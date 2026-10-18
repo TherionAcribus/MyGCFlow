@@ -62,6 +62,15 @@ const PRESETS = {
     ],
     jasmer: [['grid', 'jasmer', { position: { anchor: 'bottom-left', width: 220 } }]],
     calendar: [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 } }]],
+    activity: [['grid', 'activity', { position: { anchor: 'bottom-center' } }]],
+    age: [
+        ['bar', 'age', { position: { anchor: 'top-right', width: 280 } }],
+        ['counter', 'summary', { position: { anchor: 'top-right', dy: 8, width: 280 }, options: { items: ['oldest', 'same_day'] } }],
+    ],
+    extremes: [['counter', 'summary', {
+        position: { anchor: 'top-left', width: 340 },
+        options: { items: ['north', 'south', 'west', 'east'], columns: 2 },
+    }]],
     'evo-overview': [
         ['counter', 'summary', { position: { anchor: 'top-left' }, options: { items: ['actives', 'placees', 'archivees', 'peak'] } }],
         ['line', 'actives', { position: { anchor: 'bottom-left', width: 340 } }],
@@ -498,6 +507,7 @@ function renderForm() {
     if (holeValue && o.hole !== undefined) holeValue.textContent = `${o.hole} %`;
     setValue('switchStatsLegend', o.show_legend);
     setValue('switchStatsArea', o.show_area);
+    setValue('switchStatsMilestones', o.show_milestones);
     setValue('selectStatsCounted', o.counted || 'active');
     if (o.columns !== undefined) setValue('selectStatsColumns', String(o.columns));
     // Tuiles : seules celles du mode courant sont proposées (les autres restent
@@ -603,6 +613,7 @@ const FIELDS = [
     ['selectStatsCellMode', 'options.cell_mode', 'text'],
     ['switchStatsCoverage', 'options.show_coverage', 'bool'],
     ['switchStatsLoops', 'options.show_loops', 'bool'],
+    ['switchStatsMilestones', 'options.show_milestones', 'bool'],
     ['selectStatsSort', 'options.sort', 'text'],
     ['selectStatsOrientation', 'options.orientation', 'text'],
     ['inputStatsMaxItems', 'options.max_items', 'number'],

@@ -25,11 +25,11 @@ Mode principal (`stats.panels`) :
 
 | Type (`kind`) | Métriques (`metric`) |
 |---|---|
-| `grid` | `dt` (matrice D/T 9×9), `jasmer` (année × mois de publication, depuis mai 2000), `calendar` (mois × jour de trouvaille, 366 cases) |
-| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year`, `month`, `weekday`, `country`, `state`, `attribute`, `owner` |
+| `grid` | `dt` (matrice D/T 9×9), `jasmer` (année × mois de publication, depuis mai 2000), `calendar` (mois × jour de trouvaille, 366 cases), `activity` (une année, semaines × jours, façon contributions GitHub) |
+| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year`, `month`, `weekday`, `age` (âge de la cache à la trouvaille, 10 tranches), `country`, `state`, `attribute`, `owner` |
 | `donut` | `cache_type`, `container`, `country`, `state`, `attribute`, `owner` — anneau, camembert si `hole` vaut 0 |
 | `line` | `cumulative` — trouvailles cumulées, en escalier |
-| `counter` | `summary` — tuiles choisies dans `options.items` : `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states`, `attributes`, `owners` (valeurs distinctes connues) |
+| `counter` | `summary` — tuiles choisies dans `options.items` : `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states`, `attributes`, `owners` (valeurs distinctes connues), `oldest` (plus ancienne cache trouvée : année + date de publication), `same_day` (trouvées le jour de leur publication), `north`, `south`, `east`, `west` (trouvaille la plus au nord… en coordonnées géocaching) |
 
 Mode Évolution (`stats.evolution_panels`) :
 
@@ -101,6 +101,32 @@ numéro de jour entier) et les compteurs en `day`, `cache_type`, `country`,
 `state` selon les tuiles choisies. Les comptes par jour suffisent pour le
 record, le nombre de jours et la plus longue série (`counterValues`).
 
+**Âge à la trouvaille** (`age`) : écart entre `published_date` et
+`date_find`, en dix tranches fixes (`ageBucket`) — le jour même, 1 à 7
+jours, 8 jours à 1 mois, puis en mois calendaires révolus : 1-6 mois,
+6-12 mois, 1-2 ans, 2-5 ans, 5-10 ans, 10-15 ans, 15 ans et plus. Une cache
+sans date de publication (Labs, certains GPX), publiée avant mai 2000 ou
+« trouvée avant d'être publiée » est exclue (pied « Sans date de
+publication »). La tuile `same_day` lit la tranche 0 ; `oldest` le plus petit
+jour de la clé interne `published` (mémoïsé par révision) — affichée comme
+une année, sans animation de valeur. Les dates de publication des GPX sont
+souvent à minuit UTC : « le jour même » peut glisser d'un jour selon le
+fuseau de l'export.
+
+**Points extrêmes** (tuiles `north`/`south`/`east`/`west`) : pas une
+métrique à clés — avec la métrique interne `extremes` (`EXTREMES_METRIC`),
+l'accumulateur retient la trouvaille record de chaque direction
+(`acc.extremes`, `{ lat, lon, day, gc_code, name }`). Position lue dans la
+géométrie GeoJSON (lon/lat) ; ignorées : locationless (position fictive du
+GPX, affichées ou non), coordonnées nulles (0, 0) ou hors bornes. À
+égalité, la première trouvaille rencontrée garde le record. La tuile affiche
+la coordonnée au format des géocacheurs (`formatDdm` : « N 48° 51.396 »,
+« W 004° 29.166 ») et, en détail, code GC · nom. L'antiméridien n'est pas
+traité (est/ouest = longitude max/min).
+
+Une valeur de tuile trop large (coordonnée, grand nombre sur tuile étroite)
+réduit sa police jusqu'à ×1,1 avant d'être tronquée.
+
 Une cache sans valeur pour une métrique (Lab sans D/T ni taille, GPX sans date
 de publication) est **exclue** de cette métrique mais comptée dans le total ;
 le pied du panneau l'annonce (« Sans D/T : 12 ») pour que la somme ne
@@ -111,10 +137,24 @@ Les grilles affichent aussi une ligne de **couverture** en pied
 (`options.show_coverage`, activée par défaut) : « Combinaisons : 45/81
 (56 %) » pour la matrice D/T, « Mois : n/N (p %) » pour Jasmer, « Jours :
 n/N (p %) » pour le calendrier — le pourcentage suit le format de la langue.
-La matrice D/T peut en plus afficher « Tours de matrice : n »
+Chaque grille peut en plus afficher son nombre de **tours complets**
 (`options.show_loops`, désactivée par défaut) : n est le nombre minimal de
-trouvailles sur les 81 combinaisons — un tour est complet quand chacune a
-été trouvée au moins une fois.
+trouvailles sur les cases disponibles — « Tours de matrice » (81
+combinaisons D/T), « Tours de Jasmer » (chaque mois de publication depuis
+mai 2000 jusqu'au mois de fin, cases désactivées exclues), « Tours de
+calendrier » (366 jours, 29 février compris).
+
+**Année d'activité** (`grid/activity`) : une colonne par semaine (lundi
+en tête, 53 ou 54 colonnes), une case par jour de l'année ; les jours hors
+de l'année sont désactivés. Elle compte des jours de trouvaille : ses
+comptes, surbrillances et exclus vivent dans la métrique `day`
+(`countMetricOf`), partagée avec la courbe et les compteurs. L'année
+affichée est celle du jour en cours d'animation — la grille passe à
+l'année suivante au 1ᵉʳ janvier, jours vides compris (`touch`) — et, au
+repos, celle de la dernière trouvaille de la sélection ; le titre par défaut
+la porte (« Activité 2025 »). Cases en intensité par défaut (max de la
+référence), 520 px de large, mois en en-tête sur la semaine qui voit leur
+1ᵉʳ (`sparseColLabels`). Pas d'option « tours ».
 
 ### Deux références
 
@@ -221,6 +261,18 @@ La courbe (`line`) porte sous son axe des **jalons annuels** : un trait au
 extrémités gardant leurs libellés. Le libellé d'un jalon est masqué quand il
 chevaucherait les libellés de bord ou le jalon précédent — axe court, ou
 dates complètes quand la période tient dans une année.
+
+En mode principal, elle marque aussi les **paliers** franchis
+(`options.show_milestones`, activée par défaut) : multiples d'un pas choisi
+sur le total de la référence (`milestoneStep` : 100, 200, 500, 1000,
+2000… — le plus fin qui donne au plus cinq paliers ; aucun sous 100
+trouvailles), datés par `lineMilestones` (recherche dichotomique dans les
+points cumulés). Un palier n'est dessiné qu'une fois atteint par la valeur
+animée : pointillé depuis le bord gauche, nombre au bord (masqué s'il
+chevauche le maximum ou le palier précédent), repère sur la contremarche
+du jour. Son franchissement fait éclore un halo, porté par un tween 0 → 1
+(`tweens.level`), donc reproductible en capture image par image ; le texte
+alternatif liste « Paliers : 100 (date), … ».
 
 - **Aperçu** : un `<canvas class="stats-panel">` par panneau dans
   `#mapWithFrames`, bitmap = taille CSS × `devicePixelRatio`, `z-index: 90`

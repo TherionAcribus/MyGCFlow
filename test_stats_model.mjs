@@ -6,7 +6,9 @@ import {
     EVOLUTION_METRICS_BY_KIND,
     STATS_DEFAULTS,
     STATS_MAX_PANELS,
+    AGE_BUCKETS,
     accumulatorMetricsFor,
+    ageBucket,
     counterValues,
     createEvolutionStatsAccumulator,
     createTweenStore,
@@ -17,7 +19,9 @@ import {
     evolutionLineModel,
     evolutionStateAt,
     evolutionStatusAcc,
+    lineMilestones,
     lineModel,
+    milestoneStep,
     ymdOfDay,
     UNKNOWN_KEY,
     OTHERS_KEY,
@@ -27,6 +31,7 @@ import {
     createStatsPanel,
     dtIndex,
     featuresUpTo,
+    formatDdm,
     gridModel,
     gridSpec,
     hasActiveHighlights,
@@ -198,6 +203,144 @@ test('clés month/weekday : mois 1-12, semaine ISO lundi = 0', () => {
     assert.equal(statsKeyOf('weekday', { date_find: '1970-01-01' }), 3);
     assert.equal(statsKeyOf('weekday', { date_find: '1969-12-29' }), 0);
     assert.equal(statsKeyOf('weekday', { date_find: 'pfff' }), null);
+});
+
+test('âge à la trouvaille : tranches en jours puis en mois calendaires révolus', () => {
+    const age = (published, found) => ageBucket(parseYmd(published), parseYmd(found));
+    assert.equal(age('2020-03-15', '2020-03-15'), 0);           // le jour même
+    assert.equal(age('2020-03-15', '2020-03-16'), 1);
+    assert.equal(age('2020-03-15', '2020-03-22'), 1);           // 7 jours
+    assert.equal(age('2020-03-15', '2020-03-23'), 2);           // 8 jours
+    assert.equal(age('2020-03-15', '2020-04-14'), 2);           // pas encore un mois
+    assert.equal(age('2020-03-15', '2020-04-15'), 3);           // un mois révolu
+    assert.equal(age('2020-01-31', '2020-02-29'), 2);           // 29 j, mois non révolu
+    assert.equal(age('2020-03-15', '2020-09-14'), 3);
+    assert.equal(age('2020-03-15', '2020-09-15'), 4);           // 6 mois
+    assert.equal(age('2020-03-15', '2021-03-15'), 5);           // 1 an
+    assert.equal(age('2020-03-15', '2022-03-15'), 6);           // 2 ans
+    assert.equal(age('2010-03-15', '2015-03-14'), 6);
+    assert.equal(age('2010-03-15', '2015-03-15'), 7);           // 5 ans
+    assert.equal(age('2005-03-15', '2015-03-15'), 8);           // 10 ans
+    assert.equal(age('2001-03-15', '2016-03-15'), 9);           // 15 ans
+    assert.equal(age('2001-03-15', '2026-03-15'), AGE_BUCKETS - 1);
+    // Trouvée avant d'être publiée, dates absentes : exclue.
+    assert.equal(age('2020-03-15', '2020-03-14'), null);
+    assert.equal(ageBucket(null, parseYmd('2020-03-14')), null);
+    // Clé de la métrique : date de publication antérieure à mai 2000 = corrompue.
+    assert.equal(statsKeyOf('age', { published_date: '2020-03-15', date_find: '2020-03-15' }), 0);
+    assert.equal(statsKeyOf('age', { published_date: '1999-03-15', date_find: '2020-03-15' }), null);
+    assert.equal(statsKeyOf('age', lab().properties), null);
+    assert.equal(statsKeyOf('published', { published_date: '2000-05-02' }), dayNumber({ y: 2000, m: 5, d: 2 }));
+    assert.equal(statsKeyOf('published', { published_date: '2000-04-30' }), null);
+});
+
+test('histogramme âge : 10 tranches fixes dans l\'ordre, Labs exclus', () => {
+    const acc = countFeatures([
+        geocache(1, 1, { published_date: '2021-03-14' }),       // le jour même
+        geocache(1, 1, { published_date: '2001-01-01' }),       // 20 ans
+        lab(),
+    ], ['age']);
+    const model = barModel('age', acc, acc, createStatsPanel('bar', 'age').options);
+    assert.deepEqual(model.rows.map((r) => r.key), Array.from({ length: AGE_BUCKETS }, (_, i) => i));
+    assert.equal(model.rows[0].count, 1);
+    assert.equal(model.rows[AGE_BUCKETS - 1].count, 1);
+    assert.equal(model.excluded, 1);
+    assert.equal(createStatsPanel('bar', 'age').options.orientation, 'horizontal');
+    assert.deepEqual(accumulatorMetricsFor(createStatsPanel('counter', 'summary', { options: { items: ['oldest', 'same_day'] } })),
+        ['published', 'age']);
+});
+
+test('points extrêmes : record par axe, locationless et positions invalides ignorées', () => {
+    const at = (lon, lat, extra = {}) => ({ ...geocache(1, 1, extra), geometry: { type: 'Point', coordinates: [lon, lat] } });
+    const acc = createStatsAccumulator(['extremes']);
+    acc.add([
+        at(2.35, 48.85, { gc_code: 'GCPARIS', name: 'Paris', date_find: '2020-01-01' }),
+        at(-4.48, 48.39, { gc_code: 'GCBREST' }),
+        at(7.75, 48.58, { gc_code: 'GCSTRAS' }),
+        at(5.37, 43.29, { gc_code: 'GCMARS' }),
+        // Position fictive, nulle, hors bornes : jamais un record.
+        at(170, 89, { cache_type: 'Locationless (Reverse) Cache' }),
+        at(0, 0),
+        at(200, 95),
+        lab(),
+        // Égalité avec Paris au nord : la première reste.
+        at(3, 48.85, { gc_code: 'GCTIE' }),
+    ]);
+    const v = counterValues(acc, ['north', 'south', 'east', 'west']);
+    assert.equal(v.north.find.gc_code, 'GCPARIS');
+    assert.equal(v.north.find.name, 'Paris');
+    assert.equal(v.north.find.day, dayNumber({ y: 2020, m: 1, d: 1 }));
+    assert.equal(v.north.value, 48.85);
+    assert.equal(v.north.axis, 'lat');
+    assert.equal(v.south.find.gc_code, 'GCMARS');
+    assert.equal(v.east.find.gc_code, 'GCSTRAS');
+    assert.equal(v.east.axis, 'lon');
+    assert.equal(v.west.value, -4.48);
+    // Sans la métrique : rien de retenu, tuiles vides.
+    const none = counterValues(countFeatures([at(1, 1)], ['day']), ['north']);
+    assert.equal(none.north.find, null);
+    assert.deepEqual(accumulatorMetricsFor(createStatsPanel('counter', 'summary', { options: { items: ['north', 'west'] } })),
+        ['extremes']);
+    acc.reset();
+    assert.equal(acc.extremes.north, null);
+});
+
+test('coordonnées au format géocaching : degrés et minutes décimales', () => {
+    assert.equal(formatDdm(48.8566, 'lat'), 'N 48° 51.396');
+    assert.equal(formatDdm(2.3522, 'lon'), 'E 002° 21.132');
+    assert.equal(formatDdm(-4.4861, 'lon'), 'W 004° 29.166');
+    assert.equal(formatDdm(-33.8688, 'lat'), 'S 33° 52.128');
+    assert.equal(formatDdm(5.05, 'lat'), 'N 05° 03.000');
+    // 59.9999… minutes arrondies à 60 : la retenue passe au degré.
+    assert.equal(formatDdm(9.9999999, 'lat'), 'N 10° 00.000');
+});
+
+test('paliers : pas le plus fin donnant au plus 5 paliers, aucun sous 100', () => {
+    assert.equal(milestoneStep(0), null);
+    assert.equal(milestoneStep(99), null);
+    assert.equal(milestoneStep(100), 100);
+    assert.equal(milestoneStep(450), 100);      // 100…400
+    assert.equal(milestoneStep(600), 200);      // 6 × 100 → trop, 3 × 200
+    assert.equal(milestoneStep(1234), 500);     // 6 × 200 → trop, 2 × 500
+    assert.equal(milestoneStep(5000), 1000);
+    assert.equal(milestoneStep(12000), 5000);
+    assert.equal(milestoneStep(10_000_000), 100000);
+});
+
+test('paliers : jour de franchissement sur l\'état courant, null tant que non atteint', () => {
+    // 120 trouvailles le 1er janvier 2024, 100 de plus le 3 → total 220.
+    const day1 = Array.from({ length: 120 }, () => onDay('2024-01-01'));
+    const day3 = Array.from({ length: 100 }, () => onDay('2024-01-03'));
+    const ref = countFeatures([...day1, ...day3], ['day']);
+    const cur = countFeatures(day1, ['day']);
+    const first = dayNumber({ y: 2024, m: 1, d: 1 });
+    // Référence 220 → pas de 100 : paliers 100 et 200.
+    assert.deepEqual(lineMilestones(lineModel(ref, ref)), [
+        { value: 100, day: first }, { value: 200, day: first + 2 },
+    ]);
+    // En cours d'animation, le pas reste celui de la référence ; 200 pas encore atteint.
+    assert.deepEqual(lineMilestones(lineModel(cur, ref)), [
+        { value: 100, day: first }, { value: 200, day: null },
+    ]);
+    assert.deepEqual(lineMilestones(lineModel(countFeatures(day1.slice(0, 50), ['day']), null)), []);
+});
+
+test('compteurs : plus ancienne cache trouvée, trouvées le jour de leur publication', () => {
+    const empty = counterValues(countFeatures([lab()], ['published', 'age']), ['oldest', 'same_day']);
+    assert.deepEqual(empty.oldest, { value: 0, day: null });
+    assert.equal(empty.same_day.value, 0);
+    const acc = createStatsAccumulator(['published', 'age']);
+    acc.add([geocache(1, 1, { published_date: '2012-05-04', date_find: '2012-05-04' })]);
+    let v = counterValues(acc, ['oldest', 'same_day']);
+    assert.equal(v.oldest.value, 2012);
+    assert.equal(v.oldest.day, dayNumber({ y: 2012, m: 5, d: 4 }));
+    assert.equal(v.same_day.value, 1);
+    // Une plus ancienne arrive : la mémoïsation suit la révision.
+    acc.add([geocache(1, 1, { published_date: '2003-02-01' }), lab()]);
+    v = counterValues(acc, ['oldest', 'same_day']);
+    assert.equal(v.oldest.value, 2003);
+    assert.equal(v.oldest.day, dayNumber({ y: 2003, m: 2, d: 1 }));
+    assert.equal(v.same_day.value, 1);
 });
 
 test('clés attribute/owner : liste multi-valuée, inc négatif ignoré', () => {
@@ -395,6 +538,63 @@ test('grille D/T : tours de matrice = compte minimal sur les 81 cases', () => {
     // Une troisième passe complète : la case faible atteint 2 → deux tours.
     model = gridModel('dt', countFeatures([...twoPasses, ...combo()], ['dt']), acc);
     assert.equal(model.loops, 2);
+});
+
+test('tours de calendrier et de Jasmer : cases disponibles seulement, 29 février compris', () => {
+    // Une trouvaille chaque jour de 2024 (bissextile) : un tour de calendrier.
+    const year = [];
+    for (let day = dayNumber({ y: 2024, m: 1, d: 1 }); day <= dayNumber({ y: 2024, m: 12, d: 31 }); day++) {
+        const { y, m, d } = ymdOfDay(day);
+        year.push(geocache(1, 1, { date_find: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` }));
+    }
+    let acc = countFeatures(year, ['calendar']);
+    assert.equal(gridModel('calendar', acc, acc).loops, 1);
+    // 2023 (non bissextile) en plus : le 29 février reste à 1 → toujours un tour.
+    const common = year.filter((f) => f.properties.date_find !== '2024-02-29')
+        .map((f) => geocache(1, 1, { date_find: f.properties.date_find.replace('2024', '2023') }));
+    acc = countFeatures([...year, ...common], ['calendar']);
+    assert.equal(gridModel('calendar', acc, acc).loops, 1);
+
+    // Jasmer borné à juillet 2000 : mai, juin, juillet suffisent pour un tour.
+    const end = { y: 2000, m: 7 };
+    acc = countFeatures(['2000-05-03', '2000-06-01', '2000-07-31']
+        .map((published_date) => geocache(1, 1, { published_date })), ['jasmer']);
+    assert.equal(gridModel('jasmer', acc, acc, { end }).loops, 1);
+    assert.equal(gridModel('jasmer', acc, acc, { end: { y: 2000, m: 8 } }).loops, 0);
+});
+
+test('année d\'activité : semaines en colonnes, lundi en tête, hors année désactivé', () => {
+    // 2024 commence un lundi : 53 colonnes, aucune case avant le 1ᵉʳ janvier.
+    let spec = gridSpec('activity', { year: 2024 });
+    assert.equal(spec.rows, 7);
+    assert.equal(spec.cols, 53);
+    assert.equal(spec.keyAt(0, 0), dayNumber({ y: 2024, m: 1, d: 1 }));
+    assert.equal(spec.disabled(0, 0), false);
+    // 2023 commence un dimanche : 6 cases désactivées en tête de première colonne.
+    spec = gridSpec('activity', { year: 2023 });
+    assert.equal(spec.keyAt(6, 0), dayNumber({ y: 2023, m: 1, d: 1 }));
+    assert.equal(spec.disabled(5, 0), true);
+    assert.equal(spec.cols, 53);
+    // 2012, bissextile commençant un dimanche : 54 colonnes.
+    assert.equal(gridSpec('activity', { year: 2012 }).cols, 54);
+    // Chaque jour de l'année exactement une fois parmi les cases actives.
+    let available = 0;
+    for (let r = 0; r < 7; r++) for (let c = 0; c < spec.cols; c++) if (!spec.disabled(r, c)) available += 1;
+    assert.equal(available, 365);
+
+    // Comptes lus dans la métrique `day` ; l'échelle vient de la référence.
+    const panel = createStatsPanel('grid', 'activity');
+    assert.deepEqual(accumulatorMetricsFor(panel), ['day']);
+    assert.equal(panel.options.cell_mode, 'heat');
+    assert.equal(panel.position.width, 520);
+    const acc = countFeatures([onDay('2023-01-01'), onDay('2023-01-01'), onDay('2023-03-15'),
+        onDay('2022-12-31'), lab({ date_find: 'x' })], ['day']);
+    const model = gridModel('activity', acc, acc, { year: 2023 });
+    assert.equal(model.filled, 2);
+    assert.equal(model.available, 365);
+    assert.equal(model.max, 2);
+    assert.equal(model.excluded, 1);
+    assert.equal(model.cells[6 * model.cols].count, 2);     // dimanche 1ᵉʳ janvier, colonne 0
 });
 
 test('grille Jasmer : mai 2000 → mois de fin, cases hors plage désactivées', () => {

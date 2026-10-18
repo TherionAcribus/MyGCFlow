@@ -23,9 +23,10 @@ STATS_MAX_PANELS = 6
 
 STATS_METRICS_BY_KIND = {
     # Grilles : matrice D/T 9×9, Jasmer (année × mois de publication),
-    # calendrier 366 (mois × jour de trouvaille).
-    "grid": ("dt", "jasmer", "calendar"),
-    "bar": ("cache_type", "container", "difficulty", "terrain", "year", "month", "weekday", "country", "state", "attribute", "owner"),
+    # calendrier 366 (mois × jour de trouvaille), année d'activité (semaines
+    # × jours, façon contributions GitHub).
+    "grid": ("dt", "jasmer", "calendar", "activity"),
+    "bar": ("cache_type", "container", "difficulty", "terrain", "year", "month", "weekday", "age", "country", "state", "attribute", "owner"),
     # Anneau (camembert si le trou vaut 0) : catégories seulement.
     "donut": ("cache_type", "container", "country", "state", "attribute", "owner"),
     # Courbe des trouvailles cumulées.
@@ -70,7 +71,7 @@ STATS_SORTS = ("natural", "count", "label", "race")
 STATS_ORIENTATIONS = ("horizontal", "vertical")
 # « multi » : une couleur distincte par catégorie (anneaux hors types).
 STATS_PALETTES = ("gc", "accent", "heat", "multi")
-STATS_COUNTER_ITEMS = ("days", "best_day", "streak", "types", "countries", "states", "attributes", "owners")
+STATS_COUNTER_ITEMS = ("days", "best_day", "streak", "types", "countries", "states", "attributes", "owners", "oldest", "same_day", "north", "south", "east", "west")
 # Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
 # placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 # actif (types, pays, régions — mêmes clés qu'en mode principal).
@@ -204,6 +205,8 @@ def _config_name(value) -> str:
 _CATEGORICAL = ("cache_type", "container", "country", "state", "county", "status", "attribute", "owner")
 
 _DEFAULT_WIDTH = {"grid": 280, "bar": 280, "donut": 300, "line": 320, "counter": 280}
+# Année d'activité : 53 semaines en colonnes, illisible à 280 px.
+_ACTIVITY_WIDTH = 520
 
 
 def stats_panel_defaults(kind: str, metric: str) -> dict:
@@ -217,7 +220,8 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
         options = {
             "show_percent": False,
             "highlight": "new",
-            "cell_mode": "count" if metric == "dt" else "filled",
+            # Année d'activité : intensité selon le nombre du jour.
+            "cell_mode": "count" if metric == "dt" else "heat" if metric == "activity" else "filled",
             "show_coverage": True,
             "show_loops": False,
         }
@@ -228,7 +232,8 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
             "show_percent": False,
             "highlight": "every",
             "sort": "count" if metric in ("cache_type", "country", "state", "county", "status", "attribute", "owner") else "natural",
-            "orientation": "horizontal" if metric in _CATEGORICAL else "vertical",
+            # Âge : grandeur ordonnée, mais libellés longs (« 6 à 12 mois »).
+            "orientation": "horizontal" if metric in _CATEGORICAL or metric == "age" else "vertical",
             "max_items": 8,
             "hide_empty": False,
         }
@@ -248,6 +253,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
             "show_values": True,
             "highlight": "every",
             "show_area": True,
+            "show_milestones": True,
         }
         palette = "accent"
     else:
@@ -263,7 +269,8 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
         "title": "",
         "position": {
             "mode": "anchor", "anchor": "top-left", "dx": 16, "dy": 16,
-            "width": _DEFAULT_WIDTH.get(kind, 280), "height": None, "x": 0, "y": 0,
+            "width": _ACTIVITY_WIDTH if metric == "activity" else _DEFAULT_WIDTH.get(kind, 280),
+            "height": None, "x": 0, "y": 0,
         },
         "options": options,
         "style": {
@@ -295,6 +302,7 @@ _OPTION_COERCERS = {
     "hole": lambda v, d: _int_in(v, d, STATS_HOLE_RANGE),
     "show_legend": lambda v, d: _bool(v, d),
     "show_area": lambda v, d: _bool(v, d),
+    "show_milestones": lambda v, d: _bool(v, d),
     "items": lambda v, d: _choices(v, _ALL_COUNTER_ITEMS, d),
     "counted": lambda v, d: _choice(v, STATS_COUNTED, d),
     "columns": lambda v, d: _int_in(v, d, STATS_COLUMNS_RANGE),

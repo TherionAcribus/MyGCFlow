@@ -128,12 +128,12 @@ function highlightFor(view, keys, now) {
 }
 
 // ---------------------------------------------------------------------------
-// Grille (D/T, Jasmer, calendrier)
+// Grille (D/T, Jasmer, calendrier, année d'activité)
 // ---------------------------------------------------------------------------
 
 // Largeur réservée aux libellés de ligne, en multiples de la taille de police :
 // fixe par métrique pour que measure() n'ait pas besoin de mesurer du texte.
-const GRID_ROW_LABEL_EM = { dt: 2.4, jasmer: 2.6, calendar: 3 };
+const GRID_ROW_LABEL_EM = { dt: 2.4, jasmer: 2.6, calendar: 3, activity: 2.6 };
 
 // La hauteur imposée (targetH, px CSS de la hauteur TOTALE du panneau) est
 // optionnelle : chaque layout la convertit en hauteur de zone graphique,
@@ -166,9 +166,25 @@ function drawGrid(ctx, view, style, width, _targetH, now) {
     ctx.font = font(600, labelSize, view.fontFamily);
     ctx.fillStyle = hexToRgba(style.text_color, 0.85);
     ctx.textAlign = 'center';
-    const colStep = Math.max(1, Math.ceil((labelSize * 1.6) / L.cell));
-    for (let c = 0; c < model.cols; c += colStep) {
-        ctx.fillText(view.colLabels[c] ?? '', left + (c + 0.5) * L.cell, L.gridTop + L.headerH / 2);
+    if (view.sparseColLabels) {
+        // Peu de libellés (un mois par semaine qui le voit commencer) : chacun
+        // aligné à gauche sur sa colonne, sauté s'il chevauche le précédent.
+        ctx.textAlign = 'left';
+        let lastRight = -Infinity;
+        for (let c = 0; c < model.cols; c++) {
+            const label = view.colLabels[c];
+            if (!label) continue;
+            const x = left + c * L.cell;
+            const w = ctx.measureText(label).width;
+            if (x < lastRight + 2 || x + w > width - L.pad) continue;
+            ctx.fillText(label, x, L.gridTop + L.headerH / 2);
+            lastRight = x + w;
+        }
+    } else {
+        const colStep = Math.max(1, Math.ceil((labelSize * 1.6) / L.cell));
+        for (let c = 0; c < model.cols; c += colStep) {
+            ctx.fillText(view.colLabels[c] ?? '', left + (c + 0.5) * L.cell, L.gridTop + L.headerH / 2);
+        }
     }
     if (view.corner) {
         ctx.textAlign = 'left';
@@ -631,6 +647,37 @@ function drawLine(ctx, view, style, width, targetH, now) {
     const headY = pts[pts.length - 1][1];
     pts.push([headX, headY]);
 
+    // Paliers franchis (100ᵉ, 500ᵉ… trouvaille) : pointillé depuis le bord
+    // gauche jusqu'au jour du franchissement, nombre au bord comme un axe —
+    // sauf s'il chevauche le maximum ou le palier précédent. Seuls les
+    // paliers déjà atteints par la valeur animée : la courbe ne trahit pas
+    // la suite.
+    const milestones = (view.milestones || []).filter((m) => m.day !== null && m.value <= headTotal);
+    if (milestones.length) {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = hexToRgba(style.text_color, 0.3);
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath();
+        for (const m of milestones) {
+            const y = Math.round(yOf(m.value)) + 0.5;
+            ctx.moveTo(left, y);
+            ctx.lineTo(xOf(m.day), y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = font(600, Math.max(7, L.fontSize * 0.8), view.fontFamily);
+        ctx.fillStyle = hexToRgba(style.text_color, 0.75);
+        ctx.textAlign = 'left';
+        const maxLabelY = plotTop - L.fontSize * 0.55;
+        let lastLabelY = Infinity;
+        for (const m of milestones) {
+            const labelY = yOf(m.value) - L.fontSize * 0.6;
+            if (Math.abs(labelY - maxLabelY) < L.fontSize || lastLabelY - labelY < L.fontSize) continue;
+            ctx.fillText(m.label, left + 2, labelY);
+            lastLabelY = labelY;
+        }
+    }
+
     if (view.showArea) {
         ctx.beginPath();
         ctx.moveTo(pts[0][0], bottom);
@@ -649,6 +696,25 @@ function drawLine(ctx, view, style, width, targetH, now) {
     ctx.lineJoin = 'round';
     ctx.strokeStyle = style.accent_color;
     ctx.stroke();
+
+    // Repères des paliers sur la courbe, halo au franchissement.
+    for (const m of milestones) {
+        const x = xOf(m.day);
+        const y = yOf(m.value);
+        if (m.level > 0) {
+            ctx.beginPath();
+            ctx.arc(x, y, 4 + m.level * 10, 0, Math.PI * 2);
+            ctx.fillStyle = hexToRgba(style.accent_color, 0.45 * m.level);
+            ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = style.accent_color;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = style.text_color;
+        ctx.stroke();
+    }
 
     // Tête : point, halo tant que la dernière trouvaille est fraîche.
     const level = view.headLevel || 0;
@@ -717,7 +783,14 @@ function drawCounters(ctx, view, style, width, targetH) {
         }
         ctx.textAlign = 'center';
         const cx = x + tileW / 2;
+        // Valeur trop large (coordonnée, grand nombre sur tuile étroite) : la
+        // police rétrécit jusqu'à ×1,1 avant que fitText ne tronque.
         ctx.font = font(700, L.fontSize * 1.9, view.fontFamily);
+        const valueW = ctx.measureText(tile.value).width;
+        if (valueW > tileW - 6) {
+            const size = Math.max(L.fontSize * 1.1, (L.fontSize * 1.9 * (tileW - 6)) / valueW);
+            ctx.font = font(700, size, view.fontFamily);
+        }
         ctx.fillStyle = tile.level > 0 ? style.accent_color : style.text_color;
         ctx.fillText(fitText(ctx, tile.value, tileW - 6), cx, y + L.tileH * 0.36);
         ctx.font = font(500, Math.max(7, L.fontSize * 0.8), view.fontFamily);

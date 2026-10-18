@@ -31,6 +31,7 @@ import {
     barModel,
     counterValues,
     countFeatures,
+    countMetricOf,
     createStatsAccumulator,
     createTweenStore,
     dayNumberOfDate,
@@ -40,10 +41,12 @@ import {
     evolutionStateAt,
     evolutionStatusAcc,
     featuresUpTo,
+    formatDdm,
     gridModel,
     hasActiveHighlights,
     highlightLevel,
     layoutPanels,
+    lineMilestones,
     lineModel,
     metricsForPanels,
     normalizeStatsSettings,
@@ -346,8 +349,9 @@ export function accumulateStatsForDates(dates, now) {
     const features = featuresOfDates(dates);
     if (features.length === 0) {
         // Jours sans trouvaille : rien à compter, mais la tête d'une courbe
-        // avance quand même sur l'axe des dates — il faut redessiner.
-        if (visiblePanels().some((panel) => panel.kind === 'line')) touch();
+        // avance quand même sur l'axe des dates, et une année d'activité
+        // passe à l'année suivante au 1ᵉʳ janvier — il faut redessiner.
+        if (visiblePanels().some((panel) => panel.kind === 'line' || panel.metric === 'activity')) touch();
         return;
     }
     current.add(features, Number.isFinite(now) ? now : null);
@@ -476,6 +480,7 @@ export function defaultStatsPanelTitle(panel) {
         case 'dt': return pkg.t('Matrice D/T');
         case 'jasmer': return pkg.t('Grille Jasmer');
         case 'calendar': return pkg.t('Calendrier 366');
+        case 'activity': return pkg.t("Année d'activité");
         case 'cache_type': return pkg.t('Types de caches');
         case 'container': return pkg.t('Tailles');
         case 'difficulty': return pkg.t('Difficulté');
@@ -483,6 +488,7 @@ export function defaultStatsPanelTitle(panel) {
         case 'year': return pkg.t('Trouvailles par année');
         case 'month': return pkg.t('Trouvailles par mois');
         case 'weekday': return pkg.t('Jours de la semaine');
+        case 'age': return pkg.t('Âge des caches trouvées');
         case 'attribute': return pkg.t('Attributs');
         case 'owner': return pkg.t('Propriétaires');
         case 'country': return pkg.t('Pays');
@@ -504,6 +510,20 @@ function categoryLabel(key) {
     return pkg.t(String(key));
 }
 
+// Tranches d'âge à la trouvaille (stats_model › ageBucket).
+const AGE_LABELS = [
+    () => pkg.t('Le jour même'),
+    () => pkg.t('1 à 7 jours'),
+    () => pkg.t('8 jours à 1 mois'),
+    () => pkg.t('1 à 6 mois'),
+    () => pkg.t('6 à 12 mois'),
+    () => pkg.t('1 à 2 ans'),
+    () => pkg.t('2 à 5 ans'),
+    () => pkg.t('5 à 10 ans'),
+    () => pkg.t('10 à 15 ans'),
+    () => pkg.t('15 ans et plus'),
+];
+
 function labelFor(metric, number) {
     if (metric === 'difficulty' || metric === 'terrain') {
         return (key) => (key === OTHERS_KEY ? pkg.t('Autres') : number(DT_LABELS[key]));
@@ -511,6 +531,7 @@ function labelFor(metric, number) {
     if (metric === 'year') return (key) => String(key);
     if (metric === 'month') return (key) => monthNames('short')[key - 1] ?? String(key);
     if (metric === 'weekday') return (key) => weekdayNames('short')[key] ?? String(key);
+    if (metric === 'age') return (key) => AGE_LABELS[key]?.() ?? String(key);
     if (metric === 'status') {
         return (key) => key === 'active' ? pkg.t('Caches actives') : pkg.t('Caches archivées');
     }
@@ -522,8 +543,8 @@ function excludedLine(metric, n) {
         case 'dt': return pkg.t('Sans D/T : ${n}', { n });
         case 'difficulty': return pkg.t('Sans difficulté : ${n}', { n });
         case 'terrain': return pkg.t('Sans terrain : ${n}', { n });
-        case 'jasmer': return pkg.t('Sans date de publication : ${n}', { n });
-        case 'day': case 'month': case 'weekday':
+        case 'jasmer': case 'age': return pkg.t('Sans date de publication : ${n}', { n });
+        case 'day': case 'month': case 'weekday': case 'activity':
             return pkg.t('Sans date de trouvaille : ${n}', { n });
         case 'attribute': return pkg.t('Sans attribut : ${n}', { n });
         default: return pkg.t('Sans date : ${n}', { n });
@@ -536,7 +557,10 @@ function coverageLine(metric, filled, available, pct) {
     return pkg.t('Jours : ${filled}/${available} (${pct})', { filled, available, pct });
 }
 
-function loopsLine(n) {
+// Tours complets : chaque case disponible trouvée au moins n fois.
+function loopsLine(metric, n) {
+    if (metric === 'jasmer') return pkg.t('Tours de Jasmer : ${n}', { n });
+    if (metric === 'calendar') return pkg.t('Tours de calendrier : ${n}', { n });
     return pkg.t('Tours de matrice : ${n}', { n });
 }
 
@@ -561,6 +585,23 @@ function jasmerEnd() {
     return jasmerEndOf((mode === 'animating' && animation?.endDate) || pkg.metadata?.endDate);
 }
 
+// Année de la grille d'activité : celle du jour affiché pendant l'animation
+// (la grille passe à l'année suivante au 1ᵉʳ janvier), sinon celle de la
+// dernière trouvaille de la sélection.
+function activityYearOf(date) {
+    const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+    return d.getFullYear();
+}
+function activityYear() {
+    if (mode === 'animating' && animation) return activityYearOf(animation.lastDate || animation.startDate);
+    return activityYearOf(pkg.metadata?.endDate);
+}
+
+// Contexte des grilles : fin de Jasmer, année d'activité.
+function gridContext() {
+    return { end: jasmerEnd(), year: activityYear() };
+}
+
 // Libellés d'axes d'une grille — partagés entre la vue et l'export CSV.
 function gridAxisLabels(metric, model, number) {
     if (metric === 'dt') {
@@ -569,6 +610,19 @@ function gridAxisLabels(metric, model, number) {
     }
     if (metric === 'jasmer') {
         return { rowLabels: model.rowKeys.map(String), colLabels: monthNames('narrow'), corner: '' };
+    }
+    if (metric === 'activity') {
+        // Mois au-dessus de la semaine qui contient son 1ᵉʳ (dans l'année) ;
+        // les autres colonnes restent sans libellé (sparseColLabels).
+        const names = monthNames('short');
+        const colLabels = model.colKeys.map((monday) => {
+            for (let i = 0; i < 7; i++) {
+                const { y, m, d } = ymdOfDay(monday + i);
+                if (d === 1 && y === model.year) return names[m - 1];
+            }
+            return '';
+        });
+        return { rowLabels: weekdayNames('short'), colLabels, corner: '', sparseColLabels: true };
     }
     return { rowLabels: monthNames('short'), colLabels: model.colKeys.map(String), corner: '' };
 }
@@ -619,11 +673,38 @@ const COUNTER_LABELS = {
     states: () => pkg.t('Régions'),
     attributes: () => pkg.t('Attributs différents'),
     owners: () => pkg.t('Propriétaires différents'),
+    oldest: () => pkg.t('Plus ancienne cache trouvée'),
+    same_day: () => pkg.t('Trouvées le jour de publication'),
+    north: () => pkg.t('Trouvaille la plus au nord'),
+    south: () => pkg.t('Trouvaille la plus au sud'),
+    east: () => pkg.t("Trouvaille la plus à l'est"),
+    west: () => pkg.t("Trouvaille la plus à l'ouest"),
     actives: () => pkg.t('Caches actives'),
     placees: () => pkg.t('Caches posées'),
     archivees: () => pkg.t('Caches archivées'),
     peak: () => pkg.t('Pic de caches actives'),
 };
+
+// Texte d'une tuile (vue, export CSV). `shown` : valeur animée à afficher,
+// la valeur réelle par défaut. « Plus ancienne » est une année, les points
+// extrêmes une coordonnée : ni animées ni formatées en nombre (« 2 001 »).
+function counterText(item, entry, number, shown = entry.value) {
+    if (entry.axis) {
+        const find = entry.find;
+        return find
+            ? { value: formatDdm(entry.value, entry.axis), detail: [find.gc_code, find.name].filter(Boolean).join(' · ') }
+            : { value: '—', detail: '' };
+    }
+    if (item === 'oldest') {
+        return entry.day === null || entry.day === undefined
+            ? { value: '—', detail: '' }
+            : { value: String(entry.value), detail: formatDay(entry.day) };
+    }
+    let detail = '';
+    if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
+    if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
+    return { value: number(Math.round(shown)), detail };
+}
 
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
 // barres : la place de chaque ligne glisse aussi.
@@ -654,25 +735,27 @@ function buildView(panel) {
         showPercent: panel.options.show_percent,
         footer: [],
         highlight: mode === 'animating' && animation
-            ? { mode: panel.options.highlight, durationMs: animation.highlightMs, hits: current.lastHit.get(metric) }
+            ? { mode: panel.options.highlight, durationMs: animation.highlightMs, hits: current.lastHit.get(countMetricOf(metric)) }
             : null,
     };
     // Présence des lignes de pied décidée sur la référence : la hauteur du
     // panneau ne change pas au premier Lab rencontré.
-    const refExcluded = reference.excluded.get(metric) || 0;
+    const refExcluded = reference.excluded.get(countMetricOf(metric)) || 0;
 
     if (panel.kind === 'grid') {
-        const model = gridModel(metric, state, reference, { end: jasmerEnd() });
+        const model = gridModel(metric, state, reference, gridContext());
         view.model = model;
+        if (metric === 'activity' && panel.show_title && !panel.title) {
+            view.title = pkg.t('Activité ${year}', { year: model.year });
+        }
         view.cellMode = panel.options.cell_mode;
         Object.assign(view, gridAxisLabels(metric, model, number));
         if (panel.options.show_coverage) {
             view.footer.push(coverageLine(metric, model.filled, model.available,
                 percent(model.available > 0 ? model.filled / model.available : 0)));
         }
-        if (metric === 'dt' && panel.options.show_loops) {
-            view.footer.push(loopsLine(number(model.loops)));
-        }
+        // Pas de « tour » d'une année d'activité : chaque jour ne vient qu'une fois.
+        if (panel.options.show_loops && metric !== 'activity') view.footer.push(loopsLine(metric, number(model.loops)));
         if (refExcluded > 0) view.footer.push(excludedLine(metric, model.excluded));
         return view;
     }
@@ -694,6 +777,20 @@ function buildView(panel) {
             view.endLabel = sameYear ? formatDay(model.last) : String(ymdOfDay(model.last).y);
         }
         view.ticks = model.empty ? [] : yearTicks(model.first, model.last);
+        // Paliers (100ᵉ, 500ᵉ… trouvaille) : `level` = éclat au franchissement,
+        // porté par le tween 0 → 1 de chaque palier (immédiat au repos et à
+        // la première passe d'une animation).
+        view.milestones = panel.options.show_milestones
+            ? lineMilestones(model).map((m) => {
+                const key = `${panel.id}:ms:${m.value}`;
+                tweens.set(key, m.day === null ? 0 : 1, now);
+                return {
+                    ...m,
+                    label: number(m.value),
+                    level: panel.options.highlight === 'none' || m.day === null ? 0 : tweens.level(key, now),
+                };
+            })
+            : [];
         // Halo de la tête tant que la dernière trouvaille est fraîche.
         const lastDay = model.points.at(-1)?.day;
         view.headLevel = mode === 'animating' && animation && lastDay !== undefined
@@ -710,12 +807,13 @@ function buildView(panel) {
         view.tiles = panel.options.items.map((item) => {
             const entry = values[item] || { value: 0 };
             const key = `${panel.id}:c:${item}`;
-            const shown = tweens.set(key, entry.value, now);
-            let detail = '';
-            if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
-            if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
+            // « Plus ancienne », points extrêmes : le tween ne sert qu'à
+            // l'éclat du changement (jour de publication, coordonnée du
+            // record), la valeur s'affiche sans glisser.
+            const shown = tweens.set(key, item === 'oldest' ? (entry.day ?? 0) : entry.value, now);
+            const { value, detail } = counterText(item, entry, number, shown);
             return {
-                value: number(Math.round(shown)),
+                value,
                 label: COUNTER_LABELS[item](),
                 detail,
                 level: panel.options.highlight === 'none' ? 0 : tweens.level(key, now),
@@ -1006,8 +1104,10 @@ function overlayRects(host) {
 }
 
 // Libellé d'une case de grille pour le texte alternatif : « D2/T3 »,
-// « 2010-06 » ou « 14 mars » selon la métrique.
-function gridCellLabel(view, r, c) {
+// « 2010-06 », « 14 mars » ou la date complète (année d'activité, `key` =
+// numéro de jour) selon la métrique.
+function gridCellLabel(view, r, c, key) {
+    if (view.metric === 'activity') return formatDay(key);
     if (view.metric === 'dt') return `D${view.rowLabels[r]}/T${view.colLabels[c]}`;
     if (view.metric === 'jasmer') return `${view.rowLabels[r]}-${String(c + 1).padStart(2, '0')}`;
     return `${c + 1} ${view.rowLabels[r]}`;
@@ -1047,13 +1147,19 @@ function refreshAltText(node, panel, view, key) {
                 ? `${COUNTER_LABELS[view.metric]?.() || view.metric} : ${number(model.total)} (${formatDay(model.headDay)})`
                 : pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
         }
+        const reached = (view.milestones || []).filter((m) => m.day !== null);
+        if (reached.length) {
+            empty = false;
+            const list = reached.map((m) => `${m.label} (${formatDay(m.day)})`).join(', ');
+            add(pkg.t('Paliers : ${list}', { list }));
+        }
     } else if (view.kind === 'grid') {
         for (let r = 0; r < model.rows; r++) {
             for (let c = 0; c < model.cols; c++) {
-                const count = model.cells[r * model.cols + c].count;
+                const { count, key } = model.cells[r * model.cols + c];
                 if (!count) continue;
                 empty = false;
-                add(`${gridCellLabel(view, r, c)} : ${number(count)}`);
+                add(`${gridCellLabel(view, r, c, key)} : ${number(count)}`);
             }
         }
     } else {
@@ -1127,9 +1233,10 @@ function flush() {
         node.layout = rect;
         node.cssWidth = rect.width;
         // Texte alternatif : reconstruit quand les comptes bougent. La tête de
-        // courbe dépend aussi du jour affiché (jours vides compris).
+        // courbe et l'année d'activité dépendent aussi du jour affiché (jours
+        // vides compris).
         const view = views.get(panel.id);
-        refreshAltText(node, panel, view, `${a11yBase}|${view.model?.headDay ?? ''}`);
+        refreshAltText(node, panel, view, `${a11yBase}|${view.model?.headDay ?? ''}|${view.model?.year ?? ''}`);
         const css = rect.css;
         const cssKey = `${css.left}|${css.right}|${css.top}|${css.bottom}|${rect.width}|${rect.height}`;
         if (node.cssKey !== cssKey) {
@@ -1322,24 +1429,22 @@ export function statsPanelCsv(id) {
         push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
         const values = counterValues(ref, panel.options.items);
         for (const item of panel.options.items) {
-            const entry = values[item] || { value: 0 };
-            let detail = '';
-            if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
-            if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
-            push(COUNTER_LABELS[item](), number(entry.value), detail);
+            const { value, detail } = counterText(item, values[item] || { value: 0 }, number);
+            push(COUNTER_LABELS[item](), value, detail);
         }
     } else if (panel.kind === 'line') {
         push(pkg.t('Date'), pkg.t('Total'));
         for (const p of lineModel(ref, ref).points) push(formatDay(p.day), p.total);
     } else if (panel.kind === 'grid') {
         push(pkg.t('Case'), pkg.t('Nombre'));
-        const model = gridModel(panel.metric, ref, ref, { end: jasmerEndOf(pkg.metadata?.endDate) });
+        const model = gridModel(panel.metric, ref, ref,
+            { end: jasmerEndOf(pkg.metadata?.endDate), year: activityYearOf(pkg.metadata?.endDate) });
         if (model) {
             const labels = gridAxisLabels(panel.metric, model, number);
             for (let r = 0; r < model.rows; r++) {
                 for (let c = 0; c < model.cols; c++) {
-                    const count = model.cells[r * model.cols + c].count;
-                    if (count) push(gridCellLabel({ metric: panel.metric, ...labels }, r, c), count);
+                    const { count, key } = model.cells[r * model.cols + c];
+                    if (count) push(gridCellLabel({ metric: panel.metric, ...labels }, r, c, key), count);
                 }
             }
         }

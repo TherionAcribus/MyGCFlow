@@ -25,8 +25,8 @@ import { counterAt, counterMaxFor } from './evolution_timeline.mjs';
 export const STATS_MAX_PANELS = 6;
 
 export const STATS_METRICS_BY_KIND = Object.freeze({
-    grid: Object.freeze(['dt', 'jasmer', 'calendar']),
-    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'attribute', 'owner']),
+    grid: Object.freeze(['dt', 'jasmer', 'calendar', 'activity']),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'age', 'country', 'state', 'attribute', 'owner']),
     // Anneau (camembert si le trou vaut 0) : catégories seulement.
     donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'attribute', 'owner']),
     // Courbe des trouvailles cumulées.
@@ -70,7 +70,7 @@ export const STATS_SORTS = Object.freeze(['natural', 'count', 'label', 'race']);
 export const STATS_ORIENTATIONS = Object.freeze(['horizontal', 'vertical']);
 // « multi » : une couleur distincte par catégorie.
 export const STATS_PALETTES = Object.freeze(['gc', 'accent', 'heat', 'multi']);
-export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners']);
+export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners', 'oldest', 'same_day', 'north', 'south', 'east', 'west']);
 // Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
 // placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 // actif (types, pays, régions — mêmes clés qu'en mode principal).
@@ -172,6 +172,8 @@ function configName(value) {
 
 export const CATEGORICAL_METRICS = Object.freeze(['cache_type', 'container', 'country', 'state', 'county', 'status', 'attribute', 'owner']);
 const DEFAULT_WIDTH = { grid: 280, bar: 280, donut: 300, line: 320, counter: 280 };
+// Année d'activité : 53 semaines en colonnes, illisible à 280 px.
+const ACTIVITY_WIDTH = 520;
 
 // Valeurs par défaut d'un panneau, fonction de son type et de sa métrique :
 // les grandeurs ordonnées (tailles, D/T, années) gardent leur ordre naturel,
@@ -184,7 +186,9 @@ export function statsPanelDefaults(kind, metric) {
         options = {
             show_percent: false,
             highlight: 'new',
-            cell_mode: metric === 'dt' ? 'count' : 'filled',
+            // Année d'activité : intensité selon le nombre du jour (façon
+            // contributions GitHub).
+            cell_mode: metric === 'dt' ? 'count' : metric === 'activity' ? 'heat' : 'filled',
             show_coverage: true,
             show_loops: false,
         };
@@ -195,7 +199,8 @@ export function statsPanelDefaults(kind, metric) {
             show_percent: false,
             highlight: 'every',
             sort: ['cache_type', 'country', 'state', 'county', 'status', 'attribute', 'owner'].includes(metric) ? 'count' : 'natural',
-            orientation: CATEGORICAL_METRICS.includes(metric) ? 'horizontal' : 'vertical',
+            // Âge : grandeur ordonnée, mais libellés longs (« 6 à 12 mois »).
+            orientation: CATEGORICAL_METRICS.includes(metric) || metric === 'age' ? 'horizontal' : 'vertical',
             max_items: 8,
             hide_empty: false,
         };
@@ -211,7 +216,7 @@ export function statsPanelDefaults(kind, metric) {
         };
         palette = metric === 'cache_type' ? 'gc' : 'multi';
     } else if (kind === 'line') {
-        options = { show_values: true, highlight: 'every', show_area: true };
+        options = { show_values: true, highlight: 'every', show_area: true, show_milestones: true };
         palette = 'accent';
     } else {
         options = { highlight: 'every', items: ['days', 'best_day', 'streak', 'types'], columns: 2 };
@@ -223,7 +228,8 @@ export function statsPanelDefaults(kind, metric) {
         title: '',
         position: {
             mode: 'anchor', anchor: 'top-left', dx: 16, dy: 16,
-            width: DEFAULT_WIDTH[kind] || 280, height: null, x: 0, y: 0,
+            width: metric === 'activity' ? ACTIVITY_WIDTH : (DEFAULT_WIDTH[kind] || 280),
+            height: null, x: 0, y: 0,
         },
         options,
         style: {
@@ -253,6 +259,7 @@ const OPTION_COERCERS = {
     hole: (v, d) => intIn(v, d, STATS_HOLE_RANGE),
     show_legend: bool,
     show_area: bool,
+    show_milestones: bool,
     items: (v, d) => choices(v, ALL_COUNTER_ITEMS, d),
     counted: (v, d) => choice(v, STATS_COUNTED, d),
     columns: (v, d) => intIn(v, d, STATS_COLUMNS_RANGE),
@@ -420,6 +427,10 @@ export function createStatsPanel(kind, metric, overrides = {}, newId = newStatsP
     });
 }
 
+// Points extrêmes (tuiles nord/sud/est/ouest) : pas une métrique à clés,
+// l'accumulateur retient la trouvaille la plus au nord, au sud… (`extremes`).
+export const EXTREMES_METRIC = 'extremes';
+
 // Compteurs → métriques de l'accumulateur dont ils dépendent.
 const COUNTER_DEPENDENCIES = {
     days: 'day',
@@ -430,7 +441,20 @@ const COUNTER_DEPENDENCIES = {
     states: 'state',
     attributes: 'attribute',
     owners: 'owner',
+    oldest: 'published',
+    same_day: 'age',
+    north: EXTREMES_METRIC,
+    south: EXTREMES_METRIC,
+    east: EXTREMES_METRIC,
+    west: EXTREMES_METRIC,
 };
+
+// Métrique de l'accumulateur qui porte les comptes d'une métrique de
+// panneau : l'année d'activité compte des jours de trouvaille (`day`, clés =
+// numéros de jour) — comptes, surbrillance et exclus se lisent là.
+export function countMetricOf(metric) {
+    return metric === 'activity' ? 'day' : metric;
+}
 
 // Métriques de l'accumulateur nécessaires à un panneau. La courbe et les
 // compteurs se calculent à partir des comptes par jour, types, pays…
@@ -448,7 +472,7 @@ export function accumulatorMetricsFor(panel, { evolution = false } = {}) {
     if (panel.kind === 'counter') {
         return [...new Set((panel.options?.items || []).map((item) => COUNTER_DEPENDENCIES[item]).filter(Boolean))];
     }
-    return [panel.metric];
+    return [countMetricOf(panel.metric)];
 }
 
 // Métriques à compter pour une liste de panneaux : seuls les panneaux actifs
@@ -506,6 +530,35 @@ export const JASMER_START = Object.freeze({ y: 2000, m: 5 });
 
 export const UNKNOWN_KEY = 'unknown';
 
+// Date de publication valide pour les statistiques : antérieure à mai 2000 =
+// donnée corrompue (même règle que la grille Jasmer).
+function publishedYmd(p) {
+    const date = parseYmd(p.published_date);
+    if (!date) return null;
+    if (date.y < JASMER_START.y || (date.y === JASMER_START.y && date.m < JASMER_START.m)) return null;
+    return date;
+}
+
+// Âge de la cache le jour de la trouvaille, en tranches 0 → 9 (libellés dans
+// stats_panels › AGE_LABELS) : le jour même, ≤ 7 jours, < 1 mois, 1-6 mois,
+// 6-12 mois, 1-2 ans, 2-5 ans, 5-10 ans, 10-15 ans, 15 ans et plus.
+// Mois calendaires révolus (pas des tranches de 30 jours) : publiée le 15 mars,
+// trouvée le 14 avril = moins d'un mois.
+export const AGE_BUCKETS = 10;
+const AGE_MONTH_LIMITS = [1, 6, 12, 24, 60, 120, 180];
+
+export function ageBucket(published, found) {
+    if (!published || !found) return null;
+    const days = dayNumber(found) - dayNumber(published);
+    // Trouvée avant d'être publiée : donnée incohérente, exclue.
+    if (days < 0) return null;
+    if (days === 0) return 0;
+    if (days <= 7) return 1;
+    const months = (found.y - published.y) * 12 + (found.m - published.m) - (found.d < published.d ? 1 : 0);
+    const i = AGE_MONTH_LIMITS.findIndex((limit) => months < limit);
+    return i < 0 ? AGE_BUCKETS - 1 : i + 2;
+}
+
 const DAY_MS = 86400000;
 
 // Jour civil → numéro de jour (jours depuis le 01/01/1970) : entier, donc
@@ -547,10 +600,17 @@ const KEY_OF = {
         return d < 0 || t < 0 ? null : d * 9 + t;
     },
     jasmer(p) {
-        const date = parseYmd(p.published_date);
-        if (!date) return null;
-        if (date.y < JASMER_START.y || (date.y === JASMER_START.y && date.m < JASMER_START.m)) return null;
-        return date.y * 100 + date.m;
+        const date = publishedYmd(p);
+        return date ? date.y * 100 + date.m : null;
+    },
+    // Jour de publication (numéro de jour) : tuile « plus ancienne cache
+    // trouvée » (plus petite clé).
+    published(p) {
+        const date = publishedYmd(p);
+        return date ? dayNumber(date) : null;
+    },
+    age(p) {
+        return ageBucket(publishedYmd(p), parseYmd(p.date_find));
     },
     calendar(p) {
         const date = parseYmd(p.date_find);
@@ -637,6 +697,7 @@ export function statsKeyOf(metric, properties) {
 // toutes les clés — si lui est hors fenêtre, aucune ne surligne.
 export function createStatsAccumulator(metrics = []) {
     const list = [...new Set(metrics)].filter((m) => Object.hasOwn(KEY_OF, m));
+    const trackExtremes = [...metrics].includes(EXTREMES_METRIC);
     const acc = {
         metrics: list,
         total: 0,
@@ -644,9 +705,13 @@ export function createStatsAccumulator(metrics = []) {
         excluded: new Map(),
         lastHit: new Map(),
         latestHit: new Map(),
+        // { north, south, east, west } → { lat, lon, day, gc_code, name } ;
+        // null sans la métrique `extremes`.
+        extremes: null,
         revision: 0,
         reset() {
             acc.total = 0;
+            acc.extremes = trackExtremes ? { north: null, south: null, east: null, west: null } : null;
             for (const metric of list) {
                 acc.counts.set(metric, new Map());
                 acc.excluded.set(metric, 0);
@@ -662,6 +727,7 @@ export function createStatsAccumulator(metrics = []) {
             for (const feature of features) {
                 const properties = feature?.properties || feature?.getProperties?.() || {};
                 acc.total += 1;
+                if (acc.extremes) updateExtremes(acc.extremes, feature, properties);
                 for (const metric of list) {
                     const key = KEY_OF[metric](properties);
                     // Une métrique multi-valuée (attributs) renvoie une liste
@@ -700,6 +766,62 @@ export function createStatsAccumulator(metrics = []) {
         },
     };
     return acc.reset();
+}
+
+// Position réelle d'une trouvaille (GeoJSON lon/lat), ou null : feature
+// OpenLayers (coordonnées projetées), coordonnées hors bornes ou nulles
+// (0, 0 = position absente), locationless (position fictive du GPX —
+// affichée ou non, ce n'est pas un lieu visité).
+const LOCATIONLESS_TYPE = 'Locationless (Reverse) Cache';
+export function findPosition(feature, properties = feature?.properties || {}) {
+    if (properties.cache_type === LOCATIONLESS_TYPE) return null;
+    const coords = feature?.geometry?.coordinates;
+    if (!Array.isArray(coords)) return null;
+    const lon = Number(coords[0]);
+    const lat = Number(coords[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) return null;
+    return { lat, lon };
+}
+
+// Coordonnée au format des géocacheurs (degrés, minutes décimales) :
+// « N 48° 51.396 », « W 002° 21.132 » — point décimal et lettres N/S/E/W
+// dans toutes les langues, comme sur geocaching.com.
+export function formatDdm(value, axis) {
+    const hemisphere = axis === 'lat' ? (value < 0 ? 'S' : 'N') : (value < 0 ? 'W' : 'E');
+    const abs = Math.abs(value);
+    let degrees = Math.floor(abs);
+    let minutes = Math.round((abs - degrees) * 60000) / 1000;
+    if (minutes >= 60) {
+        degrees += 1;
+        minutes = 0;
+    }
+    const d = String(degrees).padStart(axis === 'lat' ? 2 : 3, '0');
+    return `${hemisphere} ${d}° ${minutes.toFixed(3).padStart(6, '0')}`;
+}
+
+// À égalité, la première trouvaille rencontrée reste (ordre chronologique
+// pendant l'animation) : une égalité ne fait pas clignoter la tuile.
+function updateExtremes(extremes, feature, properties) {
+    const pos = findPosition(feature, properties);
+    if (!pos) return;
+    let entry = null;
+    const make = () => {
+        if (!entry) {
+            const date = parseYmd(properties.date_find);
+            entry = {
+                ...pos,
+                day: date ? dayNumber(date) : null,
+                gc_code: typeof properties.gc_code === 'string' ? properties.gc_code : '',
+                name: typeof properties.name === 'string' ? properties.name : '',
+            };
+        }
+        return entry;
+    };
+    if (!extremes.north || pos.lat > extremes.north.lat) extremes.north = make();
+    if (!extremes.south || pos.lat < extremes.south.lat) extremes.south = make();
+    if (!extremes.east || pos.lon > extremes.east.lon) extremes.east = make();
+    if (!extremes.west || pos.lon < extremes.west.lon) extremes.west = make();
 }
 
 // Comptes statiques d'une liste de caches (totaux, référence).
@@ -748,7 +870,7 @@ export function hasActiveHighlights(acc, panels, now, durationMs) {
     for (const panel of panels) {
         const mode = panel.options?.highlight;
         if (!mode || mode === 'none') continue;
-        const latest = acc.latestHit?.get(panel.metric);
+        const latest = acc.latestHit?.get(countMetricOf(panel.metric));
         if (latest && highlightLevel(latest, now, durationMs, mode) > 0) return true;
     }
     return false;
@@ -1051,6 +1173,30 @@ export function gridSpec(metric, context = {}) {
             },
         };
     }
+    if (metric === 'activity') {
+        // Une année, une colonne par semaine (lundi en tête), comme les
+        // contributions GitHub. `context.year` : l'année affichée (sinon
+        // l'année courante). Clés = numéros de jour (métrique `day`) ; les
+        // cases hors de l'année (début de la première semaine, fin de la
+        // dernière) sont désactivées.
+        const year = Number.isInteger(context.year) ? context.year : new Date().getFullYear();
+        const first = dayNumber({ y: year, m: 1, d: 1 });
+        const last = dayNumber({ y: year, m: 12, d: 31 });
+        const offset = (((first + 3) % 7) + 7) % 7;   // jour ISO du 1ᵉʳ janvier
+        const cols = Math.ceil((offset + last - first + 1) / 7);
+        const dayAt = (r, c) => first - offset + c * 7 + r;
+        return {
+            metric,
+            year,
+            rows: 7,
+            cols,
+            rowKeys: Array.from({ length: 7 }, (_, i) => i),
+            // Numéro de jour du lundi de chaque semaine (libellés de mois).
+            colKeys: Array.from({ length: cols }, (_, c) => dayAt(0, c)),
+            keyAt: dayAt,
+            disabled: (r, c) => dayAt(r, c) < first || dayAt(r, c) > last,
+        };
+    }
     if (metric === 'calendar') {
         return {
             metric,
@@ -1073,8 +1219,9 @@ export function gridSpec(metric, context = {}) {
 export function gridModel(metric, current, reference, context = {}) {
     const spec = gridSpec(metric, context);
     if (!spec) return null;
-    const counts = current.counts.get(metric) || new Map();
-    const refCounts = (reference || current).counts.get(metric) || new Map();
+    const countMetric = countMetricOf(metric);
+    const counts = current.counts.get(countMetric) || new Map();
+    const refCounts = (reference || current).counts.get(countMetric) || new Map();
     let max = 0;
     let available = 0;
     let filled = 0;
@@ -1101,7 +1248,7 @@ export function gridModel(metric, current, reference, context = {}) {
         filled,
         available,
         loops: available > 0 ? loops : 0,
-        excluded: current.excluded.get(metric) || 0,
+        excluded: current.excluded.get(countMetric) || 0,
     };
 }
 
@@ -1180,6 +1327,8 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
         keys = Array.from({ length: 12 }, (_, i) => i + 1);
     } else if (metric === 'weekday') {
         keys = Array.from({ length: 7 }, (_, i) => i);
+    } else if (metric === 'age') {
+        keys = Array.from({ length: AGE_BUCKETS }, (_, i) => i);
     } else if (metric === 'year') {
         const years = [...refCounts.keys(), ...counts.keys()];
         if (years.length) {
@@ -1473,6 +1622,36 @@ export function lineModel(current, reference, context = {}) {
     };
 }
 
+// Paliers de la courbe (100ᵉ, 500ᵉ, 1000ᵉ trouvaille…) : multiples d'un pas
+// choisi sur le total de RÉFÉRENCE (même pas pendant toute l'animation), le
+// plus fin qui donne au plus `maxMarks` paliers. Sous 100 trouvailles : aucun.
+export const MILESTONE_STEPS = Object.freeze([100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]);
+
+export function milestoneStep(total, maxMarks = 5) {
+    if (!(total >= MILESTONE_STEPS[0])) return null;
+    return MILESTONE_STEPS.find((step) => Math.floor(total / step) <= maxMarks) ?? MILESTONE_STEPS.at(-1);
+}
+
+// Paliers d'un modèle de courbe : [{ value, day }], `day` = jour où le cumul
+// l'a atteint, null s'il ne l'est pas encore (état courant de l'animation).
+// Recherche dichotomique : les points sont cumulés, donc croissants.
+export function lineMilestones(model, maxMarks = 5) {
+    const step = milestoneStep(model?.max, maxMarks);
+    if (!step || model.empty) return [];
+    const points = model.points || [];
+    const out = [];
+    for (let value = step; value <= model.max; value += step) {
+        let lo = 0;
+        let hi = points.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (points[mid].total >= value) hi = mid; else lo = mid + 1;
+        }
+        out.push({ value, day: lo < points.length ? points[lo].day : null });
+    }
+    return out;
+}
+
 // ---------------------------------------------------------------------------
 // Compteurs
 // ---------------------------------------------------------------------------
@@ -1510,9 +1689,38 @@ export function counterValues(acc, items) {
             values.attributes = { value: knownKeys(acc, 'attribute') };
         } else if (item === 'owners') {
             values.owners = { value: knownKeys(acc, 'owner') };
+        } else if (item === 'oldest') {
+            // `day` = jour de publication de la plus ancienne, null sans date ;
+            // `value` = son année (affichée telle quelle, pas animée).
+            const day = oldestPublished(acc);
+            values.oldest = { value: day === null ? 0 : ymdOfDay(day).y, day };
+        } else if (item === 'same_day') {
+            values.same_day = { value: acc.counts.get('age')?.get(0) || 0 };
+        } else if (item === 'north' || item === 'south' || item === 'east' || item === 'west') {
+            // `value` = la coordonnée qui fait le record (latitude au nord et
+            // au sud, longitude à l'est et à l'ouest) ; `find` = la trouvaille.
+            const find = acc.extremes?.[item] || null;
+            const axis = item === 'north' || item === 'south' ? 'lat' : 'lon';
+            values[item] = { value: find ? find[axis] : 0, axis, find };
         }
     }
     return values;
+}
+
+// Plus petit jour de publication compté, mémoïsé par révision : les tuiles
+// sont reconstruites à chaque frame d'un tween.
+const oldestCache = new WeakMap();  // acc → { revision, day }
+function oldestPublished(acc) {
+    const counts = acc.counts.get('published');
+    if (!counts) return null;
+    const cached = oldestCache.get(acc);
+    if (cached && Number.isFinite(acc.revision) && cached.revision === acc.revision) return cached.day;
+    let day = null;
+    for (const [key, n] of counts) {
+        if (n > 0 && (day === null || key < day)) day = key;
+    }
+    if (Number.isFinite(acc.revision)) oldestCache.set(acc, { revision: acc.revision, day });
+    return day;
 }
 
 // ---------------------------------------------------------------------------

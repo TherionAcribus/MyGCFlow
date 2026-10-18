@@ -1076,3 +1076,135 @@ test('la matrice D/T affiche les tours quand l\'option est activée', async ({ p
   await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
   await expect(page.locator('.stats-panel-alt')).toContainText('Tours de matrice : 0');
 });
+
+test('l\'âge à la trouvaille et ses tuiles se comptent', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'a9e00101', kind: 'bar', metric: 'age', position: { anchor: 'top-left' } },
+    { id: 'a9e00102', kind: 'counter', metric: 'summary', position: { anchor: 'bottom-left' },
+      options: { items: ['oldest', 'same_day'] } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const alts = page.locator('.stats-panel-alt');
+  await expect(alts).toHaveCount(2);
+
+  // La fixture : publiées du 01/01 au 06/01/2025, trouvées un an plus tard jour pour jour.
+  const age = alts.filter({ hasText: /^Âge des caches trouvées/ });
+  await expect(age).toContainText('1 à 2 ans : 6');
+  await expect(age).toContainText('Le jour même : 0');
+  const tiles = alts.filter({ hasText: /^Chiffres clés/ });
+  await expect(tiles).toContainText('Plus ancienne cache trouvée : 2025 (1 janv. 2025)');
+  await expect(tiles).toContainText('Trouvées le jour de publication : 0');
+
+  // Deux caches trouvées le jour de leur publication, une sans date (exclue).
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const all = [...app.pointsByDate.values()].flat();
+    all[0].properties.published_date = all[0].properties.date_find;
+    all[1].properties.published_date = all[1].properties.date_find;
+    all[2].properties.published_date = null;
+    app.bumpPointsByDateRevision();
+    app.refreshStatsPanels();
+  });
+  await expect(age).toContainText('Le jour même : 2');
+  await expect(age).toContainText('1 à 2 ans : 3');
+  await expect(age).toContainText('Sans date de publication : 1');
+  await expect(tiles).toContainText('Trouvées le jour de publication : 2');
+});
+
+test('les grilles Jasmer et calendrier affichent aussi leurs tours', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'c0fe0101', kind: 'grid', metric: 'calendar', position: { anchor: 'bottom-left' },
+      options: { show_loops: true } },
+    { id: 'c0fe0102', kind: 'grid', metric: 'jasmer', position: { anchor: 'bottom-right' },
+      options: { show_loops: true } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const alts = page.locator('.stats-panel-alt');
+  await expect(alts).toHaveCount(2);
+  await expect(alts.filter({ hasText: /^Calendrier 366/ })).toContainText('Tours de calendrier : 0');
+  await expect(alts.filter({ hasText: /^Grille Jasmer/ })).toContainText('Tours de Jasmer : 0');
+
+  // L'aide du réglage suit la grille sélectionnée.
+  await page.locator('#statsPanelList li').filter({ hasText: 'Grille Jasmer' }).click();
+  await expect(page.locator('#switchStatsLoops')).toBeChecked();
+  const help = page.locator('#helpStatsLoops [data-stats-metric]');
+  await expect(help.filter({ hasText: 'mois de publication' })).toBeVisible();
+  await expect(help.filter({ hasText: '366 jours' })).toBeHidden();
+  await expect(help.filter({ hasText: '81 combinaisons' })).toBeHidden();
+});
+
+test('la courbe marque les paliers franchis', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'a11e0001', kind: 'line', metric: 'cumulative', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const alt = page.locator('.stats-panel-alt');
+  await expect(alt).toHaveCount(1);
+  // 6 trouvailles : aucun palier.
+  await expect(alt).toContainText('6 trouvailles');
+  await expect(alt).not.toContainText('Paliers');
+
+  // 20 copies de chaque jour → 126 trouvailles, la 100ᵉ le 05/01/2026.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    for (const features of app.pointsByDate.values()) {
+      const base = [...features];
+      for (let i = 0; i < 20; i++) {
+        for (const f of base) features.push({ ...f, properties: { ...f.properties } });
+      }
+    }
+    app.bumpPointsByDateRevision();
+    app.refreshStatsPanels();
+  });
+  await expect(alt).toContainText('Paliers : 100 (5 janv. 2026)');
+
+  // L'option se coupe depuis le formulaire.
+  await page.locator('#statsPanelList li').first().click();
+  await expect(page.locator('#switchStatsMilestones')).toBeChecked();
+  await page.locator('#switchStatsMilestones').uncheck();
+  await expect(alt).not.toContainText('Paliers');
+  await expect.poll(async () => (await savedStats(page)).panels[0].options.show_milestones).toBe(false);
+});
+
+test('les points extrêmes s\'affichent en coordonnées géocaching', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  // Le modèle « Points extrêmes » pose une tuile par direction.
+  await page.locator('#btnStatsAdd').click();
+  await page.locator('[data-stats-preset="extremes"]').click();
+  const alt = page.locator('.stats-panel-alt');
+  await expect(alt).toHaveCount(1);
+
+  // Fixture : de GCE2E001 (48.8501, 2.3501) à GCE2E006 (48.8556, 2.3556).
+  await expect(alt).toContainText('Trouvaille la plus au nord : N 48° 51.336 (GCE2E006');
+  await expect(alt).toContainText('Trouvaille la plus au sud : N 48° 51.006 (GCE2E001');
+  await expect(alt).toContainText("Trouvaille la plus à l'est : E 002° 21.336 (GCE2E006");
+  await expect(alt).toContainText("Trouvaille la plus à l'ouest : E 002° 21.006 (GCE2E001");
+});
+
+test('l\'année d\'activité montre les jours de trouvaille de la dernière année', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#btnStatsAdd').click();
+  await page.locator('[data-stats-preset="activity"]').click();
+  const alt = page.locator('.stats-panel-alt');
+  await expect(alt).toHaveCount(1);
+
+  // Fixture : une trouvaille par jour du 01/01 au 06/01/2026.
+  await expect(alt).toContainText('Activité 2026');
+  await expect(alt).toContainText('1 janv. 2026 : 1');
+  await expect(alt).toContainText('6 janv. 2026 : 1');
+  await expect(alt).toContainText('Jours : 6/365');
+  const saved = (await savedStats(page)).panels[0];
+  expect(saved.metric).toBe('activity');
+  expect(saved.position.width).toBe(520);
+
+  // Pas de « tours » pour une année : l'option n'est pas proposée.
+  await page.locator('#statsPanelList li').first().click();
+  await expect(page.locator('#switchStatsLoops')).toBeHidden();
+});

@@ -61,9 +61,12 @@
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="difficulty-terrain">{{ _("Difficulté + terrain") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="jasmer">{{ _("Grille Jasmer") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="calendar">{{ _("Calendrier 366") }}</button></li>
+                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="activity">{{ _("Année d'activité") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="summary-progress">{{ _("Chiffres clés + progression") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="types-donut">{{ _("Types en anneau") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="race">{{ _("Course des pays") }}</button></li>
+                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="age">{{ _("Âge des caches") }}</button></li>
+                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="extremes">{{ _("Points extrêmes") }}</button></li>
                             <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-preset="evo-overview">{{ _("Chiffres + activité") }}</button></li>
                             <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-preset="evo-status">{{ _("Actives et archivées") }}</button></li>
                             <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-preset="evo-geo">{{ _("Pays + départements") }}</button></li>
@@ -90,6 +93,7 @@
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:year">{{ _("Trouvailles par année") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:month">{{ _("Trouvailles par mois") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:weekday">{{ _("Jours de la semaine") }}</button></li>
+                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:age">{{ _("Âge des caches trouvées") }}</button></li>
                             <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:country">{{ _("Pays") }}</button></li>
                             <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:state">{{ _("Régions") }}</button></li>
                             <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:attribute">{{ _("Attributs") }}</button></li>
@@ -166,12 +170,16 @@
                                 <label class="form-check-label" for="switchStatsCoverage">{{ _("Afficher le nombre de cases remplies") }}</label>
                             </div>
                         </div>
-                        <div class="col-12" data-stats-kind="grid" data-stats-metric="dt">
+                        <div class="col-12" data-stats-kind="grid" data-stats-metric="dt jasmer calendar">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="switchStatsLoops" role="switch" aria-describedby="helpStatsLoops">
-                                <label class="form-check-label" for="switchStatsLoops">{{ _("Afficher le nombre de tours de matrice") }}</label>
+                                <label class="form-check-label" for="switchStatsLoops">{{ _("Afficher le nombre de tours complets") }}</label>
                             </div>
-                            <small id="helpStatsLoops" class="form-hint text-muted">{{ _("Un tour est complet quand chacune des 81 combinaisons D/T a été trouvée au moins une fois.") }}</small>
+                            <small id="helpStatsLoops" class="form-hint text-muted">
+                                <span data-stats-kind="grid" data-stats-metric="dt">{{ _("Un tour est complet quand chacune des 81 combinaisons D/T a été trouvée au moins une fois.") }}</span>
+                                <span data-stats-kind="grid" data-stats-metric="jasmer">{{ _("Un tour est complet quand une cache de chaque mois de publication, depuis mai 2000, a été trouvée.") }}</span>
+                                <span data-stats-kind="grid" data-stats-metric="calendar">{{ _("Un tour est complet quand chacun des 366 jours de l'année, 29 février compris, compte une trouvaille.") }}</span>
+                            </small>
                         </div>
 
                         <!-- Histogrammes -->
@@ -234,6 +242,13 @@
                                 <label class="form-check-label" for="switchStatsArea">{{ _("Remplir sous la courbe") }}</label>
                             </div>
                         </div>
+                        <div class="col-12 col-md-6" data-stats-kind="line" data-stats-metric="cumulative">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsMilestones" role="switch" aria-describedby="helpStatsMilestones">
+                                <label class="form-check-label" for="switchStatsMilestones">{{ _("Marquer les paliers") }}</label>
+                            </div>
+                            <small id="helpStatsMilestones" class="form-hint text-muted">{{ _("100ᵉ, 500ᵉ, 1000ᵉ trouvaille… : le pas s'adapte au total, cinq paliers au plus.") }}</small>
+                        </div>
 
                         <!-- Compteurs -->
                         <div class="col-12" data-stats-kind="counter">
@@ -248,6 +263,12 @@
                                     ('states', _('Régions'), 'main evolution'),
                                     ('attributes', _('Attributs différents'), 'main'),
                                     ('owners', _('Propriétaires différents'), 'main'),
+                                    ('oldest', _('Plus ancienne cache trouvée'), 'main'),
+                                    ('same_day', _('Trouvées le jour de publication'), 'main'),
+                                    ('north', _('Trouvaille la plus au nord'), 'main'),
+                                    ('south', _('Trouvaille la plus au sud'), 'main'),
+                                    ('east', _("Trouvaille la plus à l'est"), 'main'),
+                                    ('west', _("Trouvaille la plus à l'ouest"), 'main'),
                                     ('actives', _('Caches actives'), 'evolution'),
                                     ('placees', _('Caches posées'), 'evolution'),
                                     ('archivees', _('Caches archivées'), 'evolution'),

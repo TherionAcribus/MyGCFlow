@@ -988,7 +988,8 @@
           "options": {
             "show_values": true,
             "highlight": "every",
-            "show_area": true
+            "show_area": true,
+            "show_milestones": true
           },
           "style": {
             "background": "#0b1a2b",
@@ -1134,7 +1135,8 @@
           "options": {
             "show_values": true,
             "highlight": "every",
-            "show_area": true
+            "show_area": true,
+            "show_milestones": true
           },
           "style": {
             "background": "#0b1a2b",
@@ -1453,7 +1455,8 @@
           "options": {
             "show_values": true,
             "highlight": "every",
-            "show_area": true
+            "show_area": true,
+            "show_milestones": true
           },
           "style": {
             "background": "#0b1a2b",
@@ -2924,7 +2927,8 @@
           "options": {
             "show_values": true,
             "highlight": "every",
-            "show_area": true
+            "show_area": true,
+            "show_milestones": true
           },
           "style": {
             "background": "#0b1a2b",
@@ -2970,6 +2974,373 @@
             "text_color": "#ffffff",
             "accent_color": "#29d34e",
             "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "âge à la trouvaille : barres horizontales, tuiles plus ancienne et jour de publication",
+    "input": {
+      "panels": [
+        {
+          "id": "a9e00001",
+          "kind": "bar",
+          "metric": "age"
+        },
+        {
+          "id": "a9e00002",
+          "kind": "donut",
+          "metric": "age"
+        },
+        {
+          "id": "a9e00003",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": [
+              "oldest",
+              "same_day",
+              "oldest",
+              "nope"
+            ]
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "a9e00001",
+          "kind": "bar",
+          "metric": "age",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "a9e00003",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "oldest",
+              "same_day"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "points extrêmes et paliers : tuiles nord/sud/est/ouest, paliers coupés",
+    "input": {
+      "panels": [
+        {
+          "id": "e47e0001",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": [
+              "west",
+              "north",
+              "east",
+              "south",
+              "north"
+            ],
+            "columns": 2
+          }
+        },
+        {
+          "id": "e47e0002",
+          "kind": "line",
+          "metric": "cumulative",
+          "options": {
+            "show_milestones": false
+          }
+        },
+        {
+          "id": "e47e0003",
+          "kind": "line",
+          "metric": "cumulative",
+          "options": {
+            "show_milestones": "non"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "e47e0001",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "west",
+              "north",
+              "east",
+              "south"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "e47e0002",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true,
+            "show_milestones": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "e47e0003",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true,
+            "show_milestones": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "année d'activité : intensité, 520 px par défaut, largeur explicite gardée",
+    "input": {
+      "panels": [
+        {
+          "id": "ac7e0001",
+          "kind": "grid",
+          "metric": "activity"
+        },
+        {
+          "id": "ac7e0002",
+          "kind": "grid",
+          "metric": "activity",
+          "position": {
+            "anchor": "bottom-center",
+            "width": 700
+          },
+          "options": {
+            "cell_mode": "filled"
+          }
+        },
+        {
+          "id": "ac7e0003",
+          "kind": "bar",
+          "metric": "activity"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "ac7e0001",
+          "kind": "grid",
+          "metric": "activity",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 520,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_percent": false,
+            "highlight": "new",
+            "cell_mode": "heat",
+            "show_coverage": true,
+            "show_loops": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "ac7e0002",
+          "kind": "grid",
+          "metric": "activity",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-center",
+            "dx": 16,
+            "dy": 16,
+            "width": 700,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_percent": false,
+            "highlight": "new",
+            "cell_mode": "filled",
+            "show_coverage": true,
+            "show_loops": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "heat",
             "font_size": 12,
             "radius": 10,
             "inherit_font": true
