@@ -464,7 +464,19 @@ function renderForm() {
     setValue('rangeStatsOpacity', s.background_opacity);
     const opacityValue = $('valueStatsOpacity');
     if (opacityValue) opacityValue.textContent = `${s.background_opacity} %`;
-    setValue('selectStatsPalette', s.palette);
+    // « gc » = couleurs Groundspeak des types de caches : sans équivalent
+    // pour les autres métriques (categoryColor retombe sur l'accent), elle
+    // n'est proposée qu'à la métrique « type de cache » — hidden, et disabled
+    // en secours pour Safari qui ignore hidden sur les options. Un « gc »
+    // stocké s'affiche « accent » — le rendu effectif — sans réécrire le
+    // réglage : repasser à « type de cache » retrouve le choix de l'utilisateur.
+    const offersGc = panel.metric === 'cache_type';
+    const gcOption = $('selectStatsPalette')?.querySelector('option[value="gc"]');
+    if (gcOption) {
+        gcOption.hidden = !offersGc;
+        gcOption.disabled = !offersGc;
+    }
+    setValue('selectStatsPalette', !offersGc && s.palette === 'gc' ? 'accent' : s.palette);
     setValue('inputStatsFontSize', s.font_size);
     setValue('inputStatsRadius', s.radius);
     setValue('switchStatsInheritFont', s.inherit_font);

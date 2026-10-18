@@ -767,3 +767,23 @@ test('« Les nouveautés » n\'est proposé qu\'aux types qui la distinguent', a
   await list.locator('li', { hasText: 'Types de caches' }).locator('[data-action="select"]').click();
   await expect(newOption).toBeEnabled();
 });
+
+test('la palette « types de caches » n\'est proposée qu\'à la métrique type', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'a11ce001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: 'a11ce002', kind: 'donut', metric: 'country', position: { anchor: 'top-right' },
+      style: { palette: 'gc' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const list = page.locator('#statsPanelList');
+  const gcOption = page.locator('#selectStatsPalette option[value="gc"]');
+  // Type de cache : palette Groundspeak proposée.
+  await list.locator('li', { hasText: 'Types de caches' }).locator('[data-action="select"]').click();
+  await expect(gcOption).toBeEnabled();
+  // Pays : sans objet — retirée ; un « gc » stocké s'affiche « accent »,
+  // le rendu effectif (le réglage n'est pas réécrit).
+  await list.locator('li', { hasText: 'Pays' }).locator('[data-action="select"]').click();
+  await expect(gcOption).toBeDisabled();
+  await expect(page.locator('#selectStatsPalette')).toHaveValue('accent');
+});

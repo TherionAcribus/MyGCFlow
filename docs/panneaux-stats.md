@@ -162,7 +162,8 @@ En course de barres, la place de chaque ligne est elle aussi animée.
 
 Couleurs `multi` (anneaux hors types) : dix teintes, indexées sur le rang de
 la catégorie dans la référence — une catégorie garde sa couleur quand elle
-change de place.
+change de place. La palette `gc` n'est proposée qu'à la métrique « type de
+cache », les autres métriques n'ayant pas de couleur Groundspeak dédiée.
 
 ## Rendu
 
