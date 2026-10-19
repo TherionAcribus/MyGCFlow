@@ -525,7 +525,7 @@ function onListChange(event) {
         const item = items.find((i) => i.id === id);
         if (item) item.enabled = toggle.checked;
         return items;
-    }, toggle, { immediate: true });
+    }, IMAGES_SAVE_STATUS, { immediate: true });
     renderList();
 }
 

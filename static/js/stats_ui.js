@@ -410,7 +410,7 @@ function onListChange(event) {
         const panel = panels.find((p) => p.id === id);
         if (panel) panel.enabled = toggle.checked;
         return panels;
-    }, toggle, { immediate: true });
+    }, STATS_SAVE_STATUS, { immediate: true });
     renderList();
 }
 
