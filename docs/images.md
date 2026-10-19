@@ -83,7 +83,9 @@ liste.
 - Les images passent par `layoutPanels` (stats_model.mjs) avec le titre et les
   infos en obstacles. Hauteur : imposée, sinon d'après les proportions de
   l'image (marge intérieure comprise) ; ronde : carrée ; pas encore décodée :
-  carrée provisoirement.
+  ni posée ni dessinée (elle apparaît à sa place définitive quand ses
+  proportions sont connues — pas de carré provisoire ni de saut de la pile
+  de stats au chargement).
 - `getImagePanelRects()` alimente les obstacles des piles de stats
   (`stats_panels.js › overlayRects`, ids `image:<id>`). Quand la mise en page
   des images change, celle des stats est invalidée : elles suivent en direct,

@@ -143,13 +143,21 @@ export function imageSourceState(file) {
     return sources.get(file)?.state || 'loading';
 }
 
-// Images dessinées : activées, avec un fichier lisible, base chargée (même
-// règle que le titre et les infos, cf. frames.js › syncOverlayVisibility).
-function visibleItems() {
+// Candidates à l'affichage : activées, avec un fichier lisible, base chargée
+// (même règle que le titre et les infos, cf. frames.js › syncOverlayVisibility).
+// Chargement en cours compris : imagesReady doit attendre ces sources.
+function drawableItems() {
     if (!settings.enabled) return [];
     if (!(pkg.hasDatabase?.() ?? true)) return [];
     return settings.items.filter((item) => item.enabled && item.file
         && sources.get(item.file)?.state !== 'failed');
+}
+
+// Images réellement dessinées et posées : sources prêtes seulement. Une image
+// en cours de chargement n'est pas placée — la mettre en carré provisoire
+// ferait tout sauter (pile de stats comprise) à l'arrivée de ses proportions.
+function visibleItems() {
+    return drawableItems().filter((item) => sources.get(item.file)?.state === 'ready');
 }
 
 function naturalSize(item) {
@@ -511,10 +519,11 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
 // Résolue quand toutes les images affichées sont décodées (ou en échec),
 // au plus tard après `timeoutMs` : une image injoignable ne bloque pas un
 // enregistrement. Appelée avant la première frame (mapgl.js). Les images
-// de visibleItems seulement : interrupteur général éteint, base vide ou
-// fichier déjà en échec n'attendent rien.
+// de drawableItems seulement (visibleItems exclut le chargement en cours,
+// qu'il faut justement attendre) : interrupteur général éteint, base vide
+// ou fichier déjà en échec n'attendent rien.
 export function imagesReady(timeoutMs = 3000) {
-    const pending = visibleItems().map((item) => ensureSource(item.file).promise);
+    const pending = drawableItems().map((item) => ensureSource(item.file).promise);
     if (!pending.length) return Promise.resolve(true);
     return Promise.race([
         Promise.all(pending).then(() => true),
