@@ -404,3 +404,62 @@ test('mode Évolution : carte, compteur et Stats suivent le curseur', async ({ p
   await page.locator('#btnQuickStop').click();
   await expect.poll(() => playback(page)).toBe('idle');
 });
+
+test('plein écran : surimpression optionnelle, choix mémorisé', async ({ page }) => {
+  await openWithFixture(page);
+  await showBar(page);
+
+  try {
+    // Entrée plein écran : la classe fullscreen-mode sur <main> suffit (pas
+    // l'API Fullscreen). La barre devient une surimpression au bas de la
+    // carte — sans rien retrancher à #mapWithFrames, qui garde le viewport.
+    await page.locator('#btnFullscreenMode').click();
+    await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
+    await hideToolbarTooltip(page);
+
+    const overlay = page.locator('#timelineBar');
+    await expect(overlay).toBeVisible();
+    expect(await page.evaluate(() =>
+      getComputedStyle(document.getElementById('timelineBar')).position)).toBe('fixed');
+    const viewport = page.viewportSize();
+    const mapBox = await page.locator('#mapWithFrames').boundingBox();
+    const barBox = await overlay.boundingBox();
+    expect(Math.abs(mapBox.width - viewport.width)).toBeLessThan(1);
+    expect(Math.abs(mapBox.height - viewport.height)).toBeLessThan(1);
+    // Centrée horizontalement, à 16 px du bas.
+    expect(Math.abs(barBox.x + barBox.width / 2 - viewport.width / 2)).toBeLessThan(2);
+    expect(Math.abs(viewport.height - (barBox.y + barBox.height) - 16)).toBeLessThan(2);
+
+    // Le bouton du menu flottant masque la surimpression ; choix mémorisé.
+    await page.locator('#btnTimelineBarFs').click();
+    await expect(overlay).toBeHidden();
+    await expect(page.locator('#btnTimelineBarFs')).toHaveAttribute('aria-pressed', 'false');
+    expect(await page.evaluate(() => localStorage.getItem('timelineBarFullscreen'))).toBe('0');
+
+    // Rechargement : le choix survit — de retour en plein écran, la barre
+    // est toujours masquée...
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.mygcflowReady === true);
+    await page.locator('#btnFullscreenMode').click();
+    await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
+    await hideToolbarTooltip(page);
+    await expect(overlay).toBeHidden();
+    await expect(page.locator('#btnTimelineBarFs')).toHaveAttribute('aria-pressed', 'false');
+    // ... et le même bouton la réaffiche.
+    await page.locator('#btnTimelineBarFs').click();
+    await expect(overlay).toBeVisible();
+    await expect(page.locator('#btnTimelineBarFs')).toHaveAttribute('aria-pressed', 'true');
+  } finally {
+    // Rend la préférence à son état par défaut (absente = activée) et sort
+    // du plein écran, pour ne pas polluer les specs suivants. Best-effort :
+    // un échec ici ne doit pas masquer l'erreur d'origine du test.
+    try {
+      await page.evaluate(() => localStorage.removeItem('timelineBarFullscreen'));
+      await hideToolbarTooltip(page);
+      if (await page.locator('#btnToggleFullscreen').isVisible()) {
+        await page.locator('#btnToggleFullscreen').click();
+        await expect(page.locator('main')).not.toHaveClass(/fullscreen-mode/);
+      }
+    } catch (_) {}
+  }
+});

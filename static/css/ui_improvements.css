@@ -907,9 +907,40 @@ main.fullscreen-mode ~ .tooltip {
 .timeline-bar.is-narrow .timeline-bar-date {
     min-width: 0;
 }
-/* Plein écran : la carte seule (la barre pourra y revenir en surimpression). */
-main.fullscreen-mode #timelineBar {
-    display: none !important;
+/* Plein écran : la barre devient une surimpression optionnelle au bas de la
+   carte (bouton #btnTimelineBarFs du menu flottant ; timeline_bar.js pose
+   l'attribut hidden et mémorise le choix). Elle reste hors de #mapWithFrames
+   : jamais capturée dans la vidéo. :not([hidden]) laisse le masquage primer
+   sur le display:flex ci-dessous. */
+main.fullscreen-mode #timelineBar:not([hidden]) {
+    display: flex !important; /* au cas où un masquage de descendant s'ajoute */
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(720px, 62vw);
+    z-index: 2010; /* comme .control-bar */
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    color: #f1f3f5;
+    /* Fond sombre permanent, quel que soit le thème : variantes plus
+       lumineuses des --timeline-* du thème sombre. */
+    --timeline-played: var(--color-accent-text, #4dabf7);
+    --timeline-rest: rgba(241, 243, 245, 0.32);
+    --timeline-cursor: #f8f9fa;
+    --timeline-tick: rgba(241, 243, 245, 0.25);
+    --timeline-label: rgba(241, 243, 245, 0.8);
+}
+main.fullscreen-mode #timelineBar .timeline-bar-edge,
+main.fullscreen-mode #timelineBar .timeline-bar-date {
+    color: rgba(241, 243, 245, 0.85);
+}
+/* Boutons de style sur fond sombre : texte hérité, contour atténué. */
+main.fullscreen-mode #timelineBar .timeline-bar-styles .btn {
+    color: inherit;
+    border-color: rgba(241, 243, 245, 0.35);
 }
 
 /* Menu contextuel de la piste (clic droit : pose des bornes de l'animation).
@@ -2457,6 +2488,11 @@ background: rgba(33, 150, 243, 0.04);
 .control-bar .btn-icon i {
     color: #fff;
     font-size: 18px;
+}
+/* État pressé (aria-pressed) : bascules du menu flottant, ex. la
+   surimpression de chronologie #btnTimelineBarFs. */
+.control-bar .btn-icon.active {
+    background: rgba(255, 255, 255, 0.28);
 }
 
 /* ==========================================================================

@@ -7,8 +7,15 @@
 //   - en pause, il y reste ;
 //   - pendant la lecture, il est mis en pause le temps du geste, puis repart
 //     de la nouvelle date.
-// Rien n'est enregistré dans les préférences : seuls l'affichage de la barre
-// et son style sont retenus par ce navigateur (localStorage).
+// Rien n'est enregistré dans les préférences : seuls l'affichage de la barre,
+// son style et la surimpression plein écran sont retenus par ce navigateur
+// (localStorage).
+//
+// En plein écran (classe fullscreen-mode posée sur <main> par ui.js), la
+// barre devient une surimpression au bas de la carte — optionnelle : le
+// bouton #btnTimelineBarFs du menu flottant bascule `fsOverlay`, mémorisé
+// sous sa propre clé. Un MutationObserver sur la classe de <main> recalcule
+// l'affichage à chaque entrée/sortie : ui.js n'a rien à appeler.
 //
 // Le saut lui-même vit dans mapgl.js (seekAnimationToDate), la pause et la
 // reprise dans ui.js (mêmes chemins que les boutons).
@@ -34,6 +41,8 @@ import {
 
 const VISIBLE_KEY = 'timelineBarVisible';
 const STYLE_KEY = 'timelineBarStyle';
+// Surimpression plein écran : '1' affichée (défaut), '0' masquée.
+const FS_KEY = 'timelineBarFullscreen';
 // Fin d'une série de frappes : la musique est recalée et la lecture reprend.
 const KEY_SETTLE_MS = 350;
 // Molette : ~100 px cumulés par jour. Un cran classique fait 100-120 px ;
@@ -52,6 +61,11 @@ var frame = 0;
 let track = null;
 let canvas = null;
 let toggleButton = null;
+// Bouton du menu flottant (#controlBar, plein écran seulement).
+let fsButton = null;
+// Surimpression plein écran — indépendante de `visible`, qui garde son
+// rôle hors plein écran (bandeau sous la carte).
+let fsOverlay = readStorage(FS_KEY) !== '0';
 let style = 'histogram';
 let seriesMemo = null;
 // Geste en cours (pointeur ou série de frappes) : { resume, pointerId }.
@@ -136,7 +150,9 @@ function seriesFor(state, span) {
 // --- Dessin ----------------------------------------------------------------------
 
 export function refreshTimelineBar() {
-    if (!bar || !visible || frame) return;
+    // bar.hidden et non `visible` : en plein écran, la surimpression peut
+    // être affichée alors que la préférence bandeau est fausse.
+    if (!bar || bar.hidden || frame) return;
     frame = requestAnimationFrame(draw);
 }
 
@@ -150,7 +166,7 @@ function draw() {
     // planifié par refreshTimelineBar redessinerait une seconde fois.
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
-    if (!bar || !visible) return;
+    if (!bar || bar.hidden) return;
     const state = pkg.getTimelineState?.() || null;
     const span = state ? spanDays(state.start, state.end) : 0;
     const usable = !!state && span > 0;
@@ -644,24 +660,55 @@ function onContextMenu(event) {
 
 // --- Affichage et style ----------------------------------------------------------
 
+// Le plein écran est la classe `fullscreen-mode` posée sur <main> par ui.js
+// (toggleFullscreenMode) — pas l'API Fullscreen du navigateur.
+function inFullscreen() {
+    return document.querySelector('main')?.classList.contains('fullscreen-mode') === true;
+}
+
+// Visibilité réelle de la barre selon le contexte : bandeau piloté par
+// `visible` hors plein écran, surimpression pilotée par `fsOverlay` en
+// plein écran — `visible` garde son rôle pour le retour au mode normal.
+// Le rangement (fantôme, molette, menu, geste) suit le masquage effectif :
+// en plein écran la barre peut rester affichée alors que `visible` est
+// faux, et réciproquement.
+function applyVisibility() {
+    if (!bar) return;
+    bar.hidden = inFullscreen() ? !fsOverlay : !visible;
+    if (!bar.hidden) return;
+    hoverOffset = null;
+    wheelAccum = 0; // une rafale de molette ne survit pas au masquage
+    closeMenu(); // la piste masquée n'a plus de menu à afficher
+    if (gesture) endGesture();
+}
+
 function setVisible(next, { persist = true } = {}) {
     visible = !!next;
-    if (bar) bar.hidden = !visible;
+    applyVisibility();
     document.getElementById('mapTabsContainer')?.classList.toggle('has-timeline-bar', visible);
     if (toggleButton) {
         toggleButton.setAttribute('aria-pressed', String(visible));
         toggleButton.classList.toggle('active', visible);
     }
     if (persist) writeStorage(VISIBLE_KEY, visible ? '1' : '0');
-    if (!visible) {
-        hoverOffset = null;
-        wheelAccum = 0; // une rafale de molette ne survit pas au masquage
-        closeMenu(); // la piste masquée n'a plus de menu à afficher
-        if (gesture) endGesture();
-    }
     // La carte change de taille (bandeau : le séparateur rebride sa hauteur
-    // en tenant compte de la barre ; latéral : la colonne se partage).
+    // en tenant compte de la barre ; latéral : la colonne se partage). En
+    // plein écran la surimpression ne change rien — mais l'événement est
+    // aussi inoffensif (la carte y est déjà recalculée par ui.js).
     try { window.dispatchEvent(new Event('resize')); } catch (_) {}
+    refreshTimelineBar();
+}
+
+// Surimpression plein écran : le bouton du menu flottant reflète le choix
+// (aria-pressed + .active, comme les préréglages de la barre d'outils).
+function setFsOverlay(next, { persist = true } = {}) {
+    fsOverlay = !!next;
+    if (fsButton) {
+        fsButton.setAttribute('aria-pressed', String(fsOverlay));
+        fsButton.classList.toggle('active', fsOverlay);
+    }
+    if (persist) writeStorage(FS_KEY, fsOverlay ? '1' : '0');
+    applyVisibility();
     refreshTimelineBar();
 }
 
@@ -685,6 +732,7 @@ export function getTimelineBarSnapshot() {
     const state = pkg.getTimelineState?.() || null;
     return {
         visible,
+        fsOverlay,
         style,
         state,
         valueNow: Number(track?.getAttribute('aria-valuenow')),
@@ -700,6 +748,7 @@ function initTimelineBar() {
     track = document.getElementById('timelineBarTrack');
     canvas = document.getElementById('timelineBarCanvas');
     toggleButton = document.getElementById('btnTimelineBar');
+    fsButton = document.getElementById('btnTimelineBarFs');
     if (!bar || !track || !canvas) return;
 
     track.addEventListener('pointerdown', onPointerDown);
@@ -728,6 +777,18 @@ function initTimelineBar() {
         button.addEventListener('click', () => setStyle(button.dataset.timelineStyle));
     });
     toggleButton?.addEventListener('click', () => setVisible(!visible));
+    fsButton?.addEventListener('click', () => setFsOverlay(!fsOverlay));
+
+    // Entrée/sortie du plein écran : ui.js bascule la classe sur <main>.
+    // À chaque changement, la barre repasse de bandeau à surimpression (ou
+    // l'inverse) — le module s'observe lui-même, ui.js n'a rien à appeler.
+    const mainElement = document.querySelector('main');
+    if (mainElement && typeof MutationObserver === 'function') {
+        new MutationObserver(() => {
+            applyVisibility();
+            refreshTimelineBar();
+        }).observe(mainElement, { attributes: true, attributeFilter: ['class'] });
+    }
 
     if (typeof ResizeObserver === 'function') {
         new ResizeObserver(() => {
@@ -739,6 +800,8 @@ function initTimelineBar() {
 
     setStyle(readStorage(STYLE_KEY), { persist: false });
     setVisible(readStorage(VISIBLE_KEY) === '1', { persist: false });
+    // fsOverlay est déjà lu à la déclaration : ne synchronise que le bouton.
+    setFsOverlay(fsOverlay, { persist: false });
 }
 
 // Module listé après ui.js dans index.js : il s'initialise lui-même, une fois

@@ -132,6 +132,14 @@
                                     data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ _('Arrêter l\'animation') }}">
                                 <i class="ti ti-player-stop"></i>
                             </button>
+                            <!-- Barre de chronologie en surimpression plein
+                                 écran (timeline_bar.js) : le module gère
+                                 aria-pressed et la préférence mémorisée. -->
+                            <button type="button" id="btnTimelineBarFs" class="btn btn-icon" aria-pressed="false"
+                                    aria-label="{{ _('Barre de chronologie') }}"
+                                    data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ _('Barre de chronologie') }}">
+                                <i class="ti ti-timeline"></i>
+                            </button>
                             <!-- La barre n'existe qu'en plein écran : ce bouton
                                  est donc toujours la sortie du mode. -->
                             <button type="button" id="btnToggleFullscreen" class="btn btn-icon"
