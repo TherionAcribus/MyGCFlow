@@ -382,6 +382,20 @@ ramené dans le cadre (pile trop haute, largeur supérieure à la carte), pannea
 qui chevauche le titre ou les infos (panneau libre), deux panneaux de piles
 différentes qui se recouvrent.
 
+**Unités et taille de fenêtre (limite assumée).** Largeurs, hauteurs, marges
+et corps de texte sont en px CSS de l'aperçu, comme le titre et les infos. La
+vidéo étant l'aperçu agrandi (`captureRatioFor`, capture_resolution.mjs : une
+sortie 1080p depuis une carte de 540 px est rendue ×2), un panneau occupe dans
+la vidéo exactement la part de l'image qu'il occupe à l'écran. Il n'y a en
+revanche pas de format vidéo fixe : cadrage, rapport largeur/hauteur et taille
+relative de tout ce qui est affiché par-dessus la carte suivent la fenêtre.
+Une mise en page conçue sur un grand écran paraît donc plus chargée sur un
+portable (avertissements de débordement à l'appui). Écarté le 2026-10-19 :
+rendre les seuls panneaux proportionnels (incohérent avec le titre et les
+infos, qui restent en px). Le remède complet serait un « format vidéo »
+(rapport fixe, aperçu encadré, résolution de référence), à planifier à part si
+le besoin se confirme.
+
 **« Réorganiser »** (bouton de l'alerte) : `arrangePanels` (stats_model.mjs,
 pur), alimenté par `arrangeStatsPanels` (stats_panels.js : tailles mesurées,
 cadre, titre et infos, marges de coin lues sur la liste entière). Les panneaux
