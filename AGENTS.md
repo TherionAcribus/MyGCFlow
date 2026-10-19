@@ -144,6 +144,15 @@ template literal, sinon pybabel ne l'extrait pas — et sans chaînage
 optionnel : `pkg.t?.('…')` n'est pas extrait non plus (chaîne absente du
 `.pot`, jamais traduite).
 
+**Piège regex (JS) :** un guillemet double littéral dans une expression
+régulière (`/[;"
+]/`, `replace(/"/g, …)`) fait croire au lexer JS de
+pybabel qu'une chaîne s'ouvre : tous les `t()` qui suivent dans le fichier
+disparaissent de `messages.pot`, sans erreur, jusqu'à ce qu'un autre
+guillemet le resynchronise (cas de l'export CSV de `stats_panels.js`,
+corrigé le 2026-10-19). Écrire `"` dans la regex. Contrôle : une ligne
+`t('…')` sans référence `#: fichier:ligne` dans la pot.
+
 **Piège fuzzy :** `pybabel update` apparie les msgids nouveaux/renommés aux
 msgstr les plus proches et marque `#, fuzzy`. Si le drapeau est retiré sans
 corriger le msgstr, des textes sans rapport s'affichent (ex. le bouton

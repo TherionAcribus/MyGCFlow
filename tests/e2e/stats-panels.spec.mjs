@@ -1208,3 +1208,50 @@ test('l\'année d\'activité montre les jours de trouvaille de la dernière ann�
   await page.locator('#statsPanelList li').first().click();
   await expect(page.locator('#switchStatsLoops')).toBeHidden();
 });
+
+test('l\'aperçu du formulaire suit les données sans toucher au formulaire', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'b0a1e101', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#statsPanelList li').locator('[data-action="select"]').click();
+  const preview = page.locator('#statsPanelPreview');
+  await expect(preview).toBeVisible();
+  // Même pipeline et même taille (DPR 1 en test) : l'aperçu et le panneau de
+  // la carte doivent donner le même bitmap.
+  const sameAsMap = () => page.evaluate(() => {
+    const map = document.querySelector('canvas.stats-panel[data-panel-id="b0a1e101"]');
+    const prev = document.getElementById('statsPanelPreview');
+    return !!map && map.width === prev.width && map.height === prev.height
+      && map.toDataURL() === prev.toDataURL();
+  });
+  await expect.poll(sameAsMap).toBe(true);
+
+  // Les données changent sous le formulaire (nouveau type pour toutes les
+  // caches) : l'aperçu se redessine avec la carte.
+  const before = await preview.evaluate((c) => c.toDataURL());
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    for (const features of app.pointsByDate.values()) {
+      for (const f of features) f.properties.cache_type = 'Mystery Cache';
+    }
+    app.bumpPointsByDateRevision();
+    app.refreshStatsPanels();
+  });
+  await expect.poll(() => preview.evaluate((c) => c.toDataURL())).not.toBe(before);
+  await expect.poll(sameAsMap).toBe(true);
+
+  // Onglet quitté pendant le changement : l'aperçu se rattrape au retour.
+  await page.locator('a[href="#data"]').click();
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    for (const features of app.pointsByDate.values()) {
+      for (const f of features) f.properties.cache_type = 'Traditional Cache';
+    }
+    app.bumpPointsByDateRevision();
+    app.refreshStatsPanels();
+  });
+  await page.locator('a[href="#stats"]').click();
+  await expect.poll(sameAsMap).toBe(true);
+});

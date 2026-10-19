@@ -1318,6 +1318,7 @@ function flush() {
             document.dispatchEvent(new CustomEvent('mygcflow:stats-layout', { detail: { warnings } }));
         } catch (_) {}
     }
+    refreshFormPreview();
 }
 
 // Rect logique (px CSS, repère du conteneur) d'un panneau affiché, son type
@@ -1429,12 +1430,39 @@ export function drawStatsPanelPreview(id, canvas) {
     return true;
 }
 
+// Aperçu du formulaire (#statsPanelPreview, stats_ui › renderForm) : suit les
+// panneaux de la carte — redessiné à la fin d'un flush dont la révision a
+// changé (données chargées, filtre, animation), sans quoi il garderait les
+// comptes du dernier réglage touché. Seulement onglet Stats ouvert : pendant
+// une animation, ce serait sinon un panneau de plus dessiné à chaque frame
+// pour un canvas invisible (l'ouverture de l'onglet le redessine, cf.
+// stats_ui).
+let previewRevision = -1;
+function refreshFormPreview() {
+    if (!selectedPanelId || previewRevision === revision) return;
+    if (!document.getElementById('stats')?.classList.contains('active')) return;
+    const canvas = document.getElementById('statsPanelPreview');
+    if (!canvas || canvas.hidden) return;
+    previewRevision = revision;
+    drawStatsPanelPreview(selectedPanelId, canvas);
+}
+
 // Instantané PNG : le bitmap déjà dessiné pour l'aperçu (résolution écran).
 // null si le panneau n'est pas affiché (désactivé, base vide, Évolution).
 export function statsPanelPngBlob(id) {
     const node = panelNodes.get(id);
     if (!node) return Promise.resolve(null);
     return new Promise((resolve) => node.canvas.toBlob(resolve, 'image/png'));
+}
+
+// Cellule CSV : entre guillemets si elle contient « ; », un guillemet ou un
+// saut de ligne, guillemets internes doublés. Le guillemet s'écrit \x22 dans
+// les expressions régulières : un guillemet double littéral dans une regex
+// fait perdre le fil au lexer JS de pybabel, qui n'extrait alors plus les
+// chaînes t() qui suivent dans le fichier.
+function csvCell(value) {
+    const s = String(value ?? '');
+    return /[;\x22\r\n]/.test(s) ? '"' + s.replace(/\x22/g, '""') + '"' : s;
 }
 
 // Valeurs du panneau en CSV : séparateur « ; » (convention Excel francophone)
@@ -1449,12 +1477,8 @@ export function statsPanelCsv(id) {
     const { number, percent } = formatters();
     if (isEvolutionPage()) return statsPanelCsvEvolution(panel, number, percent);
     const ref = selectionTotals();
-    const cell = (v) => {
-        const s = String(v ?? '');
-        return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
     const rows = [];
-    const push = (...cols) => rows.push(cols.map(cell).join(';'));
+    const push = (...cols) => rows.push(cols.map(csvCell).join(';'));
     if (panel.kind === 'counter') {
         push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
         const values = counterValues(ref, panel.options.items);
@@ -1499,12 +1523,8 @@ function statsPanelCsvEvolution(panel, number, percent) {
     const index = evolutionIndex();
     const day = index?.restDay ?? 0;
     const acc = evolutionRestAcc();
-    const cell = (v) => {
-        const s = String(v ?? '');
-        return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
     const rows = [];
-    const push = (...cols) => rows.push(cols.map(cell).join(';'));
+    const push = (...cols) => rows.push(cols.map(csvCell).join(';'));
     if (panel.kind === 'counter') {
         push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
         const values = evolutionCounterValues(index, day, acc?.setView('active'), panel.options.items);

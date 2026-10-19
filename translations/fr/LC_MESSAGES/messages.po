@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 08:48+0200\n"
+"POT-Creation-Date: 2026-10-19 11:00+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -499,7 +499,7 @@ msgstr "Filtres"
 msgid "Paramètres"
 msgstr "Paramètres"
 
-#: templates/app.html:242 templates/guide.html:47 templates/guide.html:87
+#: templates/app.html:250 templates/guide.html:47 templates/guide.html:87
 #: templates/guide.html:109 templates/guide.html:132 templates/guide.html:152
 #: templates/guide.html:472 templates/menu_animation.html:83
 #: templates/menu_animation.html:113 templates/menu_filtre.html:45
@@ -508,13 +508,13 @@ msgstr "Paramètres"
 msgid "Données"
 msgstr "Données"
 
-#: templates/app.html:243 templates/guide.html:50 templates/guide.html:92
+#: templates/app.html:251 templates/guide.html:50 templates/guide.html:92
 #: templates/guide.html:109 templates/guide.html:179 templates/guide.html:181
 #: templates/guide.html:485 test_translations.py:31
 msgid "Style"
 msgstr "Style"
 
-#: templates/app.html:244 test_translations.py:32
+#: templates/app.html:252 test_translations.py:32
 msgid "Animation"
 msgstr "Animation"
 
@@ -1015,7 +1015,7 @@ msgstr "Un import est déjà en cours, veuillez patienter."
 msgid "Import en cours"
 msgstr "Import en cours"
 
-#: static/js/bdd.js:297 static/js/bdd.js:302 templates/app.html:174
+#: static/js/bdd.js:297 static/js/bdd.js:302 templates/app.html:182
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyse du fichier GPX en cours..."
 
@@ -2662,8 +2662,8 @@ msgstr "Plus tard"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "Vous ne serez plus averti pour cette version."
 
-#: static/js/profiles.js:40 templates/app.html:40 templates/app.html:66
-#: templates/app.html:68
+#: static/js/profiles.js:40 static/js/stats_ui.js:108 templates/app.html:40
+#: templates/app.html:66 templates/app.html:68
 msgid "Évolution"
 msgstr "Évolution"
 
@@ -2774,7 +2774,7 @@ msgid "Aucun thème"
 msgstr "Aucun thème"
 
 #: static/js/profiles.js:958 static/js/profiles.js:2748
-#: static/js/stats_ui.js:225
+#: static/js/stats_ui.js:233
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
@@ -2787,7 +2787,7 @@ msgstr "Copier vers « ${mode} »"
 msgid "Renommer"
 msgstr "Renommer"
 
-#: static/js/profiles.js:965 templates/app.html:254 templates/app.html:255
+#: static/js/profiles.js:965 templates/app.html:262 templates/app.html:263
 #: templates/guide.html:114 templates/guide.html:316 templates/guide.html:322
 #: templates/guide.html:456 templates/menu_animation.html:47
 #: templates/menu_data.html:189
@@ -2799,8 +2799,8 @@ msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
 #: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:226
-#: static/js/stats_ui.js:1097 templates/menu_style.html:272
+#: static/js/recent_videos.js:121 static/js/stats_ui.js:234
+#: static/js/stats_ui.js:1116 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Supprimer"
@@ -3438,37 +3438,44 @@ msgstr "Aucune cache"
 msgid "Aucune trouvaille"
 msgstr "Aucune trouvaille"
 
-#: static/js/stats_panels.js:1509
+#: static/js/stats_panels.js:1483 static/js/stats_panels.js:1529
 msgid "Chiffre"
 msgstr "Chiffre"
 
-#: static/js/stats_panels.js:1509
+#: static/js/stats_panels.js:1483 static/js/stats_panels.js:1529
 msgid "Valeur"
 msgstr "Valeur"
 
-#: static/js/stats_panels.js:1509 templates/menu_animation.html:189
+#: static/js/stats_panels.js:1483 static/js/stats_panels.js:1529
+#: templates/menu_animation.html:189
 msgid "Détail"
 msgstr "Détail"
 
-#: static/js/stats_panels.js:1516 templates/menu_informations.html:57
-#: templates/menu_informations.html:81
+#: static/js/stats_panels.js:1490 static/js/stats_panels.js:1536
+#: templates/menu_informations.html:57 templates/menu_informations.html:81
 msgid "Date"
 msgstr "Date"
 
-#: static/js/stats_panels.js:1516 templates/menu_informations.html:61
-#: templates/menu_informations.html:83
+#: static/js/stats_panels.js:1490 static/js/stats_panels.js:1536
+#: templates/menu_informations.html:61 templates/menu_informations.html:83
 msgid "Total"
 msgstr "Total"
 
-#: static/js/stats_panels.js:1521
-msgid "Catégorie"
-msgstr "Catégorie"
+#: static/js/stats_panels.js:1493
+msgid "Case"
+msgstr "Case"
 
-#: static/js/stats_panels.js:1521
+#: static/js/stats_panels.js:1493 static/js/stats_panels.js:1506
+#: static/js/stats_panels.js:1541
 msgid "Nombre"
 msgstr "Nombre"
 
-#: static/js/stats_panels.js:1521 templates/menu_informations.html:84
+#: static/js/stats_panels.js:1506 static/js/stats_panels.js:1541
+msgid "Catégorie"
+msgstr "Catégorie"
+
+#: static/js/stats_panels.js:1506 static/js/stats_panels.js:1541
+#: templates/menu_informations.html:84
 msgid "Pourcentage"
 msgstr "Pourcentage"
 
@@ -3488,23 +3495,27 @@ msgstr "Anneau"
 msgid "Courbe"
 msgstr "Courbe"
 
-#: static/js/stats_ui.js:197
+#: static/js/stats_ui.js:108
+msgid "Trouvailles"
+msgstr "Trouvailles"
+
+#: static/js/stats_ui.js:205
 msgid "Afficher ce panneau"
 msgstr "Afficher ce panneau"
 
-#: static/js/stats_ui.js:216 static/js/stats_ui.js:1094
+#: static/js/stats_ui.js:224 static/js/stats_ui.js:1113
 msgid "Pas affiché dans ce mode"
 msgstr "Pas affiché dans ce mode"
 
-#: static/js/stats_ui.js:223
+#: static/js/stats_ui.js:231
 msgid "Monter"
 msgstr "Monter"
 
-#: static/js/stats_ui.js:224
+#: static/js/stats_ui.js:232
 msgid "Descendre"
 msgstr "Descendre"
 
-#: static/js/stats_ui.js:236
+#: static/js/stats_ui.js:244
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
@@ -3512,7 +3523,7 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
 
-#: static/js/stats_ui.js:237 templates/menu_stats.html:109
+#: static/js/stats_ui.js:245 templates/menu_stats.html:109
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
@@ -3520,63 +3531,63 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
 
-#: static/js/stats_ui.js:260
+#: static/js/stats_ui.js:268
 #, python-brace-format
 msgid "${n} places requises"
 msgstr "${n} places requises"
 
-#: static/js/stats_ui.js:307
+#: static/js/stats_ui.js:315
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr "« ${name} » supprimé"
 
-#: static/js/stats_ui.js:1030 static/js/stats_ui.js:1036
+#: static/js/stats_ui.js:1049 static/js/stats_ui.js:1055
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr "Import impossible : fichier de panneaux invalide"
 
-#: static/js/stats_ui.js:1046
+#: static/js/stats_ui.js:1065
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr "${count} panneau(x) importé(s)"
 
-#: static/js/stats_ui.js:1136
+#: static/js/stats_ui.js:1155
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr "Configuration « ${name} » enregistrée"
 
-#: static/js/stats_ui.js:1150
+#: static/js/stats_ui.js:1169
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr "Configuration « ${name} » appliquée"
 
-#: static/js/stats_ui.js:1169
+#: static/js/stats_ui.js:1188
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr "« ${name} » supprimée"
 
-#: static/js/stats_ui.js:1200
+#: static/js/stats_ui.js:1219
 msgid "Panneaux réorganisés"
 msgstr "Panneaux réorganisés"
 
-#: static/js/stats_ui.js:1219
+#: static/js/stats_ui.js:1238
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 
-#: static/js/stats_ui.js:1221
+#: static/js/stats_ui.js:1240
 msgid "le titre"
 msgstr "le titre"
 
-#: static/js/stats_ui.js:1221
+#: static/js/stats_ui.js:1240
 msgid "les infos"
 msgstr "les infos"
 
-#: static/js/stats_ui.js:1222
+#: static/js/stats_ui.js:1241
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr "« ${name} » chevauche ${other}."
 
-#: static/js/stats_ui.js:1225
+#: static/js/stats_ui.js:1244
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
@@ -3585,45 +3596,45 @@ msgstr ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 
-#: static/js/stats_ui.js:1237
+#: static/js/stats_ui.js:1256
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 
-#: static/js/timeline_bar.js:328
+#: static/js/timeline_bar.js:418
 msgid "Aucune donnée à parcourir"
 msgstr "Aucune donnée à parcourir"
 
-#: static/js/timeline_bar.js:341
+#: static/js/timeline_bar.js:433
 #, python-brace-format
 msgid "${count} actives"
 msgstr "${count} actives"
 
-#: static/js/timeline_bar.js:341
+#: static/js/timeline_bar.js:433
 #, python-brace-format
 msgid "${count} active"
 msgstr "${count} active"
 
-#: static/js/timeline_bar.js:342
+#: static/js/timeline_bar.js:434
 #, python-brace-format
 msgid "${count} caches"
 msgstr "${count} caches"
 
-#: static/js/timeline_bar.js:342
+#: static/js/timeline_bar.js:434
 #, python-brace-format
 msgid "${count} cache"
 msgstr "${count} cache"
 
-#: static/js/timeline_bar.js:612
+#: static/js/timeline_bar.js:704
 #, python-brace-format
 msgid "Début de l'animation ici (${date})"
 msgstr "Début de l'animation ici (${date})"
 
-#: static/js/timeline_bar.js:614
+#: static/js/timeline_bar.js:706
 #, python-brace-format
 msgid "Fin de l'animation ici (${date})"
 msgstr "Fin de l'animation ici (${date})"
 
-#: static/js/timeline_bar.js:625
+#: static/js/timeline_bar.js:717
 msgid "Plage complète"
 msgstr "Plage complète"
 
@@ -3759,7 +3770,7 @@ msgstr "Écouter"
 msgid "Écouter la fin"
 msgstr "Écouter la fin"
 
-#: static/js/ui.js:725 templates/app.html:263 templates/app.html:264
+#: static/js/ui.js:725 templates/app.html:271 templates/app.html:272
 #: templates/guide.html:114 templates/guide.html:317
 #: templates/menu_animation.html:57
 msgid "Arrêter"
@@ -4638,134 +4649,135 @@ msgstr "Pause / Reprendre"
 msgid "Arrêter l'animation"
 msgstr "Arrêter l'animation"
 
-#: templates/app.html:138 templates/app.html:139
+#: templates/app.html:139 templates/app.html:140 templates/app.html:303
+#: templates/app.html:304
+msgid "Barre de chronologie"
+msgstr "Barre de chronologie"
+
+#: templates/app.html:146 templates/app.html:147
 msgid "Quitter le plein écran"
 msgstr "Quitter le plein écran"
 
-#: templates/app.html:152
+#: templates/app.html:160
 msgid "Importez un ou plusieurs exports CSV des caches d'une zone pour commencer"
 msgstr "Importez un ou plusieurs exports CSV des caches d'une zone pour commencer"
 
-#: templates/app.html:154
+#: templates/app.html:162
 msgid "Sélectionner des exports CSV"
 msgstr "Sélectionner des exports CSV"
 
-#: templates/app.html:156 templates/menu_data_evolution.html:58
+#: templates/app.html:164 templates/menu_data_evolution.html:58
 msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr "ou glissez-déposez vos fichiers n'importe où sur la page"
 
-#: templates/app.html:157
+#: templates/app.html:165
 msgid "Revenir au mode principal (mes géocaches)"
 msgstr "Revenir au mode principal (mes géocaches)"
 
-#: templates/app.html:162
+#: templates/app.html:170
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Chargez votre fichier .gpx pour commencer"
 
-#: templates/app.html:164 templates/guide.html:152 templates/menu_data.html:19
+#: templates/app.html:172 templates/guide.html:152 templates/menu_data.html:19
 msgid "Sélectionner et charger un fichier .gpx"
 msgstr "Sélectionner et charger un fichier .gpx"
 
-#: templates/app.html:169
+#: templates/app.html:177
 msgid "Comment obtenir mon fichier .gpx ?"
 msgstr "Comment obtenir mon fichier .gpx ?"
 
-#: templates/app.html:180 templates/menu_data.html:34
+#: templates/app.html:188 templates/menu_data.html:34
 msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr "ou glissez-déposez votre fichier n'importe où sur la page"
 
-#: templates/app.html:193
+#: templates/app.html:201
 msgid "Chronologie de l'animation"
 msgstr "Chronologie de l'animation"
 
-#: templates/app.html:200
+#: templates/app.html:208
 msgid "Style de la barre de chronologie"
 msgstr "Style de la barre de chronologie"
 
-#: templates/app.html:202 templates/app.html:203
+#: templates/app.html:210 templates/app.html:211
 msgid "Barre simple"
 msgstr "Barre simple"
 
-#: templates/app.html:207 templates/app.html:208
+#: templates/app.html:215 templates/app.html:216
 msgid "Histogramme des trouvailles"
 msgstr "Histogramme des trouvailles"
 
-#: templates/app.html:207 templates/app.html:208
+#: templates/app.html:215 templates/app.html:216
 msgid "Histogramme des poses et archivages"
 msgstr "Histogramme des poses et archivages"
 
-#: templates/app.html:212 templates/app.html:213
+#: templates/app.html:220 templates/app.html:221
 msgid "Courbe de progression"
 msgstr "Courbe de progression"
 
-#: templates/app.html:212 templates/app.html:213 templates/menu_stats.html:77
+#: templates/app.html:220 templates/app.html:221 templates/menu_stats.html:77
 msgid "Courbe des caches actives"
 msgstr "Courbe des caches actives"
 
-#: templates/app.html:232
+#: templates/app.html:240
 msgid "Redimensionner la carte"
 msgstr "Redimensionner la carte"
 
-#: templates/app.html:244 templates/guide.html:53 templates/guide.html:97
+#: templates/app.html:252 templates/guide.html:53 templates/guide.html:97
 #: templates/guide.html:109 templates/guide.html:247 templates/guide.html:249
 msgid "Animation & vidéo"
 msgstr "Animation & vidéo"
 
-#: templates/app.html:245 templates/guide.html:56 templates/guide.html:341
+#: templates/app.html:253 templates/guide.html:56 templates/guide.html:341
 #: templates/guide.html:343
 msgid "Stats"
 msgstr "Stats"
 
-#: templates/app.html:246 templates/guide.html:59 templates/guide.html:102
+#: templates/app.html:254 templates/guide.html:59 templates/guide.html:102
 #: templates/guide.html:109 templates/guide.html:378 templates/guide.html:380
 msgid "Préférences"
 msgstr "Préférences"
 
-#: templates/app.html:246 templates/menu_informations.html:10
+#: templates/app.html:254 templates/menu_informations.html:10
 msgid "Réglages"
 msgstr "Réglages"
 
-#: templates/app.html:250 templates/app.html:251 templates/guide.html:114
+#: templates/app.html:258 templates/app.html:259 templates/guide.html:114
 #: templates/guide.html:315 templates/guide.html:322
 #: templates/menu_animation.html:44 templates/menu_data.html:247
 msgid "Prévisualiser"
 msgstr "Prévisualiser"
 
-#: templates/app.html:258 templates/app.html:259 templates/app.html:260
+#: templates/app.html:266 templates/app.html:267 templates/app.html:268
 #: templates/guide.html:114 templates/guide.html:317
 #: templates/menu_animation.html:53 templates/menu_animation.html:54
 msgid "Pause"
 msgstr "Pause"
 
-#: templates/app.html:259 templates/menu_animation.html:53
+#: templates/app.html:267 templates/menu_animation.html:53
 msgid "Continuer"
 msgstr "Continuer"
 
-#: templates/app.html:271
+#: templates/app.html:279
 msgid "Disposition carte / réglages"
 msgstr "Disposition carte / réglages"
 
-#: templates/app.html:273 templates/app.html:274
+#: templates/app.html:281 templates/app.html:282
 msgid "Grande carte"
 msgstr "Grande carte"
 
-#: templates/app.html:278 templates/app.html:279
+#: templates/app.html:286 templates/app.html:287
 msgid "Disposition équilibrée"
 msgstr "Disposition équilibrée"
 
-#: templates/app.html:283 templates/app.html:284
+#: templates/app.html:291 templates/app.html:292
 msgid "Grands réglages"
 msgstr "Grands réglages"
 
-#: templates/app.html:288 templates/app.html:289
+#: templates/app.html:296 templates/app.html:297
 msgid "Panneau latéral"
 msgstr "Panneau latéral"
 
-#: templates/app.html:295 templates/app.html:296
-msgid "Barre de chronologie"
-msgstr "Barre de chronologie"
-
-#: templates/app.html:305 templates/app.html:306 templates/guide.html:318
+#: templates/app.html:313 templates/app.html:314 templates/guide.html:318
 msgid "Plein écran"
 msgstr "Plein écran"
 

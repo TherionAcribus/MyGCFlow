@@ -101,6 +101,14 @@ const KIND_LABELS = {
 
 const $ = (id) => document.getElementById(id);
 
+// Repère « (Trouvailles) » / « (Évolution) » d'un panneau ou d'une
+// configuration de l'autre mode. t() hors du template literal : pybabel
+// n'extrait pas les appels qui s'y trouvent.
+function otherModeBadge() {
+    const mode = evolutionMode ? pkg.t('Trouvailles') : pkg.t('Évolution');
+    return `(${mode})`;
+}
+
 function currentSettings() {
     return pkg.getStatsSettings();
 }
@@ -212,7 +220,7 @@ function renderList() {
         if (!(metricRegistry[panel.kind] || []).includes(panel.metric)) {
             const badge = document.createElement('span');
             badge.className = 'text-muted small ms-1';
-            badge.textContent = `(${evolutionMode ? pkg.t('Trouvailles') : pkg.t('Évolution')})`;
+            badge.textContent = otherModeBadge();
             badge.title = pkg.t('Pas affiché dans ce mode');
             name.appendChild(badge);
         }
@@ -592,15 +600,26 @@ function renderForm() {
     setValue('inputStatsRadius', s.radius);
     setValue('switchStatsInheritFont', s.inherit_font);
 
-    // Mini-aperçu : le panneau dessiné à sa taille réelle — utile quand la
-    // carte est hors vue (écran étroit). Masqué si non dessinable.
+    drawFormPreview(panel);
+}
+
+// Mini-aperçu : le panneau dessiné à sa taille réelle — utile quand la
+// carte est hors vue (écran étroit). Masqué si non dessinable. Hors du
+// formulaire, stats_panels le redessine quand les comptes changent (onglet
+// ouvert) ; l'ouverture de l'onglet le remet à jour (syncFormPreview).
+function drawFormPreview(panel) {
     const preview = $('statsPanelPreview');
-    if (preview) {
-        const drawn = pkg.drawStatsPanelPreview?.(panel.id, preview);
-        preview.hidden = !drawn;
-        preview.style.opacity = panel.enabled ? '' : '0.45';
-        if (drawn) preview.style.width = `${Math.round(panel.position.width)}px`;
-    }
+    if (!preview) return;
+    const drawn = pkg.drawStatsPanelPreview?.(panel.id, preview);
+    preview.hidden = !drawn;
+    preview.style.opacity = panel.enabled ? '' : '0.45';
+    if (drawn) preview.style.width = `${Math.round(panel.position.width)}px`;
+}
+
+function syncFormPreview(event) {
+    if (event?.target?.getAttribute?.('href') !== '#stats') return;
+    const panel = selectedPanel();
+    if (panel) drawFormPreview(panel);
 }
 
 // Champ du formulaire → chemin dans le panneau. `number` : valeur numérique
@@ -1088,7 +1107,7 @@ function renderConfigMenu() {
         if (config.mode !== (evolutionMode ? 'evolution' : 'finds')) {
             const badge = document.createElement('span');
             badge.className = 'text-muted small ms-1';
-            badge.textContent = `(${evolutionMode ? pkg.t('Trouvailles') : pkg.t('Évolution')})`;
+            badge.textContent = otherModeBadge();
             apply.appendChild(badge);
             apply.disabled = true;
             apply.title = pkg.t('Pas affiché dans ce mode');
@@ -1323,6 +1342,7 @@ export function initStatsTab() {
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));
     // Saisie à la souris : onglet ouvert/fermé, lecture lancée/arrêtée.
     document.addEventListener('shown.bs.tab', syncDragMode);
+    document.addEventListener('shown.bs.tab', syncFormPreview);
     document.addEventListener('hidden.bs.tab', syncDragMode);
     const controlBar = $('controlBar');
     if (controlBar && typeof MutationObserver !== 'undefined') {

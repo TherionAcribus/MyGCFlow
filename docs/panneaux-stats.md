@@ -54,7 +54,10 @@ les options reprennent les défauts du type choisi. Un aperçu du panneau
 sélectionné est dessiné en tête du formulaire avec le même pipeline que la
 carte (`drawStatsPanelPreview`), à la largeur réelle du panneau — utile sur
 écran étroit, quand la carte est hors vue pendant le réglage ; un panneau
-à métrique étrangère au mode n'y est pas dessiné, comme sur la carte.
+à métrique étrangère au mode n'y est pas dessiné, comme sur la carte. Il
+suit aussi les données : redessiné à la fin d'un `flush` dont la révision a
+changé, tant que l'onglet Stats est ouvert (pas de dessin d'un canvas
+invisible à chaque frame d'animation), et à l'ouverture de l'onglet.
 
 ## Modules
 
