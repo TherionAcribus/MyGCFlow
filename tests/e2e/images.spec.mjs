@@ -160,8 +160,10 @@ test('un fichier absent ou une image désactivée ne s’affichent pas', async (
   await openWithFixture(page);
   await expect(page.locator('canvas.image-panel')).toHaveCount(1);
   await expect(page.locator('canvas.image-panel')).toHaveAttribute('data-image-id', 'babe0006');
-  const snapshot = await page.evaluate(async () => (await import('/static/js/index.js')).getImagesSnapshot());
-  expect(snapshot.items.find((i) => i.id === 'babe0004').state).toBe('failed');
+  // « En échec » seulement après les nouvelles tentatives (~2,5 s).
+  await expect.poll(async () => (await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getImagesSnapshot())).items.find((i) => i.id === 'babe0004').state)
+    .toBe('failed');
   // Rond : carré.
   const b = await boxIn(page, 'canvas.image-panel');
   expect(Math.round(b.width)).toBe(Math.round(b.height));
@@ -191,6 +193,10 @@ test('onglet : ajout d’un fichier, réglages, suppression annulable', async ({
   await expect(page.locator('canvas.image-panel')).toBeVisible();
   await expect.poll(async () => (await savedImages(page)).items.length).toBe(1);
   await expect(page.locator('#inputImageName')).toHaveValue('logo-opaque');
+  // Image chargée, ancrée : ni « manquante » ni « position libre » (ces
+  // aides restaient affichées quand `d-block` l'emportait sur `hidden`).
+  await expect(page.locator('#imageMissingHint')).toBeHidden();
+  await expect(page.locator('#imageFreeHint')).toBeHidden();
 
   // Emplacement et largeur : appliqués à la carte et enregistrés.
   await page.locator('label[for="imageAnchor-bottom-left"]').click();
@@ -373,4 +379,38 @@ test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas'
   });
   await expect(page.locator('.gcm-toast.show').filter({ hasText: "fichier d'images invalide" })).toBeVisible();
   await expect(page.locator('#imagesList li')).toHaveCount(1);
+});
+
+test('un chargement raté une fois est réessayé : l’image n’est pas déclarée manquante', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [{ id: 'babe0030', file: logo.file, name: 'Logo' }] } });
+  // Premier chargement de l'image en échec (serveur qui redémarre, par ex.).
+  let requests = 0;
+  await page.route(`**/api/images/${logo.file}*`, (route) => (requests++ === 0 ? route.abort() : route.continue()));
+  await openImagesTab(page);
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('#imagesList li')).not.toContainText('(manquante)');
+  await expect(page.locator('#imageMissingHint')).toBeHidden();
+  expect(requests).toBeGreaterThan(1);
+});
+
+test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [{ id: 'babe0031', file: logo.file, name: 'Logo' }] } });
+  // Tous les chargements échouent : l'image finit « manquante ».
+  await page.route(`**/api/images/${logo.file}*`, (route) => route.abort());
+  await openImagesTab(page);
+  await expect(page.locator('#imagesList li')).toContainText('(manquante)');
+  await expect(page.locator('#imageMissingHint')).toBeVisible();
+  // Le serveur répond de nouveau ; « Remplacer l'image… » avec le même
+  // fichier (même contenu, même nom) : l'échec mémorisé est oublié.
+  await page.unroute(`**/api/images/${logo.file}*`);
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.locator('#btnImageReplace').click();
+  await (await chooserPromise).setFiles(LOGO);
+  await expect(page.locator('#imagesList li')).not.toContainText('(manquante)');
+  await expect(page.locator('#imageMissingHint')).toBeHidden();
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  expect((await savedImages(page)).items).toHaveLength(1);
 });

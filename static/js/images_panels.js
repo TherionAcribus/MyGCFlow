@@ -47,24 +47,46 @@ export function imageUrl(file) {
     return `/api/images/${encodeURIComponent(file)}`;
 }
 
-// Décodage d'un fichier, une seule fois par nom (le contenu d'un nom ne
-// change jamais). Chargée ou en échec, l'image relance la mise en page : sa
-// hauteur dépend de ses proportions.
+// Nouvelles tentatives après un chargement raté : un incident passager
+// (serveur de développement qui redémarre, réseau local occupé) ne doit pas
+// faire déclarer « manquante » une image bien présente. Délais cumulés
+// (2,5 s) sous le plafond de imagesReady (3 s).
+const RETRY_DELAYS_MS = [500, 2000];
+
+function loadImage(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+}
+
+// Décodage d'un fichier, une seule fois par nom tant qu'il réussit (le
+// contenu d'un nom ne change jamais). Un échec n'est retenu qu'après les
+// nouvelles tentatives, et s'oublie (forgetFailedImageSources) : un envoi du
+// même fichier ou l'ouverture de l'onglet Images le retentent. Chargée ou en
+// échec, l'image relance la mise en page : sa hauteur dépend de ses
+// proportions.
 function ensureSource(file) {
     if (!file || sources.has(file)) return sources.get(file);
-    const img = new Image();
-    img.decoding = 'async';
-    const entry = { img, state: 'loading', promise: null };
-    entry.promise = new Promise((resolve) => {
-        img.onload = () => {
-            entry.state = 'ready';
-            resolve(true);
-        };
-        img.onerror = () => {
-            entry.state = 'failed';
-            resolve(false);
-        };
-    }).then((ok) => {
+    const entry = { img: null, state: 'loading', promise: null };
+    entry.promise = (async () => {
+        for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+            if (attempt) await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt - 1]));
+            // Paramètre de tentative : jamais une réponse d'échec resservie.
+            const img = await loadImage(attempt ? `${imageUrl(file)}?retry=${attempt}` : imageUrl(file));
+            if (img) {
+                entry.img = img;
+                return true;
+            }
+        }
+        return false;
+    })().then((ok) => {
+        // Oubliée entre-temps (forgetFailedImageSources) : rien à signaler.
+        if (sources.get(file) !== entry) return ok;
+        entry.state = ok ? 'ready' : 'failed';
         revision += 1;
         invalidateImagesLayout();
         // L'onglet Images marque les images manquantes (images_ui.js).
@@ -73,9 +95,25 @@ function ensureSource(file) {
         } catch (_) {}
         return ok;
     });
-    img.src = imageUrl(file);
     sources.set(file, entry);
     return entry;
+}
+
+// Oublie les échecs mémorisés — tous, ou celui d'un fichier — puis relance
+// le chargement des images de la liste. Appelé après un envoi réussi (le
+// même contenu redonne le même nom : sans cela, l'échec d'avant serait
+// resservi) et à l'ouverture de l'onglet Images.
+export function forgetFailedImageSources(file = null) {
+    let forgotten = false;
+    for (const [name, entry] of sources) {
+        if (entry.state !== 'failed' || (file && name !== file)) continue;
+        sources.delete(name);
+        forgotten = true;
+    }
+    if (!forgotten) return;
+    for (const item of settings.items) ensureSource(item.file);
+    revision += 1;
+    invalidateImagesLayout();
 }
 
 export function applyImagesSettings(raw) {

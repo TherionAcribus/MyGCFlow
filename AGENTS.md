@@ -133,6 +133,16 @@ Autres repères :
   dans `$XDG_CONFIG_HOME/MyGCFlow` (`~/.config`), données dans
   `$XDG_DATA_HOME/MyGCFlow` (`~/.local/share`).
 
+## Piège `hidden` + classes d'affichage Bootstrap
+
+Un élément qui porte `hidden` ET une classe `d-block`/`d-flex`/`d-grid`…
+reste **toujours visible** : ces classes posent `display: … !important`, qui
+l'emporte sur l'attribut. Pour un élément masqué par `hidden`, ne pas mettre
+de classe `d-*` (`.form-hint` est déjà en bloc), ou ajouter une règle
+`#id[hidden] { display: none !important; }` (cf. `#audioEndRow`). Côté tests,
+vérifier aussi le cas MASQUÉ (`toBeHidden`) — c'est lui qui aurait révélé
+« Image manquante » affichée sous une image bien chargée (2026-10-19).
+
 ## Ordre d'évaluation des modules
 
 `ui.js` appelle ses fonctions d'init (`initUIElements`) **pendant sa propre

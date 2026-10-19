@@ -107,6 +107,9 @@ async function uploadImage(file) {
         if (!response.ok || !data.success) {
             throw new Error(data.message || pkg.t("L'image n'a pas pu être envoyée."));
         }
+        // Le fichier est sur le serveur : un échec de chargement mémorisé
+        // pour ce nom (même contenu, même nom) est périmé.
+        pkg.forgetFailedImageSources?.(data.file);
         return data;
     } catch (e) {
         pkg.showToast?.(e.message || pkg.t("L'image n'a pas pu être envoyée."), 'error', pkg.t('Images'), 6000);
@@ -777,6 +780,11 @@ export function initImagesTab() {
     // Saisie à la souris : onglet ouvert/fermé, lecture lancée/arrêtée.
     document.addEventListener('shown.bs.tab', syncDragMode);
     document.addEventListener('hidden.bs.tab', syncDragMode);
+    // Ouverture de l'onglet : les images restées en échec sont retentées
+    // (un incident passager ne doit pas les laisser « manquantes »).
+    document.addEventListener('shown.bs.tab', (event) => {
+        if (event.target?.getAttribute?.('href') === '#images') pkg.forgetFailedImageSources?.();
+    });
     const controlBar = $('controlBar');
     if (controlBar && typeof MutationObserver !== 'undefined') {
         new MutationObserver(syncDragMode).observe(controlBar, { attributes: true, attributeFilter: ['data-playback-state'] });

@@ -94,7 +94,12 @@ liste.
 - L'ombre déborde de la boîte : CSS `drop-shadow` dans l'aperçu, `shadowBlur`
   dans la vidéo, mêmes valeurs (`IMAGE_SHADOW`, même échelle de flou).
 - Fichier absent ou illisible : ni dessiné ni placé (état `failed`), signalé
-  « (manquante) » dans la liste (événement `mygcflow:image-source`).
+  « (manquante) » dans la liste (événement `mygcflow:image-source`). Un
+  chargement raté est d'abord **réessayé** deux fois (0,5 s puis 2 s, avec un
+  paramètre `?retry=n`) : un incident passager — serveur de développement qui
+  redémarre — ne déclare pas manquante une image présente. Un échec retenu
+  s'oublie (`forgetFailedImageSources`) après un envoi réussi du même fichier
+  (même contenu, même nom) et à l'ouverture de l'onglet Images.
 - Visibles avec la base chargée, comme le titre et les infos
   (`syncImagePanelsVisibility`, appelé par `frames.js › syncOverlayVisibility`).
 

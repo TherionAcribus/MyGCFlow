@@ -58,6 +58,8 @@ test('la grille place le titre : coins, centre, marges', async ({ page }) => {
 
   // Feuille par défaut : en haut à gauche, 10 px.
   await expect(page.locator('#overlayAnchor-top-left')).toBeChecked();
+  // Emplacement reconnu : l'aide « position libre ou personnalisée » est masquée.
+  await expect(page.locator('#gcCssAnchorCustom')).toBeHidden();
   await expect(page.locator('#gcCssMarginX')).toHaveValue('10');
 
   // En bas à droite : les côtés de la feuille par défaut (top/left) sont
