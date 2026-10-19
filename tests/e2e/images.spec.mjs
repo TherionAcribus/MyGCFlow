@@ -248,7 +248,9 @@ test('onglet : bibliothèque des images envoyées et limite de quatre', async ({
     await pick.click();
     await expect(page.locator('#imagesList li')).toHaveCount(n);
   }
-  await expect(page.locator('#imagesList li').first()).toContainText('Image 1');
+  // La bibliothèque retient le nom d'origine (names.json) : l'image reprise
+  // porte le nom du fichier, pas « Image 1 ».
+  await expect(page.locator('#imagesList li').first()).toContainText('avatar-transparent');
   await expect(page.locator('#btnImagesAdd')).toBeDisabled();
   await expect(page.locator('#imagesLimitHint')).toBeVisible();
   await page.locator('#btnImagesLibrary').click();
@@ -330,6 +332,60 @@ test('glisser une image : aimantée près d’un emplacement, libre ailleurs, po
   await expect.poll(async () => (await savedImages(page)).items[0].position.width).toBeGreaterThanOrEqual(215);
   const after = await canvas.boundingBox();
   expect(Math.abs((after.x + after.width) - (before.x + before.width))).toBeLessThan(2);
+});
+
+test('flèches du clavier : l’image sélectionnée se déplace (1 px, Maj = 10 px) et devient libre', async ({ page }) => {
+  const avatar = await upload(page, AVATAR);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0040', file: avatar.file, position: { anchor: 'top-left', width: 100 } },
+    // Désactivée : dans la liste, sélectionnable, mais sans rect affiché.
+    { id: 'babe0041', file: avatar.file, enabled: false, position: { anchor: 'top-right', width: 80 } },
+  ] } });
+  await openImagesTab(page);
+  const canvas = page.locator('canvas.image-panel');
+  await expect(canvas).toHaveCount(1);
+  await expect(page.locator('#mapWithFrames')).toHaveClass(/images-editing/);
+  // Le clic sur l'onglet laisse le focus sur son lien : les flèches y
+  // navigueraient entre onglets (navigation clavier des tabs, qui absorbe
+  // la touche). Le déplacement du panneau vise le reste de la page.
+  await page.evaluate(() => document.activeElement?.blur?.());
+  const rectOf = async (id) => page.evaluate(async (imageId) =>
+    (await import('/static/js/index.js')).getImagesSnapshot()
+      .items.find((i) => i.id === imageId)?.rect || null, id);
+
+  // Ancrée en haut à gauche → ArrowRight : libre à sa place affichée + 1 px.
+  const before = await rectOf('babe0040');
+  expect(before).toBeTruthy();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => (await rectOf('babe0040'))?.x).toBeCloseTo(before.x + 1, 0);
+  await expect.poll(async () => (await savedImages(page)).items[0].position)
+    .toMatchObject({ mode: 'free' });
+  await expect(page.locator('#imageFreeHint')).toBeVisible();
+  // La fraction persistée correspond au déplacement pixel.
+  const rect = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getImagePanelRect('babe0040'));
+  const saved = (await savedImages(page)).items[0].position;
+  expect(saved.x).toBeCloseTo(rect.x / (rect.container.width - rect.width), 5);
+
+  // Maj+ArrowDown : 10 px.
+  const mid = await rectOf('babe0040');
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect.poll(async () => (await rectOf('babe0040'))?.y).toBeCloseTo(mid.y + 10, 0);
+  // Attendre le PUT du SECOND nudge : « mode: free » seul serait déjà vrai
+  // avec le premier. La fraction persistée suit le rect appliqué.
+  const rectShift = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getImagePanelRect('babe0040'));
+  const expectedY = rectShift.y / (rectShift.container.height - rectShift.height);
+  await expect.poll(async () => (await savedImages(page)).items[0].position.y)
+    .toBeCloseTo(expectedY, 3);
+
+  // Sélection sans rect affiché (image désactivée) : la flèche ne fait
+  // rien — ni pour elle ni pour l'image affichée.
+  const positionsAvant = (await savedImages(page)).items.map((i) => i.position);
+  await page.locator('#imagesList li[data-image-id="babe0041"] [data-action="select"]').click();
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForTimeout(700);   // debounce écoulé : rien n'est parti
+  expect((await savedImages(page)).items.map((i) => i.position)).toEqual(positionsAvant);
 });
 
 test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas', async ({ page }) => {

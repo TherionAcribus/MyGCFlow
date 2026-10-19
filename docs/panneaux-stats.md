@@ -376,6 +376,11 @@ hauteur (`ns-resize`), et le coin qu'elles partagent règle les deux axes
 (`nwse-resize` ou `nesw-resize`) — hors grilles, dont les cases carrées ne
 laissent rien à régler.
 
+**Clavier.** En mode édition, les flèches déplacent le panneau sélectionné
+de 1 px (10 px avec Maj) ; un panneau ancré passe alors en position libre à
+sa place affichée (`nudge`, panel_interactions.js — partagé avec les
+Images). Hors champs de formulaire, où les flèches gardent leur rôle natif.
+
 Les poignées sont posées sur les bords **qui bougent** quand la taille change
 (`resizeEdges`, panel_interactions.js), pour rester sous le pointeur : droit et bas en
 général, gauche pour un panneau ancré à droite, haut pour un panneau ancré en

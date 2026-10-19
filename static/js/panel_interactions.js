@@ -1,5 +1,7 @@
 // Interactions à la souris des éléments posés sur la carte : déplacement,
-// aimantation aux emplacements, poignées de redimensionnement.
+// aimantation aux emplacements, poignées de redimensionnement. Au clavier,
+// les flèches déplacent l'élément sélectionné de 1 px (10 px avec Maj) ;
+// un élément ancré passe alors en position libre à sa place affichée.
 //
 // Partagé par les panneaux de stats (stats_ui.js) et les images
 // (images_ui.js) ; le titre et les infos (infos_editor.js) en reprennent
@@ -127,7 +129,9 @@ const STATE_CLASSES = ['is-dragging', 'is-resizing', 'is-resizing-h', 'is-resizi
 // - commitFree(id, x, y), commitSnap(id, anchor), commitResize(id, patch) :
 //   enregistrement au dépôt ;
 // - onRelease() : fin de geste (formulaire à resynchroniser) ;
-// - isBusy() : vrai pendant une animation (aucune saisie).
+// - isBusy() : vrai pendant une animation (aucune saisie) ;
+// - selectedId() → id de l'élément choisi dans l'onglet, et nudge(id, dxPx,
+//   dyPx, rect) : déplacement au clavier — sans nudge, pas d'écouteur.
 export function bindPanelDrag(options) {
     const {
         host, selector, idOf, editingClass, ghostClass,
@@ -137,6 +141,7 @@ export function bindPanelDrag(options) {
         onGrab = () => {}, onRelease = () => {},
         commitFree, commitSnap, commitResize,
         isBusy = () => false,
+        selectedId = () => null, nudge,
     } = options;
     if (!host) return;
     const ghost = createSnapGhost(host, ghostClass);
@@ -267,4 +272,33 @@ export function bindPanelDrag(options) {
     };
     host.addEventListener('pointerup', end);
     host.addEventListener('pointercancel', end);
+
+    // Flèches : l'élément sélectionné de l'onglet se déplace de 1 px
+    // (10 px avec Maj). Un élément ancré devient libre à sa place affichée
+    // — c'est le rappel `nudge`, qui reçoit le rect affiché, qui traduit
+    // les pixels en fractions. Les répétitions de la touche agissent
+    // (event.repeat ne filtre pas) : la sauvegarde débouncée des onglets
+    // les regroupe en un seul envoi.
+    if (nudge) {
+        const STEP_KEYS = {
+            ArrowLeft: [-1, 0],
+            ArrowRight: [1, 0],
+            ArrowUp: [0, -1],
+            ArrowDown: [0, 1],
+        };
+        document.addEventListener('keydown', (event) => {
+            if (!host.classList.contains(editingClass) || isBusy()) return;
+            // Dans un champ, les flèches gardent leur rôle natif (curseur,
+            // groupe radio de la grille d'emplacements…).
+            if (event.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+            const step = STEP_KEYS[event.key];
+            if (!step) return;
+            const id = selectedId();
+            const rect = id && getRect(id);
+            if (!rect) return;
+            event.preventDefault();
+            const scale = event.shiftKey ? 10 : 1;
+            nudge(id, step[0] * scale, step[1] * scale, rect);
+        });
+    }
 }

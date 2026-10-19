@@ -136,7 +136,10 @@ aussitôt pour les actions discrètes.
 `panel_interactions.js › bindPanelDrag`, la même mécanique que les panneaux —
 position libre, aimantation à 48 px (repère `.image-snap-ghost`, Alt pour s'en
 passer), poignées sur les bords qui bougent, coin haut-gauche épinglé pendant
-le redimensionnement d'une image libre (`pinImageCorner`).
+le redimensionnement d'une image libre (`pinImageCorner`). Au clavier, les
+flèches déplacent l'image sélectionnée de 1 px (10 px avec Maj ; une image
+ancrée devient libre à sa place affichée) — mécanique partagée avec les
+Stats, hors champs de formulaire.
 
 **Export/import JSON** (menu Bibliothèque) : `{ format: 'mygcflow-images',
 version: 1, items, files }`, les fichiers **embarqués** en data URL. À

@@ -918,6 +918,20 @@ function bindDragAndDrop() {
         commitSnap: (id, anchor) => commitNow(withSnappedAnchor(id, anchor)),
         commitResize: (id, patch) => commitNow(withPositionPatch(id, patch)),
         onRelease: () => renderForm(),
+        selectedId: () => selectedId,
+        // Flèches : 1 px (10 avec Maj) depuis la place affichée — un
+        // panneau ancré devient libre là où il est. Debounce (PAS
+        // immediate) : les répétitions de la touche se regroupent en un
+        // seul PUT ; le formulaire suit (mode libre, marges désactivées).
+        nudge: (id, dxPx, dyPx, rect) => {
+            const clamp01 = (v) => Math.max(0, Math.min(1, v));
+            const freeW = rect.container.width - rect.width;
+            const freeH = rect.container.height - rect.height;
+            const x = freeW > 0 ? clamp01((rect.x + dxPx) / freeW) : 0;
+            const y = freeH > 0 ? clamp01((rect.y + dyPx) / freeH) : 0;
+            commit(withFreePosition(id, x, y), STATS_SAVE_STATUS);
+            renderForm();
+        },
     });
 }
 

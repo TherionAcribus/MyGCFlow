@@ -762,6 +762,29 @@ function bindDragAndDrop() {
         }),
         commitResize: (id, patch) => updateItem(id, (item) => Object.assign(item.position, patch)),
         onRelease: () => renderForm(),
+        selectedId: () => selectedId,
+        // Flèches : 1 px (10 avec Maj) depuis la place affichée — une image
+        // ancrée devient libre là où elle est. Sauvegarde débouncée (PAS
+        // immediate) : les répétitions de la touche se regroupent en un
+        // seul PUT. En mode libre, le formulaire affiche imageFreeHint et
+        // désactive les marges : il est resynchronisé.
+        nudge: (id, dxPx, dyPx, rect) => {
+            const clamp01 = (v) => Math.max(0, Math.min(1, v));
+            const freeW = rect.container.width - rect.width;
+            const freeH = rect.container.height - rect.height;
+            const x = freeW > 0 ? clamp01((rect.x + dxPx) / freeW) : 0;
+            const y = freeH > 0 ? clamp01((rect.y + dyPx) / freeH) : 0;
+            updateItems((items) => {
+                const item = items.find((i) => i.id === id);
+                if (item) {
+                    item.position.mode = 'free';
+                    item.position.x = x;
+                    item.position.y = y;
+                }
+                return items;
+            }, IMAGES_SAVE_STATUS);
+            renderForm();
+        },
     });
 }
 
