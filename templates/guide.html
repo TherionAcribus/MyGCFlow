@@ -55,8 +55,11 @@
                 <a href="#stats" class="guide-nav-link">
                     <span class="nav-num">4</span>{{ _("Stats") }}
                 </a>
+                <a href="#images" class="guide-nav-link">
+                    <span class="nav-num">5</span>{{ _("Images") }}
+                </a>
                 <a href="#settings" class="guide-nav-link">
-                    <span class="nav-num">5</span>{{ _("Préférences") }}
+                    <span class="nav-num">6</span>{{ _("Préférences") }}
                 </a>
 
                 <div class="guide-nav-section-title">{{ _("Autre source") }}</div>
@@ -106,7 +109,7 @@
 
                 <div class="guide-callout info">
                     <i class="ti ti-info-circle"></i>
-                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation & vidéo") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Préférences") }}</span> {{ _("correspondent aux 4 sections de ce guide.") }}</div>
+                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation & vidéo") }}</span>, <span class="ui-chip">{{ _("Stats") }}</span>, <span class="ui-chip">{{ _("Images") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Préférences") }}</span> {{ _("correspondent aux sections de ce guide.") }}</div>
                 </div>
 
                 <div class="guide-callout tip">
@@ -334,7 +337,7 @@
                 </ol>
             </section>
 
-            <!-- ===================== 4. PRÉFÉRENCES ===================== -->
+            <!-- ===================== 4. STATS ===================== -->
             <section id="stats" class="guide-section">
                 <div class="guide-section-head">
                     <span class="sec-badge"><i class="ti ti-chart-bar"></i></span>
@@ -372,10 +375,40 @@
                 </ol>
             </section>
 
+            <!-- ===================== 5. IMAGES ===================== -->
+            <section id="images" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-photo"></i></span>
+                    <h2>5. {{ _("Images") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Posez sur la carte votre avatar, le logo de votre association ou toute autre image : elle apparaît dans l'aperçu et dans la vidéo. Les images se règlent dans l'onglet") }} <span class="ui-chip">{{ _("Images") }}</span>{{ _(", enregistré automatiquement quel que soit le thème. Elles sont communes au mode principal et au mode Évolution.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Ajoutez une image") }}</h3>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter une image") }}</span> {{ _("accepte les fichiers PNG, JPEG, WebP ou GIF ; vous pouvez aussi déposer le fichier sur l'onglet. Quatre images au maximum.") }}</p>
+                        <p>{{ _("L'image est préparée à l'envoi : redressée selon l'orientation de la photo, réduite à 1024 pixels, débarrassée de ses métadonnées. Sa transparence est conservée. Le menu") }} <span class="ui-chip"><i class="ti ti-library-photo"></i> {{ _("Bibliothèque") }}</span> {{ _("retrouve les images déjà envoyées, pour les reposer sans les renvoyer.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Placez-la et réglez son apparence") }}</h3>
+                        <p>{{ _("Comme pour les panneaux de stats : un emplacement, des marges et une largeur ; la hauteur suit les proportions de l'image. Choisissez une forme — rectangle, coins arrondis ou rond, idéal pour un avatar —, l'opacité, un fond et une ombre portée.") }}</p>
+                        <p>{{ _("Tant que l'onglet Images est ouvert, vous pouvez glisser une image sur la carte : lâchée près d'un emplacement, elle s'y range ; ailleurs, elle reste où vous la posez. Maintenez Alt pour vous passer de cet aimantage. Ses bords se tirent pour l'agrandir.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="ti ti-info-circle"></i>
+                            <div>{{ _("Le titre et les infos restent prioritaires : les images les contournent, et les panneaux de stats contournent à leur tour les images.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Partagez votre mise en page") }}</h3>
+                        <p>{{ _("Pour partager votre mise en page, utilisez l'export du menu") }} <span class="ui-chip"><i class="ti ti-library-photo"></i> {{ _("Bibliothèque") }}</span> {{ _(": il enregistre vos images et leurs réglages dans un seul fichier JSON, à réimporter sur un autre ordinateur.") }}</p>
+                    </li>
+                </ol>
+            </section>
+
             <section id="settings" class="guide-section">
                 <div class="guide-section-head">
                     <span class="sec-badge"><i class="ti ti-settings"></i></span>
-                    <h2>5. {{ _("Préférences") }}</h2>
+                    <h2>6. {{ _("Préférences") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application dans l'onglet") }} <span class="ui-chip">{{ _("Préférences") }}</span>.</p>
 

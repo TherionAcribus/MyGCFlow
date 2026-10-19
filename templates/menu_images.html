@@ -39,7 +39,15 @@
                                 <p id="imagesLibraryEmpty" class="dropdown-item-text text-muted small mb-0">{{ _("Aucune image envoyée pour l'instant.") }}</p>
                                 <div id="imagesLibraryList" class="images-library-grid"></div>
                                 <p id="imagesLibraryUsage" class="dropdown-item-text text-muted small mb-0"></p>
+                                <hr class="dropdown-divider">
+                                <!-- Export : réglages ET fichiers (base64) dans un seul JSON,
+                                     réimportable sur un autre ordinateur. -->
+                                <button type="button" class="dropdown-item" data-images-export>
+                                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter les images (JSON)") }}</button>
+                                <button type="button" class="dropdown-item" data-images-import>
+                                    <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Importer des images…") }}</button>
                             </div>
+                            <input type="file" id="imagesImportFile" accept=".json,application/json" hidden>
                         </div>
                         <button type="button" id="btnImagesAdd" class="btn btn-sm btn-primary">
                             <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter une image") }}

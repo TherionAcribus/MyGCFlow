@@ -325,3 +325,52 @@ test('glisser une image : aimantée près d’un emplacement, libre ailleurs, po
   const after = await canvas.boundingBox();
   expect(Math.abs((after.x + after.width) - (before.x + before.width))).toBeLessThan(2);
 });
+
+test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0020', file: logo.file, name: 'Logo du club', position: { anchor: 'top-left', width: 120 },
+      style: { shape: 'circle' } },
+  ] } });
+  await openImagesTab(page);
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+
+  // Export : réglages + image embarquée.
+  await page.locator('#btnImagesLibrary').click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('[data-images-export]').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('mygcflow-images.json');
+  const exported = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
+  expect(exported.format).toBe('mygcflow-images');
+  expect(exported.items).toHaveLength(1);
+  expect(exported.files[logo.file]).toMatch(/^data:image\/jpeg;base64,/);
+
+  // « Autre machine » : liste vidée, fichier retiré du serveur.
+  await putSettings(page, { images: { enabled: true, items: [] } });
+  expect((await page.request.post('/api/images/delete', { data: { file: logo.file } })).ok()).toBe(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#images"]').click();
+  await expect(page.locator('#imagesList li')).toHaveCount(0);
+
+  // Import : l'image revient, renvoyée au serveur, avec ses réglages.
+  await page.locator('#imagesImportFile').setInputFiles({
+    name: 'mygcflow-images.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(exported)),
+  });
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('#imagesList li').first()).toContainText('Logo du club');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: '1 image(s) importée(s)' })).toBeVisible();
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  const saved = (await savedImages(page)).items[0];
+  expect(saved.style.shape).toBe('circle');
+  expect(saved.position.anchor).toBe('top-left');
+  expect((await page.request.get(`/api/images/${saved.file}`)).ok()).toBe(true);
+
+  // Fichier invalide : refusé sans toucher la liste.
+  await page.locator('#imagesImportFile').setInputFiles({
+    name: 'faux.json', mimeType: 'application/json', buffer: Buffer.from('{"rien": true}'),
+  });
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: "fichier d'images invalide" })).toBeVisible();
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+});

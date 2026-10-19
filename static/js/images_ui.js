@@ -247,7 +247,121 @@ async function renderLibrary() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Export / import JSON : réglages ET fichiers
+// ---------------------------------------------------------------------------
+
+// Format du fichier : les images y sont embarquées (data URL), sans quoi un
+// export ouvert sur un autre ordinateur n'afficherait que des images
+// manquantes. Au plus quatre images d'environ 1024 px : le fichier reste
+// raisonnable.
+const EXPORT_FORMAT = 'mygcflow-images';
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+    });
+}
+
+// data URL d'image → Blob ; null si ce n'en est pas une.
+function dataUrlToBlob(dataUrl) {
+    const m = /^data:(image\/(?:png|jpeg|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/.exec(String(dataUrl || ''));
+    if (!m) return null;
+    try {
+        const bytes = atob(m[2].replace(/\s+/g, ''));
+        const buffer = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
+        return new Blob([buffer], { type: m[1] });
+    } catch (_) {
+        return null;
+    }
+}
+
+async function exportImages() {
+    const items = currentSettings().items;
+    const files = {};
+    for (const file of new Set(items.map((item) => item.file).filter(Boolean))) {
+        try {
+            const response = await fetch(pkg.imageUrl(file));
+            if (response.ok) files[file] = await blobToDataUrl(await response.blob());
+        } catch (_) { /* image absente : l'entrée reste, marquée manquante */ }
+    }
+    const payload = { format: EXPORT_FORMAT, version: 1, items, files };
+    downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }),
+        'mygcflow-images.json');
+}
+
+// Accepte un tableau d'images, { items: [...] } (export) ou un bloc
+// { images: { items } } de préférences complètes.
+function importedItems(data) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    if (Array.isArray(data?.images?.items)) return data.images.items;
+    return null;
+}
+
+async function importImages(file) {
+    let data = null;
+    try {
+        data = JSON.parse(await file.text());
+    } catch (_) { /* JSON illisible → toast d'erreur plus bas */ }
+    const items = importedItems(data);
+    // Fichier lisible mais sans image exploitable : refusé sans toucher la
+    // liste courante (l'import la remplacerait par du vide).
+    if (!items || !items.some((raw) => raw && typeof raw === 'object' && !Array.isArray(raw))) {
+        pkg.showToast?.(pkg.t("Import impossible : fichier d'images invalide"), 'error', pkg.t('Images'), 5000);
+        return;
+    }
+    // Chaque image embarquée repasse par le serveur, qui la normalise (et
+    // retire ses métadonnées) ; son nom peut changer, les entrées suivent.
+    const embedded = data && typeof data.files === 'object' && data.files ? data.files : {};
+    const renamed = {};
+    for (const name of new Set(items.map((raw) => raw?.file).filter((n) => typeof n === 'string' && n))) {
+        const blob = dataUrlToBlob(embedded[name]);
+        if (!blob) continue;
+        const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+        const saved = await uploadImage(new File([blob], `${name.replace(/\.[^.]+$/, '')}.${ext}`, { type: blob.type }));
+        if (saved) renamed[name] = saved.file;
+    }
+    const next = items.map((raw) => (raw && typeof raw === 'object' && raw.file in renamed
+        ? { ...raw, file: renamed[raw.file] }
+        : raw));
+    const previous = currentSettings().items;
+    const applied = commit({ ...currentSettings(), items: next }, IMAGES_SAVE_STATUS, { immediate: true });
+    selectedId = applied.items[0]?.id || null;
+    renderImagesTab();
+    pkg.showActionToast?.(
+        pkg.t('${count} image(s) importée(s)', { count: applied.items.length }),
+        { label: 'Annuler', onClick: () => {
+            commit({ ...currentSettings(), items: previous }, IMAGES_SAVE_STATUS, { immediate: true });
+            selectedId = previous[0]?.id || null;
+            renderImagesTab();
+        } });
+}
+
 async function onLibraryClick(event) {
+    if (event.target.closest('[data-images-export]')) {
+        exportImages();
+        return;
+    }
+    if (event.target.closest('[data-images-import]')) {
+        $('imagesImportFile')?.click();
+        return;
+    }
     const remove = event.target.closest('[data-library-delete]');
     if (remove) {
         // Le menu reste ouvert : on retire puis on rafraîchit la grille.
@@ -648,6 +762,11 @@ export function initImagesTab() {
         else addFromFile(file);
     });
     $('btnImagesLibrary')?.addEventListener('show.bs.dropdown', renderLibrary);
+    $('imagesImportFile')?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (file) importImages(file);
+    });
     $('imagesLibraryMenu')?.addEventListener('click', onLibraryClick);
     const list = $('imagesList');
     list?.addEventListener('click', onListClick);
