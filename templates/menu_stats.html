@@ -338,10 +338,6 @@
                                     <label class="form-label" for="inputStatsDy">{{ _("Marge verticale (px)") }}</label>
                                     <input id="inputStatsDy" type="number" class="form-control" min="0" max="2000" step="1" aria-describedby="helpStatsMargins">
                                 </div>
-                                {# Marges de coin : communes à la pile (shareCornerMargins, stats_model.mjs). #}
-                                <div class="col-12">
-                                    <small id="helpStatsMargins" class="form-hint text-muted">{{ _("Communes à tous les panneaux de ce coin, empilés à 8 px d’écart.") }}</small>
-                                </div>
                                 <div class="col-6">
                                     <label class="form-label" for="inputStatsWidth">{{ _("Largeur (px)") }}</label>
                                     <input id="inputStatsWidth" type="number" class="form-control" min="120" max="1200" step="10">
@@ -352,7 +348,8 @@
                                     <small id="helpStatsHeight" class="form-hint text-muted">{{ _("Vide : hauteur automatique ; ignoré pour les grilles (cases carrées).") }}</small>
                                 </div>
                             </div>
-                            <small class="form-hint text-muted d-block mt-1">{{ _("Les panneaux qui partagent un coin s'empilent automatiquement et contournent le titre et les infos ; la marge verticale sert alors d'espacement avec le panneau précédent.") }}</small>
+                            {# Marges de coin : communes à la pile (shareCornerMargins, stats_model.mjs). #}
+                            <small id="helpStatsMargins" class="form-hint text-muted d-block mt-1">{{ _("Les panneaux d’un même coin partagent ses marges, s’empilent à 8 px d’écart et contournent le titre et les infos.") }}</small>
                         </div>
                         <div class="col-12">
                             <div id="statsFreePosition" class="alert alert-info py-2 px-3 mb-0 small align-items-center gap-2" hidden>
@@ -360,7 +357,7 @@
                                 <span class="flex-grow-1">{{ _("Position libre : ce panneau a été glissé sur la carte.") }}</span>
                                 <button type="button" id="btnStatsBackToAnchor" class="btn btn-sm btn-outline-secondary">{{ _("Revenir au coin d'ancrage") }}</button>
                             </div>
-                            <small class="form-hint text-muted d-block mt-1">{{ _("Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la carte pour le placer librement.") }}</small>
+                            <small class="form-hint text-muted d-block mt-1">{{ _("Tant que cet onglet est ouvert, glissez un panneau sur la carte : lâché près d’un coin, il rejoint sa pile ; ailleurs, il reste en position libre (Alt : sans aimantation).") }}</small>
                         </div>
                         </div>
                     </details>

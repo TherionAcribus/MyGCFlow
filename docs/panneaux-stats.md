@@ -324,7 +324,21 @@ dans le cadre à toute taille d'aperçu ou de vidéo. Un panneau libre sort de s
 pile. Il s'obtient en glissant le panneau sur la carte tant que l'onglet Stats
 est ouvert et qu'aucune animation ne tourne (classe `stats-editing` sur
 `#mapWithFrames`, qui rend les canvas saisissables) ; choisir un coin dans le
-formulaire le remet en mode `anchor`. Pendant le glisser, chaque `pointermove`
+formulaire le remet en mode `anchor`.
+
+**Aimantation.** Au début du glisser, `getStatsSnapTargets(id)`
+(stats_panels.js) calcule pour chaque coin — sauf `middle-center`, comme
+« Réorganiser » — le rect que prendrait le panneau s'il y était ancré :
+`layoutPanels` rejoué avec le panneau déplacé dans ce coin, marges de la pile
+reprises, titre et infos contournés, place dans la pile fixée par l'ordre de la
+liste ; les coins où il déborderait ne sont pas proposés. Pendant le geste, le
+panneau suit le pointeur et un repère (`.stats-snap-ghost`, contour en
+pointillés au-dessus des panneaux, sous le titre et les infos) montre
+l'emplacement le plus proche à moins de 48 px (coin haut-gauche contre coin
+haut-gauche). Lâché là, le panneau rejoint la pile (`withSnappedAnchor` :
+mode `anchor`, marges adoptées) ; ailleurs, il passe en position libre. Alt
+maintenue désactive l'aimantation. Un petit glisser involontaire d'un panneau
+ancré le ramène donc dans sa pile au lieu de le détacher. Pendant le glisser, chaque `pointermove`
 applique la position en place via `previewStatsPanelPosition` — sans
 renormaliser le bloc ni toucher `settingsRev`, ce qui éviterait de reconstruire
 les textes alternatifs à chaque mouvement ; le `commit` au dépôt renormalise

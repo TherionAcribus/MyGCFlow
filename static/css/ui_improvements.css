@@ -3357,6 +3357,22 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 #mapWithFrames.stats-editing > .stats-panel.is-resizing-both.is-resizing-nesw {
     cursor: nesw-resize;
 }
+/* Aimantation : emplacement que prendra le panneau glissé s'il est lâché là
+   (stats_ui.js › showSnapGhost). Au-dessus des panneaux (z-index 90) : le
+   panneau déplacé recouvre presque toujours sa destination, qui resterait
+   sinon invisible ; sous le titre et les infos (100). Fond léger, jamais
+   saisissable. */
+#mapWithFrames > .stats-snap-ghost {
+    position: absolute;
+    z-index: 95;
+    pointer-events: none;
+    border: 2px dashed var(--color-accent, #0072c6);
+    border-radius: 10px;
+    background: rgba(var(--color-accent-rgb, 0, 114, 198), 0.18);
+}
+#mapWithFrames > .stats-snap-ghost[hidden] {
+    display: none;
+}
 /* Panneau sélectionné dans la liste : liseré franc de la couleur d'accent. */
 #mapWithFrames.stats-editing > .stats-panel.is-selected {
     outline: 2px solid var(--color-accent, #0072c6);

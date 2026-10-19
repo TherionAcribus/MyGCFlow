@@ -23,6 +23,7 @@ import {
     DT_LABELS,
     EVOLUTION_METRICS_BY_KIND,
     OTHERS_KEY,
+    STATS_ANCHORS,
     STATS_DEFAULTS,
     STATS_HEIGHT_RANGE,
     STATS_METRICS_BY_KIND,
@@ -1224,6 +1225,62 @@ function refreshAltText(node, panel, view, key) {
     node.alt.appendChild(list);
 }
 
+// Entrée de layoutPanels pour un panneau : sa position et sa taille mesurée
+// à la largeur effective (bornée au conteneur).
+function layoutItem(panel, view) {
+    const width = Math.min(panel.position.width, containerSize.width);
+    return {
+        id: panel.id,
+        mode: panel.position.mode,
+        anchor: panel.position.anchor,
+        dx: panel.position.dx,
+        dy: panel.position.dy,
+        x: panel.position.x,
+        y: panel.position.y,
+        width,
+        // Hauteur imposée optionnelle — les grilles l'ignorent même si
+        // une valeur était stockée (cases carrées).
+        height: measureStatsPanel(view, panel.style, Math.max(1, width),
+            panel.kind === 'grid' ? null : panel.position.height),
+    };
+}
+
+// Coins proposés à l'aimantation : tous sauf le centre de la carte, comme
+// « Réorganiser » — un panneau posé au milieu y reste en position libre.
+const SNAP_ANCHORS = STATS_ANCHORS.filter((anchor) => anchor !== 'middle-center');
+
+// Aimantation du glisser-déposer (stats_ui.js › bindDragAndDrop) : pour
+// chaque coin, le rect que prendrait le panneau s'il y était ancré — marges
+// de la pile reprises comme le ferait adoptCornerMargins, titre et infos
+// contournés, place dans la pile fixée par l'ordre de la liste. Calculé une
+// fois au début du geste : les autres panneaux ne bougent plus ensuite. Les
+// coins où le panneau déborderait du cadre ne sont pas proposés.
+export function getStatsSnapTargets(id) {
+    if (layoutDirty || drawDirty) flush();
+    const panels = visiblePanels();
+    const panel = panels.find((p) => p.id === id);
+    if (!panel) return [];
+    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const items = panels.map((p) => layoutItem(p, buildView(p)));
+    const index = panels.indexOf(panel);
+    const targets = [];
+    for (const anchor of SNAP_ANCHORS) {
+        const mate = list.find((p) => p.id !== id && p.position.mode === 'anchor' && p.position.anchor === anchor);
+        const candidate = {
+            ...items[index],
+            mode: 'anchor',
+            anchor,
+            dx: mate ? mate.position.dx : panel.position.dx,
+            dy: mate ? mate.position.dy : panel.position.dy,
+        };
+        const trial = items.map((item, i) => (i === index ? candidate : item));
+        const rect = layoutPanels(trial, containerSize, overlayRectsCache).get(id);
+        if (!rect || rect.overflow) continue;
+        targets.push({ anchor, x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+    }
+    return targets;
+}
+
 function flush() {
     drawDirty = false;
     const host = container();
@@ -1256,27 +1313,13 @@ function flush() {
         : indexRevision();
     const a11yBase = `${mode}|${settingsRev}|${altIndexRev}|${altState?.revision || 0}`;
     const items = panels.map((panel) => {
-        const width = Math.min(panel.position.width, containerSize.width);
-        // Hauteur imposée optionnelle — les grilles l'ignorent même si
-        // une valeur était stockée (cases carrées).
-        const height = measureStatsPanel(views.get(panel.id), panel.style, Math.max(1, width),
-            panel.kind === 'grid' ? null : panel.position.height);
+        const item = layoutItem(panel, views.get(panel.id));
         if (resizePin?.id === panel.id && panel.position.mode === 'free') {
             const fraction = (offset, room) => (room > 0 ? Math.max(0, Math.min(1, offset / room)) : 0);
-            panel.position.x = fraction(resizePin.left, containerSize.width - width);
-            panel.position.y = fraction(resizePin.top, containerSize.height - height);
+            item.x = panel.position.x = fraction(resizePin.left, containerSize.width - item.width);
+            item.y = panel.position.y = fraction(resizePin.top, containerSize.height - item.height);
         }
-        return {
-            id: panel.id,
-            mode: panel.position.mode,
-            anchor: panel.position.anchor,
-            dx: panel.position.dx,
-            dy: panel.position.dy,
-            x: panel.position.x,
-            y: panel.position.y,
-            width,
-            height,
-        };
+        return item;
     });
     // Les piles de coin contournent le titre et les infos.
     const layout = layoutPanels(items, containerSize, overlayRectsCache);

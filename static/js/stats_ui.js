@@ -877,6 +877,62 @@ function withPositionPatch(id, patch) {
 const withWidth = (id, width) => withPositionPatch(id, { width });
 const withHeight = (id, height) => withPositionPatch(id, { height });
 
+// Dépôt aimanté : le panneau rejoint la pile du coin, avec ses marges.
+function withSnappedAnchor(id, anchor) {
+    const settings = currentSettings();
+    const panels = modePanels(settings).map((panel) => structuredClone(panel));
+    const panel = panels.find((p) => p.id === id);
+    if (panel) {
+        panel.position.mode = 'anchor';
+        panel.position.anchor = anchor;
+        adoptCornerMargins(panel, panels);
+    }
+    return { ...settings, [panelsKey()]: panels };
+}
+
+// Aimantation : un panneau lâché à moins de SNAP_DISTANCE px (coin
+// haut-gauche, repère du conteneur) de l'emplacement qu'il occuperait dans la
+// pile d'un coin y est ancré ; plus loin, il reste en position libre. Alt
+// maintenue pendant le glisser la désactive.
+const SNAP_DISTANCE = 48;
+
+function nearestSnapTarget(targets, left, top) {
+    let best = null;
+    let bestDistance = SNAP_DISTANCE;
+    for (const target of targets) {
+        const distance = Math.hypot(target.x - left, target.y - top);
+        if (distance <= bestDistance) {
+            best = target;
+            bestDistance = distance;
+        }
+    }
+    return best;
+}
+
+// Repère de destination pendant le glisser : contour à l'emplacement exact
+// que prendra le panneau s'il est lâché là. Un seul nœud, réutilisé.
+function showSnapGhost(host, target) {
+    let ghost = host.querySelector(':scope > .stats-snap-ghost');
+    if (!target) {
+        if (ghost) ghost.hidden = true;
+        return;
+    }
+    if (!ghost) {
+        ghost = document.createElement('div');
+        ghost.className = 'stats-snap-ghost';
+        ghost.setAttribute('aria-hidden', 'true');
+        host.appendChild(ghost);
+    }
+    ghost.dataset.anchor = target.anchor;
+    Object.assign(ghost.style, {
+        left: `${Math.round(target.x)}px`,
+        top: `${Math.round(target.y)}px`,
+        width: `${Math.round(target.width)}px`,
+        height: `${Math.round(target.height)}px`,
+    });
+    ghost.hidden = false;
+}
+
 // État ouvert/fermé des sections repliables du formulaire : préférence
 // d'interface locale au navigateur (localStorage), non synchronisée serveur.
 const FORM_SECTIONS_KEY = 'statsFormSections';
@@ -972,6 +1028,9 @@ function bindDragAndDrop() {
             last: null,
             lastWidth: null,
             lastHeight: null,
+            // Emplacements d'aimantation, calculés une fois pour le geste.
+            targets: mode === 'move' ? (pkg.getStatsSnapTargets?.(canvas.dataset.panelId) || []) : [],
+            snap: null,
         };
         canvas.setPointerCapture?.(event.pointerId);
         // Le curseur en ligne posé au survol cède la place à la classe.
@@ -1027,6 +1086,11 @@ function bindDragAndDrop() {
         // Aperçu en direct : la position est écrite en place, sans
         // renormalisation ni envoi — le commit au dépôt fait les deux.
         pkg.previewStatsPanelPosition?.(drag.id, drag.last.x, drag.last.y);
+        // Le panneau suit le pointeur ; le repère montre où il se rangera.
+        const left = drag.last.x * Math.max(0, drag.container.width - drag.width);
+        const top = drag.last.y * Math.max(0, drag.container.height - drag.height);
+        drag.snap = event.altKey ? null : nearestSnapTarget(drag.targets, left, top);
+        showSnapGhost(host, drag.snap);
     });
     const end = (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
@@ -1043,10 +1107,13 @@ function bindDragAndDrop() {
             } else if (drag.lastHeight != null) {
                 commit(withHeight(drag.id, drag.lastHeight), STATS_SAVE_STATUS, { immediate: true });
             }
+        } else if (drag.snap) {
+            commit(withSnappedAnchor(drag.id, drag.snap.anchor), STATS_SAVE_STATUS, { immediate: true });
         } else if (drag.last) {
             commit(withFreePosition(drag.id, drag.last.x, drag.last.y),
                 STATS_SAVE_STATUS, { immediate: true });
         }
+        showSnapGhost(host, null);
         drag = null;
         renderForm();
     };

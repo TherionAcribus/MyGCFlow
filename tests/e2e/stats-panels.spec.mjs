@@ -407,6 +407,67 @@ test('les marges sont celles du coin : communes à la pile, reprises en la rejoi
   await expect(page.locator('#inputStatsDx')).toBeEnabled();
 });
 
+test('aimantation : lâché près d’un coin, un panneau rejoint sa pile ; ailleurs ou avec Alt, il reste libre', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'a1a90001', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left', width: 240 } },
+    { id: 'a1a90002', kind: 'bar', metric: 'cache_type', position: { anchor: 'bottom-right', dx: 30, dy: 24 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const panel = page.locator('canvas.stats-panel[data-panel-id="a1a90001"]');
+  await expect(panel).toBeVisible();
+  const ghost = page.locator('#mapWithFrames > .stats-snap-ghost');
+  const host = await page.locator('#mapWithFrames').boundingBox();
+  const snapTargets = () => page.evaluate(async () =>
+    (await import('/static/js/index.js')).getStatsSnapTargets('a1a90001'));
+  // Glisse le panneau (saisi en son centre) pour que son coin haut-gauche
+  // arrive en (left, top), repère du conteneur.
+  const dragTopLeftTo = async (left, top, { release = true } = {}) => {
+    const box = await panel.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(host.x + left + box.width / 2, host.y + top + box.height / 2, { steps: 10 });
+    if (release) await page.mouse.up();
+  };
+
+  // Coin bas-droit : le panneau, premier de la liste, ouvrira la pile ;
+  // l'emplacement tient compte des marges de la pile (30/24).
+  const target = (await snapTargets()).find((t) => t.anchor === 'bottom-right');
+  expect(target).toBeTruthy();
+  expect((await snapTargets()).some((t) => t.anchor === 'middle-center')).toBe(false);
+  await dragTopLeftTo(target.x - 20, target.y - 10, { release: false });
+  // Pendant le geste : le repère montre la destination exacte.
+  await expect(ghost).toBeVisible();
+  await expect(ghost).toHaveAttribute('data-anchor', 'bottom-right');
+  const ghostBox = await ghost.boundingBox();
+  expect(Math.abs(ghostBox.x - (host.x + target.x))).toBeLessThan(2);
+  expect(Math.abs(ghostBox.y - (host.y + target.y))).toBeLessThan(2);
+  await page.mouse.up();
+  await expect(ghost).toBeHidden();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position)
+    .toMatchObject({ mode: 'anchor', anchor: 'bottom-right', dx: 30, dy: 24 });
+  await expect.poll(async () => {
+    const box = await panel.boundingBox();
+    return Math.abs(box.x - host.x - target.x) < 1 && Math.abs(box.y - host.y - target.y) < 1;
+  }).toBe(true);
+
+  // Au centre de la carte (aucun coin proche) : position libre.
+  const box = await panel.boundingBox();
+  await dragTopLeftTo((host.width - box.width) / 2, (host.height - box.height) / 2, { release: false });
+  await expect(ghost).toBeHidden();
+  await page.mouse.up();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.mode).toBe('free');
+
+  // Alt maintenue : pas d'aimantation, même tout près d'un coin.
+  const again = (await snapTargets()).find((t) => t.anchor === 'bottom-right');
+  await page.keyboard.down('Alt');
+  await dragTopLeftTo(again.x - 10, again.y - 10, { release: false });
+  await expect(ghost).toBeHidden();
+  await page.mouse.up();
+  await page.keyboard.up('Alt');
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.mode).toBe('free');
+});
+
 test('un panneau glissé passe en position libre, choisir un coin l’y ramène', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'dddddd01', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left', width: 240 } },
