@@ -136,6 +136,10 @@ export function buildOverlayCache(scaleFactor) {
             top: borderFor('Top'), right: borderFor('Right'),
             bottom: borderFor('Bottom'), left: borderFor('Left'),
         };
+        const insetPx = (value) => {
+            const m = String(value || '').match(/^\s*(-?\d+(?:\.\d+)?)px\s*$/i);
+            return m ? Math.max(0, Number(m[1]) * scaleFactor) : null;
+        };
         const inlineLeft = el.style.left && el.style.left !== 'auto';
         const inlineRight = el.style.right && el.style.right !== 'auto';
         const inlineTop = el.style.top && el.style.top !== 'auto';
@@ -177,6 +181,15 @@ export function buildOverlayCache(scaleFactor) {
             zIndex: Number.isFinite(parseInt(style.zIndex, 10)) ? parseInt(style.zIndex, 10) : 0,
             leftGap: Math.max(0, x), rightGap,
             topGap: Math.max(0, y), bottomGap,
+            // Gauche ET droite posées : la place offerte au texte est le cadre
+            // moins ces valeurs CSS, pas les écarts mesurés — pour un
+            // cartouche centré par marges auto (left: 0; right: 0;
+            // infos_editor.js), les écarts valent (W − w) / 2 et la place
+            // retomberait à la largeur exacte de la boîte : à l'arrondi près,
+            // le titre passait à la ligne dans la vidéo et pas dans l'aperçu.
+            // Valeur non px (%) : repli sur les écarts, comme avant.
+            leftInset: insetPx(el.style.left) ?? Math.max(0, x),
+            rightInset: insetPx(el.style.right) ?? rightGap,
             horizontalAnchor, verticalAnchor,
             lineGap: (Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor,
         };
@@ -240,7 +253,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
                     boxShadows, textShadows, lineGap,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
                     whiteSpace, clipX, clipY,
-                    leftGap, rightGap, topGap, bottomGap,
+                    leftGap, rightGap, topGap, bottomGap, leftInset, rightInset,
                     horizontalAnchor, verticalAnchor } = cached;
 
             // CSS applique opacity au groupe complet. Dessiner directement chaque primitive
@@ -263,8 +276,9 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const layoutLetterSpacing = nativeLetterSpacing ? 0 : letterSpacing;
 
             const transformedText = transformOverlayText(String(text), textTransform);
-            const leftMargin = horizontalAnchor === 'right' ? 0 : leftGap;
-            const rightMargin = horizontalAnchor === 'left' ? 0 : rightGap;
+            const both = horizontalAnchor === 'both';
+            const leftMargin = horizontalAnchor === 'right' ? 0 : (both ? leftInset : leftGap);
+            const rightMargin = horizontalAnchor === 'left' ? 0 : (both ? rightInset : rightGap);
             const availableBoxWidth = Math.max(1, canvasWidth - leftMargin - rightMargin);
             const horizontalBorders = borders.left.width + borders.right.width;
             const availableTextWidth = Math.max(1, Math.min(w, availableBoxWidth) - horizontalBorders - padL - padR);

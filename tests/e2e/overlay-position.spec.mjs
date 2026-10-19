@@ -171,3 +171,72 @@ test('les piles de stats contournent le titre où qu’il soit', async ({ page }
   await page.locator('label[for="overlayAnchor-top-left"]').click();
   await expect.poll(async () => Math.round((await panelBox('0e01a001')).bottom)).toBe(16);
 });
+
+// Boîte du titre dans l'aperçu (repère du conteneur) et boîte peinte par le
+// rendu vidéo (addOverlaysToCanvas, échelle 2 ; alpha > 150 : le fond du
+// cartouche, sans l'ombre portée). Les infos sont masquées le temps de la
+// mesure pour ne pas entrer dans la zone peinte.
+async function titleBoxes(page) {
+  return page.evaluate(async () => {
+    const m = await import('/static/js/index.js');
+    const host = document.getElementById('mapWithFrames').getBoundingClientRect();
+    const r = document.getElementById('titleFrame').getBoundingClientRect();
+    const dom = { x: r.left - host.left, y: r.top - host.top, w: r.width, h: r.height };
+    const scale = 2;
+    const W = Math.round(host.width * scale);
+    const H = Math.round(host.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const infos = document.getElementById('infosFrame');
+    const infosDisplay = infos.style.display;
+    infos.style.display = 'none';
+    m.invalidateOverlayCache();
+    m.addOverlaysToCanvas(ctx, W, H, scale);
+    infos.style.display = infosDisplay;
+    m.invalidateOverlayCache();
+    const data = ctx.getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (data[(y * W + x) * 4 + 3] <= 150) continue;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x);
+        y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+    }
+    return { dom, video: { x: x0 / scale, y: y0 / scale, w: (x1 - x0 + 1) / scale, h: (y1 - y0 + 1) / scale } };
+  });
+}
+
+function expectSameBox({ dom, video }, label) {
+  for (const k of ['x', 'y', 'w', 'h']) {
+    expect(Math.abs(dom[k] - video[k]), `${label} : ${k} (aperçu ${dom[k]}, vidéo ${video[k]})`).toBeLessThan(2);
+  }
+}
+
+test('la vidéo dessine le titre à sa place de l’aperçu : centré, en coin, libre', async ({ page }) => {
+  await openTitles(page);
+  await page.locator('#inputTitle').fill('Mes trouvailles 2026');
+
+  // Centré : avant correction, la place offerte au texte dans la vidéo
+  // retombait à la largeur exacte de la boîte et le titre passait à la ligne.
+  await page.locator('label[for="overlayAnchor-top-center"]').click();
+  await page.locator('#gcCssMarginY').fill('30');
+  await expect.poll(async () => Math.round((await titleBoxes(page)).dom.y)).toBe(30);
+  expectSameBox(await titleBoxes(page), 'centré');
+
+  await page.locator('label[for="overlayAnchor-bottom-right"]').click();
+  await expect.poll(async () => Math.round((await titleBoxes(page)).dom.x) > 100).toBe(true);
+  expectSameBox(await titleBoxes(page), 'en bas à droite');
+
+  const frame = page.locator('#titleFrame');
+  const host = await page.locator('#mapWithFrames').boundingBox();
+  const box = await frame.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(host.x + host.width * 0.45, host.y + host.height * 0.5, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator('#inputTitleCss')).toHaveValue(/%/);
+  expectSameBox(await titleBoxes(page), 'libre');
+});
