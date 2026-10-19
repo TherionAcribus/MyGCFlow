@@ -786,6 +786,96 @@ main.fullscreen-mode ~ .tooltip {
        chargement) — rejouée à chaque insertion. */
     animation: stats-panel-in 0.28s ease-out;
 }
+/* Onglet Images (images_ui.js) : vignettes sur damier (la transparence se
+   voit), bibliothèque en grille, zone de dépôt d'un fichier sur la liste. */
+.images-thumb,
+.images-library-item img,
+.image-form-preview {
+    object-fit: contain;
+    background: repeating-conic-gradient(rgba(127, 127, 127, 0.25) 0% 25%, transparent 0% 50%) 50% / 12px 12px;
+    border-radius: 4px;
+}
+.images-thumb {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+}
+.images-thumb-missing {
+    font-size: 1.4rem;
+    width: 32px;
+    text-align: center;
+}
+.image-form-preview {
+    width: 96px;
+    height: 96px;
+    flex: 0 0 auto;
+}
+.images-library {
+    min-width: 260px;
+    padding: 0.5rem;
+}
+.images-library-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 56px);
+    gap: 0.4rem;
+}
+.images-library-grid:empty {
+    display: none;
+}
+.images-library-cell {
+    position: relative;
+}
+.images-library-item {
+    display: block;
+    width: 56px;
+    height: 56px;
+    padding: 2px;
+    border: 1px solid var(--tblr-border-color, rgba(127, 127, 127, 0.4));
+    border-radius: 6px;
+    background: transparent;
+}
+.images-library-item:hover:not(:disabled),
+.images-library-item:focus-visible {
+    border-color: var(--color-accent, #0072c6);
+}
+.images-library-item:disabled {
+    opacity: 0.45;
+}
+.images-library-item img {
+    width: 100%;
+    height: 100%;
+}
+.images-library-remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    line-height: 1;
+    font-size: 0.75rem;
+    background: var(--tblr-bg-surface, #fff);
+    border: 1px solid var(--tblr-border-color, rgba(127, 127, 127, 0.4));
+}
+#imagesListCard {
+    position: relative;
+}
+.images-drop-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--color-accent, #0072c6);
+    border-radius: inherit;
+    background: rgba(var(--color-accent-rgb, 0, 114, 198), 0.12);
+    font-weight: 600;
+    pointer-events: none;
+}
+#imagesListCard.is-dropping .images-drop-overlay {
+    display: flex;
+}
 /* Images de l'utilisateur (onglet Images, images_panels.js) : au-dessus des
    panneaux de stats (90), sous le titre et les infos (100), comme dans la
    vidéo. L'ombre déborde de la boîte : CSS ici, shadowBlur dans la vidéo,
@@ -3338,10 +3428,11 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     opacity: 1;
 }
 
-/* Onglet Stats ouvert, au repos : les panneaux se saisissent à la souris
-   (stats_ui.js › bindDragAndDrop). Hors de ce mode, ils laissent passer les
-   événements vers la carte. */
-#mapWithFrames.stats-editing > .stats-panel {
+/* Onglet Stats (Images) ouvert, au repos : les panneaux (les images) se
+   saisissent à la souris (panel_interactions.js › bindPanelDrag). Hors de ce
+   mode, ils laissent passer les événements vers la carte. */
+#mapWithFrames.stats-editing > .stats-panel,
+#mapWithFrames.images-editing > .image-panel {
     pointer-events: auto;
     /* Sans cela, un geste tactile sur le panneau est pris pour un
        défilement au lieu d'un glisser/redimensionner. */
@@ -3350,35 +3441,40 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     outline: 1px dashed rgba(255, 255, 255, 0.7);
     outline-offset: 2px;
 }
-#mapWithFrames.stats-editing > .stats-panel.is-dragging {
+#mapWithFrames.stats-editing > .stats-panel.is-dragging,
+#mapWithFrames.images-editing > .image-panel.is-dragging {
     cursor: grabbing;
     outline-style: solid;
 }
 /* Poignées de redimensionnement sur les bords qui bougent avec la taille :
    droit/bas, ou gauche/haut pour un panneau ancré à droite/en bas
-   (stats_ui.js › resizeEdges) ; le coin entre les deux règle les deux axes,
-   en diagonale nesw quand il est en haut-droit ou en bas-gauche (les
-   curseurs sont aussi posés en ligne au survol par stats_ui.js, qui sait où
+   (panel_interactions.js › resizeEdges) ; le coin entre les deux règle les
+   deux axes, en diagonale nesw quand il est en haut-droit ou en bas-gauche
+   (les curseurs sont aussi posés en ligne au survol, le module sait où
    pointe le curseur). */
-#mapWithFrames.stats-editing > .stats-panel.is-resizing {
+#mapWithFrames.stats-editing > .stats-panel.is-resizing,
+#mapWithFrames.images-editing > .image-panel.is-resizing {
     cursor: ew-resize;
     outline-style: solid;
 }
-#mapWithFrames.stats-editing > .stats-panel.is-resizing-h {
+#mapWithFrames.stats-editing > .stats-panel.is-resizing-h,
+#mapWithFrames.images-editing > .image-panel.is-resizing-h {
     cursor: ns-resize;
 }
-#mapWithFrames.stats-editing > .stats-panel.is-resizing-both {
+#mapWithFrames.stats-editing > .stats-panel.is-resizing-both,
+#mapWithFrames.images-editing > .image-panel.is-resizing-both {
     cursor: nwse-resize;
 }
-#mapWithFrames.stats-editing > .stats-panel.is-resizing-both.is-resizing-nesw {
+#mapWithFrames.stats-editing > .stats-panel.is-resizing-both.is-resizing-nesw,
+#mapWithFrames.images-editing > .image-panel.is-resizing-both.is-resizing-nesw {
     cursor: nesw-resize;
 }
-/* Aimantation : emplacement que prendra le panneau glissé s'il est lâché là
-   (stats_ui.js › showSnapGhost). Au-dessus des panneaux (z-index 90) : le
-   panneau déplacé recouvre presque toujours sa destination, qui resterait
-   sinon invisible ; sous le titre et les infos (100). Fond léger, jamais
-   saisissable. */
-#mapWithFrames > .stats-snap-ghost {
+/* Aimantation : emplacement que prendra l'élément glissé s'il est lâché là
+   (panel_interactions.js › createSnapGhost). Au-dessus des panneaux
+   (z-index 90) : l'élément déplacé recouvre presque toujours sa
+   destination, qui resterait sinon invisible ; sous le titre et les infos
+   (100). Fond léger, jamais saisissable. */
+#mapWithFrames > .panel-snap-ghost {
     position: absolute;
     z-index: 95;
     pointer-events: none;
@@ -3386,7 +3482,7 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     border-radius: 10px;
     background: rgba(var(--color-accent-rgb, 0, 114, 198), 0.18);
 }
-#mapWithFrames > .stats-snap-ghost[hidden] {
+#mapWithFrames > .panel-snap-ghost[hidden] {
     display: none;
 }
 /* Style › Titres ouvert, au repos : le titre et les infos se saisissent à la
@@ -3405,12 +3501,18 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     cursor: grabbing;
     outline-style: solid;
 }
-/* Repère d'aimantation des cartouches : au-dessus d'eux (z-index 100). */
+/* Repère d'aimantation des cartouches : au-dessus d'eux (z-index 100) ;
+   des images : au-dessus d'elles (95). */
 #mapWithFrames > .overlay-snap-ghost {
     z-index: 101;
 }
-/* Panneau sélectionné dans la liste : liseré franc de la couleur d'accent. */
-#mapWithFrames.stats-editing > .stats-panel.is-selected {
+#mapWithFrames > .image-snap-ghost {
+    z-index: 96;
+}
+/* Panneau (image) sélectionné dans la liste : liseré franc de la couleur
+   d'accent. */
+#mapWithFrames.stats-editing > .stats-panel.is-selected,
+#mapWithFrames.images-editing > .image-panel.is-selected {
     outline: 2px solid var(--color-accent, #0072c6);
     outline-offset: 2px;
     box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 0, 114, 198), 0.35);

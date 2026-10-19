@@ -166,3 +166,162 @@ test('un fichier absent ou une image désactivée ne s’affichent pas', async (
   const b = await boxIn(page, 'canvas.image-panel');
   expect(Math.round(b.width)).toBe(Math.round(b.height));
 });
+
+// ---------------------------------------------------------------------------
+// Onglet Images
+// ---------------------------------------------------------------------------
+
+async function savedImages(page) {
+  return (await (await page.request.get('/api/settings')).json()).images;
+}
+
+async function openImagesTab(page) {
+  await openWithFixture(page, '#images');
+  await page.locator('a[href="#images"]').click();
+  await expect(page.locator('#images')).toBeVisible();
+}
+
+test('onglet : ajout d’un fichier, réglages, suppression annulable', async ({ page }) => {
+  await openImagesTab(page);
+  await expect(page.locator('#imagesEmpty')).toBeVisible();
+  await page.locator('#imagesFileInput').setInputFiles(LOGO);
+  const rows = page.locator('#imagesList li');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('logo-opaque');
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  await expect.poll(async () => (await savedImages(page)).items.length).toBe(1);
+  await expect(page.locator('#inputImageName')).toHaveValue('logo-opaque');
+
+  // Emplacement et largeur : appliqués à la carte et enregistrés.
+  await page.locator('label[for="imageAnchor-bottom-left"]').click();
+  await page.locator('#inputImageWidth').fill('100');
+  await page.locator('#inputImageWidth').press('Tab');
+  await expect.poll(async () => (await savedImages(page)).items[0].position)
+    .toMatchObject({ anchor: 'bottom-left', width: 100 });
+  await expect.poll(async () => {
+    const b = await boxIn(page, 'canvas.image-panel');
+    return [Math.round(b.x), Math.round(b.bottom), Math.round(b.width), Math.round(b.height)];
+  }).toEqual([16, 16, 100, 50]);
+  // Centre de colonne : marge horizontale grisée.
+  await page.locator('label[for="imageAnchor-bottom-center"]').click();
+  await expect(page.locator('#inputImageDx')).toBeDisabled();
+
+  // Forme ronde : carrée, rayon des coins sans objet.
+  await page.locator('#selectImageShape').selectOption('circle');
+  await expect.poll(async () => (await savedImages(page)).items[0].style.shape).toBe('circle');
+  await expect(page.locator('#inputImageRadius')).toBeDisabled();
+  await expect.poll(async () => {
+    const b = await boxIn(page, 'canvas.image-panel');
+    return Math.round(b.width) === Math.round(b.height);
+  }).toBe(true);
+
+  // Interrupteur de la ligne : masquée sur la carte, gardée dans la liste.
+  await rows.first().locator('[data-action="toggle"]').uncheck();
+  await expect(page.locator('canvas.image-panel')).toHaveCount(0);
+  await rows.first().locator('[data-action="toggle"]').check();
+  await expect(page.locator('canvas.image-panel')).toHaveCount(1);
+
+  // Suppression, puis « Annuler ».
+  await rows.first().locator('[data-action="delete"]').click();
+  await expect(rows).toHaveCount(0);
+  await expect.poll(async () => (await savedImages(page)).items.length).toBe(0);
+  const toast = page.locator('.gcm-toast.show').filter({ hasText: 'supprimée' });
+  await toast.locator('.gcm-toast-action').filter({ hasText: 'Annuler' }).click();
+  await expect(rows).toHaveCount(1);
+  await expect.poll(async () => (await savedImages(page)).items.length).toBe(1);
+});
+
+test('onglet : bibliothèque des images envoyées et limite de quatre', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const avatar = await upload(page, AVATAR);
+  await openImagesTab(page);
+  for (let n = 1; n <= 4; n++) {
+    await page.locator('#btnImagesLibrary').click();
+    const pick = page.locator(`#imagesLibraryList [data-library-file="${avatar.file}"]`);
+    await expect(pick).toBeVisible();
+    await pick.click();
+    await expect(page.locator('#imagesList li')).toHaveCount(n);
+  }
+  await expect(page.locator('#imagesList li').first()).toContainText('Image 1');
+  await expect(page.locator('#btnImagesAdd')).toBeDisabled();
+  await expect(page.locator('#imagesLimitHint')).toBeVisible();
+  await page.locator('#btnImagesLibrary').click();
+  await expect(page.locator(`#imagesLibraryList [data-library-file="${avatar.file}"]`)).toBeDisabled();
+  // Utilisée : pas de bouton de retrait de la bibliothèque.
+  await expect(page.locator(`#imagesLibraryList [data-library-delete="${avatar.file}"]`)).toHaveCount(0);
+  await expect.poll(async () => (await savedImages(page)).items.length).toBe(4);
+});
+
+test('onglet : un fichier refusé est expliqué, une image manquante signalée', async ({ page }) => {
+  await putSettings(page, { images: { items: [{ id: 'babe0007', file: 'ffffffffffffffff.png', name: 'Ancien logo' }] } });
+  await openImagesTab(page);
+  const row = page.locator('#imagesList li');
+  await expect(row).toContainText('Ancien logo');
+  await expect(row).toContainText('(manquante)');
+  await expect(page.locator('#imageMissingHint')).toBeVisible();
+
+  await page.locator('#imagesFileInput').setInputFiles({
+    name: 'faux.png', mimeType: 'image/png', buffer: Buffer.from('pas une image'),
+  });
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: "n'est pas une image lisible" })).toBeVisible();
+  await expect(row).toHaveCount(1);
+});
+
+test('glisser une image : aimantée près d’un emplacement, libre ailleurs, poignées sur les bords mobiles', async ({ page }) => {
+  // Pas de page ouverte avant openImagesTab : '/' puis '/#images' ne serait
+  // qu'un changement d'ancre, sans recharger les réglages posés entre-temps.
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0010', file: logo.file, position: { anchor: 'bottom-right', width: 160 } },
+  ] } });
+  await openImagesTab(page);
+  const canvas = page.locator('canvas.image-panel');
+  await expect(canvas).toBeVisible();
+  await expect(page.locator('#mapWithFrames')).toHaveClass(/images-editing/);
+  await expect(canvas).toHaveClass(/is-selected/);
+  const ghost = page.locator('#mapWithFrames > .image-snap-ghost');
+  const host = await page.locator('#mapWithFrames').boundingBox();
+  const grabAndMove = async (left, top) => {
+    const box = await canvas.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(host.x + left + box.width / 2, host.y + top + box.height / 2, { steps: 10 });
+  };
+
+  // Vers l'emplacement en bas à gauche (à ~20 px) : repère, puis ancrage.
+  const targets = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getImageSnapTargets('babe0010'));
+  const target = targets.find((t) => t.anchor === 'bottom-left');
+  expect(target).toBeTruthy();
+  await grabAndMove(target.x + 15, target.y - 12);
+  await expect(ghost).toBeVisible();
+  await expect(ghost).toHaveAttribute('data-anchor', 'bottom-left');
+  await page.mouse.up();
+  await expect(ghost).toBeHidden();
+  await expect.poll(async () => (await savedImages(page)).items[0].position)
+    .toMatchObject({ mode: 'anchor', anchor: 'bottom-left' });
+  await expect(page.locator('#imageAnchor-bottom-left')).toBeChecked();
+
+  // Au milieu de la carte : position libre.
+  const box = await canvas.boundingBox();
+  await grabAndMove((host.width - box.width) / 2, (host.height - box.height) / 2);
+  await expect(ghost).toBeHidden();
+  await page.mouse.up();
+  await expect.poll(async () => (await savedImages(page)).items[0].position.mode).toBe('free');
+  await expect(page.locator('#imageFreeHint')).toBeVisible();
+
+  // Ancrée en bas à droite : la poignée de largeur est le bord GAUCHE, le
+  // bord droit ne bouge pas.
+  await page.locator('label[for="imageAnchor-bottom-right"]').click();
+  await expect.poll(async () => (await savedImages(page)).items[0].position.anchor).toBe('bottom-right');
+  const before = await canvas.boundingBox();
+  const midY = before.y + before.height / 2;
+  await page.mouse.move(before.x + 4, midY);
+  await expect(canvas).toHaveCSS('cursor', 'ew-resize');
+  await page.mouse.down();
+  await page.mouse.move(before.x + 4 - 60, midY, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => (await savedImages(page)).items[0].position.width).toBeGreaterThanOrEqual(215);
+  const after = await canvas.boundingBox();
+  expect(Math.abs((after.x + after.width) - (before.x + before.width))).toBeLessThan(2);
+});

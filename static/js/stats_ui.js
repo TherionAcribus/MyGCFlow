@@ -7,6 +7,7 @@ import * as pkg from './index.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
+import { bindPanelDrag } from './panel_interactions.js';
 import {
     CATEGORICAL_METRICS,
     EVOLUTION_COUNTER_ITEMS,
@@ -827,33 +828,6 @@ function syncDragMode() {
     host.classList.toggle('stats-editing', tabOpen && idle);
 }
 
-// Largeur des poignées de redimensionnement, mesurées depuis les bords du
-// canvas : un pointeur qui s'y abaisse change la taille au lieu de déplacer
-// le panneau. La poignée verticale impose position.height (les grilles, à
-// cases carrées, ne l'offrent pas) ; le coin entre les deux règle les deux
-// axes.
-const RESIZE_GRIP = 14;
-
-// Bords qui portent les poignées : ceux qui bougent quand la taille change,
-// pour que la poignée reste sous le pointeur. Ancré à droite (en bas), un
-// panneau grandit vers la gauche (le haut) : poignée sur ce bord, delta du
-// pointeur inversé. Centré (colonne centrale, ligne médiane), il grandit des
-// deux côtés : poignée à droite (en bas), delta doublé. Libre : bords droit
-// et bas, le coin haut-gauche étant épinglé (pinStatsPanelCorner).
-function resizeEdges(rect) {
-    const [vertical, horizontal] = rect.mode === 'free'
-        ? ['top', 'left']
-        : String(rect.anchor || 'top-left').split('-');
-    return {
-        h: horizontal === 'right'
-            ? { side: 'left', factor: -1 }
-            : { side: 'right', factor: horizontal === 'center' ? 2 : 1 },
-        v: vertical === 'bottom'
-            ? { side: 'top', factor: -1 }
-            : { side: 'bottom', factor: vertical === 'middle' ? 2 : 1 },
-    };
-}
-
 function withFreePosition(id, x, y) {
     const settings = currentSettings();
     return {
@@ -874,9 +848,6 @@ function withPositionPatch(id, patch) {
     };
 }
 
-const withWidth = (id, width) => withPositionPatch(id, { width });
-const withHeight = (id, height) => withPositionPatch(id, { height });
-
 // Dépôt aimanté : le panneau rejoint la pile du coin, avec ses marges.
 function withSnappedAnchor(id, anchor) {
     const settings = currentSettings();
@@ -888,49 +859,6 @@ function withSnappedAnchor(id, anchor) {
         adoptCornerMargins(panel, panels);
     }
     return { ...settings, [panelsKey()]: panels };
-}
-
-// Aimantation : un panneau lâché à moins de SNAP_DISTANCE px (coin
-// haut-gauche, repère du conteneur) de l'emplacement qu'il occuperait dans la
-// pile d'un coin y est ancré ; plus loin, il reste en position libre. Alt
-// maintenue pendant le glisser la désactive.
-const SNAP_DISTANCE = 48;
-
-function nearestSnapTarget(targets, left, top) {
-    let best = null;
-    let bestDistance = SNAP_DISTANCE;
-    for (const target of targets) {
-        const distance = Math.hypot(target.x - left, target.y - top);
-        if (distance <= bestDistance) {
-            best = target;
-            bestDistance = distance;
-        }
-    }
-    return best;
-}
-
-// Repère de destination pendant le glisser : contour à l'emplacement exact
-// que prendra le panneau s'il est lâché là. Un seul nœud, réutilisé.
-function showSnapGhost(host, target) {
-    let ghost = host.querySelector(':scope > .stats-snap-ghost');
-    if (!target) {
-        if (ghost) ghost.hidden = true;
-        return;
-    }
-    if (!ghost) {
-        ghost = document.createElement('div');
-        ghost.className = 'stats-snap-ghost';
-        ghost.setAttribute('aria-hidden', 'true');
-        host.appendChild(ghost);
-    }
-    ghost.dataset.anchor = target.anchor;
-    Object.assign(ghost.style, {
-        left: `${Math.round(target.x)}px`,
-        top: `${Math.round(target.y)}px`,
-        width: `${Math.round(target.width)}px`,
-        height: `${Math.round(target.height)}px`,
-    });
-    ghost.hidden = false;
 }
 
 // État ouvert/fermé des sections repliables du formulaire : préférence
@@ -959,166 +887,38 @@ function bindFormSections() {
     });
 }
 
+// Glisser-déposer, aimantation et poignées : panel_interactions.js, avec les
+// rappels propres aux panneaux (aperçu en direct par stats_panels.js,
+// enregistrement par commit). Les grilles, à cases carrées, n'ont pas de
+// poignée de hauteur.
 function bindDragAndDrop() {
-    const host = $('mapWithFrames');
-    if (!host) return;
-    let drag = null;
-    const clamp01 = (v) => Math.max(0, Math.min(1, v));
-    const positionFor = (event) => {
-        const left = event.clientX - drag.base.left - drag.offsetX;
-        const top = event.clientY - drag.base.top - drag.offsetY;
-        const freeW = drag.container.width - drag.width;
-        const freeH = drag.container.height - drag.height;
-        return {
-            x: freeW > 0 ? clamp01(left / freeW) : 0,
-            y: freeH > 0 ? clamp01(top / freeH) : 0,
-        };
-    };
-    // Axes redimensionnables au point (x, y) du canvas : 'resize-w' sur la
-    // poignée de largeur, 'resize-h' sur celle de hauteur (hors grilles),
-    // 'resize-both' au coin qu'elles partagent, 'move' partout ailleurs.
-    const dragModeFor = (canvasRect, edges, resizableH, x, y) => {
-        const nearH = edges.h.side === 'right'
-            ? x >= canvasRect.right - RESIZE_GRIP
-            : x <= canvasRect.left + RESIZE_GRIP;
-        const nearV = resizableH && (edges.v.side === 'bottom'
-            ? y >= canvasRect.bottom - RESIZE_GRIP
-            : y <= canvasRect.top + RESIZE_GRIP);
-        if (nearH && nearV) return 'resize-both';
-        if (nearH) return 'resize-w';
-        if (nearV) return 'resize-h';
-        return 'move';
-    };
-    // Coin haut-gauche ou bas-droit : nwse ; les deux autres : nesw.
-    const diagonalNesw = (edges) => (edges.h.side === 'right') !== (edges.v.side === 'bottom');
-    const cursorFor = (mode, edges) => ({
-        move: 'grab',
-        'resize-w': 'ew-resize',
-        'resize-h': 'ns-resize',
-        'resize-both': diagonalNesw(edges) ? 'nesw-resize' : 'nwse-resize',
-    })[mode];
-    host.addEventListener('pointerdown', (event) => {
-        const canvas = event.target.closest?.('canvas.stats-panel');
-        if (!canvas || event.button !== 0 || !host.classList.contains('stats-editing')) return;
-        if (pkg.isAnimationInProgress?.()) return;
-        const rect = pkg.getStatsPanelRect?.(canvas.dataset.panelId);
-        if (!rect) return;
-        const base = host.getBoundingClientRect();
-        const canvasRect = canvas.getBoundingClientRect();
-        const edges = resizeEdges(rect);
-        const mode = dragModeFor(canvasRect, edges, rect.kind !== 'grid', event.clientX, event.clientY);
-        drag = {
-            id: canvas.dataset.panelId,
-            pointerId: event.pointerId,
-            canvas,
-            base,
-            mode,
-            edges,
-            offsetX: mode === 'move' ? event.clientX - base.left - rect.x : 0,
-            offsetY: mode === 'move' ? event.clientY - base.top - rect.y : 0,
-            startClientX: event.clientX,
-            startClientY: event.clientY,
-            startWidth: canvasRect.width,
-            // Hauteur de départ du glisser : le canvas affiché, qu'elle soit
-            // automatique ou déjà imposée.
-            startHeight: canvasRect.height,
-            width: rect.width,
-            height: rect.height,
-            container: rect.container,
-            last: null,
-            lastWidth: null,
-            lastHeight: null,
-            // Emplacements d'aimantation, calculés une fois pour le geste.
-            targets: mode === 'move' ? (pkg.getStatsSnapTargets?.(canvas.dataset.panelId) || []) : [],
-            snap: null,
-        };
-        canvas.setPointerCapture?.(event.pointerId);
-        // Le curseur en ligne posé au survol cède la place à la classe.
-        canvas.style.cursor = '';
-        canvas.classList.add(mode === 'move' ? 'is-dragging' : 'is-resizing');
-        if (mode === 'resize-h') canvas.classList.add('is-resizing-h');
-        else if (mode === 'resize-both') {
-            canvas.classList.add('is-resizing-both');
-            if (diagonalNesw(edges)) canvas.classList.add('is-resizing-nesw');
-        }
-        if (mode !== 'move' && rect.mode === 'free') pkg.pinStatsPanelCorner?.(drag.id);
-        event.preventDefault();
-        selectedId = drag.id;
-        renderStatsTab();
+    const commitNow = (next) => commit(next, STATS_SAVE_STATUS, { immediate: true });
+    bindPanelDrag({
+        host: $('mapWithFrames'),
+        selector: 'canvas.stats-panel',
+        idOf: (el) => el.dataset.panelId,
+        editingClass: 'stats-editing',
+        ghostClass: 'panel-snap-ghost stats-snap-ghost',
+        isBusy: () => !!pkg.isAnimationInProgress?.(),
+        getRect: (id) => {
+            const rect = pkg.getStatsPanelRect?.(id);
+            return rect ? { ...rect, resizableHeight: rect.kind !== 'grid' } : null;
+        },
+        getSnapTargets: (id) => pkg.getStatsSnapTargets?.(id) || [],
+        previewPosition: (id, x, y) => pkg.previewStatsPanelPosition?.(id, x, y),
+        previewWidth: (id, width) => pkg.previewStatsPanelWidth?.(id, width),
+        previewHeight: (id, height) => pkg.previewStatsPanelHeight?.(id, height),
+        pinCorner: (id) => pkg.pinStatsPanelCorner?.(id),
+        unpinCorner: () => pkg.unpinStatsPanelCorner?.(),
+        onGrab: (id) => {
+            selectedId = id;
+            renderStatsTab();
+        },
+        commitFree: (id, x, y) => commitNow(withFreePosition(id, x, y)),
+        commitSnap: (id, anchor) => commitNow(withSnappedAnchor(id, anchor)),
+        commitResize: (id, patch) => commitNow(withPositionPatch(id, patch)),
+        onRelease: () => renderForm(),
     });
-    host.addEventListener('pointermove', (event) => {
-        if (!drag) {
-            // Survol hors glisser : le curseur annonce les poignées de largeur
-            // et de hauteur (curseur en ligne — le CSS ne connaît pas la
-            // position). La poignée de hauteur n'existe que sur les panneaux
-            // étirables (hors grilles, à cases carrées).
-            const canvas = event.target?.closest?.('canvas.stats-panel');
-            if (canvas && host.classList.contains('stats-editing')) {
-                const rect = pkg.getStatsPanelRect?.(canvas.dataset.panelId);
-                const canvasRect = canvas.getBoundingClientRect();
-                if (rect) {
-                    const edges = resizeEdges(rect);
-                    canvas.style.cursor = cursorFor(
-                        dragModeFor(canvasRect, edges, rect.kind !== 'grid', event.clientX, event.clientY), edges);
-                } else {
-                    canvas.style.cursor = 'grab';
-                }
-            }
-            return;
-        }
-        if (event.pointerId !== drag.pointerId) return;
-        if (drag.mode !== 'move') {
-            // Aperçu en direct de la taille, comme la position : écrite en
-            // place, sans renormalisation ni envoi — le commit les fait. Le
-            // delta suit le bord saisi (inversé à gauche/en haut, doublé
-            // quand le panneau est centré sur cet axe).
-            if (drag.mode !== 'resize-h') {
-                drag.lastWidth = drag.startWidth + (event.clientX - drag.startClientX) * drag.edges.h.factor;
-                pkg.previewStatsPanelWidth?.(drag.id, drag.lastWidth);
-            }
-            if (drag.mode !== 'resize-w') {
-                drag.lastHeight = drag.startHeight + (event.clientY - drag.startClientY) * drag.edges.v.factor;
-                pkg.previewStatsPanelHeight?.(drag.id, drag.lastHeight);
-            }
-            return;
-        }
-        drag.last = positionFor(event);
-        // Aperçu en direct : la position est écrite en place, sans
-        // renormalisation ni envoi — le commit au dépôt fait les deux.
-        pkg.previewStatsPanelPosition?.(drag.id, drag.last.x, drag.last.y);
-        // Le panneau suit le pointeur ; le repère montre où il se rangera.
-        const left = drag.last.x * Math.max(0, drag.container.width - drag.width);
-        const top = drag.last.y * Math.max(0, drag.container.height - drag.height);
-        drag.snap = event.altKey ? null : nearestSnapTarget(drag.targets, left, top);
-        showSnapGhost(host, drag.snap);
-    });
-    const end = (event) => {
-        if (!drag || event.pointerId !== drag.pointerId) return;
-        drag.canvas.classList.remove('is-dragging', 'is-resizing', 'is-resizing-h', 'is-resizing-both', 'is-resizing-nesw');
-        // Les x/y recalculés pendant le glisser (panneau libre) sont déjà
-        // dans panel.position : le commit ci-dessous les reprend.
-        pkg.unpinStatsPanelCorner?.();
-        if (drag.mode !== 'move') {
-            if (drag.lastWidth != null && drag.lastHeight != null) {
-                commit(withPositionPatch(drag.id, { width: drag.lastWidth, height: drag.lastHeight }),
-                    STATS_SAVE_STATUS, { immediate: true });
-            } else if (drag.lastWidth != null) {
-                commit(withWidth(drag.id, drag.lastWidth), STATS_SAVE_STATUS, { immediate: true });
-            } else if (drag.lastHeight != null) {
-                commit(withHeight(drag.id, drag.lastHeight), STATS_SAVE_STATUS, { immediate: true });
-            }
-        } else if (drag.snap) {
-            commit(withSnappedAnchor(drag.id, drag.snap.anchor), STATS_SAVE_STATUS, { immediate: true });
-        } else if (drag.last) {
-            commit(withFreePosition(drag.id, drag.last.x, drag.last.y),
-                STATS_SAVE_STATUS, { immediate: true });
-        }
-        showSnapGhost(host, null);
-        drag = null;
-        renderForm();
-    };
-    host.addEventListener('pointerup', end);
-    host.addEventListener('pointercancel', end);
 }
 
 // ---------------------------------------------------------------------------

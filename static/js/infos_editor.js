@@ -23,6 +23,7 @@
 
 import * as pkg from './index.js';
 import { changeTitleCssValues, changeInfosCssValues } from './frames.js';
+import { createSnapGhost, nearestSnapTarget } from './panel_interactions.js';
 import {
     OVERLAY_ANCHORS,
     OVERLAY_DEFAULT_MARGIN,
@@ -49,8 +50,6 @@ const STYLESHEET_SIDES = {
 const POSITION_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'margin-left', 'margin-right', 'width'];
 const FRAME_IDS = { title: 'titleFrame', infos: 'infosFrame' };
 
-// Même distance d'aimantation que les panneaux de stats (stats_ui.js).
-const SNAP_DISTANCE = 48;
 // En deçà, un appui n'est pas un glisser : rien n'est écrit.
 const DRAG_THRESHOLD = 3;
 
@@ -239,29 +238,6 @@ function overlaps(a, b) {
         && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
-// Repère de destination : même rendu que celui des panneaux de stats.
-function showOverlayGhost(host, target) {
-    let ghost = host.querySelector(':scope > .overlay-snap-ghost');
-    if (!target) {
-        if (ghost) ghost.hidden = true;
-        return;
-    }
-    if (!ghost) {
-        ghost = document.createElement('div');
-        ghost.className = 'stats-snap-ghost overlay-snap-ghost';
-        ghost.setAttribute('aria-hidden', 'true');
-        host.appendChild(ghost);
-    }
-    ghost.dataset.anchor = target.anchor;
-    Object.assign(ghost.style, {
-        left: `${Math.round(target.x)}px`,
-        top: `${Math.round(target.y)}px`,
-        width: `${Math.round(target.width)}px`,
-        height: `${Math.round(target.height)}px`,
-    });
-    ghost.hidden = false;
-}
-
 // Emplacements d'aimantation : chaque emplacement de la grille, aux marges
 // actuelles du cartouche, sauf ceux qui recouvriraient l'autre cartouche.
 function snapTargetsFor(target, size, container, base) {
@@ -276,19 +252,6 @@ function snapTargetsFor(target, size, container, base) {
         .filter((rect) => !overlaps(rect, other));
 }
 
-function nearestTarget(targets, left, top) {
-    let best = null;
-    let bestDistance = SNAP_DISTANCE;
-    for (const t of targets) {
-        const distance = Math.hypot(t.x - left, t.y - top);
-        if (distance <= bestDistance) {
-            best = t;
-            bestDistance = distance;
-        }
-    }
-    return best;
-}
-
 // La géométrie des cartouches a bougé : les piles de stats qui les
 // contournent et le cache des overlays vidéo se recalculent.
 function overlayGeometryChanged() {
@@ -301,6 +264,8 @@ function bindOverlayDrag() {
     const host = document.getElementById('mapWithFrames');
     if (!host) return;
     let drag = null;
+    // Repère de destination, même rendu que celui des panneaux et des images.
+    const ghost = createSnapGhost(host, 'panel-snap-ghost overlay-snap-ghost');
 
     host.addEventListener('pointerdown', (event) => {
         if (event.button !== 0 || !host.classList.contains('overlay-editing')) return;
@@ -354,8 +319,8 @@ function bindOverlayDrag() {
             marginLeft: '0px',
             marginRight: '0px',
         });
-        drag.snap = event.altKey ? null : nearestTarget(drag.targets, drag.left, drag.top);
-        showOverlayGhost(host, drag.snap);
+        drag.snap = event.altKey ? null : nearestSnapTarget(drag.targets, drag.left, drag.top);
+        ghost.show(drag.snap);
         overlayGeometryChanged();
     });
 
@@ -364,7 +329,7 @@ function bindOverlayDrag() {
         const { el, target, moved, snap, left, top, size, container } = drag;
         drag = null;
         el.classList.remove('is-dragging');
-        showOverlayGhost(host, null);
+        ghost.hide();
         if (!moved) return;
         const decl = declarationsOf(probeFor(target));
         applyPatch(target, snap

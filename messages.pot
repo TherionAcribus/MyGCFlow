@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 15:48+0200\n"
+"POT-Creation-Date: 2026-10-19 16:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1536,8 +1536,78 @@ msgstr ""
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr ""
 
-#: static/js/images_panels.js:241
+#: static/js/images_panels.js:245
 msgid "Image"
+msgstr ""
+
+#: static/js/images_ui.js:78
+#, python-brace-format
+msgid "Image ${n}"
+msgstr ""
+
+#: static/js/images_ui.js:107 static/js/images_ui.js:111
+msgid "L'image n'a pas pu être envoyée."
+msgstr ""
+
+#: static/js/images_ui.js:111 static/js/images_ui.js:263 templates/app.html:254
+#: templates/menu_images.html:30
+msgid "Images"
+msgstr ""
+
+#: static/js/images_ui.js:197 static/js/video_ready.js:31
+#, python-brace-format
+msgid "${n} Mo"
+msgstr ""
+
+#: static/js/images_ui.js:198
+#, python-brace-format
+msgid "${n} Ko"
+msgstr ""
+
+#: static/js/images_ui.js:219
+#, python-brace-format
+msgid "Ajouter cette image (${w} × ${h})"
+msgstr ""
+
+#: static/js/images_ui.js:233 static/js/images_ui.js:234
+msgid "Retirer de la bibliothèque"
+msgstr ""
+
+#: static/js/images_ui.js:245
+#, python-brace-format
+msgid "${n} image(s) · ${size}"
+msgstr ""
+
+#: static/js/images_ui.js:263
+msgid "L'image n'a pas pu être retirée."
+msgstr ""
+
+#: static/js/images_ui.js:305
+msgid "Afficher cette image"
+msgstr ""
+
+#: static/js/images_ui.js:329
+msgid "(manquante)"
+msgstr ""
+
+#: static/js/images_ui.js:336 static/js/stats_ui.js:250
+msgid "Monter"
+msgstr ""
+
+#: static/js/images_ui.js:337 static/js/stats_ui.js:251
+msgid "Descendre"
+msgstr ""
+
+#: static/js/images_ui.js:338 static/js/profiles.js:967
+#: static/js/recent_videos.js:60 static/js/recent_videos.js:121
+#: static/js/stats_ui.js:253 static/js/stats_ui.js:1263
+#: templates/menu_style.html:272 templates/modal_evolution.html:85
+msgid "Supprimer"
+msgstr ""
+
+#: static/js/images_ui.js:389 static/js/stats_ui.js:1335
+#, python-brace-format
+msgid "« ${name} » supprimée"
 msgstr ""
 
 #: static/js/labs.js:162
@@ -2049,7 +2119,8 @@ msgid ""
 msgstr ""
 
 #: static/js/labs.js:1722 templates/guide.html:224
-#: templates/menu_informations.html:99 templates/menu_stats.html:314
+#: templates/menu_images.html:87 templates/menu_informations.html:99
+#: templates/menu_stats.html:314
 msgid "Position"
 msgstr ""
 
@@ -2726,7 +2797,7 @@ msgstr ""
 msgid "Renommer"
 msgstr ""
 
-#: static/js/profiles.js:965 templates/app.html:262 templates/app.html:263
+#: static/js/profiles.js:965 templates/app.html:263 templates/app.html:264
 #: templates/guide.html:114 templates/guide.html:316 templates/guide.html:322
 #: templates/guide.html:456 templates/menu_animation.html:47
 #: templates/menu_data.html:189
@@ -2735,13 +2806,6 @@ msgstr ""
 
 #: static/js/profiles.js:966 templates/menu_style.html:297
 msgid "Réinitialiser"
-msgstr ""
-
-#: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:253
-#: static/js/stats_ui.js:1263 templates/menu_style.html:272
-#: templates/modal_evolution.html:85
-msgid "Supprimer"
 msgstr ""
 
 #: static/js/profiles.js:971
@@ -3423,14 +3487,6 @@ msgstr ""
 msgid "Pas affiché dans ce mode"
 msgstr ""
 
-#: static/js/stats_ui.js:250
-msgid "Monter"
-msgstr ""
-
-#: static/js/stats_ui.js:251
-msgid "Descendre"
-msgstr ""
-
 #: static/js/stats_ui.js:263
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
@@ -3470,11 +3526,6 @@ msgstr ""
 #: static/js/stats_ui.js:1316
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
-msgstr ""
-
-#: static/js/stats_ui.js:1335
-#, python-brace-format
-msgid "« ${name} » supprimée"
 msgstr ""
 
 #: static/js/stats_ui.js:1364
@@ -3680,7 +3731,7 @@ msgstr ""
 msgid "Écouter la fin"
 msgstr ""
 
-#: static/js/ui.js:725 templates/app.html:271 templates/app.html:272
+#: static/js/ui.js:725 templates/app.html:272 templates/app.html:273
 #: templates/guide.html:114 templates/guide.html:317
 #: templates/menu_animation.html:57
 msgid "Arrêter"
@@ -4250,11 +4301,6 @@ msgstr ""
 msgid "${n} Go"
 msgstr ""
 
-#: static/js/video_ready.js:31
-#, python-brace-format
-msgid "${n} Mo"
-msgstr ""
-
 #: static/js/video_ready.js:101
 #, python-brace-format
 msgid "Copie enregistrée : ${name}"
@@ -4470,8 +4516,8 @@ msgid "Guide"
 msgstr ""
 
 #: templates/app.html:80 templates/guide.html:211 templates/guide.html:388
-#: templates/menu_options.html:30 templates/menu_stats.html:366
-#: templates/menu_trail.html:94
+#: templates/menu_images.html:131 templates/menu_options.html:30
+#: templates/menu_stats.html:366 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr ""
 
@@ -4511,8 +4557,8 @@ msgstr ""
 msgid "Arrêter l'animation"
 msgstr ""
 
-#: templates/app.html:139 templates/app.html:140 templates/app.html:303
-#: templates/app.html:304
+#: templates/app.html:139 templates/app.html:140 templates/app.html:304
+#: templates/app.html:305
 msgid "Barre de chronologie"
 msgstr ""
 
@@ -4594,52 +4640,52 @@ msgstr ""
 msgid "Stats"
 msgstr ""
 
-#: templates/app.html:254 templates/guide.html:59 templates/guide.html:102
+#: templates/app.html:255 templates/guide.html:59 templates/guide.html:102
 #: templates/guide.html:109 templates/guide.html:378 templates/guide.html:380
 msgid "Préférences"
 msgstr ""
 
-#: templates/app.html:254 templates/menu_informations.html:10
+#: templates/app.html:255 templates/menu_informations.html:10
 msgid "Réglages"
 msgstr ""
 
-#: templates/app.html:258 templates/app.html:259 templates/guide.html:114
+#: templates/app.html:259 templates/app.html:260 templates/guide.html:114
 #: templates/guide.html:315 templates/guide.html:322
 #: templates/menu_animation.html:44 templates/menu_data.html:247
 msgid "Prévisualiser"
 msgstr ""
 
-#: templates/app.html:266 templates/app.html:267 templates/app.html:268
+#: templates/app.html:267 templates/app.html:268 templates/app.html:269
 #: templates/guide.html:114 templates/guide.html:317
 #: templates/menu_animation.html:53 templates/menu_animation.html:54
 msgid "Pause"
 msgstr ""
 
-#: templates/app.html:267 templates/menu_animation.html:53
+#: templates/app.html:268 templates/menu_animation.html:53
 msgid "Continuer"
 msgstr ""
 
-#: templates/app.html:279
+#: templates/app.html:280
 msgid "Disposition carte / réglages"
 msgstr ""
 
-#: templates/app.html:281 templates/app.html:282
+#: templates/app.html:282 templates/app.html:283
 msgid "Grande carte"
 msgstr ""
 
-#: templates/app.html:286 templates/app.html:287
+#: templates/app.html:287 templates/app.html:288
 msgid "Disposition équilibrée"
 msgstr ""
 
-#: templates/app.html:291 templates/app.html:292
+#: templates/app.html:292 templates/app.html:293
 msgid "Grands réglages"
 msgstr ""
 
-#: templates/app.html:296 templates/app.html:297
+#: templates/app.html:297 templates/app.html:298
 msgid "Panneau latéral"
 msgstr ""
 
-#: templates/app.html:313 templates/app.html:314 templates/guide.html:318
+#: templates/app.html:314 templates/app.html:315 templates/guide.html:318
 msgid "Plein écran"
 msgstr ""
 
@@ -7148,6 +7194,198 @@ msgstr ""
 msgid "Choisir la couleur du contour de disparition"
 msgstr ""
 
+#: templates/menu_images.html:9 templates/menu_images.html:54
+msgid "Images sur la carte"
+msgstr ""
+
+#: templates/menu_images.html:12
+msgid ""
+"Votre avatar, le logo de votre association… posés sur la carte et repris "
+"dans la vidéo. Enregistrées automatiquement, quel que soit le thème "
+"chargé."
+msgstr ""
+
+#: templates/menu_images.html:19
+msgid "Afficher les images sur la carte"
+msgstr ""
+
+#: templates/menu_images.html:36
+msgid "Bibliothèque"
+msgstr ""
+
+#: templates/menu_images.html:39
+msgid "Aucune image envoyée pour l'instant."
+msgstr ""
+
+#: templates/menu_images.html:45
+msgid "Ajouter une image"
+msgstr ""
+
+#: templates/menu_images.html:52
+msgid ""
+"Aucune image. Ajoutez-en une, ou déposez un fichier sur cet onglet : PNG,"
+" JPEG, WebP ou GIF."
+msgstr ""
+
+#: templates/menu_images.html:56
+msgid "Envoi de l'image…"
+msgstr ""
+
+#: templates/menu_images.html:58
+msgid "Quatre images au maximum."
+msgstr ""
+
+#: templates/menu_images.html:61
+msgid "Déposez l'image ici"
+msgstr ""
+
+#: templates/menu_images.html:71
+msgid "Image sélectionnée"
+msgstr ""
+
+#: templates/menu_images.html:74
+msgid "Remplacer l'image…"
+msgstr ""
+
+#: templates/menu_images.html:81
+msgid "Nom"
+msgstr ""
+
+#: templates/menu_images.html:83
+msgid ""
+"Image manquante : le fichier n'est plus disponible. Remplacez-la ou "
+"supprimez-la."
+msgstr ""
+
+#: templates/menu_images.html:90 templates/menu_informations.html:273
+msgid "Emplacement"
+msgstr ""
+
+#: templates/menu_images.html:93 templates/menu_informations.html:276
+#: templates/menu_stats.html:320
+msgid "En haut à gauche"
+msgstr ""
+
+#: templates/menu_images.html:93 templates/menu_informations.html:276
+#: templates/menu_stats.html:320
+msgid "En haut au centre"
+msgstr ""
+
+#: templates/menu_images.html:93 templates/menu_informations.html:276
+#: templates/menu_stats.html:320
+msgid "En haut à droite"
+msgstr ""
+
+#: templates/menu_images.html:94 templates/menu_stats.html:321
+msgid "Au milieu à gauche"
+msgstr ""
+
+#: templates/menu_images.html:94 templates/menu_stats.html:321
+msgid "Au milieu à droite"
+msgstr ""
+
+#: templates/menu_images.html:95 templates/menu_informations.html:278
+#: templates/menu_stats.html:322
+msgid "En bas à gauche"
+msgstr ""
+
+#: templates/menu_images.html:95 templates/menu_informations.html:278
+#: templates/menu_stats.html:322
+msgid "En bas au centre"
+msgstr ""
+
+#: templates/menu_images.html:95 templates/menu_informations.html:278
+#: templates/menu_stats.html:322
+msgid "En bas à droite"
+msgstr ""
+
+#: templates/menu_images.html:110 templates/menu_informations.html:293
+#: templates/menu_stats.html:334
+msgid "Marge horizontale (px)"
+msgstr ""
+
+#: templates/menu_images.html:114 templates/menu_informations.html:297
+#: templates/menu_stats.html:338
+msgid "Marge verticale (px)"
+msgstr ""
+
+#: templates/menu_images.html:118 templates/menu_stats.html:342
+msgid "Largeur (px)"
+msgstr ""
+
+#: templates/menu_images.html:122 templates/menu_stats.html:346
+msgid "Hauteur (px)"
+msgstr ""
+
+#: templates/menu_images.html:123 templates/menu_stats.html:347
+msgid "auto"
+msgstr ""
+
+#: templates/menu_images.html:126
+msgid ""
+"Hauteur vide : d'après les proportions de l'image (carrée si ronde). Les "
+"images d'un même coin partagent ses marges et s'empilent ; les panneaux "
+"de stats les contournent."
+msgstr ""
+
+#: templates/menu_images.html:127
+msgid "Position libre : choisir un emplacement l'y ramène."
+msgstr ""
+
+#: templates/menu_images.html:134 templates/menu_stats.html:143
+msgid "Forme"
+msgstr ""
+
+#: templates/menu_images.html:136
+msgid "Rectangle"
+msgstr ""
+
+#: templates/menu_images.html:137
+msgid "Coins arrondis"
+msgstr ""
+
+#: templates/menu_images.html:138
+msgid "Rond"
+msgstr ""
+
+#: templates/menu_images.html:142
+msgid "Rayon des coins (px)"
+msgstr ""
+
+#: templates/menu_images.html:146
+msgid "Ajustement"
+msgstr ""
+
+#: templates/menu_images.html:148
+msgid "Image entière"
+msgstr ""
+
+#: templates/menu_images.html:149
+msgid "Remplir la forme"
+msgstr ""
+
+#: templates/menu_images.html:153 templates/menu_informations.html:340
+#: templates/menu_trail.html:114
+msgid "Opacité"
+msgstr ""
+
+#: templates/menu_images.html:157 templates/menu_informations.html:164
+#: templates/menu_stats.html:369
+msgid "Fond"
+msgstr ""
+
+#: templates/menu_images.html:161 templates/menu_stats.html:381
+msgid "Opacité du fond"
+msgstr ""
+
+#: templates/menu_images.html:165 templates/menu_informations.html:168
+msgid "Marge intérieure (px)"
+msgstr ""
+
+#: templates/menu_images.html:171
+msgid "Ombre portée"
+msgstr ""
+
 #: templates/menu_informations.html:11
 msgid "Mode de réglage"
 msgstr ""
@@ -7265,14 +7503,6 @@ msgstr ""
 msgid "À droite"
 msgstr ""
 
-#: templates/menu_informations.html:164 templates/menu_stats.html:369
-msgid "Fond"
-msgstr ""
-
-#: templates/menu_informations.html:168
-msgid "Marge intérieure (px)"
-msgstr ""
-
 #: templates/menu_informations.html:174
 msgid "Arrondi (px)"
 msgstr ""
@@ -7322,42 +7552,6 @@ msgstr ""
 msgid "Étendue"
 msgstr ""
 
-#: templates/menu_informations.html:273
-msgid "Emplacement"
-msgstr ""
-
-#: templates/menu_informations.html:276 templates/menu_stats.html:320
-msgid "En haut à gauche"
-msgstr ""
-
-#: templates/menu_informations.html:276 templates/menu_stats.html:320
-msgid "En haut au centre"
-msgstr ""
-
-#: templates/menu_informations.html:276 templates/menu_stats.html:320
-msgid "En haut à droite"
-msgstr ""
-
-#: templates/menu_informations.html:278 templates/menu_stats.html:322
-msgid "En bas à gauche"
-msgstr ""
-
-#: templates/menu_informations.html:278 templates/menu_stats.html:322
-msgid "En bas au centre"
-msgstr ""
-
-#: templates/menu_informations.html:278 templates/menu_stats.html:322
-msgid "En bas à droite"
-msgstr ""
-
-#: templates/menu_informations.html:293 templates/menu_stats.html:334
-msgid "Marge horizontale (px)"
-msgstr ""
-
-#: templates/menu_informations.html:297 templates/menu_stats.html:338
-msgid "Marge verticale (px)"
-msgstr ""
-
 #: templates/menu_informations.html:301
 msgid "Position libre ou personnalisée : choisir un emplacement la remplace."
 msgstr ""
@@ -7400,10 +7594,6 @@ msgstr ""
 
 #: templates/menu_informations.html:334
 msgid "Gauche (px)"
-msgstr ""
-
-#: templates/menu_informations.html:340 templates/menu_trail.html:114
-msgid "Opacité"
 msgstr ""
 
 #: templates/menu_informations.html:353
@@ -8028,10 +8218,6 @@ msgstr ""
 msgid "Statistique"
 msgstr ""
 
-#: templates/menu_stats.html:143
-msgid "Forme"
-msgstr ""
-
 #: templates/menu_stats.html:153
 msgid "Afficher le titre"
 msgstr ""
@@ -8216,27 +8402,7 @@ msgid "Coin d'ancrage"
 msgstr ""
 
 #: templates/menu_stats.html:321
-msgid "Au milieu à gauche"
-msgstr ""
-
-#: templates/menu_stats.html:321
 msgid "Au centre"
-msgstr ""
-
-#: templates/menu_stats.html:321
-msgid "Au milieu à droite"
-msgstr ""
-
-#: templates/menu_stats.html:342
-msgid "Largeur (px)"
-msgstr ""
-
-#: templates/menu_stats.html:346
-msgid "Hauteur (px)"
-msgstr ""
-
-#: templates/menu_stats.html:347
-msgid "auto"
 msgstr ""
 
 #: templates/menu_stats.html:348
@@ -8270,10 +8436,6 @@ msgstr ""
 
 #: templates/menu_stats.html:377 templates/menu_stats.html:389
 msgid "Couleur principale"
-msgstr ""
-
-#: templates/menu_stats.html:381
-msgid "Opacité du fond"
 msgstr ""
 
 #: templates/menu_stats.html:387

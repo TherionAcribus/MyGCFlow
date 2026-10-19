@@ -297,6 +297,7 @@ function applyUserSettings(userSettings) {
     if (userSettings.images) {
         try {
             pkg.applyImagesSettings?.(userSettings.images);
+            pkg.renderImagesTab?.();
         } catch (e) {
             console.warn('📥 [USER_SETTINGS] Images ignorées:', e?.message || e);
         }

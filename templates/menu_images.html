@@ -1,0 +1,179 @@
+{% from '_scope_badges.html' import global_scope_badge with context %}
+<!-- Images posées sur la carte (avatar, logo d'association…). Préférence
+     globale, une liste pour les deux modes : enregistrée automatiquement,
+     indépendante du thème. Contrôles pilotés par static/js/images_ui.js ;
+     dessin par images_panels.js / images_render.mjs ; fichiers normalisés
+     et servis par blueprints/images.py. -->
+<div id="images" class="col-12 tab-pane fade">
+    <h5 class="gc-section-title">
+        <i class="ti ti-photo text-muted me-1"></i>{{ _("Images sur la carte") }}{{ global_scope_badge() }}
+    </h5>
+    <p class="form-hint text-muted mb-2">
+        {{ _("Votre avatar, le logo de votre association… posés sur la carte et repris dans la vidéo. Enregistrées automatiquement, quel que soit le thème chargé.") }}
+    </p>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="switchImages" role="switch" checked>
+                <label class="form-check-label" for="switchImages">{{ _("Afficher les images sur la carte") }}</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Liste des images -->
+        <div class="col-12 col-lg-5">
+            <div class="card h-100" id="imagesListCard">
+                <div class="card-header d-flex align-items-center justify-content-between gap-2">
+                    <h6 class="card-title m-0">
+                        <i class="ti ti-photo text-muted me-1"></i>{{ _("Images") }}<span id="imagesSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
+                    </h6>
+                    <div class="d-flex gap-2">
+                        <div class="dropdown">
+                            <button type="button" id="btnImagesLibrary" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-library-photo me-1" aria-hidden="true"></i>{{ _("Bibliothèque") }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end images-library" id="imagesLibraryMenu">
+                                <p id="imagesLibraryEmpty" class="dropdown-item-text text-muted small mb-0">{{ _("Aucune image envoyée pour l'instant.") }}</p>
+                                <div id="imagesLibraryList" class="images-library-grid"></div>
+                                <p id="imagesLibraryUsage" class="dropdown-item-text text-muted small mb-0"></p>
+                            </div>
+                        </div>
+                        <button type="button" id="btnImagesAdd" class="btn btn-sm btn-primary">
+                            <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter une image") }}
+                        </button>
+                        <input type="file" id="imagesFileInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p id="imagesEmpty" class="form-hint text-muted mb-0">
+                        {{ _("Aucune image. Ajoutez-en une, ou déposez un fichier sur cet onglet : PNG, JPEG, WebP ou GIF.") }}
+                    </p>
+                    <ul id="imagesList" class="list-group stats-panel-list" aria-label="{{ _('Images sur la carte') }}"></ul>
+                    <p id="imagesUploading" class="form-hint text-muted small mt-2 mb-0" role="status" hidden>
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>{{ _("Envoi de l'image…") }}
+                    </p>
+                    <p id="imagesLimitHint" class="form-hint text-muted small mt-2 mb-0" hidden>{{ _("Quatre images au maximum.") }}</p>
+                </div>
+                <div class="images-drop-overlay" aria-hidden="true">
+                    <i class="ti ti-upload me-1"></i>{{ _("Déposez l'image ici") }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Image sélectionnée -->
+        <div class="col-12 col-lg-7">
+            <div class="card h-100" id="imagesForm" hidden>
+                <div class="card-header d-flex align-items-center justify-content-between gap-2">
+                    <h6 class="card-title m-0">
+                        <i class="ti ti-adjustments text-muted me-1"></i>{{ _("Image sélectionnée") }}
+                    </h6>
+                    <button type="button" id="btnImageReplace" class="btn btn-sm btn-outline-secondary">
+                        <i class="ti ti-replace me-1" aria-hidden="true"></i>{{ _("Remplacer l'image…") }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-3 align-items-start mb-2">
+                        <img id="imageFormPreview" class="image-form-preview" alt="" hidden>
+                        <div class="flex-grow-1">
+                            <label class="form-label" for="inputImageName">{{ _("Nom") }}</label>
+                            <input id="inputImageName" type="text" class="form-control" maxlength="80">
+                            <small id="imageMissingHint" class="form-hint text-danger d-block mt-1" hidden>{{ _("Image manquante : le fichier n'est plus disponible. Remplacez-la ou supprimez-la.") }}</small>
+                        </div>
+                    </div>
+
+                    <h6 class="gc-subsection-title">{{ _("Position") }}</h6>
+                    <div class="row g-2 align-items-start">
+                        <div class="col-auto">
+                            <span class="form-label d-block" id="labelImageAnchor">{{ _("Emplacement") }}</span>
+                            <div class="stats-anchor-grid" role="radiogroup" aria-labelledby="labelImageAnchor">
+                                {% for anchor, label in [
+                                    ('top-left', _('En haut à gauche')), ('top-center', _('En haut au centre')), ('top-right', _('En haut à droite')),
+                                    ('middle-left', _('Au milieu à gauche')), ('', ''), ('middle-right', _('Au milieu à droite')),
+                                    ('bottom-left', _('En bas à gauche')), ('bottom-center', _('En bas au centre')), ('bottom-right', _('En bas à droite'))] %}
+                                {% if anchor %}
+                                <input type="radio" class="btn-check" name="imageAnchor" id="imageAnchor-{{ anchor }}" value="{{ anchor }}"
+                                       aria-label="{{ label }}">
+                                <label class="btn btn-sm btn-outline-secondary" for="imageAnchor-{{ anchor }}" title="{{ label }}"></label>
+                                {% else %}
+                                {# Centre de la carte : non proposé pour une image. #}
+                                <span aria-hidden="true"></span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label" for="inputImageDx">{{ _("Marge horizontale (px)") }}</label>
+                                    <input id="inputImageDx" type="number" class="form-control" min="0" max="2000" step="1">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="inputImageDy">{{ _("Marge verticale (px)") }}</label>
+                                    <input id="inputImageDy" type="number" class="form-control" min="0" max="2000" step="1">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="inputImageWidth">{{ _("Largeur (px)") }}</label>
+                                    <input id="inputImageWidth" type="number" class="form-control" min="40" max="1200" step="10">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="inputImageHeight">{{ _("Hauteur (px)") }}</label>
+                                    <input id="inputImageHeight" type="number" class="form-control" min="40" max="1200" step="10" placeholder="{{ _('auto') }}" aria-describedby="helpImageHeight">
+                                </div>
+                            </div>
+                            <small id="helpImageHeight" class="form-hint text-muted d-block mt-1">{{ _("Hauteur vide : d'après les proportions de l'image (carrée si ronde). Les images d'un même coin partagent ses marges et s'empilent ; les panneaux de stats les contournent.") }}</small>
+                            <small id="imageFreeHint" class="form-hint text-muted d-block mt-1" hidden>{{ _("Position libre : choisir un emplacement l'y ramène.") }}</small>
+                        </div>
+                    </div>
+
+                    <h6 class="gc-subsection-title mt-3">{{ _("Apparence") }}</h6>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="selectImageShape">{{ _("Forme") }}</label>
+                            <select id="selectImageShape" class="form-select">
+                                <option value="rect">{{ _("Rectangle") }}</option>
+                                <option value="rounded">{{ _("Coins arrondis") }}</option>
+                                <option value="circle">{{ _("Rond") }}</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputImageRadius">{{ _("Rayon des coins (px)") }}</label>
+                            <input id="inputImageRadius" type="number" class="form-control" min="0" max="200" step="1">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="selectImageFit">{{ _("Ajustement") }}</label>
+                            <select id="selectImageFit" class="form-select">
+                                <option value="contain">{{ _("Image entière") }}</option>
+                                <option value="cover">{{ _("Remplir la forme") }}</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="rangeImageOpacity">{{ _("Opacité") }} <span id="valueImageOpacity" class="text-muted"></span></label>
+                            <input id="rangeImageOpacity" type="range" class="form-range" min="0" max="100" step="5">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputImageBackground">{{ _("Fond") }}</label>
+                            <input id="inputImageBackground" type="color" class="form-control form-control-color">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="rangeImageBackgroundOpacity">{{ _("Opacité du fond") }} <span id="valueImageBackgroundOpacity" class="text-muted"></span></label>
+                            <input id="rangeImageBackgroundOpacity" type="range" class="form-range" min="0" max="100" step="5">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputImagePadding">{{ _("Marge intérieure (px)") }}</label>
+                            <input id="inputImagePadding" type="number" class="form-control" min="0" max="100" step="1">
+                        </div>
+                        <div class="col-6 col-md-8 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="switchImageShadow" role="switch">
+                                <label class="form-check-label" for="switchImageShadow">{{ _("Ombre portée") }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

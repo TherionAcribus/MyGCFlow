@@ -68,6 +68,7 @@ invisible à chaque frame d'animation), et à l'ouverture de l'onglet.
 | `static/js/stats_render.mjs` | Pur : dessin Canvas 2D (`measure` + `draw` par type, registre `STATS_RENDERERS`) |
 | `static/js/stats_panels.js` | Cycle de vie : canvas d'aperçu, accumulation, totaux, rendu vidéo |
 | `static/js/stats_ui.js` | Onglet Stats : liste, modèles, formulaire, sauvegarde débouncée |
+| `static/js/panel_interactions.js` | Glisser-déposer, aimantation, poignées — partagé avec les images (onglet Images) et repris par le titre/les infos |
 | `templates/menu_stats.html` | Le `tab-pane` `#stats` |
 
 **Réglages miroirs.** Le client normalise ce qu'il lit et ce qu'il envoie, le
@@ -356,7 +357,7 @@ formulaire le remet en mode `anchor`.
 `layoutPanels` rejoué avec le panneau déplacé dans ce coin, marges de la pile
 reprises, titre et infos contournés, place dans la pile fixée par l'ordre de la
 liste ; les coins où il déborderait ne sont pas proposés. Pendant le geste, le
-panneau suit le pointeur et un repère (`.stats-snap-ghost`, contour en
+panneau suit le pointeur et un repère (`.panel-snap-ghost`, contour en
 pointillés au-dessus des panneaux, sous le titre et les infos) montre
 l'emplacement le plus proche à moins de 48 px (coin haut-gauche contre coin
 haut-gauche). Lâché là, le panneau rejoint la pile (`withSnappedAnchor` :
@@ -376,7 +377,7 @@ hauteur (`ns-resize`), et le coin qu'elles partagent règle les deux axes
 laissent rien à régler.
 
 Les poignées sont posées sur les bords **qui bougent** quand la taille change
-(`resizeEdges`, stats_ui.js), pour rester sous le pointeur : droit et bas en
+(`resizeEdges`, panel_interactions.js), pour rester sous le pointeur : droit et bas en
 général, gauche pour un panneau ancré à droite, haut pour un panneau ancré en
 bas (delta du pointeur inversé). Un panneau centré sur un axe (colonne
 centrale, ligne médiane) grandit des deux côtés : poignée à droite (en bas),

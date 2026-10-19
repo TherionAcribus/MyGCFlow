@@ -251,6 +251,7 @@
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Animation & vidéo") }}</span><span class="tab-label-short">{{ _("Animation") }}</span></a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#stats" role="tab" aria-selected="false">{{ _("Stats") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#images" role="tab" aria-selected="false">{{ _("Images") }}</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#settings" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Préférences") }}</span><span class="tab-label-short">{{ _("Réglages") }}</span></a></li>
                 </ul>
                 <div id="quickActions">
@@ -336,6 +337,9 @@
 
                         <!-- Onglet Stats (mode principal seulement) -->
                         {% include 'menu_stats.html' %}
+
+                        <!-- Onglet Images (avatar, logo… ; une liste pour les deux modes) -->
+                        {% include 'menu_images.html' %}
 
                         <!-- Onglet Préférences -->
                         {% include 'menu_options.html' %}

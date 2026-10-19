@@ -107,6 +107,12 @@ Autres repères :
   exemple dans `images.spec.mjs` (`afterEach`). Les fichiers envoyés
   (`POST /api/images`) restent dans `images/` du runtime E2E, balayés une
   heure après qu'ils ne sont plus référencés.
+- `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
+  n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
+  préférences posées entre les deux par `PUT /api/settings` ne sont pas
+  relues (symptôme : réglages présents côté serveur, absents de
+  `getImagesSnapshot()`). Envoyer les fichiers par `page.request` sans
+  ouvrir de page avant, ou recharger (`page.reload()`).
 - Après un clic sur un bouton de `#layoutPresets` (préréglages, plein écran,
   `#btnTimelineBar`), sa bulle d'aide réapparaît tant qu'il garde le focus et
   intercepte les clics sur ses voisins : `document.activeElement.blur()`

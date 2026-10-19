@@ -11,6 +11,8 @@ export * from './overlay_canvas.js';
 export * from './stats_panels.js';
 export * from './images_panels.js';
 export * from './stats_ui.js';
+// Après images_panels.js : s'initialise lui-même en fin de module.
+export * from './images_ui.js';
 export * from './recording_perf.js';
 export * from './upload_queue.js';
 export * from './background_audio.js';

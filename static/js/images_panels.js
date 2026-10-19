@@ -18,7 +18,7 @@
 
 import * as pkg from './index.js';
 import { layoutPanels } from './stats_model.mjs';
-import { normalizeImagesSettings } from './images_model.mjs';
+import { IMAGE_ANCHORS, IMAGE_SIZE_RANGE, normalizeImagesSettings } from './images_model.mjs';
 import { IMAGE_SHADOW, drawImagePanel, imagePanelHeight } from './images_render.mjs';
 
 let settings = normalizeImagesSettings(null);
@@ -67,6 +67,10 @@ function ensureSource(file) {
     }).then((ok) => {
         revision += 1;
         invalidateImagesLayout();
+        // L'onglet Images marque les images manquantes (images_ui.js).
+        try {
+            document.dispatchEvent(new CustomEvent('mygcflow:image-source', { detail: { file, ok } }));
+        } catch (_) {}
         return ok;
     });
     img.src = imageUrl(file);
@@ -141,6 +145,114 @@ export function syncImagePanelsVisibility() {
     invalidateImagesLayout();
 }
 
+// Entrée de layoutPanels pour une image : sa position et sa taille à la
+// largeur effective (bornée au conteneur).
+function layoutItemOf(item) {
+    const width = Math.min(item.position.width, containerSize.width);
+    return {
+        id: item.id,
+        mode: item.position.mode,
+        anchor: item.position.anchor,
+        dx: item.position.dx,
+        dy: item.position.dy,
+        x: item.position.x,
+        y: item.position.y,
+        width,
+        height: imagePanelHeight(item, naturalSize(item), width),
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Glisser-déposer (images_ui.js › panel_interactions.js)
+// ---------------------------------------------------------------------------
+
+// Épingle du coin haut-gauche pendant le redimensionnement d'une image libre.
+let resizePin = null;
+
+function itemById(id) {
+    return settings.items.find((item) => item.id === id) || null;
+}
+
+// Aperçus en direct : écrits en place dans les réglages, sans normalisation
+// ni enregistrement (le commit au dépôt fait les deux), comme
+// previewStatsPanelPosition. La mise en page — et celle des stats, qui
+// contournent l'image — suit au prochain rafraîchissement.
+export function previewImagePosition(id, x, y) {
+    if (pkg.isAnimationInProgress?.()) return;
+    const item = itemById(id);
+    if (!item || !Number.isFinite(x) || !Number.isFinite(y)) return;
+    item.position.mode = 'free';
+    item.position.x = Math.max(0, Math.min(1, x));
+    item.position.y = Math.max(0, Math.min(1, y));
+    invalidateImagesLayout();
+}
+
+export function previewImageWidth(id, width) {
+    if (pkg.isAnimationInProgress?.()) return;
+    const item = itemById(id);
+    const w = Number(width);
+    if (!item || !Number.isFinite(w)) return;
+    const [min, max] = IMAGE_SIZE_RANGE;
+    item.position.width = Math.max(min, Math.min(max, Math.round(w)));
+    invalidateImagesLayout();
+}
+
+export function previewImageHeight(id, height) {
+    if (pkg.isAnimationInProgress?.()) return;
+    const item = itemById(id);
+    const h = Number(height);
+    if (!item || !Number.isFinite(h)) return;
+    const [min, max] = IMAGE_SIZE_RANGE;
+    item.position.height = Math.max(min, Math.min(max, Math.round(h)));
+    invalidateImagesLayout();
+}
+
+export function pinImageCorner(id) {
+    ensureLayout();
+    const rect = layout.get(id);
+    resizePin = rect ? { id, left: rect.x, top: rect.y } : null;
+}
+
+// Le dernier aperçu peut attendre encore sa mise en page : appliquée tout de
+// suite, sans quoi le commit reprendrait les x/y d'avant.
+export function unpinImageCorner() {
+    if (resizePin) ensureLayout();
+    resizePin = null;
+}
+
+// Aimantation : pour chaque emplacement, le rect que prendrait l'image si
+// elle y était ancrée — marges de la pile reprises, titre et infos
+// contournés, place dans la pile fixée par l'ordre de la liste. Les
+// emplacements où elle déborderait du cadre ne sont pas proposés (même
+// calcul que getStatsSnapTargets).
+export function getImageSnapTargets(id) {
+    ensureLayout();
+    const container = host();
+    const items = visibleItems();
+    const index = items.findIndex((item) => item.id === id);
+    if (!container || index < 0) return [];
+    const entries = items.map(layoutItemOf);
+    const obstacles = overlayRects(container);
+    const own = items[index];
+    const targets = [];
+    for (const anchor of IMAGE_ANCHORS) {
+        const mate = settings.items.find((item) => item.id !== id
+            && item.position.mode === 'anchor' && item.position.anchor === anchor);
+        const candidate = {
+            ...entries[index],
+            mode: 'anchor',
+            anchor,
+            dx: mate ? mate.position.dx : own.position.dx,
+            dy: mate ? mate.position.dy : own.position.dy,
+        };
+        const trial = entries.map((entry, i) => (i === index ? candidate : entry));
+        const rect = layoutPanels(trial, containerSize, obstacles).get(id);
+        if (!rect || rect.overflow) continue;
+        targets.push({ anchor, x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+    }
+    return targets;
+}
+
 // Recalcule la mise en page si besoin. Si elle a changé, les piles de stats,
 // qui contournent les images, sont invalidées à leur tour.
 function ensureLayout() {
@@ -154,18 +266,16 @@ function ensureLayout() {
     ensureResizeObserver(container);
     containerSize = { width: container.clientWidth, height: container.clientHeight };
     const items = visibleItems().map((item) => {
-        const width = Math.min(item.position.width, containerSize.width);
-        return {
-            id: item.id,
-            mode: item.position.mode,
-            anchor: item.position.anchor,
-            dx: item.position.dx,
-            dy: item.position.dy,
-            x: item.position.x,
-            y: item.position.y,
-            width,
-            height: imagePanelHeight(item, naturalSize(item), width),
-        };
+        const entry = layoutItemOf(item);
+        // Redimensionnement à la souris d'une image libre : son coin
+        // haut-gauche reste fixe, x/y (fractions de l'espace restant) sont
+        // recalculés en place après la mesure — comme pinStatsPanelCorner.
+        if (resizePin?.id === item.id && item.position.mode === 'free') {
+            const fraction = (offset, room) => (room > 0 ? Math.max(0, Math.min(1, offset / room)) : 0);
+            entry.x = item.position.x = fraction(resizePin.left, containerSize.width - entry.width);
+            entry.y = item.position.y = fraction(resizePin.top, containerSize.height - entry.height);
+        }
+        return entry;
     });
     layout = layoutPanels(items, containerSize, items.length ? overlayRects(container) : []);
     const key = JSON.stringify([...layout].map(([id, r]) => [id, r.x, r.y, r.width, r.height]));
@@ -197,6 +307,18 @@ export function getImagePanelRect(id) {
     };
 }
 
+// Image choisie dans l'onglet : son canvas prend `is-selected` (liseré,
+// visible en mode édition seulement). Pur repère de l'aperçu — la vidéo ne
+// lit jamais les classes DOM.
+let selectedImageId = null;
+
+export function setImagePanelSelection(id) {
+    selectedImageId = id || null;
+    for (const [imageId, node] of nodes) {
+        node.canvas.classList.toggle('is-selected', imageId === selectedImageId);
+    }
+}
+
 function scheduleFlush() {
     if (frameRequest || typeof requestAnimationFrame === 'undefined') return;
     frameRequest = requestAnimationFrame(() => {
@@ -210,6 +332,7 @@ function nodeFor(item, container) {
     if (!node) {
         const canvas = document.createElement('canvas');
         canvas.className = 'image-panel';
+        canvas.classList.toggle('is-selected', item.id === selectedImageId);
         canvas.dataset.imageId = item.id;
         canvas.setAttribute('role', 'img');
         const map = document.getElementById('map');
