@@ -109,7 +109,9 @@ liste.
 (3 s au plus) avant sa première frame. Le mode MediaRecorder **n'attend pas** :
 `recordAnimation()` est synchrone et l'animation démarre avant le pipeline —
 attendre perdrait le début de la vidéo ; une image encore en cours apparaît
-dès qu'elle est prête.
+dès qu'elle est prête : la signature des frames (`overlayContentSignature`)
+inclut `getImagesRevision`, donc son décodage produit une frame même sur
+carte immobile.
 
 ## Onglet Images (images_ui.js)
 

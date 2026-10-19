@@ -128,6 +128,10 @@ export function getImagesSettings() {
     return settings;
 }
 
+export function getImagesRevision() {
+    return revision;
+}
+
 // État de chargement d'une image (liste de l'onglet : « image manquante »).
 export function imageSourceState(file) {
     if (!file) return 'missing';

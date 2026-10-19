@@ -4193,9 +4193,12 @@ function overlayContentSignature() {
     try {
         const { title, infos } = getOverlayTextContent();
         // Panneaux de stats : une matrice qui se remplit sur une carte
-        // immobile doit quand même produire des frames.
+        // immobile doit quand même produire des frames. Images : une image
+        // qui finit de se décoder pendant l'enregistrement (le mode
+        // MediaRecorder n'attend pas imagesReady) apparaît dès que possible.
         const stats = pkg.getStatsRevision?.() ?? 0;
-        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${title}\u0000${infos}`;
+        const images = pkg.getImagesRevision?.() ?? 0;
+        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${images}\u0000${title}\u0000${infos}`;
     } catch(_) {
         // Contenu illisible : on ne prend pas le risque d'une frame périmée.
         mapDirtyTracker.markDirty();
