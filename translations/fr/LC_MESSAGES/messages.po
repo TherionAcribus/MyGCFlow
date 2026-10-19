@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 08:28+0200\n"
+"POT-Creation-Date: 2026-10-19 08:48+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -3589,31 +3589,41 @@ msgstr ""
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 
-#: static/js/timeline_bar.js:322
+#: static/js/timeline_bar.js:328
 msgid "Aucune donnée à parcourir"
 msgstr "Aucune donnée à parcourir"
 
-#: static/js/timeline_bar.js:332
+#: static/js/timeline_bar.js:341
 #, python-brace-format
 msgid "${count} actives"
 msgstr "${count} actives"
 
-#: static/js/timeline_bar.js:333
+#: static/js/timeline_bar.js:341
+#, python-brace-format
+msgid "${count} active"
+msgstr "${count} active"
+
+#: static/js/timeline_bar.js:342
 #, python-brace-format
 msgid "${count} caches"
 msgstr "${count} caches"
 
-#: static/js/timeline_bar.js:554
+#: static/js/timeline_bar.js:342
+#, python-brace-format
+msgid "${count} cache"
+msgstr "${count} cache"
+
+#: static/js/timeline_bar.js:612
 #, python-brace-format
 msgid "Début de l'animation ici (${date})"
 msgstr "Début de l'animation ici (${date})"
 
-#: static/js/timeline_bar.js:556
+#: static/js/timeline_bar.js:614
 #, python-brace-format
 msgid "Fin de l'animation ici (${date})"
 msgstr "Fin de l'animation ici (${date})"
 
-#: static/js/timeline_bar.js:567
+#: static/js/timeline_bar.js:625
 msgid "Plage complète"
 msgstr "Plage complète"
 

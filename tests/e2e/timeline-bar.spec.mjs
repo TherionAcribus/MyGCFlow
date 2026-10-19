@@ -130,6 +130,9 @@ test('le curseur amène la carte, le compteur et les Stats à la date choisie', 
   await page.keyboard.press('Home');
   await expect.poll(async () => (await stats(page)).total).toBe(1);
   await expect(page.locator('#spanNbCaches')).toHaveText('1');
+  // Compte au singulier : « 1 cache », pas « 1 caches » (\b exclut le pluriel).
+  expect((await bar(page)).valueText).toMatch(/1 cache\b/);
+  await expect(page.locator('#timelineBarDate')).toContainText(/1 cache\b/);
   // Toujours en pause après la série de frappes.
   await page.waitForTimeout(500);
   expect(await playback(page)).toBe('paused');
@@ -381,7 +384,8 @@ test('mode Évolution : carte, compteur et Stats suivent le curseur', async ({ p
 
   // À chaque position : compteur de la carte, panneau Stats et barre d'accord
   // (trois calculs distincts sur la même chronologie).
-  const countIn = (text) => Number(/([\d\s  ]+) actives/.exec(text)?.[1].replace(/\D/g, ''));
+  // « actives? » : singulier ou pluriel selon le compte du jour visé.
+  const countIn = (text) => Number(/([\d\s  ]+) actives?/.exec(text)?.[1].replace(/\D/g, ''));
   for (const offset of [0, Math.floor(span / 2), span - 1]) {
     await clickDay(page, offset, span);
     await expect.poll(async () => (await bar(page)).valueNow).toBe(offset);

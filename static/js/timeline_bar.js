@@ -333,10 +333,13 @@ function syncLabels(state, span, offset, usable) {
     if (endLabel) endLabel.textContent = format(state.end);
     const series = seriesFor(state, span);
     const textAt = (dayOffset) => {
-        const count = formatCount(series.level[dayOffset] ?? 0);
+        // Singulier/pluriel choisi sur le compte numérique (formatCount rend
+        // une chaîne localisée) — pas de ngettext côté JS, d'où deux msgids.
+        const level = series.level[dayOffset] ?? 0;
+        const count = formatCount(level);
         const countText = isEvolutionPage()
-            ? pkg.t('${count} actives', { count })
-            : pkg.t('${count} caches', { count });
+            ? (level > 1 ? pkg.t('${count} actives', { count }) : pkg.t('${count} active', { count }))
+            : (level > 1 ? pkg.t('${count} caches', { count }) : pkg.t('${count} cache', { count }));
         return `${format(dateOfOffset(state.start, dayOffset))} · ${countText}`;
     };
     // Le survol affiche la date visée, mais les attributs ARIA restent sur
