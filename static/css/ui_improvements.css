@@ -912,6 +912,52 @@ main.fullscreen-mode #timelineBar {
     display: none !important;
 }
 
+/* Menu contextuel de la piste (clic droit : pose des bornes de l'animation).
+   Hors flux, sur <body> en position fixe — z-index au-dessus de la barre de
+   contrôle (2010) mais loin des toasts (2147483000). Les variables tblr
+   suivent le thème sombre sans variante dédiée. */
+.timeline-bar-menu {
+    position: fixed;
+    z-index: 2100;
+    min-width: 14rem;
+    padding: 4px;
+    background: var(--tblr-bg-surface, #fff);
+    border: 1px solid var(--tblr-border-color, rgba(0, 0, 0, 0.12));
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    font-size: 0.8125rem;
+}
+.timeline-bar-menu-item {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.timeline-bar-menu-item:hover,
+.timeline-bar-menu-item:focus-visible {
+    background: var(--tblr-bg-surface-secondary, rgba(0, 0, 0, 0.06));
+    outline: none;
+}
+.timeline-bar-menu-item:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--color-accent-text, #0072c6);
+}
+.timeline-bar-menu-item:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.timeline-bar-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--tblr-border-color, rgba(0, 0, 0, 0.12));
+}
+
 /* Variante « Panneau latéral » : la carte passe à gauche, les réglages en
    colonne à droite. Activée par le préréglage data-layout="sidebar"
    (initMapTabsSplitPane pose la classe et pilote width au lieu de height). */

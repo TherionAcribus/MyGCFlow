@@ -4135,6 +4135,46 @@ function applySelectionEndToAnim(){
     updateDeltaDaysAndTimes();
 }
 
+// Champ + option d'une borne de l'animation : les mêmes trois lignes que les
+// boutons « Sélection » ci-dessus. Le champ peut être absent (pages sans
+// onglet Animation) : l'option — seule lue par le moteur — est posée quand
+// même.
+function setAnimDateBound(field, selector, date) {
+    const el = document.querySelector(selector);
+    if (el) {
+        setTdDate(el, date);
+        el.value = formatDateForPickers(date);
+    }
+    pkg.options.animation[field] = date;
+}
+
+// Barre de chronologie (timeline_bar.js) : pose les bornes de l'animation
+// comme les boutons « Sélection » — champ, options, pastilles et plan
+// recalculés. `start`/`end` : Date à poser, null pour la valeur par
+// défaut des données, undefined pour ne pas toucher.
+export function setAnimationDates({ start, end } = {}) {
+    let changed = false;
+    if (start !== undefined) {
+        const date = start === null ? defaultStartDate : start;
+        if (date instanceof Date) {
+            setAnimDateBound('dateStart', '#animDateStart', date);
+            changed = true;
+        }
+    }
+    if (end !== undefined) {
+        const date = end === null ? defaultEndDate : end;
+        if (date instanceof Date) {
+            setAnimDateBound('dateEnd', '#animDateEnd', date);
+            changed = true;
+        }
+    }
+    if (!changed) return;
+    // Une fois pour les deux bornes : le plan (et la barre, via
+    // refreshTimingPlan → refreshTimelineBar) ne se recalcule pas deux fois.
+    updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
+}
+
 // Debounce et wrapper
 function onSelectionChangedDebounced(){
     if (isBatchReset) return; // ignoré pendant un reset groupé

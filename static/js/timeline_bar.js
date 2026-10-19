@@ -62,6 +62,8 @@ let lastSpan = 0;
 // Jour survolé hors geste (ligne fantôme, date dans l'étiquette) — la
 // carte ne bouge pas tant qu'il n'y a pas clic.
 let hoverOffset = null;
+// Menu contextuel ouvert (clic droit : pose des bornes de l'animation).
+let menu = null;
 
 function readStorage(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -482,6 +484,106 @@ function onKeyDown(event) {
     }
 }
 
+// --- Menu contextuel --------------------------------------------------------------
+//
+// Clic droit sur la piste : pose les bornes de l'animation comme les boutons
+// « Sélection » de l'onglet Animation (setAnimationDates, ui.js). Le menu
+// natif n'a rien d'utile sur une piste : preventDefault est systématique.
+
+function closeMenu() {
+    if (!menu) return;
+    menu.remove();
+    menu = null;
+    document.removeEventListener('pointerdown', onMenuOutsidePointerDown, true);
+}
+
+function onMenuOutsidePointerDown(event) {
+    if (menu && !menu.contains(event.target)) closeMenu();
+}
+
+// Flèches entre les items (en sautant les désactivés), Échap rend le focus
+// à la piste — pattern menu ARIA minimal.
+function onMenuKeyDown(event) {
+    if (event.key === 'Escape') {
+        closeMenu();
+        track.focus({ preventScroll: true });
+        event.preventDefault();
+        return;
+    }
+    const delta = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+    if (!delta) return;
+    const items = [...menu.querySelectorAll('button:not(:disabled)')];
+    if (!items.length) return;
+    const index = items.indexOf(document.activeElement);
+    items[(index + delta + items.length) % items.length].focus();
+    event.preventDefault();
+}
+
+function onContextMenu(event) {
+    event.preventDefault();
+    // Comme onPointerDown : plage et données ont pu changer depuis le dernier
+    // dessin — le libellé des items affiche la date du jour visé.
+    draw();
+    const state = lastState;
+    if (!state || state.recording) return;
+    const day = dateOfOffset(state.start, offsetFromPointer(event));
+    const date = pkg.formatDateDisplay?.(day) ?? day.toLocaleDateString();
+
+    closeMenu(); // une nouvelle ouverture remplace l'ancien menu
+    menu = document.createElement('div');
+    menu.className = 'timeline-bar-menu';
+    menu.setAttribute('role', 'menu');
+    menu.addEventListener('keydown', onMenuKeyDown);
+
+    const addItem = (label, onPick, disabled = false) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'timeline-bar-menu-item';
+        item.setAttribute('role', 'menuitem');
+        item.disabled = disabled;
+        item.textContent = label;
+        item.addEventListener('click', () => { if (!item.disabled) onPick(); closeMenu(); });
+        menu.appendChild(item);
+    };
+    const addSeparator = () => {
+        const separator = document.createElement('div');
+        separator.className = 'timeline-bar-menu-separator';
+        menu.appendChild(separator);
+    };
+
+    addItem(pkg.t('Début de l\'animation ici (${date})', { date }),
+        () => pkg.setAnimationDates({ start: day }));
+    addItem(pkg.t('Fin de l\'animation ici (${date})', { date }),
+        () => pkg.setAnimationDates({ end: day }));
+    addSeparator();
+    // « Plage complète » = bornes aux valeurs par défaut des données. Sans
+    // effet — désactivé — quand la plage affichée y est déjà. L'étendue vient
+    // de getSelectionDateExtent : metadata.startDate/endDate sont réécrits
+    // avec la plage choisie à chaque démarrage d'animation (mapgl.js).
+    const extent = pkg.getSelectionDateExtent?.() || {};
+    const atFullRange = extent.start instanceof Date && extent.end instanceof Date
+        ? dayOffsetOf(state.start, extent.start) === 0 && dayOffsetOf(state.end, extent.end) === 0
+        : true;
+    addItem(pkg.t('Plage complète'),
+        () => pkg.setAnimationDates({ start: null, end: null }), atFullRange);
+
+    // Position fixe aux coordonnées du clic, bridée dans le viewport (taille
+    // mesurée après insertion : elle dépend des libellés).
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+    document.body.appendChild(menu);
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth - 4) {
+        menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 4)}px`;
+    }
+    if (rect.bottom > window.innerHeight - 4) {
+        menu.style.top = `${Math.max(4, window.innerHeight - rect.height - 4)}px`;
+    }
+
+    document.addEventListener('pointerdown', onMenuOutsidePointerDown, true);
+    menu.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
+}
+
 // --- Affichage et style ----------------------------------------------------------
 
 function setVisible(next, { persist = true } = {}) {
@@ -495,6 +597,7 @@ function setVisible(next, { persist = true } = {}) {
     if (persist) writeStorage(VISIBLE_KEY, visible ? '1' : '0');
     if (!visible) {
         hoverOffset = null;
+        closeMenu(); // la piste masquée n'a plus de menu à afficher
         if (gesture) endGesture();
     }
     // La carte change de taille (bandeau : le séparateur rebride sa hauteur
@@ -554,6 +657,9 @@ function initTimelineBar() {
         refreshTimelineBar();
     });
     track.addEventListener('keydown', onKeyDown);
+    // Clic droit : pose des bornes de l'animation (menu dédié). Aucun geste
+    // ne démarre — onPointerDown ignore déjà les boutons ≠ principal.
+    track.addEventListener('contextmenu', onContextMenu);
     track.addEventListener('blur', () => { if (gesture && gesture.pointerId === null) endGesture(); });
 
     bar.querySelectorAll('[data-timeline-style]').forEach((button) => {

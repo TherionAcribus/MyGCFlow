@@ -152,6 +152,67 @@ test('le curseur amène la carte, le compteur et les Stats à la date choisie', 
   expect((await bar(page)).style).toBe('curve');
 });
 
+test('clic droit : définir la plage depuis la barre', async ({ page }) => {
+  await openWithFixture(page);
+  await showBar(page);
+
+  const track = page.locator('#timelineBarTrack');
+  const menu = page.locator('.timeline-bar-menu');
+  const box = await track.boundingBox();
+  const rightClickDay = (offset, span) =>
+    page.mouse.click(box.x + (offset + 0.5) / span * box.width, box.y + box.height / 2, { button: 'right' });
+  // Les dates d'animation ne font pas partie des préférences persistées
+  // (AnimationPrefs : rythme et caméra seulement — elles sont recalées sur
+  // les données à chaque chargement). Ce qui persiste ici est le PUT des
+  // préférences d'animation déclenché par la pose d'une borne.
+  const animationPut = () => page.waitForResponse((response) => {
+    const request = response.request();
+    return request.method() === 'PUT' && request.url().includes('/api/settings')
+      && (request.postData() || '').includes('"animation"');
+  });
+  const formatDate = (iso) => page.evaluate(async (value) =>
+    (await import('/static/js/index.js')).formatDateDisplay(new Date(`${value}T00:00:00`)), iso);
+
+  // « Début ici » au 3ᵉ jour : le champ, la plage (6 → 4 jours) et le PUT.
+  await rightClickDay(2, 6);
+  await expect(menu).toBeVisible();
+  let put = animationPut();
+  await menu.getByRole('menuitem', { name: /Début de l.animation ici/ }).click();
+  await expect(menu).toBeHidden();
+  await expect(page.locator('#animDateStart')).toHaveValue(await formatDate('2026-01-03'));
+  await expect.poll(async () => (await bar(page)).valueMax).toBe(3);
+  await put;
+
+  // « Fin ici » au 2ᵉ jour de la nouvelle plage (04/01) : 4 → 2 jours.
+  await rightClickDay(1, 4);
+  await expect(menu).toBeVisible();
+  put = animationPut();
+  await menu.getByRole('menuitem', { name: /Fin de l.animation ici/ }).click();
+  await expect(page.locator('#animDateEnd')).toHaveValue(await formatDate('2026-01-04'));
+  await expect.poll(async () => (await bar(page)).valueMax).toBe(1);
+  await put;
+
+  // « Plage complète » : retour à l'étendue des données — et la plage du
+  // test est déjà restaurée pour les specs suivants (rien d'autre ne
+  // persiste : les dates ne sont pas enregistrées, cf. ci-dessus).
+  await rightClickDay(0, 2);
+  await expect(menu).toBeVisible();
+  const full = menu.getByRole('menuitem', { name: 'Plage complète' });
+  await expect(full).toBeEnabled();
+  put = animationPut();
+  await full.click();
+  await expect.poll(async () => (await bar(page)).valueMax).toBe(5);
+  await expect(page.locator('#animDateStart')).toHaveValue(await formatDate('2026-01-01'));
+  await expect(page.locator('#animDateEnd')).toHaveValue(await formatDate('2026-01-06'));
+  await put;
+
+  // Plage déjà à l'étendue des données : l'item est désactivé, Échap ferme.
+  await rightClickDay(0, 6);
+  await expect(menu.getByRole('menuitem', { name: 'Plage complète' })).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+});
+
 test('survoler la piste montre la date visée, sans toucher la carte', async ({ page }) => {
   await openWithFixture(page);
   await showBar(page);
