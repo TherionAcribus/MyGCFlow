@@ -2,6 +2,7 @@ from .core import core_bp
 from .evolution import evolution_bp
 from .filters import filters_bp
 from .gpx import gpx_bp
+from .images import images_bp
 from .labs import labs_bp
 from .media import media_bp
 from .profiles import profiles_bp
@@ -15,5 +16,6 @@ def register_blueprints(app):
     app.register_blueprint(labs_bp)
     app.register_blueprint(filters_bp)
     app.register_blueprint(media_bp)
+    app.register_blueprint(images_bp)
     app.register_blueprint(profiles_bp)
     app.register_blueprint(tasks_bp)

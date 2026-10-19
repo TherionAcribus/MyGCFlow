@@ -34,6 +34,7 @@ from settings_manager import (
     coerce_undated_archives,
     get_settings_manager,
 )
+from image_settings import coerce_images_settings
 from stats_settings import coerce_stats_settings
 
 profiles_bp = Blueprint('profiles', __name__)
@@ -104,6 +105,7 @@ def api_get_settings():
         'evolution_infos_template': s.evolution_infos_template,
         'infos_template': s.infos_template,
         'stats': asdict(s.stats),
+        'images': asdict(s.images),
         'evolution_undated_archives': s.evolution_undated_archives,
     })
     response.set_cookie(
@@ -193,6 +195,11 @@ def api_put_settings():
         stats = current.stats
         if 'stats' in data and isinstance(data.get('stats'), dict):
             stats = coerce_stats_settings(data['stats'], current.stats)
+
+        # Images posées sur la carte : même patch de premier niveau que `stats`.
+        images = current.images
+        if 'images' in data and isinstance(data.get('images'), dict):
+            images = coerce_images_settings(data['images'], current.images)
 
         # Sort des archivées sans date (mode Évolution) : réécrit seulement
         # si le client l'envoie, comme les autres préférences.
@@ -299,6 +306,7 @@ def api_put_settings():
             evolution_infos_template=evolution_infos_template,
             infos_template=infos_template,
             stats=stats,
+            images=images,
             evolution_undated_archives=evolution_undated_archives,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot

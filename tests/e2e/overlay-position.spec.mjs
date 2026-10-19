@@ -103,6 +103,14 @@ test('glisser le titre : aimanté près d’un emplacement, libre ailleurs', asy
   const frame = page.locator('#titleFrame');
   const ghost = page.locator('#mapWithFrames > .overlay-snap-ghost');
   const host = await page.locator('#mapWithFrames').boundingBox();
+  // Événements `change` du CSS du titre vus depuis l'onglet #style (capture,
+  // comme le suivi des modifications de profiles.js).
+  await page.evaluate(() => {
+    window.__titleCssChanges = 0;
+    document.getElementById('style').addEventListener('change', (event) => {
+      if (event.target?.id === 'inputTitleCss') window.__titleCssChanges += 1;
+    }, true);
+  });
 
   // Vers le coin bas-gauche (à ~20 px de l'emplacement exact).
   let box = await frame.boundingBox();
@@ -118,8 +126,11 @@ test('glisser le titre : aimanté près d’un emplacement, libre ailleurs', asy
     const b = await boxIn(page, '#titleFrame');
     return [Math.round(b.x), Math.round(b.bottom)];
   }).toEqual([10, 10]);
-  // Le thème est marqué modifié (le dépôt passe par le suivi du formulaire).
-  await expect(page.locator('#current-profile-indicator')).toHaveClass(/unsaved/);
+  // Le dépôt émet `change` sur le textarea du CSS, dans l'onglet #style que
+  // le suivi « modifications non enregistrées » du thème écoute. Contrat
+  // vérifié directement : l'indicateur lui-même ne s'allume qu'avec un thème
+  // courant, état partagé qu'un spec précédent peut avoir changé.
+  expect(await page.evaluate(() => window.__titleCssChanges)).toBeGreaterThan(0);
 
   // Au milieu de la carte : position libre (en %), aucun emplacement coché.
   box = await frame.boundingBox();

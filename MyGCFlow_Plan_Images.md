@@ -1,0 +1,134 @@
+# Images sur la carte (avatar, logo d'association…)
+
+Ajouter un onglet principal « Images », distinct de « Stats », qui permet de poser sur la carte une ou plusieurs images de l'utilisateur — avatar, logo d'association, signature… — placées comme les panneaux de stats (emplacements, marges, piles, glisser-déposer aimanté, redimensionnement), identiques dans l'aperçu et dans la vidéo, persistées en préférence globale, les fichiers copiés et normalisés dans les données de l'application.
+
+## 0. État d'avancement (2026-10-19)
+
+Décisions du §2 validées par l'utilisateur telles que recommandées (liste commune aux deux modes, priorité Titre/Infos > Images > Stats, 4 images, PNG/JPEG/WebP/GIF, 8 emplacements).
+
+Lot 1 fait : `paths.images_dir()`, `image_library.py` (normalisation Pillow, empreinte, inventaire, balayage, retrait), blueprint `blueprints/images.py` (`POST/GET /api/images`, `GET /api/images/<nom>` en cache immuable, `POST /api/images/delete` refusé si l'image est référencée), `tests/test_image_library.py`.
+
+Lot 2 fait : `image_settings.py` ↔ `static/js/images_model.mjs` (coercitions et marges de coin des stats réutilisées : `statsCoercers`, `shareCornerMargins` exportés de stats_model.mjs ; helpers privés de stats_settings.py importés), bloc `images` dans `settings_manager.py` et `/api/settings`, vecteurs partagés `tests/fixtures/images/settings_cases.json`, `tests/test_image_settings.py`, `test_images_model.mjs`. Pas de `configs` dans le schéma v1 (`referenced_image_files` les lit déjà, pour plus tard).
+
+## 1. Contexte constaté dans le code (à ne pas redécouvrir)
+
+- **Titre et Infos** sont des cartouches CSS du **thème** (`title_css`/`infos_css`, profiles.js), recopiés dans la vidéo par `overlay_canvas.js` qui relit leur CSS et leur rect. `sanitizeOverlayCss` interdit `url()` (pas de requête externe depuis un thème importé) : une image n'a rien à faire dans ce circuit.
+- **Panneaux de stats** : préférence **globale** (`stats` dans settings.json, `stats_settings.py` miroir de `stats_model.mjs`, vecteurs partagés `tests/fixtures/stats/settings_cases.json`). Mise en page pure `layoutPanels(items, container, obstacles)` : ancres, piles à écart fixe de 8 px, marges de coin communes (`shareCornerMargins`), contournement d'obstacles sur toute la hauteur de la pile, position libre en fractions de l'espace restant. Interactions dans `stats_ui.js` : glisser-déposer, aimantation (`getStatsSnapTargets`, 48 px, Alt), poignées sur les bords mobiles (`resizeEdges`), « Réorganiser » (`arrangePanels`).
+- **Ordre de dessin vidéo** : carte → panneaux de stats (`addStatsPanelsToCanvas`) → titre/infos (`addOverlaysToCanvas`). Aperçu : stats `z-index: 90`, cartouches 100. La vidéo est l'aperçu agrandi (`captureRatioFor`) : géométrie de l'aperçu × ratio.
+- **Précédent de fichiers utilisateur** : `audio_library.py` + `paths.audio_dir()` — copie de l'envoi, inventaire, balayage des copies non référencées avec délai de grâce (`AUDIO_SWEEP_GRACE_S`), jamais pendant un export ; routes dans `blueprints/media.py`.
+- **Pillow 11.3** est déjà une dépendance (requirements.txt).
+- **Canvas contaminé** : dessiner dans un canvas une image d'une autre origine le rend inexportable (`toBlob`/`captureStream` en échec). Les images doivent être servies par le serveur Flask local (même origine).
+- **Barre d'onglets** : 5 onglets (Données, Style, Animation, Stats, Préférences) ; `splitter-responsive.spec.mjs` vérifie qu'ils tiennent tous à 760 px (sans compte en dur depuis le 2026-10-19).
+- **Ordre d'évaluation des modules** (AGENTS.md) : un nouveau module d'UI s'initialise en fin de fichier, pas depuis `initUIElements`.
+
+## 2. Décisions
+
+Actées avec l'utilisateur :
+- **Onglet propre « Images »**, à côté de « Stats » et non dedans : « Stats » reste réservé aux statistiques.
+- **Préférence globale**, pas réglage de thème : l'identité de l'utilisateur ne change pas avec le thème.
+- **Même manière de placer que les panneaux de stats** (emplacements, marges, glisser aimanté, poignées), par réutilisation du code, pas par copie.
+
+À confirmer (recommandation en premier) :
+1. **Une seule liste pour les deux modes** (Mes géocaches et Évolution) — un logo est le même partout. Alternative : listes séparées comme les stats.
+2. **Priorité de placement : Titre/Infos > Images > Stats.** Les images contournent les cartouches ; les piles de stats contournent les cartouches ET les images. Alternative : images et stats dans les mêmes piles (ordre entre deux listes ambigu, déconseillé).
+3. **Jusqu'à 4 images**, limite propre (indépendante des 6 panneaux de stats).
+4. **Formats acceptés** : PNG, JPEG, WebP (GIF : première image seulement). SVG et animations exclus de la v1.
+5. **Emplacements** : les 8 de la grille des stats (tous sauf le centre de la carte).
+
+## 3. Architecture cible
+
+### 3.1 Stockage des fichiers (`image_library.py`, `paths.images_dir()`)
+
+- Dossier `images/` des données de l'app, à côté de `audio/`.
+- Envoi `POST /api/images` (multipart, 15 Mo max) → Pillow : `Image.open` + `verify`, `ImageOps.exif_transpose`, première image d'un GIF, réduction à **1024 px** sur le grand côté, PNG si transparence (canal alpha réellement utilisé), sinon JPEG qualité 90. Nom = empreinte SHA-256 tronquée du contenu normalisé + extension : un même fichier envoyé deux fois n'est stocké qu'une fois.
+- `GET /api/images/<nom>` : nom validé (`secure_filename` + motif empreinte), `Cache-Control` long (contenu immuable par nom). Même origine → canvas non contaminé.
+- `GET /api/images` (bibliothèque : nom, dimensions, poids, référencée ou non) ; `POST /api/images/delete`.
+- Balayage des fichiers non référencés (liste courante + configurations nommées), délai de grâce et jamais pendant un export, comme `audio_library.sweep_audio_dir`.
+
+### 3.2 Modèle de réglages (`images`, préférence globale)
+
+`image_settings.py` ↔ `images_model.mjs`, miroirs exacts, vecteurs partagés `tests/fixtures/images/settings_cases.json` :
+
+```
+images: {
+  enabled: true,
+  items: [{
+    id, enabled, file,            // nom dans images/ ; '' = à choisir
+    name,                         // libellé dans la liste (nom d'origine aplati)
+    position: { mode: 'anchor'|'free', anchor, dx, dy, x, y,
+                width,            // px CSS, 40–1200
+                height },         // null = d'après le ratio de l'image
+    style: { shape: 'rect'|'rounded'|'circle', radius,
+             fit: 'contain'|'cover', opacity,
+             background, background_opacity, padding,
+             shadow: bool }
+  }],
+  configs: []                     // plus tard (§7)
+}
+```
+
+Normalisation : mêmes coercitions que `stats` (bornes, couleurs, fractions arrondies à 1e-4, ids hexadécimaux régénérés), marges de coin communes (`shareCornerMargins` réutilisé), `file` validé par le même motif que le serveur.
+
+### 3.3 Mise en page commune
+
+- Les images passent par `layoutPanels` avec les cartouches titre/infos comme obstacles.
+- La mise en page des stats reçoit en obstacles **titre, infos et rects des images** (une seule source : `overlayRects` étendu, invalidé quand une image bouge ou change de taille).
+- Snap et « Réorganiser » des stats en profitent sans changement (ils lisent déjà les obstacles).
+
+### 3.4 Rendu (`images_panels.js`)
+
+- Aperçu : un `<canvas class="image-panel">` par image dans `#mapWithFrames`, `z-index: 95` (au-dessus des stats, sous les cartouches) ; même dessin que la vidéo.
+- `drawImagePanel(ctx, rect, item, bitmap)` pur (forme : rectangle, arrondi, cercle par `clip`, `contain`/`cover`, opacité, fond, ombre) — testable hors DOM.
+- Vidéo : `addImagePanelsToCanvas(ctx, w, h, scale)` appelé entre `addStatsPanelsToCanvas` et `addOverlaysToCanvas`, dans les deux pipelines (`mapgl.js`), canvas hors écran mis en cache par (révision, taille).
+- **Préchargement** : `imagesReady()` (promesse sur `img.decode()` de chaque image activée), attendue au démarrage d'un enregistrement — sinon les premières images de la vidéo sortent sans le logo.
+- Fichier manquant (configuration importée d'une autre machine, fichier supprimé) : cadre « Image manquante » dans l'aperçu, rien dans la vidéo, signalé dans la liste.
+
+### 3.5 Interactions partagées (`panel_interactions.js`)
+
+Extraire de `stats_ui.js` ce qui ne dépend pas des stats : machine d'état du glisser (seuil, capture du pointeur, Alt), `resizeEdges`/poignées et curseurs, aimantation (`nearestSnapTarget`, repère `.stats-snap-ghost` renommé `.panel-snap-ghost`), épingle du coin haut-gauche en mode libre. Paramétré par des rappels : `getRect(id)`, `getSnapTargets(id)`, `previewPosition/Size`, `commit…`. `stats_ui.js` et `images_ui.js` l'utilisent ; les specs Stats existants servent de filet pour l'extraction.
+
+Mode édition : onglet Images ouvert, au repos → classe `images-editing` sur `#mapWithFrames` (comme `stats-editing`, `overlay-editing`).
+
+### 3.6 Onglet « Images » (`templates/menu_images.html`, `images_ui.js`)
+
+- Liste : vignette, nom, interrupteur, réordonnancement, suppression avec « Annuler » (mêmes motifs que la liste des stats).
+- Ajout : bouton « Ajouter une image » (sélecteur de fichier) et dépôt d'un fichier sur l'onglet ; choix dans la bibliothèque des images déjà envoyées (réutilisation sans nouvel envoi).
+- Formulaire : Position (grille, marges, largeur, hauteur auto/imposée), Apparence (forme, rayon, ajustement, opacité, fond, ombre).
+- Retour de sauvegarde et `flush()` sur les actions discrètes (`makeDebouncedSettingsSaver`, cf. AGENTS.md).
+- Libellé court pour tenir à 760 px avec 6 onglets.
+
+## 4. Lots d'implémentation
+
+1. **Stockage et API** : `paths.images_dir()`, `image_library.py` (normalisation Pillow, empreinte, inventaire, balayage), routes. Tests Python (formats, EXIF, transparence, réduction, doublon, nom invalide, fichier non-image, balayage).
+2. **Modèle** : `image_settings.py` + `images_model.mjs`, bloc dans `settings_manager.py`, vecteurs partagés.
+3. **Rendu et mise en page** : `images_panels.js`, `drawImagePanel`, intégration vidéo (deux pipelines) et préchargement, images en obstacles des stats.
+4. **Onglet Images** : liste, ajout, bibliothèque, formulaire (sans glisser).
+5. **Interactions partagées** : extraction de `panel_interactions.js`, branchement Stats (non-régression) puis Images.
+6. **Finitions** : image manquante, export/import JSON de la liste, guide, traductions, doc `docs/images.md`.
+
+## 5. Fichiers
+
+Créés : `image_library.py`, `image_settings.py`, `static/js/images_model.mjs`, `static/js/images_render.mjs`, `static/js/images_panels.js`, `static/js/images_ui.js`, `static/js/panel_interactions.js`, `templates/menu_images.html`, `tests/test_image_library.py`, `tests/test_image_settings.py`, `test_images_model.mjs`, `tests/fixtures/images/settings_cases.json`, `tests/e2e/images.spec.mjs`, `docs/images.md`.
+
+Modifiés : `paths.py`, `settings_manager.py`, `blueprints/media.py` (ou blueprint dédié), `templates/app.html` (onglet), `static/js/index.js` (ordre des exports), `static/js/stats_panels.js` (obstacles), `static/js/stats_ui.js` (extraction), `static/js/mapgl.js` (dessin + préchargement), CSS, traductions, guide.
+
+## 6. Tests et vérification
+
+- Python : normalisation Pillow et API (lot 1), vecteurs partagés (lot 2).
+- Unitaires JS : modèle, `drawImagePanel` (forme, ajustement), mise en page avec obstacles images.
+- E2E : ajout d'une image (fixture PNG avec transparence), placement par la grille, glisser aimanté, redimensionnement ; une pile de stats contourne l'image ; **comparaison aperçu/vidéo** de la boîte dessinée (comme `overlay-position.spec.mjs`) ; export vidéo avec image (canvas non contaminé, image présente dès la première frame) ; image manquante.
+- `images` est une préférence globale partagée par les specs : chaque spec la remet à vide en sortant (cf. AGENTS.md, famille `stats`).
+
+## 7. Risques / points de vigilance
+
+- Canvas contaminé si une image ne vient pas du serveur local : ne jamais accepter d'URL externe.
+- Images lourdes : réduction à l'envoi, et coût de dessin négligeable grâce au cache par (révision, taille) — à mesurer comme pour les stats.
+- Extraction des interactions (lot 5) : risque de régression sur les Stats, couvert par leurs specs.
+- Disque : balayage des fichiers orphelins ; afficher la place occupée dans la bibliothèque.
+- Configurations et exports partagés : référence à un fichier absent → « Image manquante », jamais d'erreur.
+
+## 8. Évolutivité (sans l'implémenter maintenant)
+
+- Configurations nommées d'images, comme `stats.configs`.
+- Export JSON avec images embarquées (data URL) pour partager une mise en page complète.
+- SVG (rastérisé à l'envoi), GIF animés, apparition en fondu à une date donnée de l'animation.

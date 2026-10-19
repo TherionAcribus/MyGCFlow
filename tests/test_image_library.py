@@ -1,0 +1,255 @@
+import io
+import os
+import tempfile
+import time
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
+
+from flask import Flask
+from PIL import Image
+
+import image_library
+
+
+def encode(img, fmt, **kwargs):
+    buf = io.BytesIO()
+    img.save(buf, fmt, **kwargs)
+    return buf.getvalue()
+
+
+def decode(data):
+    img = Image.open(io.BytesIO(data))
+    img.load()
+    return img
+
+
+class ImageLibraryTestCase(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.folder = Path(tmp.name) / "images"
+        patcher = mock.patch.object(image_library.paths, "images_dir", return_value=self.folder)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+
+class NormalizeTests(ImageLibraryTestCase):
+    """Normalisation à l'envoi : vérifiée, redressée, réduite, réencodée."""
+
+    def test_transparency_keeps_png(self):
+        img = Image.new('RGBA', (40, 30), (255, 0, 0, 0))
+        img.putpixel((5, 5), (0, 128, 255, 255))
+        data, ext, size = image_library.normalize_image(encode(img, 'PNG'))
+        self.assertEqual((ext, size), ('png', (40, 30)))
+        out = decode(data)
+        self.assertEqual(out.mode, 'RGBA')
+        self.assertEqual(out.getpixel((0, 0))[3], 0)
+
+    def test_opaque_rgba_becomes_jpeg(self):
+        # Canal alpha présent mais entièrement opaque : un JPEG suffit.
+        img = Image.new('RGBA', (40, 30), (10, 200, 30, 255))
+        data, ext, _ = image_library.normalize_image(encode(img, 'PNG'))
+        self.assertEqual(ext, 'jpg')
+        self.assertEqual(decode(data).format, 'JPEG')
+
+    def test_palette_with_transparency_keeps_png(self):
+        img = Image.new('P', (20, 20), 0)
+        img.putpalette([255, 255, 255, 0, 0, 0] + [0] * 762)
+        img.info['transparency'] = 0
+        _, ext, _ = image_library.normalize_image(encode(img, 'PNG', transparency=0))
+        self.assertEqual(ext, 'png')
+
+    def test_large_image_is_reduced_keeping_its_ratio(self):
+        img = Image.new('RGB', (3000, 1500), (30, 30, 30))
+        _, _, size = image_library.normalize_image(encode(img, 'JPEG'))
+        self.assertEqual(size, (1024, 512))
+
+    def test_small_image_is_not_enlarged(self):
+        _, _, size = image_library.normalize_image(encode(Image.new('RGB', (64, 48)), 'PNG'))
+        self.assertEqual(size, (64, 48))
+
+    def test_exif_orientation_is_applied(self):
+        # Photo de téléphone : pixels en paysage, EXIF « tourner de 90° ».
+        img = Image.new('RGB', (200, 100), (200, 50, 50))
+        exif = img.getexif()
+        exif[0x0112] = 6
+        _, _, size = image_library.normalize_image(encode(img, 'JPEG', exif=exif))
+        self.assertEqual(size, (100, 200))
+
+    def test_webp_and_gif_are_accepted(self):
+        _, ext, _ = image_library.normalize_image(encode(Image.new('RGB', (30, 30), (1, 2, 3)), 'WEBP'))
+        self.assertEqual(ext, 'jpg')
+        frames = [Image.new('RGB', (30, 20), color) for color in ((255, 0, 0), (0, 0, 255))]
+        buf = io.BytesIO()
+        frames[0].save(buf, 'GIF', save_all=True, append_images=frames[1:], duration=100)
+        data, _, size = image_library.normalize_image(buf.getvalue())
+        self.assertEqual(size, (30, 20))
+        # Première image seulement : rouge.
+        r, g, b = decode(data).convert('RGB').getpixel((15, 10))
+        self.assertGreater(r, 200)
+        self.assertLess(b, 60)
+
+    def test_refusals(self):
+        cases = {
+            'not_image': b'pas une image du tout',
+            'format': encode(Image.new('RGB', (10, 10)), 'BMP'),
+            'too_large': b'x' * (image_library.IMAGE_MAX_UPLOAD_BYTES + 1),
+        }
+        for reason, data in cases.items():
+            with self.subTest(reason=reason):
+                with self.assertRaises(image_library.InvalidImage) as ctx:
+                    image_library.normalize_image(data)
+                self.assertEqual(ctx.exception.reason, reason)
+
+    def test_too_many_pixels_is_refused_before_decoding(self):
+        # 8000 × 6400 = 51,2 Mpx en noir et blanc : quelques Ko en PNG.
+        huge = encode(Image.new('1', (8000, 6400)), 'PNG')
+        with self.assertRaises(image_library.InvalidImage) as ctx:
+            image_library.normalize_image(huge)
+        self.assertEqual(ctx.exception.reason, 'too_many_pixels')
+
+    def test_truncated_file_is_refused(self):
+        data = encode(Image.new('RGB', (200, 200), (9, 9, 9)), 'PNG')
+        with self.assertRaises(image_library.InvalidImage):
+            image_library.normalize_image(data[: len(data) // 2])
+
+
+class StorageTests(ImageLibraryTestCase):
+    """Enregistrement, inventaire, balayage, retrait."""
+
+    def png(self, color=(255, 0, 0, 128), size=(20, 20)):
+        return encode(Image.new('RGBA', size, color), 'PNG')
+
+    def test_saved_name_is_the_content_hash_and_same_content_is_stored_once(self):
+        first = image_library.save_image(self.png())
+        self.assertRegex(first['file'], r'^[0-9a-f]{16}\.png$')
+        self.assertEqual((first['width'], first['height']), (20, 20))
+        second = image_library.save_image(self.png())
+        self.assertEqual(second['file'], first['file'])
+        self.assertEqual([p.name for p in self.folder.iterdir()], [first['file']])
+        other = image_library.save_image(self.png(color=(0, 0, 255, 128)))
+        self.assertNotEqual(other['file'], first['file'])
+
+    def test_safe_name_accepts_only_names_of_the_folder(self):
+        for bad in ('../x.png', 'abc.png', '0123456789abcdef.gif', '0123456789ABCDEF.png', None, 3):
+            self.assertEqual(image_library.safe_image_name(bad), '', bad)
+        self.assertEqual(image_library.safe_image_name('0123456789abcdef.jpg'), '0123456789abcdef.jpg')
+
+    def test_referenced_files_come_from_items_and_configs(self):
+        settings = {
+            'items': [{'file': 'aaaaaaaaaaaaaaaa.png'}, {'file': ''}, {'file': '../evil.png'}],
+            'configs': [{'name': 'Club', 'items': [{'file': 'bbbbbbbbbbbbbbbb.jpg'}]}],
+        }
+        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg'}
+        self.assertEqual(image_library.referenced_image_files(settings), expected)
+        as_object = SimpleNamespace(items=settings['items'], configs=settings['configs'])
+        self.assertEqual(image_library.referenced_image_files(as_object), expected)
+        self.assertEqual(image_library.referenced_image_files(None), set())
+
+    def test_list_reports_sizes_dimensions_and_references(self):
+        kept = image_library.save_image(self.png(size=(30, 10)))['file']
+        loose = image_library.save_image(self.png(color=(0, 255, 0, 128)))['file']
+        (self.folder / 'notes.txt').write_text('étranger')
+        listing = image_library.list_image_files({kept})
+        by_name = {f['file']: f for f in listing['files']}
+        self.assertEqual(set(by_name), {kept, loose})
+        self.assertEqual((by_name[kept]['width'], by_name[kept]['height']), (30, 10))
+        self.assertTrue(by_name[kept]['referenced'])
+        self.assertFalse(by_name[loose]['referenced'])
+        self.assertEqual(listing['total_bytes'], sum(f['size_bytes'] for f in listing['files']))
+
+    def test_sweep_removes_only_old_unreferenced_images(self):
+        old = time.time() - 2 * image_library.IMAGE_SWEEP_GRACE_S
+        kept = image_library.save_image(self.png())['file']
+        forgotten = image_library.save_image(self.png(color=(1, 1, 1, 128)))['file']
+        fresh = image_library.save_image(self.png(color=(2, 2, 2, 128)))['file']
+        part = self.folder / '.upload-abc.part'
+        part.write_bytes(b'x')
+        stranger = self.folder / 'notes.txt'
+        stranger.write_text('à garder')
+        for name in (kept, forgotten):
+            os.utime(self.folder / name, (old, old))
+        os.utime(part, (old, old))
+        os.utime(stranger, (old, old))
+        removed = image_library.sweep_image_dir({kept})
+        self.assertEqual(sorted(removed), sorted([forgotten, part.name]))
+        self.assertTrue((self.folder / kept).exists())
+        self.assertTrue((self.folder / fresh).exists())
+        self.assertTrue(stranger.exists())
+
+    def test_saving_again_refreshes_the_date_of_an_existing_image(self):
+        name = image_library.save_image(self.png())['file']
+        old = time.time() - 2 * image_library.IMAGE_SWEEP_GRACE_S
+        os.utime(self.folder / name, (old, old))
+        image_library.save_image(self.png())
+        self.assertEqual(image_library.sweep_image_dir(set()), [])
+
+    def test_delete(self):
+        name = image_library.save_image(self.png())['file']
+        self.assertTrue(image_library.delete_image_file(name))
+        self.assertFalse(image_library.delete_image_file(name))
+        self.assertFalse(image_library.delete_image_file('../image_library.py'))
+
+
+class RouteTests(ImageLibraryTestCase):
+    """API /api/images : envoi, bibliothèque, lecture, retrait."""
+
+    def setUp(self):
+        super().setUp()
+        from blueprints import images as images_bp_module
+
+        self.images_settings = {'items': [], 'configs': []}
+        manager = SimpleNamespace(
+            get_app_settings=lambda: SimpleNamespace(images=self.images_settings))
+        patcher = mock.patch.object(images_bp_module, 'get_settings_manager', return_value=manager)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        app = Flask(__name__)
+        app.register_blueprint(images_bp_module.images_bp)
+        self.client = app.test_client()
+
+    def upload(self, data, filename='logo.png'):
+        return self.client.post('/api/images', data={'image': (io.BytesIO(data), filename)},
+                                content_type='multipart/form-data')
+
+    def test_upload_then_read_back(self):
+        response = self.upload(encode(Image.new('RGBA', (50, 25), (0, 0, 0, 100)), 'PNG'))
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body['success'])
+        self.assertEqual((body['width'], body['height']), (50, 25))
+        served = self.client.get(f"/api/images/{body['file']}")
+        self.assertEqual(served.status_code, 200)
+        self.assertEqual(served.mimetype, 'image/png')
+        self.assertIn('immutable', served.headers['Cache-Control'])
+        self.assertEqual(decode(served.data).size, (50, 25))
+        served.close()
+
+    def test_upload_refusals_have_a_reason_and_a_status(self):
+        self.assertEqual(self.client.post('/api/images').status_code, 400)
+        bad = self.upload(b'texte', 'faux.png')
+        self.assertEqual((bad.status_code, bad.get_json()['reason']), (400, 'not_image'))
+        bmp = self.upload(encode(Image.new('RGB', (5, 5)), 'BMP'), 'x.bmp')
+        self.assertEqual((bmp.status_code, bmp.get_json()['reason']), (415, 'format'))
+
+    def test_reading_rejects_anything_but_folder_names(self):
+        for name in ('..%2Fapp.py', 'logo.png', '0123456789abcdef.png'):
+            self.assertEqual(self.client.get(f'/api/images/{name}').status_code, 404, name)
+
+    def test_list_and_delete(self):
+        name = self.upload(encode(Image.new('RGB', (8, 8), (4, 5, 6)), 'PNG')).get_json()['file']
+        listing = self.client.get('/api/images').get_json()
+        self.assertEqual([f['file'] for f in listing['files']], [name])
+        # Utilisée sur la carte : retrait refusé.
+        self.images_settings['items'] = [{'file': name}]
+        self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 409)
+        self.images_settings['items'] = []
+        self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 200)
+        self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 404)
+        self.assertEqual(self.client.post('/api/images/delete', json={'file': '../x'}).status_code, 400)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -15,6 +15,7 @@ from typing import Callable, Dict, Tuple, Optional, List
 
 from werkzeug.utils import secure_filename
 
+from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
 
@@ -424,6 +425,10 @@ class AppSettings:
     # préférence globale, comme infos_template — changer de thème ne doit pas
     # les faire disparaître. Schéma et coercition dans stats_settings.py.
     stats: StatsSettings = field(default_factory=StatsSettings)
+    # Images de l'utilisateur posées sur la carte (avatar, logo…) : préférence
+    # globale elle aussi, une seule liste pour les deux modes. Schéma dans
+    # image_settings.py, fichiers dans images/ (image_library.py).
+    images: ImagesSettings = field(default_factory=ImagesSettings)
     # Mode Évolution : sort des caches archivées sans date d'archivage.
     # "hide" (défaut) : elles ne figurent ni sur la carte ni dans les
     #   compteurs (on ne sait pas quand elles ont disparu, rien à animer).
@@ -1030,6 +1035,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.infos_template = coerce_infos_template(
             d.get("infos_template"), s.infos_template)
         s.stats = coerce_stats_settings(d.get("stats"))
+        s.images = coerce_images_settings(d.get("images"))
         s.evolution_undated_archives = coerce_undated_archives(
             d.get("evolution_undated_archives"), s.evolution_undated_archives)
         s.locationless_display = coerce_locationless_display(

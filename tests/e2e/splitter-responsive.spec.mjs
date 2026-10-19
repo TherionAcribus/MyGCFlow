@@ -33,10 +33,16 @@ test('mode latéral : repli automatique en bandeau sous 1100 px', async ({ page 
   // visible (plus de bande de ~50 px à défilement invisible).
   await page.setViewportSize({ width: 760, height: 700 });
   await expect(container(page)).not.toHaveClass(/layout-sidebar/);
+  // Tous les onglets, quel qu'en soit le nombre (le compte en dur, 4, était
+  // resté d'avant l'onglet Stats) : chacun visible et dans la barre.
   const tabs = page.locator('#mainTabs');
-  await expect(tabs.locator('.nav-link')).toHaveCount(4);
-  for (const link of await tabs.locator('.nav-link').all()) {
+  const links = tabs.locator('.nav-link');
+  expect(await links.count()).toBeGreaterThanOrEqual(4);
+  const bar = await tabs.boundingBox();
+  for (const link of await links.all()) {
     await expect(link).toBeVisible();
+    const box = await link.boundingBox();
+    expect(box.x + box.width).toBeLessThanOrEqual(bar.x + bar.width + 1);
   }
 
   // Réélargissement : le mode latéral mémorisé revient tout seul.

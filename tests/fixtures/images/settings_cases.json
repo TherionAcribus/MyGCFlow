@@ -1,0 +1,848 @@
+[
+  {
+    "name": "absent",
+    "input": null,
+    "expected": {
+      "enabled": true,
+      "items": []
+    }
+  },
+  {
+    "name": "non-objet",
+    "input": "oui",
+    "expected": {
+      "enabled": true,
+      "items": []
+    }
+  },
+  {
+    "name": "vide",
+    "input": {},
+    "expected": {
+      "enabled": true,
+      "items": []
+    }
+  },
+  {
+    "name": "enabled seul",
+    "input": {
+      "enabled": false
+    },
+    "expected": {
+      "enabled": false,
+      "items": []
+    }
+  },
+  {
+    "name": "enabled non booléen",
+    "input": {
+      "enabled": "non",
+      "items": []
+    },
+    "expected": {
+      "enabled": true,
+      "items": []
+    }
+  },
+  {
+    "name": "image minimale",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "fichier invalide ou chemin : vidé, réglages gardés",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "../app.py",
+          "name": "  Logo\r\ndu club  ",
+          "position": {
+            "width": 300
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "LOGO.PNG"
+        },
+        {
+          "id": "aaaaaa03",
+          "file": 42
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "",
+          "name": "Logo du club",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "nom aplati et tronqué à 80",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "fedcba9876543210.jpg",
+          "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "fedcba9876543210.jpg",
+          "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "bornes, chaînes numériques et arrondis",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "dx": -5,
+            "dy": "40.5",
+            "width": "2000",
+            "height": 10,
+            "x": 1.23456,
+            "y": "0.123456"
+          },
+          "style": {
+            "radius": 999,
+            "opacity": "50",
+            "background_opacity": -3,
+            "padding": 100.4
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 0,
+            "dy": 41,
+            "width": 1200,
+            "height": 40,
+            "x": 1,
+            "y": 0.1235
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 200,
+            "fit": "contain",
+            "opacity": 50,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 100,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "hauteur : null, non numérique ou booléenne",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "height": null
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-left",
+            "height": "auto"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-right",
+            "height": true
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "bottom-left",
+            "height": "250"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": 250,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "choix invalides remplacés par les défauts",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "mode": "floating",
+            "anchor": "middle-center"
+          },
+          "style": {
+            "shape": "star",
+            "fit": "stretch",
+            "background": "red",
+            "shadow": "yes"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "choix valides et couleur courte développée",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "enabled": false,
+          "position": {
+            "mode": "free",
+            "anchor": "middle-left",
+            "x": 0.25,
+            "y": 0.75
+          },
+          "style": {
+            "shape": "circle",
+            "fit": "cover",
+            "background": "#abc",
+            "shadow": true
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": false,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "free",
+            "anchor": "middle-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0.25,
+            "y": 0.75
+          },
+          "style": {
+            "shape": "circle",
+            "radius": 12,
+            "fit": "cover",
+            "opacity": 100,
+            "background": "#aabbcc",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "marges de coin communes, image libre à part",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-right",
+            "dx": 30,
+            "dy": 24
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "fedcba9876543210.jpg",
+          "position": {
+            "mode": "free",
+            "anchor": "top-right",
+            "dx": 2,
+            "dy": 3
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-right",
+            "dx": 8,
+            "dy": 8
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-right",
+            "dx": 30,
+            "dy": 24,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "fedcba9876543210.jpg",
+          "name": "",
+          "position": {
+            "mode": "free",
+            "anchor": "top-right",
+            "dx": 2,
+            "dy": 3,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-right",
+            "dx": 30,
+            "dy": 24,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "entrées non objets écartées",
+    "input": {
+      "items": [
+        "x",
+        3,
+        null,
+        [],
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "plus de quatre images : tronqué",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa04",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa05",
+          "file": "0123456789abcdef.png"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false
+          }
+        }
+      ]
+    }
+  }
+]

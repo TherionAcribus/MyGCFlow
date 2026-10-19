@@ -300,6 +300,14 @@ function coerceBlock(raw, defaults, coercers) {
     return out;
 }
 
+// Coercitions élémentaires et marges de coin communes, réutilisées par
+// images_model.mjs : mêmes règles que les panneaux, avec les mêmes miroirs
+// côté serveur (stats_settings.py, importé par image_settings.py).
+export const statsCoercers = Object.freeze({
+    intIn, unit, bool, choice, color, title, coerceBlock,
+    isId: (value) => typeof value === 'string' && ID_RE.test(value),
+});
+
 // Liste de panneaux propre à chaque mode : `stats.panels` pour le mode
 // principal (trouvailles), `stats.evolution_panels` pour /evolution.
 export function statsPanelsKey(evolution) {
@@ -370,7 +378,7 @@ function normalizePanelList(source, newId) {
 // non. Les panneaux d'une pile sont ensuite séparés d'un écart fixe
 // (STACK_GAP) : réordonner une pile ne la déplace plus. Les panneaux libres
 // gardent les leurs, reprises s'ils reviennent à un coin vide.
-function shareCornerMargins(panels) {
+export function shareCornerMargins(panels) {
     const margins = new Map();
     for (const { position } of panels) {
         if (position.mode !== 'anchor') continue;

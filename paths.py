@@ -194,6 +194,12 @@ def audio_dir() -> Path:
     return data_dir() / "audio"
 
 
+def images_dir() -> Path:
+    """Images de l'utilisateur posées sur la carte (onglet Images), normalisées
+    à l'envoi (image_library.py)."""
+    return data_dir() / "images"
+
+
 def default_video_dir() -> Path:
     """Dossier des vidéos tant que l'utilisateur n'en a pas choisi un autre.
 
