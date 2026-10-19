@@ -480,11 +480,11 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
 
 // Résolue quand toutes les images affichées sont décodées (ou en échec),
 // au plus tard après `timeoutMs` : une image injoignable ne bloque pas un
-// enregistrement. Appelée avant la première frame (mapgl.js).
+// enregistrement. Appelée avant la première frame (mapgl.js). Les images
+// de visibleItems seulement : interrupteur général éteint, base vide ou
+// fichier déjà en échec n'attendent rien.
 export function imagesReady(timeoutMs = 3000) {
-    const pending = settings.items
-        .filter((item) => item.enabled && item.file)
-        .map((item) => ensureSource(item.file).promise);
+    const pending = visibleItems().map((item) => ensureSource(item.file).promise);
     if (!pending.length) return Promise.resolve(true);
     return Promise.race([
         Promise.all(pending).then(() => true),
