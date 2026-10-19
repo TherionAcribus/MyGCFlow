@@ -92,8 +92,11 @@ liste.
   (au-dessus des stats à 90, sous les cartouches à 100). Vidéo :
   `addImagePanelsToCanvas` dans les deux pipelines, **entre** les stats et les
   cartouches, canvas hors écran mis en cache par (révision, taille).
-- L'ombre déborde de la boîte : CSS `drop-shadow` dans l'aperçu, `shadowBlur`
-  dans la vidéo, mêmes valeurs (`IMAGE_SHADOW`, même échelle de flou).
+- L'ombre déborde de la boîte : CSS `drop-shadow` dans l'aperçu ; dans la
+  vidéo, elle est cuite dans le canvas mis en cache — le panneau est dessiné
+  dans un second canvas élargi dont le contexte porte les `shadow*` (ombre du
+  composite, pas de chaque opération), puis copié par un `drawImage` nu à
+  chaque frame, mêmes valeurs (`IMAGE_SHADOW`, même échelle de flou).
 - Fichier absent ou illisible : ni dessiné ni placé (état `failed`), signalé
   « (manquante) » dans la liste (événement `mygcflow:image-source`). Un
   chargement raté est d'abord **réessayé** deux fois (0,5 s puis 2 s, avec un

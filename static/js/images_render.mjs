@@ -5,7 +5,9 @@
 // Le dessin couvre la forme, le fond, la marge intérieure, l'ajustement et
 // l'opacité. L'ombre portée n'en fait pas partie : elle déborde de la boîte,
 // donc du canvas de l'aperçu — CSS `filter: drop-shadow(...)` dans l'aperçu,
-// `shadowBlur` du contexte dans la vidéo, mêmes valeurs (IMAGE_SHADOW).
+// cuite dans un second canvas élargi du cache vidéo (posée sur le canvas qui
+// reçoit le panneau dessiné, pour l'ombre du composite comme `drop-shadow` ;
+// un drawImage nu par frame), mêmes valeurs (IMAGE_SHADOW).
 
 // Ombre portée : décalage vertical et flou en px CSS, couleur. Le flou d'un
 // drop-shadow CSS et le shadowBlur du canvas ont la même échelle (écart type

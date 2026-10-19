@@ -6,7 +6,8 @@
 // - un <canvas class="image-panel"> par image dans #mapWithFrames, au-dessus
 //   des panneaux de stats et sous le titre et les infos ;
 // - addImagePanelsToCanvas() pour les deux pipelines vidéo, entre les stats
-//   et les cartouches, à la géométrie de l'aperçu × échelle ;
+//   et les cartouches, à la géométrie de l'aperçu × échelle — l'ombre cuite
+//   dans le canvas mis en cache, un drawImage nu par frame ;
 // - getImagePanelRects() : rects des images, obstacles que les piles de
 //   stats contournent (priorité Titre/Infos > Images > Stats) ;
 // - imagesReady() : attendue avant le premier enregistrement d'une frame.
@@ -29,7 +30,8 @@ let revision = 0;
 const sources = new Map();
 // Id → { canvas, layout, cssKey, drawnKey }.
 const nodes = new Map();
-// Id → { canvas, key } : rendus hors écran de la vidéo.
+// Id → { canvas, shadowCanvas, shadowPad, key } : rendus hors écran de la
+// vidéo (shadowCanvas : second canvas élargi qui porte l'ombre, sinon null).
 const videoCache = new Map();
 
 let layout = new Map();
@@ -436,7 +438,8 @@ function flush() {
 // stats et AVANT le titre et les infos (même empilement que l'aperçu).
 // Géométrie de l'aperçu × scaleFactor, ancrée comme dans le DOM. Chaque image
 // est rendue dans un canvas hors écran gardé tant que la révision et la
-// taille ne changent pas : une image immobile coûte un drawImage.
+// taille ne changent pas : une image immobile coûte un drawImage nu, l'ombre
+// portée étant cuite dans un second canvas du cache (ci-dessous).
 export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
     ensureLayout();
     for (const item of visibleItems()) {
@@ -456,7 +459,7 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
         const key = `${revision}|${w}|${h}`;
         let cached = videoCache.get(item.id);
         if (!cached) {
-            cached = { canvas: document.createElement('canvas'), key: '' };
+            cached = { canvas: document.createElement('canvas'), shadowCanvas: null, shadowPad: 0, key: '' };
             videoCache.set(item.id, cached);
         }
         if (cached.key !== key) {
@@ -465,16 +468,36 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
             const offCtx = cached.canvas.getContext('2d');
             offCtx.clearRect(0, 0, w, h);
             drawImagePanel(offCtx, w, h, item, entry.img, scaleFactor);
+            if (item.style.shadow) {
+                // Ombre cuite dans un second canvas élargi, sur le contexte
+                // duquel les shadow* sont posés : l'ombre est alors celle du
+                // composite complet (forme + fond + image), comme le
+                // drop-shadow CSS de l'aperçu. Posées dans drawImagePanel, les
+                // shadow* s'appliqueraient à chaque opération de dessin —
+                // ombres superposées au lieu d'une seule. Marge sur tous les
+                // côtés : le spread réel d'un shadowBlur dépasse sa valeur,
+                // et l'offsetY doit rentrer dans la marge du bas.
+                const pad = Math.ceil((IMAGE_SHADOW.blur * 2 + IMAGE_SHADOW.offsetY) * scaleFactor);
+                if (!cached.shadowCanvas) cached.shadowCanvas = document.createElement('canvas');
+                cached.shadowCanvas.width = w + 2 * pad;
+                cached.shadowCanvas.height = h + 2 * pad;
+                const shadowCtx = cached.shadowCanvas.getContext('2d');
+                shadowCtx.clearRect(0, 0, cached.shadowCanvas.width, cached.shadowCanvas.height);
+                shadowCtx.shadowColor = IMAGE_SHADOW.color;
+                shadowCtx.shadowBlur = IMAGE_SHADOW.blur * scaleFactor;
+                shadowCtx.shadowOffsetY = IMAGE_SHADOW.offsetY * scaleFactor;
+                shadowCtx.drawImage(cached.canvas, pad, pad);
+                cached.shadowPad = pad;
+            } else {
+                cached.shadowCanvas = null;
+            }
             cached.key = key;
         }
-        ctx.save();
-        if (item.style.shadow) {
-            ctx.shadowColor = IMAGE_SHADOW.color;
-            ctx.shadowBlur = IMAGE_SHADOW.blur * scaleFactor;
-            ctx.shadowOffsetY = IMAGE_SHADOW.offsetY * scaleFactor;
+        if (cached.shadowCanvas) {
+            ctx.drawImage(cached.shadowCanvas, x - cached.shadowPad, y - cached.shadowPad);
+        } else {
+            ctx.drawImage(cached.canvas, x, y);
         }
-        ctx.drawImage(cached.canvas, x, y);
-        ctx.restore();
     }
 }
 
