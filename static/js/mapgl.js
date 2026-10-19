@@ -3044,16 +3044,33 @@ export function recordAnimation(){
         } else {
             pkg.showToast && pkg.showToast(pkg.t('Nettoyage initial impossible. Poursuite de l\'enregistrement.'), 'warning', pkg.t('Attention'), 3000);
         }
-        startRecordingProcess(session);
+        startRecordingWhenImagesReady(session);
     })
     .catch(err => {
         if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
         if (session !== recordingSession) return;
         pkg.showToast && pkg.showToast(pkg.t('Erreur nettoyage initial. Poursuite.'), 'warning', pkg.t('Attention'), 3000);
-        startRecordingProcess(session);
+        startRecordingWhenImagesReady(session);
     });
     try { hidePopup(); } catch(_) {}
     return;
+}
+
+// Images de l'onglet Images : décodées avant la première frame du mode image
+// par image, sinon les premières images de la vidéo sortiraient sans elles.
+// Plafond de 3 s (cf. imagesReady) : une image injoignable ne bloque pas
+// l'enregistrement. Le mode MediaRecorder n'attend pas (temps réel, cf.
+// startMediaRecorderPipeline).
+function whenImagesReady() {
+    return Promise.resolve(pkg.imagesReady?.(3000)).catch(() => false);
+}
+
+function startRecordingWhenImagesReady(session) {
+    whenImagesReady().then(() => {
+        // Arrêté pendant l'attente : ne pas démarrer après coup.
+        if (session !== recordingSession) return;
+        startRecordingProcess(session);
+    });
 }
 
 function startRecordingProcess(session){
@@ -4152,6 +4169,8 @@ function startMrDrawLoop() {
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
             // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
             pkg.addStatsPanelsToCanvas?.(mrOutCtx, w, h, effScale);
+            // Images de l'utilisateur : au-dessus des stats, sous les cartouches.
+            pkg.addImagePanelsToCanvas?.(mrOutCtx, w, h, effScale);
             addOverlaysToCanvas(mrOutCtx, w, h, effScale);
             mapDirtyTracker.noteDraw(frameStart, signature);
         } catch(e) {
@@ -4185,6 +4204,10 @@ function overlayContentSignature() {
 }
 
 async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1, session = recordingSession){
+    // Pas d'attente des images ici (cf. whenImagesReady) : l'animation est
+    // déjà lancée, la capture en temps réel perdrait son début. Les images
+    // sont décodées dès le chargement des préférences et à chaque envoi ;
+    // une image encore en cours apparaît dès qu'elle est prête.
     const fps = normalizeRecordingFps(pkg.options.record?.fps);
     const wantedMime = pkg.options?.record?.mediaRecorder?.mimeType || DEFAULT_RECORDER_MIME;
     const mime = browserRecorderMimeType(wantedMime);
@@ -4819,6 +4842,8 @@ async function captureElement() {
                     // Ajouter les overlays (titre, date, nombre de caches) à l'échelle dpr
                     // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
                     pkg.addStatsPanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
+                    // Images de l'utilisateur : au-dessus des stats, sous les cartouches.
+                    pkg.addImagePanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
                     addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, dpr);
 
                     // Convertir en WebP Blob puis uploader SANS bloquer la capture suivante.

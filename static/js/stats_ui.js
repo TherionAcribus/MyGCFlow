@@ -1385,7 +1385,9 @@ function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
         if (warning.kind === 'overflow') {
             lines.push(pkg.t('« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin.', { name: name(warning.id) }));
         } else if (warning.kind === 'overlap') {
-            const other = warning.with === 'titleFrame' ? pkg.t('le titre') : pkg.t('les infos');
+            const other = warning.with === 'titleFrame' ? pkg.t('le titre')
+                : String(warning.with).startsWith('image:') ? pkg.t('une image')
+                    : pkg.t('les infos');
             lines.push(pkg.t('« ${name} » chevauche ${other}.', { name: name(warning.id), other }));
         } else if (warning.kind === 'panels') {
             lines.push(pkg.t('« ${name} » chevauche « ${other} » : changez de coin ou réduisez une largeur.',

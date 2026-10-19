@@ -293,6 +293,7 @@ function nearestTarget(targets, left, top) {
 // contournent et le cache des overlays vidéo se recalculent.
 function overlayGeometryChanged() {
     try { pkg.invalidateStatsLayout?.(); } catch (_) {}
+    try { pkg.invalidateImagesLayout?.(); } catch (_) {}
     try { pkg.invalidateOverlayCache?.(); } catch (_) {}
 }
 

@@ -786,6 +786,22 @@ main.fullscreen-mode ~ .tooltip {
        chargement) — rejouée à chaque insertion. */
     animation: stats-panel-in 0.28s ease-out;
 }
+/* Images de l'utilisateur (onglet Images, images_panels.js) : au-dessus des
+   panneaux de stats (90), sous le titre et les infos (100), comme dans la
+   vidéo. L'ombre déborde de la boîte : CSS ici, shadowBlur dans la vidéo,
+   mêmes valeurs (images_render.mjs › IMAGE_SHADOW). */
+#mapWithFrames > .image-panel {
+    position: absolute;
+    z-index: 95;
+    pointer-events: none;
+    animation: stats-panel-in 0.28s ease-out;
+}
+#mapWithFrames > .image-panel.has-shadow {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+}
+@media (prefers-reduced-motion: reduce) {
+    #mapWithFrames > .image-panel { animation: none; }
+}
 @keyframes stats-panel-in {
     from { opacity: 0; }
 }

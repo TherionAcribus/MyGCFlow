@@ -292,6 +292,16 @@ function applyUserSettings(userSettings) {
         }
     }
 
+    // Images posées sur la carte : préférence globale, une liste pour les
+    // deux modes (images_panels.js).
+    if (userSettings.images) {
+        try {
+            pkg.applyImagesSettings?.(userSettings.images);
+        } catch (e) {
+            console.warn('📥 [USER_SETTINGS] Images ignorées:', e?.message || e);
+        }
+    }
+
     // Le thème a déjà été appliqué depuis le miroir localStorage par le script
     // anti-FOUC ; ici on réaligne sur la préférence serveur, qui fait référence.
     try {

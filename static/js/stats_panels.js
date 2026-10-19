@@ -1152,6 +1152,12 @@ function overlayRects(host) {
         const r = el.getBoundingClientRect();
         rects.push({ id, x: r.left - base.left, y: r.top - base.top, width: r.width, height: r.height });
     }
+    // Images de l'onglet Images : priorité Titre/Infos > Images > Stats, les
+    // piles les contournent comme les cartouches (id « image:<id> »). Quand
+    // leur mise en page change, images_panels.js invalide celle-ci.
+    try {
+        for (const rect of pkg.getImagePanelRects?.() || []) rects.push(rect);
+    } catch (_) {}
     return rects;
 }
 

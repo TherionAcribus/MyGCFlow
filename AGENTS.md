@@ -101,6 +101,12 @@ Autres repères :
   hexadécimal (`/^[0-9a-f]{6,32}$/`, `ID_RE` de stats_model.mjs) : un id
   invalide (`sel00001`, `a11y0001`…) est silencieusement régénéré et le
   `data-panel-id` cherché n'existe jamais.
+- Même famille : `images` (images de l'onglet Images) est une préférence
+  globale ; un spec qui en pose doit remettre
+  `PUT /api/settings {images: {enabled: true, items: []}}` en sortant —
+  exemple dans `images.spec.mjs` (`afterEach`). Les fichiers envoyés
+  (`POST /api/images`) restent dans `images/` du runtime E2E, balayés une
+  heure après qu'ils ne sont plus référencés.
 - Après un clic sur un bouton de `#layoutPresets` (préréglages, plein écran,
   `#btnTimelineBar`), sa bulle d'aide réapparaît tant qu'il garde le focus et
   intercepte les clics sur ses voisins : `document.activeElement.blur()`
@@ -145,7 +151,7 @@ optionnel : `pkg.t?.('…')` n'est pas extrait non plus (chaîne absente du
 `.pot`, jamais traduite).
 
 **Piège regex (JS) :** un guillemet double littéral dans une expression
-régulière (`/[;"
+régulière (`/[;"
 ]/`, `replace(/"/g, …)`) fait croire au lexer JS de
 pybabel qu'une chaîne s'ouvre : tous les `t()` qui suivent dans le fichier
 disparaissent de `messages.pot`, sans erreur, jusqu'à ce qu'un autre
