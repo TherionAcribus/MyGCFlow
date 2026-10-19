@@ -129,6 +129,7 @@
                                 <div class="col-6">
                                     <label class="form-label" for="inputImageHeight">{{ _("Hauteur (px)") }}</label>
                                     <input id="inputImageHeight" type="number" class="form-control" min="40" max="1200" step="10" placeholder="{{ _('auto') }}" aria-describedby="helpImageHeight">
+                                    <button type="button" id="btnImageHeightAuto" class="btn btn-sm btn-outline-secondary mt-1" hidden>{{ _("Rétablir les proportions") }}</button>
                                 </div>
                             </div>
                             <small id="helpImageHeight" class="form-hint text-muted d-block mt-1">{{ _("Hauteur vide : d'après les proportions de l'image (carrée si ronde). Les images d'un même coin partagent ses marges et s'empilent ; les panneaux de stats les contournent.") }}</small>

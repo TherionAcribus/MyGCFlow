@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 19:47+0200\n"
+"POT-Creation-Date: 2026-10-19 20:04+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -4719,7 +4719,7 @@ msgid "Guide"
 msgstr "Guide"
 
 #: templates/app.html:80 templates/guide.html:214 templates/guide.html:421
-#: templates/menu_images.html:139 templates/menu_options.html:30
+#: templates/menu_images.html:140 templates/menu_options.html:30
 #: templates/menu_stats.html:366 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr "Apparence"
@@ -7855,8 +7855,9 @@ msgstr "Importer des images…"
 msgid ""
 "Aucune image. Ajoutez-en, ou déposez des fichiers sur cet onglet : PNG, "
 "JPEG, WebP ou GIF."
-msgstr "Aucune image. Ajoutez-en, ou déposez des fichiers sur cet onglet : "
-"PNG, JPEG, WebP ou GIF."
+msgstr ""
+"Aucune image. Ajoutez-en, ou déposez des fichiers sur cet onglet : PNG, "
+"JPEG, WebP ou GIF."
 
 #: templates/menu_images.html:64
 msgid "Envoi de l'image…"
@@ -7950,7 +7951,11 @@ msgstr "Hauteur (px)"
 msgid "auto"
 msgstr "auto"
 
-#: templates/menu_images.html:134
+#: templates/menu_images.html:132
+msgid "Rétablir les proportions"
+msgstr "Rétablir les proportions"
+
+#: templates/menu_images.html:135
 msgid ""
 "Hauteur vide : d'après les proportions de l'image (carrée si ronde). Les "
 "images d'un même coin partagent ses marges et s'empilent ; les panneaux "
@@ -7960,61 +7965,61 @@ msgstr ""
 "images d'un même coin partagent ses marges et s'empilent ; les panneaux "
 "de stats les contournent."
 
-#: templates/menu_images.html:135
+#: templates/menu_images.html:136
 msgid "Position libre : choisir un emplacement l'y ramène."
 msgstr "Position libre : choisir un emplacement l'y ramène."
 
-#: templates/menu_images.html:142 templates/menu_stats.html:143
+#: templates/menu_images.html:143 templates/menu_stats.html:143
 msgid "Forme"
 msgstr "Forme"
 
-#: templates/menu_images.html:144
+#: templates/menu_images.html:145
 msgid "Rectangle"
 msgstr "Rectangle"
 
-#: templates/menu_images.html:145
+#: templates/menu_images.html:146
 msgid "Coins arrondis"
 msgstr "Coins arrondis"
 
-#: templates/menu_images.html:146
+#: templates/menu_images.html:147
 msgid "Rond"
 msgstr "Rond"
 
-#: templates/menu_images.html:150
+#: templates/menu_images.html:151
 msgid "Rayon des coins (px)"
 msgstr "Rayon des coins (px)"
 
-#: templates/menu_images.html:154
+#: templates/menu_images.html:155
 msgid "Ajustement"
 msgstr "Ajustement"
 
-#: templates/menu_images.html:156
+#: templates/menu_images.html:157
 msgid "Image entière"
 msgstr "Image entière"
 
-#: templates/menu_images.html:157
+#: templates/menu_images.html:158
 msgid "Remplir la forme"
 msgstr "Remplir la forme"
 
-#: templates/menu_images.html:161 templates/menu_informations.html:340
+#: templates/menu_images.html:162 templates/menu_informations.html:340
 #: templates/menu_trail.html:114
 msgid "Opacité"
 msgstr "Opacité"
 
-#: templates/menu_images.html:165 templates/menu_informations.html:164
+#: templates/menu_images.html:166 templates/menu_informations.html:164
 #: templates/menu_stats.html:369
 msgid "Fond"
 msgstr "Fond"
 
-#: templates/menu_images.html:169 templates/menu_stats.html:381
+#: templates/menu_images.html:170 templates/menu_stats.html:381
 msgid "Opacité du fond"
 msgstr "Opacité du fond"
 
-#: templates/menu_images.html:173 templates/menu_informations.html:168
+#: templates/menu_images.html:174 templates/menu_informations.html:168
 msgid "Marge intérieure (px)"
 msgstr "Marge intérieure (px)"
 
-#: templates/menu_images.html:179
+#: templates/menu_images.html:180
 msgid "Ombre portée"
 msgstr "Ombre portée"
 

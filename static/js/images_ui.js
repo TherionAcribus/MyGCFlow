@@ -592,6 +592,9 @@ function renderForm() {
     setValue('inputImageDy', p.dy);
     setValue('inputImageWidth', p.width);
     setValue('inputImageHeight', p.height ?? '');
+    // Hauteur imposée (champ ou poignée verticale) : retour aux proportions.
+    const heightAuto = $('btnImageHeightAuto');
+    if (heightAuto) heightAuto.hidden = p.height == null;
     // Colonne centrale : centrée, la marge horizontale ne sert pas ; ligne
     // médiane : la pile est centrée, la verticale non plus ; libre : aucune.
     const dx = $('inputImageDx');
@@ -682,6 +685,12 @@ function bindFormFields() {
         });
         height.addEventListener('change', () => renderForm());
     }
+
+    // « Rétablir les proportions » : la hauteur redevient celle de l'image.
+    $('btnImageHeightAuto')?.addEventListener('click', () => {
+        updateSelected((item) => { item.position.height = null; }, $('btnImageHeightAuto'));
+        renderForm();
+    });
 
     // Choisir un emplacement ramène une image libre dans la pile du coin.
     document.querySelectorAll('input[name="imageAnchor"]').forEach((radio) => {
