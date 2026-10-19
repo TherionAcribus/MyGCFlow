@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 13:43+0200\n"
+"POT-Creation-Date: 2026-10-19 14:38+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -888,7 +888,7 @@ msgstr "A video export is in progress: try again once the video is finished."
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr "A sequence has from 2 to %(max)d tracks."
 
-#: blueprints/media.py:295 static/js/ui.js:8907
+#: blueprints/media.py:295 static/js/ui.js:8925
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr "One of the tracks cannot be found on the server."
 
@@ -956,10 +956,10 @@ msgstr "This music cannot be played (unsupported format or damaged file)."
 
 #: static/js/background_audio.js:121 static/js/mapgl.js:3495
 #: static/js/ui.js:682 static/js/ui.js:739 static/js/ui.js:1823
-#: static/js/ui.js:8534 static/js/ui.js:8587 static/js/ui.js:8770
-#: static/js/ui.js:8867 static/js/ui.js:8921 static/js/ui.js:8945
-#: static/js/ui.js:8999 static/js/ui.js:9007 static/js/ui.js:9015
-#: static/js/ui.js:9156 templates/guide.html:285
+#: static/js/ui.js:8552 static/js/ui.js:8605 static/js/ui.js:8788
+#: static/js/ui.js:8885 static/js/ui.js:8939 static/js/ui.js:8963
+#: static/js/ui.js:9017 static/js/ui.js:9025 static/js/ui.js:9033
+#: static/js/ui.js:9174 templates/guide.html:285
 #: templates/menu_animation.html:23 templates/menu_animation.html:281
 msgid "Musique"
 msgstr "Music"
@@ -3047,7 +3047,7 @@ msgid "Conseil"
 msgstr "Tip"
 
 #: static/js/recording_perf.js:201 templates/guide.html:229
-#: templates/menu_informations.html:334
+#: templates/menu_informations.html:357
 msgid "Appliquer"
 msgstr "Apply"
 
@@ -3756,11 +3756,11 @@ msgstr ""
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:1823 static/js/ui.js:8587
+#: static/js/ui.js:1823 static/js/ui.js:8605
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Animation duration synced to the music"
 
-#: static/js/ui.js:1827 static/js/ui.js:9007
+#: static/js/ui.js:1827 static/js/ui.js:9025
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
@@ -4137,62 +4137,62 @@ msgstr "Unable to open the video folder"
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:8389
+#: static/js/ui.js:8407
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:8430 templates/menu_animation.html:316
+#: static/js/ui.js:8448 templates/menu_animation.html:316
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:8453
+#: static/js/ui.js:8471
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:8473 templates/_filter_cache_attrs.html:49
+#: static/js/ui.js:8491 templates/_filter_cache_attrs.html:49
 #: templates/_filter_cache_attrs.html:50
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:8474
+#: static/js/ui.js:8492
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:8474
+#: static/js/ui.js:8492
 msgid "Type inconnu"
 msgstr "Unknown type"
 
-#: static/js/ui.js:8475
+#: static/js/ui.js:8493
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:8476
+#: static/js/ui.js:8494
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:8513
+#: static/js/ui.js:8531
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
-#: static/js/ui.js:8534 static/js/ui.js:8867 static/js/ui.js:8999
+#: static/js/ui.js:8552 static/js/ui.js:8885 static/js/ui.js:9017
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr "Wait for the recording to finish before changing the music."
 
-#: static/js/ui.js:8626
+#: static/js/ui.js:8644
 msgid "Chargement de la musique..."
 msgstr "Loading music..."
 
-#: static/js/ui.js:8698
+#: static/js/ui.js:8716
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr "from ${s}"
 
-#: static/js/ui.js:8711
+#: static/js/ui.js:8729
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr "Remove “${name}” from recent music"
 
-#: static/js/ui.js:8731
+#: static/js/ui.js:8749
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
@@ -4200,52 +4200,52 @@ msgstr ""
 "Selected music is copied for export; copies that are no longer used are "
 "deleted."
 
-#: static/js/ui.js:8744
+#: static/js/ui.js:8762
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr "Music copies: ${size}"
 
-#: static/js/ui.js:8770
+#: static/js/ui.js:8788
 msgid "La musique n'a pas pu être retirée."
 msgstr "The music could not be removed."
 
-#: static/js/ui.js:8835
+#: static/js/ui.js:8853
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr "Move “${name}” up"
 
-#: static/js/ui.js:8836
+#: static/js/ui.js:8854
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr "Move “${name}” down"
 
-#: static/js/ui.js:8837
+#: static/js/ui.js:8855
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr "Remove “${name}” from the sequence"
 
-#: static/js/ui.js:8872
+#: static/js/ui.js:8890
 msgid "Préparation de l'enchaînement…"
 msgstr "Preparing the sequence…"
 
-#: static/js/ui.js:8891 static/js/ui.js:8921
+#: static/js/ui.js:8909 static/js/ui.js:8939
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr "The tracks could not be joined."
 
-#: static/js/ui.js:8938
+#: static/js/ui.js:8956
 msgid "Envoi du morceau…"
 msgstr "Sending the track…"
 
-#: static/js/ui.js:8945
+#: static/js/ui.js:8963
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr "The track could not be sent to the server."
 
-#: static/js/ui.js:9014
+#: static/js/ui.js:9032
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr "“${name}” is no longer available: it has been removed from the list."
 
-#: static/js/ui.js:9155
+#: static/js/ui.js:9173
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
@@ -4253,7 +4253,7 @@ msgstr ""
 "This music cannot be read (unknown format or damaged file): it will not "
 "be added to the video."
 
-#: static/js/ui.js:9241
+#: static/js/ui.js:9259
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr "${s} s of silence detected at the end of the music."
@@ -6719,7 +6719,7 @@ msgstr "Normal"
 msgid "Rapide"
 msgstr "Fast"
 
-#: templates/menu_animation.html:182 templates/menu_informations.html:274
+#: templates/menu_animation.html:182
 msgid "Personnalisé"
 msgstr "Custom"
 
@@ -7615,7 +7615,7 @@ msgstr "Font"
 
 #: templates/menu_informations.html:118 templates/menu_informations.html:132
 #: templates/menu_informations.html:151 templates/menu_informations.html:186
-#: templates/menu_informations.html:286
+#: templates/menu_informations.html:309
 msgid "Défaut"
 msgstr "Default"
 
@@ -7700,63 +7700,95 @@ msgstr "Blur"
 msgid "Étendue"
 msgstr "Spread"
 
-#: templates/menu_informations.html:272
+#: templates/menu_informations.html:273
 msgid "Emplacement"
 msgstr "Placement"
 
-#: templates/menu_informations.html:275 templates/menu_stats.html:320
+#: templates/menu_informations.html:276 templates/menu_stats.html:320
 msgid "En haut à gauche"
 msgstr "Top left"
+
+#: templates/menu_informations.html:276 templates/menu_stats.html:320
+msgid "En haut au centre"
+msgstr "Top center"
 
 #: templates/menu_informations.html:276 templates/menu_stats.html:320
 msgid "En haut à droite"
 msgstr "Top right"
 
-#: templates/menu_informations.html:277 templates/menu_stats.html:322
+#: templates/menu_informations.html:278 templates/menu_stats.html:322
 msgid "En bas à gauche"
 msgstr "Bottom left"
+
+#: templates/menu_informations.html:278 templates/menu_stats.html:322
+msgid "En bas au centre"
+msgstr "Bottom center"
 
 #: templates/menu_informations.html:278 templates/menu_stats.html:322
 msgid "En bas à droite"
 msgstr "Bottom right"
 
-#: templates/menu_informations.html:284
+#: templates/menu_informations.html:293 templates/menu_stats.html:334
+msgid "Marge horizontale (px)"
+msgstr "Horizontal margin (px)"
+
+#: templates/menu_informations.html:297 templates/menu_stats.html:338
+msgid "Marge verticale (px)"
+msgstr "Vertical margin (px)"
+
+#: templates/menu_informations.html:301
+msgid "Position libre ou personnalisée : choisir un emplacement la remplace."
+msgstr "Free or custom position: choosing a placement replaces it."
+
+#: templates/menu_informations.html:302
+msgid ""
+"Tant que cet onglet est ouvert, glissez le titre ou les infos sur la "
+"carte : lâchés près d’un emplacement, ils s’y ancrent ; ailleurs, ils "
+"restent où vous les posez (Alt : sans aimantation). Les panneaux de stats"
+" les contournent."
+msgstr ""
+"While this tab is open, drag the title or the info box on the map: "
+"dropped near a placement, they anchor there; elsewhere, they stay where "
+"you put them (hold Alt to disable snapping). Stats panels move around "
+"them."
+
+#: templates/menu_informations.html:307
 msgid "Type de position"
 msgstr "Position type"
 
-#: templates/menu_informations.html:287
+#: templates/menu_informations.html:310
 msgid "Relative"
 msgstr "Relative"
 
-#: templates/menu_informations.html:288
+#: templates/menu_informations.html:311
 msgid "Absolue"
 msgstr "Absolute"
 
-#: templates/menu_informations.html:289
+#: templates/menu_informations.html:312
 msgid "Fixe"
 msgstr "Fixed"
 
-#: templates/menu_informations.html:299
+#: templates/menu_informations.html:322
 msgid "Haut (px)"
 msgstr "Top (px)"
 
-#: templates/menu_informations.html:303
+#: templates/menu_informations.html:326
 msgid "Droite (px)"
 msgstr "Right (px)"
 
-#: templates/menu_informations.html:307
+#: templates/menu_informations.html:330
 msgid "Bas (px)"
 msgstr "Bottom (px)"
 
-#: templates/menu_informations.html:311
+#: templates/menu_informations.html:334
 msgid "Gauche (px)"
 msgstr "Left (px)"
 
-#: templates/menu_informations.html:317 templates/menu_trail.html:114
+#: templates/menu_informations.html:340 templates/menu_trail.html:114
 msgid "Opacité"
 msgstr "Opacity"
 
-#: templates/menu_informations.html:330
+#: templates/menu_informations.html:353
 msgid ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
@@ -7764,11 +7796,11 @@ msgstr ""
 "Copy the style from the current target to the other target (Title → Info "
 "or vice versa)"
 
-#: templates/menu_informations.html:331
+#: templates/menu_informations.html:354
 msgid "Copier vers l'autre"
 msgstr "Copy to the other"
 
-#: templates/menu_informations.html:343 templates/menu_informations.html:345
+#: templates/menu_informations.html:366 templates/menu_informations.html:368
 msgid "Appliquer les Modifications"
 msgstr "Apply Changes"
 
@@ -8626,10 +8658,6 @@ msgstr "Free position, dragged onto the map"
 msgid "Coin d'ancrage"
 msgstr "Anchor corner"
 
-#: templates/menu_stats.html:320
-msgid "En haut au centre"
-msgstr "Top center"
-
 #: templates/menu_stats.html:321
 msgid "Au milieu à gauche"
 msgstr "Middle left"
@@ -8641,18 +8669,6 @@ msgstr "Center"
 #: templates/menu_stats.html:321
 msgid "Au milieu à droite"
 msgstr "Middle right"
-
-#: templates/menu_stats.html:322
-msgid "En bas au centre"
-msgstr "Bottom center"
-
-#: templates/menu_stats.html:334
-msgid "Marge horizontale (px)"
-msgstr "Horizontal margin (px)"
-
-#: templates/menu_stats.html:338
-msgid "Marge verticale (px)"
-msgstr "Vertical margin (px)"
 
 #: templates/menu_stats.html:342
 msgid "Largeur (px)"

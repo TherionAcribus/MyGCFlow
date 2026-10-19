@@ -315,8 +315,32 @@ imposerait les siennes. Les panneaux libres gardent leurs `dx`/`dy`, reprises
 s'ils reviennent à un coin vide.
 
 Une pile de coin **contourne** `#titleFrame` et `#infosFrame` (rects mesurés à
-l'invalidation, passés en obstacles) : si son premier panneau tomberait sur
-l'une de ces boîtes, elle démarre juste après (8 px d'écart).
+l'invalidation, passés en obstacles) : si elle recouvrait l'une de ces boîtes
+— sur toute sa hauteur, pas seulement par son premier panneau — elle démarre
+entière juste après (8 px d'écart) ; une pile ne passe pas « par-dessus » une
+boîte. Les piles de la ligne médiane ne contournent rien (le titre et les
+infos ne s'ancrent qu'en haut ou en bas) ; un chevauchement y est signalé.
+
+**Titre et infos : même placement que les panneaux.** Style › Titres, mode
+simple : même grille d'emplacements (lignes haute et basse seulement) et mêmes
+marges que les panneaux, et même glisser-déposer aimanté (48 px, Alt pour
+désactiver) tant que ce sous-onglet est ouvert (classe `overlay-editing` sur
+`#mapWithFrames`). Le modèle reste le CSS du thème : `overlay_anchor.mjs` (pur)
+traduit emplacement + marges en déclarations et les relit,
+`infos_editor.js` les écrit par le pipeline de l'assistant
+(`change*CssValues`) puis émet `change` sur le textarea pour que le suivi
+« modifications non enregistrées » du thème voie un dépôt sur la carte.
+Centré : `left: 0; right: 0; margin: 0 auto; width: fit-content` (pas
+`left: 50%` + `transform`, qui limiterait un long titre à la mi-largeur) ;
+overlay_canvas.js reprend le rect du DOM. Position libre : `left`/`top` en %
+du cadre — en px, elle serait indiscernable d'un ancrage en haut à gauche.
+Deux pièges : `titre.css` et `infos.css` sont chargées comme feuilles et
+fixent top/left (top/right) — un côté retiré du CSS en ligne y resterait
+effectif, d'où les côtés inutilisés posés à `auto` ; et Chromium sérialise
+alors les quatre côtés en `inset`, que `parseDeclarations` (ui.js) déplie pour
+les champs Haut/Droite/Bas/Gauche du mode avancé. Chaque déplacement d'un
+cartouche invalide la mise en page des panneaux (`invalidateStatsLayout`) :
+les piles le contournent aussitôt.
 
 **Position libre** (`position.mode: "free"`) : `x`/`y` sont des fractions
 [0, 1] de l'espace restant du cadre (`(W − w) · x`), donc le panneau reste

@@ -1019,6 +1019,20 @@ test('évitement : la pile d’un coin démarre sous le titre ou au-dessus d’u
     assert.equal(bottom.get('c').y + 100, 560 - 8);
 });
 
+test('évitement : toute la hauteur de la pile compte, pas seulement son premier panneau', () => {
+    // Infos posées en bas à gauche, sous le premier panneau mais dans la
+    // course du second : la pile haut-gauche repart sous la boîte.
+    const infos = { x: 10, y: 180, width: 150, height: 30 };
+    const top = layoutPanels([item('a', 'top-left'), item('b', 'top-left')], box, [infos]);
+    assert.equal(top.get('a').y, 180 + 30 + 8);
+    assert.equal(rectsOverlap(top.get('b'), infos), false);
+    // Pile du bas, boîte au-dessus du premier panneau : même règle.
+    const title = { x: 800, y: 400, width: 150, height: 40 };
+    const bottom = layoutPanels([item('c', 'bottom-right'), item('d', 'bottom-right')], box, [title]);
+    assert.equal(bottom.get('c').y + 100, 400 - 8);
+    assert.equal(rectsOverlap(bottom.get('d'), title), false);
+});
+
 test('réorganiser : un panneau qui ne gêne personne reste où il est', () => {
     const { placements, conflict } = arrangePanels([
         { id: 'f', mode: 'free', x: 0.5, y: 0.5, width: 200, height: 100 },

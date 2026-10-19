@@ -263,20 +263,43 @@
 
         <!-- Panneau Position -->
         <div id="gcCssPanePosition" class="gc-css-pane pt-2" role="tabpanel" aria-labelledby="gcCssTabPosition">
-            <!-- Mode simple : ancrage par coin. Écrit position/top/right/bottom/
-                 left dans le même modèle CSS que les champs avancés (cf.
-                 infos_editor.js). « Personnalisé » reflète un réglage qui ne
-                 correspond à aucun coin — le choisir ne modifie rien. -->
-            <div class="row g-2 infos-simple-only">
-                <div class="col-12">
-                    <label class="form-label" for="gcCssAnchor">{{ _("Emplacement") }}</label>
-                    <select id="gcCssAnchor" class="form-select">
-                        <option value="">{{ _("Personnalisé") }}</option>
-                        <option value="top-left">{{ _("En haut à gauche") }}</option>
-                        <option value="top-right">{{ _("En haut à droite") }}</option>
-                        <option value="bottom-left">{{ _("En bas à gauche") }}</option>
-                        <option value="bottom-right">{{ _("En bas à droite") }}</option>
-                    </select>
+            <!-- Mode simple : même grille et mêmes marges que les panneaux de
+                 stats (lignes haute et basse seulement). Écrit position/top/
+                 right/bottom/left dans le même modèle CSS que les champs avancés
+                 (overlay_anchor.mjs, infos_editor.js). Aucun emplacement coché :
+                 CSS personnalisé — en choisir un le remplace. -->
+            <div class="row g-2 infos-simple-only align-items-start">
+                <div class="col-auto">
+                    <span class="form-label d-block" id="labelOverlayAnchor">{{ _("Emplacement") }}</span>
+                    <div class="stats-anchor-grid" role="radiogroup" aria-labelledby="labelOverlayAnchor">
+                        {% for anchor, label in [
+                            ('top-left', _('En haut à gauche')), ('top-center', _('En haut au centre')), ('top-right', _('En haut à droite')),
+                            ('', ''), ('', ''), ('', ''),
+                            ('bottom-left', _('En bas à gauche')), ('bottom-center', _('En bas au centre')), ('bottom-right', _('En bas à droite'))] %}
+                        {% if anchor %}
+                        <input type="radio" class="btn-check" name="overlayAnchor" id="overlayAnchor-{{ anchor }}" value="{{ anchor }}"
+                               aria-label="{{ label }}">
+                        <label class="btn btn-sm btn-outline-secondary" for="overlayAnchor-{{ anchor }}" title="{{ label }}"></label>
+                        {% else %}
+                        {# Ligne médiane : vide, la grille figure la carte. #}
+                        <span aria-hidden="true"></span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label" for="gcCssMarginX">{{ _("Marge horizontale (px)") }}</label>
+                            <input id="gcCssMarginX" type="number" class="form-control" min="0" max="2000" step="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="gcCssMarginY">{{ _("Marge verticale (px)") }}</label>
+                            <input id="gcCssMarginY" type="number" class="form-control" min="0" max="2000" step="1">
+                        </div>
+                    </div>
+                    <small id="gcCssAnchorCustom" class="form-hint text-muted d-block mt-1" hidden>{{ _("Position libre ou personnalisée : choisir un emplacement la remplace.") }}</small>
+                    <small class="form-hint text-muted d-block mt-1">{{ _("Tant que cet onglet est ouvert, glissez le titre ou les infos sur la carte : lâchés près d’un emplacement, ils s’y ancrent ; ailleurs, ils restent où vous les posez (Alt : sans aimantation). Les panneaux de stats les contournent.") }}</small>
                 </div>
             </div>
             <div class="row g-2 infos-advanced">

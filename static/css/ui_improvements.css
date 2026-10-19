@@ -3373,6 +3373,26 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 #mapWithFrames > .stats-snap-ghost[hidden] {
     display: none;
 }
+/* Style › Titres ouvert, au repos : le titre et les infos se saisissent à la
+   souris (infos_editor.js › bindOverlayDrag), comme les panneaux de stats. */
+#mapWithFrames.overlay-editing > #titleFrame,
+#mapWithFrames.overlay-editing > #infosFrame {
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    outline: 1px dashed rgba(255, 255, 255, 0.7);
+    outline-offset: 2px;
+}
+#mapWithFrames.overlay-editing > #titleFrame.is-dragging,
+#mapWithFrames.overlay-editing > #infosFrame.is-dragging {
+    cursor: grabbing;
+    outline-style: solid;
+}
+/* Repère d'aimantation des cartouches : au-dessus d'eux (z-index 100). */
+#mapWithFrames > .overlay-snap-ghost {
+    z-index: 101;
+}
 /* Panneau sélectionné dans la liste : liseré franc de la couleur d'accent. */
 #mapWithFrames.stats-editing > .stats-panel.is-selected {
     outline: 2px solid var(--color-accent, #0072c6);

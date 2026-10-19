@@ -1479,8 +1479,10 @@ export function layoutPanels(items, container, obstacles = []) {
         else if (vertical === 'bottom') cursor = H - marginY;
         else cursor = (H - total) / 2;
 
-        // Évitement du titre et des infos : une pile de coin qui démarrerait
-        // sur l'une de ces boîtes commence juste après elle.
+        // Évitement du titre et des infos : une pile de coin qui recouvrirait
+        // l'une de ces boîtes — sur toute sa hauteur, pas seulement par son
+        // premier panneau — commence juste après elle. Une pile ne passe pas
+        // « par-dessus » une boîte : elle repart entière de l'autre côté.
         if (vertical !== 'middle' && obstacles.length) {
             const xs = group.map((item) => {
                 const width = Math.min(Math.max(0, item.width || 0), W);
@@ -1490,12 +1492,11 @@ export function layoutPanels(items, container, obstacles = []) {
             });
             const left = Math.min(...xs.map(([a]) => a));
             const right = Math.max(...xs.map(([, b]) => b));
-            const firstH = heights[0];
             const sorted = [...obstacles].sort((a, b) => (vertical === 'top' ? a.y - b.y : b.y - a.y));
             for (const box of sorted) {
                 if (box.x >= right || box.x + box.width <= left) continue;
-                const top = vertical === 'top' ? cursor : cursor - firstH;
-                if (box.y >= top + firstH || box.y + box.height <= top) continue;
+                const top = vertical === 'top' ? cursor : cursor - total;
+                if (box.y >= top + total || box.y + box.height <= top) continue;
                 cursor = vertical === 'top'
                     ? box.y + box.height + STACK_GAP
                     : box.y - STACK_GAP;

@@ -10,42 +10,88 @@
 // même modèle (les textareas #inputTitleCss / #inputInfosCss appliqués aux
 // frames par changeTitleCssValues / changeInfosCssValues).
 //
-// En mode simple, le panneau Position remplace les champs CSS bruts par un
-// sélecteur d'ancrage par coin (#gcCssAnchor, `.infos-simple-only`) qui écrit
-// position:absolute + les deux propriétés du coin choisi dans le même modèle.
+// En mode simple, le panneau Position remplace les champs CSS bruts par la
+// même grille d'emplacements et les mêmes marges que les panneaux de stats
+// (overlay_anchor.mjs : lignes haute et basse), écrites dans le même modèle.
 //
-// Le choix est une préférence d'interface persistée en localStorage
-// (infosEditorMode) — pas une option de profil.
+// Glisser-déposer : tant que le sous-onglet Style › Titres est ouvert et
+// qu'aucune animation ne tourne, le titre et les infos se saisissent sur la
+// carte, avec la même aimantation que les panneaux de stats.
+//
+// Le choix Simple/Avancé est une préférence d'interface persistée en
+// localStorage (infosEditorMode) — pas une option de profil.
 
+import * as pkg from './index.js';
 import { changeTitleCssValues, changeInfosCssValues } from './frames.js';
+import {
+    OVERLAY_ANCHORS,
+    OVERLAY_DEFAULT_MARGIN,
+    detectOverlayAnchor,
+    overlayAnchorPatch,
+    overlayAnchorRect,
+    overlayFreePatch,
+} from './overlay_anchor.mjs';
 
 const MODE_KEY = 'infosEditorMode';
 const MODE_SIMPLE = 'simple';
 const MODE_ADVANCED = 'advanced';
 
-// Coin → propriétés CSS écrites (verticale puis horizontale).
-const ANCHOR_PROPS = {
-    'top-left': ['top', 'left'],
-    'top-right': ['top', 'right'],
-    'bottom-left': ['bottom', 'left'],
-    'bottom-right': ['bottom', 'right'],
-};
-const BOX_PROPS = ['top', 'right', 'bottom', 'left'];
-
-// Ancrage fourni par la feuille par défaut quand le profil ne le redéfinit pas
-// (static/css/titre.css → #titleFrame, static/css/infos.css → #infosFrame) :
-// position:absolute + les deux côtés à 10px. Le style inline de la frame est
-// remplacé en bloc par le CSS du profil, mais ces propriétés de la feuille
-// restent effectives tant qu'elles ne sont pas surchargées — d'où la fusion.
+// Côtés fixés par la feuille par défaut quand le profil ne les redéfinit pas
+// (static/css/titre.css → #titleFrame, static/css/infos.css → #infosFrame).
+// Le style inline de la frame est remplacé en bloc par le CSS du profil, mais
+// ces propriétés de la feuille restent effectives tant qu'elles ne sont pas
+// surchargées — d'où la fusion (et les `auto` d'overlayAnchorPatch).
 const STYLESHEET_SIDES = {
-    title: { top: true, left: true },
-    infos: { top: true, right: true },
+    title: { top: OVERLAY_DEFAULT_MARGIN, left: OVERLAY_DEFAULT_MARGIN },
+    infos: { top: OVERLAY_DEFAULT_MARGIN, right: OVERLAY_DEFAULT_MARGIN },
 };
-const STYLESHEET_MARGIN = '10';
+// Propriétés lues pour reconnaître un emplacement.
+const POSITION_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'margin-left', 'margin-right', 'width'];
+const FRAME_IDS = { title: 'titleFrame', infos: 'infosFrame' };
 
-function pxNumber(value) {
-    const m = (value || '').match(/(-?\d+(?:\.\d+)?)\s*px/i);
-    return m ? m[1] : null;
+// Même distance d'aimantation que les panneaux de stats (stats_ui.js).
+const SNAP_DISTANCE = 48;
+// En deçà, un appui n'est pas un glisser : rien n'est écrit.
+const DRAG_THRESHOLD = 3;
+
+function textareaFor(target) {
+    return document.getElementById(target === 'infos' ? 'inputInfosCss' : 'inputTitleCss');
+}
+
+function probeFor(target) {
+    const probe = document.createElement('div');
+    probe.style.cssText = textareaFor(target)?.value || '';
+    return probe;
+}
+
+function declarationsOf(probe) {
+    const decl = {};
+    for (const prop of POSITION_PROPS) decl[prop] = probe.style.getPropertyValue(prop);
+    return decl;
+}
+
+// Emplacement et marges du CSS de la cible, ou null (CSS personnalisé).
+export function overlayAnchorOf(target) {
+    return detectOverlayAnchor(declarationsOf(probeFor(target)), STYLESHEET_SIDES[target] || {});
+}
+
+// Applique un patch d'overlay_anchor.mjs au CSS de la cible : même pipeline
+// que les champs du formulaire (change*CssValues nettoie, applique à la frame
+// et réécrit le textarea), puis l'assistant se resynchronise. `change` sur le
+// textarea : il est dans l'onglet Style, le suivi des modifications du thème
+// (profiles.js) le voit — un dépôt sur la carte n'émet sinon aucun événement
+// de formulaire.
+function applyPatch(target, patch) {
+    const textarea = textareaFor(target);
+    if (!patch || !textarea) return;
+    const probe = probeFor(target);
+    for (const prop of patch.remove) probe.style.removeProperty(prop);
+    for (const [prop, value] of Object.entries(patch.set)) probe.style.setProperty(prop, value);
+    const apply = target === 'infos' ? changeInfosCssValues : changeTitleCssValues;
+    const applied = apply(probe.style.cssText);
+    textarea.value = typeof applied === 'string' ? applied : probe.style.cssText;
+    window.gcCssAssistantSyncFromTextareas?.();
+    textarea.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 export function initInfosEditor() {
@@ -56,7 +102,10 @@ export function initInfosEditor() {
     if (!root || !btnSimple || !btnAdvanced) return;
 
     const cbCssRaw = document.getElementById('gcCssAdvancedMode');
-    const anchorSelect = document.getElementById('gcCssAnchor');
+    const anchorRadios = [...document.querySelectorAll('input[name="overlayAnchor"]')];
+    const marginX = document.getElementById('gcCssMarginX');
+    const marginY = document.getElementById('gcCssMarginY');
+    const customHint = document.getElementById('gcCssAnchorCustom');
 
     // Cible active de l'assistant : déduite de l'onglet (initCssAssistant
     // garde sa variable activeTarget privée, le DOM reflète le même état).
@@ -65,65 +114,42 @@ export function initInfosEditor() {
             ? 'infos'
             : 'title';
     }
-    function cssTextarea() {
-        return document.getElementById(activeTarget() === 'infos' ? 'inputInfosCss' : 'inputTitleCss');
-    }
-    function cssProbe() {
-        const probe = document.createElement('div');
-        probe.style.cssText = cssTextarea()?.value || '';
-        return probe;
-    }
 
-    // Coin d'ancrage effectif : CSS du profil (textarea) fusionné avec les
-    // côtés posés par la feuille par défaut. Le style calculé n'est pas
-    // exploitable — il résout 'auto' en pixels dès que la frame est affichée.
-    // '' si le réglage n'est pas un ancrage simple (position non absolue/fixe,
-    // combinaison de côtés hors coin).
-    function detectAnchor() {
-        const s = cssProbe().style;
-        const defaults = STYLESHEET_SIDES[activeTarget()] || {};
-        const pos = s.getPropertyValue('position') || 'absolute'; // feuille par défaut
-        if (pos !== 'absolute' && pos !== 'fixed') return '';
-        const has = (p) => {
-            const v = s.getPropertyValue(p);
-            return v ? v.trim() !== 'auto' : defaults[p] === true;
+    // Grille et marges reflètent le CSS de la cible. Aucun emplacement coché
+    // si le CSS n'en décrit aucun : les marges sont alors grisées.
+    function syncAnchorControls() {
+        const found = overlayAnchorOf(activeTarget());
+        for (const radio of anchorRadios) radio.checked = !!found && radio.value === found.anchor;
+        const setMargin = (input, value, disabled) => {
+            if (!input) return;
+            input.disabled = disabled;
+            if (document.activeElement !== input) input.value = value ?? '';
         };
-        const t = has('top'), r = has('right'), b = has('bottom'), l = has('left');
-        if (t && l && !r && !b) return 'top-left';
-        if (t && r && !l && !b) return 'top-right';
-        if (b && l && !t && !r) return 'bottom-left';
-        if (b && r && !t && !l) return 'bottom-right';
-        return '';
+        setMargin(marginX, found && !found.anchor.endsWith('-center') ? found.dx : '', !found || found.anchor.endsWith('-center'));
+        setMargin(marginY, found?.dy, !found);
+        if (customHint) customHint.hidden = !!found;
     }
 
-    function syncAnchorSelect() {
-        if (anchorSelect) anchorSelect.value = detectAnchor();
+    // Change d'emplacement en gardant les marges effectives (un passage Haut
+    // gauche → Bas droite garde les 10 px actuels au lieu d'une valeur
+    // arbitraire) ; un CSS personnalisé repart des marges par défaut.
+    function applyAnchor(anchor, margins = null) {
+        const target = activeTarget();
+        const current = overlayAnchorOf(target);
+        const dx = margins?.dx ?? current?.dx ?? OVERLAY_DEFAULT_MARGIN;
+        const dy = margins?.dy ?? current?.dy ?? OVERLAY_DEFAULT_MARGIN;
+        applyPatch(target, overlayAnchorPatch(anchor, { dx, dy }, declarationsOf(probeFor(target))));
+        syncAnchorControls();
     }
 
-    // Écrit l'ancrage dans le CSS de la cible active, en conservant les marges
-    // effectives (un déplacement Haut gauche → Bas droite garde les 10px
-    // actuels — feuille par défaut ou profil — au lieu d'une valeur arbitraire).
-    function applyAnchor(anchor) {
-        const props = ANCHOR_PROPS[anchor];
-        const textarea = cssTextarea();
-        if (!props || !textarea) return; // '' = « Personnalisé » : lecture seule
-        const style = cssProbe().style;
-        const defaults = STYLESHEET_SIDES[activeTarget()] || {};
-        const margin = (prop) => pxNumber(style.getPropertyValue(prop))
-            ?? (defaults[prop] ? STYLESHEET_MARGIN : null);
-        const vMargin = margin('top') ?? margin('bottom') ?? STYLESHEET_MARGIN;
-        const hMargin = margin('left') ?? margin('right') ?? STYLESHEET_MARGIN;
-        style.setProperty('position', 'absolute');
-        BOX_PROPS.forEach((p) => style.removeProperty(p));
-        style.setProperty(props[0], `${vMargin}px`);
-        style.setProperty(props[1], `${hMargin}px`);
-        // change*CssValues applique à la frame, nettoie (sanitizeOverlayCss) et
-        // réécrit le textarea — le même pipeline que les champs du formulaire.
-        const apply = activeTarget() === 'infos' ? changeInfosCssValues : changeTitleCssValues;
-        const applied = apply(style.cssText);
-        textarea.value = typeof applied === 'string' ? applied : style.cssText;
-        // Resynchronise les champs visibles (top/right/… en mode avancé).
-        window.gcCssAssistantSyncFromTextareas?.();
+    function onMarginInput() {
+        const current = overlayAnchorOf(activeTarget());
+        if (!current) return;
+        const read = (input, fallback) => {
+            const value = Number(input?.value);
+            return input?.value !== '' && Number.isFinite(value) ? Math.max(0, Math.min(2000, value)) : fallback;
+        };
+        applyAnchor(current.anchor, { dx: read(marginX, current.dx), dy: read(marginY, current.dy) });
     }
 
     function setMode(mode, { persist = true } = {}) {
@@ -144,12 +170,18 @@ export function initInfosEditor() {
         if (persist) {
             try { localStorage.setItem(MODE_KEY, simple ? MODE_SIMPLE : MODE_ADVANCED); } catch (_) {}
         }
-        if (simple) syncAnchorSelect();
+        if (simple) syncAnchorControls();
     }
 
     btnSimple.addEventListener('click', () => setMode(MODE_SIMPLE));
     btnAdvanced.addEventListener('click', () => setMode(MODE_ADVANCED));
-    anchorSelect?.addEventListener('change', () => applyAnchor(anchorSelect.value));
+    for (const radio of anchorRadios) {
+        radio.addEventListener('change', () => {
+            if (radio.checked) applyAnchor(radio.value);
+        });
+    }
+    marginX?.addEventListener('input', onMarginInput);
+    marginY?.addEventListener('input', onMarginInput);
 
     // L'assistant resynchronise ses champs sans passer par le hook window sur
     // les changements d'onglet : recalculer l'ancrage après chaque bascule de
@@ -158,7 +190,7 @@ export function initInfosEditor() {
     // index.js), donc leur handler s'exécute d'abord et le textarea est à jour.
     ['gcCssTargetTitle', 'gcCssTargetInfos', 'gcCssTabPosition'].forEach((id) => {
         document.getElementById(id)?.addEventListener('click', () => {
-            requestAnimationFrame(syncAnchorSelect);
+            requestAnimationFrame(syncAnchorControls);
         });
     });
 
@@ -169,7 +201,7 @@ export function initInfosEditor() {
     const previousSync = window.gcCssAssistantSyncFromTextareas;
     window.gcCssAssistantSyncFromTextareas = function () {
         previousSync?.();
-        syncAnchorSelect();
+        syncAnchorControls();
     };
 
     let saved = MODE_SIMPLE;
@@ -177,6 +209,179 @@ export function initInfosEditor() {
         if (localStorage.getItem(MODE_KEY) === MODE_ADVANCED) saved = MODE_ADVANCED;
     } catch (_) {}
     setMode(saved, { persist: false });
+
+    bindOverlayDrag();
+}
+
+// ---------------------------------------------------------------------------
+// Glisser-déposer du titre et des infos sur la carte
+// ---------------------------------------------------------------------------
+
+// Mode édition : sous-onglet Style › Titres ouvert, aucune animation. La
+// classe rend les cartouches saisissables (ui_improvements.css), comme
+// `stats-editing` pour les panneaux.
+function syncOverlayDragMode() {
+    const host = document.getElementById('mapWithFrames');
+    if (!host) return;
+    const open = !!document.getElementById('style')?.classList.contains('active')
+        && !!document.getElementById('tabTitles')?.classList.contains('active');
+    const idle = !(pkg.isAnimationInProgress?.() ?? false);
+    host.classList.toggle('overlay-editing', open && idle);
+}
+
+function containerRelativeRect(el, base) {
+    const r = el.getBoundingClientRect();
+    return { x: r.left - base.left, y: r.top - base.top, width: r.width, height: r.height };
+}
+
+function overlaps(a, b) {
+    return !!a && !!b && a.x < b.x + b.width && b.x < a.x + a.width
+        && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+// Repère de destination : même rendu que celui des panneaux de stats.
+function showOverlayGhost(host, target) {
+    let ghost = host.querySelector(':scope > .overlay-snap-ghost');
+    if (!target) {
+        if (ghost) ghost.hidden = true;
+        return;
+    }
+    if (!ghost) {
+        ghost = document.createElement('div');
+        ghost.className = 'stats-snap-ghost overlay-snap-ghost';
+        ghost.setAttribute('aria-hidden', 'true');
+        host.appendChild(ghost);
+    }
+    ghost.dataset.anchor = target.anchor;
+    Object.assign(ghost.style, {
+        left: `${Math.round(target.x)}px`,
+        top: `${Math.round(target.y)}px`,
+        width: `${Math.round(target.width)}px`,
+        height: `${Math.round(target.height)}px`,
+    });
+    ghost.hidden = false;
+}
+
+// Emplacements d'aimantation : chaque emplacement de la grille, aux marges
+// actuelles du cartouche, sauf ceux qui recouvriraient l'autre cartouche.
+function snapTargetsFor(target, size, container, base) {
+    const current = overlayAnchorOf(target);
+    const margins = { dx: current?.dx ?? OVERLAY_DEFAULT_MARGIN, dy: current?.dy ?? OVERLAY_DEFAULT_MARGIN };
+    const otherEl = document.getElementById(FRAME_IDS[target === 'title' ? 'infos' : 'title']);
+    const other = otherEl && getComputedStyle(otherEl).display !== 'none'
+        ? containerRelativeRect(otherEl, base)
+        : null;
+    return OVERLAY_ANCHORS
+        .map((anchor) => ({ ...overlayAnchorRect(anchor, margins, size, container), margins }))
+        .filter((rect) => !overlaps(rect, other));
+}
+
+function nearestTarget(targets, left, top) {
+    let best = null;
+    let bestDistance = SNAP_DISTANCE;
+    for (const t of targets) {
+        const distance = Math.hypot(t.x - left, t.y - top);
+        if (distance <= bestDistance) {
+            best = t;
+            bestDistance = distance;
+        }
+    }
+    return best;
+}
+
+// La géométrie des cartouches a bougé : les piles de stats qui les
+// contournent et le cache des overlays vidéo se recalculent.
+function overlayGeometryChanged() {
+    try { pkg.invalidateStatsLayout?.(); } catch (_) {}
+    try { pkg.invalidateOverlayCache?.(); } catch (_) {}
+}
+
+function bindOverlayDrag() {
+    const host = document.getElementById('mapWithFrames');
+    if (!host) return;
+    let drag = null;
+
+    host.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || !host.classList.contains('overlay-editing')) return;
+        if (pkg.isAnimationInProgress?.()) return;
+        const el = event.target.closest?.('#titleFrame, #infosFrame');
+        if (!el || el.parentElement !== host) return;
+        const target = el.id === 'infosFrame' ? 'infos' : 'title';
+        // Le formulaire suit le cartouche saisi.
+        const tab = document.getElementById(target === 'infos' ? 'gcCssTargetInfos' : 'gcCssTargetTitle');
+        if (tab && !tab.classList.contains('active')) tab.click();
+        const base = host.getBoundingClientRect();
+        const rect = containerRelativeRect(el, base);
+        const container = { width: base.width, height: base.height };
+        drag = {
+            el,
+            target,
+            pointerId: event.pointerId,
+            base,
+            container,
+            size: { width: rect.width, height: rect.height },
+            offsetX: event.clientX - base.left - rect.x,
+            offsetY: event.clientY - base.top - rect.y,
+            startX: event.clientX,
+            startY: event.clientY,
+            moved: false,
+            left: rect.x,
+            top: rect.y,
+            snap: null,
+            targets: snapTargetsFor(target, { width: rect.width, height: rect.height }, container, base),
+        };
+        el.setPointerCapture?.(event.pointerId);
+        el.classList.add('is-dragging');
+        event.preventDefault();
+    });
+
+    host.addEventListener('pointermove', (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < DRAG_THRESHOLD) return;
+        drag.moved = true;
+        const { container, size } = drag;
+        drag.left = Math.max(0, Math.min(container.width - size.width, event.clientX - drag.base.left - drag.offsetX));
+        drag.top = Math.max(0, Math.min(container.height - size.height, event.clientY - drag.base.top - drag.offsetY));
+        // Aperçu en direct, en ligne sur la frame : le CSS du thème n'est
+        // réécrit qu'au dépôt (un seul passage dans l'assistant).
+        Object.assign(drag.el.style, {
+            position: 'absolute',
+            left: `${Math.round(drag.left)}px`,
+            top: `${Math.round(drag.top)}px`,
+            right: 'auto',
+            bottom: 'auto',
+            marginLeft: '0px',
+            marginRight: '0px',
+        });
+        drag.snap = event.altKey ? null : nearestTarget(drag.targets, drag.left, drag.top);
+        showOverlayGhost(host, drag.snap);
+        overlayGeometryChanged();
+    });
+
+    const end = (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        const { el, target, moved, snap, left, top, size, container } = drag;
+        drag = null;
+        el.classList.remove('is-dragging');
+        showOverlayGhost(host, null);
+        if (!moved) return;
+        const decl = declarationsOf(probeFor(target));
+        applyPatch(target, snap
+            ? overlayAnchorPatch(snap.anchor, snap.margins, decl)
+            : overlayFreePatch(left, top, size, container, decl));
+        overlayGeometryChanged();
+    };
+    host.addEventListener('pointerup', end);
+    host.addEventListener('pointercancel', end);
+
+    document.addEventListener('shown.bs.tab', syncOverlayDragMode);
+    document.addEventListener('hidden.bs.tab', syncOverlayDragMode);
+    const controlBar = document.getElementById('controlBar');
+    if (controlBar && typeof MutationObserver !== 'undefined') {
+        new MutationObserver(syncOverlayDragMode)
+            .observe(controlBar, { attributes: true, attributeFilter: ['data-playback-state'] });
+    }
+    syncOverlayDragMode();
 }
 
 // Les modules sont différés : le DOM est prêt à l'évaluation, comme pour

@@ -7456,6 +7456,18 @@ function initCssAssistant() {
             if (idx === -1) continue;
             const prop = part.substring(0, idx).trim().toLowerCase();
             const value = part.substring(idx + 1).trim();
+            // Chromium sérialise les quatre côtés posés ensemble en `inset`
+            // (ancrages de infos_editor.js, côtés inutilisés à `auto`) : les
+            // champs Haut/Droite/Bas/Gauche lisent les côtés dépliés.
+            if (prop === 'inset') {
+                const probe = document.createElement('div');
+                probe.style.setProperty('inset', value);
+                for (const side of ['top', 'right', 'bottom', 'left']) {
+                    const sideValue = probe.style.getPropertyValue(side);
+                    if (sideValue) out[side] = sideValue;
+                }
+                continue;
+            }
             out[prop] = value;
             if (!managedProps.has(prop)) unmanaged.push(prop);
         }
@@ -7640,11 +7652,17 @@ function initCssAssistant() {
         }
         if (fields.zIndex) fields.zIndex.value = declarations['z-index'] || '';
 
+        // Un côté absent ou à `auto` vide son champ : sinon il garderait la
+        // valeur d'avant (autre emplacement, ou autre cible Titre/Infos).
         const setPxNum = (el, prop) => {
             if (!el) return;
             const m = (declarations[prop] || '').match(/(-?\d+(?:\.\d+)?)px/i);
-            if (m) el.value = m[1];
-            else if (declarations[prop]) unmanagedExtra.push(prop);
+            if (m) {
+                el.value = m[1];
+                return;
+            }
+            el.value = '';
+            if (declarations[prop] && declarations[prop] !== 'auto') unmanagedExtra.push(prop);
         };
         setPxNum(fields.top, 'top');
         setPxNum(fields.right, 'right');
