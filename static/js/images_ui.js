@@ -138,10 +138,20 @@ function addItem(file, name = '') {
     renderImagesTab();
 }
 
-async function addFromFile(file) {
-    if (!file || uploading || currentSettings().items.length >= IMAGES_MAX_ITEMS) return;
-    const data = await uploadImage(file);
-    if (data) addItem(data.file, baseName(file.name));
+// Ajout d'un ou plusieurs fichiers (sélecteur multi, dépôt) : envoyés en
+// série, dans la limite des places restantes. Les fichiers écartés faute de
+// place sont signalés une fois, pas par fichier.
+async function addFromFiles(files) {
+    if (uploading || currentSettings().items.length >= IMAGES_MAX_ITEMS) return;
+    const room = IMAGES_MAX_ITEMS - currentSettings().items.length;
+    const list = [...(files || [])].filter(Boolean);
+    if (list.length > room) {
+        pkg.showToast?.(pkg.t('Quatre images au maximum.'), 'warning', pkg.t('Images'), 5000);
+    }
+    for (const file of list.slice(0, room)) {
+        const data = await uploadImage(file);
+        if (data) addItem(data.file, baseName(file.name));
+    }
 }
 
 async function replaceFromFile(file) {
@@ -159,10 +169,14 @@ async function replaceFromFile(file) {
 
 function openFilePicker(mode) {
     fileInputMode = mode;
-    $('imagesFileInput')?.click();
+    // Multi-sélection à l'ajout seulement : le remplacement n'en prend qu'une
+    // (si plusieurs sont choisies malgré tout, seule la première sert).
+    const input = $('imagesFileInput');
+    if (input) input.multiple = (mode === 'add');
+    input?.click();
 }
 
-// Dépôt d'un fichier sur l'onglet : même effet que « Ajouter une image ».
+// Dépôt de fichiers sur l'onglet : même effet que « Ajouter une image ».
 function bindFileDrop() {
     const pane = $('images');
     const card = $('imagesListCard');
@@ -189,7 +203,7 @@ function bindFileDrop() {
         event.preventDefault();
         depth = 0;
         card.classList.remove('is-dropping');
-        addFromFile(event.dataTransfer.files?.[0]);
+        addFromFiles(event.dataTransfer.files);
     });
 }
 
@@ -769,11 +783,13 @@ export function initImagesTab() {
     $('btnImagesAdd')?.addEventListener('click', () => openFilePicker('add'));
     $('btnImageReplace')?.addEventListener('click', () => openFilePicker('replace'));
     $('imagesFileInput')?.addEventListener('change', (event) => {
-        const file = event.target.files?.[0];
+        // FileList « live » : figée en tableau avant la remise à zéro de
+        // l'input (qui la viderait).
+        const files = [...(event.target.files || [])];
         event.target.value = '';
-        if (!file) return;
-        if (fileInputMode === 'replace') replaceFromFile(file);
-        else addFromFile(file);
+        if (!files.length) return;
+        if (fileInputMode === 'replace') replaceFromFile(files[0]);
+        else addFromFiles(files);
     });
     $('btnImagesLibrary')?.addEventListener('show.bs.dropdown', renderLibrary);
     $('imagesImportFile')?.addEventListener('change', (event) => {

@@ -52,12 +52,12 @@
                         <button type="button" id="btnImagesAdd" class="btn btn-sm btn-primary">
                             <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter une image") }}
                         </button>
-                        <input type="file" id="imagesFileInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                        <input type="file" id="imagesFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
                     </div>
                 </div>
                 <div class="card-body">
                     <p id="imagesEmpty" class="form-hint text-muted mb-0">
-                        {{ _("Aucune image. Ajoutez-en une, ou déposez un fichier sur cet onglet : PNG, JPEG, WebP ou GIF.") }}
+                        {{ _("Aucune image. Ajoutez-en, ou déposez des fichiers sur cet onglet : PNG, JPEG, WebP ou GIF.") }}
                     </p>
                     <ul id="imagesList" class="list-group stats-panel-list" aria-label="{{ _('Images sur la carte') }}"></ul>
                     <p id="imagesUploading" class="form-hint text-muted small mt-2 mb-0" role="status" hidden>
@@ -66,7 +66,7 @@
                     <p id="imagesLimitHint" class="form-hint text-muted small mt-2 mb-0" hidden>{{ _("Quatre images au maximum.") }}</p>
                 </div>
                 <div class="images-drop-overlay" aria-hidden="true">
-                    <i class="ti ti-upload me-1"></i>{{ _("Déposez l'image ici") }}
+                    <i class="ti ti-upload me-1"></i>{{ _("Déposez les images ici") }}
                 </div>
             </div>
         </div>

@@ -126,8 +126,8 @@ carte immobile.
 ## Onglet Images (images_ui.js)
 
 Liste (vignette sur damier, nom ou « Image n », interrupteur, flèches,
-suppression avec « Annuler »), ajout par fichier, par dépôt sur l'onglet ou par
-la **bibliothèque** (images déjà envoyées, retrait des non utilisées, place
+suppression avec « Annuler »), ajout par fichiers (multi-sélection) ou dépôt de
+fichiers sur l'onglet, ou par la **bibliothèque** (images déjà envoyées, retrait des non utilisées, place
 occupée), « Remplacer l'image… » qui garde les réglages, formulaire de
 position et d'apparence. Sauvegarde débouncée de la préférence complète, vidée
 aussitôt pour les actions discrètes.

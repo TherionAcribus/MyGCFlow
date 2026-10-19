@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 19:43+0200\n"
+"POT-Creation-Date: 2026-10-19 19:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1549,79 +1549,83 @@ msgstr ""
 msgid "L'image n'a pas pu être envoyée."
 msgstr ""
 
-#: static/js/images_ui.js:115 static/js/images_ui.js:336
-#: static/js/images_ui.js:392 templates/app.html:254 templates/guide.html:59
-#: templates/guide.html:112 templates/guide.html:382 templates/guide.html:384
-#: templates/menu_images.html:30
+#: static/js/images_ui.js:115 static/js/images_ui.js:149
+#: static/js/images_ui.js:350 static/js/images_ui.js:406 templates/app.html:254
+#: templates/guide.html:59 templates/guide.html:112 templates/guide.html:382
+#: templates/guide.html:384 templates/menu_images.html:30
 msgid "Images"
 msgstr ""
 
-#: static/js/images_ui.js:201 static/js/video_ready.js:31
+#: static/js/images_ui.js:149 templates/menu_images.html:66
+msgid "Quatre images au maximum."
+msgstr ""
+
+#: static/js/images_ui.js:215 static/js/video_ready.js:31
 #, python-brace-format
 msgid "${n} Mo"
 msgstr ""
 
-#: static/js/images_ui.js:202
+#: static/js/images_ui.js:216
 #, python-brace-format
 msgid "${n} Ko"
 msgstr ""
 
-#: static/js/images_ui.js:229
+#: static/js/images_ui.js:243
 #, python-brace-format
 msgid "Ajouter ${name} (${w} × ${h})"
 msgstr ""
 
-#: static/js/images_ui.js:230
+#: static/js/images_ui.js:244
 #, python-brace-format
 msgid "Ajouter cette image (${w} × ${h})"
 msgstr ""
 
-#: static/js/images_ui.js:244 static/js/images_ui.js:245
+#: static/js/images_ui.js:258 static/js/images_ui.js:259
 msgid "Retirer de la bibliothèque"
 msgstr ""
 
-#: static/js/images_ui.js:256
+#: static/js/images_ui.js:270
 #, python-brace-format
 msgid "${n} image(s) · ${size}"
 msgstr ""
 
-#: static/js/images_ui.js:336
+#: static/js/images_ui.js:350
 msgid "Import impossible : fichier d'images invalide"
 msgstr ""
 
-#: static/js/images_ui.js:362
+#: static/js/images_ui.js:376
 #, python-brace-format
 msgid "${count} image(s) importée(s)"
 msgstr ""
 
-#: static/js/images_ui.js:392
+#: static/js/images_ui.js:406
 msgid "L'image n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/images_ui.js:434
+#: static/js/images_ui.js:448
 msgid "Afficher cette image"
 msgstr ""
 
-#: static/js/images_ui.js:458
+#: static/js/images_ui.js:472
 msgid "(manquante)"
 msgstr ""
 
-#: static/js/images_ui.js:465 static/js/stats_ui.js:251
+#: static/js/images_ui.js:479 static/js/stats_ui.js:251
 msgid "Monter"
 msgstr ""
 
-#: static/js/images_ui.js:466 static/js/stats_ui.js:252
+#: static/js/images_ui.js:480 static/js/stats_ui.js:252
 msgid "Descendre"
 msgstr ""
 
-#: static/js/images_ui.js:467 static/js/profiles.js:967
+#: static/js/images_ui.js:481 static/js/profiles.js:967
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_ui.js:254 static/js/stats_ui.js:1063
 #: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/images_ui.js:518 static/js/stats_ui.js:1135
+#: static/js/images_ui.js:532 static/js/stats_ui.js:1135
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr ""
@@ -7322,20 +7326,16 @@ msgstr ""
 
 #: templates/menu_images.html:60
 msgid ""
-"Aucune image. Ajoutez-en une, ou déposez un fichier sur cet onglet : PNG,"
-" JPEG, WebP ou GIF."
+"Aucune image. Ajoutez-en, ou déposez des fichiers sur cet onglet : PNG, "
+"JPEG, WebP ou GIF."
 msgstr ""
 
 #: templates/menu_images.html:64
 msgid "Envoi de l'image…"
 msgstr ""
 
-#: templates/menu_images.html:66
-msgid "Quatre images au maximum."
-msgstr ""
-
 #: templates/menu_images.html:69
-msgid "Déposez l'image ici"
+msgid "Déposez les images ici"
 msgstr ""
 
 #: templates/menu_images.html:79
