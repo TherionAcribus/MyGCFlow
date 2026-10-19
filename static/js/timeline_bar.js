@@ -134,6 +134,9 @@ function cssColor(styles, name, fallback) {
 }
 
 function draw() {
+    // Appelé aussi directement (pointerdown, touche) : un dessin déjà
+    // planifié par refreshTimelineBar redessinerait une seconde fois.
+    if (frame) cancelAnimationFrame(frame);
     frame = 0;
     if (!bar || !visible) return;
     const state = pkg.getTimelineState?.() || null;
@@ -359,7 +362,11 @@ function flushSeek() {
 function offsetFromPointer(event) {
     const rect = track.getBoundingClientRect();
     const fraction = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0;
-    return offsetAtFraction(Math.min(1, Math.max(0, fraction)), lastSpan);
+    // Plage relue à chaque événement : elle peut changer en cours de geste
+    // (refreshTimingPlan), alors que lastSpan date du dernier dessin.
+    const state = pkg.getTimelineState?.();
+    const span = state ? spanDays(state.start, state.end) : lastSpan;
+    return offsetAtFraction(Math.min(1, Math.max(0, fraction)), span);
 }
 
 function currentOffset() {
@@ -370,10 +377,17 @@ function currentOffset() {
 
 function onPointerDown(event) {
     if (event.pointerType !== 'touch' && event.button !== 0) return;
+    // Un deuxième pointeur en plein glissement ne doit pas détourner le drag.
+    if (gesture && gesture.pointerId !== null) return;
     draw(); // état frais : plage et données ont pu changer depuis le dernier dessin
     if (!lastState) return;
     const offset = offsetFromPointer(event);
     if (!beginGesture()) return;
+    // Le pointeur succède à une série de frappes éventuelle (geste clavier,
+    // pointerId null) : son minuteur de fin ne doit plus terminer le geste
+    // — `gesture.pointerId` ci-dessous conserve le `resume` d'origine.
+    clearTimeout(keySettleTimer);
+    keySettleTimer = null;
     gesture.pointerId = event.pointerId;
     try { track.setPointerCapture(event.pointerId); } catch (_) {}
     track.focus({ preventScroll: true });
@@ -388,10 +402,16 @@ function onPointerMove(event) {
 }
 
 function onPointerUp(event) {
-    if (!gesture || gesture.pointerId !== event.pointerId) return;
-    try { track.releasePointerCapture(event.pointerId); } catch (_) {}
+    // Avant le garde-fou : la classe doit être retirée même quand le geste
+    // a déjà été terminé par ailleurs (minuteur clavier, blur) et que ce
+    // relâchement arrive en retard.
     bar.classList.remove('is-dragging');
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    // Le geste se termine d'abord : le releasePointerCapture ci-dessous
+    // réémet lostpointercapture, qui réentre dans ce gestionnaire — geste
+    // déjà null, il sort au garde-fou.
     endGesture();
+    try { track.releasePointerCapture(event.pointerId); } catch (_) {}
 }
 
 function onKeyDown(event) {
@@ -403,10 +423,15 @@ function onKeyDown(event) {
     event.preventDefault();
     if (!beginGesture()) return;
     requestSeek(target);
-    // Touche maintenue : l'aperçu reste en pause tant que les frappes
-    // s'enchaînent, et ne repart qu'à leur fin.
-    clearTimeout(keySettleTimer);
-    keySettleTimer = setTimeout(endGesture, KEY_SETTLE_MS);
+    // Une frappe pendant un glissement déplace le curseur mais ne doit pas
+    // faire terminer le geste du pointeur 350 ms plus tard (la lecture
+    // repartirait en plein drag, sans jamais retirer is-dragging).
+    if (gesture.pointerId === null) {
+        // Touche maintenue : l'aperçu reste en pause tant que les frappes
+        // s'enchaînent, et ne repart qu'à leur fin.
+        clearTimeout(keySettleTimer);
+        keySettleTimer = setTimeout(endGesture, KEY_SETTLE_MS);
+    }
 }
 
 // --- Affichage et style ----------------------------------------------------------
@@ -467,6 +492,9 @@ function initTimelineBar() {
     track.addEventListener('pointermove', onPointerMove);
     track.addEventListener('pointerup', onPointerUp);
     track.addEventListener('pointercancel', onPointerUp);
+    // Filet de sécurité : un pointerup peut se perdre (alt-tab pendant le
+    // glissement). L'événement porte pointerId, le garde-fou suffit.
+    track.addEventListener('lostpointercapture', onPointerUp);
     track.addEventListener('keydown', onKeyDown);
     track.addEventListener('blur', () => { if (gesture && gesture.pointerId === null) endGesture(); });
 
