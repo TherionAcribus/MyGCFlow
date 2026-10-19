@@ -45,6 +45,11 @@ ne désigne jamais deux contenus — `GET /api/images/<nom>` est servi avec un
 cache d'un an `immutable`. Seuls les noms de ce motif sont acceptés
 (`safe_image_name`), à la lecture comme dans les réglages.
 
+Le nom d'origine lisible vit aussi dans `images/names.json` (`{<fichier>:
+<nom>}`, retenu à l'envoi, oublié au retrait) : la bibliothèque affiche
+« logo-club » plutôt que « Image n », indépendamment des préférences. Ce
+fichier est étranger au motif : jamais balayé, jamais servi.
+
 **Même origine obligatoire** : dessiner dans un canvas une image d'une autre
 origine le contamine et rend l'export vidéo impossible. Les images viennent
 toujours du serveur local, jamais d'une URL externe.

@@ -11,7 +11,8 @@ la vidéo ne soit pas « contaminé » (export impossible).
 Le nom du fichier est l'empreinte de son contenu normalisé : la même image
 envoyée deux fois n'est stockée qu'une fois, et un nom ne désigne jamais deux
 contenus (servi avec un cache long). Le nom d'origine, lisible, vit dans les
-réglages (images.items[].name), pas sur le disque.
+réglages (images.items[].name) et dans names.json pour la bibliothèque —
+jamais sur le nom du fichier.
 
 Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
 retrait manuel (POST /api/images/delete). Seuls les envois interrompus —
@@ -21,6 +22,7 @@ délai de grâce.
 
 import hashlib
 import io
+import json
 import os
 import re
 import tempfile
@@ -49,6 +51,11 @@ _UPLOAD_PART_PREFIX = '.upload-'
 # Nom d'un fichier du dossier : empreinte + extension produite ici.
 _NAME_RE = re.compile(r'[0-9a-f]{16}\.(?:png|jpg)')
 
+# names.json : {<fichier>: <nom d'origine>} — la bibliothèque affiche
+# « logo-club » plutôt que « Image n ». Fichier étranger au motif _NAME_RE :
+# jamais balayé, jamais servi, ignoré par list_image_files.
+_NAMES_FILE = 'names.json'
+
 
 class InvalidImage(ValueError):
     """Fichier refusé. `reason` : 'too_large', 'not_image', 'format',
@@ -64,6 +71,49 @@ def safe_image_name(name):
     if isinstance(name, str) and _NAME_RE.fullmatch(name):
         return name
     return ''
+
+
+def _load_names():
+    """Noms d'origine des fichiers du dossier ({fichier: nom}), {} si
+    names.json est absent ou illisible."""
+    try:
+        with open(os.path.join(paths.images_dir(), _NAMES_FILE),
+                  encoding='utf-8') as src:
+            names = json.load(src)
+    except (OSError, ValueError):
+        return {}
+    return names if isinstance(names, dict) else {}
+
+
+def _save_names(names):
+    """Écrit names.json atomiquement (comme save_image). Les entrées dont le
+    fichier n'existe plus dans le dossier — retrait extérieur, os.remove —
+    sont écartées."""
+    folder = paths.images_dir()
+    try:
+        present = {entry.name for entry in os.scandir(folder)
+                   if entry.is_file() and safe_image_name(entry.name)}
+    except OSError:
+        present = set()
+    names = {f: n for f, n in names.items() if f in present}
+    fd, tmp_path = tempfile.mkstemp(dir=folder, prefix=_UPLOAD_PART_PREFIX, suffix='.part')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as out:
+            json.dump(names, out, ensure_ascii=False)
+        os.replace(tmp_path, os.path.join(folder, _NAMES_FILE))
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def _origin_name(name):
+    """Nom d'origine lisible : « C:\\divers\\logo club.png » → « logo club »
+    (base du chemin, sans l'extension finale, 80 caractères au plus)."""
+    base = os.path.basename(str(name).replace('\\', '/'))
+    return os.path.splitext(base)[0].strip()[:80]
 
 
 def _has_transparency(img):
@@ -114,16 +164,18 @@ def normalize_image(data):
         raise InvalidImage('not_image')
 
 
-def save_image(data):
+def save_image(data, name=''):
     """Normalise et enregistre une image dans images/.
 
     Renvoie {'file', 'width', 'height', 'size_bytes'}. Un contenu déjà présent
     n'est pas réécrit (sa date est rafraîchie : de nouveau choisi, il repasse
-    en tête de la bibliothèque, triée du plus récent au plus ancien)."""
+    en tête de la bibliothèque, triée du plus récent au plus ancien). `name`,
+    le nom d'origine du fichier envoyé, est retenu dans names.json pour la
+    bibliothèque (indépendant du nom des réglages)."""
     normalized, ext, (width, height) = normalize_image(data)
-    name = f"{hashlib.sha256(normalized).hexdigest()[:16]}.{ext}"
+    filename = f"{hashlib.sha256(normalized).hexdigest()[:16]}.{ext}"
     folder = paths.ensure_dir(paths.images_dir())
-    final_path = os.path.join(folder, name)
+    final_path = os.path.join(folder, filename)
     if os.path.exists(final_path):
         try:
             os.utime(final_path)
@@ -141,7 +193,13 @@ def save_image(data):
             except OSError:
                 pass
             raise
-    return {'file': name, 'width': width, 'height': height, 'size_bytes': len(normalized)}
+    origin = _origin_name(name)
+    if origin:
+        names = _load_names()
+        if names.get(filename) != origin:
+            names[filename] = origin
+            _save_names(names)
+    return {'file': filename, 'width': width, 'height': height, 'size_bytes': len(normalized)}
 
 
 def _value(obj, key, default=None):
@@ -171,9 +229,11 @@ def referenced_image_files(images_settings):
 
 def list_image_files(referenced):
     """Contenu du dossier : {'files': [{'file', 'size_bytes', 'width',
-    'height', 'referenced', 'modified'}], 'total_bytes'}, du plus récent au
-    plus ancien (la bibliothèque propose d'abord les derniers envois)."""
+    'height', 'referenced', 'modified', 'name'}], 'total_bytes'}, du plus
+    récent au plus ancien (la bibliothèque propose d'abord les derniers
+    envois). 'name' est le nom d'origine retenu dans names.json, '' sinon."""
     folder = paths.images_dir()
+    names = _load_names()
     files = []
     try:
         entries = list(os.scandir(folder))
@@ -196,6 +256,7 @@ def list_image_files(referenced):
             'height': height,
             'referenced': entry.name in referenced,
             'modified': stat.st_mtime,
+            'name': names.get(entry.name, ''),
         })
     files.sort(key=lambda f: (-f['modified'], f['file']))
     return {'files': files, 'total_bytes': sum(f['size_bytes'] for f in files)}
@@ -228,7 +289,8 @@ def sweep_partial_uploads(now=None, grace_s=IMAGE_SWEEP_GRACE_S):
 
 
 def delete_image_file(name):
-    """Supprime une image du dossier. False si elle n'y était pas."""
+    """Supprime une image du dossier, et son nom d'origine de names.json.
+    False si elle n'y était pas."""
     safe = safe_image_name(name)
     if not safe:
         return False
@@ -236,4 +298,8 @@ def delete_image_file(name):
     if not os.path.isfile(path):
         return False
     os.remove(path)
+    names = _load_names()
+    if safe in names:
+        del names[safe]
+        _save_names(names)
     return True

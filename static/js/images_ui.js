@@ -218,9 +218,16 @@ async function renderLibrary() {
         pick.type = 'button';
         pick.className = 'images-library-item';
         pick.dataset.libraryFile = entry.file;
+        // Nom d'origine retenu par le serveur (images/names.json) : repris
+        // comme nom de l'item — une image reprise n'est plus « Image n ».
+        pick.dataset.libraryName = entry.name || '';
         pick.disabled = full;
-        pick.title = `${entry.width} × ${entry.height}`;
-        pick.setAttribute('aria-label', pkg.t('Ajouter cette image (${w} × ${h})', { w: entry.width, h: entry.height }));
+        pick.title = entry.name
+            ? `${entry.name} — ${entry.width} × ${entry.height}`
+            : `${entry.width} × ${entry.height}`;
+        pick.setAttribute('aria-label', entry.name
+            ? pkg.t('Ajouter ${name} (${w} × ${h})', { name: entry.name, w: entry.width, h: entry.height })
+            : pkg.t('Ajouter cette image (${w} × ${h})', { w: entry.width, h: entry.height }));
         const img = document.createElement('img');
         img.src = pkg.imageUrl(entry.file);
         img.alt = '';
@@ -337,7 +344,11 @@ async function importImages(file) {
         const blob = dataUrlToBlob(embedded[name]);
         if (!blob) continue;
         const ext = blob.type === 'image/png' ? 'png' : 'jpg';
-        const saved = await uploadImage(new File([blob], `${name.replace(/\.[^.]+$/, '')}.${ext}`, { type: blob.type }));
+        // Le serveur retient le nom du fichier envoyé comme nom d'origine :
+        // celui de l'item qui référençait ce fichier, sinon la base du nom.
+        const itemName = items.find((i) => i?.file === name)?.name;
+        const fileName = `${itemName || name.replace(/\.[^.]+$/, '')}.${ext}`;
+        const saved = await uploadImage(new File([blob], fileName, { type: blob.type }));
         if (saved) renamed[name] = saved.file;
     }
     const next = items.map((raw) => (raw && typeof raw === 'object' && raw.file in renamed
@@ -384,7 +395,7 @@ async function onLibraryClick(event) {
         return;
     }
     const pick = event.target.closest('[data-library-file]');
-    if (pick && !pick.disabled) addItem(pick.dataset.libraryFile, '');
+    if (pick && !pick.disabled) addItem(pick.dataset.libraryFile, pick.dataset.libraryName || '');
 }
 
 // ---------------------------------------------------------------------------

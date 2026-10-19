@@ -51,7 +51,7 @@ def route_upload_image():
     # Lecture bornée : un fichier démesuré n'est jamais chargé en entier.
     data = upload.stream.read(image_library.IMAGE_MAX_UPLOAD_BYTES + 1)
     try:
-        saved = image_library.save_image(data)
+        saved = image_library.save_image(data, name=upload.filename or '')
     except image_library.InvalidImage as e:
         status = 413 if e.reason == 'too_large' else 415 if e.reason == 'format' else 400
         return jsonify({'success': False, 'reason': e.reason, 'message': _invalid_message(e.reason)}), status

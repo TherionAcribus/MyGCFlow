@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import tempfile
 import time
@@ -198,6 +199,62 @@ class StorageTests(ImageLibraryTestCase):
         self.assertTrue(image_library.delete_image_file(name))
         self.assertFalse(image_library.delete_image_file(name))
         self.assertFalse(image_library.delete_image_file('../image_library.py'))
+
+
+class NamesTests(ImageLibraryTestCase):
+    """names.json : la bibliothèque retient le nom d'origine des envois."""
+
+    def png(self, color=(255, 0, 0, 128), size=(20, 20)):
+        return encode(Image.new('RGBA', size, color), 'PNG')
+
+    def names_file(self):
+        return self.folder / 'names.json'
+
+    def read_names(self):
+        return json.loads(self.names_file().read_text(encoding='utf-8'))
+
+    def test_name_saved_at_upload_is_reported_by_list(self):
+        saved = image_library.save_image(self.png(), name='logo-club.png')
+        listing = image_library.list_image_files(set())
+        self.assertEqual(listing['files'][0]['name'], 'logo-club')
+        # names.json est étranger au motif : jamais listé.
+        self.assertEqual([f['file'] for f in listing['files']], [saved['file']])
+        self.assertEqual(self.read_names(), {saved['file']: 'logo-club'})
+        # Un nouvel envoi du même contenu met le nom à jour.
+        image_library.save_image(self.png(), name='badge.png')
+        self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], 'badge')
+
+    def test_name_is_cleaned(self):
+        # Base du chemin (/ et \), sans l'extension finale, espaces bordant
+        # retirés, 80 caractères au plus.
+        image_library.save_image(self.png(), name='  C:\\divers\\logo club.png  ')
+        self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], 'logo club')
+        image_library.save_image(self.png(color=(1, 2, 3, 128)), name='a' * 100 + '.png')
+        self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], 'a' * 80)
+
+    def test_save_without_name_keeps_working(self):
+        image_library.save_image(self.png())
+        self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], '')
+        self.assertFalse(self.names_file().exists())
+
+    def test_delete_forgets_the_name(self):
+        name = image_library.save_image(self.png(), name='logo.png')['file']
+        image_library.save_image(self.png(color=(9, 9, 9, 128)), name='reste.png')
+        self.assertTrue(image_library.delete_image_file(name))
+        names = self.read_names()
+        self.assertNotIn(name, names)
+        self.assertEqual(len(names), 1)
+
+    def test_stale_entry_is_dropped_on_next_write(self):
+        # Fichier retiré en dehors de delete_image_file : son entrée de
+        # names.json est écartée à la prochaine écriture.
+        gone = image_library.save_image(self.png(), name='parti.png')['file']
+        os.remove(self.folder / gone)
+        self.assertIn(gone, self.read_names())
+        image_library.save_image(self.png(color=(8, 8, 8, 128)), name='nouveau.png')
+        names = self.read_names()
+        self.assertNotIn(gone, names)
+        self.assertEqual(len(names), 1)
 
 
 class RouteTests(ImageLibraryTestCase):

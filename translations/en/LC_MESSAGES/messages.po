@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 17:12+0200\n"
+"POT-Creation-Date: 2026-10-19 19:43+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1129,7 +1129,7 @@ msgstr "Preparing upload..."
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:1161 static/js/mapgl.js:4522
+#: static/js/bdd.js:1161 static/js/mapgl.js:4525
 msgid "Terminé"
 msgstr "Done"
 
@@ -1579,7 +1579,7 @@ msgstr "The local server is not responding (timed out)"
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr "Error loading GC colors (${status}): ${statusText}"
 
-#: static/js/images_panels.js:364
+#: static/js/images_panels.js:419
 msgid "Image"
 msgstr "Image"
 
@@ -1588,78 +1588,83 @@ msgstr "Image"
 msgid "Image ${n}"
 msgstr "Image ${n}"
 
-#: static/js/images_ui.js:108 static/js/images_ui.js:112
+#: static/js/images_ui.js:108 static/js/images_ui.js:115
 msgid "L'image n'a pas pu être envoyée."
 msgstr "The image could not be uploaded."
 
-#: static/js/images_ui.js:112 static/js/images_ui.js:326
-#: static/js/images_ui.js:378 templates/app.html:254 templates/guide.html:59
+#: static/js/images_ui.js:115 static/js/images_ui.js:336
+#: static/js/images_ui.js:392 templates/app.html:254 templates/guide.html:59
 #: templates/guide.html:112 templates/guide.html:382 templates/guide.html:384
 #: templates/menu_images.html:30
 msgid "Images"
 msgstr "Images"
 
-#: static/js/images_ui.js:198 static/js/video_ready.js:31
+#: static/js/images_ui.js:201 static/js/video_ready.js:31
 #, python-brace-format
 msgid "${n} Mo"
 msgstr "${n} MB"
 
-#: static/js/images_ui.js:199
+#: static/js/images_ui.js:202
 #, python-brace-format
 msgid "${n} Ko"
 msgstr "${n} KB"
 
-#: static/js/images_ui.js:220
+#: static/js/images_ui.js:229
+#, python-brace-format
+msgid "Ajouter ${name} (${w} × ${h})"
+msgstr "Add ${name} (${w} × ${h})"
+
+#: static/js/images_ui.js:230
 #, python-brace-format
 msgid "Ajouter cette image (${w} × ${h})"
 msgstr "Add this image (${w} × ${h})"
 
-#: static/js/images_ui.js:234 static/js/images_ui.js:235
+#: static/js/images_ui.js:244 static/js/images_ui.js:245
 msgid "Retirer de la bibliothèque"
 msgstr "Remove from library"
 
-#: static/js/images_ui.js:246
+#: static/js/images_ui.js:256
 #, python-brace-format
 msgid "${n} image(s) · ${size}"
 msgstr "${n} image(s) · ${size}"
 
-#: static/js/images_ui.js:326
+#: static/js/images_ui.js:336
 msgid "Import impossible : fichier d'images invalide"
 msgstr "Import failed: invalid images file"
 
-#: static/js/images_ui.js:348
+#: static/js/images_ui.js:362
 #, python-brace-format
 msgid "${count} image(s) importée(s)"
 msgstr "${count} image(s) imported"
 
-#: static/js/images_ui.js:378
+#: static/js/images_ui.js:392
 msgid "L'image n'a pas pu être retirée."
 msgstr "The image could not be removed."
 
-#: static/js/images_ui.js:420
+#: static/js/images_ui.js:434
 msgid "Afficher cette image"
 msgstr "Show this image"
 
-#: static/js/images_ui.js:444
+#: static/js/images_ui.js:458
 msgid "(manquante)"
 msgstr "(missing)"
 
-#: static/js/images_ui.js:451 static/js/stats_ui.js:251
+#: static/js/images_ui.js:465 static/js/stats_ui.js:251
 msgid "Monter"
 msgstr "Move up"
 
-#: static/js/images_ui.js:452 static/js/stats_ui.js:252
+#: static/js/images_ui.js:466 static/js/stats_ui.js:252
 msgid "Descendre"
 msgstr "Move down"
 
-#: static/js/images_ui.js:453 static/js/profiles.js:967
+#: static/js/images_ui.js:467 static/js/profiles.js:967
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_ui.js:254 static/js/stats_ui.js:1063
 #: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/images_ui.js:504 static/js/stats_ui.js:1135
+#: static/js/images_ui.js:518 static/js/stats_ui.js:1135
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr "“${name}” deleted"
@@ -2333,7 +2338,7 @@ msgstr "Recording stopped"
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Fast capture not supported, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:2995 static/js/mapgl.js:4221
+#: static/js/mapgl.js:2995 static/js/mapgl.js:4224
 msgid "Compatibilité"
 msgstr "Compatibility"
 
@@ -2393,7 +2398,7 @@ msgstr "Preparing capture..."
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture paused: return to this tab to resume."
 
-#: static/js/mapgl.js:3230 static/js/mapgl.js:4388
+#: static/js/mapgl.js:3230 static/js/mapgl.js:4391
 msgid "Onglet masqué"
 msgstr "Tab hidden"
 
@@ -2418,9 +2423,9 @@ msgstr "The capture was interrupted by an error: ${message}"
 msgid "Capture interrompue"
 msgstr "Capture interrupted"
 
-#: static/js/mapgl.js:3511 static/js/mapgl.js:4086 static/js/mapgl.js:4298
-#: static/js/mapgl.js:4312 static/js/mapgl.js:4631 static/js/mapgl.js:4719
-#: static/js/mapgl.js:4723
+#: static/js/mapgl.js:3511 static/js/mapgl.js:4086 static/js/mapgl.js:4301
+#: static/js/mapgl.js:4315 static/js/mapgl.js:4634 static/js/mapgl.js:4722
+#: static/js/mapgl.js:4726
 msgid "Enregistrement"
 msgstr "Recording"
 
@@ -2522,22 +2527,22 @@ msgstr "Starting capture..."
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Fast capture error, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:4220
+#: static/js/mapgl.js:4223
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
 " ${used}."
 msgstr "${wanted} format not supported by this browser: recording in ${used}."
 
-#: static/js/mapgl.js:4264
+#: static/js/mapgl.js:4267
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Resolution reduced to what the browser can handle."
 
-#: static/js/mapgl.js:4298
+#: static/js/mapgl.js:4301
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "Copying the video failed. Stopping the recording."
 
-#: static/js/mapgl.js:4312
+#: static/js/mapgl.js:4315
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -2545,110 +2550,110 @@ msgstr ""
 "Video encoder error. Stopping the recording and recovering the captured "
 "sequence."
 
-#: static/js/mapgl.js:4388
+#: static/js/mapgl.js:4391
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 msgstr "Recording paused: return to this tab to resume capture."
 
-#: static/js/mapgl.js:4542
+#: static/js/mapgl.js:4545
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Copy to video folder failed"
 
-#: static/js/mapgl.js:4563
+#: static/js/mapgl.js:4566
 msgid "Finalisation"
 msgstr "Finalizing"
 
-#: static/js/mapgl.js:4563
+#: static/js/mapgl.js:4566
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Writing video duration..."
 
-#: static/js/mapgl.js:4576
+#: static/js/mapgl.js:4579
 msgid "Ajout audio"
 msgstr "Adding audio"
 
-#: static/js/mapgl.js:4576
+#: static/js/mapgl.js:4579
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Merging audio track with video..."
 
-#: static/js/mapgl.js:4616 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:4619 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalization"
 
-#: static/js/mapgl.js:4616
+#: static/js/mapgl.js:4619
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Speeding up x${applicable} for normal-speed playback..."
 
-#: static/js/mapgl.js:4631
+#: static/js/mapgl.js:4634
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "The video could not be assembled."
 
-#: static/js/mapgl.js:4638
+#: static/js/mapgl.js:4641
 msgid "Traitement serveur"
 msgstr "Server processing"
 
-#: static/js/mapgl.js:4638
+#: static/js/mapgl.js:4641
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Sending video to server..."
 
-#: static/js/mapgl.js:4675 static/js/mapgl.js:4682
+#: static/js/mapgl.js:4678 static/js/mapgl.js:4685
 msgid "Traitement serveur..."
 msgstr "Server processing..."
 
-#: static/js/mapgl.js:4680
+#: static/js/mapgl.js:4683
 msgid "Traitement serveur non démarré"
 msgstr "Server processing not started"
 
-#: static/js/mapgl.js:4719
+#: static/js/mapgl.js:4722
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr "Recording was interrupted: copying the data failed."
 
-#: static/js/mapgl.js:4723
+#: static/js/mapgl.js:4726
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Server processing unavailable, falling back to local..."
 
-#: static/js/mapgl.js:4771
+#: static/js/mapgl.js:4774
 msgid "Élément non trouvé"
 msgstr "Element not found"
 
-#: static/js/mapgl.js:4789
+#: static/js/mapgl.js:4792
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "rendercomplete timeout (5s): map rendering stalled"
 
-#: static/js/mapgl.js:4805
+#: static/js/mapgl.js:4808
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "No canvas found in the map"
 
-#: static/js/mapgl.js:4854
+#: static/js/mapgl.js:4857
 msgid "Échec conversion canvas en blob"
 msgstr "Canvas to blob conversion failed"
 
-#: static/js/mapgl.js:5392 static/js/mapgl.js:5467
+#: static/js/mapgl.js:5395 static/js/mapgl.js:5470
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
-#: static/js/mapgl.js:5392 static/js/mapgl.js:5394 static/js/mapgl.js:5467
+#: static/js/mapgl.js:5395 static/js/mapgl.js:5397 static/js/mapgl.js:5470
 #: templates/guide.html:211 templates/menu_style.html:82
 msgid "Trajet"
 msgstr "Route"
 
-#: static/js/mapgl.js:5394
+#: static/js/mapgl.js:5397
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 msgstr "Very busy days: automatic grouping applied at the chosen radius."
 
-#: static/js/mapgl.js:5980
+#: static/js/mapgl.js:5983
 msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
-#: static/js/mapgl.js:5980 static/js/mapgl.js:5984 templates/guide.html:207
+#: static/js/mapgl.js:5983 static/js/mapgl.js:5987 templates/guide.html:207
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
-#: static/js/mapgl.js:5984
+#: static/js/mapgl.js:5987
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
