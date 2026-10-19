@@ -152,6 +152,49 @@ test('le curseur amène la carte, le compteur et les Stats à la date choisie', 
   expect((await bar(page)).style).toBe('curve');
 });
 
+test('la molette promène le curseur jour par jour (Maj : une semaine)', async ({ page }) => {
+  await openWithFixture(page);
+  await showBar(page);
+
+  const box = await page.locator('#timelineBarTrack').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  expect(await playback(page)).toBe('idle');
+
+  // Repos : le premier cran ouvre l'aperçu en pause et recule le curseur
+  // d'un jour (05/01 → 5 caches sur la carte).
+  await page.mouse.wheel(0, -120);
+  await expect.poll(() => playback(page)).toBe('paused');
+  await expect.poll(async () => (await bar(page)).valueNow).toBe(4);
+  await expect.poll(() => mapPointCount(page)).toBe(5);
+  await expect(page.locator('#spanNbCaches')).toHaveText('5');
+
+  // Chaque cran : un jour — vers le bas avance, vers le haut recule.
+  await page.mouse.wheel(0, -120);
+  await expect.poll(async () => (await bar(page)).valueNow).toBe(3);
+  await expect.poll(() => mapPointCount(page)).toBe(4);
+  await page.mouse.wheel(0, 120);
+  await expect.poll(async () => (await bar(page)).valueNow).toBe(4);
+  // La page ne défile pas pendant le scrub.
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  // Maj + cran : une semaine, bridée aux bornes (4 → 0, puis 0 → 5).
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, -120);
+  await page.keyboard.up('Shift');
+  await expect.poll(async () => (await bar(page)).valueNow).toBe(0);
+  await expect.poll(() => mapPointCount(page)).toBe(1);
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, 120);
+  await page.keyboard.up('Shift');
+  await expect.poll(async () => (await bar(page)).valueNow).toBe(5);
+  expect(await mapPointCount(page)).toBe(6);
+
+  // Silence > 350 ms : la rafale est terminée, l'aperçu reste en pause.
+  await page.waitForTimeout(500);
+  expect(await playback(page)).toBe('paused');
+  expect((await bar(page)).valueNow).toBe(5);
+});
+
 test('clic droit : définir la plage depuis la barre', async ({ page }) => {
   await openWithFixture(page);
   await showBar(page);

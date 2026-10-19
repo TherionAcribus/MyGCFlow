@@ -36,6 +36,9 @@ const VISIBLE_KEY = 'timelineBarVisible';
 const STYLE_KEY = 'timelineBarStyle';
 // Fin d'une série de frappes : la musique est recalée et la lecture reprend.
 const KEY_SETTLE_MS = 350;
+// Molette : ~100 px cumulés par jour. Un cran classique fait 100-120 px ;
+// en deltaMode 1 (lignes), une ligne vaut ~40 px — un cran ≈ 3 lignes.
+const WHEEL_STEP_PX = 100;
 // Sous cette largeur, les dates des bornes et le choix du style cèdent la
 // place à la piste.
 const NARROW_PX = 520;
@@ -56,6 +59,9 @@ let gesture = null;
 let pendingOffset = null;
 let seekFrame = 0;
 let keySettleTimer = null;
+// Molette : somme des deltas depuis le dernier jour sauté — les pavés
+// émettent par petits pas sous le seuil d'un cran.
+let wheelAccum = 0;
 // Dernier état dessiné, pour convertir pointeur et touches en jours.
 let lastState = null;
 let lastSpan = 0;
@@ -370,6 +376,8 @@ function endGesture() {
     gesture = null;
     clearTimeout(keySettleTimer);
     keySettleTimer = null;
+    // La rafale de molette est finie : le prochain cran repart de zéro.
+    wheelAccum = 0;
     // Musique recalée en pause, puis reprise : elle repart avec l'animation.
     pkg.resyncPreviewMusic?.();
     if (resume) pkg.setPreviewPaused?.(false);
@@ -479,6 +487,53 @@ function onKeyDown(event) {
     if (gesture.pointerId === null) {
         // Touche maintenue : l'aperçu reste en pause tant que les frappes
         // s'enchaînent, et ne repart qu'à leur fin.
+        clearTimeout(keySettleTimer);
+        keySettleTimer = setTimeout(endGesture, KEY_SETTLE_MS);
+    }
+}
+
+// Molette : un cran promène le curseur d'un jour (Maj : une semaine), comme
+// les flèches du clavier — la position visée est celle du curseur, pas du
+// survol.
+function onWheel(event) {
+    // Ctrl/Cmd + molette = zoom pincement du navigateur, pas du scrub.
+    if (event.ctrlKey || event.metaKey) return;
+    // Un glissement pointeur en cours possède le curseur (même garde que
+    // le clavier).
+    if (gesture && gesture.pointerId !== null) return;
+    draw(); // état frais : plage et données ont pu changer depuis le dernier dessin
+    // Barre inutilisable : la page reste libre de défiler (pas de
+    // preventDefault).
+    if (!lastState || lastState.recording) return;
+    event.preventDefault(); // la page ne doit pas scroller pendant le scrub
+
+    // deltaX quand la molette/le pavé roule surtout horizontalement (Maj
+    // compris : le navigateur traduit alors le cran vertical en deltaX).
+    let delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (event.deltaMode === 1) delta *= 40; // DOM_DELTA_LINE → pixels
+    // Changement de sens : repartir dans l'autre direction n'hérite pas du
+    // reste accumulé.
+    if (Math.sign(delta) !== Math.sign(wheelAccum)) wheelAccum = 0;
+    wheelAccum += delta;
+    const steps = Math.trunc(wheelAccum / WHEEL_STEP_PX);
+    if (!steps) return; // accumulation insuffisante pour un jour
+    wheelAccum -= steps * WHEEL_STEP_PX;
+    // Cible calculée AVANT beginGesture, comme onKeyDown : depuis le repos,
+    // startPausedPreview lance l'aperçu au début de la plage — lire
+    // currentOffset() après donnerait 0 au lieu du curseur au repos.
+    // Plage relue à chaque cran, comme offsetFromPointer : elle peut
+    // changer en cours de geste (refreshTimingPlan), lastSpan date du
+    // dernier dessin.
+    const state = pkg.getTimelineState?.();
+    const span = state ? spanDays(state.start, state.end) : lastSpan;
+    const target = clampOffset(currentOffset() + steps * (event.shiftKey ? 7 : 1), span);
+    // Au repos, beginGesture ouvre l'aperçu en pause : la molette promène
+    // le curseur jour par jour.
+    if (!beginGesture()) return;
+    requestSeek(target);
+    // Comme les frappes : la rafale chaîne les sauts (un par frame via
+    // requestSeek) puis termine — musique recalée, reprise éventuelle.
+    if (gesture.pointerId === null) {
         clearTimeout(keySettleTimer);
         keySettleTimer = setTimeout(endGesture, KEY_SETTLE_MS);
     }
@@ -597,6 +652,7 @@ function setVisible(next, { persist = true } = {}) {
     if (persist) writeStorage(VISIBLE_KEY, visible ? '1' : '0');
     if (!visible) {
         hoverOffset = null;
+        wheelAccum = 0; // une rafale de molette ne survit pas au masquage
         closeMenu(); // la piste masquée n'a plus de menu à afficher
         if (gesture) endGesture();
     }
@@ -657,6 +713,9 @@ function initTimelineBar() {
         refreshTimelineBar();
     });
     track.addEventListener('keydown', onKeyDown);
+    // passive: false — sans quoi preventDefault est ignoré et la page
+    // défile pendant le scrub.
+    track.addEventListener('wheel', onWheel, { passive: false });
     // Clic droit : pose des bornes de l'animation (menu dédié). Aucun geste
     // ne démarre — onPointerDown ignore déjà les boutons ≠ principal.
     track.addEventListener('contextmenu', onContextMenu);
