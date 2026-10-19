@@ -794,11 +794,32 @@ function syncDragMode() {
     host.classList.toggle('stats-editing', tabOpen && idle);
 }
 
-// Largeur des poignées de redimensionnement, mesurées depuis les bords droit
-// et bas du canvas : un pointeur qui s'y abaisse change la taille au lieu de
-// déplacer le panneau. Le bord bas impose position.height (les grilles,
-// à cases carrées, ne l'offrent pas) ; le coin bas-droit règle les deux axes.
+// Largeur des poignées de redimensionnement, mesurées depuis les bords du
+// canvas : un pointeur qui s'y abaisse change la taille au lieu de déplacer
+// le panneau. La poignée verticale impose position.height (les grilles, à
+// cases carrées, ne l'offrent pas) ; le coin entre les deux règle les deux
+// axes.
 const RESIZE_GRIP = 14;
+
+// Bords qui portent les poignées : ceux qui bougent quand la taille change,
+// pour que la poignée reste sous le pointeur. Ancré à droite (en bas), un
+// panneau grandit vers la gauche (le haut) : poignée sur ce bord, delta du
+// pointeur inversé. Centré (colonne centrale, ligne médiane), il grandit des
+// deux côtés : poignée à droite (en bas), delta doublé. Libre : bords droit
+// et bas, le coin haut-gauche étant épinglé (pinStatsPanelCorner).
+function resizeEdges(rect) {
+    const [vertical, horizontal] = rect.mode === 'free'
+        ? ['top', 'left']
+        : String(rect.anchor || 'top-left').split('-');
+    return {
+        h: horizontal === 'right'
+            ? { side: 'left', factor: -1 }
+            : { side: 'right', factor: horizontal === 'center' ? 2 : 1 },
+        v: vertical === 'bottom'
+            ? { side: 'top', factor: -1 }
+            : { side: 'bottom', factor: vertical === 'middle' ? 2 : 1 },
+    };
+}
 
 function withFreePosition(id, x, y) {
     const settings = currentSettings();
@@ -864,18 +885,29 @@ function bindDragAndDrop() {
             y: freeH > 0 ? clamp01(top / freeH) : 0,
         };
     };
-    // Axes redimensionnables au point (x, y) du canvas : 'resize-w' au bord
-    // droit, 'resize-h' au bord bas (hors grilles), 'resize-both' au coin
-    // bas-droit, 'move' partout ailleurs.
-    const dragModeFor = (canvasRect, resizableH, x, y) => {
-        const nearRight = x >= canvasRect.right - RESIZE_GRIP;
-        const nearBottom = resizableH && y >= canvasRect.bottom - RESIZE_GRIP;
-        if (nearRight && nearBottom) return 'resize-both';
-        if (nearRight) return 'resize-w';
-        if (nearBottom) return 'resize-h';
+    // Axes redimensionnables au point (x, y) du canvas : 'resize-w' sur la
+    // poignée de largeur, 'resize-h' sur celle de hauteur (hors grilles),
+    // 'resize-both' au coin qu'elles partagent, 'move' partout ailleurs.
+    const dragModeFor = (canvasRect, edges, resizableH, x, y) => {
+        const nearH = edges.h.side === 'right'
+            ? x >= canvasRect.right - RESIZE_GRIP
+            : x <= canvasRect.left + RESIZE_GRIP;
+        const nearV = resizableH && (edges.v.side === 'bottom'
+            ? y >= canvasRect.bottom - RESIZE_GRIP
+            : y <= canvasRect.top + RESIZE_GRIP);
+        if (nearH && nearV) return 'resize-both';
+        if (nearH) return 'resize-w';
+        if (nearV) return 'resize-h';
         return 'move';
     };
-    const cursorFor = { move: 'grab', 'resize-w': 'ew-resize', 'resize-h': 'ns-resize', 'resize-both': 'nwse-resize' };
+    // Coin haut-gauche ou bas-droit : nwse ; les deux autres : nesw.
+    const diagonalNesw = (edges) => (edges.h.side === 'right') !== (edges.v.side === 'bottom');
+    const cursorFor = (mode, edges) => ({
+        move: 'grab',
+        'resize-w': 'ew-resize',
+        'resize-h': 'ns-resize',
+        'resize-both': diagonalNesw(edges) ? 'nesw-resize' : 'nwse-resize',
+    })[mode];
     host.addEventListener('pointerdown', (event) => {
         const canvas = event.target.closest?.('canvas.stats-panel');
         if (!canvas || event.button !== 0 || !host.classList.contains('stats-editing')) return;
@@ -884,13 +916,15 @@ function bindDragAndDrop() {
         if (!rect) return;
         const base = host.getBoundingClientRect();
         const canvasRect = canvas.getBoundingClientRect();
-        const mode = dragModeFor(canvasRect, rect.kind !== 'grid', event.clientX, event.clientY);
+        const edges = resizeEdges(rect);
+        const mode = dragModeFor(canvasRect, edges, rect.kind !== 'grid', event.clientX, event.clientY);
         drag = {
             id: canvas.dataset.panelId,
             pointerId: event.pointerId,
             canvas,
             base,
             mode,
+            edges,
             offsetX: mode === 'move' ? event.clientX - base.left - rect.x : 0,
             offsetY: mode === 'move' ? event.clientY - base.top - rect.y : 0,
             startClientX: event.clientX,
@@ -911,37 +945,47 @@ function bindDragAndDrop() {
         canvas.style.cursor = '';
         canvas.classList.add(mode === 'move' ? 'is-dragging' : 'is-resizing');
         if (mode === 'resize-h') canvas.classList.add('is-resizing-h');
-        else if (mode === 'resize-both') canvas.classList.add('is-resizing-both');
+        else if (mode === 'resize-both') {
+            canvas.classList.add('is-resizing-both');
+            if (diagonalNesw(edges)) canvas.classList.add('is-resizing-nesw');
+        }
+        if (mode !== 'move' && rect.mode === 'free') pkg.pinStatsPanelCorner?.(drag.id);
         event.preventDefault();
         selectedId = drag.id;
         renderStatsTab();
     });
     host.addEventListener('pointermove', (event) => {
         if (!drag) {
-            // Survol hors glisser : le curseur annonce les poignées des bords
-            // droit et bas (curseur en ligne — le CSS ne connaît pas la
-            // position). Le bord bas n'existe que sur les panneaux étirables
-            // (hors grilles, à cases carrées).
+            // Survol hors glisser : le curseur annonce les poignées de largeur
+            // et de hauteur (curseur en ligne — le CSS ne connaît pas la
+            // position). La poignée de hauteur n'existe que sur les panneaux
+            // étirables (hors grilles, à cases carrées).
             const canvas = event.target?.closest?.('canvas.stats-panel');
             if (canvas && host.classList.contains('stats-editing')) {
                 const rect = pkg.getStatsPanelRect?.(canvas.dataset.panelId);
                 const canvasRect = canvas.getBoundingClientRect();
-                canvas.style.cursor = rect
-                    ? cursorFor[dragModeFor(canvasRect, rect.kind !== 'grid', event.clientX, event.clientY)]
-                    : 'grab';
+                if (rect) {
+                    const edges = resizeEdges(rect);
+                    canvas.style.cursor = cursorFor(
+                        dragModeFor(canvasRect, edges, rect.kind !== 'grid', event.clientX, event.clientY), edges);
+                } else {
+                    canvas.style.cursor = 'grab';
+                }
             }
             return;
         }
         if (event.pointerId !== drag.pointerId) return;
         if (drag.mode !== 'move') {
             // Aperçu en direct de la taille, comme la position : écrite en
-            // place, sans renormalisation ni envoi — le commit les fait.
+            // place, sans renormalisation ni envoi — le commit les fait. Le
+            // delta suit le bord saisi (inversé à gauche/en haut, doublé
+            // quand le panneau est centré sur cet axe).
             if (drag.mode !== 'resize-h') {
-                drag.lastWidth = drag.startWidth + (event.clientX - drag.startClientX);
+                drag.lastWidth = drag.startWidth + (event.clientX - drag.startClientX) * drag.edges.h.factor;
                 pkg.previewStatsPanelWidth?.(drag.id, drag.lastWidth);
             }
             if (drag.mode !== 'resize-w') {
-                drag.lastHeight = drag.startHeight + (event.clientY - drag.startClientY);
+                drag.lastHeight = drag.startHeight + (event.clientY - drag.startClientY) * drag.edges.v.factor;
                 pkg.previewStatsPanelHeight?.(drag.id, drag.lastHeight);
             }
             return;
@@ -953,7 +997,10 @@ function bindDragAndDrop() {
     });
     const end = (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
-        drag.canvas.classList.remove('is-dragging', 'is-resizing', 'is-resizing-h', 'is-resizing-both');
+        drag.canvas.classList.remove('is-dragging', 'is-resizing', 'is-resizing-h', 'is-resizing-both', 'is-resizing-nesw');
+        // Les x/y recalculés pendant le glisser (panneau libre) sont déjà
+        // dans panel.position : le commit ci-dessous les reprend.
+        pkg.unpinStatsPanelCorner?.();
         if (drag.mode !== 'move') {
             if (drag.lastWidth != null && drag.lastHeight != null) {
                 commit(withPositionPatch(drag.id, { width: drag.lastWidth, height: drag.lastHeight }),

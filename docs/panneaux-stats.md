@@ -314,13 +314,26 @@ formulaire le remet en mode `anchor`. Pendant le glisser, chaque `pointermove`
 applique la position en place via `previewStatsPanelPosition` — sans
 renormaliser le bloc ni toucher `settingsRev`, ce qui éviterait de reconstruire
 les textes alternatifs à chaque mouvement ; le `commit` au dépôt renormalise
-et persiste comme d'habitude. En mode édition, le bord droit du canvas est une
-poignée de largeur (curseur `ew-resize`) : glissé, il change `position.width`
-en aperçu via `previewStatsPanelWidth` (même mutation en place, la hauteur se
-réadapte au prochain flush puisque `measure` dépend de la largeur) puis en
-commit au dépôt. Le bord bas est de même une poignée de hauteur (`ns-resize`),
-et le coin bas-droit règle les deux axes (`nwse-resize`) — hors grilles, dont
-les cases carrées ne laissent rien à régler. `touch-action: none` sur les
+et persiste comme d'habitude. En mode édition, un bord vertical du canvas est
+une poignée de largeur (curseur `ew-resize`) : glissé, il change
+`position.width` en aperçu via `previewStatsPanelWidth` (même mutation en
+place, la hauteur se réadapte au prochain flush puisque `measure` dépend de la
+largeur) puis en commit au dépôt. Un bord horizontal est de même une poignée de
+hauteur (`ns-resize`), et le coin qu'elles partagent règle les deux axes
+(`nwse-resize` ou `nesw-resize`) — hors grilles, dont les cases carrées ne
+laissent rien à régler.
+
+Les poignées sont posées sur les bords **qui bougent** quand la taille change
+(`resizeEdges`, stats_ui.js), pour rester sous le pointeur : droit et bas en
+général, gauche pour un panneau ancré à droite, haut pour un panneau ancré en
+bas (delta du pointeur inversé). Un panneau centré sur un axe (colonne
+centrale, ligne médiane) grandit des deux côtés : poignée à droite (en bas),
+delta doublé. Un panneau libre garde son coin haut-gauche : `x`/`y` étant des
+fractions de l'espace restant, qui change avec la taille,
+`pinStatsPanelCorner` épingle ce coin au début du geste et chaque flush
+recalcule `x`/`y` en place après la mesure ; `unpinStatsPanelCorner` (au
+dépôt, avant le commit) applique le dernier aperçu en attente puis retire
+l'épingle, et le commit reprend ces `x`/`y`. `touch-action: none` sur les
 panneaux éditables empêche le navigateur d'interpréter le geste tactile comme
 un défilement.
 

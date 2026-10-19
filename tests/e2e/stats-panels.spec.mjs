@@ -543,6 +543,104 @@ test('un panneau s\'étire en hauteur : champ, bord bas ; les grilles l\'ignoren
   await expect(canvas).toHaveCSS('cursor', 'grab');
 });
 
+test('les poignées suivent le pointeur : bords gauche/haut d’une ancre bas-droite', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e5e00010', kind: 'bar', metric: 'cache_type', position: { anchor: 'bottom-right' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const canvas = page.locator('canvas.stats-panel');
+  await expect(canvas).toHaveCount(1);
+  const box = await canvas.boundingBox();
+  const midY = box.y + box.height / 2;
+
+  // Le bord droit est fixe (ancre) : pas de poignée là, elle est à gauche.
+  await page.mouse.move(box.x + box.width - 4, midY);
+  await expect(canvas).toHaveCSS('cursor', 'grab');
+  await page.mouse.move(box.x + 4, midY);
+  await expect(canvas).toHaveCSS('cursor', 'ew-resize');
+  // Tirer le bord gauche vers la gauche élargit le panneau ; le bord droit
+  // ne bouge pas, le bord gauche suit le pointeur.
+  await page.mouse.down();
+  await page.mouse.move(box.x + 4 - 80, midY, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.width)
+    .toBeGreaterThanOrEqual(355);
+  const wide = await canvas.boundingBox();
+  expect(Math.abs((wide.x + wide.width) - (box.x + box.width))).toBeLessThan(2);
+  expect(Math.abs(wide.x - (box.x - 80))).toBeLessThan(4);
+
+  // Même logique en hauteur : poignée sur le bord haut, bord bas immobile.
+  const midX = wide.x + wide.width / 2;
+  await page.mouse.move(midX, wide.y + 4);
+  await expect(canvas).toHaveCSS('cursor', 'ns-resize');
+  await page.mouse.down();
+  await page.mouse.move(midX, wide.y + 4 - 60, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.height)
+    .toBeGreaterThanOrEqual(Math.round(wide.height) + 50);
+  const tall = await canvas.boundingBox();
+  expect(Math.abs((tall.y + tall.height) - (wide.y + wide.height))).toBeLessThan(2);
+
+  // Coin haut-gauche : les deux axes, diagonale nwse.
+  await page.mouse.move(tall.x + 4, tall.y + 4);
+  await expect(canvas).toHaveCSS('cursor', 'nwse-resize');
+
+  // Ancre bas-gauche : le coin des poignées est en haut à droite (nesw).
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e5e00011', kind: 'bar', metric: 'cache_type', position: { anchor: 'bottom-left' } },
+  ] });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#stats"]').click();
+  await expect(canvas).toHaveCount(1);
+  const left = await canvas.boundingBox();
+  await page.mouse.move(left.x + left.width - 4, left.y + 4);
+  await expect(canvas).toHaveCSS('cursor', 'nesw-resize');
+});
+
+test('un panneau libre redimensionné garde son coin haut-gauche', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e5e00012', kind: 'bar', metric: 'cache_type',
+      position: { mode: 'free', x: 0.5, y: 0.5 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const canvas = page.locator('canvas.stats-panel');
+  await expect(canvas).toHaveCount(1);
+  const box = await canvas.boundingBox();
+  const midY = box.y + box.height / 2;
+
+  // Sans épingle, x = 0,5 de l'espace restant aurait déplacé le bord gauche
+  // de la moitié de l'élargissement : la poignée aurait fui le pointeur.
+  await page.mouse.move(box.x + box.width - 4, midY);
+  await expect(canvas).toHaveCSS('cursor', 'ew-resize');
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width - 4 + 80, midY, { steps: 4 });
+  // Pendant le glisser (aperçu appliqué au rAF suivant) : bord gauche
+  // immobile, bord droit sous le pointeur.
+  await expect.poll(async () => {
+    const during = await canvas.boundingBox();
+    return Math.abs((during.x + during.width) - (box.x + box.width + 80)) < 4;
+  }).toBe(true);
+  expect(Math.abs((await canvas.boundingBox()).x - box.x)).toBeLessThan(2);
+  await page.mouse.up();
+
+  // Persisté : largeur élargie ET x/y recalculés pour ce coin.
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.width)
+    .toBeGreaterThanOrEqual(355);
+  const saved = (await savedStats(page)).panels[0].position;
+  expect(saved.mode).toBe('free');
+  expect(saved.x).toBeGreaterThan(0.5);
+  // Après rechargement (positions relues du serveur), même coin haut-gauche.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await expect(canvas).toHaveCount(1);
+  const reloaded = await canvas.boundingBox();
+  expect(Math.abs(reloaded.x - box.x)).toBeLessThan(2);
+  expect(Math.abs(reloaded.y - box.y)).toBeLessThan(2);
+});
+
 test('la pile de coin se replace quand le cartouche d’infos grandit', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'eeeeee02', kind: 'counter', metric: 'summary', position: { anchor: 'top-right', dx: 16, dy: 16 } },

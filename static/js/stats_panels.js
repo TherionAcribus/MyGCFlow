@@ -1078,6 +1078,26 @@ export function previewStatsPanelHeight(id, height) {
     touch();
 }
 
+// Redimensionnement à la souris d'un panneau libre : x/y sont des fractions
+// de l'espace restant, qui change avec la taille — sans correction, élargir
+// déplacerait aussi le bord gauche et la poignée fuirait le pointeur. Tant
+// que l'épingle est posée, chaque flush recalcule x/y en place, APRÈS la
+// mesure (la hauteur automatique suit la largeur), pour garder le coin
+// haut-gauche immobile. Le commit au dépôt reprend ces x/y avec la taille.
+let resizePin = null;  // { id, left, top } en px CSS du conteneur
+
+export function pinStatsPanelCorner(id) {
+    const rect = panelNodes.get(id)?.layout;
+    resizePin = rect ? { id, left: rect.x, top: rect.y } : null;
+}
+
+// Le dernier pointermove peut attendre encore son flush (rAF) : il est
+// appliqué tout de suite, sans quoi le commit reprendrait les x/y d'avant.
+export function unpinStatsPanelCorner() {
+    if (resizePin && drawDirty) flush();
+    resizePin = null;
+}
+
 function scheduleFlush() {
     if (frameRequest || typeof requestAnimationFrame === 'undefined') return;
     frameRequest = requestAnimationFrame(() => {
@@ -1237,6 +1257,15 @@ function flush() {
     const a11yBase = `${mode}|${settingsRev}|${altIndexRev}|${altState?.revision || 0}`;
     const items = panels.map((panel) => {
         const width = Math.min(panel.position.width, containerSize.width);
+        // Hauteur imposée optionnelle — les grilles l'ignorent même si
+        // une valeur était stockée (cases carrées).
+        const height = measureStatsPanel(views.get(panel.id), panel.style, Math.max(1, width),
+            panel.kind === 'grid' ? null : panel.position.height);
+        if (resizePin?.id === panel.id && panel.position.mode === 'free') {
+            const fraction = (offset, room) => (room > 0 ? Math.max(0, Math.min(1, offset / room)) : 0);
+            panel.position.x = fraction(resizePin.left, containerSize.width - width);
+            panel.position.y = fraction(resizePin.top, containerSize.height - height);
+        }
         return {
             id: panel.id,
             mode: panel.position.mode,
@@ -1246,10 +1275,7 @@ function flush() {
             x: panel.position.x,
             y: panel.position.y,
             width,
-            // Hauteur imposée optionnelle — les grilles l'ignorent même si
-            // une valeur était stockée (cases carrées).
-            height: measureStatsPanel(views.get(panel.id), panel.style, Math.max(1, width),
-                panel.kind === 'grid' ? null : panel.position.height),
+            height,
         };
     });
     // Les piles de coin contournent le titre et les infos.
@@ -1323,13 +1349,20 @@ function flush() {
 
 // Rect logique (px CSS, repère du conteneur) d'un panneau affiché, son type
 // (le glisser-déposer en déduit les axes redimensionnables : hauteur hors
-// grilles) et la taille du conteneur — x/y normalisés pour stats_ui.js.
+// grilles), son mode et son ancre (les bords qui portent les poignées) et la
+// taille du conteneur — x/y normalisés pour stats_ui.js.
 export function getStatsPanelRect(id) {
     const rect = panelNodes.get(id)?.layout;
     if (!rect) return null;
     const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
-    const kind = list.find((p) => p.id === id)?.kind || null;
-    return { ...rect, kind, container: { ...containerSize } };
+    const panel = list.find((p) => p.id === id);
+    return {
+        ...rect,
+        kind: panel?.kind || null,
+        mode: panel?.position.mode || 'anchor',
+        anchor: panel?.position.anchor || 'top-left',
+        container: { ...containerSize },
+    };
 }
 
 export function getStatsLayoutWarnings() {
