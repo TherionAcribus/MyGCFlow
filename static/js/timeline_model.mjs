@@ -132,3 +132,23 @@ export function yearStartOffsets(start, span) {
     }
     return out;
 }
+
+// Sous-ensemble des repères dont l'étiquette d'année tient sur la piste.
+// Toutes les afficher les ferait se chevaucher dès que la plage compte
+// plus d'années que la piste n'a de « cases » de minLabelPx. Glouton
+// depuis la gauche : le premier repère — le plus proche du début de la
+// plage, donc le plus significatif — est toujours gardé, puis chacun
+// assez loin du dernier retenu (mesuré sur le retenu, pas sur le vu :
+// un repère écarté ne bloque pas le suivant).
+export function yearLabelOffsets(offsets, span, widthPx, minLabelPx = 46) {
+    const out = [];
+    if (!(span > 0) || !(widthPx > 0)) return out;
+    let lastX = -Infinity;
+    for (const offset of offsets) {
+        const x = offset / span * widthPx;
+        if (x - lastX < minLabelPx) continue;
+        out.push(offset);
+        lastX = x;
+    }
+    return out;
+}

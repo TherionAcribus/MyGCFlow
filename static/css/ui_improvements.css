@@ -836,6 +836,7 @@ main.fullscreen-mode ~ .tooltip {
     --timeline-rest: rgba(108, 117, 125, 0.35);
     --timeline-cursor: #1d273b;
     --timeline-tick: rgba(108, 117, 125, 0.28);
+    --timeline-label: rgba(108, 117, 125, 0.85);
     flex: 0 0 auto;
     display: flex;
     align-items: center;
@@ -854,6 +855,7 @@ main.fullscreen-mode ~ .tooltip {
     --timeline-rest: rgba(173, 181, 189, 0.3);
     --timeline-cursor: #f1f3f5;
     --timeline-tick: rgba(173, 181, 189, 0.22);
+    --timeline-label: rgba(173, 181, 189, 0.75);
 }
 .timeline-bar-track {
     position: relative;

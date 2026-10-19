@@ -152,6 +152,32 @@ test('le curseur amène la carte, le compteur et les Stats à la date choisie', 
   expect((await bar(page)).style).toBe('curve');
 });
 
+test('survoler la piste montre la date visée, sans toucher la carte', async ({ page }) => {
+  await openWithFixture(page);
+  await showBar(page);
+
+  const box = await page.locator('#timelineBarTrack').boundingBox();
+  const y = box.y + box.height / 2;
+  // À ~50 % : le fantôme suit le pointeur, la date affichée est celle du
+  // jour survolé — pas la fin de plage — et la carte reste au repos.
+  await page.mouse.move(box.x + box.width / 2, y);
+  await expect.poll(async () => (await bar(page)).hover).toBeGreaterThanOrEqual(0);
+  const snap = await bar(page);
+  expect(snap.hover).toBeLessThan(snap.valueMax);
+  // ARIA : toujours le curseur réel, le survol n'est pas la valeur.
+  expect(snap.valueNow).toBe(snap.valueMax);
+  const dateText = await page.locator('#timelineBarDate').textContent();
+  const endText = await page.locator('#timelineBarEnd').textContent();
+  expect(dateText).not.toContain(endText);
+  expect(await playback(page)).toBe('idle');
+  expect(await mapPointCount(page)).toBe(6);
+
+  // Hors de la piste : plus de fantôme, l'étiquette revient au curseur.
+  await page.mouse.move(0, 0);
+  await expect.poll(async () => (await bar(page)).hover).toBeNull();
+  await expect(page.locator('#timelineBarDate')).toContainText(endText);
+});
+
 test('pendant la lecture, glisser le curseur met en pause puis relance depuis la nouvelle date', async ({ page }) => {
   await openWithFixture(page);
   await showBar(page);

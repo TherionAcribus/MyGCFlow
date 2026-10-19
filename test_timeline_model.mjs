@@ -14,6 +14,7 @@ import {
     offsetForKey,
     seriesExtent,
     spanDays,
+    yearLabelOffsets,
     yearStartOffsets,
 } from './static/js/timeline_model.mjs';
 
@@ -186,4 +187,33 @@ test('yearStartOffsets : 1ᵉʳ janvier strictement après le début, dans la pl
     // Plage vide : rien.
     assert.deepEqual(yearStartOffsets(start, 0), []);
     assert.deepEqual(yearStartOffsets(start, -3), []);
+});
+
+test('yearLabelOffsets : tous gardés quand la place suffit', () => {
+    // 3 repères à 100 px d'écart (offsets 100/200/300 sur 400 j, 400 px) :
+    // bien au-delà des 46 px par défaut.
+    assert.deepEqual(yearLabelOffsets([100, 200, 300], 400, 400), [100, 200, 300]);
+});
+
+test('yearLabelOffsets : resserrés, sous-ensemble glouton depuis la gauche', () => {
+    // 50 px pour 400 j : les trois repères à 12,5 px d'écart — seul le
+    // premier (le plus proche du début) tient.
+    assert.deepEqual(yearLabelOffsets([100, 200, 300], 400, 50), [100]);
+    // Mesuré sur le dernier RETENU : 30 px après le 1ᵉʳ est écarté, mais
+    // 70 px suffisent au 3ᵉ (x = 0, 30, 70 ; minLabelPx 46).
+    assert.deepEqual(yearLabelOffsets([0, 30, 70], 100, 100), [0, 70]);
+});
+
+test('yearLabelOffsets : minLabelPx paramétré', () => {
+    // Même géométrie (x = 0, 30, 70) : à 20 px tout passe.
+    assert.deepEqual(yearLabelOffsets([0, 30, 70], 100, 100, 20), [0, 30, 70]);
+    // À 80 px : seul le premier.
+    assert.deepEqual(yearLabelOffsets([0, 30, 70], 100, 100, 80), [0]);
+});
+
+test('yearLabelOffsets : vide, largeur ou plage nulle', () => {
+    assert.deepEqual(yearLabelOffsets([], 400, 400), []);
+    assert.deepEqual(yearLabelOffsets([100], 400, 0), []);
+    assert.deepEqual(yearLabelOffsets([100], 0, 400), []);
+    assert.deepEqual(yearLabelOffsets([100], -5, 400), []);
 });

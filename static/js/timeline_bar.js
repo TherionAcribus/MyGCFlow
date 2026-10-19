@@ -28,6 +28,7 @@ import {
     offsetForKey,
     seriesExtent,
     spanDays,
+    yearLabelOffsets,
     yearStartOffsets,
 } from './timeline_model.mjs';
 
@@ -58,6 +59,9 @@ let keySettleTimer = null;
 // Dernier état dessiné, pour convertir pointeur et touches en jours.
 let lastState = null;
 let lastSpan = 0;
+// Jour survolé hors geste (ligne fantôme, date dans l'étiquette) — la
+// carte ne bouge pas tant qu'il n'y a pas clic.
+let hoverOffset = null;
 
 function readStorage(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -171,10 +175,12 @@ function draw() {
         rest: cssColor(styles, '--timeline-rest', 'rgba(108, 117, 125, 0.35)'),
         cursor: cssColor(styles, '--timeline-cursor', '#1d273b'),
         tick: cssColor(styles, '--timeline-tick', 'rgba(108, 117, 125, 0.3)'),
+        label: cssColor(styles, '--timeline-label', 'rgba(108, 117, 125, 0.85)'),
     };
 
+    const yearOffsets = yearStartOffsets(state.start, span);
     ctx.fillStyle = colors.tick;
-    for (const yearOffset of yearStartOffsets(state.start, span)) {
+    for (const yearOffset of yearOffsets) {
         const x = Math.round(yearOffset / span * w) + 0.5;
         ctx.fillRect(x - 0.5, 0, 1, h);
     }
@@ -191,6 +197,19 @@ function draw() {
     drawSeries(ctx, series, span, w, h, colors.played);
     ctx.restore();
 
+    // Années par-dessus les barres, sous le curseur : seuls les repères
+    // qui laissent la place au texte (glouton, cf. yearLabelOffsets), et
+    // jamais au-delà du bord droit de la piste.
+    ctx.font = '10px sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = colors.label;
+    for (const yearOffset of yearLabelOffsets(yearOffsets, span, w)) {
+        const x = Math.round(yearOffset / span * w) + 0.5;
+        const label = String(dateOfOffset(state.start, yearOffset).getFullYear());
+        if (x + 3 + ctx.measureText(label).width > w - 2) continue;
+        ctx.fillText(label, x + 3, h - 1);
+    }
+
     ctx.fillStyle = colors.cursor;
     ctx.fillRect(Math.round(cursorX) - 1, 0, 2, h);
     if (style === 'simple') {
@@ -199,6 +218,16 @@ function draw() {
         ctx.beginPath();
         ctx.arc(Math.min(w - radius, Math.max(radius, cursorX)), h / 2, radius, 0, Math.PI * 2);
         ctx.fill();
+    }
+
+    // Fantôme de survol : où un clic amènerait le curseur. Sautée au droit
+    // du curseur réel — le survol n'y apprend rien et l'alpha y assombrit
+    // juste le trait (pas de clignotement à l'approche non plus).
+    if (hoverOffset !== null && hoverOffset !== offset && !gesture) {
+        ctx.globalAlpha = 0.45;
+        const x = Math.round(cursorFraction(hoverOffset, span) * w) + 0.5;
+        ctx.fillRect(x - 0.5, 0, 1, h);
+        ctx.globalAlpha = 1;
     }
 }
 
@@ -294,18 +323,23 @@ function syncLabels(state, span, offset, usable) {
     const format = (date) => pkg.formatDateDisplay?.(date) ?? date.toLocaleDateString();
     if (startLabel) startLabel.textContent = format(state.start);
     if (endLabel) endLabel.textContent = format(state.end);
-    const date = dateOfOffset(state.start, offset);
     const series = seriesFor(state, span);
-    const count = formatCount(series.level[offset] ?? 0);
-    const countText = isEvolutionPage()
-        ? pkg.t('${count} actives', { count })
-        : pkg.t('${count} caches', { count });
-    const text = `${format(date)} · ${countText}`;
+    const textAt = (dayOffset) => {
+        const count = formatCount(series.level[dayOffset] ?? 0);
+        const countText = isEvolutionPage()
+            ? pkg.t('${count} actives', { count })
+            : pkg.t('${count} caches', { count });
+        return `${format(dateOfOffset(state.start, dayOffset))} · ${countText}`;
+    };
+    // Le survol affiche la date visée, mais les attributs ARIA restent sur
+    // le curseur réel : le fantôme n'est pas la valeur du slider.
+    const labelOffset = (hoverOffset !== null && !gesture) ? hoverOffset : offset;
+    const text = textAt(labelOffset);
     if (dateLabel && dateLabel.textContent !== text) dateLabel.textContent = text;
     track.setAttribute('aria-valuemin', '0');
     track.setAttribute('aria-valuemax', String(span - 1));
     track.setAttribute('aria-valuenow', String(offset));
-    track.setAttribute('aria-valuetext', text);
+    track.setAttribute('aria-valuetext', labelOffset === offset ? text : textAt(offset));
 }
 
 // --- Saut ------------------------------------------------------------------------
@@ -388,6 +422,8 @@ function onPointerDown(event) {
     // — `gesture.pointerId` ci-dessous conserve le `resume` d'origine.
     clearTimeout(keySettleTimer);
     keySettleTimer = null;
+    // Le geste remplace le survol : le fantôme cède la place au curseur.
+    hoverOffset = null;
     gesture.pointerId = event.pointerId;
     try { track.setPointerCapture(event.pointerId); } catch (_) {}
     track.focus({ preventScroll: true });
@@ -397,7 +433,19 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
-    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    if (!gesture) {
+        // Hors geste : simple survol. Le fantôme montre où un clic
+        // amènerait le curseur — sans toucher la carte (lecteur vidéo).
+        if (!lastState) draw(); // pas encore dessiné : plage inconnue
+        if (!lastState || lastState.recording) return;
+        const offset = offsetFromPointer(event);
+        if (offset !== hoverOffset) {
+            hoverOffset = offset;
+            refreshTimelineBar();
+        }
+        return;
+    }
+    if (gesture.pointerId !== event.pointerId) return;
     requestSeek(offsetFromPointer(event));
 }
 
@@ -445,7 +493,10 @@ function setVisible(next, { persist = true } = {}) {
         toggleButton.classList.toggle('active', visible);
     }
     if (persist) writeStorage(VISIBLE_KEY, visible ? '1' : '0');
-    if (!visible && gesture) endGesture();
+    if (!visible) {
+        hoverOffset = null;
+        if (gesture) endGesture();
+    }
     // La carte change de taille (bandeau : le séparateur rebride sa hauteur
     // en tenant compte de la barre ; latéral : la colonne se partage).
     try { window.dispatchEvent(new Event('resize')); } catch (_) {}
@@ -478,6 +529,7 @@ export function getTimelineBarSnapshot() {
         valueMax: Number(track?.getAttribute('aria-valuemax')),
         valueText: track?.getAttribute('aria-valuetext') || '',
         dragging: !!gesture,
+        hover: hoverOffset,
     };
 }
 
@@ -495,6 +547,12 @@ function initTimelineBar() {
     // Filet de sécurité : un pointerup peut se perdre (alt-tab pendant le
     // glissement). L'événement porte pointerId, le garde-fou suffit.
     track.addEventListener('lostpointercapture', onPointerUp);
+    // Pointeur parti (ou capture relâchée en fin de geste) : plus de
+    // fantôme — le dessin suivant ne le cherche que hors geste.
+    track.addEventListener('pointerleave', () => {
+        hoverOffset = null;
+        refreshTimelineBar();
+    });
     track.addEventListener('keydown', onKeyDown);
     track.addEventListener('blur', () => { if (gesture && gesture.pointerId === null) endGesture(); });
 
