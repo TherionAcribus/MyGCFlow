@@ -296,9 +296,23 @@ alternatif liste « Paliers : 100 (date), … ».
 ### Mise en page
 
 `layoutPanels` (pur) : les panneaux d'une même ancre forment une pile, du coin
-vers l'intérieur ; le premier est placé par `dx`/`dy`, les suivants à la suite,
-leur `dy` servant d'espacement. Colonne centrale : centré horizontalement
-(`dx` ignoré) ; ligne médiane : la pile entière est centrée.
+vers l'intérieur, séparés d'un **écart fixe de 8 px**. Les marges de la pile
+(distance aux bords) sont les `dx`/`dy` de son premier panneau. Colonne
+centrale : centré horizontalement (`dx` ignoré) ; ligne médiane : la pile
+entière est centrée (`dy` ignoré, champ grisé).
+
+**Marges de coin.** `dx`/`dy` restent stockés dans chaque panneau (une
+configuration nommée ou un export JSON reste autonome), mais la normalisation
+— `shareCornerMargins` (JS) / `_share_corner_margins` (Python), vecteur
+partagé « marges communes… » — les rend communes à tous les panneaux ancrés au
+même coin : celles du premier de la liste, désactivé ou non, gagnent. Avant,
+`dy` servait de marge au premier panneau et d'écart aux suivants : réordonner
+une pile la déplaçait. L'onglet maintient l'invariant de lui-même : modifier
+une marge l'écrit sur toute la pile (`cornerMates`), et un panneau qui rejoint
+un coin (choix d'ancre, « retour au coin ») en prend d'abord les marges
+(`adoptCornerMargins`) — sans quoi, placé avant les autres dans la liste, il
+imposerait les siennes. Les panneaux libres gardent leurs `dx`/`dy`, reprises
+s'ils reviennent à un coin vide.
 
 Une pile de coin **contourne** `#titleFrame` et `#infosFrame` (rects mesurés à
 l'invalidation, passés en obstacles) : si son premier panneau tomberait sur

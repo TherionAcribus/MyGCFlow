@@ -362,6 +362,26 @@ function normalizePanelList(source, newId) {
         panels.push(panel);
         if (panels.length >= STATS_MAX_PANELS) break;
     }
+    return shareCornerMargins(panels);
+}
+
+// Marges de coin : les panneaux ancrés à un même coin forment une pile qui
+// partage ses marges (dx, dy) — celles du premier de la liste, désactivé ou
+// non. Les panneaux d'une pile sont ensuite séparés d'un écart fixe
+// (STACK_GAP) : réordonner une pile ne la déplace plus. Les panneaux libres
+// gardent les leurs, reprises s'ils reviennent à un coin vide.
+function shareCornerMargins(panels) {
+    const margins = new Map();
+    for (const { position } of panels) {
+        if (position.mode !== 'anchor') continue;
+        const first = margins.get(position.anchor);
+        if (first) {
+            position.dx = first.dx;
+            position.dy = first.dy;
+        } else {
+            margins.set(position.anchor, { dx: position.dx, dy: position.dy });
+        }
+    }
     return panels;
 }
 
@@ -1405,16 +1425,19 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
 // ---------------------------------------------------------------------------
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-// Espace laissé entre une pile et la boîte (titre, infos) qu'elle contourne.
+// Écart entre deux panneaux d'une pile, et entre une pile et la boîte
+// (titre, infos) qu'elle contourne.
 const STACK_GAP = 8;
 
 // Positionne les panneaux visibles dans un conteneur `{ width, height }`.
 // items : [{ id, anchor, dx, dy, width, height }] dans l'ordre de la liste.
 //
-// Les panneaux d'une même ancre forment une pile, du coin vers l'intérieur :
-// le premier est placé par ses dx/dy, les suivants à la suite, leur `dy`
-// servant d'espacement avec le précédent. Ancres centrées : `dx` (colonne
-// centrale) ou la pile entière (ligne médiane) sont centrés.
+// Les panneaux d'une même ancre forment une pile, du coin vers l'intérieur,
+// séparés de STACK_GAP. Les marges de la pile (distance aux bords) sont les
+// dx/dy de son premier panneau — la normalisation les rend communes à toute
+// la pile (shareCornerMargins). Ancres centrées : la colonne centrale est
+// centrée horizontalement (dx ignoré), la ligne médiane centre la pile
+// entière (dy ignoré).
 //
 // Renvoie Map id → { x, y, width, height, css, overflow } ; `css` exprime la
 // position par rapport à l'ancre (left/right, top/bottom), convention relue
@@ -1446,13 +1469,14 @@ export function layoutPanels(items, container, obstacles = []) {
 
     for (const [anchor, group] of groups) {
         const [vertical, horizontal] = anchor.split('-');
+        const marginX = group[0].dx || 0;
+        const marginY = group[0].dy || 0;
         const heights = group.map((item) => Math.max(0, item.height || 0));
-        const total = heights.reduce((s, h) => s + h, 0)
-            + group.slice(1).reduce((s, item) => s + (item.dy || 0), 0);
+        const total = heights.reduce((s, h) => s + h, 0) + STACK_GAP * (group.length - 1);
 
         let cursor;
-        if (vertical === 'top') cursor = group[0].dy || 0;
-        else if (vertical === 'bottom') cursor = H - (group[0].dy || 0);
+        if (vertical === 'top') cursor = marginY;
+        else if (vertical === 'bottom') cursor = H - marginY;
         else cursor = (H - total) / 2;
 
         // Évitement du titre et des infos : une pile de coin qui démarrerait
@@ -1460,8 +1484,8 @@ export function layoutPanels(items, container, obstacles = []) {
         if (vertical !== 'middle' && obstacles.length) {
             const xs = group.map((item) => {
                 const width = Math.min(Math.max(0, item.width || 0), W);
-                if (horizontal === 'left') return [item.dx || 0, (item.dx || 0) + width];
-                if (horizontal === 'right') return [W - (item.dx || 0) - width, W - (item.dx || 0)];
+                if (horizontal === 'left') return [marginX, marginX + width];
+                if (horizontal === 'right') return [W - marginX - width, W - marginX];
                 return [(W - width) / 2, (W + width) / 2];
             });
             const left = Math.min(...xs.map(([a]) => a));
@@ -1477,23 +1501,23 @@ export function layoutPanels(items, container, obstacles = []) {
                     : box.y - STACK_GAP;
             }
         }
-        const stackOverflow = (vertical === 'middle' ? total : total + (group[0].dy || 0)) > H;
+        const stackOverflow = (vertical === 'middle' ? total : total + marginY) > H;
 
         group.forEach((item, i) => {
             const width = Math.min(Math.max(0, item.width || 0), W);
             const height = heights[i];
             let x;
-            if (horizontal === 'left') x = item.dx || 0;
-            else if (horizontal === 'right') x = W - (item.dx || 0) - width;
+            if (horizontal === 'left') x = marginX;
+            else if (horizontal === 'right') x = W - marginX - width;
             else x = (W - width) / 2;
 
             let y;
             if (vertical === 'bottom') {
-                if (i > 0) cursor -= item.dy || 0;
+                if (i > 0) cursor -= STACK_GAP;
                 y = cursor - height;
                 cursor = y;
             } else {
-                if (i > 0) cursor += item.dy || 0;
+                if (i > 0) cursor += STACK_GAP;
                 y = cursor;
                 cursor = y + height;
             }

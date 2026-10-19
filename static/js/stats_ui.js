@@ -48,7 +48,7 @@ const PRESETS = {
     dt: [['grid', 'dt', { position: { anchor: 'bottom-left', width: 300 } }]],
     'types-sizes': [
         ['bar', 'cache_type', { position: { anchor: 'top-right', width: 260 } }],
-        ['bar', 'container', { position: { anchor: 'top-right', dy: 8, width: 260 } }],
+        ['bar', 'container', { position: { anchor: 'top-right', width: 260 } }],
     ],
     'summary-progress': [
         ['counter', 'summary', { position: { anchor: 'top-left' } }],
@@ -58,14 +58,14 @@ const PRESETS = {
     race: [['bar', 'country', { position: { anchor: 'top-right' }, options: { sort: 'race', max_items: 6 } }]],
     'difficulty-terrain': [
         ['bar', 'difficulty', { position: { anchor: 'bottom-right', width: 240 } }],
-        ['bar', 'terrain', { position: { anchor: 'bottom-right', dy: 8, width: 240 } }],
+        ['bar', 'terrain', { position: { anchor: 'bottom-right', width: 240 } }],
     ],
     jasmer: [['grid', 'jasmer', { position: { anchor: 'bottom-left', width: 220 } }]],
     calendar: [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 } }]],
     activity: [['grid', 'activity', { position: { anchor: 'bottom-center' } }]],
     age: [
         ['bar', 'age', { position: { anchor: 'top-right', width: 280 } }],
-        ['counter', 'summary', { position: { anchor: 'top-right', dy: 8, width: 280 }, options: { items: ['oldest', 'same_day'] } }],
+        ['counter', 'summary', { position: { anchor: 'top-right', width: 280 }, options: { items: ['oldest', 'same_day'] } }],
     ],
     extremes: [['counter', 'summary', {
         position: { anchor: 'top-left', width: 340 },
@@ -78,7 +78,7 @@ const PRESETS = {
     'evo-status': [['bar', 'status', { position: { anchor: 'top-right', width: 260 } }]],
     'evo-geo': [
         ['bar', 'country', { position: { anchor: 'top-right', width: 260 } }],
-        ['bar', 'county', { position: { anchor: 'top-right', dy: 8, width: 260 } }],
+        ['bar', 'county', { position: { anchor: 'top-right', width: 260 } }],
     ],
 };
 
@@ -139,12 +139,31 @@ function updatePanels(mutate, field = null, options = {}) {
     commit({ ...settings, [key]: result || panels }, field, options);
 }
 
+// `mutate(panel, panels)` : la liste entière est fournie pour les réglages
+// partagés par une pile (marges de coin).
 function updateSelected(mutate, field) {
     updatePanels((panels) => {
         const panel = panels.find((p) => p.id === selectedId);
-        if (panel) mutate(panel);
+        if (panel) mutate(panel, panels);
         return panels;
     }, field);
+}
+
+// Autres panneaux de la pile du coin de `panel` (même ancre, mode ancré).
+function cornerMates(panels, panel) {
+    return panels.filter((p) => p !== panel && p.position.mode === 'anchor'
+        && p.position.anchor === panel.position.anchor);
+}
+
+// Un panneau qui rejoint un coin prend les marges de sa pile, communes à
+// tous ses panneaux (shareCornerMargins, stats_model.mjs) — sans quoi, placé
+// avant eux dans la liste, il imposerait les siennes et déplacerait la pile.
+// Un coin vide garde les marges du panneau.
+function adoptCornerMargins(panel, panels) {
+    const mate = cornerMates(panels, panel)[0];
+    if (!mate) return;
+    panel.position.dx = mate.position.dx;
+    panel.position.dy = mate.position.dy;
 }
 
 // Entrées du menu « Ajouter » selon le mode : chaque item porte
@@ -570,11 +589,12 @@ function renderForm() {
     // data-stats-kind sans « grid » — cases carrées, il est masqué.
     setValue('inputStatsHeight', p.height ?? '');
     // Colonne centrale : le panneau est centré, la marge horizontale ne sert
-    // pas ; position libre : aucune marge ne sert.
+    // pas ; ligne médiane : la pile est centrée, la marge verticale non plus ;
+    // position libre : aucune marge ne sert.
     const dx = $('inputStatsDx');
     if (dx) dx.disabled = free || p.anchor.endsWith('-center');
     const dy = $('inputStatsDy');
-    if (dy) dy.disabled = free;
+    if (dy) dy.disabled = free || p.anchor.startsWith('middle-');
 
     const s = panel.style;
     setValue('inputStatsBackground', s.background);
@@ -655,6 +675,8 @@ const FIELDS = [
     ['switchStatsInheritFont', 'style.inherit_font', 'bool'],
 ];
 
+const MARGIN_PATHS = ['position.dx', 'position.dy'];
+
 function readField(el, type) {
     if (type === 'bool') return el.checked;
     if (type === 'number') return el.value === '' ? undefined : Number(el.value);
@@ -679,7 +701,14 @@ function bindFormFields() {
         el.addEventListener(live, () => {
             const value = readField(el, type);
             if (value === undefined) return;
-            updateSelected((panel) => writePath(panel, path, value), el);
+            updateSelected((panel, panels) => {
+                writePath(panel, path, value);
+                // Marges de coin : communes à la pile, écrites sur chacun
+                // de ses panneaux.
+                if (MARGIN_PATHS.includes(path) && panel.position.mode === 'anchor') {
+                    for (const mate of cornerMates(panels, panel)) writePath(mate, path, value);
+                }
+            }, el);
             if (type !== 'number' && el.tagName !== 'INPUT') renderForm();
             if (path === 'title' || path === 'show_title') renderList();
             if (type === 'bool') renderForm();
@@ -739,15 +768,19 @@ function bindFormFields() {
     document.querySelectorAll('input[name="statsAnchor"]').forEach((radio) => {
         radio.addEventListener('change', () => {
             if (!radio.checked) return;
-            updateSelected((panel) => {
+            updateSelected((panel, panels) => {
                 panel.position.anchor = radio.value;
                 panel.position.mode = 'anchor';
+                adoptCornerMargins(panel, panels);
             }, radio.closest('.stats-anchor-grid'));
             renderForm();
         });
     });
     $('btnStatsBackToAnchor')?.addEventListener('click', (event) => {
-        updateSelected((panel) => { panel.position.mode = 'anchor'; }, event.currentTarget);
+        updateSelected((panel, panels) => {
+            panel.position.mode = 'anchor';
+            adoptCornerMargins(panel, panels);
+        }, event.currentTarget);
         renderForm();
     });
 

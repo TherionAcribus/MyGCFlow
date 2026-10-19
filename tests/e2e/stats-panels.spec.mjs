@@ -361,6 +361,52 @@ test('la liste des panneaux se réordonne à la souris', async ({ page }) => {
       .toBe('aa000002,aa000003,aa000001');
 });
 
+test('les marges sont celles du coin : communes à la pile, reprises en la rejoignant', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'c0a10001', kind: 'counter', metric: 'summary', position: { anchor: 'top-right', dx: 16, dy: 16 } },
+    { id: 'c0a10002', kind: 'bar', metric: 'cache_type', position: { anchor: 'bottom-left', dx: 40, dy: 30 } },
+    { id: 'c0a10003', kind: 'bar', metric: 'container', position: { anchor: 'bottom-left', dx: 16, dy: 8 } },
+  ] });
+  const margins = async () => (await savedStats(page)).panels
+    .map((p) => `${p.id}:${p.position.anchor}:${p.position.dx}/${p.position.dy}`);
+  // Le serveur normalise : la pile bas-gauche prend les marges de son premier.
+  expect(await margins()).toEqual([
+    'c0a10001:top-right:16/16', 'c0a10002:bottom-left:40/30', 'c0a10003:bottom-left:40/30',
+  ]);
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+
+  // Modifier la marge d'un panneau de la pile l'applique à toute la pile.
+  await page.locator('li[data-panel-id="c0a10003"] .stats-panel-name').click();
+  await page.locator('#statsSectionPosition summary').click();
+  const dy = page.locator('#inputStatsDy');
+  await expect(dy).toHaveValue('30');
+  await dy.fill('50');
+  await dy.press('Tab');
+  await expect.poll(margins).toEqual([
+    'c0a10001:top-right:16/16', 'c0a10002:bottom-left:40/50', 'c0a10003:bottom-left:40/50',
+  ]);
+
+  // Le premier panneau de la liste rejoint le coin bas-gauche : il en prend
+  // les marges au lieu d'imposer les siennes (16/16) à la pile.
+  await page.locator('li[data-panel-id="c0a10001"] .stats-panel-name').click();
+  await page.locator('label[for="statsAnchor-bottom-left"]').click();
+  await expect.poll(margins).toEqual([
+    'c0a10001:bottom-left:40/50', 'c0a10002:bottom-left:40/50', 'c0a10003:bottom-left:40/50',
+  ]);
+  // Il ouvre la pile à 40 px du bord gauche et 50 px du bas du cadre.
+  const host = await page.locator('#mapWithFrames').boundingBox();
+  await expect.poll(async () => {
+    const box = await page.locator('canvas.stats-panel[data-panel-id="c0a10001"]').boundingBox();
+    return [Math.round(box.x - host.x), Math.round(host.y + host.height - box.y - box.height)];
+  }).toEqual([40, 50]);
+
+  // Ligne médiane : la pile est centrée, la marge verticale est grisée.
+  await page.locator('label[for="statsAnchor-middle-right"]').click();
+  await expect(dy).toBeDisabled();
+  await expect(page.locator('#inputStatsDx')).toBeEnabled();
+});
+
 test('un panneau glissé passe en position libre, choisir un coin l’y ramène', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'dddddd01', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left', width: 240 } },

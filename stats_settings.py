@@ -397,6 +397,25 @@ def _coerce_panel_list(source) -> list:
         panels.append(panel)
         if len(panels) >= STATS_MAX_PANELS:
             break
+    return _share_corner_margins(panels)
+
+
+def _share_corner_margins(panels: list) -> list:
+    """Marges de coin : les panneaux ancrés à un même coin forment une pile qui
+    partage ses marges (dx, dy) — celles du premier de la liste, désactivé ou
+    non. Les panneaux d'une pile sont séparés d'un écart fixe côté client
+    (layoutPanels) : réordonner une pile ne la déplace plus. Les panneaux
+    libres gardent les leurs."""
+    margins = {}
+    for panel in panels:
+        position = panel["position"]
+        if position["mode"] != "anchor":
+            continue
+        first = margins.get(position["anchor"])
+        if first is None:
+            margins[position["anchor"]] = (position["dx"], position["dy"])
+        else:
+            position["dx"], position["dy"] = first
     return panels
 
 

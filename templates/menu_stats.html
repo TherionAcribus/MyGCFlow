@@ -332,11 +332,15 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <label class="form-label" for="inputStatsDx">{{ _("Marge horizontale (px)") }}</label>
-                                    <input id="inputStatsDx" type="number" class="form-control" min="0" max="2000" step="1">
+                                    <input id="inputStatsDx" type="number" class="form-control" min="0" max="2000" step="1" aria-describedby="helpStatsMargins">
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label" for="inputStatsDy">{{ _("Marge verticale (px)") }}</label>
-                                    <input id="inputStatsDy" type="number" class="form-control" min="0" max="2000" step="1">
+                                    <input id="inputStatsDy" type="number" class="form-control" min="0" max="2000" step="1" aria-describedby="helpStatsMargins">
+                                </div>
+                                {# Marges de coin : communes à la pile (shareCornerMargins, stats_model.mjs). #}
+                                <div class="col-12">
+                                    <small id="helpStatsMargins" class="form-hint text-muted">{{ _("Communes à tous les panneaux de ce coin, empilés à 8 px d’écart.") }}</small>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label" for="inputStatsWidth">{{ _("Largeur (px)") }}</label>

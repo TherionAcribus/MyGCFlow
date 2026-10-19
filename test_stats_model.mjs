@@ -769,26 +769,66 @@ test('ancres seules : coins, centres, CSS relatif à l\'ancre', () => {
     for (const rect of layout.values()) assert.equal(rect.overflow, false);
 });
 
-test('empilement : du coin vers l\'intérieur, dy = espacement', () => {
+test('empilement : du coin vers l\'intérieur, écart fixe de 8 px', () => {
     const top = layoutPanels([
         item('a', 'top-left'),
-        item('b', 'top-left', { dy: 8, height: 50 }),
-        item('c', 'top-left', { dy: 8 }),
+        item('b', 'top-left', { height: 50 }),
+        item('c', 'top-left'),
     ], box);
     assert.equal(top.get('a').y, 16);
     assert.equal(top.get('b').y, 16 + 100 + 8);
     assert.equal(top.get('c').y, 16 + 100 + 8 + 50 + 8);
     assert.equal(rectsOverlap(top.get('a'), top.get('b')), false);
 
-    const bottom = layoutPanels([item('a', 'bottom-right'), item('b', 'bottom-right', { dy: 10 })], box);
+    const bottom = layoutPanels([item('a', 'bottom-right'), item('b', 'bottom-right')], box);
     assert.equal(bottom.get('a').y, 600 - 16 - 100);
-    assert.equal(bottom.get('b').y, 600 - 16 - 100 - 10 - 100);
+    assert.equal(bottom.get('b').y, 600 - 16 - 100 - 8 - 100);
     assert.deepEqual(bottom.get('b').css, { right: 16, bottom: 600 - bottom.get('b').y - 100 });
 
-    const middle = layoutPanels([item('a', 'middle-left'), item('b', 'middle-left', { dy: 20 })], box);
-    // Pile de 220 px centrée : 190 → 410.
-    assert.equal(middle.get('a').y, 190);
-    assert.equal(middle.get('b').y, 310);
+    const middle = layoutPanels([item('a', 'middle-left'), item('b', 'middle-left')], box);
+    // Pile de 208 px centrée : 196 → 404.
+    assert.equal(middle.get('a').y, 196);
+    assert.equal(middle.get('b').y, 304);
+});
+
+test('empilement : les marges de la pile sont celles de son premier panneau', () => {
+    // Des dx/dy divergents sur les suivants (réglages non normalisés) ne
+    // décalent ni l'écart ni l'alignement.
+    const layout = layoutPanels([
+        item('a', 'top-right', { dx: 30, dy: 40 }),
+        item('b', 'top-right', { dx: 5, dy: 90 }),
+    ], box);
+    assert.equal(layout.get('a').y, 40);
+    assert.equal(layout.get('b').y, 40 + 100 + 8);
+    assert.equal(layout.get('b').x, 1000 - 30 - 200);
+
+    // Réordonner une pile à marges communes ne la déplace pas : seul
+    // l'ordre des panneaux change.
+    const ab = layoutPanels([item('a', 'top-left', { height: 60 }), item('b', 'top-left')], box);
+    const ba = layoutPanels([item('b', 'top-left'), item('a', 'top-left', { height: 60 })], box);
+    assert.equal(ab.get('a').y, 16);
+    assert.equal(ba.get('b').y, 16);
+    assert.equal(ab.get('b').y + 100, ba.get('a').y + 60);
+});
+
+test('normalisation : marges communes aux panneaux d’un même coin', () => {
+    const panel = (id, position) => ({ id, kind: 'bar', metric: 'year', position });
+    const { panels, configs } = normalizeStatsSettings({
+        panels: [
+            panel('aaaaaa01', { anchor: 'top-left', dx: 30, dy: 40 }),
+            panel('aaaaaa02', { mode: 'free', anchor: 'top-left', dx: 2, dy: 3, x: 0.5, y: 0.5 }),
+            panel('aaaaaa03', { anchor: 'bottom-right', dx: 12, dy: 8 }),
+            panel('aaaaaa04', { anchor: 'top-left', dx: 16, dy: 8 }),
+            panel('aaaaaa05', { anchor: 'bottom-right' }),
+        ],
+        configs: [{ name: 'Pile', panels: [
+            panel('bbbbbb01', { anchor: 'middle-right', dx: 20, dy: 0 }),
+            panel('bbbbbb02', { anchor: 'middle-right', dx: 50, dy: 50 }),
+        ] }],
+    });
+    const margins = (p) => [p.position.dx, p.position.dy];
+    assert.deepEqual(panels.map(margins), [[30, 40], [2, 3], [12, 8], [30, 40], [12, 8]]);
+    assert.deepEqual(configs[0].panels.map(margins), [[20, 0], [20, 0]]);
 });
 
 test('débordement : rect ramené dans le cadre et signalé', () => {
@@ -962,14 +1002,14 @@ test('position libre : fraction de l’espace restant, hors des piles', () => {
     ], box);
     assert.deepEqual(layout.get('f').css, { left: 400, top: 500 });
     // Le panneau libre ne pousse pas la pile du coin.
-    assert.equal(layout.get('b').y, 16 + 100 + 16);
+    assert.equal(layout.get('b').y, 16 + 100 + 8);
 });
 
 test('évitement : la pile d’un coin démarre sous le titre ou au-dessus d’une boîte basse', () => {
     const title = { x: 10, y: 10, width: 250, height: 50 };
     const top = layoutPanels([item('a', 'top-left'), item('b', 'top-left')], box, [title]);
     assert.equal(top.get('a').y, 10 + 50 + 8);
-    assert.equal(top.get('b').y, 10 + 50 + 8 + 100 + 16);
+    assert.equal(top.get('b').y, 10 + 50 + 8 + 100 + 8);
     // Boîte d'un autre côté : rien ne bouge.
     const right = layoutPanels([item('r', 'top-right')], box, [title]);
     assert.equal(right.get('r').y, 16);

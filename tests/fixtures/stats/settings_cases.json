@@ -3350,5 +3350,358 @@
       "evolution_panels": [],
       "configs": []
     }
+  },
+  {
+    "name": "marges communes aux panneaux d’un même coin",
+    "input": {
+      "panels": [
+        {
+          "id": "abc00001",
+          "kind": "bar",
+          "metric": "year",
+          "position": {
+            "anchor": "top-left",
+            "dx": 30,
+            "dy": 40
+          }
+        },
+        {
+          "id": "abc00002",
+          "kind": "bar",
+          "metric": "year",
+          "enabled": false,
+          "position": {
+            "anchor": "bottom-right",
+            "dx": 12,
+            "dy": 8
+          }
+        },
+        {
+          "id": "abc00003",
+          "kind": "bar",
+          "metric": "year",
+          "position": {
+            "mode": "free",
+            "anchor": "top-left",
+            "dx": 2,
+            "dy": 3,
+            "x": 0.25,
+            "y": 0.75
+          }
+        },
+        {
+          "id": "abc00004",
+          "kind": "counter",
+          "metric": "summary",
+          "position": {
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 8
+          }
+        },
+        {
+          "id": "abc00005",
+          "kind": "line",
+          "metric": "cumulative",
+          "position": {
+            "anchor": "bottom-right"
+          }
+        }
+      ],
+      "configs": [
+        {
+          "name": "Pile",
+          "panels": [
+            {
+              "id": "abc00011",
+              "kind": "grid",
+              "metric": "dt",
+              "position": {
+                "anchor": "middle-right",
+                "dx": 20,
+                "dy": 0
+              }
+            },
+            {
+              "id": "abc00012",
+              "kind": "grid",
+              "metric": "dt",
+              "position": {
+                "anchor": "middle-right",
+                "dx": 50,
+                "dy": 50
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "abc00001",
+          "kind": "bar",
+          "metric": "year",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 30,
+            "dy": 40,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "abc00002",
+          "kind": "bar",
+          "metric": "year",
+          "enabled": false,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 12,
+            "dy": 8,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "abc00003",
+          "kind": "bar",
+          "metric": "year",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "free",
+            "anchor": "top-left",
+            "dx": 2,
+            "dy": 3,
+            "width": 280,
+            "height": null,
+            "x": 0.25,
+            "y": 0.75
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "abc00004",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 30,
+            "dy": 40,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "days",
+              "best_day",
+              "streak",
+              "types"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "abc00005",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 12,
+            "dy": 8,
+            "width": 320,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true,
+            "show_milestones": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": [
+        {
+          "name": "Pile",
+          "mode": "finds",
+          "panels": [
+            {
+              "id": "abc00011",
+              "kind": "grid",
+              "metric": "dt",
+              "enabled": true,
+              "show_title": true,
+              "title": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "middle-right",
+                "dx": 20,
+                "dy": 0,
+                "width": 280,
+                "height": null,
+                "x": 0,
+                "y": 0
+              },
+              "options": {
+                "show_percent": false,
+                "highlight": "new",
+                "cell_mode": "count",
+                "show_coverage": true,
+                "show_loops": false
+              },
+              "style": {
+                "background": "#0b1a2b",
+                "background_opacity": 85,
+                "text_color": "#ffffff",
+                "accent_color": "#29d34e",
+                "palette": "heat",
+                "font_size": 12,
+                "radius": 10,
+                "inherit_font": true
+              }
+            },
+            {
+              "id": "abc00012",
+              "kind": "grid",
+              "metric": "dt",
+              "enabled": true,
+              "show_title": true,
+              "title": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "middle-right",
+                "dx": 20,
+                "dy": 0,
+                "width": 280,
+                "height": null,
+                "x": 0,
+                "y": 0
+              },
+              "options": {
+                "show_percent": false,
+                "highlight": "new",
+                "cell_mode": "count",
+                "show_coverage": true,
+                "show_loops": false
+              },
+              "style": {
+                "background": "#0b1a2b",
+                "background_opacity": 85,
+                "text_color": "#ffffff",
+                "accent_color": "#29d34e",
+                "palette": "heat",
+                "font_size": 12,
+                "radius": 10,
+                "inherit_font": true
+              }
+            }
+          ]
+        }
+      ]
+    }
   }
 ]

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 11:00+0200\n"
+"POT-Creation-Date: 2026-10-19 13:16+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -2774,7 +2774,7 @@ msgid "Aucun thème"
 msgstr "Aucun thème"
 
 #: static/js/profiles.js:958 static/js/profiles.js:2748
-#: static/js/stats_ui.js:233
+#: static/js/stats_ui.js:252
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
@@ -2799,8 +2799,8 @@ msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
 #: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:234
-#: static/js/stats_ui.js:1116 templates/menu_style.html:272
+#: static/js/recent_videos.js:121 static/js/stats_ui.js:253
+#: static/js/stats_ui.js:1196 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Supprimer"
@@ -3420,61 +3420,61 @@ msgstr "Activité ${year}"
 msgid "trouvailles"
 msgstr "trouvailles"
 
-#: static/js/stats_panels.js:1178
+#: static/js/stats_panels.js:1198
 #, python-brace-format
 msgid "${n} trouvailles au ${date}"
 msgstr "${n} trouvailles au ${date}"
 
-#: static/js/stats_panels.js:1184
+#: static/js/stats_panels.js:1204
 #, python-brace-format
 msgid "Paliers : ${list}"
 msgstr "Paliers : ${list}"
 
-#: static/js/stats_panels.js:1202
+#: static/js/stats_panels.js:1222
 msgid "Aucune cache"
 msgstr "Aucune cache"
 
-#: static/js/stats_panels.js:1202
+#: static/js/stats_panels.js:1222
 msgid "Aucune trouvaille"
 msgstr "Aucune trouvaille"
 
-#: static/js/stats_panels.js:1483 static/js/stats_panels.js:1529
+#: static/js/stats_panels.js:1516 static/js/stats_panels.js:1562
 msgid "Chiffre"
 msgstr "Chiffre"
 
-#: static/js/stats_panels.js:1483 static/js/stats_panels.js:1529
+#: static/js/stats_panels.js:1516 static/js/stats_panels.js:1562
 msgid "Valeur"
 msgstr "Valeur"
 
-#: static/js/stats_panels.js:1483 static/js/stats_panels.js:1529
+#: static/js/stats_panels.js:1516 static/js/stats_panels.js:1562
 #: templates/menu_animation.html:189
 msgid "Détail"
 msgstr "Détail"
 
-#: static/js/stats_panels.js:1490 static/js/stats_panels.js:1536
+#: static/js/stats_panels.js:1523 static/js/stats_panels.js:1569
 #: templates/menu_informations.html:57 templates/menu_informations.html:81
 msgid "Date"
 msgstr "Date"
 
-#: static/js/stats_panels.js:1490 static/js/stats_panels.js:1536
+#: static/js/stats_panels.js:1523 static/js/stats_panels.js:1569
 #: templates/menu_informations.html:61 templates/menu_informations.html:83
 msgid "Total"
 msgstr "Total"
 
-#: static/js/stats_panels.js:1493
+#: static/js/stats_panels.js:1526
 msgid "Case"
 msgstr "Case"
 
-#: static/js/stats_panels.js:1493 static/js/stats_panels.js:1506
-#: static/js/stats_panels.js:1541
+#: static/js/stats_panels.js:1526 static/js/stats_panels.js:1539
+#: static/js/stats_panels.js:1574
 msgid "Nombre"
 msgstr "Nombre"
 
-#: static/js/stats_panels.js:1506 static/js/stats_panels.js:1541
+#: static/js/stats_panels.js:1539 static/js/stats_panels.js:1574
 msgid "Catégorie"
 msgstr "Catégorie"
 
-#: static/js/stats_panels.js:1506 static/js/stats_panels.js:1541
+#: static/js/stats_panels.js:1539 static/js/stats_panels.js:1574
 #: templates/menu_informations.html:84
 msgid "Pourcentage"
 msgstr "Pourcentage"
@@ -3499,23 +3499,23 @@ msgstr "Courbe"
 msgid "Trouvailles"
 msgstr "Trouvailles"
 
-#: static/js/stats_ui.js:205
+#: static/js/stats_ui.js:224
 msgid "Afficher ce panneau"
 msgstr "Afficher ce panneau"
 
-#: static/js/stats_ui.js:224 static/js/stats_ui.js:1113
+#: static/js/stats_ui.js:243 static/js/stats_ui.js:1193
 msgid "Pas affiché dans ce mode"
 msgstr "Pas affiché dans ce mode"
 
-#: static/js/stats_ui.js:231
+#: static/js/stats_ui.js:250
 msgid "Monter"
 msgstr "Monter"
 
-#: static/js/stats_ui.js:232
+#: static/js/stats_ui.js:251
 msgid "Descendre"
 msgstr "Descendre"
 
-#: static/js/stats_ui.js:244
+#: static/js/stats_ui.js:263
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
@@ -3523,7 +3523,7 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
 
-#: static/js/stats_ui.js:245 templates/menu_stats.html:109
+#: static/js/stats_ui.js:264 templates/menu_stats.html:109
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
@@ -3531,63 +3531,63 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
 
-#: static/js/stats_ui.js:268
+#: static/js/stats_ui.js:287
 #, python-brace-format
 msgid "${n} places requises"
 msgstr "${n} places requises"
 
-#: static/js/stats_ui.js:315
+#: static/js/stats_ui.js:334
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr "« ${name} » supprimé"
 
-#: static/js/stats_ui.js:1049 static/js/stats_ui.js:1055
+#: static/js/stats_ui.js:1129 static/js/stats_ui.js:1135
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr "Import impossible : fichier de panneaux invalide"
 
-#: static/js/stats_ui.js:1065
+#: static/js/stats_ui.js:1145
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr "${count} panneau(x) importé(s)"
 
-#: static/js/stats_ui.js:1155
+#: static/js/stats_ui.js:1235
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr "Configuration « ${name} » enregistrée"
 
-#: static/js/stats_ui.js:1169
+#: static/js/stats_ui.js:1249
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr "Configuration « ${name} » appliquée"
 
-#: static/js/stats_ui.js:1188
+#: static/js/stats_ui.js:1268
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr "« ${name} » supprimée"
 
-#: static/js/stats_ui.js:1219
+#: static/js/stats_ui.js:1299
 msgid "Panneaux réorganisés"
 msgstr "Panneaux réorganisés"
 
-#: static/js/stats_ui.js:1238
+#: static/js/stats_ui.js:1318
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 
-#: static/js/stats_ui.js:1240
+#: static/js/stats_ui.js:1320
 msgid "le titre"
 msgstr "le titre"
 
-#: static/js/stats_ui.js:1240
+#: static/js/stats_ui.js:1320
 msgid "les infos"
 msgstr "les infos"
 
-#: static/js/stats_ui.js:1241
+#: static/js/stats_ui.js:1321
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr "« ${name} » chevauche ${other}."
 
-#: static/js/stats_ui.js:1244
+#: static/js/stats_ui.js:1324
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
@@ -3596,7 +3596,7 @@ msgstr ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 
-#: static/js/stats_ui.js:1256
+#: static/js/stats_ui.js:1336
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 
@@ -4608,7 +4608,7 @@ msgid "Guide"
 msgstr "Guide"
 
 #: templates/app.html:80 templates/guide.html:211 templates/guide.html:388
-#: templates/menu_options.html:30 templates/menu_stats.html:365
+#: templates/menu_options.html:30 templates/menu_stats.html:369
 #: templates/menu_trail.html:94
 msgid "Apparence"
 msgstr "Apparence"
@@ -5310,7 +5310,7 @@ msgid "Réglez le"
 msgstr "Réglez le"
 
 #: templates/guide.html:224 templates/menu_informations.html:96
-#: templates/menu_informations.html:237 templates/menu_stats.html:372
+#: templates/menu_informations.html:237 templates/menu_stats.html:376
 msgid "Texte"
 msgstr "Texte"
 
@@ -5914,7 +5914,7 @@ msgstr ""
 "cadrage) et les"
 
 #: templates/guide.html:305 templates/menu_recording.html:46
-#: templates/menu_stats.html:384
+#: templates/menu_stats.html:388
 msgid "Couleurs"
 msgstr "Couleurs"
 
@@ -7730,7 +7730,7 @@ msgstr "Centré"
 msgid "À droite"
 msgstr "À droite"
 
-#: templates/menu_informations.html:164 templates/menu_stats.html:368
+#: templates/menu_informations.html:164 templates/menu_stats.html:372
 msgid "Fond"
 msgstr "Fond"
 
@@ -8751,23 +8751,27 @@ msgstr "Marge horizontale (px)"
 msgid "Marge verticale (px)"
 msgstr "Marge verticale (px)"
 
-#: templates/menu_stats.html:342
+#: templates/menu_stats.html:343
+msgid "Communes à tous les panneaux de ce coin, empilés à 8 px d’écart."
+msgstr "Communes à tous les panneaux de ce coin, empilés à 8 px d’écart."
+
+#: templates/menu_stats.html:346
 msgid "Largeur (px)"
 msgstr "Largeur (px)"
 
-#: templates/menu_stats.html:346
+#: templates/menu_stats.html:350
 msgid "Hauteur (px)"
 msgstr "Hauteur (px)"
 
-#: templates/menu_stats.html:347
+#: templates/menu_stats.html:351
 msgid "auto"
 msgstr "auto"
 
-#: templates/menu_stats.html:348
+#: templates/menu_stats.html:352
 msgid "Vide : hauteur automatique ; ignoré pour les grilles (cases carrées)."
 msgstr "Vide : hauteur automatique ; ignoré pour les grilles (cases carrées)."
 
-#: templates/menu_stats.html:351
+#: templates/menu_stats.html:355
 msgid ""
 "Les panneaux qui partagent un coin s'empilent automatiquement et "
 "contournent le titre et les infos ; la marge verticale sert alors "
@@ -8777,15 +8781,15 @@ msgstr ""
 "contournent le titre et les infos ; la marge verticale sert alors "
 "d'espacement avec le panneau précédent."
 
-#: templates/menu_stats.html:356
+#: templates/menu_stats.html:360
 msgid "Position libre : ce panneau a été glissé sur la carte."
 msgstr "Position libre : ce panneau a été glissé sur la carte."
 
-#: templates/menu_stats.html:357
+#: templates/menu_stats.html:361
 msgid "Revenir au coin d'ancrage"
 msgstr "Revenir au coin d'ancrage"
 
-#: templates/menu_stats.html:359
+#: templates/menu_stats.html:363
 msgid ""
 "Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la "
 "carte pour le placer librement."
@@ -8793,43 +8797,43 @@ msgstr ""
 "Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la "
 "carte pour le placer librement."
 
-#: templates/menu_stats.html:365
+#: templates/menu_stats.html:369
 msgid "Couleurs, opacité, taille du texte, arrondi"
 msgstr "Couleurs, opacité, taille du texte, arrondi"
 
-#: templates/menu_stats.html:376 templates/menu_stats.html:388
+#: templates/menu_stats.html:380 templates/menu_stats.html:392
 msgid "Couleur principale"
 msgstr "Couleur principale"
 
-#: templates/menu_stats.html:380
+#: templates/menu_stats.html:384
 msgid "Opacité du fond"
 msgstr "Opacité du fond"
 
-#: templates/menu_stats.html:386
+#: templates/menu_stats.html:390
 msgid "Couleurs des types de caches"
 msgstr "Couleurs des types de caches"
 
-#: templates/menu_stats.html:387
+#: templates/menu_stats.html:391
 msgid "Une couleur par catégorie"
 msgstr "Une couleur par catégorie"
 
-#: templates/menu_stats.html:389
+#: templates/menu_stats.html:393
 msgid "Dégradé selon le nombre"
 msgstr "Dégradé selon le nombre"
 
-#: templates/menu_stats.html:393
+#: templates/menu_stats.html:397
 msgid "Taille du texte"
 msgstr "Taille du texte"
 
-#: templates/menu_stats.html:397
+#: templates/menu_stats.html:401
 msgid "Arrondi"
 msgstr "Arrondi"
 
-#: templates/menu_stats.html:403
+#: templates/menu_stats.html:407
 msgid "Utiliser la police du cartouche d'infos"
 msgstr "Utiliser la police du cartouche d'infos"
 
-#: templates/menu_stats.html:405
+#: templates/menu_stats.html:409
 msgid ""
 "Celle réglée dans l'onglet Style → Informations ; sinon, police de "
 "l'interface."
@@ -8837,19 +8841,19 @@ msgstr ""
 "Celle réglée dans l'onglet Style → Informations ; sinon, police de "
 "l'interface."
 
-#: templates/menu_stats.html:411
+#: templates/menu_stats.html:415
 msgid "Exporter ce panneau"
 msgstr "Exporter ce panneau"
 
-#: templates/menu_stats.html:412
+#: templates/menu_stats.html:416
 msgid "Le panneau tel qu'il est affiché, ou ses valeurs en tableau."
 msgstr "Le panneau tel qu'il est affiché, ou ses valeurs en tableau."
 
-#: templates/menu_stats.html:415
+#: templates/menu_stats.html:419
 msgid "Image (PNG)"
 msgstr "Image (PNG)"
 
-#: templates/menu_stats.html:418
+#: templates/menu_stats.html:422
 msgid "Valeurs (CSV)"
 msgstr "Valeurs (CSV)"
 
