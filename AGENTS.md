@@ -105,8 +105,8 @@ Autres repères :
   globale ; un spec qui en pose doit remettre
   `PUT /api/settings {images: {enabled: true, items: []}}` en sortant —
   exemple dans `images.spec.mjs` (`afterEach`). Les fichiers envoyés
-  (`POST /api/images`) restent dans `images/` du runtime E2E, balayés une
-  heure après qu'ils ne sont plus référencés.
+  (`POST /api/images`) restent dans `images/` du runtime E2E jusqu'au retrait
+  manuel dans la bibliothèque ; seuls les envois interrompus sont balayés.
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

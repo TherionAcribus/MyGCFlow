@@ -49,11 +49,12 @@ cache d'un an `immutable`. Seuls les noms de ce motif sont acceptés
 origine le contamine et rend l'export vidéo impossible. Les images viennent
 toujours du serveur local, jamais d'une URL externe.
 
-Balayage (`sweep_image_dir`) après chaque envoi : fichiers non référencés
-(liste courante + configurations, lues par `referenced_image_files`) et envois
-interrompus, passé un délai de grâce d'une heure — la nouvelle image n'entre
-dans les préférences qu'après son envoi. `POST /api/images/delete` refuse une
-image référencée (409).
+Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
+retrait manuel via `POST /api/images/delete` — refusé (409) si elle est
+encore référencée (liste courante ou configurations, lues par
+`referenced_image_files`). Seuls les envois interrompus (`.upload-*.part`)
+sont balayés par `sweep_partial_uploads` après chaque envoi, passé un délai
+de grâce d'une heure — un envoi encore en cours est épargné.
 
 ## Réglages (`images`)
 

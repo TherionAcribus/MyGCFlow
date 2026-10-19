@@ -18,6 +18,8 @@ Lot 5 fait : `static/js/panel_interactions.js` (`resizeEdges`, `nearestSnapTarge
 
 Lot 6 fait : export/import JSON dans le menu Bibliothèque (`{ format: 'mygcflow-images', version: 1, items, files }`, **fichiers embarqués en data URL** — avancé depuis le §8 : sans eux, un export n'avait pas d'intérêt sur un autre ordinateur ; à l'import, chaque image repasse par le serveur, son nom peut changer, les entrées suivent ; « Annuler »). Guide : section « 5. Images », Préférences devient 6 ; astuce d'introduction corrigée (elle ne citait ni Stats ni Images). Doc technique `docs/images.md`. **Fonctionnalité complète** ; restent au §8 : configurations nommées d'images, SVG, GIF animés, apparition à une date.
 
+Correction d'audit du 2026-10-19 : le balayage automatique des images non référencées est abandonné — la bibliothèque est persistante, retrait manuel uniquement (`POST /api/images/delete`) ; seuls les envois interrompus `.upload-*.part` sont balayés (`sweep_partial_uploads`).
+
 ## 1. Contexte constaté dans le code (à ne pas redécouvrir)
 
 - **Titre et Infos** sont des cartouches CSS du **thème** (`title_css`/`infos_css`, profiles.js), recopiés dans la vidéo par `overlay_canvas.js` qui relit leur CSS et leur rect. `sanitizeOverlayCss` interdit `url()` (pas de requête externe depuis un thème importé) : une image n'a rien à faire dans ce circuit.
@@ -132,7 +134,7 @@ Modifiés : `paths.py`, `settings_manager.py`, `blueprints/media.py` (ou bluepri
 - Canvas contaminé si une image ne vient pas du serveur local : ne jamais accepter d'URL externe.
 - Images lourdes : réduction à l'envoi, et coût de dessin négligeable grâce au cache par (révision, taille) — à mesurer comme pour les stats.
 - Extraction des interactions (lot 5) : risque de régression sur les Stats, couvert par leurs specs.
-- Disque : balayage des fichiers orphelins ; afficher la place occupée dans la bibliothèque.
+- Disque : les images retirées de la liste restent dans la bibliothèque (retrait manuel seulement ; seuls les envois interrompus sont balayés) ; afficher la place occupée dans la bibliothèque.
 - Configurations et exports partagés : référence à un fichier absent → « Image manquante », jamais d'erreur.
 
 ## 8. Évolutivité (sans l'implémenter maintenant)

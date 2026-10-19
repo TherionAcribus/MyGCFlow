@@ -160,31 +160,38 @@ class StorageTests(ImageLibraryTestCase):
         self.assertFalse(by_name[loose]['referenced'])
         self.assertEqual(listing['total_bytes'], sum(f['size_bytes'] for f in listing['files']))
 
-    def test_sweep_removes_only_old_unreferenced_images(self):
+    def test_sweep_removes_only_old_interrupted_uploads(self):
         old = time.time() - 2 * image_library.IMAGE_SWEEP_GRACE_S
-        kept = image_library.save_image(self.png())['file']
-        forgotten = image_library.save_image(self.png(color=(1, 1, 1, 128)))['file']
-        fresh = image_library.save_image(self.png(color=(2, 2, 2, 128)))['file']
-        part = self.folder / '.upload-abc.part'
-        part.write_bytes(b'x')
+        old_image = image_library.save_image(self.png())['file']
+        fresh_image = image_library.save_image(self.png(color=(2, 2, 2, 128)))['file']
+        old_part = self.folder / '.upload-abc.part'
+        old_part.write_bytes(b'x')
+        fresh_part = self.folder / '.upload-def.part'
+        fresh_part.write_bytes(b'y')
         stranger = self.folder / 'notes.txt'
         stranger.write_text('à garder')
-        for name in (kept, forgotten):
-            os.utime(self.folder / name, (old, old))
-        os.utime(part, (old, old))
+        os.utime(self.folder / old_image, (old, old))
+        os.utime(old_part, (old, old))
         os.utime(stranger, (old, old))
-        removed = image_library.sweep_image_dir({kept})
-        self.assertEqual(sorted(removed), sorted([forgotten, part.name]))
-        self.assertTrue((self.folder / kept).exists())
-        self.assertTrue((self.folder / fresh).exists())
+        removed = image_library.sweep_partial_uploads()
+        # Seul l'envoi interrompu ancien part ; une image n'est jamais balayée.
+        self.assertEqual(removed, [old_part.name])
+        self.assertTrue((self.folder / old_image).exists())
+        self.assertTrue((self.folder / fresh_image).exists())
+        self.assertTrue(fresh_part.exists())
         self.assertTrue(stranger.exists())
 
     def test_saving_again_refreshes_the_date_of_an_existing_image(self):
         name = image_library.save_image(self.png())['file']
-        old = time.time() - 2 * image_library.IMAGE_SWEEP_GRACE_S
-        os.utime(self.folder / name, (old, old))
+        other = image_library.save_image(self.png(color=(1, 1, 1, 128)))['file']
+        past = time.time() - 60
+        os.utime(self.folder / name, (past, past))
+        os.utime(self.folder / other, (past, past))
         image_library.save_image(self.png())
-        self.assertEqual(image_library.sweep_image_dir(set()), [])
+        # Date rafraîchie : l'image rechoisie repasse en tête de bibliothèque.
+        listing = image_library.list_image_files(set())
+        self.assertEqual([f['file'] for f in listing['files']], [name, other])
+        self.assertGreater(listing['files'][0]['modified'], past)
 
     def test_delete(self):
         name = image_library.save_image(self.png())['file']

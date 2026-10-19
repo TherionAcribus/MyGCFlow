@@ -55,10 +55,10 @@ def route_upload_image():
     except image_library.InvalidImage as e:
         status = 413 if e.reason == 'too_large' else 415 if e.reason == 'format' else 400
         return jsonify({'success': False, 'reason': e.reason, 'message': _invalid_message(e.reason)}), status
-    # Une nouvelle image arrive : les fichiers que plus rien ne désigne sont
-    # balayés (passé leur délai de grâce, la nouvelle est donc épargnée).
+    # Une nouvelle image arrive : les envois interrompus (.upload-*.part)
+    # trop vieux sont balayés. Les images restent jusqu'au retrait manuel.
     try:
-        image_library.sweep_image_dir(_referenced_image_files())
+        image_library.sweep_partial_uploads()
     except Exception as e:
         print(f"[images] balayage impossible: {e}")
     return jsonify({'success': True, **saved})

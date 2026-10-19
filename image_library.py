@@ -13,8 +13,10 @@ envoyée deux fois n'est stockée qu'une fois, et un nom ne désigne jamais deux
 contenus (servi avec un cache long). Le nom d'origine, lisible, vit dans les
 réglages (images.items[].name), pas sur le disque.
 
-Comme pour audio/ (audio_library.py), les fichiers que plus rien ne désigne
-sont balayés passé un délai de grâce.
+Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
+retrait manuel (POST /api/images/delete). Seuls les envois interrompus —
+les fichiers .upload-*.part laissés par save_image — sont balayés passé un
+délai de grâce.
 """
 
 import hashlib
@@ -39,8 +41,8 @@ JPEG_QUALITY = 90
 # Formats acceptés à l'envoi (Image.format). GIF : première image seulement.
 ACCEPTED_FORMATS = frozenset({'PNG', 'JPEG', 'WEBP', 'GIF'})
 
-# Une image tout juste envoyée n'entre dans les préférences qu'ensuite : elle
-# ne doit pas être balayée entre-temps.
+# Balayage des envois interrompus (.upload-*.part) : ce délai protège un
+# envoi encore en cours, dont l'écriture n'est pas achevée.
 IMAGE_SWEEP_GRACE_S = 3600
 
 _UPLOAD_PART_PREFIX = '.upload-'
@@ -116,8 +118,8 @@ def save_image(data):
     """Normalise et enregistre une image dans images/.
 
     Renvoie {'file', 'width', 'height', 'size_bytes'}. Un contenu déjà présent
-    n'est pas réécrit (sa date est rafraîchie : de nouveau choisi, il ne doit
-    pas être balayé avant d'entrer dans les préférences)."""
+    n'est pas réécrit (sa date est rafraîchie : de nouveau choisi, il repasse
+    en tête de la bibliothèque, triée du plus récent au plus ancien)."""
     normalized, ext, (width, height) = normalize_image(data)
     name = f"{hashlib.sha256(normalized).hexdigest()[:16]}.{ext}"
     folder = paths.ensure_dir(paths.images_dir())
@@ -199,10 +201,12 @@ def list_image_files(referenced):
     return {'files': files, 'total_bytes': sum(f['size_bytes'] for f in files)}
 
 
-def sweep_image_dir(referenced, now=None, grace_s=IMAGE_SWEEP_GRACE_S):
-    """Supprime les images que plus rien ne désigne (et les envois
-    interrompus), passé le délai de grâce. Renvoie les noms supprimés. Les
-    fichiers étrangers au dossier (autre nom) ne sont jamais touchés."""
+def sweep_partial_uploads(now=None, grace_s=IMAGE_SWEEP_GRACE_S):
+    """Supprime les envois interrompus (fichiers .upload-*.part laissés par
+    save_image) passé le délai de grâce. Renvoie les noms supprimés. Les
+    images ne sont jamais balayées — elles restent dans la bibliothèque
+    jusqu'au retrait manuel — et les fichiers étrangers au dossier (autre
+    nom) ne sont jamais touchés."""
     folder = paths.images_dir()
     cutoff = (now if now is not None else time.time()) - grace_s
     removed = []
@@ -211,10 +215,7 @@ def sweep_image_dir(referenced, now=None, grace_s=IMAGE_SWEEP_GRACE_S):
     except OSError:
         return removed
     for entry in entries:
-        if not entry.is_file():
-            continue
-        is_part = entry.name.startswith(_UPLOAD_PART_PREFIX)
-        if not is_part and (not safe_image_name(entry.name) or entry.name in referenced):
+        if not entry.is_file() or not entry.name.startswith(_UPLOAD_PART_PREFIX):
             continue
         try:
             if entry.stat().st_mtime >= cutoff:

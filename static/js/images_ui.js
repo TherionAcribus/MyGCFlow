@@ -500,8 +500,8 @@ function onListClick(event) {
 }
 
 // « Annuler » du toast de suppression : l'image revient à sa place. Le
-// fichier, lui, n'a pas quitté la bibliothèque (balayé seulement une heure
-// après n'être plus référencé).
+// fichier, lui, reste dans la bibliothèque — il n'en sort que par le
+// retrait manuel.
 function showUndoForDelete(item, index) {
     pkg.showActionToast?.(
         pkg.t('« ${name} » supprimée', { name: displayName(item, index) }),
