@@ -68,6 +68,21 @@ let fsButton = null;
 let fsOverlay = readStorage(FS_KEY) !== '0';
 let style = 'histogram';
 let seriesMemo = null;
+// Calques hors écran : tout ce qui est fixe pendant la lecture (repères,
+// série en deux teintes) n'y est redessiné qu'à changement de leur clé —
+// par frame, draw() ne fait plus que deux drawImage et les mobiles
+// (étiquettes, curseur, poignée, fantôme).
+let layerRest = null;
+let layerPlayed = null;
+let layersKey = '';
+// Couleurs des --timeline-* lues une fois : getComputedStyle par frame
+// coûtait un style recalculé à chaque lot affiché. `colorsVersion` entre
+// dans la clé des calques : une invalidation force leur reconstruction.
+let colorsCache = null;
+let colorsVersion = 0;
+// Taille de la piste, tenue par le ResizeObserver — un
+// getBoundingClientRect par frame forcerait un calcul de layout.
+let trackSize = null;
 // Geste en cours (pointeur ou série de frappes) : { resume, pointerId }.
 let gesture = null;
 let pendingOffset = null;
@@ -161,6 +176,71 @@ function cssColor(styles, name, fallback) {
     return value || fallback;
 }
 
+// Les --timeline-* ne changent qu'avec le thème ou le plein écran
+// (surimpression sombre, cf. ui_improvements.css) : le style calculé est
+// lu une fois puis seulement à chaque invalidation — jamais par frame.
+function colorsFor() {
+    if (!colorsCache) {
+        const styles = getComputedStyle(bar);
+        colorsCache = {
+            played: cssColor(styles, '--timeline-played', '#0072c6'),
+            rest: cssColor(styles, '--timeline-rest', 'rgba(108, 117, 125, 0.35)'),
+            cursor: cssColor(styles, '--timeline-cursor', '#1d273b'),
+            tick: cssColor(styles, '--timeline-tick', 'rgba(108, 117, 125, 0.3)'),
+            label: cssColor(styles, '--timeline-label', 'rgba(108, 117, 125, 0.85)'),
+        };
+    }
+    return colorsCache;
+}
+
+function invalidateColors() {
+    colorsCache = null;
+    colorsVersion++;
+}
+
+// Prochaine frame : calques à reconstruire quelle que soit leur clé.
+function invalidateLayers() {
+    layersKey = '';
+}
+
+// Les deux calques hors écran, reconstruits seulement quand la clé change
+// (série — révision + plage —, taille, densité, style, version de
+// couleurs). `layerRest` porte les repères d'année et la série « à venir »
+// ; `layerPlayed` la même série en teinte « jouée » — sans repères : ils
+// ne sont pas re-teintés dans la partie jouée. Les étiquettes d'année en
+// sont volontairement absentes : dessinées par frame au-dessus des deux
+// teintes, le calque « joué » les recouvrirait sinon.
+function ensureLayers(state, span, series, w, h, ratio, colors) {
+    const key = `${seriesMemo.key}|${w}x${h}@${ratio}|${style}|${colorsVersion}`;
+    if (key === layersKey) return;
+    if (!layerRest) {
+        layerRest = document.createElement('canvas');
+        layerPlayed = document.createElement('canvas');
+    }
+    const dw = Math.max(1, Math.round(w * ratio));
+    const dh = Math.max(1, Math.round(h * ratio));
+    layerRest.width = layerPlayed.width = dw;
+    layerRest.height = layerPlayed.height = dh;
+    const restCtx = layerRest.getContext('2d');
+    restCtx.scale(ratio, ratio);
+    restCtx.fillStyle = colors.tick;
+    for (const yearOffset of yearStartOffsets(state.start, span)) {
+        const x = Math.round(yearOffset / span * w) + 0.5;
+        restCtx.fillRect(x - 0.5, 0, 1, h);
+    }
+    drawSeries(restCtx, series, span, w, h, colors.rest);
+    const playedCtx = layerPlayed.getContext('2d');
+    playedCtx.scale(ratio, ratio);
+    drawSeries(playedCtx, series, span, w, h, colors.played);
+    layersKey = key;
+}
+
+// setAttribute écrit le DOM même à valeur égale (mutation → invalidation)
+// : on ne touche un attribut ARIA que s'il change réellement.
+function setAttr(el, name, value) {
+    if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+}
+
 function draw() {
     // Appelé aussi directement (pointerdown, touche) : un dessin déjà
     // planifié par refreshTimelineBar redessinerait une seconde fois.
@@ -179,47 +259,36 @@ function draw() {
 
     syncLabels(state, span, offset, usable);
 
-    const rect = canvas.getBoundingClientRect();
+    // Taille tenue par le ResizeObserver ; mesure synchrone seulement tant
+    // qu'il n'a pas tiré — ses notifications passent après le layout, une
+    // frame plus tard qu'une lecture immédiate.
+    if (!trackSize) trackSize = canvas.getBoundingClientRect();
     const ratio = window.devicePixelRatio || 1;
-    const width = Math.max(1, Math.round(rect.width * ratio));
-    const height = Math.max(1, Math.round(rect.height * ratio));
+    const width = Math.max(1, Math.round(trackSize.width * ratio));
+    const height = Math.max(1, Math.round(trackSize.height * ratio));
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
     const ctx = canvas.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, width, height);
     if (!usable) return;
-    ctx.scale(ratio, ratio);
-    const w = rect.width;
-    const h = rect.height;
+    const w = trackSize.width;
+    const h = trackSize.height;
 
-    const styles = getComputedStyle(bar);
-    const colors = {
-        played: cssColor(styles, '--timeline-played', '#0072c6'),
-        rest: cssColor(styles, '--timeline-rest', 'rgba(108, 117, 125, 0.35)'),
-        cursor: cssColor(styles, '--timeline-cursor', '#1d273b'),
-        tick: cssColor(styles, '--timeline-tick', 'rgba(108, 117, 125, 0.3)'),
-        label: cssColor(styles, '--timeline-label', 'rgba(108, 117, 125, 0.85)'),
-    };
-
-    const yearOffsets = yearStartOffsets(state.start, span);
-    ctx.fillStyle = colors.tick;
-    for (const yearOffset of yearOffsets) {
-        const x = Math.round(yearOffset / span * w) + 0.5;
-        ctx.fillRect(x - 0.5, 0, 1, h);
-    }
-
+    const colors = colorsFor();
     const series = seriesFor(state, span);
+    // La partie fixe — repères, série « à venir » puis « jouée » — vient
+    // des calques mémoïsés. Composite en pixels device (transform
+    // identité) : la sous-image bridée au curseur s'arrête exactement à
+    // cursorX, comme le clip rect(0,0,cursorX,h) d'avant — une tranche à
+    // cheval est coupée à la bonne date.
+    ensureLayers(state, span, series, w, h, ratio, colors);
+    ctx.drawImage(layerRest, 0, 0);
     const cursorX = cursorFraction(offset, span) * w;
-    // La série entière en teinte « à venir », puis la partie jouée par-dessus,
-    // découpée au curseur : une tranche à cheval est coupée à la bonne date.
-    drawSeries(ctx, series, span, w, h, colors.rest);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, cursorX, h);
-    ctx.clip();
-    drawSeries(ctx, series, span, w, h, colors.played);
-    ctx.restore();
+    ctx.drawImage(layerPlayed,
+        0, 0, cursorX * ratio, h * ratio,
+        0, 0, cursorX * ratio, h * ratio);
+    ctx.scale(ratio, ratio);
 
     // Années par-dessus les barres, sous le curseur : seuls les repères
     // qui laissent la place au texte (glouton, cf. yearLabelOffsets), et
@@ -227,7 +296,7 @@ function draw() {
     ctx.font = '10px sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = colors.label;
-    for (const yearOffset of yearLabelOffsets(yearOffsets, span, w)) {
+    for (const yearOffset of yearLabelOffsets(yearStartOffsets(state.start, span), span, w)) {
         const x = Math.round(yearOffset / span * w) + 0.5;
         const label = String(dateOfOffset(state.start, yearOffset).getFullYear());
         if (x + 3 + ctx.measureText(label).width > w - 2) continue;
@@ -332,21 +401,28 @@ function syncLabels(state, span, offset, usable) {
     const endLabel = document.getElementById('timelineBarEnd');
     const dateLabel = document.getElementById('timelineBarDate');
     const recording = !!state?.recording;
-    bar.classList.toggle('is-disabled', !usable || recording);
-    track.setAttribute('aria-disabled', String(!usable || recording));
+    const disabled = !usable || recording;
+    // Attributs et classe écrits seulement sur changement : appelée à
+    // chaque frame, la fonction ne doit pas invalider le DOM sans raison.
+    if (bar.classList.contains('is-disabled') !== disabled) {
+        bar.classList.toggle('is-disabled', disabled);
+    }
+    setAttr(track, 'aria-disabled', String(disabled));
     if (!usable) {
-        if (startLabel) startLabel.textContent = '';
-        if (endLabel) endLabel.textContent = '';
-        if (dateLabel) dateLabel.textContent = '';
-        track.setAttribute('aria-valuemin', '0');
-        track.setAttribute('aria-valuemax', '0');
-        track.setAttribute('aria-valuenow', '0');
-        track.setAttribute('aria-valuetext', pkg.t('Aucune donnée à parcourir'));
+        if (startLabel?.textContent) startLabel.textContent = '';
+        if (endLabel?.textContent) endLabel.textContent = '';
+        if (dateLabel?.textContent) dateLabel.textContent = '';
+        setAttr(track, 'aria-valuemin', '0');
+        setAttr(track, 'aria-valuemax', '0');
+        setAttr(track, 'aria-valuenow', '0');
+        setAttr(track, 'aria-valuetext', pkg.t('Aucune donnée à parcourir'));
         return;
     }
     const format = (date) => pkg.formatDateDisplay?.(date) ?? date.toLocaleDateString();
-    if (startLabel) startLabel.textContent = format(state.start);
-    if (endLabel) endLabel.textContent = format(state.end);
+    const startText = format(state.start);
+    const endText = format(state.end);
+    if (startLabel && startLabel.textContent !== startText) startLabel.textContent = startText;
+    if (endLabel && endLabel.textContent !== endText) endLabel.textContent = endText;
     const series = seriesFor(state, span);
     const textAt = (dayOffset) => {
         // Singulier/pluriel choisi sur le compte numérique (formatCount rend
@@ -363,10 +439,10 @@ function syncLabels(state, span, offset, usable) {
     const labelOffset = (hoverOffset !== null && !gesture) ? hoverOffset : offset;
     const text = textAt(labelOffset);
     if (dateLabel && dateLabel.textContent !== text) dateLabel.textContent = text;
-    track.setAttribute('aria-valuemin', '0');
-    track.setAttribute('aria-valuemax', String(span - 1));
-    track.setAttribute('aria-valuenow', String(offset));
-    track.setAttribute('aria-valuetext', labelOffset === offset ? text : textAt(offset));
+    setAttr(track, 'aria-valuemin', '0');
+    setAttr(track, 'aria-valuemax', String(span - 1));
+    setAttr(track, 'aria-valuenow', String(offset));
+    setAttr(track, 'aria-valuetext', labelOffset === offset ? text : textAt(offset));
 }
 
 // --- Saut ------------------------------------------------------------------------
@@ -675,6 +751,10 @@ function inFullscreen() {
 function applyVisibility() {
     if (!bar) return;
     bar.hidden = inFullscreen() ? !fsOverlay : !visible;
+    // Toute transition (masquage, bandeau ↔ surimpression plein écran)
+    // peut changer la taille : forcer une mesure au prochain dessin —
+    // le RO mettra à jour ensuite.
+    trackSize = null;
     if (!bar.hidden) return;
     hoverOffset = null;
     wheelAccum = 0; // une rafale de molette ne survit pas au masquage
@@ -720,6 +800,7 @@ function setStyle(next, { persist = true } = {}) {
         button.classList.toggle('active', active);
     });
     if (persist) writeStorage(STYLE_KEY, style);
+    invalidateLayers(); // le dessin de la série dépend du style (clé des calques)
     refreshTimelineBar();
 }
 
@@ -785,18 +866,43 @@ function initTimelineBar() {
     const mainElement = document.querySelector('main');
     if (mainElement && typeof MutationObserver === 'function') {
         new MutationObserver(() => {
+            // Les --timeline-* diffèrent en plein écran (surimpression
+            // sombre) : couleurs — et donc calques — à relire. applyVisibility
+            // remet trackSize à null (bandeau ↔ surimpression change la taille).
+            invalidateColors();
             applyVisibility();
             refreshTimelineBar();
         }).observe(mainElement, { attributes: true, attributeFilter: ['class'] });
     }
 
     if (typeof ResizeObserver === 'function') {
-        new ResizeObserver(() => {
+        const observer = new ResizeObserver(() => {
             bar.classList.toggle('is-narrow', bar.clientWidth > 0 && bar.clientWidth < NARROW_PX);
+            // La taille utile est celle de la piste (le canvas la remplit à
+            // 100 %) : relevée une fois par redimensionnement au lieu d'un
+            // getBoundingClientRect par frame. Les calques, dimensionnés
+            // dessus, sont à reconstruire.
+            trackSize = canvas.getBoundingClientRect();
+            invalidateLayers();
             refreshTimelineBar();
-        }).observe(bar);
+        });
+        observer.observe(bar);
+        observer.observe(track);
     }
-    document.addEventListener('theme:applied', refreshTimelineBar);
+    // Nouveau thème → nouvelles --timeline-* : couleurs et calques à relire.
+    document.addEventListener('theme:applied', () => {
+        invalidateColors();
+        refreshTimelineBar();
+    });
+    // data-bs-theme peut aussi bouger sans theme:applied
+    // (syncThemeFromSettings au démarrage, mode « system » suivant l'OS) :
+    // observer l'attribut couvre tous les chemins d'écriture.
+    if (typeof MutationObserver === 'function') {
+        new MutationObserver(() => {
+            invalidateColors();
+            refreshTimelineBar();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    }
 
     setStyle(readStorage(STYLE_KEY), { persist: false });
     setVisible(readStorage(VISIBLE_KEY) === '1', { persist: false });
