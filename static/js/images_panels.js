@@ -23,7 +23,10 @@ import { IMAGE_ANCHORS, IMAGE_SIZE_RANGE, normalizeImagesSettings } from './imag
 import { IMAGE_SHADOW, drawImagePanel, imagePanelHeight } from './images_render.mjs';
 
 let settings = normalizeImagesSettings(null);
-// Bumpé à chaque changement de réglage ou d'image chargée : clé des dessins.
+// Bumpé à chaque changement de réglage ou d'image chargée : signale aux
+// frames MediaRecorder (overlayContentSignature) qu'une frame est à produire.
+// Les dessins eux-mêmes sont invalidés par des clés par image (flush,
+// addImagePanelsToCanvas).
 let revision = 0;
 
 // Fichier → { img, state: 'loading' | 'ready' | 'failed', promise }.
@@ -422,7 +425,11 @@ function flush() {
         const bw = Math.max(1, Math.round(rect.width * dpr));
         const bh = Math.max(1, Math.round(rect.height * dpr));
         const entry = sources.get(item.file);
-        const key = `${revision}|${bw}|${bh}`;
+        // Clé par image : tout ce qui influence drawImagePanel — fichier,
+        // état de la source, taille réelle, style. La révision globale ne
+        // suffit pas : elle re-dessinerait les quatre images pour un
+        // changement de nom (cf. addImagePanelsToCanvas, même clé).
+        const key = `${item.file}|${entry?.state === 'ready'}|${bw}|${bh}|${JSON.stringify(item.style)}`;
         if (node.drawnKey !== key) {
             node.canvas.width = bw;
             node.canvas.height = bh;
@@ -456,7 +463,7 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
         const y = rect.css.bottom != null
             ? canvasHeight - Math.round(rect.css.bottom * scaleFactor) - h
             : Math.round(rect.css.top * scaleFactor);
-        const key = `${revision}|${w}|${h}`;
+        const key = `${item.file}|${w}|${h}|${JSON.stringify(item.style)}`;
         let cached = videoCache.get(item.id);
         if (!cached) {
             cached = { canvas: document.createElement('canvas'), shadowCanvas: null, shadowPad: 0, key: '' };
