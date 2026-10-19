@@ -933,7 +933,7 @@ test('les sections Position et Apparence sont repliées par défaut et mémorise
   await expect(appearance).toHaveJSProperty('open', false);
 });
 
-test('« Réorganiser » répartit les panneaux en conflit sur des coins distincts', async ({ page }) => {
+test('« Réorganiser » ne déplace que les panneaux en conflit', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: '5e080001', kind: 'bar', metric: 'cache_type', position: { mode: 'free', x: 0.1, y: 0.1 } },
     { id: '5e080002', kind: 'bar', metric: 'container', position: { mode: 'free', x: 0.1, y: 0.1 } },
@@ -947,22 +947,40 @@ test('« Réorganiser » répartit les panneaux en conflit sur des coins distinc
   await expect(warnings).toContainText('chevauche');
   await warnings.getByRole('button', { name: 'Réorganiser automatiquement' }).click();
 
-  // Chaque panneau repart sur un coin distinct : plus aucun avertissement.
+  // Le premier panneau, qui ne gêne personne, reste libre ; le second part
+  // au premier coin où il tient sans rien chevaucher. Plus d'avertissement.
   await expect(warnings).toBeHidden();
-  const first = page.locator('canvas.stats-panel[data-panel-id="5e080001"]');
-  await expect(first).toHaveCSS('left', '16px');
-  await expect(first).toHaveCSS('bottom', '16px');
-  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.anchor))
-    .toEqual(['bottom-left', 'bottom-right']);
+  const second = page.locator('canvas.stats-panel[data-panel-id="5e080002"]');
+  await expect(second).toHaveCSS('left', '16px');
+  await expect(second).toHaveCSS('bottom', '16px');
   await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.mode))
-    .toEqual(['anchor', 'anchor']);
+    .toEqual(['free', 'anchor']);
+  expect((await savedStats(page)).panels[1].position.anchor).toBe('bottom-left');
 
   // Réversible : le toast « Annuler » restaure les positions libres d'avant.
-  const toast = page.locator('.gcm-toast.show').filter({ hasText: /réorganis/i });
+  const toast = page.locator('.gcm-toast.show').filter({ hasText: 'Panneaux réorganisés' });
   await expect(toast).toBeVisible();
   await toast.locator('.gcm-toast-action').filter({ hasText: 'Annuler' }).click();
   await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.mode))
     .toEqual(['free', 'free']);
+});
+
+test('« Réorganiser » prévient quand la place manque pour tous les panneaux', async ({ page }) => {
+  // Trois panneaux plus grands que la carte : aucun emplacement ne les
+  // sépare, le toast le dit au lieu d'annoncer un succès.
+  const huge = (id, metric) => ({ id, kind: 'bar', metric,
+    position: { anchor: 'top-left', width: 1200, height: 1200 } });
+  await putStats(page, { enabled: true, panels: [
+    huge('5e090001', 'cache_type'), huge('5e090002', 'container'), huge('5e090003', 'difficulty'),
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const warnings = page.locator('#statsLayoutWarnings');
+  await expect(warnings).toBeVisible();
+  await warnings.getByRole('button', { name: 'Réorganiser automatiquement' }).click();
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'la place manque' })).toBeVisible();
+  // Les avertissements restent : le problème n'est pas réglé.
+  await expect(warnings).toBeVisible();
 });
 
 test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) => {

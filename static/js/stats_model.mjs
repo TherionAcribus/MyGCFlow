@@ -1542,6 +1542,82 @@ export function rectsOverlap(a, b) {
         && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
+function overlapArea(a, b) {
+    if (!a || !b) return 0;
+    const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+    const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+    return w > 0 && h > 0 ? w * h : 0;
+}
+
+// Emplacements proposés par « Réorganiser », par ordre de préférence : les
+// quatre coins, les bords latéraux, puis les centres haut et bas. Jamais le
+// centre de la carte.
+const ARRANGE_ANCHORS = ['bottom-left', 'bottom-right', 'top-left', 'top-right',
+    'middle-left', 'middle-right', 'top-center', 'bottom-center'];
+const DEFAULT_CORNER_MARGIN = 16;
+
+// Gêne d'une mise en page : surface des chevauchements entre panneaux et
+// avec les obstacles (titre, infos), plus une pénalité par panneau ramené
+// dans le cadre — toujours pire qu'un chevauchement.
+function layoutConflict(items, container, obstacles) {
+    const layout = layoutPanels(items, container, obstacles);
+    const rects = items.map((item) => layout.get(item.id));
+    const overflowPenalty = Math.max(1, (container?.width || 0) * (container?.height || 0)) + 1;
+    let score = 0;
+    rects.forEach((rect, i) => {
+        if (rect.overflow) score += overflowPenalty;
+        for (const box of obstacles) score += overlapArea(rect, box);
+        for (let j = i + 1; j < rects.length; j++) score += overlapArea(rect, rects[j]);
+    });
+    return score;
+}
+
+// « Réorganiser » : place chaque panneau, dans l'ordre de la liste, là où il
+// gêne le moins les panneaux déjà placés. Un panneau qui ne gêne personne
+// reste où il est (ancré ou libre) : seuls les panneaux en conflit bougent.
+// Les autres essaient les ARRANGE_ANCHORS selon leur taille réelle — une
+// pile qui n'a plus la place de grandir n'est plus choisie. L'ordre de la
+// liste rend l'essai exact : un panneau ajouté en bout de pile ne déplace pas
+// ceux d'avant (seules les piles médianes se recentrent, et le score les
+// recalcule).
+//
+// items : comme layoutPanels, dans l'ordre de la liste. cornerMargins :
+// Map ancre → { dx, dy }, marges actuelles des piles (communes à chaque coin,
+// shareCornerMargins) — un panneau qui rejoint un coin les prend, un coin vide
+// reçoit 16/16.
+// Renvoie { placements: Map id → { mode, anchor, dx, dy }, conflict } ;
+// `conflict` > 0 : chevauchements ou débordements qu'aucun emplacement n'a pu
+// éviter.
+export function arrangePanels(items, container, obstacles = [], cornerMargins = new Map()) {
+    const marginsOf = (anchor) => cornerMargins.get(anchor)
+        || { dx: DEFAULT_CORNER_MARGIN, dy: DEFAULT_CORNER_MARGIN };
+    const placed = [];
+    for (const item of items) {
+        const stay = item.mode === 'free' ? item : { ...item, ...marginsOf(item.anchor) };
+        const candidates = [stay];
+        for (const anchor of ARRANGE_ANCHORS) {
+            if (item.mode !== 'free' && anchor === item.anchor) continue;
+            candidates.push({ ...item, mode: 'anchor', anchor, ...marginsOf(anchor) });
+        }
+        let best = null;
+        let bestScore = Infinity;
+        for (const candidate of candidates) {
+            // À score égal, le premier candidat gagne : rester, puis l'ordre
+            // de préférence.
+            const score = layoutConflict([...placed, candidate], container, obstacles);
+            if (score < bestScore) {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+        placed.push(best);
+    }
+    const placements = new Map(placed.map((p) => [p.id, p.mode === 'free'
+        ? { mode: 'free' }
+        : { mode: 'anchor', anchor: p.anchor, dx: p.dx, dy: p.dy }]));
+    return { placements, conflict: placed.length ? layoutConflict(placed, container, obstacles) : 0 };
+}
+
 // ---------------------------------------------------------------------------
 // Index de jours
 // ---------------------------------------------------------------------------

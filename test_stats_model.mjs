@@ -25,6 +25,7 @@ import {
     ymdOfDay,
     UNKNOWN_KEY,
     OTHERS_KEY,
+    arrangePanels,
     barModel,
     countFeatures,
     createStatsAccumulator,
@@ -1016,6 +1017,59 @@ test('évitement : la pile d’un coin démarre sous le titre ou au-dessus d’u
     const low = { x: 700, y: 560, width: 290, height: 30 };
     const bottom = layoutPanels([item('c', 'bottom-right')], box, [low]);
     assert.equal(bottom.get('c').y + 100, 560 - 8);
+});
+
+test('réorganiser : un panneau qui ne gêne personne reste où il est', () => {
+    const { placements, conflict } = arrangePanels([
+        { id: 'f', mode: 'free', x: 0.5, y: 0.5, width: 200, height: 100 },
+        item('a', 'top-left'),
+        item('b', 'bottom-right'),
+    ], box, [], new Map([['top-left', { dx: 16, dy: 16 }], ['bottom-right', { dx: 16, dy: 16 }]]));
+    assert.deepEqual(placements.get('f'), { mode: 'free' });
+    assert.deepEqual(placements.get('a'), { mode: 'anchor', anchor: 'top-left', dx: 16, dy: 16 });
+    assert.deepEqual(placements.get('b'), { mode: 'anchor', anchor: 'bottom-right', dx: 16, dy: 16 });
+    assert.equal(conflict, 0);
+});
+
+test('réorganiser : seul le panneau en conflit bouge, vers le premier emplacement libre', () => {
+    // Deux panneaux libres superposés : le premier reste, le second part
+    // au premier coin préféré (bas-gauche), avec les marges par défaut.
+    const free = (id) => ({ id, mode: 'free', x: 0.1, y: 0.1, width: 200, height: 100 });
+    const { placements, conflict } = arrangePanels([free('f1'), free('f2')], box);
+    assert.deepEqual(placements.get('f1'), { mode: 'free' });
+    assert.deepEqual(placements.get('f2'), { mode: 'anchor', anchor: 'bottom-left', dx: 16, dy: 16 });
+    assert.equal(conflict, 0);
+});
+
+test('réorganiser : la taille compte — une pile pleine n’est plus choisie', () => {
+    // Pile haut-gauche : 16 + 250 + 8 + 250 = 524 px sur 600. Un troisième
+    // panneau de 250 px déborderait ; bas-gauche chevaucherait la pile (même
+    // colonne) : il part en bas à droite, et prend les marges de cette pile.
+    const tall = (id, anchor, extra = {}) => item(id, anchor, { height: 250, ...extra });
+    const margins = new Map([['top-left', { dx: 16, dy: 16 }], ['bottom-right', { dx: 30, dy: 24 }]]);
+    const { placements, conflict } = arrangePanels([
+        tall('a', 'top-left'), tall('b', 'top-left'), tall('c', 'top-left'),
+    ], box, [], margins);
+    assert.equal(placements.get('a').anchor, 'top-left');
+    assert.equal(placements.get('b').anchor, 'top-left');
+    assert.deepEqual(placements.get('c'), { mode: 'anchor', anchor: 'bottom-right', dx: 30, dy: 24 });
+    assert.equal(conflict, 0);
+});
+
+test('réorganiser : un panneau libre sur le titre en est écarté', () => {
+    const title = { x: 400, y: 10, width: 200, height: 50 };
+    const { placements } = arrangePanels([
+        { id: 'f', mode: 'free', x: 0.5, y: 0, width: 200, height: 100 },
+    ], box, [title]);
+    assert.equal(placements.get('f').mode, 'anchor');
+    assert.equal(placements.get('f').anchor, 'bottom-left');
+});
+
+test('réorganiser : sans place pour tous, le conflit restant est signalé', () => {
+    const huge = (id) => item(id, 'top-left', { width: 900, height: 500 });
+    const { placements, conflict } = arrangePanels([huge('a'), huge('b'), huge('c')], box);
+    assert.equal(placements.size, 3);
+    assert.ok(conflict > 0);
 });
 
 

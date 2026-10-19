@@ -1342,28 +1342,29 @@ function deleteConfig(name) {
         } });
 }
 
-// « Réorganiser » de l'alerte de mise en page : chaque panneau repart sur un
-// coin distinct, dans l'ordre de la liste — une pile par ancre ne peut plus
-// chevaucher ni les autres panneaux ni les cartouches. `middle-center` est
-// volontairement exclu (un panneau au milieu de la carte, non).
-const REORG_ANCHORS = ['bottom-left', 'bottom-right', 'top-left', 'top-right', 'middle-left', 'middle-right'];
-
+// « Réorganiser » de l'alerte de mise en page : seuls les panneaux en conflit
+// bougent, vers l'emplacement qui gêne le moins compte tenu de leur taille,
+// du titre et des infos (arrangePanels, stats_model.mjs). Les panneaux
+// masqués ne sont pas touchés. Si la place manque pour tout le monde, le
+// toast le dit au lieu de prétendre avoir réglé le problème.
 function reorganizePanels() {
+    const arrangement = pkg.arrangeStatsPanels?.();
+    if (!arrangement) return;
     const previous = structuredClone(modePanels(currentSettings()));
     updatePanels((panels) => {
-        panels.forEach((panel, i) => {
-            panel.position = {
-                ...panel.position,
-                mode: 'anchor', anchor: REORG_ANCHORS[i % REORG_ANCHORS.length],
-                dx: 16, dy: 16,
-            };
-        });
+        for (const panel of panels) {
+            const placement = arrangement.placements.get(panel.id);
+            if (placement) panel.position = { ...panel.position, ...placement };
+        }
         return panels;
     }, STATS_SAVE_STATUS, { immediate: true });
     renderStatsTab();
     // Réversible, comme une suppression : la liste d'avant revient entière.
+    const message = arrangement.conflict > 0
+        ? pkg.t('Panneaux réorganisés, mais la place manque : réduisez-en la taille ou masquez-en un.')
+        : pkg.t('Panneaux réorganisés');
     pkg.showActionToast?.(
-        pkg.t('Panneaux réorganisés'),
+        message,
         { label: 'Annuler', onClick: () => {
             commit({ ...currentSettings(), [panelsKey()]: previous },
                 STATS_SAVE_STATUS, { immediate: true });

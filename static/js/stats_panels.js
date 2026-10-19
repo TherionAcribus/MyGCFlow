@@ -29,6 +29,7 @@ import {
     STATS_METRICS_BY_KIND,
     STATS_WIDTH_RANGE,
     UNKNOWN_KEY,
+    arrangePanels,
     barModel,
     counterValues,
     countFeatures,
@@ -1279,6 +1280,26 @@ export function getStatsSnapTargets(id) {
         targets.push({ anchor, x: rect.x, y: rect.y, width: rect.width, height: rect.height });
     }
     return targets;
+}
+
+// « Réorganiser » (stats_ui.js) : emplacements choisis par arrangePanels
+// pour les panneaux affichés, à leur taille mesurée, dans le cadre courant,
+// titre et infos compris. Les marges de coin viennent de la liste entière,
+// panneaux masqués compris — la normalisation les prend aussi en compte
+// (shareCornerMargins). null si rien n'est affiché.
+export function arrangeStatsPanels() {
+    if (layoutDirty || drawDirty) flush();
+    const panels = visiblePanels();
+    if (!panels.length) return null;
+    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const cornerMargins = new Map();
+    for (const { position } of list) {
+        if (position.mode === 'anchor' && !cornerMargins.has(position.anchor)) {
+            cornerMargins.set(position.anchor, { dx: position.dx, dy: position.dy });
+        }
+    }
+    const items = panels.map((panel) => layoutItem(panel, buildView(panel)));
+    return arrangePanels(items, containerSize, overlayRectsCache, cornerMargins);
 }
 
 function flush() {

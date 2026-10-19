@@ -382,6 +382,21 @@ ramené dans le cadre (pile trop haute, largeur supérieure à la carte), pannea
 qui chevauche le titre ou les infos (panneau libre), deux panneaux de piles
 différentes qui se recouvrent.
 
+**« Réorganiser »** (bouton de l'alerte) : `arrangePanels` (stats_model.mjs,
+pur), alimenté par `arrangeStatsPanels` (stats_panels.js : tailles mesurées,
+cadre, titre et infos, marges de coin lues sur la liste entière). Les panneaux
+affichés sont parcourus dans l'ordre de la liste ; chacun garde sa place
+(ancrée ou libre) s'il ne gêne aucun panneau déjà placé, sinon il prend le
+premier emplacement qui minimise la gêne — surface des chevauchements avec les
+panneaux et les obstacles, plus une pénalité par débordement, toujours pire
+qu'un chevauchement. Ordre de préférence : les quatre coins, les bords
+latéraux, puis les centres haut et bas ; jamais le centre de la carte. L'ordre
+de la liste rend l'essai exact (un panneau ajouté en bout de pile ne déplace
+pas les précédents). Un panneau qui rejoint un coin prend les marges de sa
+pile, un coin vide reçoit 16/16. Les panneaux masqués ne bougent pas. Si un
+conflit subsiste (`conflict > 0`), le toast dit que la place manque au lieu
+d'annoncer un succès ; « Annuler » restaure la liste d'avant.
+
 ## Tests
 
 - `node --test test_stats_model.mjs test_stats_render.mjs` — vecteurs
