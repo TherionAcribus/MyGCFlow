@@ -19,9 +19,11 @@ function fakeContext() {
         rect: record('rect'), ellipse: record('ellipse'),
         moveTo: record('moveTo'), arcTo: record('arcTo'),
         clip: record('clip'), fillRect: record('fillRect'),
-        drawImage: record('drawImage'),
+        drawImage: record('drawImage'), stroke: record('stroke'),
         set globalAlpha(v) { calls.push(['globalAlpha', v]); },
         set fillStyle(v) { calls.push(['fillStyle', v]); },
+        set strokeStyle(v) { calls.push(['strokeStyle', v]); },
+        set lineWidth(v) { calls.push(['lineWidth', v]); },
         set imageSmoothingEnabled(_) {}, set imageSmoothingQuality(_) {},
     };
 }
@@ -69,4 +71,25 @@ test('dessin : sans fond transparent ni image, seule la forme est tracée', () =
     assert.ok(names.includes('rect'));
     assert.ok(!names.includes('fillRect'));
     assert.ok(!names.includes('drawImage'));
+    assert.ok(!names.includes('stroke'));
+});
+
+test('bordure : liseré intérieur, trait doublé rogné par le clip de la forme', () => {
+    const source = { naturalWidth: 100, naturalHeight: 100 };
+    const ctx = fakeContext();
+    drawImagePanel(ctx, 200, 200, item({ style: {
+        shape: 'circle', fit: 'cover', padding: 10, border_color: '#ff0088', border_width: 6,
+    } }), source, 2);
+    // Trait doublé : 6 px CSS × 2 × échelle 2 = 24 px réels.
+    assert.deepEqual(ctx.calls.find((c) => c[0] === 'strokeStyle'), ['strokeStyle', '#ff0088']);
+    assert.deepEqual(ctx.calls.find((c) => c[0] === 'lineWidth'), ['lineWidth', 24]);
+    const names = ctx.calls.map((c) => c[0]);
+    assert.equal(names.filter((n) => n === 'stroke').length, 1);
+    // Le clip « cover » de la zone intérieure est isolé (save/restore) : le
+    // stroke reste sous le seul clip de la forme.
+    assert.equal(names.filter((n) => n === 'save').length, names.filter((n) => n === 'restore').length);
+    // Sans épaisseur : aucun stroke.
+    const plain = fakeContext();
+    drawImagePanel(plain, 100, 100, item(), null);
+    assert.ok(!plain.calls.some((c) => c[0] === 'stroke'));
 });

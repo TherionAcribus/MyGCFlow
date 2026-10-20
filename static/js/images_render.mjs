@@ -2,8 +2,9 @@
 // utilisé tel quel par l'aperçu (un <canvas> par image) et par la vidéo
 // (addImagePanelsToCanvas), comme stats_render.mjs pour les panneaux.
 //
-// Le dessin couvre la forme, le fond, la marge intérieure, l'ajustement et
-// l'opacité. L'ombre portée n'en fait pas partie : elle déborde de la boîte,
+// Le dessin couvre la forme, le fond, la marge intérieure, l'ajustement,
+// l'opacité et la bordure. L'ombre portée n'en fait pas partie : elle
+// déborde de la boîte,
 // donc du canvas de l'aperçu — CSS `filter: drop-shadow(...)` dans l'aperçu,
 // cuite dans un second canvas élargi du cache vidéo (posée sur le canvas qui
 // reçoit le panneau dessiné, pour l'ombre du composite comme `drop-shadow` ;
@@ -86,15 +87,31 @@ export function drawImagePanel(ctx, width, height, item, source, scale = 1) {
         };
         const pad = Math.min(style.padding * scale, width / 2, height / 2);
         const target = fitRect(style.fit, natural, pad, pad, width - 2 * pad, height - 2 * pad);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         if (style.fit === 'cover' && pad > 0) {
-            // Rogné à la zone intérieure : la marge reste visible.
+            // Rogné à la zone intérieure : la marge reste visible. Ce clip
+            // est isolé dans un save/restore : il ne doit pas rester actif
+            // au moment de la bordure, qui serait rognée à la zone
+            // intérieure — le clip de la forme suffit à la contenir.
+            ctx.save();
             ctx.beginPath();
             ctx.rect(pad, pad, width - 2 * pad, height - 2 * pad);
             ctx.clip();
+            ctx.drawImage(source, target.x, target.y, target.width, target.height);
+            ctx.restore();
+        } else {
+            ctx.drawImage(source, target.x, target.y, target.width, target.height);
         }
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(source, target.x, target.y, target.width, target.height);
+    }
+    // Bordure en dernier, à l'intérieur de la boîte : le trait est doublé et
+    // sa moitié externe est rognée par le clip de la forme (toujours actif
+    // depuis le début) — un liseré exact de border_width px, rien ne déborde.
+    if (style.border_width > 0) {
+        shapePath(ctx, style.shape, 0, 0, width, height, style.radius * scale);
+        ctx.strokeStyle = style.border_color;
+        ctx.lineWidth = style.border_width * 2 * scale;
+        ctx.stroke();
     }
     ctx.restore();
 }

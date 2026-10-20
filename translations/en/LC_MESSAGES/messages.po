@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 21:08+0200\n"
+"POT-Creation-Date: 2026-10-20 07:22+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -7925,7 +7925,15 @@ msgstr "Background opacity"
 msgid "Marge intérieure (px)"
 msgstr "Inner padding (px)"
 
-#: templates/menu_images.html:183
+#: templates/menu_images.html:181 templates/menu_informations.html:178
+msgid "Bordure (px)"
+msgstr "Border (px)"
+
+#: templates/menu_images.html:185 templates/menu_points.html:133
+msgid "Couleur de la bordure"
+msgstr "Border color"
+
+#: templates/menu_images.html:191
 msgid "Ombre portée"
 msgstr "Drop shadow"
 
@@ -8057,10 +8065,6 @@ msgstr "Right"
 #: templates/menu_informations.html:174
 msgid "Arrondi (px)"
 msgstr "Corner radius (px)"
-
-#: templates/menu_informations.html:178
-msgid "Bordure (px)"
-msgstr "Border (px)"
 
 #: templates/menu_informations.html:184
 msgid "Style de bordure"
@@ -8367,10 +8371,6 @@ msgstr "Border thickness"
 #: templates/menu_points.html:126
 msgid "Épaisseur en pixels"
 msgstr "Thickness in pixels"
-
-#: templates/menu_points.html:133
-msgid "Couleur de la bordure"
-msgstr "Border color"
 
 #: templates/menu_points.html:150
 msgid "Choisir la couleur de la bordure"

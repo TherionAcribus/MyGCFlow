@@ -627,6 +627,11 @@ function renderForm() {
     setValue('rangeImageBackgroundOpacity', s.background_opacity);
     setValue('inputImagePadding', s.padding);
     setValue('switchImageShadow', s.shadow);
+    setValue('inputImageBorderWidth', s.border_width);
+    setValue('inputImageBorderColor', s.border_color);
+    // Couleur sans objet sans bordure, comme le rayon hors « arrondi ».
+    const borderColor = $('inputImageBorderColor');
+    if (borderColor) borderColor.disabled = s.border_width === 0;
     const opacity = $('valueImageOpacity');
     if (opacity) opacity.textContent = `${s.opacity} %`;
     const bgOpacity = $('valueImageBackgroundOpacity');
@@ -648,6 +653,8 @@ const FIELDS = [
     ['rangeImageBackgroundOpacity', 'style.background_opacity', 'number'],
     ['inputImagePadding', 'style.padding', 'number'],
     ['switchImageShadow', 'style.shadow', 'bool'],
+    ['inputImageBorderWidth', 'style.border_width', 'number'],
+    ['inputImageBorderColor', 'style.border_color', 'text'],
 ];
 const MARGIN_PATHS = ['position.dx', 'position.dy'];
 
@@ -860,6 +867,17 @@ export function initImagesTab() {
     bindFormFields();
     bindFileDrop();
     bindDragAndDrop();
+    // Coller une image copiée l'ajoute, comme un dépôt : onglet ouvert,
+    // place libre et aucun envoi en cours — addFromFiles gère la série,
+    // la limite de quatre et les toasts.
+    document.addEventListener('paste', (event) => {
+        if (!$('images')?.classList.contains('active')) return;
+        if (uploading || currentSettings().items.length >= IMAGES_MAX_ITEMS) return;
+        const files = event.clipboardData?.files;
+        if (!files?.length) return;
+        event.preventDefault();
+        addFromFiles(files);
+    });
     // Saisie à la souris : onglet ouvert/fermé, lecture lancée/arrêtée.
     document.addEventListener('shown.bs.tab', syncDragMode);
     document.addEventListener('hidden.bs.tab', syncDragMode);

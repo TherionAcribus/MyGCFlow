@@ -42,6 +42,7 @@ IMAGE_SIZE_RANGE = (40, 1200)
 IMAGE_RADIUS_RANGE = (0, 200)
 IMAGE_OPACITY_RANGE = (0, 100)
 IMAGE_PADDING_RANGE = (0, 100)
+IMAGE_BORDER_RANGE = (0, 50)
 
 
 @dataclass
@@ -73,6 +74,8 @@ def image_item_defaults() -> dict:
             "background_opacity": 0,
             "padding": 0,
             "shadow": False,
+            "border_color": "#ffffff",
+            "border_width": 0,
         },
     }
 
@@ -98,6 +101,8 @@ _STYLE_COERCERS = {
     "background_opacity": lambda v, d: _int_in(v, d, IMAGE_OPACITY_RANGE),
     "padding": lambda v, d: _int_in(v, d, IMAGE_PADDING_RANGE),
     "shadow": lambda v, d: _bool(v, d),
+    "border_color": _color,
+    "border_width": lambda v, d: _int_in(v, d, IMAGE_BORDER_RANGE),
 }
 
 

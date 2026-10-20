@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 21:08+0200\n"
+"POT-Creation-Date: 2026-10-20 07:22+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -7489,7 +7489,15 @@ msgstr ""
 msgid "Marge intérieure (px)"
 msgstr ""
 
-#: templates/menu_images.html:183
+#: templates/menu_images.html:181 templates/menu_informations.html:178
+msgid "Bordure (px)"
+msgstr ""
+
+#: templates/menu_images.html:185 templates/menu_points.html:133
+msgid "Couleur de la bordure"
+msgstr ""
+
+#: templates/menu_images.html:191
 msgid "Ombre portée"
 msgstr ""
 
@@ -7612,10 +7620,6 @@ msgstr ""
 
 #: templates/menu_informations.html:174
 msgid "Arrondi (px)"
-msgstr ""
-
-#: templates/menu_informations.html:178
-msgid "Bordure (px)"
 msgstr ""
 
 #: templates/menu_informations.html:184
@@ -7910,10 +7914,6 @@ msgstr ""
 
 #: templates/menu_points.html:126
 msgid "Épaisseur en pixels"
-msgstr ""
-
-#: templates/menu_points.html:133
-msgid "Couleur de la bordure"
 msgstr ""
 
 #: templates/menu_points.html:150

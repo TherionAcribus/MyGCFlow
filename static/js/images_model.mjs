@@ -27,6 +27,7 @@ export const IMAGE_SIZE_RANGE = Object.freeze([40, 1200]);
 export const IMAGE_RADIUS_RANGE = Object.freeze([0, 200]);
 export const IMAGE_OPACITY_RANGE = Object.freeze([0, 100]);
 export const IMAGE_PADDING_RANGE = Object.freeze([0, 100]);
+export const IMAGE_BORDER_RANGE = Object.freeze([0, 50]);
 
 export const IMAGES_DEFAULTS = Object.freeze({ enabled: true, items: Object.freeze([]) });
 
@@ -57,6 +58,8 @@ export function imageItemDefaults() {
             background_opacity: 0,
             padding: 0,
             shadow: false,
+            border_color: '#ffffff',
+            border_width: 0,
         },
     };
 }
@@ -82,6 +85,8 @@ const STYLE_COERCERS = {
     background_opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),
     padding: (v, d) => intIn(v, d, IMAGE_PADDING_RANGE),
     shadow: bool,
+    border_color: color,
+    border_width: (v, d) => intIn(v, d, IMAGE_BORDER_RANGE),
 };
 
 const isObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);

@@ -80,7 +80,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -134,7 +136,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -160,7 +164,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -186,7 +192,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -229,7 +237,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -285,7 +295,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 100,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -354,7 +366,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -380,7 +394,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -406,7 +422,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -432,7 +450,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -484,7 +504,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -539,7 +561,9 @@
             "background": "#aabbcc",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": true
+            "shadow": true,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -605,7 +629,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -631,7 +657,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -657,7 +685,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -703,7 +733,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         }
       ]
@@ -761,7 +793,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -787,7 +821,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -813,7 +849,9 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
           }
         },
         {
@@ -839,7 +877,129 @@
             "background": "#ffffff",
             "background_opacity": 0,
             "padding": 0,
-            "shadow": false
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "bordure : couleur reprise, épaisseur bornée",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "border_color": "#ff0088",
+            "border_width": 6
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "border_color": "violet",
+            "border_width": 999
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "border_color": "#f8a",
+            "border_width": -3
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ff0088",
+            "border_width": 6
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 50
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ff88aa",
+            "border_width": 0
           }
         }
       ]

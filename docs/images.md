@@ -70,7 +70,8 @@ images: {
     id, enabled, file, name,
     position: { mode: 'anchor'|'free', anchor, dx, dy, width, height, x, y },
     style: { shape: 'rect'|'rounded'|'circle', radius, fit: 'contain'|'cover',
-             opacity, background, background_opacity, padding, shadow }
+             opacity, background, background_opacity, padding, shadow,
+             border_color, border_width }
   }]
 }
 ```
@@ -104,6 +105,11 @@ liste.
   dans un second canvas élargi dont le contexte porte les `shadow*` (ombre du
   composite, pas de chaque opération), puis copié par un `drawImage` nu à
   chaque frame, mêmes valeurs (`IMAGE_SHADOW`, même échelle de flou).
+- La bordure (`border_color`, `border_width`) est un liseré à l'intérieur de
+  la boîte, dessiné en dernier dans `drawImagePanel` : le trait, doublé, est
+  rogné à moitié par le clip de la forme (le clip « cover » de la zone
+  intérieure est isolé dans un `save`/`restore` pour ne pas écorner le
+  liseré).
 - Fichier absent ou illisible : ni dessiné ni placé (état `failed`), signalé
   « (manquante) » dans la liste (événement `mygcflow:image-source`). Un
   chargement raté est d'abord **réessayé** deux fois (0,5 s puis 2 s, avec un
@@ -126,8 +132,8 @@ carte immobile.
 ## Onglet Images (images_ui.js)
 
 Liste (vignette sur damier, nom ou « Image n », interrupteur, flèches,
-suppression avec « Annuler »), ajout par fichiers (multi-sélection) ou dépôt de
-fichiers sur l'onglet, ou par la **bibliothèque** (images déjà envoyées, retrait des non utilisées, place
+suppression avec « Annuler »), ajout par fichiers (multi-sélection), dépôt de
+fichiers sur l'onglet ou collage depuis le presse-papiers, ou par la **bibliothèque** (images déjà envoyées, retrait des non utilisées, place
 occupée), « Remplacer l'image… » qui garde les réglages, formulaire de
 position et d'apparence. Sauvegarde débouncée de la préférence complète, vidée
 aussitôt pour les actions discrètes.

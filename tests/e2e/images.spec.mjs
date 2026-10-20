@@ -237,6 +237,35 @@ test('onglet : ajout d’un fichier, réglages, suppression annulable', async ({
   await expect.poll(async () => (await savedImages(page)).items.length).toBe(1);
 });
 
+test('onglet : coller une image depuis le presse-papiers l’ajoute', async ({ page }) => {
+  const png = fs.readFileSync(AVATAR);
+  const pasteImage = () => page.evaluate((b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const file = new File([bytes], 'colle.png', { type: 'image/png' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, png.toString('base64'));
+
+  await openImagesTab(page);
+  // Onglet fermé : un collage n'ajoute rien.
+  await page.locator('a[href="#data"]').click();
+  await expect(page.locator('#images')).not.toHaveClass(/active/);
+  await pasteImage();
+  await page.waitForTimeout(500);
+  expect((await savedImages(page)).items).toHaveLength(0);
+  await expect(page.locator('#imagesList li')).toHaveCount(0);
+
+  // Onglet Images ouvert : l'image collée est envoyée puis ajoutée.
+  await page.locator('a[href="#images"]').click();
+  await pasteImage();
+  const rows = page.locator('#imagesList li');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('colle');
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  await expect.poll(async () => (await savedImages(page)).items.length).toBe(1);
+});
+
 test('onglet : bibliothèque des images envoyées et limite de quatre', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const avatar = await upload(page, AVATAR);
