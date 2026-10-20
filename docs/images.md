@@ -13,8 +13,9 @@ stats : `docs/panneaux-stats.md` › Mise en page.
 - **Priorité de placement : Titre/Infos > Images > Stats.** Les images
   contournent les cartouches ; les piles de stats contournent les cartouches
   et les images.
-- **4 images** au plus ; **PNG, JPEG, WebP, GIF** (première image) ;
-  **8 emplacements** (tous sauf le centre de la carte).
+- **4 images** au plus ; **PNG, JPEG, WebP, GIF** (première image), **SVG**
+  rastérisé dans le navigateur avant envoi ; **8 emplacements** (tous sauf
+  le centre de la carte).
 
 ## Modules
 
@@ -38,6 +39,13 @@ décompression), `ImageOps.exif_transpose`, première image d'un GIF, réduction
 **1024 px** sur le grand côté, puis **PNG** si une transparence est réellement
 utilisée (un PNG RGBA entièrement opaque devient JPEG), **JPEG** qualité 90
 sinon. Le réencodage retire au passage toutes les métadonnées (EXIF, position).
+
+Un **SVG** est rastérisé dans le navigateur avant envoi (`rasterizeSvg` de
+`images_ui.js`, point unique par lequel passent l'ajout, le remplacement, le
+collage et l'import JSON) : dessiné via `<img>` — ni script ni ressource
+externe n'est chargé — à **1024 px** sur le grand côté (taille intrinsèque,
+sinon `viewBox`, sinon carré), envoyé en PNG. Le serveur ne voit donc jamais
+de SVG et Pillow n'a pas à le supporter.
 
 Le nom est l'empreinte SHA-256 tronquée du contenu normalisé
 (`0123456789abcdef.png`) : la même image n'est stockée qu'une fois, et un nom

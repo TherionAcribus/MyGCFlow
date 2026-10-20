@@ -88,6 +88,49 @@ function isMissing(item) {
 // Envoi
 // ---------------------------------------------------------------------------
 
+// SVG : rastérisé ici, dans le navigateur — le meilleur moteur SVG qui soit,
+// et sans dépendance côté serveur. Le serveur ne reçoit qu'un PNG : toute la
+// chaîne (normalisation, empreinte, bibliothèque, vidéo) est inchangée.
+// Dessiné via <img>, le SVG n'exécute ni script ni ressource externe.
+const SVG_RASTER_SIDE = 1024; // côté le plus long, comme la normalisation serveur
+
+function isSvgFile(file) {
+    return file?.type === 'image/svg+xml' || /\.svg$/i.test(file?.name || '');
+}
+
+// Dimensions du rendu : taille intrinsèque, sinon viewBox, sinon carré.
+async function rasterizeSvg(file) {
+    const text = await file.text();
+    const url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
+    try {
+        const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error(pkg.t("L'image SVG n'a pas pu être lue.")));
+            image.src = url;
+        });
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (!(w > 0) || !(h > 0)) {
+            const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+            const box = (doc.documentElement?.getAttribute('viewBox') || '')
+                .trim().split(/[\s,]+/).map(Number);
+            if (box.length === 4 && box[2] > 0 && box[3] > 0) { w = box[2]; h = box[3]; }
+        }
+        if (!(w > 0) || !(h > 0)) { w = SVG_RASTER_SIDE; h = SVG_RASTER_SIDE; }
+        const scale = SVG_RASTER_SIDE / Math.max(w, h);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(w * scale));
+        canvas.height = Math.max(1, Math.round(h * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error(pkg.t("L'image SVG n'a pas pu être lue."));
+        return new File([blob], `${baseName(file.name)}.png`, { type: 'image/png' });
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
 function setUploading(on) {
     uploading = on;
     const hint = $('imagesUploading');
@@ -96,12 +139,15 @@ function setUploading(on) {
 }
 
 // Envoie un fichier au serveur, qui le normalise (image_library.py). Renvoie
-// { file, width, height } ou null (message d'erreur affiché).
+// { file, width, height } ou null (message d'erreur affiché). Un SVG est
+// d'abord rastérisé en PNG ici — même chose pour l'ajout, le remplacement,
+// le collage et l'import JSON, qui passent tous par cette fonction.
 async function uploadImage(file) {
-    const form = new FormData();
-    form.append('image', file, file.name);
     setUploading(true);
     try {
+        if (isSvgFile(file)) file = await rasterizeSvg(file);
+        const form = new FormData();
+        form.append('image', file, file.name);
         const response = await fetch('/api/images', { method: 'POST', body: form });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.success) {

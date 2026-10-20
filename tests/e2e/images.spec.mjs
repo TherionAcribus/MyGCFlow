@@ -5,7 +5,8 @@
 // specs d'un run : chaque test les remet à vide en sortant.
 //
 // Fixtures : logo-opaque.png (240 × 120, opaque → stocké en JPEG),
-// avatar-transparent.png (200 × 200, disque sur fond transparent → PNG).
+// avatar-transparent.png (200 × 200, disque sur fond transparent → PNG),
+// blason.svg (viewBox 200 × 100, rastérisé en PNG dans le navigateur).
 import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,6 +17,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 const LOGO = path.join(HERE, 'fixtures', 'logo-opaque.png');
 const AVATAR = path.join(HERE, 'fixtures', 'avatar-transparent.png');
+const BLASON = path.join(HERE, 'fixtures', 'blason.svg');
 
 async function putSettings(page, data) {
   const response = await page.request.put('/api/settings', { data });
@@ -235,6 +237,23 @@ test('onglet : ajout d’un fichier, réglages, suppression annulable', async ({
   await toast.locator('.gcm-toast-action').filter({ hasText: 'Annuler' }).click();
   await expect(rows).toHaveCount(1);
   await expect.poll(async () => (await savedImages(page)).items.length).toBe(1);
+});
+
+test('onglet : un SVG est rastérisé en PNG à l’envoi', async ({ page }) => {
+  await openImagesTab(page);
+  await page.locator('#imagesFileInput').setInputFiles(BLASON);
+  const rows = page.locator('#imagesList li');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('blason');
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  // Le serveur n'a vu qu'un PNG normalisé : le fichier posé est une empreinte
+  // .png, le nom d'origine gardé, les proportions du viewBox (2:1) respectées.
+  await expect.poll(async () => (await savedImages(page)).items[0]?.file).toMatch(/^[0-9a-f]+\.png$/);
+  await expect.poll(async () => (await savedImages(page)).items[0]?.name).toBe('blason');
+  await expect.poll(async () => {
+    const b = await boxIn(page, 'canvas.image-panel');
+    return Math.round(b.width / b.height);
+  }).toBe(2);
 });
 
 test('onglet : coller une image depuis le presse-papiers l’ajoute', async ({ page }) => {
@@ -494,14 +513,15 @@ test('planification : image absente avant sa date, visible après', async ({ pag
   await expect(canvas).toBeVisible();
   await expect(canvas).not.toHaveCSS('opacity', '0');
 
-  // Aperçu ouvert puis mis en pause : planifiée à partir du 03/01, l'image
-  // est masquée dès le départ (état instantané à la veille du premier jour).
+  // Aperçu en pause direct : départ + pause sont synchrones, aucune frame ne
+  // joue entre les deux (à 12 j/s le 03/01 serait dépassé avant le clic) —
+  // planifiée à partir du 03/01, l'image est masquée dès le départ (état
+  // instantané à la veille du premier jour).
   const playback = () => page.evaluate(async () =>
     (await import('/static/js/index.js')).previewPlaybackState());
-  await page.locator('#btnQuickPreview').click();
-  await expect.poll(playback).toBe('playing');
-  await page.locator('#btnQuickPause').click();
-  await expect.poll(playback).toBe('paused');
+  const paused = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).startPausedPreview());
+  expect(paused).toBe(true);
   await expect(canvas).toHaveCSS('opacity', '0');
 
   // Saut au 02/01 (avant l'apparition) : toujours masquée.
