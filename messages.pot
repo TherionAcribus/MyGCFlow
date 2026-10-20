@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 20:04+0200\n"
+"POT-Creation-Date: 2026-10-19 21:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1618,14 +1618,19 @@ msgstr ""
 msgid "Descendre"
 msgstr ""
 
-#: static/js/images_ui.js:481 static/js/profiles.js:967
+#: static/js/images_ui.js:481 static/js/profiles.js:958
+#: static/js/profiles.js:2748 static/js/stats_ui.js:253
+msgid "Dupliquer"
+msgstr ""
+
+#: static/js/images_ui.js:482 static/js/profiles.js:967
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
-#: static/js/stats_ui.js:254 static/js/stats_ui.js:1063
+#: static/js/stats_ui.js:254 static/js/stats_ui.js:1077
 #: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/images_ui.js:532 static/js/stats_ui.js:1135
+#: static/js/images_ui.js:543 static/js/stats_ui.js:1149
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr ""
@@ -2803,11 +2808,6 @@ msgstr ""
 msgid "Aucun thème"
 msgstr ""
 
-#: static/js/profiles.js:958 static/js/profiles.js:2748
-#: static/js/stats_ui.js:253
-msgid "Dupliquer"
-msgstr ""
-
 #: static/js/profiles.js:961
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
@@ -3503,7 +3503,7 @@ msgstr ""
 msgid "Afficher ce panneau"
 msgstr ""
 
-#: static/js/stats_ui.js:244 static/js/stats_ui.js:1060
+#: static/js/stats_ui.js:244 static/js/stats_ui.js:1074
 msgid "Pas affiché dans ce mode"
 msgstr ""
 
@@ -3529,65 +3529,65 @@ msgstr ""
 msgid "« ${name} » supprimé"
 msgstr ""
 
-#: static/js/stats_ui.js:996 static/js/stats_ui.js:1002
+#: static/js/stats_ui.js:1010 static/js/stats_ui.js:1016
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr ""
 
-#: static/js/stats_ui.js:1012
+#: static/js/stats_ui.js:1026
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr ""
 
-#: static/js/stats_ui.js:1102
+#: static/js/stats_ui.js:1116
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr ""
 
-#: static/js/stats_ui.js:1116
+#: static/js/stats_ui.js:1130
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr ""
 
-#: static/js/stats_ui.js:1164
+#: static/js/stats_ui.js:1178
 msgid ""
 "Panneaux réorganisés, mais la place manque : réduisez-en la taille ou "
 "masquez-en un."
 msgstr ""
 
-#: static/js/stats_ui.js:1165
+#: static/js/stats_ui.js:1179
 msgid "Panneaux réorganisés"
 msgstr ""
 
-#: static/js/stats_ui.js:1186
+#: static/js/stats_ui.js:1200
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr ""
 
-#: static/js/stats_ui.js:1188
+#: static/js/stats_ui.js:1202
 msgid "le titre"
 msgstr ""
 
-#: static/js/stats_ui.js:1189
+#: static/js/stats_ui.js:1203
 msgid "une image"
 msgstr ""
 
-#: static/js/stats_ui.js:1190
+#: static/js/stats_ui.js:1204
 msgid "les infos"
 msgstr ""
 
-#: static/js/stats_ui.js:1191
+#: static/js/stats_ui.js:1205
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr ""
 
-#: static/js/stats_ui.js:1194
+#: static/js/stats_ui.js:1208
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 msgstr ""
 
-#: static/js/stats_ui.js:1206
+#: static/js/stats_ui.js:1220
 msgid "Réorganiser automatiquement"
 msgstr ""
 
@@ -4536,7 +4536,7 @@ msgid "Guide"
 msgstr ""
 
 #: templates/app.html:80 templates/guide.html:214 templates/guide.html:421
-#: templates/menu_images.html:140 templates/menu_options.html:30
+#: templates/menu_images.html:143 templates/menu_options.html:30
 #: templates/menu_stats.html:366 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr ""
@@ -7435,57 +7435,61 @@ msgstr ""
 msgid "Position libre : choisir un emplacement l'y ramène."
 msgstr ""
 
-#: templates/menu_images.html:143 templates/menu_stats.html:143
+#: templates/menu_images.html:138
+msgid "Revenir à l'emplacement"
+msgstr ""
+
+#: templates/menu_images.html:146 templates/menu_stats.html:143
 msgid "Forme"
 msgstr ""
 
-#: templates/menu_images.html:145
+#: templates/menu_images.html:148
 msgid "Rectangle"
 msgstr ""
 
-#: templates/menu_images.html:146
+#: templates/menu_images.html:149
 msgid "Coins arrondis"
 msgstr ""
 
-#: templates/menu_images.html:147
+#: templates/menu_images.html:150
 msgid "Rond"
 msgstr ""
 
-#: templates/menu_images.html:151
+#: templates/menu_images.html:154
 msgid "Rayon des coins (px)"
 msgstr ""
 
-#: templates/menu_images.html:155
+#: templates/menu_images.html:158
 msgid "Ajustement"
 msgstr ""
 
-#: templates/menu_images.html:157
+#: templates/menu_images.html:160
 msgid "Image entière"
 msgstr ""
 
-#: templates/menu_images.html:158
+#: templates/menu_images.html:161
 msgid "Remplir la forme"
 msgstr ""
 
-#: templates/menu_images.html:162 templates/menu_informations.html:340
+#: templates/menu_images.html:165 templates/menu_informations.html:340
 #: templates/menu_trail.html:114
 msgid "Opacité"
 msgstr ""
 
-#: templates/menu_images.html:166 templates/menu_informations.html:164
+#: templates/menu_images.html:169 templates/menu_informations.html:164
 #: templates/menu_stats.html:369
 msgid "Fond"
 msgstr ""
 
-#: templates/menu_images.html:170 templates/menu_stats.html:381
+#: templates/menu_images.html:173 templates/menu_stats.html:381
 msgid "Opacité du fond"
 msgstr ""
 
-#: templates/menu_images.html:174 templates/menu_informations.html:168
+#: templates/menu_images.html:177 templates/menu_informations.html:168
 msgid "Marge intérieure (px)"
 msgstr ""
 
-#: templates/menu_images.html:180
+#: templates/menu_images.html:183
 msgid "Ombre portée"
 msgstr ""
 

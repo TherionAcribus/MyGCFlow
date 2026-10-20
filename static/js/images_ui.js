@@ -478,6 +478,7 @@ function renderList() {
         actions.append(
             iconButton('ti-arrow-up', pkg.t('Monter'), 'up', index === 0),
             iconButton('ti-arrow-down', pkg.t('Descendre'), 'down', index === items.length - 1),
+            iconButton('ti-copy', pkg.t('Dupliquer'), 'duplicate', items.length >= IMAGES_MAX_ITEMS),
             iconButton('ti-trash', pkg.t('Supprimer'), 'delete'),
         );
         li.append(toggle, thumb, name, actions);
@@ -513,6 +514,16 @@ function onListClick(event) {
             [items[index - 1], items[index]] = [items[index], items[index - 1]];
         } else if (action === 'down' && index < items.length - 1) {
             [items[index + 1], items[index]] = [items[index], items[index + 1]];
+        } else if (action === 'duplicate' && items.length < IMAGES_MAX_ITEMS) {
+            // Même image, mêmes réglages, nouvel id (createImageItem) :
+            // elle s'empile dans le même coin.
+            const copy = createImageItem(items[index].file, items[index].name, {
+                enabled: items[index].enabled,
+                position: { ...items[index].position },
+                style: { ...items[index].style },
+            });
+            items.splice(index + 1, 0, copy);
+            selectedId = copy.id;
         } else if (action === 'delete') {
             [removed] = items.splice(index, 1);
             removedIndex = index;
@@ -587,6 +598,9 @@ function renderForm() {
     });
     const freeHint = $('imageFreeHint');
     if (freeHint) freeHint.hidden = !free;
+    // Position libre : retour au coin conservé dans position.anchor.
+    const anchorBack = $('btnImageAnchorBack');
+    if (anchorBack) anchorBack.hidden = !free;
     setValue('inputImageName', item.name);
     setValue('inputImageDx', p.dx);
     setValue('inputImageDy', p.dy);
@@ -689,6 +703,16 @@ function bindFormFields() {
     // « Rétablir les proportions » : la hauteur redevient celle de l'image.
     $('btnImageHeightAuto')?.addEventListener('click', () => {
         updateSelected((item) => { item.position.height = null; }, $('btnImageHeightAuto'));
+        renderForm();
+    });
+
+    // « Revenir à l'emplacement » : la position libre redevient le coin
+    // conservé dans position.anchor, avec les marges de sa pile.
+    $('btnImageAnchorBack')?.addEventListener('click', () => {
+        updateSelected((item, items) => {
+            item.position.mode = 'anchor';
+            adoptCornerMargins(item, items);
+        }, $('btnImageAnchorBack'));
         renderForm();
     });
 
