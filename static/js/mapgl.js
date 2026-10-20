@@ -2170,6 +2170,8 @@ function showRestInfos() {
     resetCacheCount(Math.max(0, Number(pkg.metadata?.numberOfCaches) || 0));
     if (pkg.metadata?.endDate) pkg.updateCurrentDate(pkg.metadata.endDate);
     pkg.showStatsTotals?.();
+    // Au repos, le planing d'apparition des images est ignoré.
+    pkg.syncImagesToRest?.();
 }
 
 // Mode Évolution : pose les trois compteurs sans animation et réécrit la
@@ -2284,7 +2286,8 @@ function animationEndDate() {
 // Panneaux de stats : l'accumulateur repart des caches antérieures à la date
 // de début, comme la carte et le compteur. Appelé par les TROIS démarrages
 // (aperçu, capture image par image, MediaRecorder) : un oubli ferait partir
-// la vidéo des compteurs laissés par l'aperçu.
+// la vidéo des compteurs laissés par l'aperçu. Même garde pour le planing
+// d'apparition des images : état instantané au jour précédent le départ.
 function resetStatsPanelsForAnimation() {
     try {
         pkg.resetStatsForAnimation?.({
@@ -2293,6 +2296,8 @@ function resetStatsPanelsForAnimation() {
             highlightMs: animationMsPerDay(),
         });
     } catch (e) { console.warn('resetStatsForAnimation error:', e); }
+    try { pkg.resetImagesForAnimation?.(animationStartDate()); }
+    catch (e) { console.warn('resetImagesForAnimation error:', e); }
 }
 
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
@@ -2928,6 +2933,8 @@ export function seekAnimationToDate(date) {
         seekTravelTrail(dateToDayNumber(day), now);
     }
     pkg.seekStatsToDate?.(day);
+    // Planing des images : état instantané à la fin du jour sauté.
+    pkg.syncImagesToDate?.(day, null);
 
     currentDate = next;
     cameraPacingState.dayIndex = dateToDayNumber(next) - dateToDayNumber(range.start);
@@ -4170,7 +4177,7 @@ function startMrDrawLoop() {
             // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
             pkg.addStatsPanelsToCanvas?.(mrOutCtx, w, h, effScale);
             // Images de l'utilisateur : au-dessus des stats, sous les cartouches.
-            pkg.addImagePanelsToCanvas?.(mrOutCtx, w, h, effScale);
+            pkg.addImagePanelsToCanvas?.(mrOutCtx, w, h, effScale, sampleAppearClock());
             addOverlaysToCanvas(mrOutCtx, w, h, effScale);
             mapDirtyTracker.noteDraw(frameStart, signature);
         } catch(e) {
@@ -4198,7 +4205,9 @@ function overlayContentSignature() {
         // MediaRecorder n'attend pas imagesReady) apparaît dès que possible.
         const stats = pkg.getStatsRevision?.() ?? 0;
         const images = pkg.getImagesRevision?.() ?? 0;
-        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${images}\u0000${title}\u0000${infos}`;
+        // Un fondu d'image en cours dessine des frames même sur carte immobile.
+        const imagesAlpha = pkg.getImagesAlphaSignature?.() ?? '';
+        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${images}\u0000${imagesAlpha}\u0000${title}\u0000${infos}`;
     } catch(_) {
         // Contenu illisible : on ne prend pas le risque d'une frame périmée.
         mapDirtyTracker.markDirty();
@@ -4846,7 +4855,7 @@ async function captureElement() {
                     // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
                     pkg.addStatsPanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
                     // Images de l'utilisateur : au-dessus des stats, sous les cartouches.
-                    pkg.addImagePanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
+                    pkg.addImagePanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr, sampleAppearClock());
                     addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, dpr);
 
                     // Convertir en WebP Blob puis uploader SANS bloquer la capture suivante.
@@ -5010,6 +5019,8 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // Panneaux de stats : mêmes caches que le compteur (locationless masquées
     // comprises), relues dans l'index par stats_panels.js.
     pkg.accumulateStatsForDates?.(dates, sampleAppearClock());
+    // Images planifiées : fondus à la date du dernier jour du lot.
+    pkg.syncImagesToDate?.(dates[dates.length - 1], sampleAppearClock());
 
     // Mode piste : la caméra suit la piste précalculée (updateCameraFollow) —
     // aucune cible réactive à poser, sinon elle se superposerait à la piste.
@@ -5192,6 +5203,8 @@ function displayEvolutionDates(dates, flashOptions, record, infos) {
     // Panneaux Stats : poses et archivages alimentent l'accumulateur à trois
     // univers (actives / placées / archivées).
     pkg.accumulateEvolutionStats?.(dates, ev.placed, ev.archived, at);
+    // Images planifiées : fondus à la date du dernier jour du lot.
+    pkg.syncImagesToDate?.(dates[dates.length - 1], at);
 
     if (flashOptions.mode !== 'none' && ev.placed.length > 0) {
         pushFeatureFlashes(ev.placed, flashOptions, record, flashOptions.mode === 'impulse');

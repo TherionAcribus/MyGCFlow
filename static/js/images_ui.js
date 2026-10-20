@@ -472,6 +472,13 @@ function renderList() {
             badge.textContent = pkg.t('(manquante)');
             name.appendChild(badge);
         }
+        if (item.schedule?.start || item.schedule?.end) {
+            const badge = document.createElement('i');
+            badge.className = 'ti ti-calendar-time text-muted ms-1';
+            badge.title = pkg.t('Apparition planifiée');
+            badge.setAttribute('aria-hidden', 'true');
+            name.appendChild(badge);
+        }
 
         const actions = document.createElement('div');
         actions.className = 'btn-group btn-group-sm';
@@ -521,6 +528,7 @@ function onListClick(event) {
                 enabled: items[index].enabled,
                 position: { ...items[index].position },
                 style: { ...items[index].style },
+                schedule: { ...items[index].schedule },
             });
             items.splice(index + 1, 0, copy);
             selectedId = copy.id;
@@ -636,10 +644,15 @@ function renderForm() {
     if (opacity) opacity.textContent = `${s.opacity} %`;
     const bgOpacity = $('valueImageBackgroundOpacity');
     if (bgOpacity) bgOpacity.textContent = `${s.background_opacity} %`;
+
+    const schedule = item.schedule || {};
+    setValue('inputImageAppearDate', schedule.start ?? '');
+    setValue('inputImageDisappearDate', schedule.end ?? '');
+    setValue('inputImageFadeMs', schedule.fade ?? '');
 }
 
 // Champ du formulaire → chemin dans l'image. `number` : borné ensuite par la
-// normalisation.
+// normalisation ; `date` : '' → null (toujours visible sans la borne).
 const FIELDS = [
     ['inputImageName', 'name', 'text'],
     ['inputImageDx', 'position.dx', 'number'],
@@ -655,12 +668,16 @@ const FIELDS = [
     ['switchImageShadow', 'style.shadow', 'bool'],
     ['inputImageBorderWidth', 'style.border_width', 'number'],
     ['inputImageBorderColor', 'style.border_color', 'text'],
+    ['inputImageAppearDate', 'schedule.start', 'date'],
+    ['inputImageDisappearDate', 'schedule.end', 'date'],
+    ['inputImageFadeMs', 'schedule.fade', 'number'],
 ];
 const MARGIN_PATHS = ['position.dx', 'position.dy'];
 
 function readField(el, type) {
     if (type === 'bool') return el.checked;
     if (type === 'number') return el.value === '' ? undefined : Number(el.value);
+    if (type === 'date') return el.value === '' ? null : el.value;
     return el.value;
 }
 
@@ -681,15 +698,31 @@ function bindFormFields() {
         el.addEventListener(live, () => {
             const value = readField(el, type);
             if (value === undefined) return;
+            let endClamped = false;
             updateSelected((item, items) => {
                 writePath(item, path, value);
+                // « Disparaît le » avant « Apparaît le » : jamais visible —
+                // recalé à la date d'apparition (garde de saisie, pas une
+                // coercition du modèle).
+                if (type === 'date' && item.schedule.start && item.schedule.end
+                    && item.schedule.end < item.schedule.start) {
+                    item.schedule.end = item.schedule.start;
+                    endClamped = true;
+                }
                 // Marges de coin : communes à la pile.
                 if (MARGIN_PATHS.includes(path) && item.position.mode === 'anchor') {
                     for (const mate of cornerMates(items, item)) writePath(mate, path, value);
                 }
             }, el);
-            if (path === 'name') renderList();
-            if (el.tagName === 'SELECT' || type === 'bool' || path.startsWith('style.')) renderForm();
+            if (path === 'name' || type === 'date') renderList();
+            if (el.tagName === 'SELECT' || type === 'bool' || type === 'date' || path.startsWith('style.')) renderForm();
+            if (endClamped) {
+                // Champ « Disparaît le » encore actif : setValue ne le
+                // réécrit pas — la valeur recalée est posée à la main.
+                const endInput = $('inputImageDisappearDate');
+                const item = selectedItem();
+                if (endInput && item) endInput.value = item.schedule.end ?? '';
+            }
         });
         if (live === 'input') el.addEventListener('change', () => renderForm());
     }

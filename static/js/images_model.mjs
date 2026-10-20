@@ -28,6 +28,7 @@ export const IMAGE_RADIUS_RANGE = Object.freeze([0, 200]);
 export const IMAGE_OPACITY_RANGE = Object.freeze([0, 100]);
 export const IMAGE_PADDING_RANGE = Object.freeze([0, 100]);
 export const IMAGE_BORDER_RANGE = Object.freeze([0, 50]);
+export const IMAGE_FADE_RANGE = Object.freeze([0, 5000]);
 
 export const IMAGES_DEFAULTS = Object.freeze({ enabled: true, items: Object.freeze([]) });
 
@@ -61,6 +62,13 @@ export function imageItemDefaults() {
             border_color: '#ffffff',
             border_width: 0,
         },
+        // Apparition/disparition pendant l'animation : dates « AAAA-MM-JJ »
+        // (null = pas de borne), durée du fondu en ms.
+        schedule: {
+            start: null,
+            end: null,
+            fade: 600,
+        },
     };
 }
 
@@ -89,6 +97,26 @@ const STYLE_COERCERS = {
     border_width: (v, d) => intIn(v, d, IMAGE_BORDER_RANGE),
 };
 
+// Forme stricte d'une date de planing : « AAAA-MM-JJ » ET jour réel —
+// « 2026-02-30 » ou « hier » deviennent null, comme le fromisoformat du
+// miroir (new Date, lui, reporte le 30 février au 2 mars : le jour relu doit
+// être le jour donné). Pas de guillemet dans la regex : le lexer JS de
+// pybabel y verrait l'ouverture d'une chaîne (AGENTS.md).
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function date(value) {
+    if (typeof value !== 'string' || !ISO_DATE_RE.test(value)) return null;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+        ? value : null;
+}
+
+const SCHEDULE_COERCERS = {
+    start: date,
+    end: date,
+    fade: (v, d) => intIn(v, d, IMAGE_FADE_RANGE),
+};
+
 const isObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 
 // Image normalisée, ou null si l'entrée n'est pas un objet. Un fichier
@@ -104,6 +132,7 @@ export function normalizeImageItem(raw) {
         name: title(raw.name),
         position: coerceBlock(raw.position, defaults.position, POSITION_COERCERS),
         style: coerceBlock(raw.style, defaults.style, STYLE_COERCERS),
+        schedule: coerceBlock(raw.schedule, defaults.schedule, SCHEDULE_COERCERS),
     };
 }
 
@@ -150,6 +179,7 @@ export function createImageItem(file, name = '', overrides = {}, newId = newStat
         name,
         position: { ...defaults.position, ...(overrides.position || {}) },
         style: { ...defaults.style, ...(overrides.style || {}) },
+        schedule: { ...defaults.schedule, ...(overrides.schedule || {}) },
     });
     item.id = newId();
     return item;

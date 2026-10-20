@@ -71,7 +71,9 @@ images: {
     position: { mode: 'anchor'|'free', anchor, dx, dy, width, height, x, y },
     style: { shape: 'rect'|'rounded'|'circle', radius, fit: 'contain'|'cover',
              opacity, background, background_opacity, padding, shadow,
-             border_color, border_width }
+             border_color, border_width },
+    schedule: { start: 'YYYY-MM-DD'|null, end: 'YYYY-MM-DD'|null,
+                fade: 0–5000 }
   }]
 }
 ```
@@ -120,6 +122,24 @@ liste.
 - Visibles avec la base chargée, comme le titre et les infos
   (`syncImagePanelsVisibility`, appelé par `frames.js › syncOverlayVisibility`).
 
+**Apparition planifiée** (`schedule`) : l'image est visible au jour `d` ssi
+`d ≥ start` (borne incluse) et `d < end` (borne exclue — le fondu sortant
+commence ce jour-là), chaque borne nullable ; `end ≤ start` : jamais visible
+(l'onglet borne `end ≥ start`, le modèle ne force rien). Pendant
+l'animation, `mapgl.js` appelle `resetImagesForAnimation` (état instantané à
+la veille du départ) puis `syncImagesToDate` à chaque lot de jours : un
+changement de cible lance un fondu linéaire de `fade` ms sur l'horloge des
+points ; au saut (aperçu en pause) il est instantané, au repos
+(`syncImagesToRest`) le planing est ignoré. Aperçu : `transition`/`opacity`
+CSS sur le canvas — plancher **30 % en mode édition** pour garder l'image
+repérable et déplaçable. Vidéo : `globalAlpha` dans
+`addImagePanelsToCanvas(ctx, w, h, scale, now)` ;
+`getImagesAlphaSignature()` joint les alphas quantifiés à la signature des
+frames MediaRecorder (un fondu dessine des frames même sur carte immobile).
+La place de l'image dans la pile est toujours réservée
+(`visibleItems`/`imagesReady` inchangés) : rien ne saute à l'apparition, les
+piles de stats gardent le contournement.
+
 **Préchargement.** Les images sont décodées dès le chargement des préférences
 (init.js) et à chaque envoi. Le mode image par image attend `imagesReady()`
 (3 s au plus) avant sa première frame. Le mode MediaRecorder **n'attend pas** :
@@ -135,7 +155,9 @@ Liste (vignette sur damier, nom ou « Image n », interrupteur, flèches,
 suppression avec « Annuler »), ajout par fichiers (multi-sélection), dépôt de
 fichiers sur l'onglet ou collage depuis le presse-papiers, ou par la **bibliothèque** (images déjà envoyées, retrait des non utilisées, place
 occupée), « Remplacer l'image… » qui garde les réglages, formulaire de
-position et d'apparence. Sauvegarde débouncée de la préférence complète, vidée
+position, d'apparence et d'**apparition** (dates « Apparaît le » /
+« Disparaît le », fondu en ms ; badge `ti-calendar-time` sur la ligne d'une
+image planifiée). Sauvegarde débouncée de la préférence complète, vidée
 aussitôt pour les actions discrètes.
 
 **Glisser-déposer** (onglet ouvert, au repos : classe `images-editing`) :

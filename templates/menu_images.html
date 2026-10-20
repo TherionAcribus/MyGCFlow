@@ -192,6 +192,23 @@
                             </div>
                         </div>
                     </div>
+
+                    <h6 class="gc-subsection-title mt-3">{{ _("Apparition pendant l'animation") }}</h6>
+                    <small class="form-hint text-muted d-block mb-2">{{ _("L'image apparaît le jour « Apparaît le » et disparaît le jour « Disparaît le », en fondu. Dates vides : toujours visible.") }}</small>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputImageAppearDate">{{ _("Apparaît le") }}</label>
+                            <input id="inputImageAppearDate" type="date" class="form-control">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputImageDisappearDate">{{ _("Disparaît le") }}</label>
+                            <input id="inputImageDisappearDate" type="date" class="form-control">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputImageFadeMs">{{ _("Fondu (ms)") }}</label>
+                            <input id="inputImageFadeMs" type="number" class="form-control" min="0" max="5000" step="100">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

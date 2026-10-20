@@ -480,6 +480,53 @@ test('un chargement raté une fois est réessayé : l’image n’est pas décla
   expect(requests).toBeGreaterThan(1);
 });
 
+test('planification : image absente avant sa date, visible après', async ({ page }) => {
+  // L'image n'est planifiée que du 03/01 au 05/01 exclu (fixture : une cache
+  // par jour du 01 au 06/01/2026). Fondu nul : transitions instantanées.
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0050', file: logo.file, position: { anchor: 'bottom-right', width: 160 },
+      schedule: { start: '2026-01-03', end: '2026-01-05', fade: 0 } },
+  ] } });
+  await openWithFixture(page);
+  const canvas = page.locator('canvas.image-panel');
+  // Au repos, le planing est ignoré : l'image est pleine.
+  await expect(canvas).toBeVisible();
+  await expect(canvas).not.toHaveCSS('opacity', '0');
+
+  // Aperçu ouvert puis mis en pause : planifiée à partir du 03/01, l'image
+  // est masquée dès le départ (état instantané à la veille du premier jour).
+  const playback = () => page.evaluate(async () =>
+    (await import('/static/js/index.js')).previewPlaybackState());
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(playback).toBe('playing');
+  await page.locator('#btnQuickPause').click();
+  await expect.poll(playback).toBe('paused');
+  await expect(canvas).toHaveCSS('opacity', '0');
+
+  // Saut au 02/01 (avant l'apparition) : toujours masquée.
+  const seek = (iso) => page.evaluate(async (value) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(`${value}T00:00:00`)), iso);
+  expect(await seek('2026-01-02')).toBe(true);
+  await expect(canvas).toHaveCSS('opacity', '0');
+
+  // Saut au 04/01 : dedans — pleine opacité, alpha à 1 dans le snapshot.
+  expect(await seek('2026-01-04')).toBe(true);
+  await expect(canvas).toHaveCSS('opacity', '1');
+  const snap = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getImagesSnapshot());
+  expect(snap.items.find((i) => i.id === 'babe0050').alpha).toBe(1);
+
+  // Saut au 05/01 (« Disparaît le », borne exclue) : masquée de nouveau.
+  expect(await seek('2026-01-05')).toBe(true);
+  await expect(canvas).toHaveCSS('opacity', '0');
+
+  // Arrêt : retour au repos, le planing est ignoré.
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(playback).toBe('idle');
+  await expect(canvas).toHaveCSS('opacity', '1');
+});
+
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [{ id: 'babe0031', file: logo.file, name: 'Logo' }] } });

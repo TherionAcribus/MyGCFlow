@@ -62,6 +62,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -118,6 +123,11 @@
           "enabled": true,
           "file": "",
           "name": "Logo du club",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -146,6 +156,11 @@
           "enabled": true,
           "file": "",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -174,6 +189,11 @@
           "enabled": true,
           "file": "",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -219,6 +239,11 @@
           "enabled": true,
           "file": "fedcba9876543210.jpg",
           "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -277,6 +302,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -348,6 +378,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -376,6 +411,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "top-left",
@@ -404,6 +444,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "top-right",
@@ -432,6 +477,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-left",
@@ -486,6 +536,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -543,6 +598,11 @@
           "enabled": false,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "free",
             "anchor": "middle-left",
@@ -611,6 +671,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "top-right",
@@ -639,6 +704,11 @@
           "enabled": true,
           "file": "fedcba9876543210.jpg",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "free",
             "anchor": "top-right",
@@ -667,6 +737,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "top-right",
@@ -715,6 +790,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -775,6 +855,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -803,6 +888,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -831,6 +921,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -859,6 +954,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -923,6 +1023,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -951,6 +1056,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -979,6 +1089,11 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -999,6 +1114,182 @@
             "padding": 0,
             "shadow": false,
             "border_color": "#ff88aa",
+            "border_width": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "planning : dates gardées, invalides à null, fondu borné",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "start": "2026-01-03",
+            "end": "2026-01-05",
+            "fade": 9000
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "start": "hier",
+            "end": 42,
+            "fade": -50
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "schedule": "demain"
+        },
+        {
+          "id": "aaaaaa04",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "start": "2026-02-30",
+            "end": "2026-13-40",
+            "fade": "250"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "schedule": {
+            "start": "2026-01-03",
+            "end": "2026-01-05",
+            "fade": 5000
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 0
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 250
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
             "border_width": 0
           }
         }

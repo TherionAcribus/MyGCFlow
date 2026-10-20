@@ -14,6 +14,8 @@ titres, marges de coin communes) sont celles des panneaux de stats.
 
 from __future__ import annotations
 
+import datetime
+import re
 from dataclasses import dataclass, field
 
 import image_library
@@ -43,6 +45,7 @@ IMAGE_RADIUS_RANGE = (0, 200)
 IMAGE_OPACITY_RANGE = (0, 100)
 IMAGE_PADDING_RANGE = (0, 100)
 IMAGE_BORDER_RANGE = (0, 50)
+IMAGE_FADE_RANGE = (0, 5000)
 
 
 @dataclass
@@ -77,6 +80,13 @@ def image_item_defaults() -> dict:
             "border_color": "#ffffff",
             "border_width": 0,
         },
+        # Apparition/disparition pendant l'animation : dates « AAAA-MM-JJ »
+        # (None = pas de borne), durée du fondu en ms.
+        "schedule": {
+            "start": None,
+            "end": None,
+            "fade": 600,
+        },
     }
 
 
@@ -105,6 +115,27 @@ _STYLE_COERCERS = {
     "border_width": lambda v, d: _int_in(v, d, IMAGE_BORDER_RANGE),
 }
 
+# Forme stricte d'une date de planing : « AAAA-MM-JJ » ET jour réel
+# (fromisoformat valide) — « 2026-02-30 » ou « hier » deviennent None.
+_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _date(value, default) -> str | None:
+    if not (isinstance(value, str) and _DATE_RE.fullmatch(value)):
+        return None
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return None
+    return value
+
+
+_SCHEDULE_COERCERS = {
+    "start": _date,
+    "end": _date,
+    "fade": lambda v, d: _int_in(v, d, IMAGE_FADE_RANGE),
+}
+
 
 def coerce_image_item(raw) -> dict | None:
     """Image normalisée, ou None si l'entrée n'est pas un objet. Un fichier
@@ -121,6 +152,7 @@ def coerce_image_item(raw) -> dict | None:
         "name": _title(raw.get("name")),
         "position": _coerce_block(raw.get("position"), defaults["position"], _POSITION_COERCERS),
         "style": _coerce_block(raw.get("style"), defaults["style"], _STYLE_COERCERS),
+        "schedule": _coerce_block(raw.get("schedule"), defaults["schedule"], _SCHEDULE_COERCERS),
     }
 
 

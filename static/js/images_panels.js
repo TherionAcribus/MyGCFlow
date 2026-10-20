@@ -10,17 +10,21 @@
 //   dans le canvas mis en cache, un drawImage nu par frame ;
 // - getImagePanelRects() : rects des images, obstacles que les piles de
 //   stats contournent (priorité Titre/Infos > Images > Stats) ;
-// - imagesReady() : attendue avant le premier enregistrement d'une frame.
+// - imagesReady() : attendue avant le premier enregistrement d'une frame ;
+// - le planing (schedule {start, end, fade}) : une image peut apparaître puis
+//   disparaître à des dates de l'animation, en fondu — aperçu par transition
+//   CSS sur le canvas, vidéo par globalAlpha.
 //
 // Mise en page : layoutPanels de stats_model.mjs (mêmes emplacements, piles,
 // marges, position libre), titre et infos en obstacles. Aucun coût par
-// frame d'animation : les images ne changent pas pendant la lecture, tout
-// est recalculé sur invalidation seulement.
+// frame d'animation hors fondu : la place des images est réservée que le
+// planing les montre ou non, tout est recalculé sur invalidation seulement.
 
 import * as pkg from './index.js';
 import { layoutPanels } from './stats_model.mjs';
 import { IMAGE_ANCHORS, IMAGE_SIZE_RANGE, normalizeImagesSettings } from './images_model.mjs';
 import { IMAGE_SHADOW, drawImagePanel, imagePanelHeight } from './images_render.mjs';
+import { dateToDayNumber, isoToDayNumber } from './evolution_timeline.mjs';
 
 let settings = normalizeImagesSettings(null);
 // Bumpé à chaque changement de réglage ou d'image chargée : signale aux
@@ -43,6 +47,15 @@ let layoutKey = '';
 let containerSize = { width: 0, height: 0 };
 let frameRequest = 0;
 let resizeObserver = null;
+
+// Planing d'apparition (schedule {start, end, fade}) : transitions par
+// image, id → { from, to, at, dur }. L'alpha courante est interpolée de
+// `from` vers `to` à l'horloge des points ; `at: null` = état instantané
+// (saut, début d'animation, fondu nul).
+const scheduleStates = new Map();
+// Horloge du dernier composite vidéo : base des alphas de la signature des
+// frames MediaRecorder (getImagesAlphaSignature).
+let lastCompositeNow = null;
 
 function host() {
     return document.getElementById('mapWithFrames');
@@ -124,6 +137,11 @@ export function forgetFailedImageSources(file = null) {
 export function applyImagesSettings(raw) {
     settings = normalizeImagesSettings(raw, settings);
     for (const item of settings.items) ensureSource(item.file);
+    // Transitions devenues sans objet : image retirée ou planing effacé.
+    for (const id of [...scheduleStates.keys()]) {
+        const item = settings.items.find((i) => i.id === id);
+        if (!item || !scheduleOf(item)) scheduleStates.delete(id);
+    }
     revision += 1;
     invalidateImagesLayout();
     return settings;
@@ -446,6 +464,9 @@ function flush() {
             drawImagePanel(ctx, bw, bh, item, entry?.state === 'ready' ? entry.img : null, dpr);
             node.drawnKey = key;
         }
+        // Le canvas a pu être recréé (ou ses styles perdus) : le planing
+        // repose son opacité — ou l'efface au repos.
+        applyScheduleOpacity(item);
     }
 }
 
@@ -455,7 +476,10 @@ function flush() {
 // est rendue dans un canvas hors écran gardé tant que la révision et la
 // taille ne changent pas : une image immobile coûte un drawImage nu, l'ombre
 // portée étant cuite dans un second canvas du cache (ci-dessous).
-export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
+// `now` : horloge des points — le planing d'apparition est composé en
+// globalAlpha (fondu en cours, image masquée non dessinée).
+export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1, now = null) {
+    if (Number.isFinite(now)) lastCompositeNow = now;
     ensureLayout();
     for (const item of visibleItems()) {
         const rect = layout.get(item.id);
@@ -463,6 +487,9 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
         // Pas encore décodée : rien plutôt qu'une forme vide (imagesReady est
         // attendue avant l'enregistrement, ce cas reste exceptionnel).
         if (!rect || entry?.state !== 'ready') continue;
+        // Planing : fondu sortant/entrant en cours, ou hors dates (rien).
+        const alpha = scheduleAlpha(item, now);
+        if (alpha <= 0) continue;
         const w = Math.max(1, Math.round(rect.width * scaleFactor));
         const h = Math.max(1, Math.round(rect.height * scaleFactor));
         const x = rect.css.right != null
@@ -508,12 +535,154 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
             }
             cached.key = key;
         }
-        if (cached.shadowCanvas) {
-            ctx.drawImage(cached.shadowCanvas, x - cached.shadowPad, y - cached.shadowPad);
+        const blit = cached.shadowCanvas
+            ? () => ctx.drawImage(cached.shadowCanvas, x - cached.shadowPad, y - cached.shadowPad)
+            : () => ctx.drawImage(cached.canvas, x, y);
+        if (alpha < 1) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            blit();
+            ctx.restore();
         } else {
-            ctx.drawImage(cached.canvas, x, y);
+            blit();
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Apparition planifiée (schedule {start, end, fade})
+// ---------------------------------------------------------------------------
+//
+// Une image qui a un planing apparaît au jour « Apparaît le » (fondu entrant
+// commencé ce jour-là) et disparaît au jour « Disparaît le » (fondu sortant
+// commencé ce jour-là, inclus donc exclus). `end <= start` : jamais visible —
+// l'UI borne end ≥ start, le modèle ne force pas. Sa place dans la pile est
+// toujours réservée (visibleItems inchangé) : rien ne saute quand elle
+// apparaît, et les piles de stats gardent le contournement.
+
+// Planing posé sur l'image, ou null (dates vides : toujours visible).
+function scheduleOf(item) {
+    const schedule = item?.schedule;
+    return schedule && (schedule.start || schedule.end) ? schedule : null;
+}
+
+// Cible binaire au jour `day` (numéro de jour, dateToDayNumber) : 1 si
+// l'image est dedans, 0 sinon.
+function scheduleTargetAt(item, day) {
+    const schedule = scheduleOf(item);
+    if (!schedule || !Number.isFinite(day)) return 1;
+    if (schedule.start && day < isoToDayNumber(schedule.start)) return 0;
+    if (schedule.end && day >= isoToDayNumber(schedule.end)) return 0;
+    return 1;
+}
+
+// Alpha courante d'une image à l'horloge `now` : interpolation linéaire de
+// la transition en cours, bornée ; état instantané (at: null) ou horloge
+// absente = la cible déjà atteinte. Sans transition connue : pleine.
+function alphaAt(item, now) {
+    const state = scheduleStates.get(item.id);
+    if (!state) return 1;
+    if (state.at == null || !Number.isFinite(now)) return state.to;
+    const dur = Math.max(0, Number(state.dur) || 0);
+    if (dur <= 0) return state.to;
+    const t = Math.max(0, Math.min(1, (now - state.at) / dur));
+    return state.from + (state.to - state.from) * t;
+}
+
+// Alpha pour le composite vidéo : 1 sans planing ; la transition sinon.
+function scheduleAlpha(item, now) {
+    return scheduleOf(item) ? alphaAt(item, now) : 1;
+}
+
+// Aperçu : l'opacité CSS du canvas porte le planing — une transition linéaire
+// de `dur` ms pendant un fondu, 'none' aux états instantanés. En mode
+// édition (onglet Images ouvert au repos, classe posée par syncDragMode) le
+// plancher est 30 % : une image masquée reste repérable et déplaçable. Sans
+// planing ni état (repos), rien n'est posé : opacité par défaut.
+function applyScheduleOpacity(item) {
+    const node = nodes.get(item.id);
+    if (!node) return;
+    const el = node.canvas;
+    const state = scheduleOf(item) ? scheduleStates.get(item.id) : null;
+    if (!state) {
+        if (el.style.transition) el.style.transition = '';
+        if (el.style.opacity) el.style.opacity = '';
+        return;
+    }
+    const dur = state.at != null ? Math.max(0, Number(state.dur) || 0) : 0;
+    el.style.transition = dur > 0 ? `opacity ${dur}ms linear` : 'none';
+    const editing = host()?.classList.contains('images-editing') === true;
+    el.style.opacity = String(editing ? Math.max(0.3, state.to) : state.to);
+}
+
+// Jour affiché par l'animation (Date du dernier jour, comme
+// accumulateStatsForDates) : lance les fondus dont la cible a changé.
+// `now` = horloge des points ; null = saut (aperçu en pause) : instantané.
+export function syncImagesToDate(day, now) {
+    const dayNumber = dateToDayNumber(day);
+    if (!Number.isFinite(dayNumber)) return;
+    let changed = false;
+    for (const item of settings.items) {
+        const schedule = scheduleOf(item);
+        if (!schedule) continue;
+        const to = scheduleTargetAt(item, dayNumber);
+        const state = scheduleStates.get(item.id);
+        if ((state ? state.to : 1) === to) continue;
+        const instant = !Number.isFinite(now) || !(schedule.fade > 0);
+        scheduleStates.set(item.id, instant
+            ? { from: to, to, at: null, dur: schedule.fade }
+            : { from: alphaAt(item, now), to, at: now, dur: schedule.fade });
+        applyScheduleOpacity(item);
+        changed = true;
+    }
+    // Un basculement instantané (saut, fondu nul) produit une frame sur
+    // carte immobile — les fondus en cours passent par la signature alpha.
+    if (changed) revision += 1;
+}
+
+// Début d'une animation (aperçu, capture image par image, MediaRecorder) :
+// état instantané au jour qui précède la date de début — une image qui
+// « apparaît » le premier jour démarre son fondu ce jour-là, une image
+// déjà dedans est pleine dès la première frame.
+export function resetImagesForAnimation(startDate) {
+    if (!(startDate instanceof Date)) return;
+    const dayBefore = dateToDayNumber(startDate) - 1;
+    let changed = false;
+    for (const item of settings.items) {
+        const schedule = scheduleOf(item);
+        if (!schedule) continue;
+        const to = scheduleTargetAt(item, dayBefore);
+        scheduleStates.set(item.id, { from: to, to, at: null, dur: schedule.fade });
+        applyScheduleOpacity(item);
+        changed = true;
+    }
+    if (changed) revision += 1;
+}
+
+// Retour au repos : le planing est ignoré — alphas à 1, transitions et
+// opacité posée oubliées.
+export function syncImagesToRest() {
+    if (scheduleStates.size) {
+        scheduleStates.clear();
+        revision += 1;
+    }
+    for (const item of settings.items) applyScheduleOpacity(item);
+}
+
+// Signature des alphas planifiés pour overlayContentSignature : '' quand
+// aucune transition n'est en cours ; sinon les alphas quantifiés (16es) à
+// l'horloge du dernier composite — suffit à faire dessiner les frames d'un
+// fondu sur une carte immobile.
+export function getImagesAlphaSignature() {
+    const parts = [];
+    for (const item of settings.items) {
+        const state = scheduleOf(item) ? scheduleStates.get(item.id) : null;
+        if (!state || state.at == null) continue;
+        const a = alphaAt(item, lastCompositeNow);
+        if (a === state.to) continue;
+        parts.push(`${item.id}:${Math.round(a * 16)}`);
+    }
+    return parts.join('|');
 }
 
 // Résolue quand toutes les images affichées sont décodées (ou en échec),
@@ -541,6 +710,8 @@ export function getImagesSnapshot() {
             file: item.file,
             state: imageSourceState(item.file),
             rect: layout.get(item.id) || null,
+            schedule: item.schedule ? { ...item.schedule } : null,
+            alpha: alphaAt(item, lastCompositeNow),
         })),
     };
 }
