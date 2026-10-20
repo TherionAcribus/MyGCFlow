@@ -695,6 +695,10 @@ function renderForm() {
     setValue('inputImageAppearDate', schedule.start ?? '');
     setValue('inputImageDisappearDate', schedule.end ?? '');
     setValue('inputImageFadeMs', schedule.fade ?? '');
+    const appearClear = $('btnImageAppearClear');
+    if (appearClear) appearClear.disabled = !schedule.start;
+    const disappearClear = $('btnImageDisappearClear');
+    if (disappearClear) disappearClear.disabled = !schedule.end;
 }
 
 // Champ du formulaire → chemin dans l'image. `number` : borné ensuite par la
@@ -763,14 +767,22 @@ function bindFormFields() {
             if (path === 'name' || type === 'date') renderList();
             if (el.tagName === 'SELECT' || type === 'bool' || type === 'date' || path.startsWith('style.')) renderForm();
             if (endClamped) {
-                // Champ « Disparaît le » encore actif : setValue ne le
-                // réécrit pas — la valeur recalée est posée à la main.
+                // « Disparaît le » recalé : la réécriture ne se pose que si
+                // le champ n'est pas en cours de frappe — taper l'année
+                // produit des dates intermédiaires (« 0002-… ») que le
+                // modèle borne mais que l'input garde pour continuer la
+                // saisie ; la valeur recalée s'affiche à la sortie (blur).
                 const endInput = $('inputImageDisappearDate');
                 const item = selectedItem();
-                if (endInput && item) endInput.value = item.schedule.end ?? '';
+                if (endInput && item && endInput !== document.activeElement) {
+                    endInput.value = item.schedule.end ?? '';
+                }
             }
         });
         if (live === 'input') el.addEventListener('change', () => renderForm());
+        // Champ date quitté : la valeur normalisée (borne de la garde)
+        // remplace l'éventuelle saisie intermédiaire restée affichée.
+        else if (type === 'date') el.addEventListener('blur', () => renderForm());
     }
 
     // Hauteur : vide = d'après les proportions (null).
@@ -791,6 +803,19 @@ function bindFormFields() {
         updateSelected((item) => { item.position.height = null; }, $('btnImageHeightAuto'));
         renderForm();
     });
+
+    // « × » des dates du planing : vider un champ date au clavier
+    // impose d'effacer jour, mois et année segment par segment.
+    for (const [btnId, path] of [
+        ['btnImageAppearClear', 'schedule.start'],
+        ['btnImageDisappearClear', 'schedule.end'],
+    ]) {
+        $(btnId)?.addEventListener('click', () => {
+            updateSelected((item) => { writePath(item, path, null); }, $(btnId));
+            renderList();
+            renderForm();
+        });
+    }
 
     // « Revenir à l'emplacement » : la position libre redevient le coin
     // conservé dans position.anchor, avec les marges de sa pile.
@@ -828,6 +853,9 @@ function syncDragMode() {
     const tabOpen = !!$('images')?.classList.contains('active');
     const idle = !(pkg.isAnimationInProgress?.() ?? false);
     host.classList.toggle('images-editing', tabOpen && idle);
+    // Le plancher d'édition du planing (30 %) suit la bascule : sans repose,
+    // un état posé pendant la fenêtre où la classe était périmée survivrait.
+    pkg.refreshImageScheduleOpacity?.();
 }
 
 function updateItem(id, mutate) {

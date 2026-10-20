@@ -198,11 +198,21 @@
                     <div class="row g-2">
                         <div class="col-6 col-md-4">
                             <label class="form-label" for="inputImageAppearDate">{{ _("Apparaît le") }}</label>
-                            <input id="inputImageAppearDate" type="date" class="form-control">
+                            <div class="input-group">
+                                <input id="inputImageAppearDate" type="date" class="form-control">
+                                <button type="button" id="btnImageAppearClear" class="btn btn-outline-secondary" title="{{ _('Effacer la date') }}" aria-label="{{ _('Effacer la date') }}" disabled>
+                                    <i class="ti ti-x" aria-hidden="true"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label" for="inputImageDisappearDate">{{ _("Disparaît le") }}</label>
-                            <input id="inputImageDisappearDate" type="date" class="form-control">
+                            <div class="input-group">
+                                <input id="inputImageDisappearDate" type="date" class="form-control">
+                                <button type="button" id="btnImageDisappearClear" class="btn btn-outline-secondary" title="{{ _('Effacer la date') }}" aria-label="{{ _('Effacer la date') }}" disabled>
+                                    <i class="ti ti-x" aria-hidden="true"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label" for="inputImageFadeMs">{{ _("Fondu (ms)") }}</label>

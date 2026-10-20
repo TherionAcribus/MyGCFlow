@@ -547,6 +547,41 @@ test('planification : image absente avant sa date, visible après', async ({ pag
   await expect(canvas).toHaveCSS('opacity', '1');
 });
 
+test('planification : le bouton « × » vide la date d\'un clic', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0060', file: logo.file, name: 'Logo',
+      schedule: { start: '2026-01-03', end: '2026-01-05', fade: 0 } },
+  ] } });
+  await openImagesTab(page);
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+  await page.locator('#imagesList li[data-image-id="babe0060"] [data-action="select"]').click();
+
+  // Les deux champs remplis : les deux « × » sont actifs.
+  await expect(page.locator('#inputImageAppearDate')).toHaveValue('2026-01-03');
+  await expect(page.locator('#inputImageDisappearDate')).toHaveValue('2026-01-05');
+  await expect(page.locator('#btnImageAppearClear')).toBeEnabled();
+  await expect(page.locator('#btnImageDisappearClear')).toBeEnabled();
+
+  // Un clic vide « Disparaît le » : champ et bouton, valeur persistée.
+  await page.locator('#btnImageDisappearClear').click();
+  await expect(page.locator('#inputImageDisappearDate')).toHaveValue('');
+  await expect(page.locator('#btnImageDisappearClear')).toBeDisabled();
+  await expect.poll(async () =>
+    (await savedImages(page)).items[0].schedule.end).toBe(null);
+  // « Apparaît le » inchangé : le planing reste actif (badge présent).
+  await expect(page.locator('#inputImageAppearDate')).toHaveValue('2026-01-03');
+  await expect(page.locator('#imagesList li[data-image-id="babe0060"] .ti-calendar-time')).toHaveCount(1);
+
+  // Vider la dernière date : plus de planing, badge retiré de la ligne.
+  await page.locator('#btnImageAppearClear').click();
+  await expect(page.locator('#inputImageAppearDate')).toHaveValue('');
+  await expect(page.locator('#btnImageAppearClear')).toBeDisabled();
+  await expect.poll(async () =>
+    (await savedImages(page)).items[0].schedule.start).toBe(null);
+  await expect(page.locator('#imagesList li[data-image-id="babe0060"] .ti-calendar-time')).toHaveCount(0);
+});
+
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [{ id: 'babe0031', file: logo.file, name: 'Logo' }] } });

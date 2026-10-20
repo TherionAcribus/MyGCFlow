@@ -139,8 +139,11 @@ la veille du départ) puis `syncImagesToDate` à chaque lot de jours : un
 changement de cible lance un fondu linéaire de `fade` ms sur l'horloge des
 points ; au saut (aperçu en pause) il est instantané, au repos
 (`syncImagesToRest`) le planing est ignoré. Aperçu : `transition`/`opacity`
-CSS sur le canvas — plancher **30 % en mode édition** pour garder l'image
-repérable et déplaçable. Vidéo : `globalAlpha` dans
+CSS sur le canvas — plancher **30 % en mode édition au repos seulement**
+(`images-editing` ET lecture arrêtée : la classe survit au départ de
+l'animation le temps du MutationObserver, la garde sur
+`isAnimationInProgress` évite une image figée à 30 % ; les opacités sont
+reposées à chaque bascule du mode). Vidéo : `globalAlpha` dans
 `addImagePanelsToCanvas(ctx, w, h, scale, now)` ;
 `getImagesAlphaSignature()` joint les alphas quantifiés à la signature des
 frames MediaRecorder (un fondu dessine des frames même sur carte immobile).

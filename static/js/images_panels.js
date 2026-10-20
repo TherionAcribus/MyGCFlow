@@ -611,8 +611,19 @@ function applyScheduleOpacity(item) {
     }
     const dur = state.at != null ? Math.max(0, Number(state.dur) || 0) : 0;
     el.style.transition = dur > 0 ? `opacity ${dur}ms linear` : 'none';
-    const editing = host()?.classList.contains('images-editing') === true;
+    // Plancher d'édition seulement au repos : la classe `images-editing`
+    // survit au départ de l'animation le temps du MutationObserver — sans la
+    // garde, une image masquée par son planing resterait figée à 30 %.
+    const editing = host()?.classList.contains('images-editing') === true
+        && !(pkg.isAnimationInProgress?.() ?? false);
     el.style.opacity = String(editing ? Math.max(0.3, state.to) : state.to);
+}
+
+// Re-pose l'opacité du planing sur chaque image : appelée quand le mode
+// édition bascule (syncDragMode) — le plancher de 30 % suit la bascule au
+// lieu d'attendre la prochaine transition.
+export function refreshImageScheduleOpacity() {
+    for (const item of settings.items) applyScheduleOpacity(item);
 }
 
 // Jour affiché par l'animation (Date du dernier jour, comme
