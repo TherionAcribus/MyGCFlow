@@ -130,8 +130,9 @@ const STATE_CLASSES = ['is-dragging', 'is-resizing', 'is-resizing-h', 'is-resizi
 //   enregistrement au dépôt ;
 // - onRelease() : fin de geste (formulaire à resynchroniser) ;
 // - isBusy() : vrai pendant une animation (aucune saisie) ;
-// - selectedId() → id de l'élément choisi dans l'onglet, et nudge(id, dxPx,
-//   dyPx, rect) : déplacement au clavier — sans nudge, pas d'écouteur.
+// - selectedId() → id de l'élément choisi dans l'onglet, nudge(id, dxPx,
+//   dyPx, rect) : déplacement au clavier, remove(id) : suppression par
+//   Suppr — sans l'un ni l'autre, pas d'écouteur clavier.
 export function bindPanelDrag(options) {
     const {
         host, selector, idOf, editingClass, ghostClass,
@@ -141,7 +142,7 @@ export function bindPanelDrag(options) {
         onGrab = () => {}, onRelease = () => {},
         commitFree, commitSnap, commitResize,
         isBusy = () => false,
-        selectedId = () => null, nudge,
+        selectedId = () => null, nudge, remove,
     } = options;
     if (!host) return;
     const ghost = createSnapGhost(host, ghostClass);
@@ -279,7 +280,7 @@ export function bindPanelDrag(options) {
     // les pixels en fractions. Les répétitions de la touche agissent
     // (event.repeat ne filtre pas) : la sauvegarde débouncée des onglets
     // les regroupe en un seul envoi.
-    if (nudge) {
+    if (nudge || remove) {
         const STEP_KEYS = {
             ArrowLeft: [-1, 0],
             ArrowRight: [1, 0],
@@ -288,17 +289,34 @@ export function bindPanelDrag(options) {
         };
         document.addEventListener('keydown', (event) => {
             if (!host.classList.contains(editingClass) || isBusy()) return;
-            // Dans un champ, les flèches gardent leur rôle natif (curseur,
-            // groupe radio de la grille d'emplacements…).
+            // Surcouche ouverte — modale ou menu déroulant (bibliothèque
+            // d'images, options…) : les raccourcis n'agissent pas derrière.
+            if (document.querySelector('.modal.show, .dropdown-menu.show')) return;
+            // Dans un champ, les touches gardent leur rôle natif (curseur,
+            // Suppr dans un texte, groupe radio de la grille…).
             if (event.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
             const step = STEP_KEYS[event.key];
-            if (!step) return;
-            const id = selectedId();
-            const rect = id && getRect(id);
-            if (!rect) return;
-            event.preventDefault();
-            const scale = event.shiftKey ? 10 : 1;
-            nudge(id, step[0] * scale, step[1] * scale, rect);
+            if (step) {
+                if (!nudge) return;
+                const id = selectedId();
+                const rect = id && getRect(id);
+                if (!rect) return;
+                event.preventDefault();
+                const scale = event.shiftKey ? 10 : 1;
+                nudge(id, step[0] * scale, step[1] * scale, rect);
+                return;
+            }
+            // Suppr : même effet que le bouton « Supprimer » de la ligne.
+            // Contrairement aux flèches l'élément n'a pas besoin d'être
+            // affiché (désactivé, hors planing) : la sélection est un
+            // concept de liste. event.repeat filtré : la sélection bascule
+            // sur l'élément suivant, une touche maintenue viderait la liste.
+            if (event.key === 'Delete' && remove && !event.repeat) {
+                const id = selectedId();
+                if (!id) return;
+                event.preventDefault();
+                remove(id);
+            }
         });
     }
 }

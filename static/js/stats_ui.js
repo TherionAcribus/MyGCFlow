@@ -296,8 +296,12 @@ function onListClick(event) {
     const target = event.target.closest('[data-action]');
     const item = event.target.closest('[data-panel-id]');
     if (!target || !item) return;
-    const id = item.dataset.panelId;
-    const action = target.dataset.action;
+    runListAction(item.dataset.panelId, target.dataset.action);
+}
+
+// Action de ligne partagée : clic sur un bouton ou touche Suppr sur la
+// sélection (remove de bindPanelDrag). `select`/`toggle` viennent du clic.
+function runListAction(id, action) {
     if (action === 'select') {
         selectedId = id;
         renderStatsTab();
@@ -932,6 +936,9 @@ function bindDragAndDrop() {
             commit(withFreePosition(id, x, y), STATS_SAVE_STATUS);
             renderForm();
         },
+        // Suppr : même chemin que le bouton « Supprimer » de la ligne —
+        // toast « Annuler » compris.
+        remove: (id) => runListAction(id, 'delete'),
     });
 }
 

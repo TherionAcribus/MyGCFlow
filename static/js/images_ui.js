@@ -550,8 +550,12 @@ function onListClick(event) {
     const target = event.target.closest('[data-action]');
     const li = event.target.closest('[data-image-id]');
     if (!target || !li) return;
-    const id = li.dataset.imageId;
-    const action = target.dataset.action;
+    runListAction(li.dataset.imageId, target.dataset.action);
+}
+
+// Action de ligne partagée : clic sur un bouton ou touche Suppr sur la
+// sélection (remove de bindPanelDrag). `select`/`toggle` viennent du clic.
+function runListAction(id, action) {
     if (action === 'select') {
         selectedId = id;
         renderImagesTab();
@@ -923,6 +927,9 @@ function bindDragAndDrop() {
             }, IMAGES_SAVE_STATUS);
             renderForm();
         },
+        // Suppr : même chemin que le bouton « Supprimer » de la ligne —
+        // toast « Annuler » compris.
+        remove: (id) => runListAction(id, 'delete'),
     });
 }
 

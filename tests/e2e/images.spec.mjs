@@ -436,6 +436,47 @@ test('flèches du clavier : l’image sélectionnée se déplace (1 px, Maj = 10
   expect((await savedImages(page)).items.map((i) => i.position)).toEqual(positionsAvant);
 });
 
+test('touche Suppr : l’image sélectionnée est supprimée (même effet que le bouton)', async ({ page }) => {
+  const avatar = await upload(page, AVATAR);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0070', file: avatar.file, name: 'À supprimer', position: { anchor: 'top-left', width: 100 } },
+    { id: 'babe0071', file: avatar.file, name: 'Autre', position: { anchor: 'top-right', width: 80 } },
+  ] } });
+  await openImagesTab(page);
+  await expect(page.locator('canvas.image-panel')).toHaveCount(2);
+  await page.evaluate(() => document.activeElement?.blur?.());
+
+  // Sélection dans la liste puis Suppr : l'image part (liste, carte,
+  // réglages) et le toast « Annuler » s'affiche — comme le bouton.
+  await page.locator('#imagesList li[data-image-id="babe0070"] [data-action="select"]').click();
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('canvas.image-panel')).toHaveCount(1);
+  await expect.poll(async () => (await savedImages(page)).items.map((i) => i.id))
+    .toEqual(['babe0071']);
+  const undo = page.locator('.gcm-toast.show .gcm-toast-actions button', { hasText: 'Annuler' });
+  await expect(undo).toBeVisible();
+
+  // « Annuler » : l'image revient à sa place.
+  await undo.click();
+  await expect(page.locator('#imagesList li')).toHaveCount(2);
+  await expect.poll(async () => (await savedImages(page)).items.map((i) => i.id))
+    .toEqual(['babe0070', 'babe0071']);
+  await expect(page.locator('canvas.image-panel')).toHaveCount(2);
+
+  // Dans un champ, Suppr garde son rôle natif (pas de suppression).
+  await page.locator('#inputImageName').click();
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#imagesList li')).toHaveCount(2);
+  await page.evaluate(() => document.activeElement?.blur?.());
+
+  // Bibliothèque déroulée : le raccourci n'agit pas derrière la surcouche.
+  await page.locator('#btnImagesLibrary').click();
+  await expect(page.locator('#imagesLibraryMenu')).toHaveClass(/show/);
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#imagesList li')).toHaveCount(2);
+});
+
 test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [

@@ -1478,3 +1478,41 @@ test('l\'aperçu du formulaire suit les données sans toucher au formulaire', as
   await page.locator('a[href="#stats"]').click();
   await expect.poll(sameAsMap).toBe(true);
 });
+
+test('touche Suppr : le panneau sélectionné est supprimé (même effet que le bouton)', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'de1e7001', kind: 'counter', metric: 'summary', position: { anchor: 'top-left' } },
+    { id: 'de1e7002', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-right' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('#mapWithFrames')).toHaveClass(/stats-editing/);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+  // Le clic sur l'onglet laisse le focus sur son lien : Suppr viserait
+  // l'élément de la page, pas un contrôle du panneau — on s'en affranchit.
+  await page.evaluate(() => document.activeElement?.blur?.());
+
+  // Sélection dans la liste puis Suppr : le panneau part (liste, carte,
+  // réglages) et le toast « Annuler » s'affiche — comme le bouton.
+  await page.locator('#statsPanelList li[data-panel-id="de1e7001"] [data-action="select"]').click();
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#statsPanelList li')).toHaveCount(1);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id))
+    .toEqual(['de1e7002']);
+  const undo = page.locator('.gcm-toast.show .gcm-toast-actions button', { hasText: 'Annuler' });
+  await expect(undo).toBeVisible();
+
+  // « Annuler » : le panneau revient à sa place.
+  await undo.click();
+  await expect(page.locator('#statsPanelList li')).toHaveCount(2);
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id))
+    .toEqual(['de1e7001', 'de1e7002']);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Dans un champ, Suppr garde son rôle natif (pas de suppression).
+  await page.locator('#statsPanelList li[data-panel-id="de1e7001"] [data-action="select"]').click();
+  await page.locator('#inputStatsTitle').click();
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#statsPanelList li')).toHaveCount(2);
+});
