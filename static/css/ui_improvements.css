@@ -974,6 +974,12 @@ main.fullscreen-mode ~ .tooltip {
     --timeline-cursor: #1d273b;
     --timeline-tick: rgba(108, 117, 125, 0.28);
     --timeline-label: rgba(108, 117, 125, 0.85);
+    /* Marges hors plage (voile de la couleur du fond), poignées des bornes,
+       repères : trouvailles rondes et planing des images. */
+    --timeline-veil: rgba(255, 255, 255, 0.62);
+    --timeline-handle: #1d273b;
+    --timeline-milestone: #2fb344;
+    --timeline-image: #f59f00;
     flex: 0 0 auto;
     display: flex;
     align-items: center;
@@ -993,6 +999,10 @@ main.fullscreen-mode ~ .tooltip {
     --timeline-cursor: #f1f3f5;
     --timeline-tick: rgba(173, 181, 189, 0.22);
     --timeline-label: rgba(173, 181, 189, 0.75);
+    --timeline-veil: rgba(24, 36, 51, 0.62);
+    --timeline-handle: #f1f3f5;
+    --timeline-milestone: #5cd17a;
+    --timeline-image: #ffc046;
 }
 .timeline-bar-track {
     position: relative;
@@ -1015,6 +1025,52 @@ main.fullscreen-mode ~ .tooltip {
 .timeline-bar.is-dragging .timeline-bar-track {
     cursor: grabbing;
 }
+/* Poignées des bornes (languettes en haut de la piste). */
+.timeline-bar.is-over-handle .timeline-bar-track,
+.timeline-bar.is-resizing .timeline-bar-track {
+    cursor: ew-resize;
+}
+/* Bulle de survol : sur <body>, en position fixe, au-dessus de la
+   surimpression plein écran (2010) comme le menu contextuel. Elle ne prend
+   jamais le pointeur : le survol de la piste continue dessous. */
+.timeline-bar-tip {
+    position: fixed;
+    z-index: 2100;
+    max-width: 22rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: rgba(29, 39, 59, 0.94);
+    color: #f8f9fa;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.timeline-bar-tip[hidden] {
+    display: none;
+}
+.timeline-bar-tip-line.is-strong {
+    font-weight: 600;
+}
+.timeline-bar-tip-line[data-mark]::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    vertical-align: 1px;
+}
+.timeline-bar-tip-line[data-mark="milestone"]::before {
+    background: #5cd17a;
+    transform: rotate(45deg);
+}
+.timeline-bar-tip-line[data-mark="image-in"]::before {
+    background: #ffc046;
+}
+.timeline-bar-tip-line[data-mark="image-out"]::before {
+    border: 1.5px solid #ffc046;
+}
 .timeline-bar-edge {
     flex: 0 0 auto;
     color: var(--tblr-secondary, #6c757d);
@@ -1025,7 +1081,7 @@ main.fullscreen-mode ~ .tooltip {
    change pas de taille pendant le glissement. */
 .timeline-bar-date {
     flex: 0 0 auto;
-    min-width: 13em;
+    min-width: 16em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -1069,6 +1125,10 @@ main.fullscreen-mode #timelineBar:not([hidden]) {
     --timeline-cursor: #f8f9fa;
     --timeline-tick: rgba(241, 243, 245, 0.25);
     --timeline-label: rgba(241, 243, 245, 0.8);
+    --timeline-veil: rgba(0, 0, 0, 0.5);
+    --timeline-handle: #f8f9fa;
+    --timeline-milestone: #5cd17a;
+    --timeline-image: #ffc046;
 }
 main.fullscreen-mode #timelineBar .timeline-bar-edge,
 main.fullscreen-mode #timelineBar .timeline-bar-date {

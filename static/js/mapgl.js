@@ -2976,14 +2976,10 @@ export function seekAnimationToDate(date) {
     next.setDate(next.getDate() + 1);
     const now = sampleAppearClock();
 
-    // La piste de caméra, la durée imposée et le retour au cadrage sont
-    // planifiés pour un déroulé continu depuis la date de début : après un
-    // saut, le suivi est suspendu comme après une interaction sur la carte
-    // (le prochain lancement le réactive). Le rythme de la piste est gardé.
+    // Rythme de la piste gardé si elle est abandonnée plus tard (carte
+    // déplacée à la main) : sans elle, l'accumulateur retomberait sur la
+    // préférence au lieu du rythme ajusté par la durée imposée.
     if (cameraTrack && seekDayMs === null) seekDayMs = cameraTrack.dayMs ?? null;
-    cancelCameraFollowMotion();
-    cameraFollowSuspended = true;
-    cameraPacing = null;
     endHoldTimer.clear();
 
     const showDate = pkg.options.infos?.currentDate?.display === true;
@@ -3008,10 +3004,100 @@ export function seekAnimationToDate(date) {
     animationAccMs = 0;
     animationLastTs = null;
     animationDatesComplete = currentDate > pkg.metadata.endDate;
+    seekCameraFollow(now);
     mapDirtyTracker.markDirty();
     try { map.render(); } catch (_) {}
     pkg.refreshTimelineBar?.();
     return true;
+}
+
+// Saut : le suivi de caméra reprend là où la vidéo en serait, au lieu d'être
+// suspendu jusqu'au prochain lancement.
+//   - piste (défaut) : son origine est recalée sur l'instant vidéo du jour
+//     atteint ; la vue prend tout de suite la pose de la piste à cet instant,
+//     et la reprise continue la piste — même rendu qu'un déroulé continu ;
+//   - tête du trait : la vue saute sur le stylo, replacé par seekTravelTrail ;
+//   - réactif : le trajet en cours est abandonné, les jours suivants
+//     reposent leurs cibles.
+// La durée imposée sans piste (cameraPacing) répartit le temps depuis le
+// début : abandonnée, le rythme repasse au réglage. Une suspension manuelle
+// (carte déplacée pendant l'animation) reste respectée.
+// À appeler une fois dayIndex et l'accumulateur recalés (previewVideoMs).
+function seekCameraFollow(now) {
+    clearCameraRenderWait();
+    cameraTarget = null;
+    cameraTargetExtent = null;
+    cameraJourney = null;
+    cameraJourneyStartedAt = null;
+    cameraTravelPending = false;
+    trailCamJourney = null;
+    trailCamJourneyStartedAt = null;
+    trailCamLastNow = null;
+    // Retour au cadrage : son plan est gardé, la fin des dates le réarme.
+    cameraReturn = null;
+    cameraPacing = null;
+    if (!pkg.options.animation?.cameraFollow || cameraFollowSuspended || isEvolutionPage()) return;
+    const view = map.getView();
+    if (cameraTrack) {
+        const trackMs = previewVideoMs();
+        cameraTrackStartAt = now - trackMs;
+        // Préchargement : les destinations déjà passées ne sont pas
+        // redemandées (un saut en avant les déchargerait toutes d'un coup).
+        const events = cameraTrack.events || [];
+        let next = 0;
+        while (next < events.length
+            && events[next].startMs + Math.max(0, Number(events[next].durationMs) || 0) <= trackMs) next++;
+        cameraTrack.prefetchIndex = next;
+        const pose = cameraTrackStateAt(cameraTrack, trackMs);
+        if (pose) {
+            view.setCenter(canonicalCameraCenter(pose.center));
+            view.setZoom(pose.zoom);
+        }
+        return;
+    }
+    if (effectiveCameraFollowMode() === 'trail') {
+        const head = trailHeadMapPosition(now);
+        if (head) view.setCenter(canonicalCameraCenter([head.x, head.y]));
+    }
+}
+
+// Tests : état du suivi de caméra — suspension, piste et pose attendue de
+// la piste à l'instant courant de l'horloge des points (comparée à la vue).
+export function getCameraFollowSnapshot() {
+    const view = map?.getView?.();
+    const trackMs = cameraTrack && cameraTrackStartAt !== null
+        ? sampleAppearClock() - cameraTrackStartAt
+        : null;
+    const pose = trackMs !== null ? cameraTrackStateAt(cameraTrack, trackMs) : null;
+    return {
+        enabled: !!pkg.options.animation?.cameraFollow,
+        suspended: cameraFollowSuspended,
+        track: !!cameraTrack,
+        trackMs,
+        pose: pose ? { center: canonicalCameraCenter(pose.center), zoom: pose.zoom } : null,
+        view: view ? { center: view.getCenter(), zoom: view.getZoom() } : null,
+    };
+}
+
+// Barre de chronologie : instant de la vidéo à la fin de `shownDays` jours
+// de la plage (pré-roll et pauses de la piste compris). Exact pendant un
+// aperçu ou un enregistrement (plan du lancement) ; au repos, estimé sur le
+// rythme réglé — `exact: false` quand le suivi de caméra ajoutera un
+// pré-roll et des pauses que seul le lancement calcule. Le plan n'est pas
+// lu pendant un enregistrement (capture rapide : timeline étirée).
+export function videoTimeAtDays(shownDays) {
+    const shown = Math.max(0, Math.floor(Number(shownDays) || 0));
+    const preview = !!animationInProgress && !isRecordingActive();
+    const plan = preview && previewTimeline ? previewTimeline : null;
+    if (plan) {
+        let holdsMs = 0;
+        if (plan.holdsByDay) {
+            for (let i = 0; i < shown && i < plan.holdsByDay.length; i++) holdsMs += plan.holdsByDay[i] || 0;
+        }
+        return { ms: plan.leadMs + holdsMs + shown * plan.dayMs, exact: true };
+    }
+    const camera = !!pkg.options.animation?.cameraFollow && !isEvolutionPage();
+    return { ms: shown * animationMsPerDay(), exact: !camera };
 }
 
 // Instant de la vidéo qui correspond à l'état affiché : pré-roll, jours déjà

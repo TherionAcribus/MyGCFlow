@@ -11,6 +11,13 @@
 // son style et la surimpression plein écran sont retenus par ce navigateur
 // (localStorage).
 //
+// L'axe déborde la plage d'une marge grisée de chaque côté (timelineAxis) :
+// les poignées en haut des bornes se tirent pour la raccourcir ou l'étendre,
+// comme le clic droit (pose des bornes, setAnimationDates). Des repères
+// marquent les trouvailles rondes et le planing des Images ; une bulle donne,
+// au survol, la date, le nombre du jour (ou de la tranche), le total et
+// l'instant de la vidéo.
+//
 // En plein écran (classe fullscreen-mode posée sur <main> par ui.js), la
 // barre devient une surimpression au bas de la carte — optionnelle : le
 // bouton #btnTimelineBarFs du menu flottant bascule `fsOverlay`, mémorisé
@@ -20,7 +27,7 @@
 // Le saut lui-même vit dans mapgl.js (seekAnimationToDate), la pause et la
 // reprise dans ui.js (mêmes chemins que les boutons).
 import * as pkg from './index.js';
-import { counterAt } from './evolution_timeline.mjs';
+import { counterAt, dateToDayNumber } from './evolution_timeline.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
 import {
     bucketDaysFor,
@@ -31,11 +38,15 @@ import {
     cursorFraction,
     dateOfOffset,
     dayOffsetOf,
+    formatVideoTime,
+    milestoneMarks,
+    nextEventOffset,
     normalizeTimelineStyle,
     offsetAtFraction,
     offsetForKey,
     seriesExtent,
     spanDays,
+    timelineAxis,
     yearLabelOffsets,
     yearStartOffsets,
 } from './timeline_model.mjs';
@@ -52,6 +63,14 @@ const WHEEL_STEP_PX = 100;
 // Sous cette largeur, les dates des bornes et le choix du style cèdent la
 // place à la piste.
 const NARROW_PX = 520;
+// Poignées des bornes : languettes en haut de la piste. Seule cette bande
+// les saisit — plus bas, un clic près d'une borne reste un saut.
+const HANDLE_TAB_W = 6;
+const HANDLE_TAB_H = 11;
+const HANDLE_ZONE_PX = 16;
+const HANDLE_HIT_PX = 7;
+// Repères : saisis par la bulle à ±4 px du jour survolé.
+const MARK_HIT_PX = 4;
 
 // var et non let pour ce que lit refreshTimelineBar : ui.js l'appelle
 // (refreshTimingPlan, updateControlBar) pendant sa propre évaluation, avant
@@ -69,10 +88,11 @@ let fsButton = null;
 let fsOverlay = readStorage(FS_KEY) !== '0';
 let style = 'histogram';
 let seriesMemo = null;
-// Calques hors écran : tout ce qui est fixe pendant la lecture (repères,
-// série en deux teintes) n'y est redessiné qu'à changement de leur clé —
-// par frame, draw() ne fait plus que deux drawImage et les mobiles
-// (étiquettes, curseur, poignée, fantôme).
+let milestonesMemo = null;
+// Calques hors écran : tout ce qui est fixe pendant la lecture (repères
+// d'année, série en deux teintes) n'y est redessiné qu'à changement de leur
+// clé — par frame, draw() ne fait plus que deux drawImage et les mobiles
+// (voile hors plage, repères, poignées, étiquettes, curseur, fantôme).
 let layerRest = null;
 let layerPlayed = null;
 let layersKey = '';
@@ -93,13 +113,23 @@ let keySettleTimer = null;
 // émettent par petits pas sous le seuil d'un cran.
 let wheelAccum = 0;
 // Dernier état dessiné, pour convertir pointeur et touches en jours.
+// lastSpan : jours de la plage ; lastAxis : axe de la piste (timelineAxis).
 let lastState = null;
 let lastSpan = 0;
-// Jour survolé hors geste (ligne fantôme, date dans l'étiquette) — la
-// carte ne bouge pas tant qu'il n'y a pas clic.
+let lastAxis = null;
+// Jour de l'AXE survolé hors geste (ligne fantôme, date dans l'étiquette et
+// la bulle) — la carte ne bouge pas tant qu'il n'y a pas clic.
 let hoverOffset = null;
+// Poignée survolée ('start' | 'end' | null) : curseur de redimensionnement.
+let hoverHandle = null;
+// Poignée tirée : { which, pointerId, from, to } (jours de l'axe), bornes
+// posées au relâchement seulement.
+let rangeDrag = null;
 // Menu contextuel ouvert (clic droit : pose des bornes de l'animation).
 let menu = null;
+// Bulle (survol, glissement) : sur <body>, en position fixe.
+let tip = null;
+let tipText = '';
 
 function readStorage(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -109,26 +139,48 @@ function writeStorage(key, value) {
     try { localStorage.setItem(key, value); } catch (_) {}
 }
 
+function formatDate(date) {
+    return pkg.formatDateDisplay?.(date) ?? date.toLocaleDateString();
+}
+
+function formatCount(n) {
+    try { return Math.round(n).toLocaleString(document.documentElement.lang || undefined); }
+    catch (_) { return String(Math.round(n)); }
+}
+
 // --- Données ---------------------------------------------------------------------
 
-// Par jour de la plage : `events` (trouvailles, ou poses en mode Évolution),
-// `secondary` (archivages, Évolution seulement) et `level`, la valeur à la fin
-// du jour (cumul des trouvailles, ou caches actives).
-function seriesFor(state, span) {
+// Axe de la piste pour l'état courant : la plage, plus les marges que
+// l'étendue de la sélection permet (bornes de « Plage complète »).
+function axisFor(state) {
+    const defaults = pkg.getAnimationDateDefaults?.() || {};
+    const extent = defaults.start instanceof Date && defaults.end instanceof Date
+        ? defaults
+        : (pkg.getSelectionDateExtent?.() || {});
+    return timelineAxis(state.start, state.end, extent.start, extent.end);
+}
+
+// Par jour de l'axe : `events` (trouvailles, ou poses en mode Évolution),
+// `secondary` (archivages, Évolution seulement), `level`, la valeur à la fin
+// du jour (cumul des trouvailles, ou caches actives), et `base`, le cumul de
+// la veille du premier jour (trouvailles marquantes).
+function seriesFor(axis) {
     const evolution = isEvolutionPage();
     const index = evolution ? pkg.evolutionStatsIndex?.() : null;
     const revision = evolution ? `evo:${index?.revision ?? 'none'}` : `gc:${pkg.pointsByDateRevision ?? 0}`;
-    const key = `${revision}|${state.start.getTime()}|${span}`;
+    const span = axis.span;
+    const key = `${revision}|${axis.start.getTime()}|${span}`;
     if (seriesMemo?.key === key) return seriesMemo.series;
 
     const events = new Float64Array(span);
     let secondary = null;
     let level;
+    let base = 0;
     if (evolution) {
         secondary = new Float64Array(span);
         level = new Float64Array(span);
         const timeline = index?.timeline;
-        const first = index?.dayOf?.(state.start);
+        const first = index?.dayOf?.(axis.start);
         if (timeline && Number.isFinite(first)) {
             let placed = counterAt(timeline, first - 1, 'placed');
             let archived = counterAt(timeline, first - 1, 'archived');
@@ -145,22 +197,60 @@ function seriesFor(state, span) {
     } else {
         // Locationless masquées comprises : comptées comme le compteur de
         // caches, même sans point sur la carte.
-        let base = 0;
         for (const byDate of [pkg.pointsByDate, pkg.hiddenPointsByDate]) {
             if (!byDate) continue;
             for (const [dateKey, list] of byDate.entries()) {
                 const n = list?.length || 0;
                 if (!n) continue;
-                const offset = dayOffsetOf(new Date(dateKey), state.start);
+                const offset = dayOffsetOf(new Date(dateKey), axis.start);
                 if (offset < 0) base += n;
                 else if (offset < span) events[offset] += n;
             }
         }
         level = cumulative(events, base);
     }
-    const series = { events, secondary, level };
+    const series = { events, secondary, level, base };
     seriesMemo = { key, series };
     return series;
+}
+
+// Repères de l'axe, triés : trouvailles rondes (page principale) et
+// apparitions/disparitions des images planifiées. { offset, kind, label }.
+function marksFor(axis, series) {
+    const marks = [];
+    if (!isEvolutionPage()) {
+        if (milestonesMemo?.key !== seriesMemo.key) {
+            milestonesMemo = { key: seriesMemo.key, marks: milestoneMarks(series.level, series.base) };
+        }
+        for (const { offset, value } of milestonesMemo.marks) {
+            marks.push({
+                offset,
+                kind: 'milestone',
+                label: pkg.t('${count}ᵉ trouvaille', { count: formatCount(value) }),
+            });
+        }
+    }
+    const first = dateToDayNumber(axis.start);
+    for (const mark of pkg.getImageScheduleMarks?.() || []) {
+        const offset = mark.day - first;
+        if (offset < 0 || offset >= axis.span) continue;
+        marks.push({
+            offset,
+            kind: mark.kind === 'out' ? 'image-out' : 'image-in',
+            label: mark.kind === 'out'
+                ? pkg.t('Disparition : ${name}', { name: mark.name })
+                : pkg.t('Apparition : ${name}', { name: mark.name }),
+        });
+    }
+    marks.sort((a, b) => a.offset - b.offset);
+    return marks;
+}
+
+// Plage affichée sur l'axe ({ from, to }, jours inclus) : celle qu'une
+// poignée tirée propose, sinon celle de l'animation.
+function displayedRange(axis) {
+    if (rangeDrag) return { from: rangeDrag.from, to: rangeDrag.to };
+    return { from: axis.rangeOffset, to: axis.rangeOffset + axis.rangeSpan - 1 };
 }
 
 // --- Dessin ----------------------------------------------------------------------
@@ -189,6 +279,10 @@ function colorsFor() {
             cursor: cssColor(styles, '--timeline-cursor', '#1d273b'),
             tick: cssColor(styles, '--timeline-tick', 'rgba(108, 117, 125, 0.3)'),
             label: cssColor(styles, '--timeline-label', 'rgba(108, 117, 125, 0.85)'),
+            veil: cssColor(styles, '--timeline-veil', 'rgba(255, 255, 255, 0.6)'),
+            handle: cssColor(styles, '--timeline-handle', '#1d273b'),
+            milestone: cssColor(styles, '--timeline-milestone', '#2fb344'),
+            image: cssColor(styles, '--timeline-image', '#f59f00'),
         };
     }
     return colorsCache;
@@ -205,13 +299,13 @@ function invalidateLayers() {
 }
 
 // Les deux calques hors écran, reconstruits seulement quand la clé change
-// (série — révision + plage —, taille, densité, style, version de
-// couleurs). `layerRest` porte les repères d'année et la série « à venir »
-// ; `layerPlayed` la même série en teinte « jouée » — sans repères : ils
-// ne sont pas re-teintés dans la partie jouée. Les étiquettes d'année en
-// sont volontairement absentes : dessinées par frame au-dessus des deux
-// teintes, le calque « joué » les recouvrirait sinon.
-function ensureLayers(state, span, series, w, h, ratio, colors) {
+// (série — révision + axe —, taille, densité, style, version de couleurs).
+// `layerRest` porte les repères d'année et la série « à venir » ;
+// `layerPlayed` la même série en teinte « jouée » — sans repères : ils ne
+// sont pas re-teintés dans la partie jouée. Les étiquettes d'année en sont
+// volontairement absentes : dessinées par frame au-dessus des deux teintes,
+// le calque « joué » les recouvrirait sinon.
+function ensureLayers(axis, series, w, h, ratio, colors) {
     const key = `${seriesMemo.key}|${w}x${h}@${ratio}|${style}|${colorsVersion}`;
     if (key === layersKey) return;
     if (!layerRest) {
@@ -225,14 +319,14 @@ function ensureLayers(state, span, series, w, h, ratio, colors) {
     const restCtx = layerRest.getContext('2d');
     restCtx.scale(ratio, ratio);
     restCtx.fillStyle = colors.tick;
-    for (const yearOffset of yearStartOffsets(state.start, span)) {
-        const x = Math.round(yearOffset / span * w) + 0.5;
+    for (const yearOffset of yearStartOffsets(axis.start, axis.span)) {
+        const x = Math.round(yearOffset / axis.span * w) + 0.5;
         restCtx.fillRect(x - 0.5, 0, 1, h);
     }
-    drawSeries(restCtx, series, span, w, h, colors.rest);
+    drawSeries(restCtx, series, axis.span, w, h, colors.rest);
     const playedCtx = layerPlayed.getContext('2d');
     playedCtx.scale(ratio, ratio);
-    drawSeries(playedCtx, series, span, w, h, colors.played);
+    drawSeries(playedCtx, series, axis.span, w, h, colors.played);
     layersKey = key;
 }
 
@@ -240,6 +334,12 @@ function ensureLayers(state, span, series, w, h, ratio, colors) {
 // : on ne touche un attribut ARIA que s'il change réellement.
 function setAttr(el, name, value) {
     if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+}
+
+// Abscisse (px CSS) du bord droit du jour `axisOffset` — là où se pose le
+// curseur une fois ce jour affiché.
+function dayEndX(axisOffset, axis, w) {
+    return cursorFraction(axisOffset, axis.span) * w;
 }
 
 function draw() {
@@ -250,15 +350,18 @@ function draw() {
     if (!bar || bar.hidden) return;
     const state = pkg.getTimelineState?.() || null;
     const span = state ? spanDays(state.start, state.end) : 0;
-    const usable = !!state && span > 0;
+    const axis = state && span > 0 ? axisFor(state) : null;
+    const usable = !!axis;
     lastState = usable ? state : null;
     lastSpan = usable ? span : 0;
+    lastAxis = axis;
     // Pendant un glissement, le curseur suit le pointeur sans attendre le saut.
     const offset = usable
         ? clampOffset(pendingOffset ?? dayOffsetOf(state.position, state.start), span)
         : 0;
 
-    syncLabels(state, span, offset, usable);
+    const series = usable ? seriesFor(axis) : null;
+    syncLabels(state, axis, series, offset, usable);
 
     // Taille tenue par le ResizeObserver ; mesure synchrone seulement tant
     // qu'il n'a pas tiré — ses notifications passent après le layout, une
@@ -272,24 +375,35 @@ function draw() {
     const ctx = canvas.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    if (!usable) return;
+    if (!usable) {
+        syncTip(null, null, 0);
+        return;
+    }
     const w = trackSize.width;
     const h = trackSize.height;
 
     const colors = colorsFor();
-    const series = seriesFor(state, span);
     // La partie fixe — repères, série « à venir » puis « jouée » — vient
     // des calques mémoïsés. Composite en pixels device (transform
     // identité) : la sous-image bridée au curseur s'arrête exactement à
     // cursorX, comme le clip rect(0,0,cursorX,h) d'avant — une tranche à
     // cheval est coupée à la bonne date.
-    ensureLayers(state, span, series, w, h, ratio, colors);
+    ensureLayers(axis, series, w, h, ratio, colors);
     ctx.drawImage(layerRest, 0, 0);
-    const cursorX = cursorFraction(offset, span) * w;
+    const cursorAxis = offset + axis.rangeOffset;
+    const cursorX = dayEndX(cursorAxis, axis, w);
     ctx.drawImage(layerPlayed,
         0, 0, cursorX * ratio, h * ratio,
         0, 0, cursorX * ratio, h * ratio);
     ctx.scale(ratio, ratio);
+
+    // Marges hors de la plage : voile de la couleur du fond.
+    const range = displayedRange(axis);
+    const x0 = range.from / axis.span * w;
+    const x1 = (range.to + 1) / axis.span * w;
+    ctx.fillStyle = colors.veil;
+    if (x0 > 0) ctx.fillRect(0, 0, x0, h);
+    if (x1 < w) ctx.fillRect(x1, 0, w - x1, h);
 
     // Années par-dessus les barres, sous le curseur : seuls les repères
     // qui laissent la place au texte (glouton, cf. yearLabelOffsets), et
@@ -297,12 +411,16 @@ function draw() {
     ctx.font = '10px sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = colors.label;
-    for (const yearOffset of yearLabelOffsets(yearStartOffsets(state.start, span), span, w)) {
-        const x = Math.round(yearOffset / span * w) + 0.5;
-        const label = String(dateOfOffset(state.start, yearOffset).getFullYear());
+    for (const yearOffset of yearLabelOffsets(yearStartOffsets(axis.start, axis.span), axis.span, w)) {
+        const x = Math.round(yearOffset / axis.span * w) + 0.5;
+        const label = String(dateOfOffset(axis.start, yearOffset).getFullYear());
         if (x + 3 + ctx.measureText(label).width > w - 2) continue;
         ctx.fillText(label, x + 3, h - 1);
     }
+
+    const marks = marksFor(axis, series);
+    drawMarks(ctx, marks, axis, w, colors);
+    if (!state.recording) drawHandles(ctx, x0, x1, h, colors);
 
     ctx.fillStyle = colors.cursor;
     ctx.fillRect(Math.round(cursorX) - 1, 0, 2, h);
@@ -317,12 +435,62 @@ function draw() {
     // Fantôme de survol : où un clic amènerait le curseur. Sautée au droit
     // du curseur réel — le survol n'y apprend rien et l'alpha y assombrit
     // juste le trait (pas de clignotement à l'approche non plus).
-    if (hoverOffset !== null && hoverOffset !== offset && !gesture) {
+    if (hoverOffset !== null && hoverOffset !== cursorAxis && !gesture && !rangeDrag) {
         ctx.globalAlpha = 0.45;
-        const x = Math.round(cursorFraction(hoverOffset, span) * w) + 0.5;
+        const x = Math.round(dayEndX(hoverOffset, axis, w)) + 0.5;
         ctx.fillRect(x - 0.5, 0, 1, h);
         ctx.globalAlpha = 1;
     }
+
+    syncTip(axis, series, w, { cursorAxis, marks });
+}
+
+// Repères en haut de la piste : losange vert pour une trouvaille ronde,
+// triangle ambré pour une image (plein : apparition ; creux : disparition).
+function drawMarks(ctx, marks, axis, w, colors) {
+    for (const mark of marks) {
+        const x = dayEndX(mark.offset, axis, w);
+        ctx.beginPath();
+        if (mark.kind === 'milestone') {
+            ctx.moveTo(x, 1);
+            ctx.lineTo(x + 3.5, 4.5);
+            ctx.lineTo(x, 8);
+            ctx.lineTo(x - 3.5, 4.5);
+            ctx.closePath();
+            ctx.fillStyle = colors.milestone;
+            ctx.fill();
+        } else {
+            ctx.moveTo(x - 4, 1);
+            ctx.lineTo(x + 4, 1);
+            ctx.lineTo(x, 7);
+            ctx.closePath();
+            if (mark.kind === 'image-in') {
+                ctx.fillStyle = colors.image;
+                ctx.fill();
+            } else {
+                ctx.lineWidth = 1.25;
+                ctx.strokeStyle = colors.image;
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+// Poignées des bornes : trait sur toute la hauteur, languette en haut,
+// tournée vers l'intérieur de la plage.
+function drawHandles(ctx, x0, x1, h, colors) {
+    ctx.fillStyle = colors.handle;
+    const left = Math.max(0, Math.min(x0, x1 - 1.5));
+    const right = Math.max(left + 1.5, x1);
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(left, 0, 1.5, h);
+    ctx.fillRect(right - 1.5, 0, 1.5, h);
+    ctx.globalAlpha = 0.9;
+    roundRect(ctx, left, 0, HANDLE_TAB_W, HANDLE_TAB_H, 2);
+    ctx.fill();
+    roundRect(ctx, right - HANDLE_TAB_W, 0, HANDLE_TAB_W, HANDLE_TAB_H, 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
 }
 
 function drawSeries(ctx, series, span, w, h, color) {
@@ -342,6 +510,10 @@ function drawSeries(ctx, series, span, w, h, color) {
         let max = 0;
         for (let b = 0; b < main.length; b++) max = Math.max(max, main[b] + (extra ? extra[b] : 0));
         if (!(max > 0)) return;
+        // Échelle racine carrée : un jour exceptionnel (power trail,
+        // méga-event) écrasait toutes les autres barres à 2 px en linéaire ;
+        // la racine garde l'ordre et laisse les petits jours lisibles.
+        const rootMax = Math.sqrt(max);
         const usableH = h - pad;
         for (let b = 0; b < main.length; b++) {
             const total = main[b] + (extra ? extra[b] : 0);
@@ -349,13 +521,16 @@ function drawSeries(ctx, series, span, w, h, color) {
             const x0 = b * bucketDays / span * w;
             const x1 = Math.min(span, (b + 1) * bucketDays) / span * w;
             const barW = Math.max(1, x1 - x0 - (x1 - x0 > 3 ? 1 : 0));
-            // Au moins 2 px : une tranche à une seule trouvaille reste visible.
-            const mainH = main[b] > 0 ? Math.max(2, main[b] / max * usableH) : 0;
+            // Hauteur de la pile sur l'échelle racine, partagée entre poses
+            // et archivages au prorata. Au moins 2 px par part non nulle :
+            // une tranche à une seule trouvaille reste visible.
+            const totalH = Math.sqrt(total) / rootMax * usableH;
+            const mainH = main[b] > 0 ? Math.max(2, totalH * main[b] / total) : 0;
             ctx.globalAlpha = 1;
             ctx.fillRect(x0, h - mainH, barW, mainH);
             if (extra && extra[b] > 0) {
                 // Évolution : les archivages empilés, en teinte atténuée.
-                const extraH = Math.max(2, extra[b] / max * usableH);
+                const extraH = Math.max(2, totalH * extra[b] / total);
                 ctx.globalAlpha = 0.45;
                 ctx.fillRect(x0, h - mainH - extraH, barW, extraH);
             }
@@ -363,8 +538,8 @@ function drawSeries(ctx, series, span, w, h, color) {
         ctx.globalAlpha = 1;
         return;
     }
-    // Courbe : valeur à la fin de chaque jour, sur l'écart min..max de la
-    // plage (un long passé avant la date de début écraserait la progression).
+    // Courbe : valeur à la fin de chaque jour, sur l'écart min..max de l'axe
+    // (un long passé avant la date de début écraserait la progression).
     const { min, max } = seriesExtent(series.level);
     const range = max - min || 1;
     const yOf = (v) => h - pad - (v - min) / range * (h - 2 * pad);
@@ -408,12 +583,57 @@ function roundRect(ctx, x, y, w, h, r) {
     }
 }
 
-function formatCount(n) {
-    try { return Math.round(n).toLocaleString(document.documentElement.lang || undefined); }
-    catch (_) { return String(Math.round(n)); }
+// --- Textes ----------------------------------------------------------------------
+
+// Valeur à la fin du jour : caches (cumul) ou actives (Évolution).
+// Singulier/pluriel choisi sur le compte numérique (formatCount rend une
+// chaîne localisée) — pas de ngettext côté JS, d'où deux msgids.
+function levelText(level) {
+    const count = formatCount(level);
+    if (isEvolutionPage()) {
+        return level > 1 ? pkg.t('${count} actives', { count }) : pkg.t('${count} active', { count });
+    }
+    return level > 1 ? pkg.t('${count} caches', { count }) : pkg.t('${count} cache', { count });
 }
 
-function syncLabels(state, span, offset, usable) {
+// Événements d'un jour ou d'une tranche : trouvailles, ou poses et
+// archivages (Évolution).
+function eventsText(main, extra) {
+    if (isEvolutionPage()) {
+        const placed = formatCount(main);
+        const archived = formatCount(extra);
+        const placedText = main > 1 ? pkg.t('${count} poses', { count: placed }) : pkg.t('${count} pose', { count: placed });
+        const archivedText = extra > 1
+            ? pkg.t('${count} archivages', { count: archived })
+            : pkg.t('${count} archivage', { count: archived });
+        return `${placedText}, ${archivedText}`;
+    }
+    if (!(main > 0)) return pkg.t('aucune trouvaille');
+    const count = formatCount(main);
+    return main > 1 ? pkg.t('${count} trouvailles', { count }) : pkg.t('${count} trouvaille', { count });
+}
+
+// Instant de la vidéo à la fin du jour `axisOffset`, ou '' hors de la plage
+// (ces jours-là ne sont pas dans la vidéo). « ≈ » au repos quand le suivi de
+// caméra ajoutera un pré-roll et des pauses (calculés au lancement).
+function videoTimeText(axis, axisOffset) {
+    const shown = axisOffset - axis.rangeOffset + 1;
+    if (shown < 1 || shown > axis.rangeSpan) return '';
+    const time = pkg.videoTimeAtDays?.(shown);
+    if (!time || !Number.isFinite(time.ms)) return '';
+    const text = formatVideoTime(time.ms);
+    return time.exact ? text : `≈ ${text}`;
+}
+
+// Étiquette et ARIA : date, total à la fin du jour et instant de la vidéo.
+function labelText(axis, series, axisOffset) {
+    const parts = [formatDate(dateOfOffset(axis.start, axisOffset)), levelText(series.level[axisOffset] ?? 0)];
+    const time = videoTimeText(axis, axisOffset);
+    if (time) parts.push(time);
+    return parts.join(' · ');
+}
+
+function syncLabels(state, axis, series, offset, usable) {
     const startLabel = document.getElementById('timelineBarStart');
     const endLabel = document.getElementById('timelineBarEnd');
     const dateLabel = document.getElementById('timelineBarDate');
@@ -435,31 +655,126 @@ function syncLabels(state, span, offset, usable) {
         setAttr(track, 'aria-valuetext', pkg.t('Aucune donnée à parcourir'));
         return;
     }
-    const format = (date) => pkg.formatDateDisplay?.(date) ?? date.toLocaleDateString();
-    const startText = format(state.start);
-    const endText = format(state.end);
+    // Les dates des bouts suivent l'axe (marges comprises) : elles nomment
+    // les extrémités de la piste.
+    const startText = formatDate(axis.start);
+    const endText = formatDate(dateOfOffset(axis.start, axis.span - 1));
     if (startLabel && startLabel.textContent !== startText) startLabel.textContent = startText;
     if (endLabel && endLabel.textContent !== endText) endLabel.textContent = endText;
-    const series = seriesFor(state, span);
-    const textAt = (dayOffset) => {
-        // Singulier/pluriel choisi sur le compte numérique (formatCount rend
-        // une chaîne localisée) — pas de ngettext côté JS, d'où deux msgids.
-        const level = series.level[dayOffset] ?? 0;
-        const count = formatCount(level);
-        const countText = isEvolutionPage()
-            ? (level > 1 ? pkg.t('${count} actives', { count }) : pkg.t('${count} active', { count }))
-            : (level > 1 ? pkg.t('${count} caches', { count }) : pkg.t('${count} cache', { count }));
-        return `${format(dateOfOffset(state.start, dayOffset))} · ${countText}`;
-    };
     // Le survol affiche la date visée, mais les attributs ARIA restent sur
     // le curseur réel : le fantôme n'est pas la valeur du slider.
-    const labelOffset = (hoverOffset !== null && !gesture) ? hoverOffset : offset;
-    const text = textAt(labelOffset);
+    const cursorAxis = offset + axis.rangeOffset;
+    const labelOffset = (hoverOffset !== null && !gesture && !rangeDrag) ? hoverOffset : cursorAxis;
+    const text = labelText(axis, series, labelOffset);
     if (dateLabel && dateLabel.textContent !== text) dateLabel.textContent = text;
     setAttr(track, 'aria-valuemin', '0');
-    setAttr(track, 'aria-valuemax', String(span - 1));
+    setAttr(track, 'aria-valuemax', String(axis.rangeSpan - 1));
     setAttr(track, 'aria-valuenow', String(offset));
-    setAttr(track, 'aria-valuetext', labelOffset === offset ? text : textAt(offset));
+    setAttr(track, 'aria-valuetext', labelOffset === cursorAxis ? text : labelText(axis, series, cursorAxis));
+}
+
+// --- Bulle -----------------------------------------------------------------------
+
+// Lignes de la bulle pour le jour `a` de l'axe : date (ou borne tirée),
+// nombre du jour ou de la tranche de l'histogramme, total, instant de la
+// vidéo, puis les repères posés à ce jour.
+function tipLines(axis, series, a, w, { handle = null, marks = [] } = {}) {
+    const lines = [];
+    const date = formatDate(dateOfOffset(axis.start, a));
+    const inRange = a >= axis.rangeOffset && a < axis.rangeOffset + axis.rangeSpan;
+    if (handle === 'start') lines.push({ text: pkg.t('Début : ${date}', { date }), strong: true });
+    else if (handle === 'end') lines.push({ text: pkg.t('Fin : ${date}', { date }), strong: true });
+    else if (inRange) lines.push({ text: date, strong: true });
+    else lines.push({ text: pkg.t('${date} — hors de l\'animation', { date }), strong: true });
+
+    // Histogramme : la tranche sous le pointeur, alignée comme les barres
+    // (bucketize part du premier jour de l'axe).
+    const bucket = style === 'histogram' ? bucketDaysFor(axis.span, w) : 1;
+    const from = Math.floor(a / bucket) * bucket;
+    const to = Math.min(axis.span - 1, from + bucket - 1);
+    let main = 0;
+    let extra = 0;
+    for (let k = from; k <= to; k++) {
+        main += series.events[k] || 0;
+        extra += series.secondary?.[k] || 0;
+    }
+    const text = eventsText(main, extra);
+    lines.push({
+        text: from === to
+            ? pkg.t('Ce jour : ${text}', { text })
+            : pkg.t('Du ${from} au ${to} : ${text}', {
+                from: formatDate(dateOfOffset(axis.start, from)),
+                to: formatDate(dateOfOffset(axis.start, to)),
+                text,
+            }),
+    });
+    lines.push({ text: pkg.t('Total : ${text}', { text: levelText(series.level[a] ?? 0) }) });
+    const time = videoTimeText(axis, a);
+    if (time) lines.push({ text: pkg.t('Vidéo : ${time}', { time }) });
+
+    const x = dayEndX(a, axis, w);
+    for (const mark of marks) {
+        if (Math.abs(dayEndX(mark.offset, axis, w) - x) <= MARK_HIT_PX) {
+            lines.push({ text: mark.label, mark: mark.kind });
+        }
+    }
+    return lines;
+}
+
+function hideTip() {
+    if (tip && !tip.hidden) tip.hidden = true;
+}
+
+// Bulle à jour pour le dessin courant : borne tirée, curseur glissé, ou jour
+// survolé — rien sinon. DOM réécrit seulement quand le texte change.
+function syncTip(axis, series, w, { cursorAxis = 0, marks = [] } = {}) {
+    let target = null;
+    if (axis && series) {
+        if (rangeDrag) {
+            target = { a: rangeDrag.which === 'start' ? rangeDrag.from : rangeDrag.to, handle: rangeDrag.which };
+        } else if (gesture && gesture.pointerId !== null) {
+            target = { a: cursorAxis, handle: null };
+        } else if (hoverOffset !== null && !gesture) {
+            target = { a: hoverOffset, handle: null };
+        }
+    }
+    if (!target) {
+        hideTip();
+        return;
+    }
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.className = 'timeline-bar-tip';
+        // La valeur du slider (aria-valuetext) dit déjà l'essentiel ; la
+        // bulle suit la souris, elle n'est pas lue.
+        tip.setAttribute('aria-hidden', 'true');
+        tip.hidden = true;
+        document.body.appendChild(tip);
+    }
+    const lines = tipLines(axis, series, target.a, w, { handle: target.handle, marks });
+    const text = lines.map((line) => `${line.mark || ''}|${line.text}`).join('\n');
+    if (text !== tipText) {
+        tipText = text;
+        tip.replaceChildren(...lines.map((line) => {
+            const row = document.createElement('div');
+            row.className = 'timeline-bar-tip-line';
+            if (line.strong) row.classList.add('is-strong');
+            if (line.mark) row.dataset.mark = line.mark;
+            row.textContent = line.text;
+            return row;
+        }));
+    }
+    if (tip.hidden) tip.hidden = false;
+    // Au-dessus du jour visé, bridée dans le viewport ; dessous s'il n'y a
+    // pas la place (barre collée en haut d'une petite fenêtre).
+    const rect = track.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    const x = rect.left + dayEndX(target.a, axis, w);
+    const left = Math.max(4, Math.min(window.innerWidth - tipRect.width - 4, x - tipRect.width / 2));
+    const above = rect.top - tipRect.height - 8;
+    const top = above >= 4 ? above : rect.bottom + 8;
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top = `${Math.round(top)}px`;
 }
 
 // --- Saut ------------------------------------------------------------------------
@@ -515,14 +830,27 @@ function flushSeek() {
     pkg.seekAnimationToDate?.(dateOfOffset(state.start, offset));
 }
 
-function offsetFromPointer(event) {
+// Axe relu à chaque événement : la plage peut changer en cours de geste
+// (refreshTimingPlan), alors que lastAxis date du dernier dessin.
+function currentAxis() {
+    const state = pkg.getTimelineState?.();
+    return (state && spanDays(state.start, state.end) > 0 ? axisFor(state) : null) || lastAxis;
+}
+
+// Jour de l'AXE sous le pointeur.
+function axisOffsetFromPointer(event, axis = currentAxis()) {
+    if (!axis) return 0;
     const rect = track.getBoundingClientRect();
     const fraction = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0;
-    // Plage relue à chaque événement : elle peut changer en cours de geste
-    // (refreshTimingPlan), alors que lastSpan date du dernier dessin.
-    const state = pkg.getTimelineState?.();
-    const span = state ? spanDays(state.start, state.end) : lastSpan;
-    return offsetAtFraction(Math.min(1, Math.max(0, fraction)), span);
+    return offsetAtFraction(Math.min(1, Math.max(0, fraction)), axis.span);
+}
+
+// Jour de la PLAGE visé par le pointeur : un clic dans une marge amène à la
+// borne la plus proche.
+function offsetFromPointer(event) {
+    const axis = currentAxis();
+    if (!axis) return 0;
+    return clampOffset(axisOffsetFromPointer(event, axis) - axis.rangeOffset, axis.rangeSpan);
 }
 
 function currentOffset() {
@@ -531,12 +859,42 @@ function currentOffset() {
     return state ? dayOffsetOf(state.position, state.start) : 0;
 }
 
+// Poignée sous le pointeur : bande du haut seulement, la plus proche des
+// deux bornes à HANDLE_HIT_PX près.
+function handleAt(event) {
+    const axis = lastAxis;
+    if (!axis || !lastState || lastState.recording) return null;
+    const rect = track.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (y < 0 || y > HANDLE_ZONE_PX || rect.width <= 0) return null;
+    const x0 = axis.rangeOffset / axis.span * rect.width;
+    const x1 = (axis.rangeOffset + axis.rangeSpan) / axis.span * rect.width;
+    const d0 = Math.abs(x - x0);
+    const d1 = Math.abs(x - x1);
+    if (Math.min(d0, d1) > HANDLE_HIT_PX) return null;
+    // Plage d'un jour : les deux bornes se touchent, le côté décide.
+    if (Math.abs(d0 - d1) < 0.5) return x < (x0 + x1) / 2 ? 'start' : 'end';
+    return d0 < d1 ? 'start' : 'end';
+}
+
+function setHoverHandle(which) {
+    if (which === hoverHandle) return;
+    hoverHandle = which;
+    bar.classList.toggle('is-over-handle', !!which);
+}
+
 function onPointerDown(event) {
     if (event.pointerType !== 'touch' && event.button !== 0) return;
     // Un deuxième pointeur en plein glissement ne doit pas détourner le drag.
-    if (gesture && gesture.pointerId !== null) return;
+    if ((gesture && gesture.pointerId !== null) || rangeDrag) return;
     draw(); // état frais : plage et données ont pu changer depuis le dernier dessin
     if (!lastState) return;
+    const handle = handleAt(event);
+    if (handle) {
+        beginRangeDrag(handle, event);
+        return;
+    }
     const offset = offsetFromPointer(event);
     if (!beginGesture()) return;
     // Le pointeur succède à une série de frappes éventuelle (geste clavier,
@@ -555,12 +913,20 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
+    if (rangeDrag) {
+        if (rangeDrag.pointerId === event.pointerId) moveRangeDrag(event);
+        return;
+    }
     if (!gesture) {
         // Hors geste : simple survol. Le fantôme montre où un clic
         // amènerait le curseur — sans toucher la carte (lecteur vidéo).
         if (!lastState) draw(); // pas encore dessiné : plage inconnue
-        if (!lastState || lastState.recording) return;
-        const offset = offsetFromPointer(event);
+        if (!lastState || lastState.recording) {
+            setHoverHandle(null);
+            return;
+        }
+        setHoverHandle(handleAt(event));
+        const offset = axisOffsetFromPointer(event);
         if (offset !== hoverOffset) {
             hoverOffset = offset;
             refreshTimelineBar();
@@ -572,12 +938,22 @@ function onPointerMove(event) {
 }
 
 function onPointerUp(event) {
+    if (rangeDrag && rangeDrag.pointerId === event.pointerId) {
+        // Annulé par le système (pointercancel) : rien n'est posé.
+        endRangeDrag(event.type !== 'pointercancel');
+        return;
+    }
     // Avant le garde-fou : la classe doit être retirée même quand le geste
     // a déjà été terminé par ailleurs (minuteur clavier, blur, menu) et que
     // ce relâchement arrive en retard.
     bar.classList.remove('is-dragging');
     if (!gesture || gesture.pointerId !== event.pointerId) return;
     endPointerGesture(event.pointerId);
+    // Doigt levé : pas de survol pour reprendre la bulle.
+    if (event.pointerType === 'touch') {
+        hoverOffset = null;
+        refreshTimelineBar();
+    }
 }
 
 function endPointerGesture(pointerId) {
@@ -589,11 +965,119 @@ function endPointerGesture(pointerId) {
     try { track.releasePointerCapture(pointerId); } catch (_) {}
 }
 
+// --- Poignées des bornes -----------------------------------------------------------
+//
+// Tirer une poignée propose une nouvelle borne (voile et bulle suivent le
+// pointeur) ; elle n'est posée qu'au relâchement, par setAnimationDates —
+// comme le clic droit. Une borne ramenée sur l'étendue des données est
+// posée à null (« Plage complète » pour ce côté). Échap annule.
+
+function beginRangeDrag(which, event) {
+    const axis = lastAxis;
+    rangeDrag = {
+        which,
+        pointerId: event.pointerId,
+        from: axis.rangeOffset,
+        to: axis.rangeOffset + axis.rangeSpan - 1,
+    };
+    hoverOffset = null;
+    try { track.setPointerCapture(event.pointerId); } catch (_) {}
+    track.focus({ preventScroll: true });
+    bar.classList.add('is-resizing');
+    closeMenu();
+    event.preventDefault();
+    refreshTimelineBar();
+}
+
+function moveRangeDrag(event) {
+    const offset = axisOffsetFromPointer(event, lastAxis);
+    if (rangeDrag.which === 'start') rangeDrag.from = Math.min(offset, rangeDrag.to);
+    else rangeDrag.to = Math.max(offset, rangeDrag.from);
+    refreshTimelineBar();
+}
+
+function endRangeDrag(commit) {
+    const drag = rangeDrag;
+    const axis = lastAxis;
+    rangeDrag = null;
+    bar.classList.remove('is-resizing');
+    try { track.releasePointerCapture(drag.pointerId); } catch (_) {}
+    refreshTimelineBar();
+    if (!commit || !axis) return;
+    const defaults = pkg.getAnimationDateDefaults?.() || {};
+    const sameDay = (a, b) => a instanceof Date && b instanceof Date && dayOffsetOf(a, b) === 0;
+    if (drag.which === 'start') {
+        if (drag.from === axis.rangeOffset) return;
+        const date = dateOfOffset(axis.start, drag.from);
+        pkg.setAnimationDates?.({ start: sameDay(date, defaults.start) ? null : date });
+    } else {
+        if (drag.to === axis.rangeOffset + axis.rangeSpan - 1) return;
+        const date = dateOfOffset(axis.start, drag.to);
+        pkg.setAnimationDates?.({ end: sameDay(date, defaults.end) ? null : date });
+    }
+}
+
+// --- Clavier et molette ------------------------------------------------------------
+
+// Espace : lecture/pause, comme sur un lecteur vidéo. Depuis le repos,
+// l'aperçu se lance ; une série de frappes en cours est close d'abord, sans
+// sa reprise automatique — Espace décide.
+function togglePlayback() {
+    if (gesture) {
+        gesture.resume = false;
+        endGesture();
+    }
+    const playback = pkg.previewPlaybackState?.();
+    if (playback === 'playing') pkg.setPreviewPaused?.(true);
+    else if (playback === 'paused') pkg.setPreviewPaused?.(false);
+    else if (playback === 'idle') pkg.startPreviewPlayback?.();
+    refreshTimelineBar();
+}
+
+// Ctrl+←/→ : jour avec trouvaille (ou pose/archivage) précédent ou suivant
+// dans la plage ; null s'il n'y en a pas.
+function eventDayFrom(offset, direction) {
+    const axis = lastAxis;
+    if (!axis) return null;
+    const series = seriesFor(axis);
+    const totals = series.secondary
+        ? series.events.map((v, k) => v + series.secondary[k])
+        : series.events;
+    const found = nextEventOffset(totals, offset + axis.rangeOffset, direction,
+        axis.rangeOffset, axis.rangeOffset + axis.rangeSpan - 1);
+    return found === null ? null : found - axis.rangeOffset;
+}
+
 function onKeyDown(event) {
-    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (rangeDrag) {
+        if (event.key === 'Escape') {
+            endRangeDrag(false);
+            event.preventDefault();
+        }
+        return;
+    }
+    if (event.key === ' ' || event.key === 'Spacebar') {
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        event.preventDefault(); // ni défilement de la page, ni clic simulé
+        // Touche maintenue : une seule bascule ; glissement en cours : le
+        // pointeur garde la main.
+        if (event.repeat || (gesture && gesture.pointerId !== null)) return;
+        draw();
+        if (!lastState || lastState.recording) return;
+        togglePlayback();
+        return;
+    }
+    if (event.altKey || event.metaKey) return;
+    const jump = event.ctrlKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight');
+    if (event.ctrlKey && !jump) return;
     draw();
     if (!lastState) return;
-    const target = offsetForKey(event.key, { shift: event.shiftKey }, currentOffset(), lastState.start, lastSpan);
+    const target = jump
+        ? eventDayFrom(currentOffset(), event.key === 'ArrowLeft' ? -1 : 1)
+        : offsetForKey(event.key, { shift: event.shiftKey }, currentOffset(), lastState.start, lastSpan);
+    // Ctrl+flèche sans jour plus loin : la touche reste à la barre (pas de
+    // saut de mot ailleurs), rien ne bouge.
+    if (jump) event.preventDefault();
     if (target === null) return;
     event.preventDefault();
     if (!beginGesture()) return;
@@ -617,11 +1101,14 @@ function onWheel(event) {
     if (event.ctrlKey || event.metaKey) return;
     // Un glissement pointeur en cours possède le curseur (même garde que
     // le clavier).
-    if (gesture && gesture.pointerId !== null) return;
+    if ((gesture && gesture.pointerId !== null) || rangeDrag) return;
     draw(); // état frais : plage et données ont pu changer depuis le dernier dessin
     // Barre inutilisable : la page reste libre de défiler (pas de
     // preventDefault).
     if (!lastState || lastState.recording) return;
+    // Au repos, la molette n'agit que sur une piste qui a le focus (clic,
+    // Tab) : la survoler en faisant défiler la page lançait l'aperçu.
+    if (pkg.previewPlaybackState?.() === 'idle' && document.activeElement !== track) return;
     event.preventDefault(); // la page ne doit pas scroller pendant le scrub
 
     // deltaX quand la molette/le pavé roule surtout horizontalement (Maj
@@ -661,6 +1148,8 @@ function onWheel(event) {
 // Clic droit sur la piste : pose les bornes de l'animation comme les boutons
 // « Sélection » de l'onglet Animation (setAnimationDates, ui.js). Le menu
 // natif n'a rien d'utile sur une piste : preventDefault est systématique.
+// Le jour visé est celui de l'axe : un clic droit dans une marge étend la
+// plage.
 
 function closeMenu() {
     if (!menu) return;
@@ -677,8 +1166,8 @@ function onMenuOutsidePointerDown(event) {
     if (menu && !menu.contains(event.target)) closeMenu();
 }
 
-// Focus parti hors du menu (Tab, Alt+Tab, clic ailleurs sans pointerdown) :
-// le menu ne reste pas ouvert, orphelin, derrière le focus. Le menu lui-même
+// Focus parti hors du menu (Alt+Tab, clic ailleurs sans pointerdown) : le
+// menu ne reste pas ouvert, orphelin, derrière le focus. Le menu lui-même
 // est focalisable (tabindex -1) : un clic sur un item désactivé y laisse le
 // focus au lieu de fermer.
 function onMenuFocusOut(event) {
@@ -716,13 +1205,18 @@ function onContextMenu(event) {
     // démarré un geste) : le geste se termine avant l'ouverture — sinon le
     // menu s'affichait par-dessus un glissement qui pilotait encore la carte.
     if (gesture && gesture.pointerId !== null) endPointerGesture(gesture.pointerId);
+    if (rangeDrag) endRangeDrag(false);
     // Comme onPointerDown : plage et données ont pu changer depuis le dernier
     // dessin — le libellé des items affiche la date du jour visé.
     draw();
     const state = lastState;
-    if (!state || state.recording) return;
-    const day = dateOfOffset(state.start, offsetFromPointer(event));
-    const date = pkg.formatDateDisplay?.(day) ?? day.toLocaleDateString();
+    const axis = lastAxis;
+    if (!state || !axis || state.recording) return;
+    const axisDay = axisOffsetFromPointer(event, axis);
+    const day = dateOfOffset(axis.start, axisDay);
+    const date = formatDate(day);
+    const rangeFrom = axis.rangeOffset;
+    const rangeTo = axis.rangeOffset + axis.rangeSpan - 1;
 
     closeMenu(); // une nouvelle ouverture remplace l'ancien menu
     menu = document.createElement('div');
@@ -748,16 +1242,19 @@ function onContextMenu(event) {
         menu.appendChild(separator);
     };
 
+    // Une borne qui croiserait l'autre (début après la fin) est désactivée :
+    // la plage serait vide.
     addItem(pkg.t('Début de l\'animation ici (${date})', { date }),
-        () => pkg.setAnimationDates({ start: day }));
+        () => pkg.setAnimationDates({ start: day }), axisDay > rangeTo);
     addItem(pkg.t('Fin de l\'animation ici (${date})', { date }),
-        () => pkg.setAnimationDates({ end: day }));
+        () => pkg.setAnimationDates({ end: day }), axisDay < rangeFrom);
     addSeparator();
     // « Plage complète » = bornes aux valeurs par défaut des données. Sans
-    // effet — désactivé — quand la plage affichée y est déjà. L'étendue vient
-    // de getSelectionDateExtent : metadata.startDate/endDate sont réécrits
-    // avec la plage choisie à chaque démarrage d'animation (mapgl.js).
-    const extent = pkg.getSelectionDateExtent?.() || {};
+    // effet — désactivé — quand la plage affichée y est déjà.
+    const defaults = pkg.getAnimationDateDefaults?.() || {};
+    const extent = defaults.start instanceof Date && defaults.end instanceof Date
+        ? defaults
+        : (pkg.getSelectionDateExtent?.() || {});
     const atFullRange = extent.start instanceof Date && extent.end instanceof Date
         ? dayOffsetOf(state.start, extent.start) === 0 && dayOffsetOf(state.end, extent.end) === 0
         : true;
@@ -769,6 +1266,7 @@ function onContextMenu(event) {
     menu.style.left = `${event.clientX}px`;
     menu.style.top = `${event.clientY}px`;
     document.body.appendChild(menu);
+    hideTip();
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth - 4) {
         menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 4)}px`;
@@ -807,8 +1305,11 @@ function applyVisibility() {
     trackSize = null;
     if (!bar.hidden) return;
     hoverOffset = null;
+    setHoverHandle(null);
     wheelAccum = 0; // une rafale de molette ne survit pas au masquage
     closeMenu(); // la piste masquée n'a plus de menu à afficher
+    hideTip();
+    if (rangeDrag) endRangeDrag(false);
     if (gesture) endGesture();
 }
 
@@ -858,9 +1359,12 @@ export function isTimelineBarVisible() {
     return visible;
 }
 
-// Tests : ce que la barre affiche, sans lire le canvas.
+// Tests : ce que la barre affiche, sans lire le canvas. `hover` est un jour
+// de l'axe ; `axisSpan`/`rangeOffset` situent la plage sur la piste.
 export function getTimelineBarSnapshot() {
     const state = pkg.getTimelineState?.() || null;
+    const axis = state && spanDays(state.start, state.end) > 0 ? axisFor(state) : null;
+    const series = axis ? seriesFor(axis) : null;
     return {
         visible,
         fsOverlay,
@@ -871,6 +1375,12 @@ export function getTimelineBarSnapshot() {
         valueText: track?.getAttribute('aria-valuetext') || '',
         dragging: !!gesture,
         hover: hoverOffset,
+        axisStart: axis?.start ?? null,
+        axisSpan: axis?.span ?? 0,
+        rangeOffset: axis?.rangeOffset ?? 0,
+        rangeDrag: rangeDrag ? { which: rangeDrag.which, from: rangeDrag.from, to: rangeDrag.to } : null,
+        marks: axis ? marksFor(axis, series).map(({ offset, kind, label }) => ({ offset, kind, label })) : [],
+        tip: tip && !tip.hidden ? [...tip.children].map((row) => row.textContent) : null,
     };
 }
 
@@ -904,9 +1414,10 @@ function initTimelineBar() {
     // glissement). L'événement porte pointerId, le garde-fou suffit.
     track.addEventListener('lostpointercapture', onPointerUp);
     // Pointeur parti (ou capture relâchée en fin de geste) : plus de
-    // fantôme — le dessin suivant ne le cherche que hors geste.
+    // fantôme ni de bulle — le dessin suivant ne les cherche que hors geste.
     track.addEventListener('pointerleave', () => {
         hoverOffset = null;
+        setHoverHandle(null);
         refreshTimelineBar();
     });
     track.addEventListener('keydown', onKeyDown);
@@ -968,6 +1479,8 @@ function initTimelineBar() {
             refreshTimelineBar();
         }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
     }
+    // Planing des images modifié (onglet Images) : les repères suivent.
+    document.addEventListener('mygcflow:images-data', refreshTimelineBar);
 
     setStyle(readStorage(STYLE_KEY), { persist: false });
     setVisible(readStorage(VISIBLE_KEY) === '1', { persist: false });

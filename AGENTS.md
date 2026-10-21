@@ -125,6 +125,14 @@ Autres repères :
   en pause depuis le repos (`startPausedPreview`, ui.js). L'état s'observe par
   `getTimelineBarSnapshot()` (`valueNow` = jour depuis la date de début) et
   `previewPlaybackState()` (`idle`/`playing`/`paused`/`recording`).
+  L'axe de la piste déborde la plage d'une marge grisée de chaque côté
+  (`timelineAxis`, ¼ de la plage dans la limite des données) : calculer
+  les positions sur `getTimelineBarSnapshot()` (`axisStart`, `axisSpan`,
+  `rangeOffset`) — helpers `axisX`/`clickDay` de `timeline-bar.spec.mjs`.
+  Au repos, la molette n'agit que si la piste a le focus. Le suivi de
+  caméra survit à un saut (piste recalée) : `getCameraFollowSnapshot()`
+  compare la vue à la pose attendue — il faut des caches éloignées (GPX
+  généré), sinon la piste n'a aucun trajet et `pose` vaut null.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /

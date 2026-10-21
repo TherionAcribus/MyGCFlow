@@ -31,6 +31,7 @@ import {
     hasSchedule,
     imagesItemsKey,
     normalizeImagesSettings,
+    SCHEDULE_UNREACHED,
     scheduleBounds,
 } from './images_model.mjs';
 import {
@@ -168,6 +169,8 @@ export function applyImagesSettings(raw) {
     }
     revision += 1;
     invalidateImagesLayout();
+    // Repères du planing sur la barre de chronologie.
+    pkg.refreshTimelineBar?.();
     return settings;
 }
 
@@ -649,6 +652,26 @@ export function refreshImagesForData() {
 // Nombre total de trouvailles de la sélection (onglet : jalon jamais atteint).
 export function imageFindTotal() {
     return findDayCounts().reduce((total, [, count]) => total + count, 0);
+}
+
+// Barre de chronologie : jours où une image planifiée de la page apparaît
+// ('in') ou disparaît ('out') — jalons de trouvailles convertis en dates,
+// jalon jamais atteint omis. [{ day (dateToDayNumber), kind, name }].
+export function getImageScheduleMarks() {
+    const marks = [];
+    for (const item of drawableItems()) {
+        const schedule = scheduleOf(item);
+        if (!schedule) continue;
+        const bounds = scheduleBounds(schedule, imageFindDate);
+        // Sans nom : « Image N » comme la liste de l'onglet (images_ui.js).
+        const name = item.name || pkg.t('Image ${n}', { n: pageItems().indexOf(item) + 1 });
+        for (const [kind, iso] of [['in', bounds.start], ['out', bounds.end]]) {
+            if (!iso || iso === SCHEDULE_UNREACHED) continue;
+            const day = isoToDayNumber(iso);
+            if (Number.isFinite(day)) marks.push({ day, kind, name });
+        }
+    }
+    return marks;
 }
 
 // Cible binaire au jour `day` (numéro de jour, dateToDayNumber) : 1 si

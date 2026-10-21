@@ -5626,6 +5626,20 @@ export function setPreviewPaused(paused) {
     }
 }
 
+// Espace sur la barre depuis le repos : l'aperçu se lance comme par le
+// bouton Prévisualiser.
+export function startPreviewPlayback() {
+    if (previewPlaybackState() !== 'idle' || !hasAnimationData()) return false;
+    clickStartAnimation();
+    return previewPlaybackState() === 'playing';
+}
+
+// Bornes par défaut de l'animation (étendue de la sélection), celles que
+// pose « Plage complète » : l'axe de la barre de chronologie les couvre.
+export function getAnimationDateDefaults() {
+    return { start: defaultStartDate, end: defaultEndDate };
+}
+
 // Un saut depuis le repos ouvre l'aperçu, aussitôt mis en pause : la
 // carte est alors prête à recevoir la date choisie.
 export function startPausedPreview() {

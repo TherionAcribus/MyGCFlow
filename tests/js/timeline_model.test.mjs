@@ -146,3 +146,68 @@ test('extrêmes par colonne : les pics survivent au regroupement', () => {
     assert.equal(columnExtremes([4, 2], 10).lo.length, 2);
     assert.equal(columnExtremes([], 10).lo.length, 0);
 });
+
+test('axe : plage + marges bornées à l\'étendue des données', async () => {
+    const { timelineAxis } = await import('../../static/js/timeline_model.mjs');
+    // Plage = étendue : pas de marge.
+    let axis = timelineAxis(day(2026, 1, 1), day(2026, 1, 6), day(2026, 1, 1), day(2026, 1, 6));
+    assert.equal(axis.span, 6);
+    assert.equal(axis.rangeOffset, 0);
+    assert.equal(axis.rangeSpan, 6);
+    // Plage de 4 jours au milieu de 20 : marge ⌈4/4⌉ = 1 jour de chaque côté.
+    axis = timelineAxis(day(2026, 1, 10), day(2026, 1, 13), day(2026, 1, 1), day(2026, 1, 20));
+    assert.deepEqual(axis.start, day(2026, 1, 9));
+    assert.equal(axis.span, 6);
+    assert.equal(axis.rangeOffset, 1);
+    // Marge bornée par l'étendue (2 jours dispo avant, 0 après).
+    axis = timelineAxis(day(2026, 1, 3), day(2026, 1, 20), day(2026, 1, 1), day(2026, 1, 20));
+    assert.equal(axis.rangeOffset, 2);
+    assert.equal(axis.span, 20);
+    // Plage qui déborde des données : aucune marge, l'axe suit la plage.
+    axis = timelineAxis(day(2025, 12, 1), day(2026, 2, 1), day(2026, 1, 1), day(2026, 1, 20));
+    assert.equal(axis.rangeOffset, 0);
+    assert.equal(axis.span, axis.rangeSpan);
+    // Sans étendue : la plage seule ; plage vide : null.
+    assert.equal(timelineAxis(day(2026, 1, 1), day(2026, 1, 3)).span, 3);
+    assert.equal(timelineAxis(day(2026, 1, 3), day(2026, 1, 1)), null);
+});
+
+test('jour avec événement suivant / précédent, borné', async () => {
+    const { nextEventOffset } = await import('../../static/js/timeline_model.mjs');
+    const totals = [0, 2, 0, 0, 1, 0, 3];
+    assert.equal(nextEventOffset(totals, 1, 1), 4);
+    assert.equal(nextEventOffset(totals, 4, 1), 6);
+    assert.equal(nextEventOffset(totals, 6, 1), null);
+    assert.equal(nextEventOffset(totals, 4, -1), 1);
+    assert.equal(nextEventOffset(totals, 1, -1), null);
+    // Bornes de la plage : l'événement du jour 6 est hors de [0, 5].
+    assert.equal(nextEventOffset(totals, 4, 1, 0, 5), null);
+    assert.equal(nextEventOffset(totals, 5, -1, 2, 5), 4);
+});
+
+test('trouvailles marquantes : pas rond, jour du franchissement', async () => {
+    const { milestoneMarks } = await import('../../static/js/timeline_model.mjs');
+    // 0 → 350 : 100, 200, 300.
+    const level = [50, 120, 120, 260, 350];
+    assert.deepEqual(milestoneMarks(level, 0), [
+        { offset: 1, value: 100 }, { offset: 3, value: 200 }, { offset: 4, value: 300 },
+    ]);
+    // Déjà 150 avant l'axe : 100 n'est pas franchi ici.
+    assert.deepEqual(milestoneMarks([180, 220], 150), [{ offset: 1, value: 200 }]);
+    // Gros compte : le pas grossit pour rester sous maxCount.
+    const big = Array.from({ length: 100 }, (_, k) => (k + 1) * 200); // 200 → 20 000
+    const marks = milestoneMarks(big, 0, 12);
+    assert.ok(marks.length <= 12 && marks.length > 0);
+    assert.equal(marks[0].value, 2000);
+    assert.deepEqual(milestoneMarks([], 0), []);
+    assert.deepEqual(milestoneMarks([10, 40], 0), []);
+});
+
+test('instant vidéo lisible', async () => {
+    const { formatVideoTime } = await import('../../static/js/timeline_model.mjs');
+    assert.equal(formatVideoTime(0), '0:00');
+    assert.equal(formatVideoTime(42_900), '0:42');
+    assert.equal(formatVideoTime(725_000), '12:05');
+    assert.equal(formatVideoTime(3_723_000), '1:02:03');
+    assert.equal(formatVideoTime(-5), '0:00');
+});

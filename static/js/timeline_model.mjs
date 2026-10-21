@@ -110,6 +110,82 @@ export function cumulative(perDay, base = 0) {
     return out;
 }
 
+// Part de la plage ajoutée en marge de chaque côté de l'axe.
+export const TIMELINE_MARGIN_FRACTION = 0.25;
+
+// Axe de la piste : la plage de l'animation, plus une marge de chaque côté
+// (une fraction de la plage, dans la limite de l'étendue des données) où
+// l'on peut tirer les poignées pour l'étendre. Toute l'étendue réduirait
+// une plage courte à une tranche trop fine pour viser un jour ; la marge
+// se recalcule après chaque extension. `rangeOffset` : place du premier
+// jour de l'animation sur l'axe. Sans étendue connue : la plage seule.
+export function timelineAxis(rangeStart, rangeEnd, extentStart = null, extentEnd = null,
+    marginFraction = TIMELINE_MARGIN_FRACTION) {
+    const span = spanDays(rangeStart, rangeEnd);
+    if (!(span > 0)) return null;
+    const first = dateToDayNumber(rangeStart);
+    const last = dateToDayNumber(rangeEnd);
+    let before = 0;
+    let after = 0;
+    if (spanDays(extentStart, extentEnd) > 0) {
+        const margin = Math.ceil(span * Math.max(0, Number(marginFraction) || 0));
+        before = Math.max(0, Math.min(margin, first - dateToDayNumber(extentStart)));
+        after = Math.max(0, Math.min(margin, dateToDayNumber(extentEnd) - last));
+    }
+    return {
+        start: dayNumberToDate(first - before),
+        span: span + before + after,
+        rangeOffset: before,
+        rangeSpan: span,
+    };
+}
+
+// Jour suivant (direction 1) ou précédent (-1) dont `totals` est non nul,
+// entre `lo` et `hi` inclus ; null s'il n'y en a pas.
+export function nextEventOffset(totals, offset, direction, lo = 0, hi = (totals?.length || 0) - 1) {
+    const step = direction < 0 ? -1 : 1;
+    for (let k = Math.round(offset) + step; k >= lo && k <= hi; k += step) {
+        if (totals[k] > 0) return k;
+    }
+    return null;
+}
+
+// Pas « ronds » des trouvailles marquantes, du plus fin au plus large.
+const MILESTONE_STEPS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000];
+
+// Trouvailles marquantes franchies sur l'axe : multiples d'un pas rond, le
+// plus fin qui n'en place pas plus de `maxCount`. `level` est le cumul à la
+// fin de chaque jour, `before` celui de la veille du premier jour. Renvoie
+// [{ offset, value }] : le jour où le cumul atteint `value`.
+export function milestoneMarks(level, before = 0, maxCount = 12) {
+    const n = level?.length || 0;
+    if (!n) return [];
+    const from = Math.max(0, Number(before) || 0);
+    const total = level[n - 1];
+    const step = MILESTONE_STEPS.find((s) => Math.floor(total / s) - Math.floor(from / s) <= maxCount);
+    if (!step) return [];
+    const out = [];
+    let k = 0;
+    for (let value = (Math.floor(from / step) + 1) * step; value <= total; value += step) {
+        // Le cumul ne décroît pas : la recherche reprend où la précédente
+        // s'est arrêtée.
+        while (k < n && level[k] < value) k++;
+        if (k >= n) break;
+        out.push({ offset: k, value });
+    }
+    return out;
+}
+
+// Instant vidéo lisible : « 0:42 », « 12:05 », « 1:02:03 ».
+export function formatVideoTime(ms) {
+    const total = Math.max(0, Math.floor((Number(ms) || 0) / 1000));
+    const s = total % 60;
+    const m = Math.floor(total / 60) % 60;
+    const h = Math.floor(total / 3600);
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+}
+
 // Nombre d'entrées de `sortedDays` (croissant) inférieures ou égales à
 // `day` — recherche dichotomique. Sert au saut incrémental (mapgl.js) :
 // les jours affichés sont toujours un préfixe de la liste triée.
