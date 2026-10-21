@@ -1095,6 +1095,11 @@ main.fullscreen-mode #timelineBar .timeline-bar-styles .btn {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     font-size: 0.8125rem;
 }
+/* Focalisable (tabindex -1) pour garder le focus d'un clic sur un item
+   désactivé : pas de contour sur le conteneur. */
+.timeline-bar-menu:focus {
+    outline: none;
+}
 .timeline-bar-menu-item {
     display: block;
     width: 100%;

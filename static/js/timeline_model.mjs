@@ -110,6 +110,50 @@ export function cumulative(perDay, base = 0) {
     return out;
 }
 
+// Nombre d'entrées de `sortedDays` (croissant) inférieures ou égales à
+// `day` — recherche dichotomique. Sert au saut incrémental (mapgl.js) :
+// les jours affichés sont toujours un préfixe de la liste triée.
+export function countDaysUpTo(sortedDays, day) {
+    let lo = 0;
+    let hi = sortedDays?.length || 0;
+    if (Number.isNaN(day)) return 0;
+    while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (sortedDays[mid] <= day) lo = mid + 1;
+        else hi = mid;
+    }
+    return lo;
+}
+
+// Valeurs regroupées en `columns` colonnes consécutives (la colonne c couvre
+// les indices [⌊c·n/columns⌋, ⌊(c+1)·n/columns⌋), jamais vide) : minimum,
+// maximum, première et dernière valeur de chacune. La courbe de la barre
+// trace ainsi les pics d'une série plus longue que la piste n'a de pixels.
+export function columnExtremes(values, columns) {
+    const n = values?.length || 0;
+    const count = Math.max(0, Math.min(n, Math.floor(columns) || 0));
+    const lo = new Float64Array(count);
+    const hi = new Float64Array(count);
+    const first = new Float64Array(count);
+    const last = new Float64Array(count);
+    for (let c = 0; c < count; c++) {
+        const k0 = Math.floor(c * n / count);
+        const k1 = Math.max(k0 + 1, Math.floor((c + 1) * n / count));
+        let min = Infinity;
+        let max = -Infinity;
+        for (let k = k0; k < k1; k++) {
+            const v = values[k];
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+        lo[c] = min;
+        hi[c] = max;
+        first[c] = values[k0];
+        last[c] = values[k1 - 1];
+    }
+    return { lo, hi, first, last };
+}
+
 export function seriesExtent(values) {
     let min = Infinity;
     let max = -Infinity;

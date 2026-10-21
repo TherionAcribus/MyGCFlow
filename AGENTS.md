@@ -191,6 +191,38 @@ l'`update` suivant obsolète tout le catalogue (`#~` partout). Vérifier
 du fichier : `cmd //c "del nul"` échoue, utiliser
 `python -c "import os; os.remove(r'\\?\C:\chemin\nul')"`.
 
+## Tests unitaires JS
+
+`npm run test:unit` (`node --test "tests/js/*.test.mjs"`, aucune dépendance,
+Node 22 comme 24) : modules purs de `static/js/*.mjs` sans DOM — pour
+l'instant `timeline_model.mjs`. Un module importable ainsi ne doit tirer
+ni `index.js` ni le DOM dans sa chaîne d'imports.
+
+## Benchmark saut de la barre de chronologie
+
+`MYGCFLOW_BENCH=1 [BENCH_N=20000] npm run test:e2e -- bench-timeline-seek`
+(ignoré sans la variable) : génère un GPX « My Finds » de N trouvailles sur
+10 ans, ouvre l'aperçu en pause et chronomètre `seekAnimationToDate` sur un
+glissement simulé (aller-retour, 120 positions), des pas d'un jour, et
+`seekStatsToDate` seul.
+
+Mesures (2026-10-21, Windows, Chromium Playwright/SwiftShader, 20 000
+trouvailles, 2 panneaux Stats) :
+
+| | glissement moy. / p50 / max | pas d'un jour p50 | Stats seules |
+|---|---|---|---|
+| avant | 74 / 69 / 170 ms | 69 ms | 3 ms |
+| saut incrémental | 6,6 / 5,3 / 28 ms | 3,4 ms | 3 ms |
+
+Avant, chaque saut reconvertissait en objets carte (`readFeatures`) toutes
+les trouvailles jusqu'à la date, vidait puis remplissait la source
+(10 000 points : conversion ~25 ms, `clear()` ~25 ms, `addFeatures` ~20 ms).
+Désormais (`seekPointsToDay`, mapgl.js) les objets sont créés une fois par
+jour et par `pointsByDateRevision`, et seule la différence de jours est
+ajoutée/retirée — tant que la source n'a pas été touchée par autre chose
+depuis le dernier saut (même objet, même `getRevision()`) ; sinon,
+reconstruction complète depuis le cache (le max de 28 ms).
+
 ## Benchmark aperçu → commit Labs (lot 5.4)
 
 `tools/bench_lab_import.py [tailles]` mesure le parcours réel (test client

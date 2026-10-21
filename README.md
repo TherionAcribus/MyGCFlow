@@ -190,6 +190,9 @@ Tabler/Bootstrap, HTMX, ffmpeg via `imageio-ffmpeg`.
 .\.venv\Scripts\python.exe run_video_tests.py            # --quick to skip re-encoding
 # (under Linux, run both with .venv/bin/python)
 
+# JavaScript unit tests (pure modules, node --test, no dependency)
+npm run test:unit
+
 # browser end-to-end (Playwright)
 npm install && npx playwright install chromium
 npm run test:e2e

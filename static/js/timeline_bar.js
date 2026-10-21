@@ -26,6 +26,7 @@ import {
     bucketDaysFor,
     bucketize,
     clampOffset,
+    columnExtremes,
     cumulative,
     cursorFraction,
     dateOfOffset,
@@ -367,11 +368,27 @@ function drawSeries(ctx, series, span, w, h, color) {
     const { min, max } = seriesExtent(series.level);
     const range = max - min || 1;
     const yOf = (v) => h - pad - (v - min) / range * (h - 2 * pad);
-    const step = Math.max(1, Math.floor(span / Math.max(1, w)));
+    const level = series.level;
+    const columns = Math.max(1, Math.round(w));
     ctx.beginPath();
-    ctx.moveTo(0, yOf(series.level[0] ?? min));
-    for (let k = 0; k < span; k += step) ctx.lineTo((k + 1) / span * w, yOf(series.level[k]));
-    ctx.lineTo(w, yOf(series.level[span - 1]));
+    ctx.moveTo(0, yOf(level[0] ?? min));
+    if (span <= columns) {
+        for (let k = 0; k < span; k++) ctx.lineTo((k + 1) / span * w, yOf(level[k]));
+    } else {
+        // Plus de jours que de pixels : chaque colonne trace le minimum et le
+        // maximum de ses jours. Un échantillonnage (un jour sur N) sautait
+        // les pics des caches actives en mode Évolution, qui montent et
+        // descendent — la courbe en dépendait de la largeur de la piste.
+        const { lo, hi, first, last } = columnExtremes(level, columns);
+        for (let c = 0; c < columns; c++) {
+            const x = (c + 1) / columns * w;
+            const rising = last[c] >= first[c];
+            ctx.lineTo(x, yOf(rising ? lo[c] : hi[c]));
+            ctx.lineTo(x, yOf(rising ? hi[c] : lo[c]));
+            ctx.lineTo(x, yOf(last[c]));
+        }
+    }
+    ctx.lineTo(w, yOf(level[span - 1]));
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.lineTo(w, h);
@@ -556,15 +573,20 @@ function onPointerMove(event) {
 
 function onPointerUp(event) {
     // Avant le garde-fou : la classe doit être retirée même quand le geste
-    // a déjà été terminé par ailleurs (minuteur clavier, blur) et que ce
-    // relâchement arrive en retard.
+    // a déjà été terminé par ailleurs (minuteur clavier, blur, menu) et que
+    // ce relâchement arrive en retard.
     bar.classList.remove('is-dragging');
     if (!gesture || gesture.pointerId !== event.pointerId) return;
+    endPointerGesture(event.pointerId);
+}
+
+function endPointerGesture(pointerId) {
+    bar.classList.remove('is-dragging');
     // Le geste se termine d'abord : le releasePointerCapture ci-dessous
-    // réémet lostpointercapture, qui réentre dans ce gestionnaire — geste
+    // réémet lostpointercapture, qui réentre dans onPointerUp — geste
     // déjà null, il sort au garde-fou.
     endGesture();
-    try { track.releasePointerCapture(event.pointerId); } catch (_) {}
+    try { track.releasePointerCapture(pointerId); } catch (_) {}
 }
 
 function onKeyDown(event) {
@@ -642,13 +664,25 @@ function onWheel(event) {
 
 function closeMenu() {
     if (!menu) return;
-    menu.remove();
+    // Remis à null avant le retrait : retirer l'item focalisé peut émettre
+    // focusout, qui rappelle closeMenu.
+    const closing = menu;
     menu = null;
+    closing.remove();
     document.removeEventListener('pointerdown', onMenuOutsidePointerDown, true);
+    window.removeEventListener('resize', closeMenu);
 }
 
 function onMenuOutsidePointerDown(event) {
     if (menu && !menu.contains(event.target)) closeMenu();
+}
+
+// Focus parti hors du menu (Tab, Alt+Tab, clic ailleurs sans pointerdown) :
+// le menu ne reste pas ouvert, orphelin, derrière le focus. Le menu lui-même
+// est focalisable (tabindex -1) : un clic sur un item désactivé y laisse le
+// focus au lieu de fermer.
+function onMenuFocusOut(event) {
+    if (menu && !menu.contains(event.relatedTarget)) closeMenu();
 }
 
 // Flèches entre les items (en sautant les désactivés), Échap rend le focus
@@ -658,6 +692,13 @@ function onMenuKeyDown(event) {
         closeMenu();
         track.focus({ preventScroll: true });
         event.preventDefault();
+        return;
+    }
+    // Tab ferme le menu (pattern menu ARIA) et rend le focus à la piste
+    // sans preventDefault : la tabulation continue depuis elle.
+    if (event.key === 'Tab') {
+        closeMenu();
+        track.focus({ preventScroll: true });
         return;
     }
     const delta = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
@@ -671,6 +712,10 @@ function onMenuKeyDown(event) {
 
 function onContextMenu(event) {
     event.preventDefault();
+    // Clic droit en plein glissement, ou appui long au doigt (qui a déjà
+    // démarré un geste) : le geste se termine avant l'ouverture — sinon le
+    // menu s'affichait par-dessus un glissement qui pilotait encore la carte.
+    if (gesture && gesture.pointerId !== null) endPointerGesture(gesture.pointerId);
     // Comme onPointerDown : plage et données ont pu changer depuis le dernier
     // dessin — le libellé des items affiche la date du jour visé.
     draw();
@@ -683,7 +728,9 @@ function onContextMenu(event) {
     menu = document.createElement('div');
     menu.className = 'timeline-bar-menu';
     menu.setAttribute('role', 'menu');
+    menu.tabIndex = -1;
     menu.addEventListener('keydown', onMenuKeyDown);
+    menu.addEventListener('focusout', onMenuFocusOut);
 
     const addItem = (label, onPick, disabled = false) => {
         const item = document.createElement('button');
@@ -731,6 +778,9 @@ function onContextMenu(event) {
     }
 
     document.addEventListener('pointerdown', onMenuOutsidePointerDown, true);
+    // Position fixe calculée sur le viewport : un redimensionnement la rend
+    // fausse (menu détaché de la piste, voire hors écran).
+    window.addEventListener('resize', closeMenu);
     menu.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
 }
 
@@ -824,6 +874,20 @@ export function getTimelineBarSnapshot() {
     };
 }
 
+// Densité d'écran changée sans changement de taille CSS (fenêtre glissée sur
+// un autre écran) : le ResizeObserver ne tire pas, la barre restait floue
+// jusqu'au prochain dessin. La requête porte sur la densité courante : elle
+// ne change qu'une fois, puis est reposée sur la nouvelle valeur. Les
+// calques suivent seuls (le ratio fait partie de leur clé).
+function watchPixelRatio() {
+    if (typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    query.addEventListener?.('change', () => {
+        watchPixelRatio();
+        refreshTimelineBar();
+    }, { once: true });
+}
+
 function initTimelineBar() {
     bar = document.getElementById('timelineBar');
     track = document.getElementById('timelineBarTrack');
@@ -889,6 +953,7 @@ function initTimelineBar() {
         observer.observe(bar);
         observer.observe(track);
     }
+    watchPixelRatio();
     // Nouveau thème → nouvelles --timeline-* : couleurs et calques à relire.
     document.addEventListener('theme:applied', () => {
         invalidateColors();

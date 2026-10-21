@@ -257,6 +257,25 @@ test('clic droit : définir la plage depuis la barre', async ({ page }) => {
   await expect(menu.getByRole('menuitem', { name: 'Plage complète' })).toBeDisabled();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
+
+  // Tab hors du menu : il ne reste pas ouvert derrière le focus.
+  await rightClickDay(0, 6);
+  await expect(menu).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(menu).toBeHidden();
+
+  // Clic droit en plein glissement : le geste se termine avant que le menu
+  // ne s'ouvre (la carte n'est plus pilotée par le pointeur).
+  await page.mouse.move(box.x + 1.5 / 6 * box.width, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect.poll(async () => (await bar(page)).dragging).toBe(true);
+  await rightClickDay(3, 6);
+  await expect(menu).toBeVisible();
+  expect((await bar(page)).dragging).toBe(false);
+  await expect(page.locator('#timelineBar')).not.toHaveClass(/is-dragging/);
+  await page.mouse.up();
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
 });
 
 test('survoler la piste montre la date visée, sans toucher la carte', async ({ page }) => {
@@ -308,12 +327,34 @@ test('pendant la lecture, glisser le curseur met en pause puis relance depuis la
     await expect.poll(() => mapPointCount(page)).toBe(2);
     await page.mouse.up();
 
-    // Relâché : la lecture reprend depuis le 02/01 (1 j/s).
-    await expect.poll(() => playback(page)).toBe('playing');
-    await expect.poll(async () => (await stats(page)).total, { timeout: 5_000 }).toBe(3);
+    // Relâché : la lecture reprend depuis le 02/01 (1 j/s). Le total 3 ne
+    // reste affiché qu'une seconde : relevé serré (les intervalles par
+    // défaut de expect.poll montent à 1 s et manquaient souvent la fenêtre
+    // — l'animation était alors déjà au bout, total 6).
+    await expect.poll(() => playback(page), { intervals: [100] }).toBe('playing');
+    await expect.poll(async () => (await stats(page)).total, { intervals: [100], timeout: 5_000 }).toBe(3);
     const now = (await bar(page)).valueNow;
     expect(now).toBeGreaterThanOrEqual(2);
     expect(now).toBeLessThan(5);
+
+    // La lecture a ajouté ses propres points depuis le dernier saut : le
+    // saut suivant reconstruit la carte (le suivi incrémental est périmé),
+    // puis les sauts avancent et reculent par différence — jamais de point
+    // en double ni oublié.
+    // (Lecture éventuellement déjà au bout : le clic sur la barre rouvre
+    // alors l'aperçu en pause — la carte a, là aussi, été remplie ailleurs.)
+    if (await playback(page) === 'playing') await page.locator('#btnQuickPause').click();
+    await clickDay(page, 0, 6);
+    await expect.poll(() => playback(page)).toBe('paused');
+    await expect.poll(async () => (await bar(page)).valueNow).toBe(0);
+    expect(await mapPointCount(page)).toBe(1);
+    await clickDay(page, 4, 6);
+    await expect.poll(async () => (await bar(page)).valueNow).toBe(4);
+    expect(await mapPointCount(page)).toBe(5);
+    await page.locator('#timelineBarTrack').focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => mapPointCount(page)).toBe(4);
+    await expect(page.locator('#spanNbCaches')).toHaveText('4');
   } finally {
     if (await page.locator('#btnQuickStop').isVisible()) await page.locator('#btnQuickStop').click();
     await rate.fill(previousRate);
