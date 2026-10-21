@@ -38,14 +38,15 @@ stats : `docs/panneaux-stats.md` › Mise en page.
 À l'envoi (`POST /api/images`, champ `image`, 15 Mo max), chaque image est
 **normalisée** : `Image.verify()`, refus au-delà de 50 Mpx déclarés (bombe de
 décompression), `ImageOps.exif_transpose`, première image d'un GIF, réduction à
-**1024 px** sur le grand côté, puis **PNG** si une transparence est réellement
+**2048 px** sur le grand côté (en 2160p la vidéo agrandit l'aperçu d'environ
+×3 : 1024 px rendaient flou un logo de plus de ~330 px), puis **PNG** si une transparence est réellement
 utilisée (un PNG RGBA entièrement opaque devient JPEG), **JPEG** qualité 90
 sinon. Le réencodage retire au passage toutes les métadonnées (EXIF, position).
 
 Un **SVG** est rastérisé dans le navigateur avant envoi (`rasterizeSvg` de
 `images_ui.js`, point unique par lequel passent l'ajout, le remplacement, le
 collage et l'import JSON) : dessiné via `<img>` — ni script ni ressource
-externe n'est chargé — à **1024 px** sur le grand côté (taille intrinsèque,
+externe n'est chargé — à **2048 px** sur le grand côté (taille intrinsèque,
 sinon `viewBox`, sinon carré), envoyé en PNG. Le serveur ne voit donc jamais
 de SVG et Pillow n'a pas à le supporter.
 
@@ -67,7 +68,11 @@ toujours du serveur local, jamais d'une URL externe.
 Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
 retrait manuel via `POST /api/images/delete` — refusé (409) si elle est
 encore référencée (l'une des deux listes ou les configurations, lues par
-`referenced_image_files`). Seuls les envois interrompus (`.upload-*.part`)
+`referenced_image_files`). Côté onglet, le retrait est **confirmé**
+(`showConfirmation`, définitif) et le × est masqué pour les fichiers qu'un
+toast « Annuler » encore affiché (suppression d'une ligne, import)
+remettrait sur la carte (`undoProtected`, tant que le toast est dans la
+page) — sinon « Annuler » ramènerait une image manquante. Seuls les envois interrompus (`.upload-*.part`)
 sont balayés par `sweep_partial_uploads` après chaque envoi, passé un délai
 de grâce d'une heure — un envoi encore en cours est épargné.
 

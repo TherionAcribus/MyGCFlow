@@ -17,7 +17,8 @@ export const IMAGE_SHADOW = Object.freeze({ offsetY: 4, blur: 12, color: 'rgba(0
 
 // Hauteur d'une image à sa largeur : imposée, sinon d'après les proportions
 // de l'image (marge intérieure comprise). Rond : carré par défaut, pour un
-// avatar bien circulaire. Image pas encore décodée : carré provisoire.
+// avatar bien circulaire. Proportions inconnues : carré (images_panels.js ne
+// pose de toute façon une image qu'une fois décodée).
 export function imagePanelHeight(item, natural, width = item.position.width) {
     const imposed = item.position.height;
     if (imposed != null) return imposed;

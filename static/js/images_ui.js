@@ -99,7 +99,7 @@ function isMissing(item) {
 // et sans dépendance côté serveur. Le serveur ne reçoit qu'un PNG : toute la
 // chaîne (normalisation, empreinte, bibliothèque, vidéo) est inchangée.
 // Dessiné via <img>, le SVG n'exécute ni script ni ressource externe.
-const SVG_RASTER_SIDE = 1024; // côté le plus long, comme la normalisation serveur
+const SVG_RASTER_SIDE = 2048; // côté le plus long, comme la normalisation serveur (IMAGE_MAX_SIDE)
 
 function isSvgFile(file) {
     return file?.type === 'image/svg+xml' || /\.svg$/i.test(file?.name || '');
@@ -264,6 +264,30 @@ function bindFileDrop() {
 // Bibliothèque : images déjà envoyées
 // ---------------------------------------------------------------------------
 
+// Fichiers que restaurerait un toast « Annuler » encore affiché (suppression
+// d'une ligne, import) : toast → fichiers. Plus référencés par les réglages,
+// le serveur les laisserait retirer de la bibliothèque — « Annuler »
+// ramènerait alors une image manquante. La bibliothèque les protège tant que
+// le toast est dans la page.
+const undoProtected = new Map();
+
+function protectUntilToastCloses(toast, files) {
+    const kept = files.filter(Boolean);
+    if (toast && kept.length) undoProtected.set(toast, kept);
+}
+
+function filesAwaitingUndo() {
+    const files = new Set();
+    for (const [toast, list] of undoProtected) {
+        if (!toast.isConnected) {
+            undoProtected.delete(toast);
+            continue;
+        }
+        for (const file of list) files.add(file);
+    }
+    return files;
+}
+
 function formatBytes(bytes) {
     if (bytes >= 1024 * 1024) return pkg.t('${n} Mo', { n: (bytes / (1024 * 1024)).toFixed(1) });
     return pkg.t('${n} Ko', { n: Math.max(1, Math.round(bytes / 1024)) });
@@ -278,6 +302,7 @@ async function renderLibrary() {
         if (response.ok) listing = await response.json();
     } catch (_) {}
     const full = currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
+    const awaitingUndo = filesAwaitingUndo();
     grid.replaceChildren(...listing.files.map((entry) => {
         const cell = document.createElement('div');
         cell.className = 'images-library-cell';
@@ -302,12 +327,14 @@ async function renderLibrary() {
         pick.appendChild(img);
         cell.appendChild(pick);
         // Une image utilisée (sur la carte ou dans une configuration) ne
-        // peut pas être retirée : le serveur refuserait.
-        if (!entry.referenced) {
+        // peut pas être retirée : le serveur refuserait. Une image qu'un
+        // « Annuler » encore affiché remettrait sur la carte non plus.
+        if (!entry.referenced && !awaitingUndo.has(entry.file)) {
             const remove = document.createElement('button');
             remove.type = 'button';
             remove.className = 'images-library-remove btn btn-sm';
             remove.dataset.libraryDelete = entry.file;
+            remove.dataset.libraryName = entry.name || '';
             remove.title = pkg.t('Retirer de la bibliothèque');
             remove.setAttribute('aria-label', pkg.t('Retirer de la bibliothèque'));
             remove.innerHTML = '<i class="ti ti-x" aria-hidden="true"></i>';
@@ -330,7 +357,7 @@ async function renderLibrary() {
 
 // Format du fichier : les images y sont embarquées (data URL), sans quoi un
 // export ouvert sur un autre ordinateur n'afficherait que des images
-// manquantes. Au plus quatre images d'environ 1024 px : le fichier reste
+// manquantes. Au plus quatre images d'au plus 2048 px : le fichier reste
 // raisonnable.
 const EXPORT_FORMAT = 'mygcflow-images';
 
@@ -426,13 +453,30 @@ async function importImages(file) {
     const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS, { immediate: true });
     selectedId = applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
-    pkg.showActionToast?.(
+    const toast = pkg.showActionToast?.(
         pkg.t('${count} image(s) importée(s)', { count: applied[ITEMS_KEY].length }),
         { label: 'Annuler', onClick: () => {
             commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS, { immediate: true });
             selectedId = previous[0]?.id || null;
             renderImagesTab();
         } });
+    protectUntilToastCloses(toast, previous.map((item) => item.file));
+}
+
+async function deleteLibraryImage(file) {
+    try {
+        const response = await fetch('/api/images/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) throw new Error(data.message || '');
+        pkg.showToast?.(pkg.t('Image retirée de la bibliothèque.'), 'success', pkg.t('Images'), 3000);
+    } catch (e) {
+        pkg.showToast?.(e.message || pkg.t("L'image n'a pas pu être retirée."), 'error', pkg.t('Images'), 5000);
+    }
+    renderLibrary();
 }
 
 async function onLibraryClick(event) {
@@ -446,20 +490,16 @@ async function onLibraryClick(event) {
     }
     const remove = event.target.closest('[data-library-delete]');
     if (remove) {
-        // Le menu reste ouvert : on retire puis on rafraîchit la grille.
+        // Retrait définitif du fichier (aucun « Annuler » possible) :
+        // confirmé d'abord. Le menu se ferme au profit de la modale.
         event.stopPropagation();
-        try {
-            const response = await fetch('/api/images/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ file: remove.dataset.libraryDelete }),
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || !data.success) throw new Error(data.message || '');
-        } catch (e) {
-            pkg.showToast?.(e.message || pkg.t("L'image n'a pas pu être retirée."), 'error', pkg.t('Images'), 5000);
-        }
-        renderLibrary();
+        const file = remove.dataset.libraryDelete;
+        const name = remove.dataset.libraryName;
+        const message = name
+            ? pkg.t('« ${name} » sera supprimée définitivement de la bibliothèque.', { name })
+            : pkg.t('Cette image sera supprimée définitivement de la bibliothèque.');
+        pkg.showConfirmation?.(message, pkg.t('Retirer de la bibliothèque'), () => deleteLibraryImage(file),
+            null, { confirmText: pkg.t('Supprimer'), danger: true });
         return;
     }
     const pick = event.target.closest('[data-library-file]');
@@ -603,9 +643,9 @@ function runListAction(id, action) {
 
 // « Annuler » du toast de suppression : l'image revient à sa place. Le
 // fichier, lui, reste dans la bibliothèque — il n'en sort que par le
-// retrait manuel.
+// retrait manuel, refusé tant que ce toast est affiché.
 function showUndoForDelete(item, index) {
-    pkg.showActionToast?.(
+    const toast = pkg.showActionToast?.(
         pkg.t('« ${name} » supprimée', { name: displayName(item, index) }),
         { label: 'Annuler', onClick: () => {
             updateItems((items) => {
@@ -616,6 +656,7 @@ function showUndoForDelete(item, index) {
             renderImagesTab();
         } },
     );
+    protectUntilToastCloses(toast, [item.file]);
 }
 
 function onListChange(event) {

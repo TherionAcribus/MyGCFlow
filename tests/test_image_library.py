@@ -65,7 +65,7 @@ class NormalizeTests(ImageLibraryTestCase):
     def test_large_image_is_reduced_keeping_its_ratio(self):
         img = Image.new('RGB', (3000, 1500), (30, 30, 30))
         _, _, size = image_library.normalize_image(encode(img, 'JPEG'))
-        self.assertEqual(size, (1024, 512))
+        self.assertEqual(size, (2048, 1024))
 
     def test_small_image_is_not_enlarged(self):
         _, _, size = image_library.normalize_image(encode(Image.new('RGB', (64, 48)), 'PNG'))

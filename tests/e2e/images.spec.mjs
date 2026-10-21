@@ -309,6 +309,42 @@ test('onglet : bibliothèque des images envoyées et limite de quatre', async ({
   await expect.poll(async () => (await savedImages(page)).items.length).toBe(4);
 });
 
+test('bibliothèque : retrait confirmé, refusé tant qu’un « Annuler » peut ramener l’image', async ({ page }) => {
+  const libraryFiles = async () => (await (await page.request.get('/api/images')).json()).files.map((f) => f.file);
+  await openImagesTab(page);
+  await page.locator('#imagesFileInput').setInputFiles(LOGO);
+  await expect.poll(async () => (await savedImages(page)).items[0]?.file).toMatch(/^[0-9a-f]+\.jpg$/);
+  const file = (await savedImages(page)).items[0].file;
+  const remove = page.locator(`#imagesLibraryList [data-library-delete="${file}"]`);
+
+  // Ligne supprimée, toast « Annuler » affiché : le fichier n'est plus
+  // référencé, mais la bibliothèque ne propose pas de le retirer.
+  await page.locator('#imagesList li [data-action="delete"]').click();
+  const toast = page.locator('.gcm-toast.show').filter({ hasText: 'supprimée' });
+  await expect(toast).toBeVisible();
+  await page.locator('#btnImagesLibrary').click();
+  await expect(page.locator(`#imagesLibraryList [data-library-file="${file}"]`)).toBeVisible();
+  await expect(remove).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  // Toast fermé : le retrait redevient possible, après confirmation.
+  await toast.locator('.gcm-toast-close').click();
+  await expect(toast).toHaveCount(0);
+  await page.locator('#btnImagesLibrary').click();
+  await remove.click();
+  const modal = page.locator('.gcm-confirm-modal');
+  await expect(modal).toBeVisible();
+  await expect(modal).toContainText('logo-opaque');
+  await modal.locator('[data-gcm-role="cancel"]').click();
+  await expect(modal).toHaveCount(0);
+  expect(await libraryFiles()).toContain(file);
+
+  await page.locator('#btnImagesLibrary').click();
+  await remove.click();
+  await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
+  await expect.poll(libraryFiles).not.toContain(file);
+});
+
 test('onglet : un fichier refusé est expliqué, une image manquante signalée', async ({ page }) => {
   await putSettings(page, { images: { items: [{ id: 'babe0007', file: 'ffffffffffffffff.png', name: 'Ancien logo' }] } });
   await openImagesTab(page);

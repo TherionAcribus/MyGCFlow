@@ -37,7 +37,7 @@ def _invalid_message(reason):
         return _("Image trop lourde : %(max)d Mo au maximum.",
                  max=image_library.IMAGE_MAX_UPLOAD_BYTES // (1024 * 1024))
     if reason == 'format':
-        return _("Format non pris en charge : PNG, JPEG, WebP ou GIF.")
+        return _("Format non pris en charge : PNG, JPEG, WebP, GIF ou SVG.")
     if reason == 'too_many_pixels':
         return _("Image trop grande (dimensions démesurées).")
     return _("Ce fichier n'est pas une image lisible.")

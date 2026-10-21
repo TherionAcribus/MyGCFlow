@@ -1,7 +1,7 @@
 {% from '_scope_badges.html' import global_scope_badge with context %}
 <!-- Images posées sur la carte (avatar, logo d'association…). Préférence
-     globale, une liste pour les deux modes : enregistrée automatiquement,
-     indépendante du thème. Contrôles pilotés par static/js/images_ui.js ;
+     globale, une liste par page (Mes Geocaches / Évolution) : enregistrée
+     automatiquement, indépendante du thème. Contrôles pilotés par static/js/images_ui.js ;
      dessin par images_panels.js / images_render.mjs ; fichiers normalisés
      et servis par blueprints/images.py. -->
 <div id="images" class="col-12 tab-pane fade">
@@ -57,7 +57,7 @@
                 </div>
                 <div class="card-body">
                     <p id="imagesEmpty" class="form-hint text-muted mb-0">
-                        {{ _("Aucune image. Ajoutez-en, ou déposez des fichiers sur cet onglet : PNG, JPEG, WebP ou GIF.") }}
+                        {{ _("Aucune image. Ajoutez-en, déposez des fichiers sur cet onglet ou collez une image : PNG, JPEG, WebP, GIF ou SVG.") }}
                     </p>
                     <ul id="imagesList" class="list-group stats-panel-list" aria-label="{{ _('Images sur la carte') }}"></ul>
                     <p id="imagesUploading" class="form-hint text-muted small mt-2 mb-0" role="status" hidden>

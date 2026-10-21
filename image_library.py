@@ -34,8 +34,11 @@ import paths
 
 # Envoi refusé au-delà (le fichier brut, avant réduction).
 IMAGE_MAX_UPLOAD_BYTES = 15 * 1024 * 1024
-# Grand côté après normalisation : assez pour un logo en 4K, léger à dessiner.
-IMAGE_MAX_SIDE = 1024
+# Grand côté après normalisation. En 2160p, la vidéo agrandit l'aperçu
+# d'environ ×3 : à 1024 px, un logo de plus de ~330 px dans l'aperçu était
+# dessiné à partir d'une source trop petite (flou, pire en « cover » qui
+# rogne). 2048 px couvre les tailles usuelles en 4K et reste léger.
+IMAGE_MAX_SIDE = 2048
 # Garde-fou contre les « bombes de décompression » (PNG minuscule déclarant
 # des dimensions gigantesques) : refusées avant tout décodage.
 IMAGE_MAX_SOURCE_PIXELS = 50_000_000

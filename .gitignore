@@ -26,6 +26,9 @@ gcmap_versions.json
 # sonores (paths.audio_dir()), pas une ressource de l'application. Les musiques
 # qu'on y dépose ne doivent pas partir dans le dépôt public.
 audio/
+# Même chose pour images/ (paths.images_dir()) : avatars, logos et captures
+# envoyés depuis l'onglet Images en développement.
+images/
 
 # Runtimes de test laissés par un lancement manuel du harnais Playwright.
 .e2e_runtime*/
