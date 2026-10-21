@@ -116,3 +116,102 @@ export function drawImagePanel(ctx, width, height, item, source, scale = 1) {
     }
     ctx.restore();
 }
+
+// ---------------------------------------------------------------------------
+// Effets d'entrée et de sortie (planing d'apparition)
+// ---------------------------------------------------------------------------
+//
+// Le fondu (opacité, linéaire) accompagne toujours l'effet. « slide » fait
+// entrer l'image depuis le bord du cadre le plus proche, « zoom » la fait
+// grandir depuis la moitié de sa taille avec un léger rebond. La même courbe
+// de Bézier cubique sert à la transition CSS de l'aperçu (transform) et,
+// évaluée par cubicBezier, à la vidéo : les deux mouvements coïncident.
+
+export const IMAGE_EFFECT_EASINGS = Object.freeze({
+    slide: Object.freeze([0.215, 0.61, 0.355, 1]),   // « ease-out » cubique
+    zoom: Object.freeze([0.34, 1.56, 0.64, 1]),      // « ease-out » avec rebond
+});
+// Échelle de départ (image cachée) de l'effet « zoom ».
+export const IMAGE_ZOOM_FROM = 0.5;
+
+// Courbe CSS `cubic-bezier(x1, y1, x2, y2)` évaluée en JS : progression du
+// temps x ∈ [0, 1] → avancement y (peut dépasser 1 : rebond). Résolution de
+// x(t) par Newton, repli par dichotomie (même méthode que les navigateurs).
+export function cubicBezier(x1, y1, x2, y2) {
+    const cx = 3 * x1;
+    const bx = 3 * (x2 - x1) - cx;
+    const ax = 1 - cx - bx;
+    const cy = 3 * y1;
+    const by = 3 * (y2 - y1) - cy;
+    const ay = 1 - cy - by;
+    const sampleX = (t) => ((ax * t + bx) * t + cx) * t;
+    const sampleY = (t) => ((ay * t + by) * t + cy) * t;
+    const slopeX = (t) => (3 * ax * t + 2 * bx) * t + cx;
+    const solveX = (x) => {
+        let t = x;
+        for (let i = 0; i < 8; i++) {
+            const error = sampleX(t) - x;
+            if (Math.abs(error) < 1e-7) return t;
+            const slope = slopeX(t);
+            if (Math.abs(slope) < 1e-7) break;
+            t -= error / slope;
+        }
+        let lo = 0;
+        let hi = 1;
+        t = x;
+        for (let i = 0; i < 60 && hi - lo > 1e-7; i++) {
+            const value = sampleX(t);
+            if (Math.abs(value - x) < 1e-7) return t;
+            if (x > value) lo = t;
+            else hi = t;
+            t = (lo + hi) / 2;
+        }
+        return t;
+    };
+    return (x) => (x <= 0 ? 0 : x >= 1 ? 1 : sampleY(solveX(x)));
+}
+
+// Valeur CSS `transition-timing-function` d'un effet ('linear' pour le fondu).
+export function effectTimingCss(effect) {
+    const easing = IMAGE_EFFECT_EASINGS[effect];
+    return easing ? `cubic-bezier(${easing.join(', ')})` : 'linear';
+}
+
+// Décalage vers l'extérieur du cadre, par le bord le plus proche de l'image
+// (à égalité : gauche, droite, haut, bas) — juste assez pour qu'elle soit
+// entièrement dehors.
+function slideOffset(rect, container) {
+    const gaps = [
+        ['left', rect.x],
+        ['right', container.width - rect.x - rect.width],
+        ['top', rect.y],
+        ['bottom', container.height - rect.y - rect.height],
+    ];
+    let [side] = gaps[0];
+    let best = gaps[0][1];
+    for (const [name, gap] of gaps) {
+        if (gap < best) {
+            best = gap;
+            side = name;
+        }
+    }
+    if (side === 'left') return { dx: -(rect.x + rect.width), dy: 0 };
+    if (side === 'right') return { dx: container.width - rect.x, dy: 0 };
+    if (side === 'top') return { dx: 0, dy: -(rect.y + rect.height) };
+    return { dx: 0, dy: container.height - rect.y };
+}
+
+// Transformation de l'image à l'avancement `progress` (1 : à sa place,
+// 0 : cachée ; au-delà de [0, 1] pendant un rebond) — décalage en px CSS du
+// conteneur et échelle autour du centre de l'image. Fondu : identité.
+export function effectTransform(effect, progress, rect, container) {
+    const p = Number.isFinite(progress) ? progress : 1;
+    if (effect === 'slide' && rect && container) {
+        const offset = slideOffset(rect, container);
+        return { dx: offset.dx * (1 - p), dy: offset.dy * (1 - p), scale: 1 };
+    }
+    if (effect === 'zoom') {
+        return { dx: 0, dy: 0, scale: IMAGE_ZOOM_FROM + (1 - IMAGE_ZOOM_FROM) * p };
+    }
+    return { dx: 0, dy: 0, scale: 1 };
+}

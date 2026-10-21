@@ -23,8 +23,25 @@
 import * as pkg from './index.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { layoutPanels } from './stats_model.mjs';
-import { IMAGE_ANCHORS, IMAGE_SIZE_RANGE, imagesItemsKey, normalizeImagesSettings } from './images_model.mjs';
-import { IMAGE_SHADOW, drawImagePanel, imagePanelHeight } from './images_render.mjs';
+import {
+    IMAGE_ANCHORS,
+    IMAGE_SIZE_RANGE,
+    dayNumberToIso,
+    dayOfNthFind,
+    hasSchedule,
+    imagesItemsKey,
+    normalizeImagesSettings,
+    scheduleBounds,
+} from './images_model.mjs';
+import {
+    IMAGE_EFFECT_EASINGS,
+    IMAGE_SHADOW,
+    cubicBezier,
+    drawImagePanel,
+    effectTimingCss,
+    effectTransform,
+    imagePanelHeight,
+} from './images_render.mjs';
 import { dateToDayNumber, isoToDayNumber } from './evolution_timeline.mjs';
 
 let settings = normalizeImagesSettings(null);
@@ -545,9 +562,22 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
         const blit = cached.shadowCanvas
             ? () => ctx.drawImage(cached.shadowCanvas, x - cached.shadowPad, y - cached.shadowPad)
             : () => ctx.drawImage(cached.canvas, x, y);
-        if (alpha < 1) {
+        // Effet d'entrée/sortie en cours : décalage et échelle autour du
+        // centre de l'image, calculés en px CSS (mêmes valeurs que l'aperçu)
+        // puis mis à l'échelle de la vidéo.
+        const motion = scheduleMotion(item, now);
+        const tf = motion < 1 ? effectTransform(item.schedule.effect, motion, rect, containerSize) : null;
+        const moving = !!tf && (tf.dx !== 0 || tf.dy !== 0 || tf.scale !== 1);
+        if (alpha < 1 || moving) {
             ctx.save();
             ctx.globalAlpha = alpha;
+            if (moving) {
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+                ctx.translate(cx + tf.dx * scaleFactor, cy + tf.dy * scaleFactor);
+                ctx.scale(tf.scale, tf.scale);
+                ctx.translate(-cx, -cy);
+            }
             blit();
             ctx.restore();
         } else {
@@ -567,19 +597,68 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
 // toujours réservée (visibleItems inchangé) : rien ne saute quand elle
 // apparaît, et les piles de stats gardent le contournement.
 
-// Planing posé sur l'image, ou null (dates vides : toujours visible).
+// Planing posé sur l'image, ou null (aucune borne dans son mode : toujours
+// visible).
 function scheduleOf(item) {
     const schedule = item?.schedule;
-    return schedule && (schedule.start || schedule.end) ? schedule : null;
+    if (!hasSchedule(schedule)) return null;
+    // Page Évolution : pas de compteur de trouvailles — un planing par
+    // jalons (venu d'une configuration de l'autre page) y est ignoré plutôt
+    // que de cacher l'image pour toujours.
+    if (schedule.by === 'find' && isEvolutionPage()) return null;
+    return schedule;
+}
+
+// Jalons de trouvailles (`schedule.by === 'find'`) : trouvailles par jour,
+// triées — le compteur de la carte, locationless masquées comprises
+// (hiddenPointsByDate), trouvailles antérieures au début de l'animation
+// comprises. Recalculé quand l'index des points change (révision).
+let findDays = { revision: null, dayCounts: [] };
+
+function findDayCounts() {
+    const revision = pkg.pointsByDateRevision ?? 0;
+    if (findDays.revision === revision) return findDays.dayCounts;
+    const counts = new Map();
+    for (const index of [pkg.pointsByDate, pkg.hiddenPointsByDate]) {
+        if (!index) continue;
+        for (const [key, points] of index) {
+            const day = dateToDayNumber(new Date(key));
+            if (Number.isFinite(day)) counts.set(day, (counts.get(day) || 0) + (points?.length || 0));
+        }
+    }
+    findDays = { revision, dayCounts: [...counts].sort((a, b) => a[0] - b[0]) };
+    return findDays.dayCounts;
+}
+
+// Date « AAAA-MM-JJ » de la Ne trouvaille de la sélection, null si le total
+// ne l'atteint pas. Page Évolution : pas de trouvailles, toujours null.
+export function imageFindDate(n) {
+    return dayNumberToIso(dayOfNthFind(findDayCounts(), n));
+}
+
+// Index des points reconstruit (import, filtre, vidage — bdd.js) : les jalons
+// de trouvailles changent de date. Le calcul se refait seul (révision) ;
+// l'onglet Images, lui, doit redessiner les dates affichées sous les jalons
+// et l'avertissement du planing.
+export function refreshImagesForData() {
+    try {
+        document.dispatchEvent(new CustomEvent('mygcflow:images-data'));
+    } catch (_) {}
+}
+
+// Nombre total de trouvailles de la sélection (onglet : jalon jamais atteint).
+export function imageFindTotal() {
+    return findDayCounts().reduce((total, [, count]) => total + count, 0);
 }
 
 // Cible binaire au jour `day` (numéro de jour, dateToDayNumber) : 1 si
-// l'image est dedans, 0 sinon.
+// l'image est dedans, 0 sinon. Les jalons sont convertis en dates.
 function scheduleTargetAt(item, day) {
     const schedule = scheduleOf(item);
     if (!schedule || !Number.isFinite(day)) return 1;
-    if (schedule.start && day < isoToDayNumber(schedule.start)) return 0;
-    if (schedule.end && day >= isoToDayNumber(schedule.end)) return 0;
+    const bounds = scheduleBounds(schedule, imageFindDate);
+    if (bounds.start && day < isoToDayNumber(bounds.start)) return 0;
+    if (bounds.end && day >= isoToDayNumber(bounds.end)) return 0;
     return 1;
 }
 
@@ -601,6 +680,25 @@ function scheduleAlpha(item, now) {
     return scheduleOf(item) ? alphaAt(item, now) : 1;
 }
 
+// Courbes des effets, résolues une fois (cubic-bezier évaluée en JS).
+const EFFECT_CURVES = Object.fromEntries(
+    Object.entries(IMAGE_EFFECT_EASINGS).map(([effect, points]) => [effect, cubicBezier(...points)]));
+
+// Avancement de l'effet d'entrée/sortie (1 : en place, 0 : caché, au-delà
+// pendant un rebond) : la même transition que l'alpha, mais le temps passe
+// par la courbe de l'effet — celle de la transition CSS de l'aperçu. Fondu
+// seul ou sans planing : 1 (aucune transformation).
+function scheduleMotion(item, now) {
+    const curve = scheduleOf(item) ? EFFECT_CURVES[item.schedule.effect] : null;
+    const state = curve ? scheduleStates.get(item.id) : null;
+    if (!state) return 1;
+    if (state.at == null || !Number.isFinite(now)) return state.to;
+    const dur = Math.max(0, Number(state.dur) || 0);
+    if (dur <= 0) return state.to;
+    const t = Math.max(0, Math.min(1, (now - state.at) / dur));
+    return state.from + (state.to - state.from) * curve(t);
+}
+
 // Aperçu : l'opacité CSS du canvas porte le planing — une transition linéaire
 // de `dur` ms pendant un fondu, 'none' aux états instantanés. En mode
 // édition (onglet Images ouvert au repos, classe posée par syncDragMode) le
@@ -614,16 +712,29 @@ function applyScheduleOpacity(item) {
     if (!state) {
         if (el.style.transition) el.style.transition = '';
         if (el.style.opacity) el.style.opacity = '';
+        if (el.style.transform) el.style.transform = '';
         return;
     }
     const dur = state.at != null ? Math.max(0, Number(state.dur) || 0) : 0;
-    el.style.transition = dur > 0 ? `opacity ${dur}ms linear` : 'none';
+    const effect = item.schedule.effect;
+    el.style.transition = dur > 0
+        ? `opacity ${dur}ms linear, transform ${dur}ms ${effectTimingCss(effect)}`
+        : 'none';
     // Plancher d'édition seulement au repos : la classe `images-editing`
     // survit au départ de l'animation le temps du MutationObserver — sans la
     // garde, une image masquée par son planing resterait figée à 30 %.
     const editing = host()?.classList.contains('images-editing') === true
         && !(pkg.isAnimationInProgress?.() ?? false);
     el.style.opacity = String(editing ? Math.max(0.3, state.to) : state.to);
+    // Effet : l'image cachée attend hors de sa place (bord, échelle) ; la
+    // transition CSS la ramène avec la courbe de l'effet. En édition, elle
+    // reste à sa place pour être saisie.
+    const rect = nodes.get(item.id)?.layout;
+    const tf = editing ? null : effectTransform(effect, state.to, rect, containerSize);
+    const transform = tf && (tf.dx !== 0 || tf.dy !== 0 || tf.scale !== 1)
+        ? `translate(${tf.dx}px, ${tf.dy}px) scale(${tf.scale})`
+        : '';
+    if (el.style.transform !== transform) el.style.transform = transform;
 }
 
 // Re-pose l'opacité du planing sur chaque image : appelée quand le mode
@@ -698,7 +809,10 @@ export function getImagesAlphaSignature() {
         if (!state || state.at == null) continue;
         const a = alphaAt(item, lastCompositeNow);
         if (a === state.to) continue;
-        parts.push(`${item.id}:${Math.round(a * 16)}`);
+        // Un effet qui bouge l'image demande des pas plus fins qu'un fondu.
+        const motion = item.schedule.effect !== 'fade'
+            ? `:${Math.round(scheduleMotion(item, lastCompositeNow) * 64)}` : '';
+        parts.push(`${item.id}:${Math.round(a * 16)}${motion}`);
     }
     return parts.join('|');
 }
@@ -730,6 +844,7 @@ export function getImagesSnapshot() {
             rect: layout.get(item.id) || null,
             schedule: item.schedule ? { ...item.schedule } : null,
             alpha: alphaAt(item, lastCompositeNow),
+            motion: scheduleMotion(item, lastCompositeNow),
         })),
     };
 }

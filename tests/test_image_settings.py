@@ -114,7 +114,7 @@ class ImagesApiTests(unittest.TestCase):
         return self.client.get('/api/settings').get_json()['images']
 
     def test_get_exposes_the_default_block(self):
-        self.assertEqual(self.images(), {"enabled": True, "items": [], "evolution_items": []})
+        self.assertEqual(self.images(), {"enabled": True, "items": [], "evolution_items": [], "configs": []})
 
     def test_put_stores_normalised_items_and_keeps_other_preferences(self):
         self.client.put('/api/settings', json={'stats': {'enabled': False}})
@@ -137,6 +137,22 @@ class ImagesApiTests(unittest.TestCase):
         images = self.images()
         self.assertFalse(images['enabled'])
         self.assertEqual([item['id'] for item in images['items']], ['aaaaaa01'])
+
+    def test_configs_survive_a_patch_of_the_lists_and_reference_their_files(self):
+        import image_library
+
+        self.client.put('/api/settings', json={'images': {'configs': [
+            {'name': 'Club', 'items': [{'id': 'aaaaaa01', 'file': '0123456789abcdef.png'}]},
+            {'name': 'Club', 'items': []},
+        ]}})
+        self.client.put('/api/settings', json={'images': {'items': []}})
+        images = self.images()
+        # Premier nom gagnant ; un patch des listes garde les configurations.
+        self.assertEqual([(c['name'], len(c['items'])) for c in images['configs']], [('Club', 1)])
+        # Le fichier d'une configuration est référencé : la bibliothèque
+        # refuserait de le retirer.
+        settings = SettingsManager().get_app_settings()
+        self.assertEqual(image_library.referenced_image_files(settings.images), {'0123456789abcdef.png'})
 
     def test_put_of_unrelated_preferences_keeps_the_images(self):
         self.client.put('/api/settings', json={'images': {'items': [{'id': 'aaaaaa01'}]}})

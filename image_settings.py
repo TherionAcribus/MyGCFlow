@@ -6,6 +6,10 @@ change de thème. Une liste par page, comme `stats` : `items` pour le mode
 principal (Mes géocaches), `evolution_items` pour /evolution — indépendantes
 (une image retirée d'une page n'affecte pas l'autre), `enabled` reste commun.
 
+`configs` : configurations nommées {name, items}, instantanés d'une liste —
+applicables sur les DEUX pages (une image est la même partout) : c'est aussi
+le moyen de reprendre sur une page les images de l'autre.
+
 Miroir exact de `normalizeImagesSettings` (static/js/images_model.mjs) : les
 deux côtés passent les mêmes vecteurs de test
 (tests/fixtures/images/settings_cases.json), toute règle modifiée ici doit
@@ -29,6 +33,7 @@ from stats_settings import (
     _choice,
     _coerce_block,
     _color,
+    _config_name,
     _int_in,
     _new_id,
     _share_corner_margins,
@@ -47,6 +52,15 @@ IMAGE_OPACITY_RANGE = (0, 100)
 IMAGE_PADDING_RANGE = (0, 100)
 IMAGE_BORDER_RANGE = (0, 50)
 IMAGE_FADE_RANGE = (0, 5000)
+# Planing : par dates, ou par jalons du compteur de trouvailles (« à la
+# 1000e trouvaille »), converti en date au moment de l'animation.
+IMAGE_SCHEDULE_BY = ("date", "find")
+IMAGE_FIND_RANGE = (1, 10_000_000)
+# Effet d'entrée et de sortie : fondu seul, glissement depuis le bord le plus
+# proche, ou zoom (« pop »), tous combinés au fondu.
+IMAGE_EFFECTS = ("fade", "slide", "zoom")
+# Configurations nommées : instantanés de la liste d'une page.
+IMAGES_MAX_CONFIGS = 12
 
 
 @dataclass
@@ -58,6 +72,8 @@ class ImagesSettings:
     # Liste propre à la page Évolution (/evolution), même schéma — absente
     # d'un vieux settings.json, elle est vide (jamais une copie d'`items`).
     evolution_items: list = field(default_factory=list)
+    # Configurations nommées {name, items}, applicables sur les deux pages.
+    configs: list = field(default_factory=list)
 
 
 def image_item_defaults() -> dict:
@@ -84,12 +100,19 @@ def image_item_defaults() -> dict:
             "border_color": "#ffffff",
             "border_width": 0,
         },
-        # Apparition/disparition pendant l'animation : dates « AAAA-MM-JJ »
-        # (None = pas de borne), durée du fondu en ms.
+        # Apparition/disparition pendant l'animation : par dates
+        # « AAAA-MM-JJ » (`by: date`) ou par numéros de trouvaille
+        # (`by: find`) — None = pas de borne ; les deux paires sont gardées
+        # pour qu'un aller-retour entre les modes ne perde rien. Durée de la
+        # transition en ms, effet d'entrée/sortie.
         "schedule": {
+            "by": "date",
             "start": None,
             "end": None,
+            "start_find": None,
+            "end_find": None,
             "fade": 600,
+            "effect": "fade",
         },
     }
 
@@ -134,10 +157,19 @@ def _date(value, default) -> str | None:
     return value
 
 
+def _find(value, default):
+    # Numéro de trouvaille nullable : None (ou non numérique) = pas de borne.
+    return None if value is None else _int_in(value, None, IMAGE_FIND_RANGE)
+
+
 _SCHEDULE_COERCERS = {
+    "by": lambda v, d: _choice(v, IMAGE_SCHEDULE_BY, d),
     "start": _date,
     "end": _date,
+    "start_find": _find,
+    "end_find": _find,
     "fade": lambda v, d: _int_in(v, d, IMAGE_FADE_RANGE),
+    "effect": lambda v, d: _choice(v, IMAGE_EFFECTS, d),
 }
 
 
@@ -180,17 +212,46 @@ def _coerce_item_list(source) -> list:
     return _share_corner_margins(items)
 
 
+def coerce_images_config(raw) -> dict | None:
+    """Configuration nommée normalisée {name, items}, ou None si le nom est
+    vide après aplatissement. Les images suivent les règles d'une liste."""
+    if not isinstance(raw, dict):
+        return None
+    name = _config_name(raw.get("name"))
+    if not name:
+        return None
+    return {"name": name, "items": _coerce_item_list(raw.get("items"))}
+
+
+def _coerce_config_list(source) -> list:
+    """Configurations : premier nom gagnant (un doublon serait impossible à
+    distinguer), tronquées à IMAGES_MAX_CONFIGS — comme stats.configs."""
+    configs = []
+    names = set()
+    for raw in source if isinstance(source, list) else []:
+        config = coerce_images_config(raw)
+        if config is None or config["name"] in names:
+            continue
+        names.add(config["name"])
+        configs.append(config)
+        if len(configs) >= IMAGES_MAX_CONFIGS:
+            break
+    return configs
+
+
 def coerce_images_settings(raw, current: ImagesSettings | None = None) -> ImagesSettings:
     """Bloc `images` normalisé. Patch de premier niveau, comme `stats` : une
-    clé absente (`enabled`, `items`, `evolution_items`) garde la valeur
-    courante."""
+    clé absente (`enabled`, `items`, `evolution_items`, `configs`) garde la
+    valeur courante."""
     base = current if isinstance(current, ImagesSettings) else ImagesSettings()
     if not isinstance(raw, dict):
         return ImagesSettings(enabled=base.enabled, items=list(base.items),
-                              evolution_items=list(base.evolution_items))
+                              evolution_items=list(base.evolution_items),
+                              configs=list(base.configs))
     return ImagesSettings(
         enabled=_bool(raw.get("enabled"), base.enabled),
         items=_coerce_item_list(raw["items"] if "items" in raw else base.items),
         evolution_items=_coerce_item_list(
             raw["evolution_items"] if "evolution_items" in raw else base.evolution_items),
+        configs=_coerce_config_list(raw["configs"] if "configs" in raw else base.configs),
     )

@@ -5,7 +5,8 @@
     "expected": {
       "enabled": true,
       "items": [],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -14,7 +15,8 @@
     "expected": {
       "enabled": true,
       "items": [],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -23,7 +25,8 @@
     "expected": {
       "enabled": true,
       "items": [],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -34,7 +37,8 @@
     "expected": {
       "enabled": false,
       "items": [],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -46,7 +50,8 @@
     "expected": {
       "enabled": true,
       "items": [],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -67,11 +72,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -93,10 +93,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -129,11 +139,6 @@
           "enabled": true,
           "file": "",
           "name": "Logo du club",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -155,6 +160,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -162,11 +176,6 @@
           "enabled": true,
           "file": "",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -188,6 +197,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -195,11 +213,6 @@
           "enabled": true,
           "file": "",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -221,10 +234,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -246,11 +269,6 @@
           "enabled": true,
           "file": "fedcba9876543210.jpg",
           "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -272,10 +290,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -310,11 +338,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -322,7 +345,7 @@
             "dy": 41,
             "width": 1200,
             "height": 40,
-            "x": 1,
+            "x": 1.0,
             "y": 0.1235
           },
           "style": {
@@ -336,10 +359,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -387,11 +420,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -413,6 +441,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -420,11 +457,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "top-left",
@@ -446,6 +478,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -453,11 +494,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "top-right",
@@ -479,6 +515,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -486,11 +531,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-left",
@@ -512,10 +552,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -546,11 +596,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -572,10 +617,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -609,11 +664,6 @@
           "enabled": false,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "free",
             "anchor": "middle-left",
@@ -635,10 +685,20 @@
             "shadow": true,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -683,11 +743,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "top-right",
@@ -709,6 +764,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -716,11 +780,6 @@
           "enabled": true,
           "file": "fedcba9876543210.jpg",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "free",
             "anchor": "top-right",
@@ -742,6 +801,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -749,11 +817,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "top-right",
@@ -775,10 +838,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -803,11 +876,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -829,10 +897,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -869,11 +947,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -895,6 +968,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -902,11 +984,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -928,6 +1005,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -935,11 +1021,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -961,6 +1042,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -968,11 +1058,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -994,10 +1079,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -1038,11 +1133,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1064,6 +1154,15 @@
             "shadow": false,
             "border_color": "#ff0088",
             "border_width": 6
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -1071,11 +1170,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1097,6 +1191,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 50
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -1104,11 +1207,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1130,10 +1228,20 @@
             "shadow": false,
             "border_color": "#ff88aa",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -1182,11 +1290,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": "2026-01-03",
-            "end": "2026-01-05",
-            "fade": 5000
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1208,6 +1311,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": "2026-01-03",
+            "end": "2026-01-05",
+            "start_find": null,
+            "end_find": null,
+            "fade": 5000,
+            "effect": "fade"
           }
         },
         {
@@ -1215,11 +1327,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 0
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1241,6 +1348,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 0,
+            "effect": "fade"
           }
         },
         {
@@ -1248,11 +1364,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1274,6 +1385,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -1281,11 +1401,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 250
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1307,10 +1422,20 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 250,
+            "effect": "fade"
           }
         }
       ],
-      "evolution_items": []
+      "evolution_items": [],
+      "configs": []
     }
   },
   {
@@ -1344,11 +1469,6 @@
           "enabled": true,
           "file": "0123456789abcdef.png",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1370,6 +1490,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         }
       ],
@@ -1379,11 +1508,6 @@
           "enabled": true,
           "file": "fedcba9876543210.jpg",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1405,6 +1529,15 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
         },
         {
@@ -1412,11 +1545,6 @@
           "enabled": true,
           "file": "",
           "name": "",
-          "schedule": {
-            "start": null,
-            "end": null,
-            "fade": 600
-          },
           "position": {
             "mode": "anchor",
             "anchor": "bottom-right",
@@ -1438,7 +1566,380 @@
             "shadow": false,
             "border_color": "#ffffff",
             "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
           }
+        }
+      ],
+      "configs": []
+    }
+  },
+  {
+    "name": "planing par trouvailles et effet : bornes nullables, choix invalides au défaut",
+    "input": {
+      "items": [
+        {
+          "id": "aaaa0201",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "by": "find",
+            "start_find": "1000",
+            "end_find": 0,
+            "effect": "zoom",
+            "fade": 800
+          }
+        },
+        {
+          "id": "aaaa0202",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "by": "jalon",
+            "start_find": 12.6,
+            "end_find": 99999999999,
+            "effect": "spin"
+          }
+        },
+        {
+          "id": "aaaa0203",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "by": "date",
+            "start": "2026-01-03",
+            "start_find": "beaucoup",
+            "end_find": null,
+            "effect": "slide"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaa0201",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          },
+          "schedule": {
+            "by": "find",
+            "start": null,
+            "end": null,
+            "start_find": 1000,
+            "end_find": 1,
+            "fade": 800,
+            "effect": "zoom"
+          }
+        },
+        {
+          "id": "aaaa0202",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": 13,
+            "end_find": 10000000,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaa0203",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          },
+          "schedule": {
+            "by": "date",
+            "start": "2026-01-03",
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "slide"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "configurations : nom aplati, vides et doublons écartés, images normalisées",
+    "input": {
+      "configs": [
+        {
+          "name": "  Club\nlocal  ",
+          "items": [
+            {
+              "id": "aaaa0301",
+              "file": "0123456789abcdef.png",
+              "position": {
+                "width": 5000
+              }
+            }
+          ]
+        },
+        {
+          "name": "   ",
+          "items": []
+        },
+        {
+          "name": "Club local",
+          "items": []
+        },
+        "pas un objet",
+        {
+          "name": "Sans images"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": [
+        {
+          "name": "Club local",
+          "items": [
+            {
+              "id": "aaaa0301",
+              "enabled": true,
+              "file": "0123456789abcdef.png",
+              "name": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "bottom-right",
+                "dx": 16,
+                "dy": 16,
+                "width": 1200,
+                "height": null,
+                "x": 0,
+                "y": 0
+              },
+              "style": {
+                "shape": "rounded",
+                "radius": 12,
+                "fit": "contain",
+                "opacity": 100,
+                "background": "#ffffff",
+                "background_opacity": 0,
+                "padding": 0,
+                "shadow": false,
+                "border_color": "#ffffff",
+                "border_width": 0
+              },
+              "schedule": {
+                "by": "date",
+                "start": null,
+                "end": null,
+                "start_find": null,
+                "end_find": null,
+                "fade": 600,
+                "effect": "fade"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sans images",
+          "items": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "configurations : plus de douze, tronquées",
+    "input": {
+      "configs": [
+        {
+          "name": "Config 0",
+          "items": []
+        },
+        {
+          "name": "Config 1",
+          "items": []
+        },
+        {
+          "name": "Config 2",
+          "items": []
+        },
+        {
+          "name": "Config 3",
+          "items": []
+        },
+        {
+          "name": "Config 4",
+          "items": []
+        },
+        {
+          "name": "Config 5",
+          "items": []
+        },
+        {
+          "name": "Config 6",
+          "items": []
+        },
+        {
+          "name": "Config 7",
+          "items": []
+        },
+        {
+          "name": "Config 8",
+          "items": []
+        },
+        {
+          "name": "Config 9",
+          "items": []
+        },
+        {
+          "name": "Config 10",
+          "items": []
+        },
+        {
+          "name": "Config 11",
+          "items": []
+        },
+        {
+          "name": "Config 12",
+          "items": []
+        },
+        {
+          "name": "Config 13",
+          "items": []
+        },
+        {
+          "name": "Config 14",
+          "items": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": [
+        {
+          "name": "Config 0",
+          "items": []
+        },
+        {
+          "name": "Config 1",
+          "items": []
+        },
+        {
+          "name": "Config 2",
+          "items": []
+        },
+        {
+          "name": "Config 3",
+          "items": []
+        },
+        {
+          "name": "Config 4",
+          "items": []
+        },
+        {
+          "name": "Config 5",
+          "items": []
+        },
+        {
+          "name": "Config 6",
+          "items": []
+        },
+        {
+          "name": "Config 7",
+          "items": []
+        },
+        {
+          "name": "Config 8",
+          "items": []
+        },
+        {
+          "name": "Config 9",
+          "items": []
+        },
+        {
+          "name": "Config 10",
+          "items": []
+        },
+        {
+          "name": "Config 11",
+          "items": []
         }
       ]
     }

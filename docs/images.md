@@ -87,10 +87,13 @@ images: {
     style: { shape: 'rect'|'rounded'|'circle', radius, fit: 'contain'|'cover',
              opacity, background, background_opacity, padding, shadow,
              border_color, border_width },
-    schedule: { start: 'YYYY-MM-DD'|null, end: 'YYYY-MM-DD'|null,
-                fade: 0–5000 }
+    schedule: { by: 'date'|'find',
+                start: 'YYYY-MM-DD'|null, end: 'YYYY-MM-DD'|null,
+                start_find: 1–10 000 000|null, end_find: …|null,
+                fade: 0–5000, effect: 'fade'|'slide'|'zoom' }
   }],
-  evolution_items: […]  // même schéma, page /evolution (clé absente → [])
+  evolution_items: […],  // même schéma, page /evolution (clé absente → [])
+  configs: [{ name, items: […] }]  // 12 au plus, applicables sur les deux pages
 }
 ```
 
@@ -160,6 +163,34 @@ La place de l'image dans la pile est toujours réservée
 (`visibleItems`/`imagesReady` inchangés) : rien ne saute à l'apparition, les
 piles de stats gardent le contournement.
 
+**Planing par jalons** (`by: 'find'`) : « apparaît à la trouvaille n° N ».
+Converti en date au moment de l'évaluation (`scheduleBounds(schedule,
+imageFindDate)`, images_model.mjs) : `imageFindDate(n)` (images_panels.js)
+cherche le jour où le cumul des trouvailles atteint N (`dayOfNthFind`) dans
+`pointsByDate` + `hiddenPointsByDate` — le compteur de la carte,
+trouvailles antérieures au début de l'animation et locationless masquées
+comprises —, mis en cache par `pointsByDateRevision`. Tout le reste (cibles,
+fondus, sauts) est la mécanique des dates. Jalon d'apparition jamais atteint
+→ `SCHEDULE_UNREACHED` (jamais visible, signalé dans l'onglet) ; jalon de
+disparition jamais atteint → pas de fin. Les deux paires de bornes sont
+gardées : un aller-retour dates ↔ jalons ne perd rien, seul le mode `by`
+compte (`hasSchedule`). Page Évolution : pas de trouvailles, un planing par
+jalons (venu d'une configuration) y est ignoré — l'image reste visible.
+
+**Effets d'entrée/sortie** (`effect`) : le fondu accompagne toujours l'effet.
+`slide` : l'image cachée attend juste hors du cadre, par le bord le plus
+proche (à égalité : gauche, droite, haut, bas) ; `zoom` : depuis la moitié de
+sa taille (`IMAGE_ZOOM_FROM`), avec un léger rebond. `effectTransform(effect,
+avancement, rect, conteneur)` (images_render.mjs) donne décalage et échelle,
+en px CSS. Aperçu : `transform` CSS sur le canvas, transition à la courbe
+`IMAGE_EFFECT_EASINGS` (`cubic-bezier`) — pas en mode édition (l'image reste
+saisissable). Vidéo : la MÊME courbe évaluée en JS (`cubicBezier`, Newton +
+dichotomie comme les navigateurs) sur l'horloge des points
+(`scheduleMotion`), appliquée par `translate`/`scale` autour du centre dans
+`addImagePanelsToCanvas` ; l'opacité reste linéaire. La signature des frames
+MediaRecorder joint l'avancement quantifié en 64es pour un effet (16es pour
+le seul fondu).
+
 **Préchargement.** Les images sont décodées dès le chargement des préférences
 (init.js) et à chaque envoi. Le mode image par image attend `imagesReady()`
 (3 s au plus) avant sa première frame. Le mode MediaRecorder **n'attend pas** :
@@ -180,6 +211,44 @@ position, d'apparence et d'**apparition** (dates « Apparaît le » /
 image planifiée). Sauvegarde débouncée de la préférence complète, vidée
 aussitôt pour les actions discrètes.
 
+**Ajouts en file d'attente** (`addFromFiles`) : sélecteur, dépôt et collage
+passent par une file — un ajout pendant un envoi attend son tour au lieu
+d'être ignoré ; la place restante est comptée à son tour, l'excédent signalé
+une fois (« Quatre images au maximum. »).
+
+**Dépôt de fichiers** : traité par le gestionnaire de la FENÊTRE de chaque
+page (`bdd.js › routeDroppedFiles`, `evolution_data.js › setupCsvDragAndDrop`),
+qui aiguille les images (`isImageFile`, images_model.mjs) vers
+`dropImageFiles(files, point)` comme les musiques vers `dropMusicFile`.
+L'onglet Images s'ouvre ; lâchées sur la carte (`#mapWithFrames`), les images
+y sont posées **en position libre, centrées sur le point du dépôt**
+(`freePositionAt`, décalées de 24 px les unes des autres) ; ailleurs, à
+l'emplacement par défaut. Refusé pendant un enregistrement. L'onglet ne fait
+que montrer son contour de dépôt : avant, il traitait aussi le dépôt, et le
+gestionnaire de la fenêtre — qui ne connaissait pas les images — le prenait
+ensuite pour un GPX (« Fichier invalide ») ou un CSV.
+
+**Bibliothèque** : pastille sur les images déjà utilisées (`libraryUsage`) —
+coche d'accent sur cette page, icône du mode (`ti-database` / `ti-stack`,
+comme le sélecteur de l'en-tête) pour l'autre page, texte dans le titre et le
+nom accessible.
+
+**Préréglages d'apparence** (`IMAGE_STYLE_PRESETS`, `imageStylePreset`) :
+Avatar, Logo sur fond, Filigrane, Photo encadrée. Chacun repart du style par
+défaut (le résultat ne dépend pas des réglages précédents) ; position et
+largeur gardées ; un préréglage rond rend la hauteur aux proportions.
+« Annuler » rend le style et la hauteur d'avant.
+
+**Planing et période animée** : `scheduleRangeIssue(schedule, début, fin)`
+signale sous les dates (`#imageScheduleWarning`) une image jamais visible —
+fenêtre vide, apparition après la fin, disparition avant le début (période :
+`getTimelineState()`, recalculée à l'ouverture de l'onglet). « Jour affiché »
+(`scheduleFromPreview`) reprend le jour de l'aperçu en lecture ou en pause
+(`getTimelineState().position`), en gardant `end ≥ start` ; au repos, un toast
+explique la marche à suivre. Aperçu en pause : toute modification du planing
+est réappliquée aussitôt au jour affiché (`resyncScheduleWhilePaused` →
+`syncImagesToDate(position, null)`, instantané comme un saut).
+
 **Glisser-déposer** (onglet ouvert, au repos : classe `images-editing`) :
 `panel_interactions.js › bindPanelDrag`, la même mécanique que les panneaux —
 position libre, aimantation à 48 px (repère `.image-snap-ghost`, Alt pour s'en
@@ -189,14 +258,28 @@ flèches déplacent l'image sélectionnée de 1 px (10 px avec Maj ; une image
 ancrée devient libre à sa place affichée) — mécanique partagée avec les
 Stats, hors champs de formulaire.
 
-**Export/import JSON** (menu Bibliothèque) : `{ format: 'mygcflow-images',
+**Configurations nommées** (menu Configurations, comme l'onglet Stats) :
+`images.configs` = `[{ name, items }]`, instantanés de la liste de la page
+(`normalizeImagesConfig` ↔ `coerce_images_config`, premier nom gagnant, 12
+au plus, nom aplati à 40 caractères). Contrairement aux configurations de
+Stats, elles s'appliquent sur **les deux pages** — une image est la même
+partout — : c'est le moyen de reprendre sur Évolution les images de « Mes
+Géocaches », et inversement. Appliquer remplace la liste de la page
+(« Annuler ») ; un nom déjà pris remplace sa configuration. Les fichiers
+qu'elles désignent sont « référencés » (`referenced_image_files` lit
+`configs`) : la bibliothèque refuse de les retirer.
+
+**Export/import JSON** (menu Configurations) : `{ format: 'mygcflow-images',
 version: 1, items, files }`, les fichiers **embarqués** en data URL — la
 liste DE LA PAGE y voyage sous `items` quel que soit le mode ; à l'import,
 elle est écrite dans la liste de la page courante. Chaque image embarquée est
 renvoyée au serveur (normalisée de nouveau, son nom peut changer : les
 entrées suivent), puis la liste est remplacée avec « Annuler ». Accepte aussi
 un tableau d'images ou un bloc de préférences complet `{ images: { … } }`,
-lu dans la liste de la page.
+lu dans la liste de la page. « Importer et ajouter à la liste… »
+(`data-images-import="append"`) ajoute au lieu de remplacer, dans la limite
+des places libres ; les images en trop sont écartées AVANT envoi (aucun
+fichier envoyé pour rien) et signalées.
 
 ## Tests
 

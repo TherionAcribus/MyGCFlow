@@ -25,11 +25,39 @@
         <!-- Liste des images -->
         <div class="col-12 col-lg-5">
             <div class="card h-100" id="imagesListCard">
-                <div class="card-header d-flex align-items-center justify-content-between gap-2">
+                <!-- Trois boutons : l'en-tête passe à la ligne plutôt que de couper
+                     les libellés (colonne étroite en mise en page deux colonnes). -->
+                <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
                     <h6 class="card-title m-0">
                         <i class="ti ti-photo text-muted me-1"></i>{{ _("Images") }}<span id="imagesSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
                     </h6>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap gap-2 text-nowrap">
+                        <!-- Configurations nommées (applicables sur les deux pages), export et
+                             import JSON — même menu que l'onglet Stats. -->
+                        <div class="dropdown">
+                            <button type="button" id="btnImagesConfigs" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-bookmarks me-1" aria-hidden="true"></i>{{ _("Configurations") }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" id="imagesConfigMenu">
+                                <li><h6 class="dropdown-header" id="imagesConfigHeader" hidden>{{ _("Enregistrées") }}</h6></li>
+                                <li id="imagesConfigEmpty"><span class="dropdown-item-text text-muted small">{{ _("Aucune configuration enregistrée") }}</span></li>
+                                <li id="imagesConfigSep"><hr class="dropdown-divider"></li>
+                                <li><button type="button" class="dropdown-item" data-images-config-save>
+                                    <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Enregistrer la configuration actuelle") }}</button></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- Export : réglages ET fichiers (base64) dans un seul JSON,
+                                     réimportable sur un autre ordinateur. Import : remplace la
+                                     liste de la page, ou s'y ajoute dans la limite des places. -->
+                                <li><button type="button" class="dropdown-item" data-images-export>
+                                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter les images (JSON)") }}</button></li>
+                                <li><button type="button" class="dropdown-item" data-images-import="replace">
+                                    <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Importer des images…") }}</button></li>
+                                <li><button type="button" class="dropdown-item" data-images-import="append">
+                                    <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Importer et ajouter à la liste…") }}</button></li>
+                            </ul>
+                            <input type="file" id="imagesImportFile" accept=".json,application/json" hidden>
+                        </div>
                         <div class="dropdown">
                             <button type="button" id="btnImagesLibrary" class="btn btn-sm btn-outline-secondary dropdown-toggle"
                                     data-bs-toggle="dropdown" aria-expanded="false">
@@ -39,18 +67,11 @@
                                 <p id="imagesLibraryEmpty" class="dropdown-item-text text-muted small mb-0">{{ _("Aucune image envoyée pour l'instant.") }}</p>
                                 <div id="imagesLibraryList" class="images-library-grid"></div>
                                 <p id="imagesLibraryUsage" class="dropdown-item-text text-muted small mb-0"></p>
-                                <hr class="dropdown-divider">
-                                <!-- Export : réglages ET fichiers (base64) dans un seul JSON,
-                                     réimportable sur un autre ordinateur. -->
-                                <button type="button" class="dropdown-item" data-images-export>
-                                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter les images (JSON)") }}</button>
-                                <button type="button" class="dropdown-item" data-images-import>
-                                    <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Importer des images…") }}</button>
                             </div>
-                            <input type="file" id="imagesImportFile" accept=".json,application/json" hidden>
                         </div>
-                        <button type="button" id="btnImagesAdd" class="btn btn-sm btn-primary">
-                            <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter une image") }}
+                        <button type="button" id="btnImagesAdd" class="btn btn-sm btn-primary"
+                                title="{{ _('Ajouter une image') }}" aria-label="{{ _('Ajouter une image') }}">
+                            <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter") }}
                         </button>
                         <input type="file" id="imagesFileInput" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" multiple hidden>
                     </div>
@@ -60,6 +81,15 @@
                         {{ _("Aucune image. Ajoutez-en, déposez des fichiers sur cet onglet ou collez une image : PNG, JPEG, WebP, GIF ou SVG.") }}
                     </p>
                     <ul id="imagesList" class="list-group stats-panel-list" aria-label="{{ _('Images sur la carte') }}"></ul>
+                    <div id="imagesConfigSave" class="input-group input-group-sm mt-2" hidden>
+                        <input id="inputImagesConfigName" type="text" class="form-control" maxlength="40"
+                               placeholder="{{ _('Nom de la configuration') }}"
+                               aria-label="{{ _('Nom de la configuration') }}">
+                        <button type="button" id="btnImagesConfigSaveOk" class="btn btn-primary">{{ _("Enregistrer") }}</button>
+                        <button type="button" id="btnImagesConfigSaveCancel" class="btn btn-outline-secondary" aria-label="{{ _('Annuler') }}">
+                            <i class="ti ti-x" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <p id="imagesUploading" class="form-hint text-muted small mt-2 mb-0" role="status" hidden>
                         <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>{{ _("Envoi de l'image…") }}
                     </p>
@@ -141,6 +171,19 @@
                     </div>
 
                     <h6 class="gc-subsection-title mt-3">{{ _("Apparence") }}</h6>
+                    <!-- Préréglages (images_model.mjs › IMAGE_STYLE_PRESETS) : chacun
+                         repart du style par défaut ; position et largeur gardées. -->
+                    <div class="d-flex flex-wrap align-items-center gap-1 mb-2" role="group" aria-labelledby="labelImagePresets">
+                        <span class="form-label mb-0 me-1" id="labelImagePresets">{{ _("Préréglages") }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="avatar">
+                            <i class="ti ti-user me-1" aria-hidden="true"></i>{{ _("Avatar") }}</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="badge">
+                            <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Logo sur fond") }}</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="discreet">
+                            <i class="ti ti-contrast me-1" aria-hidden="true"></i>{{ _("Filigrane") }}</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="photo">
+                            <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Photo encadrée") }}</button>
+                    </div>
                     <div class="row g-2">
                         <div class="col-6 col-md-4">
                             <label class="form-label" for="selectImageShape">{{ _("Forme") }}</label>
@@ -194,9 +237,18 @@
                     </div>
 
                     <h6 class="gc-subsection-title mt-3">{{ _("Apparition pendant l'animation") }}</h6>
-                    <small class="form-hint text-muted d-block mb-2">{{ _("L'image apparaît le jour « Apparaît le » et disparaît le jour « Disparaît le », en fondu. Dates vides : toujours visible.") }}</small>
-                    <div class="row g-2">
-                        <div class="col-6 col-md-4">
+                    <small class="form-hint text-muted mb-2">{{ _("L'image entre puis sort au fil de l'animation, à des dates ou à des étapes du compteur de trouvailles. Sans borne : toujours visible.") }}</small>
+                    {% if mode != 'evolution' %}
+                    {# Jalons du compteur : page « Mes Géocaches » seulement (pas de trouvailles en Évolution). #}
+                    <div class="btn-group btn-group-sm mb-2" role="radiogroup" aria-label="{{ _('Repère du planing') }}">
+                        <input type="radio" class="btn-check" name="imageScheduleBy" id="imageScheduleBy-date" value="date">
+                        <label class="btn btn-outline-secondary" for="imageScheduleBy-date"><i class="ti ti-calendar me-1" aria-hidden="true"></i>{{ _("Par dates") }}</label>
+                        <input type="radio" class="btn-check" name="imageScheduleBy" id="imageScheduleBy-find" value="find">
+                        <label class="btn btn-outline-secondary" for="imageScheduleBy-find"><i class="ti ti-star me-1" aria-hidden="true"></i>{{ _("Par trouvailles") }}</label>
+                    </div>
+                    {% endif %}
+                    <div class="row g-2" id="imageScheduleDates">
+                        <div class="col-6">
                             <label class="form-label" for="inputImageAppearDate">{{ _("Apparaît le") }}</label>
                             <div class="input-group">
                                 <input id="inputImageAppearDate" type="date" class="form-control">
@@ -204,8 +256,10 @@
                                     <i class="ti ti-x" aria-hidden="true"></i>
                                 </button>
                             </div>
+                            <button type="button" id="btnImageAppearFromPreview" class="btn btn-sm btn-link p-0 mt-1" data-schedule-from-preview="start">
+                                <i class="ti ti-calendar-event me-1" aria-hidden="true"></i>{{ _("Jour affiché") }}</button>
                         </div>
-                        <div class="col-6 col-md-4">
+                        <div class="col-6">
                             <label class="form-label" for="inputImageDisappearDate">{{ _("Disparaît le") }}</label>
                             <div class="input-group">
                                 <input id="inputImageDisappearDate" type="date" class="form-control">
@@ -213,12 +267,50 @@
                                     <i class="ti ti-x" aria-hidden="true"></i>
                                 </button>
                             </div>
+                            <button type="button" id="btnImageDisappearFromPreview" class="btn btn-sm btn-link p-0 mt-1" data-schedule-from-preview="end">
+                                <i class="ti ti-calendar-event me-1" aria-hidden="true"></i>{{ _("Jour affiché") }}</button>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="inputImageFadeMs">{{ _("Fondu (ms)") }}</label>
+                        <div class="col-12">
+                            <small class="form-hint text-muted">{{ _("« Jour affiché » reprend le jour montré par l'aperçu, en lecture ou en pause : mettez-le en pause sur le jour voulu (barre de chronologie).") }}</small>
+                        </div>
+                    </div>
+                    <div class="row g-2" id="imageScheduleFinds" hidden>
+                        <div class="col-6">
+                            <label class="form-label" for="inputImageAppearFind">{{ _("Apparaît à la trouvaille n°") }}</label>
+                            <div class="input-group">
+                                <input id="inputImageAppearFind" type="number" class="form-control" min="1" max="10000000" step="1" aria-describedby="imageAppearFindDate">
+                                <button type="button" id="btnImageAppearFindClear" class="btn btn-outline-secondary" title="{{ _('Effacer') }}" aria-label="{{ _('Effacer') }}" disabled>
+                                    <i class="ti ti-x" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <small id="imageAppearFindDate" class="form-hint text-muted mt-1"></small>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="inputImageDisappearFind">{{ _("Disparaît à la trouvaille n°") }}</label>
+                            <div class="input-group">
+                                <input id="inputImageDisappearFind" type="number" class="form-control" min="1" max="10000000" step="1" aria-describedby="imageDisappearFindDate">
+                                <button type="button" id="btnImageDisappearFindClear" class="btn btn-outline-secondary" title="{{ _('Effacer') }}" aria-label="{{ _('Effacer') }}" disabled>
+                                    <i class="ti ti-x" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <small id="imageDisappearFindDate" class="form-hint text-muted mt-1"></small>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-6">
+                            <label class="form-label" for="selectImageEffect">{{ _("Effet") }}</label>
+                            <select id="selectImageEffect" class="form-select">
+                                <option value="fade">{{ _("Fondu") }}</option>
+                                <option value="slide">{{ _("Glissement depuis le bord") }}</option>
+                                <option value="zoom">{{ _("Zoom") }}</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="inputImageFadeMs">{{ _("Durée (ms)") }}</label>
                             <input id="inputImageFadeMs" type="number" class="form-control" min="0" max="5000" step="100">
                         </div>
                     </div>
+                    <small id="imageScheduleWarning" class="form-hint text-warning mt-1" role="status" hidden></small>
                 </div>
             </div>
         </div>

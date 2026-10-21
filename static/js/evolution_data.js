@@ -16,6 +16,7 @@ import { getBsModal, showBsModal, hideBsModal } from './ui_bootstrap.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
 import { isAudioFile } from './music_track.mjs';
+import { isImageFile } from './images_model.mjs';
 import { staggerDelayMs } from './flash_impulse.mjs';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { fileStem, suggestedImportTarget, unmatchedFilenames } from './evolution_import_target.mjs';
@@ -1200,7 +1201,7 @@ function setupCsvDragAndDrop() {
     icon.className = 'ti ti-file-upload';
     const text = document.createElement('div');
     text.className = 'gpx-drop-overlay__text';
-    text.textContent = t('Déposez vos exports CSV pour les ajouter à la base, ou une musique');
+    text.textContent = t('Déposez vos exports CSV pour les ajouter à la base, une musique ou une image');
     inner.append(icon, text);
     overlay.appendChild(inner);
     document.body.appendChild(overlay);
@@ -1228,11 +1229,15 @@ function setupCsvDragAndDrop() {
         if (!hasFiles(e)) return;
         e.preventDefault();
         hide();
-        // Une musique rejoint le sous-onglet Musique ; les CSV, l'import.
+        // Une musique rejoint le sous-onglet Musique, les images l'onglet
+        // Images (posées au point du dépôt si lâchées sur la carte) ; les
+        // CSV, l'import.
         const files = Array.from(e.dataTransfer.files || []);
         const music = files.find(isAudioFile);
         if (music) pkg.dropMusicFile?.(music);
-        const csv = files.filter((f) => !isAudioFile(f));
+        const images = files.filter(isImageFile);
+        if (images.length) pkg.dropImageFiles?.(images, { x: e.clientX, y: e.clientY });
+        const csv = files.filter((f) => !isAudioFile(f) && !isImageFile(f));
         if (csv.length) handleCsvFiles(csv);
     });
     window.addEventListener('dragend', hide);

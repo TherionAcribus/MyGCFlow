@@ -24,6 +24,8 @@ Apparition planifiée (2026-10-19, du §8) : bloc `schedule {start, end, fade}` 
 
 SVG (2026-10-19, du §8) : accepté à l'envoi, rastérisé **dans le navigateur** par `rasterizeSvg` (`images_ui.js`) — `<img>` n'exécute ni script ni ressource externe — rendu à 1024 px sur le grand côté (taille intrinsèque, sinon `viewBox`, sinon carré), puis envoyé en PNG : la chaîne serveur (normalisation, empreinte, bibliothèque, vidéo) est inchangée, aucune dépendance (pas de `cairosvg`). Point unique `uploadImage` : ajout, remplacement, dépôt, collage et import JSON couverts.
 
+Audit et suites (2026-10-21) : `images/` hors du dépôt, 2048 px, retrait de bibliothèque confirmé ; ergonomie (dépôt aiguillé par la fenêtre et posé au point lâché sur la carte, file d'attente des ajouts, pastilles « utilisée », import en ajout, préréglages, « Jour affiché », avertissement hors période) ; puis, du §8 : **configurations nommées** (`images.configs`, applicables sur les deux pages, menu Configurations qui reprend aussi export/import), **planing par jalons** (« à la Ne trouvaille », converti en date), **effets d'entrée/sortie** (glissement, zoom ; même courbe CSS/vidéo). GIF animés écartés pour l'instant (choix de l'utilisateur). Détail : `docs/images.md`.
+
 ## 1. Contexte constaté dans le code (à ne pas redécouvrir)
 
 - **Titre et Infos** sont des cartouches CSS du **thème** (`title_css`/`infos_css`, profiles.js), recopiés dans la vidéo par `overlay_canvas.js` qui relit leur CSS et leur rect. `sanitizeOverlayCss` interdit `url()` (pas de requête externe depuis un thème importé) : une image n'a rien à faire dans ce circuit.

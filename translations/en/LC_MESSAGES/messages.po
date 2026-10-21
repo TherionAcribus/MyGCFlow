@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 08:14+0200\n"
+"POT-Creation-Date: 2026-10-21 13:00+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -22,7 +22,7 @@ msgstr ""
 msgid "Aucun fichier envoyé"
 msgstr "No file was sent"
 
-#: bdd.py:120 static/js/bdd.js:76 static/js/evolution_data.js:156
+#: bdd.py:120 static/js/bdd.js:77 static/js/evolution_data.js:157
 #: templates/menu_data.html:31 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr "No file selected"
@@ -39,11 +39,11 @@ msgstr ""
 "This file contains Adventure Lab stages: import it from the “My Lab "
 "Caches” section of the Data tab."
 
-#: bdd.py:162 static/js/bdd.js:203
+#: bdd.py:162 static/js/bdd.js:204
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr "This GPX file was not produced by Groundspeak."
 
-#: bdd.py:166 static/js/bdd.js:207
+#: bdd.py:166 static/js/bdd.js:208
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr "This GPX file is a Pocket Query, not a My Finds file."
 
@@ -55,7 +55,7 @@ msgstr "File received successfully"
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr "The .zip archive does not contain any .gpx file."
 
-#: bdd.py:216 bdd.py:227 static/js/bdd.js:224
+#: bdd.py:216 bdd.py:227 static/js/bdd.js:225
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr "The file is too large (200 MB max)"
 
@@ -486,7 +486,7 @@ msgstr "A '%(type)s' task is already running"
 msgid "Base de données"
 msgstr "Database"
 
-#: blueprints/core.py:188 static/js/evolution_data.js:346
+#: blueprints/core.py:188 static/js/evolution_data.js:347
 #: templates/guide.html:160 templates/guide.html:168
 #: templates/menu_data.html:272 templates/menu_data_evolution.html:108
 #: test_translations.py:28
@@ -499,7 +499,7 @@ msgstr "Settings"
 
 #: templates/app.html:250 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
-#: templates/guide.html:510 templates/menu_animation.html:83
+#: templates/guide.html:513 templates/menu_animation.html:83
 #: templates/menu_animation.html:113 templates/menu_filtre.html:45
 #: templates/menu_filtre.html:54 templates/menu_filtre.html:70
 #: templates/menu_filtre.html:79 test_translations.py:30
@@ -508,7 +508,7 @@ msgstr "Data"
 
 #: templates/app.html:251 templates/guide.html:50 templates/guide.html:95
 #: templates/guide.html:112 templates/guide.html:182 templates/guide.html:184
-#: templates/guide.html:523 test_translations.py:31
+#: templates/guide.html:526 test_translations.py:31
 msgid "Style"
 msgstr "Style"
 
@@ -561,12 +561,12 @@ msgstr "Confirm"
 
 #: blueprints/core.py:221 static/js/notifications.js:448
 #: templates/menu_data.html:95 templates/menu_data.html:361
-#: templates/menu_stats.html:117 templates/menu_style.html:246
-#: templates/menu_style.html:271 templates/menu_style.html:296
-#: templates/menu_style.html:324 templates/menu_style.html:355
-#: templates/menu_style.html:383 templates/modal_evolution.html:18
-#: templates/modal_evolution.html:60 templates/modal_evolution.html:84
-#: templates/modal_loading.html:14
+#: templates/menu_images.html:89 templates/menu_stats.html:117
+#: templates/menu_style.html:246 templates/menu_style.html:271
+#: templates/menu_style.html:296 templates/menu_style.html:324
+#: templates/menu_style.html:355 templates/menu_style.html:383
+#: templates/modal_evolution.html:18 templates/modal_evolution.html:60
+#: templates/modal_evolution.html:84 templates/modal_loading.html:14
 msgid "Annuler"
 msgstr "Cancel"
 
@@ -635,7 +635,7 @@ msgstr "%(name)s: file too large (500 MB at most)"
 msgid "%(name)s : colonnes obligatoires absentes (%(columns)s)"
 msgstr "%(name)s: required columns missing (%(columns)s)"
 
-#: blueprints/evolution.py:207 static/js/evolution_data.js:656
+#: blueprints/evolution.py:207 static/js/evolution_data.js:657
 msgid "Un import est déjà en cours"
 msgstr "An import is already running"
 
@@ -1013,175 +1013,175 @@ msgstr ""
 "${count} map tile(s) could not be loaded during recording: the video may "
 "contain blank areas."
 
-#: static/js/bdd.js:218
+#: static/js/bdd.js:219
 msgid "Veuillez sélectionner un fichier .gpx ou .zip"
 msgstr "Please select a .gpx or .zip file"
 
-#: static/js/bdd.js:221
+#: static/js/bdd.js:222
 msgid "Le fichier sélectionné est vide"
 msgstr "The selected file is empty"
 
-#: static/js/bdd.js:287
+#: static/js/bdd.js:295
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "An import is already running, please wait."
 
-#: static/js/bdd.js:287 static/js/bdd.js:1456
+#: static/js/bdd.js:295 static/js/bdd.js:1467
 msgid "Import en cours"
 msgstr "Import in progress"
 
-#: static/js/bdd.js:297 static/js/bdd.js:302 templates/app.html:182
+#: static/js/bdd.js:305 static/js/bdd.js:310 templates/app.html:182
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyzing GPX file..."
 
-#: static/js/bdd.js:297 static/js/bdd.js:1142 static/js/bdd.js:1235
-#: static/js/evolution_data.js:257 static/js/labs.js:1502
+#: static/js/bdd.js:305 static/js/bdd.js:1153 static/js/bdd.js:1246
+#: static/js/evolution_data.js:258 static/js/labs.js:1502
 #: static/js/notifications.js:297 static/js/notifications.js:342
 msgid "Chargement"
 msgstr "Loading"
 
-#: static/js/bdd.js:308
+#: static/js/bdd.js:316
 msgid "Fichier invalide"
 msgstr "Invalid file"
 
-#: static/js/bdd.js:335
+#: static/js/bdd.js:343
 msgid ""
 "Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, "
-"ou une musique"
+"une musique ou une image"
 msgstr ""
-"Drop your file (.gpx, .zip or Lab Caches export) to load it, or a music "
-"track"
+"Drop your file (.gpx, .zip or Lab Caches export) to load it, a music "
+"track or an image"
 
-#: static/js/bdd.js:409 static/js/bdd.js:434 static/js/mapgl.js:808
+#: static/js/bdd.js:417 static/js/bdd.js:442 static/js/mapgl.js:808
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/bdd.js:422
+#: static/js/bdd.js:430
 #, python-brace-format
 msgid "du ${start} au ${end}"
 msgstr "from ${start} to ${end}"
 
-#: static/js/bdd.js:429
+#: static/js/bdd.js:437
 #, python-brace-format
 msgid "aujourd'hui à ${time}"
 msgstr "today at ${time}"
 
-#: static/js/bdd.js:432
+#: static/js/bdd.js:440
 #, python-brace-format
 msgid "hier à ${time}"
 msgstr "yesterday at ${time}"
 
-#: static/js/bdd.js:448 static/js/stats_panels.js:989
+#: static/js/bdd.js:456 static/js/stats_panels.js:989
 msgid "caches"
 msgstr "caches"
 
-#: static/js/bdd.js:448
+#: static/js/bdd.js:456
 msgid "cache"
 msgstr "cache"
 
-#: static/js/bdd.js:451
+#: static/js/bdd.js:459
 #, python-brace-format
 msgid "importé ${when}"
 msgstr "imported ${when}"
 
-#: static/js/bdd.js:487 static/js/bdd.js:629 templates/menu_data.html:57
+#: static/js/bdd.js:495 static/js/bdd.js:638 templates/menu_data.html:57
 msgid "Aucune géocache chargée"
 msgstr "No geocaches loaded"
 
-#: static/js/bdd.js:1070 static/js/bdd.js:1150
+#: static/js/bdd.js:1081 static/js/bdd.js:1161
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr "Uploading file: ${pct}%"
 
-#: static/js/bdd.js:1082
+#: static/js/bdd.js:1093
 msgid "Réponse invalide du serveur"
 msgstr "Invalid server response"
 
-#: static/js/bdd.js:1086
+#: static/js/bdd.js:1097
 msgid "Impossible de lancer l'import GPX"
 msgstr "Unable to start the GPX import"
 
-#: static/js/bdd.js:1093 static/js/bdd.js:1097 static/js/bdd.js:1192
+#: static/js/bdd.js:1104 static/js/bdd.js:1108 static/js/bdd.js:1203
 msgid "Traitement du fichier en cours..."
 msgstr "Processing file..."
 
-#: static/js/bdd.js:1102 static/js/evolution_data.js:759
+#: static/js/bdd.js:1113 static/js/evolution_data.js:760
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Network error while uploading the file"
 
-#: static/js/bdd.js:1103 static/js/evolution_data.js:760
+#: static/js/bdd.js:1114 static/js/evolution_data.js:761
 msgid "Envoi du fichier annulé"
 msgstr "File upload cancelled"
 
-#: static/js/bdd.js:1117
+#: static/js/bdd.js:1128
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr "Please select a .gpx file"
 
-#: static/js/bdd.js:1117
+#: static/js/bdd.js:1128
 msgid "Aucun fichier"
 msgstr "No file"
 
-#: static/js/bdd.js:1142 static/js/bdd.js:1143 static/js/bdd.js:1148
+#: static/js/bdd.js:1153 static/js/bdd.js:1154 static/js/bdd.js:1159
 msgid "Préparation de l'envoi..."
 msgstr "Preparing upload..."
 
-#: static/js/bdd.js:1161
+#: static/js/bdd.js:1172
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:1161 static/js/mapgl.js:4534
+#: static/js/bdd.js:1172 static/js/mapgl.js:4534
 msgid "Terminé"
 msgstr "Done"
 
-#: static/js/bdd.js:1171 static/js/bdd.js:1533
+#: static/js/bdd.js:1182 static/js/bdd.js:1544
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1191 static/js/bdd.js:1199
+#: static/js/bdd.js:1202 static/js/bdd.js:1210
 msgid "Erreur lors du chargement du fichier"
 msgstr "Error while uploading the file"
 
-#: static/js/bdd.js:1191 static/js/bdd.js:1199 static/js/bdd.js:1317
-#: static/js/bdd.js:1325 static/js/bdd.js:1519 static/js/evolution_data.js:186
-#: static/js/evolution_data.js:278 static/js/evolution_data.js:803
-#: static/js/evolution_data.js:807 static/js/evolution_data.js:1142
-#: static/js/evolution_data.js:1177 static/js/evolution_data.js:1185
+#: static/js/bdd.js:1202 static/js/bdd.js:1210 static/js/bdd.js:1328
+#: static/js/bdd.js:1336 static/js/bdd.js:1530 static/js/evolution_data.js:187
+#: static/js/evolution_data.js:279 static/js/evolution_data.js:804
+#: static/js/evolution_data.js:808 static/js/evolution_data.js:1143
+#: static/js/evolution_data.js:1178 static/js/evolution_data.js:1186
 #: static/js/labs.js:2001 static/js/labs.js:2044 static/js/labs.js:2084
 #: static/js/notifications.js:421 static/js/recording_perf.js:187
 #: static/js/ui.js:1827
 msgid "Erreur"
 msgstr "Error"
 
-#: static/js/bdd.js:1233 static/js/bdd.js:1235
+#: static/js/bdd.js:1244 static/js/bdd.js:1246
 msgid "Chargement de l'application..."
 msgstr "Loading the application..."
 
-#: static/js/bdd.js:1250
+#: static/js/bdd.js:1261
 msgid "Impossible de lancer le chargement des données"
 msgstr "Unable to start loading the data"
 
-#: static/js/bdd.js:1317 static/js/bdd.js:1325
+#: static/js/bdd.js:1328 static/js/bdd.js:1336
 msgid "Erreur lors du chargement des données"
 msgstr "Error while loading data"
 
-#: static/js/bdd.js:1393
+#: static/js/bdd.js:1404
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr "${selected} / ${total}"
 
-#: static/js/bdd.js:1419
+#: static/js/bdd.js:1430
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "No cache matches the criteria selected by the filters."
 
-#: static/js/bdd.js:1419
+#: static/js/bdd.js:1430
 msgid "Aucune cache visible"
 msgstr "No visible cache"
 
-#: static/js/bdd.js:1456
+#: static/js/bdd.js:1467
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr "An import is in progress, please wait before deleting the data."
 
-#: static/js/bdd.js:1466
+#: static/js/bdd.js:1477
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
@@ -1189,101 +1189,101 @@ msgstr ""
 "Are you sure you want to delete all your finds? This action is "
 "irreversible."
 
-#: static/js/bdd.js:1467 static/js/labs.js:2066
+#: static/js/bdd.js:1478 static/js/labs.js:2066
 msgid "Confirmation de suppression"
 msgstr "Deletion confirmation"
 
-#: static/js/bdd.js:1470 templates/guide.html:173 templates/menu_data.html:60
+#: static/js/bdd.js:1481 templates/guide.html:173 templates/menu_data.html:60
 msgid "Supprimer mes géocaches"
 msgstr "Delete my geocaches"
 
-#: static/js/bdd.js:1475
+#: static/js/bdd.js:1486
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation unavailable, action cancelled."
 
-#: static/js/bdd.js:1475 static/js/bdd.js:1486
+#: static/js/bdd.js:1486 static/js/bdd.js:1497
 msgid "Suppression"
 msgstr "Deletion"
 
-#: static/js/bdd.js:1486
+#: static/js/bdd.js:1497
 msgid "Suppression des trouvailles..."
 msgstr "Deleting finds..."
 
-#: static/js/bdd.js:1508
+#: static/js/bdd.js:1519
 msgid "Trouvailles supprimées avec succès"
 msgstr "Finds deleted successfully"
 
-#: static/js/bdd.js:1508 static/js/labs.js:2082
+#: static/js/bdd.js:1519 static/js/labs.js:2082
 msgid "Suppression réussie"
 msgstr "Deletion successful"
 
-#: static/js/bdd.js:1519
+#: static/js/bdd.js:1530
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Error while deleting finds: "
 
-#: static/js/bdd.js:1533 static/js/mapgl.js:633 static/js/notifications.js:379
+#: static/js/bdd.js:1544 static/js/mapgl.js:633 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr "Points display"
 
-#: static/js/bdd.js:1539
+#: static/js/bdd.js:1550
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr "Unable to start GeoJSON generation"
 
-#: static/js/bdd.js:1551 static/js/bdd.js:1611 static/js/bdd.js:1619
+#: static/js/bdd.js:1562 static/js/bdd.js:1622 static/js/bdd.js:1630
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Error while displaying the points on the map"
 
-#: static/js/bdd.js:1551 static/js/bdd.js:1611 static/js/bdd.js:1619
+#: static/js/bdd.js:1562 static/js/bdd.js:1622 static/js/bdd.js:1630
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/evolution_data.js:158
+#: static/js/evolution_data.js:159
 #, python-brace-format
 msgid "${n} fichiers sélectionnés"
 msgstr "${n} files selected"
 
-#: static/js/evolution_data.js:186
+#: static/js/evolution_data.js:187
 msgid "Impossible de lire la liste des bases"
 msgstr "Unable to read the list of datasets"
 
-#: static/js/evolution_data.js:213 static/js/evolution_data.js:852
+#: static/js/evolution_data.js:214 static/js/evolution_data.js:853
 #, python-brace-format
 msgid "${name} (${n} caches)"
 msgstr "${name} (${n} caches)"
 
-#: static/js/evolution_data.js:240
+#: static/js/evolution_data.js:241
 msgid "La base sera affichée à la fin de l'animation."
 msgstr "The database will be shown when the animation ends."
 
-#: static/js/evolution_data.js:240 templates/menu_data_evolution.html:14
+#: static/js/evolution_data.js:241 templates/menu_data_evolution.html:14
 #: templates/menu_data_evolution.html:20
 msgid "Base de caches"
 msgstr "Cache dataset"
 
-#: static/js/evolution_data.js:242
+#: static/js/evolution_data.js:243
 msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Stop the animation before switching datasets."
 
-#: static/js/evolution_data.js:242 static/js/evolution_data.js:1169
+#: static/js/evolution_data.js:243 static/js/evolution_data.js:1170
 #: static/js/mapgl.js:3010 static/js/mapgl.js:3052 static/js/mapgl.js:3059
 #: static/js/mapgl.js:3970 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Warning"
 
-#: static/js/evolution_data.js:257
+#: static/js/evolution_data.js:258
 msgid "Chargement de la base..."
 msgstr "Loading the dataset..."
 
-#: static/js/evolution_data.js:278
+#: static/js/evolution_data.js:279
 #, python-brace-format
 msgid "Impossible de charger la base : ${message}"
 msgstr "Unable to load the dataset: ${message}"
 
-#: static/js/evolution_data.js:346
+#: static/js/evolution_data.js:347
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr "The filter will apply when the animation ends."
 
-#: static/js/evolution_data.js:384
+#: static/js/evolution_data.js:385
 #, python-brace-format
 msgid ""
 "${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou "
@@ -1292,107 +1292,107 @@ msgstr ""
 "${n} caches displayed: the map may slow down. Filter by country or region"
 " to lighten it."
 
-#: static/js/evolution_data.js:385
+#: static/js/evolution_data.js:386
 msgid "Grosse sélection"
 msgstr "Large selection"
 
-#: static/js/evolution_data.js:612
+#: static/js/evolution_data.js:613
 #, python-brace-format
 msgid "Archivée le ${date}"
 msgstr "Archived on ${date}"
 
-#: static/js/evolution_data.js:613
+#: static/js/evolution_data.js:614
 msgid "Archivée (date inconnue)"
 msgstr "Archived (unknown date)"
 
-#: static/js/evolution_data.js:613
+#: static/js/evolution_data.js:614
 msgid "Active"
 msgstr "Active"
 
-#: static/js/evolution_data.js:631
+#: static/js/evolution_data.js:632
 #, python-brace-format
 msgid "Placée le ${date}"
 msgstr "Placed on ${date}"
 
-#: static/js/evolution_data.js:656 static/js/evolution_data.js:660
-#: static/js/evolution_data.js:670 static/js/evolution_data.js:685
+#: static/js/evolution_data.js:657 static/js/evolution_data.js:661
+#: static/js/evolution_data.js:671 static/js/evolution_data.js:686
 #: templates/menu_data.html:320
 msgid "Import"
 msgstr "Import"
 
-#: static/js/evolution_data.js:660 static/js/evolution_data.js:685
+#: static/js/evolution_data.js:661 static/js/evolution_data.js:686
 msgid "Arrêtez l'animation avant d'importer."
 msgstr "Stop the animation before importing."
 
-#: static/js/evolution_data.js:665
+#: static/js/evolution_data.js:666
 #, python-brace-format
 msgid "${name} : seuls les fichiers .csv sont acceptés"
 msgstr "${name}: only .csv files are accepted"
 
-#: static/js/evolution_data.js:666
+#: static/js/evolution_data.js:667
 #, python-brace-format
 msgid "${name} : fichier vide"
 msgstr "${name}: empty file"
 
-#: static/js/evolution_data.js:667
+#: static/js/evolution_data.js:668
 #, python-brace-format
 msgid "${name} : fichier trop volumineux (500 Mo au plus)"
 msgstr "${name}: file too large (500 MB at most)"
 
-#: static/js/evolution_data.js:699
+#: static/js/evolution_data.js:700
 msgid "Envoi des fichiers..."
 msgstr "Uploading files..."
 
-#: static/js/evolution_data.js:714 static/js/evolution_data.js:727
+#: static/js/evolution_data.js:715 static/js/evolution_data.js:728
 msgid "Import en cours..."
 msgstr "Import in progress..."
 
-#: static/js/evolution_data.js:732 static/js/labs.js:1173
+#: static/js/evolution_data.js:733 static/js/labs.js:1173
 msgid "L'import a échoué"
 msgstr "The import failed"
 
-#: static/js/evolution_data.js:748
+#: static/js/evolution_data.js:749
 #, python-brace-format
 msgid "Envoi des fichiers : ${pct}%"
 msgstr "Uploading files: ${pct}%"
 
-#: static/js/evolution_data.js:756
+#: static/js/evolution_data.js:757
 msgid "Impossible de lancer l'import"
 msgstr "Unable to start the import"
 
-#: static/js/evolution_data.js:787
+#: static/js/evolution_data.js:788
 msgid "Ma zone"
 msgstr "My area"
 
-#: static/js/evolution_data.js:803 static/js/evolution_data.js:807
+#: static/js/evolution_data.js:804 static/js/evolution_data.js:808
 msgid "Impossible de créer la base"
 msgstr "Unable to create the dataset"
 
-#: static/js/evolution_data.js:827
+#: static/js/evolution_data.js:828
 #, python-brace-format
 msgid "${files} ne correspondent pas aux exports déjà importés dans « ${name} »."
 msgstr "${files} do not match the exports already imported into “${name}”."
 
-#: static/js/evolution_data.js:828
+#: static/js/evolution_data.js:829
 #, python-brace-format
 msgid "${file} ne correspond pas aux exports déjà importés dans « ${name} »."
 msgstr "${file} does not match the exports already imported into “${name}”."
 
-#: static/js/evolution_data.js:833
+#: static/js/evolution_data.js:834
 #, python-brace-format
 msgid "Créer une nouvelle base « ${name} »"
 msgstr "Create a new database “${name}”"
 
-#: static/js/evolution_data.js:840
+#: static/js/evolution_data.js:841
 #, python-brace-format
 msgid "Ajouter à la base ouverte « ${name} » (${n} caches)"
 msgstr "Add to the open database “${name}” (${n} caches)"
 
-#: static/js/evolution_data.js:936
+#: static/js/evolution_data.js:937
 msgid "Erreur d'import"
 msgstr "Import error"
 
-#: static/js/evolution_data.js:968
+#: static/js/evolution_data.js:969
 #, python-brace-format
 msgid ""
 "${read} lignes lues : ${added} nouvelles, ${updated} mises à jour, "
@@ -1401,22 +1401,22 @@ msgstr ""
 "${read} rows read: ${added} new, ${updated} updated, ${unchanged} "
 "unchanged"
 
-#: static/js/evolution_data.js:972
+#: static/js/evolution_data.js:973
 #, python-brace-format
 msgid "${n} caches archivées depuis le précédent export"
 msgstr "${n} caches archived since the previous export"
 
-#: static/js/evolution_data.js:975
+#: static/js/evolution_data.js:976
 #, python-brace-format
 msgid "${n} lignes plus anciennes que la version déjà connue, ignorées"
 msgstr "${n} rows older than the version already known, ignored"
 
-#: static/js/evolution_data.js:978
+#: static/js/evolution_data.js:979
 #, python-brace-format
 msgid "${n} doublons dans le fichier (version la plus récente retenue)"
 msgstr "${n} duplicates in the file (most recent version kept)"
 
-#: static/js/evolution_data.js:981
+#: static/js/evolution_data.js:982
 #, python-brace-format
 msgid ""
 "${n} caches archivées sans date d'archivage : non affichées (option dans "
@@ -1425,12 +1425,12 @@ msgstr ""
 "${n} caches archived without an archive date: not displayed (option in "
 "the filters)"
 
-#: static/js/evolution_data.js:985
+#: static/js/evolution_data.js:986
 #, python-brace-format
 msgid "${n} lignes invalides ignorées (${reasons})"
 msgstr "${n} invalid rows ignored (${reasons})"
 
-#: static/js/evolution_data.js:988
+#: static/js/evolution_data.js:989
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage antérieures au placement (disparition le jour du "
@@ -1439,12 +1439,12 @@ msgstr ""
 "${n} archive dates earlier than placement (disappearance on the placement"
 " day)"
 
-#: static/js/evolution_data.js:991
+#: static/js/evolution_data.js:992
 #, python-brace-format
 msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 msgstr "${n} reactivated caches: their former archive date is ignored"
 
-#: static/js/evolution_data.js:996
+#: static/js/evolution_data.js:997
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, "
@@ -1453,7 +1453,7 @@ msgstr ""
 "${n} unreadable archive dates, ignored (accepted formats: YYYY-MM-DD, "
 "DD/MM/YYYY)"
 
-#: static/js/evolution_data.js:1004
+#: static/js/evolution_data.js:1005
 msgid ""
 "Colonne « Ajouté » absente ou vide : les caches déjà connues par un "
 "export daté ne sont pas mises à jour"
@@ -1461,7 +1461,7 @@ msgstr ""
 "“Ajouté” column missing or empty: caches already known from a dated "
 "export are not updated"
 
-#: static/js/evolution_data.js:1005
+#: static/js/evolution_data.js:1006
 #, python-brace-format
 msgid ""
 "${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent "
@@ -1470,86 +1470,86 @@ msgstr ""
 "${n} rows without an export date (“Ajouté” column): they do not update "
 "caches already known from a dated export"
 
-#: static/js/evolution_data.js:1011
+#: static/js/evolution_data.js:1012
 #, python-brace-format
 msgid "Types non reconnus (couleur par défaut) : ${types}"
 msgstr "Unrecognized types (default color): ${types}"
 
-#: static/js/evolution_data.js:1015
+#: static/js/evolution_data.js:1016
 #, python-brace-format
 msgid "Tailles non reconnues (gardées telles quelles) : ${sizes}"
 msgstr "Unrecognized sizes (kept as is): ${sizes}"
 
-#: static/js/evolution_data.js:1022
+#: static/js/evolution_data.js:1023
 msgid "code GC"
 msgstr "GC code"
 
-#: static/js/evolution_data.js:1023 static/js/labs.js:641 static/js/labs.js:785
+#: static/js/evolution_data.js:1024 static/js/labs.js:641 static/js/labs.js:785
 msgid "coordonnées"
 msgstr "coordinates"
 
-#: static/js/evolution_data.js:1024
+#: static/js/evolution_data.js:1025
 msgid "date de placement"
 msgstr "placement date"
 
-#: static/js/evolution_data.js:1036
+#: static/js/evolution_data.js:1037
 msgid "Base vide : importez un export CSV."
 msgstr "Empty dataset: import a CSV export."
 
-#: static/js/evolution_data.js:1040
+#: static/js/evolution_data.js:1041
 #, python-brace-format
 msgid "${n} caches"
 msgstr "${n} caches"
 
-#: static/js/evolution_data.js:1041
+#: static/js/evolution_data.js:1042
 #, python-brace-format
 msgid "${n} actives"
 msgstr "${n} active"
 
-#: static/js/evolution_data.js:1042
+#: static/js/evolution_data.js:1043
 #, python-brace-format
 msgid "${n} archivées"
 msgstr "${n} archived"
 
-#: static/js/evolution_data.js:1045
+#: static/js/evolution_data.js:1046
 #, python-brace-format
 msgid "${n} archivées sans date"
 msgstr "${n} archived without a date"
 
-#: static/js/evolution_data.js:1050
+#: static/js/evolution_data.js:1051
 #, python-brace-format
 msgid "placements du ${from} au ${to}"
 msgstr "placed from ${from} to ${to}"
 
-#: static/js/evolution_data.js:1054
+#: static/js/evolution_data.js:1055
 #, python-brace-format
 msgid "export du ${date}"
 msgstr "exported on ${date}"
 
-#: static/js/evolution_data.js:1087
+#: static/js/evolution_data.js:1088
 #, python-brace-format
 msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 msgstr "${date} · ${file}: ${added} new, ${updated} updated"
 
-#: static/js/evolution_data.js:1100 templates/menu_data_evolution.html:26
+#: static/js/evolution_data.js:1101 templates/menu_data_evolution.html:26
 msgid "Renommer la base"
 msgstr "Rename the dataset"
 
-#: static/js/evolution_data.js:1100 templates/menu_data_evolution.html:22
+#: static/js/evolution_data.js:1101 templates/menu_data_evolution.html:22
 #: templates/modal_evolution.html:8
 msgid "Nouvelle base"
 msgstr "New dataset"
 
-#: static/js/evolution_data.js:1129
+#: static/js/evolution_data.js:1130
 msgid "Nom refusé"
 msgstr "Name rejected"
 
-#: static/js/evolution_data.js:1142 static/js/evolution_data.js:1185
+#: static/js/evolution_data.js:1143 static/js/evolution_data.js:1186
 #, python-brace-format
 msgid "Erreur : ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/evolution_data.js:1160
+#: static/js/evolution_data.js:1161
 #, python-brace-format
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
@@ -1558,17 +1558,21 @@ msgstr ""
 "Delete the dataset “${name}” and its ${n} caches? The original CSV files "
 "are not affected."
 
-#: static/js/evolution_data.js:1169
+#: static/js/evolution_data.js:1170
 msgid "Arrêtez l'animation avant de supprimer la base."
 msgstr "Stop the animation before deleting the dataset."
 
-#: static/js/evolution_data.js:1177
+#: static/js/evolution_data.js:1178
 msgid "Suppression impossible"
 msgstr "Unable to delete"
 
-#: static/js/evolution_data.js:1203
-msgid "Déposez vos exports CSV pour les ajouter à la base, ou une musique"
-msgstr "Drop your CSV exports to add them to the database, or a music track"
+#: static/js/evolution_data.js:1204
+msgid ""
+"Déposez vos exports CSV pour les ajouter à la base, une musique ou une "
+"image"
+msgstr ""
+"Drop your CSV exports to add them to the database, a music track or an "
+"image"
 
 #: static/js/fetch_with_timeout.mjs:41
 msgid "Le serveur local ne répond pas (délai dépassé)"
@@ -1579,128 +1583,236 @@ msgstr "The local server is not responding (timed out)"
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr "Error loading GC colors (${status}): ${statusText}"
 
-#: static/js/images_panels.js:444
+#: static/js/images_panels.js:461
 msgid "Image"
 msgstr "Image"
 
-#: static/js/images_ui.js:86
+#: static/js/images_ui.js:102
 #, python-brace-format
 msgid "Image ${n}"
 msgstr "Image ${n}"
 
-#: static/js/images_ui.js:116 static/js/images_ui.js:134
+#: static/js/images_ui.js:142 static/js/images_ui.js:160
 msgid "L'image SVG n'a pas pu être lue."
 msgstr "The SVG image could not be read."
 
-#: static/js/images_ui.js:161 static/js/images_ui.js:168
+#: static/js/images_ui.js:190 static/js/images_ui.js:197
 msgid "L'image n'a pas pu être envoyée."
 msgstr "The image could not be uploaded."
 
-#: static/js/images_ui.js:168 static/js/images_ui.js:202
-#: static/js/images_ui.js:431 static/js/images_ui.js:475
-#: static/js/images_ui.js:477 templates/app.html:254 templates/guide.html:59
+#: static/js/images_ui.js:197 static/js/images_ui.js:263
+#: static/js/images_ui.js:286 static/js/images_ui.js:548
+#: static/js/images_ui.js:554 static/js/images_ui.js:583
+#: static/js/images_ui.js:608 static/js/images_ui.js:610
+#: static/js/images_ui.js:702 static/js/images_ui.js:1118
+#: static/js/images_ui.js:1123 templates/app.html:254 templates/guide.html:59
 #: templates/guide.html:112 templates/guide.html:382 templates/guide.html:384
-#: templates/menu_images.html:30
+#: templates/menu_images.html:32
 msgid "Images"
 msgstr "Images"
 
-#: static/js/images_ui.js:202 templates/menu_images.html:66
+#: static/js/images_ui.js:263 static/js/images_ui.js:554
+#: templates/menu_images.html:96
 msgid "Quatre images au maximum."
 msgstr "Four images at most."
 
-#: static/js/images_ui.js:292 static/js/video_ready.js:31
+#: static/js/images_ui.js:286
+msgid "Attendez la fin de l'enregistrement pour ajouter une image."
+msgstr "Wait for the recording to finish before adding an image."
+
+#: static/js/images_ui.js:377 static/js/video_ready.js:31
 #, python-brace-format
 msgid "${n} Mo"
 msgstr "${n} MB"
 
-#: static/js/images_ui.js:293
+#: static/js/images_ui.js:378
 #, python-brace-format
 msgid "${n} Ko"
 msgstr "${n} KB"
 
-#: static/js/images_ui.js:321
+#: static/js/images_ui.js:386
+msgid "Utilisée sur cette page"
+msgstr "Used on this page"
+
+#: static/js/images_ui.js:390
+msgid "Utilisée dans « Mes Géocaches »"
+msgstr "Used in “My Geocaches”"
+
+#: static/js/images_ui.js:391
+msgid "Utilisée dans « Évolution »"
+msgstr "Used in “Evolution”"
+
+#: static/js/images_ui.js:422
 #, python-brace-format
 msgid "Ajouter ${name} (${w} × ${h})"
 msgstr "Add ${name} (${w} × ${h})"
 
-#: static/js/images_ui.js:322
+#: static/js/images_ui.js:423
 #, python-brace-format
 msgid "Ajouter cette image (${w} × ${h})"
 msgstr "Add this image (${w} × ${h})"
 
-#: static/js/images_ui.js:338 static/js/images_ui.js:339
-#: static/js/images_ui.js:501
+#: static/js/images_ui.js:450 static/js/images_ui.js:451
+#: static/js/images_ui.js:626
 msgid "Retirer de la bibliothèque"
 msgstr "Remove from library"
 
-#: static/js/images_ui.js:350
+#: static/js/images_ui.js:462
 #, python-brace-format
 msgid "${n} image(s) · ${size}"
 msgstr "${n} image(s) · ${size}"
 
-#: static/js/images_ui.js:431
+#: static/js/images_ui.js:548
 msgid "Import impossible : fichier d'images invalide"
 msgstr "Import failed: invalid images file"
 
-#: static/js/images_ui.js:457
+#: static/js/images_ui.js:582
+#, python-brace-format
+msgid "${n} image(s) non importée(s) : quatre au maximum."
+msgstr "${n} image(s) not imported: four at most."
+
+#: static/js/images_ui.js:586
 #, python-brace-format
 msgid "${count} image(s) importée(s)"
 msgstr "${count} image(s) imported"
 
-#: static/js/images_ui.js:475
+#: static/js/images_ui.js:608
 msgid "Image retirée de la bibliothèque."
 msgstr "Image removed from the library."
 
-#: static/js/images_ui.js:477
+#: static/js/images_ui.js:610
 msgid "L'image n'a pas pu être retirée."
 msgstr "The image could not be removed."
 
-#: static/js/images_ui.js:499
+#: static/js/images_ui.js:624
 #, python-brace-format
 msgid "« ${name} » sera supprimée définitivement de la bibliothèque."
 msgstr "“${name}” will be permanently deleted from the library."
 
-#: static/js/images_ui.js:500
+#: static/js/images_ui.js:625
 msgid "Cette image sera supprimée définitivement de la bibliothèque."
 msgstr "This image will be permanently deleted from the library."
 
-#: static/js/images_ui.js:502 static/js/images_ui.js:583
-#: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:254
-#: static/js/stats_ui.js:1084 templates/menu_style.html:272
-#: templates/modal_evolution.html:85
+#: static/js/images_ui.js:627 static/js/images_ui.js:666
+#: static/js/images_ui.js:853 static/js/profiles.js:967
+#: static/js/recent_videos.js:60 static/js/recent_videos.js:121
+#: static/js/stats_ui.js:254 static/js/stats_ui.js:1084
+#: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/images_ui.js:542
+#: static/js/images_ui.js:701
+msgid "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
+msgstr "Twelve configurations at most: delete one, or reuse a name."
+
+#: static/js/images_ui.js:709 static/js/stats_ui.js:1123
+#, python-brace-format
+msgid "Configuration « ${name} » enregistrée"
+msgstr "Configuration “${name}” saved"
+
+#: static/js/images_ui.js:723 static/js/stats_ui.js:1137
+#, python-brace-format
+msgid "Configuration « ${name} » appliquée"
+msgstr "Configuration “${name}” applied"
+
+#: static/js/images_ui.js:742 static/js/images_ui.js:919
+#: static/js/stats_ui.js:1156
+#, python-brace-format
+msgid "« ${name} » supprimée"
+msgstr "“${name}” deleted"
+
+#: static/js/images_ui.js:812
 msgid "Afficher cette image"
 msgstr "Show this image"
 
-#: static/js/images_ui.js:566
+#: static/js/images_ui.js:836
 msgid "(manquante)"
 msgstr "(missing)"
 
-#: static/js/images_ui.js:572
+#: static/js/images_ui.js:842
 msgid "Apparition planifiée"
 msgstr "Scheduled appearance"
 
-#: static/js/images_ui.js:580 static/js/stats_ui.js:251
+#: static/js/images_ui.js:850 static/js/stats_ui.js:251
 msgid "Monter"
 msgstr "Move up"
 
-#: static/js/images_ui.js:581 static/js/stats_ui.js:252
+#: static/js/images_ui.js:851 static/js/stats_ui.js:252
 msgid "Descendre"
 msgstr "Move down"
 
-#: static/js/images_ui.js:582 static/js/profiles.js:958
+#: static/js/images_ui.js:852 static/js/profiles.js:958
 #: static/js/profiles.js:2748 static/js/stats_ui.js:253
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/images_ui.js:649 static/js/stats_ui.js:1156
+#: static/js/images_ui.js:1057
 #, python-brace-format
-msgid "« ${name} » supprimée"
-msgstr "“${name}” deleted"
+msgid "Le ${date}"
+msgstr "On ${date}"
+
+#: static/js/images_ui.js:1058
+#, python-brace-format
+msgid "Jamais atteinte : ${total} trouvaille(s) au total"
+msgstr "Never reached: ${total} find(s) in total"
+
+#: static/js/images_ui.js:1085
+#, python-brace-format
+msgid ""
+"La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
+"ne sera pas visible."
+msgstr ""
+"Find no. ${n} is never reached (${total} in total): the image will not be"
+" visible."
+
+#: static/js/images_ui.js:1088
+msgid ""
+"La disparition tombe le jour de l'apparition : l'image ne sera jamais "
+"visible."
+msgstr "It disappears on the day it appears: the image will never be visible."
+
+#: static/js/images_ui.js:1090
+msgid ""
+"« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
+"visible."
+msgstr ""
+"“Disappears on” falls on the day it appears: the image will never be "
+"visible."
+
+#: static/js/images_ui.js:1093
+#, python-brace-format
+msgid ""
+"L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
+"sera pas visible dans la vidéo."
+msgstr ""
+"The image only appears after the end of the animation (${date}): it will "
+"not be visible in the video."
+
+#: static/js/images_ui.js:1096
+#, python-brace-format
+msgid ""
+"L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
+"pas visible dans la vidéo."
+msgstr ""
+"The image disappears before the start of the animation (${date}): it will"
+" not be visible in the video."
+
+#: static/js/images_ui.js:1118
+msgid "Attendez la fin de l'enregistrement."
+msgstr "Wait for the recording to finish."
+
+#: static/js/images_ui.js:1122
+msgid ""
+"Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
+"chronologie), puis recliquez."
+msgstr ""
+"Start the preview and pause it on the day you want (timeline bar), then "
+"click again."
+
+#: static/js/images_ui.js:1159
+#, python-brace-format
+msgid "Préréglage « ${name} » appliqué"
+msgstr "Preset “${name}” applied"
 
 #: static/js/labs.js:162
 msgid ""
@@ -1710,7 +1822,7 @@ msgstr ""
 "Drag this button into your browser's bookmarks bar, then click it from "
 "your Adventure Lab logs page."
 
-#: static/js/labs.js:163 static/js/labs.js:1300 templates/guide.html:469
+#: static/js/labs.js:163 static/js/labs.js:1300 templates/guide.html:472
 msgid "Envoyer vers MyGCFlow"
 msgstr "Send to MyGCFlow"
 
@@ -1790,7 +1902,7 @@ msgstr "Cancelling…"
 #: static/js/labs.js:517 static/js/labs.js:1155 static/js/labs.js:1157
 #: static/js/labs.js:1200 static/js/labs.js:1365 static/js/labs.js:1400
 #: static/js/labs.js:1416 static/js/labs.js:1426
-#: templates/_filter_cache_attrs.html:37 templates/guide.html:488
+#: templates/_filter_cache_attrs.html:37 templates/guide.html:491
 #: templates/menu_filtre.html:13
 msgid "Lab Caches"
 msgstr "Lab Caches"
@@ -2225,7 +2337,7 @@ msgstr ""
 "correction possible here."
 
 #: static/js/labs.js:1722 templates/guide.html:227
-#: templates/menu_images.html:95 templates/menu_informations.html:99
+#: templates/menu_images.html:125 templates/menu_informations.html:99
 #: templates/menu_stats.html:314
 msgid "Position"
 msgstr "Position"
@@ -2243,7 +2355,8 @@ msgstr "Use suggestion"
 msgid "Date de découverte"
 msgstr "Discovery date"
 
-#: static/js/labs.js:1767 templates/menu_stats.html:116
+#: static/js/labs.js:1767 templates/menu_images.html:88
+#: templates/menu_stats.html:116
 msgid "Enregistrer"
 msgstr "Save"
 
@@ -2280,7 +2393,7 @@ msgstr ""
 "Delete all your Lab Cache stages? Your geocaches are kept. This action "
 "cannot be undone."
 
-#: static/js/labs.js:2069 templates/guide.html:173 templates/guide.html:494
+#: static/js/labs.js:2069 templates/guide.html:173 templates/guide.html:497
 #: templates/menu_data.html:170
 msgid "Supprimer mes Lab Caches"
 msgstr "Delete my Lab Caches"
@@ -2790,7 +2903,7 @@ msgid "Évolution"
 msgstr "Evolution"
 
 #: static/js/profiles.js:40 templates/app.html:61 templates/app.html:63
-#: templates/guide.html:155 templates/guide.html:510 templates/menu_data.html:8
+#: templates/guide.html:155 templates/guide.html:513 templates/menu_data.html:8
 msgid "Mes Géocaches"
 msgstr "My Geocaches"
 
@@ -2906,7 +3019,7 @@ msgstr "Rename"
 
 #: static/js/profiles.js:965 templates/app.html:263 templates/app.html:264
 #: templates/guide.html:117 templates/guide.html:319 templates/guide.html:325
-#: templates/guide.html:494 templates/menu_animation.html:47
+#: templates/guide.html:497 templates/menu_animation.html:47
 #: templates/menu_data.html:189
 msgid "Exporter"
 msgstr "Export"
@@ -3646,16 +3759,6 @@ msgstr "Import failed: invalid panels file"
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr "${count} panel(s) imported"
-
-#: static/js/stats_ui.js:1123
-#, python-brace-format
-msgid "Configuration « ${name} » enregistrée"
-msgstr "Configuration “${name}” saved"
-
-#: static/js/stats_ui.js:1137
-#, python-brace-format
-msgid "Configuration « ${name} » appliquée"
-msgstr "Configuration “${name}” applied"
 
 #: static/js/stats_ui.js:1185
 msgid ""
@@ -4697,8 +4800,8 @@ msgstr "Mode"
 msgid "Guide"
 msgstr "Guide"
 
-#: templates/app.html:80 templates/guide.html:214 templates/guide.html:426
-#: templates/menu_images.html:143 templates/menu_options.html:30
+#: templates/app.html:80 templates/guide.html:214 templates/guide.html:429
+#: templates/menu_images.html:173 templates/menu_options.html:30
 #: templates/menu_stats.html:366 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr "Appearance"
@@ -4717,7 +4820,7 @@ msgstr "Light"
 msgid "Sombre"
 msgstr "Dark"
 
-#: templates/app.html:91 templates/guide.html:429
+#: templates/app.html:91 templates/guide.html:432
 #: templates/menu_options.html:146
 msgid "Quitter MyGCFlow"
 msgstr "Quit MyGCFlow"
@@ -4823,7 +4926,7 @@ msgid "Stats"
 msgstr "Stats"
 
 #: templates/app.html:255 templates/guide.html:62 templates/guide.html:105
-#: templates/guide.html:112 templates/guide.html:416 templates/guide.html:418
+#: templates/guide.html:112 templates/guide.html:419 templates/guide.html:421
 msgid "Préférences"
 msgstr "Preferences"
 
@@ -4876,7 +4979,7 @@ msgstr "Fullscreen"
 msgid "Mode d'emploi"
 msgstr "User guide"
 
-#: templates/guide.html:29 templates/guide.html:451
+#: templates/guide.html:29 templates/guide.html:454
 msgid "Retour à l'application"
 msgstr "Back to the application"
 
@@ -4897,7 +5000,7 @@ msgid "Autre source"
 msgstr "Another source"
 
 #: templates/guide.html:67 templates/guide.html:156 templates/guide.html:173
-#: templates/guide.html:467 templates/menu_data.html:71
+#: templates/guide.html:470 templates/menu_data.html:71
 msgid "Mes Lab Caches"
 msgstr "My Lab Caches"
 
@@ -4905,7 +5008,7 @@ msgstr "My Lab Caches"
 msgid "Autre mode"
 msgstr "Other mode"
 
-#: templates/guide.html:72 templates/guide.html:510
+#: templates/guide.html:72 templates/guide.html:513
 msgid "Évolution d'une zone"
 msgstr "Evolution of an area"
 
@@ -4945,7 +5048,7 @@ msgid "Astuce : en haut de l'application, des onglets"
 msgstr "Tip: at the top of the application, the tabs"
 
 #: templates/guide.html:112 templates/guide.html:226 templates/guide.html:291
-#: templates/guide.html:320 templates/guide.html:430
+#: templates/guide.html:320 templates/guide.html:433
 msgid "et"
 msgstr "and"
 
@@ -5047,7 +5150,7 @@ msgstr ""
 msgid "Chargez le fichier dans MyGCFlow"
 msgstr "Load the file into MyGCFlow"
 
-#: templates/guide.html:155 templates/guide.html:523
+#: templates/guide.html:155 templates/guide.html:526
 msgid "Dans l'onglet"
 msgstr "In the"
 
@@ -5118,7 +5221,7 @@ msgstr "by country or region"
 msgid "En tête du panneau, le sélecteur"
 msgstr "At the top of the panel, the"
 
-#: templates/guide.html:167 templates/guide.html:488
+#: templates/guide.html:167 templates/guide.html:491
 #: templates/menu_filtre.html:10 templates/menu_filtre.html:11
 msgid "Découvertes affichées"
 msgstr "Discoveries shown"
@@ -5165,7 +5268,7 @@ msgid "Repartir de zéro (optionnel)"
 msgstr "Start over (optional)"
 
 #: templates/guide.html:173 templates/guide.html:298 templates/guide.html:299
-#: templates/guide.html:351 templates/guide.html:389 templates/guide.html:474
+#: templates/guide.html:351 templates/guide.html:389 templates/guide.html:477
 msgid "Le bouton"
 msgstr "The button"
 
@@ -5378,7 +5481,7 @@ msgstr "Switch between the"
 msgid "Titre"
 msgstr "Title"
 
-#: templates/guide.html:226 templates/guide.html:523
+#: templates/guide.html:226 templates/guide.html:526
 #: templates/menu_informations.html:25
 msgid "Infos"
 msgstr "Info"
@@ -6199,7 +6302,8 @@ msgstr ""
 msgid "Ajoutez un panneau"
 msgstr "Add a panel"
 
-#: templates/guide.html:351 templates/menu_stats.html:55
+#: templates/guide.html:351 templates/guide.html:389
+#: templates/menu_images.html:74 templates/menu_stats.html:55
 msgid "Ajouter"
 msgstr "Add"
 
@@ -6335,10 +6439,6 @@ msgstr "The main mode and the Evolution mode each have their own list of images.
 msgid "Ajoutez une image"
 msgstr "Add an image"
 
-#: templates/guide.html:389 templates/menu_images.html:53
-msgid "Ajouter une image"
-msgstr "Add an image"
-
 #: templates/guide.html:389
 msgid ""
 "accepte les fichiers PNG, JPEG, WebP, GIF ou SVG, plusieurs à la fois ; "
@@ -6347,6 +6447,10 @@ msgid ""
 msgstr ""
 "accepts PNG, JPEG, WebP, GIF or SVG files, several at once; you can also "
 "drop the files on the tab, or paste a copied image. Four images at most."
+
+#: templates/guide.html:389
+msgid "Déposée directement sur la carte, une image s'y pose là où vous la lâchez."
+msgstr "Dropped directly on the map, an image lands where you release it."
 
 #: templates/guide.html:390
 msgid ""
@@ -6358,8 +6462,7 @@ msgstr ""
 "orientation, reduced to 2048 pixels, stripped of its metadata. Its "
 "transparency is kept. The"
 
-#: templates/guide.html:390 templates/guide.html:408
-#: templates/menu_images.html:36
+#: templates/guide.html:390 templates/menu_images.html:64
 msgid "Bibliothèque"
 msgstr "Library"
 
@@ -6387,6 +6490,14 @@ msgstr ""
 "round, ideal for an avatar —, the opacity, a background, a border and a "
 "drop shadow."
 
+#: templates/guide.html:394
+msgid ""
+"Les préréglages Avatar, Logo sur fond, Filigrane et Photo encadrée "
+"règlent l'apparence d'un clic."
+msgstr ""
+"The Avatar, Logo on background, Watermark and Framed photo presets set "
+"the appearance in one click."
+
 #: templates/guide.html:395
 msgid ""
 "Tant que l'onglet Images est ouvert, vous pouvez glisser une image sur la"
@@ -6408,7 +6519,7 @@ msgstr ""
 "(ten with Shift) and the Delete key removes it. Each row of the list can "
 "also duplicate it, and"
 
-#: templates/guide.html:396 templates/menu_images.html:82
+#: templates/guide.html:396 templates/menu_images.html:112
 msgid "Remplacer l'image…"
 msgstr "Replace image…"
 
@@ -6438,15 +6549,56 @@ msgstr ""
 "and a “Disappears on” date fade the image in and out as the animation "
 "goes by. Without dates, it stays visible throughout."
 
-#: templates/guide.html:407
+#: templates/guide.html:405
+msgid ""
+"Pour viser un jour précis, mettez l'aperçu en pause sur ce jour (barre de"
+" chronologie) puis cliquez sur « Jour affiché » sous la date. Une image "
+"qui ne serait jamais visible pendant l'animation est signalée."
+msgstr ""
+"To target a specific day, pause the preview on that day (timeline bar), "
+"then click “Displayed day” under the date. An image that would never be "
+"visible during the animation is flagged."
+
+#: templates/guide.html:406
+msgid ""
+"En mode Mes Géocaches, « Par trouvailles » remplace les dates par des "
+"étapes du compteur : l'image apparaît, par exemple, à votre 1000e "
+"trouvaille. L'effet choisit comment elle entre et sort : fondu, "
+"glissement depuis le bord le plus proche ou zoom."
+msgstr ""
+"In My Geocaches mode, “By finds” replaces the dates with milestones of "
+"the counter: the image appears, for example, at your 1000th find. The "
+"effect sets how it comes in and goes out: fade, slide from the nearest "
+"edge or zoom."
+
+#: templates/guide.html:409
 msgid "Partagez votre mise en page"
 msgstr "Share your layout"
 
-#: templates/guide.html:408
+#: templates/guide.html:410
+msgid "Le menu"
+msgstr "The"
+
+#: templates/guide.html:410 templates/guide.html:411
+#: templates/menu_images.html:40 templates/menu_stats.html:36
+msgid "Configurations"
+msgstr "Configurations"
+
+#: templates/guide.html:410
+msgid ""
+"enregistre votre liste d'images sous un nom, à réappliquer d'un clic — y "
+"compris sur l'autre mode, pour reprendre en Évolution les images de Mes "
+"Géocaches."
+msgstr ""
+"menu saves your list of images under a name, to reapply in one click — "
+"including in the other mode, to reuse the My Geocaches images in "
+"Evolution."
+
+#: templates/guide.html:411
 msgid "Pour partager votre mise en page, utilisez l'export du menu"
 msgstr "To share your layout, use the export in the"
 
-#: templates/guide.html:408
+#: templates/guide.html:411
 msgid ""
 ": il enregistre vos images et leurs réglages dans un seul fichier JSON, à"
 " réimporter sur un autre ordinateur."
@@ -6454,56 +6606,64 @@ msgstr ""
 "menu: it saves your images and their settings in a single JSON file, to "
 "import again on another computer."
 
-#: templates/guide.html:418
+#: templates/guide.html:411
+msgid ""
+"L'import remplace la liste ; « Importer et ajouter à la liste… » complète"
+" la liste actuelle."
+msgstr ""
+"Importing replaces the list; “Import and add to the list…” adds to the "
+"current list."
+
+#: templates/guide.html:421
 msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
 msgstr "Configure the application's behavior once and for all in the"
 
-#: templates/guide.html:422
+#: templates/guide.html:425
 msgid "Préférences générales"
 msgstr "General preferences"
 
-#: templates/guide.html:424 templates/menu_options.html:13
+#: templates/guide.html:427 templates/menu_options.html:13
 msgid "Choix de la langue"
 msgstr "Language choice"
 
-#: templates/guide.html:424
+#: templates/guide.html:427
 msgid "basculez entre français et anglais."
 msgstr "switch between French and English."
 
-#: templates/guide.html:425 templates/menu_options.html:21
+#: templates/guide.html:428 templates/menu_options.html:21
 #: templates/menu_options.html:22
 msgid "Format des dates"
 msgstr "Date format"
 
-#: templates/guide.html:425
+#: templates/guide.html:428
 msgid "automatique selon la langue, ou jour/mois/année contre mois/jour/année."
 msgstr "automatic based on language, or day/month/year vs month/day/year."
 
-#: templates/guide.html:426
+#: templates/guide.html:429
 msgid "interface claire, sombre ou alignée sur le système."
 msgstr "light, dark or system-matching interface."
 
-#: templates/guide.html:427 templates/menu_options.html:45
+#: templates/guide.html:430 templates/menu_options.html:45
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr "Check for new versions at startup"
 
-#: templates/guide.html:427
+#: templates/guide.html:430
 msgid "soyez prévenu d'une nouvelle version ; le bouton"
 msgstr "be notified of a new version; the"
 
-#: templates/guide.html:427 templates/menu_options.html:132
+#: templates/guide.html:430 templates/menu_options.html:132
 msgid "Vérifier les mises à jour"
 msgstr "Check for updates"
 
-#: templates/guide.html:427
+#: templates/guide.html:430
 msgid "lance la même vérification à la demande."
 msgstr "runs the same check on demand."
 
-#: templates/guide.html:428 templates/menu_options.html:50
+#: templates/guide.html:431 templates/menu_options.html:50
 msgid "Thème visuel par défaut au démarrage"
 msgstr "Default visual theme at startup"
 
-#: templates/guide.html:428
+#: templates/guide.html:431
 msgid ""
 "par défaut, MyGCFlow rouvre le dernier thème utilisé. Cochez « Toujours "
 "démarrer sur ce thème » pour repartir à chaque fois du thème choisi ici "
@@ -6513,7 +6673,7 @@ msgstr ""
 " this theme\" to start every time on the theme chosen here (if none is "
 "chosen, the active theme is used)."
 
-#: templates/guide.html:429
+#: templates/guide.html:432
 msgid ""
 "arrête l'application depuis l'interface, en plus de l'icône de la zone de"
 " notification. Le même bouton, en rouge, reste visible dans le bandeau du"
@@ -6523,15 +6683,15 @@ msgstr ""
 "icon. The same button, in red, stays visible in the top header whichever "
 "tab is shown."
 
-#: templates/guide.html:430 templates/menu_options.html:174
+#: templates/guide.html:433 templates/menu_options.html:174
 msgid "Licence MIT"
 msgstr "MIT License"
 
-#: templates/guide.html:430 templates/menu_options.html:177
+#: templates/guide.html:433 templates/menu_options.html:177
 msgid "Composants tiers"
 msgstr "Third-party components"
 
-#: templates/guide.html:430
+#: templates/guide.html:433
 msgid ""
 "en bas de l'onglet, à côté du numéro de version : le texte de la licence "
 "de MyGCFlow et celui des composants qu'il embarque."
@@ -6539,11 +6699,11 @@ msgstr ""
 "at the bottom of the tab, next to the version number: the text of the "
 "MyGCFlow license and that of the components it bundles."
 
-#: templates/guide.html:434
+#: templates/guide.html:437
 msgid "Cadrage de la carte"
 msgstr "Map framing"
 
-#: templates/guide.html:435
+#: templates/guide.html:438
 msgid ""
 "Par défaut, la carte se cadre automatiquement sur les Geocaches chargées."
 " Vous pouvez choisir « Centre et zoom personnalisés » : la carte "
@@ -6555,27 +6715,27 @@ msgstr ""
 "saved center (latitude, longitude — combined input or two separate "
 "fields) and zoom."
 
-#: templates/guide.html:437 templates/menu_options.html:121
+#: templates/guide.html:440 templates/menu_options.html:121
 msgid "Enregistrer le cadrage"
 msgstr "Save the framing"
 
-#: templates/guide.html:437
+#: templates/guide.html:440
 msgid "mémorise la vue actuelle comme centre et zoom personnalisés."
 msgstr "saves the current view as the custom center and zoom."
 
-#: templates/guide.html:438 templates/menu_options.html:83
+#: templates/guide.html:441 templates/menu_options.html:83
 msgid "Cadrer sur les Geocaches"
 msgstr "Fit to the geocaches"
 
-#: templates/guide.html:438
+#: templates/guide.html:441
 msgid "recadre la carte sur les données chargées, à la demande."
 msgstr "reframes the map on the loaded data, on demand."
 
-#: templates/guide.html:445
+#: templates/guide.html:448
 msgid "Vous êtes prêt !"
 msgstr "You're all set!"
 
-#: templates/guide.html:445
+#: templates/guide.html:448
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
@@ -6583,11 +6743,11 @@ msgstr ""
 "Load your data, compose your style, run the animation, and share your "
 "geocaching map."
 
-#: templates/guide.html:460
+#: templates/guide.html:463
 msgid "Autre source : les Lab Caches"
 msgstr "Another source: Lab Caches"
 
-#: templates/guide.html:462
+#: templates/guide.html:465
 msgid ""
 "Les étapes d'Adventure Lab que vous avez découvertes peuvent rejoindre "
 "vos géocaches sur la carte : chaque étape compte pour une trouvaille et "
@@ -6597,31 +6757,31 @@ msgstr ""
 "map: each stage counts as a find and appears at its date, in the same "
 "animation and the same video."
 
-#: templates/guide.html:466
+#: templates/guide.html:469
 msgid "Importez votre historique"
 msgstr "Import your history"
 
-#: templates/guide.html:467
+#: templates/guide.html:470
 msgid "Tout se passe dans la carte"
 msgstr "Everything happens in the"
 
-#: templates/guide.html:467
+#: templates/guide.html:470
 msgid "de l'onglet Données. Deux méthodes coexistent :"
 msgstr "card of the Data tab. Two methods coexist:"
 
-#: templates/guide.html:469
+#: templates/guide.html:472
 msgid "La plus simple — le favori"
 msgstr "The simplest — the bookmark"
 
-#: templates/guide.html:469
+#: templates/guide.html:472
 msgid "glissez le bouton"
 msgstr "drag the button"
 
-#: templates/guide.html:469
+#: templates/guide.html:472
 msgid "dans la barre de favoris de votre navigateur (une seule fois), ouvrez"
 msgstr "into your browser's bookmarks bar (only once), open"
 
-#: templates/guide.html:469
+#: templates/guide.html:472
 msgid ""
 "connecté à votre compte, puis cliquez ce favori : votre historique arrive"
 " directement dans l'application."
@@ -6629,16 +6789,16 @@ msgstr ""
 "while signed in, then click that bookmark: your history goes straight "
 "into the application."
 
-#: templates/guide.html:470
+#: templates/guide.html:473
 msgid "L'import de fichiers"
 msgstr "File import"
 
-#: templates/guide.html:470 templates/menu_data.html:135
+#: templates/guide.html:473 templates/menu_data.html:135
 #: templates/menu_data.html:186
 msgid "Importer des fichiers…"
 msgstr "Import files…"
 
-#: templates/guide.html:470
+#: templates/guide.html:473
 msgid ""
 "accepte l'historique .json et les coordonnées .gpx ou .zip (exports "
 "Lab2Gpx), ensemble ou séparément. Un aperçu montre ce que le lot changera"
@@ -6648,11 +6808,11 @@ msgstr ""
 "exports), together or separately. A preview shows what the batch will "
 "change before you confirm."
 
-#: templates/guide.html:474 templates/menu_data.html:167
+#: templates/guide.html:477 templates/menu_data.html:167
 msgid "Afficher les instructions d'import"
 msgstr "Show import instructions"
 
-#: templates/guide.html:474
+#: templates/guide.html:477
 msgid ""
 "détaille comment obtenir ces fichiers, dont le script qui télécharge "
 "l'historique .json depuis la page de vos logs."
@@ -6660,11 +6820,11 @@ msgstr ""
 "explains how to get these files, including the script that downloads the "
 ".json history from your logs page."
 
-#: templates/guide.html:478
+#: templates/guide.html:481
 msgid "Laissez les étapes se placer"
 msgstr "Let the stages get placed"
 
-#: templates/guide.html:479
+#: templates/guide.html:482
 msgid ""
 "Après un import, l'application récupère seule les positions des étapes "
 "auprès du service public lab2gpx — seuls les identifiants d'Adventures "
@@ -6675,27 +6835,27 @@ msgstr ""
 "the public lab2gpx service — only Adventure identifiers are sent, never "
 "an account identifier. This automatic placement can be turned off in the"
 
-#: templates/guide.html:479 templates/menu_data.html:177
+#: templates/guide.html:482 templates/menu_data.html:177
 msgid "Options avancées"
 msgstr "Advanced options"
 
-#: templates/guide.html:479
+#: templates/guide.html:482
 msgid ""
 "de la carte (« Placer automatiquement les étapes sur la carte après un "
 "import »)."
 msgstr "of the card (“Automatically place stages on the map after an import”)."
 
-#: templates/guide.html:480
+#: templates/guide.html:483
 msgid ""
 "Les étapes que le service ne connaît pas restent « en attente » : "
 "conservées mais non affichées."
 msgstr "Stages the service doesn't know stay “pending”: kept but not shown."
 
-#: templates/guide.html:480 templates/menu_data.html:113
+#: templates/guide.html:483 templates/menu_data.html:113
 msgid "Compléter à la main"
 msgstr "Fill in manually"
 
-#: templates/guide.html:480
+#: templates/guide.html:483
 msgid ""
 "les liste regroupées par Adventure : saisissez une position — une seule "
 "suffit pour toutes les étapes d'une même Adventure — ou une date, aux "
@@ -6706,45 +6866,45 @@ msgstr ""
 " the stages of the same Adventure — or a date, in geocacher formats (N "
 "48° 51.504 E 002° 17.670, decimal or degrees-minutes-seconds)."
 
-#: templates/guide.html:480 templates/menu_data.html:110
+#: templates/guide.html:483 templates/menu_data.html:110
 msgid "Récupérer les positions"
 msgstr "Fetch positions"
 
-#: templates/guide.html:480
+#: templates/guide.html:483
 msgid "relance la récupération automatique à la demande."
 msgstr "re-runs the automatic fetch on demand."
 
-#: templates/guide.html:483
+#: templates/guide.html:486
 msgid ""
 "Vos corrections manuelles sont précieuses : un réimport ultérieur ne les "
 "efface jamais."
 msgstr "Your manual corrections are precious: a later re-import never erases them."
 
-#: templates/guide.html:487
+#: templates/guide.html:490
 msgid "Choisissez ce que la carte affiche"
 msgstr "Choose what the map shows"
 
-#: templates/guide.html:488
+#: templates/guide.html:491
 msgid "En tête des Filtres, le sélecteur"
 msgstr "At the top of the Filters, the"
 
-#: templates/guide.html:488
+#: templates/guide.html:491
 msgid "offre trois sources :"
 msgstr "selector offers three sources:"
 
-#: templates/guide.html:488 templates/menu_filtre.html:12
+#: templates/guide.html:491 templates/menu_filtre.html:12
 msgid "Géocaches"
 msgstr "Geocaches"
 
-#: templates/guide.html:488
+#: templates/guide.html:491
 msgid "ou"
 msgstr "or"
 
-#: templates/guide.html:488 templates/menu_filtre.html:14
+#: templates/guide.html:491 templates/menu_filtre.html:14
 msgid "Géocaches et Lab Caches"
 msgstr "Geocaches and Lab Caches"
 
-#: templates/guide.html:488
+#: templates/guide.html:491
 msgid ""
 "mélangées chronologiquement. Les étapes participent à tout le reste — "
 "compteur, trajet, caméra et vidéo — comme des trouvailles ordinaires."
@@ -6752,7 +6912,7 @@ msgstr ""
 "blended chronologically. Stages take part in everything else — counter, "
 "trail, camera and video — like ordinary finds."
 
-#: templates/guide.html:490
+#: templates/guide.html:493
 msgid ""
 "« Adventure Lab » est un type de cache comme les autres ; taille, "
 "difficulté et terrain ne s'appliquent pas aux étapes (désactivés quand "
@@ -6761,7 +6921,7 @@ msgstr ""
 "“Adventure Lab” is a cache type like the others; size, difficulty and "
 "terrain don't apply to stages (disabled when only Lab Caches are shown)."
 
-#: templates/guide.html:491
+#: templates/guide.html:494
 msgid ""
 "Pays et région d'une étape sont empruntés à la géocache la plus proche de"
 " votre base — les fichiers de coordonnées n'en portent pas ; au-delà de "
@@ -6771,7 +6931,7 @@ msgstr ""
 "your database — coordinate files don't carry them; beyond ten kilometres "
 "they stay “Not specified”."
 
-#: templates/guide.html:492
+#: templates/guide.html:495
 msgid ""
 "Le clic sur un point montre son image, le titre de l'étape, celui de son "
 "Adventure et votre avancement (« 3/5 étapes trouvées »)."
@@ -6779,23 +6939,23 @@ msgstr ""
 "Clicking a point shows its image, the stage title, its Adventure's title "
 "and your progress (“3/5 stages found”)."
 
-#: templates/guide.html:494
+#: templates/guide.html:497
 msgid "Côté gestion :"
 msgstr "For housekeeping:"
 
-#: templates/guide.html:494
+#: templates/guide.html:497
 msgid "produit un fichier réimportable pour sauvegarde ou transfert,"
 msgstr "produces a re-importable file for backup or transfer,"
 
-#: templates/guide.html:494
+#: templates/guide.html:497
 msgid "vide la collection sans toucher aux géocaches, et"
 msgstr "empties the collection without touching the geocaches, and"
 
-#: templates/guide.html:494 templates/menu_data.html:221
+#: templates/guide.html:497 templates/menu_data.html:221
 msgid "Régénérer le jeton du favori"
 msgstr "Regenerate the bookmarklet token"
 
-#: templates/guide.html:494
+#: templates/guide.html:497
 msgid ""
 "(options avancées) invalide un favori perdu ou partagé par erreur — il "
 "faudra alors glisser le nouveau dans la barre de favoris."
@@ -6803,11 +6963,11 @@ msgstr ""
 "(advanced options) invalidates a bookmark that was lost or shared by "
 "mistake — you'll then have to drag the new one into the bookmarks bar."
 
-#: templates/guide.html:503
+#: templates/guide.html:506
 msgid "Autre mode : évolution d'une zone"
 msgstr "Other mode: evolution of an area"
 
-#: templates/guide.html:505
+#: templates/guide.html:508
 msgid ""
 "Au lieu de vos trouvailles, animez toutes les caches d'une zone : chacune"
 " apparaît à sa date de placement et disparaît à son archivage, et le "
@@ -6817,27 +6977,27 @@ msgstr ""
 "appears on its placement date and disappears when archived, and the "
 "counter follows the number of active caches."
 
-#: templates/guide.html:509
+#: templates/guide.html:512
 msgid "Ouvrez le mode Évolution"
 msgstr "Open the Evolution mode"
 
-#: templates/guide.html:510
+#: templates/guide.html:513
 msgid "En haut de l'onglet"
 msgstr "At the top of the"
 
-#: templates/guide.html:510
+#: templates/guide.html:513
 msgid "le sélecteur"
 msgstr "tab, the"
 
-#: templates/guide.html:510
+#: templates/guide.html:513
 msgid "passe d'un mode à l'autre. Chaque mode garde ses propres données."
 msgstr "switches from one mode to the other. Each mode keeps its own data."
 
-#: templates/guide.html:513
+#: templates/guide.html:516
 msgid "Importez les exports CSV de la zone"
 msgstr "Import the CSV exports of the area"
 
-#: templates/guide.html:514
+#: templates/guide.html:517
 msgid ""
 "Sélectionnez ou glissez-déposez un ou plusieurs fichiers CSV (code GC, "
 "latitude, longitude, date de placement et, si possible, date "
@@ -6850,7 +7010,7 @@ msgstr ""
 "merged into a named dataset that you can complete later with a more "
 "recent export: new caches and archivals are added to it."
 
-#: templates/guide.html:517
+#: templates/guide.html:520
 msgid ""
 "Une cache archivée sans date d'archivage n'est pas affichée par défaut : "
 "impossible de la faire disparaître au bon moment. Le réglage « Caches "
@@ -6866,11 +7026,11 @@ msgstr ""
 "arbitrary delay, just to see both flashes. Corrected coordinates are "
 "never used."
 
-#: templates/guide.html:521
+#: templates/guide.html:524
 msgid "Réglez puis exportez"
 msgstr "Adjust, then export"
 
-#: templates/guide.html:522
+#: templates/guide.html:525
 msgid ""
 "Filtrez par pays, région, type, taille, difficulté, terrain ou "
 "département, choisissez un thème (le flash de disparition se règle dans "
@@ -6881,19 +7041,19 @@ msgstr ""
 "choose a theme (the disappearance flash is set in the Style tab) and a "
 "duration: by default, the whole period fits in one minute."
 
-#: templates/guide.html:523
+#: templates/guide.html:526
 msgid "cible"
 msgstr "target"
 
-#: templates/guide.html:523
+#: templates/guide.html:526
 msgid "le champ"
 msgstr "the field"
 
-#: templates/guide.html:523 templates/menu_informations.html:54
+#: templates/guide.html:526 templates/menu_informations.html:54
 msgid "Ligne d'informations"
 msgstr "Information line"
 
-#: templates/guide.html:523
+#: templates/guide.html:526
 #, python-brace-format
 msgid ""
 "compose le cartouche en bas de carte : texte libre et balises {date}, "
@@ -7787,7 +7947,7 @@ msgstr "Choose the disappearance flash color"
 msgid "Choisir la couleur du contour de disparition"
 msgstr "Choose the disappearance outline color"
 
-#: templates/menu_images.html:9 templates/menu_images.html:62
+#: templates/menu_images.html:9 templates/menu_images.html:83
 msgid "Images sur la carte"
 msgstr "Images on the map"
 
@@ -7804,19 +7964,39 @@ msgstr ""
 msgid "Afficher les images sur la carte"
 msgstr "Show images on the map"
 
-#: templates/menu_images.html:39
-msgid "Aucune image envoyée pour l'instant."
-msgstr "No image uploaded yet."
+#: templates/menu_images.html:43 templates/menu_stats.html:39
+msgid "Enregistrées"
+msgstr "Saved"
 
-#: templates/menu_images.html:46
+#: templates/menu_images.html:44 templates/menu_stats.html:40
+msgid "Aucune configuration enregistrée"
+msgstr "No saved configuration"
+
+#: templates/menu_images.html:47 templates/menu_stats.html:43
+msgid "Enregistrer la configuration actuelle"
+msgstr "Save the current configuration"
+
+#: templates/menu_images.html:53
 msgid "Exporter les images (JSON)"
 msgstr "Export images (JSON)"
 
-#: templates/menu_images.html:48
+#: templates/menu_images.html:55
 msgid "Importer des images…"
 msgstr "Import images…"
 
-#: templates/menu_images.html:60
+#: templates/menu_images.html:57
+msgid "Importer et ajouter à la liste…"
+msgstr "Import and add to the list…"
+
+#: templates/menu_images.html:67
+msgid "Aucune image envoyée pour l'instant."
+msgstr "No image uploaded yet."
+
+#: templates/menu_images.html:73
+msgid "Ajouter une image"
+msgstr "Add an image"
+
+#: templates/menu_images.html:81
 msgid ""
 "Aucune image. Ajoutez-en, déposez des fichiers sur cet onglet ou collez "
 "une image : PNG, JPEG, WebP, GIF ou SVG."
@@ -7824,97 +8004,102 @@ msgstr ""
 "No image yet. Add some, drop files onto this tab or paste an image: PNG, "
 "JPEG, WebP, GIF or SVG."
 
-#: templates/menu_images.html:64
+#: templates/menu_images.html:86 templates/menu_images.html:87
+#: templates/menu_stats.html:114 templates/menu_stats.html:115
+msgid "Nom de la configuration"
+msgstr "Configuration name"
+
+#: templates/menu_images.html:94
 msgid "Envoi de l'image…"
 msgstr "Uploading image…"
 
-#: templates/menu_images.html:69
+#: templates/menu_images.html:99
 msgid "Déposez les images ici"
 msgstr "Drop the images here"
 
-#: templates/menu_images.html:79
+#: templates/menu_images.html:109
 msgid "Image sélectionnée"
 msgstr "Selected image"
 
-#: templates/menu_images.html:89
+#: templates/menu_images.html:119
 msgid "Nom"
 msgstr "Name"
 
-#: templates/menu_images.html:91
+#: templates/menu_images.html:121
 msgid ""
 "Image manquante : le fichier n'est plus disponible. Remplacez-la ou "
 "supprimez-la."
 msgstr "Missing image: the file is no longer available. Replace or delete it."
 
-#: templates/menu_images.html:98 templates/menu_informations.html:273
+#: templates/menu_images.html:128 templates/menu_informations.html:273
 msgid "Emplacement"
 msgstr "Placement"
 
-#: templates/menu_images.html:101 templates/menu_informations.html:276
+#: templates/menu_images.html:131 templates/menu_informations.html:276
 #: templates/menu_stats.html:320
 msgid "En haut à gauche"
 msgstr "Top left"
 
-#: templates/menu_images.html:101 templates/menu_informations.html:276
+#: templates/menu_images.html:131 templates/menu_informations.html:276
 #: templates/menu_stats.html:320
 msgid "En haut au centre"
 msgstr "Top center"
 
-#: templates/menu_images.html:101 templates/menu_informations.html:276
+#: templates/menu_images.html:131 templates/menu_informations.html:276
 #: templates/menu_stats.html:320
 msgid "En haut à droite"
 msgstr "Top right"
 
-#: templates/menu_images.html:102 templates/menu_stats.html:321
+#: templates/menu_images.html:132 templates/menu_stats.html:321
 msgid "Au milieu à gauche"
 msgstr "Middle left"
 
-#: templates/menu_images.html:102 templates/menu_stats.html:321
+#: templates/menu_images.html:132 templates/menu_stats.html:321
 msgid "Au milieu à droite"
 msgstr "Middle right"
 
-#: templates/menu_images.html:103 templates/menu_informations.html:278
+#: templates/menu_images.html:133 templates/menu_informations.html:278
 #: templates/menu_stats.html:322
 msgid "En bas à gauche"
 msgstr "Bottom left"
 
-#: templates/menu_images.html:103 templates/menu_informations.html:278
+#: templates/menu_images.html:133 templates/menu_informations.html:278
 #: templates/menu_stats.html:322
 msgid "En bas au centre"
 msgstr "Bottom center"
 
-#: templates/menu_images.html:103 templates/menu_informations.html:278
+#: templates/menu_images.html:133 templates/menu_informations.html:278
 #: templates/menu_stats.html:322
 msgid "En bas à droite"
 msgstr "Bottom right"
 
-#: templates/menu_images.html:118 templates/menu_informations.html:293
+#: templates/menu_images.html:148 templates/menu_informations.html:293
 #: templates/menu_stats.html:334
 msgid "Marge horizontale (px)"
 msgstr "Horizontal margin (px)"
 
-#: templates/menu_images.html:122 templates/menu_informations.html:297
+#: templates/menu_images.html:152 templates/menu_informations.html:297
 #: templates/menu_stats.html:338
 msgid "Marge verticale (px)"
 msgstr "Vertical margin (px)"
 
-#: templates/menu_images.html:126 templates/menu_stats.html:342
+#: templates/menu_images.html:156 templates/menu_stats.html:342
 msgid "Largeur (px)"
 msgstr "Width (px)"
 
-#: templates/menu_images.html:130 templates/menu_stats.html:346
+#: templates/menu_images.html:160 templates/menu_stats.html:346
 msgid "Hauteur (px)"
 msgstr "Height (px)"
 
-#: templates/menu_images.html:131 templates/menu_stats.html:347
+#: templates/menu_images.html:161 templates/menu_stats.html:347
 msgid "auto"
 msgstr "auto"
 
-#: templates/menu_images.html:132
+#: templates/menu_images.html:162
 msgid "Rétablir les proportions"
 msgstr "Restore the proportions"
 
-#: templates/menu_images.html:135
+#: templates/menu_images.html:165
 msgid ""
 "Hauteur vide : d'après les proportions de l'image (carrée si ronde). Les "
 "images d'un même coin partagent ses marges et s'empilent ; les panneaux "
@@ -7924,103 +8109,175 @@ msgstr ""
 "in the same corner share its margins and stack; stats panels move around "
 "them."
 
-#: templates/menu_images.html:136
+#: templates/menu_images.html:166
 msgid "Position libre : choisir un emplacement l'y ramène."
 msgstr "Free position: choosing a placement brings it back there."
 
-#: templates/menu_images.html:138
+#: templates/menu_images.html:168
 msgid "Revenir à l'emplacement"
 msgstr "Return to the anchor point"
 
-#: templates/menu_images.html:146 templates/menu_stats.html:143
+#: templates/menu_images.html:177
+msgid "Préréglages"
+msgstr "Presets"
+
+#: templates/menu_images.html:179
+msgid "Avatar"
+msgstr "Avatar"
+
+#: templates/menu_images.html:181
+msgid "Logo sur fond"
+msgstr "Logo on background"
+
+#: templates/menu_images.html:183
+msgid "Filigrane"
+msgstr "Watermark"
+
+#: templates/menu_images.html:185
+msgid "Photo encadrée"
+msgstr "Framed photo"
+
+#: templates/menu_images.html:189 templates/menu_stats.html:143
 msgid "Forme"
 msgstr "Shape"
 
-#: templates/menu_images.html:148
+#: templates/menu_images.html:191
 msgid "Rectangle"
 msgstr "Rectangle"
 
-#: templates/menu_images.html:149
+#: templates/menu_images.html:192
 msgid "Coins arrondis"
 msgstr "Rounded corners"
 
-#: templates/menu_images.html:150
+#: templates/menu_images.html:193
 msgid "Rond"
 msgstr "Round"
 
-#: templates/menu_images.html:154
+#: templates/menu_images.html:197
 msgid "Rayon des coins (px)"
 msgstr "Corner radius (px)"
 
-#: templates/menu_images.html:158
+#: templates/menu_images.html:201
 msgid "Ajustement"
 msgstr "Fit"
 
-#: templates/menu_images.html:160
+#: templates/menu_images.html:203
 msgid "Image entière"
 msgstr "Whole image"
 
-#: templates/menu_images.html:161
+#: templates/menu_images.html:204
 msgid "Remplir la forme"
 msgstr "Fill the shape"
 
-#: templates/menu_images.html:165 templates/menu_informations.html:340
+#: templates/menu_images.html:208 templates/menu_informations.html:340
 #: templates/menu_trail.html:114
 msgid "Opacité"
 msgstr "Opacity"
 
-#: templates/menu_images.html:169 templates/menu_informations.html:164
+#: templates/menu_images.html:212 templates/menu_informations.html:164
 #: templates/menu_stats.html:369
 msgid "Fond"
 msgstr "Background"
 
-#: templates/menu_images.html:173 templates/menu_stats.html:381
+#: templates/menu_images.html:216 templates/menu_stats.html:381
 msgid "Opacité du fond"
 msgstr "Background opacity"
 
-#: templates/menu_images.html:177 templates/menu_informations.html:168
+#: templates/menu_images.html:220 templates/menu_informations.html:168
 msgid "Marge intérieure (px)"
 msgstr "Inner padding (px)"
 
-#: templates/menu_images.html:181 templates/menu_informations.html:178
+#: templates/menu_images.html:224 templates/menu_informations.html:178
 msgid "Bordure (px)"
 msgstr "Border (px)"
 
-#: templates/menu_images.html:185 templates/menu_points.html:133
+#: templates/menu_images.html:228 templates/menu_points.html:133
 msgid "Couleur de la bordure"
 msgstr "Border color"
 
-#: templates/menu_images.html:191
+#: templates/menu_images.html:234
 msgid "Ombre portée"
 msgstr "Drop shadow"
 
-#: templates/menu_images.html:196
+#: templates/menu_images.html:239
 msgid "Apparition pendant l'animation"
 msgstr "Appearance during the animation"
 
-#: templates/menu_images.html:197
+#: templates/menu_images.html:240
 msgid ""
-"L'image apparaît le jour « Apparaît le » et disparaît le jour « Disparaît"
-" le », en fondu. Dates vides : toujours visible."
+"L'image entre puis sort au fil de l'animation, à des dates ou à des "
+"étapes du compteur de trouvailles. Sans borne : toujours visible."
 msgstr ""
-"The image fades in on the \"Appears on\" day and fades out on the "
-"\"Disappears on\" day. Empty dates: always visible."
+"The image comes in and then goes out as the animation goes by, on dates "
+"or at milestones of the find counter. Without bounds: always visible."
 
-#: templates/menu_images.html:200
+#: templates/menu_images.html:243
+msgid "Repère du planing"
+msgstr "Schedule reference"
+
+#: templates/menu_images.html:245
+msgid "Par dates"
+msgstr "By dates"
+
+#: templates/menu_images.html:247
+msgid "Par trouvailles"
+msgstr "By finds"
+
+#: templates/menu_images.html:252
 msgid "Apparaît le"
 msgstr "Appears on"
 
-#: templates/menu_images.html:203 templates/menu_images.html:212
+#: templates/menu_images.html:255 templates/menu_images.html:266
 msgid "Effacer la date"
 msgstr "Clear the date"
 
-#: templates/menu_images.html:209
+#: templates/menu_images.html:260 templates/menu_images.html:271
+msgid "Jour affiché"
+msgstr "Displayed day"
+
+#: templates/menu_images.html:263
 msgid "Disparaît le"
 msgstr "Disappears on"
 
-#: templates/menu_images.html:218
-msgid "Fondu (ms)"
-msgstr "Fade (ms)"
+#: templates/menu_images.html:274
+msgid ""
+"« Jour affiché » reprend le jour montré par l'aperçu, en lecture ou en "
+"pause : mettez-le en pause sur le jour voulu (barre de chronologie)."
+msgstr ""
+"“Displayed day” takes the day shown by the preview, playing or paused: "
+"pause it on the day you want (timeline bar)."
+
+#: templates/menu_images.html:279
+msgid "Apparaît à la trouvaille n°"
+msgstr "Appears at find no."
+
+#: templates/menu_images.html:282 templates/menu_images.html:292
+msgid "Effacer"
+msgstr "Clear"
+
+#: templates/menu_images.html:289
+msgid "Disparaît à la trouvaille n°"
+msgstr "Disappears at find no."
+
+#: templates/menu_images.html:301 templates/menu_trail.html:127
+msgid "Effet"
+msgstr "Effect"
+
+#: templates/menu_images.html:303
+msgid "Fondu"
+msgstr "Fade"
+
+#: templates/menu_images.html:304
+msgid "Glissement depuis le bord"
+msgstr "Slide from the edge"
+
+#: templates/menu_images.html:305
+msgid "Zoom"
+msgstr "Zoom"
+
+#: templates/menu_images.html:309
+msgid "Durée (ms)"
+msgstr "Duration (ms)"
 
 #: templates/menu_informations.html:11
 msgid "Mode de réglage"
@@ -8768,22 +9025,6 @@ msgstr "Show the panels on the map"
 msgid "Panneaux"
 msgstr "Panels"
 
-#: templates/menu_stats.html:36
-msgid "Configurations"
-msgstr "Configurations"
-
-#: templates/menu_stats.html:39
-msgid "Enregistrées"
-msgstr "Saved"
-
-#: templates/menu_stats.html:40
-msgid "Aucune configuration enregistrée"
-msgstr "No saved configuration"
-
-#: templates/menu_stats.html:43
-msgid "Enregistrer la configuration actuelle"
-msgstr "Save the current configuration"
-
 #: templates/menu_stats.html:46
 msgid "Exporter les panneaux (JSON)"
 msgstr "Export panels (JSON)"
@@ -8883,10 +9124,6 @@ msgstr "Single bar chart"
 #: templates/menu_stats.html:111
 msgid "Panneaux de statistiques"
 msgstr "Statistics panels"
-
-#: templates/menu_stats.html:114 templates/menu_stats.html:115
-msgid "Nom de la configuration"
-msgstr "Configuration name"
 
 #: templates/menu_stats.html:121
 msgid "Six panneaux au maximum."
@@ -9538,10 +9775,6 @@ msgstr "Pattern"
 #: templates/menu_trail.html:122
 msgid "Plein"
 msgstr "Solid"
-
-#: templates/menu_trail.html:127
-msgid "Effet"
-msgstr "Effect"
 
 #: templates/menu_trail.html:130
 msgid "Lueur"
@@ -11989,4 +12222,30 @@ msgstr "Save a copy as…"
 #~ "No image yet. Add some, or drop"
 #~ " files onto this tab: PNG, JPEG, "
 #~ "WebP or GIF."
+
+#~ msgid ""
+#~ "Déposez votre fichier (.gpx, .zip ou "
+#~ "export Lab Caches) pour le charger, "
+#~ "ou une musique"
+#~ msgstr ""
+#~ "Drop your file (.gpx, .zip or Lab"
+#~ " Caches export) to load it, or "
+#~ "a music track"
+
+#~ msgid "Déposez vos exports CSV pour les ajouter à la base, ou une musique"
+#~ msgstr "Drop your CSV exports to add them to the database, or a music track"
+
+#~ msgid ""
+#~ "L'image apparaît le jour « Apparaît "
+#~ "le » et disparaît le jour « "
+#~ "Disparaît le », en fondu. Dates "
+#~ "vides : toujours visible."
+#~ msgstr ""
+#~ "The image fades in on the "
+#~ "\"Appears on\" day and fades out "
+#~ "on the \"Disappears on\" day. Empty "
+#~ "dates: always visible."
+
+#~ msgid "Fondu (ms)"
+#~ msgstr "Fade (ms)"
 

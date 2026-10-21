@@ -10,7 +10,21 @@ import * as pkg from './index.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
-import { IMAGES_MAX_ITEMS, createImageItem, imagesItemsKey } from './images_model.mjs';
+import {
+    IMAGES_MAX_CONFIGS,
+    IMAGES_MAX_ITEMS,
+    SCHEDULE_UNREACHED,
+    createImageItem,
+    hasSchedule,
+    normalizeImagesConfig,
+    scheduleBounds,
+    imageItemDefaults,
+    imageStylePreset,
+    imagesItemsKey,
+    isImageFile,
+    scheduleRangeIssue,
+} from './images_model.mjs';
+import { imagePanelHeight } from './images_render.mjs';
 import { bindPanelDrag } from './panel_interactions.js';
 
 const saveImagesDebounced = makeDebouncedSettingsSaver(500);
@@ -19,6 +33,8 @@ const saveImagesDebounced = makeDebouncedSettingsSaver(500);
 // sur /evolution (comme stats.panels / stats.evolution_panels) ; l'interrupteur
 // `enabled` reste commun aux deux pages.
 const ITEMS_KEY = imagesItemsKey(isEvolutionPage());
+// Liste de l'autre page : la bibliothèque signale les images qui y servent.
+const OTHER_ITEMS_KEY = imagesItemsKey(!isEvolutionPage());
 
 // Titre « Images » : retour « Enregistré ✓ » des actions sans champ dédié.
 const IMAGES_SAVE_STATUS = 'imagesSaveStatus';
@@ -86,6 +102,16 @@ function displayName(item, index) {
     return item.name || pkg.t('Image ${n}', { n: index + 1 });
 }
 
+// Planing qui compte sur cette page : sur Évolution, pas de compteur de
+// trouvailles — un planing par jalons y est ignoré (images_panels.js ›
+// scheduleOf). null sans borne.
+function effectiveSchedule(item) {
+    const schedule = item?.schedule;
+    if (!hasSchedule(schedule)) return null;
+    if (schedule.by === 'find' && isEvolutionPage()) return null;
+    return schedule;
+}
+
 function isMissing(item) {
     const state = pkg.imageSourceState?.(item.file);
     return state === 'missing' || state === 'failed';
@@ -142,6 +168,9 @@ function setUploading(on) {
     uploading = on;
     const hint = $('imagesUploading');
     if (hint) hint.hidden = !on;
+    // Remplacer pendant un envoi : refusé (replaceFromFile), donc grisé.
+    const replace = $('btnImageReplace');
+    if (replace) replace.disabled = on;
     renderList();
 }
 
@@ -177,12 +206,14 @@ function baseName(fileName) {
     return String(fileName || '').replace(/\.[^.]+$/, '');
 }
 
-function addItem(file, name = '') {
+// `overrides` : réglages de départ (position libre d'un dépôt sur la carte).
+// Une image ancrée prend les marges de la pile de son coin.
+function addItem(file, name = '', overrides = {}) {
     let addedId = null;
     updateItems((items) => {
         if (items.length >= IMAGES_MAX_ITEMS) return items;
-        const item = createImageItem(file, name);
-        adoptCornerMargins(item, items);
+        const item = createImageItem(file, name, overrides);
+        if (item.position.mode === 'anchor') adoptCornerMargins(item, items);
         items.push(item);
         addedId = item.id;
         return items;
@@ -191,20 +222,76 @@ function addItem(file, name = '') {
     renderImagesTab();
 }
 
-// Ajout d'un ou plusieurs fichiers (sélecteur multi, dépôt) : envoyés en
-// série, dans la limite des places restantes. Les fichiers écartés faute de
-// place sont signalés une fois, pas par fichier.
-async function addFromFiles(files) {
-    if (uploading || currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS) return;
-    const room = IMAGES_MAX_ITEMS - currentSettings()[ITEMS_KEY].length;
+// Position libre qui centre sur `point` (px CSS du conteneur de la carte)
+// une nouvelle image de proportions `natural`, à sa largeur par défaut —
+// même repère que le glisser (fractions de l'espace restant). null sans
+// point ou sans conteneur.
+function freePositionAt(point, natural) {
+    const host = $('mapWithFrames');
+    if (!point || !host) return null;
+    const probe = imageItemDefaults();
+    const width = Math.min(probe.position.width, host.clientWidth);
+    const height = imagePanelHeight(probe, natural, width);
+    const fraction = (offset, room) => (room > 0 ? Math.max(0, Math.min(1, offset / room)) : 0);
+    return {
+        mode: 'free',
+        x: fraction(point.x - width / 2, host.clientWidth - width),
+        y: fraction(point.y - height / 2, host.clientHeight - height),
+    };
+}
+
+// Ajouts en attente : un dépôt ou un collage pendant un envoi n'est plus
+// ignoré, il passe à la suite (la place restante est comptée à son tour).
+let addQueue = Promise.resolve();
+
+// Ajout d'un ou plusieurs fichiers (sélecteur multi, dépôt, collage) : envoyés
+// en série, dans la limite des places restantes. Les fichiers écartés faute
+// de place sont signalés une fois, pas par fichier. `at` : point du dépôt sur
+// la carte (px CSS du conteneur) — les images y sont posées en position
+// libre, décalées de 24 px les unes des autres.
+function addFromFiles(files, at = null) {
     const list = [...(files || [])].filter(Boolean);
+    if (!list.length) return addQueue;
+    const run = () => addFilesNow(list, at);
+    addQueue = addQueue.then(run, run);
+    return addQueue;
+}
+
+async function addFilesNow(list, at) {
+    const room = Math.max(0, IMAGES_MAX_ITEMS - currentSettings()[ITEMS_KEY].length);
     if (list.length > room) {
         pkg.showToast?.(pkg.t('Quatre images au maximum.'), 'warning', pkg.t('Images'), 5000);
     }
+    let shift = 0;
     for (const file of list.slice(0, room)) {
         const data = await uploadImage(file);
-        if (data) addItem(data.file, baseName(file.name));
+        if (!data) continue;
+        const point = at ? { x: at.x + shift, y: at.y + shift } : null;
+        const position = freePositionAt(point, { width: data.width, height: data.height });
+        addItem(data.file, baseName(file.name), position ? { position } : {});
+        shift += 24;
     }
+}
+
+// Images déposées n'importe où dans la fenêtre : aiguillées ici par le
+// gestionnaire de dépôt de la page (bdd.js, evolution_data.js), comme les
+// musiques vers dropMusicFile. L'onglet Images s'ouvre et les reçoit ;
+// lâchées sur la carte, elles sont posées en position libre au point du
+// dépôt. `point` : coordonnées client du dépôt.
+export function dropImageFiles(files, point = null) {
+    const list = [...(files || [])].filter(isImageFile);
+    if (!list.length) return null;
+    // Pendant une capture, l'image apparaîtrait au milieu de la vidéo.
+    if (pkg.isRecordingActive?.()) {
+        pkg.showToast?.(pkg.t("Attendez la fin de l'enregistrement pour ajouter une image."), 'warning', pkg.t('Images'), 4000);
+        return null;
+    }
+    const host = $('mapWithFrames');
+    const r = host?.getBoundingClientRect();
+    const onMap = !!(point && r && r.width > 0 && point.x >= r.left && point.x <= r.right
+        && point.y >= r.top && point.y <= r.bottom);
+    pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#images"]'));
+    return addFromFiles(list, onMap ? { x: point.x - r.left, y: point.y - r.top } : null);
 }
 
 async function replaceFromFile(file) {
@@ -229,7 +316,11 @@ function openFilePicker(mode) {
     input?.click();
 }
 
-// Dépôt de fichiers sur l'onglet : même effet que « Ajouter une image ».
+// Contour de dépôt sur la liste quand des fichiers survolent l'onglet. Le
+// dépôt lui-même est traité par le gestionnaire de la fenêtre (bdd.js,
+// evolution_data.js → dropImageFiles) : le traiter aussi ici enverrait
+// l'image deux fois — et le gestionnaire de la fenêtre, qui ne connaissait
+// pas les images, la prenait pour un GPX (« Fichier invalide »).
 function bindFileDrop() {
     const pane = $('images');
     const card = $('imagesListCard');
@@ -246,18 +337,12 @@ function bindFileDrop() {
         depth = Math.max(0, depth - 1);
         if (!depth) card.classList.remove('is-dropping');
     });
-    pane.addEventListener('dragover', (event) => {
-        if (!hasFiles(event)) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-    });
-    pane.addEventListener('drop', (event) => {
-        if (!hasFiles(event)) return;
-        event.preventDefault();
+    const reset = () => {
         depth = 0;
         card.classList.remove('is-dropping');
-        addFromFiles(event.dataTransfer.files);
-    });
+    };
+    pane.addEventListener('drop', reset);
+    window.addEventListener('dragend', reset);
 }
 
 // ---------------------------------------------------------------------------
@@ -293,6 +378,19 @@ function formatBytes(bytes) {
     return pkg.t('${n} Ko', { n: Math.max(1, Math.round(bytes / 1024)) });
 }
 
+// Où une image de la bibliothèque sert déjà : sur cette page, sinon sur
+// l'autre (chaque page a sa liste), sinon nulle part (null). Icônes du
+// sélecteur de mode de l'en-tête (app.html).
+function libraryUsage(file, usedHere, usedOther) {
+    if (usedHere.has(file)) {
+        return { where: 'here', icon: 'ti-check', label: pkg.t('Utilisée sur cette page') };
+    }
+    if (!usedOther.has(file)) return null;
+    return isEvolutionPage()
+        ? { where: 'other', icon: 'ti-database', label: pkg.t('Utilisée dans « Mes Géocaches »') }
+        : { where: 'other', icon: 'ti-stack', label: pkg.t('Utilisée dans « Évolution »') };
+}
+
 async function renderLibrary() {
     const grid = $('imagesLibraryList');
     if (!grid) return;
@@ -301,8 +399,11 @@ async function renderLibrary() {
         const response = await fetch('/api/images');
         if (response.ok) listing = await response.json();
     } catch (_) {}
-    const full = currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
+    const settings = currentSettings();
+    const full = settings[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
     const awaitingUndo = filesAwaitingUndo();
+    const usedHere = new Set(settings[ITEMS_KEY].map((item) => item.file));
+    const usedOther = new Set((settings[OTHER_ITEMS_KEY] || []).map((item) => item.file));
     grid.replaceChildren(...listing.files.map((entry) => {
         const cell = document.createElement('div');
         cell.className = 'images-library-cell';
@@ -314,17 +415,28 @@ async function renderLibrary() {
         // comme nom de l'item — une image reprise n'est plus « Image n ».
         pick.dataset.libraryName = entry.name || '';
         pick.disabled = full;
-        pick.title = entry.name
-            ? `${entry.name} — ${entry.width} × ${entry.height}`
-            : `${entry.width} × ${entry.height}`;
-        pick.setAttribute('aria-label', entry.name
+        const usage = libraryUsage(entry.file, usedHere, usedOther);
+        const size = `${entry.width} × ${entry.height}`;
+        pick.title = [entry.name, size, usage?.label].filter(Boolean).join(' — ');
+        const label = entry.name
             ? pkg.t('Ajouter ${name} (${w} × ${h})', { name: entry.name, w: entry.width, h: entry.height })
-            : pkg.t('Ajouter cette image (${w} × ${h})', { w: entry.width, h: entry.height }));
+            : pkg.t('Ajouter cette image (${w} × ${h})', { w: entry.width, h: entry.height });
+        pick.setAttribute('aria-label', usage ? `${label} — ${usage.label}` : label);
         const img = document.createElement('img');
         img.src = pkg.imageUrl(entry.file);
         img.alt = '';
         img.loading = 'lazy';
         pick.appendChild(img);
+        if (usage) {
+            // Pastille : où l'image sert déjà (son texte est dans le titre
+            // et le nom accessible du bouton).
+            pick.classList.add(`is-used-${usage.where}`);
+            const badge = document.createElement('span');
+            badge.className = `images-library-badge is-${usage.where}`;
+            badge.setAttribute('aria-hidden', 'true');
+            badge.innerHTML = `<i class="ti ${usage.icon}"></i>`;
+            pick.appendChild(badge);
+        }
         cell.appendChild(pick);
         // Une image utilisée (sur la carte ou dans une configuration) ne
         // peut pas être retirée : le serveur refuserait. Une image qu'un
@@ -419,42 +531,59 @@ function importedItems(data) {
     return null;
 }
 
-async function importImages(file) {
+// Import d'un export JSON. `append` : les images s'ajoutent à la liste de la
+// page (dans la limite des places libres) au lieu de la remplacer. Les
+// images en trop sont écartées AVANT envoi — aucun fichier envoyé pour rien —
+// et signalées.
+async function importImages(file, { append = false } = {}) {
     let data = null;
     try {
         data = JSON.parse(await file.text());
     } catch (_) { /* JSON illisible → toast d'erreur plus bas */ }
-    const items = importedItems(data);
+    const raws = importedItems(data);
+    const valid = (raws || []).filter((raw) => raw && typeof raw === 'object' && !Array.isArray(raw));
     // Fichier lisible mais sans image exploitable : refusé sans toucher la
     // liste courante (l'import la remplacerait par du vide).
-    if (!items || !items.some((raw) => raw && typeof raw === 'object' && !Array.isArray(raw))) {
+    if (!valid.length) {
         pkg.showToast?.(pkg.t("Import impossible : fichier d'images invalide"), 'error', pkg.t('Images'), 5000);
         return;
     }
+    const previous = currentSettings()[ITEMS_KEY];
+    const room = append ? IMAGES_MAX_ITEMS - previous.length : IMAGES_MAX_ITEMS;
+    if (room <= 0) {
+        pkg.showToast?.(pkg.t('Quatre images au maximum.'), 'warning', pkg.t('Images'), 5000);
+        return;
+    }
+    const items = valid.slice(0, room);
+    const dropped = valid.length - items.length;
     // Chaque image embarquée repasse par le serveur, qui la normalise (et
     // retire ses métadonnées) ; son nom peut changer, les entrées suivent.
     const embedded = data && typeof data.files === 'object' && data.files ? data.files : {};
     const renamed = {};
-    for (const name of new Set(items.map((raw) => raw?.file).filter((n) => typeof n === 'string' && n))) {
+    for (const name of new Set(items.map((raw) => raw.file).filter((n) => typeof n === 'string' && n))) {
         const blob = dataUrlToBlob(embedded[name]);
         if (!blob) continue;
         const ext = blob.type === 'image/png' ? 'png' : 'jpg';
         // Le serveur retient le nom du fichier envoyé comme nom d'origine :
         // celui de l'item qui référençait ce fichier, sinon la base du nom.
-        const itemName = items.find((i) => i?.file === name)?.name;
+        const itemName = items.find((i) => i.file === name)?.name;
         const fileName = `${itemName || name.replace(/\.[^.]+$/, '')}.${ext}`;
         const saved = await uploadImage(new File([blob], fileName, { type: blob.type }));
         if (saved) renamed[name] = saved.file;
     }
-    const next = items.map((raw) => (raw && typeof raw === 'object' && raw.file in renamed
-        ? { ...raw, file: renamed[raw.file] }
-        : raw));
-    const previous = currentSettings()[ITEMS_KEY];
+    const imported = items.map((raw) => (Object.hasOwn(renamed, raw.file) ? { ...raw, file: renamed[raw.file] } : raw));
+    // Ajout : un id déjà pris par la liste est régénéré par la normalisation
+    // (l'image importée garde ses réglages, pas son id).
+    const next = append ? [...previous, ...imported] : imported;
     const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS, { immediate: true });
-    selectedId = applied[ITEMS_KEY][0]?.id || null;
+    selectedId = applied[ITEMS_KEY][append ? previous.length : 0]?.id || applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
+    if (dropped > 0) {
+        pkg.showToast?.(pkg.t('${n} image(s) non importée(s) : quatre au maximum.', { n: dropped }),
+            'warning', pkg.t('Images'), 6000);
+    }
     const toast = pkg.showActionToast?.(
-        pkg.t('${count} image(s) importée(s)', { count: applied[ITEMS_KEY].length }),
+        pkg.t('${count} image(s) importée(s)', { count: imported.length }),
         { label: 'Annuler', onClick: () => {
             commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS, { immediate: true });
             selectedId = previous[0]?.id || null;
@@ -462,6 +591,10 @@ async function importImages(file) {
         } });
     protectUntilToastCloses(toast, previous.map((item) => item.file));
 }
+
+// Mode du prochain import (sélecteur de fichier commun aux deux entrées du
+// menu) : ajout ou remplacement.
+let importAppends = false;
 
 async function deleteLibraryImage(file) {
     try {
@@ -480,14 +613,6 @@ async function deleteLibraryImage(file) {
 }
 
 async function onLibraryClick(event) {
-    if (event.target.closest('[data-images-export]')) {
-        exportImages();
-        return;
-    }
-    if (event.target.closest('[data-images-import]')) {
-        $('imagesImportFile')?.click();
-        return;
-    }
     const remove = event.target.closest('[data-library-delete]');
     if (remove) {
         // Retrait définitif du fichier (aucun « Annuler » possible) :
@@ -504,6 +629,151 @@ async function onLibraryClick(event) {
     }
     const pick = event.target.closest('[data-library-file]');
     if (pick && !pick.disabled) addItem(pick.dataset.libraryFile, pick.dataset.libraryName || '');
+}
+
+// ---------------------------------------------------------------------------
+// Configurations nommées : instantané de la liste, ré-applicable sur l'une ou
+// l'autre page (une image est la même partout) — c'est aussi le moyen de
+// reprendre sur une page les images de l'autre.
+// ---------------------------------------------------------------------------
+
+// Entrées du menu entre l'en-tête « Enregistrées » et le séparateur ; chaque
+// ligne porte le nom (clic = appliquer) et une corbeille.
+function renderConfigMenu() {
+    const menu = $('imagesConfigMenu');
+    if (!menu) return;
+    const settings = currentSettings();
+    const configs = settings.configs || [];
+    menu.querySelectorAll('[data-config-entry]').forEach((el) => el.remove());
+    const header = $('imagesConfigHeader');
+    if (header) header.hidden = configs.length === 0;
+    const empty = $('imagesConfigEmpty');
+    if (empty) empty.hidden = configs.length > 0;
+    const sep = $('imagesConfigSep');
+    for (const config of configs) {
+        const li = document.createElement('li');
+        li.className = 'd-flex align-items-center';
+        li.dataset.configEntry = '';
+        const apply = document.createElement('button');
+        apply.type = 'button';
+        apply.className = 'dropdown-item text-truncate flex-grow-1';
+        apply.dataset.configApply = config.name;
+        apply.textContent = config.name;
+        const count = document.createElement('span');
+        count.className = 'text-muted ms-1';
+        count.textContent = `(${config.items.length})`;
+        apply.appendChild(count);
+        const del = iconButton('ti-trash', pkg.t('Supprimer'), 'config-delete');
+        del.classList.add('btn-sm', 'px-2');
+        del.dataset.configDelete = config.name;
+        li.append(apply, del);
+        sep?.before(li);
+    }
+    const save = menu.querySelector('[data-images-config-save]');
+    // Sans image rien à enregistrer ; la liste est bornée à IMAGES_MAX_CONFIGS
+    // (un nom déjà pris remplace sa configuration, il reste donc possible de
+    // mettre à jour une configuration quand la liste est pleine).
+    if (save) save.disabled = !settings[ITEMS_KEY].length;
+}
+
+function showConfigSave() {
+    const row = $('imagesConfigSave');
+    if (!row) return;
+    row.hidden = false;
+    $('inputImagesConfigName')?.focus();
+}
+
+function hideConfigSave() {
+    const row = $('imagesConfigSave');
+    if (row) row.hidden = true;
+    const input = $('inputImagesConfigName');
+    if (input) input.value = '';
+}
+
+function saveCurrentConfig() {
+    const settings = currentSettings();
+    const entry = normalizeImagesConfig({ name: $('inputImagesConfigName')?.value, items: settings[ITEMS_KEY] });
+    if (!entry) return;
+    const configs = settings.configs || [];
+    // À nom égal, la configuration est remplacée — la mise à jour passe par là.
+    const replaced = configs.some((c) => c.name === entry.name);
+    if (!replaced && configs.length >= IMAGES_MAX_CONFIGS) {
+        pkg.showToast?.(pkg.t('Douze configurations au maximum : supprimez-en une, ou réutilisez un nom.'),
+            'warning', pkg.t('Images'), 6000);
+        return;
+    }
+    commit({ ...settings, configs: [...configs.filter((c) => c.name !== entry.name), entry] },
+        IMAGES_SAVE_STATUS, { immediate: true });
+    hideConfigSave();
+    renderImagesTab();
+    pkg.showToast?.(pkg.t('Configuration « ${name} » enregistrée', { name: entry.name }));
+}
+
+function applyConfig(name) {
+    const settings = currentSettings();
+    const config = (settings.configs || []).find((c) => c.name === name);
+    if (!config) return;
+    const previous = settings[ITEMS_KEY];
+    const applied = commit({ ...settings, [ITEMS_KEY]: config.items }, IMAGES_SAVE_STATUS, { immediate: true });
+    selectedId = applied[ITEMS_KEY][0]?.id || null;
+    renderImagesTab();
+    // Fichier absent de cette machine : l'image est signalée « manquante »
+    // dans la liste, comme à l'import.
+    const toast = pkg.showActionToast?.(
+        pkg.t('Configuration « ${name} » appliquée', { name }),
+        { label: 'Annuler', onClick: () => {
+            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS, { immediate: true });
+            selectedId = previous[0]?.id || null;
+            renderImagesTab();
+        } });
+    protectUntilToastCloses(toast, previous.map((item) => item.file));
+}
+
+function deleteConfig(name) {
+    const settings = currentSettings();
+    const configs = settings.configs || [];
+    const index = configs.findIndex((c) => c.name === name);
+    if (index < 0) return;
+    const removed = configs[index];
+    commit({ ...settings, configs: configs.filter((c) => c.name !== name) },
+        IMAGES_SAVE_STATUS, { immediate: true });
+    renderImagesTab();
+    const toast = pkg.showActionToast?.(
+        pkg.t('« ${name} » supprimée', { name }),
+        { label: 'Annuler', onClick: () => {
+            const current = currentSettings();
+            const list = (current.configs || []).slice();
+            list.splice(Math.min(index, list.length), 0, removed);
+            commit({ ...current, configs: list }, IMAGES_SAVE_STATUS, { immediate: true });
+            renderImagesTab();
+        } });
+    protectUntilToastCloses(toast, removed.items.map((item) => item.file));
+}
+
+function onConfigMenuClick(event) {
+    const apply = event.target.closest('[data-config-apply]');
+    if (apply) {
+        applyConfig(apply.dataset.configApply);
+        return;
+    }
+    const del = event.target.closest('[data-config-delete]');
+    if (del) {
+        deleteConfig(del.dataset.configDelete);
+        return;
+    }
+    if (event.target.closest('[data-images-config-save]')) {
+        showConfigSave();
+        return;
+    }
+    if (event.target.closest('[data-images-export]')) {
+        exportImages();
+        return;
+    }
+    const importButton = event.target.closest('[data-images-import]');
+    if (importButton) {
+        importAppends = importButton.dataset.imagesImport === 'append';
+        $('imagesImportFile')?.click();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -566,7 +836,7 @@ function renderList() {
             badge.textContent = pkg.t('(manquante)');
             name.appendChild(badge);
         }
-        if (item.schedule?.start || item.schedule?.end) {
+        if (effectiveSchedule(item)) {
             const badge = document.createElement('i');
             badge.className = 'ti ti-calendar-time text-muted ms-1';
             badge.title = pkg.t('Apparition planifiée');
@@ -745,13 +1015,156 @@ function renderForm() {
     if (bgOpacity) bgOpacity.textContent = `${s.background_opacity} %`;
 
     const schedule = item.schedule || {};
+    // Jalons : page « Mes Géocaches » seulement — sur Évolution, les dates.
+    const byFind = schedule.by === 'find' && !isEvolutionPage();
+    document.querySelectorAll('input[name="imageScheduleBy"]').forEach((radio) => {
+        radio.checked = radio.value === (byFind ? 'find' : 'date');
+    });
+    const dates = $('imageScheduleDates');
+    if (dates) dates.hidden = byFind;
+    const finds = $('imageScheduleFinds');
+    if (finds) finds.hidden = !byFind;
     setValue('inputImageAppearDate', schedule.start ?? '');
     setValue('inputImageDisappearDate', schedule.end ?? '');
+    setValue('inputImageAppearFind', schedule.start_find ?? '');
+    setValue('inputImageDisappearFind', schedule.end_find ?? '');
+    setValue('selectImageEffect', schedule.effect || 'fade');
     setValue('inputImageFadeMs', schedule.fade ?? '');
-    const appearClear = $('btnImageAppearClear');
-    if (appearClear) appearClear.disabled = !schedule.start;
-    const disappearClear = $('btnImageDisappearClear');
-    if (disappearClear) disappearClear.disabled = !schedule.end;
+    for (const [id, value] of [
+        ['btnImageAppearClear', schedule.start],
+        ['btnImageDisappearClear', schedule.end],
+        ['btnImageAppearFindClear', schedule.start_find],
+        ['btnImageDisappearFindClear', schedule.end_find],
+    ]) {
+        const button = $(id);
+        if (button) button.disabled = value == null || value === '';
+    }
+    renderFindDates(schedule);
+    renderScheduleWarning(item);
+}
+
+// Date de chaque jalon sous son champ : « le 12/03/2024 », ou jamais atteint
+// (total de la sélection). Rien sans données chargées.
+function renderFindDates(schedule) {
+    const total = pkg.imageFindTotal?.() ?? 0;
+    for (const [id, n] of [['imageAppearFindDate', schedule.start_find], ['imageDisappearFindDate', schedule.end_find]]) {
+        const hint = $(id);
+        if (!hint) continue;
+        let text = '';
+        if (n && total > 0) {
+            const iso = pkg.imageFindDate?.(n);
+            text = iso
+                ? pkg.t('Le ${date}', { date: pkg.formatDateDisplay?.(new Date(`${iso}T00:00:00`)) || iso })
+                : pkg.t('Jamais atteinte : ${total} trouvaille(s) au total', { total });
+        }
+        hint.textContent = text;
+    }
+}
+
+// Planing qui rend l'image invisible pendant toute l'animation (fenêtre vide,
+// apparition après la fin, disparition avant le début) : signalé sous les
+// dates — sans quoi rien n'indique pourquoi l'image manque à la vidéo. La
+// période est celle de l'animation (dates de début et de fin, onglet
+// Animation) ; inconnue sans données, seule la fenêtre vide est signalée.
+function renderScheduleWarning(item) {
+    const warning = $('imageScheduleWarning');
+    if (!warning) return;
+    const schedule = effectiveSchedule(item);
+    const range = pkg.getTimelineState?.() || null;
+    const rangeStart = range ? pkg.formatDateIso?.(range.start) : null;
+    const rangeEnd = range ? pkg.formatDateIso?.(range.end) : null;
+    const byFind = schedule?.by === 'find';
+    const total = byFind ? (pkg.imageFindTotal?.() ?? 0) : 0;
+    // Jalons sans données chargées : rien à comparer.
+    const bounds = byFind && total === 0
+        ? { start: null, end: null }
+        : scheduleBounds(schedule, (n) => pkg.imageFindDate?.(n) ?? null);
+    const issue = scheduleRangeIssue(bounds, rangeStart, rangeEnd);
+    let message = '';
+    if (byFind && bounds.start === SCHEDULE_UNREACHED) {
+        message = pkg.t("La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image ne sera pas visible.",
+            { n: schedule.start_find, total });
+    } else if (issue === 'empty' && byFind) {
+        message = pkg.t("La disparition tombe le jour de l'apparition : l'image ne sera jamais visible.");
+    } else if (issue === 'empty') {
+        message = pkg.t("« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais visible.");
+    } else if (issue === 'after') {
+        message = pkg.t("L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne sera pas visible dans la vidéo.",
+            { date: pkg.formatDateDisplay?.(range.end) || rangeEnd });
+    } else if (issue === 'before') {
+        message = pkg.t("L'image disparaît avant le début de l'animation (${date}) : elle ne sera pas visible dans la vidéo.",
+            { date: pkg.formatDateDisplay?.(range.start) || rangeStart });
+    }
+    warning.textContent = message;
+    warning.hidden = !message;
+}
+
+// Aperçu en pause : un planing modifié s'applique tout de suite au jour
+// affiché (instantané, comme un saut) — sans cela l'image garderait son état
+// jusqu'au prochain saut ou à la reprise. En lecture, le lot de jours
+// suivant s'en charge.
+function resyncScheduleWhilePaused() {
+    const state = pkg.getTimelineState?.();
+    if (state?.paused) pkg.syncImagesToDate?.(state.position, null);
+}
+
+// « Jour affiché » : la date de l'aperçu (en lecture ou en pause) devient la
+// borne `which` ('start' | 'end') du planing de l'image sélectionnée.
+function scheduleFromPreview(which, button) {
+    const item = selectedItem();
+    if (!item) return;
+    const state = pkg.getTimelineState?.();
+    if (state?.recording) {
+        pkg.showToast?.(pkg.t("Attendez la fin de l'enregistrement."), 'warning', pkg.t('Images'), 4000);
+        return;
+    }
+    if (!state?.active) {
+        pkg.showToast?.(pkg.t("Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de chronologie), puis recliquez."),
+            'info', pkg.t('Images'), 6000);
+        return;
+    }
+    const day = pkg.formatDateIso?.(state.position);
+    if (!day) return;
+    updateSelected((target) => {
+        target.schedule.by = 'date';
+        target.schedule[which] = day;
+        // Même garde que la saisie : la disparition ne précède jamais
+        // l'apparition.
+        if (target.schedule.start && target.schedule.end && target.schedule.end < target.schedule.start) {
+            if (which === 'start') target.schedule.end = day;
+            else target.schedule.start = day;
+        }
+    }, button);
+    saveImagesDebounced.flush();
+    resyncScheduleWhilePaused();
+    renderList();
+    renderForm();
+}
+
+// Préréglage d'apparence, annulable : le style d'avant revient (et la
+// hauteur, qu'un préréglage rond rend aux proportions).
+function applyStylePreset(name, button) {
+    const item = selectedItem();
+    const result = item ? imageStylePreset(item, name) : null;
+    if (!result) return;
+    const id = item.id;
+    const before = { style: structuredClone(item.style), height: item.position.height };
+    updateSelected((target) => {
+        target.style = result.style;
+        target.position.height = result.height;
+    }, IMAGES_SAVE_STATUS);
+    saveImagesDebounced.flush();
+    renderForm();
+    pkg.showActionToast?.(
+        pkg.t('Préréglage « ${name} » appliqué', { name: button?.textContent.trim() || name }),
+        { label: 'Annuler', onClick: () => {
+            updateItem(id, (target) => {
+                target.style = before.style;
+                target.position.height = before.height;
+            });
+            renderForm();
+        } },
+    );
 }
 
 // Champ du formulaire → chemin dans l'image. `number` : borné ensuite par la
@@ -773,14 +1186,21 @@ const FIELDS = [
     ['inputImageBorderColor', 'style.border_color', 'text'],
     ['inputImageAppearDate', 'schedule.start', 'date'],
     ['inputImageDisappearDate', 'schedule.end', 'date'],
+    ['inputImageAppearFind', 'schedule.start_find', 'find'],
+    ['inputImageDisappearFind', 'schedule.end_find', 'find'],
+    ['selectImageEffect', 'schedule.effect', 'text'],
     ['inputImageFadeMs', 'schedule.fade', 'number'],
 ];
+// Saisir une borne d'un mode du planing (dates ou jalons) l'active : le
+// mode suit le champ modifié.
+const SCHEDULE_BY_OF_TYPE = { date: 'date', find: 'find' };
 const MARGIN_PATHS = ['position.dx', 'position.dy'];
 
 function readField(el, type) {
     if (type === 'bool') return el.checked;
     if (type === 'number') return el.value === '' ? undefined : Number(el.value);
     if (type === 'date') return el.value === '' ? null : el.value;
+    if (type === 'find') return el.value === '' ? null : Number(el.value);
     return el.value;
 }
 
@@ -797,13 +1217,14 @@ function bindFormFields() {
         if (!el) continue;
         // Saisie : aperçu en direct, sans réécrire le champ ; sortie du
         // champ : le formulaire reprend la valeur normalisée.
-        const live = type === 'number' || type === 'text' ? 'input' : 'change';
+        const live = type === 'number' || type === 'text' || type === 'find' ? 'input' : 'change';
         el.addEventListener(live, () => {
             const value = readField(el, type);
             if (value === undefined) return;
             let endClamped = false;
             updateSelected((item, items) => {
                 writePath(item, path, value);
+                if (SCHEDULE_BY_OF_TYPE[type]) item.schedule.by = SCHEDULE_BY_OF_TYPE[type];
                 // « Disparaît le » avant « Apparaît le » : jamais visible —
                 // recalé à la date d'apparition (garde de saisie, pas une
                 // coercition du modèle).
@@ -817,8 +1238,10 @@ function bindFormFields() {
                     for (const mate of cornerMates(items, item)) writePath(mate, path, value);
                 }
             }, el);
-            if (path === 'name' || type === 'date') renderList();
-            if (el.tagName === 'SELECT' || type === 'bool' || type === 'date' || path.startsWith('style.')) renderForm();
+            if (path === 'name' || type === 'date' || type === 'find') renderList();
+            if (path.startsWith('schedule.')) resyncScheduleWhilePaused();
+            if (el.tagName === 'SELECT' || type === 'bool' || type === 'date' || type === 'find'
+                || path.startsWith('style.')) renderForm();
             if (endClamped) {
                 // « Disparaît le » recalé : la réécriture ne se pose que si
                 // le champ n'est pas en cours de frappe — taper l'année
@@ -862,13 +1285,36 @@ function bindFormFields() {
     for (const [btnId, path] of [
         ['btnImageAppearClear', 'schedule.start'],
         ['btnImageDisappearClear', 'schedule.end'],
+        ['btnImageAppearFindClear', 'schedule.start_find'],
+        ['btnImageDisappearFindClear', 'schedule.end_find'],
     ]) {
         $(btnId)?.addEventListener('click', () => {
             updateSelected((item) => { writePath(item, path, null); }, $(btnId));
+            resyncScheduleWhilePaused();
             renderList();
             renderForm();
         });
     }
+
+    // Repère du planing : dates ou jalons du compteur (les bornes des deux
+    // modes sont gardées, un aller-retour ne perd rien).
+    document.querySelectorAll('input[name="imageScheduleBy"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            if (!radio.checked) return;
+            updateSelected((item) => { item.schedule.by = radio.value; }, radio.closest('[role="radiogroup"]'));
+            saveImagesDebounced.flush();
+            resyncScheduleWhilePaused();
+            renderList();
+            renderForm();
+        });
+    });
+
+    document.querySelectorAll('[data-schedule-from-preview]').forEach((button) => {
+        button.addEventListener('click', () => scheduleFromPreview(button.dataset.scheduleFromPreview, button));
+    });
+    document.querySelectorAll('[data-image-preset]').forEach((button) => {
+        button.addEventListener('click', () => applyStylePreset(button.dataset.imagePreset, button));
+    });
 
     // « Revenir à l'emplacement » : la position libre redevient le coin
     // conservé dans position.anchor, avec les marges de sa pile.
@@ -997,6 +1443,7 @@ export function renderImagesTab() {
     pkg.setImagePanelSelection?.(selectedId);
     renderList();
     renderForm();
+    renderConfigMenu();
     syncDragMode();
 }
 
@@ -1021,23 +1468,30 @@ export function initImagesTab() {
     $('imagesImportFile')?.addEventListener('change', (event) => {
         const file = event.target.files?.[0];
         event.target.value = '';
-        if (file) importImages(file);
+        if (file) importImages(file, { append: importAppends });
     });
     $('imagesLibraryMenu')?.addEventListener('click', onLibraryClick);
+    $('btnImagesConfigs')?.addEventListener('show.bs.dropdown', renderConfigMenu);
+    $('imagesConfigMenu')?.addEventListener('click', onConfigMenuClick);
+    $('btnImagesConfigSaveOk')?.addEventListener('click', saveCurrentConfig);
+    $('btnImagesConfigSaveCancel')?.addEventListener('click', hideConfigSave);
+    $('inputImagesConfigName')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') saveCurrentConfig();
+        else if (event.key === 'Escape') hideConfigSave();
+    });
     const list = $('imagesList');
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);
     bindFormFields();
     bindFileDrop();
     bindDragAndDrop();
-    // Coller une image copiée l'ajoute, comme un dépôt : onglet ouvert,
-    // place libre et aucun envoi en cours — addFromFiles gère la série,
-    // la limite de quatre et les toasts.
+    // Coller une image copiée l'ajoute, comme un dépôt (onglet ouvert) :
+    // addFromFiles gère la série, la file d'attente pendant un envoi, la
+    // limite de quatre et les toasts.
     document.addEventListener('paste', (event) => {
         if (!$('images')?.classList.contains('active')) return;
-        if (uploading || currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS) return;
-        const files = event.clipboardData?.files;
-        if (!files?.length) return;
+        const files = [...(event.clipboardData?.files || [])].filter(isImageFile);
+        if (!files.length) return;
         event.preventDefault();
         addFromFiles(files);
     });
@@ -1047,12 +1501,22 @@ export function initImagesTab() {
     // Ouverture de l'onglet : les images restées en échec sont retentées
     // (un incident passager ne doit pas les laisser « manquantes »).
     document.addEventListener('shown.bs.tab', (event) => {
-        if (event.target?.getAttribute?.('href') === '#images') pkg.forgetFailedImageSources?.();
+        if (event.target?.getAttribute?.('href') !== '#images') return;
+        pkg.forgetFailedImageSources?.();
+        // La période animée a pu changer (onglet Animation) : l'avertissement
+        // du planing est recalculé.
+        renderForm();
     });
     const controlBar = $('controlBar');
     if (controlBar && typeof MutationObserver !== 'undefined') {
         new MutationObserver(syncDragMode).observe(controlBar, { attributes: true, attributeFilter: ['data-playback-state'] });
     }
+    // Données chargées, filtrées ou vidées : dates des jalons et
+    // avertissement du planing à jour si l'onglet est ouvert (sinon, à son
+    // ouverture).
+    document.addEventListener('mygcflow:images-data', () => {
+        if ($('images')?.classList.contains('active')) renderForm();
+    });
     // Image chargée ou introuvable : la liste marque les manquantes.
     document.addEventListener('mygcflow:image-source', () => {
         renderList();

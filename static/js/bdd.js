@@ -6,6 +6,7 @@ import { showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
 import { isAudioFile } from './music_track.mjs';
+import { isImageFile } from './images_model.mjs';
 
 export let json_data = null;
 export const metadata = {};
@@ -251,12 +252,19 @@ async function isLabFile(file) {
     }
 }
 
-// Aiguillage d'un dépôt : une musique rejoint le sous-onglet Musique (la
+// Aiguillage d'un dépôt : les images rejoignent l'onglet Images (posées au
+// point du dépôt si lâchées sur la carte — `point`, coordonnées client) ;
+// une musique rejoint le sous-onglet Musique (la
 // première, s'il y en a plusieurs) ; dès qu'un fichier Lab est reconnu, le
 // lot part vers l'import Labs — avec les .zip qui l'accompagnent, un GPX
 // Lab2Gpx pouvant être compressé. Sinon, le premier fichier suit le
 // chargement « My Finds ».
-async function routeDroppedFiles(files) {
+async function routeDroppedFiles(files, point = null) {
+    const images = files.filter(isImageFile);
+    if (images.length) {
+        pkg.dropImageFiles?.(images, point);
+        files = files.filter((f) => !isImageFile(f));
+    }
     const music = files.find(isAudioFile);
     if (music) {
         pkg.dropMusicFile?.(music);
@@ -332,7 +340,7 @@ function setupGpxDragAndDrop() {
             '<div class="gpx-drop-overlay__inner">' +
             '<i class="ti ti-file-upload"></i>' +
             '<div class="gpx-drop-overlay__text">' +
-            t('Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, ou une musique') +
+            t('Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, une musique ou une image') +
             '</div></div>';
         document.body.appendChild(overlay);
     }
@@ -364,7 +372,7 @@ function setupGpxDragAndDrop() {
         if (!dragHasFiles(e)) return;
         e.preventDefault();
         hide();
-        routeDroppedFiles(Array.from(e.dataTransfer.files || []));
+        routeDroppedFiles(Array.from(e.dataTransfer.files || []), { x: e.clientX, y: e.clientY });
     });
     // Sécurité : si le drag est abandonné hors fenêtre, masquer l'overlay.
     window.addEventListener('dragend', hide);
@@ -563,6 +571,7 @@ function clearLocalData() {
     lastDbHasData = false;
     pkg.refreshStatsPanels?.();
     pkg.refreshTimelineBar?.();
+    pkg.refreshImagesForData?.();
 }
 
 // Emprise [ouest, sud, est, nord] (EPSG:4326) des points chargés, null si
@@ -668,6 +677,8 @@ function buildPointsByDateIndex(features = []) {
         // recalculent au prochain dessin — encore faut-il en demander un.
         pkg.refreshStatsPanels?.();
         pkg.refreshTimelineBar?.();
+        // Onglet Images : les jalons de trouvailles changent de date.
+        pkg.refreshImagesForData?.();
     }
 }
 

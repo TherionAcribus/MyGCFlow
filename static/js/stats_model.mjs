@@ -304,7 +304,7 @@ function coerceBlock(raw, defaults, coercers) {
 // images_model.mjs : mêmes règles que les panneaux, avec les mêmes miroirs
 // côté serveur (stats_settings.py, importé par image_settings.py).
 export const statsCoercers = Object.freeze({
-    intIn, unit, bool, choice, color, title, coerceBlock,
+    intIn, unit, bool, choice, color, title, coerceBlock, configName,
     isId: (value) => typeof value === 'string' && ID_RE.test(value),
 });
 

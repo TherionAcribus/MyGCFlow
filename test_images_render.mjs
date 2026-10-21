@@ -3,7 +3,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createImageItem } from './static/js/images_model.mjs';
-import { drawImagePanel, fitRect, imagePanelHeight } from './static/js/images_render.mjs';
+import {
+    IMAGE_EFFECT_EASINGS,
+    IMAGE_ZOOM_FROM,
+    cubicBezier,
+    drawImagePanel,
+    effectTimingCss,
+    effectTransform,
+    fitRect,
+    imagePanelHeight,
+} from './static/js/images_render.mjs';
 
 const FILE = '0123456789abcdef.png';
 const item = (overrides = {}) => createImageItem(FILE, 'logo', overrides, () => 'abcdef01');
@@ -92,4 +101,39 @@ test('bordure : liseré intérieur, trait doublé rogné par le clip de la forme
     const plain = fakeContext();
     drawImagePanel(plain, 100, 100, item(), null);
     assert.ok(!plain.calls.some((c) => c[0] === 'stroke'));
+});
+
+test('cubicBezier : extrémités fixes, linéaire exacte, rebond du zoom', () => {
+    const linear = cubicBezier(0, 0, 1, 1);
+    for (const x of [0.1, 0.37, 0.8]) assert.ok(Math.abs(linear(x) - x) < 1e-6);
+    for (const points of Object.values(IMAGE_EFFECT_EASINGS)) {
+        const curve = cubicBezier(...points);
+        assert.equal(curve(0), 0);
+        assert.equal(curve(1), 1);
+    }
+    // « ease-out » : en avance sur le temps ; le zoom dépasse 1 puis revient.
+    const slide = cubicBezier(...IMAGE_EFFECT_EASINGS.slide);
+    assert.ok(slide(0.5) > 0.8);
+    const zoom = cubicBezier(...IMAGE_EFFECT_EASINGS.zoom);
+    assert.ok(zoom(0.5) > 1);
+    assert.equal(effectTimingCss('zoom'), 'cubic-bezier(0.34, 1.56, 0.64, 1)');
+    assert.equal(effectTimingCss('fade'), 'linear');
+});
+
+test('effectTransform : glisse depuis le bord le plus proche, zoom depuis la moitié', () => {
+    const container = { width: 1000, height: 600 };
+    // Coin bas-droit : bords droit et bas à 16 px — la droite l'emporte.
+    const corner = { x: 824, y: 424, width: 160, height: 160 };
+    assert.deepEqual(effectTransform('slide', 0, corner, container), { dx: 176, dy: 0, scale: 1 });
+    assert.deepEqual(effectTransform('slide', 1, corner, container), { dx: 0, dy: 0, scale: 1 });
+    assert.deepEqual(effectTransform('slide', 0.5, corner, container), { dx: 88, dy: 0, scale: 1 });
+    // Haut, centré : sort par le haut, entièrement.
+    const top = { x: 420, y: 10, width: 160, height: 80 };
+    assert.deepEqual(effectTransform('slide', 0, top, container), { dx: 0, dy: -90, scale: 1 });
+    // Gauche, au milieu.
+    const left = { x: 16, y: 260, width: 100, height: 80 };
+    assert.deepEqual(effectTransform('slide', 0, left, container), { dx: -116, dy: 0, scale: 1 });
+    assert.deepEqual(effectTransform('zoom', 0, corner, container), { dx: 0, dy: 0, scale: IMAGE_ZOOM_FROM });
+    assert.equal(effectTransform('zoom', 1, corner, container).scale, 1);
+    assert.deepEqual(effectTransform('fade', 0, corner, container), { dx: 0, dy: 0, scale: 1 });
 });

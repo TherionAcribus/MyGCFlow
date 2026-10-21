@@ -55,7 +55,7 @@ async function boxIn(page, selector) {
 
 test.afterEach(async ({ page }) => {
   await putSettings(page, {
-    images: { enabled: true, items: [], evolution_items: [] },
+    images: { enabled: true, items: [], evolution_items: [], configs: [] },
     stats: { enabled: true, panels: [], evolution_panels: [] },
   });
 });
@@ -514,6 +514,319 @@ test('touche Suppr : l’image sélectionnée est supprimée (même effet que le
   await expect(page.locator('#imagesList li')).toHaveCount(2);
 });
 
+// Dépôt de fichiers simulé : dragenter, dragover puis drop sur `selector`, au
+// point (x, y) du repère de l'élément (centre par défaut) — l'événement
+// remonte jusqu'au gestionnaire de la fenêtre, comme un vrai dépôt.
+async function dropFiles(page, selector, files, at = null) {
+  const payload = files.map((file) => ({
+    name: path.basename(file), b64: fs.readFileSync(file).toString('base64'),
+  }));
+  await page.evaluate(({ selector, payload, at }) => {
+    const dt = new DataTransfer();
+    for (const f of payload) {
+      const bytes = Uint8Array.from(atob(f.b64), (c) => c.charCodeAt(0));
+      dt.items.add(new File([bytes], f.name, { type: 'image/png' }));
+    }
+    const target = document.querySelector(selector);
+    const r = target.getBoundingClientRect();
+    const clientX = r.left + (at ? at.x : r.width / 2);
+    const clientY = r.top + (at ? at.y : r.height / 2);
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      target.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, clientX, clientY }));
+    }
+  }, { selector, payload, at });
+}
+
+test('dépôt : sur la carte, posée en position libre au point lâché ; sur l’onglet, ajoutée une fois — jamais prise pour un GPX', async ({ page }) => {
+  await openWithFixture(page);
+  // Onglet Données ouvert : le dépôt d'une image ouvre l'onglet Images.
+  await dropFiles(page, '#mapWithFrames', [AVATAR], { x: 200, y: 150 });
+  await expect(page.locator('#images')).toHaveClass(/active/);
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect.poll(async () => (await savedImages(page)).items[0]?.position.mode).toBe('free');
+  // Centrée sur le point du dépôt (avatar carré, 160 px de large).
+  await expect.poll(async () => {
+    const b = await boxIn(page, 'canvas.image-panel');
+    return [Math.round(b.x + b.width / 2), Math.round(b.y + b.height / 2)];
+  }).toEqual([200, 150]);
+
+  // Sur l'onglet : une seule image de plus, ancrée (pas de point sur la carte).
+  await dropFiles(page, '#imagesListCard', [LOGO]);
+  await expect(page.locator('#imagesList li')).toHaveCount(2);
+  await expect.poll(async () => (await savedImages(page)).items.length).toBe(2);
+  await page.waitForTimeout(500);
+  expect((await savedImages(page)).items).toHaveLength(2);
+  expect((await savedImages(page)).items[1].position.mode).toBe('anchor');
+  // Le gestionnaire de la fenêtre ne l'a pas traitée comme un fichier GPX.
+  await expect(page.locator('.gcm-toast').filter({ hasText: /Fichier invalide|Analyse du fichier GPX/ })).toHaveCount(0);
+});
+
+test('bibliothèque : images utilisées signalées ; import en ajout, places comptées', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  const avatar = await upload(page, AVATAR);
+  await putSettings(page, { images: {
+    items: [{ id: 'babe0100', file: logo.file, name: 'Logo' }],
+    evolution_items: [{ id: 'babe0101', file: avatar.file, name: 'Avatar' }],
+  } });
+  await openImagesTab(page);
+  await page.locator('#btnImagesLibrary').click();
+  const logoCell = page.locator(`#imagesLibraryList [data-library-file="${logo.file}"]`);
+  const avatarCell = page.locator(`#imagesLibraryList [data-library-file="${avatar.file}"]`);
+  await expect(logoCell).toHaveClass(/is-used-here/);
+  await expect(logoCell).toHaveAttribute('aria-label', /Utilisée sur cette page/);
+  await expect(avatarCell.locator('.images-library-badge.is-other')).toHaveCount(1);
+  await expect(avatarCell).toHaveAttribute('aria-label', /Utilisée dans « Évolution »/);
+
+  // « Importer et ajouter » : la liste garde son image, trois places restent
+  // pour les quatre de l'export — la quatrième est écartée et signalée.
+  const exported = { format: 'mygcflow-images', version: 1, files: {},
+    items: [1, 2, 3, 4].map((n) => ({ file: avatar.file, name: `Importée ${n}` })) };
+  // Export et import vivent dans le menu Configurations, comme dans l'onglet Stats.
+  await page.keyboard.press('Escape');
+  await page.locator('#btnImagesConfigs').click();
+  const chooser = page.waitForEvent('filechooser');
+  await page.locator('[data-images-import="append"]').click();
+  await (await chooser).setFiles({
+    name: 'export.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(exported)),
+  });
+  const rows = page.locator('#imagesList li');
+  await expect(rows).toHaveCount(4);
+  await expect(rows.first()).toContainText('Logo');
+  await expect(rows.last()).toContainText('Importée 3');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: '1 image(s) non importée(s)' })).toBeVisible();
+  await expect.poll(async () => (await savedImages(page)).items.map((i) => i.name))
+    .toEqual(['Logo', 'Importée 1', 'Importée 2', 'Importée 3']);
+});
+
+test('préréglages : « Avatar » arrondit et encadre, « Annuler » rend le style d’avant', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0110', file: logo.file, name: 'Logo', position: { height: 90 }, style: { opacity: 50 } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+  await page.locator('[data-image-preset="avatar"]').click();
+  await expect.poll(async () => (await savedImages(page)).items[0].style)
+    .toMatchObject({ shape: 'circle', fit: 'cover', border_width: 3, shadow: true, opacity: 100 });
+  // Rond : la hauteur imposée est levée, l'image est carrée.
+  expect((await savedImages(page)).items[0].position.height).toBe(null);
+  await expect(page.locator('#selectImageShape')).toHaveValue('circle');
+  await expect.poll(async () => {
+    const b = await boxIn(page, 'canvas.image-panel');
+    return Math.round(b.width) === Math.round(b.height);
+  }).toBe(true);
+
+  const toast = page.locator('.gcm-toast.show').filter({ hasText: 'Avatar' });
+  await toast.locator('.gcm-toast-action').filter({ hasText: 'Annuler' }).click();
+  await expect.poll(async () => (await savedImages(page)).items[0].style)
+    .toMatchObject({ shape: 'rounded', opacity: 50, border_width: 0 });
+  expect((await savedImages(page)).items[0].position.height).toBe(90);
+  await expect(page.locator('#selectImageShape')).toHaveValue('rounded');
+});
+
+test('planification : avertissement hors période, « Jour affiché » reprend le jour de l’aperçu en pause', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0120', file: logo.file, name: 'Logo', schedule: { start: '2026-02-01', end: null, fade: 0 } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+  // Fixture : animation du 01/01 au 06/01/2026 — une apparition au 01/02
+  // n'a jamais lieu.
+  const warning = page.locator('#imageScheduleWarning');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText("après la fin de l'animation");
+
+  // Au repos, pas de jour affiché : le bouton explique quoi faire.
+  await page.locator('#btnImageAppearFromPreview').click();
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: "Lancez l'aperçu" })).toBeVisible();
+  await expect(page.locator('#inputImageAppearDate')).toHaveValue('2026-02-01');
+
+  // Aperçu en pause au 04/01 : « Jour affiché » le reprend, l'image
+  // apparaît aussitôt (planing réappliqué au jour affiché).
+  const paused = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).startPausedPreview());
+  expect(paused).toBe(true);
+  expect(await page.evaluate(async () =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date('2026-01-04T00:00:00')))).toBe(true);
+  const canvas = page.locator('canvas.image-panel');
+  await expect(canvas).toHaveCSS('opacity', '0');
+  await page.locator('#btnImageAppearFromPreview').click();
+  await expect(page.locator('#inputImageAppearDate')).toHaveValue('2026-01-04');
+  await expect.poll(async () => (await savedImages(page)).items[0].schedule.start).toBe('2026-01-04');
+  await expect(warning).toBeHidden();
+  await expect(canvas).toHaveCSS('opacity', '1');
+
+  // Même jour pour la disparition : fenêtre vide, signalée, image masquée.
+  await page.locator('#btnImageDisappearFromPreview').click();
+  await expect(page.locator('#inputImageDisappearDate')).toHaveValue('2026-01-04');
+  await expect(warning).toContainText('jamais visible');
+  await expect(canvas).toHaveCSS('opacity', '0');
+
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => page.evaluate(async () =>
+    (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
+});
+
+test('configurations : enregistrée sur « Mes Géocaches », appliquée sur Évolution, annulable', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0130', file: logo.file, name: 'Logo du club', position: { anchor: 'top-left' } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#btnImagesConfigs').click();
+  await page.locator('[data-images-config-save]').click();
+  await page.locator('#inputImagesConfigName').fill('Club');
+  await page.locator('#inputImagesConfigName').press('Enter');
+  await expect.poll(async () => (await savedImages(page)).configs.map((c) => [c.name, c.items.length]))
+    .toEqual([['Club', 1]]);
+
+  // Page Évolution : sa liste est vide, la configuration y est applicable.
+  await page.goto('/evolution#images', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+  await dismissFirstUseModal(page);
+  await page.locator('a[href="#images"]').click();
+  await expect(page.locator('#imagesList li')).toHaveCount(0);
+  await page.locator('#btnImagesConfigs').click();
+  const entry = page.locator('#imagesConfigMenu [data-config-apply="Club"]');
+  await expect(entry).toContainText('(1)');
+  await entry.click();
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('#imagesList li')).toContainText('Logo du club');
+  await expect.poll(async () => (await savedImages(page)).evolution_items.map((i) => i.position.anchor))
+    .toEqual(['top-left']);
+  // La liste de « Mes Géocaches » n'est pas touchée.
+  expect((await savedImages(page)).items).toHaveLength(1);
+
+  const toast = page.locator('.gcm-toast.show').filter({ hasText: 'Club' });
+  await toast.locator('.gcm-toast-action').filter({ hasText: 'Annuler' }).click();
+  await expect(page.locator('#imagesList li')).toHaveCount(0);
+  await expect.poll(async () => (await savedImages(page)).evolution_items).toEqual([]);
+});
+
+test('planification par trouvailles : le jalon devient une date, jamais atteint signalé', async ({ page }) => {
+  // Fixture : une trouvaille par jour du 01 au 06/01/2026 — la 3e le 03/01.
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0140', file: logo.file, name: 'Logo', schedule: { fade: 0 } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+  await page.locator('label[for="imageScheduleBy-find"]').click();
+  await expect(page.locator('#imageScheduleFinds')).toBeVisible();
+  await expect(page.locator('#imageScheduleDates')).toBeHidden();
+  await page.locator('#inputImageAppearFind').fill('3');
+  await expect(page.locator('#imageAppearFindDate')).toHaveText('Le 03/01/2026');
+  await expect.poll(async () => (await savedImages(page)).items[0].schedule)
+    .toMatchObject({ by: 'find', start_find: 3 });
+  await expect(page.locator('#imagesList li .ti-calendar-time')).toHaveCount(1);
+
+  const seek = (iso) => page.evaluate(async (value) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(`${value}T00:00:00`)), iso);
+  expect(await page.evaluate(async () => (await import('/static/js/index.js')).startPausedPreview())).toBe(true);
+  const canvas = page.locator('canvas.image-panel');
+  expect(await seek('2026-01-02')).toBe(true);
+  await expect(canvas).toHaveCSS('opacity', '0');
+  expect(await seek('2026-01-03')).toBe(true);
+  await expect(canvas).toHaveCSS('opacity', '1');
+  await page.locator('#btnQuickStop').click();
+
+  // Au-delà du total : jamais atteint, signalé.
+  await page.locator('#inputImageAppearFind').fill('99');
+  await expect(page.locator('#imageAppearFindDate')).toContainText('Jamais atteinte : 6');
+  await expect(page.locator('#imageScheduleWarning')).toContainText("n°99 n'est jamais atteinte");
+
+  // Retour aux dates : les jalons sont gardés, le planing ne compte plus.
+  await page.locator('label[for="imageScheduleBy-date"]').click();
+  await expect(page.locator('#imageScheduleDates')).toBeVisible();
+  await expect.poll(async () => (await savedImages(page)).items[0].schedule)
+    .toMatchObject({ by: 'date', start_find: 99 });
+  await expect(page.locator('#imagesList li .ti-calendar-time')).toHaveCount(0);
+});
+
+test('planification par trouvailles : onglet ouvert pendant le chargement, la date du jalon suit les données', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0145', file: logo.file, name: 'Logo', schedule: { by: 'find', start_find: 3 } },
+  ] } });
+  // Onglet Images ouvert AVANT les données (base vidée : les tests
+  // précédents l'ont remplie) : rien à afficher sous le jalon.
+  expect((await page.request.post('/clear_database')).ok()).toBe(true);
+  await page.goto('/#images', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await page.locator('a[href="#images"]').click();
+  await page.locator('#imagesList li [data-action="select"]').click();
+  await expect(page.locator('#inputImageAppearFind')).toHaveValue('3');
+  await expect(page.locator('#imageAppearFindDate')).toHaveText('');
+  // Données chargées, onglet toujours ouvert : la date apparaît.
+  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+  await expect(page.locator('#imageAppearFindDate')).toHaveText('Le 03/01/2026');
+});
+
+test('effet « glissement » : l’image entre par le bord le plus proche, dans l’aperçu et dans la vidéo', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0150', file: logo.file, position: { anchor: 'bottom-right', width: 160 },
+      schedule: { start: '2026-01-03', fade: 1000, effect: 'slide' } },
+  ] } });
+  // Onglet Données : pas de mode édition, l'effet s'applique à l'aperçu.
+  await openWithFixture(page);
+  await expect(page.locator('canvas.image-panel')).toBeVisible();
+
+  const result = await page.evaluate(async () => {
+    const m = await import('/static/js/index.js');
+    const canvasEl = document.querySelector('canvas.image-panel');
+    const host = document.getElementById('mapWithFrames');
+    const w = host.clientWidth;
+    const h = host.clientHeight;
+    // Colonnes extrêmes des pixels dessinés par la vidéo à l'horloge `now`.
+    const columns = (now) => {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      m.addImagePanelsToCanvas(ctx, w, h, 1, now);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      let min = w;
+      let max = -1;
+      for (let y = 0; y < h; y += 2) {
+        for (let x = 0; x < w; x++) {
+          if (data[(y * w + x) * 4 + 3] > 0) {
+            if (x < min) min = x;
+            if (x > max) max = x;
+          }
+        }
+      }
+      return { min, max };
+    };
+    // Veille du départ : cachée, hors du cadre à droite (bord le plus proche).
+    m.resetImagesForAnimation(new Date('2026-01-01T00:00:00'));
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const hiddenTransform = canvasEl.style.transform;
+    // Apparition le 03/01 à l'horloge 1000 ms, transition d'une seconde.
+    m.syncImagesToDate(new Date('2026-01-03T00:00:00'), 1000);
+    await new Promise(requestAnimationFrame);
+    const shownTransform = canvasEl.style.transform;
+    const mid = columns(1500);
+    const end = columns(2100);
+    const motion = m.getImagesSnapshot().items[0].motion;
+    m.syncImagesToRest();
+    return { hiddenTransform, shownTransform, mid, end, motion, w };
+  });
+  expect(result.hiddenTransform).toMatch(/^translate\(\d+(\.\d+)?px, 0px\) scale\(1\)$/);
+  expect(result.shownTransform).toBe('');
+  // Fin de transition : l'image est à sa place (16 px du bord droit).
+  expect(result.end.max).toBeGreaterThanOrEqual(result.w - 18);
+  expect(result.end.max).toBeLessThan(result.w - 14);
+  // À mi-temps : encore décalée vers la droite, déjà presque arrivée
+  // (« ease-out »), coupée par le bord du cadre.
+  expect(result.mid.min).toBeGreaterThan(result.end.min + 5);
+  expect(result.mid.min - result.end.min).toBeLessThan(60);
+});
+
 test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [
@@ -524,7 +837,7 @@ test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas'
   await expect(page.locator('canvas.image-panel')).toBeVisible();
 
   // Export : réglages + image embarquée.
-  await page.locator('#btnImagesLibrary').click();
+  await page.locator('#btnImagesConfigs').click();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('[data-images-export]').click();
   const download = await downloadPromise;

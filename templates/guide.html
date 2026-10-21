@@ -386,12 +386,12 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Ajoutez une image") }}</h3>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter une image") }}</span> {{ _("accepte les fichiers PNG, JPEG, WebP, GIF ou SVG, plusieurs à la fois ; vous pouvez aussi déposer les fichiers sur l'onglet, ou coller une image copiée. Quatre images au maximum.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter") }}</span> {{ _("accepte les fichiers PNG, JPEG, WebP, GIF ou SVG, plusieurs à la fois ; vous pouvez aussi déposer les fichiers sur l'onglet, ou coller une image copiée. Quatre images au maximum.") }} {{ _("Déposée directement sur la carte, une image s'y pose là où vous la lâchez.") }}</p>
                         <p>{{ _("L'image est préparée à l'envoi : redressée selon l'orientation de la photo, réduite à 2048 pixels, débarrassée de ses métadonnées. Sa transparence est conservée. Le menu") }} <span class="ui-chip"><i class="ti ti-library-photo"></i> {{ _("Bibliothèque") }}</span> {{ _("retrouve les images déjà envoyées, pour les reposer sans les renvoyer ; celles qui ne servent plus peuvent en être retirées.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Placez-la et réglez son apparence") }}</h3>
-                        <p>{{ _("Comme pour les panneaux de stats : un emplacement, des marges et une largeur ; la hauteur suit les proportions de l'image. Choisissez une forme — rectangle, coins arrondis ou rond, idéal pour un avatar —, l'opacité, un fond, une bordure et une ombre portée.") }}</p>
+                        <p>{{ _("Comme pour les panneaux de stats : un emplacement, des marges et une largeur ; la hauteur suit les proportions de l'image. Choisissez une forme — rectangle, coins arrondis ou rond, idéal pour un avatar —, l'opacité, un fond, une bordure et une ombre portée.") }} {{ _("Les préréglages Avatar, Logo sur fond, Filigrane et Photo encadrée règlent l'apparence d'un clic.") }}</p>
                         <p>{{ _("Tant que l'onglet Images est ouvert, vous pouvez glisser une image sur la carte : lâchée près d'un emplacement, elle s'y range ; ailleurs, elle reste où vous la posez. Maintenez Alt pour vous passer de cet aimantage. Ses bords se tirent pour l'agrandir.") }}</p>
                         <p>{{ _("Au clavier, les flèches déplacent l'image sélectionnée d'un pixel (dix avec Maj) et la touche Suppr la retire. Chaque ligne de la liste propose aussi de la dupliquer, et") }} <span class="ui-chip"><i class="ti ti-replace"></i> {{ _("Remplacer l'image…") }}</span> {{ _("change le fichier en gardant tous les réglages.") }}</p>
                         <div class="guide-callout info">
@@ -402,10 +402,13 @@
                     <li>
                         <h3>{{ _("Faites-la apparaître au bon moment") }}</h3>
                         <p>{{ _("Dans la section « Apparition pendant l'animation », une date « Apparaît le » et une date « Disparaît le » font entrer puis sortir l'image en fondu au fil de l'animation. Sans date, elle reste visible tout du long.") }}</p>
+                        <p>{{ _("Pour viser un jour précis, mettez l'aperçu en pause sur ce jour (barre de chronologie) puis cliquez sur « Jour affiché » sous la date. Une image qui ne serait jamais visible pendant l'animation est signalée.") }}</p>
+                        <p>{{ _("En mode Mes Géocaches, « Par trouvailles » remplace les dates par des étapes du compteur : l'image apparaît, par exemple, à votre 1000e trouvaille. L'effet choisit comment elle entre et sort : fondu, glissement depuis le bord le plus proche ou zoom.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Partagez votre mise en page") }}</h3>
-                        <p>{{ _("Pour partager votre mise en page, utilisez l'export du menu") }} <span class="ui-chip"><i class="ti ti-library-photo"></i> {{ _("Bibliothèque") }}</span> {{ _(": il enregistre vos images et leurs réglages dans un seul fichier JSON, à réimporter sur un autre ordinateur.") }}</p>
+                        <p>{{ _("Le menu") }} <span class="ui-chip"><i class="ti ti-bookmarks"></i> {{ _("Configurations") }}</span> {{ _("enregistre votre liste d'images sous un nom, à réappliquer d'un clic — y compris sur l'autre mode, pour reprendre en Évolution les images de Mes Géocaches.") }}</p>
+                        <p>{{ _("Pour partager votre mise en page, utilisez l'export du menu") }} <span class="ui-chip"><i class="ti ti-bookmarks"></i> {{ _("Configurations") }}</span> {{ _(": il enregistre vos images et leurs réglages dans un seul fichier JSON, à réimporter sur un autre ordinateur.") }} {{ _("L'import remplace la liste ; « Importer et ajouter à la liste… » complète la liste actuelle.") }}</p>
                     </li>
                 </ol>
             </section>
