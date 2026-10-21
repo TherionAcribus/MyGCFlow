@@ -54,6 +54,19 @@ class ImageItemTests(unittest.TestCase):
         # Liste envoyée : elle remplace la courante.
         self.assertEqual(coerce_images_settings({"items": []}, current).items, [])
 
+    def test_evolution_items_are_an_independent_list(self):
+        # Chaque page a sa liste ; la clé absente normalise à vide — jamais
+        # une copie de `items` (sinon retirer une image d'un côté la
+        # retirerait aussi de la vue normalisée de l'autre).
+        self.assertEqual(coerce_images_settings({"items": [{"id": "aaaaaa01"}]}).evolution_items, [])
+        current = coerce_images_settings({
+            "items": [{"id": "aaaaaa01", "file": "0123456789abcdef.png"}],
+            "evolution_items": [{"id": "bbbbbb01", "file": "fedcba9876543210.jpg"}],
+        })
+        patched = coerce_images_settings({"items": []}, current)
+        self.assertEqual(patched.items, [])
+        self.assertEqual([item["id"] for item in patched.evolution_items], ["bbbbbb01"])
+
 
 class SettingsFileTests(unittest.TestCase):
     def test_a_settings_file_without_images_gets_the_defaults(self):
@@ -101,7 +114,7 @@ class ImagesApiTests(unittest.TestCase):
         return self.client.get('/api/settings').get_json()['images']
 
     def test_get_exposes_the_default_block(self):
-        self.assertEqual(self.images(), {"enabled": True, "items": []})
+        self.assertEqual(self.images(), {"enabled": True, "items": [], "evolution_items": []})
 
     def test_put_stores_normalised_items_and_keeps_other_preferences(self):
         self.client.put('/api/settings', json={'stats': {'enabled': False}})

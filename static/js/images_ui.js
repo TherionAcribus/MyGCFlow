@@ -7,12 +7,18 @@
 // complet `{ images }`, regroupée par un debounce. Les actions discrètes
 // (ajout, suppression, réordonnancement) vident aussitôt la file.
 import * as pkg from './index.js';
+import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
-import { IMAGES_MAX_ITEMS, createImageItem } from './images_model.mjs';
+import { IMAGES_MAX_ITEMS, createImageItem, imagesItemsKey } from './images_model.mjs';
 import { bindPanelDrag } from './panel_interactions.js';
 
 const saveImagesDebounced = makeDebouncedSettingsSaver(500);
+
+// Liste de la page courante : `items` sur « Mes Geocaches », `evolution_items`
+// sur /evolution (comme stats.panels / stats.evolution_panels) ; l'interrupteur
+// `enabled` reste commun aux deux pages.
+const ITEMS_KEY = imagesItemsKey(isEvolutionPage());
 
 // Titre « Images » : retour « Enregistré ✓ » des actions sans champ dédié.
 const IMAGES_SAVE_STATUS = 'imagesSaveStatus';
@@ -31,7 +37,7 @@ function currentSettings() {
 }
 
 function selectedItem() {
-    return currentSettings().items.find((item) => item.id === selectedId) || null;
+    return currentSettings()[ITEMS_KEY].find((item) => item.id === selectedId) || null;
 }
 
 function commit(next, field = null, { immediate = false } = {}) {
@@ -45,9 +51,10 @@ function commit(next, field = null, { immediate = false } = {}) {
 
 function updateItems(mutate, field = null, options = {}) {
     const settings = currentSettings();
-    const items = settings.items.map((item) => structuredClone(item));
+    const items = settings[ITEMS_KEY].map((item) => structuredClone(item));
     const result = mutate(items);
-    commit({ ...settings, items: result || items }, field, options);
+    // Le spread conserve l'autre liste (`evolution_items`/`items`) intacte.
+    commit({ ...settings, [ITEMS_KEY]: result || items }, field, options);
 }
 
 // `mutate(item, items)` : la liste entière est fournie pour les marges de
@@ -188,8 +195,8 @@ function addItem(file, name = '') {
 // série, dans la limite des places restantes. Les fichiers écartés faute de
 // place sont signalés une fois, pas par fichier.
 async function addFromFiles(files) {
-    if (uploading || currentSettings().items.length >= IMAGES_MAX_ITEMS) return;
-    const room = IMAGES_MAX_ITEMS - currentSettings().items.length;
+    if (uploading || currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS) return;
+    const room = IMAGES_MAX_ITEMS - currentSettings()[ITEMS_KEY].length;
     const list = [...(files || [])].filter(Boolean);
     if (list.length > room) {
         pkg.showToast?.(pkg.t('Quatre images au maximum.'), 'warning', pkg.t('Images'), 5000);
@@ -270,7 +277,7 @@ async function renderLibrary() {
         const response = await fetch('/api/images');
         if (response.ok) listing = await response.json();
     } catch (_) {}
-    const full = currentSettings().items.length >= IMAGES_MAX_ITEMS;
+    const full = currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
     grid.replaceChildren(...listing.files.map((entry) => {
         const cell = document.createElement('div');
         cell.className = 'images-library-cell';
@@ -362,7 +369,7 @@ function dataUrlToBlob(dataUrl) {
 }
 
 async function exportImages() {
-    const items = currentSettings().items;
+    const items = currentSettings()[ITEMS_KEY];
     const files = {};
     for (const file of new Set(items.map((item) => item.file).filter(Boolean))) {
         try {
@@ -375,12 +382,13 @@ async function exportImages() {
         'mygcflow-images.json');
 }
 
-// Accepte un tableau d'images, { items: [...] } (export) ou un bloc
-// { images: { items } } de préférences complètes.
+// Accepte un tableau d'images, { items: [...] } (export — le format garde
+// `items` quel que soit le mode) ou un bloc { images: { … } } de préférences
+// complètes, lu alors dans la liste de la page courante.
 function importedItems(data) {
     if (Array.isArray(data)) return data;
     if (Array.isArray(data?.items)) return data.items;
-    if (Array.isArray(data?.images?.items)) return data.images.items;
+    if (Array.isArray(data?.images?.[ITEMS_KEY])) return data.images[ITEMS_KEY];
     return null;
 }
 
@@ -414,14 +422,14 @@ async function importImages(file) {
     const next = items.map((raw) => (raw && typeof raw === 'object' && raw.file in renamed
         ? { ...raw, file: renamed[raw.file] }
         : raw));
-    const previous = currentSettings().items;
-    const applied = commit({ ...currentSettings(), items: next }, IMAGES_SAVE_STATUS, { immediate: true });
-    selectedId = applied.items[0]?.id || null;
+    const previous = currentSettings()[ITEMS_KEY];
+    const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS, { immediate: true });
+    selectedId = applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
     pkg.showActionToast?.(
-        pkg.t('${count} image(s) importée(s)', { count: applied.items.length }),
+        pkg.t('${count} image(s) importée(s)', { count: applied[ITEMS_KEY].length }),
         { label: 'Annuler', onClick: () => {
-            commit({ ...currentSettings(), items: previous }, IMAGES_SAVE_STATUS, { immediate: true });
+            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS, { immediate: true });
             selectedId = previous[0]?.id || null;
             renderImagesTab();
         } });
@@ -480,7 +488,7 @@ function iconButton(icon, label, action, disabled = false) {
 function renderList() {
     const list = $('imagesList');
     if (!list) return;
-    const items = currentSettings().items;
+    const items = currentSettings()[ITEMS_KEY];
     list.replaceChildren(...items.map((item, index) => {
         const li = document.createElement('li');
         li.className = `list-group-item${item.id === selectedId ? ' is-selected' : ''}`;
@@ -940,8 +948,8 @@ function bindDragAndDrop() {
 export function renderImagesTab() {
     if (!$('images')) return;
     const settings = currentSettings();
-    if (!settings.items.some((item) => item.id === selectedId)) {
-        selectedId = settings.items[0]?.id || null;
+    if (!settings[ITEMS_KEY].some((item) => item.id === selectedId)) {
+        selectedId = settings[ITEMS_KEY][0]?.id || null;
     }
     setValue('switchImages', settings.enabled);
     // Le liseré de l'image choisie suit la sélection (visible en mode édition).
@@ -986,7 +994,7 @@ export function initImagesTab() {
     // la limite de quatre et les toasts.
     document.addEventListener('paste', (event) => {
         if (!$('images')?.classList.contains('active')) return;
-        if (uploading || currentSettings().items.length >= IMAGES_MAX_ITEMS) return;
+        if (uploading || currentSettings()[ITEMS_KEY].length >= IMAGES_MAX_ITEMS) return;
         const files = event.clipboardData?.files;
         if (!files?.length) return;
         event.preventDefault();

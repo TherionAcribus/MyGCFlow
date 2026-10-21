@@ -141,11 +141,16 @@ class StorageTests(ImageLibraryTestCase):
     def test_referenced_files_come_from_items_and_configs(self):
         settings = {
             'items': [{'file': 'aaaaaaaaaaaaaaaa.png'}, {'file': ''}, {'file': '../evil.png'}],
+            # Liste propre à /evolution : agrégée aussi, sinon une image posée
+            # seulement dans ce mode passerait pour inutilisée.
+            'evolution_items': [{'file': 'cccccccccccccccc.png'}],
             'configs': [{'name': 'Club', 'items': [{'file': 'bbbbbbbbbbbbbbbb.jpg'}]}],
         }
-        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg'}
+        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg', 'cccccccccccccccc.png'}
         self.assertEqual(image_library.referenced_image_files(settings), expected)
-        as_object = SimpleNamespace(items=settings['items'], configs=settings['configs'])
+        as_object = SimpleNamespace(items=settings['items'],
+                                    evolution_items=settings['evolution_items'],
+                                    configs=settings['configs'])
         self.assertEqual(image_library.referenced_image_files(as_object), expected)
         self.assertEqual(image_library.referenced_image_files(None), set())
 
@@ -264,7 +269,7 @@ class RouteTests(ImageLibraryTestCase):
         super().setUp()
         from blueprints import images as images_bp_module
 
-        self.images_settings = {'items': [], 'configs': []}
+        self.images_settings = {'items': [], 'evolution_items': [], 'configs': []}
         manager = SimpleNamespace(
             get_app_settings=lambda: SimpleNamespace(images=self.images_settings))
         patcher = mock.patch.object(images_bp_module, 'get_settings_manager', return_value=manager)
@@ -310,6 +315,10 @@ class RouteTests(ImageLibraryTestCase):
         self.images_settings['items'] = [{'file': name}]
         self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 409)
         self.images_settings['items'] = []
+        # Utilisée seulement par la liste du mode Évolution : retrait refusé.
+        self.images_settings['evolution_items'] = [{'file': name}]
+        self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 409)
+        self.images_settings['evolution_items'] = []
         self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 200)
         self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 404)
         self.assertEqual(self.client.post('/api/images/delete', json={'file': '../x'}).status_code, 400)

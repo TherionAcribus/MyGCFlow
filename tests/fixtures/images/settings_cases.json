@@ -4,7 +4,8 @@
     "input": null,
     "expected": {
       "enabled": true,
-      "items": []
+      "items": [],
+      "evolution_items": []
     }
   },
   {
@@ -12,7 +13,8 @@
     "input": "oui",
     "expected": {
       "enabled": true,
-      "items": []
+      "items": [],
+      "evolution_items": []
     }
   },
   {
@@ -20,7 +22,8 @@
     "input": {},
     "expected": {
       "enabled": true,
-      "items": []
+      "items": [],
+      "evolution_items": []
     }
   },
   {
@@ -30,7 +33,8 @@
     },
     "expected": {
       "enabled": false,
-      "items": []
+      "items": [],
+      "evolution_items": []
     }
   },
   {
@@ -41,7 +45,8 @@
     },
     "expected": {
       "enabled": true,
-      "items": []
+      "items": [],
+      "evolution_items": []
     }
   },
   {
@@ -90,7 +95,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -217,7 +223,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -267,7 +274,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -330,7 +338,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -505,7 +514,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -564,7 +574,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -626,7 +637,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -765,7 +777,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -818,7 +831,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -982,7 +996,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -1117,7 +1132,8 @@
             "border_width": 0
           }
         }
-      ]
+      ],
+      "evolution_items": []
     }
   },
   {
@@ -1269,6 +1285,137 @@
             "start": null,
             "end": null,
             "fade": 250
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        }
+      ],
+      "evolution_items": []
+    }
+  },
+  {
+    "name": "liste propre au mode Évolution : normalisée comme items, clé absente vide",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        }
+      ],
+      "evolution_items": [
+        {
+          "id": "bbbbbb01",
+          "file": "fedcba9876543210.jpg",
+          "position": {
+            "width": 2000
+          }
+        },
+        {
+          "id": "bbbbbb02",
+          "file": "../secret.png"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        }
+      ],
+      "evolution_items": [
+        {
+          "id": "bbbbbb01",
+          "enabled": true,
+          "file": "fedcba9876543210.jpg",
+          "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
+          },
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 1200,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0
+          }
+        },
+        {
+          "id": "bbbbbb02",
+          "enabled": true,
+          "file": "",
+          "name": "",
+          "schedule": {
+            "start": null,
+            "end": null,
+            "fade": 600
           },
           "position": {
             "mode": "anchor",

@@ -2,8 +2,9 @@
 
 Préférence GLOBALE (bloc `images` de settings.json), jamais une section de
 thème : un avatar ou un logo d'association ne doit pas disparaître quand on
-change de thème. Une seule liste pour les deux modes (Mes géocaches et
-Évolution) : le logo est le même partout (MyGCFlow_Plan_Images.md, §2).
+change de thème. Une liste par page, comme `stats` : `items` pour le mode
+principal (Mes géocaches), `evolution_items` pour /evolution — indépendantes
+(une image retirée d'une page n'affecte pas l'autre), `enabled` reste commun.
 
 Miroir exact de `normalizeImagesSettings` (static/js/images_model.mjs) : les
 deux côtés passent les mêmes vecteurs de test
@@ -54,6 +55,9 @@ class ImagesSettings:
     enabled: bool = True
     # Images normalisées (dict), dans l'ordre de dessin et d'empilement.
     items: list = field(default_factory=list)
+    # Liste propre à la page Évolution (/evolution), même schéma — absente
+    # d'un vieux settings.json, elle est vide (jamais une copie d'`items`).
+    evolution_items: list = field(default_factory=list)
 
 
 def image_item_defaults() -> dict:
@@ -178,11 +182,15 @@ def _coerce_item_list(source) -> list:
 
 def coerce_images_settings(raw, current: ImagesSettings | None = None) -> ImagesSettings:
     """Bloc `images` normalisé. Patch de premier niveau, comme `stats` : une
-    clé absente (`enabled`, `items`) garde la valeur courante."""
+    clé absente (`enabled`, `items`, `evolution_items`) garde la valeur
+    courante."""
     base = current if isinstance(current, ImagesSettings) else ImagesSettings()
     if not isinstance(raw, dict):
-        return ImagesSettings(enabled=base.enabled, items=list(base.items))
+        return ImagesSettings(enabled=base.enabled, items=list(base.items),
+                              evolution_items=list(base.evolution_items))
     return ImagesSettings(
         enabled=_bool(raw.get("enabled"), base.enabled),
         items=_coerce_item_list(raw["items"] if "items" in raw else base.items),
+        evolution_items=_coerce_item_list(
+            raw["evolution_items"] if "evolution_items" in raw else base.evolution_items),
     )

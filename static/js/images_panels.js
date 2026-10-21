@@ -21,12 +21,19 @@
 // planing les montre ou non, tout est recalculé sur invalidation seulement.
 
 import * as pkg from './index.js';
+import { isEvolutionPage } from './app_mode.mjs';
 import { layoutPanels } from './stats_model.mjs';
-import { IMAGE_ANCHORS, IMAGE_SIZE_RANGE, normalizeImagesSettings } from './images_model.mjs';
+import { IMAGE_ANCHORS, IMAGE_SIZE_RANGE, imagesItemsKey, normalizeImagesSettings } from './images_model.mjs';
 import { IMAGE_SHADOW, drawImagePanel, imagePanelHeight } from './images_render.mjs';
 import { dateToDayNumber, isoToDayNumber } from './evolution_timeline.mjs';
 
 let settings = normalizeImagesSettings(null);
+
+// Chaque page a sa liste d'images (`items` sur « Mes Geocaches »,
+// `evolution_items` sur /evolution), indépendante — comme stats.panels /
+// stats.evolution_panels ; `enabled` reste commun aux deux pages.
+const ITEMS_KEY = imagesItemsKey(isEvolutionPage());
+const pageItems = () => settings[ITEMS_KEY] || [];
 // Bumpé à chaque changement de réglage ou d'image chargée : signale aux
 // frames MediaRecorder (overlayContentSignature) qu'une frame est à produire.
 // Les dessins eux-mêmes sont invalidés par des clés par image (flush,
@@ -129,17 +136,17 @@ export function forgetFailedImageSources(file = null) {
         forgotten = true;
     }
     if (!forgotten) return;
-    for (const item of settings.items) ensureSource(item.file);
+    for (const item of pageItems()) ensureSource(item.file);
     revision += 1;
     invalidateImagesLayout();
 }
 
 export function applyImagesSettings(raw) {
     settings = normalizeImagesSettings(raw, settings);
-    for (const item of settings.items) ensureSource(item.file);
+    for (const item of pageItems()) ensureSource(item.file);
     // Transitions devenues sans objet : image retirée ou planing effacé.
     for (const id of [...scheduleStates.keys()]) {
-        const item = settings.items.find((i) => i.id === id);
+        const item = pageItems().find((i) => i.id === id);
         if (!item || !scheduleOf(item)) scheduleStates.delete(id);
     }
     revision += 1;
@@ -167,7 +174,7 @@ export function imageSourceState(file) {
 function drawableItems() {
     if (!settings.enabled) return [];
     if (!(pkg.hasDatabase?.() ?? true)) return [];
-    return settings.items.filter((item) => item.enabled && item.file
+    return pageItems().filter((item) => item.enabled && item.file
         && sources.get(item.file)?.state !== 'failed');
 }
 
@@ -243,7 +250,7 @@ function layoutItemOf(item) {
 let resizePin = null;
 
 function itemById(id) {
-    return settings.items.find((item) => item.id === id) || null;
+    return pageItems().find((item) => item.id === id) || null;
 }
 
 // Aperçus en direct : écrits en place dans les réglages, sans normalisation
@@ -309,7 +316,7 @@ export function getImageSnapTargets(id) {
     const own = items[index];
     const targets = [];
     for (const anchor of IMAGE_ANCHORS) {
-        const mate = settings.items.find((item) => item.id !== id
+        const mate = pageItems().find((item) => item.id !== id
             && item.position.mode === 'anchor' && item.position.anchor === anchor);
         const candidate = {
             ...entries[index],
@@ -371,7 +378,7 @@ export function getImagePanelRect(id) {
     ensureLayout();
     const rect = layout.get(id);
     if (!rect) return null;
-    const item = settings.items.find((i) => i.id === id);
+    const item = pageItems().find((i) => i.id === id);
     return {
         ...rect,
         mode: item?.position.mode || 'anchor',
@@ -623,7 +630,7 @@ function applyScheduleOpacity(item) {
 // édition bascule (syncDragMode) — le plancher de 30 % suit la bascule au
 // lieu d'attendre la prochaine transition.
 export function refreshImageScheduleOpacity() {
-    for (const item of settings.items) applyScheduleOpacity(item);
+    for (const item of pageItems()) applyScheduleOpacity(item);
 }
 
 // Jour affiché par l'animation (Date du dernier jour, comme
@@ -633,7 +640,7 @@ export function syncImagesToDate(day, now) {
     const dayNumber = dateToDayNumber(day);
     if (!Number.isFinite(dayNumber)) return;
     let changed = false;
-    for (const item of settings.items) {
+    for (const item of pageItems()) {
         const schedule = scheduleOf(item);
         if (!schedule) continue;
         const to = scheduleTargetAt(item, dayNumber);
@@ -659,7 +666,7 @@ export function resetImagesForAnimation(startDate) {
     if (!(startDate instanceof Date)) return;
     const dayBefore = dateToDayNumber(startDate) - 1;
     let changed = false;
-    for (const item of settings.items) {
+    for (const item of pageItems()) {
         const schedule = scheduleOf(item);
         if (!schedule) continue;
         const to = scheduleTargetAt(item, dayBefore);
@@ -677,7 +684,7 @@ export function syncImagesToRest() {
         scheduleStates.clear();
         revision += 1;
     }
-    for (const item of settings.items) applyScheduleOpacity(item);
+    for (const item of pageItems()) applyScheduleOpacity(item);
 }
 
 // Signature des alphas planifiés pour overlayContentSignature : '' quand
@@ -686,7 +693,7 @@ export function syncImagesToRest() {
 // fondu sur une carte immobile.
 export function getImagesAlphaSignature() {
     const parts = [];
-    for (const item of settings.items) {
+    for (const item of pageItems()) {
         const state = scheduleOf(item) ? scheduleStates.get(item.id) : null;
         if (!state || state.at == null) continue;
         const a = alphaAt(item, lastCompositeNow);
@@ -716,7 +723,7 @@ export function getImagesSnapshot() {
     ensureLayout();
     return {
         enabled: settings.enabled,
-        items: settings.items.map((item) => ({
+        items: pageItems().map((item) => ({
             id: item.id,
             file: item.file,
             state: imageSourceState(item.file),

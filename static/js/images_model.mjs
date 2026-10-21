@@ -1,8 +1,10 @@
 // Images posées sur la carte (onglet Images) : modèle de réglages, pur (ni DOM
 // ni carte).
 //
-// Préférence GLOBALE (`images` dans settings.json), une seule liste pour les
-// deux modes. Miroir exact de image_settings.py : les deux côtés passent les
+// Préférence GLOBALE (`images` dans settings.json). Une liste par page, comme
+// `stats` : `items` pour « Mes Geocaches », `evolution_items` pour /evolution —
+// indépendantes, `enabled` commun. Miroir exact de image_settings.py : les
+// deux côtés passent les
 // vecteurs partagés tests/fixtures/images/settings_cases.json. Les
 // coercitions élémentaires et les marges de coin communes sont celles des
 // panneaux de stats (stats_model.mjs).
@@ -30,7 +32,17 @@ export const IMAGE_PADDING_RANGE = Object.freeze([0, 100]);
 export const IMAGE_BORDER_RANGE = Object.freeze([0, 50]);
 export const IMAGE_FADE_RANGE = Object.freeze([0, 5000]);
 
-export const IMAGES_DEFAULTS = Object.freeze({ enabled: true, items: Object.freeze([]) });
+export const IMAGES_DEFAULTS = Object.freeze({
+    enabled: true, items: Object.freeze([]), evolution_items: Object.freeze([]),
+});
+
+// Liste d'images propre à chaque page : `items` pour « Mes Geocaches »,
+// `evolution_items` pour /evolution (miroir de statsPanelsKey). Une clé
+// absente normalise à [] — jamais une copie de l'autre liste, sinon retirer
+// une image d'un côté la retirerait aussi de la vue normalisée de l'autre.
+export function imagesItemsKey(evolution) {
+    return evolution ? 'evolution_items' : 'items';
+}
 
 // Nom d'un fichier du dossier images/ (image_library.safe_image_name).
 const FILE_RE = /^[0-9a-f]{16}\.(?:png|jpg)$/;
@@ -160,11 +172,14 @@ export function normalizeImagesSettings(raw, current = IMAGES_DEFAULTS, newId = 
         return {
             enabled: bool(base.enabled, true),
             items: Array.isArray(base.items) ? [...base.items] : [],
+            evolution_items: Array.isArray(base.evolution_items) ? [...base.evolution_items] : [],
         };
     }
     return {
         enabled: bool(raw.enabled, bool(base.enabled, true)),
         items: normalizeItemList(Object.hasOwn(raw, 'items') ? raw.items : base.items, newId),
+        evolution_items: normalizeItemList(
+            Object.hasOwn(raw, 'evolution_items') ? raw.evolution_items : base.evolution_items, newId),
     };
 }
 

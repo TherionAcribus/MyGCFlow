@@ -11,8 +11,8 @@ la vidéo ne soit pas « contaminé » (export impossible).
 Le nom du fichier est l'empreinte de son contenu normalisé : la même image
 envoyée deux fois n'est stockée qu'une fois, et un nom ne désigne jamais deux
 contenus (servi avec un cache long). Le nom d'origine, lisible, vit dans les
-réglages (images.items[].name) et dans names.json pour la bibliothèque —
-jamais sur le nom du fichier.
+réglages (images.items[] / images.evolution_items[].name) et dans names.json
+pour la bibliothèque — jamais sur le nom du fichier.
 
 Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
 retrait manuel (POST /api/images/delete). Seuls les envois interrompus —
@@ -209,8 +209,10 @@ def _value(obj, key, default=None):
 
 
 def referenced_image_files(images_settings):
-    """Images que les préférences désignent : celles de la liste courante et
-    celles des configurations nommées (pour pouvoir les réappliquer)."""
+    """Images que les préférences désignent : celles des DEUX listes (page
+    principale `items` et Évolution `evolution_items` — sinon une image posée
+    seulement dans l'autre mode passerait pour inutilisée) et celles des
+    configurations nommées (pour pouvoir les réappliquer)."""
     referenced = set()
 
     def collect(items):
@@ -222,6 +224,7 @@ def referenced_image_files(images_settings):
     if images_settings is None:
         return referenced
     collect(_value(images_settings, 'items'))
+    collect(_value(images_settings, 'evolution_items'))
     for config in _value(images_settings, 'configs') or []:
         collect(_value(config, 'items'))
     return referenced

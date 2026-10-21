@@ -18,6 +18,7 @@ const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 const LOGO = path.join(HERE, 'fixtures', 'logo-opaque.png');
 const AVATAR = path.join(HERE, 'fixtures', 'avatar-transparent.png');
 const BLASON = path.join(HERE, 'fixtures', 'blason.svg');
+const EVO_CSV = path.join(HERE, 'fixtures', 'evolution-a.csv');
 
 async function putSettings(page, data) {
   const response = await page.request.put('/api/settings', { data });
@@ -54,7 +55,7 @@ async function boxIn(page, selector) {
 
 test.afterEach(async ({ page }) => {
   await putSettings(page, {
-    images: { enabled: true, items: [] },
+    images: { enabled: true, items: [], evolution_items: [] },
     stats: { enabled: true, panels: [], evolution_panels: [] },
   });
 });
@@ -621,6 +622,58 @@ test('planification : le bouton « × » vide la date d\'un clic', async ({ page
   await expect.poll(async () =>
     (await savedImages(page)).items[0].schedule.start).toBe(null);
   await expect(page.locator('#imagesList li[data-image-id="babe0060"] .ti-calendar-time')).toHaveCount(0);
+});
+
+test('chaque mode a sa liste : « Mes Geocaches » et « Évolution » sont indépendants', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0090', file: logo.file, name: 'Principale' },
+  ] } });
+  await openImagesTab(page);
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('#imagesList li')).toContainText('Principale');
+  await expect(page.locator('canvas.image-panel')).toHaveCount(1);
+
+  // Page Évolution, données chargées : même préférence, mais l'autre liste —
+  // `items` rempli n'y fait rien apparaître.
+  await page.goto('/evolution#images', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+  await dismissFirstUseModal(page);
+  const loaded = page.evaluate(() => new Promise((resolve) => {
+    window.addEventListener('mygcflow:evolution-loaded', (e) => resolve(e.detail), { once: true });
+  }));
+  await page.locator('#evolutionCsvInput').setInputFiles(EVO_CSV);
+  await loaded;
+  await page.locator('a[href="#images"]').click();
+  await expect(page.locator('#imagesList li')).toHaveCount(0);
+  await expect(page.locator('canvas.image-panel')).toHaveCount(0);
+
+  // Liste Évolution renseignée : l'image apparaît ici seulement.
+  await putSettings(page, { images: { evolution_items: [
+    { id: 'babe0091', file: logo.file, name: 'Évolution' },
+  ] } });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+  await page.locator('a[href="#images"]').click();
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('#imagesList li')).toContainText('Évolution');
+  await expect(page.locator('canvas.image-panel')).toHaveCount(1);
+
+  // Retour sur « Mes Geocaches » : sa liste est intacte, l'autre non répercutée.
+  await page.goto('/#images', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#images"]').click();
+  await expect(page.locator('#imagesList li')).toHaveCount(1);
+  await expect(page.locator('#imagesList li')).toContainText('Principale');
+  const saved = await savedImages(page);
+  expect(saved.items.map((i) => i.id)).toEqual(['babe0090']);
+  expect(saved.evolution_items.map((i) => i.id)).toEqual(['babe0091']);
+
+  // La base Évolution importée ne survit pas au spec.
+  const datasets = (await (await page.request.get('/api/evolution/datasets')).json()).datasets;
+  for (const dataset of datasets) {
+    await page.request.delete(`/api/evolution/datasets/${dataset.id}`);
+  }
 });
 
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {

@@ -8,8 +8,10 @@ stats : `docs/panneaux-stats.md` › Mise en page.
 
 - **Onglet propre « Images »**, distinct de « Stats » (réservé aux statistiques).
 - **Préférence globale** `images` (settings.json), pas un réglage de thème :
-  l'identité de l'utilisateur ne change pas avec le thème. **Une seule liste**
-  pour le mode principal et le mode Évolution.
+  l'identité de l'utilisateur ne change pas avec le thème. **Une liste par
+  page**, comme `stats` : `items` (« Mes Geocaches », `/`) et
+  `evolution_items` (`/evolution`), indépendantes — la page se choisit par
+  `isEvolutionPage()` (app_mode.mjs) — ; `enabled` reste commun aux deux.
 - **Priorité de placement : Titre/Infos > Images > Stats.** Les images
   contournent les cartouches ; les piles de stats contournent les cartouches
   et les images.
@@ -64,7 +66,7 @@ toujours du serveur local, jamais d'une URL externe.
 
 Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
 retrait manuel via `POST /api/images/delete` — refusé (409) si elle est
-encore référencée (liste courante ou configurations, lues par
+encore référencée (l'une des deux listes ou les configurations, lues par
 `referenced_image_files`). Seuls les envois interrompus (`.upload-*.part`)
 sont balayés par `sweep_partial_uploads` après chaque envoi, passé un délai
 de grâce d'une heure — un envoi encore en cours est épargné.
@@ -82,7 +84,8 @@ images: {
              border_color, border_width },
     schedule: { start: 'YYYY-MM-DD'|null, end: 'YYYY-MM-DD'|null,
                 fade: 0–5000 }
-  }]
+  }],
+  evolution_items: […]  // même schéma, page /evolution (clé absente → [])
 }
 ```
 
@@ -91,8 +94,9 @@ Miroir exact `image_settings.py` ↔ `images_model.mjs`, vecteurs partagés
 celles des stats (`statsCoercers` exporté par stats_model.mjs ; helpers
 privés de stats_settings.py côté serveur), comme les **marges de coin
 communes** (`shareCornerMargins`). Un fichier invalide devient `''` sans
-perdre l'entrée. Patch de premier niveau : `{ images: { enabled } }` garde la
-liste.
+perdre l'entrée. Patch de premier niveau : `{ images: { enabled } }` garde les
+deux listes ; `items` et `evolution_items` sont indépendantes (miroir de
+`stats.panels` / `stats.evolution_panels`, clé choisie par `imagesItemsKey`).
 
 ## Mise en page et rendu
 
@@ -181,11 +185,13 @@ ancrée devient libre à sa place affichée) — mécanique partagée avec les
 Stats, hors champs de formulaire.
 
 **Export/import JSON** (menu Bibliothèque) : `{ format: 'mygcflow-images',
-version: 1, items, files }`, les fichiers **embarqués** en data URL. À
-l'import, chaque image embarquée est renvoyée au serveur (normalisée de
-nouveau, son nom peut changer : les entrées suivent), puis la liste est
-remplacée avec « Annuler ». Accepte aussi un tableau d'images ou un bloc
-`{ images: { items } }`.
+version: 1, items, files }`, les fichiers **embarqués** en data URL — la
+liste DE LA PAGE y voyage sous `items` quel que soit le mode ; à l'import,
+elle est écrite dans la liste de la page courante. Chaque image embarquée est
+renvoyée au serveur (normalisée de nouveau, son nom peut changer : les
+entrées suivent), puis la liste est remplacée avec « Annuler ». Accepte aussi
+un tableau d'images ou un bloc de préférences complet `{ images: { … } }`,
+lu dans la liste de la page.
 
 ## Tests
 

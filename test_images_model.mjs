@@ -9,6 +9,7 @@ import {
     IMAGE_ANCHORS,
     createImageItem,
     imageFileName,
+    imagesItemsKey,
     normalizeImagesSettings,
 } from './static/js/images_model.mjs';
 
@@ -38,6 +39,24 @@ test('patch de premier niveau : une clé absente garde la valeur courante', () =
     assert.equal(patched.enabled, false);
     assert.deepEqual(patched.items.map((item) => item.id), ['aaaaaa01']);
     assert.equal(normalizeImagesSettings({ items: [] }, current).items.length, 0);
+});
+
+test('listes indépendantes : chaque page a la sienne', () => {
+    assert.equal(imagesItemsKey(false), 'items');
+    assert.equal(imagesItemsKey(true), 'evolution_items');
+    // Clé absente → liste vide, jamais une copie de `items`.
+    assert.deepEqual(normalizeImagesSettings({ items: [{ id: 'aaaaaa01' }] }).evolution_items, []);
+    const current = normalizeImagesSettings({
+        items: [{ id: 'aaaaaa01', file: '0123456789abcdef.png' }],
+        evolution_items: [{ id: 'bbbbbb01', file: 'fedcba9876543210.jpg' }],
+    });
+    const patched = normalizeImagesSettings({ items: [] }, current);
+    assert.equal(patched.items.length, 0);
+    assert.deepEqual(patched.evolution_items.map((item) => item.id), ['bbbbbb01']);
+    // Bloc non objet : les deux listes reprennent leurs valeurs courantes.
+    const kept = normalizeImagesSettings('oui', current);
+    assert.equal(kept.items.length, 1);
+    assert.equal(kept.evolution_items.length, 1);
 });
 
 test('nouvelle image : défauts, surcharges, nom et fichier validés', () => {
