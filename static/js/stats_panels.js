@@ -80,8 +80,25 @@ let evoRestMemo = null;      // { key, acc } — état des trois univers au repo
 let evoPeaksMemo = null;     // { key, ref } — pics de l'ensemble actif (échelle)
 
 // Valeurs animées (barres, parts d'anneau, compteurs, tête de courbe) : elles
-// glissent vers leur cible à l'horloge des points, immédiates au repos.
-const tweens = createTweenStore(DEFAULT_HIGHLIGHT_MS);
+// glissent vers leur cible à l'horloge des points, immédiates au repos. Un
+// magasin par panneau : celui dont plus rien ne glisse n'est pas redessiné
+// pendant qu'un autre anime encore (cf. panelAnimating).
+let tweenDuration = DEFAULT_HIGHLIGHT_MS;
+const panelTweens = new Map();   // id → createTweenStore
+
+function tweensOf(id) {
+    let store = panelTweens.get(id);
+    if (!store) {
+        store = createTweenStore(tweenDuration);
+        panelTweens.set(id, store);
+    }
+    return store;
+}
+
+function clearTweens(duration = tweenDuration) {
+    tweenDuration = duration;
+    for (const store of panelTweens.values()) store.clear(duration);
+}
 
 let totalsMemo = null;      // { key, acc }
 let referenceMemo = null;   // { key, acc }
@@ -91,6 +108,11 @@ let referenceMemo = null;   // { key, acc }
 // des frames MediaRecorder : une matrice qui se remplit sur une carte immobile
 // doit quand même produire des frames.
 let revision = 0;
+// Révision du contenu, commune à tous les panneaux : comptes, réglages, mode,
+// cadre. Elle n'avance pas aux frames d'une surbrillance ou d'une valeur qui
+// glisse, ni au glisser d'un panneau : chaque panneau a sa clé de dessin
+// (panelDrawKey), qui n'ajoute l'horloge que tant que LUI anime.
+let contentRevision = 0;
 // Version des réglages appliqués : entre dans la clé du texte alternatif,
 // dont le contenu dépend aussi du titre et des options affichées.
 let settingsRev = 0;
@@ -287,7 +309,7 @@ export function accumulateEvolutionStats(dates, placed, archived, now) {
             highlightMs: animation?.highlightMs ?? DEFAULT_HIGHLIGHT_MS,
             evolution: true,
         };
-        tweens.clear(animation.highlightMs);
+        clearTweens(animation.highlightMs);
         evoCurrent = null;
     }
     animation.lastDate = dates[dates.length - 1];
@@ -303,6 +325,15 @@ export function accumulateEvolutionStats(dates, placed, archived, now) {
 }
 
 function touch() {
+    contentRevision += 1;
+    touchFrame();
+}
+
+// Nouvelle frame sans changement de contenu commun : position glissée,
+// taille (dans la clé du panneau), tête de courbe ou année d'activité sur un
+// jour vide (dans la clé des panneaux concernés). La révision globale avance
+// — signature MediaRecorder, flush —, chaque bitmap reste si sa clé tient.
+function touchFrame() {
     revision += 1;
     drawDirty = true;
     scheduleFlush();
@@ -334,7 +365,7 @@ export function resetStatsForAnimation({ startDate, endDate, highlightMs } = {})
     } else {
         rebuildCurrent();
     }
-    tweens.clear(animation.highlightMs);
+    clearTweens(animation.highlightMs);
     layoutDirty = true;
     touch();
 }
@@ -353,7 +384,9 @@ export function accumulateStatsForDates(dates, now) {
         // Jours sans trouvaille : rien à compter, mais la tête d'une courbe
         // avance quand même sur l'axe des dates, et une année d'activité
         // passe à l'année suivante au 1ᵉʳ janvier — il faut redessiner.
-        if (visiblePanels().some((panel) => panel.kind === 'line' || panel.metric === 'activity')) touch();
+        // Ces deux-là seulement : leur clé de dessin porte le jour de tête
+        // et l'année, les autres panneaux gardent leur bitmap.
+        if (visiblePanels().some((panel) => panel.kind === 'line' || panel.metric === 'activity')) touchFrame();
         return;
     }
     current.add(features, Number.isFinite(now) ? now : null);
@@ -386,7 +419,7 @@ export function seekStatsToDate(date) {
         animation.lastDate = date;
         rebuildCurrent();
     }
-    tweens.clear(animation.highlightMs);
+    clearTweens(animation.highlightMs);
     touch();
 }
 
@@ -398,7 +431,7 @@ export function showStatsTotals() {
     animation = null;
     current = createStatsAccumulator(metrics);
     evoCurrent = null;
-    tweens.clear();
+    clearTweens();
     layoutDirty = true;
     touch();
 }
@@ -413,7 +446,7 @@ export function refreshStatsPanels() {
         animation = null;
         current = createStatsAccumulator(metrics);
         evoCurrent = null;
-        tweens.clear();
+        clearTweens();
     }
     layoutDirty = true;
     touch();
@@ -427,12 +460,9 @@ export function tickStatsPanels(now) {
         if (drawDirty) flush();
         return false;
     }
-    const panels = visiblePanels();
-    const highlightActive = isEvolutionPage()
-        ? hasActiveEvolutionHighlights(panels, lastNow, animation.highlightMs)
-        : hasActiveHighlights(current, panels, lastNow, animation.highlightMs);
-    const active = panels.length > 0 && (tweens.isActive(lastNow) || highlightActive);
+    const active = visiblePanels().some(panelAnimating);
     // Une surbrillance qui vient de s'éteindre demande une dernière frame.
+    // Seuls les panneaux dont la clé change sont redessinés (panelDrawKey).
     if (active || highlightWasActive) {
         revision += 1;
         drawDirty = true;
@@ -444,6 +474,27 @@ export function tickStatsPanels(now) {
 
 export function getStatsRevision() {
     return revision;
+}
+
+// Le dessin de CE panneau dépend-il encore de l'horloge ? Une valeur qui
+// glisse (barres, parts, compteurs, tête de courbe, paliers) ou une
+// surbrillance qui s'estompe. Sinon, sa clé de dessin ignore l'horloge et
+// son bitmap est gardé pendant que les autres animent.
+function panelAnimating(panel) {
+    if (mode !== 'animating' || !animation || !Number.isFinite(lastNow)) return false;
+    if (panelTweens.get(panel.id)?.isActive(lastNow)) return true;
+    return isEvolutionPage()
+        ? hasActiveEvolutionHighlights([panel], lastNow, animation.highlightMs)
+        : hasActiveHighlights(current, [panel], lastNow, animation.highlightMs);
+}
+
+// Clé de dessin d'un panneau (aperçu et vidéo, taille du bitmap en plus) :
+// contenu commun, jour de tête (courbe) et année (activité) — qui bougent sur
+// les jours vides sans toucher au contenu commun —, horloge tant qu'il anime,
+// taille logique. Une clé inchangée = un bitmap réutilisable tel quel.
+function panelDrawKey(panel, view, rect) {
+    const clock = panelAnimating(panel) ? lastNow : '';
+    return `${contentRevision}|${view?.model?.headDay ?? ''}|${view?.model?.year ?? ''}|${clock}|${rect.width}|${rect.height}`;
 }
 
 // Surbrillance Évolution : chaque panneau lit l'horloge de SON univers
@@ -741,6 +792,7 @@ function counterText(item, entry, number, shown = entry.value) {
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
 // barres : la place de chaque ligne glisse aussi.
 function animateRows(panel, model, now) {
+    const tweens = tweensOf(panel.id);
     model.rows.forEach((row, i) => {
         row.shown = tweens.set(`${panel.id}:v:${row.key}`, row.count, now);
         if (model.race) row.slot = tweens.set(`${panel.id}:s:${row.key}`, i, now);
@@ -754,6 +806,7 @@ function buildView(panel) {
     const state = mode === 'animating' ? current : reference;
     // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
     const now = mode === 'animating' ? lastNow : Number.NaN;
+    const tweens = tweensOf(panel.id);
     const { number, percent } = formatters();
     const metric = panel.metric;
     const view = {
@@ -904,6 +957,7 @@ function buildEvolutionView(panel) {
     const acc = animating ? evoCurrent : evolutionRestAcc();
     const counted = panel.options.counted || 'active';
     const now = animating ? lastNow : Number.NaN;
+    const tweens = tweensOf(panel.id);
     const { number, percent } = formatters();
     const metric = panel.metric;
     const view = {
@@ -1046,7 +1100,8 @@ export function previewStatsPanelPosition(id, x, y) {
     panel.position.x = Math.max(0, Math.min(1, x));
     panel.position.y = Math.max(0, Math.min(1, y));
     layoutDirty = true;
-    touch();
+    // Le contenu ne change pas : le canvas bouge, aucun bitmap n'est redessiné.
+    touchFrame();
 }
 
 // Même aperçu en direct pour la largeur (poignée du bord droit,
@@ -1061,7 +1116,8 @@ export function previewStatsPanelWidth(id, width) {
     const [min, max] = STATS_WIDTH_RANGE;
     panel.position.width = Math.max(min, Math.min(max, Math.round(w)));
     layoutDirty = true;
-    touch();
+    // La taille entre dans la clé du panneau : lui seul est redessiné.
+    touchFrame();
 }
 
 // Même aperçu en direct pour la hauteur (poignée du bord bas, ou du coin
@@ -1077,7 +1133,7 @@ export function previewStatsPanelHeight(id, height) {
     const [min, max] = STATS_HEIGHT_RANGE;
     panel.position.height = Math.max(min, Math.min(max, Math.round(h)));
     layoutDirty = true;
-    touch();
+    touchFrame();
 }
 
 // Redimensionnement à la souris d'un panneau libre : x/y sont des fractions
@@ -1138,6 +1194,7 @@ function removeStalePanels(keep) {
         node.alt?.remove();
         panelNodes.delete(id);
         videoCache.delete(id);
+        panelTweens.delete(id);
     }
 }
 
@@ -1377,7 +1434,10 @@ function flush() {
         }
         const bw = Math.max(1, Math.round(rect.width * dpr));
         const bh = Math.max(1, Math.round(rect.height * dpr));
-        const key = `${revision}|${bw}|${bh}`;
+        // Clé propre au panneau : celui qui n'anime pas garde son bitmap
+        // pendant qu'un autre glisse ou s'allume. Reprise par la vidéo.
+        node.contentKey = panelDrawKey(panel, view, rect);
+        const key = `${node.contentKey}|${bw}|${bh}`;
         if (node.drawnKey !== key) {
             if (node.canvas.width !== bw || node.canvas.height !== bh) {
                 node.canvas.width = bw;
@@ -1386,9 +1446,10 @@ function flush() {
             const ctx = node.canvas.getContext('2d');
             ctx.clearRect(0, 0, bw, bh);
             drawStatsPanel(ctx, { x: 0, y: 0, width: bw, height: bh },
-                views.get(panel.id), panel.style, lastNow, rect.width);
+                view, panel.style, lastNow, rect.width);
             node.drawnKey = key;
-            node.drawnHeadDay = views.get(panel.id)?.model?.shownHeadDay ?? null;
+            node.drawCount = (node.drawCount || 0) + 1;
+            node.drawnHeadDay = view?.model?.shownHeadDay ?? null;
         }
         node.canvas.classList.toggle('is-free', panel.position.mode === 'free');
         if (rect.overflow) warnings.push({ id: panel.id, kind: 'overflow' });
@@ -1407,7 +1468,7 @@ function flush() {
     }
     // Fin de la première passe d'une animation : les catégories qui
     // apparaîtront désormais pousseront depuis 0.
-    if (mode === 'animating') tweens.settle();
+    if (mode === 'animating') for (const store of panelTweens.values()) store.settle();
     if (JSON.stringify(warnings) !== JSON.stringify(layoutWarnings)) {
         layoutWarnings = warnings;
         try {
@@ -1482,7 +1543,9 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
         const y = rect.css.bottom != null
             ? canvasHeight - Math.round(rect.css.bottom * scaleFactor) - h
             : Math.round(rect.css.top * scaleFactor);
-        const key = `${revision}|${w}|${h}`;
+        // Même clé que l'aperçu (posée par le flush) : un panneau qui n'anime
+        // pas coûte un drawImage, même quand un voisin se redessine.
+        const key = `${node.contentKey}|${w}|${h}`;
         let cached = videoCache.get(panel.id);
         if (!cached) {
             cached = { canvas: document.createElement('canvas'), key: '' };
@@ -1499,6 +1562,7 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
             drawStatsPanel(offCtx, { x: 0, y: 0, width: w, height: h },
                 views.get(panel.id), panel.style, lastNow, rect.width);
             cached.key = key;
+            cached.drawCount = (cached.drawCount || 0) + 1;
             node.drawnHeadDay = views.get(panel.id)?.model?.shownHeadDay ?? null;
         }
         ctx.drawImage(cached.canvas, x, y);
@@ -1540,13 +1604,18 @@ export function drawStatsPanelPreview(id, canvas) {
 // une animation, ce serait sinon un panneau de plus dessiné à chaque frame
 // pour un canvas invisible (l'ouverture de l'onglet le redessine, cf.
 // stats_ui).
-let previewRevision = -1;
+// Clé : celle du panneau sur la carte (il n'est redessiné que si lui change),
+// la révision globale pour un panneau masqué, sans canvas sur la carte.
+let previewKey = '';
 function refreshFormPreview() {
-    if (!selectedPanelId || previewRevision === revision) return;
+    if (!selectedPanelId) return;
+    const node = panelNodes.get(selectedPanelId);
+    const key = `${selectedPanelId}|${node?.contentKey ?? `r${revision}`}`;
+    if (previewKey === key) return;
     if (!document.getElementById('stats')?.classList.contains('active')) return;
     const canvas = document.getElementById('statsPanelPreview');
     if (!canvas || canvas.hidden) return;
-    previewRevision = revision;
+    previewKey = key;
     drawStatsPanelPreview(selectedPanelId, canvas);
 }
 
@@ -1664,6 +1733,16 @@ function statsPanelCsvEvolution(panel, number, percent) {
 // Tests
 // ---------------------------------------------------------------------------
 
+// Nombre de dessins de chaque panneau (aperçu, vidéo) : les tests E2E
+// vérifient qu'un panneau immobile n'est pas redessiné quand un autre anime.
+function panelDrawCounts() {
+    const out = {};
+    for (const [id, node] of panelNodes) {
+        out[id] = { preview: node.drawCount || 0, video: videoCache.get(id)?.drawCount || 0 };
+    }
+    return out;
+}
+
 // État courant, sérialisable : utilisé par les tests E2E pour comparer les
 // comptes au compteur de caches affiché.
 export function getStatsSnapshot() {
@@ -1698,6 +1777,7 @@ export function getStatsSnapshot() {
             universes,
             revision,
             videoDrawCount,
+            draws: panelDrawCounts(),
             visible: visiblePanels().map((panel) => panel.id),
             drawnHeads: Object.fromEntries(visiblePanels()
                 .filter((panel) => panel.kind === 'line')
@@ -1719,6 +1799,7 @@ export function getStatsSnapshot() {
         excluded,
         revision,
         videoDrawCount,
+        draws: panelDrawCounts(),
         visible: visiblePanels().map((panel) => panel.id),
         // Dernier jour peint par la tête de chaque courbe : les tests E2E
         // vérifient qu'elle avance pendant les jours sans trouvaille.

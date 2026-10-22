@@ -505,6 +505,67 @@ test('un panneau glissé passe en position libre, choisir un coin l’y ramène'
   await expect(page.locator('#statsFreePosition')).toBeHidden();
 });
 
+test('seul le panneau qui anime est redessiné, dans l\'aperçu comme dans la vidéo', async ({ page }) => {
+  // Grille sans surlignage (rien ne glisse), histogramme (barres animées),
+  // courbe (tête animée, avance seule sur un jour vide).
+  await putStats(page, { enabled: true, panels: [
+    { id: 'd7a0a001', kind: 'grid', metric: 'dt', options: { highlight: 'none' }, position: { anchor: 'bottom-left' } },
+    { id: 'ba0a0a01', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-right' } },
+    { id: 'c0a0a001', kind: 'line', metric: 'cumulative', position: { anchor: 'top-left' } },
+  ] });
+  await openWithFixture(page);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(3);
+
+  // Horloge pilotée à la main, en un seul evaluate (aucun rAF ne s'intercale) :
+  // une trouvaille le 01/01 à t = 1000 ms, valeurs animées sur 600 ms.
+  const steps = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const day = (n) => new Date(2026, 0, n);
+    const video = document.createElement('canvas');
+    video.width = 1200;
+    video.height = 900;
+    const ctx = video.getContext('2d');
+    const out = {};
+    const frame = (label, now) => {
+      app.tickStatsPanels(now);
+      app.addStatsPanelsToCanvas(ctx, video.width, video.height, 1);
+      out[label] = structuredClone(app.getStatsSnapshot().draws);
+    };
+    // Fin d'axe au 10/01 : la tête de courbe peut avancer au-delà du 06.
+    app.resetStatsForAnimation({ startDate: day(1), endDate: day(10), highlightMs: 600 });
+    frame('start', 0);
+    app.accumulateStatsForDates([day(1)], 1000);
+    frame('find', 1000);
+    frame('t1100', 1100);
+    frame('t1200', 1200);
+    frame('t1300', 1300);
+    frame('settled', 1700);   // tweens finis : une dernière frame nette
+    frame('idle', 1800);      // plus rien ne bouge
+    app.accumulateStatsForDates([day(7)], 3000);   // jour sans trouvaille
+    frame('empty', 3000);
+    return out;
+  });
+
+  const delta = (from, to, id, kind = 'preview') => steps[to][id][kind] - steps[from][id][kind];
+  for (const kind of ['preview', 'video']) {
+    // La trouvaille change le contenu des trois.
+    for (const id of ['d7a0a001', 'ba0a0a01', 'c0a0a001']) expect(delta('start', 'find', id, kind)).toBe(1);
+    // Pendant les valeurs animées : barres et courbe à chaque frame, la grille jamais.
+    expect(delta('find', 't1300', 'ba0a0a01', kind)).toBe(3);
+    expect(delta('find', 't1300', 'c0a0a001', kind)).toBe(3);
+    expect(delta('find', 't1300', 'd7a0a001', kind)).toBe(0);
+    // Fin des animations : une dernière frame pour ceux qui animaient, puis plus rien.
+    expect(delta('t1300', 'settled', 'ba0a0a01', kind)).toBe(1);
+    expect(delta('t1300', 'settled', 'c0a0a001', kind)).toBe(1);
+    expect(delta('t1300', 'settled', 'd7a0a001', kind)).toBe(0);
+    for (const id of ['d7a0a001', 'ba0a0a01', 'c0a0a001']) expect(delta('settled', 'idle', id, kind)).toBe(0);
+    // Jour vide : seule la tête de courbe avance.
+    expect(delta('idle', 'empty', 'c0a0a001', kind)).toBe(1);
+    expect(delta('idle', 'empty', 'ba0a0a01', kind)).toBe(0);
+    expect(delta('idle', 'empty', 'd7a0a001', kind)).toBe(0);
+  }
+});
+
 test('le glisser d\'un panneau ne reconstruit pas son équivalent textuel', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'd0a97001', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },

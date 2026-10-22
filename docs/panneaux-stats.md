@@ -282,17 +282,35 @@ alternatif liste « Paliers : 100 (date), … ».
   `#mapWithFrames`, bitmap = taille CSS × `devicePixelRatio`, `z-index: 90`
   (sous le titre et les infos), `pointer-events: none`. Chaque canvas
   apparaît en fondu (~0,3 s, désactivé si `prefers-reduced-motion`).
-  Redessin seulement quand la révision change ; les lectures de géométrie DOM
-  n'ont lieu que sur invalidation (resize, `ResizeObserver`, réglages),
-  jamais par frame.
+  Redessin seulement quand la **clé de dessin du panneau** change (voir
+  ci-dessous) ; les lectures de géométrie DOM n'ont lieu que sur invalidation
+  (resize, `ResizeObserver`, réglages), jamais par frame.
 - **Vidéo** : `addStatsPanelsToCanvas(ctx, w, h, scaleFactor)` est appelé dans
   les deux pipelines **avant** `addOverlaysToCanvas`, pour le même empilement
   que l'aperçu. Géométrie = mise en page de l'aperçu × `scaleFactor`, ancrée
   depuis le même coin (`left`/`right`, `top`/`bottom`). Chaque panneau est rendu
-  dans un canvas hors écran gardé tant que la révision et l'échelle ne
+  dans un canvas hors écran gardé tant que sa clé de dessin et l'échelle ne
   changent pas : un panneau immobile coûte un `drawImage`.
 - **Signature MediaRecorder** : `overlayContentSignature()` inclut
   `getStatsRevision()`.
+
+**Clé de dessin par panneau** (`panelDrawKey`, 2026-10-22). Deux révisions :
+`revision` (globale, avance à toute frame où un panneau peut changer — elle
+sert la signature MediaRecorder) et `contentRevision` (contenu commun :
+comptes, réglages, mode, cadre). La clé d'un panneau = `contentRevision` +
+jour de tête (courbe) + année (activité) + **horloge seulement tant que ce
+panneau anime** (`panelAnimating` : une de ses valeurs glisse, ou une de ses
+surbrillances s'estompe) + taille. Les valeurs animées ont un magasin par
+panneau (`tweensOf(id)`), pour savoir lequel anime encore. Conséquences :
+pendant qu'un histogramme glisse, une matrice sans surbrillance garde son
+bitmap (aperçu et vidéo) ; un jour sans trouvaille (`touchFrame`) ne
+redessine que la courbe et l'année d'activité ; glisser un panneau déplace
+son canvas sans redessiner personne, le redimensionner ne redessine que lui.
+À la fin d'une animation, la clé perd l'horloge : une dernière frame nette,
+puis plus rien. `getStatsSnapshot().draws` compte les dessins par panneau
+(`preview`, `video`) — spec « seul le panneau qui anime est redessiné ».
+Effet de bord voulu : un panneau ajouté en pleine animation affiche d'emblée
+son état (son magasin neuf démarre « immédiat »), au lieu de pousser depuis 0.
 
 ### Mise en page
 
@@ -455,7 +473,8 @@ d'annoncer un succès ; « Annuler » restaure la liste d'avant.
   export qui repart de zéro et dessine les panneaux, interrupteur général, mode
   Évolution ; anneau, courbe, compteurs et course pendant une lecture (sans
   erreur de page), glisser-déposer puis retour au coin, réordonnancement de
-  la liste à la souris, pile qui démarre sous le titre. `stats` est une préférence globale partagée par tous les specs :
+  la liste à la souris, pile qui démarre sous le titre, redessin limité au
+  panneau qui anime (horloge pilotée à la main, compte des dessins). `stats` est une préférence globale partagée par tous les specs :
   chaque test remet la liste vide en sortant.
 
 ## Mesures (2026-10-17)
