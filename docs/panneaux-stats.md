@@ -329,6 +329,19 @@ puis plus rien. `getStatsSnapshot().draws` compte les dessins par panneau
 Effet de bord voulu : un panneau ajouté en pleine animation affiche d'emblée
 son état (son magasin neuf démarre « immédiat »), au lieu de pousser depuis 0.
 
+**Équivalent textuel** : chaque canvas (`aria-hidden`) a un frère
+`.stats-panel-alt.visually-hidden` — titre, comptes réels (jamais les valeurs
+animées), lignes de pied, en `<ul>` ; pas de région `aria-live`. Il n'est
+reconstruit que quand sa clé change (mode, réglages, révision de l'index et de
+l'accumulateur, jour de tête, année). **En animation, au plus une
+reconstruction par seconde** (`A11Y_ANIMATION_INTERVAL_MS`, 2026-10-22) : une
+grille porte des centaines de `<li>` (calendrier : jusqu'à 366), refaits sinon
+à chaque jour avec trouvaille alors que personne ne les lit en pleine lecture.
+Le premier changement après un calme passe aussitôt ; un minuteur rattrape le
+dernier, donc en pause ou en fin de lecture le texte colle aux comptes
+affichés en moins d'une seconde. Au repos, rien n'est différé.
+`getStatsSnapshot().a11yRebuilds` compte les reconstructions.
+
 ### Mise en page
 
 `layoutPanels` (pur) : les panneaux d'une même ancre forment une pile, du coin

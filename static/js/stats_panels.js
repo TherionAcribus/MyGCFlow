@@ -1244,7 +1244,7 @@ function gridCellLabel(view, r, c, key) {
 // le texte est lu quand l'utilisateur s'y arrête, il n'annonce rien de
 // lui-même.
 function refreshAltText(node, panel, view, key) {
-    if (node.a11yKey === key) return;
+    if (node.a11yKey === key) return false;
     node.a11yKey = key;
     const { number, percent } = formatters();
     const model = view.model;
@@ -1296,6 +1296,28 @@ function refreshAltText(node, panel, view, key) {
     if (empty) add(isEvolutionPage() ? pkg.t('Aucune cache') : pkg.t('Aucune trouvaille'));
     for (const line of view.footer || []) add(line);
     node.alt.appendChild(list);
+    return true;
+}
+
+// Pendant une animation, les textes alternatifs suivent au plus une fois par
+// intervalle : une grille en porte des centaines de <li>, reconstruits sinon
+// à chaque jour avec trouvaille, alors que personne ne les lit en pleine
+// lecture (pas de région « live »). Le premier changement après un calme
+// passe aussitôt ; les suivants attendent la fin de l'intervalle, et un
+// minuteur rattrape le dernier — en pause ou en fin de lecture, le texte
+// colle aux comptes affichés. Au repos, rien n'est différé.
+const A11Y_ANIMATION_INTERVAL_MS = 1000;
+let a11yRefreshedAt = -Infinity;
+let a11yTimer = 0;
+let a11yRebuildCount = 0;   // tests : textes reconstruits depuis le chargement
+
+function scheduleA11yCatchUp(delay) {
+    if (a11yTimer) return;
+    a11yTimer = setTimeout(() => {
+        a11yTimer = 0;
+        drawDirty = true;
+        scheduleFlush();
+    }, Math.max(0, delay));
 }
 
 // Entrée de layoutPanels pour un panneau : sa position et sa taille mesurée
@@ -1405,6 +1427,13 @@ function flush() {
         ? `${evoIndex?.revision || 0}:${evoIndex?.restDay ?? 0}`
         : indexRevision();
     const a11yBase = `${mode}|${settingsRev}|${altIndexRev}|${altState?.revision || 0}`;
+    // Au repos, tout de suite ; en animation, au plus un passage par
+    // intervalle (cf. A11Y_ANIMATION_INTERVAL_MS), le reste rattrapé ensuite.
+    const clock = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const a11yWait = mode === 'animating' ? a11yRefreshedAt + A11Y_ANIMATION_INTERVAL_MS - clock : 0;
+    const a11yDue = a11yWait <= 0;
+    let a11yRebuilt = 0;
+    let a11yPending = false;
     const items = panels.map((panel) => {
         const item = layoutItem(panel, views.get(panel.id));
         if (resizePin?.id === panel.id && panel.position.mode === 'free') {
@@ -1428,7 +1457,12 @@ function flush() {
         // courbe et l'année d'activité dépendent aussi du jour affiché (jours
         // vides compris).
         const view = views.get(panel.id);
-        refreshAltText(node, panel, view, `${a11yBase}|${view.model?.headDay ?? ''}|${view.model?.year ?? ''}`);
+        const a11yKey = `${a11yBase}|${view.model?.headDay ?? ''}|${view.model?.year ?? ''}`;
+        if (a11yDue) {
+            if (refreshAltText(node, panel, view, a11yKey)) a11yRebuilt += 1;
+        } else if (node.a11yKey !== a11yKey) {
+            a11yPending = true;
+        }
         const css = rect.css;
         const cssKey = `${css.left}|${css.right}|${css.top}|${css.bottom}|${rect.width}|${rect.height}`;
         if (node.cssKey !== cssKey) {
@@ -1475,6 +1509,11 @@ function flush() {
             }
         }
     }
+    if (a11yRebuilt > 0) {
+        a11yRefreshedAt = clock;
+        a11yRebuildCount += a11yRebuilt;
+    }
+    if (a11yPending) scheduleA11yCatchUp(a11yWait);
     // Fin de la première passe d'une animation : les catégories qui
     // apparaîtront désormais pousseront depuis 0.
     if (mode === 'animating') for (const store of panelTweens.values()) store.settle();
@@ -1787,6 +1826,7 @@ export function getStatsSnapshot() {
             revision,
             videoDrawCount,
             draws: panelDrawCounts(),
+            a11yRebuilds: a11yRebuildCount,
             visible: visiblePanels().map((panel) => panel.id),
             drawnHeads: Object.fromEntries(visiblePanels()
                 .filter((panel) => panel.kind === 'line')
@@ -1809,6 +1849,7 @@ export function getStatsSnapshot() {
         revision,
         videoDrawCount,
         draws: panelDrawCounts(),
+        a11yRebuilds: a11yRebuildCount,
         visible: visiblePanels().map((panel) => panel.id),
         // Dernier jour peint par la tête de chaque courbe : les tests E2E
         // vérifient qu'elle avance pendant les jours sans trouvaille.

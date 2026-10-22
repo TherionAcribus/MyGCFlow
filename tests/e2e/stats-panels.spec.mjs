@@ -1008,6 +1008,40 @@ test('chaque panneau expose un équivalent textuel accessible', async ({ page })
   await expect(types).toContainText('Traditional Cache : 2');
 });
 
+test('en lecture, le texte accessible d\'une grille suit au plus une fois par seconde, puis rattrape', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'ca1e0001', kind: 'grid', metric: 'calendar', position: { anchor: 'bottom-left', width: 440 } },
+  ] });
+  await openWithFixture(page);
+  const alt = page.locator('.stats-panel-alt');
+  // Au repos : les six jours de la fixture, tout de suite.
+  await expect(alt).toContainText('6 janv. : 1');
+
+  // Rafale : début d'animation puis trois jours de trouvailles, en moins
+  // d'une seconde. Sans limite, quatre reconstructions ; ici une au plus.
+  const burst = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const day = (n) => new Date(2026, 0, n);
+    const before = app.getStatsSnapshot().a11yRebuilds;
+    app.resetStatsForAnimation({ startDate: day(1), endDate: day(6) });
+    app.tickStatsPanels(0);
+    for (let n = 1; n <= 3; n++) {
+      app.accumulateStatsForDates([day(n)], n * 1000);
+      app.tickStatsPanels(n * 1000);
+    }
+    return app.getStatsSnapshot().a11yRebuilds - before;
+  });
+  expect(burst).toBeLessThanOrEqual(1);
+
+  // Rattrapage : le texte finit sur les comptes affichés (trois jours).
+  await expect(alt).toContainText('3 janv. : 1', { timeout: 3_000 });
+  await expect(alt).not.toContainText('4 janv.');
+
+  // Retour au repos : totaux de la sélection, sans attendre.
+  await page.evaluate(async () => (await import('/static/js/index.js')).showStatsTotals());
+  await expect(alt).toContainText('6 janv. : 1', { timeout: 500 });
+});
+
 test('le panneau choisi dans la liste porte le repère de sélection sur la carte', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: '5e100001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
