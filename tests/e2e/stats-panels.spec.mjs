@@ -566,6 +566,57 @@ test('seul le panneau qui anime est redessiné, dans l\'aperçu comme dans la vi
   }
 });
 
+test('un grand nombre tient dans sa case de la matrice D/T', async ({ page }) => {
+  // 280 px, police 12 : pad 10, libellés de ligne 29 → case de 25,7 px,
+  // 24,2 px à l'intérieur (écart 1,5). Le texte doit tenir dans 86 % de
+  // l'intérieur — avant, « 12 345 » (~30 px) débordait sur les voisines.
+  const INNER = (280 - 20 - 29) / 9 - 1.5;
+  await putStats(page, { enabled: true, panels: [
+    { id: 'd7b16001', kind: 'grid', metric: 'dt', options: { cell_mode: 'count' },
+      position: { anchor: 'bottom-left', width: 280 }, style: { font_size: 12 } },
+  ] });
+  await openWithFixture(page);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+
+  // Chaque fillText du panneau est relevé avec sa largeur à la police du
+  // moment ; puis 12 344 copies d'une cache passent en D1,5/T1,5.
+  const drawn = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const calls = [];
+    const original = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function (text, ...rest) {
+      if (this.canvas?.dataset?.panelId === 'd7b16001') {
+        calls.push({ text: String(text), width: this.measureText(text).width, font: this.font });
+      }
+      return original.call(this, text, ...rest);
+    };
+    const [features] = app.pointsByDate.values();
+    const model = features[0];
+    for (let i = 0; i < 12344; i++) {
+      const copy = structuredClone(model);
+      copy.properties.difficulty = 1.5;
+      copy.properties.terrain = 1.5;
+      features.push(copy);
+    }
+    app.bumpPointsByDateRevision();
+    app.refreshStatsPanels();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    CanvasRenderingContext2D.prototype.fillText = original;
+    return calls;
+  });
+
+  // La case 1,5/1,5 compte 12 344 (aucune cache de la fixture n'y est) :
+  // format court (« 12,3 k »), jamais le nombre complet qui déborderait.
+  const big = drawn.filter((call) => /k/i.test(call.text) && /^12/.test(call.text));
+  expect(big.length).toBeGreaterThan(0);
+  expect(drawn.some((call) => call.text.replace(/\s/g, '') === '12344')).toBe(false);
+  // Toutes les valeurs de case — même police que le grand nombre — tiennent.
+  const valueFont = big[0].font;
+  const values = drawn.filter((call) => call.font === valueFont);
+  expect(values.length).toBeGreaterThan(1);
+  for (const call of values) expect(call.width).toBeLessThanOrEqual(INNER * 0.86 + 0.5);
+});
+
 test('le glisser d\'un panneau ne reconstruit pas son équivalent textuel', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'd0a97001', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },

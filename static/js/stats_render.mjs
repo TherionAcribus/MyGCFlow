@@ -152,6 +152,39 @@ function gridLayout(view, style, width) {
     return { ...frame, rowLabelW, headerH, cell, gridTop, height };
 }
 
+// Nombres des cases d'une grille : une taille et un format pour TOUTE la
+// grille, choisis pour que le plus large tienne dans une case, marge
+// comprise. Le plus large est mesuré sur le maximum (référence comprise :
+// il ne bouge pas pendant l'animation, la police non plus) et sur le nombre
+// de même longueur fait de 9 (chiffres proportionnels). Ordre de préférence :
+//   1. format complet, rétréci d'un quart au plus ;
+//   2. format court (« 1,2 k »), même limite ;
+//   3. le premier des deux qui tient au-dessus de 7 px ;
+//   sinon null : pas de nombres, la grille se lit à l'intensité des cases.
+// `formats` : [complet, court] — le court peut manquer (vue sans lui).
+const GRID_VALUE_MIN_PX = 7;
+
+export function gridValueFit(ctx, { cell, inner, fontSize, family }, maxCount, formats) {
+    const base = Math.min(fontSize * 0.85, cell * 0.5);
+    const room = inner * 0.86;
+    if (!(base >= GRID_VALUE_MIN_PX) || !(room > 0)) return null;
+    const max = Math.max(1, Math.round(Number(maxCount) || 0));
+    const nines = 10 ** String(max).length - 1;
+    ctx.font = font(600, base, family);
+    const fits = [];
+    for (const format of formats) {
+        if (typeof format !== 'function') continue;
+        const width = Math.max(ctx.measureText(format(max)).width, ctx.measureText(format(nines)).width);
+        const size = width > room ? base * (room / width) : base;
+        fits.push({ size, format });
+    }
+    for (const floor of [Math.max(GRID_VALUE_MIN_PX, base * 0.75), GRID_VALUE_MIN_PX]) {
+        const fit = fits.find((f) => f.size >= floor);
+        if (fit) return fit;
+    }
+    return null;
+}
+
 function drawGrid(ctx, view, style, width, _targetH, now) {
     const L = gridLayout(view, style, width);
     const model = view.model;
@@ -201,8 +234,14 @@ function drawGrid(ctx, view, style, width, _targetH, now) {
     }
 
     const mode = view.cellMode;
-    const valueSize = Math.min(L.fontSize * 0.85, L.cell * 0.5);
-    const showValues = mode === 'count' && valueSize >= 7;
+    const values = mode === 'count'
+        ? gridValueFit(ctx, { cell: L.cell, inner: L.cell - gap, fontSize: L.fontSize, family: view.fontFamily },
+            model.max, [view.formatNumber, view.formatCompact])
+        : null;
+    if (values) {
+        ctx.font = font(600, values.size, view.fontFamily);
+        ctx.textAlign = 'center';
+    }
     const empty = hexToRgba(style.text_color, 0.07);
     for (let r = 0; r < model.rows; r++) {
         for (let c = 0; c < model.cols; c++) {
@@ -233,11 +272,9 @@ function drawGrid(ctx, view, style, width, _targetH, now) {
                 ctx.strokeStyle = `rgba(255,255,255,${level})`;
                 ctx.stroke();
             }
-            if (showValues && cell.count > 0) {
-                ctx.font = font(600, valueSize, view.fontFamily);
-                ctx.textAlign = 'center';
+            if (values && cell.count > 0) {
                 ctx.fillStyle = style.text_color;
-                ctx.fillText(view.formatNumber(cell.count), x + size / 2, y + size / 2 + 0.5);
+                ctx.fillText(values.format(cell.count), x + size / 2, y + size / 2 + 0.5);
             }
         }
     }

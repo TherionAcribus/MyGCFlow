@@ -526,13 +526,21 @@ function locale() {
 
 let numberFormat = null;
 let percentFormat = null;
+let compactFormat = null;
 function formatters() {
     const lang = locale();
     if (!numberFormat || numberFormat.lang !== lang) {
         numberFormat = { lang, fmt: new Intl.NumberFormat(lang) };
         percentFormat = new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 0 });
+        // « 1,2 k » / « 1.2K » : cases de grille trop étroites pour le nombre
+        // complet (stats_render › gridValueFit).
+        compactFormat = new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 });
     }
-    return { number: (n) => numberFormat.fmt.format(n), percent: (r) => percentFormat.format(r) };
+    return {
+        number: (n) => numberFormat.fmt.format(n),
+        percent: (r) => percentFormat.format(r),
+        compact: (n) => compactFormat.format(n),
+    };
 }
 
 const monthNamesCache = new Map();
@@ -807,7 +815,7 @@ function buildView(panel) {
     // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
     const now = mode === 'animating' ? lastNow : Number.NaN;
     const tweens = tweensOf(panel.id);
-    const { number, percent } = formatters();
+    const { number, percent, compact } = formatters();
     const metric = panel.metric;
     const view = {
         kind: panel.kind,
@@ -816,6 +824,7 @@ function buildView(panel) {
         fontFamily: resolveFontFamily(panel),
         formatNumber: number,
         formatPercent: percent,
+        formatCompact: compact,
         showValues: panel.options.show_values,
         showPercent: panel.options.show_percent,
         footer: [],

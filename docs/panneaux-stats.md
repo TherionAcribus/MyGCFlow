@@ -131,6 +131,15 @@ traité (est/ouest = longitude max/min).
 Une valeur de tuile trop large (coordonnée, grand nombre sur tuile étroite)
 réduit sa police jusqu'à ×1,1 avant d'être tronquée.
 
+Les nombres des cases de grille (`cell_mode: count`) ont une taille et un
+format communs à toute la grille (`gridValueFit`, stats_render.mjs), calés
+sur le maximum de la référence — donc fixes pendant l'animation : format
+complet rétréci d'un quart au plus, sinon format court (`notation:
+'compact'` : « 12,3 k », « 1.2K »), sinon le premier des deux qui tient
+au-dessus de 7 px, sinon pas de nombres (la case se lit à son intensité).
+Le texte tient dans 86 % de la case. Avant (2026-10-22), « 1 234 » touchait
+les cases voisines d'une matrice D/T de 280 px et « 12 345 » débordait.
+
 Une cache sans valeur pour une métrique (Lab sans D/T ni taille, GPX sans date
 de publication) est **exclue** de cette métrique mais comptée dans le total ;
 le pied du panneau l'annonce (« Sans D/T : 12 ») pour que la somme ne
