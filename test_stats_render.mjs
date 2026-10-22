@@ -5,7 +5,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { gridValueFit, labelsMaxWidth, measureStatsPanel } from './static/js/stats_render.mjs';
+import { drawStatsPanel, gridValueFit, heatLevel, labelsMaxWidth, measureStatsPanel } from './static/js/stats_render.mjs';
+import { gridModel } from './static/js/stats_model.mjs';
 
 function fakeCtx() {
     return {
@@ -174,4 +175,75 @@ test('grille : cases trop petites pour un nombre lisible → pas de nombres', ()
     // Case moyenne, nombre immense même en court : rien ne tient au-dessus de 7 px.
     assert.equal(gridValueFit(sizedCtx(), { cell: 16, inner: 15, fontSize: 12, family: 'x' }, 123456789,
         [full, (n) => `${Math.round(n / 1e6)}M`]), null);
+});
+
+// ---------------------------------------------------------------------------
+// Échelle de couleur : heatLevel (logarithmique)
+// ---------------------------------------------------------------------------
+
+test('heatLevel : 0 sans compte, 1 au maximum, croissante', () => {
+    assert.equal(heatLevel(0, 100), 0);
+    assert.equal(heatLevel(5, 0), 0);
+    assert.equal(heatLevel(100, 100), 1);
+    assert.equal(heatLevel(150, 100), 1);   // compte courant au-delà de la référence
+    let previous = 0;
+    for (const n of [1, 2, 5, 10, 50, 100, 500, 2000]) {
+        const level = heatLevel(n, 2000);
+        assert.ok(level > previous, `${n} : ${level} <= ${previous}`);
+        previous = level;
+    }
+});
+
+test('heatLevel : une case énorme n\'écrase plus les autres', () => {
+    // Linéaire, 1 et 10 sur 2 000 donnaient 0,0005 et 0,005 — même teinte.
+    assert.ok(Math.abs(heatLevel(1, 2000) - Math.log(2) / Math.log(2001)) < 1e-12);
+    assert.ok(heatLevel(10, 2000) - heatLevel(1, 2000) > 0.2);
+    assert.ok(heatLevel(100, 2000) - heatLevel(10, 2000) > 0.2);
+});
+
+// Faux contexte qui relève la couleur de chaque fill() ; toute autre méthode
+// est sans effet.
+function recordingCtx() {
+    const state = {};
+    const fills = [];
+    const own = {
+        fills,
+        measureText: (s) => ({ width: String(s).length * 6 }),
+        fill() { fills.push(state.fillStyle); },
+    };
+    return new Proxy(own, {
+        get(target, key) {
+            if (key in target) return target[key];
+            if (key in state) return state[key];
+            return () => {};
+        },
+        set(_target, key, value) { state[key] = value; return true; },
+    });
+}
+
+test('grille en intensité : cases 1, 10, 100 et 2 000 de teintes distinctes', () => {
+    // D1/T1 = 2 000, D1/T1,5 = 10, D1/T2 = 1, D1/T2,5 = 100.
+    const acc = { counts: new Map([['dt', new Map([[0, 2000], [1, 10], [2, 1], [3, 100]])]]), excluded: new Map() };
+    const labels = Array.from({ length: 9 }, (_, i) => String(1 + i / 2));
+    const view = {
+        kind: 'grid', metric: 'dt', title: '', footer: [], model: gridModel('dt', acc, acc),
+        cellMode: 'heat', rowLabels: labels, colLabels: labels, corner: '', fontFamily: 'x',
+        formatNumber: String, formatCompact: String, highlight: null,
+    };
+    const style = { font_size: 12, background: '#000000', background_opacity: 85,
+        text_color: '#ffffff', accent_color: '#29d34e', radius: 8 };
+    const ctx = recordingCtx();
+    drawStatsPanel(ctx, { x: 0, y: 0, width: 280, height: 320 }, view, style, Number.NaN, 280);
+    // Remplissages à la couleur principale, dans l'ordre des cases (ligne D1).
+    const alphas = ctx.fills
+        .map((fill) => /^rgba\(41,\s*211,\s*78,\s*([\d.]+)\)$/.exec(String(fill))?.[1])
+        .filter(Boolean)
+        .map(Number);
+    assert.equal(alphas.length, 4);
+    const [a2000, a10, a1, a100] = alphas;
+    assert.equal(a2000, 1);
+    assert.ok(a2000 > a100 && a100 > a10 && a10 > a1);
+    // Écarts visibles (linéaire : 0,003 entre 1 et 10).
+    assert.ok(a10 - a1 > 0.1, `${a1} / ${a10}`);
+    assert.ok(a100 - a10 > 0.1, `${a10} / ${a100}`);
 });

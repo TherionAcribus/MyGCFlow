@@ -140,6 +140,14 @@ au-dessus de 7 px, sinon pas de nombres (la case se lit à son intensité).
 Le texte tient dans 86 % de la case. Avant (2026-10-22), « 1 234 » touchait
 les cases voisines d'une matrice D/T de 280 px et « 12 345 » débordait.
 
+**Échelle de couleur logarithmique** (`heatLevel`, stats_render.mjs,
+2026-10-22) : l'opacité d'une case (modes « Nombre » et « Intensité ») vaut
+`0,3 + 0,7 × log(1 + n) / log(1 + max)`, et celle d'une barre ou d'une part en
+palette « Dégradé » `0,35 + 0,65 × …` sur le même modèle. Le maximum vient de
+la référence. En linéaire, une case à 2 000 trouvailles rendait 1, 10 et 100
+quasi identiques (30 %, 30 %, 33 %) ; en log : 36 %, 52 %, 72 %. Choix de
+l'utilisateur : automatique, sans réglage (ni linéaire ni paliers par rang).
+
 Une cache sans valeur pour une métrique (Lab sans D/T ni taille, GPX sans date
 de publication) est **exclue** de cette métrique mais comptée dans le total ;
 le pied du panneau l'annonce (« Sans D/T : 12 ») pour que la somme ne

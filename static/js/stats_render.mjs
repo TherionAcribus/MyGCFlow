@@ -252,9 +252,11 @@ function drawGrid(ctx, view, style, width, _targetH, now) {
             const size = L.cell - gap;
             const radius = Math.min(3, size / 4);
             if (cell.count > 0) {
+                // Échelle logarithmique (heatLevel) : une case énorme
+                // n'efface plus les nuances entre les autres.
                 const intensity = mode === 'filled' || model.max <= 0
                     ? 1
-                    : 0.3 + 0.7 * Math.min(1, cell.count / model.max);
+                    : 0.3 + 0.7 * heatLevel(cell.count, model.max);
                 roundedRect(ctx, x, y, size, size, radius);
                 ctx.fillStyle = hexToRgba(style.accent_color, intensity);
                 ctx.fill();
@@ -292,6 +294,17 @@ export const MULTI_PALETTE = Object.freeze([
     '#edc948', '#b07aa1', '#ff9da7', '#9c755f', '#bab0ac',
 ]);
 
+// Place d'un compte sur l'échelle de couleur (0 → 1), logarithmique :
+// log(1 + n) / log(1 + max). En linéaire, une case énorme (D1,5/T1,5 à
+// 2 000 trouvailles) écrasait toutes les autres vers la teinte minimale —
+// 1, 10 et 100 sortaient presque pareils ; en log, ils se distinguent.
+// 0 pour un compte nul, 1 au maximum, croissante entre les deux. Le maximum
+// vient de la référence : l'échelle ne bouge pas pendant l'animation.
+export function heatLevel(count, max) {
+    if (!(count > 0) || !(max > 0)) return 0;
+    return Math.min(1, Math.log1p(count) / Math.log1p(max));
+}
+
 function categoryColor(view, style, row, index, max) {
     if (row.key === OTHERS_KEY) return OTHERS_COLOR;
     if (view.palette === 'gc') return view.colorOf?.(row.key) || style.accent_color;
@@ -300,7 +313,7 @@ function categoryColor(view, style, row, index, max) {
         return MULTI_PALETTE[((i % MULTI_PALETTE.length) + MULTI_PALETTE.length) % MULTI_PALETTE.length];
     }
     if (view.palette === 'heat' && max > 0) {
-        return hexToRgba(style.accent_color, 0.35 + 0.65 * Math.min(1, row.refCount / max));
+        return hexToRgba(style.accent_color, 0.35 + 0.65 * heatLevel(row.refCount, max));
     }
     return style.accent_color;
 }
