@@ -724,6 +724,9 @@ function renderForm() {
     setValue('inputStatsFontSize', s.font_size);
     setValue('inputStatsRadius', s.radius);
     setValue('switchStatsInheritFont', s.inherit_font);
+    // Rien à quoi l'appliquer tant que le panneau est seul dans la liste.
+    const styleToAll = $('btnStatsStyleToAll');
+    if (styleToAll) styleToAll.disabled = modePanels(currentSettings()).length < 2;
 
     drawFormPreview(panel);
 }
@@ -1268,6 +1271,50 @@ function deleteConfig(name) {
 // du titre et des infos (arrangePanels, stats_model.mjs). Les panneaux
 // masqués ne sont pas touchés. Si la place manque pour tout le monde, le
 // toast le dit au lieu de prétendre avoir réglé le problème.
+// « Appliquer cette apparence à tous les panneaux » (section Apparence) : le
+// style du panneau sélectionné est copié sur les autres panneaux de la liste
+// du mode, masqués compris — sauf la palette, liée à la métrique (« couleurs
+// des types » n'a de sens que pour les types). Réversible par « Annuler » :
+// seuls ces champs reviennent, par id — un réglage fait entre-temps sur un
+// autre aspect n'est pas perdu.
+const SHARED_STYLE_KEYS = Object.freeze([
+    'background', 'background_opacity', 'text_color', 'accent_color',
+    'font_size', 'radius', 'inherit_font',
+]);
+
+function applyStyleToAll(event) {
+    const source = selectedPanel();
+    if (!source) return;
+    const previous = new Map();
+    updatePanels((panels) => {
+        for (const panel of panels) {
+            if (panel.id === source.id) continue;
+            if (SHARED_STYLE_KEYS.every((key) => panel.style[key] === source.style[key])) continue;
+            previous.set(panel.id, Object.fromEntries(SHARED_STYLE_KEYS.map((key) => [key, panel.style[key]])));
+            for (const key of SHARED_STYLE_KEYS) panel.style[key] = source.style[key];
+        }
+        return panels;
+    }, event?.currentTarget || STATS_SAVE_STATUS, { immediate: true });
+    renderStatsTab();
+    if (previous.size === 0) {
+        pkg.showToast?.(pkg.t('Les autres panneaux ont déjà cette apparence.'), 'info');
+        return;
+    }
+    const message = previous.size === 1
+        ? pkg.t('Apparence appliquée à un autre panneau')
+        : pkg.t('Apparence appliquée à ${n} autres panneaux', { n: previous.size });
+    pkg.showActionToast?.(message, { label: 'Annuler', onClick: () => {
+        updatePanels((panels) => {
+            for (const panel of panels) {
+                const style = previous.get(panel.id);
+                if (style) panel.style = { ...panel.style, ...style };
+            }
+            return panels;
+        }, STATS_SAVE_STATUS, { immediate: true });
+        renderStatsTab();
+    } });
+}
+
 function reorganizePanels() {
     const arrangement = pkg.arrangeStatsPanels?.();
     if (!arrangement) return;
@@ -1367,6 +1414,7 @@ export function initStatsTab() {
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);
     if (list) bindListReorder(list);
+    $('btnStatsStyleToAll')?.addEventListener('click', applyStyleToAll);
     $('btnStatsExportPng')?.addEventListener('click', exportPanelPng);
     $('btnStatsExportCsv')?.addEventListener('click', exportPanelCsv);
     $('statsConfigMenu')?.addEventListener('click', (event) => {

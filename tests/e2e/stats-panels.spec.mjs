@@ -377,6 +377,47 @@ test('la courbe avance pendant les jours sans trouvaille', async ({ page }) => {
     { timeout: 10_000 }).toBe(DAY1 + 5);
 });
 
+test('« Appliquer cette apparence à tous » copie le style, palette exceptée, et s\'annule', async ({ page }) => {
+  const look = { background: '#112233', background_opacity: 60, text_color: '#eeeeee',
+    accent_color: '#ff8800', font_size: 14, radius: 4, inherit_font: false };
+  await putStats(page, { enabled: true, panels: [
+    { id: 'a9e00001', kind: 'bar', metric: 'cache_type', style: { ...look, palette: 'multi' } },
+    { id: 'a9e00002', kind: 'bar', metric: 'difficulty', position: { anchor: 'top-right' } },
+    // Masqué : fait partie de la liste, il suit aussi.
+    { id: 'a9e00003', kind: 'grid', metric: 'dt', enabled: false },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const before = (await savedStats(page)).panels;
+  const button = page.locator('#btnStatsStyleToAll');
+  // Le premier panneau est sélectionné ; le bouton vit dans la section Apparence.
+  await page.locator('#statsSectionAppearance > summary').click();
+  await expect(button).toBeEnabled();
+  await button.click();
+
+  const pick = (style) => Object.fromEntries(Object.keys(look).map((key) => [key, style[key]]));
+  await expect.poll(async () => (await savedStats(page)).panels.slice(1).map((p) => pick(p.style)))
+    .toEqual([look, look]);
+  const after = (await savedStats(page)).panels;
+  // La palette reste celle de chaque panneau (dégradé pour la difficulté).
+  expect(after[1].style.palette).toBe(before[1].style.palette);
+  expect(after[0].style.palette).toBe('multi');
+  const undo = page.locator('.gcm-toast.show').filter({ hasText: 'Apparence appliquée à 2 autres panneaux' })
+    .locator('.gcm-toast-action').filter({ hasText: 'Annuler' });
+  await expect(undo).toBeVisible();
+
+  // « Annuler » : le style d'avant revient sur les deux autres.
+  await undo.click();
+  await expect.poll(async () => (await savedStats(page)).panels.slice(1).map((p) => p.style))
+    .toEqual(before.slice(1).map((p) => p.style));
+
+  // Seul dans la liste : rien à quoi l'appliquer.
+  await page.locator('#statsPanelList [data-action="delete"]').nth(2).click();
+  await page.locator('#statsPanelList [data-action="delete"]').nth(1).click();
+  await expect(page.locator('#statsPanelList li')).toHaveCount(1);
+  await expect(button).toBeDisabled();
+});
+
 test('une suppression se signale, s\'enregistre aussitôt et s\'annule', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'aa000001', kind: 'bar', metric: 'cache_type', title: 'Types test' },

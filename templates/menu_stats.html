@@ -356,6 +356,14 @@
                             </div>
                             <small id="helpStatsInheritFont" class="form-hint text-muted d-block">{{ _("Celle réglée dans l'onglet Style → Informations ; sinon, police de l'interface.") }}</small>
                         </div>
+                        {# Copie le style de ce panneau sur les autres de la liste
+                           du mode (stats_ui.js › applyStyleToAll), palette exceptée. #}
+                        <div class="col-12 mt-2">
+                            <button type="button" id="btnStatsStyleToAll" class="btn btn-sm btn-outline-secondary" aria-describedby="helpStatsStyleToAll">
+                                <i class="ti ti-palette me-1" aria-hidden="true"></i>{{ _("Appliquer cette apparence à tous les panneaux") }}
+                            </button>
+                            <small id="helpStatsStyleToAll" class="form-hint text-muted d-block mt-1">{{ _("Fond, couleurs, opacité, taille du texte, arrondi et police. Les couleurs des catégories restent propres à chaque panneau.") }}</small>
+                        </div>
                         </div>
                     </details>
 

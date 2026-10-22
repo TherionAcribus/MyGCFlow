@@ -71,6 +71,17 @@ Les vignettes sont réduites par `object-fit: contain` dans une boîte flex de
 hauteur fixe — en grille CSS à rangée automatique, `height: 100%` ne tenait
 pas et un panneau haut (matrice, Jasmer) débordait sur le texte de la carte.
 
+**« Appliquer cette apparence à tous les panneaux »** (section Apparence,
+2026-10-22) : `applyStyleToAll` (stats_ui.js) recopie le style du panneau
+sélectionné sur les autres panneaux de la liste du mode, masqués compris —
+`SHARED_STYLE_KEYS` : fond, opacité, texte, couleur principale, taille du
+texte, arrondi, police héritée. **Pas la palette** : elle dépend de la
+métrique (« couleurs des types » n'a de sens que pour les types, « dégradé »
+est le défaut de la difficulté). Toast « Annuler » qui ne remet que ces
+champs, par id (un réglage fait entre-temps sur un autre aspect survit) ;
+toast simple si tous ont déjà ce style ; bouton désactivé quand le panneau
+est seul.
+
 Le select « Forme » du formulaire (section Contenu) propose les types qui
 savent dessiner la métrique courante — il n'apparaît que quand il y en a
 plusieurs, donc pour les métriques catégorielles partagées entre barres et
