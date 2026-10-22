@@ -473,6 +473,32 @@ test('flèches du clavier : l’image sélectionnée se déplace (1 px, Maj = 10
   expect((await savedImages(page)).items.map((i) => i.position)).toEqual(positionsAvant);
 });
 
+test('« Dupliquer » une image libre : la copie est décalée, pas posée sur l’original', async ({ page }) => {
+  const avatar = await upload(page, AVATAR);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0050', file: avatar.file, position: { mode: 'free', x: 0.5, y: 0.5, width: 100 } },
+  ] } });
+  await openImagesTab(page);
+  await expect(page.locator('canvas.image-panel')).toHaveCount(1);
+  const rectOf = (id) => page.evaluate(async (imageId) =>
+    (await import('/static/js/index.js')).getImagePanelRect(imageId), id);
+  const original = await rectOf('babe0050');
+  expect(original).toBeTruthy();
+
+  await page.locator('#imagesList li[data-image-id="babe0050"] [data-action="duplicate"]').click();
+  await expect(page.locator('canvas.image-panel')).toHaveCount(2);
+  let copyId = null;
+  await expect.poll(async () => {
+    const items = (await savedImages(page)).items;
+    copyId = items[1]?.id ?? null;
+    return items.length;
+  }).toBe(2);
+  expect((await savedImages(page)).items[1].position.mode).toBe('free');
+  const copy = await rectOf(copyId);
+  expect(copy.x - original.x).toBeCloseTo(24, 0);
+  expect(copy.y - original.y).toBeCloseTo(24, 0);
+});
+
 test('touche Suppr : l’image sélectionnée est supprimée (même effet que le bouton)', async ({ page }) => {
   const avatar = await upload(page, AVATAR);
   await putSettings(page, { images: { items: [

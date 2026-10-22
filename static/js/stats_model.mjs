@@ -1545,6 +1545,30 @@ export function layoutPanels(items, container, obstacles = []) {
     return result;
 }
 
+// Position de la copie d'un panneau (ou d'une image) en position libre :
+// décalée de `step` px vers le bas et la droite pour ne pas recouvrir
+// l'original — vers le haut ou la gauche sur un axe où la place manque. Une
+// copie ancrée n'a rien à faire : elle s'empile dans son coin.
+//   position : position normalisée de l'original (x/y = fractions de
+//              l'espace restant, (W − w) · x)
+//   rect     : son rect affiché { x, y, width, height, container }, ou null
+//              (masqué, pas encore dessiné) — décalage de `fallback` en
+//              fraction, faute de pixels.
+export function offsetFreeCopy(position, rect, { step = 24, fallback = 0.04 } = {}) {
+    if (position?.mode !== 'free') return position;
+    const shift = (fraction, offset, room) => {
+        if (rect && !(room > 0)) return fraction;   // pas d'espace sur cet axe
+        const [at, delta, span] = rect ? [offset, step, room] : [fraction, fallback, 1];
+        const next = at + delta <= span ? at + delta : at - delta;
+        return Math.max(0, Math.min(1, next / span));
+    };
+    return {
+        ...position,
+        x: shift(position.x, rect?.x, (rect?.container?.width ?? 0) - (rect?.width ?? 0)),
+        y: shift(position.y, rect?.y, (rect?.container?.height ?? 0) - (rect?.height ?? 0)),
+    };
+}
+
 export function rectsOverlap(a, b) {
     if (!a || !b) return false;
     return a.x < b.x + b.width && b.x < a.x + a.width

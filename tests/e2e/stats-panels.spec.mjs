@@ -29,6 +29,16 @@ async function savedStats(page) {
   return (await (await page.request.get('/api/settings')).json()).stats;
 }
 
+// Bloc `stats` persisté, une fois `ready(stats)` vrai (écriture debouncée).
+async function savedStatsWhen(page, ready) {
+  let stats = null;
+  await expect.poll(async () => {
+    stats = await savedStats(page);
+    return ready(stats);
+  }).toBe(true);
+  return stats;
+}
+
 async function openWithFixture(page, hash = '', fixture = FIXTURE, expectedCount = '6 / 6') {
   await page.goto(`/${hash}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
@@ -615,6 +625,42 @@ test('un grand nombre tient dans sa case de la matrice D/T', async ({ page }) =>
   const values = drawn.filter((call) => call.font === valueFont);
   expect(values.length).toBeGreaterThan(1);
   for (const call of values) expect(call.width).toBeLessThanOrEqual(INNER * 0.86 + 0.5);
+});
+
+test('« Dupliquer » décale la copie d\'un panneau libre, empile celle d\'un panneau ancré', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'c0b1e001', kind: 'bar', metric: 'cache_type', position: { mode: 'free', x: 0.5, y: 0.5, width: 240 } },
+    { id: 'c0b1e002', kind: 'bar', metric: 'container', position: { anchor: 'top-left', width: 240 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const canvas = (id) => page.locator(`canvas.stats-panel[data-panel-id="${id}"]`);
+  const duplicate = (id) => page.locator(`#statsPanelList [data-panel-id="${id}"] [data-action="duplicate"]`);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Libre : la copie, posée juste après l'original, est décalée de 24 px.
+  const original = await canvas('c0b1e001').boundingBox();
+  await duplicate('c0b1e001').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(3);
+  const ids = (await savedStatsWhen(page, (s) => s.panels.length === 3)).panels.map((p) => p.id);
+  const copyId = ids[1];
+  expect(ids[0]).toBe('c0b1e001');
+  const copy = await canvas(copyId).boundingBox();
+  expect(Math.abs(copy.x - original.x - 24)).toBeLessThanOrEqual(1);
+  expect(Math.abs(copy.y - original.y - 24)).toBeLessThanOrEqual(1);
+  expect((await savedStats(page)).panels[1].position.mode).toBe('free');
+
+  // Ancré : la copie rejoint la pile du coin, sous l'original, sans le recouvrir.
+  const anchored = await canvas('c0b1e002').boundingBox();
+  await duplicate('c0b1e002').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(4);
+  const saved = await savedStatsWhen(page, (s) => s.panels.length === 4);
+  const stacked = saved.panels[3];
+  expect(saved.panels[2].id).toBe('c0b1e002');
+  expect(stacked.position.mode).toBe('anchor');
+  expect(stacked.position.anchor).toBe('top-left');
+  const below = await canvas(stacked.id).boundingBox();
+  expect(below.y).toBeGreaterThanOrEqual(anchored.y + anchored.height);
 });
 
 test('le glisser d\'un panneau ne reconstruit pas son équivalent textuel', async ({ page }) => {

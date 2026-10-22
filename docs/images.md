@@ -258,6 +258,10 @@ flèches déplacent l'image sélectionnée de 1 px (10 px avec Maj ; une image
 ancrée devient libre à sa place affichée) — mécanique partagée avec les
 Stats, hors champs de formulaire.
 
+**Dupliquer** : ancrée, la copie s'empile dans le même coin ; libre, elle est
+décalée de 24 px (`offsetFreeCopy`, stats_model.mjs, partagé avec les Stats)
+au lieu de recouvrir l'original.
+
 **Configurations nommées** (menu Configurations, comme l'onglet Stats) :
 `images.configs` = `[{ name, items }]`, instantanés de la liste de la page
 (`normalizeImagesConfig` ↔ `coerce_images_config`, premier nom gagnant, 12

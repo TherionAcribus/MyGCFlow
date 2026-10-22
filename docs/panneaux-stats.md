@@ -411,6 +411,13 @@ hauteur (`ns-resize`), et le coin qu'elles partagent règle les deux axes
 (`nwse-resize` ou `nesw-resize`) — hors grilles, dont les cases carrées ne
 laissent rien à régler.
 
+**Dupliquer** (bouton de la ligne) : la copie suit l'original dans la liste.
+Ancrée, elle s'empile dans le même coin ; libre, sa position passe par
+`offsetFreeCopy` (stats_model.mjs, partagé avec les images) — décalée de
+24 px vers le bas et la droite, vers le haut ou la gauche sur un axe sans
+place, de 4 % de l'espace restant si l'original n'est pas affiché. Avant le
+2026-10-22, la copie d'un panneau libre recouvrait exactement l'original.
+
 **Clavier.** En mode édition, les flèches déplacent le panneau sélectionné
 de 1 px (10 px avec Maj) ; un panneau ancré passe alors en position libre à
 sa place affichée (`nudge`, panel_interactions.js — partagé avec les

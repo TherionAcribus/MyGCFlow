@@ -40,6 +40,7 @@ import {
     layoutPanels,
     metricsForPanels,
     normalizeStatsSettings,
+    offsetFreeCopy,
     parseYmd,
     rectsOverlap,
     statsKeyOf,
@@ -1210,4 +1211,44 @@ test('évolution : métriques acceptées par la normalisation', () => {
     assert.equal(panel.options.counted, 'placed');
     const plain = createStatsPanel('bar', 'county', {});
     assert.equal('counted' in plain.options, false);
+});
+
+// ---------------------------------------------------------------------------
+// Copie d'un panneau libre : offsetFreeCopy
+// ---------------------------------------------------------------------------
+
+// Cadre 1000×600, panneau 200×100 : espace restant 800×500.
+const freeRect = (x, y, width = 200, height = 100) => ({ x, y, width, height, container: { width: 1000, height: 600 } });
+const near = (a, b) => Math.abs(a - b) < 1e-9;
+
+test('offsetFreeCopy : une copie ancrée garde sa position (elle s\'empile)', () => {
+    const position = { mode: 'anchor', anchor: 'top-left', dx: 16, dy: 16, x: 0, y: 0 };
+    assert.equal(offsetFreeCopy(position, freeRect(16, 16)), position);
+});
+
+test('offsetFreeCopy : une copie libre est décalée de 24 px vers le bas et la droite', () => {
+    const copy = offsetFreeCopy({ mode: 'free', x: 0.5, y: 0.5, width: 200 }, freeRect(400, 250));
+    assert.ok(near(copy.x, 424 / 800));
+    assert.ok(near(copy.y, 274 / 500));
+    assert.equal(copy.mode, 'free');
+    assert.equal(copy.width, 200);
+});
+
+test('offsetFreeCopy : au bord, la copie part dans l\'autre sens', () => {
+    const copy = offsetFreeCopy({ mode: 'free', x: 1, y: 1 }, freeRect(800, 500));
+    assert.ok(near(copy.x, 776 / 800));
+    assert.ok(near(copy.y, 476 / 500));
+});
+
+test('offsetFreeCopy : sans place sur un axe, cet axe ne bouge pas', () => {
+    // Panneau aussi large que le cadre : x inchangé, y décalé.
+    const copy = offsetFreeCopy({ mode: 'free', x: 0, y: 0.2 }, freeRect(0, 100, 1000, 100));
+    assert.equal(copy.x, 0);
+    assert.ok(near(copy.y, 124 / 500));
+});
+
+test('offsetFreeCopy : panneau non affiché, décalage en fraction', () => {
+    const copy = offsetFreeCopy({ mode: 'free', x: 0.5, y: 1 }, null);
+    assert.ok(near(copy.x, 0.54));
+    assert.ok(near(copy.y, 0.96));
 });

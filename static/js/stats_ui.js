@@ -19,6 +19,7 @@ import {
     createStatsPanel,
     normalizeStatsConfig,
     normalizeStatsPanel,
+    offsetFreeCopy,
     statsPanelsKey,
 } from './stats_model.mjs';
 
@@ -318,7 +319,13 @@ function runListAction(id, action) {
         } else if (action === 'down' && index < panels.length - 1) {
             [panels[index + 1], panels[index]] = [panels[index], panels[index + 1]];
         } else if (action === 'duplicate' && panels.length < STATS_MAX_PANELS) {
-            const copy = createStatsPanel(panels[index].kind, panels[index].metric, panels[index]);
+            // Ancrée, la copie s'empile dans le coin ; libre, elle est
+            // décalée pour ne pas cacher l'original.
+            const original = panels[index];
+            const copy = createStatsPanel(original.kind, original.metric, {
+                ...original,
+                position: offsetFreeCopy(original.position, pkg.getStatsPanelRect?.(original.id) || null),
+            });
             panels.splice(index + 1, 0, copy);
             selectedId = copy.id;
         } else if (action === 'delete') {

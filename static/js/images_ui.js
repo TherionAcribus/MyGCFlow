@@ -26,6 +26,7 @@ import {
 } from './images_model.mjs';
 import { imagePanelHeight } from './images_render.mjs';
 import { bindPanelDrag } from './panel_interactions.js';
+import { offsetFreeCopy } from './stats_model.mjs';
 
 const saveImagesDebounced = makeDebouncedSettingsSaver(500);
 
@@ -891,10 +892,12 @@ function runListAction(id, action) {
             [items[index + 1], items[index]] = [items[index], items[index + 1]];
         } else if (action === 'duplicate' && items.length < IMAGES_MAX_ITEMS) {
             // Même image, mêmes réglages, nouvel id (createImageItem) :
-            // elle s'empile dans le même coin.
+            // ancrée, elle s'empile dans le même coin ; libre, elle est
+            // décalée pour ne pas cacher l'original.
             const copy = createImageItem(items[index].file, items[index].name, {
                 enabled: items[index].enabled,
-                position: { ...items[index].position },
+                position: offsetFreeCopy({ ...items[index].position },
+                    pkg.getImagePanelRect?.(items[index].id) || null),
                 style: { ...items[index].style },
                 schedule: { ...items[index].schedule },
             });
