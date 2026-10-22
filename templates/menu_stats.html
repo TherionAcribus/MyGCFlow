@@ -49,59 +49,10 @@
                         </ul>
                         <input type="file" id="statsPanelsImportFile" accept=".json,application/json" hidden>
                     </div>
-                    <div class="dropdown">
-                        <button type="button" id="btnStatsAdd" class="btn btn-sm btn-primary dropdown-toggle"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter") }}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" id="statsAddMenu">
-                            <li><h6 class="dropdown-header">{{ _("Modèles") }}</h6></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="dt">{{ _("Matrice D/T") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="types-sizes">{{ _("Types + tailles") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="difficulty-terrain">{{ _("Difficulté + terrain") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="jasmer">{{ _("Grille Jasmer") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="calendar">{{ _("Calendrier 366") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="activity">{{ _("Année d'activité") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="summary-progress">{{ _("Chiffres clés + progression") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="types-donut">{{ _("Types en anneau") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="race">{{ _("Course des pays") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="age">{{ _("Âge des caches") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-preset="extremes">{{ _("Points extrêmes") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-preset="evo-overview">{{ _("Chiffres + activité") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-preset="evo-status">{{ _("Actives et archivées") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-preset="evo-geo">{{ _("Pays + départements") }}</button></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">{{ _("Panneau seul") }}</h6></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="counter:summary">{{ _("Chiffres clés") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="line:cumulative">{{ _("Progression des trouvailles") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="line:actives">{{ _("Courbe des caches actives") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="line:placees">{{ _("Courbe des poses cumulées") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="line:archivees">{{ _("Courbe des archivages cumulés") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="donut:cache_type">{{ _("Anneau des types") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="donut:container">{{ _("Anneau des tailles") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="donut:country">{{ _("Anneau des pays") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="donut:attribute">{{ _("Anneau des attributs") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="donut:owner">{{ _("Anneau des propriétaires") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="donut:status">{{ _("Anneau du statut") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="donut:county">{{ _("Anneau des départements") }}</button></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">{{ _("Histogramme seul") }}</h6></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:cache_type">{{ _("Types de caches") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:container">{{ _("Tailles") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:difficulty">{{ _("Difficulté") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:terrain">{{ _("Terrain") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:year">{{ _("Trouvailles par année") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:month">{{ _("Trouvailles par mois") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:weekday">{{ _("Jours de la semaine") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:age">{{ _("Âge des caches trouvées") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:country">{{ _("Pays") }}</button></li>
-                            <li data-stats-modes="main evolution"><button type="button" class="dropdown-item" data-stats-add="bar:state">{{ _("Régions") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:attribute">{{ _("Attributs") }}</button></li>
-                            <li data-stats-modes="main"><button type="button" class="dropdown-item" data-stats-add="bar:owner">{{ _("Propriétaires") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="bar:status">{{ _("Statut des caches") }}</button></li>
-                            <li data-stats-modes="evolution"><button type="button" class="dropdown-item" data-stats-add="bar:county">{{ _("Départements") }}</button></li>
-                        </ul>
-                    </div>
+                    <button type="button" id="btnStatsAdd" class="btn btn-sm btn-primary" aria-haspopup="dialog"
+                            aria-controls="statsGalleryModal">
+                        <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter") }}
+                    </button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -421,6 +372,113 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Galerie « Ajouter » : chaque carte pose un panneau (data-stats-add =
+   « type:métrique ») ou un modèle (data-stats-preset, PRESETS de
+   stats_ui.js). Vignette dessinée à l'ouverture avec les données de la
+   sélection (stats_panels.js › drawStatsGalleryPreviews) ; data-stats-modes
+   filtre par page (« main » = Mes Géocaches, « evolution ») ; une variante
+   de description par mode est possible. Recherche : titre, description et
+   forme (stats_ui.js › filterGallery). #}
+{% set stats_gallery = [
+    (_("Ensembles de deux panneaux"), [
+        ('preset', 'types-sizes', _("Types + tailles"), _("Types de caches et tailles, en deux histogrammes."), None, 'main', 2),
+        ('preset', 'difficulty-terrain', _("Difficulté + terrain"), _("Difficultés et terrains, de 1 à 5."), None, 'main', 2),
+        ('preset', 'summary-progress', _("Chiffres clés + progression"), _("Chiffres clés et courbe des trouvailles cumulées."), None, 'main', 2),
+        ('preset', 'age', _("Âge des caches"), _("Âge des caches à la trouvaille, et la plus ancienne trouvée."), None, 'main', 2),
+        ('preset', 'evo-overview', _("Chiffres + activité"), _("Actives, posées, archivées, et la courbe des actives."), None, 'evolution', 2),
+        ('preset', 'evo-geo', _("Pays + départements"), _("Répartition par pays et par département."), None, 'evolution', 2),
+    ]),
+    (_("Grilles"), [
+        ('preset', 'dt', _("Matrice D/T"), _("Les 81 combinaisons difficulté/terrain."), None, 'main', 1),
+        ('preset', 'jasmer', _("Grille Jasmer"), _("Un mois de publication par case, depuis mai 2000."), None, 'main', 1),
+        ('preset', 'calendar', _("Calendrier 366"), _("Chaque jour de l'année, 29 février compris."), None, 'main', 1),
+        ('preset', 'activity', _("Année d'activité"), _("Une année jour par jour, façon contributions GitHub."), None, 'main', 1),
+    ]),
+    (_("Chiffres et courbes"), [
+        ('add', 'counter:summary', _("Chiffres clés"), _("Jours de trouvaille, record, plus longue série…"), _("Caches actives, posées, archivées et pic."), 'main evolution', 1),
+        ('preset', 'extremes', _("Points extrêmes"), _("Vos trouvailles les plus au nord, au sud, à l'est et à l'ouest."), None, 'main', 1),
+        ('add', 'line:cumulative', _("Progression des trouvailles"), _("Trouvailles cumulées au fil du temps, avec les paliers."), None, 'main', 1),
+        ('add', 'line:actives', _("Courbe des caches actives"), _("Nombre de caches actives au fil du temps."), None, 'evolution', 1),
+        ('add', 'line:placees', _("Courbe des poses cumulées"), _("Caches posées, cumulées au fil du temps."), None, 'evolution', 1),
+        ('add', 'line:archivees', _("Courbe des archivages cumulés"), _("Caches archivées, cumulées au fil du temps."), None, 'evolution', 1),
+    ]),
+    (_("Caractéristiques des caches"), [
+        ('add', 'bar:cache_type', _("Types de caches"), _("Une barre par type, aux couleurs de la carte."), None, 'main evolution', 1),
+        ('add', 'donut:cache_type', _("Anneau des types"), _("La part de chaque type."), None, 'main evolution', 1),
+        ('add', 'bar:container', _("Tailles"), _("Du micro au grand."), None, 'main evolution', 1),
+        ('add', 'donut:container', _("Anneau des tailles"), _("La part de chaque taille."), None, 'main evolution', 1),
+        ('add', 'bar:difficulty', _("Difficulté"), _("De 1 à 5, par demi-point."), None, 'main evolution', 1),
+        ('add', 'bar:terrain', _("Terrain"), _("De 1 à 5, par demi-point."), None, 'main evolution', 1),
+        ('add', 'bar:attribute', _("Attributs"), _("Les attributs les plus fréquents."), None, 'main', 1),
+        ('add', 'donut:attribute', _("Anneau des attributs"), _("La part des attributs les plus fréquents."), None, 'main', 1),
+        ('add', 'bar:age', _("Âge des caches trouvées"), _("Écart entre la publication et la trouvaille."), None, 'main', 1),
+        ('add', 'bar:status', _("Statut des caches"), _("Caches actives et archivées."), None, 'evolution', 1),
+        ('add', 'donut:status', _("Anneau du statut"), _("La part des actives et des archivées."), None, 'evolution', 1),
+    ]),
+    (_("Lieux et propriétaires"), [
+        ('add', 'bar:country', _("Pays"), _("Une barre par pays."), None, 'main evolution', 1),
+        ('add', 'donut:country', _("Anneau des pays"), _("La part de chaque pays."), None, 'main evolution', 1),
+        ('preset', 'race', _("Course des pays"), _("Les pays se doublent au fil des trouvailles."), None, 'main', 1),
+        ('add', 'bar:state', _("Régions"), _("Une barre par région."), None, 'main evolution', 1),
+        ('add', 'bar:county', _("Départements"), _("Une barre par département."), None, 'evolution', 1),
+        ('add', 'donut:county', _("Anneau des départements"), _("La part de chaque département."), None, 'evolution', 1),
+        ('add', 'bar:owner', _("Propriétaires"), _("Les propriétaires dont vous avez trouvé le plus de caches."), None, 'main', 1),
+        ('add', 'donut:owner', _("Anneau des propriétaires"), _("La part des propriétaires les plus trouvés."), None, 'main', 1),
+    ]),
+    (_("Dates de trouvaille"), [
+        ('add', 'bar:year', _("Trouvailles par année"), _("Les trouvailles de chaque année."), None, 'main', 1),
+        ('add', 'bar:month', _("Trouvailles par mois"), _("De janvier à décembre, toutes années confondues."), None, 'main', 1),
+        ('add', 'bar:weekday', _("Jours de la semaine"), _("Du lundi au dimanche."), None, 'main', 1),
+    ]),
+] %}
+<div id="statsGalleryModal" class="modal bs-modal fade" tabindex="-1" aria-labelledby="statsGalleryTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header flex-wrap gap-2">
+                <h5 id="statsGalleryTitle" class="modal-title me-auto">
+                    <i class="ti ti-chart-bar text-muted me-1" aria-hidden="true"></i>{{ _("Ajouter des statistiques") }}
+                </h5>
+                <div class="input-icon stats-gallery-search">
+                    <span class="input-icon-addon"><i class="ti ti-search" aria-hidden="true"></i></span>
+                    <input type="search" id="inputStatsGallerySearch" class="form-control form-control-sm"
+                           placeholder="{{ _('Rechercher une statistique') }}"
+                           aria-label="{{ _('Rechercher une statistique') }}" autocomplete="off">
+                </div>
+                <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                <p id="statsGallerySlots" class="form-hint text-muted small mb-0 w-100" role="status"></p>
+            </div>
+            <div class="modal-body" id="statsAddMenu">
+                {% for title, entries in stats_gallery %}
+                <section class="stats-gallery-section" aria-labelledby="statsGallerySection{{ loop.index }}">
+                    <h6 class="gc-subsection-title" id="statsGallerySection{{ loop.index }}">{{ title }}</h6>
+                    <div class="stats-gallery-grid">
+                        {% for type, value, label, desc, desc_evo, modes, count in entries %}
+                        <button type="button" class="stats-gallery-card"
+                                {% if type == 'preset' %}data-stats-preset="{{ value }}"{% else %}data-stats-add="{{ value }}"{% endif %}
+                                data-stats-modes="{{ modes }}">
+                            <span class="stats-gallery-thumb" aria-hidden="true">
+                                <i class="ti {{ {'grid': 'ti-layout-grid', 'donut': 'ti-chart-donut', 'line': 'ti-chart-line', 'counter': 'ti-123'}.get(value.split(':')[0], 'ti-chart-bar') }} stats-gallery-placeholder"></i>
+                            </span>
+                            <span class="stats-gallery-text">
+                                <span class="stats-gallery-title">{{ label }}{% if count > 1 %}<span class="badge bg-secondary-lt ms-1">{{ _("2 panneaux") }}</span>{% endif %}</span>
+                                {% if desc_evo %}
+                                <span class="stats-gallery-desc" data-stats-modes="main">{{ desc }}</span>
+                                <span class="stats-gallery-desc" data-stats-modes="evolution">{{ desc_evo }}</span>
+                                {% else %}
+                                <span class="stats-gallery-desc">{{ desc }}</span>
+                                {% endif %}
+                            </span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endfor %}
+                <p id="statsGalleryEmpty" class="form-hint text-muted mb-0" hidden>{{ _("Aucune statistique ne correspond à cette recherche.") }}</p>
             </div>
         </div>
     </div>

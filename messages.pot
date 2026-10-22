@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 20:27+0200\n"
+"POT-Creation-Date: 2026-10-22 13:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -546,7 +546,7 @@ msgstr ""
 
 #: blueprints/core.py:221 static/js/notifications.js:448
 #: templates/menu_data.html:95 templates/menu_data.html:361
-#: templates/menu_images.html:89 templates/menu_stats.html:117
+#: templates/menu_images.html:89 templates/menu_stats.html:68
 #: templates/menu_style.html:246 templates/menu_style.html:271
 #: templates/menu_style.html:296 templates/menu_style.html:324
 #: templates/menu_style.html:355 templates/menu_style.html:383
@@ -896,7 +896,7 @@ msgstr ""
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr ""
 
-#: blueprints/media.py:295 static/js/ui.js:8939
+#: blueprints/media.py:295 static/js/ui.js:10600
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr ""
 
@@ -963,11 +963,11 @@ msgid ""
 msgstr ""
 
 #: static/js/background_audio.js:121 static/js/mapgl.js:4720
-#: static/js/ui.js:682 static/js/ui.js:739 static/js/ui.js:1823
-#: static/js/ui.js:8566 static/js/ui.js:8619 static/js/ui.js:8802
-#: static/js/ui.js:8899 static/js/ui.js:8953 static/js/ui.js:8977
-#: static/js/ui.js:9031 static/js/ui.js:9039 static/js/ui.js:9047
-#: static/js/ui.js:9188 templates/guide.html:288
+#: static/js/ui.js:826 static/js/ui.js:895 static/js/ui.js:2177
+#: static/js/ui.js:10158 static/js/ui.js:10238 static/js/ui.js:10444
+#: static/js/ui.js:10559 static/js/ui.js:10616 static/js/ui.js:10642
+#: static/js/ui.js:10701 static/js/ui.js:10709 static/js/ui.js:10717
+#: static/js/ui.js:10887 templates/guide.html:288
 #: templates/menu_animation.html:23 templates/menu_animation.html:281
 msgid "Musique"
 msgstr ""
@@ -978,8 +978,8 @@ msgid ""
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:2735
-#: static/js/ui.js:2772 static/js/ui.js:2794
+#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3257
+#: static/js/ui.js:3304 static/js/ui.js:3326
 msgid "Carte"
 msgstr ""
 
@@ -1046,7 +1046,7 @@ msgstr ""
 msgid "hier à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:456 static/js/stats_panels.js:989
+#: static/js/bdd.js:456 static/js/stats_panels.js:1252
 msgid "caches"
 msgstr ""
 
@@ -1123,7 +1123,7 @@ msgstr ""
 #: static/js/evolution_data.js:1178 static/js/evolution_data.js:1186
 #: static/js/labs.js:2001 static/js/labs.js:2044 static/js/labs.js:2084
 #: static/js/notifications.js:421 static/js/recording_perf.js:187
-#: static/js/ui.js:1827
+#: static/js/ui.js:2181
 msgid "Erreur"
 msgstr ""
 
@@ -1542,219 +1542,219 @@ msgstr ""
 msgid "Image"
 msgstr ""
 
-#: static/js/images_panels.js:822 static/js/images_ui.js:102
+#: static/js/images_panels.js:822 static/js/images_ui.js:103
 #, python-brace-format
 msgid "Image ${n}"
 msgstr ""
 
-#: static/js/images_ui.js:142 static/js/images_ui.js:160
+#: static/js/images_ui.js:143 static/js/images_ui.js:161
 msgid "L'image SVG n'a pas pu être lue."
 msgstr ""
 
-#: static/js/images_ui.js:190 static/js/images_ui.js:197
+#: static/js/images_ui.js:191 static/js/images_ui.js:198
 msgid "L'image n'a pas pu être envoyée."
 msgstr ""
 
-#: static/js/images_ui.js:197 static/js/images_ui.js:263
-#: static/js/images_ui.js:286 static/js/images_ui.js:548
-#: static/js/images_ui.js:554 static/js/images_ui.js:583
-#: static/js/images_ui.js:608 static/js/images_ui.js:610
-#: static/js/images_ui.js:702 static/js/images_ui.js:1118
-#: static/js/images_ui.js:1123 templates/app.html:255 templates/guide.html:59
+#: static/js/images_ui.js:198 static/js/images_ui.js:264
+#: static/js/images_ui.js:287 static/js/images_ui.js:549
+#: static/js/images_ui.js:555 static/js/images_ui.js:584
+#: static/js/images_ui.js:609 static/js/images_ui.js:611
+#: static/js/images_ui.js:703 static/js/images_ui.js:1121
+#: static/js/images_ui.js:1126 templates/app.html:255 templates/guide.html:59
 #: templates/guide.html:112 templates/guide.html:392 templates/guide.html:394
 #: templates/menu_images.html:32
 msgid "Images"
 msgstr ""
 
-#: static/js/images_ui.js:263 static/js/images_ui.js:554
+#: static/js/images_ui.js:264 static/js/images_ui.js:555
 #: templates/menu_images.html:96
 msgid "Quatre images au maximum."
 msgstr ""
 
-#: static/js/images_ui.js:286
+#: static/js/images_ui.js:287
 msgid "Attendez la fin de l'enregistrement pour ajouter une image."
 msgstr ""
 
-#: static/js/images_ui.js:377 static/js/video_ready.js:31
+#: static/js/images_ui.js:378 static/js/video_ready.js:31
 #, python-brace-format
 msgid "${n} Mo"
 msgstr ""
 
-#: static/js/images_ui.js:378
+#: static/js/images_ui.js:379
 #, python-brace-format
 msgid "${n} Ko"
 msgstr ""
 
-#: static/js/images_ui.js:386
+#: static/js/images_ui.js:387
 msgid "Utilisée sur cette page"
 msgstr ""
 
-#: static/js/images_ui.js:390
+#: static/js/images_ui.js:391
 msgid "Utilisée dans « Mes Géocaches »"
 msgstr ""
 
-#: static/js/images_ui.js:391
+#: static/js/images_ui.js:392
 msgid "Utilisée dans « Évolution »"
-msgstr ""
-
-#: static/js/images_ui.js:422
-#, python-brace-format
-msgid "Ajouter ${name} (${w} × ${h})"
 msgstr ""
 
 #: static/js/images_ui.js:423
 #, python-brace-format
+msgid "Ajouter ${name} (${w} × ${h})"
+msgstr ""
+
+#: static/js/images_ui.js:424
+#, python-brace-format
 msgid "Ajouter cette image (${w} × ${h})"
 msgstr ""
 
-#: static/js/images_ui.js:450 static/js/images_ui.js:451
-#: static/js/images_ui.js:626
+#: static/js/images_ui.js:451 static/js/images_ui.js:452
+#: static/js/images_ui.js:627
 msgid "Retirer de la bibliothèque"
 msgstr ""
 
-#: static/js/images_ui.js:462
+#: static/js/images_ui.js:463
 #, python-brace-format
 msgid "${n} image(s) · ${size}"
 msgstr ""
 
-#: static/js/images_ui.js:548
+#: static/js/images_ui.js:549
 msgid "Import impossible : fichier d'images invalide"
 msgstr ""
 
-#: static/js/images_ui.js:582
+#: static/js/images_ui.js:583
 #, python-brace-format
 msgid "${n} image(s) non importée(s) : quatre au maximum."
 msgstr ""
 
-#: static/js/images_ui.js:586
+#: static/js/images_ui.js:587
 #, python-brace-format
 msgid "${count} image(s) importée(s)"
 msgstr ""
 
-#: static/js/images_ui.js:608
+#: static/js/images_ui.js:609
 msgid "Image retirée de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:610
+#: static/js/images_ui.js:611
 msgid "L'image n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/images_ui.js:624
+#: static/js/images_ui.js:625
 #, python-brace-format
 msgid "« ${name} » sera supprimée définitivement de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:625
+#: static/js/images_ui.js:626
 msgid "Cette image sera supprimée définitivement de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:627 static/js/images_ui.js:666
-#: static/js/images_ui.js:853 static/js/profiles.js:967
+#: static/js/images_ui.js:628 static/js/images_ui.js:667
+#: static/js/images_ui.js:854 static/js/profiles.js:967
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
-#: static/js/stats_ui.js:254 static/js/stats_ui.js:1084
+#: static/js/stats_ui.js:394 static/js/stats_ui.js:1356
 #: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/images_ui.js:701
+#: static/js/images_ui.js:702
 msgid "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 msgstr ""
 
-#: static/js/images_ui.js:709 static/js/stats_ui.js:1123
+#: static/js/images_ui.js:710 static/js/stats_ui.js:1397
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr ""
 
-#: static/js/images_ui.js:723 static/js/stats_ui.js:1137
+#: static/js/images_ui.js:724 static/js/stats_ui.js:1411
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr ""
 
-#: static/js/images_ui.js:742 static/js/images_ui.js:919
-#: static/js/stats_ui.js:1156
+#: static/js/images_ui.js:743 static/js/images_ui.js:922
+#: static/js/stats_ui.js:1430
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr ""
 
-#: static/js/images_ui.js:812
+#: static/js/images_ui.js:813
 msgid "Afficher cette image"
 msgstr ""
 
-#: static/js/images_ui.js:836
+#: static/js/images_ui.js:837
 msgid "(manquante)"
 msgstr ""
 
-#: static/js/images_ui.js:842
+#: static/js/images_ui.js:843
 msgid "Apparition planifiée"
 msgstr ""
 
-#: static/js/images_ui.js:850 static/js/stats_ui.js:251
+#: static/js/images_ui.js:851 static/js/stats_ui.js:391
 msgid "Monter"
 msgstr ""
 
-#: static/js/images_ui.js:851 static/js/stats_ui.js:252
+#: static/js/images_ui.js:852 static/js/stats_ui.js:392
 msgid "Descendre"
 msgstr ""
 
-#: static/js/images_ui.js:852 static/js/profiles.js:958
-#: static/js/profiles.js:2748 static/js/stats_ui.js:253
+#: static/js/images_ui.js:853 static/js/profiles.js:958
+#: static/js/profiles.js:2748 static/js/stats_ui.js:393
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/images_ui.js:1057
+#: static/js/images_ui.js:1060
 #, python-brace-format
 msgid "Le ${date}"
 msgstr ""
 
-#: static/js/images_ui.js:1058
+#: static/js/images_ui.js:1061
 #, python-brace-format
 msgid "Jamais atteinte : ${total} trouvaille(s) au total"
 msgstr ""
 
-#: static/js/images_ui.js:1085
+#: static/js/images_ui.js:1088
 #, python-brace-format
 msgid ""
 "La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
 "ne sera pas visible."
 msgstr ""
 
-#: static/js/images_ui.js:1088
+#: static/js/images_ui.js:1091
 msgid ""
 "La disparition tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr ""
 
-#: static/js/images_ui.js:1090
+#: static/js/images_ui.js:1093
 msgid ""
 "« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr ""
 
-#: static/js/images_ui.js:1093
+#: static/js/images_ui.js:1096
 #, python-brace-format
 msgid ""
 "L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
 "sera pas visible dans la vidéo."
 msgstr ""
 
-#: static/js/images_ui.js:1096
+#: static/js/images_ui.js:1099
 #, python-brace-format
 msgid ""
 "L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
 "pas visible dans la vidéo."
 msgstr ""
 
-#: static/js/images_ui.js:1118
+#: static/js/images_ui.js:1121
 msgid "Attendez la fin de l'enregistrement."
 msgstr ""
 
-#: static/js/images_ui.js:1122
+#: static/js/images_ui.js:1125
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
 msgstr ""
 
-#: static/js/images_ui.js:1159
+#: static/js/images_ui.js:1162
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr ""
@@ -2269,7 +2269,7 @@ msgstr ""
 
 #: static/js/labs.js:1722 templates/guide.html:227
 #: templates/menu_images.html:125 templates/menu_informations.html:99
-#: templates/menu_stats.html:314
+#: templates/menu_stats.html:265
 msgid "Position"
 msgstr ""
 
@@ -2287,7 +2287,7 @@ msgid "Date de découverte"
 msgstr ""
 
 #: static/js/labs.js:1767 templates/menu_images.html:88
-#: templates/menu_stats.html:116
+#: templates/menu_stats.html:67
 msgid "Enregistrer"
 msgstr ""
 
@@ -2543,7 +2543,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:5015 static/js/ui.js:6469
+#: static/js/mapgl.js:5015 static/js/ui.js:7703
 msgid "Assemblage en cours"
 msgstr ""
 
@@ -2733,14 +2733,14 @@ msgstr ""
 #: static/js/notifications.js:120 static/js/notifications.js:484
 #: templates/menu_data.html:290 templates/menu_data.html:329
 #: templates/menu_data.html:341 templates/menu_data.html:374
-#: templates/menu_data.html:391 templates/menu_style.html:52
-#: templates/menu_style.html:233 templates/menu_style.html:265
-#: templates/menu_style.html:290 templates/menu_style.html:318
-#: templates/menu_style.html:341 templates/menu_style.html:377
-#: templates/modal_evolution.html:9 templates/modal_evolution.html:39
-#: templates/modal_evolution.html:78 templates/modal_first_use.html:33
-#: templates/modal_infos.html:11 templates/modal_video_ready.html:11
-#: templates/modal_video_ready.html:37
+#: templates/menu_data.html:391 templates/menu_stats.html:452
+#: templates/menu_style.html:52 templates/menu_style.html:233
+#: templates/menu_style.html:265 templates/menu_style.html:290
+#: templates/menu_style.html:318 templates/menu_style.html:341
+#: templates/menu_style.html:377 templates/modal_evolution.html:9
+#: templates/modal_evolution.html:39 templates/modal_evolution.html:78
+#: templates/modal_first_use.html:33 templates/modal_infos.html:11
+#: templates/modal_video_ready.html:11 templates/modal_video_ready.html:37
 msgid "Fermer"
 msgstr ""
 
@@ -2822,7 +2822,7 @@ msgstr ""
 msgid "Vous ne serez plus averti pour cette version."
 msgstr ""
 
-#: static/js/profiles.js:40 static/js/stats_ui.js:109 templates/app.html:40
+#: static/js/profiles.js:40 static/js/stats_ui.js:127 templates/app.html:40
 #: templates/app.html:66 templates/app.html:68
 msgid "Évolution"
 msgstr ""
@@ -3257,452 +3257,463 @@ msgstr ""
 msgid "Non enregistré"
 msgstr ""
 
-#: static/js/stats_panels.js:512 templates/guide.html:363
-#: templates/menu_stats.html:59
+#: static/js/stats_panels.js:714 templates/guide.html:363
+#: templates/menu_stats.html:397
 msgid "Matrice D/T"
 msgstr ""
 
-#: static/js/stats_panels.js:513 templates/guide.html:364
-#: templates/menu_stats.html:62
+#: static/js/stats_panels.js:715 templates/guide.html:364
+#: templates/menu_stats.html:398
 msgid "Grille Jasmer"
 msgstr ""
 
-#: static/js/stats_panels.js:514 templates/guide.html:365
-#: templates/menu_stats.html:63
+#: static/js/stats_panels.js:716 templates/guide.html:365
+#: templates/menu_stats.html:399
 msgid "Calendrier 366"
 msgstr ""
 
-#: static/js/stats_panels.js:515 templates/menu_stats.html:64
+#: static/js/stats_panels.js:717 templates/menu_stats.html:400
 msgid "Année d'activité"
 msgstr ""
 
-#: static/js/stats_panels.js:516 templates/menu_stats.html:89
+#: static/js/stats_panels.js:718 templates/menu_stats.html:411
 msgid "Types de caches"
 msgstr ""
 
-#: static/js/stats_panels.js:517 templates/menu_stats.html:90
+#: static/js/stats_panels.js:719 templates/menu_stats.html:413
 msgid "Tailles"
 msgstr ""
 
-#: static/js/stats_panels.js:518 templates/menu_stats.html:91
+#: static/js/stats_panels.js:720 templates/menu_stats.html:415
 msgid "Difficulté"
 msgstr ""
 
-#: static/js/stats_panels.js:519 templates/_filter_cache_attrs.html:92
-#: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:92
+#: static/js/stats_panels.js:721 templates/_filter_cache_attrs.html:92
+#: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:416
 msgid "Terrain"
 msgstr ""
 
-#: static/js/stats_panels.js:520 templates/menu_stats.html:93
+#: static/js/stats_panels.js:722 templates/menu_stats.html:434
 msgid "Trouvailles par année"
 msgstr ""
 
-#: static/js/stats_panels.js:521 templates/menu_stats.html:94
+#: static/js/stats_panels.js:723 templates/menu_stats.html:435
 msgid "Trouvailles par mois"
 msgstr ""
 
-#: static/js/stats_panels.js:522 templates/menu_stats.html:95
+#: static/js/stats_panels.js:724 templates/menu_stats.html:436
 msgid "Jours de la semaine"
 msgstr ""
 
-#: static/js/stats_panels.js:523 templates/menu_stats.html:96
+#: static/js/stats_panels.js:725 templates/menu_stats.html:419
 msgid "Âge des caches trouvées"
 msgstr ""
 
-#: static/js/stats_panels.js:524 templates/menu_stats.html:99
+#: static/js/stats_panels.js:726 templates/menu_stats.html:417
 msgid "Attributs"
 msgstr ""
 
-#: static/js/stats_panels.js:525 templates/menu_stats.html:100
+#: static/js/stats_panels.js:727 templates/menu_stats.html:430
 msgid "Propriétaires"
 msgstr ""
 
-#: static/js/stats_panels.js:526 static/js/stats_panels.js:704
+#: static/js/stats_panels.js:728 static/js/stats_panels.js:924
 #: templates/_filter_country_state.html:6
-#: templates/_filter_country_state.html:7 templates/menu_stats.html:97
-#: templates/menu_stats.html:262
+#: templates/_filter_country_state.html:7 templates/menu_stats.html:213
+#: templates/menu_stats.html:424
 msgid "Pays"
 msgstr ""
 
-#: static/js/stats_panels.js:527 static/js/stats_panels.js:705
-#: templates/menu_stats.html:98 templates/menu_stats.html:263
+#: static/js/stats_panels.js:729 static/js/stats_panels.js:925
+#: templates/menu_stats.html:214 templates/menu_stats.html:427
 msgid "Régions"
 msgstr ""
 
-#: static/js/stats_panels.js:528 templates/menu_stats.html:102
+#: static/js/stats_panels.js:730 templates/menu_stats.html:428
 msgid "Départements"
 msgstr ""
 
-#: static/js/stats_panels.js:529 templates/menu_stats.html:101
+#: static/js/stats_panels.js:731 templates/menu_stats.html:420
 msgid "Statut des caches"
 msgstr ""
 
-#: static/js/stats_panels.js:530 static/js/stats_panels.js:568
-#: static/js/stats_panels.js:714 templates/menu_stats.html:207
-#: templates/menu_stats.html:272
+#: static/js/stats_panels.js:732 static/js/stats_panels.js:771
+#: static/js/stats_panels.js:934 templates/menu_stats.html:158
+#: templates/menu_stats.html:223
 msgid "Caches actives"
 msgstr ""
 
-#: static/js/stats_panels.js:531 templates/menu_stats.html:208
+#: static/js/stats_panels.js:733 templates/menu_stats.html:159
 msgid "Poses cumulées"
 msgstr ""
 
-#: static/js/stats_panels.js:532 templates/menu_stats.html:209
+#: static/js/stats_panels.js:734 templates/menu_stats.html:160
 msgid "Archivages cumulés"
 msgstr ""
 
-#: static/js/stats_panels.js:533 templates/guide.html:368
-#: templates/menu_stats.html:76
+#: static/js/stats_panels.js:735 templates/guide.html:368
+#: templates/menu_stats.html:405
 msgid "Progression des trouvailles"
 msgstr ""
 
-#: static/js/stats_panels.js:534 static/js/stats_ui.js:100
-#: templates/guide.html:369 templates/menu_stats.html:75
+#: static/js/stats_panels.js:736 static/js/stats_ui.js:115
+#: templates/guide.html:369 templates/menu_stats.html:403
 msgid "Chiffres clés"
 msgstr ""
 
-#: static/js/stats_panels.js:540 static/js/stats_panels.js:561
+#: static/js/stats_panels.js:742 static/js/stats_panels.js:764
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr ""
 
-#: static/js/stats_panels.js:541
+#: static/js/stats_panels.js:743
 msgid "Inconnu"
 msgstr ""
 
-#: static/js/stats_panels.js:547
+#: static/js/stats_panels.js:750
 msgid "Le jour même"
 msgstr ""
 
-#: static/js/stats_panels.js:548
+#: static/js/stats_panels.js:751
 msgid "1 à 7 jours"
 msgstr ""
 
-#: static/js/stats_panels.js:549
+#: static/js/stats_panels.js:752
 msgid "8 jours à 1 mois"
 msgstr ""
 
-#: static/js/stats_panels.js:550
+#: static/js/stats_panels.js:753
 msgid "1 à 6 mois"
 msgstr ""
 
-#: static/js/stats_panels.js:551
+#: static/js/stats_panels.js:754
 msgid "6 à 12 mois"
 msgstr ""
 
-#: static/js/stats_panels.js:552
+#: static/js/stats_panels.js:755
 msgid "1 à 2 ans"
 msgstr ""
 
-#: static/js/stats_panels.js:553
+#: static/js/stats_panels.js:756
 msgid "2 à 5 ans"
 msgstr ""
 
-#: static/js/stats_panels.js:554
+#: static/js/stats_panels.js:757
 msgid "5 à 10 ans"
 msgstr ""
 
-#: static/js/stats_panels.js:555
+#: static/js/stats_panels.js:758
 msgid "10 à 15 ans"
 msgstr ""
 
-#: static/js/stats_panels.js:556
+#: static/js/stats_panels.js:759
 msgid "15 ans et plus"
 msgstr ""
 
-#: static/js/stats_panels.js:568 static/js/stats_panels.js:716
-#: templates/menu_stats.html:274
+#: static/js/stats_panels.js:771 static/js/stats_panels.js:936
+#: templates/menu_stats.html:225
 msgid "Caches archivées"
 msgstr ""
 
-#: static/js/stats_panels.js:575
+#: static/js/stats_panels.js:778
 #, python-brace-format
 msgid "Sans D/T : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:576
+#: static/js/stats_panels.js:779
 #, python-brace-format
 msgid "Sans difficulté : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:577
+#: static/js/stats_panels.js:780
 #, python-brace-format
 msgid "Sans terrain : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:578
+#: static/js/stats_panels.js:781
 #, python-brace-format
 msgid "Sans date de publication : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:580
+#: static/js/stats_panels.js:783
 #, python-brace-format
 msgid "Sans date de trouvaille : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:581
+#: static/js/stats_panels.js:784
 #, python-brace-format
 msgid "Sans attribut : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:582
+#: static/js/stats_panels.js:785
 #, python-brace-format
 msgid "Sans date : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:587
+#: static/js/stats_panels.js:790
 #, python-brace-format
 msgid "Combinaisons : ${filled}/${available} (${pct})"
 msgstr ""
 
-#: static/js/stats_panels.js:588
+#: static/js/stats_panels.js:791
 #, python-brace-format
 msgid "Mois : ${filled}/${available} (${pct})"
 msgstr ""
 
-#: static/js/stats_panels.js:589
+#: static/js/stats_panels.js:792
 #, python-brace-format
 msgid "Jours : ${filled}/${available} (${pct})"
 msgstr ""
 
-#: static/js/stats_panels.js:594
+#: static/js/stats_panels.js:798
 #, python-brace-format
 msgid "Tours de Jasmer : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:595
+#: static/js/stats_panels.js:799
 #, python-brace-format
 msgid "Tours de calendrier : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:596
+#: static/js/stats_panels.js:800
 #, python-brace-format
 msgid "Tours de matrice : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:700 templates/menu_stats.html:258
+#: static/js/stats_panels.js:920 templates/menu_stats.html:209
 msgid "Jours avec trouvaille"
 msgstr ""
 
-#: static/js/stats_panels.js:701 templates/menu_stats.html:259
+#: static/js/stats_panels.js:921 templates/menu_stats.html:210
 msgid "Record sur une journée"
 msgstr ""
 
-#: static/js/stats_panels.js:702 templates/menu_stats.html:260
+#: static/js/stats_panels.js:922 templates/menu_stats.html:211
 msgid "Plus longue série (jours)"
 msgstr ""
 
-#: static/js/stats_panels.js:703 templates/menu_stats.html:261
+#: static/js/stats_panels.js:923 templates/menu_stats.html:212
 msgid "Types de caches différents"
 msgstr ""
 
-#: static/js/stats_panels.js:706 templates/menu_stats.html:264
+#: static/js/stats_panels.js:926 templates/menu_stats.html:215
 msgid "Attributs différents"
 msgstr ""
 
-#: static/js/stats_panels.js:707 templates/menu_stats.html:265
+#: static/js/stats_panels.js:927 templates/menu_stats.html:216
 msgid "Propriétaires différents"
 msgstr ""
 
-#: static/js/stats_panels.js:708 templates/menu_stats.html:266
+#: static/js/stats_panels.js:928 templates/menu_stats.html:217
 msgid "Plus ancienne cache trouvée"
 msgstr ""
 
-#: static/js/stats_panels.js:709 templates/menu_stats.html:267
+#: static/js/stats_panels.js:929 templates/menu_stats.html:218
 msgid "Trouvées le jour de publication"
 msgstr ""
 
-#: static/js/stats_panels.js:710 templates/menu_stats.html:268
+#: static/js/stats_panels.js:930 templates/menu_stats.html:219
 msgid "Trouvaille la plus au nord"
 msgstr ""
 
-#: static/js/stats_panels.js:711 templates/menu_stats.html:269
+#: static/js/stats_panels.js:931 templates/menu_stats.html:220
 msgid "Trouvaille la plus au sud"
 msgstr ""
 
-#: static/js/stats_panels.js:712 templates/menu_stats.html:270
+#: static/js/stats_panels.js:932 templates/menu_stats.html:221
 msgid "Trouvaille la plus à l'est"
 msgstr ""
 
-#: static/js/stats_panels.js:713 templates/menu_stats.html:271
+#: static/js/stats_panels.js:933 templates/menu_stats.html:222
 msgid "Trouvaille la plus à l'ouest"
 msgstr ""
 
-#: static/js/stats_panels.js:715 templates/menu_stats.html:273
+#: static/js/stats_panels.js:935 templates/menu_stats.html:224
 msgid "Caches posées"
 msgstr ""
 
-#: static/js/stats_panels.js:717 templates/menu_stats.html:275
+#: static/js/stats_panels.js:937 templates/menu_stats.html:226
 msgid "Pic de caches actives"
 msgstr ""
 
-#: static/js/stats_panels.js:781
+#: static/js/stats_panels.js:1020
 #, python-brace-format
 msgid "Activité ${year}"
 msgstr ""
 
-#: static/js/stats_panels.js:869
+#: static/js/stats_panels.js:1119
 msgid "trouvailles"
 msgstr ""
 
-#: static/js/stats_panels.js:1206
+#: static/js/stats_panels.js:1521
 #, python-brace-format
 msgid "${n} trouvailles au ${date}"
 msgstr ""
 
-#: static/js/stats_panels.js:1212
+#: static/js/stats_panels.js:1527
 #, python-brace-format
 msgid "Paliers : ${list}"
 msgstr ""
 
-#: static/js/stats_panels.js:1230
+#: static/js/stats_panels.js:1545
 msgid "Aucune cache"
 msgstr ""
 
-#: static/js/stats_panels.js:1230
+#: static/js/stats_panels.js:1545
 msgid "Aucune trouvaille"
 msgstr ""
 
-#: static/js/stats_panels.js:1586 static/js/stats_panels.js:1632
+#: static/js/stats_panels.js:2106 static/js/stats_panels.js:2154
 msgid "Chiffre"
 msgstr ""
 
-#: static/js/stats_panels.js:1586 static/js/stats_panels.js:1632
+#: static/js/stats_panels.js:2106 static/js/stats_panels.js:2154
 msgid "Valeur"
 msgstr ""
 
-#: static/js/stats_panels.js:1586 static/js/stats_panels.js:1632
+#: static/js/stats_panels.js:2106 static/js/stats_panels.js:2154
 #: templates/menu_animation.html:189
 msgid "Détail"
 msgstr ""
 
-#: static/js/stats_panels.js:1593 static/js/stats_panels.js:1639
+#: static/js/stats_panels.js:2113 static/js/stats_panels.js:2161
 #: templates/menu_informations.html:57 templates/menu_informations.html:81
 msgid "Date"
 msgstr ""
 
-#: static/js/stats_panels.js:1593 static/js/stats_panels.js:1639
+#: static/js/stats_panels.js:2113 static/js/stats_panels.js:2161
 #: templates/menu_informations.html:61 templates/menu_informations.html:83
 msgid "Total"
 msgstr ""
 
-#: static/js/stats_panels.js:1596
+#: static/js/stats_panels.js:2116
 msgid "Case"
 msgstr ""
 
-#: static/js/stats_panels.js:1596 static/js/stats_panels.js:1609
-#: static/js/stats_panels.js:1644
+#: static/js/stats_panels.js:2116 static/js/stats_panels.js:2129
+#: static/js/stats_panels.js:2166
 msgid "Nombre"
 msgstr ""
 
-#: static/js/stats_panels.js:1609 static/js/stats_panels.js:1644
+#: static/js/stats_panels.js:2129 static/js/stats_panels.js:2166
 msgid "Catégorie"
 msgstr ""
 
-#: static/js/stats_panels.js:1609 static/js/stats_panels.js:1644
+#: static/js/stats_panels.js:2129 static/js/stats_panels.js:2166
 #: templates/menu_informations.html:84
 msgid "Pourcentage"
 msgstr ""
 
-#: static/js/stats_ui.js:96
+#: static/js/stats_ui.js:111
 msgid "Grille"
 msgstr ""
 
-#: static/js/stats_ui.js:97
+#: static/js/stats_ui.js:112
 msgid "Histogramme"
 msgstr ""
 
-#: static/js/stats_ui.js:98
+#: static/js/stats_ui.js:113
 msgid "Anneau"
 msgstr ""
 
-#: static/js/stats_ui.js:99
+#: static/js/stats_ui.js:114
 msgid "Courbe"
 msgstr ""
 
-#: static/js/stats_ui.js:109
+#: static/js/stats_ui.js:127
 msgid "Trouvailles"
 msgstr ""
 
-#: static/js/stats_ui.js:225
+#: static/js/stats_ui.js:362
 msgid "Afficher ce panneau"
 msgstr ""
 
-#: static/js/stats_ui.js:244 static/js/stats_ui.js:1081
+#: static/js/stats_ui.js:384 static/js/stats_ui.js:1353
 msgid "Pas affiché dans ce mode"
 msgstr ""
 
-#: static/js/stats_ui.js:264
+#: static/js/stats_ui.js:404
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
 msgstr ""
 
-#: static/js/stats_ui.js:265 templates/menu_stats.html:109
+#: static/js/stats_ui.js:405 templates/menu_stats.html:60
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
 msgstr ""
 
-#: static/js/stats_ui.js:288
+#: static/js/stats_ui.js:416
+#, python-brace-format
+msgid "Places libres : ${n} sur ${max}"
+msgstr ""
+
+#: static/js/stats_ui.js:417
+msgid ""
+"Plus de place : six panneaux au maximum. Supprimez-en un pour en ajouter "
+"un autre."
+msgstr ""
+
+#: static/js/stats_ui.js:439
 #, python-brace-format
 msgid "${n} places requises"
 msgstr ""
 
-#: static/js/stats_ui.js:339
+#: static/js/stats_ui.js:503
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr ""
 
-#: static/js/stats_ui.js:1017 static/js/stats_ui.js:1023
+#: static/js/stats_ui.js:1280 static/js/stats_ui.js:1288
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr ""
 
-#: static/js/stats_ui.js:1033
+#: static/js/stats_ui.js:1298
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr ""
 
-#: static/js/stats_ui.js:1185
+#: static/js/stats_ui.js:1465
 msgid ""
 "Panneaux réorganisés, mais la place manque : réduisez-en la taille ou "
 "masquez-en un."
 msgstr ""
 
-#: static/js/stats_ui.js:1186
+#: static/js/stats_ui.js:1466
 msgid "Panneaux réorganisés"
 msgstr ""
 
-#: static/js/stats_ui.js:1207
+#: static/js/stats_ui.js:1487
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr ""
 
-#: static/js/stats_ui.js:1209
+#: static/js/stats_ui.js:1489
 msgid "le titre"
 msgstr ""
 
-#: static/js/stats_ui.js:1210
+#: static/js/stats_ui.js:1490
 msgid "une image"
 msgstr ""
 
-#: static/js/stats_ui.js:1211
+#: static/js/stats_ui.js:1491
 msgid "les infos"
 msgstr ""
 
-#: static/js/stats_ui.js:1212
+#: static/js/stats_ui.js:1492
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr ""
 
-#: static/js/stats_ui.js:1215
+#: static/js/stats_ui.js:1495
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 msgstr ""
 
-#: static/js/stats_ui.js:1227
+#: static/js/stats_ui.js:1507
 msgid "Réorganiser automatiquement"
 msgstr ""
 
@@ -3828,153 +3839,153 @@ msgstr ""
 msgid "Plage complète"
 msgstr ""
 
-#: static/js/ui.js:516
+#: static/js/ui.js:641
 #, python-brace-format
 msgid "Musique : ${d}"
 msgstr ""
 
-#: static/js/ui.js:517
+#: static/js/ui.js:642
 #, python-brace-format
 msgid "(à partir de ${s})"
 msgstr ""
 
-#: static/js/ui.js:518
+#: static/js/ui.js:643
 #, python-brace-format
 msgid "(jusqu'à ${e})"
 msgstr ""
 
-#: static/js/ui.js:519
+#: static/js/ui.js:644
 msgid "(blanc de fin ignoré)"
 msgstr ""
 
-#: static/js/ui.js:531
+#: static/js/ui.js:658
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
 "appliquée, la musique sera répétée en boucle."
 msgstr ""
 
-#: static/js/ui.js:532
+#: static/js/ui.js:659
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
 "appliquée, la musique s'arrêtera avant la fin."
 msgstr ""
 
-#: static/js/ui.js:533 static/js/ui.js:551
+#: static/js/ui.js:660 static/js/ui.js:679
 msgid "Elle se terminera en fondu."
 msgstr ""
 
-#: static/js/ui.js:535
+#: static/js/ui.js:662
 #, python-brace-format
 msgid "Durée calée sur la musique (${d})."
 msgstr ""
 
-#: static/js/ui.js:538
+#: static/js/ui.js:665
 msgid "Elle commence plus loin pour finir avec la vidéo."
 msgstr ""
 
-#: static/js/ui.js:543
+#: static/js/ui.js:670
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle se terminera"
 " en fondu."
 msgstr ""
 
-#: static/js/ui.js:544
+#: static/js/ui.js:671
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
 "en fin de vidéo."
 msgstr ""
 
-#: static/js/ui.js:548
+#: static/js/ui.js:675
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée"
 " en boucle."
 msgstr ""
 
-#: static/js/ui.js:550
+#: static/js/ui.js:678
 msgid "Les reprises s'enchaînent en fondu."
 msgstr ""
 
-#: static/js/ui.js:553
+#: static/js/ui.js:681
 #, python-brace-format
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr ""
 
-#: static/js/ui.js:557
+#: static/js/ui.js:685
 msgid "Elle commencera en fondu."
 msgstr ""
 
-#: static/js/ui.js:646
+#: static/js/ui.js:786
 msgid "Mesure impossible pour ce format : le curseur règle le volume."
 msgstr ""
 
-#: static/js/ui.js:654
+#: static/js/ui.js:794
 #, python-brace-format
 msgid "Morceau très faible : niveau standard limité à ${p} (il faudrait ${need})."
 msgstr ""
 
-#: static/js/ui.js:658
+#: static/js/ui.js:798
 #, python-brace-format
 msgid "Morceau déjà au niveau standard : ${p} du fichier."
 msgstr ""
 
-#: static/js/ui.js:660
+#: static/js/ui.js:800
 #, python-brace-format
 msgid "Morceau enregistré fort : niveau standard à ${p} du fichier."
 msgstr ""
 
-#: static/js/ui.js:662
+#: static/js/ui.js:802
 #, python-brace-format
 msgid "Morceau enregistré faiblement : niveau standard à ${p} du fichier."
 msgstr ""
 
-#: static/js/ui.js:667
+#: static/js/ui.js:809
 msgid "Les morceaux de l'enchaînement sont déjà équilibrés entre eux."
 msgstr ""
 
-#: static/js/ui.js:682 static/js/ui.js:739
+#: static/js/ui.js:826 static/js/ui.js:895
 msgid "Arrêtez l'animation pour écouter la musique seule."
 msgstr ""
 
-#: static/js/ui.js:716 templates/guide.html:298
+#: static/js/ui.js:867 templates/guide.html:298
 #: templates/menu_animation.html:406
 msgid "Écouter"
 msgstr ""
 
-#: static/js/ui.js:717 templates/guide.html:298
+#: static/js/ui.js:868 templates/guide.html:298
 #: templates/menu_animation.html:410
 msgid "Écouter la fin"
 msgstr ""
 
-#: static/js/ui.js:725 templates/app.html:273 templates/app.html:274
+#: static/js/ui.js:876 templates/app.html:273 templates/app.html:274
 #: templates/guide.html:117 templates/guide.html:320
 #: templates/menu_animation.html:57
 msgid "Arrêter"
 msgstr ""
 
-#: static/js/ui.js:1681
+#: static/js/ui.js:2009
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:1682 static/js/ui.js:3080
+#: static/js/ui.js:2010 static/js/ui.js:3669
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:1823 static/js/ui.js:8619
+#: static/js/ui.js:2177 static/js/ui.js:10238
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:1827 static/js/ui.js:9039
+#: static/js/ui.js:2181 static/js/ui.js:10709
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:1873
+#: static/js/ui.js:2235
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
@@ -3982,7 +3993,7 @@ msgid ""
 "Rendu image par image »."
 msgstr ""
 
-#: static/js/ui.js:1874
+#: static/js/ui.js:2236
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -3990,7 +4001,7 @@ msgid ""
 "par une. La vidéo, elle, ne perdra aucune image."
 msgstr ""
 
-#: static/js/ui.js:1881
+#: static/js/ui.js:2245
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -3998,64 +4009,64 @@ msgid ""
 "image plus propre."
 msgstr ""
 
-#: static/js/ui.js:1885
+#: static/js/ui.js:2249
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr ""
 
-#: static/js/ui.js:2735
+#: static/js/ui.js:3257
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:2772
+#: static/js/ui.js:3304
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:2794
+#: static/js/ui.js:3326
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:3018
+#: static/js/ui.js:3597
 msgid "Difficulté, terrain et taille ne s'appliquent pas aux Lab Caches."
 msgstr ""
 
-#: static/js/ui.js:3079
+#: static/js/ui.js:3668
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:3170
+#: static/js/ui.js:3776
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr ""
 
-#: static/js/ui.js:3171 static/js/ui.js:3174 static/js/ui.js:3191
-#: static/js/ui.js:3198 static/js/ui.js:3206 templates/app.html:92
+#: static/js/ui.js:3777 static/js/ui.js:3780 static/js/ui.js:3800
+#: static/js/ui.js:3807 static/js/ui.js:3815 templates/app.html:92
 msgid "Quitter"
 msgstr ""
 
-#: static/js/ui.js:3191 static/js/ui.js:3206
+#: static/js/ui.js:3800 static/js/ui.js:3815
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr ""
 
-#: static/js/ui.js:3197
+#: static/js/ui.js:3806
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 msgstr ""
 
-#: static/js/ui.js:3201
+#: static/js/ui.js:3810
 msgid "Quitter quand même"
 msgstr ""
 
-#: static/js/ui.js:3217
+#: static/js/ui.js:3830
 msgid "MyGCFlow est fermé"
 msgstr ""
 
-#: static/js/ui.js:3218
+#: static/js/ui.js:3831
 msgid "Vous pouvez fermer cet onglet."
 msgstr ""
 
-#: static/js/ui.js:4284 templates/_filter_cache_attrs.html:44
+#: static/js/ui.js:5085 templates/_filter_cache_attrs.html:44
 #: templates/_filter_cache_attrs.html:62 templates/_filter_cache_attrs.html:86
 #: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
@@ -4064,199 +4075,199 @@ msgstr ""
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:4403 templates/_filter_county.html:10
+#: static/js/ui.js:5238 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr ""
 
-#: static/js/ui.js:4424
+#: static/js/ui.js:5263
 msgid "Non renseigné"
 msgstr ""
 
-#: static/js/ui.js:4445 templates/_filter_country_state.html:8
+#: static/js/ui.js:5287 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:4471 static/js/ui.js:4513
+#: static/js/ui.js:5316 static/js/ui.js:5367
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:5552
+#: static/js/ui.js:6593
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr ""
 
-#: static/js/ui.js:5977
+#: static/js/ui.js:7133
 msgid "Valeur requise."
 msgstr ""
 
-#: static/js/ui.js:5979
+#: static/js/ui.js:7135
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr ""
 
-#: static/js/ui.js:5980
+#: static/js/ui.js:7136
 msgid "Nombre attendu."
 msgstr ""
 
-#: static/js/ui.js:5981
+#: static/js/ui.js:7137
 msgid "La valeur doit être strictement positive."
 msgstr ""
 
-#: static/js/ui.js:5983
+#: static/js/ui.js:7139
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
-#: static/js/ui.js:5984
+#: static/js/ui.js:7140
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr ""
 
-#: static/js/ui.js:5985
+#: static/js/ui.js:7141
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr ""
 
-#: static/js/ui.js:5986
+#: static/js/ui.js:7142
 msgid "Entre 100 et 10000 ms."
 msgstr ""
 
-#: static/js/ui.js:5987
+#: static/js/ui.js:7143
 msgid "Hors limites."
 msgstr ""
 
-#: static/js/ui.js:5988
+#: static/js/ui.js:7144
 msgid "Valeur invalide."
 msgstr ""
 
-#: static/js/ui.js:6067
+#: static/js/ui.js:7236
 #, python-brace-format
 msgid "${n} jours"
 msgstr ""
 
-#: static/js/ui.js:6068
+#: static/js/ui.js:7237
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr ""
 
-#: static/js/ui.js:6070
+#: static/js/ui.js:7239
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:6071
+#: static/js/ui.js:7240
 #, python-brace-format
 msgid "animation ${d}"
 msgstr ""
 
-#: static/js/ui.js:6072
+#: static/js/ui.js:7241
 #, python-brace-format
 msgid "fin ${d}"
 msgstr ""
 
-#: static/js/ui.js:6075
+#: static/js/ui.js:7244
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:6081
+#: static/js/ui.js:7252
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:6086
+#: static/js/ui.js:7258
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:6092
+#: static/js/ui.js:7266
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:6094
+#: static/js/ui.js:7268
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr ""
 
-#: static/js/ui.js:6096
+#: static/js/ui.js:7270
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:6097
+#: static/js/ui.js:7271
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr ""
 
-#: static/js/ui.js:6099
+#: static/js/ui.js:7273
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr ""
 
-#: static/js/ui.js:6100
+#: static/js/ui.js:7274
 #, python-brace-format
 msgid "${n} images"
 msgstr ""
 
-#: static/js/ui.js:6102
+#: static/js/ui.js:7276
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr ""
 
-#: static/js/ui.js:6123
+#: static/js/ui.js:7301
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr ""
 
-#: static/js/ui.js:6131 templates/menu_animation.html:23
+#: static/js/ui.js:7309 templates/menu_animation.html:23
 msgid "musique incluse"
 msgstr ""
 
-#: static/js/ui.js:6132
+#: static/js/ui.js:7310
 msgid "sans musique"
 msgstr ""
 
-#: static/js/ui.js:6136
+#: static/js/ui.js:7316
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr ""
 
-#: static/js/ui.js:6169
+#: static/js/ui.js:7355
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr ""
 
-#: static/js/ui.js:6172
+#: static/js/ui.js:7358
 msgid "Vide : nom du thème actif."
 msgstr ""
 
-#: static/js/ui.js:6199
+#: static/js/ui.js:7390
 msgid "La plage de dates est invalide ou vide."
 msgstr ""
 
-#: static/js/ui.js:6200
+#: static/js/ui.js:7391
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:6205
+#: static/js/ui.js:7398
 msgid "En attente de la lecture de la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:6216
+#: static/js/ui.js:7409
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 msgstr ""
 
-#: static/js/ui.js:6232
+#: static/js/ui.js:7432
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:6236
+#: static/js/ui.js:7436
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -4264,7 +4275,7 @@ msgid ""
 "posés, baissez le dynamisme ou allongez la vidéo."
 msgstr ""
 
-#: static/js/ui.js:6241
+#: static/js/ui.js:7441
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -4272,7 +4283,7 @@ msgid ""
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:6253
+#: static/js/ui.js:7457
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -4280,158 +4291,158 @@ msgid ""
 "rythme pour l'éviter."
 msgstr ""
 
-#: static/js/ui.js:6293
+#: static/js/ui.js:7504
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 msgstr ""
 
-#: static/js/ui.js:6297
+#: static/js/ui.js:7508
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 msgstr ""
 
-#: static/js/ui.js:6466
+#: static/js/ui.js:7699
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:6466
+#: static/js/ui.js:7699
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:6489
+#: static/js/ui.js:7723
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:6489 static/js/ui.js:6491 static/js/ui.js:6496
+#: static/js/ui.js:7723 static/js/ui.js:7725 static/js/ui.js:7730
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:6491
+#: static/js/ui.js:7725
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:6496
+#: static/js/ui.js:7730
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:8421
+#: static/js/ui.js:9981
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:8462 templates/menu_animation.html:316
+#: static/js/ui.js:10031 templates/menu_animation.html:316
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:8485
+#: static/js/ui.js:10060
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:8505 templates/_filter_cache_attrs.html:49
+#: static/js/ui.js:10086 templates/_filter_cache_attrs.html:49
 #: templates/_filter_cache_attrs.html:50
 msgid "Taille"
 msgstr ""
 
-#: static/js/ui.js:8506
+#: static/js/ui.js:10087
 msgid "Type"
 msgstr ""
 
-#: static/js/ui.js:8506
+#: static/js/ui.js:10087
 msgid "Type inconnu"
 msgstr ""
 
-#: static/js/ui.js:8507
+#: static/js/ui.js:10088
 msgid "Durée"
 msgstr ""
 
-#: static/js/ui.js:8508
+#: static/js/ui.js:10089
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:8545
+#: static/js/ui.js:10131
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:8566 static/js/ui.js:8899 static/js/ui.js:9031
+#: static/js/ui.js:10158 static/js/ui.js:10559 static/js/ui.js:10701
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr ""
 
-#: static/js/ui.js:8658
+#: static/js/ui.js:10283
 msgid "Chargement de la musique..."
 msgstr ""
 
-#: static/js/ui.js:8730
+#: static/js/ui.js:10365
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr ""
 
-#: static/js/ui.js:8743
+#: static/js/ui.js:10380
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr ""
 
-#: static/js/ui.js:8763
+#: static/js/ui.js:10401
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
 msgstr ""
 
-#: static/js/ui.js:8776
+#: static/js/ui.js:10415
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr ""
 
-#: static/js/ui.js:8802
+#: static/js/ui.js:10444
 msgid "La musique n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/ui.js:8867
+#: static/js/ui.js:10524
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:8868
+#: static/js/ui.js:10525
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:8869
+#: static/js/ui.js:10526
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr ""
 
-#: static/js/ui.js:8904
+#: static/js/ui.js:10564
 msgid "Préparation de l'enchaînement…"
 msgstr ""
 
-#: static/js/ui.js:8923 static/js/ui.js:8953
+#: static/js/ui.js:10583 static/js/ui.js:10616
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr ""
 
-#: static/js/ui.js:8970
+#: static/js/ui.js:10635
 msgid "Envoi du morceau…"
 msgstr ""
 
-#: static/js/ui.js:8977
+#: static/js/ui.js:10642
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr ""
 
-#: static/js/ui.js:9046
+#: static/js/ui.js:10716
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr ""
 
-#: static/js/ui.js:9187
+#: static/js/ui.js:10886
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
 msgstr ""
 
-#: static/js/ui.js:9273
+#: static/js/ui.js:10995
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr ""
@@ -4736,7 +4747,7 @@ msgstr ""
 
 #: templates/app.html:80 templates/guide.html:214 templates/guide.html:439
 #: templates/menu_images.html:173 templates/menu_options.html:30
-#: templates/menu_stats.html:366 templates/menu_trail.html:94
+#: templates/menu_stats.html:317 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr ""
 
@@ -4841,7 +4852,7 @@ msgstr ""
 msgid "Courbe de progression"
 msgstr ""
 
-#: templates/app.html:221 templates/app.html:222 templates/menu_stats.html:77
+#: templates/app.html:221 templates/app.html:222 templates/menu_stats.html:406
 msgid "Courbe des caches actives"
 msgstr ""
 
@@ -5366,7 +5377,7 @@ msgstr ""
 
 #: templates/guide.html:226 templates/menu_informations.html:22
 #: templates/menu_informations.html:45 templates/menu_informations.html:46
-#: templates/menu_stats.html:147
+#: templates/menu_stats.html:98
 msgid "Titre"
 msgstr ""
 
@@ -5384,7 +5395,7 @@ msgid "Réglez le"
 msgstr ""
 
 #: templates/guide.html:227 templates/menu_informations.html:96
-#: templates/menu_informations.html:237 templates/menu_stats.html:373
+#: templates/menu_informations.html:237 templates/menu_stats.html:324
 msgid "Texte"
 msgstr ""
 
@@ -5930,7 +5941,7 @@ msgid ""
 msgstr ""
 
 #: templates/guide.html:308 templates/menu_recording.html:46
-#: templates/menu_stats.html:385
+#: templates/menu_stats.html:336
 msgid "Couleurs"
 msgstr ""
 
@@ -6154,14 +6165,15 @@ msgid "Ajoutez un panneau"
 msgstr ""
 
 #: templates/guide.html:361 templates/guide.html:399
-#: templates/menu_images.html:74 templates/menu_stats.html:55
+#: templates/menu_images.html:74 templates/menu_stats.html:54
 msgid "Ajouter"
 msgstr ""
 
 #: templates/guide.html:361
 msgid ""
-"propose des modèles prêts à l'emploi et des histogrammes seuls, six "
-"panneaux au maximum :"
+"ouvre une galerie classée par thème : chaque panneau y est dessiné avec "
+"vos propres données, et une recherche retrouve une statistique par son "
+"nom. Six panneaux au maximum :"
 msgstr ""
 
 #: templates/guide.html:363
@@ -7663,7 +7675,7 @@ msgid ""
 msgstr ""
 
 #: templates/menu_images.html:86 templates/menu_images.html:87
-#: templates/menu_stats.html:114 templates/menu_stats.html:115
+#: templates/menu_stats.html:65 templates/menu_stats.html:66
 msgid "Nom de la configuration"
 msgstr ""
 
@@ -7694,62 +7706,62 @@ msgid "Emplacement"
 msgstr ""
 
 #: templates/menu_images.html:131 templates/menu_informations.html:276
-#: templates/menu_stats.html:320
+#: templates/menu_stats.html:271
 msgid "En haut à gauche"
 msgstr ""
 
 #: templates/menu_images.html:131 templates/menu_informations.html:276
-#: templates/menu_stats.html:320
+#: templates/menu_stats.html:271
 msgid "En haut au centre"
 msgstr ""
 
 #: templates/menu_images.html:131 templates/menu_informations.html:276
-#: templates/menu_stats.html:320
+#: templates/menu_stats.html:271
 msgid "En haut à droite"
 msgstr ""
 
-#: templates/menu_images.html:132 templates/menu_stats.html:321
+#: templates/menu_images.html:132 templates/menu_stats.html:272
 msgid "Au milieu à gauche"
 msgstr ""
 
-#: templates/menu_images.html:132 templates/menu_stats.html:321
+#: templates/menu_images.html:132 templates/menu_stats.html:272
 msgid "Au milieu à droite"
 msgstr ""
 
 #: templates/menu_images.html:133 templates/menu_informations.html:278
-#: templates/menu_stats.html:322
+#: templates/menu_stats.html:273
 msgid "En bas à gauche"
 msgstr ""
 
 #: templates/menu_images.html:133 templates/menu_informations.html:278
-#: templates/menu_stats.html:322
+#: templates/menu_stats.html:273
 msgid "En bas au centre"
 msgstr ""
 
 #: templates/menu_images.html:133 templates/menu_informations.html:278
-#: templates/menu_stats.html:322
+#: templates/menu_stats.html:273
 msgid "En bas à droite"
 msgstr ""
 
 #: templates/menu_images.html:148 templates/menu_informations.html:293
-#: templates/menu_stats.html:334
+#: templates/menu_stats.html:285
 msgid "Marge horizontale (px)"
 msgstr ""
 
 #: templates/menu_images.html:152 templates/menu_informations.html:297
-#: templates/menu_stats.html:338
+#: templates/menu_stats.html:289
 msgid "Marge verticale (px)"
 msgstr ""
 
-#: templates/menu_images.html:156 templates/menu_stats.html:342
+#: templates/menu_images.html:156 templates/menu_stats.html:293
 msgid "Largeur (px)"
 msgstr ""
 
-#: templates/menu_images.html:160 templates/menu_stats.html:346
+#: templates/menu_images.html:160 templates/menu_stats.html:297
 msgid "Hauteur (px)"
 msgstr ""
 
-#: templates/menu_images.html:161 templates/menu_stats.html:347
+#: templates/menu_images.html:161 templates/menu_stats.html:298
 msgid "auto"
 msgstr ""
 
@@ -7792,7 +7804,7 @@ msgstr ""
 msgid "Photo encadrée"
 msgstr ""
 
-#: templates/menu_images.html:189 templates/menu_stats.html:143
+#: templates/menu_images.html:189 templates/menu_stats.html:94
 msgid "Forme"
 msgstr ""
 
@@ -7830,11 +7842,11 @@ msgid "Opacité"
 msgstr ""
 
 #: templates/menu_images.html:212 templates/menu_informations.html:164
-#: templates/menu_stats.html:369
+#: templates/menu_stats.html:320
 msgid "Fond"
 msgstr ""
 
-#: templates/menu_images.html:216 templates/menu_stats.html:381
+#: templates/menu_images.html:216 templates/menu_stats.html:332
 msgid "Opacité du fond"
 msgstr ""
 
@@ -8626,378 +8638,550 @@ msgstr ""
 msgid "Importer des panneaux…"
 msgstr ""
 
-#: templates/menu_stats.html:58
-msgid "Modèles"
-msgstr ""
-
-#: templates/menu_stats.html:60
-msgid "Types + tailles"
-msgstr ""
-
-#: templates/menu_stats.html:61
-msgid "Difficulté + terrain"
-msgstr ""
-
-#: templates/menu_stats.html:65
-msgid "Chiffres clés + progression"
-msgstr ""
-
-#: templates/menu_stats.html:66
-msgid "Types en anneau"
-msgstr ""
-
-#: templates/menu_stats.html:67
-msgid "Course des pays"
-msgstr ""
-
-#: templates/menu_stats.html:68
-msgid "Âge des caches"
-msgstr ""
-
-#: templates/menu_stats.html:69
-msgid "Points extrêmes"
-msgstr ""
-
-#: templates/menu_stats.html:70
-msgid "Chiffres + activité"
-msgstr ""
-
-#: templates/menu_stats.html:71
-msgid "Actives et archivées"
-msgstr ""
-
-#: templates/menu_stats.html:72
-msgid "Pays + départements"
-msgstr ""
-
-#: templates/menu_stats.html:74
-msgid "Panneau seul"
-msgstr ""
-
-#: templates/menu_stats.html:78
-msgid "Courbe des poses cumulées"
-msgstr ""
-
-#: templates/menu_stats.html:79
-msgid "Courbe des archivages cumulés"
-msgstr ""
-
-#: templates/menu_stats.html:80
-msgid "Anneau des types"
-msgstr ""
-
-#: templates/menu_stats.html:81
-msgid "Anneau des tailles"
-msgstr ""
-
-#: templates/menu_stats.html:82
-msgid "Anneau des pays"
-msgstr ""
-
-#: templates/menu_stats.html:83
-msgid "Anneau des attributs"
-msgstr ""
-
-#: templates/menu_stats.html:84
-msgid "Anneau des propriétaires"
-msgstr ""
-
-#: templates/menu_stats.html:85
-msgid "Anneau du statut"
-msgstr ""
-
-#: templates/menu_stats.html:86
-msgid "Anneau des départements"
-msgstr ""
-
-#: templates/menu_stats.html:88
-msgid "Histogramme seul"
-msgstr ""
-
-#: templates/menu_stats.html:111
+#: templates/menu_stats.html:62
 msgid "Panneaux de statistiques"
 msgstr ""
 
-#: templates/menu_stats.html:121
+#: templates/menu_stats.html:72
 msgid "Six panneaux au maximum."
 msgstr ""
 
-#: templates/menu_stats.html:131
+#: templates/menu_stats.html:82
 msgid "Panneau sélectionné"
 msgstr ""
 
-#: templates/menu_stats.html:136
+#: templates/menu_stats.html:87
 msgid "Contenu"
 msgstr ""
 
-#: templates/menu_stats.html:139
+#: templates/menu_stats.html:90
 msgid "Statistique"
 msgstr ""
 
-#: templates/menu_stats.html:153
+#: templates/menu_stats.html:104
 msgid "Afficher le titre"
 msgstr ""
 
-#: templates/menu_stats.html:159
+#: templates/menu_stats.html:110
 msgid "Cases"
 msgstr ""
 
-#: templates/menu_stats.html:161 templates/menu_stats.html:190
+#: templates/menu_stats.html:112 templates/menu_stats.html:141
 msgid "Nombre de trouvailles"
 msgstr ""
 
-#: templates/menu_stats.html:162
+#: templates/menu_stats.html:113
 msgid "Intensité de couleur"
 msgstr ""
 
-#: templates/menu_stats.html:163
+#: templates/menu_stats.html:114
 msgid "Remplie ou vide"
 msgstr ""
 
-#: templates/menu_stats.html:165
+#: templates/menu_stats.html:116
 msgid ""
 "« Remplie ou vide » montre seulement les cases déjà obtenues, comme une "
 "grille de défi."
 msgstr ""
 
-#: templates/menu_stats.html:170
+#: templates/menu_stats.html:121
 msgid "Afficher le nombre de cases remplies"
 msgstr ""
 
-#: templates/menu_stats.html:176
+#: templates/menu_stats.html:127
 msgid "Afficher le nombre de tours complets"
 msgstr ""
 
-#: templates/menu_stats.html:179
+#: templates/menu_stats.html:130
 msgid ""
 "Un tour est complet quand chacune des 81 combinaisons D/T a été trouvée "
 "au moins une fois."
 msgstr ""
 
-#: templates/menu_stats.html:180
+#: templates/menu_stats.html:131
 msgid ""
 "Un tour est complet quand une cache de chaque mois de publication, depuis"
 " mai 2000, a été trouvée."
 msgstr ""
 
-#: templates/menu_stats.html:181
+#: templates/menu_stats.html:132
 msgid ""
 "Un tour est complet quand chacun des 366 jours de l'année, 29 février "
 "compris, compte une trouvaille."
 msgstr ""
 
-#: templates/menu_stats.html:187
+#: templates/menu_stats.html:138
 msgid "Ordre"
 msgstr ""
 
-#: templates/menu_stats.html:189
+#: templates/menu_stats.html:140
 msgid "Ordre naturel"
 msgstr ""
 
-#: templates/menu_stats.html:191
+#: templates/menu_stats.html:142
 msgid "Alphabétique"
 msgstr ""
 
-#: templates/menu_stats.html:192
+#: templates/menu_stats.html:143
 msgid "Course (les lignes se doublent)"
 msgstr ""
 
-#: templates/menu_stats.html:194
+#: templates/menu_stats.html:145
 msgid ""
 "L'ordre est fixé sur les totaux de fin d'animation : les lignes ne "
 "changent pas de place pendant la lecture. En « Course », elles se "
 "doublent au fil des trouvailles."
 msgstr ""
 
-#: templates/menu_stats.html:197
+#: templates/menu_stats.html:148
 msgid "Barres"
 msgstr ""
 
-#: templates/menu_stats.html:199
+#: templates/menu_stats.html:150
 msgid "Horizontales"
 msgstr ""
 
-#: templates/menu_stats.html:200
+#: templates/menu_stats.html:151
 msgid "Verticales"
 msgstr ""
 
-#: templates/menu_stats.html:205
+#: templates/menu_stats.html:156
 msgid "Compter"
 msgstr ""
 
-#: templates/menu_stats.html:211
+#: templates/menu_stats.html:162
 msgid ""
 "Ensemble compté : les caches présentes à la date affichée, ou le cumul "
 "des poses et des archivages."
 msgstr ""
 
-#: templates/menu_stats.html:214
+#: templates/menu_stats.html:165
 msgid "Lignes au maximum"
 msgstr ""
 
-#: templates/menu_stats.html:216
+#: templates/menu_stats.html:167
 msgid "Les catégories suivantes sont regroupées dans « Autres »."
 msgstr ""
 
-#: templates/menu_stats.html:221
+#: templates/menu_stats.html:172
 msgid "Masquer les lignes vides"
 msgstr ""
 
-#: templates/menu_stats.html:227
+#: templates/menu_stats.html:178
 msgid "Trou central"
 msgstr ""
 
-#: templates/menu_stats.html:229
+#: templates/menu_stats.html:180
 msgid "À 0 %, l'anneau devient un camembert."
 msgstr ""
 
-#: templates/menu_stats.html:234
+#: templates/menu_stats.html:185
 msgid "Afficher la légende"
 msgstr ""
 
-#: templates/menu_stats.html:242
+#: templates/menu_stats.html:193
 msgid "Remplir sous la courbe"
 msgstr ""
 
-#: templates/menu_stats.html:248
+#: templates/menu_stats.html:199
 msgid "Marquer les paliers"
 msgstr ""
 
-#: templates/menu_stats.html:250
+#: templates/menu_stats.html:201
 msgid ""
 "100ᵉ, 500ᵉ, 1000ᵉ trouvaille… : le pas s'adapte au total, cinq paliers au"
 " plus."
 msgstr ""
 
-#: templates/menu_stats.html:255
+#: templates/menu_stats.html:206
 msgid "Chiffres affichés"
 msgstr ""
 
-#: templates/menu_stats.html:282
+#: templates/menu_stats.html:233
 msgid "Au moins un chiffre : décocher le dernier n'a pas d'effet."
 msgstr ""
 
-#: templates/menu_stats.html:285
+#: templates/menu_stats.html:236
 msgid "Colonnes"
 msgstr ""
 
-#: templates/menu_stats.html:296
+#: templates/menu_stats.html:247
 msgid "Afficher les nombres"
 msgstr ""
 
-#: templates/menu_stats.html:300
+#: templates/menu_stats.html:251
 msgid "Afficher les pourcentages"
 msgstr ""
 
-#: templates/menu_stats.html:304
+#: templates/menu_stats.html:255
 msgid "Surligner pendant l'animation"
 msgstr ""
 
-#: templates/menu_stats.html:306
+#: templates/menu_stats.html:257
 msgid "Les nouveautés (case ou catégorie obtenue)"
 msgstr ""
 
-#: templates/menu_stats.html:307
+#: templates/menu_stats.html:258
 msgid "Chaque trouvaille"
 msgstr ""
 
-#: templates/menu_stats.html:308
+#: templates/menu_stats.html:259
 msgid "Rien"
 msgstr ""
 
-#: templates/menu_stats.html:314
+#: templates/menu_stats.html:265
 msgid "Coin d'ancrage, marges, largeur"
 msgstr ""
 
-#: templates/menu_stats.html:314
+#: templates/menu_stats.html:265
 msgid "Position libre, glissée sur la carte"
 msgstr ""
 
-#: templates/menu_stats.html:317
+#: templates/menu_stats.html:268
 msgid "Coin d'ancrage"
 msgstr ""
 
-#: templates/menu_stats.html:321
+#: templates/menu_stats.html:272
 msgid "Au centre"
 msgstr ""
 
-#: templates/menu_stats.html:348
+#: templates/menu_stats.html:299
 msgid "Vide : hauteur automatique ; ignoré pour les grilles (cases carrées)."
 msgstr ""
 
-#: templates/menu_stats.html:352
+#: templates/menu_stats.html:303
 msgid ""
 "Les panneaux d’un même coin partagent ses marges, s’empilent à 8 px "
 "d’écart et contournent le titre et les infos."
 msgstr ""
 
-#: templates/menu_stats.html:357
+#: templates/menu_stats.html:308
 msgid "Position libre : ce panneau a été glissé sur la carte."
 msgstr ""
 
-#: templates/menu_stats.html:358
+#: templates/menu_stats.html:309
 msgid "Revenir au coin d'ancrage"
 msgstr ""
 
-#: templates/menu_stats.html:360
+#: templates/menu_stats.html:311
 msgid ""
 "Tant que cet onglet est ouvert, glissez un panneau sur la carte : lâché "
 "près d’un coin, il rejoint sa pile ; ailleurs, il reste en position libre"
 " (Alt : sans aimantation)."
 msgstr ""
 
-#: templates/menu_stats.html:366
+#: templates/menu_stats.html:317
 msgid "Couleurs, opacité, taille du texte, arrondi"
 msgstr ""
 
-#: templates/menu_stats.html:377 templates/menu_stats.html:389
+#: templates/menu_stats.html:328 templates/menu_stats.html:340
 msgid "Couleur principale"
 msgstr ""
 
-#: templates/menu_stats.html:387
+#: templates/menu_stats.html:338
 msgid "Couleurs des types de caches"
 msgstr ""
 
-#: templates/menu_stats.html:388
+#: templates/menu_stats.html:339
 msgid "Une couleur par catégorie"
 msgstr ""
 
-#: templates/menu_stats.html:390
+#: templates/menu_stats.html:341
 msgid "Dégradé selon le nombre"
 msgstr ""
 
-#: templates/menu_stats.html:394
+#: templates/menu_stats.html:345
 msgid "Taille du texte"
 msgstr ""
 
-#: templates/menu_stats.html:398
+#: templates/menu_stats.html:349
 msgid "Arrondi"
 msgstr ""
 
-#: templates/menu_stats.html:404
+#: templates/menu_stats.html:355
 msgid "Utiliser la police du cartouche d'infos"
 msgstr ""
 
-#: templates/menu_stats.html:406
+#: templates/menu_stats.html:357
 msgid ""
 "Celle réglée dans l'onglet Style → Informations ; sinon, police de "
 "l'interface."
 msgstr ""
 
-#: templates/menu_stats.html:412
+#: templates/menu_stats.html:363
 msgid "Exporter ce panneau"
 msgstr ""
 
-#: templates/menu_stats.html:413
+#: templates/menu_stats.html:364
 msgid "Le panneau tel qu'il est affiché, ou ses valeurs en tableau."
 msgstr ""
 
-#: templates/menu_stats.html:416
+#: templates/menu_stats.html:367
 msgid "Image (PNG)"
 msgstr ""
 
-#: templates/menu_stats.html:419
+#: templates/menu_stats.html:370
 msgid "Valeurs (CSV)"
+msgstr ""
+
+#: templates/menu_stats.html:388
+msgid "Ensembles de deux panneaux"
+msgstr ""
+
+#: templates/menu_stats.html:389
+msgid "Types + tailles"
+msgstr ""
+
+#: templates/menu_stats.html:389
+msgid "Types de caches et tailles, en deux histogrammes."
+msgstr ""
+
+#: templates/menu_stats.html:390
+msgid "Difficulté + terrain"
+msgstr ""
+
+#: templates/menu_stats.html:390
+msgid "Difficultés et terrains, de 1 à 5."
+msgstr ""
+
+#: templates/menu_stats.html:391
+msgid "Chiffres clés + progression"
+msgstr ""
+
+#: templates/menu_stats.html:391
+msgid "Chiffres clés et courbe des trouvailles cumulées."
+msgstr ""
+
+#: templates/menu_stats.html:392
+msgid "Âge des caches"
+msgstr ""
+
+#: templates/menu_stats.html:392
+msgid "Âge des caches à la trouvaille, et la plus ancienne trouvée."
+msgstr ""
+
+#: templates/menu_stats.html:393
+msgid "Chiffres + activité"
+msgstr ""
+
+#: templates/menu_stats.html:393
+msgid "Actives, posées, archivées, et la courbe des actives."
+msgstr ""
+
+#: templates/menu_stats.html:394
+msgid "Pays + départements"
+msgstr ""
+
+#: templates/menu_stats.html:394
+msgid "Répartition par pays et par département."
+msgstr ""
+
+#: templates/menu_stats.html:396
+msgid "Grilles"
+msgstr ""
+
+#: templates/menu_stats.html:397
+msgid "Les 81 combinaisons difficulté/terrain."
+msgstr ""
+
+#: templates/menu_stats.html:398
+msgid "Un mois de publication par case, depuis mai 2000."
+msgstr ""
+
+#: templates/menu_stats.html:399
+msgid "Chaque jour de l'année, 29 février compris."
+msgstr ""
+
+#: templates/menu_stats.html:400
+msgid "Une année jour par jour, façon contributions GitHub."
+msgstr ""
+
+#: templates/menu_stats.html:402
+msgid "Chiffres et courbes"
+msgstr ""
+
+#: templates/menu_stats.html:403
+msgid "Jours de trouvaille, record, plus longue série…"
+msgstr ""
+
+#: templates/menu_stats.html:403
+msgid "Caches actives, posées, archivées et pic."
+msgstr ""
+
+#: templates/menu_stats.html:404
+msgid "Points extrêmes"
+msgstr ""
+
+#: templates/menu_stats.html:404
+msgid "Vos trouvailles les plus au nord, au sud, à l'est et à l'ouest."
+msgstr ""
+
+#: templates/menu_stats.html:405
+msgid "Trouvailles cumulées au fil du temps, avec les paliers."
+msgstr ""
+
+#: templates/menu_stats.html:406
+msgid "Nombre de caches actives au fil du temps."
+msgstr ""
+
+#: templates/menu_stats.html:407
+msgid "Courbe des poses cumulées"
+msgstr ""
+
+#: templates/menu_stats.html:407
+msgid "Caches posées, cumulées au fil du temps."
+msgstr ""
+
+#: templates/menu_stats.html:408
+msgid "Courbe des archivages cumulés"
+msgstr ""
+
+#: templates/menu_stats.html:408
+msgid "Caches archivées, cumulées au fil du temps."
+msgstr ""
+
+#: templates/menu_stats.html:410
+msgid "Caractéristiques des caches"
+msgstr ""
+
+#: templates/menu_stats.html:411
+msgid "Une barre par type, aux couleurs de la carte."
+msgstr ""
+
+#: templates/menu_stats.html:412
+msgid "Anneau des types"
+msgstr ""
+
+#: templates/menu_stats.html:412
+msgid "La part de chaque type."
+msgstr ""
+
+#: templates/menu_stats.html:413
+msgid "Du micro au grand."
+msgstr ""
+
+#: templates/menu_stats.html:414
+msgid "Anneau des tailles"
+msgstr ""
+
+#: templates/menu_stats.html:414
+msgid "La part de chaque taille."
+msgstr ""
+
+#: templates/menu_stats.html:415 templates/menu_stats.html:416
+msgid "De 1 à 5, par demi-point."
+msgstr ""
+
+#: templates/menu_stats.html:417
+msgid "Les attributs les plus fréquents."
+msgstr ""
+
+#: templates/menu_stats.html:418
+msgid "Anneau des attributs"
+msgstr ""
+
+#: templates/menu_stats.html:418
+msgid "La part des attributs les plus fréquents."
+msgstr ""
+
+#: templates/menu_stats.html:419
+msgid "Écart entre la publication et la trouvaille."
+msgstr ""
+
+#: templates/menu_stats.html:420
+msgid "Caches actives et archivées."
+msgstr ""
+
+#: templates/menu_stats.html:421
+msgid "Anneau du statut"
+msgstr ""
+
+#: templates/menu_stats.html:421
+msgid "La part des actives et des archivées."
+msgstr ""
+
+#: templates/menu_stats.html:423
+msgid "Lieux et propriétaires"
+msgstr ""
+
+#: templates/menu_stats.html:424
+msgid "Une barre par pays."
+msgstr ""
+
+#: templates/menu_stats.html:425
+msgid "Anneau des pays"
+msgstr ""
+
+#: templates/menu_stats.html:425
+msgid "La part de chaque pays."
+msgstr ""
+
+#: templates/menu_stats.html:426
+msgid "Course des pays"
+msgstr ""
+
+#: templates/menu_stats.html:426
+msgid "Les pays se doublent au fil des trouvailles."
+msgstr ""
+
+#: templates/menu_stats.html:427
+msgid "Une barre par région."
+msgstr ""
+
+#: templates/menu_stats.html:428
+msgid "Une barre par département."
+msgstr ""
+
+#: templates/menu_stats.html:429
+msgid "Anneau des départements"
+msgstr ""
+
+#: templates/menu_stats.html:429
+msgid "La part de chaque département."
+msgstr ""
+
+#: templates/menu_stats.html:430
+msgid "Les propriétaires dont vous avez trouvé le plus de caches."
+msgstr ""
+
+#: templates/menu_stats.html:431
+msgid "Anneau des propriétaires"
+msgstr ""
+
+#: templates/menu_stats.html:431
+msgid "La part des propriétaires les plus trouvés."
+msgstr ""
+
+#: templates/menu_stats.html:433
+msgid "Dates de trouvaille"
+msgstr ""
+
+#: templates/menu_stats.html:434
+msgid "Les trouvailles de chaque année."
+msgstr ""
+
+#: templates/menu_stats.html:435
+msgid "De janvier à décembre, toutes années confondues."
+msgstr ""
+
+#: templates/menu_stats.html:436
+msgid "Du lundi au dimanche."
+msgstr ""
+
+#: templates/menu_stats.html:444
+msgid "Ajouter des statistiques"
+msgstr ""
+
+#: templates/menu_stats.html:449 templates/menu_stats.html:450
+msgid "Rechercher une statistique"
+msgstr ""
+
+#: templates/menu_stats.html:468
+msgid "2 panneaux"
+msgstr ""
+
+#: templates/menu_stats.html:481
+msgid "Aucune statistique ne correspond à cette recherche."
 msgstr ""
 
 #: templates/menu_style.html:20

@@ -127,6 +127,46 @@ test('un modèle pose la matrice D/T, ancrée, empilée et retrouvée au redéma
   await expect(page.locator('canvas.stats-panel')).toHaveCount(3, { timeout: 15_000 });
 });
 
+test('la galerie « Ajouter » montre des vignettes, se filtre et pose le panneau choisi', async ({ page }) => {
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#btnStatsAdd').click();
+  const gallery = page.locator('#statsGalleryModal');
+  await expect(gallery).toBeVisible();
+  await expect(page.locator('#inputStatsGallerySearch')).toBeFocused();
+  await expect(page.locator('#statsGallerySlots')).toHaveText('Places libres : 6 sur 6');
+
+  // Vignettes dessinées avec les données : un canvas par panneau posé.
+  const card = (selector) => gallery.locator(selector);
+  await expect(card('[data-stats-preset="dt"] .stats-gallery-thumb canvas')).toHaveCount(1);
+  await expect(card('[data-stats-preset="types-sizes"] .stats-gallery-thumb canvas')).toHaveCount(2);
+  await expect(card('[data-stats-preset="dt"] .stats-gallery-thumb')).toHaveClass(/has-preview/);
+  // Dessiner la galerie ne pose rien et ne touche pas aux comptes des panneaux.
+  expect((await snapshot(page)).visible).toEqual([]);
+
+  // Recherche : sans accents ni casse, sur le titre, la description et la forme.
+  const search = page.locator('#inputStatsGallerySearch');
+  await search.fill('anneau');
+  await expect(card('[data-stats-add="donut:cache_type"]')).toBeVisible();
+  await expect(card('[data-stats-add="bar:cache_type"]')).toBeHidden();
+  await expect(card('[data-stats-preset="dt"]')).toBeHidden();
+  await search.fill('EXTREME');
+  await expect(card('[data-stats-preset="extremes"]')).toBeVisible();
+  await expect(card('[data-stats-add="donut:cache_type"]')).toBeHidden();
+  await search.fill('zzz introuvable');
+  await expect(page.locator('#statsGalleryEmpty')).toBeVisible();
+  await search.fill('');
+  await expect(page.locator('#statsGalleryEmpty')).toBeHidden();
+  await expect(card('[data-stats-add="bar:year"]')).toBeVisible();
+
+  // Un clic pose le panneau, referme la galerie et le sélectionne.
+  await card('[data-stats-add="donut:country"]').click();
+  await expect(gallery).toBeHidden();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+  await expect(page.locator('#statsPanelList li.is-selected')).toHaveCount(1);
+  await expect(page.locator('#selectStatsKind')).toHaveValue('donut');
+});
+
 test('un panneau apparaît en fondu à sa création', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [{ id: 'aaaaaa01', kind: 'grid', metric: 'dt' }] });
   await openWithFixture(page);
@@ -151,15 +191,24 @@ test('un modèle à deux panneaux se désactive quand il ne reste qu\'une place'
   await expect(preset).toBeDisabled();
   await expect(preset.locator('.stats-slots-hint')).toHaveText('2 places requises');
   await expect(page.locator('[data-stats-add="bar:year"]')).toBeEnabled();
+  await expect(page.locator('#statsGallerySlots')).toHaveText('Places libres : 1 sur 6');
 
   // Une suppression libère la place : le modèle redevient cliquable et pose
-  // bien ses deux panneaux d'un coup. (Un second clic replie le menu, sinon
-  // il intercepte les clics de la liste.)
-  await page.locator('#btnStatsAdd').click();
+  // bien ses deux panneaux d'un coup. (Échap ferme la galerie, sinon elle
+  // recouvre la liste — une fois ouverte : pendant son fondu d'entrée, la
+  // touche serait ignorée.)
+  await expect(page.locator('#inputStatsGallerySearch')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#statsGalleryModal')).toBeHidden();
   await page.locator('#statsPanelList [data-action="delete"]').first().click();
   await page.locator('#btnStatsAdd').click();
   await preset.click();
   await expect(page.locator('canvas.stats-panel')).toHaveCount(6);
+  // Le clic referme la galerie ; complète, elle le dit.
+  await expect(page.locator('#statsGalleryModal')).toBeHidden();
+  await page.locator('#btnStatsAdd').click();
+  await expect(page.locator('#statsGallerySlots')).toContainText('Plus de place');
+  await expect(page.locator('[data-stats-add="bar:year"]')).toBeDisabled();
 });
 
 test('la lecture remplit les panneaux jour après jour, l\'arrêt rend les totaux', async ({ page }) => {

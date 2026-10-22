@@ -46,6 +46,31 @@ Les barres et anneaux Évolution acceptent `options.counted` :
 rejouent la chronologie (`placedOrder`/`archivedOrder` de
 `evolution_timeline.mjs`) au jour affiché ou au jour de fin de plage.
 
+**Galerie « Ajouter »** (2026-10-22, remplace un menu déroulant d'une
+trentaine d'entrées) : le bouton ouvre `#statsGalleryModal`
+(menu_stats.html), des cartes rangées en six sections — ensembles de deux
+panneaux, grilles, chiffres et courbes, caractéristiques des caches, lieux et
+propriétaires, dates de trouvaille. Le catalogue vit dans le gabarit (liste
+Jinja : type, valeur, titre, description, description Évolution facultative,
+modes, nombre de panneaux) ; chaque carte garde `data-stats-preset` (clé de
+`PRESETS`, stats_ui.js) ou `data-stats-add` (« type:métrique »), et le
+conteneur l'id `statsAddMenu`. À chaque ouverture, chaque carte du mode
+dessine ses panneaux tels qu'ils apparaîtraient au repos, avec les données de
+la sélection (`drawStatsGalleryPreviews`, stats_panels.js) : un comptage
+unique de TOUTES les métriques des vignettes (`gallerySource`, mémoïsé par
+révision de l'index ou, en Évolution, par révision + `restDay`), des vues
+construites avec `buildView(panel, source)` — repos forcé, valeurs immédiates,
+magasin de tweens jetable : rien ne touche l'état des panneaux posés. La
+recherche (focus à l'ouverture) ignore accents et casse, porte sur le titre,
+la description du mode et le nom des formes (« anneau », « courbe »…). Un clic
+pose le panneau ou le modèle, le sélectionne et referme la galerie ; une carte
+qui demande plus de places qu'il n'en reste est désactivée (« 2 places
+requises »), l'en-tête dit les places libres. Retirés car doublons d'une
+entrée simple : les modèles « Types en anneau » et « Actives et archivées ».
+Les vignettes sont réduites par `object-fit: contain` dans une boîte flex de
+hauteur fixe — en grille CSS à rangée automatique, `height: 100%` ne tenait
+pas et un panneau haut (matrice, Jasmer) débordait sur le texte de la carte.
+
 Le select « Forme » du formulaire (section Contenu) propose les types qui
 savent dessiner la métrique courante — il n'apparaît que quand il y en a
 plusieurs, donc pour les métriques catégorielles partagées entre barres et

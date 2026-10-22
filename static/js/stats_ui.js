@@ -8,6 +8,7 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import { bindPanelDrag } from './panel_interactions.js';
+import { hideBsModal, showBsModal } from './ui_bootstrap.js';
 import {
     CATEGORICAL_METRICS,
     EVOLUTION_COUNTER_ITEMS,
@@ -56,7 +57,6 @@ const PRESETS = {
         ['counter', 'summary', { position: { anchor: 'top-left' } }],
         ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 } }],
     ],
-    'types-donut': [['donut', 'cache_type', { position: { anchor: 'top-right', width: 300 } }]],
     race: [['bar', 'country', { position: { anchor: 'top-right' }, options: { sort: 'race', max_items: 6 } }]],
     'difficulty-terrain': [
         ['bar', 'difficulty', { position: { anchor: 'bottom-right', width: 240 } }],
@@ -77,7 +77,6 @@ const PRESETS = {
         ['counter', 'summary', { position: { anchor: 'top-left' }, options: { items: ['actives', 'placees', 'archivees', 'peak'] } }],
         ['line', 'actives', { position: { anchor: 'bottom-left', width: 340 } }],
     ],
-    'evo-status': [['bar', 'status', { position: { anchor: 'top-right', width: 260 } }]],
     'evo-geo': [
         ['bar', 'country', { position: { anchor: 'top-right', width: 260 } }],
         ['bar', 'county', { position: { anchor: 'top-right', width: 260 } }],
@@ -168,24 +167,111 @@ function adoptCornerMargins(panel, panels) {
     panel.position.dy = mate.position.dy;
 }
 
-// Entrées du menu « Ajouter » selon le mode : chaque item porte
-// data-stats-modes (« main », « evolution », les deux) ; un en-tête ou un
-// séparateur n'est affiché que si un item visible le suit (menu sans sections
-// vides). Le mode ne change pas au fil de la page : filtrage unique à l'init.
-function syncAddMenuMode() {
+// ---------------------------------------------------------------------------
+// Galerie « Ajouter » (#statsGalleryModal, menu_stats.html)
+// ---------------------------------------------------------------------------
+
+const GALLERY_MODAL = 'statsGalleryModal';
+
+// Cartes et variantes de description selon la page : chaque élément porte
+// data-stats-modes (« main », « evolution », les deux). Le mode ne change
+// pas au fil de la page : filtrage unique à l'init ; la recherche
+// (filterGallery) n'agit ensuite que sur les cartes du mode.
+function syncGalleryMode() {
     const mode = evolutionMode ? 'evolution' : 'main';
-    const entries = [...document.querySelectorAll('#statsAddMenu > li')];
-    let hasVisible = false;
-    for (let i = entries.length - 1; i >= 0; i--) {
-        const entry = entries[i];
-        if (entry.dataset.statsModes) {
-            entry.hidden = !entry.dataset.statsModes.split(' ').includes(mode);
-            if (!entry.hidden) hasVisible = true;
-        } else {
-            entry.hidden = !hasVisible;
-            hasVisible = false;
-        }
+    document.querySelectorAll('#statsAddMenu [data-stats-modes]').forEach((el) => {
+        const inMode = el.dataset.statsModes.split(' ').includes(mode);
+        el.hidden = !inMode;
+        if (el.classList.contains('stats-gallery-card')) el.dataset.inMode = inMode ? '1' : '';
+    });
+    filterGallery('');
+}
+
+// Panneaux posés par une carte : ceux du modèle, ou le panneau seul (compteur
+// Évolution : tuiles de la chronologie).
+function gallerySpecs(card) {
+    if (card.dataset.statsPreset) return PRESETS[card.dataset.statsPreset] || [];
+    const [kind, metric] = (card.dataset.statsAdd || '').split(':');
+    if (!kind || !metric) return [];
+    const overrides = kind === 'counter' && COUNTER_DEFAULT_ITEMS
+        ? { options: { items: COUNTER_DEFAULT_ITEMS } }
+        : {};
+    return [[kind, metric, overrides]];
+}
+
+// Recherche sans accents ni casse, sur le titre, la description du mode et
+// le nom des formes (« anneau », « histogramme », « courbe »…).
+const foldText = (text) => String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function galleryText(card) {
+    if (card.dataset.searchText === undefined) {
+        const visible = [...card.querySelectorAll('.stats-gallery-title, .stats-gallery-desc')]
+            .filter((el) => !el.hidden)
+            .map((el) => el.textContent);
+        const kinds = gallerySpecs(card).map(([kind]) => KIND_LABELS[kind]?.() || '');
+        card.dataset.searchText = foldText([...visible, ...kinds].join(' '));
     }
+    return card.dataset.searchText;
+}
+
+function filterGallery(query) {
+    const words = foldText(query).split(/\s+/).filter(Boolean);
+    let any = false;
+    document.querySelectorAll('#statsAddMenu .stats-gallery-section').forEach((section) => {
+        let visible = 0;
+        section.querySelectorAll('.stats-gallery-card').forEach((card) => {
+            const text = card.dataset.inMode ? galleryText(card) : '';
+            card.hidden = !card.dataset.inMode || !words.every((word) => text.includes(word));
+            if (!card.hidden) visible += 1;
+        });
+        section.hidden = visible === 0;
+        if (visible) any = true;
+    });
+    const empty = $('statsGalleryEmpty');
+    if (empty) empty.hidden = any;
+}
+
+// Vignettes : chaque carte du mode dessine ses panneaux tels qu'ils
+// apparaîtraient au repos, avec les données de la sélection. Redessinées à
+// chaque ouverture (les données ont pu changer). Sans données dessinables
+// (Évolution sans base), l'icône de la forme reste.
+function drawGalleryThumbs() {
+    const entries = [];
+    document.querySelectorAll('#statsAddMenu .stats-gallery-card').forEach((card) => {
+        const thumb = card.querySelector('.stats-gallery-thumb');
+        if (!thumb) return;
+        thumb.querySelectorAll('canvas').forEach((canvas) => canvas.remove());
+        thumb.classList.remove('has-preview');
+        if (!card.dataset.inMode) return;
+        for (const spec of gallerySpecs(card)) {
+            const canvas = document.createElement('canvas');
+            thumb.appendChild(canvas);
+            entries.push({ spec, canvas });
+        }
+    });
+    const drawn = pkg.drawStatsGalleryPreviews?.(entries) || new Set();
+    for (const { canvas } of entries) {
+        if (!drawn.has(canvas)) canvas.remove();
+        else canvas.parentElement.classList.add('has-preview');
+    }
+}
+
+function openGallery() {
+    const search = $('inputStatsGallerySearch');
+    if (search) search.value = '';
+    filterGallery('');
+    drawGalleryThumbs();
+    showBsModal(GALLERY_MODAL);
+}
+
+// Clic sur une carte : pose le panneau ou le modèle, puis referme la galerie
+// — le nouveau panneau est sélectionné, son formulaire ouvert.
+function onGalleryClick(event) {
+    const card = event.target.closest('.stats-gallery-card');
+    if (!card || card.disabled) return;
+    if (card.dataset.statsPreset) addPanels(PRESETS[card.dataset.statsPreset] || []);
+    else addPanels(gallerySpecs(card));
+    hideBsModal(GALLERY_MODAL);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,6 +355,13 @@ function renderList() {
     const limit = $('statsLimitHint');
     if (limit) limit.hidden = !full;
     const available = STATS_MAX_PANELS - panels.length;
+    // Places libres, en tête de la galerie « Ajouter ».
+    const slots = $('statsGallerySlots');
+    if (slots) {
+        slots.textContent = available > 0
+            ? pkg.t('Places libres : ${n} sur ${max}', { n: available, max: STATS_MAX_PANELS })
+            : pkg.t('Plus de place : six panneaux au maximum. Supprimez-en un pour en ajouter un autre.');
+    }
     document.querySelectorAll('#statsAddMenu [data-stats-preset], #statsAddMenu [data-stats-add]')
         .forEach((button) => {
             // Modèles atomiques : celui qui demande plus de places qu'il n'en
@@ -1259,29 +1352,17 @@ export function renderStatsTab() {
 export function initStatsTab() {
     if (initialized || !$('stats')) return;
     initialized = true;
-    syncAddMenuMode();
+    syncGalleryMode();
 
     $('switchStats')?.addEventListener('change', (event) => {
         commit({ ...currentSettings(), enabled: event.target.checked },
             event.target, { immediate: true });
     });
-    $('statsAddMenu')?.addEventListener('click', (event) => {
-        const preset = event.target.closest('[data-stats-preset]');
-        if (preset) {
-            addPanels(PRESETS[preset.dataset.statsPreset] || []);
-            return;
-        }
-        const add = event.target.closest('[data-stats-add]');
-        if (add) {
-            const [kind, metric] = add.dataset.statsAdd.split(':');
-            // Compteur en Évolution : les tuiles de la chronologie, pas celles
-            // des trouvailles (défauts du mode principal).
-            const overrides = kind === 'counter' && COUNTER_DEFAULT_ITEMS
-                ? { options: { items: COUNTER_DEFAULT_ITEMS } }
-                : {};
-            addPanels([[kind, metric, overrides]]);
-        }
-    });
+    $('btnStatsAdd')?.addEventListener('click', openGallery);
+    $('statsAddMenu')?.addEventListener('click', onGalleryClick);
+    $('inputStatsGallerySearch')?.addEventListener('input', (event) => filterGallery(event.target.value));
+    // Focus sur la recherche à l'ouverture : on tape aussitôt ce qu'on cherche.
+    $(GALLERY_MODAL)?.addEventListener('shown.bs.modal', () => $('inputStatsGallerySearch')?.focus());
     const list = $('statsPanelList');
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);

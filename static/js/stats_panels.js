@@ -35,6 +35,7 @@ import {
     countFeatures,
     countMetricOf,
     createStatsAccumulator,
+    createStatsPanel,
     createTweenStore,
     dayNumberOfDate,
     evolutionActivePeaks,
@@ -53,6 +54,7 @@ import {
     metricsForPanels,
     normalizeStatsSettings,
     rectsOverlap,
+    statsPanelsKey,
     yearTicks,
     ymdOfDay,
 } from './stats_model.mjs';
@@ -672,8 +674,8 @@ function jasmerEndOf(date) {
     const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
     return { y: d.getFullYear(), m: d.getMonth() + 1 };
 }
-function jasmerEnd() {
-    return jasmerEndOf((mode === 'animating' && animation?.endDate) || pkg.metadata?.endDate);
+function jasmerEnd(animating = mode === 'animating') {
+    return jasmerEndOf((animating && animation?.endDate) || pkg.metadata?.endDate);
 }
 
 // Année de la grille d'activité : celle du jour affiché pendant l'animation
@@ -683,14 +685,14 @@ function activityYearOf(date) {
     const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
     return d.getFullYear();
 }
-function activityYear() {
-    if (mode === 'animating' && animation) return activityYearOf(animation.lastDate || animation.startDate);
+function activityYear(animating = mode === 'animating') {
+    if (animating && animation) return activityYearOf(animation.lastDate || animation.startDate);
     return activityYearOf(pkg.metadata?.endDate);
 }
 
 // Contexte des grilles : fin de Jasmer, année d'activité.
-function gridContext() {
-    return { end: jasmerEnd(), year: activityYear() };
+function gridContext(animating = mode === 'animating') {
+    return { end: jasmerEnd(animating), year: activityYear(animating) };
 }
 
 // Libellés d'axes d'une grille — partagés entre la vue et l'export CSV.
@@ -799,8 +801,7 @@ function counterText(item, entry, number, shown = entry.value) {
 
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
 // barres : la place de chaque ligne glisse aussi.
-function animateRows(panel, model, now) {
-    const tweens = tweensOf(panel.id);
+function animateRows(panel, model, now, tweens = tweensOf(panel.id)) {
     model.rows.forEach((row, i) => {
         row.shown = tweens.set(`${panel.id}:v:${row.key}`, row.count, now);
         if (model.race) row.slot = tweens.set(`${panel.id}:s:${row.key}`, i, now);
@@ -808,13 +809,18 @@ function animateRows(panel, model, now) {
     model.shownMax = tweens.set(`${panel.id}:max`, model.max, now);
 }
 
-function buildView(panel) {
-    if (isEvolutionPage()) return buildEvolutionView(panel);
-    const reference = mode === 'animating' ? animationReference() : selectionTotals();
-    const state = mode === 'animating' ? current : reference;
+// `source` (vignettes de la galerie « Ajouter », drawStatsGalleryPreviews) :
+// comptes imposés `{ totals }` / `{ evoAcc, evoPeaks }`, toujours une vue de
+// repos, valeurs immédiates, magasin de tweens jetable — rien ne touche
+// l'état des panneaux posés.
+function buildView(panel, source = null) {
+    if (isEvolutionPage()) return buildEvolutionView(panel, source);
+    const animating = !source && mode === 'animating';
+    const reference = source ? source.totals : (animating ? animationReference() : selectionTotals());
+    const state = animating ? current : reference;
     // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
-    const now = mode === 'animating' ? lastNow : Number.NaN;
-    const tweens = tweensOf(panel.id);
+    const now = animating ? lastNow : Number.NaN;
+    const tweens = source ? createTweenStore(0) : tweensOf(panel.id);
     const { number, percent, compact } = formatters();
     const metric = panel.metric;
     const view = {
@@ -828,7 +834,7 @@ function buildView(panel) {
         showValues: panel.options.show_values,
         showPercent: panel.options.show_percent,
         footer: [],
-        highlight: mode === 'animating' && animation
+        highlight: animating && animation
             ? { mode: panel.options.highlight, durationMs: animation.highlightMs, hits: current.lastHit.get(countMetricOf(metric)) }
             : null,
     };
@@ -837,7 +843,7 @@ function buildView(panel) {
     const refExcluded = reference.excluded.get(countMetricOf(metric)) || 0;
 
     if (panel.kind === 'grid') {
-        const model = gridModel(metric, state, reference, gridContext());
+        const model = gridModel(metric, state, reference, gridContext(animating));
         view.model = model;
         if (metric === 'activity' && panel.show_title && !panel.title) {
             view.title = pkg.t('Activité ${year}', { year: model.year });
@@ -855,8 +861,8 @@ function buildView(panel) {
     }
 
     if (panel.kind === 'line') {
-        const headDay = mode === 'animating' && animation?.lastDate ? dayNumberOfDate(animation.lastDate) : undefined;
-        const endDay = mode === 'animating' && animation?.endDate ? dayNumberOfDate(animation.endDate) : undefined;
+        const headDay = animating && animation?.lastDate ? dayNumberOfDate(animation.lastDate) : undefined;
+        const endDay = animating && animation?.endDate ? dayNumberOfDate(animation.endDate) : undefined;
         const model = lineModel(state, reference, { headDay, endDay });
         model.shownTotal = tweens.set(`${panel.id}:total`, model.total, now);
         model.shownHeadDay = tweens.set(`${panel.id}:head`, model.headDay, now);
@@ -887,7 +893,7 @@ function buildView(panel) {
             : [];
         // Halo de la tête tant que la dernière trouvaille est fraîche.
         const lastDay = model.points.at(-1)?.day;
-        view.headLevel = mode === 'animating' && animation && lastDay !== undefined
+        view.headLevel = animating && animation && lastDay !== undefined
             ? highlightLevel(current.lastHit.get('day')?.get(lastDay), now, animation.highlightMs,
                 panel.options.highlight === 'none' ? 'none' : 'every')
             : 0;
@@ -924,7 +930,7 @@ function buildView(panel) {
 
     if (panel.kind === 'donut') {
         const model = barModel(metric, state, reference, { sort: 'count', max_items: panel.options.max_items }, labelOf);
-        animateRows(panel, model, now);
+        animateRows(panel, model, now, tweens);
         view.model = model;
         view.hole = panel.options.hole;
         view.showLegend = panel.options.show_legend;
@@ -944,7 +950,7 @@ function buildView(panel) {
         const known = new Set([...(reference.counts.get(metric) || new Map()).keys(), ...model.rows.map((r) => r.key)]);
         model.slots = Math.max(1, Math.min(panel.options.max_items, known.size));
     }
-    animateRows(panel, model, now);
+    animateRows(panel, model, now, tweens);
     view.model = model;
     view.orientation = panel.options.orientation;
     view.sum = model.rows.reduce((s, row) => s + Math.max(0, row.shown), 0);
@@ -959,14 +965,15 @@ function buildView(panel) {
 // la référence est figée sur la fin de plage — pics de l'ensemble actif pour
 // « actives », état final pour les cumuls — comme les totaux du mode
 // principal.
-function buildEvolutionView(panel) {
+function buildEvolutionView(panel, source = null) {
     const index = evolutionIndex();
-    const animating = mode === 'animating' && !!evoCurrent;
+    const animating = !source && mode === 'animating' && !!evoCurrent;
     const day = animating ? evoAppliedDay : (index?.restDay ?? 0);
-    const acc = animating ? evoCurrent : evolutionRestAcc();
+    const restAcc = () => (source ? source.evoAcc : evolutionRestAcc());
+    const acc = animating ? evoCurrent : restAcc();
     const counted = panel.options.counted || 'active';
     const now = animating ? lastNow : Number.NaN;
-    const tweens = tweensOf(panel.id);
+    const tweens = source ? createTweenStore(0) : tweensOf(panel.id);
     const { number, percent } = formatters();
     const metric = panel.metric;
     const view = {
@@ -1036,8 +1043,8 @@ function buildEvolutionView(panel) {
     } else {
         currentView = acc?.setView(counted) || acc?.setView('active');
         referenceView = counted === 'active'
-            ? evolutionActivePeaksRef()
-            : evolutionRestAcc()?.setView(counted);
+            ? (source ? source.evoPeaks : evolutionActivePeaksRef())
+            : restAcc()?.setView(counted);
     }
     if (!currentView) currentView = { counts: new Map(), excluded: new Map(), total: 0 };
     if (!referenceView) referenceView = currentView;
@@ -1058,7 +1065,7 @@ function buildEvolutionView(panel) {
         }
         view.orientation = panel.options.orientation;
     }
-    animateRows(panel, model, now);
+    animateRows(panel, model, now, tweens);
     view.model = model;
     if (panel.kind !== 'donut') view.sum = model.rows.reduce((s, row) => s + Math.max(0, row.shown), 0);
     if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state', 'county', 'status'].includes(metric)) {
@@ -1631,7 +1638,13 @@ export function drawStatsPanelPreview(id, canvas) {
     const registry = isEvolutionPage() ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
     if (!panel || !canvas || !(registry[panel.kind] || []).includes(panel.metric)) return false;
     if (drawDirty) flush();
-    const view = buildView(panel);
+    paintPanelPreview(panel, buildView(panel), canvas);
+    return true;
+}
+
+// Un panneau dessiné hors carte, à sa largeur réelle (bitmap ≤ 2× : un
+// aperçu n'a pas besoin de plus).
+function paintPanelPreview(panel, view, canvas) {
     const cssWidth = Math.max(1, Math.round(panel.position.width || 280));
     const height = measureStatsPanel(view, panel.style, cssWidth,
         panel.kind === 'grid' ? null : panel.position.height);
@@ -1642,7 +1655,54 @@ export function drawStatsPanelPreview(id, canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssWidth, height);
     drawStatsPanel(ctx, { x: 0, y: 0, width: cssWidth, height }, view, panel.style, lastNow, cssWidth);
-    return true;
+}
+
+// Vignettes de la galerie « Ajouter » (stats_ui.js) : chaque entrée
+// `{ spec: [kind, metric, overrides], canvas }` est dessinée comme elle
+// apparaîtrait au repos, avec les comptes de la sélection — TOUTES les
+// métriques des vignettes, pas seulement celles des panneaux posés.
+// Comptage unique pour la galerie, mémoïsé par révision des données.
+// Renvoie l'ensemble des canvas dessinés (vide en Évolution sans base, ou
+// pour une forme étrangère au mode).
+let galleryMemo = null;   // { key, source }
+
+function gallerySource(panels) {
+    const evolution = isEvolutionPage();
+    const needed = metricsForPanels({ enabled: true, [statsPanelsKey(evolution)]: panels }, { evolution });
+    const metricKey = [...needed].sort().join(',');
+    if (evolution) {
+        const index = evolutionIndex();
+        if (!index) return null;
+        const key = `evo|${index.revision}|${index.restDay}|${metricKey}`;
+        if (galleryMemo?.key !== key) {
+            galleryMemo = { key, source: {
+                evoAcc: evolutionStateAt(index, needed, index.restDay),
+                evoPeaks: evolutionActivePeaks(index, needed, index.restDay),
+            } };
+        }
+        return galleryMemo.source;
+    }
+    const key = `main|${indexRevision()}|${metricKey}`;
+    if (galleryMemo?.key !== key) {
+        galleryMemo = { key, source: { totals: countFeatures(indexFeaturesUpTo(null), needed) } };
+    }
+    return galleryMemo.source;
+}
+
+export function drawStatsGalleryPreviews(entries) {
+    const evolution = isEvolutionPage();
+    const registry = evolution ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+    const items = (entries || [])
+        .map(({ spec, canvas }) => ({ panel: createStatsPanel(spec[0], spec[1], spec[2] || {}), canvas }))
+        .filter(({ panel, canvas }) => panel && canvas && (registry[panel.kind] || []).includes(panel.metric));
+    const source = items.length ? gallerySource(items.map(({ panel }) => panel)) : null;
+    const drawn = new Set();
+    if (!source) return drawn;
+    for (const { panel, canvas } of items) {
+        paintPanelPreview(panel, buildView(panel, source), canvas);
+        drawn.add(canvas);
+    }
+    return drawn;
 }
 
 // Aperçu du formulaire (#statsPanelPreview, stats_ui › renderForm) : suit les
