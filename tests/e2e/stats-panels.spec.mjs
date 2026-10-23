@@ -1276,14 +1276,38 @@ test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) =>
   await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
 
   // Nom de fichier : le titre du panneau en slug ASCII (« Mes types » →
-  // « stats-mes-types.png ») ; sans titre, le titre par défaut est slugué.
-  const [png] = await Promise.all([
-    page.waitForEvent('download'),
-    page.locator('#btnStatsExportPng').click(),
-  ]);
-  expect(png.suggestedFilename()).toBe('stats-mes-types.png');
-  const signature = fs.readFileSync(await png.path()).subarray(0, 8);
-  expect([...signature]).toEqual([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  // « stats-mes-types ») ; sans titre, le titre par défaut est slugué.
+  // Image redessinée à l'échelle choisie (2× par défaut, suffixe « @2x ») :
+  // dimensions = taille du panneau sur la carte × échelle (en-tête IHDR).
+  const box = await page.locator('canvas.stats-panel[data-panel-id="5e0a0001"]').evaluate(
+    (el) => ({ width: parseFloat(el.style.width), height: parseFloat(el.style.height) }));
+  const exportPng = async () => {
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('#btnStatsExportPng').click(),
+    ]);
+    const bytes = fs.readFileSync(await download.path());
+    return { name: download.suggestedFilename(), bytes,
+      width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  };
+  const scale = page.locator('#selectStatsPngScale');
+  await expect(scale).toHaveValue('2');
+  await expect(scale.locator('option[value="2"]'))
+    .toHaveText(`2× — ${Math.round(box.width * 2)} × ${Math.round(box.height * 2)} px`);
+  const png = await exportPng();
+  expect(png.name).toBe('stats-mes-types@2x.png');
+  expect([...png.bytes.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  expect([png.width, png.height]).toEqual([Math.round(box.width * 2), Math.round(box.height * 2)]);
+  await scale.selectOption('4');
+  const png4 = await exportPng();
+  expect(png4.name).toBe('stats-mes-types@4x.png');
+  expect([png4.width, png4.height]).toEqual([Math.round(box.width * 4), Math.round(box.height * 4)]);
+  await scale.selectOption('1');
+  const png1 = await exportPng();
+  expect(png1.name).toBe('stats-mes-types.png');
+  expect([png1.width, png1.height]).toEqual([Math.round(box.width), Math.round(box.height)]);
+  // Choix retenu par le navigateur.
+  expect(await page.evaluate(() => localStorage.getItem('statsPngScale'))).toBe('1');
 
   const [csv] = await Promise.all([
     page.waitForEvent('download'),
@@ -1307,6 +1331,15 @@ test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) =>
   expect(content2).toContain('Chiffre;Valeur;Détail');
   expect(content2).toContain('Jours avec trouvaille;6');
   expect(content2).toContain('Types de caches différents;3');
+
+  // Masqué, il n'a plus de canvas sur la carte mais s'exporte encore,
+  // redessiné à sa largeur réglée (280 px par défaut).
+  await page.locator('#statsPanelList li', { hasText: 'Chiffres clés' }).locator('[data-action="toggle"]').uncheck();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+  await expect(page.locator('#btnStatsExportPng')).toBeEnabled();
+  const hidden = await exportPng();
+  expect(hidden.name).toBe('stats-chiffres-cles.png');
+  expect(hidden.width).toBe(280);
 });
 
 test('une configuration nommée enregistre et ré-applique la liste de panneaux', async ({ page }) => {

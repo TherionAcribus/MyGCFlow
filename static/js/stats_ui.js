@@ -604,9 +604,9 @@ function renderForm() {
     setValue('inputStatsTitle', panel.title);
     setValue('switchStatsShowTitle', panel.show_title);
     if (titleInput) titleInput.disabled = !panel.show_title;
-    // Pas de canvas pour un panneau masqué : l'export PNG n'a rien à offrir.
-    const pngBtn = $('btnStatsExportPng');
-    if (pngBtn) pngBtn.disabled = !panel.enabled;
+    // Export PNG : tailles en pixels de chaque échelle ; un panneau masqué
+    // s'exporte aussi (redessiné à sa largeur réglée).
+    renderPngScales(panel);
 
     // Options : seules celles du type du panneau existent (les autres restent
     // indéfinies, setValue les ignore).
@@ -1063,17 +1063,66 @@ function downloadBlob(blob, filename) {
 // Nom de fichier d'export : le titre du panneau (ou son titre par défaut)
 // en slug ASCII — « Ma D/T ! » → « stats-ma-dt.png » ; repli sur
 // « stats-bar-cache_type » quand le slug est vide (titre non latin…).
+// `ext` : extension (\u00ab csv \u00bb) ou suffixe complet commen\u00e7ant par \u00ab . \u00bb ou
+// \u00ab @ \u00bb (\u00ab @2x.png \u00bb).
 function exportFileName(panel, ext) {
     const label = (panel.title || pkg.defaultStatsPanelTitle(panel) || '')
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    return `stats-${label || `${panel.kind}-${panel.metric}`}.${ext}`;
+    const suffix = /^[.@]/.test(ext) ? ext : `.${ext}`;
+    return `stats-${label || `${panel.kind}-${panel.metric}`}${suffix}`;
+}
+
+// Échelle de l'export PNG (1×, 2×, 4×) : préférence d'interface locale au
+// navigateur, comme l'état des sections repliables. 2× par défaut — net
+// dans une vidéo 1080p, et sur un écran haute densité.
+const PNG_SCALE_KEY = 'statsPngScale';
+const PNG_SCALES = [1, 2, 4];
+
+function pngScale() {
+    const value = Number($('selectStatsPngScale')?.value);
+    return PNG_SCALES.includes(value) ? value : 2;
+}
+
+function restorePngScale() {
+    const select = $('selectStatsPngScale');
+    if (!select) return;
+    try {
+        const saved = Number(localStorage.getItem(PNG_SCALE_KEY));
+        if (PNG_SCALES.includes(saved)) select.value = String(saved);
+    } catch (_) { /* stockage indisponible : défaut du gabarit */ }
+    select.addEventListener('change', () => {
+        try { localStorage.setItem(PNG_SCALE_KEY, String(pngScale())); } catch (_) { /* quota */ }
+    });
+    // La taille sur la carte suit la fenêtre : libellés relus à l'ouverture.
+    select.addEventListener('pointerdown', () => renderPngScales(selectedPanel()));
+    select.addEventListener('focus', () => renderPngScales(selectedPanel()));
+}
+
+// « 2× — 560 × 620 px » : la taille de l'image produite par chaque échelle.
+function renderPngScales(panel) {
+    const select = $('selectStatsPngScale');
+    const button = $('btnStatsExportPng');
+    const size = panel ? pkg.statsPanelExportSize?.(panel.id) : null;
+    if (button) button.disabled = !size;
+    if (select) {
+        select.disabled = !size;
+        for (const option of select.options) {
+            const scale = Number(option.value);
+            option.textContent = size
+                ? `${scale}× — ${Math.round(size.width * scale)} × ${Math.round(size.height * scale)} px`
+                : `${scale}×`;
+        }
+    }
 }
 
 async function exportPanelPng() {
     const panel = selectedPanel();
-    const blob = panel ? await pkg.statsPanelPngBlob?.(panel.id) : null;
-    if (blob) downloadBlob(blob, exportFileName(panel, 'png'));
+    if (!panel) return;
+    const scale = pngScale();
+    const blob = await pkg.statsPanelPngBlob?.(panel.id, scale);
+    // « stats-ma-dt@2x.png » : la convention des images haute densité.
+    if (blob) downloadBlob(blob, exportFileName(panel, scale > 1 ? `@${scale}x.png` : '.png'));
 }
 
 function exportPanelCsv() {
@@ -1415,6 +1464,7 @@ export function initStatsTab() {
     list?.addEventListener('change', onListChange);
     if (list) bindListReorder(list);
     $('btnStatsStyleToAll')?.addEventListener('click', applyStyleToAll);
+    restorePngScale();
     $('btnStatsExportPng')?.addEventListener('click', exportPanelPng);
     $('btnStatsExportCsv')?.addEventListener('click', exportPanelCsv);
     $('statsConfigMenu')?.addEventListener('click', (event) => {
@@ -1447,6 +1497,9 @@ export function initStatsTab() {
     bindFormSections();
     bindDragAndDrop();
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));
+    // Données chargées, filtre, fenêtre redimensionnée : la taille du panneau
+    // change, les tailles d'export affichées aussi.
+    document.addEventListener('mygcflow:stats-preview', () => renderPngScales(selectedPanel()));
     // Saisie à la souris : onglet ouvert/fermé, lecture lancée/arrêtée.
     document.addEventListener('shown.bs.tab', syncDragMode);
     document.addEventListener('shown.bs.tab', syncFormPreview);

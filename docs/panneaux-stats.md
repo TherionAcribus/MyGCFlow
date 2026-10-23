@@ -582,11 +582,24 @@ métriques et le schéma de ses options des deux côtés (`stats_settings.py`,
 (`data-stats-kind`) et `stats_ui.js › FIELDS`. Une nouvelle grille, elle, n'est
 qu'une entrée dans `gridSpec`.
 
-Le panneau sélectionné s'exporte en **PNG** (instantané du canvas) et en
-**CSV** (ses valeurs) depuis le formulaire. Le nom du fichier est le titre
-du panneau — ou son titre par défaut — en slug ASCII (« Ma D/T ! » →
-`stats-ma-dt.png`) ; un titre dont le slug serait vide (écriture non latine)
-retombe sur `stats-{kind}-{metric}`.
+Le panneau sélectionné s'exporte en **PNG** et en **CSV** (ses valeurs)
+depuis le formulaire. Le nom du fichier est le titre du panneau — ou son
+titre par défaut — en slug ASCII (« Ma D/T ! » → `stats-ma-dt.png`) ; un
+titre dont le slug serait vide (écriture non latine) retombe sur
+`stats-{kind}-{metric}`.
+
+**PNG à l'échelle** (2026-10-22) : le panneau tel qu'il est affiché (mêmes
+comptes, même instant d'animation) est **redessiné** à 1×, 2× (défaut) ou 4×
+de sa taille CSS sur la carte (`statsPanelPngBlob(id, scale)`,
+`STATS_PNG_SCALES`) — pas un agrandissement du bitmap d'écran, donc net à
+toute échelle ; 2× ≈ vidéo 1080p depuis une carte de 540 px, 4× ≈ 4K.
+Suffixe `@2x` / `@4x` au-delà de 1×. Le select affiche les pixels de chaque
+échelle (« 2× — 560 × 620 px », `statsPanelExportSize`), rafraîchis avec
+l'aperçu du formulaire (événement `mygcflow:stats-preview`) : calculés
+avant le chargement des données, ils restaient sinon ceux d'un panneau vide.
+Choix retenu dans `localStorage` (`statsPngScale`). Un panneau masqué
+s'exporte aussi, à sa largeur réglée ; un panneau à métrique étrangère au
+mode, non (bouton grisé).
 
 La liste du mode courant s'exporte en JSON et se ré-importe depuis le menu
 « Configurations » (`stats-panneaux-{mode}.json` : `{mode, panels}` ; à

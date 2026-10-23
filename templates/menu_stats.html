@@ -370,7 +370,15 @@
                     <div class="stats-form-export mt-4 pt-3">
                         <h6 class="gc-subsection-title">{{ _("Exporter ce panneau") }}</h6>
                         <p class="form-hint text-muted small mb-2">{{ _("Le panneau tel qu'il est affiché, ou ses valeurs en tableau.") }}</p>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            {# Échelle de l'image : libellés « 2× — 560 × 620 px »
+                               posés par stats_ui.js › renderPngScales. #}
+                            <select id="selectStatsPngScale" class="form-select form-select-sm w-auto"
+                                    aria-label="{{ _('Taille de l’image') }}" aria-describedby="helpStatsPngScale">
+                                <option value="1">1×</option>
+                                <option value="2" selected>2×</option>
+                                <option value="4">4×</option>
+                            </select>
                             <button type="button" id="btnStatsExportPng" class="btn btn-sm btn-outline-secondary">
                                 <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Image (PNG)") }}
                             </button>
@@ -378,6 +386,7 @@
                                 <i class="ti ti-file-type-csv me-1" aria-hidden="true"></i>{{ _("Valeurs (CSV)") }}
                             </button>
                         </div>
+                        <small id="helpStatsPngScale" class="form-hint text-muted d-block mt-1">{{ _("1× : taille à l'écran. 2× ou 4× : image redessinée plus grande, nette pour une vidéo en haute définition ou une impression.") }}</small>
                     </div>
                 </div>
             </div>

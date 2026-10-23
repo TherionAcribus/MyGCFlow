@@ -1725,14 +1725,61 @@ function refreshFormPreview() {
     if (!canvas || canvas.hidden) return;
     previewKey = key;
     drawStatsPanelPreview(selectedPanelId, canvas);
+    // Ce qui dépend aussi de la taille dessinée (tailles d'export PNG,
+    // stats_ui.js) suit le même rythme.
+    try {
+        document.dispatchEvent(new CustomEvent('mygcflow:stats-preview', { detail: { id: selectedPanelId } }));
+    } catch (_) {}
 }
 
-// Instantané PNG : le bitmap déjà dessiné pour l'aperçu (résolution écran).
-// null si le panneau n'est pas affiché (désactivé, base vide, Évolution).
-export function statsPanelPngBlob(id) {
-    const node = panelNodes.get(id);
-    if (!node) return Promise.resolve(null);
-    return new Promise((resolve) => node.canvas.toBlob(resolve, 'image/png'));
+// Export PNG : le panneau tel qu'il est affiché (mêmes comptes, même
+// instant d'animation), REDESSINÉ à la taille demandée — 1× = taille CSS de
+// la carte, 2× ≈ vidéo 1080p depuis une carte de 540 px, 4× ≈ 4K. Un
+// redessin, pas un agrandissement du bitmap d'écran : net à toute échelle.
+// Un panneau masqué s'exporte aussi, à sa largeur réglée ; un panneau à
+// métrique étrangère au mode, non (null).
+export const STATS_PNG_SCALES = Object.freeze([1, 2, 4]);
+
+function panelForExport(id) {
+    const evolution = isEvolutionPage();
+    const panel = (settings[statsPanelsKey(evolution)] || []).find((p) => p.id === id);
+    const registry = evolution ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+    return panel && (registry[panel.kind] || []).includes(panel.metric) ? panel : null;
+}
+
+// Vue et taille logique (px CSS) : celles de la carte si le panneau y est,
+// sinon sa largeur réglée et la hauteur qui en découle.
+function exportGeometry(panel) {
+    if (drawDirty) flush();
+    const view = buildView(panel);
+    const rect = panelNodes.get(panel.id)?.layout;
+    if (rect?.width > 0 && rect?.height > 0) return { view, width: rect.width, height: rect.height };
+    const width = Math.max(1, Math.round(panel.position.width || 280));
+    const height = measureStatsPanel(view, panel.style, width,
+        panel.kind === 'grid' ? null : panel.position.height);
+    return { view, width, height };
+}
+
+// Taille logique de l'export (le formulaire en déduit les pixels de chaque
+// échelle), ou null si le panneau ne s'exporte pas.
+export function statsPanelExportSize(id) {
+    const panel = panelForExport(id);
+    if (!panel) return null;
+    const { width, height } = exportGeometry(panel);
+    return { width, height };
+}
+
+export function statsPanelPngBlob(id, scale = 2) {
+    const panel = panelForExport(id);
+    if (!panel) return Promise.resolve(null);
+    const factor = STATS_PNG_SCALES.includes(scale) ? scale : 2;
+    const { view, width, height } = exportGeometry(panel);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * factor));
+    canvas.height = Math.max(1, Math.round(height * factor));
+    drawStatsPanel(canvas.getContext('2d'), { x: 0, y: 0, width: canvas.width, height: canvas.height },
+        view, panel.style, lastNow, width);
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
 
 // Cellule CSV : entre guillemets si elle contient « ; », un guillemet ou un
