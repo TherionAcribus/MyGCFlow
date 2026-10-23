@@ -652,6 +652,18 @@ test('préréglages : « Avatar » arrondit et encadre, « Annuler » rend le st
   ] } });
   await openImagesTab(page);
   await page.locator('#imagesList li [data-action="select"]').click();
+  // Cartes des préréglages : l'image dessinée dans chaque style, l'icône de
+  // repli masquée. Avatar (rond) : carrée ; « Logo sur fond » garde la
+  // hauteur imposée (160 × 90).
+  const thumb = (name) => page.locator(`[data-image-preset="${name}"] .image-preset-thumb`);
+  for (const name of ['avatar', 'badge', 'discreet', 'photo']) {
+    await expect(thumb(name).locator('canvas')).toBeVisible();
+    await expect(thumb(name).locator('.ti')).toBeHidden();
+  }
+  const ratio = (name) => thumb(name).locator('canvas').evaluate(
+    (c) => parseFloat(c.style.width) / parseFloat(c.style.height));
+  expect(await ratio('avatar')).toBeCloseTo(1, 1);
+  expect(await ratio('badge')).toBeCloseTo(160 / 90, 1);
   await page.locator('[data-image-preset="avatar"]').click();
   await expect.poll(async () => (await savedImages(page)).items[0].style)
     .toMatchObject({ shape: 'circle', fit: 'cover', border_width: 3, shadow: true, opacity: 100 });

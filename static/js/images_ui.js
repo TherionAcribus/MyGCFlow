@@ -970,9 +970,45 @@ const FORM_PREVIEW_BOX = Object.freeze({ width: 104, height: 88 });
 // Vignette : l'image avec son style (forme, fond, bordure, ombre…), redessinée
 // à chaque réglage. Rien pour une image manquante (aide affichée à la place).
 function renderFormPreview(item = selectedItem()) {
+    if (item) renderPresetThumbs(item);
     const canvas = $('imageFormPreview');
     if (!canvas || !item || isMissing(item)) return;
     pkg.drawImageFormPreview?.(canvas, item, FORM_PREVIEW_BOX);
+}
+
+// Case d'une vignette de préréglage, en px CSS (.image-preset-thumb, marge
+// intérieure déduite).
+const PRESET_THUMB_BOX = Object.freeze({ width: 56, height: 38 });
+// Les vignettes ne dépendent que du fichier et de la taille de l'image (le
+// préréglage fixe tout le style) : redessinées seulement quand ils changent.
+let presetThumbsKey = null;
+
+// Cartes des préréglages : l'image elle-même dans chaque style, à l'échelle
+// réelle réduite comme la vignette du formulaire. Image pas encore décodée
+// ou manquante : l'icône du préréglage reste à sa place.
+function renderPresetThumbs(item) {
+    const ready = pkg.imageSourceState?.(item.file) === 'ready';
+    const key = ready ? [item.file, item.position.width, item.position.height].join('|') : '';
+    if (key === presetThumbsKey) return;
+    presetThumbsKey = key;
+    document.querySelectorAll('[data-image-preset]').forEach((button) => {
+        const canvas = button.querySelector('canvas');
+        const icon = button.querySelector('.image-preset-thumb .ti');
+        if (!canvas) return;
+        const result = ready ? imageStylePreset(item, button.dataset.imagePreset) : null;
+        const drawn = !!result && !!pkg.drawImageFormPreview?.(canvas, {
+            ...item,
+            style: result.style,
+            position: { ...item.position, height: result.height },
+        }, PRESET_THUMB_BOX);
+        canvas.hidden = !drawn;
+        if (icon) icon.hidden = drawn;
+    });
+}
+
+// Nom affiché d'un préréglage (sans le texte éventuel de la vignette).
+function presetLabel(button) {
+    return button?.querySelector('.image-preset-label')?.textContent.trim() || '';
 }
 
 // Bloc « Apparence ». Les réglages sans objet pour ce style
@@ -1097,7 +1133,7 @@ function renderSectionSummaries(item = selectedItem()) {
         .find((button) => button.dataset.imagePreset === preset);
     let appearance;
     if (presetButton) {
-        appearance = [presetButton.textContent.trim()];
+        appearance = [presetLabel(presetButton)];
     } else {
         appearance = [radioLabel(`imageShape-${s.shape}`) || s.shape];
         if (s.background_opacity > 0) appearance.push(pkg.t('fond'));
@@ -1295,7 +1331,7 @@ function applyStylePreset(name, button) {
     saveImagesDebounced.flush();
     renderForm();
     pkg.showActionToast?.(
-        pkg.t('Préréglage « ${name} » appliqué', { name: button?.textContent.trim() || name }),
+        pkg.t('Préréglage « ${name} » appliqué', { name: presetLabel(button) || name }),
         { label: 'Annuler', onClick: () => {
             updateItem(id, (target) => {
                 target.style = before.style;

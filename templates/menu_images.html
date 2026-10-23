@@ -193,15 +193,19 @@
                            défaut ; position et largeur gardées. Celui que l'image porte
                            exactement est enfoncé (matchingStylePreset). #}
                         <span class="form-label is-top" id="labelImagePresets">{{ _("Préréglages") }}</span>
-                        <div class="d-flex flex-wrap gap-1" role="group" aria-labelledby="labelImagePresets">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="avatar" aria-pressed="false">
-                                <i class="ti ti-user me-1" aria-hidden="true"></i>{{ _("Avatar") }}</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="badge" aria-pressed="false">
-                                <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Logo sur fond") }}</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="discreet" aria-pressed="false">
-                                <i class="ti ti-contrast me-1" aria-hidden="true"></i>{{ _("Filigrane") }}</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="photo" aria-pressed="false">
-                                <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Photo encadrée") }}</button>
+                        {# Chaque carte montre l'image elle-même avec ce préréglage
+                           (images_ui.js › renderPresetThumbs) ; l'icône tient la place
+                           tant que l'image n'est pas chargée, ou si elle manque. #}
+                        <div class="image-preset-list" role="group" aria-labelledby="labelImagePresets">
+                            {% for name, icon, label in [('avatar', 'ti-user', _('Avatar')),
+                                                         ('badge', 'ti-bookmark', _('Logo sur fond')),
+                                                         ('discreet', 'ti-contrast', _('Filigrane')),
+                                                         ('photo', 'ti-photo', _('Photo encadrée'))] %}
+                            <button type="button" class="btn image-preset-btn" data-image-preset="{{ name }}" aria-pressed="false">
+                                <span class="image-preset-thumb" aria-hidden="true"><canvas hidden></canvas><i class="ti {{ icon }}"></i></span>
+                                <span class="image-preset-label">{{ label }}</span>
+                            </button>
+                            {% endfor %}
                         </div>
 
                         <span class="form-label is-top" id="labelImageShape">{{ _("Forme") }}</span>

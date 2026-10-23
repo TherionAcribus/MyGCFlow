@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 20:40+0200\n"
+"POT-Creation-Date: 2026-10-23 20:53+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1604,8 +1604,8 @@ msgstr "The image could not be uploaded."
 #: static/js/images_ui.js:290 static/js/images_ui.js:552
 #: static/js/images_ui.js:558 static/js/images_ui.js:587
 #: static/js/images_ui.js:612 static/js/images_ui.js:614
-#: static/js/images_ui.js:706 static/js/images_ui.js:1257
-#: static/js/images_ui.js:1262 templates/app.html:255 templates/guide.html:59
+#: static/js/images_ui.js:706 static/js/images_ui.js:1293
+#: static/js/images_ui.js:1298 templates/app.html:255 templates/guide.html:59
 #: templates/guide.html:112 templates/guide.html:393 templates/guide.html:395
 #: templates/menu_images.html:32
 msgid "Images"
@@ -1746,67 +1746,67 @@ msgstr "Move down"
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/images_ui.js:1067
+#: static/js/images_ui.js:1103
 msgid "Toujours visible"
 msgstr "Always visible"
 
-#: static/js/images_ui.js:1070
+#: static/js/images_ui.js:1106
 #, python-brace-format
 msgid "Trouvailles n°${from} à n°${to}"
 msgstr "Finds no. ${from} to no. ${to}"
 
-#: static/js/images_ui.js:1071
+#: static/js/images_ui.js:1107
 #, python-brace-format
 msgid "Dès la trouvaille n°${n}"
 msgstr "From find no. ${n}"
 
-#: static/js/images_ui.js:1072
+#: static/js/images_ui.js:1108
 #, python-brace-format
 msgid "Jusqu'à la trouvaille n°${n}"
 msgstr "Until find no. ${n}"
 
-#: static/js/images_ui.js:1076
+#: static/js/images_ui.js:1112
 #, python-brace-format
 msgid "Du ${from} au ${to}"
 msgstr "From ${from} to ${to}"
 
-#: static/js/images_ui.js:1078
+#: static/js/images_ui.js:1114
 #, python-brace-format
 msgid "À partir du ${date}"
 msgstr "From ${date}"
 
-#: static/js/images_ui.js:1079
+#: static/js/images_ui.js:1115
 #, python-brace-format
 msgid "Jusqu'au ${date}"
 msgstr "Until ${date}"
 
-#: static/js/images_ui.js:1089
+#: static/js/images_ui.js:1125
 msgid "Position libre"
 msgstr "Free position"
 
-#: static/js/images_ui.js:1103
+#: static/js/images_ui.js:1139
 msgid "fond"
 msgstr "background"
 
-#: static/js/images_ui.js:1104
+#: static/js/images_ui.js:1140
 msgid "bordure"
 msgstr "border"
 
-#: static/js/images_ui.js:1105
+#: static/js/images_ui.js:1141
 msgid "ombre"
 msgstr "shadow"
 
-#: static/js/images_ui.js:1196
+#: static/js/images_ui.js:1232
 #, python-brace-format
 msgid "Le ${date}"
 msgstr "On ${date}"
 
-#: static/js/images_ui.js:1197
+#: static/js/images_ui.js:1233
 #, python-brace-format
 msgid "Jamais atteinte : ${total} trouvaille(s) au total"
 msgstr "Never reached: ${total} find(s) in total"
 
-#: static/js/images_ui.js:1224
+#: static/js/images_ui.js:1260
 #, python-brace-format
 msgid ""
 "La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
@@ -1815,13 +1815,13 @@ msgstr ""
 "Find no. ${n} is never reached (${total} in total): the image will not be"
 " visible."
 
-#: static/js/images_ui.js:1227
+#: static/js/images_ui.js:1263
 msgid ""
 "La disparition tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr "It disappears on the day it appears: the image will never be visible."
 
-#: static/js/images_ui.js:1229
+#: static/js/images_ui.js:1265
 msgid ""
 "« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
@@ -1829,7 +1829,7 @@ msgstr ""
 "“Disappears on” falls on the day it appears: the image will never be "
 "visible."
 
-#: static/js/images_ui.js:1232
+#: static/js/images_ui.js:1268
 #, python-brace-format
 msgid ""
 "L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
@@ -1838,7 +1838,7 @@ msgstr ""
 "The image only appears after the end of the animation (${date}): it will "
 "not be visible in the video."
 
-#: static/js/images_ui.js:1235
+#: static/js/images_ui.js:1271
 #, python-brace-format
 msgid ""
 "L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
@@ -1847,11 +1847,11 @@ msgstr ""
 "The image disappears before the start of the animation (${date}): it will"
 " not be visible in the video."
 
-#: static/js/images_ui.js:1257
+#: static/js/images_ui.js:1293
 msgid "Attendez la fin de l'enregistrement."
 msgstr "Wait for the recording to finish."
 
-#: static/js/images_ui.js:1261
+#: static/js/images_ui.js:1297
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
@@ -1859,7 +1859,7 @@ msgstr ""
 "Start the preview and pause it on the day you want (timeline bar), then "
 "click again."
 
-#: static/js/images_ui.js:1298
+#: static/js/images_ui.js:1334
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr "Preset “${name}” applied"
@@ -8352,11 +8352,11 @@ msgstr "Return to the anchor point"
 msgid "Préréglages"
 msgstr "Presets"
 
-#: templates/menu_images.html:198
+#: templates/menu_images.html:200
 msgid "Avatar"
 msgstr "Avatar"
 
-#: templates/menu_images.html:200
+#: templates/menu_images.html:201
 msgid "Logo sur fond"
 msgstr "Logo on background"
 
@@ -8364,43 +8364,43 @@ msgstr "Logo on background"
 msgid "Filigrane"
 msgstr "Watermark"
 
-#: templates/menu_images.html:204
+#: templates/menu_images.html:203
 msgid "Photo encadrée"
 msgstr "Framed photo"
 
-#: templates/menu_images.html:207 templates/menu_stats.html:94
+#: templates/menu_images.html:211 templates/menu_stats.html:94
 msgid "Forme"
 msgstr "Shape"
 
-#: templates/menu_images.html:210
+#: templates/menu_images.html:214
 msgid "Rectangle"
 msgstr "Rectangle"
 
-#: templates/menu_images.html:211 templates/menu_stats.html:349
+#: templates/menu_images.html:215 templates/menu_stats.html:349
 msgid "Arrondi"
 msgstr "Corner radius"
 
-#: templates/menu_images.html:212
+#: templates/menu_images.html:216
 msgid "Rond"
 msgstr "Round"
 
-#: templates/menu_images.html:218
+#: templates/menu_images.html:222
 msgid "Rayon"
 msgstr "Radius"
 
-#: templates/menu_images.html:224
+#: templates/menu_images.html:228
 msgid "Ajustement"
 msgstr "Fit"
 
-#: templates/menu_images.html:227
+#: templates/menu_images.html:231
 msgid "Image entière"
 msgstr "Whole image"
 
-#: templates/menu_images.html:228
+#: templates/menu_images.html:232
 msgid "Remplir la forme"
 msgstr "Fill the shape"
 
-#: templates/menu_images.html:233
+#: templates/menu_images.html:237
 msgid ""
 "Sans effet : la forme suit les proportions de l'image. Choisissez « Rond "
 "» ou imposez une hauteur pour recadrer."
@@ -8408,40 +8408,40 @@ msgstr ""
 "No effect: the shape follows the image's proportions. Choose “Round” or "
 "set a height to crop."
 
-#: templates/menu_images.html:238 templates/menu_informations.html:164
+#: templates/menu_images.html:242 templates/menu_informations.html:164
 #: templates/menu_stats.html:320
 msgid "Fond"
 msgstr "Background"
 
-#: templates/menu_images.html:242 templates/menu_stats.html:332
+#: templates/menu_images.html:246 templates/menu_stats.html:332
 msgid "Opacité du fond"
 msgstr "Background opacity"
 
-#: templates/menu_images.html:246
+#: templates/menu_images.html:250
 msgid "Marge intérieure"
 msgstr "Padding"
 
-#: templates/menu_images.html:252
+#: templates/menu_images.html:256
 msgid "Bordure"
 msgstr "Border"
 
-#: templates/menu_images.html:259 templates/menu_points.html:133
+#: templates/menu_images.html:263 templates/menu_points.html:133
 msgid "Couleur de la bordure"
 msgstr "Border color"
 
-#: templates/menu_images.html:262
+#: templates/menu_images.html:266
 msgid "Ombre portée"
 msgstr "Drop shadow"
 
-#: templates/menu_images.html:268
+#: templates/menu_images.html:272
 msgid "Opacité de l'ensemble"
 msgstr "Overall opacity"
 
-#: templates/menu_images.html:278
+#: templates/menu_images.html:282
 msgid "Apparition pendant l'animation"
 msgstr "Appearance during the animation"
 
-#: templates/menu_images.html:280
+#: templates/menu_images.html:284
 msgid ""
 "L'image entre puis sort au fil de l'animation, à des dates ou à des "
 "étapes du compteur de trouvailles. Sans borne : toujours visible."
@@ -8449,35 +8449,35 @@ msgstr ""
 "The image comes in and then goes out as the animation goes by, on dates "
 "or at milestones of the find counter. Without bounds: always visible."
 
-#: templates/menu_images.html:283
+#: templates/menu_images.html:287
 msgid "Repère du planing"
 msgstr "Schedule reference"
 
-#: templates/menu_images.html:285
+#: templates/menu_images.html:289
 msgid "Par dates"
 msgstr "By dates"
 
-#: templates/menu_images.html:287
+#: templates/menu_images.html:291
 msgid "Par trouvailles"
 msgstr "By finds"
 
-#: templates/menu_images.html:292
+#: templates/menu_images.html:296
 msgid "Apparaît le"
 msgstr "Appears on"
 
-#: templates/menu_images.html:295 templates/menu_images.html:306
+#: templates/menu_images.html:299 templates/menu_images.html:310
 msgid "Effacer la date"
 msgstr "Clear the date"
 
-#: templates/menu_images.html:300 templates/menu_images.html:311
+#: templates/menu_images.html:304 templates/menu_images.html:315
 msgid "Jour affiché"
 msgstr "Displayed day"
 
-#: templates/menu_images.html:303
+#: templates/menu_images.html:307
 msgid "Disparaît le"
 msgstr "Disappears on"
 
-#: templates/menu_images.html:314
+#: templates/menu_images.html:318
 msgid ""
 "« Jour affiché » reprend le jour montré par l'aperçu, en lecture ou en "
 "pause : mettez-le en pause sur le jour voulu (barre de chronologie)."
@@ -8485,35 +8485,35 @@ msgstr ""
 "“Displayed day” takes the day shown by the preview, playing or paused: "
 "pause it on the day you want (timeline bar)."
 
-#: templates/menu_images.html:319
+#: templates/menu_images.html:323
 msgid "Apparaît à la trouvaille n°"
 msgstr "Appears at find no."
 
-#: templates/menu_images.html:322 templates/menu_images.html:332
+#: templates/menu_images.html:326 templates/menu_images.html:336
 msgid "Effacer"
 msgstr "Clear"
 
-#: templates/menu_images.html:329
+#: templates/menu_images.html:333
 msgid "Disparaît à la trouvaille n°"
 msgstr "Disappears at find no."
 
-#: templates/menu_images.html:341 templates/menu_trail.html:127
+#: templates/menu_images.html:345 templates/menu_trail.html:127
 msgid "Effet"
 msgstr "Effect"
 
-#: templates/menu_images.html:343
+#: templates/menu_images.html:347
 msgid "Fondu"
 msgstr "Fade"
 
-#: templates/menu_images.html:344
+#: templates/menu_images.html:348
 msgid "Glissement depuis le bord"
 msgstr "Slide from the edge"
 
-#: templates/menu_images.html:345
+#: templates/menu_images.html:349
 msgid "Zoom"
 msgstr "Zoom"
 
-#: templates/menu_images.html:349
+#: templates/menu_images.html:353
 msgid "Durée (ms)"
 msgstr "Duration (ms)"
 

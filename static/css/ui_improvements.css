@@ -819,8 +819,70 @@ main.fullscreen-mode ~ .tooltip {
 .image-form-preview[hidden] {
     display: none;
 }
+/* Fond des vignettes stylées (formulaire, préréglages) : damier sur un gris
+   moyen, pour que les liserés, cadres et fonds blancs restent visibles. */
+.image-form-preview,
+.image-preset-thumb {
+    background-color: rgba(100, 116, 139, 0.3);
+}
 .image-form-preview canvas.has-shadow {
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+}
+/* Préréglages d'apparence : cartes avec l'image dessinée dans chaque style
+   (images_ui.js › renderPresetThumbs), damier comme la vignette du formulaire. */
+.image-preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.image-preset-btn {
+    flex: 1 1 0;
+    min-width: 4.5rem;
+    max-width: 6.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    color: inherit;
+    background: var(--tblr-bg-surface, #fff);
+    border: 1px solid var(--tblr-border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: normal;
+}
+.image-preset-btn:hover {
+    color: inherit;
+    border-color: var(--color-accent, #0072c6);
+}
+.image-preset-btn.active,
+.image-preset-btn.active:hover {
+    color: var(--color-accent-on-weak, #005fa3);
+    background: var(--color-accent-weak, #e6f2fb);
+    border-color: var(--color-accent-text, #0072c6);
+    box-shadow: inset 0 0 0 1px var(--color-accent-text, #0072c6);
+}
+.image-preset-thumb {
+    height: 48px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    /* Propriétés détaillées : le raccourci `background` effacerait la
+       couleur de fond commune posée plus haut. */
+    background-image: repeating-conic-gradient(rgba(127, 127, 127, 0.25) 0% 25%, transparent 0% 50%);
+    background-position: 50%;
+    background-size: 10px 10px;
+}
+.image-preset-thumb .ti {
+    font-size: 1.3rem;
+    color: var(--color-text-muted);
+}
+.image-preset-thumb canvas.has-shadow {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
 /* Apparence d'une image : une ligne par réglage, libellé à gauche. */
 .image-style-grid {

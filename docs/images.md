@@ -239,6 +239,12 @@ défaut (le résultat ne dépend pas des réglages précédents) ; position et
 largeur gardées ; un préréglage rond rend la hauteur aux proportions.
 « Annuler » rend le style et la hauteur d'avant. Le bouton du préréglage que
 l'image porte exactement est enfoncé (`matchingStylePreset`, `aria-pressed`).
+Chaque carte de préréglage montre **l'image elle-même dans ce style**
+(`renderPresetThumbs` → `drawImageFormPreview` avec le résultat de
+`imageStylePreset`), redessinée seulement quand le fichier ou la taille
+changent (le préréglage fixe tout le reste) ; l'icône du préréglage tient la
+place tant que l'image n'est pas décodée, ou si elle manque. Vignettes sur
+damier posé sur un gris moyen : un liseré ou un fond blanc reste visible.
 
 **Bloc Apparence** : une ligne par réglage, libellé à gauche
 (`.image-style-grid`) ; forme et ajustement en boutons radio
