@@ -271,6 +271,47 @@ export function imageStylePreset(item, name) {
     return { style, height };
 }
 
+// Préréglage dont l'image porte exactement le style (bouton mis en
+// évidence), ou null dès qu'un réglage s'en écarte. Couleurs comparées sans
+// la casse : « #FFFFFF » vaut « #ffffff ».
+export function matchingStylePreset(style) {
+    if (!style) return null;
+    const same = (a, b) => (typeof a === 'string' && typeof b === 'string'
+        ? a.toLowerCase() === b.toLowerCase() : a === b);
+    const defaults = imageItemDefaults().style;
+    for (const [name, preset] of Object.entries(IMAGE_STYLE_PRESETS)) {
+        const expected = { ...defaults, ...preset };
+        if (Object.keys(expected).every((key) => same(style[key], expected[key]))) return name;
+    }
+    return null;
+}
+
+// Réglages d'apparence qui ont un effet avec ce style (le formulaire masque
+// ou grise les autres) : le rayon ne sert qu'aux coins arrondis, la couleur
+// de bordure qu'avec une bordure, l'ajustement que si la boîte ne suit pas
+// les proportions de l'image — ronde, ou hauteur imposée. Sinon « Image
+// entière » et « Remplir la forme » donnent le même dessin (imagePanelHeight
+// taille la boîte sur l'image).
+export function imageStyleFieldStates(item) {
+    const style = item?.style || {};
+    return {
+        radius: style.shape === 'rounded',
+        borderColor: style.border_width > 0,
+        fit: style.shape === 'circle' || item?.position?.height != null,
+    };
+}
+
+// Couleur de fond choisie : un fond transparent devient opaque, sinon le
+// choix ne se verrait pas (l'opacité du fond vaut 0 par défaut). Une opacité
+// déjà réglée est gardée.
+export function withBackgroundColor(style, background) {
+    return {
+        ...style,
+        background,
+        background_opacity: style.background_opacity > 0 ? style.background_opacity : 100,
+    };
+}
+
 // Jour (numéro de jour) où le compteur de trouvailles atteint `n` :
 // `dayCounts` = [[jour, trouvailles du jour], …] trié par jour croissant —
 // le compteur de la carte, qui part des trouvailles antérieures au début de

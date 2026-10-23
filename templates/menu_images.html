@@ -114,7 +114,11 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex gap-3 align-items-start mb-2">
-                        <img id="imageFormPreview" class="image-form-preview" alt="" hidden>
+                        {# Vignette dessinée avec le style de l'image (drawImagePanel),
+                           comme sur la carte, réduite pour tenir dans la case. #}
+                        <div id="imageFormPreviewBox" class="image-form-preview" hidden>
+                            <canvas id="imageFormPreview" role="img" aria-label="{{ _("Aperçu de l'image avec son apparence") }}"></canvas>
+                        </div>
                         <div class="flex-grow-1">
                             <label class="form-label" for="inputImageName">{{ _("Nom") }}</label>
                             <input id="inputImageName" type="text" class="form-control" maxlength="80">
@@ -171,68 +175,90 @@
                     </div>
 
                     <h6 class="gc-subsection-title mt-3">{{ _("Apparence") }}</h6>
-                    <!-- Préréglages (images_model.mjs › IMAGE_STYLE_PRESETS) : chacun
-                         repart du style par défaut ; position et largeur gardées. -->
-                    <div class="d-flex flex-wrap align-items-center gap-1 mb-2" role="group" aria-labelledby="labelImagePresets">
-                        <span class="form-label mb-0 me-1" id="labelImagePresets">{{ _("Préréglages") }}</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="avatar">
-                            <i class="ti ti-user me-1" aria-hidden="true"></i>{{ _("Avatar") }}</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="badge">
-                            <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Logo sur fond") }}</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="discreet">
-                            <i class="ti ti-contrast me-1" aria-hidden="true"></i>{{ _("Filigrane") }}</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="photo">
-                            <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Photo encadrée") }}</button>
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="selectImageShape">{{ _("Forme") }}</label>
-                            <select id="selectImageShape" class="form-select">
-                                <option value="rect">{{ _("Rectangle") }}</option>
-                                <option value="rounded">{{ _("Coins arrondis") }}</option>
-                                <option value="circle">{{ _("Rond") }}</option>
-                            </select>
+                    <!-- Une ligne par réglage, libellé à gauche. Les réglages sans
+                         objet pour le style choisi sont masqués ou grisés
+                         (images_model.mjs › imageStyleFieldStates). -->
+                    <div class="image-style-grid">
+                        {# Préréglages (IMAGE_STYLE_PRESETS) : chacun repart du style par
+                           défaut ; position et largeur gardées. Celui que l'image porte
+                           exactement est enfoncé (matchingStylePreset). #}
+                        <span class="form-label is-top" id="labelImagePresets">{{ _("Préréglages") }}</span>
+                        <div class="d-flex flex-wrap gap-1" role="group" aria-labelledby="labelImagePresets">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="avatar" aria-pressed="false">
+                                <i class="ti ti-user me-1" aria-hidden="true"></i>{{ _("Avatar") }}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="badge" aria-pressed="false">
+                                <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Logo sur fond") }}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="discreet" aria-pressed="false">
+                                <i class="ti ti-contrast me-1" aria-hidden="true"></i>{{ _("Filigrane") }}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-image-preset="photo" aria-pressed="false">
+                                <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Photo encadrée") }}</button>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="inputImageRadius">{{ _("Rayon des coins (px)") }}</label>
-                            <input id="inputImageRadius" type="number" class="form-control" min="0" max="200" step="1">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="selectImageFit">{{ _("Ajustement") }}</label>
-                            <select id="selectImageFit" class="form-select">
-                                <option value="contain">{{ _("Image entière") }}</option>
-                                <option value="cover">{{ _("Remplir la forme") }}</option>
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="rangeImageOpacity">{{ _("Opacité") }} <span id="valueImageOpacity" class="text-muted"></span></label>
-                            <input id="rangeImageOpacity" type="range" class="form-range" min="0" max="100" step="5">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="inputImageBackground">{{ _("Fond") }}</label>
-                            <input id="inputImageBackground" type="color" class="form-control form-control-color">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="rangeImageBackgroundOpacity">{{ _("Opacité du fond") }} <span id="valueImageBackgroundOpacity" class="text-muted"></span></label>
-                            <input id="rangeImageBackgroundOpacity" type="range" class="form-range" min="0" max="100" step="5">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="inputImagePadding">{{ _("Marge intérieure (px)") }}</label>
-                            <input id="inputImagePadding" type="number" class="form-control" min="0" max="100" step="1">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="inputImageBorderWidth">{{ _("Bordure (px)") }}</label>
-                            <input id="inputImageBorderWidth" type="number" class="form-control" min="0" max="50" step="1">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label" for="inputImageBorderColor">{{ _("Couleur de la bordure") }}</label>
-                            <input id="inputImageBorderColor" type="color" class="form-control form-control-color">
-                        </div>
-                        <div class="col-6 col-md-4 d-flex align-items-end">
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="switchImageShadow" role="switch">
-                                <label class="form-check-label" for="switchImageShadow">{{ _("Ombre portée") }}</label>
+
+                        <span class="form-label" id="labelImageShape">{{ _("Forme") }}</span>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <div class="btn-group btn-group-sm" role="radiogroup" aria-labelledby="labelImageShape">
+                                {% for value, icon, label in [('rect', 'ti-square', _('Rectangle')),
+                                                              ('rounded', 'ti-square-rounded', _('Arrondi')),
+                                                              ('circle', 'ti-circle', _('Rond'))] %}
+                                <input type="radio" class="btn-check" name="imageShape" id="imageShape-{{ value }}" value="{{ value }}">
+                                <label class="btn btn-outline-secondary" for="imageShape-{{ value }}"><i class="ti {{ icon }} me-1" aria-hidden="true"></i>{{ label }}</label>
+                                {% endfor %}
                             </div>
+                            <div class="input-group input-group-sm image-style-radius" id="imageRadiusGroup">
+                                <label class="input-group-text" for="inputImageRadius">{{ _("Rayon") }}</label>
+                                <input id="inputImageRadius" type="number" class="form-control" min="0" max="200" step="1">
+                                <span class="input-group-text">px</span>
+                            </div>
+                        </div>
+
+                        <span class="form-label is-top" id="labelImageFit">{{ _("Ajustement") }}</span>
+                        <div>
+                            <div class="btn-group btn-group-sm" role="radiogroup" aria-labelledby="labelImageFit" aria-describedby="imageFitHint">
+                                {% for value, icon, label in [('contain', 'ti-arrows-minimize', _('Image entière')),
+                                                              ('cover', 'ti-arrows-maximize', _('Remplir la forme'))] %}
+                                <input type="radio" class="btn-check" name="imageFit" id="imageFit-{{ value }}" value="{{ value }}">
+                                <label class="btn btn-outline-secondary" for="imageFit-{{ value }}"><i class="ti {{ icon }} me-1" aria-hidden="true"></i>{{ label }}</label>
+                                {% endfor %}
+                            </div>
+                            <small id="imageFitHint" class="form-hint text-muted mt-1" hidden>{{ _("Sans effet : la forme suit les proportions de l'image. Choisissez « Rond » ou imposez une hauteur pour recadrer.") }}</small>
+                        </div>
+
+                        {# Choisir une couleur alors que le fond est transparent le rend
+                           opaque (withBackgroundColor) : sinon rien ne changerait. #}
+                        <label class="form-label" for="inputImageBackground">{{ _("Fond") }}</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input id="inputImageBackground" type="color" class="form-control form-control-color">
+                            <input id="rangeImageBackgroundOpacity" type="range" class="form-range flex-grow-1" min="0" max="100" step="5"
+                                   aria-label="{{ _('Opacité du fond') }}">
+                            <span id="valueImageBackgroundOpacity" class="text-muted small image-style-value"></span>
+                        </div>
+
+                        <label class="form-label" for="inputImagePadding">{{ _("Marge intérieure") }}</label>
+                        <div class="input-group input-group-sm image-style-number">
+                            <input id="inputImagePadding" type="number" class="form-control" min="0" max="100" step="1">
+                            <span class="input-group-text">px</span>
+                        </div>
+
+                        <label class="form-label" for="inputImageBorderWidth">{{ _("Bordure") }}</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm image-style-number">
+                                <input id="inputImageBorderWidth" type="number" class="form-control" min="0" max="50" step="1">
+                                <span class="input-group-text">px</span>
+                            </div>
+                            <input id="inputImageBorderColor" type="color" class="form-control form-control-color"
+                                   aria-label="{{ _('Couleur de la bordure') }}" hidden>
+                        </div>
+
+                        <label class="form-label" for="switchImageShadow">{{ _("Ombre portée") }}</label>
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" id="switchImageShadow" role="switch">
+                        </div>
+
+                        {# globalAlpha de drawImagePanel : image, fond et bordure ensemble. #}
+                        <label class="form-label" for="rangeImageOpacity">{{ _("Opacité de l'ensemble") }}</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input id="rangeImageOpacity" type="range" class="form-range flex-grow-1" min="0" max="100" step="5">
+                            <span id="valueImageOpacity" class="text-muted small image-style-value"></span>
                         </div>
                     </div>
 

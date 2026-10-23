@@ -19,10 +19,13 @@ import {
     normalizeImagesConfig,
     scheduleBounds,
     imageItemDefaults,
+    imageStyleFieldStates,
     imageStylePreset,
     imagesItemsKey,
     isImageFile,
+    matchingStylePreset,
     scheduleRangeIssue,
+    withBackgroundColor,
 } from './images_model.mjs';
 import { imagePanelHeight } from './images_render.mjs';
 import { bindPanelDrag } from './panel_interactions.js';
@@ -956,6 +959,58 @@ function setValue(id, value) {
     else el.value = value;
 }
 
+function setRadio(name, value) {
+    document.getElementsByName(name).forEach((radio) => { radio.checked = radio.value === value; });
+}
+
+// Case de la vignette du formulaire, en px CSS (.image-form-preview, marge
+// intérieure déduite).
+const FORM_PREVIEW_BOX = Object.freeze({ width: 104, height: 88 });
+
+// Vignette : l'image avec son style (forme, fond, bordure, ombre…), redessinée
+// à chaque réglage. Rien pour une image manquante (aide affichée à la place).
+function renderFormPreview(item = selectedItem()) {
+    const canvas = $('imageFormPreview');
+    if (!canvas || !item || isMissing(item)) return;
+    pkg.drawImageFormPreview?.(canvas, item, FORM_PREVIEW_BOX);
+}
+
+// Bloc « Apparence ». Les réglages sans objet pour ce style
+// (imageStyleFieldStates) sont masqués — rayon hors « Arrondi », couleur sans
+// bordure — ou grisés avec une explication : l'ajustement, qu'on doit
+// pouvoir découvrir.
+function renderStyleFields(item) {
+    const s = item.style;
+    const states = imageStyleFieldStates(item);
+    setRadio('imageShape', s.shape);
+    setValue('inputImageRadius', s.radius);
+    const radiusGroup = $('imageRadiusGroup');
+    if (radiusGroup) radiusGroup.hidden = !states.radius;
+    setRadio('imageFit', s.fit);
+    document.getElementsByName('imageFit').forEach((radio) => { radio.disabled = !states.fit; });
+    const fitHint = $('imageFitHint');
+    if (fitHint) fitHint.hidden = states.fit;
+    setValue('inputImageBackground', s.background);
+    setValue('rangeImageBackgroundOpacity', s.background_opacity);
+    setValue('inputImagePadding', s.padding);
+    setValue('inputImageBorderWidth', s.border_width);
+    setValue('inputImageBorderColor', s.border_color);
+    const borderColor = $('inputImageBorderColor');
+    if (borderColor) borderColor.hidden = !states.borderColor;
+    setValue('switchImageShadow', s.shadow);
+    setValue('rangeImageOpacity', s.opacity);
+    const opacity = $('valueImageOpacity');
+    if (opacity) opacity.textContent = `${s.opacity} %`;
+    const bgOpacity = $('valueImageBackgroundOpacity');
+    if (bgOpacity) bgOpacity.textContent = `${s.background_opacity} %`;
+    const preset = matchingStylePreset(s);
+    document.querySelectorAll('[data-image-preset]').forEach((button) => {
+        const active = button.dataset.imagePreset === preset;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
 function renderForm() {
     const form = $('imagesForm');
     if (!form) return;
@@ -963,11 +1018,9 @@ function renderForm() {
     form.hidden = !item;
     if (!item) return;
     const missing = isMissing(item);
-    const preview = $('imageFormPreview');
-    if (preview) {
-        preview.hidden = missing;
-        if (!missing) preview.src = pkg.imageUrl(item.file);
-    }
+    const previewBox = $('imageFormPreviewBox');
+    if (previewBox) previewBox.hidden = missing;
+    renderFormPreview(item);
     const missingHint = $('imageMissingHint');
     if (missingHint) missingHint.hidden = !missing;
 
@@ -996,26 +1049,7 @@ function renderForm() {
     const dy = $('inputImageDy');
     if (dy) dy.disabled = free || p.anchor.startsWith('middle-');
 
-    const s = item.style;
-    setValue('selectImageShape', s.shape);
-    setValue('inputImageRadius', s.radius);
-    const radius = $('inputImageRadius');
-    if (radius) radius.disabled = s.shape !== 'rounded';
-    setValue('selectImageFit', s.fit);
-    setValue('rangeImageOpacity', s.opacity);
-    setValue('inputImageBackground', s.background);
-    setValue('rangeImageBackgroundOpacity', s.background_opacity);
-    setValue('inputImagePadding', s.padding);
-    setValue('switchImageShadow', s.shadow);
-    setValue('inputImageBorderWidth', s.border_width);
-    setValue('inputImageBorderColor', s.border_color);
-    // Couleur sans objet sans bordure, comme le rayon hors « arrondi ».
-    const borderColor = $('inputImageBorderColor');
-    if (borderColor) borderColor.disabled = s.border_width === 0;
-    const opacity = $('valueImageOpacity');
-    if (opacity) opacity.textContent = `${s.opacity} %`;
-    const bgOpacity = $('valueImageBackgroundOpacity');
-    if (bgOpacity) bgOpacity.textContent = `${s.background_opacity} %`;
+    renderStyleFields(item);
 
     const schedule = item.schedule || {};
     // Jalons : page « Mes Géocaches » seulement — sur Évolution, les dates.
@@ -1177,9 +1211,7 @@ const FIELDS = [
     ['inputImageDx', 'position.dx', 'number'],
     ['inputImageDy', 'position.dy', 'number'],
     ['inputImageWidth', 'position.width', 'number'],
-    ['selectImageShape', 'style.shape', 'text'],
     ['inputImageRadius', 'style.radius', 'number'],
-    ['selectImageFit', 'style.fit', 'text'],
     ['rangeImageOpacity', 'style.opacity', 'number'],
     ['inputImageBackground', 'style.background', 'text'],
     ['rangeImageBackgroundOpacity', 'style.background_opacity', 'number'],
@@ -1226,7 +1258,9 @@ function bindFormFields() {
             if (value === undefined) return;
             let endClamped = false;
             updateSelected((item, items) => {
-                writePath(item, path, value);
+                // Couleur de fond : un fond transparent devient opaque.
+                if (path === 'style.background') item.style = withBackgroundColor(item.style, value);
+                else writePath(item, path, value);
                 if (SCHEDULE_BY_OF_TYPE[type]) item.schedule.by = SCHEDULE_BY_OF_TYPE[type];
                 // « Disparaît le » avant « Apparaît le » : jamais visible —
                 // recalé à la date d'apparition (garde de saisie, pas une
@@ -1245,6 +1279,8 @@ function bindFormFields() {
             if (path.startsWith('schedule.')) resyncScheduleWhilePaused();
             if (el.tagName === 'SELECT' || type === 'bool' || type === 'date' || type === 'find'
                 || path.startsWith('style.')) renderForm();
+            // Largeur : la vignette suit les proportions de la boîte.
+            else if (path.startsWith('position.')) renderFormPreview();
             if (endClamped) {
                 // « Disparaît le » recalé : la réécriture ne se pose que si
                 // le champ n'est pas en cours de frappe — taper l'année
@@ -1273,6 +1309,9 @@ function bindFormFields() {
             updateSelected((item) => {
                 item.position.height = raw === '' || !Number.isFinite(value) ? null : value;
             }, height);
+            // L'ajustement n'a d'effet qu'avec une hauteur imposée ; le champ
+            // en cours de frappe n'est pas réécrit (setValue).
+            renderForm();
         });
         height.addEventListener('change', () => renderForm());
     }
@@ -1318,6 +1357,17 @@ function bindFormFields() {
     document.querySelectorAll('[data-image-preset]').forEach((button) => {
         button.addEventListener('click', () => applyStylePreset(button.dataset.imagePreset, button));
     });
+
+    // Forme et ajustement : groupes de boutons radio.
+    for (const [name, key] of [['imageShape', 'shape'], ['imageFit', 'fit']]) {
+        document.getElementsByName(name).forEach((radio) => {
+            radio.addEventListener('change', () => {
+                if (!radio.checked) return;
+                updateSelected((item) => { item.style[key] = radio.value; }, radio.closest('[role="radiogroup"]'));
+                renderForm();
+            });
+        });
+    }
 
     // « Revenir à l'emplacement » : la position libre redevient le coin
     // conservé dans position.anchor, avec les marges de sa pile.

@@ -237,7 +237,26 @@ nom accessible.
 Avatar, Logo sur fond, Filigrane, Photo encadrée. Chacun repart du style par
 défaut (le résultat ne dépend pas des réglages précédents) ; position et
 largeur gardées ; un préréglage rond rend la hauteur aux proportions.
-« Annuler » rend le style et la hauteur d'avant.
+« Annuler » rend le style et la hauteur d'avant. Le bouton du préréglage que
+l'image porte exactement est enfoncé (`matchingStylePreset`, `aria-pressed`).
+
+**Bloc Apparence** : une ligne par réglage, libellé à gauche
+(`.image-style-grid`) ; forme et ajustement en boutons radio
+(`name="imageShape"` / `"imageFit"`). `imageStyleFieldStates(item)`
+(images_model.mjs, testé par `npm run test:unit`) dit quels réglages ont un
+effet : le rayon (masqué hors « Arrondi »), la couleur de bordure (masquée
+sans bordure), l'ajustement (grisé avec une explication tant que la boîte suit
+les proportions de l'image, c.-à-d. ni rond ni hauteur imposée — `contain` et
+`cover` y donnent le même dessin). Choisir une couleur de fond sur un fond
+transparent le rend opaque (`withBackgroundColor`) : sans cela, le choix ne se
+voyait pas (opacité du fond à 0 par défaut). « Opacité de l'ensemble » est le
+`globalAlpha` de `drawImagePanel` : image, fond et bordure.
+
+**Vignette du formulaire** (`#imageFormPreview`) : un canvas dessiné par
+`drawImageFormPreview` (images_panels.js) avec `drawImagePanel`, réduit pour
+tenir dans la case (jamais agrandi, rayon/marge/bordure réduits d'autant),
+ombre par la classe `has-shadow`. Redessinée à chaque réglage d'apparence ou
+de taille, et à l'arrivée de la source (`mygcflow:image-source`).
 
 **Planing et période animée** : `scheduleRangeIssue(schedule, début, fin)`
 signale sous les dates (`#imageScheduleWarning`) une image jamais visible —

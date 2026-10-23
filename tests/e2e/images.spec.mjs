@@ -215,14 +215,35 @@ test('onglet : ajout d’un fichier, réglages, suppression annulable', async ({
   await page.locator('label[for="imageAnchor-bottom-center"]').click();
   await expect(page.locator('#inputImageDx')).toBeDisabled();
 
-  // Forme ronde : carrée, rayon des coins sans objet.
-  await page.locator('#selectImageShape').selectOption('circle');
+  // Coins arrondis, hauteur d'après l'image : rayon proposé, ajustement
+  // grisé (sans effet) avec son explication.
+  await expect(page.locator('#imageRadiusGroup')).toBeVisible();
+  await expect(page.locator('#imageFit-cover')).toBeDisabled();
+  await expect(page.locator('#imageFitHint')).toBeVisible();
+
+  // Forme ronde : carrée, rayon des coins masqué, ajustement utile.
+  await page.locator('label[for="imageShape-circle"]').click();
   await expect.poll(async () => (await savedImages(page)).items[0].style.shape).toBe('circle');
-  await expect(page.locator('#inputImageRadius')).toBeDisabled();
+  await expect(page.locator('#imageRadiusGroup')).toBeHidden();
+  await expect(page.locator('#imageFit-cover')).toBeEnabled();
+  await expect(page.locator('#imageFitHint')).toBeHidden();
   await expect.poll(async () => {
     const b = await boxIn(page, 'canvas.image-panel');
     return Math.round(b.width) === Math.round(b.height);
   }).toBe(true);
+  // Vignette du formulaire dessinée avec le style : ronde, donc carrée.
+  await expect.poll(() => page.locator('#imageFormPreview').evaluate(
+    (c) => c.width > 1 && c.style.width !== '' && c.style.width === c.style.height)).toBe(true);
+
+  // Couleur de fond choisie sur un fond transparent : il devient opaque.
+  await page.locator('#inputImageBackground').fill('#ff0000');
+  await expect.poll(async () => (await savedImages(page)).items[0].style)
+    .toMatchObject({ background: '#ff0000', background_opacity: 100 });
+  await expect(page.locator('#valueImageBackgroundOpacity')).toHaveText('100 %');
+  // Couleur de bordure : seulement avec une bordure.
+  await expect(page.locator('#inputImageBorderColor')).toBeHidden();
+  await page.locator('#inputImageBorderWidth').fill('2');
+  await expect(page.locator('#inputImageBorderColor')).toBeVisible();
 
   // Interrupteur de la ligne : masquée sur la carte, gardée dans la liste.
   await rows.first().locator('[data-action="toggle"]').uncheck();
@@ -636,7 +657,9 @@ test('préréglages : « Avatar » arrondit et encadre, « Annuler » rend le st
     .toMatchObject({ shape: 'circle', fit: 'cover', border_width: 3, shadow: true, opacity: 100 });
   // Rond : la hauteur imposée est levée, l'image est carrée.
   expect((await savedImages(page)).items[0].position.height).toBe(null);
-  await expect(page.locator('#selectImageShape')).toHaveValue('circle');
+  await expect(page.locator('#imageShape-circle')).toBeChecked();
+  // Préréglage porté exactement : bouton enfoncé.
+  await expect(page.locator('[data-image-preset="avatar"]')).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(async () => {
     const b = await boxIn(page, 'canvas.image-panel');
     return Math.round(b.width) === Math.round(b.height);
@@ -647,7 +670,8 @@ test('préréglages : « Avatar » arrondit et encadre, « Annuler » rend le st
   await expect.poll(async () => (await savedImages(page)).items[0].style)
     .toMatchObject({ shape: 'rounded', opacity: 50, border_width: 0 });
   expect((await savedImages(page)).items[0].position.height).toBe(90);
-  await expect(page.locator('#selectImageShape')).toHaveValue('rounded');
+  await expect(page.locator('#imageShape-rounded')).toBeChecked();
+  await expect(page.locator('[data-image-preset="avatar"]')).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('planification : avertissement hors période, « Jour affiché » reprend le jour de l’aperçu en pause', async ({ page }) => {

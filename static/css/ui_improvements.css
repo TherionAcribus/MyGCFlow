@@ -805,10 +805,58 @@ main.fullscreen-mode ~ .tooltip {
     width: 32px;
     text-align: center;
 }
+/* Vignette du formulaire : l'image dessinée avec son style, centrée dans une
+   case fixe (images_ui.js › renderFormPreview). La marge laisse voir l'ombre. */
 .image-form-preview {
-    width: 96px;
-    height: 96px;
+    width: 120px;
+    height: 104px;
+    padding: 8px;
     flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.image-form-preview[hidden] {
+    display: none;
+}
+.image-form-preview canvas.has-shadow {
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+}
+/* Apparence d'une image : une ligne par réglage, libellé à gauche. */
+.image-style-grid {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, max-content) minmax(0, 1fr);
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+}
+.image-style-grid > .form-label {
+    margin-bottom: 0;
+}
+/* Libellé d'un bloc qui peut passer sur deux lignes : aligné sur la première. */
+.image-style-grid > .form-label.is-top {
+    align-self: start;
+    padding-top: 0.3rem;
+}
+/* Sélecteurs de couleur à la hauteur des petits champs voisins. */
+.image-style-grid .form-control-color {
+    width: 2.5rem;
+    font-size: 0.875rem;
+    height: calc(1.5em + 0.5rem + 2px);
+    padding: 0.15rem;
+    flex: 0 0 auto;
+}
+.image-style-number {
+    width: 6.5rem;
+    flex: 0 0 auto;
+}
+.image-style-radius {
+    width: 10rem;
+    flex: 0 0 auto;
+}
+.image-style-value {
+    min-width: 3.2em;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
 }
 .images-library {
     min-width: 260px;

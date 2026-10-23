@@ -497,6 +497,32 @@ function flush() {
     }
 }
 
+// Vignette du formulaire de l'onglet : l'image dessinée avec son style, à
+// l'échelle qui la fait tenir dans `box` (px CSS) — jamais agrandie, rayon,
+// marge et bordure réduits d'autant. Ombre par la classe `has-shadow` (CSS).
+// false tant que la source n'est pas décodée : son arrivée
+// (mygcflow:image-source) relance le formulaire.
+export function drawImageFormPreview(canvas, item, box) {
+    const entry = ensureSource(item?.file);
+    if (entry?.state !== 'ready') return false;
+    const natural = { width: entry.img.naturalWidth, height: entry.img.naturalHeight };
+    const width = item.position.width;
+    const height = imagePanelHeight(item, natural, width);
+    const fit = Math.min(1, box.width / width, box.height / height);
+    const cssWidth = Math.max(1, Math.round(width * fit));
+    const cssHeight = Math.max(1, Math.round(height * fit));
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.max(1, Math.round(cssWidth * dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight * dpr));
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawImagePanel(ctx, canvas.width, canvas.height, item, entry.img, fit * dpr);
+    canvas.classList.toggle('has-shadow', !!item.style.shadow);
+    return true;
+}
+
 // Dessine les images sur le canvas d'enregistrement, APRÈS les panneaux de
 // stats et AVANT le titre et les infos (même empilement que l'aperçu).
 // Géométrie de l'aperçu × scaleFactor, ancrée comme dans le DOM. Chaque image
