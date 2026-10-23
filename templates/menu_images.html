@@ -126,7 +126,13 @@
                         </div>
                     </div>
 
-                    <h6 class="gc-subsection-title">{{ _("Position") }}</h6>
+                    {# Sections repliables (mêmes classes que l'onglet Stats), ouvertes
+                       par défaut, état mémorisé (images_ui.js › bindFormSections).
+                       Repliées, leur résumé montre les réglages en cours
+                       (renderSectionSummaries). #}
+                    <details class="stats-form-section" id="imageSectionPosition" open>
+                    <summary class="gc-subsection-title">{{ _("Position") }}<span class="stats-form-summary-hint" id="imagePositionSummary"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+                    <div class="stats-form-section-body">
                     <div class="row g-2 align-items-start">
                         <div class="col-auto">
                             <span class="form-label d-block" id="labelImageAnchor">{{ _("Emplacement") }}</span>
@@ -173,8 +179,12 @@
                             </button>
                         </div>
                     </div>
+                    </div>
+                    </details>
 
-                    <h6 class="gc-subsection-title mt-3">{{ _("Apparence") }}</h6>
+                    <details class="stats-form-section" id="imageSectionAppearance" open>
+                    <summary class="gc-subsection-title">{{ _("Apparence") }}<span class="stats-form-summary-hint" id="imageAppearanceSummary"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+                    <div class="stats-form-section-body">
                     <!-- Une ligne par réglage, libellé à gauche. Les réglages sans
                          objet pour le style choisi sont masqués ou grisés
                          (images_model.mjs › imageStyleFieldStates). -->
@@ -194,7 +204,7 @@
                                 <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Photo encadrée") }}</button>
                         </div>
 
-                        <span class="form-label" id="labelImageShape">{{ _("Forme") }}</span>
+                        <span class="form-label is-top" id="labelImageShape">{{ _("Forme") }}</span>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <div class="btn-group btn-group-sm" role="radiogroup" aria-labelledby="labelImageShape">
                                 {% for value, icon, label in [('rect', 'ti-square', _('Rectangle')),
@@ -261,8 +271,12 @@
                             <span id="valueImageOpacity" class="text-muted small image-style-value"></span>
                         </div>
                     </div>
+                    </div>
+                    </details>
 
-                    <h6 class="gc-subsection-title mt-3">{{ _("Apparition pendant l'animation") }}</h6>
+                    <details class="stats-form-section" id="imageSectionSchedule" open>
+                    <summary class="gc-subsection-title">{{ _("Apparition pendant l'animation") }}<span class="stats-form-summary-hint" id="imageScheduleSummary"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+                    <div class="stats-form-section-body">
                     <small class="form-hint text-muted mb-2">{{ _("L'image entre puis sort au fil de l'animation, à des dates ou à des étapes du compteur de trouvailles. Sans borne : toujours visible.") }}</small>
                     {% if mode != 'evolution' %}
                     {# Jalons du compteur : page « Mes Géocaches » seulement (pas de trouvailles en Évolution). #}
@@ -337,6 +351,8 @@
                         </div>
                     </div>
                     <small id="imageScheduleWarning" class="form-hint text-warning mt-1" role="status" hidden></small>
+                    </div>
+                    </details>
                 </div>
             </div>
         </div>

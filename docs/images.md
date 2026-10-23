@@ -252,6 +252,18 @@ transparent le rend opaque (`withBackgroundColor`) : sans cela, le choix ne se
 voyait pas (opacité du fond à 0 par défaut). « Opacité de l'ensemble » est le
 `globalAlpha` de `drawImagePanel` : image, fond et bordure.
 
+**Sections repliables** : Position, Apparence et Apparition sont des
+`<details>` aux classes de l'onglet Stats (`stats-form-section`), mais
+**ouvertes par défaut** — sans « Contenu » toujours visible, un formulaire
+tout replié n'afficherait rien. État par section en `localStorage`
+(`imagesFormSections`, `bindFormSections`). Repliée, une section montre dans
+son titre un résumé des réglages en cours (`renderSectionSummaries`) :
+emplacement ou « Position libre » + taille ; préréglage, sinon forme + fond,
+bordure, ombre, opacité ; bornes du planing ou « Toujours visible », en
+couleur d'alerte quand `#imageScheduleWarning` est affiché (sinon
+l'avertissement serait caché avec la section). Le `bindFormSections` de
+stats_ui.js est restreint à `#stats` : il refermait aussi ces sections.
+
 **Vignette du formulaire** (`#imageFormPreview`) : un canvas dessiné par
 `drawImageFormPreview` (images_panels.js) avec `drawImagePanel`, réduit pour
 tenir dans la case (jamais agrandi, rayon/marge/bordure réduits d'autant),

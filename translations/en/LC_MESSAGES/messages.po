@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 20:26+0200\n"
+"POT-Creation-Date: 2026-10-23 20:40+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1604,8 +1604,8 @@ msgstr "The image could not be uploaded."
 #: static/js/images_ui.js:290 static/js/images_ui.js:552
 #: static/js/images_ui.js:558 static/js/images_ui.js:587
 #: static/js/images_ui.js:612 static/js/images_ui.js:614
-#: static/js/images_ui.js:706 static/js/images_ui.js:1155
-#: static/js/images_ui.js:1160 templates/app.html:255 templates/guide.html:59
+#: static/js/images_ui.js:706 static/js/images_ui.js:1257
+#: static/js/images_ui.js:1262 templates/app.html:255 templates/guide.html:59
 #: templates/guide.html:112 templates/guide.html:393 templates/guide.html:395
 #: templates/menu_images.html:32
 msgid "Images"
@@ -1696,7 +1696,7 @@ msgstr "This image will be permanently deleted from the library."
 #: static/js/images_ui.js:631 static/js/images_ui.js:670
 #: static/js/images_ui.js:857 static/js/profiles.js:967
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
-#: static/js/stats_ui.js:394 static/js/stats_ui.js:1418
+#: static/js/stats_ui.js:341 static/js/stats_ui.js:1238
 #: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
@@ -1705,18 +1705,18 @@ msgstr "Delete"
 msgid "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 msgstr "Twelve configurations at most: delete one, or reuse a name."
 
-#: static/js/images_ui.js:713 static/js/stats_ui.js:1459
+#: static/js/images_ui.js:713 static/js/stats_ui.js:1277
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr "Configuration “${name}” saved"
 
-#: static/js/images_ui.js:727 static/js/stats_ui.js:1473
+#: static/js/images_ui.js:727 static/js/stats_ui.js:1291
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr "Configuration “${name}” applied"
 
 #: static/js/images_ui.js:746 static/js/images_ui.js:925
-#: static/js/stats_ui.js:1492
+#: static/js/stats_ui.js:1310
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr "“${name}” deleted"
@@ -1733,30 +1733,80 @@ msgstr "(missing)"
 msgid "Apparition planifiée"
 msgstr "Scheduled appearance"
 
-#: static/js/images_ui.js:854 static/js/stats_ui.js:391
+#: static/js/images_ui.js:854 static/js/stats_ui.js:338
 msgid "Monter"
 msgstr "Move up"
 
-#: static/js/images_ui.js:855 static/js/stats_ui.js:392
+#: static/js/images_ui.js:855 static/js/stats_ui.js:339
 msgid "Descendre"
 msgstr "Move down"
 
 #: static/js/images_ui.js:856 static/js/profiles.js:958
-#: static/js/profiles.js:2748 static/js/stats_ui.js:393
+#: static/js/profiles.js:2748 static/js/stats_ui.js:340
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/images_ui.js:1094
+#: static/js/images_ui.js:1067
+msgid "Toujours visible"
+msgstr "Always visible"
+
+#: static/js/images_ui.js:1070
+#, python-brace-format
+msgid "Trouvailles n°${from} à n°${to}"
+msgstr "Finds no. ${from} to no. ${to}"
+
+#: static/js/images_ui.js:1071
+#, python-brace-format
+msgid "Dès la trouvaille n°${n}"
+msgstr "From find no. ${n}"
+
+#: static/js/images_ui.js:1072
+#, python-brace-format
+msgid "Jusqu'à la trouvaille n°${n}"
+msgstr "Until find no. ${n}"
+
+#: static/js/images_ui.js:1076
+#, python-brace-format
+msgid "Du ${from} au ${to}"
+msgstr "From ${from} to ${to}"
+
+#: static/js/images_ui.js:1078
+#, python-brace-format
+msgid "À partir du ${date}"
+msgstr "From ${date}"
+
+#: static/js/images_ui.js:1079
+#, python-brace-format
+msgid "Jusqu'au ${date}"
+msgstr "Until ${date}"
+
+#: static/js/images_ui.js:1089
+msgid "Position libre"
+msgstr "Free position"
+
+#: static/js/images_ui.js:1103
+msgid "fond"
+msgstr "background"
+
+#: static/js/images_ui.js:1104
+msgid "bordure"
+msgstr "border"
+
+#: static/js/images_ui.js:1105
+msgid "ombre"
+msgstr "shadow"
+
+#: static/js/images_ui.js:1196
 #, python-brace-format
 msgid "Le ${date}"
 msgstr "On ${date}"
 
-#: static/js/images_ui.js:1095
+#: static/js/images_ui.js:1197
 #, python-brace-format
 msgid "Jamais atteinte : ${total} trouvaille(s) au total"
 msgstr "Never reached: ${total} find(s) in total"
 
-#: static/js/images_ui.js:1122
+#: static/js/images_ui.js:1224
 #, python-brace-format
 msgid ""
 "La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
@@ -1765,13 +1815,13 @@ msgstr ""
 "Find no. ${n} is never reached (${total} in total): the image will not be"
 " visible."
 
-#: static/js/images_ui.js:1125
+#: static/js/images_ui.js:1227
 msgid ""
 "La disparition tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr "It disappears on the day it appears: the image will never be visible."
 
-#: static/js/images_ui.js:1127
+#: static/js/images_ui.js:1229
 msgid ""
 "« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
@@ -1779,7 +1829,7 @@ msgstr ""
 "“Disappears on” falls on the day it appears: the image will never be "
 "visible."
 
-#: static/js/images_ui.js:1130
+#: static/js/images_ui.js:1232
 #, python-brace-format
 msgid ""
 "L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
@@ -1788,7 +1838,7 @@ msgstr ""
 "The image only appears after the end of the animation (${date}): it will "
 "not be visible in the video."
 
-#: static/js/images_ui.js:1133
+#: static/js/images_ui.js:1235
 #, python-brace-format
 msgid ""
 "L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
@@ -1797,11 +1847,11 @@ msgstr ""
 "The image disappears before the start of the animation (${date}): it will"
 " not be visible in the video."
 
-#: static/js/images_ui.js:1155
+#: static/js/images_ui.js:1257
 msgid "Attendez la fin de l'enregistrement."
 msgstr "Wait for the recording to finish."
 
-#: static/js/images_ui.js:1159
+#: static/js/images_ui.js:1261
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
@@ -1809,7 +1859,7 @@ msgstr ""
 "Start the preview and pause it on the day you want (timeline bar), then "
 "click again."
 
-#: static/js/images_ui.js:1196
+#: static/js/images_ui.js:1298
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr "Preset “${name}” applied"
@@ -2337,7 +2387,7 @@ msgstr ""
 "correction possible here."
 
 #: static/js/labs.js:1722 templates/guide.html:227
-#: templates/menu_images.html:129 templates/menu_informations.html:99
+#: templates/menu_images.html:134 templates/menu_informations.html:99
 #: templates/menu_stats.html:265
 msgid "Position"
 msgstr "Position"
@@ -2897,7 +2947,7 @@ msgstr "Later"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "You will no longer be notified about this version."
 
-#: static/js/profiles.js:40 static/js/stats_ui.js:127 templates/app.html:40
+#: static/js/profiles.js:40 static/js/stats_ui.js:109 templates/app.html:40
 #: templates/app.html:66 templates/app.html:68
 msgid "Évolution"
 msgstr "Evolution"
@@ -3449,7 +3499,7 @@ msgstr "Cumulative archives"
 msgid "Progression des trouvailles"
 msgstr "Finds over time"
 
-#: static/js/stats_panels.js:736 static/js/stats_ui.js:115
+#: static/js/stats_panels.js:736 static/js/stats_ui.js:100
 #: templates/guide.html:369 templates/menu_stats.html:420
 msgid "Chiffres clés"
 msgstr "Key figures"
@@ -3697,35 +3747,35 @@ msgstr "Category"
 msgid "Pourcentage"
 msgstr "Percentage"
 
-#: static/js/stats_ui.js:111
+#: static/js/stats_ui.js:96
 msgid "Grille"
 msgstr "Grid"
 
-#: static/js/stats_ui.js:112
+#: static/js/stats_ui.js:97
 msgid "Histogramme"
 msgstr "Bar chart"
 
-#: static/js/stats_ui.js:113
+#: static/js/stats_ui.js:98
 msgid "Anneau"
 msgstr "Donut"
 
-#: static/js/stats_ui.js:114
+#: static/js/stats_ui.js:99
 msgid "Courbe"
 msgstr "Curve"
 
-#: static/js/stats_ui.js:127
+#: static/js/stats_ui.js:109
 msgid "Trouvailles"
 msgstr "Finds"
 
-#: static/js/stats_ui.js:362
+#: static/js/stats_ui.js:312
 msgid "Afficher ce panneau"
 msgstr "Show this panel"
 
-#: static/js/stats_ui.js:384 static/js/stats_ui.js:1415
+#: static/js/stats_ui.js:331 static/js/stats_ui.js:1235
 msgid "Pas affiché dans ce mode"
 msgstr "Not shown in this mode"
 
-#: static/js/stats_ui.js:404
+#: static/js/stats_ui.js:351
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
@@ -3733,7 +3783,7 @@ msgstr ""
 "No panels. Start with a preset: the timeline counters, forexample, count "
 "active, placed and archived caches."
 
-#: static/js/stats_ui.js:405 templates/menu_stats.html:60
+#: static/js/stats_ui.js:352 templates/menu_stats.html:60
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
@@ -3741,50 +3791,50 @@ msgstr ""
 "No panels yet. Start from a template: the D/T grid, for instance, fills "
 "up cell by cell as your finds appear."
 
-#: static/js/stats_ui.js:416
+#: static/js/stats_ui.js:362
 #, python-brace-format
 msgid "Places libres : ${n} sur ${max}"
 msgstr "Free slots: ${n} of ${max}"
 
-#: static/js/stats_ui.js:417
+#: static/js/stats_ui.js:363
 msgid ""
 "Plus de place : six panneaux au maximum. Supprimez-en un pour en ajouter "
 "un autre."
 msgstr "No room left: six panels at most. Remove one to add another."
 
-#: static/js/stats_ui.js:439
+#: static/js/stats_ui.js:382
 #, python-brace-format
 msgid "${n} places requises"
 msgstr "${n} slots required"
 
-#: static/js/stats_ui.js:503
+#: static/js/stats_ui.js:439
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr "“${name}” deleted"
 
-#: static/js/stats_ui.js:1342 static/js/stats_ui.js:1350
+#: static/js/stats_ui.js:1171 static/js/stats_ui.js:1177
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr "Import failed: invalid panels file"
 
-#: static/js/stats_ui.js:1360
+#: static/js/stats_ui.js:1187
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr "${count} panel(s) imported"
 
-#: static/js/stats_ui.js:1544
+#: static/js/stats_ui.js:1351
 msgid "Les autres panneaux ont déjà cette apparence."
 msgstr "The other panels already have this appearance."
 
-#: static/js/stats_ui.js:1548
+#: static/js/stats_ui.js:1355
 msgid "Apparence appliquée à un autre panneau"
 msgstr "Appearance applied to one other panel"
 
-#: static/js/stats_ui.js:1549
+#: static/js/stats_ui.js:1356
 #, python-brace-format
 msgid "Apparence appliquée à ${n} autres panneaux"
 msgstr "Appearance applied to ${n} other panels"
 
-#: static/js/stats_ui.js:1577
+#: static/js/stats_ui.js:1383
 msgid ""
 "Panneaux réorganisés, mais la place manque : réduisez-en la taille ou "
 "masquez-en un."
@@ -3792,40 +3842,40 @@ msgstr ""
 "Panels rearranged, but there is not enough room: make some smaller or "
 "hide one."
 
-#: static/js/stats_ui.js:1578
+#: static/js/stats_ui.js:1384
 msgid "Panneaux réorganisés"
 msgstr "Panels rearranged"
 
-#: static/js/stats_ui.js:1599
+#: static/js/stats_ui.js:1405
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr "“${name}” overflows the map: reduce its width or pick another corner."
 
-#: static/js/stats_ui.js:1601
+#: static/js/stats_ui.js:1407
 msgid "le titre"
 msgstr "the title"
 
-#: static/js/stats_ui.js:1602
+#: static/js/stats_ui.js:1408
 msgid "une image"
 msgstr "an image"
 
-#: static/js/stats_ui.js:1603
+#: static/js/stats_ui.js:1409
 msgid "les infos"
 msgstr "the info box"
 
-#: static/js/stats_ui.js:1604
+#: static/js/stats_ui.js:1410
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr "“${name}” overlaps ${other}."
 
-#: static/js/stats_ui.js:1607
+#: static/js/stats_ui.js:1413
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 msgstr "“${name}” overlaps “${other}”: pick another corner or reduce a width."
 
-#: static/js/stats_ui.js:1619
+#: static/js/stats_ui.js:1425
 msgid "Réorganiser automatiquement"
 msgstr "Reorganize automatically"
 
@@ -4909,7 +4959,7 @@ msgid "Guide"
 msgstr "Guide"
 
 #: templates/app.html:80 templates/guide.html:214 templates/guide.html:440
-#: templates/menu_images.html:177 templates/menu_options.html:30
+#: templates/menu_images.html:186 templates/menu_options.html:30
 #: templates/menu_stats.html:317 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr "Appearance"
@@ -8212,75 +8262,75 @@ msgid ""
 "supprimez-la."
 msgstr "Missing image: the file is no longer available. Replace or delete it."
 
-#: templates/menu_images.html:132 templates/menu_informations.html:273
+#: templates/menu_images.html:138 templates/menu_informations.html:273
 msgid "Emplacement"
 msgstr "Placement"
 
-#: templates/menu_images.html:135 templates/menu_informations.html:276
+#: templates/menu_images.html:141 templates/menu_informations.html:276
 #: templates/menu_stats.html:271
 msgid "En haut à gauche"
 msgstr "Top left"
 
-#: templates/menu_images.html:135 templates/menu_informations.html:276
+#: templates/menu_images.html:141 templates/menu_informations.html:276
 #: templates/menu_stats.html:271
 msgid "En haut au centre"
 msgstr "Top center"
 
-#: templates/menu_images.html:135 templates/menu_informations.html:276
+#: templates/menu_images.html:141 templates/menu_informations.html:276
 #: templates/menu_stats.html:271
 msgid "En haut à droite"
 msgstr "Top right"
 
-#: templates/menu_images.html:136 templates/menu_stats.html:272
+#: templates/menu_images.html:142 templates/menu_stats.html:272
 msgid "Au milieu à gauche"
 msgstr "Middle left"
 
-#: templates/menu_images.html:136 templates/menu_stats.html:272
+#: templates/menu_images.html:142 templates/menu_stats.html:272
 msgid "Au milieu à droite"
 msgstr "Middle right"
 
-#: templates/menu_images.html:137 templates/menu_informations.html:278
+#: templates/menu_images.html:143 templates/menu_informations.html:278
 #: templates/menu_stats.html:273
 msgid "En bas à gauche"
 msgstr "Bottom left"
 
-#: templates/menu_images.html:137 templates/menu_informations.html:278
+#: templates/menu_images.html:143 templates/menu_informations.html:278
 #: templates/menu_stats.html:273
 msgid "En bas au centre"
 msgstr "Bottom center"
 
-#: templates/menu_images.html:137 templates/menu_informations.html:278
+#: templates/menu_images.html:143 templates/menu_informations.html:278
 #: templates/menu_stats.html:273
 msgid "En bas à droite"
 msgstr "Bottom right"
 
-#: templates/menu_images.html:152 templates/menu_informations.html:293
+#: templates/menu_images.html:158 templates/menu_informations.html:293
 #: templates/menu_stats.html:285
 msgid "Marge horizontale (px)"
 msgstr "Horizontal margin (px)"
 
-#: templates/menu_images.html:156 templates/menu_informations.html:297
+#: templates/menu_images.html:162 templates/menu_informations.html:297
 #: templates/menu_stats.html:289
 msgid "Marge verticale (px)"
 msgstr "Vertical margin (px)"
 
-#: templates/menu_images.html:160 templates/menu_stats.html:293
+#: templates/menu_images.html:166 templates/menu_stats.html:293
 msgid "Largeur (px)"
 msgstr "Width (px)"
 
-#: templates/menu_images.html:164 templates/menu_stats.html:297
+#: templates/menu_images.html:170 templates/menu_stats.html:297
 msgid "Hauteur (px)"
 msgstr "Height (px)"
 
-#: templates/menu_images.html:165 templates/menu_stats.html:298
+#: templates/menu_images.html:171 templates/menu_stats.html:298
 msgid "auto"
 msgstr "auto"
 
-#: templates/menu_images.html:166
+#: templates/menu_images.html:172
 msgid "Rétablir les proportions"
 msgstr "Restore the proportions"
 
-#: templates/menu_images.html:169
+#: templates/menu_images.html:175
 msgid ""
 "Hauteur vide : d'après les proportions de l'image (carrée si ronde). Les "
 "images d'un même coin partagent ses marges et s'empilent ; les panneaux "
@@ -8290,106 +8340,108 @@ msgstr ""
 "in the same corner share its margins and stack; stats panels move around "
 "them."
 
-#: templates/menu_images.html:170
+#: templates/menu_images.html:176
 msgid "Position libre : choisir un emplacement l'y ramène."
 msgstr "Free position: choosing a placement brings it back there."
 
-#: templates/menu_images.html:172
+#: templates/menu_images.html:178
 msgid "Revenir à l'emplacement"
 msgstr "Return to the anchor point"
 
-#: templates/menu_images.html:185
+#: templates/menu_images.html:195
 msgid "Préréglages"
 msgstr "Presets"
 
-#: templates/menu_images.html:188
+#: templates/menu_images.html:198
 msgid "Avatar"
 msgstr "Avatar"
 
-#: templates/menu_images.html:190
+#: templates/menu_images.html:200
 msgid "Logo sur fond"
 msgstr "Logo on background"
 
-#: templates/menu_images.html:192
+#: templates/menu_images.html:202
 msgid "Filigrane"
 msgstr "Watermark"
 
-#: templates/menu_images.html:194
+#: templates/menu_images.html:204
 msgid "Photo encadrée"
 msgstr "Framed photo"
 
-#: templates/menu_images.html:197 templates/menu_stats.html:94
+#: templates/menu_images.html:207 templates/menu_stats.html:94
 msgid "Forme"
 msgstr "Shape"
 
-#: templates/menu_images.html:200
+#: templates/menu_images.html:210
 msgid "Rectangle"
 msgstr "Rectangle"
 
-#: templates/menu_images.html:201 templates/menu_stats.html:349
+#: templates/menu_images.html:211 templates/menu_stats.html:349
 msgid "Arrondi"
 msgstr "Corner radius"
 
-#: templates/menu_images.html:202
+#: templates/menu_images.html:212
 msgid "Rond"
 msgstr "Round"
 
-#: templates/menu_images.html:208
+#: templates/menu_images.html:218
 msgid "Rayon"
 msgstr "Radius"
 
-#: templates/menu_images.html:214
+#: templates/menu_images.html:224
 msgid "Ajustement"
 msgstr "Fit"
 
-#: templates/menu_images.html:217
+#: templates/menu_images.html:227
 msgid "Image entière"
 msgstr "Whole image"
 
-#: templates/menu_images.html:218
+#: templates/menu_images.html:228
 msgid "Remplir la forme"
 msgstr "Fill the shape"
 
-#: templates/menu_images.html:223
+#: templates/menu_images.html:233
 msgid ""
 "Sans effet : la forme suit les proportions de l'image. Choisissez « Rond "
 "» ou imposez une hauteur pour recadrer."
-msgstr "No effect: the shape follows the image's proportions. Choose “Round” or set a height to crop."
+msgstr ""
+"No effect: the shape follows the image's proportions. Choose “Round” or "
+"set a height to crop."
 
-#: templates/menu_images.html:228 templates/menu_informations.html:164
+#: templates/menu_images.html:238 templates/menu_informations.html:164
 #: templates/menu_stats.html:320
 msgid "Fond"
 msgstr "Background"
 
-#: templates/menu_images.html:232 templates/menu_stats.html:332
+#: templates/menu_images.html:242 templates/menu_stats.html:332
 msgid "Opacité du fond"
 msgstr "Background opacity"
 
-#: templates/menu_images.html:236
+#: templates/menu_images.html:246
 msgid "Marge intérieure"
 msgstr "Padding"
 
-#: templates/menu_images.html:242
+#: templates/menu_images.html:252
 msgid "Bordure"
 msgstr "Border"
 
-#: templates/menu_images.html:249 templates/menu_points.html:133
+#: templates/menu_images.html:259 templates/menu_points.html:133
 msgid "Couleur de la bordure"
 msgstr "Border color"
 
-#: templates/menu_images.html:252
+#: templates/menu_images.html:262
 msgid "Ombre portée"
 msgstr "Drop shadow"
 
-#: templates/menu_images.html:258
+#: templates/menu_images.html:268
 msgid "Opacité de l'ensemble"
 msgstr "Overall opacity"
 
-#: templates/menu_images.html:265
+#: templates/menu_images.html:278
 msgid "Apparition pendant l'animation"
 msgstr "Appearance during the animation"
 
-#: templates/menu_images.html:266
+#: templates/menu_images.html:280
 msgid ""
 "L'image entre puis sort au fil de l'animation, à des dates ou à des "
 "étapes du compteur de trouvailles. Sans borne : toujours visible."
@@ -8397,35 +8449,35 @@ msgstr ""
 "The image comes in and then goes out as the animation goes by, on dates "
 "or at milestones of the find counter. Without bounds: always visible."
 
-#: templates/menu_images.html:269
+#: templates/menu_images.html:283
 msgid "Repère du planing"
 msgstr "Schedule reference"
 
-#: templates/menu_images.html:271
+#: templates/menu_images.html:285
 msgid "Par dates"
 msgstr "By dates"
 
-#: templates/menu_images.html:273
+#: templates/menu_images.html:287
 msgid "Par trouvailles"
 msgstr "By finds"
 
-#: templates/menu_images.html:278
+#: templates/menu_images.html:292
 msgid "Apparaît le"
 msgstr "Appears on"
 
-#: templates/menu_images.html:281 templates/menu_images.html:292
+#: templates/menu_images.html:295 templates/menu_images.html:306
 msgid "Effacer la date"
 msgstr "Clear the date"
 
-#: templates/menu_images.html:286 templates/menu_images.html:297
+#: templates/menu_images.html:300 templates/menu_images.html:311
 msgid "Jour affiché"
 msgstr "Displayed day"
 
-#: templates/menu_images.html:289
+#: templates/menu_images.html:303
 msgid "Disparaît le"
 msgstr "Disappears on"
 
-#: templates/menu_images.html:300
+#: templates/menu_images.html:314
 msgid ""
 "« Jour affiché » reprend le jour montré par l'aperçu, en lecture ou en "
 "pause : mettez-le en pause sur le jour voulu (barre de chronologie)."
@@ -8433,35 +8485,35 @@ msgstr ""
 "“Displayed day” takes the day shown by the preview, playing or paused: "
 "pause it on the day you want (timeline bar)."
 
-#: templates/menu_images.html:305
+#: templates/menu_images.html:319
 msgid "Apparaît à la trouvaille n°"
 msgstr "Appears at find no."
 
-#: templates/menu_images.html:308 templates/menu_images.html:318
+#: templates/menu_images.html:322 templates/menu_images.html:332
 msgid "Effacer"
 msgstr "Clear"
 
-#: templates/menu_images.html:315
+#: templates/menu_images.html:329
 msgid "Disparaît à la trouvaille n°"
 msgstr "Disappears at find no."
 
-#: templates/menu_images.html:327 templates/menu_trail.html:127
+#: templates/menu_images.html:341 templates/menu_trail.html:127
 msgid "Effet"
 msgstr "Effect"
 
-#: templates/menu_images.html:329
+#: templates/menu_images.html:343
 msgid "Fondu"
 msgstr "Fade"
 
-#: templates/menu_images.html:330
+#: templates/menu_images.html:344
 msgid "Glissement depuis le bord"
 msgstr "Slide from the edge"
 
-#: templates/menu_images.html:331
+#: templates/menu_images.html:345
 msgid "Zoom"
 msgstr "Zoom"
 
-#: templates/menu_images.html:335
+#: templates/menu_images.html:349
 msgid "Durée (ms)"
 msgstr "Duration (ms)"
 

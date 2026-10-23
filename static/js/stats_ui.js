@@ -982,7 +982,9 @@ function readFormSections() {
 }
 
 function bindFormSections() {
-    const sections = document.querySelectorAll('details.stats-form-section[id]');
+    // Onglet Stats seulement : l'onglet Images reprend ces classes avec son
+    // propre état (images_ui.js › bindFormSections).
+    const sections = document.querySelectorAll('#stats details.stats-form-section[id]');
     const saved = readFormSections();
     sections.forEach((section) => {
         section.open = !!saved[section.id];

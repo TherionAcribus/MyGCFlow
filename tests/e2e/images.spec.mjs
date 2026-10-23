@@ -674,6 +674,52 @@ test('préréglages : « Avatar » arrondit et encadre, « Annuler » rend le st
   await expect(page.locator('[data-image-preset="avatar"]')).toHaveAttribute('aria-pressed', 'false');
 });
 
+test('sections repliables : ouvertes par défaut, résumé des réglages une fois repliées, état mémorisé', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0130', file: logo.file, name: 'Logo', position: { anchor: 'bottom-left', width: 120 },
+      style: { shape: 'circle', fit: 'cover', border_width: 3, border_color: '#ffffff', shadow: true },
+      // Fixture animée du 01/01 au 06/01/2026 : jamais visible dans la vidéo.
+      schedule: { start: '2026-02-01', end: null, fade: 0 } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+  const position = page.locator('#imageSectionPosition');
+  const appearance = page.locator('#imageSectionAppearance');
+  const schedule = page.locator('#imageSectionSchedule');
+  for (const section of [position, appearance, schedule]) await expect(section).toHaveJSProperty('open', true);
+  // Ouverte : contrôles visibles, résumé masqué.
+  await expect(page.locator('#inputImageWidth')).toBeVisible();
+  await expect(page.locator('#imagePositionSummary')).toBeHidden();
+
+  // Repliées : contrôles hors de vue, résumé des réglages en cours.
+  await position.locator('summary').click();
+  await expect(position).toHaveJSProperty('open', false);
+  await expect(page.locator('#inputImageWidth')).toBeHidden();
+  await expect(page.locator('#imagePositionSummary')).toHaveText('En bas à gauche · 120 px');
+  await appearance.locator('summary').click();
+  await expect(page.locator('#imageAppearanceSummary')).toHaveText('Avatar');
+  await schedule.locator('summary').click();
+  await expect(page.locator('#imageScheduleSummary')).toHaveText(/^À partir du /);
+  // L'avertissement du planing, masqué avec la section, colore le résumé.
+  await expect(page.locator('#imageScheduleSummary')).toHaveClass(/is-warning/);
+
+  // Repliée, le résumé suit un changement fait hors du formulaire : une
+  // flèche du clavier rend l'image libre à sa place affichée.
+  await page.locator('#imagesList li [data-action="select"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#imagePositionSummary')).toHaveText('Position libre · 120 px');
+
+  // L'état replié/ouvert est mémorisé et restauré au rechargement.
+  await appearance.locator('summary').click();
+  await expect(appearance).toHaveJSProperty('open', true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await expect(page.locator('#imageSectionPosition')).toHaveJSProperty('open', false);
+  await expect(page.locator('#imageSectionAppearance')).toHaveJSProperty('open', true);
+  await expect(page.locator('#imageSectionSchedule')).toHaveJSProperty('open', false);
+});
+
 test('planification : avertissement hors période, « Jour affiché » reprend le jour de l’aperçu en pause', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [

@@ -1011,6 +1011,107 @@ function renderStyleFields(item) {
     });
 }
 
+// ---------------------------------------------------------------------------
+// Sections repliables du formulaire (Position, Apparence, Apparition)
+// ---------------------------------------------------------------------------
+//
+// <details> natifs, mêmes classes que l'onglet Stats. Ouvertes par défaut
+// (sans « Contenu » toujours visible comme dans Stats, un formulaire tout
+// replié n'afficherait rien), état mémorisé par section dans ce navigateur.
+
+const FORM_SECTIONS_KEY = 'imagesFormSections';
+
+function readFormSections() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(FORM_SECTIONS_KEY));
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function bindFormSections() {
+    const saved = readFormSections();
+    document.querySelectorAll('#imagesForm details.stats-form-section[id]').forEach((section) => {
+        if (typeof saved[section.id] === 'boolean') section.open = saved[section.id];
+        section.addEventListener('toggle', () => {
+            const state = readFormSections();
+            state[section.id] = section.open;
+            try { localStorage.setItem(FORM_SECTIONS_KEY, JSON.stringify(state)); } catch (_) { /* quota */ }
+            // Les saisies d'une section ouverte ne rafraîchissent pas toutes
+            // son résumé (masqué) : recalculé à la fermeture.
+            if (!section.open) renderSectionSummaries();
+        });
+    });
+}
+
+// Résumé d'une section repliée ; `title` pour le texte coupé par l'ellipse.
+function setSummary(id, text, { warning = false } = {}) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = text;
+    el.title = text;
+    el.classList.toggle('is-warning', warning);
+}
+
+// Libellé affiché d'un bouton radio (déjà traduit par le gabarit).
+function radioLabel(id) {
+    return $(id)?.labels?.[0]?.textContent.trim() || '';
+}
+
+function formatScheduleDate(iso) {
+    return pkg.formatDateDisplay?.(new Date(`${iso}T00:00:00`)) || iso;
+}
+
+function scheduleSummary(schedule) {
+    if (!schedule) return pkg.t('Toujours visible');
+    if (schedule.by === 'find') {
+        const { start_find: from, end_find: to } = schedule;
+        if (from && to) return pkg.t('Trouvailles n°${from} à n°${to}', { from, to });
+        if (from) return pkg.t('Dès la trouvaille n°${n}', { n: from });
+        return pkg.t("Jusqu'à la trouvaille n°${n}", { n: to });
+    }
+    const { start, end } = schedule;
+    if (start && end) {
+        return pkg.t('Du ${from} au ${to}', { from: formatScheduleDate(start), to: formatScheduleDate(end) });
+    }
+    if (start) return pkg.t('À partir du ${date}', { date: formatScheduleDate(start) });
+    return pkg.t("Jusqu'au ${date}", { date: formatScheduleDate(end) });
+}
+
+// Résumés des sections : visibles seulement section repliée (CSS), ils
+// montrent les réglages en cours — emplacement et taille, préréglage ou
+// forme, bornes du planing (en alerte si l'image ne sera jamais visible).
+function renderSectionSummaries(item = selectedItem()) {
+    if (!item) return;
+    const p = item.position;
+    const where = p.mode === 'free'
+        ? pkg.t('Position libre')
+        : ($(`imageAnchor-${p.anchor}`)?.getAttribute('aria-label') || p.anchor);
+    const size = p.height == null ? `${p.width} px` : `${p.width} × ${p.height} px`;
+    setSummary('imagePositionSummary', `${where} · ${size}`);
+
+    const s = item.style;
+    const preset = matchingStylePreset(s);
+    const presetButton = [...document.querySelectorAll('[data-image-preset]')]
+        .find((button) => button.dataset.imagePreset === preset);
+    let appearance;
+    if (presetButton) {
+        appearance = [presetButton.textContent.trim()];
+    } else {
+        appearance = [radioLabel(`imageShape-${s.shape}`) || s.shape];
+        if (s.background_opacity > 0) appearance.push(pkg.t('fond'));
+        if (s.border_width > 0) appearance.push(pkg.t('bordure'));
+        if (s.shadow) appearance.push(pkg.t('ombre'));
+        if (s.opacity < 100) appearance.push(`${s.opacity} %`);
+    }
+    setSummary('imageAppearanceSummary', appearance.join(' · '));
+
+    const warning = $('imageScheduleWarning');
+    setSummary('imageScheduleSummary', scheduleSummary(effectiveSchedule(item)),
+        { warning: !!warning && !warning.hidden });
+}
+
 function renderForm() {
     const form = $('imagesForm');
     if (!form) return;
@@ -1078,6 +1179,7 @@ function renderForm() {
     }
     renderFindDates(schedule);
     renderScheduleWarning(item);
+    renderSectionSummaries(item);
 }
 
 // Date de chaque jalon sous son champ : « le 12/03/2024 », ou jamais atteint
@@ -1536,6 +1638,7 @@ export function initImagesTab() {
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);
     bindFormFields();
+    bindFormSections();
     bindFileDrop();
     bindDragAndDrop();
     // Coller une image copiée l'ajoute, comme un dépôt (onglet ouvert) :

@@ -3468,6 +3468,18 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Élément flex : sans cela il ne rétrécit pas, l'ellipse ne joue pas et
+       un long résumé pousse le chevron hors du cadre. */
+    min-width: 0;
+}
+/* Résumé signalant un problème (planing d'une image jamais visible). */
+.stats-form-summary-hint.is-warning {
+    color: var(--tblr-warning, #f59f00);
+}
+/* Contenu d'une section repliable qui n'est pas une simple .row (onglet
+   Images). */
+.stats-form-section > .stats-form-section-body {
+    padding: 0 0.75rem 0.75rem;
 }
 .stats-form-section[open] .stats-form-summary-hint {
     display: none;
