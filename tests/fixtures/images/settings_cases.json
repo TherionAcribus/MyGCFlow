@@ -1,2123 +1,2355 @@
 [
- {
-  "name": "absent",
-  "input": null,
-  "expected": {
-   "enabled": true,
-   "items": [],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "non-objet",
-  "input": "oui",
-  "expected": {
-   "enabled": true,
-   "items": [],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "vide",
-  "input": {},
-  "expected": {
-   "enabled": true,
-   "items": [],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "enabled seul",
-  "input": {
-   "enabled": false
+  {
+    "name": "absent",
+    "input": null,
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": []
+    }
   },
-  "expected": {
-   "enabled": false,
-   "items": [],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "enabled non booléen",
-  "input": {
-   "enabled": "non",
-   "items": []
+  {
+    "name": "non-objet",
+    "input": "oui",
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": []
+    }
   },
-  "expected": {
-   "enabled": true,
-   "items": [],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "image minimale",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png"
+  {
+    "name": "vide",
+    "input": {},
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": []
     }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "fichier invalide ou chemin : vidé, réglages gardés",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "../app.py",
-     "name": "  Logo\r\ndu club  ",
-     "position": {
-      "width": 300
-     }
+  {
+    "name": "enabled seul",
+    "input": {
+      "enabled": false
     },
-    {
-     "id": "aaaaaa02",
-     "file": "LOGO.PNG"
-    },
-    {
-     "id": "aaaaaa03",
-     "file": 42
+    "expected": {
+      "enabled": false,
+      "items": [],
+      "evolution_items": [],
+      "configs": []
     }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "",
-     "name": "Logo du club",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 300,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "enabled non booléen",
+    "input": {
+      "enabled": "non",
+      "items": []
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "enabled": true,
-     "file": "",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "nom aplati et tronqué à 80",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "fedcba9876543210.jpg",
-     "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "fedcba9876543210.jpg",
-     "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "image minimale",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "bornes, chaînes numériques et arrondis",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "dx": -5,
-      "dy": "40.5",
-      "width": "2000",
-      "height": 10,
-      "x": 1.23456,
-      "y": "0.123456"
-     },
-     "style": {
-      "radius": 999,
-      "opacity": "50",
-      "background_opacity": -3,
-      "padding": 100.4
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 0,
-      "dy": 41,
-      "width": 1200,
-      "height": 40,
-      "x": 1.0,
-      "y": 0.1235
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 200,
-      "fit": "contain",
-      "opacity": 50,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 100,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "fichier invalide ou chemin : vidé, réglages gardés",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "../app.py",
+          "name": "  Logo\r\ndu club  ",
+          "position": {
+            "width": 300
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "LOGO.PNG"
+        },
+        {
+          "id": "aaaaaa03",
+          "file": 42
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "",
+          "name": "Logo du club",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "hauteur : null, non numérique ou booléenne",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "height": null
-     }
-    },
-    {
-     "id": "aaaaaa02",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "anchor": "top-left",
-      "height": "auto"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "anchor": "top-right",
-      "height": true
-     }
-    },
-    {
-     "id": "aaaaaa04",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "anchor": "bottom-left",
-      "height": "250"
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "nom aplati et tronqué à 80",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "fedcba9876543210.jpg",
+          "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "top-left",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "top-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa04",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-left",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": 250,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "fedcba9876543210.jpg",
+          "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "choix invalides remplacés par les défauts",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "mode": "floating",
-      "anchor": "middle-center"
-     },
-     "style": {
-      "shape": "star",
-      "fit": "stretch",
-      "background": "red",
-      "shadow": "yes"
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "bornes, chaînes numériques et arrondis",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "dx": -5,
+            "dy": "40.5",
+            "width": "2000",
+            "height": 10,
+            "x": 1.23456,
+            "y": "0.123456"
+          },
+          "style": {
+            "radius": 999,
+            "opacity": "50",
+            "background_opacity": -3,
+            "padding": 100.4
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 0,
+            "dy": 41,
+            "width": 1200,
+            "height": 40,
+            "x": 1.0,
+            "y": 0.1235
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 200,
+            "fit": "contain",
+            "opacity": 50,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 100,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "choix valides et couleur courte développée",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "enabled": false,
-     "position": {
-      "mode": "free",
-      "anchor": "middle-left",
-      "x": 0.25,
-      "y": 0.75
-     },
-     "style": {
-      "shape": "circle",
-      "fit": "cover",
-      "background": "#abc",
-      "shadow": true
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": false,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "free",
-      "anchor": "middle-left",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0.25,
-      "y": 0.75
-     },
-     "style": {
-      "shape": "circle",
-      "radius": 12,
-      "fit": "cover",
-      "opacity": 100,
-      "background": "#aabbcc",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": true,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "marges de coin communes, image libre à part",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "anchor": "top-right",
-      "dx": 30,
-      "dy": 24
-     }
+  {
+    "name": "hauteur : null, non numérique ou booléenne",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "height": null
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-left",
+            "height": "auto"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-right",
+            "height": true
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "bottom-left",
+            "height": "250"
+          }
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "file": "fedcba9876543210.jpg",
-     "position": {
-      "mode": "free",
-      "anchor": "top-right",
-      "dx": 2,
-      "dy": 3
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "file": "0123456789abcdef.png",
-     "position": {
-      "anchor": "top-right",
-      "dx": 8,
-      "dy": 8
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": 250,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "top-right",
-      "dx": 30,
-      "dy": 24,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "choix invalides remplacés par les défauts",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "mode": "floating",
+            "anchor": "middle-center"
+          },
+          "style": {
+            "shape": "star",
+            "fit": "stretch",
+            "background": "red",
+            "shadow": "yes"
+          }
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "fedcba9876543210.jpg",
-     "name": "",
-     "position": {
-      "mode": "free",
-      "anchor": "top-right",
-      "dx": 2,
-      "dy": 3,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "top-right",
-      "dx": 30,
-      "dy": 24,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "entrées non objets écartées",
-  "input": {
-   "items": [
-    "x",
-    3,
-    null,
-    [],
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png"
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "choix valides et couleur courte développée",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "enabled": false,
+          "position": {
+            "mode": "free",
+            "anchor": "middle-left",
+            "x": 0.25,
+            "y": 0.75
+          },
+          "style": {
+            "shape": "circle",
+            "fit": "cover",
+            "background": "#abc",
+            "shadow": true
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": false,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "free",
+            "anchor": "middle-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0.25,
+            "y": 0.75
+          },
+          "style": {
+            "shape": "circle",
+            "radius": 12,
+            "fit": "cover",
+            "opacity": 100,
+            "background": "#aabbcc",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": true,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "plus de quatre images : tronqué",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png"
-    },
-    {
-     "id": "aaaaaa02",
-     "file": "0123456789abcdef.png"
-    },
-    {
-     "id": "aaaaaa03",
-     "file": "0123456789abcdef.png"
-    },
-    {
-     "id": "aaaaaa04",
-     "file": "0123456789abcdef.png"
-    },
-    {
-     "id": "aaaaaa05",
-     "file": "0123456789abcdef.png"
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "marges de coin communes, image libre à part",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-right",
+            "dx": 30,
+            "dy": 24
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "fedcba9876543210.jpg",
+          "position": {
+            "mode": "free",
+            "anchor": "top-right",
+            "dx": 2,
+            "dy": 3
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "position": {
+            "anchor": "top-right",
+            "dx": 8,
+            "dy": 8
+          }
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa04",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-right",
+            "dx": 30,
+            "dy": 24,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "fedcba9876543210.jpg",
+          "name": "",
+          "position": {
+            "mode": "free",
+            "anchor": "top-right",
+            "dx": 2,
+            "dy": 3,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-right",
+            "dx": 30,
+            "dy": 24,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "bordure : couleur reprise, épaisseur bornée",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "style": {
-      "border_color": "#ff0088",
-      "border_width": 6
-     }
-    },
-    {
-     "id": "aaaaaa02",
-     "file": "0123456789abcdef.png",
-     "style": {
-      "border_color": "violet",
-      "border_width": 999
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "file": "0123456789abcdef.png",
-     "style": {
-      "border_color": "#f8a",
-      "border_width": -3
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ff0088",
-      "border_width": 6,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "entrées non objets écartées",
+    "input": {
+      "items": [
+        "x",
+        3,
+        null,
+        [],
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 50,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ff88aa",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "planning : dates gardées, invalides à null, fondu borné",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "schedule": {
-      "start": "2026-01-03",
-      "end": "2026-01-05",
-      "fade": 9000
-     }
-    },
-    {
-     "id": "aaaaaa02",
-     "file": "0123456789abcdef.png",
-     "schedule": {
-      "start": "hier",
-      "end": 42,
-      "fade": -50
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "file": "0123456789abcdef.png",
-     "schedule": "demain"
-    },
-    {
-     "id": "aaaaaa04",
-     "file": "0123456789abcdef.png",
-     "schedule": {
-      "start": "2026-02-30",
-      "end": "2026-13-40",
-      "fade": "250"
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": "2026-01-03",
-      "end": "2026-01-05",
-      "start_find": null,
-      "end_find": null,
-      "fade": 5000,
-      "effect": "fade"
-     }
+  {
+    "name": "plus de quatre images : tronqué",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa04",
+          "file": "0123456789abcdef.png"
+        },
+        {
+          "id": "aaaaaa05",
+          "file": "0123456789abcdef.png"
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 0,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa03",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaaaa04",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 250,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "liste propre au mode Évolution : normalisée comme items, clé absente vide",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png"
-    }
-   ],
-   "evolution_items": [
-    {
-     "id": "bbbbbb01",
-     "file": "fedcba9876543210.jpg",
-     "position": {
-      "width": 2000
-     }
-    },
-    {
-     "id": "bbbbbb02",
-     "file": "../secret.png"
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
-    }
-   ],
-   "evolution_items": [
-    {
-     "id": "bbbbbb01",
-     "enabled": true,
-     "file": "fedcba9876543210.jpg",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 1200,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "bordure : couleur reprise, épaisseur bornée",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "border_color": "#ff0088",
+            "border_width": 6
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "border_color": "violet",
+            "border_width": 999
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "border_color": "#f8a",
+            "border_width": -3
+          }
+        }
+      ]
     },
-    {
-     "id": "bbbbbb02",
-     "enabled": true,
-     "file": "",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ff0088",
+            "border_width": 6,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 50,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ff88aa",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "configs": []
-  }
- },
- {
-  "name": "planing par trouvailles et effet : bornes nullables, choix invalides au défaut",
-  "input": {
-   "items": [
-    {
-     "id": "aaaa0201",
-     "file": "0123456789abcdef.png",
-     "schedule": {
-      "by": "find",
-      "start_find": "1000",
-      "end_find": 0,
-      "effect": "zoom",
-      "fade": 800
-     }
-    },
-    {
-     "id": "aaaa0202",
-     "file": "0123456789abcdef.png",
-     "schedule": {
-      "by": "jalon",
-      "start_find": 12.6,
-      "end_find": 99999999999,
-      "effect": "spin"
-     }
-    },
-    {
-     "id": "aaaa0203",
-     "file": "0123456789abcdef.png",
-     "schedule": {
-      "by": "date",
-      "start": "2026-01-03",
-      "start_find": "beaucoup",
-      "end_find": null,
-      "effect": "slide"
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaa0201",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "find",
-      "start": null,
-      "end": null,
-      "start_find": 1000,
-      "end_find": 1,
-      "fade": 800,
-      "effect": "zoom"
-     }
+  {
+    "name": "planning : dates gardées, invalides à null, fondu borné",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "start": "2026-01-03",
+            "end": "2026-01-05",
+            "fade": 9000
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "start": "hier",
+            "end": 42,
+            "fade": -50
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "file": "0123456789abcdef.png",
+          "schedule": "demain"
+        },
+        {
+          "id": "aaaaaa04",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "start": "2026-02-30",
+            "end": "2026-13-40",
+            "fade": "250"
+          }
+        }
+      ]
     },
-    {
-     "id": "aaaa0202",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": 13,
-      "end_find": 10000000,
-      "fade": 600,
-      "effect": "fade"
-     }
-    },
-    {
-     "id": "aaaa0203",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0,
-      "focus_x": 50,
-      "focus_y": 50
-     },
-     "schedule": {
-      "by": "date",
-      "start": "2026-01-03",
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "slide"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": "2026-01-03",
+            "end": "2026-01-05",
+            "start_find": null,
+            "end_find": null,
+            "fade": 5000,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 0,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 250,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ],
-   "evolution_items": [],
-   "configs": []
-  }
- },
- {
-  "name": "configurations : nom aplati, vides et doublons écartés, images normalisées",
-  "input": {
-   "configs": [
-    {
-     "name": "  Club\nlocal  ",
-     "items": [
-      {
-       "id": "aaaa0301",
-       "file": "0123456789abcdef.png",
-       "position": {
-        "width": 5000
-       }
-      }
-     ]
-    },
-    {
-     "name": "   ",
-     "items": []
-    },
-    {
-     "name": "Club local",
-     "items": []
-    },
-    "pas un objet",
-    {
-     "name": "Sans images"
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [],
-   "evolution_items": [],
-   "configs": [
-    {
-     "name": "Club local",
-     "items": [
-      {
-       "id": "aaaa0301",
-       "enabled": true,
-       "file": "0123456789abcdef.png",
-       "name": "",
-       "position": {
-        "mode": "anchor",
-        "anchor": "bottom-right",
-        "dx": 16,
-        "dy": 16,
-        "width": 1200,
-        "height": null,
-        "x": 0,
-        "y": 0
-       },
-       "style": {
-        "shape": "rounded",
-        "radius": 12,
-        "fit": "contain",
-        "opacity": 100,
-        "background": "#ffffff",
-        "background_opacity": 0,
-        "padding": 0,
-        "shadow": false,
-        "border_color": "#ffffff",
-        "border_width": 0,
-        "focus_x": 50,
-        "focus_y": 50
-       },
-       "schedule": {
-        "by": "date",
-        "start": null,
-        "end": null,
-        "start_find": null,
-        "end_find": null,
-        "fade": 600,
-        "effect": "fade"
-       }
-      }
-     ]
+  {
+    "name": "liste propre au mode Évolution : normalisée comme items, clé absente vide",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png"
+        }
+      ],
+      "evolution_items": [
+        {
+          "id": "bbbbbb01",
+          "file": "fedcba9876543210.jpg",
+          "position": {
+            "width": 2000
+          }
+        },
+        {
+          "id": "bbbbbb02",
+          "file": "../secret.png"
+        }
+      ]
     },
-    {
-     "name": "Sans images",
-     "items": []
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [
+        {
+          "id": "bbbbbb01",
+          "enabled": true,
+          "file": "fedcba9876543210.jpg",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 1200,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "bbbbbb02",
+          "enabled": true,
+          "file": "",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "configs": []
     }
-   ]
-  }
- },
- {
-  "name": "configurations : plus de douze, tronquées",
-  "input": {
-   "configs": [
-    {
-     "name": "Config 0",
-     "items": []
-    },
-    {
-     "name": "Config 1",
-     "items": []
-    },
-    {
-     "name": "Config 2",
-     "items": []
-    },
-    {
-     "name": "Config 3",
-     "items": []
-    },
-    {
-     "name": "Config 4",
-     "items": []
-    },
-    {
-     "name": "Config 5",
-     "items": []
-    },
-    {
-     "name": "Config 6",
-     "items": []
-    },
-    {
-     "name": "Config 7",
-     "items": []
-    },
-    {
-     "name": "Config 8",
-     "items": []
-    },
-    {
-     "name": "Config 9",
-     "items": []
-    },
-    {
-     "name": "Config 10",
-     "items": []
-    },
-    {
-     "name": "Config 11",
-     "items": []
-    },
-    {
-     "name": "Config 12",
-     "items": []
-    },
-    {
-     "name": "Config 13",
-     "items": []
-    },
-    {
-     "name": "Config 14",
-     "items": []
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [],
-   "evolution_items": [],
-   "configs": [
-    {
-     "name": "Config 0",
-     "items": []
+  {
+    "name": "planing par trouvailles et effet : bornes nullables, choix invalides au défaut",
+    "input": {
+      "items": [
+        {
+          "id": "aaaa0201",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "by": "find",
+            "start_find": "1000",
+            "end_find": 0,
+            "effect": "zoom",
+            "fade": 800
+          }
+        },
+        {
+          "id": "aaaa0202",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "by": "jalon",
+            "start_find": 12.6,
+            "end_find": 99999999999,
+            "effect": "spin"
+          }
+        },
+        {
+          "id": "aaaa0203",
+          "file": "0123456789abcdef.png",
+          "schedule": {
+            "by": "date",
+            "start": "2026-01-03",
+            "start_find": "beaucoup",
+            "end_find": null,
+            "effect": "slide"
+          }
+        }
+      ]
     },
-    {
-     "name": "Config 1",
-     "items": []
-    },
-    {
-     "name": "Config 2",
-     "items": []
-    },
-    {
-     "name": "Config 3",
-     "items": []
-    },
-    {
-     "name": "Config 4",
-     "items": []
-    },
-    {
-     "name": "Config 5",
-     "items": []
-    },
-    {
-     "name": "Config 6",
-     "items": []
-    },
-    {
-     "name": "Config 7",
-     "items": []
-    },
-    {
-     "name": "Config 8",
-     "items": []
-    },
-    {
-     "name": "Config 9",
-     "items": []
-    },
-    {
-     "name": "Config 10",
-     "items": []
-    },
-    {
-     "name": "Config 11",
-     "items": []
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaa0201",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "find",
+            "start": null,
+            "end": null,
+            "start_find": 1000,
+            "end_find": 1,
+            "fade": 800,
+            "effect": "zoom"
+          }
+        },
+        {
+          "id": "aaaa0202",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": 13,
+            "end_find": 10000000,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaa0203",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "focus_x": 50,
+            "focus_y": 50,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": "2026-01-03",
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "slide"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
     }
-   ]
-  }
- },
- {
-  "name": "point focal : borné à 0-100, 50 par défaut",
-  "input": {
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "file": "0123456789abcdef.png",
-     "style": {
-      "fit": "cover",
-      "focus_x": -20,
-      "focus_y": 130
-     }
-    },
-    {
-     "id": "aaaaaa02",
-     "file": "0123456789abcdef.png",
-     "style": {
-      "focus_x": "gauche"
-     }
-    }
-   ]
   },
-  "expected": {
-   "enabled": true,
-   "items": [
-    {
-     "id": "aaaaaa01",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "cover",
-      "focus_x": 0,
-      "focus_y": 100,
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+  {
+    "name": "configurations : nom aplati, vides et doublons écartés, images normalisées",
+    "input": {
+      "configs": [
+        {
+          "name": "  Club\nlocal  ",
+          "items": [
+            {
+              "id": "aaaa0301",
+              "file": "0123456789abcdef.png",
+              "position": {
+                "width": 5000
+              }
+            }
+          ]
+        },
+        {
+          "name": "   ",
+          "items": []
+        },
+        {
+          "name": "Club local",
+          "items": []
+        },
+        "pas un objet",
+        {
+          "name": "Sans images"
+        }
+      ]
     },
-    {
-     "id": "aaaaaa02",
-     "enabled": true,
-     "file": "0123456789abcdef.png",
-     "name": "",
-     "position": {
-      "mode": "anchor",
-      "anchor": "bottom-right",
-      "dx": 16,
-      "dy": 16,
-      "width": 160,
-      "height": null,
-      "x": 0,
-      "y": 0
-     },
-     "style": {
-      "shape": "rounded",
-      "radius": 12,
-      "fit": "contain",
-      "focus_x": 50,
-      "focus_y": 50,
-      "opacity": 100,
-      "background": "#ffffff",
-      "background_opacity": 0,
-      "padding": 0,
-      "shadow": false,
-      "border_color": "#ffffff",
-      "border_width": 0
-     },
-     "schedule": {
-      "by": "date",
-      "start": null,
-      "end": null,
-      "start_find": null,
-      "end_find": null,
-      "fade": 600,
-      "effect": "fade"
-     }
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": [
+        {
+          "name": "Club local",
+          "items": [
+            {
+              "id": "aaaa0301",
+              "enabled": true,
+              "file": "0123456789abcdef.png",
+              "name": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "bottom-right",
+                "dx": 16,
+                "dy": 16,
+                "width": 1200,
+                "height": null,
+                "x": 0,
+                "y": 0
+              },
+              "style": {
+                "shape": "rounded",
+                "radius": 12,
+                "fit": "contain",
+                "opacity": 100,
+                "background": "#ffffff",
+                "background_opacity": 0,
+                "padding": 0,
+                "shadow": false,
+                "border_color": "#ffffff",
+                "border_width": 0,
+                "focus_x": 50,
+                "focus_y": 50,
+                "rotate": 0,
+                "mirror": false
+              },
+              "schedule": {
+                "by": "date",
+                "start": null,
+                "end": null,
+                "start_find": null,
+                "end_find": null,
+                "fade": 600,
+                "effect": "fade"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sans images",
+          "items": []
+        }
+      ]
     }
-   ],
-   "evolution_items": [],
-   "configs": []
+  },
+  {
+    "name": "configurations : plus de douze, tronquées",
+    "input": {
+      "configs": [
+        {
+          "name": "Config 0",
+          "items": []
+        },
+        {
+          "name": "Config 1",
+          "items": []
+        },
+        {
+          "name": "Config 2",
+          "items": []
+        },
+        {
+          "name": "Config 3",
+          "items": []
+        },
+        {
+          "name": "Config 4",
+          "items": []
+        },
+        {
+          "name": "Config 5",
+          "items": []
+        },
+        {
+          "name": "Config 6",
+          "items": []
+        },
+        {
+          "name": "Config 7",
+          "items": []
+        },
+        {
+          "name": "Config 8",
+          "items": []
+        },
+        {
+          "name": "Config 9",
+          "items": []
+        },
+        {
+          "name": "Config 10",
+          "items": []
+        },
+        {
+          "name": "Config 11",
+          "items": []
+        },
+        {
+          "name": "Config 12",
+          "items": []
+        },
+        {
+          "name": "Config 13",
+          "items": []
+        },
+        {
+          "name": "Config 14",
+          "items": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [],
+      "evolution_items": [],
+      "configs": [
+        {
+          "name": "Config 0",
+          "items": []
+        },
+        {
+          "name": "Config 1",
+          "items": []
+        },
+        {
+          "name": "Config 2",
+          "items": []
+        },
+        {
+          "name": "Config 3",
+          "items": []
+        },
+        {
+          "name": "Config 4",
+          "items": []
+        },
+        {
+          "name": "Config 5",
+          "items": []
+        },
+        {
+          "name": "Config 6",
+          "items": []
+        },
+        {
+          "name": "Config 7",
+          "items": []
+        },
+        {
+          "name": "Config 8",
+          "items": []
+        },
+        {
+          "name": "Config 9",
+          "items": []
+        },
+        {
+          "name": "Config 10",
+          "items": []
+        },
+        {
+          "name": "Config 11",
+          "items": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "point focal : borné à 0-100, 50 par défaut",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "fit": "cover",
+            "focus_x": -20,
+            "focus_y": 130
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "focus_x": "gauche"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "id": "aaaaaa01",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "cover",
+            "focus_x": 0,
+            "focus_y": 100,
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "focus_x": 50,
+            "focus_y": 50,
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          }
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "orientation : quarts de tour seulement, miroir strict",
+    "input": {
+      "items": [
+        {
+          "id": "aaaaaa10",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "rotate": 90,
+            "mirror": true
+          }
+        },
+        {
+          "id": "aaaaaa11",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "rotate": 45,
+            "mirror": "oui"
+          }
+        },
+        {
+          "id": "aaaaaa12",
+          "file": "0123456789abcdef.png",
+          "style": {
+            "rotate": "270"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "items": [
+        {
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "focus_x": 50,
+            "focus_y": 50,
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "rotate": 90,
+            "mirror": true
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          },
+          "id": "aaaaaa10"
+        },
+        {
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "focus_x": 50,
+            "focus_y": 50,
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "rotate": 0,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          },
+          "id": "aaaaaa11"
+        },
+        {
+          "enabled": true,
+          "file": "0123456789abcdef.png",
+          "name": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "bottom-right",
+            "dx": 16,
+            "dy": 16,
+            "width": 160,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "shape": "rounded",
+            "radius": 12,
+            "fit": "contain",
+            "focus_x": 50,
+            "focus_y": 50,
+            "opacity": 100,
+            "background": "#ffffff",
+            "background_opacity": 0,
+            "padding": 0,
+            "shadow": false,
+            "border_color": "#ffffff",
+            "border_width": 0,
+            "rotate": 270,
+            "mirror": false
+          },
+          "schedule": {
+            "by": "date",
+            "start": null,
+            "end": null,
+            "start_find": null,
+            "end_find": null,
+            "fade": 600,
+            "effect": "fade"
+          },
+          "id": "aaaaaa12"
+        }
+      ],
+      "evolution_items": [],
+      "configs": []
+    }
   }
- }
 ]

@@ -18,15 +18,42 @@ export const IMAGE_SHADOW = Object.freeze({ offsetY: 4, blur: 12, color: 'rgba(0
 // Hauteur d'une image à sa largeur : imposée, sinon d'après les proportions
 // de l'image (marge intérieure comprise). Rond : carré par défaut, pour un
 // avatar bien circulaire. Proportions inconnues : carré (images_panels.js ne
-// pose de toute façon une image qu'une fois décodée).
+// pose de toute façon une image qu'une fois décodée). Un quart de tour
+// échange les proportions : l'image tournée de 90°/270° monte en portrait.
 export function imagePanelHeight(item, natural, width = item.position.width) {
     const imposed = item.position.height;
     if (imposed != null) return imposed;
     if (item.style.shape === 'circle') return width;
     if (!natural || !(natural.width > 0) || !(natural.height > 0)) return width;
+    const shown = naturalInDisplay(natural, item.style.rotate);
     const pad = Math.min(item.style.padding, width / 2);
     const inner = Math.max(1, width - 2 * pad);
-    return Math.max(1, Math.round(inner * (natural.height / natural.width) + 2 * pad));
+    return Math.max(1, Math.round(inner * (shown.height / shown.width) + 2 * pad));
+}
+
+// Proportions de l'image telle qu'affichée : un quart de tour échange
+// largeur et hauteur, le miroir n'y change rien.
+export function naturalInDisplay(natural, rotate) {
+    return (rotate === 90 || rotate === 270)
+        ? { width: natural.height, height: natural.width }
+        : natural;
+}
+
+// Point focal vu dans l'espace affiché : le réglage (`focus_x`/`focus_y`,
+// en % de l'image SOURCE — celle montrée par le sélecteur du formulaire) y
+// est transporté par la même transformée que le dessin : rotation d'abord,
+// puis retournement horizontal du résultat (x, y ∈ [0, 1]).
+export function focusInDisplay(style) {
+    const x = (style.focus_x ?? 50) / 100;
+    const y = (style.focus_y ?? 50) / 100;
+    let rx = x;
+    let ry = y;
+    switch (style.rotate) {
+        case 90: rx = 1 - y; ry = x; break;
+        case 180: rx = 1 - x; ry = 1 - y; break;
+        case 270: rx = y; ry = 1 - x; break;
+    }
+    return { x: style.mirror ? 1 - rx : rx, y: ry };
 }
 
 // Rect de l'image dans sa zone (x, y, w, h) selon l'ajustement : `contain`
@@ -95,10 +122,32 @@ export function drawImagePanel(ctx, width, height, item, source, scale = 1) {
             height: source.naturalHeight || source.height || 0,
         };
         const pad = Math.min(style.padding * scale, width / 2, height / 2);
-        const target = fitRect(style.fit, natural, pad, pad, width - 2 * pad, height - 2 * pad,
-            { x: (style.focus_x ?? 50) / 100, y: (style.focus_y ?? 50) / 100 });
+        const rotate = style.rotate || 0;
+        const target = fitRect(style.fit, naturalInDisplay(natural, rotate),
+            pad, pad, width - 2 * pad, height - 2 * pad, focusInDisplay(style));
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
+        const draw = () => {
+            if (rotate || style.mirror) {
+                // L'image pivotée/miroir occupe le même rect : tournée autour
+                // de son centre, ses dimensions avant rotation sont celles du
+                // rect échangées. Le point focal (espace source) suit via
+                // focusInDisplay — le point choisi reste dans le visible.
+                const w = (rotate === 90 || rotate === 270) ? target.height : target.width;
+                const h = (rotate === 90 || rotate === 270) ? target.width : target.height;
+                ctx.save();
+                ctx.translate(target.x + target.width / 2, target.y + target.height / 2);
+                // Miroir dans l'espace affiché (avant rotate dans le code =
+                // après dans la composée) : le bouton retourne toujours
+                // horizontalement ce que l'on voit, à toute rotation.
+                if (style.mirror) ctx.scale(-1, 1);
+                ctx.rotate(rotate * Math.PI / 180);
+                ctx.drawImage(source, -w / 2, -h / 2, w, h);
+                ctx.restore();
+            } else {
+                ctx.drawImage(source, target.x, target.y, target.width, target.height);
+            }
+        };
         if (style.fit === 'cover' && pad > 0) {
             // Rogné à la zone intérieure : la marge reste visible. Ce clip
             // est isolé dans un save/restore : il ne doit pas rester actif
@@ -108,10 +157,10 @@ export function drawImagePanel(ctx, width, height, item, source, scale = 1) {
             ctx.beginPath();
             ctx.rect(pad, pad, width - 2 * pad, height - 2 * pad);
             ctx.clip();
-            ctx.drawImage(source, target.x, target.y, target.width, target.height);
+            draw();
             ctx.restore();
         } else {
-            ctx.drawImage(source, target.x, target.y, target.width, target.height);
+            draw();
         }
     }
     // Bordure en dernier, à l'intérieur de la boîte : le trait est doublé et

@@ -33,6 +33,9 @@ export const IMAGE_PADDING_RANGE = Object.freeze([0, 100]);
 export const IMAGE_BORDER_RANGE = Object.freeze([0, 50]);
 // Point focal du recadrage « cover », en % de l'image (50 = centré).
 export const IMAGE_FOCUS_RANGE = Object.freeze([0, 100]);
+// Orientation : quarts de tour dans le sens horaire, et miroir horizontal
+// (appliqué dans l'espace de l'image, avant la rotation).
+export const IMAGE_ROTATIONS = Object.freeze([0, 90, 180, 270]);
 export const IMAGE_FADE_RANGE = Object.freeze([0, 5000]);
 // Planing : par dates, ou par jalons du compteur de trouvailles (« à la
 // 1000e trouvaille »), converti en date au moment de l'animation.
@@ -82,6 +85,8 @@ export function imageItemDefaults() {
             // au centre du recadrage (50 = cadrage centré).
             focus_x: 50,
             focus_y: 50,
+            rotate: 0,
+            mirror: false,
             opacity: 100,
             background: '#ffffff',
             background_opacity: 0,
@@ -125,6 +130,8 @@ const STYLE_COERCERS = {
     fit: (v, d) => choice(v, IMAGE_FITS, d),
     focus_x: (v, d) => intIn(v, d, IMAGE_FOCUS_RANGE),
     focus_y: (v, d) => intIn(v, d, IMAGE_FOCUS_RANGE),
+    rotate: (v, d) => (IMAGE_ROTATIONS.includes(Number(v)) ? Number(v) : d),
+    mirror: bool,
     opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),
     background: color,
     background_opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),

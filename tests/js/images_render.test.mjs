@@ -12,7 +12,9 @@ import {
     effectTimingCss,
     effectTransform,
     fitRect,
+    focusInDisplay,
     imagePanelHeight,
+    naturalInDisplay,
 } from '../../static/js/images_render.mjs';
 import { imageItemDefaults } from '../../static/js/images_model.mjs';
 
@@ -44,6 +46,45 @@ test('imagePanelHeight : proportions de l’image, marge intérieure comprise', 
     // La marge est bornée à la moitié de la largeur : intérieure plancher 1.
     const huge = itemWith({ padding: 100 }, { width: 100 });
     assert.equal(imagePanelHeight(huge, { width: 100, height: 100 }), 101);
+});
+
+test('imagePanelHeight : un quart de tour échange les proportions', () => {
+    const natural = { width: 200, height: 100 };
+    assert.equal(imagePanelHeight(itemWith({ rotate: 0 }, { width: 100 }), natural), 50);
+    assert.equal(imagePanelHeight(itemWith({ rotate: 90 }, { width: 100 }), natural), 200);
+    assert.equal(imagePanelHeight(itemWith({ rotate: 270 }, { width: 100 }), natural), 200);
+    // 180° ne change pas les proportions ; le miroir non plus.
+    assert.equal(imagePanelHeight(itemWith({ rotate: 180 }, { width: 100 }), natural), 50);
+    assert.equal(imagePanelHeight(itemWith({ mirror: true }, { width: 100 }), natural), 50);
+});
+
+// ---------------------------------------------------------------------------
+// naturalInDisplay / focusInDisplay (orientation)
+// ---------------------------------------------------------------------------
+
+test('naturalInDisplay : les quarts de tour échangent largeur et hauteur', () => {
+    const natural = { width: 200, height: 100 };
+    assert.deepEqual(naturalInDisplay(natural, 90), { width: 100, height: 200 });
+    assert.deepEqual(naturalInDisplay(natural, 270), { width: 100, height: 200 });
+    assert.equal(naturalInDisplay(natural, 0), natural);
+    assert.equal(naturalInDisplay(natural, 180), natural);
+});
+
+test('focusInDisplay : le point source suit rotation puis miroir affiché', () => {
+    const focus = (x, y, rotate = 0, mirror = false) =>
+        focusInDisplay({ focus_x: x * 100, focus_y: y * 100, rotate, mirror });
+    // Sans orientation : inchangé ; miroir : x inversé.
+    assert.deepEqual(focus(0.25, 0.75), { x: 0.25, y: 0.75 });
+    assert.deepEqual(focus(0.25, 0.75, 0, true), { x: 0.75, y: 0.75 });
+    // 90° horaire : le coin haut-gauche (0,0) part en haut à droite (1,0).
+    assert.deepEqual(focus(0, 0, 90), { x: 1, y: 0 });
+    assert.deepEqual(focus(0.25, 0.75, 90), { x: 0.25, y: 0.25 });
+    // 180° : les deux axes inversés ; 270° : rotation inverse.
+    assert.deepEqual(focus(0.25, 0.75, 180), { x: 0.75, y: 0.25 });
+    assert.deepEqual(focus(0.25, 0.75, 270), { x: 0.75, y: 0.75 });
+    // Miroir + 90° : le miroir retourne le résultat (après rotation, dans
+    // l'espace affiché) : (0.25, 0.25) → x inversé.
+    assert.deepEqual(focus(0.25, 0.75, 90, true), { x: 0.75, y: 0.25 });
 });
 
 // ---------------------------------------------------------------------------
@@ -203,6 +244,9 @@ function stubCtx() {
         clip() { calls.push('clip'); },
         fillRect(x, y, w, h) { calls.push(['fill', x, y, w, h]); },
         drawImage(source, x, y, w, h) { calls.push(['draw', source, x, y, w, h]); },
+        translate(x, y) { calls.push(['translate', x, y]); },
+        rotate(a) { calls.push(['rotate', a]); },
+        scale(x, y) { calls.push(['scale', x, y]); },
         stroke() { calls.push('stroke'); },
     };
     return ctx;
@@ -241,6 +285,37 @@ test('drawImagePanel : cover avec marge, clip intérieur isolé du tracé', () =
     // en hauteur → 160 × 80, déborde de 40 de chaque côté.
     assert.deepEqual(ctx.calls.find((c) => c[0] === 'draw'),
         ['draw', { naturalWidth: 200, naturalHeight: 100 }, -30, 10, 160, 80]);
+});
+
+test('drawImagePanel : rotation autour du centre, dimensions échangées', () => {
+    const ctx = stubCtx();
+    const source = { naturalWidth: 200, naturalHeight: 100 };
+    // Image paysage tournée de 90° : portrait 50 × 100 centré dans la boîte
+    // (100 × 100), centre (50, 50). Avant rotation elle est dessinée en
+    // dimensions échangées (100 × 50).
+    drawImagePanel(ctx, 100, 100, itemWith({ fit: 'contain', rotate: 90 }), source, 1);
+    const i = ctx.calls.findIndex((c) => c[0] === 'translate');
+    assert.deepEqual(ctx.calls[i], ['translate', 50, 50]);
+    assert.deepEqual(ctx.calls[i + 1], ['rotate', Math.PI / 2]);
+    assert.deepEqual(ctx.calls[i + 2], ['draw', source, -50, -25, 100, 50]);
+    // La transformée est encadrée : le tracé suivant repart sans rotation.
+    assert.equal(ctx.calls[i - 1], 'save');
+    assert.equal(ctx.calls[i + 3], 'restore');
+});
+
+test('drawImagePanel : miroir retourné dans l’espace affiché', () => {
+    const ctx = stubCtx();
+    const source = { naturalWidth: 200, naturalHeight: 100 };
+    // contain : 200 × 100 → 100 × 50 centrée ((0,15)→(100,65)), miroir =
+    // scale(-1, 1) après translation au centre du rect (50, 40) — AVANT
+    // rotate dans le code : dans la composée, il retourne le résultat
+    // affiché, à toute rotation.
+    drawImagePanel(ctx, 100, 80, itemWith({ fit: 'contain', mirror: true }), source, 1);
+    const i = ctx.calls.findIndex((c) => c[0] === 'translate');
+    assert.deepEqual(ctx.calls[i], ['translate', 50, 40]);
+    assert.deepEqual(ctx.calls[i + 1], ['scale', -1, 1]);
+    assert.deepEqual(ctx.calls[i + 2], ['rotate', 0]);
+    assert.deepEqual(ctx.calls[i + 3], ['draw', source, -50, -25, 100, 50]);
 });
 
 test('drawImagePanel : la bordure est doublée puis rognée par la forme', () => {

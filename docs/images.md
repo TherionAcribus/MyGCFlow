@@ -94,7 +94,7 @@ images: {
     id, enabled, file, name,
     position: { mode: 'anchor'|'free', anchor, dx, dy, width, height, x, y },
     style: { shape: 'rect'|'rounded'|'circle', radius, fit: 'contain'|'cover',
-             focus_x: 0–100, focus_y: 0–100,
+             focus_x: 0–100, focus_y: 0–100, rotate: 0|90|180|270, mirror: bool,
              opacity, background, background_opacity, padding, shadow,
              border_color, border_width },
     schedule: { by: 'date'|'find',
@@ -286,8 +286,17 @@ cadrage centré ; `fitRect` place le point focal à la même fraction de la
 zone, ce qui le garde dans la partie visible sans clampage. Le sélecteur
 (`#imageFocusPicker`, `bindFocusPicker`) montre l'image entière sur damier,
 le point se glisse à la souris ou aux flèches (1 %, Maj = 10 %) — le
-résultat se voit en direct sur la carte et dans la vignette. Choisir une
-couleur de fond sur un fond
+résultat se voit en direct sur la carte et dans la vignette.
+
+**Orientation** : `rotate` (quarts de tour horaires) et `mirror` (retournement
+horizontal dans l'espace de l'image, appliqué avant la rotation) — boutons
+`#btnImageRotate` / `#btnImageMirror`. Le dessin pivote l'image autour du
+centre de son rect d'ajustement : à 90°/270° les proportions s'échangent
+(`naturalInDisplay`), la hauteur automatique suit l'image affichée. Le point
+focal reste exprimé dans l'espace source — celui du sélecteur — et
+`focusInDisplay` le transporte dans l'espace affiché : le point choisi reste
+dans la partie visible quelle que soit l'orientation. Choisir une couleur de
+fond sur un fond
 transparent le rend opaque (`withBackgroundColor`) : sans cela, le choix ne se
 voyait pas (opacité du fond à 0 par défaut). « Opacité de l'ensemble » est le
 `globalAlpha` de `drawImagePanel` : image, fond et bordure.

@@ -1273,6 +1273,13 @@ function renderStyleFields(item) {
     const bgOpacity = $('valueImageBackgroundOpacity');
     if (bgOpacity) bgOpacity.textContent = `${s.background_opacity} %`;
     renderFocusPicker(item, states.focus);
+    const rotateValue = $('imageRotateValue');
+    if (rotateValue) rotateValue.textContent = `${s.rotate}°`;
+    const mirror = $('btnImageMirror');
+    if (mirror) {
+        mirror.classList.toggle('active', s.mirror);
+        mirror.setAttribute('aria-pressed', String(s.mirror));
+    }
     const preset = matchingStylePreset(s);
     document.querySelectorAll('[data-image-preset]').forEach((button) => {
         const active = button.dataset.imagePreset === preset;
@@ -1692,6 +1699,20 @@ function bindFormFields() {
     // « Rétablir les proportions » : la hauteur redevient celle de l'image.
     $('btnImageHeightAuto')?.addEventListener('click', () => {
         updateSelected((item) => { item.position.height = null; }, $('btnImageHeightAuto'));
+        renderForm();
+    });
+
+    // Orientation : quarts de tour (0 → 90 → 180 → 270) et miroir
+    // horizontal. Un quart de tour échange les proportions — la hauteur
+    // automatique suit l'image affichée (naturalInDisplay).
+    $('btnImageRotate')?.addEventListener('click', () => {
+        updateSelected((item) => {
+            item.style.rotate = (item.style.rotate + 90) % 360;
+        }, $('btnImageRotate'));
+        renderForm();
+    });
+    $('btnImageMirror')?.addEventListener('click', () => {
+        updateSelected((item) => { item.style.mirror = !item.style.mirror; }, $('btnImageMirror'));
         renderForm();
     });
 

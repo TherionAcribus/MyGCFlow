@@ -19,6 +19,7 @@ const LOGO = path.join(HERE, 'fixtures', 'logo-opaque.png');
 const AVATAR = path.join(HERE, 'fixtures', 'avatar-transparent.png');
 const BLASON = path.join(HERE, 'fixtures', 'blason.svg');
 const HEIC = path.join(HERE, 'fixtures', 'photo-heic.heic');
+const BANDES = path.join(HERE, 'fixtures', 'bandes.png');
 const EVO_CSV = path.join(HERE, 'fixtures', 'evolution-a.csv');
 
 async function putSettings(page, data) {
@@ -1269,6 +1270,56 @@ test('point focal : « Remplir la forme » recadre autour du point choisi', asyn
   await page.locator('label[for="imageShape-rect"]').click();
   await page.locator('#btnImageHeightAuto').click();
   await expect(picker).toBeHidden();
+});
+
+test('rotation et miroir : quarts de tour et retournement dessinés et persistés', async ({ page }) => {
+  const bandes = await upload(page, BANDES);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0160', file: bandes.file, name: 'Bandes',
+      position: { anchor: 'bottom-right', width: 160 } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+
+  // Pixels du canvas de l'image : gauche/milieu/droite (et haut/bas) du
+  // panneau — la moitié gauche de la fixture est rouge, droite bleue.
+  const sample = () => page.evaluate(() => {
+    const c = document.querySelector('canvas.image-panel[data-image-id="babe0160"]');
+    const ctx = c.getContext('2d');
+    const at = (x, y) => [...ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data].slice(0, 3);
+    return { w: c.width, h: c.height,
+      left: at(c.width * 0.25, c.height / 2), right: at(c.width * 0.75, c.height / 2),
+      top: at(c.width / 2, c.height * 0.25), bottom: at(c.width / 2, c.height * 0.75) };
+  });
+  const isRed = (rgb) => rgb[0] > 150 && rgb[2] < 100;
+  const isBlue = (rgb) => rgb[2] > 150 && rgb[0] < 100;
+
+  await page.evaluate(async () => (await import('/static/js/index.js')).imagesReady());
+  const first = await sample();
+  expect(isRed(first.left) && isBlue(first.right)).toBe(true);
+
+  // Miroir : le rouge passe à droite, persisté.
+  await page.locator('#btnImageMirror').click();
+  await expect(page.locator('#btnImageMirror')).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await savedImages(page)).items[0].style.mirror).toBe(true);
+  await expect.poll(async () => isBlue((await sample()).left)).toBe(true);
+
+  // Quart de tour : 64×48 → le panneau passe en portrait (160 → ~213), le
+  // rouge (bord gauche) rejoint le bord haut.
+  await page.locator('#btnImageRotate').click();
+  await expect(page.locator('#imageRotateValue')).toHaveText('90°');
+  await expect.poll(async () => (await savedImages(page)).items[0].style.rotate).toBe(90);
+  await expect.poll(async () => {
+    const s = await sample();
+    return s.h > s.w && isRed(s.top) && isBlue(s.bottom);
+  }).toBe(true);
+
+  // Cycle complet : 270° puis retour à 0°.
+  await page.locator('#btnImageRotate').click();
+  await page.locator('#btnImageRotate').click();
+  await expect(page.locator('#imageRotateValue')).toHaveText('270°');
+  await page.locator('#btnImageRotate').click();
+  await expect.poll(async () => (await savedImages(page)).items[0].style.rotate).toBe(0);
 });
 
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
