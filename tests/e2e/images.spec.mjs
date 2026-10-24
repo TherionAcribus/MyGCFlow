@@ -1133,6 +1133,47 @@ test('chaque mode a sa liste : « Mes Geocaches » et « Évolution » sont ind�
   }
 });
 
+test('une modification n’envoie au serveur que les clés du bloc changées', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  // Une liste posée sur chaque page plus une configuration : si le PUT
+  // renvoyait le bloc complet, une page écraserait le travail de l'autre
+  // avec sa copie (périmée si deux onglets sont ouverts). Chaque écriture
+  // ne doit donc porter que les clés de premier niveau changées.
+  await putSettings(page, { images: {
+    items: [{ id: 'babe0095', file: logo.file, name: 'Principale' }],
+    evolution_items: [{ id: 'e5e50001', file: logo.file, name: 'Évolution' }],
+    configs: [{ name: 'Club', items: [{ id: 'c0c00001', file: logo.file }] }],
+  } });
+  await openImagesTab(page);
+  const imagePut = (req) => req.method() === 'PUT' && req.url().endsWith('/api/settings')
+    && !!req.postDataJSON()?.images;
+
+  // Interrupteur général : seule « enabled » part.
+  const enabledPut = page.waitForRequest(imagePut);
+  await page.locator('#switchImages').click();
+  const enabledImages = (await enabledPut).postDataJSON().images;
+  expect(Object.keys(enabledImages)).toEqual(['enabled']);
+  expect(enabledImages.enabled).toBe(false);
+  // Écriture confirmée (la clé sort de l'accumulateur) avant le changement
+  // suivant : sinon le PUT du renommage pourrait encore porter « enabled ».
+  await expect.poll(async () => (await savedImages(page)).enabled).toBe(false);
+
+  // Renommage : seule la liste de la page part — pas l'interrupteur, pas
+  // la liste de l'autre page, pas les configurations.
+  const itemsPut = page.waitForRequest(imagePut);
+  await page.locator('#inputImageName').fill('Nom renommé');
+  const itemsImages = (await itemsPut).postDataJSON().images;
+  expect(Object.keys(itemsImages)).toEqual(['items']);
+  expect(itemsImages.items[0].name).toBe('Nom renommé');
+
+  // Côté serveur, les clés non envoyées ont survécu.
+  await expect.poll(async () => (await savedImages(page)).items[0]?.name).toBe('Nom renommé');
+  const saved = await savedImages(page);
+  expect(saved.enabled).toBe(false);
+  expect(saved.evolution_items.map((i) => i.id)).toEqual(['e5e50001']);
+  expect(saved.configs.map((c) => c.name)).toEqual(['Club']);
+});
+
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [{ id: 'babe0031', file: logo.file, name: 'Logo' }] } });

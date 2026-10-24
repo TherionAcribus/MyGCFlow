@@ -102,8 +102,13 @@ Miroir exact `image_settings.py` ↔ `images_model.mjs`, vecteurs partagés
 celles des stats (`statsCoercers` exporté par stats_model.mjs ; helpers
 privés de stats_settings.py côté serveur), comme les **marges de coin
 communes** (`shareCornerMargins`). Un fichier invalide devient `''` sans
-perdre l'entrée. Patch de premier niveau : `{ images: { enabled } }` garde les
-deux listes ; `items` et `evolution_items` sont indépendantes (miroir de
+perdre l'entrée. Patch de premier niveau des deux côtés : `{ images: { enabled } }`
+garde les deux listes (serveur : `coerce_images_settings(raw, current)` ;
+client : `commit` n'envoie que les clés de premier niveau changées —
+`enabled`, `items`, `evolution_items`, `configs` — accumulées jusqu'à
+l'écriture confirmée, sinon deux onglets ouverts sur des pages différentes
+écraseraient à tour de rôle la liste de l'autre avec leur copie locale).
+`items` et `evolution_items` sont indépendantes (miroir de
 `stats.panels` / `stats.evolution_panels`, clé choisie par `imagesItemsKey`).
 
 ## Mise en page et rendu

@@ -138,6 +138,15 @@ class ImagesApiTests(unittest.TestCase):
         self.assertFalse(images['enabled'])
         self.assertEqual([item['id'] for item in images['items']], ['aaaaaa01'])
 
+    def test_put_of_the_other_page_list_keeps_both_lists(self):
+        # Une page n'envoie que sa propre liste : l'autre doit survivre au
+        # patch (deux onglets ouverts sur des pages différentes).
+        self.client.put('/api/settings', json={'images': {'items': [{'id': 'aaaaaa01'}]}})
+        self.client.put('/api/settings', json={'images': {'evolution_items': [{'id': 'bbbbbb01'}]}})
+        images = self.images()
+        self.assertEqual([item['id'] for item in images['items']], ['aaaaaa01'])
+        self.assertEqual([item['id'] for item in images['evolution_items']], ['bbbbbb01'])
+
     def test_configs_survive_a_patch_of_the_lists_and_reference_their_files(self):
         import image_library
 

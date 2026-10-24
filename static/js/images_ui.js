@@ -3,9 +3,10 @@
 // l'image choisie.
 //
 // Préférence globale, comme l'onglet Stats : chaque modification s'applique
-// aussitôt à l'aperçu (applyImagesSettings) puis part au serveur en bloc
-// complet `{ images }`, regroupée par un debounce. Les actions discrètes
-// (ajout, suppression, réordonnancement) vident aussitôt la file.
+// aussitôt à l'aperçu (applyImagesSettings) puis part au serveur en patch
+// de premier niveau `{ images: { <clés changées> } }` (commit), regroupée
+// par un debounce. Les actions discrètes (ajout, suppression,
+// réordonnancement) vident aussitôt la file.
 import * as pkg from './index.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
@@ -76,13 +77,58 @@ function isRecordingBlocked() {
     return true;
 }
 
+// Clés de premier niveau du bloc `images` modifiées depuis la dernière
+// écriture confirmée. Le serveur fait un patch de premier niveau : n'envoyer
+// que les clés changées évite d'écraser la liste de l'autre page quand « Mes
+// Géocaches » et « Évolution » sont ouverts dans deux onglets — chaque page
+// renverrait sinon SA copie (périmée) du bloc complet. L'accumulateur est
+// requis : le saver débouncé fusionne les patchs en surface (un second
+// `{images: …}` remplace le premier entier), deux commits avant le drain
+// perdraient sinon les clés du premier. En cas d'échec d'écriture, les clés
+// restent et repartent au prochain commit.
+const IMAGES_BLOCK_KEYS = ['enabled', 'items', 'evolution_items', 'configs'];
+const pendingImageKeys = {};
+
 // null quand l'écriture est refusée (enregistrement en cours) — rien n'est
 // appliqué ni envoyé, l'appelant ne doit pas afficher de succès.
-function commit(next, field = null, { immediate = false } = {}) {
+//
+// `dirty` : clés de premier niveau que l'appelant vient de modifier. Il les
+// déclare car le diff ne suffit pas : les aperçus en direct (glisser,
+// poignées) écrivent déjà la valeur finale en place dans les réglages —
+// `applied` et `previous` y sont alors identiques et le diff ne marque rien.
+// Le diff reste calculé en union, en garde pour un appelant qui oublierait
+// `dirty`.
+function commit(next, field = null, { immediate = false, dirty = null } = {}) {
     if (isRecordingBlocked()) return null;
+    const previous = currentSettings();
     const applied = pkg.applyImagesSettings(next);
     if (window.userSettings) window.userSettings.images = applied;
-    const saving = saveImagesDebounced({ images: applied });
+    for (const key of dirty || []) {
+        if (IMAGES_BLOCK_KEYS.includes(key)) pendingImageKeys[key] = applied[key];
+    }
+    for (const key of IMAGES_BLOCK_KEYS) {
+        if (JSON.stringify(applied[key]) !== JSON.stringify(previous[key])) {
+            pendingImageKeys[key] = applied[key];
+        }
+    }
+    // Copie : la charge programmée ne doit pas suivre les marquages suivants.
+    const payload = { ...pendingImageKeys };
+    const sentKeys = Object.keys(payload);
+    const saving = sentKeys.length
+        ? saveImagesDebounced({ images: payload }).then((ok) => {
+            if (ok) {
+                // Confirmée : la clé sort de l'accumulateur, sauf si un commit
+                // plus récent l'a déjà réécrite (objet différent en attente).
+                for (const key of sentKeys) {
+                    if (pendingImageKeys[key] === payload[key]) delete pendingImageKeys[key];
+                }
+                // updateLocalCache a posé le patch partiel dans
+                // userSettings.images : reposer le bloc complet.
+                if (window.userSettings) window.userSettings.images = currentSettings();
+            }
+            return ok;
+        })
+        : Promise.resolve(true);
     if (immediate) saveImagesDebounced.flush();
     if (field) reportSave(field, saving);
     return applied;
@@ -96,7 +142,7 @@ function updateItems(mutate, field = null, options = {}) {
     const items = settings[ITEMS_KEY].map((item) => structuredClone(item));
     const result = mutate(items);
     // Le spread conserve l'autre liste (`evolution_items`/`items`) intacte.
-    commit({ ...settings, [ITEMS_KEY]: result || items }, field, options);
+    commit({ ...settings, [ITEMS_KEY]: result || items }, field, { ...options, dirty: [ITEMS_KEY] });
 }
 
 // `mutate(item, items)` : la liste entière est fournie pour les marges de
@@ -607,7 +653,8 @@ async function importImages(file, { append = false } = {}) {
     // Ajout : un id déjà pris par la liste est régénéré par la normalisation
     // (l'image importée garde ses réglages, pas son id).
     const next = append ? [...previous, ...imported] : imported;
-    const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS, { immediate: true });
+    const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS,
+        { immediate: true, dirty: [ITEMS_KEY] });
     if (!applied) return;
     selectedId = applied[ITEMS_KEY][append ? previous.length : 0]?.id || applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
@@ -618,7 +665,8 @@ async function importImages(file, { append = false } = {}) {
     const toast = pkg.showActionToast?.(
         pkg.t('${count} image(s) importée(s)', { count: imported.length }),
         { label: 'Annuler', onClick: () => {
-            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS, { immediate: true });
+            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS,
+                { immediate: true, dirty: [ITEMS_KEY] });
             selectedId = previous[0]?.id || null;
             renderImagesTab();
         } });
@@ -737,7 +785,7 @@ function saveCurrentConfig() {
         return;
     }
     commit({ ...settings, configs: [...configs.filter((c) => c.name !== entry.name), entry] },
-        IMAGES_SAVE_STATUS, { immediate: true });
+        IMAGES_SAVE_STATUS, { immediate: true, dirty: ['configs'] });
     hideConfigSave();
     renderImagesTab();
     pkg.showToast?.(pkg.t('Configuration « ${name} » enregistrée', { name: entry.name }));
@@ -749,7 +797,8 @@ function applyConfig(name) {
     const config = (settings.configs || []).find((c) => c.name === name);
     if (!config) return;
     const previous = settings[ITEMS_KEY];
-    const applied = commit({ ...settings, [ITEMS_KEY]: config.items }, IMAGES_SAVE_STATUS, { immediate: true });
+    const applied = commit({ ...settings, [ITEMS_KEY]: config.items }, IMAGES_SAVE_STATUS,
+        { immediate: true, dirty: [ITEMS_KEY] });
     if (!applied) return;
     selectedId = applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
@@ -758,7 +807,8 @@ function applyConfig(name) {
     const toast = pkg.showActionToast?.(
         pkg.t('Configuration « ${name} » appliquée', { name }),
         { label: 'Annuler', onClick: () => {
-            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS, { immediate: true });
+            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS,
+                { immediate: true, dirty: [ITEMS_KEY] });
             selectedId = previous[0]?.id || null;
             renderImagesTab();
         } });
@@ -773,7 +823,7 @@ function deleteConfig(name) {
     if (index < 0) return;
     const removed = configs[index];
     commit({ ...settings, configs: configs.filter((c) => c.name !== name) },
-        IMAGES_SAVE_STATUS, { immediate: true });
+        IMAGES_SAVE_STATUS, { immediate: true, dirty: ['configs'] });
     renderImagesTab();
     const toast = pkg.showActionToast?.(
         pkg.t('« ${name} » supprimée', { name }),
@@ -781,7 +831,8 @@ function deleteConfig(name) {
             const current = currentSettings();
             const list = (current.configs || []).slice();
             list.splice(Math.min(index, list.length), 0, removed);
-            commit({ ...current, configs: list }, IMAGES_SAVE_STATUS, { immediate: true });
+            commit({ ...current, configs: list }, IMAGES_SAVE_STATUS,
+                { immediate: true, dirty: ['configs'] });
             renderImagesTab();
         } });
     protectUntilToastCloses(toast, removed.items.map((item) => item.file));
@@ -1681,7 +1732,8 @@ export function initImagesTab() {
             event.target.checked = currentSettings().enabled;
             return;
         }
-        commit({ ...currentSettings(), enabled: event.target.checked }, event.target, { immediate: true });
+        commit({ ...currentSettings(), enabled: event.target.checked }, event.target,
+            { immediate: true, dirty: ['enabled'] });
     });
     $('btnImagesAdd')?.addEventListener('click', () => openFilePicker('add'));
     $('btnImageReplace')?.addEventListener('click', () => openFilePicker('replace'));
