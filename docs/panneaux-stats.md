@@ -82,6 +82,19 @@ champs, par id (un réglage fait entre-temps sur un autre aspect survit) ;
 toast simple si tous ont déjà ce style ; bouton désactivé quand le panneau
 est seul.
 
+**Préréglages d'apparence** (section Apparence, 2026-10-24) : quatre cartes
+`STATS_STYLE_PRESETS` (stats_model.mjs) — « Sombre » (le défaut), « Clair »,
+« Verre », « Sans fond » — qui fixent chacune complètement
+`STATS_PRESET_STYLE_KEYS` : fond, opacité, texte, couleur principale et
+arrondi. Taille et famille du texte restent un choix de lisibilité, la
+palette reste liée à la métrique. Chaque carte montre le panneau lui-même
+dessiné dans ce style (`drawStatsStylePresetPreview`, stats_panels.js : vrai
+pipeline, réduit proportionnellement dans la vignette) ; celle qu'il porte
+exactement est enfoncée (`matchingStatsStylePreset`, couleurs comparées sans
+la casse — une taille de texte ou une palette personnelle ne « dématche »
+pas). Toast « Annuler » qui ne remet que les champs du préréglage, comme
+« Appliquer à tous ».
+
 Le select « Forme » du formulaire (section Contenu) propose les types qui
 savent dessiner la métrique courante — il n'apparaît que quand il y en a
 plusieurs, donc pour les métriques catégorielles partagées entre barres et
@@ -571,7 +584,9 @@ d'annoncer un succès ; « Annuler » restaure la liste d'avant.
   épargnée).
 - `python -m unittest tests.test_stats_settings` — vecteurs partagés, ids,
   patch, fichier sans bloc `stats`, API GET/PUT/reset.
-- `tests/e2e/stats-panels.spec.mjs` — modèle posé et ancré, empilement,
+- `tests/e2e/stats-panels-*.spec.mjs` (quatre specs thématiques : cycle de
+  vie, comptage, mise en page, formulaire ; helpers partagés dans
+  `stats-panels-helpers.mjs`) — modèle posé et ancré, empilement,
   persistance, remplissage pendant la lecture, totaux après un nouveau filtre,
   export qui repart de zéro et dessine les panneaux, interrupteur général, mode
   Évolution ; anneau, courbe, compteurs et course pendant une lecture (sans

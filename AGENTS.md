@@ -84,7 +84,7 @@ Autres repères :
   dans `accumulateStatsForDates` (le bug ne se voit que quand
   `msPerDay > duration`). `getStatsSnapshot().drawnHeads` expose le dernier
   jour peint par la tête de chaque courbe — exemple dans
-  `stats-panels.spec.mjs` (fixture `my-finds-gap.gpx`).
+  `stats-panels-counting.spec.mjs` (fixture `my-finds-gap.gpx`).
 - `makeDebouncedSettingsSaver` expose `flush()` : il envoie tout de suite le
   patch en attente. Les actions discrètes (suppression, réordonnancement…)
   doivent l'appeler — sinon leur écriture peut mourir dans le minuteur si la
@@ -95,7 +95,8 @@ Autres repères :
   globale. Un spec qui pose des panneaux doit remettre
   `PUT /api/settings {stats: {enabled: true, panels: []}}` en sortant, sinon
   les suivants démarrent avec des canvas `.stats-panel` sur la carte —
-  exemple dans `stats-panels.spec.mjs` (`afterEach`). Pour lire les comptes :
+  exemple dans les specs `stats-panels-*.spec.mjs` (`resetStats`, helpers dans
+  `stats-panels-helpers.mjs`). Pour lire les comptes :
   `app.getStatsSnapshot()` (mode, total, comptes par métrique,
   `videoDrawCount`). Un `id` de panneau posé dans un spec doit être
   hexadécimal (`/^[0-9a-f]{6,32}$/`, `ID_RE` de stats_model.mjs) : un id

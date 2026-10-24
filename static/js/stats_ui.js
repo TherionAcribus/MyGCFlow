@@ -17,11 +17,14 @@ import {
     STATS_MAX_CONFIGS,
     STATS_MAX_PANELS,
     STATS_METRICS_BY_KIND,
+    STATS_PRESET_STYLE_KEYS,
     createStatsPanel,
+    matchingStatsStylePreset,
     normalizeStatsConfig,
     normalizeStatsPanel,
     offsetFreeCopy,
     statsPanelsKey,
+    statsStylePreset,
 } from './stats_model.mjs';
 
 const saveStatsDebounced = makeDebouncedSettingsSaver(500);
@@ -728,6 +731,7 @@ function renderForm() {
     // Rien à quoi l'appliquer tant que le panneau est seul dans la liste.
     const styleToAll = $('btnStatsStyleToAll');
     if (styleToAll) styleToAll.disabled = modePanels(currentSettings()).length < 2;
+    renderPresetButtons(panel);
 
     drawFormPreview(panel);
 }
@@ -743,6 +747,35 @@ function drawFormPreview(panel) {
     preview.hidden = !drawn;
     preview.style.opacity = panel.enabled ? '' : '0.45';
     if (drawn) preview.style.width = `${Math.round(panel.position.width)}px`;
+}
+
+// Case d'une vignette de préréglage, en px CSS (.image-preset-thumb, marge
+// intérieure déduite — mêmes classes que les préréglages de l'onglet Images).
+const PRESET_THUMB_BOX = Object.freeze({ width: 56, height: 38 });
+
+// Cartes des préréglages d'apparence : le panneau dessiné dans chaque style,
+// réduit proportionnellement (même pipeline que la carte, stats_panels.js ›
+// drawStatsStylePresetPreview) ; celui qu'il porte exactement est enfoncé
+// (matchingStatsStylePreset). Panneau indessinable : l'icône tient la place.
+function renderPresetButtons(panel) {
+    const preset = matchingStatsStylePreset(panel.style);
+    document.querySelectorAll('[data-stats-style-preset]').forEach((button) => {
+        const name = button.dataset.statsStylePreset;
+        const active = name === preset;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+        const canvas = button.querySelector('canvas');
+        const icon = button.querySelector('.image-preset-thumb .ti');
+        const drawn = !!canvas && !!pkg.drawStatsStylePresetPreview?.(
+            panel.id, name, canvas, PRESET_THUMB_BOX);
+        if (canvas) canvas.hidden = !drawn;
+        if (icon) icon.hidden = drawn;
+    });
+}
+
+// Nom affiché d'un préréglage (sans le texte éventuel de la vignette).
+function presetLabel(button) {
+    return button?.querySelector('.image-preset-label')?.textContent.trim() || '';
 }
 
 function syncFormPreview(event) {
@@ -1334,6 +1367,31 @@ const SHARED_STYLE_KEYS = Object.freeze([
     'font_size', 'radius', 'inherit_font',
 ]);
 
+// Préréglage d'apparence (cartes de la section « Apparence »), annulable :
+// seuls les champs qu'il fixe reviennent (STATS_PRESET_STYLE_KEYS) — une
+// taille de texte ou une palette retouchée entre-temps n'est pas perdue.
+function applyStylePreset(name, button) {
+    const panel = selectedPanel();
+    const patch = panel ? statsStylePreset(name) : null;
+    if (!patch) return;
+    const id = panel.id;
+    const before = Object.fromEntries(
+        STATS_PRESET_STYLE_KEYS.map((key) => [key, panel.style[key]]));
+    const write = (patch_) => {
+        updatePanels((panels) => {
+            const target = panels.find((p) => p.id === id);
+            if (target) Object.assign(target.style, patch_);
+            return panels;
+        }, STATS_SAVE_STATUS, { immediate: true });
+        renderForm();
+    };
+    write(patch);
+    pkg.showActionToast?.(
+        pkg.t('Préréglage « ${name} » appliqué', { name: presetLabel(button) || name }),
+        { label: 'Annuler', onClick: () => write(before) },
+    );
+}
+
 function applyStyleToAll(event) {
     const source = selectedPanel();
     if (!source) return;
@@ -1467,6 +1525,10 @@ export function initStatsTab() {
     list?.addEventListener('change', onListChange);
     if (list) bindListReorder(list);
     $('btnStatsStyleToAll')?.addEventListener('click', applyStyleToAll);
+    document.querySelectorAll('[data-stats-style-preset]').forEach((button) => {
+        button.addEventListener('click',
+            () => applyStylePreset(button.dataset.statsStylePreset, button));
+    });
     restorePngScale();
     $('btnStatsExportPng')?.addEventListener('click', exportPanelPng);
     $('btnStatsExportCsv')?.addEventListener('click', exportPanelCsv);

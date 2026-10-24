@@ -828,8 +828,9 @@ main.fullscreen-mode ~ .tooltip {
 .image-form-preview canvas.has-shadow {
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
 }
-/* Préréglages d'apparence : cartes avec l'image dessinée dans chaque style
-   (images_ui.js › renderPresetThumbs), damier comme la vignette du formulaire. */
+/* Préréglages d'apparence : cartes avec l'image (images_ui.js ›
+   renderPresetThumbs) ou le panneau Stats (stats_ui.js › renderPresetButtons)
+   dessiné dans chaque style, damier comme la vignette du formulaire. */
 .image-preset-list {
     display: flex;
     flex-wrap: wrap;

@@ -102,6 +102,44 @@ export const STATS_DEFAULTS = Object.freeze({
     evolution_panels: Object.freeze([]), configs: Object.freeze([]),
 });
 
+// Champs de style qu'un préréglage fixe (boutons « Apparence » du formulaire,
+// stats_ui.js) : couleurs, opacité du fond et arrondi. Taille et famille du
+// texte restent un choix de lisibilité ; la palette, liée à la métrique
+// (« couleurs des types »), n'entre pas non plus dans un habillage.
+export const STATS_PRESET_STYLE_KEYS = Object.freeze([
+    'background', 'background_opacity', 'text_color', 'accent_color', 'radius',
+]);
+
+// Préréglages d'apparence : chacun fixe complètement les champs ci-dessus, le
+// résultat ne dépend donc pas des réglages précédents. « sombre » reprend le
+// style par défaut des panneaux (createStatsPanel).
+export const STATS_STYLE_PRESETS = Object.freeze({
+    sombre: Object.freeze({ background: '#0b1a2b', background_opacity: 85, text_color: '#ffffff', accent_color: '#29d34e', radius: 10 }),
+    clair: Object.freeze({ background: '#f8f9fa', background_opacity: 92, text_color: '#1a2b3c', accent_color: '#1e9e44', radius: 10 }),
+    verre: Object.freeze({ background: '#0b1a2b', background_opacity: 40, text_color: '#ffffff', accent_color: '#29d34e', radius: 14 }),
+    sans_fond: Object.freeze({ background: '#0b1a2b', background_opacity: 0, text_color: '#ffffff', accent_color: '#29d34e', radius: 0 }),
+});
+
+// Le style partiel d'un préréglage (seuls les champs STATS_PRESET_STYLE_KEYS),
+// ou null si le nom est inconnu.
+export function statsStylePreset(name) {
+    const preset = Object.hasOwn(STATS_STYLE_PRESETS, name) ? STATS_STYLE_PRESETS[name] : null;
+    return preset ? { ...preset } : null;
+}
+
+// Préréglage dont le panneau porte exactement le style (bouton enfoncé), ou
+// null dès qu'un champ s'en écarte. Couleurs comparées sans la casse :
+// « #FFFFFF » vaut « #ffffff ».
+export function matchingStatsStylePreset(style) {
+    if (!style) return null;
+    const same = (a, b) => (typeof a === 'string' && typeof b === 'string'
+        ? a.toLowerCase() === b.toLowerCase() : a === b);
+    for (const [name, preset] of Object.entries(STATS_STYLE_PRESETS)) {
+        if (STATS_PRESET_STYLE_KEYS.every((key) => same(style[key], preset[key]))) return name;
+    }
+    return null;
+}
+
 const ID_RE = /^[0-9a-f]{6,32}$/;
 const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 // Même règle que _NUMERIC_RE côté serveur : « 12 », « -3 », « 12.5 », rien d'autre.

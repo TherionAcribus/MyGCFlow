@@ -157,7 +157,16 @@ export function showBsModal(el) {
  */
 export function hideBsModal(el) {
     const modal = getBsModal(el);
-    if (modal) modal.hide();
+    if (!modal) return;
+    // Bootstrap ignore hide() pendant la transition d'ouverture
+    // (_isTransitioning) : sans cette garde, un appel arrivé pendant le
+    // fondu d'entrée laisse la modale ouverte (ex. carte cliquée à peine la
+    // galerie Stats affichée). Différer jusqu'à 'shown.bs.modal'.
+    if (modal._isTransitioning) {
+        modal._element.addEventListener('shown.bs.modal', () => modal.hide(), { once: true });
+        return;
+    }
+    modal.hide();
 }
 
 /* =====================================================================

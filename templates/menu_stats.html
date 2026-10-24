@@ -318,6 +318,26 @@
                     <details class="stats-form-section" id="statsSectionAppearance">
                         <summary class="gc-subsection-title">{{ _("Apparence") }}<span class="stats-form-summary-hint">{{ _("Couleurs, opacité, taille du texte, arrondi") }}</span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
                         <div class="row g-2">
+                        {# Préréglages d'apparence (STATS_STYLE_PRESETS, stats_model.mjs) :
+                           chacun fixe fond, opacité, texte, couleur principale et arrondi —
+                           taille/police du texte et palette restent du choix de
+                           l'utilisateur. Chaque carte montre le panneau lui-même dans ce
+                           style (stats_ui.js › renderPresetButtons) ; celui qu'il porte
+                           exactement est enfoncé (matchingStatsStylePreset). #}
+                        <div class="col-12">
+                            <span class="form-label" id="labelStatsStylePresets">{{ _("Préréglages") }}</span>
+                            <div class="image-preset-list" role="group" aria-labelledby="labelStatsStylePresets">
+                                {% for name, icon, label in [('sombre', 'ti-moon', _('Sombre')),
+                                                             ('clair', 'ti-sun-high', _('Clair')),
+                                                             ('verre', 'ti-droplet', _('Verre')),
+                                                             ('sans_fond', 'ti-border-none', _('Sans fond'))] %}
+                                <button type="button" class="btn image-preset-btn" data-stats-style-preset="{{ name }}" aria-pressed="false">
+                                    <span class="image-preset-thumb" aria-hidden="true"><canvas hidden></canvas><i class="ti {{ icon }}"></i></span>
+                                    <span class="image-preset-label">{{ label }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label" for="inputStatsBackground">{{ _("Fond") }}</label>
                             <input type="color" class="form-control form-control-color" id="inputStatsBackground">

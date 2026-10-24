@@ -42,11 +42,13 @@ import {
     highlightLevel,
     layoutPanels,
     metricsForPanels,
+    matchingStatsStylePreset,
     normalizeStatsSettings,
     offsetFreeCopy,
     parseYmd,
     rectsOverlap,
     statsKeyOf,
+    statsStylePreset,
     yearTicks,
 } from './static/js/stats_model.mjs';
 import { buildTimeline } from './static/js/evolution_timeline.mjs';
@@ -117,6 +119,23 @@ test('createStatsPanel : défauts de la métrique, surcharges, id neuf', () => {
     assert.equal(panel.position.width, 280);
     assert.match(panel.id, /^[0-9a-f]{12}$/);
     assert.equal(createStatsPanel('grid', 'year'), null);
+});
+
+test('préréglages d\'apparence : style complet sur leurs champs, matching exact', () => {
+    const clair = statsStylePreset('clair');
+    assert.equal(clair.background_opacity, 92);
+    assert.equal(clair.text_color, '#1a2b3c');
+    assert.equal(statsStylePreset('introuvable'), null);
+    // « sombre » reprend le style par défaut : un panneau neuf matche.
+    const panel = createStatsPanel('bar', 'year');
+    assert.equal(matchingStatsStylePreset(panel.style), 'sombre');
+    // Un style qui reprend un préréglage, autres champs libres : matché.
+    assert.equal(matchingStatsStylePreset({ ...panel.style, ...clair, font_size: 18 }), 'clair');
+    // Un seul champ en écart (arrondi retouché) : plus de préréglage actif.
+    assert.equal(matchingStatsStylePreset({ ...panel.style, radius: 4 }), null);
+    // Couleurs comparées sans la casse.
+    assert.equal(matchingStatsStylePreset(
+        { ...panel.style, background: '#0B1A2B' }), 'sombre');
 });
 
 test('position.height : null par défaut, nullable et bornée', () => {

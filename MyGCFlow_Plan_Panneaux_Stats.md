@@ -19,6 +19,8 @@ Lot 4 — statistiques de géocacheur (2026-10-18) : barre `age` (âge de la cac
 
 Lot 5 (2026-10-24) : grille `finds_ym` — « Jasmer des trouvailles » (mêmes clés année × 100 + mois, sur `date_find`, une ligne par année de la première à la dernière trouvaille, aucune case désactivée, `cell_mode: heat` par défaut, bornes lues sur la référence via `ymYearBounds`) — et tuile `total` (nombre de trouvailles, première de la liste, adossée à une pseudo-métrique constante `KEY_OF.total` rendant 1 pour que `accumulatorMetricsFor` ne rende jamais un ensemble vide qui court-circuiterait `accumulateStatsForDates`). Modèle « Trouvailles mois × année » en galerie, option « tours » (« Tours année × mois »).
 
+Lot 5 suite (2026-10-24) — préréglages d'apparence (patron de l'onglet Images) : quatre cartes `STATS_STYLE_PRESETS` (« Sombre » = défaut, « Clair », « Verre », « Sans fond ») dans la section Apparence du formulaire, chacune fixant `STATS_PRESET_STYLE_KEYS` (fond, opacité, texte, couleur principale, arrondi — ni taille/police du texte ni palette, liée à la métrique). Vignettes dessinées avec le vrai pipeline (`drawStatsStylePresetPreview`, stats_panels.js : le panneau dans ce style, réduit proportionnellement), bouton enfoncé quand le style porté correspond exactement (`matchingStatsStylePreset`, comparaison partielle sans la casse), toast « Annuler » qui ne remet que les champs du préréglage. Classes CSS `.image-preset-*` réutilisées (attribut `data-stats-style-preset`, `data-stats-preset` étant pris par la galerie).
+
 Écarts par rapport au plan ci-dessous, décidés en cours de route :
 - **Pas de bloc `stats` dans `defaultValues.json`** : ce fichier alimente `pkg.options` (réglages de thème), où `stats` n'a rien à faire. Les défauts vivent dans `stats_settings.py` et `stats_model.mjs`, verrouillés par des vecteurs de test partagés (`tests/fixtures/stats/settings_cases.json`).
 - **Stats dessinées AVANT `addOverlaysToCanvas`** (et `z-index: 90` dans l'aperçu) : le titre et les infos restent au-dessus, dans l'aperçu comme dans la vidéo.
@@ -74,7 +76,7 @@ static/js/stats_panels.js      DOM + cycle de vie : crée/positionne les <canvas
                                expose reset/accumulate/showTotals/revision, addStatsPanelsToCanvas (vidéo)
 static/js/stats_ui.js          onglet « Stats » : liste des panneaux, modèles, formulaire, sauvegarde debouncée
 templates/menu_stats.html      le tab-pane #stats
-tests : test_stats_model.mjs, tests/test_stats_settings.py, tests/e2e/stats-panels.spec.mjs
+tests : test_stats_model.mjs, tests/test_stats_settings.py, tests/e2e/stats-panels-*.spec.mjs
 docs/panneaux-stats.md, section guide.html, README(.fr).md
 ```
 
@@ -231,7 +233,7 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
 - `templates/app.html` (onglet), `templates/menu_stats.html` (nouveau), `static/css/style.css` ou `ui_improvements.css` (`.stats-panel`, formulaire).
 - `static/vendor/tabler-icons/*` si icône absente du subset.
 - `run_video_tests.py` — `test_stats_model.mjs`.
-- `test_stats_model.mjs`, `tests/test_stats_settings.py`, `tests/e2e/stats-panels.spec.mjs` — nouveaux.
+- `test_stats_model.mjs`, `tests/test_stats_settings.py`, `tests/e2e/stats-panels-*.spec.mjs` — nouveaux.
 - `docs/panneaux-stats.md` (nouveau), `templates/guide.html`, `README.md`, `README.fr.md`, `docs/preferences-et-profils.md` (mention « préférence globale »).
 - `messages.pot`, `translations/{fr,en}/LC_MESSAGES/messages.{po,mo}`.
 - `AGENTS.md` — nouveau piège : `stats` est une préférence globale partagée par tous les specs → remettre `{ stats: STATS_DEFAULTS }` en `afterEach` et attendre la persistance.

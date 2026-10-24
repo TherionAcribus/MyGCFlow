@@ -58,6 +58,7 @@ import {
     normalizeStatsSettings,
     rectsOverlap,
     statsPanelsKey,
+    statsStylePreset,
     yearTicks,
     ymdOfDay,
 } from './stats_model.mjs';
@@ -1783,6 +1784,34 @@ function paintPanelPreview(panel, view, canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssWidth, height);
     drawStatsPanel(ctx, { x: 0, y: 0, width: cssWidth, height }, view, panel.style, lastNow, cssWidth);
+}
+
+// Vignette d'un préréglage d'apparence (stats_ui.js) : le panneau dessiné
+// avec le style du préréglage, réduit proportionnellement dans `box` (px CSS)
+// — même pipeline que la carte et l'aperçu du formulaire. false si le
+// panneau ou le préréglage est inconnu.
+export function drawStatsStylePresetPreview(id, presetName, canvas, box) {
+    const list = isEvolutionPage() ? settings.evolution_panels : settings.panels;
+    const panel = (list || []).find((p) => p.id === id);
+    const patch = statsStylePreset(presetName);
+    const width = Math.max(1, Math.round(box?.width || 0));
+    const maxHeight = Math.max(1, Math.round(box?.height || 0));
+    if (!panel || !canvas || !patch || !width || !maxHeight) return false;
+    if (drawDirty) flush();
+    const style = { ...panel.style, ...patch };
+    const view = buildView(panel);
+    const cssWidth = Math.max(1, Math.round(panel.position.width || 280));
+    const height = measureStatsPanel(view, style, cssWidth,
+        panel.kind === 'grid' ? null : panel.position.height);
+    const shrink = Math.min(1, width / cssWidth, maxHeight / height);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.max(1, Math.round(cssWidth * shrink * dpr));
+    canvas.height = Math.max(1, Math.round(height * shrink * dpr));
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr * shrink, 0, 0, dpr * shrink, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, height);
+    drawStatsPanel(ctx, { x: 0, y: 0, width: cssWidth, height }, view, style, lastNow, cssWidth);
+    return true;
 }
 
 // Vignettes de la galerie « Ajouter » (stats_ui.js) : chaque entrée
