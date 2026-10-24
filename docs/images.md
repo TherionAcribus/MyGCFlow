@@ -348,7 +348,8 @@ signalées.
 
 - Python : `tests/test_image_library.py` (normalisation, stockage, API),
   `tests/test_image_settings.py` (vecteurs partagés, API des préférences).
-- Unitaires JS : `test_images_model.mjs`, `test_images_render.mjs`.
+- Unitaires JS : `tests/js/images_model.test.mjs` (règles d'apparence),
+  `tests/js/images_render.test.mjs` (hauteur, ajustement, effets, tracé).
 - E2E : `tests/e2e/images.spec.mjs` — envoi, affichage, contournement par les
   stats, **comparaison aperçu/vidéo au pixel près**, onglet, bibliothèque et
   limite, image manquante, glisser aimanté et poignées, export/import.
