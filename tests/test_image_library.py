@@ -20,6 +20,18 @@ def encode(img, fmt, **kwargs):
     return buf.getvalue()
 
 
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+
+    def encode_heic(img):
+        buf = io.BytesIO()
+        pillow_heif.from_pillow(img).save(buf)
+        return buf.getvalue()
+except ImportError:
+    encode_heic = None
+
+
 def decode(data):
     img = Image.open(io.BytesIO(data))
     img.load()
@@ -91,6 +103,42 @@ class NormalizeTests(ImageLibraryTestCase):
         r, g, b = decode(data).convert('RGB').getpixel((15, 10))
         self.assertGreater(r, 200)
         self.assertLess(b, 60)
+
+    @unittest.skipUnless(encode_heic, "pillow-heif absent")
+    def test_heic_is_accepted_and_normalized(self):
+        # Photo iPhone bicolore : rouge à gauche, bleu à droite.
+        img = Image.new('RGB', (96, 64))
+        px = img.load()
+        for x in range(96):
+            for y in range(64):
+                px[x, y] = (255, 0, 0) if x < 48 else (0, 0, 255)
+        data, ext, size = image_library.normalize_image(encode_heic(img))
+        self.assertEqual((ext, size), ('jpg', (96, 64)))
+        out = decode(data).convert('RGB')
+        self.assertEqual(out.getpixel((10, 32))[:2], (254, 0))
+        self.assertEqual(out.getpixel((86, 32))[:2], (0, 0))
+
+    @unittest.skipUnless(encode_heic, "pillow-heif absent")
+    def test_heic_with_exif_normalizes(self):
+        # L'orientation des HEIC n'est pas portée par l'EXIF mais par les
+        # transformations irot/imir, que libheif applique au décodage : un
+        # HEIC avec EXIF se normalise comme les autres.
+        img = Image.new('RGB', (200, 100), (50, 50, 200))
+        exif = img.getexif()
+        exif[0x0112] = 1
+        buf = io.BytesIO()
+        pillow_heif.from_pillow(img).save(buf, exif=exif.tobytes())
+        data, ext, size = image_library.normalize_image(buf.getvalue())
+        self.assertEqual((ext, size), ('jpg', (200, 100)))
+
+    def test_heif_signature_is_a_format_refusal_not_not_image(self):
+        # La boîte « ftyp » d'un HEIC le fait reconnaître : sans le greffon
+        # le message cible le format (pas « illisible ») ; avec le greffon,
+        # un contenu tronqué refuse quand même proprement.
+        fake = b'\x00\x00\x00\x1cftypheic' + b'\x00' * 16
+        with self.assertRaises(image_library.InvalidImage) as ctx:
+            image_library.normalize_image(fake)
+        self.assertIn(ctx.exception.reason, ('format', 'not_image'))
 
     def test_refusals(self):
         cases = {

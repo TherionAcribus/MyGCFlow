@@ -18,6 +18,7 @@ const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 const LOGO = path.join(HERE, 'fixtures', 'logo-opaque.png');
 const AVATAR = path.join(HERE, 'fixtures', 'avatar-transparent.png');
 const BLASON = path.join(HERE, 'fixtures', 'blason.svg');
+const HEIC = path.join(HERE, 'fixtures', 'photo-heic.heic');
 const EVO_CSV = path.join(HERE, 'fixtures', 'evolution-a.csv');
 
 async function putSettings(page, data) {
@@ -74,6 +75,26 @@ test('l’envoi normalise : PNG transparent gardé, opaque converti en JPEG, mê
     multipart: { image: { name: 'faux.png', mimeType: 'image/png', buffer: Buffer.from('pas une image') } },
   });
   expect(refused.status()).toBe(400);
+});
+
+test('une photo HEIC (iPhone) envoyée est normalisée puis posée sur la carte', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const photo = await upload(page, HEIC);
+  expect(photo.file).toMatch(/^[0-9a-f]{16}\.jpg$/);
+  expect([photo.width, photo.height]).toEqual([64, 48]);
+  // Posée : le navigateur reçoit le JPEG normalisé — il ne saurait pas
+  // lire le HEIC d'origine. 64×48 → hauteur 120 pour 160 de large.
+  await putSettings(page, { images: { items: [
+    { id: 'babe0080', file: photo.file, name: 'Photo iPhone',
+      position: { anchor: 'bottom-right', width: 160 } },
+  ] } });
+  await openWithFixture(page);
+  const canvas = page.locator('canvas.image-panel[data-image-id="babe0080"]');
+  await expect(canvas).toBeVisible();
+  await expect.poll(async () => {
+    const b = await boxIn(page, 'canvas.image-panel');
+    return [Math.round(b.width), Math.round(b.height)];
+  }).toEqual([160, 120]);
 });
 
 test('une image s’affiche à son emplacement, hauteur d’après ses proportions', async ({ page }) => {

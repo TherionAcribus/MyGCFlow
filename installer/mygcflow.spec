@@ -9,6 +9,7 @@ et ressources). Mode dossier plutôt que fichier unique : démarrage immédiat (
 de décompression à chaque lancement) et bien moins de faux positifs antivirus.
 """
 
+import importlib.util
 import os
 import re
 import sys
@@ -85,10 +86,28 @@ if IS_WINDOWS:
         ],
     )
 
+# pillow-heif (décodage des HEIC de l'onglet Images) : ses bibliothèques
+# natives (libheif, libde265, libx265…) sont posées par delvewheel à la
+# racine de site-packages, le paquet les retrouve par os.add_dll_directory
+# sur son dossier parent. Dans l'exécutable ce parent est _internal/ : les
+# DLL y sont donc copiées. Sur Linux elles vivent dans pillow_heif.libs/,
+# couvert par collect_dynamic_libs.
+import sysconfig
+from PyInstaller.utils.hooks import collect_dynamic_libs
+
+binaries = []
+if importlib.util.find_spec("pillow_heif") is not None:
+    binaries += collect_dynamic_libs("pillow_heif")
+    if IS_WINDOWS:
+        _purelib = Path(sysconfig.get_paths()["purelib"])
+        for pattern in ("libheif-*.dll", "libde265-*.dll", "libx265-*.dll",
+                        "libgcc_s_seh-*.dll", "libstdc++-*.dll", "libwinpthread-*.dll"):
+            binaries += [(str(dll), ".") for dll in _purelib.glob(pattern)]
+
 a = Analysis(
     [str(ROOT / "launcher.py")],
     pathex=[str(ROOT)],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     # pystray choisit son moteur à l'exécution (import dynamique) : embarquer
     # les backends de la plateforme de construction. Ceux qui manqueraient dans

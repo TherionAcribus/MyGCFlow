@@ -32,6 +32,17 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 import paths
 
+# HEIC/HEIF (photos iPhone) : greffon Pillow optionnel. Présent, il
+# enregistre un décodeur et Image.open lit les .heic comme tout autre
+# format ; absent, l'envoi d'un HEIC reste refusé (message « format » — la
+# boîte ftyp le fait reconnaître comme image, cf. _looks_like_heif).
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+    _HEIF_READABLE = True
+except ImportError:
+    _HEIF_READABLE = False
+
 # Envoi refusé au-delà (le fichier brut, avant réduction).
 IMAGE_MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 # Grand côté après normalisation. En 2160p, la vidéo agrandit l'aperçu
@@ -44,7 +55,17 @@ IMAGE_MAX_SIDE = 2048
 IMAGE_MAX_SOURCE_PIXELS = 50_000_000
 JPEG_QUALITY = 90
 # Formats acceptés à l'envoi (Image.format). GIF : première image seulement.
-ACCEPTED_FORMATS = frozenset({'PNG', 'JPEG', 'WEBP', 'GIF'})
+ACCEPTED_FORMATS = frozenset({'PNG', 'JPEG', 'WEBP', 'GIF'} | ({'HEIF'} if _HEIF_READABLE else set()))
+
+# Marques des fichiers HEIC/HEIF (boîte « ftyp » en tête, marque à
+# l'octet 8 puis compatibles). Un HEIC envoyé sans le greffon est ainsi
+# distingué d'un non-image : refus « format » plutôt qu'« illisible ».
+_HEIF_BRANDS = (b'heic', b'heix', b'hevc', b'hevx', b'heim', b'heis', b'hevm', b'hevs')
+
+
+def _looks_like_heif(data):
+    return len(data) > 12 and data[4:8] == b'ftyp' \
+        and any(brand in data[8:96] for brand in _HEIF_BRANDS)
 
 # Balayage des envois interrompus (.upload-*.part) : ce délai protège un
 # envoi encore en cours, dont l'écriture n'est pas achevée.
@@ -141,7 +162,7 @@ def normalize_image(data):
             width, height = probe.size
             probe.verify()
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError):
-        raise InvalidImage('not_image')
+        raise InvalidImage('format' if _looks_like_heif(data) else 'not_image')
     if fmt not in ACCEPTED_FORMATS:
         raise InvalidImage('format')
     if width * height > IMAGE_MAX_SOURCE_PIXELS:

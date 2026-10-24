@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-24 14:54+0200\n"
+"POT-Creation-Date: 2026-10-24 15:17+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -673,8 +673,8 @@ msgid "Image trop lourde : %(max)d Mo au maximum."
 msgstr "Image too large: %(max)d MB at most."
 
 #: blueprints/images.py:40
-msgid "Format non pris en charge : PNG, JPEG, WebP, GIF ou SVG."
-msgstr "Unsupported format: PNG, JPEG, WebP, GIF or SVG."
+msgid "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
+msgstr "Unsupported format: PNG, JPEG, WebP, GIF, SVG or HEIC."
 
 #: blueprints/images.py:42
 msgid "Image trop grande (dimensions démesurées)."
@@ -8503,8 +8503,9 @@ msgstr "Focal point"
 msgid ""
 "Zone gardée au centre du cadrage — glissez le point, ou déplacez-le aux "
 "flèches."
-msgstr "Area kept at the center of the crop — drag the dot, or move it with "
-"the arrow keys."
+msgstr ""
+"Area kept at the center of the crop — drag the dot, or move it with the "
+"arrow keys."
 
 #: templates/menu_images.html:258 templates/menu_informations.html:164
 #: templates/menu_stats.html:346

@@ -244,8 +244,11 @@ export function normalizeImagesSettings(raw, current = IMAGES_DEFAULTS, newId = 
 // Fichier accepté par l'onglet Images (PNG, JPEG, WebP, GIF ; SVG rastérisé
 // dans le navigateur) : aiguillage des dépôts de fichiers sur la fenêtre
 // (bdd.js, evolution_data.js), comme isAudioFile pour les musiques.
-const IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml']);
-const IMAGE_EXTENSIONS = /\.(?:png|jpe?g|webp|gif|svg)$/i;
+// HEIC/HEIF (photos iPhone) : le navigateur ne les décode pas, mais le
+// serveur les normalise (pillow-heif) — ils passent donc le filtre.
+const IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml',
+    'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence']);
+const IMAGE_EXTENSIONS = /\.(?:png|jpe?g|webp|gif|svg|heic|heif)$/i;
 
 export function isImageFile(file) {
     if (!file) return false;

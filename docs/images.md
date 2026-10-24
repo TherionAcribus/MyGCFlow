@@ -15,7 +15,8 @@ stats : `docs/panneaux-stats.md` › Mise en page.
 - **Priorité de placement : Titre/Infos > Images > Stats.** Les images
   contournent les cartouches ; les piles de stats contournent les cartouches
   et les images.
-- **4 images** au plus ; **PNG, JPEG, WebP, GIF** (première image), **SVG**
+- **4 images** au plus ; **PNG, JPEG, WebP, GIF** (première image), **HEIC**
+  (photos iPhone, décodées côté serveur par `pillow-heif`), **SVG**
   rastérisé dans le navigateur avant envoi ; **8 emplacements** (tous sauf
   le centre de la carte).
 
@@ -49,6 +50,14 @@ collage et l'import JSON) : dessiné via `<img>` — ni script ni ressource
 externe n'est chargé — à **2048 px** sur le grand côté (taille intrinsèque,
 sinon `viewBox`, sinon carré), envoyé en PNG. Le serveur ne voit donc jamais
 de SVG et Pillow n'a pas à le supporter.
+
+Un **HEIC** suit le chemin inverse : le navigateur ne sait pas le lire, le
+fichier brut est envoyé tel quel et `pillow-heif` (greffon Pillow optionnel,
+`image_library.py`) le décode côté serveur — l'orientation des HEIC est
+portée par les transformations irot/imir que libheif applique au décodage,
+pas par l'EXIF. Sans le greffon installé, la boîte `ftyp` en tête fait tout
+de même reconnaître le fichier comme un HEIC : le refus cite les formats
+plutôt que « illisible » (`_looks_like_heif`).
 
 Le nom est l'empreinte SHA-256 tronquée du contenu normalisé
 (`0123456789abcdef.png`) : la même image n'est stockée qu'une fois, et un nom

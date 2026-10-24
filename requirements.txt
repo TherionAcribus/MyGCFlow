@@ -4,6 +4,9 @@ Flask-Babel==4.0.0
 Flask-Compress==1.24
 Flask-SQLAlchemy==3.1.1
 Pillow==11.3.0
+# Greffon Pillow pour les photos HEIC/HEIF (iPhone) envoyées dans l'onglet
+# Images : image_library les normalise comme les autres formats.
+pillow-heif==1.8.1
 # Fournit le binaire ffmpeg utilisé pour les deux pipelines vidéo (assemblage
 # d'images et post-traitement MediaRecorder).
 imageio-ffmpeg==0.6.0

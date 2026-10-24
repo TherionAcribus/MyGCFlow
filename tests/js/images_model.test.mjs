@@ -7,6 +7,7 @@ import {
     imageItemDefaults,
     imageStyleFieldStates,
     imageStylePreset,
+    isImageFile,
     matchingStylePreset,
     withBackgroundColor,
 } from '../../static/js/images_model.mjs';
@@ -66,4 +67,18 @@ test('withBackgroundColor : fond transparent rendu opaque, opacité réglée gar
         { ...base, background: '#123456', background_opacity: 100 });
     assert.equal(withBackgroundColor({ ...base, background_opacity: 40 }, '#123456').background_opacity, 40);
     assert.equal(base.background_opacity, 0, 'le style d’origine n’est pas modifié');
+});
+
+test('isImageFile : formats acceptés par type MIME ou par extension', () => {
+    // Le HEIC n'est pas décodé par le navigateur, mais le serveur le
+    // normalise (pillow-heif) : le filtre le laisse passer.
+    for (const ok of [{ type: 'image/heic', name: 'IMG_001.heic' },
+                      { type: '', name: 'PHOTO.HEIF' },
+                      { type: 'image/png', name: 'logo.png' }]) {
+        assert.equal(isImageFile(ok), true, JSON.stringify(ok));
+    }
+    for (const bad of [{ type: 'text/plain', name: 'note.txt' },
+                       { type: 'video/mp4', name: 'clip.mp4' }, null]) {
+        assert.equal(isImageFile(bad), false, JSON.stringify(bad));
+    }
 });
