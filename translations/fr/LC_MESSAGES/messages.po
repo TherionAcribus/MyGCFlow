@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-24 14:02+0200\n"
+"POT-Creation-Date: 2026-10-24 14:16+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -1602,273 +1602,278 @@ msgstr "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgid "Image"
 msgstr "Image"
 
-#: static/js/images_panels.js:853 static/js/images_ui.js:106
+#: static/js/images_panels.js:853 static/js/images_ui.js:128
 #, python-brace-format
 msgid "Image ${n}"
 msgstr "Image ${n}"
 
-#: static/js/images_ui.js:146 static/js/images_ui.js:164
-msgid "L'image SVG n'a pas pu être lue."
-msgstr "L'image SVG n'a pas pu être lue."
+#: static/js/images_ui.js:74
+msgid "Attendez la fin de l'enregistrement pour modifier les images."
+msgstr "Attendez la fin de l'enregistrement pour modifier les images."
 
-#: static/js/images_ui.js:194 static/js/images_ui.js:201
-msgid "L'image n'a pas pu être envoyée."
-msgstr "L'image n'a pas pu être envoyée."
-
-#: static/js/images_ui.js:201 static/js/images_ui.js:267
-#: static/js/images_ui.js:290 static/js/images_ui.js:552
-#: static/js/images_ui.js:558 static/js/images_ui.js:587
-#: static/js/images_ui.js:612 static/js/images_ui.js:614
-#: static/js/images_ui.js:706 static/js/images_ui.js:1293
-#: static/js/images_ui.js:1298 templates/app.html:255 templates/guide.html:59
-#: templates/guide.html:112 templates/guide.html:394 templates/guide.html:396
+#: static/js/images_ui.js:75 static/js/images_ui.js:223
+#: static/js/images_ui.js:292 static/js/images_ui.js:315
+#: static/js/images_ui.js:580 static/js/images_ui.js:586
+#: static/js/images_ui.js:616 static/js/images_ui.js:641
+#: static/js/images_ui.js:643 static/js/images_ui.js:736
+#: static/js/images_ui.js:1326 static/js/images_ui.js:1331
+#: templates/app.html:255 templates/guide.html:59 templates/guide.html:112
+#: templates/guide.html:394 templates/guide.html:396
 #: templates/menu_images.html:32
 msgid "Images"
 msgstr "Images"
 
-#: static/js/images_ui.js:267 static/js/images_ui.js:558
+#: static/js/images_ui.js:168 static/js/images_ui.js:186
+msgid "L'image SVG n'a pas pu être lue."
+msgstr "L'image SVG n'a pas pu être lue."
+
+#: static/js/images_ui.js:216 static/js/images_ui.js:223
+msgid "L'image n'a pas pu être envoyée."
+msgstr "L'image n'a pas pu être envoyée."
+
+#: static/js/images_ui.js:292 static/js/images_ui.js:586
 #: templates/menu_images.html:96
 msgid "Quatre images au maximum."
 msgstr "Quatre images au maximum."
 
-#: static/js/images_ui.js:290
+#: static/js/images_ui.js:315
 msgid "Attendez la fin de l'enregistrement pour ajouter une image."
 msgstr "Attendez la fin de l'enregistrement pour ajouter une image."
 
-#: static/js/images_ui.js:381 static/js/video_ready.js:31
+#: static/js/images_ui.js:408 static/js/video_ready.js:31
 #, python-brace-format
 msgid "${n} Mo"
 msgstr "${n} Mo"
 
-#: static/js/images_ui.js:382
+#: static/js/images_ui.js:409
 #, python-brace-format
 msgid "${n} Ko"
 msgstr "${n} Ko"
 
-#: static/js/images_ui.js:390
+#: static/js/images_ui.js:417
 msgid "Utilisée sur cette page"
 msgstr "Utilisée sur cette page"
 
-#: static/js/images_ui.js:394
+#: static/js/images_ui.js:421
 msgid "Utilisée dans « Mes Géocaches »"
 msgstr "Utilisée dans « Mes Géocaches »"
 
-#: static/js/images_ui.js:395
+#: static/js/images_ui.js:422
 msgid "Utilisée dans « Évolution »"
 msgstr "Utilisée dans « Évolution »"
 
-#: static/js/images_ui.js:426
+#: static/js/images_ui.js:453
 #, python-brace-format
 msgid "Ajouter ${name} (${w} × ${h})"
 msgstr "Ajouter ${name} (${w} × ${h})"
 
-#: static/js/images_ui.js:427
+#: static/js/images_ui.js:454
 #, python-brace-format
 msgid "Ajouter cette image (${w} × ${h})"
 msgstr "Ajouter cette image (${w} × ${h})"
 
-#: static/js/images_ui.js:454 static/js/images_ui.js:455
-#: static/js/images_ui.js:630
+#: static/js/images_ui.js:481 static/js/images_ui.js:482
+#: static/js/images_ui.js:659
 msgid "Retirer de la bibliothèque"
 msgstr "Retirer de la bibliothèque"
 
-#: static/js/images_ui.js:466
+#: static/js/images_ui.js:493
 #, python-brace-format
 msgid "${n} image(s) · ${size}"
 msgstr "${n} image(s) · ${size}"
 
-#: static/js/images_ui.js:552
+#: static/js/images_ui.js:580
 msgid "Import impossible : fichier d'images invalide"
 msgstr "Import impossible : fichier d'images invalide"
 
-#: static/js/images_ui.js:586
+#: static/js/images_ui.js:615
 #, python-brace-format
 msgid "${n} image(s) non importée(s) : quatre au maximum."
 msgstr "${n} image(s) non importée(s) : quatre au maximum."
 
-#: static/js/images_ui.js:590
+#: static/js/images_ui.js:619
 #, python-brace-format
 msgid "${count} image(s) importée(s)"
 msgstr "${count} image(s) importée(s)"
 
-#: static/js/images_ui.js:612
+#: static/js/images_ui.js:641
 msgid "Image retirée de la bibliothèque."
 msgstr "Image retirée de la bibliothèque."
 
-#: static/js/images_ui.js:614
+#: static/js/images_ui.js:643
 msgid "L'image n'a pas pu être retirée."
 msgstr "L'image n'a pas pu être retirée."
 
-#: static/js/images_ui.js:628
+#: static/js/images_ui.js:657
 #, python-brace-format
 msgid "« ${name} » sera supprimée définitivement de la bibliothèque."
 msgstr "« ${name} » sera supprimée définitivement de la bibliothèque."
 
-#: static/js/images_ui.js:629
+#: static/js/images_ui.js:658
 msgid "Cette image sera supprimée définitivement de la bibliothèque."
 msgstr "Cette image sera supprimée définitivement de la bibliothèque."
 
-#: static/js/images_ui.js:631 static/js/images_ui.js:670
-#: static/js/images_ui.js:857 static/js/profiles.js:967
+#: static/js/images_ui.js:660 static/js/images_ui.js:699
+#: static/js/images_ui.js:890 static/js/profiles.js:967
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_ui.js:346 static/js/stats_ui.js:1348
 #: templates/menu_style.html:272 templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Supprimer"
 
-#: static/js/images_ui.js:705
+#: static/js/images_ui.js:735
 msgid "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 msgstr "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 
-#: static/js/images_ui.js:713 static/js/stats_ui.js:1387
+#: static/js/images_ui.js:743 static/js/stats_ui.js:1387
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr "Configuration « ${name} » enregistrée"
 
-#: static/js/images_ui.js:727 static/js/stats_ui.js:1401
+#: static/js/images_ui.js:759 static/js/stats_ui.js:1401
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr "Configuration « ${name} » appliquée"
 
-#: static/js/images_ui.js:746 static/js/images_ui.js:925
+#: static/js/images_ui.js:779 static/js/images_ui.js:958
 #: static/js/stats_ui.js:1420
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr "« ${name} » supprimée"
 
-#: static/js/images_ui.js:816
+#: static/js/images_ui.js:849
 msgid "Afficher cette image"
 msgstr "Afficher cette image"
 
-#: static/js/images_ui.js:840
+#: static/js/images_ui.js:873
 msgid "(manquante)"
 msgstr "(manquante)"
 
-#: static/js/images_ui.js:846
+#: static/js/images_ui.js:879
 msgid "Apparition planifiée"
 msgstr "Apparition planifiée"
 
-#: static/js/images_ui.js:854 static/js/stats_ui.js:343
+#: static/js/images_ui.js:887 static/js/stats_ui.js:343
 msgid "Monter"
 msgstr "Monter"
 
-#: static/js/images_ui.js:855 static/js/stats_ui.js:344
+#: static/js/images_ui.js:888 static/js/stats_ui.js:344
 msgid "Descendre"
 msgstr "Descendre"
 
-#: static/js/images_ui.js:856 static/js/profiles.js:958
+#: static/js/images_ui.js:889 static/js/profiles.js:958
 #: static/js/profiles.js:2748 static/js/stats_ui.js:345
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
-#: static/js/images_ui.js:1103
+#: static/js/images_ui.js:1136
 msgid "Toujours visible"
 msgstr "Toujours visible"
 
-#: static/js/images_ui.js:1106
+#: static/js/images_ui.js:1139
 #, python-brace-format
 msgid "Trouvailles n°${from} à n°${to}"
 msgstr "Trouvailles n°${from} à n°${to}"
 
-#: static/js/images_ui.js:1107
+#: static/js/images_ui.js:1140
 #, python-brace-format
 msgid "Dès la trouvaille n°${n}"
 msgstr "Dès la trouvaille n°${n}"
 
-#: static/js/images_ui.js:1108
+#: static/js/images_ui.js:1141
 #, python-brace-format
 msgid "Jusqu'à la trouvaille n°${n}"
 msgstr "Jusqu'à la trouvaille n°${n}"
 
-#: static/js/images_ui.js:1112
+#: static/js/images_ui.js:1145
 #, python-brace-format
 msgid "Du ${from} au ${to}"
 msgstr "Du ${from} au ${to}"
 
-#: static/js/images_ui.js:1114
+#: static/js/images_ui.js:1147
 #, python-brace-format
 msgid "À partir du ${date}"
 msgstr "À partir du ${date}"
 
-#: static/js/images_ui.js:1115
+#: static/js/images_ui.js:1148
 #, python-brace-format
 msgid "Jusqu'au ${date}"
 msgstr "Jusqu'au ${date}"
 
-#: static/js/images_ui.js:1125
+#: static/js/images_ui.js:1158
 msgid "Position libre"
 msgstr "Position libre"
 
-#: static/js/images_ui.js:1139
+#: static/js/images_ui.js:1172
 msgid "fond"
 msgstr "fond"
 
-#: static/js/images_ui.js:1140
+#: static/js/images_ui.js:1173
 msgid "bordure"
 msgstr "bordure"
 
-#: static/js/images_ui.js:1141
+#: static/js/images_ui.js:1174
 msgid "ombre"
 msgstr "ombre"
 
-#: static/js/images_ui.js:1232
+#: static/js/images_ui.js:1265
 #, python-brace-format
 msgid "Le ${date}"
 msgstr "Le ${date}"
 
-#: static/js/images_ui.js:1233
+#: static/js/images_ui.js:1266
 #, python-brace-format
 msgid "Jamais atteinte : ${total} trouvaille(s) au total"
 msgstr "Jamais atteinte : ${total} trouvaille(s) au total"
 
-#: static/js/images_ui.js:1260
-#, python-brace-format
-msgid ""
-"La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
-"ne sera pas visible."
-msgstr ""
-"La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
-"ne sera pas visible."
-
-#: static/js/images_ui.js:1263
-msgid ""
-"La disparition tombe le jour de l'apparition : l'image ne sera jamais "
-"visible."
-msgstr ""
-"La disparition tombe le jour de l'apparition : l'image ne sera jamais "
-"visible."
-
-#: static/js/images_ui.js:1265
-msgid ""
-"« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
-"visible."
-msgstr ""
-"« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
-"visible."
-
-#: static/js/images_ui.js:1268
-#, python-brace-format
-msgid ""
-"L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
-"sera pas visible dans la vidéo."
-msgstr ""
-"L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
-"sera pas visible dans la vidéo."
-
-#: static/js/images_ui.js:1271
-#, python-brace-format
-msgid ""
-"L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
-"pas visible dans la vidéo."
-msgstr ""
-"L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
-"pas visible dans la vidéo."
-
 #: static/js/images_ui.js:1293
+#, python-brace-format
+msgid ""
+"La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
+"ne sera pas visible."
+msgstr ""
+"La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
+"ne sera pas visible."
+
+#: static/js/images_ui.js:1296
+msgid ""
+"La disparition tombe le jour de l'apparition : l'image ne sera jamais "
+"visible."
+msgstr ""
+"La disparition tombe le jour de l'apparition : l'image ne sera jamais "
+"visible."
+
+#: static/js/images_ui.js:1298
+msgid ""
+"« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
+"visible."
+msgstr ""
+"« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
+"visible."
+
+#: static/js/images_ui.js:1301
+#, python-brace-format
+msgid ""
+"L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
+"sera pas visible dans la vidéo."
+msgstr ""
+"L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
+"sera pas visible dans la vidéo."
+
+#: static/js/images_ui.js:1304
+#, python-brace-format
+msgid ""
+"L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
+"pas visible dans la vidéo."
+msgstr ""
+"L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
+"pas visible dans la vidéo."
+
+#: static/js/images_ui.js:1326
 msgid "Attendez la fin de l'enregistrement."
 msgstr "Attendez la fin de l'enregistrement."
 
-#: static/js/images_ui.js:1297
+#: static/js/images_ui.js:1330
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
@@ -1876,7 +1881,7 @@ msgstr ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
 
-#: static/js/images_ui.js:1334 static/js/stats_ui.js:1466
+#: static/js/images_ui.js:1368 static/js/stats_ui.js:1466
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr "Préréglage « ${name} » appliqué"

@@ -60,7 +60,26 @@ function selectedItem() {
     return currentSettings()[ITEMS_KEY].find((item) => item.id === selectedId) || null;
 }
 
+// Enregistrement en cours : toute modification des images serait dessinée au
+// milieu de la vidéo capturée — l'onglet est en lecture seule (le glisser et
+// les aperçus en direct sont déjà bloqués par isAnimationInProgress, qui
+// couvre la capture). Le toast est espacé : un curseur enfoncé tente un
+// commit à chaque événement « input ».
+let recordingToastAt = 0;
+function isRecordingBlocked() {
+    if (!pkg.isRecordingActive?.()) return false;
+    const now = Date.now();
+    if (now - recordingToastAt < 4000) return true;
+    recordingToastAt = now;
+    pkg.showToast?.(pkg.t("Attendez la fin de l'enregistrement pour modifier les images."),
+        'warning', pkg.t('Images'), 4000);
+    return true;
+}
+
+// null quand l'écriture est refusée (enregistrement en cours) — rien n'est
+// appliqué ni envoyé, l'appelant ne doit pas afficher de succès.
 function commit(next, field = null, { immediate = false } = {}) {
+    if (isRecordingBlocked()) return null;
     const applied = pkg.applyImagesSettings(next);
     if (window.userSettings) window.userSettings.images = applied;
     const saving = saveImagesDebounced({ images: applied });
@@ -70,6 +89,9 @@ function commit(next, field = null, { immediate = false } = {}) {
 }
 
 function updateItems(mutate, field = null, options = {}) {
+    // Bloqué AVANT mutate : un effet de bord du mutate (l'image « supprimée »
+    // capturée par runListAction) survivrait au refus du commit.
+    if (isRecordingBlocked()) return;
     const settings = currentSettings();
     const items = settings[ITEMS_KEY].map((item) => structuredClone(item));
     const result = mutate(items);
@@ -262,6 +284,9 @@ function addFromFiles(files, at = null) {
 }
 
 async function addFilesNow(list, at) {
+    // Garde au moment de l'exécution : un enregistrement a pu démarrer
+    // pendant que l'ajout attendait son tour dans la file.
+    if (isRecordingBlocked()) return;
     const room = Math.max(0, IMAGES_MAX_ITEMS - currentSettings()[ITEMS_KEY].length);
     if (list.length > room) {
         pkg.showToast?.(pkg.t('Quatre images au maximum.'), 'warning', pkg.t('Images'), 5000);
@@ -299,6 +324,7 @@ export function dropImageFiles(files, point = null) {
 }
 
 async function replaceFromFile(file) {
+    if (isRecordingBlocked()) return;
     const item = selectedItem();
     if (!file || !item || uploading) return;
     const data = await uploadImage(file);
@@ -312,6 +338,7 @@ async function replaceFromFile(file) {
 }
 
 function openFilePicker(mode) {
+    if (isRecordingBlocked()) return;
     fileInputMode = mode;
     // Multi-sélection à l'ajout seulement : le remplacement n'en prend qu'une
     // (si plusieurs sont choisies malgré tout, seule la première sert).
@@ -540,6 +567,7 @@ function importedItems(data) {
 // images en trop sont écartées AVANT envoi — aucun fichier envoyé pour rien —
 // et signalées.
 async function importImages(file, { append = false } = {}) {
+    if (isRecordingBlocked()) return;
     let data = null;
     try {
         data = JSON.parse(await file.text());
@@ -580,6 +608,7 @@ async function importImages(file, { append = false } = {}) {
     // (l'image importée garde ses réglages, pas son id).
     const next = append ? [...previous, ...imported] : imported;
     const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS, { immediate: true });
+    if (!applied) return;
     selectedId = applied[ITEMS_KEY][append ? previous.length : 0]?.id || applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
     if (dropped > 0) {
@@ -695,6 +724,7 @@ function hideConfigSave() {
 }
 
 function saveCurrentConfig() {
+    if (isRecordingBlocked()) return;
     const settings = currentSettings();
     const entry = normalizeImagesConfig({ name: $('inputImagesConfigName')?.value, items: settings[ITEMS_KEY] });
     if (!entry) return;
@@ -714,11 +744,13 @@ function saveCurrentConfig() {
 }
 
 function applyConfig(name) {
+    if (isRecordingBlocked()) return;
     const settings = currentSettings();
     const config = (settings.configs || []).find((c) => c.name === name);
     if (!config) return;
     const previous = settings[ITEMS_KEY];
     const applied = commit({ ...settings, [ITEMS_KEY]: config.items }, IMAGES_SAVE_STATUS, { immediate: true });
+    if (!applied) return;
     selectedId = applied[ITEMS_KEY][0]?.id || null;
     renderImagesTab();
     // Fichier absent de cette machine : l'image est signalée « manquante »
@@ -734,6 +766,7 @@ function applyConfig(name) {
 }
 
 function deleteConfig(name) {
+    if (isRecordingBlocked()) return;
     const settings = currentSettings();
     const configs = settings.configs || [];
     const index = configs.findIndex((c) => c.name === name);
@@ -1319,6 +1352,7 @@ function scheduleFromPreview(which, button) {
 // Préréglage d'apparence, annulable : le style d'avant revient (et la
 // hauteur, qu'un préréglage rond rend aux proportions).
 function applyStylePreset(name, button) {
+    if (isRecordingBlocked()) return;
     const item = selectedItem();
     const result = item ? imageStylePreset(item, name) : null;
     if (!result) return;
@@ -1642,6 +1676,11 @@ export function initImagesTab() {
     if (initialized || !$('images')) return;
     initialized = true;
     $('switchImages')?.addEventListener('change', (event) => {
+        if (isRecordingBlocked()) {
+            // Rien n'a changé : l'interrupteur revient à l'état enregistré.
+            event.target.checked = currentSettings().enabled;
+            return;
+        }
         commit({ ...currentSettings(), enabled: event.target.checked }, event.target, { immediate: true });
     });
     $('btnImagesAdd')?.addEventListener('click', () => openFilePicker('add'));

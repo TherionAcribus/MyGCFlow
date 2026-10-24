@@ -209,7 +209,17 @@ occupée), « Remplacer l'image… » qui garde les réglages, formulaire de
 position, d'apparence et d'**apparition** (dates « Apparaît le » /
 « Disparaît le », fondu en ms ; badge `ti-calendar-time` sur la ligne d'une
 image planifiée). Sauvegarde débouncée de la préférence complète, vidée
-aussitôt pour les actions discrètes.
+aussitôt pour les actions discrètes. **Enregistrement en cours** : l'onglet
+est en lecture seule — toute modification serait dessinée au milieu de la
+vidéo capturée. La garde `isRecordingBlocked` (toast espacé de 4 s : un
+curseur enfoncé tente un commit à chaque `input`) bloque `commit` et
+`updateItems` — avant `mutate`, sinon un effet de bord (l'image « supprimée »
+du toast « Annuler ») survivrait — plus en amont tout ce qui ferait un envoi
+ou afficherait un succès : sélecteur, ajout, remplacement, import,
+configurations, préréglages, interrupteur général. Le glisser, les poignées
+et les raccourcis clavier sont déjà bloqués (`isBusy` : `isAnimationInProgress`
+couvre l'enregistrement). Retrait de bibliothèque (fichiers non référencés,
+sans effet sur la vidéo) et export restent permis.
 
 **Ajouts en file d'attente** (`addFromFiles`) : sélecteur, dépôt et collage
 passent par une file — un ajout pendant un envoi attend son tour au lieu
