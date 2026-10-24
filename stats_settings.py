@@ -234,7 +234,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
         options = {
             "show_values": True,
             "show_percent": False,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count" if metric in ("cache_type", "country", "state", "county", "status", "attribute", "owner") else "natural",
             # Âge et durée de vie : grandeurs ordonnées, mais libellés
             # longs (« 6 à 12 mois », « 5 à 10 ans »).
@@ -247,7 +247,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
         options = {
             "show_values": True,
             "show_percent": True,
-            "highlight": "every",
+            "highlight": "new",
             "max_items": 6,
             "hole": 55,
             "show_legend": True,

@@ -350,7 +350,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -387,7 +387,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "horizontal",
             "max_items": 8,
@@ -424,7 +424,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -461,7 +461,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -533,7 +533,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -607,7 +607,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "label",
             "orientation": "vertical",
             "max_items": 3,
@@ -801,7 +801,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -1015,7 +1015,7 @@
           "options": {
             "show_values": true,
             "show_percent": true,
-            "highlight": "every",
+            "highlight": "new",
             "max_items": 6,
             "hole": 55,
             "show_legend": true
@@ -1051,7 +1051,7 @@
           "options": {
             "show_values": true,
             "show_percent": true,
-            "highlight": "every",
+            "highlight": "new",
             "max_items": 6,
             "hole": 55,
             "show_legend": true
@@ -1160,7 +1160,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -1484,7 +1484,7 @@
           "options": {
             "show_values": true,
             "show_percent": true,
-            "highlight": "every",
+            "highlight": "new",
             "max_items": 3,
             "hole": 85,
             "show_legend": false
@@ -1520,7 +1520,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "race",
             "orientation": "horizontal",
             "max_items": 8,
@@ -1645,7 +1645,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -1682,7 +1682,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -1719,7 +1719,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -1756,7 +1756,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -1793,7 +1793,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -1830,7 +1830,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -2323,7 +2323,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -2360,7 +2360,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -2397,7 +2397,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -2434,7 +2434,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -2471,7 +2471,7 @@
           "options": {
             "show_values": true,
             "show_percent": true,
-            "highlight": "every",
+            "highlight": "new",
             "max_items": 6,
             "hole": 55,
             "show_legend": true
@@ -2507,7 +2507,7 @@
           "options": {
             "show_values": true,
             "show_percent": true,
-            "highlight": "every",
+            "highlight": "new",
             "max_items": 6,
             "hole": 55,
             "show_legend": true
@@ -2609,7 +2609,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -2666,7 +2666,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -2723,7 +2723,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "count",
             "orientation": "horizontal",
             "max_items": 8,
@@ -2955,7 +2955,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -2992,7 +2992,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -3139,7 +3139,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "horizontal",
             "max_items": 8,
@@ -3562,7 +3562,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -3599,7 +3599,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -3636,7 +3636,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "vertical",
             "max_items": 8,
@@ -3854,7 +3854,7 @@
           "options": {
             "show_values": true,
             "show_percent": false,
-            "highlight": "every",
+            "highlight": "new",
             "sort": "natural",
             "orientation": "horizontal",
             "max_items": 8,
