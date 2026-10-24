@@ -246,7 +246,9 @@ ensuite pour un GPX (« Fichier invalide ») ou un CSV.
 **Bibliothèque** : pastille sur les images déjà utilisées (`libraryUsage`) —
 coche d'accent sur cette page, icône du mode (`ti-database` / `ti-stack`,
 comme le sélecteur de l'en-tête) pour l'autre page, texte dans le titre et le
-nom accessible.
+nom accessible. Un relevé `GET /api/images` en échec n'affiche pas le message
+« aucune image » (mensonger) : un état d'erreur avec bouton **Réessayer**
+(`imagesLibraryError`) le remplace.
 
 **Préréglages d'apparence** (`IMAGE_STYLE_PRESETS`, `imageStylePreset`) :
 Avatar, Logo sur fond, Filigrane, Photo encadrée. Chacun repart du style par

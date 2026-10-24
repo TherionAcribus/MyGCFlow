@@ -65,6 +65,11 @@
                             </button>
                             <div class="dropdown-menu dropdown-menu-end images-library" id="imagesLibraryMenu">
                                 <p id="imagesLibraryEmpty" class="dropdown-item-text text-muted small mb-0">{{ _("Aucune image envoyée pour l'instant.") }}</p>
+                                <div id="imagesLibraryError" class="dropdown-item-text small mb-0" hidden>
+                                    <p class="text-danger mb-1">{{ _("La bibliothèque n'a pas pu être chargée.") }}</p>
+                                    <button type="button" id="btnImagesLibraryRetry" class="btn btn-sm btn-outline-secondary">
+                                        <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réessayer") }}</button>
+                                </div>
                                 <div id="imagesLibraryList" class="images-library-grid"></div>
                                 <p id="imagesLibraryUsage" class="dropdown-item-text text-muted small mb-0"></p>
                             </div>

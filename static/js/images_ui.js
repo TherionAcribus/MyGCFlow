@@ -471,11 +471,15 @@ function libraryUsage(file, usedHere, usedOther) {
 async function renderLibrary() {
     const grid = $('imagesLibraryList');
     if (!grid) return;
-    let listing = { files: [], total_bytes: 0 };
+    // null quand le relevé a échoué : la bibliothèque n'est pas « vide » —
+    // un état d'erreur avec réessai est affiché à la place.
+    let listing = null;
     try {
         const response = await fetch('/api/images');
         if (response.ok) listing = await response.json();
     } catch (_) {}
+    const failed = listing === null;
+    listing = listing || { files: [], total_bytes: 0 };
     const settings = currentSettings();
     const full = settings[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
     const awaitingUndo = filesAwaitingUndo();
@@ -532,10 +536,12 @@ async function renderLibrary() {
         return cell;
     }));
     const empty = $('imagesLibraryEmpty');
-    if (empty) empty.hidden = listing.files.length > 0;
+    if (empty) empty.hidden = failed || listing.files.length > 0;
+    const error = $('imagesLibraryError');
+    if (error) error.hidden = !failed;
     const usage = $('imagesLibraryUsage');
     if (usage) {
-        usage.hidden = listing.files.length === 0;
+        usage.hidden = failed || listing.files.length === 0;
         usage.textContent = pkg.t('${n} image(s) · ${size}', { n: listing.files.length, size: formatBytes(listing.total_bytes) });
     }
 }
@@ -694,6 +700,12 @@ async function deleteLibraryImage(file) {
 }
 
 async function onLibraryClick(event) {
+    if (event.target.closest('#btnImagesLibraryRetry')) {
+        // Le menu reste ouvert pendant le nouvel essai.
+        event.stopPropagation();
+        renderLibrary();
+        return;
+    }
     const remove = event.target.closest('[data-library-delete]');
     if (remove) {
         // Retrait définitif du fichier (aucun « Annuler » possible) :

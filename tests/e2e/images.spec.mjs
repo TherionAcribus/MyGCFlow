@@ -330,6 +330,24 @@ test('onglet : bibliothèque des images envoyées et limite de quatre', async ({
   await expect.poll(async () => (await savedImages(page)).items.length).toBe(4);
 });
 
+test('bibliothèque : un relevé en échec affiche une erreur, « Réessayer » la recharge', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await openImagesTab(page);
+  // GET /api/images en échec : erreur explicite plutôt que le message
+  // « aucune image », qui serait mensonger. La route ne touche que le
+  // relevé, pas les fichiers /api/images/<fichier>.
+  const listingUrl = (url) => url.pathname === '/api/images';
+  await page.route(listingUrl, (route) => route.abort());
+  await page.locator('#btnImagesLibrary').click();
+  await expect(page.locator('#imagesLibraryError')).toBeVisible();
+  await expect(page.locator('#imagesLibraryEmpty')).toBeHidden();
+  // « Réessayer » recharge sans fermer le menu.
+  await page.unroute(listingUrl);
+  await page.locator('#btnImagesLibraryRetry').click();
+  await expect(page.locator('#imagesLibraryError')).toBeHidden();
+  await expect(page.locator(`#imagesLibraryList [data-library-file="${logo.file}"]`)).toBeVisible();
+});
+
 test('bibliothèque : retrait confirmé, refusé tant qu’un « Annuler » peut ramener l’image', async ({ page }) => {
   const libraryFiles = async () => (await (await page.request.get('/api/images')).json()).files.map((f) => f.file);
   await openImagesTab(page);
