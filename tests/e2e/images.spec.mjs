@@ -424,7 +424,11 @@ test('bibliothèque : tri et nettoyage groupé des images inutilisées', async (
   await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
   const referenced = files.filter((f) => f.referenced).map((f) => f.file).sort();
   await expect.poll(async () => (await library()).map((f) => f.file).sort()).toEqual(referenced);
-  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'retirée' })).toBeVisible();
+  // `.last()` : le retrait groupé suit d'autres retraits dans ce test, et un
+  // toast précédent peut encore porter « retirée » au moment du contrôle
+  // (les nœuds survivent ~300 ms) — deux correspondances font échouer le mode
+  // strict. C'est le plus récent qui nous intéresse.
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'retirée' }).last()).toBeVisible();
   await expect(page.locator('#imagesLibraryCleanupBar')).toBeHidden();
   await expect(page.locator('#imagesLibraryList .images-library-cell')).toHaveCount(referenced.length);
 });

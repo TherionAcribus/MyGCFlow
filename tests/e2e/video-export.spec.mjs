@@ -1502,6 +1502,11 @@ test('le plan annonce les pauses de dates quand le rythme est trop rapide', asyn
   await page.locator('a[href="#animation"]').click();
   await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
+  // Cible épinglée : « tête du trait » est une préférence globale qu'une
+  // autre spec peut laisser derrière elle (travel-trail, timeline-bar).
+  // Sans cela, la caméra suivait le stylo au lieu du groupe du jour et
+  // cadrait Paris quand le jour 0 est à New York — 8 500 km d'écart.
+  await page.locator('#selectCameraTarget').selectOption('days');
   await page.locator('#animationConfigTab').click();
   await page.locator('#inputExtraEndTime').fill('0');
   // Caches alternant New York / Paris chaque jour : chaque jour impose un
