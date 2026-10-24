@@ -1219,6 +1219,29 @@ function exportPanelCsv() {
         exportFileName(panel, 'csv'));
 }
 
+// Export groupé (menu « Configurations ») : tous les panneaux visibles sur
+// une image de la taille du cadre, à l'échelle du sélecteur du formulaire —
+// « stats-panneaux-finds@2x.png ». Indice « 2× — 2560 × 1440 px » relu à
+// chaque ouverture du menu (taille de la carte, échelle choisie).
+function renderBoardPngItem() {
+    const item = $('statsConfigMenu')?.querySelector('[data-stats-panels-png]');
+    if (!item) return;
+    const scale = pngScale();
+    const size = pkg.statsPanelsExportSize?.();
+    item.disabled = !size;
+    const hint = $('statsBoardPngSize');
+    if (hint) hint.textContent = size
+        ? `${scale}× — ${Math.round(size.width * scale)} × ${Math.round(size.height * scale)} px`
+        : '';
+}
+
+async function exportBoardPng() {
+    const scale = pngScale();
+    const blob = await pkg.statsPanelsPngBlob?.(scale);
+    if (blob) downloadBlob(blob,
+        `stats-panneaux-${evolutionMode ? 'evolution' : 'finds'}${scale > 1 ? `@${scale}x` : ''}.png`);
+}
+
 // Export/import de la liste du mode courant — pour qui veut la copier
 // ailleurs : la normalisation reprend tout à l'import (métriques
 // incompatibles filtrées, ids en doublon régénérés), comme l'application
@@ -1595,9 +1618,12 @@ export function initStatsTab() {
             return;
         }
         if (event.target.closest('[data-stats-config-save]')) showConfigSave();
+        if (event.target.closest('[data-stats-panels-png]')) exportBoardPng();
         if (event.target.closest('[data-stats-panels-export]')) exportPanels();
         if (event.target.closest('[data-stats-panels-import]')) $('statsPanelsImportFile')?.click();
     });
+    // Indice de taille de l'export groupé relu à l'ouverture du menu.
+    $('btnStatsConfigs')?.addEventListener('click', renderBoardPngItem);
     $('statsPanelsImportFile')?.addEventListener('change', (event) => {
         const file = event.target.files?.[0];
         event.target.value = '';

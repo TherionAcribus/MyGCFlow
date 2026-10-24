@@ -660,6 +660,15 @@ Choix retenu dans `localStorage` (`statsPngScale`). Un panneau masqué
 s'exporte aussi, à sa largeur réglée ; un panneau à métrique étrangère au
 mode, non (bouton grisé).
 
+**PNG groupé** (2026-10-24) : « Exporter tous les panneaux (PNG) » dans le
+menu « Configurations » produit **une** image de la taille du cadre de la
+carte, tous les panneaux visibles à leur place — le tableau de bord tel
+qu'affiché, sur fond transparent (`statsPanelsPngBlob`, même pipeline que
+la vidéo : `addStatsPanelsToCanvas`). L'échelle est celle du sélecteur du
+formulaire (`statsPngScale`) ; l'indice « 2× — 1588 × 1712 px » est relu à
+chaque ouverture du menu (`statsPanelsExportSize`). Fichier
+`stats-panneaux-{mode}[@Nx].png`. Grisé sans panneau visible.
+
 La liste du mode courant s'exporte en JSON et se ré-importe depuis le menu
 « Configurations » (`stats-panneaux-{mode}.json` : `{mode, panels}` ; à
 l'import, la liste est lue dans un tableau, `panels`, `evolution_panels` ou

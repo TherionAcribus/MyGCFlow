@@ -445,6 +445,59 @@ test('les panneaux s\'exportent en JSON et se ré-importent', async ({ page }) =
   }
 });
 
+test('tous les panneaux s\'exportent en une seule image PNG', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'b04d0001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: 'b04d0002', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Menu « Configurations » : l'indice donne la taille produite à l'échelle
+  // choisie (2× par défaut) — le cadre de la carte, pas un panneau. Les
+  // clientWidth/Height entiers, comme containerSize de stats_panels.js.
+  const frame = await page.locator('#mapWithFrames')
+    .evaluate((el) => ({ width: el.clientWidth, height: el.clientHeight }));
+  await page.locator('#btnStatsConfigs').click();
+  await expect(page.locator('#statsBoardPngSize'))
+    .toHaveText(`2× — ${Math.round(frame.width * 2)} × ${Math.round(frame.height * 2)} px`);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('[data-stats-panels-png]').click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('stats-panneaux-finds@2x.png');
+  const bytes = fs.readFileSync(await download.path());
+  expect([...bytes.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  expect(bytes.readUInt32BE(16)).toBe(Math.round(frame.width * 2));
+  expect(bytes.readUInt32BE(20)).toBe(Math.round(frame.height * 2));
+  // Les panneaux sont dessinés : l'image n'est pas un fond transparent vide
+  // (pixels alpha décodés dans la page, à l'échelle 1).
+  const painted = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const blob = await app.statsPanelsPngBlob(1);
+    const bmp = await createImageBitmap(blob);
+    const c = document.createElement('canvas');
+    c.width = bmp.width;
+    c.height = bmp.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(bmp, 0, 0);
+    const data = ctx.getImageData(0, 0, c.width, c.height).data;
+    let px = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i] > 0) px += 1;
+    return px;
+  });
+  expect(painted).toBeGreaterThan(0);
+
+  // Interrupteur général coupé : rien à exporter, l'entrée se grise.
+  await page.locator('#switchStats').uncheck();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(0);
+  await page.locator('#btnStatsConfigs').click();
+  await expect(page.locator('[data-stats-panels-png]')).toBeDisabled();
+  await expect(page.locator('#statsBoardPngSize')).toHaveText('');
+});
+
 test('« Lignes au maximum » est proposé pour les métriques à catégories', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: '7ab1e501', kind: 'bar', metric: 'attribute', position: { anchor: 'top-left' } },

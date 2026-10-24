@@ -1976,6 +1976,28 @@ export function statsPanelPngBlob(id, scale = 2) {
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
 
+// Export groupé : tous les panneaux visibles à leur place, sur une image de
+// la taille du cadre — le « tableau de bord » tel qu'affiché, à l'échelle
+// choisie (même pipeline que la vidéo : addStatsPanelsToCanvas). Fond
+// transparent : à poser sur une capture de carte ou un fond de son choix.
+// null sans panneau visible (interrupteur coupé, liste vide).
+export function statsPanelsExportSize() {
+    if (drawDirty) flush();
+    return visiblePanels().length && containerSize.width > 0 && containerSize.height > 0
+        ? { ...containerSize } : null;
+}
+
+export function statsPanelsPngBlob(scale = 2) {
+    const size = statsPanelsExportSize();
+    if (!size) return Promise.resolve(null);
+    const factor = STATS_PNG_SCALES.includes(scale) ? scale : 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(size.width * factor));
+    canvas.height = Math.max(1, Math.round(size.height * factor));
+    addStatsPanelsToCanvas(canvas.getContext('2d'), canvas.width, canvas.height, factor);
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+}
+
 // Cellule CSV : entre guillemets si elle contient « ; », un guillemet ou un
 // saut de ligne, guillemets internes doublés. Le guillemet s'écrit \x22 dans
 // les expressions régulières : un guillemet double littéral dans une regex
