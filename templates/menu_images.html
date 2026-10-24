@@ -293,8 +293,38 @@
                         </div>
 
                         <label class="form-label" for="switchImageShadow">{{ _("Ombre portée") }}</label>
-                        <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" id="switchImageShadow" role="switch">
+                        <div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="switchImageShadow" role="switch">
+                            </div>
+                            {# Paramètres de l'ombre, visibles quand elle est active —
+                               identiques aperçu (drop-shadow) et vidéo (shadow*). #}
+                            <div id="imageShadowParams" class="mt-1" hidden>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <input id="inputImageShadowColor" type="color" class="form-control form-control-color"
+                                           aria-label="{{ _("Couleur de l'ombre") }}">
+                                    <input id="rangeImageShadowOpacity" type="range" class="form-range flex-grow-1" min="0" max="100" step="5"
+                                           aria-label="{{ _("Opacité de l'ombre") }}">
+                                    <span id="valueImageShadowOpacity" class="text-muted small image-style-value"></span>
+                                </div>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <div class="input-group input-group-sm image-style-number">
+                                        <label class="input-group-text" for="inputImageShadowBlur">{{ _("Flou") }}</label>
+                                        <input id="inputImageShadowBlur" type="number" class="form-control" min="0" max="80" step="1">
+                                        <span class="input-group-text">px</span>
+                                    </div>
+                                    <div class="input-group input-group-sm image-style-number">
+                                        <label class="input-group-text" for="inputImageShadowX" aria-hidden="true">↔</label>
+                                        <input id="inputImageShadowX" type="number" class="form-control" min="-80" max="80" step="1"
+                                               aria-label="{{ _("Décalage horizontal de l'ombre (px)") }}">
+                                    </div>
+                                    <div class="input-group input-group-sm image-style-number">
+                                        <label class="input-group-text" for="inputImageShadowY" aria-hidden="true">↕</label>
+                                        <input id="inputImageShadowY" type="number" class="form-control" min="-80" max="80" step="1"
+                                               aria-label="{{ _("Décalage vertical de l'ombre (px)") }}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {# globalAlpha de drawImagePanel : image, fond et bordure ensemble. #}

@@ -825,9 +825,6 @@ main.fullscreen-mode ~ .tooltip {
 .image-preset-thumb {
     background-color: rgba(100, 116, 139, 0.3);
 }
-.image-form-preview canvas.has-shadow {
-    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
-}
 /* Préréglages d'apparence : cartes avec l'image (images_ui.js ›
    renderPresetThumbs) ou le panneau Stats (stats_ui.js › renderPresetButtons)
    dessiné dans chaque style, damier comme la vignette du formulaire. */
@@ -881,9 +878,6 @@ main.fullscreen-mode ~ .tooltip {
 .image-preset-thumb .ti {
     font-size: 1.3rem;
     color: var(--color-text-muted);
-}
-.image-preset-thumb canvas.has-shadow {
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
 /* Point focal du recadrage « cover » : l'image entière sur damier, le point
    à glisser là où le cadrage se concentre (images_ui.js › bindFocusPicker).
@@ -1064,16 +1058,14 @@ main.fullscreen-mode ~ .tooltip {
 }
 /* Images de l'utilisateur (onglet Images, images_panels.js) : au-dessus des
    panneaux de stats (90), sous le titre et les infos (100), comme dans la
-   vidéo. L'ombre déborde de la boîte : CSS ici, shadowBlur dans la vidéo,
-   mêmes valeurs (images_render.mjs › IMAGE_SHADOW). */
+   vidéo. L'ombre déborde de la boîte : filtre drop-shadow posé en ligne, par
+   image (imageShadowCss), shadow* du canvas dans la vidéo, mêmes paramètres
+   (images_render.mjs › imageShadowParams). */
 #mapWithFrames > .image-panel {
     position: absolute;
     z-index: 95;
     pointer-events: none;
     animation: stats-panel-in 0.28s ease-out;
-}
-#mapWithFrames > .image-panel.has-shadow {
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
 }
 @media (prefers-reduced-motion: reduce) {
     #mapWithFrames > .image-panel { animation: none; }

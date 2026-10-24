@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-24 15:28+0200\n"
+"POT-Creation-Date: 2026-10-24 15:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1538,11 +1538,11 @@ msgstr ""
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr ""
 
-#: static/js/images_panels.js:561
+#: static/js/images_panels.js:562
 msgid "Image"
 msgstr ""
 
-#: static/js/images_panels.js:853 static/js/images_ui.js:174
+#: static/js/images_panels.js:862 static/js/images_ui.js:174
 #, python-brace-format
 msgid "Image ${n}"
 msgstr ""
@@ -1556,8 +1556,8 @@ msgstr ""
 #: static/js/images_ui.js:644 static/js/images_ui.js:652
 #: static/js/images_ui.js:706 static/js/images_ui.js:710
 #: static/js/images_ui.js:740 static/js/images_ui.js:742
-#: static/js/images_ui.js:841 static/js/images_ui.js:1534
-#: static/js/images_ui.js:1539 templates/app.html:255 templates/guide.html:59
+#: static/js/images_ui.js:841 static/js/images_ui.js:1543
+#: static/js/images_ui.js:1548 templates/app.html:255 templates/guide.html:59
 #: templates/guide.html:112 templates/guide.html:394 templates/guide.html:396
 #: templates/menu_images.html:32
 msgid "Images"
@@ -1721,110 +1721,110 @@ msgstr ""
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/images_ui.js:1344
-msgid "Toujours visible"
-msgstr ""
-
-#: static/js/images_ui.js:1347
-#, python-brace-format
-msgid "Trouvailles n°${from} à n°${to}"
-msgstr ""
-
-#: static/js/images_ui.js:1348
-#, python-brace-format
-msgid "Dès la trouvaille n°${n}"
-msgstr ""
-
-#: static/js/images_ui.js:1349
-#, python-brace-format
-msgid "Jusqu'à la trouvaille n°${n}"
-msgstr ""
-
 #: static/js/images_ui.js:1353
-#, python-brace-format
-msgid "Du ${from} au ${to}"
-msgstr ""
-
-#: static/js/images_ui.js:1355
-#, python-brace-format
-msgid "À partir du ${date}"
+msgid "Toujours visible"
 msgstr ""
 
 #: static/js/images_ui.js:1356
 #, python-brace-format
+msgid "Trouvailles n°${from} à n°${to}"
+msgstr ""
+
+#: static/js/images_ui.js:1357
+#, python-brace-format
+msgid "Dès la trouvaille n°${n}"
+msgstr ""
+
+#: static/js/images_ui.js:1358
+#, python-brace-format
+msgid "Jusqu'à la trouvaille n°${n}"
+msgstr ""
+
+#: static/js/images_ui.js:1362
+#, python-brace-format
+msgid "Du ${from} au ${to}"
+msgstr ""
+
+#: static/js/images_ui.js:1364
+#, python-brace-format
+msgid "À partir du ${date}"
+msgstr ""
+
+#: static/js/images_ui.js:1365
+#, python-brace-format
 msgid "Jusqu'au ${date}"
 msgstr ""
 
-#: static/js/images_ui.js:1366
+#: static/js/images_ui.js:1375
 msgid "Position libre"
 msgstr ""
 
-#: static/js/images_ui.js:1380
+#: static/js/images_ui.js:1389
 msgid "fond"
 msgstr ""
 
-#: static/js/images_ui.js:1381
+#: static/js/images_ui.js:1390
 msgid "bordure"
 msgstr ""
 
-#: static/js/images_ui.js:1382
+#: static/js/images_ui.js:1391
 msgid "ombre"
 msgstr ""
 
-#: static/js/images_ui.js:1473
+#: static/js/images_ui.js:1482
 #, python-brace-format
 msgid "Le ${date}"
 msgstr ""
 
-#: static/js/images_ui.js:1474
+#: static/js/images_ui.js:1483
 #, python-brace-format
 msgid "Jamais atteinte : ${total} trouvaille(s) au total"
 msgstr ""
 
-#: static/js/images_ui.js:1501
+#: static/js/images_ui.js:1510
 #, python-brace-format
 msgid ""
 "La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
 "ne sera pas visible."
 msgstr ""
 
-#: static/js/images_ui.js:1504
+#: static/js/images_ui.js:1513
 msgid ""
 "La disparition tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr ""
 
-#: static/js/images_ui.js:1506
+#: static/js/images_ui.js:1515
 msgid ""
 "« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr ""
 
-#: static/js/images_ui.js:1509
+#: static/js/images_ui.js:1518
 #, python-brace-format
 msgid ""
 "L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
 "sera pas visible dans la vidéo."
 msgstr ""
 
-#: static/js/images_ui.js:1512
+#: static/js/images_ui.js:1521
 #, python-brace-format
 msgid ""
 "L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
 "pas visible dans la vidéo."
 msgstr ""
 
-#: static/js/images_ui.js:1534
+#: static/js/images_ui.js:1543
 msgid "Attendez la fin de l'enregistrement."
 msgstr ""
 
-#: static/js/images_ui.js:1538
+#: static/js/images_ui.js:1547
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
 msgstr ""
 
-#: static/js/images_ui.js:1576 static/js/stats_ui.js:1466
+#: static/js/images_ui.js:1585 static/js/stats_ui.js:1466
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr ""
@@ -8054,83 +8054,104 @@ msgstr ""
 msgid "Ombre portée"
 msgstr ""
 
-#: templates/menu_images.html:301
+#: templates/menu_images.html:305
+msgid "Couleur de l'ombre"
+msgstr ""
+
+#: templates/menu_images.html:307
+msgid "Opacité de l'ombre"
+msgstr ""
+
+#: templates/menu_images.html:312 templates/menu_informations.html:220
+#: templates/menu_informations.html:252
+msgid "Flou"
+msgstr ""
+
+#: templates/menu_images.html:319
+msgid "Décalage horizontal de l'ombre (px)"
+msgstr ""
+
+#: templates/menu_images.html:324
+msgid "Décalage vertical de l'ombre (px)"
+msgstr ""
+
+#: templates/menu_images.html:331
 msgid "Opacité de l'ensemble"
 msgstr ""
 
-#: templates/menu_images.html:311
+#: templates/menu_images.html:341
 msgid "Apparition pendant l'animation"
 msgstr ""
 
-#: templates/menu_images.html:313
+#: templates/menu_images.html:343
 msgid ""
 "L'image entre puis sort au fil de l'animation, à des dates ou à des "
 "étapes du compteur de trouvailles. Sans borne : toujours visible."
 msgstr ""
 
-#: templates/menu_images.html:316
+#: templates/menu_images.html:346
 msgid "Repère du planing"
 msgstr ""
 
-#: templates/menu_images.html:318
+#: templates/menu_images.html:348
 msgid "Par dates"
 msgstr ""
 
-#: templates/menu_images.html:320
+#: templates/menu_images.html:350
 msgid "Par trouvailles"
 msgstr ""
 
-#: templates/menu_images.html:325
+#: templates/menu_images.html:355
 msgid "Apparaît le"
 msgstr ""
 
-#: templates/menu_images.html:328 templates/menu_images.html:339
+#: templates/menu_images.html:358 templates/menu_images.html:369
 msgid "Effacer la date"
 msgstr ""
 
-#: templates/menu_images.html:333 templates/menu_images.html:344
+#: templates/menu_images.html:363 templates/menu_images.html:374
 msgid "Jour affiché"
 msgstr ""
 
-#: templates/menu_images.html:336
+#: templates/menu_images.html:366
 msgid "Disparaît le"
 msgstr ""
 
-#: templates/menu_images.html:347
+#: templates/menu_images.html:377
 msgid ""
 "« Jour affiché » reprend le jour montré par l'aperçu, en lecture ou en "
 "pause : mettez-le en pause sur le jour voulu (barre de chronologie)."
 msgstr ""
 
-#: templates/menu_images.html:352
+#: templates/menu_images.html:382
 msgid "Apparaît à la trouvaille n°"
 msgstr ""
 
-#: templates/menu_images.html:355 templates/menu_images.html:365
+#: templates/menu_images.html:385 templates/menu_images.html:395
 msgid "Effacer"
 msgstr ""
 
-#: templates/menu_images.html:362
+#: templates/menu_images.html:392
 msgid "Disparaît à la trouvaille n°"
 msgstr ""
 
-#: templates/menu_images.html:374 templates/menu_trail.html:127
+#: templates/menu_images.html:404 templates/menu_trail.html:127
 msgid "Effet"
 msgstr ""
 
-#: templates/menu_images.html:376
+#: templates/menu_images.html:406
 msgid "Fondu"
 msgstr ""
 
-#: templates/menu_images.html:377
+#: templates/menu_images.html:407
 msgid "Glissement depuis le bord"
 msgstr ""
 
-#: templates/menu_images.html:378
+#: templates/menu_images.html:408
 msgid "Zoom"
 msgstr ""
 
-#: templates/menu_images.html:382
+#: templates/menu_images.html:412
 msgid "Durée (ms)"
 msgstr ""
 
@@ -8294,10 +8315,6 @@ msgstr ""
 
 #: templates/menu_informations.html:216 templates/menu_informations.html:248
 msgid "Décalage Y"
-msgstr ""
-
-#: templates/menu_informations.html:220 templates/menu_informations.html:252
-msgid "Flou"
 msgstr ""
 
 #: templates/menu_informations.html:224

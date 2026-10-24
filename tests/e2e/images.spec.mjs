@@ -1322,6 +1322,49 @@ test('rotation et miroir : quarts de tour et retournement dessinés et persisté
   await expect.poll(async () => (await savedImages(page)).items[0].style.rotate).toBe(0);
 });
 
+test('ombre portée réglable : filtre du panneau et persistance', async ({ page }) => {
+  const logo = await upload(page, LOGO);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0170', file: logo.file, name: 'Logo' },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+
+  const canvasFilter = () => page.evaluate(() =>
+    document.querySelector('canvas.image-panel[data-image-id="babe0170"]').style.filter);
+
+  // Inactive : aucun filtre, paramètres masqués.
+  await page.evaluate(async () => (await import('/static/js/index.js')).imagesReady());
+  expect(await canvasFilter()).toBe('');
+  await expect(page.locator('#imageShadowParams')).toBeHidden();
+
+  // Activée : les paramètres apparaissent, l'ombre historique par défaut.
+  // (style.filter est relu sérialisé par le navigateur : la couleur passe en
+  // premier — on vérifie les parties, pas la chaîne exacte.)
+  await page.locator('#switchImageShadow').check();
+  await expect(page.locator('#imageShadowParams')).toBeVisible();
+  await expect.poll(canvasFilter).toContain('drop-shadow(');
+  await expect.poll(canvasFilter).toContain('0, 0, 0, 0.35');
+
+  // Chaque paramètre se règle : flou et décalage horizontal modifient le
+  // filtre du panneau et partent au serveur (clé items seule).
+  await page.locator('#inputImageShadowBlur').fill('30');
+  await expect.poll(canvasFilter).toContain('30px');
+  await page.locator('#inputImageShadowX').fill('-8');
+  await expect.poll(canvasFilter).toContain('-8px');
+  await page.locator('#inputImageShadowColor').fill('#336699');
+  await expect.poll(canvasFilter).toContain('51, 102, 153');
+  await expect.poll(async () => (await savedImages(page)).items[0].style)
+    .toMatchObject({ shadow: true, shadow_blur: 30, shadow_x: -8, shadow_color: '#336699' });
+
+  // Désactivée : filtre retiré, réglages gardés au retour.
+  await page.locator('#switchImageShadow').uncheck();
+  await expect(page.locator('#imageShadowParams')).toBeHidden();
+  await expect.poll(canvasFilter).toBe('');
+  await page.locator('#switchImageShadow').check();
+  await expect.poll(canvasFilter).toContain('-8px');
+});
+
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [{ id: 'babe0031', file: logo.file, name: 'Logo' }] } });

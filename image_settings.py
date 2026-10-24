@@ -51,6 +51,11 @@ IMAGE_RADIUS_RANGE = (0, 200)
 IMAGE_OPACITY_RANGE = (0, 100)
 IMAGE_PADDING_RANGE = (0, 100)
 IMAGE_BORDER_RANGE = (0, 50)
+# Ombre portée : décalages en px CSS (négatifs permis), flou, couleur et
+# opacité — paramètres identiques entre drop-shadow CSS (aperçu) et les
+# shadow* du canvas (vidéo), cf. images_render.mjs › imageShadowParams.
+IMAGE_SHADOW_OFFSET_RANGE = (-80, 80)
+IMAGE_SHADOW_BLUR_RANGE = (0, 80)
 # Point focal du recadrage « cover », en % de l'image (50 = centré).
 IMAGE_FOCUS_RANGE = (0, 100)
 # Orientation : quarts de tour dans le sens horaire, et miroir horizontal
@@ -108,6 +113,11 @@ def image_item_defaults() -> dict:
             "background_opacity": 0,
             "padding": 0,
             "shadow": False,
+            "shadow_x": 0,
+            "shadow_y": 4,
+            "shadow_blur": 12,
+            "shadow_color": "#000000",
+            "shadow_opacity": 35,
             "border_color": "#ffffff",
             "border_width": 0,
         },
@@ -153,6 +163,11 @@ _STYLE_COERCERS = {
     "background_opacity": lambda v, d: _int_in(v, d, IMAGE_OPACITY_RANGE),
     "padding": lambda v, d: _int_in(v, d, IMAGE_PADDING_RANGE),
     "shadow": lambda v, d: _bool(v, d),
+    "shadow_x": lambda v, d: _int_in(v, d, IMAGE_SHADOW_OFFSET_RANGE),
+    "shadow_y": lambda v, d: _int_in(v, d, IMAGE_SHADOW_OFFSET_RANGE),
+    "shadow_blur": lambda v, d: _int_in(v, d, IMAGE_SHADOW_BLUR_RANGE),
+    "shadow_color": _color,
+    "shadow_opacity": lambda v, d: _int_in(v, d, IMAGE_OPACITY_RANGE),
     "border_color": _color,
     "border_width": lambda v, d: _int_in(v, d, IMAGE_BORDER_RANGE),
 }

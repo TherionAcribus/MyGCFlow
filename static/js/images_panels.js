@@ -36,12 +36,13 @@ import {
 } from './images_model.mjs';
 import {
     IMAGE_EFFECT_EASINGS,
-    IMAGE_SHADOW,
     cubicBezier,
     drawImagePanel,
     effectTimingCss,
     effectTransform,
     imagePanelHeight,
+    imageShadowCss,
+    imageShadowParams,
 } from './images_render.mjs';
 import { dateToDayNumber, isoToDayNumber } from './evolution_timeline.mjs';
 
@@ -462,7 +463,10 @@ function flush() {
         node.layout = rect;
         // Nom accessible : le nom d'origine du fichier, à défaut « Image ».
         node.canvas.setAttribute('aria-label', item.name || pkg.t('Image'));
-        node.canvas.classList.toggle('has-shadow', item.style.shadow);
+        // Ombre portée réglable : filtre drop-shadow par image, mêmes
+        // paramètres que le cache vidéo (imageShadowParams). Posée à chaque
+        // flush : le style n'est pas dans cssKey, le coût est nul.
+        node.canvas.style.filter = item.style.shadow ? imageShadowCss(item.style) : '';
         const css = rect.css;
         const cssKey = `${css.left}|${css.right}|${css.top}|${css.bottom}|${rect.width}|${rect.height}`;
         if (node.cssKey !== cssKey) {
@@ -519,7 +523,7 @@ export function drawImageFormPreview(canvas, item, box) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawImagePanel(ctx, canvas.width, canvas.height, item, entry.img, fit * dpr);
-    canvas.classList.toggle('has-shadow', !!item.style.shadow);
+    canvas.style.filter = item.style.shadow ? imageShadowCss(item.style, fit) : '';
     return true;
 }
 
@@ -571,16 +575,18 @@ export function addImagePanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
                 // shadow* s'appliqueraient à chaque opération de dessin —
                 // ombres superposées au lieu d'une seule. Marge sur tous les
                 // côtés : le spread réel d'un shadowBlur dépasse sa valeur,
-                // et l'offsetY doit rentrer dans la marge du bas.
-                const pad = Math.ceil((IMAGE_SHADOW.blur * 2 + IMAGE_SHADOW.offsetY) * scaleFactor);
+                // et les décalages (signés) doivent rentrer des deux côtés.
+                const sh = imageShadowParams(item.style, scaleFactor);
+                const pad = Math.ceil(sh.blur * 2 + Math.max(Math.abs(sh.x), Math.abs(sh.y)));
                 if (!cached.shadowCanvas) cached.shadowCanvas = document.createElement('canvas');
                 cached.shadowCanvas.width = w + 2 * pad;
                 cached.shadowCanvas.height = h + 2 * pad;
                 const shadowCtx = cached.shadowCanvas.getContext('2d');
                 shadowCtx.clearRect(0, 0, cached.shadowCanvas.width, cached.shadowCanvas.height);
-                shadowCtx.shadowColor = IMAGE_SHADOW.color;
-                shadowCtx.shadowBlur = IMAGE_SHADOW.blur * scaleFactor;
-                shadowCtx.shadowOffsetY = IMAGE_SHADOW.offsetY * scaleFactor;
+                shadowCtx.shadowColor = sh.color;
+                shadowCtx.shadowBlur = sh.blur;
+                shadowCtx.shadowOffsetX = sh.x;
+                shadowCtx.shadowOffsetY = sh.y;
                 shadowCtx.drawImage(cached.canvas, pad, pad);
                 cached.shadowPad = pad;
             } else {

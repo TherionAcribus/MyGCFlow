@@ -31,6 +31,11 @@ export const IMAGE_RADIUS_RANGE = Object.freeze([0, 200]);
 export const IMAGE_OPACITY_RANGE = Object.freeze([0, 100]);
 export const IMAGE_PADDING_RANGE = Object.freeze([0, 100]);
 export const IMAGE_BORDER_RANGE = Object.freeze([0, 50]);
+// Ombre portée : décalages en px CSS (négatifs permis), flou, couleur et
+// opacité — paramètres identiques entre drop-shadow CSS (aperçu) et les
+// shadow* du canvas (vidéo), cf. images_render.mjs › imageShadowParams.
+export const IMAGE_SHADOW_OFFSET_RANGE = Object.freeze([-80, 80]);
+export const IMAGE_SHADOW_BLUR_RANGE = Object.freeze([0, 80]);
 // Point focal du recadrage « cover », en % de l'image (50 = centré).
 export const IMAGE_FOCUS_RANGE = Object.freeze([0, 100]);
 // Orientation : quarts de tour dans le sens horaire, et miroir horizontal
@@ -92,6 +97,11 @@ export function imageItemDefaults() {
             background_opacity: 0,
             padding: 0,
             shadow: false,
+            shadow_x: 0,
+            shadow_y: 4,
+            shadow_blur: 12,
+            shadow_color: '#000000',
+            shadow_opacity: 35,
             border_color: '#ffffff',
             border_width: 0,
         },
@@ -137,6 +147,11 @@ const STYLE_COERCERS = {
     background_opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),
     padding: (v, d) => intIn(v, d, IMAGE_PADDING_RANGE),
     shadow: bool,
+    shadow_x: (v, d) => intIn(v, d, IMAGE_SHADOW_OFFSET_RANGE),
+    shadow_y: (v, d) => intIn(v, d, IMAGE_SHADOW_OFFSET_RANGE),
+    shadow_blur: (v, d) => intIn(v, d, IMAGE_SHADOW_BLUR_RANGE),
+    shadow_color: color,
+    shadow_opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),
     border_color: color,
     border_width: (v, d) => intIn(v, d, IMAGE_BORDER_RANGE),
 };

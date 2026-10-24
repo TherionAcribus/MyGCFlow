@@ -1267,6 +1267,15 @@ function renderStyleFields(item) {
     const borderColor = $('inputImageBorderColor');
     if (borderColor) borderColor.hidden = !states.borderColor;
     setValue('switchImageShadow', s.shadow);
+    const shadowParams = $('imageShadowParams');
+    if (shadowParams) shadowParams.hidden = !s.shadow;
+    setValue('inputImageShadowColor', s.shadow_color);
+    setValue('rangeImageShadowOpacity', s.shadow_opacity);
+    setValue('inputImageShadowBlur', s.shadow_blur);
+    setValue('inputImageShadowX', s.shadow_x);
+    setValue('inputImageShadowY', s.shadow_y);
+    const shadowOpacity = $('valueImageShadowOpacity');
+    if (shadowOpacity) shadowOpacity.textContent = `${s.shadow_opacity} %`;
     setValue('rangeImageOpacity', s.opacity);
     const opacity = $('valueImageOpacity');
     if (opacity) opacity.textContent = `${s.opacity} %`;
@@ -1597,6 +1606,11 @@ const FIELDS = [
     ['rangeImageBackgroundOpacity', 'style.background_opacity', 'number'],
     ['inputImagePadding', 'style.padding', 'number'],
     ['switchImageShadow', 'style.shadow', 'bool'],
+    ['inputImageShadowColor', 'style.shadow_color', 'text'],
+    ['rangeImageShadowOpacity', 'style.shadow_opacity', 'number'],
+    ['inputImageShadowBlur', 'style.shadow_blur', 'number'],
+    ['inputImageShadowX', 'style.shadow_x', 'number'],
+    ['inputImageShadowY', 'style.shadow_y', 'number'],
     ['inputImageBorderWidth', 'style.border_width', 'number'],
     ['inputImageBorderColor', 'style.border_color', 'text'],
     ['inputImageAppearDate', 'schedule.start', 'date'],

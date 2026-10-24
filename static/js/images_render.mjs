@@ -8,12 +8,29 @@
 // donc du canvas de l'aperçu — CSS `filter: drop-shadow(...)` dans l'aperçu,
 // cuite dans un second canvas élargi du cache vidéo (posée sur le canvas qui
 // reçoit le panneau dessiné, pour l'ombre du composite comme `drop-shadow` ;
-// un drawImage nu par frame), mêmes valeurs (IMAGE_SHADOW).
+// un drawImage nu par frame), mêmes valeurs (imageShadowParams).
 
-// Ombre portée : décalage vertical et flou en px CSS, couleur. Le flou d'un
-// drop-shadow CSS et le shadowBlur du canvas ont la même échelle (écart type
-// = moitié de la valeur), les deux rendus coïncident.
-export const IMAGE_SHADOW = Object.freeze({ offsetY: 4, blur: 12, color: 'rgba(0, 0, 0, 0.35)' });
+// Ombre portée d'une image à son style : les quatre paramètres que partagent
+// le filtre CSS drop-shadow de l'aperçu et les shadow* du canvas de la vidéo
+// — décalages, flou et couleur (opacité fondue dedans). `scale` : px réels
+// (ou affichés) par px CSS — vignettes du formulaire, vidéo. Le flou d'un
+// drop-shadow CSS et le shadowBlur du canvas ont la même échelle (écart
+// type = moitié de la valeur), les deux rendus coïncident.
+export function imageShadowParams(style, scale = 1) {
+    return {
+        x: (style.shadow_x || 0) * scale,
+        y: (style.shadow_y || 0) * scale,
+        blur: (style.shadow_blur || 0) * scale,
+        color: hexToRgba(style.shadow_color, (style.shadow_opacity ?? 0) / 100),
+    };
+}
+
+// Le même paramétrage en filtre CSS pour l'aperçu (canvas .image-panel de la
+// carte, vignettes du formulaire) : posé en style en ligne, par image.
+export function imageShadowCss(style, scale = 1) {
+    const p = imageShadowParams(style, scale);
+    return `drop-shadow(${p.x}px ${p.y}px ${p.blur}px ${p.color})`;
+}
 
 // Hauteur d'une image à sa largeur : imposée, sinon d'après les proportions
 // de l'image (marge intérieure comprise). Rond : carré par défaut, pour un

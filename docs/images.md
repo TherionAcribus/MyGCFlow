@@ -28,7 +28,7 @@ stats : `docs/panneaux-stats.md` › Mise en page.
 | `blueprints/images.py` | API `/api/images` : envoi, bibliothèque, lecture, retrait |
 | `image_settings.py` | Schéma et coercition serveur du bloc `images` (miroir) |
 | `static/js/images_model.mjs` | Pur : normalisation miroir, `createImageItem` |
-| `static/js/images_render.mjs` | Pur : `imagePanelHeight`, `fitRect`, `drawImagePanel`, `IMAGE_SHADOW` |
+| `static/js/images_render.mjs` | Pur : `imagePanelHeight`, `fitRect`, `drawImagePanel`, `imageShadowParams`/`imageShadowCss` |
 | `static/js/images_panels.js` | Chargement, mise en page, canvas d'aperçu, vidéo, aperçus en direct, aimantation |
 | `static/js/images_ui.js` | Onglet : liste, ajout, bibliothèque, formulaire, glisser, export/import |
 | `static/js/panel_interactions.js` | Glisser-déposer, aimantation, poignées — partagé avec les Stats |
@@ -95,7 +95,9 @@ images: {
     position: { mode: 'anchor'|'free', anchor, dx, dy, width, height, x, y },
     style: { shape: 'rect'|'rounded'|'circle', radius, fit: 'contain'|'cover',
              focus_x: 0–100, focus_y: 0–100, rotate: 0|90|180|270, mirror: bool,
-             opacity, background, background_opacity, padding, shadow,
+             opacity, background, background_opacity, padding,
+             shadow, shadow_x: −80–80, shadow_y: −80–80, shadow_blur: 0–80,
+             shadow_color, shadow_opacity: 0–100,
              border_color, border_width },
     schedule: { by: 'date'|'find',
                 start: 'YYYY-MM-DD'|null, end: 'YYYY-MM-DD'|null,
@@ -137,11 +139,16 @@ l'écriture confirmée, sinon deux onglets ouverts sur des pages différentes
   (au-dessus des stats à 90, sous les cartouches à 100). Vidéo :
   `addImagePanelsToCanvas` dans les deux pipelines, **entre** les stats et les
   cartouches, canvas hors écran mis en cache par (révision, taille).
-- L'ombre déborde de la boîte : CSS `drop-shadow` dans l'aperçu ; dans la
-  vidéo, elle est cuite dans le canvas mis en cache — le panneau est dessiné
-  dans un second canvas élargi dont le contexte porte les `shadow*` (ombre du
-  composite, pas de chaque opération), puis copié par un `drawImage` nu à
-  chaque frame, mêmes valeurs (`IMAGE_SHADOW`, même échelle de flou).
+- L'ombre déborde de la boîte : filtre `drop-shadow` posé en ligne sur le
+  canvas dans l'aperçu ; dans la vidéo, elle est cuite dans le canvas mis en
+  cache — le panneau est dessiné dans un second canvas élargi dont le contexte
+  porte les `shadow*` (ombre du composite, pas de chaque opération), puis
+  copié par un `drawImage` nu à chaque frame. Réglable par image
+  (`shadow_x/y`, `shadow_blur`, `shadow_color`, `shadow_opacity`) : une seule
+  source, `imageShadowParams`/`imageShadowCss`, sert les deux moteurs — le
+  flou CSS et le `shadowBlur` canvas ont la même échelle, les rendus
+  coïncident. La marge du canvas d'ombre couvre le flou et les décalages
+  signés des deux côtés.
 - La bordure (`border_color`, `border_width`) est un liseré à l'intérieur de
   la boîte, dessiné en dernier dans `drawImagePanel` : le trait, doublé, est
   rogné à moitié par le clip de la forme (le clip « cover » de la zone
@@ -316,8 +323,9 @@ stats_ui.js est restreint à `#stats` : il refermait aussi ces sections.
 **Vignette du formulaire** (`#imageFormPreview`) : un canvas dessiné par
 `drawImageFormPreview` (images_panels.js) avec `drawImagePanel`, réduit pour
 tenir dans la case (jamais agrandi, rayon/marge/bordure réduits d'autant),
-ombre par la classe `has-shadow`. Redessinée à chaque réglage d'apparence ou
-de taille, et à l'arrivée de la source (`mygcflow:image-source`).
+ombre par `imageShadowCss(style, fit)` en filtre en ligne — à l'échelle de la
+vignette, comme la carte et la vidéo. Redessinée à chaque réglage d'apparence
+ou de taille, et à l'arrivée de la source (`mygcflow:image-source`).
 
 **Planing et période animée** : `scheduleRangeIssue(schedule, début, fin)`
 signale sous les dates (`#imageScheduleWarning`) une image jamais visible —

@@ -5,7 +5,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     IMAGE_EFFECT_EASINGS,
-    IMAGE_SHADOW,
     IMAGE_ZOOM_FROM,
     cubicBezier,
     drawImagePanel,
@@ -14,6 +13,8 @@ import {
     fitRect,
     focusInDisplay,
     imagePanelHeight,
+    imageShadowCss,
+    imageShadowParams,
     naturalInDisplay,
 } from '../../static/js/images_render.mjs';
 import { imageItemDefaults } from '../../static/js/images_model.mjs';
@@ -328,10 +329,25 @@ test('drawImagePanel : la bordure est doublée puis rognée par la forme', () =>
 });
 
 // ---------------------------------------------------------------------------
-// Constantes partagées aperçu/vidéo
+// Ombre portée : paramètres communs aperçu (drop-shadow CSS) / vidéo (shadow*)
 // ---------------------------------------------------------------------------
 
-test('IMAGE_SHADOW : valeurs communes au drop-shadow CSS et au cache vidéo', () => {
-    assert.deepEqual(IMAGE_SHADOW, { offsetY: 4, blur: 12, color: 'rgba(0, 0, 0, 0.35)' });
-    assert.ok(Object.isFrozen(IMAGE_SHADOW));
+test('imageShadowParams : les défauts reproduisent l’ombre historique', () => {
+    // Style d'origine (figé avant le réglage) : offsetY 4, flou 12, noir 35 %.
+    assert.deepEqual(imageShadowParams(imageItemDefaults().style),
+        { x: 0, y: 4, blur: 12, color: 'rgba(0, 0, 0, 0.35)' });
+    // scale : px réels par px CSS (vignettes, vidéo).
+    const style = { shadow_x: -10, shadow_y: 6, shadow_blur: 20, shadow_color: '#102030', shadow_opacity: 50 };
+    assert.deepEqual(imageShadowParams(style, 2),
+        { x: -20, y: 12, blur: 40, color: 'rgba(16, 32, 48, 0.5)' });
+    // Couleur inconnue ou non normalisée : blanc, comme drawImagePanel.
+    assert.equal(imageShadowParams({ shadow_opacity: 40 }).color, 'rgba(255, 255, 255, 0.4)');
+});
+
+test('imageShadowCss : même paramétrage en drop-shadow pour l’aperçu', () => {
+    assert.equal(imageShadowCss(imageItemDefaults().style),
+        'drop-shadow(0px 4px 12px rgba(0, 0, 0, 0.35))');
+    assert.equal(imageShadowCss(
+        { shadow_x: 8, shadow_y: -4, shadow_blur: 6, shadow_color: '#ff0000', shadow_opacity: 25 }, 0.5),
+        'drop-shadow(4px -2px 3px rgba(255, 0, 0, 0.25))');
 });
