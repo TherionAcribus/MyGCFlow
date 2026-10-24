@@ -3737,6 +3737,23 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 0, 114, 198), 0.35);
 }
 
+/* Infobulle de survol d'un panneau Stats (stats_ui.js › onHoverTipMove) :
+   suit le pointeur, au-dessus des panneaux et des cartouches, jamais
+   saisissable — les événements passent au canvas dessous. */
+#mapWithFrames > .stats-hover-tip {
+    position: absolute;
+    z-index: 110;
+    pointer-events: none;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #f8f9fa;
+    background: rgba(16, 24, 38, 0.92);
+    border-radius: 4px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 /* Chiffres du panneau de compteurs : deux colonnes de cases à cocher. */
 .stats-counter-items {
     display: grid;

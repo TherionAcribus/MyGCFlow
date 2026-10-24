@@ -1082,6 +1082,57 @@ function bindDragAndDrop() {
 }
 
 // ---------------------------------------------------------------------------
+// Infobulle de survol (case, ligne, part, tuile, jour de courbe)
+// ---------------------------------------------------------------------------
+//
+// Le pointeur repose sur un panneau (mode édition seulement : hors de
+// l'onglet Stats, les canvas laissent passer les événements vers la carte) :
+// la bulle dit ce qu'il affiche là — le même texte que l'équivalent
+// accessible (stats_panels.js › statsPanelHoverText). Un seul élément,
+// partagé, repositionné à chaque mouvement.
+let hoverTip = null;
+
+function hideHoverTip() {
+    hoverTip?.remove();
+    hoverTip = null;
+}
+
+function onHoverTipMove(event) {
+    const canvas = event.target.closest?.('canvas.stats-panel');
+    // Un bouton enfoncé = glisser, redimensionner ou balayer la carte.
+    if (!canvas || event.buttons) { hideHoverTip(); return; }
+    const host = $('mapWithFrames');
+    const rect = canvas.getBoundingClientRect();
+    const text = pkg.statsPanelHoverText?.(canvas.dataset.panelId,
+        event.clientX - rect.left, event.clientY - rect.top);
+    if (!text) { hideHoverTip(); return; }
+    if (!hoverTip) {
+        hoverTip = document.createElement('div');
+        hoverTip.className = 'stats-hover-tip';
+        host.appendChild(hoverTip);
+    }
+    if (hoverTip.textContent !== text) hoverTip.textContent = text;
+    // Sous le pointeur, recalée dans le cadre quand elle en sortirait.
+    const hostRect = host.getBoundingClientRect();
+    const maxLeft = Math.max(0, hostRect.width - hoverTip.offsetWidth - 4);
+    const maxTop = Math.max(0, hostRect.height - hoverTip.offsetHeight - 4);
+    hoverTip.style.left = `${Math.min(event.clientX - hostRect.left + 14, maxLeft)}px`;
+    hoverTip.style.top = `${Math.min(event.clientY - hostRect.top + 14, maxTop)}px`;
+}
+
+function bindHoverTip() {
+    const host = $('mapWithFrames');
+    if (!host) return;
+    host.addEventListener('pointermove', onHoverTipMove);
+    host.addEventListener('pointerdown', hideHoverTip);
+    host.addEventListener('pointerleave', hideHoverTip);
+    // Changer d'onglet ou lancer la lecture ne change rien aux zones
+    // survolables, mais un pointeur resté sur le canvas masqué garderait sa
+    // bulle sans événement pour l'enlever.
+    document.addEventListener('hidden.bs.tab', hideHoverTip);
+}
+
+// ---------------------------------------------------------------------------
 // Export du panneau sélectionné (instantané PNG, valeurs CSV)
 // ---------------------------------------------------------------------------
 
@@ -1561,6 +1612,7 @@ export function initStatsTab() {
     bindFormFields();
     bindFormSections();
     bindDragAndDrop();
+    bindHoverTip();
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));
     // Données chargées, filtre, fenêtre redimensionnée : la taille du panneau
     // change, les tailles d'export affichées aussi.

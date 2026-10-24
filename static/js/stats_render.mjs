@@ -283,6 +283,20 @@ function drawGrid(ctx, view, style, width, _targetH, now) {
     }
 }
 
+// Case sous le pointeur (infobulle de survol) : { r, c, cell } ou null —
+// hors grille ou case désactivée.
+function gridHit(view, style, width, _height, x, y) {
+    const L = gridLayout(view, style, width);
+    const model = view.model;
+    const left = L.pad + L.rowLabelW;
+    const top = L.gridTop + L.headerH;
+    const c = Math.floor((x - left) / L.cell);
+    const r = Math.floor((y - top) / L.cell);
+    if (r < 0 || r >= model.rows || c < 0 || c >= model.cols) return null;
+    const cell = model.cells[r * model.cols + c];
+    return cell && !cell.disabled ? { r, c, cell } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Couleurs des catégories
 // ---------------------------------------------------------------------------
@@ -470,6 +484,27 @@ function drawBars(ctx, view, style, width, targetH, now) {
     ctx.restore();
 }
 
+// Ligne sous le pointeur (infobulle de survol) : { row } ou null. La bande
+// de chaque ligne va de son rang à rang + 1 (un glissement de course donne
+// des positions fractionnaires — la bande suit la ligne, pas la grille).
+function barHit(view, style, width, height, x, y) {
+    const L = barLayout(view, style, width, height);
+    const rows = view.model.rows;
+    let place;
+    if (view.orientation === 'vertical') {
+        const slot = (width - L.pad * 2) / Math.max(1, L.rows);
+        place = (x - L.pad) / slot;
+        if (y < L.top || y > L.top + L.chartH) return null;
+    } else {
+        place = (y - L.top) / (L.chartH / Math.max(1, L.rows));
+    }
+    const row = rows.find((row, i) => {
+        const position = Number.isFinite(row.slot) ? row.slot : i;
+        return position <= place && place < position + 1;
+    });
+    return row ? { row } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Anneau (camembert si le trou vaut 0)
 // ---------------------------------------------------------------------------
@@ -589,6 +624,39 @@ function drawDonut(ctx, view, style, width, targetH, now) {
         const labelX = legendX + swatch + L.fontSize * 0.45;
         ctx.fillText(fitText(ctx, view.labelOf(row.key), legendW - (labelX - legendX) - valueW), labelX, y);
     });
+}
+
+// Part ou ligne de légende sous le pointeur (infobulle de survol) : { row }
+// ou null. Les bords de part suivent les valeurs affichées (shown), comme
+// le dessin — l'anneau animé reste cohérent avec ce qu'il montre.
+function donutHit(view, style, width, height, x, y) {
+    const L = donutLayout(view, style, width, height);
+    const { rows } = view.model;
+    if (!rows.length) return null;
+    if (L.legend && x > L.pad + L.diameter) {
+        const legendTop = L.top + (L.chartH - L.legendH) / 2;
+        const i = Math.floor((y - legendTop) / L.rowH);
+        return rows[i] ? { row: rows[i] } : null;
+    }
+    const cx = L.legend ? L.pad + L.diameter / 2 : width / 2;
+    const cy = L.top + L.chartH / 2;
+    const outer = L.diameter / 2 - 4;
+    const inner = outer * (view.hole / 100);
+    const d = Math.hypot(x - cx, y - cy);
+    if (d > outer || d < inner) return null;
+    const sum = rows.reduce((s, row) => s + Math.max(0, shownOf(row)), 0);
+    if (!(sum > 0)) return null;
+    // Parts posées depuis midi (-PI/2) dans le sens horaire, comme drawDonut.
+    let angle = Math.atan2(y - cy, x - cx) + Math.PI / 2;
+    if (angle < 0) angle += Math.PI * 2;
+    let acc = 0;
+    for (const row of rows) {
+        const value = Math.max(0, shownOf(row));
+        if (value <= 0) continue;
+        acc += (value / sum) * Math.PI * 2;
+        if (angle < acc) return { row };
+    }
+    return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -790,6 +858,27 @@ function drawLine(ctx, view, style, width, targetH, now) {
     }
 }
 
+// Jour sous le pointeur (infobulle de survol) : { day, total } — le total
+// cumulé que porte la courbe ce jour-là (escalier : dernier sommet ≤ jour).
+function lineHit(view, style, width, height, x, y) {
+    const L = lineLayout(view, style, width, height);
+    const model = view.model;
+    if (model.empty) return null;
+    if (y < L.top || y > L.top + L.plotH + L.axisH) return null;
+    const left = L.pad;
+    const right = width - L.pad;
+    if (x < left || x > right) return null;
+    const span = Math.max(1, model.last - model.first);
+    const day = Math.max(model.first,
+        Math.min(model.last, Math.round(model.first + ((x - left) / (right - left)) * span)));
+    let total = 0;
+    for (const point of model.points) {
+        if (point.day > day) break;
+        total = point.total;
+    }
+    return { day, total };
+}
+
 // ---------------------------------------------------------------------------
 // Compteurs
 // ---------------------------------------------------------------------------
@@ -855,6 +944,23 @@ function drawCounters(ctx, view, style, width, targetH) {
     });
 }
 
+// Tuile sous le pointeur (infobulle de survol) : { tile } ou null — son
+// libellé/valeur entiers, utile quand le texte est tronqué ou rétréci.
+function counterHit(view, style, width, height, x, y) {
+    const L = counterLayout(view, style, width, height);
+    const tiles = view.tiles;
+    if (!tiles.length) return null;
+    const tileW = (width - L.pad * 2 - (L.columns - 1) * L.gap) / L.columns;
+    const col = Math.floor((x - L.pad) / (tileW + L.gap));
+    const row = Math.floor((y - L.top) / (L.tileH + L.gap));
+    if (col < 0 || col >= L.columns || row < 0) return null;
+    // Interstice entre les tuiles : pas de tuile sous le pointeur.
+    if (x - L.pad - col * (tileW + L.gap) > tileW) return null;
+    if (y - L.top - row * (L.tileH + L.gap) > L.tileH) return null;
+    const tile = tiles[row * L.columns + col];
+    return tile ? { tile } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Registre
 // ---------------------------------------------------------------------------
@@ -863,22 +969,27 @@ export const STATS_RENDERERS = Object.freeze({
     grid: {
         measure: (view, style, width) => gridLayout(view, style, width).height,
         draw: drawGrid,
+        hit: gridHit,
     },
     bar: {
         measure: (view, style, width, height) => barLayout(view, style, width, height).height,
         draw: drawBars,
+        hit: barHit,
     },
     donut: {
         measure: (view, style, width, height) => donutLayout(view, style, width, height).height,
         draw: drawDonut,
+        hit: donutHit,
     },
     line: {
         measure: (view, style, width, height) => lineLayout(view, style, width, height).height,
         draw: drawLine,
+        hit: lineHit,
     },
     counter: {
         measure: (view, style, width, height) => counterLayout(view, style, width, height).height,
         draw: drawCounters,
+        hit: counterHit,
     },
 });
 
@@ -908,4 +1019,13 @@ export function drawStatsPanel(ctx, rect, view, style, now, cssWidth) {
     } finally {
         ctx.restore();
     }
+}
+
+// Élément sous le point (x, y) en px CSS du panneau — infobulle de survol.
+// Renvoie un objet sémantique propre à la forme ({ r, c, cell }, { row },
+// { day, total }, { tile }) ou null ; la mise en texte est dans
+// stats_panels.js (libellés traduits, formatters).
+export function hitStatsPanel(view, style, width, height, x, y) {
+    const hit = STATS_RENDERERS[view?.kind]?.hit;
+    return hit ? hit(view, style, width, height, x, y) : null;
 }

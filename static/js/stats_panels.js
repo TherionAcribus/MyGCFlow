@@ -62,7 +62,7 @@ import {
     yearTicks,
     ymdOfDay,
 } from './stats_model.mjs';
-import { STATS_RENDERERS, drawStatsPanel, measureStatsPanel } from './stats_render.mjs';
+import { STATS_RENDERERS, drawStatsPanel, hitStatsPanel, measureStatsPanel } from './stats_render.mjs';
 
 const DEFAULT_HIGHLIGHT_MS = 600;
 
@@ -1435,6 +1435,41 @@ function refreshAltText(node, panel, view, key) {
     return true;
 }
 
+// Texte de l'infobulle pour l'élément touché (hitStatsPanel) : la même
+// ligne que l'équivalent textuel — « D2/T3 : 4 », « France : 12 (40 %) ».
+function hitText(view, hit) {
+    const { number, percent } = formatters();
+    const model = view.model;
+    if (view.kind === 'grid') {
+        return `${gridCellLabel(view, hit.r, hit.c, hit.cell.key)} : ${number(hit.cell.count)}`;
+    }
+    if (view.kind === 'counter') {
+        const tile = hit.tile;
+        return `${tile.label} : ${tile.value}${tile.detail ? ` (${tile.detail})` : ''}`;
+    }
+    if (view.kind === 'line') {
+        return `${formatDay(hit.day)} : ${number(hit.total)}`;
+    }
+    // Barres et anneaux : la ligne « catégorie : nombre (pourcentage) ».
+    const label = `${view.labelOf(hit.row.key)} : ${number(hit.row.count)}`;
+    return view.showPercent && model.total
+        ? `${label} (${percent(hit.row.count / model.total)})`
+        : label;
+}
+
+// Infobulle de survol d'un panneau (stats_ui.js › pointermove, mode
+// édition) : le texte de ce qui est sous le pointeur en px CSS du canvas —
+// case de grille, ligne, part d'anneau, tuile ou jour de la courbe — ou
+// null hors d'un élément. Vue de la dernière passe de dessin : l'infobulle
+// suit l'animation comme le canvas.
+export function statsPanelHoverText(id, x, y) {
+    const node = panelNodes.get(id);
+    if (!node?.view || !node.panel || !node.layout) return null;
+    const hit = hitStatsPanel(node.view, node.panel.style,
+        node.layout.width, node.layout.height, x, y);
+    return hit ? hitText(node.view, hit) : null;
+}
+
 // Pendant une animation, les textes alternatifs suivent au plus une fois par
 // intervalle : une grille en porte des centaines de <li>, reconstruits sinon
 // à chaque jour avec trouvaille, alors que personne ne les lit en pleine
@@ -1593,6 +1628,8 @@ function flush() {
         // courbe et l'année d'activité dépendent aussi du jour affiché (jours
         // vides compris).
         const view = views.get(panel.id);
+        node.view = view;
+        node.panel = panel;
         const a11yKey = `${a11yBase}|${view.model?.headDay ?? ''}|${view.model?.year ?? ''}`;
         if (a11yDue) {
             if (refreshAltText(node, panel, view, a11yKey)) a11yRebuilt += 1;

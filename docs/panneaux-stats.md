@@ -421,6 +421,20 @@ dernier, donc en pause ou en fin de lecture le texte colle aux comptes
 affichés en moins d'une seconde. Au repos, rien n'est différé.
 `getStatsSnapshot().a11yRebuilds` compte les reconstructions.
 
+**Infobulle de survol** (2026-10-24). En mode édition (les canvas reprennent
+`pointer-events`), `pointermove` délégué sur `#mapWithFrames` affiche ce
+qu'il y a sous le pointeur — le même texte que la ligne de l'équivalent
+textuel (« D2/T3 : 4 », « Multi-cache : 2 », « 12/03/2026 : 8 »). Le
+hit-testing vit dans le renderer (`hitStatsPanel`, `stats_render.mjs`) :
+chaque type déclare `hit()` qui réutilise son layout, donc les zones
+collent aux pixels dessinés — case désactivée, trou de l'anneau, interstice
+entre tuiles ou pied de page ne répondent pas. `statsPanelHoverText`
+(stats_panels.js) convertit le résultat en ligne traduite depuis la vue de
+la dernière passe (`node.view`) : la bulle suit l'animation comme le
+canvas. Un bouton enfoncé (glisser, redimensionner) la masque, comme le
+départ du pointeur ou le changement d'onglet ; la bulle elle-même est
+`pointer-events: none` pour ne jamais se mettre sous elle-même.
+
 ### Mise en page
 
 `layoutPanels` (pur) : les panneaux d'une même ancre forment une pile, du coin

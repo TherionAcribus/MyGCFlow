@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { drawStatsPanel, gridValueFit, heatLevel, labelsMaxWidth, measureStatsPanel } from './static/js/stats_render.mjs';
+import { drawStatsPanel, gridValueFit, heatLevel, hitStatsPanel, labelsMaxWidth, measureStatsPanel } from './static/js/stats_render.mjs';
 import { gridModel } from './static/js/stats_model.mjs';
 
 function fakeCtx() {
@@ -246,4 +246,132 @@ test('grille en intensité : cases 1, 10, 100 et 2 000 de teintes distinctes', (
     // Écarts visibles (linéaire : 0,003 entre 1 et 10).
     assert.ok(a10 - a1 > 0.1, `${a1} / ${a10}`);
     assert.ok(a100 - a10 > 0.1, `${a10} / ${a100}`);
+});
+
+// ---------------------------------------------------------------------------
+// Infobulle de survol : hitStatsPanel(view, style, w, h, x, y)
+// Les vues minimales ci-dessous suivent la même géométrie que les tests de
+// mesure (style 12 → pad 10) ; les zones sont celles du dessin.
+// ---------------------------------------------------------------------------
+
+const hitStyle = { font_size: 12 };
+
+// Grille 9 × 9 (métrique dt : libellés de ligne 2,4 em ≈ 29 px) :
+// left = 39, haut des cases = 28, case = 231/9 ≈ 25,7.
+function hitGridView() {
+    const cells = [];
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) cells.push({ key: r * 9 + c, count: r + c, disabled: false });
+    }
+    return { kind: 'grid', metric: 'dt', title: '', footer: [],
+        model: { rows: 9, cols: 9, cells } };
+}
+
+test('hit grille : la case sous le pointeur, null hors de la zone', () => {
+    const view = hitGridView();
+    const cell = 231 / 9;
+    const at = (r, c) => hitStatsPanel(view, hitStyle, 280, null, 39 + (c + 0.5) * cell, 28 + (r + 0.5) * cell);
+    assert.deepEqual(at(2, 3), { r: 2, c: 3, cell: view.model.cells[21] });
+    assert.deepEqual(at(8, 8), { r: 8, c: 8, cell: view.model.cells[80] });
+    // Libellés de ligne et de colonnes, marges, dessous de la grille : rien.
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 20, 28 + 4 * cell), null);
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 39 + 4 * cell, 15), null);
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 39 + 4 * cell, 262), null);
+    // Case désactivée : pas d'infobulle.
+    view.model.cells[40].disabled = true;
+    assert.equal(at(4, 4), null);
+});
+
+const hitBarView = {
+    kind: 'bar', title: 'Types', footer: [], orientation: 'horizontal',
+    model: { max: 3, rows: [
+        { key: 'a', keys: ['a'], count: 3 },
+        { key: 'b', keys: ['b'], count: 1 },
+    ] },
+};
+
+test('hit histogramme : la ligne sous le pointeur, rangs fractionnaires inclus', () => {
+    // Titre → top 31 ; 2 lignes → chartH 42, bande de 21 px.
+    const hit = (y) => hitStatsPanel(hitBarView, hitStyle, 280, null, 140, y);
+    assert.equal(hit(40).row.key, 'a');
+    assert.equal(hit(60).row.key, 'b');
+    assert.equal(hit(80), null);   // sous la zone (pied / marge)
+    // Course : la ligne a glissé (slot 0,5 → bande [0,5 ; 1,5)).
+    const sliding = { ...hitBarView, model: { ...hitBarView.model,
+        rows: [hitBarView.model.rows[0], { ...hitBarView.model.rows[1], slot: 0.5 }] } };
+    assert.equal(hitStatsPanel(sliding, hitStyle, 280, null, 140, 40).row.key, 'a');
+    assert.equal(hitStatsPanel(sliding, hitStyle, 280, null, 140, 60).row.key, 'b');
+});
+
+test('hit histogramme vertical : la colonne sous le pointeur', () => {
+    const view = { ...hitBarView, orientation: 'vertical' };
+    // Deux colonnes de 130 px ; chartH 166 depuis top 31 → y = 100 dedans.
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 75, 100).row.key, 'a');
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 205, 100).row.key, 'b');
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 205, 250), null);
+});
+
+const hitDonutRows = [
+    { key: 'a', keys: ['a'], count: 1 },
+    { key: 'b', keys: ['b'], count: 1 },
+    { key: 'c', keys: ['c'], count: 2 },
+];
+
+test('hit anneau : la part sous le pointeur, jamais le trou ni l\'extérieur', () => {
+    // Sans légende : diamètre 260, centre (140, 140), outer 126, trou 60 %.
+    const view = { kind: 'donut', title: '', footer: [], hole: 60, showLegend: false,
+        model: { rows: hitDonutRows } };
+    const hit = (x, y) => hitStatsPanel(view, hitStyle, 280, null, x, y);
+    // Parts depuis midi, sens horaire : a (1/4), b (1/4), c (1/2).
+    assert.equal(hit(140, 40).row.key, 'a');    // midi
+    assert.equal(hit(240, 140).row.key, 'b');   // 3 h
+    assert.equal(hit(40, 140).row.key, 'c');    // 9 h
+    assert.equal(hit(140, 140), null);          // le trou
+    assert.equal(hit(140, 5), null);            // hors de l'anneau
+});
+
+test('hit anneau : la ligne de légende vise sa part', () => {
+    const view = { kind: 'donut', title: '', footer: [], hole: 60, showLegend: true,
+        model: { rows: hitDonutRows } };
+    // Légende : diamètre 120 → x > 130 ; bandes de 19 px depuis 41,5.
+    const hit = (y) => hitStatsPanel(view, hitStyle, 280, null, 200, y);
+    assert.equal(hit(45).row.key, 'a');
+    assert.equal(hit(70).row.key, 'b');
+    assert.equal(hit(95).row.key, 'c');
+    assert.equal(hit(110), null);
+});
+
+const hitLineView = {
+    kind: 'line', title: '', footer: [],
+    model: { first: 0, last: 9, max: 5, total: 5, headDay: 9, empty: false,
+        points: [{ day: 2, total: 2 }, { day: 5, total: 5 }] },
+};
+
+test('hit courbe : le jour sous le pointeur porte le total de l\'escalier', () => {
+    // Axe [10 ; 270] pour les jours 0..9 ; zone [10 ; 127] en hauteur.
+    const hit = (x) => hitStatsPanel(hitLineView, hitStyle, 280, null, x, 60);
+    assert.deepEqual(hit(10), { day: 0, total: 0 });            // avant la 1ʳᵉ trouvaille
+    assert.deepEqual(hit(10 + (2 / 9) * 260), { day: 2, total: 2 });
+    // Jour sans sommet entre deux trouvailles : total du dernier sommet.
+    assert.deepEqual(hit(10 + (4 / 9) * 260), { day: 4, total: 2 });
+    assert.deepEqual(hit(270), { day: 9, total: 5 });
+    // Zone vide ou hors cadre : rien.
+    assert.equal(hitStatsPanel(hitLineView, hitStyle, 280, null, 140, 200), null);
+    assert.equal(hitStatsPanel(hitLineView, hitStyle, 280, null, 275, 60), null);
+    // Courbe vide : rien, même dans la zone.
+    const empty = { ...hitLineView, model: { ...hitLineView.model, empty: true } };
+    assert.equal(hitStatsPanel(empty, hitStyle, 280, null, 140, 60), null);
+});
+
+test('hit compteurs : la tuile sous le pointeur, jamais l\'interstice', () => {
+    const tiles = [{ label: 'a' }, { label: 'b' }, { label: 'c' }, { label: 'd' }];
+    const view = { kind: 'counter', title: '', footer: [], columns: 2, tiles };
+    // 2 × 2 : tuiles de 127 × 53, interstices de 6 px depuis (10, 10).
+    const hit = (x, y) => hitStatsPanel(view, hitStyle, 280, null, x, y);
+    assert.equal(hit(70, 30).tile, tiles[0]);
+    assert.equal(hit(200, 30).tile, tiles[1]);
+    assert.equal(hit(70, 90).tile, tiles[2]);
+    assert.equal(hit(140, 30), null);   // interstice vertical
+    assert.equal(hit(70, 66), null);    // interstice horizontal
+    assert.equal(hitStatsPanel(view, hitStyle, 280, null, 70, 200), null);
 });

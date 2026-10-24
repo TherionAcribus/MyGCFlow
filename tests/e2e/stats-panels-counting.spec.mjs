@@ -485,6 +485,49 @@ test('les points extrêmes s\'affichent en coordonnées géocaching', async ({ p
   await expect(alt).toContainText("Trouvaille la plus à l'ouest : E 002° 21.006 (GCE2E001");
 });
 
+test('le survol d\'un panneau affiche l\'élément pointé dans une infobulle', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'b0a70001', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },
+    { id: 'b0a70002', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-right' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('#mapWithFrames')).toHaveClass(/stats-editing/);
+  const tip = page.locator('.stats-hover-tip');
+
+  // Canvas 280 × 308 (titre + pied) : les cases vont de x≈39 à 270 et de
+  // y≈49 à 280. Centre de la case (0,0) = D1/T1 (une trouvaille de la
+  // fixture) ; (8,8) = D5/T5, jamais trouvée : 0.
+  const gridBox = await page.locator('canvas.stats-panel[data-panel-id="b0a70001"]').boundingBox();
+  const d1t1 = { x: gridBox.x + gridBox.width * 0.185, y: gridBox.y + gridBox.height * 0.20 };
+  await page.mouse.move(d1t1.x, d1t1.y);
+  await expect(tip).toBeVisible();
+  await expect(tip).toHaveText('D1/T1 : 1');
+  await page.mouse.move(gridBox.x + gridBox.width * 0.92, gridBox.y + gridBox.height * 0.87);
+  await expect(tip).toHaveText('D5/T5 : 0');
+
+  // Ligne du milieu de l'histogramme (tri alphabétique : Event, Multi, Traditional).
+  const barBox = await page.locator('canvas.stats-panel[data-panel-id="b0a70002"]').boundingBox();
+  await page.mouse.move(barBox.x + barBox.width / 2, barBox.y + barBox.height * 0.55);
+  await expect(tip).toHaveText('Multi-cache : 2');
+
+  // Pointeur hors du panneau : la bulle s'efface ; un bouton enfoncé
+  // (glisser, balayer la carte) aussi.
+  await page.mouse.move(barBox.x + barBox.width / 2, barBox.y - 40);
+  await expect(tip).toBeHidden();
+  await page.mouse.move(d1t1.x, d1t1.y);
+  await expect(tip).toHaveText('D1/T1 : 1');
+  await page.mouse.down();
+  await expect(tip).toBeHidden();
+  await page.mouse.up();
+
+  // Onglet fermé : plus de mode édition, plus d'infobulle.
+  await page.mouse.move(d1t1.x, d1t1.y);
+  await page.locator('a[href="#style"]').click();
+  await expect(page.locator('#mapWithFrames')).not.toHaveClass(/stats-editing/);
+  await expect(tip).toBeHidden();
+});
+
 test('l\'année d\'activité montre les jours de trouvaille de la dernière année', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [] });
   await openWithFixture(page, '#stats');
