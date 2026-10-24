@@ -328,16 +328,21 @@ qu'elles désignent sont « référencés » (`referenced_image_files` lit
 `configs`) : la bibliothèque refuse de les retirer.
 
 **Export/import JSON** (menu Configurations) : `{ format: 'mygcflow-images',
-version: 1, items, files }`, les fichiers **embarqués** en data URL — la
-liste DE LA PAGE y voyage sous `items` quel que soit le mode ; à l'import,
-elle est écrite dans la liste de la page courante. Chaque image embarquée est
+version: 2, items, configs, files }`, les fichiers **embarqués** en data URL
+— la liste DE LA PAGE y voyage sous `items` quel que soit le mode ; à
+l'import, elle est écrite dans la liste de la page courante. Les
+configurations nommées voyagent depuis la version 2, avec les fichiers
+qu'elles référencent ; à l'import elles fusionnent avec les existantes
+(même nom = remplacée, douze au total au plus, les excédentaires signalées).
+La version 1, sans configurations, reste lisible. Chaque image embarquée est
 renvoyée au serveur (normalisée de nouveau, son nom peut changer : les
-entrées suivent), puis la liste est remplacée avec « Annuler ». Accepte aussi
-un tableau d'images ou un bloc de préférences complet `{ images: { … } }`,
-lu dans la liste de la page. « Importer et ajouter à la liste… »
-(`data-images-import="append"`) ajoute au lieu de remplacer, dans la limite
-des places libres ; les images en trop sont écartées AVANT envoi (aucun
-fichier envoyé pour rien) et signalées.
+entrées — liste et configurations — suivent), puis liste et configurations
+sont remplacées avec « Annuler ». Accepte aussi un tableau d'images ou un
+bloc de préférences complet `{ images: { … } }`, lu dans la liste de la
+page. « Importer et ajouter à la liste… » (`data-images-import="append"`)
+ajoute au lieu de remplacer, dans la limite des places libres ; les images
+en trop sont écartées AVANT envoi (aucun fichier envoyé pour rien) et
+signalées.
 
 ## Tests
 

@@ -552,8 +552,10 @@ async function renderLibrary() {
 
 // Format du fichier : les images y sont embarquées (data URL), sans quoi un
 // export ouvert sur un autre ordinateur n'afficherait que des images
-// manquantes. Au plus quatre images d'au plus 2048 px : le fichier reste
-// raisonnable.
+// manquantes. Au plus quatre images d'au plus 2048 px plus les
+// configurations : le fichier reste raisonnable. La version 2 ajoute
+// `configs` (et les fichiers qu'elles référencent) — la 1, sans
+// configurations, reste lisible à l'import.
 const EXPORT_FORMAT = 'mygcflow-images';
 
 function downloadBlob(blob, filename) {
@@ -591,15 +593,22 @@ function dataUrlToBlob(dataUrl) {
 }
 
 async function exportImages() {
-    const items = currentSettings()[ITEMS_KEY];
+    const settings = currentSettings();
+    const items = settings[ITEMS_KEY];
+    const configs = settings.configs || [];
+    // Fichiers référencés par la liste ET par les configurations : sans eux,
+    // une configuration appliquée ailleurs ne produirait que des manquantes.
+    const wanted = new Set(
+        [...items, ...configs.flatMap((config) => config.items || [])]
+            .map((item) => item?.file).filter(Boolean));
     const files = {};
-    for (const file of new Set(items.map((item) => item.file).filter(Boolean))) {
+    for (const file of wanted) {
         try {
             const response = await fetch(pkg.imageUrl(file));
             if (response.ok) files[file] = await blobToDataUrl(await response.blob());
         } catch (_) { /* image absente : l'entrée reste, marquée manquante */ }
     }
-    const payload = { format: EXPORT_FORMAT, version: 1, items, files };
+    const payload = { format: EXPORT_FORMAT, version: 2, items, configs, files };
     downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }),
         'mygcflow-images.json');
 }
@@ -617,34 +626,42 @@ function importedItems(data) {
 // Import d'un export JSON. `append` : les images s'ajoutent à la liste de la
 // page (dans la limite des places libres) au lieu de la remplacer. Les
 // images en trop sont écartées AVANT envoi — aucun fichier envoyé pour rien —
-// et signalées.
+// et signalées. Les configurations (version 2) fusionnent avec les
+// existantes : même nom = remplacée, douze au total au plus.
 async function importImages(file, { append = false } = {}) {
     if (isRecordingBlocked()) return;
     let data = null;
     try {
         data = JSON.parse(await file.text());
     } catch (_) { /* JSON illisible → toast d'erreur plus bas */ }
-    const raws = importedItems(data);
-    const valid = (raws || []).filter((raw) => raw && typeof raw === 'object' && !Array.isArray(raw));
-    // Fichier lisible mais sans image exploitable : refusé sans toucher la
-    // liste courante (l'import la remplacerait par du vide).
-    if (!valid.length) {
+    const isObject = (raw) => raw && typeof raw === 'object' && !Array.isArray(raw);
+    const valid = (importedItems(data) || []).filter(isObject);
+    const validConfigs = (Array.isArray(data?.configs) ? data.configs : [])
+        .filter((cfg) => isObject(cfg) && typeof cfg.name === 'string' && cfg.name.trim());
+    // Fichier lisible mais sans image ni configuration exploitable : refusé
+    // sans toucher les réglages (l'import les remplacerait par du vide).
+    if (!valid.length && !validConfigs.length) {
         pkg.showToast?.(pkg.t("Import impossible : fichier d'images invalide"), 'error', pkg.t('Images'), 5000);
         return;
     }
-    const previous = currentSettings()[ITEMS_KEY];
+    const settings = currentSettings();
+    const previous = settings[ITEMS_KEY];
+    const previousConfigs = settings.configs || [];
     const room = append ? IMAGES_MAX_ITEMS - previous.length : IMAGES_MAX_ITEMS;
-    if (room <= 0) {
+    if (valid.length && room <= 0 && !validConfigs.length) {
         pkg.showToast?.(pkg.t('Quatre images au maximum.'), 'warning', pkg.t('Images'), 5000);
         return;
     }
-    const items = valid.slice(0, room);
+    const items = valid.slice(0, Math.max(0, room));
     const dropped = valid.length - items.length;
     // Chaque image embarquée repasse par le serveur, qui la normalise (et
     // retire ses métadonnées) ; son nom peut changer, les entrées suivent.
     const embedded = data && typeof data.files === 'object' && data.files ? data.files : {};
+    const wanted = new Set(
+        [...items, ...validConfigs.flatMap((cfg) => (Array.isArray(cfg.items) ? cfg.items : []))]
+            .map((raw) => raw?.file).filter((n) => typeof n === 'string' && n));
     const renamed = {};
-    for (const name of new Set(items.map((raw) => raw.file).filter((n) => typeof n === 'string' && n))) {
+    for (const name of wanted) {
         const blob = dataUrlToBlob(embedded[name]);
         if (!blob) continue;
         const ext = blob.type === 'image/png' ? 'png' : 'jpg';
@@ -655,28 +672,56 @@ async function importImages(file, { append = false } = {}) {
         const saved = await uploadImage(new File([blob], fileName, { type: blob.type }));
         if (saved) renamed[name] = saved.file;
     }
-    const imported = items.map((raw) => (Object.hasOwn(renamed, raw.file) ? { ...raw, file: renamed[raw.file] } : raw));
+    const renamedItem = (raw) =>
+        (Object.hasOwn(renamed, raw.file) ? { ...raw, file: renamed[raw.file] } : raw);
+    const imported = items.map(renamedItem);
+    const importedConfigs = validConfigs.map((cfg) => ({
+        ...cfg,
+        items: (Array.isArray(cfg.items) ? cfg.items : []).filter(isObject).map(renamedItem),
+    }));
+    // Les configurations importées remplacent celles du même nom.
+    let mergedConfigs = previousConfigs;
+    let importedConfigCount = 0;
+    let droppedConfigs = 0;
+    if (importedConfigs.length) {
+        const names = new Set(importedConfigs.map((cfg) => cfg.name.trim()));
+        const kept = previousConfigs.filter((cfg) => !names.has(cfg.name));
+        mergedConfigs = [...kept, ...importedConfigs].slice(0, IMAGES_MAX_CONFIGS);
+        importedConfigCount = mergedConfigs.length - kept.length;
+        droppedConfigs = importedConfigs.length - importedConfigCount;
+    }
     // Ajout : un id déjà pris par la liste est régénéré par la normalisation
     // (l'image importée garde ses réglages, pas son id).
-    const next = append ? [...previous, ...imported] : imported;
-    const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next }, IMAGES_SAVE_STATUS,
-        { immediate: true, dirty: [ITEMS_KEY] });
+    const next = valid.length ? (append ? [...previous, ...imported] : imported) : previous;
+    const dirty = [];
+    if (valid.length) dirty.push(ITEMS_KEY);
+    if (importedConfigs.length) dirty.push('configs');
+    const applied = commit({ ...currentSettings(), [ITEMS_KEY]: next, configs: mergedConfigs },
+        IMAGES_SAVE_STATUS, { immediate: true, dirty });
     if (!applied) return;
-    selectedId = applied[ITEMS_KEY][append ? previous.length : 0]?.id || applied[ITEMS_KEY][0]?.id || null;
+    selectedId = applied[ITEMS_KEY][append && valid.length ? previous.length : 0]?.id || null;
     renderImagesTab();
     if (dropped > 0) {
         pkg.showToast?.(pkg.t('${n} image(s) non importée(s) : quatre au maximum.', { n: dropped }),
             'warning', pkg.t('Images'), 6000);
     }
-    const toast = pkg.showActionToast?.(
-        pkg.t('${count} image(s) importée(s)', { count: imported.length }),
-        { label: 'Annuler', onClick: () => {
-            commit({ ...currentSettings(), [ITEMS_KEY]: previous }, IMAGES_SAVE_STATUS,
-                { immediate: true, dirty: [ITEMS_KEY] });
-            selectedId = previous[0]?.id || null;
-            renderImagesTab();
-        } });
-    protectUntilToastCloses(toast, previous.map((item) => item.file));
+    if (droppedConfigs > 0) {
+        pkg.showToast?.(pkg.t('${n} configuration(s) non importée(s) : douze au maximum.', { n: droppedConfigs }),
+            'warning', pkg.t('Images'), 6000);
+    }
+    const label = importedConfigCount
+        ? (imported.length
+            ? pkg.t('${count} image(s) et ${n} configuration(s) importée(s)', { count: imported.length, n: importedConfigCount })
+            : pkg.t('${n} configuration(s) importée(s)', { n: importedConfigCount }))
+        : pkg.t('${count} image(s) importée(s)', { count: imported.length });
+    const toast = pkg.showActionToast?.(label, { label: 'Annuler', onClick: () => {
+        commit({ ...currentSettings(), [ITEMS_KEY]: previous, configs: previousConfigs },
+            IMAGES_SAVE_STATUS, { immediate: true, dirty });
+        selectedId = previous[0]?.id || null;
+        renderImagesTab();
+    } });
+    protectUntilToastCloses(toast,
+        [...previous, ...previousConfigs.flatMap((cfg) => cfg.items || [])].map((item) => item.file));
 }
 
 // Mode du prochain import (sélecteur de fichier commun aux deux entrées du

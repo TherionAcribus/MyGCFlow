@@ -46,9 +46,11 @@
                                 <li><button type="button" class="dropdown-item" data-images-config-save>
                                     <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Enregistrer la configuration actuelle") }}</button></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <!-- Export : réglages ET fichiers (base64) dans un seul JSON,
-                                     réimportable sur un autre ordinateur. Import : remplace la
-                                     liste de la page, ou s'y ajoute dans la limite des places. -->
+                                <!-- Export : réglages, configurations ET fichiers (base64) dans
+                                     un seul JSON, réimportable sur un autre ordinateur. Import :
+                                     remplace la liste de la page, ou s'y ajoute dans la limite
+                                     des places ; les configurations fusionnent (même nom =
+                                     remplacée). -->
                                 <li><button type="button" class="dropdown-item" data-images-export>
                                     <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter les images (JSON)") }}</button></li>
                                 <li><button type="button" class="dropdown-item" data-images-import="replace">

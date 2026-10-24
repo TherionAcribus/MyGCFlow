@@ -958,11 +958,14 @@ test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas'
   await putSettings(page, { images: { items: [
     { id: 'babe0020', file: logo.file, name: 'Logo du club', position: { anchor: 'top-left', width: 120 },
       style: { shape: 'circle' } },
+  ], configs: [
+    { name: 'Club', items: [{ id: 'babe0021', file: logo.file, name: 'Logo cfg', position: { anchor: 'bottom-left' } }] },
   ] } });
   await openImagesTab(page);
   await expect(page.locator('canvas.image-panel')).toBeVisible();
 
-  // Export : réglages + image embarquée.
+  // Export : réglages + image embarquée ; la configuration nommée voyage
+  // aussi (version 2), avec le fichier qu'elle référence.
   await page.locator('#btnImagesConfigs').click();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('[data-images-export]').click();
@@ -970,29 +973,39 @@ test('export JSON avec les fichiers, réimport sur une machine qui ne les a pas'
   expect(download.suggestedFilename()).toBe('mygcflow-images.json');
   const exported = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
   expect(exported.format).toBe('mygcflow-images');
+  expect(exported.version).toBe(2);
   expect(exported.items).toHaveLength(1);
+  expect(exported.configs.map((c) => c.name)).toEqual(['Club']);
   expect(exported.files[logo.file]).toMatch(/^data:image\/jpeg;base64,/);
 
-  // « Autre machine » : liste vidée, fichier retiré du serveur.
-  await putSettings(page, { images: { enabled: true, items: [] } });
+  // « Autre machine » : liste et configurations vidées, fichier retiré du
+  // serveur.
+  await putSettings(page, { images: { enabled: true, items: [], configs: [] } });
   expect((await page.request.post('/api/images/delete', { data: { file: logo.file } })).ok()).toBe(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await page.locator('a[href="#images"]').click();
   await expect(page.locator('#imagesList li')).toHaveCount(0);
 
-  // Import : l'image revient, renvoyée au serveur, avec ses réglages.
+  // Import : l'image revient, renvoyée au serveur, avec ses réglages — et
+  // la configuration, qui référence le nouveau fichier.
   await page.locator('#imagesImportFile').setInputFiles({
     name: 'mygcflow-images.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(exported)),
   });
   await expect(page.locator('#imagesList li')).toHaveCount(1);
   await expect(page.locator('#imagesList li').first()).toContainText('Logo du club');
-  await expect(page.locator('.gcm-toast.show').filter({ hasText: '1 image(s) importée(s)' })).toBeVisible();
+  await expect(page.locator('.gcm-toast.show')
+    .filter({ hasText: '1 image(s) et 1 configuration(s) importée(s)' })).toBeVisible();
   await expect(page.locator('canvas.image-panel')).toBeVisible();
-  const saved = (await savedImages(page)).items[0];
+  const savedImages_ = await savedImages(page);
+  const saved = savedImages_.items[0];
   expect(saved.style.shape).toBe('circle');
   expect(saved.position.anchor).toBe('top-left');
   expect((await page.request.get(`/api/images/${saved.file}`)).ok()).toBe(true);
+  const club = savedImages_.configs.find((c) => c.name === 'Club');
+  expect(club).toBeTruthy();
+  expect(club.items[0].file).toBe(saved.file);
+  expect(club.items[0].position.anchor).toBe('bottom-left');
 
   // Fichier invalide : refusé sans toucher la liste.
   await page.locator('#imagesImportFile').setInputFiles({
