@@ -19,6 +19,9 @@ video (with a music track if you want one).
 
 - **GPX import** — `.gpx` or the `.zip` downloaded from geocaching.com, imported
   in the background with a progress bar.
+- **Adventure Lab stages** — your Lab Cache finds join the map like ordinary
+  finds: history import in one click via a browser bookmarklet or by files
+  (JSON / Lab2Gpx GPX), missing positions recovered automatically.
 - **Filters** — by cache type, date range, country/region.
 - **Map styles** — OpenStreetMap, Toner (light/dark), Watercolor, or a vector
   basemap whose stroke, fill, background and line width you set yourself.
@@ -36,11 +39,17 @@ video (with a music track if you want one).
   figures (best day, longest streak…), placed on the map — anchored to a corner
   or dragged with the mouse — filling up as the animation plays and rendered
   into the video.
+- **Image panels** — pin your avatar, a club logo or any picture on the map:
+  shape, fit, border, shadow, rotation, scheduled appearance (by date or by
+  find number) with fade, slide or zoom effects.
 - **Overlay** — title and info block (find count, current date), styled through
   text/box/shadow/position controls or raw CSS.
 - **Animation** — start/end dates, duration per day or total target duration,
   end pause, animated point appearance, and an optional camera follow that
   tracks either each day's caches or the head of the route.
+- **Timeline bar** — scrub through the animation under the map: click, drag,
+  wheel or keyboard move the map and the panels to any day, with hover
+  details, and the range handles redefine the start and end dates.
 - **Audio** — add a music track, set its volume, or derive the animation length
   from the track's duration.
 - **Video recording** — two pipelines: **MediaRecorder** (fast, in-browser
@@ -238,6 +247,7 @@ GitHub Release.
 - [docs/lab-caches.md](docs/lab-caches.md) — Adventure Lab stages (file exports, import, displayed sources, pending cases)
 - [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — travel trail (route computation, timing, cost)
 - [docs/panneaux-stats.md](docs/panneaux-stats.md) — statistics panels (incremental counting, scale reference, preview/video rendering)
+- [docs/images.md](docs/images.md) — image panels (library, placement, scheduled appearance, preview/video rendering)
 - [docs/translations.md](docs/translations.md) — i18n rules
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — video test matrix
 

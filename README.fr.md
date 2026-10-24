@@ -20,6 +20,10 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
 
 - **Import GPX** — fichier `.gpx` ou `.zip` téléchargé depuis geocaching.com,
   importé en tâche de fond avec barre de progression.
+- **Étapes Adventure Lab** — vos Lab Caches rejoignent la carte comme des
+  trouvailles : import de l'historique en un clic via un favori navigateur
+  ou par fichiers (JSON / GPX Lab2Gpx), positions manquantes récupérées
+  automatiquement.
 - **Filtres** — par type de cache, par période, par pays ou région.
 - **Fonds de carte** — OpenStreetMap, Toner (clair/sombre), Watercolor, ou une
   carte vectorielle dont vous réglez contour, remplissage, fond et épaisseur des
@@ -39,11 +43,19 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
   progression et chiffres clés (record, plus longue série…), posés sur la carte
   — en coin ou glissés à la souris — qui se remplissent au fil de l'animation
   et apparaissent dans la vidéo.
+- **Panneaux d'images** — épinglez votre avatar, le logo de votre association
+  ou toute image sur la carte : forme, cadrage, bordure, ombre, rotation,
+  apparition planifiée (à une date ou à la Ne trouvaille) en fondu,
+  glissement ou zoom.
 - **Overlay** — titre et cartouche d'informations (nombre de caches, date en
   cours), stylés via les onglets texte / boîte / ombre / position ou en CSS.
 - **Animation** — dates de début et de fin, durée par jour ou durée totale
   visée, pause finale, apparition animée des points, et suivi de caméra qui
   accompagne les caches du jour ou la tête du trajet.
+- **Barre de chronologie** — parcourez l'animation sous la carte : clic,
+  glisser, molette ou clavier amènent la carte et les panneaux au jour voulu,
+  avec détail au survol ; les poignées redéfinissent les dates de début et de
+  fin.
 - **Audio** — ajout d'une musique, réglage du volume, ou calage de la durée de
   l'animation sur celle du morceau.
 - **Enregistrement vidéo** — deux pipelines : **MediaRecorder** (rapide, `.webm`
@@ -250,6 +262,7 @@ Release GitHub.
 - [docs/lab-caches.md](docs/lab-caches.md) — étapes Adventure Lab (exports par fichiers, import, sources affichées, cas en attente)
 - [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — traits de déplacement (calcul du trajet, synchronisation, coût)
 - [docs/panneaux-stats.md](docs/panneaux-stats.md) — panneaux de statistiques (comptage incrémental, référence d'échelle, rendu aperçu/vidéo)
+- [docs/images.md](docs/images.md) — panneaux d'images (bibliothèque, mise en page, apparition planifiée, rendu aperçu/vidéo)
 - [docs/translations.md](docs/translations.md) — règles d'internationalisation
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — matrice des tests vidéo
 

@@ -226,6 +226,7 @@
                             <li>{{ _("Basculez entre la cible") }} <strong>{{ _("Titre") }}</strong> {{ _("et") }} <strong>{{ _("Infos") }}</strong> {{ _("pour les styliser séparément.") }}</li>
                             <li>{{ _("Réglez le") }} <strong>{{ _("Texte") }}</strong>, {{ _("la") }} <strong>{{ _("Boîte") }}</strong>, {{ _("l'") }}<strong>{{ _("Ombre") }}</strong> {{ _("et la") }} <strong>{{ _("Position") }}</strong> {{ _("via les onglets dédiés — l'ombre se règle séparément pour la boîte et pour le texte.") }}</li>
                             <li>{{ _("Pour un contrôle total, cochez") }} <span class="ui-chip">CSS</span> {{ _("et éditez le style à la main.") }}</li>
+                            <li>{{ _("Tant que le sous-onglet Titres est ouvert, le titre et le bloc d'informations se déplacent aussi à la souris sur la carte — aimantés aux emplacements, Alt pour s'en passer.") }}</li>
                         </ul>
                         <div class="guide-callout info">
                             <i class="ti ti-hand-click"></i>
@@ -332,7 +333,9 @@
                             <li>{{ _("Au survol, une bulle donne la date, les trouvailles du jour, le total et l'instant de la vidéo — pratique pour caler une musique.") }}</li>
                             <li>{{ _("Les repères signalent les trouvailles rondes (100ᵉ, 1 000ᵉ…) et les apparitions des images planifiées.") }}</li>
                             <li>{{ _("Tirez les poignées en haut des bornes pour raccourcir ou étendre la plage ; la zone grisée de chaque côté montre les dates disponibles. Le clic droit propose aussi de poser le début ou la fin.") }}</li>
+                            <li>{{ _("À la molette (piste au focus) : un cran promène le curseur d'un jour, avec Maj d'une semaine.") }}</li>
                             <li>{{ _("Au clavier, sur la barre : ← → un jour, Maj une semaine, Ctrl le jour avec trouvaille précédent ou suivant, Espace lecture ou pause.") }}</li>
+                            <li>{{ _("Trois présentations au choix : barre simple, histogramme des trouvailles ou courbe de progression. En plein écran, le bouton") }} <span class="ui-chip"><i class="ti ti-timeline"></i> {{ _("Barre de chronologie") }}</span> {{ _("du menu flottant l'affiche en surimpression.") }}</li>
                         </ul>
                     </li>
                     <li>
@@ -372,17 +375,24 @@
                     </li>
                     <li>
                         <h3>{{ _("Placez-le et réglez son apparence") }}</h3>
-                        <p>{{ _("Choisissez un coin d'ancrage, des marges et une largeur : les panneaux qui partagent un coin s'empilent automatiquement et contournent le titre et les infos. Un avertissement signale un panneau qui dépasse de la carte ou en chevauche un autre.") }}</p>
-                        <p>{{ _("Tant que l'onglet Stats est ouvert, vous pouvez aussi glisser un panneau directement sur la carte pour le placer où vous voulez ; choisir un coin l'y ramène.") }}</p>
-                        <p>{{ _("Pour harmoniser vos panneaux, réglez l'apparence de l'un d'eux puis cliquez sur") }} <span class="ui-chip"><i class="ti ti-palette"></i> {{ _("Appliquer cette apparence à tous les panneaux") }}</span>{{ _(" : fond, couleurs, taille du texte et police sont recopiés, les couleurs des catégories restent celles de chaque panneau.") }}</p>
+                        <p>{{ _("Choisissez un coin d'ancrage, des marges, une largeur et au besoin une hauteur : les panneaux qui partagent un coin s'empilent automatiquement et contournent le titre et les infos. Un avertissement signale un panneau qui dépasse de la carte ou en chevauche un autre — son bouton « Réorganiser automatiquement » résout les conflits.") }}</p>
+                        <p>{{ _("Tant que l'onglet Stats est ouvert, vous pouvez aussi glisser un panneau directement sur la carte : lâché près d'un emplacement, il s'y range ; maintenez Alt pour vous passer de cet aimantage. Choisir un coin le ramène à une position ancrée. Les flèches du clavier déplacent le panneau sélectionné d'un pixel (dix avec Maj) et la touche Suppr le retire.") }}</p>
+                        <p>{{ _("Les préréglages Sombre, Clair, Verre et Sans fond règlent l'apparence d'un clic. Pour harmoniser vos panneaux, réglez l'apparence de l'un d'eux puis cliquez sur") }} <span class="ui-chip"><i class="ti ti-palette"></i> {{ _("Appliquer cette apparence à tous les panneaux") }}</span>{{ _(" : fond, couleurs, taille du texte et police sont recopiés, les couleurs des catégories restent celles de chaque panneau.") }}</p>
+                        <p>{{ _("La liste se réordonne aussi par glisser-déposer, et chaque ligne permet de dupliquer ou de supprimer le panneau — une suppression peut être annulée.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Regardez-les se remplir") }}</h3>
                         <p>{{ _("Les panneaux partent des caches trouvées avant la date de début, puis se remplissent jour après jour ; les nouveautés (une case obtenue, une nouvelle catégorie) sont surlignées. L'échelle et l'ordre des lignes sont calculés sur la fin de l'animation : rien ne bouge en cours de route. Au repos, les panneaux montrent les totaux de la sélection.") }}</p>
+                        <p>{{ _("En mode édition, le survol d'un panneau affiche une infobulle avec le détail de ce qui se trouve sous le pointeur — une case, une barre, une part.") }}</p>
                         <div class="guide-callout info">
                             <i class="ti ti-info-circle"></i>
                             <div>{{ _("Les Lab Caches n'ont ni difficulté, ni terrain, ni taille : elles comptent dans les types de caches, pas dans la matrice D/T. Le pied du panneau indique combien de caches sont ainsi laissées de côté.") }}</div>
                         </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Enregistrez et exportez vos panneaux") }}</h3>
+                        <p>{{ _("Le menu") }} <span class="ui-chip"><i class="ti ti-bookmarks"></i> {{ _("Configurations") }}</span> {{ _("enregistre la liste des panneaux sous un nom, à réappliquer d'un clic — une configuration n'est proposée que dans le mode où elle a été créée. Le même menu exporte la liste en JSON (à réimporter ailleurs) et réunit tous les panneaux visibles en une seule image (« Exporter tous les panneaux (PNG) »).") }}</p>
+                        <p>{{ _("En bas du formulaire du panneau, la zone « Exporter ce panneau » produit l'image du seul panneau sélectionné — à sa taille d'écran, ou agrandie ×2 ou ×4 pour rester nette à l'impression — ou ses valeurs dans un tableau CSV.") }}</p>
                     </li>
                 </ol>
             </section>
@@ -398,12 +408,13 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Ajoutez une image") }}</h3>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter") }}</span> {{ _("accepte les fichiers PNG, JPEG, WebP, GIF ou SVG, plusieurs à la fois ; vous pouvez aussi déposer les fichiers sur l'onglet, ou coller une image copiée. Quatre images au maximum.") }} {{ _("Déposée directement sur la carte, une image s'y pose là où vous la lâchez.") }}</p>
-                        <p>{{ _("L'image est préparée à l'envoi : redressée selon l'orientation de la photo, réduite à 2048 pixels, débarrassée de ses métadonnées. Sa transparence est conservée. Le menu") }} <span class="ui-chip"><i class="ti ti-library-photo"></i> {{ _("Bibliothèque") }}</span> {{ _("retrouve les images déjà envoyées, pour les reposer sans les renvoyer ; celles qui ne servent plus peuvent en être retirées.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter") }}</span> {{ _("accepte les fichiers PNG, JPEG, WebP, GIF, SVG ou HEIC (photos iPhone), plusieurs à la fois ; vous pouvez aussi déposer les fichiers sur l'onglet, ou coller une image copiée. Quatre images au maximum.") }} {{ _("Déposée directement sur la carte, une image s'y pose là où vous la lâchez.") }}</p>
+                        <p>{{ _("L'image est préparée à l'envoi : redressée selon l'orientation de la photo, réduite à 2048 pixels, débarrassée de ses métadonnées. Sa transparence est conservée. Le menu") }} <span class="ui-chip"><i class="ti ti-library-photo"></i> {{ _("Bibliothèque") }}</span> {{ _("retrouve les images déjà envoyées, pour les reposer sans les renvoyer : un tri par date, nom ou taille aide à s'y retrouver, et le mode « Nettoyer » retire d'un coup celles qui ne servent plus.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Placez-la et réglez son apparence") }}</h3>
                         <p>{{ _("Comme pour les panneaux de stats : un emplacement, des marges et une largeur ; la hauteur suit les proportions de l'image. Choisissez une forme — rectangle, coins arrondis ou rond, idéal pour un avatar —, l'opacité, un fond, une bordure et une ombre portée.") }} {{ _("Les préréglages Avatar, Logo sur fond, Filigrane et Photo encadrée règlent l'apparence d'un clic.") }}</p>
+                        <p>{{ _("Quand la forme ne suit pas les proportions de l'image, l'ajustement décide du cadrage : « Image entière » la montre complète, « Remplir la forme » recadre en gardant au centre le point focal que vous placez. La ligne « Orientation » pivote l'image par quarts de tour ou la retourne en miroir.") }}</p>
                         <p>{{ _("Tant que l'onglet Images est ouvert, vous pouvez glisser une image sur la carte : lâchée près d'un emplacement, elle s'y range ; ailleurs, elle reste où vous la posez. Maintenez Alt pour vous passer de cet aimantage. Ses bords se tirent pour l'agrandir.") }}</p>
                         <p>{{ _("Au clavier, les flèches déplacent l'image sélectionnée d'un pixel (dix avec Maj) et la touche Suppr la retire. Chaque ligne de la liste propose aussi de la dupliquer, et") }} <span class="ui-chip"><i class="ti ti-replace"></i> {{ _("Remplacer l'image…") }}</span> {{ _("change le fichier en gardant tous les réglages.") }}</p>
                         <div class="guide-callout info">
