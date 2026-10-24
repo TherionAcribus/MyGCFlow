@@ -468,24 +468,56 @@ function libraryUsage(file, usedHere, usedOther) {
         : { where: 'other', icon: 'ti-stack', label: pkg.t('Utilisée dans « Évolution »') };
 }
 
-async function renderLibrary() {
-    const grid = $('imagesLibraryList');
-    if (!grid) return;
-    // null quand le relevé a échoué : la bibliothèque n'est pas « vide » —
-    // un état d'erreur avec réessai est affiché à la place.
-    let listing = null;
+// Relevé conservé en mémoire : tri et nettoyage groupé redessinent la grille
+// sans repasser par le serveur. null = pas encore relevé ou relevé en échec.
+let libraryListing = null;
+// Tri choisi (localStorage, comme l'état des sections du formulaire).
+const LIBRARY_SORT_KEY = 'imagesLibrarySort';
+let librarySort = (() => {
+    try { return localStorage.getItem(LIBRARY_SORT_KEY) || 'recent'; } catch (_) { return 'recent'; }
+})();
+// Mode nettoyage : cases à cocher sur les images retirables, suppression
+// groupée. Refermé avec le menu (hidden.bs.dropdown, bindLibraryMenu).
+let libraryCleanupMode = false;
+const librarySelection = new Set();
+
+const LIBRARY_SORTS = {
+    recent: (a, b) => (b.modified - a.modified) || a.file.localeCompare(b.file),
+    oldest: (a, b) => (a.modified - b.modified) || a.file.localeCompare(b.file),
+    name: (a, b) => (a.name || a.file).localeCompare(b.name || b.file),
+    size: (a, b) => (b.size_bytes - a.size_bytes) || a.file.localeCompare(b.file),
+};
+
+// Relevé du serveur puis rendu (états vide/erreur compris).
+async function refreshLibrary() {
     try {
         const response = await fetch('/api/images');
-        if (response.ok) listing = await response.json();
-    } catch (_) {}
-    const failed = listing === null;
-    listing = listing || { files: [], total_bytes: 0 };
+        libraryListing = response.ok ? await response.json() : null;
+    } catch (_) {
+        libraryListing = null;
+    }
+    renderLibraryGrid();
+}
+
+// Redessine la grille depuis le relevé en mémoire (tri, sélection du mode
+// nettoyage). null = relevé en échec : la bibliothèque n'est pas « vide »,
+// l'état d'erreur avec réessai est affiché à la place.
+function renderLibraryGrid() {
+    const grid = $('imagesLibraryList');
+    if (!grid) return;
+    const failed = libraryListing === null;
+    const listing = libraryListing || { files: [], total_bytes: 0 };
     const settings = currentSettings();
     const full = settings[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
     const awaitingUndo = filesAwaitingUndo();
     const usedHere = new Set(settings[ITEMS_KEY].map((item) => item.file));
     const usedOther = new Set((settings[OTHER_ITEMS_KEY] || []).map((item) => item.file));
-    grid.replaceChildren(...listing.files.map((entry) => {
+    const entries = [...listing.files].sort(LIBRARY_SORTS[librarySort] || LIBRARY_SORTS.recent);
+    // Une image utilisée (sur la carte ou dans une configuration) ne peut pas
+    // être retirée : le serveur refuserait. Une image qu'un « Annuler »
+    // encore affiché remettrait sur la carte non plus.
+    const removable = (entry) => !entry.referenced && !awaitingUndo.has(entry.file);
+    grid.replaceChildren(...entries.map((entry) => {
         const cell = document.createElement('div');
         cell.className = 'images-library-cell';
         const pick = document.createElement('button');
@@ -495,7 +527,7 @@ async function renderLibrary() {
         // Nom d'origine retenu par le serveur (images/names.json) : repris
         // comme nom de l'item — une image reprise n'est plus « Image n ».
         pick.dataset.libraryName = entry.name || '';
-        pick.disabled = full;
+        pick.disabled = full || libraryCleanupMode;
         const usage = libraryUsage(entry.file, usedHere, usedOther);
         const size = `${entry.width} × ${entry.height}`;
         pick.title = [entry.name, size, usage?.label].filter(Boolean).join(' — ');
@@ -519,10 +551,21 @@ async function renderLibrary() {
             pick.appendChild(badge);
         }
         cell.appendChild(pick);
-        // Une image utilisée (sur la carte ou dans une configuration) ne
-        // peut pas être retirée : le serveur refuserait. Une image qu'un
-        // « Annuler » encore affiché remettrait sur la carte non plus.
-        if (!entry.referenced && !awaitingUndo.has(entry.file)) {
+        if (libraryCleanupMode) {
+            // Sélection des retirables ; une image utilisée reste marquée
+            // mais sans case — elle ne serait pas retirée.
+            if (removable(entry)) {
+                cell.classList.add('is-selectable');
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.className = 'form-check-input images-library-check';
+                box.dataset.librarySelect = entry.file;
+                box.checked = librarySelection.has(entry.file);
+                const name = entry.name || entry.file;
+                box.setAttribute('aria-label', pkg.t('Sélectionner ${name}', { name }));
+                cell.appendChild(box);
+            }
+        } else if (removable(entry)) {
             const remove = document.createElement('button');
             remove.type = 'button';
             remove.className = 'images-library-remove btn btn-sm';
@@ -544,6 +587,82 @@ async function renderLibrary() {
         usage.hidden = failed || listing.files.length === 0;
         usage.textContent = pkg.t('${n} image(s) · ${size}', { n: listing.files.length, size: formatBytes(listing.total_bytes) });
     }
+    // Barre d'outils et barre de nettoyage.
+    const toolbar = grid.parentElement?.querySelector('.images-library-toolbar');
+    if (toolbar) toolbar.hidden = failed || listing.files.length === 0;
+    const sortSelect = $('imagesLibrarySort');
+    if (sortSelect) sortSelect.value = librarySort;
+    const cleanupButton = $('btnImagesLibraryCleanup');
+    if (cleanupButton) cleanupButton.classList.toggle('active', libraryCleanupMode);
+    renderCleanupBar(listing, removable);
+}
+
+// Barre du mode nettoyage : sélection courante (nombre et taille), « Tout »
+// coche les images retirables, « Retirer » lance la suppression groupée.
+function renderCleanupBar(listing, removable) {
+    const bar = $('imagesLibraryCleanupBar');
+    if (!bar) return;
+    bar.hidden = !libraryCleanupMode;
+    if (!libraryCleanupMode) return;
+    const deletable = listing.files.filter(removable);
+    const selected = deletable.filter((entry) => librarySelection.has(entry.file));
+    const counter = $('imagesLibrarySelection');
+    if (counter) {
+        counter.textContent = selected.length
+            ? pkg.t('${n} sélectionnée(s) · ${size}', {
+                n: selected.length,
+                size: formatBytes(selected.reduce((sum, e) => sum + (e.size_bytes || 0), 0)),
+            })
+            : '';
+    }
+    const selectAll = $('imagesLibrarySelectAll');
+    if (selectAll) {
+        selectAll.checked = deletable.length > 0 && selected.length === deletable.length;
+        selectAll.indeterminate = selected.length > 0 && selected.length < deletable.length;
+        selectAll.disabled = deletable.length === 0;
+    }
+    const deleteButton = $('btnImagesLibraryDelete');
+    if (deleteButton) deleteButton.disabled = selected.length === 0;
+}
+
+function exitLibraryCleanup() {
+    if (!libraryCleanupMode) return;
+    libraryCleanupMode = false;
+    librarySelection.clear();
+    renderLibraryGrid();
+}
+
+// Suppression groupée : un appel par fichier (l'API unitaire existe déjà),
+// toast de synthèse ; un échec n'interrompt pas les suivants. `files` est
+// figé au clic : la fermeture du menu, qui quitte le mode nettoyage, vide
+// déjà librarySelection quand la confirmation revient.
+async function deleteLibraryFiles(files) {
+    let removed = 0;
+    let failed = 0;
+    for (const file of files) {
+        try {
+            const response = await fetch('/api/images/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (response.ok && data.success) removed += 1;
+            else failed += 1;
+        } catch (_) {
+            failed += 1;
+        }
+    }
+    if (removed) {
+        pkg.showToast?.(pkg.t('${n} image(s) retirée(s) de la bibliothèque.', { n: removed }),
+            'success', pkg.t('Images'), 3000);
+    }
+    if (failed) {
+        pkg.showToast?.(pkg.t("${n} image(s) n'ont pas pu être retirées.", { n: failed }),
+            'error', pkg.t('Images'), 5000);
+    }
+    exitLibraryCleanup();
+    refreshLibrary();
 }
 
 // ---------------------------------------------------------------------------
@@ -741,14 +860,53 @@ async function deleteLibraryImage(file) {
     } catch (e) {
         pkg.showToast?.(e.message || pkg.t("L'image n'a pas pu être retirée."), 'error', pkg.t('Images'), 5000);
     }
-    renderLibrary();
+    refreshLibrary();
 }
 
 async function onLibraryClick(event) {
+    if (event.target.closest('#btnImagesLibraryCleanup')) {
+        // Entrée/sortie du mode nettoyage : le menu reste ouvert.
+        event.stopPropagation();
+        if (libraryCleanupMode) exitLibraryCleanup();
+        else {
+            libraryCleanupMode = true;
+            librarySelection.clear();
+            renderLibraryGrid();
+        }
+        return;
+    }
+    // Tri et barre de nettoyage : interactions internes, le menu reste
+    // ouvert (sans quoi l'auto-fermeture Bootstrap le refermerait).
+    if (event.target.closest('.images-library-toolbar, #imagesLibraryCleanupBar')) {
+        event.stopPropagation();
+        return;
+    }
     if (event.target.closest('#btnImagesLibraryRetry')) {
         // Le menu reste ouvert pendant le nouvel essai.
         event.stopPropagation();
-        renderLibrary();
+        refreshLibrary();
+        return;
+    }
+    const cleanupCell = event.target.closest('[data-library-select]');
+    if (cleanupCell && libraryCleanupMode) {
+        // Case d'une image retirable : bascule de la sélection.
+        event.stopPropagation();
+        const file = cleanupCell.dataset.librarySelect;
+        if (librarySelection.has(file)) librarySelection.delete(file);
+        else librarySelection.add(file);
+        renderLibraryGrid();
+        return;
+    }
+    if (libraryCleanupMode && event.target.closest('.images-library-cell')) {
+        // Clic sur la cellule (vignette comprise) = bascule de la case.
+        event.stopPropagation();
+        const box = event.target.closest('.images-library-cell').querySelector('[data-library-select]');
+        if (box) {
+            const file = box.dataset.librarySelect;
+            if (librarySelection.has(file)) librarySelection.delete(file);
+            else librarySelection.add(file);
+            renderLibraryGrid();
+        }
         return;
     }
     const remove = event.target.closest('[data-library-delete]');
@@ -1931,7 +2089,34 @@ export function initImagesTab() {
         if (fileInputMode === 'replace') replaceFromFile(files[0]);
         else addFromFiles(files);
     });
-    $('btnImagesLibrary')?.addEventListener('show.bs.dropdown', renderLibrary);
+    $('btnImagesLibrary')?.addEventListener('show.bs.dropdown', refreshLibrary);
+    // Le mode nettoyage (cases à cocher, suppression groupée) se referme avec
+    // le menu ; le tri est conservé dans ce navigateur.
+    $('btnImagesLibrary')?.addEventListener('hidden.bs.dropdown', exitLibraryCleanup);
+    $('imagesLibrarySort')?.addEventListener('change', (event) => {
+        librarySort = event.target.value in LIBRARY_SORTS ? event.target.value : 'recent';
+        try { localStorage.setItem(LIBRARY_SORT_KEY, librarySort); } catch (_) { /* quota */ }
+        renderLibraryGrid();
+    });
+    $('imagesLibrarySelectAll')?.addEventListener('change', (event) => {
+        // « Tout » : coche/décoche toutes les images retirables de la grille.
+        const listing = libraryListing || { files: [] };
+        const awaitingUndo = filesAwaitingUndo();
+        for (const entry of listing.files) {
+            if (entry.referenced || awaitingUndo.has(entry.file)) continue;
+            if (event.target.checked) librarySelection.add(entry.file);
+            else librarySelection.delete(entry.file);
+        }
+        renderLibraryGrid();
+    });
+    $('btnImagesLibraryDelete')?.addEventListener('click', () => {
+        const files = [...librarySelection];
+        if (!files.length) return;
+        pkg.showConfirmation?.(
+            pkg.t('${n} image(s) seront supprimées définitivement de la bibliothèque.', { n: files.length }),
+            pkg.t('Nettoyer la bibliothèque'), () => deleteLibraryFiles(files),
+            null, { confirmText: pkg.t('Supprimer'), danger: true });
+    });
     $('imagesImportFile')?.addEventListener('change', (event) => {
         const file = event.target.files?.[0];
         event.target.value = '';

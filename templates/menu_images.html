@@ -66,6 +66,19 @@
                                 <i class="ti ti-library-photo me-1" aria-hidden="true"></i>{{ _("Bibliothèque") }}
                             </button>
                             <div class="dropdown-menu dropdown-menu-end images-library" id="imagesLibraryMenu">
+                                {# Tri et nettoyage groupé (images_ui.js) : visibles seulement
+                                   quand la grille a des images. #}
+                                <div class="images-library-toolbar">
+                                    <select id="imagesLibrarySort" class="form-select form-select-sm"
+                                            aria-label="{{ _('Tri de la bibliothèque') }}">
+                                        <option value="recent">{{ _("Récents d'abord") }}</option>
+                                        <option value="oldest">{{ _("Anciens d'abord") }}</option>
+                                        <option value="name">{{ _("Par nom") }}</option>
+                                        <option value="size">{{ _("Par taille") }}</option>
+                                    </select>
+                                    <button type="button" id="btnImagesLibraryCleanup" class="btn btn-sm btn-outline-secondary text-nowrap">
+                                        <i class="ti ti-checklist me-1" aria-hidden="true"></i>{{ _("Nettoyer") }}</button>
+                                </div>
                                 <p id="imagesLibraryEmpty" class="dropdown-item-text text-muted small mb-0">{{ _("Aucune image envoyée pour l'instant.") }}</p>
                                 <div id="imagesLibraryError" class="dropdown-item-text small mb-0" hidden>
                                     <p class="text-danger mb-1">{{ _("La bibliothèque n'a pas pu être chargée.") }}</p>
@@ -73,6 +86,15 @@
                                         <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réessayer") }}</button>
                                 </div>
                                 <div id="imagesLibraryList" class="images-library-grid"></div>
+                                <div id="imagesLibraryCleanupBar" class="images-library-cleanup" hidden>
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input" type="checkbox" id="imagesLibrarySelectAll">
+                                        <label class="form-check-label" for="imagesLibrarySelectAll">{{ _("Tout") }}</label>
+                                    </div>
+                                    <span id="imagesLibrarySelection" class="text-muted small flex-grow-1"></span>
+                                    <button type="button" id="btnImagesLibraryDelete" class="btn btn-sm btn-danger" disabled>
+                                        <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Retirer") }}</button>
+                                </div>
                                 <p id="imagesLibraryUsage" class="dropdown-item-text text-muted small mb-0"></p>
                             </div>
                         </div>

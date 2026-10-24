@@ -265,7 +265,14 @@ coche d'accent sur cette page, icône du mode (`ti-database` / `ti-stack`,
 comme le sélecteur de l'en-tête) pour l'autre page, texte dans le titre et le
 nom accessible. Un relevé `GET /api/images` en échec n'affiche pas le message
 « aucune image » (mensonger) : un état d'erreur avec bouton **Réessayer**
-(`imagesLibraryError`) le remplace.
+(`imagesLibraryError`) le remplace. Le relevé est gardé en mémoire
+(`libraryListing`) : le **tri** (récents d'abord — l'ordre du serveur —,
+anciens, par nom, par taille ; `#imagesLibrarySort`, choix retenu dans ce
+navigateur) et le **nettoyage groupé** (« Nettoyer » : cases à cocher sur les
+images retirables seules, « Tout », « Retirer » après confirmation — un
+appel `POST /api/images/delete` par fichier, toast de synthèse) redessinent
+la grille sans repasser par le serveur. Le mode nettoyage se referme avec le
+menu (`hidden.bs.dropdown` sur le bouton `Bibliothèque`).
 
 **Préréglages d'apparence** (`IMAGE_STYLE_PRESETS`, `imageStylePreset`) :
 Avatar, Logo sur fond, Filigrane, Photo encadrée. Chacun repart du style par

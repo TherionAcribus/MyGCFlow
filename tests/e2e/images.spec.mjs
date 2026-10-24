@@ -370,6 +370,65 @@ test('bibliothèque : un relevé en échec affiche une erreur, « Réessayer » 
   await expect(page.locator(`#imagesLibraryList [data-library-file="${logo.file}"]`)).toBeVisible();
 });
 
+test('bibliothèque : tri et nettoyage groupé des images inutilisées', async ({ page }) => {
+  const bandes = await upload(page, BANDES);
+  const avatar = await upload(page, AVATAR);
+  const logo = await upload(page, LOGO);
+  // Le logo est utilisé sur la carte : pas de case en mode nettoyage, et
+  // le serveur refuserait son retrait.
+  await putSettings(page, { images: { items: [
+    { id: 'babe0180', file: logo.file, name: 'Logo', position: { anchor: 'bottom-right', width: 160 } },
+  ] } });
+  await openImagesTab(page);
+  // Les fichiers envoyés par les specs précédents restent en bibliothèque :
+  // toutes les attentes se calculent depuis le relevé, jamais en absolu.
+  const library = async () => (await (await page.request.get('/api/images')).json()).files;
+  const gridOrder = () => page.locator('#imagesLibraryList [data-library-file]')
+    .evaluateAll((nodes) => nodes.map((n) => n.dataset.libraryFile));
+
+  await page.locator('#btnImagesLibrary').click();
+  for (const { file } of [bandes, avatar, logo]) {
+    await expect(page.locator(`#imagesLibraryList [data-library-file="${file}"]`)).toBeVisible();
+  }
+
+  // Tri par nom : avatar-transparent < bandes < logo-opaque (ordre
+  // indépendant des dates d'envoi — les mtimes peuvent être à la même seconde).
+  await page.locator('#imagesLibrarySort').selectOption('name');
+  const byName = await gridOrder();
+  expect(byName.indexOf(avatar.file)).toBeLessThan(byName.indexOf(bandes.file));
+  expect(byName.indexOf(bandes.file)).toBeLessThan(byName.indexOf(logo.file));
+
+  // Tri par taille : la grille suit le relevé, ordre décroissant puis
+  // départage par le nom de fichier (même comparateur que le client).
+  const files = await library();
+  const expectedBySize = [...files]
+    .sort((a, b) => (b.size_bytes - a.size_bytes) || a.file.localeCompare(b.file))
+    .map((f) => f.file);
+  await page.locator('#imagesLibrarySort').selectOption('size');
+  expect(await gridOrder()).toEqual(expectedBySize);
+
+  // Mode nettoyage : cases sur les images retirables, aucune sur l'image
+  // utilisée ; les vignettes ne peuvent plus être ajoutées.
+  await page.locator('#btnImagesLibraryCleanup').click();
+  await expect(page.locator('#imagesLibraryCleanupBar')).toBeVisible();
+  const removable = files.filter((f) => !f.referenced).map((f) => f.file);
+  await expect(page.locator('#imagesLibraryList [data-library-select]')).toHaveCount(removable.length);
+  await expect(page.locator(`#imagesLibraryList [data-library-select="${logo.file}"]`)).toHaveCount(0);
+  await expect(page.locator(`#imagesLibraryList [data-library-file="${avatar.file}"]`)).toBeDisabled();
+
+  // « Tout » coche les retirables ; « Retirer » demande confirmation, puis
+  // ils disparaissent — seules les images encore référencées restent.
+  await page.locator('#imagesLibrarySelectAll').check();
+  await expect(page.locator('#imagesLibrarySelection')).toContainText(`${removable.length} sélectionnée`);
+  await page.locator('#btnImagesLibraryDelete').click();
+  await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
+  const referenced = files.filter((f) => f.referenced).map((f) => f.file).sort();
+  await expect.poll(async () => (await library()).map((f) => f.file).sort()).toEqual(referenced);
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'retirée' })).toBeVisible();
+  await expect(page.locator('#imagesLibraryCleanupBar')).toBeHidden();
+  await expect(page.locator('#imagesLibraryList .images-library-cell')).toHaveCount(referenced.length);
+});
+
 test('bibliothèque : retrait confirmé, refusé tant qu’un « Annuler » peut ramener l’image', async ({ page }) => {
   const libraryFiles = async () => (await (await page.request.get('/api/images')).json()).files.map((f) => f.file);
   await openImagesTab(page);
