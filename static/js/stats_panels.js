@@ -40,10 +40,13 @@ import {
     dayNumberOfDate,
     evolutionActivePeaks,
     evolutionCounterValues,
+    evolutionEventsBetween,
     evolutionLineModel,
     evolutionStateAt,
     evolutionStatusAcc,
+    extremesOfFeatures,
     featuresUpTo,
+    foldExtreme,
     formatDdm,
     gridModel,
     hasActiveHighlights,
@@ -217,6 +220,78 @@ function indexRevision() {
     return Number(pkg.pointsByDateRevision) || 0;
 }
 
+// Index par jour des sauts et de l'accumulation : jours triés → features
+// (visibles puis locationless masquées, même ordre que featuresOfDates pour
+// les égalités d'extrêmes). Mémoïsé par révision de l'index source ; les
+// extrêmes par jour ne sont calculés qu'à la demande (repli d'un record
+// retiré, cf. removeDays).
+let statsDaysMemo = null;  // { revision, days: number[], feats: Feature[][], extremes: (ex|null)[] }
+let appliedPos = 0;        // nombre de jours de tête comptés dans `current`
+let basePos = 0;           // jours d'avant la date de début : plancher d'un saut
+let appliedRev = -1;       // révision de l'index couverte par `current`
+
+function statsDayIndex() {
+    const revision = indexRevision();
+    if (statsDaysMemo?.revision === revision) return statsDaysMemo;
+    const byDay = new Map();
+    for (const byDate of [pkg.pointsByDate, pkg.hiddenPointsByDate]) {
+        if (!byDate) continue;
+        for (const [key, list] of byDate.entries()) {
+            if (!list?.length) continue;
+            const day = dayNumberOfDate(new Date(key));
+            if (!Number.isFinite(day)) continue;
+            let bucket = byDay.get(day);
+            if (!bucket) byDay.set(day, (bucket = []));
+            for (const feature of list) bucket.push(feature);
+        }
+    }
+    const days = [...byDay.keys()].sort((a, b) => a - b);
+    statsDaysMemo = {
+        revision,
+        days,
+        feats: days.map((d) => byDay.get(d)),
+        extremes: new Array(days.length).fill(null),
+    };
+    return statsDaysMemo;
+}
+
+// Nombre d'entrées de `days` ≤ `day` (recherche dichotomique) : la position
+// de comptage correspondant à un jour affiché.
+function daysUpTo(days, day) {
+    let lo = 0;
+    let hi = days.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (days[mid] <= day) lo = mid + 1;
+        else hi = mid;
+    }
+    return lo;
+}
+
+// Extrêmes d'un jour de l'index, calculés une fois (mémoïsés dans l'index).
+function dayExtremes(index, pos) {
+    return index.extremes[pos] ?? (index.extremes[pos] = extremesOfFeatures(index.feats[pos]));
+}
+
+// Retire du comptage les jours [from, to) : mêmes comptes en moins, puis les
+// records d'extrêmes nés dans un jour retiré (leur `day` identifie le seau
+// d'origine) sont repliés sur les jours restants — premier gagnant à égalité,
+// ordre chronologique, comme updateExtremes.
+function removeDays(index, from, to) {
+    const removed = new Set(index.days.slice(from, to));
+    const batch = [];
+    for (let i = from; i < to; i++) for (const feature of index.feats[i]) batch.push(feature);
+    current.remove(batch);
+    const ex = current.extremes;
+    if (!ex) return;
+    for (const dir of ['north', 'south', 'east', 'west']) {
+        if (!ex[dir] || !removed.has(ex[dir].day)) continue;
+        const entries = [];
+        for (let i = 0; i < from; i++) entries.push(dayExtremes(index, i)[dir]);
+        ex[dir] = foldExtreme(dir, entries);
+    }
+}
+
 // Totaux de la sélection filtrée (locationless masquées comprises, comme le
 // compteur de caches), recalculés une fois par changement de sélection.
 function selectionTotals() {
@@ -242,10 +317,19 @@ function animationReference() {
 
 function rebuildCurrent() {
     current = createStatsAccumulator(metrics);
+    appliedPos = 0;
+    basePos = 0;
+    appliedRev = indexRevision();
     if (!animation) return;
-    const until = animation.lastDate
-        || new Date(animation.startDate.getTime() - 1);
-    current.add(indexFeaturesUpTo(until));
+    const index = statsDayIndex();
+    // Les jours d'avant la date de début sont comptés au lancement (caches
+    // déjà affichées) : un saut ne redescend jamais sous ce plancher.
+    basePos = animation.startDate instanceof Date
+        ? daysUpTo(index.days, dayNumberOfDate(animation.startDate) - 1)
+        : 0;
+    const until = animation.lastDate || new Date(animation.startDate.getTime() - 1);
+    appliedPos = daysUpTo(index.days, dayNumberOfDate(until));
+    for (let i = 0; i < appliedPos; i++) current.add(index.feats[i]);
 }
 
 function featuresOfDates(dates) {
@@ -381,7 +465,19 @@ export function accumulateStatsForDates(dates, now) {
     }
     animation.lastDate = dates[dates.length - 1];
     if (Number.isFinite(now)) lastNow = now;
+    const index = statsDayIndex();
+    if (appliedRev !== index.revision) {
+        // Index reconstruit en pleine animation (import, filtre) : l'état
+        // courant est recompté jusqu'au dernier jour affiché, pas incrémenté
+        // par-dessus — les features du lot en cours sont dedans.
+        rebuildCurrent();
+        touch();
+        return;
+    }
     const features = featuresOfDates(dates);
+    // Les jours sans trouvaille ne figurent pas dans `days` : la borne sur
+    // le dernier jour du lot suffit à suivre la position comptée.
+    appliedPos = daysUpTo(index.days, dayNumberOfDate(dates[dates.length - 1]));
     if (features.length === 0) {
         // Jours sans trouvaille : rien à compter, mais la tête d'une courbe
         // avance quand même sur l'axe des dates, et une année d'activité
@@ -396,8 +492,11 @@ export function accumulateStatsForDates(dates, now) {
 }
 
 // Saut dans la chronologie (barre de chronologie, aperçu en pause) : l'état à
-// la fin du jour `date`, reconstruit depuis l'index, sans surbrillance — rien
-// ne vient d'être trouvé. Les échelles restent celles de la référence.
+// la fin du jour `date`, sans surbrillance — rien ne vient d'être trouvé.
+// Incrémental comme seekPointsToDay pour les points de la carte : seuls les
+// jours entre l'ancienne et la nouvelle position sont ajoutés ou retirés
+// (un replay complet ne survient que si l'index a été reconstruit entre
+// deux). Les échelles restent celles de la référence.
 export function seekStatsToDate(date) {
     if (!(date instanceof Date)) return;
     if (isEvolutionPage()) {
@@ -414,12 +513,36 @@ export function seekStatsToDate(date) {
             highlightMs: animation?.highlightMs ?? DEFAULT_HIGHLIGHT_MS,
             evolution: true,
         };
+        if (!evoCurrent || !Number.isFinite(evoAppliedDay)) {
+            evoCurrent = evolutionStateAt(index, metrics, day);
+        } else if (day > evoAppliedDay) {
+            // En avant : poses et archivages des jours (applied, day].
+            const ev = evolutionEventsBetween(index, evoAppliedDay, day);
+            evoCurrent.add(ev.placed, null);
+            evoCurrent.remove(ev.archived, null);
+        } else if (day < evoAppliedDay) {
+            // En arrière : les mêmes événements défaits (les cumuls
+            // redescendent, l'ensemble actif se repeuple) — rewind défait
+            // les archivages avant les poses, l'ordre exact qui préserve
+            // l'ensemble actif (cf. stats_model).
+            const ev = evolutionEventsBetween(index, day, evoAppliedDay);
+            evoCurrent.rewind(ev);
+        }
         evoAppliedDay = day;
-        evoCurrent = evolutionStateAt(index, metrics, day);
     } else {
         if (mode !== 'animating' || !animation) return;
         animation.lastDate = date;
-        rebuildCurrent();
+        const index = statsDayIndex();
+        if (appliedRev !== index.revision) rebuildCurrent();
+        // jamais sous le plancher des jours d'avant la date de début.
+        const target = Math.max(basePos, daysUpTo(index.days, dayNumberOfDate(date)));
+        if (target > appliedPos) {
+            // Sans horloge : rien ne surligne.
+            for (let i = appliedPos; i < target; i++) current.add(index.feats[i]);
+        } else if (target < appliedPos) {
+            removeDays(index, target, appliedPos);
+        }
+        appliedPos = target;
     }
     clearTweens(animation.highlightMs);
     touch();

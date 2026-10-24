@@ -256,6 +256,19 @@ ramène alors aux totaux.
 Un panneau ajouté en pleine animation reconstruit l'accumulateur jusqu'au
 dernier jour affiché, sans relancer l'animation.
 
+Le **saut** de la barre de chronologie (aperçu en pause) est incrémental,
+comme `seekPointsToDay` pour les points de la carte : les features sont
+indexées une fois par révision (`statsDayIndex`, jours triés → visibles puis
+masquées), et seuls les jours entre l'ancienne et la nouvelle position sont
+ajoutés (`add`, sans horloge) ou retirés (`remove` — la clé retombée à 0 est
+gardée). Un record d'extrêmes né dans un jour retiré est replié sur les jours
+restants, premier gagnant à égalité (`extremesOfFeatures` + `foldExtreme`).
+Un saut ne redescend jamais sous les jours d'avant la date de début (`basePos`),
+déjà comptés au lancement. En Évolution, les événements de l'intervalle
+(`evolutionEventsBetween`) sont appliqués en avant ou défaits en arrière
+(`rewind` — archivages avant poses, ordre chronologique inverse) au lieu de
+rejouer toute la chronologie.
+
 ### Surlignage
 
 `highlight: "new"` surligne les **déblocages** (case ou catégorie qui passe de

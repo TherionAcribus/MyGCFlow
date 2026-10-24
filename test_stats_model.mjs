@@ -16,6 +16,7 @@ import {
     dayNumberOfDate,
     evolutionActivePeaks,
     evolutionCounterValues,
+    evolutionEventsBetween,
     evolutionLineModel,
     evolutionStateAt,
     evolutionStatusAcc,
@@ -32,6 +33,8 @@ import {
     createStatsPanel,
     dtIndex,
     featuresUpTo,
+    extremesOfFeatures,
+    foldExtreme,
     formatDdm,
     gridModel,
     gridSpec,
@@ -287,6 +290,32 @@ test('points extrêmes : record par axe, locationless et positions invalides ign
     assert.equal(acc.extremes.north, null);
 });
 
+test('extremesOfFeatures + foldExtreme : repli du record retiré, premier à égalité', () => {
+    const at = (lon, lat, extra = {}) => ({ ...geocache(1, 1, extra), geometry: { type: 'Point', coordinates: [lon, lat] } });
+    // Deux jours : le record du nord naît au second ; retiré, c'est celui du
+    // premier qui reprend (saut en arrière, stats_panels › removeDays).
+    const ex1 = extremesOfFeatures([
+        at(2.0, 47.0, { gc_code: 'GC1', date_find: '2021-01-01' }),
+        at(-3.0, 44.0, { gc_code: 'GC2', date_find: '2021-01-01' }),
+    ]);
+    const ex2 = extremesOfFeatures([
+        at(5.0, 49.0, { gc_code: 'GC3', date_find: '2021-01-02' }),
+    ]);
+    assert.equal(ex1.north.gc_code, 'GC1');
+    assert.equal(ex2.north.gc_code, 'GC3');
+    // Ordre chronologique, comparaisons strictes : à égalité le premier
+    // reste, comme à l'accumulation.
+    assert.equal(foldExtreme('north', [ex1.north, ex2.north]).gc_code, 'GC3');
+    const tie = { lat: 49.0, lon: 9, day: 5, gc_code: 'GCTIE' };
+    assert.equal(foldExtreme('north', [ex2.north, tie]).gc_code, 'GC3');
+    assert.equal(foldExtreme('north', [tie, ex2.north]).gc_code, 'GCTIE');
+    // Autres axes : sud = min de lat, est/ouest = max/min de lon ; null ignoré.
+    assert.equal(foldExtreme('south', [null, ex1.south, ex2.south]).gc_code, 'GC2');
+    assert.equal(foldExtreme('east', [ex1.east, ex2.east]).gc_code, 'GC3');
+    assert.equal(foldExtreme('west', [ex1.west, ex2.west]).gc_code, 'GC2');
+    assert.equal(foldExtreme('north', []), null);
+});
+
 test('coordonnées au format géocaching : degrés et minutes décimales', () => {
     assert.equal(formatDdm(48.8566, 'lat'), 'N 48° 51.396');
     assert.equal(formatDdm(2.3522, 'lon'), 'E 002° 21.132');
@@ -438,6 +467,47 @@ test('accumulateur : attributs multi-valués, exclue si aucun', () => {
     // Somme des comptes ≠ total pour une métrique multi-valuée : une cache
     // compte une fois par attribut porté, zéro si elle n'en a pas.
     assert.equal(acc.count('weekday', 6), 4);                  // les 4 au dimanche
+});
+
+test('remove : miroir exact de add — comptes, exclus, clés gardées à 0', () => {
+    const metrics = ['dt', 'cache_type', 'attribute', 'day'];
+    const batchA = [
+        geocache(1, 1, { attributes: [{ name: 'Scenic view' }, { name: 'Bikes allowed' }] }),
+        geocache(4, 4.5),
+        lab(),                                                    // exclue de D/T
+    ];
+    const batchB = [
+        geocache(2, 3.5, { attributes: [{ name: 'Scenic view' }] }),
+        geocache(2, 3.5, { date_find: '2021-04-02' }),
+        lab(),                                                    // exclue de D/T
+    ];
+    const full = createStatsAccumulator(metrics).add([...batchA, ...batchB]);
+    full.remove(batchB);
+    const partial = createStatsAccumulator(metrics).add(batchA);
+    assert.equal(full.total, partial.total);
+    // Les clés retombées à 0 sont gardées par remove (invariant vérifié plus
+    // bas) : la comparaison porte sur les valeurs non nulles.
+    const nonzero = (map) => Object.fromEntries([...map].filter(([, n]) => n > 0));
+    for (const metric of metrics) {
+        assert.deepEqual(nonzero(full.counts.get(metric)),
+            nonzero(partial.counts.get(metric)), metric);
+        assert.equal(full.excluded.get(metric), partial.excluded.get(metric), metric);
+    }
+    // Une clé retombée à 0 reste dans les comptes : les barres glissent vers
+    // 0 au lieu de perdre leur ligne (invariant de remove, cf. stats_model).
+    const batchC = [geocache(5, 5)];
+    const acc = createStatsAccumulator(metrics).add([...batchA, ...batchC]);
+    acc.remove(batchC);
+    assert.equal(acc.count('dt', 80), 0);
+    assert.ok(acc.counts.get('dt').has(80));
+    // Planchers à 0 : retirer plus que compté ne descend pas sous 0.
+    acc.remove([geocache(5, 5), geocache(5, 5)]);
+    assert.equal(acc.count('dt', 80), 0);
+    // Aucune horloge écrite par le retrait : pas de surlignage.
+    const revision = acc.revision;
+    acc.remove([]);
+    assert.equal(acc.revision, revision);                         // lot vide : rien
+    assert.equal(acc.lastHit.get('dt').size, 0);
 });
 
 test('surlignage : déblocage seulement au passage de 0 à 1', () => {
@@ -1163,6 +1233,69 @@ test('évolution : evolutionStateAt rejoue les événements, pas les jours', () 
     const end = evolutionStateAt(index, ['cache_type'], 20);
     assert.equal(end.setView('placed').total, 4);
     assert.equal(end.setView('active').total, 2);
+});
+
+test('évolution : deltas de saut — rewind défait le replay', () => {
+    const index = evolutionIndex();
+    const metrics = ['cache_type'];
+    // Photographie des trois univers pour comparer à evolutionStateAt —
+    // les clés retombées à 0 sont filtrées (remove/undo les gardent, cf.
+    // l'invariant « clés à 0 » de l'accumulateur).
+    const snap = (acc) => Object.fromEntries(['active', 'placed', 'archived'].map((name) => {
+        const view = acc.setView(name);
+        return [name, {
+            total: view.total,
+            counts: Object.fromEntries(
+                [...view.counts.get('cache_type')].filter(([, n]) => n > 0)),
+        }];
+    }));
+    const acc = evolutionStateAt(index, metrics, 2);
+    // En avant : le delta (2, 10] = les deux archivages ; (10, 20] = la pose.
+    const ev1 = evolutionEventsBetween(index, 2, 10);
+    acc.add(ev1.placed, null);
+    acc.remove(ev1.archived, null);
+    assert.deepEqual(snap(acc), snap(evolutionStateAt(index, metrics, 10)));
+    const ev2 = evolutionEventsBetween(index, 10, 20);
+    acc.add(ev2.placed, null);
+    acc.remove(ev2.archived, null);
+    assert.deepEqual(snap(acc), snap(evolutionStateAt(index, metrics, 20)));
+    // En arrière : les mêmes événements défaits rendent l'état exact.
+    acc.rewind(ev2);
+    assert.deepEqual(snap(acc), snap(evolutionStateAt(index, metrics, 10)));
+    acc.rewind(ev1);
+    assert.deepEqual(snap(acc), snap(evolutionStateAt(index, metrics, 2)));
+});
+
+test('évolution : rewind défait l\'archivage avant la pose (plancher à 0)', () => {
+    // Fenêtre défaite contenant une pose ET l'archivage qui la suit : posée
+    // jour 5, archivée jour 8 — elle n'existait pas encore au jour cible 4.
+    // Défaire la pose d'abord ferait passer l'actif à −1 (planché à 0), puis
+    // le désarchivage la ferait resurgir à 1 au lieu de 0. T0 est posée avant
+    // la fenêtre et archivée dedans : elle repasse à l'actif au jour 4.
+    const rows = [0, 1];
+    const index = {
+        timeline: buildTimeline(
+            { placed: Int32Array.from([1, 5]), archived: Int32Array.from([9, 8]) }, rows),
+        features: [cache({ cache_type: 'T0', country: 'France' }),
+            cache({ cache_type: 'T9', country: 'France' })],
+        originDay: 0,
+    };
+    const metrics = ['cache_type'];
+    const acc = evolutionStateAt(index, metrics, 10);
+    acc.rewind(evolutionEventsBetween(index, 4, 10));
+    const active = Object.fromEntries(
+        [...acc.setView('active').counts.get('cache_type')].filter(([, n]) => n > 0));
+    assert.deepEqual(active, { T0: 1 });                       // pas de fantôme T9
+    assert.equal(acc.setView('active').total, 1);
+    assert.equal(acc.setView('placed').total, 1);              // seule T0 posée
+    assert.equal(acc.setView('archived').total, 0);            // rien d'archivé au 4
+    assert.deepEqual(
+        Object.fromEntries(['active', 'placed', 'archived'].map((name) => {
+            const view = acc.setView(name);
+            return [name, Object.fromEntries(
+                [...view.counts.get('cache_type')].filter(([, n]) => n > 0))];
+        })),
+        { active: { T0: 1 }, placed: { T0: 1 }, archived: {} });
 });
 
 test('évolution : référence « pics » et ligne de statut', () => {

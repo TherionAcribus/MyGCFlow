@@ -15,7 +15,7 @@
 // (test_stats_model.mjs). Le dessin vit dans stats_render.mjs, le cycle de vie
 // dans stats_panels.js.
 
-import { counterAt, counterMaxFor } from './evolution_timeline.mjs';
+import { counterAt, counterMaxFor, eventsInRange } from './evolution_timeline.mjs';
 
 // ---------------------------------------------------------------------------
 // Réglages — miroir exact de stats_settings.py. Les deux côtés passent les
@@ -789,6 +789,34 @@ export function createStatsAccumulator(metrics = []) {
             acc.revision += 1;
             return acc;
         },
+        // Saut en arrière dans la chronologie (stats_panels › removeDays) :
+        // miroir exact de `add` en décrément. Une clé retombée à 0 est GARDÉE
+        // (barModel lit counts.keys() — une ligne à 0 glisse au lieu de
+        // disparaître). Aucune horloge : retirer n'est jamais une trouvaille.
+        // `extremes` n'est PAS touché : un record né dans un jour retiré
+        // exige un rescan des jours restants (foldExtreme), que seul
+        // l'appelant — qui connaît les seaux — peut faire.
+        remove(features) {
+            if (!features || features.length === 0) return acc;
+            for (const feature of features) {
+                const properties = feature?.properties || feature?.getProperties?.() || {};
+                acc.total = Math.max(0, acc.total - 1);
+                for (const metric of list) {
+                    const key = KEY_OF[metric](properties);
+                    // Même protocole que `add` : liste pour les métriques
+                    // multi-valuées, null ou liste vide = exclue.
+                    const keys = Array.isArray(key) ? key : [key];
+                    if (key === null || keys.length === 0) {
+                        acc.excluded.set(metric, Math.max(0, acc.excluded.get(metric) - 1));
+                        continue;
+                    }
+                    const counts = acc.counts.get(metric);
+                    for (const k of keys) counts.set(k, Math.max(0, (counts.get(k) || 0) - 1));
+                }
+            }
+            acc.revision += 1;
+            return acc;
+        },
         count(metric, key) {
             return acc.counts.get(metric)?.get(key) || 0;
         },
@@ -850,6 +878,33 @@ function updateExtremes(extremes, feature, properties) {
     if (!extremes.south || pos.lat < extremes.south.lat) extremes.south = make();
     if (!extremes.east || pos.lon > extremes.east.lon) extremes.east = make();
     if (!extremes.west || pos.lon < extremes.west.lon) extremes.west = make();
+}
+
+// Extrêmes d'un lot de features, calculés à la demande (saut en arrière :
+// un record né dans un jour retiré est replié sur les jours restants, cf.
+// foldExtreme). Même extraction des propriétés et même premier gagnant à
+// égalité qu'à l'accumulation (`add`).
+export function extremesOfFeatures(features) {
+    const extremes = { north: null, south: null, east: null, west: null };
+    for (const feature of features || []) {
+        updateExtremes(extremes, feature,
+            feature?.properties || feature?.getProperties?.() || {});
+    }
+    return extremes;
+}
+
+// Record parmi des entrées déjà calculées ({lat, lon, day, gc_code, name}),
+// fournies dans l'ordre chronologique : premier gagnant à égalité, comme
+// updateExtremes (comparaisons strictes). Entrées null ignorées.
+export function foldExtreme(direction, entries) {
+    const axis = direction === 'north' || direction === 'south' ? 'lat' : 'lon';
+    const higher = direction === 'north' || direction === 'east';
+    let best = null;
+    for (const entry of entries || []) {
+        if (!entry) continue;
+        if (!best || (higher ? entry[axis] > best[axis] : entry[axis] < best[axis])) best = entry;
+    }
+    return best;
 }
 
 // Comptes statiques d'une liste de caches (totaux, référence).
@@ -952,6 +1007,19 @@ export function createEvolutionStatsAccumulator(metrics = []) {
             applyEvents(features, at, [sets.archived], +1);
             return acc;
         },
+
+        // Défait les événements d'une plage de jours ({placed, archived},
+        // evolutionEventsBetween) : les archivages AVANT les poses, ordre
+        // chronologique inverse. Défaire une pose alors que l'archivage qui
+        // la suivait est encore appliqué ferait passer l'ensemble actif sous
+        // son plancher à 0 — la cache est posée ET archivée dans la plage,
+        // donc absente des deux au jour cible.
+        rewind(events = {}) {
+            applyEvents(events.archived, null, [sets.active], +1);
+            applyEvents(events.archived, null, [sets.archived], -1);
+            applyEvents(events.placed, null, [sets.active, sets.placed], -1);
+            return acc;
+        },
         // Vue d'un univers au format accumulateur principal (lecture seule).
         setView(name) {
             const set = sets[name] || sets.active;
@@ -1025,6 +1093,20 @@ export function evolutionStateAt(index, metrics, day) {
     acc.remove(Array.from(timeline.archivedOrder.subarray(0, timeline.archivedStart[upto]),
         (k) => features[k]), null);
     return acc;
+}
+
+// Événements des jours (fromDay, toDay] — le delta d'un saut entre deux
+// positions de la chronologie : poses et archivages à appliquer en avant,
+// à défaire en arrière (rewind). Indices convertis en features
+// comme evolutionStateAt : Array.from, jamais .map sur un Int32Array (les
+// features y deviendraient des 0).
+export function evolutionEventsBetween(index, fromDay, toDay) {
+    const features = index?.features || [];
+    const range = eventsInRange(index?.timeline, fromDay + 1, toDay);
+    return {
+        placed: Array.from(range.placed, (k) => features[k]),
+        archived: Array.from(range.archived, (k) => features[k]),
+    };
 }
 
 // Référence « échelle fixe » de l'univers actif : maximum atteint par chaque

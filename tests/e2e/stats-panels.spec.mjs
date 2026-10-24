@@ -250,6 +250,49 @@ test('la lecture remplit les panneaux jour après jour, l\'arrêt rend les totau
   expect(state.counts.cache_type).toEqual({ 'Traditional Cache': 3 });
 });
 
+test('un saut dans la chronologie recalcule les comptes dans les deux sens', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'dddddd01', kind: 'grid', metric: 'dt' },
+    { id: 'dddddd02', kind: 'counter', metric: 'summary' },
+  ] });
+  await openWithFixture(page, '#stats');
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Le saut n'est accepté que sur un aperçu en pause (barre de chronologie).
+  const paused = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).startPausedPreview());
+  expect(paused).toBe(true);
+  const seek = (iso) => page.evaluate(async (d) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(d)), iso);
+
+  // Fin du 04/01 : quatre trouvailles comptées (une par jour depuis le 01).
+  expect(await seek('2026-01-04T00:00:00')).toBe(true);
+  let state = await snapshot(page);
+  expect(state.mode).toBe('animating');
+  expect(state.total).toBe(4);
+  expect(sum(state.counts.dt)).toBe(4);
+
+  // En arrière : les jours retirés sont décomptés, l'état du 02/01 revient.
+  // Les cases retirées restent à 0 (la clé est gardée — la barre glisse vers
+  // 0 au lieu de disparaître, cf. stats_model › remove).
+  expect(await seek('2026-01-02T00:00:00')).toBe(true);
+  state = await snapshot(page);
+  expect(state.total).toBe(2);
+  expect(sum(state.counts.dt)).toBe(2);
+  expect(Object.values(state.counts.dt).filter((n) => n > 0)).toHaveLength(2);
+
+  // En avant jusqu'au bout : les six, comme le déroulé.
+  expect(await seek('2026-01-06T00:00:00')).toBe(true);
+  state = await snapshot(page);
+  expect(state.total).toBe(6);
+  expect(sum(state.counts.dt)).toBe(6);
+  expect(Object.keys(state.counts.dt)).toHaveLength(6);
+
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => page.evaluate(async () =>
+    (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
+});
+
 test('un export repart de zéro, même après un aperçu, et dessine les panneaux dans la vidéo', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [{ id: 'aaaaaa01', kind: 'grid', metric: 'dt' }] });
   await openWithFixture(page);
