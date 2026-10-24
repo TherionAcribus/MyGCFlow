@@ -25,7 +25,7 @@ import { counterAt, counterMaxFor, eventsInRange } from './evolution_timeline.mj
 export const STATS_MAX_PANELS = 6;
 
 export const STATS_METRICS_BY_KIND = Object.freeze({
-    grid: Object.freeze(['dt', 'jasmer', 'calendar', 'activity']),
+    grid: Object.freeze(['dt', 'jasmer', 'finds_ym', 'calendar', 'activity']),
     bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'age', 'country', 'state', 'attribute', 'owner']),
     // Anneau (camembert si le trou vaut 0) : catégories seulement.
     donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'attribute', 'owner']),
@@ -70,7 +70,7 @@ export const STATS_SORTS = Object.freeze(['natural', 'count', 'label', 'race']);
 export const STATS_ORIENTATIONS = Object.freeze(['horizontal', 'vertical']);
 // « multi » : une couleur distincte par catégorie.
 export const STATS_PALETTES = Object.freeze(['gc', 'accent', 'heat', 'multi']);
-export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners', 'oldest', 'same_day', 'north', 'south', 'east', 'west']);
+export const STATS_COUNTER_ITEMS = Object.freeze(['total', 'days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners', 'oldest', 'same_day', 'north', 'south', 'east', 'west']);
 // Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
 // placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 // actif (types, pays, régions — mêmes clés qu'en mode principal).
@@ -187,8 +187,11 @@ export function statsPanelDefaults(kind, metric) {
             show_percent: false,
             highlight: 'new',
             // Année d'activité : intensité selon le nombre du jour (façon
-            // contributions GitHub).
-            cell_mode: metric === 'dt' ? 'count' : metric === 'activity' ? 'heat' : 'filled',
+            // contributions GitHub). Même traitement pour la grille des
+            // trouvailles mois × année : un défi à cases (D/T, Jasmer,
+            // calendrier) reste « remplie ou vide », un comptage dense
+            // préfère l'intensité.
+            cell_mode: metric === 'dt' ? 'count' : metric === 'activity' || metric === 'finds_ym' ? 'heat' : 'filled',
             show_coverage: true,
             show_loops: false,
         };
@@ -219,7 +222,7 @@ export function statsPanelDefaults(kind, metric) {
         options = { show_values: true, highlight: 'every', show_area: true, show_milestones: true };
         palette = 'accent';
     } else {
-        options = { highlight: 'every', items: ['days', 'best_day', 'streak', 'types'], columns: 2 };
+        options = { highlight: 'every', items: ['total', 'days', 'best_day', 'streak', 'types'], columns: 2 };
         palette = 'accent';
     }
     return {
@@ -459,8 +462,13 @@ export function createStatsPanel(kind, metric, overrides = {}, newId = newStatsP
 // l'accumulateur retient la trouvaille la plus au nord, au sud… (`extremes`).
 export const EXTREMES_METRIC = 'extremes';
 
-// Compteurs → métriques de l'accumulateur dont ils dépendent.
+// Compteurs → métriques de l'accumulateur dont ils dépendent. « total »
+// s'appuie sur une pseudo-métrique constante (KEY_OF) : sans elle, un
+// panneau réduit à la tuile « Trouvailles » n'aurait aucune métrique à
+// compter et accumulateStatsForDates ne tournerait jamais pour lui
+// (court-circuit sur metrics.size === 0).
 const COUNTER_DEPENDENCIES = {
+    total: 'total',
     days: 'day',
     best_day: 'day',
     streak: 'day',
@@ -622,6 +630,14 @@ function textKey(value) {
 }
 
 const KEY_OF = {
+    // Pseudo-métrique constante : chaque feature compte sous la clé 1, ce
+    // qui fait traverser « total » par le pipeline de comptage comme les
+    // autres métriques (acc.total est incrémenté sans condition dans add ;
+    // la métrique évite le cas metrics.size === 0 où accumulateStatsForDates
+    // ne tournerait jamais pour un panneau à tuile « total » seule).
+    total(p) {
+        return 1;
+    },
     dt(p) {
         const d = dtIndex(p.difficulty);
         const t = dtIndex(p.terrain);
@@ -629,6 +645,12 @@ const KEY_OF = {
     },
     jasmer(p) {
         const date = publishedYmd(p);
+        return date ? date.y * 100 + date.m : null;
+    },
+    // Mois de la trouvaille (année × 100 + mois), mêmes clés que Jasmer
+    // mais sur date_find : la « grille Jasmer des trouvailles ».
+    finds_ym(p) {
+        const date = parseYmd(p.date_find);
         return date ? date.y * 100 + date.m : null;
     },
     // Jour de publication (numéro de jour) : tuile « plus ancienne cache
@@ -1243,7 +1265,9 @@ export const DT_LABELS = Object.freeze(
 );
 
 // Géométrie logique d'une grille. `context.end` ({ y, m }) borne Jasmer : les
-// mois postérieurs à la fin de l'animation sont désactivés.
+// mois postérieurs à la fin de l'animation sont désactivés. `context.years`
+// ([première, dernière année]) borne finds_ym : toutes les années comprises
+// ont leur ligne.
 //   rows/cols  : nombre de lignes/colonnes
 //   rowKeys    : valeur portée par chaque ligne (D, année, mois)
 //   colKeys    : idem pour les colonnes (T, mois, jour)
@@ -1281,6 +1305,29 @@ export function gridSpec(metric, context = {}) {
                 if (y === JASMER_START.y && m < JASMER_START.m) return true;
                 return y > end.y || (y === end.y && m > end.m);
             },
+        };
+    }
+    if (metric === 'finds_ym') {
+        // « Jasmer des trouvailles » : une ligne par année, de la première à
+        // la dernière trouvaille (context.years, borné sur la référence par
+        // gridModel — géométrie stable pendant l'animation, comme les
+        // échelles ; repli : l'année courante). 12 colonnes de mois, aucune
+        // case désactivée : un mois sans trouvaille est une information,
+        // pas un trou.
+        const fallback = new Date().getFullYear();
+        const years = Array.isArray(context.years)
+            && Number.isInteger(context.years[0]) && Number.isInteger(context.years[1])
+            ? context.years : [fallback, fallback];
+        const rowKeys = [];
+        for (let y = years[0]; y <= years[1]; y++) rowKeys.push(y);
+        return {
+            metric,
+            rows: rowKeys.length,
+            cols: 12,
+            rowKeys,
+            colKeys: Array.from({ length: 12 }, (_, i) => i + 1),
+            keyAt: (r, c) => rowKeys[r] * 100 + (c + 1),
+            disabled: () => false,
         };
     }
     if (metric === 'activity') {
@@ -1321,17 +1368,36 @@ export function gridSpec(metric, context = {}) {
     return null;
 }
 
+// Bornes [première, dernière année] des clés année × 100 + mois d'un
+// comptage (finds_ym, jasmer), null si vide.
+function ymYearBounds(counts) {
+    let first = Infinity;
+    let last = -Infinity;
+    for (const key of counts.keys()) {
+        const y = Math.floor(key / 100);
+        if (y < first) first = y;
+        if (y > last) last = y;
+    }
+    return first <= last ? [first, last] : null;
+}
+
 // Modèle d'affichage d'une grille : cases, max de référence, couverture,
 // tours (nombre minimal de trouvailles sur les cases disponibles — un
 // « tour de matrice » est complet quand chaque case a été trouvée).
 //   current   : accumulateur courant (ce qui est déjà apparu)
 //   reference : accumulateur de référence (fin d'animation) — échelle
 export function gridModel(metric, current, reference, context = {}) {
-    const spec = gridSpec(metric, context);
-    if (!spec) return null;
     const countMetric = countMetricOf(metric);
     const counts = current.counts.get(countMetric) || new Map();
     const refCounts = (reference || current).counts.get(countMetric) || new Map();
+    // finds_ym : la géométrie (première → dernière année) se lit sur la
+    // référence, comme les échelles — la grille ne grandit pas en cours
+    // d'animation, les cases des mois futurs attendent leur trouvaille.
+    if (metric === 'finds_ym') {
+        context = { ...context, years: ymYearBounds(refCounts) || undefined };
+    }
+    const spec = gridSpec(metric, context);
+    if (!spec) return null;
     let max = 0;
     let available = 0;
     let filled = 0;
@@ -1887,7 +1953,9 @@ export function counterValues(acc, items) {
     const values = {};
     const dayCounts = acc.counts.get('day') || new Map();
     for (const item of items) {
-        if (item === 'days') {
+        if (item === 'total') {
+            values.total = { value: acc.total };
+        } else if (item === 'days') {
             values.days = { value: dayCounts.size };
         } else if (item === 'best_day') {
             // Copie : l'objet de l'index est partagé entre les appels.

@@ -25,11 +25,11 @@ Mode principal (`stats.panels`) :
 
 | Type (`kind`) | Métriques (`metric`) |
 |---|---|
-| `grid` | `dt` (matrice D/T 9×9), `jasmer` (année × mois de publication, depuis mai 2000), `calendar` (mois × jour de trouvaille, 366 cases), `activity` (une année, semaines × jours, façon contributions GitHub) |
+| `grid` | `dt` (matrice D/T 9×9), `jasmer` (année × mois de publication, depuis mai 2000), `finds_ym` (année × mois de trouvaille), `calendar` (mois × jour de trouvaille, 366 cases), `activity` (une année, semaines × jours, façon contributions GitHub) |
 | `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year`, `month`, `weekday`, `age` (âge de la cache à la trouvaille, 10 tranches), `country`, `state`, `attribute`, `owner` |
 | `donut` | `cache_type`, `container`, `country`, `state`, `attribute`, `owner` — anneau, camembert si `hole` vaut 0 |
 | `line` | `cumulative` — trouvailles cumulées, en escalier |
-| `counter` | `summary` — tuiles choisies dans `options.items` : `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states`, `attributes`, `owners` (valeurs distinctes connues), `oldest` (plus ancienne cache trouvée : année + date de publication), `same_day` (trouvées le jour de leur publication), `north`, `south`, `east`, `west` (trouvaille la plus au nord… en coordonnées géocaching) |
+| `counter` | `summary` — tuiles choisies dans `options.items` : `total` (nombre de trouvailles), `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states`, `attributes`, `owners` (valeurs distinctes connues), `oldest` (plus ancienne cache trouvée : année + date de publication), `same_day` (trouvées le jour de leur publication), `north`, `south`, `east`, `west` (trouvaille la plus au nord… en coordonnées géocaching) |
 
 Mode Évolution (`stats.evolution_panels`) :
 
@@ -139,7 +139,11 @@ Les métriques de l'accumulateur ne sont pas toujours celles des panneaux :
 `accumulatorMetricsFor` traduit la courbe en `day` (jour de trouvaille, en
 numéro de jour entier) et les compteurs en `day`, `cache_type`, `country`,
 `state` selon les tuiles choisies. Les comptes par jour suffisent pour le
-record, le nombre de jours et la plus longue série (`counterValues`).
+record, le nombre de jours et la plus longue série (`counterValues`). La
+tuile `total` lit `acc.total`, incrémenté à chaque cache sans condition ;
+sa dépendance est une pseudo-métrique constante (`KEY_OF.total` rend 1) —
+sans elle, un panneau réduit à cette tuile n'aurait aucune métrique à
+demander et l'ensemble vide court-circuiterait `accumulateStatsForDates`.
 
 **Âge à la trouvaille** (`age`) : écart entre `published_date` et
 `date_find`, en dix tranches fixes (`ageBucket`) — le jour même, 1 à 7
@@ -192,14 +196,27 @@ hauteur du panneau ne change pas au premier Lab rencontré.
 
 Les grilles affichent aussi une ligne de **couverture** en pied
 (`options.show_coverage`, activée par défaut) : « Combinaisons : 45/81
-(56 %) » pour la matrice D/T, « Mois : n/N (p %) » pour Jasmer, « Jours :
-n/N (p %) » pour le calendrier — le pourcentage suit le format de la langue.
+(56 %) » pour la matrice D/T, « Mois : n/N (p %) » pour Jasmer et les
+trouvailles mois × année, « Jours : n/N (p %) » pour le calendrier — le
+pourcentage suit le format de la langue.
 Chaque grille peut en plus afficher son nombre de **tours complets**
 (`options.show_loops`, désactivée par défaut) : n est le nombre minimal de
 trouvailles sur les cases disponibles — « Tours de matrice » (81
 combinaisons D/T), « Tours de Jasmer » (chaque mois de publication depuis
-mai 2000 jusqu'au mois de fin, cases désactivées exclues), « Tours de
-calendrier » (366 jours, 29 février compris).
+mai 2000 jusqu'au mois de fin, cases désactivées exclues), « Tours année ×
+mois » (chaque mois de la première à la dernière année de trouvaille),
+« Tours de calendrier » (366 jours, 29 février compris).
+
+**Trouvailles mois × année** (`grid/finds_ym`) : la « grille Jasmer des
+trouvailles » — mêmes clés (année × 100 + mois) mais sur `date_find` au
+lieu de `published_date`, et une ligne par année **de la première à la
+dernière trouvaille** au lieu du plafond fixe de mai 2000. Les bornes se
+lisent sur les comptes de la référence (`ymYearBounds`), comme les
+échelles : la géométrie ne change pas pendant l'animation. Aucune case
+désactivée : un mois sans trouvaille est une information, pas une
+combinaison impossible. Cases en intensité par défaut (`cell_mode: heat`,
+comptage dense comme l'année d'activité), le pied d'exclusion est « Sans
+date de trouvaille ».
 
 **Année d'activité** (`grid/activity`) : une colonne par semaine (lundi
 en tête, 53 ou 54 colonnes), une case par jour de l'année ; les jours hors

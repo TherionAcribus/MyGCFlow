@@ -121,7 +121,7 @@
                                 <label class="form-check-label" for="switchStatsCoverage">{{ _("Afficher le nombre de cases remplies") }}</label>
                             </div>
                         </div>
-                        <div class="col-12" data-stats-kind="grid" data-stats-metric="dt jasmer calendar">
+                        <div class="col-12" data-stats-kind="grid" data-stats-metric="dt jasmer calendar finds_ym">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="switchStatsLoops" role="switch" aria-describedby="helpStatsLoops">
                                 <label class="form-check-label" for="switchStatsLoops">{{ _("Afficher le nombre de tours complets") }}</label>
@@ -130,6 +130,7 @@
                                 <span data-stats-kind="grid" data-stats-metric="dt">{{ _("Un tour est complet quand chacune des 81 combinaisons D/T a été trouvée au moins une fois.") }}</span>
                                 <span data-stats-kind="grid" data-stats-metric="jasmer">{{ _("Un tour est complet quand une cache de chaque mois de publication, depuis mai 2000, a été trouvée.") }}</span>
                                 <span data-stats-kind="grid" data-stats-metric="calendar">{{ _("Un tour est complet quand chacun des 366 jours de l'année, 29 février compris, compte une trouvaille.") }}</span>
+                                <span data-stats-kind="grid" data-stats-metric="finds_ym">{{ _("Un tour est complet quand chaque mois, de la première à la dernière année de trouvaille, compte une trouvaille.") }}</span>
                             </small>
                         </div>
 
@@ -206,6 +207,7 @@
                             <span class="form-label d-block" id="labelStatsCounterItems">{{ _("Chiffres affichés") }}</span>
                             <div id="statsCounterItems" class="stats-counter-items" role="group" aria-labelledby="labelStatsCounterItems">
                                 {% for item, label, modes in [
+                                    ('total', _('Trouvailles'), 'main'),
                                     ('days', _('Jours avec trouvaille'), 'main'),
                                     ('best_day', _('Record sur une journée'), 'main'),
                                     ('streak', _('Plus longue série (jours)'), 'main'),
@@ -413,6 +415,7 @@
     (_("Grilles"), [
         ('preset', 'dt', _("Matrice D/T"), _("Les 81 combinaisons difficulté/terrain."), None, 'main', 1),
         ('preset', 'jasmer', _("Grille Jasmer"), _("Un mois de publication par case, depuis mai 2000."), None, 'main', 1),
+        ('preset', 'finds_ym', _("Trouvailles mois × année"), _("Un mois de trouvaille par case, une ligne par année."), None, 'main', 1),
         ('preset', 'calendar', _("Calendrier 366"), _("Chaque jour de l'année, 29 février compris."), None, 'main', 1),
         ('preset', 'activity', _("Année d'activité"), _("Une année jour par jour, façon contributions GitHub."), None, 'main', 1),
     ]),

@@ -190,6 +190,12 @@ test('clés par métrique : Jasmer depuis mai 2000, calendrier mois×jour, taill
     assert.equal(statsKeyOf('jasmer', p), 201006);
     assert.equal(statsKeyOf('jasmer', { published_date: '2000-04-30' }), null);
     assert.equal(statsKeyOf('jasmer', { published_date: '2000-05-03' }), 200005);
+    // finds_ym : mêmes clés année × 100 + mois que Jasmer, sur date_find.
+    assert.equal(statsKeyOf('finds_ym', p), 202103);
+    assert.equal(statsKeyOf('finds_ym', { date_find: '2021-03-14' }), 202103);
+    assert.equal(statsKeyOf('finds_ym', { date_find: 'pfff' }), null);
+    assert.equal(statsKeyOf('finds_ym', { date_find: '2021-02-31' }), null);
+    assert.equal(statsKeyOf('finds_ym', {}), null);
     assert.equal(statsKeyOf('calendar', { date_find: '2020-02-29' }), 229);
     assert.equal(statsKeyOf('container', { container: null }), UNKNOWN_KEY);
     assert.equal(statsKeyOf('container', { container: 'Unknown' }), UNKNOWN_KEY);
@@ -685,6 +691,47 @@ test('grille Jasmer : mai 2000 → mois de fin, cases hors plage désactivées',
     assert.equal(model.filled, 1);
 });
 
+test('grille finds_ym : années des trouvailles en lignes, aucune case désactivée', () => {
+    // Géométrie déclarée par le contexte : 2020 → 2022, trois lignes.
+    const spec = gridSpec('finds_ym', { years: [2020, 2022] });
+    assert.equal(spec.rows, 3);
+    assert.equal(spec.cols, 12);
+    assert.deepEqual(spec.rowKeys, [2020, 2021, 2022]);
+    assert.equal(spec.keyAt(2, 11), 202212);
+    // Un mois sans trouvaille est une information, pas un trou : rien de
+    // désactivé, même avant la première ou après la dernière trouvaille.
+    for (let r = 0; r < spec.rows; r++) {
+        for (let c = 0; c < spec.cols; c++) assert.equal(spec.disabled(r, c), false);
+    }
+    // Sans contexte : repli sur l'année courante, une seule ligne.
+    const seule = gridSpec('finds_ym');
+    assert.equal(seule.rows, 1);
+    assert.deepEqual(seule.rowKeys, [new Date().getFullYear()]);
+
+    // gridModel lit les bornes sur les comptes de la RÉFÉRENCE (la grille ne
+    // grandit pas pendant l'animation) : 2019 et 2024 → six lignes.
+    const reference = countFeatures([
+        onDay('2019-05-12'), onDay('2024-11-03'), onDay('2024-11-20'),
+    ], ['finds_ym']);
+    const current = countFeatures([onDay('2019-05-12')], ['finds_ym']);
+    const model = gridModel('finds_ym', current, reference);
+    assert.deepEqual(model.rowKeys, [2019, 2020, 2021, 2022, 2023, 2024]);
+    assert.equal(model.rows, 6);
+    assert.equal(model.available, 72);
+    assert.equal(model.filled, 1);              // mai 2019 seul, côté courant
+    assert.equal(model.max, 2);                 // novembre 2024, référence
+    // La clé de la case « mai 2019 » est joignable : key + count dans cells.
+    assert.equal(model.cells.find((cell) => cell.key === 201905).count, 1);
+    const nov2024 = model.cells.find((cell) => cell.key === 202411);
+    assert.equal(nov2024.count, 0);
+    const modelRef = gridModel('finds_ym', reference, reference);
+    assert.equal(modelRef.cells.find((cell) => cell.key === 202411).count, 2);
+    // Comptage dense : le défaut est l'intensité, pas « remplie ou vide ».
+    assert.equal(createStatsPanel('grid', 'finds_ym').options.cell_mode, 'heat');
+    // La dépendance de la grille est sa propre métrique (clés sur date_find).
+    assert.deepEqual(accumulatorMetricsFor(createStatsPanel('grid', 'finds_ym')), ['finds_ym']);
+});
+
 test('grille calendrier : 366 cases, 29 février valide, 31 avril impossible', () => {
     const acc = countFeatures([], ['calendar']);
     const model = gridModel('calendar', acc, acc);
@@ -941,6 +988,12 @@ test('dépendances : courbe et compteurs comptent ce dont ils ont besoin', () =>
         accumulatorMetricsFor({ kind: 'counter', metric: 'summary', options: { items: ['streak', 'days', 'countries'] } }),
         ['day', 'country'],
     );
+    // « total » seul doit quand même compter : sa pseudo-métrique constante
+    // évite l'ensemble vide qui court-circuiterait accumulateStatsForDates.
+    assert.deepEqual(
+        accumulatorMetricsFor({ kind: 'counter', metric: 'summary', options: { items: ['total'] } }),
+        ['total'],
+    );
     assert.deepEqual(accumulatorMetricsFor({ kind: 'donut', metric: 'state' }), ['state']);
     const settings = normalizeStatsSettings({ panels: [
         { id: 'aaaaaa01', kind: 'line', metric: 'cumulative' },
@@ -962,7 +1015,8 @@ test('compteurs : jours, record (le plus ancien à égalité), plus longue séri
         onDay('2024-01-08', { attributes: [{ name: 'Scenic view' }], owner: 'B' }),
     ], ['day', 'cache_type', 'country', 'state', 'attribute', 'owner']);
     const v = counterValues(acc,
-        ['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners']);
+        ['total', 'days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners']);
+    assert.equal(v.total.value, 9);         // toutes les features, acc.total
     assert.equal(v.days.value, 7);
     assert.equal(v.best_day.value, 2);
     assert.equal(v.best_day.day, dayNumber({ y: 2024, m: 1, d: 2 }));

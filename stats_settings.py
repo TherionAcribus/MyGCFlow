@@ -23,9 +23,10 @@ STATS_MAX_PANELS = 6
 
 STATS_METRICS_BY_KIND = {
     # Grilles : matrice D/T 9×9, Jasmer (année × mois de publication),
-    # calendrier 366 (mois × jour de trouvaille), année d'activité (semaines
-    # × jours, façon contributions GitHub).
-    "grid": ("dt", "jasmer", "calendar", "activity"),
+    # trouvailles mois × année (mêmes clés que Jasmer, sur la date de
+    # trouvaille), calendrier 366 (mois × jour de trouvaille), année
+    # d'activité (semaines × jours, façon contributions GitHub).
+    "grid": ("dt", "jasmer", "finds_ym", "calendar", "activity"),
     "bar": ("cache_type", "container", "difficulty", "terrain", "year", "month", "weekday", "age", "country", "state", "attribute", "owner"),
     # Anneau (camembert si le trou vaut 0) : catégories seulement.
     "donut": ("cache_type", "container", "country", "state", "attribute", "owner"),
@@ -71,7 +72,7 @@ STATS_SORTS = ("natural", "count", "label", "race")
 STATS_ORIENTATIONS = ("horizontal", "vertical")
 # « multi » : une couleur distincte par catégorie (anneaux hors types).
 STATS_PALETTES = ("gc", "accent", "heat", "multi")
-STATS_COUNTER_ITEMS = ("days", "best_day", "streak", "types", "countries", "states", "attributes", "owners", "oldest", "same_day", "north", "south", "east", "west")
+STATS_COUNTER_ITEMS = ("total", "days", "best_day", "streak", "types", "countries", "states", "attributes", "owners", "oldest", "same_day", "north", "south", "east", "west")
 # Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
 # placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 # actif (types, pays, régions — mêmes clés qu'en mode principal).
@@ -220,8 +221,11 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
         options = {
             "show_percent": False,
             "highlight": "new",
-            # Année d'activité : intensité selon le nombre du jour.
-            "cell_mode": "count" if metric == "dt" else "heat" if metric == "activity" else "filled",
+            # Année d'activité : intensité selon le nombre du jour. Même
+            # traitement pour les trouvailles mois × année (comptage dense) ;
+            # les défis à cases (D/T, Jasmer, calendrier) restent
+            # « remplie ou vide ».
+            "cell_mode": "count" if metric == "dt" else "heat" if metric in ("activity", "finds_ym") else "filled",
             "show_coverage": True,
             "show_loops": False,
         }
@@ -259,7 +263,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
     else:
         options = {
             "highlight": "every",
-            "items": ["days", "best_day", "streak", "types"],
+            "items": ["total", "days", "best_day", "streak", "types"],
             "columns": 2,
         }
         palette = "accent"

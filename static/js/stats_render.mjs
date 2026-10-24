@@ -128,12 +128,13 @@ function highlightFor(view, keys, now) {
 }
 
 // ---------------------------------------------------------------------------
-// Grille (D/T, Jasmer, calendrier, année d'activité)
+// Grille (D/T, Jasmer, trouvailles mois × année, calendrier, année d'activité)
 // ---------------------------------------------------------------------------
 
 // Largeur réservée aux libellés de ligne, en multiples de la taille de police :
-// fixe par métrique pour que measure() n'ait pas besoin de mesurer du texte.
-const GRID_ROW_LABEL_EM = { dt: 2.4, jasmer: 2.6, calendar: 3, activity: 2.6 };
+// fixe par métrique pour que measure() n'ait pas besoin de mesurer du texte
+// (finds_ym : des années, comme Jasmer).
+const GRID_ROW_LABEL_EM = { dt: 2.4, jasmer: 2.6, finds_ym: 2.6, calendar: 3, activity: 2.6 };
 
 // La hauteur imposée (targetH, px CSS de la hauteur TOTALE du panneau) est
 // optionnelle : chaque layout la convertit en hauteur de zone graphique,

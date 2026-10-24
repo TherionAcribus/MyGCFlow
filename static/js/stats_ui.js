@@ -63,6 +63,7 @@ const PRESETS = {
         ['bar', 'terrain', { position: { anchor: 'bottom-right', width: 240 } }],
     ],
     jasmer: [['grid', 'jasmer', { position: { anchor: 'bottom-left', width: 220 } }]],
+    finds_ym: [['grid', 'finds_ym', { position: { anchor: 'bottom-center', width: 320 } }]],
     calendar: [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 } }]],
     activity: [['grid', 'activity', { position: { anchor: 'bottom-center' } }]],
     age: [

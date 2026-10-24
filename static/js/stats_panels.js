@@ -695,6 +695,7 @@ export function defaultStatsPanelTitle(panel) {
     switch (panel.metric) {
         case 'dt': return pkg.t('Matrice D/T');
         case 'jasmer': return pkg.t('Grille Jasmer');
+        case 'finds_ym': return pkg.t('Trouvailles mois × année');
         case 'calendar': return pkg.t('Calendrier 366');
         case 'activity': return pkg.t("Année d'activité");
         case 'cache_type': return pkg.t('Types de caches');
@@ -760,7 +761,7 @@ function excludedLine(metric, n) {
         case 'difficulty': return pkg.t('Sans difficulté : ${n}', { n });
         case 'terrain': return pkg.t('Sans terrain : ${n}', { n });
         case 'jasmer': case 'age': return pkg.t('Sans date de publication : ${n}', { n });
-        case 'day': case 'month': case 'weekday': case 'activity':
+        case 'day': case 'month': case 'weekday': case 'activity': case 'finds_ym':
             return pkg.t('Sans date de trouvaille : ${n}', { n });
         case 'attribute': return pkg.t('Sans attribut : ${n}', { n });
         default: return pkg.t('Sans date : ${n}', { n });
@@ -769,13 +770,14 @@ function excludedLine(metric, n) {
 
 function coverageLine(metric, filled, available, pct) {
     if (metric === 'dt') return pkg.t('Combinaisons : ${filled}/${available} (${pct})', { filled, available, pct });
-    if (metric === 'jasmer') return pkg.t('Mois : ${filled}/${available} (${pct})', { filled, available, pct });
+    if (metric === 'jasmer' || metric === 'finds_ym') return pkg.t('Mois : ${filled}/${available} (${pct})', { filled, available, pct });
     return pkg.t('Jours : ${filled}/${available} (${pct})', { filled, available, pct });
 }
 
 // Tours complets : chaque case disponible trouvée au moins n fois.
 function loopsLine(metric, n) {
     if (metric === 'jasmer') return pkg.t('Tours de Jasmer : ${n}', { n });
+    if (metric === 'finds_ym') return pkg.t('Tours année × mois : ${n}', { n });
     if (metric === 'calendar') return pkg.t('Tours de calendrier : ${n}', { n });
     return pkg.t('Tours de matrice : ${n}', { n });
 }
@@ -824,7 +826,9 @@ function gridAxisLabels(metric, model, number) {
         // Lignes D, colonnes T : abréviations communes au français et à l'anglais.
         return { rowLabels: DT_LABELS.map(number), colLabels: DT_LABELS.map(number), corner: 'D/T' };
     }
-    if (metric === 'jasmer') {
+    if (metric === 'jasmer' || metric === 'finds_ym') {
+        // Années en lignes, mois en colonnes — la grille des trouvailles
+        // (finds_ym) a la même géométrie que Jasmer.
         return { rowLabels: model.rowKeys.map(String), colLabels: monthNames('narrow'), corner: '' };
     }
     if (metric === 'activity') {
@@ -881,6 +885,7 @@ function formatDay(day) {
 }
 
 const COUNTER_LABELS = {
+    total: () => pkg.t('Trouvailles'),
     days: () => pkg.t('Jours avec trouvaille'),
     best_day: () => pkg.t('Record sur une journée'),
     streak: () => pkg.t('Plus longue série (jours)'),
@@ -1363,7 +1368,7 @@ function overlayRects(host) {
 function gridCellLabel(view, r, c, key) {
     if (view.metric === 'activity') return formatDay(key);
     if (view.metric === 'dt') return `D${view.rowLabels[r]}/T${view.colLabels[c]}`;
-    if (view.metric === 'jasmer') return `${view.rowLabels[r]}-${String(c + 1).padStart(2, '0')}`;
+    if (view.metric === 'jasmer' || view.metric === 'finds_ym') return `${view.rowLabels[r]}-${String(c + 1).padStart(2, '0')}`;
     return `${c + 1} ${view.rowLabels[r]}`;
 }
 

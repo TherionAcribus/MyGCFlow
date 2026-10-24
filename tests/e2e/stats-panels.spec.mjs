@@ -293,6 +293,41 @@ test('un saut dans la chronologie recalcule les comptes dans les deux sens', asy
     (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
 });
 
+test('grille des trouvailles mois × année et tuile « total » suivent le saut', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'eeeeee01', kind: 'grid', metric: 'finds_ym' },
+    // Le compteur réduit à la tuile « Trouvailles » : sa pseudo-métrique
+    // constante doit suffire à faire tourner l'accumulateur — sinon
+    // l'ensemble des métriques est vide et rien n'est jamais compté.
+    { id: 'eeeeee02', kind: 'counter', metric: 'summary', options: { items: ['total'] } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Au repos : les six trouvailles de la fixture, toutes en janvier 2026.
+  let state = await snapshot(page);
+  expect(state.total).toBe(6);
+  expect(state.counts.finds_ym).toEqual({ 202601: 6 });
+  expect(state.counts.total).toEqual({ 1: 6 });
+
+  // Saut jusqu'à la fin du 04/01 : quatre trouvailles comptées, le total
+  // et le mois de la grille suivent (une seule ligne, l'année 2026).
+  const paused = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).startPausedPreview());
+  expect(paused).toBe(true);
+  expect(await page.evaluate(async () =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date('2026-01-04T00:00:00')))).toBe(true);
+  state = await snapshot(page);
+  expect(state.mode).toBe('animating');
+  expect(state.total).toBe(4);
+  expect(state.counts.finds_ym).toEqual({ 202601: 4 });
+  expect(state.counts.total).toEqual({ 1: 4 });
+
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => page.evaluate(async () =>
+    (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
+});
+
 test('un export repart de zéro, même après un aperçu, et dessine les panneaux dans la vidéo', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [{ id: 'aaaaaa01', kind: 'grid', metric: 'dt' }] });
   await openWithFixture(page);

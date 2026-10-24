@@ -203,6 +203,105 @@
     }
   },
   {
+    "name": "grille trouvailles mois × année : intensité par défaut, tuile « total »",
+    "input": {
+      "panels": [
+        {
+          "id": "aaaaaa05",
+          "kind": "grid",
+          "metric": "finds_ym"
+        },
+        {
+          "id": "aaaaaa06",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": [
+              "total"
+            ]
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "aaaaaa05",
+          "kind": "grid",
+          "metric": "finds_ym",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_percent": false,
+            "highlight": "new",
+            "cell_mode": "heat",
+            "show_coverage": true,
+            "show_loops": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa06",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "total"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
     "name": "défauts des barres selon la métrique",
     "input": {
       "panels": [
@@ -1022,6 +1121,7 @@
           "options": {
             "highlight": "every",
             "items": [
+              "total",
               "days",
               "best_day",
               "streak",
@@ -1251,6 +1351,7 @@
           "options": {
             "highlight": "every",
             "items": [
+              "total",
               "days",
               "best_day",
               "streak",
@@ -1289,6 +1390,7 @@
           "options": {
             "highlight": "every",
             "items": [
+              "total",
               "days",
               "best_day",
               "streak",
@@ -2961,6 +3063,7 @@
           "options": {
             "highlight": "every",
             "items": [
+              "total",
               "days",
               "best_day",
               "streak",
@@ -3570,6 +3673,7 @@
           "options": {
             "highlight": "every",
             "items": [
+              "total",
               "days",
               "best_day",
               "streak",
