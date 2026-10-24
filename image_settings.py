@@ -51,6 +51,8 @@ IMAGE_RADIUS_RANGE = (0, 200)
 IMAGE_OPACITY_RANGE = (0, 100)
 IMAGE_PADDING_RANGE = (0, 100)
 IMAGE_BORDER_RANGE = (0, 50)
+# Point focal du recadrage « cover », en % de l'image (50 = centré).
+IMAGE_FOCUS_RANGE = (0, 100)
 IMAGE_FADE_RANGE = (0, 5000)
 # Planing : par dates, ou par jalons du compteur de trouvailles (« à la
 # 1000e trouvaille »), converti en date au moment de l'animation.
@@ -92,6 +94,10 @@ def image_item_defaults() -> dict:
             "shape": "rounded",
             "radius": 12,
             "fit": "contain",
+            # Point focal de « Remplir la forme » : la zone de l'image gardée
+            # au centre du recadrage (50 = cadrage centré).
+            "focus_x": 50,
+            "focus_y": 50,
             "opacity": 100,
             "background": "#ffffff",
             "background_opacity": 0,
@@ -133,6 +139,8 @@ _STYLE_COERCERS = {
     "shape": lambda v, d: _choice(v, IMAGE_SHAPES, d),
     "radius": lambda v, d: _int_in(v, d, IMAGE_RADIUS_RANGE),
     "fit": lambda v, d: _choice(v, IMAGE_FITS, d),
+    "focus_x": lambda v, d: _int_in(v, d, IMAGE_FOCUS_RANGE),
+    "focus_y": lambda v, d: _int_in(v, d, IMAGE_FOCUS_RANGE),
     "opacity": lambda v, d: _int_in(v, d, IMAGE_OPACITY_RANGE),
     "background": _color,
     "background_opacity": lambda v, d: _int_in(v, d, IMAGE_OPACITY_RANGE),

@@ -31,14 +31,22 @@ export function imagePanelHeight(item, natural, width = item.position.width) {
 
 // Rect de l'image dans sa zone (x, y, w, h) selon l'ajustement : `contain`
 // montre toute l'image (bandes vides éventuelles), `cover` remplit la zone
-// (l'excédent est rogné par la forme).
-export function fitRect(fit, natural, x, y, w, h) {
+// (l'excédent est rogné par la forme). `focus` (fractions [0, 1] de l'image)
+// place en `cover` le point focal à la même fraction de la zone — il reste
+// donc dans la partie visible ; 0.5 = cadrage centré. Comme la fraction est
+// bornée, l'image couvre toujours la zone, sans clampage.
+export function fitRect(fit, natural, x, y, w, h, focus = null) {
     if (!natural || !(natural.width > 0) || !(natural.height > 0)) return { x, y, width: w, height: h };
     const scale = fit === 'cover'
         ? Math.max(w / natural.width, h / natural.height)
         : Math.min(w / natural.width, h / natural.height);
     const width = natural.width * scale;
     const height = natural.height * scale;
+    if (fit === 'cover' && focus) {
+        const fx = Number.isFinite(focus.x) ? Math.max(0, Math.min(1, focus.x)) : 0.5;
+        const fy = Number.isFinite(focus.y) ? Math.max(0, Math.min(1, focus.y)) : 0.5;
+        return { x: x + fx * (w - width), y: y + fy * (h - height), width, height };
+    }
     return { x: x + (w - width) / 2, y: y + (h - height) / 2, width, height };
 }
 
@@ -87,7 +95,8 @@ export function drawImagePanel(ctx, width, height, item, source, scale = 1) {
             height: source.naturalHeight || source.height || 0,
         };
         const pad = Math.min(style.padding * scale, width / 2, height / 2);
-        const target = fitRect(style.fit, natural, pad, pad, width - 2 * pad, height - 2 * pad);
+        const target = fitRect(style.fit, natural, pad, pad, width - 2 * pad, height - 2 * pad,
+            { x: (style.focus_x ?? 50) / 100, y: (style.focus_y ?? 50) / 100 });
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         if (style.fit === 'cover' && pad > 0) {

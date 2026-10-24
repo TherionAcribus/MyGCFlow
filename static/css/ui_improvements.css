@@ -885,6 +885,50 @@ main.fullscreen-mode ~ .tooltip {
 .image-preset-thumb canvas.has-shadow {
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
+/* Point focal du recadrage « cover » : l'image entière sur damier, le point
+   à glisser là où le cadrage se concentre (images_ui.js › bindFocusPicker).
+   Les proportions de l'image sont posées en aspect-ratio par le JS une fois
+   décodée ; min-height garde une case vide signifiante avant. */
+.image-focus-picker {
+    position: relative;
+    width: 160px;
+    max-width: 100%;
+    min-height: 56px;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    border: 1px solid var(--tblr-border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 6px;
+    overflow: hidden;
+    background-image: repeating-conic-gradient(rgba(127, 127, 127, 0.25) 0% 25%, transparent 0% 50%);
+    background-position: 50%;
+    background-size: 12px 12px;
+    background-color: rgba(100, 116, 139, 0.3);
+}
+.image-focus-picker:focus-visible {
+    outline: 2px solid var(--color-accent-text, #0072c6);
+    outline-offset: 2px;
+}
+.image-focus-picker img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+}
+.image-focus-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+}
 /* Apparence d'une image : une ligne par réglage, libellé à gauche. */
 .image-style-grid {
     display: grid;

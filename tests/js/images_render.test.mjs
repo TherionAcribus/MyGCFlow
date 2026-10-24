@@ -74,6 +74,27 @@ test('fitRect : proportions inconnues → la zone entière', () => {
         { x: 5, y: 10, width: 100, height: 50 });
 });
 
+test('fitRect : cover suit le point focal, 0.5 = le centrage d’avant', () => {
+    const natural = { width: 200, height: 100 }; // couvre en largeur : 200 × 100
+    // Sans focus : centré (comportement d'origine). Fraction 0.5 : identique.
+    const centered = { x: -50, y: 0, width: 200, height: 100 };
+    assert.deepEqual(fitRect('cover', natural, 0, 0, 100, 100), centered);
+    assert.deepEqual(fitRect('cover', natural, 0, 0, 100, 100, { x: 0.5, y: 0.5 }), centered);
+    // Bord gauche de l'image au bord gauche de la zone ; bord droit aligné
+    // à droite — le point focal reste dans la partie visible.
+    assert.deepEqual(fitRect('cover', natural, 0, 0, 100, 100, { x: 0, y: 0.5 }),
+        { x: 0, y: 0, width: 200, height: 100 });
+    assert.deepEqual(fitRect('cover', natural, 0, 0, 100, 100, { x: 1, y: 0.5 }),
+        { x: -100, y: 0, width: 200, height: 100 });
+    // Fractions invalides : le centre sert de repli ; hors [0, 1] : bornées.
+    assert.deepEqual(fitRect('cover', natural, 0, 0, 100, 100, { x: Number.NaN, y: 0.5 }), centered);
+    assert.deepEqual(fitRect('cover', natural, 0, 0, 100, 100, { x: 2, y: -1 }),
+        { x: -100, y: 0, width: 200, height: 100 });
+    // contain ignore le point focal : l'image entière reste centrée.
+    assert.deepEqual(fitRect('contain', natural, 0, 0, 100, 100, { x: 0, y: 0 }),
+        { x: 0, y: 25, width: 100, height: 50 });
+});
+
 // ---------------------------------------------------------------------------
 // cubicBezier / effectTimingCss
 // ---------------------------------------------------------------------------

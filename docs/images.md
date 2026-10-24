@@ -85,6 +85,7 @@ images: {
     id, enabled, file, name,
     position: { mode: 'anchor'|'free', anchor, dx, dy, width, height, x, y },
     style: { shape: 'rect'|'rounded'|'circle', radius, fit: 'contain'|'cover',
+             focus_x: 0–100, focus_y: 0–100,
              opacity, background, background_opacity, padding, shadow,
              border_color, border_width },
     schedule: { by: 'date'|'find',
@@ -270,7 +271,14 @@ damier posé sur un gris moyen : un liseré ou un fond blanc reste visible.
 effet : le rayon (masqué hors « Arrondi »), la couleur de bordure (masquée
 sans bordure), l'ajustement (grisé avec une explication tant que la boîte suit
 les proportions de l'image, c.-à-d. ni rond ni hauteur imposée — `contain` et
-`cover` y donnent le même dessin). Choisir une couleur de fond sur un fond
+`cover` y donnent le même dessin), et le **point focal** (visible seulement
+quand `cover` recadre vraiment) : `focus_x`/`focus_y` en % de l'image, 50 =
+cadrage centré ; `fitRect` place le point focal à la même fraction de la
+zone, ce qui le garde dans la partie visible sans clampage. Le sélecteur
+(`#imageFocusPicker`, `bindFocusPicker`) montre l'image entière sur damier,
+le point se glisse à la souris ou aux flèches (1 %, Maj = 10 %) — le
+résultat se voit en direct sur la carte et dans la vignette. Choisir une
+couleur de fond sur un fond
 transparent le rend opaque (`withBackgroundColor`) : sans cela, le choix ne se
 voyait pas (opacité du fond à 0 par défaut). « Opacité de l'ensemble » est le
 `globalAlpha` de `drawImagePanel` : image, fond et bordure.

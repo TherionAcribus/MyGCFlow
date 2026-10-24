@@ -52,6 +52,14 @@ test('imageStyleFieldStates : ajustement utile si rond ou hauteur imposée', () 
     assert.equal(imageStyleFieldStates(itemWith({ shape: 'rect' }, { height: 90 })).fit, true);
 });
 
+test('imageStyleFieldStates : point focal seulement en « Remplir la forme » utile', () => {
+    assert.equal(imageStyleFieldStates(itemWith({ shape: 'circle', fit: 'cover' })).focus, true);
+    assert.equal(imageStyleFieldStates(itemWith({ shape: 'circle', fit: 'contain' })).focus, false);
+    // Forme suivant les proportions : le recadrage n'a pas d'effet non plus.
+    assert.equal(imageStyleFieldStates(itemWith({ shape: 'rect', fit: 'cover' })).focus, false);
+    assert.equal(imageStyleFieldStates(itemWith({ shape: 'rect', fit: 'cover' }, { height: 90 })).focus, true);
+});
+
 test('withBackgroundColor : fond transparent rendu opaque, opacité réglée gardée', () => {
     const base = imageItemDefaults().style;
     assert.deepEqual(withBackgroundColor(base, '#123456'),

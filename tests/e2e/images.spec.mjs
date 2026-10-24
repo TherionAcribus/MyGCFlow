@@ -1205,6 +1205,51 @@ test('une modification n’envoie au serveur que les clés du bloc changées', a
   expect(saved.configs.map((c) => c.name)).toEqual(['Club']);
 });
 
+test('point focal : « Remplir la forme » recadre autour du point choisi', async ({ page }) => {
+  const avatar = await upload(page, AVATAR);
+  await putSettings(page, { images: { items: [
+    { id: 'babe0030', file: avatar.file, name: 'Avatar',
+      position: { anchor: 'bottom-right', width: 160, height: 90 },
+      style: { fit: 'cover' } },
+  ] } });
+  await openImagesTab(page);
+  await page.locator('#imagesList li [data-action="select"]').click();
+  const picker = page.locator('#imageFocusPicker');
+  await expect(picker).toBeVisible();
+  const dot = page.locator('#imageFocusDot');
+  // left/top sont posés en style en ligne (le calculé serait résolu en px).
+  const dotPos = () => dot.evaluate((el) => ({ left: el.style.left, top: el.style.top }));
+  expect(await dotPos()).toEqual({ left: '50%', top: '50%' });
+
+  // Glisser le point vers le haut à gauche de l'image : la valeur part en
+  // PUT (15 %, 20 % de l'image). Le sélecteur est sous la ligne de
+  // flottaison du formulaire : le ramener dans le viewport, sinon le
+  // geste page.mouse atteindrait des coordonnées hors écran.
+  await picker.scrollIntoViewIfNeeded();
+  const box = await picker.boundingBox();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.15, box.y + box.height * 0.2, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => (await savedImages(page)).items[0].style)
+    .toMatchObject({ fit: 'cover', focus_x: 15, focus_y: 20 });
+
+  // « Image entière » : le recadrage n'existe plus, le point est masqué —
+  // sa valeur est gardée au retour de « Remplir la forme ».
+  await page.locator('label[for="imageFit-contain"]').click();
+  await expect(picker).toBeHidden();
+  await page.locator('label[for="imageFit-cover"]').click();
+  await expect(picker).toBeVisible();
+  expect(await dotPos()).toEqual({ left: '15%', top: '20%' });
+
+  // Rectangle sans hauteur imposée : la forme suit les proportions de
+  // l'image, le recadrage n'a pas d'effet — le point reste masqué même en
+  // « Remplir la forme ».
+  await page.locator('label[for="imageShape-rect"]').click();
+  await page.locator('#btnImageHeightAuto').click();
+  await expect(picker).toBeHidden();
+});
+
 test('une image restée en échec revient quand on renvoie le même fichier', async ({ page }) => {
   const logo = await upload(page, LOGO);
   await putSettings(page, { images: { items: [{ id: 'babe0031', file: logo.file, name: 'Logo' }] } });

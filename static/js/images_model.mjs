@@ -31,6 +31,8 @@ export const IMAGE_RADIUS_RANGE = Object.freeze([0, 200]);
 export const IMAGE_OPACITY_RANGE = Object.freeze([0, 100]);
 export const IMAGE_PADDING_RANGE = Object.freeze([0, 100]);
 export const IMAGE_BORDER_RANGE = Object.freeze([0, 50]);
+// Point focal du recadrage « cover », en % de l'image (50 = centré).
+export const IMAGE_FOCUS_RANGE = Object.freeze([0, 100]);
 export const IMAGE_FADE_RANGE = Object.freeze([0, 5000]);
 // Planing : par dates, ou par jalons du compteur de trouvailles (« à la
 // 1000e trouvaille »), converti en date au moment de l'animation.
@@ -76,6 +78,10 @@ export function imageItemDefaults() {
             shape: 'rounded',
             radius: 12,
             fit: 'contain',
+            // Point focal de « Remplir la forme » : la zone de l'image gardée
+            // au centre du recadrage (50 = cadrage centré).
+            focus_x: 50,
+            focus_y: 50,
             opacity: 100,
             background: '#ffffff',
             background_opacity: 0,
@@ -117,6 +123,8 @@ const STYLE_COERCERS = {
     shape: (v, d) => choice(v, IMAGE_SHAPES, d),
     radius: (v, d) => intIn(v, d, IMAGE_RADIUS_RANGE),
     fit: (v, d) => choice(v, IMAGE_FITS, d),
+    focus_x: (v, d) => intIn(v, d, IMAGE_FOCUS_RANGE),
+    focus_y: (v, d) => intIn(v, d, IMAGE_FOCUS_RANGE),
     opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),
     background: color,
     background_opacity: (v, d) => intIn(v, d, IMAGE_OPACITY_RANGE),
@@ -291,13 +299,16 @@ export function matchingStylePreset(style) {
 // de bordure qu'avec une bordure, l'ajustement que si la boîte ne suit pas
 // les proportions de l'image — ronde, ou hauteur imposée. Sinon « Image
 // entière » et « Remplir la forme » donnent le même dessin (imagePanelHeight
-// taille la boîte sur l'image).
+// taille la boîte sur l'image). Le point focal ne sert qu'avec cet
+// ajustement en « Remplir la forme ».
 export function imageStyleFieldStates(item) {
     const style = item?.style || {};
+    const fit = style.shape === 'circle' || item?.position?.height != null;
     return {
         radius: style.shape === 'rounded',
         borderColor: style.border_width > 0,
-        fit: style.shape === 'circle' || item?.position?.height != null,
+        fit,
+        focus: fit && style.fit === 'cover',
     };
 }
 

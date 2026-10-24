@@ -1152,6 +1152,98 @@ function presetLabel(button) {
     return button?.querySelector('.image-preset-label')?.textContent.trim() || '';
 }
 
+// Point focal du recadrage « cover » : l'image entière, un point à glisser
+// là où le cadrage se concentre (le résultat se voit sur la carte et dans
+// la vignette). Masqué hors « Remplir la forme » — ou quand l'ajustement
+// n'a pas d'effet (forme qui suit les proportions de l'image).
+function renderFocusPicker(item, visible) {
+    const row = $('imageFocusRow');
+    if (row) row.hidden = !visible;
+    if (!visible) return;
+    const picker = $('imageFocusPicker');
+    const img = $('imageFocusImage');
+    if (picker && img) {
+        if (img.dataset.file !== (item.file || '')) {
+            img.dataset.file = item.file || '';
+            picker.style.aspectRatio = '';
+            img.src = item.file ? pkg.imageUrl?.(item.file) || '' : '';
+        }
+        // Proportions connues au décodage : la case les suit, le point
+        // recouvre alors exactement les pixels de l'image.
+        if (!img.dataset.bound) {
+            img.dataset.bound = '1';
+            img.addEventListener('load', () => {
+                if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                    picker.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+                }
+            });
+        }
+    }
+    const dot = $('imageFocusDot');
+    if (dot) {
+        dot.style.left = `${item.style.focus_x}%`;
+        dot.style.top = `${item.style.focus_y}%`;
+    }
+}
+
+// Glisser dans le sélecteur (ou les flèches : 1 %, Maj = 10 %) déplace la
+// zone gardée au centre du recadrage. Le commit reste débouncé pendant le
+// geste ; le point est déplacé directement, sans reconstruire le formulaire.
+function bindFocusPicker() {
+    const picker = $('imageFocusPicker');
+    if (!picker) return;
+    const moveDot = (fx, fy) => {
+        const dot = $('imageFocusDot');
+        if (dot) {
+            dot.style.left = `${fx}%`;
+            dot.style.top = `${fy}%`;
+        }
+        renderFormPreview();
+    };
+    const moveFocusTo = (event) => {
+        const rect = picker.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const clamp01 = (v) => Math.max(0, Math.min(1, v));
+        const fx = Math.round(clamp01((event.clientX - rect.left) / rect.width) * 100);
+        const fy = Math.round(clamp01((event.clientY - rect.top) / rect.height) * 100);
+        updateSelected((item) => {
+            item.style.focus_x = fx;
+            item.style.focus_y = fy;
+        });
+        moveDot(fx, fy);
+    };
+    picker.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        picker.setPointerCapture?.(event.pointerId);
+        moveFocusTo(event);
+        const move = (e) => { if (e.pointerId === event.pointerId) moveFocusTo(e); };
+        const up = (e) => {
+            if (e.pointerId !== event.pointerId) return;
+            picker.removeEventListener('pointermove', move);
+            picker.removeEventListener('pointerup', up);
+            picker.removeEventListener('pointercancel', up);
+            renderForm();
+        };
+        picker.addEventListener('pointermove', move);
+        picker.addEventListener('pointerup', up);
+        picker.addEventListener('pointercancel', up);
+        event.preventDefault();
+    });
+    picker.addEventListener('keydown', (event) => {
+        const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+        if (!dir) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 10 : 1;
+        const clamp = (v) => Math.max(0, Math.min(100, v));
+        updateSelected((item) => {
+            item.style.focus_x = clamp(item.style.focus_x + dir[0] * step);
+            item.style.focus_y = clamp(item.style.focus_y + dir[1] * step);
+        });
+        const item = selectedItem();
+        if (item) moveDot(item.style.focus_x, item.style.focus_y);
+    });
+}
+
 // Bloc « Apparence ». Les réglages sans objet pour ce style
 // (imageStyleFieldStates) sont masqués — rayon hors « Arrondi », couleur sans
 // bordure — ou grisés avec une explication : l'ajustement, qu'on doit
@@ -1180,6 +1272,7 @@ function renderStyleFields(item) {
     if (opacity) opacity.textContent = `${s.opacity} %`;
     const bgOpacity = $('valueImageBackgroundOpacity');
     if (bgOpacity) bgOpacity.textContent = `${s.background_opacity} %`;
+    renderFocusPicker(item, states.focus);
     const preset = matchingStylePreset(s);
     document.querySelectorAll('[data-image-preset]').forEach((button) => {
         const active = button.dataset.imagePreset === preset;
@@ -1823,6 +1916,7 @@ export function initImagesTab() {
     list?.addEventListener('change', onListChange);
     bindFormFields();
     bindFormSections();
+    bindFocusPicker();
     bindFileDrop();
     bindDragAndDrop();
     // Coller une image copiée l'ajoute, comme un dépôt (onglet ouvert) :

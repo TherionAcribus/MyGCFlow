@@ -242,6 +242,15 @@
                                 {% endfor %}
                             </div>
                             <small id="imageFitHint" class="form-hint text-muted mt-1" hidden>{{ _("Sans effet : la forme suit les proportions de l'image. Choisissez « Rond » ou imposez une hauteur pour recadrer.") }}</small>
+                            <div id="imageFocusRow" class="mt-2" hidden>
+                                <span class="form-label" id="labelImageFocus">{{ _("Point focal") }}</span>
+                                <div class="image-focus-picker" id="imageFocusPicker" tabindex="0" role="group"
+                                     aria-labelledby="labelImageFocus" aria-describedby="imageFocusHint">
+                                    <img id="imageFocusImage" alt="" draggable="false">
+                                    <span id="imageFocusDot" class="image-focus-dot" aria-hidden="true"></span>
+                                </div>
+                                <small id="imageFocusHint" class="form-hint text-muted mt-1">{{ _("Zone gardée au centre du cadrage — glissez le point, ou déplacez-le aux flèches.") }}</small>
+                            </div>
                         </div>
 
                         {# Choisir une couleur alors que le fond est transparent le rend
