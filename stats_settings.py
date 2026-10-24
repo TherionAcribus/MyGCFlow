@@ -42,7 +42,7 @@ STATS_METRICS_BY_KIND = {
 # registres, le rendu filtre par mode (visiblePanels côté client).
 EVOLUTION_METRICS_BY_KIND = {
     "grid": (),
-    "bar": ("cache_type", "container", "difficulty", "terrain", "country", "state", "county", "status"),
+    "bar": ("cache_type", "container", "difficulty", "terrain", "country", "state", "county", "status", "lifetime"),
     "donut": ("cache_type", "container", "country", "state", "county", "status"),
     "line": ("actives", "placees", "archivees"),
     "counter": ("summary",),
@@ -76,7 +76,7 @@ STATS_COUNTER_ITEMS = ("total", "days", "best_day", "streak", "types", "countrie
 # Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
 # placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 # actif (types, pays, régions — mêmes clés qu'en mode principal).
-EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "countries", "states")
+EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "countries", "states", "age_moyen")
 _ALL_COUNTER_ITEMS = STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS
 
 STATS_OFFSET_RANGE = (0, 2000)
@@ -236,8 +236,9 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
             "show_percent": False,
             "highlight": "every",
             "sort": "count" if metric in ("cache_type", "country", "state", "county", "status", "attribute", "owner") else "natural",
-            # Âge : grandeur ordonnée, mais libellés longs (« 6 à 12 mois »).
-            "orientation": "horizontal" if metric in _CATEGORICAL or metric == "age" else "vertical",
+            # Âge et durée de vie : grandeurs ordonnées, mais libellés
+            # longs (« 6 à 12 mois », « 5 à 10 ans »).
+            "orientation": "horizontal" if metric in _CATEGORICAL or metric in ("age", "lifetime") else "vertical",
             "max_items": 8,
             "hide_empty": False,
         }

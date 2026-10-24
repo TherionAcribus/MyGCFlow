@@ -10,6 +10,7 @@ import {
     accumulatorMetricsFor,
     ageBucket,
     counterValues,
+    countedUniverse,
     createEvolutionStatsAccumulator,
     createTweenStore,
     dayNumber,
@@ -18,6 +19,7 @@ import {
     evolutionCounterValues,
     evolutionEventsBetween,
     evolutionLineModel,
+    evolutionMeanActiveAge,
     evolutionStateAt,
     evolutionStatusAcc,
     lineMilestones,
@@ -1247,7 +1249,15 @@ function evolutionIndex() {
     const rows = [0, 1, 2, 3];
     return {
         timeline: buildTimeline(base, rows),
-        features: rows.map(evoFeature),
+        // Jours de pose et d'archivage sur les propriétés, comme
+        // evolution_data.js › buildFeatures — la durée de vie et l'âge
+        // moyen les lisent.
+        features: rows.map((i) => ({
+            properties: {
+                cache_type: `T${i}`, country: 'France',
+                placedDay: base.placed[i], archivedDay: base.archived[i],
+            },
+        })),
         originDay: 0,
     };
 }
@@ -1417,6 +1427,52 @@ test('évolution : métriques acceptées par la normalisation', () => {
     assert.equal(panel.options.counted, 'placed');
     const plain = createStatsPanel('bar', 'county', {});
     assert.equal('counted' in plain.options, false);
+});
+
+test('évolution : durée de vie — tranches et univers par défaut', () => {
+    // KEY_OF.lifetime : <1 an, 1-2, 2-3, 3-5, 5-10, 10 ans et +.
+    for (const [days, bucket] of [[364, 0], [365, 1], [729, 1], [730, 2],
+        [1094, 2], [1095, 3], [1824, 3], [1825, 4], [3649, 4], [3650, 5]]) {
+        assert.equal(statsKeyOf('lifetime', { placedDay: 0, archivedDay: days }), bucket, `${days} j`);
+    }
+    // Jamais archivée ou sans dates : exclue.
+    assert.equal(statsKeyOf('lifetime', { placedDay: 0, archivedDay: EVO_NEVER_DAY }), null);
+    assert.equal(statsKeyOf('lifetime', {}), null);
+    // « Compter » : 'archived' est le défaut de la durée de vie (seul
+    // ensemble qui se remplit), 'active' pour les autres métriques.
+    assert.equal(countedUniverse({ metric: 'lifetime', options: {} }), 'archived');
+    assert.equal(countedUniverse({ metric: 'cache_type', options: {} }), 'active');
+    assert.equal(countedUniverse({ metric: 'lifetime', options: { counted: 'placed' } }), 'placed');
+});
+
+test('évolution : durée de vie comptée dans l\'univers archivé', () => {
+    const index = evolutionIndex();
+    // T0 : 3 jours, T2 : 8 jours → « <1 an » ; T1 et T3 jamais archivées.
+    const acc = evolutionStateAt(index, ['lifetime'], 20);
+    assert.deepEqual(Object.fromEntries(acc.setView('archived').counts.get('lifetime')), { 0: 2 });
+    assert.equal(acc.setView('archived').excluded.get('lifetime'), 0);
+    // Dans « placées », les quatre caches sont lues : les deux jamais
+    // archivées comptent parmi les exclues.
+    assert.deepEqual(Object.fromEntries(acc.setView('placed').counts.get('lifetime')), { 0: 2 });
+    assert.equal(acc.setView('placed').excluded.get('lifetime'), 2);
+});
+
+test('évolution : âge moyen des actives', () => {
+    const index = evolutionIndex();
+    // Jour 10 : seule T1 (posée jour 1) est active — âge 9.
+    assert.equal(evolutionMeanActiveAge(index, 10), 9);
+    // Jour 20 : T1 (19 j) et T3 (0 j) → moyenne 9,5.
+    assert.equal(evolutionMeanActiveAge(index, 20), 9.5);
+    // Jour 2 : T0, T1, T2 (2 + 1 + 0) → moyenne 1.
+    assert.equal(evolutionMeanActiveAge(index, 2), 1);
+    // Sans active : null — la tuile affiche « — ».
+    const empty = {
+        timeline: buildTimeline({ placed: new Int32Array(0), archived: new Int32Array(0) }, []),
+        features: [],
+    };
+    assert.equal(evolutionMeanActiveAge(empty, 0), null);
+    // evolutionCounterValues la publie comme les autres chiffres.
+    assert.equal(evolutionCounterValues(index, 20, null, ['age_moyen']).age_moyen.value, 9.5);
 });
 
 // ---------------------------------------------------------------------------

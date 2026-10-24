@@ -18,6 +18,7 @@ import {
     STATS_MAX_PANELS,
     STATS_METRICS_BY_KIND,
     STATS_PRESET_STYLE_KEYS,
+    countedUniverse,
     createStatsPanel,
     matchingStatsStylePreset,
     normalizeStatsConfig,
@@ -644,7 +645,7 @@ function renderForm() {
     setValue('switchStatsLegend', o.show_legend);
     setValue('switchStatsArea', o.show_area);
     setValue('switchStatsMilestones', o.show_milestones);
-    setValue('selectStatsCounted', o.counted || 'active');
+    setValue('selectStatsCounted', countedUniverse(panel));
     if (o.columns !== undefined) setValue('selectStatsColumns', String(o.columns));
     // Tuiles : seules celles du mode courant sont proposées (les autres restent
     // dans options.items, préservées à l'enregistrement).
@@ -943,11 +944,12 @@ function bindFormFields() {
         }, event.target);
     });
 
-    // Univers compté (Évolution) : 'active' est le défaut — la clé est ôtée
-    // plutôt que sérialisée (les panneaux principaux ne la portent pas).
+    // Univers compté (Évolution) : la clé est ôtée plutôt que sérialisée
+    // quand la valeur choisie est le défaut de la métrique ('active', ou
+    // 'archived' pour la durée de vie — countedUniverse).
     $('selectStatsCounted')?.addEventListener('change', (event) => {
         updateSelected((panel) => {
-            if (event.target.value === 'active') delete panel.options.counted;
+            if (event.target.value === countedUniverse({ metric: panel.metric })) delete panel.options.counted;
             else panel.options.counted = event.target.value;
         }, event.target);
     });

@@ -35,16 +35,23 @@ Mode Évolution (`stats.evolution_panels`) :
 
 | Type (`kind`) | Métriques (`metric`) |
 |---|---|
-| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `country`, `state`, `county`, `status` (actives vs archivées) |
+| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `country`, `state`, `county`, `status` (actives vs archivées), `lifetime` (durée de vie : archivage − pose, six tranches) |
 | `donut` | `cache_type`, `container`, `country`, `state`, `county`, `status` |
 | `line` | `actives` (présentes à la date), `placees`, `archivees` (cumuls) |
-| `counter` | `summary` — tuiles : `actives`, `placees`, `archivees`, `peak` (pic d'actives), `types`, `countries`, `states` |
+| `counter` | `summary` — tuiles : `actives`, `placees`, `archivees`, `peak` (pic d'actives), `age_moyen` (âge moyen des actives), `types`, `countries`, `states` |
 
 Les barres et anneaux Évolution acceptent `options.counted` :
 `active` (ensemble vivant à la date affichée, défaut), `placed` ou
-`archived` (cumuls des événements). `status` l'ignore. Les comptes
-rejouent la chronologie (`placedOrder`/`archivedOrder` de
+`archived` (cumuls des événements). `status` l'ignore ; `lifetime` vise
+`archived` par défaut (`countedUniverse`, stats_model.mjs) — le seul
+ensemble dont les six tranches se remplissent en animant : les caches
+encore actives tombent parmi les exclues (« Jamais archivées »). Les
+comptes rejouent la chronologie (`placedOrder`/`archivedOrder` de
 `evolution_timeline.mjs`) au jour affiché ou au jour de fin de plage.
+La tuile `age_moyen` lit la même chronologie : deux sommes préfixes de
+jours de pose (mémoïsées par timeline) donnent Σ(jour − pose) sur
+l'ensemble vivant en deux lectures — `evolutionMeanActiveAge`, valeur
+`null` (« — ») quand aucune cache n'est active.
 
 **Galerie « Ajouter »** (2026-10-22, remplace un menu déroulant d'une
 trentaine d'entrées) : le bouton ouvre `#statsGalleryModal`

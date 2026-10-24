@@ -32,6 +32,7 @@ import {
     arrangePanels,
     barModel,
     counterValues,
+    countedUniverse,
     countFeatures,
     countMetricOf,
     createStatsAccumulator,
@@ -42,6 +43,7 @@ import {
     evolutionCounterValues,
     evolutionEventsBetween,
     evolutionLineModel,
+    evolutionMeanActiveAge,
     evolutionStateAt,
     evolutionStatusAcc,
     extremesOfFeatures,
@@ -636,7 +638,7 @@ function hasActiveEvolutionHighlights(panels, now, durationMs) {
         // Même test O(1) que hasActiveHighlights : le max des horloges de la
         // métrique décide pour toutes les clés (at monotone ≤ now, cf.
         // stats_model.mjs).
-        const latest = evoCurrent.sets[panel.options.counted || 'active']?.latestHit?.get(panel.metric);
+        const latest = evoCurrent.sets[countedUniverse(panel)]?.latestHit?.get(panel.metric);
         if (latest && highlightLevel(latest, now, durationMs, mode) > 0) return true;
     }
     return false;
@@ -713,6 +715,8 @@ export function defaultStatsPanelTitle(panel) {
         case 'state': return pkg.t('Régions');
         case 'county': return pkg.t('Départements');
         case 'status': return pkg.t('Statut des caches');
+        case 'lifetime': return pkg.t('Durée de vie');
+        case 'age_moyen': return pkg.t('Âge moyen des actives');
         case 'actives': return pkg.t('Caches actives');
         case 'placees': return pkg.t('Poses cumulées');
         case 'archivees': return pkg.t('Archivages cumulés');
@@ -742,6 +746,17 @@ const AGE_LABELS = [
     () => pkg.t('15 ans et plus'),
 ];
 
+// Tranches de durée de vie des caches archivées, Évolution
+// (stats_model.mjs › KEY_OF.lifetime — même ordre).
+const LIFETIME_LABELS = [
+    () => pkg.t("Moins d'un an"),
+    () => pkg.t('1 à 2 ans'),
+    () => pkg.t('2 à 3 ans'),
+    () => pkg.t('3 à 5 ans'),
+    () => pkg.t('5 à 10 ans'),
+    () => pkg.t('10 ans et plus'),
+];
+
 function labelFor(metric, number) {
     if (metric === 'difficulty' || metric === 'terrain') {
         return (key) => (key === OTHERS_KEY ? pkg.t('Autres') : number(DT_LABELS[key]));
@@ -750,6 +765,7 @@ function labelFor(metric, number) {
     if (metric === 'month') return (key) => monthNames('short')[key - 1] ?? String(key);
     if (metric === 'weekday') return (key) => weekdayNames('short')[key] ?? String(key);
     if (metric === 'age') return (key) => AGE_LABELS[key]?.() ?? String(key);
+    if (metric === 'lifetime') return (key) => LIFETIME_LABELS[key]?.() ?? String(key);
     if (metric === 'status') {
         return (key) => key === 'active' ? pkg.t('Caches actives') : pkg.t('Caches archivées');
     }
@@ -765,6 +781,7 @@ function excludedLine(metric, n) {
         case 'day': case 'month': case 'weekday': case 'activity': case 'finds_ym':
             return pkg.t('Sans date de trouvaille : ${n}', { n });
         case 'attribute': return pkg.t('Sans attribut : ${n}', { n });
+        case 'lifetime': return pkg.t('Jamais archivées : ${n}', { n });
         default: return pkg.t('Sans date : ${n}', { n });
     }
 }
@@ -905,7 +922,17 @@ const COUNTER_LABELS = {
     placees: () => pkg.t('Caches posées'),
     archivees: () => pkg.t('Caches archivées'),
     peak: () => pkg.t('Pic de caches actives'),
+    age_moyen: () => pkg.t('Âge moyen des actives'),
 };
+
+// Âge moyen des actives (jours) → texte compact : « 3,2 ans »,
+// « 8 mois », « 42 jours » ; « — » sans active.
+function meanAgeText(days, number) {
+    if (!Number.isFinite(days)) return '—';
+    if (days >= 365.25) return pkg.t('${n} ans', { n: number(Math.round(days / 36.525) / 10) });
+    if (days >= 60) return pkg.t('${n} mois', { n: number(Math.round(days / 30.44)) });
+    return pkg.t('${n} jours', { n: number(Math.round(days)) });
+}
 
 // Texte d'une tuile (vue, export CSV). `shown` : valeur animée à afficher,
 // la valeur réelle par défaut. « Plus ancienne » est une année, les points
@@ -1100,7 +1127,7 @@ function buildEvolutionView(panel, source = null) {
     const day = animating ? evoAppliedDay : (index?.restDay ?? 0);
     const restAcc = () => (source ? source.evoAcc : evolutionRestAcc());
     const acc = animating ? evoCurrent : restAcc();
-    const counted = panel.options.counted || 'active';
+    const counted = countedUniverse(panel);
     const now = animating ? lastNow : Number.NaN;
     const tweens = source ? createTweenStore(0) : tweensOf(panel.id);
     const { number, percent } = formatters();
@@ -1147,9 +1174,13 @@ function buildEvolutionView(panel, source = null) {
         view.tiles = panel.options.items.map((item) => {
             const entry = values[item] || { value: 0 };
             const key = `${panel.id}:c:${item}`;
-            const shown = tweens.set(key, entry.value, now);
+            const shown = tweens.set(key, Number.isFinite(entry.value) ? entry.value : 0, now);
             return {
-                value: number(Math.round(shown)),
+                // Âge moyen : valeur animée en jours, texte en durée ;
+                // « — » tant qu'il n'y a pas d'active.
+                value: item === 'age_moyen'
+                    ? meanAgeText(Number.isFinite(entry.value) ? shown : null, number)
+                    : number(Math.round(shown)),
                 label: COUNTER_LABELS[item](),
                 detail: '',
                 level: panel.options.highlight === 'none' ? 0 : tweens.level(key, now),
@@ -2073,7 +2104,8 @@ function statsPanelCsvEvolution(panel, number, percent) {
         const values = evolutionCounterValues(index, day, acc?.setView('active'), panel.options.items);
         for (const item of panel.options.items) {
             const entry = values[item] || { value: 0 };
-            push(COUNTER_LABELS[item](), number(entry.value), '');
+            const value = item === 'age_moyen' ? meanAgeText(entry.value, number) : number(entry.value);
+            push(COUNTER_LABELS[item](), value, '');
         }
     } else if (panel.kind === 'line') {
         push(pkg.t('Date'), pkg.t('Total'));
@@ -2084,7 +2116,7 @@ function statsPanelCsvEvolution(panel, number, percent) {
         push(pkg.t('Catégorie'), pkg.t('Nombre'), pkg.t('Pourcentage'));
         const metric = panel.metric;
         const labelOf = labelFor(metric, number);
-        const counted = panel.options.counted || 'active';
+        const counted = countedUniverse(panel);
         const current = metric === 'status'
             ? evolutionStatusAcc(index, day)
             : acc?.setView(counted) || { counts: new Map(), excluded: new Map(), total: 0 };
@@ -2118,6 +2150,7 @@ function panelDrawCounts() {
 // comptes au compteur de caches affiché.
 export function getStatsSnapshot() {
     if (isEvolutionPage()) {
+        const index = evolutionIndex();
         const acc = (mode === 'animating' && evoCurrent) ? evoCurrent : evolutionRestAcc();
         const activeView = acc?.setView('active');
         const counts = {};
@@ -2142,6 +2175,10 @@ export function getStatsSnapshot() {
         return {
             mode,
             total: activeView?.total || 0,
+            // Âge moyen des actives (jours) au jour affiché — tuile
+            // « Âge moyen », vérifiable par les tests sans lire le canvas.
+            meanActiveAge: evolutionMeanActiveAge(index,
+                (mode === 'animating' && evoCurrent) ? evoAppliedDay : (index?.restDay ?? 0)),
             metrics: [...metrics],
             counts,
             excluded,

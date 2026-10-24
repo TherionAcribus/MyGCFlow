@@ -228,7 +228,8 @@
                                     ('actives', _('Caches actives'), 'evolution'),
                                     ('placees', _('Caches posées'), 'evolution'),
                                     ('archivees', _('Caches archivées'), 'evolution'),
-                                    ('peak', _('Pic de caches actives'), 'evolution')] %}
+                                    ('peak', _('Pic de caches actives'), 'evolution'),
+                                    ('age_moyen', _('Âge moyen des actives'), 'evolution')] %}
                                 <div class="form-check" data-stats-modes="{{ modes }}">
                                     <input class="form-check-input" type="checkbox" id="statsCounter-{{ item }}" data-counter-item="{{ item }}">
                                     <label class="form-check-label" for="statsCounter-{{ item }}">{{ label }}</label>
@@ -462,6 +463,7 @@
         ('add', 'bar:age', _("Âge des caches trouvées"), _("Écart entre la publication et la trouvaille."), None, 'main', 1),
         ('add', 'bar:status', _("Statut des caches"), _("Caches actives et archivées."), None, 'evolution', 1),
         ('add', 'donut:status', _("Anneau du statut"), _("La part des actives et des archivées."), None, 'evolution', 1),
+        ('add', 'bar:lifetime', _("Durée de vie"), _("De la pose à l'archivage, par tranche."), None, 'evolution', 1),
     ]),
     (_("Lieux et propriétaires"), [
         ('add', 'bar:country', _("Pays"), _("Une barre par pays."), None, 'main evolution', 1),

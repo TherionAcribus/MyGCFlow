@@ -16,6 +16,7 @@
 // dans stats_panels.js.
 
 import { counterAt, counterMaxFor, eventsInRange } from './evolution_timeline.mjs';
+import { EVO_NEVER_DAY } from './evolution_style.mjs';
 
 // ---------------------------------------------------------------------------
 // Réglages — miroir exact de stats_settings.py. Les deux côtés passent les
@@ -41,7 +42,7 @@ export const STATS_METRICS_BY_KIND = Object.freeze({
 // l'union des deux registres, le rendu filtre par mode (visiblePanels).
 export const EVOLUTION_METRICS_BY_KIND = Object.freeze({
     grid: Object.freeze([]),
-    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'country', 'state', 'county', 'status']),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'country', 'state', 'county', 'status', 'lifetime']),
     donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'county', 'status']),
     line: Object.freeze(['actives', 'placees', 'archivees']),
     counter: Object.freeze(['summary']),
@@ -74,7 +75,7 @@ export const STATS_COUNTER_ITEMS = Object.freeze(['total', 'days', 'best_day', '
 // Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
 // placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 // actif (types, pays, régions — mêmes clés qu'en mode principal).
-export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'archivees', 'peak', 'types', 'countries', 'states']);
+export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'archivees', 'peak', 'types', 'countries', 'states', 'age_moyen']);
 const ALL_COUNTER_ITEMS = [...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS];
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
@@ -240,8 +241,9 @@ export function statsPanelDefaults(kind, metric) {
             show_percent: false,
             highlight: 'every',
             sort: ['cache_type', 'country', 'state', 'county', 'status', 'attribute', 'owner'].includes(metric) ? 'count' : 'natural',
-            // Âge : grandeur ordonnée, mais libellés longs (« 6 à 12 mois »).
-            orientation: CATEGORICAL_METRICS.includes(metric) || metric === 'age' ? 'horizontal' : 'vertical',
+            // Âge et durée de vie : grandeurs ordonnées, mais libellés
+            // longs (« 6 à 12 mois », « 5 à 10 ans »).
+            orientation: CATEGORICAL_METRICS.includes(metric) || metric === 'age' || metric === 'lifetime' ? 'horizontal' : 'vertical',
             max_items: 8,
             hide_empty: false,
         };
@@ -762,11 +764,34 @@ const KEY_OF = {
     county(p) {
         return textKey(p.county);
     },
+    // Durée de vie d'une cache archivée (Évolution) : tranche 0-5 de
+    // `archivedDay − placedDay` — « <1 an », « 1-2 », « 2-3 », « 3-5 »,
+    // « 5-10 », « 10 ans et + » (LIFETIME_LABELS, stats_panels). Jamais
+    // archivée (EVO_NEVER_DAY) ou sans dates : exclue.
+    lifetime(p) {
+        const placed = Number(p.placedDay);
+        const archived = Number(p.archivedDay);
+        if (!Number.isFinite(placed) || !Number.isFinite(archived) || archived >= EVO_NEVER_DAY) return null;
+        const days = Math.max(0, archived - placed);
+        if (days < 365) return 0;
+        if (days < 730) return 1;
+        if (days < 1095) return 2;
+        if (days < 1825) return 3;
+        if (days < 3650) return 4;
+        return 5;
+    },
 };
 
 export function statsKeyOf(metric, properties) {
     const fn = KEY_OF[metric];
     return fn ? fn(properties || {}) : null;
+}
+
+// Univers compté par un panneau catégoriel Évolution (actives / poses /
+// archivages) : 'active' par défaut ; la durée de vie vise 'archived' —
+// le seul ensemble dont les six tranches se remplissent en animant.
+export function countedUniverse(panel) {
+    return panel?.options?.counted || (panel?.metric === 'lifetime' ? 'archived' : 'active');
 }
 
 // ---------------------------------------------------------------------------
@@ -1277,6 +1302,55 @@ export function evolutionStatusAcc(index, day, { reference = false } = {}) {
 // catégories distinctes de l'ensemble actif (`activeView`). Même forme que
 // counterValues.
 const EMPTY_VIEW = { counts: new Map() };
+
+// Âge moyen des actives : Σ(jour affiché − jour de pose) sur l'ensemble
+// vivant. Les sommes préfixes des jours de pose (posées cumulées, et
+// posées des archivées) ne dépendent que de la chronologie — calculées une
+// fois, mémoïsées dessus ; l'âge au jour `day` en coûte deux lectures.
+const ageSumsCache = new WeakMap();  // timeline → { placed, archivedPlaced }
+function evolutionAgeSums(index) {
+    const timeline = index?.timeline;
+    if (!timeline || timeline.count === 0) return null;
+    let sums = ageSumsCache.get(timeline);
+    if (sums) return sums;
+    const features = index.features || [];
+    const span = timeline.lastDay - timeline.firstDay + 1;
+    const placed = new Float64Array(span + 1);
+    const archivedPlaced = new Float64Array(span + 1);
+    const placedDayOf = (k) => Number(propertiesOf(features[k]).placedDay) || 0;
+    let acc = 0;
+    for (let d = 0; d < span; d++) {
+        for (let k = timeline.placedStart[d]; k < timeline.placedStart[d + 1]; k++) {
+            acc += placedDayOf(timeline.placedOrder[k]);
+        }
+        placed[d + 1] = acc;
+    }
+    acc = 0;
+    for (let d = 0; d < span; d++) {
+        for (let k = timeline.archivedStart[d]; k < timeline.archivedStart[d + 1]; k++) {
+            acc += placedDayOf(timeline.archivedOrder[k]);
+        }
+        archivedPlaced[d + 1] = acc;
+    }
+    sums = { placed, archivedPlaced };
+    ageSumsCache.set(timeline, sums);
+    return sums;
+}
+
+// Âge moyen (en jours) des caches actives à `day`, null quand il n'y en a
+// pas — la tuile affiche « — » plutôt qu'un 0 trompeur.
+export function evolutionMeanActiveAge(index, day) {
+    const timeline = index?.timeline;
+    const sums = evolutionAgeSums(index);
+    if (!timeline || !sums) return null;
+    const actives = counterAt(timeline, day, 'active');
+    if (!actives) return null;
+    const span = timeline.lastDay - timeline.firstDay + 1;
+    const upto = Math.max(0, Math.min(day - timeline.firstDay + 1, span));
+    const placedSum = sums.placed[upto] - sums.archivedPlaced[upto];
+    return (actives * day - placedSum) / actives;
+}
+
 export function evolutionCounterValues(index, day, activeView, items) {
     const timeline = index?.timeline;
     const values = {};
@@ -1285,6 +1359,7 @@ export function evolutionCounterValues(index, day, activeView, items) {
         else if (item === 'placees') values.placees = { value: counterAt(timeline, day, 'placed') };
         else if (item === 'archivees') values.archivees = { value: counterAt(timeline, day, 'archived') };
         else if (item === 'peak') values.peak = { value: timeline?.peakActive || 0 };
+        else if (item === 'age_moyen') values.age_moyen = { value: evolutionMeanActiveAge(index, day) };
         else if (item === 'types') values.types = { value: knownKeys(activeView || EMPTY_VIEW, 'cache_type') };
         else if (item === 'countries') values.countries = { value: knownKeys(activeView || EMPTY_VIEW, 'country') };
         else if (item === 'states') values.states = { value: knownKeys(activeView || EMPTY_VIEW, 'state') };

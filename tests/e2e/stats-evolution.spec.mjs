@@ -178,6 +178,57 @@ test('les panneaux Évolution comptent les trois univers et suivent l\'animation
     expect((await snapshot(page)).total).toBe(5);
 });
 
+test('durée de vie des archivées et âge moyen des actives', async ({ page }) => {
+    await putStats(page, { enabled: true, panels: [], evolution_panels: [
+        { kind: 'bar', metric: 'lifetime', title: 'Durée de vie' },
+        { kind: 'counter', metric: 'summary', title: 'Compteurs',
+            options: { items: ['actives', 'age_moyen'] } },
+    ] });
+    await openEvolution(page);
+    const loaded = page.evaluate(() => new Promise((resolve) => {
+        window.addEventListener('mygcflow:evolution-loaded', (e) => resolve(e.detail), { once: true });
+    }));
+    await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_A, FIXTURE_B]);
+    expect((await loaded).selected).toBe(8);
+    // Même fin de plage que le test principal : état connu au 15/01/2020.
+    await page.locator('a[href="#animation"]').click();
+    await page.locator('#animationConfigTab').click();
+    const end = page.locator('#animDateEnd');
+    await end.fill('15/01/2020');
+    await end.dispatchEvent('change');
+
+    // Archivées datées : A02 (3 j), A05 (4 j), B02 (0 j) → « <1 an » ×3.
+    // « Placées » lit les 8 caches : A01 survit jusqu'en 2026 (5-10 ans),
+    // les quatre non archivées comptent parmi les exclues.
+    const state = await snapshot(page);
+    expect(state.universes.archived.counts.lifetime).toEqual({ 0: 3 });
+    expect(state.universes.placed.counts.lifetime).toEqual({ 0: 3, 4: 1 });
+    // Actives : A01, A04, A06, B01, B03 → âges 14+13+8+6+13 = 54 → 10,8 j.
+    expect(state.meanActiveAge).toBeCloseTo(10.8);
+
+    const alt = (title) => page.locator('.stats-panel-alt', { hasText: title });
+    await expect(alt('Durée de vie')).toContainText("Moins d'un an : 3");
+    const counters = alt('Compteurs');
+    await expect(counters).toContainText('Caches actives : 5');
+    await expect(counters).toContainText('Âge moyen des actives : 11 jours');
+
+    // « Compter » : 'archived' est le défaut de la durée de vie ; basculer
+    // sur « Poses cumulées » montre les cinq années d'A01 et les exclues.
+    await page.locator('a[href="#stats"]').click();
+    const list = page.locator('#statsPanelList');
+    await list.locator('li', { hasText: 'Durée de vie' }).locator('[data-action="select"]').click();
+    const counted = page.locator('#selectStatsCounted');
+    await expect(counted).toBeVisible();
+    await expect(counted).toHaveValue('archived');
+    await counted.selectOption('placed');
+    await expect(alt('Durée de vie')).toContainText('5 à 10 ans : 1');
+    await expect(alt('Durée de vie')).toContainText('Jamais archivées : 4');
+    await expect.poll(async () => {
+        const res = await page.request.get('/api/settings');
+        return (await res.json()).stats.evolution_panels.find((p) => p.metric === 'lifetime')?.options?.counted;
+    }).toBe('placed');
+});
+
 test('le champ « Surligner » se masque quand il est sans effet', async ({ page }) => {
   await openEvolution(page);
   await page.locator('a[href="#stats"]').click();

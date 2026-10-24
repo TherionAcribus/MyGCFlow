@@ -3807,5 +3807,108 @@
         }
       ]
     }
+  },
+  {
+    "name": "évolution : durée de vie et âge moyen",
+    "input": {
+      "evolution_panels": [
+        {
+          "id": "f00d0001",
+          "kind": "bar",
+          "metric": "lifetime"
+        },
+        {
+          "id": "f00d0002",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": [
+              "actives",
+              "age_moyen"
+            ]
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "evolution_panels": [
+        {
+          "id": "f00d0001",
+          "kind": "bar",
+          "metric": "lifetime",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "f00d0002",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "actives",
+              "age_moyen"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "configs": []
+    }
   }
 ]
