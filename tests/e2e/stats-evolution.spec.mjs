@@ -105,6 +105,10 @@ test('les panneaux Évolution comptent les trois univers et suivent l\'animation
     await expect(menu.locator('[data-stats-add="bar:year"]')).toBeHidden();
     await expect(menu.locator('[data-stats-add="line:cumulative"]')).toBeHidden();
     await page.keyboard.press('Escape');
+    // La galerie est une modale : son animation de fermeture dure encore
+    // quelques centaines de millisecondes, pendant lesquelles elle intercepte
+    // les clics sur la liste des panneaux (échec sous charge, mode strict).
+    await expect(page.locator('#statsGalleryModal')).toBeHidden();
 
     // État au repos : actives à la date de fin, cumuls complets. Les comptes
     // exposent les clés canoniques ; l'ensemble actif conserve à 0 les types
