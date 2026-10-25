@@ -158,7 +158,37 @@ function renderStatus(st) {
         detail.appendChild(li(countLabel(st.pending_coordinates,
             t('cache sans position connue'), t('caches sans position connue')), 'text-warning'));
     }
+    const lastLine = lastImportLine(st.last_import);
+    if (lastLine) detail.appendChild(li(lastLine, 'text-muted'));
     detail.hidden = false;
+}
+
+// « Dernier import le 25/10/2026 09:22 : 5 nouveaux logs, 1 retiré — favori »
+// — répond à « dois-je réimporter ? » sans ouvrir l'historique.
+function lastImportLine(info) {
+    if (!info?.at) return null;
+    // `last_import_at` est stocké en UTC naïf : le suffixe Z évite une
+    // lecture en heure locale par le navigateur.
+    const d = new Date(/[zZ+]/.test(info.at) ? info.at : `${info.at}Z`);
+    if (isNaN(d.getTime())) return null;
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const when = `${pkg.formatDateDisplay?.(d) || ''} ${hh}:${mm}`.trim();
+    const parts = [];
+    const push = (n, one, many) => { if (n) parts.push(countLabel(n, one, many)); };
+    push(info.added, t('nouveau log'), t('nouveaux logs'));
+    push(info.updated, t('log mis à jour'), t('logs mis à jour'));
+    push(info.removed, t('log retiré'), t('logs retirés'));
+    const changes = parts.join(', ') || t('aucun changement');
+    let origin = null;
+    if (info.source === 'gpx-myfinds') origin = 'My Finds';
+    else if (info.source === 'gpx') origin = t('fichier GPX');
+    else if (info.source === 'mygcflow-logs') {
+        origin = /bookmarklet/.test(info.generator || '')
+            ? t('favori') : t('fichier mygcflow-logs');
+    }
+    const via = origin ? ` — ${origin}` : '';
+    return t('Dernier import le ${date} : ${changes}${via}', { date: when, changes, via });
 }
 
 // Le parcours du favori s'affiche d'office tant que rien n'est importé ;

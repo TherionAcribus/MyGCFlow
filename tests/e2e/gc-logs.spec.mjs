@@ -72,6 +72,9 @@ test('aperçu puis import : le statut reflète les logs', async ({ page }) => {
   await expect(detail).toContainText('À vous : 2 DNF, 1 trouvaille, 1 autre');
   await expect(detail).toContainText("3 logs d'autres joueurs");
   await expect(detail).toContainText('1 cache sans position connue');
+  // Dernier import rappelé dans le détail : date + bilan + source.
+  await expect(detail).toContainText('Dernier import le');
+  await expect(detail).toContainText('7 nouveaux logs');
   // Exporter vit dans les options avancées : les ouvrir avant de le lire.
   await page.locator('#gcLogsAdvanced summary').click();
   await expect(page.locator('#gcLogsExportBtn')).toBeVisible();

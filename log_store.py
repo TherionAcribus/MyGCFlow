@@ -409,11 +409,29 @@ def merge_myfinds_logs(session, parsed: LogsParseResult) -> dict:
 # Statut, suppression
 # ---------------------------------------------------------------------------
 
+def _last_import_info(collection) -> dict | None:
+    """Bilan allégé du dernier import pour la carte « Mes logs » : date et
+    compteurs principaux du résumé persisté — assez pour « dois-je
+    réimporter ? », sans les échantillons ni les raisons de rejet."""
+    if not collection.last_import_at:
+        return None
+    info = {"at": collection.last_import_at.isoformat()}
+    if collection.last_import_summary:
+        try:
+            stored = json.loads(collection.last_import_summary)
+        except (ValueError, TypeError):
+            stored = {}
+        for key in ("added", "updated", "removed", "source", "generator"):
+            if stored.get(key) is not None:
+                info[key] = stored[key]
+    return info
+
+
 def collection_status(session) -> dict:
     collection = get_collection(session)
     if collection is None:
         return {"exists": False, "logs": 0, "mine": 0, "mine_by_category": {}, "caches": 0,
-                "pending_coordinates": 0, "revision": 0, "account": None}
+                "pending_coordinates": 0, "revision": 0, "account": None, "last_import": None}
     cid = collection.id
     total = session.query(LogEvent.id).filter(LogEvent.collection_id == cid).count()
     mine_by_category = Counter()
@@ -430,6 +448,7 @@ def collection_status(session) -> dict:
                     "username": collection.account_username},
         "revision": collection.revision,
         "last_import_at": collection.last_import_at.isoformat() if collection.last_import_at else None,
+        "last_import": _last_import_info(collection),
         "logs": total,
         "mine": sum(mine_by_category.values()),
         "mine_by_category": dict(mine_by_category),

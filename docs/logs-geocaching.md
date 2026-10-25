@@ -354,7 +354,10 @@ Un fichier par import (`.json`, `.gpx`, ou `.zip` dont le premier `.json`/
    que les logs ne sont pas dessinés (lot C). Le statut porte aussi
    `pending_import` quand un export du favori attend sa validation
    (bandeau « Voir l'aperçu » de la carte, relevé toutes les 4 s tant que
-   l'onglet Données est affiché).
+   l'onglet Données est affiché) et `last_import` — date et compteurs
+   allégés (`added`, `updated`, `removed`, `source`, `generator`) issus
+   de `last_import_summary`, que la carte affiche en « Dernier import
+   le … : … — favori/fichier ».
 
 **Réception du favori** — `POST /api/logs/receive` : corps = document
 `mygcflow-logs` (pas de multipart), jeton d'installation en en-tête

@@ -72,6 +72,18 @@ class LogStoreTests(unittest.TestCase):
         ref = db.session.query(CacheRef).filter_by(gc_code="GC9ZZZZ").one()
         self.assertEqual((ref.corrected_latitude, ref.coordinate_source), (48.01, lf.SOURCE_LOGS))
 
+    def test_status_reports_last_import(self):
+        # « Dernier import le … : +n logs, … — source » de la carte.
+        self.assertIsNone(log_store.collection_status(db.session)["last_import"])
+        self._commit()
+        info = log_store.collection_status(db.session)["last_import"]
+        self.assertEqual(info["added"], 7)
+        self.assertEqual(info["source"], lf.SOURCE_LOGS)
+        self.assertEqual(info["generator"], "outil-fictif 1.0")
+        self.assertTrue(info["at"].startswith("20"))
+        log_store.clear_logs(db.session)
+        self.assertIsNone(log_store.collection_status(db.session)["last_import"])
+
     def test_reimport_is_idempotent(self):
         self._commit()
         summary = self._commit()
