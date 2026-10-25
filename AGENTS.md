@@ -116,8 +116,10 @@ Autres repères :
   n'ont pas d'attribut `id` : rejetés, ils ne créent aucune collection.
   Même famille : `dnf_display` / `dnf_in_trail` (points DNF) sont des
   préférences globales à remettre (`false` / `true`) en sortant. Les points
-  DNF sont dans `window.vectorSource` (`source_kind === 'dnf'`) mais jamais
-  dans `pointsByDate` — exemple dans `dnf-display.spec.mjs`.
+  DNF ont leur propre couche, sous les trouvailles : source
+  `window.dnfVectorSource` (pas `window.vectorSource`), jamais dans
+  `pointsByDate` — exemple dans `dnf-display.spec.mjs` ; effacements et
+  flashs DNF relevés par `getDnfDebugState()`.
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

@@ -43,11 +43,13 @@ async function openWithData(page) {
 }
 
 
-// Codes GC des points DNF présents sur la carte, et des trouvailles.
+// Codes GC des points DNF présents sur la carte (leur couche, sous celle des
+// trouvailles), et des trouvailles.
 function mapCodes(page, kind) {
-  return page.evaluate((wanted) => (window.vectorSource?.getFeatures() || [])
-    .filter(f => (f.get('source_kind') === 'dnf') === (wanted === 'dnf'))
-    .map(f => f.get('gc_code')).sort(), kind);
+  return page.evaluate((wanted) => {
+    const source = wanted === 'dnf' ? window.dnfVectorSource : window.vectorSource;
+    return (source?.getFeatures() || []).map(f => f.get('gc_code')).sort();
+  }, kind);
 }
 
 

@@ -396,7 +396,12 @@ de l'animation, ni panneaux Stats, ni barre de chronologie, ni suivi de
 caméra par jour ne les voient. `static/js/dnf_data.js` les charge (seulement
 si l'affichage est activé), les filtre comme la sélection courante
 (`filterLikeCurrentSelection`, bdd.js) puis `mapgl.js` les ajoute et les
-retire dans la source des points selon le jour montré (`syncDnfToDay` à
+retire dans **leur propre couche, sous celle des trouvailles** (zIndex 1000
+contre 1001, source `window.dnfVectorSource`, même style et même horloge) —
+une trouvaille qui chevauche un DNF reste visible et prioritaire au clic.
+Une seule couche ne convient pas : OpenLayers 10 y dessine les points dans
+l'ordre de leurs identifiants internes, et les DNF, créés après les
+trouvailles, passaient dessus. Mise à jour selon le jour montré (`syncDnfToDay` à
 chaque jour de l'animation, au départ et à chaque saut de la chronologie ;
 `syncDnfStatic` au repos, état à la fin de la sélection). Règles pures dans
 `static/js/dnf_model.mjs` (testées par `tests/js/dnf_model.test.mjs`).

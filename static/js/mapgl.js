@@ -221,6 +221,10 @@ function loadHtml2Canvas() {
 
 // couche de points
 let vectorLayer;
+// Couche des points DNF (syncDnf), sous celle des trouvailles : un
+// géocacheur veut voir ce qu'il a trouvé avant ce qu'il n'a pas trouvé.
+// Source : window.dnfVectorSource.
+let dnfLayer;
 let features;
 // Mode Évolution : vrai tant que la source contient toutes les caches filtrées
 // (elles y restent en permanence ; seul le style décide de leur visibilité).
@@ -624,8 +628,10 @@ export function refreshPoints(){
     // Hors animation, la source contient déjà tous les points affichés ; on garde
     // `features` en repli si elle est vide (source pas encore alimentée).
     let toDisplay = features || [];
+    let dnfToDisplay = [];
     if (!isEvolutionPage() && isAnimationInProgress() && window.vectorSource) {
         toDisplay = window.vectorSource.getFeatures();
+        dnfToDisplay = window.dnfVectorSource?.getFeatures() || [];
     }
 
     // Toast seulement s'il y a des points à redessiner : le thème appliqué au
@@ -645,9 +651,10 @@ export function refreshPoints(){
 
     clearMap();
     displayWebGLPoints(toDisplay, pkg.options.point);
-    // En animation, la source recopiée contenait déjà les DNF visibles ; au
-    // repos, `features` n'a que les trouvailles.
-    if (!isAnimationInProgress()) syncDnfStatic();
+    // En animation, les DNF visibles sont recopiés tels quels (même état,
+    // effacements en cours compris) ; au repos, recalculés.
+    if (dnfToDisplay.length) displayDnfPoints(dnfToDisplay);
+    else if (!isAnimationInProgress()) syncDnfStatic();
 }
 
 
@@ -763,8 +770,9 @@ export function initPopupOverlay(){
 
         const pixel = evt.pixel;
         const feature = map.forEachFeatureAtPixel(pixel, function(ft, layer){
-            // On cible uniquement nos couches de points
-            if (layer === vectorLayer) return ft;
+            // On cible uniquement nos couches de points (trouvailles, puis DNF
+            // dessous : parcours du haut vers le bas).
+            if (layer === vectorLayer || layer === dnfLayer) return ft;
         });
 
         if (!feature) {
@@ -907,7 +915,7 @@ export function initPopupOverlay(){
     // Masquer si on clique ailleurs sur la carte (sans feature)
     map.on('pointermove', function(evt){
         if (!isIdleState()) return; // pas de survol en mode non-idle
-        const hit = map.hasFeatureAtPixel(evt.pixel, { layerFilter: l => l === vectorLayer });
+        const hit = map.hasFeatureAtPixel(evt.pixel, { layerFilter: l => l === vectorLayer || l === dnfLayer });
         map.getTargetElement().style.cursor = hit ? 'pointer' : '';
     });
 }
@@ -2257,6 +2265,12 @@ export function clearMap(){
         map.removeLayer(vectorLayer);
         vectorLayer = undefined;
     }
+    // Couche DNF : même sort (un style changé la recrée aussi).
+    if (window.dnfVectorSource) window.dnfVectorSource.clear();
+    if (dnfLayer) {
+        map.removeLayer(dnfLayer);
+        dnfLayer = undefined;
+    }
 
     // Supprimer les autres layers si nécessaire
     if (window.borderLayer) {
@@ -2430,8 +2444,8 @@ function seekPointsToDay(day) {
         if (source) source.clear();
         if (target > 0) displayWebGLPoints(seekFeaturesBetween(index.entries, 0, target), pkg.options.point);
     }
-    // Avant de mémoriser la révision de la source : sinon chaque saut suivant
-    // la croirait touchée par autre chose et repartirait de zéro.
+    // DNF du jour, dans leur propre couche (la source des trouvailles et sa
+    // révision, mémorisée ci-dessous, n'en sont pas touchées).
     syncDnfToDay(day);
     const after = window.vectorSource;
     seekShown = after ? { source: after, sourceRevision: after.getRevision(), count: target } : null;
@@ -2440,8 +2454,8 @@ function seekPointsToDay(day) {
 
 // --- Points DNF (dnf_data.js, docs/logs-geocaching.md) ----------------------
 //
-// Dans la même source que les trouvailles, mais hors de pointsByDate : ni
-// compteur, ni Stats, ni chronologie ne les voient. Ajoutés et retirés ici
+// Dans leur propre couche, sous les trouvailles, et hors de pointsByDate :
+// ni compteur, ni Stats, ni chronologie ne les voient. Ajoutés et retirés ici
 // selon le jour montré — un DNF disparaît le jour où sa trouvaille apparaît.
 // L'état se recale sur la source réelle (hasFeature) : un vidage de la carte
 // par un autre chemin ne laisse pas de fantôme.
@@ -2488,11 +2502,36 @@ function dnfFoundFlashOptions() {
 // `flash` : { findFlash, record } pendant l'animation — chaque DNF qui
 // apparaît y joue son flash, chaque DNF trouvé s'efface (et peut célébrer) ;
 // absent (départ, saut, repos) : ajouts et retraits immédiats, sans flash.
+// Couche DNF créée à la demande, sous celle des trouvailles (zIndex 1000 <
+// 1001), avec le même style et les mêmes variables (horloge des points).
+function ensureDnfLayer() {
+    if (!window.dnfVectorSource) window.dnfVectorSource = new ol.source.Vector({ wrapX: true });
+    if (!dnfLayer) {
+        dnfLayer = new ol.layer.WebGLPoints({
+            source: window.dnfVectorSource,
+            style: buildPointStyle(pkg.options.point),
+            variables: pointStyleVariables,
+            zIndex: 1000,
+        });
+    }
+    if (!map.getLayers().getArray().includes(dnfLayer)) map.addLayer(dnfLayer);
+    if (!pointAppearListenerKey) {
+        pointAppearListenerKey = map.on('precompose', updatePointAppearClock);
+    }
+    return window.dnfVectorSource;
+}
+
+function displayDnfPoints(olFeatures, appear = null) {
+    const source = ensureDnfLayer();
+    setAppearAttributes(olFeatures, olFeatures, true, pkg.options.point, appear);
+    source.addFeatures(olFeatures);
+}
+
 function syncDnf(isVisible, appear = null, flash = null) {
     if (isEvolutionPage()) return;
     const entries = pkg.getDnfEntries?.() || [];
     if (!entries.length && !dnfShown.size && !dnfVanishing.size) return;
-    const source = window.vectorSource;
+    const source = window.dnfVectorSource;
     const now = sampleAppearClock();
 
     // Effacements terminés — ou tous, hors animation.
@@ -2542,7 +2581,7 @@ function syncDnf(isVisible, appear = null, flash = null) {
     dnfShown.clear();
     for (const feature of wanted) dnfShown.add(feature);
     if (toAdd.length) {
-        displayWebGLPoints(toAdd, pkg.options.point, appear);
+        displayDnfPoints(toAdd, appear);
         const options = flash ? dnfFlashOptions(flash.findFlash) : null;
         if (options) {
             pushFeatureFlashes(toAdd, options, flash.record, false);
