@@ -65,6 +65,14 @@ export function buildPosesBase(payload) {
     base.authors = Array.isArray(payload?.authors) ? payload.authors : [];
     base.kindCode = Object.fromEntries(base.logKinds.map((kind, code) => [kind, code]));
 
+    // Trouvailles reçues par cache (filtre « Trouvailles reçues ») : les logs
+    // « folded » comptent — ce sont de vraies trouvailles, seulement ramenées
+    // au jour d'apparition.
+    base.findTotals = new Int32Array(n);
+    for (let j = 0; j < base.ev.cache.length; j++) {
+        if (base.ev.kind[j] === base.kindCode.find) base.findTotals[base.ev.cache[j]]++;
+    }
+
     // Changements de chaque cache, dans l'ordre chronologique (CSR) : `st`
     // est trié par jour, le remplissage par cache conserve cet ordre.
     const chStart = new Int32Array(n + 1);
@@ -82,6 +90,24 @@ export function buildPosesBase(payload) {
     base.chDay = chDay;
     base.chState = chState;
     return base;
+}
+
+// Critères propres à la page Mes poses, appliqués après les filtres partagés
+// (filterRows). Même convention : null/undefined = critère inactif, un tableau
+// vide (« Aucun ») ne retient rien.
+//   selection.states  états à l'export retenus (colonne `status` : 0 active,
+//                     1 archivée, 3 désactivée) — valeurs du select, en Number
+//   selection.finds   'found' (au moins une trouvaille reçue) / 'never'
+export function filterPosesRows(base, rows, selection = {}) {
+    const states = Array.isArray(selection.states) ? new Set(selection.states.map(Number)) : null;
+    const finds = Array.isArray(selection.finds) ? new Set(selection.finds) : null;
+    if ((states && states.size === 0) || (finds && finds.size === 0)) return new Int32Array(0);
+    if (!states && !finds) return rows;
+    return rows.filter((i) => {
+        if (states && !states.has(base.status[i])) return false;
+        if (finds && !finds.has(base.findTotals[i] > 0 ? 'found' : 'never')) return false;
+        return true;
+    });
 }
 
 // État de la cache `i` (ligne de la base) à la fin du jour `day`.

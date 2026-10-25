@@ -10,6 +10,7 @@ import {
     appearancesInRange,
     buildPosesBase,
     buildPosesTimeline,
+    filterPosesRows,
     findDayCounts,
     flashesInRange,
     maxFlashesInWindow,
@@ -185,6 +186,53 @@ test('trouvailles reçues par jour (jalons des images) et pic de flashs', () => 
     assert.equal(counts[0][0], base.originDay);
     assert.equal(maxFlashesInWindow(tl, 1), 1);
     assert.ok(maxFlashesInWindow(tl, 30) >= 3);
+});
+
+test('findTotals : trouvailles reçues par cache, « folded » compris', () => {
+    const base = buildPosesBase(payload());
+    assert.ok(base.findTotals instanceof Int32Array);
+    // A : 2 trouvailles, B : 2, C : 1 (les notes ramenées ne comptent pas).
+    assert.deepEqual([...base.findTotals], [2, 2, 1]);
+    // Une trouvaille ramenée au jour d'apparition reste une vraie trouvaille.
+    const p = payload();
+    p.ev.folded[1] = 1;
+    assert.deepEqual([...buildPosesBase(p).findTotals], [2, 2, 1]);
+});
+
+test('filterPosesRows : état à l\'export et trouvailles reçues', () => {
+    const base = buildPosesBase(payload());
+    const all = filterRows(base, { undatedMode: 'keep' });
+    // Critères inactifs (null/omis) : la sélection passe telle quelle.
+    assert.deepEqual([...filterPosesRows(base, all, {})], [0, 1, 2]);
+    assert.deepEqual([...filterPosesRows(base, all, { states: null, finds: undefined })], [0, 1, 2]);
+    // État à l'export (status : 0 active, 1 archivée, 3 désactivée).
+    assert.deepEqual([...filterPosesRows(base, all, { states: ['1'] })], [2]);
+    assert.deepEqual([...filterPosesRows(base, all, { states: ['0', '3'] })], [0, 1]);
+    assert.deepEqual([...filterPosesRows(base, all, { states: [] })], []);   // « Aucun »
+    // Trouvailles reçues : les trois caches en ont au moins une.
+    assert.deepEqual([...filterPosesRows(base, all, { finds: ['found'] })], [0, 1, 2]);
+    assert.deepEqual([...filterPosesRows(base, all, { finds: ['never'] })], []);
+    assert.deepEqual([...filterPosesRows(base, all, { finds: ['found', 'never'] })], [0, 1, 2]);
+    assert.deepEqual([...filterPosesRows(base, all, { finds: [] })], []);
+    // Les deux critères se combinent.
+    assert.deepEqual([...filterPosesRows(base, all, { states: ['1'], finds: ['found'] })], [2]);
+    assert.deepEqual([...filterPosesRows(base, all, { states: ['1'], finds: ['never'] })], []);
+    // Retour typé (un .filter d'Int32Array en rend déjà un).
+    assert.ok(filterPosesRows(base, all, {}) instanceof Int32Array);
+});
+
+test('filterPosesRows : « jamais trouvée » retient les caches sans trouvaille', () => {
+    // Même jeu sans aucune trouvaille reçue.
+    const p = payload();
+    const keep = p.ev.kind.map((kind) => kind !== K.find);
+    for (const key of ['cache', 'day', 'kind', 'fav', 'folded', 'author']) {
+        p.ev[key] = p.ev[key].filter((_, j) => keep[j]);
+    }
+    const base = buildPosesBase(p);
+    assert.deepEqual([...base.findTotals], [0, 0, 0]);
+    const all = filterRows(base, { undatedMode: 'keep' });
+    assert.deepEqual([...filterPosesRows(base, all, { finds: ['never'] })], [0, 1, 2]);
+    assert.deepEqual([...filterPosesRows(base, all, { finds: ['found'] })], []);
 });
 
 test('filtres : une cache écartée ne compte plus', () => {

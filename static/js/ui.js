@@ -85,6 +85,8 @@ var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain,
 // (ReferenceError au démarrage). selectCounty n'existe qu'en mode Évolution.
 var selectType, selectTerrain, selectDifficulty, selectContainer;
 var selectCounty, btnAllCounty, btnNoneCounty;
+// Filtres propres à la page Mes poses (/poses), absents des autres pages.
+var selectPosesStatus, selectPosesFinds, btnAllPosesStatus, btnNonePosesStatus, btnAllPosesFinds, btnNonePosesFinds;
 
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
@@ -940,6 +942,12 @@ selectContainer = document.getElementById('selectContainer');
 selectCounty = document.getElementById('selectCounty');
     if (selectCounty) selectCounty.addEventListener('change', onSelectionChangedDebounced);
 
+// État actuel / trouvailles reçues : propres à la page Mes poses.
+selectPosesStatus = document.getElementById('selectPosesStatus');
+    if (selectPosesStatus) selectPosesStatus.addEventListener('change', onSelectionChangedDebounced);
+selectPosesFinds = document.getElementById('selectPosesFinds');
+    if (selectPosesFinds) selectPosesFinds.addEventListener('change', onSelectionChangedDebounced);
+
 // Country/State selects
 const selectCountry = document.getElementById('selectCountry');
 const selectState = document.getElementById('selectState');
@@ -996,6 +1004,16 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     if (btnAllCounty) btnAllCounty.addEventListener('click', () => selectAllOptions(selectCounty));
     if (btnNoneCounty) btnNoneCounty.addEventListener('click', () => deselectAllOptions(selectCounty));
 
+    btnAllPosesStatus = document.getElementById('btnAllPosesStatus');
+    btnNonePosesStatus = document.getElementById('btnNonePosesStatus');
+    if (btnAllPosesStatus) btnAllPosesStatus.addEventListener('click', () => selectAllOptions(selectPosesStatus));
+    if (btnNonePosesStatus) btnNonePosesStatus.addEventListener('click', () => deselectAllOptions(selectPosesStatus));
+
+    btnAllPosesFinds = document.getElementById('btnAllPosesFinds');
+    btnNonePosesFinds = document.getElementById('btnNonePosesFinds');
+    if (btnAllPosesFinds) btnAllPosesFinds.addEventListener('click', () => selectAllOptions(selectPosesFinds));
+    if (btnNonePosesFinds) btnNonePosesFinds.addEventListener('click', () => deselectAllOptions(selectPosesFinds));
+
     // Pays / États - boutons Tout/Aucun et infos
     const btnAllCountry = document.getElementById('btnAllCountry');
     const btnNoneCountry = document.getElementById('btnNoneCountry');
@@ -1043,6 +1061,8 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     if (selectDifficulty) initFilterTomSelect(selectDifficulty);
     if (selectTerrain) initFilterTomSelect(selectTerrain);
     if (selectContainer) initFilterTomSelect(selectContainer);
+    if (selectPosesStatus) initFilterTomSelect(selectPosesStatus);
+    if (selectPosesFinds) initFilterTomSelect(selectPosesFinds);
 
     // Initialiser Tempus Dominus sur les datepickers de filtre. Le format
     // affiché suit la préférence de format de date (utils.js) ; les valeurs
@@ -4565,6 +4585,8 @@ function restoreSelectedValues(){
         if (selectDifficulty) refreshTomSelect(selectDifficulty);
         if (selectTerrain) refreshTomSelect(selectTerrain);
         if (selectContainer) refreshTomSelect(selectContainer);
+        if (selectPosesStatus) refreshTomSelect(selectPosesStatus);
+        if (selectPosesFinds) refreshTomSelect(selectPosesFinds);
         updateFilterInfos();
         return;
     }
@@ -4669,6 +4691,8 @@ function resetAllFilters(){
         }
         if (selState) selectAllOptions(selState);
         selectAllOptions(selectCounty);
+        selectAllOptions(selectPosesStatus);
+        selectAllOptions(selectPosesFinds);
         // Dates : reset aux valeurs par défaut
         resetStartDateToDefault();
         resetEndDateToDefault();
@@ -4699,6 +4723,8 @@ function updateFilterInfos(){
     updateFilterInfoFor(selectCountryEl, btnAllCountry, btnNoneCountry);
     updateFilterInfoFor(selectStateEl, btnAllState, btnNoneState);
     updateFilterInfoFor(selectCounty, btnAllCounty, btnNoneCounty);
+    updateFilterInfoFor(selectPosesStatus, btnAllPosesStatus, btnNonePosesStatus);
+    updateFilterInfoFor(selectPosesFinds, btnAllPosesFinds, btnNonePosesFinds);
 }
 
 function updateFilterInfoFor(selectEl, btnAllEl, btnNoneEl){
@@ -4773,6 +4799,7 @@ export function filtersAreDefault(){
         document.getElementById('selectCountry'),
         document.getElementById('selectState'),
         selectCounty,
+        selectPosesStatus, selectPosesFinds,
     ];
     for (const sel of selects) {
         if (!sel) continue;

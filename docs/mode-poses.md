@@ -83,6 +83,12 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
   `grey` (défaut) — elles restent grisées ; `hide` — elles disparaissent comme
   en Évolution, et réapparaissent à un désarchivage (segments de présence,
   `visibleSegment`).
+- **Filtres propres** (onglet Données, après Pays / Région) : « État actuel »,
+  la colonne `status` de la charge utile (état à l'export : 0 active,
+  1 archivée, 3 désactivée), et « Trouvailles reçues » (au moins une / jamais
+  trouvée, comptées sur `ev` dans `findTotals` — les logs « folded » compris).
+  Appliqués côté client par `filterPosesRows` après `filterRows` ; non
+  persistés, comme les autres filtres des pages « cycle de vie ».
 - **Flashs par événement** : un flash par cache et par lot de jours affichés,
   le type le plus marquant l'emporte — archive > désactivation > réactivation
   > publication > signalement > maintenance > favori > trouvaille > DNF > note

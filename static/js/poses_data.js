@@ -45,6 +45,7 @@ import {
     STATE_DISABLED,
     appearancesInRange,
     buildPosesBase,
+    filterPosesRows,
     findDayCounts,
     buildPosesTimeline,
     flashesInRange,
@@ -238,6 +239,10 @@ function readFilterSelection() {
         sizes: read('selectContainer'),
         difficulties: read('selectDifficulty'),
         terrains: read('selectTerrain'),
+        // Critères propres à la page (état à l'export, trouvailles reçues) :
+        // appliqués par filterPosesRows après filterRows.
+        states: read('selectPosesStatus'),
+        finds: read('selectPosesFinds'),
         // Aucune cache posée n'est « archivée sans date » (statut 2).
         undatedMode: 'keep',
     };
@@ -258,12 +263,16 @@ export function posesApplySelection() {
 function applySelection(selection, { resetDates = false } = {}) {
     if (!base) return;
     rows = filterRows(base, selection);
+    rows = filterPosesRows(base, rows, selection);
     timeline = buildPosesTimeline(base, rows, { archivedDisplay });
     olFeatures = buildFeatures(rows);
     dataRevision += 1;
     findsIndex = null;
     datasetScope = { selected: rows.length, total: base.count };
     pkg.setExternalDatasetState(buildMeta(), datasetScope);
+    // Sélection ramenée à zéro par les filtres : l'avertissement
+    // #dataNoResults et « prochaine étape » suivent la nouvelle sélection.
+    pkg.updateDataAvailabilityUI?.();
     if (resetDates) pkg.setPickerDates?.(pkg.metadata);
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
     pkg.setLifecycleFeatures(olFeatures);

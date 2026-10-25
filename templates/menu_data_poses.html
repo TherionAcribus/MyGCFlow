@@ -37,6 +37,15 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Sélection vide (filtres) : avertissement + raccourci de
+                         réinitialisation, même motif que la page principale. -->
+                    <div id="dataNoResults" class="alert alert-warning mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
+                        <span class="small">{{ _("Aucune cache ne correspond aux filtres actuels.") }}</span>
+                        <button type="button" id="btnResetFiltersFromData" class="btn btn-sm btn-warning ms-auto">
+                            <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réinitialiser les filtres") }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -56,6 +65,38 @@
                         </div>
                         {% include '_filter_cache_attrs.html' %}
                         {% include '_filter_country_state.html' %}
+                        <!-- Filtres propres à la page : état de la cache et
+                             trouvailles reçues, à l'export le plus récent
+                             (lues côté client par poses_data.js). -->
+                        <div class="row g-2">
+                            <div class="mb-3 col-12 col-md-6 filter-field">
+                                <label class="form-label" for="selectPosesStatus">{{ _("État actuel") }}</label>
+                                <select multiple id="selectPosesStatus" class="form-select filter-select" aria-label="{{ _('État actuel') }}">
+                                    <option value="" disabled selected>{{ _("Filtrer par état") }}</option>
+                                    <option value="0" selected>{{ _("Active") }}</option>
+                                    <option value="3" selected>{{ _("Désactivée") }}</option>
+                                    <option value="1" selected>{{ _("Archivée") }}</option>
+                                </select>
+                                <div class="filter-actions mt-1">
+                                    <button type="button" id="btnAllPosesStatus" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+                                    <button type="button" id="btnNonePosesStatus" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+                                </div>
+                                <div class="form-hint text-muted">{{ _("État de la cache à l'export le plus récent.") }}</div>
+                            </div>
+                            <div class="mb-3 col-12 col-md-6 filter-field">
+                                <label class="form-label" for="selectPosesFinds">{{ _("Trouvailles reçues") }}</label>
+                                <select multiple id="selectPosesFinds" class="form-select filter-select" aria-label="{{ _('Trouvailles reçues') }}">
+                                    <option value="" disabled selected>{{ _("Filtrer par trouvailles") }}</option>
+                                    <option value="found" selected>{{ _("Au moins une") }}</option>
+                                    <option value="never" selected>{{ _("Jamais trouvée") }}</option>
+                                </select>
+                                <div class="filter-actions mt-1">
+                                    <button type="button" id="btnAllPosesFinds" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+                                    <button type="button" id="btnNonePosesFinds" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+                                </div>
+                                <div class="form-hint text-muted">{{ _("Trouvailles reçues des autres joueurs, à l'export le plus récent.") }}</div>
+                            </div>
+                        </div>
                         <!-- Pas un filtre de sélection : sort des caches archivées
                              à l'écran. Préférence persistée : poses_archived_display. -->
                         <div class="mt-1">

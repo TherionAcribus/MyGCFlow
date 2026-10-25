@@ -171,6 +171,54 @@ test('archivées masquées : segment de présence et réglage persisté', async 
     .toBe('hide');
 });
 
+test('filtres « État actuel » et « Trouvailles reçues »', async ({ page, request }) => {
+  await importPoses(request);
+  await openPoses(page);
+  await expect(page.locator('#filtersCounter')).toContainText('7 / 7');
+
+  // Les selects passent par Tom Select : la sélection se change sur le select
+  // natif, puis un 'change' déclenche le cycle de filtrage (debounce 200 ms).
+  const selectOptions = (id, wanted) => page.evaluate(([selectId, values]) => {
+    const select = document.getElementById(selectId);
+    for (const option of select.options) {
+      if (option.value) option.selected = values.includes(option.value);
+    }
+    select.dispatchEvent(new Event('change'));
+  }, [id, wanted]);
+  const selectedCodes = async () => (await debugState(page)).features.map((f) => f.code);
+
+  // État actuel : seules GCP0005 et GCP0006 sont archivées à l'export.
+  await selectOptions('selectPosesStatus', ['1']);
+  await expect(page.locator('#filtersCounter')).toContainText('2 / 7');
+  expect((await debugState(page)).selected).toBe(2);
+  expect((await selectedCodes()).sort()).toEqual(['GCP0005', 'GCP0006']);
+
+  // Trouvailles reçues : seule GCP0004 n'a jamais été trouvée.
+  await selectOptions('selectPosesStatus', ['0', '3', '1']);
+  await selectOptions('selectPosesFinds', ['never']);
+  await expect(page.locator('#filtersCounter')).toContainText('1 / 7');
+  expect(await selectedCodes()).toEqual(['GCP0004']);
+  await selectOptions('selectPosesFinds', ['found']);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 7');
+
+  // « Aucun » sur l'état : sélection vide, plus aucune feature, l'avertissement
+  // « aucun résultat » prend le relais de la suggestion « prochaine étape ».
+  await page.evaluate(() => document.getElementById('btnNonePosesStatus').click());
+  await expect(page.locator('#filtersCounter')).toContainText('0 / 7');
+  const empty = await debugState(page);
+  expect(empty.selected).toBe(0);
+  expect(empty.features).toEqual([]);
+  await expect(page.locator('#dataNoResults')).toBeVisible();
+  await expect(page.locator('#dataNextStep')).toBeHidden();
+
+  // « Réinitialiser tous les filtres » ramène les sept caches.
+  await page.locator('#btnResetAllFilters').click();
+  await expect(page.locator('#filtersCounter')).toContainText('7 / 7');
+  expect((await debugState(page)).selected).toBe(7);
+  await expect(page.locator('#dataNoResults')).toBeHidden();
+  await expect(page.locator('#dataNextStep')).toBeVisible();
+});
+
 test('le moteur joue un flash par cache, agrandi les jours chargés', async ({ page, request }) => {
   await importPoses(request);
   await openPoses(page);
