@@ -15,6 +15,22 @@
             </select>
             <p class="form-hint text-muted mb-0" id="discoverySourcesHint"></p>
         </div>
+        <!-- Points DNF (dnf_data.js, docs/logs-geocaching.md) : choix
+             d'affichage global (préférences dnf_display / dnf_in_trail),
+             pas un filtre de sélection. Les DNF suivent les filtres des
+             géocaches et ne comptent jamais comme des trouvailles. -->
+        <div class="col-12 col-md-6" id="dnfDisplayField">
+            <span class="form-label">{{ _("Mes DNF") }}</span>
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="checkDnfDisplay">
+                <label class="form-check-label" for="checkDnfDisplay">{{ _("Afficher mes DNF sur la carte") }}</label>
+            </div>
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="checkDnfInTrail">
+                <label class="form-check-label" for="checkDnfInTrail">{{ _("Les inclure dans le trait de déplacement") }}</label>
+            </div>
+            <p class="form-hint text-muted mb-0" id="dnfDisplayHint" aria-live="polite"></p>
+        </div>
     </div>
     <hr class="my-2">
 

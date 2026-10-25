@@ -204,6 +204,9 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
     if (evolution) {
         applyEvolutionTimeline(pointStyle, pointOptions);
     } else {
+        // Avant l'apparition et la persistance, qui enveloppent ces valeurs :
+        // les DNF en profitent comme les trouvailles.
+        applyDnfStyle(pointStyle, pointOptions.mode == "icone" ? pointOptions.sprite : null);
         if (pointOptions.appearAnimation) {
             applyAppearAnimation(pointStyle);
         }
@@ -213,6 +216,29 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
     }
 
     return pointStyle;
+}
+
+// Points DNF (source_kind 'dnf', docs/logs-geocaching.md) : noirs en
+// vectoriel — bordure blanche quand le thème en dessine une, pour rester
+// visibles sur un fond sombre — et icône DNF en mode icônes, quel que soit
+// leur type de cache (gardé tel quel pour les filtres).
+export const DNF_FILL_COLOR = '#000000';
+export const DNF_STROKE_COLOR = '#ffffff';
+const IS_DNF = ['==', ['get', 'source_kind'], 'dnf'];
+
+function applyDnfStyle(pointStyle, sprite) {
+    const forDnf = (key, value) => {
+        if (key in pointStyle) pointStyle[key] = ['case', IS_DNF, value, pointStyle[key]];
+    };
+    forDnf('circle-fill-color', DNF_FILL_COLOR);
+    forDnf('shape-fill-color', DNF_FILL_COLOR);
+    forDnf('circle-stroke-color', DNF_STROKE_COLOR);
+    forDnf('shape-stroke-color', DNF_STROKE_COLOR);
+    const rect = sprite?.map?.dnf;
+    if (rect) {
+        forDnf('icon-offset', [rect.x, rect.y]);
+        forDnf('icon-size', [rect.w, rect.h]);
+    }
 }
 
 // Couleurs éclaircies par la persistance des points récents. La bordure est

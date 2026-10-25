@@ -4784,6 +4784,19 @@ export function filtersAreDefault(){
         && datePickerAtDefault('#publishedDatePickerEnd', defaultPublishedEndDate);
 }
 
+// Bornes de dates restées à leur valeur par défaut (l'étendue des
+// trouvailles). Les points DNF, dont les dates sortent souvent de cette
+// étendue, n'appliquent une borne que si l'utilisateur l'a déplacée
+// (filterLikeCurrentSelection, bdd.js).
+export function dateBoundsAtDefault(){
+    return {
+        findStart: datePickerAtDefault('#datePickerStart', defaultStartDate),
+        findEnd: datePickerAtDefault('#datePickerEnd', defaultEndDate),
+        pubStart: datePickerAtDefault('#publishedDatePickerStart', defaultPublishedStartDate),
+        pubEnd: datePickerAtDefault('#publishedDatePickerEnd', defaultPublishedEndDate),
+    };
+}
+
 // Le champ affiche le format choisi par l'utilisateur : la comparaison se
 // fait sur la même forme que updateResetButtonsHighlight (texte affiché).
 function datePickerAtDefault(selector, defaultDate){
@@ -4910,6 +4923,9 @@ const ICON_SETS = {
             // Slot ajouté pour les étapes Adventure Lab : icône officielle,
             // collée à la suite de la feuille Geocaching qui ne la contient pas.
             { key: 'adventurelab', x: 1800, y:  0, w:50, h:50, label: 'Adventure Lab' },
+            // Points DNF (docs/logs-geocaching.md) : icône du type de log
+            // « Didn't find it » de geocaching.com, collée à la suite.
+            { key: 'dnf', x: 1900, y:  0, w:50, h:50, label: 'DNF' },
             // Autres à ajouter éventuellement)
         ]
     },
@@ -4921,7 +4937,9 @@ const ICON_SETS = {
         sheetWidth: 2048,
         sheetHeight: 256,
         items: [
-            { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' }
+            { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' },
+            // Pendant du smiley pour les points DNF.
+            { key: 'dnf', x: 1900, y: 0, w: 50, h: 50, label: 'DNF' }
         ]
     }
 };

@@ -389,6 +389,13 @@ class AppSettings:
     # Activée par défaut : sans elle, un historique importé n'affiche rien
     # sur la carte. L'interface l'annonce et permet de la couper.
     labs_auto_fetch_coords: bool = True
+    # Points DNF sur la carte (docs/logs-geocaching.md) : masqués par défaut,
+    # affichés à la demande. Choix d'affichage global, comme les sources
+    # affichées : changer de thème ne change pas les données montrées.
+    dnf_display: bool = False
+    # Un DNF est un déplacement : le trait de déplacement y passe, sauf choix
+    # contraire (sans effet tant que dnf_display est coupé).
+    dnf_in_trail: bool = True
     # Jeton embarqué dans le bookmarklet « Envoyer vers MyGCFlow » : protège
     # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
@@ -1048,6 +1055,11 @@ def coerce_settings(d: dict) -> AppSettings:
         raw_fetch = d.get("labs_auto_fetch_coords")
         if raw_fetch is not None:
             s.labs_auto_fetch_coords = raw_fetch is True
+        # Booléens stricts : une valeur corrompue coupe l'option.
+        for name in ("dnf_display", "dnf_in_trail"):
+            raw = d.get(name)
+            if raw is not None:
+                setattr(s, name, raw is True)
         token = d.get("labs_receive_token")
         s.labs_receive_token = str(token) if token else ""
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :

@@ -245,6 +245,7 @@ GitHub Release.
 - [docs/async-tasks.md](docs/async-tasks.md) — background tasks API
 - [docs/mode-evolution.md](docs/mode-evolution.md) — Evolution mode (caches of an area appearing and disappearing, CSV imports)
 - [docs/lab-caches.md](docs/lab-caches.md) — Adventure Lab stages (file exports, import, displayed sources, pending cases)
+- [docs/logs-geocaching.md](docs/logs-geocaching.md) — Geocaching logs (DNFs, owner actions, logs on your caches): `mygcflow-logs` contract, storage, import
 - [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — travel trail (route computation, timing, cost)
 - [docs/panneaux-stats.md](docs/panneaux-stats.md) — statistics panels (incremental counting, scale reference, preview/video rendering)
 - [docs/images.md](docs/images.md) — image panels (library, placement, scheduled appearance, preview/video rendering)

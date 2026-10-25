@@ -394,6 +394,10 @@ def merge_myfinds_logs(session, parsed: LogsParseResult) -> dict:
     l'import des trouvailles, lui, a déjà réussi."""
     if parsed.meta.get("source") != SOURCE_GPX_MYFINDS:
         raise ValueError("merge_myfinds_logs attend des logs My Finds")
+    if not parsed.logs:
+        # Rien d'exploitable (logs sans identifiant…) : ni collection vide
+        # créée, ni révision changée.
+        return {"success": False, "skipped": "no_logs", "rejected": len(parsed.rejected)}
     try:
         return commit_logs(session, parsed)
     except LogAccountMismatch as exc:

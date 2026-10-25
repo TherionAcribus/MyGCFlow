@@ -1,10 +1,11 @@
 # Logs Geocaching — contrat d'import, stockage et plan
 
-> **Statut : lot A codé** (2026-10-25) — données : `log_formats.py`
-> (lecture), `log_store.py` (fusion, aperçu, statut), migration v8, logs du
-> My Finds. Pas encore d'interface ni de route (lot B) : les noms de routes
-> ci-dessous restent des propositions. Spécification rédigée le 2026-10-24
-> sur `main` à `bb69772`.
+> **Statut : lots A, B et C codés** (2026-10-25). A — données :
+> `log_formats.py` (lecture), `log_store.py` (fusion, aperçu, statut),
+> migration v8, logs du My Finds. B — interface : carte « Mes logs » de
+> l'onglet Données (`static/js/gc_logs.js`) et routes `/api/logs/*`
+> (`blueprints/gc_logs.py`). C — DNF sur la carte (§ Affichage des DNF).
+> Spécification rédigée le 2026-10-24 sur `main` à `bb69772`.
 
 ## Pourquoi
 
@@ -322,18 +323,35 @@ Un import **fusionne**, il ne remplace jamais toute la table :
 Même parcours que « Mes Lab Caches » (`blueprints/labs.py`). Aperçu et
 validation partagent un seul calcul (`log_store._plan`), qui ne fait que
 lire ; seule la validation écrit (`log_store.commit_logs`, sous verrou).
-Les étapes 1 à 3 relèvent du lot B (routes et tâches) :
+Un fichier par import (`.json`, `.gpx`, ou `.zip` dont le premier `.json`/
+`.gpx` est pris), borné comme l'envoi GPX (200 Mo décompressés).
 
-1. **Aperçu** : `log_store.preview_logs`, fichiers conservés en attente
-   (comme `_store_pending`). Bilan par fichier et
-   projeté : ajoutés, mis à jour, inchangés, **retirés** (couverture
-   complète), rejetés avec motif, types inconnus, logs en attente de
-   coordonnées, répartition par catégorie et « moi / les autres ».
-2. **Validation** : tâche de fond exclusive (`task_manager`), qui reparse et
-   recalcule sur l'état courant — refusée si `revision` a bougé depuis
-   l'aperçu (`commit_logs(..., expected_revision=…)` lève
-   `LogRevisionConflict`).
-3. Invalidation de `geojson_cache` et du cache de statut.
+1. **Aperçu** — `POST /api/logs/import/preview` (champ `file`) :
+   `log_store.preview_logs`, fichier conservé sous un jeton opaque (TTL
+   30 min, dossier temporaire `mygcflow-log-imports`). Bilan : ajoutés, mis
+   à jour, inchangés, plus anciens ignorés, **retirés** (couverture complète,
+   avec échantillon), rejetés avec motif, avertissements, doublons, caches
+   sans position, répartition par catégorie « à vous / d'autres joueurs ».
+   Un fichier d'un autre compte est refusé dès l'aperçu (409).
+2. **Validation** — `POST /api/logs/import/commit` (`import_token`) : le
+   jeton est consommé par renommage de son dossier, puis la tâche de fond
+   exclusive `log_import` reparse et applique sur l'état courant — échec si
+   `revision` a bougé depuis l'aperçu (`LogRevisionConflict` : relancer
+   l'aperçu). Le bilan de la tâche porte le statut à jour.
+3. Statut — `GET /api/logs/status` ; aucun cache GeoJSON à invalider tant
+   que les logs ne sont pas dessinés (lot C).
+
+Autres routes : `GET /api/logs/export` réexporte tout en `mygcflow-logs` v1
+**sans couverture** (réimporté, il ne retire rien) et daté de ses données
+les plus récentes (`max(source_exported_at)`), pas de l'heure de l'export —
+sinon il passerait pour plus frais qu'un vrai export postérieur à ses
+données ; `POST /api/logs/clear` vide logs, fiches et compte (refusé pendant
+un import).
+
+Un `.json` `mygcflow-logs` glissé sur la page (ou choisi dans « Mes
+Géocaches ») est aiguillé vers « Mes logs » par `bdd.js` (`isLogsFile`, testé
+avant `isLabFile`, qui prend tout `.json` pour un historique Labs). Un import
+My Finds réussi rafraîchit le statut de la carte.
 
 Les suppressions annoncées par l'aperçu sont toujours visibles avant
 validation : un fichier mal déclaré « complet » ne doit pas effacer un
@@ -358,17 +376,61 @@ Requêtes de base, pour vérifier que le modèle suffit :
 | Mode « Mes caches » | `cache_ref.owner_id = moi` et `author_id ≠ moi` |
 | Points favoris reçus | idem, `favorite = true` — seulement si la source les fournit |
 
-Le rendu (feature DNF par cache avec `dnf_dates` et date de résolution,
-masqué par défaut, noir en vectoriel / icône DNF), les animations dédiées et
-l'intégration aux Stats sont décrits séparément, au moment de leur lot.
+Les animations dédiées et l'intégration aux Stats sont décrites au moment
+de leur lot.
+
+## Affichage des DNF (lot C)
+
+**Un point par cache en DNF** (`dnf_geojson.py`, `GET /api/logs/dnf_features`) :
+il apparaît au premier DNF du joueur (`date_find`) et disparaît le jour où une
+trouvaille du joueur le résout (`resolved_date` : la plus ancienne trouvaille
+postérieure ou égale au premier DNF, lue dans ses logs ou dans le My Finds) —
+la trouvaille prend alors sa place. Une cache trouvée avant tout DNF n'a pas
+de point ; les DNF postérieurs à la résolution sont ignorés. Position : fiche
+`cache_ref`, sinon le My Finds ; sans position, la cache est comptée en
+attente (`pending`) et jamais placée.
+
+**Jamais une trouvaille.** Les points DNF sont servis à part du jeu principal
+et ne passent pas par `pointsByDate` : ni compteur de sélection, ni compteur
+de l'animation, ni panneaux Stats, ni barre de chronologie, ni suivi de
+caméra par jour ne les voient. `static/js/dnf_data.js` les charge (seulement
+si l'affichage est activé), les filtre comme la sélection courante
+(`filterLikeCurrentSelection`, bdd.js) puis `mapgl.js` les ajoute et les
+retire dans la source des points selon le jour montré (`syncDnfToDay` à
+chaque jour de l'animation, au départ et à chaque saut de la chronologie ;
+`syncDnfStatic` au repos, état à la fin de la sélection). Règles pures dans
+`static/js/dnf_model.mjs` (testées par `tests/js/dnf_model.test.mjs`).
+
+**Filtres.** Type, taille, D/T, pays et région s'appliquent comme aux
+géocaches. Les bornes de dates par défaut valent l'étendue des trouvailles :
+un DNF antérieur à la première ou postérieur à la dernière en sortirait sans
+que rien n'ait été restreint. Seule une borne déplacée par l'utilisateur
+s'applique aux DNF (`dateBoundsAtDefault`, ui.js), sur la date du premier
+DNF. En « Lab Caches » seuls, aucun DNF.
+
+**Rendu** (`point_webgl_style.js`, `applyDnfStyle`) : noir en vectoriel —
+bordure blanche quand le thème en dessine une — et icône du type de log
+« Didn't find it » de geocaching.com en mode icônes (case `dnf` des feuilles
+`geocaching-sprite*.png`, x = 1900, aussi dans le jeu « smiley »). Pas de
+flash ni de compteur à l'apparition, retrait sans transition : les animations
+dédiées (DNF, « DNF trouvé ») viendront plus tard. Popup : nombre de DNF,
+date du premier, date de la trouvaille ou « Pas encore trouvée ».
+
+**Trait de déplacement.** Chaque DNF est un déplacement : chaque tentative
+(`dnf_dates`) est une étape du trajet, jusqu'à la date de fin de l'animation
+(`getTrailGeometry`, clé de mémoïsation `dnfRevision`).
+
+**Préférences globales** (onglet Données, panneau des filtres, « Mes DNF »)
+: `dnf_display` (masqués par défaut) et `dnf_in_trail` (inclus par défaut,
+sans effet tant que l'affichage est coupé).
 
 ## Plan
 
 | Lot | Contenu | Livrable vérifiable |
 |---|---|---|
 | **A — données** ✅ | migration v8 ; `log_formats.py` (contrat + logs GPX, sans Flask) ; `log_store.py` (fusion, couverture, aperçu) ; My Finds alimente `log_event` | tests unitaires sur fixtures **fictives** ; banc d'import (100 000 logs) pour fixer les plafonds |
-| **B — interface** | carte « Mes logs » de l'onglet Données : import avec aperçu, statut (par catégorie, en attente), export `mygcflow-logs`, suppression | e2e : aperçu, validation, réimport idempotent, refus d'un autre compte |
-| **C — DNF sur la carte** | réglage d'affichage (masqué par défaut), apparition / résolution dans l'animation, saut de la barre de chronologie | e2e : DNF masqué, DNF affiché puis remplacé par la trouvaille |
+| **B — interface** ✅ | carte « Mes logs » de l'onglet Données : import avec aperçu, statut (par catégorie, en attente), export `mygcflow-logs`, suppression | e2e : aperçu, validation, réimport idempotent, refus d'un autre compte |
+| **C — DNF sur la carte** ✅ | réglage d'affichage (masqué par défaut), apparition / résolution dans l'animation, saut de la barre de chronologie | e2e : DNF masqué, DNF affiché puis remplacé par la trouvaille |
 | **D — poseur** | affichage de l'activité de poseur | |
 | **E — mode « Mes caches »** | page dédiée, comme le mode Évolution | |
 | **F — Stats** | métriques DNF / poseur optionnelles dans les panneaux | |

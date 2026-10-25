@@ -108,6 +108,16 @@ Autres repères :
   exemple dans `images.spec.mjs` (`afterEach`). Les fichiers envoyés
   (`POST /api/images`) restent dans `images/` du runtime E2E jusqu'au retrait
   manuel dans la bibliothèque ; seuls les envois interrompus sont balayés.
+- Les logs Geocaching (carte « Mes logs », docs/logs-geocaching.md) vivent
+  dans la base du runtime, hors de `/clear_database` : un spec qui en importe
+  doit appeler `POST /api/logs/clear` en sortant, sinon le compte reste
+  posé et les specs suivants voient leurs imports refusés (« autre compte »)
+  — exemple dans `gc-logs.spec.mjs`. Les logs des fixtures My Finds e2e
+  n'ont pas d'attribut `id` : rejetés, ils ne créent aucune collection.
+  Même famille : `dnf_display` / `dnf_in_trail` (points DNF) sont des
+  préférences globales à remettre (`false` / `true`) en sortant. Les points
+  DNF sont dans `window.vectorSource` (`source_kind === 'dnf'`) mais jamais
+  dans `pointsByDate` — exemple dans `dnf-display.spec.mjs`.
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

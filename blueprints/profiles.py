@@ -96,6 +96,8 @@ def api_get_settings():
         'locationless_display': s.locationless_display,
         'main_discovery_sources': s.main_discovery_sources,
         'labs_auto_fetch_coords': s.labs_auto_fetch_coords,
+        'dnf_display': s.dnf_display,
+        'dnf_in_trail': s.dnf_in_trail,
         'labs_receive_token': s.labs_receive_token,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
@@ -298,6 +300,10 @@ def api_put_settings():
                 if isinstance(data.get('labs_auto_fetch_coords'), bool)
                 else current.labs_auto_fetch_coords),
             labs_receive_token=current.labs_receive_token,
+            dnf_display=(data['dnf_display'] if isinstance(data.get('dnf_display'), bool)
+                         else current.dnf_display),
+            dnf_in_trail=(data['dnf_in_trail'] if isinstance(data.get('dnf_in_trail'), bool)
+                          else current.dnf_in_trail),
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

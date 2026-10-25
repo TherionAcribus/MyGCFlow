@@ -581,6 +581,9 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
             logger.info("Logs My Finds : %s ajoutés, %s mis à jour, %s inchangés, %s rejetés",
                         log_summary["added"], log_summary["updated"],
                         log_summary["unchanged"], log_summary["rejected"])
+        elif log_summary.get("skipped") == "no_logs":
+            logger.info("Logs My Finds : aucun log exploitable (%s rejetés)",
+                        log_summary.get("rejected"))
         else:
             logger.warning("Logs My Finds ignorés : %s", log_summary.get("reason"))
     except Exception as e:

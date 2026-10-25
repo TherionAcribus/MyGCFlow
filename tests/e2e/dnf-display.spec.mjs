@@ -1,0 +1,152 @@
+// Points DNF sur la carte (docs/logs-geocaching.md, lot C) : masqués par
+// défaut, affichés à la demande, jamais comptés comme des trouvailles,
+// apparus au premier échec puis remplacés par la trouvaille, et intégrés au
+// trait de déplacement sauf choix contraire.
+//
+// Fixtures fictives : le My Finds (2 trouvailles : GC2PR3N le 08/01/2012,
+// GC345J4 le 22/04/2012) porte un DNF sur GC2PR3N le 20/08/2011 ; le fichier
+// de logs ajoute un DNF jamais résolu sur GC9ZZZZ (02/05/2021), placé par sa
+// fiche.
+import { expect, test } from '@playwright/test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dismissFirstUseModal } from './first-use.mjs';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
+const MY_FINDS = path.join(FIXTURES, 'my-finds-logs.gpx');
+const CONTRACT = path.join(FIXTURES, 'logs-contract-valid.json');
+
+
+async function openWithData(page) {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await page.locator('#file-input').setInputFiles(MY_FINDS);
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+    .toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('#filtersCounter')).toContainText('2 / 2', { timeout: 30_000 });
+  // Les filtres se réappliquent encore un peu après l'import, chacun par un
+  // addVector() : attendre que l'index des jours ne bouge plus.
+  let previous = -1;
+  await expect.poll(async () => {
+    const revision = await page.evaluate(async () => (await import('/static/js/index.js')).pointsByDateRevision);
+    const stable = revision === previous;
+    previous = revision;
+    return stable;
+  }, { intervals: [700], timeout: 15_000 }).toBe(true);
+
+  await page.locator('#gc-logs-file-input').setInputFiles(CONTRACT);
+  await expect(page.locator('#gcLogsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#gcLogsPreviewConfirmBtn').click();
+  await expect(page.locator('#gcLogsStatus')).toContainText('logs enregistrés', { timeout: 30_000 });
+}
+
+
+// Codes GC des points DNF présents sur la carte, et des trouvailles.
+function mapCodes(page, kind) {
+  return page.evaluate((wanted) => (window.vectorSource?.getFeatures() || [])
+    .filter(f => (f.get('source_kind') === 'dnf') === (wanted === 'dnf'))
+    .map(f => f.get('gc_code')).sort(), kind);
+}
+
+
+async function showDnf(page) {
+  await page.locator('#checkDnfDisplay').check();
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC9ZZZZ']);
+}
+
+
+async function enableTrail(page) {
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTrail"]').click();
+  await expect(page.locator('#selectTrailRouting')).toBeEnabled();
+  await page.locator('#switchTrail').check();
+  await page.locator('a[href="#data"]').click();
+}
+
+
+async function trailStops(page) {
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateStart = new Date(2011, 7, 1);
+  });
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getTravelTrailDebugState())).stops).toBeGreaterThan(0);
+  const { stops } = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getTravelTrailDebugState());
+  await page.locator('#btnQuickStop').click();
+  await expect(page.locator('#btnQuickPreview')).toBeVisible();
+  return stops;
+}
+
+
+// dnf_display et dnf_in_trail sont des préférences globales, et les logs
+// vivent dans la base partagée du runtime : tout remettre en sortant.
+test.afterEach(async ({ request }) => {
+  await request.put('/api/settings', { data: { dnf_display: false, dnf_in_trail: true } }).catch(() => {});
+  await request.post('/api/logs/clear').catch(() => {});
+  await request.post('/clear_database').catch(() => {});
+});
+
+
+test('masqués par défaut, affichés à la demande sans compter comme des trouvailles', async ({ page, request }) => {
+  await openWithData(page);
+  await expect(page.locator('#checkDnfDisplay')).not.toBeChecked();
+  await expect(page.locator('#checkDnfInTrail')).toBeDisabled();
+  expect(await mapCodes(page, 'dnf')).toEqual([]);
+
+  // Carte au repos : GC2PR3N, trouvée dans la période, a laissé place à sa
+  // trouvaille ; seul le DNF jamais résolu reste.
+  await showDnf(page);
+  await expect(page.locator('#filtersCounter')).toContainText('2 / 2');
+  expect(await mapCodes(page, 'find')).toEqual(['GC2PR3N', 'GC345J4']);
+  await expect(page.locator('#dnfDisplayHint')).toContainText('2 DNF dans la sélection');
+  await expect(page.locator('#checkDnfInTrail')).toBeEnabled();
+  await expect.poll(async () => (await (await request.get('/api/settings')).json()).dnf_display).toBe(true);
+
+  await page.locator('#checkDnfDisplay').uncheck();
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual([]);
+  expect(await mapCodes(page, 'find')).toEqual(['GC2PR3N', 'GC345J4']);
+});
+
+
+test('dans le temps, un DNF apparaît au premier échec puis laisse place à la trouvaille', async ({ page }) => {
+  await openWithData(page);
+  await showDnf(page);
+  const paused = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateStart = new Date(2011, 7, 1);
+    return app.startPausedPreview();
+  });
+  expect(paused).toBe(true);
+
+  const seek = (y, m, d) => page.evaluate(async ([yy, mm, dd]) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(yy, mm, dd)), [y, m, d]);
+
+  expect(await seek(2011, 7, 19)).toBe(true);       // veille du DNF
+  expect(await mapCodes(page, 'dnf')).toEqual([]);
+  await seek(2011, 8, 1);                           // après le DNF, avant la trouvaille
+  expect(await mapCodes(page, 'dnf')).toEqual(['GC2PR3N']);
+  expect(await mapCodes(page, 'find')).toEqual([]);
+  await seek(2012, 1, 1);                           // trouvée le 08/01/2012
+  expect(await mapCodes(page, 'dnf')).toEqual([]);
+  expect(await mapCodes(page, 'find')).toEqual(['GC2PR3N']);
+  await seek(2011, 8, 1);                           // retour en arrière
+  expect(await mapCodes(page, 'dnf')).toEqual(['GC2PR3N']);
+});
+
+
+test('le trait de déplacement passe par les DNF, sauf si on les en retire', async ({ page }) => {
+  await openWithData(page);
+  await enableTrail(page);
+  await showDnf(page);
+
+  const withDnf = await trailStops(page);
+  await page.locator('#checkDnfInTrail').uncheck();
+  const withoutDnf = await trailStops(page);
+  // Le DNF du 20/08/2011 est une étape de plus (celui de 2021 est après la
+  // fin de l'animation).
+  expect(withDnf).toBe(withoutDnf + 1);
+});

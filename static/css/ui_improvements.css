@@ -3550,6 +3550,11 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     .labs-mobile-import { display: block; }
 }
 
+/* « Mes logs » (gc_logs.js) bascule ses éléments par l'attribut hidden :
+   .btn, .alert et .d-flex posent leur propre display, qui l'emporterait
+   (AGENTS.md, piège hidden + classes d'affichage). */
+.gc-logs-ui [hidden] { display: none !important; }
+
 /* --- Onglet Stats (templates/menu_stats.html) --------------------------- */
 
 /* Sous-sections du formulaire d'un panneau (Contenu, Position, Apparence). */

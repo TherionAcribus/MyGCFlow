@@ -32,6 +32,10 @@ export * from './theme.js';
 export * from './evolution_data.js';
 export * from './infos_editor.js';
 export * from './labs.js';
+// S'initialise lui-même en fin de module (cf. AGENTS.md, ordre d'évaluation).
+export * from './gc_logs.js';
+// Points DNF (après bdd.js et ui.js, qu'il appelle) ; s'initialise lui-même.
+export * from './dnf_data.js';
 // Après ui.js : s'initialise lui-même (cf. AGENTS.md, ordre d'évaluation).
 export * from './timeline_bar.js';
 

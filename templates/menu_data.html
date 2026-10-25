@@ -229,6 +229,49 @@
                 </div>
             </div>
 
+            <!-- Section Logs : DNF, actions de poseur, logs reçus sur ses
+                 caches (docs/logs-geocaching.md). Source indépendante :
+                 import avec aperçu, statut, export et suppression propres
+                 (gc_logs.js). Rien n'est encore affiché sur la carte. -->
+            <h5 class="gc-section-title mt-3">
+                <i class="ti ti-checklist text-muted me-1"></i>{{ _("Mes logs") }}
+            </h5>
+            <div class="card gc-logs-ui">
+                <div class="card-body">
+                    <div id="gcLogsStatus" class="fw-medium mb-1" aria-live="polite">
+                        {{ _("Aucun log importé") }}
+                    </div>
+                    <ul id="gcLogsDetail" class="list-unstyled small text-muted mb-2" hidden></ul>
+
+                    <div id="gcLogsActivity" class="alert alert-info py-2 px-3 mb-2" hidden aria-live="polite">
+                        <div class="flex-fill d-flex align-items-center gap-2">
+                            <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                            <span id="gcLogsActivityTitle"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Vos DNF, vos actions de poseur et les logs reçus sur vos caches. Les logs de votre fichier My Finds s'y ajoutent à chaque import.") }}
+                    </div>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <input type="file" class="visually-hidden" id="gc-logs-file-input" accept=".json,.gpx,.zip"
+                               aria-label="{{ _('Fichier de logs (.json, .gpx ou .zip)') }}" />
+                        <button type="button" id="gc-logs-file-btn" class="btn btn-outline-primary btn-sm gcm-file-btn">
+                            <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer un fichier…") }}
+                        </button>
+                        <button type="button" id="gcLogsExportBtn" class="btn btn-outline-secondary btn-sm" hidden>
+                            <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
+                        </button>
+                        <button type="button" id="gcLogsClearBtn" class="btn btn-outline-danger btn-sm ms-auto" hidden>
+                            <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes logs") }}
+                        </button>
+                    </div>
+                    <div class="form-hint text-muted mt-2">
+                        {{ _("Fichier mygcflow-logs (.json) ou GPX contenant des logs (.gpx ou .zip).") }}
+                    </div>
+                </div>
+            </div>
+
             <!-- Messages du jeu global (toutes sources confondues) : vivent
                  sous les deux cartes de sources, pas dans la carte « Mes
                  Géocaches » — des Lab Caches seuls les concernent aussi
@@ -360,6 +403,32 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
                     <button type="button" id="labsPreviewConfirmBtn" class="btn btn-primary">{{ _("Importer") }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aperçu d'un import de logs : ce qui changera, ce qui sera retiré,
+         ce que contient le fichier, points d'attention (gc_logs.js). -->
+    <div id="gcLogsPreviewModal" class="modal bs-modal gc-logs-ui" tabindex="-1" aria-labelledby="gcLogsPreviewModal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="gcLogsPreviewModal-title" class="modal-title">{{ _("Aperçu de l'import de logs") }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="gcLogsPreviewChanges" class="alert alert-info small mb-3"></div>
+                    <div id="gcLogsPreviewRemovals" class="alert alert-warning small mb-3" hidden></div>
+                    <div id="gcLogsPreviewContent" class="small mb-2"></div>
+                    <details id="gcLogsPreviewIssues" class="small mb-0" hidden>
+                        <summary class="fw-bold">{{ _("Points d'attention") }}</summary>
+                        <ul class="mt-2 mb-0"></ul>
+                    </details>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                    <button type="button" id="gcLogsPreviewConfirmBtn" class="btn btn-primary">{{ _("Importer") }}</button>
                 </div>
             </div>
         </div>

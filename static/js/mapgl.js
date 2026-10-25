@@ -149,6 +149,7 @@ import {
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
 import { countDaysUpTo } from './timeline_model.mjs';
+import { dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -609,6 +610,7 @@ export function addVector(data) {
     }
 
     displayWebGLPoints(features || [], pkg.options.point);
+    syncDnfStatic();
 }
 
 // fonction appelée au changement d'options graphique
@@ -643,6 +645,9 @@ export function refreshPoints(){
 
     clearMap();
     displayWebGLPoints(toDisplay, pkg.options.point);
+    // En animation, la source recopiée contenait déjà les DNF visibles ; au
+    // repos, `features` n'a que les trouvailles.
+    if (!isAnimationInProgress()) syncDnfStatic();
 }
 
 
@@ -807,6 +812,31 @@ export function initPopupOverlay(){
         const foundLabel = props.found ? t('Trouvé') : t('DNF');
         const publishedLabel = publishedDate ? t('Publié le ${date}', { date: publishedDate }) : '';
         const dateFindLabel = dateFind ? t('le ${date}', { date: dateFind }) : '';
+
+        // Popup des points DNF : tentatives et, la cache trouvée ensuite, la
+        // date de la trouvaille. Concaténation, pas de gabarit imbriqué (cf.
+        // la note sur le lexer Babel plus haut).
+        if (props.source_kind === 'dnf') {
+            const tries = Array.isArray(props.dnf_dates) ? props.dnf_dates.length : 1;
+            const triesLabel = tries > 1
+                ? t('${n} DNF, le premier le ${date}', { n: tries, date: dateFind })
+                : t('DNF le ${date}', { date: dateFind });
+            const resolvedLabel = props.resolved_date
+                ? t('Trouvée ensuite, le ${date}', { date: fmtPopupDate(props.resolved_date) })
+                : t('Pas encore trouvée');
+            const titleHtml = (linkHref
+                ? '<a href=' + JSON.stringify(linkHref) + ' target="_blank" rel="noopener noreferrer" class="gc-popup-link">' + gcEsc + '</a>'
+                : gcEsc) + ' - ' + nameLabel;
+            const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+            contentEl.innerHTML = '<div class="gc-popup-title">' + titleHtml + '</div>'
+                + '<div>' + (type || '-') + ', ' + (cont || '-') + ', ' + (dif || '-') + '/' + (ter || '-') + '</div>'
+                + (owner ? '<div>' + owner + '</div>' : '')
+                + '<div>' + sanitize(triesLabel) + '</div>'
+                + '<div>' + sanitize(resolvedLabel) + '</div>';
+            popupEl.classList.add('is-visible');
+            popupOverlay.setPosition(evt.coordinate);
+            return;
+        }
 
         // Popup dédié aux étapes Adventure Lab : D/T et taille sans objet,
         // pas de code GC ni de lien coord.info. L'étape, l'Adventure (liée
@@ -2398,9 +2428,70 @@ function seekPointsToDay(day) {
         if (source) source.clear();
         if (target > 0) displayWebGLPoints(seekFeaturesBetween(index.entries, 0, target), pkg.options.point);
     }
+    // Avant de mémoriser la révision de la source : sinon chaque saut suivant
+    // la croirait touchée par autre chose et repartirait de zéro.
+    syncDnfToDay(day);
     const after = window.vectorSource;
     seekShown = after ? { source: after, sourceRevision: after.getRevision(), count: target } : null;
     return index.counts[target];
+}
+
+// --- Points DNF (dnf_data.js, docs/logs-geocaching.md) ----------------------
+//
+// Dans la même source que les trouvailles, mais hors de pointsByDate : ni
+// compteur, ni Stats, ni chronologie ne les voient. Ajoutés et retirés ici
+// selon le jour montré — un DNF disparaît le jour où sa trouvaille apparaît.
+// L'état se recale sur la source réelle (hasFeature) : un vidage de la carte
+// par un autre chemin ne laisse pas de fantôme.
+
+const dnfShown = new Set();
+let dnfFormat = null;
+
+function dnfOlFeature(entry) {
+    if (!entry.ol) {
+        dnfFormat ??= new ol.format.GeoJSON();
+        entry.ol = dnfFormat.readFeature(entry.feature, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857',
+        });
+    }
+    return entry.ol;
+}
+
+function syncDnf(isVisible, appear = null) {
+    if (isEvolutionPage()) return;
+    const entries = pkg.getDnfEntries?.() || [];
+    if (!entries.length && !dnfShown.size) return;
+    const source = window.vectorSource;
+    const wanted = new Set();
+    const toAdd = [];
+    for (const entry of entries) {
+        if (!isVisible(entry)) continue;
+        const feature = dnfOlFeature(entry);
+        wanted.add(feature);
+        if (!source || !source.hasFeature(feature)) toAdd.push(feature);
+    }
+    const toRemove = [];
+    for (const feature of dnfShown) {
+        if (!wanted.has(feature) && source?.hasFeature(feature)) toRemove.push(feature);
+    }
+    if (toRemove.length) source.removeFeatures(toRemove);
+    dnfShown.clear();
+    for (const feature of wanted) dnfShown.add(feature);
+    if (toAdd.length) displayWebGLPoints(toAdd, pkg.options.point, appear);
+}
+
+// Carte à la fin du jour `day` (animation, saut de la chronologie).
+export function syncDnfToDay(day, appear = null) {
+    syncDnf((entry) => dnfVisibleAt(entry, day), appear);
+}
+
+// Carte au repos : état à la fin de la sélection — un DNF résolu dans la
+// période a laissé place à sa trouvaille.
+export function syncDnfStatic() {
+    const end = pkg.metadata?.endDate instanceof Date ? dateToDayNumber(pkg.metadata.endDate) : NaN;
+    const endDay = Number.isFinite(end) ? end : Infinity;
+    syncDnf((entry) => dnfVisibleStatic(entry, endDay));
 }
 
 // Caches comptées sans point (locationless masquées) sur un lot de jours :
@@ -2581,6 +2672,8 @@ export function startAnimation(restart=false) {
         if (filteredPointsAtStart.length > 0) {
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
+        // DNF déjà en cours la veille du départ (non résolus à cette date).
+        syncDnfToDay(dateToDayNumber(animationStartDate()) - 1);
 
         createFlashElements();
         resetCameraFollow();
@@ -3424,6 +3517,8 @@ function startRecordingProcess(session){
         if (filteredPointsAtStart.length > 0) {
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
+        // DNF déjà en cours la veille du départ (non résolus à cette date).
+        syncDnfToDay(dateToDayNumber(animationStartDate()) - 1);
 
         // resetCameraFollow a déjà été fait avant prepareCameraPacing, plus haut.
         createFlashElements();
@@ -4183,6 +4278,8 @@ function recordAnimationMediaRecorder(){
         if (filteredPointsAtStart.length > 0) {
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
+        // DNF déjà en cours la veille du départ (non résolus à cette date).
+        syncDnfToDay(dateToDayNumber(animationStartDate()) - 1);
 
         createFlashElements();
         resetCameraFollow();
@@ -5151,6 +5248,9 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             delayMs: flashOptions.mode === 'impulse' ? staggerDelayMs : null,
         });
     }
+    // DNF : apparus au premier échec, retirés quand la trouvaille les résout
+    // (sans flash ni compteur — ce ne sont pas des trouvailles).
+    syncDnfToDay(dateToDayNumber(dates[dates.length - 1]), { at: sampleAppearClock() });
 
     if (flashOptions.mode != "none") {
         // Animation de flash seulement pour les nouvelles features (dates du lot)
@@ -5488,6 +5588,7 @@ function trailGeometryKey(opts) {
     const endDay = dateToDayNumber(animationEndDate());
     return [
         pkg.pointsByDateRevision,
+        pkg.isDnfInTrail?.() ? 'dnf' + pkg.dnfRevision : 'sans-dnf',
         opts.routing, opts.clusterKm, opts.jumpKm, opts.jumpStyle, opts.curve,
         Number.isFinite(endDay) ? endDay : 'all',
     ].join('|');
@@ -5517,6 +5618,24 @@ function getTrailGeometry(opts) {
             // journée. Le `time_find` des géocaches est factice, jamais lu ici.
             times: points.map((feature) => timeOfDaySeconds(feature.properties?.found_local_time)),
         });
+    }
+    // Un DNF est un déplacement : chaque tentative est une étape du trajet,
+    // sauf si l'utilisateur les en a retirées (préférence dnf_in_trail).
+    if (pkg.isDnfInTrail?.()) {
+        const visits = dnfVisitsByDay(pkg.getDnfEntries?.() || [], Number.isFinite(endDay) ? endDay : Infinity);
+        if (visits.size) {
+            const byDay = new Map(days.map((entry) => [entry.day, entry]));
+            for (const [day, coords] of visits) {
+                const entry = byDay.get(day);
+                if (entry) {
+                    appendPoints(entry.points, coords);
+                    appendPoints(entry.times, coords.map(() => null));
+                } else {
+                    days.push({ day, points: coords.slice(), times: coords.map(() => null) });
+                }
+            }
+            days.sort((a, b) => a.day - b.day);
+        }
     }
     const route = buildTrailRoute(days, opts);
     const path = buildTrailPath(route, {

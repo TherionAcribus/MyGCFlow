@@ -231,6 +231,14 @@ class LogStoreTests(unittest.TestCase):
         self.assertEqual(self._log(228739556).gc_code, "GC9ZZZZ")
         self.assertEqual(summary["status"]["pending_coordinates"], 0)
 
+    def test_my_finds_without_usable_logs_creates_nothing(self):
+        # Logs sans attribut id (cas des fixtures e2e) : rejetés, et aucune
+        # collection vide ni révision créée.
+        result = log_store.merge_myfinds_logs(
+            db.session, lf.myfinds_parse_result([], ["log sans identité (ni log_id, ni log_code)"]))
+        self.assertEqual(result, {"success": False, "skipped": "no_logs", "rejected": 1})
+        self.assertIsNone(log_store.get_collection(db.session))
+
     def test_my_finds_of_another_account_keeps_finds(self):
         doc = _doc()
         doc["account"] = {"user_id": 999}

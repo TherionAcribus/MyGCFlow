@@ -45,6 +45,11 @@ let noCacheToast = null;
 // visuel sans requête supplémentaire.
 let lastDbHasData = null;
 
+// Dernière sélection appliquée par changeSelect (null tant qu'aucun filtre
+// n'a été appliqué : au chargement, seules les sources affichées comptent).
+// Les points DNF (dnf_data.js) sont filtrés avec elle.
+let lastSelection = null;
+
 // Jeu de données complet (toutes les caches) conservé en mémoire pour permettre
 // un filtrage 100% côté client, sans aller-retour serveur. Alimenté à chaque
 // chargement complet (readBdd / loadAndDisplayPoints) et remis à null au vidage.
@@ -237,6 +242,20 @@ async function validateGpxFile(file) {
     return { ok: true };
 }
 
+// Fichier de logs `mygcflow-logs` (.json, docs/logs-geocaching.md), reconnu
+// à son en-tête : à tester AVANT isLabFile, qui prend tout .json pour un
+// historique Labs.
+async function isLogsFile(file) {
+    if (!file || !/\.json$/i.test(file.name || '')) return false;
+    try {
+        const head = await file.slice(0, GPX_HEADER_SNIFF_BYTES).text();
+        // \x22 et non un guillemet : pybabel perdrait la suite des t() (AGENTS.md).
+        return /\x22format\x22\s*:\s*\x22mygcflow-logs\x22/.test(head);
+    } catch (_) {
+        return false;
+    }
+}
+
 // Fichier Adventure Lab : export d'historique (.json) ou GPX Lab2Gpx, reconnu
 // à son en-tête. Il ne passe pas par le pipeline « My Finds », qui le
 // refuserait (« Fichier invalide ») : il est confié à l'import Labs. Un .zip
@@ -255,7 +274,8 @@ async function isLabFile(file) {
 // Aiguillage d'un dépôt : les images rejoignent l'onglet Images (posées au
 // point du dépôt si lâchées sur la carte — `point`, coordonnées client) ;
 // une musique rejoint le sous-onglet Musique (la
-// première, s'il y en a plusieurs) ; dès qu'un fichier Lab est reconnu, le
+// première, s'il y en a plusieurs) ; un fichier de logs part vers « Mes
+// logs » (le premier) ; dès qu'un fichier Lab est reconnu, le
 // lot part vers l'import Labs — avec les .zip qui l'accompagnent, un GPX
 // Lab2Gpx pouvant être compressé. Sinon, le premier fichier suit le
 // chargement « My Finds ».
@@ -271,6 +291,11 @@ async function routeDroppedFiles(files, point = null) {
         files = files.filter((f) => !isAudioFile(f));
     }
     if (!files.length) return;
+    const logs = await Promise.all(files.map(isLogsFile));
+    if (logs.some(Boolean)) {
+        pkg.importLogFile?.(files[logs.indexOf(true)]);
+        return;
+    }
     const isLab = await Promise.all(files.map(isLabFile));
     if (isLab.some(Boolean)) {
         pkg.importLabFiles?.(files.filter((f, i) => isLab[i] || isZipFile(f)));
@@ -282,7 +307,12 @@ async function routeDroppedFiles(files, point = null) {
 // Point d'entrée unique pour tout fichier GPX à charger (sélection via input
 // ou glisser-déposer) : valide localement, puis lance l'upload.
 async function handleGpxFile(file) {
-    // Un fichier Lab choisi par le sélecteur des géocaches : même aiguillage.
+    // Un fichier de logs ou Lab choisi par le sélecteur des géocaches : même
+    // aiguillage que le glisser-déposer.
+    if (await isLogsFile(file)) {
+        pkg.importLogFile?.(file);
+        return;
+    }
     if (await isLabFile(file)) {
         pkg.importLabFiles?.([file]);
         return;
@@ -673,6 +703,8 @@ function buildPointsByDateIndex(features = []) {
     } catch (e) {
         console.warn('buildPointsByDateIndex error:', e);
     } finally {
+        // Points DNF : refiltrés avec la même sélection, hors de l'index.
+        pkg.rebuildDnfIndex?.();
         // Panneaux de stats : leurs totaux, mémoïsés sur la révision, se
         // recalculent au prochain dessin — encore faut-il en demander un.
         pkg.refreshStatsPanels?.();
@@ -819,6 +851,30 @@ function filterFeaturesClientSide(features, sel) {
         out.push(f);
     }
     return out;
+}
+
+// Filtre des features hors jeu principal (points DNF) selon la sélection
+// courante — sans la dimension « sources », que dnf_data.js traite lui-même.
+// Les bornes de dates par défaut valent l'étendue des TROUVAILLES : un DNF
+// antérieur à la première ou postérieur à la dernière en sortirait sans que
+// l'utilisateur ait rien restreint. Seule une borne déplacée s'applique.
+export function filterLikeCurrentSelection(features) {
+    if (!lastSelection) return features;
+    const atDefault = pkg.dateBoundsAtDefault?.() || {};
+    const bounds = (range, startAtDefault, endAtDefault) => ({
+        start: startAtDefault ? null : normIsoDate(range?.startDate),
+        end: endAtDefault ? null : normIsoDate(range?.endDate),
+    });
+    const found = bounds(lastSelection.dates, atDefault.findStart, atDefault.findEnd);
+    const published = bounds(lastSelection.published_dates, atDefault.pubStart, atDefault.pubEnd);
+    const within = (value, range) => {
+        if (!range.start && !range.end) return true;
+        const iso = normIsoDate(value);
+        return !!iso && (!range.start || iso >= range.start) && (!range.end || iso <= range.end);
+    };
+    const rest = { ...lastSelection, sources: undefined, dates: undefined, published_dates: undefined };
+    return filterFeaturesClientSide(features, rest).filter((f) =>
+        within(f?.properties?.date_find, found) && within(f?.properties?.published_date, published));
 }
 
 // La préférence « sources affichées » (main_discovery_sources) s'applique
@@ -1173,6 +1229,10 @@ function uploadBdd (file, uploadToast){
 
             // mets à jour les infos de la BDD
             readBddValues();
+            // Le My Finds apporte aussi ses logs (DNF suivis d'une trouvaille…)
+            // et résout des DNF : statut de « Mes logs » et points DNF relus.
+            pkg.refreshLogsStatus?.();
+            pkg.reloadDnfData?.();
 
             // L'état vide reste affiché tant que totalCaches n'est pas connu :
             // garder l'indicateur (et les contrôles verrouillés, endImport est
@@ -1279,6 +1339,7 @@ export function readBdd(){
                 console.log('[readBdd] onSuccess - features:', result.geojson?.features?.length, 'metadata:', result.metadata);
                 // Conserver le jeu complet pour le filtrage client-side ultérieur.
                 baseGeojson = result.geojson;
+                lastSelection = null;
                 // La préférence « sources affichées » s'applique dès le
                 // chargement, contrairement aux filtres de sélection qui
                 // attendent le premier changement (comportement historique).
@@ -1348,6 +1409,7 @@ export function changeSelect(selectedValues, optionValues) {
     }
 
     const sel = selectedValues || {};
+    lastSelection = sel;
     const filteredFeatures = filterFeaturesClientSide(baseGeojson.features, sel);
     const geojson = { type: 'FeatureCollection', features: filteredFeatures };
     const meta = buildMetadataClientSide(filteredFeatures);
