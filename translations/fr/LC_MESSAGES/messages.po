@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 16:42+0100\n"
+"POT-Creation-Date: 2026-10-25 17:15+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -664,7 +664,7 @@ msgid "Base de données"
 msgstr "Base de données"
 
 #: blueprints/core.py:196 static/js/evolution_data.js:435
-#: static/js/poses_data.js:280 templates/guide.html:160
+#: static/js/poses_data.js:288 templates/guide.html:160
 #: templates/guide.html:168 templates/menu_data.html:400
 #: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:47
 #: test_translations.py:28
@@ -1385,7 +1385,7 @@ msgstr "Analyse du fichier GPX en cours..."
 #: static/js/bdd.js:459 static/js/bdd.js:1521 static/js/bdd.js:1645
 #: static/js/evolution_data.js:333 static/js/gc_logs.js:280
 #: static/js/labs.js:1502 static/js/notifications.js:297
-#: static/js/notifications.js:342 static/js/poses_data.js:155
+#: static/js/notifications.js:342 static/js/poses_data.js:158
 msgid "Chargement"
 msgstr "Chargement"
 
@@ -1498,7 +1498,7 @@ msgstr "Erreur lors du chargement du fichier"
 #: static/js/evolution_data.js:1348 static/js/evolution_data.js:1356
 #: static/js/gc_logs.js:687 static/js/labs.js:2001 static/js/labs.js:2044
 #: static/js/labs.js:2084 static/js/notifications.js:421
-#: static/js/poses_data.js:172 static/js/recording_perf.js:187
+#: static/js/poses_data.js:175 static/js/recording_perf.js:187
 #: static/js/ui.js:2183
 msgid "Erreur"
 msgstr "Erreur"
@@ -1647,7 +1647,7 @@ msgstr "Chargement de la base..."
 msgid "Impossible de charger la base : ${message}"
 msgstr "Impossible de charger la base : ${message}"
 
-#: static/js/evolution_data.js:435 static/js/poses_data.js:280
+#: static/js/evolution_data.js:435 static/js/poses_data.js:288
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr "Le filtre s'appliquera à la fin de l'animation."
 
@@ -1673,7 +1673,7 @@ msgstr "Archivée le ${date}"
 msgid "Archivée (date inconnue)"
 msgstr "Archivée (date inconnue)"
 
-#: static/js/evolution_data.js:753 static/js/poses_data.js:691
+#: static/js/evolution_data.js:753 static/js/poses_data.js:699
 msgid "Active"
 msgstr "Active"
 
@@ -3761,38 +3761,66 @@ msgstr "Plus tard"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "Vous ne serez plus averti pour cette version."
 
-#: static/js/poses_data.js:129
+#: static/js/poses_data.js:132
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Le réglage s'appliquera à la fin de l'animation."
 
-#: static/js/poses_data.js:129 static/js/stats_panels.js:1009
+#: static/js/poses_data.js:132 static/js/stats_panels.js:1009
 #: static/js/stats_panels.js:1184 templates/menu_data_poses.html:62
 #: templates/menu_stats.html:230
 msgid "Caches archivées"
 msgstr "Caches archivées"
 
-#: static/js/poses_data.js:155
+#: static/js/poses_data.js:158
 msgid "Chargement de vos caches posées..."
 msgstr "Chargement de vos caches posées..."
 
-#: static/js/poses_data.js:172
+#: static/js/poses_data.js:175
 #, python-brace-format
 msgid "Impossible de charger vos caches posées : ${message}"
 msgstr "Impossible de charger vos caches posées : ${message}"
 
-#: static/js/poses_data.js:206
+#: static/js/poses_data.js:209
 msgid "Aucun log importé pour l'instant"
 msgstr "Aucun log importé pour l'instant"
 
-#: static/js/poses_data.js:207
+#: static/js/poses_data.js:210
 msgid "Le compte de vos logs est inconnu : importez un export de vos logs"
 msgstr "Le compte de vos logs est inconnu : importez un export de vos logs"
 
-#: static/js/poses_data.js:208 templates/app.html:175
+#: static/js/poses_data.js:211
+msgid ""
+"Vos caches posées sont dans vos logs, mais aucune n'a de position et de "
+"date connues"
+msgstr ""
+"Vos caches posées sont dans vos logs, mais aucune n'a de position et de "
+"date connues"
+
+#: static/js/poses_data.js:212 templates/app.html:175
 msgid "Aucune cache posée trouvée dans vos logs importés"
 msgstr "Aucune cache posée trouvée dans vos logs importés"
 
+#: static/js/poses_data.js:225
+#, python-brace-format
+msgid "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
+msgstr "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
+
+#: static/js/poses_data.js:226
+#, python-brace-format
+msgid "${n} caches sans date de publication ni de pose"
+msgstr "${n} caches sans date de publication ni de pose"
+
 #: static/js/poses_data.js:227
+#, python-brace-format
+msgid "${n} changements d'état déduits du statut à l'export (sans log)"
+msgstr "${n} changements d'état déduits du statut à l'export (sans log)"
+
+#: static/js/poses_data.js:228
+#, python-brace-format
+msgid "Logs importés le ${date}"
+msgstr "Logs importés le ${date}"
+
+#: static/js/poses_data.js:248
 #, python-brace-format
 msgid ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
@@ -3801,45 +3829,40 @@ msgstr ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
 "favoris"
 
-#: static/js/poses_data.js:232
-#, python-brace-format
-msgid "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
-msgstr "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
-
-#: static/js/poses_data.js:233
-#, python-brace-format
-msgid "${n} caches sans date de publication ni de pose"
-msgstr "${n} caches sans date de publication ni de pose"
-
-#: static/js/poses_data.js:234
-#, python-brace-format
-msgid "${n} changements d'état déduits du statut à l'export (sans log)"
-msgstr "${n} changements d'état déduits du statut à l'export (sans log)"
-
-#: static/js/poses_data.js:235
-#, python-brace-format
-msgid "Logs importés le ${date}"
-msgstr "Logs importés le ${date}"
-
-#: static/js/poses_data.js:692
+#: static/js/poses_data.js:700
 msgid "Désactivée"
 msgstr "Désactivée"
 
-#: static/js/poses_data.js:693
+#: static/js/poses_data.js:701
 msgid "Archivée"
 msgstr "Archivée"
 
-#: static/js/poses_data.js:718
+#: static/js/poses_data.js:741
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Publiée le ${date}"
 
-#: static/js/poses_data.js:734
+#: static/js/poses_data.js:742
+#, python-brace-format
+msgid "Posée le ${date}"
+msgstr "Posée le ${date}"
+
+#: static/js/poses_data.js:743
+#, python-brace-format
+msgid "Trouvée avant sa publication le ${date}"
+msgstr "Trouvée avant sa publication le ${date}"
+
+#: static/js/poses_data.js:744
+#, python-brace-format
+msgid "Premier log le ${date}"
+msgstr "Premier log le ${date}"
+
+#: static/js/poses_data.js:768
 #, python-brace-format
 msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 msgstr "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 
-#: static/js/poses_data.js:740
+#: static/js/poses_data.js:777
 #, python-brace-format
 msgid "Premier trouveur : ${name} (${date})"
 msgstr "Premier trouveur : ${name} (${date})"
@@ -9497,8 +9520,8 @@ msgstr "Couleurs GC (par type)"
 
 #: templates/menu_flash.html:50 templates/menu_flash.html:76
 #: templates/menu_flash_disappear.html:57 templates/menu_flash_dnf.html:63
-#: templates/menu_flash_dnf.html:132 templates/menu_points.html:75
-#: templates/menu_points.html:140
+#: templates/menu_flash_dnf.html:132 templates/menu_flash_events.html:44
+#: templates/menu_points.html:75 templates/menu_points.html:140
 msgid "Transparent"
 msgstr "Transparent"
 
@@ -9506,7 +9529,7 @@ msgstr "Transparent"
 #: templates/menu_flash_disappear.html:38
 #: templates/menu_flash_disappear.html:61 templates/menu_flash_dnf.html:45
 #: templates/menu_flash_dnf.html:67 templates/menu_flash_dnf.html:114
-#: templates/menu_flash_dnf.html:136 templates/menu_flash_events.html:44
+#: templates/menu_flash_dnf.html:136 templates/menu_flash_events.html:45
 #: templates/menu_points.html:79 templates/menu_points.html:144
 msgid "Couleur unique"
 msgstr "Couleur unique"
@@ -9515,7 +9538,7 @@ msgstr "Couleur unique"
 #: templates/menu_flash_disappear.html:41
 #: templates/menu_flash_disappear.html:64 templates/menu_flash_dnf.html:48
 #: templates/menu_flash_dnf.html:70 templates/menu_flash_dnf.html:117
-#: templates/menu_flash_dnf.html:139 templates/menu_flash_events.html:47
+#: templates/menu_flash_dnf.html:139 templates/menu_flash_events.html:48
 #: templates/menu_points.html:84 templates/menu_points.html:149
 msgid "Choisir la couleur"
 msgstr "Choisir la couleur"

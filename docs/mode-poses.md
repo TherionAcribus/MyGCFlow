@@ -53,6 +53,10 @@ compte. Un état final qui contredit le statut de la fiche à l'export
 
 **Position** : fiche (correction manuelle comprise), sinon ligne du My Finds ;
 sans position, la cache est en attente (`meta.pending`), jamais placée.
+Quand **aucune** cache posée n'est plaçable (sans position ou sans date), la
+charge utile est vide avec `meta.reason = "no-placed-caches"` — les compteurs
+`ownedTotal` / `pending` / `undatable` restent servis, à la différence de
+`"no-owned-caches"` (aucune cache possédée).
 **Pays et région** manquants (le favori ne les collecte pas) : ceux du My
 Finds, sinon empruntés à la trouvaille la plus proche à 10 km
 (`lab_geojson.compute_borrowed_geo`, drapeau `geoBorrowed`).
@@ -96,8 +100,11 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
 - **Barre de chronologie** : histogramme des trouvailles reçues par jour, les
   autres logs empilés dessus ; courbe du cumul des trouvailles reçues ;
   jalons « Nᵉ trouvaille reçue ».
-- **Popup** : type, taille, D/T, date de publication, état au jour affiché,
-  trouvailles / favoris / DNF, premier trouveur (`/api/poses/caches/<code>`).
+- **Popup** : type, taille, D/T, état au jour affiché, premier trouveur —
+  tout est lu côté client dans la charge utile (`base`), sans fetch, pour que
+  les comptes trouvailles / favoris / DNF s'arrêtent au jour affiché pendant
+  l'animation. Le libellé d'apparition suit `appearSource` : « Publiée le »,
+  « Posée le », « Trouvée avant sa publication le », « Premier log le ».
 
 ## Thèmes
 
@@ -150,7 +157,7 @@ trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).
 |---|---|
 | `GET /poses` | page (`app.html`, `data-mode="poses"`) |
 | `GET /api/poses/data` | données en colonnes (format de `/api/evolution/.../data` + `st`, `ev`, `authors`, `logKinds`, `meta`), ETag par collection, révision et contenu de `geocache` |
-| `GET /api/poses/caches/<code>` | détails d'une cache posée (popup), 404 sinon |
+| `GET /api/poses/caches/<code>` | détails d'une cache posée, 404 sinon (totaux à l'export ; la popup ne s'en sert plus — tests et réserve d'enrichissements) |
 
 ## Tests
 

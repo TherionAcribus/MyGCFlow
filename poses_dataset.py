@@ -37,8 +37,10 @@ from log_formats import CATEGORY_FIND, log_category
 from models import CacheRef, Geocache, LogEvent
 
 # Version du format : entre dans l'ETag et la clé du mémo (une mise à jour du
-# code qui change la charge utile invalide les réponses gardées).
-PAYLOAD_VERSION = 1
+# code qui change la charge utile — colonnes, raisons de `meta` — invalide
+# les réponses gardées).
+# 2 : raison « no-placed-caches » (caches posées, aucune plaçable).
+PAYLOAD_VERSION = 2
 
 # --- Types d'événements -----------------------------------------------------
 #
@@ -344,7 +346,9 @@ def build_payload(session) -> dict:
     placed.sort(key=lambda item: (item[0].appear, item[0].ref.gc_code))
 
     if not placed:
-        payload = _empty_payload("no-owned-caches", collection)
+        # Des caches posées existent mais aucune n'a position ET date :
+        # raison propre pour que la page l'explique (en attente / non datable).
+        payload = _empty_payload("no-placed-caches", collection)
         payload["meta"].update(ownedTotal=len(caches), pending=pending, undatable=undatable,
                                ownerMatchedByName=by_name)
         return payload

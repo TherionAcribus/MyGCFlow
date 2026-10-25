@@ -41,6 +41,7 @@
                     <select class="form-select form-select-sm w-auto" data-event-flash-field="color_type"
                             aria-label="{{ _('Couleur du flash') }} — {{ kind.label }}">
                         <option value="gc" {{ 'selected' if kind.defaults.color_type == 'gc' }}>{{ _("Couleurs GC") }}</option>
+                        <option value="none" {{ 'selected' if kind.defaults.color_type == 'none' }}>{{ _("Transparent") }}</option>
                         <option value="fix" {{ 'selected' if kind.defaults.color_type == 'fix' }}>{{ _("Couleur unique") }}</option>
                     </select>
                     <input type="color" class="form-control form-control-color form-control-sm" data-event-flash-field="color"

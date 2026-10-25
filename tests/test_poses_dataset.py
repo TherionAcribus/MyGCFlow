@@ -125,6 +125,22 @@ class PayloadTests(_Base):
         self.assertEqual(payload["placed"], sorted(payload["placed"]))
         self.assertEqual(payload["placed"][0], 0)
 
+    def test_no_placed_caches_when_every_owned_cache_is_pending(self):
+        # Toutes les caches posées sans position : raison propre (distincte de
+        # « aucune cache possédée »), les compteurs d'attente restent servis.
+        doc = _doc()
+        for cache in doc["caches"]:
+            cache.pop("latitude", None)
+            cache.pop("longitude", None)
+        self._commit(doc)
+        payload = self._payload()
+        meta = payload["meta"]
+        self.assertEqual(meta["reason"], "no-placed-caches")
+        self.assertEqual(payload["count"], 0)
+        self.assertEqual(meta["ownedTotal"], 8)
+        self.assertEqual(meta["pending"], 8)
+        self.assertEqual(meta["undatable"], 0)
+
     def test_appearance_is_the_publication(self):
         self._commit()
         p = self._payload()

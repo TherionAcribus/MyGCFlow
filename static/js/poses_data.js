@@ -36,6 +36,10 @@ import {
     stepEvolution,
 } from './evolution_timeline.mjs';
 import {
+    APPEAR_BETA_FIND,
+    APPEAR_FIRST_LOG,
+    APPEAR_PLACED,
+    APPEAR_PUBLISH,
     POSES_COUNTER_TAGS,
     STATE_ARCHIVED,
     STATE_DISABLED,
@@ -68,7 +72,6 @@ let pendingReload = false;    // rechargement demandé pendant une animation
 let pendingTimer = null;
 let loadSeq = 0;
 let dataRevision = 0;
-let popupSeq = 0;
 let flashOptionsByKind = new Map(); // résolus au début de l'animation
 let findsIndex = null;              // { revision, byDate } — trouvailles reçues (Stats)
 let stateMutations = 0;             // réécritures de `pstate` (tests, mesures)
@@ -176,6 +179,7 @@ function formatDate(date) {
 function emptyReasonText(reason) {
     if (reason === 'no-collection') return t('Aucun log importé pour l\'instant');
     if (reason === 'no-account') return t('Le compte de vos logs est inconnu : importez un export de vos logs');
+    if (reason === 'no-placed-caches') return t('Vos caches posées sont dans vos logs, mais aucune n\'a de position et de date connues');
     return t('Aucune cache posée trouvée dans vos logs importés');
 }
 
@@ -184,11 +188,26 @@ function renderStatus() {
     const status = el('posesStatus');
     const detail = el('posesDetail');
     const emptyText = el('posesEmptyText');
+    // Détail commun aux deux états : quand aucune cache n'est plaçable, les
+    // compteurs « en attente » / « non datable » expliquent la carte vide.
+    const lines = [];
+    if (meta.pending > 0) lines.push(t('${n} caches sans position (complétez-les depuis la carte « Mes logs »)', { n: formatNumber(meta.pending) }));
+    if (meta.undatable > 0) lines.push(t('${n} caches sans date de publication ni de pose', { n: formatNumber(meta.undatable) }));
+    if (meta.inferredStates > 0) lines.push(t('${n} changements d\'état déduits du statut à l\'export (sans log)', { n: formatNumber(meta.inferredStates) }));
+    if (meta.lastImportAt) lines.push(t('Logs importés le ${date}', { date: formatDate(pkg.parseLocalDate?.(meta.lastImportAt.slice(0, 10))) }));
+    if (detail) {
+        detail.textContent = '';
+        for (const line of lines) {
+            const li = document.createElement('li');
+            li.textContent = line;
+            detail.appendChild(li);
+        }
+        detail.hidden = lines.length === 0;
+    }
     if (meta.reason || !base || base.count === 0) {
         const text = emptyReasonText(meta.reason);
         if (status) status.textContent = text;
         if (emptyText) emptyText.textContent = text;
-        if (detail) { detail.hidden = true; detail.textContent = ''; }
         return;
     }
     if (status) {
@@ -198,19 +217,6 @@ function renderStatus() {
             favorites: formatNumber(meta.favorites),
         });
     }
-    if (!detail) return;
-    const lines = [];
-    if (meta.pending > 0) lines.push(t('${n} caches sans position (complétez-les depuis la carte « Mes logs »)', { n: formatNumber(meta.pending) }));
-    if (meta.undatable > 0) lines.push(t('${n} caches sans date de publication ni de pose', { n: formatNumber(meta.undatable) }));
-    if (meta.inferredStates > 0) lines.push(t('${n} changements d\'état déduits du statut à l\'export (sans log)', { n: formatNumber(meta.inferredStates) }));
-    if (meta.lastImportAt) lines.push(t('Logs importés le ${date}', { date: formatDate(pkg.parseLocalDate?.(meta.lastImportAt.slice(0, 10))) }));
-    detail.textContent = '';
-    for (const line of lines) {
-        const li = document.createElement('li');
-        li.textContent = line;
-        detail.appendChild(li);
-    }
-    detail.hidden = lines.length === 0;
 }
 
 // --- Sélection --------------------------------------------------------------------
@@ -632,10 +638,13 @@ const STATE_LABELS = () => ({
     2: t('Archivée'),
 });
 
+// Popup d'une cache posée : tout vient de `base` (aucun fetch) pour que les
+// comptes — trouvailles, favoris, DNF — s'arrêtent au jour affiché pendant
+// l'animation. `ev` est trié par jour : le parcours s'arrête au premier log
+// postérieur ; les logs « folded » (ramenés à l'apparition) comptent.
 export function renderPosesPopup(feature, container) {
     const row = feature?.get?.('row');
     if (!base || !Number.isInteger(row) || !container) return;
-    const seq = ++popupSeq;
     const code = base.code[row];
     const day = clock.running ? clock.day : clock.restDay;
 
@@ -652,36 +661,54 @@ export function renderPosesPopup(feature, container) {
     name.textContent = base.name[row] ? ` - ${base.name[row]}` : '';
     title.append(link, name);
     const details = document.createElement('div');
-    details.textContent = base.types[base.type[row]] || '-';
+    details.textContent = [
+        base.types[base.type[row]] || '-',
+        base.sizes[base.size[row]] || '-',
+        `${base.difficulties[base.difficulty[row]] || '-'}/${base.terrains[base.terrain[row]] || '-'}`,
+    ].join(', ');
+    const appearDate = formatDate(dateOfDayIndex(base, base.placed[row]));
     const appearLine = document.createElement('div');
-    appearLine.textContent = t('Publiée le ${date}', { date: formatDate(dateOfDayIndex(base, base.placed[row])) });
+    // Libellé d'apparition selon la source (poses_dataset.APPEAR_*).
+    const appearText = {
+        [APPEAR_PUBLISH]: t('Publiée le ${date}', { date: appearDate }),
+        [APPEAR_PLACED]: t('Posée le ${date}', { date: appearDate }),
+        [APPEAR_BETA_FIND]: t('Trouvée avant sa publication le ${date}', { date: appearDate }),
+        [APPEAR_FIRST_LOG]: t('Premier log le ${date}', { date: appearDate }),
+    };
+    appearLine.textContent = appearText[base.appearSource[row]] || appearText[APPEAR_PUBLISH];
     const stateLine = document.createElement('div');
     stateLine.textContent = STATE_LABELS()[stateAt(base, row, day)] || '';
+    const findCode = base.kindCode.find;
+    const dnfCode = base.kindCode.dnf;
+    let finds = 0, favorites = 0, dnf = 0, firstFind = -1;
+    for (let j = 0; j < base.ev.cache.length; j++) {
+        if (base.ev.day[j] > day) break;
+        if (base.ev.cache[j] !== row) continue;
+        const kind = base.ev.kind[j];
+        if (kind === findCode) {
+            finds++;
+            if (base.ev.fav[j]) favorites++;
+            if (firstFind < 0) firstFind = j;
+        } else if (kind === dnfCode) {
+            dnf++;
+        }
+    }
     const countsLine = document.createElement('div');
+    countsLine.textContent = t('${finds} trouvailles · ${favorites} favoris · ${dnf} DNF', {
+        finds: formatNumber(finds),
+        favorites: formatNumber(favorites),
+        dnf: formatNumber(dnf),
+    });
     container.append(title, details, appearLine, stateLine, countsLine);
-
-    fetch(`${CONFIG.BASE_URL}/api/poses/caches/${encodeURIComponent(code)}`, { headers: { Accept: 'application/json' } })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-            const cache = data?.cache;
-            if (seq !== popupSeq || !cache) return;
-            const parts = [cache.cache_type || '-', cache.container || '-', `${cache.difficulty ?? '-'}/${cache.terrain ?? '-'}`];
-            details.textContent = parts.join(', ');
-            countsLine.textContent = t('${finds} trouvailles · ${favorites} favoris · ${dnf} DNF', {
-                finds: formatNumber(cache.counts?.find || 0),
-                favorites: formatNumber(cache.favorites || 0),
-                dnf: formatNumber(cache.counts?.dnf || 0),
-            });
-            if (cache.first_find?.author) {
-                const ftf = document.createElement('div');
-                ftf.textContent = t('Premier trouveur : ${name} (${date})', {
-                    name: cache.first_find.author,
-                    date: formatDate(pkg.parseLocalDate?.(cache.first_find.date)),
-                });
-                container.appendChild(ftf);
-            }
-        })
-        .catch(() => {});
+    // Premier trouveur : seulement s'il est déjà passé au jour affiché et nommé.
+    if (firstFind >= 0 && base.ev.author[firstFind] >= 0) {
+        const ftf = document.createElement('div');
+        ftf.textContent = t('Premier trouveur : ${name} (${date})', {
+            name: base.authors[base.ev.author[firstFind]] || '',
+            date: formatDate(dateOfDayIndex(base, base.ev.day[firstFind])),
+        });
+        container.appendChild(ftf);
+    }
 }
 
 // --- Moteur « cycle de vie » ----------------------------------------------------------

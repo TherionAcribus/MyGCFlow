@@ -112,6 +112,49 @@ test('caches posées : compteurs, états au repos et date de fin', async ({ page
   expect(errors).toEqual([]);
 });
 
+test('popup : libellé d\'apparition et comptes au jour affiché', async ({ page, request }) => {
+  await importPoses(request);
+  await openPoses(page);
+  const popupText = (code) => page.evaluate(async (gc) => {
+    const app = await import('/static/js/index.js');
+    const div = document.createElement('div');
+    const feature = app.posesStatsIndex().features.find((f) => f.get('gc_code') === gc);
+    app.renderPosesPopup(feature, div);
+    return div.textContent;
+  }, code);
+
+  // GCP0001 (publication le 05/03/2018) : au repos, les comptes valent les
+  // totaux de la cache — 2 trouvailles, 1 favori, 1 DNF, Alice première.
+  const atRest = await popupText('GCP0001');
+  expect(atRest).toContain('Publiée le');
+  expect(atRest).toContain('Traditional Cache, Micro, 1.5/2');
+  expect(atRest).toContain('2 trouvailles · 1 favoris · 1 DNF');
+  expect(atRest).toContain('Premier trouveur : Alice');
+
+  // Autres sources d'apparition : date de pose (GCP0002), bêta-trouvaille
+  // (GCP0003, testée le 10/01/2019, publiée le 20/01/2019).
+  expect(await popupText('GCP0002')).toContain('Posée le');
+  expect(await popupText('GCP0003')).toContain('Trouvée avant sa publication le');
+
+  // Date de fin avant la première trouvaille de GCP0001 : 0 trouvaille et
+  // pas de ligne « Premier trouveur ».
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateEnd = new Date(2018, 2, 1);
+    app.showLifecycleRestState();
+  });
+  const early = await popupText('GCP0001');
+  expect(early).toContain('0 trouvailles · 0 favoris · 0 DNF');
+  expect(early).not.toContain('Premier trouveur');
+
+  // dateEnd vit en mémoire : remise sur la fin des données.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateEnd = null;
+    app.showLifecycleRestState();
+  });
+});
+
 test('archivées masquées : segment de présence et réglage persisté', async ({ page, request }) => {
   await importPoses(request);
   await openPoses(page);

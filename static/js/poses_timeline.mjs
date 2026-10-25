@@ -20,6 +20,13 @@ export const STATE_ACTIVE = 0;
 export const STATE_DISABLED = 1;
 export const STATE_ARCHIVED = 2;
 
+// Source de la date d'apparition (colonne `appearSource`) : miroir de
+// poses_dataset.APPEAR_*.
+export const APPEAR_PUBLISH = 0;
+export const APPEAR_PLACED = 1;
+export const APPEAR_BETA_FIND = 2;
+export const APPEAR_FIRST_LOG = 3;
+
 // Grandeurs comptées jour après jour : balises de la ligne d'infos (la
 // première alimente aussi le compteur de caches) et courbes Stats.
 //   actives      caches visibles non archivées (désactivées comprises)
