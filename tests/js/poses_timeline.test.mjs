@@ -163,9 +163,12 @@ test('un flash par cache : le plus marquant gagne, la taille suit le volume', ()
     const all = () => true;
     // Jour 0 : publication + trouvaille avec favori (+ note ramenée, ignorée).
     assert.deepEqual(flashesInRange(tl, base, 0, 0, all), [{ k: 0, kind: 'publish', count: 2 }]);
-    // Sans flash de publication, le favori l'emporte sur la trouvaille.
+    // Sans flash de publication, la FTF (premier find de A) l'emporte sur le
+    // favori ; sans elle non plus, le favori l'emporte sur la trouvaille.
     const noPublish = (kind) => kind !== 'publish';
-    assert.deepEqual(flashesInRange(tl, base, 0, 0, noPublish), [{ k: 0, kind: 'favorite', count: 2 }]);
+    assert.deepEqual(flashesInRange(tl, base, 0, 0, noPublish), [{ k: 0, kind: 'ftf', count: 2 }]);
+    const noPublishNoFtf = (kind) => kind !== 'publish' && kind !== 'ftf';
+    assert.deepEqual(flashesInRange(tl, base, 0, 0, noPublishNoFtf), [{ k: 0, kind: 'favorite', count: 2 }]);
     // Jour 5 : désactivation + deux trouvailles sur B.
     assert.deepEqual(flashesInRange(tl, base, 5, 5, all), [{ k: 1, kind: 'disable', count: 3 }]);
     // Plusieurs jours par lot : un flash par cache sur tout le lot.
@@ -175,7 +178,8 @@ test('un flash par cache : le plus marquant gagne, la taille suit le volume', ()
 
 test('archivées masquées : plus de flash après l’archivage, sauf l’archivage', () => {
     const grey = setup('grey');
-    assert.deepEqual(flashesInRange(grey.timeline, grey.base, 13, 13), [{ k: 2, kind: 'find', count: 1 }]);
+    // Le jour 13 est la première trouvaille reçue de C : flash « ftf ».
+    assert.deepEqual(flashesInRange(grey.timeline, grey.base, 13, 13), [{ k: 2, kind: 'ftf', count: 1 }]);
     const hide = setup('hide');
     assert.deepEqual(flashesInRange(hide.timeline, hide.base, 13, 13), []);
     assert.deepEqual(flashesInRange(hide.timeline, hide.base, 12, 12), [{ k: 2, kind: 'archive', count: 1 }]);
@@ -188,6 +192,62 @@ test('trouvailles reçues par jour (jalons des images) et pic de flashs', () => 
     assert.equal(counts[0][0], base.originDay);
     assert.equal(maxFlashesInWindow(tl, 1), 1);
     assert.ok(maxFlashesInWindow(tl, 30) >= 3);
+});
+
+test('evFtf : premier « find » de chaque cache seulement', () => {
+    const base = buildPosesBase(payload());
+    assert.ok(base.evFtf instanceof Uint8Array);
+    // A : find aux index 1 et 3 ; B : 8 et 9 ; C : 14 — un seul drapeau chacune.
+    assert.deepEqual([...base.evFtf], [0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
+    // Un premier find plié garde le drapeau (il ne flashera pas pour autant).
+    const p = payload();
+    p.ev.folded[1] = 1;
+    assert.equal(buildPosesBase(p).evFtf[1], 1);
+});
+
+test('flash « ftf » : jour de la première trouvaille, repli et priorité', () => {
+    const { base, timeline: tl } = setup();
+    const all = () => true;
+    // Jour 13 : premier (et seul) find de C → « ftf », pas « find ».
+    assert.deepEqual(flashesInRange(tl, base, 13, 13, all), [{ k: 2, kind: 'ftf', count: 1 }]);
+    // Jour 1 : deuxième find de A → « find », la FTF est déjà passée.
+    assert.deepEqual(flashesInRange(tl, base, 1, 1, all), [{ k: 0, kind: 'find', count: 1 }]);
+    // « Pas de flash » sur ftf : le type mappé (« find » ici, sans favori)
+    // concourt quand même.
+    const noFtf = (kind) => kind !== 'ftf';
+    assert.deepEqual(flashesInRange(tl, base, 13, 13, noFtf), [{ k: 2, kind: 'find', count: 1 }]);
+    // Jour 0 : publication et FTF favorite le même jour → « publish » l'emporte.
+    assert.deepEqual(flashesInRange(tl, base, 0, 0, all), [{ k: 0, kind: 'publish', count: 2 }]);
+});
+
+test('flash « ftf » : priorité sur le favori, repli quand il est coupé', () => {
+    const p = payload();
+    p.ev.fav[14] = 1;   // premier find de C porte un point favori
+    const base = buildPosesBase(p);
+    const rows = filterRows(base, { undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    const all = () => true;
+    // FTF + favori le même jour : « ftf » est plus prioritaire que « favorite ».
+    assert.deepEqual(flashesInRange(tl, base, 13, 13, all), [{ k: 2, kind: 'ftf', count: 1 }]);
+    // « Pas de flash » sur ftf : le type mappé du log favori est « favorite »
+    // (jamais « find »), qui concourt quand même.
+    const noFtf = (kind) => kind !== 'ftf';
+    assert.deepEqual(flashesInRange(tl, base, 13, 13, noFtf), [{ k: 2, kind: 'favorite', count: 1 }]);
+});
+
+test('FTF pliée au jour d’apparition : la publication joue, pas de flash « ftf »', () => {
+    const p = payload();
+    p.ev.folded[1] = 1;   // premier find de A ramené au jour d'apparition
+    const base = buildPosesBase(p);
+    const rows = filterRows(base, { undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    const all = () => true;
+    // Jour 0 : le find plié est sauté avant toute offre → « publish » seul.
+    assert.deepEqual(flashesInRange(tl, base, 0, 0, all), [{ k: 0, kind: 'publish', count: 1 }]);
+    // Le find du jour 1 n'est pas une première trouvaille → « find ».
+    assert.deepEqual(flashesInRange(tl, base, 1, 1, all), [{ k: 0, kind: 'find', count: 1 }]);
+    // Jamais de « ftf » pour A sur toute la plage.
+    assert.ok(!flashesInRange(tl, base, 0, 13, all).some((f) => f.k === 0 && f.kind === 'ftf'));
 });
 
 test('findTotals : trouvailles reçues par cache, « folded » compris', () => {

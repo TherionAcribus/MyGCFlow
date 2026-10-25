@@ -15,7 +15,7 @@
 // Ordre = priorité décroissante.
 export const EVENT_FLASH_KINDS = Object.freeze([
     'archive', 'disable', 'enable', 'publish', 'alert', 'maintenance',
-    'favorite', 'find', 'dnf', 'note', 'reviewer',
+    'ftf', 'favorite', 'find', 'dnf', 'note', 'reviewer',
 ]);
 
 // « same » reprend le flash principal (celui des trouvailles du thème).
@@ -43,6 +43,7 @@ export const EVENT_FLASH_DEFAULTS = Object.freeze({
     publish: kindDefaults('same', 40, '#ffffff'),
     alert: kindDefaults('target', 30, '#ff9800'),
     maintenance: kindDefaults('sparkle', 28, '#43a047'),
+    ftf: kindDefaults('fireworks', 34, '#009dff'),
     favorite: kindDefaults('star', 36, '#ffc107'),
     find: kindDefaults('circle', 20, '#ffffff', 'gc'),
     dnf: kindDefaults('circle', 20, '#263238'),

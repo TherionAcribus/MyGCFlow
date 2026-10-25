@@ -56,6 +56,14 @@
       "mode": "circle",
       "size": 20
     },
+    "ftf": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#009dff",
+      "color_type": "fix",
+      "mode": "fireworks",
+      "size": 34
+    },
     "maintenance": {
       "border_color": "#ffffff",
       "border_color_type": "auto",
@@ -96,6 +104,7 @@
     "publish",
     "alert",
     "maintenance",
+    "ftf",
     "favorite",
     "find",
     "dnf",

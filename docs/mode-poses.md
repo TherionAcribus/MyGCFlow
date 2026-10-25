@@ -91,8 +91,12 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
   persistés, comme les autres filtres des pages « cycle de vie ».
 - **Flashs par événement** : un flash par cache et par lot de jours affichés,
   le type le plus marquant l'emporte — archive > désactivation > réactivation
-  > publication > signalement > maintenance > favori > trouvaille > DNF > note
-  > relecteur ; seuls les types dont le flash n'est pas « aucun » concourent.
+  > publication > signalement > maintenance > première trouvaille > favori >
+  trouvaille > DNF > note > relecteur ; seuls les types dont le flash n'est
+  pas « aucun » concourent. « Première trouvaille » (`ftf`) est le premier
+  log « find » reçu de la cache (drapeau `evFtf` de `buildPosesBase`) ; une
+  première trouvaille ramenée au jour d'apparition (« folded ») ne flashe
+  pas — la publication joue ce jour-là.
   Sa taille grandit avec le nombre de logs de la cache dans le lot :
   `min(1 + log2(n)/3, 2,5)`, quantifiée au 1/8 (`flashScale`). L'apparition
   joue le flash `publish` (« Comme le flash principal » par défaut). Quand les

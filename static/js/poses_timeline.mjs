@@ -67,10 +67,20 @@ export function buildPosesBase(payload) {
 
     // Trouvailles reçues par cache (filtre « Trouvailles reçues ») : les logs
     // « folded » comptent — ce sont de vraies trouvailles, seulement ramenées
-    // au jour d'apparition.
+    // au jour d'apparition. Drapeau FTF : premier « find » de la cache, logs
+    // pliés compris (pliée, la FTF ne flashe pas : le jour d'apparition joue
+    // la publication).
     base.findTotals = new Int32Array(n);
+    base.evFtf = new Uint8Array(base.ev.cache.length);
+    const ftfDone = new Uint8Array(n);
     for (let j = 0; j < base.ev.cache.length; j++) {
-        if (base.ev.kind[j] === base.kindCode.find) base.findTotals[base.ev.cache[j]]++;
+        if (base.ev.kind[j] !== base.kindCode.find) continue;
+        const i = base.ev.cache[j];
+        base.findTotals[i]++;
+        if (!ftfDone[i]) {
+            ftfDone[i] = 1;
+            base.evFtf[j] = 1;
+        }
     }
 
     // Changements de chaque cache, dans l'ordre chronologique (CSR) : `st`
@@ -427,6 +437,11 @@ export function flashesInRange(timeline, base, fromDay, toDay, canFlash = () => 
         if (hide && logKind !== 'archive' && stateAt(base, i, base.ev.day[j]) === STATE_ARCHIVED) continue;
         const e = entry(timeline.featureOf[i]);
         e.count++;
+        // Première trouvaille reçue de la cache : son flash « ftf » l'emporte
+        // sur favori/trouvaille (mais pas sur les états ni la publication).
+        // Un log plié a été sauté avant tout : une FTF ramenée au jour
+        // d'apparition ne flashe pas — la publication joue ce jour-là.
+        if (base.evFtf?.[j]) offer(e, 'ftf');
         offer(e, flashKindOfLog(logKind, !!base.ev.fav[j]));
     }
     const out = [];

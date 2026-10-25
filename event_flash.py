@@ -49,6 +49,7 @@ EVENT_FLASH_KINDS = (
     ("publish", _l("Publication"), _defaults("same", 40, "#ffffff")),
     ("alert", _l("Signalement (maintenance demandée)"), _defaults("target", 30, "#ff9800")),
     ("maintenance", _l("Maintenance du poseur"), _defaults("sparkle", 28, "#43a047")),
+    ("ftf", _l("Première trouvaille"), _defaults("fireworks", 34, "#009dff")),
     ("favorite", _l("Point favori"), _defaults("star", 36, "#ffc107")),
     ("find", _l("Trouvaille"), _defaults("circle", 20, "#ffffff", "gc")),
     ("dnf", _l("DNF"), _defaults("circle", 20, "#263238")),

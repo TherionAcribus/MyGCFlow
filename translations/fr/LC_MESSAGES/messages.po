@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 18:00+0100\n"
+"POT-Creation-Date: 2026-10-25 18:21+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -313,25 +313,29 @@ msgstr "Signalement (maintenance demandée)"
 msgid "Maintenance du poseur"
 msgstr "Maintenance du poseur"
 
-#: event_flash.py:52
+#: event_flash.py:52 poses_dataset.py:613
+msgid "Première trouvaille"
+msgstr "Première trouvaille"
+
+#: event_flash.py:53
 msgid "Point favori"
 msgstr "Point favori"
 
-#: event_flash.py:53
+#: event_flash.py:54
 msgid "Trouvaille"
 msgstr "Trouvaille"
 
-#: event_flash.py:54 poses_dataset.py:612 static/js/gc_logs.js:39
+#: event_flash.py:55 poses_dataset.py:612 static/js/gc_logs.js:39
 #: static/js/gc_logs.js:60 static/js/mapgl.js:1165
 #: templates/menu_informations.html:66
 msgid "DNF"
 msgstr "DNF"
 
-#: event_flash.py:55
+#: event_flash.py:56
 msgid "Note"
 msgstr "Note"
 
-#: event_flash.py:56
+#: event_flash.py:57
 msgid "Note du relecteur"
 msgstr "Note du relecteur"
 
@@ -673,10 +677,6 @@ msgstr "Favoris"
 #: poses_dataset.py:612 templates/menu_informations.html:67
 msgid "Logs"
 msgstr "Logs"
-
-#: poses_dataset.py:613
-msgid "Première trouvaille"
-msgstr "Première trouvaille"
 
 #: poses_dataset.py:613
 msgid "Premier trouveur"

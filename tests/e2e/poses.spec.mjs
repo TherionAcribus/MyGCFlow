@@ -251,28 +251,66 @@ test('barre de chronologie : repères FTF par cache, aucun palier rond', async (
 test('le moteur joue un flash par cache, agrandi les jours chargés', async ({ page, request }) => {
   await importPoses(request);
   await openPoses(page);
-  const log = await page.evaluate(async () => {
+  const { log, logNoFtf, days } = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const { lifecycleEngine } = await import('/static/js/lifecycle_engine.mjs');
-    const engine = lifecycleEngine();
-    app.clearPosesFlashLog();
     const start = new Date(2018, 2, 1);
     const end = new Date(2020, 11, 31);
-    engine.begin(start, end, performance.now(), {});
-    const steps = [];
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const ev = engine.step([new Date(d)], performance.now());
-      if (ev?.flashes?.length) steps.push(ev.flashes.length);
-    }
-    engine.end();
+    const run = () => {
+      const engine = lifecycleEngine();
+      app.clearPosesFlashLog();
+      engine.begin(start, end, performance.now(), {});
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        engine.step([new Date(d)], performance.now());
+      }
+      engine.end();
+      return app.getPosesDebugState().flashLog;
+    };
+    const log = run();
+    // Deuxième passage avec le flash « ftf » coupé (« Pas de flash », en
+    // mémoire seulement) : le type mappé du log concourt à sa place.
+    app.options.flash.events.ftf.mode = 'none';
+    const logNoFtf = run();
     app.showLifecycleRestState();
-    return app.getPosesDebugState().flashLog;
+    const dayOf = app.posesStatsIndex().dayOf;
+    return {
+      log,
+      logNoFtf,
+      days: {
+        gcp0001: dayOf(new Date(2018, 2, 5)),
+        gcp0002: dayOf(new Date(2018, 5, 15)),
+        gcp0003: dayOf(new Date(2019, 0, 10)),
+        gcp0005: dayOf(new Date(2019, 1, 2)),
+        gcp0006: dayOf(new Date(2019, 3, 20)),
+        gcp0008: dayOf(new Date(2020, 1, 11)),
+      },
+    };
   });
   const kinds = new Set(log.map((f) => f.kind));
-  // (La seule maintenance tombe le jour d'une réactivation, qui l'emporte.)
-  for (const kind of ['publish', 'disable', 'enable', 'archive', 'find', 'favorite', 'alert', 'dnf']) {
+  // (La seule maintenance tombe le jour d'une réactivation, qui l'emporte ;
+  // « favorite » n'apparaît pas : tous les favoris de la fixture arrivent sur
+  // une première trouvaille — « ftf », plus prioritaire — ou un jour de
+  // publication.)
+  for (const kind of ['publish', 'disable', 'enable', 'archive', 'find', 'alert', 'dnf', 'ftf']) {
     expect(kinds, kind).toContain(kind);
   }
+  expect(kinds).not.toContain('favorite');
+  // « Première trouvaille » : le jour du premier find reçu de chaque cache,
+  // sauf quand la cache apparaît ce jour-là — la publication l'emporte alors
+  // (GCP0001 trouvée le 05/03/2018, jour de sa publication ; GCP0003 le
+  // 10/01/2019, jour de son apparition par bêta-trouvaille).
+  for (const code of ['GCP0002', 'GCP0005', 'GCP0006', 'GCP0008']) {
+    const ftf = log.filter((f) => f.code === code && f.kind === 'ftf');
+    expect(ftf.length, code).toBe(1);
+    expect(ftf[0].day, code).toBe(days[code.toLowerCase()]);
+  }
+  expect(log.some((f) => f.code === 'GCP0001' && f.kind === 'ftf')).toBe(false);
+  expect(log.some((f) => f.code === 'GCP0003' && f.kind === 'ftf')).toBe(false);
+  expect(log.some((f) => f.code === 'GCP0001' && f.kind === 'publish' && f.day === days.gcp0001)).toBe(true);
+  // Flash « ftf » coupé : plus aucun, et le favori du premier find de GCP0006
+  // (20/04/2019) reprend la main.
+  expect(logNoFtf.some((f) => f.kind === 'ftf')).toBe(false);
+  expect(logNoFtf.some((f) => f.code === 'GCP0006' && f.kind === 'favorite' && f.day === days.gcp0006)).toBe(true);
   // Publication de GCP0003 le 20/01/2019 avec trois trouvailles (dont un
   // favori) : un seul flash, la publication, agrandi.
   const published = log.filter((f) => f.code === 'GCP0003' && f.kind === 'publish');
@@ -307,7 +345,9 @@ test('les flashs par événement se règlent dans le thème', async ({ page, req
   await page.locator('a[href="#style"]').click();
   await page.locator('a[href="#tabFlash"]').click();
   const rows = page.locator('#flashEvents [data-event-flash-kind]');
-  await expect(rows).toHaveCount(11);
+  await expect(rows).toHaveCount(12);
+  const ftf = page.locator('#flashEvents [data-event-flash-kind="ftf"]');
+  await expect(ftf.locator('[data-event-flash-field="mode"]')).toHaveValue('fireworks');
   const favorite = page.locator('#flashEvents [data-event-flash-kind="favorite"]');
   await expect(favorite.locator('[data-event-flash-field="mode"]')).toHaveValue('star');
   if (process.env.VISUAL_OUT) await page.locator('#flashEvents').screenshot({ path: `${process.env.VISUAL_OUT}/flash-events.png` });
