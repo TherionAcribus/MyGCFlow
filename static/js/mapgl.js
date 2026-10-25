@@ -112,7 +112,7 @@ import {
     getOverlayCacheRevision,
     getOverlayTextContent,
 } from './overlay_canvas.js';
-import { buildPointStyle } from './point_webgl_style.js';
+import { buildPointStyle, DNF_NOT_VANISHING } from './point_webgl_style.js';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { EVO_FILTER, EVO_STATIC_FROM, POINT_DISAPPEAR_MS } from './evolution_style.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
@@ -1073,6 +1073,8 @@ function setAppearAttributes(olFeatures, featureList, isOlFeature, pointOptions,
     let latest = -Infinity;
     for (let i = 0; i < olFeatures.length; i++) {
         const feature = olFeatures[i];
+        // Attribut lu par le style de tous les points (fin d'un DNF trouvé).
+        if (feature.get('vanish') === undefined) feature.set('vanish', DNF_NOT_VANISHING, true);
         if (!animate) {
             if (feature.get('appear') === undefined) feature.set('appear', STATIC_APPEAR, true);
             continue;
@@ -2445,6 +2447,9 @@ function seekPointsToDay(day) {
 // par un autre chemin ne laisse pas de fantôme.
 
 const dnfShown = new Set();
+// DNF trouvés en train de s'effacer : objet carte -> fin de l'effacement
+// (horloge des points). Retirés de la source à la synchronisation suivante.
+const dnfVanishing = new Map();
 let dnfFormat = null;
 
 function dnfOlFeature(entry) {
@@ -2471,26 +2476,69 @@ function dnfFlashOptions(findFlash) {
     return options;
 }
 
+// Célébration d'un DNF trouvé (pkg.options.flash.dnf_found), facultative.
+function dnfFoundFlashOptions() {
+    const options = pkg.options.flash?.dnf_found;
+    if (!options || !options.mode || options.mode === 'none') return null;
+    if (!options.rgb && options.color) options.rgb = pkg.hexToRgb(options.color);
+    if (!options.border_rgb && options.border_color) options.border_rgb = pkg.hexToRgb(options.border_color);
+    return options;
+}
+
 // `flash` : { findFlash, record } pendant l'animation — chaque DNF qui
-// apparaît y joue son flash ; absent (départ, saut, repos), aucun flash.
+// apparaît y joue son flash, chaque DNF trouvé s'efface (et peut célébrer) ;
+// absent (départ, saut, repos) : ajouts et retraits immédiats, sans flash.
 function syncDnf(isVisible, appear = null, flash = null) {
     if (isEvolutionPage()) return;
     const entries = pkg.getDnfEntries?.() || [];
-    if (!entries.length && !dnfShown.size) return;
+    if (!entries.length && !dnfShown.size && !dnfVanishing.size) return;
     const source = window.vectorSource;
+    const now = sampleAppearClock();
+
+    // Effacements terminés — ou tous, hors animation.
+    const done = [];
+    for (const [feature, until] of dnfVanishing) {
+        if (!flash || until <= now) {
+            dnfVanishing.delete(feature);
+            if (source?.hasFeature(feature)) done.push(feature);
+        }
+    }
+    if (done.length) source.removeFeatures(done);
+
     const wanted = new Set();
     const toAdd = [];
     for (const entry of entries) {
         if (!isVisible(entry)) continue;
         const feature = dnfOlFeature(entry);
         wanted.add(feature);
-        if (!source || !source.hasFeature(feature)) toAdd.push(feature);
+        if (dnfVanishing.delete(feature)) {
+            feature.set('vanish', DNF_NOT_VANISHING);     // revenu avant la fin
+        } else if (!source || !source.hasFeature(feature)) {
+            feature.set('vanish', DNF_NOT_VANISHING, true);
+            toAdd.push(feature);
+        }
     }
-    const toRemove = [];
+    const leaving = [];
     for (const feature of dnfShown) {
-        if (!wanted.has(feature) && source?.hasFeature(feature)) toRemove.push(feature);
+        if (!wanted.has(feature) && source?.hasFeature(feature)) leaving.push(feature);
     }
-    if (toRemove.length) source.removeFeatures(toRemove);
+    if (leaving.length && flash) {
+        // Animation : la trouvaille arrive, le DNF s'efface puis sera retiré.
+        for (const feature of leaving) {
+            feature.set('vanish', now);
+            dnfVanishing.set(feature, now + POINT_DISAPPEAR_MS);
+        }
+        extendPointsAnimation(now + POINT_DISAPPEAR_MS);
+        dnfVanishedTotal += leaving.length;
+        const celebration = dnfFoundFlashOptions();
+        if (celebration) {
+            pushFeatureFlashes(leaving, celebration, flash.record, false);
+            for (let i = 0; i < leaving.length; i++) dnfCelebrationLog.push(celebration.mode);
+            if (dnfCelebrationLog.length > 200) dnfCelebrationLog.splice(0, dnfCelebrationLog.length - 200);
+        }
+    } else if (leaving.length) {
+        source.removeFeatures(leaving);
+    }
     dnfShown.clear();
     for (const feature of wanted) dnfShown.add(feature);
     if (toAdd.length) {
@@ -2504,11 +2552,19 @@ function syncDnf(isVisible, appear = null, flash = null) {
     }
 }
 
-// Relevé pour les tests : DNF présents sur la carte et forme des derniers
-// flashs joués par des DNF (200 au plus).
+// Relevé pour les tests : DNF présents sur la carte, en train de s'effacer,
+// forme des derniers flashs d'apparition et des célébrations (200 au plus).
 const dnfFlashLog = [];
+const dnfCelebrationLog = [];
+let dnfVanishedTotal = 0;
 export function getDnfDebugState() {
-    return { shown: dnfShown.size, flashes: dnfFlashLog.slice() };
+    return {
+        shown: dnfShown.size,
+        vanishing: dnfVanishing.size,
+        vanished: dnfVanishedTotal,
+        flashes: dnfFlashLog.slice(),
+        celebrations: dnfCelebrationLog.slice(),
+    };
 }
 
 // Carte à la fin du jour `day` (animation, saut de la chronologie).

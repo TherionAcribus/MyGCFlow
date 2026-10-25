@@ -194,6 +194,62 @@ test('un DNF qui apparaît joue le flash des trouvailles, ou son flash propre', 
 });
 
 
+function dnfDebug(page) {
+  return page.evaluate(async () => (await import('/static/js/index.js')).getDnfDebugState());
+}
+
+
+// Lecture complète depuis le 01/08/2011 : le DNF de GC2PR3N apparaît le
+// 20/08/2011 et la trouvaille le résout le 08/01/2012.
+async function playToEnd(page) {
+  await page.evaluate(async () => {
+    (await import('/static/js/index.js')).options.animation.dateStart = new Date(2011, 7, 1);
+  });
+  await page.locator('#btnQuickPreview').click();
+  await expect(page.locator('#btnQuickPause')).toBeVisible();
+  await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 40_000 });
+}
+
+
+test('un DNF trouvé s\'efface pendant la lecture, avec une célébration facultative', async ({ page }) => {
+  await openWithData(page);
+  await showDnf(page);
+  await setRhythm(page, 60);
+  await page.evaluate(async () => { (await import('/static/js/index.js')).options.flash.mode = 'none'; });
+
+  // Par défaut : le point DNF s'efface, sans célébration.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabFlash"]').click();
+  await expect(page.locator('#selectDnfFoundFlashMode')).toHaveValue('none');
+  await expect(page.locator('#dnfFoundFlashOwnFields')).toBeHidden();
+  await page.locator('a[href="#data"]').click();
+  let before = await dnfDebug(page);
+  await playToEnd(page);
+  let after = await dnfDebug(page);
+  expect(after.vanished).toBe(before.vanished + 1);
+  expect(after.celebrations.length).toBe(before.celebrations.length);
+  // Effacement terminé : le DNF a quitté la carte, la trouvaille l'a remplacé.
+  expect(after.vanishing).toBe(0);
+  expect(await mapCodes(page, 'dnf')).toEqual([]);
+  expect(await mapCodes(page, 'find')).toContain('GC2PR3N');
+
+  // Feu d'artifice : ses réglages apparaissent, et il joue à la trouvaille.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabFlash"]').click();
+  await page.evaluate(() => {
+    const select = document.getElementById('selectDnfFoundFlashMode');
+    select.value = 'fireworks';
+    select.dispatchEvent(new Event('change'));
+  });
+  await expect(page.locator('#dnfFoundFlashOwnFields')).toBeVisible();
+  await page.locator('a[href="#data"]').click();
+  before = await dnfDebug(page);
+  await playToEnd(page);
+  after = await dnfDebug(page);
+  expect(after.celebrations.slice(before.celebrations.length)).toEqual(['fireworks']);
+});
+
+
 test('le trait de déplacement passe par les DNF, sauf si on les en retire', async ({ page }) => {
   await openWithData(page);
   await enableTrail(page);

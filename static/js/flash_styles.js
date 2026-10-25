@@ -15,6 +15,7 @@ import { impulseFrame } from './flash_impulse.mjs';
 import { implodeFrame } from './flash_implode.mjs';
 import { echoFrame } from './flash_echo.mjs';
 import { targetFrame } from './flash_target.mjs';
+import { fireworksFrame } from './flash_fireworks.mjs';
 
 const flashStyleCache = createFlashStyleCache();
 
@@ -179,6 +180,51 @@ function targetStyle(frame, flashOptions, cacheType) {
     });
 }
 
+// Flash « feu d'artifice » (célébration d'un DNF trouvé, flash_fireworks.mjs) :
+// traînées à la couleur du flash, étincelles éclaircies vers le blanc, éclat
+// central blanc. Canvas en double densité, comme la cible.
+function fireworksStyle(frame, flashOptions, cacheType) {
+    const rgb = impulseRgb(flashOptions, cacheType);
+    const light = {
+        r: Math.round((rgb.r + 255) / 2),
+        g: Math.round((rgb.g + 255) / 2),
+        b: Math.round((rgb.b + 255) / 2),
+    };
+    const dpr = 2 * (window.devicePixelRatio || 1);
+    const side = Math.ceil(2 * frame.extent) + 4;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = side * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const c = side / 2;
+
+    ctx.lineCap = 'round';
+    for (const p of frame.particles) {
+        if (frame.particleOpacity <= 0) break;
+        const col = p.tint ? light : rgb;
+        ctx.strokeStyle = `rgba(${col.r}, ${col.g}, ${col.b}, ${frame.particleOpacity})`;
+        ctx.lineWidth = p.width;
+        ctx.beginPath();
+        ctx.moveTo(c + p.x1, c + p.y1);
+        ctx.lineTo(c + p.x2, c + p.y2);
+        ctx.stroke();
+    }
+    if (frame.coreOpacity > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${frame.coreOpacity})`;
+        ctx.beginPath();
+        ctx.arc(c, c, frame.coreRadius, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    return new ol.style.Style({
+        image: new ol.style.Icon({
+            img: canvas,
+            imgSize: [canvas.width, canvas.height],
+            scale: side / canvas.width,
+        }),
+    });
+}
+
 // Base de couleur effectivement utilisée par les fonctions de style ci-dessous,
 // en reprenant exactement leur ordre de décision (un mode 'gc' sans type de cache
 // ou sans table GC chargée retombe sur la couleur fixe). Elle entre dans la clé
@@ -254,6 +300,13 @@ export function flashStyleAt(step, steps, flashOptions, cacheType = null) {
                 value: targetStyle(frame, flashOptions, cacheType),
                 // Le canvas du réticule est rastérisé en double densité.
                 bytes: 4 * estimateFlashStyleBytes(frame.tickOuter + frame.ringWidth),
+            };
+        }
+        if (mode === 'fireworks') {
+            const frame = fireworksFrame(ratio, size);
+            return {
+                value: fireworksStyle(frame, flashOptions, cacheType),
+                bytes: 4 * estimateFlashStyleBytes(frame.extent),
             };
         }
         const radius = ol.easing.easeOut(ratio) * (size / 2) + (size / 10);

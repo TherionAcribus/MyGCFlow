@@ -553,6 +553,18 @@ class DnfFlashOptions:
 
 
 @dataclass
+class DnfFoundFlashOptions:
+    """Célébration d'un DNF enfin trouvé : flash joué quand la trouvaille
+    remplace le point DNF. Facultatif : désactivé par défaut."""
+    mode: str = "none"  # "none", "fireworks" ou une forme de DNF_FOUND_FLASH_MODES
+    size: int = 40  # en px
+    color: str = "#FFC107"
+    color_type: str = "fix"  # "gc", "none", "fix"
+    border_color: str = "#000000"
+    border_color_type: str = "auto"  # "auto", "gc", "none", "fix"
+
+
+@dataclass
 class FlashOptions:
     mode: str = "circle"  # "none", "circle", "impulse", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond"
     # Durée (ms) : caractère du flash autant que sa forme — un flash sec de
@@ -567,6 +579,7 @@ class FlashOptions:
     border_color_type: str = "auto"  # "auto", "gc", "none", "fix"
     disappear: DisappearFlashOptions = field(default_factory=DisappearFlashOptions)
     dnf: DnfFlashOptions = field(default_factory=DnfFlashOptions)
+    dnf_found: DnfFoundFlashOptions = field(default_factory=DnfFoundFlashOptions)
 
 
 @dataclass
@@ -730,6 +743,9 @@ DISAPPEAR_FLASH_MODES = ("none", "implode", "target", "circle", "star", "sparkle
 # « impulse » (décalage par position, sans objet pour un point isolé) ;
 # « same » reprend le flash des trouvailles.
 DNF_FLASH_MODES = ("same", "none", "circle", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond")
+# Célébration d'un DNF trouvé : le feu d'artifice, propre à ce flash, puis les
+# formes du flash d'apparition (hors vague « impulse »).
+DNF_FOUND_FLASH_MODES = ("none", "fireworks", "sparkle", "star", "echo", "circle", "target", "implode", "square", "triangle", "diamond")
 POINT_SIZE_RANGE = (1, 10)
 BORDER_SIZE_RANGE = (0, 10)
 ICON_SIZE_RANGE = (12, 40)
@@ -1204,6 +1220,9 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
         raw_fn = f.get("dnf") or {}
         fn = raw_fn if isinstance(raw_fn, dict) else {}
         pfn = p.flash.dnf
+        raw_ff = f.get("dnf_found") or {}
+        ff = raw_ff if isinstance(raw_ff, dict) else {}
+        pff = p.flash.dnf_found
         p.flash = FlashOptions(
             mode=_coerce_choice(f.get("mode"), FLASH_MODES, p.flash.mode),
             # Thèmes antérieurs au déplacement de la durée : repli sur la
@@ -1229,6 +1248,14 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                 color_type=_coerce_choice(fn.get("color_type"), COLOR_TYPES, pfn.color_type),
                 border_color=_coerce_hex_color(fn.get("border_color"), pfn.border_color),
                 border_color_type=_coerce_choice(fn.get("border_color_type"), FLASH_BORDER_TYPES, pfn.border_color_type),
+            ),
+            dnf_found=DnfFoundFlashOptions(
+                mode=_coerce_choice(ff.get("mode"), DNF_FOUND_FLASH_MODES, pff.mode),
+                size=_clamp_int(ff.get("size"), pff.size, *FLASH_SIZE_RANGE),
+                color=_coerce_hex_color(ff.get("color"), pff.color),
+                color_type=_coerce_choice(ff.get("color_type"), COLOR_TYPES, pff.color_type),
+                border_color=_coerce_hex_color(ff.get("border_color"), pff.border_color),
+                border_color_type=_coerce_choice(ff.get("border_color_type"), FLASH_BORDER_TYPES, pff.border_color_type),
             ),
         )
 
@@ -2883,6 +2910,14 @@ class SettingsManager:
                     'color_type': prof.flash.dnf.color_type,
                     'border_color': prof.flash.dnf.border_color,
                     'border_color_type': prof.flash.dnf.border_color_type,
+                },
+                'dnf_found': {
+                    'mode': prof.flash.dnf_found.mode,
+                    'size': prof.flash.dnf_found.size,
+                    'color': prof.flash.dnf_found.color,
+                    'color_type': prof.flash.dnf_found.color_type,
+                    'border_color': prof.flash.dnf_found.border_color,
+                    'border_color_type': prof.flash.dnf_found.border_color_type,
                 },
             },
             'infos': {

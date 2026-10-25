@@ -260,6 +260,16 @@ class DisappearFlashTests(unittest.TestCase):
         self.assertEqual(prof.flash.dnf.border_color_type, "auto")
         self.assertEqual(coerce_profile({"flash": {"dnf": {"mode": "echo"}}}).flash.dnf.mode, "echo")
 
+    def test_dnf_found_celebration_is_optional_and_validated(self):
+        # Célébration d'un DNF trouvé : désactivée par défaut (thèmes anciens).
+        legacy = coerce_profile({"flash": {"mode": "star"}})
+        self.assertEqual(legacy.flash.dnf_found, settings_manager.DnfFoundFlashOptions())
+        self.assertEqual(legacy.flash.dnf_found.mode, "none")
+        prof = coerce_profile({"flash": {"dnf_found": {"mode": "fireworks", "size": 1, "color": "#00FF00"}}})
+        self.assertEqual((prof.flash.dnf_found.mode, prof.flash.dnf_found.size, prof.flash.dnf_found.color),
+                         ("fireworks", 5, "#00FF00"))
+        self.assertEqual(coerce_profile({"flash": {"dnf_found": {"mode": "same"}}}).flash.dnf_found.mode, "none")
+
     def test_flash_border_color_is_validated(self):
         prof = coerce_profile({"flash": {
             "border_color": "#123456", "border_color_type": "fix",

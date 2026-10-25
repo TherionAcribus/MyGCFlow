@@ -7091,9 +7091,13 @@ export function syncTrailOptionsUI() {
 // du module (cf. AGENTS.md).
 
 function flashVariantIds(kind) {
-    return kind === 'dnf'
-        ? { key: 'dnf', mode: 'selectDnfFlashMode', size: 'inputSizeDnfFlash', color: 'dnfFlashColor', border: 'dnfFlashBorderColor' }
-        : { key: 'disappear', mode: 'selectDisappearFlashMode', size: 'inputSizeDisappearFlash', color: 'disappearFlashColor', border: 'disappearFlashBorderColor' };
+    if (kind === 'dnf') {
+        return { key: 'dnf', mode: 'selectDnfFlashMode', size: 'inputSizeDnfFlash', color: 'dnfFlashColor', border: 'dnfFlashBorderColor', own: 'dnfFlashOwnFields' };
+    }
+    if (kind === 'dnf_found') {
+        return { key: 'dnf_found', mode: 'selectDnfFoundFlashMode', size: 'inputSizeDnfFoundFlash', color: 'dnfFoundFlashColor', border: 'dnfFoundFlashBorderColor', own: 'dnfFoundFlashOwnFields' };
+    }
+    return { key: 'disappear', mode: 'selectDisappearFlashMode', size: 'inputSizeDisappearFlash', color: 'disappearFlashColor', border: 'disappearFlashBorderColor', own: null };
 }
 
 function flashVariantOptions(kind) {
@@ -7102,7 +7106,9 @@ function flashVariantOptions(kind) {
     if (!flash[key] || typeof flash[key] !== 'object') {
         flash[key] = kind === 'dnf'
             ? { mode: 'same', size: 30, color: '#2992D2', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' }
-            : { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' };
+            : kind === 'dnf_found'
+                ? { mode: 'none', size: 40, color: '#FFC107', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' }
+                : { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' };
     }
     return flash[key];
 }
@@ -7168,7 +7174,9 @@ function updateFlashVariantVisibility(kind) {
     if (border?.parentElement) {
         border.parentElement.style.display = options.border_color_type === 'fix' ? 'block' : 'none';
     }
-    const own = kind === 'dnf' ? document.getElementById('dnfFlashOwnFields') : null;
+    // Réglages propres masqués quand ils ne servent à rien : « Comme les
+    // trouvailles » (DNF) et « Pas de flash ».
+    const own = ids.own ? document.getElementById(ids.own) : null;
     if (own) own.hidden = options.mode === 'same' || options.mode === 'none';
 }
 
@@ -7193,11 +7201,13 @@ function syncFlashVariantUI(kind) {
 function initDisappearFlashControls() {
     initFlashVariantControls('disappear');
     initFlashVariantControls('dnf');
+    initFlashVariantControls('dnf_found');
 }
 
 function syncDisappearFlashUI() {
     syncFlashVariantUI('disappear');
     syncFlashVariantUI('dnf');
+    syncFlashVariantUI('dnf_found');
 }
 
 // Validation à la perte de focus : plus de correction silencieuse, on

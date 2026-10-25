@@ -414,9 +414,23 @@ bordure blanche quand le thème en dessine une — et icône du type de log
 `geocaching-sprite*.png`, x = 1900, aussi dans le jeu « smiley »), refaite
 sur le modèle des autres : disque blanc sur toute la case (48 px, 96 en
 @2x), icône réduite à 40 px (80) au centre — sans ce contour, elle paraissait
-plus grosse que ses voisines. Pas de compteur à l'apparition, retrait sans
-transition (l'animation « DNF trouvé » viendra plus tard). Popup : nombre de
-DNF, date du premier, date de la trouvaille ou « Pas encore trouvée ».
+plus grosse que ses voisines. Pas de compteur à l'apparition. Popup : nombre
+de DNF, date du premier, date de la trouvaille ou « Pas encore trouvée ».
+
+**DNF trouvé.** Pendant l'animation et la vidéo, quand la trouvaille résout
+un DNF, le point DNF ne disparaît pas d'un coup : il fait un léger sursaut,
+rétrécit et s'efface (450 ms, la courbe de la disparition du mode
+Évolution) pendant que la trouvaille apparaît. Le style lit l'attribut
+`vanish` (instant de départ sur l'horloge des points ; `DNF_NOT_VANISHING`
+pour tous les autres points, posé par `setAppearAttributes`) ; `syncDnf` le
+pose, puis retire le point à la synchronisation suivante, une fois
+l'effacement fini (`dnfVanishing`). Lors d'un saut ou au repos, le retrait
+reste immédiat. **Célébration** facultative (thème, `flash.dnf_found`,
+désactivée par défaut) : un flash joué à ce moment, avec une forme propre,
+le **feu d'artifice** (`flash_fireworks.mjs`, testé par
+`test_flash_fireworks.mjs` : éclat blanc, douze traînées à la couleur du
+flash qui retombent, huit étincelles plus claires), ou l'une des formes du
+flash d'apparition.
 
 **Flash** (réglage du thème `flash.dnf`, sous-onglet Flash du mode principal,
 `menu_flash_dnf.html`) : à son apparition pendant l'animation ou la vidéo,
@@ -425,7 +439,8 @@ flash propre — forme, taille, couleur, contour, comme le flash de
 disparition du mode Évolution (mêmes contrôles génériques dans `ui.js`,
 `initFlashVariantControls`). Formes : celles du flash d'apparition sauf la
 vague « impulse ». Aucun flash au départ de l'animation ni lors d'un saut.
-`getDnfDebugState()` (mapgl.js) relève les flashs joués pour les tests.
+`getDnfDebugState()` (mapgl.js) relève, pour les tests, les flashs d'apparition, les
+célébrations et les effacements (en cours et cumulés).
 
 **Trait de déplacement.** Chaque DNF est un déplacement : chaque tentative
 (`dnf_dates`) est une étape du trajet, jusqu'à la date de fin de l'animation

@@ -15,6 +15,7 @@ import {
     disappearOpacityExpression,
     disappearScaleExpression,
     EVO_AGE,
+    POINT_DISAPPEAR_MS,
 } from './evolution_style.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
@@ -213,6 +214,8 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
         if (Number(pointOptions.recentGlowDays) > 0) {
             applyRecentGlow(pointStyle);
         }
+        // En dernier : multiplie les tailles et l'opacité déjà enveloppées.
+        applyDnfVanish(pointStyle);
     }
 
     return pointStyle;
@@ -225,6 +228,28 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
 export const DNF_FILL_COLOR = '#000000';
 export const DNF_STROKE_COLOR = '#ffffff';
 const IS_DNF = ['==', ['get', 'source_kind'], 'dnf'];
+
+// Fin d'un DNF trouvé (mapgl.js, syncDnf) : l'attribut 'vanish' porte
+// l'instant de départ sur l'horloge des points ; il vaut DNF_NOT_VANISHING
+// pour tous les autres points. Même courbe que la disparition du mode
+// Évolution : léger sursaut, rétrécissement jusqu'à zéro, fondu.
+export const DNF_NOT_VANISHING = -1e9;
+const VANISHING = ['>', ['get', 'vanish'], DNF_NOT_VANISHING / 10];
+const VANISH_AGE = ['-', ['var', 'now'], ['get', 'vanish']];
+
+function applyDnfVanish(pointStyle) {
+    const scale = ['case', VANISHING,
+        ['interpolate', ['linear'], VANISH_AGE, 0, 1, 0.3 * POINT_DISAPPEAR_MS, 1.2, POINT_DISAPPEAR_MS, 0], 1];
+    const opacity = ['case', VANISHING,
+        ['interpolate', ['linear'], VANISH_AGE, 0, 1, POINT_DISAPPEAR_MS, 0], 1];
+    for (const key of APPEAR_SIZE_KEYS) {
+        if (key in pointStyle) pointStyle[key] = ['*', pointStyle[key], scale];
+    }
+    const opacityKey = opacityKeyOf(pointStyle);
+    if (opacityKey) {
+        pointStyle[opacityKey] = opacityKey in pointStyle ? ['*', pointStyle[opacityKey], opacity] : opacity;
+    }
+}
 
 function applyDnfStyle(pointStyle, sprite) {
     const forDnf = (key, value) => {

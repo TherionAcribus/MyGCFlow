@@ -1664,6 +1664,7 @@ class ProfileManager {
                 disappear: normalizeDisappearFlash(flash.disappear),
                 // Flash des points DNF (mode principal) : même précaution.
                 dnf: normalizeDnfFlash(flash.dnf),
+                dnf_found: normalizeDnfFoundFlash(flash.dnf_found),
             };
 
             dbgProfiles('🔍 Paramètres flash récupérés:', flashSettings);
@@ -2621,6 +2622,8 @@ function applyPointState(pointOptions) {
 const DISAPPEAR_FLASH_DEFAULTS = Object.freeze({ mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' });
 // Flash des points DNF : « same » rejoue le flash des trouvailles.
 const DNF_FLASH_DEFAULTS = Object.freeze({ mode: 'same', size: 30, color: '#2992D2', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' });
+// Célébration d'un DNF trouvé : facultative, désactivée par défaut.
+const DNF_FOUND_FLASH_DEFAULTS = Object.freeze({ mode: 'none', size: 40, color: '#FFC107', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' });
 
 // Flash secondaire (disparition Évolution, points DNF) : mêmes champs, défauts propres.
 function normalizeFlashVariant(value, defaults) {
@@ -2643,6 +2646,10 @@ export function normalizeDisappearFlash(value) {
 
 export function normalizeDnfFlash(value) {
     return normalizeFlashVariant(value, DNF_FLASH_DEFAULTS);
+}
+
+export function normalizeDnfFoundFlash(value) {
+    return normalizeFlashVariant(value, DNF_FOUND_FLASH_DEFAULTS);
 }
 
 // Écrit les paramètres de flash du profil dans pkg.options.flash.
@@ -2726,6 +2733,8 @@ function applyFlashState(flashOptions) {
         // Profils antérieurs aux points DNF : le flash des trouvailles.
         const dnf = normalizeDnfFlash(flashOptions.dnf);
         flash.dnf = { ...dnf, rgb: pkg.hexToRgb(dnf.color), border_rgb: pkg.hexToRgb(dnf.border_color) };
+        const found = normalizeDnfFoundFlash(flashOptions.dnf_found);
+        flash.dnf_found = { ...found, rgb: pkg.hexToRgb(found.color), border_rgb: pkg.hexToRgb(found.border_color) };
 
         dbgProfiles('Paramètres flash appliqués:', flash);
     } catch (error) {

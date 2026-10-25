@@ -95,6 +95,14 @@
             "border_color": "#000000",
             "border_color_type": "auto",
             "size": 30
+        },
+        "dnf_found": {
+            "mode": "none",
+            "color": "#FFC107",
+            "color_type": "fix",
+            "border_color": "#000000",
+            "border_color_type": "auto",
+            "size": 40
         }
     },
     "trail": {
