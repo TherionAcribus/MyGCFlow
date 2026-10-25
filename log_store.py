@@ -188,7 +188,8 @@ def _plan_removals(plan, session, collection_id, parsed):
     removed = set()
     for scope in scopes:
         query = session.query(LogEvent.id, LogEvent.log_id, LogEvent.gc_code, LogEvent.type_id,
-                              LogEvent.log_date, LogEvent.author_id).filter(
+                              LogEvent.log_date, LogEvent.author_id,
+                              LogEvent.author_name).filter(
             LogEvent.collection_id == collection_id)
         if scope.kind == "author":
             query = query.filter(LogEvent.author_id == scope.author_id)
@@ -209,7 +210,7 @@ def _plan_removals(plan, session, collection_id, parsed):
             if len(plan.removed_sample) < _SAMPLE:
                 plan.removed_sample.append({
                     "log_id": row.log_id, "gc_code": row.gc_code, "type_id": row.type_id,
-                    "date": row.log_date.isoformat()})
+                    "date": row.log_date.isoformat(), "author": row.author_name})
     plan.log_removals = sorted(removed)
     plan.counts["removed"] = len(removed)
 

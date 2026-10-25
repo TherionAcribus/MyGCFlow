@@ -60,6 +60,11 @@ test('aperçu puis import : le statut reflète les logs', async ({ page }) => {
   await expect(page.locator('#gcLogsPreviewChanges')).toContainText('compte Joueur_Fictif');
   await expect(page.locator('#gcLogsPreviewRemovals')).toBeHidden();
   await expect(page.locator('#gcLogsPreviewContent')).toContainText('À vous : 2 DNF');
+  // Fichier daté, couverture complète déclarée, échéance du jeton visible.
+  await expect(page.locator('#gcLogsPreviewChanges')).not.toContainText('pas daté');
+  await expect(page.locator('#gcLogsPreviewContent'))
+    .toContainText('Couverture complète déclarée (2 périmètres)');
+  await expect(page.locator('#gcLogsPreviewExpiry')).toContainText('À valider avant');
   // Lignes illisibles et cache sans position : signalées, pas bloquantes.
   const issues = page.locator('#gcLogsPreviewIssues');
   await expect(issues).toBeVisible();
@@ -87,6 +92,14 @@ test('réimport : rien de nouveau, puis retrait annoncé avant validation', asyn
   await preview(page, CONTRACT);
   await confirmImport(page);
 
+  // Fichier sans date d'export : l'avertissement dit qu'il écrasera les
+  // versions enregistrées plutôt que d'être ignoré.
+  const undated = contractWith(doc => { delete doc.exported_at; }, testInfo, 'sans-date.json');
+  await preview(page, undated);
+  await expect(page.locator('#gcLogsPreviewChanges')).toContainText('pas daté');
+  await page.locator('#gcLogsPreviewModal [data-bs-dismiss="modal"]').first().click();
+  await expect(page.locator('#gcLogsPreviewModal')).toBeHidden();
+
   await preview(page, CONTRACT);
   await expect(page.locator('#gcLogsPreviewChanges')).toContainText('7 logs déjà connus');
   await page.locator('#gcLogsPreviewModal [data-bs-dismiss="modal"]').first().click();
@@ -101,7 +114,7 @@ test('réimport : rien de nouveau, puis retrait annoncé avant validation', asyn
   const removals = page.locator('#gcLogsPreviewRemovals');
   await expect(removals).toBeVisible();
   await expect(removals).toContainText('1 log sera retiré');
-  await expect(removals).toContainText('GC9ZZZZ — 2021-05-02 — DNF');
+  await expect(removals).toContainText('GC9ZZZZ — 2021-05-02 — DNF — Joueur_Fictif');
   await confirmImport(page);
   await expect(page.locator('#gcLogsStatus')).toContainText('6 logs enregistrés');
 });

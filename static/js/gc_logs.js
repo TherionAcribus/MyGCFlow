@@ -29,6 +29,7 @@ let lastStatus = null;    // dernier statut rendu (pour le guide)
 let pendingImport = null; // export reçu du favori, en attente de validation
 let taskWasActive = false; // import lancé ailleurs (autre onglet) vu par le relevé
 let statusPollTimer = null;
+let previewExpiryTimer = null; // bascule « aperçu expiré » dans la modale
 
 function el(id) { return document.getElementById(id); }
 
@@ -130,6 +131,7 @@ function renderStatus(st) {
             taskActive ? (st.active_task.message || t('Import de vos logs…')) : '';
         box.hidden = !taskActive;
         el('gc-logs-file-btn').disabled = taskActive;
+        el('gcLogsExportBtn').disabled = taskActive;
         el('gcLogsClearBtn').disabled = taskActive;
     }
     if (taskWasActive && !taskActive) pkg.reloadDnfData?.();
@@ -222,11 +224,17 @@ function renderPending(pending) {
     }
 }
 
+// TTL des jetons d'aperçu côté serveur (PENDING_TTL_SECONDS, gc_logs.py) :
+// le dépôt d'un export reçu porte sa date de création, pas son échéance.
+const PREVIEW_TTL_MS = 30 * 60 * 1000;
+
 function onPendingView() {
     const pending = pendingImport;
     if (!pending || !el('gcLogsPreviewModal')) return;
     importToken = pending.import_token;
-    renderPreview({ name: pending.name || t('export du favori'), summary: pending.summary || {} });
+    const received = Date.parse(pending.received_at || '');
+    renderPreview({ name: pending.name || t('export du favori'), summary: pending.summary || {} },
+        Number.isFinite(received) ? received + PREVIEW_TTL_MS : null);
     showBsModal(el('gcLogsPreviewModal'));
 }
 
@@ -418,6 +426,7 @@ function setBusy(title) {
     el('gcLogsActivityTitle').textContent = title || '';
     box.hidden = !title;
     el('gc-logs-file-btn').disabled = busy;
+    el('gcLogsExportBtn').disabled = busy;
     el('gcLogsClearBtn').disabled = busy;
 }
 
@@ -445,7 +454,7 @@ export async function importLogFile(file) {
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success) throw new Error(data.message || t('Import impossible'));
         importToken = data.import_token;
-        renderPreview(data);
+        renderPreview(data, Date.now() + (data.expires_in_seconds || 0) * 1000);
         showBsModal(el('gcLogsPreviewModal'));
     } catch (e) {
         showError(e.message || t("Erreur lors de l'analyse"), t('Import de logs'));
@@ -454,8 +463,40 @@ export async function importLogFile(file) {
     }
 }
 
-function renderPreview(data) {
+// `expiresAt` : échéance (ms) du jeton d'aperçu — `expires_in_seconds` du
+// serveur pour un fichier, `received_at` + TTL pour un export reçu.
+function renderPreview(data, expiresAt = null) {
     const s = data.summary || {};
+
+    // Échéance du jeton : annoncée, puis « expiré » + « Importer » coupé —
+    // sans elle, le clic échouait 30 min plus tard sans raison apparente.
+    if (previewExpiryTimer) { clearTimeout(previewExpiryTimer); previewExpiryTimer = null; }
+    const expiryEl = el('gcLogsPreviewExpiry');
+    const confirmBtn = el('gcLogsPreviewConfirmBtn');
+    confirmBtn.disabled = false;
+    if (expiresAt) {
+        const markExpired = () => {
+            previewExpiryTimer = null;
+            expiryEl.textContent = t("Cet aperçu a expiré — fermez-le et relancez l'import.");
+            expiryEl.className = 'form-hint me-auto small text-warning';
+            expiryEl.hidden = false;
+            confirmBtn.disabled = true;
+        };
+        if (Date.now() >= expiresAt) {
+            markExpired();
+        } else {
+            const deadline = new Date(expiresAt);
+            const hh = String(deadline.getHours()).padStart(2, '0');
+            const mm = String(deadline.getMinutes()).padStart(2, '0');
+            expiryEl.textContent = t("À valider avant ${time} — au-delà, relancez l'aperçu.",
+                { time: `${hh}:${mm}` });
+            expiryEl.className = 'form-hint text-muted me-auto small';
+            expiryEl.hidden = false;
+            previewExpiryTimer = setTimeout(markExpired, expiresAt - Date.now());
+        }
+    } else {
+        expiryEl.hidden = true;
+    }
 
     const changes = alertBody(el('gcLogsPreviewChanges'));
     const head = document.createElement('div');
@@ -504,7 +545,8 @@ function renderPreview(data) {
         const list = document.createElement('ul');
         list.className = 'mb-0 mt-1';
         for (const item of (s.removed_sample || [])) {
-            list.appendChild(li(`${item.gc_code} — ${item.date} — ${categoryOfType(item.type_id)}`));
+            const who = item.author ? ` — ${item.author}` : '';
+            list.appendChild(li(`${item.gc_code} — ${item.date} — ${categoryOfType(item.type_id)}${who}`));
         }
         const hidden = s.removed - (s.removed_sample || []).length;
         if (hidden > 0) list.appendChild(li(moreLabel(hidden)));
@@ -515,9 +557,18 @@ function renderPreview(data) {
     content.textContent = '';
     const mine = categoryList(s.categories?.mine);
     const others = categoryList(s.categories?.others);
+    // Hors du t() parent : pybabel n'extrait pas un t() imbriqué dans les
+    // arguments d'un autre appel.
+    const scope = s.coverage ? countLabel(s.coverage, t('périmètre'), t('périmètres')) : null;
     for (const line of [
         mine && t('À vous : ${list}', { list: mine }),
         others && t("D'autres joueurs : ${list}", { list: others }),
+        // Sans couverture déclarée, un fichier ne retirera jamais rien —
+        // le dire explicitement évite « mes logs vont-ils disparaître ? ».
+        s.coverage
+            ? t('Couverture complète déclarée (${scope}) — les logs stockés dans son périmètre et absents du fichier seront retirés.',
+                { scope })
+            : t('Aucune couverture complète déclarée — ce fichier ne retirera aucun log existant.'),
     ]) {
         if (!line) continue;
         const div = document.createElement('div');
@@ -744,7 +795,10 @@ export function initLogsUI() {
     el('gcLogsExportBtn').addEventListener('click', onExport);
     el('gcLogsClearBtn').addEventListener('click', onClear);
     // Aperçu abandonné : le jeton expire seul côté serveur.
-    el('gcLogsPreviewModal').addEventListener('hidden.bs.modal', () => { importToken = null; });
+    el('gcLogsPreviewModal').addEventListener('hidden.bs.modal', () => {
+        importToken = null;
+        if (previewExpiryTimer) { clearTimeout(previewExpiryTimer); previewExpiryTimer = null; }
+    });
 
     el('gcLogsPendingViewBtn').addEventListener('click', onPendingView);
     el('gcLogsUpdateBtn').addEventListener('click', () => {

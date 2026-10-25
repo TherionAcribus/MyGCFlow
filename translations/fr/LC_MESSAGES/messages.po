@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 10:55+0100\n"
+"POT-Creation-Date: 2026-10-25 11:03+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -550,11 +550,11 @@ msgstr "XML invalide : %(error)s"
 msgid "compte %(incoming)s différent de celui des logs déjà importés (%(stored)s)"
 msgstr "compte %(incoming)s différent de celui des logs déjà importés (%(stored)s)"
 
-#: log_store.py:269
+#: log_store.py:270
 msgid "import refusé : le fichier a des erreurs structurelles"
 msgstr "import refusé : le fichier a des erreurs structurelles"
 
-#: log_store.py:382
+#: log_store.py:383
 msgid "les logs ont changé depuis l'aperçu : relancez-le"
 msgstr "les logs ont changé depuis l'aperçu : relancez-le"
 
@@ -695,7 +695,7 @@ msgstr "Confirmer"
 
 #: blueprints/core.py:221 static/js/notifications.js:448
 #: templates/menu_data.html:95 templates/menu_data.html:489
-#: templates/menu_data.html:515 templates/menu_images.html:118
+#: templates/menu_data.html:519 templates/menu_images.html:118
 #: templates/menu_stats.html:71 templates/menu_style.html:250
 #: templates/menu_style.html:275 templates/menu_style.html:300
 #: templates/menu_style.html:328 templates/menu_style.html:359
@@ -796,6 +796,7 @@ msgstr "Archive .zip illisible"
 #: blueprints/gc_logs.py:111
 msgid "L'archive ne contient pas de fichier de logs exploitable"
 msgstr "L'archive ne contient pas de fichier de logs exploitable"
+
 #: blueprints/gc_logs.py:160 blueprints/labs.py:189
 msgid "Jeton d'import invalide"
 msgstr "Jeton d'import invalide"
@@ -864,7 +865,7 @@ msgstr "Contenu absent ou trop volumineux"
 msgid "Format non reconnu (export mygcflow-logs attendu)"
 msgstr "Format non reconnu (export mygcflow-logs attendu)"
 
-#: blueprints/gc_logs.py:491 static/js/gc_logs.js:229
+#: blueprints/gc_logs.py:491 static/js/gc_logs.js:236
 msgid "export du favori"
 msgstr "export du favori"
 
@@ -1291,7 +1292,7 @@ msgstr "Veuillez sélectionner un fichier .gpx ou .zip"
 msgid "Le fichier sélectionné est vide"
 msgstr "Le fichier sélectionné est vide"
 
-#: static/js/bdd.js:338 static/js/gc_logs.js:437
+#: static/js/bdd.js:338 static/js/gc_logs.js:446
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "Un import est déjà en cours, veuillez patienter."
 
@@ -1304,7 +1305,7 @@ msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyse du fichier GPX en cours..."
 
 #: static/js/bdd.js:348 static/js/bdd.js:1222 static/js/bdd.js:1319
-#: static/js/evolution_data.js:258 static/js/gc_logs.js:272
+#: static/js/evolution_data.js:258 static/js/gc_logs.js:280
 #: static/js/labs.js:1502 static/js/notifications.js:297
 #: static/js/notifications.js:342
 msgid "Chargement"
@@ -1417,7 +1418,7 @@ msgstr "Erreur lors du chargement du fichier"
 #: static/js/evolution_data.js:279 static/js/evolution_data.js:804
 #: static/js/evolution_data.js:808 static/js/evolution_data.js:1143
 #: static/js/evolution_data.js:1178 static/js/evolution_data.js:1186
-#: static/js/gc_logs.js:636 static/js/labs.js:2001 static/js/labs.js:2044
+#: static/js/gc_logs.js:687 static/js/labs.js:2001 static/js/labs.js:2044
 #: static/js/labs.js:2084 static/js/notifications.js:421
 #: static/js/recording_perf.js:187 static/js/ui.js:1827
 msgid "Erreur"
@@ -1460,7 +1461,7 @@ msgstr ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 
-#: static/js/bdd.js:1553 static/js/gc_logs.js:622 static/js/labs.js:2066
+#: static/js/bdd.js:1553 static/js/gc_logs.js:673 static/js/labs.js:2066
 msgid "Confirmation de suppression"
 msgstr "Confirmation de suppression"
 
@@ -1484,7 +1485,7 @@ msgstr "Suppression des trouvailles..."
 msgid "Trouvailles supprimées avec succès"
 msgstr "Trouvailles supprimées avec succès"
 
-#: static/js/bdd.js:1594 static/js/gc_logs.js:634 static/js/labs.js:2082
+#: static/js/bdd.js:1594 static/js/gc_logs.js:685 static/js/labs.js:2082
 msgid "Suppression réussie"
 msgstr "Suppression réussie"
 
@@ -1517,11 +1518,11 @@ msgstr "Aucun DNF importé : voir la carte « Mes logs »."
 msgid "${n} DNF dans la sélection"
 msgstr "${n} DNF dans la sélection"
 
-#: static/js/dnf_data.js:102 static/js/gc_logs.js:159 static/js/gc_logs.js:540
+#: static/js/dnf_data.js:102 static/js/gc_logs.js:161 static/js/gc_logs.js:591
 msgid "cache sans position connue"
 msgstr "cache sans position connue"
 
-#: static/js/dnf_data.js:102 static/js/gc_logs.js:159 static/js/gc_logs.js:540
+#: static/js/dnf_data.js:102 static/js/gc_logs.js:161 static/js/gc_logs.js:591
 msgid "caches sans position connue"
 msgstr "caches sans position connue"
 
@@ -1867,179 +1868,179 @@ msgstr "Le serveur local ne répond pas (délai dépassé)"
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 
-#: static/js/gc_logs.js:38 static/js/gc_logs.js:59 static/js/mapgl.js:820
+#: static/js/gc_logs.js:39 static/js/gc_logs.js:60 static/js/mapgl.js:820
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/gc_logs.js:39 static/js/gc_logs.js:60
+#: static/js/gc_logs.js:40 static/js/gc_logs.js:61
 msgid "trouvaille"
 msgstr "trouvaille"
 
-#: static/js/gc_logs.js:39 static/js/stats_panels.js:1314
+#: static/js/gc_logs.js:40 static/js/stats_panels.js:1314
 msgid "trouvailles"
 msgstr "trouvailles"
 
-#: static/js/gc_logs.js:40 static/js/gc_logs.js:61
+#: static/js/gc_logs.js:41 static/js/gc_logs.js:62
 msgid "action de poseur"
 msgstr "action de poseur"
 
-#: static/js/gc_logs.js:40
+#: static/js/gc_logs.js:41
 msgid "actions de poseur"
 msgstr "actions de poseur"
 
-#: static/js/gc_logs.js:41 static/js/gc_logs.js:62
+#: static/js/gc_logs.js:42 static/js/gc_logs.js:63
 msgid "note"
 msgstr "note"
 
-#: static/js/gc_logs.js:41
+#: static/js/gc_logs.js:42
 msgid "notes"
 msgstr "notes"
 
-#: static/js/gc_logs.js:42
+#: static/js/gc_logs.js:43
 msgid "signalement"
 msgstr "signalement"
 
-#: static/js/gc_logs.js:42
+#: static/js/gc_logs.js:43
 msgid "signalements"
 msgstr "signalements"
 
-#: static/js/gc_logs.js:43
+#: static/js/gc_logs.js:44
 msgid "log de relecteur"
 msgstr "log de relecteur"
 
-#: static/js/gc_logs.js:43
+#: static/js/gc_logs.js:44
 msgid "logs de relecteur"
 msgstr "logs de relecteur"
 
-#: static/js/gc_logs.js:44
+#: static/js/gc_logs.js:45
 msgid "log d'événement"
 msgstr "log d'événement"
 
-#: static/js/gc_logs.js:44
+#: static/js/gc_logs.js:45
 msgid "logs d'événement"
 msgstr "logs d'événement"
 
-#: static/js/gc_logs.js:45
+#: static/js/gc_logs.js:46
 msgid "autre"
 msgstr "autre"
 
-#: static/js/gc_logs.js:45
+#: static/js/gc_logs.js:46
 msgid "autres"
 msgstr "autres"
 
-#: static/js/gc_logs.js:63
+#: static/js/gc_logs.js:64
 msgid "log"
 msgstr "log"
 
-#: static/js/gc_logs.js:67 static/js/labs.js:636
+#: static/js/gc_logs.js:68 static/js/labs.js:636
 msgid "… et 1 autre"
 msgstr "… et 1 autre"
 
-#: static/js/gc_logs.js:67 static/js/labs.js:636
+#: static/js/gc_logs.js:68 static/js/labs.js:636
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr "… et ${n} autres"
 
-#: static/js/gc_logs.js:117
+#: static/js/gc_logs.js:118
 msgid "Collecte complète prévue au prochain passage"
 msgstr "Collecte complète prévue au prochain passage"
 
-#: static/js/gc_logs.js:118 templates/menu_data.html:349
+#: static/js/gc_logs.js:119 templates/menu_data.html:349
 msgid "Forcer une collecte complète la prochaine fois"
 msgstr "Forcer une collecte complète la prochaine fois"
 
-#: static/js/gc_logs.js:130 static/js/gc_logs.js:590
+#: static/js/gc_logs.js:131 static/js/gc_logs.js:641
 msgid "Import de vos logs…"
 msgstr "Import de vos logs…"
 
-#: static/js/gc_logs.js:139 templates/menu_data.html:242
+#: static/js/gc_logs.js:141 templates/menu_data.html:242
 msgid "Aucun log importé"
 msgstr "Aucun log importé"
 
-#: static/js/gc_logs.js:145
+#: static/js/gc_logs.js:147
 #, python-brace-format
 msgid "${count} — compte ${name}"
 msgstr "${count} — compte ${name}"
 
-#: static/js/gc_logs.js:146
+#: static/js/gc_logs.js:148
 msgid "log enregistré"
 msgstr "log enregistré"
 
-#: static/js/gc_logs.js:146
+#: static/js/gc_logs.js:148
 msgid "logs enregistrés"
 msgstr "logs enregistrés"
 
-#: static/js/gc_logs.js:148 static/js/gc_logs.js:519
+#: static/js/gc_logs.js:150 static/js/gc_logs.js:564
 #, python-brace-format
 msgid "À vous : ${list}"
 msgstr "À vous : ${list}"
 
-#: static/js/gc_logs.js:152
+#: static/js/gc_logs.js:154
 msgid "log d'autres joueurs"
 msgstr "log d'autres joueurs"
 
-#: static/js/gc_logs.js:152
+#: static/js/gc_logs.js:154
 msgid "logs d'autres joueurs"
 msgstr "logs d'autres joueurs"
 
-#: static/js/gc_logs.js:155
+#: static/js/gc_logs.js:157
 msgid "fiche de cache"
 msgstr "fiche de cache"
 
-#: static/js/gc_logs.js:155
+#: static/js/gc_logs.js:157
 msgid "fiches de caches"
 msgstr "fiches de caches"
 
-#: static/js/gc_logs.js:163
+#: static/js/gc_logs.js:165
 msgid "compléter"
 msgstr "compléter"
 
-#: static/js/gc_logs.js:186 static/js/gc_logs.js:477 static/js/gc_logs.js:578
+#: static/js/gc_logs.js:188 static/js/gc_logs.js:518 static/js/gc_logs.js:629
 msgid "nouveau log"
 msgstr "nouveau log"
 
-#: static/js/gc_logs.js:186 static/js/gc_logs.js:477 static/js/gc_logs.js:578
+#: static/js/gc_logs.js:188 static/js/gc_logs.js:518 static/js/gc_logs.js:629
 msgid "nouveaux logs"
 msgstr "nouveaux logs"
 
-#: static/js/gc_logs.js:187 static/js/gc_logs.js:478 static/js/gc_logs.js:579
+#: static/js/gc_logs.js:189 static/js/gc_logs.js:519 static/js/gc_logs.js:630
 msgid "log mis à jour"
 msgstr "log mis à jour"
 
-#: static/js/gc_logs.js:187 static/js/gc_logs.js:478 static/js/gc_logs.js:579
+#: static/js/gc_logs.js:189 static/js/gc_logs.js:519 static/js/gc_logs.js:630
 msgid "logs mis à jour"
 msgstr "logs mis à jour"
 
-#: static/js/gc_logs.js:188 static/js/gc_logs.js:580
+#: static/js/gc_logs.js:190 static/js/gc_logs.js:631
 msgid "log retiré"
 msgstr "log retiré"
 
-#: static/js/gc_logs.js:188 static/js/gc_logs.js:580
+#: static/js/gc_logs.js:190 static/js/gc_logs.js:631
 msgid "logs retirés"
 msgstr "logs retirés"
 
-#: static/js/gc_logs.js:189 static/js/labs.js:747
+#: static/js/gc_logs.js:191 static/js/labs.js:747
 msgid "aucun changement"
 msgstr "aucun changement"
 
-#: static/js/gc_logs.js:192
+#: static/js/gc_logs.js:194
 msgid "fichier GPX"
 msgstr "fichier GPX"
 
-#: static/js/gc_logs.js:195
+#: static/js/gc_logs.js:197
 msgid "favori"
 msgstr "favori"
 
-#: static/js/gc_logs.js:195
+#: static/js/gc_logs.js:197
 msgid "fichier mygcflow-logs"
 msgstr "fichier mygcflow-logs"
 
-#: static/js/gc_logs.js:198
+#: static/js/gc_logs.js:200
 #, python-brace-format
 msgid "Dernier import le ${date} : ${changes}${via}"
 msgstr "Dernier import le ${date} : ${changes}${via}"
 
-#: static/js/gc_logs.js:219
+#: static/js/gc_logs.js:221
 #, python-brace-format
 msgid ""
 "Un export a été reçu de votre favori (${count} nouveaux logs annoncés) — "
@@ -2048,115 +2049,127 @@ msgstr ""
 "Un export a été reçu de votre favori (${count} nouveaux logs annoncés) — "
 "validez l'aperçu avant l'import."
 
-#: static/js/gc_logs.js:287 static/js/labs.js:1517
+#: static/js/gc_logs.js:295 static/js/labs.js:1517
 msgid "Chargement impossible"
 msgstr "Chargement impossible"
 
-#: static/js/gc_logs.js:312
+#: static/js/gc_logs.js:320
 msgid "Aucune cache sans position sur cette page."
 msgstr "Aucune cache sans position sur cette page."
 
-#: static/js/gc_logs.js:345
+#: static/js/gc_logs.js:353
 #, python-brace-format
 msgid "de ${name}"
 msgstr "de ${name}"
 
-#: static/js/gc_logs.js:346
+#: static/js/gc_logs.js:354
 msgid "DNF à vous"
 msgstr "DNF à vous"
 
-#: static/js/gc_logs.js:348
+#: static/js/gc_logs.js:356
 msgid "autre log"
 msgstr "autre log"
 
-#: static/js/gc_logs.js:348
+#: static/js/gc_logs.js:356
 msgid "autres logs"
 msgstr "autres logs"
 
-#: static/js/gc_logs.js:363
+#: static/js/gc_logs.js:371
 #, python-brace-format
 msgid "Position de ${code}"
 msgstr "Position de ${code}"
 
-#: static/js/gc_logs.js:367
+#: static/js/gc_logs.js:375
 msgid "Placer"
 msgstr "Placer"
 
-#: static/js/gc_logs.js:395 static/js/labs.js:1834
+#: static/js/gc_logs.js:403 static/js/labs.js:1834
 msgid "Correction refusée"
 msgstr "Correction refusée"
 
-#: static/js/gc_logs.js:437 static/js/gc_logs.js:451 static/js/gc_logs.js:604
+#: static/js/gc_logs.js:446 static/js/gc_logs.js:460 static/js/gc_logs.js:655
 msgid "Import de logs"
 msgstr "Import de logs"
 
-#: static/js/gc_logs.js:440
+#: static/js/gc_logs.js:449
 msgid "Analyse du fichier…"
 msgstr "Analyse du fichier…"
 
-#: static/js/gc_logs.js:446 static/js/labs.js:621
+#: static/js/gc_logs.js:455 static/js/labs.js:621
 msgid "Import impossible"
 msgstr "Import impossible"
 
-#: static/js/gc_logs.js:451 static/js/labs.js:608
+#: static/js/gc_logs.js:460 static/js/labs.js:608
 msgid "Erreur lors de l'analyse"
 msgstr "Erreur lors de l'analyse"
 
-#: static/js/gc_logs.js:464
+#: static/js/gc_logs.js:480
+msgid "Cet aperçu a expiré — fermez-le et relancez l'import."
+msgstr "Cet aperçu a expiré — fermez-le et relancez l'import."
+
+#: static/js/gc_logs.js:491
+#, python-brace-format
+msgid "À valider avant ${time} — au-delà, relancez l'aperçu."
+msgstr "À valider avant ${time} — au-delà, relancez l'aperçu."
+
+#: static/js/gc_logs.js:505
 #, python-brace-format
 msgid "${file} — compte ${name}"
 msgstr "${file} — compte ${name}"
 
-#: static/js/gc_logs.js:472
+#: static/js/gc_logs.js:513
 msgid ""
 "Ce fichier n'est pas daté : ses données écraseront les versions déjà "
 "enregistrées plutôt que d'être ignorées."
-msgstr "Ce fichier n'est pas daté : ses données écraseront les versions déjà enregistrées plutôt que d'être ignorées."
-#: static/js/gc_logs.js:479
+msgstr ""
+"Ce fichier n'est pas daté : ses données écraseront les versions déjà "
+"enregistrées plutôt que d'être ignorées."
+
+#: static/js/gc_logs.js:520
 msgid "log déjà connu"
 msgstr "log déjà connu"
 
-#: static/js/gc_logs.js:479
+#: static/js/gc_logs.js:520
 msgid "logs déjà connus"
 msgstr "logs déjà connus"
 
-#: static/js/gc_logs.js:480
+#: static/js/gc_logs.js:521
 msgid "log plus ancien que la version enregistrée, ignoré"
 msgstr "log plus ancien que la version enregistrée, ignoré"
 
-#: static/js/gc_logs.js:481
+#: static/js/gc_logs.js:522
 msgid "logs plus anciens que la version enregistrée, ignorés"
 msgstr "logs plus anciens que la version enregistrée, ignorés"
 
-#: static/js/gc_logs.js:482
+#: static/js/gc_logs.js:523
 msgid "nouvelle fiche de cache"
 msgstr "nouvelle fiche de cache"
 
-#: static/js/gc_logs.js:482
+#: static/js/gc_logs.js:523
 msgid "nouvelles fiches de caches"
 msgstr "nouvelles fiches de caches"
 
-#: static/js/gc_logs.js:483
+#: static/js/gc_logs.js:524
 msgid "fiche de cache mise à jour"
 msgstr "fiche de cache mise à jour"
 
-#: static/js/gc_logs.js:483
+#: static/js/gc_logs.js:524
 msgid "fiches de caches mises à jour"
 msgstr "fiches de caches mises à jour"
 
-#: static/js/gc_logs.js:484
+#: static/js/gc_logs.js:525
 msgid "Rien de nouveau dans ce fichier."
 msgstr "Rien de nouveau dans ce fichier."
 
-#: static/js/gc_logs.js:499
+#: static/js/gc_logs.js:540
 msgid "log sera retiré"
 msgstr "log sera retiré"
 
-#: static/js/gc_logs.js:499
+#: static/js/gc_logs.js:540
 msgid "logs seront retirés"
 msgstr "logs seront retirés"
 
-#: static/js/gc_logs.js:502
+#: static/js/gc_logs.js:543
 msgid ""
 "Le fichier déclare contenir tous ces logs : ceux qu'il n'a plus ont été "
 "supprimés sur le site."
@@ -2164,44 +2177,67 @@ msgstr ""
 "Le fichier déclare contenir tous ces logs : ceux qu'il n'a plus ont été "
 "supprimés sur le site."
 
-#: static/js/gc_logs.js:520
+#: static/js/gc_logs.js:562
+msgid "périmètre"
+msgstr "périmètre"
+#: static/js/gc_logs.js:562
+msgid "périmètres"
+msgstr "périmètres"
+#: static/js/gc_logs.js:565
 #, python-brace-format
 msgid "D'autres joueurs : ${list}"
 msgstr "D'autres joueurs : ${list}"
 
-#: static/js/gc_logs.js:536
+#: static/js/gc_logs.js:569
+#, python-brace-format
+msgid ""
+"Couverture complète déclarée (${scope}) — les logs stockés dans son "
+"périmètre et absents du fichier seront retirés."
+msgstr ""
+"Couverture complète déclarée (${scope}) — les logs stockés dans son "
+"périmètre et absents du fichier seront retirés."
+
+#: static/js/gc_logs.js:571
+msgid ""
+"Aucune couverture complète déclarée — ce fichier ne retirera aucun log "
+"existant."
+msgstr ""
+"Aucune couverture complète déclarée — ce fichier ne retirera aucun log "
+"existant."
+
+#: static/js/gc_logs.js:587
 msgid "doublon ignoré"
 msgstr "doublon ignoré"
 
-#: static/js/gc_logs.js:536
+#: static/js/gc_logs.js:587
 msgid "doublons ignorés"
 msgstr "doublons ignorés"
 
-#: static/js/gc_logs.js:559 static/js/labs.js:1012 static/js/profiles.js:251
+#: static/js/gc_logs.js:610 static/js/labs.js:1012 static/js/profiles.js:251
 msgid "Import échoué"
 msgstr "Import échoué"
 
-#: static/js/gc_logs.js:565 static/js/labs.js:1027
+#: static/js/gc_logs.js:616 static/js/labs.js:1027
 msgid "Le serveur ne répond plus — vérifiez sa disponibilité."
 msgstr "Le serveur ne répond plus — vérifiez sa disponibilité."
 
-#: static/js/gc_logs.js:581
+#: static/js/gc_logs.js:632
 msgid "Aucun changement : vos logs étaient déjà à jour."
 msgstr "Aucun changement : vos logs étaient déjà à jour."
 
-#: static/js/gc_logs.js:598 static/js/labs.js:933
+#: static/js/gc_logs.js:649 static/js/labs.js:933
 msgid "Import refusé"
 msgstr "Import refusé"
 
-#: static/js/gc_logs.js:602
+#: static/js/gc_logs.js:653
 msgid "Logs importés"
 msgstr "Logs importés"
 
-#: static/js/gc_logs.js:604 static/js/labs.js:939 static/js/labs.js:1183
+#: static/js/gc_logs.js:655 static/js/labs.js:939 static/js/labs.js:1183
 msgid "Erreur lors de l'import"
 msgstr "Erreur lors de l'import"
 
-#: static/js/gc_logs.js:621
+#: static/js/gc_logs.js:672
 msgid ""
 "Supprimer tous vos logs importés ? Vos géocaches et vos Lab Caches sont "
 "conservés. Cette action est irréversible."
@@ -2209,53 +2245,53 @@ msgstr ""
 "Supprimer tous vos logs importés ? Vos géocaches et vos Lab Caches sont "
 "conservés. Cette action est irréversible."
 
-#: static/js/gc_logs.js:625 templates/menu_data.html:310
+#: static/js/gc_logs.js:676 templates/menu_data.html:310
 msgid "Supprimer mes logs"
 msgstr "Supprimer mes logs"
 
-#: static/js/gc_logs.js:628
+#: static/js/gc_logs.js:679
 msgid "Suppression de vos logs…"
 msgstr "Suppression de vos logs…"
 
-#: static/js/gc_logs.js:632 static/js/labs.js:2075
+#: static/js/gc_logs.js:683 static/js/labs.js:2075
 msgid "Erreur inconnue"
 msgstr "Erreur inconnue"
 
-#: static/js/gc_logs.js:634
+#: static/js/gc_logs.js:685
 msgid "Logs supprimés"
 msgstr "Logs supprimés"
 
-#: static/js/gc_logs.js:636 static/js/labs.js:2084
+#: static/js/gc_logs.js:687 static/js/labs.js:2084
 msgid "Erreur lors de la suppression"
 msgstr "Erreur lors de la suppression"
 
-#: static/js/gc_logs.js:657 static/js/gc_logs.js:761 static/js/labs.js:163
+#: static/js/gc_logs.js:708 static/js/gc_logs.js:815 static/js/labs.js:163
 #: static/js/labs.js:1300 templates/guide.html:495
 msgid "Envoyer vers MyGCFlow"
 msgstr "Envoyer vers MyGCFlow"
 
-#: static/js/gc_logs.js:675 static/js/labs.js:1320
+#: static/js/gc_logs.js:726 static/js/labs.js:1320
 msgid "Favori indisponible"
 msgstr "Favori indisponible"
 
-#: static/js/gc_logs.js:690 static/js/labs.js:1339
+#: static/js/gc_logs.js:741 static/js/labs.js:1339
 msgid "Lien copié"
 msgstr "Lien copié"
 
-#: static/js/gc_logs.js:692 static/js/labs.js:1341
+#: static/js/gc_logs.js:743 static/js/labs.js:1341
 msgid "Copie impossible — glissez le bouton à la place."
 msgstr "Copie impossible — glissez le bouton à la place."
 
-#: static/js/gc_logs.js:707
+#: static/js/gc_logs.js:758
 msgid "La collecte complète n'a pas pu être prévue"
 msgstr "La collecte complète n'a pas pu être prévue"
 
-#: static/js/gc_logs.js:707 static/js/gc_logs.js:729
+#: static/js/gc_logs.js:758 static/js/gc_logs.js:780
 #: templates/menu_data.html:237
 msgid "Mes logs"
 msgstr "Mes logs"
 
-#: static/js/gc_logs.js:715 static/js/labs.js:1351
+#: static/js/gc_logs.js:766 static/js/labs.js:1351
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris."
@@ -2263,19 +2299,19 @@ msgstr ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris."
 
-#: static/js/gc_logs.js:716 static/js/labs.js:1352
+#: static/js/gc_logs.js:767 static/js/labs.js:1352
 msgid "Jeton du favori"
 msgstr "Jeton du favori"
 
-#: static/js/gc_logs.js:727 static/js/labs.js:1363
+#: static/js/gc_logs.js:778 static/js/labs.js:1363
 msgid "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
 msgstr "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
 
-#: static/js/gc_logs.js:729 static/js/labs.js:1365
+#: static/js/gc_logs.js:780 static/js/labs.js:1365
 msgid "Jeton non régénéré"
 msgstr "Jeton non régénéré"
 
-#: static/js/gc_logs.js:760
+#: static/js/gc_logs.js:814
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis une page de geocaching.com."
@@ -3553,8 +3589,8 @@ msgstr ""
 #: static/js/notifications.js:120 static/js/notifications.js:484
 #: templates/menu_data.html:418 templates/menu_data.html:457
 #: templates/menu_data.html:469 templates/menu_data.html:503
-#: templates/menu_data.html:530 templates/menu_data.html:547
-#: templates/menu_data.html:559 templates/menu_data.html:576
+#: templates/menu_data.html:534 templates/menu_data.html:551
+#: templates/menu_data.html:563 templates/menu_data.html:580
 #: templates/menu_stats.html:497 templates/menu_style.html:52
 #: templates/menu_style.html:237 templates/menu_style.html:269
 #: templates/menu_style.html:294 templates/menu_style.html:322
@@ -6536,7 +6572,7 @@ msgid "crée un thème,"
 msgstr "crée un thème,"
 
 #: templates/guide.html:241 templates/menu_data.html:490
-#: templates/menu_data.html:516 templates/menu_style.html:64
+#: templates/menu_data.html:520 templates/menu_style.html:64
 #: templates/modal_evolution.html:61
 msgid "Importer"
 msgstr "Importer"
@@ -8880,11 +8916,11 @@ msgstr "Aperçu de l'import de logs"
 msgid "Points d'attention"
 msgstr "Points d'attention"
 
-#: templates/menu_data.html:529
+#: templates/menu_data.html:533
 msgid "Caches sans position"
 msgstr "Caches sans position"
 
-#: templates/menu_data.html:534
+#: templates/menu_data.html:538
 msgid ""
 "Ces caches ont des logs enregistrés mais aucune position connue : vos DNF"
 " n'y apparaîtront pas tant qu'elles n'en auront pas. La position saisie "
@@ -8893,28 +8929,28 @@ msgstr ""
 "Ces caches ont des logs enregistrés mais aucune position connue : vos DNF"
 " n'y apparaîtront pas tant qu'elles n'en auront pas. La position saisie "
 "n'est jamais écrasée par un import."
-
-#: templates/menu_data.html:537 templates/menu_data.html:566
-msgid ""
-"Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
-"2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
-msgstr ""
-"Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
-"2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
 
 #: templates/menu_data.html:541 templates/menu_data.html:570
+msgid ""
+"Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
+"2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
+msgstr ""
+"Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
+"2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
+
+#: templates/menu_data.html:545 templates/menu_data.html:574
 msgid "Précédent"
 msgstr "Précédent"
 
-#: templates/menu_data.html:543 templates/menu_data.html:572
+#: templates/menu_data.html:547 templates/menu_data.html:576
 msgid "Suivant"
 msgstr "Suivant"
 
-#: templates/menu_data.html:558
+#: templates/menu_data.html:562
 msgid "Étapes en attente"
 msgstr "Étapes en attente"
 
-#: templates/menu_data.html:563
+#: templates/menu_data.html:567
 msgid ""
 "Ces étapes sont conservées mais non affichées : renseignez leur position "
 "ou leur date de découverte pour les rendre affichables. Une seule "

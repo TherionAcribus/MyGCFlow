@@ -512,6 +512,10 @@
                     </details>
                 </div>
                 <div class="modal-footer">
+                    <!-- gc_logs.js : « À valider avant HH:MM » puis « expiré »
+                         (le jeton d'aperçu vit 30 min) — « Importer » est
+                         désactivé à l'échéance plutôt qu'échouer. -->
+                    <span id="gcLogsPreviewExpiry" class="form-hint text-muted me-auto small" hidden></span>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
                     <button type="button" id="gcLogsPreviewConfirmBtn" class="btn btn-primary">{{ _("Importer") }}</button>
                 </div>

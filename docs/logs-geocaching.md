@@ -347,8 +347,10 @@ comme les fichiers Labs).
    pas dans le temp partagé, sinon un export reçu d'un runtime de test
    ressortirait dans l'application et inversement). Bilan : ajoutés, mis
    à jour, inchangés, plus anciens ignorés, **retirés** (couverture complète,
-   avec échantillon), rejetés avec motif, avertissements, doublons, caches
-   sans position, répartition par catégorie « à vous / d'autres joueurs »,
+   avec échantillon — code, date, catégorie, auteur), rejetés avec motif,
+   avertissements, doublons, caches sans position, nombre de périmètres de
+   couverture (0 = le fichier ne retirera rien — dit explicitement),
+   répartition par catégorie « à vous / d'autres joueurs »,
    date d'export (`exported_at` ; son absence est annoncée — un fichier
    non daté écrase les versions enregistrées plutôt que d'être ignoré).
    Un fichier d'un autre compte est refusé dès l'aperçu (409).

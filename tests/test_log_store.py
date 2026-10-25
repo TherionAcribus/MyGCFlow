@@ -168,6 +168,7 @@ class LogStoreTests(unittest.TestCase):
         summary = self._commit(doc)
         self.assertEqual(summary["removed"], 1)
         self.assertEqual(summary["removed_sample"][0]["log_id"], 228739556)
+        self.assertEqual(summary["removed_sample"][0]["author"], "Joueur_Fictif")
         self.assertIsNone(self._log(228739556))
 
     def test_complete_cache_coverage_removes_only_that_cache(self):
