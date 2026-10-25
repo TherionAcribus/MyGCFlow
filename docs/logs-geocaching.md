@@ -385,6 +385,24 @@ puis renvoie le lien `javascript:` monoligne (sources
 (`logs_receive_token` dans les préférences) survit à « Réinitialiser
 l'application », sinon le favori installé mourrait sans explication.
 
+**Reprise de collecte** — `POST /api/logs/receive/fragment` (mêmes jeton et
+CORS). Une collecte de plusieurs centaines de caches peut s'interrompre
+(session expirée, onglet fermé) : le favori poste l'export courant en
+**fragments** tous les quinze caches traités, sous un identifiant de
+passage `X-MyGCFlow-Run-Id`. Chaque fragment est fusionné dans le document
+conservé sous `frag-<run>` (dédupliqué par `log_id`/`gc_code`, périmètres
+de couverture unis, compte unique — TTL 7 jours, contre 30 minutes pour un
+aperçu). `X-MyGCFlow-Final: 1` scelle : le document fusionné passe l'aperçu
+habituel et devient un import en attente — c'est cette route, pas
+`/receive`, que le favori appelle en fin de collecte. Côté navigateur, le
+*plan* (file de caches, avancement, échecs, `since`, ordre des dates figé
+avec le premier fragment) vit dans `localStorage` (~25 Ko) : au clic
+suivant, le favori propose de reprendre là où il en était — les données
+déjà lues sont côté application. Un plan de plus de 7 jours est écarté :
+ses fragments ayant expiré, la couverture du scellement serait mensongère.
+Un envoi final qui échoue laisse le plan à `done = file entière` : la
+reprise renvoie l'export sans rien relire.
+
 **Collecte incrémentale** — `GET /api/logs/receive/state` (mêmes jeton et
 CORS ; une GET, donc hors du garde-fou inter-sites qui ne vise que les
 mutations) répond au favori avant qu'il ne parte :

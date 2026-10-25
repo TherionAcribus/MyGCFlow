@@ -29,7 +29,11 @@ SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 # bookmarklets s'exécutent sur labs.geocaching.com / geocaching.com) — jeton
 # local + CORS dédié dans les blueprints. Le contrôle Host ci-dessous (DNS
 # rebinding) reste appliqué en amont.
-SELF_GUARDED_ENDPOINTS = frozenset({"labs.labs_receive", "gc_logs.logs_receive"})
+SELF_GUARDED_ENDPOINTS = frozenset({
+    "labs.labs_receive",
+    "gc_logs.logs_receive",
+    "gc_logs.logs_receive_fragment",
+})
 
 
 def _hostname(host: str) -> str:

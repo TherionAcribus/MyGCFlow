@@ -502,7 +502,11 @@ class LogsAutomationTests(LogsApiTests):
 
         received = out["received"]
         self.assertIsNotNone(received, out["said"])
-        self.assertTrue(received["url"].endswith("/api/logs/receive"))
+        # Le favori scelle sa collecte sur /receive/fragment (reprise
+        # possible), pas sur /receive directement.
+        self.assertTrue(received["url"].endswith("/api/logs/receive/fragment"))
+        self.assertEqual(received["headers"]["X-MyGCFlow-Final"], "1")
+        self.assertTrue(received["headers"]["X-MyGCFlow-Run-Id"])
         self.assertEqual(received["credentials"], "omit")
         token = self.manager.get_app_settings().logs_receive_token
         self.assertEqual(received["headers"]["X-MyGCFlow-Token"], token)
@@ -709,6 +713,211 @@ class LogsAutomationTests(LogsApiTests):
         self.assertIsNone(out["received"])
         self.assertEqual(out["requests"], [])
         self.assertTrue(any("annulée" in s for s in out["said"]), out["said"])
+
+    # --- /api/logs/receive/fragment : collecte reprenable -------------------
+
+    def _fragment(self, doc, run_id="run-test-1", token="tok-receive",
+                  final=False):
+        headers = {"X-MyGCFlow-Token": token, "X-MyGCFlow-Run-Id": run_id}
+        if final:
+            headers["X-MyGCFlow-Final"] = "1"
+        return self.client.post('/api/logs/receive/fragment',
+                                data=doc, content_type='application/json',
+                                headers=headers)
+
+    def test_fragment_rejects_bad_inputs(self):
+        self._set_token()
+        doc = CONTRACT.read_bytes()
+        self.assertEqual(self._fragment(doc, run_id="").status_code, 400)
+        self.assertEqual(self._fragment(doc, run_id="x").status_code, 400)
+        self.assertEqual(self._fragment(doc, token="mauvais").status_code, 403)
+        self.assertEqual(self._fragment(b"<html>").status_code, 400)
+        self.assertEqual(self._fragment(b'{"format": "autre"}').status_code, 400)
+        # Preflight : même garde CORS que /receive.
+        rv = self.client.open('/api/logs/receive/fragment', method='OPTIONS',
+                              headers={"Origin": "https://www.geocaching.com"})
+        self.assertIn("Access-Control-Allow-Origin", rv.headers)
+        rv = self.client.open('/api/logs/receive/fragment', method='OPTIONS',
+                              headers={"Origin": "https://malveillant.example"})
+        self.assertNotIn("Access-Control-Allow-Origin", rv.headers)
+
+    def test_fragment_merges_then_seals_into_a_pending_preview(self):
+        """Chaque fragment est fusionné sous `frag-<run>` ; le dernier
+        (`Final`) scelle : l'aperçu du document complet devient un import
+        en attente — le parcours de validation est celui de /receive."""
+        self._set_token()
+        doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        first = dict(doc, logs=doc["logs"][:4], caches=doc["caches"][:2],
+                     coverage=doc["coverage"][:1])
+        # Recouvrement volontaire : le dernier fragment re-verrouille un
+        # log déjà envoyé — dédoublonné par log_id dans le document scellé.
+        second = dict(doc, logs=doc["logs"][3:], caches=doc["caches"][2:],
+                      coverage=doc["coverage"][1:])
+
+        rv = self._fragment(json.dumps(first).encode())
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        body = rv.get_json()
+        self.assertEqual(body["received"], "fragment")
+        self.assertEqual((body["logs"], body["caches"]), (4, 2))
+        # Pas d'aperçu déposé tant que la collecte n'est pas scellée.
+        self.assertIsNone(
+            self.client.get("/api/logs/status").get_json()["pending_import"])
+
+        rv = self._fragment(json.dumps(second).encode(), final=True)
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        self.assertIn("import_token", rv.get_json())
+        pending = self.client.get("/api/logs/status").get_json()["pending_import"]
+        self.assertIsNotNone(pending)
+        self.assertEqual(pending["summary"]["added"], 7)   # 7 logs, pas 8
+        # Le dossier de fragments est consommé au scellement.
+        import blueprints.gc_logs as gc_logs_mod
+        self.assertFalse((gc_logs_mod.PENDING_ROOT / "frag-run-test-1").exists())
+
+        rv2 = self.client.post("/api/logs/import/commit",
+                               json={"import_token": pending["import_token"]})
+        st = self._wait_task(rv2.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["added"], 7)
+
+    def test_fragment_rejects_a_second_account_mid_run(self):
+        self._set_token()
+        doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        rv = self._fragment(json.dumps(dict(
+            doc, account={"user_id": 42, "username": "Testeur"})).encode())
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        rv = self._fragment(json.dumps(dict(
+            doc, account={"user_id": 999, "username": "Autre"})).encode())
+        self.assertEqual(rv.status_code, 409)
+
+    # --- reprise de collecte côté favori (harnais) --------------------------
+
+    @staticmethod
+    def _saved_plan(run_id="run-sauve", done=1, queue=None, **kw):
+        return json.dumps({
+            "v": 1, "runId": run_id, "created": 9999999999999,
+            "since": None, "order": "DMY",
+            "me": {"name": "Testeur", "id": 42},
+            "dnfComplete": True, "queue": queue or [],
+            "done": done, "read": [], "failed": {"d": [], "o": []}, **kw})
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_checkpoints_and_drops_the_plan_once_sent(self):
+        # 16 caches : au-delà du pas de sauvegarde (15) — un fragment part
+        # avant la fin, puis le scellement emporte plan et drapeau Final.
+        codes = [f"GC8{i:04d}" for i in range(16)]
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "dnfPages": [{"codes": codes}],
+            "ownedPages": [{}],
+            "caches": {c: self._gc(c, f"t{i}") for i, c in enumerate(codes)},
+            "books": {f"t{i}": [[self._entry(100 + i, 3, "13/05/2024",
+                                             "Testeur", 42)]]
+                      for i in range(16)},
+        }
+        out = self._run_bookmarklet(**scenario)
+        non_final = [f for f in out["fragments"]
+                     if f["headers"].get("X-MyGCFlow-Final") != "1"]
+        self.assertTrue(non_final)
+        self.assertTrue(all(f["headers"].get("X-MyGCFlow-Run-Id")
+                            for f in out["fragments"]))
+        self.assertIsNotNone(out["received"], out["said"])
+        self.assertEqual(out["received"]["headers"]["X-MyGCFlow-Final"], "1")
+        # Collecte bouclée et reçue : plus rien à reprendre.
+        self.assertNotIn("mygcflowLogsRun", out["storage"])
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_resumes_a_saved_plan(self):
+        # Plan en place (2/3 caches lues) → la reprise ne relit que la
+        # dernière, sans repasser par les listes, et scelle sous le même
+        # identifiant de collecte.
+        queue = [{"u": "/geocache/GC1AAA", "o": 1},
+                 {"u": "/geocache/GC2BBB", "o": 1},
+                 {"u": "/geocache/GC3CCC", "o": 1}]
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "savedStorage": {"mygcflowLogsRun": self._saved_plan(
+                done=2, queue=queue, read=["GC1AAA", "GC2BBB"])},
+            "dnfPages": [{"codes": ["GC1AAA", "GC2BBB", "GC3CCC"]}],
+            "ownedPages": [{}],
+            "caches": {c: self._gc(c, f"t{i}")
+                       for i, c in enumerate(["GC1AAA", "GC2BBB", "GC3CCC"])},
+            "books": {f"t{i}": [[self._entry(10 + i, 3, "13/05/2024",
+                                             "Testeur", 42)]]
+                      for i in range(3)},
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertTrue(any("reprise" in s for s in out["said"]), out["said"])
+        fetched = [u for u in out["requests"] if u.startswith("/geocache/")]
+        self.assertEqual(fetched, ["/geocache/GC3CCC"])
+        journal = [u for u in out["requests"] if "/my/logs.aspx" in u]
+        self.assertEqual(journal, [])
+        self.assertIsNotNone(out["received"], out["said"])
+        self.assertEqual(
+            out["received"]["headers"]["X-MyGCFlow-Run-Id"], "run-sauve")
+        self.assertNotIn("mygcflowLogsRun", out["storage"])
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_declining_resume_starts_a_fresh_run(self):
+        queue = [{"u": "/geocache/GC1AAA", "o": 1}]
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "confirms": [False],   # « reprendre ? » → non : collecte neuve
+            "savedStorage": {"mygcflowLogsRun": self._saved_plan(
+                done=0, queue=queue)},
+            "dnfPages": [{"codes": ["GC1AAA"]}],
+            "ownedPages": [{}],
+            "caches": {"GC1AAA": self._gc("GC1AAA", "t1")},
+            "books": {"t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42)]]},
+        }
+        out = self._run_bookmarklet(**scenario)
+        journal = [u for u in out["requests"] if "/my/logs.aspx" in u]
+        self.assertTrue(journal)   # les listes sont relues — pas de reprise
+        self.assertIsNotNone(out["received"], out["said"])
+        # Un nouvel identifiant de collecte — pas celui du plan refusé.
+        self.assertNotEqual(
+            out["received"]["headers"]["X-MyGCFlow-Run-Id"], "run-sauve")
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_keeps_its_plan_when_the_send_fails(self):
+        # Application injoignable : la collecte est bouclée mais l'envoi
+        # a échoué — le plan reste (done = file entière) pour un renvoi
+        # immédiat au prochain clic, sans rien relire.
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "receiveStatus": 500,
+            "dnfPages": [{"codes": ["GC1AAA"]}],
+            "ownedPages": [{}],
+            "caches": {"GC1AAA": self._gc("GC1AAA", "t1")},
+            "books": {"t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42)]]},
+        }
+        out = self._run_bookmarklet(**scenario)
+        plan = json.loads(out["storage"].get("mygcflowLogsRun") or "null")
+        self.assertIsNotNone(plan, out["storage"])
+        self.assertEqual(plan["done"], len(plan["queue"]))
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_finished_plan_resends_without_recollection(self):
+        # Collecte bouclée, envoi raté : la reprise ne touche pas le site
+        # et re-scelle directement.
+        queue = [{"u": "/geocache/GC1AAA", "o": 1}]
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "savedStorage": {"mygcflowLogsRun": self._saved_plan(
+                done=1, queue=queue, read=["GC1AAA"])},
+            "caches": {},
+            "books": {},
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertEqual(out["requests"], [])
+        self.assertIsNotNone(out["received"], out["said"])
+        self.assertEqual(
+            out["received"]["headers"]["X-MyGCFlow-Final"], "1")
+        self.assertNotIn("mygcflowLogsRun", out["storage"])
 
 
 if __name__ == "__main__":

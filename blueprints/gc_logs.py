@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import secrets
 import shutil
+import threading
 import uuid
 import zipfile
 from contextlib import nullcontext
@@ -40,6 +42,12 @@ logs_bp = Blueprint('gc_logs', __name__)
 
 TASK_TYPE_LOG_IMPORT = "log_import"
 PENDING_TTL_SECONDS = 30 * 60
+# Fragments d'une collecte en cours du favori : ils doivent survivre à la
+# nuit, contrairement à un aperçu en attente — TTL de 7 jours, aligné sur
+# l'expiration du plan de reprise côté navigateur.
+FRAGMENT_TTL_SECONDS = 7 * 24 * 3600
+_RUN_ID_RE = re.compile(r"^[0-9a-zA-Z_-]{8,64}$")
+_FRAGMENT_LOCK = threading.Lock()
 # Redirigé par les tests ; sinon _pending_root() (sous les données).
 PENDING_ROOT: Path | None = None
 MAX_DETAIL_ITEMS = 50
@@ -143,7 +151,12 @@ def _purge_expired_pending():
     except FileNotFoundError:
         return
     for child in children:
-        ttl = timedelta(days=1) if child.name.endswith("-taken")             else timedelta(seconds=PENDING_TTL_SECONDS)
+        if child.name.endswith("-taken"):
+            ttl = timedelta(days=1)
+        elif child.name.startswith("frag-"):
+            ttl = timedelta(seconds=FRAGMENT_TTL_SECONDS)
+        else:
+            ttl = timedelta(seconds=PENDING_TTL_SECONDS)
         try:
             created = datetime.fromisoformat(
                 json.loads((child / "manifest.json").read_text("utf-8"))["created_at"])
@@ -496,6 +509,158 @@ def logs_receive():
         'import_token': token})), 202
 
 
+def _merge_fragment(folder: Path, incoming: dict):
+    """Fusionne un fragment dans le document conservé pour cette collecte.
+
+    Dédupliqué par `log_id` / `gc_code` — le dernier arrivé l'emporte ;
+    les périmètres de couverture s'unissent (chaque fragment porte le
+    périmètre `caches` des caches qu'il a entièrement relues). Renvoie
+    (document fusionné, erreur éventuelle)."""
+    created = datetime.now(timezone.utc).isoformat()
+    merged = None
+    try:
+        merged = json.loads((folder / "doc.json").read_text("utf-8"))
+        created = json.loads(
+            (folder / "manifest.json").read_text("utf-8"))["created_at"]
+    except Exception:
+        pass
+    if merged is None:
+        merged = {"format": lf.FORMAT_LOGS,
+                  "schema_version": lf.LOGS_SCHEMA_VERSION,
+                  "logs": [], "caches": [], "coverage": []}
+
+    account = incoming.get("account") or {}
+    previous = merged.get("account") or {}
+    if account.get("user_id") is not None:
+        if (previous.get("user_id") is not None
+                and previous["user_id"] != account["user_id"]):
+            return None, _("un autre compte alimente déjà cette collecte")
+        # Le compte réel (id lu sur une fiche) remplace le « pseudo seul »
+        # des tout premiers fragments.
+        merged["account"] = account
+    elif not merged.get("account"):
+        merged["account"] = account
+
+    def _dedup(records, field):
+        # Les enregistrements sans identifiant sont gardés tels quels —
+        # le parseur complet les triera au scellement.
+        seen = {}
+        for rec in records:
+            if not isinstance(rec, dict):
+                continue
+            seen[rec.get(field) if rec.get(field) is not None
+                 else f"@{len(seen)}"] = rec
+        return list(seen.values())
+
+    merged["logs"] = _dedup(
+        (merged.get("logs") or []) + (incoming.get("logs") or []), "log_id")
+    merged["caches"] = _dedup(
+        (merged.get("caches") or []) + (incoming.get("caches") or []), "gc_code")
+    seen_scopes = {json.dumps(c, sort_keys=True, ensure_ascii=False)
+                   for c in merged.get("coverage") or []}
+    merged.setdefault("coverage", [])
+    for scope in incoming.get("coverage") or []:
+        key = json.dumps(scope, sort_keys=True, ensure_ascii=False)
+        if key not in seen_scopes:
+            seen_scopes.add(key)
+            merged["coverage"].append(scope)
+    stamps = [s for s in (merged.get("exported_at"), incoming.get("exported_at")) if s]
+    merged["exported_at"] = max(stamps) if stamps else None
+    if incoming.get("generator") and not merged.get("generator"):
+        merged["generator"] = incoming["generator"]
+
+    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    (folder / "doc.json").write_text(
+        json.dumps(merged, ensure_ascii=False), "utf-8")
+    (folder / "manifest.json").write_text(json.dumps({
+        "created_at": created, "kind": "fragments",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }, ensure_ascii=False), "utf-8")
+    return merged, None
+
+
+@logs_bp.route('/api/logs/receive/fragment', methods=['POST', 'OPTIONS'])
+def logs_receive_fragment():
+    """Fragment d'une collecte longue du favori (mêmes jeton + CORS que
+    /receive).
+
+    `X-MyGCFlow-Run-Id` identifie le passage : chaque fragment est
+    fusionné dans le document conservé sous `frag-<run>` (TTL 7 jours).
+    `X-MyGCFlow-Final: 1` scelle : le document fusionné passe l'aperçu
+    habituel et devient un import en attente, comme /receive. C'est ce
+    qui rend une collecte interrompue reprenable — les données déjà lues
+    sont côté application, pas dans le navigateur."""
+    if request.method == 'OPTIONS':
+        return _receive_cors_headers(current_app.make_response(('', 204)))
+
+    def reject(message, code):
+        return _receive_cors_headers(
+            jsonify({'success': False, 'message': message})), code
+
+    expected = get_settings_manager().get_app_settings().logs_receive_token
+    token = request.headers.get('X-MyGCFlow-Token', '')
+    if not expected or not secrets.compare_digest(token, expected):
+        return reject(_("Jeton de réception invalide — régénérer le bookmarklet"), 403)
+
+    run_id = request.headers.get('X-MyGCFlow-Run-Id', '')
+    if not _RUN_ID_RE.match(run_id):
+        return reject(_("Fragment sans identifiant de collecte valide"), 400)
+
+    raw = request.get_data(cache=False)
+    if not raw or len(raw) > GPX_MAX_SIZE_BYTES:
+        return reject(_("Contenu absent ou trop volumineux"), 400)
+    try:
+        doc = json.loads(raw.decode("utf-8-sig"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return reject(_("Fragment illisible (JSON attendu)"), 400)
+    if (not isinstance(doc, dict)
+            or doc.get("format") != lf.FORMAT_LOGS
+            or doc.get("schema_version") != lf.LOGS_SCHEMA_VERSION
+            or not isinstance(doc.get("logs"), list)
+            or not isinstance(doc.get("caches"), list)):
+        return reject(
+            _("Fragment non conforme (export mygcflow-logs attendu)"), 400)
+
+    final = request.headers.get('X-MyGCFlow-Final') == '1'
+    if final and task_manager.get_active(TASK_TYPE_LOG_IMPORT) is not None:
+        return reject(_("Un import de logs est déjà en cours"), 409)
+
+    _purge_expired_pending()
+    folder = _pending_root() / f"frag-{run_id}"
+    with _FRAGMENT_LOCK:
+        merged, error = _merge_fragment(folder, doc)
+    if error:
+        return reject(error, 409)
+    if not final:
+        return _receive_cors_headers(jsonify({
+            'success': True, 'received': 'fragment',
+            'logs': len(merged["logs"]),
+            'caches': len(merged["caches"])})), 202
+
+    # Scellement : le document fusionné reprend le parcours de /receive.
+    payload = json.dumps(merged, ensure_ascii=False).encode("utf-8")
+    parsed = lf.parse_logs_json(payload)
+    if not parsed.ok:
+        reasons = "; ".join(e["reason"] for e in parsed.errors[:3])
+        return reject(
+            _("Fichier refusé : %(reasons)s", reasons=reasons), 400)
+    try:
+        summary = log_store.preview_logs(db.session, parsed)
+    except log_store.LogImportError as exc:
+        return reject(str(exc), 409)
+    finally:
+        db.session.rollback()
+
+    pending_token = _store_pending(
+        payload, _("export du favori"), summary["collection_revision"],
+        received=True, summary=_slim(summary))
+    shutil.rmtree(folder, ignore_errors=True)
+    return _receive_cors_headers(jsonify({
+        'success': True,
+        'message': _("Export reçu — validez l'aperçu dans l'application"),
+        'import_token': pending_token})), 202
+
+
 @logs_bp.route('/api/logs/receive/state', methods=['GET', 'OPTIONS'])
 def logs_receive_state():
     """État lu par le favori avant de collecter (mêmes jeton + CORS que
@@ -598,6 +763,8 @@ def _bookmarklet_strings():
         '__T_PENDINGASK__': _("Un export attend déjà sa validation dans l'application — collecter quand même ?"),
         '__T_PENDINGSTOP__': _("Collecte annulée — ouvrez l'application pour valider l'aperçu en attente."),
         '__T_BADTOKEN__': _("jeton refusé — régénérez le favori dans l'application"),
+        '__T_RESUMEASK__': _("Une collecte interrompue existe (${a}/${b} caches déjà lues) — reprendre là où elle s'était arrêtée ?"),
+        '__T_RESUME__': _("MyGCFlow : reprise — ${a}/${b} caches déjà lues, on continue…"),
     }
 
 

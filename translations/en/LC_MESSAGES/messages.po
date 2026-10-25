@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 11:03+0100\n"
+"POT-Creation-Date: 2026-10-25 11:19+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -744,7 +744,7 @@ msgstr "A dataset already has this name"
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr "An import is running: try again once it is done"
 
-#: blueprints/evolution.py:158 blueprints/gc_logs.py:229 blueprints/gpx.py:37
+#: blueprints/evolution.py:158 blueprints/gc_logs.py:242 blueprints/gpx.py:37
 #: blueprints/labs.py:512
 msgid "Aucun fichier fourni"
 msgstr "No file provided"
@@ -783,138 +783,156 @@ msgstr "Importing %(name)s (%(index)s/%(count)s)…"
 msgid "Colonnes obligatoires absentes (%(columns)s)"
 msgstr "Required columns missing (%(columns)s)"
 
-#: blueprints/gc_logs.py:79 blueprints/gc_logs.py:110
+#: blueprints/gc_logs.py:87 blueprints/gc_logs.py:118
 msgid "Fichier trop volumineux (200 Mo max)"
 msgstr "File too large (200 MB max)"
 
-#: blueprints/gc_logs.py:106
+#: blueprints/gc_logs.py:114
 msgid "Archive .zip illisible"
 msgstr "Unreadable .zip archive"
 
-#: blueprints/gc_logs.py:111
+#: blueprints/gc_logs.py:119
 msgid "L'archive ne contient pas de fichier de logs exploitable"
 msgstr "The archive does not contain a usable logs file"
 
-#: blueprints/gc_logs.py:160 blueprints/labs.py:189
+#: blueprints/gc_logs.py:173 blueprints/labs.py:189
 msgid "Jeton d'import invalide"
 msgstr "Invalid import token"
 
-#: blueprints/gc_logs.py:166 blueprints/gc_logs.py:174 blueprints/labs.py:195
+#: blueprints/gc_logs.py:179 blueprints/gc_logs.py:187 blueprints/labs.py:195
 msgid "Jeton d'import inconnu ou déjà consommé"
 msgstr "Unknown or already used import token"
 
-#: blueprints/gc_logs.py:169 blueprints/labs.py:204
+#: blueprints/gc_logs.py:182 blueprints/labs.py:204
 msgid "Jeton d'import expiré — relancer l'aperçu"
 msgstr "Import token expired — run the preview again"
 
-#: blueprints/gc_logs.py:240 blueprints/gc_logs.py:482
+#: blueprints/gc_logs.py:253 blueprints/gc_logs.py:495
+#: blueprints/gc_logs.py:646
 #, python-format
 msgid "Fichier refusé : %(reasons)s"
 msgstr "File refused: %(reasons)s"
 
-#: blueprints/gc_logs.py:260 blueprints/gc_logs.py:357
-#: blueprints/gc_logs.py:476
+#: blueprints/gc_logs.py:273 blueprints/gc_logs.py:370
+#: blueprints/gc_logs.py:489 blueprints/gc_logs.py:626
 msgid "Un import de logs est déjà en cours"
 msgstr "A log import is already running"
 
-#: blueprints/gc_logs.py:281
+#: blueprints/gc_logs.py:294
 msgid "Lecture du fichier de logs"
 msgstr "Reading the log file"
 
-#: blueprints/gc_logs.py:283
+#: blueprints/gc_logs.py:296
 msgid "Enregistrement des logs"
 msgstr "Saving the logs"
 
-#: blueprints/gc_logs.py:322 blueprints/labs.py:710 blueprints/labs.py:723
+#: blueprints/gc_logs.py:335 blueprints/labs.py:710 blueprints/labs.py:723
 msgid "Pagination invalide"
 msgstr "Invalid pagination"
 
-#: blueprints/gc_logs.py:340 blueprints/labs.py:762 blueprints/labs.py:821
+#: blueprints/gc_logs.py:353 blueprints/labs.py:762 blueprints/labs.py:821
 msgid "Aucune correction fournie"
 msgstr "No correction provided"
 
-#: blueprints/gc_logs.py:344 blueprints/labs.py:743
+#: blueprints/gc_logs.py:357 blueprints/labs.py:743
 #, python-format
 msgid "Coordonnées invalides : %(reason)s"
 msgstr "Invalid coordinates: %(reason)s"
 
-#: blueprints/gc_logs.py:349
+#: blueprints/gc_logs.py:362
 msgid "Cache inconnue"
 msgstr "Unknown cache"
 
-#: blueprints/gc_logs.py:360
+#: blueprints/gc_logs.py:373
 #, python-format
 msgid "%(count)s logs supprimés."
 msgstr "%(count)s logs deleted."
 
-#: blueprints/gc_logs.py:375
+#: blueprints/gc_logs.py:388
 msgid "Aucun log à exporter"
 msgstr "No logs to export"
 
-#: blueprints/gc_logs.py:467 blueprints/gc_logs.py:520 blueprints/labs.py:972
+#: blueprints/gc_logs.py:480 blueprints/gc_logs.py:603
+#: blueprints/gc_logs.py:685 blueprints/labs.py:972
 msgid "Jeton de réception invalide — régénérer le bookmarklet"
 msgstr "Invalid receive token — regenerate the bookmarklet"
 
-#: blueprints/gc_logs.py:471 blueprints/labs.py:976
+#: blueprints/gc_logs.py:484 blueprints/gc_logs.py:611 blueprints/labs.py:976
 msgid "Contenu absent ou trop volumineux"
 msgstr "Content missing or too large"
 
-#: blueprints/gc_logs.py:473
+#: blueprints/gc_logs.py:486
 msgid "Format non reconnu (export mygcflow-logs attendu)"
 msgstr "Unrecognized format (mygcflow-logs export expected)"
 
-#: blueprints/gc_logs.py:491 static/js/gc_logs.js:236
+#: blueprints/gc_logs.py:504 blueprints/gc_logs.py:655 static/js/gc_logs.js:236
 msgid "export du favori"
 msgstr "bookmarklet export"
 
-#: blueprints/gc_logs.py:495
+#: blueprints/gc_logs.py:508 blueprints/gc_logs.py:660
 msgid "Export reçu — validez l'aperçu dans l'application"
 msgstr "Export received — validate the preview in the app"
 
-#: blueprints/gc_logs.py:584 blueprints/labs.py:1042
+#: blueprints/gc_logs.py:537
+msgid "un autre compte alimente déjà cette collecte"
+msgstr "another account is already feeding this collection"
+
+#: blueprints/gc_logs.py:607
+msgid "Fragment sans identifiant de collecte valide"
+msgstr "Fragment without a valid collection id"
+
+#: blueprints/gc_logs.py:615
+msgid "Fragment illisible (JSON attendu)"
+msgstr "Unreadable fragment (JSON expected)"
+
+#: blueprints/gc_logs.py:622
+msgid "Fragment non conforme (export mygcflow-logs attendu)"
+msgstr "Non-conforming fragment (mygcflow-logs export expected)"
+
+#: blueprints/gc_logs.py:749 blueprints/labs.py:1042
 msgid "MyGCFlow : démarrage…"
 msgstr "MyGCFlow: starting…"
 
-#: blueprints/gc_logs.py:585
+#: blueprints/gc_logs.py:750
 #, python-brace-format
 msgid "MyGCFlow : compte ${a} — lecture des listes…"
 msgstr "MyGCFlow: account ${a} — reading lists…"
 
-#: blueprints/gc_logs.py:586
+#: blueprints/gc_logs.py:751
 #, python-brace-format
 msgid "MyGCFlow : ${a} cache(s) avec un DNF à relire…"
 msgstr "MyGCFlow: ${a} cache(s) with a DNF to re-read…"
 
-#: blueprints/gc_logs.py:587
+#: blueprints/gc_logs.py:752
 #, python-brace-format
 msgid "MyGCFlow : ${a} cache(s) posée(s) à relire…"
 msgstr "MyGCFlow: ${a} owned cache(s) to re-read…"
 
-#: blueprints/gc_logs.py:588
+#: blueprints/gc_logs.py:753
 #, python-brace-format
 msgid "MyGCFlow : ${a} caches à lire (~${b} min)…"
 msgstr "MyGCFlow: ${a} caches to read (~${b} min)…"
 
-#: blueprints/gc_logs.py:589
+#: blueprints/gc_logs.py:754
 #, python-brace-format
 msgid "MyGCFlow : cache ${a}/${b} — ${c}"
 msgstr "MyGCFlow: cache ${a}/${b} — ${c}"
 
-#: blueprints/gc_logs.py:590
+#: blueprints/gc_logs.py:755
 #, python-brace-format
 msgid "MyGCFlow : arrêt après ${a}/${b} caches — envoi de ce qui a été lu…"
 msgstr "MyGCFlow: stopped after ${a}/${b} caches — sending what was read…"
 
-#: blueprints/gc_logs.py:591 blueprints/labs.py:1047
+#: blueprints/gc_logs.py:756 blueprints/labs.py:1047
 msgid "MyGCFlow : envoi à l'application…"
 msgstr "MyGCFlow: sending to the app…"
 
-#: blueprints/gc_logs.py:592
+#: blueprints/gc_logs.py:757
 #, python-brace-format
 msgid "✔ ${a} logs, ${b} caches envoyés à MyGCFlow"
 msgstr "✔ ${a} logs, ${b} caches sent to MyGCFlow"
 
-#: blueprints/gc_logs.py:593
+#: blueprints/gc_logs.py:758
 #, python-brace-format
 msgid ""
 "MyGCFlow : ordre des dates indéterminé (${a}). Appelez "
@@ -923,36 +941,50 @@ msgstr ""
 "MyGCFlow: undetermined date order (${a}). Call mygcflowLogsFinish('DMY') "
 "or mygcflowLogsFinish('MDY') in the console."
 
-#: blueprints/gc_logs.py:594 blueprints/labs.py:1052
+#: blueprints/gc_logs.py:759 blueprints/labs.py:1052
 msgid "MyGCFlow : erreur"
 msgstr "MyGCFlow: error"
 
-#: blueprints/gc_logs.py:595 blueprints/labs.py:1053
+#: blueprints/gc_logs.py:760 blueprints/labs.py:1053
 msgid "MyGCFlow :"
 msgstr "MyGCFlow:"
 
-#: blueprints/gc_logs.py:596
+#: blueprints/gc_logs.py:761
 msgid "à lancer depuis une page de geocaching.com"
 msgstr "run it from a geocaching.com page"
 
-#: blueprints/gc_logs.py:597
+#: blueprints/gc_logs.py:762
 #, python-brace-format
 msgid "MyGCFlow : nouveautés depuis le ${a} seulement…"
 msgstr "MyGCFlow: new items since ${a} only…"
 
-#: blueprints/gc_logs.py:598
+#: blueprints/gc_logs.py:763
 msgid ""
 "Un export attend déjà sa validation dans l'application — collecter quand "
 "même ?"
 msgstr "An export is already waiting for validation in the app — collect anyway?"
 
-#: blueprints/gc_logs.py:599
+#: blueprints/gc_logs.py:764
 msgid "Collecte annulée — ouvrez l'application pour valider l'aperçu en attente."
 msgstr "Collection cancelled — open the app to validate the pending preview."
 
-#: blueprints/gc_logs.py:600
+#: blueprints/gc_logs.py:765
 msgid "jeton refusé — régénérez le favori dans l'application"
 msgstr "token refused — regenerate the bookmarklet in the app"
+
+#: blueprints/gc_logs.py:766
+#, python-brace-format
+msgid ""
+"Une collecte interrompue existe (${a}/${b} caches déjà lues) — reprendre "
+"là où elle s'était arrêtée ?"
+msgstr ""
+"An interrupted collection exists (${a}/${b} caches already read) — resume "
+"where it left off?"
+
+#: blueprints/gc_logs.py:767
+#, python-brace-format
+msgid "MyGCFlow : reprise — ${a}/${b} caches déjà lues, on continue…"
+msgstr "MyGCFlow: resuming — ${a}/${b} caches already read, continuing…"
 
 #: blueprints/gpx.py:41
 msgid "Nom de fichier vide"
@@ -2165,9 +2197,11 @@ msgstr ""
 #: static/js/gc_logs.js:562
 msgid "périmètre"
 msgstr "scope"
+
 #: static/js/gc_logs.js:562
 msgid "périmètres"
 msgstr "scopes"
+
 #: static/js/gc_logs.js:565
 #, python-brace-format
 msgid "D'autres joueurs : ${list}"

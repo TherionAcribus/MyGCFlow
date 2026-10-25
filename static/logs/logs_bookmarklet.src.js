@@ -35,7 +35,9 @@
     since: __T_SINCE__,
     pendingask: __T_PENDINGASK__,
     pendingstop: __T_PENDINGSTOP__,
-    badtoken: __T_BADTOKEN__
+    badtoken: __T_BADTOKEN__,
+    resumeask: __T_RESUMEASK__,
+    resume: __T_RESUME__
   };
 
   // @include logs_collect_core.js
@@ -93,17 +95,131 @@
     var state = newState();
     state.since = since;
 
-    var send = async function (order) {
-      var built = mygcflowGcLogsFinish(state, order);
-      say(MESSAGES.sending);
-      var response = await fetch(ORIGIN + '/api/logs/receive', {
+    // --- Reprise de collecte -----------------------------------------
+    // Le PLAN (file de caches à lire + avancement, ~25 Ko) tient dans
+    // localStorage, sur l'origine geocaching.com. Les LOGS, eux, partent
+    // en fragments vers l'application à chaque point de sauvegarde —
+    // l'onglet peut se fermer, rien de collecté n'est perdu. Les
+    // fragments expirent au bout de 7 jours côté application : un plan
+    // plus vieux est écarté (la couverture serait mensongère).
+    var PLAN_KEY = 'mygcflowLogsRun';
+    var PLAN_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
+    var dropPlan = function () {
+      try { localStorage.removeItem(PLAN_KEY); } catch (e) {}
+    };
+    var newRunId = function () {
+      return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    };
+    var savePlan = function (done) {
+      try {
+        localStorage.setItem(PLAN_KEY, JSON.stringify({
+          v: 1,
+          runId: state.runId,
+          created: state.planCreated || Date.now(),
+          since: state.since,
+          order: state.order || state.prefOrder || null,
+          me: { name: state.me.name, id: state.me.id },
+          dnfComplete: !!state.dnf.listingComplete,
+          queue: state.queueSnapshot || [],
+          done: done,
+          read: Array.from(state.read),
+          failed: {
+            d: state.dnf.failed.map(function (f) { return f.ref; }),
+            o: state.owned.failed.map(function (f) { return f.ref; })
+          }
+        }));
+        if (!state.planCreated) state.planCreated = Date.now();
+      } catch (e) {
+        // Quota ou stockage indisponible : pas de plan périmé conservé,
+        // la reprise est simplement désactivée pour ce passage.
+        dropPlan();
+        state.persist = null;
+        console.warn('[mygcflow-logs] Plan de reprise impossible : ' + e.message);
+      }
+    };
+    // Fragment = l'export courant SANS couverture (elle n'a de sens que
+    // fusionnée ; le document final la recompute). Rien d'envoyé tant
+    // que l'ordre des dates est inconnu ou qu'il n'y a rien de nouveau.
+    var lastFragCount = -1;
+    var fragment = async function () {
+      if (!state.logs.size && !state.caches.size) return;
+      if (state.logs.size + state.caches.size === lastFragCount) return;
+      // Un fragment écrit des dates : l'ordre choisi devient définitif —
+      // ne pas le figer sur un échantillon vide (détection renverrait un
+      // ordre par défaut sans avoir vu la moindre date).
+      var picked = mygcflowGcLogsOrder(state, null);
+      if (!picked.order) return;
+      state.order = picked.order;
+      var built = buildPayload(state, picked.order);
+      var doc = built.payload;
+      doc.coverage = [];
+      var r = await fetch(ORIGIN + '/api/logs/receive/fragment', {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
-        headers: { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': TOKEN },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-MyGCFlow-Token': TOKEN,
+          'X-MyGCFlow-Run-Id': state.runId
+        },
+        body: JSON.stringify(doc)
+      });
+      if (r.ok || r.status === 202) {
+        lastFragCount = state.logs.size + state.caches.size;
+      } else {
+        console.warn('[mygcflow-logs] Fragment refusé (' + r.status + ') — la reprise couvrira moins.');
+      }
+    };
+    state.persist = async function (done) {
+      savePlan(done);
+      try {
+        await fragment();
+      } catch (e) {
+        console.warn('[mygcflow-logs] Fragment non envoyé : ' + e.message);
+      }
+    };
+
+    // Un plan valide ? « done === queue.length » = collecte bouclée mais
+    // envoi raté : la reprise renvoie l'export sans rien relire.
+    var saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(PLAN_KEY) || 'null');
+    } catch (e) {
+      saved = null;
+    }
+    var resumable = saved && saved.v === 1 && saved.runId &&
+      Array.isArray(saved.queue) && saved.queue.length > 0 &&
+      typeof saved.done === 'number' && saved.done >= 0 && saved.done <= saved.queue.length &&
+      (!saved.created || Date.now() - saved.created <= PLAN_MAX_AGE_MS);
+    if (resumable && confirm(fill(MESSAGES.resumeask, saved.done, saved.queue.length, 0))) {
+      state.resume = saved;
+      state.runId = saved.runId;
+      state.order = saved.order || null;
+      note('resume', saved.done, saved.queue.length, 0);
+    } else {
+      dropPlan();
+      state.runId = newRunId();
+    }
+
+    var send = async function (order) {
+      var built = mygcflowGcLogsFinish(state, order);
+      say(MESSAGES.sending);
+      var headers = { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': TOKEN };
+      var url = ORIGIN + '/api/logs/receive';
+      if (state.runId) {
+        url += '/fragment';
+        headers['X-MyGCFlow-Run-Id'] = state.runId;
+        headers['X-MyGCFlow-Final'] = '1';
+      }
+      var response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: headers,
         body: JSON.stringify(built.payload)
       });
       if (response.ok || response.status === 202) {
+        dropPlan();
         var detail = '';
         try {
           var body = await response.json();

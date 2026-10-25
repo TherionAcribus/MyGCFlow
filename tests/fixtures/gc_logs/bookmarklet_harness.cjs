@@ -16,10 +16,13 @@
 //   state,               // réponse de /api/logs/receive/state
 //                        // ({since, pending, status}) ;
 //   confirmPending       // réponse à « collecter quand même ? » (défaut oui)
+//   confirms,            // file de réponses aux confirm() successifs
+//   savedStorage,        // contenu initial de localStorage ({clé: valeur})
+//   receiveStatus        // statut des POST vers l'application (défaut 202)
 // }
 // `rows` des pages de journal : [{code|guid, date}] — la date pilote
 // l'arrêt de la collecte incrémentale.
-// Sortie : { said, received, requests, attempts, failedFetches }.
+// Sortie : { said, received, fragments, storage, requests, attempts }.
 const fs = require('node:fs');
 const vm = require('node:vm');
 
@@ -222,6 +225,7 @@ function preferencesHtml(order) {
 // ---------------------------------------------------------------
 
 const received = { payload: null };
+const fragments = [];      // POST reçus sur /receive/fragment (ordre conservé)
 const requests = [];       // urls demandées (hors /receive)
 const attempts = {};       // url -> nombre de requêtes
 const said = [];
@@ -260,6 +264,20 @@ async function fakeFetch(url, options) {
       pending: state.pending || null,
     });
   }
+  if (target.includes('/api/logs/receive/fragment')) {
+    const entry = {
+      url: target,
+      headers: options.headers,
+      credentials: options.credentials,
+      body: JSON.parse(options.body),
+    };
+    fragments.push(entry);
+    if (options.headers['X-MyGCFlow-Final'] === '1') {
+      received.payload = entry;
+    }
+    const status = scenario.receiveStatus || 202;
+    return res(target, status, { success: status < 400, message: 'Export reçu' });
+  }
   if (target.includes('/api/logs/receive')) {
     received.payload = {
       url: target,
@@ -267,7 +285,8 @@ async function fakeFetch(url, options) {
       credentials: options.credentials,
       body: JSON.parse(options.body),
     };
-    return res(target, 202, { success: true, message: 'Export reçu' });
+    const status = scenario.receiveStatus || 202;
+    return res(target, status, { success: status < 400, message: 'Export reçu' });
   }
   requests.push(target);
   attempts[target] = (attempts[target] || 0) + 1;
@@ -316,6 +335,25 @@ async function fakeFetch(url, options) {
 // ---------------------------------------------------------------
 
 const host = parseHtml(scenario.html || '');
+
+// localStorage fonctionnel (le favori y pose son plan de reprise) —
+// pré-rempli par le scénario, relu en sortie.
+const storage = new Map(Object.entries(scenario.savedStorage || {}));
+const localStorage = {
+  getItem: (k) => (storage.has(k) ? storage.get(k) : null),
+  setItem: (k, v) => storage.set(k, String(v)),
+  removeItem: (k) => storage.delete(k),
+};
+// Réponses aux confirm() dans l'ordre des appels (export en attente,
+// reprise d'une collecte interrompue…) — défaut oui.
+const confirmQueue = [...(scenario.confirms || [])];
+if (scenario.confirmPending === false && !confirmQueue.length) {
+  confirmQueue.push(false);
+}
+let confirmIdx = 0;
+const confirmFn = () => (
+  confirmIdx < confirmQueue.length ? confirmQueue[confirmIdx++] : true);
+
 // La console du moteur reste lisible, sur stderr : stdout ne porte que le
 // résultat JSON.
 const out = (...args) => process.stderr.write(args.join(' ') + '\n');
@@ -337,8 +375,8 @@ const sandbox = {
     querySelector: (sel) => host.queryIn(host.roots, sel)[0] || null,
     querySelectorAll: (sel) => host.queryIn(host.roots, sel),
   },
-  localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
-  confirm: () => scenario.confirmPending !== false,
+  localStorage,
+  confirm: confirmFn,
   fetch: fakeFetch,
 };
 sandbox.window = sandbox;
@@ -358,6 +396,8 @@ sandbox.serverParameters = { 'user:info': { username: scenario.username || 'Test
   process.stdout.write(JSON.stringify({
     said,
     received: received.payload,
+    fragments,
+    storage: Object.fromEntries(storage),
     requests,
     attempts,
   }));

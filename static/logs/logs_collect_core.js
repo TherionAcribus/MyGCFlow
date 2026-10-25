@@ -19,6 +19,9 @@
 
 var LOGS_DELAY_MS = 800;
 var LOGBOOK_PAGE_SIZE = 100;
+// Rythme de sauvegarde de la progression (state.persist, posé par le
+// favori) : plan localStorage + fragment vers l'application.
+var CHECKPOINT_EVERY = 15;
 var DNF_TYPE_ID = 3;
 // Types que seul le propriétaire (ou un relecteur) publie : leurs listes
 // servent à retrouver vos caches si la page « vos caches » ne répond pas.
@@ -296,7 +299,11 @@ function buildPayload(state, order) {
   caches.sort(function (a, b) { return a.gc_code < b.gc_code ? -1 : 1; });
 
   var coverage = [];
-  var dnfAllRead = Array.from(state.dnf.codes).every(function (code) { return state.caches.has(code); });
+  // `read` couvre aussi les caches lues par un passage précédent (leurs
+  // logs sont dans les fragments côté application, pas dans state.caches).
+  var dnfAllRead = Array.from(state.dnf.codes).every(function (code) {
+    return state.caches.has(code) || state.read.has(code);
+  });
   if (state.dnf.listingComplete && !state.limited && !state.dnf.failed.length && dnfAllRead &&
       state.me.id !== null) {
     // Incrémental : la couverture est bornée à la fenêtre — seuls les
@@ -334,10 +341,22 @@ function newState() {
     owned: { codes: new Set(), full: new Set(), failed: [] },
     limited: false,
     prefOrder: null,
+    // Ordre figé par un premier fragment (les fragments déjà envoyés
+    // portent des dates écrites avec) — prioritaire sur la détection.
+    order: null,
     // Collecte incrémentale : date ISO (« AAAA-MM-JJ ») du dernier export
     // connu de l'application, lue avant de partir — null = tout relire.
     since: null,
-    dateSamples: []
+    dateSamples: [],
+    // Reprise de collecte : identifiant du passage (fragments serveur),
+    // codes traités (y compris par un passage précédent, restaurés),
+    // plan sauvegardé à reprendre, instantané de la file pour le plan,
+    // et callback de sauvegarde périodique posé par le favori.
+    runId: null,
+    read: new Set(),
+    resume: null,
+    queueSnapshot: null,
+    persist: null
   };
 }
 
@@ -665,6 +684,58 @@ async function processCache(state, ref, ownOnly) {
 // bandeau de la page ; la console garde le détail.
 // ---------------------------------------------------------------------
 
+// Clé de file (code GC ou guid) retrouvée depuis l'URL enregistrée dans
+// le plan de reprise.
+function keyOfUrl(url) {
+  var m = /\/geocache\/(GC[0-9A-Z]+)/i.exec(url || '');
+  if (m) return m[1].toUpperCase();
+  var g = /guid=([0-9a-f-]+)/i.exec(url || '');
+  return g ? g[1].toLowerCase() : String(url || '');
+}
+
+// Restaure un plan sauvegardé (state.resume = objet du localStorage) :
+// file, avancement, jeux de codes et échecs — les listes ne sont pas
+// relues, la collecte reprend à l'indice conservé. Renvoie le couple
+// [file, indice de départ] ; sans reprise, [file ordinaire, 0].
+function resumeEntries(state) {
+  var saved = state.resume;
+  if (!saved || !sameName(saved.me && saved.me.name, state.me.name)) {
+    // Autre compte connecté : le plan et son ordre des dates ne valent
+    // que pour celui qui l'a produit.
+    state.resume = null;
+    state.order = null;
+    return [null, 0];
+  }
+  if (state.me.id === null && saved.me && saved.me.id !== undefined) {
+    state.me.id = saved.me.id;
+  }
+  state.since = saved.since || null;
+  state.dnf.listingComplete = !!saved.dnfComplete;
+  var failedD = {};
+  var failedO = {};
+  ((saved.failed && saved.failed.d) || []).forEach(function (k) { failedD[k] = true; });
+  ((saved.failed && saved.failed.o) || []).forEach(function (k) { failedO[k] = true; });
+  var entries = saved.queue.map(function (q, idx) {
+    var url = q.u;
+    var ownOnly = !!q.o;
+    var key = keyOfUrl(url);
+    var isCode = /^GC[0-9A-Z]+$/i.test(key);
+    if (ownOnly) {
+      if (isCode) state.dnf.codes.add(key);
+      if (failedD[key]) state.dnf.failed.push({ ref: key, error: 'interrompu' });
+    } else {
+      if (isCode) state.owned.codes.add(key);
+      if (failedO[key]) state.owned.failed.push({ ref: key, error: 'interrompu' });
+      else if (idx < saved.done && isCode) state.owned.full.add(key);
+    }
+    return [key, { url: url, ownOnly: ownOnly }];
+  });
+  ((saved.read) || []).forEach(function (c) { state.read.add(c); });
+  console.log('[mygcflow-logs] Reprise : ' + (entries.length - saved.done) +
+    ' cache(s) restante(s) sur ' + entries.length + '.');
+  return [entries, saved.done];
+}
+
 async function mygcflowCollectGcLogs(state, note) {
   state.me.name = detectUsername();
   if (!state.me.name) {
@@ -672,67 +743,87 @@ async function mygcflowCollectGcLogs(state, note) {
   }
   console.log('[mygcflow-logs] Compte : ' + state.me.name);
   note('account', state.me.name, 0, 0);
-  state.prefOrder = await detectPreferredOrder();
 
-  var todo = new Map();
-  var addRefs = function (refs, ownOnly) {
-    refs.codes.forEach(function (code) {
-      var prev = todo.get(code);
-      todo.set(code, { url: '/geocache/' + code, ownOnly: prev ? prev.ownOnly && ownOnly : ownOnly });
-    });
-    refs.guids.forEach(function (guid) {
-      if (!todo.has(guid)) todo.set(guid, { url: '/seek/cache_details.aspx?guid=' + guid, ownOnly: ownOnly });
-    });
+  var callPersist = async function (i) {
+    if (!state.persist) return;
+    try {
+      await state.persist(i);
+    } catch (e) {
+      console.warn('[mygcflow-logs] Progression non enregistrée : ' + e.message);
+    }
   };
 
-  // « Vos journaux » : collecte complète sur vos DNF, ou fenêtre depuis
-  // le dernier export — alors sur TOUS vos types de logs (une trouvaille
-  // récente sur une vieille cache en DNF doit la faire relire aussi).
-  var journalUrl = state.since
-    ? '/my/logs.aspx?s=1'
-    : '/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID;
-  var dnf = await collectJournal(journalUrl, state.since, state.prefOrder);
-  state.dnf.listingComplete = dnf.complete;
-  dnf.codes.forEach(function (c) { state.dnf.codes.add(c); });
-  console.log('[mygcflow-logs] ' + (state.since ? 'Logs à vous depuis le ' + state.since : 'DNF') +
-    ' : ' + dnf.codes.size + ' cache(s)' +
-    (dnf.guids.size ? ' + ' + dnf.guids.size + ' lien(s) ancien(s)' : ''));
-  note('dnf', dnf.codes.size, 0, 0);
-  addRefs({ codes: Array.from(dnf.codes), guids: Array.from(dnf.guids) }, true);
+  var resumed = resumeEntries(state);
+  var entries = resumed[0];
+  var start = resumed[1];
+  state.prefOrder = (state.resume ? state.order : null) || await detectPreferredOrder();
 
-  var owned = new Set();
-  var listed = 0;
-  try {
-    var list = await collectListing('/my/owned.aspx');
-    listed = list.codes.size;
-    list.codes.forEach(function (c) { owned.add(c); });
-  } catch (e) {
-    console.warn('[mygcflow-logs] Page « vos caches » illisible (' + e.message + ').');
-  }
-  if (!listed) {
-    console.warn('[mygcflow-logs] Aucune cache trouvée sur « vos caches » : repli sur vos logs de poseur.');
-    for (var t = 0; t < OWNER_LOG_TYPES.length; t++) {
-      var ownerList = await collectListing('/my/logs.aspx?s=1&lt=' + OWNER_LOG_TYPES[t]);
-      ownerList.codes.forEach(function (c) { owned.add(c); });
+  if (entries === null) {
+    var todo = new Map();
+    var addRefs = function (refs, ownOnly) {
+      refs.codes.forEach(function (code) {
+        var prev = todo.get(code);
+        todo.set(code, { url: '/geocache/' + code, ownOnly: prev ? prev.ownOnly && ownOnly : ownOnly });
+      });
+      refs.guids.forEach(function (guid) {
+        if (!todo.has(guid)) todo.set(guid, { url: '/seek/cache_details.aspx?guid=' + guid, ownOnly: ownOnly });
+      });
+    };
+
+    // « Vos journaux » : collecte complète sur vos DNF, ou fenêtre depuis
+    // le dernier export — alors sur TOUS vos types de logs (une trouvaille
+    // récente sur une vieille cache en DNF doit la faire relire aussi).
+    var journalUrl = state.since
+      ? '/my/logs.aspx?s=1'
+      : '/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID;
+    var dnf = await collectJournal(journalUrl, state.since, state.prefOrder);
+    state.dnf.listingComplete = dnf.complete;
+    dnf.codes.forEach(function (c) { state.dnf.codes.add(c); });
+    console.log('[mygcflow-logs] ' + (state.since ? 'Logs à vous depuis le ' + state.since : 'DNF') +
+      ' : ' + dnf.codes.size + ' cache(s)' +
+      (dnf.guids.size ? ' + ' + dnf.guids.size + ' lien(s) ancien(s)' : ''));
+    note('dnf', dnf.codes.size, 0, 0);
+    addRefs({ codes: Array.from(dnf.codes), guids: Array.from(dnf.guids) }, true);
+
+    var owned = new Set();
+    var listed = 0;
+    try {
+      var list = await collectListing('/my/owned.aspx');
+      listed = list.codes.size;
+      list.codes.forEach(function (c) { owned.add(c); });
+    } catch (e) {
+      console.warn('[mygcflow-logs] Page « vos caches » illisible (' + e.message + ').');
     }
-  }
-  owned.forEach(function (c) { state.owned.codes.add(c); });
-  console.log('[mygcflow-logs] Vos caches : ' + owned.size);
-  note('owned', owned.size, 0, 0);
-  addRefs({ codes: Array.from(owned), guids: [] }, false);
+    if (!listed) {
+      console.warn('[mygcflow-logs] Aucune cache trouvée sur « vos caches » : repli sur vos logs de poseur.');
+      for (var t = 0; t < OWNER_LOG_TYPES.length; t++) {
+        var ownerList = await collectListing('/my/logs.aspx?s=1&lt=' + OWNER_LOG_TYPES[t]);
+        ownerList.codes.forEach(function (c) { owned.add(c); });
+      }
+    }
+    owned.forEach(function (c) { state.owned.codes.add(c); });
+    console.log('[mygcflow-logs] Vos caches : ' + owned.size);
+    note('owned', owned.size, 0, 0);
+    addRefs({ codes: Array.from(owned), guids: [] }, false);
 
-  var entries = Array.from(todo.entries());
-  var minutes = Math.ceil(entries.length * 2 * LOGS_DELAY_MS / 60000);
-  console.log('[mygcflow-logs] ' + entries.length + ' cache(s) à lire — au moins ' + minutes + ' min.');
-  note('plan', entries.length, minutes, 0);
+    entries = Array.from(todo.entries());
+    var minutes = Math.ceil(entries.length * 2 * LOGS_DELAY_MS / 60000);
+    console.log('[mygcflow-logs] ' + entries.length + ' cache(s) à lire — au moins ' + minutes + ' min.');
+    note('plan', entries.length, minutes, 0);
+  }
+  state.queueSnapshot = entries.map(function (entry) {
+    return { u: entry[1].url, o: entry[1].ownOnly ? 1 : 0 };
+  });
+  await callPersist(start);
 
   var consecutiveFailures = 0;
-  for (var i = 0; i < entries.length; i++) {
+  for (var i = start; i < entries.length; i++) {
     var key = entries[i][0];
     var ref = entries[i][1];
     try {
       var done = await processCache(state, ref, ref.ownOnly);
       consecutiveFailures = 0;
+      state.read.add(done.code);
       if (!ref.ownOnly && !done.truncated) state.owned.full.add(done.code);
       console.log('[mygcflow-logs] [' + (i + 1) + '/' + entries.length + '] ' + done.code + ' — ' +
         done.count + ' log(s)' + (done.truncated ? ' (tronqué)' : ''));
@@ -748,7 +839,9 @@ async function mygcflowCollectGcLogs(state, note) {
         break;
       }
     }
+    if ((i + 1) % CHECKPOINT_EVERY === 0) await callPersist(i + 1);
   }
+  await callPersist(entries.length);
   if (state.dnf.failed.length || state.owned.failed.length) {
     console.table(state.dnf.failed.concat(state.owned.failed));
   }
@@ -761,7 +854,7 @@ function mygcflowGcLogsOrder(state, forcedOrder) {
   if (forcedOrder && !/^(DMY|MDY|YMD)$/.test(forcedOrder)) {
     return { order: null, candidates: [], samples: [] };
   }
-  var order = forcedOrder || state.prefOrder;
+  var order = forcedOrder || state.order || state.prefOrder;
   if (order) {
     return { order: order, candidates: [], samples: [] };
   }
