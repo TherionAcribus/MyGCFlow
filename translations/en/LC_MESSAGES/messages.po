@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 17:24+0100\n"
+"POT-Creation-Date: 2026-10-25 17:33+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -664,9 +664,9 @@ msgid "Base de données"
 msgstr "Database"
 
 #: blueprints/core.py:196 static/js/evolution_data.js:435
-#: static/js/poses_data.js:295 templates/guide.html:160
+#: static/js/poses_data.js:298 templates/guide.html:160
 #: templates/guide.html:168 templates/menu_data.html:400
-#: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:47
+#: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:56
 #: test_translations.py:28
 msgid "Filtres"
 msgstr "Filters"
@@ -1370,7 +1370,7 @@ msgstr "Analyzing GPX file..."
 #: static/js/bdd.js:459 static/js/bdd.js:1521 static/js/bdd.js:1645
 #: static/js/evolution_data.js:333 static/js/gc_logs.js:280
 #: static/js/labs.js:1502 static/js/notifications.js:297
-#: static/js/notifications.js:342 static/js/poses_data.js:159
+#: static/js/notifications.js:342 static/js/poses_data.js:162
 msgid "Chargement"
 msgstr "Loading"
 
@@ -1483,7 +1483,7 @@ msgstr "Error while uploading the file"
 #: static/js/evolution_data.js:1348 static/js/evolution_data.js:1356
 #: static/js/gc_logs.js:687 static/js/labs.js:2001 static/js/labs.js:2044
 #: static/js/labs.js:2084 static/js/notifications.js:421
-#: static/js/poses_data.js:176 static/js/recording_perf.js:187
+#: static/js/poses_data.js:179 static/js/recording_perf.js:187
 #: static/js/ui.js:2205
 msgid "Erreur"
 msgstr "Error"
@@ -1632,7 +1632,7 @@ msgstr "Loading the dataset..."
 msgid "Impossible de charger la base : ${message}"
 msgstr "Unable to load the dataset: ${message}"
 
-#: static/js/evolution_data.js:435 static/js/poses_data.js:295
+#: static/js/evolution_data.js:435 static/js/poses_data.js:298
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr "The filter will apply when the animation ends."
 
@@ -1658,8 +1658,8 @@ msgstr "Archived on ${date}"
 msgid "Archivée (date inconnue)"
 msgstr "Archived (unknown date)"
 
-#: static/js/evolution_data.js:753 static/js/poses_data.js:707
-#: templates/menu_data_poses.html:67
+#: static/js/evolution_data.js:753 static/js/poses_data.js:740
+#: templates/menu_data_poses.html:76
 msgid "Active"
 msgstr "Active"
 
@@ -3727,34 +3727,34 @@ msgstr "Later"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "You will no longer be notified about this version."
 
-#: static/js/poses_data.js:133
+#: static/js/poses_data.js:136
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "The setting will apply at the end of the animation."
 
-#: static/js/poses_data.js:133 static/js/stats_panels.js:1009
-#: static/js/stats_panels.js:1184 templates/menu_data_poses.html:94
+#: static/js/poses_data.js:136 static/js/stats_panels.js:1009
+#: static/js/stats_panels.js:1184 templates/menu_data_poses.html:103
 #: templates/menu_stats.html:230
 msgid "Caches archivées"
 msgstr "Archived caches"
 
-#: static/js/poses_data.js:159
+#: static/js/poses_data.js:162
 msgid "Chargement de vos caches posées..."
 msgstr "Loading your hidden caches..."
 
-#: static/js/poses_data.js:176
+#: static/js/poses_data.js:179
 #, python-brace-format
 msgid "Impossible de charger vos caches posées : ${message}"
 msgstr "Unable to load your hidden caches: ${message}"
 
-#: static/js/poses_data.js:210
+#: static/js/poses_data.js:213
 msgid "Aucun log importé pour l'instant"
 msgstr "No logs imported yet"
 
-#: static/js/poses_data.js:211
+#: static/js/poses_data.js:214
 msgid "Le compte de vos logs est inconnu : importez un export de vos logs"
 msgstr "The account of your logs is unknown: import an export of your logs"
 
-#: static/js/poses_data.js:212
+#: static/js/poses_data.js:215
 msgid ""
 "Vos caches posées sont dans vos logs, mais aucune n'a de position et de "
 "date connues"
@@ -3762,71 +3762,71 @@ msgstr ""
 "Your hidden caches are in your logs, but none has a known position and "
 "date"
 
-#: static/js/poses_data.js:213 templates/app.html:175
+#: static/js/poses_data.js:216 templates/app.html:175
 msgid "Aucune cache posée trouvée dans vos logs importés"
 msgstr "No hidden cache found in your imported logs"
 
-#: static/js/poses_data.js:226
+#: static/js/poses_data.js:229
 #, python-brace-format
 msgid "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
 msgstr "${n} caches without a position (complete them from the “My logs” card)"
 
-#: static/js/poses_data.js:227
+#: static/js/poses_data.js:230
 #, python-brace-format
 msgid "${n} caches sans date de publication ni de pose"
 msgstr "${n} caches without a publication or placed date"
 
-#: static/js/poses_data.js:228
+#: static/js/poses_data.js:231
 #, python-brace-format
 msgid "${n} changements d'état déduits du statut à l'export (sans log)"
 msgstr "${n} status changes inferred from the status at export (no log)"
 
-#: static/js/poses_data.js:229
+#: static/js/poses_data.js:232
 #, python-brace-format
 msgid "Logs importés le ${date}"
 msgstr "Logs imported on ${date}"
 
-#: static/js/poses_data.js:249
+#: static/js/poses_data.js:252
 #, python-brace-format
 msgid ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
 "favoris"
 msgstr "${caches} hidden caches · ${finds} finds received · ${favorites} favorites"
 
-#: static/js/poses_data.js:708 templates/menu_data_poses.html:68
+#: static/js/poses_data.js:741 templates/menu_data_poses.html:77
 msgid "Désactivée"
 msgstr "Disabled"
 
-#: static/js/poses_data.js:709 templates/menu_data_poses.html:69
+#: static/js/poses_data.js:742 templates/menu_data_poses.html:78
 msgid "Archivée"
 msgstr "Archived"
 
-#: static/js/poses_data.js:749
+#: static/js/poses_data.js:782
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/poses_data.js:750
+#: static/js/poses_data.js:783
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Placed on ${date}"
 
-#: static/js/poses_data.js:751
+#: static/js/poses_data.js:784
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Found before its publication on ${date}"
 
-#: static/js/poses_data.js:752
+#: static/js/poses_data.js:785
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "First log on ${date}"
 
-#: static/js/poses_data.js:776
+#: static/js/poses_data.js:809
 #, python-brace-format
 msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 msgstr "${finds} finds · ${favorites} favorites · ${dnf} DNF"
 
-#: static/js/poses_data.js:785
+#: static/js/poses_data.js:818
 #, python-brace-format
 msgid "Premier trouveur : ${name} (${date})"
 msgstr "First to find: ${name} (${date})"
@@ -4301,7 +4301,7 @@ msgid "Trouvailles reçues par mois"
 msgstr "Finds received per month"
 
 #: static/js/stats_panels.js:928 static/js/stats_panels.js:1164
-#: templates/menu_data_poses.html:78 templates/menu_data_poses.html:79
+#: templates/menu_data_poses.html:87 templates/menu_data_poses.html:88
 msgid "Trouvailles reçues"
 msgstr "Finds received"
 
@@ -4863,150 +4863,160 @@ msgstr "“${name}” overlaps “${other}”: pick another corner or reduce a w
 msgid "Réorganiser automatiquement"
 msgstr "Reorganize automatically"
 
-#: static/js/timeline_bar.js:320
+#: static/js/timeline_bar.js:323
 #, python-brace-format
 msgid "${count}ᵉ trouvaille reçue"
 msgstr "${count}th find received"
 
-#: static/js/timeline_bar.js:321
+#: static/js/timeline_bar.js:324
 #, python-brace-format
 msgid "${count}ᵉ trouvaille"
 msgstr "${count}th find"
 
-#: static/js/timeline_bar.js:333
+#: static/js/timeline_bar.js:344
+#, python-brace-format
+msgid "Première trouvaille : ${code}"
+msgstr "First find: ${code}"
+
+#: static/js/timeline_bar.js:345
+#, python-brace-format
+msgid "${count}ᵉ trouvaille : ${code}"
+msgstr "${count}th find: ${code}"
+
+#: static/js/timeline_bar.js:358
 #, python-brace-format
 msgid "Disparition : ${name}"
 msgstr "Disappears: ${name}"
 
-#: static/js/timeline_bar.js:334
+#: static/js/timeline_bar.js:359
 #, python-brace-format
 msgid "Apparition : ${name}"
 msgstr "Appears: ${name}"
 
-#: static/js/timeline_bar.js:746
+#: static/js/timeline_bar.js:786
 #, python-brace-format
 msgid "${count} actives"
 msgstr "${count} active"
 
-#: static/js/timeline_bar.js:746
+#: static/js/timeline_bar.js:786
 #, python-brace-format
 msgid "${count} active"
 msgstr "${count} active"
 
-#: static/js/timeline_bar.js:750
+#: static/js/timeline_bar.js:790
 #, python-brace-format
 msgid "${count} trouvailles reçues"
 msgstr "${count} finds received"
 
-#: static/js/timeline_bar.js:751
+#: static/js/timeline_bar.js:791
 #, python-brace-format
 msgid "${count} trouvaille reçue"
 msgstr "${count} find received"
 
-#: static/js/timeline_bar.js:753
+#: static/js/timeline_bar.js:793
 #, python-brace-format
 msgid "${count} caches"
 msgstr "${count} caches"
 
-#: static/js/timeline_bar.js:753
+#: static/js/timeline_bar.js:793
 #, python-brace-format
 msgid "${count} cache"
 msgstr "${count} cache"
 
-#: static/js/timeline_bar.js:764
+#: static/js/timeline_bar.js:804
 #, python-brace-format
 msgid "${count} poses"
 msgstr "${count} placements"
 
-#: static/js/timeline_bar.js:764
+#: static/js/timeline_bar.js:804
 #, python-brace-format
 msgid "${count} pose"
 msgstr "${count} placement"
 
-#: static/js/timeline_bar.js:766
+#: static/js/timeline_bar.js:806
 #, python-brace-format
 msgid "${count} archivages"
 msgstr "${count} archivals"
 
-#: static/js/timeline_bar.js:767
+#: static/js/timeline_bar.js:807
 #, python-brace-format
 msgid "${count} archivage"
 msgstr "${count} archival"
 
-#: static/js/timeline_bar.js:773 static/js/timeline_bar.js:779
+#: static/js/timeline_bar.js:813 static/js/timeline_bar.js:819
 #, python-brace-format
 msgid "${count} trouvailles"
 msgstr "${count} finds"
 
-#: static/js/timeline_bar.js:773 static/js/timeline_bar.js:779
+#: static/js/timeline_bar.js:813 static/js/timeline_bar.js:819
 #, python-brace-format
 msgid "${count} trouvaille"
 msgstr "${count} find"
 
-#: static/js/timeline_bar.js:774
+#: static/js/timeline_bar.js:814
 #, python-brace-format
 msgid "${count} autres logs"
 msgstr "${count} other logs"
 
-#: static/js/timeline_bar.js:774
+#: static/js/timeline_bar.js:814
 #, python-brace-format
 msgid "${count} autre log"
 msgstr "${count} other log"
 
-#: static/js/timeline_bar.js:777
+#: static/js/timeline_bar.js:817
 msgid "aucune trouvaille"
 msgstr "no finds"
 
-#: static/js/timeline_bar.js:827
+#: static/js/timeline_bar.js:867
 msgid "Aucune donnée à parcourir"
 msgstr "No data to browse"
 
-#: static/js/timeline_bar.js:865
+#: static/js/timeline_bar.js:905
 #, python-brace-format
 msgid "Début : ${date}"
 msgstr "Start: ${date}"
 
-#: static/js/timeline_bar.js:866
+#: static/js/timeline_bar.js:906
 #, python-brace-format
 msgid "Fin : ${date}"
 msgstr "End: ${date}"
 
-#: static/js/timeline_bar.js:868
+#: static/js/timeline_bar.js:908
 #, python-brace-format
 msgid "${date} — hors de l'animation"
 msgstr "${date} — outside the animation"
 
-#: static/js/timeline_bar.js:886
+#: static/js/timeline_bar.js:926
 #, python-brace-format
 msgid "Ce jour : ${text}"
 msgstr "This day: ${text}"
 
-#: static/js/timeline_bar.js:889
+#: static/js/timeline_bar.js:929
 #, python-brace-format
 msgid "Du ${from} au ${to} : ${text}"
 msgstr "${from} to ${to}: ${text}"
 
-#: static/js/timeline_bar.js:893
+#: static/js/timeline_bar.js:933
 #, python-brace-format
 msgid "Total : ${text}"
 msgstr "Total: ${text}"
 
-#: static/js/timeline_bar.js:895
+#: static/js/timeline_bar.js:935
 #, python-brace-format
 msgid "Vidéo : ${time}"
 msgstr "Video: ${time}"
 
-#: static/js/timeline_bar.js:1542
+#: static/js/timeline_bar.js:1582
 #, python-brace-format
 msgid "Début de l'animation ici (${date})"
 msgstr "Animation start here (${date})"
 
-#: static/js/timeline_bar.js:1544
+#: static/js/timeline_bar.js:1584
 #, python-brace-format
 msgid "Fin de l'animation ici (${date})"
 msgstr "Animation end here (${date})"
 
-#: static/js/timeline_bar.js:1558
+#: static/js/timeline_bar.js:1598
 msgid "Plage complète"
 msgstr "Full range"
 
@@ -5263,7 +5273,7 @@ msgstr "You can close this tab."
 #: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
 #: templates/_filter_country_state.html:22 templates/_filter_county.html:14
-#: templates/menu_data_poses.html:73 templates/menu_data_poses.html:86
+#: templates/menu_data_poses.html:82 templates/menu_data_poses.html:95
 #: templates/menu_trail.html:129
 msgid "Aucun"
 msgstr "None"
@@ -5854,7 +5864,7 @@ msgstr "Adventure Lab"
 #: templates/_filter_cache_attrs.html:85 templates/_filter_cache_attrs.html:106
 #: templates/_filter_country_state.html:11
 #: templates/_filter_country_state.html:21 templates/_filter_county.html:13
-#: templates/menu_data_poses.html:72 templates/menu_data_poses.html:85
+#: templates/menu_data_poses.html:81 templates/menu_data_poses.html:94
 #: templates/menu_images.html:92
 msgid "Tout"
 msgstr "All"
@@ -8987,11 +8997,11 @@ msgstr "Your finds are ready."
 msgid "Choisir un style"
 msgstr "Choose a style"
 
-#: templates/menu_data.html:386
+#: templates/menu_data.html:386 templates/menu_data_poses.html:44
 msgid "Aucune cache ne correspond aux filtres actuels."
 msgstr "No cache matches the current filters."
 
-#: templates/menu_data.html:388
+#: templates/menu_data.html:388 templates/menu_data_poses.html:46
 msgid "Réinitialiser les filtres"
 msgstr "Reset filters"
 
@@ -9193,7 +9203,7 @@ msgstr "Import history"
 msgid "La base est prête."
 msgstr "The dataset is ready."
 
-#: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:54
+#: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:63
 #: templates/menu_filtre.html:42
 msgid "Réinitialiser tous les filtres"
 msgstr "Reset all filters"
@@ -9246,43 +9256,43 @@ msgstr "Update my logs"
 msgid "Vos caches posées sont prêtes."
 msgstr "Your hidden caches are ready."
 
-#: templates/menu_data_poses.html:64 templates/menu_data_poses.html:65
+#: templates/menu_data_poses.html:73 templates/menu_data_poses.html:74
 msgid "État actuel"
 msgstr "Current state"
 
-#: templates/menu_data_poses.html:66
+#: templates/menu_data_poses.html:75
 msgid "Filtrer par état"
 msgstr "Filter by state"
 
-#: templates/menu_data_poses.html:75
+#: templates/menu_data_poses.html:84
 msgid "État de la cache à l'export le plus récent."
 msgstr "State of the cache at the most recent export."
 
-#: templates/menu_data_poses.html:80
+#: templates/menu_data_poses.html:89
 msgid "Filtrer par trouvailles"
 msgstr "Filter by finds"
 
-#: templates/menu_data_poses.html:81
+#: templates/menu_data_poses.html:90
 msgid "Au moins une"
 msgstr "At least one"
 
-#: templates/menu_data_poses.html:82
+#: templates/menu_data_poses.html:91
 msgid "Jamais trouvée"
 msgstr "Never found"
 
-#: templates/menu_data_poses.html:88
+#: templates/menu_data_poses.html:97
 msgid "Trouvailles reçues des autres joueurs, à l'export le plus récent."
 msgstr "Finds received from other players, at the most recent export."
 
-#: templates/menu_data_poses.html:96
+#: templates/menu_data_poses.html:105
 msgid "Restent visibles, grisées"
 msgstr "Stay visible, greyed out"
 
-#: templates/menu_data_poses.html:97
+#: templates/menu_data_poses.html:106
 msgid "Disparaissent"
 msgstr "Disappear"
 
-#: templates/menu_data_poses.html:99
+#: templates/menu_data_poses.html:108
 msgid "Dans les deux cas, l'archivage joue son flash."
 msgstr "In both cases, the archive plays its flash."
 

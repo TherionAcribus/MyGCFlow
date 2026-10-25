@@ -395,6 +395,45 @@ export function findDayCounts(timeline, base) {
     return out;
 }
 
+// Pas « ronds » des paliers de trouvailles d'une cache, du plus fin au plus
+// large : le plus fin qui n'en place pas plus de PER_CACHE_MAX (même motif
+// adaptatif que milestoneMarks de timeline_model.mjs, mais par cache).
+const PER_CACHE_STEPS = [10, 25, 50, 100, 250, 500];
+const PER_CACHE_MAX = 4;
+
+// Repères par cache de la barre de chronologie, calculés sur les trouvailles
+// reçues de la sélection (`timeline.evOrder` : les caches écartées par les
+// filtres ne marquent pas, c'est voulu) :
+//   'ftf'        première trouvaille reçue de la cache (value 1) ;
+//   'cacheRound' palier rond de trouvailles de la cache (value = multiple),
+//                émis le jour où son cumul atteint le multiple.
+// → [{ day, k, kind, value }] triés par jour (evOrder l'est déjà). Un premier
+// find qui atteindrait un palier émettrait les deux repères le même jour
+// (impossible : 1 < 10 — le garde-fou des deux conditions l'assure quand même).
+export function posesCacheMilestones(timeline, base) {
+    const out = [];
+    const findCode = base?.kindCode?.find;
+    if (!timeline || timeline.count === 0 || findCode === undefined) return out;
+    const found = new Int32Array(timeline.count);
+    const steps = new Int32Array(timeline.count).fill(-1); // -1 : pas encore lu
+    for (const j of timeline.evOrder) {
+        if (base.ev.kind[j] !== findCode) continue;
+        const k = timeline.featureOf[base.ev.cache[j]];
+        if (k < 0) continue;
+        if (steps[k] < 0) {
+            // Le pas adaptatif exige le total de la cache — findTotals est
+            // indexé par ligne de base, lu une fois au premier find du k.
+            const total = base.findTotals[base.ev.cache[j]];
+            steps[k] = PER_CACHE_STEPS.find((s) => Math.floor(total / s) <= PER_CACHE_MAX) ?? 0;
+        }
+        const n = ++found[k];
+        const day = base.ev.day[j];
+        if (n === 1) out.push({ day, k, kind: 'ftf', value: 1 });
+        if (steps[k] > 0 && n % steps[k] === 0) out.push({ day, k, kind: 'cacheRound', value: n });
+    }
+    return out;
+}
+
 // Pic de flashs simultanés sur une fenêtre de `windowDays` jours (estimation
 // de charge de l'onglet Animation) : au plus un flash par cache et par jour.
 export function maxFlashesInWindow(timeline, windowDays) {

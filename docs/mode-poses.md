@@ -105,7 +105,9 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
   `{logs}` (cumuls reçus), `{trouveurs}` (joueurs distincts), `{total}`.
 - **Barre de chronologie** : histogramme des trouvailles reçues par jour, les
   autres logs empilés dessus ; courbe du cumul des trouvailles reçues ;
-  jalons « Nᵉ trouvaille reçue ».
+  jalons « Nᵉ trouvaille reçue » (losange plein), première trouvaille reçue
+  de chaque cache (rond bleu) et paliers ronds par cache « Nᵉ trouvaille :
+  GCxxxx » (losange creux — pas adaptatif, comme les jalons globaux).
 - **Popup** : type, taille, D/T, état au jour affiché, premier trouveur —
   tout est lu côté client dans la charge utile (`base`), sans fetch, pour que
   les comptes trouvailles / favoris / DNF s'arrêtent au jour affiché pendant

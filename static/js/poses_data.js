@@ -49,6 +49,7 @@ import {
     findDayCounts,
     buildPosesTimeline,
     flashesInRange,
+    posesCacheMilestones,
     maxFlashesInWindow,
     posesCounterAt,
     posesCounterMaxes,
@@ -75,6 +76,7 @@ let loadSeq = 0;
 let dataRevision = 0;
 let flashOptionsByKind = new Map(); // résolus au début de l'animation
 let findsIndex = null;              // { revision, byDate } — trouvailles reçues (Stats)
+let cacheMarksMemo = null;          // { revision, marks } — repères par cache (barre)
 let stateMutations = 0;             // réécritures de `pstate` (tests, mesures)
 const flashLog = [];                // derniers flashs joués (tests)
 const FLASH_LOG_MAX = 500;
@@ -600,6 +602,26 @@ function posesTimelineSeries(axisStart, span) {
     return { events, secondary, level, base: startFinds };
 }
 
+// Repères par cache de la barre de chronologie, sur la fenêtre de l'axe :
+// première trouvaille reçue ('ftf') et paliers ronds ('cacheRound').
+// posesCacheMilestones travaille sur les jours de la base ; la conversion en
+// décalages d'axe est refaite à l'appel (la liste est mémoïsée par révision).
+// → [{ offset, kind, code, value }]
+function posesMilestones(axisStart, span) {
+    if (!base || !timeline || !(axisStart instanceof Date) || !(span > 0)) return [];
+    if (cacheMarksMemo?.revision !== dataRevision) {
+        cacheMarksMemo = { revision: dataRevision, marks: posesCacheMilestones(timeline, base) };
+    }
+    const first = dayIndexOf(base, axisStart);
+    const out = [];
+    for (const m of cacheMarksMemo.marks) {
+        const offset = m.day - first;
+        if (offset < 0 || offset >= span) continue;
+        out.push({ offset, kind: m.kind, code: base.code[rows[m.k]], value: m.value });
+    }
+    return out;
+}
+
 // Flash d'un type réglé ailleurs que « aucun » : la pause de fin en tient
 // compte quand le flash principal est coupé.
 function posesHasOwnFlashes() {
@@ -741,6 +763,7 @@ const POSES_ENGINE = Object.freeze({
     maxEventsInWindow: (windowDays) => maxFlashesInWindow(timeline, windowDays),
     findDayCounts: () => findDayCounts(timeline, base),
     timelineSeries: posesTimelineSeries,
+    milestones: posesMilestones,
     renderPopup: renderPosesPopup,
     hasOwnFlashes: posesHasOwnFlashes,
 });

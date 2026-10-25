@@ -1167,10 +1167,12 @@ main.fullscreen-mode ~ .tooltip {
     --timeline-tick: rgba(108, 117, 125, 0.28);
     --timeline-label: rgba(108, 117, 125, 0.85);
     /* Marges hors plage (voile de la couleur du fond), poignées des bornes,
-       repères : trouvailles rondes et planing des images. */
+       repères : trouvailles rondes, premières trouvailles par cache et
+       planing des images. */
     --timeline-veil: rgba(255, 255, 255, 0.62);
     --timeline-handle: #1d273b;
     --timeline-milestone: #2fb344;
+    --timeline-ftf: #009dff;
     --timeline-image: #f59f00;
     flex: 0 0 auto;
     display: flex;
@@ -1194,6 +1196,7 @@ main.fullscreen-mode ~ .tooltip {
     --timeline-veil: rgba(24, 36, 51, 0.62);
     --timeline-handle: #f1f3f5;
     --timeline-milestone: #5cd17a;
+    --timeline-ftf: #5cc8ff;
     --timeline-image: #ffc046;
 }
 .timeline-bar-track {
@@ -1255,6 +1258,14 @@ main.fullscreen-mode ~ .tooltip {
 }
 .timeline-bar-tip-line[data-mark="milestone"]::before {
     background: #5cd17a;
+    transform: rotate(45deg);
+}
+.timeline-bar-tip-line[data-mark="ftf"]::before {
+    background: #5cc8ff;
+    border-radius: 50%;
+}
+.timeline-bar-tip-line[data-mark="cacheRound"]::before {
+    border: 1.5px solid #5cd17a;
     transform: rotate(45deg);
 }
 .timeline-bar-tip-line[data-mark="image-in"]::before {
@@ -1320,6 +1331,7 @@ main.fullscreen-mode #timelineBar:not([hidden]) {
     --timeline-veil: rgba(0, 0, 0, 0.5);
     --timeline-handle: #f8f9fa;
     --timeline-milestone: #5cd17a;
+    --timeline-ftf: #5cc8ff;
     --timeline-image: #ffc046;
 }
 main.fullscreen-mode #timelineBar .timeline-bar-edge,

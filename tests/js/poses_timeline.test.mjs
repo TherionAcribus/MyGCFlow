@@ -14,6 +14,7 @@ import {
     findDayCounts,
     flashesInRange,
     maxFlashesInWindow,
+    posesCacheMilestones,
     posesCounterAt,
     posesCounterMaxes,
     stateAt,
@@ -197,6 +198,69 @@ test('findTotals : trouvailles reçues par cache, « folded » compris', () => {
     const p = payload();
     p.ev.folded[1] = 1;
     assert.deepEqual([...buildPosesBase(p).findTotals], [2, 2, 1]);
+});
+
+test('repères par cache : FTF une par cache trouvée, au jour exact', () => {
+    const { base, timeline: tl } = setup();
+    const marks = posesCacheMilestones(tl, base);
+    // Les trois caches ont au moins une trouvaille : A jour 0, B jour 5,
+    // C jour 13 — ordre chronologique.
+    assert.deepEqual(marks, [
+        { day: 0, k: 0, kind: 'ftf', value: 1 },
+        { day: 5, k: 1, kind: 'ftf', value: 1 },
+        { day: 13, k: 2, kind: 'ftf', value: 1 },
+    ]);
+});
+
+test('repères par cache : paliers ronds adaptatifs au jour du multiple', () => {
+    const p = payload();
+    // Cache A : 9 trouvailles de plus (jours 21..29) → total 11, pas 10 :
+    // le palier tombe sur la 10ᵉ, reçue le jour 28.
+    for (let d = 21; d <= 29; d++) {
+        p.ev.cache.push(0); p.ev.day.push(d); p.ev.kind.push(K.find);
+        p.ev.fav.push(0); p.ev.folded.push(0); p.ev.author.push(1);
+    }
+    const base = buildPosesBase(p);
+    const rows = filterRows(base, { undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    const marks = posesCacheMilestones(tl, base);
+    assert.deepEqual(marks.filter((m) => m.kind === 'cacheRound'), [
+        { day: 28, k: 0, kind: 'cacheRound', value: 10 },
+    ]);
+    // La FTF de A reste au jour 0.
+    assert.deepEqual(marks.filter((m) => m.kind === 'ftf' && m.k === 0), [
+        { day: 0, k: 0, kind: 'ftf', value: 1 },
+    ]);
+});
+
+test('repères par cache : pas élargi quand les paliers dépassent quatre', () => {
+    const p = payload();
+    // Cache A : 51 trouvailles de plus (jours 21..71) → total 53 : le pas 10
+    // donnerait 5 paliers, le pas retenu est 25 → multiples 25 et 50.
+    for (let d = 21; d <= 71; d++) {
+        p.ev.cache.push(0); p.ev.day.push(d); p.ev.kind.push(K.find);
+        p.ev.fav.push(0); p.ev.folded.push(0); p.ev.author.push(1);
+    }
+    const base = buildPosesBase(p);
+    const rows = filterRows(base, { undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    const rounds = posesCacheMilestones(tl, base).filter((m) => m.kind === 'cacheRound');
+    // 25ᵉ trouvaille le jour 43 (cumul 2 + 23), 50ᵉ le jour 68.
+    assert.deepEqual(rounds, [
+        { day: 43, k: 0, kind: 'cacheRound', value: 25 },
+        { day: 68, k: 0, kind: 'cacheRound', value: 50 },
+    ]);
+});
+
+test('repères par cache : une cache écartée par les filtres ne marque pas', () => {
+    const base = buildPosesBase(payload());
+    const rows = filterRows(base, { types: ['Multi-cache'], undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    assert.equal(tl.count, 1);
+    // Seule C (feature 0 de la sélection) : sa FTF au jour de base 13.
+    assert.deepEqual(posesCacheMilestones(tl, base), [
+        { day: 13, k: 0, kind: 'ftf', value: 1 },
+    ]);
 });
 
 test('filterPosesRows : état à l\'export et trouvailles reçues', () => {

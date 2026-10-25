@@ -32,6 +32,9 @@
 //   refreshRest()              la date de fin a changé (onglet Animation)
 //   applySelection()           un filtre a changé
 //   statsIndex()               vue de la chronologie pour Stats / barre
+//   milestones(axisStart, span) repères par cache de la barre de chronologie
+//                              → [{ offset, kind, code, value }] (optionnel ;
+//                              Mes poses : première trouvaille, paliers ronds)
 //   maxEventsInWindow(days)    pic d'événements, estimation de charge
 //   renderPopup(feature, el)   popup d'un point
 

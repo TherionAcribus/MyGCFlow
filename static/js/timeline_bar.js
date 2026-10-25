@@ -90,6 +90,7 @@ let fsOverlay = readStorage(FS_KEY) !== '0';
 let style = 'histogram';
 let seriesMemo = null;
 let milestonesMemo = null;
+let cacheMarksMemo = null;
 // Calques hors écran : tout ce qui est fixe pendant la lecture (repères
 // d'année, série en deux teintes) n'y est redessiné qu'à changement de leur
 // clé — par frame, draw() ne fait plus que deux drawImage et les mobiles
@@ -227,7 +228,8 @@ function seriesFor(axis) {
     return series;
 }
 
-// Repères de l'axe, triés : trouvailles rondes (page principale) et
+// Repères de l'axe, triés : trouvailles rondes (page principale et Mes
+// poses), repères par cache (Mes poses : 'ftf', 'cacheRound') et
 // apparitions/disparitions des images planifiées. { offset, kind, label }.
 function marksFor(axis, series) {
     const marks = [];
@@ -243,6 +245,26 @@ function marksFor(axis, series) {
                     ? pkg.t('${count}ᵉ trouvaille reçue', { count: formatCount(value) })
                     : pkg.t('${count}ᵉ trouvaille', { count: formatCount(value) }),
             });
+        }
+        // Mes poses : repères par cache (première trouvaille, paliers ronds),
+        // mémoïsés comme les jalons sur la clé de la série courante.
+        if (isPosesPage()) {
+            const engine = lifecycleEngine();
+            if (cacheMarksMemo?.key !== seriesMemo.key) {
+                cacheMarksMemo = {
+                    key: seriesMemo.key,
+                    marks: engine?.milestones?.(axis.start, axis.span) || [],
+                };
+            }
+            for (const m of cacheMarksMemo.marks) {
+                marks.push({
+                    offset: m.offset,
+                    kind: m.kind,
+                    label: m.kind === 'ftf'
+                        ? pkg.t('Première trouvaille : ${code}', { code: m.code })
+                        : pkg.t('${count}ᵉ trouvaille : ${code}', { count: formatCount(m.value), code: m.code }),
+                });
+            }
         }
     }
     const first = dateToDayNumber(axis.start);
@@ -297,6 +319,7 @@ function colorsFor() {
             veil: cssColor(styles, '--timeline-veil', 'rgba(255, 255, 255, 0.6)'),
             handle: cssColor(styles, '--timeline-handle', '#1d273b'),
             milestone: cssColor(styles, '--timeline-milestone', '#2fb344'),
+            ftf: cssColor(styles, '--timeline-ftf', '#009dff'),
             image: cssColor(styles, '--timeline-image', '#f59f00'),
         };
     }
@@ -460,20 +483,32 @@ function draw() {
     syncTip(axis, series, w, { cursorAxis, marks });
 }
 
-// Repères en haut de la piste : losange vert pour une trouvaille ronde,
-// triangle ambré pour une image (plein : apparition ; creux : disparition).
+// Repères en haut de la piste : losange vert pour une trouvaille ronde (creux
+// pour un palier d'une cache, page Mes poses), rond bleu pour la première
+// trouvaille d'une cache, triangle ambré pour une image (plein : apparition ;
+// creux : disparition).
 function drawMarks(ctx, marks, axis, w, colors) {
     for (const mark of marks) {
         const x = dayEndX(mark.offset, axis, w);
         ctx.beginPath();
-        if (mark.kind === 'milestone') {
+        if (mark.kind === 'ftf') {
+            ctx.arc(x, 4.5, 2.75, 0, Math.PI * 2);
+            ctx.fillStyle = colors.ftf;
+            ctx.fill();
+        } else if (mark.kind === 'milestone' || mark.kind === 'cacheRound') {
             ctx.moveTo(x, 1);
             ctx.lineTo(x + 3.5, 4.5);
             ctx.lineTo(x, 8);
             ctx.lineTo(x - 3.5, 4.5);
             ctx.closePath();
-            ctx.fillStyle = colors.milestone;
-            ctx.fill();
+            if (mark.kind === 'cacheRound') {
+                ctx.lineWidth = 1.25;
+                ctx.strokeStyle = colors.milestone;
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = colors.milestone;
+                ctx.fill();
+            }
         } else {
             ctx.moveTo(x - 4, 1);
             ctx.lineTo(x + 4, 1);

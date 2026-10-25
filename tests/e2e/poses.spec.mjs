@@ -219,6 +219,35 @@ test('filtres « État actuel » et « Trouvailles reçues »', async ({ page, r
   await expect(page.locator('#dataNextStep')).toBeVisible();
 });
 
+test('barre de chronologie : repères FTF par cache, aucun palier rond', async ({ page, request }) => {
+  await importPoses(request);
+  await openPoses(page);
+  await page.locator('#btnTimelineBar').click();
+  await expect(page.locator('#timelineBar')).toBeVisible();
+
+  const snap = await page.evaluate(async () => (await import('/static/js/index.js')).getTimelineBarSnapshot());
+  // Jours de l'axe en heure locale (minuit local), comme le modèle de la barre.
+  const dayOf = (m) => {
+    const d = new Date(snap.axisStart.getTime() + m.offset * 86_400_000);
+    const p2 = (v) => String(v).padStart(2, '0');
+    return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  };
+  // Une FTF par cache trouvée de la sélection : GCP0004 jamais trouvée (et
+  // GCP0007 sans position n'apparaît pas) → six repères, aux dates des
+  // premières trouvailles reçues.
+  const ftf = snap.marks.filter((m) => m.kind === 'ftf').map((m) => [dayOf(m), m.label]);
+  expect(ftf).toEqual([
+    ['2018-03-05', 'Première trouvaille : GCP0001'],
+    ['2018-06-15', 'Première trouvaille : GCP0002'],
+    ['2019-01-10', 'Première trouvaille : GCP0003'],
+    ['2019-02-02', 'Première trouvaille : GCP0005'],
+    ['2019-04-20', 'Première trouvaille : GCP0006'],
+    ['2020-02-11', 'Première trouvaille : GCP0008'],
+  ]);
+  // 4 trouvailles au plus par cache dans la fixture (< 10) : aucun palier.
+  expect(snap.marks.filter((m) => m.kind === 'cacheRound')).toEqual([]);
+});
+
 test('le moteur joue un flash par cache, agrandi les jours chargés', async ({ page, request }) => {
   await importPoses(request);
   await openPoses(page);
