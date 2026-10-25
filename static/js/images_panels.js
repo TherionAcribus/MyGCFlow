@@ -21,7 +21,8 @@
 // planing les montre ou non, tout est recalculé sur invalidation seulement.
 
 import * as pkg from './index.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { appMode, isEvolutionPage, isPosesPage } from './app_mode.mjs';
+import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { layoutPanels } from './stats_model.mjs';
 import {
     IMAGE_ANCHORS,
@@ -51,7 +52,7 @@ let settings = normalizeImagesSettings(null);
 // Chaque page a sa liste d'images (`items` sur « Mes Geocaches »,
 // `evolution_items` sur /evolution), indépendante — comme stats.panels /
 // stats.evolution_panels ; `enabled` reste commun aux deux pages.
-const ITEMS_KEY = imagesItemsKey(isEvolutionPage());
+const ITEMS_KEY = imagesItemsKey(appMode());
 const pageItems = () => settings[ITEMS_KEY] || [];
 // Bumpé à chaque changement de réglage ou d'image chargée : signale aux
 // frames MediaRecorder (overlayContentSignature) qu'une frame est à produire.
@@ -651,6 +652,16 @@ function scheduleOf(item) {
 let findDays = { revision: null, dayCounts: [] };
 
 function findDayCounts() {
+    // Page Mes poses : les jalons comptent les trouvailles REÇUES (logs des
+    // autres joueurs sur les caches posées), fournies par le moteur.
+    if (isPosesPage()) {
+        const engine = lifecycleEngine();
+        const revision = `poses:${engine?.statsIndex?.()?.revision ?? 'none'}`;
+        if (findDays.revision !== revision) {
+            findDays = { revision, dayCounts: engine?.findDayCounts?.() || [] };
+        }
+        return findDays.dayCounts;
+    }
     const revision = pkg.pointsByDateRevision ?? 0;
     if (findDays.revision === revision) return findDays.dayCounts;
     const counts = new Map();

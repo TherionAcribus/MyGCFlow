@@ -17,6 +17,7 @@
 
 import { counterAt, counterMaxFor, eventsInRange } from './evolution_timeline.mjs';
 import { EVO_NEVER_DAY } from './evolution_style.mjs';
+import { modeOf } from './app_mode.mjs';
 
 // ---------------------------------------------------------------------------
 // Réglages — miroir exact de stats_settings.py. Les deux côtés passent les
@@ -48,6 +49,19 @@ export const EVOLUTION_METRICS_BY_KIND = Object.freeze({
     counter: Object.freeze(['summary']),
 });
 
+// Page Mes poses (/poses) : le jeu compte les TROUVAILLES REÇUES (logs « Found
+// it » des autres joueurs sur les caches posées), avec les mêmes propriétés
+// que les trouvailles du mode principal (date_find = date du log, attributs
+// de la cache) : les métriques du mode principal s'y appliquent telles
+// quelles, plus la cache trouvée et le trouveur. Liste `stats.poses_panels`.
+export const POSES_METRICS_BY_KIND = Object.freeze({
+    grid: Object.freeze(['dt', 'finds_ym', 'calendar', 'activity']),
+    bar: Object.freeze(['cache', 'finder', 'year', 'month', 'weekday', 'age', 'cache_type', 'container', 'difficulty', 'terrain', 'country', 'state']),
+    donut: Object.freeze(['cache', 'finder', 'cache_type', 'container', 'country', 'state']),
+    line: Object.freeze(['cumulative']),
+    counter: Object.freeze(['summary']),
+});
+
 // Univers comptés par un panneau catégoriel Évolution (« Compter ») :
 // 'active' = caches présentes à la date affichée (ensemble vivant),
 // 'placed'/'archived' = cumuls monotone des événements.
@@ -76,7 +90,22 @@ export const STATS_COUNTER_ITEMS = Object.freeze(['total', 'days', 'best_day', '
 // placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 // actif (types, pays, régions — mêmes clés qu'en mode principal).
 export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'archivees', 'peak', 'types', 'countries', 'states', 'age_moyen']);
-const ALL_COUNTER_ITEMS = [...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS];
+// Tuiles de Mes poses : trouvailles reçues (total, jours, record, série),
+// trouveurs distincts, favoris reçus, caches trouvées au moins une fois,
+// trouvées le jour de leur publication, catégories, points extrêmes.
+export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'favorites', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west']);
+const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS])];
+
+// Registre de métriques et tuiles de la page (`mode` : nom de mode ou ancien
+// booléen « page Évolution »).
+export function statsMetricsRegistry(mode) {
+    const m = modeOf(mode);
+    return m === 'evolution' ? EVOLUTION_METRICS_BY_KIND : m === 'poses' ? POSES_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+}
+export function statsCounterItemsFor(mode) {
+    const m = modeOf(mode);
+    return m === 'evolution' ? EVOLUTION_COUNTER_ITEMS : m === 'poses' ? POSES_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
+}
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
 export const STATS_WIDTH_RANGE = Object.freeze([120, 1200]);
@@ -96,11 +125,16 @@ export const STATS_CONFIG_NAME_MAX = 40;
 // Mode de la page où la configuration a été enregistrée (mêmes valeurs que
 // le `mode` du JSON exporté par exportPanels) ; 'finds' par défaut — les
 // configurations antérieures viennent de la page principale.
-export const STATS_CONFIG_MODES = Object.freeze(['finds', 'evolution']);
+export const STATS_CONFIG_MODES = Object.freeze(['finds', 'evolution', 'poses']);
+// Mode de configuration d'une page (app_mode → STATS_CONFIG_MODES).
+export function statsConfigModeFor(mode) {
+    const m = modeOf(mode);
+    return m === 'main' ? 'finds' : m;
+}
 
 export const STATS_DEFAULTS = Object.freeze({
     enabled: true, panels: Object.freeze([]),
-    evolution_panels: Object.freeze([]), configs: Object.freeze([]),
+    evolution_panels: Object.freeze([]), poses_panels: Object.freeze([]), configs: Object.freeze([]),
 });
 
 // Champs de style qu'un préréglage fixe (boutons « Apparence » du formulaire,
@@ -209,7 +243,7 @@ function configName(value) {
     return Array.from(flat).slice(0, STATS_CONFIG_NAME_MAX).join('');
 }
 
-export const CATEGORICAL_METRICS = Object.freeze(['cache_type', 'container', 'country', 'state', 'county', 'status', 'attribute', 'owner']);
+export const CATEGORICAL_METRICS = Object.freeze(['cache_type', 'container', 'country', 'state', 'county', 'status', 'attribute', 'owner', 'cache', 'finder']);
 const DEFAULT_WIDTH = { grid: 280, bar: 280, donut: 300, line: 320, counter: 280 };
 // Année d'activité : 53 semaines en colonnes, illisible à 280 px.
 const ACTIVITY_WIDTH = 520;
@@ -240,7 +274,7 @@ export function statsPanelDefaults(kind, metric) {
             show_values: true,
             show_percent: false,
             highlight: 'new',
-            sort: ['cache_type', 'country', 'state', 'county', 'status', 'attribute', 'owner'].includes(metric) ? 'count' : 'natural',
+            sort: ['cache_type', 'country', 'state', 'county', 'status', 'attribute', 'owner', 'cache', 'finder'].includes(metric) ? 'count' : 'natural',
             // Âge et durée de vie : grandeurs ordonnées, mais libellés
             // longs (« 6 à 12 mois », « 5 à 10 ans »).
             orientation: CATEGORICAL_METRICS.includes(metric) || metric === 'age' || metric === 'lifetime' ? 'horizontal' : 'vertical',
@@ -351,18 +385,22 @@ export const statsCoercers = Object.freeze({
     isId: (value) => typeof value === 'string' && ID_RE.test(value),
 });
 
-// Liste de panneaux propre à chaque mode : `stats.panels` pour le mode
-// principal (trouvailles), `stats.evolution_panels` pour /evolution.
-export function statsPanelsKey(evolution) {
-    return evolution ? 'evolution_panels' : 'panels';
+// Liste de panneaux propre à chaque page : `stats.panels` pour le mode
+// principal (trouvailles), `stats.evolution_panels` pour /evolution,
+// `stats.poses_panels` pour /poses. `mode` = nom de mode (app_mode.mjs) ou
+// l'ancien booléen « page Évolution ? ».
+const STATS_PANELS_KEYS = Object.freeze({ main: 'panels', evolution: 'evolution_panels', poses: 'poses_panels' });
+export function statsPanelsKey(mode) {
+    return STATS_PANELS_KEYS[modeOf(mode)];
 }
 
-// La normalisation accepte l'union des deux registres (principal + Évolution) :
-// un panneau à métrique étrangère peut figurer dans une liste, c'est le rendu
-// qui le masque (stats_panels › visiblePanels — badge dans la liste).
+// La normalisation accepte l'union des registres (principal, Évolution, Mes
+// poses) : un panneau à métrique étrangère peut figurer dans une liste, c'est
+// le rendu qui le masque (stats_panels › visiblePanels — badge dans la liste).
 export function metricValidForKind(kind, metric) {
     return (STATS_METRICS_BY_KIND[kind] || []).includes(metric)
-        || (EVOLUTION_METRICS_BY_KIND[kind] || []).includes(metric);
+        || (EVOLUTION_METRICS_BY_KIND[kind] || []).includes(metric)
+        || (POSES_METRICS_BY_KIND[kind] || []).includes(metric);
 }
 
 // Panneau normalisé, ou null s'il n'est pas représentable (type ou métrique
@@ -461,6 +499,7 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
             enabled: bool(base.enabled, true),
             panels: Array.isArray(base.panels) ? [...base.panels] : [],
             evolution_panels: Array.isArray(base.evolution_panels) ? [...base.evolution_panels] : [],
+            poses_panels: Array.isArray(base.poses_panels) ? [...base.poses_panels] : [],
             configs: Array.isArray(base.configs) ? [...base.configs] : [],
         };
     }
@@ -468,6 +507,8 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
     const panels = normalizePanelList(Object.hasOwn(raw, 'panels') ? raw.panels : base.panels, newId);
     const evolutionPanels = normalizePanelList(
         Object.hasOwn(raw, 'evolution_panels') ? raw.evolution_panels : base.evolution_panels, newId);
+    const posesPanels = normalizePanelList(
+        Object.hasOwn(raw, 'poses_panels') ? raw.poses_panels : base.poses_panels, newId);
     // Premier nom gagnant : un doublon serait impossible à distinguer.
     const configSource = Object.hasOwn(raw, 'configs') ? raw.configs : base.configs;
     const configs = [];
@@ -479,7 +520,7 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
         configs.push(config);
         if (configs.length >= STATS_MAX_CONFIGS) break;
     }
-    return { enabled, panels, evolution_panels: evolutionPanels, configs };
+    return { enabled, panels, evolution_panels: evolutionPanels, poses_panels: posesPanels, configs };
 }
 
 // Nouveau panneau prêt à l'emploi (bouton « Ajouter », modèles) : défauts de
@@ -517,6 +558,9 @@ const COUNTER_DEPENDENCIES = {
     states: 'state',
     attributes: 'attribute',
     owners: 'owner',
+    finders: 'finder',
+    favorites: 'favorite',
+    caches: 'cache',
     oldest: 'published',
     same_day: 'age',
     north: EXTREMES_METRIC,
@@ -552,15 +596,19 @@ export function accumulatorMetricsFor(panel, { evolution = false } = {}) {
 }
 
 // Métriques à compter pour une liste de panneaux : seuls les panneaux actifs
-// coûtent quelque chose.
-export function metricsForPanels(settings, { evolution = false } = {}) {
+// coûtent quelque chose. `mode` : page (nom de mode) ; à défaut, l'ancien
+// drapeau `evolution`. Mes poses compte comme le mode principal (des
+// trouvailles), avec son propre registre.
+export function metricsForPanels(settings, { evolution = false, mode = null } = {}) {
+    const page = modeOf(mode ?? evolution);
+    const isEvolution = page === 'evolution';
+    const registry = statsMetricsRegistry(page);
     const metrics = new Set();
     if (!settings?.enabled) return metrics;
-    for (const panel of settings?.[statsPanelsKey(evolution)] || []) {
+    for (const panel of settings?.[statsPanelsKey(page)] || []) {
         if (!panel.enabled) continue;
-        if (evolution && !(EVOLUTION_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric)) continue;
-        if (!evolution && !(STATS_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric)) continue;
-        for (const metric of accumulatorMetricsFor(panel, { evolution })) metrics.add(metric);
+        if (!(registry[panel.kind] || []).includes(panel.metric)) continue;
+        for (const metric of accumulatorMetricsFor(panel, { evolution: isEvolution })) metrics.add(metric);
     }
     return metrics;
 }
@@ -749,6 +797,20 @@ const KEY_OF = {
     },
     owner(p) {
         return textKey(p.owner);
+    },
+    // Mes poses : cache trouvée (« GCxxxx · nom ») et trouveur d'une
+    // trouvaille reçue ; favori = 1 quand le log porte un point favori.
+    cache(p) {
+        const code = typeof p.gc_code === 'string' ? p.gc_code.trim() : '';
+        const name = typeof p.name === 'string' ? p.name.trim() : '';
+        if (!code && !name) return UNKNOWN_KEY;
+        return name ? `${code} · ${name}` : code;
+    },
+    finder(p) {
+        return textKey(p.finder);
+    },
+    favorite(p) {
+        return p.favorite ? 1 : null;
     },
     // Jour de trouvaille : courbe cumulée et compteurs (jours, record, série).
     day(p) {
@@ -2085,6 +2147,12 @@ export function counterValues(acc, items) {
             values.attributes = { value: knownKeys(acc, 'attribute') };
         } else if (item === 'owners') {
             values.owners = { value: knownKeys(acc, 'owner') };
+        } else if (item === 'finders') {
+            values.finders = { value: knownKeys(acc, 'finder') };
+        } else if (item === 'caches') {
+            values.caches = { value: knownKeys(acc, 'cache') };
+        } else if (item === 'favorites') {
+            values.favorites = { value: acc.counts.get('favorite')?.get(1) || 0 };
         } else if (item === 'oldest') {
             // `day` = jour de publication de la plus ancienne, null sans date ;
             // `value` = son année (affichée telle quelle, pas animée).

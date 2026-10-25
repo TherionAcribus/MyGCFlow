@@ -34,7 +34,9 @@ import {
 import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { appMode, isLifecyclePage, isMainPage, perPage } from './app_mode.mjs';
+import { lifecycleEngine } from './lifecycle_engine.mjs';
+import { normalizeEventFlashes } from './event_flash.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
@@ -1479,8 +1481,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     // balise à la position du curseur.
     inputInfosTemplate = document.getElementById('inputInfosTemplate');
     if (inputInfosTemplate) inputInfosTemplate.addEventListener('input', changeInfosTemplate);
-    document.querySelectorAll('[data-evolution-info-tag]').forEach(btn => {
-        btn.addEventListener('click', () => insertInfosTemplateTag(btn.dataset.evolutionInfoTag));
+    document.querySelectorAll('[data-info-tag]').forEach(btn => {
+        btn.addEventListener('click', () => insertInfosTemplateTag(btn.dataset.infoTag));
     });
     document.querySelectorAll('[data-infos-tag]').forEach(btn => {
         btn.addEventListener('click', () => insertInfosTemplateTag(btn.dataset.infosTag));
@@ -1986,7 +1988,7 @@ function updateMediaRecorderOptionsVisibility() {
 // Évolution partagent la même interface mais pas la même donnée — l'onglet
 // restauré sur l'une ne doit pas décider de l'arrivée sur l'autre.
 function activeTabStorageKey() {
-    return `activeTab:${document.body?.dataset?.mode === 'evolution' ? 'evolution' : 'main'}`;
+    return `activeTab:${appMode()}`;
 }
 
 // Gestion de la mémorisation des onglets
@@ -3674,10 +3676,11 @@ function loadRecordSettings() {
 
 const saveAnimationSettingsDebounced = makeDebouncedSettingsSaver(500);
 
-// Le mode Évolution a son propre rythme (clé `evolution_animation`) : des
-// décennies de données ne se jouent pas au tempo des trouvailles.
+// Les pages Évolution et Mes poses ont leur propre rythme
+// (`evolution_animation`, `poses_animation`) : des années de données ne se
+// jouent pas au tempo des trouvailles.
 function animationSettingsKey() {
-    return isEvolutionPage() ? 'evolution_animation' : 'animation';
+    return perPage({ main: 'animation', evolution: 'evolution_animation', poses: 'poses_animation' });
 }
 
 // Traduit pkg.options.animation/flash vers la forme snake_case de l'API.
@@ -3690,7 +3693,7 @@ function animationSettingsPayload() {
         days_per_second: Number.isFinite(dps) && dps > 0 ? dps : TIMING_LIMITS.daysPerSecond.fallback,
         total_duration_seconds: Number.isFinite(total) && total > 0 ? total : TIMING_LIMITS.totalDurationSeconds.fallback,
         extra_end_seconds: Math.max(0, Number(a.extraEndSeconds) || 0),
-        camera_follow: a.cameraFollow === true && !isEvolutionPage(),
+        camera_follow: a.cameraFollow === true && isMainPage(),
         camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
         camera_follow_mode: a.cameraFollowMode === 'trail' ? 'trail' : 'days',
         camera_return_home: a.cameraReturnHome !== false,
@@ -3700,7 +3703,7 @@ function animationSettingsPayload() {
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
         // Idem pour la durée du tracé des traits de déplacement (sans objet en
         // mode Évolution, où les traits n'existent pas).
-        ...(isEvolutionPage() ? {} : { trail_duration_ms: normalizeTrailOptions(pkg.options.trail).duration }),
+        ...(isLifecyclePage() ? {} : { trail_duration_ms: normalizeTrailOptions(pkg.options.trail).duration }),
     };
 }
 
@@ -3737,7 +3740,7 @@ function applyAnimationSettingsPayload(anim) {
     }
     if (typeof anim.camera_follow === 'boolean') a.cameraFollow = anim.camera_follow;
     // Suivi de caméra : sans objet quand des milliers de caches bougent à la fois.
-    if (isEvolutionPage()) a.cameraFollow = false;
+    if (isLifecyclePage()) a.cameraFollow = false;
     const cameraDynamism = Math.round(Number(anim.camera_dynamism));
     if (cameraDynamism >= 1 && cameraDynamism <= 4) a.cameraDynamism = cameraDynamism;
     if (anim.camera_follow_mode === 'trail' || anim.camera_follow_mode === 'days') {
@@ -4184,11 +4187,11 @@ function onSelectionChangedDebounced(){
 
 function applySelectionChange(){
     const selectedValues = collectSelectedValues();
-    if (isEvolutionPage()) {
-        // Sélection propre à la base ouverte : ne pas écraser celle du mode
-        // principal (localStorage 'filtersSelection', partagé par les deux pages).
+    if (isLifecyclePage()) {
+        // Sélection propre à la page : ne pas écraser celle du mode principal
+        // (localStorage 'filtersSelection', partagé par toutes les pages).
         updateFilterInfos();
-        pkg.evolutionApplySelection?.(selectedValues);
+        lifecycleEngine()?.applySelection?.(selectedValues);
         return;
     }
     persistSelectedValues(selectedValues);
@@ -4222,7 +4225,7 @@ function collectSelectedValues(){
     // Sources affichées : préférence globale (pas un filtre du panneau) —
     // toujours explicite pour que le filtrage ne dépende pas du réflexe
     // « champ absent = pas de restriction ».
-    if (!isEvolutionPage()) {
+    if (isMainPage()) {
         selectedValues["sources"] = getDiscoverySourceKinds();
     }
     return selectedValues;
@@ -4295,9 +4298,9 @@ function updateCompactFilterSummary(selectEl, all = null, none = null){
 // vide, il faut le recharger une fois les données importées pour que les
 // filtres Pays/Région existent.
 export function refreshCountryStateFilters() {
-    // Mode Évolution : l'arbre vient de la base ouverte (setCountryStateTree),
-    // pas de la base des trouvailles.
-    if (isEvolutionPage()) return;
+    // Pages « cycle de vie » : l'arbre vient des données de la page
+    // (setCountryStateTree), pas de la base des trouvailles.
+    if (isLifecyclePage()) return;
     try {
         dbgFilters('[COUNTRY] Fetching /api/country_state ...');
         const apiUrl = `${window.location.origin}/api/country_state`;
@@ -4555,9 +4558,9 @@ function persistSelectedValues(values){
 }
 
 function restoreSelectedValues(){
-    // La sélection du mode Évolution n'est pas persistée : ne pas la polluer
-    // avec 'filtersSelection' du mode principal (même clé localStorage).
-    if (isEvolutionPage()) {
+    // La sélection des pages « cycle de vie » n'est pas persistée : ne pas la
+    // polluer avec 'filtersSelection' du mode principal (même clé localStorage).
+    if (isLifecyclePage()) {
         if (selectType) refreshTomSelect(selectType);
         if (selectDifficulty) refreshTomSelect(selectDifficulty);
         if (selectTerrain) refreshTomSelect(selectTerrain);
@@ -4902,6 +4905,12 @@ const ICON_SETS = {
         // Les icônes restent ancrées en haut-gauche, le padding est en bas-droite : les offsets ne changent pas.
         sheetWidth: 2048,
         sheetHeight: 256,
+        // Rangée grisée (Mes poses : caches désactivées ou archivées) : même
+        // case décalée de 152 px vers le bas, pour les icônes jusqu'à x = 1700
+        // (pas de version grisée pour Adventure Lab ni DNF). Mesuré sur les
+        // deux feuilles (304 px en @2x).
+        greyRowY: 152,
+        greyMaxX: 1700,
         items: [
             { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
             { key: 'ape',   x:  100, y:  0, w:50, h:50, label: 'APE' },
@@ -4936,6 +4945,8 @@ const ICON_SETS = {
         // Feuille paddée en puissance de 2 (2048x256) — voir 'geocaching'.
         sheetWidth: 2048,
         sheetHeight: 256,
+        greyRowY: 152,
+        greyMaxX: 1700,
         items: [
             { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' },
             // Pendant du smiley pour les points DNF.
@@ -4965,6 +4976,8 @@ export function setPointIconSet(setName) {
         url2x: meta.url2x,
         sheetWidth: meta.sheetWidth,
         sheetHeight: meta.sheetHeight,
+        greyRowY: meta.greyRowY,
+        greyMaxX: meta.greyMaxX,
         map: Object.fromEntries(meta.items.map(it => [it.key, {x:it.x, y:it.y, w:it.w, h:it.h}]))
     };
     return name;
@@ -5705,11 +5718,13 @@ document.addEventListener('visibilitychange', () => {
 // champ sélectionne son mode (editRhythmField). Seul 'music' les verrouille,
 // la durée y étant imposée par le fichier.
 
-// Mode Évolution : des décennies de données, donc des préréglages plus rapides
-// (libellés assortis dans menu_animation.html).
-const RHYTHM_PRESETS = isEvolutionPage()
-    ? Object.freeze({ slow: 50, normal: 150, fast: 400 })
-    : Object.freeze({ slow: 10, normal: 20, fast: 50 });
+// Préréglages de rythme par page (libellés assortis dans menu_animation.html) :
+// des décennies de données en Évolution, une dizaine d'années sur Mes poses.
+const RHYTHM_PRESETS = perPage({
+    main: Object.freeze({ slow: 10, normal: 20, fast: 50 }),
+    evolution: Object.freeze({ slow: 50, normal: 150, fast: 400 }),
+    poses: Object.freeze({ slow: 20, normal: 40, fast: 100 }),
+});
 
 function rhythmMode() {
     return pkg.options?.animation?.rhythmMode || 'rate';
@@ -5895,7 +5910,7 @@ export function refreshTimingPlan({ save = true } = {}) {
         extraEndSeconds: extraP.ok ? extraP.value : (Number(animation.extraEndSeconds) || 0),
         // Mode Évolution : plusieurs jours peuvent partager une image, sinon
         // vingt ans de données imposeraient cinq minutes de vidéo au minimum.
-        allowMultipleDaysPerFrame: isEvolutionPage(),
+        allowMultipleDaysPerFrame: isLifecyclePage(),
         cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
         cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
         // Pré-roll du mode piste : durée vidéo du trajet du jour 0, jouée en
@@ -5939,7 +5954,7 @@ export function refreshTimingPlan({ save = true } = {}) {
             flashDurationMs: Number(pkg.options.flash?.duration) || 0,
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
             extraEndSeconds: extraP.ok ? extraP.value : (Number(animation.extraEndSeconds) || 0),
-            allowMultipleDaysPerFrame: isEvolutionPage(),
+            allowMultipleDaysPerFrame: isLifecyclePage(),
             cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
             cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
             cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
@@ -5985,7 +6000,7 @@ export function refreshTimingPlan({ save = true } = {}) {
     updateDataAvailabilityUI();
     pkg.updateInfosForPictures();
     // Mode Évolution : la carte au repos montre l'état à la date de fin.
-    if (isEvolutionPage()) pkg.evolutionRefreshRest?.();
+    if (isLifecyclePage()) lifecycleEngine()?.refreshRest?.();
     if (save) saveAnimationSettings();
 }
 
@@ -6287,12 +6302,12 @@ function renderLoadEstimate(plan) {
     let simultaneousFlashes = null;
     const flashDurationMs = Number(pkg.options.flash?.duration) || 0;
     try {
-        if (isEvolutionPage()) {
-            // Apparitions et disparitions réelles sur la durée d'un flash, plutôt
-            // que le pic d'une journée multiplié par le nombre de jours couverts
-            // (très pessimiste quand des centaines de jours défilent par seconde).
+        if (isLifecyclePage()) {
+            // Flashs réels sur la durée d'un flash, plutôt que le pic d'une
+            // journée multiplié par le nombre de jours couverts (très pessimiste
+            // quand des centaines de jours défilent par seconde).
             const windowDays = flashDurationMs / Math.max(1e-3, plan.timePerDayMs);
-            simultaneousFlashes = pkg.evolutionMaxEventsInWindow?.(windowDays) ?? null;
+            simultaneousFlashes = lifecycleEngine()?.maxEventsInWindow?.(windowDays) ?? null;
         } else if (pkg.pointsByDate) {
             for (const pts of pkg.pointsByDate.values()) {
                 if (pts && pts.length > maxPointsPerDay) maxPointsPerDay = pts.length;
@@ -7202,12 +7217,68 @@ function initDisappearFlashControls() {
     initFlashVariantControls('disappear');
     initFlashVariantControls('dnf');
     initFlashVariantControls('dnf_found');
+    initEventFlashControls();
 }
 
 function syncDisappearFlashUI() {
     syncFlashVariantUI('disappear');
     syncFlashVariantUI('dnf');
     syncFlashVariantUI('dnf_found');
+    syncEventFlashUI();
+}
+
+// Flashs par événement (page Mes poses, menu_flash_events.html) : une ligne
+// par type, champs repérés par data-event-flash-field ; le bloc du thème est
+// pkg.options.flash.events (normalisé par profiles.js).
+function eventFlashOptions(kind) {
+    const flash = pkg.options.flash;
+    if (!flash.events || typeof flash.events !== 'object') flash.events = normalizeEventFlashes(null);
+    if (!flash.events[kind]) flash.events[kind] = normalizeEventFlashes(null)[kind];
+    return flash.events[kind];
+}
+
+function updateEventFlashRow(row) {
+    const options = eventFlashOptions(row.dataset.eventFlashKind);
+    const own = row.querySelector('.event-flash-own');
+    if (own) own.hidden = options.mode === 'same' || options.mode === 'none';
+    const color = row.querySelector('[data-event-flash-field="color"]');
+    if (color) color.hidden = options.color_type !== 'fix';
+}
+
+function initEventFlashControls() {
+    document.querySelectorAll('[data-event-flash-kind]').forEach((row) => {
+        const kind = row.dataset.eventFlashKind;
+        row.querySelectorAll('[data-event-flash-field]').forEach((input) => {
+            const field = input.dataset.eventFlashField;
+            const apply = () => {
+                const options = eventFlashOptions(kind);
+                if (field === 'size') {
+                    const value = parseInt(input.value);
+                    if (!isNaN(value)) options.size = Math.min(200, Math.max(5, value));
+                } else {
+                    options[field] = input.value;
+                }
+                updateEventFlashRow(row);
+            };
+            input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', apply);
+            if (field === 'size') {
+                input.addEventListener('blur', () => {
+                    input.value = eventFlashOptions(kind).size;
+                });
+            }
+        });
+    });
+}
+
+function syncEventFlashUI() {
+    document.querySelectorAll('[data-event-flash-kind]').forEach((row) => {
+        const options = eventFlashOptions(row.dataset.eventFlashKind);
+        row.querySelectorAll('[data-event-flash-field]').forEach((input) => {
+            const value = options[input.dataset.eventFlashField];
+            if (value != null) input.value = value;
+        });
+        updateEventFlashRow(row);
+    });
 }
 
 // Validation à la perte de focus : plus de correction silencieuse, on
@@ -7256,14 +7327,16 @@ function changeInfosValues(event){
 const saveInfosTemplateDebounced = makeDebouncedSettingsSaver(500);
 
 // Modèle libre de la ligne d'infos (texte + balises). Préférence globale
-// persistée par mode (evolution_infos_template / infos_template de
-// settings.json) ; l'aperçu suit la frappe sans attendre l'enregistrement.
+// persistée par page (infos_template, evolution_infos_template,
+// poses_infos_template de settings.json) ; l'aperçu suit la frappe sans
+// attendre l'enregistrement.
 function changeInfosTemplate() {
     const value = inputInfosTemplate ? inputInfosTemplate.value : '';
-    if (isEvolutionPage()) {
-        pkg.setEvolutionInfosTemplate?.(value);
-        if (window.userSettings) window.userSettings.evolution_infos_template = value;
-        reportSave(inputInfosTemplate, saveInfosTemplateDebounced({ evolution_infos_template: value }));
+    const engine = isLifecyclePage() ? lifecycleEngine() : null;
+    if (engine?.infosTemplateKey) {
+        engine.setInfosTemplate?.(value);
+        if (window.userSettings) window.userSettings[engine.infosTemplateKey] = value;
+        reportSave(inputInfosTemplate, saveInfosTemplateDebounced({ [engine.infosTemplateKey]: value }));
     } else {
         pkg.setMainInfosTemplate?.(value);
         if (window.userSettings) window.userSettings.infos_template = value;

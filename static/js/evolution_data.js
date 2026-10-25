@@ -15,6 +15,8 @@ import { t } from './notifications.js';
 import { getBsModal, showBsModal, hideBsModal } from './ui_bootstrap.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
+import { registerLifecycleEngine } from './lifecycle_engine.mjs';
+import { EVOLUTION_INFO_TAGS } from './infos_template.mjs';
 import { isAudioFile } from './music_track.mjs';
 import { isImageFile } from './images_model.mjs';
 import { staggerDelayMs } from './flash_impulse.mjs';
@@ -427,12 +429,13 @@ function buildMeta() {
         return {
             startDate: null, endDate: null, deltaDays: null, numberOfCaches: 0,
             counterMaxes: { active: 0, placed: 0, archived: 0 },
+            tagMaxes: { actives: 0, placees: 0, archivees: 0 },
         };
     }
     const start = dateOfDayIndex(base, timeline.firstDay);
     let end = base.meta?.snapshotDate ? pkg.parseLocalDate(base.meta.snapshotDate) : null;
     if (!(end instanceof Date) || end < start) end = dateOfDayIndex(base, timeline.lastDay);
-    return {
+    const meta = {
         startDate: pkg.formatDateIso(start),
         endDate: pkg.formatDateIso(end),
         deltaDays: inclusiveDayCount(start, end),
@@ -445,6 +448,13 @@ function buildMeta() {
             archived: counterMaxFor(timeline, 'archived'),
         },
     };
+    // Mêmes maxima, indexés par balise de la ligne d'infos (frames.js).
+    meta.tagMaxes = {
+        actives: meta.counterMaxes.active,
+        placees: meta.counterMaxes.placed,
+        archivees: meta.counterMaxes.archived,
+    };
+    return meta;
 }
 
 // --- Interface avec le moteur d'animation (mapgl.js) -------------------------------------
@@ -1264,3 +1274,34 @@ function formatNumber(value) {
 function formatDate(date) {
     return (date && pkg.formatDateDisplay?.(date)) || '—';
 }
+
+// --- Moteur « cycle de vie » ------------------------------------------------------------------
+//
+// mapgl.js pilote l'animation par ce moteur (lifecycle_engine.mjs) plutôt que
+// par des appels nommés : la page Mes poses enregistre le sien de la même façon.
+const EVOLUTION_ENGINE = Object.freeze({
+    id: 'evolution',
+    counterKeys: Object.freeze(['actives', 'placees', 'archivees']),
+    infosTags: EVOLUTION_INFO_TAGS,
+    hasData: evolutionHasData,
+    infosTemplate: evolutionInfosTemplate,
+    infosTemplateKey: 'evolution_infos_template',
+    setInfosTemplate: setEvolutionInfosTemplate,
+    begin: (startDate, endDate, at, { stagger = false } = {}) => evolutionBegin(startDate, endDate, at, stagger),
+    step: evolutionStep,
+    frameVars: evolutionFrameVars,
+    end: evolutionEnd,
+    restState: evolutionRestState,
+    refreshRest: evolutionRefreshRest,
+    applySelection: evolutionApplySelection,
+    statsIndex: evolutionStatsIndex,
+    maxEventsInWindow: evolutionMaxEventsInWindow,
+    renderPopup: renderEvolutionPopup,
+    // Le flash de disparition peut être le seul actif (pause de fin).
+    hasOwnFlashes: () => {
+        const mode = pkg.options?.flash?.disappear?.mode;
+        return !!mode && mode !== 'none';
+    },
+});
+
+if (isEvolutionPage()) registerLifecycleEngine(EVOLUTION_ENGINE);

@@ -63,7 +63,7 @@ def lab_record_uid(collection_uid: str, row) -> str:
     return f"lab:{collection_uid}:{row.stage_uuid or row.local_uid}"
 
 
-def _geocache_fingerprint(session) -> tuple:
+def geocache_fingerprint(session) -> tuple:
     """Empreinte du contenu de `geocache` : un import remplace toute la
     table (les id peuvent repartir de 1), compter les lignes ne suffit pas."""
     return tuple(session.query(
@@ -74,10 +74,12 @@ def _geocache_fingerprint(session) -> tuple:
     ).one())
 
 
-def _compute_borrowed_geo(session, rows) -> dict:
+def compute_borrowed_geo(session, rows) -> dict:
     """id → (pays, région) de la géocache la plus proche (≤ rayon), sinon
     (None, None). Grille de cellules de 0,1° ; distances équirectangulaires,
-    exactes à l'échelle de 10 km (l'antiméridien n'est pas déplié)."""
+    exactes à l'échelle de 10 km (l'antiméridien n'est pas déplié). `rows` :
+    objets à `id`, `latitude`, `longitude` (étapes Labs, caches posées de
+    poses_dataset)."""
     grid = defaultdict(list)
     for lat, lon, country, state in session.query(
             Geocache.latitude, Geocache.longitude, Geocache.country, Geocache.state
@@ -117,7 +119,7 @@ def borrowed_geo(session, collection, rows) -> dict:
     with _geo_lock:
         if _geo_memo["key"] == key:
             return _geo_memo["by_id"]
-    by_id = _compute_borrowed_geo(session, rows)
+    by_id = compute_borrowed_geo(session, rows)
     with _geo_lock:
         _geo_memo.update(key=key, by_id=by_id, pairs=frozenset(by_id.values()))
     return by_id
@@ -126,7 +128,7 @@ def borrowed_geo(session, collection, rows) -> dict:
 def _geo_key(session, collection) -> tuple:
     # created_at : un id de collection peut resservir après un « Vider ».
     return (collection.id, collection.created_at, collection.revision,
-            _geocache_fingerprint(session))
+            geocache_fingerprint(session))
 
 
 def lab_geo_pairs(session) -> set:

@@ -115,7 +115,8 @@ import {
 import { buildPointStyle, DNF_NOT_VANISHING } from './point_webgl_style.js';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { EVO_FILTER, EVO_STATIC_FROM, POINT_DISAPPEAR_MS } from './evolution_style.mjs';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isLifecyclePage, isPosesPage } from './app_mode.mjs';
+import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { captureRatioFor } from './capture_resolution.mjs';
 import { normalizeColorFidelity } from './color_fidelity.mjs';
@@ -550,13 +551,26 @@ let trailLastStrokeDurationMs = null;
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
 const cacheCountAnimator = createCountAnimator();
-// Mode Évolution : les trois grandeurs de la ligne d'infos à balises
-// (actives présentes, cumuls placées/archivées) sont animées chacune.
-const evolutionCounters = {
-    actives: createCountAnimator(),
-    placees: createCountAnimator(),
-    archivees: createCountAnimator(),
-};
+// Pages « cycle de vie » (Évolution, Mes poses) : chaque grandeur numérique de
+// la ligne d'infos à balises (counterKeys du moteur : actives, cumuls…) est
+// animée par son propre compteur, créé à la première demande.
+const lifecycleCounters = new Map();
+function lifecycleCounter(key) {
+    let counter = lifecycleCounters.get(key);
+    if (!counter) {
+        counter = createCountAnimator();
+        lifecycleCounters.set(key, counter);
+    }
+    return counter;
+}
+function lifecycleCounterKeys() {
+    return lifecycleEngine()?.counterKeys || [];
+}
+// Grandeur affichée par #spanNbCaches : la première balise du moteur.
+function lifecyclePrimaryCount(now) {
+    const key = lifecycleCounterKeys()[0];
+    return key ? lifecycleCounter(key).valueAt(now) : 0;
+}
 let displayedCacheCount = null;
 let pointAppearListenerKey = null;
 // Garde : true pendant nos propres renderSync de compositing (cf. mrPostrenderKey).
@@ -629,7 +643,7 @@ export function refreshPoints(){
     // `features` en repli si elle est vide (source pas encore alimentée).
     let toDisplay = features || [];
     let dnfToDisplay = [];
-    if (!isEvolutionPage() && isAnimationInProgress() && window.vectorSource) {
+    if (!isLifecyclePage() && isAnimationInProgress() && window.vectorSource) {
         toDisplay = window.vectorSource.getFeatures();
         dnfToDisplay = window.dnfVectorSource?.getFeatures() || [];
     }
@@ -783,11 +797,11 @@ export function initPopupOverlay(){
             return;
         }
 
-        if (isEvolutionPage()) {
+        if (isLifecyclePage()) {
             // Dates de placement et d'archivage ; nom et propriétaire sont
             // chargés à la demande (absents des données de la carte).
             const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
-            pkg.renderEvolutionPopup?.(feature, contentEl);
+            lifecycleEngine()?.renderPopup?.(feature, contentEl);
             popupEl.classList.add('is-visible');
             popupOverlay.setPosition(evt.coordinate);
             return;
@@ -983,10 +997,10 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
     // réellement changer le style).
     if (!vectorLayer) {
         dbgMapgl('[displayWebGLPoints] Création nouveau vectorLayer WebGLPoints');
-        const evolution = isEvolutionPage();
+        const evolution = isLifecyclePage();
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
-            style: buildPointStyle(pointOptions, { evolution }),
+            style: buildPointStyle(pointOptions, { evolution, poses: isPosesPage() }),
             // Mode Évolution : les points pas encore placés ou déjà disparus
             // sont écartés par le shader, y compris pour le clic (popup).
             ...(evolution ? { filter: EVO_FILTER } : {}),
@@ -1028,7 +1042,7 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
             });
         }
 
-        if (isEvolutionPage()) {
+        if (isLifecyclePage()) {
             // Apparition et disparition calculées par le style (evolution_style.mjs).
             window.vectorSource.addFeatures(toAdd);
             evolutionPointsLoaded = true;
@@ -1140,8 +1154,8 @@ function updatePointAppearClock() {
     // Lecture en pause : horloge figée, aucune frame ne diffère — ne pas
     // entretenir une boucle de rendu pendant toute la pause.
     if (livePausedAt !== null) return false;
-    if (isEvolutionPage()) {
-        const vars = pkg.evolutionFrameVars?.(now, animationMsPerDay());
+    if (isLifecyclePage()) {
+        const vars = lifecycleEngine()?.frameVars?.(now, animationMsPerDay());
         if (vars) Object.assign(pointStyleVariables, vars);
     }
 
@@ -1639,7 +1653,7 @@ function resetCameraFollow() {
     cameraHome = Array.isArray(homeCenter) && Number.isFinite(cameraHomeZoom)
         ? { center: [...homeCenter], zoom: cameraHomeZoom, resolution: map.getView().getResolution() }
         : null;
-    if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return;
+    if (!pkg.options.animation?.cameraFollow || isLifecyclePage()) return;
     // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
     // vue glisserait de nouveau vers la cible juste après son déplacement.
     if (!cameraInteractionKey) {
@@ -1798,7 +1812,7 @@ function ensureCameraSummaries() {
 // plage de dates animée. null si le suivi est inactif ou les données absentes.
 // `forRecording` : cf. effectiveCameraDynamism.
 function simulateCurrentCameraJourneys({ forRecording } = {}) {
-    if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return null;
+    if (!pkg.options.animation?.cameraFollow || isLifecyclePage()) return null;
     try {
         const start = animationStartDate();
         const end = animationEndDate();
@@ -1885,7 +1899,7 @@ function estimateTrailReturnJourney() {
 // fenêtre nulle quand la caméra est déjà chez elle. `simulation` : celle des
 // trajets par jour (sans objet en suivi « tête du trait »).
 function planCameraReturn(simulation) {
-    if (!pkg.options.animation?.cameraFollow || isEvolutionPage() || !effectiveCameraReturnHome()) return null;
+    if (!pkg.options.animation?.cameraFollow || isLifecyclePage() || !effectiveCameraReturnHome()) return null;
     let journey = null;
     try {
         journey = effectiveCameraFollowMode() === 'trail'
@@ -1913,7 +1927,7 @@ export function estimateCameraReturnMs() {
 // Durée cumulée et nombre des trajets de caméra de la prochaine animation, pour
 // le plan de durée affiché (ui.js, refreshTimingPlan).
 export function estimateCameraTravel() {
-    if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return null;
+    if (!pkg.options.animation?.cameraFollow || isLifecyclePage()) return null;
     // Suivi « tête du trait » : aucun trajet à simuler — le mouvement continu
     // ne met jamais les dates en pause, la durée annoncée est exacte.
     if (effectiveCameraFollowMode() === 'trail') return null;
@@ -2160,18 +2174,17 @@ function cameraTrackHoldFrames(dayIndex) {
 // Écrit la valeur courante du compteur dans l'overlay. Retourne true tant que
 // l'animation du compteur n'est pas terminée (il faut continuer à redessiner).
 function updateAnimatedCacheCount(now) {
-    if (isEvolutionPage()) {
-        // spanNbCaches reste alimenté en arrière-plan avec les actives : la
-        // valeur sert au dessin de débogage et à la réserve historique.
-        const actives = evolutionCounters.actives.valueAt(now);
-        if (actives !== displayedCacheCount) {
-            displayedCacheCount = actives;
-            pkg.updateNbCaches(actives);
+    if (isLifecyclePage()) {
+        // spanNbCaches reste alimenté en arrière-plan avec la première
+        // grandeur (actives) : la valeur sert au dessin de débogage et à la
+        // réserve historique.
+        const primary = lifecyclePrimaryCount(now);
+        if (primary !== displayedCacheCount) {
+            displayedCacheCount = primary;
+            pkg.updateNbCaches(primary);
         }
-        renderEvolutionInfosLine(now);
-        return evolutionCounters.actives.isAnimating(now)
-            || evolutionCounters.placees.isAnimating(now)
-            || evolutionCounters.archivees.isAnimating(now);
+        renderLifecycleInfosLine(now);
+        return lifecycleCounterKeys().some((key) => lifecycleCounter(key).isAnimating(now));
     }
     const value = cacheCountAnimator.valueAt(now);
     if (value !== displayedCacheCount) {
@@ -2181,19 +2194,20 @@ function updateAnimatedCacheCount(now) {
     return cacheCountAnimator.isAnimating(now);
 }
 
-// Compose la ligne d'infos du mode Évolution depuis le modèle à balises et
-// l'écrit dans son span si elle a changé. {date} lit #spanCurrentDate,
-// alimenté en arrière-plan comme les autres spans classiques.
-function renderEvolutionInfosLine(now) {
+// Compose la ligne d'infos des pages « cycle de vie » depuis le modèle à
+// balises et l'écrit dans son span si elle a changé. {date} lit
+// #spanCurrentDate, alimenté en arrière-plan comme les autres spans classiques.
+function renderLifecycleInfosLine(now) {
     const span = document.getElementById('spanInfosTemplate');
     if (!span) return;
-    const text = renderInfosTemplate(pkg.evolutionInfosTemplate?.() ?? '', {
+    const engine = lifecycleEngine();
+    if (!engine) return;
+    const values = {
         date: document.getElementById('spanCurrentDate')?.textContent ?? '',
-        actives: evolutionCounters.actives.valueAt(now),
-        placees: evolutionCounters.placees.valueAt(now),
-        archivees: evolutionCounters.archivees.valueAt(now),
         total: pkg.metadata?.numberOfCaches ?? 0,
-    });
+    };
+    for (const key of lifecycleCounterKeys()) values[key] = lifecycleCounter(key).valueAt(now);
+    const text = renderInfosTemplate(engine.infosTemplate?.() ?? '', values, engine.infosTags);
     if (span.textContent !== text) span.textContent = text;
 }
 
@@ -2215,16 +2229,14 @@ function showRestInfos() {
     pkg.syncImagesToRest?.();
 }
 
-// Mode Évolution : pose les trois compteurs sans animation et réécrit la
+// Pages « cycle de vie » : pose les compteurs sans animation et réécrit la
 // ligne d'infos immédiatement (état au repos, début d'animation).
-function resetEvolutionCounters(values = {}) {
-    for (const key of ['actives', 'placees', 'archivees']) {
-        evolutionCounters[key].set(values?.[key]);
-    }
-    const actives = evolutionCounters.actives.valueAt(sampleAppearClock());
-    displayedCacheCount = actives;
-    pkg.updateNbCaches(actives);
-    renderEvolutionInfosLine(sampleAppearClock());
+function resetLifecycleCounters(values = {}) {
+    for (const key of lifecycleCounterKeys()) lifecycleCounter(key).set(values?.[key]);
+    const primary = lifecyclePrimaryCount(sampleAppearClock());
+    displayedCacheCount = primary;
+    pkg.updateNbCaches(primary);
+    renderLifecycleInfosLine(sampleAppearClock());
 }
 
 // Durée d'un jour d'animation, dans l'unité de l'horloge des points : temps vidéo
@@ -2304,7 +2316,7 @@ function appendPoints(target, points) {
 
 // Fonction helper pour récupérer tous les points filtrés
 function getAllFilteredPoints() {
-    if (isEvolutionPage()) return features || [];
+    if (isLifecyclePage()) return features || [];
     const allPoints = [];
     if (pkg.pointsByDate) {
         for (const points of pkg.pointsByDate.values()) {
@@ -2350,7 +2362,7 @@ function resetStatsPanelsForAnimation() {
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
 function getFilteredPointsAtStart() {
     // Mode Évolution : toutes les caches sont dans la source dès le départ.
-    if (isEvolutionPage()) return features || [];
+    if (isLifecyclePage()) return features || [];
     const allPoints = [];
     if (pkg.pointsByDate) {
         // Utiliser la date de début d'animation comme limite supérieure
@@ -2528,7 +2540,7 @@ function displayDnfPoints(olFeatures, appear = null) {
 }
 
 function syncDnf(isVisible, appear = null, flash = null) {
-    if (isEvolutionPage()) return;
+    if (isLifecyclePage()) return;
     const entries = pkg.getDnfEntries?.() || [];
     if (!entries.length && !dnfShown.size && !dnfVanishing.size) return;
     const source = window.dnfVectorSource;
@@ -2742,7 +2754,7 @@ function finalizeAnimationEnd() {
     // l'état piste doit être nul (la cible réactive resterait sinon inhibée).
     cameraTrack = null;
     cameraTrackStartAt = null;
-    if (isEvolutionPage()) endEvolutionTimeline();
+    if (isLifecyclePage()) endLifecycleTimeline();
 
     // Fin RÉELLE de l'animation atteinte. En mode MediaRecorder, c'est ici qu'il
     // faut arrêter le recorder : le setTimeout théorique se désynchronise dès que
@@ -2777,10 +2789,10 @@ export function startAnimation(restart=false) {
     livePausedAt = null;
     if (!restart) livePauseOffsetMs = 0;
     endHoldTimer.clear();
-    if (!restart && isEvolutionPage()) {
+    if (!restart && isLifecyclePage()) {
         animationDatesComplete = false;
         // Toutes les caches restent dans la source : seul le style change.
-        ensureEvolutionPoints();
+        ensureLifecyclePoints();
         createFlashElements();
         // Le compteur et l'horloge des points sont posés plus bas, une fois la
         // date de début connue.
@@ -2836,7 +2848,12 @@ export function startAnimation(restart=false) {
 
     if (!restart) {
         currentDate = new Date(pkg.metadata.startDate);
-        if (isEvolutionPage()) infos = createObjectInfos(beginEvolutionTimeline(currentDate));
+        if (isLifecyclePage()) {
+            infos = createObjectInfos(beginLifecycleTimeline(currentDate));
+            // Mes poses : Stats (trouvailles reçues) et images repartent de la
+            // date de début, comme en mode principal.
+            if (isPosesPage()) resetStatsPanelsForAnimation();
+        }
     }
     // Sans effet à la reprise d'une pause : l'approche n'est planifiée qu'une fois.
     startTravelTrailApproach();
@@ -2907,7 +2924,7 @@ export function startAnimation(restart=false) {
         // d'un coup (rAF est suspendu en arrière-plan, contrairement à setInterval).
         // Le plafond vaut exactement ce qu'une frame sait consommer : l'accumulateur
         // ne peut donc pas gonfler indéfiniment quand le rendu ne suit pas.
-        const maxDaysThisFrame = isEvolutionPage()
+        const maxDaysThisFrame = isLifecyclePage()
             ? EVOLUTION_MAX_DAYS_PER_FRAME
             // La limite à 1 jour/frame ne se justifie qu'en mode réactif, où
             // chaque date affichée peut figer l'animation pour un trajet. En
@@ -3052,7 +3069,7 @@ export function stopAnimation(){
     // Remettre la carte à l'état d'origine avec tous les points filtrés.
     // Mode Évolution : les points restent dans la source, seul l'état au repos
     // du style est rétabli (plus bas).
-    const evolution = isEvolutionPage();
+    const evolution = isLifecyclePage();
     if (!evolution) {
         dbgMapgl('[STOP] Nettoyage de la carte...');
         clearMap();
@@ -3095,8 +3112,8 @@ export function stopAnimation(){
     dbgMapgl('[STOP] Styles d\'animation remis à zéro');
 
     if (evolution) {
-        ensureEvolutionPoints();
-        endEvolutionTimeline();
+        ensureLifecyclePoints();
+        endLifecycleTimeline();
     } else {
         const allFilteredPoints = getAllFilteredPoints();
         dbgMapgl('[STOP] Nombre de points filtrés à afficher:', allFilteredPoints.length);
@@ -3201,11 +3218,11 @@ export function seekAnimationToDate(date) {
     endHoldTimer.clear();
 
     const showDate = pkg.options.infos?.currentDate?.display === true;
-    if (isEvolutionPage()) {
+    if (isLifecyclePage()) {
         createFlashElements();
         // La date avant les compteurs : la ligne d'infos à balises la relit.
         pkg.updateCurrentDate(day);
-        infos = createObjectInfos(beginEvolutionTimeline(next));
+        infos = createObjectInfos(beginLifecycleTimeline(next));
     } else {
         const shown = seekPointsToDay(dateToDayNumber(day));
         createFlashElements();
@@ -3254,7 +3271,7 @@ function seekCameraFollow(now) {
     // Retour au cadrage : son plan est gardé, la fin des dates le réarme.
     cameraReturn = null;
     cameraPacing = null;
-    if (!pkg.options.animation?.cameraFollow || cameraFollowSuspended || isEvolutionPage()) return;
+    if (!pkg.options.animation?.cameraFollow || cameraFollowSuspended || isLifecyclePage()) return;
     const view = map.getView();
     if (cameraTrack) {
         const trackMs = previewVideoMs();
@@ -3314,7 +3331,7 @@ export function videoTimeAtDays(shownDays) {
         }
         return { ms: plan.leadMs + holdsMs + shown * plan.dayMs, exact: true };
     }
-    const camera = !!pkg.options.animation?.cameraFollow && !isEvolutionPage();
+    const camera = !!pkg.options.animation?.cameraFollow && !isLifecyclePage();
     return { ms: shown * animationMsPerDay(), exact: !camera };
 }
 
@@ -3460,7 +3477,7 @@ function startRecordingProcess(session){
     // Remise à zéro de l'état de la carte et des informations affichées.
     // Mode Évolution : les caches restent dans la source (seul le style change),
     // les recharger coûterait plusieurs secondes sur un gros jeu de données.
-    if (!isEvolutionPage()) clearMap(); // Nettoie les points sur la carte
+    if (!isLifecyclePage()) clearMap(); // Nettoie les points sur la carte
 
     // Remise à zéro des compteurs d'images/frames pour un nouvel enregistrement
     imageCounter = 0;
@@ -3533,7 +3550,7 @@ function startRecordingProcess(session){
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
             flashMode: effectiveFlashMode(),
             flashDurationMs: pkg.options.flash.duration,
-            allowMultipleDaysPerFrame: isEvolutionPage(),
+            allowMultipleDaysPerFrame: isLifecyclePage(),
         });
 
         recordingDayIndex = 0;
@@ -3542,7 +3559,7 @@ function startRecordingProcess(session){
         recordingBaseFrameCount = timingPlan.baseFrameCount;
         recordingReturnFrames = timingPlan.returnFrameCount || 0;
         currentDayFrameTarget = framesForDay(0, recordingDayCount, recordingBaseFrameCount,
-            { allowZero: isEvolutionPage() });
+            { allowZero: isLifecyclePage() });
         framesPerDay = timingPlan.framesPerDayAverage;
         pkg.options.record.framesPerDay = framesPerDay;
         pkg.options.record.framesPerSec = timingPlan.fps;
@@ -3628,10 +3645,11 @@ function startRecordingProcess(session){
     }
     
     let initialCount;
-    if (isEvolutionPage()) {
-        ensureEvolutionPoints();
+    if (isLifecyclePage()) {
+        ensureLifecyclePoints();
         createFlashElements();
-        initialCount = beginEvolutionTimeline(currentDate);
+        initialCount = beginLifecycleTimeline(currentDate);
+        if (isPosesPage()) resetStatsPanelsForAnimation();
     } else {
         window.vectorSource.clear();
 
@@ -3709,7 +3727,7 @@ function startRecordingProcess(session){
 // initialCount : caches déjà présentes sur la carte au démarrage (celles antérieures
 // à la date de début d'animation). Le compteur doit partir de ce nombre, sinon il
 // annonce 0 alors que ces points sont bien visibles.
-// En mode Évolution, beginEvolutionTimeline passe un objet { actives, placees,
+// Sur les pages « cycle de vie », beginLifecycleTimeline passe un objet { actives, placees,
 // archivees } qui initialise les trois compteurs de la ligne d'infos à balises.
 function createObjectInfos(initialCount = initialCacheCount()){
     let infos = new Object();
@@ -3724,7 +3742,7 @@ function createObjectInfos(initialCount = initialCacheCount()){
         infos.displayNumberofCaches = true;
         // La ligne repart des valeurs d'avant la date de début, sans animer
         // depuis le total de la base affiché hors animation.
-        resetEvolutionCounters(initialCount);
+        resetLifecycleCounters(initialCount);
         return infos
     }
     infos.cacheNumber = Math.max(0, Number(initialCount) || 0);
@@ -3847,9 +3865,9 @@ function abortRecordingOnError(error) {
 
     // Remettre la carte avec tous les points filtrés
     try {
-        if (isEvolutionPage()) {
-            ensureEvolutionPoints();
-            endEvolutionTimeline();
+        if (isLifecyclePage()) {
+            ensureLifecyclePoints();
+            endLifecycleTimeline();
         } else {
             clearMap();
             const allFilteredPoints = getAllFilteredPoints();
@@ -4104,9 +4122,9 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
         clearTravelTrail();
 
         // Remettre la carte avec tous les points filtrés
-        if (isEvolutionPage()) {
-            ensureEvolutionPoints();
-            endEvolutionTimeline();
+        if (isLifecyclePage()) {
+            ensureLifecyclePoints();
+            endLifecycleTimeline();
         } else {
             clearMap();
             const allFilteredPoints = getAllFilteredPoints();
@@ -4275,7 +4293,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                 ? cameraPacedFrameTarget(false)
                 : framesForDay(0, recordingDayCount, recordingBaseFrameCount);
             displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
-        } else if (isEvolutionPage()) {
+        } else if (isLifecyclePage()) {
             // Plusieurs jours peuvent partager une image : les jours qui n'en
             // reçoivent aucune sont affichés en un seul lot avec le suivant.
             const batch = [];
@@ -4371,7 +4389,7 @@ function recordAnimationMediaRecorder(){
     // Préparation carte: points initiaux, animations, etc.
     // NB : les points initiaux sont affichés plus bas, APRÈS le window.vectorSource.clear()
     // de préparation — sinon ce clear les efface et la vidéo démarre sur une carte vide.
-    if (!isEvolutionPage()) {
+    if (!isLifecyclePage()) {
         try { clearMap(); } catch(_) {}
     }
 
@@ -4389,10 +4407,11 @@ function recordAnimationMediaRecorder(){
     // Frames/informations
     window.vectorSource = window.vectorSource || new ol.source.Vector({ wrapX: true });
     let initialCount;
-    if (isEvolutionPage()) {
-        ensureEvolutionPoints();
+    if (isLifecyclePage()) {
+        ensureLifecyclePoints();
         createFlashElements();
-        initialCount = beginEvolutionTimeline(currentDate);
+        initialCount = beginLifecycleTimeline(currentDate);
+        if (isPosesPage()) resetStatsPanelsForAnimation();
     } else {
         window.vectorSource.clear();
 
@@ -5341,8 +5360,8 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // Le curseur de la barre de chronologie suit les jours affichés (le
     // dessin est regroupé à la frame suivante).
     pkg.refreshTimelineBar?.();
-    if (isEvolutionPage()) {
-        displayEvolutionDates(dates, flashOptions, record, infos);
+    if (isLifecyclePage()) {
+        displayLifecycleDates(dates, flashOptions, record, infos);
         return;
     }
 
@@ -5485,7 +5504,7 @@ function displayInfosForDate(infos, date, featuresForDate, hiddenCount = 0) {
 // evolution_data.js ; ici, seulement ce qui touche la carte et l'animation.
 
 // Remplace les points affichés par les caches de la sélection courante.
-export function setEvolutionFeatures(olFeatures) {
+export function setLifecycleFeatures(olFeatures) {
     features = Array.isArray(olFeatures) ? olFeatures : [];
     if (vectorLayer && isLayerOnMap(map, vectorLayer) && window.vectorSource) {
         // Le layer garde son style : seules les features changent. Le recréer
@@ -5499,8 +5518,10 @@ export function setEvolutionFeatures(olFeatures) {
         clearMap();
         if (features.length > 0) displayWebGLPoints(features, pkg.options.point);
     }
-    showEvolutionRestState();
+    showLifecycleRestState();
 }
+// Nom historique, encore appelé par evolution_data.js.
+export const setEvolutionFeatures = setLifecycleFeatures;
 
 // Cadre la vue sur l'étendue [ouest, sud, est, nord] (degrés) d'une base.
 // Sert au mode Évolution et au cadrage automatique du mode principal
@@ -5520,7 +5541,7 @@ export function fitMapView(lonLatExtent, { onlyIfOutside = false } = {}) {
 }
 
 // Remet les caches dans la source si un nettoyage de la carte les en a retirées.
-function ensureEvolutionPoints() {
+function ensureLifecyclePoints() {
     if (evolutionPointsLoaded && vectorLayer && isLayerOnMap(map, vectorLayer)) return;
     clearMap();
     if (features && features.length > 0) displayWebGLPoints(features, pkg.options.point);
@@ -5528,34 +5549,36 @@ function ensureEvolutionPoints() {
 
 // Carte au repos : état final à la date de fin, ligne d'infos et date à
 // l'avenant (la date avant les compteurs : la balise {date} la lit).
-export function showEvolutionRestState() {
-    const rest = pkg.evolutionRestState?.();
+export function showLifecycleRestState() {
+    const rest = lifecycleEngine()?.restState?.();
     if (!rest) return;
     if (rest.date) pkg.updateCurrentDate(rest.date);
-    resetEvolutionCounters(rest.values);
+    resetLifecycleCounters(rest.values);
     // Panneaux Stats : retour aux totaux de l'état de fin (repos).
     pkg.refreshStatsPanels?.();
     mapDirtyTracker.markDirty();
     try { map.render(); } catch (_) {}
 }
+// Nom historique, encore appelé par evolution_data.js.
+export const showEvolutionRestState = showLifecycleRestState;
 
-// Début d'animation ou d'enregistrement ; retourne les trois compteurs
-// ({ actives, placees, archivees }) juste avant la date de début.
-function beginEvolutionTimeline(startDate) {
+// Début d'animation ou d'enregistrement ; retourne les compteurs du moteur
+// ({ actives, placees, archivees } en Évolution) juste avant la date de début.
+function beginLifecycleTimeline(startDate) {
     const disappear = pkg.options.flash?.disappear;
     if (disappear?.color) disappear.rgb = pkg.hexToRgb(disappear.color);
     if (disappear?.border_color) disappear.border_rgb = pkg.hexToRgb(disappear.border_color);
-    return pkg.evolutionBegin?.(startDate, pkg.metadata.endDate, sampleAppearClock(),
-        pkg.options.flash?.mode === 'impulse') || 0;
+    return lifecycleEngine()?.begin?.(startDate, pkg.metadata.endDate, sampleAppearClock(),
+        { stagger: pkg.options.flash?.mode === 'impulse' }) || {};
 }
 
-function endEvolutionTimeline() {
-    pkg.evolutionEnd?.();
-    showEvolutionRestState();
+function endLifecycleTimeline() {
+    lifecycleEngine()?.end?.();
+    showLifecycleRestState();
 }
 
 function hasTimelineData() {
-    if (isEvolutionPage()) return !!pkg.evolutionHasData?.();
+    if (isLifecyclePage()) return !!lifecycleEngine()?.hasData?.();
     // Les locationless masquées n'ont pas de point mais restent comptées :
     // une sélection qui n'en contient que des masquées a quand même une
     // chronologie à jouer (le compteur avance de jour en jour).
@@ -5563,49 +5586,63 @@ function hasTimelineData() {
         || (pkg.hiddenPointsByDate && pkg.hiddenPointsByDate.size > 0));
 }
 
-// Mode du flash retenu pour la pause de fin : en mode Évolution, le flash de
-// disparition compte aussi (il peut être le seul actif).
+// Mode du flash retenu pour la pause de fin : sur les pages « cycle de vie »,
+// les flashs propres au moteur (disparition, événements) comptent aussi — ils
+// peuvent être les seuls actifs.
 export function effectiveFlashMode() {
     const mode = pkg.options.flash?.mode || 'none';
-    if (mode !== 'none' || !isEvolutionPage()) return mode;
-    const disappear = pkg.options.flash?.disappear?.mode;
-    return disappear && disappear !== 'none' ? 'circle' : 'none';
+    if (mode !== 'none' || !isLifecyclePage()) return mode;
+    return lifecycleEngine()?.hasOwnFlashes?.() ? 'circle' : 'none';
 }
 
-// Équivalent de displayFeaturesForDates pour le mode Évolution : aucun point
-// n'est ajouté ni retiré, le jour courant avance et les flashs partent.
-function displayEvolutionDates(dates, flashOptions, record, infos) {
+// Équivalent de displayFeaturesForDates pour les pages « cycle de vie » :
+// aucun point n'est ajouté ni retiré, le jour courant avance et les flashs
+// partent.
+function displayLifecycleDates(dates, flashOptions, record, infos) {
     const at = sampleAppearClock();
-    const ev = pkg.evolutionStep?.(dates, at);
+    const ev = lifecycleEngine()?.step?.(dates, at);
     if (!ev) return;
 
-    // Panneaux Stats : poses et archivages alimentent l'accumulateur à trois
-    // univers (actives / placées / archivées).
-    pkg.accumulateEvolutionStats?.(dates, ev.placed, ev.archived, at);
+    // Panneaux Stats : le lot du moteur (poses, archivages, événements)
+    // alimente les accumulateurs de la page.
+    pkg.accumulateLifecycleStats?.(dates, ev, at);
     // Images planifiées : fondus à la date du dernier jour du lot.
     pkg.syncImagesToDate?.(dates[dates.length - 1], at);
 
-    if (flashOptions.mode !== 'none' && ev.placed.length > 0) {
-        pushFeatureFlashes(ev.placed, flashOptions, record, flashOptions.mode === 'impulse');
+    if (Array.isArray(ev.flashes)) {
+        // Flashs par événement, déjà choisis et dimensionnés par le moteur :
+        // un appel par jeu d'options (le cache de styles les partage).
+        const byOptions = new Map();
+        for (const { feature, options } of ev.flashes) {
+            if (!feature || !options) continue;
+            let list = byOptions.get(options);
+            if (!list) byOptions.set(options, (list = []));
+            list.push(feature);
+        }
+        for (const [options, list] of byOptions) {
+            pushFeatureFlashes(list, options, record, options.mode === 'impulse');
+        }
+    } else {
+        if (flashOptions.mode !== 'none' && ev.placed.length > 0) {
+            pushFeatureFlashes(ev.placed, flashOptions, record, flashOptions.mode === 'impulse');
+        }
+        const disappear = pkg.options.flash?.disappear;
+        if (disappear && disappear.mode && disappear.mode !== 'none' && ev.archived.length > 0) {
+            pushFeatureFlashes(ev.archived, disappear, record, false);
+        }
     }
-    const disappear = pkg.options.flash?.disappear;
-    if (disappear && disappear.mode && disappear.mode !== 'none' && ev.archived.length > 0) {
-        pushFeatureFlashes(ev.archived, disappear, record, false);
-    }
-    if (ev.placed.length > 0 || ev.archived.length > 0) {
+    if (ev.placed.length > 0 || ev.archived.length > 0 || ev.changed) {
         extendPointsAnimation(at + Math.max(POINT_APPEAR_MS, POINT_DISAPPEAR_MS) + IMPULSE_MAX_STAGGER_MS);
     }
 
     if (infos.displayDate) pkg.updateCurrentDate(dates[dates.length - 1]);
     if (infos.displayNumberofCaches) {
-        // Valeurs absolues des trois compteurs de la ligne d'infos : actives
-        // présentes (monte et descend) et cumuls placées/archivées (ne font
-        // que monter).
+        // Valeurs absolues des compteurs de la ligne d'infos (actives
+        // présentes, cumuls…), chacun animé vers sa nouvelle valeur.
         const duration = Math.min(COUNTER_ANIMATION_MS, animationMsPerDay());
-        evolutionCounters.actives.setTarget(ev.values.actives, at, duration);
-        evolutionCounters.placees.setTarget(ev.values.placees, at, duration);
-        evolutionCounters.archivees.setTarget(ev.values.archivees, at, duration);
-        infos.cacheNumber = ev.values.actives;
+        const keys = lifecycleCounterKeys();
+        for (const key of keys) lifecycleCounter(key).setTarget(ev.values?.[key], at, duration);
+        if (keys.length) infos.cacheNumber = ev.values?.[keys[0]];
     }
 
     mapDirtyTracker.markDirty();
@@ -5786,7 +5823,7 @@ function resetTravelTrail(silent = false) {
     // stop, l'utilisateur revoit sa route.
     clearTrailPreview();
     clearTravelTrail();
-    if (isEvolutionPage()) return;
+    if (isLifecyclePage()) return;
     const opts = currentTrailOptions();
     if (!opts.enabled) return;
 
@@ -5867,7 +5904,7 @@ export function toggleTrailPreview() {
     // par l'animation — le bouton est alors désactivé côté UI. La pause garde
     // animationInProgress vrai (isIdleState seul la laisserait passer). Trajet
     // désactivé, l'aperçu reste ouvrable : il sert à régler avant d'activer.
-    if (isEvolutionPage() || !isIdleState() || isAnimationInProgress()) return !!trailPreview;
+    if (isLifecyclePage() || !isIdleState() || isAnimationInProgress()) return !!trailPreview;
     const opts = currentTrailOptions();
 
     let geometry;
@@ -5908,7 +5945,7 @@ function clearTrailPreview() {
 export function refreshTrailPreview() {
     if (!trailPreview) return;
     const opts = currentTrailOptions();
-    if (isEvolutionPage()) {
+    if (isLifecyclePage()) {
         clearTrailPreview();
         return;
     }
@@ -6424,7 +6461,7 @@ function clearFlashPreview() {
 function pickFlashPreviewFeatures() {
     if (!map || !window.vectorSource) return [];
     const extent = map.getView().calculateExtent(map.getSize());
-    const restDay = isEvolutionPage() ? pointStyleVariables.evoDay : null;
+    const restDay = isLifecyclePage() ? pointStyleVariables.evoDay : null;
     const byType = new Map();
     window.vectorSource.forEachFeatureInExtent(extent, (feature) => {
         if (restDay !== null) {

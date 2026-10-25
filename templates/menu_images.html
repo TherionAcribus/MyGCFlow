@@ -364,12 +364,12 @@
                     <div class="stats-form-section-body">
                     <small class="form-hint text-muted mb-2">{{ _("L'image entre puis sort au fil de l'animation, à des dates ou à des étapes du compteur de trouvailles. Sans borne : toujours visible.") }}</small>
                     {% if mode != 'evolution' %}
-                    {# Jalons du compteur : page « Mes Géocaches » seulement (pas de trouvailles en Évolution). #}
+                    {# Jalons du compteur : pas de trouvailles en Évolution ; sur Mes poses, ce sont les trouvailles reçues. #}
                     <div class="btn-group btn-group-sm mb-2" role="radiogroup" aria-label="{{ _('Repère du planing') }}">
                         <input type="radio" class="btn-check" name="imageScheduleBy" id="imageScheduleBy-date" value="date">
                         <label class="btn btn-outline-secondary" for="imageScheduleBy-date"><i class="ti ti-calendar me-1" aria-hidden="true"></i>{{ _("Par dates") }}</label>
                         <input type="radio" class="btn-check" name="imageScheduleBy" id="imageScheduleBy-find" value="find">
-                        <label class="btn btn-outline-secondary" for="imageScheduleBy-find"><i class="ti ti-star me-1" aria-hidden="true"></i>{{ _("Par trouvailles") }}</label>
+                        <label class="btn btn-outline-secondary" for="imageScheduleBy-find"><i class="ti ti-star me-1" aria-hidden="true"></i>{% if mode == 'poses' %}{{ _("Par trouvailles reçues") }}{% else %}{{ _("Par trouvailles") }}{% endif %}</label>
                     </div>
                     {% endif %}
                     <div class="row g-2" id="imageScheduleDates">

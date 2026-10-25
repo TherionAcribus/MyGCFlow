@@ -30,6 +30,9 @@ export * from './flash_animations.js';
 export * from './profiles.js';
 export * from './theme.js';
 export * from './evolution_data.js';
+// Après evolution_data.js ; noms d'export uniques (posesXxx) : `export *`
+// écarte en silence un nom exporté par deux modules.
+export * from './poses_data.js';
 export * from './infos_editor.js';
 export * from './labs.js';
 // S'initialise lui-même en fin de module (cf. AGENTS.md, ordre d'évaluation).

@@ -153,8 +153,12 @@ et laisse le shader décider de leur visibilité :
   `evolutionRestState`…).
 
 Dans `mapgl.js`, chaque point d'entrée du moteur (début et fin d'animation,
-jour affiché, deux pipelines d'enregistrement) teste `isEvolutionPage()` et
-délègue à ces modules ; le chemin du mode principal est inchangé. Un jour
+jour affiché, deux pipelines d'enregistrement) teste `isLifecyclePage()` et
+délègue au moteur enregistré par la page (`lifecycle_engine.mjs` :
+`begin`, `step`, `frameVars`, `restState`…) ; le chemin du mode principal est
+inchangé. La page Mes poses (docs/mode-poses.md) partage ce moteur avec son
+propre module de données ; `isEvolutionPage()` ne garde que ce qui tient aux
+bases CSV (archivées sans date, départements). Un jour
 animé ne coûte que ses flashs d'apparition et de disparition (flash
 « implosion », `flash_implode.mjs`).
 

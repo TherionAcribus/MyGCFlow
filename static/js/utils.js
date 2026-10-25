@@ -1,6 +1,6 @@
 import * as pkg from './index.js';
 import { buildImageTimingPlan } from './video_timing.mjs';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isLifecyclePage } from './app_mode.mjs';
 
 // Fonction pour convertir Hex en composantes RGB
 export function hexToRgb(hex) {
@@ -64,7 +64,7 @@ export function updateInfosForPictures(){
         tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
         flashMode: pkg.effectiveFlashMode ? pkg.effectiveFlashMode() : pkg.options.flash.mode,
         flashDurationMs: pkg.options.flash.duration,
-        allowMultipleDaysPerFrame: isEvolutionPage(),
+        allowMultipleDaysPerFrame: isLifecyclePage(),
         // Pré-roll « piste » éventuel (déjà nul hors mode piste) : ses images
         // de tête comptent dans le total annoncé.
         cameraLeadMs: pkg.options.animation?.cameraLeadMs || 0,

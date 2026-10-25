@@ -82,7 +82,9 @@ class ImagesSettings:
     # Liste propre à la page Évolution (/evolution), même schéma — absente
     # d'un vieux settings.json, elle est vide (jamais une copie d'`items`).
     evolution_items: list = field(default_factory=list)
-    # Configurations nommées {name, items}, applicables sur les deux pages.
+    # Liste propre à la page Mes poses (/poses), même règle.
+    poses_items: list = field(default_factory=list)
+    # Configurations nommées {name, items}, applicables sur toutes les pages.
     configs: list = field(default_factory=list)
 
 
@@ -271,17 +273,21 @@ def _coerce_config_list(source) -> list:
 
 def coerce_images_settings(raw, current: ImagesSettings | None = None) -> ImagesSettings:
     """Bloc `images` normalisé. Patch de premier niveau, comme `stats` : une
-    clé absente (`enabled`, `items`, `evolution_items`, `configs`) garde la
+    clé absente (`enabled`, `items`, `evolution_items`, `poses_items`,
+    `configs`) garde la
     valeur courante."""
     base = current if isinstance(current, ImagesSettings) else ImagesSettings()
     if not isinstance(raw, dict):
         return ImagesSettings(enabled=base.enabled, items=list(base.items),
                               evolution_items=list(base.evolution_items),
+                              poses_items=list(base.poses_items),
                               configs=list(base.configs))
     return ImagesSettings(
         enabled=_bool(raw.get("enabled"), base.enabled),
         items=_coerce_item_list(raw["items"] if "items" in raw else base.items),
         evolution_items=_coerce_item_list(
             raw["evolution_items"] if "evolution_items" in raw else base.evolution_items),
+        poses_items=_coerce_item_list(
+            raw["poses_items"] if "poses_items" in raw else base.poses_items),
         configs=_coerce_config_list(raw["configs"] if "configs" in raw else base.configs),
     )

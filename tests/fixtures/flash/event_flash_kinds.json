@@ -1,0 +1,119 @@
+{
+  "defaults": {
+    "alert": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#ff9800",
+      "color_type": "fix",
+      "mode": "target",
+      "size": 30
+    },
+    "archive": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#616161",
+      "color_type": "fix",
+      "mode": "implode",
+      "size": 40
+    },
+    "disable": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#9e9e9e",
+      "color_type": "fix",
+      "mode": "implode",
+      "size": 30
+    },
+    "dnf": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#263238",
+      "color_type": "fix",
+      "mode": "circle",
+      "size": 20
+    },
+    "enable": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#66bb6a",
+      "color_type": "fix",
+      "mode": "echo",
+      "size": 30
+    },
+    "favorite": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#ffc107",
+      "color_type": "fix",
+      "mode": "star",
+      "size": 36
+    },
+    "find": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#ffffff",
+      "color_type": "gc",
+      "mode": "circle",
+      "size": 20
+    },
+    "maintenance": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#43a047",
+      "color_type": "fix",
+      "mode": "sparkle",
+      "size": 28
+    },
+    "note": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#90a4ae",
+      "color_type": "fix",
+      "mode": "none",
+      "size": 16
+    },
+    "publish": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#ffffff",
+      "color_type": "fix",
+      "mode": "same",
+      "size": 40
+    },
+    "reviewer": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#7e57c2",
+      "color_type": "fix",
+      "mode": "none",
+      "size": 16
+    }
+  },
+  "kinds": [
+    "archive",
+    "disable",
+    "enable",
+    "publish",
+    "alert",
+    "maintenance",
+    "favorite",
+    "find",
+    "dnf",
+    "note",
+    "reviewer"
+  ],
+  "modes": [
+    "same",
+    "none",
+    "circle",
+    "implode",
+    "echo",
+    "target",
+    "star",
+    "sparkle",
+    "square",
+    "triangle",
+    "diamond",
+    "fireworks"
+  ]
+}

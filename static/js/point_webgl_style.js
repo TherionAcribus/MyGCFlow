@@ -27,10 +27,12 @@ const TRANSPARENT = [0, 0, 0, 0];
 // création du layer (il compile des shaders) : cette fonction n'est donc à
 // appeler qu'à la (re)création du layer, jamais à chaque frame d'animation.
 //
-// `evolution` : style du mode Évolution, où tous les points sont présents dès
-// le départ et apparaissent / disparaissent selon le jour courant (voir
-// evolution_style.mjs ; le filtre de visibilité est posé sur le layer).
-export function buildPointStyle(pointOptions, { evolution = false } = {}) {
+// `evolution` : style des pages « cycle de vie » (Évolution, Mes poses), où
+// tous les points sont présents dès le départ et apparaissent / disparaissent
+// selon le jour courant (voir evolution_style.mjs ; le filtre de visibilité
+// est posé sur le layer). `poses` : en plus, rendu grisé des caches
+// désactivées ou archivées (attribut 'pstate', voir applyPosesState).
+export function buildPointStyle(pointOptions, { evolution = false, poses = false } = {}) {
     // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
     const pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
     const borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
@@ -66,6 +68,7 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
     }
 
     let pointStyle;
+    let greyIconOffset = null;
     if (pointOptions.mode == "icone") {
         // Utilisation du sprite Geocaching: offset/size dynamiques selon le type ('cache_type')
         if (pointOptions.sprite && pointOptions.sprite.map) {
@@ -135,6 +138,20 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
             const logicalSheetW = sp.sheetWidth;
             const logicalSheetH = sp.sheetHeight;
 
+            // Page Mes poses : même icône dans la rangée grisée de la feuille
+            // (désactivées, archivées), quand elle existe.
+            if (poses) {
+                const grey = ['match', ['get', 'cache_type']];
+                typeEntries.forEach(([cacheType, key]) => {
+                    const r = sp.map[key];
+                    if (!r) return;
+                    const hasGrey = Number.isFinite(sp.greyRowY) && r.x <= (sp.greyMaxX ?? -1);
+                    grey.push(cacheType, hasGrey ? [r.x, r.y + sp.greyRowY] : [r.x, r.y]);
+                });
+                grey.push([defaultRect.x, defaultRect.y]);
+                greyIconOffset = grey;
+            }
+
             pointStyle = {
                 'icon-src': iconUrl,
                 'icon-size': buildMatchArray('size', [defaultRect.w, defaultRect.h]),
@@ -203,7 +220,9 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
     }
 
     if (evolution) {
+        if (poses) applyPosesColors(pointStyle, greyIconOffset);
         applyEvolutionTimeline(pointStyle, pointOptions);
+        if (poses) applyPosesOpacity(pointStyle);
     } else {
         // Avant l'apparition et la persistance, qui enveloppent ces valeurs :
         // les DNF en profitent comme les trouvailles.
@@ -264,6 +283,49 @@ function applyDnfStyle(pointStyle, sprite) {
         forDnf('icon-offset', [rect.x, rect.y]);
         forDnf('icon-size', [rect.w, rect.h]);
     }
+}
+
+// Page Mes poses : état de chaque cache dans l'attribut 'pstate' (0 active,
+// 1 désactivée, 2 archivée), réécrit les jours où il change. En vectoriel, la
+// couleur du thème vire au gris (désactivée : gris franc, opacité pleine ;
+// archivée : gris clair, à demi effacée) ; en icônes, l'icône de la rangée
+// grisée de la feuille. Le type reste lisible sous le gris.
+export const POSES_DISABLED_GREY = '#9e9e9e';
+export const POSES_ARCHIVED_GREY = '#bdbdbd';
+const POSES_DISABLED_MIX = 0.6;
+const POSES_ARCHIVED_MIX = 0.85;
+export const POSES_ARCHIVED_OPACITY = 0.55;
+const PSTATE = ['get', 'pstate'];
+const IS_DISABLED = ['==', PSTATE, 1];
+const IS_ARCHIVED = ['==', PSTATE, 2];
+const POSES_COLOR_KEYS = ['circle-fill-color', 'shape-fill-color', 'circle-stroke-color', 'shape-stroke-color'];
+
+function mixColor(color, grey, amount) {
+    return ['interpolate', ['linear'], amount, 0, color, 1, grey];
+}
+
+function applyPosesColors(pointStyle, greyIconOffset) {
+    for (const key of POSES_COLOR_KEYS) {
+        if (!(key in pointStyle)) continue;
+        const color = pointStyle[key];
+        // Couleur transparente (centre ou bordure « aucune ») : rien à griser.
+        if (Array.isArray(color) && color.length === 4 && color.every((v) => v === 0)) continue;
+        pointStyle[key] = ['case',
+            IS_ARCHIVED, mixColor(color, POSES_ARCHIVED_GREY, POSES_ARCHIVED_MIX),
+            IS_DISABLED, mixColor(color, POSES_DISABLED_GREY, POSES_DISABLED_MIX),
+            color];
+    }
+    if (greyIconOffset && 'icon-offset' in pointStyle) {
+        pointStyle['icon-offset'] = ['case', ['>', PSTATE, 0], greyIconOffset, pointStyle['icon-offset']];
+    }
+}
+
+// Après applyEvolutionTimeline, qui pose l'opacité d'apparition/disparition.
+function applyPosesOpacity(pointStyle) {
+    const opacityKey = opacityKeyOf(pointStyle);
+    if (!opacityKey) return;
+    const factor = ['case', IS_ARCHIVED, POSES_ARCHIVED_OPACITY, 1];
+    pointStyle[opacityKey] = opacityKey in pointStyle ? ['*', pointStyle[opacityKey], factor] : factor;
 }
 
 // Couleurs éclaircies par la persistance des points récents. La bordure est

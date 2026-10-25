@@ -221,6 +221,20 @@ class ProfileSaveAndImportValidationTests(unittest.TestCase):
         payload = self.manager.export_profile_payload("Alpha", "test")
         self.assertEqual(payload["profile"]["flash"]["dnf"]["mode"], "star")
 
+    def test_a_partial_patch_merges_into_one_event_flash(self):
+        # Flashs par événement de Mes poses : patch partiel d'un seul type,
+        # les autres types gardent leurs réglages.
+        self._put({"flash": {"events": {"favorite": {"mode": "fireworks"}}}})
+        self._put({"flash": {"events": {"favorite": {"color": "#112233"}, "inconnu": {"mode": "star"}}}})
+        saved = settings_manager.read_json(settings_manager.PROFILES_DIR / "Alpha.json")
+        events = saved["flash"]["events"]
+        self.assertEqual(events["favorite"]["mode"], "fireworks")
+        self.assertEqual(events["favorite"]["color"], "#112233")
+        self.assertEqual(events["find"]["mode"], "circle")
+        self.assertNotIn("inconnu", events)
+        payload = self.manager.export_profile_payload("Alpha", "test")
+        self.assertEqual(payload["profile"]["flash"]["events"]["favorite"]["mode"], "fireworks")
+
 
 class DisappearFlashTests(unittest.TestCase):
     """Flash de disparition du mode Évolution, porté par le thème."""

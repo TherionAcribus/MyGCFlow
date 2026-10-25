@@ -1,0 +1,74 @@
+<!-- Onglet Données de la page Mes poses (/poses) : caches posées par le joueur,
+     tirées des logs importés par la carte « Mes logs » du mode principal
+     (rien ne s'importe ici), et filtres Type / Taille / Difficulté / Terrain /
+     Pays / Région. Piloté par static/js/poses_data.js. Les identifiants
+     partagés avec les autres pages (filterPanel, filtersCounter, dataNextStep,
+     selects des filtres) sont ceux qu'attend ui.js. -->
+<div id="data" class="col-12 tab-pane fade show active">
+    {% include '_mode_switch.html' %}
+
+    <div class="row g-3">
+        <!-- Caches posées -->
+        <div class="col-12 col-lg-5">
+            <h5 class="gc-section-title">
+                <i class="ti ti-map-pin text-muted me-1"></i>{{ _("Mes caches posées") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <div id="posesStatus" class="fw-medium mb-1" aria-live="polite">{{ _("Chargement…") }}</div>
+                    <ul id="posesDetail" class="list-unstyled small text-muted mb-2" hidden></ul>
+                    <div class="form-hint text-muted">
+                        {{ _("Les caches posées et leurs logs viennent de la carte « Mes logs » de la page Mes Géocaches : le favori de collecte relit chacune de vos caches.") }}
+                    </div>
+                    <a id="posesLogsLink" class="btn btn-sm btn-outline-primary mt-2" href="/#data">
+                        <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Mettre à jour mes logs") }}
+                    </a>
+
+                    <!-- Prochaine étape suggérée : affichée dès que des caches
+                         sont chargées (updateDataAvailabilityUI). -->
+                    <div id="dataNextStep" class="alert alert-success mt-3 mb-0 py-2 px-3" hidden>
+                        <div class="mb-2">{{ _("Vos caches posées sont prêtes.") }}</div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" id="btnGoStyleTab" class="btn btn-sm btn-success">
+                                <i class="ti ti-palette me-1" aria-hidden="true"></i>{{ _("Choisir un style") }}
+                            </button>
+                            <button type="button" id="btnGoPreview" class="btn btn-sm btn-outline-success">
+                                <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser l'animation") }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="col-12 col-lg-7">
+            <h5 class="gc-section-title">
+                <i class="ti ti-filter text-muted me-1"></i>{{ _("Filtres") }}<span id="filtersCounter" class="badge bg-secondary-lt ms-2">0 / 0</span>
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <section id="filterPanel">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-secondary">
+                                <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
+                            </button>
+                        </div>
+                        {% include '_filter_cache_attrs.html' %}
+                        {% include '_filter_country_state.html' %}
+                        <!-- Pas un filtre de sélection : sort des caches archivées
+                             à l'écran. Préférence persistée : poses_archived_display. -->
+                        <div class="mt-1">
+                            <label class="form-label" for="selectPosesArchivedDisplay">{{ _("Caches archivées") }}</label>
+                            <select id="selectPosesArchivedDisplay" class="form-select">
+                                <option value="grey" selected>{{ _("Restent visibles, grisées") }}</option>
+                                <option value="hide">{{ _("Disparaissent") }}</option>
+                            </select>
+                            <div class="form-hint text-muted">{{ _("Dans les deux cas, l'archivage joue son flash.") }}</div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

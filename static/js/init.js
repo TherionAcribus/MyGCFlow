@@ -3,7 +3,7 @@
 // flask --app app.py --debug run
 
 import * as pkg from './index.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isEvolutionPage, isLifecyclePage, isMainPage, isPosesPage } from './app_mode.mjs';
 
 // Import de la couche d'abstraction Bootstrap/Tabler (remplace progressivement M.*)
 import {
@@ -68,11 +68,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     const defaultValuesPromise = pkg.getDefaultValues();
     const userSettingsPromise = fetchUserSettings();
 
-    // Page du mode Évolution (/evolution) : ses données viennent de bases de
-    // caches importées depuis des CSV, pas de la base des trouvailles.
-    const evolutionPage = isEvolutionPage();
+    // Pages « cycle de vie » (/evolution, /poses) : leurs données ne viennent
+    // pas de la base des trouvailles (bases CSV, logs des caches posées).
+    const lifecyclePage = isLifecyclePage();
 
-    if (evolutionPage) {
+    if (lifecyclePage) {
         // Le parcours « première utilisation » (invitation à charger un GPX)
         // est sans objet ici. Le jalon est quand même publié pour les tests
         // et intégrations.
@@ -164,10 +164,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // (après le profil de démarrage, pour éviter un "saut" visuel)
     pkg.displayFrames();
 
-    if (evolutionPage) {
+    if (isEvolutionPage()) {
         // Liste des bases puis chargement de la dernière ouverte (asynchrone,
         // comme readBdd ; fin signalée par l'événement mygcflow:evolution-loaded).
         pkg.initEvolutionPage();
+    } else if (isPosesPage()) {
+        // Caches posées tirées des logs importés (asynchrone ; fin signalée
+        // par l'événement mygcflow:poses-loaded).
+        pkg.initPosesPage?.();
     } else {
         pkg.readBdd();  // creation du geojson et des metadatas
     }
@@ -275,7 +279,7 @@ function applyUserSettings(userSettings) {
     // Modèle de la ligne d'infos du mode principal : préférence globale relue
     // ici, à coup sûr (les préférences arrivent après l'évaluation des
     // modules), puis reflétée dans le champ de l'onglet Infos.
-    if (!isEvolutionPage() && 'infos_template' in userSettings) {
+    if (isMainPage() && 'infos_template' in userSettings) {
         pkg.setMainInfosTemplate?.(userSettings.infos_template);
         const inp = document.getElementById('inputInfosTemplate');
         if (inp) inp.value = pkg.mainInfosTemplateText?.() ?? '';

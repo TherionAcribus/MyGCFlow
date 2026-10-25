@@ -18,7 +18,7 @@
 // l'animation, l'état courant, mis à l'échelle de la RÉFÉRENCE (comptes à la
 // date de fin) pour que rien ne se redimensionne ni ne change de rang.
 import * as pkg from './index.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { appMode, isEvolutionPage, isPosesPage } from './app_mode.mjs';
 import {
     DT_LABELS,
     EVOLUTION_METRICS_BY_KIND,
@@ -59,6 +59,7 @@ import {
     metricsForPanels,
     normalizeStatsSettings,
     rectsOverlap,
+    statsMetricsRegistry,
     statsPanelsKey,
     statsStylePreset,
     yearTicks,
@@ -149,6 +150,15 @@ export function getStatsSettings() {
     return settings;
 }
 
+// Liste de panneaux et registre de métriques de la page courante
+// (stats.panels / evolution_panels / poses_panels).
+function pagePanels() {
+    return settings[statsPanelsKey(appMode())] || [];
+}
+function pageRegistry() {
+    return statsMetricsRegistry(appMode());
+}
+
 // Applique des réglages (chargement, onglet Stats). L'aperçu suit aussitôt ;
 // la persistance est l'affaire de stats_ui.js.
 export function applyStatsSettings(raw) {
@@ -158,7 +168,7 @@ export function applyStatsSettings(raw) {
     settings = normalizeStatsSettings(raw, settings);
     settingsRev += 1;
     const evolution = isEvolutionPage();
-    const nextMetrics = metricsForPanels(settings, { evolution });
+    const nextMetrics = metricsForPanels(settings, { mode: appMode() });
     const nextKey = [...nextMetrics].sort().join(',');
     if (nextKey !== metricsKey) {
         metrics = nextMetrics;
@@ -197,8 +207,10 @@ function visiblePanels() {
             && (EVOLUTION_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric));
     }
     if (!(pkg.hasDatabase?.() ?? false)) return [];
-    return (settings.panels || []).filter((panel) => panel.enabled && STATS_RENDERERS[panel.kind]
-        && (STATS_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric));
+    // Mode principal et Mes poses : des trouvailles (reçues, sur Mes poses).
+    const registry = pageRegistry();
+    return pagePanels().filter((panel) => panel.enabled && STATS_RENDERERS[panel.kind]
+        && (registry[panel.kind] || []).includes(panel.metric));
 }
 
 // Index de la sélection Évolution (chronologie + features + révision), ou
@@ -212,15 +224,31 @@ function evolutionIndex() {
 // Comptage
 // ---------------------------------------------------------------------------
 
+// Trouvailles comptées, par jour (clés Date.toDateString()) : celles de la
+// carte en mode principal (visibles puis locationless masquées) ; sur Mes
+// poses, les trouvailles REÇUES, fournies par poses_data.js (mêmes
+// propriétés : date_find, attributs de la cache, plus le trouveur).
+function findIndexes() {
+    if (isPosesPage()) {
+        const source = pkg.posesStatsFinds?.();
+        return { revision: `poses:${source?.revision ?? 'none'}`, maps: source ? [source.byDate] : [] };
+    }
+    return {
+        revision: Number(pkg.pointsByDateRevision) || 0,
+        maps: [pkg.pointsByDate, pkg.hiddenPointsByDate],
+    };
+}
+
 function indexFeaturesUpTo(until) {
-    const visible = featuresUpTo(pkg.pointsByDate, until);
-    const hidden = featuresUpTo(pkg.hiddenPointsByDate, until);
-    for (const feature of hidden) visible.push(feature);
-    return visible;
+    const out = [];
+    for (const map of findIndexes().maps) {
+        for (const feature of featuresUpTo(map, until)) out.push(feature);
+    }
+    return out;
 }
 
 function indexRevision() {
-    return Number(pkg.pointsByDateRevision) || 0;
+    return findIndexes().revision;
 }
 
 // Index par jour des sauts et de l'accumulation : jours triés → features
@@ -237,7 +265,7 @@ function statsDayIndex() {
     const revision = indexRevision();
     if (statsDaysMemo?.revision === revision) return statsDaysMemo;
     const byDay = new Map();
-    for (const byDate of [pkg.pointsByDate, pkg.hiddenPointsByDate]) {
+    for (const byDate of findIndexes().maps) {
         if (!byDate) continue;
         for (const [key, list] of byDate.entries()) {
             if (!list?.length) continue;
@@ -337,12 +365,13 @@ function rebuildCurrent() {
 
 function featuresOfDates(dates) {
     const out = [];
+    const maps = findIndexes().maps;
     for (const date of dates) {
         const key = date.toDateString();
-        const visible = pkg.pointsByDate?.get(key);
-        if (visible) for (const feature of visible) out.push(feature);
-        const hidden = pkg.hiddenPointsByDate?.get(key);
-        if (hidden) for (const feature of hidden) out.push(feature);
+        for (const map of maps) {
+            const list = map?.get(key);
+            if (list) for (const feature of list) out.push(feature);
+        }
     }
     return out;
 }
@@ -411,6 +440,16 @@ export function accumulateEvolutionStats(dates, placed, archived, now) {
     evoAppliedDay = last;
     if (Number.isFinite(now)) lastNow = now;
     touch();
+}
+
+// Point d'entrée du moteur « cycle de vie » (mapgl › displayLifecycleDates) :
+// `ev` = lot rendu par le moteur de la page (step).
+export function accumulateLifecycleStats(dates, ev, now) {
+    if (!ev) return;
+    if (isEvolutionPage()) accumulateEvolutionStats(dates, ev.placed, ev.archived, now);
+    // Mes poses : les trouvailles reçues des jours affichés, comme le mode
+    // principal compte celles de la carte.
+    else if (isPosesPage()) accumulateStatsForDates(dates, now);
 }
 
 function touch() {
@@ -695,6 +734,18 @@ function weekdayNames(style) {
 // Titre par défaut d'un panneau, d'après sa métrique — aussi le nom affiché
 // dans la liste de l'onglet Stats.
 export function defaultStatsPanelTitle(panel) {
+    if (isPosesPage()) {
+        switch (panel.metric) {
+            case 'cache': return pkg.t('Caches les plus trouvées');
+            case 'finder': return pkg.t('Meilleurs trouveurs');
+            case 'year': return pkg.t('Trouvailles reçues par année');
+            case 'month': return pkg.t('Trouvailles reçues par mois');
+            case 'cumulative': return pkg.t('Trouvailles reçues');
+            case 'finds_ym': return pkg.t('Trouvailles reçues mois × année');
+            case 'summary': return pkg.t('Chiffres clés de mes poses');
+            default: break;
+        }
+    }
     switch (panel.metric) {
         case 'dt': return pkg.t('Matrice D/T');
         case 'jasmer': return pkg.t('Grille Jasmer');
@@ -903,7 +954,10 @@ function formatDay(day) {
 }
 
 const COUNTER_LABELS = {
-    total: () => pkg.t('Trouvailles'),
+    total: () => (isPosesPage() ? pkg.t('Trouvailles reçues') : pkg.t('Trouvailles')),
+    finders: () => pkg.t('Trouveurs différents'),
+    favorites: () => pkg.t('Favoris reçus'),
+    caches: () => pkg.t('Caches trouvées au moins une fois'),
     days: () => pkg.t('Jours avec trouvaille'),
     best_day: () => pkg.t('Record sur une journée'),
     streak: () => pkg.t('Plus longue série (jours)'),
@@ -1269,7 +1323,7 @@ export function invalidateStatsLayout() {
 // <li> pour un calendrier). Le commit au dépôt (stats_ui.js) renormalise.
 export function previewStatsPanelPosition(id, x, y) {
     if (pkg.isAnimationInProgress?.()) return;
-    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const list = pagePanels();
     const panel = list.find((p) => p.id === id);
     if (!panel || !Number.isFinite(x) || !Number.isFinite(y)) return;
     panel.position.mode = 'free';
@@ -1285,7 +1339,7 @@ export function previewStatsPanelPosition(id, x, y) {
 // (measure dépend de la largeur). Le commit au dépôt renormalise.
 export function previewStatsPanelWidth(id, width) {
     if (pkg.isAnimationInProgress?.()) return;
-    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const list = pagePanels();
     const panel = list.find((p) => p.id === id);
     const w = Number(width);
     if (!panel || !Number.isFinite(w)) return;
@@ -1302,7 +1356,7 @@ export function previewStatsPanelWidth(id, width) {
 // l'automatique (null). Les grilles l'ignorent (cases carrées).
 export function previewStatsPanelHeight(id, height) {
     if (pkg.isAnimationInProgress?.()) return;
-    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const list = pagePanels();
     const panel = list.find((p) => p.id === id);
     const h = Number(height);
     if (!panel || panel.kind === 'grid' || !Number.isFinite(h)) return;
@@ -1557,7 +1611,7 @@ export function getStatsSnapTargets(id) {
     const panels = visiblePanels();
     const panel = panels.find((p) => p.id === id);
     if (!panel) return [];
-    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const list = pagePanels();
     const items = panels.map((p) => layoutItem(p, buildView(p)));
     const index = panels.indexOf(panel);
     const targets = [];
@@ -1587,7 +1641,7 @@ export function arrangeStatsPanels() {
     if (layoutDirty || drawDirty) flush();
     const panels = visiblePanels();
     if (!panels.length) return null;
-    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const list = pagePanels();
     const cornerMargins = new Map();
     for (const { position } of list) {
         if (position.mode === 'anchor' && !cornerMargins.has(position.anchor)) {
@@ -1737,7 +1791,7 @@ function flush() {
 export function getStatsPanelRect(id) {
     const rect = panelNodes.get(id)?.layout;
     if (!rect) return null;
-    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const list = pagePanels();
     const panel = list.find((p) => p.id === id);
     return {
         ...rect,
@@ -1830,9 +1884,9 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
 // carte et la vidéo, à la largeur réelle du panneau. false si le panneau
 // n'est pas dessinable ici (inconnu, métrique étrangère au mode).
 export function drawStatsPanelPreview(id, canvas) {
-    const list = isEvolutionPage() ? settings.evolution_panels : settings.panels;
+    const list = pagePanels();
     const panel = (list || []).find((p) => p.id === id);
-    const registry = isEvolutionPage() ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+    const registry = pageRegistry();
     if (!panel || !canvas || !(registry[panel.kind] || []).includes(panel.metric)) return false;
     if (drawDirty) flush();
     paintPanelPreview(panel, buildView(panel), canvas);
@@ -1859,7 +1913,7 @@ function paintPanelPreview(panel, view, canvas) {
 // — même pipeline que la carte et l'aperçu du formulaire. false si le
 // panneau ou le préréglage est inconnu.
 export function drawStatsStylePresetPreview(id, presetName, canvas, box) {
-    const list = isEvolutionPage() ? settings.evolution_panels : settings.panels;
+    const list = pagePanels();
     const panel = (list || []).find((p) => p.id === id);
     const patch = statsStylePreset(presetName);
     const width = Math.max(1, Math.round(box?.width || 0));
@@ -1893,7 +1947,7 @@ let galleryMemo = null;   // { key, source }
 
 function gallerySource(panels) {
     const evolution = isEvolutionPage();
-    const needed = metricsForPanels({ enabled: true, [statsPanelsKey(evolution)]: panels }, { evolution });
+    const needed = metricsForPanels({ enabled: true, [statsPanelsKey(appMode())]: panels }, { mode: appMode() });
     const metricKey = [...needed].sort().join(',');
     if (evolution) {
         const index = evolutionIndex();
@@ -1915,8 +1969,7 @@ function gallerySource(panels) {
 }
 
 export function drawStatsGalleryPreviews(entries) {
-    const evolution = isEvolutionPage();
-    const registry = evolution ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+    const registry = pageRegistry();
     const items = (entries || [])
         .map(({ spec, canvas }) => ({ panel: createStatsPanel(spec[0], spec[1], spec[2] || {}), canvas }))
         .filter(({ panel, canvas }) => panel && canvas && (registry[panel.kind] || []).includes(panel.metric));
@@ -1966,9 +2019,8 @@ function refreshFormPreview() {
 export const STATS_PNG_SCALES = Object.freeze([1, 2, 4]);
 
 function panelForExport(id) {
-    const evolution = isEvolutionPage();
-    const panel = (settings[statsPanelsKey(evolution)] || []).find((p) => p.id === id);
-    const registry = evolution ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+    const panel = pagePanels().find((p) => p.id === id);
+    const registry = pageRegistry();
     return panel && (registry[panel.kind] || []).includes(panel.metric) ? panel : null;
 }
 
@@ -2045,7 +2097,7 @@ function csvCell(value) {
 // modèle — jamais l'état d'animation, et sans toucher aux tweens.
 // null sans panneau.
 export function statsPanelCsv(id) {
-    const list = isEvolutionPage() ? settings.evolution_panels : settings.panels;
+    const list = pagePanels();
     const panel = (list || []).find((p) => p.id === id);
     if (!panel) return null;
     const { number, percent } = formatters();

@@ -18,6 +18,7 @@ import {
     shareCornerMargins,
     statsCoercers,
 } from './stats_model.mjs';
+import { modeOf } from './app_mode.mjs';
 
 const { intIn, unit, bool, choice, color, title, coerceBlock, configName, isId } = statsCoercers;
 
@@ -53,15 +54,18 @@ export const IMAGE_EFFECTS = Object.freeze(['fade', 'slide', 'zoom']);
 export const IMAGES_MAX_CONFIGS = 12;
 
 export const IMAGES_DEFAULTS = Object.freeze({
-    enabled: true, items: Object.freeze([]), evolution_items: Object.freeze([]), configs: Object.freeze([]),
+    enabled: true, items: Object.freeze([]), evolution_items: Object.freeze([]),
+    poses_items: Object.freeze([]), configs: Object.freeze([]),
 });
 
 // Liste d'images propre à chaque page : `items` pour « Mes Geocaches »,
-// `evolution_items` pour /evolution (miroir de statsPanelsKey). Une clé
-// absente normalise à [] — jamais une copie de l'autre liste, sinon retirer
-// une image d'un côté la retirerait aussi de la vue normalisée de l'autre.
-export function imagesItemsKey(evolution) {
-    return evolution ? 'evolution_items' : 'items';
+// `evolution_items` pour /evolution, `poses_items` pour /poses (miroir de
+// statsPanelsKey). Une clé absente normalise à [] — jamais une copie d'une
+// autre liste, sinon retirer une image d'un côté la retirerait aussi de la
+// vue normalisée de l'autre. `mode` = nom de mode ou ancien booléen.
+const IMAGES_ITEMS_KEYS = Object.freeze({ main: 'items', evolution: 'evolution_items', poses: 'poses_items' });
+export function imagesItemsKey(mode) {
+    return IMAGES_ITEMS_KEYS[modeOf(mode)];
 }
 
 // Nom d'un fichier du dossier images/ (image_library.safe_image_name).
@@ -251,6 +255,7 @@ export function normalizeImagesSettings(raw, current = IMAGES_DEFAULTS, newId = 
             enabled: bool(base.enabled, true),
             items: Array.isArray(base.items) ? [...base.items] : [],
             evolution_items: Array.isArray(base.evolution_items) ? [...base.evolution_items] : [],
+            poses_items: Array.isArray(base.poses_items) ? [...base.poses_items] : [],
             configs: Array.isArray(base.configs) ? [...base.configs] : [],
         };
     }
@@ -259,6 +264,8 @@ export function normalizeImagesSettings(raw, current = IMAGES_DEFAULTS, newId = 
         items: normalizeItemList(Object.hasOwn(raw, 'items') ? raw.items : base.items, newId),
         evolution_items: normalizeItemList(
             Object.hasOwn(raw, 'evolution_items') ? raw.evolution_items : base.evolution_items, newId),
+        poses_items: normalizeItemList(
+            Object.hasOwn(raw, 'poses_items') ? raw.poses_items : base.poses_items, newId),
         configs: normalizeConfigList(Object.hasOwn(raw, 'configs') ? raw.configs : base.configs, newId),
     };
 }

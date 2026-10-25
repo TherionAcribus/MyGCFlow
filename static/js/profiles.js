@@ -8,16 +8,19 @@ import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal
 import { markSaved, markSaveError } from './saved_indicator.mjs';
 import { normalizeTrailOptions } from './travel_trail.mjs';
 import { buildThemeThumbnail } from './theme_thumbs.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { appMode } from './app_mode.mjs';
+import { normalizeEventFlashes } from './event_flash.mjs';
 
-// Chaque page a sa propre liste de thèmes (champ `mode` du thème, voir
-// PROFILE_MODES dans settings_manager.py) et mémorise son propre thème actif
-// et son propre thème par défaut : un thème réglé pour quelques milliers de
-// trouvailles noie la carte du mode Évolution, et inversement.
-const PROFILE_MODE = isEvolutionPage() ? 'evolution' : 'main';
+// Chaque mode de thème a sa propre liste (champ `mode` du thème, voir
+// PROFILE_MODES dans settings_manager.py) : un thème réglé pour quelques
+// milliers de trouvailles noie la carte du mode Évolution, et inversement. La
+// page Mes poses, aux densités du mode principal, liste les thèmes de
+// celui-ci (même thème par défaut) mais retient son propre thème actif.
+const PAGE_MODE = appMode();
+const PROFILE_MODE = PAGE_MODE === 'evolution' ? 'evolution' : 'main';
 const OTHER_PROFILE_MODE = PROFILE_MODE === 'evolution' ? 'main' : 'evolution';
-// Clés de settings.json propres au mode de la page.
-const SETTINGS_KEYS = PROFILE_MODE === 'evolution'
+// Clés de settings.json propres à la page.
+const SETTINGS_KEYS = PAGE_MODE === 'evolution'
     ? Object.freeze({
         defaultUid: 'evolution_default_profile_uid',
         defaultName: 'evolution_default_profile_name',
@@ -26,7 +29,7 @@ const SETTINGS_KEYS = PROFILE_MODE === 'evolution'
     : Object.freeze({
         defaultUid: 'default_profile_uid',
         defaultName: 'default_profile_name',
-        lastUid: 'last_profile_uid',
+        lastUid: PAGE_MODE === 'poses' ? 'poses_last_profile_uid' : 'last_profile_uid',
     });
 
 // Nom affiché d'un mode : celui du sélecteur de mode de l'en-tête.
@@ -1469,7 +1472,11 @@ class ProfileManager {
 
             const settings = await this.loadAppSettings();
             // Dernier thème actif et thème par défaut DU MODE de la page.
-            const lastUid = settings[SETTINGS_KEYS.lastUid] || null;
+            // Mes poses sans thème retenu (première visite) : celui de la page
+            // Mes Géocaches, dont elle partage la liste.
+            const lastUid = settings[SETTINGS_KEYS.lastUid]
+                || (PAGE_MODE === 'poses' ? settings.last_profile_uid : null)
+                || null;
             const defaultUid = settings[SETTINGS_KEYS.defaultUid] || null;
             dbgProfiles('🎯 [STARTUP_PROFILE] Paramètres chargés au démarrage:', {
                 mode: PROFILE_MODE,
@@ -1665,6 +1672,8 @@ class ProfileManager {
                 // Flash des points DNF (mode principal) : même précaution.
                 dnf: normalizeDnfFlash(flash.dnf),
                 dnf_found: normalizeDnfFoundFlash(flash.dnf_found),
+                // Flashs par événement de Mes poses (rgb précalculés retirés).
+                events: normalizeEventFlashes(flash.events),
             };
 
             dbgProfiles('🔍 Paramètres flash récupérés:', flashSettings);
@@ -2735,6 +2744,9 @@ function applyFlashState(flashOptions) {
         flash.dnf = { ...dnf, rgb: pkg.hexToRgb(dnf.color), border_rgb: pkg.hexToRgb(dnf.border_color) };
         const found = normalizeDnfFoundFlash(flashOptions.dnf_found);
         flash.dnf_found = { ...found, rgb: pkg.hexToRgb(found.color), border_rgb: pkg.hexToRgb(found.border_color) };
+        // Thèmes antérieurs à Mes poses : défauts de chaque type. Les rgb sont
+        // calculés au début de chaque animation (event_flash.resolveEventFlash).
+        flash.events = normalizeEventFlashes(flashOptions.events);
 
         dbgProfiles('Paramètres flash appliqués:', flash);
     } catch (error) {

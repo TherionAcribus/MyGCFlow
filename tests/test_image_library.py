@@ -192,12 +192,15 @@ class StorageTests(ImageLibraryTestCase):
             # Liste propre à /evolution : agrégée aussi, sinon une image posée
             # seulement dans ce mode passerait pour inutilisée.
             'evolution_items': [{'file': 'cccccccccccccccc.png'}],
+            # Même règle pour la page Mes poses.
+            'poses_items': [{'file': 'dddddddddddddddd.png'}],
             'configs': [{'name': 'Club', 'items': [{'file': 'bbbbbbbbbbbbbbbb.jpg'}]}],
         }
-        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg', 'cccccccccccccccc.png'}
+        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg', 'cccccccccccccccc.png', 'dddddddddddddddd.png'}
         self.assertEqual(image_library.referenced_image_files(settings), expected)
         as_object = SimpleNamespace(items=settings['items'],
                                     evolution_items=settings['evolution_items'],
+                                    poses_items=settings['poses_items'],
                                     configs=settings['configs'])
         self.assertEqual(image_library.referenced_image_files(as_object), expected)
         self.assertEqual(image_library.referenced_image_files(None), set())

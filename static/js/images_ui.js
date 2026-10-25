@@ -8,7 +8,7 @@
 // par un debounce. Les actions discrètes (ajout, suppression,
 // réordonnancement) vident aussitôt la file.
 import * as pkg from './index.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { APP_MODES, appMode, isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import {
@@ -35,11 +35,11 @@ import { offsetFreeCopy } from './stats_model.mjs';
 const saveImagesDebounced = makeDebouncedSettingsSaver(500);
 
 // Liste de la page courante : `items` sur « Mes Geocaches », `evolution_items`
-// sur /evolution (comme stats.panels / stats.evolution_panels) ; l'interrupteur
-// `enabled` reste commun aux deux pages.
-const ITEMS_KEY = imagesItemsKey(isEvolutionPage());
-// Liste de l'autre page : la bibliothèque signale les images qui y servent.
-const OTHER_ITEMS_KEY = imagesItemsKey(!isEvolutionPage());
+// sur /evolution, `poses_items` sur /poses (comme les listes de panneaux
+// Stats) ; l'interrupteur `enabled` reste commun aux pages.
+const ITEMS_KEY = imagesItemsKey(appMode());
+// Listes des autres pages : la bibliothèque signale les images qui y servent.
+const OTHER_PAGES = APP_MODES.filter((mode) => mode !== appMode());
 
 // Titre « Images » : retour « Enregistré ✓ » des actions sans champ dédié.
 const IMAGES_SAVE_STATUS = 'imagesSaveStatus';
@@ -86,7 +86,7 @@ function isRecordingBlocked() {
 // `{images: …}` remplace le premier entier), deux commits avant le drain
 // perdraient sinon les clés du premier. En cas d'échec d'écriture, les clés
 // restent et repartent au prochain commit.
-const IMAGES_BLOCK_KEYS = ['enabled', 'items', 'evolution_items', 'configs'];
+const IMAGES_BLOCK_KEYS = ['enabled', 'items', 'evolution_items', 'poses_items', 'configs'];
 const pendingImageKeys = {};
 
 // null quand l'écriture est refusée (enregistrement en cours) — rien n'est
@@ -455,17 +455,18 @@ function formatBytes(bytes) {
     return pkg.t('${n} Ko', { n: Math.max(1, Math.round(bytes / 1024)) });
 }
 
-// Où une image de la bibliothèque sert déjà : sur cette page, sinon sur
-// l'autre (chaque page a sa liste), sinon nulle part (null). Icônes du
-// sélecteur de mode de l'en-tête (app.html).
+// Où une image de la bibliothèque sert déjà : sur cette page, sinon sur une
+// autre (chaque page a sa liste ; `usedOther` : fichier → page), sinon nulle
+// part (null). Icônes du sélecteur de mode de l'en-tête (app.html).
 function libraryUsage(file, usedHere, usedOther) {
     if (usedHere.has(file)) {
         return { where: 'here', icon: 'ti-check', label: pkg.t('Utilisée sur cette page') };
     }
-    if (!usedOther.has(file)) return null;
-    return isEvolutionPage()
-        ? { where: 'other', icon: 'ti-database', label: pkg.t('Utilisée dans « Mes Géocaches »') }
-        : { where: 'other', icon: 'ti-stack', label: pkg.t('Utilisée dans « Évolution »') };
+    const page = usedOther.get(file);
+    if (page === 'main') return { where: 'other', icon: 'ti-database', label: pkg.t('Utilisée dans « Mes Géocaches »') };
+    if (page === 'evolution') return { where: 'other', icon: 'ti-stack', label: pkg.t('Utilisée dans « Évolution »') };
+    if (page === 'poses') return { where: 'other', icon: 'ti-map-pin', label: pkg.t('Utilisée dans « Mes poses »') };
+    return null;
 }
 
 // Relevé conservé en mémoire : tri et nettoyage groupé redessinent la grille
@@ -511,7 +512,12 @@ function renderLibraryGrid() {
     const full = settings[ITEMS_KEY].length >= IMAGES_MAX_ITEMS;
     const awaitingUndo = filesAwaitingUndo();
     const usedHere = new Set(settings[ITEMS_KEY].map((item) => item.file));
-    const usedOther = new Set((settings[OTHER_ITEMS_KEY] || []).map((item) => item.file));
+    const usedOther = new Map();
+    for (const page of OTHER_PAGES) {
+        for (const item of settings[imagesItemsKey(page)] || []) {
+            if (!usedOther.has(item.file)) usedOther.set(item.file, page);
+        }
+    }
     const entries = [...listing.files].sort(LIBRARY_SORTS[librarySort] || LIBRARY_SORTS.recent);
     // Une image utilisée (sur la carte ou dans une configuration) ne peut pas
     // être retirée : le serveur refuserait. Une image qu'un « Annuler »

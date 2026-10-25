@@ -1,9 +1,11 @@
-{# Rappel du mode courant en tête de l'onglet Données des deux pages. Le
+{# Rappel du mode courant en tête de l'onglet Données de chaque page. Le
    sélecteur de mode a remonté dans l'en-tête d'application (#appHeader,
    .app-header-mode) : il ne reste ici que la phrase d'explication. #}
 <p class="mode-switch-note text-muted small mb-3">
     {% if mode == 'evolution' %}
     {{ _("Apparition et disparition des caches d'une zone au fil du temps, à partir d'exports CSV.") }}
+    {% elif mode == 'poses' %}
+    {{ _("La vie de vos caches posées : publication, trouvailles, favoris, maintenance, archivage.") }}
     {% else %}
     {{ _("Vos trouvailles, importées depuis votre fichier .gpx.") }}
     {% endif %}

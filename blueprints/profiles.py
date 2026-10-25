@@ -12,7 +12,7 @@ def _(msgid, **kwargs):
     except Exception:
         return msgid % kwargs if kwargs else msgid
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 from settings_manager import (
     AppSettings,
@@ -28,6 +28,8 @@ from settings_manager import (
     coerce_map_center,
     coerce_map_framing,
     coerce_map_zoom,
+    coerce_poses_animation,
+    coerce_poses_archived_display,
     coerce_profile,
     coerce_recording_settings,
     coerce_theme,
@@ -73,6 +75,9 @@ def api_get_settings():
     evolution_last_profile_name = None
     if s.evolution_last_profile_uid:
         evolution_last_profile_name = settings_manager.get_profile_name_by_uid(s.evolution_last_profile_uid)
+    poses_last_profile_name = None
+    if s.poses_last_profile_uid:
+        poses_last_profile_name = settings_manager.get_profile_name_by_uid(s.poses_last_profile_uid)
 
     response = jsonify({
         'version': s.version,
@@ -90,6 +95,8 @@ def api_get_settings():
         'evolution_default_profile_name': evolution_default_profile_name,
         'evolution_last_profile_uid': s.evolution_last_profile_uid,
         'evolution_last_profile_name': evolution_last_profile_name,
+        'poses_last_profile_uid': s.poses_last_profile_uid,
+        'poses_last_profile_name': poses_last_profile_name,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
         'map_framing': s.map_framing,
@@ -109,6 +116,9 @@ def api_get_settings():
         'stats': asdict(s.stats),
         'images': asdict(s.images),
         'evolution_undated_archives': s.evolution_undated_archives,
+        'poses_animation': asdict(s.poses_animation),
+        'poses_infos_template': s.poses_infos_template,
+        'poses_archived_display': s.poses_archived_display,
     })
     response.set_cookie(
         'mygcflow_lang',
@@ -210,6 +220,25 @@ def api_put_settings():
             evolution_undated_archives = coerce_undated_archives(
                 data.get('evolution_undated_archives'), current.evolution_undated_archives)
 
+        # Page Mes poses : rythme (patch partiel comme `animation`), ligne
+        # d'infos et sort des archivées — réécrits seulement si envoyés.
+        poses_animation = current.poses_animation
+        if 'poses_animation' in data and isinstance(data.get('poses_animation'), dict):
+            merged_poses = asdict(current.poses_animation)
+            merged_poses.update(data['poses_animation'])
+            poses_animation = coerce_poses_animation(merged_poses)
+        poses_infos_template = current.poses_infos_template
+        if 'poses_infos_template' in data:
+            poses_infos_template = coerce_infos_template(
+                data.get('poses_infos_template'), current.poses_infos_template)
+        poses_archived_display = current.poses_archived_display
+        if 'poses_archived_display' in data:
+            poses_archived_display = coerce_poses_archived_display(
+                data.get('poses_archived_display'), current.poses_archived_display)
+        poses_last_profile_uid = current.poses_last_profile_uid
+        if 'poses_last_profile_uid' in data:
+            poses_last_profile_uid = data.get('poses_last_profile_uid')
+
         # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
         # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
         default_profile_uid = current.default_profile_uid
@@ -277,11 +306,16 @@ def api_put_settings():
                 data.get('main_discovery_sources'), current.main_discovery_sources
             )
 
-        return AppSettings(
-            version=current.version,
+        # `replace` part de l'existant : un champ absent de cette liste (jetons
+        # des favoris, compteurs internes, préférences ajoutées plus tard)
+        # est conservé tel quel. Reconstruire `AppSettings(...)` champ par
+        # champ remettait à leur défaut ceux qu'on oubliait d'y recopier —
+        # cas de `logs_receive_token` : chaque écriture de préférence cassait
+        # le favori « Mes logs » déjà installé.
+        return replace(
+            current,
             language=language,
             check_updates=check_updates,
-            last_update_check=current.last_update_check,
             skipped_update_version=skipped_update_version,
             theme=theme,
             date_format=date_format,
@@ -299,7 +333,6 @@ def api_put_settings():
                 data['labs_auto_fetch_coords']
                 if isinstance(data.get('labs_auto_fetch_coords'), bool)
                 else current.labs_auto_fetch_coords),
-            labs_receive_token=current.labs_receive_token,
             dnf_display=(data['dnf_display'] if isinstance(data.get('dnf_display'), bool)
                          else current.dnf_display),
             dnf_in_trail=(data['dnf_in_trail'] if isinstance(data.get('dnf_in_trail'), bool)
@@ -314,11 +347,10 @@ def api_put_settings():
             stats=stats,
             images=images,
             evolution_undated_archives=evolution_undated_archives,
-            examples_seeded=current.examples_seeded,
-            # Sans cette reprise, toute écriture de préférence ramenait le lot
-            # d'exemples à 0 et réinstallait au démarrage suivant les profils
-            # d'exemple ajoutés depuis la v1, y compris ceux supprimés.
-            examples_version=current.examples_version,
+            poses_animation=poses_animation,
+            poses_infos_template=poses_infos_template,
+            poses_archived_display=poses_archived_display,
+            poses_last_profile_uid=poses_last_profile_uid,
         )
 
     # Fusion et écriture d'un seul tenant : le corps de la requête ne décrit que

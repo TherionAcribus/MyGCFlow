@@ -114,7 +114,7 @@ class ImagesApiTests(unittest.TestCase):
         return self.client.get('/api/settings').get_json()['images']
 
     def test_get_exposes_the_default_block(self):
-        self.assertEqual(self.images(), {"enabled": True, "items": [], "evolution_items": [], "configs": []})
+        self.assertEqual(self.images(), {"enabled": True, "items": [], "evolution_items": [], "poses_items": [], "configs": []})
 
     def test_put_stores_normalised_items_and_keeps_other_preferences(self):
         self.client.put('/api/settings', json={'stats': {'enabled': False}})

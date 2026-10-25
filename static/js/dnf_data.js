@@ -11,7 +11,7 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { t } from './notifications.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isMainPage } from './app_mode.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { markSaveError, reportSave } from './saved_indicator.mjs';
 import { buildDnfEntries } from './dnf_model.mjs';
@@ -63,7 +63,7 @@ function applyChange() {
 // Appelé au démarrage, à la bascule, et après tout import qui peut en
 // changer (logs, My Finds) ou leur suppression.
 export async function reloadDnfData() {
-    if (isEvolutionPage()) return;
+    if (!isMainPage()) return;
     const seq = ++loadSeq;
     if (!isDnfDisplayEnabled()) {
         loaded = [];
@@ -136,7 +136,7 @@ async function onTrailToggle(e) {
 }
 
 export function initDnfUI() {
-    if (bound || isEvolutionPage()) return;
+    if (bound || !isMainPage()) return;
     const display = el('checkDnfDisplay');
     if (!display) return;
     bound = true;

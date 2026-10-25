@@ -28,7 +28,8 @@
 // reprise dans ui.js (mêmes chemins que les boutons).
 import * as pkg from './index.js';
 import { counterAt, dateToDayNumber } from './evolution_timeline.mjs';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isEvolutionPage, isPosesPage } from './app_mode.mjs';
+import { lifecycleEngine } from './lifecycle_engine.mjs';
 import {
     bucketDaysFor,
     bucketize,
@@ -166,11 +167,23 @@ function axisFor(state) {
 // la veille du premier jour (trouvailles marquantes).
 function seriesFor(axis) {
     const evolution = isEvolutionPage();
+    const poses = isPosesPage();
     const index = evolution ? pkg.evolutionStatsIndex?.() : null;
-    const revision = evolution ? `evo:${index?.revision ?? 'none'}` : `gc:${pkg.pointsByDateRevision ?? 0}`;
+    const engine = poses ? lifecycleEngine() : null;
+    const revision = evolution ? `evo:${index?.revision ?? 'none'}`
+        : poses ? `poses:${engine?.statsIndex?.()?.revision ?? 'none'}`
+        : `gc:${pkg.pointsByDateRevision ?? 0}`;
     const span = axis.span;
     const key = `${revision}|${axis.start.getTime()}|${span}`;
     if (seriesMemo?.key === key) return seriesMemo.series;
+    // Mes poses : trouvailles reçues par jour, autres logs en second,
+    // courbe du cumul des trouvailles reçues (moteur de la page).
+    if (poses) {
+        const series = engine?.timelineSeries?.(axis.start, span)
+            || { events: new Float64Array(span), secondary: new Float64Array(span), level: new Float64Array(span), base: 0 };
+        seriesMemo = { key, series };
+        return series;
+    }
 
     const events = new Float64Array(span);
     let secondary = null;
@@ -226,7 +239,9 @@ function marksFor(axis, series) {
             marks.push({
                 offset,
                 kind: 'milestone',
-                label: pkg.t('${count}ᵉ trouvaille', { count: formatCount(value) }),
+                label: isPosesPage()
+                    ? pkg.t('${count}ᵉ trouvaille reçue', { count: formatCount(value) })
+                    : pkg.t('${count}ᵉ trouvaille', { count: formatCount(value) }),
             });
         }
     }
@@ -593,6 +608,11 @@ function levelText(level) {
     if (isEvolutionPage()) {
         return level > 1 ? pkg.t('${count} actives', { count }) : pkg.t('${count} active', { count });
     }
+    if (isPosesPage()) {
+        return level > 1
+            ? pkg.t('${count} trouvailles reçues', { count })
+            : pkg.t('${count} trouvaille reçue', { count });
+    }
     return level > 1 ? pkg.t('${count} caches', { count }) : pkg.t('${count} cache', { count });
 }
 
@@ -607,6 +627,13 @@ function eventsText(main, extra) {
             ? pkg.t('${count} archivages', { count: archived })
             : pkg.t('${count} archivage', { count: archived });
         return `${placedText}, ${archivedText}`;
+    }
+    if (isPosesPage()) {
+        const finds = formatCount(main);
+        const others = formatCount(extra);
+        const findsText = main > 1 ? pkg.t('${count} trouvailles', { count: finds }) : pkg.t('${count} trouvaille', { count: finds });
+        const othersText = extra > 1 ? pkg.t('${count} autres logs', { count: others }) : pkg.t('${count} autre log', { count: others });
+        return `${findsText}, ${othersText}`;
     }
     if (!(main > 0)) return pkg.t('aucune trouvaille');
     const count = formatCount(main);

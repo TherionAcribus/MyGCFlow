@@ -4,7 +4,7 @@ import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
 import { showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isMainPage } from './app_mode.mjs';
 import { isAudioFile } from './music_track.mjs';
 import { isImageFile } from './images_model.mjs';
 
@@ -422,7 +422,7 @@ function setupGpxDragAndDrop() {
 }
 
 // Page du mode Évolution : le glisser-déposer y importe des CSV (evolution_data.js).
-if (!isEvolutionPage()) setupGpxDragAndDrop();
+if (isMainPage()) setupGpxDragAndDrop();
 
 // Lit l'état de la BDD (/db_status) et le reflète dans l'UI (texte d'infos +
 // visibilité du bouton de vidage). Avec { settleFirstUse: true } (uniquement

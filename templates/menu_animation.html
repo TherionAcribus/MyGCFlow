@@ -14,7 +14,7 @@
                         <!-- Pastilles : signalent ce qui pèse sur la vidéo sans
                              ouvrir le sous-onglet (suivi activé, musique
                              incluse) — bascule dans ui.js. -->
-                        {% if mode != 'evolution' %}
+                        {% if not lifecycle %}
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="cameraConfigTab" data-bs-toggle="tab" data-bs-target="#cameraConfigPane" type="button" role="tab" aria-controls="cameraConfigPane" aria-selected="false">{{ _("Caméra") }}<span id="cameraTabDot" class="subtab-dot" hidden><span class="visually-hidden">{{ _("suivi activé") }}</span></span></button>
                         </li>
@@ -174,8 +174,8 @@
                             <div class="mb-3">
                                 <label for="selectRhythmPreset" class="form-label">{{ _("Préréglage") }}</label>
                                 <select id="selectRhythmPreset" class="form-select">
-                                    {# Valeurs : RHYTHM_PRESETS de static/js/ui.js (propres au mode Évolution) #}
-                                    {% set presets = (50, 150, 400) if mode == 'evolution' else (10, 20, 50) %}
+                                    {# Valeurs : RHYTHM_PRESETS de static/js/ui.js (propres à chaque page) #}
+                                    {% set presets = {'evolution': (50, 150, 400), 'poses': (20, 40, 100)}.get(mode, (10, 20, 50)) %}
                                     <option value="slow">{{ _("Lent") }} ({{ presets[0] }} {{ _("jours/s") }})</option>
                                     <option value="normal" selected>{{ _("Normal") }} ({{ presets[1] }} {{ _("jours/s") }})</option>
                                     <option value="fast">{{ _("Rapide") }} ({{ presets[2] }} {{ _("jours/s") }})</option>
@@ -209,7 +209,7 @@
                     </div>
 
                     {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
-                    {% if mode != 'evolution' %}
+                    {% if not lifecycle %}
                     <div class="tab-pane fade" id="cameraConfigPane" role="tabpanel" aria-labelledby="cameraConfigTab" tabindex="0">
                     <div class="anim-section-divider mt-0 mb-2">
                         <span class="anim-section-label">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</span>

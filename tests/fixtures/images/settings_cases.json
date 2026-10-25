@@ -6,6 +6,7 @@
       "enabled": true,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -16,6 +17,7 @@
       "enabled": true,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -26,6 +28,7 @@
       "enabled": true,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -38,6 +41,7 @@
       "enabled": false,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -51,6 +55,7 @@
       "enabled": true,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -115,6 +120,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -283,6 +289,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -348,6 +355,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -426,6 +434,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -655,6 +664,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -734,6 +744,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -816,6 +827,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -996,6 +1008,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -1064,6 +1077,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -1282,6 +1296,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -1458,6 +1473,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -1688,6 +1704,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -1858,6 +1875,7 @@
           }
         }
       ],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -2042,6 +2060,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -2079,6 +2098,7 @@
       "enabled": true,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": [
         {
           "name": "Club local",
@@ -2208,6 +2228,7 @@
       "enabled": true,
       "items": [],
       "evolution_items": [],
+      "poses_items": [],
       "configs": [
         {
           "name": "Config 0",
@@ -2379,6 +2400,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -2554,6 +2576,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   },
@@ -2626,6 +2649,7 @@
         }
       ],
       "evolution_items": [],
+      "poses_items": [],
       "configs": []
     }
   }

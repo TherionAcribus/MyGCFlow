@@ -1,6 +1,7 @@
 # Logs Geocaching — contrat d'import, stockage et plan
 
-> **Statut : lots A, B et C codés** (2026-10-25). A — données :
+> **Statut : lots A à E codés** (2026-10-25) — D et E réunis dans la page
+> « Mes poses » (`/poses`, docs/mode-poses.md). A — données :
 > `log_formats.py` (lecture), `log_store.py` (fusion, aperçu, statut),
 > migration v8, logs du My Finds. B — interface : carte « Mes logs » de
 > l'onglet Données (`static/js/gc_logs.js`) et routes `/api/logs/*`
@@ -563,9 +564,9 @@ sans effet tant que l'affichage est coupé).
 | **A — données** ✅ | migration v8 ; `log_formats.py` (contrat + logs GPX, sans Flask) ; `log_store.py` (fusion, couverture, aperçu) ; My Finds alimente `log_event` | tests unitaires sur fixtures **fictives** ; banc d'import (100 000 logs) pour fixer les plafonds |
 | **B — interface** ✅ | carte « Mes logs » de l'onglet Données : favori de collecte (`javascript:`, jeton régénérable) + réception `/api/logs/receive` en import en attente ; import de fichier avec aperçu, statut (par catégorie, en attente), export `mygcflow-logs`, suppression | e2e : aperçu, validation, réimport idempotent, refus d'un autre compte, export du favori jusqu'à l'aperçu |
 | **C — DNF sur la carte** ✅ | réglage d'affichage (masqué par défaut), apparition / résolution dans l'animation, saut de la barre de chronologie | e2e : DNF masqué, DNF affiché puis remplacé par la trouvaille |
-| **D — poseur** | affichage de l'activité de poseur | |
-| **E — mode « Mes caches »** | page dédiée, comme le mode Évolution | |
-| **F — Stats** | métriques DNF / poseur optionnelles dans les panneaux | |
+| **D — poseur** ✅ | activité de poseur : publication, désactivations, maintenance, archivage (page « Mes poses ») | e2e `poses.spec.mjs` |
+| **E — mode « Mes caches »** ✅ | page `/poses` sur le moteur du mode Évolution : logs des autres joueurs, favoris, flashs par événement, rendu grisé (docs/mode-poses.md) | e2e `poses.spec.mjs` |
+| **F — Stats** (en partie) | panneaux de Mes poses sur les trouvailles reçues (`stats.poses_panels`) ; DNF dans les Stats du mode principal : à faire | e2e `stats-poses.spec.mjs` |
 
 Mesures du lot A (`tools/bench_log_import.py`, 2026-10-25, Windows, SQLite
 local ; ~50 logs par cache, couverture complète par cache ; l'incrément est

@@ -3949,3 +3949,10 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .stats-gallery-card .stats-slots-hint {
     padding: 0 0.7rem 0.6rem;
 }
+
+/* Flashs par événement (Mes poses, menu_flash_events.html) : champ de taille
+   étroit ; les réglages propres disparaissent en « Comme le flash
+   principal » / « Pas de flash » (attribut hidden posé par ui.js). */
+.event-flash-row .event-flash-size { width: 5rem; }
+.event-flash-row .event-flash-own[hidden],
+.event-flash-row [data-event-flash-field][hidden] { display: none !important; }

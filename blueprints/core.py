@@ -7,6 +7,7 @@ from dataclasses import replace
 from flask import Blueprint, abort, current_app, jsonify, make_response, render_template, request
 from flask_babel import gettext as _
 
+import event_flash
 import options
 import paths
 from localization import get_locale
@@ -25,9 +26,12 @@ def index():
 def render_app_page(mode: str):
     """Page principale de l'application, dans le mode demandé.
 
-    `mode` vaut 'main' (trouvailles importées depuis un GPX) ou 'evolution'
-    (caches d'une zone importées depuis des CSV, cf. blueprints/evolution.py) :
-    les deux pages partagent la même interface, seul l'onglet Données change.
+    `mode` vaut 'main' (trouvailles importées depuis un GPX), 'evolution'
+    (caches d'une zone importées depuis des CSV, cf. blueprints/evolution.py)
+    ou 'poses' (vie des caches posées par le joueur, tirée de ses logs). Les
+    pages partagent la même interface ; `lifecycle` signale celles animées par
+    le moteur « cycle de vie » (Évolution, Mes poses : ni caméra, ni trajet,
+    ligne d'infos à balises).
     """
     current_locale = get_locale()
     # `can_quit` : le bouton « Quitter » n'a de sens que lancé par launcher.py.
@@ -35,6 +39,10 @@ def render_app_page(mode: str):
     response = make_response(render_template(
         'app.html',
         mode=mode,
+        lifecycle=mode in ('evolution', 'poses'),
+        # Flashs par événement (onglet Style › Flash de /poses).
+        event_flash_kinds=event_flash.event_flash_kinds_for_template() if mode == 'poses' else [],
+        event_flash_modes=event_flash.EVENT_FLASH_MODES,
         can_quit=bool(current_app.config.get('QUIT_HOOK')),
         repo_url=options.REPO_URL,
         lang=(current_locale or 'fr').split('_')[0],

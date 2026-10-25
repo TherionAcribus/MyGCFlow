@@ -10,6 +10,15 @@
 //                  {trouvees}  : compteur courant de caches trouvées ;
 //                  {total}     : taille de la sélection ;
 //                  {pct}       : trouvées / total en pourcentage (« 42 % »).
+// Mes poses      — {date}, {total} ;
+//                  {actives}   : caches posées non archivées à la date ;
+//                  {posees}    : cumul des caches apparues ;
+//                  {archivees} : caches archivées À LA DATE (une cache
+//                                désarchivée en sort : actives + archivees
+//                                = posees), contrairement au cumul d'Évolution ;
+//                  {desactivees} : caches désactivées à la date ;
+//                  {trouvailles}, {favoris}, {dnf}, {logs} : cumuls reçus ;
+//                  {trouveurs} : joueurs distincts ayant trouvé une cache.
 
 import { WIDEST_DATE } from './infos_reserve.mjs';
 
@@ -17,12 +26,18 @@ import { WIDEST_DATE } from './infos_reserve.mjs';
 // « date · compteur » et à la préférence `evolution_infos_template` côté
 // serveur (settings.json).
 export const DEFAULT_EVOLUTION_TEMPLATE = '{date} · {actives}';
+// Modèle par défaut de Mes poses (préférence `poses_infos_template`).
+export const DEFAULT_POSES_TEMPLATE = '{date} · {actives} · {trouvailles}';
 
 // Balises reconnues par mode, dans l'ordre où l'onglet Infos les propose.
 // Une balise d'un autre mode reste littérale chez soi : l'utilisateur voit
 // sa faute de frappe plutôt qu'un trou dans la ligne.
 export const EVOLUTION_INFO_TAGS = ['date', 'actives', 'placees', 'archivees', 'total'];
 export const MAIN_INFO_TAGS = ['date', 'trouvees', 'total', 'pct'];
+export const POSES_INFO_TAGS = [
+    'date', 'actives', 'posees', 'archivees', 'desactivees',
+    'trouvailles', 'favoris', 'dnf', 'logs', 'trouveurs', 'total',
+];
 
 // {tag} : insensible à la casse, espaces tolérés autour du nom ({ ACTIVES }).
 // Le motif est construit par mode (voir renderInfosTemplate).

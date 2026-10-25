@@ -37,7 +37,7 @@
         <link rel="stylesheet" href="../static/vendor/ol/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
-        <title>{% if mode == 'evolution' %}MyGCFlow – {{ _("Évolution") }}{% else %}MyGCFlow{% endif %}</title>
+        <title>{% if mode == 'evolution' %}MyGCFlow – {{ _("Évolution") }}{% elif mode == 'poses' %}MyGCFlow – {{ _("Mes poses") }}{% else %}MyGCFlow{% endif %}</title>
         {% include '_branding_head.html' %}
     </head>
 
@@ -57,15 +57,20 @@
                          était en tête de l'onglet Données (le libellé du mode
                          reste visible quelle que soit la vue active). -->
                     <nav class="app-header-mode" aria-label="{{ _('Mode') }}">
-                        <a href="/" id="linkMainMode" class="app-mode-link {{ 'active' if mode != 'evolution' }}"
+                        <a href="/" id="linkMainMode" class="app-mode-link {{ 'active' if mode == 'main' }}"
                            aria-label="{{ _('Mes Géocaches') }}"
-                           {% if mode != 'evolution' %}aria-current="page"{% endif %}>
+                           {% if mode == 'main' %}aria-current="page"{% endif %}>
                             <i class="ti ti-database" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes Géocaches") }}</span>
                         </a>
                         <a href="/evolution" id="linkEvolutionMode" class="app-mode-link {{ 'active' if mode == 'evolution' }}"
                            aria-label="{{ _('Évolution') }}"
                            {% if mode == 'evolution' %}aria-current="page"{% endif %}>
                             <i class="ti ti-stack" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Évolution") }}</span>
+                        </a>
+                        <a href="/poses" id="linkPosesMode" class="app-mode-link {{ 'active' if mode == 'poses' }}"
+                           aria-label="{{ _('Mes poses') }}"
+                           {% if mode == 'poses' %}aria-current="page"{% endif %}>
+                            <i class="ti ti-map-pin" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes poses") }}</span>
                         </a>
                     </nav>
                 </div>
@@ -164,6 +169,15 @@
                             <p class="empty-state-hint">{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}</p>
                             <p class="empty-state-hint"><a href="/">{{ _("Revenir au mode principal (mes géocaches)") }}</a></p>
                         </div>
+                        {% elif mode == 'poses' %}
+                        <div class="empty-state-card">
+                            {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
+                            <p id="posesEmptyText" class="empty-state-text">{{ _("Aucune cache posée trouvée dans vos logs importés") }}</p>
+                            <a id="posesEmptyLogsLink" class="btn btn-primary" href="/#data">
+                                <i class="ti ti-checklist me-1" aria-hidden="true"></i>{{ _("Importer mes logs") }}
+                            </a>
+                            <p class="empty-state-hint">{{ _("La carte « Mes logs » de la page Mes Géocaches collecte vos caches posées et tous leurs logs.") }}</p>
+                        </div>
                         {% else %}
                         <div class="empty-state-card">
                             {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
@@ -213,13 +227,15 @@
                             <i class="ti ti-minus" aria-hidden="true"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-timeline-style="histogram" aria-pressed="true"
-                                aria-label="{{ _('Histogramme des trouvailles') if mode != 'evolution' else _('Histogramme des poses et archivages') }}"
-                                data-bs-toggle="tooltip" data-bs-title="{{ _('Histogramme des trouvailles') if mode != 'evolution' else _('Histogramme des poses et archivages') }}">
+                                {% set timeline_histogram_label = {'evolution': _('Histogramme des poses et archivages'), 'poses': _('Histogramme des logs reçus')}.get(mode, _('Histogramme des trouvailles')) %}
+                                aria-label="{{ timeline_histogram_label }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ timeline_histogram_label }}">
                             <i class="ti ti-chart-bar" aria-hidden="true"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-timeline-style="curve" aria-pressed="false"
-                                aria-label="{{ _('Courbe de progression') if mode != 'evolution' else _('Courbe des caches actives') }}"
-                                data-bs-toggle="tooltip" data-bs-title="{{ _('Courbe de progression') if mode != 'evolution' else _('Courbe des caches actives') }}">
+                                {% set timeline_curve_label = {'evolution': _('Courbe des caches actives'), 'poses': _('Courbe des trouvailles reçues')}.get(mode, _('Courbe de progression')) %}
+                                aria-label="{{ timeline_curve_label }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ timeline_curve_label }}">
                             <i class="ti ti-chart-line" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -326,6 +342,8 @@
                         <!-- Onglet Données (propre à chaque mode) -->
                         {% if mode == 'evolution' %}
                         {% include 'menu_data_evolution.html' %}
+                        {% elif mode == 'poses' %}
+                        {% include 'menu_data_poses.html' %}
                         {% else %}
                         {% include 'menu_data.html' %}
                         {% endif %}
@@ -365,7 +383,7 @@
             {% if mode == 'evolution' %}
             <!-- Modales du mode Évolution (nom et suppression d'une base) -->
             {% include 'modal_evolution.html' %}
-            {% else %}
+            {% elif mode == 'main' %}
             <!-- Modal de première utilisation -->
             {% include 'modal_first_use.html' %}
             {% endif %}

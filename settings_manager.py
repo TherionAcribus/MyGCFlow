@@ -15,6 +15,7 @@ from typing import Callable, Dict, Tuple, Optional, List
 
 from werkzeug.utils import secure_filename
 
+from event_flash import coerce_event_flashes, event_flash_defaults, scale_event_flash_sizes
 from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
@@ -56,6 +57,18 @@ FIRST_LAUNCH_EVOLUTION_PROFILE = "Évolution Classique"
 PROFILE_MODE_MAIN = "main"
 PROFILE_MODE_EVOLUTION = "evolution"
 PROFILE_MODES = (PROFILE_MODE_MAIN, PROFILE_MODE_EVOLUTION)
+# Préférences qui désignent un thème, avec le mode de thème attendu. Une page
+# peut ne pas avoir sa propre liste (Mes poses liste les thèmes du mode
+# principal) mais retenir son propre dernier thème.
+PROFILE_REF_SETTINGS = (
+    ("default_profile_uid", PROFILE_MODE_MAIN),
+    ("last_profile_uid", PROFILE_MODE_MAIN),
+    ("evolution_default_profile_uid", PROFILE_MODE_EVOLUTION),
+    ("evolution_last_profile_uid", PROFILE_MODE_EVOLUTION),
+    # Mes poses liste les thèmes du mode principal, avec son propre dernier
+    # thème (le thème par défaut est celui du mode principal).
+    ("poses_last_profile_uid", PROFILE_MODE_MAIN),
+)
 # Compatibilité avec les tests et extensions qui importent encore ce nom.
 EXAMPLES_ADDED_AFTER_V1 = set().union(*EXAMPLE_PROFILE_BATCHES.values())
 MAX_OVERLAY_TITLE_LENGTH = 500
@@ -365,6 +378,10 @@ class AppSettings:
     # thème de l'autre mode.
     evolution_default_profile_uid: Optional[str] = None
     evolution_last_profile_uid: Optional[str] = None
+    # Page /poses : thèmes du mode principal, dernier thème retenu à part (un
+    # thème choisi pour la vidéo de ses poses ne change pas celui des
+    # trouvailles).
+    poses_last_profile_uid: Optional[str] = None
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
@@ -450,6 +467,15 @@ class AppSettings:
     # "expire" : elles apparaissent puis disparaissent à la date du dernier
     #   export, seul instant où l'on sait qu'elles n'existaient plus.
     evolution_undated_archives: str = "hide"  # "hide" | "keep" | "expire"
+    # Page Mes poses (/poses) : rythme propre (une dizaine d'années de vie
+    # des caches), ligne d'infos à balises ({date}, {actives}, {posees},
+    # {archivees}, {desactivees}, {trouvailles}, {favoris}, {dnf}, {logs},
+    # {trouveurs}, {total}) et sort des caches archivées : "grey" (défaut,
+    # elles restent visibles, grisées) ou "hide" (elles disparaissent, comme
+    # en mode Évolution).
+    poses_animation: "AnimationPrefs" = field(default_factory=lambda: poses_animation_defaults())
+    poses_infos_template: str = '{date} · {actives} · {trouvailles}'
+    poses_archived_display: str = "grey"  # "grey" | "hide"
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -531,6 +557,18 @@ def evolution_animation_defaults() -> AnimationPrefs:
     )
 
 
+def poses_animation_defaults() -> AnimationPrefs:
+    """Rythme par défaut de Mes poses : une minute pour toute la vie des
+    caches (souvent une dizaine d'années), sans suivi de caméra."""
+    return AnimationPrefs(
+        rhythm_mode="duration",
+        days_per_second=40.0,
+        total_duration_seconds=60.0,
+        camera_follow=False,
+        flash_duration_ms=800,
+    )
+
+
 @dataclass
 class DisappearFlashOptions:
     """Flash de disparition d'une cache (mode Évolution, à son archivage)."""
@@ -587,6 +625,10 @@ class FlashOptions:
     disappear: DisappearFlashOptions = field(default_factory=DisappearFlashOptions)
     dnf: DnfFlashOptions = field(default_factory=DnfFlashOptions)
     dnf_found: DnfFoundFlashOptions = field(default_factory=DnfFoundFlashOptions)
+    # Page Mes poses : un flash par type d'événement (publication, trouvaille,
+    # favori, désactivation, archivage…). Table, défauts et validation dans
+    # event_flash.py ; sans effet sur les autres pages.
+    events: dict = field(default_factory=event_flash_defaults)
 
 
 @dataclass
@@ -1017,6 +1059,21 @@ def coerce_evolution_animation(d: dict) -> AnimationPrefs:
     return a
 
 
+def coerce_poses_animation(d: dict) -> AnimationPrefs:
+    """Rythme de Mes poses : jamais de suivi de caméra."""
+    a = coerce_animation_settings(d, poses_animation_defaults())
+    a.camera_follow = False
+    return a
+
+
+POSES_ARCHIVED_DISPLAYS = ("grey", "hide")
+
+
+def coerce_poses_archived_display(value, fallback: str = "grey") -> str:
+    """Sort des caches archivées sur la page Mes poses ; inconnu → repli."""
+    return value if value in POSES_ARCHIVED_DISPLAYS else fallback
+
+
 def coerce_dataset_id(value) -> Optional[int]:
     """Identifiant de base du mode Évolution (entier positif), None sinon."""
     if isinstance(value, bool):
@@ -1086,6 +1143,11 @@ def coerce_settings(d: dict) -> AppSettings:
         s.images = coerce_images_settings(d.get("images"))
         s.evolution_undated_archives = coerce_undated_archives(
             d.get("evolution_undated_archives"), s.evolution_undated_archives)
+        s.poses_animation = coerce_poses_animation(d.get("poses_animation"))
+        s.poses_infos_template = coerce_infos_template(
+            d.get("poses_infos_template"), s.poses_infos_template)
+        s.poses_archived_display = coerce_poses_archived_display(
+            d.get("poses_archived_display"), s.poses_archived_display)
         s.locationless_display = coerce_locationless_display(
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(
@@ -1137,6 +1199,7 @@ def coerce_settings(d: dict) -> AppSettings:
 
         s.evolution_default_profile_uid = _coerce_optional_str(d.get("evolution_default_profile_uid"))
         s.evolution_last_profile_uid = _coerce_optional_str(d.get("evolution_last_profile_uid"))
+        s.poses_last_profile_uid = _coerce_optional_str(d.get("poses_last_profile_uid"))
 
         s.startup_default_profile = bool(d.get("startup_default_profile", s.startup_default_profile))
 
@@ -1267,6 +1330,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                 border_color=_coerce_hex_color(ff.get("border_color"), pff.border_color),
                 border_color_type=_coerce_choice(ff.get("border_color_type"), FLASH_BORDER_TYPES, pff.border_color_type),
             ),
+            events=coerce_event_flashes(f.get("events"), p.flash.events),
         )
 
         # Options infos (titre, cases à cocher, CSS)
@@ -1361,9 +1425,11 @@ def convert_profile_for_mode(prof: MapProfile, target_mode: str) -> MapProfile:
         points.border_size = 0
         flash.size = _scaled(flash.size, EVOLUTION_FLASH_SCALE, *FLASH_SIZE_RANGE)
         flash.duration = min(flash.duration, EVOLUTION_FLASH_MAX_DURATION)
+        flash.events = scale_event_flash_sizes(flash.events, EVOLUTION_FLASH_SCALE)
     else:
         points.size = _scaled(points.size, 1 / EVOLUTION_POINT_SCALE, *POINT_SIZE_RANGE)
         flash.size = _scaled(flash.size, 1 / EVOLUTION_FLASH_SCALE, *FLASH_SIZE_RANGE)
+        flash.events = scale_event_flash_sizes(flash.events, 1 / EVOLUTION_FLASH_SCALE)
     prof.mode = target_mode
     return prof
 
@@ -2569,12 +2635,7 @@ class SettingsManager:
             # même façon : la page le chargerait sans pouvoir le montrer dans
             # sa liste.
             stale = False
-            for attr, mode in (
-                ("default_profile_uid", PROFILE_MODE_MAIN),
-                ("last_profile_uid", PROFILE_MODE_MAIN),
-                ("evolution_default_profile_uid", PROFILE_MODE_EVOLUTION),
-                ("evolution_last_profile_uid", PROFILE_MODE_EVOLUTION),
-            ):
+            for attr, mode in PROFILE_REF_SETTINGS:
                 uid = getattr(settings, attr)
                 if uid and self.get_profile_mode_by_uid(uid) != mode:
                     logging.warning("Thème référencé par %s introuvable (uid=%s), réinitialisation.", attr, uid)
@@ -2931,6 +2992,7 @@ class SettingsManager:
                     'border_color': prof.flash.dnf_found.border_color,
                     'border_color_type': prof.flash.dnf_found.border_color_type,
                 },
+                'events': {kind: dict(value) for kind, value in prof.flash.events.items()},
             },
             'infos': {
                 'title': {

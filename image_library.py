@@ -233,10 +233,11 @@ def _value(obj, key, default=None):
 
 
 def referenced_image_files(images_settings):
-    """Images que les préférences désignent : celles des DEUX listes (page
-    principale `items` et Évolution `evolution_items` — sinon une image posée
-    seulement dans l'autre mode passerait pour inutilisée) et celles des
-    configurations nommées (pour pouvoir les réappliquer)."""
+    """Images que les préférences désignent : celles des listes de chaque
+    page (principale `items`, Évolution `evolution_items`, Mes poses
+    `poses_items` — sinon une image posée seulement sur une autre page
+    passerait pour inutilisée) et celles des configurations nommées (pour
+    pouvoir les réappliquer)."""
     referenced = set()
 
     def collect(items):
@@ -249,6 +250,7 @@ def referenced_image_files(images_settings):
         return referenced
     collect(_value(images_settings, 'items'))
     collect(_value(images_settings, 'evolution_items'))
+    collect(_value(images_settings, 'poses_items'))
     for config in _value(images_settings, 'configs') or []:
         collect(_value(config, 'items'))
     return referenced

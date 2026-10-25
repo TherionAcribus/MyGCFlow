@@ -669,6 +669,19 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(
             self.manager.get_app_settings().labs_receive_token, "tok-test")
 
+    def test_logs_bookmarklet_state_survives_settings_patch(self):
+        # Même règle pour le favori « Mes logs » : avant la reprise par
+        # `replace`, tout PUT de préférence remettait son jeton à vide (le
+        # favori installé recevait 403) et oubliait la collecte complète
+        # demandée pour la prochaine fois.
+        from dataclasses import replace
+        self.manager.update_app_settings(
+            lambda s: replace(s, logs_receive_token="logs-tok", logs_collect_full_once=True))
+        self.client.put('/api/settings', json={'theme': 'dark'})
+        stored = self.manager.get_app_settings()
+        self.assertEqual(stored.logs_receive_token, "logs-tok")
+        self.assertTrue(stored.logs_collect_full_once)
+
     def test_an_invalid_date_format_leaves_the_stored_one_untouched(self):
         self.client.put('/api/settings', json={'date_format': 'eu'})
         self.client.put('/api/settings', json={'date_format': 'yyyy'})
@@ -885,6 +898,28 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['evolution_animation']['days_per_second'], 300)
         self.assertEqual(payload['evolution_animation']['extra_end_seconds'], 2)
         self.assertEqual(payload['evolution_animation']['rhythm_mode'], 'duration')
+
+    def test_poses_preferences_round_trip(self):
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['poses_archived_display'], 'grey')
+        self.assertEqual(payload['poses_infos_template'], '{date} · {actives} · {trouvailles}')
+        self.assertEqual(payload['poses_animation']['rhythm_mode'], 'duration')
+        self.assertFalse(payload['poses_animation']['camera_follow'])
+        self.client.put('/api/settings', json={
+            'poses_archived_display': 'hide',
+            'poses_infos_template': '{trouvailles} trouvailles',
+            'poses_animation': {'days_per_second': 80, 'camera_follow': True},
+        })
+        # Une valeur inconnue garde la valeur enregistrée.
+        self.client.put('/api/settings', json={'poses_archived_display': 'bof', 'theme': 'dark'})
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['poses_archived_display'], 'hide')
+        self.assertEqual(payload['poses_infos_template'], '{trouvailles} trouvailles')
+        self.assertEqual(payload['poses_animation']['days_per_second'], 80)
+        # Pas de suivi de caméra sur Mes poses, comme en Évolution.
+        self.assertFalse(payload['poses_animation']['camera_follow'])
+        # Le rythme du mode principal n'a pas bougé.
+        self.assertNotEqual(payload['animation']['days_per_second'], 80)
 
     def test_last_dataset_survives_unrelated_writes(self):
         self.client.put('/api/settings', json={'evolution_dataset_id': 4})

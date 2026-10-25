@@ -210,26 +210,29 @@
                             <span class="form-label d-block" id="labelStatsCounterItems">{{ _("Chiffres affichés") }}</span>
                             <div id="statsCounterItems" class="stats-counter-items" role="group" aria-labelledby="labelStatsCounterItems">
                                 {% for item, label, modes in [
-                                    ('total', _('Trouvailles'), 'main'),
-                                    ('days', _('Jours avec trouvaille'), 'main'),
-                                    ('best_day', _('Record sur une journée'), 'main'),
-                                    ('streak', _('Plus longue série (jours)'), 'main'),
-                                    ('types', _('Types de caches différents'), 'main evolution'),
-                                    ('countries', _('Pays'), 'main evolution'),
-                                    ('states', _('Régions'), 'main evolution'),
+                                    ('total', _('Trouvailles'), 'main poses'),
+                                    ('days', _('Jours avec trouvaille'), 'main poses'),
+                                    ('best_day', _('Record sur une journée'), 'main poses'),
+                                    ('streak', _('Plus longue série (jours)'), 'main poses'),
+                                    ('types', _('Types de caches différents'), 'main evolution poses'),
+                                    ('countries', _('Pays'), 'main evolution poses'),
+                                    ('states', _('Régions'), 'main evolution poses'),
                                     ('attributes', _('Attributs différents'), 'main'),
                                     ('owners', _('Propriétaires différents'), 'main'),
                                     ('oldest', _('Plus ancienne cache trouvée'), 'main'),
-                                    ('same_day', _('Trouvées le jour de publication'), 'main'),
-                                    ('north', _('Trouvaille la plus au nord'), 'main'),
-                                    ('south', _('Trouvaille la plus au sud'), 'main'),
-                                    ('east', _("Trouvaille la plus à l'est"), 'main'),
-                                    ('west', _("Trouvaille la plus à l'ouest"), 'main'),
+                                    ('same_day', _('Trouvées le jour de publication'), 'main poses'),
+                                    ('north', _('Trouvaille la plus au nord'), 'main poses'),
+                                    ('south', _('Trouvaille la plus au sud'), 'main poses'),
+                                    ('east', _("Trouvaille la plus à l'est"), 'main poses'),
+                                    ('west', _("Trouvaille la plus à l'ouest"), 'main poses'),
                                     ('actives', _('Caches actives'), 'evolution'),
                                     ('placees', _('Caches posées'), 'evolution'),
                                     ('archivees', _('Caches archivées'), 'evolution'),
                                     ('peak', _('Pic de caches actives'), 'evolution'),
-                                    ('age_moyen', _('Âge moyen des actives'), 'evolution')] %}
+                                    ('age_moyen', _('Âge moyen des actives'), 'evolution'),
+                                    ('finders', _('Trouveurs différents'), 'poses'),
+                                    ('favorites', _('Favoris reçus'), 'poses'),
+                                    ('caches', _('Caches trouvées au moins une fois'), 'poses')] %}
                                 <div class="form-check" data-stats-modes="{{ modes }}">
                                     <input class="form-check-input" type="checkbox" id="statsCounter-{{ item }}" data-counter-item="{{ item }}">
                                     <label class="form-check-label" for="statsCounter-{{ item }}">{{ label }}</label>
@@ -429,56 +432,64 @@
    forme (stats_ui.js › filterGallery). #}
 {% set stats_gallery = [
     (_("Ensembles de deux panneaux"), [
-        ('preset', 'types-sizes', _("Types + tailles"), _("Types de caches et tailles, en deux histogrammes."), None, 'main', 2),
-        ('preset', 'difficulty-terrain', _("Difficulté + terrain"), _("Difficultés et terrains, de 1 à 5."), None, 'main', 2),
+        ('preset', 'types-sizes', _("Types + tailles"), _("Types de caches et tailles, en deux histogrammes."), None, 'main poses', 2),
+        ('preset', 'difficulty-terrain', _("Difficulté + terrain"), _("Difficultés et terrains, de 1 à 5."), None, 'main poses', 2),
         ('preset', 'summary-progress', _("Chiffres clés + progression"), _("Chiffres clés et courbe des trouvailles cumulées."), None, 'main', 2),
         ('preset', 'age', _("Âge des caches"), _("Âge des caches à la trouvaille, et la plus ancienne trouvée."), None, 'main', 2),
         ('preset', 'evo-overview', _("Chiffres + activité"), _("Actives, posées, archivées, et la courbe des actives."), None, 'evolution', 2),
         ('preset', 'evo-geo', _("Pays + départements"), _("Répartition par pays et par département."), None, 'evolution', 2),
     ]),
     (_("Grilles"), [
-        ('preset', 'dt', _("Matrice D/T"), _("Les 81 combinaisons difficulté/terrain."), None, 'main', 1),
+        ('preset', 'dt', _("Matrice D/T"), _("Les 81 combinaisons difficulté/terrain."), None, 'main poses', 1),
         ('preset', 'jasmer', _("Grille Jasmer"), _("Un mois de publication par case, depuis mai 2000."), None, 'main', 1),
-        ('preset', 'finds_ym', _("Trouvailles mois × année"), _("Un mois de trouvaille par case, une ligne par année."), None, 'main', 1),
-        ('preset', 'calendar', _("Calendrier 366"), _("Chaque jour de l'année, 29 février compris."), None, 'main', 1),
-        ('preset', 'activity', _("Année d'activité"), _("Une année jour par jour, façon contributions GitHub."), None, 'main', 1),
+        ('preset', 'finds_ym', _("Trouvailles mois × année"), _("Un mois de trouvaille par case, une ligne par année."), None, 'main poses', 1),
+        ('preset', 'calendar', _("Calendrier 366"), _("Chaque jour de l'année, 29 février compris."), None, 'main poses', 1),
+        ('preset', 'activity', _("Année d'activité"), _("Une année jour par jour, façon contributions GitHub."), None, 'main poses', 1),
     ]),
     (_("Chiffres et courbes"), [
-        ('add', 'counter:summary', _("Chiffres clés"), _("Jours de trouvaille, record, plus longue série…"), _("Caches actives, posées, archivées et pic."), 'main evolution', 1),
-        ('preset', 'extremes', _("Points extrêmes"), _("Vos trouvailles les plus au nord, au sud, à l'est et à l'ouest."), None, 'main', 1),
-        ('add', 'line:cumulative', _("Progression des trouvailles"), _("Trouvailles cumulées au fil du temps, avec les paliers."), None, 'main', 1),
+        ('add', 'counter:summary', _("Chiffres clés"), _("Jours de trouvaille, record, plus longue série…"), _("Caches actives, posées, archivées et pic."), 'main evolution poses', 1),
+        ('preset', 'extremes', _("Points extrêmes"), _("Vos trouvailles les plus au nord, au sud, à l'est et à l'ouest."), None, 'main poses', 1),
+        ('add', 'line:cumulative', _("Progression des trouvailles"), _("Trouvailles cumulées au fil du temps, avec les paliers."), None, 'main poses', 1),
         ('add', 'line:actives', _("Courbe des caches actives"), _("Nombre de caches actives au fil du temps."), None, 'evolution', 1),
         ('add', 'line:placees', _("Courbe des poses cumulées"), _("Caches posées, cumulées au fil du temps."), None, 'evolution', 1),
         ('add', 'line:archivees', _("Courbe des archivages cumulés"), _("Caches archivées, cumulées au fil du temps."), None, 'evolution', 1),
     ]),
     (_("Caractéristiques des caches"), [
-        ('add', 'bar:cache_type', _("Types de caches"), _("Une barre par type, aux couleurs de la carte."), None, 'main evolution', 1),
-        ('add', 'donut:cache_type', _("Anneau des types"), _("La part de chaque type."), None, 'main evolution', 1),
-        ('add', 'bar:container', _("Tailles"), _("Du micro au grand."), None, 'main evolution', 1),
-        ('add', 'donut:container', _("Anneau des tailles"), _("La part de chaque taille."), None, 'main evolution', 1),
-        ('add', 'bar:difficulty', _("Difficulté"), _("De 1 à 5, par demi-point."), None, 'main evolution', 1),
-        ('add', 'bar:terrain', _("Terrain"), _("De 1 à 5, par demi-point."), None, 'main evolution', 1),
+        ('add', 'bar:cache_type', _("Types de caches"), _("Une barre par type, aux couleurs de la carte."), None, 'main evolution poses', 1),
+        ('add', 'donut:cache_type', _("Anneau des types"), _("La part de chaque type."), None, 'main evolution poses', 1),
+        ('add', 'bar:container', _("Tailles"), _("Du micro au grand."), None, 'main evolution poses', 1),
+        ('add', 'donut:container', _("Anneau des tailles"), _("La part de chaque taille."), None, 'main evolution poses', 1),
+        ('add', 'bar:difficulty', _("Difficulté"), _("De 1 à 5, par demi-point."), None, 'main evolution poses', 1),
+        ('add', 'bar:terrain', _("Terrain"), _("De 1 à 5, par demi-point."), None, 'main evolution poses', 1),
         ('add', 'bar:attribute', _("Attributs"), _("Les attributs les plus fréquents."), None, 'main', 1),
         ('add', 'donut:attribute', _("Anneau des attributs"), _("La part des attributs les plus fréquents."), None, 'main', 1),
-        ('add', 'bar:age', _("Âge des caches trouvées"), _("Écart entre la publication et la trouvaille."), None, 'main', 1),
+        ('add', 'bar:age', _("Âge des caches trouvées"), _("Écart entre la publication et la trouvaille."), None, 'main poses', 1),
         ('add', 'bar:status', _("Statut des caches"), _("Caches actives et archivées."), None, 'evolution', 1),
         ('add', 'donut:status', _("Anneau du statut"), _("La part des actives et des archivées."), None, 'evolution', 1),
         ('add', 'bar:lifetime', _("Durée de vie"), _("De la pose à l'archivage, par tranche."), None, 'evolution', 1),
     ]),
     (_("Lieux et propriétaires"), [
-        ('add', 'bar:country', _("Pays"), _("Une barre par pays."), None, 'main evolution', 1),
-        ('add', 'donut:country', _("Anneau des pays"), _("La part de chaque pays."), None, 'main evolution', 1),
-        ('preset', 'race', _("Course des pays"), _("Les pays se doublent au fil des trouvailles."), None, 'main', 1),
-        ('add', 'bar:state', _("Régions"), _("Une barre par région."), None, 'main evolution', 1),
+        ('add', 'bar:country', _("Pays"), _("Une barre par pays."), None, 'main evolution poses', 1),
+        ('add', 'donut:country', _("Anneau des pays"), _("La part de chaque pays."), None, 'main evolution poses', 1),
+        ('preset', 'race', _("Course des pays"), _("Les pays se doublent au fil des trouvailles."), None, 'main poses', 1),
+        ('add', 'bar:state', _("Régions"), _("Une barre par région."), None, 'main evolution poses', 1),
         ('add', 'bar:county', _("Départements"), _("Une barre par département."), None, 'evolution', 1),
         ('add', 'donut:county', _("Anneau des départements"), _("La part de chaque département."), None, 'evolution', 1),
         ('add', 'bar:owner', _("Propriétaires"), _("Les propriétaires dont vous avez trouvé le plus de caches."), None, 'main', 1),
         ('add', 'donut:owner', _("Anneau des propriétaires"), _("La part des propriétaires les plus trouvés."), None, 'main', 1),
     ]),
+    (_("Mes poses : trouvailles reçues"), [
+        ('preset', 'poses-overview', _("Chiffres + progression"), _("Trouvailles et favoris reçus, trouveurs, et la courbe des trouvailles reçues."), None, 'poses', 2),
+        ('preset', 'poses-race', _("Course des caches"), _("Vos caches se doublent au fil des trouvailles reçues."), None, 'poses', 1),
+        ('preset', 'poses-finders', _("Meilleurs trouveurs"), _("Les joueurs qui ont trouvé le plus de vos caches."), None, 'poses', 1),
+        ('add', 'bar:cache', _("Caches les plus trouvées"), _("Une barre par cache, triée par trouvailles reçues."), None, 'poses', 1),
+        ('add', 'donut:cache', _("Anneau des caches"), _("La part de chaque cache dans les trouvailles reçues."), None, 'poses', 1),
+        ('add', 'donut:finder', _("Anneau des trouveurs"), _("La part des joueurs qui vous ont le plus rendu visite."), None, 'poses', 1),
+    ]),
     (_("Dates de trouvaille"), [
-        ('add', 'bar:year', _("Trouvailles par année"), _("Les trouvailles de chaque année."), None, 'main', 1),
-        ('add', 'bar:month', _("Trouvailles par mois"), _("De janvier à décembre, toutes années confondues."), None, 'main', 1),
-        ('add', 'bar:weekday', _("Jours de la semaine"), _("Du lundi au dimanche."), None, 'main', 1),
+        ('add', 'bar:year', _("Trouvailles par année"), _("Les trouvailles de chaque année."), None, 'main poses', 1),
+        ('add', 'bar:month', _("Trouvailles par mois"), _("De janvier à décembre, toutes années confondues."), None, 'main poses', 1),
+        ('add', 'bar:weekday', _("Jours de la semaine"), _("Du lundi au dimanche."), None, 'main poses', 1),
     ]),
 ] %}
 <div id="statsGalleryModal" class="modal bs-modal fade" tabindex="-1" aria-labelledby="statsGalleryTitle" aria-hidden="true">
@@ -512,7 +523,7 @@
                             <span class="stats-gallery-text">
                                 <span class="stats-gallery-title">{{ label }}{% if count > 1 %}<span class="badge bg-secondary-lt ms-1">{{ _("2 panneaux") }}</span>{% endif %}</span>
                                 {% if desc_evo %}
-                                <span class="stats-gallery-desc" data-stats-modes="main">{{ desc }}</span>
+                                <span class="stats-gallery-desc" data-stats-modes="main poses">{{ desc }}</span>
                                 <span class="stats-gallery-desc" data-stats-modes="evolution">{{ desc_evo }}</span>
                                 {% else %}
                                 <span class="stats-gallery-desc">{{ desc }}</span>

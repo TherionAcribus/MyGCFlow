@@ -118,6 +118,25 @@ class DnfFeaturesTests(unittest.TestCase):
         self.assertEqual([f["properties"]["gc_code"] for f in body["features"]], ["GC9ZZZZ"])
 
     def test_preferences(self):
+        # Préférences dans un dossier temporaire : sans cela, le test écrivait
+        # dans la configuration réelle (dnf_display=True y restait et le test
+        # échouait au lancement suivant).
+        from pathlib import Path
+        from unittest import mock
+        import settings_manager
+        from blueprints import profiles as profiles_bp_module
+        cfg = Path(self.tmpdir.name) / "cfg"
+        for name, value in {"CONFIG_DIR": cfg, "PROFILES_DIR": cfg / "profiles",
+                            "SETTINGS_PATH": cfg / "settings.json"}.items():
+            patcher = mock.patch.object(settings_manager, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        settings_manager.write_json(settings_manager.SETTINGS_PATH, {
+            "examples_seeded": True, "examples_version": settings_manager.EXAMPLES_VERSION})
+        patcher = mock.patch.object(profiles_bp_module, "settings_manager", settings_manager.SettingsManager())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
         client = self.app.test_client()
         defaults = client.get("/api/settings").get_json()
         self.assertEqual((defaults["dnf_display"], defaults["dnf_in_trail"]), (False, True))

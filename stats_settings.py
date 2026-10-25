@@ -48,6 +48,18 @@ EVOLUTION_METRICS_BY_KIND = {
     "counter": ("summary",),
 }
 
+# Page Mes poses (/poses) : le jeu compte les TROUVAILLES REÇUES (logs des
+# autres joueurs sur les caches posées), avec les propriétés des trouvailles
+# du mode principal, plus la cache trouvée et le trouveur. Liste propre
+# (`poses_panels`).
+POSES_METRICS_BY_KIND = {
+    "grid": ("dt", "finds_ym", "calendar", "activity"),
+    "bar": ("cache", "finder", "year", "month", "weekday", "age", "cache_type", "container", "difficulty", "terrain", "country", "state"),
+    "donut": ("cache", "finder", "cache_type", "container", "country", "state"),
+    "line": ("cumulative",),
+    "counter": ("summary",),
+}
+
 # Univers comptés par un panneau catégoriel Évolution (« Compter ») :
 # 'active' = caches présentes à la date affichée (ensemble vivant),
 # 'placed'/'archived' = cumuls monotone des événements.
@@ -77,7 +89,9 @@ STATS_COUNTER_ITEMS = ("total", "days", "best_day", "streak", "types", "countrie
 # placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 # actif (types, pays, régions — mêmes clés qu'en mode principal).
 EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "countries", "states", "age_moyen")
-_ALL_COUNTER_ITEMS = STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS
+# Tuiles de Mes poses : trouvailles reçues, trouveurs, favoris, caches trouvées…
+POSES_COUNTER_ITEMS = ("total", "finders", "favorites", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west")
+_ALL_COUNTER_ITEMS = tuple(dict.fromkeys(STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS + POSES_COUNTER_ITEMS))
 
 STATS_OFFSET_RANGE = (0, 2000)
 STATS_WIDTH_RANGE = (120, 1200)
@@ -97,7 +111,7 @@ STATS_CONFIG_NAME_MAX = 40
 # Mode de la page où la configuration a été enregistrée (mêmes valeurs que
 # le « mode » du JSON exporté côté client) ; « finds » par défaut — les
 # configurations antérieures viennent de la page principale.
-STATS_CONFIG_MODES = ("finds", "evolution")
+STATS_CONFIG_MODES = ("finds", "evolution", "poses")
 
 # Toujours appliquées par fullmatch, en classes ASCII explicites : `$` admet
 # un saut de ligne final et `\d` les chiffres non latins en Python, pas en JS.
@@ -116,6 +130,8 @@ class StatsSettings:
     panels: list = field(default_factory=list)
     # Liste propre au mode Évolution (/evolution), même schéma.
     evolution_panels: list = field(default_factory=list)
+    # Liste propre à la page Mes poses (/poses), même schéma.
+    poses_panels: list = field(default_factory=list)
     # Configurations nommées : {name, mode, panels}, instantanés de la liste.
     configs: list = field(default_factory=list)
 
@@ -203,7 +219,7 @@ def _config_name(value) -> str:
     return flat[:STATS_CONFIG_NAME_MAX]
 
 
-_CATEGORICAL = ("cache_type", "container", "country", "state", "county", "status", "attribute", "owner")
+_CATEGORICAL = ("cache_type", "container", "country", "state", "county", "status", "attribute", "owner", "cache", "finder")
 
 _DEFAULT_WIDTH = {"grid": 280, "bar": 280, "donut": 300, "line": 320, "counter": 280}
 # Année d'activité : 53 semaines en colonnes, illisible à 280 px.
@@ -235,7 +251,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
             "show_values": True,
             "show_percent": False,
             "highlight": "new",
-            "sort": "count" if metric in ("cache_type", "country", "state", "county", "status", "attribute", "owner") else "natural",
+            "sort": "count" if metric in ("cache_type", "country", "state", "county", "status", "attribute", "owner", "cache", "finder") else "natural",
             # Âge et durée de vie : grandeurs ordonnées, mais libellés
             # longs (« 6 à 12 mois », « 5 à 10 ans »).
             "orientation": "horizontal" if metric in _CATEGORICAL or metric in ("age", "lifetime") else "vertical",
@@ -361,7 +377,8 @@ def coerce_stats_panel(raw) -> dict | None:
         return None
     # Union des deux registres : les panneaux du mode Évolution vivent dans
     # la même liste, le rendu filtre par mode.
-    if metric not in STATS_METRICS_BY_KIND[kind] and metric not in EVOLUTION_METRICS_BY_KIND.get(kind, ()):
+    if (metric not in STATS_METRICS_BY_KIND[kind] and metric not in EVOLUTION_METRICS_BY_KIND.get(kind, ())
+            and metric not in POSES_METRICS_BY_KIND.get(kind, ())):
         return None
     defaults = stats_panel_defaults(kind, metric)
     options = _coerce_block(raw.get("options"), defaults["options"], _OPTION_COERCERS)
@@ -455,12 +472,15 @@ def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSet
     if not isinstance(raw, dict):
         return StatsSettings(
             enabled=base.enabled, panels=list(base.panels),
-            evolution_panels=list(base.evolution_panels), configs=list(base.configs))
+            evolution_panels=list(base.evolution_panels), poses_panels=list(base.poses_panels),
+            configs=list(base.configs))
 
     enabled = _bool(raw.get("enabled"), base.enabled)
     panels = _coerce_panel_list(raw["panels"] if "panels" in raw else base.panels)
     evolution_panels = _coerce_panel_list(
         raw["evolution_panels"] if "evolution_panels" in raw else base.evolution_panels)
+    poses_panels = _coerce_panel_list(
+        raw["poses_panels"] if "poses_panels" in raw else base.poses_panels)
     configs = []
     names = set()
     config_source = raw["configs"] if "configs" in raw else base.configs
@@ -473,4 +493,4 @@ def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSet
         if len(configs) >= STATS_MAX_CONFIGS:
             break
     return StatsSettings(enabled=enabled, panels=panels,
-                         evolution_panels=evolution_panels, configs=configs)
+                         evolution_panels=evolution_panels, poses_panels=poses_panels, configs=configs)

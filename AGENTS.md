@@ -152,6 +152,21 @@ Autres repères :
   caméra survit à un saut (piste recalée) : `getCameraFollowSnapshot()`
   compare la vue à la pose attendue — il faut des caches éloignées (GPX
   généré), sinon la piste n'a aucun trajet et `pose` vaut null.
+- Page Mes poses (`/poses`, docs/mode-poses.md) : ses données sont les logs
+  importés — un spec appelle `POST /api/logs/clear` en entrée ET en sortie
+  (les specs `gc-logs`, `dnf-display` partagent la collection). Préférences à
+  remettre : `poses_archived_display`, `poses_infos_template`,
+  `poses_animation`, `stats.poses_panels`, `images.poses_items`. Relevés :
+  `getPosesDebugState()` (états `pstate`, segments, journal des flashs,
+  compteurs) ; signal `window.mygcflowPosesLoaded`. Pour tester les flashs
+  sans dépendre du rythme, piloter le moteur jour par jour
+  (`lifecycleEngine().begin/step/end`, exemple dans `poses.spec.mjs`).
+- Trois pages, trois prédicats (`app_mode.mjs`) : `isLifecyclePage()` pour le
+  moteur partagé Évolution / Mes poses, `isEvolutionPage()` pour ce qui tient
+  aux bases CSV, `isMainPage()` pour GPX, DNF, sources. Les clés de stockage
+  par page passent par `statsPanelsKey(mode)` / `imagesItemsKey(mode)` /
+  `perPage(...)`. Un module de page exporte des noms uniques (`posesXxx`) :
+  `export *` d'index.js écarte EN SILENCE un nom exporté par deux modules.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /

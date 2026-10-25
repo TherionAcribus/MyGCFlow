@@ -4,7 +4,7 @@
 // (applyStatsSettings) puis part au serveur en bloc complet `{ stats }`,
 // regroupée par un debounce comme les autres préférences globales.
 import * as pkg from './index.js';
-import { isEvolutionPage } from './app_mode.mjs';
+import { appMode, isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import { bindPanelDrag } from './panel_interactions.js';
@@ -24,6 +24,9 @@ import {
     normalizeStatsConfig,
     normalizeStatsPanel,
     offsetFreeCopy,
+    statsConfigModeFor,
+    statsCounterItemsFor,
+    statsMetricsRegistry,
     statsPanelsKey,
     statsStylePreset,
 } from './stats_model.mjs';
@@ -40,14 +43,20 @@ let initialized = false;
 // Page /evolution : métriques, modèles et chiffres des compteurs différent.
 // Chaque mode a sa liste de panneaux (`stats.panels` / `stats.evolution_panels`),
 // indépendante : ajouter ou retirer un panneau ici ne touche pas l'autre page.
+// Page /poses : trouvailles reçues, avec sa propre liste (`stats.poses_panels`).
 const evolutionMode = isEvolutionPage();
-const panelsKey = () => statsPanelsKey(evolutionMode);
+const pageMode = appMode();
+// Mode des configurations nommées et des exports (finds / evolution / poses).
+const configMode = statsConfigModeFor(pageMode);
+const panelsKey = () => statsPanelsKey(pageMode);
 const modePanels = (s) => s[panelsKey()] || [];
-const metricRegistry = evolutionMode ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
-const counterItems = evolutionMode ? EVOLUTION_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
+const metricRegistry = statsMetricsRegistry(pageMode);
+const counterItems = statsCounterItemsFor(pageMode);
 // Tuiles du compteur « Chiffres clés » créé en Évolution : les chiffres de la
-// chronologie, pas ceux des trouvailles.
-const COUNTER_DEFAULT_ITEMS = evolutionMode ? ['actives', 'placees', 'archivees', 'peak'] : null;
+// chronologie, pas ceux des trouvailles ; sur Mes poses, ceux des trouvailles
+// reçues.
+const COUNTER_DEFAULT_ITEMS = evolutionMode ? ['actives', 'placees', 'archivees', 'peak']
+    : pageMode === 'poses' ? ['total', 'finders', 'favorites', 'caches'] : null;
 
 // Modèles : un clic pose un ou deux panneaux pré-réglés et pré-placés. Les
 // piles de coin contournent d'elles-mêmes le titre et les infos.
@@ -86,6 +95,13 @@ const PRESETS = {
         ['bar', 'country', { position: { anchor: 'top-right', width: 260 } }],
         ['bar', 'county', { position: { anchor: 'top-right', width: 260 } }],
     ],
+    // Mes poses : trouvailles reçues.
+    'poses-overview': [
+        ['counter', 'summary', { position: { anchor: 'top-left' }, options: { items: ['total', 'finders', 'favorites', 'caches'] } }],
+        ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 } }],
+    ],
+    'poses-race': [['bar', 'cache', { position: { anchor: 'top-right', width: 300 }, options: { sort: 'race', max_items: 8 } }]],
+    'poses-finders': [['bar', 'finder', { position: { anchor: 'top-right', width: 280 }, options: { max_items: 10 } }]],
 };
 
 const KIND_ICONS = {
@@ -111,7 +127,7 @@ const $ = (id) => document.getElementById(id);
 // configuration de l'autre mode. t() hors du template literal : pybabel
 // n'extrait pas les appels qui s'y trouvent.
 function otherModeBadge() {
-    const mode = evolutionMode ? pkg.t('Trouvailles') : pkg.t('Évolution');
+    const mode = pageMode === 'main' ? pkg.t('Autre page') : pkg.t('Trouvailles');
     return `(${mode})`;
 }
 
@@ -183,7 +199,7 @@ const GALLERY_MODAL = 'statsGalleryModal';
 // pas au fil de la page : filtrage unique à l'init ; la recherche
 // (filterGallery) n'agit ensuite que sur les cartes du mode.
 function syncGalleryMode() {
-    const mode = evolutionMode ? 'evolution' : 'main';
+    const mode = pageMode;
     document.querySelectorAll('#statsAddMenu [data-stats-modes]').forEach((el) => {
         const inMode = el.dataset.statsModes.split(' ').includes(mode);
         el.hidden = !inMode;
@@ -354,7 +370,9 @@ function renderList() {
         empty.hidden = panels.length > 0;
         empty.textContent = evolutionMode
             ? pkg.t('Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, par exemple, comptent actives, poses et archivages.')
-            : pkg.t('Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se remplit case par case au fil de vos trouvailles.');
+            : pageMode === 'poses'
+                ? pkg.t('Aucun panneau. Commencez par un modèle : la course des caches les plus trouvées, par exemple, suit les visites de vos poses.')
+                : pkg.t('Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se remplit case par case au fil de vos trouvailles.');
     }
     const full = panels.length >= STATS_MAX_PANELS;
     const limit = $('statsLimitHint');
@@ -649,7 +667,7 @@ function renderForm() {
     if (o.columns !== undefined) setValue('selectStatsColumns', String(o.columns));
     // Tuiles : seules celles du mode courant sont proposées (les autres restent
     // dans options.items, préservées à l'enregistrement).
-    const mode = evolutionMode ? 'evolution' : 'main';
+    const mode = pageMode;
     document.querySelectorAll('#statsCounterItems [data-counter-item]').forEach((box) => {
         const wrap = box.closest('[data-stats-modes]');
         if (wrap) wrap.hidden = !(wrap.dataset.statsModes || '').split(' ').includes(mode);
@@ -1241,7 +1259,7 @@ async function exportBoardPng() {
     const scale = pngScale();
     const blob = await pkg.statsPanelsPngBlob?.(scale);
     if (blob) downloadBlob(blob,
-        `stats-panneaux-${evolutionMode ? 'evolution' : 'finds'}${scale > 1 ? `@${scale}x` : ''}.png`);
+        `stats-panneaux-${configMode}${scale > 1 ? `@${scale}x` : ''}.png`);
 }
 
 // Export/import de la liste du mode courant — pour qui veut la copier
@@ -1251,7 +1269,7 @@ async function exportBoardPng() {
 function exportPanels() {
     const settings = currentSettings();
     const payload = {
-        mode: evolutionMode ? 'evolution' : 'finds',
+        mode: configMode,
         panels: modePanels(settings),
     };
     const json = JSON.stringify(payload, null, 2);
@@ -1336,7 +1354,7 @@ function renderConfigMenu() {
         apply.appendChild(count);
         // Enregistrée dans l'autre mode : ses panneaux rempliraient la liste
         // du mauvais mode — marquée et non applicable, la suppression reste.
-        if (config.mode !== (evolutionMode ? 'evolution' : 'finds')) {
+        if (config.mode !== configMode) {
             const badge = document.createElement('span');
             badge.className = 'text-muted small ms-1';
             badge.textContent = otherModeBadge();
@@ -1374,7 +1392,7 @@ function saveCurrentConfig() {
     const settings = currentSettings();
     const entry = normalizeStatsConfig({
         name: $('inputStatsConfigName')?.value,
-        mode: evolutionMode ? 'evolution' : 'finds',
+        mode: configMode,
         panels: modePanels(settings),
     });
     if (!entry) return;

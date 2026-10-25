@@ -6,6 +6,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -16,6 +17,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -26,6 +28,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -38,6 +41,7 @@
       "enabled": false,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -51,6 +55,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -105,6 +110,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -199,6 +205,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -298,6 +305,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -480,6 +488,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -552,6 +561,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -626,6 +636,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -695,6 +706,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -759,6 +771,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -820,6 +833,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -958,6 +972,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1179,6 +1194,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1251,6 +1267,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1411,6 +1428,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1573,6 +1591,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1849,6 +1868,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1872,6 +1892,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "Ma mise en page",
@@ -1931,6 +1952,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -1950,6 +1972,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "Ok",
@@ -1983,6 +2006,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "Dup",
@@ -2042,6 +2066,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
@@ -2075,6 +2100,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "C",
@@ -2190,6 +2216,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "cfg0",
@@ -2525,6 +2552,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -2628,6 +2656,7 @@
           }
         }
       ],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -2685,6 +2714,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -2742,6 +2772,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -2760,6 +2791,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "E",
@@ -2784,6 +2816,7 @@
       "enabled": true,
       "panels": [],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "F",
@@ -2891,6 +2924,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -3084,6 +3118,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -3194,6 +3229,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -3345,6 +3381,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -3451,6 +3488,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": []
     }
   },
@@ -3728,6 +3766,7 @@
         }
       ],
       "evolution_panels": [],
+      "poses_panels": [],
       "configs": [
         {
           "name": "Pile",
@@ -3908,6 +3947,7 @@
           }
         }
       ],
+      "poses_panels": [],
       "configs": []
     }
   }

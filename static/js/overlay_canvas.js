@@ -11,7 +11,7 @@
 import * as pkg from './index.js';
 import { digitAdvance, isTabularNums, layoutTabularText } from './tabular_text.mjs';
 import { INFOS_SEPARATOR } from './infos_reserve.mjs';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isLifecyclePage } from './app_mode.mjs';
 
 // Largeur commune des chiffres par police (font-variant-numeric: tabular-nums).
 // Mesurer les dix chiffres à chaque frame serait inutile : la police ne change
@@ -213,7 +213,7 @@ export function getOverlayTextContent() {
         : '';
     const infoParts = [];
     const spanTemplate = document.getElementById('spanInfosTemplate');
-    if (isEvolutionPage()) {
+    if (isLifecyclePage()) {
         // Ligne à balises : le span du modèle est tenu à jour par mapgl.js ;
         // les spans classiques existent mais sont masqués dans ce mode.
         infoParts.push(spanTemplate?.textContent || '');

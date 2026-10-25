@@ -78,7 +78,7 @@
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPoints" role="tab" aria-selected="false">{{ _("Points") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabFlash" role="tab" aria-selected="false">{{ _("Flash") }}</a></li>
                         {# Traits de déplacement : un trajet n'a de sens que pour un seul géocacheur. #}
-                        {% if mode != 'evolution' %}
+                        {% if not lifecycle %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
                         {% endif %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTitles" role="tab" aria-selected="false">{{ _("Titres") }}</a></li>
@@ -191,7 +191,11 @@
                             <div class="col-12 col-md-6">
                                 {% include 'menu_flash_disappear.html' %}
                             </div>
-                            {% else %}
+                            {% elif mode == 'poses' %}
+                            <div class="col-12 col-md-6">
+                                {% include 'menu_flash_events.html' %}
+                            </div>
+                            {% elif mode == 'main' %}
                             <div class="col-12 col-md-6">
                                 {% include 'menu_flash_dnf.html' %}
                             </div>
@@ -199,7 +203,7 @@
                         </div>
                     </div>
 
-                    {% if mode != 'evolution' %}
+                    {% if not lifecycle %}
                     <!-- Sous-onglet Trajet (traits de déplacement) -->
                     <div id="tabTrail" class="tab-pane fade">
                         {% include 'menu_trail.html' %}

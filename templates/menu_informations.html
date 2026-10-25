@@ -49,18 +49,34 @@
 
         <!-- Panneau Infos -->
         <div id="gcInfosPanelInfos" class="gc-infos-panel mb-2" role="tabpanel" aria-labelledby="gcCssTargetInfos" hidden>
-            {% if mode == 'evolution' %}
+            {% if lifecycle %}
             <div class="mb-1">
                 <label class="form-label" for="inputInfosTemplate">{{ _("Ligne d'informations") }}</label>
                 <input id="inputInfosTemplate" type="text" class="form-control" maxlength="200" autocomplete="off" placeholder="{date} · {actives}">
                 <div class="d-flex flex-wrap gap-1 mt-1" role="group" aria-label="{{ _('Insérer une balise') }}">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-evolution-info-tag="date">{{ _("Date") }}</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-evolution-info-tag="actives">{{ _("Actives") }}</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-evolution-info-tag="placees">{{ _("Placées") }}</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-evolution-info-tag="archivees">{{ _("Archivées") }}</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-evolution-info-tag="total">{{ _("Total") }}</button>
+                    {# Balises de chaque page : EVOLUTION_INFO_TAGS / POSES_INFO_TAGS de infos_template.mjs #}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="date">{{ _("Date") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="actives">{{ _("Actives") }}</button>
+                    {% if mode == 'poses' %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="posees">{{ _("Posées") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="archivees">{{ _("Archivées") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="desactivees">{{ _("Désactivées") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="trouvailles">{{ _("Trouvailles") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="favoris">{{ _("Favoris") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="dnf">{{ _("DNF") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="logs">{{ _("Logs") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="trouveurs">{{ _("Trouveurs") }}</button>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="placees">{{ _("Placées") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="archivees">{{ _("Archivées") }}</button>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="total">{{ _("Total") }}</button>
                 </div>
+                {% if mode == 'poses' %}
+                <div class="form-text">{{ _("Balises remplacées en direct : {date}, {actives} (non archivées), {posees}, {archivees} et {desactivees} (à la date), {trouvailles}, {favoris}, {dnf}, {logs} (reçus depuis le début), {trouveurs} (joueurs distincts), {total}. Un champ vide masque la ligne.") }}</div>
+                {% else %}
                 <div class="form-text">{{ _("Balises remplacées en direct : {date}, {actives}, {placees}, {archivees}, {total}. Le reste du texte est affiché tel quel ; un champ vide masque la ligne.") }}</div>
+                {% endif %}
             </div>
             {% else %}
             <div class="form-check">

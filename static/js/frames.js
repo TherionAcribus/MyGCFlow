@@ -2,7 +2,8 @@
 import * as pkg from './index.js';
 import { reservedInfosText } from './infos_reserve.mjs';
 import { MAIN_INFO_TAGS, renderInfosTemplate, reservedInfosTemplateText } from './infos_template.mjs';
-import { isEvolutionPage } from './app_mode.mjs';
+import { isLifecyclePage, isMainPage } from './app_mode.mjs';
+import { lifecycleEngine } from './lifecycle_engine.mjs';
 
 // Modèle de la ligne d'infos du mode principal : texte libre avec balises
 // {date}, {trouvees}, {total}, {pct} (infos_template de settings.json).
@@ -26,7 +27,7 @@ export function mainInfosTemplateText() {
 // repli (les cases pilotent la ligne).
 function mainTemplateActive() {
     try {
-        return !isEvolutionPage() && mainInfosTemplate.trim() !== '';
+        return isMainPage() && mainInfosTemplate.trim() !== '';
     } catch (_) {
         return false;
     }
@@ -69,11 +70,12 @@ export function displayFrames(){
     syncOverlayVisibility();
 }
 
-// Lecture du modèle Évolution avec garde TDZ : syncOverlayVisibility peut
-// tourner pendant l'évaluation des modules (initUIElements), avant que
-// evolution_data.js ait initialisé ses exports — cf. hasAnimationData (ui.js).
-function safeEvolutionTemplate() {
-    try { return pkg.evolutionInfosTemplate?.() ?? ''; } catch (_) { return ''; }
+// Lecture du modèle des pages « cycle de vie » (Évolution, Mes poses) avec
+// garde TDZ : syncOverlayVisibility peut tourner pendant l'évaluation des
+// modules (initUIElements), avant que le module de la page ait enregistré son
+// moteur et initialisé ses exports — cf. hasAnimationData (ui.js).
+function safeLifecycleTemplate() {
+    try { return lifecycleEngine()?.infosTemplate?.() ?? ''; } catch (_) { return ''; }
 }
 
 // Source de vérité unique pour la visibilité des overlays. Le CSS utilisateur
@@ -88,12 +90,12 @@ export function syncOverlayVisibility(){
     const titleFrame = document.getElementById("titleFrame");
     const infosFrame = document.getElementById("infosFrame");
     const showTitle = dbReady && opts.title?.display === true;
-    // Mode Évolution : la ligne d'infos est un modèle libre — un modèle vide
-    // masque la cartouche quelles que soient les cases du profil (elles ne sont
-    // pas proposées dans ce mode). Mode principal : un modèle rempli prend la
-    // main sur les cases ; vide, ce sont les cases qui décident.
-    const showInfos = dbReady && (isEvolutionPage()
-        ? safeEvolutionTemplate().trim() !== ''
+    // Pages « cycle de vie » : la ligne d'infos est un modèle libre — un modèle
+    // vide masque la cartouche quelles que soient les cases du profil (elles
+    // ne sont pas proposées sur ces pages). Mode principal : un modèle rempli
+    // prend la main sur les cases ; vide, ce sont les cases qui décident.
+    const showInfos = dbReady && (isLifecyclePage()
+        ? safeLifecycleTemplate().trim() !== ''
         : (mainTemplateActive() || opts.numberOfCaches?.display === true || opts.currentDate?.display === true));
 
     if (titleFrame) {
@@ -127,7 +129,7 @@ export function updateInfosSpansVisibility(){
     const spanDate = document.getElementById("spanCurrentDate");
     const spanSep = document.getElementById("spanInfosSep");
     const spanTemplate = document.getElementById("spanInfosTemplate");
-    if (isEvolutionPage()) {
+    if (isLifecyclePage()) {
         for (const span of [spanCaches, spanSep, spanDate]) {
             if (span) {
                 span.hidden = true;
@@ -135,7 +137,7 @@ export function updateInfosSpansVisibility(){
             }
         }
         if (spanTemplate) {
-            const showTemplate = safeEvolutionTemplate().trim() !== '';
+            const showTemplate = safeLifecycleTemplate().trim() !== '';
             spanTemplate.hidden = !showTemplate;
             spanTemplate.style.display = showTemplate ? "inline" : "none";
         }
@@ -188,16 +190,15 @@ export function updateInfosReserve(){
     let text;
     try {
         const meta = pkg.metadata;
-        // Mode Évolution : réserve par balise du modèle — chaque compteur prend
-        // sa valeur maximale (pic d'actives, totaux des cumuls), la date la
-        // plus large.
-        text = isEvolutionPage()
-            ? reservedInfosTemplateText(pkg.evolutionInfosTemplate?.(), {
-                actives: meta?.counterMaxes?.active,
-                placees: meta?.counterMaxes?.placed,
-                archivees: meta?.counterMaxes?.archived,
+        // Pages « cycle de vie » : réserve par balise du modèle — chaque
+        // compteur prend sa valeur maximale (meta.tagMaxes : pic d'actives,
+        // totaux des cumuls…), la date la plus large.
+        const engine = isLifecyclePage() ? lifecycleEngine() : null;
+        text = engine
+            ? reservedInfosTemplateText(engine.infosTemplate?.(), {
+                ...(meta?.tagMaxes || {}),
                 total: meta?.numberOfCaches,
-            })
+            }, engine.infosTags)
             : mainTemplateActive()
             ? reservedInfosTemplateText(mainInfosTemplate, {
                 // Le compteur ne dépasse jamais le total de la sélection ;
