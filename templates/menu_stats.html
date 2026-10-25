@@ -231,8 +231,12 @@
                                     ('peak', _('Pic de caches actives'), 'evolution'),
                                     ('age_moyen', _('Âge moyen des actives'), 'evolution'),
                                     ('finders', _('Trouveurs différents'), 'poses'),
+                                    ('loyal', _('Trouveurs fidèles'), 'poses'),
                                     ('favorites', _('Favoris reçus'), 'poses'),
-                                    ('caches', _('Caches trouvées au moins une fois'), 'poses')] %}
+                                    ('fav_ratio', _('Part de favoris'), 'poses'),
+                                    ('caches', _('Caches trouvées au moins une fois'), 'poses'),
+                                    ('ftf_delay', _('Délai moyen avant la FTF'), 'poses'),
+                                    ('neglected', _('Cache la plus délaissée'), 'poses')] %}
                                 <div class="form-check" data-stats-modes="{{ modes }}">
                                     <input class="form-check-input" type="checkbox" id="statsCounter-{{ item }}" data-counter-item="{{ item }}">
                                     <label class="form-check-label" for="statsCounter-{{ item }}">{{ label }}</label>

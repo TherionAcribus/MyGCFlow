@@ -307,6 +307,61 @@ export function posesCounterMaxes(timeline) {
     return out;
 }
 
+// Valeurs des tuiles « poseur » des compteurs Stats au jour `day` (jour
+// affiché pendant l'animation, jour de repos sinon) :
+//   ftfDelay  moyenne des délais apparition → première trouvaille reçue, en
+//             jours flottants (null tant qu'aucune cache n'est trouvée) ;
+//   neglected { days, code, lastDay, found } de la cache la plus délaissée :
+//             jamais trouvée d'abord (la plus anciennement apparue), sinon la
+//             dernière trouvaille la plus ancienne. `lastDay` est le jour de
+//             la dernière visite, ou celui d'apparition quand `found` est faux.
+// `evOrder` est trié par jour : le parcours s'arrête au premier log postérieur.
+export function posesCounterAtDay(timeline, base, day) {
+    const out = { ftfDelay: null, neglected: null };
+    if (!timeline || timeline.count === 0 || !Number.isFinite(day)) return out;
+    const findCode = base.kindCode.find;
+    const n = timeline.count;
+    const firstFind = new Int32Array(n).fill(-1);
+    const lastFind = new Int32Array(n).fill(-1);
+    for (const j of timeline.evOrder) {
+        if (base.ev.day[j] > day) break;
+        if (base.ev.kind[j] !== findCode) continue;
+        const k = timeline.featureOf[base.ev.cache[j]];
+        if (k < 0) continue;
+        if (firstFind[k] < 0) firstFind[k] = base.ev.day[j];
+        lastFind[k] = base.ev.day[j];
+    }
+    let delaySum = 0, foundCount = 0;
+    let pick = -1, pickVisit = 0, pickNever = false;
+    for (let k = 0; k < n; k++) {
+        const appearDay = base.placed[timeline.rows[k]];
+        if (appearDay > day) continue;          // pas encore apparue
+        const never = firstFind[k] < 0;
+        if (!never) {
+            delaySum += firstFind[k] - appearDay;
+            foundCount++;
+        }
+        const visitDay = never ? appearDay : lastFind[k];
+        // Jamais trouvée : plus délaissée que toute cache déjà trouvée.
+        if (pick < 0 || (never && !pickNever)
+            || (never === pickNever && visitDay < pickVisit)) {
+            pick = k;
+            pickVisit = visitDay;
+            pickNever = never;
+        }
+    }
+    if (foundCount > 0) out.ftfDelay = delaySum / foundCount;
+    if (pick >= 0) {
+        out.neglected = {
+            days: day - pickVisit,
+            code: base.code[timeline.rows[pick]],
+            lastDay: pickVisit,
+            found: !pickNever,
+        };
+    }
+    return out;
+}
+
 // Bornes [a, b[ d'un index par jour pour les jours [fromDay, toDay].
 function dayRange(timeline, start, fromDay, toDay) {
     const a = Math.max(0, fromDay - timeline.firstDay);

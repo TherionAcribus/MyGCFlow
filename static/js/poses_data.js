@@ -52,6 +52,7 @@ import {
     posesCacheMilestones,
     maxFlashesInWindow,
     posesCounterAt,
+    posesCounterAtDay,
     posesCounterMaxes,
     posesCountersAt,
     stateAt,
@@ -77,6 +78,7 @@ let dataRevision = 0;
 let flashOptionsByKind = new Map(); // résolus au début de l'animation
 let findsIndex = null;              // { revision, byDate } — trouvailles reçues (Stats)
 let cacheMarksMemo = null;          // { revision, marks } — repères par cache (barre)
+let counterStatsMemo = null;        // { revision, day, stats } — tuiles « poseur » (Stats)
 let stateMutations = 0;             // réécritures de `pstate` (tests, mesures)
 const flashLog = [];                // derniers flashs joués (tests)
 const FLASH_LOG_MAX = 500;
@@ -577,6 +579,23 @@ export function posesStatsIndex() {
     };
 }
 
+// Tuiles « poseur » des compteurs Stats (délai moyen avant la première
+// trouvaille, cache la plus délaissée) au jour affiché. Mémoïsé par
+// (révision, jour) : le dessin l'appelle à chaque frame ; le calcul reste
+// O(événements ≤ jour), arrêt au premier log postérieur (poses_timeline.mjs
+// › posesCounterAtDay) — les journaux reçus restent modestes.
+export function posesCounterStats(day) {
+    if (!base || !timeline) return null;
+    const d = Number.isFinite(day) ? day : restDayIndex();
+    if (counterStatsMemo && counterStatsMemo.revision === dataRevision
+        && counterStatsMemo.day === d) {
+        return counterStatsMemo.stats;
+    }
+    const stats = posesCounterAtDay(timeline, base, d);
+    counterStatsMemo = { revision: dataRevision, day: d, stats };
+    return stats;
+}
+
 // Barre de chronologie : par jour de l'axe, trouvailles reçues (`events`),
 // autres logs (`secondary`, empilés dessus : la pile vaut les logs du jour),
 // cumul des trouvailles reçues (`level`) et cumul de la veille (`base`).
@@ -760,6 +779,7 @@ const POSES_ENGINE = Object.freeze({
     refreshRest: posesRefreshRest,
     applySelection: posesApplySelection,
     statsIndex: posesStatsIndex,
+    counterStats: posesCounterStats,
     maxEventsInWindow: (windowDays) => maxFlashesInWindow(timeline, windowDays),
     findDayCounts: () => findDayCounts(timeline, base),
     timelineSeries: posesTimelineSeries,

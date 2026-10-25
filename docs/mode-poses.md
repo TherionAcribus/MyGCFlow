@@ -142,8 +142,14 @@ plus trouvées »), par trouveur (`finder`), année, mois, jour de semaine, âge
 de la cache à la trouvaille, type, taille, D, T, pays, région ; courbe
 cumulée ; tuiles `POSES_COUNTER_ITEMS` (trouvailles reçues, trouveurs,
 favoris, caches trouvées, jours, record, série, trouvées le jour de
-publication, catégories, points extrêmes). Configurations nommées de mode
-`poses`.
+publication, catégories, points extrêmes). Quatre tuiles « poseur » en plus :
+« Part de favoris » (favoris / trouvailles), « Trouveurs fidèles » (au moins
+3 trouvailles reçues, détail = trouveur le plus assidu), « Délai moyen avant
+la FTF » et « Cache la plus délaissée » — ces deux-là sont lues dans la
+chronologie au jour affiché (`posesCounterAtDay`/`posesCounterStats`), pas
+dans l'accumulateur : la délaissée est la jamais trouvée la plus anciennement
+apparue, sinon la dernière trouvaille la plus ancienne. Configurations
+nommées de mode `poses`.
 
 **Images** : liste propre `images.poses_items`. La planification « par
 trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).

@@ -69,6 +69,11 @@ import { STATS_RENDERERS, drawStatsPanel, hitStatsPanel, measureStatsPanel } fro
 
 const DEFAULT_HIGHLIGHT_MS = 600;
 
+// Tuiles « poseur » des compteurs Mes poses dont la valeur dépend du jour
+// affiché (lues dans la chronologie, pas dans l'accumulateur) : un panneau
+// qui en porte est redessiné aussi les jours sans trouvaille.
+const POSES_DAY_TILES = new Set(['ftf_delay', 'neglected']);
+
 let settings = normalizeStatsSettings(STATS_DEFAULTS);
 let metrics = new Set();
 let metricsKey = '';
@@ -522,11 +527,15 @@ export function accumulateStatsForDates(dates, now) {
     appliedPos = daysUpTo(index.days, dayNumberOfDate(dates[dates.length - 1]));
     if (features.length === 0) {
         // Jours sans trouvaille : rien à compter, mais la tête d'une courbe
-        // avance quand même sur l'axe des dates, et une année d'activité
-        // passe à l'année suivante au 1ᵉʳ janvier — il faut redessiner.
-        // Ces deux-là seulement : leur clé de dessin porte le jour de tête
-        // et l'année, les autres panneaux gardent leur bitmap.
-        if (visiblePanels().some((panel) => panel.kind === 'line' || panel.metric === 'activity')) touchFrame();
+        // avance quand même sur l'axe des dates, une année d'activité
+        // passe à l'année suivante au 1ᵉʳ janvier, et les tuiles « poseur »
+        // de Mes poses (délai FTF, délaissement) suivent le jour affiché —
+        // il faut redessiner (leur clé porte le jour, cf. panelDrawKey).
+        if (visiblePanels().some((panel) => panel.kind === 'line' || panel.metric === 'activity'
+            || (isPosesPage() && panel.kind === 'counter'
+                && (panel.options.items || []).some(POSES_DAY_TILES.has, POSES_DAY_TILES)))) {
+            touchFrame();
+        }
         return;
     }
     current.add(features, Number.isFinite(now) ? now : null);
@@ -661,7 +670,7 @@ function panelAnimating(panel) {
 // taille logique. Une clé inchangée = un bitmap réutilisable tel quel.
 function panelDrawKey(panel, view, rect) {
     const clock = panelAnimating(panel) ? lastNow : '';
-    return `${contentRevision}|${view?.model?.headDay ?? ''}|${view?.model?.year ?? ''}|${clock}|${rect.width}|${rect.height}`;
+    return `${contentRevision}|${view?.model?.headDay ?? ''}|${view?.model?.year ?? ''}|${view?.counterDay ?? ''}|${clock}|${rect.width}|${rect.height}`;
 }
 
 // Surbrillance Évolution : chaque panneau lit l'horloge de SON univers
@@ -957,6 +966,10 @@ const COUNTER_LABELS = {
     total: () => (isPosesPage() ? pkg.t('Trouvailles reçues') : pkg.t('Trouvailles')),
     finders: () => pkg.t('Trouveurs différents'),
     favorites: () => pkg.t('Favoris reçus'),
+    fav_ratio: () => pkg.t('Part de favoris'),
+    loyal: () => pkg.t('Trouveurs fidèles'),
+    ftf_delay: () => pkg.t('Délai moyen avant la FTF'),
+    neglected: () => pkg.t('Cache la plus délaissée'),
     caches: () => pkg.t('Caches trouvées au moins une fois'),
     days: () => pkg.t('Jours avec trouvaille'),
     best_day: () => pkg.t('Record sur une journée'),
@@ -991,22 +1004,51 @@ function meanAgeText(days, number) {
 // Texte d'une tuile (vue, export CSV). `shown` : valeur animée à afficher,
 // la valeur réelle par défaut. « Plus ancienne » est une année, les points
 // extrêmes une coordonnée : ni animées ni formatées en nombre (« 2 001 »).
-function counterText(item, entry, number, shown = entry.value) {
+// `entry.duration` : valeur en jours rendue en durée (« 8 mois », « — » sans
+// valeur) ; `entry.pct` : fraction rendue en pourcent (« 23 % »).
+function counterText(item, entry, number, shown = entry.value, percent = null) {
     if (entry.axis) {
         const find = entry.find;
         return find
             ? { value: formatDdm(entry.value, entry.axis), detail: [find.gc_code, find.name].filter(Boolean).join(' · ') }
             : { value: '—', detail: '' };
     }
+    if (entry.duration) {
+        return {
+            value: Number.isFinite(entry.value) ? meanAgeText(shown, number) : '—',
+            detail: entry.detail || '',
+        };
+    }
+    if (entry.pct) {
+        return { value: percent ? percent(shown) : number(Math.round(shown)), detail: entry.detail || '' };
+    }
     if (item === 'oldest') {
         return entry.day === null || entry.day === undefined
             ? { value: '—', detail: '' }
             : { value: String(entry.value), detail: formatDay(entry.day) };
     }
-    let detail = '';
+    let detail = entry.detail || '';
     if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
     if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
     return { value: number(Math.round(shown)), detail };
+}
+
+// Tuiles « poseur » d'un compteur Mes poses (délai avant FTF, cache
+// délaissée) : lues dans la chronologie de la page au jour `day`
+// (poses_data.js › posesCounterStats), pas dans l'accumulateur. Le détail de
+// la délaissée est composé ici : code GC, suivi de la date de dernière
+// visite ou de « jamais trouvée ».
+function posesCounterTiles(values, day) {
+    const extra = pkg.posesCounterStats?.(day);
+    values.ftf_delay = { value: extra?.ftfDelay ?? null, duration: true };
+    const neg = extra?.neglected;
+    values.neglected = {
+        value: neg ? neg.days : null,
+        detail: neg
+            ? neg.code + (neg.found ? ` · ${formatDay(neg.lastDay)}` : ' · ' + pkg.t('jamais trouvée'))
+            : '',
+        duration: true,
+    };
 }
 
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
@@ -1113,15 +1155,32 @@ function buildView(panel, source = null) {
 
     if (panel.kind === 'counter') {
         const values = counterValues(state, panel.options.items);
+        // Tuiles « poseur » de Mes poses : délai avant FTF et cache délaissée
+        // suivent le jour affiché, lu dans la chronologie de la page.
+        if (isPosesPage()
+            && (panel.options.items.includes('ftf_delay') || panel.options.items.includes('neglected'))) {
+            const index = pkg.posesStatsIndex?.();
+            if (index) {
+                const day = animating && animation?.lastDate
+                    ? index.dayOf(animation.lastDate)
+                    : index.restDay;
+                posesCounterTiles(values, day);
+                view.counterDay = day;
+            }
+        }
         view.columns = panel.options.columns;
         view.tiles = panel.options.items.map((item) => {
             const entry = values[item] || { value: 0 };
             const key = `${panel.id}:c:${item}`;
             // « Plus ancienne », points extrêmes : le tween ne sert qu'à
             // l'éclat du changement (jour de publication, coordonnée du
-            // record), la valeur s'affiche sans glisser.
-            const shown = tweens.set(key, item === 'oldest' ? (entry.day ?? 0) : entry.value, now);
-            const { value, detail } = counterText(item, entry, number, shown);
+            // record), la valeur s'affiche sans glisser. Une valeur non
+            // numérique (tuile « poseur » sans donnée) glisse depuis 0 et
+            // le texte affiche « — ».
+            const shown = tweens.set(key,
+                item === 'oldest' ? (entry.day ?? 0)
+                    : (Number.isFinite(entry.value) ? entry.value : 0), now);
+            const { value, detail } = counterText(item, entry, number, shown, percent);
             return {
                 value,
                 label: COUNTER_LABELS[item](),
@@ -1715,7 +1774,7 @@ function flush() {
         const view = views.get(panel.id);
         node.view = view;
         node.panel = panel;
-        const a11yKey = `${a11yBase}|${view.model?.headDay ?? ''}|${view.model?.year ?? ''}`;
+        const a11yKey = `${a11yBase}|${view.model?.headDay ?? ''}|${view.model?.year ?? ''}|${view.counterDay ?? ''}`;
         if (a11yDue) {
             if (refreshAltText(node, panel, view, a11yKey)) a11yRebuilt += 1;
         } else if (node.a11yKey !== a11yKey) {
@@ -2108,8 +2167,14 @@ export function statsPanelCsv(id) {
     if (panel.kind === 'counter') {
         push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
         const values = counterValues(ref, panel.options.items);
+        // Mêmes tuiles « poseur » qu'à l'écran, au jour de repos (date de fin).
+        if (isPosesPage()
+            && (panel.options.items.includes('ftf_delay') || panel.options.items.includes('neglected'))) {
+            const index = pkg.posesStatsIndex?.();
+            if (index) posesCounterTiles(values, index.restDay);
+        }
         for (const item of panel.options.items) {
-            const { value, detail } = counterText(item, values[item] || { value: 0 }, number);
+            const { value, detail } = counterText(item, values[item] || { value: 0 }, number, undefined, percent);
             push(COUNTER_LABELS[item](), value, detail);
         }
     } else if (panel.kind === 'line') {

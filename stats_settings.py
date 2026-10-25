@@ -89,8 +89,10 @@ STATS_COUNTER_ITEMS = ("total", "days", "best_day", "streak", "types", "countrie
 # placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
 # actif (types, pays, régions — mêmes clés qu'en mode principal).
 EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "countries", "states", "age_moyen")
-# Tuiles de Mes poses : trouvailles reçues, trouveurs, favoris, caches trouvées…
-POSES_COUNTER_ITEMS = ("total", "finders", "favorites", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west")
+# Tuiles de Mes poses : trouvailles reçues, trouveurs (distincts, fidèles),
+# favoris (total, part), caches trouvées… « ftf_delay » et « neglected » sont
+# lues dans la chronologie de la page, pas dans l'accumulateur.
+POSES_COUNTER_ITEMS = ("total", "finders", "loyal", "favorites", "fav_ratio", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west", "ftf_delay", "neglected")
 _ALL_COUNTER_ITEMS = tuple(dict.fromkeys(STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS + POSES_COUNTER_ITEMS))
 
 STATS_OFFSET_RANGE = (0, 2000)

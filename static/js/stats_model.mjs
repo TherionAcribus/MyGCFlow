@@ -91,9 +91,12 @@ export const STATS_COUNTER_ITEMS = Object.freeze(['total', 'days', 'best_day', '
 // actif (types, pays, régions — mêmes clés qu'en mode principal).
 export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'archivees', 'peak', 'types', 'countries', 'states', 'age_moyen']);
 // Tuiles de Mes poses : trouvailles reçues (total, jours, record, série),
-// trouveurs distincts, favoris reçus, caches trouvées au moins une fois,
-// trouvées le jour de leur publication, catégories, points extrêmes.
-export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'favorites', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west']);
+// trouveurs distincts et fidèles, favoris reçus et leur part, caches
+// trouvées au moins une fois, trouvées le jour de leur publication,
+// catégories, points extrêmes, délai avant la première trouvaille et cache
+// la plus délaissée (les deux derniers lus dans la chronologie de la page
+// par stats_panels, pas dans l'accumulateur).
+export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', 'favorites', 'fav_ratio', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west', 'ftf_delay', 'neglected']);
 const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS])];
 
 // Registre de métriques et tuiles de la page (`mode` : nom de mode ou ancien
@@ -560,6 +563,8 @@ const COUNTER_DEPENDENCIES = {
     owners: 'owner',
     finders: 'finder',
     favorites: 'favorite',
+    fav_ratio: 'favorite',
+    loyal: 'finder',
     caches: 'cache',
     oldest: 'published',
     same_day: 'age',
@@ -567,6 +572,11 @@ const COUNTER_DEPENDENCIES = {
     south: EXTREMES_METRIC,
     east: EXTREMES_METRIC,
     west: EXTREMES_METRIC,
+    // Tuiles « poseur » lues dans la chronologie : la pseudo-métrique
+    // constante garantit que l'accumulation tourne même pour un panneau
+    // limité à ces tuiles (elles ne comptent rien par elles-mêmes).
+    ftf_delay: 'total',
+    neglected: 'total',
 };
 
 // Métrique de l'accumulateur qui porte les comptes d'une métrique de
@@ -2122,6 +2132,21 @@ function knownKeys(acc, metric) {
     return n;
 }
 
+// « Trouveurs fidèles » (tuile Mes poses) : joueurs à l'origine d'au moins
+// LOYAL_MIN trouvailles reçues ; le détail nomme le plus assidu
+// (« Nom · N »), vide s'il n'y a aucun trouveur.
+export const LOYAL_MIN = 3;
+
+function loyalFinders(acc) {
+    let value = 0, topName = '', topCount = 0;
+    for (const [name, count] of (acc.counts.get('finder') || new Map())) {
+        if (name === UNKNOWN_KEY || count <= 0) continue;
+        if (count >= LOYAL_MIN) value += 1;
+        if (count > topCount) { topCount = count; topName = name; }
+    }
+    return { value, detail: topCount > 0 ? `${topName} · ${topCount}` : '' };
+}
+
 // Valeurs des tuiles demandées. Égalités : la journée record la plus ancienne,
 // la série la plus ancienne (celle qui a été atteinte en premier).
 export function counterValues(acc, items) {
@@ -2153,6 +2178,16 @@ export function counterValues(acc, items) {
             values.caches = { value: knownKeys(acc, 'cache') };
         } else if (item === 'favorites') {
             values.favorites = { value: acc.counts.get('favorite')?.get(1) || 0 };
+        } else if (item === 'fav_ratio') {
+            // Part de favoris : fraction, rendue en pourcent (`pct`).
+            const fav = acc.counts.get('favorite')?.get(1) || 0;
+            values.fav_ratio = { value: acc.total > 0 ? fav / acc.total : 0, pct: true };
+        } else if (item === 'loyal') {
+            values.loyal = loyalFinders(acc);
+        } else if (item === 'ftf_delay' || item === 'neglected') {
+            // Tuiles « poseur » : remplies depuis la chronologie de Mes poses
+            // (stats_panels › buildView) ; « — » partout ailleurs.
+            values[item] = { value: null, duration: true };
         } else if (item === 'oldest') {
             // `day` = jour de publication de la plus ancienne, null sans date ;
             // `value` = son année (affichée telle quelle, pas animée).

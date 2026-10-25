@@ -16,6 +16,7 @@ import {
     maxFlashesInWindow,
     posesCacheMilestones,
     posesCounterAt,
+    posesCounterAtDay,
     posesCounterMaxes,
     stateAt,
     stateChangesInRange,
@@ -297,6 +298,52 @@ test('filterPosesRows : « jamais trouvée » retient les caches sans trouvaille
     const all = filterRows(base, { undatedMode: 'keep' });
     assert.deepEqual([...filterPosesRows(base, all, { finds: ['never'] })], [0, 1, 2]);
     assert.deepEqual([...filterPosesRows(base, all, { finds: ['found'] })], []);
+});
+
+test('tuiles poseur : délai avant FTF et cache la plus délaissée', () => {
+    const { base, timeline: tl } = setup();
+    // Jour 13 (fin) : les trois caches sont trouvées — délais 0 (A, trouvée le
+    // jour même), 3 (B, apparue 2 trouvée 5) et 10 (C, apparue 3 trouvée 13) ;
+    // la plus délaissée est A, sans visite depuis le jour 1.
+    const end = posesCounterAtDay(tl, base, 13);
+    assert.equal(end.ftfDelay, 13 / 3);
+    assert.deepEqual(end.neglected, { days: 12, code: 'GCA', lastDay: 1, found: true });
+    // Jour 6 : A et B trouvées (délais 0 et 3) ; C, jamais trouvée depuis son
+    // apparition au jour 3, l'emporte sur les trouvées.
+    const mid = posesCounterAtDay(tl, base, 6);
+    assert.equal(mid.ftfDelay, 1.5);
+    assert.deepEqual(mid.neglected, { days: 3, code: 'GCC', lastDay: 3, found: false });
+    // Jour 2 : B vient d'apparaître, jamais trouvée — `lastDay` = apparition.
+    assert.deepEqual(posesCounterAtDay(tl, base, 2).neglected,
+        { days: 0, code: 'GCB', lastDay: 2, found: false });
+    // Jour 4 : B et C jamais trouvées, la plus anciennement apparue gagne.
+    assert.deepEqual(posesCounterAtDay(tl, base, 4).neglected,
+        { days: 2, code: 'GCB', lastDay: 2, found: false });
+    // Sélection réduite à C (Multi) : délai 10, délaissée = elle-même.
+    const multi = buildPosesTimeline(base, filterRows(base, { types: ['Multi-cache'], undatedMode: 'keep' }), {});
+    const only = posesCounterAtDay(multi, base, 20);
+    assert.equal(only.ftfDelay, 10);
+    assert.deepEqual(only.neglected, { days: 7, code: 'GCC', lastDay: 13, found: true });
+});
+
+test('tuiles poseur : avant toute trouvaille, délai indéfini et délaissée = apparition', () => {
+    const p = payload();
+    // Sans la trouvaille du jour 0 (2ᵉ ligne de ev), aucune cache n'est
+    // trouvée ce jour-là.
+    for (const key of ['cache', 'day', 'kind', 'fav', 'folded', 'author']) p.ev[key].splice(1, 1);
+    const base = buildPosesBase(p);
+    const rows = filterRows(base, { undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    const s = posesCounterAtDay(tl, base, 0);
+    assert.equal(s.ftfDelay, null);
+    assert.deepEqual(s.neglected, { days: 0, code: 'GCA', lastDay: 0, found: false });
+    // Avant la première apparition : rien du tout.
+    const before = posesCounterAtDay(tl, base, -1);
+    assert.equal(before.ftfDelay, null);
+    assert.equal(before.neglected, null);
+    // Timeline vide : idem.
+    const empty = buildPosesTimeline(base, new Int32Array(0));
+    assert.deepEqual(posesCounterAtDay(empty, base, 10), { ftfDelay: null, neglected: null });
 });
 
 test('filtres : une cache écartée ne compte plus', () => {
