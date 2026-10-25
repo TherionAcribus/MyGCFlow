@@ -18,6 +18,7 @@ mygcflow-logs-*.json
 !tests/e2e/fixtures/my-finds-gap.gpx
 !tests/e2e/fixtures/my-finds-locationless.gpx
 !tests/fixtures/labs/*.gpx
+!tests/fixtures/gc_logs/*.gpx
 captured/
 static/geojson_data.json
 static/json/country_state.json

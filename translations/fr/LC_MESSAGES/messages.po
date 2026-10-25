@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-24 16:41+0200\n"
+"POT-Creation-Date: 2026-10-25 06:42+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -18,102 +18,102 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bdd.py:116
+#: bdd.py:118
 msgid "Aucun fichier envoyé"
 msgstr "Aucun fichier envoyé"
 
-#: bdd.py:120 static/js/bdd.js:77 static/js/evolution_data.js:157 templates/menu_data.html:31
+#: bdd.py:122 static/js/bdd.js:77 static/js/evolution_data.js:157 templates/menu_data.html:31
 #: templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr "Aucun fichier sélectionné"
 
-#: bdd.py:138
+#: bdd.py:140
 msgid "Le fichier fourni n'est pas un fichier GPX valide"
 msgstr "Le fichier fourni n'est pas un fichier GPX valide"
 
-#: bdd.py:160
+#: bdd.py:162
 msgid "Ce fichier contient des étapes Adventure Lab : importez-le depuis la section « Mes Lab Caches » de l'onglet Données."
 msgstr "Ce fichier contient des étapes Adventure Lab : importez-le depuis la section « Mes Lab Caches » de l'onglet Données."
 
-#: bdd.py:162 static/js/bdd.js:204
+#: bdd.py:164 static/js/bdd.js:204
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 
-#: bdd.py:166 static/js/bdd.js:208
+#: bdd.py:168 static/js/bdd.js:208
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 
-#: bdd.py:168
+#: bdd.py:170
 msgid "Fichier reçu avec succès"
 msgstr "Fichier reçu avec succès"
 
-#: bdd.py:201
+#: bdd.py:203
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr "L'archive .zip ne contient aucun fichier .gpx."
 
-#: bdd.py:216 bdd.py:227 static/js/bdd.js:225
+#: bdd.py:218 bdd.py:229 static/js/bdd.js:225
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr "Le fichier est trop volumineux (200 Mo max)"
 
-#: bdd.py:231
+#: bdd.py:233
 msgid "L'archive .zip est illisible ou corrompue."
 msgstr "L'archive .zip est illisible ou corrompue."
 
-#: bdd.py:291
+#: bdd.py:293
 msgid "Lecture du fichier GPX..."
 msgstr "Lecture du fichier GPX..."
 
-#: bdd.py:344
+#: bdd.py:346
 msgid "Fichier GPX invalide"
 msgstr "Fichier GPX invalide"
 
-#: bdd.py:351
+#: bdd.py:353
 msgid "Aucun waypoint trouvé dans le fichier GPX"
 msgstr "Aucun waypoint trouvé dans le fichier GPX"
 
-#: bdd.py:531
+#: bdd.py:541
 #, python-format
 msgid "Ajout du point %(count)s sur %(total)s à la base de données"
 msgstr "Ajout du point %(count)s sur %(total)s à la base de données"
 
-#: bdd.py:552
+#: bdd.py:562
 msgid "Enregistrement en base de données..."
 msgstr "Enregistrement en base de données..."
 
-#: bdd.py:578
+#: bdd.py:603
 msgid "Import terminé"
 msgstr "Import terminé"
 
-#: bdd.py:740
+#: bdd.py:765
 #, python-format
 msgid "Génération du GeoJSON (%(idx)s/%(total)s)"
 msgstr "Génération du GeoJSON (%(idx)s/%(total)s)"
 
-#: bdd.py:1064
+#: bdd.py:1089
 msgid "Préparation des données GeoJSON..."
 msgstr "Préparation des données GeoJSON..."
 
-#: bdd.py:1074
+#: bdd.py:1099
 msgid "GeoJSON servi depuis le cache"
 msgstr "GeoJSON servi depuis le cache"
 
-#: bdd.py:1076
+#: bdd.py:1101
 msgid "Génération du GeoJSON complet..."
 msgstr "Génération du GeoJSON complet..."
 
-#: bdd.py:1086
+#: bdd.py:1111
 msgid "Résultat filtré servi depuis le cache"
 msgstr "Résultat filtré servi depuis le cache"
 
-#: bdd.py:1089
+#: bdd.py:1114
 msgid "Pré-calcul du GeoJSON complet pour indexer les filtres..."
 msgstr "Pré-calcul du GeoJSON complet pour indexer les filtres..."
 
-#: bdd.py:1095
+#: bdd.py:1120
 msgid "Application des index mémoire (date/type/région)..."
 msgstr "Application des index mémoire (date/type/région)..."
 
-#: bdd.py:1098
+#: bdd.py:1123
 msgid "Filtrage direct en base (fallback)..."
 msgstr "Filtrage direct en base (fallback)..."
 
@@ -312,7 +312,7 @@ msgstr "(0,0) — sentinelle possible, à vérifier"
 msgid "format de coordonnées non reconnu"
 msgstr "format de coordonnées non reconnu"
 
-#: lab_formats.py:437
+#: lab_formats.py:437 log_formats.py:539
 #, python-format
 msgid "JSON invalide : %(error)s"
 msgstr "JSON invalide : %(error)s"
@@ -321,20 +321,20 @@ msgstr "JSON invalide : %(error)s"
 msgid "pas un export mygcflow-lab-finds"
 msgstr "pas un export mygcflow-lab-finds"
 
-#: lab_formats.py:444
+#: lab_formats.py:444 log_formats.py:546
 #, python-format
 msgid "version non supportée : %(version)s"
 msgstr "version non supportée : %(version)s"
 
-#: lab_formats.py:449
+#: lab_formats.py:449 log_formats.py:553
 msgid "absent ou n'est pas une liste"
 msgstr "absent ou n'est pas une liste"
 
-#: lab_formats.py:452
+#: lab_formats.py:452 log_formats.py:561 log_formats.py:761
 msgid "trop d'enregistrements"
 msgstr "trop d'enregistrements"
 
-#: lab_formats.py:476
+#: lab_formats.py:476 log_formats.py:392 log_formats.py:459
 msgid "enregistrement non objet"
 msgstr "enregistrement non objet"
 
@@ -358,7 +358,7 @@ msgstr "identité dérivée de la ligne — reimport non garanti"
 msgid "coordonnées historique invalides — ignorées"
 msgstr "coordonnées historique invalides — ignorées"
 
-#: lab_formats.py:658
+#: lab_formats.py:658 log_formats.py:727
 msgid "DOCTYPE/ENTITY interdit (XML non sûr)"
 msgstr "DOCTYPE/ENTITY interdit (XML non sûr)"
 
@@ -402,6 +402,135 @@ msgstr "%(n)s étape de l'historique non marquée trouvée dans le GPX"
 #, python-format
 msgid "%(n)s étapes de l'historique non marquées trouvées dans le GPX"
 msgstr "%(n)s étapes de l'historique non marquées trouvées dans le GPX"
+
+#: log_formats.py:382
+msgid "format de fichier non reconnu"
+msgstr "format de fichier non reconnu"
+
+#: log_formats.py:397
+msgid "log_id invalide"
+msgstr "log_id invalide"
+
+#: log_formats.py:402
+msgid "log_code invalide"
+msgstr "log_code invalide"
+
+#: log_formats.py:404
+msgid "log_id et log_code ne concordent pas"
+msgstr "log_id et log_code ne concordent pas"
+
+#: log_formats.py:407 log_formats.py:647
+msgid "log sans identité (ni log_id, ni log_code)"
+msgstr "log sans identité (ni log_id, ni log_code)"
+
+#: log_formats.py:411 log_formats.py:462 log_formats.py:643
+msgid "code GC absent ou invalide"
+msgstr "code GC absent ou invalide"
+
+#: log_formats.py:416
+msgid "type_id invalide"
+msgstr "type_id invalide"
+
+#: log_formats.py:419 log_formats.py:652
+msgid "type de log absent ou inconnu"
+msgstr "type de log absent ou inconnu"
+
+#: log_formats.py:421
+msgid "log d'objet voyageur, sans rapport avec les caches"
+msgstr "log d'objet voyageur, sans rapport avec les caches"
+
+#: log_formats.py:423
+msgid "type de log inconnu — conservé"
+msgstr "type de log inconnu — conservé"
+
+#: log_formats.py:427 log_formats.py:656
+msgid "date absente ou illisible"
+msgstr "date absente ou illisible"
+
+#: log_formats.py:435
+msgid "favorite non booléen — ignoré"
+msgstr "favorite non booléen — ignoré"
+
+#: log_formats.py:447
+#, python-format
+msgid "%(label)s incomplètes — ignorées"
+msgstr "%(label)s incomplètes — ignorées"
+
+#: log_formats.py:452
+#, python-format
+msgid "%(label)s invalides — ignorées"
+msgstr "%(label)s invalides — ignorées"
+
+#: log_formats.py:471 log_formats.py:670 static/js/evolution_data.js:1024 static/js/labs.js:641 static/js/labs.js:785
+msgid "coordonnées"
+msgstr "coordonnées"
+
+#: log_formats.py:474
+msgid "coordonnées corrigées"
+msgstr "coordonnées corrigées"
+
+#: log_formats.py:479
+#, python-format
+msgid "%(field)s hors échelle — ignorée"
+msgstr "%(field)s hors échelle — ignorée"
+
+#: log_formats.py:486
+msgid "date de pose illisible — ignorée"
+msgstr "date de pose illisible — ignorée"
+
+#: log_formats.py:491
+msgid "état de cache inconnu — ignoré"
+msgstr "état de cache inconnu — ignoré"
+
+#: log_formats.py:501
+msgid "couverture non objet — ignorée"
+msgstr "couverture non objet — ignorée"
+
+#: log_formats.py:509
+msgid "couverture : type_ids invalide — ignorée"
+msgstr "couverture : type_ids invalide — ignorée"
+
+#: log_formats.py:515
+msgid "couverture : since illisible — ignorée"
+msgstr "couverture : since illisible — ignorée"
+
+#: log_formats.py:520
+msgid "couverture : author_id manquant — ignorée"
+msgstr "couverture : author_id manquant — ignorée"
+
+#: log_formats.py:526
+msgid "couverture : gc_codes invalide — ignorée"
+msgstr "couverture : gc_codes invalide — ignorée"
+
+#: log_formats.py:529
+msgid "couverture : kind inconnu — ignorée"
+msgstr "couverture : kind inconnu — ignorée"
+
+#: log_formats.py:542
+msgid "pas un fichier mygcflow-logs"
+msgstr "pas un fichier mygcflow-logs"
+
+#: log_formats.py:555 log_formats.py:557
+msgid "n'est pas une liste"
+msgstr "n'est pas une liste"
+
+#: log_formats.py:765
+#, python-format
+msgid "XML invalide : %(error)s"
+msgstr "XML invalide : %(error)s"
+
+#: log_store.py:113
+#, python-format
+msgid "compte %(incoming)s différent de celui des logs déjà importés (%(stored)s)"
+msgstr "compte %(incoming)s différent de celui des logs déjà importés (%(stored)s)"
+
+#: log_store.py:268
+msgid "import refusé : le fichier a des erreurs structurelles"
+msgstr "import refusé : le fichier a des erreurs structurelles"
+
+#: log_store.py:377
+msgid "les logs ont changé depuis l'aperçu : relancez-le"
+msgstr "les logs ont changé depuis l'aperçu : relancez-le"
 
 #: settings_manager.py:2568
 #, python-format
@@ -1378,10 +1507,6 @@ msgstr "Tailles non reconnues (gardées telles quelles) : ${sizes}"
 #: static/js/evolution_data.js:1023
 msgid "code GC"
 msgstr "code GC"
-
-#: static/js/evolution_data.js:1024 static/js/labs.js:641 static/js/labs.js:785
-msgid "coordonnées"
-msgstr "coordonnées"
 
 #: static/js/evolution_data.js:1025
 msgid "date de placement"

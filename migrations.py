@@ -143,6 +143,58 @@ def _v7_region_factice(db):
             pass
 
 
+def _v8_tables_logs(db):
+    # Logs Geocaching : collection, événements, fiches de caches
+    # (docs/logs-geocaching.md). Idempotent, comme v2.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS log_collection ("
+            "id INTEGER PRIMARY KEY, uid VARCHAR(64) UNIQUE NOT NULL, "
+            "account_user_id INTEGER, account_username VARCHAR(255), "
+            "revision INTEGER NOT NULL DEFAULT 0, "
+            "last_import_at DATETIME, last_import_summary TEXT, "
+            "created_at DATETIME)"
+        )
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS log_event ("
+            "id INTEGER PRIMARY KEY, "
+            "collection_id INTEGER NOT NULL REFERENCES log_collection (id), "
+            "log_id INTEGER NOT NULL, gc_code VARCHAR(16) NOT NULL, "
+            "type_id INTEGER NOT NULL, log_date DATE NOT NULL, "
+            "author_id INTEGER, author_name VARCHAR(255), favorite BOOLEAN, "
+            "source_format VARCHAR(32), source_exported_at DATETIME, "
+            "imported_at DATETIME, updated_at DATETIME, "
+            "CONSTRAINT uq_log_event_log_id UNIQUE (collection_id, log_id))"
+        )
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS cache_ref ("
+            "id INTEGER PRIMARY KEY, "
+            "collection_id INTEGER NOT NULL REFERENCES log_collection (id), "
+            "gc_code VARCHAR(16) NOT NULL, name VARCHAR(255), "
+            "cache_type VARCHAR(50), container VARCHAR(50), "
+            "difficulty FLOAT, terrain FLOAT, "
+            "country VARCHAR(100), state VARCHAR(100), "
+            "latitude FLOAT, longitude FLOAT, coordinate_source VARCHAR(32), "
+            "corrected_latitude FLOAT, corrected_longitude FLOAT, "
+            "owner_id INTEGER, owner_name VARCHAR(255), placed_date DATE, "
+            "status VARCHAR(16), status_at DATETIME, favorite_points INTEGER, "
+            "source_format VARCHAR(32), source_exported_at DATETIME, "
+            "imported_at DATETIME, updated_at DATETIME, "
+            "CONSTRAINT uq_cache_ref_gc_code UNIQUE (collection_id, gc_code))"
+        )
+        for idx in (
+            "CREATE INDEX IF NOT EXISTS ix_log_event_cache "
+            "ON log_event (collection_id, gc_code, log_date)",
+            "CREATE INDEX IF NOT EXISTS ix_log_event_author "
+            "ON log_event (collection_id, author_id, type_id, log_date)",
+            "CREATE INDEX IF NOT EXISTS ix_log_event_date "
+            "ON log_event (collection_id, log_date)",
+            "CREATE INDEX IF NOT EXISTS ix_cache_ref_owner "
+            "ON cache_ref (collection_id, owner_id)",
+        ):
+            conn.exec_driver_sql(idx)
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -151,6 +203,7 @@ MIGRATIONS = [
     (5, _v5_lab_proprietaire_publication),
     (6, _v6_lab_rang_et_images),
     (7, _v7_region_factice),
+    (8, _v8_tables_logs),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

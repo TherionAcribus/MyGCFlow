@@ -147,3 +147,92 @@ class LabDiscovery(db.Model):
 
     def __repr__(self):
         return f"<LabDiscovery {self.id}, {self.latitude}, {self.longitude}, {self.local_uid}, {self.stage_title}, {self.found_date}, {self.coordinate_status}>"
+
+
+# Logs Geocaching (docs/logs-geocaching.md) : DNF, actions de poseur, logs
+# des autres sur ses caches. Rattachés aux caches par `gc_code`, jamais par
+# `geocache.id` — l'import My Finds réécrit toutes les lignes de `geocache`.
+
+class LogCollection(db.Model):
+    """Logs importés d'un joueur (une collection = un compte en v1)."""
+    __tablename__ = 'log_collection'
+
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(64), unique=True, nullable=False)
+    # « Moi » : comparé à log_event.author_id et cache_ref.owner_id.
+    account_user_id = db.Column(db.Integer)
+    account_username = db.Column(db.String(255))
+    # Incrémentée à chaque import ou suppression : contrôle optimiste du commit.
+    revision = db.Column(db.Integer, nullable=False, default=0)
+    last_import_at = db.Column(db.DateTime)
+    last_import_summary = db.Column(db.Text)
+    created_at = db.Column(db.DateTime)
+
+
+class LogEvent(db.Model):
+    """Un log Geocaching (une cache, un auteur, un type, une date civile)."""
+    __tablename__ = 'log_event'
+
+    id = db.Column(db.Integer, primary_key=True)
+    collection_id = db.Column(db.Integer, db.ForeignKey('log_collection.id'), nullable=False)
+    log_id = db.Column(db.Integer, nullable=False)       # identifiant Geocaching
+    gc_code = db.Column(db.String(16), nullable=False)
+    # Identifiant de type Geocaching (2 Found it, 3 DNF…) ; la catégorie
+    # (find, dnf, owner…) se déduit, voir log_formats.log_category.
+    type_id = db.Column(db.Integer, nullable=False)
+    log_date = db.Column(db.Date, nullable=False)
+    author_id = db.Column(db.Integer)
+    author_name = db.Column(db.String(255))
+    favorite = db.Column(db.Boolean)                     # NULL = inconnu
+    source_format = db.Column(db.String(32))
+    # `exported_at` du fichier qui a fourni la version retenue : départage
+    # deux versions d'un même log (la plus récente l'emporte).
+    source_exported_at = db.Column(db.DateTime)
+    imported_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)
+
+    __table_args__ = (
+        db.UniqueConstraint('collection_id', 'log_id', name='uq_log_event_log_id'),
+        db.Index('ix_log_event_cache', 'collection_id', 'gc_code', 'log_date'),
+        db.Index('ix_log_event_author', 'collection_id', 'author_id', 'type_id', 'log_date'),
+        db.Index('ix_log_event_date', 'collection_id', 'log_date'),
+    )
+
+
+class CacheRef(db.Model):
+    """Fiche d'une cache vue dans les logs (DNF jamais résolus, caches posées…)."""
+    __tablename__ = 'cache_ref'
+
+    id = db.Column(db.Integer, primary_key=True)
+    collection_id = db.Column(db.Integer, db.ForeignKey('log_collection.id'), nullable=False)
+    gc_code = db.Column(db.String(16), nullable=False)
+    name = db.Column(db.String(255))
+    cache_type = db.Column(db.String(50))
+    container = db.Column(db.String(50))
+    difficulty = db.Column(db.Float)
+    terrain = db.Column(db.Float)
+    country = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    # Coordonnées publiées ; `coordinate_source` vaut le format du fichier,
+    # ou 'user_correction' — prioritaire sur tout import ultérieur.
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    coordinate_source = db.Column(db.String(32))
+    # Coordonnées corrigées par le joueur (mystery résolue), usage à décider.
+    corrected_latitude = db.Column(db.Float)
+    corrected_longitude = db.Column(db.Float)
+    owner_id = db.Column(db.Integer)
+    owner_name = db.Column(db.String(255))
+    placed_date = db.Column(db.Date)
+    status = db.Column(db.String(16))                    # active/disabled/archived/unknown
+    status_at = db.Column(db.DateTime)                   # export qui atteste l'état
+    favorite_points = db.Column(db.Integer)
+    source_format = db.Column(db.String(32))
+    source_exported_at = db.Column(db.DateTime)
+    imported_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)
+
+    __table_args__ = (
+        db.UniqueConstraint('collection_id', 'gc_code', name='uq_cache_ref_gc_code'),
+        db.Index('ix_cache_ref_owner', 'collection_id', 'owner_id'),
+    )

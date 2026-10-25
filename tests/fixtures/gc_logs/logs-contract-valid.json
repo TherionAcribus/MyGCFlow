@@ -1,0 +1,51 @@
+{
+  "format": "mygcflow-logs",
+  "schema_version": 1,
+  "exported_at": "2026-10-24T09:12:00Z",
+  "generator": { "name": "outil-fictif", "version": "1.0" },
+  "account": { "user_id": 1234567, "username": "Joueur_Fictif" },
+  "coverage": [
+    { "kind": "author", "author_id": 1234567, "type_ids": [3], "complete": true },
+    { "kind": "caches", "gc_codes": ["GC1ABCD"], "complete": true },
+    { "kind": "author", "author_id": 1234567, "complete": false }
+  ],
+  "caches": [
+    {
+      "gc_code": "GC1ABCD", "name": "Ma cache fictive", "type": "Traditional Cache",
+      "latitude": 49.1, "longitude": 6.1, "difficulty": 1.5, "terrain": 2,
+      "container": "Micro", "country": "France", "state": "Grand-Est",
+      "owner": { "id": 1234567, "name": "Joueur_Fictif" },
+      "placed_date": "2015-04-01", "status": "archived", "favorite_points": 1
+    },
+    {
+      "gc_code": "GC9ZZZZ", "name": "DNF jamais résolu", "type": "Multi-cache",
+      "latitude": 48.0, "longitude": 7.0, "difficulty": 2.5, "terrain": 3.5,
+      "container": "Small", "owner": { "id": null, "name": "Autre_Poseur" },
+      "placed_date": "2020-06-01", "status": "active", "favorite_points": 4,
+      "corrected": { "latitude": 48.01, "longitude": 7.01 }
+    }
+  ],
+  "logs": [
+    { "log_id": 181176759, "gc_code": "GC2PR3N", "type_id": 3, "type_label": "Didn't find it",
+      "date": "2011-08-20", "author": { "id": 1234567, "name": "Joueur_Fictif" }, "favorite": null },
+    { "log_id": 207457894, "gc_code": "GC2PR3N", "type_id": 2, "date": "2012-01-08",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }, "favorite": true },
+    { "log_code": "GL803Y79", "gc_code": "gc9zzzz", "type_id": 3, "date": "2021-05-02T19:00:00Z",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }, "text": "jamais lu" },
+    { "log_id": 500000001, "gc_code": "GC1ABCD", "type_id": 24, "date": "2015-04-10",
+      "author": { "id": 42, "name": "Relecteur" } },
+    { "log_id": 500000002, "gc_code": "GC1ABCD", "type_id": 2, "date": "2015-05-02",
+      "author": { "id": 7654321, "name": "Autre_Joueur" }, "favorite": true },
+    { "log_id": 500000003, "gc_code": "GC1ABCD", "type_id": 1003, "date": "2015-05-03",
+      "author": { "id": 42, "name": "Relecteur" } },
+    { "log_id": 500000004, "gc_code": "GC1ABCD", "type_id": 999, "date": "2016-01-01",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" } },
+    { "log_id": 500000002, "gc_code": "GC1ABCD", "type_id": 2, "date": "2015-05-02",
+      "author": { "id": 7654321, "name": "Autre_Joueur" } },
+    { "log_id": 500000005, "gc_code": "GC1ABCD", "type_id": 3, "date": "20/08/2011",
+      "author": { "id": 7654321, "name": "Autre_Joueur" } },
+    { "log_id": 500000006, "gc_code": "GC1ABCD", "type_id": 19, "date": "2016-01-01",
+      "author": { "id": 7654321, "name": "Autre_Joueur" } },
+    { "gc_code": "GC1ABCD", "type_id": 2, "date": "2016-01-01" }
+  ]
+}

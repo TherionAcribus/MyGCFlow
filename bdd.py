@@ -12,6 +12,8 @@ from typing import Optional
 import paths
 import lab_geojson
 import lab_store
+import log_formats
+import log_store
 from extensions import db
 from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
@@ -361,6 +363,10 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         # sans nom/date/type. On ne libère la mémoire qu'une fois le <wpt>
         # entièrement traité (waypoint.clear() en fin de boucle, ligne ~441).
         new_caches = []
+        # Tous les logs du fichier (DNF suivis d'une trouvaille, notes…) :
+        # fusionnés dans log_event après l'enregistrement des trouvailles.
+        myfinds_logs = []
+        myfinds_rejected = []
         wpt_index = 0
         for event, waypoint in ET.iterparse(file_path, events=('end',)):
             if waypoint.tag != wpt_tag:
@@ -499,6 +505,10 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
                         date_find = last_found_dt
                         time_find = last_found_dt.strftime('%H:%M:%S')
 
+            wpt_logs, wpt_rejected = log_formats.logs_from_cache_element(cache_data, gc_code)
+            myfinds_logs.extend(wpt_logs)
+            myfinds_rejected.extend(wpt_rejected)
+
             new_geocache = {
                 'latitude': lat,
                 'longitude': lon,
@@ -561,6 +571,21 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         db.session.flush()
 
     db.session.commit()
+
+    # Les logs ont leur propre transaction (docs/logs-geocaching.md) : un
+    # échec est journalisé sans annuler l'import des trouvailles.
+    try:
+        log_summary = log_store.merge_myfinds_logs(
+            db.session, log_formats.myfinds_parse_result(myfinds_logs, myfinds_rejected))
+        if log_summary.get("success"):
+            logger.info("Logs My Finds : %s ajoutés, %s mis à jour, %s inchangés, %s rejetés",
+                        log_summary["added"], log_summary["updated"],
+                        log_summary["unchanged"], log_summary["rejected"])
+        else:
+            logger.warning("Logs My Finds ignorés : %s", log_summary.get("reason"))
+    except Exception as e:
+        db.session.rollback()
+        logger.error("Fusion des logs My Finds échouée : %s", e)
 
     try:
         non_null_pd = db.session.query(Geocache).filter(Geocache.published_date != None).count()

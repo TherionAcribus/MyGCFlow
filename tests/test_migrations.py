@@ -176,6 +176,28 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertIn('lab_discovery', self._tables())
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_old_database_gains_log_tables(self):
+        # Base d'avant les logs Geocaching (v7) : tables et index créés, les
+        # données existantes intactes.
+        self._create_app()
+        with self._connect() as conn:
+            for table in ('log_event', 'cache_ref', 'log_collection'):
+                conn.execute(f"DROP TABLE {table}")
+            conn.execute("INSERT INTO geocache (gc_code, latitude, longitude) VALUES ('GC1', 1, 2)")
+            conn.execute("PRAGMA user_version = 7")
+
+        self._create_app()
+
+        self.assertTrue({'log_collection', 'log_event', 'cache_ref'} <= self._tables())
+        self.assertTrue({'log_id', 'gc_code', 'type_id', 'log_date', 'favorite',
+                         'source_exported_at'} <= self._columns('log_event'))
+        self.assertTrue({'corrected_latitude', 'owner_id', 'status_at'} <= self._columns('cache_ref'))
+        with self._connect() as conn:
+            indexes = {row[1] for row in conn.execute("PRAGMA index_list(log_event)")}
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM geocache").fetchone()[0], 1)
+        self.assertTrue({'ix_log_event_cache', 'ix_log_event_author', 'ix_log_event_date'} <= indexes)
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
 
 if __name__ == '__main__':
     unittest.main()

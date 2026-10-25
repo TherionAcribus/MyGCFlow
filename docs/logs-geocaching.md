@@ -1,9 +1,10 @@
 # Logs Geocaching — contrat d'import, stockage et plan
 
-> **Statut : spécification, rien n'est codé** (2026-10-24, rédigée sur `main`
-> à `bb69772`). Ce document fixe le contrat avant le code ; les noms de
-> modules, tables et routes sont des propositions à ajuster aux conventions
-> du moment.
+> **Statut : lot A codé** (2026-10-25) — données : `log_formats.py`
+> (lecture), `log_store.py` (fusion, aperçu, statut), migration v8, logs du
+> My Finds. Pas encore d'interface ni de route (lot B) : les noms de routes
+> ci-dessous restent des propositions. Spécification rédigée le 2026-10-24
+> sur `main` à `bb69772`.
 
 ## Pourquoi
 
@@ -201,8 +202,10 @@ Mêmes règles que les Labs (`lab_formats.py`) :
 - doublon d'identité dans un même fichier : le premier fait foi, les
   suivants sont comptés ;
 - fiche de cache aux coordonnées invalides : gardée sans coordonnées ;
-- plafonds : taille alignée sur `GPX_MAX_SIZE_BYTES` (200 Mo décompressés) ;
-  nombre de logs à fixer après mesure (§ Plan, lot A).
+- plafonds : 1 000 000 de logs et 500 000 fiches par fichier
+  (`log_formats.MAX_LOGS` / `MAX_CACHES`) — environ 150 Mo de JSON, sous la
+  taille d'envoi `GPX_MAX_SIZE_BYTES` (200 Mo décompressés). Mesures au
+  § Plan.
 
 ## Import depuis un GPX
 
@@ -216,12 +219,16 @@ aucune couverture : import en ajout/mise à jour seulement.
 collecte en plus tous les logs du fichier. Les DNF suivis d'une trouvaille
 (cas de l'exemple GC2PR3N : DNF le 2011-08-20, trouvée le 2012-01-08)
 deviennent visibles **sans aucun autre fichier**. Le `finder id` de ces logs
-initialise le compte (`account.user_id`) s'il n'est pas encore connu.
+initialise le compte (`account.user_id`) s'il n'est pas encore connu — à
+condition qu'il soit unique dans le fichier. La lecture d'un log est partagée
+(`log_formats.logs_from_cache_element`) ; un log sans attribut `id` est
+rejeté (cas des fixtures e2e), sans effet sur les trouvailles.
 
 Les deux écritures restent distinctes : le remplacement de la table
 `geocache` est commité d'abord, comme aujourd'hui ; la fusion des logs suit
-dans sa propre transaction. Son échec est signalé dans le bilan sans annuler
-l'import des trouvailles.
+dans sa propre transaction (`log_store.merge_myfinds_logs`). Son échec est
+journalisé sans annuler l'import des trouvailles ; un My Finds d'un autre
+compte que celui des logs déjà importés laisse ces logs intacts.
 
 ## Stockage
 
@@ -272,9 +279,11 @@ bornes de l'animation.
 
 | Colonne | Rôle |
 |---|---|
-| `gc_code` | **unique** |
+| `collection_id` | → `log_collection` |
+| `gc_code` | **unique** dans la collection |
 | `name`, `cache_type`, `container`, `difficulty`, `terrain`, `country`, `state` | |
-| `latitude`, `longitude`, `coordinate_source` | `file` / `user_correction` |
+| `latitude`, `longitude`, `coordinate_source` | publiées ; source = format du fichier, ou `user_correction` (jamais écrasée par un import) |
+| `corrected_latitude`, `corrected_longitude` | corrigées par le joueur (champ `corrected`) |
 | `owner_id`, `owner_name`, `placed_date` | |
 | `status`, `status_at` | état et date d'export qui l'atteste |
 | `favorite_points` | |
@@ -310,16 +319,20 @@ Un import **fusionne**, il ne remplace jamais toute la table :
 
 ### Aperçu puis validation
 
-Même parcours que « Mes Lab Caches » (`blueprints/labs.py`) :
+Même parcours que « Mes Lab Caches » (`blueprints/labs.py`). Aperçu et
+validation partagent un seul calcul (`log_store._plan`), qui ne fait que
+lire ; seule la validation écrit (`log_store.commit_logs`, sous verrou).
+Les étapes 1 à 3 relèvent du lot B (routes et tâches) :
 
-1. **Aperçu** : parsing et fusion simulée dans une transaction annulée,
-   fichiers conservés en attente (`_store_pending`). Bilan par fichier et
+1. **Aperçu** : `log_store.preview_logs`, fichiers conservés en attente
+   (comme `_store_pending`). Bilan par fichier et
    projeté : ajoutés, mis à jour, inchangés, **retirés** (couverture
    complète), rejetés avec motif, types inconnus, logs en attente de
    coordonnées, répartition par catégorie et « moi / les autres ».
 2. **Validation** : tâche de fond exclusive (`task_manager`), qui reparse et
-   recalcule sur l'état courant — l'aperçu est refusé si `revision` a bougé
-   entre-temps (`_load_pending`).
+   recalcule sur l'état courant — refusée si `revision` a bougé depuis
+   l'aperçu (`commit_logs(..., expected_revision=…)` lève
+   `LogRevisionConflict`).
 3. Invalidation de `geojson_cache` et du cache de statut.
 
 Les suppressions annoncées par l'aperçu sont toujours visibles avant
@@ -353,12 +366,25 @@ l'intégration aux Stats sont décrits séparément, au moment de leur lot.
 
 | Lot | Contenu | Livrable vérifiable |
 |---|---|---|
-| **A — données** | migration v8 ; `log_formats.py` (contrat + logs GPX, sans Flask) ; `log_store.py` (fusion, couverture, aperçu) ; My Finds alimente `log_event` | tests unitaires sur fixtures **fictives** ; banc d'import (100 000 logs) pour fixer les plafonds |
+| **A — données** ✅ | migration v8 ; `log_formats.py` (contrat + logs GPX, sans Flask) ; `log_store.py` (fusion, couverture, aperçu) ; My Finds alimente `log_event` | tests unitaires sur fixtures **fictives** ; banc d'import (100 000 logs) pour fixer les plafonds |
 | **B — interface** | carte « Mes logs » de l'onglet Données : import avec aperçu, statut (par catégorie, en attente), export `mygcflow-logs`, suppression | e2e : aperçu, validation, réimport idempotent, refus d'un autre compte |
 | **C — DNF sur la carte** | réglage d'affichage (masqué par défaut), apparition / résolution dans l'animation, saut de la barre de chronologie | e2e : DNF masqué, DNF affiché puis remplacé par la trouvaille |
 | **D — poseur** | affichage de l'activité de poseur | |
 | **E — mode « Mes caches »** | page dédiée, comme le mode Évolution | |
 | **F — Stats** | métriques DNF / poseur optionnelles dans les panneaux | |
+
+Mesures du lot A (`tools/bench_log_import.py`, 2026-10-25, Windows, SQLite
+local ; ~50 logs par cache, couverture complète par cache ; l'incrément est
+un export plus récent où 1 % des logs ont changé et 1 % ont disparu) :
+
+| logs | JSON | lecture | aperçu (base vide) | 1er import | réimport identique | incrément |
+|---|---|---|---|---|---|---|
+| 10 000 | 1,5 Mo | 0,05 s | 0,03 s | 0,14 s | 0,10 s | 0,19 s |
+| 100 000 | 15 Mo | 0,44 s | 0,06 s | 3,1 s | 2,1 s | 3,6 s |
+| 500 000 | 76 Mo | 5,8 s | 0,7 s | 24 s | 10 s | 16 s |
+
+Un export réel (5 277 logs, 515 caches) s'importe en 0,1 s. Le coût dominant
+est l'écriture (insertions par lots) ; rien à optimiser à ces volumes.
 
 Le lot A suffit à rendre les DNF résolus disponibles à partir du seul
 My Finds ; les autres sources n'arrivent qu'avec un fichier `mygcflow-logs`
