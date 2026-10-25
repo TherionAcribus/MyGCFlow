@@ -84,6 +84,33 @@ class LogStoreTests(unittest.TestCase):
         log_store.clear_logs(db.session)
         self.assertIsNone(log_store.collection_status(db.session)["last_import"])
 
+    def test_pending_caches_and_resolve(self):
+        # GC2PR3N : des logs, pas de fiche ni de position (modale de complétion).
+        self._commit()
+        page = log_store.pending_caches(db.session)
+        self.assertEqual(page["total"], 1)
+        item = page["items"][0]
+        self.assertEqual((item["gc_code"], item["logs"], item["dnf"]), ("GC2PR3N", 2, 1))
+        self.assertIsNone(item["name"])
+
+        # La saisie manuelle crée la fiche et sort la cache de l'attente.
+        self.assertTrue(log_store.resolve_cache_coordinates(
+            db.session, "GC2PR3N", 48.8584, 2.2945))
+        self.assertEqual(log_store.collection_status(db.session)["pending_coordinates"], 0)
+        ref = db.session.query(CacheRef).filter_by(gc_code="GC2PR3N").one()
+        self.assertEqual(ref.coordinate_source, lf.USER_CORRECTION)
+        self.assertFalse(
+            log_store.resolve_cache_coordinates(db.session, "GC00000", 1.0, 1.0))
+
+        # Un import postérieur reprend les autres champs mais pas la position.
+        doc = _doc()
+        doc["caches"].append({"gc_code": "GC2PR3N", "name": "Renommée",
+                              "latitude": 10.0, "longitude": 10.0})
+        self._commit(doc)
+        ref = db.session.query(CacheRef).filter_by(gc_code="GC2PR3N").one()
+        self.assertAlmostEqual(ref.latitude, 48.8584)
+        self.assertEqual(ref.name, "Renommée")
+
     def test_reimport_is_idempotent(self):
         self._commit()
         summary = self._commit()

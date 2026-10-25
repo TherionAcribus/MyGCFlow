@@ -519,6 +519,37 @@
         </div>
     </div>
 
+    <!-- Complétion : caches des logs sans position connue (gc_logs.js) —
+         une position saisie à la main place les points DNF, et n'est jamais
+         écrasée par un import ultérieur. -->
+    <div id="gcLogsCoordsModal" class="modal bs-modal gc-logs-ui" tabindex="-1" aria-labelledby="gcLogsCoordsModal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="gcLogsCoordsModal-title" class="modal-title">{{ _("Caches sans position") }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="form-hint text-muted">
+                        {{ _("Ces caches ont des logs enregistrés mais aucune position connue : vos DNF n'y apparaîtront pas tant qu'elles n'en auront pas. La position saisie n'est jamais écrasée par un import.") }}
+                    </p>
+                    <p class="form-hint text-muted">
+                        {{ _("Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, 2.2945 (décimal) ou 48°51′30″N 2°17′40″E.") }}
+                    </p>
+                    <div id="gcLogsCoordsList"></div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <button type="button" id="gcLogsCoordsPrev" class="btn btn-sm btn-outline-secondary">{{ _("Précédent") }}</button>
+                        <span id="gcLogsCoordsPage" class="small text-muted"></span>
+                        <button type="button" id="gcLogsCoordsNext" class="btn btn-sm btn-outline-secondary">{{ _("Suivant") }}</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="gcLogsCoordsClose" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Complétion : étapes importées sans coordonnées ni date exploitables -->
     <div id="labsPendingModal" class="modal bs-modal" tabindex="-1" aria-labelledby="labsPendingModal-title" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">

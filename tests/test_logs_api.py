@@ -14,7 +14,7 @@ from unittest import mock
 import settings_manager
 from app import create_app
 from extensions import db
-from models import LogEvent
+from models import CacheRef, LogEvent
 from task_manager import task_manager
 
 from tests.test_log_formats import CONTRACT, MY_FINDS
@@ -157,6 +157,38 @@ class LogsApiTests(unittest.TestCase):
         rv = self.client.post("/api/logs/clear")
         self.assertEqual(rv.get_json()["removed_logs"], 7)
         self.assertFalse(self.client.get("/api/logs/status").get_json()["exists"])
+
+    def test_pending_caches_and_resolve(self):
+        self._import(CONTRACT.read_bytes())
+        page = self.client.get("/api/logs/pending_caches").get_json()
+        self.assertEqual(page["total"], 1)
+        item = page["items"][0]
+        self.assertEqual((item["gc_code"], item["dnf"], item["logs"]), ("GC2PR3N", 1, 2))
+
+        # Saisie au format geocaching.com, code en minuscules accepté.
+        rv = self.client.post("/api/logs/caches/gc2pr3n/resolve",
+                              json={"coordinates": "N 48° 51.504 E 002° 17.670"})
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        self.assertAlmostEqual(rv.get_json()["latitude"], 48.8584, places=3)
+        self.assertEqual(
+            self.client.get("/api/logs/status").get_json()["pending_coordinates"], 0)
+        self.assertEqual(
+            self.client.get("/api/logs/pending_caches").get_json()["total"], 0)
+        ref = db.session.query(CacheRef).filter_by(gc_code="GC2PR3N").one()
+        self.assertEqual(ref.coordinate_source, "user_correction")
+
+    def test_pending_resolve_errors(self):
+        self._import(CONTRACT.read_bytes())
+        self.assertEqual(self.client.post(
+            "/api/logs/caches/GC2PR3N/resolve", json={}).status_code, 400)
+        bad = self.client.post("/api/logs/caches/GC2PR3N/resolve",
+                               json={"coordinates": "n'importe quoi"})
+        self.assertEqual(bad.status_code, 400)
+        self.assertIn("invalides", bad.get_json()["message"].lower())
+        unknown = self.client.post("/api/logs/caches/GC00000/resolve",
+                                   json={"coordinates": "48.5, 2.3"})
+        self.assertEqual(unknown.status_code, 404)
+        self.assertEqual(self.client.get("/api/logs/pending_caches?offset=x").status_code, 400)
 
 
 class LogsAutomationTests(LogsApiTests):

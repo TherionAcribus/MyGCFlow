@@ -28,6 +28,7 @@ import dnf_geojson
 import log_formats as lf
 import log_store
 import paths
+from lab_formats import parse_coordinates_text, validate_coordinates
 from bdd import GPX_MAX_SIZE_BYTES
 from extensions import db
 from localization import get_locale
@@ -288,6 +289,45 @@ def logs_dnf_features():
     """Points DNF de la carte, à part du jeu principal : jamais comptés comme
     des trouvailles (dnf_geojson.py)."""
     return jsonify({'success': True, **dnf_geojson.build_dnf_features(db.session)})
+
+
+@logs_bp.route('/api/logs/pending_caches')
+def logs_pending_caches():
+    """Caches des logs sans position connue (modale de complétion), paginées."""
+    try:
+        limit = max(1, min(int(request.args.get('limit', 20)), 100))
+        offset = max(0, int(request.args.get('offset', 0)))
+    except ValueError:
+        return jsonify({'success': False, 'message': _("Pagination invalide")}), 400
+    page = log_store.pending_caches(db.session, limit=limit, offset=offset)
+    return jsonify({'success': True, **page, 'limit': limit, 'offset': offset})
+
+
+@logs_bp.route('/api/logs/caches/<gc_code>/resolve', methods=['POST'])
+def logs_resolve_cache(gc_code):
+    """Position manuelle d'une cache sans coordonnées connues : texte libre
+    (`coordinates`, formats du géocacheur) ou couple `latitude`/`longitude`.
+    La correction n'est jamais écrasée par un import ultérieur."""
+    body = request.get_json(silent=True) or {}
+    text = body.get("coordinates")
+    if isinstance(text, str) and text.strip():
+        cc = parse_coordinates_text(text)
+    elif body.get("latitude") is not None or body.get("longitude") is not None:
+        cc = validate_coordinates(body.get("latitude"), body.get("longitude"))
+    else:
+        return jsonify({'success': False,
+                        'message': _("Aucune correction fournie")}), 400
+    if not cc.ok:
+        reason = cc.warnings[0] if cc.warnings else ""
+        return jsonify({'success': False,
+                        'message': _("Coordonnées invalides : %(reason)s", reason=reason),
+                        'warnings': cc.warnings}), 400
+    code = gc_code.strip().upper()
+    if not log_store.resolve_cache_coordinates(
+            db.session, code, cc.latitude, cc.longitude):
+        return jsonify({'success': False, 'message': _("Cache inconnue")}), 404
+    return jsonify({'success': True, 'gc_code': code,
+                    'latitude': cc.latitude, 'longitude': cc.longitude})
 
 
 @logs_bp.route('/api/logs/clear', methods=['POST'])

@@ -161,6 +161,33 @@ test('le favori reçoit l\'export : bandeau puis aperçu avant l\'import', async
 });
 
 
+test('une cache sans position est placée depuis la modale de complétion', async ({ page }) => {
+  await openReadyApp(page);
+  await preview(page, CONTRACT);
+  await confirmImport(page);
+
+  const detail = page.locator('#gcLogsDetail');
+  await expect(detail).toContainText('1 cache sans position connue');
+  await detail.getByRole('button', { name: 'compléter' }).click();
+  const modal = page.locator('#gcLogsCoordsModal');
+  await expect(modal).toBeVisible();
+
+  const row = modal.locator('[data-gc-code="GC2PR3N"]');
+  await expect(row).toBeVisible();
+  await row.locator('input').fill('48.8584, 2.2945');
+  await row.getByRole('button', { name: 'Placer' }).click();
+  await expect(row).toHaveCount(0);
+  await expect(modal.locator('#gcLogsCoordsList')).toContainText('Aucune cache sans position');
+
+  await page.locator('#gcLogsCoordsClose').click();
+  await expect(detail).not.toContainText('cache sans position connue');
+  // La correction a placé le point DNF : GC2PR3N sort de l'attente.
+  const dnf = await (await page.request.get('/api/logs/dnf_features')).json();
+  expect(dnf.pending).toBe(0);
+  expect(dnf.features.map(f => f.properties.gc_code)).toContain('GC2PR3N');
+});
+
+
 test('le bouton du favori reçoit son lien javascript:', async ({ page }) => {
   await openReadyApp(page);
   const link = page.locator('#gcLogsBookmarkletLink');

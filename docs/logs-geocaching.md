@@ -410,6 +410,18 @@ sinon il passerait pour plus frais qu'un vrai export postérieur à ses
 données ; `POST /api/logs/clear` vide logs, fiches et compte (refusé pendant
 un import).
 
+**Complétion des positions** — le compteur `pending_coordinates` du statut
+(codes GC des logs couverts ni par une fiche `cache_ref` ni par une
+trouvaille My Finds) n'est plus un cul-de-sac : `GET
+/api/logs/pending_caches` (paginé : code, métadonnées de fiche connues,
+volume de logs et DNF du compte) alimente la modale « Caches sans
+position », et `POST /api/logs/caches/<code>/resolve` pose la position —
+`coordinates` en texte libre (formats du géocacheur, même validation que
+les étapes Labs) ou `latitude`/`longitude`. La fiche est créée si la cache
+n'a que des logs ; `coordinate_source = user_correction` la protège de
+tout import ultérieur, et la révision de collection est incrémentée (les
+aperçus en attente deviennent caducs, comme pour tout import).
+
 Un `.json` `mygcflow-logs` glissé sur la page (ou choisi dans « Mes
 Géocaches ») est aiguillé vers « Mes logs » par `bdd.js` (`isLogsFile`, testé
 avant `isLabFile`, qui prend tout `.json` pour un historique Labs). Un import

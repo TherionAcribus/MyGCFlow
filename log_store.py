@@ -457,6 +457,82 @@ def collection_status(session) -> dict:
     }
 
 
+def pending_caches(session, limit=20, offset=0) -> dict:
+    """Caches des logs sans position connue, pour la modale de complétion :
+    code, métadonnées de fiche quand elles existent, volume de logs et DNF
+    du compte (ce sont eux qui attendent un point sur la carte)."""
+    collection = get_collection(session)
+    if collection is None:
+        return {"items": [], "total": 0}
+    cid = collection.id
+    codes = {code for (code,) in session.query(LogEvent.gc_code).filter(
+        LogEvent.collection_id == cid).distinct()}
+    missing = sorted(codes - _codes_with_coordinates(session, cid, codes))
+    total = len(missing)
+    page = missing[offset:offset + limit]
+    items = []
+    if page:
+        refs = {r.gc_code: r for r in session.query(CacheRef).filter(
+            CacheRef.collection_id == cid, CacheRef.gc_code.in_(page))}
+        logs_count = dict(session.query(LogEvent.gc_code, func.count(LogEvent.id)).filter(
+            LogEvent.collection_id == cid, LogEvent.gc_code.in_(page)).group_by(LogEvent.gc_code))
+        me = collection.account_user_id
+        mine = Counter()
+        if me is not None:
+            for code, type_id, n in session.query(
+                    LogEvent.gc_code, LogEvent.type_id, func.count(LogEvent.id)).filter(
+                    LogEvent.collection_id == cid, LogEvent.gc_code.in_(page),
+                    LogEvent.author_id == me).group_by(LogEvent.gc_code, LogEvent.type_id):
+                if log_category(type_id) == "dnf":
+                    mine[code] += n
+        for code in page:
+            ref = refs.get(code)
+            items.append({
+                "gc_code": code,
+                "name": ref.name if ref else None,
+                "cache_type": ref.cache_type if ref else None,
+                "owner_name": ref.owner_name if ref else None,
+                "logs": logs_count.get(code, 0),
+                "dnf": mine.get(code, 0),
+            })
+    return {"items": items, "total": total}
+
+
+def resolve_cache_coordinates(session, gc_code, latitude, longitude) -> bool:
+    """Position manuelle d'une cache (modale de complétion). La fiche est
+    créée si la cache n'a que des logs ; `user_correction` la protège de
+    tout import ultérieur, même déclaré complet. Faux si le code n'est
+    connu ni d'un log ni d'une fiche — rien à corriger alors."""
+    collection = get_collection(session)
+    if collection is None:
+        return False
+    with LOG_MUTATION_LOCK:
+        try:
+            row = session.query(CacheRef).filter_by(
+                collection_id=collection.id, gc_code=gc_code).one_or_none()
+            known = row is not None or session.query(LogEvent.id).filter(
+                LogEvent.collection_id == collection.id,
+                LogEvent.gc_code == gc_code).first() is not None
+            if not known:
+                session.rollback()
+                return False
+            now = _utcnow()
+            if row is None:
+                row = CacheRef(collection_id=collection.id, gc_code=gc_code,
+                               source_format=USER_CORRECTION, imported_at=now)
+                session.add(row)
+            row.latitude = latitude
+            row.longitude = longitude
+            row.coordinate_source = USER_CORRECTION
+            row.updated_at = now
+            collection.revision = (collection.revision or 0) + 1
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+    return True
+
+
 def collection_since(session):
     """Horizon de connaissance du site pour le favori : date du
     `exported_at` le plus récent parmi les logs venus d'un export

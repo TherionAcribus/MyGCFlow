@@ -155,8 +155,15 @@ function renderStatus(st) {
         detail.appendChild(li(countLabel(st.caches, t('fiche de cache'), t('fiches de caches'))));
     }
     if (st.pending_coordinates) {
-        detail.appendChild(li(countLabel(st.pending_coordinates,
-            t('cache sans position connue'), t('caches sans position connue')), 'text-warning'));
+        const item = li(countLabel(st.pending_coordinates,
+            t('cache sans position connue'), t('caches sans position connue')), 'text-warning');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-link p-0 ms-1 align-baseline';
+        btn.textContent = t('compléter');
+        btn.addEventListener('click', openCoordsModal);
+        item.appendChild(btn);
+        detail.appendChild(item);
     }
     const lastLine = lastImportLine(st.last_import);
     if (lastLine) detail.appendChild(li(lastLine, 'text-muted'));
@@ -221,6 +228,186 @@ function onPendingView() {
     importToken = pending.import_token;
     renderPreview({ name: pending.name || t('export du favori'), summary: pending.summary || {} });
     showBsModal(el('gcLogsPreviewModal'));
+}
+
+// ------------------------------------------------- caches sans position
+//
+// Même patron que les « étapes en attente » des Labs : liste paginée,
+// saisie par ligne au format du géocacheur, résolution immédiate. La
+// position manuelle (`user_correction`) n'est jamais reprise par un
+// import ultérieur.
+
+const COORDS_PAGE_SIZE = 20;
+let coordsOffset = 0;
+let coordsTotal = 0;
+let coordsLoadSeq = 0;
+
+async function openCoordsModal() {
+    const modal = el('gcLogsCoordsModal');
+    if (!modal) return;
+    coordsOffset = 0;
+    showBsModal(modal);
+    await loadCoordsPage(0);
+}
+
+async function loadCoordsPage(offset) {
+    const listEl = el('gcLogsCoordsList');
+    if (!listEl) return;
+    // Numéro de requête : une page lente n'écrase pas une demande plus récente.
+    const seq = ++coordsLoadSeq;
+    const prev = el('gcLogsCoordsPrev');
+    const next = el('gcLogsCoordsNext');
+    if (prev) prev.disabled = true;
+    if (next) next.disabled = true;
+    listEl.textContent = '';
+    const spinner = document.createElement('div');
+    spinner.className = 'd-flex justify-content-center align-items-center gap-2 py-3';
+    spinner.setAttribute('role', 'status');
+    const wheel = document.createElement('div');
+    wheel.className = 'spinner-border spinner-border-sm';
+    wheel.setAttribute('aria-hidden', 'true');
+    spinner.appendChild(wheel);
+    const label = document.createElement('span');
+    label.className = 'small text-muted';
+    label.textContent = t('Chargement');
+    spinner.appendChild(label);
+    listEl.appendChild(spinner);
+    try {
+        const r = await fetch(
+            `${CONFIG.BASE_URL}/api/logs/pending_caches?limit=${COORDS_PAGE_SIZE}&offset=${Math.max(0, offset)}`);
+        const data = await r.json();
+        if (seq !== coordsLoadSeq) return;   // réponse périmée
+        if (!data.success) throw new Error(data.message || 'erreur');
+        coordsOffset = data.offset || 0;
+        coordsTotal = data.total || 0;
+        renderCoordsList(data.items || []);
+        updateCoordsPager();
+    } catch (e) {
+        if (seq !== coordsLoadSeq) return;
+        listEl.textContent = t('Chargement impossible');
+        updateCoordsPager();
+    }
+}
+
+function updateCoordsPager() {
+    const prev = el('gcLogsCoordsPrev');
+    const next = el('gcLogsCoordsNext');
+    const page = el('gcLogsCoordsPage');
+    const total = coordsTotal || 0;
+    if (prev) prev.disabled = coordsOffset <= 0;
+    if (next) next.disabled = coordsOffset + COORDS_PAGE_SIZE >= total;
+    if (page) {
+        const start = total === 0 ? 0 : coordsOffset + 1;
+        const end = Math.min(coordsOffset + COORDS_PAGE_SIZE, total);
+        page.textContent = `${start}–${end} / ${countLabel(total, t('cache'), t('caches'))}`;
+    }
+}
+
+function renderCoordsList(items) {
+    const listEl = el('gcLogsCoordsList');
+    listEl.textContent = '';
+    if (!items.length) {
+        const empty = document.createElement('p');
+        empty.className = 'form-hint text-muted';
+        empty.textContent = t('Aucune cache sans position sur cette page.');
+        listEl.appendChild(empty);
+        return;
+    }
+    for (const item of items) listEl.appendChild(buildCoordsRow(item));
+}
+
+// Une ligne par cache : code (lien vers la fiche), nom et contexte connus,
+// saisie de la position au format du géocacheur.
+function buildCoordsRow(item) {
+    const row = document.createElement('div');
+    row.className = 'border rounded p-2 mb-2';
+    row.dataset.gcCode = item.gc_code;
+    row.tabIndex = -1;
+
+    const head = document.createElement('div');
+    head.className = 'small';
+    const link = document.createElement('a');
+    link.href = `https://www.geocaching.com/geocache/${item.gc_code}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'fw-medium';
+    link.textContent = item.gc_code;
+    head.appendChild(link);
+    if (item.name) {
+        const name = document.createElement('span');
+        name.textContent = ` — ${item.name}`;
+        head.appendChild(name);
+    }
+    row.appendChild(head);
+
+    const parts = [];
+    if (item.cache_type) parts.push(item.cache_type);
+    if (item.owner_name) parts.push(t('de ${name}', { name: item.owner_name }));
+    if (item.dnf) parts.push(countLabel(item.dnf, t('DNF à vous'), t('DNF à vous')));
+    if (item.logs > (item.dnf || 0)) {
+        parts.push(countLabel(item.logs - (item.dnf || 0), t('autre log'), t('autres logs')));
+    }
+    if (parts.length) {
+        const meta = document.createElement('div');
+        meta.className = 'form-hint text-muted mb-1';
+        meta.textContent = parts.join(' · ');
+        row.appendChild(meta);
+    }
+
+    const form = document.createElement('div');
+    form.className = 'd-flex flex-wrap gap-2 align-items-center';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm flex-grow-1';
+    input.placeholder = 'N 48° 51.504 E 002° 17.670';
+    input.setAttribute('aria-label', t('Position de ${code}', { code: item.gc_code }));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-primary';
+    btn.textContent = t('Placer');
+    const feedback = document.createElement('span');
+    feedback.className = 'small';
+    feedback.setAttribute('role', 'status');
+    btn.addEventListener('click', () => onResolveCoords(row, item, input, btn, feedback));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); btn.click(); }
+    });
+    form.appendChild(input);
+    form.appendChild(btn);
+    form.appendChild(feedback);
+    row.appendChild(form);
+    return row;
+}
+
+async function onResolveCoords(row, item, input, btn, feedback) {
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    btn.disabled = true;
+    try {
+        const r = await fetch(
+            `${CONFIG.BASE_URL}/api/logs/caches/${encodeURIComponent(item.gc_code)}/resolve`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ coordinates: text }),
+            });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.success) throw new Error(data.message || t('Correction refusée'));
+        // La ligne disparaît : la cache a sa position, et le point DNF
+        // arrive avec le rechargement des données carte.
+        row.remove();
+        coordsTotal = Math.max(0, coordsTotal - 1);
+        updateCoordsPager();
+        if (el('gcLogsCoordsList') && !el('gcLogsCoordsList').children.length) {
+            loadCoordsPage(coordsOffset > 0 ? coordsOffset - COORDS_PAGE_SIZE : 0);
+        }
+        refreshLogsStatus();
+        pkg.reloadDnfData?.();
+    } catch (e) {
+        btn.disabled = false;
+        feedback.className = 'small text-danger';
+        feedback.textContent = e.message;
+    }
 }
 
 // -------------------------------------------------------------- activité
@@ -571,6 +758,10 @@ export function initLogsUI() {
     el('gcLogsBookmarkletFallbackBtn').addEventListener('click', () => fileInput.click());
     el('gcLogsRegenTokenBtn').addEventListener('click', onRegenBookmarkletToken);
     el('gcLogsFullNextBtn').addEventListener('click', onFullNextCollect);
+    el('gcLogsCoordsPrev')?.addEventListener('click',
+        () => loadCoordsPage(coordsOffset - COORDS_PAGE_SIZE));
+    el('gcLogsCoordsNext')?.addEventListener('click',
+        () => loadCoordsPage(coordsOffset + COORDS_PAGE_SIZE));
 
     // Un export déposé par le favori ou un import validé ailleurs arrivent
     // hors de cette page : relevé tant que l'onglet Données est affiché,
