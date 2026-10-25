@@ -404,6 +404,10 @@ class AppSettings:
     # Même rôle pour le favori « Mes logs » (/api/logs/receive), distinct du
     # jeton Labs : révoquer l'un ne casse pas l'autre favori.
     logs_receive_token: str = ""
+    # Le favori collecte incrémentalement depuis le dernier export ; ce
+    # drapeau (posé depuis la carte « Mes logs ») force la prochaine à tout
+    # relire, puis retombe à False dès que le favori l'a lu.
+    logs_collect_full_once: bool = False
     recording: RecordingSettings = field(default_factory=RecordingSettings)
     # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
     # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
@@ -1101,6 +1105,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.labs_receive_token = str(token) if token else ""
         token = d.get("logs_receive_token")
         s.logs_receive_token = str(token) if token else ""
+        s.logs_collect_full_once = d.get("logs_collect_full_once") is True
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))

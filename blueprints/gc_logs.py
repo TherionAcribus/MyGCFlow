@@ -15,7 +15,6 @@ import io
 import json
 import secrets
 import shutil
-import tempfile
 import uuid
 import zipfile
 from contextlib import nullcontext
@@ -28,6 +27,7 @@ from flask_babel import force_locale, gettext as _
 import dnf_geojson
 import log_formats as lf
 import log_store
+import paths
 from bdd import GPX_MAX_SIZE_BYTES
 from extensions import db
 from localization import get_locale
@@ -39,7 +39,8 @@ logs_bp = Blueprint('gc_logs', __name__)
 
 TASK_TYPE_LOG_IMPORT = "log_import"
 PENDING_TTL_SECONDS = 30 * 60
-PENDING_ROOT = Path(tempfile.gettempdir()) / "mygcflow-log-imports"
+# Redirigé par les tests ; sinon _pending_root() (sous les données).
+PENDING_ROOT: Path | None = None
 MAX_DETAIL_ITEMS = 50
 
 # Seules origines autorisées à poster sur /api/logs/receive (le favori
@@ -50,6 +51,13 @@ LOGS_ORIGINS = frozenset({
     "https://www.geocaching.com",
     "https://geocaching.com",
 })
+
+
+def _pending_root() -> Path:
+    """Dossier des jetons d'aperçu, sous les données : %TEMP% est partagé
+    entre la vraie application, pytest et le harnais e2e — un export reçu
+    d'un run ressortait dans le suivant. MYGCFLOW_DATA_DIR l'isole."""
+    return PENDING_ROOT or (paths.data_dir() / "pending_log_imports")
 
 
 # ---------------------------------------------------------------------------
@@ -85,8 +93,8 @@ def _store_pending(raw: bytes, name: str, revision: int,
                    received: bool = False, summary: dict | None = None) -> str:
     token = uuid.uuid4().hex
     # Historique personnel : dossiers privés (le mode est ignoré sous Windows).
-    PENDING_ROOT.mkdir(mode=0o700, exist_ok=True)
-    folder = PENDING_ROOT / token
+    _pending_root().mkdir(mode=0o700, exist_ok=True)
+    folder = _pending_root() / token
     folder.mkdir(mode=0o700)
     (folder / "file.bin").write_bytes(raw)
     manifest = {
@@ -109,7 +117,7 @@ def _purge_expired_pending():
     interrompue par un arrêt brutal) est balayé."""
     now = datetime.now(timezone.utc)
     try:
-        children = list(PENDING_ROOT.iterdir())
+        children = list(_pending_root().iterdir())
     except FileNotFoundError:
         return
     for child in children:
@@ -128,7 +136,7 @@ def _take_pending(token) -> tuple[Path | None, dict | None, str | None]:
     qu'une fois : (dossier, manifest, message d'erreur)."""
     if not isinstance(token, str) or not token.isalnum():
         return None, None, _("Jeton d'import invalide")
-    folder = PENDING_ROOT / token
+    folder = _pending_root() / token
     try:
         manifest = json.loads((folder / "manifest.json").read_text("utf-8"))
         created = datetime.fromisoformat(manifest["created_at"])
@@ -162,7 +170,7 @@ def _received_pending() -> dict | None:
     aperçu demandé depuis la carte)."""
     now = datetime.now(timezone.utc)
     try:
-        children = list(PENDING_ROOT.iterdir())
+        children = list(_pending_root().iterdir())
     except FileNotFoundError:
         return None
     newest = None
@@ -270,6 +278,8 @@ def logs_status():
     if active is not None:
         payload['active_task'] = active.to_dict()
     payload['pending_import'] = _received_pending()
+    payload['full_collect_planned'] = \
+        get_settings_manager().get_app_settings().logs_collect_full_once
     return jsonify(payload)
 
 
@@ -425,6 +435,46 @@ def logs_receive():
         'import_token': token})), 202
 
 
+@logs_bp.route('/api/logs/receive/state', methods=['GET', 'OPTIONS'])
+def logs_receive_state():
+    """État lu par le favori avant de collecter (mêmes jeton + CORS que
+    /receive ; une simple GET, donc rien à déclarer dans security.py — le
+    contrôle inter-sites ne vise que les mutations).
+
+    - `since` : horizon de connaissance = date du dernier export
+      `mygcflow-logs` importé — le favori ne relit que les caches touchées
+      depuis (collecte incrémentale). `null` → collecte complète ;
+    - `pending` : un export précédent attend toujours sa validation — le
+      favori le signale au lieu de repartir pour un tour ;
+    - `logs_collect_full_once` (« forcer la prochaine collecte complète »)
+      est consommé à la lecture : la requête suivante revoit `since`."""
+    if request.method == 'OPTIONS':
+        return _receive_cors_headers(current_app.make_response(('', 204)))
+
+    expected = get_settings_manager().get_app_settings().logs_receive_token
+    token = request.headers.get('X-MyGCFlow-Token', '')
+    if not expected or not secrets.compare_digest(token, expected):
+        return _receive_cors_headers(jsonify({
+            'success': False,
+            'message': _("Jeton de réception invalide — régénérer le bookmarklet")})), 403
+
+    manager = get_settings_manager()
+    full_once = manager.get_app_settings().logs_collect_full_once
+    if full_once:
+        from dataclasses import replace
+        manager.update_app_settings(
+            lambda s: replace(s, logs_collect_full_once=False))
+    since = None if full_once else log_store.collection_since(db.session)
+    pending = _received_pending()
+    return _receive_cors_headers(jsonify({
+        'success': True,
+        'since': since.isoformat() if since else None,
+        'pending': ({'name': pending['name'],
+                     'received_at': pending['received_at']}
+                    if pending else None),
+    }))
+
+
 # Favori « Envoyer vers MyGCFlow » (logs) : source JS lisible dans
 # static/logs/, cœur de collecte inclus à son repère, comme pour les Labs.
 _LOGS_JS_INCLUDE_MARKER = "// @include logs_collect_core.js"
@@ -483,6 +533,10 @@ def _bookmarklet_strings():
         '__T_ERROR__': _("MyGCFlow : erreur"),
         '__T_PREFIX__': _("MyGCFlow :"),
         '__T_WRONGSITE__': _("à lancer depuis une page de geocaching.com"),
+        '__T_SINCE__': _("MyGCFlow : nouveautés depuis le ${a} seulement…"),
+        '__T_PENDINGASK__': _("Un export attend déjà sa validation dans l'application — collecter quand même ?"),
+        '__T_PENDINGSTOP__': _("Collecte annulée — ouvrez l'application pour valider l'aperçu en attente."),
+        '__T_BADTOKEN__': _("jeton refusé — régénérez le favori dans l'application"),
     }
 
 
@@ -503,6 +557,18 @@ def logs_bookmarklet():
     origin = request.host_url.rstrip('/')
     js = _build_bookmarklet(origin, settings.logs_receive_token)
     return jsonify({'success': True, 'origin': origin, 'bookmarklet': js})
+
+
+@logs_bp.route('/api/logs/bookmarklet/full-next', methods=['POST'])
+def logs_bookmarklet_full_next():
+    """Arme « la prochaine collecte sera complète » : l'incrémental ne
+    détecte ni les logs anciens supprimés ni les retards d'une fenêtre,
+    l'utilisateur doit pouvoir repartir d'un tour complet sans régénérer
+    le favori. Le drapeau est consommé par /api/logs/receive/state."""
+    from dataclasses import replace
+    get_settings_manager().update_app_settings(
+        lambda s: replace(s, logs_collect_full_once=True))
+    return jsonify({'success': True})
 
 
 @logs_bp.route('/api/logs/bookmarklet/regenerate', methods=['POST'])

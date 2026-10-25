@@ -299,7 +299,11 @@ function buildPayload(state, order) {
   var dnfAllRead = Array.from(state.dnf.codes).every(function (code) { return state.caches.has(code); });
   if (state.dnf.listingComplete && !state.limited && !state.dnf.failed.length && dnfAllRead &&
       state.me.id !== null) {
-    coverage.push({ kind: 'author', author_id: state.me.id, type_ids: [DNF_TYPE_ID], complete: true });
+    // Incrémental : la couverture est bornée à la fenêtre — seuls les
+    // logs datés depuis `since` peuvent être retirés à l'import.
+    var dnfScope = { kind: 'author', author_id: state.me.id, type_ids: [DNF_TYPE_ID], complete: true };
+    if (state.since) dnfScope.since = state.since;
+    coverage.push(dnfScope);
   }
   var fullOwned = Array.from(state.owned.full).sort();
   if (fullOwned.length) {
@@ -330,6 +334,9 @@ function newState() {
     owned: { codes: new Set(), full: new Set(), failed: [] },
     limited: false,
     prefOrder: null,
+    // Collecte incrémentale : date ISO (« AAAA-MM-JJ ») du dernier export
+    // connu de l'application, lue avant de partir — null = tout relire.
+    since: null,
     dateSamples: []
   };
 }
@@ -494,6 +501,80 @@ async function collectListing(url) {
   return { codes: codes, guids: guids, complete: false };
 }
 
+// La ligne d'un journal « vos logs » est-elle dans la fenêtre ? La date
+// est lue dans ses cellules ; date illisible = prudence, on la relit.
+// Ordre inconnu : la ligne est dans la fenêtre si UN ordre possible la
+// fait basculer dedans (trop relire coûte du temps, trop peu perd des
+// logs — le choix est vite fait).
+function rowInWindow(tr, since, order) {
+  var texts = Array.from(tr.querySelectorAll('td'), function (td) {
+    return td.textContent.replace(/\s+/g, ' ').trim();
+  });
+  var orders = order ? [order] : ['DMY', 'MDY', 'YMD'];
+  var dates = [];
+  for (var t = 0; t < texts.length && !dates.length; t++) {
+    for (var o = 0; o < orders.length; o++) {
+      var d = parseDateText(texts[t], orders[o]);
+      if (d) dates.push(d);
+    }
+  }
+  if (!dates.length) return true;
+  return dates.some(function (d) { return d >= since; });
+}
+
+var POSTBACK_LINK = 'a[href*="__doPostBack(\'ctl00$ContentBody$pgrTop$ctl08\'"]';
+
+// « Vos journaux », ligne à ligne : chaque <tr> porte le lien de la cache
+// et la date de VOTRE log. since = null → toutes les lignes (comportement
+// de collectListing) ; sinon, seules les lignes de la fenêtre comptent et
+// la lecture s'arrête dès qu'une page entière en sort.
+//   complete : true quand le périmètre visé a été lu en entier — listing
+//   complet sans since, fenêtre entièrement couverte avec.
+async function collectJournal(url, since, order) {
+  var codes = new Set();
+  var guids = new Set();
+  var page = await fetchHtml(url);
+  for (var n = 0; n < 1000; n++) {
+    var before = codes.size + guids.size;
+    var rows = page.doc.querySelectorAll('table tr');
+    var anyRecent = false;
+    for (var r = 0; r < rows.length; r++) {
+      var hrefs = Array.from(rows[r].querySelectorAll('a[href]'), function (a) {
+        return a.getAttribute('href');
+      });
+      var refs = refsFromHrefs(hrefs);
+      if (!refs.codes.length && !refs.guids.length) continue;
+      if (since && !rowInWindow(rows[r], since, order)) continue;
+      anyRecent = true;
+      refs.codes.forEach(function (c) { codes.add(c); });
+      refs.guids.forEach(function (g) { guids.add(g); });
+    }
+    var next = page.doc.querySelector(POSTBACK_LINK);
+    if (!next || (since && !anyRecent)) {
+      return { codes: codes, guids: guids, complete: true };
+    }
+    if (codes.size + guids.size === before) {
+      // Postback rejoué sans nouveauté : sortie prudente — la fenêtre
+      // n'est pas garantie couverte.
+      return { codes: codes, guids: guids, complete: !since };
+    }
+    var form = page.doc.querySelector('form');
+    if (!form) break;
+    var body = new URLSearchParams();
+    form.querySelectorAll('input[type=hidden][name]').forEach(function (input) {
+      body.append(input.name, input.value || '');
+    });
+    body.set('__EVENTTARGET', 'ctl00$ContentBody$pgrTop$ctl08');
+    body.set('__EVENTARGUMENT', '');
+    page = await fetchHtml(page.url, {
+      method: 'POST',
+      body: body,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+  return { codes: codes, guids: guids, complete: false };
+}
+
 var loggedLogbookFields = false;
 
 async function fetchLogbook(token, ownOnly) {
@@ -604,10 +685,17 @@ async function mygcflowCollectGcLogs(state, note) {
     });
   };
 
-  var dnf = await collectListing('/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID);
+  // « Vos journaux » : collecte complète sur vos DNF, ou fenêtre depuis
+  // le dernier export — alors sur TOUS vos types de logs (une trouvaille
+  // récente sur une vieille cache en DNF doit la faire relire aussi).
+  var journalUrl = state.since
+    ? '/my/logs.aspx?s=1'
+    : '/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID;
+  var dnf = await collectJournal(journalUrl, state.since, state.prefOrder);
   state.dnf.listingComplete = dnf.complete;
   dnf.codes.forEach(function (c) { state.dnf.codes.add(c); });
-  console.log('[mygcflow-logs] DNF : ' + dnf.codes.size + ' cache(s)' +
+  console.log('[mygcflow-logs] ' + (state.since ? 'Logs à vous depuis le ' + state.since : 'DNF') +
+    ' : ' + dnf.codes.size + ' cache(s)' +
     (dnf.guids.size ? ' + ' + dnf.guids.size + ' lien(s) ancien(s)' : ''));
   note('dnf', dnf.codes.size, 0, 0);
   addRefs({ codes: Array.from(dnf.codes), guids: Array.from(dnf.guids) }, true);

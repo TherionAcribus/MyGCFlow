@@ -109,6 +109,17 @@ function renderStatus(st) {
     if (updateBtn) updateBtn.style.display = has ? '' : 'none';
     renderGuide(has);
     renderPending(st?.pending_import);
+    const fullBtn = el('gcLogsFullNextBtn');
+    if (fullBtn) {
+        const planned = !!st?.full_collect_planned;
+        fullBtn.disabled = planned;
+        const label = planned
+            ? t('Collecte complète prévue au prochain passage')
+            : t('Forcer une collecte complète la prochaine fois');
+        const icon = planned ? 'ti-check' : 'ti-zoom-scan';
+        fullBtn.innerHTML = `<i class="ti ${icon} me-1" aria-hidden="true"></i>`;
+        fullBtn.appendChild(document.createTextNode(label));
+    }
     // Un import peut tourner hors de cette page (validation faite dans un
     // autre onglet) : le bloc d'activité reflète la tâche serveur, et sa fin
     // relance la lecture des points DNF.
@@ -457,6 +468,21 @@ async function onCopyBookmarklet() {
     }
 }
 
+// « La prochaine collecte sera complète » : drapeau consommé par le
+// favori à son prochain passage — l'incrémental ne revoit pas les vieux
+// logs supprimés.
+async function onFullNextCollect() {
+    try {
+        const r = await fetch(`${CONFIG.BASE_URL}/api/logs/bookmarklet/full-next`,
+            { method: 'POST' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.success) throw new Error('refusé');
+        refreshLogsStatus();
+    } catch (e) {
+        showError(t('La collecte complète n\'a pas pu être prévue'), t('Mes logs'));
+    }
+}
+
 // Régénération du jeton : explicite sur l'invalidation de l'ancien favori
 // (confirmation) puis le lien est rechargé avec le nouveau jeton.
 function onRegenBookmarkletToken() {
@@ -514,6 +540,7 @@ export function initLogsUI() {
     el('gcLogsCopyLinkBtn').addEventListener('click', onCopyBookmarklet);
     el('gcLogsBookmarkletFallbackBtn').addEventListener('click', () => fileInput.click());
     el('gcLogsRegenTokenBtn').addEventListener('click', onRegenBookmarkletToken);
+    el('gcLogsFullNextBtn').addEventListener('click', onFullNextCollect);
 
     // Un export déposé par le favori ou un import validé ailleurs arrivent
     // hors de cette page : relevé tant que l'onglet Données est affiché,

@@ -11,9 +11,14 @@
 //   caches,              // {code|guid : {name, token, placed, lat, lng,
 //                        //             owner, favs, archived, failStatus}}
 //   books,               // {jeton : [[entrée,…],…]} — carnet par page idx
-//   finish               // ordre passé à window.mygcflowLogsFinish après la
+//   finish,              // ordre passé à window.mygcflowLogsFinish après la
 //                        // collecte (dates ambiguës)
+//   state,               // réponse de /api/logs/receive/state
+//                        // ({since, pending, status}) ;
+//   confirmPending       // réponse à « collecter quand même ? » (défaut oui)
 // }
+// `rows` des pages de journal : [{code|guid, date}] — la date pilote
+// l'arrêt de la collecte incrémentale.
 // Sortie : { said, received, requests, attempts, failedFetches }.
 const fs = require('node:fs');
 const vm = require('node:vm');
@@ -166,16 +171,25 @@ function makeDoc(html) {
 // ---------------------------------------------------------------
 
 function listingHtml(page) {
-  const links = [];
-  (page.codes || []).forEach((c) => links.push(`<a href="/geocache/${c}">${c}</a>`));
-  (page.guids || []).forEach((g) => links.push(`<a href="/seek/cache_details.aspx?guid=${g}">${g}</a>`));
+  // Chaque entrée est une ligne de journal (<tr> date + lien), comme « Vos
+  // journaux » — la collecte incrémentale lit la fenêtre dessus. `rows`
+  // accepte {code|guid, date} ; `codes`/`guids` restent un raccourci sans
+  // date (ligne toujours « récente » pour la fenêtre).
+  const rows = (page.rows || []).map((r) => {
+    const link = r.code
+      ? `<a href="/geocache/${r.code}">${r.code}</a>`
+      : `<a href="/seek/cache_details.aspx?guid=${r.guid}">${r.guid}</a>`;
+    return `<tr><td>${r.date || ''}</td><td>${link}</td></tr>`;
+  });
+  (page.codes || []).forEach((c) => rows.push(`<tr><td></td><td><a href="/geocache/${c}">${c}</a></td></tr>`));
+  (page.guids || []).forEach((g) => rows.push(`<tr><td></td><td><a href="/seek/cache_details.aspx?guid=${g}">${g}</a></td></tr>`));
   const next = page.next
     ? '<a href="javascript:__doPostBack(\'ctl00$ContentBody$pgrTop$ctl08\',\'\')">2</a>'
     : '';
   return '<form>' +
     '<input type="hidden" name="__VIEWSTATE" value="v">' +
     '<input type="hidden" name="__EVENTTARGET" value="">' +
-    `<table>${links.join('')}${next}</table></form>`;
+    `<table>${rows.join('')}${next}</table></form>`;
 }
 
 function cachePageHtml(code, info) {
@@ -226,9 +240,10 @@ function res(url, status, body) {
 function serveListing(url, pages) {
   const idx = listingCursors[url] || 0;
   if (idx >= pages.length) {
-    // Un postback de trop : rejouer la dernière page (codes déjà vus →
-    // fin de liste côté collecteur).
-    return res(url, 200, listingHtml(pages[pages.length - 1] || {}));
+    // Un postback de trop : rejouer la dernière page, sans lien « suivant »
+    // (codes déjà vus ou page vide → fin de liste côté collecteur).
+    const last = pages[pages.length - 1] || {};
+    return res(url, 200, listingHtml({ ...last, next: false }));
   }
   listingCursors[url] = idx + 1;
   return res(url, 200, listingHtml(pages[idx]));
@@ -236,6 +251,15 @@ function serveListing(url, pages) {
 
 async function fakeFetch(url, options) {
   const target = String(url);
+  if (target.includes('/api/logs/receive/state')) {
+    const state = scenario.state || {};
+    return res(target, state.status || 200, {
+      success: !(state.status >= 400),
+      message: state.message,
+      since: state.since === undefined ? null : state.since,
+      pending: state.pending || null,
+    });
+  }
   if (target.includes('/api/logs/receive')) {
     received.payload = {
       url: target,
@@ -250,9 +274,11 @@ async function fakeFetch(url, options) {
 
   if (/\/my\/logs\.aspx/.test(target)) {
     const lt = /[?&]lt=(\d+)/.exec(target);
-    const pages = (lt && scenario.dnfPages && lt[1] === '3')
-      ? scenario.dnfPages
-      : (scenario.ownerLogPages && scenario.ownerLogPages[lt ? lt[1] : '']) || [];
+    // lt=3 = journal filtré DNF (collecte complète) ; sans lt = journal
+    // complet (collecte incrémentale) — même scénario `dnfPages`.
+    const pages = (!lt || lt[1] === '3')
+      ? (scenario.dnfPages || [])
+      : ((scenario.ownerLogPages || {})[lt[1]] || []);
     return serveListing(target, pages);
   }
   if (/\/my\/owned\.aspx/.test(target)) {
@@ -312,6 +338,7 @@ const sandbox = {
     querySelectorAll: (sel) => host.queryIn(host.roots, sel),
   },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+  confirm: () => scenario.confirmPending !== false,
   fetch: fakeFetch,
 };
 sandbox.window = sandbox;

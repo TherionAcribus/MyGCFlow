@@ -38,6 +38,13 @@ class LogsApiTests(unittest.TestCase):
         self.ctx.push()
         self.client = self.app.test_client()
         self.addCleanup(self._wait_for_idle)
+        # Les jetons d'aperçu vivent dans un tempdir partagé : l'isoler,
+        # sinon les dépôts `received` d'un test traînent dans le suivant.
+        import blueprints.gc_logs as gc_logs_mod
+        pending_dir = Path(self.tmpdir.name) / "pending"
+        patcher = mock.patch.object(gc_logs_mod, "PENDING_ROOT", pending_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     @staticmethod
     def _wait_for_idle(timeout=15):
@@ -518,6 +525,108 @@ class LogsAutomationTests(LogsApiTests):
         out = self._run_bookmarklet(hostname="www.example.com")
         self.assertIsNone(out["received"])
         self.assertTrue(any("geocaching.com" in s for s in out["said"]), out["said"])
+
+    # --- /api/logs/receive/state + collecte incrémentale ---------------------
+
+    def _state(self, token="tok-receive", **kw):
+        return self.client.get('/api/logs/receive/state',
+                               headers={"X-MyGCFlow-Token": token}, **kw)
+
+    def test_receive_state_requires_token_and_cors(self):
+        self._set_token()
+        self.assertEqual(self.client.get('/api/logs/receive/state').status_code, 403)
+        self.assertEqual(self._state("mauvais").status_code, 403)
+        # Preflight : mêmes origines que /receive.
+        for origin, allowed in (("https://www.geocaching.com", True),
+                                ("https://malveillant.example", False)):
+            rv = self.client.open('/api/logs/receive/state', method='OPTIONS',
+                                  headers={"Origin": origin})
+            self.assertEqual("Access-Control-Allow-Origin" in rv.headers,
+                             allowed, origin)
+
+    def test_receive_state_reports_since_pending_and_full_once(self):
+        self._set_token()
+        body = self._state().get_json()
+        self.assertIsNone(body["since"])          # rien d'importé → tout relire
+        self.assertIsNone(body["pending"])
+
+        self._import(CONTRACT.read_bytes())       # exported_at = 2026-10-24
+        self.assertEqual(self._state().get_json()["since"], "2026-10-24")
+
+        # Un export reçu non validé est signalé au favori.
+        self._receive(CONTRACT.read_bytes())
+        self.assertIsNotNone(self._state().get_json()["pending"])
+
+        # « Forcer la prochaine collecte complète » : consommé à la lecture.
+        rv = self.client.post('/api/logs/bookmarklet/full-next')
+        self.assertTrue(rv.get_json()["success"])
+        self.assertTrue(self.client.get("/api/logs/status")
+                        .get_json()["full_collect_planned"])
+        self.assertIsNone(self._state().get_json()["since"])
+        self.assertFalse(self.client.get("/api/logs/status")
+                         .get_json()["full_collect_planned"])
+        self.assertEqual(self._state().get_json()["since"], "2026-10-24")
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_incremental_collects_only_the_recent_window(self):
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "state": {"since": "2024-06-10"},
+            "dnfPages": [
+                {"rows": [{"code": "GC1NEW", "date": "15/06/2024"},
+                          {"code": "GC2BOR", "date": "10/06/2024"}], "next": True},
+                {"rows": [{"code": "GC3OLD", "date": "05/06/2024"},
+                          {"code": "GC4OLD", "date": "01/06/2024"}]}],
+            "ownedPages": [{"codes": ["GC9OWN"]}],
+            "caches": {
+                "GC1NEW": self._gc("GC1NEW", "n1"),
+                "GC2BOR": self._gc("GC2BOR", "n2"),
+                "GC3OLD": self._gc("GC3OLD", "n3"),
+                "GC4OLD": self._gc("GC4OLD", "n4"),
+                "GC9OWN": self._gc("GC9OWN", "t5"),
+            },
+            "books": {
+                "n1": [[self._entry(21, 3, "15/06/2024", "Testeur", 42)]],
+                "n2": [[self._entry(22, 3, "10/06/2024", "Testeur", 42)]],
+                "n3": [[self._entry(23, 3, "05/06/2024", "Testeur", 42)]],
+                "n4": [[self._entry(24, 3, "01/06/2024", "Testeur", 42)]],
+                "t5": [[self._entry(25, 46, "13/05/2010", "Testeur", 42)]],
+            },
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertTrue(any("depuis le 2024-06-10" in s for s in out["said"]),
+                        out["said"])
+        received = out["received"]
+        self.assertIsNotNone(received, out["said"])
+        body = received["body"]
+        # Les caches hors fenêtre ne sont même pas demandées.
+        fetched = [u for u in out["requests"] if u.startswith("/geocache/")]
+        self.assertNotIn("/geocache/GC3OLD", fetched)
+        self.assertNotIn("/geocache/GC4OLD", fetched)
+        self.assertIn("/geocache/GC2BOR", fetched)   # borne incluse
+        self.assertEqual(sorted(c["gc_code"] for c in body["caches"]),
+                         ["GC1NEW", "GC2BOR", "GC9OWN"])
+        # Couverture bornée à la fenêtre : les vieux DNF supprimés du site
+        # ne seront pas retirés — la collecte complète sert à ça.
+        dnf_scope = next(c for c in body["coverage"] if c["kind"] == "author")
+        self.assertEqual(dnf_scope["since"], "2024-06-10")
+        # Deux pages de journal lues, pas une de plus.
+        journal_calls = [u for u in out["requests"] if "/my/logs.aspx" in u]
+        self.assertEqual(len(journal_calls), 2)
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_skips_collect_when_an_export_is_pending(self):
+        scenario = {
+            "username": "Testeur",
+            "state": {"pending": {"name": "export du favori",
+                                  "received_at": "2026-10-25T08:00:00Z"}},
+            "confirmPending": False,
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertIsNone(out["received"])
+        self.assertEqual(out["requests"], [])
+        self.assertTrue(any("annulée" in s for s in out["said"]), out["said"])
 
 
 if __name__ == "__main__":

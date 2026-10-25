@@ -119,7 +119,13 @@ Autres repères :
   DNF ont leur propre couche, sous les trouvailles : source
   `window.dnfVectorSource` (pas `window.vectorSource`), jamais dans
   `pointsByDate` — exemple dans `dnf-display.spec.mjs` ; effacements et
-  flashs DNF relevés par `getDnfDebugState()`.
+  flashs DNF relevés par `getDnfDebugState()`. Les jetons d'aperçu
+  (fichier ou export du favori) vivent sous `pending_log_imports/` du
+  répertoire de **données** — pas dans `%TEMP%`, partagé entre l'app,
+  pytest et le harnais e2e : un export reçu d'un run y ressortait au
+  suivant et gardait le bandeau « export en attente » affiché après
+  l'import. `blueprints/labs.py` a le même motif `%TEMP%` pour ses jetons
+  (non remontés dans un statut, donc sans symptôme e2e).
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

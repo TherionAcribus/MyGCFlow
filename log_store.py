@@ -28,7 +28,8 @@ from flask_babel import gettext as _
 from sqlalchemy import func
 
 from log_formats import (
-    SOURCE_GPX_MYFINDS, USER_CORRECTION, LogsParseResult, log_category,
+    SOURCE_GPX_MYFINDS, SOURCE_LOGS, USER_CORRECTION, LogsParseResult,
+    log_category,
 )
 from models import CacheRef, Geocache, LogCollection, LogEvent
 
@@ -435,6 +436,18 @@ def collection_status(session) -> dict:
         "caches": session.query(CacheRef.id).filter(CacheRef.collection_id == cid).count(),
         "pending_coordinates": len(codes - _codes_with_coordinates(session, cid, codes)),
     }
+
+
+def collection_since(session):
+    """Horizon de connaissance du site pour le favori : date du
+    `exported_at` le plus récent parmi les logs venus d'un export
+    `mygcflow-logs` (les GPX ne comptent pas : ils ne portent pas les DNF
+    hors caches trouvées, avancer l'horizon dessus manquerait des logs).
+    None tant qu'aucun export contrat n'a été importé — la prochaine
+    collecte est alors complète."""
+    latest = session.query(func.max(LogEvent.source_exported_at)).filter(
+        LogEvent.source_format == SOURCE_LOGS).scalar()
+    return latest.date() if latest is not None else None
 
 
 def clear_logs(session) -> dict:

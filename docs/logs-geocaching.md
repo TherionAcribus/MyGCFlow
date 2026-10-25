@@ -338,7 +338,9 @@ Un fichier par import (`.json`, `.gpx`, ou `.zip` dont le premier `.json`/
 
 1. **Aperçu** — `POST /api/logs/import/preview` (champ `file`) :
    `log_store.preview_logs`, fichier conservé sous un jeton opaque (TTL
-   30 min, dossier temporaire `mygcflow-log-imports`). Bilan : ajoutés, mis
+   30 min, dossier `pending_log_imports` sous le répertoire de données —
+   pas dans le temp partagé, sinon un export reçu d'un runtime de test
+   ressortirait dans l'application et inversement). Bilan : ajoutés, mis
    à jour, inchangés, plus anciens ignorés, **retirés** (couverture complète,
    avec échantillon), rejetés avec motif, avertissements, doublons, caches
    sans position, répartition par catégorie « à vous / d'autres joueurs ».
@@ -370,6 +372,33 @@ puis renvoie le lien `javascript:` monoligne (sources
 (un seul jeton actif à la fois, comme pour les Labs). Le jeton
 (`logs_receive_token` dans les préférences) survit à « Réinitialiser
 l'application », sinon le favori installé mourrait sans explication.
+
+**Collecte incrémentale** — `GET /api/logs/receive/state` (mêmes jeton et
+CORS ; une GET, donc hors du garde-fou inter-sites qui ne vise que les
+mutations) répond au favori avant qu'il ne parte :
+
+- `since` : date du `exported_at` le plus récent parmi les logs de source
+  `mygcflow-logs` (`log_store.collection_since`). Les GPX ne font pas
+  avancer l'horizon : ils ne portent pas les DNF hors caches trouvées.
+  `null` tant qu'aucun export contrat n'a été importé → collecte complète ;
+- `pending` : un export précédent attend sa validation — le favori
+  propose alors d'annuler plutôt que de relire pour rien ;
+- `logs_collect_full_once` (bouton « Forcer une collecte complète la
+  prochaine fois », options avancées ; `POST
+  /api/logs/bookmarklet/full-next`) est consommé à la lecture : la
+  collecte suivante revoit `since`.
+
+Avec `since`, le favori pagine « Vos journaux » **tous types** (pas
+seulement les DNF : une trouvaille récente sur une vieille cache en DNF la
+fait relire) et s'arrête dès qu'une page entière sort de la fenêtre — la
+date est lue dans chaque ligne, avec repli prudent quand l'ordre des dates
+est ambigu. Seules les caches touchées sont relues. La couverture
+déclarée devient `{author, type_ids:[3], since}` : la fusion ne retire que
+les logs datés dans la fenêtre — un DNF supprimé plus ancien resterait en
+place jusqu'à une collecte complète (d'où le bouton). Limite assumée : un
+log rétro-daté posté dans la fenêtre et un log supprimé hors fenêtre
+échappent à l'incrémental. Les caches posées sont toujours relues en
+entier (la liste « Vos caches » ne porte pas de date de dernier log).
 
 Autres routes : `GET /api/logs/export` réexporte tout en `mygcflow-logs` v1
 **sans couverture** (réimporté, il ne retire rien) et daté de ses données

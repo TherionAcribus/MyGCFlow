@@ -31,7 +31,11 @@
     order: __T_ORDER__,
     error: __T_ERROR__,
     prefix: __T_PREFIX__,
-    wrongsite: __T_WRONGSITE__
+    wrongsite: __T_WRONGSITE__,
+    since: __T_SINCE__,
+    pendingask: __T_PENDINGASK__,
+    pendingstop: __T_PENDINGSTOP__,
+    badtoken: __T_BADTOKEN__
   };
 
   // @include logs_collect_core.js
@@ -57,7 +61,37 @@
       throw new Error(MESSAGES.wrongsite);
     }
     say(MESSAGES.start);
+
+    // État de l'application avant de partir : un export en attente se
+    // signale (inutile de relire tant qu'il n'est pas validé), et `since`
+    // borne la collecte aux nouveautés — l'export incrémental ne voit pas
+    // les suppressions de logs plus anciens, d'où le bouton « collecte
+    // complète » de la carte. Si l'app ne répond pas, collecte complète :
+    // l'envoi montrera l'erreur si elle persiste.
+    var info = null;
+    try {
+      var sr = await fetch(ORIGIN + '/api/logs/receive/state', {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: { 'X-MyGCFlow-Token': TOKEN }
+      });
+      if (sr.status === 403) {
+        say(MESSAGES.error + ' : ' + MESSAGES.badtoken);
+        return;
+      }
+      if (sr.ok) info = await sr.json();
+    } catch (e) {
+      info = null;
+    }
+    if (info && info.pending && !confirm(MESSAGES.pendingask)) {
+      say(MESSAGES.pendingstop);
+      return;
+    }
+    var since = (info && info.since) || null;
+    if (since) note('since', since, 0, 0);
     var state = newState();
+    state.since = since;
 
     var send = async function (order) {
       var built = mygcflowGcLogsFinish(state, order);

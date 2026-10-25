@@ -20,6 +20,7 @@ mygcflow-logs-*.json
 !tests/fixtures/labs/*.gpx
 !tests/fixtures/gc_logs/*.gpx
 captured/
+pending_log_imports/
 static/geojson_data.json
 static/json/country_state.json
 video/
