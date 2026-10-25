@@ -66,28 +66,49 @@ def _pending_root() -> Path:
 # ---------------------------------------------------------------------------
 
 def _read_upload(upload) -> tuple[bytes | None, str | None]:
-    """Contenu exploitable d'un envoi : (octets, message d'erreur). Un .zip
-    fournit son premier .json/.gpx, borné à la taille d'envoi décompressée."""
+    """Contenu exploitable d'un envoi : (octets, message d'erreur).
+
+    Un .zip est parcouru en entier : chaque membre .json/.gpx est reconnu
+    par son contenu (`detect_logs_file_format`), pas par sa place dans
+    l'archive — une Pocket Query contient un « *-wpts.gpx » (waypoints,
+    sans logs) qui peut arriver en premier. Ordre de préférence : un
+    `mygcflow-logs` .json, puis un .gpx ordinaire, puis un « *-wpts.gpx »
+    en dernier recours."""
     raw = upload.read(GPX_MAX_SIZE_BYTES + 1)
     if len(raw) > GPX_MAX_SIZE_BYTES:
         return None, _("Fichier trop volumineux (200 Mo max)")
     if lf.detect_logs_file_format(raw) is not None or not zipfile.is_zipfile(io.BytesIO(raw)):
         return raw, None
+    best = None            # (priorité, octets) — la plus petite gagne
+    size_error = False
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             for info in archive.infolist():
-                if info.is_dir() or not info.filename.lower().endswith((".json", ".gpx")):
+                name = info.filename.lower()
+                if info.is_dir() or not name.endswith((".json", ".gpx")):
                     continue
                 if info.file_size > GPX_MAX_SIZE_BYTES:
-                    return None, _("Fichier trop volumineux (200 Mo max)")
+                    size_error = True
+                    continue
                 with archive.open(info) as member:
                     data = member.read(GPX_MAX_SIZE_BYTES + 1)
                 if len(data) > GPX_MAX_SIZE_BYTES:
-                    return None, _("Fichier trop volumineux (200 Mo max)")
-                return data, None
+                    size_error = True
+                    continue
+                if lf.detect_logs_file_format(data) is None:
+                    continue
+                rank = 0 if name.endswith(".json") else 2 if name.endswith("-wpts.gpx") else 1
+                if best is None or rank < best[0]:
+                    best = (rank, data)
+                    if rank == 0:
+                        break
     except zipfile.BadZipFile:
         return None, _("Archive .zip illisible")
-    return None, _("L'archive ne contient ni .json ni .gpx")
+    if best is not None:
+        return best[1], None
+    if size_error:
+        return None, _("Fichier trop volumineux (200 Mo max)")
+    return None, _("L'archive ne contient pas de fichier de logs exploitable")
 
 
 def _store_pending(raw: bytes, name: str, revision: int,

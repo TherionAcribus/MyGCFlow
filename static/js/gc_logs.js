@@ -464,6 +464,14 @@ function renderPreview(data) {
         ? t('${file} — compte ${name}', { file: data.name, name: s.account.username })
         : data.name;
     changes.appendChild(head);
+    if (!s.exported_at) {
+        // Un fichier sans date d'export gagne tout conflit de version :
+        // il écrase les enregistrements plutôt que d'être ignoré.
+        const undated = document.createElement('div');
+        undated.className = 'text-warning mt-1';
+        undated.textContent = t('Ce fichier n\'est pas daté : ses données écraseront les versions déjà enregistrées plutôt que d\'être ignorées.');
+        changes.appendChild(undated);
+    }
     const lines = [];
     const push = (n, one, many) => { if (n) lines.push(countLabel(n, one, many)); };
     push(s.added, t('nouveau log'), t('nouveaux logs'));

@@ -333,8 +333,13 @@ Un import **fusionne**, il ne remplace jamais toute la table :
 Même parcours que « Mes Lab Caches » (`blueprints/labs.py`). Aperçu et
 validation partagent un seul calcul (`log_store._plan`), qui ne fait que
 lire ; seule la validation écrit (`log_store.commit_logs`, sous verrou).
-Un fichier par import (`.json`, `.gpx`, ou `.zip` dont le premier `.json`/
-`.gpx` est pris), borné comme l'envoi GPX (200 Mo décompressés).
+Un fichier par import (`.json`, `.gpx`, ou `.zip` parcouru en entier :
+chaque membre est reconnu par son contenu — un `mygcflow-logs` .json est
+préféré à un .gpx, un « `*-wpts.gpx » de Pocket Query, sans logs, n'est
+retenu qu'en dernier recours), borné comme l'envoi GPX (200 Mo
+décompressés). Un GPX de Pocket Query déposé sur la page est routé vers
+cette carte plutôt que vers My Finds (reniflage d'en-tête côté client,
+comme les fichiers Labs).
 
 1. **Aperçu** — `POST /api/logs/import/preview` (champ `file`) :
    `log_store.preview_logs`, fichier conservé sous un jeton opaque (TTL
@@ -343,7 +348,9 @@ Un fichier par import (`.json`, `.gpx`, ou `.zip` dont le premier `.json`/
    ressortirait dans l'application et inversement). Bilan : ajoutés, mis
    à jour, inchangés, plus anciens ignorés, **retirés** (couverture complète,
    avec échantillon), rejetés avec motif, avertissements, doublons, caches
-   sans position, répartition par catégorie « à vous / d'autres joueurs ».
+   sans position, répartition par catégorie « à vous / d'autres joueurs »,
+   date d'export (`exported_at` ; son absence est annoncée — un fichier
+   non daté écrase les versions enregistrées plutôt que d'être ignoré).
    Un fichier d'un autre compte est refusé dès l'aperçu (409).
 2. **Validation** — `POST /api/logs/import/commit` (`import_token`) : le
    jeton est consommé par renommage de son dossier, puis la tâche de fond

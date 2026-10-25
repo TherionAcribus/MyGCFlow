@@ -302,9 +302,13 @@ def _summary(plan: _Plan, parsed: LogsParseResult) -> dict:
         who = "mine" if plan.account_user_id is not None \
             and draft.author_id == plan.account_user_id else "others"
         categories[who][category] += 1
+    exported_at = parsed.meta.get("exported_at")
     return {
         "source": parsed.meta.get("source"),
         "generator": parsed.meta.get("generator"),
+        # None = fichier non daté : il écrase les versions enregistrées
+        # plutôt que d'être ignoré en cas de conflit — l'aperçu l'annonce.
+        "exported_at": exported_at.isoformat() if exported_at else None,
         "account": {"user_id": plan.account_user_id, "username": plan.account_username},
         "logs_in_file": len(parsed.logs),
         "added": counts["added"], "updated": counts["updated"],

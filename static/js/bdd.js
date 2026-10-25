@@ -242,18 +242,31 @@ async function validateGpxFile(file) {
     return { ok: true };
 }
 
-// Fichier de logs `mygcflow-logs` (.json, docs/logs-geocaching.md), reconnu
-// à son en-tête : à tester AVANT isLabFile, qui prend tout .json pour un
-// historique Labs.
+// Fichier de logs pour la carte « Mes logs » : `mygcflow-logs` (.json) ou
+// GPX Groundspeak de logs (Pocket Query, GSAK), reconnus à leur en-tête. À
+// tester AVANT isLabFile, qui prend tout .json pour un historique Labs —
+// et un GPX Lab2Gpx reste aux Labs (le sniffer l'écarte). Un GPX
+// « My Finds » n'est PAS routé ici : l'import des géocaches le lit déjà
+// (il alimente les deux tables), l'y renvoyer lancerait un second parcours.
 async function isLogsFile(file) {
-    if (!file || !/\.json$/i.test(file.name || '')) return false;
+    if (!file) return false;
+    const name = file.name || '';
+    let head;
     try {
-        const head = await file.slice(0, GPX_HEADER_SNIFF_BYTES).text();
-        // \x22 et non un guillemet : pybabel perdrait la suite des t() (AGENTS.md).
-        return /\x22format\x22\s*:\s*\x22mygcflow-logs\x22/.test(head);
+        head = await file.slice(0, GPX_HEADER_SNIFF_BYTES).text();
     } catch (_) {
         return false;
     }
+    if (/\.json$/i.test(name)) {
+        // \x22 et non un guillemet : pybabel perdrait la suite des t() (AGENTS.md).
+        return /\x22format\x22\s*:\s*\x22mygcflow-logs\x22/.test(head);
+    }
+    if (isGpxFile(file)) {
+        return /groundspeak\.com\/cache/.test(head)
+            && !/lab2gpx/i.test(head)
+            && !/my finds pocket query/i.test(head);
+    }
+    return false;
 }
 
 // Fichier Adventure Lab : export d'historique (.json) ou GPX Lab2Gpx, reconnu

@@ -138,6 +138,56 @@ class LogsApiTests(unittest.TestCase):
         self.assertEqual(rv.status_code, 200, rv.get_json())
         self.assertEqual(rv.get_json()["summary"]["added"], 4)
 
+    # GPX de waypoints additionnels d'une Pocket Query : même espace de noms
+    # Groundspeak (donc « reconnu ») mais aucune fiche ni log — il ne doit
+    # jamais être choisi à la place du vrai fichier, même en premier.
+    WPTS_GPX = b'''<?xml version="1.0" encoding="utf-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/0"
+     xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1"
+     creator="Test" version="1.0">
+  <name>Waypoints</name>
+  <wpt lat="48.8584" lon="2.2945"><name>PK2PR3N</name></wpt>
+</gpx>'''
+
+    def test_zip_prefers_the_real_member(self):
+        # Ordre défavorable : -wpts en tête, un .json non-logs entre les deux.
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as archive:
+            archive.writestr("12345_pq-wpts.gpx", self.WPTS_GPX)
+            archive.writestr("notes.json", b'{"remarque": "pas un export"}')
+            archive.writestr("12345_pq.gpx", MY_FINDS.read_bytes())
+        rv = self._preview(buf.getvalue(), "pq.zip")
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        self.assertEqual(rv.get_json()["summary"]["added"], 4)
+
+    def test_zip_prefers_a_mygcflow_logs_json(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as archive:
+            archive.writestr("my-finds.gpx", MY_FINDS.read_bytes())
+            archive.writestr("export/logs.json", CONTRACT.read_bytes())
+        rv = self._preview(buf.getvalue(), "lot.zip")
+        body = rv.get_json()
+        self.assertEqual(rv.status_code, 200, body)
+        self.assertEqual(body["format"], "mygcflow-logs")
+        self.assertEqual(body["summary"]["added"], 7)
+
+    def test_zip_without_usable_member(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as archive:
+            archive.writestr("lisez-moi.txt", "rien")
+            archive.writestr("notes.json", b'{"remarque": "pas un export"}')
+        rv = self._preview(buf.getvalue(), "vide.zip")
+        self.assertEqual(rv.status_code, 400)
+        self.assertIn("archive", rv.get_json()["message"])
+
+    def test_preview_reports_the_file_date(self):
+        body = self._preview(CONTRACT.read_bytes()).get_json()
+        self.assertEqual(body["summary"]["exported_at"], "2026-10-24T09:12:00")
+        undated = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        del undated["exported_at"]
+        body = self._preview(json.dumps(undated).encode()).get_json()
+        self.assertIsNone(body["summary"]["exported_at"])
+
     def test_export_round_trip(self):
         self.assertEqual(self.client.get("/api/logs/export").status_code, 404)
         self._import(CONTRACT.read_bytes())
