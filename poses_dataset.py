@@ -25,11 +25,16 @@ Règles (choix de l'utilisateur, 2026-10-25) :
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import threading
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Iterator
+
+from flask_babel import gettext as _
 
 import lab_geojson
 import log_store
@@ -574,3 +579,125 @@ def cache_details(session, gc_code: str) -> dict | None:
 
 def _iso(value):
     return value.isoformat() if value is not None else None
+
+
+# --- Export CSV -----------------------------------------------------------------
+#
+# Bouton « Exporter en CSV » de l'onglet Données : TOUTES les caches posées de
+# la collection — en attente (sans position) et non datables comprises —
+# indépendamment des filtres appliqués côté client. Séparateur « ; », fins de
+# ligne CRLF et BOM UTF-8 en tête (convention Excel francophone, comme les
+# exports des panneaux Stats), une ligne par cache, ordre du code GC
+# (load_owned_caches).
+
+# Lignes par morceau produit : le corps complet n'est jamais matérialisé.
+_EXPORT_CHUNK = 500
+
+
+def export_csv(session) -> Iterator[str]:
+    """CSV des caches posées, produit en flux (morceaux de texte UTF-8).
+
+    Sans collection ni cache posée, l'en-tête seule est servie (le lien
+    n'apparaît à l'écran qu'avec des données).
+    """
+    collection = log_store.get_collection(session)
+    # BOM UTF-8 en premier : Excel lit alors les accents sans assistant.
+    yield "\ufeff"
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";", lineterminator="\r\n")
+    writer.writerow((
+        _("Code GC"), _("Nom"), _("Type"), _("Taille"), _("D"), _("T"),
+        _("Latitude"), _("Longitude"), _("Pays"), _("Région"),
+        _("Apparition"), _("Source d'apparition"), _("Statut"),
+        _("Trouvailles"), _("Favoris"), _("DNF"), _("Logs"),
+        _("Première trouvaille"), _("Premier trouveur"), _("Dernier log"),
+    ))
+    yield buf.getvalue()
+    buf.seek(0)
+    buf.truncate()
+    if collection is None:
+        return
+    caches, _by_name = load_owned_caches(session, collection)
+    if not caches:
+        return
+
+    # Position, nom, pays et région : fiche, sinon ligne du My Finds au même
+    # code (comme la charge utile, sans l'emprunt au voisinage propre à la carte).
+    rows = {}
+    codes = [cache.ref.gc_code for cache in caches]
+    for start in range(0, len(codes), 900):
+        for row in session.query(Geocache).filter(Geocache.gc_code.in_(codes[start:start + 900])):
+            rows[row.gc_code] = row
+
+    appear_sources = {
+        APPEAR_PUBLISH: _("Publication"),
+        APPEAR_PLACED: _("Date de pose"),
+        APPEAR_BETA_FIND: _("Bêta-trouvaille"),
+        APPEAR_FIRST_LOG: _("Premier log"),
+    }
+    # Mêmes libellés que le filtre « État actuel » de l'onglet Données.
+    status_labels = {
+        STATE_ACTIVE: _("Active"),
+        STATE_DISABLED: _("Désactivée"),
+        STATE_ARCHIVED: _("Archivée"),
+    }
+    pending = 0
+    for cache in caches:
+        ref = cache.ref
+        row = rows.get(ref.gc_code)
+
+        def pick(ref_attr, row_attr=None):
+            value = getattr(ref, ref_attr, None)
+            if value is None and row is not None:
+                value = getattr(row, row_attr or ref_attr, None)
+            return value
+
+        lat = ref.latitude if ref.latitude is not None else getattr(row, "latitude", None)
+        lon = ref.longitude if ref.longitude is not None else getattr(row, "longitude", None)
+        difficulty = pick("difficulty")
+        terrain = pick("terrain")
+        # Comptes comme cache_details : trouvailles reçues, favoris posés sur
+        # une trouvaille, DNF reçus ; logs = total de la cache.
+        finds = favorites = dnf = 0
+        first_find = None
+        for log in cache.logs:
+            if log.kind == KIND_FIND:
+                finds += 1
+                if log.favorite:
+                    favorites += 1
+                if first_find is None:
+                    first_find = log
+            elif log.kind == KIND_DNF:
+                dnf += 1
+        # Non datable : l'état n'a jamais été joué (final_state reste
+        # « active ») ; le statut de la fiche à l'export fait foi.
+        status = cache.final_state
+        if cache.appear is None:
+            status = _STATE_BY_STATUS.get((ref.status or "").lower(), STATE_ACTIVE)
+        writer.writerow((
+            ref.gc_code,
+            pick("name", "cache_name") or "",
+            pick("cache_type") or "",
+            pick("container") or "",
+            "" if difficulty is None else f"{difficulty:g}",
+            "" if terrain is None else f"{terrain:g}",
+            "" if lat is None else repr(float(lat)),
+            "" if lon is None else repr(float(lon)),
+            pick("country") or "",
+            pick("state") or "",
+            cache.appear.isoformat() if cache.appear is not None else "",
+            appear_sources.get(cache.appear_source, ""),
+            status_labels.get(status, ""),
+            finds, favorites, dnf, len(cache.logs),
+            first_find.day.isoformat() if first_find else "",
+            (first_find.author_name or "") if first_find else "",
+            cache.logs[-1].day.isoformat() if cache.logs else "",
+        ))
+        pending += 1
+        if pending >= _EXPORT_CHUNK:
+            yield buf.getvalue()
+            buf.seek(0)
+            buf.truncate()
+            pending = 0
+    if pending:
+        yield buf.getvalue()

@@ -8,8 +8,10 @@ s'importe ici.
 """
 
 import hashlib
+from datetime import date
 
-from flask import Blueprint, jsonify, make_response, request
+from flask import (Blueprint, Response, jsonify, make_response, request,
+                   stream_with_context)
 
 import poses_dataset
 from extensions import db
@@ -35,6 +37,20 @@ def poses_data():
     response.set_etag(f"poses-{digest}-p{poses_dataset.PAYLOAD_VERSION}", weak=True)
     response.headers['Cache-Control'] = 'no-cache'
     return response.make_conditional(request)
+
+
+@poses_bp.route('/api/poses/export.csv', methods=['GET'])
+def poses_export():
+    # Toutes les caches posées de la collection — en attente et non datables
+    # comprises — pas la sélection filtrée (réglage côté client). Produit en
+    # flux : le générateur est itéré sous le contexte de la requête, ce qui
+    # garde la session et la locale pour les en-têtes traduites.
+    return Response(
+        stream_with_context(poses_dataset.export_csv(db.session)),
+        mimetype='text/csv',
+        headers={'Content-Disposition':
+                 f'attachment; filename="mes-poses-{date.today().isoformat()}.csv"'},
+    )
 
 
 @poses_bp.route('/api/poses/caches/<code>', methods=['GET'])

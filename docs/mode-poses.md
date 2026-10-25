@@ -172,6 +172,7 @@ trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).
 | `GET /poses` | page (`app.html`, `data-mode="poses"`) |
 | `GET /api/poses/data` | données en colonnes (format de `/api/evolution/.../data` + `st`, `ev`, `authors`, `logKinds`, `meta`), ETag par collection, révision et contenu de `geocache` |
 | `GET /api/poses/caches/<code>` | détails d'une cache posée, 404 sinon (totaux à l'export ; la popup ne s'en sert plus — tests et réserve d'enrichissements) |
+| `GET /api/poses/export.csv` | téléchargement CSV (`poses_dataset.export_csv`, lien « Exporter en CSV » de l'onglet Données) : **toutes** les caches posées de la collection, en attente et non datables comprises — pas la sélection filtrée. BOM UTF-8, séparateur « ; », une ligne par cache (ordre du code GC) ; colonnes : code, nom, type, taille, D/T, position, pays/région, apparition et sa source, statut, comptes (trouvailles, favoris, DNF, logs), première trouvaille et son auteur, dernier log |
 
 ## Tests
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 17:49+0100\n"
+"POT-Creation-Date: 2026-10-25 18:00+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -301,7 +301,7 @@ msgstr "Désactivation"
 msgid "Réactivation"
 msgstr "Réactivation"
 
-#: event_flash.py:49
+#: event_flash.py:49 poses_dataset.py:633
 msgid "Publication"
 msgstr "Publication"
 
@@ -321,8 +321,9 @@ msgstr "Point favori"
 msgid "Trouvaille"
 msgstr "Trouvaille"
 
-#: event_flash.py:54 static/js/gc_logs.js:39 static/js/gc_logs.js:60
-#: static/js/mapgl.js:1165 templates/menu_informations.html:66
+#: event_flash.py:54 poses_dataset.py:612 static/js/gc_logs.js:39
+#: static/js/gc_logs.js:60 static/js/mapgl.js:1165
+#: templates/menu_informations.html:66
 msgid "DNF"
 msgstr "DNF"
 
@@ -603,6 +604,115 @@ msgstr "import refusé : le fichier a des erreurs structurelles"
 msgid "les logs ont changé depuis l'aperçu : relancez-le"
 msgstr "les logs ont changé depuis l'aperçu : relancez-le"
 
+#: poses_dataset.py:609
+msgid "Code GC"
+msgstr "Code GC"
+
+#: poses_dataset.py:609 templates/menu_images.html:152
+msgid "Nom"
+msgstr "Nom"
+
+#: poses_dataset.py:609 static/js/ui.js:10258
+msgid "Type"
+msgstr "Type"
+
+#: poses_dataset.py:609 static/js/ui.js:10257
+#: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
+msgid "Taille"
+msgstr "Taille"
+
+#: poses_dataset.py:609
+msgid "D"
+msgstr "D"
+
+#: poses_dataset.py:609
+msgid "T"
+msgstr "T"
+
+#: blueprints/evolution.py:40 poses_dataset.py:610
+msgid "Latitude"
+msgstr "Latitude"
+
+#: blueprints/evolution.py:41 poses_dataset.py:610
+msgid "Longitude"
+msgstr "Longitude"
+
+#: poses_dataset.py:610 static/js/stats_panels.js:962
+#: static/js/stats_panels.js:1188 templates/_filter_country_state.html:6
+#: templates/_filter_country_state.html:7 templates/menu_stats.html:218
+#: templates/menu_stats.html:476
+msgid "Pays"
+msgstr "Pays"
+
+#: poses_dataset.py:610
+msgid "Région"
+msgstr "Région"
+
+#: poses_dataset.py:611
+msgid "Apparition"
+msgstr "Apparition"
+
+#: poses_dataset.py:611
+msgid "Source d'apparition"
+msgstr "Source d'apparition"
+
+#: poses_dataset.py:611
+msgid "Statut"
+msgstr "Statut"
+
+#: poses_dataset.py:612 static/js/stats_panels.js:1176
+#: static/js/stats_ui.js:152 templates/menu_informations.html:64
+#: templates/menu_stats.html:213
+msgid "Trouvailles"
+msgstr "Trouvailles"
+
+#: poses_dataset.py:612 templates/menu_informations.html:65
+msgid "Favoris"
+msgstr "Favoris"
+
+#: poses_dataset.py:612 templates/menu_informations.html:67
+msgid "Logs"
+msgstr "Logs"
+
+#: poses_dataset.py:613
+msgid "Première trouvaille"
+msgstr "Première trouvaille"
+
+#: poses_dataset.py:613
+msgid "Premier trouveur"
+msgstr "Premier trouveur"
+
+#: poses_dataset.py:613
+msgid "Dernier log"
+msgstr "Dernier log"
+
+#: poses_dataset.py:634
+msgid "Date de pose"
+msgstr "Date de pose"
+
+#: poses_dataset.py:635
+msgid "Bêta-trouvaille"
+msgstr "Bêta-trouvaille"
+
+#: poses_dataset.py:636
+msgid "Premier log"
+msgstr "Premier log"
+
+#: poses_dataset.py:640 static/js/evolution_data.js:753
+#: static/js/poses_data.js:773 templates/menu_data_poses.html:83
+msgid "Active"
+msgstr "Active"
+
+#: poses_dataset.py:641 static/js/poses_data.js:774
+#: templates/menu_data_poses.html:84
+msgid "Désactivée"
+msgstr "Désactivée"
+
+#: poses_dataset.py:642 static/js/poses_data.js:775
+#: templates/menu_data_poses.html:85
+msgid "Archivée"
+msgstr "Archivée"
+
 #: settings_manager.py:2710
 #, python-format
 msgid ""
@@ -664,9 +774,9 @@ msgid "Base de données"
 msgstr "Base de données"
 
 #: blueprints/core.py:196 static/js/evolution_data.js:435
-#: static/js/poses_data.js:301 templates/guide.html:160
+#: static/js/poses_data.js:309 templates/guide.html:160
 #: templates/guide.html:168 templates/menu_data.html:400
-#: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:56
+#: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:63
 #: test_translations.py:28
 msgid "Filtres"
 msgstr "Filtres"
@@ -754,14 +864,6 @@ msgstr "Annuler"
 #: blueprints/evolution.py:39
 msgid "GC code"
 msgstr "GC code"
-
-#: blueprints/evolution.py:40
-msgid "Latitude"
-msgstr "Latitude"
-
-#: blueprints/evolution.py:41
-msgid "Longitude"
-msgstr "Longitude"
 
 #: blueprints/evolution.py:42
 msgid "Date de placement"
@@ -1647,7 +1749,7 @@ msgstr "Chargement de la base..."
 msgid "Impossible de charger la base : ${message}"
 msgstr "Impossible de charger la base : ${message}"
 
-#: static/js/evolution_data.js:435 static/js/poses_data.js:301
+#: static/js/evolution_data.js:435 static/js/poses_data.js:309
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr "Le filtre s'appliquera à la fin de l'animation."
 
@@ -1672,11 +1774,6 @@ msgstr "Archivée le ${date}"
 #: static/js/evolution_data.js:753
 msgid "Archivée (date inconnue)"
 msgstr "Archivée (date inconnue)"
-
-#: static/js/evolution_data.js:753 static/js/poses_data.js:765
-#: templates/menu_data_poses.html:76
-msgid "Active"
-msgstr "Active"
 
 #: static/js/evolution_data.js:771
 #, python-brace-format
@@ -3767,7 +3864,7 @@ msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Le réglage s'appliquera à la fin de l'animation."
 
 #: static/js/poses_data.js:139 static/js/stats_panels.js:1021
-#: static/js/stats_panels.js:1200 templates/menu_data_poses.html:103
+#: static/js/stats_panels.js:1200 templates/menu_data_poses.html:110
 #: templates/menu_stats.html:230
 msgid "Caches archivées"
 msgstr "Caches archivées"
@@ -3801,27 +3898,27 @@ msgstr ""
 msgid "Aucune cache posée trouvée dans vos logs importés"
 msgstr "Aucune cache posée trouvée dans vos logs importés"
 
-#: static/js/poses_data.js:232
+#: static/js/poses_data.js:240
 #, python-brace-format
 msgid "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
 msgstr "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
 
-#: static/js/poses_data.js:233
+#: static/js/poses_data.js:241
 #, python-brace-format
 msgid "${n} caches sans date de publication ni de pose"
 msgstr "${n} caches sans date de publication ni de pose"
 
-#: static/js/poses_data.js:234
+#: static/js/poses_data.js:242
 #, python-brace-format
 msgid "${n} changements d'état déduits du statut à l'export (sans log)"
 msgstr "${n} changements d'état déduits du statut à l'export (sans log)"
 
-#: static/js/poses_data.js:235
+#: static/js/poses_data.js:243
 #, python-brace-format
 msgid "Logs importés le ${date}"
 msgstr "Logs importés le ${date}"
 
-#: static/js/poses_data.js:255
+#: static/js/poses_data.js:263
 #, python-brace-format
 msgid ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
@@ -3830,40 +3927,32 @@ msgstr ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
 "favoris"
 
-#: static/js/poses_data.js:766 templates/menu_data_poses.html:77
-msgid "Désactivée"
-msgstr "Désactivée"
-
-#: static/js/poses_data.js:767 templates/menu_data_poses.html:78
-msgid "Archivée"
-msgstr "Archivée"
-
-#: static/js/poses_data.js:807
+#: static/js/poses_data.js:815
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Publiée le ${date}"
 
-#: static/js/poses_data.js:808
+#: static/js/poses_data.js:816
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Posée le ${date}"
 
-#: static/js/poses_data.js:809
+#: static/js/poses_data.js:817
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Trouvée avant sa publication le ${date}"
 
-#: static/js/poses_data.js:810
+#: static/js/poses_data.js:818
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "Premier log le ${date}"
 
-#: static/js/poses_data.js:834
+#: static/js/poses_data.js:842
 #, python-brace-format
 msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 msgstr "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 
-#: static/js/poses_data.js:843
+#: static/js/poses_data.js:851
 #, python-brace-format
 msgid "Premier trouveur : ${name} (${date})"
 msgstr "Premier trouveur : ${name} (${date})"
@@ -4343,7 +4432,7 @@ msgid "Trouvailles reçues par mois"
 msgstr "Trouvailles reçues par mois"
 
 #: static/js/stats_panels.js:940 static/js/stats_panels.js:1176
-#: templates/menu_data_poses.html:87 templates/menu_data_poses.html:88
+#: templates/menu_data_poses.html:94 templates/menu_data_poses.html:95
 msgid "Trouvailles reçues"
 msgstr "Trouvailles reçues"
 
@@ -4419,13 +4508,6 @@ msgstr "Attributs"
 #: static/js/stats_panels.js:961 templates/menu_stats.html:482
 msgid "Propriétaires"
 msgstr "Propriétaires"
-
-#: static/js/stats_panels.js:962 static/js/stats_panels.js:1188
-#: templates/_filter_country_state.html:6
-#: templates/_filter_country_state.html:7 templates/menu_stats.html:218
-#: templates/menu_stats.html:476
-msgid "Pays"
-msgstr "Pays"
 
 #: static/js/stats_panels.js:963 static/js/stats_panels.js:1189
 #: templates/menu_stats.html:219 templates/menu_stats.html:479
@@ -4612,11 +4694,6 @@ msgstr "Tours de calendrier : ${n}"
 #, python-brace-format
 msgid "Tours de matrice : ${n}"
 msgstr "Tours de matrice : ${n}"
-
-#: static/js/stats_panels.js:1176 static/js/stats_ui.js:152
-#: templates/menu_informations.html:64 templates/menu_stats.html:213
-msgid "Trouvailles"
-msgstr "Trouvailles"
 
 #: static/js/stats_panels.js:1177 templates/menu_stats.html:233
 msgid "Trouveurs différents"
@@ -5341,7 +5418,7 @@ msgstr "Vous pouvez fermer cet onglet."
 #: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
 #: templates/_filter_country_state.html:22 templates/_filter_county.html:14
-#: templates/menu_data_poses.html:82 templates/menu_data_poses.html:95
+#: templates/menu_data_poses.html:89 templates/menu_data_poses.html:102
 #: templates/menu_trail.html:129
 msgid "Aucun"
 msgstr "Aucun"
@@ -5625,15 +5702,6 @@ msgstr "Aucune musique sélectionnée"
 #: static/js/ui.js:10231
 msgid "Non disponible"
 msgstr "Non disponible"
-
-#: static/js/ui.js:10257 templates/_filter_cache_attrs.html:49
-#: templates/_filter_cache_attrs.html:50
-msgid "Taille"
-msgstr "Taille"
-
-#: static/js/ui.js:10258
-msgid "Type"
-msgstr "Type"
 
 #: static/js/ui.js:10258
 msgid "Type inconnu"
@@ -5933,7 +6001,7 @@ msgstr "Adventure Lab"
 #: templates/_filter_cache_attrs.html:85 templates/_filter_cache_attrs.html:106
 #: templates/_filter_country_state.html:11
 #: templates/_filter_country_state.html:21 templates/_filter_county.html:13
-#: templates/menu_data_poses.html:81 templates/menu_data_poses.html:94
+#: templates/menu_data_poses.html:88 templates/menu_data_poses.html:101
 #: templates/menu_images.html:92
 msgid "Tout"
 msgstr "Tout"
@@ -6086,7 +6154,7 @@ msgid "Quitter MyGCFlow"
 msgstr "Quitter MyGCFlow"
 
 #: templates/app.html:121 templates/app.html:122
-#: templates/menu_data_evolution.html:95 templates/menu_data_poses.html:36
+#: templates/menu_data_evolution.html:95 templates/menu_data_poses.html:43
 msgid "Prévisualiser l'animation"
 msgstr "Prévisualiser l'animation"
 
@@ -9122,15 +9190,15 @@ msgid "Vos trouvailles sont prêtes."
 msgstr "Vos trouvailles sont prêtes."
 
 #: templates/menu_data.html:372 templates/menu_data_evolution.html:92
-#: templates/menu_data_poses.html:33
+#: templates/menu_data_poses.html:40
 msgid "Choisir un style"
 msgstr "Choisir un style"
 
-#: templates/menu_data.html:386 templates/menu_data_poses.html:44
+#: templates/menu_data.html:386 templates/menu_data_poses.html:51
 msgid "Aucune cache ne correspond aux filtres actuels."
 msgstr "Aucune cache ne correspond aux filtres actuels."
 
-#: templates/menu_data.html:388 templates/menu_data_poses.html:46
+#: templates/menu_data.html:388 templates/menu_data_poses.html:53
 msgid "Réinitialiser les filtres"
 msgstr "Réinitialiser les filtres"
 
@@ -9336,7 +9404,7 @@ msgstr "Historique des imports"
 msgid "La base est prête."
 msgstr "La base est prête."
 
-#: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:63
+#: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:70
 #: templates/menu_filtre.html:42
 msgid "Réinitialiser tous les filtres"
 msgstr "Réinitialiser tous les filtres"
@@ -9385,47 +9453,51 @@ msgstr ""
 msgid "Mettre à jour mes logs"
 msgstr "Mettre à jour mes logs"
 
-#: templates/menu_data_poses.html:30
+#: templates/menu_data_poses.html:31
+msgid "Exporter en CSV"
+msgstr "Exporter en CSV"
+
+#: templates/menu_data_poses.html:37
 msgid "Vos caches posées sont prêtes."
 msgstr "Vos caches posées sont prêtes."
 
-#: templates/menu_data_poses.html:73 templates/menu_data_poses.html:74
+#: templates/menu_data_poses.html:80 templates/menu_data_poses.html:81
 msgid "État actuel"
 msgstr "État actuel"
 
-#: templates/menu_data_poses.html:75
+#: templates/menu_data_poses.html:82
 msgid "Filtrer par état"
 msgstr "Filtrer par état"
 
-#: templates/menu_data_poses.html:84
+#: templates/menu_data_poses.html:91
 msgid "État de la cache à l'export le plus récent."
 msgstr "État de la cache à l'export le plus récent."
 
-#: templates/menu_data_poses.html:89
+#: templates/menu_data_poses.html:96
 msgid "Filtrer par trouvailles"
 msgstr "Filtrer par trouvailles"
 
-#: templates/menu_data_poses.html:90
+#: templates/menu_data_poses.html:97
 msgid "Au moins une"
 msgstr "Au moins une"
 
-#: templates/menu_data_poses.html:91
+#: templates/menu_data_poses.html:98
 msgid "Jamais trouvée"
 msgstr "Jamais trouvée"
 
-#: templates/menu_data_poses.html:97
+#: templates/menu_data_poses.html:104
 msgid "Trouvailles reçues des autres joueurs, à l'export le plus récent."
 msgstr "Trouvailles reçues des autres joueurs, à l'export le plus récent."
 
-#: templates/menu_data_poses.html:105
+#: templates/menu_data_poses.html:112
 msgid "Restent visibles, grisées"
 msgstr "Restent visibles, grisées"
 
-#: templates/menu_data_poses.html:106
+#: templates/menu_data_poses.html:113
 msgid "Disparaissent"
 msgstr "Disparaissent"
 
-#: templates/menu_data_poses.html:108
+#: templates/menu_data_poses.html:115
 msgid "Dans les deux cas, l'archivage joue son flash."
 msgstr "Dans les deux cas, l'archivage joue son flash."
 
@@ -9853,10 +9925,6 @@ msgstr "Image sélectionnée"
 msgid "Aperçu de l'image avec son apparence"
 msgstr "Aperçu de l'image avec son apparence"
 
-#: templates/menu_images.html:152
-msgid "Nom"
-msgstr "Nom"
-
 #: templates/menu_images.html:154
 msgid ""
 "Image manquante : le fichier n'est plus disponible. Remplacez-la ou "
@@ -10212,14 +10280,6 @@ msgstr "Archivées"
 #: templates/menu_informations.html:63
 msgid "Désactivées"
 msgstr "Désactivées"
-
-#: templates/menu_informations.html:65
-msgid "Favoris"
-msgstr "Favoris"
-
-#: templates/menu_informations.html:67
-msgid "Logs"
-msgstr "Logs"
 
 #: templates/menu_informations.html:68
 msgid "Trouveurs"

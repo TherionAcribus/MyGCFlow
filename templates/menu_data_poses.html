@@ -23,6 +23,13 @@
                     <a id="posesLogsLink" class="btn btn-sm btn-outline-primary mt-2" href="/#data">
                         <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Mettre à jour mes logs") }}
                     </a>
+                    <!-- Export serveur de TOUTES les caches posées (en attente
+                         et non datables comprises), pas la sélection filtrée.
+                         Affiché par poses_data.js dès meta.ownedTotal > 0 ;
+                         téléchargement direct (href + download), sans JS. -->
+                    <a id="posesExportLink" class="btn btn-sm btn-outline-secondary mt-2 ms-1" href="/api/poses/export.csv" download hidden>
+                        <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter en CSV") }}
+                    </a>
 
                     <!-- Prochaine étape suggérée : affichée dès que des caches
                          sont chargées (updateDataAvailabilityUI). -->

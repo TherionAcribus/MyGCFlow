@@ -193,6 +193,11 @@ function renderStatus() {
     const status = el('posesStatus');
     const detail = el('posesDetail');
     const emptyText = el('posesEmptyText');
+    // Export CSV : toutes les caches posées (en attente et non datables
+    // comprises) — le lien n'a de sens qu'avec des caches possédées, même
+    // si aucune n'est plaçable.
+    const exportLink = el('posesExportLink');
+    if (exportLink) exportLink.hidden = !(meta.ownedTotal > 0);
     // Détail commun aux deux états : quand aucune cache n'est plaçable, les
     // compteurs « en attente » / « non datable » expliquent la carte vide.
     const lines = [];

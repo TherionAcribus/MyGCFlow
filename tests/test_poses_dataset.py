@@ -6,6 +6,8 @@ désarchivage → archivage, event du poseur, cache sans position, cache sans
 pays, cache d'un autre poseur).
 """
 
+import csv
+import io
 import json
 import os
 import tempfile
@@ -297,6 +299,100 @@ class DetailsTests(_Base):
         self.assertIsNone(pd.cache_details(db.session, "GCZZZZZ"))
 
 
+class ExportCsvTests(_Base):
+    """Export CSV de toutes les caches posées (poses_dataset.export_csv)."""
+
+    def _csv_text(self):
+        return "".join(pd.export_csv(db.session))
+
+    def _csv_rows(self):
+        text = self._csv_text()
+        return list(csv.reader(io.StringIO(text[1:]), delimiter=";"))
+
+    def _row_of(self, code):
+        return {r[0]: r for r in self._csv_rows()[1:]}[code]
+
+    def test_bom_separator_and_header_only_without_collection(self):
+        text = self._csv_text()
+        self.assertTrue(text.startswith("\ufeff"))
+        self.assertEqual(text.count("\r\n"), 1)
+        rows = self._csv_rows()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0], [
+            "Code GC", "Nom", "Type", "Taille", "D", "T",
+            "Latitude", "Longitude", "Pays", "Région",
+            "Apparition", "Source d'apparition", "Statut",
+            "Trouvailles", "Favoris", "DNF", "Logs",
+            "Première trouvaille", "Premier trouveur", "Dernier log",
+        ])
+
+    def test_one_row_per_owned_cache_in_code_order(self):
+        self._commit()
+        rows = self._csv_rows()
+        self.assertEqual(len(rows), 9)          # en-tête + 8 caches posées
+        codes = [r[0] for r in rows[1:]]
+        self.assertEqual(codes, sorted(codes))
+        self.assertNotIn("GCQ0001", codes)      # cache d'un autre poseur
+
+    def test_row_values_and_log_counts(self):
+        self._commit()
+        c = self._row_of("GCP0001")
+        self.assertEqual(c[1], "Publication et premier trouveur")
+        self.assertEqual(c[2:4], ["Traditional Cache", "Micro"])
+        self.assertEqual(c[4:6], ["1.5", "2"])
+        self.assertAlmostEqual(float(c[6]), 49.10)
+        self.assertAlmostEqual(float(c[7]), 6.10)
+        self.assertEqual(c[8:10], ["France", "Grand-Est"])
+        self.assertEqual(c[10], "2018-03-05")   # apparition = publication
+        self.assertEqual(c[11], "Publication")
+        self.assertEqual(c[12], "Active")
+        self.assertEqual(c[13:17], ["2", "1", "1", "5"])  # trouv./fav/DNF/logs
+        self.assertEqual(c[17], "2018-03-05")   # première trouvaille
+        self.assertEqual(c[18], "Alice")        # premier trouveur
+        self.assertEqual(c[19], "2018-03-20")   # dernier log
+
+    def test_appearance_sources_and_statuses(self):
+        self._commit()
+        # Bêta-trouvaille : apparition avancée au premier « Found it ».
+        c = self._row_of("GCP0003")
+        self.assertEqual(c[10:12], ["2019-01-10", "Bêta-trouvaille"])
+        self.assertEqual(c[17:19], ["2019-01-10", "Testeur"])
+        self.assertEqual(c[13:17], ["4", "1", "0", "7"])
+        # Pose seule, sans publication.
+        self.assertEqual(self._row_of("GCP0002")[11], "Date de pose")
+        # Archivage joué par les logs / déduit du statut à l'export.
+        self.assertEqual(self._row_of("GCP0005")[12], "Archivée")
+        self.assertEqual(self._row_of("GCP0006")[12], "Archivée")
+
+    def test_never_found_cache_has_empty_first_find_cells(self):
+        self._commit()
+        c = self._row_of("GCP0004")
+        self.assertEqual(c[13], "0")            # jamais trouvée
+        self.assertEqual(c[17], "")
+        self.assertEqual(c[18], "")
+        self.assertEqual(c[19], "2019-09-10")   # dernier log quand même
+
+    def test_pending_cache_is_exported_with_empty_cells(self):
+        # Sans position : cellules lat/lon vides, ligne exportée quand même.
+        self._commit()
+        c = self._row_of("GCP0007")
+        self.assertEqual(c[6:8], ["", ""])
+        self.assertEqual(c[10:12], ["2019-06-05", "Publication"])
+        # Sans pays : le pays emprunté au voisinage reste propre à la carte.
+        self.assertEqual(self._row_of("GCP0008")[8:10], ["", ""])
+
+    def test_undatable_cache_is_exported_with_empty_cells(self):
+        doc = _doc()
+        doc["caches"][1].pop("placed_date")     # GCP0002 : ni pose ni log
+        doc["logs"] = [log for log in doc["logs"] if log["gc_code"] != "GCP0002"]
+        self._commit(doc)
+        c = self._row_of("GCP0002")
+        self.assertEqual(c[10:12], ["", ""])    # apparition et source vides
+        self.assertEqual(c[12], "Active")       # statut de la fiche à l'export
+        self.assertEqual(c[16], "0")
+        self.assertEqual(c[19], "")
+
+
 class ApiTests(_Base):
     def test_page_carries_its_mode_and_link(self):
         html = self.app.test_client().get("/poses").get_data(as_text=True)
@@ -324,6 +420,26 @@ class ApiTests(_Base):
         self.assertEqual(client.get("/api/poses/caches/GCP0001").get_json()["cache"]["name"],
                          "Publication et premier trouveur")
         self.assertEqual(client.get("/api/poses/caches/GCQ0001").status_code, 404)
+
+    def test_export_csv_route(self):
+        self._commit()
+        response = self.app.test_client().get("/api/poses/export.csv")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "text/csv")
+        disposition = response.headers["Content-Disposition"]
+        self.assertIn("attachment", disposition)
+        self.assertIn("mes-poses-", disposition)
+        body = response.get_data().decode("utf-8")
+        self.assertTrue(body.startswith("\ufeff"))
+        # En-tête + une ligne par cache posée (8), y compris la sans position.
+        self.assertEqual(len(body.lstrip("\ufeff").splitlines()), 9)
+
+    def test_export_csv_route_without_collection(self):
+        response = self.app.test_client().get("/api/poses/export.csv")
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data().decode("utf-8")
+        self.assertTrue(body.startswith("\ufeff"))
+        self.assertIn("Code GC", body)
 
 
 if __name__ == "__main__":
