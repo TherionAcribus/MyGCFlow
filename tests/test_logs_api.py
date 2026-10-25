@@ -1,17 +1,26 @@
 import io
 import json
 import os
+import shutil
+import subprocess
 import tempfile
 import time
 import unittest
 import zipfile
+from dataclasses import replace
+from pathlib import Path
+from unittest import mock
 
+import settings_manager
 from app import create_app
 from extensions import db
 from models import LogEvent
 from task_manager import task_manager
 
 from tests.test_log_formats import CONTRACT, MY_FINDS
+
+NODE = shutil.which("node")
+BOOKMARKLET_HARNESS = Path(__file__).parent / "fixtures" / "gc_logs" / "bookmarklet_harness.cjs"
 
 
 class LogsApiTests(unittest.TestCase):
@@ -141,6 +150,374 @@ class LogsApiTests(unittest.TestCase):
         rv = self.client.post("/api/logs/clear")
         self.assertEqual(rv.get_json()["removed_logs"], 7)
         self.assertFalse(self.client.get("/api/logs/status").get_json()["exists"])
+
+
+class LogsAutomationTests(LogsApiTests):
+    """Automatisation : /api/logs/receive (CORS+jeton, aperçu en attente),
+    /api/logs/bookmarklet (favori « Envoyer vers MyGCFlow »)."""
+
+    def setUp(self):
+        super().setUp()
+        # Réglages isolés : le jeton ne doit pas écrire dans la configuration
+        # réelle de l'utilisateur (même pattern que LabsAutomationTests).
+        cfg = Path(tempfile.mkdtemp(prefix="mygcflow-logs-cfg-"))
+        self.addCleanup(shutil.rmtree, cfg, True)
+        for name, value in {
+            "CONFIG_DIR": cfg,
+            "PROFILES_DIR": cfg / "profiles",
+            "SETTINGS_PATH": cfg / "settings.json",
+        }.items():
+            patcher = mock.patch.object(settings_manager, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        settings_manager.write_json(settings_manager.SETTINGS_PATH, {})
+        self.manager = settings_manager.SettingsManager()
+
+        import blueprints.gc_logs as gc_logs_mod
+        patcher = mock.patch.object(gc_logs_mod, "get_settings_manager",
+                                    lambda: self.manager)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _set_token(self, value="tok-receive"):
+        self.manager.update_app_settings(
+            lambda s: replace(s, logs_receive_token=value))
+
+    def _receive(self, data: bytes, token="tok-receive", **kw):
+        return self.client.post('/api/logs/receive', data=data,
+                                content_type='application/json',
+                                headers={"X-MyGCFlow-Token": token}, **kw)
+
+    # --- /api/logs/bookmarklet ---------------------------------------------
+
+    def test_bookmarklet_generates_stable_token_and_link(self):
+        rv = self.client.get('/api/logs/bookmarklet')
+        self.assertEqual(rv.status_code, 200)
+        body = rv.get_json()
+        self.assertTrue(body["success"])
+        js = body["bookmarklet"]
+        self.assertTrue(js.startswith("javascript:"))
+        token = self.manager.get_app_settings().logs_receive_token
+        self.assertTrue(token)
+        self.assertIn(json.dumps(token), js)
+        # L'origine locale réelle est celle de la requête.
+        self.assertIn("/api/logs/receive", js)
+        # Tous les placeholders de traduction sont remplacés.
+        self.assertNotIn("__T_", js)
+        # Idempotent : le jeton n'est pas régénéré (le favori resterait valide).
+        self.assertEqual(
+            self.client.get('/api/logs/bookmarklet').status_code, 200)
+        self.assertEqual(
+            self.manager.get_app_settings().logs_receive_token, token)
+
+    def test_bookmarklet_is_a_single_comment_free_line(self):
+        """Le navigateur retire les sauts de ligne d'un lien javascript: —
+        un commentaire `//` resté dans le code avalerait toute la suite."""
+        js = self.client.get('/api/logs/bookmarklet').get_json()["bookmarklet"]
+        self.assertNotIn("\n", js)
+        self.assertNotIn("//", js.replace("://", ""))
+        self.assertNotIn("@include", js)
+        self.assertNotIn("__ORIGIN__", js)
+        self.assertNotIn("__TOKEN__", js)
+        # Le cœur partagé est bien inclus.
+        self.assertIn("mygcflowCollectGcLogs", js)
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_is_valid_javascript(self):
+        js = self.client.get('/api/logs/bookmarklet').get_json()["bookmarklet"]
+        folder = Path(tempfile.mkdtemp(prefix="mygcflow-logs-bookmarklet-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        # Le corps du lien est un programme JS valide (expression IIFE).
+        script = folder / "bookmarklet.cjs"
+        script.write_text(js[len("javascript:"):], encoding="utf-8")
+        done = subprocess.run([NODE, "--check", str(script)],
+                              capture_output=True, timeout=60)
+        self.assertEqual(done.returncode, 0, done.stderr.decode("utf-8", "replace"))
+
+    def test_bookmarklet_regenerate_is_post_only(self):
+        self.assertEqual(
+            self.client.get('/api/logs/bookmarklet/regenerate').status_code,
+            405)
+
+    def test_bookmarklet_regenerate_replaces_token_and_invalidates_old(self):
+        self.client.get('/api/logs/bookmarklet')
+        old_token = self.manager.get_app_settings().logs_receive_token
+        self.assertTrue(old_token)
+
+        rv = self.client.post('/api/logs/bookmarklet/regenerate')
+        self.assertEqual(rv.status_code, 200)
+        new_js = rv.get_json()["bookmarklet"]
+        new_token = self.manager.get_app_settings().logs_receive_token
+        self.assertTrue(new_token)
+        self.assertNotEqual(new_token, old_token)
+        self.assertIn(json.dumps(new_token), new_js)
+        self.assertNotIn(json.dumps(old_token), new_js)
+        # Le GET suivant ne régénère pas : le lien servi reste celui-ci.
+        again = self.client.get('/api/logs/bookmarklet').get_json()["bookmarklet"]
+        self.assertEqual(again, new_js)
+
+        # L'ancien favori est mort (403 jeton) ; le nouveau passe la porte
+        # jeton (le payload non-logs échoue ensuite en 400).
+        for token, expected in ((old_token, 403), (new_token, 400)):
+            rv = self.client.post('/api/logs/receive',
+                                  data=b'<html>page</html>',
+                                  content_type='application/json',
+                                  headers={"X-MyGCFlow-Token": token})
+            self.assertEqual(rv.status_code, expected, token)
+
+    # --- /api/logs/receive --------------------------------------------------
+
+    def test_receive_rejects_missing_or_wrong_token(self):
+        self._set_token()
+        for headers in ({}, {"X-MyGCFlow-Token": "mauvais"}):
+            rv = self.client.post('/api/logs/receive',
+                                  data=CONTRACT.read_bytes(),
+                                  content_type='application/json',
+                                  headers=headers)
+            self.assertEqual(rv.status_code, 403, headers)
+        # Sans jeton configuré du tout : refusé aussi (pas de bypass).
+        self.manager.update_app_settings(
+            lambda s: replace(s, logs_receive_token=""))
+        rv = self._receive(CONTRACT.read_bytes())
+        self.assertEqual(rv.status_code, 403)
+
+    def test_receive_cors_is_scoped_to_geocaching(self):
+        # Preflight : les en-têtes ne partent que pour l'origine officielle.
+        for origin, allowed in (("https://www.geocaching.com", True),
+                                ("https://geocaching.com", True),
+                                ("https://malveillant.example", False),
+                                (None, False)):
+            headers = {"Origin": origin} if origin else {}
+            rv = self.client.open('/api/logs/receive', method='OPTIONS',
+                                  headers=headers)
+            has_cors = "Access-Control-Allow-Origin" in rv.headers
+            self.assertEqual(has_cors, allowed, origin)
+            if allowed:
+                self.assertEqual(
+                    rv.headers["Access-Control-Allow-Origin"], origin)
+                self.assertEqual(
+                    rv.headers["Access-Control-Allow-Private-Network"], "true")
+
+    def test_receive_rejects_bad_format(self):
+        self._set_token()
+        rv = self._receive(b'<html>page</html>')
+        self.assertEqual(rv.status_code, 400)
+        self.assertFalse(rv.get_json()["success"])
+
+    def test_receive_stores_a_pending_preview(self):
+        """Pas d'import d'office : la couverture complète peut retirer des
+        logs — l'aperçu reste à valider. Le statut remonte le dépôt."""
+        self._set_token()
+        rv = self._receive(CONTRACT.read_bytes())
+        self.assertEqual(rv.status_code, 202)
+        body = rv.get_json()
+        self.assertTrue(body["success"])
+        self.assertIn("import_token", body)
+        # Rien n'est écrit : seul l'aperçu est conservé.
+        self.assertEqual(db.session.query(LogEvent).count(), 0)
+
+        status = self.client.get("/api/logs/status").get_json()
+        pending = status["pending_import"]
+        self.assertIsNotNone(pending)
+        self.assertEqual(pending["import_token"], body["import_token"])
+        self.assertEqual(pending["summary"]["added"], 7)
+
+        # La validation suit le parcours habituel : jeton → tâche d'import.
+        rv2 = self.client.post("/api/logs/import/commit",
+                               json={"import_token": pending["import_token"]})
+        self.assertEqual(rv2.status_code, 202, rv2.get_json())
+        st = self._wait_task(rv2.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["added"], 7)
+        # Consommé : plus de dépôt en attente.
+        self.assertIsNone(
+            self.client.get("/api/logs/status").get_json()["pending_import"])
+
+    def test_receive_of_another_account_is_refused(self):
+        self._set_token()
+        self._import(CONTRACT.read_bytes())
+        doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        doc["account"] = {"user_id": 999}
+        rv = self._receive(json.dumps(doc).encode())
+        self.assertEqual(rv.status_code, 409)
+        self.assertIsNone(
+            self.client.get("/api/logs/status").get_json()["pending_import"])
+
+    def test_bookmarklet_strings_follow_ui_language(self):
+        from flask_babel import force_locale
+        from blueprints.gc_logs import _bookmarklet_strings
+        # Langue par défaut (fr) : messages en français.
+        self.assertEqual(
+            _bookmarklet_strings()['__T_START__'], "MyGCFlow : démarrage…")
+        # Locale en : le favori généré parle anglais (messages traduits
+        # côté serveur, injectés dans le javascript:).
+        with force_locale('en'):
+            strings_en = _bookmarklet_strings()
+        self.assertEqual(strings_en['__T_START__'], "MyGCFlow: starting…")
+
+    # --- exécution du favori sur un faux geocaching.com (harnais Node) ----
+
+    def _run_bookmarklet(self, **scenario):
+        js = self.client.get('/api/logs/bookmarklet').get_json()["bookmarklet"]
+        folder = Path(tempfile.mkdtemp(prefix="mygcflow-logs-favori-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        link = folder / "bookmarklet.txt"
+        link.write_text(js, encoding="utf-8")
+        done = subprocess.run(
+            [NODE, str(BOOKMARKLET_HARNESS), str(link), json.dumps(scenario)],
+            capture_output=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr.decode("utf-8", "replace"))
+        return json.loads(done.stdout.decode("utf-8"))
+
+    @staticmethod
+    def _entry(log_id, type_id, visited, name, account_id, fav=None):
+        return {"LogID": log_id, "LogTypeID": type_id,
+                "LogType": "Didn't find it" if type_id == 3 else "Found it",
+                "Visited": visited, "AccountID": account_id, "UserName": name,
+                "FavoritePointUsed": fav}
+
+    @staticmethod
+    def _gc(code, token, name="Cache", placed="13/05/2010", **kw):
+        return {"token": token, "name": name, "placed": placed,
+                "lat": 49.2, "lng": 6.2, "owner": "Testeur", **kw}
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_collects_everything_and_posts_the_export(self):
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "dnfPages": [{"codes": ["GC1AAA", "GC2BBB"], "next": True},
+                         {"codes": ["GC3CCC"], "guids": ["11111111-2222-3333-4444-555555555555"]}],
+            "ownedPages": [{"codes": ["GC9OWN"]}],
+            "caches": {
+                "GC1AAA": self._gc("GC1AAA", "t1"),
+                "GC2BBB": self._gc("GC2BBB", "t2"),
+                "GC3CCC": self._gc("GC3CCC", "t3"),
+                "11111111-2222-3333-4444-555555555555": self._gc("GC4DDD", "t4", title="GC4DDD - guid"),
+                "GC9OWN": self._gc("GC9OWN", "t5", favs=42),
+            },
+            "books": {
+                # Les carnets des DNF ne gardent que MES logs (ownOnly) :
+                # la ligne d'un autre joueur est écartée.
+                "t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42),
+                        self._entry(12, 2, "14/05/2024", "Autre", 7)]],
+                "t2": [[self._entry(13, 3, "02/Jun/2024", "Testeur", 42)]],
+                "t3": [[self._entry(14, 3, "2024-06-03", "Testeur", 42)]],
+                "t4": [[self._entry(15, 2, "10/06/2024", "Testeur", 42)]],
+                # Carnet paginé d'une cache posée : tout le monde est lu.
+                "t5": [[self._entry(16, 46, "13/05/2010", "Testeur", 42)],
+                       [self._entry(17, 2, "20/06/2024", "Promeneur", 9, "true")]],
+            },
+        }
+        out = self._run_bookmarklet(**scenario)
+
+        received = out["received"]
+        self.assertIsNotNone(received, out["said"])
+        self.assertTrue(received["url"].endswith("/api/logs/receive"))
+        self.assertEqual(received["credentials"], "omit")
+        token = self.manager.get_app_settings().logs_receive_token
+        self.assertEqual(received["headers"]["X-MyGCFlow-Token"], token)
+
+        body = received["body"]
+        self.assertEqual(body["format"], "mygcflow-logs")
+        self.assertEqual(body["account"]["username"], "Testeur")
+        self.assertEqual(body["account"]["user_id"], 42)
+        # 5 logs à moi (4 DNF/found + Enable Listing), 1 d'un autre joueur.
+        self.assertEqual(len(body["logs"]), 6)
+        others = [l for l in body["logs"] if l["author"]["id"] != 42]
+        self.assertEqual([l["log_id"] for l in others], [17])
+        self.assertTrue(others[0]["favorite"])
+        self.assertEqual(sorted(c["gc_code"] for c in body["caches"]),
+                         ["GC1AAA", "GC2BBB", "GC3CCC", "GC4DDD", "GC9OWN"])
+        kinds = {(c["kind"], tuple(sorted(c.get("gc_codes", []))),
+                  tuple(c.get("type_ids", []))) for c in body["coverage"]}
+        self.assertIn(("author", (), (3,)), kinds)
+        self.assertIn(("caches", ("GC9OWN",), ()), kinds)
+        # Postback de la liste DNF + carnet paginé : la pagination tourne.
+        dnf_calls = [u for u in out["requests"] if "/my/logs.aspx" in u]
+        self.assertEqual(len(dnf_calls), 2)
+        book_calls = [u for u in out["requests"] if "geocache.logbook" in u
+                      and "tkn=t5" in u]
+        self.assertEqual(len(book_calls), 2)
+
+        # Le fichier produit est bien celui que l'import accepte.
+        import log_formats as lf
+        parsed = lf.parse_logs_file(json.dumps(body).encode())
+        self.assertTrue(parsed.ok, parsed.errors)
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_ambiguous_dates_wait_for_a_console_call(self):
+        # 05/06/2024 : DMY et MDY restent possibles → le favori s'arrête
+        # sans envoyer et explique mygcflowLogsFinish ; l'appel finit l'envoi.
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": None,
+            "dnfPages": [{"codes": ["GC1AAA"]}],
+            "ownedPages": [{}],
+            "caches": {"GC1AAA": self._gc("GC1AAA", "t1", placed="05/06/2011")},
+            "books": {"t1": [[self._entry(11, 3, "05/06/2024", "Testeur", 42)]]},
+            "finish": "DMY",
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertTrue(any("ordre des dates indéterminé" in s for s in out["said"]),
+                        out["said"])
+        self.assertIsNotNone(out["received"], out["said"])
+        dates = {l["log_id"]: l["date"] for l in out["received"]["body"]["logs"]}
+        self.assertEqual(dates[11], "2024-06-05")
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_retries_then_keeps_going(self):
+        # 429 deux fois puis OK : le retry couvre la fiche ; collecte complète.
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "dnfPages": [{"codes": ["GC1AAA", "GC2BBB"]}],
+            "ownedPages": [{}],
+            "caches": {
+                "GC1AAA": self._gc("GC1AAA", "t1"),
+                "GC2BBB": self._gc("GC2BBB", "t2", failStatus=429, failTimes=2),
+            },
+            "books": {
+                "t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42)]],
+                "t2": [[self._entry(12, 3, "14/05/2024", "Testeur", 42)]],
+            },
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertIsNotNone(out["received"], out["said"])
+        body = out["received"]["body"]
+        self.assertEqual(len(body["logs"]), 2)
+        gc2 = [u for u in out["requests"] if "/geocache/GC2BBB" in u]
+        self.assertEqual(len(gc2), 3)
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_persistent_failures_send_the_partial_export(self):
+        # Cinq caches posées illisibles d'affilée : arrêt après le seuil,
+        # mais l'export partiel part quand même (couverture incomplète
+        # signalée — l'import ne retirera rien).
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "dnfPages": [{"codes": ["GC1AAA"]}],
+            "ownedPages": [{"codes": [f"GC9O{i}" for i in range(6)]}],
+            "caches": {
+                "GC1AAA": self._gc("GC1AAA", "t1"),
+                **{f"GC9O{i}": self._gc(f"GC9O{i}", f"o{i}", failStatus=500)
+                   for i in range(6)},
+            },
+            "books": {"t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42)]]},
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertTrue(any("arrêt" in s for s in out["said"]), out["said"])
+        self.assertIsNotNone(out["received"], out["said"])
+        body = out["received"]["body"]
+        self.assertEqual(len(body["logs"]), 1)
+        self.assertEqual(body["coverage"], [])
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_off_geocaching_does_nothing(self):
+        out = self._run_bookmarklet(hostname="www.example.com")
+        self.assertIsNone(out["received"])
+        self.assertTrue(any("geocaching.com" in s for s in out["said"]), out["said"])
 
 
 if __name__ == "__main__":

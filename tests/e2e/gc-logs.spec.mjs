@@ -72,6 +72,8 @@ test('aperçu puis import : le statut reflète les logs', async ({ page }) => {
   await expect(detail).toContainText('À vous : 2 DNF, 1 trouvaille, 1 autre');
   await expect(detail).toContainText("3 logs d'autres joueurs");
   await expect(detail).toContainText('1 cache sans position connue');
+  // Exporter vit dans les options avancées : les ouvrir avant de le lire.
+  await page.locator('#gcLogsAdvanced summary').click();
   await expect(page.locator('#gcLogsExportBtn')).toBeVisible();
   await expect(page.locator('#gcLogsClearBtn')).toBeVisible();
 });
@@ -126,6 +128,43 @@ test('un fichier mygcflow-logs déposé sur la page part vers « Mes logs »', a
   }, content);
   await expect(page.locator('#gcLogsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('#labsPreviewModal')).toBeHidden();
+});
+
+
+test('le favori reçoit l\'export : bandeau puis aperçu avant l\'import', async ({ page }) => {
+  // Le favori est généré par le serveur avec son jeton d'installation.
+  const bm = await page.request.get('/api/logs/bookmarklet');
+  const js = (await bm.json()).bookmarklet;
+  expect(js.startsWith('javascript:')).toBe(true);
+  const token = /TOKEN\s*=\s*"([^"]+)"/.exec(js)[1];
+  expect(token).toBeTruthy();
+
+  // Même envoi que le favori depuis geocaching.com (origine simulée).
+  const received = await page.request.post('/api/logs/receive', {
+    headers: { 'X-MyGCFlow-Token': token, 'Origin': 'https://www.geocaching.com' },
+    data: readFileSync(CONTRACT),
+  });
+  expect(received.status()).toBe(202);
+
+  await openReadyApp(page);
+  const alert = page.locator('#gcLogsPendingAlert');
+  await expect(alert).toBeVisible({ timeout: 20_000 });
+  await page.locator('#gcLogsPendingViewBtn').click();
+  await expect(page.locator('#gcLogsPreviewModal')).toBeVisible();
+  await expect(page.locator('#gcLogsPreviewChanges')).toContainText('7 nouveaux logs');
+  await confirmImport(page);
+  await expect(page.locator('#gcLogsStatus')).toContainText('7 logs enregistrés');
+  await expect(alert).toBeHidden();
+});
+
+
+test('le bouton du favori reçoit son lien javascript:', async ({ page }) => {
+  await openReadyApp(page);
+  const link = page.locator('#gcLogsBookmarkletLink');
+  await expect(link).toBeVisible();
+  await expect(link).not.toHaveAttribute('aria-disabled', 'true');
+  await expect(link).toHaveAttribute('href', /^javascript:/);
+  await expect(page.locator('#gcLogsCopyLinkBtn')).toBeEnabled();
 });
 
 

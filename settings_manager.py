@@ -401,6 +401,9 @@ class AppSettings:
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
     # un identifiant d'installation, pas une préférence.
     labs_receive_token: str = ""
+    # Même rôle pour le favori « Mes logs » (/api/logs/receive), distinct du
+    # jeton Labs : révoquer l'un ne casse pas l'autre favori.
+    logs_receive_token: str = ""
     recording: RecordingSettings = field(default_factory=RecordingSettings)
     # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
     # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
@@ -1096,6 +1099,8 @@ def coerce_settings(d: dict) -> AppSettings:
                 setattr(s, name, raw is True)
         token = d.get("labs_receive_token")
         s.labs_receive_token = str(token) if token else ""
+        token = d.get("logs_receive_token")
+        s.logs_receive_token = str(token) if token else ""
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))
@@ -2601,9 +2606,11 @@ class SettingsManager:
             lambda current: AppSettings(
                 examples_seeded=current.examples_seeded,
                 examples_version=current.examples_version,
-                # Identifiant d'installation du bookmarklet Labs, pas une
-                # préférence : le régénérer casserait le favori déjà installé.
+                # Identifiants d'installation des bookmarklets, pas des
+                # préférences : les régénérer casserait les favoris déjà
+                # installés.
                 labs_receive_token=current.labs_receive_token,
+                logs_receive_token=current.logs_receive_token,
             )
         )
 

@@ -9,17 +9,26 @@
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showConfirmation, showError, showSuccess, t } from './notifications.js';
+import { showConfirmation, showError, showInfo, showSuccess, t } from './notifications.js';
 import { hideBsModal, showBsModal } from './ui_bootstrap.js';
 import { countLabel } from './utils.js';
 
 const TASK_POLL_MS = 500;
 const TASK_MAX_ERRORS = 10;
+// Relevé du statut tant que l'onglet Données est affiché : un export déposé
+// par le favori « Envoyer vers MyGCFlow » arrive hors de cette page, et
+// l'onglet peut rester ouvert sans reprendre le focus.
+const STATUS_POLL_MS = 4000;
 
 let bound = false;
 let fileInput = null;
 let importToken = null;   // jeton opaque de l'aperçu affiché
 let busy = false;         // aperçu, import ou suppression en cours
+let guideOpen = false;    // parcours du favori rouvert via « Afficher les instructions »
+let lastStatus = null;    // dernier statut rendu (pour le guide)
+let pendingImport = null; // export reçu du favori, en attente de validation
+let taskWasActive = false; // import lancé ailleurs (autre onglet) vu par le relevé
+let statusPollTimer = null;
 
 function el(id) { return document.getElementById(id); }
 
@@ -90,11 +99,30 @@ export async function refreshLogsStatus() {
 }
 
 function renderStatus(st) {
+    lastStatus = st;
     const statusEl = el('gcLogsStatus');
     const detail = el('gcLogsDetail');
     const has = !!(st && st.exists && st.logs > 0);
     el('gcLogsExportBtn').hidden = !has;
     el('gcLogsClearBtn').hidden = !has;
+    const updateBtn = el('gcLogsUpdateBtn');
+    if (updateBtn) updateBtn.style.display = has ? '' : 'none';
+    renderGuide(has);
+    renderPending(st?.pending_import);
+    // Un import peut tourner hors de cette page (validation faite dans un
+    // autre onglet) : le bloc d'activité reflète la tâche serveur, et sa fin
+    // relance la lecture des points DNF.
+    const taskActive = !!(st && st.active_task);
+    if (!busy) {
+        const box = el('gcLogsActivity');
+        el('gcLogsActivityTitle').textContent =
+            taskActive ? (st.active_task.message || t('Import de vos logs…')) : '';
+        box.hidden = !taskActive;
+        el('gc-logs-file-btn').disabled = taskActive;
+        el('gcLogsClearBtn').disabled = taskActive;
+    }
+    if (taskWasActive && !taskActive) pkg.reloadDnfData?.();
+    taskWasActive = taskActive;
     detail.textContent = '';
     if (!has) {
         statusEl.textContent = t('Aucun log importé');
@@ -120,6 +148,38 @@ function renderStatus(st) {
             t('cache sans position connue'), t('caches sans position connue')), 'text-warning'));
     }
     detail.hidden = false;
+}
+
+// Le parcours du favori s'affiche d'office tant que rien n'est importé ;
+// ensuite il se replie derrière « Afficher les instructions d'import ».
+function renderGuide(hasLogs) {
+    const guide = el('gcLogsGuide');
+    if (!guide) return;
+    guide.hidden = !(!hasLogs || guideOpen);
+    el('gcLogsUpdateBtn')?.setAttribute('aria-expanded', String(!guide.hidden));
+}
+
+// Export déposé par le favori : bandeau « à valider » → la même modale
+// d'aperçu qu'un fichier choisi à la main.
+function renderPending(pending) {
+    pendingImport = pending || null;
+    const alertEl = el('gcLogsPendingAlert');
+    if (!alertEl) return;
+    alertEl.classList.toggle('d-none', !pending);
+    if (pending) {
+        const count = pending.summary?.added ?? 0;
+        el('gcLogsPendingText').textContent = t(
+            'Un export a été reçu de votre favori (${count} nouveaux logs annoncés) — validez l\'aperçu avant l\'import.',
+            { count });
+    }
+}
+
+function onPendingView() {
+    const pending = pendingImport;
+    if (!pending || !el('gcLogsPreviewModal')) return;
+    importToken = pending.import_token;
+    renderPreview({ name: pending.name || t('export du favori'), summary: pending.summary || {} });
+    showBsModal(el('gcLogsPreviewModal'));
 }
 
 // -------------------------------------------------------------- activité
@@ -344,6 +404,82 @@ async function onClear() {
     }
 }
 
+// ------------------------------------------------- favori « Envoyer vers MyGCFlow »
+//
+// Le favori est fait pour être glissé dans la barre de favoris : un clic
+// dessus depuis l'app serait un no-op. Tant que le lien réel n'est pas
+// chargé il est inerte (aria-disabled, non glissable, hors tabulation) ;
+// en échec, l'import de fichiers prend le relais. « Copier le lien » rend
+// le parcours possible au clavier. Même mécanique que labs.js.
+
+function markBookmarkletReady(link, bookmarklet) {
+    link.href = bookmarklet;
+    link.draggable = true;
+    link.removeAttribute('aria-disabled');
+    link.removeAttribute('tabindex');
+    const label = el('gcLogsBookmarkletLabel');
+    if (label) label.textContent = t('Envoyer vers MyGCFlow');
+    const copyBtn = el('gcLogsCopyLinkBtn');
+    if (copyBtn) copyBtn.disabled = false;
+    const errBox = el('gcLogsBookmarkletError');
+    if (errBox) errBox.hidden = true;
+}
+
+async function loadBookmarklet(link) {
+    try {
+        const r = await fetch(`${CONFIG.BASE_URL}/api/logs/bookmarklet`);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.success || !d.bookmarklet) throw new Error('indisponible');
+        markBookmarkletReady(link, d.bookmarklet);
+    } catch (e) {
+        console.warn('[LOGS] bookmarklet indisponible:', e);
+        // Le bouton reste inerte ; le message visible propose le repli
+        // « importer un fichier » plutôt qu'un favori muet.
+        const label = el('gcLogsBookmarkletLabel');
+        if (label) label.textContent = t('Favori indisponible');
+        const errBox = el('gcLogsBookmarkletError');
+        if (errBox) errBox.hidden = false;
+    }
+}
+
+// Copie du lien javascript: dans le presse-papiers — alternative clavier au
+// glisser-déposer (un favori peut être créé à la main avec ce contenu).
+async function onCopyBookmarklet() {
+    const link = el('gcLogsBookmarkletLink');
+    const statusEl = el('gcLogsBookmarkletStatus');
+    const href = link?.getAttribute('href');
+    if (!href || href === '#') return;
+    try {
+        await navigator.clipboard.writeText(href);
+        if (statusEl) statusEl.textContent = t('Lien copié');
+    } catch (_) {
+        if (statusEl) statusEl.textContent = t('Copie impossible — glissez le bouton à la place.');
+    }
+}
+
+// Régénération du jeton : explicite sur l'invalidation de l'ancien favori
+// (confirmation) puis le lien est rechargé avec le nouveau jeton.
+function onRegenBookmarkletToken() {
+    showConfirmation(
+        t('Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris.'),
+        t('Jeton du favori'),
+        async () => {
+            try {
+                const r = await fetch(`${CONFIG.BASE_URL}/api/logs/bookmarklet/regenerate`,
+                    { method: 'POST' });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok || !d.success || !d.bookmarklet) throw new Error('refusé');
+                const link = el('gcLogsBookmarkletLink');
+                if (link) markBookmarkletReady(link, d.bookmarklet);
+                const statusEl = el('gcLogsBookmarkletStatus');
+                if (statusEl) statusEl.textContent =
+                    t('Nouveau favori prêt — remplacez l\'ancien dans vos favoris.');
+            } catch (e) {
+                showError(t('Jeton non régénéré'), t('Mes logs'));
+            }
+        });
+}
+
 // ---------------------------------------------------------------- init
 
 export function initLogsUI() {
@@ -358,6 +494,49 @@ export function initLogsUI() {
     el('gcLogsClearBtn').addEventListener('click', onClear);
     // Aperçu abandonné : le jeton expire seul côté serveur.
     el('gcLogsPreviewModal').addEventListener('hidden.bs.modal', () => { importToken = null; });
+
+    el('gcLogsPendingViewBtn').addEventListener('click', onPendingView);
+    el('gcLogsUpdateBtn').addEventListener('click', () => {
+        guideOpen = !guideOpen;
+        renderGuide(!!(lastStatus && lastStatus.exists && lastStatus.logs > 0));
+    });
+    const bm = el('gcLogsBookmarkletLink');
+    if (bm) {
+        bm.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (bm.getAttribute('aria-disabled') === 'true') return;
+            showInfo(
+                t('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez-le depuis une page de geocaching.com.'),
+                t('Envoyer vers MyGCFlow'));
+        });
+        loadBookmarklet(bm);
+    }
+    el('gcLogsCopyLinkBtn').addEventListener('click', onCopyBookmarklet);
+    el('gcLogsBookmarkletFallbackBtn').addEventListener('click', () => fileInput.click());
+    el('gcLogsRegenTokenBtn').addEventListener('click', onRegenBookmarkletToken);
+
+    // Un export déposé par le favori ou un import validé ailleurs arrivent
+    // hors de cette page : relevé tant que l'onglet Données est affiché,
+    // plus au retour de focus. Chaîné (jamais de requêtes qui se chevauchent)
+    // et muet quand une action de cette page est en cours ou que la carte
+    // joue (le rechargement des DNF en fin d'import attendrait son tour).
+    const checkOutside = () => {
+        if (document.hidden || busy) return;
+        if (pkg.isAnimationInProgress?.() || pkg.isRecordingActive?.()) return;
+        refreshLogsStatus();
+    };
+    const scheduleStatusPoll = () => {
+        if (statusPollTimer) return;
+        statusPollTimer = setTimeout(() => {
+            statusPollTimer = null;
+            if (el('data')?.classList.contains('active')) checkOutside();
+            scheduleStatusPoll();
+        }, STATUS_POLL_MS);
+    };
+    window.addEventListener('focus', checkOutside);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkOutside(); });
+    scheduleStatusPoll();
+
     refreshLogsStatus();
 }
 

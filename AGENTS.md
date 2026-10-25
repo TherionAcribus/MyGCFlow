@@ -154,6 +154,20 @@ Autres repères :
   dans `$XDG_CONFIG_HOME/MyGCFlow` (`~/.config`), données dans
   `$XDG_DATA_HOME/MyGCFlow` (`~/.local/share`).
 
+## Piège `.gitignore` et dossiers nommés `logs/`
+
+`logs/` dans `.gitignore` (journaux runtime) est un motif nu : il ignore
+**tout** dossier `logs/`, où qu'il soit — `static/logs/` (sources du favori
+« Mes logs ») ne ressortait pas de `git status`. Exception posée :
+`!static/logs/`. Si un nouveau dossier `logs/` doit être versionné,
+ajouter sa propre exception.
+
+Autre contrainte de ces sources : elles finissent sur **une seule ligne**
+dans le lien `javascript:` (commentaires en lignes entières, instructions
+terminées par `;`, pas de chaîne multi-ligne) — vérifié par
+`test_bookmarklet_is_a_single_comment_free_line` dans
+`tests/test_logs_api.py`.
+
 ## Piège `hidden` + classes d'affichage Bootstrap
 
 Un élément qui porte `hidden` ET une classe `d-block`/`d-flex`/`d-grid`…

@@ -24,19 +24,29 @@ fichiers.
 
 ## Principe : l'app importe, elle ne collecte pas
 
-MyGCFlow n'accède pas à geocaching.com pour ces données : ni scraper, ni
-cookies, ni identifiants. Elle importe des **fichiers** :
+MyGCFlow n'accède pas à geocaching.com depuis le serveur : ni scraper, ni
+cookies, ni identifiants. Elle importe le contrat neutre
+**`mygcflow-logs` v1** (ci-dessous) et les **logs Groundspeak d'un GPX**
+(`<groundspeak:log>` : My Finds, Pocket Query, export GSAK).
 
-- le contrat neutre **`mygcflow-logs` v1** (ci-dessous), que n'importe quel
-  outil peut produire ;
-- les **logs Groundspeak d'un GPX** (`<groundspeak:log>`) : My Finds, Pocket
-  Query, export GSAK.
+Deux voies produisent le fichier `mygcflow-logs` :
+
+- le **favori intégré** (carte « Mes logs », même mécanique que celui des
+  Lab Caches) : un lien `javascript:` à glisser dans la barre de favoris,
+  à cliquer depuis une page de geocaching.com. Il relit dans la session du
+  navigateur les mêmes pages qu'une consultation manuelle (listes de DNF,
+  caches posées, carnets), avec les mêmes cadences, puis envoie le
+  document à l'app — où il arrive comme un **import en attente**, validé
+  par l'aperçu avant tout écriture ;
+- l'**outil console** `tools/gc_logs_exporter/export_gc_logs.js` (usage
+  développeur), dont le moteur a été porté dans le cœur partagé du favori
+  (`static/logs/logs_collect_core.js`).
 
 Le contrat ne suppose rien de l'outil qui l'a produit : aucun champ
 spécifique à une méthode de collecte. Les conditions d'utilisation de
-geocaching.com interdisent la collecte automatisée sans autorisation écrite ;
-un outil tiers qui produirait ce fichier n'est ni livré dans l'installeur, ni
-présenté comme la voie d'import de l'app.
+geocaching.com restreignent la collecte automatisée ; le favori est un
+outil à la demande, lancé à la main par l'utilisateur dans son propre
+navigateur — la décision d'usage lui appartient.
 
 ## Format `mygcflow-logs` v1
 
@@ -339,7 +349,27 @@ Un fichier par import (`.json`, `.gpx`, ou `.zip` dont le premier `.json`/
    `revision` a bougé depuis l'aperçu (`LogRevisionConflict` : relancer
    l'aperçu). Le bilan de la tâche porte le statut à jour.
 3. Statut — `GET /api/logs/status` ; aucun cache GeoJSON à invalider tant
-   que les logs ne sont pas dessinés (lot C).
+   que les logs ne sont pas dessinés (lot C). Le statut porte aussi
+   `pending_import` quand un export du favori attend sa validation
+   (bandeau « Voir l'aperçu » de la carte, relevé toutes les 4 s tant que
+   l'onglet Données est affiché).
+
+**Réception du favori** — `POST /api/logs/receive` : corps = document
+`mygcflow-logs` (pas de multipart), jeton d'installation en en-tête
+`X-MyGCFlow-Token` (comparaison `secrets.compare_digest`), origine
+navigateur limitée à `https://www.geocaching.com` (CORS + preflight
+`Access-Control-Allow-Private-Network`, aucune tête CORS sinon). L'app
+étant en `http://localhost`, Chromium exige aussi `Vary: Origin`. Le
+document reçu est déposé comme un aperçu : fichier conservé sous un jeton
+d'import ordinaire (même mécanique que l'envoi de fichier) — la route ne
+commit jamais. `GET /api/logs/bookmarklet` génère et mémorise le jeton
+puis renvoie le lien `javascript:` monoligne (sources
+`static/logs/logs_collect_core.js` + `logs_bookmarklet.src.js`,
+`__TOKEN__`/`__ORIGIN__`/`__T_*__` substitués) ;
+`POST /api/logs/bookmarklet/regenerate` invalide le favori existant
+(un seul jeton actif à la fois, comme pour les Labs). Le jeton
+(`logs_receive_token` dans les préférences) survit à « Réinitialiser
+l'application », sinon le favori installé mourrait sans explication.
 
 Autres routes : `GET /api/logs/export` réexporte tout en `mygcflow-logs` v1
 **sans couverture** (réimporté, il ne retire rien) et daté de ses données
@@ -460,7 +490,7 @@ sans effet tant que l'affichage est coupé).
 | Lot | Contenu | Livrable vérifiable |
 |---|---|---|
 | **A — données** ✅ | migration v8 ; `log_formats.py` (contrat + logs GPX, sans Flask) ; `log_store.py` (fusion, couverture, aperçu) ; My Finds alimente `log_event` | tests unitaires sur fixtures **fictives** ; banc d'import (100 000 logs) pour fixer les plafonds |
-| **B — interface** ✅ | carte « Mes logs » de l'onglet Données : import avec aperçu, statut (par catégorie, en attente), export `mygcflow-logs`, suppression | e2e : aperçu, validation, réimport idempotent, refus d'un autre compte |
+| **B — interface** ✅ | carte « Mes logs » de l'onglet Données : favori de collecte (`javascript:`, jeton régénérable) + réception `/api/logs/receive` en import en attente ; import de fichier avec aperçu, statut (par catégorie, en attente), export `mygcflow-logs`, suppression | e2e : aperçu, validation, réimport idempotent, refus d'un autre compte, export du favori jusqu'à l'aperçu |
 | **C — DNF sur la carte** ✅ | réglage d'affichage (masqué par défaut), apparition / résolution dans l'animation, saut de la barre de chronologie | e2e : DNF masqué, DNF affiché puis remplacé par la trouvaille |
 | **D — poseur** | affichage de l'activité de poseur | |
 | **E — mode « Mes caches »** | page dédiée, comme le mode Évolution | |

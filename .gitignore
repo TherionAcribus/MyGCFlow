@@ -24,6 +24,8 @@ static/geojson_data.json
 static/json/country_state.json
 video/
 logs/
+# …sauf les sources du favori « Mes logs » (collecte sur geocaching.com).
+!static/logs/
 gcmap_versions.json
 
 # Données de l'utilisateur en développement : audio/ est le dossier des pistes
