@@ -1,0 +1,75 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
+{# Flash d'apparition des points DNF (mode principal) : réglage du thème,
+   comme le flash des trouvailles. « Comme les trouvailles » (défaut) le
+   rejoue ; les autres formes et couleurs ne servent qu'au flash propre.
+   Piloté par ui.js (initDnfFlashControls). #}
+<div id="flashDnf">
+    <h5 class="gc-section-title">
+        <i class="ti ti-bolt text-muted me-1"></i>{{ _("Flash des DNF") }}{{ profile_scope_badge() }}
+    </h5>
+    <p class="form-hint text-muted">{{ _("Joué quand un DNF apparaît sur la carte (affichage des DNF activé dans l'onglet Données).") }}</p>
+    <form>
+        <div class="mb-3">
+            <label class="form-label" for="selectDnfFlashMode">{{ _("Forme du flash des DNF") }}</label>
+            <select id="selectDnfFlashMode" class="form-select" aria-label="{{ _('Forme du flash des DNF') }}">
+                <option value="same" selected>{{ _("Comme les trouvailles") }}</option>
+                <option value="none">{{ _("Pas de flash") }}</option>
+                <option value="circle">{{ _("Cercle") }}</option>
+                <option value="implode">{{ _("Implosion (anneau qui se referme)") }}</option>
+                <option value="echo">{{ _("Double onde (écho)") }}</option>
+                <option value="target">{{ _("Cible (réticule)") }}</option>
+                <option value="star">{{ _("Étoile") }}</option>
+                <option value="sparkle">{{ _("Scintillement") }}</option>
+                <option value="square">{{ _("Carré") }}</option>
+                <option value="triangle">{{ _("Triangle") }}</option>
+                <option value="diamond">{{ _("Losange") }}</option>
+            </select>
+        </div>
+
+        <!-- Réglages du flash propre : masqués en « Comme les trouvailles »
+             et « Pas de flash » (ui.js, updateDnfFlashFieldsVisibility). -->
+        <div id="dnfFlashOwnFields">
+            <div class="mb-3">
+                <label class="form-label" for="inputSizeDnfFlash">{{ _("Taille du flash en px") }}</label>
+                <input id="inputSizeDnfFlash" type="number" class="form-control" min="5" max="200" step="5" aria-describedby="helpSizeDnfFlash">
+                <small id="helpSizeDnfFlash" class="form-hint text-muted">{{ _("5 à 200 px") }}</small>
+            </div>
+
+            <label class="form-label">{{ _("Couleur du flash") }}</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="dnfFlashColor" id="dnfFlashColorGc" value="gc" aria-labelledby="dnfFlashColorGcLabel">
+                <label class="form-check-label" id="dnfFlashColorGcLabel" for="dnfFlashColorGc">{{ _("Couleurs GC (par type)") }}</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="dnfFlashColor" id="dnfFlashColorFix" value="fix" checked aria-labelledby="dnfFlashColorFixLabel">
+                <label class="form-check-label" id="dnfFlashColorFixLabel" for="dnfFlashColorFix">{{ _("Couleur unique") }}</label>
+            </div>
+            <div class="mt-2">
+                <label class="form-label" for="dnfFlashColor">{{ _("Choisir la couleur") }}</label>
+                <input type="color" class="form-control form-control-color" id="dnfFlashColor" value="#2992D2" aria-label="{{ _('Choisir la couleur du flash des DNF') }}">
+            </div>
+
+            <label class="form-label mt-3">{{ _("Couleur du contour") }}</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="dnfFlashBorderColor" id="dnfFlashBorderColorAuto" value="auto" checked aria-labelledby="dnfFlashBorderColorAutoLabel">
+                <label class="form-check-label" id="dnfFlashBorderColorAutoLabel" for="dnfFlashBorderColorAuto">{{ _("Automatique") }}</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="dnfFlashBorderColor" id="dnfFlashBorderColorGc" value="gc" aria-labelledby="dnfFlashBorderColorGcLabel">
+                <label class="form-check-label" id="dnfFlashBorderColorGcLabel" for="dnfFlashBorderColorGc">{{ _("Couleurs GC (par type)") }}</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="dnfFlashBorderColor" id="dnfFlashBorderColorNone" value="none" aria-labelledby="dnfFlashBorderColorNoneLabel">
+                <label class="form-check-label" id="dnfFlashBorderColorNoneLabel" for="dnfFlashBorderColorNone">{{ _("Transparent") }}</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="dnfFlashBorderColor" id="dnfFlashBorderColorFix" value="fix" aria-labelledby="dnfFlashBorderColorFixLabel">
+                <label class="form-check-label" id="dnfFlashBorderColorFixLabel" for="dnfFlashBorderColorFix">{{ _("Couleur unique") }}</label>
+            </div>
+            <div class="mt-2">
+                <label class="form-label" for="dnfFlashBorderColor">{{ _("Choisir la couleur") }}</label>
+                <input type="color" class="form-control form-control-color" id="dnfFlashBorderColor" value="#000000" aria-label="{{ _('Choisir la couleur du contour du flash des DNF') }}">
+            </div>
+        </div>
+    </form>
+</div>

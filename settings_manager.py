@@ -540,6 +540,19 @@ class DisappearFlashOptions:
 
 
 @dataclass
+class DnfFlashOptions:
+    """Flash d'apparition d'un point DNF (docs/logs-geocaching.md). « same »
+    (défaut) rejoue le flash des trouvailles ; sinon, un flash propre."""
+    mode: str = "same"  # "same", "none", ou une forme de DNF_FLASH_MODES
+    size: int = 30  # en px
+    # Bleu de l'icône DNF de geocaching.com.
+    color: str = "#2992D2"
+    color_type: str = "fix"  # "gc", "none", "fix"
+    border_color: str = "#000000"
+    border_color_type: str = "auto"  # "auto", "gc", "none", "fix"
+
+
+@dataclass
 class FlashOptions:
     mode: str = "circle"  # "none", "circle", "impulse", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond"
     # Durée (ms) : caractère du flash autant que sa forme — un flash sec de
@@ -553,6 +566,7 @@ class FlashOptions:
     border_color: str = "#000000"
     border_color_type: str = "auto"  # "auto", "gc", "none", "fix"
     disappear: DisappearFlashOptions = field(default_factory=DisappearFlashOptions)
+    dnf: DnfFlashOptions = field(default_factory=DnfFlashOptions)
 
 
 @dataclass
@@ -712,6 +726,10 @@ FLASH_MODES = ("none", "circle", "impulse", "implode", "echo", "target", "star",
 # du sens pour une cache qui s'éteint — ni la vague « impulse » ni l'écho,
 # qui s'étendent depuis le point.
 DISAPPEAR_FLASH_MODES = ("none", "implode", "target", "circle", "star", "sparkle", "square", "triangle", "diamond")
+# Flash propre des points DNF : les formes du flash d'apparition, sauf la vague
+# « impulse » (décalage par position, sans objet pour un point isolé) ;
+# « same » reprend le flash des trouvailles.
+DNF_FLASH_MODES = ("same", "none", "circle", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond")
 POINT_SIZE_RANGE = (1, 10)
 BORDER_SIZE_RANGE = (0, 10)
 ICON_SIZE_RANGE = (12, 40)
@@ -1182,6 +1200,10 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
         raw_fd = f.get("disappear") or {}
         fd = raw_fd if isinstance(raw_fd, dict) else {}
         pfd = p.flash.disappear
+        # Flash des points DNF : même règle (thèmes antérieurs → défauts).
+        raw_fn = f.get("dnf") or {}
+        fn = raw_fn if isinstance(raw_fn, dict) else {}
+        pfn = p.flash.dnf
         p.flash = FlashOptions(
             mode=_coerce_choice(f.get("mode"), FLASH_MODES, p.flash.mode),
             # Thèmes antérieurs au déplacement de la durée : repli sur la
@@ -1199,6 +1221,14 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                 color_type=_coerce_choice(fd.get("color_type"), COLOR_TYPES, pfd.color_type),
                 border_color=_coerce_hex_color(fd.get("border_color"), pfd.border_color),
                 border_color_type=_coerce_choice(fd.get("border_color_type"), FLASH_BORDER_TYPES, pfd.border_color_type),
+            ),
+            dnf=DnfFlashOptions(
+                mode=_coerce_choice(fn.get("mode"), DNF_FLASH_MODES, pfn.mode),
+                size=_clamp_int(fn.get("size"), pfn.size, *FLASH_SIZE_RANGE),
+                color=_coerce_hex_color(fn.get("color"), pfn.color),
+                color_type=_coerce_choice(fn.get("color_type"), COLOR_TYPES, pfn.color_type),
+                border_color=_coerce_hex_color(fn.get("border_color"), pfn.border_color),
+                border_color_type=_coerce_choice(fn.get("border_color_type"), FLASH_BORDER_TYPES, pfn.border_color_type),
             ),
         )
 
@@ -2845,6 +2875,14 @@ class SettingsManager:
                     'color_type': prof.flash.disappear.color_type,
                     'border_color': prof.flash.disappear.border_color,
                     'border_color_type': prof.flash.disappear.border_color_type,
+                },
+                'dnf': {
+                    'mode': prof.flash.dnf.mode,
+                    'size': prof.flash.dnf.size,
+                    'color': prof.flash.dnf.color,
+                    'color_type': prof.flash.dnf.color_type,
+                    'border_color': prof.flash.dnf.border_color,
+                    'border_color_type': prof.flash.dnf.border_color_type,
                 },
             },
             'infos': {

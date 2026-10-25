@@ -2458,7 +2458,22 @@ function dnfOlFeature(entry) {
     return entry.ol;
 }
 
-function syncDnf(isVisible, appear = null) {
+// Flash d'un DNF qui apparaît : celui des trouvailles (« same », défaut du
+// thème) ou son flash propre (pkg.options.flash.dnf). null : pas de flash.
+function dnfFlashOptions(findFlash) {
+    const own = pkg.options.flash?.dnf;
+    const options = !own || own.mode === 'same' ? findFlash : own;
+    if (!options || !options.mode || options.mode === 'none') return null;
+    if (options === own) {
+        if (!own.rgb && own.color) own.rgb = pkg.hexToRgb(own.color);
+        if (!own.border_rgb && own.border_color) own.border_rgb = pkg.hexToRgb(own.border_color);
+    }
+    return options;
+}
+
+// `flash` : { findFlash, record } pendant l'animation — chaque DNF qui
+// apparaît y joue son flash ; absent (départ, saut, repos), aucun flash.
+function syncDnf(isVisible, appear = null, flash = null) {
     if (isEvolutionPage()) return;
     const entries = pkg.getDnfEntries?.() || [];
     if (!entries.length && !dnfShown.size) return;
@@ -2478,12 +2493,27 @@ function syncDnf(isVisible, appear = null) {
     if (toRemove.length) source.removeFeatures(toRemove);
     dnfShown.clear();
     for (const feature of wanted) dnfShown.add(feature);
-    if (toAdd.length) displayWebGLPoints(toAdd, pkg.options.point, appear);
+    if (toAdd.length) {
+        displayWebGLPoints(toAdd, pkg.options.point, appear);
+        const options = flash ? dnfFlashOptions(flash.findFlash) : null;
+        if (options) {
+            pushFeatureFlashes(toAdd, options, flash.record, false);
+            for (let i = 0; i < toAdd.length; i++) dnfFlashLog.push(options.mode);
+            if (dnfFlashLog.length > 200) dnfFlashLog.splice(0, dnfFlashLog.length - 200);
+        }
+    }
+}
+
+// Relevé pour les tests : DNF présents sur la carte et forme des derniers
+// flashs joués par des DNF (200 au plus).
+const dnfFlashLog = [];
+export function getDnfDebugState() {
+    return { shown: dnfShown.size, flashes: dnfFlashLog.slice() };
 }
 
 // Carte à la fin du jour `day` (animation, saut de la chronologie).
-export function syncDnfToDay(day, appear = null) {
-    syncDnf((entry) => dnfVisibleAt(entry, day), appear);
+export function syncDnfToDay(day, appear = null, flash = null) {
+    syncDnf((entry) => dnfVisibleAt(entry, day), appear, flash);
 }
 
 // Carte au repos : état à la fin de la sélection — un DNF résolu dans la
@@ -5248,9 +5278,10 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             delayMs: flashOptions.mode === 'impulse' ? staggerDelayMs : null,
         });
     }
-    // DNF : apparus au premier échec, retirés quand la trouvaille les résout
-    // (sans flash ni compteur — ce ne sont pas des trouvailles).
-    syncDnfToDay(dateToDayNumber(dates[dates.length - 1]), { at: sampleAppearClock() });
+    // DNF : apparus au premier échec (avec leur flash), retirés quand la
+    // trouvaille les résout — jamais comptés : ce ne sont pas des trouvailles.
+    syncDnfToDay(dateToDayNumber(dates[dates.length - 1]), { at: sampleAppearClock() },
+        { findFlash: flashOptions, record });
 
     if (flashOptions.mode != "none") {
         // Animation de flash seulement pour les nouvelles features (dates du lot)

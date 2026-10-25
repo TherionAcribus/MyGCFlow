@@ -210,6 +210,17 @@ class ProfileSaveAndImportValidationTests(unittest.TestCase):
         imported = self.manager.import_profile_payload(payload)
         self.assertEqual(imported.flash.disappear.mode, "circle")
 
+    def test_a_partial_patch_merges_into_the_dnf_flash(self):
+        self._put({"flash": {"dnf": {"mode": "star"}}})
+        self._put({"flash": {"dnf": {"color": "#112233"}}})
+        saved = settings_manager.read_json(settings_manager.PROFILES_DIR / "Alpha.json")
+        self.assertEqual(saved["flash"]["dnf"], {
+            "mode": "star", "size": 30, "color": "#112233", "color_type": "fix",
+            "border_color": "#000000", "border_color_type": "auto",
+        })
+        payload = self.manager.export_profile_payload("Alpha", "test")
+        self.assertEqual(payload["profile"]["flash"]["dnf"]["mode"], "star")
+
 
 class DisappearFlashTests(unittest.TestCase):
     """Flash de disparition du mode Évolution, porté par le thème."""
@@ -230,6 +241,24 @@ class DisappearFlashTests(unittest.TestCase):
         self.assertEqual(prof.flash.disappear.color_type, "gc")
         self.assertEqual(prof.flash.disappear.border_color, "#000000")
         self.assertEqual(prof.flash.disappear.border_color_type, "auto")
+
+    def test_a_legacy_theme_gets_the_default_dnf_flash(self):
+        # Points DNF : par défaut, le même flash que les trouvailles.
+        prof = coerce_profile({"flash": {"mode": "star", "size": 40}})
+        self.assertEqual(prof.flash.dnf, settings_manager.DnfFlashOptions())
+        self.assertEqual(prof.flash.dnf.mode, "same")
+
+    def test_dnf_flash_values_are_validated(self):
+        prof = coerce_profile({"flash": {"dnf": {
+            "mode": "impulse", "size": 999, "color": "bleu", "color_type": "gc",
+            "border_color_type": "arc-en-ciel",
+        }}})
+        self.assertEqual(prof.flash.dnf.mode, "same")      # la vague n'est pas proposée
+        self.assertEqual(prof.flash.dnf.size, 200)
+        self.assertEqual(prof.flash.dnf.color, "#2992D2")
+        self.assertEqual(prof.flash.dnf.color_type, "gc")
+        self.assertEqual(prof.flash.dnf.border_color_type, "auto")
+        self.assertEqual(coerce_profile({"flash": {"dnf": {"mode": "echo"}}}).flash.dnf.mode, "echo")
 
     def test_flash_border_color_is_validated(self):
         prof = coerce_profile({"flash": {

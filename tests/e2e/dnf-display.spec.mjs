@@ -138,6 +138,62 @@ test('dans le temps, un DNF apparaît au premier échec puis laisse place à la 
 });
 
 
+async function setRhythm(page, daysPerSecond) {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
+  await page.locator('#inputDaysPerSecond').fill(String(daysPerSecond));
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('a[href="#data"]').click();
+}
+
+
+// Formes des flashs joués par des DNF pendant une lecture depuis le 01/08/2011
+// (le DNF de GC2PR3N tombe le 20/08/2011).
+async function dnfFlashesDuringPreview(page) {
+  const before = (await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getDnfDebugState())).flashes.length;
+  await page.evaluate(async () => {
+    (await import('/static/js/index.js')).options.animation.dateStart = new Date(2011, 7, 1);
+  });
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getDnfDebugState())).flashes.length,
+  { timeout: 20_000 }).toBeGreaterThan(before);
+  await page.locator('#btnQuickStop').click();
+  await expect(page.locator('#btnQuickPreview')).toBeVisible();
+  return (await page.evaluate(async () =>
+    (await import('/static/js/index.js')).getDnfDebugState())).flashes.slice(before);
+}
+
+
+test('un DNF qui apparaît joue le flash des trouvailles, ou son flash propre', async ({ page }) => {
+  await openWithData(page);
+  await showDnf(page);
+  await setRhythm(page, 20);
+  await page.evaluate(async () => { (await import('/static/js/index.js')).options.flash.mode = 'circle'; });
+
+  // Thème par défaut : « Comme les trouvailles », réglages propres masqués.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabFlash"]').click();
+  await expect(page.locator('#selectDnfFlashMode')).toHaveValue('same');
+  await expect(page.locator('#dnfFlashOwnFields')).toBeHidden();
+  await page.locator('a[href="#data"]').click();
+  expect(await dnfFlashesDuringPreview(page)).toEqual(['circle']);
+
+  // Flash propre : ses réglages apparaissent, et c'est lui qui joue.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabFlash"]').click();
+  await page.evaluate(() => {
+    const select = document.getElementById('selectDnfFlashMode');
+    select.value = 'star';
+    select.dispatchEvent(new Event('change'));
+  });
+  await expect(page.locator('#dnfFlashOwnFields')).toBeVisible();
+  await page.locator('a[href="#data"]').click();
+  expect(await dnfFlashesDuringPreview(page)).toEqual(['star']);
+});
+
+
 test('le trait de déplacement passe par les DNF, sauf si on les en retire', async ({ page }) => {
   await openWithData(page);
   await enableTrail(page);

@@ -411,10 +411,21 @@ DNF. En « Lab Caches » seuls, aucun DNF.
 **Rendu** (`point_webgl_style.js`, `applyDnfStyle`) : noir en vectoriel —
 bordure blanche quand le thème en dessine une — et icône du type de log
 « Didn't find it » de geocaching.com en mode icônes (case `dnf` des feuilles
-`geocaching-sprite*.png`, x = 1900, aussi dans le jeu « smiley »). Pas de
-flash ni de compteur à l'apparition, retrait sans transition : les animations
-dédiées (DNF, « DNF trouvé ») viendront plus tard. Popup : nombre de DNF,
-date du premier, date de la trouvaille ou « Pas encore trouvée ».
+`geocaching-sprite*.png`, x = 1900, aussi dans le jeu « smiley »), refaite
+sur le modèle des autres : disque blanc sur toute la case (48 px, 96 en
+@2x), icône réduite à 40 px (80) au centre — sans ce contour, elle paraissait
+plus grosse que ses voisines. Pas de compteur à l'apparition, retrait sans
+transition (l'animation « DNF trouvé » viendra plus tard). Popup : nombre de
+DNF, date du premier, date de la trouvaille ou « Pas encore trouvée ».
+
+**Flash** (réglage du thème `flash.dnf`, sous-onglet Flash du mode principal,
+`menu_flash_dnf.html`) : à son apparition pendant l'animation ou la vidéo,
+un DNF joue par défaut le flash des trouvailles (`mode: "same"`), ou son
+flash propre — forme, taille, couleur, contour, comme le flash de
+disparition du mode Évolution (mêmes contrôles génériques dans `ui.js`,
+`initFlashVariantControls`). Formes : celles du flash d'apparition sauf la
+vague « impulse ». Aucun flash au départ de l'animation ni lors d'un saut.
+`getDnfDebugState()` (mapgl.js) relève les flashs joués pour les tests.
 
 **Trait de déplacement.** Chaque DNF est un déplacement : chaque tentative
 (`dnf_dates`) est une étape du trajet, jusqu'à la date de fin de l'animation

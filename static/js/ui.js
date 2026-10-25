@@ -7082,105 +7082,122 @@ export function syncTrailOptionsUI() {
     updateTrailControlsState();
 }
 
-// --- Flash de disparition (mode Évolution) ----------------------------------
-// Réglage du thème (pkg.options.flash.disappear), présent seulement sur la page
-// /evolution (menu_flash_disappear.html). Déclarations de fonctions : appelées
-// depuis initUIElements, qui s'exécute pendant l'évaluation du module.
+// --- Flashs secondaires : disparition (Évolution) et points DNF -------------
+// Réglages du thème (pkg.options.flash.disappear, présent seulement sur la
+// page /evolution — menu_flash_disappear.html ; pkg.options.flash.dnf,
+// seulement sur la page principale — menu_flash_dnf.html). Mêmes champs :
+// forme, taille, couleur et contour. Déclarations de fonctions, sans const de
+// module : appelées depuis initUIElements, qui s'exécute pendant l'évaluation
+// du module (cf. AGENTS.md).
 
-function disappearFlashOptions() {
-    const flash = pkg.options.flash;
-    if (!flash.disappear || typeof flash.disappear !== 'object') {
-        flash.disappear = { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' };
-    }
-    return flash.disappear;
+function flashVariantIds(kind) {
+    return kind === 'dnf'
+        ? { key: 'dnf', mode: 'selectDnfFlashMode', size: 'inputSizeDnfFlash', color: 'dnfFlashColor', border: 'dnfFlashBorderColor' }
+        : { key: 'disappear', mode: 'selectDisappearFlashMode', size: 'inputSizeDisappearFlash', color: 'disappearFlashColor', border: 'disappearFlashBorderColor' };
 }
 
-function initDisappearFlashControls() {
-    const select = document.getElementById('selectDisappearFlashMode');
+function flashVariantOptions(kind) {
+    const flash = pkg.options.flash;
+    const { key } = flashVariantIds(kind);
+    if (!flash[key] || typeof flash[key] !== 'object') {
+        flash[key] = kind === 'dnf'
+            ? { mode: 'same', size: 30, color: '#2992D2', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' }
+            : { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' };
+    }
+    return flash[key];
+}
+
+function initFlashVariantControls(kind) {
+    const ids = flashVariantIds(kind);
+    const options = () => flashVariantOptions(kind);
+    const select = document.getElementById(ids.mode);
     if (!select) return;
-    select.addEventListener('change', () => { disappearFlashOptions().mode = select.value; });
+    select.addEventListener('change', () => {
+        options().mode = select.value;
+        updateFlashVariantVisibility(kind);
+    });
     initTomSelect(select, { maxItems: 1, plugins: [] });
 
-    const size = document.getElementById('inputSizeDisappearFlash');
+    const size = document.getElementById(ids.size);
     if (size) {
         size.addEventListener('input', () => {
             const value = parseInt(size.value);
-            if (!isNaN(value)) disappearFlashOptions().size = value;
+            if (!isNaN(value)) options().size = value;
         });
         size.addEventListener('blur', () => {
             const value = Math.min(200, Math.max(5, parseInt(size.value) || 5));
             size.value = value;
-            disappearFlashOptions().size = value;
+            options().size = value;
         });
     }
 
-    const color = document.getElementById('disappearFlashColor');
-    if (color) {
-        const apply = () => {
-            const options = disappearFlashOptions();
-            options.color = color.value;
-            options.rgb = pkg.hexToRgb(color.value);
-        };
-        color.addEventListener('input', apply);
-        color.addEventListener('change', apply);
-    }
-
-    document.getElementsByName('disappearFlashColor').forEach((radio) => {
-        radio.addEventListener('change', () => {
-            disappearFlashOptions().color_type = radio.value;
-            updateDisappearColorPickerVisibility();
+    for (const [inputId, field, rgbField, typeField] of [
+        [ids.color, 'color', 'rgb', 'color_type'],
+        [ids.border, 'border_color', 'border_rgb', 'border_color_type'],
+    ]) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            const apply = () => {
+                const o = options();
+                o[field] = input.value;
+                o[rgbField] = pkg.hexToRgb(input.value);
+            };
+            input.addEventListener('input', apply);
+            input.addEventListener('change', apply);
+        }
+        // Les radios portent le même nom que le sélecteur de couleur.
+        document.getElementsByName(inputId).forEach((radio) => {
+            radio.addEventListener('change', () => {
+                options()[typeField] = radio.value;
+                updateFlashVariantVisibility(kind);
+            });
         });
-    });
-
-    const borderColor = document.getElementById('disappearFlashBorderColor');
-    if (borderColor) {
-        const apply = () => {
-            const options = disappearFlashOptions();
-            options.border_color = borderColor.value;
-            options.border_rgb = pkg.hexToRgb(borderColor.value);
-        };
-        borderColor.addEventListener('input', apply);
-        borderColor.addEventListener('change', apply);
-    }
-
-    document.getElementsByName('disappearFlashBorderColor').forEach((radio) => {
-        radio.addEventListener('change', () => {
-            disappearFlashOptions().border_color_type = radio.value;
-            updateDisappearBorderPickerVisibility();
-        });
-    });
-}
-
-function updateDisappearColorPickerVisibility() {
-    const color = document.getElementById('disappearFlashColor');
-    if (color?.parentElement) {
-        color.parentElement.style.display = disappearFlashOptions().color_type === 'fix' ? 'block' : 'none';
     }
 }
 
-function updateDisappearBorderPickerVisibility() {
-    const color = document.getElementById('disappearFlashBorderColor');
+// Sélecteurs de couleur visibles en « Couleur unique » seulement ; pour les
+// DNF, réglages propres masqués en « Comme les trouvailles » / « Pas de flash ».
+function updateFlashVariantVisibility(kind) {
+    const ids = flashVariantIds(kind);
+    const options = flashVariantOptions(kind);
+    const color = document.getElementById(ids.color);
     if (color?.parentElement) {
-        color.parentElement.style.display = disappearFlashOptions().border_color_type === 'fix' ? 'block' : 'none';
+        color.parentElement.style.display = options.color_type === 'fix' ? 'block' : 'none';
     }
+    const border = document.getElementById(ids.border);
+    if (border?.parentElement) {
+        border.parentElement.style.display = options.border_color_type === 'fix' ? 'block' : 'none';
+    }
+    const own = kind === 'dnf' ? document.getElementById('dnfFlashOwnFields') : null;
+    if (own) own.hidden = options.mode === 'same' || options.mode === 'none';
+}
+
+function syncFlashVariantUI(kind) {
+    const ids = flashVariantIds(kind);
+    const select = document.getElementById(ids.mode);
+    if (!select) return;
+    const options = flashVariantOptions(kind);
+    select.value = options.mode;
+    refreshTomSelect(select);
+    const size = document.getElementById(ids.size);
+    if (size && options.size != null) size.value = options.size;
+    const color = document.getElementById(ids.color);
+    if (color && options.color) color.value = options.color;
+    setRadioGroupValue(document.getElementsByName(ids.color), options.color_type);
+    const border = document.getElementById(ids.border);
+    if (border && options.border_color) border.value = options.border_color;
+    setRadioGroupValue(document.getElementsByName(ids.border), options.border_color_type || 'auto');
+    updateFlashVariantVisibility(kind);
+}
+
+function initDisappearFlashControls() {
+    initFlashVariantControls('disappear');
+    initFlashVariantControls('dnf');
 }
 
 function syncDisappearFlashUI() {
-    const select = document.getElementById('selectDisappearFlashMode');
-    if (!select) return;
-    const options = disappearFlashOptions();
-    select.value = options.mode;
-    refreshTomSelect(select);
-    const size = document.getElementById('inputSizeDisappearFlash');
-    if (size && options.size != null) size.value = options.size;
-    const color = document.getElementById('disappearFlashColor');
-    if (color && options.color) color.value = options.color;
-    setRadioGroupValue(document.getElementsByName('disappearFlashColor'), options.color_type);
-    updateDisappearColorPickerVisibility();
-    const borderColor = document.getElementById('disappearFlashBorderColor');
-    if (borderColor && options.border_color) borderColor.value = options.border_color;
-    setRadioGroupValue(document.getElementsByName('disappearFlashBorderColor'), options.border_color_type || 'auto');
-    updateDisappearBorderPickerVisibility();
+    syncFlashVariantUI('disappear');
+    syncFlashVariantUI('dnf');
 }
 
 // Validation à la perte de focus : plus de correction silencieuse, on
