@@ -11,6 +11,9 @@ instance/
 
 # Données générées
 *.gpx
+# Exports de l'exporteur de logs (tools/gc_logs_exporter) : pseudo, identifiant
+# de compte et historique personnel, à ne pas publier.
+mygcflow-logs-*.json
 !tests/e2e/fixtures/my-finds.gpx
 !tests/e2e/fixtures/my-finds-gap.gpx
 !tests/e2e/fixtures/my-finds-locationless.gpx
