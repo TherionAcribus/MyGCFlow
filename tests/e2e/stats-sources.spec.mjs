@@ -227,16 +227,40 @@ test('le formulaire propose la source et garde la statistique quand elle existe'
   await expect(page.locator('#selectStatsSource')).toHaveValue('dnf');
   await expect(page.locator('#selectStatsMetric option[value="attribute"]')).toHaveCount(0);
 
-  // Vers les caches posées : la difficulté existe aussi, elle est gardée.
+  // Réglages de la métrique : conservés quand la nouvelle source la garde.
+  await page.locator('#selectStatsSort').selectOption('race');
+  await page.locator('#selectStatsOrientation').selectOption('vertical');
+  await expect.poll(async () =>
+    (await (await request.get('/api/settings')).json()).stats.panels[0]?.options?.sort
+  ).toBe('race');
+
+  // Vers les caches posées : la difficulté existe aussi — métrique et
+  // réglages gardés.
   await page.locator('#selectStatsSource').selectOption('owned');
   await expect.poll(async () => (await snapshot(page)).sources?.owned?.counts?.difficulty).toBeTruthy();
   await expect(page.locator('#selectStatsMetric')).toHaveValue('difficulty');
-  // Vers les trouvailles : l'option `source` disparaît du réglage.
+  await expect(page.locator('#selectStatsSort')).toHaveValue('race');
+  await expect(page.locator('#selectStatsOrientation')).toHaveValue('vertical');
+  // Vers les trouvailles : l'option `source` disparaît du réglage, les
+  // réglages de la métrique restent.
   await page.locator('#selectStatsSource').selectOption('finds');
   await expect.poll(async () => {
     const stats = (await (await request.get('/api/settings')).json()).stats;
     return stats.panels[0]?.options?.source ?? 'finds';
   }).toBe('finds');
+  await expect(page.locator('#selectStatsSort')).toHaveValue('race');
+
+  // Métrique étrangère à la source (« Attributs », trouvailles seulement) :
+  // repli sur la première du même type et options par défaut. (Relevé dans
+  // les réglages : le champ garde la valeur tapée tant qu'il a le focus.)
+  await page.locator('#selectStatsMetric').selectOption('attribute');
+  await page.locator('#inputStatsMaxItems').fill('5');
+  await page.locator('#selectStatsSource').selectOption('dnf');
+  await expect(page.locator('#selectStatsMetric')).toHaveValue('cache_type');
+  await expect.poll(async () => {
+    const panel = (await (await request.get('/api/settings')).json()).stats.panels[0];
+    return [panel?.options?.source, panel?.options?.max_items];
+  }).toEqual(['dnf', 8]);
 
   // Galerie : sections DNF et caches posées proposées avec leurs données.
   await page.locator('#btnStatsAdd').click();

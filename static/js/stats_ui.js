@@ -1067,7 +1067,9 @@ function bindFormFields() {
     });
 
     // Données comptées : la métrique est gardée si la source la propose, sinon
-    // la première du même type ; options par défaut, tuiles de la source.
+    // la première du même type. Métrique conservée : ses réglages aussi (tri,
+    // mode de cellule…) — seuls les tuiles d'un compteur et la palette suivent
+    // la nouvelle source ; métrique changée : options par défaut.
     $('selectStatsSource')?.addEventListener('change', (event) => {
         const source = event.target.value;
         updateSelected((panel) => {
@@ -1075,9 +1077,10 @@ function bindFormFields() {
             const metric = offered.includes(panel.metric) ? panel.metric : offered[0];
             if (!metric) return;
             const fresh = createStatsPanel(panel.kind, metric, {});
+            if (metric !== panel.metric) panel.options = fresh.options;
             panel.metric = metric;
-            panel.options = fresh.options;
             if (source !== 'finds') panel.options.source = source;
+            else delete panel.options.source;
             if (panel.kind === 'counter') {
                 const defaults = pageMode === 'poses' ? POSES_SOURCE_COUNTER_DEFAULTS : SOURCE_COUNTER_DEFAULTS;
                 panel.options.items = [...(defaults[source] || fresh.options.items)];
