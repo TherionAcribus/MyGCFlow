@@ -58,11 +58,12 @@ async function importLogs(request, name, buffer) {
 
 const PANELS = [
   { id: 'abc00001', kind: 'counter', metric: 'summary',
-    options: { source: 'dnf', items: ['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio'] } },
+    options: { source: 'dnf', items: ['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio', 'dnf_resolve_delay', 'dnf_visits'] } },
   { id: 'abc00002', kind: 'bar', metric: 'difficulty', options: { source: 'dnf' } },
   { id: 'abc00003', kind: 'counter', metric: 'summary',
     options: { source: 'owned', items: ['total', 'owned_active', 'owned_disabled', 'owned_archived', 'maintenances'] } },
   { id: 'abc00004', kind: 'bar', metric: 'year', options: { source: 'owned' } },
+  { id: 'abc00006', kind: 'bar', metric: 'cache', options: { source: 'dnf' } },
 ];
 
 function altText(page, id) {
@@ -124,6 +125,16 @@ test('au repos : DNF et caches posées comptés même masqués sur la carte', as
   await expect(dnf).toContainText('DNF résolus : 1');
   // 3 DNF pour 2 trouvailles.
   await expect(dnf).toContainText(/Taux d'échec : 60/);
+  // GC5AAA2 : apparue le 10/06/2019, résolue le 31/03/2020 (~10 mois) après
+  // deux passages — la seule résolue ; GCD0001 jamais trouvée.
+  await expect(dnf).toContainText('Délai moyen de résolution : 10 mois');
+  await expect(dnf).toContainText(/Record de tentatives : 2 \(GC5AAA2\)/);
+
+  // « Les caches qui vous résistent » : une barre par cache en échec.
+  const byCache = altText(page, 'abc00006');
+  await expect(byCache).toContainText('DNF par cache');
+  await expect(byCache).toContainText(/GC5AAA2 · .+ : 2/);
+  await expect(byCache).toContainText('GCD0001 · Échec fictif : 1');
 
   const owned = altText(page, 'abc00003');
   await expect(owned).toContainText('Caches posées : 7');
@@ -279,12 +290,13 @@ test('le formulaire propose la source et garde la statistique quand elle existe'
   await expect(page.locator('#selectStatsSort')).toHaveValue('race');
 
   // Métrique étrangère à la source (« Attributs », trouvailles seulement) :
-  // repli sur la première du même type et options par défaut. (Relevé dans
-  // les réglages : le champ garde la valeur tapée tant qu'il a le focus.)
+  // repli sur la première du même type — « DNF par cache » — et options par
+  // défaut. (Relevé dans les réglages : le champ garde la valeur tapée tant
+  // qu'il a le focus.)
   await page.locator('#selectStatsMetric').selectOption('attribute');
   await page.locator('#inputStatsMaxItems').fill('5');
   await page.locator('#selectStatsSource').selectOption('dnf');
-  await expect(page.locator('#selectStatsMetric')).toHaveValue('cache_type');
+  await expect(page.locator('#selectStatsMetric')).toHaveValue('cache');
   await expect.poll(async () => {
     const panel = (await (await request.get('/api/settings')).json()).stats.panels[0];
     return [panel?.options?.source, panel?.options?.max_items];

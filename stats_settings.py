@@ -101,7 +101,7 @@ EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "
 POSES_COUNTER_ITEMS = ("total", "finders", "loyal", "favorites", "fav_ratio", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west", "ftf_delay", "neglected")
 # Tuiles des sources DNF et caches posées (page principale) ; les tuiles
 # d'état sont lues au jour affiché par le client.
-DNF_COUNTER_ITEMS = ("total", "caches", "dnf_open", "dnf_resolved", "dnf_ratio", "days", "best_day", "streak", "types", "countries", "states")
+DNF_COUNTER_ITEMS = ("total", "caches", "dnf_open", "dnf_resolved", "dnf_ratio", "dnf_resolve_delay", "dnf_visits", "days", "best_day", "streak", "types", "countries", "states")
 OWNED_COUNTER_ITEMS = ("total", "owned_active", "owned_disabled", "owned_archived", "maintenances", "days", "best_day", "types", "countries", "states")
 _ALL_COUNTER_ITEMS = tuple(dict.fromkeys(STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS + POSES_COUNTER_ITEMS
                                          + DNF_COUNTER_ITEMS + OWNED_COUNTER_ITEMS))

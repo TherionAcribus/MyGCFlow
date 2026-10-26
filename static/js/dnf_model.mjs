@@ -63,16 +63,31 @@ export function dnfEventsByDate(features) {
 }
 
 // Tuiles d'état au jour `day` : caches en échec non résolues (« DNF en
-// cours ») et résolues par une trouvaille.
+// cours ») et résolues par une trouvaille, somme des durées avant résolution
+// (le délai moyen en découle : resolveDays / resolved) et record de passages
+// DNF sur une même cache (`visitsCode` = code GC du record).
 export function dnfStatesAt(entries, day) {
     let open = 0;
     let resolved = 0;
+    let resolveDays = 0;
+    let visits = 0;
+    let visitsCode = '';
     for (const entry of entries || []) {
         if (entry.appearDay > day) continue;
-        if (entry.resolveDay !== null && entry.resolveDay <= day) resolved += 1;
-        else open += 1;
+        if (entry.resolveDay !== null && entry.resolveDay <= day) {
+            resolved += 1;
+            resolveDays += entry.resolveDay - entry.appearDay;
+        } else open += 1;
+        // Record de passages « au jour » : seuls les DNF survenus comptent,
+        // pas ceux à venir de cette cache.
+        let visitsSoFar = 0;
+        for (const visit of entry.visitDays) if (visit <= day) visitsSoFar += 1;
+        if (visitsSoFar > visits) {
+            visits = visitsSoFar;
+            visitsCode = entry.feature?.properties?.gc_code || '';
+        }
     }
-    return { open, resolved };
+    return { open, resolved, resolveDays, visits, visitsCode };
 }
 
 // Passages DNF pour le trait de déplacement : chaque DNF est un déplacement,

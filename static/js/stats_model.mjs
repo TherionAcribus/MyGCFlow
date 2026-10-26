@@ -81,8 +81,9 @@ export const POSES_STATS_SOURCES = Object.freeze(['finds', 'dnf', 'favorites']);
 export const ALL_STATS_SOURCES = Object.freeze([...STATS_SOURCES, 'favorites']);
 export const DNF_METRICS_BY_KIND = Object.freeze({
     grid: Object.freeze(['dt', 'finds_ym', 'calendar', 'activity']),
-    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'owner']),
-    donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'owner']),
+    // « cache » : les caches qui résistent (un DNF chacune, course possible).
+    bar: Object.freeze(['cache', 'cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'owner']),
+    donut: Object.freeze(['cache', 'cache_type', 'container', 'country', 'state', 'owner']),
     line: Object.freeze(['cumulative']),
     counter: Object.freeze(['summary']),
 });
@@ -136,7 +137,8 @@ export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', '
 // d'état (DNF en cours / résolus, taux d'échec, actives, désactivées,
 // archivées, maintenances) sont lues dans les données de la source au jour
 // affiché par stats_panels, pas dans l'accumulateur.
-export const DNF_COUNTER_ITEMS = Object.freeze(['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio', 'days', 'best_day', 'streak', 'types', 'countries', 'states']);
+export const DNF_COUNTER_ITEMS = Object.freeze(['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
+    'dnf_resolve_delay', 'dnf_visits', 'days', 'best_day', 'streak', 'types', 'countries', 'states']);
 export const OWNED_COUNTER_ITEMS = Object.freeze(['total', 'owned_active', 'owned_disabled', 'owned_archived', 'maintenances', 'days', 'best_day', 'types', 'countries', 'states']);
 // Tuiles des sources « DNF reçus » et « favoris reçus » (Mes poses) :
 // accumulateur seul, pas de tuiles « poseur » ni d'état.
@@ -144,6 +146,7 @@ export const POSES_ALT_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'cache
 // Tuiles lues au jour affiché (hors accumulateur) : leur panneau se
 // redessine aussi les jours sans événement compté.
 export const STATS_DAY_TILES = Object.freeze(['ftf_delay', 'neglected', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
+    'dnf_resolve_delay', 'dnf_visits',
     'owned_active', 'owned_disabled', 'owned_archived', 'maintenances']);
 const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS,
     ...DNF_COUNTER_ITEMS, ...OWNED_COUNTER_ITEMS, ...POSES_ALT_COUNTER_ITEMS])];
@@ -666,6 +669,8 @@ const COUNTER_DEPENDENCIES = {
     dnf_open: 'total',
     dnf_resolved: 'total',
     dnf_ratio: 'total',
+    dnf_resolve_delay: 'total',
+    dnf_visits: 'total',
     owned_active: 'total',
     owned_disabled: 'total',
     owned_archived: 'total',
@@ -2290,7 +2295,9 @@ export function counterValues(acc, items) {
         } else if (STATS_DAY_TILES.includes(item)) {
             // Tuiles d'état DNF / caches posées : remplies au jour affiché
             // par stats_panels (dnfStatsAtDay, ownerStatsAtDay).
-            values[item] = item === 'dnf_ratio' ? { value: 0, pct: true } : { value: 0 };
+            values[item] = item === 'dnf_ratio' ? { value: 0, pct: true }
+                : item === 'dnf_resolve_delay' ? { value: null, duration: true }
+                    : { value: 0 };
         } else if (item === 'oldest') {
             // `day` = jour de publication de la plus ancienne, null sans date ;
             // `value` = son année (affichée telle quelle, pas animée).

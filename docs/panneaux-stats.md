@@ -382,11 +382,18 @@ affiché** (Infinity au repos : état actuel), hors accumulateur
 de géocaches) jusqu'au jour — le dénominateur exclut les Lab Caches, qui
 ne peuvent pas recevoir de DNF, par cumuls des index (`countUpTo`,
 `geoFindsUpTo`), détail « 3 DNF · 2 trouvailles »),
-`owned_active` / `owned_disabled` / `owned_archived` /
+`dnf_resolve_delay` (délai moyen apparition → résolution, sur les résolus —
+durée) et `dnf_visits` (record de passages sur une même cache, détail = code
+GC), toutes deux issues de `dnfStatesAt` ; `owned_active` /
+`owned_disabled` / `owned_archived` /
 `maintenances` (`ownerStatesAt`). Un panneau qui en porte se redessine les
 jours sans événement (`panelFollowsDay`, clé `counterDay`). Libellés selon la
 source (`statsCounterLabel`) : « DNF », « Caches posées », « Jours avec
 DNF »…
+
+La source DNF offre aussi la métrique **`cache`** (barres et anneau) : une
+barre par cache en échec — « les caches qui vous résistent », course
+possible.
 
 **Interface** : champ « Données comptées » du formulaire (`#selectStatsSource`,
 La source `owned` offre aussi la métrique **`status`** (barres et anneau) :

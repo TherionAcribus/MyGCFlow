@@ -849,6 +849,7 @@ export function defaultStatsPanelTitle(panel) {
             case 'finds_ym': return pkg.t('DNF mois × année');
             case 'calendar': return pkg.t('Calendrier des DNF');
             case 'activity': return pkg.t('Activité DNF');
+            case 'cache': return pkg.t('DNF par cache');
             case 'cache_type': return pkg.t('DNF par type');
             case 'container': return pkg.t('DNF par taille');
             case 'difficulty': return pkg.t('DNF par difficulté');
@@ -1190,6 +1191,8 @@ const COUNTER_LABELS = {
     dnf_open: () => pkg.t('DNF en cours'),
     dnf_resolved: () => pkg.t('DNF résolus'),
     dnf_ratio: () => pkg.t("Taux d'échec"),
+    dnf_resolve_delay: () => pkg.t('Délai moyen de résolution'),
+    dnf_visits: () => pkg.t('Record de tentatives'),
     owned_active: () => pkg.t('Caches actives'),
     owned_disabled: () => pkg.t('Caches désactivées'),
     owned_archived: () => pkg.t('Caches archivées'),
@@ -1211,6 +1214,13 @@ function sourceDayTiles(values, S, day) {
         const states = pkg.dnfStatsAtDay?.(day) || { open: 0, resolved: 0 };
         values.dnf_open = { value: states.open };
         values.dnf_resolved = { value: states.resolved };
+        // Délai moyen apparition → résolution (jour entier, rendu en durée) ;
+        // record de passages sur une même cache, détail = code GC.
+        values.dnf_resolve_delay = {
+            value: states.resolved ? (states.resolveDays || 0) / states.resolved : null,
+            duration: true,
+        };
+        values.dnf_visits = { value: states.visits || 0, detail: states.visitsCode || '' };
         const dnf = countUpTo(S, day);
         const finds = geoFindsUpTo(day);
         values.dnf_ratio = {

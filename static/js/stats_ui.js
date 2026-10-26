@@ -148,6 +148,7 @@ const PRESETS = {
     'dnf-dt': [['grid', 'dt', { position: { anchor: 'bottom-left', width: 300 }, options: { source: 'dnf' } }]],
     'dnf-difficulty': [['bar', 'difficulty', { position: { anchor: 'bottom-right', width: 240 }, options: { source: 'dnf' } }]],
     'dnf-types': [['bar', 'cache_type', { position: { anchor: 'top-right', width: 260 }, options: { source: 'dnf' } }]],
+    'dnf-cache': [['bar', 'cache', { position: { anchor: 'top-right', width: 300 }, options: { source: 'dnf' } }]],
     'dnf-year': [['bar', 'year', { position: { anchor: 'top-right', width: 280 }, options: { source: 'dnf' } }]],
     'dnf-calendar': [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 }, options: { source: 'dnf' } }]],
     // Page principale, source « caches posées ».

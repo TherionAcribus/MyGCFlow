@@ -1628,8 +1628,17 @@ test('source d\'un panneau : trouvailles par défaut, registre et tuiles propres
     assert.ok(statsPanelRegistry(finds, 'main').bar.includes('attribute'));
     assert.ok(!statsPanelRegistry({ ...finds, options: { source: 'owned' } }, 'main').bar.includes('attribute'));
     assert.ok(statsPanelRegistry(dnf, 'poses').bar.includes('finder'));
+    // « cache » : les caches qui résistent — offert aux DNF du joueur aussi.
+    assert.ok(DNF_METRICS_BY_KIND.bar.includes('cache'));
+    assert.ok(DNF_METRICS_BY_KIND.donut.includes('cache'));
     assert.ok(statsSourceCounterItems('owned').includes('maintenances'));
     assert.ok(!statsSourceCounterItems('finds').includes('dnf_open'));
+    // Tuiles « au jour » de la source DNF : délai de résolution, record.
+    const dnfItems = statsSourceCounterItems('dnf');
+    assert.ok(dnfItems.includes('dnf_resolve_delay'));
+    assert.ok(dnfItems.includes('dnf_visits'));
+    assert.deepEqual(accumulatorMetricsFor(createStatsPanel('counter', 'summary',
+        { options: { source: 'dnf', items: ['dnf_resolve_delay', 'dnf_visits'] } })), ['total']);
 });
 
 test('métriques à compter : une liste par source', () => {
