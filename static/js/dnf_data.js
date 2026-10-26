@@ -141,19 +141,18 @@ export async function reloadDnfData() {
 function renderHint() {
     const hint = el('dnfDisplayHint');
     if (!hint) return;
-    if (!isDnfDisplayEnabled()) {
-        hint.textContent = '';
-        return;
-    }
+    hint.textContent = '';
+    if (!isDnfDisplayEnabled()) return;
     if (!loaded.length && !pending) {
         hint.textContent = t('Aucun DNF importé : voir la carte « Mes logs ».');
         return;
     }
-    const parts = [t('${n} DNF dans la sélection', { n: entries.length })];
+    hint.append(t('${n} DNF dans la sélection', { n: entries.length }));
+    // Compte cliquable : il ouvre la modale de complétion des positions.
     if (pending) {
-        parts.push(countLabel(pending, t('cache sans position connue'), t('caches sans position connue')));
+        hint.append(' · ', pkg.pendingCoordsLink?.(pending)
+            || countLabel(pending, t('cache sans position connue'), t('caches sans position connue')));
     }
-    hint.textContent = parts.join(' · ');
 }
 
 // Case de l'onglet Données et réglages du thème : visibles seulement avec

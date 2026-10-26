@@ -244,6 +244,20 @@ test('pose et entretien sont des étapes du trait de déplacement, sauf choix co
 });
 
 
+// Le compte « sans position » du hint ouvre la modale de complétion
+// (pendingCoordsLink, gc_logs.js) — même modal que la carte « Mes logs ».
+test('le compte sans position du hint ouvre la modale de complétion', async ({ page, request }) => {
+  await openWithData(page, request);
+  await showOwner(page);
+  const link = page.locator('#ownerDisplayHint button');
+  await expect(link).toHaveText('1 cache sans position connue');
+  await link.click();
+  await expect(page.locator('#gcLogsCoordsModal')).toBeVisible();
+  await expect(page.locator('#gcLogsCoordsList')).toContainText('GCP0007', { timeout: 15_000 });
+  await page.locator('#gcLogsCoordsClose').click();
+});
+
+
 // « Période de découverte » déplacée : une cache posée reste sur la carte
 // pour toujours — reculer le début de la fenêtre ne la retire pas
 // (aliveInWindow, bdd.js ; avant, le filtre sur date_find la vidait).

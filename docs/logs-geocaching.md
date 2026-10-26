@@ -450,7 +450,10 @@ position », et `POST /api/logs/caches/<code>/resolve` pose la position —
 les étapes Labs) ou `latitude`/`longitude`. La fiche est créée si la cache
 n'a que des logs ; `coordinate_source = user_correction` la protège de
 tout import ultérieur, et la révision de collection est incrémentée (les
-aperçus en attente deviennent caducs, comme pour tout import).
+aperçus en attente deviennent caducs, comme pour tout import). Le compte
+« N caches sans position connue » des hints « Mes DNF » et « Mes caches
+posées » de l'onglet Données est un lien vers cette même modale
+(`pendingCoordsLink`, gc_logs.js).
 
 Un `.json` `mygcflow-logs` glissé sur la page (ou choisi dans « Mes
 Géocaches ») est aiguillé vers « Mes logs » par `bdd.js` (`isLogsFile`, testé

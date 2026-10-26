@@ -253,12 +253,24 @@ let coordsOffset = 0;
 let coordsTotal = 0;
 let coordsLoadSeq = 0;
 
-async function openCoordsModal() {
+export async function openCoordsModal() {
     const modal = el('gcLogsCoordsModal');
     if (!modal) return;
     coordsOffset = 0;
     showBsModal(modal);
     await loadCoordsPage(0);
+}
+
+// Lien « N caches sans position connue » qui ouvre la modale de complétion —
+// repris par les hints « Mes DNF » / « Mes caches posées » de l'onglet
+// Données, où le compte était auparavant un cul-de-sac.
+export function pendingCoordsLink(count) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-link p-0 align-baseline';
+    btn.textContent = countLabel(count, t('cache sans position connue'), t('caches sans position connue'));
+    btn.addEventListener('click', openCoordsModal);
+    return btn;
 }
 
 async function loadCoordsPage(offset) {

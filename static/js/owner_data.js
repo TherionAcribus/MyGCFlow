@@ -148,18 +148,17 @@ function renderOffer() {
 function renderHint() {
     const hint = el('ownerDisplayHint');
     if (!hint) return;
-    if (!isOwnerDisplayEnabled()) {
-        hint.textContent = '';
-        return;
-    }
-    const parts = [countLabel(entries.length, t('cache posée dans la sélection'), t('caches posées dans la sélection'))];
+    hint.textContent = '';
+    if (!isOwnerDisplayEnabled()) return;
+    hint.append(countLabel(entries.length, t('cache posée dans la sélection'), t('caches posées dans la sélection')));
+    // Compte cliquable : il ouvre la modale de complétion des positions.
     if (pending) {
-        parts.push(countLabel(pending, t('cache sans position connue'), t('caches sans position connue')));
+        hint.append(' · ', pkg.pendingCoordsLink?.(pending)
+            || countLabel(pending, t('cache sans position connue'), t('caches sans position connue')));
     }
     if (undatable) {
-        parts.push(countLabel(undatable, t('cache sans date'), t('caches sans date')));
+        hint.append(' · ', countLabel(undatable, t('cache sans date'), t('caches sans date')));
     }
-    hint.textContent = parts.join(' · ');
 }
 
 function syncBoxes() {
