@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-26 11:47+0100\n"
+"POT-Creation-Date: 2026-10-26 12:04+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -674,12 +674,12 @@ msgid "Statut"
 msgstr "Statut"
 
 #: poses_dataset.py:612 static/js/stats_panels.js:1391
-#: static/js/stats_ui.js:231 templates/menu_informations.html:64
+#: static/js/stats_ui.js:221 templates/menu_informations.html:64
 #: templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Trouvailles"
 
-#: poses_dataset.py:612 static/js/stats_ui.js:510
+#: poses_dataset.py:612 static/js/stats_ui.js:500
 #: templates/menu_informations.html:65
 msgid "Favoris"
 msgstr "Favoris"
@@ -1605,12 +1605,13 @@ msgid "Erreur lors du chargement du fichier"
 msgstr "Erreur lors du chargement du fichier"
 
 #: static/js/bdd.js:1591 static/js/bdd.js:1599 static/js/bdd.js:1751
-#: static/js/bdd.js:1759 static/js/bdd.js:2003 static/js/evolution_data.js:252
-#: static/js/evolution_data.js:356 static/js/evolution_data.js:956
-#: static/js/evolution_data.js:960 static/js/evolution_data.js:1310
-#: static/js/evolution_data.js:1348 static/js/evolution_data.js:1356
-#: static/js/gc_logs.js:693 static/js/labs.js:2001 static/js/labs.js:2044
-#: static/js/labs.js:2084 static/js/notifications.js:421
+#: static/js/bdd.js:1759 static/js/bdd.js:2003 static/js/dnf_data.js:140
+#: static/js/evolution_data.js:252 static/js/evolution_data.js:356
+#: static/js/evolution_data.js:956 static/js/evolution_data.js:960
+#: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
+#: static/js/evolution_data.js:1356 static/js/gc_logs.js:693
+#: static/js/labs.js:2001 static/js/labs.js:2044 static/js/labs.js:2084
+#: static/js/notifications.js:421 static/js/owner_data.js:163
 #: static/js/poses_data.js:187 static/js/recording_perf.js:187
 #: static/js/ui.js:2207
 msgid "Erreur"
@@ -1701,22 +1702,27 @@ msgstr "Erreur lors de l'affichage des points sur la carte"
 msgid "Erreur d'affichage"
 msgstr "Erreur d'affichage"
 
-#: static/js/dnf_data.js:149
+#: static/js/dnf_data.js:140
+#, python-brace-format
+msgid "Impossible de charger vos DNF : ${message}"
+msgstr "Impossible de charger vos DNF : ${message}"
+
+#: static/js/dnf_data.js:155
 msgid "Aucun DNF importé : voir la carte « Mes logs »."
 msgstr "Aucun DNF importé : voir la carte « Mes logs »."
 
-#: static/js/dnf_data.js:152
+#: static/js/dnf_data.js:158
 #, python-brace-format
 msgid "${n} DNF dans la sélection"
 msgstr "${n} DNF dans la sélection"
 
-#: static/js/dnf_data.js:154 static/js/gc_logs.js:164 static/js/gc_logs.js:595
-#: static/js/owner_data.js:186
+#: static/js/dnf_data.js:160 static/js/gc_logs.js:164 static/js/gc_logs.js:595
+#: static/js/owner_data.js:192
 msgid "cache sans position connue"
 msgstr "cache sans position connue"
 
-#: static/js/dnf_data.js:154 static/js/gc_logs.js:164 static/js/gc_logs.js:595
-#: static/js/owner_data.js:186
+#: static/js/dnf_data.js:160 static/js/gc_logs.js:164 static/js/gc_logs.js:595
+#: static/js/owner_data.js:192
 msgid "caches sans position connue"
 msgstr "caches sans position connue"
 
@@ -2665,8 +2671,8 @@ msgstr "Cette image sera supprimée définitivement de la bibliothèque."
 #: static/js/images_ui.js:1104 static/js/images_ui.js:1150
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
 #: static/js/profiles.js:972 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:531
-#: static/js/stats_ui.js:1780 templates/menu_style.html:283
+#: static/js/recent_videos.js:121 static/js/stats_ui.js:521
+#: static/js/stats_ui.js:1770 templates/menu_style.html:283
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Supprimer"
@@ -2675,18 +2681,18 @@ msgstr "Supprimer"
 msgid "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 msgstr "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 
-#: static/js/images_ui.js:1198 static/js/stats_ui.js:1821
+#: static/js/images_ui.js:1198 static/js/stats_ui.js:1811
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr "Configuration « ${name} » enregistrée"
 
-#: static/js/images_ui.js:1217 static/js/stats_ui.js:1835
+#: static/js/images_ui.js:1217 static/js/stats_ui.js:1825
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr "Configuration « ${name} » appliquée"
 
 #: static/js/images_ui.js:1238 static/js/images_ui.js:1430
-#: static/js/stats_ui.js:1854
+#: static/js/stats_ui.js:1844
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr "« ${name} » supprimée"
@@ -2703,16 +2709,16 @@ msgstr "(manquante)"
 msgid "Apparition planifiée"
 msgstr "Apparition planifiée"
 
-#: static/js/images_ui.js:1350 static/js/stats_ui.js:528
+#: static/js/images_ui.js:1350 static/js/stats_ui.js:518
 msgid "Monter"
 msgstr "Monter"
 
-#: static/js/images_ui.js:1351 static/js/stats_ui.js:529
+#: static/js/images_ui.js:1351 static/js/stats_ui.js:519
 msgid "Descendre"
 msgstr "Descendre"
 
 #: static/js/images_ui.js:1352 static/js/profiles.js:963
-#: static/js/profiles.js:2777 static/js/stats_ui.js:530
+#: static/js/profiles.js:2777 static/js/stats_ui.js:520
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
@@ -2831,7 +2837,7 @@ msgstr ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
 
-#: static/js/images_ui.js:2014 static/js/stats_ui.js:1914
+#: static/js/images_ui.js:2014 static/js/stats_ui.js:1904
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr "Préréglage « ${name} » appliqué"
@@ -3905,19 +3911,24 @@ msgstr "Plus tard"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "Vous ne serez plus averti pour cette version."
 
-#: static/js/owner_data.js:184
+#: static/js/owner_data.js:163 static/js/poses_data.js:187
+#, python-brace-format
+msgid "Impossible de charger vos caches posées : ${message}"
+msgstr "Impossible de charger vos caches posées : ${message}"
+
+#: static/js/owner_data.js:190
 msgid "cache posée dans la sélection"
 msgstr "cache posée dans la sélection"
 
-#: static/js/owner_data.js:184
+#: static/js/owner_data.js:190
 msgid "caches posées dans la sélection"
 msgstr "caches posées dans la sélection"
 
-#: static/js/owner_data.js:189
+#: static/js/owner_data.js:195
 msgid "cache sans date"
 msgstr "cache sans date"
 
-#: static/js/owner_data.js:189
+#: static/js/owner_data.js:195
 msgid "caches sans date"
 msgstr "caches sans date"
 
@@ -3935,11 +3946,6 @@ msgstr "Caches archivées"
 #: static/js/poses_data.js:170
 msgid "Chargement de vos caches posées..."
 msgstr "Chargement de vos caches posées..."
-
-#: static/js/poses_data.js:187
-#, python-brace-format
-msgid "Impossible de charger vos caches posées : ${message}"
-msgstr "Impossible de charger vos caches posées : ${message}"
 
 #: static/js/poses_data.js:221
 msgid "Aucun log importé pour l'instant"
@@ -4646,7 +4652,7 @@ msgstr "DNF reçus par pays"
 msgid "DNF reçus par région"
 msgstr "DNF reçus par région"
 
-#: static/js/stats_panels.js:1119 static/js/stats_ui.js:794
+#: static/js/stats_panels.js:1119 static/js/stats_ui.js:784
 #: templates/menu_stats.html:515
 msgid "DNF reçus"
 msgstr "DNF reçus"
@@ -4720,7 +4726,7 @@ msgid "Favoris reçus par région"
 msgstr "Favoris reçus par région"
 
 #: static/js/stats_panels.js:1141 static/js/stats_panels.js:1390
-#: static/js/stats_panels.js:1394 static/js/stats_ui.js:794
+#: static/js/stats_panels.js:1394 static/js/stats_ui.js:784
 #: templates/menu_stats.html:250 templates/menu_stats.html:519
 msgid "Favoris reçus"
 msgstr "Favoris reçus"
@@ -4746,7 +4752,7 @@ msgid "Trouvailles reçues par mois"
 msgstr "Trouvailles reçues par mois"
 
 #: static/js/stats_panels.js:1152 static/js/stats_panels.js:1391
-#: static/js/stats_ui.js:794 templates/menu_data_poses.html:94
+#: static/js/stats_ui.js:784 templates/menu_data_poses.html:94
 #: templates/menu_data_poses.html:95
 msgid "Trouvailles reçues"
 msgstr "Trouvailles reçues"
@@ -4866,7 +4872,7 @@ msgstr "Archivages cumulés"
 msgid "Progression des trouvailles"
 msgstr "Progression des trouvailles"
 
-#: static/js/stats_panels.js:1184 static/js/stats_ui.js:219
+#: static/js/stats_panels.js:1184 static/js/stats_ui.js:209
 #: templates/guide.html:373 templates/menu_stats.html:476
 msgid "Chiffres clés"
 msgstr "Chiffres clés"
@@ -5012,7 +5018,7 @@ msgid "Tours de matrice : ${n}"
 msgstr "Tours de matrice : ${n}"
 
 #: static/js/stats_panels.js:1389 static/js/stats_panels.js:1420
-#: static/js/stats_ui.js:510 templates/menu_stats.html:244
+#: static/js/stats_ui.js:500 templates/menu_stats.html:244
 msgid "Caches posées"
 msgstr "Caches posées"
 
@@ -5263,55 +5269,55 @@ msgstr "Catégorie"
 msgid "Pourcentage"
 msgstr "Pourcentage"
 
-#: static/js/stats_ui.js:215
+#: static/js/stats_ui.js:205
 msgid "Grille"
 msgstr "Grille"
 
-#: static/js/stats_ui.js:216
+#: static/js/stats_ui.js:206
 msgid "Histogramme"
 msgstr "Histogramme"
 
-#: static/js/stats_ui.js:217
+#: static/js/stats_ui.js:207
 msgid "Anneau"
 msgstr "Anneau"
 
-#: static/js/stats_ui.js:218
+#: static/js/stats_ui.js:208
 msgid "Courbe"
 msgstr "Courbe"
 
-#: static/js/stats_ui.js:231
+#: static/js/stats_ui.js:221
 msgid "Autre page"
 msgstr "Autre page"
 
-#: static/js/stats_ui.js:472
+#: static/js/stats_ui.js:462
 msgid "Afficher ce panneau"
 msgstr "Afficher ce panneau"
 
-#: static/js/stats_ui.js:494 static/js/stats_ui.js:1777
+#: static/js/stats_ui.js:484 static/js/stats_ui.js:1767
 msgid "Pas affiché dans ce mode"
 msgstr "Pas affiché dans ce mode"
 
-#: static/js/stats_ui.js:512
+#: static/js/stats_ui.js:502
 msgid "Données comptées : DNF reçus"
 msgstr "Données comptées : DNF reçus"
 
-#: static/js/stats_ui.js:512
+#: static/js/stats_ui.js:502
 msgid "Données comptées : mes DNF"
 msgstr "Données comptées : mes DNF"
 
-#: static/js/stats_ui.js:513
+#: static/js/stats_ui.js:503
 msgid "Données comptées : favoris reçus"
 msgstr "Données comptées : favoris reçus"
 
-#: static/js/stats_ui.js:514
+#: static/js/stats_ui.js:504
 msgid "Données comptées : mes caches posées"
 msgstr "Données comptées : mes caches posées"
 
-#: static/js/stats_ui.js:519
+#: static/js/stats_ui.js:509
 msgid "(aucune donnée)"
 msgstr "(aucune donnée)"
 
-#: static/js/stats_ui.js:520
+#: static/js/stats_ui.js:510
 msgid ""
 "Les logs importés ne contiennent rien pour cette source (carte « Mes logs"
 " » de l'onglet Données)."
@@ -5319,7 +5325,7 @@ msgstr ""
 "Les logs importés ne contiennent rien pour cette source (carte « Mes logs"
 " » de l'onglet Données)."
 
-#: static/js/stats_ui.js:541
+#: static/js/stats_ui.js:531
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
@@ -5327,7 +5333,7 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
 
-#: static/js/stats_ui.js:543
+#: static/js/stats_ui.js:533
 msgid ""
 "Aucun panneau. Commencez par un modèle : la course des caches les plus "
 "trouvées, par exemple, suit les visites de vos poses."
@@ -5335,7 +5341,7 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : la course des caches les plus "
 "trouvées, par exemple, suit les visites de vos poses."
 
-#: static/js/stats_ui.js:544 templates/menu_stats.html:63
+#: static/js/stats_ui.js:534 templates/menu_stats.html:63
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
@@ -5343,12 +5349,12 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
 
-#: static/js/stats_ui.js:555
+#: static/js/stats_ui.js:545
 #, python-brace-format
 msgid "Places libres : ${n} sur ${max}"
 msgstr "Places libres : ${n} sur ${max}"
 
-#: static/js/stats_ui.js:556
+#: static/js/stats_ui.js:546
 msgid ""
 "Plus de place : six panneaux au maximum. Supprimez-en un pour en ajouter "
 "un autre."
@@ -5356,17 +5362,17 @@ msgstr ""
 "Plus de place : six panneaux au maximum. Supprimez-en un pour en ajouter "
 "un autre."
 
-#: static/js/stats_ui.js:578
+#: static/js/stats_ui.js:568
 #, python-brace-format
 msgid "${n} places requises"
 msgstr "${n} places requises"
 
-#: static/js/stats_ui.js:642
+#: static/js/stats_ui.js:632
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr "« ${name} » supprimé"
 
-#: static/js/stats_ui.js:783
+#: static/js/stats_ui.js:773
 msgid ""
 "Les DNF et les favoris reçus sont comptés à part, avec les mêmes "
 "statistiques que les trouvailles reçues."
@@ -5374,7 +5380,7 @@ msgstr ""
 "Les DNF et les favoris reçus sont comptés à part, avec les mêmes "
 "statistiques que les trouvailles reçues."
 
-#: static/js/stats_ui.js:784 templates/menu_stats.html:105
+#: static/js/stats_ui.js:774 templates/menu_stats.html:105
 msgid ""
 "Les DNF et les caches posées sont comptés même s'ils ne sont pas affichés"
 " sur la carte."
@@ -5382,44 +5388,44 @@ msgstr ""
 "Les DNF et les caches posées sont comptés même s'ils ne sont pas affichés"
 " sur la carte."
 
-#: static/js/stats_ui.js:795 templates/menu_stats.html:101
+#: static/js/stats_ui.js:785 templates/menu_stats.html:101
 msgid "Mes trouvailles"
 msgstr "Mes trouvailles"
 
-#: static/js/stats_ui.js:795 templates/menu_filtre.html:23
+#: static/js/stats_ui.js:785 templates/menu_filtre.html:23
 #: templates/menu_stats.html:102 templates/menu_stats.html:523
 msgid "Mes DNF"
 msgstr "Mes DNF"
 
-#: static/js/stats_ui.js:795 templates/menu_data_poses.html:14
+#: static/js/stats_ui.js:785 templates/menu_data_poses.html:14
 #: templates/menu_filtre.html:39 templates/menu_points.html:165
 #: templates/menu_stats.html:103 templates/menu_stats.html:531
 msgid "Mes caches posées"
 msgstr "Mes caches posées"
 
-#: static/js/stats_ui.js:1704 static/js/stats_ui.js:1712
+#: static/js/stats_ui.js:1694 static/js/stats_ui.js:1702
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr "Import impossible : fichier de panneaux invalide"
 
-#: static/js/stats_ui.js:1722
+#: static/js/stats_ui.js:1712
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr "${count} panneau(x) importé(s)"
 
-#: static/js/stats_ui.js:1934
+#: static/js/stats_ui.js:1924
 msgid "Les autres panneaux ont déjà cette apparence."
 msgstr "Les autres panneaux ont déjà cette apparence."
 
-#: static/js/stats_ui.js:1938
+#: static/js/stats_ui.js:1928
 msgid "Apparence appliquée à un autre panneau"
 msgstr "Apparence appliquée à un autre panneau"
 
-#: static/js/stats_ui.js:1939
+#: static/js/stats_ui.js:1929
 #, python-brace-format
 msgid "Apparence appliquée à ${n} autres panneaux"
 msgstr "Apparence appliquée à ${n} autres panneaux"
 
-#: static/js/stats_ui.js:1967
+#: static/js/stats_ui.js:1957
 msgid ""
 "Panneaux réorganisés, mais la place manque : réduisez-en la taille ou "
 "masquez-en un."
@@ -5427,33 +5433,33 @@ msgstr ""
 "Panneaux réorganisés, mais la place manque : réduisez-en la taille ou "
 "masquez-en un."
 
-#: static/js/stats_ui.js:1968
+#: static/js/stats_ui.js:1958
 msgid "Panneaux réorganisés"
 msgstr "Panneaux réorganisés"
 
-#: static/js/stats_ui.js:1989
+#: static/js/stats_ui.js:1979
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 
-#: static/js/stats_ui.js:1991
+#: static/js/stats_ui.js:1981
 msgid "le titre"
 msgstr "le titre"
 
-#: static/js/stats_ui.js:1992
+#: static/js/stats_ui.js:1982
 msgid "une image"
 msgstr "une image"
 
-#: static/js/stats_ui.js:1993
+#: static/js/stats_ui.js:1983
 msgid "les infos"
 msgstr "les infos"
 
-#: static/js/stats_ui.js:1994
+#: static/js/stats_ui.js:1984
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr "« ${name} » chevauche ${other}."
 
-#: static/js/stats_ui.js:1997
+#: static/js/stats_ui.js:1987
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
@@ -5462,7 +5468,7 @@ msgstr ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 
-#: static/js/stats_ui.js:2009
+#: static/js/stats_ui.js:1999
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 

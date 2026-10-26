@@ -107,7 +107,8 @@ export async function reloadOwnerData() {
     const seq = ++loadSeq;
     try {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/logs/owner_features`);
-        const data = await resp.json();
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data) throw new Error(data?.message || `HTTP ${resp.status}`);
         if (seq !== loadSeq) return;
         loaded = Array.isArray(data.features) ? data.features : [];
         ownedTotal = Number(data.ownedTotal) || 0;
@@ -116,6 +117,9 @@ export async function reloadOwnerData() {
     } catch (e) {
         if (seq !== loadSeq) return;
         console.warn('[Caches posées] chargement impossible :', e);
+        // Sans ce toast, un panneau « source caches posées » resterait
+        // dessiné à zéro sans explication (idem poses_data.js).
+        pkg.showToast?.(t('Impossible de charger vos caches posées : ${message}', { message: e.message }), 'error', t('Erreur'));
         loaded = [];
         ownedTotal = pending = undatable = 0;
     }

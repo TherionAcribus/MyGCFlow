@@ -70,22 +70,14 @@ const POSES_SOURCE_COUNTER_DEFAULTS = {
 };
 // Une source est proposée quand la page en a les données (trouvailles :
 // toujours) ; un panneau qui la porte déjà la garde.
-// stats_ui.js s'initialise pendant sa propre évaluation, avant dnf_data.js et
-// owner_data.js (ordre d'index.js) : leurs `let` sont encore en zone morte —
-// pas de données à ce stade. La galerie se resynchronise à l'ouverture, le
-// formulaire quand les données arrivent (renderStatsTab).
+// Sûr sans filet : initStatsTab attend le jalon mygcflow:ready (fin de
+// fichier), après l'évaluation de tous les modules — plus de zone morte.
 function sourceAvailable(source) {
     if (source === 'finds') return true;
-    if (pageMode === 'poses') {
-        try { return pkg.posesSourceAvailable?.(source) === true; } catch (_) { return false; }
-    }
+    if (pageMode === 'poses') return pkg.posesSourceAvailable?.(source) === true;
     // « favorites » n'existe que sur Mes poses ; jamais proposée ici.
     if (source === 'favorites') return false;
-    try {
-        return source === 'dnf' ? !!pkg.hasDnfData?.() : !!pkg.hasOwnedCaches?.();
-    } catch (_) {
-        return false;
-    }
+    return source === 'dnf' ? !!pkg.hasDnfData?.() : !!pkg.hasOwnedCaches?.();
 }
 // Tuiles du compteur « Chiffres clés » créé en Évolution : les chiffres de la
 // chronologie, pas ceux des trouvailles ; sur Mes poses, ceux des trouvailles
@@ -1845,10 +1837,12 @@ export function initStatsTab() {
     renderStatsTab();
 }
 
-// Auto-initialisation : ui.js appelle ses init pendant sa propre évaluation,
-// avant celle de ce module (ordre d'index.js) — un appel depuis là tomberait
-// dans la zone morte de `initialized` et ferait échouer tout le graphe.
-if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initStatsTab);
-    else initStatsTab();
+// Auto-initialisation au jalon mygcflow:ready (init.js) : tous les modules
+// sont évalués à ce stade, leurs exportations ne sont plus en zone morte —
+// sourceAvailable peut lire dnf_data.js / owner_data.js / poses_data.js sans
+// filet. (ui.js appelle ses init pendant sa propre évaluation, avant celle
+// de ce module — AGENTS.md, ordre d'évaluation.)
+if (typeof window !== 'undefined') {
+    if (window.mygcflowReady) initStatsTab();
+    else window.addEventListener('mygcflow:ready', initStatsTab, { once: true });
 }

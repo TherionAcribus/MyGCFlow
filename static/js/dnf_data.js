@@ -93,13 +93,17 @@ export async function reloadDnfData() {
     const seq = ++loadSeq;
     try {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/logs/dnf_features`);
-        const data = await resp.json();
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data) throw new Error(data?.message || `HTTP ${resp.status}`);
         if (seq !== loadSeq) return;
         loaded = Array.isArray(data.features) ? data.features : [];
         pending = Number(data.pending) || 0;
     } catch (e) {
         if (seq !== loadSeq) return;
         console.warn('[DNF] chargement impossible :', e);
+        // Sans ce toast, un panneau « source DNF » resterait dessiné à zéro
+        // sans explication (la liste de l'onglet Stats le signale aussi).
+        pkg.showToast?.(t('Impossible de charger vos DNF : ${message}', { message: e.message }), 'error', t('Erreur'));
         loaded = [];
         pending = 0;
     }
