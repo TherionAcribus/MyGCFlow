@@ -39,6 +39,7 @@ import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
 import { dnfPointOptions } from './dnf_model.mjs';
+import { dayNumberToDate } from './evolution_timeline.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
@@ -99,6 +100,11 @@ var defaultEndDate = null;
 // Dates de publication par défaut
 var defaultPublishedStartDate = null;
 var defaultPublishedEndDate = null;
+// Dernières bornes « Données » calculées pour l'animation : servent à
+// reconnaître une borne encore « au défaut » quand l'étendue change (couche
+// annexe affichée/masquée, case d'extension, filtre).
+var lastAnimDefaultStart = null;
+var lastAnimDefaultEnd = null;
 // Pays/Etats
 let countryToStates = {};
 // Région -> départements (mode Évolution), alimenté par
@@ -1281,6 +1287,16 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (cbCameraPreferHome) {
         cbCameraPreferHome.addEventListener('change', () => {
             pkg.options.animation.cameraPreferHome = cbCameraPreferHome.checked;
+            refreshTimingPlan();
+        });
+    }
+    // Plage « Données » étendue aux événements des couches annexes affichées :
+    // ré-ancre les bornes encore « au défaut » sur la nouvelle étendue.
+    const checkAnimExtendSide = document.getElementById('checkAnimExtendSide');
+    if (checkAnimExtendSide) {
+        checkAnimExtendSide.addEventListener('change', () => {
+            pkg.options.animation.extendSideEvents = checkAnimExtendSide.checked;
+            refreshAnimDateDefaults();
             refreshTimingPlan();
         });
     }
@@ -3732,6 +3748,9 @@ function animationSettingsPayload() {
         // Idem pour la durée du tracé des traits de déplacement (sans objet en
         // mode Évolution, où les traits n'existent pas).
         ...(isLifecyclePage() ? {} : { trail_duration_ms: normalizeTrailOptions(pkg.options.trail).duration }),
+        // Plage « Données » étendue aux événements des couches annexes
+        // affichées — n'a de sens que sur la page principale.
+        extend_side_events: a.extendSideEvents === true && isMainPage(),
     };
 }
 
@@ -3776,6 +3795,7 @@ function applyAnimationSettingsPayload(anim) {
     }
     if (typeof anim.camera_return_home === 'boolean') a.cameraReturnHome = anim.camera_return_home;
     if (typeof anim.camera_prefer_home === 'boolean') a.cameraPreferHome = anim.camera_prefer_home;
+    if (typeof anim.extend_side_events === 'boolean') a.extendSideEvents = anim.extend_side_events;
     const flash = Number(anim.flash_duration_ms);
     if (Number.isFinite(flash) && flash > 0) {
         pkg.options.flash = pkg.options.flash || {};
@@ -3818,6 +3838,85 @@ function loadAnimationSettings() {
 // Filtres
 
 // synchronise les dates de selection des pickers avec BDD
+// Étendue (numéros de jour) des événements des couches annexes affichées :
+// jours de visite des points DNF et étapes des caches posées. Les entrées
+// viennent des index déjà filtrés — vides quand la couche est coupée, en
+// mode Lab seul, ou sans données : l'étendue est alors null.
+function sideEventDayExtent() {
+    let start = Infinity, end = -Infinity;
+    const feed = (day) => {
+        if (!Number.isFinite(day)) return;
+        if (day < start) start = day;
+        if (day > end) end = day;
+    };
+    for (const e of pkg.getDnfEntries?.() || []) {
+        for (const d of e.visitDays || []) feed(d);
+        feed(e.resolveDay);
+    }
+    for (const e of pkg.getOwnerEntries?.() || []) {
+        for (const d of e.visitDays || []) feed(d);
+    }
+    return end >= start ? { start, end } : null;
+}
+
+// Bornes « Données » de l'animation : étendue des trouvailles, élargie à
+// celle des événements des couches annexes affichées quand la case
+// « Étendre aux DNF et étapes des caches posées » est cochée — sans elle,
+// un DNF ou une archive hors des dates de trouvailles n'est jamais joué.
+function animDataDefaults() {
+    let start = defaultStartDate, end = defaultEndDate;
+    if (pkg.options?.animation?.extendSideEvents === true) {
+        const side = sideEventDayExtent();
+        if (side) {
+            const sideStart = dayNumberToDate(side.start);
+            const sideEnd = dayNumberToDate(side.end);
+            start = start instanceof Date && start < sideStart ? start : sideStart;
+            end = end instanceof Date && end > sideEnd ? end : sideEnd;
+        }
+    }
+    return { start, end };
+}
+
+// Même jour calendaire ? Les bornes sont toujours à minuit local : comparer
+// les composantes suffit, sans se soucier du fuseau.
+function sameCalendarDay(a, b) {
+    return a instanceof Date && b instanceof Date
+        && a.getFullYear() === b.getFullYear()
+        && a.getMonth() === b.getMonth()
+        && a.getDate() === b.getDate();
+}
+
+// Recalcule les bornes « Données » de l'animation (case d'extension,
+// bascule d'une couche annexe, nouveau filtrage) : une borne encore posée
+// sur l'ancienne valeur « Données » suit la nouvelle ; une borne
+// personnalisée ne bouge pas. Appelée par dnf_data/owner_data (bascule de
+// couche) et bdd.js (reconstruction des index).
+export function refreshAnimDateDefaults() {
+    const next = animDataDefaults();
+    const a = pkg.options?.animation;
+    let changed = false;
+    if (a) {
+        if (!(a.dateStart instanceof Date) || sameCalendarDay(a.dateStart, lastAnimDefaultStart)) {
+            if (next.start instanceof Date && !sameCalendarDay(a.dateStart, next.start)) {
+                setAnimDateBound('dateStart', '#animDateStart', next.start);
+                changed = true;
+            }
+        }
+        if (!(a.dateEnd instanceof Date) || sameCalendarDay(a.dateEnd, lastAnimDefaultEnd)) {
+            if (next.end instanceof Date && !sameCalendarDay(a.dateEnd, next.end)) {
+                setAnimDateBound('dateEnd', '#animDateEnd', next.end);
+                changed = true;
+            }
+        }
+    }
+    lastAnimDefaultStart = next.start;
+    lastAnimDefaultEnd = next.end;
+    updateResetAnimButtonsHighlight();
+    if (changed) updateDeltaDaysAndTimes();
+    // L'axe de la barre de chronologie suit la même étendue.
+    pkg.refreshTimelineBar?.();
+}
+
 export function setPickerDates(metadata) {
     const startDateElement = document.querySelector('#datePickerStart');
     const endDateElement = document.querySelector('#datePickerEnd');
@@ -3870,20 +3969,24 @@ export function setPickerDates(metadata) {
         updatePublishedResetButtonsHighlight();
     }
 
-    // Pré-remplir les datepickers Animation avec les dates par défaut
+    // Pré-remplir les datepickers Animation avec les bornes « Données » —
+    // étendues aux couches annexes quand la case correspondante est cochée.
     const animStartElement = document.querySelector('#animDateStart');
     const animEndElement = document.querySelector('#animDateEnd');
+    const animDefaults = animDataDefaults();
+    lastAnimDefaultStart = animDefaults.start;
+    lastAnimDefaultEnd = animDefaults.end;
 
-    if (animStartElement && defaultStartDate) {
-        setTdDate(animStartElement, defaultStartDate);
-        animStartElement.value = formattedStartDate;
-        pkg.options.animation.dateStart = defaultStartDate;
+    if (animStartElement && animDefaults.start) {
+        setTdDate(animStartElement, animDefaults.start);
+        animStartElement.value = formatDateForPickers(animDefaults.start);
+        pkg.options.animation.dateStart = animDefaults.start;
     }
 
-    if (animEndElement && defaultEndDate) {
-        setTdDate(animEndElement, defaultEndDate);
-        animEndElement.value = formattedEndDate;
-        pkg.options.animation.dateEnd = defaultEndDate;
+    if (animEndElement && animDefaults.end) {
+        setTdDate(animEndElement, animDefaults.end);
+        animEndElement.value = formatDateForPickers(animDefaults.end);
+        pkg.options.animation.dateEnd = animDefaults.end;
     }
 
     // Mettre à jour les boutons reset Animation aussi
@@ -3987,7 +4090,7 @@ function updateResetButtonsHighlight(){
 
 function resetAnimStartDateToDefault(){
     const el = document.querySelector('#animDateStart');
-    const start = defaultStartDate;
+    const start = animDataDefaults().start;
     if (!el || !start) return;
     setTdDate(el, start);
     el.value = formatDateForPickers(start);
@@ -3998,7 +4101,7 @@ function resetAnimStartDateToDefault(){
 
 function resetAnimEndDateToDefault(){
     const el = document.querySelector('#animDateEnd');
-    const end = defaultEndDate;
+    const end = animDataDefaults().end;
     if (!el || !end) return;
     setTdDate(el, end);
     el.value = formatDateForPickers(end);
@@ -4012,8 +4115,9 @@ function updateResetAnimButtonsHighlight(){
     const btnEnd = document.getElementById('btnResetAnimEndDate');
     const currentStart = document.querySelector('#animDateStart')?.value;
     const currentEnd = document.querySelector('#animDateEnd')?.value;
-    const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
-    const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
+    const defaults = animDataDefaults();
+    const defaultStartStr = defaults.start ? formatDateForPickers(defaults.start) : null;
+    const defaultEndStr = defaults.end ? formatDateForPickers(defaults.end) : null;
 
     if (btnStart) {
         updateDateSourceButton(btnStart, defaultStartStr, currentStart && defaultStartStr && currentStart === defaultStartStr);
@@ -4044,6 +4148,12 @@ export function updateAnimFilterInfo(){
     const animEnd = document.querySelector('#animDateEnd')?.value?.trim();
     const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
     const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
+    // « Données » côté champs d'animation : les bornes étendues aux couches
+    // annexes quand la case est cochée (cf. animDataDefaults). Les sources
+    // « Sélection » et « Filtre » restent sur l'étendue des trouvailles.
+    const animDefaults = animDataDefaults();
+    const animDefaultStartStr = animDefaults.start ? formatDateForPickers(animDefaults.start) : null;
+    const animDefaultEndStr = animDefaults.end ? formatDateForPickers(animDefaults.end) : null;
 
     // Étendue réelle des caches sélectionnées (première/dernière date),
     // capturée par bdd.js à chaque filtrage — metadata est mutée par le moteur
@@ -4095,11 +4205,11 @@ export function updateAnimFilterInfo(){
     // simplement décochées laissaient croire à un état neutre au lieu de dire
     // « valeur saisie à la main ».
     const startIsCustom = !!(animStart
-        && !(defaultStartStr && animStart === defaultStartStr)
+        && !(animDefaultStartStr && animStart === animDefaultStartStr)
         && !(showSelStart && animStart === selStartStr)
         && !(showStart && animStart === filterStart));
     const endIsCustom = !!(animEnd
-        && !(defaultEndStr && animEnd === defaultEndStr)
+        && !(animDefaultEndStr && animEnd === animDefaultEndStr)
         && !(showSelEnd && animEnd === selEndStr)
         && !(showEnd && animEnd === filterEnd));
     const startCustomInfo = document.getElementById('animCustomStartInfo');
@@ -4185,15 +4295,16 @@ function setAnimDateBound(field, selector, date) {
 // défaut des données, undefined pour ne pas toucher.
 export function setAnimationDates({ start, end } = {}) {
     let changed = false;
+    const defaults = animDataDefaults();
     if (start !== undefined) {
-        const date = start === null ? defaultStartDate : start;
+        const date = start === null ? defaults.start : start;
         if (date instanceof Date) {
             setAnimDateBound('dateStart', '#animDateStart', date);
             changed = true;
         }
     }
     if (end !== undefined) {
-        const date = end === null ? defaultEndDate : end;
+        const date = end === null ? defaults.end : end;
         if (date instanceof Date) {
             setAnimDateBound('dateEnd', '#animDateEnd', date);
             changed = true;
@@ -5788,10 +5899,12 @@ export function startPreviewPlayback() {
     return previewPlaybackState() === 'playing';
 }
 
-// Bornes par défaut de l'animation (étendue de la sélection), celles que
-// pose « Plage complète » : l'axe de la barre de chronologie les couvre.
+// Bornes « Données » de l'animation (étendue des trouvailles, élargie aux
+// événements des couches annexes affichées quand la case d'extension est
+// cochée), celles que pose « Plage complète » : l'axe de la barre de
+// chronologie les couvre — repères DNF/posées hors trouvailles compris.
 export function getAnimationDateDefaults() {
-    return { start: defaultStartDate, end: defaultEndDate };
+    return animDataDefaults();
 }
 
 // Un saut depuis le repos ouvre l'aperçu, aussitôt mis en pause : la
@@ -6522,6 +6635,7 @@ function normalizeAnimationOptions() {
     animation.cameraFollowMode = animation.cameraFollowMode === 'trail' ? 'trail' : 'days';
     animation.cameraReturnHome = animation.cameraReturnHome !== false;
     animation.cameraPreferHome = animation.cameraPreferHome === true;
+    animation.extendSideEvents = animation.extendSideEvents === true;
 }
 
 // Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
@@ -6551,6 +6665,8 @@ export function syncAnimationOptionsUI() {
     if (cbCameraReturnHome) cbCameraReturnHome.checked = animation.cameraReturnHome !== false;
     const cbCameraPreferHome = document.getElementById('cbCameraPreferHome');
     if (cbCameraPreferHome) cbCameraPreferHome.checked = animation.cameraPreferHome === true;
+    const checkAnimExtendSide = document.getElementById('checkAnimExtendSide');
+    if (checkAnimExtendSide) checkAnimExtendSide.checked = animation.extendSideEvents === true;
     syncCameraFollowControls();
 
     refreshTimingPlan({ save: false });

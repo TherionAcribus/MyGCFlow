@@ -108,6 +108,9 @@ function applyChange() {
     pkg.syncMapLegend?.();
     // Chronologie : les repères des étapes de poseur suivent l'affichage.
     pkg.refreshTimelineBar?.();
+    // Plage « Données » de l'animation : l'étendue des étapes de poseur la
+    // suit quand la case d'extension est cochée.
+    pkg.refreshAnimDateDefaults?.();
 }
 
 // (Re)charge les caches posées du serveur. Toujours lues sur la page

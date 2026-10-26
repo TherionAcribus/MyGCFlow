@@ -686,6 +686,20 @@ seulement avec des caches posées) : `owner_display` (masquées par défaut) et
 coupé, bulle d'aide sur le libellé). Même reprise d'état qu'en DNF si
 l'enregistrement échoue (`revertSetting`, owner_data.js).
 
+**Plage d'animation étendue** (onglet Animation, « Dates & rythme », case
+« Étendre aux DNF et étapes des caches posées affichées », préférence
+`animation.extend_side_events`, décochée par défaut) : les bornes « Données »
+de l'animation couvrent alors aussi les jours d'événements des couches
+annexes affichées — tentatives DNF, étapes de poseur — au-delà des dates de
+trouvailles (`animDataDefaults`, ui.js ; entrées `getDnfEntries()` /
+`getOwnerEntries()`, vides quand la couche est coupée ou en « Lab Caches »
+seuls). Sans elle, un DNF ou une archive postérieur à la dernière trouvaille
+n'est jamais joué — et son repère reste hors de l'axe de la chronologie
+(`getAnimationDateDefaults` retourne l'étendue étendue). Une borne encore «
+au défaut » suit l'étendue quand elle change — cochage, bascule de couche,
+nouveau filtrage (`refreshAnimDateDefaults`) ; une borne personnalisée ne
+bouge pas.
+
 Tests : `tests/test_owner_geojson.py`, `tests/js/owner_model.test.mjs`,
 `tests/e2e/owner-display.spec.mjs` (fixture `my-finds-poses.gpx`, dont les
 trouvailles encadrent la vie des caches de `logs-poses.json`).

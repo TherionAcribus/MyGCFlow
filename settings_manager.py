@@ -554,6 +554,10 @@ class AnimationPrefs:
     # Durée maximale du tracé d'une étape du trajet (même logique que la durée
     # du flash) ; raccourcie à l'exécution quand les jours défilent plus vite.
     trail_duration_ms: int = 800
+    # Plage par défaut étendue aux événements des couches annexes affichées
+    # (points DNF, étapes des caches posées) : sans elle, un événement hors
+    # des dates de trouvailles n'est jamais joué. Page principale uniquement.
+    extend_side_events: bool = False
 
 
 def evolution_animation_defaults() -> AnimationPrefs:
@@ -1096,6 +1100,7 @@ def coerce_animation_settings(d: dict, defaults: Optional[AnimationPrefs] = None
     a.camera_prefer_home = bool(d.get("camera_prefer_home", a.camera_prefer_home))
     a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, *FLASH_DURATION_RANGE)
     a.trail_duration_ms = _clamp_int(d.get("trail_duration_ms"), a.trail_duration_ms, 100, 10000)
+    a.extend_side_events = bool(d.get("extend_side_events", a.extend_side_events))
     return a
 
 

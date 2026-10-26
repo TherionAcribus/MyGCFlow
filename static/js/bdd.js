@@ -722,6 +722,10 @@ function buildPointsByDateIndex(features = []) {
         // hors de l'index.
         pkg.rebuildDnfIndex?.();
         pkg.rebuildOwnerIndex?.();
+        // Les événements de ces couches peuvent étendre les bornes « Données »
+        // de l'animation (case « Étendre aux DNF et étapes… ») : le nouvel
+        // index change leur étendue, les bornes « au défaut » suivent.
+        pkg.refreshAnimDateDefaults?.();
         // Panneaux de stats : leurs totaux, mémoïsés sur la révision, se
         // recalculent au prochain dessin — encore faut-il en demander un.
         pkg.refreshStatsPanels?.();

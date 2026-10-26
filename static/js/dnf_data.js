@@ -115,6 +115,9 @@ function applyChange() {
     pkg.syncMapLegend?.();
     // Chronologie : les repères des jours de DNF suivent l'affichage.
     pkg.refreshTimelineBar?.();
+    // Plage « Données » de l'animation : l'étendue des jours de DNF la suit
+    // quand la case d'extension est cochée.
+    pkg.refreshAnimDateDefaults?.();
 }
 
 // (Re)charge les DNF du serveur, affichés ou non : les panneaux Stats les

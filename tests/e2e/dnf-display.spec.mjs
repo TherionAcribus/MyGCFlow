@@ -93,9 +93,15 @@ async function trailStops(page) {
 
 // dnf_display et dnf_in_trail sont des préférences globales, et les logs
 // vivent dans la base partagée du runtime : tout remettre en sortant.
+// animation.extend_side_events aussi (fusion profonde : la clé seule suffit).
 test.afterEach(async ({ request }) => {
   await request.put('/api/settings', {
-    data: { dnf_display: false, dnf_in_trail: true, dnf_same_day_display: false },
+    data: {
+      dnf_display: false,
+      dnf_in_trail: true,
+      dnf_same_day_display: false,
+      animation: { extend_side_events: false },
+    },
   }).catch(() => {});
   await request.post('/api/logs/clear').catch(() => {});
   await request.post('/clear_database').catch(() => {});
@@ -499,4 +505,49 @@ test('le style des points DNF est réglable : forme, couleurs, icône et anneau'
   await page.locator('#inputDnfBorderWidth').fill('0');
   await page.locator('#inputDnfBorderWidth').dispatchEvent('change');
   await expect.poll(async () => (await dnfDebug(page)).ring).toBe(false);
+});
+
+
+// 2e : la plage « Données » de l'animation peut couvrir les événements des
+// couches annexes affichées — sinon le DNF de GC9ZZZZ (2021, après les
+// trouvailles de 2012) ne serait jamais joué. La borne « au défaut » suit
+// l'étendue ; une borne personnalisée ne bouge pas.
+test('la plage d\'animation s\'étend aux DNF affichés hors trouvailles', async ({ page }) => {
+  const animEndYear = async () => page.evaluate(async () =>
+    (await import('/static/js/index.js')).options.animation.dateEnd?.getFullYear());
+  const markLabels = async () => page.evaluate(async () =>
+    (await import('/static/js/index.js')).getTimelineBarSnapshot().marks.map(m => m.label));
+
+  await openWithData(page);
+  await showDnf(page);
+
+  await page.locator('a[href="#animation"]').click();
+  const check = page.locator('#checkAnimExtendSide');
+  await expect(check).toBeVisible();
+  await expect(check).not.toBeChecked();
+  // Sans extension : la borne fin reste sur la dernière trouvaille (2012) et
+  // le repère du DNF 2021 est hors axe.
+  expect(await animEndYear()).toBe(2012);
+  expect(await markLabels()).not.toContain('DNF : GC9ZZZZ');
+
+  await check.check();
+  await expect.poll(animEndYear).toBe(2021);
+  await expect.poll(markLabels).toContain('DNF : GC9ZZZZ');
+
+  // Une borne saisie ne suit plus l'étendue : ni au décochage, ni au
+  // recochage.
+  await page.evaluate(async () =>
+    (await import('/static/js/index.js')).setAnimationDates({ end: new Date(2020, 5, 15) }));
+  expect(await animEndYear()).toBe(2020);
+  await check.uncheck();
+  expect(await animEndYear()).toBe(2020);
+  await check.check();
+  expect(await animEndYear()).toBe(2020);
+
+  // « Données » réapplique l'étendue DNF…
+  await page.locator('#btnResetAnimEndDate').click();
+  await expect.poll(animEndYear).toBe(2021);
+  // … et la décochage la ramène aux trouvailles quand la borne est au défaut.
+  await check.uncheck();
+  await expect.poll(animEndYear).toBe(2012);
 });

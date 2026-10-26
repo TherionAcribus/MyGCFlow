@@ -129,6 +129,19 @@
                         </div>
                     </div>
 
+                    {% if mode == 'main' %}
+                    <!-- Étendre la plage « Données » aux événements des couches
+                         annexes affichées (DNF, étapes des caches posées) : un
+                         DNF ou une archive hors des dates de trouvailles serait
+                         sinon jamais joué. Une borne « Données » suit
+                         l'extension ; une borne personnalisée ne bouge pas. -->
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="checkAnimExtendSide">
+                        <label class="form-check-label" for="checkAnimExtendSide">{{ _("Étendre aux DNF et étapes des caches posées affichées") }}</label>
+                        <div class="form-hint text-muted">{{ _("La plage par défaut couvre aussi les événements de ces couches, hors dates de trouvailles.") }}</div>
+                    </div>
+                    {% endif %}
+
                     <!-- Trois façons exclusives de définir le tempo : une seule
                          valeur pilote, les autres sont des résultats calculés.
                          Rythme et durée restent saisissables : y écrire

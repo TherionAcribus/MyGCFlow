@@ -289,6 +289,13 @@ class AnimationCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_animation_settings({}).camera_prefer_home)
         self.assertTrue(coerce_animation_settings({"camera_prefer_home": True}).camera_prefer_home)
 
+    def test_extend_side_events_defaults_to_false(self):
+        self.assertFalse(coerce_animation_settings({}).extend_side_events)
+        self.assertTrue(coerce_animation_settings({"extend_side_events": True}).extend_side_events)
+        self.assertFalse(coerce_animation_settings({"extend_side_events": False}).extend_side_events)
+        # Valeur non booléenne : normalisée en booléen.
+        self.assertIs(coerce_animation_settings({"extend_side_events": 1}).extend_side_events, True)
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_animation_settings(None), AnimationPrefs())
 

@@ -116,7 +116,11 @@ Autres repères :
   n'ont pas d'attribut `id` : rejetés, ils ne créent aucune collection.
   Même famille : `dnf_display` / `dnf_in_trail` / `dnf_same_day_display`
   (points DNF) sont des préférences globales à remettre (`false` / `true` /
-  `false`) en sortant. Les points
+  `false`) en sortant, et `animation.extend_side_events` (`false` — plage «
+  Données » étendue aux événements des couches annexes affichées ; une borne
+  « au défaut » suit l'étendue via `refreshAnimDateDefaults`, une borne
+  personnalisée ne bouge pas ; `getAnimationDateDefaults()` retourne
+  l'étendue étendue, l'axe de la chronologie la couvre donc). Les points
   DNF ont leur propre couche, sous les trouvailles : source
   `window.dnfVectorSource` (pas `window.vectorSource`), jamais dans
   `pointsByDate` — exemple dans `dnf-display.spec.mjs` ; effacements et
