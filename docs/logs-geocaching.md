@@ -612,6 +612,14 @@ et `window.userSettings` reviennent à la valeur du disque
 (`revertSetting`, dnf_data.js) — sinon l'écran afficherait le contraire du
 serveur jusqu'au prochain chargement.
 
+**Compteurs de la ligne d'infos** (facultatifs, modèle libre de l'onglet
+Style › Titres) : `{dnf}` rend le cumul des tentatives à la date affichée et
+`{dnf_resolus}` le cumul des DNF résolus (`attempts`/`resolved` de
+`dnfStatsAtDay`, au jour synchronisé de la couche — `dnfCurrentDay` de
+mapgl.js, déjà à jour quand `updateCurrentDate` rafraîchit la ligne). Les
+données filtrées comptent, que la couche de points soit affichée ou non —
+comme les panneaux Stats.
+
 ## Caches posées sur la carte principale
 
 Le 2026-10-26, la carte « Mes Géocaches » peut montrer les **caches posées par

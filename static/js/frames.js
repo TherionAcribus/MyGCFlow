@@ -57,11 +57,22 @@ export function refreshMainInfosLine() {
     const foundText = document.getElementById('spanNbCaches')?.textContent ?? '';
     const total = Math.max(0, Number(pkg.metadata?.numberOfCaches) || 0);
     const found = Math.max(0, Number.parseInt(foundText, 10) || 0);
+    // Compteurs DNF au jour affiché (jour synchronisé de la couche, déjà à
+    // jour quand la date change : syncDnfToDay précède updateCurrentDate) —
+    // données filtrées, que la couche soit affichée ou non.
+    let dnf = '', dnfResolus = '';
+    const dnfStates = pkg.dnfStatsAtDay?.(pkg.dnfCurrentDay?.());
+    if (dnfStates) {
+        dnf = String(dnfStates.attempts ?? 0);
+        dnfResolus = String(dnfStates.resolved ?? 0);
+    }
     const text = renderInfosTemplate(mainInfosTemplate, {
         date: document.getElementById('spanCurrentDate')?.textContent ?? '',
         trouvees: foundText,
         total: String(total),
         pct: `${total > 0 ? Math.round(found * 100 / total) : 0} %`,
+        dnf,
+        dnf_resolus: dnfResolus,
     }, MAIN_INFO_TAGS);
     if (span.textContent !== text) span.textContent = text;
 }
@@ -246,10 +257,13 @@ export function updateInfosReserve(){
             : mainTemplateActive()
             ? reservedInfosTemplateText(mainInfosTemplate, {
                 // Le compteur ne dépasse jamais le total de la sélection ;
-                // {pct} plafonne à « 100 % ».
+                // {pct} plafonne à « 100 % ». Les compteurs DNF plafonnent à
+                // leurs totaux finaux (Infinity = fin des temps).
                 trouvees: meta?.numberOfCaches,
                 total: meta?.numberOfCaches,
                 pct: '100 %',
+                dnf: pkg.dnfStatsAtDay?.(Infinity)?.attempts ?? 0,
+                dnf_resolus: pkg.dnfStatsAtDay?.(Infinity)?.resolved ?? 0,
             }, MAIN_INFO_TAGS)
             : reservedInfosText({
                 showCount: opts?.numberOfCaches?.display === true,

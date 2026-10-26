@@ -102,8 +102,10 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="trouvees">{{ _("Trouvées") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="total">{{ _("Total") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="pct">{{ _("Pourcentage") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="dnf">{{ _("DNF") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="dnf_resolus">{{ _("DNF résolus") }}</button>
                 </div>
-                <div class="form-text">{{ _("Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}. Un champ rempli remplace la ligne pilotée par les cases ; vide, il leur rend la main.") }}</div>
+                <div class="form-text">{{ _("Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}, {dnf} (tentatives), {dnf_resolus}. Un champ rempli remplace la ligne pilotée par les cases ; vide, il leur rend la main.") }}</div>
             </div>
             {% endif %}
         </div>

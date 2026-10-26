@@ -101,6 +101,7 @@ test.afterEach(async ({ request }) => {
       dnf_in_trail: true,
       dnf_same_day_display: false,
       animation: { extend_side_events: false },
+      infos_template: '',
     },
   }).catch(() => {});
   await request.post('/api/logs/clear').catch(() => {});
@@ -550,4 +551,35 @@ test('la plage d\'animation s\'étend aux DNF affichés hors trouvailles', async
   // … et la décochage la ramène aux trouvailles quand la borne est au défaut.
   await check.uncheck();
   await expect.poll(animEndYear).toBe(2012);
+});
+
+
+// Compteurs DNF de la ligne d'infos (facultatifs) : {dnf} = tentatives à la
+// date affichée, {dnf_resolus} = résolus — données de la sélection, que la
+// couche de points soit affichée ou non.
+test('les balises {dnf} et {dnf_resolus} comptent dans la ligne d\'infos', async ({ page }) => {
+  await openWithData(page);
+
+  // Style › Titres › cible « Infos » : champ du modèle libre.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
+  await page.locator('#gcCssTargetInfos').click();
+  await page.locator('#inputInfosTemplate').fill('{date} · DNF:{dnf} · résolus:{dnf_resolus}');
+
+  const line = page.locator('#spanInfosTemplate');
+  // Au repos (fin de la période = 22/04/2012) : le DNF de GC2PR3N
+  // (20/08/2011) est résolu le 08/01/2012 ; celui de GC9ZZZZ (05/2021) n'a
+  // pas encore eu lieu → 1 tentative, 1 résolu.
+  await expect(line).toContainText('DNF:1');
+  await expect(line).toContainText('résolus:1');
+
+  // Un jour après le second DNF : la ligne suit la date affichée.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const tl = await import('/static/js/evolution_timeline.mjs');
+    app.syncDnfToDay(tl.isoToDayNumber('2021-05-03'));
+    app.updateCurrentDate(new Date(2021, 4, 3));
+  });
+  await expect(line).toContainText('DNF:2');
+  await expect(line).toContainText('résolus:1');
 });

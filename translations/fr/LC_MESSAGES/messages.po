@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-26 17:36+0100\n"
+"POT-Creation-Date: 2026-10-26 17:56+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -248,7 +248,7 @@ msgstr "Traitement vidéo"
 msgid "Traitement ffmpeg"
 msgstr "Traitement ffmpeg"
 
-#: capture.py:1226 static/js/mapgl.js:5370 templates/guide.html:343
+#: capture.py:1226 static/js/mapgl.js:5382 templates/guide.html:343
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Vidéo prête"
@@ -328,7 +328,7 @@ msgstr "Trouvaille"
 #: event_flash.py:60 poses_dataset.py:612 static/js/gc_logs.js:39
 #: static/js/gc_logs.js:60 static/js/mapgl.js:1190
 #: static/js/stats_panels.js:1405 static/js/stats_panels.js:1825
-#: templates/menu_informations.html:66
+#: templates/menu_informations.html:66 templates/menu_informations.html:105
 msgid "DNF"
 msgstr "DNF"
 
@@ -708,17 +708,17 @@ msgstr "Bêta-trouvaille"
 msgid "Premier log"
 msgstr "Premier log"
 
-#: poses_dataset.py:640 static/js/evolution_data.js:753 static/js/mapgl.js:3720
+#: poses_dataset.py:640 static/js/evolution_data.js:753 static/js/mapgl.js:3732
 #: static/js/poses_data.js:807 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Active"
 
-#: poses_dataset.py:641 static/js/mapgl.js:3720 static/js/poses_data.js:808
+#: poses_dataset.py:641 static/js/mapgl.js:3732 static/js/poses_data.js:808
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr "Désactivée"
 
-#: poses_dataset.py:642 static/js/mapgl.js:3720 static/js/poses_data.js:809
+#: poses_dataset.py:642 static/js/mapgl.js:3732 static/js/poses_data.js:809
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr "Archivée"
@@ -1442,7 +1442,7 @@ msgstr ""
 "Cette musique ne peut pas être lue (format non pris en charge ou fichier "
 "endommagé)."
 
-#: static/js/background_audio.js:121 static/js/mapgl.js:5371
+#: static/js/background_audio.js:121 static/js/mapgl.js:5383
 #: static/js/ui.js:842 static/js/ui.js:911 static/js/ui.js:2231
 #: static/js/ui.js:10601 static/js/ui.js:10681 static/js/ui.js:10887
 #: static/js/ui.js:11002 static/js/ui.js:11059 static/js/ui.js:11085
@@ -1592,7 +1592,7 @@ msgstr "Préparation de l'envoi..."
 msgid "Fichier chargé avec succès !"
 msgstr "Fichier chargé avec succès !"
 
-#: static/js/bdd.js:1589 static/js/mapgl.js:6677
+#: static/js/bdd.js:1589 static/js/mapgl.js:6689
 msgid "Terminé"
 msgstr "Terminé"
 
@@ -1758,8 +1758,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Arrêtez l'animation avant de changer de base."
 
 #: static/js/evolution_data.js:314 static/js/evolution_data.js:1340
-#: static/js/mapgl.js:4711 static/js/mapgl.js:4763 static/js/mapgl.js:4770
-#: static/js/mapgl.js:5918 static/js/notifications.js:425
+#: static/js/mapgl.js:4723 static/js/mapgl.js:4775 static/js/mapgl.js:4782
+#: static/js/mapgl.js:5930 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Attention"
 
@@ -3305,7 +3305,7 @@ msgstr ""
 "correction possible ici."
 
 #: static/js/labs.js:1722 templates/guide.html:227
-#: templates/menu_images.html:163 templates/menu_informations.html:119
+#: templates/menu_images.html:163 templates/menu_informations.html:121
 #: templates/menu_stats.html:304
 msgid "Position"
 msgstr "Position"
@@ -3443,143 +3443,143 @@ msgstr "${found}/${total} étapes trouvées"
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Position approximative (centre de l’Adventure)"
 
-#: static/js/mapgl.js:3715 static/js/poses_data.js:849
+#: static/js/mapgl.js:3727 static/js/poses_data.js:849
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Publiée le ${date}"
 
-#: static/js/mapgl.js:3716 static/js/poses_data.js:850
+#: static/js/mapgl.js:3728 static/js/poses_data.js:850
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Posée le ${date}"
 
-#: static/js/mapgl.js:3717 static/js/poses_data.js:851
+#: static/js/mapgl.js:3729 static/js/poses_data.js:851
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Trouvée avant sa publication le ${date}"
 
-#: static/js/mapgl.js:3718 static/js/poses_data.js:852
+#: static/js/mapgl.js:3730 static/js/poses_data.js:852
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "Premier log le ${date}"
 
-#: static/js/mapgl.js:3731
+#: static/js/mapgl.js:3743
 #, python-brace-format
 msgid "Dernière maintenance le ${date}"
 msgstr "Dernière maintenance le ${date}"
 
-#: static/js/mapgl.js:3732
+#: static/js/mapgl.js:3744
 msgid "Aucune maintenance enregistrée"
 msgstr "Aucune maintenance enregistrée"
 
-#: static/js/mapgl.js:3738
+#: static/js/mapgl.js:3750
 msgid "Ma cache"
 msgstr "Ma cache"
 
-#: static/js/mapgl.js:4298
+#: static/js/mapgl.js:4310
 msgid "Aucune vidéo n'a été créée."
 msgstr "Aucune vidéo n'a été créée."
 
-#: static/js/mapgl.js:4298
+#: static/js/mapgl.js:4310
 msgid "Arrêt de l'enregistrement"
 msgstr "Arrêt de l'enregistrement"
 
-#: static/js/mapgl.js:4702
+#: static/js/mapgl.js:4714
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Capture rapide non supportée, bascule en mode image par image."
 
-#: static/js/mapgl.js:4702 static/js/mapgl.js:6266
+#: static/js/mapgl.js:4714 static/js/mapgl.js:6278
 msgid "Compatibilité"
 msgstr "Compatibilité"
 
-#: static/js/mapgl.js:4711
+#: static/js/mapgl.js:4723
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Données en cours de chargement. Veuillez réessayer."
 
-#: static/js/mapgl.js:4731
+#: static/js/mapgl.js:4743
 msgid "Préparation de l'enregistrement..."
 msgstr "Préparation de l'enregistrement..."
 
-#: static/js/mapgl.js:4731
+#: static/js/mapgl.js:4743
 msgid "Nettoyage initial"
 msgstr "Nettoyage initial"
 
-#: static/js/mapgl.js:4755
+#: static/js/mapgl.js:4767
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 
-#: static/js/mapgl.js:4756
+#: static/js/mapgl.js:4768
 msgid "Enregistrement annulé"
 msgstr "Enregistrement annulé"
 
-#: static/js/mapgl.js:4761
+#: static/js/mapgl.js:4773
 msgid "Répertoire d’images nettoyé."
 msgstr "Répertoire d’images nettoyé."
 
-#: static/js/mapgl.js:4761
+#: static/js/mapgl.js:4773
 msgid "Préparation"
 msgstr "Préparation"
 
-#: static/js/mapgl.js:4763
+#: static/js/mapgl.js:4775
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Nettoyage initial impossible. Poursuite de l'enregistrement."
 
-#: static/js/mapgl.js:4770
+#: static/js/mapgl.js:4782
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Erreur nettoyage initial. Poursuite."
 
-#: static/js/mapgl.js:4956
+#: static/js/mapgl.js:4968
 msgid "0% | préparation..."
 msgstr "0% | préparation..."
 
-#: static/js/mapgl.js:4965 static/js/mapgl.js:5930
+#: static/js/mapgl.js:4977 static/js/mapgl.js:5942
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ La musique sera intégrée automatiquement après la capture."
 
-#: static/js/mapgl.js:4972
+#: static/js/mapgl.js:4984
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Capture en cours – Ne pas bouger la fenêtre"
 
-#: static/js/mapgl.js:4973
+#: static/js/mapgl.js:4985
 msgid "Préparation de la capture..."
 msgstr "Préparation de la capture..."
 
-#: static/js/mapgl.js:5005
+#: static/js/mapgl.js:5017
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture en pause : revenez sur cet onglet pour la poursuivre."
 
-#: static/js/mapgl.js:5005 static/js/mapgl.js:6499
+#: static/js/mapgl.js:5017 static/js/mapgl.js:6511
 msgid "Onglet masqué"
 msgstr "Onglet masqué"
 
-#: static/js/mapgl.js:5116
+#: static/js/mapgl.js:5128
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "Le rendu initial de la carte n'a pas abouti (timeout)"
 
-#: static/js/mapgl.js:5243
+#: static/js/mapgl.js:5255
 msgid "Nettoyage en cours..."
 msgstr "Nettoyage en cours..."
 
-#: static/js/mapgl.js:5342
+#: static/js/mapgl.js:5354
 msgid "erreur inconnue"
 msgstr "erreur inconnue"
 
-#: static/js/mapgl.js:5344
+#: static/js/mapgl.js:5356
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "La capture a été interrompue suite à une erreur : ${message}"
 
-#: static/js/mapgl.js:5346
+#: static/js/mapgl.js:5358
 msgid "Capture interrompue"
 msgstr "Capture interrompue"
 
-#: static/js/mapgl.js:5370 static/js/mapgl.js:6081 static/js/mapgl.js:6373
-#: static/js/mapgl.js:6391 static/js/mapgl.js:6800 static/js/mapgl.js:6906
-#: static/js/mapgl.js:6910
+#: static/js/mapgl.js:5382 static/js/mapgl.js:6093 static/js/mapgl.js:6385
+#: static/js/mapgl.js:6403 static/js/mapgl.js:6812 static/js/mapgl.js:6918
+#: static/js/mapgl.js:6922
 msgid "Enregistrement"
 msgstr "Enregistrement"
 
-#: static/js/mapgl.js:5383
+#: static/js/mapgl.js:5395
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
@@ -3587,7 +3587,7 @@ msgstr ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
 
-#: static/js/mapgl.js:5387
+#: static/js/mapgl.js:5399
 msgid ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
@@ -3595,23 +3595,23 @@ msgstr ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
 
-#: static/js/mapgl.js:5425
+#: static/js/mapgl.js:5437
 msgid "task_id manquant"
 msgstr "task_id manquant"
 
-#: static/js/mapgl.js:5426
+#: static/js/mapgl.js:5438
 msgid "Délai d'assemblage dépassé"
 msgstr "Délai d'assemblage dépassé"
 
-#: static/js/mapgl.js:5439
+#: static/js/mapgl.js:5451
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 
-#: static/js/mapgl.js:5453
+#: static/js/mapgl.js:5465
 msgid "Tâche échouée"
 msgstr "Tâche échouée"
 
-#: static/js/mapgl.js:5460
+#: static/js/mapgl.js:5472
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
@@ -3620,68 +3620,68 @@ msgstr ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 
-#: static/js/mapgl.js:5572
+#: static/js/mapgl.js:5584
 msgid "Envoi des dernières images..."
 msgstr "Envoi des dernières images..."
 
-#: static/js/mapgl.js:5666 static/js/ui.js:8031
+#: static/js/mapgl.js:5678 static/js/ui.js:8031
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
-#: static/js/mapgl.js:5666
+#: static/js/mapgl.js:5678
 msgid "Création de la vidéo à partir des images..."
 msgstr "Création de la vidéo à partir des images..."
 
-#: static/js/mapgl.js:5750
+#: static/js/mapgl.js:5762
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Impossible de lancer l'assemblage vidéo"
 
-#: static/js/mapgl.js:5757
+#: static/js/mapgl.js:5769
 msgid "Création de la vidéo..."
 msgstr "Création de la vidéo..."
 
-#: static/js/mapgl.js:5764
+#: static/js/mapgl.js:5776
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Vidéo créée. Nettoyage des images..."
 
-#: static/js/mapgl.js:5765
+#: static/js/mapgl.js:5777
 msgid "Nettoyage en cours"
 msgstr "Nettoyage en cours"
 
-#: static/js/mapgl.js:5765
+#: static/js/mapgl.js:5777
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Vidéo créée avec succès. Nettoyage des images..."
 
-#: static/js/mapgl.js:5782
+#: static/js/mapgl.js:5794
 msgid "Nettoyage terminé"
 msgstr "Nettoyage terminé"
 
-#: static/js/mapgl.js:5796
+#: static/js/mapgl.js:5808
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Erreur lors du traitement automatique: ${message}"
 
-#: static/js/mapgl.js:5798
+#: static/js/mapgl.js:5810
 msgid "Erreur chaîne"
 msgstr "Erreur chaîne"
 
-#: static/js/mapgl.js:5918
+#: static/js/mapgl.js:5930
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Données en cours de chargement. Réessayez."
 
-#: static/js/mapgl.js:6031
+#: static/js/mapgl.js:6043
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Enregistrement en cours – Ne pas bouger la fenêtre"
 
-#: static/js/mapgl.js:6032
+#: static/js/mapgl.js:6044
 msgid "Démarrage de la capture..."
 msgstr "Démarrage de la capture..."
 
-#: static/js/mapgl.js:6081
+#: static/js/mapgl.js:6093
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Erreur de la capture rapide, bascule en mode image par image."
 
-#: static/js/mapgl.js:6265
+#: static/js/mapgl.js:6277
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
@@ -3690,15 +3690,15 @@ msgstr ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
 " ${used}."
 
-#: static/js/mapgl.js:6327
+#: static/js/mapgl.js:6339
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Résolution réduite aux capacités du navigateur."
 
-#: static/js/mapgl.js:6373
+#: static/js/mapgl.js:6385
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 
-#: static/js/mapgl.js:6391
+#: static/js/mapgl.js:6403
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -3706,7 +3706,7 @@ msgstr ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
 
-#: static/js/mapgl.js:6499
+#: static/js/mapgl.js:6511
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
@@ -3714,89 +3714,89 @@ msgstr ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 
-#: static/js/mapgl.js:6701
+#: static/js/mapgl.js:6713
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Copie vers le dossier vidéo échouée"
 
-#: static/js/mapgl.js:6725
+#: static/js/mapgl.js:6737
 msgid "Finalisation"
 msgstr "Finalisation"
 
-#: static/js/mapgl.js:6725
+#: static/js/mapgl.js:6737
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Écriture de la durée de la vidéo..."
 
-#: static/js/mapgl.js:6741
+#: static/js/mapgl.js:6753
 msgid "Ajout audio"
 msgstr "Ajout audio"
 
-#: static/js/mapgl.js:6741
+#: static/js/mapgl.js:6753
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Fusion de la piste audio avec la vidéo en cours..."
 
-#: static/js/mapgl.js:6785 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:6797 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalisation"
 
-#: static/js/mapgl.js:6785
+#: static/js/mapgl.js:6797
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Accélération x${applicable} pour lecture à vitesse normale..."
 
-#: static/js/mapgl.js:6800
+#: static/js/mapgl.js:6812
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "La vidéo n'a pas pu être assemblée."
 
-#: static/js/mapgl.js:6809
+#: static/js/mapgl.js:6821
 msgid "Traitement serveur"
 msgstr "Traitement serveur"
 
-#: static/js/mapgl.js:6809
+#: static/js/mapgl.js:6821
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Envoi de la vidéo au serveur..."
 
-#: static/js/mapgl.js:6854 static/js/mapgl.js:6861
+#: static/js/mapgl.js:6866 static/js/mapgl.js:6873
 msgid "Traitement serveur..."
 msgstr "Traitement serveur..."
 
-#: static/js/mapgl.js:6859
+#: static/js/mapgl.js:6871
 msgid "Traitement serveur non démarré"
 msgstr "Traitement serveur non démarré"
 
-#: static/js/mapgl.js:6906
+#: static/js/mapgl.js:6918
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr "L'enregistrement a été interrompu : la copie des données a échoué."
 
-#: static/js/mapgl.js:6910
+#: static/js/mapgl.js:6922
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Traitement serveur indisponible, repli local..."
 
-#: static/js/mapgl.js:6966
+#: static/js/mapgl.js:6978
 msgid "Élément non trouvé"
 msgstr "Élément non trouvé"
 
-#: static/js/mapgl.js:6987
+#: static/js/mapgl.js:6999
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
 
-#: static/js/mapgl.js:7008
+#: static/js/mapgl.js:7020
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "Aucun canvas trouvé dans la carte"
 
-#: static/js/mapgl.js:7073
+#: static/js/mapgl.js:7085
 msgid "Échec conversion canvas en blob"
 msgstr "Échec conversion canvas en blob"
 
-#: static/js/mapgl.js:7831 static/js/mapgl.js:7923
+#: static/js/mapgl.js:7843 static/js/mapgl.js:7935
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "Aucun déplacement à tracer pour cette sélection."
 
-#: static/js/mapgl.js:7831 static/js/mapgl.js:7833 static/js/mapgl.js:7923
+#: static/js/mapgl.js:7843 static/js/mapgl.js:7845 static/js/mapgl.js:7935
 #: templates/guide.html:211 templates/menu_style.html:82
 msgid "Trajet"
 msgstr "Trajet"
 
-#: static/js/mapgl.js:7833
+#: static/js/mapgl.js:7845
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
@@ -3804,16 +3804,16 @@ msgstr ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 
-#: static/js/mapgl.js:8537
+#: static/js/mapgl.js:8549
 msgid "Choisissez d’abord une forme de flash."
 msgstr "Choisissez d’abord une forme de flash."
 
-#: static/js/mapgl.js:8537 static/js/mapgl.js:8541 templates/guide.html:207
+#: static/js/mapgl.js:8549 static/js/mapgl.js:8553 templates/guide.html:207
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
-#: static/js/mapgl.js:8541
+#: static/js/mapgl.js:8553
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -4421,7 +4421,7 @@ msgid "Conseil"
 msgstr "Conseil"
 
 #: static/js/recording_perf.js:201 templates/guide.html:233
-#: templates/menu_informations.html:377
+#: templates/menu_informations.html:379
 msgid "Appliquer"
 msgstr "Appliquer"
 
@@ -5156,7 +5156,8 @@ msgstr "Pic de caches actives"
 msgid "DNF en cours"
 msgstr "DNF en cours"
 
-#: static/js/stats_panels.js:1444 templates/menu_stats.html:258
+#: static/js/stats_panels.js:1444 templates/menu_informations.html:106
+#: templates/menu_stats.html:258
 msgid "DNF résolus"
 msgstr "DNF résolus"
 
@@ -7514,8 +7515,8 @@ msgstr "pour les styliser séparément."
 msgid "Réglez le"
 msgstr "Réglez le"
 
-#: templates/guide.html:227 templates/menu_informations.html:116
-#: templates/menu_informations.html:257 templates/menu_stats.html:383
+#: templates/guide.html:227 templates/menu_informations.html:118
+#: templates/menu_informations.html:259 templates/menu_stats.html:383
 msgid "Texte"
 msgstr "Texte"
 
@@ -7523,8 +7524,8 @@ msgstr "Texte"
 msgid "la"
 msgstr "la"
 
-#: templates/guide.html:227 templates/menu_informations.html:117
-#: templates/menu_informations.html:222
+#: templates/guide.html:227 templates/menu_informations.html:119
+#: templates/menu_informations.html:224
 msgid "Boîte"
 msgstr "Boîte"
 
@@ -7532,7 +7533,7 @@ msgstr "Boîte"
 msgid "l'"
 msgstr "l'"
 
-#: templates/guide.html:227 templates/menu_informations.html:118
+#: templates/guide.html:227 templates/menu_informations.html:120
 msgid "Ombre"
 msgstr "Ombre"
 
@@ -9400,7 +9401,7 @@ msgstr "Lent"
 msgid "jours/s"
 msgstr "jours/s"
 
-#: templates/menu_animation.html:193 templates/menu_informations.html:153
+#: templates/menu_animation.html:193 templates/menu_informations.html:155
 msgid "Normal"
 msgstr "Normal"
 
@@ -10536,21 +10537,21 @@ msgstr ""
 "Image manquante : le fichier n'est plus disponible. Remplacez-la ou "
 "supprimez-la."
 
-#: templates/menu_images.html:167 templates/menu_informations.html:293
+#: templates/menu_images.html:167 templates/menu_informations.html:295
 msgid "Emplacement"
 msgstr "Emplacement"
 
-#: templates/menu_images.html:170 templates/menu_informations.html:296
+#: templates/menu_images.html:170 templates/menu_informations.html:298
 #: templates/menu_stats.html:310
 msgid "En haut à gauche"
 msgstr "En haut à gauche"
 
-#: templates/menu_images.html:170 templates/menu_informations.html:296
+#: templates/menu_images.html:170 templates/menu_informations.html:298
 #: templates/menu_stats.html:310
 msgid "En haut au centre"
 msgstr "En haut au centre"
 
-#: templates/menu_images.html:170 templates/menu_informations.html:296
+#: templates/menu_images.html:170 templates/menu_informations.html:298
 #: templates/menu_stats.html:310
 msgid "En haut à droite"
 msgstr "En haut à droite"
@@ -10563,27 +10564,27 @@ msgstr "Au milieu à gauche"
 msgid "Au milieu à droite"
 msgstr "Au milieu à droite"
 
-#: templates/menu_images.html:172 templates/menu_informations.html:298
+#: templates/menu_images.html:172 templates/menu_informations.html:300
 #: templates/menu_stats.html:312
 msgid "En bas à gauche"
 msgstr "En bas à gauche"
 
-#: templates/menu_images.html:172 templates/menu_informations.html:298
+#: templates/menu_images.html:172 templates/menu_informations.html:300
 #: templates/menu_stats.html:312
 msgid "En bas au centre"
 msgstr "En bas au centre"
 
-#: templates/menu_images.html:172 templates/menu_informations.html:298
+#: templates/menu_images.html:172 templates/menu_informations.html:300
 #: templates/menu_stats.html:312
 msgid "En bas à droite"
 msgstr "En bas à droite"
 
-#: templates/menu_images.html:187 templates/menu_informations.html:313
+#: templates/menu_images.html:187 templates/menu_informations.html:315
 #: templates/menu_stats.html:324
 msgid "Marge horizontale (px)"
 msgstr "Marge horizontale (px)"
 
-#: templates/menu_images.html:191 templates/menu_informations.html:317
+#: templates/menu_images.html:191 templates/menu_informations.html:319
 #: templates/menu_stats.html:328
 msgid "Marge verticale (px)"
 msgstr "Marge verticale (px)"
@@ -10702,7 +10703,7 @@ msgstr "Orientation"
 msgid "Retourner en miroir"
 msgstr "Retourner en miroir"
 
-#: templates/menu_images.html:293 templates/menu_informations.html:184
+#: templates/menu_images.html:293 templates/menu_informations.html:186
 #: templates/menu_stats.html:379
 msgid "Fond"
 msgstr "Fond"
@@ -10735,8 +10736,8 @@ msgstr "Couleur de l'ombre"
 msgid "Opacité de l'ombre"
 msgstr "Opacité de l'ombre"
 
-#: templates/menu_images.html:334 templates/menu_informations.html:240
-#: templates/menu_informations.html:272
+#: templates/menu_images.html:334 templates/menu_informations.html:242
+#: templates/menu_informations.html:274
 msgid "Flou"
 msgstr "Flou"
 
@@ -10936,114 +10937,114 @@ msgstr "Ligne d'informations personnalisée"
 msgid "Trouvées"
 msgstr "Trouvées"
 
-#: templates/menu_informations.html:106
+#: templates/menu_informations.html:108
 #, python-brace-format
 msgid ""
-"Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}. Un "
-"champ rempli remplace la ligne pilotée par les cases ; vide, il leur rend"
-" la main."
+"Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}, {dnf} "
+"(tentatives), {dnf_resolus}. Un champ rempli remplace la ligne pilotée "
+"par les cases ; vide, il leur rend la main."
 msgstr ""
-"Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}. Un "
-"champ rempli remplace la ligne pilotée par les cases ; vide, il leur rend"
-" la main."
+"Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}, {dnf} "
+"(tentatives), {dnf_resolus}. Un champ rempli remplace la ligne pilotée "
+"par les cases ; vide, il leur rend la main."
 
-#: templates/menu_informations.html:126 templates/menu_informations.html:214
-#: templates/menu_informations.html:250 templates/menu_informations.html:278
+#: templates/menu_informations.html:128 templates/menu_informations.html:216
+#: templates/menu_informations.html:252 templates/menu_informations.html:280
 msgid "Couleur"
 msgstr "Couleur"
 
-#: templates/menu_informations.html:130
+#: templates/menu_informations.html:132
 msgid "Taille (px)"
 msgstr "Taille (px)"
 
-#: templates/menu_informations.html:136
+#: templates/menu_informations.html:138
 msgid "Police"
 msgstr "Police"
 
-#: templates/menu_informations.html:138 templates/menu_informations.html:152
-#: templates/menu_informations.html:171 templates/menu_informations.html:206
-#: templates/menu_informations.html:329
+#: templates/menu_informations.html:140 templates/menu_informations.html:154
+#: templates/menu_informations.html:173 templates/menu_informations.html:208
+#: templates/menu_informations.html:331
 msgid "Défaut"
 msgstr "Défaut"
 
-#: templates/menu_informations.html:150 templates/menu_trail.html:108
+#: templates/menu_informations.html:152 templates/menu_trail.html:108
 msgid "Épaisseur"
 msgstr "Épaisseur"
 
-#: templates/menu_informations.html:154
+#: templates/menu_informations.html:156
 msgid "Gras"
 msgstr "Gras"
 
-#: templates/menu_informations.html:169
+#: templates/menu_informations.html:171
 msgid "Alignement"
 msgstr "Alignement"
 
-#: templates/menu_informations.html:172
+#: templates/menu_informations.html:174
 msgid "À gauche"
 msgstr "À gauche"
 
-#: templates/menu_informations.html:173
+#: templates/menu_informations.html:175
 msgid "Centré"
 msgstr "Centré"
 
-#: templates/menu_informations.html:174
+#: templates/menu_informations.html:176
 msgid "À droite"
 msgstr "À droite"
 
-#: templates/menu_informations.html:188
+#: templates/menu_informations.html:190
 msgid "Marge intérieure (px)"
 msgstr "Marge intérieure (px)"
 
-#: templates/menu_informations.html:194
+#: templates/menu_informations.html:196
 msgid "Arrondi (px)"
 msgstr "Arrondi (px)"
 
-#: templates/menu_informations.html:198
+#: templates/menu_informations.html:200
 msgid "Bordure (px)"
 msgstr "Bordure (px)"
 
-#: templates/menu_informations.html:204
+#: templates/menu_informations.html:206
 msgid "Style de bordure"
 msgstr "Style de bordure"
 
-#: templates/menu_informations.html:207 templates/menu_points.html:28
+#: templates/menu_informations.html:209 templates/menu_points.html:28
 #: templates/menu_trail.html:135
 msgid "Aucune"
 msgstr "Aucune"
 
-#: templates/menu_informations.html:208
+#: templates/menu_informations.html:210
 msgid "Pleine"
 msgstr "Pleine"
 
-#: templates/menu_informations.html:209 templates/menu_trail.html:123
+#: templates/menu_informations.html:211 templates/menu_trail.html:123
 msgid "Tirets"
 msgstr "Tirets"
 
-#: templates/menu_informations.html:210 templates/menu_trail.html:79
+#: templates/menu_informations.html:212 templates/menu_trail.html:79
 msgid "Pointillés"
 msgstr "Pointillés"
 
-#: templates/menu_informations.html:225 templates/menu_informations.html:260
+#: templates/menu_informations.html:227 templates/menu_informations.html:262
 msgid "Activer"
 msgstr "Activer"
 
-#: templates/menu_informations.html:232 templates/menu_informations.html:264
+#: templates/menu_informations.html:234 templates/menu_informations.html:266
 msgid "Décalage X"
 msgstr "Décalage X"
 
-#: templates/menu_informations.html:236 templates/menu_informations.html:268
+#: templates/menu_informations.html:238 templates/menu_informations.html:270
 msgid "Décalage Y"
 msgstr "Décalage Y"
 
-#: templates/menu_informations.html:244
+#: templates/menu_informations.html:246
 msgid "Étendue"
 msgstr "Étendue"
 
-#: templates/menu_informations.html:321
+#: templates/menu_informations.html:323
 msgid "Position libre ou personnalisée : choisir un emplacement la remplace."
 msgstr "Position libre ou personnalisée : choisir un emplacement la remplace."
 
-#: templates/menu_informations.html:322
+#: templates/menu_informations.html:324
 msgid ""
 "Tant que cet onglet est ouvert, glissez le titre ou les infos sur la "
 "carte : lâchés près d’un emplacement, ils s’y ancrent ; ailleurs, ils "
@@ -11055,43 +11056,43 @@ msgstr ""
 "restent où vous les posez (Alt : sans aimantation). Les panneaux de stats"
 " les contournent."
 
-#: templates/menu_informations.html:327
+#: templates/menu_informations.html:329
 msgid "Type de position"
 msgstr "Type de position"
 
-#: templates/menu_informations.html:330
+#: templates/menu_informations.html:332
 msgid "Relative"
 msgstr "Relative"
 
-#: templates/menu_informations.html:331
+#: templates/menu_informations.html:333
 msgid "Absolue"
 msgstr "Absolue"
 
-#: templates/menu_informations.html:332
+#: templates/menu_informations.html:334
 msgid "Fixe"
 msgstr "Fixe"
 
-#: templates/menu_informations.html:342
+#: templates/menu_informations.html:344
 msgid "Haut (px)"
 msgstr "Haut (px)"
 
-#: templates/menu_informations.html:346
+#: templates/menu_informations.html:348
 msgid "Droite (px)"
 msgstr "Droite (px)"
 
-#: templates/menu_informations.html:350
+#: templates/menu_informations.html:352
 msgid "Bas (px)"
 msgstr "Bas (px)"
 
-#: templates/menu_informations.html:354
+#: templates/menu_informations.html:356
 msgid "Gauche (px)"
 msgstr "Gauche (px)"
 
-#: templates/menu_informations.html:360 templates/menu_trail.html:114
+#: templates/menu_informations.html:362 templates/menu_trail.html:114
 msgid "Opacité"
 msgstr "Opacité"
 
-#: templates/menu_informations.html:373
+#: templates/menu_informations.html:375
 msgid ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
@@ -11099,11 +11100,11 @@ msgstr ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
 
-#: templates/menu_informations.html:374
+#: templates/menu_informations.html:376
 msgid "Copier vers l'autre"
 msgstr "Copier vers l'autre"
 
-#: templates/menu_informations.html:386 templates/menu_informations.html:388
+#: templates/menu_informations.html:388 templates/menu_informations.html:390
 msgid "Appliquer les Modifications"
 msgstr "Appliquer les Modifications"
 

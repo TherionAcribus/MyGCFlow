@@ -9,7 +9,9 @@
 // Mode principal — {date}      : date affichée ;
 //                  {trouvees}  : compteur courant de caches trouvées ;
 //                  {total}     : taille de la sélection ;
-//                  {pct}       : trouvées / total en pourcentage (« 42 % »).
+//                  {pct}       : trouvées / total en pourcentage (« 42 % ») ;
+//                  {dnf}       : cumul des tentatives DNF à la date ;
+//                  {dnf_resolus} : cumul des DNF résolus par une trouvaille.
 // Mes poses      — {date}, {total} ;
 //                  {actives}   : caches posées non archivées à la date ;
 //                  {posees}    : cumul des caches apparues ;
@@ -33,7 +35,7 @@ export const DEFAULT_POSES_TEMPLATE = '{date} · {actives} · {trouvailles}';
 // Une balise d'un autre mode reste littérale chez soi : l'utilisateur voit
 // sa faute de frappe plutôt qu'un trou dans la ligne.
 export const EVOLUTION_INFO_TAGS = ['date', 'actives', 'placees', 'archivees', 'total'];
-export const MAIN_INFO_TAGS = ['date', 'trouvees', 'total', 'pct'];
+export const MAIN_INFO_TAGS = ['date', 'trouvees', 'total', 'pct', 'dnf', 'dnf_resolus'];
 export const POSES_INFO_TAGS = [
     'date', 'actives', 'posees', 'archivees', 'desactivees',
     'trouvailles', 'favoris', 'dnf', 'logs', 'trouveurs', 'total',

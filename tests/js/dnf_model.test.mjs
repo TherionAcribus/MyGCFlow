@@ -123,12 +123,13 @@ test('Stats : un événement par DNF, à sa date, avec les propriétés de la ca
     assert.equal(sept[0].properties.date_find, '2011-09-01');
     assert.equal(byDate.get(new Date('2011-08-20T00:00:00').toDateString()).length, 1);
     const entries = buildDnfEntries(features, day);
-    // État au jour : comptes + somme des délais de résolution + record de
-    // passages (tuiles « au jour » de stats_panels › sourceDayTiles).
+    // État au jour : comptes + somme des délais de résolution + tentatives
+    // survenues (compteur {dnf} de la ligne d'infos) + record de passages
+    // (tuiles « au jour » de stats_panels › sourceDayTiles).
     assert.deepEqual(dnfStatesAt(entries, day('2011-08-31')),
-        { open: 1, resolved: 0, resolveDays: 0, visits: 1, visitsCode: 'GC1' });
+        { open: 1, resolved: 0, resolveDays: 0, attempts: 1, visits: 1, visitsCode: 'GC1' });
     assert.deepEqual(dnfStatesAt(entries, day('2012-01-08')),
-        { open: 1, resolved: 1, resolveDays: day('2012-01-08') - day('2011-08-20'), visits: 2, visitsCode: 'GC1' });
+        { open: 1, resolved: 1, resolveDays: day('2012-01-08') - day('2011-08-20'), attempts: 3, visits: 2, visitsCode: 'GC1' });
 });
 
 test('style DNF : normalisation et valeurs par défaut', () => {

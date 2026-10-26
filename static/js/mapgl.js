@@ -2700,6 +2700,14 @@ function syncDnf(isVisible, day, appear = null, flash = null) {
     }
 }
 
+// Jour auquel la couche DNF est synchronisée (numéro de jour) : dernier
+// jour animé, ou fin de la fenêtre de découverte au repos — Infinity quand
+// la sélection n'a pas de borne. La ligne d'infos y lit ses compteurs DNF
+// ({dnf}, {dnf_resolus} de infos_template.mjs).
+export function dnfCurrentDay() {
+    return dnfSyncedDay;
+}
+
 // Relevé pour les tests : DNF présents sur la carte, en train de s'effacer,
 // forme des derniers flashs d'apparition et des célébrations (200 au plus).
 const dnfFlashLog = [];
