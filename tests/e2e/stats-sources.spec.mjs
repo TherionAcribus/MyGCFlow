@@ -196,6 +196,34 @@ test('le taux d\'échec ignore les Lab Caches de la sélection', async ({ page, 
 });
 
 
+// « État de mes caches » (métrique status de la source owned) se lit au jour
+// affiché dans ownerStatsAtDay, pas dans l'accumulateur : le panneau doit se
+// redessiner même les jours sans log (un archivage n'est pas un événement de
+// pose) — comme les tuiles d'état du compteur.
+test('le graphe d\'état des caches posées suit le jour affiché', async ({ page, request }) => {
+  await openWithSources(page, request, [
+    { id: 'abc00005', kind: 'donut', metric: 'status', options: { source: 'owned' } },
+  ]);
+
+  // Au repos : état actuel des fixtures (5 actives, 2 archivées).
+  const alt = altText(page, 'abc00005');
+  await expect(alt).toContainText('État de mes caches');
+  await expect(alt).toContainText('Caches actives : 5');
+  await expect(alt).toContainText('Caches archivées : 2');
+
+  // 05/09/2019 : GCP0004 est désactivée ce jour-là (poses.spec.mjs).
+  expect(await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateStart = new Date(2019, 0, 1);
+    return app.startPausedPreview();
+  })).toBe(true);
+  await page.evaluate(async () =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2019, 8, 5)));
+  await expect(alt).toContainText('Caches désactivées : 1');
+  await page.locator('#btnQuickStop').click();
+});
+
+
 // La liste de l'onglet signale la source comptée — un titre personnalisé
 // ne dit plus ce que le panneau compte — et une source sans données,
 // faute de quoi son panneau resterait dessiné à zéro sans explication.

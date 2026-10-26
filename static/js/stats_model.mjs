@@ -88,8 +88,11 @@ export const DNF_METRICS_BY_KIND = Object.freeze({
 });
 export const OWNED_METRICS_BY_KIND = Object.freeze({
     grid: Object.freeze(['dt', 'finds_ym', 'calendar', 'activity']),
-    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state']),
-    donut: Object.freeze(['cache_type', 'container', 'country', 'state']),
+    // « status » : état des caches posées au jour affiché (actives,
+    // désactivées, archivées), lu hors accumulateur — pas un comptage
+    // d'événements (stats_panels › ownedStatusAcc).
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'status']),
+    donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'status']),
     line: Object.freeze(['cumulative']),
     counter: Object.freeze(['summary']),
 });
@@ -689,6 +692,9 @@ export function accumulatorMetricsFor(panel, { evolution = false } = {}) {
         return [panel.metric];
     }
     if (panel.kind === 'line') return ['day'];
+    // « status » (source caches posées) : lu au jour affiché dans
+    // ownerStatsAtDay, pas dans l'accumulateur — rien à compter.
+    if (panel.metric === 'status') return [];
     if (panel.kind === 'counter') {
         return [...new Set((panel.options?.items || []).map((item) => COUNTER_DEPENDENCIES[item]).filter(Boolean))];
     }

@@ -389,6 +389,15 @@ source (`statsCounterLabel`) : « DNF », « Caches posées », « Jours avec
 DNF »…
 
 **Interface** : champ « Données comptées » du formulaire (`#selectStatsSource`,
+La source `owned` offre aussi la métrique **`status`** (barres et anneau) :
+répartition **actives / désactivées / archivées lue au jour affiché**, hors
+accumulateur (`ownedStatusAcc`, `ownerStatsAtDay` — un archivage n'est pas
+un événement de pose). Comme les tuiles d'état, le panneau se redessine les
+jours sans événement (`panelFollowsDay`, clé `counterDay`) ; son titre par
+défaut est « État de mes caches » et la galerie propose le modèle
+`owned-status`.
+
+**Interface** : champ « Données comptées » du formulaire (`#selectStatsSource`,
 visible quand les logs apportent des DNF ou des caches posées — une source
 sans données n'est pas proposée, sauf celle du panneau). Changer de source
 garde la métrique si la source la propose, sinon la première du type ;

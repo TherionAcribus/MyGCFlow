@@ -156,6 +156,7 @@ const PRESETS = {
         ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 }, options: { source: 'owned' } }],
     ],
     'owned-types': [['donut', 'cache_type', { position: { anchor: 'top-right', width: 300 }, options: { source: 'owned' } }]],
+    'owned-status': [['donut', 'status', { position: { anchor: 'top-right', width: 300 }, options: { source: 'owned' } }]],
     'owned-dt': [['grid', 'dt', { position: { anchor: 'bottom-left', width: 300 }, options: { source: 'owned' } }]],
     'owned-year': [['bar', 'year', { position: { anchor: 'top-right', width: 280 }, options: { source: 'owned' } }]],
     'owned-sizes': [['bar', 'container', { position: { anchor: 'top-right', width: 260 }, options: { source: 'owned' } }]],
@@ -772,9 +773,11 @@ function renderForm() {
         newOption.disabled = !offersNew;
     }
     setValue('selectStatsHighlight', !offersNew && o.highlight === 'new' ? 'every' : o.highlight);
-    // Sans effet du tout (Évolution : statut, courbes) : le champ se masque.
+    // Sans effet du tout (Évolution : statut, courbes ; statut des caches
+    // posées, lu au jour — jamais de « nouveauté ») : le champ se masque.
     const highlightField = $('statsHighlightField');
-    if (highlightField) highlightField.hidden = evolutionMode && (panel.metric === 'status' || panel.kind === 'line');
+    if (highlightField) highlightField.hidden = (evolutionMode && (panel.metric === 'status' || panel.kind === 'line'))
+        || (panel.metric === 'status' && source === 'owned');
     setValue('selectStatsCellMode', o.cell_mode);
     setValue('switchStatsCoverage', o.show_coverage);
     setValue('switchStatsLoops', o.show_loops);

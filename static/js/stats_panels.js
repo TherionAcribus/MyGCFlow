@@ -467,9 +467,11 @@ function featuresOfDates(S, dates) {
 }
 
 // Le panneau suit-il le jour affiché même sans événement compté ? Tête de
-// courbe, année d'activité, tuiles lues au jour (DAY_TILES).
+// courbe, année d'activité, tuiles lues au jour (DAY_TILES), état des caches
+// posées (lu au jour, hors accumulateur — ownedStatusAcc).
 function panelFollowsDay(panel) {
     return panel.kind === 'line' || panel.metric === 'activity'
+        || (panel.metric === 'status' && panelState(panel).key === 'owned')
         || (panel.kind === 'counter' && (panel.options.items || []).some(DAY_TILES.has, DAY_TILES));
 }
 
@@ -877,6 +879,7 @@ export function defaultStatsPanelTitle(panel) {
             case 'country': return pkg.t('Mes caches par pays');
             case 'state': return pkg.t('Mes caches par région');
             case 'cumulative': return pkg.t('Caches posées cumulées');
+            case 'status': return pkg.t('État de mes caches');
             case 'summary': return pkg.t('Chiffres clés de mes caches');
             default: break;
         }
@@ -1009,7 +1012,10 @@ function labelFor(metric, number) {
     if (metric === 'age') return (key) => AGE_LABELS[key]?.() ?? String(key);
     if (metric === 'lifetime') return (key) => LIFETIME_LABELS[key]?.() ?? String(key);
     if (metric === 'status') {
-        return (key) => key === 'active' ? pkg.t('Caches actives') : pkg.t('Caches archivées');
+        // « disabled » n'apparaît que dans le statut des caches posées (page
+        // principale) ; en Évolution une cache est active ou archivée.
+        return (key) => key === 'active' ? pkg.t('Caches actives')
+            : key === 'disabled' ? pkg.t('Caches désactivées') : pkg.t('Caches archivées');
     }
     return categoryLabel;
 }
@@ -1221,6 +1227,24 @@ function sourceDayTiles(values, S, day) {
     }
 }
 
+// Relevé « état des caches posées » au jour `day` (Infinity au repos), sous
+// la forme d'une vue de comptage pour barModel — lecture hors accumulateur
+// (owner_data.js › ownerStatsAtDay), comme evolutionStatusAcc en Évolution.
+function ownedStatusAcc(day) {
+    const states = pkg.ownerStatsAtDay?.(day) || { active: 0, disabled: 0, archived: 0 };
+    const counts = new Map([
+        ['active', states.active || 0],
+        ['disabled', states.disabled || 0],
+        ['archived', states.archived || 0],
+    ]);
+    return {
+        counts: new Map([['status', counts]]),
+        excluded: new Map([['status', 0]]),
+        lastHit: new Map(),
+        total: counts.get('active') + counts.get('disabled') + counts.get('archived'),
+    };
+}
+
 // Âge moyen des actives (jours) → texte compact : « 3,2 ans »,
 // « 8 mois », « 42 jours » ; « — » sans active.
 function meanAgeText(days, number) {
@@ -1298,16 +1322,24 @@ function buildView(panel, source = null) {
     if (isEvolutionPage()) return buildEvolutionView(panel, source);
     const animating = !source && mode === 'animating';
     const S = panelState(panel);
-    const reference = source
-        ? (source.totalsBySource?.get(S.key) ?? source.totals)
-        : (animating ? animationReference(S) : selectionTotals(S));
-    const state = animating ? S.current : reference;
+    const metric = panel.metric;
+    // Source « caches posées », métrique « statut » : actives, désactivées et
+    // archivées AU JOUR AFFICHÉ, lu hors accumulateur (ownedStatusAcc) — état
+    // actuel au repos (Infinity), jour affiché en animation ; la référence
+    // (ordre, couleurs) est l'état final.
+    const ownedStatus = S.key === 'owned' && metric === 'status';
+    const statusDay = ownedStatus
+        ? (animating && animation?.lastDate ? dayNumberOfDate(animation.lastDate) : Infinity)
+        : 0;
+    const reference = ownedStatus ? ownedStatusAcc(Infinity)
+        : source ? (source.totalsBySource?.get(S.key) ?? source.totals)
+            : (animating ? animationReference(S) : selectionTotals(S));
+    const state = ownedStatus ? ownedStatusAcc(statusDay) : (animating ? S.current : reference);
     const current = S.current;
     // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
     const now = animating ? lastNow : Number.NaN;
     const tweens = source ? createTweenStore(0) : tweensOf(panel.id);
     const { number, percent, compact } = formatters();
-    const metric = panel.metric;
     const view = {
         kind: panel.kind,
         metric,
@@ -1324,6 +1356,9 @@ function buildView(panel, source = null) {
             : null,
     };
     view.source = S.key;
+    // Statut des caches posées : la clé de dessin porte le jour, comme les
+    // tuiles d'état — le panneau se redessine même les jours sans événement.
+    if (ownedStatus) view.counterDay = animating ? statusDay : 'rest';
     // Présence des lignes de pied décidée sur la référence : la hauteur du
     // panneau ne change pas au premier Lab rencontré.
     const refExcluded = reference.excluded.get(countMetricOf(metric)) || 0;
@@ -2470,7 +2505,10 @@ export function statsPanelCsv(id) {
         const options = panel.kind === 'donut'
             ? { sort: 'count', max_items: panel.options.max_items }
             : panel.options;
-        const model = barModel(panel.metric, ref, ref, options, labelOf);
+        // Statut des caches posées : lu au jour, hors accumulateur — état
+        // actuel (repos), comme à l'écran.
+        const acc = S.key === 'owned' && panel.metric === 'status' ? ownedStatusAcc(Infinity) : ref;
+        const model = barModel(panel.metric, acc, acc, options, labelOf);
         for (const row of model.rows) {
             push(labelOf(row.key), row.count,
                 model.total ? percent(row.count / model.total) : '');

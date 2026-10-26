@@ -1643,6 +1643,25 @@ test('métriques à compter : une liste par source', () => {
     assert.deepEqual([...metricsForPanels(settings, { mode: 'main', source: 'owned' })], ['total']);
 });
 
+test('statut des caches posées : propre à « owned », rien à compter', () => {
+    // Offert en barres et anneau seulement pour la source « caches posées »
+    // (les autres pages/sources n'y voient pas ce « status »-là).
+    for (const kind of ['bar', 'donut']) {
+        assert.ok(statsPanelRegistry({ kind, options: { source: 'owned' } }, 'main')[kind].includes('status'), kind);
+        assert.ok(!statsPanelRegistry({ kind }, 'main')[kind].includes('status'), `finds/${kind}`);
+        assert.ok(!statsPanelRegistry({ kind, options: { source: 'dnf' } }, 'main')[kind].includes('status'), `dnf/${kind}`);
+        assert.ok(!statsPanelRegistry({ kind, options: { source: 'owned' } }, 'poses')[kind].includes('status'), `poses/${kind}`);
+    }
+    // Lu au jour affiché (ownerStatsAtDay), hors accumulateur : aucune
+    // métrique déclarée — sinon les événements « pose » la compteraient deux.
+    assert.deepEqual(accumulatorMetricsFor(
+        createStatsPanel('donut', 'status', { options: { source: 'owned' } })), []);
+    const settings = normalizeStatsSettings({ panels: [
+        { id: 'aaaaaa24', kind: 'donut', metric: 'status', options: { source: 'owned' } },
+    ] });
+    assert.equal(metricsForPanels(settings, { mode: 'main', source: 'owned' }).size, 0);
+});
+
 test('tuiles d\'état : valeurs neutres tant que stats_panels ne les remplit pas', () => {
     const acc = createStatsAccumulator(['total']);
     const values = counterValues(acc, ['dnf_open', 'dnf_ratio', 'maintenances']);
