@@ -31,6 +31,23 @@
             </div>
             <p class="form-hint text-muted mb-0" id="dnfDisplayHint" aria-live="polite"></p>
         </div>
+        <!-- Caches posées (owner_data.js, docs/logs-geocaching.md) : même
+             nature que les DNF (préférences owner_display / owner_in_trail).
+             Proposé seulement quand les logs importés décrivent au moins une
+             cache posée : masqué sinon (attribut hidden, sans classe d-*). -->
+        <div class="col-12 col-md-6" id="ownerDisplayField" hidden>
+            <span class="form-label">{{ _("Mes caches posées") }}</span>
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="checkOwnerDisplay" aria-describedby="ownerDisplayHelp">
+                <label class="form-check-label" for="checkOwnerDisplay">{{ _("Afficher mes caches posées sur la carte") }}</label>
+            </div>
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="checkOwnerInTrail">
+                <label class="form-check-label" for="checkOwnerInTrail">{{ _("Inclure pose et entretien dans le trait de déplacement") }}</label>
+            </div>
+            <p class="form-hint text-muted mb-0" id="ownerDisplayHelp">{{ _("Vos étapes de poseur seulement (pose, maintenance, désactivation, archivage) : les logs des autres joueurs restent sur la page Mes poses.") }}</p>
+            <p class="form-hint text-muted mb-0" id="ownerDisplayHint" aria-live="polite"></p>
+        </div>
     </div>
     <hr class="my-2">
 

@@ -124,5 +124,54 @@
     "triangle",
     "diamond",
     "fireworks"
+  ],
+  "owner_defaults": {
+    "archive": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#616161",
+      "color_type": "fix",
+      "mode": "implode",
+      "size": 40
+    },
+    "disable": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#9e9e9e",
+      "color_type": "fix",
+      "mode": "implode",
+      "size": 30
+    },
+    "enable": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#66bb6a",
+      "color_type": "fix",
+      "mode": "echo",
+      "size": 30
+    },
+    "maintenance": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#43a047",
+      "color_type": "fix",
+      "mode": "sparkle",
+      "size": 30
+    },
+    "place": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#ffc107",
+      "color_type": "fix",
+      "mode": "star",
+      "size": 42
+    }
+  },
+  "owner_kinds": [
+    "archive",
+    "disable",
+    "enable",
+    "place",
+    "maintenance"
   ]
 }

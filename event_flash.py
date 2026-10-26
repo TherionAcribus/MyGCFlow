@@ -12,6 +12,11 @@ compare à la sienne.
 
 Une table, pas une classe par type : ajouter un type ne demande qu'une
 ligne ici, une dans le module JS et une ligne de gabarit.
+
+Seconde table, mêmes règles : les étapes du poseur sur ses propres caches,
+montrées sur la carte principale (« Mes caches posées », `flash.owner`,
+docs/logs-geocaching.md) — pose, maintenance, désactivation, réactivation,
+archivage. Défauts distincts du flash des trouvailles, pour les reconnaître.
 """
 
 from __future__ import annotations
@@ -59,10 +64,26 @@ EVENT_FLASH_KINDS = (
 EVENT_FLASH_KEYS = tuple(kind for kind, _label, _d in EVENT_FLASH_KINDS)
 _DEFAULTS = {kind: d for kind, _label, d in EVENT_FLASH_KINDS}
 
+# Étapes du poseur sur la carte principale, même ordre de priorité.
+OWNER_FLASH_KINDS = (
+    ("archive", _l("Archivage"), _defaults("implode", 40, "#616161")),
+    ("disable", _l("Désactivation"), _defaults("implode", 30, "#9e9e9e")),
+    ("enable", _l("Réactivation"), _defaults("echo", 30, "#66bb6a")),
+    ("place", _l("Pose de la cache"), _defaults("star", 42, "#ffc107")),
+    ("maintenance", _l("Maintenance"), _defaults("sparkle", 30, "#43a047")),
+)
+OWNER_FLASH_KEYS = tuple(kind for kind, _label, _d in OWNER_FLASH_KINDS)
+_OWNER_DEFAULTS = {kind: d for kind, _label, d in OWNER_FLASH_KINDS}
+
 
 def event_flash_defaults() -> dict:
     """Bloc `flash.events` par défaut (copie modifiable)."""
     return {kind: dict(d) for kind, d in _DEFAULTS.items()}
+
+
+def owner_flash_defaults() -> dict:
+    """Bloc `flash.owner` par défaut (copie modifiable)."""
+    return {kind: dict(d) for kind, d in _OWNER_DEFAULTS.items()}
 
 
 def _clamp_size(value, default):
@@ -95,29 +116,43 @@ def coerce_event_flash(raw, current: dict) -> dict:
     }
 
 
-def coerce_event_flashes(raw, current: dict | None = None) -> dict:
-    """Bloc `flash.events` normalisé : chaque type connu (défauts pour les
-    absents ou invalides, valeur courante pour les champs absents), types
-    inconnus écartés. Un thème antérieur à Mes poses reçoit les défauts."""
+def _coerce_table(raw, current, keys, defaults) -> dict:
     base = current if isinstance(current, dict) else {}
     src = raw if isinstance(raw, dict) else {}
     out = {}
-    for kind in EVENT_FLASH_KEYS:
+    for kind in keys:
         existing = base.get(kind) if isinstance(base.get(kind), dict) else None
-        merged = coerce_event_flash(existing, _DEFAULTS[kind]) if existing else dict(_DEFAULTS[kind])
+        merged = coerce_event_flash(existing, defaults[kind]) if existing else dict(defaults[kind])
         out[kind] = coerce_event_flash(src.get(kind), merged)
     return out
 
 
-def scale_event_flash_sizes(events: dict, factor: float) -> dict:
+def coerce_event_flashes(raw, current: dict | None = None) -> dict:
+    """Bloc `flash.events` normalisé : chaque type connu (défauts pour les
+    absents ou invalides, valeur courante pour les champs absents), types
+    inconnus écartés. Un thème antérieur à Mes poses reçoit les défauts."""
+    return _coerce_table(raw, current, EVENT_FLASH_KEYS, _DEFAULTS)
+
+
+def coerce_owner_flashes(raw, current: dict | None = None) -> dict:
+    """Bloc `flash.owner` normalisé, mêmes règles que `flash.events`."""
+    return _coerce_table(raw, current, OWNER_FLASH_KEYS, _OWNER_DEFAULTS)
+
+
+def scale_event_flash_sizes(events: dict, factor: float, defaults: dict | None = None) -> dict:
     """Tailles × facteur (copie d'un thème vers un autre mode)."""
+    table = _DEFAULTS if defaults is None else defaults
     out = {}
     for kind, value in (events or {}).items():
         item = dict(value)
-        item["size"] = _clamp_size(round(item.get("size", _DEFAULTS.get(kind, {}).get("size", 20)) * factor),
-                                   _DEFAULTS.get(kind, {}).get("size", 20))
+        default_size = table.get(kind, {}).get("size", 20)
+        item["size"] = _clamp_size(round(item.get("size", default_size) * factor), default_size)
         out[kind] = item
     return out
+
+
+def scale_owner_flash_sizes(owner: dict, factor: float) -> dict:
+    return scale_event_flash_sizes(owner, factor, _OWNER_DEFAULTS)
 
 
 def event_flash_kinds_for_template() -> list:
@@ -125,7 +160,15 @@ def event_flash_kinds_for_template() -> list:
     return [{"key": kind, "label": label, "defaults": dict(d)} for kind, label, d in EVENT_FLASH_KINDS]
 
 
+def owner_flash_kinds_for_template() -> list:
+    """[{key, label, defaults}] des étapes du poseur (onglet Flash du mode
+    principal)."""
+    return [{"key": kind, "label": label, "defaults": dict(d)} for kind, label, d in OWNER_FLASH_KINDS]
+
+
 def event_flash_table() -> dict:
     """Table sans libellés, comparée par le test JS (dérive Python/JS)."""
     return {"kinds": list(EVENT_FLASH_KEYS), "modes": list(EVENT_FLASH_MODES),
-            "defaults": {kind: dict(d) for kind, d in _DEFAULTS.items()}}
+            "defaults": {kind: dict(d) for kind, d in _DEFAULTS.items()},
+            "owner_kinds": list(OWNER_FLASH_KEYS),
+            "owner_defaults": {kind: dict(d) for kind, d in _OWNER_DEFAULTS.items()}}

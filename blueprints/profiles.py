@@ -105,6 +105,8 @@ def api_get_settings():
         'labs_auto_fetch_coords': s.labs_auto_fetch_coords,
         'dnf_display': s.dnf_display,
         'dnf_in_trail': s.dnf_in_trail,
+        'owner_display': s.owner_display,
+        'owner_in_trail': s.owner_in_trail,
         'labs_receive_token': s.labs_receive_token,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
@@ -337,6 +339,10 @@ def api_put_settings():
                          else current.dnf_display),
             dnf_in_trail=(data['dnf_in_trail'] if isinstance(data.get('dnf_in_trail'), bool)
                           else current.dnf_in_trail),
+            owner_display=(data['owner_display'] if isinstance(data.get('owner_display'), bool)
+                           else current.owner_display),
+            owner_in_trail=(data['owner_in_trail'] if isinstance(data.get('owner_in_trail'), bool)
+                            else current.owner_in_trail),
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

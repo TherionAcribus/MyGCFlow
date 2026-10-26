@@ -27,6 +27,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_babel import force_locale, gettext as _
 
 import dnf_geojson
+import owner_geojson
 import log_formats as lf
 import log_store
 import paths
@@ -323,6 +324,14 @@ def logs_dnf_features():
     """Points DNF de la carte, à part du jeu principal : jamais comptés comme
     des trouvailles (dnf_geojson.py)."""
     return jsonify({'success': True, **dnf_geojson.build_dnf_features(db.session)})
+
+
+@logs_bp.route('/api/logs/owner_features')
+def logs_owner_features():
+    """Caches posées par le joueur et ses étapes de poseur (pose,
+    maintenance, désactivation, archivage), à part du jeu principal :
+    jamais comptées comme des trouvailles (owner_geojson.py)."""
+    return jsonify({'success': True, **owner_geojson.build_owner_features(db.session)})
 
 
 @logs_bp.route('/api/logs/pending_caches')

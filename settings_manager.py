@@ -15,7 +15,10 @@ from typing import Callable, Dict, Tuple, Optional, List
 
 from werkzeug.utils import secure_filename
 
-from event_flash import coerce_event_flashes, event_flash_defaults, scale_event_flash_sizes
+from event_flash import (
+    coerce_event_flashes, coerce_owner_flashes, event_flash_defaults, owner_flash_defaults,
+    scale_event_flash_sizes, scale_owner_flash_sizes,
+)
 from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
@@ -413,6 +416,13 @@ class AppSettings:
     # Un DNF est un déplacement : le trait de déplacement y passe, sauf choix
     # contraire (sans effet tant que dnf_display est coupé).
     dnf_in_trail: bool = True
+    # Caches posées par le joueur sur la carte principale (« Mes caches
+    # posées », docs/logs-geocaching.md) : masquées par défaut, proposées
+    # seulement quand les logs en décrivent. Mêmes règles que les DNF.
+    owner_display: bool = False
+    # Pose, maintenance, désactivation, archivage sont des déplacements du
+    # poseur : étapes du trait de déplacement, sauf choix contraire.
+    owner_in_trail: bool = True
     # Jeton embarqué dans le bookmarklet « Envoyer vers MyGCFlow » : protège
     # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
@@ -629,6 +639,9 @@ class FlashOptions:
     # favori, désactivation, archivage…). Table, défauts et validation dans
     # event_flash.py ; sans effet sur les autres pages.
     events: dict = field(default_factory=event_flash_defaults)
+    # Carte principale : un flash par étape du poseur sur ses caches (pose,
+    # maintenance, désactivation, réactivation, archivage) ; event_flash.py.
+    owner: dict = field(default_factory=owner_flash_defaults)
 
 
 @dataclass
@@ -671,6 +684,13 @@ class PointStyle:
     # Fenêtre de persistance des points récents, en jours (0 = désactivée) :
     # les caches des derniers jours restent plus claires et un peu plus grosses.
     recent_glow_days: int = 0
+    # Caches posées par le joueur (carte principale) : forme propre en
+    # vectoriel (« same » = celle des trouvailles) et contour — bordure de la
+    # forme en vectoriel, anneau autour de l'icône en mode icônes. Une
+    # épaisseur nulle retire le contour.
+    owner_shape: str = "star"  # OWNER_POINT_SHAPES
+    owner_border_color: str = "#ffc107"
+    owner_border_width: int = 2  # px, OWNER_BORDER_WIDTH_RANGE
 
 
 @dataclass
@@ -777,6 +797,9 @@ TILE_PROVIDERS = ("OSM", "watercolor", "stamenToner", "vectorMap")
 TONER_VARIANTS = ("light", "dark")
 POINT_MODES = ("vectoriel", "icone")
 POINT_SHAPES = ("circle", "triangle")
+# Forme des caches posées (vectoriel) : « same » reprend celle des trouvailles.
+OWNER_POINT_SHAPES = ("star", "square", "diamond", "triangle", "circle", "same")
+OWNER_BORDER_WIDTH_RANGE = (0, 6)
 ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
 COLOR_TYPES = ("gc", "none", "fix")
 # Couleur du contour des formes de flash : « auto » garde le contour historique
@@ -1159,7 +1182,7 @@ def coerce_settings(d: dict) -> AppSettings:
         if raw_fetch is not None:
             s.labs_auto_fetch_coords = raw_fetch is True
         # Booléens stricts : une valeur corrompue coupe l'option.
-        for name in ("dnf_display", "dnf_in_trail"):
+        for name in ("dnf_display", "dnf_in_trail", "owner_display", "owner_in_trail"):
             raw = d.get(name)
             if raw is not None:
                 setattr(s, name, raw is True)
@@ -1280,6 +1303,10 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             icon_size=_clamp_int(pt.get("icon_size"), pp.icon_size, *ICON_SIZE_RANGE),
             appear_animation=bool(pt.get("appear_animation", pp.appear_animation)),
             recent_glow_days=_clamp_int(pt.get("recent_glow_days"), pp.recent_glow_days, *RECENT_GLOW_DAYS_RANGE),
+            owner_shape=_coerce_choice(pt.get("owner_shape"), OWNER_POINT_SHAPES, pp.owner_shape),
+            owner_border_color=_coerce_hex_color(pt.get("owner_border_color"), pp.owner_border_color),
+            owner_border_width=_clamp_int(pt.get("owner_border_width"), pp.owner_border_width,
+                                          *OWNER_BORDER_WIDTH_RANGE),
         )
 
         # Options flash
@@ -1331,6 +1358,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                 border_color_type=_coerce_choice(ff.get("border_color_type"), FLASH_BORDER_TYPES, pff.border_color_type),
             ),
             events=coerce_event_flashes(f.get("events"), p.flash.events),
+            owner=coerce_owner_flashes(f.get("owner"), p.flash.owner),
         )
 
         # Options infos (titre, cases à cocher, CSS)
@@ -1426,10 +1454,12 @@ def convert_profile_for_mode(prof: MapProfile, target_mode: str) -> MapProfile:
         flash.size = _scaled(flash.size, EVOLUTION_FLASH_SCALE, *FLASH_SIZE_RANGE)
         flash.duration = min(flash.duration, EVOLUTION_FLASH_MAX_DURATION)
         flash.events = scale_event_flash_sizes(flash.events, EVOLUTION_FLASH_SCALE)
+        flash.owner = scale_owner_flash_sizes(flash.owner, EVOLUTION_FLASH_SCALE)
     else:
         points.size = _scaled(points.size, 1 / EVOLUTION_POINT_SCALE, *POINT_SIZE_RANGE)
         flash.size = _scaled(flash.size, 1 / EVOLUTION_FLASH_SCALE, *FLASH_SIZE_RANGE)
         flash.events = scale_event_flash_sizes(flash.events, 1 / EVOLUTION_FLASH_SCALE)
+        flash.owner = scale_owner_flash_sizes(flash.owner, 1 / EVOLUTION_FLASH_SCALE)
     prof.mode = target_mode
     return prof
 
@@ -2959,6 +2989,9 @@ class SettingsManager:
                 'icon_size': prof.points.icon_size,
                 'appear_animation': prof.points.appear_animation,
                 'recent_glow_days': prof.points.recent_glow_days,
+                'owner_shape': prof.points.owner_shape,
+                'owner_border_color': prof.points.owner_border_color,
+                'owner_border_width': prof.points.owner_border_width,
             },
             'flash': {
                 'mode': prof.flash.mode,
@@ -2993,6 +3026,7 @@ class SettingsManager:
                     'border_color_type': prof.flash.dnf_found.border_color_type,
                 },
                 'events': {kind: dict(value) for kind, value in prof.flash.events.items()},
+                'owner': {kind: dict(value) for kind, value in prof.flash.owner.items()},
             },
             'infos': {
                 'title': {

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-25 18:21+0100\n"
+"POT-Creation-Date: 2026-10-26 09:05+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -246,7 +246,7 @@ msgstr "Video processing"
 msgid "Traitement ffmpeg"
 msgstr "ffmpeg processing"
 
-#: capture.py:1226 static/js/mapgl.js:5002 templates/guide.html:343
+#: capture.py:1226 static/js/mapgl.js:5271 templates/guide.html:343
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Video ready"
@@ -287,55 +287,63 @@ msgstr "Out-of-sequence video fragment"
 msgid "Fragment vidéo absent"
 msgstr "Missing video fragment"
 
-#: event_flash.py:46
+#: event_flash.py:51 event_flash.py:69
 msgid "Archivage"
 msgstr "Archive"
 
-#: event_flash.py:47
+#: event_flash.py:52 event_flash.py:70
 msgid "Désactivation"
 msgstr "Disable"
 
-#: event_flash.py:48
+#: event_flash.py:53 event_flash.py:71
 msgid "Réactivation"
 msgstr "Enable"
 
-#: event_flash.py:49 poses_dataset.py:633
+#: event_flash.py:54 poses_dataset.py:633
 msgid "Publication"
 msgstr "Publication"
 
-#: event_flash.py:50
+#: event_flash.py:55
 msgid "Signalement (maintenance demandée)"
 msgstr "Report (needs maintenance)"
 
-#: event_flash.py:51
+#: event_flash.py:56
 msgid "Maintenance du poseur"
 msgstr "Owner maintenance"
 
-#: event_flash.py:52 poses_dataset.py:613
+#: event_flash.py:57 poses_dataset.py:613
 msgid "Première trouvaille"
 msgstr "First find"
 
-#: event_flash.py:53
+#: event_flash.py:58
 msgid "Point favori"
 msgstr "Favorite point"
 
-#: event_flash.py:54
+#: event_flash.py:59
 msgid "Trouvaille"
 msgstr "Find"
 
-#: event_flash.py:55 poses_dataset.py:612 static/js/gc_logs.js:39
-#: static/js/gc_logs.js:60 static/js/mapgl.js:1165
+#: event_flash.py:60 poses_dataset.py:612 static/js/gc_logs.js:39
+#: static/js/gc_logs.js:60 static/js/mapgl.js:1182
 #: templates/menu_informations.html:66
 msgid "DNF"
 msgstr "DNF"
 
-#: event_flash.py:56
+#: event_flash.py:61
 msgid "Note"
 msgstr "Note"
 
-#: event_flash.py:57
+#: event_flash.py:62
 msgid "Note du relecteur"
 msgstr "Reviewer note"
+
+#: event_flash.py:72
+msgid "Pose de la cache"
+msgstr "Cache placed"
+
+#: event_flash.py:73
+msgid "Maintenance"
+msgstr "Maintenance"
 
 #: lab_formats.py:117
 msgid "found_date invalide (jour inexistant)"
@@ -616,11 +624,11 @@ msgstr "GC code"
 msgid "Nom"
 msgstr "Name"
 
-#: poses_dataset.py:609 static/js/ui.js:10258
+#: poses_dataset.py:609 static/js/ui.js:10315
 msgid "Type"
 msgstr "Type"
 
-#: poses_dataset.py:609 static/js/ui.js:10257
+#: poses_dataset.py:609 static/js/ui.js:10314
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
 msgid "Taille"
 msgstr "Size"
@@ -698,22 +706,22 @@ msgstr "Beta find"
 msgid "Premier log"
 msgstr "First log"
 
-#: poses_dataset.py:640 static/js/evolution_data.js:753
+#: poses_dataset.py:640 static/js/evolution_data.js:753 static/js/mapgl.js:3621
 #: static/js/poses_data.js:773 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Active"
 
-#: poses_dataset.py:641 static/js/poses_data.js:774
+#: poses_dataset.py:641 static/js/mapgl.js:3621 static/js/poses_data.js:774
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr "Disabled"
 
-#: poses_dataset.py:642 static/js/poses_data.js:775
+#: poses_dataset.py:642 static/js/mapgl.js:3621 static/js/poses_data.js:775
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr "Archived"
 
-#: settings_manager.py:2710
+#: settings_manager.py:2740
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -722,45 +730,45 @@ msgstr ""
 "The name '%(name)s' contains no usable characters (at least one letter or"
 " digit is required)"
 
-#: blueprints/profiles.py:535 settings_manager.py:2750 settings_manager.py:2827
-#: settings_manager.py:2879
+#: blueprints/profiles.py:541 settings_manager.py:2780 settings_manager.py:2857
+#: settings_manager.py:2909
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Theme '%(name)s' not found"
 
-#: settings_manager.py:2771
+#: settings_manager.py:2801
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "No theme found with UUID: %(uid)s"
 
-#: settings_manager.py:2807 settings_manager.py:2832
+#: settings_manager.py:2837 settings_manager.py:2862
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "A theme named '%(name)s' already exists"
 
-#: settings_manager.py:2844
+#: settings_manager.py:2874
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Source theme '%(name)s' not found"
 
-#: settings_manager.py:2860
+#: settings_manager.py:2890
 msgid "Mode de thème inconnu"
 msgstr "Unknown theme mode"
 
-#: settings_manager.py:2863
+#: settings_manager.py:2893
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "The theme '%(name)s' already belongs to this mode"
 
-#: settings_manager.py:3041
+#: settings_manager.py:3075
 msgid "Payload invalide"
 msgstr "Invalid payload"
 
-#: settings_manager.py:3044
+#: settings_manager.py:3078
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Invalid theme file (missing magic marker)"
 
-#: settings_manager.py:3048
+#: settings_manager.py:3082
 msgid "Section 'profile' manquante"
 msgstr "Missing 'profile' section"
 
@@ -769,11 +777,11 @@ msgstr "Missing 'profile' section"
 msgid "Une tâche '%(type)s' est déjà en cours"
 msgstr "A '%(type)s' task is already running"
 
-#: blueprints/core.py:194 blueprints/core.py:232 test_translations.py:27
+#: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
 msgstr "Database"
 
-#: blueprints/core.py:196 static/js/evolution_data.js:435
+#: blueprints/core.py:198 static/js/evolution_data.js:435
 #: static/js/poses_data.js:309 templates/guide.html:160
 #: templates/guide.html:168 templates/menu_data.html:400
 #: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:63
@@ -781,16 +789,16 @@ msgstr "Database"
 msgid "Filtres"
 msgstr "Filters"
 
-#: blueprints/core.py:198 test_translations.py:29
+#: blueprints/core.py:200 test_translations.py:29
 msgid "Paramètres"
 msgstr "Settings"
 
 #: templates/app.html:267 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
 #: templates/guide.html:536 templates/menu_animation.html:83
-#: templates/menu_animation.html:113 templates/menu_filtre.html:61
-#: templates/menu_filtre.html:70 templates/menu_filtre.html:86
-#: templates/menu_filtre.html:95 test_translations.py:30
+#: templates/menu_animation.html:113 templates/menu_filtre.html:78
+#: templates/menu_filtre.html:87 templates/menu_filtre.html:103
+#: templates/menu_filtre.html:112 test_translations.py:30
 msgid "Données"
 msgstr "Data"
 
@@ -804,38 +812,38 @@ msgstr "Style"
 msgid "Animation"
 msgstr "Animation"
 
-#: blueprints/core.py:195
+#: blueprints/core.py:197
 msgid "Choisir fichier"
 msgstr "Choose file"
 
-#: blueprints/core.py:197 templates/guide.html:189 templates/menu_style.html:77
+#: blueprints/core.py:199 templates/guide.html:189 templates/menu_style.html:77
 #: templates/menu_style.html:91
 msgid "Cartes"
 msgstr "Maps"
 
-#: blueprints/core.py:199
+#: blueprints/core.py:201
 msgid "Cancel"
 msgstr "Cancel"
 
-#: blueprints/core.py:200 templates/menu_points.html:6
+#: blueprints/core.py:202 templates/menu_points.html:6
 msgid "Graphisme des points"
 msgstr "Point graphics"
 
-#: blueprints/core.py:201 templates/menu_points.html:49
+#: blueprints/core.py:203 templates/menu_points.html:49
 msgid "Centre du point"
 msgstr "Point center"
 
-#: blueprints/core.py:221
+#: blueprints/core.py:223
 msgid ""
 "La langue a été changée. La page va se recharger pour appliquer les "
 "modifications."
 msgstr "The language has been changed. The page will reload to apply the changes."
 
-#: blueprints/core.py:223
+#: blueprints/core.py:225
 msgid "Changement de langue"
 msgstr "Language change"
 
-#: blueprints/core.py:225
+#: blueprints/core.py:227
 msgid ""
 "La langue a été changée. L'application va redémarrer pour appliquer les "
 "modifications."
@@ -843,17 +851,17 @@ msgstr ""
 "The language has been changed. The application will restart to apply the "
 "changes."
 
-#: blueprints/core.py:227 static/js/notifications.js:447
+#: blueprints/core.py:229 static/js/notifications.js:447
 msgid "Confirmer"
 msgstr "Confirm"
 
-#: blueprints/core.py:229 static/js/notifications.js:448
+#: blueprints/core.py:231 static/js/notifications.js:448
 #: templates/menu_data.html:95 templates/menu_data.html:489
 #: templates/menu_data.html:519 templates/menu_images.html:118
-#: templates/menu_stats.html:71 templates/menu_style.html:254
-#: templates/menu_style.html:279 templates/menu_style.html:304
-#: templates/menu_style.html:332 templates/menu_style.html:363
-#: templates/menu_style.html:391 templates/modal_evolution.html:18
+#: templates/menu_stats.html:71 templates/menu_style.html:257
+#: templates/menu_style.html:282 templates/menu_style.html:307
+#: templates/menu_style.html:335 templates/menu_style.html:366
+#: templates/menu_style.html:394 templates/modal_evolution.html:18
 #: templates/modal_evolution.html:60 templates/modal_evolution.html:84
 #: templates/modal_loading.html:14
 msgid "Annuler"
@@ -892,7 +900,7 @@ msgstr "A dataset already has this name"
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr "An import is running: try again once it is done"
 
-#: blueprints/evolution.py:158 blueprints/gc_logs.py:242 blueprints/gpx.py:37
+#: blueprints/evolution.py:158 blueprints/gc_logs.py:243 blueprints/gpx.py:37
 #: blueprints/labs.py:512
 msgid "Aucun fichier fourni"
 msgstr "No file provided"
@@ -931,156 +939,156 @@ msgstr "Importing %(name)s (%(index)s/%(count)s)…"
 msgid "Colonnes obligatoires absentes (%(columns)s)"
 msgstr "Required columns missing (%(columns)s)"
 
-#: blueprints/gc_logs.py:87 blueprints/gc_logs.py:118
+#: blueprints/gc_logs.py:88 blueprints/gc_logs.py:119
 msgid "Fichier trop volumineux (200 Mo max)"
 msgstr "File too large (200 MB max)"
 
-#: blueprints/gc_logs.py:114
+#: blueprints/gc_logs.py:115
 msgid "Archive .zip illisible"
 msgstr "Unreadable .zip archive"
 
-#: blueprints/gc_logs.py:119
+#: blueprints/gc_logs.py:120
 msgid "L'archive ne contient pas de fichier de logs exploitable"
 msgstr "The archive does not contain a usable logs file"
 
-#: blueprints/gc_logs.py:173 blueprints/labs.py:189
+#: blueprints/gc_logs.py:174 blueprints/labs.py:189
 msgid "Jeton d'import invalide"
 msgstr "Invalid import token"
 
-#: blueprints/gc_logs.py:179 blueprints/gc_logs.py:187 blueprints/labs.py:195
+#: blueprints/gc_logs.py:180 blueprints/gc_logs.py:188 blueprints/labs.py:195
 msgid "Jeton d'import inconnu ou déjà consommé"
 msgstr "Unknown or already used import token"
 
-#: blueprints/gc_logs.py:182 blueprints/labs.py:204
+#: blueprints/gc_logs.py:183 blueprints/labs.py:204
 msgid "Jeton d'import expiré — relancer l'aperçu"
 msgstr "Import token expired — run the preview again"
 
-#: blueprints/gc_logs.py:253 blueprints/gc_logs.py:495
-#: blueprints/gc_logs.py:646
+#: blueprints/gc_logs.py:254 blueprints/gc_logs.py:504
+#: blueprints/gc_logs.py:655
 #, python-format
 msgid "Fichier refusé : %(reasons)s"
 msgstr "File refused: %(reasons)s"
 
-#: blueprints/gc_logs.py:273 blueprints/gc_logs.py:370
-#: blueprints/gc_logs.py:489 blueprints/gc_logs.py:626
+#: blueprints/gc_logs.py:274 blueprints/gc_logs.py:379
+#: blueprints/gc_logs.py:498 blueprints/gc_logs.py:635
 msgid "Un import de logs est déjà en cours"
 msgstr "A log import is already running"
 
-#: blueprints/gc_logs.py:294
+#: blueprints/gc_logs.py:295
 msgid "Lecture du fichier de logs"
 msgstr "Reading the log file"
 
-#: blueprints/gc_logs.py:296
+#: blueprints/gc_logs.py:297
 msgid "Enregistrement des logs"
 msgstr "Saving the logs"
 
-#: blueprints/gc_logs.py:335 blueprints/labs.py:710 blueprints/labs.py:723
+#: blueprints/gc_logs.py:344 blueprints/labs.py:710 blueprints/labs.py:723
 msgid "Pagination invalide"
 msgstr "Invalid pagination"
 
-#: blueprints/gc_logs.py:353 blueprints/labs.py:762 blueprints/labs.py:821
+#: blueprints/gc_logs.py:362 blueprints/labs.py:762 blueprints/labs.py:821
 msgid "Aucune correction fournie"
 msgstr "No correction provided"
 
-#: blueprints/gc_logs.py:357 blueprints/labs.py:743
+#: blueprints/gc_logs.py:366 blueprints/labs.py:743
 #, python-format
 msgid "Coordonnées invalides : %(reason)s"
 msgstr "Invalid coordinates: %(reason)s"
 
-#: blueprints/gc_logs.py:362
+#: blueprints/gc_logs.py:371
 msgid "Cache inconnue"
 msgstr "Unknown cache"
 
-#: blueprints/gc_logs.py:373
+#: blueprints/gc_logs.py:382
 #, python-format
 msgid "%(count)s logs supprimés."
 msgstr "%(count)s logs deleted."
 
-#: blueprints/gc_logs.py:388
+#: blueprints/gc_logs.py:397
 msgid "Aucun log à exporter"
 msgstr "No logs to export"
 
-#: blueprints/gc_logs.py:480 blueprints/gc_logs.py:603
-#: blueprints/gc_logs.py:685 blueprints/labs.py:972
+#: blueprints/gc_logs.py:489 blueprints/gc_logs.py:612
+#: blueprints/gc_logs.py:694 blueprints/labs.py:972
 msgid "Jeton de réception invalide — régénérer le bookmarklet"
 msgstr "Invalid receive token — regenerate the bookmarklet"
 
-#: blueprints/gc_logs.py:484 blueprints/gc_logs.py:611 blueprints/labs.py:976
+#: blueprints/gc_logs.py:493 blueprints/gc_logs.py:620 blueprints/labs.py:976
 msgid "Contenu absent ou trop volumineux"
 msgstr "Content missing or too large"
 
-#: blueprints/gc_logs.py:486
+#: blueprints/gc_logs.py:495
 msgid "Format non reconnu (export mygcflow-logs attendu)"
 msgstr "Unrecognized format (mygcflow-logs export expected)"
 
-#: blueprints/gc_logs.py:504 blueprints/gc_logs.py:655 static/js/gc_logs.js:236
+#: blueprints/gc_logs.py:513 blueprints/gc_logs.py:664 static/js/gc_logs.js:239
 msgid "export du favori"
 msgstr "bookmarklet export"
 
-#: blueprints/gc_logs.py:508 blueprints/gc_logs.py:660
+#: blueprints/gc_logs.py:517 blueprints/gc_logs.py:669
 msgid "Export reçu — validez l'aperçu dans l'application"
 msgstr "Export received — validate the preview in the app"
 
-#: blueprints/gc_logs.py:537
+#: blueprints/gc_logs.py:546
 msgid "un autre compte alimente déjà cette collecte"
 msgstr "another account is already feeding this collection"
 
-#: blueprints/gc_logs.py:607
+#: blueprints/gc_logs.py:616
 msgid "Fragment sans identifiant de collecte valide"
 msgstr "Fragment without a valid collection id"
 
-#: blueprints/gc_logs.py:615
+#: blueprints/gc_logs.py:624
 msgid "Fragment illisible (JSON attendu)"
 msgstr "Unreadable fragment (JSON expected)"
 
-#: blueprints/gc_logs.py:622
+#: blueprints/gc_logs.py:631
 msgid "Fragment non conforme (export mygcflow-logs attendu)"
 msgstr "Non-conforming fragment (mygcflow-logs export expected)"
 
-#: blueprints/gc_logs.py:749 blueprints/labs.py:1042
+#: blueprints/gc_logs.py:758 blueprints/labs.py:1042
 msgid "MyGCFlow : démarrage…"
 msgstr "MyGCFlow: starting…"
 
-#: blueprints/gc_logs.py:750
+#: blueprints/gc_logs.py:759
 #, python-brace-format
 msgid "MyGCFlow : compte ${a} — lecture des listes…"
 msgstr "MyGCFlow: account ${a} — reading lists…"
 
-#: blueprints/gc_logs.py:751
+#: blueprints/gc_logs.py:760
 #, python-brace-format
 msgid "MyGCFlow : ${a} cache(s) avec un DNF à relire…"
 msgstr "MyGCFlow: ${a} cache(s) with a DNF to re-read…"
 
-#: blueprints/gc_logs.py:752
+#: blueprints/gc_logs.py:761
 #, python-brace-format
 msgid "MyGCFlow : ${a} cache(s) posée(s) à relire…"
 msgstr "MyGCFlow: ${a} owned cache(s) to re-read…"
 
-#: blueprints/gc_logs.py:753
+#: blueprints/gc_logs.py:762
 #, python-brace-format
 msgid "MyGCFlow : ${a} caches à lire (~${b} min)…"
 msgstr "MyGCFlow: ${a} caches to read (~${b} min)…"
 
-#: blueprints/gc_logs.py:754
+#: blueprints/gc_logs.py:763
 #, python-brace-format
 msgid "MyGCFlow : cache ${a}/${b} — ${c}"
 msgstr "MyGCFlow: cache ${a}/${b} — ${c}"
 
-#: blueprints/gc_logs.py:755
+#: blueprints/gc_logs.py:764
 #, python-brace-format
 msgid "MyGCFlow : arrêt après ${a}/${b} caches — envoi de ce qui a été lu…"
 msgstr "MyGCFlow: stopped after ${a}/${b} caches — sending what was read…"
 
-#: blueprints/gc_logs.py:756 blueprints/labs.py:1047
+#: blueprints/gc_logs.py:765 blueprints/labs.py:1047
 msgid "MyGCFlow : envoi à l'application…"
 msgstr "MyGCFlow: sending to the app…"
 
-#: blueprints/gc_logs.py:757
+#: blueprints/gc_logs.py:766
 #, python-brace-format
 msgid "✔ ${a} logs, ${b} caches envoyés à MyGCFlow"
 msgstr "✔ ${a} logs, ${b} caches sent to MyGCFlow"
 
-#: blueprints/gc_logs.py:758
+#: blueprints/gc_logs.py:767
 #, python-brace-format
 msgid ""
 "MyGCFlow : ordre des dates indéterminé (${a}). Appelez "
@@ -1089,38 +1097,38 @@ msgstr ""
 "MyGCFlow: undetermined date order (${a}). Call mygcflowLogsFinish('DMY') "
 "or mygcflowLogsFinish('MDY') in the console."
 
-#: blueprints/gc_logs.py:759 blueprints/labs.py:1052
+#: blueprints/gc_logs.py:768 blueprints/labs.py:1052
 msgid "MyGCFlow : erreur"
 msgstr "MyGCFlow: error"
 
-#: blueprints/gc_logs.py:760 blueprints/labs.py:1053
+#: blueprints/gc_logs.py:769 blueprints/labs.py:1053
 msgid "MyGCFlow :"
 msgstr "MyGCFlow:"
 
-#: blueprints/gc_logs.py:761
+#: blueprints/gc_logs.py:770
 msgid "à lancer depuis une page de geocaching.com"
 msgstr "run it from a geocaching.com page"
 
-#: blueprints/gc_logs.py:762
+#: blueprints/gc_logs.py:771
 #, python-brace-format
 msgid "MyGCFlow : nouveautés depuis le ${a} seulement…"
 msgstr "MyGCFlow: new items since ${a} only…"
 
-#: blueprints/gc_logs.py:763
+#: blueprints/gc_logs.py:772
 msgid ""
 "Un export attend déjà sa validation dans l'application — collecter quand "
 "même ?"
 msgstr "An export is already waiting for validation in the app — collect anyway?"
 
-#: blueprints/gc_logs.py:764
+#: blueprints/gc_logs.py:773
 msgid "Collecte annulée — ouvrez l'application pour valider l'aperçu en attente."
 msgstr "Collection cancelled — open the app to validate the pending preview."
 
-#: blueprints/gc_logs.py:765
+#: blueprints/gc_logs.py:774
 msgid "jeton refusé — régénérez le favori dans l'application"
 msgstr "token refused — regenerate the bookmarklet in the app"
 
-#: blueprints/gc_logs.py:766
+#: blueprints/gc_logs.py:775
 #, python-brace-format
 msgid ""
 "Une collecte interrompue existe (${a}/${b} caches déjà lues) — reprendre "
@@ -1129,7 +1137,7 @@ msgstr ""
 "An interrupted collection exists (${a}/${b} caches already read) — resume"
 " where it left off?"
 
-#: blueprints/gc_logs.py:767
+#: blueprints/gc_logs.py:776
 #, python-brace-format
 msgid "MyGCFlow : reprise — ${a}/${b} caches déjà lues, on continue…"
 msgstr "MyGCFlow: resuming — ${a}/${b} caches already read, continuing…"
@@ -1353,7 +1361,7 @@ msgstr "A video export is in progress: try again once the video is finished."
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr "A sequence has from 2 to %(max)d tracks."
 
-#: blueprints/media.py:295 static/js/ui.js:10771
+#: blueprints/media.py:295 static/js/ui.js:10828
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr "One of the tracks cannot be found on the server."
 
@@ -1395,13 +1403,13 @@ msgstr "A folder selection window is already open."
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "The folder picker is not available: type the path."
 
-#: blueprints/profiles.py:441
+#: blueprints/profiles.py:447
 msgid ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
 "/api/profiles/<name>/rename"
 msgstr "Renaming is not allowed via this endpoint, use /api/profiles/<name>/rename"
 
-#: blueprints/profiles.py:469
+#: blueprints/profiles.py:475
 msgid "Nouveau nom manquant"
 msgstr "New name missing"
 
@@ -1419,12 +1427,12 @@ msgid ""
 "endommagé)."
 msgstr "This music cannot be played (unsupported format or damaged file)."
 
-#: static/js/background_audio.js:121 static/js/mapgl.js:5003
-#: static/js/ui.js:831 static/js/ui.js:900 static/js/ui.js:2201
-#: static/js/ui.js:10329 static/js/ui.js:10409 static/js/ui.js:10615
-#: static/js/ui.js:10730 static/js/ui.js:10787 static/js/ui.js:10813
-#: static/js/ui.js:10872 static/js/ui.js:10880 static/js/ui.js:10888
-#: static/js/ui.js:11058 templates/guide.html:289
+#: static/js/background_audio.js:121 static/js/mapgl.js:5272
+#: static/js/ui.js:832 static/js/ui.js:901 static/js/ui.js:2203
+#: static/js/ui.js:10386 static/js/ui.js:10466 static/js/ui.js:10672
+#: static/js/ui.js:10787 static/js/ui.js:10844 static/js/ui.js:10870
+#: static/js/ui.js:10929 static/js/ui.js:10937 static/js/ui.js:10945
+#: static/js/ui.js:11115 templates/guide.html:289
 #: templates/menu_animation.html:23 templates/menu_animation.html:281
 msgid "Musique"
 msgstr "Music"
@@ -1435,8 +1443,8 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3281
-#: static/js/ui.js:3328 static/js/ui.js:3350
+#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3283
+#: static/js/ui.js:3330 static/js/ui.js:3352
 msgid "Carte"
 msgstr "Map"
 
@@ -1457,11 +1465,11 @@ msgstr "Please select a .gpx or .zip file"
 msgid "Le fichier sélectionné est vide"
 msgstr "The selected file is empty"
 
-#: static/js/bdd.js:444 static/js/gc_logs.js:446
+#: static/js/bdd.js:444 static/js/gc_logs.js:450
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "An import is already running, please wait."
 
-#: static/js/bdd.js:444 static/js/bdd.js:1925
+#: static/js/bdd.js:444 static/js/bdd.js:1929
 msgid "Import en cours"
 msgstr "Import in progress"
 
@@ -1469,8 +1477,8 @@ msgstr "Import in progress"
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyzing GPX file..."
 
-#: static/js/bdd.js:459 static/js/bdd.js:1521 static/js/bdd.js:1645
-#: static/js/evolution_data.js:333 static/js/gc_logs.js:280
+#: static/js/bdd.js:459 static/js/bdd.js:1524 static/js/bdd.js:1649
+#: static/js/evolution_data.js:333 static/js/gc_logs.js:283
 #: static/js/labs.js:1502 static/js/notifications.js:297
 #: static/js/notifications.js:342 static/js/poses_data.js:165
 msgid "Chargement"
@@ -1488,7 +1496,7 @@ msgstr ""
 "Drop your file (.gpx, .zip or Lab Caches export) to load it, a music "
 "track or an image"
 
-#: static/js/bdd.js:596 static/js/bdd.js:622 static/js/mapgl.js:1167
+#: static/js/bdd.js:596 static/js/bdd.js:622 static/js/mapgl.js:1184
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
@@ -1525,101 +1533,101 @@ msgstr "imported ${when}"
 msgid "Aucune géocache chargée"
 msgstr "No geocaches loaded"
 
-#: static/js/bdd.js:1433 static/js/bdd.js:1531
+#: static/js/bdd.js:1436 static/js/bdd.js:1534
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr "Uploading file: ${pct}%"
 
-#: static/js/bdd.js:1445
+#: static/js/bdd.js:1448
 msgid "Réponse invalide du serveur"
 msgstr "Invalid server response"
 
-#: static/js/bdd.js:1449
+#: static/js/bdd.js:1452
 msgid "Impossible de lancer l'import GPX"
 msgstr "Unable to start the GPX import"
 
-#: static/js/bdd.js:1459 static/js/bdd.js:1463 static/js/bdd.js:1588
+#: static/js/bdd.js:1462 static/js/bdd.js:1466 static/js/bdd.js:1592
 msgid "Traitement du fichier en cours..."
 msgstr "Processing file..."
 
-#: static/js/bdd.js:1468 static/js/evolution_data.js:909
+#: static/js/bdd.js:1471 static/js/evolution_data.js:909
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Network error while uploading the file"
 
-#: static/js/bdd.js:1469 static/js/evolution_data.js:910
+#: static/js/bdd.js:1472 static/js/evolution_data.js:910
 msgid "Envoi du fichier annulé"
 msgstr "File upload cancelled"
 
-#: static/js/bdd.js:1483
+#: static/js/bdd.js:1486
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr "Please select a .gpx file"
 
-#: static/js/bdd.js:1483
+#: static/js/bdd.js:1486
 msgid "Aucun fichier"
 msgstr "No file"
 
-#: static/js/bdd.js:1521 static/js/bdd.js:1522 static/js/bdd.js:1529
+#: static/js/bdd.js:1524 static/js/bdd.js:1525 static/js/bdd.js:1532
 msgid "Préparation de l'envoi..."
 msgstr "Preparing upload..."
 
-#: static/js/bdd.js:1544
+#: static/js/bdd.js:1547
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:1544 static/js/mapgl.js:6306
+#: static/js/bdd.js:1547 static/js/mapgl.js:6578
 msgid "Terminé"
 msgstr "Done"
 
-#: static/js/bdd.js:1566 static/js/bdd.js:2019
+#: static/js/bdd.js:1570 static/js/bdd.js:2023
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1587 static/js/bdd.js:1595
+#: static/js/bdd.js:1591 static/js/bdd.js:1599
 msgid "Erreur lors du chargement du fichier"
 msgstr "Error while uploading the file"
 
-#: static/js/bdd.js:1587 static/js/bdd.js:1595 static/js/bdd.js:1747
-#: static/js/bdd.js:1755 static/js/bdd.js:1999 static/js/evolution_data.js:252
+#: static/js/bdd.js:1591 static/js/bdd.js:1599 static/js/bdd.js:1751
+#: static/js/bdd.js:1759 static/js/bdd.js:2003 static/js/evolution_data.js:252
 #: static/js/evolution_data.js:356 static/js/evolution_data.js:956
 #: static/js/evolution_data.js:960 static/js/evolution_data.js:1310
 #: static/js/evolution_data.js:1348 static/js/evolution_data.js:1356
-#: static/js/gc_logs.js:687 static/js/labs.js:2001 static/js/labs.js:2044
+#: static/js/gc_logs.js:693 static/js/labs.js:2001 static/js/labs.js:2044
 #: static/js/labs.js:2084 static/js/notifications.js:421
 #: static/js/poses_data.js:182 static/js/recording_perf.js:187
-#: static/js/ui.js:2205
+#: static/js/ui.js:2207
 msgid "Erreur"
 msgstr "Error"
 
-#: static/js/bdd.js:1643 static/js/bdd.js:1645
+#: static/js/bdd.js:1647 static/js/bdd.js:1649
 msgid "Chargement de l'application..."
 msgstr "Loading the application..."
 
-#: static/js/bdd.js:1662
+#: static/js/bdd.js:1666
 msgid "Impossible de lancer le chargement des données"
 msgstr "Unable to start loading the data"
 
-#: static/js/bdd.js:1747 static/js/bdd.js:1755
+#: static/js/bdd.js:1751 static/js/bdd.js:1759
 msgid "Erreur lors du chargement des données"
 msgstr "Error while loading data"
 
-#: static/js/bdd.js:1845
+#: static/js/bdd.js:1849
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr "${selected} / ${total}"
 
-#: static/js/bdd.js:1878
+#: static/js/bdd.js:1882
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "No cache matches the criteria selected by the filters."
 
-#: static/js/bdd.js:1878
+#: static/js/bdd.js:1882
 msgid "Aucune cache visible"
 msgstr "No visible cache"
 
-#: static/js/bdd.js:1925
+#: static/js/bdd.js:1929
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr "An import is in progress, please wait before deleting the data."
 
-#: static/js/bdd.js:1938
+#: static/js/bdd.js:1942
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
@@ -1627,51 +1635,51 @@ msgstr ""
 "Are you sure you want to delete all your finds? This action is "
 "irreversible."
 
-#: static/js/bdd.js:1939 static/js/gc_logs.js:673 static/js/labs.js:2066
+#: static/js/bdd.js:1943 static/js/gc_logs.js:678 static/js/labs.js:2066
 msgid "Confirmation de suppression"
 msgstr "Deletion confirmation"
 
-#: static/js/bdd.js:1942 templates/guide.html:173 templates/menu_data.html:60
+#: static/js/bdd.js:1946 templates/guide.html:173 templates/menu_data.html:60
 msgid "Supprimer mes géocaches"
 msgstr "Delete my geocaches"
 
-#: static/js/bdd.js:1949
+#: static/js/bdd.js:1953
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation unavailable, action cancelled."
 
-#: static/js/bdd.js:1949 static/js/bdd.js:1961
+#: static/js/bdd.js:1953 static/js/bdd.js:1965
 msgid "Suppression"
 msgstr "Deletion"
 
-#: static/js/bdd.js:1961
+#: static/js/bdd.js:1965
 msgid "Suppression des trouvailles..."
 msgstr "Deleting finds..."
 
-#: static/js/bdd.js:1988
+#: static/js/bdd.js:1992
 msgid "Trouvailles supprimées avec succès"
 msgstr "Finds deleted successfully"
 
-#: static/js/bdd.js:1988 static/js/gc_logs.js:685 static/js/labs.js:2082
+#: static/js/bdd.js:1992 static/js/gc_logs.js:691 static/js/labs.js:2082
 msgid "Suppression réussie"
 msgstr "Deletion successful"
 
-#: static/js/bdd.js:1999
+#: static/js/bdd.js:2003
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Error while deleting finds: "
 
-#: static/js/bdd.js:2019 static/js/mapgl.js:950 static/js/notifications.js:379
+#: static/js/bdd.js:2023 static/js/mapgl.js:963 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr "Points display"
 
-#: static/js/bdd.js:2025
+#: static/js/bdd.js:2029
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr "Unable to start GeoJSON generation"
 
-#: static/js/bdd.js:2037 static/js/bdd.js:2115 static/js/bdd.js:2123
+#: static/js/bdd.js:2041 static/js/bdd.js:2119 static/js/bdd.js:2127
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Error while displaying the points on the map"
 
-#: static/js/bdd.js:2037 static/js/bdd.js:2115 static/js/bdd.js:2123
+#: static/js/bdd.js:2041 static/js/bdd.js:2119 static/js/bdd.js:2127
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
@@ -1684,11 +1692,13 @@ msgstr "No DNF imported: see the “My logs” card."
 msgid "${n} DNF dans la sélection"
 msgstr "${n} DNFs in the selection"
 
-#: static/js/dnf_data.js:124 static/js/gc_logs.js:161 static/js/gc_logs.js:591
+#: static/js/dnf_data.js:124 static/js/gc_logs.js:164 static/js/gc_logs.js:595
+#: static/js/owner_data.js:126
 msgid "cache sans position connue"
 msgstr "cache without a known position"
 
-#: static/js/dnf_data.js:124 static/js/gc_logs.js:161 static/js/gc_logs.js:591
+#: static/js/dnf_data.js:124 static/js/gc_logs.js:164 static/js/gc_logs.js:595
+#: static/js/owner_data.js:126
 msgid "caches sans position connue"
 msgstr "caches without a known position"
 
@@ -1720,8 +1730,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Stop the animation before switching datasets."
 
 #: static/js/evolution_data.js:314 static/js/evolution_data.js:1340
-#: static/js/mapgl.js:4346 static/js/mapgl.js:4398 static/js/mapgl.js:4405
-#: static/js/mapgl.js:5550 static/js/notifications.js:425
+#: static/js/mapgl.js:4612 static/js/mapgl.js:4664 static/js/mapgl.js:4671
+#: static/js/mapgl.js:5819 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Warning"
 
@@ -2107,98 +2117,98 @@ msgstr "Full collect scheduled for the next run"
 msgid "Forcer une collecte complète la prochaine fois"
 msgstr "Force a full collect next time"
 
-#: static/js/gc_logs.js:131 static/js/gc_logs.js:641
+#: static/js/gc_logs.js:131 static/js/gc_logs.js:645
 msgid "Import de vos logs…"
 msgstr "Importing your logs…"
 
-#: static/js/gc_logs.js:141 templates/menu_data.html:242
+#: static/js/gc_logs.js:144 templates/menu_data.html:242
 msgid "Aucun log importé"
 msgstr "No logs imported"
 
-#: static/js/gc_logs.js:147
+#: static/js/gc_logs.js:150
 #, python-brace-format
 msgid "${count} — compte ${name}"
 msgstr "${count} — account ${name}"
 
-#: static/js/gc_logs.js:148
+#: static/js/gc_logs.js:151
 msgid "log enregistré"
 msgstr "log saved"
 
-#: static/js/gc_logs.js:148
+#: static/js/gc_logs.js:151
 msgid "logs enregistrés"
 msgstr "logs saved"
 
-#: static/js/gc_logs.js:150 static/js/gc_logs.js:564
+#: static/js/gc_logs.js:153 static/js/gc_logs.js:568
 #, python-brace-format
 msgid "À vous : ${list}"
 msgstr "Yours: ${list}"
 
-#: static/js/gc_logs.js:154
+#: static/js/gc_logs.js:157
 msgid "log d'autres joueurs"
 msgstr "log from other players"
 
-#: static/js/gc_logs.js:154
+#: static/js/gc_logs.js:157
 msgid "logs d'autres joueurs"
 msgstr "logs from other players"
 
-#: static/js/gc_logs.js:157
+#: static/js/gc_logs.js:160
 msgid "fiche de cache"
 msgstr "cache record"
 
-#: static/js/gc_logs.js:157
+#: static/js/gc_logs.js:160
 msgid "fiches de caches"
 msgstr "cache records"
 
-#: static/js/gc_logs.js:165
+#: static/js/gc_logs.js:168
 msgid "compléter"
 msgstr "fill in"
 
-#: static/js/gc_logs.js:188 static/js/gc_logs.js:518 static/js/gc_logs.js:629
+#: static/js/gc_logs.js:191 static/js/gc_logs.js:522 static/js/gc_logs.js:633
 msgid "nouveau log"
 msgstr "new log"
 
-#: static/js/gc_logs.js:188 static/js/gc_logs.js:518 static/js/gc_logs.js:629
+#: static/js/gc_logs.js:191 static/js/gc_logs.js:522 static/js/gc_logs.js:633
 msgid "nouveaux logs"
 msgstr "new logs"
 
-#: static/js/gc_logs.js:189 static/js/gc_logs.js:519 static/js/gc_logs.js:630
+#: static/js/gc_logs.js:192 static/js/gc_logs.js:523 static/js/gc_logs.js:634
 msgid "log mis à jour"
 msgstr "log updated"
 
-#: static/js/gc_logs.js:189 static/js/gc_logs.js:519 static/js/gc_logs.js:630
+#: static/js/gc_logs.js:192 static/js/gc_logs.js:523 static/js/gc_logs.js:634
 msgid "logs mis à jour"
 msgstr "logs updated"
 
-#: static/js/gc_logs.js:190 static/js/gc_logs.js:631
+#: static/js/gc_logs.js:193 static/js/gc_logs.js:635
 msgid "log retiré"
 msgstr "log removed"
 
-#: static/js/gc_logs.js:190 static/js/gc_logs.js:631
+#: static/js/gc_logs.js:193 static/js/gc_logs.js:635
 msgid "logs retirés"
 msgstr "logs removed"
 
-#: static/js/gc_logs.js:191 static/js/labs.js:747
+#: static/js/gc_logs.js:194 static/js/labs.js:747
 msgid "aucun changement"
 msgstr "no change"
 
-#: static/js/gc_logs.js:194
+#: static/js/gc_logs.js:197
 msgid "fichier GPX"
 msgstr "GPX file"
 
-#: static/js/gc_logs.js:197
+#: static/js/gc_logs.js:200
 msgid "favori"
 msgstr "bookmarklet"
 
-#: static/js/gc_logs.js:197
+#: static/js/gc_logs.js:200
 msgid "fichier mygcflow-logs"
 msgstr "mygcflow-logs file"
 
-#: static/js/gc_logs.js:200
+#: static/js/gc_logs.js:203
 #, python-brace-format
 msgid "Dernier import le ${date} : ${changes}${via}"
 msgstr "Last import on ${date}: ${changes}${via}"
 
-#: static/js/gc_logs.js:221
+#: static/js/gc_logs.js:224
 #, python-brace-format
 msgid ""
 "Un export a été reçu de votre favori (${count} nouveaux logs annoncés) — "
@@ -2207,75 +2217,75 @@ msgstr ""
 "An export was received from your bookmarklet (${count} new logs "
 "announced) — validate the preview before importing."
 
-#: static/js/gc_logs.js:295 static/js/labs.js:1517
+#: static/js/gc_logs.js:298 static/js/labs.js:1517
 msgid "Chargement impossible"
 msgstr "Unable to load"
 
-#: static/js/gc_logs.js:320
+#: static/js/gc_logs.js:323
 msgid "Aucune cache sans position sur cette page."
 msgstr "No cache without a position on this page."
 
-#: static/js/gc_logs.js:353
+#: static/js/gc_logs.js:356
 #, python-brace-format
 msgid "de ${name}"
 msgstr "by ${name}"
 
-#: static/js/gc_logs.js:354
+#: static/js/gc_logs.js:357
 msgid "DNF à vous"
 msgstr "DNF of yours"
 
-#: static/js/gc_logs.js:356
+#: static/js/gc_logs.js:359
 msgid "autre log"
 msgstr "other log"
 
-#: static/js/gc_logs.js:356
+#: static/js/gc_logs.js:359
 msgid "autres logs"
 msgstr "other logs"
 
-#: static/js/gc_logs.js:371
+#: static/js/gc_logs.js:374
 #, python-brace-format
 msgid "Position de ${code}"
 msgstr "${code} position"
 
-#: static/js/gc_logs.js:375
+#: static/js/gc_logs.js:378
 msgid "Placer"
 msgstr "Place"
 
-#: static/js/gc_logs.js:403 static/js/labs.js:1834
+#: static/js/gc_logs.js:406 static/js/labs.js:1834
 msgid "Correction refusée"
 msgstr "Correction refused"
 
-#: static/js/gc_logs.js:446 static/js/gc_logs.js:460 static/js/gc_logs.js:655
+#: static/js/gc_logs.js:450 static/js/gc_logs.js:464 static/js/gc_logs.js:660
 msgid "Import de logs"
 msgstr "Log import"
 
-#: static/js/gc_logs.js:449
+#: static/js/gc_logs.js:453
 msgid "Analyse du fichier…"
 msgstr "Analyzing the file…"
 
-#: static/js/gc_logs.js:455 static/js/labs.js:621
+#: static/js/gc_logs.js:459 static/js/labs.js:621
 msgid "Import impossible"
 msgstr "Import not possible"
 
-#: static/js/gc_logs.js:460 static/js/labs.js:608
+#: static/js/gc_logs.js:464 static/js/labs.js:608
 msgid "Erreur lors de l'analyse"
 msgstr "Error while analyzing"
 
-#: static/js/gc_logs.js:480
+#: static/js/gc_logs.js:484
 msgid "Cet aperçu a expiré — fermez-le et relancez l'import."
 msgstr "This preview has expired — close it and restart the import."
 
-#: static/js/gc_logs.js:491
+#: static/js/gc_logs.js:495
 #, python-brace-format
 msgid "À valider avant ${time} — au-delà, relancez l'aperçu."
 msgstr "Validate before ${time} — after that, restart the preview."
 
-#: static/js/gc_logs.js:505
+#: static/js/gc_logs.js:509
 #, python-brace-format
 msgid "${file} — compte ${name}"
 msgstr "${file} — account ${name}"
 
-#: static/js/gc_logs.js:513
+#: static/js/gc_logs.js:517
 msgid ""
 "Ce fichier n'est pas daté : ses données écraseront les versions déjà "
 "enregistrées plutôt que d'être ignorées."
@@ -2283,51 +2293,51 @@ msgstr ""
 "This file is not dated: its data will overwrite stored versions instead "
 "of being ignored."
 
-#: static/js/gc_logs.js:520
+#: static/js/gc_logs.js:524
 msgid "log déjà connu"
 msgstr "log already known"
 
-#: static/js/gc_logs.js:520
+#: static/js/gc_logs.js:524
 msgid "logs déjà connus"
 msgstr "logs already known"
 
-#: static/js/gc_logs.js:521
+#: static/js/gc_logs.js:525
 msgid "log plus ancien que la version enregistrée, ignoré"
 msgstr "log older than the saved version, ignored"
 
-#: static/js/gc_logs.js:522
+#: static/js/gc_logs.js:526
 msgid "logs plus anciens que la version enregistrée, ignorés"
 msgstr "logs older than the saved version, ignored"
 
-#: static/js/gc_logs.js:523
+#: static/js/gc_logs.js:527
 msgid "nouvelle fiche de cache"
 msgstr "new cache record"
 
-#: static/js/gc_logs.js:523
+#: static/js/gc_logs.js:527
 msgid "nouvelles fiches de caches"
 msgstr "new cache records"
 
-#: static/js/gc_logs.js:524
+#: static/js/gc_logs.js:528
 msgid "fiche de cache mise à jour"
 msgstr "cache record updated"
 
-#: static/js/gc_logs.js:524
+#: static/js/gc_logs.js:528
 msgid "fiches de caches mises à jour"
 msgstr "cache records updated"
 
-#: static/js/gc_logs.js:525
+#: static/js/gc_logs.js:529
 msgid "Rien de nouveau dans ce fichier."
 msgstr "Nothing new in this file."
 
-#: static/js/gc_logs.js:540
+#: static/js/gc_logs.js:544
 msgid "log sera retiré"
 msgstr "log will be removed"
 
-#: static/js/gc_logs.js:540
+#: static/js/gc_logs.js:544
 msgid "logs seront retirés"
 msgstr "logs will be removed"
 
-#: static/js/gc_logs.js:543
+#: static/js/gc_logs.js:547
 msgid ""
 "Le fichier déclare contenir tous ces logs : ceux qu'il n'a plus ont été "
 "supprimés sur le site."
@@ -2335,20 +2345,20 @@ msgstr ""
 "The file states that it contains all of these logs: those it no longer "
 "has were deleted on the website."
 
-#: static/js/gc_logs.js:562
+#: static/js/gc_logs.js:566
 msgid "périmètre"
 msgstr "scope"
 
-#: static/js/gc_logs.js:562
+#: static/js/gc_logs.js:566
 msgid "périmètres"
 msgstr "scopes"
 
-#: static/js/gc_logs.js:565
+#: static/js/gc_logs.js:569
 #, python-brace-format
 msgid "D'autres joueurs : ${list}"
 msgstr "Other players: ${list}"
 
-#: static/js/gc_logs.js:569
+#: static/js/gc_logs.js:573
 #, python-brace-format
 msgid ""
 "Couverture complète déclarée (${scope}) — les logs stockés dans son "
@@ -2357,45 +2367,45 @@ msgstr ""
 "Full coverage declared (${scope}) — stored logs within its scope but "
 "absent from the file will be removed."
 
-#: static/js/gc_logs.js:571
+#: static/js/gc_logs.js:575
 msgid ""
 "Aucune couverture complète déclarée — ce fichier ne retirera aucun log "
 "existant."
 msgstr "No full coverage declared — this file will not remove any existing log."
 
-#: static/js/gc_logs.js:587
+#: static/js/gc_logs.js:591
 msgid "doublon ignoré"
 msgstr "duplicate ignored"
 
-#: static/js/gc_logs.js:587
+#: static/js/gc_logs.js:591
 msgid "doublons ignorés"
 msgstr "duplicates ignored"
 
-#: static/js/gc_logs.js:610 static/js/labs.js:1012 static/js/profiles.js:329
+#: static/js/gc_logs.js:614 static/js/labs.js:1012 static/js/profiles.js:330
 msgid "Import échoué"
 msgstr "Import failed"
 
-#: static/js/gc_logs.js:616 static/js/labs.js:1027
+#: static/js/gc_logs.js:620 static/js/labs.js:1027
 msgid "Le serveur ne répond plus — vérifiez sa disponibilité."
 msgstr "The server is no longer responding — check its availability."
 
-#: static/js/gc_logs.js:632
+#: static/js/gc_logs.js:636
 msgid "Aucun changement : vos logs étaient déjà à jour."
 msgstr "No change: your logs were already up to date."
 
-#: static/js/gc_logs.js:649 static/js/labs.js:933
+#: static/js/gc_logs.js:653 static/js/labs.js:933
 msgid "Import refusé"
 msgstr "Import refused"
 
-#: static/js/gc_logs.js:653
+#: static/js/gc_logs.js:658
 msgid "Logs importés"
 msgstr "Logs imported"
 
-#: static/js/gc_logs.js:655 static/js/labs.js:939 static/js/labs.js:1183
+#: static/js/gc_logs.js:660 static/js/labs.js:939 static/js/labs.js:1183
 msgid "Erreur lors de l'import"
 msgstr "Error while importing"
 
-#: static/js/gc_logs.js:672
+#: static/js/gc_logs.js:677
 msgid ""
 "Supprimer tous vos logs importés ? Vos géocaches et vos Lab Caches sont "
 "conservés. Cette action est irréversible."
@@ -2403,53 +2413,53 @@ msgstr ""
 "Delete all your imported logs? Your geocaches and Lab Caches are kept. "
 "This cannot be undone."
 
-#: static/js/gc_logs.js:676 templates/menu_data.html:310
+#: static/js/gc_logs.js:681 templates/menu_data.html:310
 msgid "Supprimer mes logs"
 msgstr "Delete my logs"
 
-#: static/js/gc_logs.js:679
+#: static/js/gc_logs.js:684
 msgid "Suppression de vos logs…"
 msgstr "Deleting your logs…"
 
-#: static/js/gc_logs.js:683 static/js/labs.js:2075
+#: static/js/gc_logs.js:688 static/js/labs.js:2075
 msgid "Erreur inconnue"
 msgstr "Unknown error"
 
-#: static/js/gc_logs.js:685
+#: static/js/gc_logs.js:691
 msgid "Logs supprimés"
 msgstr "Logs deleted"
 
-#: static/js/gc_logs.js:687 static/js/labs.js:2084
+#: static/js/gc_logs.js:693 static/js/labs.js:2084
 msgid "Erreur lors de la suppression"
 msgstr "Error while deleting"
 
-#: static/js/gc_logs.js:708 static/js/gc_logs.js:815 static/js/labs.js:163
+#: static/js/gc_logs.js:714 static/js/gc_logs.js:821 static/js/labs.js:163
 #: static/js/labs.js:1300 templates/guide.html:495
 msgid "Envoyer vers MyGCFlow"
 msgstr "Send to MyGCFlow"
 
-#: static/js/gc_logs.js:726 static/js/labs.js:1320
+#: static/js/gc_logs.js:732 static/js/labs.js:1320
 msgid "Favori indisponible"
 msgstr "Bookmarklet unavailable"
 
-#: static/js/gc_logs.js:741 static/js/labs.js:1339
+#: static/js/gc_logs.js:747 static/js/labs.js:1339
 msgid "Lien copié"
 msgstr "Link copied"
 
-#: static/js/gc_logs.js:743 static/js/labs.js:1341
+#: static/js/gc_logs.js:749 static/js/labs.js:1341
 msgid "Copie impossible — glissez le bouton à la place."
 msgstr "Copy failed — drag the button instead."
 
-#: static/js/gc_logs.js:758
+#: static/js/gc_logs.js:764
 msgid "La collecte complète n'a pas pu être prévue"
 msgstr "The full collect could not be scheduled"
 
-#: static/js/gc_logs.js:758 static/js/gc_logs.js:780
+#: static/js/gc_logs.js:764 static/js/gc_logs.js:786
 #: templates/menu_data.html:237
 msgid "Mes logs"
 msgstr "My logs"
 
-#: static/js/gc_logs.js:766 static/js/labs.js:1351
+#: static/js/gc_logs.js:772 static/js/labs.js:1351
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris."
@@ -2457,19 +2467,19 @@ msgstr ""
 "Regenerate the token? The current bookmarklet will stop working: you will"
 " have to drag the \"Send to MyGCFlow\" button into your bookmarks again."
 
-#: static/js/gc_logs.js:767 static/js/labs.js:1352
+#: static/js/gc_logs.js:773 static/js/labs.js:1352
 msgid "Jeton du favori"
 msgstr "Bookmarklet token"
 
-#: static/js/gc_logs.js:778 static/js/labs.js:1363
+#: static/js/gc_logs.js:784 static/js/labs.js:1363
 msgid "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
 msgstr "New bookmarklet ready — replace the old one in your bookmarks."
 
-#: static/js/gc_logs.js:780 static/js/labs.js:1365
+#: static/js/gc_logs.js:786 static/js/labs.js:1365
 msgid "Jeton non régénéré"
 msgstr "Token not regenerated"
 
-#: static/js/gc_logs.js:814
+#: static/js/gc_logs.js:820
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis une page de geocaching.com."
@@ -2634,9 +2644,9 @@ msgstr "This image will be permanently deleted from the library."
 
 #: static/js/images_ui.js:1104 static/js/images_ui.js:1150
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
-#: static/js/profiles.js:971 static/js/recent_videos.js:60
+#: static/js/profiles.js:972 static/js/recent_videos.js:60
 #: static/js/recent_videos.js:121 static/js/stats_ui.js:419
-#: static/js/stats_ui.js:1580 templates/menu_style.html:280
+#: static/js/stats_ui.js:1580 templates/menu_style.html:283
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
@@ -2681,8 +2691,8 @@ msgstr "Move up"
 msgid "Descendre"
 msgstr "Move down"
 
-#: static/js/images_ui.js:1352 static/js/profiles.js:962
-#: static/js/profiles.js:2765 static/js/stats_ui.js:418
+#: static/js/images_ui.js:1352 static/js/profiles.js:963
+#: static/js/profiles.js:2777 static/js/stats_ui.js:418
 msgid "Dupliquer"
 msgstr "Duplicate"
 
@@ -3082,7 +3092,7 @@ msgstr "(manual correction)"
 msgid "Garder"
 msgstr "Keep"
 
-#: static/js/labs.js:844 templates/menu_style.html:392
+#: static/js/labs.js:844 templates/menu_style.html:395
 msgid "Remplacer"
 msgstr "Replace"
 
@@ -3320,187 +3330,220 @@ msgstr "Delete my Lab Caches"
 msgid "Lab Caches supprimés"
 msgstr "Lab Caches deleted"
 
-#: static/js/mapgl.js:280
+#: static/js/mapgl.js:282
 msgid "Impossible de charger html2canvas"
 msgstr "Unable to load html2canvas"
 
-#: static/js/mapgl.js:951
+#: static/js/mapgl.js:964
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Updating point display..."
 
-#: static/js/mapgl.js:1041
+#: static/js/mapgl.js:1058
 #, python-brace-format
 msgid "${count} caches regroupées"
 msgstr "${count} grouped caches"
 
-#: static/js/mapgl.js:1042
+#: static/js/mapgl.js:1059
 msgid "1 cache"
 msgstr "1 cache"
 
-#: static/js/mapgl.js:1045
+#: static/js/mapgl.js:1062
 #, python-brace-format
 msgid "Étape ${index} sur ${total}"
 msgstr "Stop ${index} of ${total}"
 
-#: static/js/mapgl.js:1164
+#: static/js/mapgl.js:1181
 msgid "Sans nom"
 msgstr "Unnamed"
 
-#: static/js/mapgl.js:1165
+#: static/js/mapgl.js:1182
 msgid "Trouvé"
 msgstr "Found"
 
-#: static/js/mapgl.js:1166
+#: static/js/mapgl.js:1183
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:1178
+#: static/js/mapgl.js:1195
 #, python-brace-format
 msgid "${n} DNF, le premier le ${date}"
 msgstr "${n} DNFs, the first on ${date}"
 
-#: static/js/mapgl.js:1179
+#: static/js/mapgl.js:1196
 #, python-brace-format
 msgid "DNF le ${date}"
 msgstr "DNF on ${date}"
 
-#: static/js/mapgl.js:1181
+#: static/js/mapgl.js:1198
 #, python-brace-format
 msgid "Trouvée ensuite, le ${date}"
 msgstr "Found later, on ${date}"
 
-#: static/js/mapgl.js:1182
+#: static/js/mapgl.js:1199
 msgid "Pas encore trouvée"
 msgstr "Not found yet"
 
-#: static/js/mapgl.js:1225
+#: static/js/mapgl.js:1254
 #, python-brace-format
 msgid "Étape ${n}/${total}"
 msgstr "Stage ${n}/${total}"
 
-#: static/js/mapgl.js:1225
+#: static/js/mapgl.js:1254
 #, python-brace-format
 msgid "Étape ${n}"
 msgstr "Stage ${n}"
 
-#: static/js/mapgl.js:1228
+#: static/js/mapgl.js:1257
 msgid "Adventure complète"
 msgstr "Adventure completed"
 
-#: static/js/mapgl.js:1229
+#: static/js/mapgl.js:1258
 #, python-brace-format
 msgid "${found}/${total} étapes trouvées"
 msgstr "${found}/${total} stages found"
 
-#: static/js/mapgl.js:1233
+#: static/js/mapgl.js:1262
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Approximate position (Adventure center)"
 
-#: static/js/mapgl.js:3933
+#: static/js/mapgl.js:3616 static/js/poses_data.js:815
+#, python-brace-format
+msgid "Publiée le ${date}"
+msgstr "Published on ${date}"
+
+#: static/js/mapgl.js:3617 static/js/poses_data.js:816
+#, python-brace-format
+msgid "Posée le ${date}"
+msgstr "Placed on ${date}"
+
+#: static/js/mapgl.js:3618 static/js/poses_data.js:817
+#, python-brace-format
+msgid "Trouvée avant sa publication le ${date}"
+msgstr "Found before its publication on ${date}"
+
+#: static/js/mapgl.js:3619 static/js/poses_data.js:818
+#, python-brace-format
+msgid "Premier log le ${date}"
+msgstr "First log on ${date}"
+
+#: static/js/mapgl.js:3632
+#, python-brace-format
+msgid "Dernière maintenance le ${date}"
+msgstr "Last maintenance on ${date}"
+
+#: static/js/mapgl.js:3633
+msgid "Aucune maintenance enregistrée"
+msgstr "No maintenance recorded"
+
+#: static/js/mapgl.js:3639
+msgid "Ma cache"
+msgstr "My cache"
+
+#: static/js/mapgl.js:4199
 msgid "Aucune vidéo n'a été créée."
 msgstr "No video was created."
 
-#: static/js/mapgl.js:3933
+#: static/js/mapgl.js:4199
 msgid "Arrêt de l'enregistrement"
 msgstr "Recording stopped"
 
-#: static/js/mapgl.js:4337
+#: static/js/mapgl.js:4603
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Fast capture not supported, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:4337 static/js/mapgl.js:5895
+#: static/js/mapgl.js:4603 static/js/mapgl.js:6167
 msgid "Compatibilité"
 msgstr "Compatibility"
 
-#: static/js/mapgl.js:4346
+#: static/js/mapgl.js:4612
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Data is still loading. Please try again."
 
-#: static/js/mapgl.js:4366
+#: static/js/mapgl.js:4632
 msgid "Préparation de l'enregistrement..."
 msgstr "Preparing the recording..."
 
-#: static/js/mapgl.js:4366
+#: static/js/mapgl.js:4632
 msgid "Nettoyage initial"
 msgstr "Initial cleanup"
 
-#: static/js/mapgl.js:4390
+#: static/js/mapgl.js:4656
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr "A video assembly is running. Try again when processing is done."
 
-#: static/js/mapgl.js:4391
+#: static/js/mapgl.js:4657
 msgid "Enregistrement annulé"
 msgstr "Recording cancelled"
 
-#: static/js/mapgl.js:4396
+#: static/js/mapgl.js:4662
 msgid "Répertoire d’images nettoyé."
 msgstr "Image directory cleaned."
 
-#: static/js/mapgl.js:4396
+#: static/js/mapgl.js:4662
 msgid "Préparation"
 msgstr "Preparation"
 
-#: static/js/mapgl.js:4398
+#: static/js/mapgl.js:4664
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Initial cleanup failed. Continuing with the recording."
 
-#: static/js/mapgl.js:4405
+#: static/js/mapgl.js:4671
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Initial cleanup error. Continuing."
 
-#: static/js/mapgl.js:4591
+#: static/js/mapgl.js:4857
 msgid "0% | préparation..."
 msgstr "0% | preparing..."
 
-#: static/js/mapgl.js:4600 static/js/mapgl.js:5562
+#: static/js/mapgl.js:4866 static/js/mapgl.js:5831
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ The music will be added automatically after capture."
 
-#: static/js/mapgl.js:4607
+#: static/js/mapgl.js:4873
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Capturing – Do not move the window"
 
-#: static/js/mapgl.js:4608
+#: static/js/mapgl.js:4874
 msgid "Préparation de la capture..."
 msgstr "Preparing capture..."
 
-#: static/js/mapgl.js:4640
+#: static/js/mapgl.js:4906
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture paused: return to this tab to resume."
 
-#: static/js/mapgl.js:4640 static/js/mapgl.js:6128
+#: static/js/mapgl.js:4906 static/js/mapgl.js:6400
 msgid "Onglet masqué"
 msgstr "Tab hidden"
 
-#: static/js/mapgl.js:4748
+#: static/js/mapgl.js:5017
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "The initial map render did not complete (timeout)"
 
-#: static/js/mapgl.js:4875
+#: static/js/mapgl.js:5144
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:4974
+#: static/js/mapgl.js:5243
 msgid "erreur inconnue"
 msgstr "unknown error"
 
-#: static/js/mapgl.js:4976
+#: static/js/mapgl.js:5245
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:4978
+#: static/js/mapgl.js:5247
 msgid "Capture interrompue"
 msgstr "Capture interrupted"
 
-#: static/js/mapgl.js:5002 static/js/mapgl.js:5710 static/js/mapgl.js:6002
-#: static/js/mapgl.js:6020 static/js/mapgl.js:6429 static/js/mapgl.js:6535
-#: static/js/mapgl.js:6539
+#: static/js/mapgl.js:5271 static/js/mapgl.js:5982 static/js/mapgl.js:6274
+#: static/js/mapgl.js:6292 static/js/mapgl.js:6701 static/js/mapgl.js:6807
+#: static/js/mapgl.js:6811
 msgid "Enregistrement"
 msgstr "Recording"
 
-#: static/js/mapgl.js:5015
+#: static/js/mapgl.js:5284
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
@@ -3508,112 +3551,112 @@ msgstr ""
 "The music could not be sent to the server: the video was created without "
 "music."
 
-#: static/js/mapgl.js:5019
+#: static/js/mapgl.js:5288
 msgid ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
 msgstr "The music could not be added to the video: it was created without music."
 
-#: static/js/mapgl.js:5057
+#: static/js/mapgl.js:5326
 msgid "task_id manquant"
 msgstr "missing task_id"
 
-#: static/js/mapgl.js:5058
+#: static/js/mapgl.js:5327
 msgid "Délai d'assemblage dépassé"
 msgstr "Assembly timed out"
 
-#: static/js/mapgl.js:5071
+#: static/js/mapgl.js:5340
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Task not found on the server (purged or server restarted)"
 
-#: static/js/mapgl.js:5085
+#: static/js/mapgl.js:5354
 msgid "Tâche échouée"
 msgstr "Task failed"
 
-#: static/js/mapgl.js:5092
+#: static/js/mapgl.js:5361
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 
-#: static/js/mapgl.js:5204
+#: static/js/mapgl.js:5473
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:5298 static/js/ui.js:7777
+#: static/js/mapgl.js:5567 static/js/ui.js:7821
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/mapgl.js:5298
+#: static/js/mapgl.js:5567
 msgid "Création de la vidéo à partir des images..."
 msgstr "Creating video from images..."
 
-#: static/js/mapgl.js:5382
+#: static/js/mapgl.js:5651
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Unable to start the GPX import"
 
-#: static/js/mapgl.js:5389
+#: static/js/mapgl.js:5658
 msgid "Création de la vidéo..."
 msgstr "Creating the video..."
 
-#: static/js/mapgl.js:5396
+#: static/js/mapgl.js:5665
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Video created. Cleaning up images..."
 
-#: static/js/mapgl.js:5397
+#: static/js/mapgl.js:5666
 msgid "Nettoyage en cours"
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:5397
+#: static/js/mapgl.js:5666
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Video created successfully. Cleaning up images..."
 
-#: static/js/mapgl.js:5414
+#: static/js/mapgl.js:5683
 msgid "Nettoyage terminé"
 msgstr "Cleanup finished"
 
-#: static/js/mapgl.js:5428
+#: static/js/mapgl.js:5697
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
 
-#: static/js/mapgl.js:5430
+#: static/js/mapgl.js:5699
 msgid "Erreur chaîne"
 msgstr "Pipeline error"
 
-#: static/js/mapgl.js:5550
+#: static/js/mapgl.js:5819
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Data is still loading. Try again."
 
-#: static/js/mapgl.js:5660
+#: static/js/mapgl.js:5932
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Recording in progress – Do not move the window"
 
-#: static/js/mapgl.js:5661
+#: static/js/mapgl.js:5933
 msgid "Démarrage de la capture..."
 msgstr "Starting capture..."
 
-#: static/js/mapgl.js:5710
+#: static/js/mapgl.js:5982
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Fast capture error, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:5894
+#: static/js/mapgl.js:6166
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
 " ${used}."
 msgstr "${wanted} format not supported by this browser: recording in ${used}."
 
-#: static/js/mapgl.js:5956
+#: static/js/mapgl.js:6228
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Resolution reduced to what the browser can handle."
 
-#: static/js/mapgl.js:6002
+#: static/js/mapgl.js:6274
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "Copying the video failed. Stopping the recording."
 
-#: static/js/mapgl.js:6020
+#: static/js/mapgl.js:6292
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -3621,110 +3664,110 @@ msgstr ""
 "Video encoder error. Stopping the recording and recovering the captured "
 "sequence."
 
-#: static/js/mapgl.js:6128
+#: static/js/mapgl.js:6400
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 msgstr "Recording paused: return to this tab to resume capture."
 
-#: static/js/mapgl.js:6330
+#: static/js/mapgl.js:6602
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Copy to video folder failed"
 
-#: static/js/mapgl.js:6354
+#: static/js/mapgl.js:6626
 msgid "Finalisation"
 msgstr "Finalizing"
 
-#: static/js/mapgl.js:6354
+#: static/js/mapgl.js:6626
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Writing video duration..."
 
-#: static/js/mapgl.js:6370
+#: static/js/mapgl.js:6642
 msgid "Ajout audio"
 msgstr "Adding audio"
 
-#: static/js/mapgl.js:6370
+#: static/js/mapgl.js:6642
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Merging audio track with video..."
 
-#: static/js/mapgl.js:6414 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:6686 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalization"
 
-#: static/js/mapgl.js:6414
+#: static/js/mapgl.js:6686
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Speeding up x${applicable} for normal-speed playback..."
 
-#: static/js/mapgl.js:6429
+#: static/js/mapgl.js:6701
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "The video could not be assembled."
 
-#: static/js/mapgl.js:6438
+#: static/js/mapgl.js:6710
 msgid "Traitement serveur"
 msgstr "Server processing"
 
-#: static/js/mapgl.js:6438
+#: static/js/mapgl.js:6710
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Sending video to server..."
 
-#: static/js/mapgl.js:6483 static/js/mapgl.js:6490
+#: static/js/mapgl.js:6755 static/js/mapgl.js:6762
 msgid "Traitement serveur..."
 msgstr "Server processing..."
 
-#: static/js/mapgl.js:6488
+#: static/js/mapgl.js:6760
 msgid "Traitement serveur non démarré"
 msgstr "Server processing not started"
 
-#: static/js/mapgl.js:6535
+#: static/js/mapgl.js:6807
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr "Recording was interrupted: copying the data failed."
 
-#: static/js/mapgl.js:6539
+#: static/js/mapgl.js:6811
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Server processing unavailable, falling back to local..."
 
-#: static/js/mapgl.js:6595
+#: static/js/mapgl.js:6867
 msgid "Élément non trouvé"
 msgstr "Element not found"
 
-#: static/js/mapgl.js:6616
+#: static/js/mapgl.js:6888
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "rendercomplete timeout (5s): map rendering stalled"
 
-#: static/js/mapgl.js:6637
+#: static/js/mapgl.js:6909
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "No canvas found in the map"
 
-#: static/js/mapgl.js:6702
+#: static/js/mapgl.js:6974
 msgid "Échec conversion canvas en blob"
 msgstr "Canvas to blob conversion failed"
 
-#: static/js/mapgl.js:7437 static/js/mapgl.js:7529
+#: static/js/mapgl.js:7732 static/js/mapgl.js:7824
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
-#: static/js/mapgl.js:7437 static/js/mapgl.js:7439 static/js/mapgl.js:7529
+#: static/js/mapgl.js:7732 static/js/mapgl.js:7734 static/js/mapgl.js:7824
 #: templates/guide.html:211 templates/menu_style.html:82
 msgid "Trajet"
 msgstr "Route"
 
-#: static/js/mapgl.js:7439
+#: static/js/mapgl.js:7734
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 msgstr "Very busy days: automatic grouping applied at the chosen radius."
 
-#: static/js/mapgl.js:8143
+#: static/js/mapgl.js:8438
 msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
-#: static/js/mapgl.js:8143 static/js/mapgl.js:8147 templates/guide.html:207
+#: static/js/mapgl.js:8438 static/js/mapgl.js:8442 templates/guide.html:207
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
-#: static/js/mapgl.js:8147
+#: static/js/mapgl.js:8442
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -3736,9 +3779,9 @@ msgstr "No cache visible on screen: move the map over your points."
 #: templates/menu_data.html:534 templates/menu_data.html:551
 #: templates/menu_data.html:563 templates/menu_data.html:580
 #: templates/menu_stats.html:512 templates/menu_style.html:52
-#: templates/menu_style.html:241 templates/menu_style.html:273
-#: templates/menu_style.html:298 templates/menu_style.html:326
-#: templates/menu_style.html:349 templates/menu_style.html:385
+#: templates/menu_style.html:244 templates/menu_style.html:276
+#: templates/menu_style.html:301 templates/menu_style.html:329
+#: templates/menu_style.html:352 templates/menu_style.html:388
 #: templates/modal_evolution.html:9 templates/modal_evolution.html:39
 #: templates/modal_evolution.html:78 templates/modal_first_use.html:33
 #: templates/modal_infos.html:11 templates/modal_video_ready.html:11
@@ -3824,6 +3867,22 @@ msgstr "Later"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "You will no longer be notified about this version."
 
+#: static/js/owner_data.js:124
+msgid "cache posée dans la sélection"
+msgstr "hidden cache in the selection"
+
+#: static/js/owner_data.js:124
+msgid "caches posées dans la sélection"
+msgstr "hidden caches in the selection"
+
+#: static/js/owner_data.js:129
+msgid "cache sans date"
+msgstr "cache without a date"
+
+#: static/js/owner_data.js:129
+msgid "caches sans date"
+msgstr "caches without a date"
+
 #: static/js/poses_data.js:139
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "The setting will apply at the end of the animation."
@@ -3890,26 +3949,6 @@ msgid ""
 "favoris"
 msgstr "${caches} hidden caches · ${finds} finds received · ${favorites} favorites"
 
-#: static/js/poses_data.js:815
-#, python-brace-format
-msgid "Publiée le ${date}"
-msgstr "Published on ${date}"
-
-#: static/js/poses_data.js:816
-#, python-brace-format
-msgid "Posée le ${date}"
-msgstr "Placed on ${date}"
-
-#: static/js/poses_data.js:817
-#, python-brace-format
-msgid "Trouvée avant sa publication le ${date}"
-msgstr "Found before its publication on ${date}"
-
-#: static/js/poses_data.js:818
-#, python-brace-format
-msgid "Premier log le ${date}"
-msgstr "First log on ${date}"
-
 #: static/js/poses_data.js:842
 #, python-brace-format
 msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
@@ -3920,195 +3959,195 @@ msgstr "${finds} finds · ${favorites} favorites · ${dnf} DNF"
 msgid "Premier trouveur : ${name} (${date})"
 msgstr "First to find: ${name} (${date})"
 
-#: static/js/profiles.js:44 templates/app.html:40 templates/app.html:66
+#: static/js/profiles.js:45 templates/app.html:40 templates/app.html:66
 #: templates/app.html:68
 msgid "Évolution"
 msgstr "Evolution"
 
-#: static/js/profiles.js:44 templates/app.html:61 templates/app.html:63
+#: static/js/profiles.js:45 templates/app.html:61 templates/app.html:63
 #: templates/guide.html:155 templates/guide.html:536 templates/menu_data.html:8
 msgid "Mes Géocaches"
 msgstr "My Geocaches"
 
-#: static/js/profiles.js:118
+#: static/js/profiles.js:119
 msgid "espace"
 msgstr "space"
 
-#: static/js/profiles.js:339
+#: static/js/profiles.js:340
 #, python-brace-format
 msgid "Thème \"${name}\" importé dans le mode « ${mode} »"
 msgstr "Theme \"${name}\" imported into the “${mode}” mode"
 
-#: static/js/profiles.js:343
+#: static/js/profiles.js:344
 #, python-brace-format
 msgid "Thème \"${name}\" importé"
 msgstr "Theme \"${name}\" imported"
 
-#: static/js/profiles.js:348
+#: static/js/profiles.js:349
 msgid "Erreur import du thème"
 msgstr "Theme import error"
 
-#: static/js/profiles.js:374
+#: static/js/profiles.js:375
 msgid "Erreur API"
 msgstr "API error"
 
-#: static/js/profiles.js:380
+#: static/js/profiles.js:381
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:513 static/js/profiles.js:1620
+#: static/js/profiles.js:514 static/js/profiles.js:1621
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr "Theme \"${name}\" loaded"
 
-#: static/js/profiles.js:550
+#: static/js/profiles.js:551
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr "Theme \"${name}\" saved"
 
-#: static/js/profiles.js:605
+#: static/js/profiles.js:606
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr "Theme \"${name}\" created, but its settings could not be saved"
 
-#: static/js/profiles.js:615
+#: static/js/profiles.js:616
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr "Theme \"${name}\" created"
 
-#: static/js/profiles.js:631
+#: static/js/profiles.js:632
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr "Theme duplicated: \"${name}\""
 
-#: static/js/profiles.js:655
+#: static/js/profiles.js:656
 #, python-brace-format
 msgid "Thème copié dans le mode « ${mode} » : \"${name}\""
 msgstr "Theme copied to the “${mode}” mode: \"${name}\""
 
-#: static/js/profiles.js:671
+#: static/js/profiles.js:672
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr "Theme \"${name}\" deleted"
 
-#: static/js/profiles.js:741
+#: static/js/profiles.js:742
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr "Theme \"${name}\" reset"
 
-#: static/js/profiles.js:776
+#: static/js/profiles.js:777
 msgid "Export échoué"
 msgstr "Export failed"
 
-#: static/js/profiles.js:787
+#: static/js/profiles.js:788
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr "Theme \"${name}\" exported"
 
-#: static/js/profiles.js:790
+#: static/js/profiles.js:791
 msgid "Erreur export du thème"
 msgstr "Theme export error"
 
-#: static/js/profiles.js:810
+#: static/js/profiles.js:811
 msgid "Thème introuvable ou UID manquant"
 msgstr "Theme not found or missing UID"
 
-#: static/js/profiles.js:825
+#: static/js/profiles.js:826
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr "Failed to save the default theme"
 
-#: static/js/profiles.js:830
+#: static/js/profiles.js:831
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr "Theme \"${name}\" set as the default theme"
 
-#: static/js/profiles.js:843
+#: static/js/profiles.js:844
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr "Error while setting the default theme"
 
-#: static/js/profiles.js:858 static/js/profiles.js:1157
+#: static/js/profiles.js:859 static/js/profiles.js:1158
 msgid "Aucun thème"
 msgstr "No theme"
 
-#: static/js/profiles.js:965
+#: static/js/profiles.js:966
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
 msgstr "Copy to “${mode}”"
 
-#: static/js/profiles.js:968 static/js/profiles.js:2745
+#: static/js/profiles.js:969 static/js/profiles.js:2757
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:969 templates/app.html:280 templates/app.html:281
+#: static/js/profiles.js:970 templates/app.html:280 templates/app.html:281
 #: templates/guide.html:117 templates/guide.html:320 templates/guide.html:326
 #: templates/guide.html:520 templates/menu_animation.html:47
 #: templates/menu_data.html:189 templates/menu_data.html:328
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:970 templates/menu_style.html:305
+#: static/js/profiles.js:971 templates/menu_style.html:308
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:975
+#: static/js/profiles.js:976
 msgid "Définir comme par défaut"
 msgstr "Set as default"
 
-#: static/js/profiles.js:1061
+#: static/js/profiles.js:1062
 msgid "Thème par défaut"
 msgstr "Default theme"
 
-#: static/js/profiles.js:1120 templates/menu_style.html:322
+#: static/js/profiles.js:1121 templates/menu_style.html:325
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:1168
+#: static/js/profiles.js:1169
 msgid "Choisir un thème"
 msgstr "Choose a theme"
 
-#: static/js/profiles.js:1415
+#: static/js/profiles.js:1416
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Theme \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1416
+#: static/js/profiles.js:1417
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1624
+#: static/js/profiles.js:1625
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr "Error while loading the default theme"
 
-#: static/js/profiles.js:1657
+#: static/js/profiles.js:1658
 msgid "Aucun thème par défaut"
 msgstr "No default theme"
 
-#: static/js/profiles.js:1764
+#: static/js/profiles.js:1765
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr "Theme \"${selectedProfile}\" applied and set as default theme"
 
-#: static/js/profiles.js:1765
+#: static/js/profiles.js:1766
 msgid "Aucun thème par défaut défini"
 msgstr "No default theme set"
 
-#: static/js/profiles.js:1990
+#: static/js/profiles.js:1991
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr "The theme could not be loaded: no theme is active."
 
-#: static/js/profiles.js:2446
+#: static/js/profiles.js:2458
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr "Create the theme \"${name}\""
 
-#: static/js/profiles.js:2561 static/js/profiles.js:2982
+#: static/js/profiles.js:2573 static/js/profiles.js:2994
 msgid "Veuillez saisir un nom de thème"
 msgstr "Please enter a theme name"
 
-#: static/js/profiles.js:2624
+#: static/js/profiles.js:2636
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
@@ -4117,74 +4156,74 @@ msgstr ""
 "The theme « ${name} » already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2670
+#: static/js/profiles.js:2682
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2730
+#: static/js/profiles.js:2742
 msgid "Enregistrer dans un nouveau thème"
 msgstr "Save to a new theme"
 
-#: static/js/profiles.js:2730 templates/menu_style.html:240
+#: static/js/profiles.js:2742 templates/menu_style.html:243
 msgid "Nouveau thème"
 msgstr "New theme"
 
-#: static/js/profiles.js:2736 templates/menu_style.html:364
+#: static/js/profiles.js:2748 templates/menu_style.html:367
 msgid "Enregistrer le thème"
 msgstr "Save the theme"
 
-#: static/js/profiles.js:2736 templates/menu_style.html:255
+#: static/js/profiles.js:2748 templates/menu_style.html:258
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2743
+#: static/js/profiles.js:2755
 msgid "Renommer le thème"
 msgstr "Rename the theme"
 
-#: static/js/profiles.js:2763
+#: static/js/profiles.js:2775
 msgid "Dupliquer le thème"
 msgstr "Duplicate the theme"
 
-#: static/js/profiles.js:2784
+#: static/js/profiles.js:2796
 #, python-brace-format
 msgid "Copier le thème vers « ${mode} »"
 msgstr "Copy the theme to “${mode}”"
 
-#: static/js/profiles.js:2786
+#: static/js/profiles.js:2798
 msgid "Copier"
 msgstr "Copy"
 
-#: static/js/profiles.js:2840
+#: static/js/profiles.js:2852
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2865 static/js/profiles.js:2885
+#: static/js/profiles.js:2877 static/js/profiles.js:2897
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2871
+#: static/js/profiles.js:2883
 #, python-brace-format
 msgid "Ce nom est déjà pris par un thème du mode « ${mode} »"
 msgstr "This name is already taken by a theme of the “${mode}” mode"
 
-#: static/js/profiles.js:2901
+#: static/js/profiles.js:2913
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr "« ${name} » is the active theme: its settings will be updated"
 
-#: static/js/profiles.js:2907
+#: static/js/profiles.js:2919
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2914
+#: static/js/profiles.js:2926
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr "A theme named « ${name} » already exists"
 
-#: static/js/profiles.js:2915
+#: static/js/profiles.js:2927
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -4193,22 +4232,22 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2924
+#: static/js/profiles.js:2936
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr "Ignored characters (${dropped}): the theme will be saved as « ${key} »"
 
-#: static/js/profiles.js:3043
+#: static/js/profiles.js:3055
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr "Theme renamed to \"${name}\""
 
-#: static/js/profiles.js:3057
+#: static/js/profiles.js:3069
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr "Are you sure you want to delete the theme \"${name}\"?"
 
-#: static/js/profiles.js:3076
+#: static/js/profiles.js:3088
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -4747,7 +4786,7 @@ msgstr "${n} years"
 msgid "${n} mois"
 msgstr "${n} months"
 
-#: static/js/stats_panels.js:1213 static/js/ui.js:7310
+#: static/js/stats_panels.js:1213 static/js/ui.js:7354
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} days"
@@ -5117,26 +5156,26 @@ msgstr "Animation end here (${date})"
 msgid "Plage complète"
 msgstr "Full range"
 
-#: static/js/ui.js:646
+#: static/js/ui.js:647
 #, python-brace-format
 msgid "Musique : ${d}"
 msgstr "Music: ${d}"
 
-#: static/js/ui.js:647
+#: static/js/ui.js:648
 #, python-brace-format
 msgid "(à partir de ${s})"
 msgstr "(from ${s})"
 
-#: static/js/ui.js:648
+#: static/js/ui.js:649
 #, python-brace-format
 msgid "(jusqu'à ${e})"
 msgstr "(until ${e})"
 
-#: static/js/ui.js:649
+#: static/js/ui.js:650
 msgid "(blanc de fin ignoré)"
 msgstr "(trailing silence ignored)"
 
-#: static/js/ui.js:663
+#: static/js/ui.js:664
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
@@ -5145,7 +5184,7 @@ msgstr ""
 "Music shorter than the minimum duration (${min}): duration ${d} applied, "
 "the music will be looped."
 
-#: static/js/ui.js:664
+#: static/js/ui.js:665
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
@@ -5154,20 +5193,20 @@ msgstr ""
 "Music shorter than the minimum duration (${min}): duration ${d} applied, "
 "the music will stop before the end."
 
-#: static/js/ui.js:665 static/js/ui.js:684
+#: static/js/ui.js:666 static/js/ui.js:685
 msgid "Elle se terminera en fondu."
 msgstr "It will fade out at the end."
 
-#: static/js/ui.js:667
+#: static/js/ui.js:668
 #, python-brace-format
 msgid "Durée calée sur la musique (${d})."
 msgstr "Duration synced to the music (${d})."
 
-#: static/js/ui.js:670
+#: static/js/ui.js:671
 msgid "Elle commence plus loin pour finir avec la vidéo."
 msgstr "It starts later so that it ends with the video."
 
-#: static/js/ui.js:675
+#: static/js/ui.js:676
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle se terminera"
@@ -5176,7 +5215,7 @@ msgstr ""
 "The music (${m}) is longer than the video (${v}): it will fade out at the"
 " end."
 
-#: static/js/ui.js:676
+#: static/js/ui.js:677
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
@@ -5185,75 +5224,75 @@ msgstr ""
 "The music (${m}) is longer than the video (${v}): it will be cut at the "
 "end of the video."
 
-#: static/js/ui.js:680
+#: static/js/ui.js:681
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée"
 " en boucle."
 msgstr "The music (${m}) is shorter than the video (${v}): it will be looped."
 
-#: static/js/ui.js:683
+#: static/js/ui.js:684
 msgid "Les reprises s'enchaînent en fondu."
 msgstr "Each repeat crossfades into the next."
 
-#: static/js/ui.js:686
+#: static/js/ui.js:687
 #, python-brace-format
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr "The music (${m}) ends before the end of the video (${v})."
 
-#: static/js/ui.js:690
+#: static/js/ui.js:691
 msgid "Elle commencera en fondu."
 msgstr "It will fade in."
 
-#: static/js/ui.js:791
+#: static/js/ui.js:792
 msgid "Mesure impossible pour ce format : le curseur règle le volume."
 msgstr "Cannot be measured for this format: the slider sets the volume."
 
-#: static/js/ui.js:799
+#: static/js/ui.js:800
 #, python-brace-format
 msgid "Morceau très faible : niveau standard limité à ${p} (il faudrait ${need})."
 msgstr "Very quiet track: standard level capped at ${p} (it would need ${need})."
 
-#: static/js/ui.js:803
+#: static/js/ui.js:804
 #, python-brace-format
 msgid "Morceau déjà au niveau standard : ${p} du fichier."
 msgstr "Track already at the standard level: ${p} of the file."
 
-#: static/js/ui.js:805
+#: static/js/ui.js:806
 #, python-brace-format
 msgid "Morceau enregistré fort : niveau standard à ${p} du fichier."
 msgstr "Loud recording: standard level at ${p} of the file."
 
-#: static/js/ui.js:807
+#: static/js/ui.js:808
 #, python-brace-format
 msgid "Morceau enregistré faiblement : niveau standard à ${p} du fichier."
 msgstr "Quiet recording: standard level at ${p} of the file."
 
-#: static/js/ui.js:814
+#: static/js/ui.js:815
 msgid "Les morceaux de l'enchaînement sont déjà équilibrés entre eux."
 msgstr "The tracks in the sequence are already balanced with each other."
 
-#: static/js/ui.js:831 static/js/ui.js:900
+#: static/js/ui.js:832 static/js/ui.js:901
 msgid "Arrêtez l'animation pour écouter la musique seule."
 msgstr "Stop the animation to listen to the music on its own."
 
-#: static/js/ui.js:872 templates/guide.html:299
+#: static/js/ui.js:873 templates/guide.html:299
 #: templates/menu_animation.html:406
 msgid "Écouter"
 msgstr "Listen"
 
-#: static/js/ui.js:873 templates/guide.html:299
+#: static/js/ui.js:874 templates/guide.html:299
 #: templates/menu_animation.html:410
 msgid "Écouter la fin"
 msgstr "Listen to the end"
 
-#: static/js/ui.js:881 templates/app.html:289 templates/app.html:290
+#: static/js/ui.js:882 templates/app.html:289 templates/app.html:290
 #: templates/guide.html:117 templates/guide.html:321
 #: templates/menu_animation.html:57
 msgid "Arrêter"
 msgstr "Stop"
 
-#: static/js/ui.js:2033
+#: static/js/ui.js:2035
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -5261,19 +5300,19 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:2034 static/js/ui.js:3693
+#: static/js/ui.js:2036 static/js/ui.js:3695
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:2201 static/js/ui.js:10409
+#: static/js/ui.js:2203 static/js/ui.js:10466
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Animation duration synced to the music"
 
-#: static/js/ui.js:2205 static/js/ui.js:10880
+#: static/js/ui.js:2207 static/js/ui.js:10937
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:2259
+#: static/js/ui.js:2261
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
@@ -5284,7 +5323,7 @@ msgstr ""
 "video stutters, choose a lower resolution or switch to frame-by-frame "
 "rendering."
 
-#: static/js/ui.js:2260
+#: static/js/ui.js:2262
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -5295,7 +5334,7 @@ msgstr ""
 " every frame is captured, encoded and uploaded one by one. The video "
 "itself will not drop a single frame."
 
-#: static/js/ui.js:2269
+#: static/js/ui.js:2271
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -5306,46 +5345,46 @@ msgstr ""
 "compressed: lowering the frame rate or the resolution will give a cleaner"
 " image."
 
-#: static/js/ui.js:2273
+#: static/js/ui.js:2275
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr "Bitrate raised to ${bitrate} Mbit/s for this resolution."
 
-#: static/js/ui.js:3281
+#: static/js/ui.js:3283
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:3328
+#: static/js/ui.js:3330
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:3350
+#: static/js/ui.js:3352
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:3621
+#: static/js/ui.js:3623
 msgid "Difficulté, terrain et taille ne s'appliquent pas aux Lab Caches."
 msgstr "Difficulty, terrain and size do not apply to Lab Caches."
 
-#: static/js/ui.js:3692
+#: static/js/ui.js:3694
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:3800
+#: static/js/ui.js:3802
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr "Close MyGCFlow? The local server will be stopped."
 
-#: static/js/ui.js:3801 static/js/ui.js:3804 static/js/ui.js:3824
-#: static/js/ui.js:3831 static/js/ui.js:3839 templates/app.html:97
+#: static/js/ui.js:3803 static/js/ui.js:3806 static/js/ui.js:3826
+#: static/js/ui.js:3833 static/js/ui.js:3841 templates/app.html:97
 msgid "Quitter"
 msgstr "Quit"
 
-#: static/js/ui.js:3824 static/js/ui.js:3839
+#: static/js/ui.js:3826 static/js/ui.js:3841
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr "MyGCFlow could not be stopped."
 
-#: static/js/ui.js:3830
+#: static/js/ui.js:3832
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
@@ -5353,19 +5392,19 @@ msgstr ""
 "An import or a video processing task is running. It will be interrupted. "
 "Quit anyway?"
 
-#: static/js/ui.js:3834
+#: static/js/ui.js:3836
 msgid "Quitter quand même"
 msgstr "Quit anyway"
 
-#: static/js/ui.js:3854
+#: static/js/ui.js:3856
 msgid "MyGCFlow est fermé"
 msgstr "MyGCFlow is closed"
 
-#: static/js/ui.js:3855
+#: static/js/ui.js:3857
 msgid "Vous pouvez fermer cet onglet."
 msgstr "You can close this tab."
 
-#: static/js/ui.js:5111 templates/_filter_cache_attrs.html:44
+#: static/js/ui.js:5113 templates/_filter_cache_attrs.html:44
 #: templates/_filter_cache_attrs.html:62 templates/_filter_cache_attrs.html:86
 #: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
@@ -5375,180 +5414,180 @@ msgstr "You can close this tab."
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:5264 templates/_filter_county.html:10
+#: static/js/ui.js:5266 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr "Filter by county"
 
-#: static/js/ui.js:5289
+#: static/js/ui.js:5291
 msgid "Non renseigné"
 msgstr "Not specified"
 
-#: static/js/ui.js:5313 templates/_filter_country_state.html:8
+#: static/js/ui.js:5315 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:5342 static/js/ui.js:5393
+#: static/js/ui.js:5344 static/js/ui.js:5395
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:6665
+#: static/js/ui.js:6709
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause unavailable while recording - use Stop"
 
-#: static/js/ui.js:7207
+#: static/js/ui.js:7251
 msgid "Valeur requise."
 msgstr "Value required."
 
-#: static/js/ui.js:7209
+#: static/js/ui.js:7253
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Expected format: mm:ss (e.g. 4:55)."
 
-#: static/js/ui.js:7210
+#: static/js/ui.js:7254
 msgid "Nombre attendu."
 msgstr "Number expected."
 
-#: static/js/ui.js:7211
+#: static/js/ui.js:7255
 msgid "La valeur doit être strictement positive."
 msgstr "The value must be strictly positive."
 
-#: static/js/ui.js:7213
+#: static/js/ui.js:7257
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Between ${min} and ${max} days/s."
 
-#: static/js/ui.js:7214
+#: static/js/ui.js:7258
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Between ${min} and ${max} s."
 
-#: static/js/ui.js:7215
+#: static/js/ui.js:7259
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:7216
+#: static/js/ui.js:7260
 msgid "Entre 100 et 10000 ms."
 msgstr "Between 100 and 10000 ms."
 
-#: static/js/ui.js:7217
+#: static/js/ui.js:7261
 msgid "Hors limites."
 msgstr "Out of bounds."
 
-#: static/js/ui.js:7218
+#: static/js/ui.js:7262
 msgid "Valeur invalide."
 msgstr "Invalid value."
 
-#: static/js/ui.js:7311
+#: static/js/ui.js:7355
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} days/s"
 
-#: static/js/ui.js:7313
+#: static/js/ui.js:7357
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "minimum animation ${d}"
 
-#: static/js/ui.js:7314
+#: static/js/ui.js:7358
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:7315
+#: static/js/ui.js:7359
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "end ${d}"
 
-#: static/js/ui.js:7318
+#: static/js/ui.js:7362
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr "incl. camera travel ${d}"
 
-#: static/js/ui.js:7326
+#: static/js/ui.js:7370
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr "incl. camera lead-in ${d}"
 
-#: static/js/ui.js:7332
+#: static/js/ui.js:7376
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr "incl. camera pauses ${d}"
 
-#: static/js/ui.js:7340
+#: static/js/ui.js:7384
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr "incl. camera return ${d}"
 
-#: static/js/ui.js:7342
+#: static/js/ui.js:7386
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} extra"
 
-#: static/js/ui.js:7344
+#: static/js/ui.js:7388
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "minimum video ${d}"
 
-#: static/js/ui.js:7345
+#: static/js/ui.js:7389
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "video ${d}"
 
-#: static/js/ui.js:7347
+#: static/js/ui.js:7391
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "${n} frames minimum"
 
-#: static/js/ui.js:7348
+#: static/js/ui.js:7392
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} frames"
 
-#: static/js/ui.js:7350
+#: static/js/ui.js:7394
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr "≈ ${n} days per frame"
 
-#: static/js/ui.js:7375
+#: static/js/ui.js:7419
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr "Video ~${d}"
 
-#: static/js/ui.js:7383 templates/menu_animation.html:23
+#: static/js/ui.js:7427 templates/menu_animation.html:23
 msgid "musique incluse"
 msgstr "music included"
 
-#: static/js/ui.js:7384
+#: static/js/ui.js:7428
 msgid "sans musique"
 msgstr "no music"
 
-#: static/js/ui.js:7390
+#: static/js/ui.js:7434
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr "destination: ${d}"
 
-#: static/js/ui.js:7429
+#: static/js/ui.js:7473
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr "Example: ${name}"
 
-#: static/js/ui.js:7432
+#: static/js/ui.js:7476
 msgid "Vide : nom du thème actif."
 msgstr "Empty: name of the active theme."
 
-#: static/js/ui.js:7464
+#: static/js/ui.js:7508
 msgid "La plage de dates est invalide ou vide."
 msgstr "The date range is invalid or empty."
 
-#: static/js/ui.js:7465
+#: static/js/ui.js:7509
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Select an audio file for the \"Sync to music\" mode."
 
-#: static/js/ui.js:7472
+#: static/js/ui.js:7516
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "Waiting for the music duration to be read."
 
-#: static/js/ui.js:7483
+#: static/js/ui.js:7527
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -5557,7 +5596,7 @@ msgstr ""
 "Requested duration (${req}) too short to show every day (minimum ${min}):"
 " ${app} applied."
 
-#: static/js/ui.js:7506
+#: static/js/ui.js:7550
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -5567,7 +5606,7 @@ msgstr ""
 "and frame count are minimums; the result will be longer and may exceed "
 "the music duration."
 
-#: static/js/ui.js:7510
+#: static/js/ui.js:7554
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -5578,7 +5617,7 @@ msgstr ""
 "it is sped up to fit in ${applied}. For calmer moves, lower the dynamism "
 "or lengthen the video."
 
-#: static/js/ui.js:7515
+#: static/js/ui.js:7559
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -5589,7 +5628,7 @@ msgstr ""
 "moves add about ${d} to the video. To hit an exact duration, choose “By "
 "duration” or “Sync to music”."
 
-#: static/js/ui.js:7531
+#: static/js/ui.js:7575
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -5599,7 +5638,7 @@ msgstr ""
 "${n} camera journeys will pause the dates (+${d} in total) so each day is"
 " framed when it appears. Reduce the dynamism or the pace to avoid it."
 
-#: static/js/ui.js:7578
+#: static/js/ui.js:7622
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -5608,7 +5647,7 @@ msgstr ""
 "High load: up to ~${n} simultaneous flashes. Suggestions: shorten the "
 "flash duration, slow down the animation, or use Images mode."
 
-#: static/js/ui.js:7582
+#: static/js/ui.js:7626
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -5617,78 +5656,78 @@ msgstr ""
 "${n} frames to produce (~${d} in Images mode). Consider a lower fps or a "
 "shorter animation."
 
-#: static/js/ui.js:7773
+#: static/js/ui.js:7817
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:7773
+#: static/js/ui.js:7817
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:7797
+#: static/js/ui.js:7841
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:7797 static/js/ui.js:7799 static/js/ui.js:7804
+#: static/js/ui.js:7841 static/js/ui.js:7843 static/js/ui.js:7848
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:7799
+#: static/js/ui.js:7843
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:7804
+#: static/js/ui.js:7848
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:10152
+#: static/js/ui.js:10209
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:10202 templates/menu_animation.html:316
+#: static/js/ui.js:10259 templates/menu_animation.html:316
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:10231
+#: static/js/ui.js:10288
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:10258
+#: static/js/ui.js:10315
 msgid "Type inconnu"
 msgstr "Unknown type"
 
-#: static/js/ui.js:10259
+#: static/js/ui.js:10316
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:10260
+#: static/js/ui.js:10317
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:10302
+#: static/js/ui.js:10359
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
-#: static/js/ui.js:10329 static/js/ui.js:10730 static/js/ui.js:10872
+#: static/js/ui.js:10386 static/js/ui.js:10787 static/js/ui.js:10929
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr "Wait for the recording to finish before changing the music."
 
-#: static/js/ui.js:10454
+#: static/js/ui.js:10511
 msgid "Chargement de la musique..."
 msgstr "Loading music..."
 
-#: static/js/ui.js:10536
+#: static/js/ui.js:10593
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr "from ${s}"
 
-#: static/js/ui.js:10551
+#: static/js/ui.js:10608
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr "Remove “${name}” from recent music"
 
-#: static/js/ui.js:10572
+#: static/js/ui.js:10629
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
@@ -5696,52 +5735,52 @@ msgstr ""
 "Selected music is copied for export; copies that are no longer used are "
 "deleted."
 
-#: static/js/ui.js:10586
+#: static/js/ui.js:10643
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr "Music copies: ${size}"
 
-#: static/js/ui.js:10615
+#: static/js/ui.js:10672
 msgid "La musique n'a pas pu être retirée."
 msgstr "The music could not be removed."
 
-#: static/js/ui.js:10695
+#: static/js/ui.js:10752
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr "Move “${name}” up"
 
-#: static/js/ui.js:10696
+#: static/js/ui.js:10753
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr "Move “${name}” down"
 
-#: static/js/ui.js:10697
+#: static/js/ui.js:10754
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr "Remove “${name}” from the sequence"
 
-#: static/js/ui.js:10735
+#: static/js/ui.js:10792
 msgid "Préparation de l'enchaînement…"
 msgstr "Preparing the sequence…"
 
-#: static/js/ui.js:10754 static/js/ui.js:10787
+#: static/js/ui.js:10811 static/js/ui.js:10844
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr "The tracks could not be joined."
 
-#: static/js/ui.js:10806
+#: static/js/ui.js:10863
 msgid "Envoi du morceau…"
 msgstr "Sending the track…"
 
-#: static/js/ui.js:10813
+#: static/js/ui.js:10870
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr "The track could not be sent to the server."
 
-#: static/js/ui.js:10887
+#: static/js/ui.js:10944
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr "“${name}” is no longer available: it has been removed from the list."
 
-#: static/js/ui.js:11057
+#: static/js/ui.js:11114
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
@@ -5749,7 +5788,7 @@ msgstr ""
 "This music cannot be read (unknown format or damaged file): it will not "
 "be added to the video."
 
-#: static/js/ui.js:11166
+#: static/js/ui.js:11223
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr "${s} s of silence detected at the end of the music."
@@ -5863,6 +5902,110 @@ msgstr "Unable to open the video stream"
 #: static/js/video_stream.mjs:74
 msgid "Aucun flux vidéo ouvert"
 msgstr "No video stream open"
+
+#: templates/_event_flash_rows.html:9
+msgid "Comme le flash principal"
+msgstr "Same as the main flash"
+
+#: templates/_event_flash_rows.html:10 templates/menu_flash.html:11
+#: templates/menu_flash_disappear.html:13 templates/menu_flash_dnf.html:16
+msgid "Pas de flash"
+msgstr "No flash"
+
+#: templates/_event_flash_rows.html:11 templates/menu_flash.html:12
+#: templates/menu_flash_disappear.html:16 templates/menu_flash_dnf.html:17
+#: templates/menu_flash_dnf.html:91 templates/menu_points.html:102
+#: templates/menu_points.html:177
+msgid "Cercle"
+msgstr "Circle"
+
+#: templates/_event_flash_rows.html:12
+msgid "Implosion"
+msgstr "Implosion"
+
+#: templates/_event_flash_rows.html:13
+msgid "Écho"
+msgstr "Echo"
+
+#: templates/_event_flash_rows.html:14
+msgid "Cible"
+msgstr "Target"
+
+#: templates/_event_flash_rows.html:15 templates/menu_flash.html:17
+#: templates/menu_flash_disappear.html:17 templates/menu_flash_dnf.html:21
+#: templates/menu_flash_dnf.html:89 templates/menu_points.html:173
+msgid "Étoile"
+msgstr "Star"
+
+#: templates/_event_flash_rows.html:16 templates/menu_flash.html:18
+#: templates/menu_flash_disappear.html:18 templates/menu_flash_dnf.html:22
+#: templates/menu_flash_dnf.html:88
+msgid "Scintillement"
+msgstr "Sparkle"
+
+#: templates/_event_flash_rows.html:17 templates/menu_flash.html:19
+#: templates/menu_flash_disappear.html:19 templates/menu_flash_dnf.html:23
+#: templates/menu_flash_dnf.html:94 templates/menu_points.html:174
+msgid "Carré"
+msgstr "Square"
+
+#: templates/_event_flash_rows.html:18 templates/menu_flash.html:20
+#: templates/menu_flash_disappear.html:20 templates/menu_flash_dnf.html:24
+#: templates/menu_flash_dnf.html:95 templates/menu_points.html:103
+#: templates/menu_points.html:176
+msgid "Triangle"
+msgstr "Triangle"
+
+#: templates/_event_flash_rows.html:19 templates/menu_flash.html:21
+#: templates/menu_flash_disappear.html:21 templates/menu_flash_dnf.html:25
+#: templates/menu_flash_dnf.html:96 templates/menu_points.html:175
+msgid "Losange"
+msgstr "Diamond"
+
+#: templates/_event_flash_rows.html:20 templates/menu_flash_dnf.html:87
+msgid "Feu d'artifice"
+msgstr "Fireworks"
+
+#: templates/_event_flash_rows.html:36 templates/menu_flash.html:30
+#: templates/menu_flash_disappear.html:26 templates/menu_flash_dnf.html:33
+#: templates/menu_flash_dnf.html:102
+msgid "Taille du flash en px"
+msgstr "Flash size in px"
+
+#: templates/_event_flash_rows.html:39 templates/menu_flash.html:43
+#: templates/menu_flash_disappear.html:31 templates/menu_flash_dnf.html:38
+#: templates/menu_flash_dnf.html:107
+msgid "Couleur du flash"
+msgstr "Flash color"
+
+#: templates/_event_flash_rows.html:40
+msgid "Couleurs GC"
+msgstr "GC colors"
+
+#: templates/_event_flash_rows.html:41 templates/menu_flash.html:50
+#: templates/menu_flash.html:76 templates/menu_flash_disappear.html:57
+#: templates/menu_flash_dnf.html:63 templates/menu_flash_dnf.html:132
+#: templates/menu_points.html:75 templates/menu_points.html:140
+msgid "Transparent"
+msgstr "Transparent"
+
+#: templates/_event_flash_rows.html:42 templates/menu_flash.html:54
+#: templates/menu_flash.html:80 templates/menu_flash_disappear.html:38
+#: templates/menu_flash_disappear.html:61 templates/menu_flash_dnf.html:45
+#: templates/menu_flash_dnf.html:67 templates/menu_flash_dnf.html:114
+#: templates/menu_flash_dnf.html:136 templates/menu_points.html:79
+#: templates/menu_points.html:144
+msgid "Couleur unique"
+msgstr "Single color"
+
+#: templates/_event_flash_rows.html:45 templates/menu_flash.html:59
+#: templates/menu_flash.html:83 templates/menu_flash_disappear.html:41
+#: templates/menu_flash_disappear.html:64 templates/menu_flash_dnf.html:48
+#: templates/menu_flash_dnf.html:70 templates/menu_flash_dnf.html:117
+#: templates/menu_flash_dnf.html:139 templates/menu_points.html:84
+#: templates/menu_points.html:149
+msgid "Choisir la couleur"
+msgstr "Choose color"
 
 #: templates/_filter_cache_attrs.html:9 templates/_filter_cache_attrs.html:10
 msgid "Type de cache"
@@ -6545,8 +6688,8 @@ msgstr "shows how many caches are selected out of the total."
 msgid "Sous les filtres, le réglage"
 msgstr "Below the filters, the"
 
-#: templates/guide.html:169 templates/menu_filtre.html:115
-#: templates/menu_filtre.html:116
+#: templates/guide.html:169 templates/menu_filtre.html:132
+#: templates/menu_filtre.html:133
 msgid "Caches sans localisation (locationless)"
 msgstr "Locationless caches"
 
@@ -6946,16 +7089,16 @@ msgid "Renseignez la"
 msgstr "Fill in the"
 
 #: templates/guide.html:259 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:57
-#: templates/menu_filtre.html:58 templates/menu_filtre.html:82
-#: templates/menu_filtre.html:83
+#: templates/menu_animation.html:80 templates/menu_filtre.html:74
+#: templates/menu_filtre.html:75 templates/menu_filtre.html:99
+#: templates/menu_filtre.html:100
 msgid "Date de début"
 msgstr "Start date"
 
 #: templates/guide.html:259 templates/menu_animation.html:109
-#: templates/menu_animation.html:110 templates/menu_filtre.html:66
-#: templates/menu_filtre.html:67 templates/menu_filtre.html:91
-#: templates/menu_filtre.html:92
+#: templates/menu_animation.html:110 templates/menu_filtre.html:83
+#: templates/menu_filtre.html:84 templates/menu_filtre.html:108
+#: templates/menu_filtre.html:109
 msgid "Date de fin"
 msgstr "End date"
 
@@ -9292,7 +9435,7 @@ msgid "La base est prête."
 msgstr "The dataset is ready."
 
 #: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:70
-#: templates/menu_filtre.html:42
+#: templates/menu_filtre.html:59
 msgid "Réinitialiser tous les filtres"
 msgstr "Reset all filters"
 
@@ -9320,7 +9463,8 @@ msgstr ""
 "Arbitrary delay: just long enough to see the appearance, then the "
 "disappearance."
 
-#: templates/menu_data_poses.html:14
+#: templates/menu_data_poses.html:14 templates/menu_filtre.html:39
+#: templates/menu_points.html:165
 msgid "Mes caches posées"
 msgstr "My hidden caches"
 
@@ -9400,28 +9544,44 @@ msgstr "Show my DNFs on the map"
 msgid "Les inclure dans le trait de déplacement"
 msgstr "Include them in the travel trail"
 
-#: templates/menu_filtre.html:54
+#: templates/menu_filtre.html:42
+msgid "Afficher mes caches posées sur la carte"
+msgstr "Show my hidden caches on the map"
+
+#: templates/menu_filtre.html:46
+msgid "Inclure pose et entretien dans le trait de déplacement"
+msgstr "Include placement and maintenance in the travel trail"
+
+#: templates/menu_filtre.html:48
+msgid ""
+"Vos étapes de poseur seulement (pose, maintenance, désactivation, "
+"archivage) : les logs des autres joueurs restent sur la page Mes poses."
+msgstr ""
+"Only your own owner steps (placement, maintenance, disabling, archiving):"
+" other players' logs stay on the My hides page."
+
+#: templates/menu_filtre.html:71
 msgid "Période de découverte"
 msgstr "Found period"
 
-#: templates/menu_filtre.html:60 templates/menu_filtre.html:69
-#: templates/menu_filtre.html:85 templates/menu_filtre.html:94
+#: templates/menu_filtre.html:77 templates/menu_filtre.html:86
+#: templates/menu_filtre.html:102 templates/menu_filtre.html:111
 msgid "Date par défaut (toutes les données)"
 msgstr "Default date (all data)"
 
-#: templates/menu_filtre.html:79
+#: templates/menu_filtre.html:96
 msgid "Période de pose"
 msgstr "Published period"
 
-#: templates/menu_filtre.html:117
+#: templates/menu_filtre.html:134
 msgid "Comptées, sans point sur la carte"
 msgstr "Counted, with no point on the map"
 
-#: templates/menu_filtre.html:118
+#: templates/menu_filtre.html:135
 msgid "Comptées et affichées sur la carte"
 msgstr "Counted and shown on the map"
 
-#: templates/menu_filtre.html:121
+#: templates/menu_filtre.html:138
 msgid ""
 "Leur position dans le fichier est fictive : affichée, elle trace un point"
 " là où vous n'êtes pas allé."
@@ -9436,17 +9596,6 @@ msgstr "Flash animation"
 #: templates/menu_flash.html:9 templates/menu_flash.html:10
 msgid "Forme du flash"
 msgstr "Flash shape"
-
-#: templates/menu_flash.html:11 templates/menu_flash_disappear.html:13
-#: templates/menu_flash_dnf.html:16 templates/menu_flash_events.html:8
-msgid "Pas de flash"
-msgstr "No flash"
-
-#: templates/menu_flash.html:12 templates/menu_flash_disappear.html:16
-#: templates/menu_flash_dnf.html:17 templates/menu_flash_dnf.html:91
-#: templates/menu_flash_events.html:9 templates/menu_points.html:102
-msgid "Cercle"
-msgstr "Circle"
 
 #: templates/menu_flash.html:13
 msgid "Impulsion (halo + onde)"
@@ -9466,42 +9615,6 @@ msgstr "Double wave (echo)"
 #: templates/menu_flash_dnf.html:20 templates/menu_flash_dnf.html:92
 msgid "Cible (réticule)"
 msgstr "Target (reticle)"
-
-#: templates/menu_flash.html:17 templates/menu_flash_disappear.html:17
-#: templates/menu_flash_dnf.html:21 templates/menu_flash_dnf.html:89
-#: templates/menu_flash_events.html:13
-msgid "Étoile"
-msgstr "Star"
-
-#: templates/menu_flash.html:18 templates/menu_flash_disappear.html:18
-#: templates/menu_flash_dnf.html:22 templates/menu_flash_dnf.html:88
-#: templates/menu_flash_events.html:14
-msgid "Scintillement"
-msgstr "Sparkle"
-
-#: templates/menu_flash.html:19 templates/menu_flash_disappear.html:19
-#: templates/menu_flash_dnf.html:23 templates/menu_flash_dnf.html:94
-#: templates/menu_flash_events.html:15
-msgid "Carré"
-msgstr "Square"
-
-#: templates/menu_flash.html:20 templates/menu_flash_disappear.html:20
-#: templates/menu_flash_dnf.html:24 templates/menu_flash_dnf.html:95
-#: templates/menu_flash_events.html:16 templates/menu_points.html:103
-msgid "Triangle"
-msgstr "Triangle"
-
-#: templates/menu_flash.html:21 templates/menu_flash_disappear.html:21
-#: templates/menu_flash_dnf.html:25 templates/menu_flash_dnf.html:96
-#: templates/menu_flash_events.html:17
-msgid "Losange"
-msgstr "Diamond"
-
-#: templates/menu_flash.html:30 templates/menu_flash_disappear.html:26
-#: templates/menu_flash_dnf.html:33 templates/menu_flash_dnf.html:102
-#: templates/menu_flash_events.html:39
-msgid "Taille du flash en px"
-msgstr "Flash size in px"
 
 #: templates/menu_flash.html:31
 msgid "Taille du Flash"
@@ -9524,12 +9637,6 @@ msgstr ""
 "100 to 10,000 ms — a crisp flash or a slow halo: duration is as much a "
 "part of the style as the shape."
 
-#: templates/menu_flash.html:43 templates/menu_flash_disappear.html:31
-#: templates/menu_flash_dnf.html:38 templates/menu_flash_dnf.html:107
-#: templates/menu_flash_events.html:42
-msgid "Couleur du flash"
-msgstr "Flash color"
-
 #: templates/menu_flash.html:46 templates/menu_flash.html:72
 #: templates/menu_flash_disappear.html:34
 #: templates/menu_flash_disappear.html:53 templates/menu_flash_dnf.html:41
@@ -9539,37 +9646,13 @@ msgstr "Flash color"
 msgid "Couleurs GC (par type)"
 msgstr "GC colors (by type)"
 
-#: templates/menu_flash.html:50 templates/menu_flash.html:76
-#: templates/menu_flash_disappear.html:57 templates/menu_flash_dnf.html:63
-#: templates/menu_flash_dnf.html:132 templates/menu_flash_events.html:44
-#: templates/menu_points.html:75 templates/menu_points.html:140
-msgid "Transparent"
-msgstr "Transparent"
-
-#: templates/menu_flash.html:54 templates/menu_flash.html:80
-#: templates/menu_flash_disappear.html:38
-#: templates/menu_flash_disappear.html:61 templates/menu_flash_dnf.html:45
-#: templates/menu_flash_dnf.html:67 templates/menu_flash_dnf.html:114
-#: templates/menu_flash_dnf.html:136 templates/menu_flash_events.html:45
-#: templates/menu_points.html:79 templates/menu_points.html:144
-msgid "Couleur unique"
-msgstr "Single color"
-
-#: templates/menu_flash.html:59 templates/menu_flash.html:83
-#: templates/menu_flash_disappear.html:41
-#: templates/menu_flash_disappear.html:64 templates/menu_flash_dnf.html:48
-#: templates/menu_flash_dnf.html:70 templates/menu_flash_dnf.html:117
-#: templates/menu_flash_dnf.html:139 templates/menu_flash_events.html:48
-#: templates/menu_points.html:84 templates/menu_points.html:149
-msgid "Choisir la couleur"
-msgstr "Choose color"
-
 #: templates/menu_flash.html:60
 msgid "Choisir la couleur du flash"
 msgstr "Choose the flash color"
 
 #: templates/menu_flash.html:65 templates/menu_flash_disappear.html:46
 #: templates/menu_flash_dnf.html:52 templates/menu_flash_dnf.html:121
+#: templates/menu_points.html:189
 msgid "Couleur du contour"
 msgstr "Outline color"
 
@@ -9623,7 +9706,7 @@ msgstr ""
 msgid "Forme du flash des DNF"
 msgstr "DNF flash shape"
 
-#: templates/menu_flash_dnf.html:15
+#: templates/menu_flash_dnf.html:15 templates/menu_points.html:178
 msgid "Comme les trouvailles"
 msgstr "Same as finds"
 
@@ -9655,10 +9738,6 @@ msgstr "Celebration shape"
 msgid "Pas de célébration"
 msgstr "No celebration"
 
-#: templates/menu_flash_dnf.html:87 templates/menu_flash_events.html:18
-msgid "Feu d'artifice"
-msgstr "Fireworks"
-
 #: templates/menu_flash_dnf.html:118
 msgid "Choisir la couleur de la célébration"
 msgstr "Choose the celebration color"
@@ -9667,27 +9746,11 @@ msgstr "Choose the celebration color"
 msgid "Choisir la couleur du contour de la célébration"
 msgstr "Choose the celebration outline color"
 
-#: templates/menu_flash_events.html:7
-msgid "Comme le flash principal"
-msgstr "Same as the main flash"
-
-#: templates/menu_flash_events.html:10
-msgid "Implosion"
-msgstr "Implosion"
-
-#: templates/menu_flash_events.html:11
-msgid "Écho"
-msgstr "Echo"
-
-#: templates/menu_flash_events.html:12
-msgid "Cible"
-msgstr "Target"
-
-#: templates/menu_flash_events.html:22
+#: templates/menu_flash_events.html:8
 msgid "Flashs des événements"
 msgstr "Event flashes"
 
-#: templates/menu_flash_events.html:24
+#: templates/menu_flash_events.html:10
 msgid ""
 "Un flash par cache et par jour : le type le plus marquant, du haut de la "
 "liste vers le bas, l'emporte. Plus la cache reçoit de logs ce jour-là, "
@@ -9697,9 +9760,21 @@ msgstr ""
 "of the list down, wins. The more logs the cache receives that day, the "
 "larger the flash."
 
-#: templates/menu_flash_events.html:43
-msgid "Couleurs GC"
-msgstr "GC colors"
+#: templates/menu_flash_owner.html:9
+msgid "Flashs de mes caches posées"
+msgstr "Flashes of my hidden caches"
+
+#: templates/menu_flash_owner.html:11
+msgid ""
+"Joués pendant l'animation quand vous posez une cache ou passez "
+"l'entretenir (affichage des caches posées activé dans l'onglet Données). "
+"Un flash par cache et par jour : l'étape la plus marquante, du haut de la"
+" liste vers le bas, l'emporte."
+msgstr ""
+"Played during the animation when you place a cache or visit it for "
+"maintenance (hidden caches display enabled in the Data tab). One flash "
+"per cache and per day: the most significant step, from the top of the "
+"list down, wins."
 
 #: templates/menu_images.html:9 templates/menu_images.html:112
 msgid "Images sur la carte"
@@ -10544,12 +10619,13 @@ msgstr ""
 msgid "Taille du centre"
 msgstr "Center size"
 
-#: templates/menu_points.html:61 templates/menu_points.html:182
+#: templates/menu_points.html:61 templates/menu_points.html:222
 msgid "Taille en pixels"
 msgstr "Size in pixels"
 
 #: templates/menu_points.html:62 templates/menu_points.html:127
-#: templates/menu_points.html:183 templates/menu_trail.html:111
+#: templates/menu_points.html:185 templates/menu_points.html:223
+#: templates/menu_trail.html:111
 msgid "px"
 msgstr "px"
 
@@ -10589,19 +10665,37 @@ msgstr "Thickness in pixels"
 msgid "Choisir la couleur de la bordure"
 msgstr "Choose the border color"
 
-#: templates/menu_points.html:163
+#: templates/menu_points.html:171
+msgid "Forme (mode vectoriel)"
+msgstr "Shape (vector mode)"
+
+#: templates/menu_points.html:182
+msgid "Épaisseur du contour (0 = aucun)"
+msgstr "Outline width (0 = none)"
+
+#: templates/menu_points.html:193
+msgid ""
+"Le centre garde les couleurs des trouvailles. En mode icônes, l'icône du "
+"type est entourée d'un anneau à la couleur du contour. Désactivées et "
+"archivées sont grisées."
+msgstr ""
+"The center keeps the colors of your finds. In icon mode, the type icon is"
+" surrounded by a ring in the outline color. Disabled and archived caches "
+"are greyed out."
+
+#: templates/menu_points.html:203
 msgid "Configuration des icônes"
 msgstr "Icon configuration"
 
-#: templates/menu_points.html:168 templates/menu_points.html:169
+#: templates/menu_points.html:208 templates/menu_points.html:209
 msgid "Jeu d'icônes"
 msgstr "Icon set"
 
-#: templates/menu_points.html:175 templates/menu_points.html:178
+#: templates/menu_points.html:215 templates/menu_points.html:218
 msgid "Taille des icônes"
 msgstr "Icon size"
 
-#: templates/menu_points.html:189
+#: templates/menu_points.html:229
 msgid "Aperçu des icônes"
 msgstr "Icon preview"
 
@@ -11568,7 +11662,7 @@ msgstr "Save the active theme"
 msgid "Autres options d'enregistrement"
 msgstr "More save options"
 
-#: templates/menu_style.html:29 templates/menu_style.html:348
+#: templates/menu_style.html:29 templates/menu_style.html:351
 msgid "Enregistrer sous…"
 msgstr "Save as…"
 
@@ -11671,60 +11765,60 @@ msgstr ""
 " animation: handy for checking shape, size and colors. In \"GC colors\" "
 "mode, several cache types blink together."
 
-#: templates/menu_style.html:216
+#: templates/menu_style.html:219
 msgid "Titre et informations"
 msgstr "Title and information"
 
-#: templates/menu_style.html:245 templates/menu_style.html:246
+#: templates/menu_style.html:248 templates/menu_style.html:249
 msgid "Nom du thème"
 msgstr "Theme name"
 
-#: templates/menu_style.html:269
+#: templates/menu_style.html:272
 msgid "Confirmer la suppression"
 msgstr "Confirm deletion"
 
-#: templates/menu_style.html:270 templates/menu_style.html:295
+#: templates/menu_style.html:273 templates/menu_style.html:298
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr "This action is permanent"
 
-#: templates/menu_style.html:276
+#: templates/menu_style.html:279
 msgid "Êtes-vous sûr de vouloir supprimer ce thème ?"
 msgstr "Are you sure you want to delete this theme?"
 
-#: templates/menu_style.html:294
+#: templates/menu_style.html:297
 msgid "Confirmer la réinitialisation"
 msgstr "Confirm reset"
 
-#: templates/menu_style.html:301
+#: templates/menu_style.html:304
 msgid "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
 msgstr "Are you sure you want to reset this theme to its default values?"
 
-#: templates/menu_style.html:323
+#: templates/menu_style.html:326
 msgid "Le thème actif a été modifié"
 msgstr "The active theme has been modified"
 
-#: templates/menu_style.html:329
+#: templates/menu_style.html:332
 msgid "Vous avez des modifications non enregistrées."
 msgstr "You have unsaved changes."
 
-#: templates/menu_style.html:333
+#: templates/menu_style.html:336
 msgid "Abandonner"
 msgstr "Discard"
 
-#: templates/menu_style.html:334
+#: templates/menu_style.html:337
 msgid "Enregistrer et charger"
 msgstr "Save and load"
 
-#: templates/menu_style.html:353
+#: templates/menu_style.html:356
 msgid "Thème de destination"
 msgstr "Destination theme"
 
-#: templates/menu_style.html:354
+#: templates/menu_style.html:357
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr "Choose a theme or type a new name"
 
-#: templates/menu_style.html:355
+#: templates/menu_style.html:358
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
@@ -11732,11 +11826,11 @@ msgstr ""
 "Choose an existing theme to save the displayed settings into, or type a "
 "new name to create a theme."
 
-#: templates/menu_style.html:381
+#: templates/menu_style.html:384
 msgid "Remplacer le thème ?"
 msgstr "Replace the theme?"
 
-#: templates/menu_style.html:382
+#: templates/menu_style.html:385
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr "The theme's saved settings will be lost"
 

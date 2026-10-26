@@ -1,7 +1,9 @@
 # Logs Geocaching — contrat d'import, stockage et plan
 
 > **Statut : lots A à E codés** (2026-10-25) — D et E réunis dans la page
-> « Mes poses » (`/poses`, docs/mode-poses.md). A — données :
+> « Mes poses » (`/poses`, docs/mode-poses.md) ; caches posées et étapes du
+> poseur aussi sur la carte principale (2026-10-26, § Caches posées sur la
+> carte principale). A — données :
 > `log_formats.py` (lecture), `log_store.py` (fusion, aperçu, statut),
 > migration v8, logs du My Finds. B — interface : carte « Mes logs » de
 > l'onglet Données (`static/js/gc_logs.js`) et routes `/api/logs/*`
@@ -557,6 +559,74 @@ célébrations et les effacements (en cours et cumulés).
 : `dnf_display` (masqués par défaut) et `dnf_in_trail` (inclus par défaut,
 sans effet tant que l'affichage est coupé).
 
+## Caches posées sur la carte principale
+
+Le 2026-10-26, la carte « Mes Géocaches » peut montrer les **caches posées par
+le joueur** et ses **étapes physiques de poseur** — pose, maintenance,
+désactivation, réactivation, archivage — à côté de ses trouvailles. À la
+différence de la page « Mes poses » (docs/mode-poses.md), **aucun log des
+autres joueurs** n'y apparaît. Choix de l'utilisateur : facultatif, proposé
+seulement si la base en contient ; flashs distincts de ceux des trouvailles ;
+forme et contour propres.
+
+**Données** (`owner_geojson.py`, `GET /api/logs/owner_features`) : les caches
+de `poses_dataset.load_owned_caches`, mêmes règles d'apparition (publication,
+sinon pose déclarée, une trouvaille de bêta-test l'avance) et d'état que Mes
+poses. Un point par cache placée (fiche, sinon My Finds ; sans position :
+`pending` ; sans date : `undatable`). Propriétés des trouvailles (filtres),
+`date_find` = jour d'apparition, plus `owner_states` (`[[jour, état]]`,
+changements effectifs, **tous** auteurs : une archive du relecteur grise la
+cache) et `owner_events` (`[[jour, type]]` : maintenance — 46 et 47 —,
+désactivation, réactivation, désarchivage, archivage **du poseur seulement**,
+à partir de l'apparition). `ownedTotal` dit s'il faut proposer l'affichage.
+
+**Jamais une trouvaille** : même mécanique que les DNF — `static/js/owner_data.js`
+(chargé toujours sur la page principale, car c'est lui qui décide de
+proposer l'option ; filtré par `filterLikeCurrentSelection`), règles pures
+dans `static/js/owner_model.mjs` (tests `tests/js/owner_model.test.mjs`),
+couches propres dans `mapgl.js` (`syncOwnerToDay` / `syncOwnerStatic`,
+source `window.ownerVectorSource`), hors de `pointsByDate`.
+
+**Affichage** : une cache posée apparaît à sa publication puis reste ;
+désactivée ou archivée, elle est grisée (attribut `pstate`, comme sur Mes
+poses, mais plus soutenu : gris `#8a8a8a` à 85 % d'opacité pour les
+archivées — quelques caches parmi les trouvailles doivent rester
+repérables). Couches entre les DNF et les trouvailles (zIndex 1000,5 et
+1000,6). Au repos : toutes les caches de la sélection, dans leur état actuel
+(ou à la date de fin si sa borne a été déplacée — la fin par défaut est la
+dernière trouvaille). Popup : « Ma cache », apparition, état, dernière
+maintenance.
+
+**Forme et contour** (thème, `points.owner_shape` / `owner_border_color` /
+`owner_border_width`, sous-onglet Points) : en vectoriel, étoile (défaut),
+carré, losange, triangle, cercle ou « comme les trouvailles », centre aux
+couleurs du thème, contour propre (doré `#ffc107`, 2 px ; 0 = aucun). En
+mode icônes, l'icône du type est entourée d'un **anneau** à la couleur du
+contour : une icône WebGL n'a pas de contour, l'anneau est une seconde
+couche (`buildOwnerRingStyle`) sur la même source, dessinée dessous.
+
+**Flashs** (thème, `flash.owner`, sous-onglet Flash) : seconde table de
+`event_flash.py` / `event_flash.mjs` (`OWNER_FLASH_KINDS`, défauts distincts
+du flash des trouvailles : pose = étoile dorée, maintenance =
+scintillement vert…). Un flash par cache et par lot de jours, le plus
+marquant l'emporte (archivage > désactivation > réactivation > pose >
+maintenance) parmi ceux qui flashent ; un désarchivage joue la réactivation.
+Lignes de réglage partagées avec Mes poses (`_event_flash_rows.html`,
+groupe `data-event-flash-group`).
+
+**Trait de déplacement** : la pose et chaque jour d'étape du poseur sont des
+déplacements (`ownerVisitsByDay`, clé de mémoïsation `ownerRevision`).
+
+**Préférences globales** (onglet Données, « Mes caches posées », visible
+seulement avec des caches posées) : `owner_display` (masquées par défaut) et
+`owner_in_trail` (incluses par défaut).
+
+Tests : `tests/test_owner_geojson.py`, `tests/js/owner_model.test.mjs`,
+`tests/e2e/owner-display.spec.mjs` (fixture `my-finds-poses.gpx`, dont les
+trouvailles encadrent la vie des caches de `logs-poses.json`).
+`getOwnerDebugState()` (mapgl.js) relève caches affichées et états, flashs
+joués, changements d'état et présence de l'anneau.
+
 ## Plan
 
 | Lot | Contenu | Livrable vérifiable |
@@ -566,7 +636,8 @@ sans effet tant que l'affichage est coupé).
 | **C — DNF sur la carte** ✅ | réglage d'affichage (masqué par défaut), apparition / résolution dans l'animation, saut de la barre de chronologie | e2e : DNF masqué, DNF affiché puis remplacé par la trouvaille |
 | **D — poseur** ✅ | activité de poseur : publication, désactivations, maintenance, archivage (page « Mes poses ») | e2e `poses.spec.mjs` |
 | **E — mode « Mes caches »** ✅ | page `/poses` sur le moteur du mode Évolution : logs des autres joueurs, favoris, flashs par événement, rendu grisé (docs/mode-poses.md) | e2e `poses.spec.mjs` |
-| **F — Stats** (en partie) | panneaux de Mes poses sur les trouvailles reçues (`stats.poses_panels`) ; DNF dans les Stats du mode principal : à faire | e2e `stats-poses.spec.mjs` |
+| **D bis — poseur sur la carte principale** ✅ | caches posées et étapes du poseur (pose, maintenance, désactivation, archivage) parmi les trouvailles, sans les logs des autres ; forme, contour et flashs propres (§ Caches posées sur la carte principale) | e2e `owner-display.spec.mjs` |
+| **F — Stats** (en partie) | panneaux de Mes poses sur les trouvailles reçues (`stats.poses_panels`) ; DNF et caches posées dans les Stats du mode principal : à faire | e2e `stats-poses.spec.mjs` |
 
 Mesures du lot A (`tools/bench_log_import.py`, 2026-10-25, Windows, SQLite
 local ; ~50 logs par cache, couverture complète par cache ; l'incrément est

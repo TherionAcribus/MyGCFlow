@@ -134,7 +134,10 @@ function renderStatus(st) {
         el('gcLogsExportBtn').disabled = taskActive;
         el('gcLogsClearBtn').disabled = taskActive;
     }
-    if (taskWasActive && !taskActive) pkg.reloadDnfData?.();
+    if (taskWasActive && !taskActive) {
+        pkg.reloadDnfData?.();
+        pkg.reloadOwnerData?.();
+    }
     taskWasActive = taskActive;
     detail.textContent = '';
     if (!has) {
@@ -411,6 +414,7 @@ async function onResolveCoords(row, item, input, btn, feedback) {
         }
         refreshLogsStatus();
         pkg.reloadDnfData?.();
+        pkg.reloadOwnerData?.();
     } catch (e) {
         btn.disabled = false;
         feedback.className = 'small text-danger';
@@ -650,6 +654,7 @@ async function onPreviewConfirm() {
         const result = await pollTask(data.task_id);
         if (result.status) renderStatus(result.status);
         pkg.reloadDnfData?.();
+        pkg.reloadOwnerData?.();
         showSuccess(resultMessage(result), t('Logs importés'));
     } catch (e) {
         showError(e.message || t("Erreur lors de l'import"), t('Import de logs'));
@@ -682,6 +687,7 @@ async function onClear() {
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success) throw new Error(data.message || t('Erreur inconnue'));
         pkg.reloadDnfData?.();
+        pkg.reloadOwnerData?.();
         showSuccess(t('Logs supprimés'), t('Suppression réussie'));
     } catch (e) {
         showError(e.message || t('Erreur lors de la suppression'), t('Erreur'));

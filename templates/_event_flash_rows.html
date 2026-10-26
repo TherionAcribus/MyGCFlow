@@ -1,0 +1,51 @@
+{# Lignes de réglage des flashs par type d'événement : une ligne par type
+   (`kinds` = [{key, label, defaults}], ordre = priorité). `group` désigne le
+   bloc du thème piloté : 'events' (page Mes poses, flash.events) ou 'owner'
+   (étapes du poseur sur la carte principale, flash.owner). Liaison générique
+   dans ui.js (initEventFlashControls), attributs data-event-flash-*. Le
+   contour garde le réglage « automatique » des formes. #}
+{% macro event_flash_rows(group, kinds, modes) %}
+{% set flash_mode_labels = {
+    'same': _("Comme le flash principal"),
+    'none': _("Pas de flash"),
+    'circle': _("Cercle"),
+    'implode': _("Implosion"),
+    'echo': _("Écho"),
+    'target': _("Cible"),
+    'star': _("Étoile"),
+    'sparkle': _("Scintillement"),
+    'square': _("Carré"),
+    'triangle': _("Triangle"),
+    'diamond': _("Losange"),
+    'fireworks': _("Feu d'artifice"),
+} %}
+<div class="event-flash-list">
+    {% for kind in kinds %}
+    <div class="event-flash-row mb-2" data-event-flash-group="{{ group }}" data-event-flash-kind="{{ kind.key }}">
+        <div class="fw-medium small mb-1" id="eventFlashLabel-{{ group }}-{{ kind.key }}">{{ kind.label }}</div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <select class="form-select form-select-sm w-auto" data-event-flash-field="mode"
+                    aria-labelledby="eventFlashLabel-{{ group }}-{{ kind.key }}">
+                {% for mode in modes %}
+                <option value="{{ mode }}" {{ 'selected' if mode == kind.defaults.mode }}>{{ flash_mode_labels.get(mode, mode) }}</option>
+                {% endfor %}
+            </select>
+            <span class="event-flash-own d-inline-flex align-items-center gap-2">
+                <input type="number" class="form-control form-control-sm event-flash-size" min="5" max="200" step="2"
+                       value="{{ kind.defaults.size }}" data-event-flash-field="size"
+                       aria-label="{{ _('Taille du flash en px') }} — {{ kind.label }}">
+                <span class="small text-muted">px</span>
+                <select class="form-select form-select-sm w-auto" data-event-flash-field="color_type"
+                        aria-label="{{ _('Couleur du flash') }} — {{ kind.label }}">
+                    <option value="gc" {{ 'selected' if kind.defaults.color_type == 'gc' }}>{{ _("Couleurs GC") }}</option>
+                    <option value="none" {{ 'selected' if kind.defaults.color_type == 'none' }}>{{ _("Transparent") }}</option>
+                    <option value="fix" {{ 'selected' if kind.defaults.color_type == 'fix' }}>{{ _("Couleur unique") }}</option>
+                </select>
+                <input type="color" class="form-control form-control-color form-control-sm" data-event-flash-field="color"
+                       value="{{ kind.defaults.color }}" aria-label="{{ _('Choisir la couleur') }} — {{ kind.label }}">
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}

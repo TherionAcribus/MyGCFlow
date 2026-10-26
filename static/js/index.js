@@ -39,6 +39,8 @@ export * from './labs.js';
 export * from './gc_logs.js';
 // Points DNF (après bdd.js et ui.js, qu'il appelle) ; s'initialise lui-même.
 export * from './dnf_data.js';
+// Caches posées (même mécanique que les DNF) ; s'initialise lui-même.
+export * from './owner_data.js';
 // Après ui.js : s'initialise lui-même (cf. AGENTS.md, ordre d'évaluation).
 export * from './timeline_bar.js';
 

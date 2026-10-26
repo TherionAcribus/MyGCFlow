@@ -36,7 +36,8 @@ import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { appMode, isLifecyclePage, isMainPage, perPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
-import { normalizeEventFlashes } from './event_flash.mjs';
+import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
+import { ownerPointOptions } from './owner_model.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
@@ -1189,6 +1190,7 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
     });
     document.getElementById('switchPointAppear')?.addEventListener('change', changePointStyleUI);
     document.getElementById('selectPointRecentGlow')?.addEventListener('change', changePointStyleUI);
+    initOwnerPointControls();
 
 // select
     selectShape = document.getElementById('selectShape');
@@ -4847,6 +4849,42 @@ function getSelectedValuesText(selectEl){
 
 // ----------- POINTS ------------
 
+// Caches posées (page principale, menu_points.html #pointsOwner) : forme en
+// vectoriel, couleur et épaisseur du contour — pkg.options.point.owner,
+// normalisé par owner_model.mjs. Un changement recrée les couches de points
+// (le style WebGL est figé à leur création).
+function initOwnerPointControls() {
+    const shape = document.getElementById('selectOwnerShape');
+    const width = document.getElementById('inputOwnerBorderWidth');
+    const color = document.getElementById('ownerBorderColor');
+    if (!shape || !width || !color) return;
+    const apply = () => {
+        pkg.options.point.owner = ownerPointOptions({
+            shape: shape.value,
+            borderColor: color.value,
+            borderWidth: width.value === '' ? pkg.options.point.owner?.borderWidth : width.value,
+        });
+        pkg.refreshPoints(pkg.options);
+    };
+    shape.addEventListener('change', apply);
+    color.addEventListener('change', apply);
+    width.addEventListener('change', apply);
+    // Valeur bornée réaffichée à la sortie du champ (7 → 6).
+    width.addEventListener('blur', () => { width.value = ownerPointOptions(pkg.options.point.owner).borderWidth; });
+    syncOwnerPointUI();
+}
+
+function syncOwnerPointUI() {
+    const shape = document.getElementById('selectOwnerShape');
+    if (!shape) return;
+    const owner = ownerPointOptions(pkg.options?.point?.owner);
+    shape.value = owner.shape;
+    const width = document.getElementById('inputOwnerBorderWidth');
+    if (width) width.value = owner.borderWidth;
+    const color = document.getElementById('ownerBorderColor');
+    if (color) color.value = owner.borderColor;
+}
+
 // recupère tous les changements liés aux points
 function changePointStyleUI(event){
     // switch
@@ -5173,6 +5211,7 @@ export function syncPointOptionsUI() {
     if (switchPointAppear) switchPointAppear.checked = point.appearAnimation === true;
     const selectPointRecentGlow = document.getElementById('selectPointRecentGlow');
     if (selectPointRecentGlow) selectPointRecentGlow.value = String(Math.max(0, parseInt(point.recentGlowDays) || 0));
+    syncOwnerPointUI();
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;
@@ -7254,18 +7293,28 @@ function syncDisappearFlashUI() {
     syncEventFlashUI();
 }
 
-// Flashs par événement (page Mes poses, menu_flash_events.html) : une ligne
-// par type, champs repérés par data-event-flash-field ; le bloc du thème est
-// pkg.options.flash.events (normalisé par profiles.js).
-function eventFlashOptions(kind) {
+// Flashs par type d'événement (_event_flash_rows.html) : une ligne par type,
+// champs repérés par data-event-flash-field. Deux groupes, deux blocs du
+// thème normalisés par profiles.js : 'events' (page Mes poses,
+// pkg.options.flash.events) et 'owner' (étapes du poseur sur la carte
+// principale, pkg.options.flash.owner).
+// (Fonction plutôt que table : initUIElements y passe pendant l'évaluation
+// du module, avant toute const déclarée ici — AGENTS.md.)
+function eventFlashOptions(group, kind) {
+    const key = group === 'owner' ? 'owner' : 'events';
+    const normalize = key === 'owner' ? normalizeOwnerFlashes : normalizeEventFlashes;
     const flash = pkg.options.flash;
-    if (!flash.events || typeof flash.events !== 'object') flash.events = normalizeEventFlashes(null);
-    if (!flash.events[kind]) flash.events[kind] = normalizeEventFlashes(null)[kind];
-    return flash.events[kind];
+    if (!flash[key] || typeof flash[key] !== 'object') flash[key] = normalize(null);
+    if (!flash[key][kind]) flash[key][kind] = normalize(null)[kind];
+    return flash[key][kind];
+}
+
+function rowFlashOptions(row) {
+    return eventFlashOptions(row.dataset.eventFlashGroup || 'events', row.dataset.eventFlashKind);
 }
 
 function updateEventFlashRow(row) {
-    const options = eventFlashOptions(row.dataset.eventFlashKind);
+    const options = rowFlashOptions(row);
     const own = row.querySelector('.event-flash-own');
     if (own) own.hidden = options.mode === 'same' || options.mode === 'none';
     const color = row.querySelector('[data-event-flash-field="color"]');
@@ -7274,11 +7323,10 @@ function updateEventFlashRow(row) {
 
 function initEventFlashControls() {
     document.querySelectorAll('[data-event-flash-kind]').forEach((row) => {
-        const kind = row.dataset.eventFlashKind;
         row.querySelectorAll('[data-event-flash-field]').forEach((input) => {
             const field = input.dataset.eventFlashField;
             const apply = () => {
-                const options = eventFlashOptions(kind);
+                const options = rowFlashOptions(row);
                 if (field === 'size') {
                     const value = parseInt(input.value);
                     if (!isNaN(value)) options.size = Math.min(200, Math.max(5, value));
@@ -7290,7 +7338,7 @@ function initEventFlashControls() {
             input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', apply);
             if (field === 'size') {
                 input.addEventListener('blur', () => {
-                    input.value = eventFlashOptions(kind).size;
+                    input.value = rowFlashOptions(row).size;
                 });
             }
         });
@@ -7299,7 +7347,7 @@ function initEventFlashControls() {
 
 function syncEventFlashUI() {
     document.querySelectorAll('[data-event-flash-kind]').forEach((row) => {
-        const options = eventFlashOptions(row.dataset.eventFlashKind);
+        const options = rowFlashOptions(row);
         row.querySelectorAll('[data-event-flash-field]').forEach((input) => {
             const value = options[input.dataset.eventFlashField];
             if (value != null) input.value = value;

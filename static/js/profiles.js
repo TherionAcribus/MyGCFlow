@@ -9,7 +9,8 @@ import { markSaved, markSaveError } from './saved_indicator.mjs';
 import { normalizeTrailOptions } from './travel_trail.mjs';
 import { buildThemeThumbnail } from './theme_thumbs.js';
 import { appMode } from './app_mode.mjs';
-import { normalizeEventFlashes } from './event_flash.mjs';
+import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
+import { ownerPointOptions } from './owner_model.mjs';
 
 // Chaque mode de thème a sa propre liste (champ `mode` du thème, voir
 // PROFILE_MODES dans settings_manager.py) : un thème réglé pour quelques
@@ -1629,6 +1630,7 @@ class ProfileManager {
             const center = point.center || {};
             const border = point.border || {};
             const borderSize = parseInt(border.size) || 0;
+            const owner = ownerPointOptions(point.owner);
 
             const pointSettings = {
                 size: parseInt(center.size) || 8,
@@ -1643,7 +1645,12 @@ class ProfileManager {
                 icon_set: point.iconSet || 'geocaching',
                 icon_size: parseInt(point.iconSize) || 24,
                 appear_animation: point.appearAnimation === true,
-                recent_glow_days: Math.max(0, parseInt(point.recentGlowDays) || 0)
+                recent_glow_days: Math.max(0, parseInt(point.recentGlowDays) || 0),
+                // Caches posées (carte principale) : sérialisées sur toutes les
+                // pages, le thème étant partagé avec Mes poses.
+                owner_shape: owner.shape,
+                owner_border_color: owner.borderColor,
+                owner_border_width: owner.borderWidth,
             };
 
             dbgProfiles('Paramètres points récupérés:', pointSettings);
@@ -1674,6 +1681,8 @@ class ProfileManager {
                 dnf_found: normalizeDnfFoundFlash(flash.dnf_found),
                 // Flashs par événement de Mes poses (rgb précalculés retirés).
                 events: normalizeEventFlashes(flash.events),
+                // Étapes du poseur (carte principale), même précaution.
+                owner: normalizeOwnerFlashes(flash.owner),
             };
 
             dbgProfiles('🔍 Paramètres flash récupérés:', flashSettings);
@@ -2619,6 +2628,12 @@ function applyPointState(pointOptions) {
         // Profils antérieurs à ce réglage : pas d'apparition animée.
         point.appearAnimation = pointOptions.appear_animation === true;
         point.recentGlowDays = Math.max(0, parseInt(pointOptions.recent_glow_days) || 0);
+        // Thèmes antérieurs aux caches posées : valeurs par défaut.
+        point.owner = ownerPointOptions({
+            shape: pointOptions.owner_shape,
+            borderColor: pointOptions.owner_border_color,
+            borderWidth: pointOptions.owner_border_width,
+        });
 
         dbgProfiles('Paramètres des points appliqués:', point);
     } catch (error) {
@@ -2747,6 +2762,7 @@ function applyFlashState(flashOptions) {
         // Thèmes antérieurs à Mes poses : défauts de chaque type. Les rgb sont
         // calculés au début de chaque animation (event_flash.resolveEventFlash).
         flash.events = normalizeEventFlashes(flashOptions.events);
+        flash.owner = normalizeOwnerFlashes(flashOptions.owner);
 
         dbgProfiles('Paramètres flash appliqués:', flash);
     } catch (error) {

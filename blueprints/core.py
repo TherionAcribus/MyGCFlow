@@ -43,6 +43,8 @@ def render_app_page(mode: str):
         # Flashs par événement (onglet Style › Flash de /poses).
         event_flash_kinds=event_flash.event_flash_kinds_for_template() if mode == 'poses' else [],
         event_flash_modes=event_flash.EVENT_FLASH_MODES,
+        # Étapes du poseur (onglet Style › Flash de la page principale).
+        owner_flash_kinds=event_flash.owner_flash_kinds_for_template() if mode == 'main' else [],
         can_quit=bool(current_app.config.get('QUIT_HOOK')),
         repo_url=options.REPO_URL,
         lang=(current_locale or 'fr').split('_')[0],

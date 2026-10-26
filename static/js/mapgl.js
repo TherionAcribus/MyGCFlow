@@ -112,7 +112,7 @@ import {
     getOverlayCacheRevision,
     getOverlayTextContent,
 } from './overlay_canvas.js';
-import { buildPointStyle, DNF_NOT_VANISHING } from './point_webgl_style.js';
+import { buildOwnerRingStyle, buildPointStyle, DNF_NOT_VANISHING } from './point_webgl_style.js';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { EVO_FILTER, EVO_STATIC_FROM, POINT_DISAPPEAR_MS } from './evolution_style.mjs';
 import { isLifecyclePage, isPosesPage } from './app_mode.mjs';
@@ -151,6 +151,8 @@ import {
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
 import { countDaysUpTo } from './timeline_model.mjs';
 import { dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
+import { ownerFlashBetween, ownerStateAt, ownerVisibleAt, ownerVisitsByDay } from './owner_model.mjs';
+import { OWNER_FLASH_KINDS, resolveOwnerFlash } from './event_flash.mjs';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -226,6 +228,11 @@ let vectorLayer;
 // géocacheur veut voir ce qu'il a trouvé avant ce qu'il n'a pas trouvé.
 // Source : window.dnfVectorSource.
 let dnfLayer;
+// Couches des caches posées (syncOwner, owner_data.js), entre les DNF et les
+// trouvailles ; l'anneau des icônes dessous. Source : window.ownerVectorSource.
+let ownerLayer;
+let ownerRingLayer;
+let ownerRingChecked = false;     // style de l'anneau évalué depuis la création
 let features;
 // Mode Évolution : vrai tant que la source contient toutes les caches filtrées
 // (elles y restent en permanence ; seul le style décide de leur visibilité).
@@ -629,6 +636,7 @@ export function addVector(data) {
 
     displayWebGLPoints(features || [], pkg.options.point);
     syncDnfStatic();
+    syncOwnerStatic();
 }
 
 // fonction appelée au changement d'options graphique
@@ -643,9 +651,11 @@ export function refreshPoints(){
     // `features` en repli si elle est vide (source pas encore alimentée).
     let toDisplay = features || [];
     let dnfToDisplay = [];
+    let ownerToDisplay = [];
     if (!isLifecyclePage() && isAnimationInProgress() && window.vectorSource) {
         toDisplay = window.vectorSource.getFeatures();
         dnfToDisplay = window.dnfVectorSource?.getFeatures() || [];
+        ownerToDisplay = window.ownerVectorSource?.getFeatures() || [];
     }
 
     // Toast seulement s'il y a des points à redessiner : le thème appliqué au
@@ -669,6 +679,9 @@ export function refreshPoints(){
     // effacements en cours compris) ; au repos, recalculés.
     if (dnfToDisplay.length) displayDnfPoints(dnfToDisplay);
     else if (!isAnimationInProgress()) syncDnfStatic();
+    // Caches posées : même règle (état grisé porté par les objets eux-mêmes).
+    if (ownerToDisplay.length) displayOwnerPoints(ownerToDisplay);
+    else if (!isAnimationInProgress()) syncOwnerStatic();
 }
 
 
@@ -784,9 +797,9 @@ export function initPopupOverlay(){
 
         const pixel = evt.pixel;
         const feature = map.forEachFeatureAtPixel(pixel, function(ft, layer){
-            // On cible uniquement nos couches de points (trouvailles, puis DNF
-            // dessous : parcours du haut vers le bas).
-            if (layer === vectorLayer || layer === dnfLayer) return ft;
+            // On cible uniquement nos couches de points (trouvailles, puis
+            // caches posées et DNF dessous : parcours du haut vers le bas).
+            if (layer === vectorLayer || layer === ownerLayer || layer === dnfLayer) return ft;
         });
 
         if (!feature) {
@@ -855,6 +868,16 @@ export function initPopupOverlay(){
                 + (owner ? '<div>' + owner + '</div>' : '')
                 + '<div>' + sanitize(triesLabel) + '</div>'
                 + '<div>' + sanitize(resolvedLabel) + '</div>';
+            popupEl.classList.add('is-visible');
+            popupOverlay.setPosition(evt.coordinate);
+            return;
+        }
+
+        // Popup des caches posées : apparition, état affiché et dernière
+        // maintenance — aucun log des autres joueurs.
+        if (props.source_kind === 'owned') {
+            const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+            contentEl.innerHTML = ownerPopupHtml(feature, props, { gcEsc, linkHref, nameLabel, type, cont, dif, ter, fmtPopupDate, t });
             popupEl.classList.add('is-visible');
             popupOverlay.setPosition(evt.coordinate);
             return;
@@ -929,7 +952,7 @@ export function initPopupOverlay(){
     // Masquer si on clique ailleurs sur la carte (sans feature)
     map.on('pointermove', function(evt){
         if (!isIdleState()) return; // pas de survol en mode non-idle
-        const hit = map.hasFeatureAtPixel(evt.pixel, { layerFilter: l => l === vectorLayer || l === dnfLayer });
+        const hit = map.hasFeatureAtPixel(evt.pixel, { layerFilter: l => l === vectorLayer || l === ownerLayer || l === dnfLayer });
         map.getTargetElement().style.cursor = hit ? 'pointer' : '';
     });
 }
@@ -2283,6 +2306,11 @@ export function clearMap(){
         map.removeLayer(dnfLayer);
         dnfLayer = undefined;
     }
+    // Caches posées : idem (deux couches, une source).
+    if (window.ownerVectorSource) window.ownerVectorSource.clear();
+    for (const layer of [ownerLayer, ownerRingLayer]) if (layer) map.removeLayer(layer);
+    ownerLayer = ownerRingLayer = undefined;
+    ownerRingChecked = false;
 
     // Supprimer les autres layers si nécessaire
     if (window.borderLayer) {
@@ -2459,6 +2487,7 @@ function seekPointsToDay(day) {
     // DNF du jour, dans leur propre couche (la source des trouvailles et sa
     // révision, mémorisée ci-dessous, n'en sont pas touchées).
     syncDnfToDay(day);
+    syncOwnerToDay(day);
     const after = window.vectorSource;
     seekShown = after ? { source: after, sourceRevision: after.getRevision(), count: target } : null;
     return index.counts[target];
@@ -2629,6 +2658,205 @@ export function syncDnfStatic() {
     const end = pkg.metadata?.endDate instanceof Date ? dateToDayNumber(pkg.metadata.endDate) : NaN;
     const endDay = Number.isFinite(end) ? end : Infinity;
     syncDnf((entry) => dnfVisibleStatic(entry, endDay));
+}
+
+// --- Caches posées (owner_data.js, docs/logs-geocaching.md) ------------------
+//
+// Dans leurs propres couches, entre les DNF et les trouvailles, hors de
+// pointsByDate. Une cache posée apparaît à sa publication puis reste : son
+// état (actif, désactivé, archivé) est l'attribut 'pstate', réécrit les jours
+// où il change, que le style grise comme sur la page Mes poses. Les étapes
+// du poseur jouent leur flash (pkg.options.flash.owner), un par cache et par
+// lot de jours, le plus marquant l'emporte.
+
+const ownerShown = new Set();
+// Dernier jour synchronisé : les flashs d'un lot couvrent ]ownerSyncedDay, jour].
+let ownerSyncedDay = -Infinity;
+let ownerFormat = null;
+// Options de flash résolues par type, pour une animation (l'identité des
+// options regroupe les flashs) ; vidées à chaque départ, saut ou repos.
+let ownerFlashResolved = null;
+const ownerFlashLog = [];
+let ownerStateChanges = 0;
+
+function ownerOlFeature(entry) {
+    if (!entry.ol) {
+        ownerFormat ??= new ol.format.GeoJSON();
+        entry.ol = ownerFormat.readFeature(entry.feature, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857',
+        });
+    }
+    return entry.ol;
+}
+
+function ownerFlashOptionsByKind() {
+    if (!ownerFlashResolved) {
+        ownerFlashResolved = new Map();
+        for (const kind of OWNER_FLASH_KINDS) ownerFlashResolved.set(kind, resolveOwnerFlash(kind, pkg.options.flash));
+    }
+    return ownerFlashResolved;
+}
+
+// Couches créées à la demande : les points (forme et contour propres en
+// vectoriel, icône en mode icônes) au-dessus des DNF, sous les trouvailles
+// (zIndex 1000 < 1000,6 < 1001), et en mode icônes l'anneau à la couleur du
+// contour juste dessous. Même horloge et mêmes variables que les trouvailles.
+function ensureOwnerLayers() {
+    if (!window.ownerVectorSource) window.ownerVectorSource = new ol.source.Vector({ wrapX: true });
+    const source = window.ownerVectorSource;
+    if (!ownerLayer) {
+        ownerLayer = new ol.layer.WebGLPoints({
+            source,
+            style: buildPointStyle(pkg.options.point, { owner: true }),
+            variables: pointStyleVariables,
+            zIndex: 1000.6,
+        });
+    }
+    if (!ownerRingChecked) {
+        ownerRingChecked = true;
+        const ringStyle = buildOwnerRingStyle(pkg.options.point);
+        if (ringStyle) {
+            ownerRingLayer = new ol.layer.WebGLPoints({
+                source,
+                style: ringStyle,
+                variables: pointStyleVariables,
+                zIndex: 1000.5,
+            });
+        }
+    }
+    const onMap = map.getLayers().getArray();
+    for (const layer of [ownerRingLayer, ownerLayer]) {
+        if (layer && !onMap.includes(layer)) map.addLayer(layer);
+    }
+    if (!pointAppearListenerKey) {
+        pointAppearListenerKey = map.on('precompose', updatePointAppearClock);
+    }
+    return source;
+}
+
+function displayOwnerPoints(olFeatures, appear = null) {
+    const source = ensureOwnerLayers();
+    setAppearAttributes(olFeatures, olFeatures, true, pkg.options.point, appear);
+    source.addFeatures(olFeatures);
+}
+
+// `flash` : { findFlash, record } pendant l'animation ; absent (départ, saut,
+// repos) : ajouts, retraits et états immédiats, sans flash.
+function syncOwner(isVisible, day, appear = null, flash = null) {
+    if (isLifecyclePage()) return;
+    if (!flash) ownerFlashResolved = null;
+    const entries = pkg.getOwnerEntries?.() || [];
+    const from = ownerSyncedDay;
+    ownerSyncedDay = day;
+    if (!entries.length && !ownerShown.size) return;
+    const source = window.ownerVectorSource;
+    const resolved = flash && day > from ? ownerFlashOptionsByKind() : null;
+    const flashOn = resolved ? (kind) => !!resolved.get(kind) : null;
+
+    const wanted = new Set();
+    const toAdd = [];
+    const flashes = new Map();       // options -> objets carte
+    for (const entry of entries) {
+        if (!isVisible(entry)) continue;
+        const feature = ownerOlFeature(entry);
+        wanted.add(feature);
+        const state = ownerStateAt(entry, day);
+        if (!source || !source.hasFeature(feature)) {
+            // Attribut posé avant l'ajout : le layer le lit à l'insertion.
+            feature.set('pstate', state, true);
+            toAdd.push(feature);
+        } else if (feature.get('pstate') !== state) {
+            feature.set('pstate', state);
+            ownerStateChanges++;
+        }
+        if (resolved) {
+            const kind = ownerFlashBetween(entry, from, day, flashOn);
+            if (kind) {
+                const options = resolved.get(kind);
+                const list = flashes.get(options) || [];
+                list.push(feature);
+                flashes.set(options, list);
+                ownerFlashLog.push(kind);
+            }
+        }
+    }
+    const leaving = [];
+    for (const feature of ownerShown) {
+        if (!wanted.has(feature) && source?.hasFeature(feature)) leaving.push(feature);
+    }
+    if (leaving.length) source.removeFeatures(leaving);
+    ownerShown.clear();
+    for (const feature of wanted) ownerShown.add(feature);
+    if (toAdd.length) displayOwnerPoints(toAdd, appear);
+    for (const [options, list] of flashes) pushFeatureFlashes(list, options, flash.record, false);
+    if (ownerFlashLog.length > 200) ownerFlashLog.splice(0, ownerFlashLog.length - 200);
+}
+
+// Relevé pour les tests : caches posées sur la carte et leur état, types des
+// derniers flashs (200 au plus), changements d'état appliqués, anneau présent.
+export function getOwnerDebugState() {
+    const shownFeatures = window.ownerVectorSource?.getFeatures() || [];
+    return {
+        shown: ownerShown.size,
+        day: ownerSyncedDay,
+        states: Object.fromEntries(shownFeatures.map((f) => [f.get('gc_code'), f.get('pstate')])),
+        flashes: ownerFlashLog.slice(),
+        stateChanges: ownerStateChanges,
+        ring: !!ownerRingLayer && map.getLayers().getArray().includes(ownerRingLayer),
+    };
+}
+
+// Carte à la fin du jour `day` (animation, saut de la chronologie).
+export function syncOwnerToDay(day, appear = null, flash = null) {
+    syncOwner((entry) => ownerVisibleAt(entry, day), day, appear, flash);
+}
+
+// Carte au repos : toutes les caches posées de la sélection, dans leur état
+// à la fin de la période choisie — leur état actuel sans borne de fin
+// déplacée (la fin par défaut est la dernière trouvaille, souvent antérieure
+// au dernier archivage).
+export function syncOwnerStatic() {
+    let endDay = Infinity;
+    if (pkg.dateBoundsAtDefault?.()?.findEnd === false && pkg.metadata?.endDate instanceof Date) {
+        const end = dateToDayNumber(pkg.metadata.endDate);
+        if (Number.isFinite(end)) endDay = end;
+    }
+    syncOwner(() => true, endDay);
+}
+
+// Contenu du popup d'une cache posée (au repos : état affiché sur la carte).
+// Concaténation, pas de gabarit imbriqué (lexer Babel).
+function ownerPopupHtml(feature, props, { gcEsc, linkHref, nameLabel, type, cont, dif, ter, fmtPopupDate, t }) {
+    const appearDate = fmtPopupDate(props.date_find);
+    const appearText = {
+        0: t('Publiée le ${date}', { date: appearDate }),
+        1: t('Posée le ${date}', { date: appearDate }),
+        2: t('Trouvée avant sa publication le ${date}', { date: appearDate }),
+        3: t('Premier log le ${date}', { date: appearDate }),
+    };
+    const stateText = { 0: t('Active'), 1: t('Désactivée'), 2: t('Archivée') };
+    const events = Array.isArray(props.owner_events) ? props.owner_events : [];
+    const shownDay = ownerSyncedDay;
+    let last = null;
+    for (const pair of events) {
+        if (pair?.[1] !== 'maintenance') continue;
+        const date = pkg.parseLocalDate?.(pair[0]);
+        if (date && dateToDayNumber(date) > shownDay) break;
+        last = pair[0];
+    }
+    const maintenanceText = last
+        ? t('Dernière maintenance le ${date}', { date: fmtPopupDate(last) })
+        : t('Aucune maintenance enregistrée');
+    const titleHtml = (linkHref
+        ? '<a href=' + JSON.stringify(linkHref) + ' target="_blank" rel="noopener noreferrer" class="gc-popup-link">' + gcEsc + '</a>'
+        : gcEsc) + ' - ' + nameLabel;
+    return '<div class="gc-popup-title">' + titleHtml + '</div>'
+        + '<div>' + (type || '-') + ', ' + (cont || '-') + ', ' + (dif || '-') + '/' + (ter || '-') + '</div>'
+        + '<div>' + sanitize(t('Ma cache')) + '</div>'
+        + '<div>' + sanitize(appearText[props.appear_source] || appearText[0]) + '</div>'
+        + '<div>' + sanitize(stateText[feature.get('pstate')] || stateText[0]) + '</div>'
+        + '<div>' + sanitize(maintenanceText) + '</div>';
 }
 
 // Caches comptées sans point (locationless masquées) sur un lot de jours :
@@ -2809,8 +3037,10 @@ export function startAnimation(restart=false) {
         if (filteredPointsAtStart.length > 0) {
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
-        // DNF déjà en cours la veille du départ (non résolus à cette date).
+        // DNF déjà en cours la veille du départ (non résolus à cette date),
+        // caches posées déjà apparues (dans leur état de ce jour).
         syncDnfToDay(dateToDayNumber(animationStartDate()) - 1);
+        syncOwnerToDay(dateToDayNumber(animationStartDate()) - 1);
 
         createFlashElements();
         resetCameraFollow();
@@ -3660,8 +3890,10 @@ function startRecordingProcess(session){
         if (filteredPointsAtStart.length > 0) {
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
-        // DNF déjà en cours la veille du départ (non résolus à cette date).
+        // DNF déjà en cours la veille du départ (non résolus à cette date),
+        // caches posées déjà apparues (dans leur état de ce jour).
         syncDnfToDay(dateToDayNumber(animationStartDate()) - 1);
+        syncOwnerToDay(dateToDayNumber(animationStartDate()) - 1);
 
         // resetCameraFollow a déjà été fait avant prepareCameraPacing, plus haut.
         createFlashElements();
@@ -4422,8 +4654,10 @@ function recordAnimationMediaRecorder(){
         if (filteredPointsAtStart.length > 0) {
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
-        // DNF déjà en cours la veille du départ (non résolus à cette date).
+        // DNF déjà en cours la veille du départ (non résolus à cette date),
+        // caches posées déjà apparues (dans leur état de ce jour).
         syncDnfToDay(dateToDayNumber(animationStartDate()) - 1);
+        syncOwnerToDay(dateToDayNumber(animationStartDate()) - 1);
 
         createFlashElements();
         resetCameraFollow();
@@ -5396,6 +5630,10 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // trouvaille les résout — jamais comptés : ce ne sont pas des trouvailles.
     syncDnfToDay(dateToDayNumber(dates[dates.length - 1]), { at: sampleAppearClock() },
         { findFlash: flashOptions, record });
+    // Caches posées : apparition, changements d'état et étapes du poseur du
+    // lot, avec leurs flashs propres — jamais comptées non plus.
+    syncOwnerToDay(dateToDayNumber(dates[dates.length - 1]), { at: sampleAppearClock() },
+        { findFlash: flashOptions, record });
 
     if (flashOptions.mode != "none") {
         // Animation de flash seulement pour les nouvelles features (dates du lot)
@@ -5752,6 +5990,7 @@ function trailGeometryKey(opts) {
     return [
         pkg.pointsByDateRevision,
         pkg.isDnfInTrail?.() ? 'dnf' + pkg.dnfRevision : 'sans-dnf',
+        pkg.isOwnerInTrail?.() ? 'poses' + pkg.ownerRevision : 'sans-poses',
         opts.routing, opts.clusterKm, opts.jumpKm, opts.jumpStyle, opts.curve,
         Number.isFinite(endDay) ? endDay : 'all',
     ].join('|');
@@ -5784,21 +6023,14 @@ function getTrailGeometry(opts) {
     }
     // Un DNF est un déplacement : chaque tentative est une étape du trajet,
     // sauf si l'utilisateur les en a retirées (préférence dnf_in_trail).
+    const visitEnd = Number.isFinite(endDay) ? endDay : Infinity;
     if (pkg.isDnfInTrail?.()) {
-        const visits = dnfVisitsByDay(pkg.getDnfEntries?.() || [], Number.isFinite(endDay) ? endDay : Infinity);
-        if (visits.size) {
-            const byDay = new Map(days.map((entry) => [entry.day, entry]));
-            for (const [day, coords] of visits) {
-                const entry = byDay.get(day);
-                if (entry) {
-                    appendPoints(entry.points, coords);
-                    appendPoints(entry.times, coords.map(() => null));
-                } else {
-                    days.push({ day, points: coords.slice(), times: coords.map(() => null) });
-                }
-            }
-            days.sort((a, b) => a.day - b.day);
-        }
+        mergeTrailVisits(days, dnfVisitsByDay(pkg.getDnfEntries?.() || [], visitEnd));
+    }
+    // Pose, maintenance, désactivation, archivage : le poseur s'est déplacé
+    // jusqu'à sa cache (préférence owner_in_trail).
+    if (pkg.isOwnerInTrail?.()) {
+        mergeTrailVisits(days, ownerVisitsByDay(pkg.getOwnerEntries?.() || [], visitEnd));
     }
     const route = buildTrailRoute(days, opts);
     const path = buildTrailPath(route, {
@@ -5811,6 +6043,25 @@ function getTrailGeometry(opts) {
     dbgMapgl('[TRAIL] Trajet calculé :', route.lon.length, 'étapes,', path.cum.length,
         'sommets en', trailGeometry.buildMs.toFixed(1), 'ms');
     return trailGeometry;
+}
+
+// Ajoute aux jours du trajet des passages hors trouvailles (DNF, caches
+// posées) : Map jour → [[lon, lat], …], sans heure de passage.
+function mergeTrailVisits(days, visits) {
+    if (!visits.size) return;
+    const byDay = new Map(days.map((entry) => [entry.day, entry]));
+    for (const [day, coords] of visits) {
+        const entry = byDay.get(day);
+        if (entry) {
+            appendPoints(entry.points, coords);
+            appendPoints(entry.times, coords.map(() => null));
+        } else {
+            const added = { day, points: coords.slice(), times: coords.map(() => null) };
+            days.push(added);
+            byDay.set(day, added);
+        }
+    }
+    days.sort((a, b) => a.day - b.day);
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement, une fois les points

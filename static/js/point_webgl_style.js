@@ -17,6 +17,7 @@ import {
     EVO_AGE,
     POINT_DISAPPEAR_MS,
 } from './evolution_style.mjs';
+import { ownerPointOptions as normalizeOwnerPoint } from './owner_model.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
 // les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
@@ -32,7 +33,11 @@ const TRANSPARENT = [0, 0, 0, 0];
 // selon le jour courant (voir evolution_style.mjs ; le filtre de visibilité
 // est posé sur le layer). `poses` : en plus, rendu grisé des caches
 // désactivées ou archivées (attribut 'pstate', voir applyPosesState).
-export function buildPointStyle(pointOptions, { evolution = false, poses = false } = {}) {
+// `owner` : couche des caches posées de la carte principale (owner_data.js) —
+// forme et contour propres en vectoriel (pointOptions.owner), même grisé
+// que sur la page Mes poses ; l'anneau des icônes est une couche à part
+// (buildOwnerRingStyle).
+export function buildPointStyle(pointOptions, { evolution = false, poses = false, owner = false } = {}) {
     // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
     const pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
     const borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
@@ -140,7 +145,7 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
 
             // Page Mes poses : même icône dans la rangée grisée de la feuille
             // (désactivées, archivées), quand elle existe.
-            if (poses) {
+            if (poses || owner) {
                 const grey = ['match', ['get', 'cache_type']];
                 typeEntries.forEach(([cacheType, key]) => {
                     const r = sp.map[key];
@@ -170,6 +175,8 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
                 'circle-fill-color': fillColor || '#FF0000'
             };
         }
+    } else if (owner) {
+        pointStyle = ownerShapeStyle(pointOptions, pointSize, fillColor || '#FF0000', borderColor, borderSizeValue, borderWidth);
     } else {
         if (pointOptions.shape == "circle") {
             // Si taille bordure = 0 OU mode = none, pas de bordure du tout
@@ -223,6 +230,8 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
         if (poses) applyPosesColors(pointStyle, greyIconOffset);
         applyEvolutionTimeline(pointStyle, pointOptions);
         if (poses) applyPosesOpacity(pointStyle);
+    } else if (owner) {
+        applyMainPageTimeline(pointStyle, pointOptions, greyIconOffset);
     } else {
         // Avant l'apparition et la persistance, qui enveloppent ces valeurs :
         // les DNF en profitent comme les trouvailles.
@@ -238,6 +247,89 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
     }
 
     return pointStyle;
+}
+
+// Grisé (pstate) puis apparition, persistance et effacement de la carte
+// principale, dans le même ordre que pour les trouvailles.
+// Grisé plus soutenu que sur la page Mes poses : quelques caches posées
+// parmi les trouvailles doivent rester repérables une fois archivées.
+const OWNER_GREY = Object.freeze({
+    disabledGrey: '#9e9e9e', disabledMix: 0.6,
+    archivedGrey: '#8a8a8a', archivedMix: 0.8, archivedOpacity: 0.85,
+});
+
+function applyMainPageTimeline(pointStyle, pointOptions, greyIconOffset) {
+    applyPosesColors(pointStyle, greyIconOffset, OWNER_GREY);
+    if (pointOptions.appearAnimation) applyAppearAnimation(pointStyle);
+    if (Number(pointOptions.recentGlowDays) > 0) applyRecentGlow(pointStyle);
+    applyPosesOpacity(pointStyle, OWNER_GREY.archivedOpacity);
+    applyDnfVanish(pointStyle);
+}
+
+// --- Caches posées (carte principale, owner_data.js) ------------------------
+//
+// pointOptions.owner = { shape, borderColor, borderWidth } (thème,
+// points.owner_*, normalisé par owner_model.mjs). Une forme de même rayon
+// paraît plus petite qu'un cercle : chaque forme a son facteur, pour un
+// encombrement voisin.
+const OWNER_SHAPE_GEOMETRY = {
+    triangle: { points: 3, radius: 1.4, angle: 0 },
+    square: { points: 4, radius: 1.3, angle: Math.PI / 4 },
+    diamond: { points: 4, radius: 1.5, angle: 0 },
+    star: { points: 5, radius: 1.9, radius2: 0.85, angle: 0 },
+};
+
+function ownerPointOptions(pointOptions) {
+    return normalizeOwnerPoint(pointOptions?.owner);
+}
+
+function ownerShapeStyle(pointOptions, pointSize, fillColor, themeBorderColor, themeBorderSize, themeBorderWidth) {
+    const own = ownerPointOptions(pointOptions);
+    // « Comme les trouvailles » : forme du thème ; le contour reste le sien
+    // s'il en a un, celui du thème sinon.
+    const shape = own.shape === 'same' ? (pointOptions.shape === 'triangle' ? 'triangle' : 'circle') : own.shape;
+    let stroke = null;
+    if (own.borderWidth > 0) {
+        stroke = { color: own.borderColor, width: own.borderWidth };
+    } else if (own.shape === 'same' && themeBorderSize > 0 && pointOptions.border?.mode !== 'none') {
+        stroke = { color: themeBorderColor || '#000000', width: themeBorderWidth };
+    }
+    if (shape === 'circle') {
+        const style = { 'circle-radius': pointSize, 'circle-fill-color': fillColor, 'circle-rotate-with-view': false };
+        if (stroke) Object.assign(style, { 'circle-stroke-color': stroke.color, 'circle-stroke-width': stroke.width });
+        return style;
+    }
+    const geom = OWNER_SHAPE_GEOMETRY[shape];
+    // La forme « same » d'un thème triangle garde ses proportions.
+    const radiusFactor = own.shape === 'same' ? 1 : geom.radius;
+    const style = {
+        'shape-points': geom.points,
+        'shape-radius': pointSize * radiusFactor,
+        'shape-angle': geom.angle,
+        'shape-fill-color': fillColor,
+        'shape-rotate-with-view': false,
+    };
+    if (geom.radius2) style['shape-radius2'] = pointSize * geom.radius2;
+    if (stroke) Object.assign(style, { 'shape-stroke-color': stroke.color, 'shape-stroke-width': stroke.width });
+    return style;
+}
+
+// Anneau des caches posées en mode icônes : un disque à la couleur du
+// contour, un peu plus grand que l'icône, dessiné dessous par sa propre
+// couche (une icône WebGL n'a pas de contour). null : pas d'anneau (mode
+// vectoriel, épaisseur nulle).
+export function buildOwnerRingStyle(pointOptions) {
+    if (pointOptions?.mode !== 'icone' || !pointOptions.sprite?.map) return null;
+    const own = ownerPointOptions(pointOptions);
+    if (own.borderWidth <= 0) return null;
+    const iconPx = Math.max(1, parseInt(pointOptions.iconSize) || 24);
+    const style = {
+        'circle-radius': iconPx / 2 + own.borderWidth,
+        'circle-fill-color': own.borderColor,
+        'circle-rotate-with-view': false,
+    };
+    applyMainPageTimeline(style, pointOptions, null);
+    return style;
 }
 
 // Points DNF (source_kind 'dnf', docs/logs-geocaching.md) : noirs en
@@ -304,15 +396,20 @@ function mixColor(color, grey, amount) {
     return ['interpolate', ['linear'], amount, 0, color, 1, grey];
 }
 
-function applyPosesColors(pointStyle, greyIconOffset) {
+const POSES_GREY = Object.freeze({
+    disabledGrey: POSES_DISABLED_GREY, disabledMix: POSES_DISABLED_MIX,
+    archivedGrey: POSES_ARCHIVED_GREY, archivedMix: POSES_ARCHIVED_MIX,
+});
+
+function applyPosesColors(pointStyle, greyIconOffset, grey = POSES_GREY) {
     for (const key of POSES_COLOR_KEYS) {
         if (!(key in pointStyle)) continue;
         const color = pointStyle[key];
         // Couleur transparente (centre ou bordure « aucune ») : rien à griser.
         if (Array.isArray(color) && color.length === 4 && color.every((v) => v === 0)) continue;
         pointStyle[key] = ['case',
-            IS_ARCHIVED, mixColor(color, POSES_ARCHIVED_GREY, POSES_ARCHIVED_MIX),
-            IS_DISABLED, mixColor(color, POSES_DISABLED_GREY, POSES_DISABLED_MIX),
+            IS_ARCHIVED, mixColor(color, grey.archivedGrey, grey.archivedMix),
+            IS_DISABLED, mixColor(color, grey.disabledGrey, grey.disabledMix),
             color];
     }
     if (greyIconOffset && 'icon-offset' in pointStyle) {
@@ -321,10 +418,10 @@ function applyPosesColors(pointStyle, greyIconOffset) {
 }
 
 // Après applyEvolutionTimeline, qui pose l'opacité d'apparition/disparition.
-function applyPosesOpacity(pointStyle) {
+function applyPosesOpacity(pointStyle, archivedOpacity = POSES_ARCHIVED_OPACITY) {
     const opacityKey = opacityKeyOf(pointStyle);
     if (!opacityKey) return;
-    const factor = ['case', IS_ARCHIVED, POSES_ARCHIVED_OPACITY, 1];
+    const factor = ['case', IS_ARCHIVED, archivedOpacity, 1];
     pointStyle[opacityKey] = opacityKey in pointStyle ? ['*', pointStyle[opacityKey], factor] : factor;
 }
 
@@ -334,7 +431,7 @@ const GLOW_COLOR_KEYS = ['circle-fill-color', 'shape-fill-color'];
 
 // Propriétés de taille (multipliées par l'échelle d'apparition) et d'opacité,
 // selon le type de symbole du style.
-const APPEAR_SIZE_KEYS = ['circle-radius', 'circle-stroke-width', 'shape-radius', 'shape-stroke-width', 'icon-scale'];
+const APPEAR_SIZE_KEYS = ['circle-radius', 'circle-stroke-width', 'shape-radius', 'shape-radius2', 'shape-stroke-width', 'icon-scale'];
 const APPEAR_OPACITY_KEY = { circle: 'circle-opacity', shape: 'shape-opacity', icon: 'icon-opacity' };
 
 // Ajoute l'apparition animée (voir point_appear.mjs) à un style de points. Les

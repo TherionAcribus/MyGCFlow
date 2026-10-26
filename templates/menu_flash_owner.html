@@ -1,0 +1,13 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
+{% from '_event_flash_rows.html' import event_flash_rows with context %}
+{# Flashs des étapes du poseur sur la carte principale (« Mes caches posées ») :
+   réglage du thème, flash.owner (table event_flash.OWNER_FLASH_KINDS, ordre =
+   priorité). Masqué tant que les logs ne décrivent aucune cache posée
+   (owner_data.js). Piloté par ui.js (initEventFlashControls). #}
+<div id="flashOwner" hidden>
+    <h5 class="gc-section-title">
+        <i class="ti ti-bolt text-muted me-1"></i>{{ _("Flashs de mes caches posées") }}{{ profile_scope_badge() }}
+    </h5>
+    <p class="form-hint text-muted">{{ _("Joués pendant l'animation quand vous posez une cache ou passez l'entretenir (affichage des caches posées activé dans l'onglet Données). Un flash par cache et par jour : l'étape la plus marquante, du haut de la liste vers le bas, l'emporte.") }}</p>
+    {{ event_flash_rows('owner', owner_flash_kinds, event_flash_modes) }}
+</div>

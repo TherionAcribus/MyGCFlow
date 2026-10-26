@@ -29,6 +29,11 @@
             "color": "#000000",
             "size": 10,
             "mode": "fix"
+        },
+        "owner": {
+            "shape": "star",
+            "borderColor": "#ffc107",
+            "borderWidth": 2
         }
     },
     "animation":{

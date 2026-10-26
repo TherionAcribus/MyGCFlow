@@ -126,6 +126,15 @@ Autres repères :
   suivant et gardait le bandeau « export en attente » affiché après
   l'import. `blueprints/labs.py` a le même motif `%TEMP%` pour ses jetons
   (non remontés dans un statut, donc sans symptôme e2e).
+- Même famille que les DNF : `owner_display` / `owner_in_trail` (caches
+  posées sur la carte principale) sont des préférences globales à remettre
+  (`false` / `true`) en sortant, et les logs à vider. Couche propre, source
+  `window.ownerVectorSource` (jamais dans `pointsByDate`) ; relevé
+  `getOwnerDebugState()` (états `pstate`, flashs, anneau des icônes). La case
+  de l'onglet Données n'existe qu'avec des caches posées : importer les logs
+  puis `page.reload()` (ou `reloadOwnerData()`) — exemple dans
+  `owner-display.spec.mjs`, dont la fixture `my-finds-poses.gpx` cale la plage
+  d'animation sur la vie des caches de `logs-poses.json`.
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

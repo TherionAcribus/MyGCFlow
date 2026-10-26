@@ -155,6 +155,46 @@
         </div>
     </div>
 
+    {% if mode == 'main' %}
+    <!-- Caches posées (owner_data.js) : forme et contour propres, pour les
+         distinguer des trouvailles. Masqué tant que les logs ne décrivent
+         aucune cache posée. Piloté par ui.js (initOwnerPointControls). -->
+    <div id="pointsOwner" class="card mt-3" hidden>
+        <div class="card-header">
+            <h6 class="card-title m-0">
+                <i class="ti ti-star text-muted me-1"></i>{{ _("Mes caches posées") }}
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="selectOwnerShape">{{ _("Forme (mode vectoriel)") }}</label>
+                    <select id="selectOwnerShape" class="form-select" aria-describedby="helpOwnerPoint">
+                        <option value="star">{{ _("Étoile") }}</option>
+                        <option value="square">{{ _("Carré") }}</option>
+                        <option value="diamond">{{ _("Losange") }}</option>
+                        <option value="triangle">{{ _("Triangle") }}</option>
+                        <option value="circle">{{ _("Cercle") }}</option>
+                        <option value="same">{{ _("Comme les trouvailles") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="inputOwnerBorderWidth">{{ _("Épaisseur du contour (0 = aucun)") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" id="inputOwnerBorderWidth" min="0" max="6" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="ownerBorderColor">{{ _("Couleur du contour") }}</label>
+                    <input type="color" class="form-control form-control-color" id="ownerBorderColor" value="#ffc107">
+                </div>
+            </div>
+            <small id="helpOwnerPoint" class="form-hint text-muted">{{ _("Le centre garde les couleurs des trouvailles. En mode icônes, l'icône du type est entourée d'un anneau à la couleur du contour. Désactivées et archivées sont grisées.") }}</small>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Sous-menu Icône -->
     <div id="iconeOptions" class="point-options" style="display: none;">
         <div class="card">

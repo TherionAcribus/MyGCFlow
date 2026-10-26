@@ -716,8 +716,10 @@ function buildPointsByDateIndex(features = []) {
     } catch (e) {
         console.warn('buildPointsByDateIndex error:', e);
     } finally {
-        // Points DNF : refiltrés avec la même sélection, hors de l'index.
+        // Points DNF et caches posées : refiltrés avec la même sélection,
+        // hors de l'index.
         pkg.rebuildDnfIndex?.();
+        pkg.rebuildOwnerIndex?.();
         // Panneaux de stats : leurs totaux, mémoïsés sur la révision, se
         // recalculent au prochain dessin — encore faut-il en demander un.
         pkg.refreshStatsPanels?.();
@@ -1246,6 +1248,7 @@ function uploadBdd (file, uploadToast){
             // et résout des DNF : statut de « Mes logs » et points DNF relus.
             pkg.refreshLogsStatus?.();
             pkg.reloadDnfData?.();
+            pkg.reloadOwnerData?.();
 
             // L'état vide reste affiché tant que totalCaches n'est pas connu :
             // garder l'indicateur (et les contrôles verrouillés, endImport est

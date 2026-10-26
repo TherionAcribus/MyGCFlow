@@ -10,6 +10,10 @@
 // marquant l'emporte (ordre de EVENT_FLASH_KINDS), et sa taille grandit avec
 // le nombre de logs de la cache dans le lot (flashScale).
 //
+// Seconde table, mêmes règles : les étapes du poseur sur ses propres caches,
+// sur la carte principale (« Mes caches posées », `flash.owner`, voir
+// owner_model.mjs) — pose, maintenance, désactivation, réactivation, archivage.
+//
 // Module pur (aucun DOM) : testé par node --test.
 
 // Ordre = priorité décroissante.
@@ -50,6 +54,29 @@ export const EVENT_FLASH_DEFAULTS = Object.freeze({
     note: kindDefaults('none', 16, '#90a4ae'),
     reviewer: kindDefaults('none', 16, '#7e57c2'),
 });
+
+// Étapes du poseur (carte principale), ordre = priorité décroissante.
+export const OWNER_FLASH_KINDS = Object.freeze(['archive', 'disable', 'enable', 'place', 'maintenance']);
+
+export const OWNER_FLASH_DEFAULTS = Object.freeze({
+    archive: kindDefaults('implode', 40, '#616161'),
+    disable: kindDefaults('implode', 30, '#9e9e9e'),
+    enable: kindDefaults('echo', 30, '#66bb6a'),
+    place: kindDefaults('star', 42, '#ffc107'),
+    maintenance: kindDefaults('sparkle', 30, '#43a047'),
+});
+
+// Étape servie par owner_geojson.py → type de flash : un désarchivage joue
+// la réactivation.
+export function ownerFlashKindOf(eventKind) {
+    if (eventKind === 'unarchive') return 'enable';
+    return OWNER_FLASH_KINDS.includes(eventKind) ? eventKind : null;
+}
+
+const OWNER_RANK = new Map(OWNER_FLASH_KINDS.map((kind, i) => [kind, i]));
+export function ownerFlashPriority(kind) {
+    return OWNER_RANK.has(kind) ? OWNER_RANK.get(kind) : Infinity;
+}
 
 // Type de log (poses_dataset.POSES_LOG_KINDS) → type de flash. Une trouvaille
 // avec point favori joue le flash du favori.
@@ -102,6 +129,14 @@ export function normalizeEventFlashes(raw) {
     return out;
 }
 
+// Bloc `flash.owner` d'un thème, mêmes règles.
+export function normalizeOwnerFlashes(raw) {
+    const src = raw && typeof raw === 'object' ? raw : {};
+    const out = {};
+    for (const kind of OWNER_FLASH_KINDS) out[kind] = normalizeOne(src[kind], OWNER_FLASH_DEFAULTS[kind]);
+    return out;
+}
+
 // Même forme que pkg.hexToRgb (flash_styles.js lit rgb.r / rgb.g / rgb.b).
 function hexToRgb(hex) {
     if (!HEX_RE.test(hex || '')) return null;
@@ -116,7 +151,18 @@ function hexToRgb(hex) {
 // une fois par animation (l'identité sert de clé aux regroupements).
 export function resolveEventFlash(kind, flash) {
     const events = flash?.events && typeof flash.events === 'object' ? flash.events : {};
-    const opts = normalizeOne(events[kind], EVENT_FLASH_DEFAULTS[kind] || EVENT_FLASH_DEFAULTS.note);
+    return resolveOptions(normalizeOne(events[kind], EVENT_FLASH_DEFAULTS[kind] || EVENT_FLASH_DEFAULTS.note), flash);
+}
+
+// Même chose pour une étape du poseur (`flash.owner`).
+export function resolveOwnerFlash(kind, flash) {
+    const defaults = OWNER_FLASH_DEFAULTS[kind];
+    if (!defaults) return null;
+    const owner = flash?.owner && typeof flash.owner === 'object' ? flash.owner : {};
+    return resolveOptions(normalizeOne(owner[kind], defaults), flash);
+}
+
+function resolveOptions(opts, flash) {
     if (opts.mode === 'none') return null;
     if (opts.mode === 'same') {
         if (!flash || !flash.mode || flash.mode === 'none') return null;
