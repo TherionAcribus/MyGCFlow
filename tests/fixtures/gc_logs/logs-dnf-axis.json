@@ -1,0 +1,41 @@
+{
+  "format": "mygcflow-logs",
+  "schema_version": 1,
+  "exported_at": "2026-10-26T10:00:00Z",
+  "generator": { "name": "fixture-e2e" },
+  "account": { "user_id": 1234567, "username": "Joueur_Fictif" },
+  "caches": [
+    {
+      "gc_code": "GC9MARK",
+      "name": "Deux échecs dans la fenêtre des trouvailles",
+      "type": "Traditional Cache",
+      "latitude": 48.5,
+      "longitude": 6.5,
+      "difficulty": 3,
+      "terrain": 2.5,
+      "container": "Regular",
+      "owner": { "id": null, "name": "Autre_Poseur" },
+      "placed_date": "2011-01-15",
+      "status": "active",
+      "favorite_points": 12
+    }
+  ],
+  "logs": [
+    {
+      "log_id": 900000011,
+      "gc_code": "GC9MARK",
+      "type_id": 3,
+      "type_label": "Didn't find it",
+      "date": "2012-02-10",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }
+    },
+    {
+      "log_id": 900000012,
+      "gc_code": "GC9MARK",
+      "type_id": 3,
+      "type_label": "Didn't find it",
+      "date": "2012-03-15",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }
+    }
+  ]
+}

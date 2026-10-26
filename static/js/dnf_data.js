@@ -113,6 +113,8 @@ function applyChange() {
     pkg.renderStatsTab?.();
     // Légende de la carte : la ligne DNF suit l'affichage effectif.
     pkg.syncMapLegend?.();
+    // Chronologie : les repères des jours de DNF suivent l'affichage.
+    pkg.refreshTimelineBar?.();
 }
 
 // (Re)charge les DNF du serveur, affichés ou non : les panneaux Stats les

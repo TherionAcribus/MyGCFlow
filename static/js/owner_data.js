@@ -106,6 +106,8 @@ function applyChange() {
     pkg.renderStatsTab?.();
     // Légende de la carte : la ligne « cache posée » suit l'affichage.
     pkg.syncMapLegend?.();
+    // Chronologie : les repères des étapes de poseur suivent l'affichage.
+    pkg.refreshTimelineBar?.();
 }
 
 // (Re)charge les caches posées du serveur. Toujours lues sur la page

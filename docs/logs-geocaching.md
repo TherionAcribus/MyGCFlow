@@ -574,6 +574,13 @@ célébrations et les effacements (en cours et cumulés).
 (`dnf_dates`) est une étape du trajet, jusqu'à la date de fin de l'animation
 (`getTrailGeometry`, clé de mémoïsation `dnfRevision`).
 
+**Chronologie.** Chaque jour de DNF porte un repère dans la barre de
+chronologie (rond foncé, kind `dnf` dans `getTimelineBarSnapshot().marks`,
+bulle « DNF : code » / « DNF n°x : code » pour les tentatives répétées) —
+seulement quand la couche est affichée, comme les lignes de la légende, et
+seulement dans l'axe (étendue des trouvailles + marge : un DNF au-delà de
+la plage n'a pas de repère tant que la plage n'est pas étendue).
+
 **Préférences globales** (onglet Données, panneau des filtres, « Mes DNF »)
 : `dnf_display` (masqués par défaut), `dnf_in_trail` (inclus par défaut) et
 `dnf_same_day_display` (opt-in, désactivée : pendant l'animation, un DNF
@@ -650,6 +657,12 @@ groupe `data-event-flash-group`).
 
 **Trait de déplacement** : la pose et chaque jour d'étape du poseur sont des
 déplacements (`ownerVisitsByDay`, clé de mémoïsation `ownerRevision`).
+
+**Chronologie** : chaque étape porte une étoile dans la barre (pleine : la
+pose ; creuse : maintenance, désactivation, réactivation, archivage — kinds
+`owner-place` / `owner-event` dans `getTimelineBarSnapshot().marks`, à la
+couleur de contour du thème comme la pastille de la légende). Là aussi,
+seulement quand la couche est affichée et dans l'axe.
 
 **Préférences globales** (onglet Données, « Mes caches posées », visible
 seulement avec des caches posées) : `owner_display` (masquées par défaut) et

@@ -197,6 +197,14 @@ Autres repères :
   caméra survit à un saut (piste recalée) : `getCameraFollowSnapshot()`
   compare la vue à la pose attendue — il faut des caches éloignées (GPX
   généré), sinon la piste n'a aucun trajet et `pose` vaut null.
+  Repères des familles hors trouvailles (kinds `dnf`, `owner-place`,
+  `owner-event` dans `getTimelineBarSnapshot().marks`,
+  `sideEventMarks`) : posés seulement quand la couche est affichée
+  (`getDnfEntries`/`getOwnerEntries` sont vides sinon), et seulement
+  dans l'axe — l'étendue étant celle des trouvailles, un DNF ou une pose
+  hors de leur fenêtre n'a pas de repère tant que la plage n'est pas
+  étendue (point 2e). Pour tester, importer des événements DANS la
+  fenêtre — fixture `logs-dnf-axis.json`.
 - Page Mes poses (`/poses`, docs/mode-poses.md) : ses données sont les logs
   importés — un spec appelle `POST /api/logs/clear` en entrée ET en sortie
   (les specs `gc-logs`, `dnf-display` partagent la collection). Préférences à

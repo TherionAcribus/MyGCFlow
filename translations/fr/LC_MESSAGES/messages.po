@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-26 16:24+0100\n"
+"POT-Creation-Date: 2026-10-26 16:33+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -1605,13 +1605,13 @@ msgid "Erreur lors du chargement du fichier"
 msgstr "Erreur lors du chargement du fichier"
 
 #: static/js/bdd.js:1626 static/js/bdd.js:1634 static/js/bdd.js:1786
-#: static/js/bdd.js:1794 static/js/bdd.js:2038 static/js/dnf_data.js:183
+#: static/js/bdd.js:1794 static/js/bdd.js:2038 static/js/dnf_data.js:186
 #: static/js/evolution_data.js:252 static/js/evolution_data.js:356
 #: static/js/evolution_data.js:956 static/js/evolution_data.js:960
 #: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
 #: static/js/evolution_data.js:1356 static/js/gc_logs.js:705
 #: static/js/labs.js:2001 static/js/labs.js:2044 static/js/labs.js:2084
-#: static/js/notifications.js:421 static/js/owner_data.js:177
+#: static/js/notifications.js:421 static/js/owner_data.js:180
 #: static/js/poses_data.js:187 static/js/recording_perf.js:187
 #: static/js/ui.js:2212
 msgid "Erreur"
@@ -1702,31 +1702,31 @@ msgstr "Erreur lors de l'affichage des points sur la carte"
 msgid "Erreur d'affichage"
 msgstr "Erreur d'affichage"
 
-#: static/js/dnf_data.js:183
+#: static/js/dnf_data.js:186
 #, python-brace-format
 msgid "Impossible de charger vos DNF : ${message}"
 msgstr "Impossible de charger vos DNF : ${message}"
 
-#: static/js/dnf_data.js:196
+#: static/js/dnf_data.js:199
 msgid "Aucun DNF importé : voir la carte « Mes logs »."
 msgstr "Aucun DNF importé : voir la carte « Mes logs »."
 
-#: static/js/dnf_data.js:199
+#: static/js/dnf_data.js:202
 #, python-brace-format
 msgid "${n} DNF dans la sélection"
 msgstr "${n} DNF dans la sélection"
 
-#: static/js/dnf_data.js:204 static/js/gc_logs.js:164 static/js/gc_logs.js:271
-#: static/js/gc_logs.js:607 static/js/owner_data.js:207
+#: static/js/dnf_data.js:207 static/js/gc_logs.js:164 static/js/gc_logs.js:271
+#: static/js/gc_logs.js:607 static/js/owner_data.js:210
 msgid "cache sans position connue"
 msgstr "cache sans position connue"
 
-#: static/js/dnf_data.js:204 static/js/gc_logs.js:164 static/js/gc_logs.js:271
-#: static/js/gc_logs.js:607 static/js/owner_data.js:207
+#: static/js/dnf_data.js:207 static/js/gc_logs.js:164 static/js/gc_logs.js:271
+#: static/js/gc_logs.js:607 static/js/owner_data.js:210
 msgid "caches sans position connue"
 msgstr "caches sans position connue"
 
-#: static/js/dnf_data.js:249 static/js/dnf_data.js:250
+#: static/js/dnf_data.js:252 static/js/dnf_data.js:253
 msgid "Actif quand les DNF sont affichés"
 msgstr "Actif quand les DNF sont affichés"
 
@@ -3915,28 +3915,28 @@ msgstr "Plus tard"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "Vous ne serez plus averti pour cette version."
 
-#: static/js/owner_data.js:177 static/js/poses_data.js:187
+#: static/js/owner_data.js:180 static/js/poses_data.js:187
 #, python-brace-format
 msgid "Impossible de charger vos caches posées : ${message}"
 msgstr "Impossible de charger vos caches posées : ${message}"
 
-#: static/js/owner_data.js:202
+#: static/js/owner_data.js:205
 msgid "cache posée dans la sélection"
 msgstr "cache posée dans la sélection"
 
-#: static/js/owner_data.js:202
+#: static/js/owner_data.js:205
 msgid "caches posées dans la sélection"
 msgstr "caches posées dans la sélection"
 
-#: static/js/owner_data.js:210
+#: static/js/owner_data.js:213
 msgid "cache sans date"
 msgstr "cache sans date"
 
-#: static/js/owner_data.js:210
+#: static/js/owner_data.js:213
 msgid "caches sans date"
 msgstr "caches sans date"
 
-#: static/js/owner_data.js:235
+#: static/js/owner_data.js:238
 msgid "Actif quand les caches posées sont affichées"
 msgstr "Actif quand les caches posées sont affichées"
 
@@ -5509,160 +5509,200 @@ msgstr ""
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 
-#: static/js/timeline_bar.js:323
+#: static/js/timeline_bar.js:329
 #, python-brace-format
 msgid "${count}ᵉ trouvaille reçue"
 msgstr "${count}ᵉ trouvaille reçue"
 
-#: static/js/timeline_bar.js:324
+#: static/js/timeline_bar.js:330
 #, python-brace-format
 msgid "${count}ᵉ trouvaille"
 msgstr "${count}ᵉ trouvaille"
 
-#: static/js/timeline_bar.js:344
+#: static/js/timeline_bar.js:350
 #, python-brace-format
 msgid "Première trouvaille : ${code}"
 msgstr "Première trouvaille : ${code}"
 
-#: static/js/timeline_bar.js:345
+#: static/js/timeline_bar.js:351
 #, python-brace-format
 msgid "${count}ᵉ trouvaille : ${code}"
 msgstr "${count}ᵉ trouvaille : ${code}"
 
-#: static/js/timeline_bar.js:358
+#: static/js/timeline_bar.js:379
 #, python-brace-format
 msgid "Disparition : ${name}"
 msgstr "Disparition : ${name}"
 
-#: static/js/timeline_bar.js:359
+#: static/js/timeline_bar.js:380
 #, python-brace-format
 msgid "Apparition : ${name}"
 msgstr "Apparition : ${name}"
 
-#: static/js/timeline_bar.js:786
+#: static/js/timeline_bar.js:393
+#, python-brace-format
+msgid "Cache archivée : ${code}"
+msgstr "Cache archivée : ${code}"
+
+#: static/js/timeline_bar.js:394
+#, python-brace-format
+msgid "Cache désactivée : ${code}"
+msgstr "Cache désactivée : ${code}"
+
+#: static/js/timeline_bar.js:395
+#, python-brace-format
+msgid "Cache réactivée : ${code}"
+msgstr "Cache réactivée : ${code}"
+
+#: static/js/timeline_bar.js:396
+#, python-brace-format
+msgid "Maintenance : ${code}"
+msgstr "Maintenance : ${code}"
+
+#: static/js/timeline_bar.js:397
+#, python-brace-format
+msgid "Étape du poseur : ${code}"
+msgstr "Étape du poseur : ${code}"
+
+#: static/js/timeline_bar.js:420
+#, python-brace-format
+msgid "DNF : ${code}"
+msgstr "DNF : ${code}"
+
+#: static/js/timeline_bar.js:421
+#, python-brace-format
+msgid "DNF n°${count} : ${code}"
+msgstr "DNF n°${count} : ${code}"
+
+#: static/js/timeline_bar.js:426
+#, python-brace-format
+msgid "Cache posée : ${code}"
+msgstr "Cache posée : ${code}"
+
+#: static/js/timeline_bar.js:895
 #, python-brace-format
 msgid "${count} actives"
 msgstr "${count} actives"
 
-#: static/js/timeline_bar.js:786
+#: static/js/timeline_bar.js:895
 #, python-brace-format
 msgid "${count} active"
 msgstr "${count} active"
 
-#: static/js/timeline_bar.js:790
+#: static/js/timeline_bar.js:899
 #, python-brace-format
 msgid "${count} trouvailles reçues"
 msgstr "${count} trouvailles reçues"
 
-#: static/js/timeline_bar.js:791
+#: static/js/timeline_bar.js:900
 #, python-brace-format
 msgid "${count} trouvaille reçue"
 msgstr "${count} trouvaille reçue"
 
-#: static/js/timeline_bar.js:793
+#: static/js/timeline_bar.js:902
 #, python-brace-format
 msgid "${count} caches"
 msgstr "${count} caches"
 
-#: static/js/timeline_bar.js:793
+#: static/js/timeline_bar.js:902
 #, python-brace-format
 msgid "${count} cache"
 msgstr "${count} cache"
 
-#: static/js/timeline_bar.js:804
+#: static/js/timeline_bar.js:913
 #, python-brace-format
 msgid "${count} poses"
 msgstr "${count} poses"
 
-#: static/js/timeline_bar.js:804
+#: static/js/timeline_bar.js:913
 #, python-brace-format
 msgid "${count} pose"
 msgstr "${count} pose"
 
-#: static/js/timeline_bar.js:806
+#: static/js/timeline_bar.js:915
 #, python-brace-format
 msgid "${count} archivages"
 msgstr "${count} archivages"
 
-#: static/js/timeline_bar.js:807
+#: static/js/timeline_bar.js:916
 #, python-brace-format
 msgid "${count} archivage"
 msgstr "${count} archivage"
 
-#: static/js/timeline_bar.js:813 static/js/timeline_bar.js:819
+#: static/js/timeline_bar.js:922 static/js/timeline_bar.js:928
 #, python-brace-format
 msgid "${count} trouvailles"
 msgstr "${count} trouvailles"
 
-#: static/js/timeline_bar.js:813 static/js/timeline_bar.js:819
+#: static/js/timeline_bar.js:922 static/js/timeline_bar.js:928
 #, python-brace-format
 msgid "${count} trouvaille"
 msgstr "${count} trouvaille"
 
-#: static/js/timeline_bar.js:814
+#: static/js/timeline_bar.js:923
 #, python-brace-format
 msgid "${count} autres logs"
 msgstr "${count} autres logs"
 
-#: static/js/timeline_bar.js:814
+#: static/js/timeline_bar.js:923
 #, python-brace-format
 msgid "${count} autre log"
 msgstr "${count} autre log"
 
-#: static/js/timeline_bar.js:817
+#: static/js/timeline_bar.js:926
 msgid "aucune trouvaille"
 msgstr "aucune trouvaille"
 
-#: static/js/timeline_bar.js:867
+#: static/js/timeline_bar.js:976
 msgid "Aucune donnée à parcourir"
 msgstr "Aucune donnée à parcourir"
 
-#: static/js/timeline_bar.js:905
+#: static/js/timeline_bar.js:1014
 #, python-brace-format
 msgid "Début : ${date}"
 msgstr "Début : ${date}"
 
-#: static/js/timeline_bar.js:906
+#: static/js/timeline_bar.js:1015
 #, python-brace-format
 msgid "Fin : ${date}"
 msgstr "Fin : ${date}"
 
-#: static/js/timeline_bar.js:908
+#: static/js/timeline_bar.js:1017
 #, python-brace-format
 msgid "${date} — hors de l'animation"
 msgstr "${date} — hors de l'animation"
 
-#: static/js/timeline_bar.js:926
+#: static/js/timeline_bar.js:1035
 #, python-brace-format
 msgid "Ce jour : ${text}"
 msgstr "Ce jour : ${text}"
 
-#: static/js/timeline_bar.js:929
+#: static/js/timeline_bar.js:1038
 #, python-brace-format
 msgid "Du ${from} au ${to} : ${text}"
 msgstr "Du ${from} au ${to} : ${text}"
 
-#: static/js/timeline_bar.js:933
+#: static/js/timeline_bar.js:1042
 #, python-brace-format
 msgid "Total : ${text}"
 msgstr "Total : ${text}"
 
-#: static/js/timeline_bar.js:935
+#: static/js/timeline_bar.js:1044
 #, python-brace-format
 msgid "Vidéo : ${time}"
 msgstr "Vidéo : ${time}"
 
-#: static/js/timeline_bar.js:1582
+#: static/js/timeline_bar.js:1691
 #, python-brace-format
 msgid "Début de l'animation ici (${date})"
 msgstr "Début de l'animation ici (${date})"
 
-#: static/js/timeline_bar.js:1584
+#: static/js/timeline_bar.js:1693
 #, python-brace-format
 msgid "Fin de l'animation ici (${date})"
 msgstr "Fin de l'animation ici (${date})"
 
-#: static/js/timeline_bar.js:1598
+#: static/js/timeline_bar.js:1707
 msgid "Plage complète"
 msgstr "Plage complète"
 

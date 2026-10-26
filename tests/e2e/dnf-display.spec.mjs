@@ -20,6 +20,9 @@ const CONTRACT = path.join(FIXTURES, 'logs-contract-valid.json');
 const REPEAT = path.join(FIXTURES, 'logs-dnf-repeat.json');
 // GC8DAYX : DNF puis trouvaille le même jour (10/09/2021).
 const SAMEDAY = path.join(FIXTURES, 'logs-dnf-same-day.json');
+// GC9MARK : deux DNF DANS la fenêtre des trouvailles (10/02 et 15/03/2012) —
+// l'axe de la chronologie ne couvre que l'étendue des trouvailles + marge.
+const AXIS = path.join(FIXTURES, 'logs-dnf-axis.json');
 
 
 async function openWithData(page, logsFile = CONTRACT) {
@@ -392,6 +395,25 @@ test('la légende optionnelle suit les familles hors trouvailles affichées', as
 });
 
 
+// Barre de chronologie : un repère par jour de DNF, seulement quand la
+// couche est affichée (getTimelineBarSnapshot().marks, timeline_bar.js).
+test('la chronologie marque les jours de DNF affichés', async ({ page }) => {
+  await openWithData(page, AXIS);
+  const dnfMarks = async () => {
+    const snap = await page.evaluate(async () =>
+      (await import('/static/js/index.js')).getTimelineBarSnapshot());
+    return snap.marks.filter((m) => m.kind === 'dnf').map((m) => m.label);
+  };
+  // Couche masquée : aucun repère DNF.
+  expect(await dnfMarks()).toEqual([]);
+
+  await page.locator('#checkDnfDisplay').check();
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC9MARK']);
+  // Un repère par tentative : la seconde est numérotée.
+  await expect.poll(dnfMarks).toEqual(['DNF : GC9MARK', 'DNF n°2 : GC9MARK']);
+});
+
+
 // Échec du PUT /api/settings : la case et window.userSettings reviennent à
 // l'état du disque (revertSetting) — l'écran ne doit pas afficher le
 // contraire du serveur.
@@ -404,8 +426,10 @@ test('un échec de sauvegarde remet la case et la préférence', async ({ page }
   });
 
   // Décochage refusé côté serveur : la case recoche, la préférence reste
-  // vraie et les points reviennent sur la carte.
-  await page.locator('#checkDnfDisplay').uncheck();
+  // vraie et les points reviennent sur la carte. click() et non uncheck() :
+  // ce dernier vérifie l'état final, que le rollback recoche déjà — le
+  // refus s'affirme ensuite, pas pendant l'action.
+  await page.locator('#checkDnfDisplay').click();
   await expect(page.locator('.gc-saved-indicator.is-error').first()).toBeVisible();
   await expect(page.locator('#checkDnfDisplay')).toBeChecked();
   await expect.poll(() => page.evaluate(() => window.userSettings?.dnf_display)).toBe(true);

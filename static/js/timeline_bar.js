@@ -14,7 +14,8 @@
 // L'axe déborde la plage d'une marge grisée de chaque côté (timelineAxis) :
 // les poignées en haut des bornes se tirent pour la raccourcir ou l'étendre,
 // comme le clic droit (pose des bornes, setAnimationDates). Des repères
-// marquent les trouvailles rondes et le planing des Images ; une bulle donne,
+// marquent les trouvailles rondes, les jours de DNF et les étapes des caches
+// posées affichées, et le planing des Images ; une bulle donne,
 // au survol, la date, le nombre du jour (ou de la tranche), le total et
 // l'instant de la vidéo.
 //
@@ -28,8 +29,9 @@
 // reprise dans ui.js (mêmes chemins que les boutons).
 import * as pkg from './index.js';
 import { counterAt, dateToDayNumber } from './evolution_timeline.mjs';
-import { isEvolutionPage, isPosesPage } from './app_mode.mjs';
+import { isEvolutionPage, isMainPage, isPosesPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
+import { ownerPointOptions } from './owner_model.mjs';
 import {
     bucketDaysFor,
     bucketize,
@@ -91,6 +93,7 @@ let style = 'histogram';
 let seriesMemo = null;
 let milestonesMemo = null;
 let cacheMarksMemo = null;
+let sideMarksMemo = null;
 // Calques hors écran : tout ce qui est fixe pendant la lecture (repères
 // d'année, série en deux teintes) n'y est redessiné qu'à changement de leur
 // clé — par frame, draw() ne fait plus que deux drawImage et les mobiles
@@ -229,7 +232,8 @@ function seriesFor(axis) {
 }
 
 // Repères de l'axe, triés : trouvailles rondes (page principale et Mes
-// poses), repères par cache (Mes poses : 'ftf', 'cacheRound') et
+// poses), repères par cache (Mes poses : 'ftf', 'cacheRound'), jours de DNF
+// et étapes des caches posées affichées (page principale) et
 // apparitions/disparitions des images planifiées. { offset, kind, label }.
 function marksFor(axis, series) {
     const marks = [];
@@ -267,6 +271,17 @@ function marksFor(axis, series) {
             }
         }
     }
+    // Page principale : jours DNF et étapes des caches posées, quand la
+    // famille est affichée (comme les lignes de la légende — getXxxEntries
+    // est vide sinon). Mémoïsés sur la série et les révisions des deux
+    // sources : une bascule de case ou un rechargement les recompute.
+    if (isMainPage()) {
+        const sideKey = `${seriesMemo.key}|${pkg.dnfRevision ?? 0}|${pkg.ownerRevision ?? 0}`;
+        if (sideMarksMemo?.key !== sideKey) {
+            sideMarksMemo = { key: sideKey, marks: sideEventMarks(axis) };
+        }
+        marks.push(...sideMarksMemo.marks);
+    }
     const first = dateToDayNumber(axis.start);
     for (const mark of pkg.getImageScheduleMarks?.() || []) {
         const offset = mark.day - first;
@@ -280,6 +295,48 @@ function marksFor(axis, series) {
         });
     }
     marks.sort((a, b) => a.offset - b.offset);
+    return marks;
+}
+
+// Libellé de bulle d'une étape du poseur (kinds d'event_flash.mjs ; la pose
+// elle-même est marquée au jour d'apparition, kind 'owner-place').
+function ownerStepLabel(kind, code) {
+    switch (kind) {
+        case 'archive': return pkg.t('Cache archivée : ${code}', { code });
+        case 'unarchive': return pkg.t('Cache désarchivée : ${code}', { code });
+        case 'disable': return pkg.t('Cache désactivée : ${code}', { code });
+        case 'enable': return pkg.t('Cache réactivée : ${code}', { code });
+        case 'maintenance': return pkg.t('Maintenance : ${code}', { code });
+        default: return pkg.t('Étape du poseur : ${code}', { code });
+    }
+}
+
+// Repères des familles hors trouvailles de la page principale : chaque jour
+// de DNF (une tentative répétée rejoue son flash, elle garde son repère) et
+// chaque étape des caches posées — pose, puis étapes du poseur. Les jours
+// hors de l'axe ne donnent rien.
+function sideEventMarks(axis) {
+    const first = dateToDayNumber(axis.start);
+    const marks = [];
+    const push = (day, kind, label) => {
+        const offset = day - first;
+        if (offset >= 0 && offset < axis.span) marks.push({ offset, kind, label });
+    };
+    for (const entry of pkg.getDnfEntries?.() || []) {
+        const code = entry.feature?.properties?.gc_code || '?';
+        entry.visitDays.forEach((day, i) => {
+            push(day, 'dnf', i === 0
+                ? pkg.t('DNF : ${code}', { code })
+                : pkg.t('DNF n°${count} : ${code}', { count: formatCount(i + 1), code }));
+        });
+    }
+    for (const entry of pkg.getOwnerEntries?.() || []) {
+        const code = entry.feature?.properties?.gc_code || '?';
+        push(entry.appearDay, 'owner-place', pkg.t('Cache posée : ${code}', { code }));
+        for (const event of entry.events) {
+            push(event.day, 'owner-event', ownerStepLabel(event.kind, code));
+        }
+    }
     return marks;
 }
 
@@ -321,6 +378,7 @@ function colorsFor() {
             milestone: cssColor(styles, '--timeline-milestone', '#2fb344'),
             ftf: cssColor(styles, '--timeline-ftf', '#009dff'),
             image: cssColor(styles, '--timeline-image', '#f59f00'),
+            dnf: cssColor(styles, '--timeline-dnf', '#263238'),
         };
     }
     return colorsCache;
@@ -485,9 +543,15 @@ function draw() {
 
 // Repères en haut de la piste : losange vert pour une trouvaille ronde (creux
 // pour un palier d'une cache, page Mes poses), rond bleu pour la première
-// trouvaille d'une cache, triangle ambré pour une image (plein : apparition ;
-// creux : disparition).
+// trouvaille d'une cache, rond foncé pour un jour de DNF, étoile pour une
+// étape de poseur (pleine : la pose ; creuse : maintenance, désactivation,
+// réactivation, archivage), triangle ambré pour une image (plein :
+// apparition ; creux : disparition).
 function drawMarks(ctx, marks, axis, w, colors) {
+    // L'étoile suit la couleur de contour posée du thème, comme la pastille
+    // de la légende — relue à chaque dessin : le réglage change sans
+    // theme:applied (options, pas CSS).
+    const ownerColor = ownerPointOptions(pkg.options?.point?.owner).borderColor;
     for (const mark of marks) {
         const x = dayEndX(mark.offset, axis, w);
         ctx.beginPath();
@@ -495,6 +559,20 @@ function drawMarks(ctx, marks, axis, w, colors) {
             ctx.arc(x, 4.5, 2.75, 0, Math.PI * 2);
             ctx.fillStyle = colors.ftf;
             ctx.fill();
+        } else if (mark.kind === 'dnf') {
+            ctx.arc(x, 4.5, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = colors.dnf;
+            ctx.fill();
+        } else if (mark.kind === 'owner-place' || mark.kind === 'owner-event') {
+            starPath(ctx, x, 4.5, 4);
+            if (mark.kind === 'owner-place') {
+                ctx.fillStyle = ownerColor;
+                ctx.fill();
+            } else {
+                ctx.lineWidth = 1.25;
+                ctx.strokeStyle = ownerColor;
+                ctx.stroke();
+            }
         } else if (mark.kind === 'milestone' || mark.kind === 'cacheRound') {
             ctx.moveTo(x, 1);
             ctx.lineTo(x + 3.5, 4.5);
@@ -524,6 +602,19 @@ function drawMarks(ctx, marks, axis, w, colors) {
             }
         }
     }
+}
+
+// Étoile à 5 branches centrée en (cx, cy), rayon extérieur `r` — le symbole
+// des caches posées (même lecture que la carte et la légende).
+function starPath(ctx, cx, cy, r) {
+    for (let i = 0; i < 10; i++) {
+        const angle = -Math.PI / 2 + i * Math.PI / 5;
+        const radius = i % 2 === 0 ? r : r * 0.45;
+        const px = cx + radius * Math.cos(angle);
+        const py = cy + radius * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
 }
 
 // Poignées des bornes : trait sur toute la hauteur, languette en haut,

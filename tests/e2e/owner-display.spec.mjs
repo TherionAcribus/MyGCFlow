@@ -92,6 +92,39 @@ test.afterEach(async ({ request }) => {
 });
 
 
+// Barre de chronologie : étoile par étape de poseur (pose pleine, étapes
+// creuses) quand la couche est affichée — les poses d'avant la fenêtre des
+// trouvailles restent hors de l'axe (marge de ±¼ plafonnée à l'étendue).
+test('la chronologie marque les étapes des caches posées affichées', async ({ page, request }) => {
+  await openWithData(page, request);
+  const marks = async () => {
+    const snap = await page.evaluate(async () =>
+      (await import('/static/js/index.js')).getTimelineBarSnapshot());
+    return snap.marks;
+  };
+  // Couche masquée : aucun repère poseur.
+  expect((await marks()).filter((m) => m.kind.startsWith('owner-'))).toEqual([]);
+
+  await showOwner(page);
+  await expect.poll(async () => (await marks()).filter((m) => m.kind === 'owner-place').length)
+    .toBeGreaterThan(0);
+  const all = await marks();
+  const places = all.filter((m) => m.kind === 'owner-place').map((m) => m.label).sort();
+  // Dans l'axe : GCP0004 (le jour même de la première trouvaille) et
+  // GCP0008 (10/02/2020). Les autres sont apparues avant la fenêtre des
+  // trouvailles — la marge de l'axe reste dans l'étendue des données —
+  // ou n'ont pas de feature (GCP0007, sans position) : pas de repère.
+  expect(places).toEqual(['Cache posée : GCP0004', 'Cache posée : GCP0008']);
+  const steps = all.filter((m) => m.kind === 'owner-event').map((m) => m.label);
+  expect(steps).toContain('Cache désactivée : GCP0004');
+  expect(steps).toContain('Maintenance : GCP0004');
+  expect(steps).toContain('Cache archivée : GCP0005');
+  // Le désarchivage de GCP0005 est un acte du relecteur, pas du poseur :
+  // jamais servi dans owner_events (_by_owner, owner_geojson.py).
+  expect(steps).not.toContain('Cache désarchivée : GCP0005');
+});
+
+
 test('sans cache posée, rien n\'est proposé', async ({ page, request }) => {
   await openWithData(page, request, { withLogs: false });
   await expect(page.locator('#ownerDisplayField')).toBeHidden();
