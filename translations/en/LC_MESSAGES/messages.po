@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-26 15:52+0100\n"
+"POT-Creation-Date: 2026-10-26 16:24+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1710,6 +1710,10 @@ msgstr "cache without a known position"
 #: static/js/gc_logs.js:607 static/js/owner_data.js:207
 msgid "caches sans position connue"
 msgstr "caches without a known position"
+
+#: static/js/dnf_data.js:249 static/js/dnf_data.js:250
+msgid "Actif quand les DNF sont affichés"
+msgstr "Active when DNF are shown"
 
 #: static/js/evolution_data.js:218
 #, python-brace-format
@@ -3896,6 +3900,10 @@ msgstr "cache without a date"
 #: static/js/owner_data.js:210
 msgid "caches sans date"
 msgstr "caches without a date"
+
+#: static/js/owner_data.js:235
+msgid "Actif quand les caches posées sont affichées"
+msgstr "Active when owned caches are shown"
 
 #: static/js/poses_data.js:144
 msgid "Le réglage s'appliquera à la fin de l'animation."

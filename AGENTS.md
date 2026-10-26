@@ -130,6 +130,14 @@ Autres repères :
   suivant et gardait le bandeau « export en attente » affiché après
   l'import. `blueprints/labs.py` a le même motif `%TEMP%` pour ses jetons
   (non remontés dans un statut, donc sans symptôme e2e).
+- `reportSave` (saved_indicator.mjs) résout `true`/`false`, ne rejette
+  jamais : un `try/catch` autour est du code mort — l'échec se teste sur le
+  retour (`revertSetting` de dnf_data.js/owner_data.js remet alors la case
+  et `userSettings` à la valeur du disque ; exemple e2e : le test « un échec
+  de sauvegarde… » de dnf-display.spec.mjs, qui fait échouer le PUT par
+  `page.route`). La bulle `title` d'une case `disabled` ne s'affiche pas
+  partout : l'explication des cases « dans le trait » grisées porte sur le
+  `label` (`disabledHint`).
 - Même famille que les DNF : `owner_display` / `owner_in_trail` (caches
   posées sur la carte principale) sont des préférences globales à remettre
   (`false` / `true`) en sortant, et les logs à vider. Couche propre, source

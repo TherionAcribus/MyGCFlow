@@ -22,7 +22,7 @@ import { CONFIG } from './init.js';
 import { t } from './notifications.js';
 import { isMainPage } from './app_mode.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
-import { markSaveError, reportSave } from './saved_indicator.mjs';
+import { reportSave } from './saved_indicator.mjs';
 import { buildDnfEntries, dnfEventsByDate, dnfStatesAt } from './dnf_model.mjs';
 import { isoToDayNumber } from './evolution_timeline.mjs';
 import { countLabel } from './utils.js';
@@ -168,19 +168,44 @@ function renderOffer() {
     syncBoxes();
 }
 
+// Case grisée tant que les points sont masqués : la raison va sur le label
+// (la bulle `title` d'un input disabled n'apparaît pas partout, celle du
+// label oui — et elle survit au survol même hors de la case).
+function disabledHint(boxId, off, text) {
+    for (const node of [el(boxId), document.querySelector(`label[for="${boxId}"]`)]) {
+        if (!node) continue;
+        if (off) node.title = text;
+        else node.removeAttribute('title');
+    }
+}
+
 function syncBoxes() {
     const display = el('checkDnfDisplay');
     if (display) display.checked = window.userSettings?.dnf_display === true;
+    const off = !isDnfDisplayEnabled();
     const trail = el('checkDnfInTrail');
     if (trail) {
         trail.checked = window.userSettings?.dnf_in_trail !== false;
-        trail.disabled = !isDnfDisplayEnabled();
+        trail.disabled = off;
     }
     const sameDay = el('checkDnfSameDay');
     if (sameDay) {
         sameDay.checked = window.userSettings?.dnf_same_day_display === true;
-        sameDay.disabled = !isDnfDisplayEnabled();
+        sameDay.disabled = off;
     }
+    disabledHint('checkDnfInTrail', off, t('Actif quand les DNF sont affichés'));
+    disabledHint('checkDnfSameDay', off, t('Actif quand les DNF sont affichés'));
+}
+
+// Échec de l'enregistrement : la case et window.userSettings reviennent à
+// la valeur du disque — sinon l'écran afficherait le contraire du serveur
+// jusqu'au prochain rechargement (l'indicateur « Non enregistré » est déjà
+// posé par reportSave). La garde `=== on` protège un clic plus récent.
+async function revertSetting(key, on) {
+    if (window.userSettings?.[key] !== on) return;
+    window.userSettings[key] = !on;
+    syncBoxes();
+    applyChange();
 }
 
 async function onDisplayToggle(e) {
@@ -189,33 +214,26 @@ async function onDisplayToggle(e) {
     if (window.userSettings) window.userSettings.dnf_display = on;
     syncBoxes();
     applyChange();
-    try {
-        await reportSave(box, saveSettingsPatch({ dnf_display: on }));
-    } catch (_) {
-        markSaveError(box);
-    }
+    const ok = await reportSave(box, saveSettingsPatch({ dnf_display: on }));
+    if (!ok) await revertSetting('dnf_display', on);
 }
 
 async function onTrailToggle(e) {
     const box = e.currentTarget;
-    if (window.userSettings) window.userSettings.dnf_in_trail = box.checked;
+    const on = box.checked;
+    if (window.userSettings) window.userSettings.dnf_in_trail = on;
     // Le trajet est recalculé à la prochaine lecture (clé de mémoïsation).
-    try {
-        await reportSave(box, saveSettingsPatch({ dnf_in_trail: box.checked }));
-    } catch (_) {
-        markSaveError(box);
-    }
+    const ok = await reportSave(box, saveSettingsPatch({ dnf_in_trail: on }));
+    if (!ok) await revertSetting('dnf_in_trail', on);
 }
 
 async function onSameDayToggle(e) {
     const box = e.currentTarget;
-    if (window.userSettings) window.userSettings.dnf_same_day_display = box.checked;
+    const on = box.checked;
+    if (window.userSettings) window.userSettings.dnf_same_day_display = on;
     // N'agit que pendant l'animation : rien à resynchroniser au repos.
-    try {
-        await reportSave(box, saveSettingsPatch({ dnf_same_day_display: box.checked }));
-    } catch (_) {
-        markSaveError(box);
-    }
+    const ok = await reportSave(box, saveSettingsPatch({ dnf_same_day_display: on }));
+    if (!ok) await revertSetting('dnf_same_day_display', on);
 }
 
 export function initDnfUI() {

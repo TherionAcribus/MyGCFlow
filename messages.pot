@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-26 15:52+0100\n"
+"POT-Creation-Date: 2026-10-26 16:24+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1676,6 +1676,10 @@ msgstr ""
 #: static/js/dnf_data.js:204 static/js/gc_logs.js:164 static/js/gc_logs.js:271
 #: static/js/gc_logs.js:607 static/js/owner_data.js:207
 msgid "caches sans position connue"
+msgstr ""
+
+#: static/js/dnf_data.js:249 static/js/dnf_data.js:250
+msgid "Actif quand les DNF sont affichés"
 msgstr ""
 
 #: static/js/evolution_data.js:218
@@ -3802,6 +3806,10 @@ msgstr ""
 
 #: static/js/owner_data.js:210
 msgid "caches sans date"
+msgstr ""
+
+#: static/js/owner_data.js:235
+msgid "Actif quand les caches posées sont affichées"
 msgstr ""
 
 #: static/js/poses_data.js:144

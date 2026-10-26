@@ -18,7 +18,7 @@ import { CONFIG } from './init.js';
 import { t } from './notifications.js';
 import { isMainPage } from './app_mode.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
-import { markSaveError, reportSave } from './saved_indicator.mjs';
+import { reportSave } from './saved_indicator.mjs';
 import { buildOwnerEntries, ownerEventsByDate, ownerStatesAt } from './owner_model.mjs';
 import { isoToDayNumber } from './evolution_timeline.mjs';
 import { countLabel } from './utils.js';
@@ -163,14 +163,37 @@ function renderHint() {
     }
 }
 
+// Case grisée tant que les caches sont masquées : la raison va sur le
+// label (la bulle `title` d'un input disabled n'apparaît pas partout).
+function disabledHint(boxId, off, text) {
+    for (const node of [el(boxId), document.querySelector(`label[for="${boxId}"]`)]) {
+        if (!node) continue;
+        if (off) node.title = text;
+        else node.removeAttribute('title');
+    }
+}
+
 function syncBoxes() {
     const display = el('checkOwnerDisplay');
     if (display) display.checked = window.userSettings?.owner_display === true;
+    const off = !isOwnerDisplayEnabled();
     const trail = el('checkOwnerInTrail');
     if (trail) {
         trail.checked = window.userSettings?.owner_in_trail !== false;
-        trail.disabled = !isOwnerDisplayEnabled();
+        trail.disabled = off;
     }
+    disabledHint('checkOwnerInTrail', off, t('Actif quand les caches posées sont affichées'));
+}
+
+// Échec de l'enregistrement : la case et window.userSettings reviennent à
+// la valeur du disque — sinon l'écran afficherait le contraire du serveur
+// jusqu'au prochain rechargement (l'indicateur « Non enregistré » est déjà
+// posé par reportSave). La garde `=== on` protège un clic plus récent.
+async function revertSetting(key, on) {
+    if (window.userSettings?.[key] !== on) return;
+    window.userSettings[key] = !on;
+    syncBoxes();
+    applyChange();
 }
 
 async function onDisplayToggle(e) {
@@ -179,22 +202,17 @@ async function onDisplayToggle(e) {
     if (window.userSettings) window.userSettings.owner_display = on;
     syncBoxes();
     applyChange();
-    try {
-        await reportSave(box, saveSettingsPatch({ owner_display: on }));
-    } catch (_) {
-        markSaveError(box);
-    }
+    const ok = await reportSave(box, saveSettingsPatch({ owner_display: on }));
+    if (!ok) await revertSetting('owner_display', on);
 }
 
 async function onTrailToggle(e) {
     const box = e.currentTarget;
-    if (window.userSettings) window.userSettings.owner_in_trail = box.checked;
+    const on = box.checked;
+    if (window.userSettings) window.userSettings.owner_in_trail = on;
     // Le trajet est recalculé à la prochaine lecture (clé de mémoïsation).
-    try {
-        await reportSave(box, saveSettingsPatch({ owner_in_trail: box.checked }));
-    } catch (_) {
-        markSaveError(box);
-    }
+    const ok = await reportSave(box, saveSettingsPatch({ owner_in_trail: on }));
+    if (!ok) await revertSetting('owner_in_trail', on);
 }
 
 export function initOwnerUI() {

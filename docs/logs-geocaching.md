@@ -579,10 +579,15 @@ célébrations et les effacements (en cours et cumulés).
 `dnf_same_day_display` (opt-in, désactivée : pendant l'animation, un DNF
 trouvé le jour même — jamais affiché sinon, `dnfSameDayResolved` —
 apparaît un instant puis s'efface avec la célébration éventuelle). Les
-deux dernières sont sans effet tant que l'affichage est coupé. La case et
-les réglages du
+deux dernières sont grisées tant que l'affichage est coupé, avec une bulle
+d'aide sur le libellé (celle d'un `input` désactivé ne s'affiche pas
+partout). La case et les réglages du
 thème (sous-onglet Flash) ne sont proposés que quand les logs importés
-décrivent au moins un DNF — placé ou non (`OFFER_IDS`, dnf_data.js).
+décrivent au moins un DNF — placé ou non (`OFFER_IDS`, dnf_data.js). Si
+l'enregistrement d'une préférence échoue (`reportSave` → `false`), la case
+et `window.userSettings` reviennent à la valeur du disque
+(`revertSetting`, dnf_data.js) — sinon l'écran afficherait le contraire du
+serveur jusqu'au prochain chargement.
 
 ## Caches posées sur la carte principale
 
@@ -648,7 +653,9 @@ déplacements (`ownerVisitsByDay`, clé de mémoïsation `ownerRevision`).
 
 **Préférences globales** (onglet Données, « Mes caches posées », visible
 seulement avec des caches posées) : `owner_display` (masquées par défaut) et
-`owner_in_trail` (incluses par défaut).
+`owner_in_trail` (incluses par défaut — grisée tant que l'affichage est
+coupé, bulle d'aide sur le libellé). Même reprise d'état qu'en DNF si
+l'enregistrement échoue (`revertSetting`, owner_data.js).
 
 Tests : `tests/test_owner_geojson.py`, `tests/js/owner_model.test.mjs`,
 `tests/e2e/owner-display.spec.mjs` (fixture `my-finds-poses.gpx`, dont les

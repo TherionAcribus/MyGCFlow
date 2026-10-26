@@ -103,6 +103,10 @@ test('masqués par défaut, affichés à la demande sans compter comme des trouv
   await openWithData(page);
   await expect(page.locator('#checkDnfDisplay')).not.toBeChecked();
   await expect(page.locator('#checkDnfInTrail')).toBeDisabled();
+  // La case grisée explique pourquoi (bulle sur le label — celle d'un input
+  // disabled n'apparaît pas partout).
+  await expect(page.locator('label[for="checkDnfInTrail"]'))
+    .toHaveAttribute('title', 'Actif quand les DNF sont affichés');
   expect(await mapCodes(page, 'dnf')).toEqual([]);
 
   // Carte au repos : GC2PR3N, trouvée dans la période, a laissé place à sa
@@ -112,6 +116,7 @@ test('masqués par défaut, affichés à la demande sans compter comme des trouv
   expect(await mapCodes(page, 'find')).toEqual(['GC2PR3N', 'GC345J4']);
   await expect(page.locator('#dnfDisplayHint')).toContainText('2 DNF dans la sélection');
   await expect(page.locator('#checkDnfInTrail')).toBeEnabled();
+  await expect(page.locator('label[for="checkDnfInTrail"]')).not.toHaveAttribute('title', /.+/);
   await expect.poll(async () => (await (await request.get('/api/settings')).json()).dnf_display).toBe(true);
 
   await page.locator('#checkDnfDisplay').uncheck();
@@ -384,6 +389,27 @@ test('la légende optionnelle suit les familles hors trouvailles affichées', as
 
   await page.locator('#cbDisplayLegend').uncheck();
   await expect(page.locator('#mapLegend')).toBeHidden();
+});
+
+
+// Échec du PUT /api/settings : la case et window.userSettings reviennent à
+// l'état du disque (revertSetting) — l'écran ne doit pas afficher le
+// contraire du serveur.
+test('un échec de sauvegarde remet la case et la préférence', async ({ page }) => {
+  await openWithData(page);
+  await showDnf(page);
+  await page.route('**/api/settings', (route) => {
+    if (route.request().method() === 'PUT') route.fulfill({ status: 500 });
+    else route.continue();
+  });
+
+  // Décochage refusé côté serveur : la case recoche, la préférence reste
+  // vraie et les points reviennent sur la carte.
+  await page.locator('#checkDnfDisplay').uncheck();
+  await expect(page.locator('.gc-saved-indicator.is-error').first()).toBeVisible();
+  await expect(page.locator('#checkDnfDisplay')).toBeChecked();
+  await expect.poll(() => page.evaluate(() => window.userSettings?.dnf_display)).toBe(true);
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC9ZZZZ']);
 });
 
 
