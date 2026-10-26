@@ -27,7 +27,11 @@ import {
     statsConfigModeFor,
     statsCounterItemsFor,
     statsMetricsRegistry,
+    statsPanelRegistry,
+    statsPanelSource,
     statsPanelsKey,
+    statsSourceCounterItems,
+    statsSourceRegistry,
     statsStylePreset,
 } from './stats_model.mjs';
 
@@ -52,6 +56,30 @@ const panelsKey = () => statsPanelsKey(pageMode);
 const modePanels = (s) => s[panelsKey()] || [];
 const metricRegistry = statsMetricsRegistry(pageMode);
 const counterItems = statsCounterItemsFor(pageMode);
+const mainPage = pageMode === 'main';
+// Page principale : registre et tuiles suivent la source du panneau
+// (trouvailles, DNF, caches posées — stats_model › statsPanelSource).
+const registryOf = (panel) => statsPanelRegistry(panel, pageMode);
+const counterItemsOf = (panel) => (mainPage ? statsSourceCounterItems(statsPanelSource(panel)) : counterItems);
+// Tuiles d'un compteur neuf selon sa source (page principale).
+const SOURCE_COUNTER_DEFAULTS = {
+    dnf: ['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio'],
+    owned: ['total', 'owned_active', 'owned_archived', 'maintenances'],
+};
+// Une source est proposée quand la page en a les données (trouvailles :
+// toujours) ; un panneau qui la porte déjà la garde.
+// stats_ui.js s'initialise pendant sa propre évaluation, avant dnf_data.js et
+// owner_data.js (ordre d'index.js) : leurs `let` sont encore en zone morte —
+// pas de données à ce stade. La galerie se resynchronise à l'ouverture, le
+// formulaire quand les données arrivent (renderStatsTab).
+function sourceAvailable(source) {
+    if (source === 'finds') return true;
+    try {
+        return source === 'dnf' ? !!pkg.hasDnfData?.() : !!pkg.hasOwnedCaches?.();
+    } catch (_) {
+        return false;
+    }
+}
 // Tuiles du compteur « Chiffres clés » créé en Évolution : les chiffres de la
 // chronologie, pas ceux des trouvailles ; sur Mes poses, ceux des trouvailles
 // reçues.
@@ -102,6 +130,25 @@ const PRESETS = {
     ],
     'poses-race': [['bar', 'cache', { position: { anchor: 'top-right', width: 300 }, options: { sort: 'race', max_items: 8 } }]],
     'poses-finders': [['bar', 'finder', { position: { anchor: 'top-right', width: 280 }, options: { max_items: 10 } }]],
+    // Page principale, source « DNF ».
+    'dnf-overview': [
+        ['counter', 'summary', { position: { anchor: 'top-left' }, options: { source: 'dnf', items: SOURCE_COUNTER_DEFAULTS.dnf } }],
+        ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 }, options: { source: 'dnf' } }],
+    ],
+    'dnf-dt': [['grid', 'dt', { position: { anchor: 'bottom-left', width: 300 }, options: { source: 'dnf' } }]],
+    'dnf-difficulty': [['bar', 'difficulty', { position: { anchor: 'bottom-right', width: 240 }, options: { source: 'dnf' } }]],
+    'dnf-types': [['bar', 'cache_type', { position: { anchor: 'top-right', width: 260 }, options: { source: 'dnf' } }]],
+    'dnf-year': [['bar', 'year', { position: { anchor: 'top-right', width: 280 }, options: { source: 'dnf' } }]],
+    'dnf-calendar': [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 }, options: { source: 'dnf' } }]],
+    // Page principale, source « caches posées ».
+    'owned-overview': [
+        ['counter', 'summary', { position: { anchor: 'top-left' }, options: { source: 'owned', items: SOURCE_COUNTER_DEFAULTS.owned } }],
+        ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 }, options: { source: 'owned' } }],
+    ],
+    'owned-types': [['donut', 'cache_type', { position: { anchor: 'top-right', width: 300 }, options: { source: 'owned' } }]],
+    'owned-dt': [['grid', 'dt', { position: { anchor: 'bottom-left', width: 300 }, options: { source: 'owned' } }]],
+    'owned-year': [['bar', 'year', { position: { anchor: 'top-right', width: 280 }, options: { source: 'owned' } }]],
+    'owned-sizes': [['bar', 'container', { position: { anchor: 'top-right', width: 260 }, options: { source: 'owned' } }]],
 };
 
 const KIND_ICONS = {
@@ -201,7 +248,10 @@ const GALLERY_MODAL = 'statsGalleryModal';
 function syncGalleryMode() {
     const mode = pageMode;
     document.querySelectorAll('#statsAddMenu [data-stats-modes]').forEach((el) => {
-        const inMode = el.dataset.statsModes.split(' ').includes(mode);
+        // Cartes d'une source (DNF, caches posées) : seulement avec ses données.
+        const source = el.dataset.statsSource;
+        const inMode = el.dataset.statsModes.split(' ').includes(mode)
+            && (!source || sourceAvailable(source));
         el.hidden = !inMode;
         if (el.classList.contains('stats-gallery-card')) el.dataset.inMode = inMode ? '1' : '';
     });
@@ -280,7 +330,8 @@ function drawGalleryThumbs() {
 function openGallery() {
     const search = $('inputStatsGallerySearch');
     if (search) search.value = '';
-    filterGallery('');
+    // Les données DNF / caches posées ont pu arriver depuis l'init.
+    syncGalleryMode();
     drawGalleryThumbs();
     showBsModal(GALLERY_MODAL);
 }
@@ -345,7 +396,7 @@ function renderList() {
         // Un panneau dont la métrique n'existe pas dans le mode courant
         // (réglages bidouillés, configuration appliquée d'un mode à l'autre)
         // est marqué : il reste éditable, juste non dessiné.
-        if (!(metricRegistry[panel.kind] || []).includes(panel.metric)) {
+        if (!(registryOf(panel)[panel.kind] || []).includes(panel.metric)) {
             const badge = document.createElement('span');
             badge.className = 'text-muted small ms-1';
             badge.textContent = otherModeBadge();
@@ -576,19 +627,36 @@ function renderForm() {
     form.hidden = !panel;
     if (!panel) return;
 
+    // Données comptées (page principale) : trouvailles, DNF, caches posées.
+    const source = statsPanelSource(panel);
+    const sourceField = $('statsSourceField');
+    if (sourceField) {
+        sourceField.hidden = !mainPage || !['dnf', 'owned'].some(sourceAvailable) && source === 'finds';
+        const select = $('selectStatsSource');
+        if (select) {
+            select.querySelectorAll('option').forEach((option) => {
+                const offered = option.value === source || sourceAvailable(option.value);
+                option.hidden = !offered;
+                option.disabled = !offered;
+            });
+            select.value = source;
+        }
+    }
+    const registry = registryOf(panel);
+
     const metricSelect = $('selectStatsMetric');
     if (metricSelect) {
-        // Métriques du mode courant ; un type sans registre ici (grilles en
-        // Évolution) retombe sur celui du mode principal.
-        const offered = metricRegistry[panel.kind]?.length
-            ? metricRegistry[panel.kind]
+        // Métriques du mode courant (et de la source) ; un type sans registre
+        // ici (grilles en Évolution) retombe sur celui du mode principal.
+        const offered = registry[panel.kind]?.length
+            ? registry[panel.kind]
             : STATS_METRICS_BY_KIND[panel.kind];
-        const wanted = offered.join(',');
+        const wanted = `${source}|${offered.join(',')}`;
         if (metricSelect.dataset.kind !== wanted) {
             metricSelect.replaceChildren(...offered.map((metric) => {
                 const option = document.createElement('option');
                 option.value = metric;
-                option.textContent = pkg.defaultStatsPanelTitle({ metric });
+                option.textContent = pkg.defaultStatsPanelTitle({ metric, options: { source } });
                 return option;
             }));
             metricSelect.dataset.kind = wanted;
@@ -602,8 +670,8 @@ function renderForm() {
     const kindSelect = $('selectStatsKind');
     const kindField = $('statsKindField');
     if (kindSelect && kindField) {
-        let kinds = Object.keys(metricRegistry)
-            .filter((kind) => (metricRegistry[kind] || []).includes(panel.metric));
+        let kinds = Object.keys(registry)
+            .filter((kind) => (registry[kind] || []).includes(panel.metric));
         if (!kinds.length) {
             kinds = Object.keys(STATS_METRICS_BY_KIND)
                 .filter((kind) => STATS_METRICS_BY_KIND[kind].includes(panel.metric));
@@ -668,10 +736,20 @@ function renderForm() {
     // Tuiles : seules celles du mode courant sont proposées (les autres restent
     // dans options.items, préservées à l'enregistrement).
     const mode = pageMode;
+    const sourceItems = counterItemsOf(panel);
     document.querySelectorAll('#statsCounterItems [data-counter-item]').forEach((box) => {
+        const item = box.dataset.counterItem;
         const wrap = box.closest('[data-stats-modes]');
-        if (wrap) wrap.hidden = !(wrap.dataset.statsModes || '').split(' ').includes(mode);
-        box.checked = (o.items || []).includes(box.dataset.counterItem);
+        if (wrap) {
+            wrap.hidden = !(wrap.dataset.statsModes || '').split(' ').includes(mode)
+                || (mainPage && !sourceItems.includes(item));
+        }
+        // Libellé selon la source (« Trouvailles » / « DNF » / « Caches posées »).
+        if (mainPage) {
+            const label = wrap?.querySelector('label');
+            if (label) label.textContent = pkg.statsCounterLabel?.(item, source) ?? label.textContent;
+        }
+        box.checked = (o.items || []).includes(item);
     });
     document.querySelectorAll('#statsPanelForm [data-stats-kind]').forEach((el) => {
         const kindOk = el.dataset.statsKind.split(' ').includes(panel.kind);
@@ -905,9 +983,11 @@ function bindFormFields() {
         updateSelected((panel) => {
             // Nouvelle métrique : ses options par défaut (ordre, orientation…),
             // en gardant titre, position et apparence.
+            const source = statsPanelSource(panel);
             const fresh = createStatsPanel(panel.kind, metric, {});
             panel.metric = metric;
             panel.options = fresh.options;
+            if (source !== 'finds') panel.options.source = source;
             if (panel.kind === 'bar' || panel.kind === 'donut') panel.style.palette = fresh.style.palette;
         }, event.target);
         renderStatsTab();
@@ -917,10 +997,32 @@ function bindFormFields() {
         updateSelected((panel) => {
             // Nouvelle forme : ses options par défaut (trou, légende, ordre…),
             // en gardant titre, position, apparence et métrique.
+            const source = statsPanelSource(panel);
             const fresh = createStatsPanel(event.target.value, panel.metric, {});
             if (!fresh) return;
             panel.kind = event.target.value;
             panel.options = fresh.options;
+            if (source !== 'finds') panel.options.source = source;
+        }, event.target);
+        renderStatsTab();
+    });
+
+    // Données comptées : la métrique est gardée si la source la propose, sinon
+    // la première du même type ; options par défaut, tuiles de la source.
+    $('selectStatsSource')?.addEventListener('change', (event) => {
+        const source = event.target.value;
+        updateSelected((panel) => {
+            const offered = statsSourceRegistry(source)[panel.kind] || [];
+            const metric = offered.includes(panel.metric) ? panel.metric : offered[0];
+            if (!metric) return;
+            const fresh = createStatsPanel(panel.kind, metric, {});
+            panel.metric = metric;
+            panel.options = fresh.options;
+            if (source !== 'finds') panel.options.source = source;
+            if (panel.kind === 'counter') {
+                panel.options.items = [...(SOURCE_COUNTER_DEFAULTS[source] || fresh.options.items)];
+            }
+            if (panel.kind === 'bar' || panel.kind === 'donut') panel.style.palette = fresh.style.palette;
         }, event.target);
         renderStatsTab();
     });
@@ -951,13 +1053,14 @@ function bindFormFields() {
         const checked = [...document.querySelectorAll('#statsCounterItems [data-counter-item]')]
             .filter((box) => box.checked)
             .map((box) => box.dataset.counterItem);
-        const items = counterItems.filter((item) => checked.includes(item));
+        const offered = counterItemsOf(selectedPanel());
+        const items = offered.filter((item) => checked.includes(item));
         if (!items.length) {
             event.target.checked = true;
             return;
         }
         updateSelected((panel) => {
-            const kept = (panel.options.items || []).filter((item) => !counterItems.includes(item));
+            const kept = (panel.options.items || []).filter((item) => !offered.includes(item));
             panel.options.items = [...kept, ...items];
         }, event.target);
     });

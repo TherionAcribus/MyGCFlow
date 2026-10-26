@@ -1532,8 +1532,8 @@
             "dy": 16,
             "width": 280,
             "height": null,
-            "x": 1.0,
-            "y": 0.0
+            "x": 1,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -3947,6 +3947,255 @@
           }
         }
       ],
+      "poses_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "source comptée : DNF et caches posées gardées, trouvailles et inconnue retirées",
+    "input": {
+      "panels": [
+        {
+          "id": "aaaaaa11",
+          "kind": "bar",
+          "metric": "difficulty",
+          "options": {
+            "source": "dnf"
+          }
+        },
+        {
+          "id": "aaaaaa12",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "source": "owned",
+            "items": [
+              "total",
+              "owned_active",
+              "maintenances",
+              "inconnu"
+            ]
+          }
+        },
+        {
+          "id": "aaaaaa13",
+          "kind": "grid",
+          "metric": "dt",
+          "options": {
+            "source": "finds"
+          }
+        },
+        {
+          "id": "aaaaaa14",
+          "kind": "line",
+          "metric": "cumulative",
+          "options": {
+            "source": "trouvailles"
+          }
+        },
+        {
+          "id": "aaaaaa15",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "source": "dnf",
+            "items": [
+              "dnf_open",
+              "dnf_ratio",
+              "caches"
+            ]
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "aaaaaa11",
+          "kind": "bar",
+          "metric": "difficulty",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "new",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false,
+            "source": "dnf"
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa12",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "total",
+              "owned_active",
+              "maintenances"
+            ],
+            "columns": 2,
+            "source": "owned"
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa13",
+          "kind": "grid",
+          "metric": "dt",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_percent": false,
+            "highlight": "new",
+            "cell_mode": "count",
+            "show_coverage": true,
+            "show_loops": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa14",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true,
+            "show_milestones": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa15",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "dnf_open",
+              "dnf_ratio",
+              "caches"
+            ],
+            "columns": 2,
+            "source": "dnf"
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
       "poses_panels": [],
       "configs": []
     }

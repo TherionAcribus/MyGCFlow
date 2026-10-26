@@ -41,6 +41,40 @@ export function dnfVisibleStatic(entry, endDay) {
     return entry.resolveDay === null || entry.resolveDay > endDay;
 }
 
+// Événements comptés par les Stats (source « DNF ») : un par log « Didn't
+// find it », avec les propriétés de la cache et `date_find` = date du DNF —
+// les métriques des trouvailles s'y appliquent telles quelles. Map
+// clé `Date.toDateString()` → événements, comme pointsByDate (bdd.js).
+export function dnfEventsByDate(features) {
+    const byDate = new Map();
+    for (const feature of features || []) {
+        const p = feature?.properties || {};
+        const dates = Array.isArray(p.dnf_dates) && p.dnf_dates.length ? p.dnf_dates : [p.date_find];
+        for (const iso of dates) {
+            const date = new Date(`${iso}T00:00:00`);
+            if (!iso || Number.isNaN(date.getTime())) continue;
+            const key = date.toDateString();
+            const list = byDate.get(key) || [];
+            list.push({ type: 'Feature', geometry: feature.geometry, properties: { ...p, date_find: iso } });
+            byDate.set(key, list);
+        }
+    }
+    return byDate;
+}
+
+// Tuiles d'état au jour `day` : caches en échec non résolues (« DNF en
+// cours ») et résolues par une trouvaille.
+export function dnfStatesAt(entries, day) {
+    let open = 0;
+    let resolved = 0;
+    for (const entry of entries || []) {
+        if (entry.appearDay > day) continue;
+        if (entry.resolveDay !== null && entry.resolveDay <= day) resolved += 1;
+        else open += 1;
+    }
+    return { open, resolved };
+}
+
 // Passages DNF pour le trait de déplacement : chaque DNF est un déplacement,
 // même plusieurs sur la même cache. Map jour → [[lon, lat], …], jours au plus
 // égaux à `endDay`.

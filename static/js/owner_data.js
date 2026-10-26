@@ -19,7 +19,7 @@ import { t } from './notifications.js';
 import { isMainPage } from './app_mode.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { markSaveError, reportSave } from './saved_indicator.mjs';
-import { buildOwnerEntries } from './owner_model.mjs';
+import { buildOwnerEntries, ownerEventsByDate, ownerStatesAt } from './owner_model.mjs';
 import { isoToDayNumber } from './evolution_timeline.mjs';
 import { countLabel } from './utils.js';
 
@@ -28,7 +28,10 @@ let ownedTotal = 0;       // caches posées reconnues (placées ou non)
 let pending = 0;          // sans position connue
 let undatable = 0;        // sans aucune date
 let loadSeq = 0;          // une réponse ancienne ne doit pas écraser une plus récente
-let entries = [];         // entrées filtrées (owner_model.mjs)
+let entries = [];         // entrées filtrées (owner_model.mjs), carte
+let statsEntries = [];    // mêmes entrées, affichées ou non (tuiles Stats)
+let statsIndex = null;    // { revision, byDate } — source « caches posées » des Stats
+let statsRevision = 0;
 let bound = false;
 // Change à chaque refiltrage : clé de mémoïsation du trait de déplacement.
 export let ownerRevision = 0;
@@ -54,6 +57,18 @@ export function getOwnerEntries() {
     return entries;
 }
 
+// Source « caches posées » des panneaux Stats (comptées même masquées sur la
+// carte) : une cache par jour d'apparition.
+export function ownerStatsIndex() {
+    return statsIndex;
+}
+
+// Tuiles d'état au jour `day` (numéro de jour) : actives, désactivées,
+// archivées, maintenances faites.
+export function ownerStatsAtDay(day) {
+    return ownerStatesAt(statsEntries, day);
+}
+
 // Relevé pour les tests : caches servies, filtrées, comptes du serveur.
 export function getOwnerSummary() {
     return { loaded: loaded.length, shown: entries.length, ownedTotal, pending, undatable };
@@ -64,9 +79,10 @@ export function getOwnerSummary() {
 // Les caches posées suivent les géocaches : absentes en « Lab Caches » seuls.
 export function rebuildOwnerIndex() {
     const kinds = pkg.getDiscoverySourceKinds?.() || ['geocache'];
-    const usable = isOwnerDisplayEnabled() && kinds.includes('geocache');
-    const features = usable ? (pkg.filterLikeCurrentSelection?.(loaded) ?? loaded) : [];
-    entries = buildOwnerEntries(features, isoToDayNumber);
+    const features = kinds.includes('geocache') ? (pkg.filterLikeCurrentSelection?.(loaded) ?? loaded) : [];
+    statsEntries = buildOwnerEntries(features, isoToDayNumber);
+    statsIndex = { revision: `owned:${++statsRevision}`, byDate: ownerEventsByDate(features) };
+    entries = isOwnerDisplayEnabled() ? statsEntries : [];
     ownerRevision++;
     renderHint();
 }
@@ -77,6 +93,9 @@ function applyChange() {
     // Carte au repos : à jour tout de suite. En animation, au prochain jour
     // ou au prochain saut de la barre de chronologie.
     if (!pkg.isAnimationInProgress?.()) pkg.syncOwnerStatic?.();
+    // Panneaux Stats de source « caches posées » (et galerie) : nouvel index.
+    pkg.refreshStatsPanels?.();
+    pkg.renderStatsTab?.();
 }
 
 // (Re)charge les caches posées du serveur. Toujours lues sur la page

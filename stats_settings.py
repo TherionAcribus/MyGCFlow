@@ -60,6 +60,12 @@ POSES_METRICS_BY_KIND = {
     "counter": ("summary",),
 }
 
+# Page principale : chaque panneau compte une SOURCE (option `source`,
+# absente = trouvailles) — les DNF du joueur ou ses caches posées, chacune
+# avec son registre (sous-ensembles de STATS_METRICS_BY_KIND). Le client
+# s'en sert pour le rendu ; la normalisation n'a besoin que des valeurs.
+STATS_SOURCES = ("finds", "dnf", "owned")
+
 # Univers comptés par un panneau catégoriel Évolution (« Compter ») :
 # 'active' = caches présentes à la date affichée (ensemble vivant),
 # 'placed'/'archived' = cumuls monotone des événements.
@@ -93,7 +99,12 @@ EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "
 # favoris (total, part), caches trouvées… « ftf_delay » et « neglected » sont
 # lues dans la chronologie de la page, pas dans l'accumulateur.
 POSES_COUNTER_ITEMS = ("total", "finders", "loyal", "favorites", "fav_ratio", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west", "ftf_delay", "neglected")
-_ALL_COUNTER_ITEMS = tuple(dict.fromkeys(STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS + POSES_COUNTER_ITEMS))
+# Tuiles des sources DNF et caches posées (page principale) ; les tuiles
+# d'état sont lues au jour affiché par le client.
+DNF_COUNTER_ITEMS = ("total", "caches", "dnf_open", "dnf_resolved", "dnf_ratio", "days", "best_day", "streak", "types", "countries", "states")
+OWNED_COUNTER_ITEMS = ("total", "owned_active", "owned_disabled", "owned_archived", "maintenances", "days", "best_day", "types", "countries", "states")
+_ALL_COUNTER_ITEMS = tuple(dict.fromkeys(STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS + POSES_COUNTER_ITEMS
+                                         + DNF_COUNTER_ITEMS + OWNED_COUNTER_ITEMS))
 
 STATS_OFFSET_RANGE = (0, 2000)
 STATS_WIDTH_RANGE = (120, 1200)
@@ -329,6 +340,7 @@ _OPTION_COERCERS = {
     "items": lambda v, d: _choices(v, _ALL_COUNTER_ITEMS, d),
     "counted": lambda v, d: _choice(v, STATS_COUNTED, d),
     "columns": lambda v, d: _int_in(v, d, STATS_COLUMNS_RANGE),
+    "source": lambda v, d: _choice(v, STATS_SOURCES, d),
 }
 
 _POSITION_COERCERS = {
@@ -390,6 +402,12 @@ def coerce_stats_panel(raw) -> dict | None:
     raw_options = raw.get("options")
     if kind in ("bar", "donut") and isinstance(raw_options, dict) and "counted" in raw_options:
         options["counted"] = _OPTION_COERCERS["counted"](raw_options["counted"], "active")
+    # Source comptée (page principale) : conservée seulement si fournie et
+    # différente des trouvailles (clé absente = « finds »).
+    if isinstance(raw_options, dict) and "source" in raw_options:
+        source = _OPTION_COERCERS["source"](raw_options["source"], "finds")
+        if source != "finds":
+            options["source"] = source
     raw_id = raw.get("id")
     return {
         "id": raw_id if isinstance(raw_id, str) and _ID_RE.fullmatch(raw_id) else "",

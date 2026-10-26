@@ -89,6 +89,18 @@
                     <canvas id="statsPanelPreview" class="stats-panel-preview mb-2" aria-hidden="true"></canvas>
                     <h6 class="gc-subsection-title">{{ _("Contenu") }}</h6>
                     <div class="row g-2">
+                        <!-- Données comptées (page principale) : trouvailles, DNF ou
+                             caches posées — proposé quand les logs en apportent
+                             (stats_ui.js › renderForm). -->
+                        <div class="col-12" id="statsSourceField" hidden>
+                            <label class="form-label" for="selectStatsSource">{{ _("Données comptées") }}</label>
+                            <select id="selectStatsSource" class="form-select" aria-describedby="helpStatsSource">
+                                <option value="finds">{{ _("Mes trouvailles") }}</option>
+                                <option value="dnf">{{ _("Mes DNF") }}</option>
+                                <option value="owned">{{ _("Mes caches posées") }}</option>
+                            </select>
+                            <small id="helpStatsSource" class="form-hint text-muted">{{ _("Les DNF et les caches posées sont comptés même s'ils ne sont pas affichés sur la carte.") }}</small>
+                        </div>
                         <div class="col-12 col-md-5">
                             <label class="form-label" for="selectStatsMetric">{{ _("Statistique") }}</label>
                             <select id="selectStatsMetric" class="form-select"></select>
@@ -234,9 +246,16 @@
                                     ('loyal', _('Trouveurs fidèles'), 'poses'),
                                     ('favorites', _('Favoris reçus'), 'poses'),
                                     ('fav_ratio', _('Part de favoris'), 'poses'),
-                                    ('caches', _('Caches trouvées au moins une fois'), 'poses'),
+                                    ('caches', _('Caches trouvées au moins une fois'), 'main poses'),
                                     ('ftf_delay', _('Délai moyen avant la FTF'), 'poses'),
-                                    ('neglected', _('Cache la plus délaissée'), 'poses')] %}
+                                    ('neglected', _('Cache la plus délaissée'), 'poses'),
+                                    ('dnf_open', _('DNF en cours'), 'main'),
+                                    ('dnf_resolved', _('DNF résolus'), 'main'),
+                                    ('dnf_ratio', _("Taux d'échec"), 'main'),
+                                    ('owned_active', _('Caches actives'), 'main'),
+                                    ('owned_disabled', _('Caches désactivées'), 'main'),
+                                    ('owned_archived', _('Caches archivées'), 'main'),
+                                    ('maintenances', _('Maintenances'), 'main')] %}
                                 <div class="form-check" data-stats-modes="{{ modes }}">
                                     <input class="form-check-input" type="checkbox" id="statsCounter-{{ item }}" data-counter-item="{{ item }}">
                                     <label class="form-check-label" for="statsCounter-{{ item }}">{{ label }}</label>
@@ -490,6 +509,21 @@
         ('add', 'donut:cache', _("Anneau des caches"), _("La part de chaque cache dans les trouvailles reçues."), None, 'poses', 1),
         ('add', 'donut:finder', _("Anneau des trouveurs"), _("La part des joueurs qui vous ont le plus rendu visite."), None, 'poses', 1),
     ]),
+    (_("Mes DNF"), [
+        ('preset', 'dnf-overview', _("Chiffres + progression des DNF"), _("DNF, caches en échec, en cours, résolus, taux d'échec, et la courbe des DNF."), None, 'main', 2),
+        ('preset', 'dnf-dt', _("Matrice D/T des DNF"), _("Les combinaisons difficulté/terrain où vous avez échoué."), None, 'main', 1),
+        ('preset', 'dnf-difficulty', _("DNF par difficulté"), _("Vos échecs selon la difficulté de la cache."), None, 'main', 1),
+        ('preset', 'dnf-types', _("DNF par type"), _("Une barre par type de cache."), None, 'main', 1),
+        ('preset', 'dnf-year', _("DNF par année"), _("Vos échecs de chaque année."), None, 'main', 1),
+        ('preset', 'dnf-calendar', _("Calendrier des DNF"), _("Chaque jour de l'année où vous avez noté un DNF."), None, 'main', 1),
+    ]),
+    (_("Mes caches posées"), [
+        ('preset', 'owned-overview', _("Chiffres + poses cumulées"), _("Caches posées, actives, archivées, maintenances, et la courbe des poses."), None, 'main', 2),
+        ('preset', 'owned-types', _("Anneau de mes caches"), _("La part de chaque type parmi vos caches posées."), None, 'main', 1),
+        ('preset', 'owned-dt', _("Matrice D/T de mes caches"), _("Les combinaisons difficulté/terrain de vos caches."), None, 'main', 1),
+        ('preset', 'owned-sizes', _("Tailles de mes caches"), _("Du micro au grand, parmi vos caches posées."), None, 'main', 1),
+        ('preset', 'owned-year', _("Poses par année"), _("Les caches posées chaque année."), None, 'main', 1),
+    ]),
     (_("Dates de trouvaille"), [
         ('add', 'bar:year', _("Trouvailles par année"), _("Les trouvailles de chaque année."), None, 'main poses', 1),
         ('add', 'bar:month', _("Trouvailles par mois"), _("De janvier à décembre, toutes années confondues."), None, 'main poses', 1),
@@ -518,8 +552,11 @@
                     <h6 class="gc-subsection-title" id="statsGallerySection{{ loop.index }}">{{ title }}</h6>
                     <div class="stats-gallery-grid">
                         {% for type, value, label, desc, desc_evo, modes, count in entries %}
+                        {# Cartes d'une source (DNF, caches posées) : masquées sans ses données. #}
+                        {% set card_source = 'dnf' if value.startswith('dnf-') else ('owned' if value.startswith('owned-') else '') %}
                         <button type="button" class="stats-gallery-card"
                                 {% if type == 'preset' %}data-stats-preset="{{ value }}"{% else %}data-stats-add="{{ value }}"{% endif %}
+                                {% if card_source %}data-stats-source="{{ card_source }}"{% endif %}
                                 data-stats-modes="{{ modes }}">
                             <span class="stats-gallery-thumb" aria-hidden="true">
                                 <i class="ti {{ {'grid': 'ti-layout-grid', 'donut': 'ti-chart-donut', 'line': 'ti-chart-line', 'counter': 'ti-123'}.get(value.split(':')[0], 'ti-chart-bar') }} stats-gallery-placeholder"></i>

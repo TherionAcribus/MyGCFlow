@@ -1514,3 +1514,41 @@ test('offsetFreeCopy : panneau non affiché, décalage en fraction', () => {
     assert.ok(near(copy.x, 0.54));
     assert.ok(near(copy.y, 0.96));
 });
+
+// ---------------------------------------------------------------------------
+// Sources comptées (page principale) : trouvailles, DNF, caches posées
+// ---------------------------------------------------------------------------
+
+test('source d\'un panneau : trouvailles par défaut, registre et tuiles propres', async () => {
+    const { statsPanelSource, statsPanelRegistry, statsSourceCounterItems, DNF_METRICS_BY_KIND } = await import('./static/js/stats_model.mjs');
+    const dnf = createStatsPanel('bar', 'difficulty', { options: { source: 'dnf' } });
+    const finds = createStatsPanel('bar', 'attribute');
+    assert.equal(statsPanelSource(dnf), 'dnf');
+    assert.equal(statsPanelSource(finds), 'finds');
+    // Attributs : sans objet pour les DNF ; la source ne joue que sur la page principale.
+    assert.ok(!DNF_METRICS_BY_KIND.bar.includes('attribute'));
+    assert.ok(statsPanelRegistry(finds, 'main').bar.includes('attribute'));
+    assert.ok(!statsPanelRegistry({ ...finds, options: { source: 'owned' } }, 'main').bar.includes('attribute'));
+    assert.ok(statsPanelRegistry(dnf, 'poses').bar.includes('finder'));
+    assert.ok(statsSourceCounterItems('owned').includes('maintenances'));
+    assert.ok(!statsSourceCounterItems('finds').includes('dnf_open'));
+});
+
+test('métriques à compter : une liste par source', () => {
+    const settings = normalizeStatsSettings({ panels: [
+        { id: 'aaaaaa21', kind: 'grid', metric: 'dt' },
+        { id: 'aaaaaa22', kind: 'bar', metric: 'year', options: { source: 'dnf' } },
+        { id: 'aaaaaa23', kind: 'counter', metric: 'summary', options: { source: 'owned', items: ['total', 'owned_active'] } },
+    ] });
+    assert.deepEqual([...metricsForPanels(settings, { mode: 'main' })], ['dt']);
+    assert.deepEqual([...metricsForPanels(settings, { mode: 'main', source: 'dnf' })], ['year']);
+    assert.deepEqual([...metricsForPanels(settings, { mode: 'main', source: 'owned' })], ['total']);
+});
+
+test('tuiles d\'état : valeurs neutres tant que stats_panels ne les remplit pas', () => {
+    const acc = createStatsAccumulator(['total']);
+    const values = counterValues(acc, ['dnf_open', 'dnf_ratio', 'maintenances']);
+    assert.deepEqual(values.dnf_open, { value: 0 });
+    assert.deepEqual(values.dnf_ratio, { value: 0, pct: true });
+    assert.deepEqual(values.maintenances, { value: 0 });
+});

@@ -135,6 +135,13 @@ Autres repères :
   puis `page.reload()` (ou `reloadOwnerData()`) — exemple dans
   `owner-display.spec.mjs`, dont la fixture `my-finds-poses.gpx` cale la plage
   d'animation sur la vie des caches de `logs-poses.json`.
+- Panneaux Stats par source (`options.source` : `dnf` / `owned`) : les
+  données DNF et caches posées sont chargées au démarrage même si leur
+  affichage carte est coupé — un spec qui importe des logs recharge la page
+  puis attend `hasDnfData()` / `hasOwnedCaches()`. Comptes par source dans
+  `getStatsSnapshot().sources` (seulement pour une source qui a des
+  panneaux) ; tuiles d'état lues dans `.stats-panel-alt` — exemple dans
+  `stats-sources.spec.mjs`.
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

@@ -18,15 +18,17 @@
 // l'animation, l'état courant, mis à l'échelle de la RÉFÉRENCE (comptes à la
 // date de fin) pour que rien ne se redimensionne ni ne change de rang.
 import * as pkg from './index.js';
-import { appMode, isEvolutionPage, isPosesPage } from './app_mode.mjs';
+import { appMode, isEvolutionPage, isMainPage, isPosesPage } from './app_mode.mjs';
 import {
     DT_LABELS,
     EVOLUTION_METRICS_BY_KIND,
     OTHERS_KEY,
     STATS_ANCHORS,
+    STATS_DAY_TILES,
     STATS_DEFAULTS,
     STATS_HEIGHT_RANGE,
     STATS_METRICS_BY_KIND,
+    STATS_SOURCES,
     STATS_WIDTH_RANGE,
     UNKNOWN_KEY,
     arrangePanels,
@@ -59,7 +61,8 @@ import {
     metricsForPanels,
     normalizeStatsSettings,
     rectsOverlap,
-    statsMetricsRegistry,
+    statsPanelRegistry,
+    statsPanelSource,
     statsPanelsKey,
     statsStylePreset,
     yearTicks,
@@ -69,18 +72,48 @@ import { STATS_RENDERERS, drawStatsPanel, hitStatsPanel, measureStatsPanel } fro
 
 const DEFAULT_HIGHLIGHT_MS = 600;
 
-// Tuiles « poseur » des compteurs Mes poses dont la valeur dépend du jour
-// affiché (lues dans la chronologie, pas dans l'accumulateur) : un panneau
-// qui en porte est redessiné aussi les jours sans trouvaille.
-const POSES_DAY_TILES = new Set(['ftf_delay', 'neglected']);
+// Tuiles dont la valeur dépend du jour affiché (lues hors de l'accumulateur :
+// chronologie de Mes poses, états des DNF et des caches posées) : un panneau
+// qui en porte est redessiné aussi les jours sans événement compté.
+const DAY_TILES = new Set(STATS_DAY_TILES);
 
 let settings = normalizeStatsSettings(STATS_DEFAULTS);
-let metrics = new Set();
-let metricsKey = '';
 
-// 'rest' : totaux de la sélection ; 'animating' : accumulateur courant.
+// Comptage par SOURCE (docs/panneaux-stats.md) : sur la page principale,
+// chaque panneau compte les trouvailles, les DNF ou les caches posées
+// (stats_model › statsPanelSource) ; chaque source a son index par jour, son
+// accumulateur, ses totaux et sa référence. Les autres pages n'ont que la
+// source « finds » (trouvailles reçues sur Mes poses ; métriques des
+// catégories en Évolution, qui a son propre accumulateur).
+function newSourceState(key) {
+    return {
+        key,
+        metrics: new Set(),
+        metricsKey: '',
+        current: createStatsAccumulator(),
+        totalsMemo: null,      // { key, acc }
+        referenceMemo: null,   // { key, acc }
+        // Index par jour des sauts et de l'accumulation (statsDayIndex).
+        daysMemo: null,        // { revision, days, feats, extremes, prefix }
+        appliedPos: 0,         // nombre de jours de tête comptés dans `current`
+        basePos: 0,            // jours d'avant la date de début : plancher d'un saut
+        appliedRev: -1,        // révision de l'index couverte par `current`
+    };
+}
+const sourceStates = new Map(STATS_SOURCES.map((key) => [key, newSourceState(key)]));
+const FINDS = sourceStates.get('finds');
+
+function panelState(panel) {
+    return isMainPage() ? (sourceStates.get(statsPanelSource(panel)) || FINDS) : FINDS;
+}
+
+// Sources dont au moins un panneau actif compte quelque chose.
+function countingStates() {
+    return [...sourceStates.values()].filter((S) => S.metrics.size > 0);
+}
+
+// 'rest' : totaux de la sélection ; 'animating' : accumulateurs courants.
 let mode = 'rest';
-let current = createStatsAccumulator();
 let animation = null;   // { startDate, endDate, lastDate, highlightMs }
 let lastNow = Number.NaN;
 let highlightWasActive = false;
@@ -113,9 +146,6 @@ function clearTweens(duration = tweenDuration) {
     tweenDuration = duration;
     for (const store of panelTweens.values()) store.clear(duration);
 }
-
-let totalsMemo = null;      // { key, acc }
-let referenceMemo = null;   // { key, acc }
 
 // Révision : tout ce qui change ce que dessinent les panneaux (comptes,
 // réglages, mise en page, surbrillance qui s'estompe). Entre dans la signature
@@ -160,8 +190,10 @@ export function getStatsSettings() {
 function pagePanels() {
     return settings[statsPanelsKey(appMode())] || [];
 }
-function pageRegistry() {
-    return statsMetricsRegistry(appMode());
+// Registre d'un panneau sur la page courante (source comprise sur la page
+// principale).
+function pageRegistry(panel) {
+    return statsPanelRegistry(panel, appMode());
 }
 
 // Applique des réglages (chargement, onglet Stats). L'aperçu suit aussitôt ;
@@ -173,25 +205,31 @@ export function applyStatsSettings(raw) {
     settings = normalizeStatsSettings(raw, settings);
     settingsRev += 1;
     const evolution = isEvolutionPage();
-    const nextMetrics = metricsForPanels(settings, { mode: appMode() });
-    const nextKey = [...nextMetrics].sort().join(',');
-    if (nextKey !== metricsKey) {
-        metrics = nextMetrics;
-        metricsKey = nextKey;
-        totalsMemo = null;
-        referenceMemo = null;
-        evoRestMemo = null;
-        evoPeaksMemo = null;
+    for (const S of sourceStates.values()) {
+        // Sources DNF / caches posées : page principale seulement.
+        const nextMetrics = S === FINDS || isMainPage()
+            ? metricsForPanels(settings, { mode: appMode(), source: S.key })
+            : new Set();
+        const nextKey = [...nextMetrics].sort().join(',');
+        if (nextKey === S.metricsKey) continue;
+        S.metrics = nextMetrics;
+        S.metricsKey = nextKey;
+        S.totalsMemo = null;
+        S.referenceMemo = null;
+        if (S === FINDS) {
+            evoRestMemo = null;
+            evoPeaksMemo = null;
+        }
         // Métrique ajoutée en pleine animation : l'accumulateur est reconstruit
         // jusqu'au dernier jour affiché, sans relancer l'animation.
         if (mode === 'animating') {
-            if (evolution && evolutionIndex()) {
-                evoCurrent = evolutionStateAt(evolutionIndex(), metrics, evoAppliedDay ?? -1);
+            if (evolution && S === FINDS && evolutionIndex()) {
+                evoCurrent = evolutionStateAt(evolutionIndex(), S.metrics, evoAppliedDay ?? -1);
             } else if (!evolution) {
-                rebuildCurrent();
+                rebuildCurrent(S);
             }
         } else if (!evolution) {
-            current = createStatsAccumulator(metrics);
+            S.current = createStatsAccumulator(S.metrics);
         }
     }
     videoCache.clear();
@@ -212,10 +250,11 @@ function visiblePanels() {
             && (EVOLUTION_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric));
     }
     if (!(pkg.hasDatabase?.() ?? false)) return [];
-    // Mode principal et Mes poses : des trouvailles (reçues, sur Mes poses).
-    const registry = pageRegistry();
+    // Mode principal (trouvailles, DNF ou caches posées selon la source du
+    // panneau) et Mes poses (trouvailles reçues).
+    const page = appMode();
     return pagePanels().filter((panel) => panel.enabled && STATS_RENDERERS[panel.kind]
-        && (registry[panel.kind] || []).includes(panel.metric));
+        && (statsPanelRegistry(panel, page)[panel.kind] || []).includes(panel.metric));
 }
 
 // Index de la sélection Évolution (chronologie + features + révision), ou
@@ -229,11 +268,18 @@ function evolutionIndex() {
 // Comptage
 // ---------------------------------------------------------------------------
 
-// Trouvailles comptées, par jour (clés Date.toDateString()) : celles de la
-// carte en mode principal (visibles puis locationless masquées) ; sur Mes
-// poses, les trouvailles REÇUES, fournies par poses_data.js (mêmes
-// propriétés : date_find, attributs de la cache, plus le trouveur).
-function findIndexes() {
+// Événements comptés, par jour (clés Date.toDateString()). Source « finds » :
+// les trouvailles de la carte en mode principal (visibles puis locationless
+// masquées) ; sur Mes poses, les trouvailles REÇUES, fournies par
+// poses_data.js (mêmes propriétés : date_find, attributs de la cache, plus le
+// trouveur). Sources « dnf » / « owned » (page principale) : un événement par
+// DNF, une cache posée par jour d'apparition (dnf_data.js, owner_data.js),
+// affichés ou non sur la carte.
+function findIndexes(S = FINDS) {
+    if (S.key !== 'finds') {
+        const source = S.key === 'dnf' ? pkg.dnfStatsIndex?.() : pkg.ownerStatsIndex?.();
+        return { revision: source?.revision ?? `${S.key}:none`, maps: source ? [source.byDate] : [] };
+    }
     if (isPosesPage()) {
         const source = pkg.posesStatsFinds?.();
         return { revision: `poses:${source?.revision ?? 'none'}`, maps: source ? [source.byDate] : [] };
@@ -244,33 +290,28 @@ function findIndexes() {
     };
 }
 
-function indexFeaturesUpTo(until) {
+function indexFeaturesUpTo(S, until) {
     const out = [];
-    for (const map of findIndexes().maps) {
+    for (const map of findIndexes(S).maps) {
         for (const feature of featuresUpTo(map, until)) out.push(feature);
     }
     return out;
 }
 
-function indexRevision() {
-    return findIndexes().revision;
+function indexRevision(S = FINDS) {
+    return findIndexes(S).revision;
 }
 
 // Index par jour des sauts et de l'accumulation : jours triés → features
 // (visibles puis locationless masquées, même ordre que featuresOfDates pour
 // les égalités d'extrêmes). Mémoïsé par révision de l'index source ; les
 // extrêmes par jour ne sont calculés qu'à la demande (repli d'un record
-// retiré, cf. removeDays).
-let statsDaysMemo = null;  // { revision, days: number[], feats: Feature[][], extremes: (ex|null)[] }
-let appliedPos = 0;        // nombre de jours de tête comptés dans `current`
-let basePos = 0;           // jours d'avant la date de début : plancher d'un saut
-let appliedRev = -1;       // révision de l'index couverte par `current`
-
-function statsDayIndex() {
-    const revision = indexRevision();
-    if (statsDaysMemo?.revision === revision) return statsDaysMemo;
+// retiré, cf. removeDays), les cumuls aussi (countUpTo).
+function statsDayIndex(S) {
+    const revision = indexRevision(S);
+    if (S.daysMemo?.revision === revision) return S.daysMemo;
     const byDay = new Map();
-    for (const byDate of findIndexes().maps) {
+    for (const byDate of findIndexes(S).maps) {
         if (!byDate) continue;
         for (const [key, list] of byDate.entries()) {
             if (!list?.length) continue;
@@ -282,13 +323,14 @@ function statsDayIndex() {
         }
     }
     const days = [...byDay.keys()].sort((a, b) => a - b);
-    statsDaysMemo = {
+    S.daysMemo = {
         revision,
         days,
         feats: days.map((d) => byDay.get(d)),
         extremes: new Array(days.length).fill(null),
+        prefix: null,
     };
-    return statsDaysMemo;
+    return S.daysMemo;
 }
 
 // Nombre d'entrées de `days` ≤ `day` (recherche dichotomique) : la position
@@ -304,6 +346,18 @@ function daysUpTo(days, day) {
     return lo;
 }
 
+// Nombre d'événements d'une source jusqu'au jour `day` inclus (Infinity :
+// tous), indépendamment de ce que comptent ses panneaux — tuile « taux
+// d'échec » (DNF / (DNF + trouvailles)).
+function countUpTo(S, day) {
+    const index = statsDayIndex(S);
+    if (!index.prefix) {
+        index.prefix = [0];
+        for (const list of index.feats) index.prefix.push(index.prefix.at(-1) + list.length);
+    }
+    return index.prefix[daysUpTo(index.days, day)];
+}
+
 // Extrêmes d'un jour de l'index, calculés une fois (mémoïsés dans l'index).
 function dayExtremes(index, pos) {
     return index.extremes[pos] ?? (index.extremes[pos] = extremesOfFeatures(index.feats[pos]));
@@ -313,12 +367,12 @@ function dayExtremes(index, pos) {
 // records d'extrêmes nés dans un jour retiré (leur `day` identifie le seau
 // d'origine) sont repliés sur les jours restants — premier gagnant à égalité,
 // ordre chronologique, comme updateExtremes.
-function removeDays(index, from, to) {
+function removeDays(S, index, from, to) {
     const removed = new Set(index.days.slice(from, to));
     const batch = [];
     for (let i = from; i < to; i++) for (const feature of index.feats[i]) batch.push(feature);
-    current.remove(batch);
-    const ex = current.extremes;
+    S.current.remove(batch);
+    const ex = S.current.extremes;
     if (!ex) return;
     for (const dir of ['north', 'south', 'east', 'west']) {
         if (!ex[dir] || !removed.has(ex[dir].day)) continue;
@@ -330,47 +384,49 @@ function removeDays(index, from, to) {
 
 // Totaux de la sélection filtrée (locationless masquées comprises, comme le
 // compteur de caches), recalculés une fois par changement de sélection.
-function selectionTotals() {
-    const key = `${indexRevision()}|${metricsKey}`;
-    if (totalsMemo?.key !== key) {
-        totalsMemo = { key, acc: countFeatures(indexFeaturesUpTo(null), metrics) };
+function selectionTotals(S = FINDS) {
+    const key = `${indexRevision(S)}|${S.metricsKey}`;
+    if (S.totalsMemo?.key !== key) {
+        S.totalsMemo = { key, acc: countFeatures(indexFeaturesUpTo(S, null), S.metrics) };
     }
-    return totalsMemo.acc;
+    return S.totalsMemo.acc;
 }
 
 // Comptes à la date de fin de l'animation : l'échelle, l'ordre et les bornes
-// des graphes. Égaux aux totaux sans date de fin imposée.
-function animationReference() {
+// des graphes. Égaux aux totaux sans date de fin imposée. Les DNF et les
+// caches posées peuvent dépasser la dernière trouvaille : leur référence
+// s'arrête toujours à la date de fin.
+function animationReference(S = FINDS) {
     const end = animation?.endDate instanceof Date ? animation.endDate : null;
     const lastFind = pkg.metadata?.endDate instanceof Date ? pkg.metadata.endDate : null;
-    if (!end || (lastFind && end.getTime() >= lastFind.getTime())) return selectionTotals();
-    const key = `${indexRevision()}|${metricsKey}|${end.getTime()}`;
-    if (referenceMemo?.key !== key) {
-        referenceMemo = { key, acc: countFeatures(indexFeaturesUpTo(end), metrics) };
+    if (!end || (S === FINDS && lastFind && end.getTime() >= lastFind.getTime())) return selectionTotals(S);
+    const key = `${indexRevision(S)}|${S.metricsKey}|${end.getTime()}`;
+    if (S.referenceMemo?.key !== key) {
+        S.referenceMemo = { key, acc: countFeatures(indexFeaturesUpTo(S, end), S.metrics) };
     }
-    return referenceMemo.acc;
+    return S.referenceMemo.acc;
 }
 
-function rebuildCurrent() {
-    current = createStatsAccumulator(metrics);
-    appliedPos = 0;
-    basePos = 0;
-    appliedRev = indexRevision();
-    if (!animation) return;
-    const index = statsDayIndex();
+function rebuildCurrent(S) {
+    S.current = createStatsAccumulator(S.metrics);
+    S.appliedPos = 0;
+    S.basePos = 0;
+    S.appliedRev = indexRevision(S);
+    if (!animation || S.metrics.size === 0) return;
+    const index = statsDayIndex(S);
     // Les jours d'avant la date de début sont comptés au lancement (caches
     // déjà affichées) : un saut ne redescend jamais sous ce plancher.
-    basePos = animation.startDate instanceof Date
+    S.basePos = animation.startDate instanceof Date
         ? daysUpTo(index.days, dayNumberOfDate(animation.startDate) - 1)
         : 0;
     const until = animation.lastDate || new Date(animation.startDate.getTime() - 1);
-    appliedPos = daysUpTo(index.days, dayNumberOfDate(until));
-    for (let i = 0; i < appliedPos; i++) current.add(index.feats[i]);
+    S.appliedPos = daysUpTo(index.days, dayNumberOfDate(until));
+    for (let i = 0; i < S.appliedPos; i++) S.current.add(index.feats[i]);
 }
 
-function featuresOfDates(dates) {
+function featuresOfDates(S, dates) {
     const out = [];
-    const maps = findIndexes().maps;
+    const maps = findIndexes(S).maps;
     for (const date of dates) {
         const key = date.toDateString();
         for (const map of maps) {
@@ -379,6 +435,13 @@ function featuresOfDates(dates) {
         }
     }
     return out;
+}
+
+// Le panneau suit-il le jour affiché même sans événement compté ? Tête de
+// courbe, année d'activité, tuiles lues au jour (DAY_TILES).
+function panelFollowsDay(panel) {
+    return panel.kind === 'line' || panel.metric === 'activity'
+        || (panel.kind === 'counter' && (panel.options.items || []).some(DAY_TILES.has, DAY_TILES));
 }
 
 // --- Mode Évolution ------------------------------------------------------------
@@ -392,9 +455,9 @@ function evolutionRestAcc() {
     // restDay dépend de la date de fin choisie (onglet Animation), pas de la
     // révision des données : il fait partie de la clé, sinon l'état calculé
     // avant le changement de borne resterait servi indéfiniment.
-    const key = `${index.revision}|${index.restDay}|${metricsKey}`;
+    const key = `${index.revision}|${index.restDay}|${FINDS.metricsKey}`;
     if (evoRestMemo?.key !== key) {
-        evoRestMemo = { key, acc: evolutionStateAt(index, metrics, index.restDay) };
+        evoRestMemo = { key, acc: evolutionStateAt(index, FINDS.metrics, index.restDay) };
     }
     return evoRestMemo.acc;
 }
@@ -404,9 +467,9 @@ function evolutionRestAcc() {
 function evolutionActivePeaksRef() {
     const index = evolutionIndex();
     if (!index) return null;
-    const key = `${index.revision}|${index.restDay}|${metricsKey}`;
+    const key = `${index.revision}|${index.restDay}|${FINDS.metricsKey}`;
     if (evoPeaksMemo?.key !== key) {
-        evoPeaksMemo = { key, ref: evolutionActivePeaks(index, metrics, index.restDay) };
+        evoPeaksMemo = { key, ref: evolutionActivePeaks(index, FINDS.metrics, index.restDay) };
     }
     return evoPeaksMemo.ref;
 }
@@ -437,7 +500,7 @@ export function accumulateEvolutionStats(dates, placed, archived, now) {
     }
     animation.lastDate = dates[dates.length - 1];
     if (!evoCurrent || evoAppliedDay !== first - 1) {
-        evoCurrent = evolutionStateAt(index, metrics, first - 1);
+        evoCurrent = evolutionStateAt(index, FINDS.metrics, first - 1);
     }
     const at = Number.isFinite(now) ? now : null;
     evoCurrent.add(placed, at);
@@ -494,9 +557,9 @@ export function resetStatsForAnimation({ startDate, endDate, highlightMs } = {})
         const index = evolutionIndex();
         const day = index?.dayOf?.(startDate);
         evoAppliedDay = Number.isFinite(day) ? day - 1 : null;
-        evoCurrent = index ? evolutionStateAt(index, metrics, evoAppliedDay ?? -1) : null;
+        evoCurrent = index ? evolutionStateAt(index, FINDS.metrics, evoAppliedDay ?? -1) : null;
     } else {
-        rebuildCurrent();
+        for (const S of sourceStates.values()) rebuildCurrent(S);
     }
     clearTweens(animation.highlightMs);
     layoutDirty = true;
@@ -506,40 +569,42 @@ export function resetStatsForAnimation({ startDate, endDate, highlightMs } = {})
 // Lot de jours affichés par l'animation (un ou plusieurs jours rattrapés par
 // la même frame) : leurs caches, locationless masquées comprises.
 export function accumulateStatsForDates(dates, now) {
-    if (mode !== 'animating' || !dates?.length || metrics.size === 0) {
+    if (mode !== 'animating' || !dates?.length) {
         if (dates?.length && animation) animation.lastDate = dates[dates.length - 1];
         return;
     }
     animation.lastDate = dates[dates.length - 1];
     if (Number.isFinite(now)) lastNow = now;
-    const index = statsDayIndex();
-    if (appliedRev !== index.revision) {
-        // Index reconstruit en pleine animation (import, filtre) : l'état
-        // courant est recompté jusqu'au dernier jour affiché, pas incrémenté
-        // par-dessus — les features du lot en cours sont dedans.
-        rebuildCurrent();
+    const lastDay = dayNumberOfDate(dates[dates.length - 1]);
+    let counted = false;
+    for (const S of countingStates()) {
+        const index = statsDayIndex(S);
+        if (S.appliedRev !== index.revision) {
+            // Index reconstruit en pleine animation (import, filtre) : l'état
+            // courant est recompté jusqu'au dernier jour affiché, pas
+            // incrémenté par-dessus — les features du lot en cours sont dedans.
+            rebuildCurrent(S);
+            counted = true;
+            continue;
+        }
+        const features = featuresOfDates(S, dates);
+        // Les jours sans événement ne figurent pas dans `days` : la borne sur
+        // le dernier jour du lot suffit à suivre la position comptée.
+        S.appliedPos = daysUpTo(index.days, lastDay);
+        if (features.length === 0) continue;
+        S.current.add(features, Number.isFinite(now) ? now : null);
+        counted = true;
+    }
+    if (counted) {
         touch();
         return;
     }
-    const features = featuresOfDates(dates);
-    // Les jours sans trouvaille ne figurent pas dans `days` : la borne sur
-    // le dernier jour du lot suffit à suivre la position comptée.
-    appliedPos = daysUpTo(index.days, dayNumberOfDate(dates[dates.length - 1]));
-    if (features.length === 0) {
-        // Jours sans trouvaille : rien à compter, mais la tête d'une courbe
-        // avance quand même sur l'axe des dates, une année d'activité
-        // passe à l'année suivante au 1ᵉʳ janvier, et les tuiles « poseur »
-        // de Mes poses (délai FTF, délaissement) suivent le jour affiché —
-        // il faut redessiner (leur clé porte le jour, cf. panelDrawKey).
-        if (visiblePanels().some((panel) => panel.kind === 'line' || panel.metric === 'activity'
-            || (isPosesPage() && panel.kind === 'counter'
-                && (panel.options.items || []).some(POSES_DAY_TILES.has, POSES_DAY_TILES)))) {
-            touchFrame();
-        }
-        return;
-    }
-    current.add(features, Number.isFinite(now) ? now : null);
-    touch();
+    // Jours sans événement : rien à compter, mais la tête d'une courbe avance
+    // quand même sur l'axe des dates, une année d'activité passe à l'année
+    // suivante au 1ᵉʳ janvier, et les tuiles lues au jour (délai FTF, DNF en
+    // cours, caches actives…) suivent le jour affiché — il faut redessiner
+    // (leur clé porte le jour, cf. panelDrawKey).
+    if (visiblePanels().some(panelFollowsDay)) touchFrame();
 }
 
 // Saut dans la chronologie (barre de chronologie, aperçu en pause) : l'état à
@@ -565,7 +630,7 @@ export function seekStatsToDate(date) {
             evolution: true,
         };
         if (!evoCurrent || !Number.isFinite(evoAppliedDay)) {
-            evoCurrent = evolutionStateAt(index, metrics, day);
+            evoCurrent = evolutionStateAt(index, FINDS.metrics, day);
         } else if (day > evoAppliedDay) {
             // En avant : poses et archivages des jours (applied, day].
             const ev = evolutionEventsBetween(index, evoAppliedDay, day);
@@ -583,17 +648,19 @@ export function seekStatsToDate(date) {
     } else {
         if (mode !== 'animating' || !animation) return;
         animation.lastDate = date;
-        const index = statsDayIndex();
-        if (appliedRev !== index.revision) rebuildCurrent();
-        // jamais sous le plancher des jours d'avant la date de début.
-        const target = Math.max(basePos, daysUpTo(index.days, dayNumberOfDate(date)));
-        if (target > appliedPos) {
-            // Sans horloge : rien ne surligne.
-            for (let i = appliedPos; i < target; i++) current.add(index.feats[i]);
-        } else if (target < appliedPos) {
-            removeDays(index, target, appliedPos);
+        for (const S of countingStates()) {
+            const index = statsDayIndex(S);
+            if (S.appliedRev !== index.revision) rebuildCurrent(S);
+            // jamais sous le plancher des jours d'avant la date de début.
+            const target = Math.max(S.basePos, daysUpTo(index.days, dayNumberOfDate(date)));
+            if (target > S.appliedPos) {
+                // Sans horloge : rien ne surligne.
+                for (let i = S.appliedPos; i < target; i++) S.current.add(index.feats[i]);
+            } else if (target < S.appliedPos) {
+                removeDays(S, index, target, S.appliedPos);
+            }
+            S.appliedPos = target;
         }
-        appliedPos = target;
     }
     clearTweens(animation.highlightMs);
     touch();
@@ -605,7 +672,7 @@ export function seekStatsToDate(date) {
 export function showStatsTotals() {
     mode = 'rest';
     animation = null;
-    current = createStatsAccumulator(metrics);
+    for (const S of sourceStates.values()) S.current = createStatsAccumulator(S.metrics);
     evoCurrent = null;
     clearTweens();
     layoutDirty = true;
@@ -620,7 +687,7 @@ export function refreshStatsPanels() {
     if (mode === 'animating' && !(pkg.isAnimationInProgress?.() ?? false)) {
         mode = 'rest';
         animation = null;
-        current = createStatsAccumulator(metrics);
+        for (const S of sourceStates.values()) S.current = createStatsAccumulator(S.metrics);
         evoCurrent = null;
         clearTweens();
     }
@@ -661,7 +728,7 @@ function panelAnimating(panel) {
     if (panelTweens.get(panel.id)?.isActive(lastNow)) return true;
     return isEvolutionPage()
         ? hasActiveEvolutionHighlights([panel], lastNow, animation.highlightMs)
-        : hasActiveHighlights(current, [panel], lastNow, animation.highlightMs);
+        : hasActiveHighlights(panelState(panel).current, [panel], lastNow, animation.highlightMs);
 }
 
 // Clé de dessin d'un panneau (aperçu et vidéo, taille du bitmap en plus) :
@@ -743,6 +810,47 @@ function weekdayNames(style) {
 // Titre par défaut d'un panneau, d'après sa métrique — aussi le nom affiché
 // dans la liste de l'onglet Stats.
 export function defaultStatsPanelTitle(panel) {
+    const source = isMainPage() ? statsPanelSource(panel) : 'finds';
+    if (source === 'dnf') {
+        switch (panel.metric) {
+            case 'dt': return pkg.t('Matrice D/T des DNF');
+            case 'finds_ym': return pkg.t('DNF mois × année');
+            case 'calendar': return pkg.t('Calendrier des DNF');
+            case 'activity': return pkg.t('Activité DNF');
+            case 'cache_type': return pkg.t('DNF par type');
+            case 'container': return pkg.t('DNF par taille');
+            case 'difficulty': return pkg.t('DNF par difficulté');
+            case 'terrain': return pkg.t('DNF par terrain');
+            case 'year': return pkg.t('DNF par année');
+            case 'month': return pkg.t('DNF par mois');
+            case 'weekday': return pkg.t('DNF par jour de la semaine');
+            case 'country': return pkg.t('DNF par pays');
+            case 'state': return pkg.t('DNF par région');
+            case 'owner': return pkg.t('DNF par propriétaire');
+            case 'cumulative': return pkg.t('DNF cumulés');
+            case 'summary': return pkg.t('Chiffres clés des DNF');
+            default: break;
+        }
+    } else if (source === 'owned') {
+        switch (panel.metric) {
+            case 'dt': return pkg.t('Matrice D/T de mes caches');
+            case 'finds_ym': return pkg.t('Poses mois × année');
+            case 'calendar': return pkg.t('Calendrier des poses');
+            case 'activity': return pkg.t('Activité de poseur');
+            case 'cache_type': return pkg.t('Mes caches par type');
+            case 'container': return pkg.t('Mes caches par taille');
+            case 'difficulty': return pkg.t('Mes caches par difficulté');
+            case 'terrain': return pkg.t('Mes caches par terrain');
+            case 'year': return pkg.t('Poses par année');
+            case 'month': return pkg.t('Poses par mois');
+            case 'weekday': return pkg.t('Poses par jour de la semaine');
+            case 'country': return pkg.t('Mes caches par pays');
+            case 'state': return pkg.t('Mes caches par région');
+            case 'cumulative': return pkg.t('Caches posées cumulées');
+            case 'summary': return pkg.t('Chiffres clés de mes caches');
+            default: break;
+        }
+    }
     if (isPosesPage()) {
         switch (panel.metric) {
             case 'cache': return pkg.t('Caches les plus trouvées');
@@ -963,15 +1071,18 @@ function formatDay(day) {
 }
 
 const COUNTER_LABELS = {
-    total: () => (isPosesPage() ? pkg.t('Trouvailles reçues') : pkg.t('Trouvailles')),
+    total: (source) => (source === 'dnf' ? pkg.t('DNF')
+        : source === 'owned' ? pkg.t('Caches posées')
+            : isPosesPage() ? pkg.t('Trouvailles reçues') : pkg.t('Trouvailles')),
     finders: () => pkg.t('Trouveurs différents'),
     favorites: () => pkg.t('Favoris reçus'),
     fav_ratio: () => pkg.t('Part de favoris'),
     loyal: () => pkg.t('Trouveurs fidèles'),
     ftf_delay: () => pkg.t('Délai moyen avant la FTF'),
     neglected: () => pkg.t('Cache la plus délaissée'),
-    caches: () => pkg.t('Caches trouvées au moins une fois'),
-    days: () => pkg.t('Jours avec trouvaille'),
+    caches: (source) => (source === 'dnf' ? pkg.t('Caches en échec') : pkg.t('Caches trouvées au moins une fois')),
+    days: (source) => (source === 'dnf' ? pkg.t('Jours avec DNF')
+        : source === 'owned' ? pkg.t('Jours de pose') : pkg.t('Jours avec trouvaille')),
     best_day: () => pkg.t('Record sur une journée'),
     streak: () => pkg.t('Plus longue série (jours)'),
     types: () => pkg.t('Types de caches différents'),
@@ -990,7 +1101,45 @@ const COUNTER_LABELS = {
     archivees: () => pkg.t('Caches archivées'),
     peak: () => pkg.t('Pic de caches actives'),
     age_moyen: () => pkg.t('Âge moyen des actives'),
+    dnf_open: () => pkg.t('DNF en cours'),
+    dnf_resolved: () => pkg.t('DNF résolus'),
+    dnf_ratio: () => pkg.t("Taux d'échec"),
+    owned_active: () => pkg.t('Caches actives'),
+    owned_disabled: () => pkg.t('Caches désactivées'),
+    owned_archived: () => pkg.t('Caches archivées'),
+    maintenances: () => pkg.t('Maintenances'),
 };
+
+// Libellé d'une tuile selon la source comptée (onglet Stats : cases à cocher).
+export function statsCounterLabel(item, source = 'finds') {
+    return COUNTER_LABELS[item]?.(source) ?? item;
+}
+
+// Tuiles d'état des sources DNF et caches posées, lues au jour `day`
+// (Infinity au repos : état actuel) dans les données de la source —
+// dnf_data.js › dnfStatsAtDay, owner_data.js › ownerStatsAtDay. Le taux
+// d'échec rapporte les DNF à toutes les tentatives (DNF + trouvailles)
+// jusqu'à ce jour.
+function sourceDayTiles(values, S, day) {
+    if (S.key === 'dnf') {
+        const states = pkg.dnfStatsAtDay?.(day) || { open: 0, resolved: 0 };
+        values.dnf_open = { value: states.open };
+        values.dnf_resolved = { value: states.resolved };
+        const dnf = countUpTo(S, day);
+        const finds = countUpTo(FINDS, day);
+        values.dnf_ratio = {
+            value: dnf + finds > 0 ? dnf / (dnf + finds) : 0,
+            pct: true,
+            detail: pkg.t('${dnf} DNF · ${finds} trouvailles', { dnf, finds }),
+        };
+    } else if (S.key === 'owned') {
+        const states = pkg.ownerStatsAtDay?.(day) || { active: 0, disabled: 0, archived: 0, maintenances: 0 };
+        values.owned_active = { value: states.active };
+        values.owned_disabled = { value: states.disabled };
+        values.owned_archived = { value: states.archived };
+        values.maintenances = { value: states.maintenances };
+    }
+}
 
 // Âge moyen des actives (jours) → texte compact : « 3,2 ans »,
 // « 8 mois », « 42 jours » ; « — » sans active.
@@ -1068,8 +1217,12 @@ function animateRows(panel, model, now, tweens = tweensOf(panel.id)) {
 function buildView(panel, source = null) {
     if (isEvolutionPage()) return buildEvolutionView(panel, source);
     const animating = !source && mode === 'animating';
-    const reference = source ? source.totals : (animating ? animationReference() : selectionTotals());
-    const state = animating ? current : reference;
+    const S = panelState(panel);
+    const reference = source
+        ? (source.totalsBySource?.get(S.key) ?? source.totals)
+        : (animating ? animationReference(S) : selectionTotals(S));
+    const state = animating ? S.current : reference;
+    const current = S.current;
     // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
     const now = animating ? lastNow : Number.NaN;
     const tweens = source ? createTweenStore(0) : tweensOf(panel.id);
@@ -1090,6 +1243,7 @@ function buildView(panel, source = null) {
             ? { mode: panel.options.highlight, durationMs: animation.highlightMs, hits: current.lastHit.get(countMetricOf(metric)) }
             : null,
     };
+    view.source = S.key;
     // Présence des lignes de pied décidée sur la référence : la hauteur du
     // panneau ne change pas au premier Lab rencontré.
     const refExcluded = reference.excluded.get(countMetricOf(metric)) || 0;
@@ -1098,7 +1252,9 @@ function buildView(panel, source = null) {
         const model = gridModel(metric, state, reference, gridContext(animating));
         view.model = model;
         if (metric === 'activity' && panel.show_title && !panel.title) {
-            view.title = pkg.t('Activité ${year}', { year: model.year });
+            view.title = S.key === 'dnf' ? pkg.t('DNF ${year}', { year: model.year })
+                : S.key === 'owned' ? pkg.t('Poses ${year}', { year: model.year })
+                    : pkg.t('Activité ${year}', { year: model.year });
         }
         view.cellMode = panel.options.cell_mode;
         Object.assign(view, gridAxisLabels(metric, model, number));
@@ -1168,6 +1324,13 @@ function buildView(panel, source = null) {
                 view.counterDay = day;
             }
         }
+        // Tuiles d'état DNF / caches posées : jour affiché, ou état actuel
+        // au repos (clé de dessin constante).
+        if (S.key !== 'finds' && panel.options.items.some(DAY_TILES.has, DAY_TILES)) {
+            const day = animating && animation?.lastDate ? dayNumberOfDate(animation.lastDate) : Infinity;
+            sourceDayTiles(values, S, day);
+            view.counterDay = animating ? day : 'rest';
+        }
         view.columns = panel.options.columns;
         view.tiles = panel.options.items.map((item) => {
             const entry = values[item] || { value: 0 };
@@ -1183,7 +1346,7 @@ function buildView(panel, source = null) {
             const { value, detail } = counterText(item, entry, number, shown, percent);
             return {
                 value,
-                label: COUNTER_LABELS[item](),
+                label: statsCounterLabel(item, S.key),
                 detail,
                 level: panel.options.highlight === 'none' ? 0 : tweens.level(key, now),
             };
@@ -1203,7 +1366,8 @@ function buildView(panel, source = null) {
         view.model = model;
         view.hole = panel.options.hole;
         view.showLegend = panel.options.show_legend;
-        view.centerLabel = pkg.t('trouvailles');
+        view.centerLabel = S.key === 'dnf' ? pkg.t('DNF')
+            : S.key === 'owned' ? pkg.t('caches') : pkg.t('trouvailles');
         // Même pied « exclus » que les barres : seule `attribute` peut en
         // produire parmi les catégories (une cache sans attribut n'a pas de
         // ligne « Inconnu », elle est hors sujet).
@@ -1549,7 +1713,11 @@ function refreshAltText(node, panel, view, key) {
             empty = false;
             add(isEvolutionPage()
                 ? `${COUNTER_LABELS[view.metric]?.() || view.metric} : ${number(model.total)} (${formatDay(model.headDay)})`
-                : pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
+                : view.source === 'dnf'
+                    ? pkg.t('${n} DNF au ${date}', { n: number(model.total), date: formatDay(model.headDay) })
+                    : view.source === 'owned'
+                        ? pkg.t('${n} caches posées au ${date}', { n: number(model.total), date: formatDay(model.headDay) })
+                        : pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
         }
         const reached = (view.milestones || []).filter((m) => m.day !== null);
         if (reached.length) {
@@ -1731,17 +1899,17 @@ function flush() {
     // l'accumulateur), mode, sélection et réglages — pas `revision`, qui
     // bouge à chaque estompe de surbrillance sans changer les chiffres.
     const evolution = isEvolutionPage();
-    const altState = evolution
-        ? (mode === 'animating' ? evoCurrent : evolutionRestAcc())
-        : (mode === 'animating' ? current : selectionTotals());
+    const altStates = evolution
+        ? [mode === 'animating' ? evoCurrent : evolutionRestAcc()]
+        : countingStates().map((S) => (mode === 'animating' ? S.current : selectionTotals(S)));
     // En Évolution l'état de repos dépend aussi du jour de fin choisi
     // (`restDay`) : l'accumulateur rejoué repart de revision 1, sans quoi
     // un changement de date de fin laisserait les textes (et dessins) figés.
     const evoIndex = evolution ? evolutionIndex() : null;
     const altIndexRev = evolution
         ? `${evoIndex?.revision || 0}:${evoIndex?.restDay ?? 0}`
-        : indexRevision();
-    const a11yBase = `${mode}|${settingsRev}|${altIndexRev}|${altState?.revision || 0}`;
+        : countingStates().map((S) => indexRevision(S)).join(':');
+    const a11yBase = `${mode}|${settingsRev}|${altIndexRev}|${altStates.map((acc) => acc?.revision || 0).join(':')}`;
     // Au repos, tout de suite ; en animation, au plus un passage par
     // intervalle (cf. A11Y_ANIMATION_INTERVAL_MS), le reste rattrapé ensuite.
     const clock = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -1945,8 +2113,7 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
 export function drawStatsPanelPreview(id, canvas) {
     const list = pagePanels();
     const panel = (list || []).find((p) => p.id === id);
-    const registry = pageRegistry();
-    if (!panel || !canvas || !(registry[panel.kind] || []).includes(panel.metric)) return false;
+    if (!panel || !canvas || !(pageRegistry(panel)[panel.kind] || []).includes(panel.metric)) return false;
     if (drawDirty) flush();
     paintPanelPreview(panel, buildView(panel), canvas);
     return true;
@@ -2020,18 +2187,30 @@ function gallerySource(panels) {
         }
         return galleryMemo.source;
     }
-    const key = `main|${indexRevision()}|${metricKey}`;
+    // Page principale : une passe par source (trouvailles, DNF, caches posées).
+    const page = appMode();
+    const list = { enabled: true, [statsPanelsKey(page)]: panels };
+    const perSource = [...sourceStates.values()]
+        .filter((S) => S === FINDS || isMainPage())
+        .map((S) => {
+            const sourceMetrics = metricsForPanels(list, { mode: page, source: S.key });
+            return { S, sourceMetrics, sig: `${S.key}:${indexRevision(S)}:${[...sourceMetrics].sort().join(',')}` };
+        });
+    const key = `main|${perSource.map((entry) => entry.sig).join('|')}|${metricKey}`;
     if (galleryMemo?.key !== key) {
-        galleryMemo = { key, source: { totals: countFeatures(indexFeaturesUpTo(null), needed) } };
+        const totalsBySource = new Map(perSource.map(({ S, sourceMetrics }) =>
+            [S.key, countFeatures(indexFeaturesUpTo(S, null), sourceMetrics)]));
+        galleryMemo = { key, source: { totals: totalsBySource.get('finds'), totalsBySource } };
     }
     return galleryMemo.source;
 }
 
 export function drawStatsGalleryPreviews(entries) {
-    const registry = pageRegistry();
+    const page = appMode();
     const items = (entries || [])
         .map(({ spec, canvas }) => ({ panel: createStatsPanel(spec[0], spec[1], spec[2] || {}), canvas }))
-        .filter(({ panel, canvas }) => panel && canvas && (registry[panel.kind] || []).includes(panel.metric));
+        .filter(({ panel, canvas }) => panel && canvas
+            && (statsPanelRegistry(panel, page)[panel.kind] || []).includes(panel.metric));
     const source = items.length ? gallerySource(items.map(({ panel }) => panel)) : null;
     const drawn = new Set();
     if (!source) return drawn;
@@ -2079,8 +2258,7 @@ export const STATS_PNG_SCALES = Object.freeze([1, 2, 4]);
 
 function panelForExport(id) {
     const panel = pagePanels().find((p) => p.id === id);
-    const registry = pageRegistry();
-    return panel && (registry[panel.kind] || []).includes(panel.metric) ? panel : null;
+    return panel && (pageRegistry(panel)[panel.kind] || []).includes(panel.metric) ? panel : null;
 }
 
 // Vue et taille logique (px CSS) : celles de la carte si le panneau y est,
@@ -2161,7 +2339,8 @@ export function statsPanelCsv(id) {
     if (!panel) return null;
     const { number, percent } = formatters();
     if (isEvolutionPage()) return statsPanelCsvEvolution(panel, number, percent);
-    const ref = selectionTotals();
+    const S = panelState(panel);
+    const ref = selectionTotals(S);
     const rows = [];
     const push = (...cols) => rows.push(cols.map(csvCell).join(';'));
     if (panel.kind === 'counter') {
@@ -2173,9 +2352,10 @@ export function statsPanelCsv(id) {
             const index = pkg.posesStatsIndex?.();
             if (index) posesCounterTiles(values, index.restDay);
         }
+        if (S.key !== 'finds') sourceDayTiles(values, S, Infinity);
         for (const item of panel.options.items) {
             const { value, detail } = counterText(item, values[item] || { value: 0 }, number, undefined, percent);
-            push(COUNTER_LABELS[item](), value, detail);
+            push(statsCounterLabel(item, S.key), value, detail);
         }
     } else if (panel.kind === 'line') {
         push(pkg.t('Date'), pkg.t('Total'));
@@ -2222,7 +2402,7 @@ function statsPanelCsvEvolution(panel, number, percent) {
         for (const item of panel.options.items) {
             const entry = values[item] || { value: 0 };
             const value = item === 'age_moyen' ? meanAgeText(entry.value, number) : number(entry.value);
-            push(COUNTER_LABELS[item](), value, '');
+            push(statsCounterLabel(item), value, '');
         }
     } else if (panel.kind === 'line') {
         push(pkg.t('Date'), pkg.t('Total'));
@@ -2272,7 +2452,7 @@ export function getStatsSnapshot() {
         const activeView = acc?.setView('active');
         const counts = {};
         const excluded = {};
-        for (const metric of metrics) {
+        for (const metric of FINDS.metrics) {
             counts[metric] = Object.fromEntries(activeView?.counts.get(metric) || new Map());
             excluded[metric] = activeView?.excluded.get(metric) || 0;
         }
@@ -2283,7 +2463,7 @@ export function getStatsSnapshot() {
             for (const name of ['active', 'placed', 'archived']) {
                 const set = acc.sets[name];
                 const setCounts = {};
-                for (const metric of metrics) {
+                for (const metric of FINDS.metrics) {
                     setCounts[metric] = Object.fromEntries(set?.counts.get(metric) || new Map());
                 }
                 universes[name] = { total: set?.total || 0, counts: setCounts };
@@ -2296,7 +2476,7 @@ export function getStatsSnapshot() {
             // « Âge moyen », vérifiable par les tests sans lire le canvas.
             meanActiveAge: evolutionMeanActiveAge(index,
                 (mode === 'animating' && evoCurrent) ? evoAppliedDay : (index?.restDay ?? 0)),
-            metrics: [...metrics],
+            metrics: [...FINDS.metrics],
             counts,
             excluded,
             universes,
@@ -2310,19 +2490,29 @@ export function getStatsSnapshot() {
                 .map((panel) => [panel.id, panelNodes.get(panel.id)?.drawnHeadDay ?? null])),
         };
     }
-    const state = mode === 'animating' ? current : selectionTotals();
-    const counts = {};
-    const excluded = {};
-    for (const metric of metrics) {
-        counts[metric] = Object.fromEntries(state.counts.get(metric) || new Map());
-        excluded[metric] = state.excluded.get(metric) || 0;
+    const snapshotOf = (S) => {
+        const state = mode === 'animating' ? S.current : selectionTotals(S);
+        const counts = {};
+        const excluded = {};
+        for (const metric of S.metrics) {
+            counts[metric] = Object.fromEntries(state.counts.get(metric) || new Map());
+            excluded[metric] = state.excluded.get(metric) || 0;
+        }
+        return { total: state.total, metrics: [...S.metrics], counts, excluded };
+    };
+    const finds = snapshotOf(FINDS);
+    // Sources DNF / caches posées (page principale) : mêmes relevés.
+    const sources = {};
+    for (const S of sourceStates.values()) {
+        if (S !== FINDS && S.metrics.size > 0) sources[S.key] = snapshotOf(S);
     }
     return {
         mode,
-        total: state.total,
-        metrics: [...metrics],
-        counts,
-        excluded,
+        total: finds.total,
+        metrics: finds.metrics,
+        counts: finds.counts,
+        excluded: finds.excluded,
+        sources,
         revision,
         videoDrawCount,
         draws: panelDrawCounts(),

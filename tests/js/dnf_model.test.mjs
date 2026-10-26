@@ -61,3 +61,19 @@ test('chaque DNF est un passage du trait, borné par la date de fin', () => {
     assert.deepEqual(visits.get(day('2011-09-01')), [[1, 1], [2, 2]]);
     assert.equal(dnfVisitsByDay(entries, day('2011-08-31')).size, 1);
 });
+
+test('Stats : un événement par DNF, à sa date, avec les propriétés de la cache', async () => {
+    const { dnfEventsByDate, dnfStatesAt } = await import('../../static/js/dnf_model.mjs');
+    const features = [
+        dnf('GC1', ['2011-08-20', '2011-09-01'], '2012-01-08'),
+        dnf('GC2', ['2011-09-01']),
+    ];
+    const byDate = dnfEventsByDate(features);
+    const sept = byDate.get(new Date('2011-09-01T00:00:00').toDateString());
+    assert.deepEqual(sept.map((e) => e.properties.gc_code), ['GC1', 'GC2']);
+    assert.equal(sept[0].properties.date_find, '2011-09-01');
+    assert.equal(byDate.get(new Date('2011-08-20T00:00:00').toDateString()).length, 1);
+    const entries = buildDnfEntries(features, day);
+    assert.deepEqual(dnfStatesAt(entries, day('2011-08-31')), { open: 1, resolved: 0 });
+    assert.deepEqual(dnfStatesAt(entries, day('2012-01-08')), { open: 1, resolved: 1 });
+});

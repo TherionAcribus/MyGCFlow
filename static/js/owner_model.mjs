@@ -101,6 +101,40 @@ export function ownerFlashBetween(entry, afterDay, upToDay, isEnabled = () => tr
     return best;
 }
 
+// Événements comptés par les Stats (source « caches posées ») : une cache
+// par jour d'apparition (date_find), Map clé Date.toDateString().
+export function ownerEventsByDate(features) {
+    const byDate = new Map();
+    for (const feature of features || []) {
+        const iso = feature?.properties?.date_find;
+        const date = new Date(`${iso}T00:00:00`);
+        if (!iso || Number.isNaN(date.getTime())) continue;
+        const key = date.toDateString();
+        const list = byDate.get(key) || [];
+        list.push(feature);
+        byDate.set(key, list);
+    }
+    return byDate;
+}
+
+// Tuiles d'état au jour `day` : caches apparues par état, et maintenances
+// du poseur faites jusque-là.
+export function ownerStatesAt(entries, day) {
+    const out = { active: 0, disabled: 0, archived: 0, maintenances: 0 };
+    for (const entry of entries || []) {
+        if (entry.appearDay > day) continue;
+        const state = ownerStateAt(entry, day);
+        if (state === OWNER_STATE_ARCHIVED) out.archived += 1;
+        else if (state === OWNER_STATE_DISABLED) out.disabled += 1;
+        else out.active += 1;
+        for (const event of entry.events) {
+            if (event.day > day) break;
+            if (event.kind === 'maintenance') out.maintenances += 1;
+        }
+    }
+    return out;
+}
+
 // Passages du poseur pour le trait de déplacement : Map jour → [[lon, lat], …],
 // jours au plus égaux à `endDay`.
 export function ownerVisitsByDay(entries, endDay = Infinity) {

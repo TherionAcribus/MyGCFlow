@@ -62,6 +62,28 @@ export const POSES_METRICS_BY_KIND = Object.freeze({
     counter: Object.freeze(['summary']),
 });
 
+// Page principale : chaque panneau compte une SOURCE (`options.source`) —
+// les trouvailles (défaut, clé absente), les DNF du joueur (un événement par
+// log « Didn't find it », date_find = date du DNF) ou ses caches posées (un
+// événement par cache, date_find = apparition). Mêmes propriétés que les
+// trouvailles : les métriques s'appliquent telles quelles, chacune dans son
+// registre (sans les métriques sans objet : attributs, âge, Jasmer…).
+export const STATS_SOURCES = Object.freeze(['finds', 'dnf', 'owned']);
+export const DNF_METRICS_BY_KIND = Object.freeze({
+    grid: Object.freeze(['dt', 'finds_ym', 'calendar', 'activity']),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'owner']),
+    donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'owner']),
+    line: Object.freeze(['cumulative']),
+    counter: Object.freeze(['summary']),
+});
+export const OWNED_METRICS_BY_KIND = Object.freeze({
+    grid: Object.freeze(['dt', 'finds_ym', 'calendar', 'activity']),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state']),
+    donut: Object.freeze(['cache_type', 'container', 'country', 'state']),
+    line: Object.freeze(['cumulative']),
+    counter: Object.freeze(['summary']),
+});
+
 // Univers comptés par un panneau catégoriel Évolution (« Compter ») :
 // 'active' = caches présentes à la date affichée (ensemble vivant),
 // 'placed'/'archived' = cumuls monotone des événements.
@@ -97,7 +119,18 @@ export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'arc
 // la plus délaissée (les deux derniers lus dans la chronologie de la page
 // par stats_panels, pas dans l'accumulateur).
 export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', 'favorites', 'fav_ratio', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west', 'ftf_delay', 'neglected']);
-const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS])];
+// Tuiles des sources DNF et caches posées (page principale). Les tuiles
+// d'état (DNF en cours / résolus, taux d'échec, actives, désactivées,
+// archivées, maintenances) sont lues dans les données de la source au jour
+// affiché par stats_panels, pas dans l'accumulateur.
+export const DNF_COUNTER_ITEMS = Object.freeze(['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio', 'days', 'best_day', 'streak', 'types', 'countries', 'states']);
+export const OWNED_COUNTER_ITEMS = Object.freeze(['total', 'owned_active', 'owned_disabled', 'owned_archived', 'maintenances', 'days', 'best_day', 'types', 'countries', 'states']);
+// Tuiles lues au jour affiché (hors accumulateur) : leur panneau se
+// redessine aussi les jours sans événement compté.
+export const STATS_DAY_TILES = Object.freeze(['ftf_delay', 'neglected', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
+    'owned_active', 'owned_disabled', 'owned_archived', 'maintenances']);
+const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS,
+    ...DNF_COUNTER_ITEMS, ...OWNED_COUNTER_ITEMS])];
 
 // Registre de métriques et tuiles de la page (`mode` : nom de mode ou ancien
 // booléen « page Évolution »).
@@ -108,6 +141,24 @@ export function statsMetricsRegistry(mode) {
 export function statsCounterItemsFor(mode) {
     const m = modeOf(mode);
     return m === 'evolution' ? EVOLUTION_COUNTER_ITEMS : m === 'poses' ? POSES_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
+}
+
+// Source comptée par un panneau (page principale) : 'finds' sans réglage.
+export function statsPanelSource(panel) {
+    const source = panel?.options?.source;
+    return STATS_SOURCES.includes(source) ? source : 'finds';
+}
+export function statsSourceRegistry(source) {
+    return source === 'dnf' ? DNF_METRICS_BY_KIND : source === 'owned' ? OWNED_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+}
+export function statsSourceCounterItems(source) {
+    return source === 'dnf' ? DNF_COUNTER_ITEMS : source === 'owned' ? OWNED_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
+}
+// Registre d'un panneau sur une page : la source ne joue que sur la page
+// principale (les autres pages n'ont qu'un jeu).
+export function statsPanelRegistry(panel, mode) {
+    const m = modeOf(mode);
+    return m === 'main' ? statsSourceRegistry(statsPanelSource(panel)) : statsMetricsRegistry(m);
 }
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
@@ -343,6 +394,7 @@ const OPTION_COERCERS = {
     items: (v, d) => choices(v, ALL_COUNTER_ITEMS, d),
     counted: (v, d) => choice(v, STATS_COUNTED, d),
     columns: (v, d) => intIn(v, d, STATS_COLUMNS_RANGE),
+    source: (v, d) => choice(v, STATS_SOURCES, d),
 };
 
 const POSITION_COERCERS = {
@@ -421,6 +473,12 @@ export function normalizeStatsPanel(raw) {
     // panneaux du mode principal ne la portent pas (absent = 'active').
     if ((kind === 'bar' || kind === 'donut') && isObject(raw.options) && Object.hasOwn(raw.options, 'counted')) {
         options.counted = OPTION_COERCERS.counted(raw.options.counted, 'active');
+    }
+    // Source comptée (page principale) : même règle, conservée seulement si
+    // fournie et différente des trouvailles — la clé absente vaut 'finds'.
+    if (isObject(raw.options) && Object.hasOwn(raw.options, 'source')) {
+        const source = OPTION_COERCERS.source(raw.options.source, 'finds');
+        if (source !== 'finds') options.source = source;
     }
     return {
         id: typeof raw.id === 'string' && ID_RE.test(raw.id) ? raw.id : '',
@@ -577,6 +635,14 @@ const COUNTER_DEPENDENCIES = {
     // limité à ces tuiles (elles ne comptent rien par elles-mêmes).
     ftf_delay: 'total',
     neglected: 'total',
+    // Tuiles d'état des DNF et des caches posées : même principe.
+    dnf_open: 'total',
+    dnf_resolved: 'total',
+    dnf_ratio: 'total',
+    owned_active: 'total',
+    owned_disabled: 'total',
+    owned_archived: 'total',
+    maintenances: 'total',
 };
 
 // Métrique de l'accumulateur qui porte les comptes d'une métrique de
@@ -609,14 +675,17 @@ export function accumulatorMetricsFor(panel, { evolution = false } = {}) {
 // coûtent quelque chose. `mode` : page (nom de mode) ; à défaut, l'ancien
 // drapeau `evolution`. Mes poses compte comme le mode principal (des
 // trouvailles), avec son propre registre.
-export function metricsForPanels(settings, { evolution = false, mode = null } = {}) {
+// `source` (page principale) : seuls les panneaux de cette source ('finds'
+// par défaut) — chaque source a son accumulateur.
+export function metricsForPanels(settings, { evolution = false, mode = null, source = 'finds' } = {}) {
     const page = modeOf(mode ?? evolution);
     const isEvolution = page === 'evolution';
-    const registry = statsMetricsRegistry(page);
     const metrics = new Set();
     if (!settings?.enabled) return metrics;
     for (const panel of settings?.[statsPanelsKey(page)] || []) {
         if (!panel.enabled) continue;
+        if (page === 'main' && statsPanelSource(panel) !== source) continue;
+        const registry = statsPanelRegistry(panel, page);
         if (!(registry[panel.kind] || []).includes(panel.metric)) continue;
         for (const metric of accumulatorMetricsFor(panel, { evolution: isEvolution })) metrics.add(metric);
     }
@@ -2188,6 +2257,10 @@ export function counterValues(acc, items) {
             // Tuiles « poseur » : remplies depuis la chronologie de Mes poses
             // (stats_panels › buildView) ; « — » partout ailleurs.
             values[item] = { value: null, duration: true };
+        } else if (STATS_DAY_TILES.includes(item)) {
+            // Tuiles d'état DNF / caches posées : remplies au jour affiché
+            // par stats_panels (dnfStatsAtDay, ownerStatsAtDay).
+            values[item] = item === 'dnf_ratio' ? { value: 0, pct: true } : { value: 0 };
         } else if (item === 'oldest') {
             // `day` = jour de publication de la plus ancienne, null sans date ;
             // `value` = son année (affichée telle quelle, pas animée).

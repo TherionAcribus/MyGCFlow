@@ -75,3 +75,14 @@ test('passages : la pose puis un par jour d\'étape, bornés par la fin', () => 
     assert.equal(all.size, 5);                       // le 10/09 ne compte qu'une fois
     assert.deepEqual(all.get(day('2019-09-10')), [[6, 49]]);
 });
+
+test('Stats : une cache posée par jour d\'apparition, états et maintenances au jour', async () => {
+    const { ownerEventsByDate, ownerStatesAt } = await import('../../static/js/owner_model.mjs');
+    const other = owned('GCP0005', '2019-02-01', { states: [['2019-10-01', 2]], events: [['2019-10-01', 'archive']] });
+    const byDate = ownerEventsByDate([GCP4, other]);
+    assert.equal(byDate.get(new Date('2019-05-01T00:00:00').toDateString())[0].properties.gc_code, 'GCP0004');
+    const entries = buildOwnerEntries([GCP4, other], day);
+    assert.deepEqual(ownerStatesAt(entries, day('2019-03-01')), { active: 1, disabled: 0, archived: 0, maintenances: 0 });
+    assert.deepEqual(ownerStatesAt(entries, day('2019-09-05')), { active: 1, disabled: 1, archived: 0, maintenances: 0 });
+    assert.deepEqual(ownerStatesAt(entries, day('2019-12-31')), { active: 1, disabled: 0, archived: 1, maintenances: 1 });
+});

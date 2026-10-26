@@ -637,7 +637,7 @@ joués, changements d'état et présence de l'anneau.
 | **D — poseur** ✅ | activité de poseur : publication, désactivations, maintenance, archivage (page « Mes poses ») | e2e `poses.spec.mjs` |
 | **E — mode « Mes caches »** ✅ | page `/poses` sur le moteur du mode Évolution : logs des autres joueurs, favoris, flashs par événement, rendu grisé (docs/mode-poses.md) | e2e `poses.spec.mjs` |
 | **D bis — poseur sur la carte principale** ✅ | caches posées et étapes du poseur (pose, maintenance, désactivation, archivage) parmi les trouvailles, sans les logs des autres ; forme, contour et flashs propres (§ Caches posées sur la carte principale) | e2e `owner-display.spec.mjs` |
-| **F — Stats** (en partie) | panneaux de Mes poses sur les trouvailles reçues (`stats.poses_panels`) ; DNF et caches posées dans les Stats du mode principal : à faire | e2e `stats-poses.spec.mjs` |
+| **F — Stats** ✅ | panneaux de Mes poses sur les trouvailles reçues (`stats.poses_panels`) ; sur la page principale, source par panneau : trouvailles, DNF, caches posées (docs/panneaux-stats.md § Sources comptées) | e2e `stats-poses.spec.mjs`, `stats-sources.spec.mjs` |
 
 Mesures du lot A (`tools/bench_log_import.py`, 2026-10-25, Windows, SQLite
 local ; ~50 logs par cache, couverture complète par cache ; l'incrément est

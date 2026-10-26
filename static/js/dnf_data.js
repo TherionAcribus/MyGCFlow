@@ -1,4 +1,5 @@
-// Points DNF de la carte (docs/logs-geocaching.md, lot C).
+// Points DNF de la carte (docs/logs-geocaching.md, lot C) et source « DNF »
+// des panneaux Stats (docs/panneaux-stats.md).
 //
 // Chargés à part du jeu principal (/api/logs/dnf_features) et jamais mêlés à
 // pointsByDate : compteurs, panneaux Stats et chronologie ne comptent que des
@@ -7,6 +8,10 @@
 // le jour affiché. Deux préférences globales : dnf_display (masqués par
 // défaut) et dnf_in_trail (le trait passe par les DNF, par défaut).
 // Rien ici sur la page Évolution.
+//
+// Les Stats comptent les DNF même masqués sur la carte (le panneau est le
+// choix d'afficher) : les données sont toujours chargées sur la page
+// principale, et l'index des Stats suit la même sélection que les points.
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
@@ -14,14 +19,17 @@ import { t } from './notifications.js';
 import { isMainPage } from './app_mode.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { markSaveError, reportSave } from './saved_indicator.mjs';
-import { buildDnfEntries } from './dnf_model.mjs';
+import { buildDnfEntries, dnfEventsByDate, dnfStatesAt } from './dnf_model.mjs';
 import { isoToDayNumber } from './evolution_timeline.mjs';
 import { countLabel } from './utils.js';
 
 let loaded = [];      // features servies, avant filtrage
 let pending = 0;      // caches en DNF sans position connue
 let loadSeq = 0;      // une réponse ancienne ne doit pas écraser une plus récente
-let entries = [];     // entrées filtrées (dnf_model.mjs)
+let entries = [];     // entrées filtrées (dnf_model.mjs), carte
+let statsEntries = [];   // mêmes entrées, affichées ou non (tuiles Stats)
+let statsIndex = null;   // { revision, byDate } — source « DNF » des Stats
+let statsRevision = 0;
 let bound = false;
 // Change à chaque refiltrage : clé de mémoïsation du trait de déplacement.
 export let dnfRevision = 0;
@@ -40,14 +48,29 @@ export function getDnfEntries() {
     return entries;
 }
 
+export function hasDnfData() {
+    return loaded.length > 0;
+}
+
+// Source « DNF » des panneaux Stats : un événement par DNF, par jour.
+export function dnfStatsIndex() {
+    return statsIndex;
+}
+
+// Tuiles « DNF en cours » / « DNF résolus » au jour `day` (numéro de jour).
+export function dnfStatsAtDay(day) {
+    return dnfStatesAt(statsEntries, day);
+}
+
 // Refiltre selon la sélection courante. Appelé à chaque reconstruction de
 // l'index des trouvailles (bdd.js) : chargement, filtres, sources affichées.
 // Les DNF suivent les géocaches : absents en « Lab Caches » seuls.
 export function rebuildDnfIndex() {
     const kinds = pkg.getDiscoverySourceKinds?.() || ['geocache'];
-    const usable = isDnfDisplayEnabled() && kinds.includes('geocache');
-    const features = usable ? (pkg.filterLikeCurrentSelection?.(loaded) ?? loaded) : [];
-    entries = buildDnfEntries(features, isoToDayNumber);
+    const features = kinds.includes('geocache') ? (pkg.filterLikeCurrentSelection?.(loaded) ?? loaded) : [];
+    statsEntries = buildDnfEntries(features, isoToDayNumber);
+    statsIndex = { revision: `dnf:${++statsRevision}`, byDate: dnfEventsByDate(features) };
+    entries = isDnfDisplayEnabled() ? statsEntries : [];
     dnfRevision++;
     renderHint();
 }
@@ -57,20 +80,17 @@ function applyChange() {
     // Carte au repos : à jour tout de suite. En animation, au prochain jour
     // ou au prochain saut de la barre de chronologie.
     if (!pkg.isAnimationInProgress?.()) pkg.syncDnfStatic?.();
+    // Panneaux Stats de source « DNF » (et galerie) : nouvel index.
+    pkg.refreshStatsPanels?.();
+    pkg.renderStatsTab?.();
 }
 
-// (Re)charge les DNF du serveur — seulement si l'affichage est activé.
-// Appelé au démarrage, à la bascule, et après tout import qui peut en
+// (Re)charge les DNF du serveur, affichés ou non : les panneaux Stats les
+// comptent aussi. Appelé au démarrage, et après tout import qui peut en
 // changer (logs, My Finds) ou leur suppression.
 export async function reloadDnfData() {
     if (!isMainPage()) return;
     const seq = ++loadSeq;
-    if (!isDnfDisplayEnabled()) {
-        loaded = [];
-        pending = 0;
-        applyChange();
-        return;
-    }
     try {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/logs/dnf_features`);
         const data = await resp.json();
@@ -116,7 +136,7 @@ async function onDisplayToggle(e) {
     const on = box.checked;
     if (window.userSettings) window.userSettings.dnf_display = on;
     syncTrailBox();
-    reloadDnfData();
+    applyChange();
     try {
         await reportSave(box, saveSettingsPatch({ dnf_display: on }));
     } catch (_) {

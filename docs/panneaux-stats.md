@@ -21,7 +21,8 @@ possible. La normalisation accepte l'union des deux registres de métriques :
 un panneau à métrique étrangère peut figurer dans une liste — il est marqué
 « (Trouvailles) » / « (Évolution) » dans l'onglet et n'est pas dessiné.
 
-Mode principal (`stats.panels`) :
+Mode principal (`stats.panels`) — chaque panneau compte les trouvailles, les
+DNF ou les caches posées (§ Sources comptées) :
 
 | Type (`kind`) | Métriques (`metric`) |
 |---|---|
@@ -341,6 +342,67 @@ Couleurs `multi` (anneaux hors types) : dix teintes, indexées sur le rang de
 la catégorie dans la référence — une catégorie garde sa couleur quand elle
 change de place. La palette `gc` n'est proposée qu'à la métrique « type de
 cache », les autres métriques n'ayant pas de couleur Groundspeak dédiée.
+
+## Sources comptées (page principale)
+
+Depuis le 2026-10-26, chaque panneau de la page principale compte une
+**source** (`options.source`, sérialisée seulement hors trouvailles — clé
+absente = `finds`, comme `counted`) : choix de l'utilisateur, un réglage par
+panneau plutôt que des panneaux dédiés.
+
+| Source | Événement compté (`date_find`) | Données |
+|---|---|---|
+| `finds` | une trouvaille (défaut) | `pointsByDate` + locationless masquées |
+| `dnf` | **chaque** log « Didn't find it » (3 échecs sur une cache = 3) | `dnf_data.js › dnfStatsIndex` (`dnfEventsByDate`) |
+| `owned` | une cache posée, à son apparition (règles de Mes poses) | `owner_data.js › ownerStatsIndex` (`ownerEventsByDate`) |
+
+Les DNF et les caches posées sont comptés **même masqués sur la carte** (le
+panneau est le choix d'afficher) : leurs données sont toujours chargées sur la
+page principale et suivent les filtres de la sélection
+(`filterLikeCurrentSelection`) ; la carte, elle, reste soumise à
+`dnf_display` / `owner_display`. Les événements ont les propriétés des
+trouvailles : toutes les métriques s'appliquent, dans un registre par source
+(`DNF_METRICS_BY_KIND`, `OWNED_METRICS_BY_KIND` — sans attributs, âge,
+Jasmer ; sans propriétaires pour les caches posées).
+
+**Un comptage par source** (`stats_panels.js`, `sourceStates`) : index par
+jour, accumulateur, totaux, référence et position des sauts propres à
+chaque source ; `metricsForPanels(settings, { mode, source })` ne lit que
+les panneaux de la source. Accumulation, saut, retour au repos et galerie
+bouclent sur les sources qui comptent quelque chose. La référence d'une
+source DNF / caches posées s'arrête toujours à la date de fin d'animation
+(ses événements peuvent dépasser la dernière trouvaille).
+
+**Tuiles** (`DNF_COUNTER_ITEMS`, `OWNED_COUNTER_ITEMS`) : celles de
+l'accumulateur (total, jours, record, série, types, pays, régions, « caches
+en échec » = `caches` distinctes), plus des tuiles d'**état lues au jour
+affiché** (Infinity au repos : état actuel), hors accumulateur
+(`STATS_DAY_TILES`, `sourceDayTiles`) : `dnf_open` / `dnf_resolved`
+(`dnfStatesAt`), `dnf_ratio` (« taux d'échec » = DNF / (DNF + trouvailles)
+jusqu'au jour, par cumuls des index — `countUpTo`, détail « 3 DNF ·
+2 trouvailles »), `owned_active` / `owned_disabled` / `owned_archived` /
+`maintenances` (`ownerStatesAt`). Un panneau qui en porte se redessine les
+jours sans événement (`panelFollowsDay`, clé `counterDay`). Libellés selon la
+source (`statsCounterLabel`) : « DNF », « Caches posées », « Jours avec
+DNF »…
+
+**Interface** : champ « Données comptées » du formulaire (`#selectStatsSource`,
+visible quand les logs apportent des DNF ou des caches posées — une source
+sans données n'est pas proposée, sauf celle du panneau). Changer de source
+garde la métrique si la source la propose, sinon la première du type ;
+changer de métrique ou de forme garde la source. Galerie : sections « Mes
+DNF » et « Mes caches posées » (modèles `dnf-*`, `owned-*` de `PRESETS`,
+cartes `data-stats-source`, masquées sans données). Titres par défaut propres
+(« DNF par difficulté », « Mes caches par type »…).
+
+Piège d'ordre d'évaluation : `stats_ui.js` s'initialise avant `dnf_data.js` /
+`owner_data.js` (ordre d'`index.js`) — `hasDnfData()` y est en zone morte ;
+`sourceAvailable` l'attrape et la galerie se resynchronise à l'ouverture.
+
+Tests : `test_stats_model.mjs` (sources, registres, métriques par source),
+`tests/js/dnf_model.test.mjs` / `owner_model.test.mjs` (événements, états),
+vecteur partagé « source comptée » de `settings_cases.json`, e2e
+`stats-sources.spec.mjs` (`getStatsSnapshot().sources`).
 
 ## Rendu
 
