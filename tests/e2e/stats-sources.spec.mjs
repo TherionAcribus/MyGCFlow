@@ -259,6 +259,31 @@ test('la liste signale la source comptée et les sources sans données', async (
 });
 
 
+// Le select « Données » de la galerie teinte les vignettes des cartes libres
+// (« add ») et la source du panneau posé ; les cartes dont la métrique
+// n'existe pas pour la source sont masquées. Les modèles gardent la leur.
+test('la galerie pose les cartes libres sur la source choisie', async ({ page, request }) => {
+  await openWithSources(page, request, []);
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#btnStatsAdd').click();
+  const modal = page.locator('#statsGalleryModal');
+  await expect(modal).toBeVisible();
+
+  const select = page.locator('#selectStatsGallerySource');
+  await expect(select).toBeVisible();
+  await select.selectOption('dnf');
+  // « Attributs » n'existe pas dans le registre DNF : carte masquée.
+  await expect(modal.locator('[data-stats-add="bar:attribute"]')).toBeHidden();
+
+  // Poser « Trouvailles par année » : le panneau compte les DNF.
+  await modal.locator('[data-stats-add="bar:year"]').click();
+  await expect.poll(async () => {
+    const panel = (await (await request.get('/api/settings')).json()).stats.panels[0];
+    return [panel?.metric, panel?.options?.source];
+  }).toEqual(['year', 'dnf']);
+});
+
+
 test('le formulaire propose la source et garde la statistique quand elle existe', async ({ page, request }) => {
   await openWithSources(page, request, [PANELS[1]]);
   await page.locator('a[href="#stats"]').click();

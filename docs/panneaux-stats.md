@@ -414,7 +414,12 @@ cartes `data-stats-source`, masquées sans données). Titres par défaut propres
 (« DNF par difficulté », « Mes caches par type »…). Dans la liste de
 l'onglet, un panneau DNF ou caches posées porte le badge de sa source
 (« DNF » / « Posées »), complété par « (aucune donnée) » quand les logs
-importés n'apportent rien à cette source.
+importés n'apportent rien à cette source. Un select « Données » en tête de
+galerie (`#selectStatsGallerySource`, mêmes listes et libellés, masqué quand
+une seule source a des données) teinte les vignettes des cartes libres avec
+la source choisie — les métriques absentes de son registre cachent leur
+carte — et le panneau posé porte `options.source` (tuiles de la source pour
+un compteur) ; les modèles gardent la leur. Réinitialisé à chaque ouverture.
 
 Piège d'ordre d'évaluation : `stats_ui.js` s'initialise avant `dnf_data.js` /
 `owner_data.js` (ordre d'`index.js`) — `hasDnfData()` y est en zone morte ;

@@ -253,6 +253,47 @@ function adoptCornerMargins(panel, panels) {
 
 const GALLERY_MODAL = 'statsGalleryModal';
 
+// Source choisie en tête de galerie (« Données ») : elle teinte les vignettes
+// des cartes « add » et la source du panneau posé — les modèles gardent la
+// leur. Réinitialisée à chaque ouverture.
+let gallerySource = 'finds';
+
+// Même liste de sources que le champ du formulaire, mêmes libellés — limitée
+// aux sources qui ont des données, masquée quand une seule existe.
+function syncGallerySource() {
+    const select = $('selectStatsGallerySource');
+    if (!select) return;
+    const sources = (pageMode === 'poses' ? ['finds', 'dnf', 'favorites']
+        : mainPage ? ['finds', 'dnf', 'owned'] : ['finds']).filter(sourceAvailable);
+    if (!sources.includes(gallerySource)) gallerySource = 'finds';
+    const labels = pageMode === 'poses'
+        ? { finds: pkg.t('Trouvailles reçues'), dnf: pkg.t('DNF reçus'), favorites: pkg.t('Favoris reçus') }
+        : { finds: pkg.t('Mes trouvailles'), dnf: pkg.t('Mes DNF'), owned: pkg.t('Mes caches posées') };
+    const wanted = sources.join('|');
+    if (select.dataset.sources !== wanted) {
+        select.replaceChildren(...sources.map((value) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = labels[value] || value;
+            return option;
+        }));
+        select.dataset.sources = wanted;
+    }
+    select.value = gallerySource;
+    select.hidden = sources.length < 2;
+}
+
+// Carte « add » : la métrique doit exister dans le registre de la source
+// choisie en galerie (« attribute » n'existe pas pour les DNF, « finder »
+// pas pour les caches posées). Les modèles portent leur source — exempts.
+function galleryMetricOffered(el) {
+    const add = el.dataset.statsAdd;
+    if (!add) return true;
+    const [kind, metric] = add.split(':');
+    const offered = statsPanelRegistry({ kind, options: { source: gallerySource } }, pageMode)[kind] || [];
+    return offered.includes(metric);
+}
+
 // Cartes et variantes de description selon la page : chaque élément porte
 // data-stats-modes (« main », « evolution », les deux). Le mode ne change
 // pas au fil de la page : filtrage unique à l'init ; la recherche
@@ -263,7 +304,8 @@ function syncGalleryMode() {
         // Cartes d'une source (DNF, caches posées) : seulement avec ses données.
         const source = el.dataset.statsSource;
         const inMode = el.dataset.statsModes.split(' ').includes(mode)
-            && (!source || sourceAvailable(source));
+            && (!source || sourceAvailable(source))
+            && galleryMetricOffered(el);
         el.hidden = !inMode;
         if (el.classList.contains('stats-gallery-card')) el.dataset.inMode = inMode ? '1' : '';
     });
@@ -271,15 +313,20 @@ function syncGalleryMode() {
 }
 
 // Panneaux posés par une carte : ceux du modèle, ou le panneau seul (compteur
-// Évolution : tuiles de la chronologie).
+// Évolution : tuiles de la chronologie ; source de la galerie sinon).
 function gallerySpecs(card) {
     if (card.dataset.statsPreset) return PRESETS[card.dataset.statsPreset] || [];
     const [kind, metric] = (card.dataset.statsAdd || '').split(':');
     if (!kind || !metric) return [];
-    const overrides = kind === 'counter' && COUNTER_DEFAULT_ITEMS
-        ? { options: { items: COUNTER_DEFAULT_ITEMS } }
-        : {};
-    return [[kind, metric, overrides]];
+    const options = {};
+    if (kind === 'counter') {
+        if (gallerySource !== 'finds') {
+            const defaults = pageMode === 'poses' ? POSES_SOURCE_COUNTER_DEFAULTS : SOURCE_COUNTER_DEFAULTS;
+            options.items = [...(defaults[gallerySource] || [])];
+        } else if (COUNTER_DEFAULT_ITEMS) options.items = COUNTER_DEFAULT_ITEMS;
+    }
+    if (gallerySource !== 'finds') options.source = gallerySource;
+    return [[kind, metric, Object.keys(options).length ? { options } : {}]];
 }
 
 // Recherche sans accents ni casse, sur le titre, la description du mode et
@@ -343,6 +390,8 @@ function openGallery() {
     const search = $('inputStatsGallerySearch');
     if (search) search.value = '';
     // Les données DNF / caches posées ont pu arriver depuis l'init.
+    gallerySource = 'finds';
+    syncGallerySource();
     syncGalleryMode();
     drawGalleryThumbs();
     showBsModal(GALLERY_MODAL);
@@ -1780,6 +1829,13 @@ export function initStatsTab() {
             event.target, { immediate: true });
     });
     $('btnStatsAdd')?.addEventListener('click', openGallery);
+    // « Données » de la galerie : refiltre les cartes et redessine les
+    // vignettes avec la source choisie (mémoïsée par source).
+    $('selectStatsGallerySource')?.addEventListener('change', (event) => {
+        gallerySource = event.target.value;
+        syncGalleryMode();
+        drawGalleryThumbs();
+    });
     $('statsAddMenu')?.addEventListener('click', onGalleryClick);
     $('inputStatsGallerySearch')?.addEventListener('input', (event) => filterGallery(event.target.value));
     // Focus sur la recherche à l'ouverture : on tape aussitôt ce qu'on cherche.

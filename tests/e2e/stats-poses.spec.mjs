@@ -111,6 +111,34 @@ test('les tuiles « poseur » du compteur', async ({ page, request }) => {
   await expect(alt).toContainText('GCP0004 · jamais trouvée');
 });
 
+// Même filtre « Données » dans la galerie de Mes poses : les vignettes des
+// cartes libres suivent la source — le registre de la page est commun aux
+// trois, rien n'est masqué — et le panneau posé la porte.
+test('la galerie de Mes poses pose sur la source choisie', async ({ page, request }) => {
+  await importPoses(request);
+  await request.put('/api/settings', { data: { stats: { enabled: true, poses_panels: [] } } });
+  await page.goto('/poses', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.waitForFunction(() => window.mygcflowPosesLoaded === true);
+
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#btnStatsAdd').click();
+  const modal = page.locator('#statsGalleryModal');
+  await expect(modal).toBeVisible();
+
+  const select = page.locator('#selectStatsGallerySource');
+  await expect(select).toBeVisible();
+  const options = select.locator('option');
+  await expect(options).toHaveCount(3);
+  await select.selectOption('favorites');
+
+  await modal.locator('[data-stats-add="bar:cache"]').click();
+  await expect.poll(async () => {
+    const panel = (await (await request.get('/api/settings')).json()).stats.poses_panels[0];
+    return [panel?.metric, panel?.options?.source];
+  }).toEqual(['cache', 'favorites']);
+});
+
 // Sources de Mes poses : « dnf » compte les DNF REÇUS (autre sens que sur la
 // page principale) et « favorites » les trouvailles reçues portant un point
 // favori ; les deux partagent le registre de métriques des trouvailles
