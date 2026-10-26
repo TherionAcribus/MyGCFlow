@@ -196,6 +196,30 @@ test('le taux d\'échec ignore les Lab Caches de la sélection', async ({ page, 
 });
 
 
+// La liste de l'onglet signale la source comptée — un titre personnalisé
+// ne dit plus ce que le panneau compte — et une source sans données,
+// faute de quoi son panneau resterait dessiné à zéro sans explication.
+test('la liste signale la source comptée et les sources sans données', async ({ page, request }) => {
+  const panels = [
+    { ...PANELS[0], title: 'Compteur A' },
+    { ...PANELS[2], title: 'Compteur B' },
+  ];
+  await openWithSources(page, request, panels);
+  await page.locator('a[href="#stats"]').click();
+  const rows = page.locator('#statsPanelList li');
+  await expect(rows.nth(0)).toContainText('DNF');
+  await expect(rows.nth(1)).toContainText('Caches posées');
+
+  // Logs vidés : les deux sources perdent leurs données au rechargement.
+  await request.post('/api/logs/clear');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#stats"]').click();
+  await expect(rows.nth(0)).toContainText('aucune donnée');
+  await expect(rows.nth(1)).toContainText('aucune donnée');
+});
+
+
 test('le formulaire propose la source et garde la statistique quand elle existe', async ({ page, request }) => {
   await openWithSources(page, request, [PANELS[1]]);
   await page.locator('a[href="#stats"]').click();

@@ -30,8 +30,6 @@ import {
     statsPanelRegistry,
     statsPanelSource,
     statsPanelsKey,
-    statsSourceCounterItems,
-    statsSourceRegistry,
     statsStylePreset,
 } from './stats_model.mjs';
 
@@ -55,16 +53,20 @@ const configMode = statsConfigModeFor(pageMode);
 const panelsKey = () => statsPanelsKey(pageMode);
 const modePanels = (s) => s[panelsKey()] || [];
 const metricRegistry = statsMetricsRegistry(pageMode);
-const counterItems = statsCounterItemsFor(pageMode);
 const mainPage = pageMode === 'main';
-// Page principale : registre et tuiles suivent la source du panneau
-// (trouvailles, DNF, caches posées — stats_model › statsPanelSource).
+// Registre et tuiles suivent la source du panneau (stats_model ›
+// statsPanelSource — trouvailles/DNF/caches posées sur la page principale,
+// trouvailles reçues/DNF reçus/favoris reçus sur Mes poses).
 const registryOf = (panel) => statsPanelRegistry(panel, pageMode);
-const counterItemsOf = (panel) => (mainPage ? statsSourceCounterItems(statsPanelSource(panel)) : counterItems);
-// Tuiles d'un compteur neuf selon sa source (page principale).
+const counterItemsOf = (panel) => statsCounterItemsFor(pageMode, statsPanelSource(panel, pageMode));
+// Tuiles d'un compteur neuf selon sa source.
 const SOURCE_COUNTER_DEFAULTS = {
     dnf: ['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio'],
     owned: ['total', 'owned_active', 'owned_archived', 'maintenances'],
+};
+const POSES_SOURCE_COUNTER_DEFAULTS = {
+    dnf: ['total', 'finders', 'caches', 'days'],
+    favorites: ['total', 'finders', 'caches'],
 };
 // Une source est proposée quand la page en a les données (trouvailles :
 // toujours) ; un panneau qui la porte déjà la garde.
@@ -74,6 +76,11 @@ const SOURCE_COUNTER_DEFAULTS = {
 // formulaire quand les données arrivent (renderStatsTab).
 function sourceAvailable(source) {
     if (source === 'finds') return true;
+    if (pageMode === 'poses') {
+        try { return pkg.posesSourceAvailable?.(source) === true; } catch (_) { return false; }
+    }
+    // « favorites » n'existe que sur Mes poses ; jamais proposée ici.
+    if (source === 'favorites') return false;
     try {
         return source === 'dnf' ? !!pkg.hasDnfData?.() : !!pkg.hasOwnedCaches?.();
     } catch (_) {
@@ -130,6 +137,17 @@ const PRESETS = {
     ],
     'poses-race': [['bar', 'cache', { position: { anchor: 'top-right', width: 300 }, options: { sort: 'race', max_items: 8 } }]],
     'poses-finders': [['bar', 'finder', { position: { anchor: 'top-right', width: 280 }, options: { max_items: 10 } }]],
+    // Mes poses, sources « DNF reçus » et « favoris reçus ».
+    'poses-dnf-overview': [
+        ['counter', 'summary', { position: { anchor: 'top-left' }, options: { source: 'dnf', items: POSES_SOURCE_COUNTER_DEFAULTS.dnf } }],
+        ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 }, options: { source: 'dnf' } }],
+    ],
+    'poses-dnf-race': [['bar', 'cache', { position: { anchor: 'top-right', width: 300 }, options: { source: 'dnf', sort: 'race', max_items: 8 } }]],
+    'poses-fav-overview': [
+        ['counter', 'summary', { position: { anchor: 'top-left' }, options: { source: 'favorites', items: POSES_SOURCE_COUNTER_DEFAULTS.favorites } }],
+        ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 }, options: { source: 'favorites' } }],
+    ],
+    'poses-fav-donut': [['donut', 'cache', { position: { anchor: 'top-right', width: 300 }, options: { source: 'favorites' } }]],
     // Page principale, source « DNF ».
     'dnf-overview': [
         ['counter', 'summary', { position: { anchor: 'top-left' }, options: { source: 'dnf', items: SOURCE_COUNTER_DEFAULTS.dnf } }],
@@ -403,6 +421,29 @@ function renderList() {
             badge.title = pkg.t('Pas affiché dans ce mode');
             name.appendChild(badge);
         }
+        // Source comptée (pages principale et Mes poses) : « DNF » /
+        // « Posées » / « Favoris » — un titre personnalisé ne dit plus ce
+        // que compte le panneau. Source sans données (logs vidés ou jamais
+        // importés) : le panneau resterait dessiné à zéro sans explication.
+        const panelSource = statsPanelSource(panel, pageMode);
+        if ((mainPage || pageMode === 'poses') && panelSource !== 'finds') {
+            const sourceBadge = document.createElement('span');
+            sourceBadge.className = 'text-muted small ms-1';
+            sourceBadge.textContent = panelSource === 'dnf' ? 'DNF'
+                : panelSource === 'favorites' ? pkg.t('Favoris') : pkg.t('Caches posées');
+            sourceBadge.title = panelSource === 'dnf'
+                ? (pageMode === 'poses' ? pkg.t('Données comptées : DNF reçus') : pkg.t('Données comptées : mes DNF'))
+                : panelSource === 'favorites' ? pkg.t('Données comptées : favoris reçus')
+                    : pkg.t('Données comptées : mes caches posées');
+            name.appendChild(sourceBadge);
+            if (!sourceAvailable(panelSource)) {
+                const emptyBadge = document.createElement('span');
+                emptyBadge.className = 'text-warning small ms-1';
+                emptyBadge.textContent = pkg.t('(aucune donnée)');
+                emptyBadge.title = pkg.t('Les logs importés ne contiennent rien pour cette source (carte « Mes logs » de l\'onglet Données).');
+                name.appendChild(emptyBadge);
+            }
+        }
 
         const actions = document.createElement('div');
         actions.className = 'btn-group btn-group-sm';
@@ -627,13 +668,38 @@ function renderForm() {
     form.hidden = !panel;
     if (!panel) return;
 
-    // Données comptées (page principale) : trouvailles, DNF, caches posées.
-    const source = statsPanelSource(panel);
+    // Données comptées : trouvailles par défaut, alternatives propres à la
+    // page (DNF et caches posées sur la principale, DNF reçus et favoris
+    // reçus sur Mes poses) — proposées quand la sélection en apporte.
+    const source = statsPanelSource(panel, pageMode);
     const sourceField = $('statsSourceField');
     if (sourceField) {
-        sourceField.hidden = !mainPage || !['dnf', 'owned'].some(sourceAvailable) && source === 'finds';
+        const altSources = mainPage ? ['dnf', 'owned']
+            : pageMode === 'poses' ? ['dnf', 'favorites'] : [];
+        sourceField.hidden = !altSources.length
+            || (!altSources.some(sourceAvailable) && source === 'finds');
+        const help = $('helpStatsSource');
+        if (help) {
+            help.textContent = pageMode === 'poses'
+                ? pkg.t('Les DNF et les favoris reçus sont comptés à part, avec les mêmes statistiques que les trouvailles reçues.')
+                : pkg.t('Les DNF et les caches posées sont comptés même s\'ils ne sont pas affichés sur la carte.');
+        }
         const select = $('selectStatsSource');
         if (select) {
+            // Options propres à la page : le gabarit ne porte que celles de
+            // la page principale — reconstruites quand le mode diffère.
+            if (select.dataset.mode !== pageMode) {
+                const options = pageMode === 'poses'
+                    ? [['finds', pkg.t('Trouvailles reçues')], ['dnf', pkg.t('DNF reçus')], ['favorites', pkg.t('Favoris reçus')]]
+                    : [['finds', pkg.t('Mes trouvailles')], ['dnf', pkg.t('Mes DNF')], ['owned', pkg.t('Mes caches posées')]];
+                select.replaceChildren(...options.map(([value, label]) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = label;
+                    return option;
+                }));
+                select.dataset.mode = pageMode;
+            }
             select.querySelectorAll('option').forEach((option) => {
                 const offered = option.value === source || sourceAvailable(option.value);
                 option.hidden = !offered;
@@ -742,10 +808,11 @@ function renderForm() {
         const wrap = box.closest('[data-stats-modes]');
         if (wrap) {
             wrap.hidden = !(wrap.dataset.statsModes || '').split(' ').includes(mode)
-                || (mainPage && !sourceItems.includes(item));
+                || ((mainPage || pageMode === 'poses') && !sourceItems.includes(item));
         }
-        // Libellé selon la source (« Trouvailles » / « DNF » / « Caches posées »).
-        if (mainPage) {
+        // Libellé selon la source (« Trouvailles » / « DNF » / « Caches posées » /
+        // « Favoris reçus »…).
+        if (mainPage || pageMode === 'poses') {
             const label = wrap?.querySelector('label');
             if (label) label.textContent = pkg.statsCounterLabel?.(item, source) ?? label.textContent;
         }
@@ -983,7 +1050,7 @@ function bindFormFields() {
         updateSelected((panel) => {
             // Nouvelle métrique : ses options par défaut (ordre, orientation…),
             // en gardant titre, position et apparence.
-            const source = statsPanelSource(panel);
+            const source = statsPanelSource(panel, pageMode);
             const fresh = createStatsPanel(panel.kind, metric, {});
             panel.metric = metric;
             panel.options = fresh.options;
@@ -997,7 +1064,7 @@ function bindFormFields() {
         updateSelected((panel) => {
             // Nouvelle forme : ses options par défaut (trou, légende, ordre…),
             // en gardant titre, position, apparence et métrique.
-            const source = statsPanelSource(panel);
+            const source = statsPanelSource(panel, pageMode);
             const fresh = createStatsPanel(event.target.value, panel.metric, {});
             if (!fresh) return;
             panel.kind = event.target.value;
@@ -1012,7 +1079,7 @@ function bindFormFields() {
     $('selectStatsSource')?.addEventListener('change', (event) => {
         const source = event.target.value;
         updateSelected((panel) => {
-            const offered = statsSourceRegistry(source)[panel.kind] || [];
+            const offered = statsPanelRegistry({ options: { source } }, pageMode)[panel.kind] || [];
             const metric = offered.includes(panel.metric) ? panel.metric : offered[0];
             if (!metric) return;
             const fresh = createStatsPanel(panel.kind, metric, {});
@@ -1020,7 +1087,8 @@ function bindFormFields() {
             panel.options = fresh.options;
             if (source !== 'finds') panel.options.source = source;
             if (panel.kind === 'counter') {
-                panel.options.items = [...(SOURCE_COUNTER_DEFAULTS[source] || fresh.options.items)];
+                const defaults = pageMode === 'poses' ? POSES_SOURCE_COUNTER_DEFAULTS : SOURCE_COUNTER_DEFAULTS;
+                panel.options.items = [...(defaults[source] || fresh.options.items)];
             }
             if (panel.kind === 'bar' || panel.kind === 'donut') panel.style.palette = fresh.style.palette;
         }, event.target);

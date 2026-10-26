@@ -69,6 +69,16 @@ export const POSES_METRICS_BY_KIND = Object.freeze({
 // trouvailles : les métriques s'appliquent telles quelles, chacune dans son
 // registre (sans les métriques sans objet : attributs, âge, Jasmer…).
 export const STATS_SOURCES = Object.freeze(['finds', 'dnf', 'owned']);
+// Page Mes poses : trouvailles reçues (défaut), DNF reçus (un événement par
+// log « Didn't find it » sur une cache posée) ou favoris reçus (trouvaille
+// reçue portant un point favori) — même valeur « dnf », autre sens que sur
+// la page principale, mais les listes de panneaux sont séparées.
+export const POSES_STATS_SOURCES = Object.freeze(['finds', 'dnf', 'favorites']);
+// Union de toutes les pages : la normalisation accepte la valeur quelle que
+// soit la liste (`stats.panels` / `stats.poses_panels`), l'interprétation par
+// page est celle de statsPanelSource — « owned » sur Mes poses et
+// « favorites » sur la page principale retombent sur « finds ».
+export const ALL_STATS_SOURCES = Object.freeze([...STATS_SOURCES, 'favorites']);
 export const DNF_METRICS_BY_KIND = Object.freeze({
     grid: Object.freeze(['dt', 'finds_ym', 'calendar', 'activity']),
     bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'owner']),
@@ -125,12 +135,15 @@ export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', '
 // affiché par stats_panels, pas dans l'accumulateur.
 export const DNF_COUNTER_ITEMS = Object.freeze(['total', 'caches', 'dnf_open', 'dnf_resolved', 'dnf_ratio', 'days', 'best_day', 'streak', 'types', 'countries', 'states']);
 export const OWNED_COUNTER_ITEMS = Object.freeze(['total', 'owned_active', 'owned_disabled', 'owned_archived', 'maintenances', 'days', 'best_day', 'types', 'countries', 'states']);
+// Tuiles des sources « DNF reçus » et « favoris reçus » (Mes poses) :
+// accumulateur seul, pas de tuiles « poseur » ni d'état.
+export const POSES_ALT_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'caches', 'days', 'best_day', 'streak', 'types', 'countries', 'states', 'north', 'south', 'east', 'west']);
 // Tuiles lues au jour affiché (hors accumulateur) : leur panneau se
 // redessine aussi les jours sans événement compté.
 export const STATS_DAY_TILES = Object.freeze(['ftf_delay', 'neglected', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
     'owned_active', 'owned_disabled', 'owned_archived', 'maintenances']);
 const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS,
-    ...DNF_COUNTER_ITEMS, ...OWNED_COUNTER_ITEMS])];
+    ...DNF_COUNTER_ITEMS, ...OWNED_COUNTER_ITEMS, ...POSES_ALT_COUNTER_ITEMS])];
 
 // Registre de métriques et tuiles de la page (`mode` : nom de mode ou ancien
 // booléen « page Évolution »).
@@ -138,15 +151,22 @@ export function statsMetricsRegistry(mode) {
     const m = modeOf(mode);
     return m === 'evolution' ? EVOLUTION_METRICS_BY_KIND : m === 'poses' ? POSES_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
 }
-export function statsCounterItemsFor(mode) {
+// Tuiles de la page : `source` ne joue que sur les pages qui en comptent
+// plusieurs (principale : trouvailles/DNF/posées ; Mes poses : trouvailles
+// reçues/DNF reçus/favoris reçus — accumulateur seul pour les deux autres).
+export function statsCounterItemsFor(mode, source = 'finds') {
     const m = modeOf(mode);
-    return m === 'evolution' ? EVOLUTION_COUNTER_ITEMS : m === 'poses' ? POSES_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
+    if (m === 'evolution') return EVOLUTION_COUNTER_ITEMS;
+    if (m === 'poses') return source === 'finds' ? POSES_COUNTER_ITEMS : POSES_ALT_COUNTER_ITEMS;
+    return statsSourceCounterItems(source);
 }
 
-// Source comptée par un panneau (page principale) : 'finds' sans réglage.
-export function statsPanelSource(panel) {
+// Source comptée par un panneau : 'finds' sans réglage, ou quand la valeur
+// n'existe pas sur la page ('owned' sur Mes poses, 'favorites' ailleurs).
+export function statsPanelSource(panel, mode = 'main') {
     const source = panel?.options?.source;
-    return STATS_SOURCES.includes(source) ? source : 'finds';
+    const allowed = modeOf(mode) === 'poses' ? POSES_STATS_SOURCES : STATS_SOURCES;
+    return allowed.includes(source) ? source : 'finds';
 }
 export function statsSourceRegistry(source) {
     return source === 'dnf' ? DNF_METRICS_BY_KIND : source === 'owned' ? OWNED_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
@@ -155,10 +175,14 @@ export function statsSourceCounterItems(source) {
     return source === 'dnf' ? DNF_COUNTER_ITEMS : source === 'owned' ? OWNED_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
 }
 // Registre d'un panneau sur une page : la source ne joue que sur la page
-// principale (les autres pages n'ont qu'un jeu).
+// principale (registre par source). Sur Mes poses, les trois sources
+// partagent POSES_METRICS_BY_KIND — les événements portent les mêmes
+// propriétés (attributs de la cache, date_find = date du log, trouveur) ;
+// seule la valeur de la source est validée par page (statsPanelSource).
 export function statsPanelRegistry(panel, mode) {
     const m = modeOf(mode);
-    return m === 'main' ? statsSourceRegistry(statsPanelSource(panel)) : statsMetricsRegistry(m);
+    const source = statsPanelSource(panel, m);
+    return m === 'main' ? statsSourceRegistry(source) : statsMetricsRegistry(m);
 }
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
@@ -394,7 +418,7 @@ const OPTION_COERCERS = {
     items: (v, d) => choices(v, ALL_COUNTER_ITEMS, d),
     counted: (v, d) => choice(v, STATS_COUNTED, d),
     columns: (v, d) => intIn(v, d, STATS_COLUMNS_RANGE),
-    source: (v, d) => choice(v, STATS_SOURCES, d),
+    source: (v, d) => choice(v, ALL_STATS_SOURCES, d),
 };
 
 const POSITION_COERCERS = {
@@ -675,8 +699,8 @@ export function accumulatorMetricsFor(panel, { evolution = false } = {}) {
 // coûtent quelque chose. `mode` : page (nom de mode) ; à défaut, l'ancien
 // drapeau `evolution`. Mes poses compte comme le mode principal (des
 // trouvailles), avec son propre registre.
-// `source` (page principale) : seuls les panneaux de cette source ('finds'
-// par défaut) — chaque source a son accumulateur.
+// `source` (pages principale et Mes poses) : seuls les panneaux de cette
+// source ('finds' par défaut) — chaque source a son accumulateur.
 export function metricsForPanels(settings, { evolution = false, mode = null, source = 'finds' } = {}) {
     const page = modeOf(mode ?? evolution);
     const isEvolution = page === 'evolution';
@@ -684,7 +708,7 @@ export function metricsForPanels(settings, { evolution = false, mode = null, sou
     if (!settings?.enabled) return metrics;
     for (const panel of settings?.[statsPanelsKey(page)] || []) {
         if (!panel.enabled) continue;
-        if (page === 'main' && statsPanelSource(panel) !== source) continue;
+        if ((page === 'main' || page === 'poses') && statsPanelSource(panel, page) !== source) continue;
         const registry = statsPanelRegistry(panel, page);
         if (!(registry[panel.kind] || []).includes(panel.metric)) continue;
         for (const metric of accumulatorMetricsFor(panel, { evolution: isEvolution })) metrics.add(metric);

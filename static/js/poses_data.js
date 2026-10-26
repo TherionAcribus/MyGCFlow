@@ -76,7 +76,10 @@ let pendingTimer = null;
 let loadSeq = 0;
 let dataRevision = 0;
 let flashOptionsByKind = new Map(); // résolus au début de l'animation
-let findsIndex = null;              // { revision, byDate } — trouvailles reçues (Stats)
+// Index par jour des événements Stats de la page, par source : 'finds' =
+// trouvailles reçues, 'dnf' = DNF reçus, 'favorites' = trouvailles reçues
+// portant un point favori (posesStatsFinds). Mémoïsés par (source, révision).
+const statsFindsIndexes = new Map();
 let cacheMarksMemo = null;          // { revision, marks } — repères par cache (barre)
 let counterStatsMemo = null;        // { revision, day, stats } — tuiles « poseur » (Stats)
 let stateMutations = 0;             // réécritures de `pstate` (tests, mesures)
@@ -276,7 +279,7 @@ function applySelection(selection, { resetDates = false } = {}) {
     timeline = buildPosesTimeline(base, rows, { archivedDisplay });
     olFeatures = buildFeatures(rows);
     dataRevision += 1;
-    findsIndex = null;
+    statsFindsIndexes.clear();
     datasetScope = { selected: rows.length, total: base.count };
     pkg.setExternalDatasetState(buildMeta(), datasetScope);
     // Sélection ramenée à zéro par les filtres : l'avertissement
@@ -286,6 +289,8 @@ function applySelection(selection, { resetDates = false } = {}) {
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
     pkg.setLifecycleFeatures(olFeatures);
     pkg.refreshStatsPanels?.();
+    // Onglet Stats : la dispo des sources (DNF, favoris reçus) vient de changer.
+    pkg.renderStatsTab?.();
     pkg.refreshTimelineBar?.();
     // Jalons « Ne trouvaille reçue » des images planifiées : dates recalculées.
     pkg.refreshImagesForData?.();
@@ -508,15 +513,27 @@ function posesRefreshRest() {
     if (dayIndexOf(base, date) !== clock.restDay) pkg.showLifecycleRestState?.();
 }
 
-// Trouvailles reçues de la sélection, par jour (clés Date.toDateString(),
-// comme bdd.js › pointsByDate) : la source des panneaux Stats de la page.
-// Mêmes propriétés que les trouvailles du mode principal (date_find = date du
-// log, attributs de la cache, géométrie GeoJSON pour les points extrêmes),
-// plus le trouveur et le point favori.
-export function posesStatsFinds() {
+// Filtre d'une source d'événements Stats : 'finds' = trouvailles reçues,
+// 'dnf' = DNF reçus, 'favorites' = trouvailles reçues portant un point
+// favori. Toute autre clé : pas de source ici (null).
+function statsSourceKeep(source) {
+    if (source === 'finds') return (j) => base.ev.kind[j] === base.kindCode.find;
+    if (source === 'dnf') return (j) => base.ev.kind[j] === base.kindCode.dnf;
+    if (source === 'favorites') return (j) => base.ev.kind[j] === base.kindCode.find && base.ev.fav[j] === 1;
+    return null;
+}
+
+// Événements de la sélection comptés par les panneaux Stats de la page, par
+// jour (clés Date.toDateString(), comme bdd.js › pointsByDate). Mêmes
+// propriétés que les trouvailles du mode principal (date_find = date du log,
+// attributs de la cache, géométrie GeoJSON pour les points extrêmes), plus
+// le trouveur et le point favori. Mémoïsé par (source, révision).
+export function posesStatsFinds(source = 'finds') {
     if (!base || !timeline) return null;
-    if (findsIndex?.revision === dataRevision) return findsIndex;
-    const findCode = base.kindCode.find;
+    const keep = statsSourceKeep(source);
+    if (!keep) return null;
+    const cached = statsFindsIndexes.get(source);
+    if (cached?.revision === dataRevision) return cached;
     const byDate = new Map();
     const props = new Map();
     const cacheProps = (i) => {
@@ -542,7 +559,7 @@ export function posesStatsFinds() {
     let iso = '';
     for (let e = 0; e < timeline.evOrder.length; e++) {
         const j = timeline.evOrder[e];
-        if (base.ev.kind[j] !== findCode) continue;
+        if (!keep(j)) continue;
         const day = base.ev.day[j];
         if (day !== lastDay) {
             const date = dateOfDayIndex(base, day);
@@ -566,8 +583,17 @@ export function posesStatsFinds() {
         if (!list) byDate.set(key, (list = []));
         list.push(record);
     }
-    findsIndex = { revision: dataRevision, byDate };
-    return findsIndex;
+    const index = { revision: dataRevision, byDate };
+    statsFindsIndexes.set(source, index);
+    return index;
+}
+
+// La source est proposée (select « Données comptées », galerie) quand la
+// sélection lui apporte au moins un événement.
+export function posesSourceAvailable(source) {
+    const index = posesStatsFinds(source);
+    for (const list of index?.byDate?.values() || []) if (list.length) return true;
+    return false;
 }
 
 // Vue de l'index pour les panneaux Stats et la barre de chronologie.

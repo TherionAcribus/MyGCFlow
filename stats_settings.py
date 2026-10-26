@@ -60,11 +60,11 @@ POSES_METRICS_BY_KIND = {
     "counter": ("summary",),
 }
 
-# Page principale : chaque panneau compte une SOURCE (option `source`,
-# absente = trouvailles) — les DNF du joueur ou ses caches posées, chacune
-# avec son registre (sous-ensembles de STATS_METRICS_BY_KIND). Le client
-# s'en sert pour le rendu ; la normalisation n'a besoin que des valeurs.
-STATS_SOURCES = ("finds", "dnf", "owned")
+# Union de toutes les pages : page principale (trouvailles, DNF du joueur,
+# caches posées) et Mes poses (trouvailles reçues, « DNF reçus », « favoris
+# reçus » — même valeur « dnf », autre sens). L'interprétation par page est
+# côté client ; la normalisation n'a besoin que des valeurs possibles.
+STATS_SOURCES = ("finds", "dnf", "owned", "favorites")
 
 # Univers comptés par un panneau catégoriel Évolution (« Compter ») :
 # 'active' = caches présentes à la date affichée (ensemble vivant),

@@ -135,18 +135,26 @@ par type, générée par boucle), liaison générique `initEventFlashControls`
 
 ## Stats et Images
 
-**Stats** : liste propre `stats.poses_panels`. Les panneaux comptent les
-**trouvailles reçues**, servies par `posesStatsFinds()` avec les propriétés
-des trouvailles du mode principal (date du log en `date_find`, attributs de la
-cache, plus `finder` et `favorite`) : le chemin de comptage du mode principal
-s'applique tel quel (`findIndexes` de stats_panels.js). Registre
-`POSES_METRICS_BY_KIND` : grilles D/T, mois × année, calendrier, année
-d'activité ; histogrammes et anneaux par cache (`cache`, course « caches les
-plus trouvées »), par trouveur (`finder`), année, mois, jour de semaine, âge
-de la cache à la trouvaille, type, taille, D, T, pays, région ; courbe
-cumulée ; tuiles `POSES_COUNTER_ITEMS` (trouvailles reçues, trouveurs,
-favoris, caches trouvées, jours, record, série, trouvées le jour de
-publication, catégories, points extrêmes). Quatre tuiles « poseur » en plus :
+**Stats** : liste propre `stats.poses_panels`. Chaque panneau compte une
+**source** (`options.source`) : les **trouvailles reçues** par défaut
+(`finds`), les **DNF reçus** (`dnf` — même valeur que la page principale,
+autre sens : échecs des visiteurs, pas ceux du joueur) ou les **favoris
+reçus** (`favorites` — trouvailles reçues portant un point favori ; la
+« trouvaille » du poseur sur sa propre cache est une note du poseur, jamais
+reçue). Chaque source est servie par `posesStatsFinds(source)` avec les
+propriétés des trouvailles du mode principal (date du log en `date_find`,
+attributs de la cache, plus `finder` et `favorite`) : le chemin de comptage
+du mode principal s'applique tel quel (`findIndexes` de stats_panels.js).
+Registre `POSES_METRICS_BY_KIND`, commun aux trois sources : grilles D/T,
+mois × année, calendrier, année d'activité ; histogrammes et anneaux par
+cache (`cache`, course « caches les plus trouvées »), par trouveur
+(`finder`), année, mois, jour de semaine, âge de la cache à la trouvaille,
+type, taille, D, T, pays, région ; courbe cumulée ; tuiles
+`POSES_COUNTER_ITEMS` pour les trouvailles reçues (trouveurs, favoris,
+caches trouvées, jours, record, série, trouvées le jour de publication,
+catégories, points extrêmes), `POSES_ALT_COUNTER_ITEMS` pour les DNF reçus
+et les favoris reçus — accumulateur seul, aucune tuile « au jour ». Quatre
+tuiles « poseur » en plus :
 « Part de favoris » (favoris / trouvailles), « Trouveurs fidèles » (au moins
 3 trouvailles reçues, détail = trouveur le plus assidu), « Délai moyen avant
 la FTF » et « Cache la plus délaissée » — ces deux-là sont lues dans la

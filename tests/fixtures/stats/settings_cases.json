@@ -4199,5 +4199,205 @@
       "poses_panels": [],
       "configs": []
     }
+  },
+  {
+    "name": "source des panneaux de Mes poses : favoris et DNF gardés (union des pages), inconnue retirée",
+    "input": {
+      "poses_panels": [
+        {
+          "id": "bbbbbb11",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "source": "favorites",
+            "items": [
+              "total",
+              "finders",
+              "caches"
+            ]
+          }
+        },
+        {
+          "id": "bbbbbb12",
+          "kind": "bar",
+          "metric": "cache",
+          "options": {
+            "source": "dnf"
+          }
+        },
+        {
+          "id": "bbbbbb13",
+          "kind": "line",
+          "metric": "cumulative",
+          "options": {
+            "source": "owned"
+          }
+        },
+        {
+          "id": "bbbbbb14",
+          "kind": "bar",
+          "metric": "finder",
+          "options": {
+            "source": "inconnue"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "evolution_panels": [],
+      "poses_panels": [
+        {
+          "id": "bbbbbb11",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "total",
+              "finders",
+              "caches"
+            ],
+            "columns": 2,
+            "source": "favorites"
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "bbbbbb12",
+          "kind": "bar",
+          "metric": "cache",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "new",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false,
+            "source": "dnf"
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "bbbbbb13",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true,
+            "show_milestones": true,
+            "source": "owned"
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "bbbbbb14",
+          "kind": "bar",
+          "metric": "finder",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "new",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "configs": []
+    }
   }
 ]

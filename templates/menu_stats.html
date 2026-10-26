@@ -89,9 +89,12 @@
                     <canvas id="statsPanelPreview" class="stats-panel-preview mb-2" aria-hidden="true"></canvas>
                     <h6 class="gc-subsection-title">{{ _("Contenu") }}</h6>
                     <div class="row g-2">
-                        <!-- Données comptées (page principale) : trouvailles, DNF ou
-                             caches posées — proposé quand les logs en apportent
-                             (stats_ui.js › renderForm). -->
+                        <!-- Données comptées : trouvailles par défaut, puis les sources
+                             de la page — DNF et caches posées sur la page principale,
+                             DNF reçus et favoris reçus sur Mes poses (le gabarit ne
+                             porte que les options principales ; stats_ui.js ›
+                             renderForm les reconstruit par mode et le texte d'aide
+                             aussi). -->
                         <div class="col-12" id="statsSourceField" hidden>
                             <label class="form-label" for="selectStatsSource">{{ _("Données comptées") }}</label>
                             <select id="selectStatsSource" class="form-select" aria-describedby="helpStatsSource">
@@ -509,6 +512,14 @@
         ('add', 'donut:cache', _("Anneau des caches"), _("La part de chaque cache dans les trouvailles reçues."), None, 'poses', 1),
         ('add', 'donut:finder', _("Anneau des trouveurs"), _("La part des joueurs qui vous ont le plus rendu visite."), None, 'poses', 1),
     ]),
+    (_("DNF reçus"), [
+        ('preset', 'poses-dnf-overview', _("Chiffres + progression des DNF reçus"), _("DNF reçus, chercheurs distincts, caches en échec, et la courbe des DNF."), None, 'poses', 2),
+        ('preset', 'poses-dnf-race', _("Course des caches en échec"), _("Les caches qui résistent le plus aux visiteurs."), None, 'poses', 1),
+    ]),
+    (_("Favoris reçus"), [
+        ('preset', 'poses-fav-overview', _("Chiffres + favoris cumulés"), _("Favoris reçus, joueurs, caches favorisées, et la courbe des favoris."), None, 'poses', 2),
+        ('preset', 'poses-fav-donut', _("Anneau des favoris"), _("La part de chaque cache dans les favoris reçus."), None, 'poses', 1),
+    ]),
     (_("Mes DNF"), [
         ('preset', 'dnf-overview', _("Chiffres + progression des DNF"), _("DNF, caches en échec, en cours, résolus, taux d'échec, et la courbe des DNF."), None, 'main', 2),
         ('preset', 'dnf-dt', _("Matrice D/T des DNF"), _("Les combinaisons difficulté/terrain où vous avez échoué."), None, 'main', 1),
@@ -552,8 +563,9 @@
                     <h6 class="gc-subsection-title" id="statsGallerySection{{ loop.index }}">{{ title }}</h6>
                     <div class="stats-gallery-grid">
                         {% for type, value, label, desc, desc_evo, modes, count in entries %}
-                        {# Cartes d'une source (DNF, caches posées) : masquées sans ses données. #}
-                        {% set card_source = 'dnf' if value.startswith('dnf-') else ('owned' if value.startswith('owned-') else '') %}
+                        {# Cartes d'une source (DNF, caches posées, DNF ou favoris
+                           reçus sur Mes poses) : masquées sans ses données. #}
+                        {% set card_source = 'dnf' if value.startswith('dnf-') else ('owned' if value.startswith('owned-') else ('dnf' if value.startswith('poses-dnf-') else ('favorites' if value.startswith('poses-fav-') else ''))) %}
                         <button type="button" class="stats-gallery-card"
                                 {% if type == 'preset' %}data-stats-preset="{{ value }}"{% else %}data-stats-add="{{ value }}"{% endif %}
                                 {% if card_source %}data-stats-source="{{ card_source }}"{% endif %}

@@ -20,6 +20,7 @@
 import * as pkg from './index.js';
 import { appMode, isEvolutionPage, isMainPage, isPosesPage } from './app_mode.mjs';
 import {
+    ALL_STATS_SOURCES,
     DT_LABELS,
     EVOLUTION_METRICS_BY_KIND,
     OTHERS_KEY,
@@ -28,7 +29,6 @@ import {
     STATS_DEFAULTS,
     STATS_HEIGHT_RANGE,
     STATS_METRICS_BY_KIND,
-    STATS_SOURCES,
     STATS_WIDTH_RANGE,
     UNKNOWN_KEY,
     arrangePanels,
@@ -80,11 +80,13 @@ const DAY_TILES = new Set(STATS_DAY_TILES);
 let settings = normalizeStatsSettings(STATS_DEFAULTS);
 
 // Comptage par SOURCE (docs/panneaux-stats.md) : sur la page principale,
-// chaque panneau compte les trouvailles, les DNF ou les caches posées
-// (stats_model › statsPanelSource) ; chaque source a son index par jour, son
-// accumulateur, ses totaux et sa référence. Les autres pages n'ont que la
-// source « finds » (trouvailles reçues sur Mes poses ; métriques des
-// catégories en Évolution, qui a son propre accumulateur).
+// chaque panneau compte les trouvailles, les DNF ou les caches posées ; sur
+// Mes poses, les trouvailles reçues, les DNF reçus ou les favoris reçus
+// (stats_model › statsPanelSource, validée par page). Chaque source a son
+// index par jour, son accumulateur, ses totaux et sa référence — les états
+// vides en pratique : « owned » sur Mes poses, « favorites » sur la page
+// principale (countingStates ne retient que ceux avec métriques). Évolution
+// n'a que la source « finds » (métriques des catégories, accumulateur propre).
 function newSourceState(key) {
     return {
         key,
@@ -100,11 +102,14 @@ function newSourceState(key) {
         appliedRev: -1,        // révision de l'index couverte par `current`
     };
 }
-const sourceStates = new Map(STATS_SOURCES.map((key) => [key, newSourceState(key)]));
+const sourceStates = new Map(ALL_STATS_SOURCES.map((key) => [key, newSourceState(key)]));
 const FINDS = sourceStates.get('finds');
 
 function panelState(panel) {
-    return isMainPage() ? (sourceStates.get(statsPanelSource(panel)) || FINDS) : FINDS;
+    const m = appMode();
+    return (m === 'main' || m === 'poses')
+        ? (sourceStates.get(statsPanelSource(panel, m)) || FINDS)
+        : FINDS;
 }
 
 // Sources dont au moins un panneau actif compte quelque chose.
@@ -206,8 +211,9 @@ export function applyStatsSettings(raw) {
     settingsRev += 1;
     const evolution = isEvolutionPage();
     for (const S of sourceStates.values()) {
-        // Sources DNF / caches posées : page principale seulement.
-        const nextMetrics = S === FINDS || isMainPage()
+        // Sources alternatives : page principale (dnf/owned), Mes poses
+        // (dnf/favorites — « owned » n'existe pas là : pas de métriques).
+        const nextMetrics = S === FINDS || isMainPage() || (isPosesPage() && S.key !== 'owned')
             ? metricsForPanels(settings, { mode: appMode(), source: S.key })
             : new Set();
         const nextKey = [...nextMetrics].sort().join(',');
@@ -268,26 +274,31 @@ function evolutionIndex() {
 // Comptage
 // ---------------------------------------------------------------------------
 
-// Événements comptés, par jour (clés Date.toDateString()). Source « finds » :
-// les trouvailles de la carte en mode principal (visibles puis locationless
-// masquées) ; sur Mes poses, les trouvailles REÇUES, fournies par
-// poses_data.js (mêmes propriétés : date_find, attributs de la cache, plus le
-// trouveur). Sources « dnf » / « owned » (page principale) : un événement par
-// DNF, une cache posée par jour d'apparition (dnf_data.js, owner_data.js),
-// affichés ou non sur la carte.
+// Événements comptés, par jour (clés Date.toDateString()). Page Mes poses,
+// quelle que soit la clé : les événements de la source sont servis par
+// poses_data.js › posesStatsFinds ('finds' = trouvailles reçues, 'dnf' =
+// DNF reçus, 'favorites' = trouvailles reçues avec favori — mêmes
+// propriétés : date_find, attributs de la cache, trouveur). Page
+// principale : 'finds' = trouvailles de la carte (visibles puis locationless
+// masquées), 'dnf' / 'owned' = un événement par DNF, une cache posée par
+// jour d'apparition (dnf_data.js, owner_data.js), affichés ou non sur la
+// carte ; 'favorites' (et toute autre) n'y a pas de source.
 function findIndexes(S = FINDS) {
-    if (S.key !== 'finds') {
+    if (isPosesPage()) {
+        const source = pkg.posesStatsFinds?.(S.key);
+        return { revision: `poses:${S.key}:${source?.revision ?? 'none'}`, maps: source ? [source.byDate] : [] };
+    }
+    if (S.key === 'finds') {
+        return {
+            revision: Number(pkg.pointsByDateRevision) || 0,
+            maps: [pkg.pointsByDate, pkg.hiddenPointsByDate],
+        };
+    }
+    if (S.key === 'dnf' || S.key === 'owned') {
         const source = S.key === 'dnf' ? pkg.dnfStatsIndex?.() : pkg.ownerStatsIndex?.();
         return { revision: source?.revision ?? `${S.key}:none`, maps: source ? [source.byDate] : [] };
     }
-    if (isPosesPage()) {
-        const source = pkg.posesStatsFinds?.();
-        return { revision: `poses:${source?.revision ?? 'none'}`, maps: source ? [source.byDate] : [] };
-    }
-    return {
-        revision: Number(pkg.pointsByDateRevision) || 0,
-        maps: [pkg.pointsByDate, pkg.hiddenPointsByDate],
-    };
+    return { revision: `${S.key}:none`, maps: [] };
 }
 
 function indexFeaturesUpTo(S, until) {
@@ -828,8 +839,9 @@ function weekdayNames(style) {
 // Titre par défaut d'un panneau, d'après sa métrique — aussi le nom affiché
 // dans la liste de l'onglet Stats.
 export function defaultStatsPanelTitle(panel) {
-    const source = isMainPage() ? statsPanelSource(panel) : 'finds';
-    if (source === 'dnf') {
+    const page = appMode();
+    const source = (page === 'main' || page === 'poses') ? statsPanelSource(panel, page) : 'finds';
+    if (page === 'main' && source === 'dnf') {
         switch (panel.metric) {
             case 'dt': return pkg.t('Matrice D/T des DNF');
             case 'finds_ym': return pkg.t('DNF mois × année');
@@ -849,7 +861,7 @@ export function defaultStatsPanelTitle(panel) {
             case 'summary': return pkg.t('Chiffres clés des DNF');
             default: break;
         }
-    } else if (source === 'owned') {
+    } else if (page === 'main' && source === 'owned') {
         switch (panel.metric) {
             case 'dt': return pkg.t('Matrice D/T de mes caches');
             case 'finds_ym': return pkg.t('Poses mois × année');
@@ -866,6 +878,50 @@ export function defaultStatsPanelTitle(panel) {
             case 'state': return pkg.t('Mes caches par région');
             case 'cumulative': return pkg.t('Caches posées cumulées');
             case 'summary': return pkg.t('Chiffres clés de mes caches');
+            default: break;
+        }
+    } else if (page === 'poses' && source === 'dnf') {
+        switch (panel.metric) {
+            case 'dt': return pkg.t('Matrice D/T des DNF reçus');
+            case 'finds_ym': return pkg.t('DNF reçus mois × année');
+            case 'calendar': return pkg.t('Calendrier des DNF reçus');
+            case 'activity': return pkg.t('Activité des DNF reçus');
+            case 'cache': return pkg.t('DNF reçus par cache');
+            case 'finder': return pkg.t('DNF reçus par joueur');
+            case 'year': return pkg.t('DNF reçus par année');
+            case 'month': return pkg.t('DNF reçus par mois');
+            case 'weekday': return pkg.t('DNF reçus par jour de la semaine');
+            case 'age': return pkg.t('Âge des caches au DNF');
+            case 'cache_type': return pkg.t('DNF reçus par type');
+            case 'container': return pkg.t('DNF reçus par taille');
+            case 'difficulty': return pkg.t('DNF reçus par difficulté');
+            case 'terrain': return pkg.t('DNF reçus par terrain');
+            case 'country': return pkg.t('DNF reçus par pays');
+            case 'state': return pkg.t('DNF reçus par région');
+            case 'cumulative': return pkg.t('DNF reçus');
+            case 'summary': return pkg.t('Chiffres clés des DNF reçus');
+            default: break;
+        }
+    } else if (page === 'poses' && source === 'favorites') {
+        switch (panel.metric) {
+            case 'dt': return pkg.t('Matrice D/T des favoris');
+            case 'finds_ym': return pkg.t('Favoris reçus mois × année');
+            case 'calendar': return pkg.t('Calendrier des favoris reçus');
+            case 'activity': return pkg.t('Activité des favoris reçus');
+            case 'cache': return pkg.t('Favoris reçus par cache');
+            case 'finder': return pkg.t('Joueurs favorisants');
+            case 'year': return pkg.t('Favoris reçus par année');
+            case 'month': return pkg.t('Favoris reçus par mois');
+            case 'weekday': return pkg.t('Favoris reçus par jour de la semaine');
+            case 'age': return pkg.t('Âge des caches au favori');
+            case 'cache_type': return pkg.t('Favoris reçus par type');
+            case 'container': return pkg.t('Favoris reçus par taille');
+            case 'difficulty': return pkg.t('Favoris reçus par difficulté');
+            case 'terrain': return pkg.t('Favoris reçus par terrain');
+            case 'country': return pkg.t('Favoris reçus par pays');
+            case 'state': return pkg.t('Favoris reçus par région');
+            case 'cumulative': return pkg.t('Favoris reçus');
+            case 'summary': return pkg.t('Chiffres clés des favoris reçus');
             default: break;
         }
     }
@@ -1091,16 +1147,22 @@ function formatDay(day) {
 const COUNTER_LABELS = {
     total: (source) => (source === 'dnf' ? pkg.t('DNF')
         : source === 'owned' ? pkg.t('Caches posées')
-            : isPosesPage() ? pkg.t('Trouvailles reçues') : pkg.t('Trouvailles')),
-    finders: () => pkg.t('Trouveurs différents'),
+            : source === 'favorites' ? pkg.t('Favoris reçus')
+                : isPosesPage() ? pkg.t('Trouvailles reçues') : pkg.t('Trouvailles')),
+    finders: (source) => (source === 'dnf' ? pkg.t('Chercheurs distincts')
+        : source === 'favorites' ? pkg.t('Joueurs favorisants') : pkg.t('Trouveurs différents')),
     favorites: () => pkg.t('Favoris reçus'),
     fav_ratio: () => pkg.t('Part de favoris'),
     loyal: () => pkg.t('Trouveurs fidèles'),
     ftf_delay: () => pkg.t('Délai moyen avant la FTF'),
     neglected: () => pkg.t('Cache la plus délaissée'),
-    caches: (source) => (source === 'dnf' ? pkg.t('Caches en échec') : pkg.t('Caches trouvées au moins une fois')),
+    caches: (source) => (source === 'dnf' ? pkg.t('Caches en échec')
+        : source === 'favorites' ? pkg.t('Caches favorisées')
+            : pkg.t('Caches trouvées au moins une fois')),
     days: (source) => (source === 'dnf' ? pkg.t('Jours avec DNF')
-        : source === 'owned' ? pkg.t('Jours de pose') : pkg.t('Jours avec trouvaille')),
+        : source === 'owned' ? pkg.t('Jours de pose')
+            : source === 'favorites' ? pkg.t('Jours avec favori')
+                : pkg.t('Jours avec trouvaille')),
     best_day: () => pkg.t('Record sur une journée'),
     streak: () => pkg.t('Plus longue série (jours)'),
     types: () => pkg.t('Types de caches différents'),
@@ -1270,9 +1332,12 @@ function buildView(panel, source = null) {
         const model = gridModel(metric, state, reference, gridContext(animating));
         view.model = model;
         if (metric === 'activity' && panel.show_title && !panel.title) {
-            view.title = S.key === 'dnf' ? pkg.t('DNF ${year}', { year: model.year })
-                : S.key === 'owned' ? pkg.t('Poses ${year}', { year: model.year })
-                    : pkg.t('Activité ${year}', { year: model.year });
+            view.title = S.key === 'dnf'
+                    ? (isPosesPage() ? pkg.t('DNF reçus ${year}', { year: model.year })
+                        : pkg.t('DNF ${year}', { year: model.year }))
+                : S.key === 'favorites' ? pkg.t('Favoris ${year}', { year: model.year })
+                    : S.key === 'owned' ? pkg.t('Poses ${year}', { year: model.year })
+                        : pkg.t('Activité ${year}', { year: model.year });
         }
         view.cellMode = panel.options.cell_mode;
         Object.assign(view, gridAxisLabels(metric, model, number));
@@ -1330,8 +1395,9 @@ function buildView(panel, source = null) {
     if (panel.kind === 'counter') {
         const values = counterValues(state, panel.options.items);
         // Tuiles « poseur » de Mes poses : délai avant FTF et cache délaissée
-        // suivent le jour affiché, lu dans la chronologie de la page.
-        if (isPosesPage()
+        // suivent le jour affiché, lu dans la chronologie de la page — elles
+        // ne sont proposées qu'en trouvailles reçues.
+        if (isPosesPage() && S.key === 'finds'
             && (panel.options.items.includes('ftf_delay') || panel.options.items.includes('neglected'))) {
             const index = pkg.posesStatsIndex?.();
             if (index) {
@@ -1343,8 +1409,9 @@ function buildView(panel, source = null) {
             }
         }
         // Tuiles d'état DNF / caches posées : jour affiché, ou état actuel
-        // au repos (clé de dessin constante).
-        if (S.key !== 'finds' && panel.options.items.some(DAY_TILES.has, DAY_TILES)) {
+        // au repos (clé de dessin constante). Page principale seulement —
+        // les sources de Mes poses n'ont pas de tuiles « au jour ».
+        if (isMainPage() && S.key !== 'finds' && panel.options.items.some(DAY_TILES.has, DAY_TILES)) {
             const day = animating && animation?.lastDate ? dayNumberOfDate(animation.lastDate) : Infinity;
             sourceDayTiles(values, S, day);
             view.counterDay = animating ? day : 'rest';
@@ -1385,7 +1452,8 @@ function buildView(panel, source = null) {
         view.hole = panel.options.hole;
         view.showLegend = panel.options.show_legend;
         view.centerLabel = S.key === 'dnf' ? pkg.t('DNF')
-            : S.key === 'owned' ? pkg.t('caches') : pkg.t('trouvailles');
+            : S.key === 'favorites' ? pkg.t('favoris')
+                : S.key === 'owned' ? pkg.t('caches') : pkg.t('trouvailles');
         // Même pied « exclus » que les barres : seule `attribute` peut en
         // produire parmi les catégories (une cache sans attribut n'a pas de
         // ligne « Inconnu », elle est hors sujet).
@@ -1735,7 +1803,9 @@ function refreshAltText(node, panel, view, key) {
                     ? pkg.t('${n} DNF au ${date}', { n: number(model.total), date: formatDay(model.headDay) })
                     : view.source === 'owned'
                         ? pkg.t('${n} caches posées au ${date}', { n: number(model.total), date: formatDay(model.headDay) })
-                        : pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
+                        : view.source === 'favorites'
+                            ? pkg.t('${n} favoris au ${date}', { n: number(model.total), date: formatDay(model.headDay) })
+                            : pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
         }
         const reached = (view.milestones || []).filter((m) => m.day !== null);
         if (reached.length) {
@@ -2205,11 +2275,13 @@ function gallerySource(panels) {
         }
         return galleryMemo.source;
     }
-    // Page principale : une passe par source (trouvailles, DNF, caches posées).
+    // Pages principale et Mes poses : une passe par source (trouvailles,
+    // DNF, caches posées / trouvailles reçues, DNF reçus, favoris reçus —
+    // « owned » n'existe pas sur Mes poses).
     const page = appMode();
     const list = { enabled: true, [statsPanelsKey(page)]: panels };
     const perSource = [...sourceStates.values()]
-        .filter((S) => S === FINDS || isMainPage())
+        .filter((S) => S === FINDS || isMainPage() || (isPosesPage() && S.key !== 'owned'))
         .map((S) => {
             const sourceMetrics = metricsForPanels(list, { mode: page, source: S.key });
             return { S, sourceMetrics, sig: `${S.key}:${indexRevision(S)}:${[...sourceMetrics].sort().join(',')}` };
@@ -2364,13 +2436,14 @@ export function statsPanelCsv(id) {
     if (panel.kind === 'counter') {
         push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
         const values = counterValues(ref, panel.options.items);
-        // Mêmes tuiles « poseur » qu'à l'écran, au jour de repos (date de fin).
-        if (isPosesPage()
+        // Mêmes tuiles « poseur » qu'à l'écran, au jour de repos (date de
+        // fin) — trouvailles reçues seulement.
+        if (isPosesPage() && S.key === 'finds'
             && (panel.options.items.includes('ftf_delay') || panel.options.items.includes('neglected'))) {
             const index = pkg.posesStatsIndex?.();
             if (index) posesCounterTiles(values, index.restDay);
         }
-        if (S.key !== 'finds') sourceDayTiles(values, S, Infinity);
+        if (isMainPage() && S.key !== 'finds') sourceDayTiles(values, S, Infinity);
         for (const item of panel.options.items) {
             const { value, detail } = counterText(item, values[item] || { value: 0 }, number, undefined, percent);
             push(statsCounterLabel(item, S.key), value, detail);
@@ -2519,8 +2592,10 @@ export function getStatsSnapshot() {
         return { total: state.total, metrics: [...S.metrics], counts, excluded };
     };
     const finds = snapshotOf(FINDS);
-    // Sources DNF / caches posées (page principale) : mêmes relevés.
-    const sources = {};
+    // Comptes par source : « finds » toujours, une source alternative
+    // seulement quand un panneau la compte (page principale : DNF et caches
+    // posées ; Mes poses : DNF reçus et favoris reçus).
+    const sources = { finds };
     for (const S of sourceStates.values()) {
         if (S !== FINDS && S.metrics.size > 0) sources[S.key] = snapshotOf(S);
     }

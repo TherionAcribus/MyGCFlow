@@ -395,7 +395,10 @@ garde la métrique si la source la propose, sinon la première du type ;
 changer de métrique ou de forme garde la source. Galerie : sections « Mes
 DNF » et « Mes caches posées » (modèles `dnf-*`, `owned-*` de `PRESETS`,
 cartes `data-stats-source`, masquées sans données). Titres par défaut propres
-(« DNF par difficulté », « Mes caches par type »…).
+(« DNF par difficulté », « Mes caches par type »…). Dans la liste de
+l'onglet, un panneau DNF ou caches posées porte le badge de sa source
+(« DNF » / « Posées »), complété par « (aucune donnée) » quand les logs
+importés n'apportent rien à cette source.
 
 Piège d'ordre d'évaluation : `stats_ui.js` s'initialise avant `dnf_data.js` /
 `owner_data.js` (ordre d'`index.js`) — `hasDnfData()` y est en zone morte ;
@@ -405,6 +408,53 @@ Tests : `test_stats_model.mjs` (sources, registres, métriques par source),
 `tests/js/dnf_model.test.mjs` / `owner_model.test.mjs` (événements, états),
 vecteur partagé « source comptée » de `settings_cases.json`, e2e
 `stats-sources.spec.mjs` (`getStatsSnapshot().sources`).
+
+### Sources de Mes poses
+
+La page /poses a **sa propre liste de sources** (`POSES_STATS_SOURCES`) :
+`finds` (trouvailles reçues, défaut), `dnf` (**DNF reçus** — même valeur
+que sur la page principale, autre sens : échecs des visiteurs sur les caches
+posées, pas ceux du joueur) et `favorites` (**favoris reçus** — trouvailles
+reçues portant un point favori, `ev.fav === 1` ; la « trouvaille » du poseur
+sur sa propre cache est classée `owner_note` côté serveur
+(`poses_dataset.py › classify_log`), jamais reçue). Les listes étant séparées
+(`stats.panels` / `stats.poses_panels`), la sérialisation est sans ambiguïté ;
+`OPTION_COERCERS.source` valide contre l'union `ALL_STATS_SOURCES`
+(`stats_settings.py › STATS_SOURCES` pareil). Une valeur étrangère à la page
+retombe silencieusement sur `finds` (`statsPanelSource(panel, mode)`) :
+`owned` sur Mes poses, `favorites` sur la page principale.
+
+| Source | Événement compté (`date_find` = date du log, `finder` = auteur) | Données |
+|---|---|---|
+| `finds` | une trouvaille reçue (défaut) | `poses_data.js › posesStatsFinds('finds')` |
+| `dnf` | chaque DNF reçu | `posesStatsFinds('dnf')` |
+| `favorites` | chaque trouvaille reçue avec favori | `posesStatsFinds('favorites')` |
+
+**Un seul registre** : les trois sources partagent `POSES_METRICS_BY_KIND` —
+les événements portent les mêmes propriétés (attributs de la cache, trouveur,
+géométrie pour les points extrêmes) ; la source choisit les événements, pas
+les statistiques. Comptage par source identique à la page principale
+(`sourceStates`, index par jour mémoïsé par `dataRevision`).
+
+**Tuiles** : `finds` garde `POSES_COUNTER_ITEMS` (tuiles « poseur »
+`ftf_delay` / `neglected` comprises) ; `dnf` et `favorites` n'ont que
+`POSES_ALT_COUNTER_ITEMS` — accumulateur seul, aucune tuile « au jour » ni
+d'état (leurs compteurs ne se redessinent donc que sur événement). Libellés
+propres (`statsCounterLabel`) : « DNF », « Favoris reçus », « Chercheurs
+distincts », « Joueurs favorisants », « Caches favorisées », « Jours avec
+favori »…
+
+**Interface** : le champ « Données comptées » reconstruit ses options selon
+la page (« Trouvailles reçues » / « DNF reçus » / « Favoris reçus » sur Mes
+poses) ; proposées quand la source a au moins un événement
+(`posesSourceAvailable`). Galerie : sections « DNF reçus » et « Favoris
+reçus » (modèles `poses-dnf-*`, `poses-fav-*`, `data-stats-source`). Badges
+de la liste : « DNF » / « Favoris », « (aucune donnée) » le cas échéant.
+Titres par défaut propres (« DNF reçus par cache », « Joueurs
+favorisants »…).
+
+Tests : mêmes vecteurs que ci-dessus, e2e `stats-poses.spec.mjs`
+(« les panneaux comptent DNF et favoris reçus »).
 
 ## Rendu
 

@@ -3,9 +3,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
+    ALL_STATS_SOURCES,
     EVOLUTION_METRICS_BY_KIND,
+    POSES_ALT_COUNTER_ITEMS,
+    POSES_COUNTER_ITEMS,
+    POSES_METRICS_BY_KIND,
+    POSES_STATS_SOURCES,
     STATS_DEFAULTS,
     STATS_MAX_PANELS,
+    STATS_METRICS_BY_KIND,
     AGE_BUCKETS,
     accumulatorMetricsFor,
     ageBucket,
@@ -49,7 +55,10 @@ import {
     offsetFreeCopy,
     parseYmd,
     rectsOverlap,
+    statsCounterItemsFor,
     statsKeyOf,
+    statsPanelRegistry,
+    statsPanelSource,
     statsStylePreset,
     yearTicks,
 } from './static/js/stats_model.mjs';
@@ -164,6 +173,95 @@ test('metricsForPanels : seulement les panneaux actifs, rien si coupé', () => {
     assert.deepEqual([...metricsForPanels(settings)].sort(), ['cache_type', 'dt']);
     assert.equal(metricsForPanels({ ...settings, enabled: false }).size, 0);
     assert.ok(STATS_MAX_PANELS >= 3);
+});
+
+// ---------------------------------------------------------------------------
+// Sources comptées (page principale : finds/dnf/owned ; Mes poses :
+// finds/dnf/favorites — même valeur « dnf », autre sens)
+// ---------------------------------------------------------------------------
+
+test('sources : constantes par page et union pour la normalisation', () => {
+    assert.deepEqual(POSES_STATS_SOURCES, ['finds', 'dnf', 'favorites']);
+    assert.deepEqual(ALL_STATS_SOURCES, ['finds', 'dnf', 'owned', 'favorites']);
+});
+
+test('statsPanelSource : la page décide des valeurs permises', () => {
+    const panel = (source) => ({ options: { source } });
+    // Page principale : finds/dnf/owned.
+    assert.equal(statsPanelSource(panel('dnf'), 'main'), 'dnf');
+    assert.equal(statsPanelSource(panel('owned'), 'main'), 'owned');
+    assert.equal(statsPanelSource(panel('favorites'), 'main'), 'finds');   // pas de favoris ici
+    assert.equal(statsPanelSource(panel('inconnu'), 'main'), 'finds');
+    // Mes poses : finds/dnf/favorites — « owned » retombe sur finds.
+    assert.equal(statsPanelSource(panel('dnf'), 'poses'), 'dnf');
+    assert.equal(statsPanelSource(panel('favorites'), 'poses'), 'favorites');
+    assert.equal(statsPanelSource(panel('owned'), 'poses'), 'finds');
+    assert.equal(statsPanelSource({}, 'poses'), 'finds');
+    // Défaut historique : page principale.
+    assert.equal(statsPanelSource(panel('favorites')), 'finds');
+    assert.equal(statsPanelSource(panel('owned')), 'owned');
+});
+
+test('statsPanelRegistry : Mes poses garde son registre quelle que soit la source', () => {
+    for (const source of POSES_STATS_SOURCES) {
+        const panel = { kind: 'bar', options: { source } };
+        assert.equal(statsPanelRegistry(panel, 'poses'), POSES_METRICS_BY_KIND, source);
+    }
+    // Page principale : la source change de registre.
+    assert.notEqual(statsPanelRegistry({ kind: 'bar', options: { source: 'dnf' } }, 'main'), STATS_METRICS_BY_KIND);
+    assert.equal(statsPanelRegistry({ kind: 'bar', options: { source: 'favorites' } }, 'main'), STATS_METRICS_BY_KIND);
+});
+
+test('statsCounterItemsFor : les sources alternatives de Mes poses n\'ont que des tuiles d\'accumulateur', () => {
+    assert.equal(statsCounterItemsFor('poses', 'finds'), POSES_COUNTER_ITEMS);
+    for (const source of ['dnf', 'favorites']) {
+        const items = statsCounterItemsFor('poses', source);
+        assert.equal(items, POSES_ALT_COUNTER_ITEMS, source);
+        // Pas de tuiles « poseur » (chronologie) ni d'état « au jour ».
+        for (const tile of ['ftf_delay', 'neglected', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
+            'owned_active', 'owned_disabled', 'owned_archived', 'maintenances',
+            'favorites', 'fav_ratio', 'loyal', 'same_day']) {
+            assert.ok(!items.includes(tile), `${source} : ${tile}`);
+        }
+    }
+    // Page principale et Évolution inchangées.
+    assert.deepEqual([...statsCounterItemsFor('main', 'finds')],
+        [...statsCounterItemsFor('main')]);
+    assert.ok(statsCounterItemsFor('main', 'dnf').includes('dnf_open'));
+    assert.ok(statsCounterItemsFor('main', 'owned').includes('owned_active'));
+    assert.ok(statsCounterItemsFor('evolution').includes('actives'));
+});
+
+test('metricsForPanels : chaque source de Mes poses a ses métriques', () => {
+    const settings = normalizeStatsSettings({ poses_panels: [
+        { id: 'aaaaaa10', kind: 'bar', metric: 'cache' },
+        { id: 'aaaaaa11', kind: 'counter', metric: 'summary', options: { source: 'dnf', items: ['total', 'finders'] } },
+        { id: 'aaaaaa12', kind: 'counter', metric: 'summary', options: { source: 'favorites', items: ['total', 'caches'] } },
+        // « owned » sur Mes poses retombe sur finds : compté avec elle.
+        { id: 'aaaaaa13', kind: 'bar', metric: 'finder', options: { source: 'owned' } },
+    ] });
+    assert.deepEqual([...metricsForPanels(settings, { mode: 'poses', source: 'finds' })].sort(),
+        ['cache', 'finder']);
+    assert.deepEqual([...metricsForPanels(settings, { mode: 'poses', source: 'dnf' })].sort(),
+        ['finder', 'total']);
+    assert.deepEqual([...metricsForPanels(settings, { mode: 'poses', source: 'favorites' })].sort(),
+        ['cache', 'total']);
+    // Page principale : la même liste posée dans `panels` filtre pareil —
+    // « favorites » y retombe sur finds.
+    const main = normalizeStatsSettings({ panels: [
+        { id: 'aaaaaa10', kind: 'bar', metric: 'cache_type' },
+        { id: 'aaaaaa12', kind: 'donut', metric: 'container', options: { source: 'favorites' } },
+        { id: 'aaaaaa11', kind: 'bar', metric: 'difficulty', options: { source: 'dnf' } },
+    ] });
+    assert.deepEqual([...metricsForPanels(main, { mode: 'main', source: 'finds' })].sort(),
+        ['cache_type', 'container']);
+    assert.equal(metricsForPanels(main, { mode: 'main', source: 'favorites' }).size, 0);
+    assert.deepEqual([...metricsForPanels(main, { mode: 'main', source: 'dnf' })], ['difficulty']);
+    // Évolution : `source` sans effet (une seule source).
+    const evo = normalizeStatsSettings({ evolution_panels: [
+        { id: 'aaaaaa10', kind: 'bar', metric: 'country' },
+    ] });
+    assert.deepEqual([...metricsForPanels(evo, { mode: 'evolution', source: 'dnf' })], ['country']);
 });
 
 // ---------------------------------------------------------------------------
