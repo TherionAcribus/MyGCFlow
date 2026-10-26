@@ -148,7 +148,7 @@ import {
     trailCameraZoomTarget,
     zoomForExtent,
 } from './camera_follow.mjs';
-import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
+import { dateToDayNumber, dayNumberToDate, isoToDayNumber } from './evolution_timeline.mjs';
 import { countDaysUpTo } from './timeline_model.mjs';
 import { dnfRevisitBetween, dnfSameDayResolved, dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
 import { ownerFlashBetween, ownerStateAt, ownerVisibleAt, ownerVisitsByDay } from './owner_model.mjs';
@@ -2697,10 +2697,13 @@ export function syncDnfToDay(day, appear = null, flash = null) {
     syncDnf((entry) => dnfVisibleAt(entry, day), day, appear, flash);
 }
 
-// Carte au repos : état à la fin de la sélection — un DNF résolu dans la
-// période a laissé place à sa trouvaille.
+// Carte au repos : état à la fin de la fenêtre « Période de découverte » —
+// borne déplacée s'il y en a une, sinon la dernière trouvaille de la
+// sélection. Un DNF résolu avant cette fin a laissé place à sa trouvaille.
 export function syncDnfStatic() {
-    const end = pkg.metadata?.endDate instanceof Date ? dateToDayNumber(pkg.metadata.endDate) : NaN;
+    const bound = pkg.movedDiscoveryBounds?.().end;
+    const end = bound ? isoToDayNumber(bound)
+        : pkg.metadata?.endDate instanceof Date ? dateToDayNumber(pkg.metadata.endDate) : NaN;
     const endDay = Number.isFinite(end) ? end : Infinity;
     syncDnf((entry) => dnfVisibleStatic(entry, endDay), endDay);
 }
@@ -2862,11 +2865,17 @@ export function syncOwnerToDay(day, appear = null, flash = null) {
 // déplacée (la fin par défaut est la dernière trouvaille, souvent antérieure
 // au dernier archivage).
 export function syncOwnerStatic() {
-    let endDay = Infinity;
-    if (pkg.dateBoundsAtDefault?.()?.findEnd === false && pkg.metadata?.endDate instanceof Date) {
-        const end = dateToDayNumber(pkg.metadata.endDate);
-        if (Number.isFinite(end)) endDay = end;
+    // Fin de la fenêtre « Période de découverte » (borne déplacée, sinon la
+    // dernière trouvaille) : elle borne l'état — grisée à cette date — et le
+    // trait, pas la présence (une cache posée ne disparaît jamais).
+    const bound = pkg.movedDiscoveryBounds?.().end;
+    let endDay = bound ? isoToDayNumber(bound) : NaN;
+    if (!Number.isFinite(endDay)
+        && pkg.dateBoundsAtDefault?.()?.findEnd === false
+        && pkg.metadata?.endDate instanceof Date) {
+        endDay = dateToDayNumber(pkg.metadata.endDate);
     }
+    if (!Number.isFinite(endDay)) endDay = Infinity;
     syncOwner(() => true, endDay);
 }
 

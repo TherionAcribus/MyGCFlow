@@ -41,6 +41,19 @@ export function dnfVisibleStatic(entry, endDay) {
     return entry.resolveDay === null || entry.resolveDay > endDay;
 }
 
+// Fenêtre « Période de découverte » déplacée (filterLikeCurrentSelection,
+// bdd.js) : un DNF n'a pas la sémantique « événement » d'une trouvaille —
+// il dure. Il est retenu s'il est en échec à un moment de la fenêtre :
+// apparu au plus tard à sa fin, résolu strictement après son début ou
+// jamais. `startIso`/`endIso` sont des bornes 'YYYY-MM-DD', null = aucune.
+export function dnfAliveInWindow(props, startIso, endIso) {
+    const appear = props?.date_find;
+    const resolved = props?.resolved_date || null;
+    if (endIso && (!appear || appear > endIso)) return false;
+    if (startIso && resolved && resolved <= startIso) return false;
+    return true;
+}
+
 // Vrai si la cache a reçu un autre DNF dans ]afterDay, upToDay] : le point
 // est déjà sur la carte (il y est resté depuis son apparition), la tentative
 // rejoue son flash — chaque DNF est un déplacement, comme pour le trait.

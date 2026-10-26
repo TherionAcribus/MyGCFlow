@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     buildDnfEntries,
+    dnfAliveInWindow,
     dnfRevisitBetween,
     dnfSameDayResolved,
     dnfVisibleAt,
@@ -85,6 +86,27 @@ test('résolu le jour même : seule la résolution intra-journée de la fenêtre
     // Jamais résolu.
     const [open] = buildDnfEntries([dnf('GC3', ['2021-09-10'])], day);
     assert.equal(dnfSameDayResolved(open, day('2021-08-01'), day('2021-09-10')), false);
+});
+
+test('fenêtre de période : un DNF en échec dans la fenêtre est retenu', () => {
+    const open = dnf('GC1', ['2011-08-20']).properties;              // jamais résolu
+    const mid = dnf('GC2', ['2011-08-20'], '2012-01-08').properties;
+    // Apparu avant le début de la fenêtre, encore en échec : retenu.
+    assert.equal(dnfAliveInWindow(open, '2015-01-01', null), true);
+    assert.equal(dnfAliveInWindow(mid, '2015-01-01', null), false);  // résolu avant
+    assert.equal(dnfAliveInWindow(mid, '2011-01-01', null), true);   // résolu dans
+    assert.equal(dnfAliveInWindow(mid, '2011-08-20', null), true);   // en échec au début
+    assert.equal(dnfAliveInWindow(mid, '2012-01-08', null), false);  // résolu le jour même
+    // Apparu après la fin de la fenêtre : écarté.
+    assert.equal(dnfAliveInWindow(open, null, '2011-08-19'), false);
+    assert.equal(dnfAliveInWindow(open, null, '2011-08-20'), true);
+    // Fenêtre fermée : en échec à un moment entre les deux bornes.
+    assert.equal(dnfAliveInWindow(mid, '2011-01-01', '2011-12-31'), true);
+    assert.equal(dnfAliveInWindow(mid, '2011-09-01', '2011-12-31'), true);
+    assert.equal(dnfAliveInWindow(mid, '2012-01-09', '2012-12-31'), false);
+    assert.equal(dnfAliveInWindow(open, '2011-01-01', '2011-12-31'), true);
+    // Sans borne ni date d'apparition : rien à écarter.
+    assert.equal(dnfAliveInWindow({ source_kind: 'dnf' }, '2011-01-01', null), true);
 });
 
 test('Stats : un événement par DNF, à sa date, avec les propriétés de la cache', async () => {

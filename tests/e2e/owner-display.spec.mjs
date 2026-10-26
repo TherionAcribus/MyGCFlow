@@ -244,6 +244,23 @@ test('pose et entretien sont des étapes du trait de déplacement, sauf choix co
 });
 
 
+// « Période de découverte » déplacée : une cache posée reste sur la carte
+// pour toujours — reculer le début de la fenêtre ne la retire pas
+// (aliveInWindow, bdd.js ; avant, le filtre sur date_find la vidait).
+test('période de découverte : les poses antérieures au début restent affichées', async ({ page, request }) => {
+  await openWithData(page, request);
+  await showOwner(page);
+  // Toutes les poses sont de 2018-2020 : début de fenêtre reculé en 2021,
+  // les 7 caches restent « en vie » dans la fenêtre (aucune fin déplacée).
+  await page.locator('#datePickerStart').evaluate((el) => {
+    el.value = '01/01/2021';
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await expect(page.locator('#ownerDisplayHint')).toContainText('7 caches posées dans la sélection');
+  await expect.poll(() => mapCodes(page, 'owner')).toEqual(PLACED);
+});
+
+
 test('en mode icônes, un anneau entoure l\'icône des caches posées', async ({ page, request }) => {
   await openWithData(page, request);
   await showOwner(page);

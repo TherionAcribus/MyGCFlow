@@ -331,6 +331,33 @@ test('la case « Mes DNF » et ses réglages n\'apparaissent qu\'avec des DNF', 
 });
 
 
+// « Période de découverte » déplacée : un point à durée de vie est retenu
+// s'il est en échec dans la fenêtre, pas filtré sur son premier jour
+// (aliveInWindow, bdd.js — sinon un début reculé vidait tout).
+test('période de découverte : un DNF vivant dans la fenêtre reste affiché', async ({ page }) => {
+  const setBound = (selector, value) => page.locator(selector).evaluate((el, v) => {
+    el.value = v;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }, value);
+  await openWithData(page);
+  await showDnf(page);
+  const start0 = await page.locator('#datePickerStart').inputValue();
+
+  // Début reculé après tous les DNF (2021) : GC9ZZZZ, jamais résolue, vit
+  // encore dans la fenêtre ; GC2PR3N, résolue en 2012, n'y est plus.
+  await setBound('#datePickerStart', '08/01/2022');
+  await expect(page.locator('#dnfDisplayHint')).toContainText('1 DNF dans la sélection');
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC9ZZZZ']);
+
+  // Fin reculée avant la résolution de GC2PR3N (08/01/2012) : alors en
+  // échec, son point est affiché ; GC9ZZZZ n'est pas encore apparue.
+  await setBound('#datePickerStart', start0);
+  await setBound('#datePickerEnd', '31/12/2011');
+  await expect(page.locator('#dnfDisplayHint')).toContainText('1 DNF dans la sélection');
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC2PR3N']);
+});
+
+
 test('le trait de déplacement passe par les DNF, sauf si on les en retire', async ({ page }) => {
   await openWithData(page);
   await enableTrail(page);

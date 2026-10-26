@@ -73,6 +73,17 @@ export function ownerVisibleAt(entry, day) {
     return entry.appearDay <= day;
 }
 
+// Fenêtre « Période de découverte » déplacée (filterLikeCurrentSelection,
+// bdd.js) : une cache posée reste sur la carte pour toujours — elle est
+// retenue dès qu'elle est apparue au plus tard à la fin de la fenêtre ; la
+// borne de début ne l'écarte jamais (filtrer les poses « dans » une période
+// est le rôle de « Période de pose », sur published_date).
+export function ownerAliveInWindow(props, endIso) {
+    if (!endIso) return true;
+    const appear = props?.date_find;
+    return !!appear && appear <= endIso;
+}
+
 // État à la fin du jour `day` (0 active, 1 désactivée, 2 archivée).
 export function ownerStateAt(entry, day) {
     let state = OWNER_STATE_ACTIVE;

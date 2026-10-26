@@ -5,6 +5,8 @@ import { clearMap } from './mapgl.js';
 import { showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { isMainPage } from './app_mode.mjs';
+import { dnfAliveInWindow } from './dnf_model.mjs';
+import { ownerAliveInWindow } from './owner_model.mjs';
 import { isAudioFile } from './music_track.mjs';
 import { isImageFile } from './images_model.mjs';
 
@@ -868,11 +870,25 @@ function filterFeaturesClientSide(features, sel) {
     return out;
 }
 
-// Filtre des features hors jeu principal (points DNF) selon la sélection
-// courante — sans la dimension « sources », que dnf_data.js traite lui-même.
-// Les bornes de dates par défaut valent l'étendue des TROUVAILLES : un DNF
-// antérieur à la première ou postérieur à la dernière en sortirait sans que
-// l'utilisateur ait rien restreint. Seule une borne déplacée s'applique.
+// Bornes « Période de découverte » effectivement déplacées par l'utilisateur
+// (null quand une borne reste au défaut — l'étendue des trouvailles, qui
+// écarte trop souvent les points hors jeu principal). Partagées par
+// filterLikeCurrentSelection et la carte statique (syncDnfStatic /
+// syncOwnerStatic, mapgl.js) pour l'état « en fin de fenêtre ».
+export function movedDiscoveryBounds() {
+    if (!lastSelection) return { start: null, end: null };
+    const atDefault = pkg.dateBoundsAtDefault?.() || {};
+    return {
+        start: atDefault.findStart ? null : normIsoDate(lastSelection.dates?.startDate),
+        end: atDefault.findEnd ? null : normIsoDate(lastSelection.dates?.endDate),
+    };
+}
+
+// Filtre des features hors jeu principal (points DNF, caches posées) selon la
+// sélection courante — sans la dimension « sources », que dnf_data.js et
+// owner_data.js traitent eux-mêmes. Une borne « découverte » déplacée
+// s'interprète en « vivante dans la fenêtre » (aliveInWindow), une borne
+// « pose » reste un filtre d'attribut (published_date).
 export function filterLikeCurrentSelection(features) {
     if (!lastSelection) return features;
     const atDefault = pkg.dateBoundsAtDefault?.() || {};
@@ -880,16 +896,26 @@ export function filterLikeCurrentSelection(features) {
         start: startAtDefault ? null : normIsoDate(range?.startDate),
         end: endAtDefault ? null : normIsoDate(range?.endDate),
     });
-    const found = bounds(lastSelection.dates, atDefault.findStart, atDefault.findEnd);
+    const found = movedDiscoveryBounds();
     const published = bounds(lastSelection.published_dates, atDefault.pubStart, atDefault.pubEnd);
     const within = (value, range) => {
         if (!range.start && !range.end) return true;
         const iso = normIsoDate(value);
         return !!iso && (!range.start || iso >= range.start) && (!range.end || iso <= range.end);
     };
+    // Les points à durée de vie (DNF en échec, caches posées présentes pour
+    // toujours) ne sont pas filtrés sur le jour de leur premier événement
+    // mais sur leur présence dans la fenêtre — sinon reculer la borne de
+    // début retirait une cache posée bien avant, pourtant encore là.
+    const aliveInWindow = (p, range) => {
+        if (!range.start && !range.end) return true;
+        if (p?.source_kind === 'dnf') return dnfAliveInWindow(p, range.start, range.end);
+        if (p?.source_kind === 'owned') return ownerAliveInWindow(p, range.end);
+        return within(p?.date_find, range);
+    };
     const rest = { ...lastSelection, sources: undefined, dates: undefined, published_dates: undefined };
     return filterFeaturesClientSide(features, rest).filter((f) =>
-        within(f?.properties?.date_find, found) && within(f?.properties?.published_date, published));
+        aliveInWindow(f?.properties, found) && within(f?.properties?.published_date, published));
 }
 
 // La préférence « sources affichées » (main_discovery_sources) s'applique

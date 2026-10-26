@@ -514,8 +514,11 @@ chaque jour de l'animation, au départ et à chaque saut de la chronologie ;
 géocaches. Les bornes de dates par défaut valent l'étendue des trouvailles :
 un DNF antérieur à la première ou postérieur à la dernière en sortirait sans
 que rien n'ait été restreint. Seule une borne déplacée par l'utilisateur
-s'applique aux DNF (`dateBoundsAtDefault`, ui.js), sur la date du premier
-DNF. En « Lab Caches » seuls, aucun DNF.
+s'applique aux DNF (`dateBoundsAtDefault`, ui.js) — et s'interprète en
+« en échec dans la fenêtre » : apparu au plus tard à sa fin, résolu
+strictement après son début ou jamais (`dnfAliveInWindow`, `movedDiscoveryBounds`,
+bdd.js). « Période de pose » reste un filtre d'attribut sur `published_date`.
+En « Lab Caches » seuls, aucun DNF.
 
 **Rendu** (`point_webgl_style.js`, `applyDnfStyle`) : noir en vectoriel —
 bordure blanche quand le thème en dessine une — et icône du type de log
@@ -594,7 +597,11 @@ désactivation, réactivation, désarchivage, archivage **du poseur seulement**,
 proposer l'option ; filtré par `filterLikeCurrentSelection`), règles pures
 dans `static/js/owner_model.mjs` (tests `tests/js/owner_model.test.mjs`),
 couches propres dans `mapgl.js` (`syncOwnerToDay` / `syncOwnerStatic`,
-source `window.ownerVectorSource`), hors de `pointsByDate`.
+source `window.ownerVectorSource`), hors de `pointsByDate`. Une borne
+« Période de découverte » déplacée est lue « en vie dans la fenêtre »
+(`ownerAliveInWindow`) : une cache posée n'en sort que si elle n'est apparue
+qu'après la fin — le début ne l'écarte jamais, elle reste sur la carte pour
+toujours.
 
 **Affichage** : une cache posée apparaît à sa publication puis reste ;
 désactivée ou archivée, elle est grisée (attribut `pstate`, comme sur Mes

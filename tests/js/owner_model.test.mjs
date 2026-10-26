@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     buildOwnerEntries,
+    ownerAliveInWindow,
     ownerFlashBetween,
     ownerStateAt,
     ownerVisibleAt,
@@ -43,6 +44,17 @@ test('présente dès son apparition, jamais retirée', () => {
     assert.equal(ownerVisibleAt(entry, day('2019-04-30')), false);
     assert.equal(ownerVisibleAt(entry, day('2019-05-01')), true);
     assert.equal(ownerVisibleAt(entry, day('2030-01-01')), true);
+});
+
+test('fenêtre de période : apparue avant la fin, peu importe le début', () => {
+    const p = GCP4.properties;                                       // apparue 01/05/2019
+    // Une cache posée reste sur la carte pour toujours : la borne de début
+    // ne l'écarte jamais, seule une apparition après la fenêtre l'écarte.
+    assert.equal(ownerAliveInWindow(p, '2030-12-31'), true);
+    assert.equal(ownerAliveInWindow(p, '2019-05-01'), true);
+    assert.equal(ownerAliveInWindow(p, '2019-04-30'), false);
+    assert.equal(ownerAliveInWindow(p, null), true);
+    assert.equal(ownerAliveInWindow({ source_kind: 'owned' }, '2019-04-30'), false);
 });
 
 test('état au jour : désactivée puis réactivée', () => {
