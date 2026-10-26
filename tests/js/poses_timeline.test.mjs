@@ -364,26 +364,38 @@ test('tuiles poseur : délai avant FTF et cache la plus délaissée', () => {
     const { base, timeline: tl } = setup();
     // Jour 13 (fin) : les trois caches sont trouvées — délais 0 (A, trouvée le
     // jour même), 3 (B, apparue 2 trouvée 5) et 10 (C, apparue 3 trouvée 13) ;
-    // la plus délaissée est A, sans visite depuis le jour 1.
+    // la plus délaissée est A, sans visite depuis le jour 1. 5 trouvailles
+    // reçues sur 3 caches (A×2, B×2, C×1), aucune jamais trouvée.
     const end = posesCounterAtDay(tl, base, 13);
     assert.equal(end.ftfDelay, 13 / 3);
     assert.deepEqual(end.neglected, { days: 12, code: 'GCA', lastDay: 1, found: true });
+    assert.equal(end.findsPerCache, 5 / 3);
+    assert.deepEqual(end.unfound, []);
     // Jour 6 : A et B trouvées (délais 0 et 3) ; C, jamais trouvée depuis son
-    // apparition au jour 3, l'emporte sur les trouvées.
+    // apparition au jour 3, l'emporte sur les trouvées. 4 trouvailles reçues
+    // (A×2, B×2) sur 3 caches apparues.
     const mid = posesCounterAtDay(tl, base, 6);
     assert.equal(mid.ftfDelay, 1.5);
     assert.deepEqual(mid.neglected, { days: 3, code: 'GCC', lastDay: 3, found: false });
+    assert.equal(mid.findsPerCache, 4 / 3);
+    assert.deepEqual(mid.unfound, ['GCC']);
     // Jour 2 : B vient d'apparaître, jamais trouvée — `lastDay` = apparition.
-    assert.deepEqual(posesCounterAtDay(tl, base, 2).neglected,
-        { days: 0, code: 'GCB', lastDay: 2, found: false });
+    const two = posesCounterAtDay(tl, base, 2);
+    assert.deepEqual(two.neglected, { days: 0, code: 'GCB', lastDay: 2, found: false });
+    assert.equal(two.findsPerCache, 1);          // 2 trouvailles de A / 2 caches
+    assert.deepEqual(two.unfound, ['GCB']);
     // Jour 4 : B et C jamais trouvées, la plus anciennement apparue gagne.
-    assert.deepEqual(posesCounterAtDay(tl, base, 4).neglected,
-        { days: 2, code: 'GCB', lastDay: 2, found: false });
+    const four = posesCounterAtDay(tl, base, 4);
+    assert.deepEqual(four.neglected, { days: 2, code: 'GCB', lastDay: 2, found: false });
+    assert.equal(four.findsPerCache, 2 / 3);     // 2 trouvailles / 3 apparues
+    assert.deepEqual(four.unfound, ['GCB', 'GCC']);
     // Sélection réduite à C (Multi) : délai 10, délaissée = elle-même.
     const multi = buildPosesTimeline(base, filterRows(base, { types: ['Multi-cache'], undatedMode: 'keep' }), {});
     const only = posesCounterAtDay(multi, base, 20);
     assert.equal(only.ftfDelay, 10);
     assert.deepEqual(only.neglected, { days: 7, code: 'GCC', lastDay: 13, found: true });
+    assert.equal(only.findsPerCache, 1);
+    assert.deepEqual(only.unfound, []);
 });
 
 test('tuiles poseur : avant toute trouvaille, délai indéfini et délaissée = apparition', () => {
@@ -397,13 +409,19 @@ test('tuiles poseur : avant toute trouvaille, délai indéfini et délaissée = 
     const s = posesCounterAtDay(tl, base, 0);
     assert.equal(s.ftfDelay, null);
     assert.deepEqual(s.neglected, { days: 0, code: 'GCA', lastDay: 0, found: false });
+    // A apparue mais aucune trouvaille : moyenne 0, elle est « jamais trouvée ».
+    assert.equal(s.findsPerCache, 0);
+    assert.deepEqual(s.unfound, ['GCA']);
     // Avant la première apparition : rien du tout.
     const before = posesCounterAtDay(tl, base, -1);
     assert.equal(before.ftfDelay, null);
     assert.equal(before.neglected, null);
+    assert.equal(before.findsPerCache, null);
+    assert.deepEqual(before.unfound, []);
     // Timeline vide : idem.
     const empty = buildPosesTimeline(base, new Int32Array(0));
-    assert.deepEqual(posesCounterAtDay(empty, base, 10), { ftfDelay: null, neglected: null });
+    assert.deepEqual(posesCounterAtDay(empty, base, 10),
+        { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] });
 });
 
 test('filtres : une cache écartée ne compte plus', () => {

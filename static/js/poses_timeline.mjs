@@ -324,32 +324,40 @@ export function posesCounterMaxes(timeline) {
 //   neglected { days, code, lastDay, found } de la cache la plus délaissée :
 //             jamais trouvée d'abord (la plus anciennement apparue), sinon la
 //             dernière trouvaille la plus ancienne. `lastDay` est le jour de
-//             la dernière visite, ou celui d'apparition quand `found` est faux.
+//             la dernière visite, ou celui d'apparition quand `found` est faux ;
+//   findsPerCache  trouvailles reçues par cache apparue, en moyenne (null
+//             avant la première apparition) ;
+//   unfound   codes des caches apparues jamais trouvées au jour affiché.
 // `evOrder` est trié par jour : le parcours s'arrête au premier log postérieur.
 export function posesCounterAtDay(timeline, base, day) {
-    const out = { ftfDelay: null, neglected: null };
+    const out = { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] };
     if (!timeline || timeline.count === 0 || !Number.isFinite(day)) return out;
     const findCode = base.kindCode.find;
     const n = timeline.count;
     const firstFind = new Int32Array(n).fill(-1);
     const lastFind = new Int32Array(n).fill(-1);
+    let findTotal = 0;
     for (const j of timeline.evOrder) {
         if (base.ev.day[j] > day) break;
         if (base.ev.kind[j] !== findCode) continue;
         const k = timeline.featureOf[base.ev.cache[j]];
         if (k < 0) continue;
+        findTotal++;
         if (firstFind[k] < 0) firstFind[k] = base.ev.day[j];
         lastFind[k] = base.ev.day[j];
     }
-    let delaySum = 0, foundCount = 0;
+    let delaySum = 0, foundCount = 0, appeared = 0;
     let pick = -1, pickVisit = 0, pickNever = false;
     for (let k = 0; k < n; k++) {
         const appearDay = base.placed[timeline.rows[k]];
         if (appearDay > day) continue;          // pas encore apparue
+        appeared++;
         const never = firstFind[k] < 0;
         if (!never) {
             delaySum += firstFind[k] - appearDay;
             foundCount++;
+        } else {
+            out.unfound.push(base.code[timeline.rows[k]]);
         }
         const visitDay = never ? appearDay : lastFind[k];
         // Jamais trouvée : plus délaissée que toute cache déjà trouvée.
@@ -361,6 +369,7 @@ export function posesCounterAtDay(timeline, base, day) {
         }
     }
     if (foundCount > 0) out.ftfDelay = delaySum / foundCount;
+    if (appeared > 0) out.findsPerCache = findTotal / appeared;
     if (pick >= 0) {
         out.neglected = {
             days: day - pickVisit,

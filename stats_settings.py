@@ -96,9 +96,10 @@ STATS_COUNTER_ITEMS = ("total", "days", "best_day", "streak", "types", "countrie
 # actif (types, pays, régions — mêmes clés qu'en mode principal).
 EVOLUTION_COUNTER_ITEMS = ("actives", "placees", "archivees", "peak", "types", "countries", "states", "age_moyen")
 # Tuiles de Mes poses : trouvailles reçues, trouveurs (distincts, fidèles),
-# favoris (total, part), caches trouvées… « ftf_delay » et « neglected » sont
-# lues dans la chronologie de la page, pas dans l'accumulateur.
-POSES_COUNTER_ITEMS = ("total", "finders", "loyal", "favorites", "fav_ratio", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west", "ftf_delay", "neglected")
+# favoris (total, part), caches trouvées… « ftf_delay », « neglected »,
+# « finds_per_cache » et « unfound » sont lues dans la chronologie de la
+# page, pas dans l'accumulateur.
+POSES_COUNTER_ITEMS = ("total", "finders", "loyal", "favorites", "fav_ratio", "caches", "days", "best_day", "streak", "same_day", "types", "countries", "states", "north", "south", "east", "west", "ftf_delay", "neglected", "finds_per_cache", "unfound")
 # Tuiles des sources DNF et caches posées (page principale) ; les tuiles
 # d'état sont lues au jour affiché par le client.
 DNF_COUNTER_ITEMS = ("total", "caches", "dnf_open", "dnf_resolved", "dnf_ratio", "dnf_resolve_delay", "dnf_visits", "days", "best_day", "streak", "types", "countries", "states")

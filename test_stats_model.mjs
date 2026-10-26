@@ -218,7 +218,8 @@ test('statsCounterItemsFor : les sources alternatives de Mes poses n\'ont que de
         const items = statsCounterItemsFor('poses', source);
         assert.equal(items, POSES_ALT_COUNTER_ITEMS, source);
         // Pas de tuiles « poseur » (chronologie) ni d'état « au jour ».
-        for (const tile of ['ftf_delay', 'neglected', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
+        for (const tile of ['ftf_delay', 'neglected', 'finds_per_cache', 'unfound',
+            'dnf_open', 'dnf_resolved', 'dnf_ratio',
             'owned_active', 'owned_disabled', 'owned_archived', 'maintenances',
             'favorites', 'fav_ratio', 'loyal', 'same_day']) {
             assert.ok(!items.includes(tile), `${source} : ${tile}`);

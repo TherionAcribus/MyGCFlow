@@ -87,16 +87,19 @@ test('les panneaux de Mes poses comptent les trouvailles reçues', async ({ page
 });
 
 // Tuiles « poseur » du compteur « Chiffres clés » : part de favoris et
-// trouveurs fidèles (accumulateur), délai moyen avant la première trouvaille
-// et cache la plus délaissée (chronologie de la page, au jour affiché). Sur
-// la fixture : 3 favoris / 12 trouvailles ; Alice (5) et Bob (4) sont les
-// seuls fidèles (≥ 3) ; délais de première trouvaille 0, 14, 0, 1, 19 et
-// 1 j (moyenne 35/6 ≈ 5,8 → « 6 jours ») ; GCP0004 jamais trouvée.
+// trouveurs fidèles (accumulateur), délai moyen avant la première trouvaille,
+// cache la plus délaissée, moyenne de trouvailles par cache et jamais
+// trouvées (chronologie de la page, au jour affiché). Sur la fixture :
+// 3 favoris / 12 trouvailles ; Alice (5) et Bob (4) sont les seuls fidèles
+// (≥ 3) ; délais de première trouvaille 0, 14, 0, 1, 19 et 1 j (moyenne
+// 35/6 ≈ 5,8 → « 6 jours ») ; 12 trouvailles sur 7 caches apparues ≈ 1,7
+// (GCQ0001 est à un autre poseur, GCP0007 n'a aucun log reçu) ; GCP0004
+// jamais trouvée.
 test('les tuiles « poseur » du compteur', async ({ page, request }) => {
   await importPoses(request);
   await request.put('/api/settings', { data: { stats: { enabled: true, poses_panels: [
     { id: 'a0c0de03', kind: 'counter', metric: 'summary', enabled: true,
-      options: { items: ['fav_ratio', 'loyal', 'ftf_delay', 'neglected'] } },
+      options: { items: ['fav_ratio', 'loyal', 'ftf_delay', 'neglected', 'finds_per_cache', 'unfound'] } },
   ] } } });
 
   await page.goto('/poses', { waitUntil: 'domcontentloaded' });
@@ -109,6 +112,8 @@ test('les tuiles « poseur » du compteur', async ({ page, request }) => {
   await expect(alt).toContainText('Trouveurs fidèles : 2 (Alice · 5)');
   await expect(alt).toContainText('Délai moyen avant la première trouvaille : 6 jours');
   await expect(alt).toContainText('GCP0004 · jamais trouvée');
+  await expect(alt).toContainText('Moyenne de trouvailles par cache : 1,7');
+  await expect(alt).toContainText('Caches jamais trouvées : 1 (GCP0004)');
 });
 
 // Même filtre « Données » dans la galerie de Mes poses : les vignettes des

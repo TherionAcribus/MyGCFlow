@@ -129,10 +129,11 @@ export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'arc
 // Tuiles de Mes poses : trouvailles reçues (total, jours, record, série),
 // trouveurs distincts et fidèles, favoris reçus et leur part, caches
 // trouvées au moins une fois, trouvées le jour de leur publication,
-// catégories, points extrêmes, délai avant la première trouvaille et cache
-// la plus délaissée (les deux derniers lus dans la chronologie de la page
-// par stats_panels, pas dans l'accumulateur).
-export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', 'favorites', 'fav_ratio', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west', 'ftf_delay', 'neglected']);
+// catégories, points extrêmes, délai avant la première trouvaille, cache
+// la plus délaissée, moyenne de trouvailles par cache et caches jamais
+// trouvées (les quatre derniers lus dans la chronologie de la page par
+// stats_panels, pas dans l'accumulateur).
+export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', 'favorites', 'fav_ratio', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west', 'ftf_delay', 'neglected', 'finds_per_cache', 'unfound']);
 // Tuiles des sources DNF et caches posées (page principale). Les tuiles
 // d'état (DNF en cours / résolus, taux d'échec, actives, désactivées,
 // archivées, maintenances) sont lues dans les données de la source au jour
@@ -145,8 +146,8 @@ export const OWNED_COUNTER_ITEMS = Object.freeze(['total', 'owned_active', 'owne
 export const POSES_ALT_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'caches', 'days', 'best_day', 'streak', 'types', 'countries', 'states', 'north', 'south', 'east', 'west']);
 // Tuiles lues au jour affiché (hors accumulateur) : leur panneau se
 // redessine aussi les jours sans événement compté.
-export const STATS_DAY_TILES = Object.freeze(['ftf_delay', 'neglected', 'dnf_open', 'dnf_resolved', 'dnf_ratio',
-    'dnf_resolve_delay', 'dnf_visits',
+export const STATS_DAY_TILES = Object.freeze(['ftf_delay', 'neglected', 'finds_per_cache', 'unfound',
+    'dnf_open', 'dnf_resolved', 'dnf_ratio', 'dnf_resolve_delay', 'dnf_visits',
     'owned_active', 'owned_disabled', 'owned_archived', 'maintenances']);
 const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS,
     ...DNF_COUNTER_ITEMS, ...OWNED_COUNTER_ITEMS, ...POSES_ALT_COUNTER_ITEMS])];
@@ -665,6 +666,8 @@ const COUNTER_DEPENDENCIES = {
     // limité à ces tuiles (elles ne comptent rien par elles-mêmes).
     ftf_delay: 'total',
     neglected: 'total',
+    finds_per_cache: 'total',
+    unfound: 'total',
     // Tuiles d'état des DNF et des caches posées : même principe.
     dnf_open: 'total',
     dnf_resolved: 'total',
@@ -2292,6 +2295,10 @@ export function counterValues(acc, items) {
             // Tuiles « poseur » : remplies depuis la chronologie de Mes poses
             // (stats_panels › buildView) ; « — » partout ailleurs.
             values[item] = { value: null, duration: true };
+        } else if (item === 'finds_per_cache' || item === 'unfound') {
+            // Mêmes tuiles « poseur » : la moyenne est un flottant (une
+            // décimale), les jamais trouvées un entier ; « — » hors Mes poses.
+            values[item] = { value: null, float: item === 'finds_per_cache' };
         } else if (STATS_DAY_TILES.includes(item)) {
             // Tuiles d'état DNF / caches posées : remplies au jour affiché
             // par stats_panels (dnfStatsAtDay, ownerStatsAtDay).

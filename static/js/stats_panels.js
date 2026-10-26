@@ -76,6 +76,9 @@ const DEFAULT_HIGHLIGHT_MS = 600;
 // chronologie de Mes poses, états des DNF et des caches posées) : un panneau
 // qui en porte est redessiné aussi les jours sans événement compté.
 const DAY_TILES = new Set(STATS_DAY_TILES);
+// Tuiles « poseur » remplies depuis la chronologie de Mes poses
+// (posesCounterStats), pas depuis l'accumulateur.
+const POSES_COUNTER_TILES = new Set(['ftf_delay', 'neglected', 'finds_per_cache', 'unfound']);
 
 let settings = normalizeStatsSettings(STATS_DEFAULTS);
 
@@ -1164,6 +1167,8 @@ const COUNTER_LABELS = {
     loyal: () => pkg.t('Trouveurs fidèles'),
     ftf_delay: () => pkg.t('Délai moyen avant la première trouvaille'),
     neglected: () => pkg.t('Cache la plus délaissée'),
+    finds_per_cache: () => pkg.t('Moyenne de trouvailles par cache'),
+    unfound: () => pkg.t('Caches jamais trouvées'),
     caches: (source) => (source === 'dnf' ? pkg.t('Caches en échec')
         : source === 'favorites' ? pkg.t('Caches favorisées')
             : pkg.t('Caches trouvées au moins une fois')),
@@ -1286,6 +1291,10 @@ function counterText(item, entry, number, shown = entry.value, percent = null) {
     if (entry.pct) {
         return { value: percent ? percent(shown) : number(Math.round(shown)), detail: entry.detail || '' };
     }
+    if (entry.float) {
+        // Moyenne : une décimale (« 1,7 »), « — » tant qu'elle est indéfinie.
+        return { value: Number.isFinite(entry.value) ? number(Math.round(shown * 10) / 10) : '—', detail: entry.detail || '' };
+    }
     if (item === 'oldest') {
         return entry.day === null || entry.day === undefined
             ? { value: '—', detail: '' }
@@ -1294,15 +1303,16 @@ function counterText(item, entry, number, shown = entry.value, percent = null) {
     let detail = entry.detail || '';
     if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
     if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
-    return { value: number(Math.round(shown)), detail };
+    return { value: Number.isFinite(entry.value) ? number(Math.round(shown)) : '—', detail };
 }
 
 // Tuiles « poseur » d'un compteur Mes poses (délai avant la première
-// trouvaille, cache
-// délaissée) : lues dans la chronologie de la page au jour `day`
+// trouvaille, cache délaissée, moyenne de trouvailles par cache, jamais
+// trouvées) : lues dans la chronologie de la page au jour `day`
 // (poses_data.js › posesCounterStats), pas dans l'accumulateur. Le détail de
 // la délaissée est composé ici : code GC, suivi de la date de dernière
-// visite ou de « jamais trouvée ».
+// visite ou de « jamais trouvée » ; celui des jamais trouvées liste leurs
+// codes (5 premiers puis « … »).
 function posesCounterTiles(values, day) {
     const extra = pkg.posesCounterStats?.(day);
     values.ftf_delay = { value: extra?.ftfDelay ?? null, duration: true };
@@ -1313,6 +1323,12 @@ function posesCounterTiles(values, day) {
             ? neg.code + (neg.found ? ` · ${formatDay(neg.lastDay)}` : ' · ' + pkg.t('jamais trouvée'))
             : '',
         duration: true,
+    };
+    values.finds_per_cache = { value: extra?.findsPerCache ?? null, float: true };
+    const un = extra?.unfound;
+    values.unfound = {
+        value: un ? un.length : null,
+        detail: un?.length ? un.slice(0, 5).join(' · ') + (un.length > 5 ? ' · …' : '') : '',
     };
 }
 
@@ -1446,7 +1462,7 @@ function buildView(panel, source = null) {
         // suivent le jour affiché, lu dans la chronologie de la page — elles
         // ne sont proposées qu'en trouvailles reçues.
         if (isPosesPage() && S.key === 'finds'
-            && (panel.options.items.includes('ftf_delay') || panel.options.items.includes('neglected'))) {
+            && panel.options.items.some((item) => POSES_COUNTER_TILES.has(item))) {
             const index = pkg.posesStatsIndex?.();
             if (index) {
                 const day = animating && animation?.lastDate
@@ -2487,7 +2503,7 @@ export function statsPanelCsv(id) {
         // Mêmes tuiles « poseur » qu'à l'écran, au jour de repos (date de
         // fin) — trouvailles reçues seulement.
         if (isPosesPage() && S.key === 'finds'
-            && (panel.options.items.includes('ftf_delay') || panel.options.items.includes('neglected'))) {
+            && panel.options.items.some((item) => POSES_COUNTER_TILES.has(item))) {
             const index = pkg.posesStatsIndex?.();
             if (index) posesCounterTiles(values, index.restDay);
         }
