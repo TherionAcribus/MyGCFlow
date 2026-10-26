@@ -8,8 +8,9 @@
 // GC5AAA2 le 10/06/2019 et le 02/11/2019 (résolus par sa trouvaille du
 // 31/03/2020), GCD0001 le 15/09/2019 (jamais trouvée).
 //
-// `stats` est une préférence globale, les logs vivent hors de
-// /clear_database : tout remettre en sortant (AGENTS.md).
+// `stats` est une préférence globale, les logs et la collection Labs
+// vivent hors de /clear_database, le sélecteur de sources est un réglage
+// partagé : tout remettre en sortant (AGENTS.md).
 import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,6 +21,9 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
 const MY_FINDS = path.join(FIXTURES, 'my-finds-poses.gpx');
 const POSES = path.join(FIXTURES, 'logs-poses.json');
+const LABS = path.join(HERE, '..', 'fixtures', 'labs');
+const LABS_HISTORY = path.join(LABS, 'lab-finds-valid.json');
+const LABS_COORDS = path.join(LABS, 'lab2gpx-stages.gpx');
 
 const ME = { id: 1234567, name: 'Joueur_Fictif' };
 const DNF_DOC = {
@@ -88,6 +92,8 @@ test.beforeEach(async ({ request }) => {
 test.afterEach(async ({ request }) => {
   await request.put('/api/settings', { data: { stats: DEFAULT_STATS } }).catch(() => {});
   await request.post('/api/logs/clear').catch(() => {});
+  await request.put('/api/settings', { data: { main_discovery_sources: 'geocaches', labs_auto_fetch_coords: false } }).catch(() => {});
+  await request.post('/api/labs/clear').catch(() => {});
   await request.post('/clear_database').catch(() => {});
 });
 
@@ -162,6 +168,31 @@ test('dans le temps : tuiles d\'état et comptes au jour affiché', async ({ pag
   await seek(2019, 4, 2);
   await expect.poll(async () => (await snapshot(page)).sources.dnf.total).toBe(0);
   await page.locator('#btnQuickStop').click();
+});
+
+
+// Non-régression : un DNF ne peut exister que sur une géocache. Quand la
+// sélection affiche aussi des Lab Caches, le dénominateur du « taux
+// d'échec » ne doit retenir que les trouvailles de géocaches — sinon les
+// 8 étapes Labs dilueraient le taux à 3 / (3 + 2 + 8) ≈ 23 % au lieu de
+// 3 / (3 + 2) = 60 %.
+test('le taux d\'échec ignore les Lab Caches de la sélection', async ({ page, request }) => {
+  // Le service lab2gpx ne doit jamais être appelé en test.
+  await request.put('/api/settings', { data: { labs_auto_fetch_coords: false } });
+  await openWithSources(page, request, [PANELS[0]]);
+
+  // Import Labs par l'interface (8 étapes affichables, comme
+  // labs-sources.spec.mjs) : l'import bascule le sélecteur de sources sur
+  // « labs », le remettre sur « both » — 2 géocaches + 8 étapes.
+  await page.locator('#labs-file-input').setInputFiles([LABS_HISTORY, LABS_COORDS]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsStatus')).toContainText('8', { timeout: 60_000 });
+  await page.locator('#selectDiscoverySources').selectOption('both');
+  await expect(page.locator('#filtersCounter')).toContainText('10', { timeout: 60_000 });
+
+  // 3 DNF pour 2 trouvailles de géocaches : toujours 60 %, pas ~23 %.
+  await expect(altText(page, 'abc00001')).toContainText(/Taux d'échec : 60/);
 });
 
 

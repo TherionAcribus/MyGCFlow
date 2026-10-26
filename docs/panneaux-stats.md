@@ -378,9 +378,11 @@ l'accumulateur (total, jours, record, série, types, pays, régions, « caches
 en échec » = `caches` distinctes), plus des tuiles d'**état lues au jour
 affiché** (Infinity au repos : état actuel), hors accumulateur
 (`STATS_DAY_TILES`, `sourceDayTiles`) : `dnf_open` / `dnf_resolved`
-(`dnfStatesAt`), `dnf_ratio` (« taux d'échec » = DNF / (DNF + trouvailles)
-jusqu'au jour, par cumuls des index — `countUpTo`, détail « 3 DNF ·
-2 trouvailles »), `owned_active` / `owned_disabled` / `owned_archived` /
+(`dnfStatesAt`), `dnf_ratio` (« taux d'échec » = DNF / (DNF + trouvailles
+de géocaches) jusqu'au jour — le dénominateur exclut les Lab Caches, qui
+ne peuvent pas recevoir de DNF, par cumuls des index (`countUpTo`,
+`geoFindsUpTo`), détail « 3 DNF · 2 trouvailles »),
+`owned_active` / `owned_disabled` / `owned_archived` /
 `maintenances` (`ownerStatesAt`). Un panneau qui en porte se redessine les
 jours sans événement (`panelFollowsDay`, clé `counterDay`). Libellés selon la
 source (`statsCounterLabel`) : « DNF », « Caches posées », « Jours avec

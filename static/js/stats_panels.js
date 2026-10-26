@@ -358,6 +358,24 @@ function countUpTo(S, day) {
     return index.prefix[daysUpTo(index.days, day)];
 }
 
+// Trouvailles de géocaches jusqu'au jour `day` (Infinity : toutes) :
+// dénominateur du taux d'échec. Les Lab Caches ne peuvent pas recevoir de
+// DNF — les compter diluerait le taux quand la sélection les affiche.
+function geoFindsUpTo(day) {
+    const index = statsDayIndex(FINDS);
+    if (!index.geoPrefix) {
+        index.geoPrefix = [0];
+        for (const list of index.feats) {
+            let n = 0;
+            for (const feature of list) {
+                if ((feature?.properties?.source_kind || 'geocache') === 'geocache') n++;
+            }
+            index.geoPrefix.push(index.geoPrefix.at(-1) + n);
+        }
+    }
+    return index.geoPrefix[daysUpTo(index.days, day)];
+}
+
 // Extrêmes d'un jour de l'index, calculés une fois (mémoïsés dans l'index).
 function dayExtremes(index, pos) {
     return index.extremes[pos] ?? (index.extremes[pos] = extremesOfFeatures(index.feats[pos]));
@@ -1118,15 +1136,15 @@ export function statsCounterLabel(item, source = 'finds') {
 // Tuiles d'état des sources DNF et caches posées, lues au jour `day`
 // (Infinity au repos : état actuel) dans les données de la source —
 // dnf_data.js › dnfStatsAtDay, owner_data.js › ownerStatsAtDay. Le taux
-// d'échec rapporte les DNF à toutes les tentatives (DNF + trouvailles)
-// jusqu'à ce jour.
+// d'échec rapporte les DNF aux tentatives sur géocaches (DNF + trouvailles
+// de géocaches, Lab Caches exclus) jusqu'à ce jour.
 function sourceDayTiles(values, S, day) {
     if (S.key === 'dnf') {
         const states = pkg.dnfStatsAtDay?.(day) || { open: 0, resolved: 0 };
         values.dnf_open = { value: states.open };
         values.dnf_resolved = { value: states.resolved };
         const dnf = countUpTo(S, day);
-        const finds = countUpTo(FINDS, day);
+        const finds = geoFindsUpTo(day);
         values.dnf_ratio = {
             value: dnf + finds > 0 ? dnf / (dnf + finds) : 0,
             pct: true,
