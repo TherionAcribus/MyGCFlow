@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-26 13:28+0100\n"
+"POT-Creation-Date: 2026-10-26 14:52+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -235,7 +235,7 @@ msgstr ""
 msgid "Traitement ffmpeg"
 msgstr ""
 
-#: capture.py:1226 static/js/mapgl.js:5271 templates/guide.html:343
+#: capture.py:1226 static/js/mapgl.js:5326 templates/guide.html:343
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr ""
@@ -695,67 +695,67 @@ msgstr ""
 msgid "Premier log"
 msgstr ""
 
-#: poses_dataset.py:640 static/js/evolution_data.js:753 static/js/mapgl.js:3621
+#: poses_dataset.py:640 static/js/evolution_data.js:753 static/js/mapgl.js:3676
 #: static/js/poses_data.js:807 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr ""
 
-#: poses_dataset.py:641 static/js/mapgl.js:3621 static/js/poses_data.js:808
+#: poses_dataset.py:641 static/js/mapgl.js:3676 static/js/poses_data.js:808
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr ""
 
-#: poses_dataset.py:642 static/js/mapgl.js:3621 static/js/poses_data.js:809
+#: poses_dataset.py:642 static/js/mapgl.js:3676 static/js/poses_data.js:809
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr ""
 
-#: settings_manager.py:2740
+#: settings_manager.py:2746
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
 msgstr ""
 
-#: blueprints/profiles.py:541 settings_manager.py:2780 settings_manager.py:2857
-#: settings_manager.py:2909
+#: blueprints/profiles.py:545 settings_manager.py:2786 settings_manager.py:2863
+#: settings_manager.py:2915
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr ""
 
-#: settings_manager.py:2801
+#: settings_manager.py:2807
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr ""
 
-#: settings_manager.py:2837 settings_manager.py:2862
+#: settings_manager.py:2843 settings_manager.py:2868
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr ""
 
-#: settings_manager.py:2874
+#: settings_manager.py:2880
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr ""
 
-#: settings_manager.py:2890
+#: settings_manager.py:2896
 msgid "Mode de thème inconnu"
 msgstr ""
 
-#: settings_manager.py:2893
+#: settings_manager.py:2899
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr ""
 
-#: settings_manager.py:3075
+#: settings_manager.py:3081
 msgid "Payload invalide"
 msgstr ""
 
-#: settings_manager.py:3078
+#: settings_manager.py:3084
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr ""
 
-#: settings_manager.py:3082
+#: settings_manager.py:3088
 msgid "Section 'profile' manquante"
 msgstr ""
 
@@ -783,9 +783,9 @@ msgstr ""
 #: templates/app.html:267 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
 #: templates/guide.html:536 templates/menu_animation.html:83
-#: templates/menu_animation.html:113 templates/menu_filtre.html:78
-#: templates/menu_filtre.html:87 templates/menu_filtre.html:103
-#: templates/menu_filtre.html:112 test_translations.py:30
+#: templates/menu_animation.html:113 templates/menu_filtre.html:84
+#: templates/menu_filtre.html:93 templates/menu_filtre.html:109
+#: templates/menu_filtre.html:118 test_translations.py:30
 msgid "Données"
 msgstr ""
 
@@ -1378,13 +1378,13 @@ msgstr ""
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr ""
 
-#: blueprints/profiles.py:447
+#: blueprints/profiles.py:451
 msgid ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
 "/api/profiles/<name>/rename"
 msgstr ""
 
-#: blueprints/profiles.py:475
+#: blueprints/profiles.py:479
 msgid "Nouveau nom manquant"
 msgstr ""
 
@@ -1402,7 +1402,7 @@ msgid ""
 "endommagé)."
 msgstr ""
 
-#: static/js/background_audio.js:121 static/js/mapgl.js:5272
+#: static/js/background_audio.js:121 static/js/mapgl.js:5327
 #: static/js/ui.js:832 static/js/ui.js:901 static/js/ui.js:2203
 #: static/js/ui.js:10386 static/js/ui.js:10466 static/js/ui.js:10672
 #: static/js/ui.js:10787 static/js/ui.js:10844 static/js/ui.js:10870
@@ -1546,7 +1546,7 @@ msgstr ""
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:1547 static/js/mapgl.js:6578
+#: static/js/bdd.js:1547 static/js/mapgl.js:6633
 msgid "Terminé"
 msgstr ""
 
@@ -1559,13 +1559,13 @@ msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
 #: static/js/bdd.js:1591 static/js/bdd.js:1599 static/js/bdd.js:1751
-#: static/js/bdd.js:1759 static/js/bdd.js:2003 static/js/dnf_data.js:140
+#: static/js/bdd.js:1759 static/js/bdd.js:2003 static/js/dnf_data.js:180
 #: static/js/evolution_data.js:252 static/js/evolution_data.js:356
 #: static/js/evolution_data.js:956 static/js/evolution_data.js:960
 #: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
 #: static/js/evolution_data.js:1356 static/js/gc_logs.js:693
 #: static/js/labs.js:2001 static/js/labs.js:2044 static/js/labs.js:2084
-#: static/js/notifications.js:421 static/js/owner_data.js:163
+#: static/js/notifications.js:421 static/js/owner_data.js:174
 #: static/js/poses_data.js:187 static/js/recording_perf.js:187
 #: static/js/ui.js:2207
 msgid "Erreur"
@@ -1654,27 +1654,27 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/dnf_data.js:140
+#: static/js/dnf_data.js:180
 #, python-brace-format
 msgid "Impossible de charger vos DNF : ${message}"
 msgstr ""
 
-#: static/js/dnf_data.js:155
+#: static/js/dnf_data.js:195
 msgid "Aucun DNF importé : voir la carte « Mes logs »."
 msgstr ""
 
-#: static/js/dnf_data.js:158
+#: static/js/dnf_data.js:198
 #, python-brace-format
 msgid "${n} DNF dans la sélection"
 msgstr ""
 
-#: static/js/dnf_data.js:160 static/js/gc_logs.js:164 static/js/gc_logs.js:595
-#: static/js/owner_data.js:192
+#: static/js/dnf_data.js:200 static/js/gc_logs.js:164 static/js/gc_logs.js:595
+#: static/js/owner_data.js:203
 msgid "cache sans position connue"
 msgstr ""
 
-#: static/js/dnf_data.js:160 static/js/gc_logs.js:164 static/js/gc_logs.js:595
-#: static/js/owner_data.js:192
+#: static/js/dnf_data.js:200 static/js/gc_logs.js:164 static/js/gc_logs.js:595
+#: static/js/owner_data.js:203
 msgid "caches sans position connue"
 msgstr ""
 
@@ -1706,8 +1706,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr ""
 
 #: static/js/evolution_data.js:314 static/js/evolution_data.js:1340
-#: static/js/mapgl.js:4612 static/js/mapgl.js:4664 static/js/mapgl.js:4671
-#: static/js/mapgl.js:5819 static/js/notifications.js:425
+#: static/js/mapgl.js:4667 static/js/mapgl.js:4719 static/js/mapgl.js:4726
+#: static/js/mapgl.js:5874 static/js/notifications.js:425
 msgid "Attention"
 msgstr ""
 
@@ -3327,363 +3327,363 @@ msgstr ""
 msgid "Position approximative (centre de l’Adventure)"
 msgstr ""
 
-#: static/js/mapgl.js:3616 static/js/poses_data.js:849
+#: static/js/mapgl.js:3671 static/js/poses_data.js:849
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:3617 static/js/poses_data.js:850
+#: static/js/mapgl.js:3672 static/js/poses_data.js:850
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:3618 static/js/poses_data.js:851
+#: static/js/mapgl.js:3673 static/js/poses_data.js:851
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:3619 static/js/poses_data.js:852
+#: static/js/mapgl.js:3674 static/js/poses_data.js:852
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:3632
+#: static/js/mapgl.js:3687
 #, python-brace-format
 msgid "Dernière maintenance le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:3633
+#: static/js/mapgl.js:3688
 msgid "Aucune maintenance enregistrée"
 msgstr ""
 
-#: static/js/mapgl.js:3639
+#: static/js/mapgl.js:3694
 msgid "Ma cache"
 msgstr ""
 
-#: static/js/mapgl.js:4199
+#: static/js/mapgl.js:4254
 msgid "Aucune vidéo n'a été créée."
 msgstr ""
 
-#: static/js/mapgl.js:4199
+#: static/js/mapgl.js:4254
 msgid "Arrêt de l'enregistrement"
 msgstr ""
 
-#: static/js/mapgl.js:4603
+#: static/js/mapgl.js:4658
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr ""
 
-#: static/js/mapgl.js:4603 static/js/mapgl.js:6167
+#: static/js/mapgl.js:4658 static/js/mapgl.js:6222
 msgid "Compatibilité"
 msgstr ""
 
-#: static/js/mapgl.js:4612
+#: static/js/mapgl.js:4667
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr ""
 
-#: static/js/mapgl.js:4632
+#: static/js/mapgl.js:4687
 msgid "Préparation de l'enregistrement..."
 msgstr ""
 
-#: static/js/mapgl.js:4632
+#: static/js/mapgl.js:4687
 msgid "Nettoyage initial"
 msgstr ""
 
-#: static/js/mapgl.js:4656
+#: static/js/mapgl.js:4711
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr ""
 
-#: static/js/mapgl.js:4657
+#: static/js/mapgl.js:4712
 msgid "Enregistrement annulé"
 msgstr ""
 
-#: static/js/mapgl.js:4662
+#: static/js/mapgl.js:4717
 msgid "Répertoire d’images nettoyé."
 msgstr ""
 
-#: static/js/mapgl.js:4662
+#: static/js/mapgl.js:4717
 msgid "Préparation"
 msgstr ""
 
-#: static/js/mapgl.js:4664
+#: static/js/mapgl.js:4719
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr ""
 
-#: static/js/mapgl.js:4671
+#: static/js/mapgl.js:4726
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr ""
 
-#: static/js/mapgl.js:4857
+#: static/js/mapgl.js:4912
 msgid "0% | préparation..."
 msgstr ""
 
-#: static/js/mapgl.js:4866 static/js/mapgl.js:5831
+#: static/js/mapgl.js:4921 static/js/mapgl.js:5886
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr ""
 
-#: static/js/mapgl.js:4873
+#: static/js/mapgl.js:4928
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr ""
 
-#: static/js/mapgl.js:4874
+#: static/js/mapgl.js:4929
 msgid "Préparation de la capture..."
 msgstr ""
 
-#: static/js/mapgl.js:4906
+#: static/js/mapgl.js:4961
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr ""
 
-#: static/js/mapgl.js:4906 static/js/mapgl.js:6400
+#: static/js/mapgl.js:4961 static/js/mapgl.js:6455
 msgid "Onglet masqué"
 msgstr ""
 
-#: static/js/mapgl.js:5017
+#: static/js/mapgl.js:5072
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr ""
 
-#: static/js/mapgl.js:5144
+#: static/js/mapgl.js:5199
 msgid "Nettoyage en cours..."
 msgstr ""
 
-#: static/js/mapgl.js:5243
+#: static/js/mapgl.js:5298
 msgid "erreur inconnue"
 msgstr ""
 
-#: static/js/mapgl.js:5245
+#: static/js/mapgl.js:5300
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:5247
+#: static/js/mapgl.js:5302
 msgid "Capture interrompue"
 msgstr ""
 
-#: static/js/mapgl.js:5271 static/js/mapgl.js:5982 static/js/mapgl.js:6274
-#: static/js/mapgl.js:6292 static/js/mapgl.js:6701 static/js/mapgl.js:6807
-#: static/js/mapgl.js:6811
+#: static/js/mapgl.js:5326 static/js/mapgl.js:6037 static/js/mapgl.js:6329
+#: static/js/mapgl.js:6347 static/js/mapgl.js:6756 static/js/mapgl.js:6862
+#: static/js/mapgl.js:6866
 msgid "Enregistrement"
 msgstr ""
 
-#: static/js/mapgl.js:5284
+#: static/js/mapgl.js:5339
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
 msgstr ""
 
-#: static/js/mapgl.js:5288
+#: static/js/mapgl.js:5343
 msgid ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
 msgstr ""
 
-#: static/js/mapgl.js:5326
+#: static/js/mapgl.js:5381
 msgid "task_id manquant"
 msgstr ""
 
-#: static/js/mapgl.js:5327
+#: static/js/mapgl.js:5382
 msgid "Délai d'assemblage dépassé"
 msgstr ""
 
-#: static/js/mapgl.js:5340
+#: static/js/mapgl.js:5395
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr ""
 
-#: static/js/mapgl.js:5354
+#: static/js/mapgl.js:5409
 msgid "Tâche échouée"
 msgstr ""
 
-#: static/js/mapgl.js:5361
+#: static/js/mapgl.js:5416
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 msgstr ""
 
-#: static/js/mapgl.js:5473
+#: static/js/mapgl.js:5528
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:5567 static/js/ui.js:7821
+#: static/js/mapgl.js:5622 static/js/ui.js:7821
 msgid "Assemblage en cours"
 msgstr ""
 
-#: static/js/mapgl.js:5567
+#: static/js/mapgl.js:5622
 msgid "Création de la vidéo à partir des images..."
 msgstr ""
 
-#: static/js/mapgl.js:5651
+#: static/js/mapgl.js:5706
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr ""
 
-#: static/js/mapgl.js:5658
+#: static/js/mapgl.js:5713
 msgid "Création de la vidéo..."
 msgstr ""
 
-#: static/js/mapgl.js:5665
+#: static/js/mapgl.js:5720
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr ""
 
-#: static/js/mapgl.js:5666
+#: static/js/mapgl.js:5721
 msgid "Nettoyage en cours"
 msgstr ""
 
-#: static/js/mapgl.js:5666
+#: static/js/mapgl.js:5721
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr ""
 
-#: static/js/mapgl.js:5683
+#: static/js/mapgl.js:5738
 msgid "Nettoyage terminé"
 msgstr ""
 
-#: static/js/mapgl.js:5697
+#: static/js/mapgl.js:5752
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:5699
+#: static/js/mapgl.js:5754
 msgid "Erreur chaîne"
 msgstr ""
 
-#: static/js/mapgl.js:5819
+#: static/js/mapgl.js:5874
 msgid "Données en cours de chargement. Réessayez."
 msgstr ""
 
-#: static/js/mapgl.js:5932
+#: static/js/mapgl.js:5987
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr ""
 
-#: static/js/mapgl.js:5933
+#: static/js/mapgl.js:5988
 msgid "Démarrage de la capture..."
 msgstr ""
 
-#: static/js/mapgl.js:5982
+#: static/js/mapgl.js:6037
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr ""
 
-#: static/js/mapgl.js:6166
+#: static/js/mapgl.js:6221
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
 " ${used}."
 msgstr ""
 
-#: static/js/mapgl.js:6228
+#: static/js/mapgl.js:6283
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr ""
 
-#: static/js/mapgl.js:6274
+#: static/js/mapgl.js:6329
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr ""
 
-#: static/js/mapgl.js:6292
+#: static/js/mapgl.js:6347
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
 msgstr ""
 
-#: static/js/mapgl.js:6400
+#: static/js/mapgl.js:6455
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 msgstr ""
 
-#: static/js/mapgl.js:6602
+#: static/js/mapgl.js:6657
 msgid "Copie vers le dossier vidéo échouée"
 msgstr ""
 
-#: static/js/mapgl.js:6626
+#: static/js/mapgl.js:6681
 msgid "Finalisation"
 msgstr ""
 
-#: static/js/mapgl.js:6626
+#: static/js/mapgl.js:6681
 msgid "Écriture de la durée de la vidéo..."
 msgstr ""
 
-#: static/js/mapgl.js:6642
+#: static/js/mapgl.js:6697
 msgid "Ajout audio"
 msgstr ""
 
-#: static/js/mapgl.js:6642
+#: static/js/mapgl.js:6697
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr ""
 
-#: static/js/mapgl.js:6686 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:6741 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr ""
 
-#: static/js/mapgl.js:6686
+#: static/js/mapgl.js:6741
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr ""
 
-#: static/js/mapgl.js:6701
+#: static/js/mapgl.js:6756
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr ""
 
-#: static/js/mapgl.js:6710
+#: static/js/mapgl.js:6765
 msgid "Traitement serveur"
 msgstr ""
 
-#: static/js/mapgl.js:6710
+#: static/js/mapgl.js:6765
 msgid "Envoi de la vidéo au serveur..."
 msgstr ""
 
-#: static/js/mapgl.js:6755 static/js/mapgl.js:6762
+#: static/js/mapgl.js:6810 static/js/mapgl.js:6817
 msgid "Traitement serveur..."
 msgstr ""
 
-#: static/js/mapgl.js:6760
+#: static/js/mapgl.js:6815
 msgid "Traitement serveur non démarré"
 msgstr ""
 
-#: static/js/mapgl.js:6807
+#: static/js/mapgl.js:6862
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr ""
 
-#: static/js/mapgl.js:6811
+#: static/js/mapgl.js:6866
 msgid "Traitement serveur indisponible, repli local..."
 msgstr ""
 
-#: static/js/mapgl.js:6867
+#: static/js/mapgl.js:6922
 msgid "Élément non trouvé"
 msgstr ""
 
-#: static/js/mapgl.js:6888
+#: static/js/mapgl.js:6943
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr ""
 
-#: static/js/mapgl.js:6909
+#: static/js/mapgl.js:6964
 msgid "Aucun canvas trouvé dans la carte"
 msgstr ""
 
-#: static/js/mapgl.js:6974
+#: static/js/mapgl.js:7029
 msgid "Échec conversion canvas en blob"
 msgstr ""
 
-#: static/js/mapgl.js:7732 static/js/mapgl.js:7824
+#: static/js/mapgl.js:7787 static/js/mapgl.js:7879
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr ""
 
-#: static/js/mapgl.js:7732 static/js/mapgl.js:7734 static/js/mapgl.js:7824
+#: static/js/mapgl.js:7787 static/js/mapgl.js:7789 static/js/mapgl.js:7879
 #: templates/guide.html:211 templates/menu_style.html:82
 msgid "Trajet"
 msgstr ""
 
-#: static/js/mapgl.js:7734
+#: static/js/mapgl.js:7789
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 msgstr ""
 
-#: static/js/mapgl.js:8438
+#: static/js/mapgl.js:8493
 msgid "Choisissez d’abord une forme de flash."
 msgstr ""
 
-#: static/js/mapgl.js:8438 static/js/mapgl.js:8442 templates/guide.html:207
+#: static/js/mapgl.js:8493 static/js/mapgl.js:8497 templates/guide.html:207
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr ""
 
-#: static/js/mapgl.js:8442
+#: static/js/mapgl.js:8497
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -3783,24 +3783,24 @@ msgstr ""
 msgid "Vous ne serez plus averti pour cette version."
 msgstr ""
 
-#: static/js/owner_data.js:163 static/js/poses_data.js:187
+#: static/js/owner_data.js:174 static/js/poses_data.js:187
 #, python-brace-format
 msgid "Impossible de charger vos caches posées : ${message}"
 msgstr ""
 
-#: static/js/owner_data.js:190
+#: static/js/owner_data.js:201
 msgid "cache posée dans la sélection"
 msgstr ""
 
-#: static/js/owner_data.js:190
+#: static/js/owner_data.js:201
 msgid "caches posées dans la sélection"
 msgstr ""
 
-#: static/js/owner_data.js:195
+#: static/js/owner_data.js:206
 msgid "cache sans date"
 msgstr ""
 
-#: static/js/owner_data.js:195
+#: static/js/owner_data.js:206
 msgid "caches sans date"
 msgstr ""
 
@@ -5166,13 +5166,13 @@ msgid "Mes trouvailles"
 msgstr ""
 
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
-#: templates/menu_filtre.html:23 templates/menu_stats.html:102
+#: templates/menu_filtre.html:25 templates/menu_stats.html:102
 #: templates/menu_stats.html:527
 msgid "Mes DNF"
 msgstr ""
 
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
-#: templates/menu_data_poses.html:14 templates/menu_filtre.html:39
+#: templates/menu_data_poses.html:14 templates/menu_filtre.html:45
 #: templates/menu_points.html:165 templates/menu_stats.html:103
 #: templates/menu_stats.html:536
 msgid "Mes caches posées"
@@ -6190,13 +6190,13 @@ msgid "Comme le flash principal"
 msgstr ""
 
 #: templates/_event_flash_rows.html:10 templates/menu_flash.html:11
-#: templates/menu_flash_disappear.html:13 templates/menu_flash_dnf.html:16
+#: templates/menu_flash_disappear.html:13 templates/menu_flash_dnf.html:17
 msgid "Pas de flash"
 msgstr ""
 
 #: templates/_event_flash_rows.html:11 templates/menu_flash.html:12
-#: templates/menu_flash_disappear.html:16 templates/menu_flash_dnf.html:17
-#: templates/menu_flash_dnf.html:91 templates/menu_points.html:102
+#: templates/menu_flash_disappear.html:16 templates/menu_flash_dnf.html:18
+#: templates/menu_flash_dnf.html:92 templates/menu_points.html:102
 #: templates/menu_points.html:177
 msgid "Cercle"
 msgstr ""
@@ -6214,49 +6214,49 @@ msgid "Cible"
 msgstr ""
 
 #: templates/_event_flash_rows.html:15 templates/menu_flash.html:17
-#: templates/menu_flash_disappear.html:17 templates/menu_flash_dnf.html:21
-#: templates/menu_flash_dnf.html:89 templates/menu_points.html:173
+#: templates/menu_flash_disappear.html:17 templates/menu_flash_dnf.html:22
+#: templates/menu_flash_dnf.html:90 templates/menu_points.html:173
 msgid "Étoile"
 msgstr ""
 
 #: templates/_event_flash_rows.html:16 templates/menu_flash.html:18
-#: templates/menu_flash_disappear.html:18 templates/menu_flash_dnf.html:22
-#: templates/menu_flash_dnf.html:88
+#: templates/menu_flash_disappear.html:18 templates/menu_flash_dnf.html:23
+#: templates/menu_flash_dnf.html:89
 msgid "Scintillement"
 msgstr ""
 
 #: templates/_event_flash_rows.html:17 templates/menu_flash.html:19
-#: templates/menu_flash_disappear.html:19 templates/menu_flash_dnf.html:23
-#: templates/menu_flash_dnf.html:94 templates/menu_points.html:174
+#: templates/menu_flash_disappear.html:19 templates/menu_flash_dnf.html:24
+#: templates/menu_flash_dnf.html:95 templates/menu_points.html:174
 msgid "Carré"
 msgstr ""
 
 #: templates/_event_flash_rows.html:18 templates/menu_flash.html:20
-#: templates/menu_flash_disappear.html:20 templates/menu_flash_dnf.html:24
-#: templates/menu_flash_dnf.html:95 templates/menu_points.html:103
+#: templates/menu_flash_disappear.html:20 templates/menu_flash_dnf.html:25
+#: templates/menu_flash_dnf.html:96 templates/menu_points.html:103
 #: templates/menu_points.html:176
 msgid "Triangle"
 msgstr ""
 
 #: templates/_event_flash_rows.html:19 templates/menu_flash.html:21
-#: templates/menu_flash_disappear.html:21 templates/menu_flash_dnf.html:25
-#: templates/menu_flash_dnf.html:96 templates/menu_points.html:175
+#: templates/menu_flash_disappear.html:21 templates/menu_flash_dnf.html:26
+#: templates/menu_flash_dnf.html:97 templates/menu_points.html:175
 msgid "Losange"
 msgstr ""
 
-#: templates/_event_flash_rows.html:20 templates/menu_flash_dnf.html:87
+#: templates/_event_flash_rows.html:20 templates/menu_flash_dnf.html:88
 msgid "Feu d'artifice"
 msgstr ""
 
 #: templates/_event_flash_rows.html:36 templates/menu_flash.html:30
-#: templates/menu_flash_disappear.html:26 templates/menu_flash_dnf.html:33
-#: templates/menu_flash_dnf.html:102
+#: templates/menu_flash_disappear.html:26 templates/menu_flash_dnf.html:34
+#: templates/menu_flash_dnf.html:103
 msgid "Taille du flash en px"
 msgstr ""
 
 #: templates/_event_flash_rows.html:39 templates/menu_flash.html:43
-#: templates/menu_flash_disappear.html:31 templates/menu_flash_dnf.html:38
-#: templates/menu_flash_dnf.html:107
+#: templates/menu_flash_disappear.html:31 templates/menu_flash_dnf.html:39
+#: templates/menu_flash_dnf.html:108
 msgid "Couleur du flash"
 msgstr ""
 
@@ -6266,25 +6266,25 @@ msgstr ""
 
 #: templates/_event_flash_rows.html:41 templates/menu_flash.html:50
 #: templates/menu_flash.html:76 templates/menu_flash_disappear.html:57
-#: templates/menu_flash_dnf.html:63 templates/menu_flash_dnf.html:132
+#: templates/menu_flash_dnf.html:64 templates/menu_flash_dnf.html:133
 #: templates/menu_points.html:75 templates/menu_points.html:140
 msgid "Transparent"
 msgstr ""
 
 #: templates/_event_flash_rows.html:42 templates/menu_flash.html:54
 #: templates/menu_flash.html:80 templates/menu_flash_disappear.html:38
-#: templates/menu_flash_disappear.html:61 templates/menu_flash_dnf.html:45
-#: templates/menu_flash_dnf.html:67 templates/menu_flash_dnf.html:114
-#: templates/menu_flash_dnf.html:136 templates/menu_points.html:79
+#: templates/menu_flash_disappear.html:61 templates/menu_flash_dnf.html:46
+#: templates/menu_flash_dnf.html:68 templates/menu_flash_dnf.html:115
+#: templates/menu_flash_dnf.html:137 templates/menu_points.html:79
 #: templates/menu_points.html:144
 msgid "Couleur unique"
 msgstr ""
 
 #: templates/_event_flash_rows.html:45 templates/menu_flash.html:59
 #: templates/menu_flash.html:83 templates/menu_flash_disappear.html:41
-#: templates/menu_flash_disappear.html:64 templates/menu_flash_dnf.html:48
-#: templates/menu_flash_dnf.html:70 templates/menu_flash_dnf.html:117
-#: templates/menu_flash_dnf.html:139 templates/menu_points.html:84
+#: templates/menu_flash_disappear.html:64 templates/menu_flash_dnf.html:49
+#: templates/menu_flash_dnf.html:71 templates/menu_flash_dnf.html:118
+#: templates/menu_flash_dnf.html:140 templates/menu_points.html:84
 #: templates/menu_points.html:149
 msgid "Choisir la couleur"
 msgstr ""
@@ -6941,8 +6941,8 @@ msgstr ""
 msgid "Sous les filtres, le réglage"
 msgstr ""
 
-#: templates/guide.html:169 templates/menu_filtre.html:132
-#: templates/menu_filtre.html:133
+#: templates/guide.html:169 templates/menu_filtre.html:138
+#: templates/menu_filtre.html:139
 msgid "Caches sans localisation (locationless)"
 msgstr ""
 
@@ -7304,16 +7304,16 @@ msgid "Renseignez la"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:74
-#: templates/menu_filtre.html:75 templates/menu_filtre.html:99
-#: templates/menu_filtre.html:100
+#: templates/menu_animation.html:80 templates/menu_filtre.html:80
+#: templates/menu_filtre.html:81 templates/menu_filtre.html:105
+#: templates/menu_filtre.html:106
 msgid "Date de début"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:109
-#: templates/menu_animation.html:110 templates/menu_filtre.html:83
-#: templates/menu_filtre.html:84 templates/menu_filtre.html:108
-#: templates/menu_filtre.html:109
+#: templates/menu_animation.html:110 templates/menu_filtre.html:89
+#: templates/menu_filtre.html:90 templates/menu_filtre.html:114
+#: templates/menu_filtre.html:115
 msgid "Date de fin"
 msgstr ""
 
@@ -9350,7 +9350,7 @@ msgid "La base est prête."
 msgstr ""
 
 #: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:70
-#: templates/menu_filtre.html:59
+#: templates/menu_filtre.html:65
 msgid "Réinitialiser tous les filtres"
 msgstr ""
 
@@ -9438,50 +9438,54 @@ msgstr ""
 msgid "Dans les deux cas, l'archivage joue son flash."
 msgstr ""
 
-#: templates/menu_filtre.html:26
+#: templates/menu_filtre.html:28
 msgid "Afficher mes DNF sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:30
+#: templates/menu_filtre.html:32
 msgid "Les inclure dans le trait de déplacement"
 msgstr ""
 
-#: templates/menu_filtre.html:42
-msgid "Afficher mes caches posées sur la carte"
-msgstr ""
-
-#: templates/menu_filtre.html:46
-msgid "Inclure pose et entretien dans le trait de déplacement"
+#: templates/menu_filtre.html:36
+msgid "Montrer aussi les DNF trouvés le jour même"
 msgstr ""
 
 #: templates/menu_filtre.html:48
+msgid "Afficher mes caches posées sur la carte"
+msgstr ""
+
+#: templates/menu_filtre.html:52
+msgid "Inclure pose et entretien dans le trait de déplacement"
+msgstr ""
+
+#: templates/menu_filtre.html:54
 msgid ""
 "Vos étapes de poseur seulement (pose, maintenance, désactivation, "
 "archivage) : les logs des autres joueurs restent sur la page Mes poses."
 msgstr ""
 
-#: templates/menu_filtre.html:71
+#: templates/menu_filtre.html:77
 msgid "Période de découverte"
 msgstr ""
 
-#: templates/menu_filtre.html:77 templates/menu_filtre.html:86
-#: templates/menu_filtre.html:102 templates/menu_filtre.html:111
+#: templates/menu_filtre.html:83 templates/menu_filtre.html:92
+#: templates/menu_filtre.html:108 templates/menu_filtre.html:117
 msgid "Date par défaut (toutes les données)"
 msgstr ""
 
-#: templates/menu_filtre.html:96
+#: templates/menu_filtre.html:102
 msgid "Période de pose"
 msgstr ""
 
-#: templates/menu_filtre.html:134
+#: templates/menu_filtre.html:140
 msgid "Comptées, sans point sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:135
+#: templates/menu_filtre.html:141
 msgid "Comptées et affichées sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:138
+#: templates/menu_filtre.html:144
 msgid ""
 "Leur position dans le fichier est fictive : affichée, elle trace un point"
 " là où vous n'êtes pas allé."
@@ -9500,17 +9504,17 @@ msgid "Impulsion (halo + onde)"
 msgstr ""
 
 #: templates/menu_flash.html:14 templates/menu_flash_disappear.html:14
-#: templates/menu_flash_dnf.html:18 templates/menu_flash_dnf.html:93
+#: templates/menu_flash_dnf.html:19 templates/menu_flash_dnf.html:94
 msgid "Implosion (anneau qui se referme)"
 msgstr ""
 
-#: templates/menu_flash.html:15 templates/menu_flash_dnf.html:19
-#: templates/menu_flash_dnf.html:90
+#: templates/menu_flash.html:15 templates/menu_flash_dnf.html:20
+#: templates/menu_flash_dnf.html:91
 msgid "Double onde (écho)"
 msgstr ""
 
 #: templates/menu_flash.html:16 templates/menu_flash_disappear.html:15
-#: templates/menu_flash_dnf.html:20 templates/menu_flash_dnf.html:92
+#: templates/menu_flash_dnf.html:21 templates/menu_flash_dnf.html:93
 msgid "Cible (réticule)"
 msgstr ""
 
@@ -9519,7 +9523,7 @@ msgid "Taille du Flash"
 msgstr ""
 
 #: templates/menu_flash.html:32 templates/menu_flash_disappear.html:28
-#: templates/menu_flash_dnf.html:35 templates/menu_flash_dnf.html:104
+#: templates/menu_flash_dnf.html:36 templates/menu_flash_dnf.html:105
 msgid "5 à 200 px"
 msgstr ""
 
@@ -9535,9 +9539,9 @@ msgstr ""
 
 #: templates/menu_flash.html:46 templates/menu_flash.html:72
 #: templates/menu_flash_disappear.html:34
-#: templates/menu_flash_disappear.html:53 templates/menu_flash_dnf.html:41
-#: templates/menu_flash_dnf.html:59 templates/menu_flash_dnf.html:110
-#: templates/menu_flash_dnf.html:128 templates/menu_points.html:71
+#: templates/menu_flash_disappear.html:53 templates/menu_flash_dnf.html:42
+#: templates/menu_flash_dnf.html:60 templates/menu_flash_dnf.html:111
+#: templates/menu_flash_dnf.html:129 templates/menu_points.html:71
 #: templates/menu_points.html:136
 msgid "Couleurs GC (par type)"
 msgstr ""
@@ -9547,13 +9551,13 @@ msgid "Choisir la couleur du flash"
 msgstr ""
 
 #: templates/menu_flash.html:65 templates/menu_flash_disappear.html:46
-#: templates/menu_flash_dnf.html:52 templates/menu_flash_dnf.html:121
+#: templates/menu_flash_dnf.html:53 templates/menu_flash_dnf.html:122
 #: templates/menu_points.html:189
 msgid "Couleur du contour"
 msgstr ""
 
 #: templates/menu_flash.html:68 templates/menu_flash_disappear.html:49
-#: templates/menu_flash_dnf.html:55 templates/menu_flash_dnf.html:124
+#: templates/menu_flash_dnf.html:56 templates/menu_flash_dnf.html:125
 msgid "Automatique"
 msgstr ""
 
@@ -9584,55 +9588,55 @@ msgstr ""
 msgid "Choisir la couleur du contour de disparition"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:8
+#: templates/menu_flash_dnf.html:9
 msgid "Flash des DNF"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:10
+#: templates/menu_flash_dnf.html:11
 msgid ""
 "Joué quand un DNF apparaît sur la carte (affichage des DNF activé dans "
 "l'onglet Données)."
 msgstr ""
 
-#: templates/menu_flash_dnf.html:13 templates/menu_flash_dnf.html:14
+#: templates/menu_flash_dnf.html:14 templates/menu_flash_dnf.html:15
 msgid "Forme du flash des DNF"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:15 templates/menu_points.html:178
+#: templates/menu_flash_dnf.html:16 templates/menu_points.html:178
 msgid "Comme les trouvailles"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:49
+#: templates/menu_flash_dnf.html:50
 msgid "Choisir la couleur du flash des DNF"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:71
+#: templates/menu_flash_dnf.html:72
 msgid "Choisir la couleur du contour du flash des DNF"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:79
+#: templates/menu_flash_dnf.html:80
 msgid "Célébration d'un DNF trouvé"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:81
+#: templates/menu_flash_dnf.html:82
 msgid ""
 "Joué quand vous trouvez enfin une cache où vous aviez échoué : le point "
 "DNF s'efface et la trouvaille prend sa place."
 msgstr ""
 
-#: templates/menu_flash_dnf.html:84 templates/menu_flash_dnf.html:85
+#: templates/menu_flash_dnf.html:85 templates/menu_flash_dnf.html:86
 msgid "Forme de la célébration"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:86
+#: templates/menu_flash_dnf.html:87
 msgid "Pas de célébration"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:118
+#: templates/menu_flash_dnf.html:119
 msgid "Choisir la couleur de la célébration"
 msgstr ""
 
-#: templates/menu_flash_dnf.html:140
+#: templates/menu_flash_dnf.html:141
 msgid "Choisir la couleur du contour de la célébration"
 msgstr ""
 

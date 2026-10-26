@@ -559,8 +559,12 @@ célébrations et les effacements (en cours et cumulés).
 (`getTrailGeometry`, clé de mémoïsation `dnfRevision`).
 
 **Préférences globales** (onglet Données, panneau des filtres, « Mes DNF »)
-: `dnf_display` (masqués par défaut) et `dnf_in_trail` (inclus par défaut,
-sans effet tant que l'affichage est coupé). La case et les réglages du
+: `dnf_display` (masqués par défaut), `dnf_in_trail` (inclus par défaut) et
+`dnf_same_day_display` (opt-in, désactivée : pendant l'animation, un DNF
+trouvé le jour même — jamais affiché sinon, `dnfSameDayResolved` —
+apparaît un instant puis s'efface avec la célébration éventuelle). Les
+deux dernières sont sans effet tant que l'affichage est coupé. La case et
+les réglages du
 thème (sous-onglet Flash) ne sont proposés que quand les logs importés
 décrivent au moins un DNF — placé ou non (`OFFER_IDS`, dnf_data.js).
 

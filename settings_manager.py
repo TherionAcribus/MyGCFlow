@@ -416,6 +416,11 @@ class AppSettings:
     # Un DNF est un déplacement : le trait de déplacement y passe, sauf choix
     # contraire (sans effet tant que dnf_display est coupé).
     dnf_in_trail: bool = True
+    # Un DNF trouvé le jour même n'apparaît jamais (il disparaît le jour où
+    # il apparaît). Opt-in : pendant l'animation, le point s'affiche un
+    # instant puis s'efface, avec la célébration « DNF trouvé » si elle est
+    # réglée (sans effet tant que dnf_display est coupé).
+    dnf_same_day_display: bool = False
     # Caches posées par le joueur sur la carte principale (« Mes caches
     # posées », docs/logs-geocaching.md) : masquées par défaut, proposées
     # seulement quand les logs en décrivent. Mêmes règles que les DNF.
@@ -1182,7 +1187,8 @@ def coerce_settings(d: dict) -> AppSettings:
         if raw_fetch is not None:
             s.labs_auto_fetch_coords = raw_fetch is True
         # Booléens stricts : une valeur corrompue coupe l'option.
-        for name in ("dnf_display", "dnf_in_trail", "owner_display", "owner_in_trail"):
+        for name in ("dnf_display", "dnf_in_trail", "dnf_same_day_display",
+                     "owner_display", "owner_in_trail"):
             raw = d.get(name)
             if raw is not None:
                 setattr(s, name, raw is True)

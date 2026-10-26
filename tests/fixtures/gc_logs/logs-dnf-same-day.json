@@ -1,0 +1,41 @@
+{
+  "format": "mygcflow-logs",
+  "schema_version": 1,
+  "exported_at": "2026-10-20T10:00:00Z",
+  "generator": { "name": "fixture-e2e" },
+  "account": { "user_id": 1234567, "username": "Joueur_Fictif" },
+  "caches": [
+    {
+      "gc_code": "GC8DAYX",
+      "name": "DNF rattrapé le jour même",
+      "type": "Traditional Cache",
+      "latitude": 48.5,
+      "longitude": 6.5,
+      "difficulty": 1.5,
+      "terrain": 2,
+      "container": "Regular",
+      "owner": { "id": null, "name": "Autre_Poseur" },
+      "placed_date": "2019-03-01",
+      "status": "active",
+      "favorite_points": 2
+    }
+  ],
+  "logs": [
+    {
+      "log_id": 900000101,
+      "gc_code": "GC8DAYX",
+      "type_id": 3,
+      "type_label": "Didn't find it",
+      "date": "2021-09-10",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }
+    },
+    {
+      "log_id": 900000102,
+      "gc_code": "GC8DAYX",
+      "type_id": 2,
+      "type_label": "Found it",
+      "date": "2021-09-10",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }
+    }
+  ]
+}

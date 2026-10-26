@@ -150,7 +150,7 @@ import {
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
 import { countDaysUpTo } from './timeline_model.mjs';
-import { dnfRevisitBetween, dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
+import { dnfRevisitBetween, dnfSameDayResolved, dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
 import { ownerFlashBetween, ownerStateAt, ownerVisibleAt, ownerVisitsByDay } from './owner_model.mjs';
 import { OWNER_FLASH_KINDS, resolveOwnerFlash } from './event_flash.mjs';
 import {
@@ -2647,6 +2647,31 @@ function syncDnf(isVisible, day, appear = null, flash = null) {
             pushFeatureFlashes(revisit, options, flash.record, false);
             for (let i = 0; i < revisit.length; i++) dnfFlashLog.push(options.mode);
             if (dnfFlashLog.length > 200) dnfFlashLog.splice(0, dnfFlashLog.length - 200);
+        }
+    }
+    // DNF trouvé le jour même (option dnf_same_day_display) : jamais affiché
+    // sinon (il disparaît le jour où il apparaît) — il s'affiche un instant,
+    // s'efface comme tout DNF résolu et joue la célébration si elle est
+    // réglée. Jamais au départ ni lors d'un saut (pas de `flash`).
+    if (flash && day > from && pkg.isDnfSameDayDisplay?.()) {
+        const sameDay = [];
+        for (const entry of entries) {
+            if (dnfSameDayResolved(entry, from, day)) sameDay.push(dnfOlFeature(entry));
+        }
+        if (sameDay.length) {
+            for (const feature of sameDay) {
+                feature.set('vanish', now);
+                dnfVanishing.set(feature, now + POINT_DISAPPEAR_MS);
+            }
+            displayDnfPoints(sameDay, appear);
+            extendPointsAnimation(now + POINT_DISAPPEAR_MS);
+            dnfVanishedTotal += sameDay.length;
+            const celebration = dnfFoundFlashOptions();
+            if (celebration) {
+                pushFeatureFlashes(sameDay, celebration, flash.record, false);
+                for (let i = 0; i < sameDay.length; i++) dnfCelebrationLog.push(celebration.mode);
+                if (dnfCelebrationLog.length > 200) dnfCelebrationLog.splice(0, dnfCelebrationLog.length - 200);
+            }
         }
     }
 }

@@ -114,8 +114,9 @@ Autres repères :
   posé et les specs suivants voient leurs imports refusés (« autre compte »)
   — exemple dans `gc-logs.spec.mjs`. Les logs des fixtures My Finds e2e
   n'ont pas d'attribut `id` : rejetés, ils ne créent aucune collection.
-  Même famille : `dnf_display` / `dnf_in_trail` (points DNF) sont des
-  préférences globales à remettre (`false` / `true`) en sortant. Les points
+  Même famille : `dnf_display` / `dnf_in_trail` / `dnf_same_day_display`
+  (points DNF) sont des préférences globales à remettre (`false` / `true` /
+  `false`) en sortant. Les points
   DNF ont leur propre couche, sous les trouvailles : source
   `window.dnfVectorSource` (pas `window.vectorSource`), jamais dans
   `pointsByDate` — exemple dans `dnf-display.spec.mjs` ; effacements et

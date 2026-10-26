@@ -18,6 +18,8 @@ const MY_FINDS = path.join(FIXTURES, 'my-finds-logs.gpx');
 const CONTRACT = path.join(FIXTURES, 'logs-contract-valid.json');
 // GC9ZZZZ avec DEUX DNF (02/05 et 15/08/2021), jamais résolu.
 const REPEAT = path.join(FIXTURES, 'logs-dnf-repeat.json');
+// GC8DAYX : DNF puis trouvaille le même jour (10/09/2021).
+const SAMEDAY = path.join(FIXTURES, 'logs-dnf-same-day.json');
 
 
 async function openWithData(page, logsFile = CONTRACT) {
@@ -89,7 +91,9 @@ async function trailStops(page) {
 // dnf_display et dnf_in_trail sont des préférences globales, et les logs
 // vivent dans la base partagée du runtime : tout remettre en sortant.
 test.afterEach(async ({ request }) => {
-  await request.put('/api/settings', { data: { dnf_display: false, dnf_in_trail: true } }).catch(() => {});
+  await request.put('/api/settings', {
+    data: { dnf_display: false, dnf_in_trail: true, dnf_same_day_display: false },
+  }).catch(() => {});
   await request.post('/api/logs/clear').catch(() => {});
   await request.post('/clear_database').catch(() => {});
 });
@@ -219,12 +223,14 @@ function dnfDebug(page) {
 }
 
 
-// Lecture complète depuis le 01/08/2011 : le DNF de GC2PR3N apparaît le
-// 20/08/2011 et la trouvaille le résout le 08/01/2012.
-async function playToEnd(page) {
-  await page.evaluate(async () => {
-    (await import('/static/js/index.js')).options.animation.dateStart = new Date(2011, 7, 1);
-  });
+// Lecture complète (par défaut depuis le 01/08/2011 : le DNF de GC2PR3N
+// apparaît le 20/08/2011 et la trouvaille le résout le 08/01/2012).
+async function playToEnd(page, { dateStart = '2011-08-01', dateEnd = null } = {}) {
+  await page.evaluate(async ([start, end]) => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateStart = new Date(`${start}T00:00:00`);
+    app.options.animation.dateEnd = end ? new Date(`${end}T00:00:00`) : null;
+  }, [dateStart, dateEnd]);
   await page.locator('#btnQuickPreview').click();
   await expect(page.locator('#btnQuickPause')).toBeVisible();
   await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 40_000 });
@@ -267,6 +273,43 @@ test('un DNF trouvé s\'efface pendant la lecture, avec une célébration facult
   await playToEnd(page);
   after = await dnfDebug(page);
   expect(after.celebrations.slice(before.celebrations.length)).toEqual(['fireworks']);
+});
+
+
+// Option dnf_same_day_display (décochée par défaut) : GC8DAYX, DNF puis
+// trouvée le 10/09/2021, n'est jamais affichée au repos ; pendant la lecture
+// le point apparaît un instant, s'efface et joue la célébration réglée.
+test('option : un DNF trouvé le jour même s\'affiche un instant puis s\'efface', async ({ page, request }) => {
+  await openWithData(page, SAMEDAY);
+  await page.locator('#checkDnfDisplay').check();
+  await expect(page.locator('#checkDnfSameDay')).not.toBeChecked();
+  // Au repos, la cache est affichée : sa résolution (2021) tombe après la
+  // fin de la période des trouvailles (2012) — même règle que GC9ZZZZ. Seule
+  // l'animation la masque, elle disparaît le jour où elle apparaît.
+  expect(await mapCodes(page, 'dnf')).toEqual(['GC8DAYX']);
+
+  // Sans l'option : aucun effacement ce jour-là.
+  await setRhythm(page, 60);
+  await page.evaluate(async () => { (await import('/static/js/index.js')).options.flash.mode = 'none'; });
+  let before = await dnfDebug(page);
+  await playToEnd(page, { dateStart: '2021-08-01', dateEnd: '2021-12-31' });
+  let after = await dnfDebug(page);
+  expect(after.vanished).toBe(before.vanished);
+
+  // Avec l'option : le point apparaît, s'efface et célèbre la trouvaille.
+  await page.locator('#checkDnfSameDay').check();
+  await expect.poll(async () =>
+    (await (await request.get('/api/settings')).json()).dnf_same_day_display).toBe(true);
+  await page.evaluate(async () => {
+    (await import('/static/js/index.js')).options.flash.dnf_found.mode = 'fireworks';
+  });
+  before = after;
+  await playToEnd(page, { dateStart: '2021-08-01', dateEnd: '2021-12-31' });
+  after = await dnfDebug(page);
+  expect(after.vanished).toBe(before.vanished + 1);
+  expect(after.celebrations.slice(before.celebrations.length)).toEqual(['fireworks']);
+  // La carte garde l'état de fin de lecture : le point effacé reste absent.
+  expect(await mapCodes(page, 'dnf')).toEqual([]);
 });
 
 

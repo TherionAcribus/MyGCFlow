@@ -52,6 +52,18 @@ export function dnfRevisitBetween(entry, afterDay, upToDay) {
     return false;
 }
 
+// DNF trouvé le jour même (option dnf_same_day_display, mapgl.js) : le
+// point n'est jamais visible (il disparaît le jour où il apparaît). Vrai
+// quand cette résolution intra-journée survient dans ]afterDay, upToDay] —
+// l'animation l'affiche alors un instant puis l'efface, comme tout DNF
+// résolu, avec la célébration « DNF trouvé » si elle est réglée.
+export function dnfSameDayResolved(entry, afterDay, upToDay) {
+    return entry.resolveDay !== null
+        && entry.resolveDay === entry.appearDay
+        && entry.appearDay > afterDay
+        && entry.appearDay <= upToDay;
+}
+
 // Événements comptés par les Stats (source « DNF ») : un par log « Didn't
 // find it », avec les propriétés de la cache et `date_find` = date du DNF —
 // les métriques des trouvailles s'y appliquent telles quelles. Map

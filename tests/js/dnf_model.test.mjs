@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import {
     buildDnfEntries,
     dnfRevisitBetween,
+    dnfSameDayResolved,
     dnfVisibleAt,
     dnfVisibleStatic,
     dnfVisitsByDay,
@@ -71,6 +72,19 @@ test('DNF répété : une tentative de plus dans ]début, fin]', () => {
     assert.equal(dnfRevisitBetween(entry, day('2011-08-20'), day('2011-09-01')), true);
     assert.equal(dnfRevisitBetween(entry, day('2011-09-01'), day('2011-09-10')), true);
     assert.equal(dnfRevisitBetween(entry, day('2011-09-10'), day('2011-09-30')), false);
+});
+
+test('résolu le jour même : seule la résolution intra-journée de la fenêtre', () => {
+    const [same] = buildDnfEntries([dnf('GC1', ['2021-09-10'], '2021-09-10')], day);
+    assert.equal(dnfSameDayResolved(same, day('2021-08-01'), day('2021-09-10')), true);
+    assert.equal(dnfSameDayResolved(same, day('2021-09-10'), day('2021-09-11')), false);  // borne exclue
+    assert.equal(dnfSameDayResolved(same, day('2021-08-01'), day('2021-09-09')), false);
+    // Résolue plus tard : cas ordinaire, le point s'est affiché entre-temps.
+    const [later] = buildDnfEntries([dnf('GC2', ['2021-09-10'], '2021-09-12')], day);
+    assert.equal(dnfSameDayResolved(later, day('2021-08-01'), day('2021-09-12')), false);
+    // Jamais résolu.
+    const [open] = buildDnfEntries([dnf('GC3', ['2021-09-10'])], day);
+    assert.equal(dnfSameDayResolved(open, day('2021-08-01'), day('2021-09-10')), false);
 });
 
 test('Stats : un événement par DNF, à sa date, avec les propriétés de la cache', async () => {

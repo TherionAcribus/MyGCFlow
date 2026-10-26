@@ -58,6 +58,12 @@ export function isDnfInTrail() {
     return isDnfDisplayEnabled() && window.userSettings?.dnf_in_trail !== false;
 }
 
+// Un DNF trouvé le jour même : affiché un instant puis effacé pendant
+// l'animation (mapgl.js, syncDnf). Opt-in : décoché par défaut.
+export function isDnfSameDayDisplay() {
+    return isDnfDisplayEnabled() && window.userSettings?.dnf_same_day_display === true;
+}
+
 export function getDnfEntries() {
     return entries;
 }
@@ -165,9 +171,15 @@ function syncBoxes() {
     const display = el('checkDnfDisplay');
     if (display) display.checked = window.userSettings?.dnf_display === true;
     const trail = el('checkDnfInTrail');
-    if (!trail) return;
-    trail.checked = window.userSettings?.dnf_in_trail !== false;
-    trail.disabled = !isDnfDisplayEnabled();
+    if (trail) {
+        trail.checked = window.userSettings?.dnf_in_trail !== false;
+        trail.disabled = !isDnfDisplayEnabled();
+    }
+    const sameDay = el('checkDnfSameDay');
+    if (sameDay) {
+        sameDay.checked = window.userSettings?.dnf_same_day_display === true;
+        sameDay.disabled = !isDnfDisplayEnabled();
+    }
 }
 
 async function onDisplayToggle(e) {
@@ -194,6 +206,17 @@ async function onTrailToggle(e) {
     }
 }
 
+async function onSameDayToggle(e) {
+    const box = e.currentTarget;
+    if (window.userSettings) window.userSettings.dnf_same_day_display = box.checked;
+    // N'agit que pendant l'animation : rien à resynchroniser au repos.
+    try {
+        await reportSave(box, saveSettingsPatch({ dnf_same_day_display: box.checked }));
+    } catch (_) {
+        markSaveError(box);
+    }
+}
+
 export function initDnfUI() {
     if (bound || !isMainPage()) return;
     const display = el('checkDnfDisplay');
@@ -202,6 +225,7 @@ export function initDnfUI() {
     syncBoxes();
     display.addEventListener('change', onDisplayToggle);
     el('checkDnfInTrail')?.addEventListener('change', onTrailToggle);
+    el('checkDnfSameDay')?.addEventListener('change', onSameDayToggle);
     reloadDnfData();
 }
 
