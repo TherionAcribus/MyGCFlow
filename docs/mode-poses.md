@@ -157,7 +157,7 @@ et les favoris reçus — accumulateur seul, aucune tuile « au jour ». Quatre
 tuiles « poseur » en plus :
 « Part de favoris » (favoris / trouvailles), « Trouveurs fidèles » (au moins
 3 trouvailles reçues, détail = trouveur le plus assidu), « Délai moyen avant
-la FTF » et « Cache la plus délaissée » — ces deux-là sont lues dans la
+la première trouvaille » et « Cache la plus délaissée » — ces deux-là sont lues dans la
 chronologie au jour affiché (`posesCounterAtDay`/`posesCounterStats`), pas
 dans l'accumulateur : la délaissée est la jamais trouvée la plus anciennement
 apparue, sinon la dernière trouvaille la plus ancienne. Configurations

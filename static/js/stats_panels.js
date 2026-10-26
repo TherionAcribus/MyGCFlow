@@ -632,7 +632,8 @@ export function accumulateStatsForDates(dates, now) {
     }
     // Jours sans événement : rien à compter, mais la tête d'une courbe avance
     // quand même sur l'axe des dates, une année d'activité passe à l'année
-    // suivante au 1ᵉʳ janvier, et les tuiles lues au jour (délai FTF, DNF en
+    // suivante au 1ᵉʳ janvier, et les tuiles lues au jour (délai avant la
+    // première trouvaille, DNF en
     // cours, caches actives…) suivent le jour affiché — il faut redessiner
     // (leur clé porte le jour, cf. panelDrawKey).
     if (visiblePanels().some(panelFollowsDay)) touchFrame();
@@ -1161,7 +1162,7 @@ const COUNTER_LABELS = {
     favorites: () => pkg.t('Favoris reçus'),
     fav_ratio: () => pkg.t('Part de favoris'),
     loyal: () => pkg.t('Trouveurs fidèles'),
-    ftf_delay: () => pkg.t('Délai moyen avant la FTF'),
+    ftf_delay: () => pkg.t('Délai moyen avant la première trouvaille'),
     neglected: () => pkg.t('Cache la plus délaissée'),
     caches: (source) => (source === 'dnf' ? pkg.t('Caches en échec')
         : source === 'favorites' ? pkg.t('Caches favorisées')
@@ -1296,7 +1297,8 @@ function counterText(item, entry, number, shown = entry.value, percent = null) {
     return { value: number(Math.round(shown)), detail };
 }
 
-// Tuiles « poseur » d'un compteur Mes poses (délai avant FTF, cache
+// Tuiles « poseur » d'un compteur Mes poses (délai avant la première
+// trouvaille, cache
 // délaissée) : lues dans la chronologie de la page au jour `day`
 // (poses_data.js › posesCounterStats), pas dans l'accumulateur. Le détail de
 // la délaissée est composé ici : code GC, suivi de la date de dernière
@@ -1439,7 +1441,8 @@ function buildView(panel, source = null) {
 
     if (panel.kind === 'counter') {
         const values = counterValues(state, panel.options.items);
-        // Tuiles « poseur » de Mes poses : délai avant FTF et cache délaissée
+        // Tuiles « poseur » de Mes poses : délai avant la première trouvaille
+        // et cache délaissée
         // suivent le jour affiché, lu dans la chronologie de la page — elles
         // ne sont proposées qu'en trouvailles reçues.
         if (isPosesPage() && S.key === 'finds'

@@ -87,11 +87,11 @@ test('les panneaux de Mes poses comptent les trouvailles reçues', async ({ page
 });
 
 // Tuiles « poseur » du compteur « Chiffres clés » : part de favoris et
-// trouveurs fidèles (accumulateur), délai moyen avant la FTF et cache la
-// plus délaissée (chronologie de la page, au jour affiché). Sur la fixture :
-// 3 favoris / 12 trouvailles ; Alice (5) et Bob (4) sont les seuls fidèles
-// (≥ 3) ; délais FTF 0, 14, 0, 1, 19 et 1 j (moyenne 35/6 ≈ 5,8 →
-// « 6 jours ») ; GCP0004 jamais trouvée.
+// trouveurs fidèles (accumulateur), délai moyen avant la première trouvaille
+// et cache la plus délaissée (chronologie de la page, au jour affiché). Sur
+// la fixture : 3 favoris / 12 trouvailles ; Alice (5) et Bob (4) sont les
+// seuls fidèles (≥ 3) ; délais de première trouvaille 0, 14, 0, 1, 19 et
+// 1 j (moyenne 35/6 ≈ 5,8 → « 6 jours ») ; GCP0004 jamais trouvée.
 test('les tuiles « poseur » du compteur', async ({ page, request }) => {
   await importPoses(request);
   await request.put('/api/settings', { data: { stats: { enabled: true, poses_panels: [
@@ -107,7 +107,7 @@ test('les tuiles « poseur » du compteur', async ({ page, request }) => {
   const alt = page.locator('.stats-panel-alt');
   await expect(alt).toContainText(/Part de favoris : 25\s*%/);
   await expect(alt).toContainText('Trouveurs fidèles : 2 (Alice · 5)');
-  await expect(alt).toContainText('Délai moyen avant la FTF : 6 jours');
+  await expect(alt).toContainText('Délai moyen avant la première trouvaille : 6 jours');
   await expect(alt).toContainText('GCP0004 · jamais trouvée');
 });
 
