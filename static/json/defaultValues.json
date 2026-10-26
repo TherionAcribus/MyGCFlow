@@ -34,6 +34,13 @@
             "shape": "star",
             "borderColor": "#ffc107",
             "borderWidth": 2
+        },
+        "dnf": {
+            "shape": "circle",
+            "color": "#000000",
+            "borderColor": "#ffffff",
+            "borderWidth": 2,
+            "icon": "dnf"
         }
     },
     "animation":{

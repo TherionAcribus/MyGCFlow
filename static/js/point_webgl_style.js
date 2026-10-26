@@ -7,7 +7,6 @@ import {
     appearOpacityExpression,
     appearScaleExpression,
     POINT_APPEAR_MS,
-    withAppearScale,
     withRecentGlowColor,
     withRecentGlowScale,
 } from './point_appear.mjs';
@@ -15,9 +14,18 @@ import {
     disappearOpacityExpression,
     disappearScaleExpression,
     EVO_AGE,
-    POINT_DISAPPEAR_MS,
 } from './evolution_style.mjs';
 import { ownerPointOptions as normalizeOwnerPoint } from './owner_model.mjs';
+import {
+    APPEAR_SIZE_KEYS,
+    GLOW_COLOR_KEYS,
+    applyAppearAnimation,
+    applyDnfVanish,
+    applyRecentGlow,
+    opacityKeyOf,
+} from './point_decorators.mjs';
+import { SHAPE_GEOMETRY } from './point_geometry.mjs';
+import { applyDnfIcon, dnfShapeStyle } from './dnf_point_style.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
 // les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
@@ -36,8 +44,10 @@ const TRANSPARENT = [0, 0, 0, 0];
 // `owner` : couche des caches posées de la carte principale (owner_data.js) —
 // forme et contour propres en vectoriel (pointOptions.owner), même grisé
 // que sur la page Mes poses ; l'anneau des icônes est une couche à part
-// (buildOwnerRingStyle).
-export function buildPointStyle(pointOptions, { evolution = false, poses = false, owner = false } = {}) {
+// (buildOwnerRingStyle). `dnf` : couche des DNF (dnf_data.js) — style propre
+// du thème (pointOptions.dnf : forme/couleur/contour en vectoriel, icône des
+// échecs ou du type en mode icônes ; anneau : buildDnfRingStyle).
+export function buildPointStyle(pointOptions, { evolution = false, poses = false, owner = false, dnf = false } = {}) {
     // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
     const pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
     const borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
@@ -177,6 +187,8 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
         }
     } else if (owner) {
         pointStyle = ownerShapeStyle(pointOptions, pointSize, fillColor || '#FF0000', borderColor, borderSizeValue, borderWidth);
+    } else if (dnf) {
+        pointStyle = dnfShapeStyle(pointOptions, pointSize, borderSizeValue, borderWidth);
     } else {
         if (pointOptions.shape == "circle") {
             // Si taille bordure = 0 OU mode = none, pas de bordure du tout
@@ -233,9 +245,10 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
     } else if (owner) {
         applyMainPageTimeline(pointStyle, pointOptions, greyIconOffset);
     } else {
-        // Avant l'apparition et la persistance, qui enveloppent ces valeurs :
-        // les DNF en profitent comme les trouvailles.
-        applyDnfStyle(pointStyle, pointOptions.mode == "icone" ? pointOptions.sprite : null);
+        // Couche DNF : l'icône des échecs écrase les correspondances par
+        // type déjà posées ; « type » les garde (l'anneau la marque).
+        if (dnf) applyDnfIcon(pointStyle, pointOptions);
+        // Avant l'apparition et la persistance, qui enveloppent ces valeurs.
         if (pointOptions.appearAnimation) {
             applyAppearAnimation(pointStyle);
         }
@@ -269,15 +282,8 @@ function applyMainPageTimeline(pointStyle, pointOptions, greyIconOffset) {
 // --- Caches posées (carte principale, owner_data.js) ------------------------
 //
 // pointOptions.owner = { shape, borderColor, borderWidth } (thème,
-// points.owner_*, normalisé par owner_model.mjs). Une forme de même rayon
-// paraît plus petite qu'un cercle : chaque forme a son facteur, pour un
-// encombrement voisin.
-const OWNER_SHAPE_GEOMETRY = {
-    triangle: { points: 3, radius: 1.4, angle: 0 },
-    square: { points: 4, radius: 1.3, angle: Math.PI / 4 },
-    diamond: { points: 4, radius: 1.5, angle: 0 },
-    star: { points: 5, radius: 1.9, radius2: 0.85, angle: 0 },
-};
+// points.owner_*, normalisé par owner_model.mjs). La géométrie des formes
+// (SHAPE_GEOMETRY, point_geometry.mjs) est partagée avec les points DNF.
 
 function ownerPointOptions(pointOptions) {
     return normalizeOwnerPoint(pointOptions?.owner);
@@ -299,7 +305,7 @@ function ownerShapeStyle(pointOptions, pointSize, fillColor, themeBorderColor, t
         if (stroke) Object.assign(style, { 'circle-stroke-color': stroke.color, 'circle-stroke-width': stroke.width });
         return style;
     }
-    const geom = OWNER_SHAPE_GEOMETRY[shape];
+    const geom = SHAPE_GEOMETRY[shape];
     // La forme « same » d'un thème triangle garde ses proportions.
     const radiusFactor = own.shape === 'same' ? 1 : geom.radius;
     const style = {
@@ -332,50 +338,12 @@ export function buildOwnerRingStyle(pointOptions) {
     return style;
 }
 
-// Points DNF (source_kind 'dnf', docs/logs-geocaching.md) : noirs en
-// vectoriel — bordure blanche quand le thème en dessine une, pour rester
-// visibles sur un fond sombre — et icône DNF en mode icônes, quel que soit
-// leur type de cache (gardé tel quel pour les filtres).
-export const DNF_FILL_COLOR = '#000000';
-export const DNF_STROKE_COLOR = '#ffffff';
-const IS_DNF = ['==', ['get', 'source_kind'], 'dnf'];
-
-// Fin d'un DNF trouvé (mapgl.js, syncDnf) : l'attribut 'vanish' porte
-// l'instant de départ sur l'horloge des points ; il vaut DNF_NOT_VANISHING
-// pour tous les autres points. Même courbe que la disparition du mode
-// Évolution : léger sursaut, rétrécissement jusqu'à zéro, fondu.
-export const DNF_NOT_VANISHING = -1e9;
-const VANISHING = ['>', ['get', 'vanish'], DNF_NOT_VANISHING / 10];
-const VANISH_AGE = ['-', ['var', 'now'], ['get', 'vanish']];
-
-function applyDnfVanish(pointStyle) {
-    const scale = ['case', VANISHING,
-        ['interpolate', ['linear'], VANISH_AGE, 0, 1, 0.3 * POINT_DISAPPEAR_MS, 1.2, POINT_DISAPPEAR_MS, 0], 1];
-    const opacity = ['case', VANISHING,
-        ['interpolate', ['linear'], VANISH_AGE, 0, 1, POINT_DISAPPEAR_MS, 0], 1];
-    for (const key of APPEAR_SIZE_KEYS) {
-        if (key in pointStyle) pointStyle[key] = ['*', pointStyle[key], scale];
-    }
-    const opacityKey = opacityKeyOf(pointStyle);
-    if (opacityKey) {
-        pointStyle[opacityKey] = opacityKey in pointStyle ? ['*', pointStyle[opacityKey], opacity] : opacity;
-    }
-}
-
-function applyDnfStyle(pointStyle, sprite) {
-    const forDnf = (key, value) => {
-        if (key in pointStyle) pointStyle[key] = ['case', IS_DNF, value, pointStyle[key]];
-    };
-    forDnf('circle-fill-color', DNF_FILL_COLOR);
-    forDnf('shape-fill-color', DNF_FILL_COLOR);
-    forDnf('circle-stroke-color', DNF_STROKE_COLOR);
-    forDnf('shape-stroke-color', DNF_STROKE_COLOR);
-    const rect = sprite?.map?.dnf;
-    if (rect) {
-        forDnf('icon-offset', [rect.x, rect.y]);
-        forDnf('icon-size', [rect.w, rect.h]);
-    }
-}
+// Points DNF (source_kind 'dnf', docs/logs-geocaching.md) : le style de la
+// couche dédiée — forme/couleur/contour en vectoriel, icône des échecs ou du
+// type + anneau en mode icônes — vit dans dnf_point_style.mjs (module pur,
+// testé par tests/js/point_style.test.mjs) ; buildPointStyle l'aiguille sur
+// le drapeau `dnf`. L'effacement à la résolution (attribut 'vanish',
+// DNF_NOT_VANISHING) vient de point_decorators.mjs.
 
 // Page Mes poses : état de chaque cache dans l'attribut 'pstate' (0 active,
 // 1 désactivée, 2 archivée), réécrit les jours où il change. En vectoriel, la
@@ -425,33 +393,6 @@ function applyPosesOpacity(pointStyle, archivedOpacity = POSES_ARCHIVED_OPACITY)
     pointStyle[opacityKey] = opacityKey in pointStyle ? ['*', pointStyle[opacityKey], factor] : factor;
 }
 
-// Couleurs éclaircies par la persistance des points récents. La bordure est
-// laissée telle quelle : c'est le point lui-même qui doit s'éclairer.
-const GLOW_COLOR_KEYS = ['circle-fill-color', 'shape-fill-color'];
-
-// Propriétés de taille (multipliées par l'échelle d'apparition) et d'opacité,
-// selon le type de symbole du style.
-const APPEAR_SIZE_KEYS = ['circle-radius', 'circle-stroke-width', 'shape-radius', 'shape-radius2', 'shape-stroke-width', 'icon-scale'];
-const APPEAR_OPACITY_KEY = { circle: 'circle-opacity', shape: 'shape-opacity', icon: 'icon-opacity' };
-
-// Ajoute l'apparition animée (voir point_appear.mjs) à un style de points. Les
-// features doivent porter l'attribut numérique 'appear' et le layer la variable
-// 'now' : c'est displayWebGLPoints() qui s'en charge.
-function applyAppearAnimation(pointStyle) {
-    for (const key of APPEAR_SIZE_KEYS) {
-        if (key in pointStyle) pointStyle[key] = withAppearScale(pointStyle[key]);
-    }
-    const symbol = Object.keys(APPEAR_OPACITY_KEY).find((prefix) => `${prefix}-radius` in pointStyle || `${prefix}-src` in pointStyle);
-    if (symbol) pointStyle[APPEAR_OPACITY_KEY[symbol]] = appearOpacityExpression();
-}
-
-
-
-function opacityKeyOf(pointStyle) {
-    const symbol = Object.keys(APPEAR_OPACITY_KEY).find((prefix) => `${prefix}-radius` in pointStyle || `${prefix}-src` in pointStyle);
-    return symbol ? APPEAR_OPACITY_KEY[symbol] : null;
-}
-
 // Mode Évolution : chaque point rétrécit et s'estompe à sa disparition ;
 // l'apparition animée et la persistance des points récents, si elles sont
 // activées dans le thème, se calculent sur l'âge déduit du jour courant.
@@ -476,18 +417,5 @@ function applyEvolutionTimeline(pointStyle, pointOptions) {
         pointStyle[opacityKey] = appear
             ? ['*', disappearOpacityExpression(), appearOpacityExpression(POINT_APPEAR_MS, EVO_AGE)]
             : disappearOpacityExpression();
-    }
-}
-
-// Ajoute la persistance des points récents (voir point_appear.mjs) : les points
-// des derniers jours restent plus clairs et un peu plus gros. Repose sur les
-// mêmes prérequis que l'apparition animée, plus la variable de style 'glowMs'
-// (durée de la fenêtre en temps d'animation).
-function applyRecentGlow(pointStyle) {
-    for (const key of GLOW_COLOR_KEYS) {
-        if (key in pointStyle) pointStyle[key] = withRecentGlowColor(pointStyle[key]);
-    }
-    for (const key of APPEAR_SIZE_KEYS) {
-        if (key in pointStyle) pointStyle[key] = withRecentGlowScale(pointStyle[key]);
     }
 }

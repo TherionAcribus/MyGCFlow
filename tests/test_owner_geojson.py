@@ -143,6 +143,11 @@ class OwnerThemeTests(unittest.TestCase):
         profile = coerce_profile({"name": "Ancien", "points": {"shape": "triangle"}, "flash": {"mode": "circle"}})
         self.assertEqual((profile.points.owner_shape, profile.points.owner_border_color,
                           profile.points.owner_border_width), ("star", "#ffc107", 2))
+        # Points DNF : rendu historique par défaut (point noir, contour
+        # blanc de 2 px, icône des échecs).
+        self.assertEqual((profile.points.dnf_shape, profile.points.dnf_color,
+                          profile.points.dnf_border_color, profile.points.dnf_border_width,
+                          profile.points.dnf_icon), ("circle", "#000000", "#ffffff", 2, "dnf"))
         self.assertEqual(profile.flash.owner, ef.owner_flash_defaults())
         self.assertEqual(MapProfile().flash.owner["place"]["mode"], "star")
 
@@ -150,17 +155,26 @@ class OwnerThemeTests(unittest.TestCase):
         from settings_manager import SettingsManager, coerce_profile
         profile = coerce_profile({"name": "T", "points": {
             "owner_shape": "hexagone", "owner_border_color": "#ABCDEF", "owner_border_width": 99,
+            "dnf_shape": "hexagone", "dnf_color": "#A1B2C3", "dnf_border_color": "rouge",
+            "dnf_border_width": 99, "dnf_icon": "boussole",
         }, "flash": {"owner": {"maintenance": {"mode": "none"}, "inconnu": {"mode": "star"}}}})
         self.assertEqual(profile.points.owner_shape, "star")          # inconnue → défaut
         self.assertEqual(profile.points.owner_border_color, "#ABCDEF")
         self.assertEqual(profile.points.owner_border_width, 6)        # bornée
+        self.assertEqual(profile.points.dnf_shape, "circle")          # inconnue → défaut
+        self.assertEqual(profile.points.dnf_color, "#A1B2C3")
+        self.assertEqual(profile.points.dnf_border_color, "#ffffff")  # non hexa → défaut
+        self.assertEqual(profile.points.dnf_border_width, 6)          # bornée
+        self.assertEqual(profile.points.dnf_icon, "dnf")              # inconnu → défaut
         self.assertEqual(profile.flash.owner["maintenance"]["mode"], "none")
         self.assertNotIn("inconnu", profile.flash.owner)
         # Aller-retour par la sérialisation de l'API (sans lire de fichier).
         data = SettingsManager.__new__(SettingsManager)._profile_to_dict(profile)
         self.assertEqual(data["points"]["owner_border_width"], 6)
+        self.assertEqual(data["points"]["dnf_color"], "#A1B2C3")
         again = coerce_profile(data)
         self.assertEqual(again.points.owner_border_color, "#ABCDEF")
+        self.assertEqual(again.points.dnf_icon, "dnf")
         self.assertEqual(again.flash.owner, profile.flash.owner)
 
 

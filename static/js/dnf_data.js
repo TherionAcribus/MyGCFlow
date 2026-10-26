@@ -40,7 +40,7 @@ let bound = false;
 export let dnfRevision = 0;
 
 // Blocs proposés seulement quand des DNF existent.
-const OFFER_IDS = ['dnfDisplayField', 'flashDnf'];
+const OFFER_IDS = ['dnfDisplayField', 'pointsDnf', 'flashDnf'];
 
 function el(id) { return document.getElementById(id); }
 

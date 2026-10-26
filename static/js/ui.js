@@ -38,6 +38,7 @@ import { appMode, isLifecyclePage, isMainPage, perPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
+import { dnfPointOptions } from './dnf_model.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
@@ -1191,6 +1192,7 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
     document.getElementById('switchPointAppear')?.addEventListener('change', changePointStyleUI);
     document.getElementById('selectPointRecentGlow')?.addEventListener('change', changePointStyleUI);
     initOwnerPointControls();
+    initDnfPointControls();
 
 // select
     selectShape = document.getElementById('selectShape');
@@ -4891,6 +4893,54 @@ function syncOwnerPointUI() {
     if (color) color.value = owner.borderColor;
 }
 
+// Points DNF (page principale, menu_points.html #pointsDnf) : forme, couleur
+// de point et contour en vectoriel, icône des échecs ou du type en mode
+// icônes — pkg.options.point.dnf, normalisé par dnf_model.mjs. Un changement
+// recrée les couches (style figé à la création), comme pour les posées.
+function initDnfPointControls() {
+    const shape = document.getElementById('selectDnfShape');
+    const color = document.getElementById('dnfPointColor');
+    const icon = document.getElementById('selectDnfIcon');
+    const width = document.getElementById('inputDnfBorderWidth');
+    const borderColor = document.getElementById('dnfBorderColor');
+    if (!shape || !color || !icon || !width || !borderColor) return;
+    const apply = () => {
+        pkg.options.point.dnf = dnfPointOptions({
+            shape: shape.value,
+            color: color.value,
+            icon: icon.value,
+            borderColor: borderColor.value,
+            borderWidth: width.value === '' ? pkg.options.point.dnf?.borderWidth : width.value,
+        });
+        pkg.refreshPoints(pkg.options);
+        // La pastille de la légende reprend la couleur du point.
+        pkg.syncMapLegend?.();
+    };
+    shape.addEventListener('change', apply);
+    color.addEventListener('change', apply);
+    icon.addEventListener('change', apply);
+    width.addEventListener('change', apply);
+    borderColor.addEventListener('change', apply);
+    // Valeur bornée réaffichée à la sortie du champ (7 → 6).
+    width.addEventListener('blur', () => { width.value = dnfPointOptions(pkg.options.point.dnf).borderWidth; });
+    syncDnfPointUI();
+}
+
+function syncDnfPointUI() {
+    const shape = document.getElementById('selectDnfShape');
+    if (!shape) return;
+    const dnf = dnfPointOptions(pkg.options?.point?.dnf);
+    shape.value = dnf.shape;
+    const color = document.getElementById('dnfPointColor');
+    if (color) color.value = dnf.color;
+    const icon = document.getElementById('selectDnfIcon');
+    if (icon) icon.value = dnf.icon;
+    const width = document.getElementById('inputDnfBorderWidth');
+    if (width) width.value = dnf.borderWidth;
+    const borderColor = document.getElementById('dnfBorderColor');
+    if (borderColor) borderColor.value = dnf.borderColor;
+}
+
 // recupère tous les changements liés aux points
 function changePointStyleUI(event){
     // switch
@@ -5218,6 +5268,7 @@ export function syncPointOptionsUI() {
     const selectPointRecentGlow = document.getElementById('selectPointRecentGlow');
     if (selectPointRecentGlow) selectPointRecentGlow.value = String(Math.max(0, parseInt(point.recentGlowDays) || 0));
     syncOwnerPointUI();
+    syncDnfPointUI();
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;

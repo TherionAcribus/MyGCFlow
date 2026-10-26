@@ -36,8 +36,9 @@
     vertical-align: baseline;
 }
 
-/* Point DNF : noir bordé de blanc (point_webgl_style.js), reproduit par un
-   halo clair pour rester lisible sur le cartouche comme sur la vidéo. */
+/* Point DNF : couleur de point et halo à la couleur du contour du thème
+   (points.dnf_*), posés par syncMapLegend (frames.js) — le style de base
+   suit les valeurs par défaut. */
 .legend-sym-dnf {
     color: #000000;
     text-shadow: 0 0 2px #ffffff, 0 0 2px #ffffff;

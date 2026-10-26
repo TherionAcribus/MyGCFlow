@@ -449,3 +449,54 @@ test('le trait de déplacement passe par les DNF, sauf si on les en retire', asy
   // fin de l'animation).
   expect(withDnf).toBe(withoutDnf + 1);
 });
+
+
+// Style des points DNF (thème points.dnf_*, carte #pointsDnf du sous-onglet
+// Points, dnf_point_style.mjs) : valeurs du rendu historique par défaut,
+// chaque réglage recrée la couche — getDnfDebugState().style/.ring relèvent
+// le style effectivement appliqué.
+test('le style des points DNF est réglable : forme, couleurs, icône et anneau', async ({ page }) => {
+  await openWithData(page);
+  await showDnf(page);
+
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabPoints"]').click();
+  await expect(page.locator('#pointsDnf')).toBeVisible();
+  await expect(page.locator('#selectDnfShape')).toHaveValue('circle');
+  await expect(page.locator('#dnfPointColor')).toHaveValue('#000000');
+  await expect(page.locator('#dnfBorderColor')).toHaveValue('#ffffff');
+  await expect(page.locator('#inputDnfBorderWidth')).toHaveValue('2');
+  await expect(page.locator('#selectDnfIcon')).toHaveValue('dnf');
+
+  let debug = await dnfDebug(page);
+  expect(debug.style['circle-fill-color']).toBe('#000000');
+  expect(debug.style['circle-stroke-color']).toBe('#ffffff');
+  expect(debug.ring).toBe(false);                    // vectoriel : pas d'anneau
+
+  // Losange violet à contour jaune : la couche recréée porte le nouveau style.
+  // fill() ne déclenche pas 'change' sur un sélecteur de couleur.
+  await page.locator('#selectDnfShape').selectOption('diamond');
+  await page.locator('#dnfPointColor').fill('#aa11bb');
+  await page.locator('#dnfPointColor').dispatchEvent('change');
+  await page.locator('#dnfBorderColor').fill('#ffcc00');
+  await page.locator('#dnfBorderColor').dispatchEvent('change');
+  await expect.poll(async () => (await dnfDebug(page)).style?.['shape-fill-color']).toBe('#aa11bb');
+  debug = await dnfDebug(page);
+  expect(debug.style['shape-points']).toBe(4);
+  expect(debug.style['shape-stroke-color']).toBe('#ffcc00');
+  expect(debug.style['circle-fill-color']).toBeUndefined();
+  expect(await mapCodes(page, 'dnf')).toEqual(['GC9ZZZZ']);
+
+  // Mode icônes : l'anneau à la couleur du contour marque le point.
+  await page.locator('#labelPointModeIcone').click();
+  await expect.poll(async () => (await dnfDebug(page)).ring).toBe(true);
+  // « Icône du type de cache » : les correspondances par type restent
+  // (expression 'match' conservée, pas l'icône des échecs).
+  await page.locator('#selectDnfIcon').selectOption('type');
+  await expect.poll(async () => (await dnfDebug(page)).style?.['icon-offset']?.[0]).toBe('match');
+  expect(await mapCodes(page, 'dnf')).toEqual(['GC9ZZZZ']);
+  // Épaisseur nulle : plus d'anneau.
+  await page.locator('#inputDnfBorderWidth').fill('0');
+  await page.locator('#inputDnfBorderWidth').dispatchEvent('change');
+  await expect.poll(async () => (await dnfDebug(page)).ring).toBe(false);
+});

@@ -11,6 +11,7 @@ import { buildThemeThumbnail } from './theme_thumbs.js';
 import { appMode } from './app_mode.mjs';
 import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
+import { dnfPointOptions } from './dnf_model.mjs';
 
 // Chaque mode de thème a sa propre liste (champ `mode` du thème, voir
 // PROFILE_MODES dans settings_manager.py) : un thème réglé pour quelques
@@ -1631,6 +1632,7 @@ class ProfileManager {
             const border = point.border || {};
             const borderSize = parseInt(border.size) || 0;
             const owner = ownerPointOptions(point.owner);
+            const dnf = dnfPointOptions(point.dnf);
 
             const pointSettings = {
                 size: parseInt(center.size) || 8,
@@ -1651,6 +1653,13 @@ class ProfileManager {
                 owner_shape: owner.shape,
                 owner_border_color: owner.borderColor,
                 owner_border_width: owner.borderWidth,
+                // Points DNF : même motif — le thème est partagé avec l'onglet
+                // Données, qui sérialise aussi ces valeurs.
+                dnf_shape: dnf.shape,
+                dnf_color: dnf.color,
+                dnf_border_color: dnf.borderColor,
+                dnf_border_width: dnf.borderWidth,
+                dnf_icon: dnf.icon,
             };
 
             dbgProfiles('Paramètres points récupérés:', pointSettings);
@@ -2634,6 +2643,14 @@ function applyPointState(pointOptions) {
             shape: pointOptions.owner_shape,
             borderColor: pointOptions.owner_border_color,
             borderWidth: pointOptions.owner_border_width,
+        });
+        // Thèmes antérieurs aux points DNF : valeurs par défaut.
+        point.dnf = dnfPointOptions({
+            shape: pointOptions.dnf_shape,
+            color: pointOptions.dnf_color,
+            borderColor: pointOptions.dnf_border_color,
+            borderWidth: pointOptions.dnf_border_width,
+            icon: pointOptions.dnf_icon,
         });
 
         dbgProfiles('Paramètres des points appliqués:', point);

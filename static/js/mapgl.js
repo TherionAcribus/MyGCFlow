@@ -112,7 +112,9 @@ import {
     getOverlayCacheRevision,
     getOverlayTextContent,
 } from './overlay_canvas.js';
-import { buildOwnerRingStyle, buildPointStyle, DNF_NOT_VANISHING } from './point_webgl_style.js';
+import { buildOwnerRingStyle, buildPointStyle } from './point_webgl_style.js';
+import { buildDnfRingStyle } from './dnf_point_style.mjs';
+import { DNF_NOT_VANISHING } from './point_decorators.mjs';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { EVO_FILTER, EVO_STATIC_FROM, POINT_DISAPPEAR_MS } from './evolution_style.mjs';
 import { isLifecyclePage, isPosesPage } from './app_mode.mjs';
@@ -228,6 +230,9 @@ let vectorLayer;
 // géocacheur veut voir ce qu'il a trouvé avant ce qu'il n'a pas trouvé.
 // Source : window.dnfVectorSource.
 let dnfLayer;
+let dnfRingLayer;               // anneau des icônes (contour du thème), dessous
+let dnfRingChecked = false;     // style de l'anneau évalué depuis la création
+let dnfStyleUsed = null;        // dernier style de la couche (relevé tests)
 // Couches des caches posées (syncOwner, owner_data.js), entre les DNF et les
 // trouvailles ; l'anneau des icônes dessous. Source : window.ownerVectorSource.
 let ownerLayer;
@@ -2302,10 +2307,10 @@ export function clearMap(){
     }
     // Couche DNF : même sort (un style changé la recrée aussi).
     if (window.dnfVectorSource) window.dnfVectorSource.clear();
-    if (dnfLayer) {
-        map.removeLayer(dnfLayer);
-        dnfLayer = undefined;
-    }
+    for (const layer of [dnfLayer, dnfRingLayer]) if (layer) map.removeLayer(layer);
+    dnfLayer = dnfRingLayer = undefined;
+    dnfRingChecked = false;
+    dnfStyleUsed = null;
     // Caches posées : idem (deux couches, une source).
     if (window.ownerVectorSource) window.ownerVectorSource.clear();
     for (const layer of [ownerLayer, ownerRingLayer]) if (layer) map.removeLayer(layer);
@@ -2548,22 +2553,41 @@ function dnfFoundFlashOptions() {
 // affichée le rejoue, chaque DNF trouvé s'efface (et peut célébrer) ;
 // absent (départ, saut, repos) : ajouts et retraits immédiats, sans flash.
 // Couche DNF créée à la demande, sous celle des trouvailles (zIndex 1000 <
-// 1001), avec le même style et les mêmes variables (horloge des points).
+// 1001), avec son style propre (thème points.dnf_*) et les mêmes variables
+// (horloge des points) ; l'anneau des icônes, à la couleur du contour, est
+// une couche dessous (999.9) — même motif que les caches posées.
 function ensureDnfLayer() {
     if (!window.dnfVectorSource) window.dnfVectorSource = new ol.source.Vector({ wrapX: true });
+    const source = window.dnfVectorSource;
     if (!dnfLayer) {
+        dnfStyleUsed = buildPointStyle(pkg.options.point, { dnf: true });
         dnfLayer = new ol.layer.WebGLPoints({
-            source: window.dnfVectorSource,
-            style: buildPointStyle(pkg.options.point),
+            source,
+            style: dnfStyleUsed,
             variables: pointStyleVariables,
             zIndex: 1000,
         });
     }
-    if (!map.getLayers().getArray().includes(dnfLayer)) map.addLayer(dnfLayer);
+    if (!dnfRingChecked) {
+        dnfRingChecked = true;
+        const ringStyle = buildDnfRingStyle(pkg.options.point);
+        if (ringStyle) {
+            dnfRingLayer = new ol.layer.WebGLPoints({
+                source,
+                style: ringStyle,
+                variables: pointStyleVariables,
+                zIndex: 999.9,
+            });
+        }
+    }
+    const onMap = map.getLayers().getArray();
+    for (const layer of [dnfRingLayer, dnfLayer]) {
+        if (layer && !onMap.includes(layer)) map.addLayer(layer);
+    }
     if (!pointAppearListenerKey) {
         pointAppearListenerKey = map.on('precompose', updatePointAppearClock);
     }
-    return window.dnfVectorSource;
+    return source;
 }
 
 function displayDnfPoints(olFeatures, appear = null) {
@@ -2689,6 +2713,8 @@ export function getDnfDebugState() {
         vanished: dnfVanishedTotal,
         flashes: dnfFlashLog.slice(),
         celebrations: dnfCelebrationLog.slice(),
+        ring: !!dnfRingLayer && map.getLayers().getArray().includes(dnfRingLayer),
+        style: dnfStyleUsed,
     };
 }
 

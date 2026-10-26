@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     buildDnfEntries,
+    DNF_POINT_DEFAULTS,
     dnfAliveInWindow,
+    dnfPointOptions,
     dnfRevisitBetween,
     dnfSameDayResolved,
     dnfVisibleAt,
@@ -127,4 +129,24 @@ test('Stats : un événement par DNF, à sa date, avec les propriétés de la ca
         { open: 1, resolved: 0, resolveDays: 0, visits: 1, visitsCode: 'GC1' });
     assert.deepEqual(dnfStatesAt(entries, day('2012-01-08')),
         { open: 1, resolved: 1, resolveDays: day('2012-01-08') - day('2011-08-20'), visits: 2, visitsCode: 'GC1' });
+});
+
+test('style DNF : normalisation et valeurs par défaut', () => {
+    // Entrée absente ou incomplète → le rendu historique (point noir, contour
+    // blanc de 2 px, icône des échecs).
+    assert.deepEqual(dnfPointOptions(null), DNF_POINT_DEFAULTS);
+    assert.deepEqual(dnfPointOptions({}), DNF_POINT_DEFAULTS);
+    // Valeurs admises, normalisées (hexa minuscule, entier borné).
+    assert.deepEqual(dnfPointOptions({
+        shape: 'diamond', color: '#AA11BB', borderColor: '#FFCC00',
+        borderWidth: '3', icon: 'type',
+    }), { shape: 'diamond', color: '#aa11bb', borderColor: '#ffcc00', borderWidth: 3, icon: 'type' });
+    // Hors bornes ou inconnues → bornées ou valeur par défaut.
+    assert.equal(dnfPointOptions({ borderWidth: 9 }).borderWidth, 6);
+    assert.equal(dnfPointOptions({ borderWidth: -2 }).borderWidth, 0);
+    assert.equal(dnfPointOptions({ borderWidth: 'x' }).borderWidth, DNF_POINT_DEFAULTS.borderWidth);
+    assert.equal(dnfPointOptions({ shape: 'hexagon' }).shape, 'circle');
+    assert.equal(dnfPointOptions({ color: 'red' }).color, '#000000');
+    assert.equal(dnfPointOptions({ color: '#fff' }).color, '#000000');
+    assert.equal(dnfPointOptions({ icon: 'miss' }).icon, 'dnf');
 });

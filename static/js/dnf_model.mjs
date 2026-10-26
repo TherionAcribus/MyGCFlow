@@ -5,6 +5,35 @@
 // trouvaille le résout (la trouvaille prend alors sa place). Les jours sont
 // des numéros de jour (dateToDayNumber) : `dayOf('2026-07-20')` → nombre.
 
+// Réglages du thème (points.dnf_* côté serveur, pkg.options.point.dnf côté
+// client) : forme, couleur de point et contour en vectoriel (« same » =
+// forme des trouvailles ; une épaisseur nulle retire le contour — bordure
+// de la forme en vectoriel, anneau autour de l'icône en mode icônes) et
+// choix de l'icône (« dnf » = celle des échecs, « type » = celle du type de
+// cache, marquée de l'anneau). Mêmes formes que settings_manager
+// (OWNER_POINT_SHAPES, DNF_BORDER_WIDTH_RANGE).
+export const DNF_POINT_DEFAULTS = Object.freeze({
+    shape: 'circle', color: '#000000', borderColor: '#ffffff', borderWidth: 2, icon: 'dnf',
+});
+export const DNF_SHAPES = Object.freeze(['circle', 'square', 'diamond', 'triangle', 'star', 'same']);
+export const DNF_ICONS = Object.freeze(['dnf', 'type']);
+export const DNF_BORDER_WIDTH_MAX = 6;
+
+export function dnfPointOptions(raw) {
+    const src = raw && typeof raw === 'object' ? raw : {};
+    const width = Number(src.borderWidth);
+    const hex = (value, fallback) => (/^#[0-9a-fA-F]{6}$/.test(value || '') ? value.toLowerCase() : fallback);
+    return {
+        shape: DNF_SHAPES.includes(src.shape) ? src.shape : DNF_POINT_DEFAULTS.shape,
+        color: hex(src.color, DNF_POINT_DEFAULTS.color),
+        borderColor: hex(src.borderColor, DNF_POINT_DEFAULTS.borderColor),
+        borderWidth: Number.isFinite(width)
+            ? Math.min(DNF_BORDER_WIDTH_MAX, Math.max(0, Math.round(width)))
+            : DNF_POINT_DEFAULTS.borderWidth,
+        icon: DNF_ICONS.includes(src.icon) ? src.icon : DNF_POINT_DEFAULTS.icon,
+    };
+}
+
 // Entrées triées par jour d'apparition, une par feature exploitable.
 // `ol` est l'objet carte, créé à la demande par mapgl.js.
 export function buildDnfEntries(features, dayOf) {

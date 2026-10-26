@@ -5,6 +5,7 @@ import { MAIN_INFO_TAGS, renderInfosTemplate, reservedInfosTemplateText } from '
 import { isLifecyclePage, isMainPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
+import { dnfPointOptions } from './dnf_model.mjs';
 
 // Modèle de la ligne d'infos du mode principal : texte libre avec balises
 // {date}, {trouvees}, {total}, {pct} (infos_template de settings.json).
@@ -148,6 +149,14 @@ export function syncMapLegend() {
     // La pastille « cache posée » reprend la couleur de contour du thème.
     const sym = document.getElementById('legendOwnerSym');
     if (sym) sym.style.color = ownerPointOptions(pkg.options?.point?.owner).borderColor;
+    // La pastille « DNF » reprend point et contour du thème — le halo, à la
+    // couleur du contour, la garde lisible sur le cartouche et la vidéo.
+    const dnfSym = document.getElementById('legendDnfSym');
+    if (dnfSym) {
+        const dnf = dnfPointOptions(pkg.options?.point?.dnf);
+        dnfSym.style.color = dnf.color;
+        dnfSym.style.textShadow = `0 0 2px ${dnf.borderColor}, 0 0 2px ${dnf.borderColor}`;
+    }
     const visible = rows.legendDnfRow || rows.legendOwnerRow;
     legend.style.display = visible ? 'block' : 'none';
     legend.setAttribute('aria-hidden', visible ? 'false' : 'true');

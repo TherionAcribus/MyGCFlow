@@ -193,6 +193,56 @@
             <small id="helpOwnerPoint" class="form-hint text-muted">{{ _("Le centre garde les couleurs des trouvailles. En mode icônes, l'icône du type est entourée d'un anneau à la couleur du contour. Désactivées et archivées sont grisées.") }}</small>
         </div>
     </div>
+
+    <!-- Points DNF (dnf_data.js) : forme, couleur de point et contour propres,
+         pour les distinguer des trouvailles et des caches posées. Masqué tant
+         que les logs ne décrivent aucun DNF. Piloté par ui.js
+         (initDnfPointControls). -->
+    <div id="pointsDnf" class="card mt-3" hidden>
+        <div class="card-header">
+            <h6 class="card-title m-0">
+                <i class="ti ti-x text-muted me-1"></i>{{ _("Mes DNF") }}
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="selectDnfShape">{{ _("Forme (mode vectoriel)") }}</label>
+                    <select id="selectDnfShape" class="form-select" aria-describedby="helpDnfPoint">
+                        <option value="circle">{{ _("Cercle") }}</option>
+                        <option value="square">{{ _("Carré") }}</option>
+                        <option value="diamond">{{ _("Losange") }}</option>
+                        <option value="triangle">{{ _("Triangle") }}</option>
+                        <option value="star">{{ _("Étoile") }}</option>
+                        <option value="same">{{ _("Comme les trouvailles") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="dnfPointColor">{{ _("Couleur du point") }}</label>
+                    <input type="color" class="form-control form-control-color" id="dnfPointColor" value="#000000">
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="selectDnfIcon">{{ _("Icône (mode icônes)") }}</label>
+                    <select id="selectDnfIcon" class="form-select" aria-describedby="helpDnfPoint">
+                        <option value="dnf">{{ _("Échec (DNF)") }}</option>
+                        <option value="type">{{ _("Icône du type de cache") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="inputDnfBorderWidth">{{ _("Épaisseur du contour (0 = aucun)") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" id="inputDnfBorderWidth" min="0" max="6" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="dnfBorderColor">{{ _("Couleur du contour") }}</label>
+                    <input type="color" class="form-control form-control-color" id="dnfBorderColor" value="#ffffff">
+                </div>
+            </div>
+            <small id="helpDnfPoint" class="form-hint text-muted">{{ _("En mode icônes, l'icône est entourée d'un anneau à la couleur du contour.") }}</small>
+        </div>
+    </div>
     {% endif %}
 
     <!-- Sous-menu Icône -->

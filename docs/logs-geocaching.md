@@ -504,7 +504,8 @@ caméra par jour ne les voient. `static/js/dnf_data.js` les charge (seulement
 si l'affichage est activé), les filtre comme la sélection courante
 (`filterLikeCurrentSelection`, bdd.js) puis `mapgl.js` les ajoute et les
 retire dans **leur propre couche, sous celle des trouvailles** (zIndex 1000
-contre 1001, source `window.dnfVectorSource`, même style et même horloge) —
+contre 1001, source `window.dnfVectorSource`, style dédié du thème, même
+horloge des points) —
 une trouvaille qui chevauche un DNF reste visible et prioritaire au clic.
 Une seule couche ne convient pas : OpenLayers 10 y dessine les points dans
 l'ordre de leurs identifiants internes, et les DNF, créés après les
@@ -523,19 +524,33 @@ strictement après son début ou jamais (`dnfAliveInWindow`, `movedDiscoveryBoun
 bdd.js). « Période de pose » reste un filtre d'attribut sur `published_date`.
 En « Lab Caches » seuls, aucun DNF.
 
-**Rendu** (`point_webgl_style.js`, `applyDnfStyle`) : noir en vectoriel —
-bordure blanche quand le thème en dessine une — et icône du type de log
-« Didn't find it » de geocaching.com en mode icônes (case `dnf` des feuilles
-`geocaching-sprite*.png`, x = 1900, aussi dans le jeu « smiley »), refaite
-sur le modèle des autres : disque blanc sur toute la case (48 px, 96 en
-@2x), icône réduite à 40 px (80) au centre — sans ce contour, elle paraissait
-plus grosse que ses voisines. Pas de compteur à l'apparition. Popup : nombre
-de DNF, date du premier, date de la trouvaille ou « Pas encore trouvée ».
+**Rendu** (`buildPointStyle(..., { dnf: true })`, `point_webgl_style.js` ;
+style dédié de `dnf_point_style.mjs`, module pur testé par
+`tests/js/point_style.test.mjs`) : réglé par le thème `points.dnf_*` —
+forme (cercle par défaut ; « Comme les trouvailles » reprend la forme du
+thème, avec le contour du thème à la couleur DNF si l'épaisseur propre est
+nulle), couleur du point (noir par défaut) et contour (blanc, 2 px par
+défaut ; 0 = aucun) en vectoriel ; en mode icônes, l'icône des échecs
+(`dnf`, défaut) ou celle du type de cache (`type`), dans les deux cas
+entourée d'un anneau à la couleur du contour dessiné par une couche dessous
+(zIndex 999.9, `buildDnfRingStyle` — nul en vectoriel ou à épaisseur
+nulle). Les contrôles vivent dans la carte « Mes DNF » du sous-onglet
+Points (`#pointsDnf`, `menu_points.html`, masquée sans DNF — OFFER_IDS de
+`dnf_data.js` ; `initDnfPointControls`/`syncDnfPointUI`, ui.js) ; chaque
+changement recrée les couches, le style WebGL étant figé à leur création.
+L'icône des échecs est celle du type de log « Didn't find it » de
+geocaching.com (case `dnf` des feuilles `geocaching-sprite*.png`, x = 1900,
+aussi dans le jeu « smiley »), refaite sur le modèle des autres : disque
+blanc sur toute la case (48 px, 96 en @2x), icône réduite à 40 px (80) au
+centre — sans ce contour, elle paraissait plus grosse que ses voisines.
+Pas de compteur à l'apparition. Popup : nombre de DNF, date du premier,
+date de la trouvaille ou « Pas encore trouvée ».
 
 **Légende optionnelle** (`options.infos.legend.display`, case « Afficher la
 légende » de l'onglet Style › Titres — décochée par défaut) : un cartouche
 `#mapLegend` en bas à gauche liste une ligne par famille hors trouvailles
-affichée — point noir « DNF (échec) », étoile « Cache posée » à la couleur
+affichée — point « DNF (échec) » à la couleur du point, auréolé de la
+couleur du contour (`points.dnf_*`), étoile « Cache posée » à la couleur
 de contour du thème — et disparaît quand rien n'est affiché (`syncMapLegend`,
 frames.js, appelée par syncOverlayVisibility et les applyChange DNF/posées).
 Elle entre dans la vidéo : `overlay_canvas.js` met en cache la boîte et
@@ -568,7 +583,8 @@ le même flash : chaque DNF est un déplacement, comme pour le trait. Formes :
 celles du flash d'apparition sauf la vague « impulse ». Aucun flash au
 départ de l'animation ni lors d'un saut.
 `getDnfDebugState()` (mapgl.js) relève, pour les tests, les flashs d'apparition, les
-célébrations et les effacements (en cours et cumulés).
+célébrations et les effacements (en cours et cumulés), la présence de
+l'anneau (`ring`) et le style appliqué à la couche (`style`).
 
 **Trait de déplacement.** Chaque DNF est un déplacement : chaque tentative
 (`dnf_dates`) est une étape du trajet, jusqu'à la date de fin de l'animation

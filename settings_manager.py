@@ -696,6 +696,17 @@ class PointStyle:
     owner_shape: str = "star"  # OWNER_POINT_SHAPES
     owner_border_color: str = "#ffc107"
     owner_border_width: int = 2  # px, OWNER_BORDER_WIDTH_RANGE
+    # Points DNF (carte principale) : forme, couleur de point et contour
+    # propres en vectoriel (« same » = forme des trouvailles ; une épaisseur
+    # nulle retire le contour — bordure de la forme en vectoriel, anneau
+    # autour de l'icône en mode icônes). « dnf_icon » choisit l'icône du
+    # mode icônes : « dnf » = celle des échecs, « type » = celle du type de
+    # cache (marquée de l'anneau).
+    dnf_shape: str = "circle"  # DNF_POINT_SHAPES
+    dnf_color: str = "#000000"
+    dnf_border_color: str = "#ffffff"
+    dnf_border_width: int = 2  # px, DNF_BORDER_WIDTH_RANGE
+    dnf_icon: str = "dnf"  # DNF_ICON_MODES
 
 
 @dataclass
@@ -808,6 +819,11 @@ POINT_SHAPES = ("circle", "triangle")
 # Forme des caches posées (vectoriel) : « same » reprend celle des trouvailles.
 OWNER_POINT_SHAPES = ("star", "square", "diamond", "triangle", "circle", "same")
 OWNER_BORDER_WIDTH_RANGE = (0, 6)
+# Points DNF : mêmes formes que les caches posées ; l'icône est celle des
+# échecs (« dnf », défaut) ou du type de cache (« type »).
+DNF_POINT_SHAPES = OWNER_POINT_SHAPES
+DNF_BORDER_WIDTH_RANGE = (0, 6)
+DNF_ICON_MODES = ("dnf", "type")
 ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
 COLOR_TYPES = ("gc", "none", "fix")
 # Couleur du contour des formes de flash : « auto » garde le contour historique
@@ -1316,6 +1332,12 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             owner_border_color=_coerce_hex_color(pt.get("owner_border_color"), pp.owner_border_color),
             owner_border_width=_clamp_int(pt.get("owner_border_width"), pp.owner_border_width,
                                           *OWNER_BORDER_WIDTH_RANGE),
+            dnf_shape=_coerce_choice(pt.get("dnf_shape"), DNF_POINT_SHAPES, pp.dnf_shape),
+            dnf_color=_coerce_hex_color(pt.get("dnf_color"), pp.dnf_color),
+            dnf_border_color=_coerce_hex_color(pt.get("dnf_border_color"), pp.dnf_border_color),
+            dnf_border_width=_clamp_int(pt.get("dnf_border_width"), pp.dnf_border_width,
+                                        *DNF_BORDER_WIDTH_RANGE),
+            dnf_icon=_coerce_choice(pt.get("dnf_icon"), DNF_ICON_MODES, pp.dnf_icon),
         )
 
         # Options flash
@@ -3002,6 +3024,11 @@ class SettingsManager:
                 'owner_shape': prof.points.owner_shape,
                 'owner_border_color': prof.points.owner_border_color,
                 'owner_border_width': prof.points.owner_border_width,
+                'dnf_shape': prof.points.dnf_shape,
+                'dnf_color': prof.points.dnf_color,
+                'dnf_border_color': prof.points.dnf_border_color,
+                'dnf_border_width': prof.points.dnf_border_width,
+                'dnf_icon': prof.points.dnf_icon,
             },
             'flash': {
                 'mode': prof.flash.mode,
