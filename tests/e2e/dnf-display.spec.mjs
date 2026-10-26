@@ -16,9 +16,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
 const MY_FINDS = path.join(FIXTURES, 'my-finds-logs.gpx');
 const CONTRACT = path.join(FIXTURES, 'logs-contract-valid.json');
+// GC9ZZZZ avec DEUX DNF (02/05 et 15/08/2021), jamais résolu.
+const REPEAT = path.join(FIXTURES, 'logs-dnf-repeat.json');
 
 
-async function openWithData(page) {
+async function openWithData(page, logsFile = CONTRACT) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
@@ -36,7 +38,7 @@ async function openWithData(page) {
     return stable;
   }, { intervals: [700], timeout: 15_000 }).toBe(true);
 
-  await page.locator('#gc-logs-file-input').setInputFiles(CONTRACT);
+  await page.locator('#gc-logs-file-input').setInputFiles(logsFile);
   await expect(page.locator('#gcLogsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await page.locator('#gcLogsPreviewConfirmBtn').click();
   await expect(page.locator('#gcLogsStatus')).toContainText('logs enregistrés', { timeout: 30_000 });
@@ -149,18 +151,21 @@ async function setRhythm(page, daysPerSecond) {
 }
 
 
-// Formes des flashs joués par des DNF pendant une lecture depuis le 01/08/2011
-// (le DNF de GC2PR3N tombe le 20/08/2011).
-async function dnfFlashesDuringPreview(page) {
+// Formes des flashs joués par des DNF pendant une lecture (par défaut depuis
+// le 01/08/2011 : le DNF de GC2PR3N tombe le 20/08/2011). `expected` est le
+// nombre de flashs à attendre avant d'arrêter la lecture.
+async function dnfFlashesDuringPreview(page, { dateStart = '2011-08-01', dateEnd = null, expected = 1 } = {}) {
   const before = (await page.evaluate(async () =>
     (await import('/static/js/index.js')).getDnfDebugState())).flashes.length;
-  await page.evaluate(async () => {
-    (await import('/static/js/index.js')).options.animation.dateStart = new Date(2011, 7, 1);
-  });
+  await page.evaluate(async ([start, end]) => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateStart = new Date(`${start}T00:00:00`);
+    app.options.animation.dateEnd = end ? new Date(`${end}T00:00:00`) : null;
+  }, [dateStart, dateEnd]);
   await page.locator('#btnQuickPreview').click();
   await expect.poll(async () => (await page.evaluate(async () =>
     (await import('/static/js/index.js')).getDnfDebugState())).flashes.length,
-  { timeout: 20_000 }).toBeGreaterThan(before);
+  { timeout: 20_000 }).toBeGreaterThanOrEqual(before + expected);
   await page.locator('#btnQuickStop').click();
   await expect(page.locator('#btnQuickPreview')).toBeVisible();
   return (await page.evaluate(async () =>
@@ -193,6 +198,19 @@ test('un DNF qui apparaît joue le flash des trouvailles, ou son flash propre', 
   await expect(page.locator('#dnfFlashOwnFields')).toBeVisible();
   await page.locator('a[href="#data"]').click();
   expect(await dnfFlashesDuringPreview(page)).toEqual(['star']);
+});
+
+
+// Deux DNF sur GC9ZZZZ (logs-dnf-repeat.json) : la seconde tentative doit
+// rejouer le flash sur le point déjà affiché, pas seulement avancer le trait.
+test('un DNF répété rejoue le flash sur une cache déjà affichée', async ({ page }) => {
+  await openWithData(page, REPEAT);
+  await showDnf(page);
+  await setRhythm(page, 60);
+  await page.evaluate(async () => { (await import('/static/js/index.js')).options.flash.mode = 'circle'; });
+  // Fenêtre 2021 : apparition le 02/05, seconde tentative le 15/08.
+  expect(await dnfFlashesDuringPreview(page, { dateStart: '2021-04-01', dateEnd: '2021-12-31', expected: 2 }))
+    .toEqual(['circle', 'circle']);
 });
 
 

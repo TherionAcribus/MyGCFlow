@@ -546,8 +546,11 @@ flash d'apparition.
 un DNF joue par défaut le flash des trouvailles (`mode: "same"`), ou son
 flash propre — forme, taille, couleur, contour, comme le flash de
 disparition du mode Évolution (mêmes contrôles génériques dans `ui.js`,
-`initFlashVariantControls`). Formes : celles du flash d'apparition sauf la
-vague « impulse ». Aucun flash au départ de l'animation ni lors d'un saut.
+`initFlashVariantControls`). Une tentative supplémentaire sur une cache
+déjà affichée (`dnfRevisitBetween`, fenêtre ]jour précédent, jour]) rejoue
+le même flash : chaque DNF est un déplacement, comme pour le trait. Formes :
+celles du flash d'apparition sauf la vague « impulse ». Aucun flash au
+départ de l'animation ni lors d'un saut.
 `getDnfDebugState()` (mapgl.js) relève, pour les tests, les flashs d'apparition, les
 célébrations et les effacements (en cours et cumulés).
 

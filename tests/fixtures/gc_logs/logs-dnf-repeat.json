@@ -1,0 +1,41 @@
+{
+  "format": "mygcflow-logs",
+  "schema_version": 1,
+  "exported_at": "2026-10-20T10:00:00Z",
+  "generator": { "name": "fixture-e2e" },
+  "account": { "user_id": 1234567, "username": "Joueur_Fictif" },
+  "caches": [
+    {
+      "gc_code": "GC9ZZZZ",
+      "name": "DNF répété jamais résolu",
+      "type": "Multi-cache",
+      "latitude": 48,
+      "longitude": 7,
+      "difficulty": 2.5,
+      "terrain": 3.5,
+      "container": "Small",
+      "owner": { "id": null, "name": "Autre_Poseur" },
+      "placed_date": "2020-06-01",
+      "status": "active",
+      "favorite_points": 4
+    }
+  ],
+  "logs": [
+    {
+      "log_id": 900000001,
+      "gc_code": "GC9ZZZZ",
+      "type_id": 3,
+      "type_label": "Didn't find it",
+      "date": "2021-05-02",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }
+    },
+    {
+      "log_id": 900000002,
+      "gc_code": "GC9ZZZZ",
+      "type_id": 3,
+      "type_label": "Didn't find it",
+      "date": "2021-08-15",
+      "author": { "id": 1234567, "name": "Joueur_Fictif" }
+    }
+  ]
+}

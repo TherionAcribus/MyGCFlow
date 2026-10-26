@@ -150,7 +150,7 @@ import {
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
 import { countDaysUpTo } from './timeline_model.mjs';
-import { dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
+import { dnfRevisitBetween, dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
 import { ownerFlashBetween, ownerStateAt, ownerVisibleAt, ownerVisitsByDay } from './owner_model.mjs';
 import { OWNER_FLASH_KINDS, resolveOwnerFlash } from './event_flash.mjs';
 import {
@@ -2505,6 +2505,9 @@ const dnfShown = new Set();
 // DNF trouvés en train de s'effacer : objet carte -> fin de l'effacement
 // (horloge des points). Retirés de la source à la synchronisation suivante.
 const dnfVanishing = new Map();
+// Dernier jour synchronisé : les flashs de DNF répétés couvrent
+// ]dnfSyncedDay, jour] (même motif que ownerSyncedDay).
+let dnfSyncedDay = -Infinity;
 let dnfFormat = null;
 
 function dnfOlFeature(entry) {
@@ -2541,7 +2544,8 @@ function dnfFoundFlashOptions() {
 }
 
 // `flash` : { findFlash, record } pendant l'animation — chaque DNF qui
-// apparaît y joue son flash, chaque DNF trouvé s'efface (et peut célébrer) ;
+// apparaît y joue son flash, chaque nouvelle tentative sur une cache déjà
+// affichée le rejoue, chaque DNF trouvé s'efface (et peut célébrer) ;
 // absent (départ, saut, repos) : ajouts et retraits immédiats, sans flash.
 // Couche DNF créée à la demande, sous celle des trouvailles (zIndex 1000 <
 // 1001), avec le même style et les mêmes variables (horloge des points).
@@ -2568,9 +2572,11 @@ function displayDnfPoints(olFeatures, appear = null) {
     source.addFeatures(olFeatures);
 }
 
-function syncDnf(isVisible, appear = null, flash = null) {
+function syncDnf(isVisible, day, appear = null, flash = null) {
     if (isLifecyclePage()) return;
     const entries = pkg.getDnfEntries?.() || [];
+    const from = dnfSyncedDay;
+    dnfSyncedDay = day;
     if (!entries.length && !dnfShown.size && !dnfVanishing.size) return;
     const source = window.dnfVectorSource;
     const now = sampleAppearClock();
@@ -2587,6 +2593,7 @@ function syncDnf(isVisible, appear = null, flash = null) {
 
     const wanted = new Set();
     const toAdd = [];
+    const revisit = [];     // caches déjà affichées recevant un autre DNF
     for (const entry of entries) {
         if (!isVisible(entry)) continue;
         const feature = dnfOlFeature(entry);
@@ -2596,6 +2603,8 @@ function syncDnf(isVisible, appear = null, flash = null) {
         } else if (!source || !source.hasFeature(feature)) {
             feature.set('vanish', DNF_NOT_VANISHING, true);
             toAdd.push(feature);
+        } else if (flash && day > from && dnfRevisitBetween(entry, from, day)) {
+            revisit.push(feature);
         }
     }
     const leaving = [];
@@ -2630,6 +2639,16 @@ function syncDnf(isVisible, appear = null, flash = null) {
             if (dnfFlashLog.length > 200) dnfFlashLog.splice(0, dnfFlashLog.length - 200);
         }
     }
+    // Un DNF de plus sur une cache déjà affichée : le point rejoue le même
+    // flash qu'à l'apparition (chaque tentative est un déplacement).
+    if (revisit.length) {
+        const options = dnfFlashOptions(flash.findFlash);
+        if (options) {
+            pushFeatureFlashes(revisit, options, flash.record, false);
+            for (let i = 0; i < revisit.length; i++) dnfFlashLog.push(options.mode);
+            if (dnfFlashLog.length > 200) dnfFlashLog.splice(0, dnfFlashLog.length - 200);
+        }
+    }
 }
 
 // Relevé pour les tests : DNF présents sur la carte, en train de s'effacer,
@@ -2640,6 +2659,7 @@ let dnfVanishedTotal = 0;
 export function getDnfDebugState() {
     return {
         shown: dnfShown.size,
+        day: dnfSyncedDay,
         vanishing: dnfVanishing.size,
         vanished: dnfVanishedTotal,
         flashes: dnfFlashLog.slice(),
@@ -2649,7 +2669,7 @@ export function getDnfDebugState() {
 
 // Carte à la fin du jour `day` (animation, saut de la chronologie).
 export function syncDnfToDay(day, appear = null, flash = null) {
-    syncDnf((entry) => dnfVisibleAt(entry, day), appear, flash);
+    syncDnf((entry) => dnfVisibleAt(entry, day), day, appear, flash);
 }
 
 // Carte au repos : état à la fin de la sélection — un DNF résolu dans la
@@ -2657,7 +2677,7 @@ export function syncDnfToDay(day, appear = null, flash = null) {
 export function syncDnfStatic() {
     const end = pkg.metadata?.endDate instanceof Date ? dateToDayNumber(pkg.metadata.endDate) : NaN;
     const endDay = Number.isFinite(end) ? end : Infinity;
-    syncDnf((entry) => dnfVisibleStatic(entry, endDay));
+    syncDnf((entry) => dnfVisibleStatic(entry, endDay), endDay);
 }
 
 // --- Caches posées (owner_data.js, docs/logs-geocaching.md) ------------------

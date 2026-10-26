@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     buildDnfEntries,
+    dnfRevisitBetween,
     dnfVisibleAt,
     dnfVisibleStatic,
     dnfVisitsByDay,
@@ -60,6 +61,16 @@ test('chaque DNF est un passage du trait, borné par la date de fin', () => {
     assert.deepEqual(visits.get(day('2011-08-20')), [[1, 1]]);
     assert.deepEqual(visits.get(day('2011-09-01')), [[1, 1], [2, 2]]);
     assert.equal(dnfVisitsByDay(entries, day('2011-08-31')).size, 1);
+});
+
+test('DNF répété : une tentative de plus dans ]début, fin]', () => {
+    const [entry] = buildDnfEntries([dnf('GC1', ['2011-08-20', '2011-09-01', '2011-09-10'])], day);
+    // L'apparition ne compte pas : elle joue déjà le flash d'ajout.
+    assert.equal(dnfRevisitBetween(entry, day('2011-08-19'), day('2011-08-20')), false);
+    assert.equal(dnfRevisitBetween(entry, day('2011-08-20'), day('2011-08-31')), false);
+    assert.equal(dnfRevisitBetween(entry, day('2011-08-20'), day('2011-09-01')), true);
+    assert.equal(dnfRevisitBetween(entry, day('2011-09-01'), day('2011-09-10')), true);
+    assert.equal(dnfRevisitBetween(entry, day('2011-09-10'), day('2011-09-30')), false);
 });
 
 test('Stats : un événement par DNF, à sa date, avec les propriétés de la cache', async () => {

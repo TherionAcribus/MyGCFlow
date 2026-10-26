@@ -41,6 +41,17 @@ export function dnfVisibleStatic(entry, endDay) {
     return entry.resolveDay === null || entry.resolveDay > endDay;
 }
 
+// Vrai si la cache a reçu un autre DNF dans ]afterDay, upToDay] : le point
+// est déjà sur la carte (il y est resté depuis son apparition), la tentative
+// rejoue son flash — chaque DNF est un déplacement, comme pour le trait.
+// L'apparition (`appearDay`) n'y compte pas : elle joue le flash d'ajout.
+export function dnfRevisitBetween(entry, afterDay, upToDay) {
+    for (const visit of entry.visitDays || []) {
+        if (visit !== entry.appearDay && visit > afterDay && visit <= upToDay) return true;
+    }
+    return false;
+}
+
 // Événements comptés par les Stats (source « DNF ») : un par log « Didn't
 // find it », avec les propriétés de la cache et `date_find` = date du DNF —
 // les métriques des trouvailles s'y appliquent telles quelles. Map
