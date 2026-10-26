@@ -146,6 +146,23 @@ Autres repères :
   `getStatsSnapshot().sources` (seulement pour une source qui a des
   panneaux) ; tuiles d'état lues dans `.stats-panel-alt` — exemple dans
   `stats-sources.spec.mjs`.
+- Les blocs « Mes DNF » / « Mes caches posées » peuvent être déjà visibles
+  alors que le rechargement déclenché par l'import (`reloadDnfData` /
+  `reloadOwnerData` après le commit) n'a pas encore rendu ses données : la
+  case répondait (visible grâce au DNF du My Finds) mais `mapCodes` lisait
+  l'ancien chargement. Attendre le point attendu par `expect.poll`, pas une
+  lecture directe — cas de `dnf-display.spec.mjs` (2026-10-26).
+- L'onglet Style → « Titres » contient l'assistant CSS à DEUX cibles :
+  « Titre » (`#gcCssTargetTitle`, active par défaut) et « Infos »
+  (`#gcCssTargetInfos`). Les cases infos (`cbDisplayNumberofCaches`,
+  `cbDisplayCurrentDate`, `cbDisplayLegend`) vivent dans
+  `#gcInfosPanelInfos`, masqué tant que la cible Infos n'est pas cliquée —
+  le clic sur `a[href="#tabTitles"]` ne suffit pas. La légende carte/vidéo
+  (`#mapLegend`, `options.infos.legend.display`, décochée par défaut) est
+  resynchronisée par `syncMapLegend` (frames.js) et repeinte dans la vidéo
+  par `overlay_canvas.js` : le `hidden` doit porter sur les éléments rendus
+  eux-mêmes (symbole et libellé séparés — une couleur par élément), pas
+  seulement sur la ligne parente.
 - `page.goto('/')` puis `page.goto('/#images')` (ou tout autre `#onglet`)
   n'est qu'un changement d'ancre : la page n'est PAS rechargée, les
   préférences posées entre les deux par `PUT /api/settings` ne sont pas

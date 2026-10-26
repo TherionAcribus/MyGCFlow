@@ -75,6 +75,9 @@
         },
         "currentDate": {
             "display": true
+        },
+        "legend": {
+            "display": false
         }
     },
     "flash":{

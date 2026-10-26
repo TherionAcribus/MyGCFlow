@@ -70,7 +70,7 @@ function ensureOverlayResizeObserver(container) {
     if (overlayResizeObserver || typeof ResizeObserver === 'undefined') return;
     overlayResizeObserver = new ResizeObserver(() => invalidateOverlayCache());
     overlayResizeObserver.observe(container);
-    for (const id of ['titleFrame', 'infosFrame']) {
+    for (const id of ['titleFrame', 'infosFrame', 'mapLegend']) {
         const el = document.getElementById(id);
         if (el) overlayResizeObserver.observe(el);
     }
@@ -200,6 +200,14 @@ export function buildOverlayCache(scaleFactor) {
         scaleFactor,
         title: cacheElement('titleFrame'),
         infos: cacheElement('infosFrame'),
+        // Légende : la boîte, puis une paire symbole/libellé par ligne —
+        // chaque élément n'a qu'une couleur (le symbole est coloré, pas le
+        // texte).
+        legendBox: cacheElement('mapLegend'),
+        legendDnfSym: cacheElement('legendDnfSym'),
+        legendDnfLabel: cacheElement('legendDnfLabel'),
+        legendOwnerSym: cacheElement('legendOwnerSym'),
+        legendOwnerLabel: cacheElement('legendOwnerLabel'),
     };
 }
 
@@ -241,13 +249,15 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
     if (!overlayCache) return;
 
     try {
-        const renderFromCache = (cached, text) => {
+        const renderFromCache = (cached, text, boxOnly = false) => {
             if (!cached || !cached.el) return;
             // Masquée dans la preview (display/visibility) → absente de la vidéo.
             // opacity <= 0 rendrait un calque entièrement transparent : on
             // économise la passe plutôt que de peindre pour rien.
             if (cached.hidden || cached.opacity <= 0) return;
-            if (!text || !text.trim()) return;
+            // boxOnly : fond + bordure sans texte (la boîte de la légende, dont
+            // le contenu vit dans les éléments lignes, chacun sa couleur).
+            if (!boxOnly && (!text || !text.trim())) return;
 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,
                     boxShadows, textShadows, lineGap,
@@ -407,11 +417,21 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
         const overlays = [];
         if (content.title) overlays.push({ cached: overlayCache.title, text: content.title });
         if (content.infos) overlays.push({ cached: overlayCache.infos, text: content.infos });
+        // Légende : la boîte (fond + bordure, le texte vit dans ses lignes
+        // enfants), puis chaque symbole et libellé — le `hidden` de chaque
+        // ligne masquée est déjà dans le cache.
+        if (overlayCache.legendBox) {
+            overlays.push({ cached: overlayCache.legendBox, text: '', boxOnly: true });
+            for (const key of ['legendDnfSym', 'legendDnfLabel', 'legendOwnerSym', 'legendOwnerLabel']) {
+                const cached = overlayCache[key];
+                if (cached?.el) overlays.push({ cached, text: cached.el.textContent });
+            }
+        }
 
         overlays
             .filter(item => item.cached)
             .sort((a, b) => a.cached.zIndex - b.cached.zIndex)
-            .forEach(item => renderFromCache(item.cached, item.text));
+            .forEach(item => renderFromCache(item.cached, item.text, item.boxOnly === true));
 
     } catch (error) {
         console.warn('Erreur lors du rendu des overlays:', error);

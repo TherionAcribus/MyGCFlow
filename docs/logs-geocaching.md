@@ -532,6 +532,16 @@ sur le modèle des autres : disque blanc sur toute la case (48 px, 96 en
 plus grosse que ses voisines. Pas de compteur à l'apparition. Popup : nombre
 de DNF, date du premier, date de la trouvaille ou « Pas encore trouvée ».
 
+**Légende optionnelle** (`options.infos.legend.display`, case « Afficher la
+légende » de l'onglet Style › Titres — décochée par défaut) : un cartouche
+`#mapLegend` en bas à gauche liste une ligne par famille hors trouvailles
+affichée — point noir « DNF (échec) », étoile « Cache posée » à la couleur
+de contour du thème — et disparaît quand rien n'est affiché (`syncMapLegend`,
+frames.js, appelée par syncOverlayVisibility et les applyChange DNF/posées).
+Elle entre dans la vidéo : `overlay_canvas.js` met en cache la boîte et
+chaque ligne (symbole et libellé sont deux éléments séparés — une seule
+couleur par élément), repeints à la frame.
+
 **DNF trouvé.** Pendant l'animation et la vidéo, quand la trouvaille résout
 un DNF, le point DNF ne disparaît pas d'un coup : il fait un léger sursaut,
 rétrécit et s'efface (450 ms, la courbe de la disparition du mode

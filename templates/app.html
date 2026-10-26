@@ -28,6 +28,7 @@
         <link rel="stylesheet" href="../static/css/style.css" />
         <link rel="stylesheet" href="../static/css/titre.css" />
         <link rel="stylesheet" href="../static/css/infos.css" />
+        <link rel="stylesheet" href="../static/css/legend.css" />
 
         <!-- CSS custom MyGCFlow -->
         <link rel="stylesheet" href="../static/css/ui_improvements.css" />
@@ -110,6 +111,16 @@
 
                     <!-- Infos -->
                     <div id="infosFrame" style="display:none" aria-hidden="true"><span id="spanInfosLine"><span id="spanNbCaches"></span><span id="spanInfosSep"> · </span><span id="spanCurrentDate"></span><span id="spanInfosTemplate" hidden></span></span><span id="spanInfosReserve" aria-hidden="true"></span></div>
+
+                    <!-- Légende optionnelle des points hors trouvailles (une
+                         ligne par famille affichée). Symbole et libellé sont
+                         deux éléments distincts : le rendu vidéo
+                         (overlay_canvas.js) ne connaît qu'une couleur par
+                         élément. -->
+                    <div id="mapLegend" style="display:none" aria-hidden="true">
+                        <div id="legendDnfRow" class="legend-row" hidden><span id="legendDnfSym" class="legend-sym legend-sym-dnf" hidden>●</span><span id="legendDnfLabel" hidden>{{ _('DNF (échec)') }}</span></div>
+                        <div id="legendOwnerRow" class="legend-row" hidden><span id="legendOwnerSym" class="legend-sym legend-sym-owner" hidden>★</span><span id="legendOwnerLabel" hidden>{{ _('Cache posée') }}</span></div>
+                    </div>
 
                     <!-- Menu flottant de contrôle.
                          Boutons icône-seuls : chacun porte un aria-label (nom accessible

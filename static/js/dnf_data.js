@@ -111,6 +111,8 @@ function applyChange() {
     // Panneaux Stats de source « DNF » (et galerie) : nouvel index.
     pkg.refreshStatsPanels?.();
     pkg.renderStatsTab?.();
+    // Légende de la carte : la ligne DNF suit l'affichage effectif.
+    pkg.syncMapLegend?.();
 }
 
 // (Re)charge les DNF du serveur, affichés ou non : les panneaux Stats les

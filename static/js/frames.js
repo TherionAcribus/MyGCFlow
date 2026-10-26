@@ -4,6 +4,7 @@ import { reservedInfosText } from './infos_reserve.mjs';
 import { MAIN_INFO_TAGS, renderInfosTemplate, reservedInfosTemplateText } from './infos_template.mjs';
 import { isLifecyclePage, isMainPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
+import { ownerPointOptions } from './owner_model.mjs';
 
 // Modèle de la ligne d'infos du mode principal : texte libre avec balises
 // {date}, {trouvees}, {total}, {pct} (infos_template de settings.json).
@@ -109,6 +110,7 @@ export function syncOverlayVisibility(){
         infosFrame.setAttribute('aria-hidden', showInfos ? 'false' : 'true');
     }
     updateInfosSpansVisibility();
+    syncMapLegend();
     try { pkg.invalidateOverlayCache?.(); } catch(_) {}
     // Mêmes conditions pour les panneaux de stats (base absente…), et la
     // police héritée de #infosFrame a pu changer avec son style.
@@ -116,6 +118,39 @@ export function syncOverlayVisibility(){
     // Les images suivent la même règle (base chargée) et contournent les
     // cartouches, dont la taille a pu changer.
     try { pkg.syncImagePanelsVisibility?.(); } catch(_) {}
+}
+
+// Légende optionnelle (options.infos.legend.display, case « Afficher la
+// légende » de l'onglet Informations) : une ligne par famille hors
+// trouvailles affichée — DNF, caches posées — rien si aucune n'est visible
+// ou sans base chargée. Repeinte dans la vidéo par overlay_canvas.js via
+// les mêmes éléments DOM ; un changement d'affichage DNF/posées y passe
+// aussi (applyChange de dnf_data.js / owner_data.js).
+export function syncMapLegend() {
+    const legend = document.getElementById('mapLegend');
+    if (!legend) return;
+    const offered = (pkg.hasDatabase?.() ?? true) && isMainPage()
+        && pkg.options?.infos?.legend?.display === true;
+    const rows = {
+        legendDnfRow: offered && pkg.isDnfDisplayEnabled?.() === true,
+        legendOwnerRow: offered && pkg.isOwnerDisplayEnabled?.() === true,
+    };
+    for (const [id, show] of Object.entries(rows)) {
+        const row = document.getElementById(id);
+        if (!row) continue;
+        row.hidden = !show;
+        // Le `hidden` doit aussi porter sur les éléments enfants : le cache
+        // vidéo (overlay_canvas.js) lit leur display calculé — celui d'un
+        // enfant de ligne masquée reste « inline » et il serait peint en
+        // haut à gauche du canvas.
+        for (const child of row.querySelectorAll('[id]')) child.hidden = !show;
+    }
+    // La pastille « cache posée » reprend la couleur de contour du thème.
+    const sym = document.getElementById('legendOwnerSym');
+    if (sym) sym.style.color = ownerPointOptions(pkg.options?.point?.owner).borderColor;
+    const visible = rows.legendDnfRow || rows.legendOwnerRow;
+    legend.style.display = visible ? 'block' : 'none';
+    legend.setAttribute('aria-hidden', visible ? 'false' : 'true');
 }
 
 // Affiche/masque nombre de caches, date et le séparateur "-" selon les options.

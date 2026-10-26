@@ -107,7 +107,7 @@ var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor, cpFlashBorderColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
-var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
+var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, cbDisplayLegend, inputTitle;
 var inputInfosTemplate;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
@@ -1496,6 +1496,10 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
     if (cbDisplayCurrentDate) cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
+
+    // Légende DNF / caches posées : n'existe que sur la page principale.
+    cbDisplayLegend = document.getElementById('cbDisplayLegend');
+    if (cbDisplayLegend) cbDisplayLegend.addEventListener('change', changeInfosValues);
 
     // Modèle de la ligne d'infos : texte libre avec balises — {date}/
     // {actives}/{placees}/{archivees}/{total} en mode Évolution, {date}/
@@ -4865,6 +4869,8 @@ function initOwnerPointControls() {
             borderWidth: width.value === '' ? pkg.options.point.owner?.borderWidth : width.value,
         });
         pkg.refreshPoints(pkg.options);
+        // La pastille de la légende reprend la couleur du contour.
+        pkg.syncMapLegend?.();
     };
     shape.addEventListener('change', apply);
     color.addEventListener('change', apply);
@@ -7387,6 +7393,10 @@ function changeInfosValues(event){
     // ligne d'infos y est un modèle libre) : ne pas les toucher alors.
     if (cbDisplayCurrentDate) pkg.options.infos.currentDate.display = cbDisplayCurrentDate.checked;
     if (cbDisplayNumberofCaches) pkg.options.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
+    if (cbDisplayLegend) {
+        const legend = pkg.options.infos.legend || (pkg.options.infos.legend = {});
+        legend.display = cbDisplayLegend.checked;
+    }
 
     if (event?.target?.id === "inputTitle") {
         const title = String(event.target.value || '').slice(0, 500);
@@ -7455,6 +7465,7 @@ export function syncInfosOptionsUI() {
     if (cbDisplayTitle) cbDisplayTitle.checked = infos.title?.display === true;
     if (cbDisplayNumberofCaches) cbDisplayNumberofCaches.checked = infos.numberOfCaches?.display === true;
     if (cbDisplayCurrentDate) cbDisplayCurrentDate.checked = infos.currentDate?.display === true;
+    if (cbDisplayLegend) cbDisplayLegend.checked = infos.legend?.display === true;
     if (inputTitle) inputTitle.value = infos.title?.text ?? '';
 
     // displayFrames() écrit le texte du titre et applique la visibilité des

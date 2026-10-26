@@ -286,7 +286,10 @@ test('option : un DNF trouvé le jour même s\'affiche un instant puis s\'efface
   // Au repos, la cache est affichée : sa résolution (2021) tombe après la
   // fin de la période des trouvailles (2012) — même règle que GC9ZZZZ. Seule
   // l'animation la masque, elle disparaît le jour où elle apparaît.
-  expect(await mapCodes(page, 'dnf')).toEqual(['GC8DAYX']);
+  // La case est déjà proposée par le DNF du My Finds : le rechargement des
+  // DNF qui suit l'import du fichier peut encore être en vol — attendre
+  // GC8DAYX plutôt que lire la carte trop tôt.
+  await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC8DAYX']);
 
   // Sans l'option : aucun effacement ce jour-là.
   await setRhythm(page, 60);
@@ -355,6 +358,32 @@ test('période de découverte : un DNF vivant dans la fenêtre reste affiché', 
   await setBound('#datePickerEnd', '31/12/2011');
   await expect(page.locator('#dnfDisplayHint')).toContainText('1 DNF dans la sélection');
   await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC2PR3N']);
+});
+
+
+// Légende optionnelle (#mapLegend, options.infos.legend.display — décochée
+// par défaut) : une ligne par famille hors trouvailles affichée, masquée
+// sans la case. La vidéo la repeint via overlay_canvas.js (mêmes ids DOM).
+test('la légende optionnelle suit les familles hors trouvailles affichées', async ({ page }) => {
+  await openWithData(page);
+  await showDnf(page);
+  // Masquée par défaut même avec un DNF affiché.
+  await expect(page.locator('#mapLegend')).toBeHidden();
+
+  // Onglet Style → Titres → cible « Infos » → « Afficher la légende ».
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
+  await page.locator('#gcCssTargetInfos').click();
+  await expect(page.locator('#cbDisplayLegend')).not.toBeChecked();
+  await page.locator('#cbDisplayLegend').check();
+  await expect(page.locator('#mapLegend')).toBeVisible();
+  await expect(page.locator('#legendDnfRow')).toBeVisible();
+  await expect(page.locator('#legendDnfLabel')).toHaveText('DNF (échec)');
+  // Pas de caches posées dans la fixture : la ligne owner reste masquée.
+  await expect(page.locator('#legendOwnerRow')).toBeHidden();
+
+  await page.locator('#cbDisplayLegend').uncheck();
+  await expect(page.locator('#mapLegend')).toBeHidden();
 });
 
 

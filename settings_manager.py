@@ -709,6 +709,9 @@ class InfosOptions:
     title: InfosTitle = field(default_factory=InfosTitle)
     number_of_caches: bool = True
     current_date: bool = True
+    # Légende des points hors trouvailles (DNF, caches posées) — masquée
+    # par défaut.
+    legend: bool = False
     title_css: str = ""
     infos_css: str = ""
 
@@ -1377,6 +1380,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             ),
             number_of_caches=bool(i.get("number_of_caches", p.infos.number_of_caches)),
             current_date=bool(i.get("current_date", p.infos.current_date)),
+            legend=bool(i.get("legend", p.infos.legend)),
             title_css=sanitize_overlay_css(i.get("title_css", p.infos.title_css)),
             infos_css=sanitize_overlay_css(i.get("infos_css", p.infos.infos_css)),
         )
@@ -3041,6 +3045,7 @@ class SettingsManager:
                 },
                 'number_of_caches': prof.infos.number_of_caches,
                 'current_date': prof.infos.current_date,
+                'legend': prof.infos.legend,
                 'title_css': prof.infos.title_css,
                 'infos_css': prof.infos.infos_css,
             },

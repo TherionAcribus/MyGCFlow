@@ -1701,6 +1701,7 @@ class ProfileManager {
                 },
                 number_of_caches: infos.numberOfCaches?.display !== false,
                 current_date: infos.currentDate?.display !== false,
+                legend: infos.legend?.display === true,
                 title_css: extractCssDeclarations(titleCssTextarea ? titleCssTextarea.value : ''),
                 infos_css: extractCssDeclarations(infosCssTextarea ? infosCssTextarea.value : ''),
             };
@@ -2790,6 +2791,8 @@ function applyInfosState(infosOptions) {
 
         (infos.numberOfCaches || (infos.numberOfCaches = {})).display = !!infosOptions.number_of_caches;
         (infos.currentDate || (infos.currentDate = {})).display = !!infosOptions.current_date;
+        // « legend » est absent des thèmes antérieurs : non affichée alors.
+        (infos.legend || (infos.legend = {})).display = !!infosOptions.legend;
 
         dbgProfiles('📄 Paramètres infos appliqués:', infos);
     } catch (error) {

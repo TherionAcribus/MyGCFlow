@@ -1,0 +1,50 @@
+/* Légende des points hors trouvailles (DNF, caches posées). Optionnelle
+   (case « Afficher la légende » de l'onglet Informations), en bas à gauche —
+   l'opposé du cartouche d'infos — pour laisser la trajectoire respirer.
+   Mêmes contraintes de rendu vidéo que #infosFrame (overlay_canvas.js) :
+   chaque élément n'a qu'une couleur, le symbole et son libellé sont donc
+   deux éléments séparés. */
+#mapLegend {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    box-shadow: 0px 6px 16px 0px rgba(15, 23, 42, 0.12);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.legend-row {
+    display: block;
+}
+
+.legend-sym {
+    display: inline-block;
+    width: 1.2em;
+    text-align: center;
+    font-size: 1.1em;
+    line-height: 1;
+    vertical-align: baseline;
+}
+
+/* Point DNF : noir bordé de blanc (point_webgl_style.js), reproduit par un
+   halo clair pour rester lisible sur le cartouche comme sur la vidéo. */
+.legend-sym-dnf {
+    color: #000000;
+    text-shadow: 0 0 2px #ffffff, 0 0 2px #ffffff;
+}
+
+/* Cache posée : étoile à la couleur du contour du thème, posée par
+   syncMapLegend (frames.js) — le style de base suit le défaut. */
+.legend-sym-owner {
+    color: #ffc107;
+}

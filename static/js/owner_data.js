@@ -104,6 +104,8 @@ function applyChange() {
     // Panneaux Stats de source « caches posées » (et galerie) : nouvel index.
     pkg.refreshStatsPanels?.();
     pkg.renderStatsTab?.();
+    // Légende de la carte : la ligne « cache posée » suit l'affichage.
+    pkg.syncMapLegend?.();
 }
 
 // (Re)charge les caches posées du serveur. Toujours lues sur la page
