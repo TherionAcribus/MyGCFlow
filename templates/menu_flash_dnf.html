@@ -2,8 +2,9 @@
 {# Flash d'apparition des points DNF (mode principal) : réglage du thème,
    comme le flash des trouvailles. « Comme les trouvailles » (défaut) le
    rejoue ; les autres formes et couleurs ne servent qu'au flash propre.
-   Piloté par ui.js (initDnfFlashControls). #}
-<div id="flashDnf">
+   Piloté par ui.js (initDnfFlashControls). Proposé seulement quand les
+   logs décrivent au moins un DNF (dnf_data.js, OFFER_IDS). #}
+<div id="flashDnf" hidden>
     <h5 class="gc-section-title">
         <i class="ti ti-bolt text-muted me-1"></i>{{ _("Flash des DNF") }}{{ profile_scope_badge() }}
     </h5>

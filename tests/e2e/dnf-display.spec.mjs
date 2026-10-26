@@ -252,6 +252,24 @@ test('un DNF trouvé s\'efface pendant la lecture, avec une célébration facult
 });
 
 
+// Sans DNF connus, la case « Mes DNF » et les réglages du thème restent
+// masqués (OFFER_IDS de dnf_data.js) ; un import les révèle.
+test('la case « Mes DNF » et ses réglages n\'apparaissent qu\'avec des DNF', async ({ page, request }) => {
+  await request.post('/api/logs/clear').catch(() => {});
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await expect(page.locator('#dnfDisplayField')).toBeHidden();
+  // Sous-onglet Flash de l'onglet Style : hors onglet actif, seul
+  // l'attribut hidden est fiable (le panneau masque sinon à tort).
+  await expect(page.locator('#flashDnf')).toHaveJSProperty('hidden', true);
+
+  await openWithData(page);
+  await expect(page.locator('#dnfDisplayField')).toBeVisible();
+  await expect(page.locator('#flashDnf')).toHaveJSProperty('hidden', false);
+});
+
+
 test('le trait de déplacement passe par les DNF, sauf si on les en retire', async ({ page }) => {
   await openWithData(page);
   await enableTrail(page);

@@ -557,7 +557,9 @@ célébrations et les effacements (en cours et cumulés).
 
 **Préférences globales** (onglet Données, panneau des filtres, « Mes DNF »)
 : `dnf_display` (masqués par défaut) et `dnf_in_trail` (inclus par défaut,
-sans effet tant que l'affichage est coupé).
+sans effet tant que l'affichage est coupé). La case et les réglages du
+thème (sous-onglet Flash) ne sont proposés que quand les logs importés
+décrivent au moins un DNF — placé ou non (`OFFER_IDS`, dnf_data.js).
 
 ## Caches posées sur la carte principale
 

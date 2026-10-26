@@ -119,7 +119,10 @@ Autres repères :
   DNF ont leur propre couche, sous les trouvailles : source
   `window.dnfVectorSource` (pas `window.vectorSource`), jamais dans
   `pointsByDate` — exemple dans `dnf-display.spec.mjs` ; effacements et
-  flashs DNF relevés par `getDnfDebugState()`. Les jetons d'aperçu
+  flashs DNF relevés par `getDnfDebugState()`. La case « Mes DNF » et les
+  réglages `flash.dnf` n'existent qu'avec des DNF importés (`#dnfDisplayField`
+  / `#flashDnf` masqués sinon, `OFFER_IDS` de dnf_data.js) : un spec qui les
+  manipule doit d'abord importer des logs portant un DNF. Les jetons d'aperçu
   (fichier ou export du favori) vivent sous `pending_log_imports/` du
   répertoire de **données** — pas dans `%TEMP%`, partagé entre l'app,
   pytest et le harnais e2e : un export reçu d'un run y ressortait au

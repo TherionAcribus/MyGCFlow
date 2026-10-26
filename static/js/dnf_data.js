@@ -9,6 +9,10 @@
 // défaut) et dnf_in_trail (le trait passe par les DNF, par défaut).
 // Rien ici sur la page Évolution.
 //
+// Proposés seulement quand les logs importés décrivent au moins un DNF :
+// sans eux, la case de l'onglet Données et les réglages du thème restent
+// masqués (même motif que les caches posées, owner_data.js).
+//
 // Les Stats comptent les DNF même masqués sur la carte (le panneau est le
 // choix d'afficher) : les données sont toujours chargées sur la page
 // principale, et l'index des Stats suit la même sélection que les points.
@@ -35,10 +39,19 @@ let bound = false;
 // Change à chaque refiltrage : clé de mémoïsation du trait de déplacement.
 export let dnfRevision = 0;
 
+// Blocs proposés seulement quand des DNF existent.
+const OFFER_IDS = ['dnfDisplayField', 'flashDnf'];
+
 function el(id) { return document.getElementById(id); }
 
+// Au moins un DNF connu, placé ou non (`pending` compte les caches en DNF
+// sans position connue — c'est de la donnée, l'option reste proposée).
+function hasDnfRecords() {
+    return loaded.length > 0 || pending > 0;
+}
+
 export function isDnfDisplayEnabled() {
-    return window.userSettings?.dnf_display === true;
+    return window.userSettings?.dnf_display === true && hasDnfRecords();
 }
 
 export function isDnfInTrail() {
@@ -85,6 +98,7 @@ export function rebuildDnfIndex() {
 
 function applyChange() {
     rebuildDnfIndex();
+    renderOffer();
     // Carte au repos : à jour tout de suite. En animation, au prochain jour
     // ou au prochain saut de la barre de chronologie.
     if (!pkg.isAnimationInProgress?.()) pkg.syncDnfStatic?.();
@@ -136,7 +150,20 @@ function renderHint() {
     hint.textContent = parts.join(' · ');
 }
 
-function syncTrailBox() {
+// Case de l'onglet Données et réglages du thème : visibles seulement avec
+// des DNF (attribut hidden, sans classe d-* — AGENTS.md).
+function renderOffer() {
+    const offered = hasDnfRecords();
+    for (const id of OFFER_IDS) {
+        const node = el(id);
+        if (node) node.hidden = !offered;
+    }
+    syncBoxes();
+}
+
+function syncBoxes() {
+    const display = el('checkDnfDisplay');
+    if (display) display.checked = window.userSettings?.dnf_display === true;
     const trail = el('checkDnfInTrail');
     if (!trail) return;
     trail.checked = window.userSettings?.dnf_in_trail !== false;
@@ -147,7 +174,7 @@ async function onDisplayToggle(e) {
     const box = e.currentTarget;
     const on = box.checked;
     if (window.userSettings) window.userSettings.dnf_display = on;
-    syncTrailBox();
+    syncBoxes();
     applyChange();
     try {
         await reportSave(box, saveSettingsPatch({ dnf_display: on }));
@@ -172,8 +199,7 @@ export function initDnfUI() {
     const display = el('checkDnfDisplay');
     if (!display) return;
     bound = true;
-    display.checked = isDnfDisplayEnabled();
-    syncTrailBox();
+    syncBoxes();
     display.addEventListener('change', onDisplayToggle);
     el('checkDnfInTrail')?.addEventListener('change', onTrailToggle);
     reloadDnfData();
