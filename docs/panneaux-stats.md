@@ -386,7 +386,9 @@ ne peuvent pas recevoir de DNF, par cumuls des index (`countUpTo`,
 durée) et `dnf_visits` (record de passages sur une même cache, détail = code
 GC), toutes deux issues de `dnfStatesAt` ; `owned_active` /
 `owned_disabled` / `owned_archived` /
-`maintenances` (`ownerStatesAt`). Un panneau qui en porte se redessine les
+`maintenances` (`ownerStatesAt`). `dnfStatsAtDay` / `ownerStatsAtDay`
+mémoïsent le relevé par (révision, jour) — les tweens des compteurs relisent
+un même jour en O(1). Un panneau qui en porte se redessine les
 jours sans événement (`panelFollowsDay`, clé `counterDay`). Libellés selon la
 source (`statsCounterLabel`) : « DNF », « Caches posées », « Jours avec
 DNF »…

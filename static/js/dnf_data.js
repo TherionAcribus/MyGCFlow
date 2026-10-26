@@ -30,6 +30,7 @@ let entries = [];     // entrées filtrées (dnf_model.mjs), carte
 let statsEntries = [];   // mêmes entrées, affichées ou non (tuiles Stats)
 let statsIndex = null;   // { revision, byDate } — source « DNF » des Stats
 let statsRevision = 0;
+let statesMemo = null;   // { revision, day, states } — tuiles « au jour »
 let bound = false;
 // Change à chaque refiltrage : clé de mémoïsation du trait de déplacement.
 export let dnfRevision = 0;
@@ -57,9 +58,16 @@ export function dnfStatsIndex() {
     return statsIndex;
 }
 
-// Tuiles « DNF en cours » / « DNF résolus » au jour `day` (numéro de jour).
+// Tuiles « DNF en cours » / « DNF résolus » au jour `day` (numéro de jour,
+// Infinity au repos). Mémoïsé par (révision, jour) : les tweens des
+// compteurs l'appellent à chaque frame — un même jour est relu en O(1).
 export function dnfStatsAtDay(day) {
-    return dnfStatesAt(statsEntries, day);
+    if (statesMemo && statesMemo.revision === statsRevision && statesMemo.day === day) {
+        return statesMemo.states;
+    }
+    const states = dnfStatesAt(statsEntries, day);
+    statesMemo = { revision: statsRevision, day, states };
+    return states;
 }
 
 // Refiltre selon la sélection courante. Appelé à chaque reconstruction de

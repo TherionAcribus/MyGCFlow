@@ -32,6 +32,7 @@ let entries = [];         // entrées filtrées (owner_model.mjs), carte
 let statsEntries = [];    // mêmes entrées, affichées ou non (tuiles Stats)
 let statsIndex = null;    // { revision, byDate } — source « caches posées » des Stats
 let statsRevision = 0;
+let statesMemo = null;    // { revision, day, states } — tuiles « au jour »
 let bound = false;
 // Change à chaque refiltrage : clé de mémoïsation du trait de déplacement.
 export let ownerRevision = 0;
@@ -63,10 +64,17 @@ export function ownerStatsIndex() {
     return statsIndex;
 }
 
-// Tuiles d'état au jour `day` (numéro de jour) : actives, désactivées,
-// archivées, maintenances faites.
+// Tuiles d'état au jour `day` (numéro de jour, Infinity au repos) : actives,
+// désactivées, archivées, maintenances faites. Mémoïsé par (révision, jour) :
+// les tweens des compteurs l'appellent à chaque frame — un même jour est
+// relu en O(1).
 export function ownerStatsAtDay(day) {
-    return ownerStatesAt(statsEntries, day);
+    if (statesMemo && statesMemo.revision === statsRevision && statesMemo.day === day) {
+        return statesMemo.states;
+    }
+    const states = ownerStatesAt(statsEntries, day);
+    statesMemo = { revision: statsRevision, day, states };
+    return states;
 }
 
 // Relevé pour les tests : caches servies, filtrées, comptes du serveur.
