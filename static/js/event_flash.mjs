@@ -18,7 +18,7 @@
 
 // Ordre = priorité décroissante.
 export const EVENT_FLASH_KINDS = Object.freeze([
-    'archive', 'disable', 'enable', 'publish', 'alert', 'maintenance',
+    'archive', 'disable', 'enable', 'publish', 'milestone', 'alert', 'maintenance',
     'ftf', 'favorite', 'find', 'dnf', 'note', 'reviewer',
 ]);
 
@@ -45,6 +45,9 @@ export const EVENT_FLASH_DEFAULTS = Object.freeze({
     disable: kindDefaults('implode', 30, '#9e9e9e'),
     enable: kindDefaults('echo', 30, '#66bb6a'),
     publish: kindDefaults('same', 40, '#ffffff'),
+    // Palier rond de trouvailles d'une cache : seulement si l'effet est coché
+    // (points.poses_effects.milestone_flash, poses_effects.mjs).
+    milestone: kindDefaults('fireworks', 50, '#ffd54f'),
     alert: kindDefaults('target', 30, '#ff9800'),
     maintenance: kindDefaults('sparkle', 28, '#43a047'),
     ftf: kindDefaults('fireworks', 34, '#009dff'),

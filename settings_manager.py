@@ -19,6 +19,7 @@ from event_flash import (
     coerce_event_flashes, coerce_owner_flashes, event_flash_defaults, owner_flash_defaults,
     scale_event_flash_sizes, scale_owner_flash_sizes,
 )
+from poses_effects import coerce_poses_effects, poses_effects_defaults
 from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
@@ -711,6 +712,11 @@ class PointStyle:
     dnf_border_color: str = "#ffffff"
     dnf_border_width: int = 2  # px, DNF_BORDER_WIDTH_RANGE
     dnf_icon: str = "dnf"  # DNF_ICON_MODES
+    # Page Mes poses : animation des points (taille selon la popularité,
+    # lueur d'activité, fraîcheur, flash de palier, pulsation des désactivées,
+    # style des archivées). Défauts, préréglages et validation dans
+    # poses_effects.py ; sans effet sur les autres pages.
+    poses_effects: dict = field(default_factory=poses_effects_defaults)
 
 
 @dataclass
@@ -1343,6 +1349,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             dnf_border_width=_clamp_int(pt.get("dnf_border_width"), pp.dnf_border_width,
                                         *DNF_BORDER_WIDTH_RANGE),
             dnf_icon=_coerce_choice(pt.get("dnf_icon"), DNF_ICON_MODES, pp.dnf_icon),
+            poses_effects=coerce_poses_effects(pt.get("poses_effects"), pp.poses_effects),
         )
 
         # Options flash
@@ -3034,6 +3041,7 @@ class SettingsManager:
                 'dnf_border_color': prof.points.dnf_border_color,
                 'dnf_border_width': prof.points.dnf_border_width,
                 'dnf_icon': prof.points.dnf_icon,
+                'poses_effects': copy.deepcopy(prof.points.poses_effects),
             },
             'flash': {
                 'mode': prof.flash.mode,

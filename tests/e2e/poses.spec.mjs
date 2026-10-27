@@ -345,7 +345,7 @@ test('les flashs par événement se règlent dans le thème', async ({ page, req
   await page.locator('a[href="#style"]').click();
   await page.locator('a[href="#tabFlash"]').click();
   const rows = page.locator('#flashEvents [data-event-flash-kind]');
-  await expect(rows).toHaveCount(12);
+  await expect(rows).toHaveCount(13);
   const ftf = page.locator('#flashEvents [data-event-flash-kind="ftf"]');
   await expect(ftf.locator('[data-event-flash-field="mode"]')).toHaveValue('fireworks');
   const favorite = page.locator('#flashEvents [data-event-flash-kind="favorite"]');

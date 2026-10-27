@@ -41,6 +41,15 @@
             "borderColor": "#ffffff",
             "borderWidth": 2,
             "icon": "dnf"
+        },
+        "posesEffects": {
+            "level": "sober",
+            "popularity": {"enabled": false, "scale": "relative", "max_scale": 2},
+            "activity": {"enabled": false, "color": "#ffb300", "half_life_days": 14, "intensity": 60},
+            "freshness": {"enabled": false, "after_days": 365, "strength": 70},
+            "milestone_flash": false,
+            "disabled_pulse": false,
+            "archived_style": "grey"
         }
     },
     "animation":{

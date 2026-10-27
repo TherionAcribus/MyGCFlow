@@ -26,6 +26,13 @@ import {
 } from './point_decorators.mjs';
 import { SHAPE_GEOMETRY } from './point_geometry.mjs';
 import { applyDnfIcon, dnfShapeStyle } from './dnf_point_style.mjs';
+import {
+    applyDisabledPulse,
+    applyPosesFreshness,
+    applyPosesGhost,
+    applyPosesPopularity,
+    archivedOpacityFor,
+} from './poses_point_style.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
 // les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
@@ -239,9 +246,21 @@ export function buildPointStyle(pointOptions, { evolution = false, poses = false
     }
 
     if (evolution) {
-        if (poses) applyPosesColors(pointStyle, greyIconOffset);
+        // Page Mes poses : effets du thème (points.poses_effects,
+        // poses_point_style.mjs). L'opacité d'apparition de la chronologie
+        // remplace celle du symbole : les facteurs d'opacité viennent après.
+        const effects = poses ? pointOptions.posesEffects : null;
+        if (poses) {
+            applyPosesColors(pointStyle, greyIconOffset);
+            applyPosesGhost(pointStyle, effects);
+        }
         applyEvolutionTimeline(pointStyle, pointOptions);
-        if (poses) applyPosesOpacity(pointStyle);
+        if (poses) {
+            applyPosesPopularity(pointStyle, effects);
+            applyPosesOpacity(pointStyle, archivedOpacityFor(effects, 'icon-src' in pointStyle));
+            applyPosesFreshness(pointStyle, effects);
+            applyDisabledPulse(pointStyle, effects);
+        }
     } else if (owner) {
         applyMainPageTimeline(pointStyle, pointOptions, greyIconOffset);
     } else {

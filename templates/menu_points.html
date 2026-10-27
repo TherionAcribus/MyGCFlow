@@ -245,6 +245,131 @@
     </div>
     {% endif %}
 
+    {% if mode == 'poses' %}
+    <!-- Mes poses : animation des points (points.poses_effects du thème,
+         poses_effects.mjs, docs/mode-poses.md). Chaque effet est optionnel ;
+         le niveau coche un préréglage, une case touchée passe en
+         « Personnalisé ». Piloté par ui.js (initPosesEffectsControls). -->
+    <div id="posesEffectsCard" class="card mt-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">
+                <i class="ti ti-sparkles text-muted me-1"></i>{{ _("Animation des caches posées") }}
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-5">
+                    <label class="form-label" for="selectPosesEffectsLevel">{{ _("Niveau d'animation") }}</label>
+                    <select id="selectPosesEffectsLevel" class="form-select" aria-describedby="helpPosesEffectsLevel">
+                        <option value="sober">{{ _("Sobre") }}</option>
+                        <option value="balanced">{{ _("Équilibré") }}</option>
+                        <option value="rich">{{ _("Riche") }}</option>
+                        <option value="custom" disabled>{{ _("Personnalisé") }}</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-7">
+                    <small id="helpPosesEffectsLevel" class="form-hint text-muted">{{ _("Sobre : aucun effet. Équilibré : taille, fraîcheur et flash de palier. Riche : tous les effets. Cochez ou décochez un effet pour composer le vôtre.") }}</small>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <!-- Taille selon la popularité -->
+                <div class="col-12 col-lg-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="posesFxPopularity" role="switch" aria-describedby="helpPosesFxPopularity">
+                        <label class="form-check-label fw-medium" for="posesFxPopularity">{{ _("Taille selon la popularité") }}</label>
+                    </div>
+                    <small id="helpPosesFxPopularity" class="form-hint text-muted">{{ _("La cache grossit à mesure qu'elle reçoit des trouvailles.") }}</small>
+                    <fieldset id="posesFxPopularityFields" class="row g-2 mt-1">
+                        <div class="col-12 col-sm-7">
+                            <label class="form-label" for="posesFxPopularityScale">{{ _("Échelle") }}</label>
+                            <select id="posesFxPopularityScale" class="form-select form-select-sm">
+                                <option value="relative">{{ _("Par rapport à la plus trouvée") }}</option>
+                                <option value="fixed">{{ _("Paliers fixes (1, 3, 10, 25, 50, 100…)") }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-5">
+                            <label class="form-label" for="posesFxPopularityMax">{{ _("Taille maximale") }}</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">×</span>
+                                <input type="number" class="form-control" id="posesFxPopularityMax" min="1.2" max="4" step="0.1">
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <!-- Lueur d'activité -->
+                <div class="col-12 col-lg-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="posesFxActivity" role="switch" aria-describedby="helpPosesFxActivity">
+                        <label class="form-check-label fw-medium" for="posesFxActivity">{{ _("Lueur d'activité") }}</label>
+                    </div>
+                    <small id="helpPosesFxActivity" class="form-hint text-muted">{{ _("Une lueur s'allume derrière la cache à chaque trouvaille, puis s'éteint peu à peu.") }}</small>
+                    <fieldset id="posesFxActivityFields" class="row g-2 mt-1">
+                        <div class="col-4">
+                            <label class="form-label" for="posesFxActivityColor">{{ _("Couleur") }}</label>
+                            <input type="color" class="form-control form-control-color" id="posesFxActivityColor" value="#ffb300">
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label" for="posesFxActivityHalfLife">{{ _("S'éteint de moitié en") }}</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" class="form-control" id="posesFxActivityHalfLife" min="1" max="365" step="1">
+                                <span class="input-group-text">{{ _("jours") }}</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="posesFxActivityIntensity">{{ _("Intensité") }}</label>
+                            <input type="range" class="form-range" id="posesFxActivityIntensity" min="10" max="100" step="5">
+                        </div>
+                    </fieldset>
+                </div>
+
+                <!-- Fraîcheur -->
+                <div class="col-12 col-lg-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="posesFxFreshness" role="switch" aria-describedby="helpPosesFxFreshness">
+                        <label class="form-check-label fw-medium" for="posesFxFreshness">{{ _("Fraîcheur") }}</label>
+                    </div>
+                    <small id="helpPosesFxFreshness" class="form-hint text-muted">{{ _("Une cache sans trouvaille depuis longtemps pâlit, puis reprend sa couleur à la trouvaille suivante.") }}</small>
+                    <fieldset id="posesFxFreshnessFields" class="row g-2 mt-1">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label" for="posesFxFreshnessAfter">{{ _("Pâlit après") }}</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" class="form-control" id="posesFxFreshnessAfter" min="7" max="3650" step="1">
+                                <span class="input-group-text">{{ _("jours") }}</span>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label" for="posesFxFreshnessStrength">{{ _("Intensité") }}</label>
+                            <input type="range" class="form-range" id="posesFxFreshnessStrength" min="10" max="100" step="5">
+                        </div>
+                    </fieldset>
+                </div>
+
+                <!-- Flash de palier, pulsation, archivées -->
+                <div class="col-12 col-lg-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="posesFxMilestone" role="switch" aria-describedby="helpPosesFxMilestone">
+                        <label class="form-check-label fw-medium" for="posesFxMilestone">{{ _("Flash de palier") }}</label>
+                    </div>
+                    <small id="helpPosesFxMilestone" class="form-hint text-muted">{{ _("Un flash marque les trouvailles rondes d'une cache (10ᵉ, 50ᵉ, 100ᵉ…). Forme et couleur : onglet Flash, « Palier de trouvailles ».") }}</small>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="posesFxPulse" role="switch" aria-describedby="helpPosesFxPulse">
+                        <label class="form-check-label fw-medium" for="posesFxPulse">{{ _("Pulsation des désactivées") }}</label>
+                    </div>
+                    <small id="helpPosesFxPulse" class="form-hint text-muted">{{ _("Une cache désactivée pulse lentement pendant l'animation.") }}</small>
+                    <label class="form-label mt-3" for="posesFxArchivedStyle">{{ _("Style des caches archivées") }}</label>
+                    <select id="posesFxArchivedStyle" class="form-select form-select-sm" aria-describedby="helpPosesFxArchivedStyle">
+                        <option value="grey">{{ _("Grisées") }}</option>
+                        <option value="ghost">{{ _("Fantôme (contour seul)") }}</option>
+                    </select>
+                    <small id="helpPosesFxArchivedStyle" class="form-hint text-muted">{{ _("En mode icônes, le fantôme est une icône très effacée. Pour les faire disparaître : onglet Données.") }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Sous-menu Icône -->
     <div id="iconeOptions" class="point-options" style="display: none;">
         <div class="card">

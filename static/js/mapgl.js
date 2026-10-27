@@ -118,6 +118,8 @@ import { DNF_NOT_VANISHING } from './point_decorators.mjs';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { EVO_FILTER, EVO_STATIC_FROM, POINT_DISAPPEAR_MS } from './evolution_style.mjs';
 import { isLifecyclePage, isPosesPage } from './app_mode.mjs';
+import { buildPosesActivityStyle, POSES_ACTIVITY_FILTER } from './poses_point_style.mjs';
+import { posesEffectsAnimate } from './poses_effects.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { captureRatioFor } from './capture_resolution.mjs';
@@ -226,6 +228,10 @@ function loadHtml2Canvas() {
 
 // couche de points
 let vectorLayer;
+// Page Mes poses : lueur d'activité sous les points, même source
+// (points.poses_effects.activity, poses_point_style.mjs) — absente quand
+// l'effet est décoché.
+let posesActivityLayer;
 // Couche des points DNF (syncDnf), sous celle des trouvailles : un
 // géocacheur veut voir ce qu'il a trouvé avant ce qu'il n'a pas trouvé.
 // Source : window.dnfVectorSource.
@@ -687,6 +693,9 @@ export function refreshPoints(){
     // Caches posées : même règle (état grisé porté par les objets eux-mêmes).
     if (ownerToDisplay.length) displayOwnerPoints(ownerToDisplay);
     else if (!isAnimationInProgress()) syncOwnerStatic();
+    // Pages « cycle de vie » : le moteur recalcule ce que le nouveau style lit
+    // dans les features (Mes poses : attributs des effets de points).
+    if (isLifecyclePage()) lifecycleEngine()?.styleChanged?.();
 }
 
 
@@ -1036,6 +1045,19 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
             zIndex: 1001,
         });
         map.addLayer(vectorLayer);
+        if (isPosesPage()) {
+            const activityStyle = buildPosesActivityStyle(pointOptions, pointOptions.posesEffects);
+            if (activityStyle) {
+                posesActivityLayer = new ol.layer.WebGLPoints({
+                    source: window.vectorSource,
+                    style: activityStyle,
+                    filter: POSES_ACTIVITY_FILTER,
+                    variables: pointStyleVariables,
+                    zIndex: 1000.95,
+                });
+                map.addLayer(posesActivityLayer);
+            }
+        }
     }
     if (!pointAppearListenerKey) {
         pointAppearListenerKey = map.on('precompose', updatePointAppearClock);
@@ -1051,6 +1073,9 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
     if (vectorLayer && !layerOnMap) {
         dbgMapgl('[displayWebGLPoints] Re-ajout du layer sur la carte');
         map.addLayer(vectorLayer);
+    }
+    if (posesActivityLayer && !map.getLayers().getArray().includes(posesActivityLayer)) {
+        map.addLayer(posesActivityLayer);
     }
 
     // Alimenter la source avec les features filtrées
@@ -1190,8 +1215,11 @@ function updatePointAppearClock() {
     const glowDays = Math.max(0, Number(pkg.options.point?.recentGlowDays) || 0);
     if (glowDays > 0) pointStyleVariables.glowMs = Math.max(1, glowDays * animationMsPerDay());
     // La persistance s'estompe en continu : chaque frame diffère de la précédente
-    // tant qu'une animation tourne, même sans nouveau point ni flash.
-    setPointsGlowing(glowDays > 0 && isAnimationInProgress());
+    // tant qu'une animation tourne, même sans nouveau point ni flash. Même cas
+    // pour les effets de Mes poses (lueur qui s'éteint, pâleur, croissance,
+    // pulsation).
+    const posesEffectsLive = isPosesPage() && posesEffectsAnimate(pkg.options.point?.posesEffects);
+    setPointsGlowing((glowDays > 0 || posesEffectsLive) && isAnimationInProgress());
 
     // updateAnimatedCacheCount écrit le compteur dans le DOM : il doit
     // s'évaluer même quand la persistance est active, sinon le compteur reste
@@ -2305,6 +2333,10 @@ export function clearMap(){
         map.removeLayer(vectorLayer);
         vectorLayer = undefined;
     }
+    if (posesActivityLayer) {
+        map.removeLayer(posesActivityLayer);
+        posesActivityLayer = undefined;
+    }
     // Couche DNF : même sort (un style changé la recrée aussi).
     if (window.dnfVectorSource) window.dnfVectorSource.clear();
     for (const layer of [dnfLayer, dnfRingLayer]) if (layer) map.removeLayer(layer);
@@ -2877,6 +2909,11 @@ function syncOwner(isVisible, day, appear = null, flash = null) {
 
 // Relevé pour les tests : caches posées sur la carte et leur état, types des
 // derniers flashs (200 au plus), changements d'état appliqués, anneau présent.
+// Tests : la couche de lueur d'activité de Mes poses est sur la carte.
+export function posesActivityLayerShown() {
+    return !!posesActivityLayer && map.getLayers().getArray().includes(posesActivityLayer);
+}
+
 export function getOwnerDebugState() {
     const shownFeatures = window.ownerVectorSource?.getFeatures() || [];
     return {

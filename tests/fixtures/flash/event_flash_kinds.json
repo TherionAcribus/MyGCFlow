@@ -72,6 +72,14 @@
       "mode": "sparkle",
       "size": 28
     },
+    "milestone": {
+      "border_color": "#ffffff",
+      "border_color_type": "auto",
+      "color": "#ffd54f",
+      "color_type": "fix",
+      "mode": "fireworks",
+      "size": 50
+    },
     "note": {
       "border_color": "#ffffff",
       "border_color_type": "auto",
@@ -102,6 +110,7 @@
     "disable",
     "enable",
     "publish",
+    "milestone",
     "alert",
     "maintenance",
     "ftf",

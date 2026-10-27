@@ -7,8 +7,17 @@ import {
     STATE_ACTIVE,
     STATE_ARCHIVED,
     STATE_DISABLED,
+    FIXED_FIND_STEPS,
+    NO_DAY,
+    POP_LEVEL_MAX,
+    POP_LEVEL_PACK,
     appearancesInRange,
     buildPosesBase,
+    buildPosesEffects,
+    foundInRange,
+    perCacheRoundStep,
+    popularityLevel,
+    posesEffectAttrs,
     buildPosesTimeline,
     filterPosesRows,
     findDayCounts,
@@ -460,4 +469,83 @@ test('flashs : table des types, résolution, taille', () => {
     assert.equal(scaled.size, 72);
     assert.equal(scaledFlash(fav, 2), scaled);  // même objet : regroupements, cache de styles
     assert.equal(scaledFlash(fav, 1), fav);
+});
+
+test('flash de palier : le jour du multiple, sous la publication, au-dessus de la FTF', () => {
+    const p = payload();
+    for (let d = 21; d <= 29; d++) {
+        p.ev.cache.push(0); p.ev.day.push(d); p.ev.kind.push(K.find);
+        p.ev.fav.push(0); p.ev.folded.push(0); p.ev.author.push(1);
+    }
+    const base = buildPosesBase(p);
+    const rows = filterRows(base, { undatedMode: 'keep' });
+    const tl = buildPosesTimeline(base, rows);
+    // 10ᵉ trouvaille de A le jour 28.
+    assert.deepEqual(flashesInRange(tl, base, 28, 28).map((f) => f.kind), ['milestone']);
+    assert.deepEqual(flashesInRange(tl, base, 27, 27).map((f) => f.kind), ['find']);
+    // Coupé (case décochée ou forme « aucun ») : la trouvaille joue.
+    const noMilestone = (kind) => kind !== 'milestone';
+    assert.deepEqual(flashesInRange(tl, base, 28, 28, noMilestone).map((f) => f.kind), ['find']);
+    assert.ok(EVENT_FLASH_KINDS.indexOf('milestone') < EVENT_FLASH_KINDS.indexOf('ftf'));
+    assert.ok(EVENT_FLASH_KINDS.indexOf('publish') < EVENT_FLASH_KINDS.indexOf('milestone'));
+});
+
+test('pas des paliers par cache', () => {
+    assert.equal(perCacheRoundStep(0), 0);
+    assert.equal(perCacheRoundStep(9), 0);
+    assert.equal(perCacheRoundStep(11), 10);
+    assert.equal(perCacheRoundStep(53), 25);
+    assert.equal(perCacheRoundStep(5000), 0);
+});
+
+test('niveau de taille : relatif (surface ∝ trouvailles) ou paliers fixes', () => {
+    assert.equal(popularityLevel(0, { maxFinds: 10 }), 0);
+    assert.equal(popularityLevel(10, { maxFinds: 10 }), POP_LEVEL_MAX);
+    assert.equal(popularityLevel(1, { maxFinds: 4 }), POP_LEVEL_MAX / 2);
+    assert.equal(popularityLevel(1, { maxFinds: 1e6 }), 1);   // jamais 0 une fois trouvée
+    const fixed = (n) => popularityLevel(n, { scale: 'fixed' });
+    assert.equal(fixed(1), Math.round(POP_LEVEL_MAX / FIXED_FIND_STEPS.length));
+    assert.equal(fixed(2), fixed(1));
+    assert.ok(fixed(100) > fixed(50));
+    assert.equal(fixed(5000), POP_LEVEL_MAX);
+    // Indépendant de la sélection.
+    assert.equal(popularityLevel(30, { scale: 'fixed', maxFinds: 30 }), popularityLevel(30, { scale: 'fixed', maxFinds: 3000 }));
+});
+
+test('attributs d’effet : dernière trouvaille, chaleur, niveau et transition', () => {
+    const { base, rows } = setup();
+    const fx = buildPosesEffects(base, rows, { scale: 'relative', halfLifeDays: 14 });
+    assert.equal(fx.maxFinds, 2);
+    const lv1 = popularityLevel(1, { maxFinds: 2 });
+    // A : trouvée les jours 0 et 1.
+    assert.deepEqual(posesEffectAttrs(base, fx, 0, 0),
+        { lastFind: 0, heatVal: 1, popLevels: lv1 * POP_LEVEL_PACK, popDay: 0 });
+    const a3 = posesEffectAttrs(base, fx, 0, 3);
+    assert.equal(a3.lastFind, 1);
+    assert.equal(a3.popLevels, POP_LEVEL_MAX * POP_LEVEL_PACK + lv1);
+    assert.equal(a3.popDay, 1);
+    assert.ok(Math.abs(a3.heatVal - (1 + 2 ** (-1 / 14))) < 1e-6);
+    // B : apparue le jour 2, pas encore trouvée le jour 4 → apparition, sans transition.
+    assert.deepEqual(posesEffectAttrs(base, fx, 1, 4), { lastFind: 2, heatVal: 0, popLevels: 0, popDay: NO_DAY });
+    // B : deux trouvailles le même jour → niveau max, depuis le niveau d'une seule.
+    const b5 = posesEffectAttrs(base, fx, 1, 5);
+    assert.equal(b5.popLevels, POP_LEVEL_MAX * POP_LEVEL_PACK + lv1);
+    assert.equal(b5.popDay, 5);
+    assert.equal(b5.heatVal, 2);
+});
+
+test('attributs d’effet : paliers fixes — même niveau, transition gardée au premier', () => {
+    const { base, rows } = setup();
+    const fx = buildPosesEffects(base, rows, { scale: 'fixed' });
+    const lv = popularityLevel(1, { scale: 'fixed' });
+    // A : la 2ᵉ trouvaille (jour 1) ne franchit aucun palier.
+    assert.deepEqual(posesEffectAttrs(base, fx, 0, 1).popLevels, lv * POP_LEVEL_PACK);
+    assert.equal(posesEffectAttrs(base, fx, 0, 1).popDay, 0);
+});
+
+test('caches trouvées dans une plage de jours', () => {
+    const { base, timeline } = setup();
+    assert.deepEqual(foundInRange(timeline, base, 0, 1), [0]);
+    assert.deepEqual(foundInRange(timeline, base, 2, 4), []);
+    assert.deepEqual(foundInRange(timeline, base, 5, 13).sort(), [1, 2]);
 });

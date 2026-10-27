@@ -1,0 +1,83 @@
+{
+  "archived_styles": [
+    "grey",
+    "ghost"
+  ],
+  "defaults": {
+    "activity": {
+      "color": "#ffb300",
+      "enabled": false,
+      "half_life_days": 14,
+      "intensity": 60
+    },
+    "archived_style": "grey",
+    "disabled_pulse": false,
+    "freshness": {
+      "after_days": 365,
+      "enabled": false,
+      "strength": 70
+    },
+    "level": "sober",
+    "milestone_flash": false,
+    "popularity": {
+      "enabled": false,
+      "max_scale": 2.0,
+      "scale": "relative"
+    }
+  },
+  "levels": [
+    "sober",
+    "balanced",
+    "rich",
+    "custom"
+  ],
+  "presets": {
+    "balanced": {
+      "activity": false,
+      "disabled_pulse": false,
+      "freshness": true,
+      "milestone_flash": true,
+      "popularity": true
+    },
+    "rich": {
+      "activity": true,
+      "disabled_pulse": true,
+      "freshness": true,
+      "milestone_flash": true,
+      "popularity": true
+    },
+    "sober": {
+      "activity": false,
+      "disabled_pulse": false,
+      "freshness": false,
+      "milestone_flash": false,
+      "popularity": false
+    }
+  },
+  "ranges": {
+    "after_days": [
+      7,
+      3650
+    ],
+    "half_life_days": [
+      1,
+      365
+    ],
+    "intensity": [
+      10,
+      100
+    ],
+    "max_scale": [
+      1.2,
+      4.0
+    ],
+    "strength": [
+      10,
+      100
+    ]
+  },
+  "scales": [
+    "relative",
+    "fixed"
+  ]
+}

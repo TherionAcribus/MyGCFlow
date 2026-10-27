@@ -83,6 +83,26 @@ export function buildPosesBase(payload) {
         }
     }
 
+    // Trouvailles reçues de chaque cache, par jour croissant (CSR : `ev` est
+    // trié par jour, le remplissage par cache conserve cet ordre) — effets de
+    // points (taille, lueur, fraîcheur) — et paliers ronds (`evRound`, log
+    // qui porte le cumul de sa cache à un multiple du pas de la cache).
+    const findStart = new Int32Array(n + 1);
+    for (let i = 0; i < n; i++) findStart[i + 1] = findStart[i] + base.findTotals[i];
+    const findDay = new Int32Array(findStart[n]);
+    const findFill = findStart.slice(0, n);
+    const roundStep = Int32Array.from(base.findTotals, perCacheRoundStep);
+    base.evRound = new Uint8Array(base.ev.cache.length);
+    for (let j = 0; j < base.ev.cache.length; j++) {
+        if (base.ev.kind[j] !== base.kindCode.find) continue;
+        const i = base.ev.cache[j];
+        const nth = findFill[i] - findStart[i] + 1;
+        findDay[findFill[i]++] = base.ev.day[j];
+        if (roundStep[i] > 0 && nth % roundStep[i] === 0) base.evRound[j] = 1;
+    }
+    base.findStart = findStart;
+    base.findDay = findDay;
+
     // Changements de chaque cache, dans l'ordre chronologique (CSR) : `st`
     // est trié par jour, le remplissage par cache conserve cet ordre.
     const chStart = new Int32Array(n + 1);
@@ -451,6 +471,9 @@ export function flashesInRange(timeline, base, fromDay, toDay, canFlash = () => 
         // Un log plié a été sauté avant tout : une FTF ramenée au jour
         // d'apparition ne flashe pas — la publication joue ce jour-là.
         if (base.evFtf?.[j]) offer(e, 'ftf');
+        // Palier rond de la cache (10ᵉ, 50ᵉ… trouvaille) : au-dessus de tout
+        // sauf les changements d'état et la publication.
+        if (base.evRound?.[j]) offer(e, 'milestone');
         offer(e, flashKindOfLog(logKind, !!base.ev.fav[j]));
     }
     const out = [];
@@ -480,6 +503,13 @@ export function findDayCounts(timeline, base) {
 const PER_CACHE_STEPS = [10, 25, 50, 100, 250, 500];
 const PER_CACHE_MAX = 4;
 
+// Pas des paliers d'une cache qui totalise `total` trouvailles (0 : aucun —
+// au-delà de 2 500 trouvailles, ou moins de 10).
+export function perCacheRoundStep(total) {
+    if (!(total >= PER_CACHE_STEPS[0])) return 0;
+    return PER_CACHE_STEPS.find((s) => Math.floor(total / s) <= PER_CACHE_MAX) ?? 0;
+}
+
 // Repères par cache de la barre de chronologie, calculés sur les trouvailles
 // reçues de la sélection (`timeline.evOrder` : les caches écartées par les
 // filtres ne marquent pas, c'est voulu) :
@@ -494,21 +524,16 @@ export function posesCacheMilestones(timeline, base) {
     const findCode = base?.kindCode?.find;
     if (!timeline || timeline.count === 0 || findCode === undefined) return out;
     const found = new Int32Array(timeline.count);
-    const steps = new Int32Array(timeline.count).fill(-1); // -1 : pas encore lu
     for (const j of timeline.evOrder) {
         if (base.ev.kind[j] !== findCode) continue;
         const k = timeline.featureOf[base.ev.cache[j]];
         if (k < 0) continue;
-        if (steps[k] < 0) {
-            // Le pas adaptatif exige le total de la cache — findTotals est
-            // indexé par ligne de base, lu une fois au premier find du k.
-            const total = base.findTotals[base.ev.cache[j]];
-            steps[k] = PER_CACHE_STEPS.find((s) => Math.floor(total / s) <= PER_CACHE_MAX) ?? 0;
-        }
         const n = ++found[k];
         const day = base.ev.day[j];
         if (n === 1) out.push({ day, k, kind: 'ftf', value: 1 });
-        if (steps[k] > 0 && n % steps[k] === 0) out.push({ day, k, kind: 'cacheRound', value: n });
+        // Palier rond : drapeau posé par buildPosesBase (même pas adaptatif
+        // que le flash de palier).
+        if (base.evRound?.[j]) out.push({ day, k, kind: 'cacheRound', value: n });
     }
     return out;
 }
@@ -527,4 +552,100 @@ export function maxFlashesInWindow(timeline, windowDays) {
         if (sum > max) max = sum;
     }
     return max;
+}
+
+// --- Effets de points (poses_effects.mjs) ---------------------------------
+//
+// Taille selon la popularité, lueur d'activité et fraîcheur ne dépendent que
+// des trouvailles reçues de chaque cache jusqu'au jour affiché. Elles passent
+// au shader par quatre attributs de la feature, réécrits seulement les jours
+// où la cache reçoit une trouvaille (et au repos / au saut) :
+//   lastFind   jour de la dernière trouvaille, sinon jour d'apparition ;
+//   heatVal    chaleur au jour `lastFind` (somme des trouvailles passées,
+//              chacune divisée par deux tous les `halfLifeDays` jours) — le
+//              shader la fait décroître depuis `lastFind` ;
+//   popLevels  niveau de taille courant × POP_LEVEL_PACK + niveau précédent ;
+//   popDay     jour du dernier changement de niveau (transition), NO_DAY
+//              sans trouvaille.
+
+export const POP_LEVEL_MAX = 32;
+export const POP_LEVEL_PACK = 64;
+export const FIXED_FIND_STEPS = Object.freeze([1, 3, 10, 25, 50, 100, 250, 500, 1000]);
+export const NO_DAY = -1e6;
+
+// Niveau de taille (0..POP_LEVEL_MAX) d'une cache à `finds` trouvailles :
+// 'relative' — surface proportionnelle aux trouvailles, la plus trouvée de la
+// sélection (`maxFinds`) au maximum ; 'fixed' — paliers FIXED_FIND_STEPS,
+// identiques quelle que soit la sélection.
+export function popularityLevel(finds, { scale = 'relative', maxFinds = 0 } = {}) {
+    if (!(finds > 0)) return 0;
+    if (scale === 'fixed') {
+        let reached = 0;
+        for (const step of FIXED_FIND_STEPS) if (finds >= step) reached++;
+        return Math.round(POP_LEVEL_MAX * reached / FIXED_FIND_STEPS.length);
+    }
+    if (!(maxFinds > 0)) return 0;
+    return Math.max(1, Math.round(POP_LEVEL_MAX * Math.sqrt(Math.min(1, finds / maxFinds))));
+}
+
+// Valeurs par trouvaille (alignées sur base.findDay) des caches `rows` :
+// niveau de taille, début de la série de même niveau, chaleur.
+export function buildPosesEffects(base, rows, { scale = 'relative', halfLifeDays = 14 } = {}) {
+    const total = base.findDay?.length || 0;
+    const level = new Uint8Array(total);
+    const runStart = new Int32Array(total);
+    const heat = new Float32Array(total);
+    let maxFinds = 0;
+    for (const i of rows) if (base.findTotals[i] > maxFinds) maxFinds = base.findTotals[i];
+    const halfLife = Math.max(1e-3, Number(halfLifeDays) || 14);
+    for (const i of rows) {
+        const a = base.findStart[i];
+        const b = base.findStart[i + 1];
+        let run = a;
+        for (let f = a; f < b; f++) {
+            const lv = popularityLevel(f - a + 1, { scale, maxFinds });
+            if (f === a || lv !== level[f - 1]) run = f;
+            level[f] = lv;
+            runStart[f] = run;
+            heat[f] = f === a ? 1 : heat[f - 1] * 2 ** (-(base.findDay[f] - base.findDay[f - 1]) / halfLife) + 1;
+        }
+    }
+    return { level, runStart, heat, maxFinds, scale, halfLifeDays: halfLife };
+}
+
+// Attributs d'effet de la cache `i` (ligne de la base) à la fin du jour `day`.
+export function posesEffectAttrs(base, fx, i, day) {
+    const a = base.findStart[i];
+    let lo = a;
+    let hi = base.findStart[i + 1] - 1;
+    let f = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (base.findDay[mid] <= day) {
+            f = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    if (f < 0 || !fx) return { lastFind: base.placed[i], heatVal: 0, popLevels: 0, popDay: NO_DAY };
+    const run = fx.runStart[f];
+    const from = run > a ? fx.level[run - 1] : 0;
+    return {
+        lastFind: base.findDay[f],
+        heatVal: fx.heat[f],
+        popLevels: fx.level[f] * POP_LEVEL_PACK + from,
+        popDay: base.findDay[run],
+    };
+}
+
+// Positions (dans `rows`) des caches qui reçoivent une trouvaille entre
+// fromDay et toDay inclus : leurs attributs d'effet sont à réécrire.
+export function foundInRange(timeline, base, fromDay, toDay) {
+    const findCode = base.kindCode.find;
+    const out = new Set();
+    for (const j of logsInRange(timeline, fromDay, toDay)) {
+        if (base.ev.kind[j] === findCode) out.add(timeline.featureOf[base.ev.cache[j]]);
+    }
+    return [...out];
 }

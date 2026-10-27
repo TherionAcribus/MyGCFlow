@@ -91,9 +91,13 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
   persistés, comme les autres filtres des pages « cycle de vie ».
 - **Flashs par événement** : un flash par cache et par lot de jours affichés,
   le type le plus marquant l'emporte — archive > désactivation > réactivation
-  > publication > signalement > maintenance > première trouvaille > favori >
-  trouvaille > DNF > note > relecteur ; seuls les types dont le flash n'est
-  pas « aucun » concourent. « Première trouvaille » (`ftf`) est le premier
+  > publication > palier de trouvailles > signalement > maintenance >
+  première trouvaille > favori > trouvaille > DNF > note > relecteur ; seuls
+  les types dont le flash n'est pas « aucun » concourent. Le palier
+  (`milestone`) est le log qui porte le cumul d'une cache à un multiple de son
+  pas adaptatif (drapeau `evRound`, mêmes paliers que la barre de
+  chronologie) ; il ne joue que si l'effet « Flash de palier » est coché
+  (ci-dessous). « Première trouvaille » (`ftf`) est le premier
   log « find » reçu de la cache (drapeau `evFtf` de `buildPosesBase`) ; une
   première trouvaille ramenée au jour d'apparition (« folded ») ne flashe
   pas — la publication joue ce jour-là.
@@ -117,6 +121,42 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
   les comptes trouvailles / favoris / DNF s'arrêtent au jour affiché pendant
   l'animation. Le libellé d'apparition suit `appearSource` : « Publiée le »,
   « Posée le », « Trouvée avant sa publication le », « Premier log le ».
+
+## Animation des points
+
+Bloc du thème `points.poses_effects` (onglet Style › Points, carte
+« Animation des caches posées ») : chaque effet est optionnel, pour une carte
+aussi sobre ou animée que le joueur le veut. Source de vérité
+`poses_effects.py`, copie `static/js/poses_effects.mjs` (test croisé via
+`tests/fixtures/poses/poses_effects.json`). Sans effet sur les autres pages.
+
+| Effet | Réglages | Rendu |
+|---|---|---|
+| Taille selon la popularité (`popularity`) | échelle `relative` (la plus trouvée de la sélection au maximum, surface ∝ trouvailles) ou `fixed` (paliers 1, 3, 10, 25, 50, 100, 250, 500, 1 000) ; taille maximale ×1,2 à ×4 | 33 niveaux ; transition de 500 ms (temps vidéo) au jour du changement |
+| Lueur d'activité (`activity`) | couleur, demi-vie (jours), intensité | disque sous le point (couche `posesActivityLayer` de mapgl.js, même source) ; chaque trouvaille ajoute 1 à la chaleur, divisée par deux à chaque demi-vie ; une trouvaille seule = mi-intensité |
+| Fraîcheur (`freshness`) | délai (jours), intensité | une cache active sans trouvaille (depuis son apparition si jamais trouvée) pâlit après le délai, pleinement au double : vers le gris-bleu `#90a4ae` (70 % au plus) et un peu d'opacité en vectoriel, opacité seule en icônes |
+| Flash de palier (`milestone_flash`) | forme et couleur : onglet Flash, « Palier de trouvailles » | voir Flashs par événement |
+| Pulsation des désactivées (`disabled_pulse`) | — | opacité qui ondule (1,6 s) pendant l'animation, jamais au repos |
+| Style des archivées (`archived_style`) | `grey` / `ghost` | fantôme : centre transparent, contour à la couleur grisée en vectoriel ; icône très effacée (35 %) en icônes |
+
+**Niveau d'animation** (`level`) : préréglages qui ne touchent que les cases —
+Sobre (aucun effet, défaut : un thème antérieur garde son rendu), Équilibré
+(taille, fraîcheur, palier), Riche (tous). Chaque effet garde ses réglages
+d'un préréglage à l'autre ; une case touchée qui ne correspond à aucun
+préréglage donne « Personnalisé ». Le niveau est recalculé à la validation,
+jamais lu tel quel. Le style des archivées est hors préréglages.
+
+**Mécanique** : aucun calcul par image. Le shader lit quatre attributs des
+features — `lastFind`, `heatVal`, `popLevels` (niveau × 64 + niveau
+précédent), `popDay` — réécrits par poses_data.js les jours où la cache reçoit
+une trouvaille (`foundInRange`), au repos et au saut
+(`posesEffectAttrs`, recherche dichotomique dans `base.findDay`), et les
+variables evo* (jour fractionnaire `evoDay + evoIntraMs / evoMsPerDay`).
+Décorateurs purs dans `static/js/poses_point_style.mjs`, appelés par
+`buildPointStyle` ; un changement de style recrée la couche puis appelle le
+crochet `styleChanged` du moteur. Tant qu'un effet évolue (lueur, pâleur,
+croissance, pulsation), mapgl.js compte l'animation comme continue
+(`setPointsGlowing`) : le compositing MediaRecorder n'écarte aucune image.
 
 ## Thèmes
 
@@ -178,6 +218,7 @@ trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).
 | Dernier thème | Globale | `poses_last_profile_uid` |
 | Panneaux Stats / images | Globale | `stats.poses_panels`, `images.poses_items` |
 | Flashs par événement | Thème | `flash.events` |
+| Animation des points (niveau, effets) | Thème | `points.poses_effects` |
 
 ## API
 
@@ -192,12 +233,17 @@ trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).
 
 - Python : `tests/test_poses_dataset.py` (une règle par test, sur la fixture
   `tests/fixtures/gc_logs/logs-poses.json`, API comprise),
-  `tests/test_event_flash.py`, cas `poses_*` de `test_global_preferences.py`
-  et `flash.events` de `test_profile_validation.py`.
+  `tests/test_event_flash.py`, `tests/test_poses_effects.py`, cas `poses_*`
+  de `test_global_preferences.py` et `flash.events` de
+  `test_profile_validation.py`.
 - Node : `tests/js/poses_timeline.test.mjs`, `tests/js/event_flash.test.mjs`,
+  `tests/js/poses_effects.test.mjs`, `tests/js/poses_point_style.test.mjs`
+  (les expressions de style y sont évaluées par un petit interprète),
   `tests/js/app_mode.test.mjs`.
 - Playwright : `tests/e2e/poses.spec.mjs` (état vide, états au repos, mode
   masqué, flashs du moteur jour par jour, aperçu complet),
+  `tests/e2e/poses-effects.spec.mjs` (niveau et cases, attributs, lueur,
+  flash de palier, aperçu riche en vectoriel et en icônes),
   `tests/e2e/stats-poses.spec.mjs`. Les logs vivent hors de
   `/clear_database` : chaque spec appelle `POST /api/logs/clear` en entrée et
   en sortie. `getPosesDebugState()` expose états, segments, journal des

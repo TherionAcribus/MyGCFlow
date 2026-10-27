@@ -52,6 +52,10 @@ EVENT_FLASH_KINDS = (
     ("disable", _l("Désactivation"), _defaults("implode", 30, "#9e9e9e")),
     ("enable", _l("Réactivation"), _defaults("echo", 30, "#66bb6a")),
     ("publish", _l("Publication"), _defaults("same", 40, "#ffffff")),
+    # Palier rond de trouvailles d'une cache (10ᵉ, 50ᵉ, 100ᵉ…, pas adaptatif
+    # de poses_timeline.mjs) ; ne joue que si l'effet est coché
+    # (points.poses_effects.milestone_flash, poses_effects.py).
+    ("milestone", _l("Palier de trouvailles"), _defaults("fireworks", 50, "#ffd54f")),
     ("alert", _l("Signalement (maintenance demandée)"), _defaults("target", 30, "#ff9800")),
     ("maintenance", _l("Maintenance du poseur"), _defaults("sparkle", 28, "#43a047")),
     ("ftf", _l("Première trouvaille"), _defaults("fireworks", 34, "#009dff")),

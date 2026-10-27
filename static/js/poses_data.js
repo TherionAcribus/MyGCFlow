@@ -23,6 +23,7 @@ import { staggerDelayMs } from './flash_impulse.mjs';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { EVO_NEVER_DAY } from './evolution_style.mjs';
 import { EVENT_FLASH_KINDS, flashScale, resolveEventFlash, scaledFlash } from './event_flash.mjs';
+import { normalizePosesEffects } from './poses_effects.mjs';
 import {
     beginEvolution,
     buildCountryRegionTree,
@@ -44,8 +45,12 @@ import {
     STATE_ARCHIVED,
     STATE_DISABLED,
     appearancesInRange,
+    NO_DAY,
     buildPosesBase,
+    buildPosesEffects,
     filterPosesRows,
+    foundInRange,
+    posesEffectAttrs,
     findDayCounts,
     buildPosesTimeline,
     flashesInRange,
@@ -76,6 +81,11 @@ let pendingTimer = null;
 let loadSeq = 0;
 let dataRevision = 0;
 let flashOptionsByKind = new Map(); // résolus au début de l'animation
+// Effets de points du thème (points.poses_effects) : valeurs par trouvaille
+// (buildPosesEffects), reconstruites quand la sélection, l'échelle de taille
+// ou la demi-vie de la lueur changent ; null quand aucun effet n'en a besoin.
+let effectsFx = null;
+let effectsKey = '';
 // Index par jour des événements Stats de la page, par source : 'finds' =
 // trouvailles reçues, 'dnf' = DNF reçus, 'favorites' = trouvailles reçues
 // portant un point favori (posesStatsFinds). Mémoïsés par (source, révision).
@@ -277,8 +287,9 @@ function applySelection(selection, { resetDates = false } = {}) {
     rows = filterRows(base, selection);
     rows = filterPosesRows(base, rows, selection);
     timeline = buildPosesTimeline(base, rows, { archivedDisplay });
-    olFeatures = buildFeatures(rows);
     dataRevision += 1;
+    ensureEffects();
+    olFeatures = buildFeatures(rows);
     statsFindsIndexes.clear();
     datasetScope = { selected: rows.length, total: base.count };
     pkg.setExternalDatasetState(buildMeta(), datasetScope);
@@ -323,9 +334,52 @@ function buildFeatures(selected) {
             pstate: stateAt(base, i, restDay),
             stagger: staggerDelayMs(lon, lat),
             row: i,
+            // Effets de points (poses_point_style.mjs) : toujours posés, le
+            // shader lit un attribut absent comme 0.
+            ...effectAttrsAt(i, restDay),
         });
     }
     return features;
+}
+
+// --- Effets de points (points.poses_effects, docs/mode-poses.md) ------------
+
+function currentEffects() {
+    return normalizePosesEffects(pkg.options?.point?.posesEffects);
+}
+
+// Les effets lus par le shader dans les attributs de la feature.
+function effectsUseAttrs(fx) {
+    return fx.popularity.enabled || fx.activity.enabled || fx.freshness.enabled;
+}
+
+function ensureEffects() {
+    const fx = currentEffects();
+    if (!base || !effectsUseAttrs(fx)) {
+        effectsFx = null;
+        effectsKey = '';
+        return;
+    }
+    const key = `${dataRevision}|${fx.popularity.scale}|${fx.activity.half_life_days}`;
+    if (key === effectsKey && effectsFx) return;
+    effectsFx = buildPosesEffects(base, rows, { scale: fx.popularity.scale, halfLifeDays: fx.activity.half_life_days });
+    effectsKey = key;
+}
+
+const NO_EFFECT = Object.freeze({ lastFind: 0, heatVal: 0, popLevels: 0, popDay: NO_DAY });
+
+function effectAttrsAt(i, day) {
+    if (!effectsFx) return { ...NO_EFFECT, lastFind: base.placed[i] };
+    return posesEffectAttrs(base, effectsFx, i, day);
+}
+
+// Un réglage de style a changé (onglet Points, thème appliqué) : la couche
+// vient d'être recréée par mapgl.js ; les attributs suivent le nouveau
+// réglage, au jour affiché.
+export function refreshPosesEffects() {
+    if (!base || !timeline) return;
+    ensureEffects();
+    applyStatesAt(clock.running ? clock.day : restDayIndex());
 }
 
 function isoOfDay(dayIndex) {
@@ -362,11 +416,16 @@ function setFeatureState(k, day) {
     const i = rows[k];
     const pstate = stateAt(base, i, day);
     const segment = visibleSegment(base, i, day, archivedDisplay);
+    const fx = effectAttrsAt(i, day);
     const changed = feature.get('pstate') !== pstate
         || feature.get('placedDay') !== segment.placedDay
-        || feature.get('archivedDay') !== segment.archivedDay;
+        || feature.get('archivedDay') !== segment.archivedDay
+        || feature.get('lastFind') !== fx.lastFind
+        || feature.get('heatVal') !== fx.heatVal
+        || feature.get('popLevels') !== fx.popLevels
+        || feature.get('popDay') !== fx.popDay;
     if (changed) {
-        feature.setProperties({ pstate, placedDay: segment.placedDay, archivedDay: segment.archivedDay });
+        feature.setProperties({ pstate, placedDay: segment.placedDay, archivedDay: segment.archivedDay, ...fx });
         stateMutations++;
     }
     return changed;
@@ -383,7 +442,11 @@ function applyStatesAt(day) {
 function resolveFlashes() {
     flashOptionsByKind = new Map();
     const flash = pkg.options?.flash;
-    for (const kind of EVENT_FLASH_KINDS) flashOptionsByKind.set(kind, resolveEventFlash(kind, flash));
+    // Flash de palier : seulement si l'effet est coché (points.poses_effects).
+    const milestone = currentEffects().milestone_flash;
+    for (const kind of EVENT_FLASH_KINDS) {
+        flashOptionsByKind.set(kind, kind === 'milestone' && !milestone ? null : resolveEventFlash(kind, flash));
+    }
 }
 
 function canFlash(kind) {
@@ -429,6 +492,7 @@ function posesBegin(startDate, endDate, at, { stagger = false } = {}) {
     endDay = dayIndexOf(base, endDate instanceof Date ? endDate : restEndDate());
     staggerOn = !!stagger;
     resolveFlashes();
+    ensureEffects();
     applyStatesAt(startDay - 1);
     beginEvolution(clock, startDay, at);
     return posesCountersAt(timeline, startDay - 1);
@@ -440,8 +504,10 @@ function posesStep(dates, at) {
     const last = dayIndexOf(base, dates[dates.length - 1]);
     const placed = appearancesInRange(timeline, first, last).map((k) => olFeatures[k]);
     const { changed, archived } = stateChangesInRange(timeline, base, first, last);
+    // Caches trouvées dans le lot : taille, lueur et fraîcheur à réécrire.
+    const touched = effectsFx ? new Set([...changed, ...foundInRange(timeline, base, first, last)]) : changed;
     let mutated = 0;
-    for (const k of changed) if (setFeatureState(k, last)) mutated++;
+    for (const k of touched) if (setFeatureState(k, last)) mutated++;
     stepEvolution(clock, last, at, last >= endDay);
 
     const flashes = [];
@@ -502,6 +568,7 @@ function posesRestState() {
     if (!date) return null;
     const day = dayIndexOf(base, date);
     clock.restDay = day;
+    ensureEffects();
     applyStatesAt(day);
     return { day, date, values: posesCountersAt(timeline, day) };
 }
@@ -676,7 +743,9 @@ function posesMilestones(axisStart, span) {
 // compte quand le flash principal est coupé.
 function posesHasOwnFlashes() {
     const flash = pkg.options?.flash;
-    return EVENT_FLASH_KINDS.some((kind) => kind !== 'publish' && !!resolveEventFlash(kind, flash));
+    const milestone = currentEffects().milestone_flash;
+    return EVENT_FLASH_KINDS.some((kind) => kind !== 'publish'
+        && (kind !== 'milestone' || milestone) && !!resolveEventFlash(kind, flash));
 }
 
 // Pour les tests navigateur : états à l'écran, flashs joués, réécritures.
@@ -700,7 +769,11 @@ export function getPosesDebugState() {
         features: olFeatures.map((f) => ({
             code: f.get('gc_code'), pstate: f.get('pstate'),
             placedDay: f.get('placedDay'), archivedDay: f.get('archivedDay'),
+            lastFind: f.get('lastFind'), heatVal: f.get('heatVal'),
+            popLevels: f.get('popLevels'), popDay: f.get('popDay'),
         })),
+        effects: currentEffects(),
+        activityLayer: pkg.posesActivityLayerShown?.() === true,
         flashLog: flashLog.slice(),
         mutations: stateMutations,
         counters: timeline ? posesCountersAt(timeline, clock.running ? clock.day : clock.restDay) : null,
@@ -817,6 +890,7 @@ const POSES_ENGINE = Object.freeze({
     milestones: posesMilestones,
     renderPopup: renderPosesPopup,
     hasOwnFlashes: posesHasOwnFlashes,
+    styleChanged: refreshPosesEffects,
 });
 
 if (isPosesPage()) registerLifecycleEngine(POSES_ENGINE);

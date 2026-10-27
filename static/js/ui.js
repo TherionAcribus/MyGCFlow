@@ -39,6 +39,7 @@ import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
 import { dnfPointOptions } from './dnf_model.mjs';
+import { normalizePosesEffects, withPosesEffectsPreset } from './poses_effects.mjs';
 import { dayNumberToDate } from './evolution_timeline.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
@@ -1199,6 +1200,7 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
     document.getElementById('selectPointRecentGlow')?.addEventListener('change', changePointStyleUI);
     initOwnerPointControls();
     initDnfPointControls();
+    initPosesEffectsControls();
 
 // select
     selectShape = document.getElementById('selectShape');
@@ -5052,6 +5054,101 @@ function syncDnfPointUI() {
     if (borderColor) borderColor.value = dnf.borderColor;
 }
 
+// Page Mes poses (menu_points.html #posesEffectsCard) : animation des points,
+// pkg.options.point.posesEffects normalisé par poses_effects.mjs. Le niveau
+// applique un préréglage (cases seulement) ; toucher un effet recalcule le
+// niveau (« Personnalisé » quand aucun préréglage ne correspond). Un
+// changement recrée la couche (style figé à la création) ; mapgl.js relance
+// ensuite le calcul des attributs (moteur › styleChanged).
+// Fonction plutôt que constante : initUIElements tourne pendant l'évaluation
+// de ce module, avant cette ligne (zone morte d'une `const`, cf. AGENTS.md).
+function posesFxIds() {
+    return {
+    popularity: 'posesFxPopularity',
+    popularityScale: 'posesFxPopularityScale',
+    popularityMax: 'posesFxPopularityMax',
+    activity: 'posesFxActivity',
+    activityColor: 'posesFxActivityColor',
+    activityHalfLife: 'posesFxActivityHalfLife',
+    activityIntensity: 'posesFxActivityIntensity',
+    freshness: 'posesFxFreshness',
+    freshnessAfter: 'posesFxFreshnessAfter',
+    freshnessStrength: 'posesFxFreshnessStrength',
+    milestone: 'posesFxMilestone',
+    pulse: 'posesFxPulse',
+    archivedStyle: 'posesFxArchivedStyle',
+    };
+}
+
+function posesFxEl(key) {
+    return document.getElementById(posesFxIds()[key]);
+}
+
+function readPosesEffectsUI() {
+    const checked = (key) => posesFxEl(key)?.checked === true;
+    const value = (key) => posesFxEl(key)?.value;
+    return normalizePosesEffects({
+        popularity: { enabled: checked('popularity'), scale: value('popularityScale'), max_scale: value('popularityMax') },
+        activity: {
+            enabled: checked('activity'),
+            color: value('activityColor'),
+            half_life_days: value('activityHalfLife'),
+            intensity: value('activityIntensity'),
+        },
+        freshness: { enabled: checked('freshness'), after_days: value('freshnessAfter'), strength: value('freshnessStrength') },
+        milestone_flash: checked('milestone'),
+        disabled_pulse: checked('pulse'),
+        archived_style: value('archivedStyle'),
+    }, pkg.options?.point?.posesEffects);
+}
+
+function initPosesEffectsControls() {
+    const level = document.getElementById('selectPosesEffectsLevel');
+    if (!level) return;
+    const commit = (effects) => {
+        pkg.options.point.posesEffects = effects;
+        syncPosesEffectsUI();
+        pkg.refreshPoints(pkg.options);
+    };
+    level.addEventListener('change', () => {
+        commit(withPosesEffectsPreset(pkg.options.point.posesEffects, level.value));
+    });
+    for (const key of Object.keys(posesFxIds())) {
+        posesFxEl(key)?.addEventListener('change', () => commit(readPosesEffectsUI()));
+    }
+    syncPosesEffectsUI();
+}
+
+function syncPosesEffectsUI() {
+    const level = document.getElementById('selectPosesEffectsLevel');
+    if (!level) return;
+    const fx = normalizePosesEffects(pkg.options?.point?.posesEffects);
+    level.value = fx.level;
+    const set = (key, prop, value) => {
+        const el = posesFxEl(key);
+        if (el) el[prop] = value;
+    };
+    set('popularity', 'checked', fx.popularity.enabled);
+    set('popularityScale', 'value', fx.popularity.scale);
+    set('popularityMax', 'value', fx.popularity.max_scale);
+    set('activity', 'checked', fx.activity.enabled);
+    set('activityColor', 'value', fx.activity.color);
+    set('activityHalfLife', 'value', fx.activity.half_life_days);
+    set('activityIntensity', 'value', fx.activity.intensity);
+    set('freshness', 'checked', fx.freshness.enabled);
+    set('freshnessAfter', 'value', fx.freshness.after_days);
+    set('freshnessStrength', 'value', fx.freshness.strength);
+    set('milestone', 'checked', fx.milestone_flash);
+    set('pulse', 'checked', fx.disabled_pulse);
+    set('archivedStyle', 'value', fx.archived_style);
+    // Réglages d'un effet décoché : grisés.
+    for (const [toggle, fields] of [['popularity', 'posesFxPopularityFields'],
+        ['activity', 'posesFxActivityFields'], ['freshness', 'posesFxFreshnessFields']]) {
+        const fieldset = document.getElementById(fields);
+        if (fieldset) fieldset.disabled = !fx[toggle].enabled;
+    }
+}
+
 // recupère tous les changements liés aux points
 function changePointStyleUI(event){
     // switch
@@ -5380,6 +5477,7 @@ export function syncPointOptionsUI() {
     if (selectPointRecentGlow) selectPointRecentGlow.value = String(Math.max(0, parseInt(point.recentGlowDays) || 0));
     syncOwnerPointUI();
     syncDnfPointUI();
+    syncPosesEffectsUI();
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;

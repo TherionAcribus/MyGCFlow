@@ -37,6 +37,9 @@
 //                              Mes poses : première trouvaille, paliers ronds)
 //   maxEventsInWindow(days)    pic d'événements, estimation de charge
 //   renderPopup(feature, el)   popup d'un point
+//   styleChanged()             la couche de points vient d'être recréée par
+//                              un changement de style (optionnel ; Mes poses :
+//                              attributs des effets de points)
 
 let current = null;
 

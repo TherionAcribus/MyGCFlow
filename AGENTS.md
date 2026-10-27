@@ -225,6 +225,13 @@ Autres repères :
   compteurs) ; signal `window.mygcflowPosesLoaded`. Pour tester les flashs
   sans dépendre du rythme, piloter le moteur jour par jour
   (`lifecycleEngine().begin/step/end`, exemple dans `poses.spec.mjs`).
+- Effets de points de Mes poses (`points.poses_effects`, thème) : un spec
+  les pose en mémoire (`app.options.point.posesEffects` puis
+  `app.refreshPoints`) sans enregistrer le thème — rien à remettre. Attributs
+  lus par le shader et présence de la lueur dans `getPosesDebugState()`
+  (`features[].popLevels/heatVal/lastFind`, `activityLayer`) — exemple dans
+  `poses-effects.spec.mjs`. `toBeDisabled()` ne voit pas un `<fieldset
+  disabled>` : tester un champ qu'il contient.
 - Trois pages, trois prédicats (`app_mode.mjs`) : `isLifecyclePage()` pour le
   moteur partagé Évolution / Mes poses, `isEvolutionPage()` pour ce qui tient
   aux bases CSV, `isMainPage()` pour GPX, DNF, sources. Les clés de stockage
@@ -252,6 +259,16 @@ dans le lien `javascript:` (commentaires en lignes entières, instructions
 terminées par `;`, pas de chaîne multi-ligne) — vérifié par
 `test_bookmarklet_is_a_single_comment_free_line` dans
 `tests/test_logs_api.py`.
+
+## Expressions de style WebGL (OpenLayers 10.6)
+
+Les styles `WebGLPoints` n'acceptent que les opérateurs d'OpenLayers :
+`+ - * / % ^`, `clamp`, `floor`, `round`, `sin`, `cos`, `case`, `match`,
+`interpolate`, `all`, `get`, `var`… — **pas de `max` ni de `min`** (calculer
+en JS quand l'opérande est fixe, ou passer par `clamp`). Les styles purs
+(`dnf_point_style.mjs`, `poses_point_style.mjs`) se testent sous Node ;
+`tests/js/poses_point_style.test.mjs` contient un petit interprète pour
+vérifier les valeurs calculées, pas seulement la forme des expressions.
 
 ## Piège `hidden` + classes d'affichage Bootstrap
 
