@@ -12,6 +12,7 @@
 // init pendant sa propre évaluation, avant celle de ce module.
 
 import * as pkg from './index.js';
+import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { isPosesPage } from './app_mode.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
@@ -76,6 +77,39 @@ function namesFields() {
 }
 
 const $ = (id) => document.getElementById(id);
+
+// Case sans objet : grisée, la raison va aussi sur le label (la bulle d'un
+// input disabled n'apparaît pas partout — motif disabledHint de dnf_data.js).
+function disabledHint(boxId, off, text) {
+    const box = $(boxId);
+    if (box) box.disabled = off;
+    for (const node of [box, box && document.querySelector(`label[for="${boxId}"]`)]) {
+        if (!node) continue;
+        if (off) node.title = text;
+        else node.removeAttribute('title');
+    }
+}
+
+// Avertissement de densité : au rythme courant, le jour le plus chargé peut
+// produire plus d'étiquettes simultanées que le plafond — les moins
+// marquantes seront écourtées ou écartées. Estimation haute : chaque log du
+// lot vit duration_ms, et msPerDay sépare deux jours (les DNF et notes
+// cochés s'ajoutent aux trouvailles comptées par findDayCounts). Recalculé
+// à chaque changement de réglage ; pas quand seul le rythme change.
+function syncDensityHint(names) {
+    const el = $('posesNamesDensityHint');
+    if (!el) return;
+    el.hidden = true;
+    if (!names?.enabled) return;
+    const counts = lifecycleEngine()?.findDayCounts?.() || [];
+    const peak = counts.reduce((m, [, n]) => Math.max(m, n), 0);
+    const msPerDay = Math.max(1, Number(pkg.options?.animation?.timePerDay) || 1000);
+    const concurrent = peak * (names.duration_ms / msPerDay);
+    if (peak > 0 && concurrent > names.max_visible) {
+        el.textContent = pkg.t('Au rythme actuel, le jour le plus chargé peut produire ~${n} étiquettes simultanées, au-delà du plafond de ${m} : les moins marquantes seront écourtées ou écartées.', { n: Math.ceil(concurrent), m: names.max_visible });
+        el.hidden = false;
+    }
+}
 
 function getPath(obj, path) {
     return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -142,6 +176,16 @@ export function syncPosesNamesUI() {
     if (glowColor) glowColor.disabled = names.glow <= 0;
     const outlineColor = $('posesNamesOutlineColor');
     if (outlineColor) outlineColor.disabled = names.outline_width <= 0;
+    // DNF et notes ne sont jamais « marquants » : cases sans objet tant que
+    // le filtre est coché.
+    const onlyNotable = names.only_notable === true;
+    for (const id of ['posesNamesKindDnf', 'posesNamesKindNote']) {
+        disabledHint(id, onlyNotable, pkg.t('Sans objet : un DNF ou une note n’est jamais un log marquant.'));
+    }
+    // Rappel quand l'interrupteur est éteint (l'aperçu reste utilisable).
+    const disabledHintEl = $('posesNamesDisabledHint');
+    if (disabledHintEl) disabledHintEl.hidden = names.enabled === true;
+    syncDensityHint(names);
     for (const span of document.querySelectorAll('[data-names-value]')) {
         const field = $(span.dataset.namesValue);
         if (field) span.textContent = `${field.value}${span.dataset.namesUnit || ''}`;

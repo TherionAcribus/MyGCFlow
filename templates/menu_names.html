@@ -41,6 +41,10 @@
         </div>
     </div>
 
+    <small id="posesNamesDisabledHint" class="form-hint text-warning d-block mb-2" hidden>
+        {{ _("Interrupteur éteint : les pseudos n'apparaîtront ni sur la carte ni dans la vidéo. L'aperçu ci-dessus reste utilisable pour régler le style.") }}
+    </small>
+
     <fieldset id="posesNamesOptions">
         <div class="row g-3">
             <!-- Quels logs -->
@@ -128,6 +132,7 @@
                             <span class="input-group-text">×</span>
                             <input type="number" class="form-control" id="posesNamesEmphasis" min="1" max="2.5" step="0.1">
                         </div>
+                        <small id="posesNamesDensityHint" class="form-hint text-warning d-block mt-2" hidden></small>
                     </div>
                 </div>
             </div>
