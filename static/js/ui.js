@@ -5478,6 +5478,9 @@ export function syncPointOptionsUI() {
     syncOwnerPointUI();
     syncDnfPointUI();
     syncPosesEffectsUI();
+    // Pseudos des visiteurs (Mes poses, poses_names_ui.js) : module évalué
+    // après ui.js, appelé par le paquet.
+    pkg.syncPosesNamesUI?.();
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;

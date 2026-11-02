@@ -120,6 +120,14 @@ import { EVO_FILTER, EVO_STATIC_FROM, POINT_DISAPPEAR_MS } from './evolution_sty
 import { isLifecyclePage, isPosesPage } from './app_mode.mjs';
 import { buildPosesActivityStyle, POSES_ACTIVITY_FILTER } from './poses_point_style.mjs';
 import { posesEffectsAnimate } from './poses_effects.mjs';
+import { normalizePosesNames } from './poses_names.mjs';
+import {
+    clearNameLabels,
+    createNameLabels,
+    drawNameLabels,
+    nameLabelsSnapshot,
+    spawnNameLabels,
+} from './name_labels.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { captureRatioFor } from './capture_resolution.mjs';
@@ -545,6 +553,17 @@ let cameraSummariesExtent = null;
 // trajet précalculé au lancement et mémoïsé, stylo piloté par l'horloge des
 // points (déterministe en capture image par image).
 let trailLayer = null;          // le trait, sous les points
+// Pseudos des visiteurs (Mes poses, points.poses_names du thème) : couche
+// dédiée au-dessus des flashs, dessinée dans son postrender (name_labels.mjs).
+let nameLabelsLayer = null;
+const nameLabels = createNameLabels();
+let nameLabelsAnimating = false; // compte comme une animation pour mapDirtyTracker
+// Ralentissement MediaRecorder : les durées des étiquettes sont étirées comme
+// la timeline (la vidéo est accélérée ensuite).
+let nameLabelsTimeScale = 1;
+let namesPreview = false;        // aperçu en boucle (onglet Style › Pseudos)
+let namesPreviewWaves = 0;
+let namesMeasureCtx = null;
 let trailHeadLayer = null;      // la tête du trait, au-dessus des points
 // var et non let : initUIElements (ui.js) s'exécute pendant l'évaluation des
 // modules, alors que mapgl n'a pas encore fini la sienne (import circulaire
@@ -2318,6 +2337,7 @@ function resetPointAppearAnimation() {
     pointsAppearing = false;
     pointsGlowing = false;
     trailAnimating = false;
+    nameLabelsAnimating = false;
 }
 
 // supprime les points de la carte (centre et bordures si existantes)
@@ -3448,6 +3468,7 @@ export function stopAnimation(){
         dbgMapgl('[STOP] Animation layer masqué');
     }
     clearTravelTrail();
+    clearPosesNameLabels();
 
     // Nettoyer les références globales
     if (window.animationSource) {
@@ -4219,6 +4240,7 @@ function abortRecordingOnError(error) {
     try { if (animationSource) animationSource.clear(); } catch(_) {}
     try { if (animationLayer) animationLayer.setVisible(false); } catch(_) {}
     try { clearTravelTrail(); } catch(_) {}
+    try { clearPosesNameLabels(); } catch(_) {}
 
     // Remettre la carte avec tous les points filtrés
     try {
@@ -4477,6 +4499,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
             dbgMapgl('[RECORD END] Animation layer masqué');
         }
         clearTravelTrail();
+        clearPosesNameLabels();
 
         // Remettre la carte avec tous les points filtrés
         if (isLifecyclePage()) {
@@ -4823,6 +4846,8 @@ function recordAnimationMediaRecorder(){
             pkg.options.flash.duration = originalFlashDuration * sd;
             // Idem pour le tracé des traits de déplacement.
             if (pkg.options.trail) pkg.options.trail.duration = normalizeTrailOptions(pkg.options.trail).duration * sd;
+            // Idem pour les pseudos des visiteurs (Mes poses).
+            nameLabelsTimeScale = sd;
             // Toute la timeline doit être ralentie, y compris la fin demandée.
             // Sinon ffmpeg raccourcit cette partie lors de la normalisation.
             pkg.options.animation.extraEndSeconds = originalExtraEndSeconds * sd;
@@ -4860,6 +4885,7 @@ function recordAnimationMediaRecorder(){
         try { pkg.options.flash.duration = originalFlashDuration; } catch(_) {}
         try { if (pkg.options.trail) pkg.options.trail.duration = originalTrailDuration; } catch(_) {}
         try { pkg.options.animation.extraEndSeconds = originalExtraEndSeconds; } catch(_) {}
+        nameLabelsTimeScale = 1;
     };
 }
 
@@ -5997,6 +6023,9 @@ function displayLifecycleDates(dates, flashOptions, record, infos) {
     if (ev.placed.length > 0 || ev.archived.length > 0 || ev.changed) {
         extendPointsAnimation(at + Math.max(POINT_APPEAR_MS, POINT_DISAPPEAR_MS) + IMPULSE_MAX_STAGGER_MS);
     }
+    // Pseudos des visiteurs (Mes poses) : étiquettes du lot, déjà choisies
+    // par le moteur (poses_names_model.mjs).
+    if (Array.isArray(ev.names) && ev.names.length > 0) spawnPosesNameLabels(ev.names, at);
 
     if (infos.displayDate) pkg.updateCurrentDate(dates[dates.length - 1]);
     if (infos.displayNumberofCaches) {
@@ -6618,6 +6647,165 @@ export function getTravelTrailDebugState() {
     };
 }
 
+// -------------- PSEUDOS DES VISITEURS (Mes poses) -------------
+//
+// Le moteur de la page choisit les étiquettes d'un lot de jours
+// (poses_names_model.mjs) ; elles sont animées et dessinées ici, dans le
+// postrender d'une couche dédiée (name_labels.mjs), avec l'horloge des
+// points : même rendu en lecture, en capture image par image et en
+// MediaRecorder.
+
+function currentNamesOptions() {
+    return normalizePosesNames(pkg.options?.point?.posesNames);
+}
+
+function ensureNameLabelsLayer() {
+    if (!map) return;
+    if (!nameLabelsLayer || !isLayerOnMap(map, nameLabelsLayer)) {
+        nameLabelsLayer = new ol.layer.Vector({
+            // Au-dessus des flashs (1100) : un pseudo ne se cache pas sous
+            // le cercle de sa propre trouvaille.
+            source: new ol.source.Vector(), style: null, zIndex: 1150,
+        });
+        nameLabelsLayer.on('postrender', drawNameLabelsLayer);
+        map.addLayer(nameLabelsLayer);
+    }
+}
+
+function measureNameText(text, font) {
+    if (!namesMeasureCtx) namesMeasureCtx = document.createElement('canvas').getContext('2d');
+    namesMeasureCtx.font = font;
+    return namesMeasureCtx.measureText(text).width;
+}
+
+function nameCacheTypeColor(type) {
+    const color = type && pkg.defaultGcColors ? pkg.defaultGcColors[type] : null;
+    return typeof color === 'string' && color.startsWith('#') ? color : null;
+}
+
+// Tant qu'une étiquette est à l'écran, chaque frame diffère : le compositing
+// MediaRecorder ne doit rien sauter.
+function syncNameLabelsAnimating() {
+    const active = nameLabels.labels.length > 0;
+    if (active === nameLabelsAnimating) return;
+    nameLabelsAnimating = active;
+    if (active) mapDirtyTracker.beginAnimation();
+    else mapDirtyTracker.endAnimation();
+}
+
+function spawnPosesNameLabels(candidates, at) {
+    ensureNameLabelsLayer();
+    nameLabels.previewing = false;
+    spawnNameLabels(nameLabels, candidates, {
+        at,
+        opts: currentNamesOptions(),
+        timeScale: nameLabelsTimeScale,
+        anchorOf: (c) => c.feature?.getGeometry?.()?.getCoordinates?.() ?? null,
+        pixelOf: (coord) => { try { return map.getPixelFromCoordinate(coord); } catch (_) { return null; } },
+        measure: measureNameText,
+    });
+    syncNameLabelsAnimating();
+}
+
+function clearPosesNameLabels() {
+    clearNameLabels(nameLabels);
+    namesPreview = false;
+    nameLabels.previewing = false;
+    syncNameLabelsAnimating();
+}
+
+function drawNameLabelsLayer(event) {
+    if (nameLabels.labels.length === 0 && !namesPreview) {
+        syncNameLabelsAnimating();
+        return;
+    }
+    const now = sampleAppearClock();
+    const opts = currentNamesOptions();
+    const frameState = event.frameState;
+    const m = composeTransform(event.inversePixelTransform, frameState.coordinateToPixelTransform);
+    drawNameLabels(event.context, nameLabels, {
+        now,
+        opts,
+        ratio: frameState.pixelRatio || 1,
+        toPixel: (c) => [m[0] * c[0] + m[2] * c[1] + m[4], m[1] * c[0] + m[3] * c[1] + m[5]],
+        cacheTypeColor: nameCacheTypeColor,
+    });
+    // Aperçu : la vague qui s'achève enfile la suivante.
+    if (namesPreview && nameLabels.labels.length === 0) queueNamesPreviewWave();
+    syncNameLabelsAnimating();
+    // Lecture live seulement : en capture, la boucle de capture pilote les
+    // rendus (cf. drawActiveFlashes) ; en pause, les étiquettes sont figées.
+    if (nameLabels.labels.length > 0 && !isRecording && !isMediaRecording && livePausedAt === null) {
+        map.render();
+    }
+}
+
+// Un réglage d'apparence a changé : les étiquettes affichées (aperçu, pause)
+// sont redessinées tout de suite.
+export function refreshPosesNamesStyle() {
+    if (nameLabels.labels.length > 0 || namesPreview) {
+        try { map.render(); } catch (_) {}
+    }
+}
+
+export function isPosesNamesPreviewActive() {
+    return !!namesPreview;
+}
+
+// Aperçu en boucle sur quelques caches visibles, carte au repos, avec des
+// pseudos réels : même dessin et même horloge que la lecture.
+export function togglePosesNamesPreview() {
+    if (namesPreview) {
+        namesPreview = false;
+        return false;
+    }
+    if (!isPosesPage() || !isIdleState() || isAnimationInProgress()) return false;
+    if (pickFlashPreviewFeatures().length === 0) {
+        pkg.showToast?.(pkg.t('Aucune cache visible à l’écran : déplacez la carte au-dessus de vos points.'), 'info', pkg.t('Pseudos'));
+        return false;
+    }
+    ensureNameLabelsLayer();
+    namesPreview = true;
+    namesPreviewWaves = 0;
+    queueNamesPreviewWave();
+    try { map.render(); } catch (_) {}
+    return true;
+}
+
+function queueNamesPreviewWave() {
+    const features = pickFlashPreviewFeatures().slice(0, 6);
+    const candidates = lifecycleEngine()?.namesPreview?.(features, namesPreviewWaves) || [];
+    if (candidates.length === 0) {
+        namesPreview = false;
+        return;
+    }
+    namesPreviewWaves++;
+    nameLabels.previewing = true;
+    spawnNameLabels(nameLabels, candidates, {
+        at: sampleAppearClock() + FLASH_PREVIEW_GAP_MS,
+        // Plafond ignoré : la vague entière se montre.
+        opts: { ...currentNamesOptions(), max_visible: 60 },
+        anchorOf: (c) => c.feature?.getGeometry?.()?.getCoordinates?.() ?? null,
+        pixelOf: (coord) => { try { return map.getPixelFromCoordinate(coord); } catch (_) { return null; } },
+        measure: measureNameText,
+    });
+    syncNameLabelsAnimating();
+}
+
+// État observable (tests navigateur, diagnostic).
+export function getNameLabelsDebugState() {
+    const now = pointAppearClock.last;
+    return {
+        ...nameLabelsSnapshot(nameLabels, now, currentNamesOptions()),
+        now,
+        preview: !!namesPreview,
+        waves: namesPreviewWaves,
+        timeScale: nameLabelsTimeScale,
+        layer: !!nameLabelsLayer && isLayerOnMap(map, nameLabelsLayer),
+        animating: nameLabelsAnimating,
+    };
+}
+
 // -------------- FLASH ---------------------------------------
 
 function flashGeometry(featureData) {
@@ -6746,6 +6934,9 @@ function createFlashElements(){
         mapDirtyTracker.resetAnimations();
         resetPointAppearAnimation();
     }
+    // Lancement ou saut : les pseudos encore à l'écran (ou l'aperçu)
+    // appartenaient à l'état d'avant.
+    clearPosesNameLabels();
     animationSource = new ol.source.Vector();
     animationLayer = new ol.layer.Vector({
         source: animationSource,

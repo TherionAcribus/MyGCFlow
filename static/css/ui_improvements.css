@@ -3968,3 +3968,20 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .event-flash-row .event-flash-size { width: 5rem; }
 .event-flash-row .event-flash-own[hidden],
 .event-flash-row [data-event-flash-field][hidden] { display: none !important; }
+
+/* Pseudos des visiteurs (Mes poses, menu_names.html) : pastilles de couleur
+   par événement, masquées hors du mode « Selon l'événement ». `d-flex`
+   l'emporterait sur l'attribut hidden (AGENTS.md). */
+#posesNamesKindColors[hidden] { display: none !important; }
+.names-kind-color {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    margin: 0;
+}
+.names-kind-color .form-control-color {
+    width: 2rem;
+    height: 1.75rem;
+    padding: 0.15rem;
+}

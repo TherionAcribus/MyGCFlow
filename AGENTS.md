@@ -232,6 +232,15 @@ Autres repères :
   (`features[].popLevels/heatVal/lastFind`, `activityLayer`) — exemple dans
   `poses-effects.spec.mjs`. `toBeDisabled()` ne voit pas un `<fieldset
   disabled>` : tester un champ qu'il contient.
+- Pseudos des visiteurs de Mes poses (`points.poses_names`, thème) : un
+  spec les pose en mémoire (`app.options.point.posesNames` puis
+  `app.syncPosesNamesUI()`) — rien à remettre. La confidentialité
+  (`poses_names_privacy`) est une préférence globale à remettre
+  (`{mode: 'show', exclude: []}`). Pour tester le contenu sans dépendre du
+  rythme, lire `names` dans le retour de `lifecycleEngine().step()` ; pour
+  le rendu, `getNameLabelsDebugState()` — exemple dans
+  `poses-names.spec.mjs`. La reprise après `#btnQuickPause` se fait en
+  recliquant `#btnQuickPause` (`#btnQuickPreview` est masqué en pause).
 - Trois pages, trois prédicats (`app_mode.mjs`) : `isLifecyclePage()` pour le
   moteur partagé Évolution / Mes poses, `isEvolutionPage()` pour ce qui tient
   aux bases CSV, `isMainPage()` pour GPX, DNF, sources. Les clés de stockage

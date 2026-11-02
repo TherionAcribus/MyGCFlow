@@ -24,6 +24,8 @@ import { inclusiveDayCount } from './video_timing.mjs';
 import { EVO_NEVER_DAY } from './evolution_style.mjs';
 import { EVENT_FLASH_KINDS, flashScale, resolveEventFlash, scaledFlash } from './event_flash.mjs';
 import { normalizePosesEffects } from './poses_effects.mjs';
+import { normalizeNamesPrivacy, normalizePosesNames } from './poses_names.mjs';
+import { buildNameStats, nameCandidates, namePreviewCandidates } from './poses_names_model.mjs';
 import {
     beginEvolution,
     buildCountryRegionTree,
@@ -86,6 +88,10 @@ let flashOptionsByKind = new Map(); // résolus au début de l'animation
 // ou la demi-vie de la lueur changent ; null quand aucun effet n'en a besoin.
 let effectsFx = null;
 let effectsKey = '';
+// Pseudos des visiteurs (points.poses_names) : rangs des trouvailles reçues
+// (par cache, par visiteur), recalculés à chaque chargement de la base.
+let nameStats = null;
+let nameStatsBase = null;
 // Index par jour des événements Stats de la page, par source : 'finds' =
 // trouvailles reçues, 'dnf' = DNF reçus, 'favorites' = trouvailles reçues
 // portant un point favori (posesStatsFinds). Mémoïsés par (source, révision).
@@ -453,6 +459,58 @@ function canFlash(kind) {
     return !!flashOptionsByKind.get(kind);
 }
 
+// --- Pseudos des visiteurs (points.poses_names, docs/mode-poses.md) -------------
+
+function currentNames() {
+    return normalizePosesNames(pkg.options?.point?.posesNames);
+}
+
+// Préférence globale : pseudos abrégés, masqués ou exclus.
+function currentNamesPrivacy() {
+    return normalizeNamesPrivacy(window.userSettings?.poses_names_privacy);
+}
+
+function ensureNameStats() {
+    if (nameStatsBase !== base) {
+        nameStats = base ? buildNameStats(base) : null;
+        nameStatsBase = base;
+    }
+    return nameStats;
+}
+
+// Étiquettes des jours first..last, avec la feature de leur cache.
+function namesInRange(first, last) {
+    const opts = currentNames();
+    if (!opts.enabled || !base || !timeline) return null;
+    const hide = archivedDisplay === 'hide';
+    const list = nameCandidates(base, timeline, first, last, opts, {
+        privacy: currentNamesPrivacy(),
+        stats: ensureNameStats(),
+        hiddenLabel: t('Un visiteur'),
+        // Archivées masquées : une cache archivée ne reçoit plus d'étiquette.
+        isHidden: hide ? (i, day) => stateAt(base, i, day) === STATE_ARCHIVED : null,
+    });
+    for (const c of list) c.feature = olFeatures[c.k];
+    return list;
+}
+
+// Aperçu (onglet Style › Pseudos) : une étiquette par feature visible,
+// pseudos réels pris dans la base.
+function posesNamesPreview(features, round = 0) {
+    if (!base || !Array.isArray(features) || features.length === 0) return [];
+    const ks = [];
+    for (const feature of features) {
+        const i = feature.get('row');
+        const k = timeline?.featureOf?.[i];
+        if (Number.isInteger(i) && k >= 0) ks.push({ k, i, feature });
+    }
+    const list = namePreviewCandidates(base, ks, currentNames(), {
+        privacy: currentNamesPrivacy(), hiddenLabel: t('Un visiteur'), round,
+    });
+    for (const c of list) c.feature = olFeatures[c.k];
+    return list;
+}
+
 // --- Interface avec le moteur d'animation (mapgl.js) ------------------------------
 
 function restEndDate() {
@@ -521,6 +579,7 @@ function posesStep(dates, at) {
         placed,
         archived: archived.map((k) => olFeatures[k]),
         flashes,
+        names: namesInRange(first, last),
         changed: mutated > 0,
         logRange: [first, last],
         values: posesCountersAt(timeline, last),
@@ -891,6 +950,7 @@ const POSES_ENGINE = Object.freeze({
     renderPopup: renderPosesPopup,
     hasOwnFlashes: posesHasOwnFlashes,
     styleChanged: refreshPosesEffects,
+    namesPreview: posesNamesPreview,
 });
 
 if (isPosesPage()) registerLifecycleEngine(POSES_ENGINE);

@@ -37,6 +37,7 @@ from settings_manager import (
     get_settings_manager,
 )
 from image_settings import coerce_images_settings
+from poses_names import coerce_names_privacy
 from stats_settings import coerce_stats_settings
 
 profiles_bp = Blueprint('profiles', __name__)
@@ -122,6 +123,7 @@ def api_get_settings():
         'poses_animation': asdict(s.poses_animation),
         'poses_infos_template': s.poses_infos_template,
         'poses_archived_display': s.poses_archived_display,
+        'poses_names_privacy': dict(s.poses_names_privacy),
     })
     response.set_cookie(
         'mygcflow_lang',
@@ -238,6 +240,11 @@ def api_put_settings():
         if 'poses_archived_display' in data:
             poses_archived_display = coerce_poses_archived_display(
                 data.get('poses_archived_display'), current.poses_archived_display)
+        poses_names_privacy = current.poses_names_privacy
+        if 'poses_names_privacy' in data:
+            # Patch partiel : un champ absent (mode, exclusions) garde sa valeur.
+            poses_names_privacy = coerce_names_privacy(
+                data.get('poses_names_privacy'), current.poses_names_privacy)
         poses_last_profile_uid = current.poses_last_profile_uid
         if 'poses_last_profile_uid' in data:
             poses_last_profile_uid = data.get('poses_last_profile_uid')
@@ -360,6 +367,7 @@ def api_put_settings():
             poses_animation=poses_animation,
             poses_infos_template=poses_infos_template,
             poses_archived_display=poses_archived_display,
+            poses_names_privacy=poses_names_privacy,
             poses_last_profile_uid=poses_last_profile_uid,
         )
 

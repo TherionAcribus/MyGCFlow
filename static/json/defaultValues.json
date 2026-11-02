@@ -50,7 +50,8 @@
             "milestone_flash": false,
             "disabled_pulse": false,
             "archived_style": "grey"
-        }
+        },
+        "posesNames": {"enabled": false, "kinds": {"find": true, "dnf": false, "note": false}, "only_notable": false, "loyal_min": 3, "template": "{pseudo}", "badges": true, "max_visible": 12, "avoid_overlap": true, "emphasis": 1.3, "grouping": "merge", "stagger_ms": 150, "path": "away", "direction": "up", "distance": 60, "trajectory": "straight", "easing": "smooth", "duration_ms": 2200, "entrance": "fade", "exit": "fade", "wobble": 0, "tilt": 0, "offset_y": -14, "connector": false, "font": "sans", "size": 14, "bold": true, "italic": false, "uppercase": false, "color_mode": "fixed", "color": "#ffffff", "outline_width": 3, "outline_color": "#000000", "glow": 0, "glow_color": "#ffffff", "background": "none", "background_color": "#000000", "background_opacity": 55, "opacity": 100, "kind_colors": {"find": "#a5d6a7", "ftf": "#ffd54f", "milestone": "#b388ff", "favorite": "#ff80ab", "loyal": "#4fc3f7", "dnf": "#90caf9", "note": "#cfd8dc"}}
     },
     "animation":{
         "rhythmMode": "rate",

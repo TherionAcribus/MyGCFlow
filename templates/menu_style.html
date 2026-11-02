@@ -77,6 +77,10 @@
                         <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMap" role="tab" aria-selected="true">{{ _("Cartes") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPoints" role="tab" aria-selected="false">{{ _("Points") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabFlash" role="tab" aria-selected="false">{{ _("Flash") }}</a></li>
+                        {# Pseudos des visiteurs : propres à Mes poses (logs reçus). #}
+                        {% if mode == 'poses' %}
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabNames" role="tab" aria-selected="false">{{ _("Pseudos") }}</a></li>
+                        {% endif %}
                         {# Traits de déplacement : un trajet n'a de sens que pour un seul géocacheur. #}
                         {% if not lifecycle %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
@@ -205,6 +209,13 @@
                             {% endif %}
                         </div>
                     </div>
+
+                    {% if mode == 'poses' %}
+                    <!-- Sous-onglet Pseudos (visiteurs de Mes poses) -->
+                    <div id="tabNames" class="tab-pane fade">
+                        {% include 'menu_names.html' %}
+                    </div>
+                    {% endif %}
 
                     {% if not lifecycle %}
                     <!-- Sous-onglet Trajet (traits de déplacement) -->

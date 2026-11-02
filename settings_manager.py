@@ -20,6 +20,7 @@ from event_flash import (
     scale_event_flash_sizes, scale_owner_flash_sizes,
 )
 from poses_effects import coerce_poses_effects, poses_effects_defaults
+from poses_names import coerce_names_privacy, coerce_poses_names, poses_names_defaults, privacy_defaults
 from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
@@ -492,6 +493,11 @@ class AppSettings:
     poses_animation: "AnimationPrefs" = field(default_factory=lambda: poses_animation_defaults())
     poses_infos_template: str = '{date} · {actives} · {trouvailles}'
     poses_archived_display: str = "grey"  # "grey" | "hide"
+    # Pseudos des visiteurs (Mes poses) : affichés tels quels, réduits aux
+    # initiales ou remplacés par « un visiteur », et pseudos jamais affichés.
+    # Global (pas dans le thème) : changer de thème ne doit jamais remettre
+    # au jour un pseudo écarté. poses_names.py.
+    poses_names_privacy: dict = field(default_factory=privacy_defaults)
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -717,6 +723,11 @@ class PointStyle:
     # style des archivées). Défauts, préréglages et validation dans
     # poses_effects.py ; sans effet sur les autres pages.
     poses_effects: dict = field(default_factory=poses_effects_defaults)
+    # Page Mes poses : pseudos des visiteurs qui flottent près des caches à
+    # chaque log reçu (quels logs, densité, mouvement, texte). Défauts,
+    # styles prêts à l'emploi et validation dans poses_names.py ; désactivé
+    # par défaut.
+    poses_names: dict = field(default_factory=poses_names_defaults)
 
 
 @dataclass
@@ -1206,6 +1217,8 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("poses_infos_template"), s.poses_infos_template)
         s.poses_archived_display = coerce_poses_archived_display(
             d.get("poses_archived_display"), s.poses_archived_display)
+        s.poses_names_privacy = coerce_names_privacy(
+            d.get("poses_names_privacy"), s.poses_names_privacy)
         s.locationless_display = coerce_locationless_display(
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(
@@ -1350,6 +1363,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                                         *DNF_BORDER_WIDTH_RANGE),
             dnf_icon=_coerce_choice(pt.get("dnf_icon"), DNF_ICON_MODES, pp.dnf_icon),
             poses_effects=coerce_poses_effects(pt.get("poses_effects"), pp.poses_effects),
+            poses_names=coerce_poses_names(pt.get("poses_names"), pp.poses_names),
         )
 
         # Options flash
@@ -3042,6 +3056,7 @@ class SettingsManager:
                 'dnf_border_width': prof.points.dnf_border_width,
                 'dnf_icon': prof.points.dnf_icon,
                 'poses_effects': copy.deepcopy(prof.points.poses_effects),
+                'poses_names': copy.deepcopy(prof.points.poses_names),
             },
             'flash': {
                 'mode': prof.flash.mode,

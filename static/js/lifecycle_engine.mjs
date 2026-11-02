@@ -40,6 +40,9 @@
 //   styleChanged()             la couche de points vient d'être recréée par
 //                              un changement de style (optionnel ; Mes poses :
 //                              attributs des effets de points)
+//   namesPreview(features, round) étiquettes d'aperçu des pseudos des
+//                              visiteurs (optionnel ; Mes poses) ; step() peut
+//                              aussi renvoyer `names` (poses_names_model.mjs)
 
 let current = null;
 

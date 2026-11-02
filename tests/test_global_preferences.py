@@ -928,6 +928,17 @@ class SettingsApiTests(unittest.TestCase):
         # Le rythme du mode principal n'a pas bougé.
         self.assertNotEqual(payload['animation']['days_per_second'], 80)
 
+    def test_poses_names_privacy_round_trip(self):
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['poses_names_privacy'], {'mode': 'show', 'exclude': []})
+        self.client.put('/api/settings', json={'poses_names_privacy': {'mode': 'initials', 'exclude': ['Toto', 'toto']}})
+        # Patch partiel : le mode change, les exclusions restent.
+        self.client.put('/api/settings', json={'poses_names_privacy': {'mode': 'hidden'}})
+        # Une préférence voisine ne l'efface pas.
+        self.client.put('/api/settings', json={'theme': 'dark'})
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['poses_names_privacy'], {'mode': 'hidden', 'exclude': ['Toto']})
+
     def test_last_dataset_survives_unrelated_writes(self):
         self.client.put('/api/settings', json={'evolution_dataset_id': 4})
         self.client.put('/api/settings', json={'theme': 'dark'})

@@ -158,6 +158,53 @@ crochet `styleChanged` du moteur. Tant qu'un effet évolue (lueur, pâleur,
 croissance, pulsation), mapgl.js compte l'animation comme continue
 (`setPointsGlowing`) : le compositing MediaRecorder n'écarte aucune image.
 
+## Pseudos des visiteurs
+
+Onglet Style › **Pseudos** (page Mes poses seulement, `menu_names.html`) : à
+chaque log reçu, le pseudo du visiteur apparaît près de la cache, se déplace
+puis s'efface — sur la carte et dans la vidéo. Désactivé par défaut.
+
+**Portées** : l'apparence est un bloc du thème, `points.poses_names`
+(`poses_names.py`, source de vérité ; copie `static/js/poses_names.mjs`,
+test croisé via `tests/fixtures/poses/poses_names.json`). La
+confidentialité est une préférence globale, `poses_names_privacy`
+(`{mode: show|initials|hidden, exclude: [pseudos]}`) : changer de thème ne
+remet jamais au jour un pseudo écarté.
+
+| Groupe | Réglages |
+|---|---|
+| Quels logs | trouvailles / DNF / notes ; seulement les logs marquants (première trouvaille, palier rond, favori, visiteur fidèle dès `loyal_min` trouvailles sur toutes les caches) ; symboles ♛ ✦ ♥ ★ ✗ ✎ ; modèle `{pseudo}`, `{code}`, `{nom}`, `{n}` (rang sur la cache), `{visites}` (rang du visiteur) |
+| Densité | plafond d'étiquettes à l'écran (`max_visible`) ; plusieurs logs d'une cache dans un lot : une étiquette « Pseudo +2 » ou une par visiteur, décalées de `stagger_ms` ; anti-chevauchement ; logs marquants agrandis (`emphasis`) |
+| Mouvement | les pseudos partent de la cache / arrivent dessus / restent sur place ; direction (haut, bas, gauche, droite, en étoile, au hasard) ; trajectoire droite, en arc, ondulante, en spirale ; allure ; distance ; durée de vie (temps vidéo) ; entrée (fondu, pop, zoom, lettre à lettre, chute) ; sortie (fondu, rétrécit, s'évapore, lettres éparpillées, clignote) ; balancement, inclinaison, décalage vertical, trait de rappel |
+| Texte | police (6 familles), taille, gras / italique / majuscules, opacité ; couleur unique, par événement (`kind_colors`), par visiteur (teinte tirée du pseudo, stable) ou du type de cache ; contour, halo, fond (pastille, étiquette, bulle de dialogue) |
+
+**Styles prêts à l'emploi** (`PRESETS`) : Envol, Bulles, Éclatement,
+Atterrissage, Machine à écrire, Arcade, Feuilles au vent, Tourbillon. Ils ne
+touchent que le mouvement et le texte (`PRESET_KEYS`) ; le menu affiche
+« Personnalisé » dès qu'un de ces réglages s'en écarte.
+
+**Choix des logs** (`poses_names_model.mjs`, pur) : par lot de jours, les
+logs non « folded » des familles cochées, sans les pseudos exclus ni les
+caches archivées masquées ; priorité première trouvaille > palier > favori
+> fidèle > trouvaille > DNF > note ; coupés au plafond. **Animation**
+(`name_labels.mjs`, pur) : file des étiquettes, pose (trajet, entrée,
+sortie) calculée à chaque image depuis l'horloge des points de mapgl.js —
+temps vidéo en capture image par image, temps actif en MediaRecorder (durées
+étirées par le ralentissement, `nameLabelsTimeScale`), figée en pause. Plein :
+une étiquette plus marquante écourte (250 ms) la moins marquante encore
+entière ; sinon elle est écartée. Placement : décalage vertical qui évite
+les étiquettes visibles aux mêmes instants. Dessin dans le postrender d'une
+couche dédiée (zIndex 1150, au-dessus des flashs) ; l'apparence est relue à
+chaque image, d'où l'aperçu en direct.
+
+**Aperçu** (bouton de l'onglet, carte au repos) : vagues de pseudos réels
+(visiteurs seulement : `visitorNames`) sur quelques caches visibles, types
+variés pour juger couleurs et symboles. Arrêté par un lancement de lecture.
+
+Relevé pour les tests : `getNameLabelsDebugState()` (étiquettes actives et
+leur pose, compteurs `spawned` / `dropped` / `evicted`, historique,
+aperçu) ; `step()` du moteur renvoie aussi `names`.
+
 ## Thèmes
 
 La page liste les thèmes du **mode principal** (choix de l'utilisateur :
@@ -219,6 +266,8 @@ trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).
 | Panneaux Stats / images | Globale | `stats.poses_panels`, `images.poses_items` |
 | Flashs par événement | Thème | `flash.events` |
 | Animation des points (niveau, effets) | Thème | `points.poses_effects` |
+| Pseudos des visiteurs (apparence) | Thème | `points.poses_names` |
+| Pseudos : confidentialité, exclusions | Globale | `poses_names_privacy` |
 
 ## API
 
@@ -233,18 +282,21 @@ trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).
 
 - Python : `tests/test_poses_dataset.py` (une règle par test, sur la fixture
   `tests/fixtures/gc_logs/logs-poses.json`, API comprise),
-  `tests/test_event_flash.py`, `tests/test_poses_effects.py`, cas `poses_*`
+  `tests/test_event_flash.py`, `tests/test_poses_effects.py`,
+  `tests/test_poses_names.py`, cas `poses_*`
   de `test_global_preferences.py` et `flash.events` de
   `test_profile_validation.py`.
 - Node : `tests/js/poses_timeline.test.mjs`, `tests/js/event_flash.test.mjs`,
   `tests/js/poses_effects.test.mjs`, `tests/js/poses_point_style.test.mjs`
   (les expressions de style y sont évaluées par un petit interprète),
-  `tests/js/app_mode.test.mjs`.
+  `tests/js/app_mode.test.mjs`, `tests/js/poses_names.test.mjs` (réglages,
+  choix des logs, mouvement, file et dessin sur faux contexte).
 - Playwright : `tests/e2e/poses.spec.mjs` (état vide, états au repos, mode
   masqué, flashs du moteur jour par jour, aperçu complet),
   `tests/e2e/poses-effects.spec.mjs` (niveau et cases, attributs, lueur,
   flash de palier, aperçu riche en vectoriel et en icônes),
-  `tests/e2e/stats-poses.spec.mjs`. Les logs vivent hors de
+  `tests/e2e/stats-poses.spec.mjs`, `tests/e2e/poses-names.spec.mjs`
+  (onglet, lots de jours, confidentialité, aperçu et lecture). Les logs vivent hors de
   `/clear_database` : chaque spec appelle `POST /api/logs/clear` en entrée et
   en sortie. `getPosesDebugState()` expose états, segments, journal des
   flashs et compteurs.

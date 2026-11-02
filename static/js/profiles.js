@@ -13,6 +13,7 @@ import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs'
 import { ownerPointOptions } from './owner_model.mjs';
 import { dnfPointOptions } from './dnf_model.mjs';
 import { normalizePosesEffects } from './poses_effects.mjs';
+import { normalizePosesNames } from './poses_names.mjs';
 
 // Chaque mode de thème a sa propre liste (champ `mode` du thème, voir
 // PROFILE_MODES dans settings_manager.py) : un thème réglé pour quelques
@@ -1665,6 +1666,8 @@ class ProfileManager {
                 // Le thème est partagé avec la page principale, qui renvoie
                 // le bloc tel quel.
                 poses_effects: normalizePosesEffects(point.posesEffects),
+                // Pseudos des visiteurs de Mes poses (poses_names.mjs).
+                poses_names: normalizePosesNames(point.posesNames),
             };
 
             dbgProfiles('Paramètres points récupérés:', pointSettings);
@@ -2659,6 +2662,8 @@ function applyPointState(pointOptions) {
         });
         // Thèmes antérieurs aux effets de Mes poses : sobre (rendu inchangé).
         point.posesEffects = normalizePosesEffects(pointOptions.poses_effects);
+        // Thèmes antérieurs aux pseudos des visiteurs : désactivés.
+        point.posesNames = normalizePosesNames(pointOptions.poses_names);
 
         dbgProfiles('Paramètres des points appliqués:', point);
     } catch (error) {
