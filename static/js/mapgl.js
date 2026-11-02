@@ -6672,6 +6672,7 @@ function ensureNamesFonts() {
         for (const spec of [
             '400 16px Inter', '700 16px Inter', 'italic 400 16px Inter', 'italic 700 16px Inter',
             '400 16px Nunito', '700 16px Nunito', 'italic 400 16px Nunito', 'italic 700 16px Nunito',
+            '400 16px Oswald', '700 16px Oswald', 'italic 400 16px Oswald', 'italic 700 16px Oswald',
         ]) {
             document.fonts?.load?.(spec);
         }

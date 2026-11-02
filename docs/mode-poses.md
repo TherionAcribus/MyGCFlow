@@ -178,12 +178,12 @@ remet jamais au jour un pseudo écarté.
 | Mouvement | les pseudos partent de la cache / arrivent dessus / restent sur place ; direction (haut, bas, gauche, droite, en étoile, au hasard) ; trajectoire droite, en arc, ondulante, en spirale ; allure ; distance ; durée de vie (temps vidéo) ; entrée (fondu, pop, zoom, lettre à lettre, chute) ; sortie (fondu, rétrécit, s'évapore, lettres éparpillées, clignote) ; balancement, inclinaison, décalage vertical, trait de rappel |
 | Texte | police (6 familles), taille, gras / italique / majuscules, opacité ; couleur unique, par événement (`kind_colors`), par visiteur (teinte tirée du pseudo, stable) ou du type de cache ; contour, halo, fond (pastille, étiquette, bulle de dialogue) |
 
-« Sans empattement » (Inter) et « Arrondie » (Nunito) citent des polices
-servies en local (`static/fonts/`, licences OFL) : la vidéo a le même rendu
-sur toutes les machines ; les autres familles restent des empilements
-système. Les polices sont préchargées à la création de la couche
-(`ensureNamesFonts`, mapgl.js) et les métriques des étiquettes nées avant
-leur arrivée sont invalidées au chargement.
+« Sans empattement » (Inter), « Arrondie » (Nunito) et « Étroite » (Oswald)
+citent des polices servies en local (`static/fonts/`, licences OFL) : la
+vidéo a le même rendu sur toutes les machines ; les autres familles restent
+des empilements système. Les polices sont préchargées à la création de la
+couche (`ensureNamesFonts`, mapgl.js) et les métriques des étiquettes nées
+avant leur arrivée sont invalidées au chargement.
 
 **Styles prêts à l'emploi** (`PRESETS`) : Envol, Bulles, Éclatement,
 Atterrissage, Machine à écrire, Arcade, Feuilles au vent, Tourbillon. Ils ne

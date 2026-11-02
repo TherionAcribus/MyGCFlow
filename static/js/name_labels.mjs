@@ -18,7 +18,7 @@ export const FONT_STACKS = Object.freeze({
     serif: 'Georgia, "Times New Roman", "DejaVu Serif", serif',
     mono: '"Cascadia Mono", Consolas, "DejaVu Sans Mono", "Courier New", monospace',
     rounded: '"Nunito", "Arial Rounded MT Bold", "Varela Round", "Segoe UI", sans-serif',
-    condensed: '"Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", sans-serif',
+    condensed: '"Oswald", "Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", sans-serif',
     handwritten: '"Segoe Print", "Comic Sans MS", "Bradley Hand", "Chalkboard SE", cursive',
 });
 
