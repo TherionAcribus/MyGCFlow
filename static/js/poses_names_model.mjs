@@ -281,6 +281,11 @@ function computeVisitorNames(base) {
 // `count` étiquettes, une par cache donnée.
 export function namePreviewCandidates(base, ks, opts, { privacy = null, hiddenLabel = '…', round = 0 } = {}) {
     const kinds = ['ftf', 'find', 'favorite', 'loyal', 'milestone', 'find', 'dnf', 'note'];
+    // Seules les familles cochées sont représentées — sinon l'aperçu montre
+    // des étiquettes que la lecture ne produirait jamais ; si aucune n'est
+    // cochée, on garde l'échantillon complet (l'aperçu sert au réglage).
+    const pool = kinds.filter((kind) => opts.kinds?.[nameFamilyOf(kind)]);
+    const cycle = pool.length ? pool : kinds;
     const authors = visitorNames(base);
     const excluded = excludedSet(privacy);
     const out = [];
@@ -294,8 +299,7 @@ export function namePreviewCandidates(base, ks, opts, { privacy = null, hiddenLa
             pseudo = displayPseudo(realName, privacy, hiddenLabel, excluded);
         }
         if (pseudo === null) continue;
-        let kind = kinds[(idx + round) % kinds.length];
-        if (!opts.kinds[nameFamilyOf(kind)]) kind = 'find';
+        const kind = cycle[(idx + round) % cycle.length];
         const favorite = kind === 'favorite';
         const values = { pseudo, code: base?.code?.[i] || '', nom: base?.name?.[i] || '', n: idx + 1, visites: idx + 2 };
         let text = formatNameLabel(opts.template, values) || pseudo;

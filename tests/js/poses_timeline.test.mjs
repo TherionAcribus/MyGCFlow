@@ -259,6 +259,20 @@ test('FTF pliée au jour d’apparition : la publication joue, pas de flash « f
     assert.ok(!flashesInRange(tl, base, 0, 13, all).some((f) => f.k === 0 && f.kind === 'ftf'));
 });
 
+test('index par cache : chaque cache ne lit que ses logs, dans l\'ordre', () => {
+    const base = buildPosesBase(payload());
+    assert.ok(base.cacheEvStart instanceof Int32Array);
+    assert.ok(base.cacheEvOrder instanceof Int32Array);
+    assert.equal(base.cacheEvStart.length, base.count + 1);
+    assert.equal(base.cacheEvOrder.length, base.ev.cache.length);
+    // Chaque cache a 5 logs dans la fixture ; l'index n'en donne que les siens.
+    assert.deepEqual([...base.cacheEvStart], [0, 5, 10, 15]);
+    const evA = Array.from(base.cacheEvOrder.subarray(base.cacheEvStart[0], base.cacheEvStart[1]));
+    assert.ok(evA.every((j) => base.ev.cache[j] === 0));
+    const days = evA.map((j) => base.ev.day[j]);
+    assert.deepEqual(days, [...days].sort((x, y) => x - y));   // chronologique
+});
+
 test('findTotals : trouvailles reçues par cache, « folded » compris', () => {
     const base = buildPosesBase(payload());
     assert.ok(base.findTotals instanceof Int32Array);

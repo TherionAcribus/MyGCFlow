@@ -288,6 +288,16 @@ test('aperçu : pseudos réels, types variés, exclusions respectées', () => {
     assert.ok(new Set(list.map((c) => c.kind)).size > 1);
 });
 
+test('aperçu : seules les familles cochées sont représentées', () => {
+    const { base } = setup();
+    const ks = [{ k: 0, i: 0 }, { k: 1, i: 1 }, { k: 2, i: 2 }];
+    const dnfOnly = namePreviewCandidates(base, ks, enabled({ kinds: { find: false, dnf: true } }), {});
+    assert.ok(dnfOnly.length > 0);
+    assert.ok(dnfOnly.every((c) => c.kind === 'dnf'));
+    const noteOnly = namePreviewCandidates(base, ks, enabled({ kinds: { find: false, note: true } }), {});
+    assert.ok(noteOnly.every((c) => c.kind === 'note'));
+});
+
 test('aperçu : clé de couleur par visiteur alignée sur la lecture', () => {
     const { base, timeline, stats } = setup();
     const privacy = { mode: 'hidden', exclude: [] };

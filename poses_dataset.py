@@ -102,7 +102,23 @@ STATUS_ARCHIVED = 1
 STATUS_DISABLED = 3
 
 
-def classify_log(type_id: int, author_id, owner_id) -> str:
+def _fold(value) -> str:
+    return (value or "").strip().lower()
+
+
+def _is_owner(author_id, author_name, owner_id, owner_names) -> bool:
+    """L'auteur du log est-il le poseur ? À l'identifiant d'abord, sinon au
+    pseudo — fiche reconnue au seul pseudo (`owner_names`, casse ignorée) ou
+    compte sans identifiant : sans ce repli, les logs du joueur sur ses
+    propres caches étaient comptés comme des événements « reçus »."""
+    if owner_id is not None and author_id == owner_id:
+        return True
+    folded = _fold(author_name)
+    return bool(folded) and folded in owner_names
+
+
+def classify_log(type_id: int, author_id, owner_id,
+                 author_name=None, owner_names=frozenset()) -> str:
     """Type d'événement d'un log sur une cache posée.
 
     Une trouvaille, un DNF ou une note n'est « reçu » que s'il vient d'un
@@ -113,7 +129,7 @@ def classify_log(type_id: int, author_id, owner_id) -> str:
     if kind is not None:
         return kind
     category = log_category(type_id)
-    by_owner = owner_id is not None and author_id == owner_id
+    by_owner = _is_owner(author_id, author_name, owner_id, owner_names)
     if category == CATEGORY_FIND:
         return KIND_OWNER_NOTE if by_owner else KIND_FIND
     if type_id == 3:
@@ -217,7 +233,7 @@ def state_changes(ref, logs, appear: date) -> tuple:
 
 
 def _collection_owner(collection):
-    return collection.account_user_id, (collection.account_username or "").strip().lower()
+    return collection.account_user_id, _fold(collection.account_username)
 
 
 def _owned_refs(session, collection) -> tuple:
@@ -242,8 +258,13 @@ def load_owned_caches(session, collection) -> tuple:
     refs, by_name = _owned_refs(session, collection)
     if not refs:
         return [], by_name
-    owner_of = {ref.gc_code: (ref.owner_id if ref.owner_id is not None else collection.account_user_id)
-                for ref in refs}
+    owner_of = {}
+    for ref in refs:
+        names = {n for n in (_fold(ref.owner_name),
+                             _fold(collection.account_username)) if n}
+        owner_of[ref.gc_code] = (
+            ref.owner_id if ref.owner_id is not None else collection.account_user_id,
+            frozenset(names))
     logs = defaultdict(list)
     codes = list(owner_of)
     for start in range(0, len(codes), 900):
@@ -252,9 +273,11 @@ def load_owned_caches(session, collection) -> tuple:
                 LogEvent.log_id, LogEvent.gc_code, LogEvent.type_id, LogEvent.log_date,
                 LogEvent.author_id, LogEvent.author_name, LogEvent.favorite).filter(
                 LogEvent.collection_id == collection.id, LogEvent.gc_code.in_(chunk)):
+            owner_id, owner_names = owner_of[code]
             logs[code].append(_Log(
                 log_id=log_id, day=_as_date(log_date),
-                kind=classify_log(type_id, author_id, owner_of[code]),
+                kind=classify_log(type_id, author_id, owner_id,
+                                  author_name=author_name, owner_names=owner_names),
                 author_id=author_id, author_name=author_name, favorite=favorite is True))
     caches = []
     for ref in refs:
@@ -540,14 +563,17 @@ def cache_details(session, gc_code: str) -> dict | None:
     favorites = 0
     first_find = None
     reviewer_archive = False
-    owner = ref.owner_id if ref.owner_id is not None else collection.account_user_id
+    owner_id = ref.owner_id if ref.owner_id is not None else collection.account_user_id
+    owner_names = {n for n in (_fold(ref.owner_name),
+                               _fold(collection.account_username)) if n}
     for log in cache.logs:
         by_kind[log.kind] += 1
         if log.kind == KIND_FIND:
             favorites += 1 if log.favorite else 0
             if first_find is None:
                 first_find = log
-        if log.kind == KIND_ARCHIVE and log.author_id is not None and log.author_id != owner:
+        if (log.kind == KIND_ARCHIVE and log.author_id is not None
+                and not _is_owner(log.author_id, log.author_name, owner_id, owner_names)):
             reviewer_archive = True
     publish = next((log.day for log in cache.logs if log.kind == KIND_PUBLISH), None)
     return {

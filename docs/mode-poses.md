@@ -16,7 +16,11 @@ les auteurs, point favori par log, couverture `caches` complète).
 
 **Caches posées** : fiches `cache_ref` dont `owner_id` vaut le compte de la
 collection (`log_collection.account_user_id`) ; à défaut d'identifiant, le
-pseudo du compte (compté dans `meta.ownerMatchedByName`).
+pseudo du compte (compté dans `meta.ownerMatchedByName`, affiché dans le
+détail de la carte « Mes caches posées »). Le poseur est reconnu de même
+parmi les auteurs de logs : à l'identifiant, sinon au pseudo (casse
+ignorée) — sans ce repli, ses propres logs sur une fiche reconnue au nom
+seraient comptés comme des événements « reçus ».
 
 **Types d'événements** (`classify_log`, ordre = code servi au client) :
 
@@ -53,6 +57,9 @@ compte. Un état final qui contredit le statut de la fiche à l'export
 
 **Position** : fiche (correction manuelle comprise), sinon ligne du My Finds ;
 sans position, la cache est en attente (`meta.pending`), jamais placée.
+Limite connue : la position servie est la position **finale** — un log
+« Update Coordinates » joue un flash de maintenance mais ne repositionne
+pas le point (la position passée n'est pas collectée).
 Quand **aucune** cache posée n'est plaçable (sans position ou sans date), la
 charge utile est vide avec `meta.reason = "no-placed-caches"` — les compteurs
 `ownedTotal` / `pending` / `undatable` restent servis, à la différence de
@@ -119,8 +126,13 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
 - **Popup** : type, taille, D/T, état au jour affiché, premier trouveur —
   tout est lu côté client dans la charge utile (`base`), sans fetch, pour que
   les comptes trouvailles / favoris / DNF s'arrêtent au jour affiché pendant
-  l'animation. Le libellé d'apparition suit `appearSource` : « Publiée le »,
-  « Posée le », « Trouvée avant sa publication le », « Premier log le ».
+  l'animation (index par cache `cacheEvStart`/`cacheEvOrder`, pas de balayage
+  de toute la colonne `ev`). Le libellé d'apparition suit `appearSource` :
+  « Publiée le », « Posée le », « Trouvée avant sa publication le »,
+  « Premier log le ». Le premier trouveur suit la préférence de
+  confidentialité `poses_names_privacy` (initiales, « Un visiteur »,
+  exclusions). Une ligne « Pays et région déduits des trouvailles voisines »
+  apparaît quand la géographie est empruntée (`geoBorrowed`).
 
 ## Animation des points
 
@@ -240,6 +252,11 @@ reçue). Chaque source est servie par `posesStatsFinds(source)` avec les
 propriétés des trouvailles du mode principal (date du log en `date_find`,
 attributs de la cache, plus `finder` et `favorite`) : le chemin de comptage
 du mode principal s'applique tel quel (`findIndexes` de stats_panels.js).
+`finder` suit la préférence de confidentialité `poses_names_privacy` — les
+panneaux « par trouveur » se dessinent dans la vidéo : initiales, « Un
+visiteur » et exclusions y sont respectés, avec un discriminant stable
+« #n » (indice de l'auteur) sur les formes non uniques pour garder des
+comptes exacts.
 Registre `POSES_METRICS_BY_KIND`, commun aux trois sources : grilles D/T,
 mois × année, calendrier, année d'activité ; histogrammes et anneaux par
 cache (`cache`, course « caches les plus trouvées »), par trouveur

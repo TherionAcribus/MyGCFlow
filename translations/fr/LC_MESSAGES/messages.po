@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-02 17:11+0100\n"
+"POT-Creation-Date: 2026-11-02 18:18+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -301,7 +301,7 @@ msgstr "Désactivation"
 msgid "Réactivation"
 msgstr "Réactivation"
 
-#: event_flash.py:54 poses_dataset.py:633
+#: event_flash.py:54 poses_dataset.py:659
 msgid "Publication"
 msgstr "Publication"
 
@@ -317,7 +317,7 @@ msgstr "Signalement (maintenance demandée)"
 msgid "Maintenance du poseur"
 msgstr "Maintenance du poseur"
 
-#: event_flash.py:61 poses_dataset.py:613
+#: event_flash.py:61 poses_dataset.py:639
 msgid "Première trouvaille"
 msgstr "Première trouvaille"
 
@@ -329,7 +329,7 @@ msgstr "Point favori"
 msgid "Trouvaille"
 msgstr "Trouvaille"
 
-#: event_flash.py:64 poses_dataset.py:612 static/js/gc_logs.js:39
+#: event_flash.py:64 poses_dataset.py:638 static/js/gc_logs.js:39
 #: static/js/gc_logs.js:60 static/js/mapgl.js:1231
 #: static/js/stats_panels.js:1405 static/js/stats_panels.js:1825
 #: templates/menu_informations.html:66 templates/menu_informations.html:105
@@ -622,109 +622,109 @@ msgstr "import refusé : le fichier a des erreurs structurelles"
 msgid "les logs ont changé depuis l'aperçu : relancez-le"
 msgstr "les logs ont changé depuis l'aperçu : relancez-le"
 
-#: poses_dataset.py:609
+#: poses_dataset.py:635
 msgid "Code GC"
 msgstr "Code GC"
 
-#: poses_dataset.py:609 templates/menu_images.html:152
+#: poses_dataset.py:635 templates/menu_images.html:152
 msgid "Nom"
 msgstr "Nom"
 
-#: poses_dataset.py:609 static/js/ui.js:10642
+#: poses_dataset.py:635 static/js/ui.js:10642
 msgid "Type"
 msgstr "Type"
 
-#: poses_dataset.py:609 static/js/ui.js:10641
+#: poses_dataset.py:635 static/js/ui.js:10641
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
 #: templates/menu_names.html:264
 msgid "Taille"
 msgstr "Taille"
 
-#: poses_dataset.py:609
+#: poses_dataset.py:635
 msgid "D"
 msgstr "D"
 
-#: poses_dataset.py:609
+#: poses_dataset.py:635
 msgid "T"
 msgstr "T"
 
-#: blueprints/evolution.py:40 poses_dataset.py:610
+#: blueprints/evolution.py:40 poses_dataset.py:636
 msgid "Latitude"
 msgstr "Latitude"
 
-#: blueprints/evolution.py:41 poses_dataset.py:610
+#: blueprints/evolution.py:41 poses_dataset.py:636
 msgid "Longitude"
 msgstr "Longitude"
 
-#: poses_dataset.py:610 static/js/stats_panels.js:1186
+#: poses_dataset.py:636 static/js/stats_panels.js:1186
 #: static/js/stats_panels.js:1428 templates/_filter_country_state.html:6
 #: templates/_filter_country_state.html:7 templates/menu_stats.html:233
 #: templates/menu_stats.html:502
 msgid "Pays"
 msgstr "Pays"
 
-#: poses_dataset.py:610
+#: poses_dataset.py:636
 msgid "Région"
 msgstr "Région"
 
-#: poses_dataset.py:611
+#: poses_dataset.py:637
 msgid "Apparition"
 msgstr "Apparition"
 
-#: poses_dataset.py:611
+#: poses_dataset.py:637
 msgid "Source d'apparition"
 msgstr "Source d'apparition"
 
-#: poses_dataset.py:611
+#: poses_dataset.py:637
 msgid "Statut"
 msgstr "Statut"
 
-#: poses_dataset.py:612 static/js/stats_panels.js:1408
+#: poses_dataset.py:638 static/js/stats_panels.js:1408
 #: static/js/stats_ui.js:223 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Trouvailles"
 
-#: poses_dataset.py:612 static/js/stats_ui.js:559
+#: poses_dataset.py:638 static/js/stats_ui.js:559
 #: templates/menu_informations.html:65
 msgid "Favoris"
 msgstr "Favoris"
 
-#: poses_dataset.py:612 templates/menu_informations.html:67
+#: poses_dataset.py:638 templates/menu_informations.html:67
 msgid "Logs"
 msgstr "Logs"
 
-#: poses_dataset.py:613
+#: poses_dataset.py:639
 msgid "Premier trouveur"
 msgstr "Premier trouveur"
 
-#: poses_dataset.py:613
+#: poses_dataset.py:639
 msgid "Dernier log"
 msgstr "Dernier log"
 
-#: poses_dataset.py:634
+#: poses_dataset.py:660
 msgid "Date de pose"
 msgstr "Date de pose"
 
-#: poses_dataset.py:635
+#: poses_dataset.py:661
 msgid "Bêta-trouvaille"
 msgstr "Bêta-trouvaille"
 
-#: poses_dataset.py:636
+#: poses_dataset.py:662
 msgid "Premier log"
 msgstr "Premier log"
 
-#: poses_dataset.py:640 static/js/evolution_data.js:753 static/js/mapgl.js:3805
-#: static/js/poses_data.js:959 templates/menu_data_poses.html:83
+#: poses_dataset.py:666 static/js/evolution_data.js:753 static/js/mapgl.js:3805
+#: static/js/poses_data.js:1016 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Active"
 
-#: poses_dataset.py:641 static/js/mapgl.js:3805 static/js/poses_data.js:960
+#: poses_dataset.py:667 static/js/mapgl.js:3805 static/js/poses_data.js:1017
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr "Désactivée"
 
-#: poses_dataset.py:642 static/js/mapgl.js:3805 static/js/poses_data.js:961
+#: poses_dataset.py:668 static/js/mapgl.js:3805 static/js/poses_data.js:1018
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr "Archivée"
@@ -790,7 +790,7 @@ msgid "Base de données"
 msgstr "Base de données"
 
 #: blueprints/core.py:198 static/js/evolution_data.js:435
-#: static/js/poses_data.js:335 templates/guide.html:160
+#: static/js/poses_data.js:336 templates/guide.html:160
 #: templates/guide.html:168 templates/menu_data.html:400
 #: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:63
 #: test_translations.py:28
@@ -1778,7 +1778,7 @@ msgstr "Chargement de la base..."
 msgid "Impossible de charger la base : ${message}"
 msgstr "Impossible de charger la base : ${message}"
 
-#: static/js/evolution_data.js:435 static/js/poses_data.js:335
+#: static/js/evolution_data.js:435 static/js/poses_data.js:336
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr "Le filtre s'appliquera à la fin de l'animation."
 
@@ -3450,22 +3450,22 @@ msgstr "${found}/${total} étapes trouvées"
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Position approximative (centre de l’Adventure)"
 
-#: static/js/mapgl.js:3800 static/js/poses_data.js:1001
+#: static/js/mapgl.js:3800 static/js/poses_data.js:1062
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Publiée le ${date}"
 
-#: static/js/mapgl.js:3801 static/js/poses_data.js:1002
+#: static/js/mapgl.js:3801 static/js/poses_data.js:1063
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Posée le ${date}"
 
-#: static/js/mapgl.js:3802 static/js/poses_data.js:1003
+#: static/js/mapgl.js:3802 static/js/poses_data.js:1064
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Trouvée avant sa publication le ${date}"
 
-#: static/js/mapgl.js:3803 static/js/poses_data.js:1004
+#: static/js/mapgl.js:3803 static/js/poses_data.js:1065
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "Premier log le ${date}"
@@ -3811,7 +3811,7 @@ msgstr ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 
-#: static/js/mapgl.js:8558 static/js/mapgl.js:8851
+#: static/js/mapgl.js:8572 static/js/mapgl.js:8865
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -3819,15 +3819,15 @@ msgstr ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
 
-#: static/js/mapgl.js:8558 templates/menu_style.html:82
+#: static/js/mapgl.js:8572 templates/menu_style.html:82
 msgid "Pseudos"
 msgstr "Pseudos"
 
-#: static/js/mapgl.js:8847
+#: static/js/mapgl.js:8861
 msgid "Choisissez d’abord une forme de flash."
 msgstr "Choisissez d’abord une forme de flash."
 
-#: static/js/mapgl.js:8847 static/js/mapgl.js:8851 templates/guide.html:207
+#: static/js/mapgl.js:8861 static/js/mapgl.js:8865 templates/guide.html:207
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
@@ -3988,25 +3988,30 @@ msgstr "Aucune cache posée trouvée dans vos logs importés"
 
 #: static/js/poses_data.js:266
 #, python-brace-format
+msgid "${n} caches reconnues à votre pseudo (identifiant du poseur manquant)"
+msgstr "${n} caches reconnues à votre pseudo (identifiant du poseur manquant)"
+
+#: static/js/poses_data.js:267
+#, python-brace-format
 msgid "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
 msgstr "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
 
-#: static/js/poses_data.js:267
+#: static/js/poses_data.js:268
 #, python-brace-format
 msgid "${n} caches sans date de publication ni de pose"
 msgstr "${n} caches sans date de publication ni de pose"
 
-#: static/js/poses_data.js:268
+#: static/js/poses_data.js:269
 #, python-brace-format
 msgid "${n} changements d'état déduits du statut à l'export (sans log)"
 msgstr "${n} changements d'état déduits du statut à l'export (sans log)"
 
-#: static/js/poses_data.js:269
+#: static/js/poses_data.js:270
 #, python-brace-format
 msgid "Logs importés le ${date}"
 msgstr "Logs importés le ${date}"
 
-#: static/js/poses_data.js:289
+#: static/js/poses_data.js:290
 #, python-brace-format
 msgid ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
@@ -4015,16 +4020,21 @@ msgstr ""
 "${caches} caches posées · ${finds} trouvailles reçues · ${favorites} "
 "favoris"
 
-#: static/js/poses_data.js:563 static/js/poses_data.js:585
+#: static/js/poses_data.js:576 static/js/poses_data.js:594
+#: static/js/poses_data.js:616 static/js/poses_data.js:638
 msgid "Un visiteur"
 msgstr "Un visiteur"
 
-#: static/js/poses_data.js:1028
+#: static/js/poses_data.js:1092
 #, python-brace-format
 msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 msgstr "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 
-#: static/js/poses_data.js:1037
+#: static/js/poses_data.js:1102
+msgid "Pays et région déduits des trouvailles voisines"
+msgstr "Pays et région déduits des trouvailles voisines"
+
+#: static/js/poses_data.js:1113
 #, python-brace-format
 msgid "Premier trouveur : ${name} (${date})"
 msgstr "Premier trouveur : ${name} (${date})"

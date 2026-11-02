@@ -99,6 +99,22 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual(pd.POSES_LOG_KINDS[:3], ("publish", "find", "dnf"))
         self.assertEqual(len(set(pd.POSES_LOG_KINDS)), len(pd.POSES_LOG_KINDS))
 
+    def test_owner_recognized_by_name(self):
+        # Sans identifiant (fiche reconnue au pseudo, compte sans user_id),
+        # le pseudo suffit à reconnaître les logs du poseur — sinon ils
+        # seraient comptés comme des événements « reçus ».
+        names = frozenset({"joueur_fictif"})
+        own = dict(author_name="Joueur_Fictif", owner_names=names)
+        self.assertEqual(pd.classify_log(2, None, None, **own), pd.KIND_OWNER_NOTE)
+        self.assertEqual(pd.classify_log(2, 5, None, **own), pd.KIND_OWNER_NOTE)
+        self.assertEqual(pd.classify_log(3, 5, None, **own), pd.KIND_OWNER_NOTE)
+        self.assertEqual(pd.classify_log(4, 5, None, **own), pd.KIND_OWNER_NOTE)
+        # Casse ignorée, pseudo d'un autre joueur inchangé.
+        self.assertEqual(pd.classify_log(2, 5, None, author_name="joueur_fictif",
+                                         owner_names=names), pd.KIND_OWNER_NOTE)
+        self.assertEqual(pd.classify_log(2, 5, None, author_name="Alice",
+                                         owner_names=names), pd.KIND_FIND)
+
 
 class PayloadTests(_Base):
     def test_empty_reasons(self):
@@ -265,6 +281,27 @@ class PayloadTests(_Base):
         p = self._payload()
         self.assertIn("GCP0001", p["code"])
         self.assertEqual(p["meta"]["ownerMatchedByName"], 1)
+
+    def test_own_logs_by_name_are_not_received(self):
+        # Compte sans identifiant et caches reconnues au pseudo : les logs du
+        # joueur sur ses propres caches sont des notes du poseur, pas des
+        # événements « reçus » (compteurs, étiquettes, trouveurs).
+        doc = _doc()
+        doc["account"] = {"username": "Joueur_Fictif"}
+        for cache in doc["caches"]:
+            if (cache.get("owner") or {}).get("id") == ME:
+                cache["owner"] = {"id": None, "name": "Joueur_Fictif"}
+        doc["logs"].append({"log_id": 900000555, "gc_code": "GCP0001", "type_id": 2,
+                            "date": "2018-04-01", "favorite": False,
+                            "author": {"id": None, "name": "joueur_fictif"}})
+        self._commit(doc)
+        p = self._payload()
+        self.assertEqual(p["meta"]["ownerMatchedByName"], p["meta"]["ownedTotal"])
+        events = self._events(p, "GCP0001")
+        # La « trouvaille » du poseur n'est pas reçue : seules celles d'Alice
+        # et Bob comptent ; elle est servie comme note du poseur.
+        self.assertEqual([k for _d, k, _f, _fo in events].count("find"), 2)
+        self.assertIn("owner_note", {k for _d, k, _f, _fo in events})
 
     def test_memo_follows_the_revision(self):
         self._commit()

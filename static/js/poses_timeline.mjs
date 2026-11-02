@@ -119,6 +119,18 @@ export function buildPosesBase(payload) {
     base.chStart = chStart;
     base.chDay = chDay;
     base.chState = chState;
+
+    // Tous les événements de chaque cache, dans l'ordre chronologique (CSR,
+    // même motif) : la popup ne lit que les logs de sa cache, pas toute la
+    // colonne `ev` jusqu'au jour affiché.
+    const evStart = new Int32Array(n + 1);
+    for (let j = 0; j < base.ev.cache.length; j++) evStart[base.ev.cache[j] + 1]++;
+    for (let i = 0; i < n; i++) evStart[i + 1] += evStart[i];
+    const evOrder = new Int32Array(base.ev.cache.length);
+    const evFill = evStart.slice(0, n);
+    for (let j = 0; j < base.ev.cache.length; j++) evOrder[evFill[base.ev.cache[j]]++] = j;
+    base.cacheEvStart = evStart;
+    base.cacheEvOrder = evOrder;
     return base;
 }
 
@@ -159,7 +171,7 @@ export function stateAt(base, i, day) {
 
 // Segments de présence d'une cache quand les archivées disparaissent :
 // [début, fin[ ; un archivage termine le segment, un désarchivage en ouvre un.
-function visibleSegments(base, i) {
+function computeVisibleSegments(base, i) {
     const segments = [];
     let start = base.placed[i];
     let previous = STATE_ACTIVE;
@@ -176,6 +188,15 @@ function visibleSegments(base, i) {
     }
     if (start !== null) segments.push([start, EVO_NEVER_DAY]);
     return segments;
+}
+
+// Mémoïsés par base (visibleSegment est appelé pour chaque point à chaque
+// état de repos et à chaque changement de style) : indexés par ligne.
+const segmentsMemo = new WeakMap();
+function visibleSegments(base, i) {
+    let perBase = segmentsMemo.get(base);
+    if (!perBase) segmentsMemo.set(base, (perBase = new Array(base.count)));
+    return perBase[i] || (perBase[i] = computeVisibleSegments(base, i));
 }
 
 // { placedDay, archivedDay } d'une cache pour le shader au jour `day`.

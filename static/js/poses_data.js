@@ -25,7 +25,7 @@ import { EVO_NEVER_DAY } from './evolution_style.mjs';
 import { EVENT_FLASH_KINDS, flashScale, resolveEventFlash, scaledFlash } from './event_flash.mjs';
 import { normalizePosesEffects } from './poses_effects.mjs';
 import { normalizeNamesPrivacy, normalizePosesNames } from './poses_names.mjs';
-import { buildNameStats, nameCandidates, namePreviewCandidates } from './poses_names_model.mjs';
+import { buildNameStats, displayPseudo, nameCandidates, namePreviewCandidates } from './poses_names_model.mjs';
 import {
     beginEvolution,
     buildCountryRegionTree,
@@ -220,6 +220,7 @@ function renderStatus() {
     // Détail commun aux deux états : quand aucune cache n'est plaçable, les
     // compteurs « en attente » / « non datable » expliquent la carte vide.
     const lines = [];
+    if (meta.ownerMatchedByName > 0) lines.push(t('${n} caches reconnues à votre pseudo (identifiant du poseur manquant)', { n: formatNumber(meta.ownerMatchedByName) }));
     if (meta.pending > 0) lines.push(t('${n} caches sans position (complétez-les depuis la carte « Mes logs »)', { n: formatNumber(meta.pending) }));
     if (meta.undatable > 0) lines.push(t('${n} caches sans date de publication ni de pose', { n: formatNumber(meta.undatable) }));
     if (meta.inferredStates > 0) lines.push(t('${n} changements d\'état déduits du statut à l\'export (sans log)', { n: formatNumber(meta.inferredStates) }));
@@ -486,6 +487,30 @@ function currentNamesPrivacy() {
     return namesPrivacyMemo;
 }
 
+// Pseudo d'un visiteur tel qu'affichable selon la préférence de
+// confidentialité — la même règle s'applique partout où un pseudo peut se
+// retrouver dans une capture ou une vidéo (étiquettes, popup, panneaux
+// Stats « par trouveur ») : un pseudo exclu ou inconnu devient le libellé
+// masqué plutôt que d'être montré en clair.
+function displayablePseudo(authorIndex) {
+    const label = t('Un visiteur');
+    if (authorIndex < 0) return label;
+    return displayPseudo(base.authors[authorIndex] || '', currentNamesPrivacy(), label) || label;
+}
+
+// Variante pour les regroupements Stats : la forme affichée, plus un
+// discriminant stable (#indice de l'auteur) quand elle n'est pas unique —
+// « A. » pour deux visiteurs différents, « Un visiteur » pour les masqués
+// et les exclus. Les comptes « par trouveur » restent exacts sans jamais
+// exposer le pseudo.
+function statsFinder(authorIndex) {
+    if (authorIndex < 0 || !base.authors[authorIndex]) return '';
+    const privacy = currentNamesPrivacy();
+    const shown = displayPseudo(base.authors[authorIndex], privacy, t('Un visiteur'));
+    if (shown === base.authors[authorIndex]) return shown;
+    return `${shown || t('Un visiteur')} #${authorIndex + 1}`;
+}
+
 function ensureNameStats() {
     if (nameStatsBase !== base) {
         nameStats = base ? buildNameStats(base) : null;
@@ -717,7 +742,9 @@ export function posesStatsFinds(source = 'finds') {
             properties: {
                 ...cacheProps(i),
                 date_find: iso,
-                finder: author >= 0 ? (base.authors[author] || '') : '',
+                // Les panneaux « par trouveur » se dessinent dans la vidéo :
+                // la préférence de confidentialité s'y applique aussi.
+                finder: statsFinder(author),
                 favorite: base.ev.fav[j] === 1,
             },
         };
@@ -869,8 +896,10 @@ const STATE_LABELS = () => ({
 
 // Popup d'une cache posée : tout vient de `base` (aucun fetch) pour que les
 // comptes — trouvailles, favoris, DNF — s'arrêtent au jour affiché pendant
-// l'animation. `ev` est trié par jour : le parcours s'arrête au premier log
-// postérieur ; les logs « folded » (ramenés à l'apparition) comptent.
+// l'animation. Les logs de la cache sont lus dans l'index par cache
+// (`cacheEvStart`/`cacheEvOrder`, chronologique) : le parcours s'arrête au
+// premier log postérieur ; les logs « folded » (ramenés à l'apparition)
+// comptent.
 export function renderPosesPopup(feature, container) {
     const row = feature?.get?.('row');
     if (!base || !Number.isInteger(row) || !container) return;
@@ -909,8 +938,11 @@ export function renderPosesPopup(feature, container) {
     stateLine.textContent = STATE_LABELS()[stateAt(base, row, day)] || '';
     const findCode = base.kindCode.find;
     const dnfCode = base.kindCode.dnf;
+    const evA = base.cacheEvStart?.[row] ?? 0;
+    const evB = base.cacheEvStart?.[row + 1] ?? base.ev.cache.length;
     let finds = 0, favorites = 0, dnf = 0, firstFind = -1;
-    for (let j = 0; j < base.ev.cache.length; j++) {
+    for (let e = evA; e < evB; e++) {
+        const j = base.cacheEvOrder?.[e] ?? e;
         if (base.ev.day[j] > day) break;
         if (base.ev.cache[j] !== row) continue;
         const kind = base.ev.kind[j];
@@ -929,11 +961,20 @@ export function renderPosesPopup(feature, container) {
         dnf: formatNumber(dnf),
     });
     container.append(title, details, appearLine, stateLine, countsLine);
-    // Premier trouveur : seulement s'il est déjà passé au jour affiché et nommé.
+    // Pays et région empruntés à la trouvaille la plus proche (la fiche et le
+    // My Finds n'en portaient pas).
+    if (base.geoBorrowed?.[row]) {
+        const geoLine = document.createElement('div');
+        geoLine.className = 'text-muted';
+        geoLine.textContent = t('Pays et région déduits des trouvailles voisines');
+        container.appendChild(geoLine);
+    }
+    // Premier trouveur : seulement s'il est déjà passé au jour affiché, sous
+    // la forme permise par la préférence de confidentialité.
     if (firstFind >= 0 && base.ev.author[firstFind] >= 0) {
         const ftf = document.createElement('div');
         ftf.textContent = t('Premier trouveur : ${name} (${date})', {
-            name: base.authors[base.ev.author[firstFind]] || '',
+            name: displayablePseudo(base.ev.author[firstFind]),
             date: formatDate(dateOfDayIndex(base, base.ev.day[firstFind])),
         });
         container.appendChild(ftf);
