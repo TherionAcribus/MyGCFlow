@@ -173,7 +173,7 @@ remet jamais au jour un pseudo écarté.
 
 | Groupe | Réglages |
 |---|---|
-| Quels logs | trouvailles / DNF / notes ; seulement les logs marquants (première trouvaille, palier rond, favori, visiteur fidèle dès `loyal_min` trouvailles sur toutes les caches) ; symboles ♛ ✦ ♥ ★ ✗ ✎ ; modèle `{pseudo}`, `{code}`, `{nom}`, `{n}` (rang sur la cache), `{visites}` (rang du visiteur) |
+| Quels logs | trouvailles / DNF / notes ; seulement les logs marquants (première trouvaille, palier rond, favori, visiteur fidèle dès `loyal_min` trouvailles sur toutes les caches) ; symboles ♛ ✦ ♥ ★ ✗ ✎ ; modèle `{pseudo}`, `{code}`, `{nom}`, `{n}` (rang sur la cache), `{visites}` (rang du visiteur) ; texte final borné à `NAME_TEXT_MAX` caractères (ellipse, appliquée avant le « +N » des lots fusionnés) |
 | Densité | plafond d'étiquettes à l'écran (`max_visible`) ; plusieurs logs d'une cache dans un lot : une étiquette « Pseudo +2 » ou une par visiteur, décalées de `stagger_ms` ; anti-chevauchement ; logs marquants agrandis (`emphasis`) |
 | Mouvement | les pseudos partent de la cache / arrivent dessus / restent sur place ; direction (haut, bas, gauche, droite, en étoile, au hasard) ; trajectoire droite, en arc, ondulante, en spirale ; allure ; distance ; durée de vie (temps vidéo) ; entrée (fondu, pop, zoom, lettre à lettre, chute) ; sortie (fondu, rétrécit, s'évapore, lettres éparpillées, clignote) ; balancement, inclinaison, décalage vertical, trait de rappel |
 | Texte | police (6 familles), taille, gras / italique / majuscules, opacité ; couleur unique, par événement (`kind_colors`), par visiteur (teinte tirée du pseudo, stable) ou du type de cache ; contour, halo, fond (pastille, étiquette, bulle de dialogue) |

@@ -18,6 +18,18 @@ export const NAME_PRIORITY = Object.freeze({
 // accentuée).
 export const NOTABLE_NAME_KINDS = Object.freeze(['ftf', 'milestone', 'favorite', 'loyal']);
 
+// Borne du texte dessiné : un modèle riche ({pseudo} · {nom} + symboles) peut
+// produire une étiquette de soixante caractères et plus, ingérable par
+// l'anti-chevauchement et illisible à l'écran. Au-delà, ellipse — appliquée
+// avant le « +N » d'un lot fusionné, pour que le compte survive.
+export const NAME_TEXT_MAX = 48;
+
+function clipNameText(text) {
+    const chars = Array.from(String(text || ''));
+    if (chars.length <= NAME_TEXT_MAX) return String(text || '');
+    return `${chars.slice(0, NAME_TEXT_MAX - 1).join('').trimEnd()}…`;
+}
+
 // Rang de chaque trouvaille reçue : n-ième de sa cache (`cacheNth`) et
 // n-ième du visiteur sur l'ensemble des caches posées (`authorNth`, toutes
 // caches de la base, pas seulement la sélection : la fidélité d'un visiteur
@@ -205,6 +217,7 @@ function finishCandidate(base, stats, c, opts, group, groupSize, extra) {
         const { prefix, suffix } = nameBadges(c.kind, c.favorite);
         text = `${prefix}${text}${suffix}`;
     }
+    text = clipNameText(text);
     if (extra > 0) text = `${text} +${extra}`;
     return {
         k: c.k,
@@ -273,9 +286,15 @@ export function namePreviewCandidates(base, ks, opts, { privacy = null, hiddenLa
             const { prefix, suffix } = nameBadges(kind, favorite);
             text = `${prefix}${text}${suffix}`;
         }
+        text = clipNameText(text);
+        // Même clé de couleur « par visiteur » qu'en lecture : indice de
+        // l'auteur dans la base (sinon deux visiteurs aux mêmes initiales —
+        // ou tous en mode « hidden » — auraient la même teinte ; repli
+        // distinct pour les pseudos factices, hors base).
+        const authorIndex = base?.authors?.indexOf(realName) ?? -1;
         out.push({
             k, j: -1, kind, priority: NAME_PRIORITY[kind], notable: NOTABLE_NAME_KINDS.includes(kind),
-            text, pseudo, finderKey: privacy?.mode === 'show' ? foldPseudo(realName) : pseudo,
+            text, pseudo, finderKey: privacy?.mode === 'show' ? foldPseudo(realName) : (authorIndex >= 0 ? `#${authorIndex}` : `#f${idx}`),
             favorite, code: values.code, cacheType: base?.types?.[base?.type?.[i]] || '',
             seed: hash32(round * 131 + idx), cacheSeed: hash32(i + 0x5bd1e995),
             group: 0, groupSize: 1, extra: 0,

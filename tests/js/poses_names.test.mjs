@@ -25,6 +25,7 @@ import {
     withPosesNamesPreset,
 } from '../../static/js/poses_names.mjs';
 import {
+    NAME_TEXT_MAX,
     buildNameStats,
     displayPseudo,
     formatNameLabel,
@@ -259,6 +260,23 @@ test('modèle de l’étiquette et plafond', () => {
     assert.deepEqual(capped.map((c) => c.kind), ['ftf']);
 });
 
+test('étiquette bornée en longueur, « +N » préservé', () => {
+    const { base, timeline, stats } = setup();
+    const opts = enabled({ grouping: 'separate', badges: false, template: 'Z'.repeat(NAME_TEMPLATE_MAX) });
+    const list = nameCandidates(base, timeline, 5, 5, opts, { stats });
+    assert.ok(list.length > 0);
+    for (const c of list) {
+        assert.equal(Array.from(c.text).length, NAME_TEXT_MAX);
+        assert.ok(c.text.endsWith('…'));
+    }
+    // Le « +N » d'un lot fusionné est ajouté après la coupure.
+    const merged = texts(nameCandidates(base, timeline, 5, 5, { ...opts, grouping: 'merge' }, { stats }));
+    assert.ok(merged[0].endsWith('+1'));
+    // Même borne pour l'aperçu.
+    const preview = namePreviewCandidates(base, [{ k: 0, i: 0 }], opts, {});
+    assert.ok(preview[0].text.endsWith('…'));
+});
+
 test('aperçu : pseudos réels, types variés, exclusions respectées', () => {
     const { base } = setup();
     const ks = [{ k: 0, i: 0 }, { k: 1, i: 1 }, { k: 2, i: 2 }];
@@ -268,6 +286,23 @@ test('aperçu : pseudos réels, types variés, exclusions respectées', () => {
     for (const c of list) assert.ok(/Alice|Chloé/.test(c.text), c.text);
     assert.deepEqual(visitorNames(base), ['Alice', 'Bob', 'Chloé']);
     assert.ok(new Set(list.map((c) => c.kind)).size > 1);
+});
+
+test('aperçu : clé de couleur par visiteur alignée sur la lecture', () => {
+    const { base, timeline, stats } = setup();
+    const privacy = { mode: 'hidden', exclude: [] };
+    const opts = enabled({ color_mode: 'finder', badges: false });
+    // Lecture : indice de l'auteur, jamais le pseudo affiché (« Un visiteur »
+    // pour tous donnerait une seule teinte).
+    const read = new Set(nameCandidates(base, timeline, 0, 13, opts, { stats, privacy }).map((c) => c.finderKey));
+    const ks = [{ k: 0, i: 0 }, { k: 1, i: 1 }, { k: 2, i: 2 }];
+    const prev = new Set(namePreviewCandidates(base, ks, opts, { privacy }).map((c) => c.finderKey));
+    assert.ok(prev.size > 1);
+    assert.ok([...prev].every((k) => /^#\d+$/.test(k)));
+    assert.deepEqual([...prev].sort(), [...read].sort());
+    // En mode « show », la clé reste le pseudo réel (casse ignorée).
+    const shown = namePreviewCandidates(base, ks, opts, { privacy: { mode: 'show', exclude: [] } });
+    assert.ok(shown.every((c) => !c.finderKey.startsWith('#')));
 });
 
 // --- Animation et dessin ------------------------------------------------------------
