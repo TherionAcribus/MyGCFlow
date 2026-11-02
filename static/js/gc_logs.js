@@ -110,6 +110,13 @@ function renderStatus(st) {
     if (updateBtn) updateBtn.style.display = has ? '' : 'none';
     renderGuide(has);
     renderPending(st?.pending_import);
+    // Périmètre du favori : refléter le réglage serveur, sauf pendant que
+    // la liste est ouverte (un relevé ne doit pas refermer le choix en
+    // cours — son POST suivra ou le handler le restaurera en cas d'échec).
+    const scopeSelect = el('gcLogsScopeSelect');
+    if (scopeSelect && scopeSelect !== document.activeElement) {
+        scopeSelect.value = st?.collect_scope || 'all';
+    }
     const fullBtn = el('gcLogsFullNextBtn');
     if (fullBtn) {
         const planned = !!st?.full_collect_planned;
@@ -762,6 +769,30 @@ async function onCopyBookmarklet() {
     }
 }
 
+// Périmètre de la collecte (« tout », DNF seulement, caches posées
+// seulement) : préférence persistante que le favori relit à chaque
+// démarrage via /api/logs/receive/state — pas un drapeau à un coup comme
+// « collecte complète ». En échec, la valeur enregistrée est restaurée.
+async function onScopeChange() {
+    const select = el('gcLogsScopeSelect');
+    if (!select) return;
+    const scope = select.value;
+    try {
+        const r = await fetch(`${CONFIG.BASE_URL}/api/logs/bookmarklet/scope`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scope }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.success) throw new Error(d.message || 'refusé');
+    } catch (e) {
+        select.value = lastStatus?.collect_scope || 'all';
+        showError(t('Le périmètre de collecte n\'a pas pu être enregistré'), t('Mes logs'));
+    } finally {
+        refreshLogsStatus();
+    }
+}
+
 // « La prochaine collecte sera complète » : drapeau consommé par le
 // favori à son prochain passage — l'incrémental ne revoit pas les vieux
 // logs supprimés.
@@ -838,6 +869,7 @@ export function initLogsUI() {
     el('gcLogsBookmarkletFallbackBtn').addEventListener('click', () => fileInput.click());
     el('gcLogsRegenTokenBtn').addEventListener('click', onRegenBookmarkletToken);
     el('gcLogsFullNextBtn').addEventListener('click', onFullNextCollect);
+    el('gcLogsScopeSelect')?.addEventListener('change', onScopeChange);
     el('gcLogsCoordsPrev')?.addEventListener('click',
         () => loadCoordsPage(coordsOffset - COORDS_PAGE_SIZE));
     el('gcLogsCoordsNext')?.addEventListener('click',

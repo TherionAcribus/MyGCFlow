@@ -261,6 +261,7 @@ async function fakeFetch(url, options) {
       success: !(state.status >= 400),
       message: state.message,
       since: state.since === undefined ? null : state.since,
+      scope: state.scope || 'all',
       pending: state.pending || null,
     });
   }

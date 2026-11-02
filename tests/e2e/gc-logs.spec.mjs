@@ -43,9 +43,12 @@ async function confirmImport(page) {
 }
 
 
-// Les logs vivent dans la base partagée par le runtime de test.
+// Les logs vivent dans la base partagée par le runtime de test, et le
+// périmètre de collecte est une préférence globale : tous deux remis.
 test.afterEach(async ({ request }) => {
   await request.post('/api/logs/clear').catch(() => {});
+  await request.post('/api/logs/bookmarklet/scope',
+    { data: { scope: 'all' } }).catch(() => {});
 });
 
 
@@ -198,6 +201,27 @@ test('une cache sans position est placée depuis la modale de complétion', asyn
   const dnf = await (await page.request.get('/api/logs/dnf_features')).json();
   expect(dnf.pending).toBe(0);
   expect(dnf.features.map(f => f.properties.gc_code)).toContain('GC2PR3N');
+});
+
+
+test('le périmètre de collecte du favori est persisté', async ({ page, request }) => {
+  await openReadyApp(page);
+  const select = page.locator('#gcLogsScopeSelect');
+  await expect(select).toBeVisible();
+  await expect(select).toHaveValue('all');
+
+  await select.selectOption('owned');
+  await expect.poll(async () =>
+    (await (await request.get('/api/logs/status')).json()).collect_scope,
+    { timeout: 15_000 }).toBe('owned');
+
+  // Préférence globale : elle survit au rechargement.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await expect(page.locator('#gcLogsScopeSelect')).toHaveValue('owned');
+  await expect.poll(async () =>
+    (await (await request.get('/api/logs/status')).json()).collect_scope,
+    { timeout: 15_000 }).toBe('owned');
 });
 
 

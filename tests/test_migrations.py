@@ -198,6 +198,41 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertTrue({'ix_log_event_cache', 'ix_log_event_author', 'ix_log_event_date'} <= indexes)
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_log_collection_gains_dnf_horizon_column(self):
+        # Base v8 : la colonne horizon DNF n'existe pas ; la migration la
+        # crée et la remplit du dernier exported_at des exports
+        # mygcflow-logs (les GPX ne comptent pas, comme avant).
+        self._create_app()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO log_collection (uid, account_user_id, revision) "
+                "VALUES ('default', 42, 1)")
+            cid = cur.lastrowid
+            conn.executemany(
+                "INSERT INTO log_event (collection_id, log_id, gc_code, "
+                "type_id, log_date, source_format, source_exported_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [(cid, 1, 'GC1AAA', 3, '2024-01-01',
+                  'mygcflow-logs', '2026-10-20 09:12:00'),
+                 (cid, 2, 'GC1AAA', 3, '2024-01-02',
+                  'mygcflow-logs', '2026-10-24 09:12:00'),
+                 # Un export plus récent d'une autre source : ignoré.
+                 (cid, 3, 'GC1AAA', 2, '2024-01-03',
+                  'gpx-myfinds', '2026-11-01 00:00:00')])
+            conn.execute("ALTER TABLE log_collection DROP COLUMN dnf_covered_at")
+            conn.execute("PRAGMA user_version = 8")
+        self.assertNotIn('dnf_covered_at', self._columns('log_collection'))
+
+        self._create_app()
+
+        self.assertIn('dnf_covered_at', self._columns('log_collection'))
+        with self._connect() as conn:
+            covered = conn.execute(
+                "SELECT dnf_covered_at FROM log_collection WHERE uid = 'default'"
+            ).fetchone()[0]
+        self.assertTrue(str(covered).startswith('2026-10-24'), covered)
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
 
 if __name__ == '__main__':
     unittest.main()

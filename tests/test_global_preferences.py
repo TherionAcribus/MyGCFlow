@@ -683,11 +683,16 @@ class SettingsApiTests(unittest.TestCase):
         # demandée pour la prochaine fois.
         from dataclasses import replace
         self.manager.update_app_settings(
-            lambda s: replace(s, logs_receive_token="logs-tok", logs_collect_full_once=True))
+            lambda s: replace(s, logs_receive_token="logs-tok",
+                              logs_collect_full_once=True,
+                              logs_collect_scope="dnf"))
         self.client.put('/api/settings', json={'theme': 'dark'})
         stored = self.manager.get_app_settings()
         self.assertEqual(stored.logs_receive_token, "logs-tok")
         self.assertTrue(stored.logs_collect_full_once)
+        # Le périmètre de collecte est une préférence comme les autres :
+        # un PUT partiel ne le remet pas à « all ».
+        self.assertEqual(stored.logs_collect_scope, "dnf")
 
     def test_an_invalid_date_format_leaves_the_stored_one_untouched(self):
         self.client.put('/api/settings', json={'date_format': 'eu'})

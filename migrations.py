@@ -195,6 +195,27 @@ def _v8_tables_logs(db):
             conn.exec_driver_sql(idx)
 
 
+def _v9_logs_horizon_dnf(db):
+    # Horizon DNF de la collecte du favori (log_collection.dnf_covered_at) :
+    # n'avance que sur un export à couverture DNF complète — une collecte
+    # « caches posées seulement » ne doit pas faire sauter la fenêtre
+    # incrémentale suivante. Idempotent, comme v3. Le rattrapage reprend
+    # l'ancien calcul de l'horizon (max des exported_at des exports
+    # mygcflow-logs), qui surestime si la dernière collecte était réduite
+    # aux posées — borne haute tolérée, la collecte complète la rattrape.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in
+                   conn.exec_driver_sql("PRAGMA table_info(log_collection)")}
+        if "dnf_covered_at" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE log_collection ADD COLUMN dnf_covered_at DATETIME")
+        conn.exec_driver_sql(
+            "UPDATE log_collection SET dnf_covered_at = ("
+            "SELECT max(source_exported_at) FROM log_event "
+            "WHERE log_event.collection_id = log_collection.id "
+            "AND source_format = 'mygcflow-logs')")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -204,6 +225,7 @@ MIGRATIONS = [
     (6, _v6_lab_rang_et_images),
     (7, _v7_region_factice),
     (8, _v8_tables_logs),
+    (9, _v9_logs_horizon_dnf),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

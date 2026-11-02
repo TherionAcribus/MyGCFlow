@@ -314,8 +314,11 @@ def logs_status():
     if active is not None:
         payload['active_task'] = active.to_dict()
     payload['pending_import'] = _received_pending()
-    payload['full_collect_planned'] = \
-        get_settings_manager().get_app_settings().logs_collect_full_once
+    settings = get_settings_manager().get_app_settings()
+    payload['full_collect_planned'] = settings.logs_collect_full_once
+    # Périmètre choisi pour la prochaine collecte du favori (carte « Mes
+    # logs » : tout, DNF seulement ou caches posées seulement).
+    payload['collect_scope'] = settings.logs_collect_scope
     return jsonify(payload)
 
 
@@ -681,6 +684,9 @@ def logs_receive_state():
       depuis (collecte incrémentale). `null` → collecte complète ;
     - `pending` : un export précédent attend toujours sa validation — le
       favori le signale au lieu de repartir pour un tour ;
+    - `scope` : périmètre choisi dans la carte « Mes logs » (« all »,
+      « dnf » ou « owned ») — le favori ne lit que la famille demandée.
+      NON consommé à la lecture, contrairement à `logs_collect_full_once` ;
     - `logs_collect_full_once` (« forcer la prochaine collecte complète »)
       est consommé à la lecture : la requête suivante revoit `since`."""
     if request.method == 'OPTIONS':
@@ -694,16 +700,18 @@ def logs_receive_state():
             'message': _("Jeton de réception invalide — régénérer le bookmarklet")})), 403
 
     manager = get_settings_manager()
-    full_once = manager.get_app_settings().logs_collect_full_once
-    if full_once:
+    settings = manager.get_app_settings()
+    if settings.logs_collect_full_once:
         from dataclasses import replace
         manager.update_app_settings(
             lambda s: replace(s, logs_collect_full_once=False))
-    since = None if full_once else log_store.collection_since(db.session)
+    since = None if settings.logs_collect_full_once \
+        else log_store.collection_since(db.session)
     pending = _received_pending()
     return _receive_cors_headers(jsonify({
         'success': True,
         'since': since.isoformat() if since else None,
+        'scope': settings.logs_collect_scope,
         'pending': ({'name': pending['name'],
                      'received_at': pending['received_at']}
                     if pending else None),
@@ -769,6 +777,8 @@ def _bookmarklet_strings():
         '__T_PREFIX__': _("MyGCFlow :"),
         '__T_WRONGSITE__': _("à lancer depuis une page de geocaching.com"),
         '__T_SINCE__': _("MyGCFlow : nouveautés depuis le ${a} seulement…"),
+        '__T_SCOPEDNF__': _("MyGCFlow : périmètre « DNF seulement » — caches posées ignorées…"),
+        '__T_SCOPEOWNED__': _("MyGCFlow : périmètre « caches posées seulement » — DNF ignorés…"),
         '__T_PENDINGASK__': _("Un export attend déjà sa validation dans l'application — collecter quand même ?"),
         '__T_PENDINGSTOP__': _("Collecte annulée — ouvrez l'application pour valider l'aperçu en attente."),
         '__T_BADTOKEN__': _("jeton refusé — régénérez le favori dans l'application"),
@@ -806,6 +816,26 @@ def logs_bookmarklet_full_next():
     get_settings_manager().update_app_settings(
         lambda s: replace(s, logs_collect_full_once=True))
     return jsonify({'success': True})
+
+
+LOGS_COLLECT_SCOPES = frozenset({"all", "dnf", "owned"})
+
+
+@logs_bp.route('/api/logs/bookmarklet/scope', methods=['POST'])
+def logs_bookmarklet_scope():
+    """Périmètre de la collecte du favori : « all » (DNF + caches posées),
+    « dnf » ou « owned ». Persisté comme une préférence ordinaire et relu
+    par le favori à chaque démarrage via /api/logs/receive/state — ce n'est
+    pas un drapeau à consommation unique comme « collecte complète »."""
+    body = request.get_json(silent=True) or {}
+    scope = body.get("scope")
+    if not isinstance(scope, str) or scope not in LOGS_COLLECT_SCOPES:
+        return jsonify({'success': False,
+                        'message': _("Périmètre invalide — valeur attendue : all, dnf ou owned")}), 400
+    from dataclasses import replace
+    get_settings_manager().update_app_settings(
+        lambda s: replace(s, logs_collect_scope=scope))
+    return jsonify({'success': True, 'scope': scope})
 
 
 @logs_bp.route('/api/logs/bookmarklet/regenerate', methods=['POST'])

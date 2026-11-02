@@ -28,12 +28,15 @@ from flask_babel import gettext as _
 from sqlalchemy import func
 
 from log_formats import (
-    SOURCE_GPX_MYFINDS, SOURCE_LOGS, USER_CORRECTION, LogsParseResult,
+    SOURCE_GPX_MYFINDS, USER_CORRECTION, LogsParseResult,
     log_category,
 )
 from models import CacheRef, Geocache, LogCollection, LogEvent
 
 COLLECTION_UID = "default"
+# Type Geocaching « Didn't find it » : le scope « author » qui déclare les
+# DNF du compte complets (même identifiant que DNF_TYPE_ID côté favori).
+DNF_LOG_TYPE_ID = 3
 # SQLite accepte 999 paramètres par requête : les IN (...) sont découpés.
 _IN_CHUNK = 900
 _WRITE_CHUNK = 1000
@@ -383,6 +386,7 @@ def commit_logs(session, parsed: LogsParseResult, expected_revision=None) -> dic
                 raise LogRevisionConflict(_("les logs ont changé depuis l'aperçu : relancez-le"))
             summary = _summary(plan, parsed)
             collection = _execute(session, plan)
+            _advance_dnf_horizon(collection, parsed)
             summary["collection_revision"] = collection.revision
             collection.last_import_summary = json.dumps(_slim_for_storage(summary), default=str)
             session.commit()
@@ -538,16 +542,37 @@ def resolve_cache_coordinates(session, gc_code, latitude, longitude) -> bool:
     return True
 
 
+def _advance_dnf_horizon(collection, parsed: LogsParseResult) -> None:
+    """Fait avancer `dnf_covered_at` quand l'export déclare les DNF du
+    compte couverts en entier (scope « author » incluant le type DNF, les
+    scopes bornés par `since` comptent : la fenêtre since→exported_at est
+    couverte) et porte une date d'export. Une collecte réduite aux caches
+    posées ne porte pas ce scope — l'horizon ne bouge pas : sinon la
+    collecte incrémentale suivante sauterait les DNF parus entre-temps."""
+    exported_at = parsed.meta.get("exported_at")
+    if exported_at is None:
+        return
+    for scope in parsed.meta.get("coverage") or []:
+        if (scope.kind == "author" and scope.type_ids
+                and DNF_LOG_TYPE_ID in scope.type_ids):
+            if collection.dnf_covered_at is None \
+                    or exported_at > collection.dnf_covered_at:
+                collection.dnf_covered_at = exported_at
+            return
+
+
 def collection_since(session):
-    """Horizon de connaissance du site pour le favori : date du
-    `exported_at` le plus récent parmi les logs venus d'un export
-    `mygcflow-logs` (les GPX ne comptent pas : ils ne portent pas les DNF
-    hors caches trouvées, avancer l'horizon dessus manquerait des logs).
-    None tant qu'aucun export contrat n'a été importé — la prochaine
-    collecte est alors complète."""
-    latest = session.query(func.max(LogEvent.source_exported_at)).filter(
-        LogEvent.source_format == SOURCE_LOGS).scalar()
-    return latest.date() if latest is not None else None
+    """Horizon de connaissance du site pour le favori : date du dernier
+    `exported_at` d'un export à couverture DNF complète
+    (`dnf_covered_at`, alimenté par `_advance_dnf_horizon` à l'import).
+    Les GPX et les collectes réduites aux caches posées ne comptent pas :
+    les uns ne portent pas les DNF hors caches trouvées, les autres ne
+    disent rien des DNF. None tant qu'aucun export à couverture DNF n'a
+    été importé — la prochaine collecte est alors complète."""
+    collection = get_collection(session)
+    if collection is None or collection.dnf_covered_at is None:
+        return None
+    return collection.dnf_covered_at.date()
 
 
 def clear_logs(session) -> dict:

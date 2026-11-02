@@ -11,6 +11,9 @@
 //     (DNF, trouvaille éventuelle, notes) ;
 //   - vos caches : TOUS les logs du carnet (les vôtres de poseur et ceux
 //     des autres, avec le point favori éventuel).
+// Le périmètre choisi dans l'application (state.scope : « all », « dnf »
+// ou « owned », relu par le favori via /api/logs/receive/state) peut
+// limiter la collecte à une seule de ces familles.
 // Le texte des logs, l'e-mail et l'avatar des auteurs ne sont jamais repris.
 //
 // Contrainte d'écriture (ce fichier finit sur une seule ligne dans le
@@ -347,6 +350,9 @@ function newState() {
     // Collecte incrémentale : date ISO (« AAAA-MM-JJ ») du dernier export
     // connu de l'application, lue avant de partir — null = tout relire.
     since: null,
+    // Périmètre choisi dans l'application : « all » (journal + caches),
+    // « dnf » (journal seul) ou « owned » (caches seules).
+    scope: 'all',
     dateSamples: [],
     // Reprise de collecte : identifiant du passage (fragments serveur),
     // codes traités (y compris par un passage précédent, restaurés),
@@ -710,6 +716,7 @@ function resumeEntries(state) {
     state.me.id = saved.me.id;
   }
   state.since = saved.since || null;
+  state.scope = saved.scope || 'all';
   state.dnf.listingComplete = !!saved.dnfComplete;
   var failedD = {};
   var failedO = {};
@@ -773,38 +780,44 @@ async function mygcflowCollectGcLogs(state, note) {
     // « Vos journaux » : collecte complète sur vos DNF, ou fenêtre depuis
     // le dernier export — alors sur TOUS vos types de logs (une trouvaille
     // récente sur une vieille cache en DNF doit la faire relire aussi).
-    var journalUrl = state.since
-      ? '/my/logs.aspx?s=1'
-      : '/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID;
-    var dnf = await collectJournal(journalUrl, state.since, state.prefOrder);
-    state.dnf.listingComplete = dnf.complete;
-    dnf.codes.forEach(function (c) { state.dnf.codes.add(c); });
-    console.log('[mygcflow-logs] ' + (state.since ? 'Logs à vous depuis le ' + state.since : 'DNF') +
-      ' : ' + dnf.codes.size + ' cache(s)' +
-      (dnf.guids.size ? ' + ' + dnf.guids.size + ' lien(s) ancien(s)' : ''));
-    note('dnf', dnf.codes.size, 0, 0);
-    addRefs({ codes: Array.from(dnf.codes), guids: Array.from(dnf.guids) }, true);
+    // Périmètre « caches posées seulement » : bloc sauté entièrement.
+    if (state.scope !== 'owned') {
+      var journalUrl = state.since
+        ? '/my/logs.aspx?s=1'
+        : '/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID;
+      var dnf = await collectJournal(journalUrl, state.since, state.prefOrder);
+      state.dnf.listingComplete = dnf.complete;
+      dnf.codes.forEach(function (c) { state.dnf.codes.add(c); });
+      console.log('[mygcflow-logs] ' + (state.since ? 'Logs à vous depuis le ' + state.since : 'DNF') +
+        ' : ' + dnf.codes.size + ' cache(s)' +
+        (dnf.guids.size ? ' + ' + dnf.guids.size + ' lien(s) ancien(s)' : ''));
+      note('dnf', dnf.codes.size, 0, 0);
+      addRefs({ codes: Array.from(dnf.codes), guids: Array.from(dnf.guids) }, true);
+    }
 
-    var owned = new Set();
-    var listed = 0;
-    try {
-      var list = await collectListing('/my/owned.aspx');
-      listed = list.codes.size;
-      list.codes.forEach(function (c) { owned.add(c); });
-    } catch (e) {
-      console.warn('[mygcflow-logs] Page « vos caches » illisible (' + e.message + ').');
-    }
-    if (!listed) {
-      console.warn('[mygcflow-logs] Aucune cache trouvée sur « vos caches » : repli sur vos logs de poseur.');
-      for (var t = 0; t < OWNER_LOG_TYPES.length; t++) {
-        var ownerList = await collectListing('/my/logs.aspx?s=1&lt=' + OWNER_LOG_TYPES[t]);
-        ownerList.codes.forEach(function (c) { owned.add(c); });
+    // « Vos caches » : périmètre « DNF seulement » → bloc sauté.
+    if (state.scope !== 'dnf') {
+      var owned = new Set();
+      var listed = 0;
+      try {
+        var list = await collectListing('/my/owned.aspx');
+        listed = list.codes.size;
+        list.codes.forEach(function (c) { owned.add(c); });
+      } catch (e) {
+        console.warn('[mygcflow-logs] Page « vos caches » illisible (' + e.message + ').');
       }
+      if (!listed) {
+        console.warn('[mygcflow-logs] Aucune cache trouvée sur « vos caches » : repli sur vos logs de poseur.');
+        for (var t = 0; t < OWNER_LOG_TYPES.length; t++) {
+          var ownerList = await collectListing('/my/logs.aspx?s=1&lt=' + OWNER_LOG_TYPES[t]);
+          ownerList.codes.forEach(function (c) { owned.add(c); });
+        }
+      }
+      owned.forEach(function (c) { state.owned.codes.add(c); });
+      console.log('[mygcflow-logs] Vos caches : ' + owned.size);
+      note('owned', owned.size, 0, 0);
+      addRefs({ codes: Array.from(owned), guids: [] }, false);
     }
-    owned.forEach(function (c) { state.owned.codes.add(c); });
-    console.log('[mygcflow-logs] Vos caches : ' + owned.size);
-    note('owned', owned.size, 0, 0);
-    addRefs({ codes: Array.from(owned), guids: [] }, false);
 
     entries = Array.from(todo.entries());
     var minutes = Math.ceil(entries.length * 2 * LOGS_DELAY_MS / 60000);

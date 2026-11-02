@@ -140,7 +140,10 @@ Autres repères :
   pytest et le harnais e2e : un export reçu d'un run y ressortait au
   suivant et gardait le bandeau « export en attente » affiché après
   l'import. `blueprints/labs.py` a le même motif `%TEMP%` pour ses jetons
-  (non remontés dans un statut, donc sans symptôme e2e).
+  (non remontés dans un statut, donc sans symptôme e2e). Même famille :
+  `logs_collect_scope` (périmètre du favori « Mes logs » : « all » /
+  « dnf » / « owned ») est une préférence globale — la remettre à « all »
+  en sortie de spec (`POST /api/logs/bookmarklet/scope`).
 - `reportSave` (saved_indicator.mjs) résout `true`/`false`, ne rejette
   jamais : un `try/catch` autour est du code mort — l'échec se teste sur le
   retour (`revertSetting` de dnf_data.js/owner_data.js remet alors la case

@@ -653,6 +653,138 @@ class LogsAutomationTests(LogsApiTests):
                          .get_json()["full_collect_planned"])
         self.assertEqual(self._state().get_json()["since"], "2026-10-24")
 
+    def test_bookmarklet_scope_route_round_trips(self):
+        """POST /api/logs/bookmarklet/scope : valeur validée, reflétée dans
+        le statut (`collect_scope`) et lue par le favori (`scope` de
+        /receive/state) — jamais consommée à la lecture."""
+        self._set_token()
+        self.assertEqual(self._state().get_json()["scope"], "all")
+        self.assertEqual(self.client.get("/api/logs/status")
+                         .get_json()["collect_scope"], "all")
+
+        rv = self.client.post('/api/logs/bookmarklet/scope',
+                              json={"scope": "dnf"})
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        self.assertEqual(rv.get_json()["scope"], "dnf")
+        self.assertEqual(self._state().get_json()["scope"], "dnf")
+        self.assertEqual(self.client.get("/api/logs/status")
+                         .get_json()["collect_scope"], "dnf")
+        # Relue à chaque démarrage du favori : toujours là après lecture.
+        self.assertEqual(self._state().get_json()["scope"], "dnf")
+
+        for bad in ("tout", 3, None, ["dnf"]):
+            rv = self.client.post('/api/logs/bookmarklet/scope',
+                                  json={"scope": bad})
+            self.assertEqual(rv.status_code, 400, bad)
+            self.assertFalse(rv.get_json()["success"])
+        self.assertEqual(self._state().get_json()["scope"], "dnf")
+
+    def test_owned_only_import_does_not_advance_the_dnf_horizon(self):
+        """`dnf_covered_at` n'avance que sur une couverture DNF complète :
+        un export réduit aux caches posées laisse l'horizon à sa place,
+        sinon la collecte incrémentale suivante sauterait les DNF parus
+        entre les deux."""
+        import log_store
+        from datetime import date
+        doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
+
+        # T1 : export complet (scope auteur type DNF) → l'horizon suit.
+        doc["exported_at"] = "2026-10-20T09:00:00Z"
+        self._import(json.dumps(doc).encode())
+        self.assertEqual(log_store.collection_since(db.session),
+                         date(2026, 10, 20))
+
+        # T2 : seule couverture « caches » → l'horizon DNF ne bouge pas.
+        only_owned = dict(doc, exported_at="2026-10-25T09:00:00Z",
+                          coverage=[{"kind": "caches",
+                                     "gc_codes": ["GC1ABCD"],
+                                     "complete": True}])
+        self._import(json.dumps(only_owned).encode())
+        self.assertEqual(log_store.collection_since(db.session),
+                         date(2026, 10, 20))
+
+        # T3 : nouvelle couverture DNF → l'horizon avance à nouveau.
+        dnf_again = dict(doc, exported_at="2026-10-30T09:00:00Z")
+        self._import(json.dumps(dnf_again).encode())
+        self.assertEqual(log_store.collection_since(db.session),
+                         date(2026, 10, 30))
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_owned_scope_skips_the_journal(self):
+        # Périmètre « caches posées seulement » : « Vos journaux » n'est
+        # jamais demandé, le « depuis » n'est pas annoncé et la couverture
+        # ne déclare que le scope caches — l'import ne touchera pas aux
+        # DNF (ni aux logs des autres déjà stockés hors de ces caches).
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "state": {"scope": "owned", "since": "2024-06-10"},
+            "dnfPages": [{"codes": ["GC1DNF"]}],
+            "ownedPages": [{"codes": ["GC9OWN"]}],
+            "caches": {
+                "GC1DNF": self._gc("GC1DNF", "t1"),
+                "GC9OWN": self._gc("GC9OWN", "t5"),
+            },
+            "books": {
+                "t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42)]],
+                "t5": [[self._entry(16, 46, "13/05/2010", "Testeur", 42)],
+                       [self._entry(17, 2, "20/06/2024", "Promeneur", 9)]],
+            },
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertFalse(any("/my/logs.aspx" in u for u in out["requests"]),
+                         out["requests"])
+        self.assertFalse(any("/geocache/GC1DNF" in u for u in out["requests"]),
+                         out["requests"])
+        self.assertTrue(any("caches posées seulement" in s for s in out["said"]),
+                        out["said"])
+        self.assertFalse(any("depuis le" in s for s in out["said"]),
+                         out["said"])
+        received = out["received"]
+        self.assertIsNotNone(received, out["said"])
+        kinds = {c["kind"] for c in received["body"]["coverage"]}
+        self.assertNotIn("author", kinds)
+        self.assertIn("caches", kinds)
+        # Le carnet complet de la cache posée est lu (tous les auteurs).
+        self.assertEqual(sorted(l["log_id"] for l in received["body"]["logs"]),
+                         [16, 17])
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_dnf_scope_skips_owned_caches(self):
+        # Périmètre « DNF seulement » : ni « Vos caches » ni le repli sur
+        # les listes de logs de poseur ; la couverture ne déclare que le
+        # scope auteur — les fiches de caches restent hors de l'import.
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "state": {"scope": "dnf"},
+            "dnfPages": [{"codes": ["GC1AAA"]}],
+            "ownedPages": [{"codes": ["GC9OWN"]}],
+            "caches": {
+                "GC1AAA": self._gc("GC1AAA", "t1"),
+                "GC9OWN": self._gc("GC9OWN", "t5"),
+            },
+            "books": {
+                "t1": [[self._entry(11, 3, "13/05/2024", "Testeur", 42)]],
+                "t5": [[self._entry(16, 46, "13/05/2010", "Testeur", 42)]],
+            },
+        }
+        out = self._run_bookmarklet(**scenario)
+        owner_lists = [u for u in out["requests"]
+                       if "/my/owned.aspx" in u
+                       or any(f"lt={t}" in u for t in (46, 47, 22, 23))]
+        self.assertEqual(owner_lists, [])
+        self.assertFalse(any("/geocache/GC9OWN" in u for u in out["requests"]),
+                         out["requests"])
+        self.assertTrue(any("DNF seulement" in s for s in out["said"]),
+                        out["said"])
+        received = out["received"]
+        self.assertIsNotNone(received, out["said"])
+        kinds = {c["kind"] for c in received["body"]["coverage"]}
+        self.assertIn("author", kinds)
+        self.assertNotIn("caches", kinds)
+        self.assertEqual([l["log_id"] for l in received["body"]["logs"]], [11])
+
     @unittest.skipUnless(NODE, "node introuvable")
     def test_bookmarklet_incremental_collects_only_the_recent_window(self):
         scenario = {

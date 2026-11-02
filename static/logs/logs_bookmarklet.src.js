@@ -10,7 +10,10 @@
 // relit vos journaux et vos caches comme une consultation à la main :
 // elle peut durer plusieurs minutes — le bandeau en haut à droite suit
 // l'avancement. L'export est ensuite envoyé à l'application, où un aperçu
-// reste à valider avant l'import.
+// reste à valider avant l'import. Ce qu'elle lit : tout (journaux et
+// caches posées), ou une seule famille selon le périmètre choisi dans la
+// carte « Mes logs » — relu avant chaque passage via
+// /api/logs/receive/state.
 //
 // Contrainte d'écriture, vérifiée par les tests : commentaires en lignes
 // entières uniquement, chaque instruction terminée par un point-virgule,
@@ -33,6 +36,8 @@
     prefix: __T_PREFIX__,
     wrongsite: __T_WRONGSITE__,
     since: __T_SINCE__,
+    scopednf: __T_SCOPEDNF__,
+    scopeowned: __T_SCOPEOWNED__,
     pendingask: __T_PENDINGASK__,
     pendingstop: __T_PENDINGSTOP__,
     badtoken: __T_BADTOKEN__,
@@ -91,9 +96,15 @@
       return;
     }
     var since = (info && info.since) || null;
-    if (since) note('since', since, 0, 0);
     var state = newState();
     state.since = since;
+    // Périmètre choisi dans l'application (« all » par défaut — un état
+    // plus ancien ne le porte pas). « owned » rend `since` sans objet :
+    // il ne borne que les DNF, qui ne sont pas lus — ne pas l'annoncer.
+    state.scope = (info && info.scope) || 'all';
+    if (since && state.scope !== 'owned') note('since', since, 0, 0);
+    if (state.scope === 'dnf') say(MESSAGES.scopednf);
+    if (state.scope === 'owned') say(MESSAGES.scopeowned);
 
     // --- Reprise de collecte -----------------------------------------
     // Le PLAN (file de caches à lire + avancement, ~25 Ko) tient dans
@@ -117,6 +128,7 @@
           runId: state.runId,
           created: state.planCreated || Date.now(),
           since: state.since,
+          scope: state.scope,
           order: state.order || state.prefOrder || null,
           me: { name: state.me.name, id: state.me.id },
           dnfComplete: !!state.dnf.listingComplete,

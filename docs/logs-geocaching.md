@@ -40,7 +40,10 @@ Deux voies produisent le fichier `mygcflow-logs` :
   navigateur les mêmes pages qu'une consultation manuelle (listes de DNF,
   caches posées, carnets), avec les mêmes cadences, puis envoie le
   document à l'app — où il arrive comme un **import en attente**, validé
-  par l'aperçu avant tout écriture ;
+  par l'aperçu avant tout écriture. La carte règle aussi ce que le favori
+  collecte : tout (DNF + caches posées), les DNF seulement ou les caches
+  posées seulement — périmètre relu à chaque passage (`scope` de
+  `/api/logs/receive/state`, voir « Collecte incrémentale ») ;
 - l'**outil console** `tools/gc_logs_exporter/export_gc_logs.js` (usage
   développeur), dont le moteur a été porté dans le cœur partagé du favori
   (`static/logs/logs_collect_core.js`).
@@ -410,10 +413,23 @@ reprise renvoie l'export sans rien relire.
 CORS ; une GET, donc hors du garde-fou inter-sites qui ne vise que les
 mutations) répond au favori avant qu'il ne parte :
 
-- `since` : date du `exported_at` le plus récent parmi les logs de source
-  `mygcflow-logs` (`log_store.collection_since`). Les GPX ne font pas
-  avancer l'horizon : ils ne portent pas les DNF hors caches trouvées.
-  `null` tant qu'aucun export contrat n'a été importé → collecte complète ;
+- `since` : horizon DNF de la collection (`log_collection.dnf_covered_at`,
+  renvoyé par `log_store.collection_since`) — date du dernier `exported_at`
+  d'un export dont la couverture déclare les DNF du compte complets (scope
+  `author` incluant le type 3 ; un scope borné par `since` compte : la
+  fenêtre since→exported_at est couverte). Les GPX ne font pas avancer
+  l'horizon : ils ne portent pas les DNF hors caches trouvées. Une collecte
+  réduite aux caches posées ne le fait pas non plus — sinon la fenêtre
+  incrémentale suivante sauterait les DNF parus entre-temps. `null` tant
+  qu'aucun export à couverture DNF n'a été importé → collecte complète ;
+- `scope` : périmètre de collecte choisi dans la carte « Mes logs »
+  (`logs_collect_scope` : « all », « dnf » ou « owned » ; `POST
+  /api/logs/bookmarklet/scope`). « dnf » saute le bloc « Vos caches »,
+  « owned » saute le journal **et** l'annonce `since` (qui ne borne que
+  les DNF). Lu à chaque démarrage, jamais consommé — contrairement à
+  `logs_collect_full_once`. La famille non collectée ne produit aucun
+  scope de couverture : l'import n'y touche pas (logs déjà importés
+  conservés) ;
 - `pending` : un export précédent attend sa validation — le favori
   propose alors d'annuler plutôt que de relire pour rien ;
 - `logs_collect_full_once` (bouton « Forcer une collecte complète la

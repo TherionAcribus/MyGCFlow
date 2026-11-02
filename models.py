@@ -166,6 +166,12 @@ class LogCollection(db.Model):
     revision = db.Column(db.Integer, nullable=False, default=0)
     last_import_at = db.Column(db.DateTime)
     last_import_summary = db.Column(db.Text)
+    # Instant `exported_at` jusqu'auquel les DNF du compte sont connus :
+    # horizon de la collecte incrémentale du favori. Il n'avance que sur
+    # un export à couverture DNF complète — une collecte « caches posées
+    # seulement » ne le fait pas bouger, sinon la fenêtre incrémentale
+    # suivante sauterait les DNF parus entre-temps.
+    dnf_covered_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime)
 
 

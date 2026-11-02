@@ -250,6 +250,22 @@
                         {{ _("Vos DNF, vos actions de poseur et les logs reçus sur vos caches.") }}
                     </div>
 
+                    <!-- Périmètre de la collecte du favori : choisi avant
+                         de cliquer le favori, relu par celui-ci via
+                         /api/logs/receive/state — pas sous « Options
+                         avancées » où on ne le verrait pas à temps. -->
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <label for="gcLogsScopeSelect" class="form-label mb-0">{{ _('Le favori collecte') }}</label>
+                        <select id="gcLogsScopeSelect" class="form-select form-select-sm w-auto">
+                            <option value="all">{{ _('Tout : DNF et caches posées') }}</option>
+                            <option value="dnf">{{ _('Mes DNF seulement') }}</option>
+                            <option value="owned">{{ _('Mes caches posées seulement') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Un périmètre réduit raccourcit la collecte. Les logs de l'autre famille déjà importés sont conservés.") }}
+                    </div>
+
                     <div id="gcLogsActivity" class="alert alert-info py-2 px-3 mb-2" hidden aria-live="polite">
                         <div class="flex-fill d-flex align-items-center gap-2">
                             <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
