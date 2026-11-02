@@ -444,7 +444,55 @@ test('tuiles poseur : avant toute trouvaille, délai indéfini et délaissée = 
     // Timeline vide : idem.
     const empty = buildPosesTimeline(base, new Int32Array(0));
     assert.deepEqual(posesCounterAtDay(empty, base, 10),
-        { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] });
+        { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [],
+          maintDelay: null, maintOpen: [], rescued: [], topFav: null });
+});
+
+test('tuiles poseur : maintenance, sauvetages et cache la plus favorisée', () => {
+    const p = payload();
+    // A : alerte jour 5 résolue par une maintenance jour 12 (délai 7), puis
+    // seconde alerte jour 20 encore ouverte à la fin. B : DNF jour 3 puis
+    // trouvailles favorisées jours 6 et 7 — sauvée, et plus favorisée que A
+    // (qui n'a qu'un favori, au jour 0).
+    for (const row of [
+        [1, 3, K.dnf, 0, 0, 4],
+        [0, 5, K.alert, 0, 0, 1],
+        [1, 6, K.find, 1, 0, 1],
+        [1, 7, K.find, 1, 0, 3],
+        [0, 12, K.maintenance, 0, 0, 2],
+        [0, 20, K.alert, 0, 0, 1],
+    ]) {
+        p.ev.cache.push(row[0]); p.ev.day.push(row[1]); p.ev.kind.push(row[2]);
+        p.ev.fav.push(row[3]); p.ev.folded.push(row[4]); p.ev.author.push(row[5]);
+    }
+    const order = [...p.ev.day.keys()].sort((a, b) => p.ev.day[a] - p.ev.day[b] || p.ev.cache[a] - p.ev.cache[b]);
+    for (const key of Object.keys(p.ev)) p.ev[key] = order.map((j) => p.ev[key][j]);
+    const base = buildPosesBase(p);
+    const tl = buildPosesTimeline(base, filterRows(base, { undatedMode: 'keep' }));
+
+    // Avant la maintenance : alerte d'A ouverte, délai indéfini ; B déjà
+    // sauvée et la plus favorisée.
+    const d11 = posesCounterAtDay(tl, base, 11);
+    assert.equal(d11.maintDelay, null);
+    assert.deepEqual(d11.maintOpen, ['GCA']);
+    assert.deepEqual(d11.rescued, ['GCB']);
+    assert.deepEqual(d11.topFav, { count: 2, code: 'GCB' });
+
+    // À la fin : la maintenance d'A ferme sa première alerte (délai 7) ;
+    // la seconde reste ouverte.
+    const end = posesCounterAtDay(tl, base, 25);
+    assert.equal(end.maintDelay, 7);
+    assert.deepEqual(end.maintOpen, ['GCA']);
+    assert.deepEqual(end.rescued, ['GCB']);
+    assert.deepEqual(end.topFav, { count: 2, code: 'GCB' });
+
+    // Avant l'alerte d'A : rien d'ouvert ; seul le favori d'A (jour 0)
+    // compte pour la plus favorisée, et B n'est pas encore sauvée.
+    const d4 = posesCounterAtDay(tl, base, 4);
+    assert.equal(d4.maintDelay, null);
+    assert.deepEqual(d4.maintOpen, []);
+    assert.deepEqual(d4.rescued, []);
+    assert.deepEqual(d4.topFav, { count: 1, code: 'GCA' });
 });
 
 test('tuiles poseur : le résultat ne dépend pas de l\'ordre des jours demandés', () => {

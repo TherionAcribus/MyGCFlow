@@ -267,17 +267,20 @@ type, taille, D, T, pays, région ; courbe cumulée ; tuiles
 `POSES_COUNTER_ITEMS` pour les trouvailles reçues (trouveurs, favoris,
 caches trouvées, jours, record, série, trouvées le jour de publication,
 catégories, points extrêmes), `POSES_ALT_COUNTER_ITEMS` pour les DNF reçus
-et les favoris reçus — accumulateur seul, aucune tuile « au jour ». Quatre
-tuiles « poseur » en plus :
+et les favoris reçus — accumulateur seul, aucune tuile « au jour ». Tuiles
+« poseur » en plus, lues dans la chronologie au jour affiché
+(`posesCounterAtDay`/`posesCounterStats`), pas dans l'accumulateur :
 « Part de favoris » (favoris / trouvailles), « Trouveurs fidèles » (au moins
 3 trouvailles reçues, détail = trouveur le plus assidu), « Délai moyen avant
-la première trouvaille », « Cache la plus délaissée », « Moyenne de
-trouvailles par cache » (trouvailles reçues / caches apparues) et « Caches
-jamais trouvées » (détail = leurs codes) — ces quatre-là sont lues dans la
-chronologie au jour affiché (`posesCounterAtDay`/`posesCounterStats`), pas
-dans l'accumulateur : la délaissée est la jamais trouvée la plus anciennement
-apparue, sinon la dernière trouvaille la plus ancienne. Configurations
-nommées de mode `poses`.
+la première trouvaille », « Cache la plus délaissée » (la jamais trouvée la
+plus anciennement apparue, sinon la dernière trouvaille la plus ancienne),
+« Moyenne de trouvailles par cache » (trouvailles reçues / caches apparues),
+« Caches jamais trouvées » (détail = leurs codes), « Délai moyen avant
+maintenance » (signalement NM/NA → log de maintenance, moyenne des alertes
+résolues), « Caches en attente de maintenance » (alerte sans maintenance,
+détail = leurs codes), « Caches sauvées » (un DNF puis une trouvaille,
+détail = leurs codes) et « Cache la plus favorisée » (détail = son code).
+Configurations nommées de mode `poses`.
 
 **Images** : liste propre `images.poses_items`. La planification « par
 trouvailles » compte les trouvailles reçues (`findDayCounts` du moteur).

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-02 18:18+0100\n"
+"POT-Creation-Date: 2026-11-02 18:30+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -329,7 +329,7 @@ msgstr "Find"
 
 #: event_flash.py:64 poses_dataset.py:638 static/js/gc_logs.js:39
 #: static/js/gc_logs.js:60 static/js/mapgl.js:1231
-#: static/js/stats_panels.js:1405 static/js/stats_panels.js:1825
+#: static/js/stats_panels.js:1406 static/js/stats_panels.js:1839
 #: templates/menu_informations.html:66 templates/menu_informations.html:105
 #: templates/menu_names.html:64 templates/menu_names.html:309
 msgid "DNF"
@@ -656,8 +656,8 @@ msgstr "Latitude"
 msgid "Longitude"
 msgstr "Longitude"
 
-#: poses_dataset.py:636 static/js/stats_panels.js:1186
-#: static/js/stats_panels.js:1428 templates/_filter_country_state.html:6
+#: poses_dataset.py:636 static/js/stats_panels.js:1187
+#: static/js/stats_panels.js:1433 templates/_filter_country_state.html:6
 #: templates/_filter_country_state.html:7 templates/menu_stats.html:233
 #: templates/menu_stats.html:502
 msgid "Pays"
@@ -679,7 +679,7 @@ msgstr "Appearance source"
 msgid "Statut"
 msgstr "Status"
 
-#: poses_dataset.py:638 static/js/stats_panels.js:1408
+#: poses_dataset.py:638 static/js/stats_panels.js:1409
 #: static/js/stats_ui.js:223 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
@@ -715,16 +715,16 @@ msgid "Premier log"
 msgstr "First log"
 
 #: poses_dataset.py:666 static/js/evolution_data.js:753 static/js/mapgl.js:3805
-#: static/js/poses_data.js:1016 templates/menu_data_poses.html:83
+#: static/js/poses_data.js:1018 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Active"
 
-#: poses_dataset.py:667 static/js/mapgl.js:3805 static/js/poses_data.js:1017
+#: poses_dataset.py:667 static/js/mapgl.js:3805 static/js/poses_data.js:1019
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr "Disabled"
 
-#: poses_dataset.py:668 static/js/mapgl.js:3805 static/js/poses_data.js:1018
+#: poses_dataset.py:668 static/js/mapgl.js:3805 static/js/poses_data.js:1020
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr "Archived"
@@ -1524,8 +1524,8 @@ msgstr "today at ${time}"
 msgid "hier à ${time}"
 msgstr "yesterday at ${time}"
 
-#: static/js/bdd.js:642 static/js/stats_panels.js:1827
-#: static/js/stats_panels.js:1966
+#: static/js/bdd.js:642 static/js/stats_panels.js:1841
+#: static/js/stats_panels.js:1980
 msgid "caches"
 msgstr "caches"
 
@@ -2063,7 +2063,7 @@ msgstr "Error loading GC colors (${status}): ${statusText}"
 msgid "trouvaille"
 msgstr "find"
 
-#: static/js/gc_logs.js:40 static/js/stats_panels.js:1827
+#: static/js/gc_logs.js:40 static/js/stats_panels.js:1841
 #: templates/menu_names.html:81
 msgid "trouvailles"
 msgstr "finds"
@@ -3427,22 +3427,22 @@ msgstr "${found}/${total} stages found"
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Approximate position (Adventure center)"
 
-#: static/js/mapgl.js:3800 static/js/poses_data.js:1062
+#: static/js/mapgl.js:3800 static/js/poses_data.js:1064
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:3801 static/js/poses_data.js:1063
+#: static/js/mapgl.js:3801 static/js/poses_data.js:1065
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Placed on ${date}"
 
-#: static/js/mapgl.js:3802 static/js/poses_data.js:1064
+#: static/js/mapgl.js:3802 static/js/poses_data.js:1066
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Found before its publication on ${date}"
 
-#: static/js/mapgl.js:3803 static/js/poses_data.js:1065
+#: static/js/mapgl.js:3803 static/js/poses_data.js:1067
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "First log on ${date}"
@@ -3920,8 +3920,8 @@ msgstr "Active when owned caches are shown"
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "The setting will apply at the end of the animation."
 
-#: static/js/poses_data.js:165 static/js/stats_panels.js:1250
-#: static/js/stats_panels.js:1440 static/js/stats_panels.js:1450
+#: static/js/poses_data.js:165 static/js/stats_panels.js:1251
+#: static/js/stats_panels.js:1445 static/js/stats_panels.js:1455
 #: templates/menu_data_poses.html:110 templates/menu_stats.html:245
 #: templates/menu_stats.html:264
 msgid "Caches archivées"
@@ -3988,16 +3988,16 @@ msgstr "${caches} hidden caches · ${finds} finds received · ${favorites} favor
 msgid "Un visiteur"
 msgstr "A visitor"
 
-#: static/js/poses_data.js:1092
+#: static/js/poses_data.js:1094
 #, python-brace-format
 msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
 msgstr "${finds} finds · ${favorites} favorites · ${dnf} DNF"
 
-#: static/js/poses_data.js:1102
+#: static/js/poses_data.js:1104
 msgid "Pays et région déduits des trouvailles voisines"
 msgstr "Country and region deduced from nearby finds"
 
-#: static/js/poses_data.js:1113
+#: static/js/poses_data.js:1115
 #, python-brace-format
 msgid "Premier trouveur : ${name} (${date})"
 msgstr "First to find: ${name} (${date})"
@@ -4470,835 +4470,851 @@ msgstr "Saving…"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/stats_panels.js:1074 templates/menu_stats.html:529
+#: static/js/stats_panels.js:1075 templates/menu_stats.html:529
 msgid "Matrice D/T des DNF"
 msgstr "D/T matrix of DNFs"
 
-#: static/js/stats_panels.js:1075
+#: static/js/stats_panels.js:1076
 msgid "DNF mois × année"
 msgstr "DNFs month × year"
 
-#: static/js/stats_panels.js:1076 templates/menu_stats.html:534
+#: static/js/stats_panels.js:1077 templates/menu_stats.html:534
 msgid "Calendrier des DNF"
 msgstr "DNF calendar"
 
-#: static/js/stats_panels.js:1077
+#: static/js/stats_panels.js:1078
 msgid "Activité DNF"
 msgstr "DNF activity"
 
-#: static/js/stats_panels.js:1078 templates/menu_stats.html:532
+#: static/js/stats_panels.js:1079 templates/menu_stats.html:532
 msgid "DNF par cache"
 msgstr "DNF per cache"
 
-#: static/js/stats_panels.js:1079 templates/menu_stats.html:531
+#: static/js/stats_panels.js:1080 templates/menu_stats.html:531
 msgid "DNF par type"
 msgstr "DNFs by type"
 
-#: static/js/stats_panels.js:1080
+#: static/js/stats_panels.js:1081
 msgid "DNF par taille"
 msgstr "DNFs by size"
 
-#: static/js/stats_panels.js:1081 templates/menu_stats.html:530
+#: static/js/stats_panels.js:1082 templates/menu_stats.html:530
 msgid "DNF par difficulté"
 msgstr "DNFs by difficulty"
 
-#: static/js/stats_panels.js:1082
+#: static/js/stats_panels.js:1083
 msgid "DNF par terrain"
 msgstr "DNFs by terrain"
 
-#: static/js/stats_panels.js:1083 templates/menu_stats.html:533
+#: static/js/stats_panels.js:1084 templates/menu_stats.html:533
 msgid "DNF par année"
 msgstr "DNFs by year"
 
-#: static/js/stats_panels.js:1084
+#: static/js/stats_panels.js:1085
 msgid "DNF par mois"
 msgstr "DNFs by month"
 
-#: static/js/stats_panels.js:1085
+#: static/js/stats_panels.js:1086
 msgid "DNF par jour de la semaine"
 msgstr "DNFs by day of the week"
 
-#: static/js/stats_panels.js:1086
+#: static/js/stats_panels.js:1087
 msgid "DNF par pays"
 msgstr "DNFs by country"
 
-#: static/js/stats_panels.js:1087
+#: static/js/stats_panels.js:1088
 msgid "DNF par région"
 msgstr "DNFs by region"
 
-#: static/js/stats_panels.js:1088
+#: static/js/stats_panels.js:1089
 msgid "DNF par propriétaire"
 msgstr "DNFs by owner"
 
-#: static/js/stats_panels.js:1089
+#: static/js/stats_panels.js:1090
 msgid "DNF cumulés"
 msgstr "Cumulative DNFs"
 
-#: static/js/stats_panels.js:1090
+#: static/js/stats_panels.js:1091
 msgid "Chiffres clés des DNF"
 msgstr "DNF key figures"
 
-#: static/js/stats_panels.js:1095 templates/menu_stats.html:540
+#: static/js/stats_panels.js:1096 templates/menu_stats.html:540
 msgid "Matrice D/T de mes caches"
 msgstr "D/T matrix of my caches"
 
-#: static/js/stats_panels.js:1096
+#: static/js/stats_panels.js:1097
 msgid "Poses mois × année"
 msgstr "Hides month × year"
 
-#: static/js/stats_panels.js:1097
+#: static/js/stats_panels.js:1098
 msgid "Calendrier des poses"
 msgstr "Hide calendar"
 
-#: static/js/stats_panels.js:1098
+#: static/js/stats_panels.js:1099
 msgid "Activité de poseur"
 msgstr "Hider activity"
 
-#: static/js/stats_panels.js:1099
+#: static/js/stats_panels.js:1100
 msgid "Mes caches par type"
 msgstr "My caches by type"
 
-#: static/js/stats_panels.js:1100
+#: static/js/stats_panels.js:1101
 msgid "Mes caches par taille"
 msgstr "My caches by size"
 
-#: static/js/stats_panels.js:1101
+#: static/js/stats_panels.js:1102
 msgid "Mes caches par difficulté"
 msgstr "My caches by difficulty"
 
-#: static/js/stats_panels.js:1102
+#: static/js/stats_panels.js:1103
 msgid "Mes caches par terrain"
 msgstr "My caches by terrain"
 
-#: static/js/stats_panels.js:1103 templates/menu_stats.html:542
+#: static/js/stats_panels.js:1104 templates/menu_stats.html:542
 msgid "Poses par année"
 msgstr "Hides by year"
 
-#: static/js/stats_panels.js:1104
+#: static/js/stats_panels.js:1105
 msgid "Poses par mois"
 msgstr "Hides by month"
 
-#: static/js/stats_panels.js:1105
+#: static/js/stats_panels.js:1106
 msgid "Poses par jour de la semaine"
 msgstr "Hides by day of the week"
 
-#: static/js/stats_panels.js:1106
+#: static/js/stats_panels.js:1107
 msgid "Mes caches par pays"
 msgstr "My caches by country"
 
-#: static/js/stats_panels.js:1107
+#: static/js/stats_panels.js:1108
 msgid "Mes caches par région"
 msgstr "My caches by region"
 
-#: static/js/stats_panels.js:1108
+#: static/js/stats_panels.js:1109
 msgid "Caches posées cumulées"
 msgstr "Cumulative hidden caches"
 
-#: static/js/stats_panels.js:1109 templates/menu_stats.html:539
+#: static/js/stats_panels.js:1110 templates/menu_stats.html:539
 msgid "État de mes caches"
 msgstr "State of my caches"
 
-#: static/js/stats_panels.js:1110
+#: static/js/stats_panels.js:1111
 msgid "Chiffres clés de mes caches"
 msgstr "My caches key figures"
 
-#: static/js/stats_panels.js:1115
+#: static/js/stats_panels.js:1116
 msgid "Matrice D/T des DNF reçus"
 msgstr "D/T matrix of received DNFs"
 
-#: static/js/stats_panels.js:1116
+#: static/js/stats_panels.js:1117
 msgid "DNF reçus mois × année"
 msgstr "Received DNFs month × year"
 
-#: static/js/stats_panels.js:1117
+#: static/js/stats_panels.js:1118
 msgid "Calendrier des DNF reçus"
 msgstr "Received DNFs calendar"
 
-#: static/js/stats_panels.js:1118
+#: static/js/stats_panels.js:1119
 msgid "Activité des DNF reçus"
 msgstr "Received DNF activity"
 
-#: static/js/stats_panels.js:1119
+#: static/js/stats_panels.js:1120
 msgid "DNF reçus par cache"
 msgstr "Received DNFs per cache"
 
-#: static/js/stats_panels.js:1120
+#: static/js/stats_panels.js:1121
 msgid "DNF reçus par joueur"
 msgstr "Received DNFs per player"
 
-#: static/js/stats_panels.js:1121
+#: static/js/stats_panels.js:1122
 msgid "DNF reçus par année"
 msgstr "Received DNFs per year"
 
-#: static/js/stats_panels.js:1122
+#: static/js/stats_panels.js:1123
 msgid "DNF reçus par mois"
 msgstr "Received DNFs per month"
 
-#: static/js/stats_panels.js:1123
+#: static/js/stats_panels.js:1124
 msgid "DNF reçus par jour de la semaine"
 msgstr "Received DNFs by day of the week"
 
-#: static/js/stats_panels.js:1124
+#: static/js/stats_panels.js:1125
 msgid "Âge des caches au DNF"
 msgstr "Cache age at the DNF"
 
-#: static/js/stats_panels.js:1125
+#: static/js/stats_panels.js:1126
 msgid "DNF reçus par type"
 msgstr "Received DNFs by type"
 
-#: static/js/stats_panels.js:1126
+#: static/js/stats_panels.js:1127
 msgid "DNF reçus par taille"
 msgstr "Received DNFs by size"
 
-#: static/js/stats_panels.js:1127
+#: static/js/stats_panels.js:1128
 msgid "DNF reçus par difficulté"
 msgstr "Received DNFs by difficulty"
 
-#: static/js/stats_panels.js:1128
+#: static/js/stats_panels.js:1129
 msgid "DNF reçus par terrain"
 msgstr "Received DNFs by terrain"
 
-#: static/js/stats_panels.js:1129
+#: static/js/stats_panels.js:1130
 msgid "DNF reçus par pays"
 msgstr "Received DNFs by country"
 
-#: static/js/stats_panels.js:1130
+#: static/js/stats_panels.js:1131
 msgid "DNF reçus par région"
 msgstr "Received DNFs by region"
 
-#: static/js/stats_panels.js:1131 static/js/stats_ui.js:324
+#: static/js/stats_panels.js:1132 static/js/stats_ui.js:324
 #: static/js/stats_ui.js:843 templates/menu_stats.html:519
 msgid "DNF reçus"
 msgstr "DNFs received"
 
-#: static/js/stats_panels.js:1132
+#: static/js/stats_panels.js:1133
 msgid "Chiffres clés des DNF reçus"
 msgstr "Received DNF key figures"
 
-#: static/js/stats_panels.js:1137
+#: static/js/stats_panels.js:1138
 msgid "Matrice D/T des favoris"
 msgstr "D/T matrix of favorites"
 
-#: static/js/stats_panels.js:1138
+#: static/js/stats_panels.js:1139
 msgid "Favoris reçus mois × année"
 msgstr "Favorites received month × year"
 
-#: static/js/stats_panels.js:1139
+#: static/js/stats_panels.js:1140
 msgid "Calendrier des favoris reçus"
 msgstr "Favorites received calendar"
 
-#: static/js/stats_panels.js:1140
+#: static/js/stats_panels.js:1141
 msgid "Activité des favoris reçus"
 msgstr "Favorites received activity"
 
-#: static/js/stats_panels.js:1141
+#: static/js/stats_panels.js:1142
 msgid "Favoris reçus par cache"
 msgstr "Favorites received per cache"
 
-#: static/js/stats_panels.js:1142 static/js/stats_panels.js:1410
+#: static/js/stats_panels.js:1143 static/js/stats_panels.js:1411
 msgid "Joueurs favorisants"
 msgstr "Favoriting players"
 
-#: static/js/stats_panels.js:1143
+#: static/js/stats_panels.js:1144
 msgid "Favoris reçus par année"
 msgstr "Favorites received per year"
 
-#: static/js/stats_panels.js:1144
+#: static/js/stats_panels.js:1145
 msgid "Favoris reçus par mois"
 msgstr "Favorites received per month"
 
-#: static/js/stats_panels.js:1145
+#: static/js/stats_panels.js:1146
 msgid "Favoris reçus par jour de la semaine"
 msgstr "Favorites received by day of the week"
 
-#: static/js/stats_panels.js:1146
+#: static/js/stats_panels.js:1147
 msgid "Âge des caches au favori"
 msgstr "Cache age at the favorite"
 
-#: static/js/stats_panels.js:1147
+#: static/js/stats_panels.js:1148
 msgid "Favoris reçus par type"
 msgstr "Favorites received by type"
 
-#: static/js/stats_panels.js:1148
+#: static/js/stats_panels.js:1149
 msgid "Favoris reçus par taille"
 msgstr "Favorites received by size"
 
-#: static/js/stats_panels.js:1149
+#: static/js/stats_panels.js:1150
 msgid "Favoris reçus par difficulté"
 msgstr "Favorites received by difficulty"
 
-#: static/js/stats_panels.js:1150
+#: static/js/stats_panels.js:1151
 msgid "Favoris reçus par terrain"
 msgstr "Favorites received by terrain"
 
-#: static/js/stats_panels.js:1151
+#: static/js/stats_panels.js:1152
 msgid "Favoris reçus par pays"
 msgstr "Favorites received by country"
 
-#: static/js/stats_panels.js:1152
+#: static/js/stats_panels.js:1153
 msgid "Favoris reçus par région"
 msgstr "Favorites received by region"
 
-#: static/js/stats_panels.js:1153 static/js/stats_panels.js:1407
-#: static/js/stats_panels.js:1411 static/js/stats_ui.js:324
+#: static/js/stats_panels.js:1154 static/js/stats_panels.js:1408
+#: static/js/stats_panels.js:1412 static/js/stats_ui.js:324
 #: static/js/stats_ui.js:843 templates/menu_stats.html:250
 #: templates/menu_stats.html:523
 msgid "Favoris reçus"
 msgstr "Favorites received"
 
-#: static/js/stats_panels.js:1154
+#: static/js/stats_panels.js:1155
 msgid "Chiffres clés des favoris reçus"
 msgstr "Received favorites key figures"
 
-#: static/js/stats_panels.js:1160 templates/menu_stats.html:515
+#: static/js/stats_panels.js:1161 templates/menu_stats.html:515
 msgid "Caches les plus trouvées"
 msgstr "Most found caches"
 
-#: static/js/stats_panels.js:1161 templates/menu_stats.html:514
+#: static/js/stats_panels.js:1162 templates/menu_stats.html:514
 msgid "Meilleurs trouveurs"
 msgstr "Top finders"
 
-#: static/js/stats_panels.js:1162
+#: static/js/stats_panels.js:1163
 msgid "Trouvailles reçues par année"
 msgstr "Finds received per year"
 
-#: static/js/stats_panels.js:1163
+#: static/js/stats_panels.js:1164
 msgid "Trouvailles reçues par mois"
 msgstr "Finds received per month"
 
-#: static/js/stats_panels.js:1164 static/js/stats_panels.js:1408
+#: static/js/stats_panels.js:1165 static/js/stats_panels.js:1409
 #: static/js/stats_ui.js:324 static/js/stats_ui.js:843
 #: templates/menu_data_poses.html:94 templates/menu_data_poses.html:95
 msgid "Trouvailles reçues"
 msgstr "Finds received"
 
-#: static/js/stats_panels.js:1165
+#: static/js/stats_panels.js:1166
 msgid "Trouvailles reçues mois × année"
 msgstr "Finds received month × year"
 
-#: static/js/stats_panels.js:1166
+#: static/js/stats_panels.js:1167
 msgid "Chiffres clés de mes poses"
 msgstr "Key figures of my hides"
 
-#: static/js/stats_panels.js:1171 templates/guide.html:366
+#: static/js/stats_panels.js:1172 templates/guide.html:366
 #: templates/menu_stats.html:473
 msgid "Matrice D/T"
 msgstr "D/T grid"
 
-#: static/js/stats_panels.js:1172 templates/guide.html:367
+#: static/js/stats_panels.js:1173 templates/guide.html:367
 #: templates/menu_stats.html:474
 msgid "Grille Jasmer"
 msgstr "Jasmer grid"
 
-#: static/js/stats_panels.js:1173 templates/guide.html:368
+#: static/js/stats_panels.js:1174 templates/guide.html:368
 #: templates/menu_stats.html:475
 msgid "Trouvailles mois × année"
 msgstr "Month × year finds"
 
-#: static/js/stats_panels.js:1174 templates/guide.html:369
+#: static/js/stats_panels.js:1175 templates/guide.html:369
 #: templates/menu_stats.html:476
 msgid "Calendrier 366"
 msgstr "366-day calendar"
 
-#: static/js/stats_panels.js:1175 templates/menu_stats.html:477
+#: static/js/stats_panels.js:1176 templates/menu_stats.html:477
 msgid "Année d'activité"
 msgstr "Activity year"
 
-#: static/js/stats_panels.js:1176 templates/menu_stats.html:488
+#: static/js/stats_panels.js:1177 templates/menu_stats.html:488
 msgid "Types de caches"
 msgstr "Cache types"
 
-#: static/js/stats_panels.js:1177 templates/menu_stats.html:490
+#: static/js/stats_panels.js:1178 templates/menu_stats.html:490
 msgid "Tailles"
 msgstr "Sizes"
 
-#: static/js/stats_panels.js:1178 templates/menu_stats.html:492
+#: static/js/stats_panels.js:1179 templates/menu_stats.html:492
 msgid "Difficulté"
 msgstr "Difficulty"
 
-#: static/js/stats_panels.js:1179 templates/_filter_cache_attrs.html:92
+#: static/js/stats_panels.js:1180 templates/_filter_cache_attrs.html:92
 #: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:493
 msgid "Terrain"
 msgstr "Terrain"
 
-#: static/js/stats_panels.js:1180 templates/menu_stats.html:545
+#: static/js/stats_panels.js:1181 templates/menu_stats.html:545
 msgid "Trouvailles par année"
 msgstr "Finds per year"
 
-#: static/js/stats_panels.js:1181 templates/menu_stats.html:546
+#: static/js/stats_panels.js:1182 templates/menu_stats.html:546
 msgid "Trouvailles par mois"
 msgstr "Finds by month"
 
-#: static/js/stats_panels.js:1182 templates/menu_stats.html:547
+#: static/js/stats_panels.js:1183 templates/menu_stats.html:547
 msgid "Jours de la semaine"
 msgstr "Days of the week"
 
-#: static/js/stats_panels.js:1183 templates/menu_stats.html:496
+#: static/js/stats_panels.js:1184 templates/menu_stats.html:496
 msgid "Âge des caches trouvées"
 msgstr "Age of found caches"
 
-#: static/js/stats_panels.js:1184 templates/menu_stats.html:494
+#: static/js/stats_panels.js:1185 templates/menu_stats.html:494
 msgid "Attributs"
 msgstr "Attributes"
 
-#: static/js/stats_panels.js:1185 templates/menu_stats.html:508
+#: static/js/stats_panels.js:1186 templates/menu_stats.html:508
 msgid "Propriétaires"
 msgstr "Owners"
 
-#: static/js/stats_panels.js:1187 static/js/stats_panels.js:1429
+#: static/js/stats_panels.js:1188 static/js/stats_panels.js:1434
 #: templates/menu_stats.html:234 templates/menu_stats.html:505
 msgid "Régions"
 msgstr "Regions"
 
-#: static/js/stats_panels.js:1188 templates/menu_stats.html:506
+#: static/js/stats_panels.js:1189 templates/menu_stats.html:506
 msgid "Départements"
 msgstr "Counties"
 
-#: static/js/stats_panels.js:1189 templates/menu_stats.html:497
+#: static/js/stats_panels.js:1190 templates/menu_stats.html:497
 msgid "Statut des caches"
 msgstr "Cache status"
 
-#: static/js/stats_panels.js:1190 templates/menu_names.html:212
+#: static/js/stats_panels.js:1191 templates/menu_names.html:212
 #: templates/menu_stats.html:499
 msgid "Durée de vie"
 msgstr "Lifetime"
 
-#: static/js/stats_panels.js:1191 static/js/stats_panels.js:1442
+#: static/js/stats_panels.js:1192 static/js/stats_panels.js:1447
 #: templates/menu_stats.html:247
 msgid "Âge moyen des actives"
 msgstr "Average age of active caches"
 
-#: static/js/stats_panels.js:1192 static/js/stats_panels.js:1249
-#: static/js/stats_panels.js:1438 static/js/stats_panels.js:1448
+#: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
+#: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
 #: templates/menu_stats.html:177 templates/menu_stats.html:243
 #: templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Active caches"
 
-#: static/js/stats_panels.js:1193 templates/menu_stats.html:178
+#: static/js/stats_panels.js:1194 templates/menu_stats.html:178
 msgid "Poses cumulées"
 msgstr "Cumulative placements"
 
-#: static/js/stats_panels.js:1194 templates/menu_stats.html:179
+#: static/js/stats_panels.js:1195 templates/menu_stats.html:179
 msgid "Archivages cumulés"
 msgstr "Cumulative archives"
 
-#: static/js/stats_panels.js:1195 templates/guide.html:372
+#: static/js/stats_panels.js:1196 templates/guide.html:372
 #: templates/menu_stats.html:482
 msgid "Progression des trouvailles"
 msgstr "Finds over time"
 
-#: static/js/stats_panels.js:1196 static/js/stats_ui.js:211
+#: static/js/stats_panels.js:1197 static/js/stats_ui.js:211
 #: templates/guide.html:373 templates/menu_stats.html:480
 msgid "Chiffres clés"
 msgstr "Key figures"
 
-#: static/js/stats_panels.js:1202 static/js/stats_panels.js:1237
+#: static/js/stats_panels.js:1203 static/js/stats_panels.js:1238
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr "Others"
 
-#: static/js/stats_panels.js:1203
+#: static/js/stats_panels.js:1204
 msgid "Inconnu"
 msgstr "Unknown"
 
-#: static/js/stats_panels.js:1210
+#: static/js/stats_panels.js:1211
 msgid "Le jour même"
 msgstr "Same day"
 
-#: static/js/stats_panels.js:1211
+#: static/js/stats_panels.js:1212
 msgid "1 à 7 jours"
 msgstr "1 to 7 days"
 
-#: static/js/stats_panels.js:1212
+#: static/js/stats_panels.js:1213
 msgid "8 jours à 1 mois"
 msgstr "8 days to 1 month"
 
-#: static/js/stats_panels.js:1213
+#: static/js/stats_panels.js:1214
 msgid "1 à 6 mois"
 msgstr "1 to 6 months"
 
-#: static/js/stats_panels.js:1214
+#: static/js/stats_panels.js:1215
 msgid "6 à 12 mois"
 msgstr "6 to 12 months"
 
-#: static/js/stats_panels.js:1215 static/js/stats_panels.js:1228
+#: static/js/stats_panels.js:1216 static/js/stats_panels.js:1229
 msgid "1 à 2 ans"
 msgstr "1 to 2 years"
 
-#: static/js/stats_panels.js:1216
+#: static/js/stats_panels.js:1217
 msgid "2 à 5 ans"
 msgstr "2 to 5 years"
 
-#: static/js/stats_panels.js:1217 static/js/stats_panels.js:1231
+#: static/js/stats_panels.js:1218 static/js/stats_panels.js:1232
 msgid "5 à 10 ans"
 msgstr "5 to 10 years"
 
-#: static/js/stats_panels.js:1218
+#: static/js/stats_panels.js:1219
 msgid "10 à 15 ans"
 msgstr "10 to 15 years"
 
-#: static/js/stats_panels.js:1219
+#: static/js/stats_panels.js:1220
 msgid "15 ans et plus"
 msgstr "15 years and more"
 
-#: static/js/stats_panels.js:1227
+#: static/js/stats_panels.js:1228
 msgid "Moins d'un an"
 msgstr "Less than a year"
 
-#: static/js/stats_panels.js:1229
+#: static/js/stats_panels.js:1230
 msgid "2 à 3 ans"
 msgstr "2 to 3 years"
 
-#: static/js/stats_panels.js:1230
+#: static/js/stats_panels.js:1231
 msgid "3 à 5 ans"
 msgstr "3 to 5 years"
 
-#: static/js/stats_panels.js:1232
+#: static/js/stats_panels.js:1233
 msgid "10 ans et plus"
 msgstr "10 years and more"
 
-#: static/js/stats_panels.js:1250 static/js/stats_panels.js:1449
+#: static/js/stats_panels.js:1251 static/js/stats_panels.js:1454
 #: templates/menu_stats.html:263
 msgid "Caches désactivées"
 msgstr "Disabled caches"
 
-#: static/js/stats_panels.js:1257
+#: static/js/stats_panels.js:1258
 #, python-brace-format
 msgid "Sans D/T : ${n}"
 msgstr "No D/T: ${n}"
 
-#: static/js/stats_panels.js:1258
+#: static/js/stats_panels.js:1259
 #, python-brace-format
 msgid "Sans difficulté : ${n}"
 msgstr "No difficulty: ${n}"
 
-#: static/js/stats_panels.js:1259
+#: static/js/stats_panels.js:1260
 #, python-brace-format
 msgid "Sans terrain : ${n}"
 msgstr "No terrain: ${n}"
 
-#: static/js/stats_panels.js:1260
+#: static/js/stats_panels.js:1261
 #, python-brace-format
 msgid "Sans date de publication : ${n}"
 msgstr "No publication date: ${n}"
 
-#: static/js/stats_panels.js:1262
+#: static/js/stats_panels.js:1263
 #, python-brace-format
 msgid "Sans date de trouvaille : ${n}"
 msgstr "No find date: ${n}"
 
-#: static/js/stats_panels.js:1263
+#: static/js/stats_panels.js:1264
 #, python-brace-format
 msgid "Sans attribut : ${n}"
 msgstr "No attribute: ${n}"
 
-#: static/js/stats_panels.js:1264
+#: static/js/stats_panels.js:1265
 #, python-brace-format
 msgid "Jamais archivées : ${n}"
 msgstr "Never archived: ${n}"
 
-#: static/js/stats_panels.js:1265
+#: static/js/stats_panels.js:1266
 #, python-brace-format
 msgid "Sans date : ${n}"
 msgstr "No date: ${n}"
 
-#: static/js/stats_panels.js:1270
+#: static/js/stats_panels.js:1271
 #, python-brace-format
 msgid "Combinaisons : ${filled}/${available} (${pct})"
 msgstr "Combinations: ${filled}/${available} (${pct})"
 
-#: static/js/stats_panels.js:1271
+#: static/js/stats_panels.js:1272
 #, python-brace-format
 msgid "Mois : ${filled}/${available} (${pct})"
 msgstr "Months: ${filled}/${available} (${pct})"
 
-#: static/js/stats_panels.js:1272
+#: static/js/stats_panels.js:1273
 #, python-brace-format
 msgid "Jours : ${filled}/${available} (${pct})"
 msgstr "Days: ${filled}/${available} (${pct})"
 
-#: static/js/stats_panels.js:1278
+#: static/js/stats_panels.js:1279
 #, python-brace-format
 msgid "Tours de Jasmer : ${n}"
 msgstr "Jasmer rounds: ${n}"
 
-#: static/js/stats_panels.js:1279
+#: static/js/stats_panels.js:1280
 #, python-brace-format
 msgid "Tours année × mois : ${n}"
 msgstr "Year × month rounds: ${n}"
 
-#: static/js/stats_panels.js:1280
+#: static/js/stats_panels.js:1281
 #, python-brace-format
 msgid "Tours de calendrier : ${n}"
 msgstr "Calendar rounds: ${n}"
 
-#: static/js/stats_panels.js:1281
+#: static/js/stats_panels.js:1282
 #, python-brace-format
 msgid "Tours de matrice : ${n}"
 msgstr "Matrix loops: ${n}"
 
-#: static/js/stats_panels.js:1406 static/js/stats_panels.js:1439
+#: static/js/stats_panels.js:1407 static/js/stats_panels.js:1444
 #: static/js/stats_ui.js:559 templates/menu_stats.html:244
 msgid "Caches posées"
 msgstr "Placed caches"
 
-#: static/js/stats_panels.js:1409
+#: static/js/stats_panels.js:1410
 msgid "Chercheurs distincts"
 msgstr "Distinct seekers"
 
-#: static/js/stats_panels.js:1410 templates/menu_stats.html:248
+#: static/js/stats_panels.js:1411 templates/menu_stats.html:248
 msgid "Trouveurs différents"
 msgstr "Distinct finders"
 
-#: static/js/stats_panels.js:1412 templates/menu_stats.html:251
+#: static/js/stats_panels.js:1413 templates/menu_stats.html:251
 msgid "Part de favoris"
 msgstr "Share of favorites"
 
-#: static/js/stats_panels.js:1413 templates/menu_stats.html:249
+#: static/js/stats_panels.js:1414 templates/menu_stats.html:249
 msgid "Trouveurs fidèles"
 msgstr "Loyal finders"
 
-#: static/js/stats_panels.js:1414 templates/menu_stats.html:253
+#: static/js/stats_panels.js:1415 templates/menu_stats.html:253
 msgid "Délai moyen avant la première trouvaille"
 msgstr "Average delay before the first find"
 
-#: static/js/stats_panels.js:1415 templates/menu_stats.html:254
+#: static/js/stats_panels.js:1416 templates/menu_stats.html:254
 msgid "Cache la plus délaissée"
 msgstr "Most neglected cache"
 
-#: static/js/stats_panels.js:1416 templates/menu_stats.html:255
+#: static/js/stats_panels.js:1417 templates/menu_stats.html:255
 msgid "Moyenne de trouvailles par cache"
 msgstr "Average finds per cache"
 
-#: static/js/stats_panels.js:1417 templates/menu_stats.html:256
+#: static/js/stats_panels.js:1418 templates/menu_stats.html:256
 msgid "Caches jamais trouvées"
 msgstr "Caches never found"
 
-#: static/js/stats_panels.js:1418
+#: static/js/stats_panels.js:1419
+msgid "Délai moyen avant maintenance"
+msgstr "Average time to maintenance"
+
+#: static/js/stats_panels.js:1420
+msgid "Caches en attente de maintenance"
+msgstr "Caches awaiting maintenance"
+
+#: static/js/stats_panels.js:1421
+msgid "Caches sauvées"
+msgstr "Rescued caches"
+
+#: static/js/stats_panels.js:1422
+msgid "Cache la plus favorisée"
+msgstr "Most favorited cache"
+
+#: static/js/stats_panels.js:1423
 msgid "Caches en échec"
 msgstr "Caches not found"
 
-#: static/js/stats_panels.js:1419
+#: static/js/stats_panels.js:1424
 msgid "Caches favorisées"
 msgstr "Favorited caches"
 
-#: static/js/stats_panels.js:1420 templates/menu_stats.html:252
+#: static/js/stats_panels.js:1425 templates/menu_stats.html:252
 msgid "Caches trouvées au moins une fois"
 msgstr "Caches found at least once"
 
-#: static/js/stats_panels.js:1421
+#: static/js/stats_panels.js:1426
 msgid "Jours avec DNF"
 msgstr "Days with a DNF"
 
-#: static/js/stats_panels.js:1422
+#: static/js/stats_panels.js:1427
 msgid "Jours de pose"
 msgstr "Hide days"
 
-#: static/js/stats_panels.js:1423
+#: static/js/stats_panels.js:1428
 msgid "Jours avec favori"
 msgstr "Days with a favorite"
 
-#: static/js/stats_panels.js:1424 templates/menu_stats.html:229
+#: static/js/stats_panels.js:1429 templates/menu_stats.html:229
 msgid "Jours avec trouvaille"
 msgstr "Days with finds"
 
-#: static/js/stats_panels.js:1425 templates/menu_stats.html:230
+#: static/js/stats_panels.js:1430 templates/menu_stats.html:230
 msgid "Record sur une journée"
 msgstr "Best day"
 
-#: static/js/stats_panels.js:1426 templates/menu_stats.html:231
+#: static/js/stats_panels.js:1431 templates/menu_stats.html:231
 msgid "Plus longue série (jours)"
 msgstr "Longest streak (days)"
 
-#: static/js/stats_panels.js:1427 templates/menu_stats.html:232
+#: static/js/stats_panels.js:1432 templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Different cache types"
 
-#: static/js/stats_panels.js:1430 templates/menu_stats.html:235
+#: static/js/stats_panels.js:1435 templates/menu_stats.html:235
 msgid "Attributs différents"
 msgstr "Different attributes"
 
-#: static/js/stats_panels.js:1431 templates/menu_stats.html:236
+#: static/js/stats_panels.js:1436 templates/menu_stats.html:236
 msgid "Propriétaires différents"
 msgstr "Different owners"
 
-#: static/js/stats_panels.js:1432 templates/menu_stats.html:237
+#: static/js/stats_panels.js:1437 templates/menu_stats.html:237
 msgid "Plus ancienne cache trouvée"
 msgstr "Oldest cache found"
 
-#: static/js/stats_panels.js:1433 templates/menu_stats.html:238
+#: static/js/stats_panels.js:1438 templates/menu_stats.html:238
 msgid "Trouvées le jour de publication"
 msgstr "Found on publication day"
 
-#: static/js/stats_panels.js:1434 templates/menu_stats.html:239
+#: static/js/stats_panels.js:1439 templates/menu_stats.html:239
 msgid "Trouvaille la plus au nord"
 msgstr "Northernmost find"
 
-#: static/js/stats_panels.js:1435 templates/menu_stats.html:240
+#: static/js/stats_panels.js:1440 templates/menu_stats.html:240
 msgid "Trouvaille la plus au sud"
 msgstr "Southernmost find"
 
-#: static/js/stats_panels.js:1436 templates/menu_stats.html:241
+#: static/js/stats_panels.js:1441 templates/menu_stats.html:241
 msgid "Trouvaille la plus à l'est"
 msgstr "Easternmost find"
 
-#: static/js/stats_panels.js:1437 templates/menu_stats.html:242
+#: static/js/stats_panels.js:1442 templates/menu_stats.html:242
 msgid "Trouvaille la plus à l'ouest"
 msgstr "Westernmost find"
 
-#: static/js/stats_panels.js:1441 templates/menu_stats.html:246
+#: static/js/stats_panels.js:1446 templates/menu_stats.html:246
 msgid "Pic de caches actives"
 msgstr "Peak active caches"
 
-#: static/js/stats_panels.js:1443 templates/menu_stats.html:257
+#: static/js/stats_panels.js:1448 templates/menu_stats.html:257
 msgid "DNF en cours"
 msgstr "Open DNFs"
 
-#: static/js/stats_panels.js:1444 templates/menu_informations.html:106
+#: static/js/stats_panels.js:1449 templates/menu_informations.html:106
 #: templates/menu_stats.html:258
 msgid "DNF résolus"
 msgstr "Resolved DNFs"
 
-#: static/js/stats_panels.js:1445 templates/menu_stats.html:259
+#: static/js/stats_panels.js:1450 templates/menu_stats.html:259
 msgid "Taux d'échec"
 msgstr "DNF rate"
 
-#: static/js/stats_panels.js:1446 templates/menu_stats.html:260
+#: static/js/stats_panels.js:1451 templates/menu_stats.html:260
 msgid "Délai moyen de résolution"
 msgstr "Average resolution delay"
 
-#: static/js/stats_panels.js:1447 templates/menu_stats.html:261
+#: static/js/stats_panels.js:1452 templates/menu_stats.html:261
 msgid "Record de tentatives"
 msgstr "Most attempts on a cache"
 
-#: static/js/stats_panels.js:1451 templates/menu_stats.html:265
+#: static/js/stats_panels.js:1456 templates/menu_stats.html:265
 msgid "Maintenances"
 msgstr "Maintenance visits"
 
-#: static/js/stats_panels.js:1489
+#: static/js/stats_panels.js:1494
 #, python-brace-format
 msgid "${dnf} DNF · ${finds} trouvailles"
 msgstr "${dnf} DNF · ${finds} finds"
 
-#: static/js/stats_panels.js:1527
+#: static/js/stats_panels.js:1532
 #, python-brace-format
 msgid "${n} ans"
 msgstr "${n} years"
 
-#: static/js/stats_panels.js:1528
+#: static/js/stats_panels.js:1533
 #, python-brace-format
 msgid "${n} mois"
 msgstr "${n} months"
 
-#: static/js/stats_panels.js:1529 static/js/ui.js:7673
+#: static/js/stats_panels.js:1534 static/js/ui.js:7673
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} days"
 
-#: static/js/stats_panels.js:1595
+#: static/js/stats_panels.js:1602
 msgid "jamais trouvée"
 msgstr "never found"
 
-#: static/js/stats_panels.js:1686
+#: static/js/stats_panels.js:1700
 #, python-brace-format
 msgid "DNF reçus ${year}"
 msgstr "Received DNFs ${year}"
 
-#: static/js/stats_panels.js:1687
+#: static/js/stats_panels.js:1701
 #, python-brace-format
 msgid "DNF ${year}"
 msgstr "DNFs ${year}"
 
-#: static/js/stats_panels.js:1688
+#: static/js/stats_panels.js:1702
 #, python-brace-format
 msgid "Favoris ${year}"
 msgstr "Favorites ${year}"
 
-#: static/js/stats_panels.js:1689
+#: static/js/stats_panels.js:1703
 #, python-brace-format
 msgid "Poses ${year}"
 msgstr "Hides ${year}"
 
-#: static/js/stats_panels.js:1690
+#: static/js/stats_panels.js:1704
 #, python-brace-format
 msgid "Activité ${year}"
 msgstr "Activity ${year}"
 
-#: static/js/stats_panels.js:1826
+#: static/js/stats_panels.js:1840
 msgid "favoris"
 msgstr "favorites"
 
-#: static/js/stats_panels.js:2236
+#: static/js/stats_panels.js:2250
 #, python-brace-format
 msgid "${n} DNF au ${date}"
 msgstr "${n} DNFs on ${date}"
 
-#: static/js/stats_panels.js:2238
+#: static/js/stats_panels.js:2252
 #, python-brace-format
 msgid "${n} caches posées au ${date}"
 msgstr "${n} hidden caches on ${date}"
 
-#: static/js/stats_panels.js:2240
+#: static/js/stats_panels.js:2254
 #, python-brace-format
 msgid "${n} favoris au ${date}"
 msgstr "${n} favorites on ${date}"
 
-#: static/js/stats_panels.js:2241
+#: static/js/stats_panels.js:2255
 #, python-brace-format
 msgid "${n} trouvailles au ${date}"
 msgstr "${n} finds on ${date}"
 
-#: static/js/stats_panels.js:2247
+#: static/js/stats_panels.js:2261
 #, python-brace-format
 msgid "Paliers : ${list}"
 msgstr "Milestones: ${list}"
 
-#: static/js/stats_panels.js:2265
+#: static/js/stats_panels.js:2279
 msgid "Aucune cache"
 msgstr "No cache"
 
-#: static/js/stats_panels.js:2265
+#: static/js/stats_panels.js:2279
 msgid "Aucune trouvaille"
 msgstr "No finds"
 
-#: static/js/stats_panels.js:3001 static/js/stats_panels.js:3064
+#: static/js/stats_panels.js:3015 static/js/stats_panels.js:3078
 msgid "Chiffre"
 msgstr "Figure"
 
-#: static/js/stats_panels.js:3001 static/js/stats_panels.js:3064
+#: static/js/stats_panels.js:3015 static/js/stats_panels.js:3078
 msgid "Valeur"
 msgstr "Value"
 
-#: static/js/stats_panels.js:3001 static/js/stats_panels.js:3064
+#: static/js/stats_panels.js:3015 static/js/stats_panels.js:3078
 #: templates/menu_animation.html:202
 msgid "Détail"
 msgstr "Details"
 
-#: static/js/stats_panels.js:3018 static/js/stats_panels.js:3072
+#: static/js/stats_panels.js:3032 static/js/stats_panels.js:3086
 #: templates/menu_informations.html:58 templates/menu_informations.html:101
 msgid "Date"
 msgstr "Date"
 
-#: static/js/stats_panels.js:3018 static/js/stats_panels.js:3072
+#: static/js/stats_panels.js:3032 static/js/stats_panels.js:3086
 #: templates/menu_informations.html:73 templates/menu_informations.html:103
 msgid "Total"
 msgstr "Total"
 
-#: static/js/stats_panels.js:3021
+#: static/js/stats_panels.js:3035
 msgid "Case"
 msgstr "Cell"
 
-#: static/js/stats_panels.js:3021 static/js/stats_panels.js:3034
-#: static/js/stats_panels.js:3077
+#: static/js/stats_panels.js:3035 static/js/stats_panels.js:3048
+#: static/js/stats_panels.js:3091
 msgid "Nombre"
 msgstr "Count"
 
-#: static/js/stats_panels.js:3034 static/js/stats_panels.js:3077
+#: static/js/stats_panels.js:3048 static/js/stats_panels.js:3091
 msgid "Catégorie"
 msgstr "Category"
 
-#: static/js/stats_panels.js:3034 static/js/stats_panels.js:3077
+#: static/js/stats_panels.js:3048 static/js/stats_panels.js:3091
 #: templates/menu_informations.html:104
 msgid "Pourcentage"
 msgstr "Percentage"

@@ -129,11 +129,13 @@ export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'arc
 // Tuiles de Mes poses : trouvailles reçues (total, jours, record, série),
 // trouveurs distincts et fidèles, favoris reçus et leur part, caches
 // trouvées au moins une fois, trouvées le jour de leur publication,
-// catégories, points extrêmes, délai avant la première trouvaille, cache
-// la plus délaissée, moyenne de trouvailles par cache et caches jamais
-// trouvées (les quatre derniers lus dans la chronologie de la page par
-// stats_panels, pas dans l'accumulateur).
-export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', 'favorites', 'fav_ratio', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west', 'ftf_delay', 'neglected', 'finds_per_cache', 'unfound']);
+// catégories, points extrêmes, puis les tuiles « poseur » lues dans la
+// chronologie de la page par stats_panels (pas dans l'accumulateur) :
+// délai avant la première trouvaille, cache la plus délaissée, moyenne de
+// trouvailles par cache, caches jamais trouvées, délai signalement →
+// maintenance, caches en attente de maintenance, caches sauvées et cache
+// la plus favorisée.
+export const POSES_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'loyal', 'favorites', 'fav_ratio', 'caches', 'days', 'best_day', 'streak', 'same_day', 'types', 'countries', 'states', 'north', 'south', 'east', 'west', 'ftf_delay', 'neglected', 'finds_per_cache', 'unfound', 'maint_delay', 'maint_open', 'rescued', 'top_fav']);
 // Tuiles des sources DNF et caches posées (page principale). Les tuiles
 // d'état (DNF en cours / résolus, taux d'échec, actives, désactivées,
 // archivées, maintenances) sont lues dans les données de la source au jour
@@ -147,6 +149,7 @@ export const POSES_ALT_COUNTER_ITEMS = Object.freeze(['total', 'finders', 'cache
 // Tuiles lues au jour affiché (hors accumulateur) : leur panneau se
 // redessine aussi les jours sans événement compté.
 export const STATS_DAY_TILES = Object.freeze(['ftf_delay', 'neglected', 'finds_per_cache', 'unfound',
+    'maint_delay', 'maint_open', 'rescued', 'top_fav',
     'dnf_open', 'dnf_resolved', 'dnf_ratio', 'dnf_resolve_delay', 'dnf_visits',
     'owned_active', 'owned_disabled', 'owned_archived', 'maintenances']);
 const ALL_COUNTER_ITEMS = [...new Set([...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS, ...POSES_COUNTER_ITEMS,
@@ -668,6 +671,10 @@ const COUNTER_DEPENDENCIES = {
     neglected: 'total',
     finds_per_cache: 'total',
     unfound: 'total',
+    maint_delay: 'total',
+    maint_open: 'total',
+    rescued: 'total',
+    top_fav: 'total',
     // Tuiles d'état des DNF et des caches posées : même principe.
     dnf_open: 'total',
     dnf_resolved: 'total',
@@ -2291,13 +2298,14 @@ export function counterValues(acc, items) {
             values.fav_ratio = { value: acc.total > 0 ? fav / acc.total : 0, pct: true };
         } else if (item === 'loyal') {
             values.loyal = loyalFinders(acc);
-        } else if (item === 'ftf_delay' || item === 'neglected') {
+        } else if (item === 'ftf_delay' || item === 'neglected' || item === 'maint_delay') {
             // Tuiles « poseur » : remplies depuis la chronologie de Mes poses
             // (stats_panels › buildView) ; « — » partout ailleurs.
             values[item] = { value: null, duration: true };
-        } else if (item === 'finds_per_cache' || item === 'unfound') {
+        } else if (item === 'finds_per_cache' || item === 'unfound'
+            || item === 'maint_open' || item === 'rescued' || item === 'top_fav') {
             // Mêmes tuiles « poseur » : la moyenne est un flottant (une
-            // décimale), les jamais trouvées un entier ; « — » hors Mes poses.
+            // décimale), les autres un entier ; « — » hors Mes poses.
             values[item] = { value: null, float: item === 'finds_per_cache' };
         } else if (STATS_DAY_TILES.includes(item)) {
             // Tuiles d'état DNF / caches posées : remplies au jour affiché

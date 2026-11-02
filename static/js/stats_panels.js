@@ -78,7 +78,8 @@ const DEFAULT_HIGHLIGHT_MS = 600;
 const DAY_TILES = new Set(STATS_DAY_TILES);
 // Tuiles « poseur » remplies depuis la chronologie de Mes poses
 // (posesCounterStats), pas depuis l'accumulateur.
-const POSES_COUNTER_TILES = new Set(['ftf_delay', 'neglected', 'finds_per_cache', 'unfound']);
+const POSES_COUNTER_TILES = new Set(['ftf_delay', 'neglected', 'finds_per_cache', 'unfound',
+    'maint_delay', 'maint_open', 'rescued', 'top_fav']);
 
 let settings = normalizeStatsSettings(STATS_DEFAULTS);
 
@@ -1169,6 +1170,10 @@ const COUNTER_LABELS = {
     neglected: () => pkg.t('Cache la plus délaissée'),
     finds_per_cache: () => pkg.t('Moyenne de trouvailles par cache'),
     unfound: () => pkg.t('Caches jamais trouvées'),
+    maint_delay: () => pkg.t('Délai moyen avant maintenance'),
+    maint_open: () => pkg.t('Caches en attente de maintenance'),
+    rescued: () => pkg.t('Caches sauvées'),
+    top_fav: () => pkg.t('Cache la plus favorisée'),
     caches: (source) => (source === 'dnf' ? pkg.t('Caches en échec')
         : source === 'favorites' ? pkg.t('Caches favorisées')
             : pkg.t('Caches trouvées au moins une fois')),
@@ -1308,11 +1313,12 @@ function counterText(item, entry, number, shown = entry.value, percent = null) {
 
 // Tuiles « poseur » d'un compteur Mes poses (délai avant la première
 // trouvaille, cache délaissée, moyenne de trouvailles par cache, jamais
-// trouvées) : lues dans la chronologie de la page au jour `day`
-// (poses_data.js › posesCounterStats), pas dans l'accumulateur. Le détail de
-// la délaissée est composé ici : code GC, suivi de la date de dernière
-// visite ou de « jamais trouvée » ; celui des jamais trouvées liste leurs
-// codes (5 premiers puis « … »).
+// trouvées, maintenance, sauvetages, favorisée) : lues dans la chronologie
+// de la page au jour `day` (poses_data.js › posesCounterStats), pas dans
+// l'accumulateur. Le détail de la délaissée est composé ici : code GC,
+// suivi de la date de dernière visite ou de « jamais trouvée » ; celui des
+// tuiles à liste (jamais trouvées, en attente, sauvées) cite les codes
+// (5 premiers puis « … »).
 function posesCounterTiles(values, day) {
     const extra = pkg.posesCounterStats?.(day);
     values.ftf_delay = { value: extra?.ftfDelay ?? null, duration: true };
@@ -1325,11 +1331,18 @@ function posesCounterTiles(values, day) {
         duration: true,
     };
     values.finds_per_cache = { value: extra?.findsPerCache ?? null, float: true };
+    const codesDetail = (list) => (
+        list?.length ? list.slice(0, 5).join(' · ') + (list.length > 5 ? ' · …' : '') : ''
+    );
     const un = extra?.unfound;
-    values.unfound = {
-        value: un ? un.length : null,
-        detail: un?.length ? un.slice(0, 5).join(' · ') + (un.length > 5 ? ' · …' : '') : '',
-    };
+    values.unfound = { value: un ? un.length : null, detail: codesDetail(un) };
+    values.maint_delay = { value: extra?.maintDelay ?? null, duration: true };
+    const mo = extra?.maintOpen;
+    values.maint_open = { value: mo ? mo.length : null, detail: codesDetail(mo) };
+    const re = extra?.rescued;
+    values.rescued = { value: re ? re.length : null, detail: codesDetail(re) };
+    const tf = extra?.topFav;
+    values.top_fav = { value: tf ? tf.count : null, detail: tf?.code || '' };
 }
 
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de

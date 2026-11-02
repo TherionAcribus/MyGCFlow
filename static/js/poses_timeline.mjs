@@ -371,51 +371,103 @@ export function posesCounterMaxes(timeline) {
 //             la dernière visite, ou celui d'apparition quand `found` est faux ;
 //   findsPerCache  trouvailles reçues par cache apparue, en moyenne (null
 //             avant la première apparition) ;
-//   unfound   codes des caches apparues jamais trouvées au jour affiché.
-// Parcours incrémental des trouvailles pour `posesCounterAtDay` : `evOrder`
-// est trié par jour — quand `day` avance (animation), seuls les logs des
+//   unfound   codes des caches apparues jamais trouvées au jour affiché ;
+//   maintDelay   délai moyen signalement (alerte) → maintenance, en jours
+//             flottants (null tant qu'aucune alerte n'est résolue) ;
+//   maintOpen codes des caches dont une alerte reste sans maintenance au
+//             jour affiché ;
+//   rescued   codes des caches « sauvées » : un DNF suivi d'une trouvaille ;
+//   topFav    { count, code } de la cache la plus favorisée (null tant
+//             qu'aucune n'a de favori — la première atteinte gagne à égalité).
+// Parcours incrémental des logs pour `posesCounterAtDay` : `evOrder` est
+// trié par jour — quand `day` avance (animation), seuls les logs des
 // nouvelles journées sont lus au lieu de rescanner tous les logs ≤ jour ;
 // un saut en arrière (barre de chronologie) repart du début. L'état vit par
 // timeline dans une WeakMap (une autre timeline sur la même base — sélection
 // réduite — a son propre curseur).
-const findScanMemo = new WeakMap();
-function findScanUpTo(timeline, base, day) {
+//   firstFind / lastFind  premier et dernier jour trouvés, par cache ;
+//   hadDnf / rescued      DNF vue, puis DNF « résolue » par une trouvaille ;
+//   openAlert             jour de l'alerte non résolue la plus ancienne
+//                         (résolue par le log de maintenance suivant) ;
+//   favCount / topFav     favoris par cache et record (premier atteint).
+const logScanMemo = new WeakMap();
+function logScanUpTo(timeline, base, day) {
     const n = timeline.count;
-    let scan = findScanMemo.get(timeline);
+    let scan = logScanMemo.get(timeline);
     if (!scan || scan.base !== base || scan.firstFind.length !== n) {
         scan = { base, day: -Infinity, cursor: 0, findTotal: 0,
                  firstFind: new Int32Array(n).fill(-1),
-                 lastFind: new Int32Array(n).fill(-1) };
-        findScanMemo.set(timeline, scan);
+                 lastFind: new Int32Array(n).fill(-1),
+                 hadDnf: new Uint8Array(n),
+                 rescued: new Uint8Array(n), rescuedTotal: 0,
+                 openAlert: new Int32Array(n).fill(-1),
+                 alertDelaySum: 0, alertResolved: 0,
+                 favCount: new Int32Array(n), topFav: 0, topFavCache: -1 };
+        logScanMemo.set(timeline, scan);
     }
     if (day < scan.day) {
         scan.cursor = 0;
         scan.findTotal = 0;
         scan.firstFind.fill(-1);
         scan.lastFind.fill(-1);
+        scan.hadDnf.fill(0);
+        scan.rescued.fill(0);
+        scan.rescuedTotal = 0;
+        scan.openAlert.fill(-1);
+        scan.alertDelaySum = 0;
+        scan.alertResolved = 0;
+        scan.favCount.fill(0);
+        scan.topFav = 0;
+        scan.topFavCache = -1;
     }
     const findCode = base.kindCode.find;
+    const dnfCode = base.kindCode.dnf;
+    const alertCode = base.kindCode.alert;
+    const maintCode = base.kindCode.maintenance;
     const order = timeline.evOrder;
     while (scan.cursor < order.length) {
         const j = order[scan.cursor];
-        if (base.ev.day[j] > day) break;
+        const evDay = base.ev.day[j];
+        if (evDay > day) break;
         scan.cursor++;
-        if (base.ev.kind[j] !== findCode) continue;
         const k = timeline.featureOf[base.ev.cache[j]];
         if (k < 0) continue;
-        scan.findTotal++;
-        if (scan.firstFind[k] < 0) scan.firstFind[k] = base.ev.day[j];
-        scan.lastFind[k] = base.ev.day[j];
+        const kind = base.ev.kind[j];
+        if (kind === findCode) {
+            scan.findTotal++;
+            if (scan.firstFind[k] < 0) scan.firstFind[k] = evDay;
+            scan.lastFind[k] = evDay;
+            if (base.ev.fav[j] && ++scan.favCount[k] > scan.topFav) {
+                scan.topFav = scan.favCount[k];
+                scan.topFavCache = k;
+            }
+            if (scan.hadDnf[k] && !scan.rescued[k]) {
+                scan.rescued[k] = 1;
+                scan.rescuedTotal++;
+            }
+        } else if (kind === dnfCode) {
+            scan.hadDnf[k] = 1;
+        } else if (kind === alertCode) {
+            // Une alerte déjà ouverte garde le jour le plus ancien : c'est le
+            // pire délai de réponse qui compte.
+            if (scan.openAlert[k] < 0) scan.openAlert[k] = evDay;
+        } else if (kind === maintCode && scan.openAlert[k] >= 0) {
+            scan.alertDelaySum += evDay - scan.openAlert[k];
+            scan.alertResolved++;
+            scan.openAlert[k] = -1;
+        }
     }
     scan.day = day;
     return scan;
 }
 
 export function posesCounterAtDay(timeline, base, day) {
-    const out = { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] };
+    const out = { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [],
+                  maintDelay: null, maintOpen: [], rescued: [], topFav: null };
     if (!timeline || timeline.count === 0 || !Number.isFinite(day)) return out;
     const n = timeline.count;
-    const { firstFind, lastFind, findTotal } = findScanUpTo(timeline, base, day);
+    const scan = logScanUpTo(timeline, base, day);
+    const { firstFind, lastFind, findTotal } = scan;
     let delaySum = 0, foundCount = 0, appeared = 0;
     let pick = -1, pickVisit = 0, pickNever = false;
     for (let k = 0; k < n; k++) {
@@ -447,6 +499,14 @@ export function posesCounterAtDay(timeline, base, day) {
             lastDay: pickVisit,
             found: !pickNever,
         };
+    }
+    if (scan.alertResolved > 0) out.maintDelay = scan.alertDelaySum / scan.alertResolved;
+    for (let k = 0; k < n; k++) {
+        if (scan.openAlert[k] >= 0) out.maintOpen.push(base.code[timeline.rows[k]]);
+        if (scan.rescued[k]) out.rescued.push(base.code[timeline.rows[k]]);
+    }
+    if (scan.topFavCache >= 0) {
+        out.topFav = { count: scan.topFav, code: base.code[timeline.rows[scan.topFavCache]] };
     }
     return out;
 }

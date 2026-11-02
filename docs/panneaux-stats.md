@@ -460,8 +460,9 @@ les statistiques. Comptage par source identique à la page principale
 (`sourceStates`, index par jour mémoïsé par `dataRevision`).
 
 **Tuiles** : `finds` garde `POSES_COUNTER_ITEMS` (tuiles « poseur »
-`ftf_delay`, `neglected`, `finds_per_cache` et `unfound` comprises, lues au
-jour affiché dans `posesCounterAtDay`) ; `dnf` et `favorites` n'ont que
+`ftf_delay`, `neglected`, `finds_per_cache`, `unfound`, `maint_delay`,
+`maint_open`, `rescued` et `top_fav` comprises, lues au jour affiché dans
+`posesCounterAtDay`) ; `dnf` et `favorites` n'ont que
 `POSES_ALT_COUNTER_ITEMS` — accumulateur seul, aucune tuile « au jour » ni
 d'état (leurs compteurs ne se redessinent donc que sur événement). Libellés
 propres (`statsCounterLabel`) : « DNF », « Favoris reçus », « Chercheurs
