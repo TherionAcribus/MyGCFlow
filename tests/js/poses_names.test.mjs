@@ -427,6 +427,43 @@ test('dessin : texte, contour, majuscules, lettre à lettre', () => {
     assert.equal(state.labels.length, 0);
 });
 
+test('dessin : graphemes entiers, rappel au bord, bulle orientée', () => {
+    // Emoji composé : un seul « caractère » à l'éparpillement.
+    const scatter = enabled({ path: 'still', exit: 'scatter', entrance: 'none', outline_width: 0 });
+    const s1 = createNameLabels();
+    spawnNameLabels(s1, [candidate({ text: 'A👨‍👩‍👧B', duration: 0 })], spawnOpts(scatter, { at: 0 }));
+    s1.labels[0].duration = 2000;
+    const ctx1 = fakeCtx();
+    drawNameLabels(ctx1, s1, { now: 1900, opts: scatter, toPixel: (c) => c });
+    assert.deepEqual(ctx1.calls.map((c) => c[1]).sort(), ['A', 'B', '👨‍👩‍👧']);
+
+    const calls = [];
+    const ctx = fakeCtx();
+    ctx.moveTo = (x, y) => calls.push(['m', x, y]);
+    ctx.lineTo = (x, y) => calls.push(['l', x, y]);
+    // Étiquette sous la cache : la queue de la bulle pointe vers le haut…
+    const below = enabled({ path: 'still', offset_y: 40, background: 'bubble', entrance: 'none' });
+    const s2 = createNameLabels();
+    spawnNameLabels(s2, [candidate()], spawnOpts(below, { at: 0 }));
+    drawNameLabels(ctx, s2, { now: 500, opts: below, toPixel: (c) => c });
+    assert.ok(calls.some((c) => c[0] === 'l' && c[2] < -15), 'queue vers le haut');
+    // … au-dessus : vers le bas.
+    calls.length = 0;
+    const above = { ...below, offset_y: -40 };
+    const s3 = createNameLabels();
+    spawnNameLabels(s3, [candidate()], spawnOpts(above, { at: 0 }));
+    drawNameLabels(ctx, s3, { now: 500, opts: above, toPixel: (c) => c });
+    assert.ok(calls.some((c) => c[0] === 'l' && c[2] > 15), 'queue vers le bas');
+    // Trait de rappel : s'arrête au bord de l'étiquette, pas au centre (−50).
+    calls.length = 0;
+    const conn = enabled({ path: 'still', offset_y: -50, connector: true, entrance: 'none' });
+    const s4 = createNameLabels();
+    spawnNameLabels(s4, [candidate()], spawnOpts(conn, { at: 0 }));
+    drawNameLabels(ctx, s4, { now: 500, opts: conn, toPixel: (c) => c });
+    const end = calls.find((c) => c[0] === 'l');
+    assert.ok(end && end[2] > -50 && end[2] < -40, `bord atteint (${end?.[2]})`);
+});
+
 test('couleurs : fixe, par événement, par visiteur, par type', () => {
     const opts = enabled({ color: '#111111' });
     const l = { kind: 'ftf', finderKey: 'alice', cacheType: 'Multi-cache' };

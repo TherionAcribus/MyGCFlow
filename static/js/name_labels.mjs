@@ -25,6 +25,17 @@ export const FONT_STACKS = Object.freeze({
 const EVICT_MS = 250;
 const TAU = Math.PI * 2;
 
+// Découpage en graphemes (entrée « lettre à lettre », sortie « lettres
+// éparpillées ») : un emoji composé ou une lettre + diacritique combinant
+// reste un seul caractère. Repli sur les points de code sans Segmenter.
+const graphemeSegmenter = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+export function graphemes(text) {
+    const s = String(text ?? '');
+    if (!graphemeSegmenter) return Array.from(s);
+    return [...graphemeSegmenter.segment(s)].map((seg) => seg.segment);
+}
+
 export function createNameLabels() {
     return { labels: [], spawned: 0, dropped: 0, evicted: 0, history: [] };
 }
@@ -395,7 +406,7 @@ function labelMetrics(ctx, label, text, font) {
     const m = label.metrics;
     if (m && m.font === font && m.text === text) return m;
     ctx.font = font;
-    const chars = Array.from(text);
+    const chars = graphemes(text);
     const charX = new Array(chars.length);
     let prefix = '';
     for (let i = 0; i < chars.length; i++) {
@@ -439,15 +450,30 @@ function drawLabel(ctx, label, pose, alpha, anchor, opts, ratio, cacheTypeColor)
     const y = anchor[1] + (pose.dy + label.nudge[1]) * ratio;
 
     ctx.save();
-    // Trait de rappel : du point à l'étiquette.
+    // Trait de rappel : du point au bord de l'étiquette — jusqu'au centre
+    // auparavant, le trait traversait le texte. Boîte non tournée
+    // (inclinaisons faibles, approximation suffisante) ; rien à relier
+    // quand le point est déjà dans la boîte.
     if (opts.connector) {
-        ctx.globalAlpha = alpha * 0.55;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(1, ratio);
-        ctx.beginPath();
-        ctx.moveTo(anchor[0], anchor[1]);
-        ctx.lineTo(x, y);
-        ctx.stroke();
+        const sc = Math.abs(pose.scale);
+        const hasBg = opts.background !== 'none' && opts.background_opacity > 0;
+        const hw = sc * (m.width / 2 + (hasBg ? fontPx * 0.45 : 0)) + 2 * ratio;
+        const hh = sc * (fontPx * 0.4 + (hasBg ? fontPx * 0.3 : 0)) + 2 * ratio;
+        const dxL = x - anchor[0];
+        const dyL = y - anchor[1];
+        let t = 0;
+        if (Math.abs(dxL) > 1e-6) t = Math.max(t, 1 - hw / Math.abs(dxL));
+        if (Math.abs(dyL) > 1e-6) t = Math.max(t, 1 - hh / Math.abs(dyL));
+        t = Math.min(t, 1);
+        if (t > 0) {
+            ctx.globalAlpha = alpha * 0.55;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = Math.max(1, ratio);
+            ctx.beginPath();
+            ctx.moveTo(anchor[0], anchor[1]);
+            ctx.lineTo(anchor[0] + dxL * t, anchor[1] + dyL * t);
+            ctx.stroke();
+        }
     }
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
@@ -468,12 +494,15 @@ function drawLabel(ctx, label, pose, alpha, anchor, opts, ratio, cacheTypeColor)
         roundRect(ctx, -w / 2, -h / 2, w, h, opts.background === 'bubble' ? fontPx * 0.45 : radius);
         ctx.fill();
         if (opts.background === 'bubble') {
-            // Queue de la bulle, vers le bas.
+            // Queue de la bulle, vers le point : vers le bas quand
+            // l'étiquette flotte au-dessus, vers le haut quand elle est en
+            // dessous (offset_y positif, direction « vers le bas »…).
+            const dir = pose.dy + label.nudge[1] > 0 ? -1 : 1;
             const tail = fontPx * 0.45;
             ctx.beginPath();
-            ctx.moveTo(-tail * 0.7, h / 2 - 0.5);
-            ctx.lineTo(0, h / 2 + tail);
-            ctx.lineTo(tail * 0.7, h / 2 - 0.5);
+            ctx.moveTo(-tail * 0.7, dir * (h / 2 - 0.5));
+            ctx.lineTo(0, dir * (h / 2 + tail));
+            ctx.lineTo(tail * 0.7, dir * (h / 2 - 0.5));
             ctx.closePath();
             ctx.fill();
         }
