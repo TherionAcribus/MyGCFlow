@@ -461,13 +461,29 @@ function canFlash(kind) {
 
 // --- Pseudos des visiteurs (points.poses_names, docs/mode-poses.md) -------------
 
+// Mémoïsées sur l'identité des objets (remplacés à chaque commit, jamais
+// mutés en place) : la normalisation court à chaque lot de jours sinon.
+let namesOptsSrc;
+let namesOptsMemo = null;
 function currentNames() {
-    return normalizePosesNames(pkg.options?.point?.posesNames);
+    const src = pkg.options?.point?.posesNames;
+    if (src !== namesOptsSrc) {
+        namesOptsSrc = src;
+        namesOptsMemo = normalizePosesNames(src);
+    }
+    return namesOptsMemo;
 }
 
 // Préférence globale : pseudos abrégés, masqués ou exclus.
+let namesPrivacySrc;
+let namesPrivacyMemo = null;
 function currentNamesPrivacy() {
-    return normalizeNamesPrivacy(window.userSettings?.poses_names_privacy);
+    const src = window.userSettings?.poses_names_privacy;
+    if (src !== namesPrivacySrc) {
+        namesPrivacySrc = src;
+        namesPrivacyMemo = normalizeNamesPrivacy(src);
+    }
+    return namesPrivacyMemo;
 }
 
 function ensureNameStats() {

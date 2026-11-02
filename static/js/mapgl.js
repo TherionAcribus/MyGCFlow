@@ -6656,8 +6656,17 @@ export function getTravelTrailDebugState() {
 // points : même rendu en lecture, en capture image par image et en
 // MediaRecorder.
 
+// Mémoïsé sur l'identité du bloc (commitNames le remplace, jamais muté en
+// place) : normaliser ~50 clés à chaque postrender serait du gaspillage.
+let namesOptsSrc;
+let namesOptsMemo = null;
 function currentNamesOptions() {
-    return normalizePosesNames(pkg.options?.point?.posesNames);
+    const src = pkg.options?.point?.posesNames;
+    if (src !== namesOptsSrc) {
+        namesOptsSrc = src;
+        namesOptsMemo = normalizePosesNames(src);
+    }
+    return namesOptsMemo;
 }
 
 // Les familles « sans » et « arrondie » des étiquettes citent des polices

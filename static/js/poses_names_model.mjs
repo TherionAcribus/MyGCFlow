@@ -93,8 +93,16 @@ export function displayPseudo(name, privacy, hiddenLabel = '…', excluded = nul
     return raw;
 }
 
+// Mémoïsé sur l'identité de l'objet privacy (currentNamesPrivacy le
+// memoïse aussi : même objet tant que la préférence n'a pas changé).
+const excludedSetMemo = new WeakMap();
 export function excludedSet(privacy) {
-    return new Set((privacy?.exclude || []).map(foldPseudo));
+    if (privacy && typeof privacy === 'object') {
+        let set = excludedSetMemo.get(privacy);
+        if (!set) excludedSetMemo.set(privacy, (set = new Set((privacy.exclude || []).map(foldPseudo))));
+        return set;
+    }
+    return new Set();
 }
 
 // Modèle de l'étiquette : {pseudo}, {code}, {nom}, {n} (rang de la
@@ -243,8 +251,17 @@ function finishCandidate(base, stats, c, opts, group, groupSize, extra) {
 
 // Pseudos des visiteurs : auteurs d'au moins une trouvaille, un DNF ou une
 // note reçus (ni le relecteur, ni le poseur, dont les logs sont d'autres
-// types). Ordre de première apparition.
+// types). Ordre de première apparition. Mémoïsé sur l'identité de `base` :
+// la liste ne dépend que des données (parcourue à chaque vague d'aperçu).
+const visitorNamesMemo = new WeakMap();
 export function visitorNames(base) {
+    if (!base || typeof base !== 'object') return [];
+    let out = visitorNamesMemo.get(base);
+    if (!out) visitorNamesMemo.set(base, (out = computeVisitorNames(base)));
+    return out;
+}
+
+function computeVisitorNames(base) {
     const out = [];
     const seen = new Set();
     const n = base?.ev?.cache?.length || 0;
