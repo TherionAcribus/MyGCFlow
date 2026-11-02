@@ -157,6 +157,9 @@
                                 <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">{{ _("vos logs Adventure Lab") }}</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
                             </li>
                         </ol>
+                        <div class="form-hint text-warning mb-2">
+                            <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques.") }}
+                        </div>
                         <div class="form-hint text-muted mb-2">
                             {{ _("Vos étapes arrivent ici et se placent seules sur la carte, grâce au service public lab2gpx (réglable dans les options avancées).") }}
                         </div>
@@ -221,7 +224,7 @@
                                     <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Régénérer le jeton du favori") }}
                                 </button>
                                 <div class="form-hint text-muted">
-                                    {{ _("L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « Envoyer vers MyGCFlow » dans votre barre de favoris.") }}
+                                    {{ _("L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « MyGCFlow — Lab Caches » dans votre barre de favoris.") }}
                                 </div>
                             </div>
                         </div>
@@ -297,6 +300,9 @@
                                 <a href="https://www.geocaching.com" target="_blank" rel="noopener noreferrer">geocaching.com</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
                             </li>
                         </ol>
+                        <div class="form-hint text-warning mb-2">
+                            <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques.") }}
+                        </div>
                         <div class="form-hint text-muted mb-2">
                             {{ _("La collecte relit vos journaux et vos caches comme une consultation à la main : elle peut durer plusieurs minutes. L'export arrive ici ensuite — un aperçu reste à valider avant l'import.") }}
                         </div>
@@ -338,7 +344,7 @@
                                     <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Régénérer le jeton du favori") }}
                                 </button>
                                 <div class="form-hint text-muted">
-                                    {{ _("L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « Envoyer vers MyGCFlow » dans votre barre de favoris.") }}
+                                    {{ _("L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « MyGCFlow — Mes logs » dans votre barre de favoris.") }}
                                 </div>
                             </div>
                             <!-- Collecte complète ponctuelle : l'incrémental
@@ -421,7 +427,7 @@
                     <p><strong>{{ _("La méthode simple — en un clic") }}</strong></p>
                     <ol class="mb-3">
                         <li class="mb-2">
-                            {{ _("Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans la barre de favoris de votre navigateur — une seule fois.") }}
+                            {{ _("Glissez le bouton « MyGCFlow — Lab Caches » dans la barre de favoris de votre navigateur — une seule fois.") }}
                         </li>
                         <li class="mb-2">
                             {{ _("Connectez-vous sur") }}
@@ -432,6 +438,9 @@
                             {{ _("Les étapes se placent seules sur la carte. Si vous avez désactivé ce placement automatique (options avancées), complétez-les par fichier ou à la main.") }}
                         </li>
                     </ol>
+                    <p class="form-hint text-warning">
+                        <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques.") }}
+                    </p>
                     <hr>
                     <p><strong>{{ _("La méthode manuelle — deux fichiers") }}</strong></p>
                     <ol class="mb-3">

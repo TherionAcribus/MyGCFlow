@@ -243,7 +243,7 @@ class LogsApiTests(unittest.TestCase):
 
 class LogsAutomationTests(LogsApiTests):
     """Automatisation : /api/logs/receive (CORS+jeton, aperçu en attente),
-    /api/logs/bookmarklet (favori « Envoyer vers MyGCFlow »)."""
+    /api/logs/bookmarklet (favori « MyGCFlow — Mes logs »)."""
 
     def setUp(self):
         super().setUp()

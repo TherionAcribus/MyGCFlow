@@ -997,7 +997,7 @@ def labs_receive():
     return _receive_cors_headers(resp), 202
 
 
-# Favori « Envoyer vers MyGCFlow » et script d'export manuel : sources JS
+# Favori « MyGCFlow — Lab Caches » et script d'export manuel : sources JS
 # lisibles dans static/labs/, assemblées à la demande. Les deux incluent
 # lab_logs_core.js — seule copie de la boucle de pagination de /logs.
 _JS_INCLUDE_MARKER = "// @include lab_logs_core.js"

@@ -54,7 +54,7 @@ PENDING_ROOT: Path | None = None
 MAX_DETAIL_ITEMS = 50
 
 # Seules origines autorisées à poster sur /api/logs/receive (le favori
-# « Envoyer vers MyGCFlow » s'exécute sur geocaching.com — apex inclus,
+# « MyGCFlow — Mes logs » s'exécute sur geocaching.com — apex inclus,
 # sa navigation finit sur www). Toute autre page web ne peut pas nous
 # atteindre en CORS ; le jeton couvre les clients sans CORS (curl & co).
 LOGS_ORIGINS = frozenset({
@@ -442,7 +442,7 @@ def logs_export():
 
 
 # ---------------------------------------------------------------------------
-# Réception directe du favori « Envoyer vers MyGCFlow »
+# Réception directe du favori « MyGCFlow — Mes logs »
 # ---------------------------------------------------------------------------
 
 def _receive_cors_headers(resp):
@@ -710,7 +710,7 @@ def logs_receive_state():
     }))
 
 
-# Favori « Envoyer vers MyGCFlow » (logs) : source JS lisible dans
+# Favori « MyGCFlow — Mes logs » : source JS lisible dans
 # static/logs/, cœur de collecte inclus à son repère, comme pour les Labs.
 _LOGS_JS_INCLUDE_MARKER = "// @include logs_collect_core.js"
 

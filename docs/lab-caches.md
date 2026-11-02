@@ -7,14 +7,14 @@ même vidéo. Une **découverte = une étape** (pas un point par Adventure) :
 
 Aucune connexion à l'API officielle n'est requise. Deux chemins coexistent :
 
-- **le favori « Envoyer vers MyGCFlow »** — un clic depuis la page `/logs`
+- **le favori « MyGCFlow — Lab Caches »** — un clic depuis la page `/logs`
   connectée envoie l'historique directement à l'application ;
 - **l'import de fichiers** — historique `.json` + coordonnées `.gpx`/`.zip`
   déposés dans la carte « Mes Lab Caches » de l'onglet Données.
 
 ## La méthode « un clic »
 
-1. **Une fois** : glisser le bouton **« Envoyer vers MyGCFlow »** de la carte
+1. **Une fois** : glisser le bouton **« MyGCFlow — Lab Caches »** de la carte
    « Mes Lab Caches » dans la barre de favoris du navigateur. Le lien
    `javascript:` est généré par `GET /api/labs/bookmarklet` avec l'origine
    locale réelle et un jeton d'installation (`labs_receive_token`, révocable

@@ -1,7 +1,7 @@
 // Interface « Mes Lab Caches » (onglet Données, mode Normal).
 //
 // La carte montre l'essentiel : l'état de la collection, le parcours en un
-// clic (favori « Envoyer vers MyGCFlow ») et, pendant toute opération, un
+// clic (favori « MyGCFlow — Lab Caches ») et, pendant toute opération, un
 // bloc d'activité qui nomme l'étape en cours. Le reste — import de fichiers
 // avec aperçu, réglage du placement automatique, export — vit dans « Options
 // avancées ». Complétion des étapes sans position/date et suppression
@@ -97,7 +97,7 @@ export function initLabsUI() {
         renderGuide();
     });
 
-    // Le favori « Envoyer vers MyGCFlow » est fait pour être glissé dans la
+    // Le favori « MyGCFlow — Lab Caches » est fait pour être glissé dans la
     // barre de favoris : un clic dessus depuis l'app serait un no-op. Tant
     // que le lien réel n'est pas chargé il est inerte (aria-disabled, non
     // glissable, hors tabulation) ; en échec, l'import de fichiers prend le
@@ -109,7 +109,7 @@ export function initLabsUI() {
             if (bm.getAttribute('aria-disabled') === 'true') return;
             showInfo(
                 t('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez-le depuis la page de vos logs Adventure Lab.'),
-                t('Envoyer vers MyGCFlow'));
+                t('MyGCFlow — Lab Caches'));
         });
         loadBookmarklet(bm);
     }
@@ -126,8 +126,8 @@ export function initLabsUI() {
         updateMapAfterLabsChange();
     });
 
-    // Un import peut démarrer hors de cet onglet (favori « Envoyer vers
-    // MyGCFlow » → /api/labs/receive) : le statut expose la tâche active et
+    // Un import peut démarrer hors de cet onglet (favori
+    // « MyGCFlow — Lab Caches » → /api/labs/receive) : le statut expose la tâche active et
     // le bloc d'activité prend le relais — sinon le favori importerait en
     // silence. Relevé au retour sur la fenêtre ou sur l'onglet Données, et
     // périodiquement tant que celui-ci est affiché. Rien pendant une
@@ -1070,7 +1070,7 @@ function markBookmarkletReady(link, bookmarklet) {
     link.removeAttribute('aria-disabled');
     link.removeAttribute('tabindex');
     const label = el('labsBookmarkletLabel');
-    if (label) label.textContent = t('Envoyer vers MyGCFlow');
+    if (label) label.textContent = t('MyGCFlow — Lab Caches');
     const copyBtn = el('labsCopyLinkBtn');
     if (copyBtn) copyBtn.disabled = false;
     const errBox = el('labsBookmarkletError');
@@ -1114,7 +1114,7 @@ async function onCopyBookmarklet() {
 // (confirmation) puis le lien est rechargé avec le nouveau jeton.
 function onRegenBookmarkletToken() {
     pkg.showConfirmation?.(
-        t('Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris.'),
+        t('Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra glisser à nouveau le bouton « MyGCFlow — Lab Caches » dans vos favoris.'),
         t('Jeton du favori'),
         async () => {
             try {

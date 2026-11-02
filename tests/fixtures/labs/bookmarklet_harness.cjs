@@ -1,4 +1,4 @@
-// Exécute le favori « Envoyer vers MyGCFlow » généré par l'application dans
+// Exécute le favori « MyGCFlow — Lab Caches » généré par l'application dans
 // une fausse page labs.geocaching.com/logs, et imprime ce qu'il a fait.
 //
 //   node bookmarklet_harness.cjs <fichier du lien javascript:> <scénario JSON>

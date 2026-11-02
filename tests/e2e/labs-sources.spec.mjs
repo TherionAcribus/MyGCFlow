@@ -416,7 +416,7 @@ test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }
 });
 
 
-test('le favori « Envoyer vers MyGCFlow » porte origine locale et jeton', async ({ page }) => {
+test('le favori « MyGCFlow — Lab Caches » porte origine locale et jeton', async ({ page }) => {
   await openReadyApp(page);
 
   const link = page.locator('#labsBookmarkletLink');
@@ -1279,7 +1279,7 @@ test('le favori est inerte tant que son lien charge, puis devient glissable', as
 
   releaseBookmarklet();
   // Prêt : vrai javascript:, glissable, de nouveau accessible au clavier.
-  await expect(link).toContainText('Envoyer vers MyGCFlow');
+  await expect(link).toContainText('MyGCFlow — Lab Caches');
   await expect(link).toHaveAttribute('draggable', 'true');
   expect(await link.getAttribute('aria-disabled')).toBeNull();
   expect(await link.getAttribute('tabindex')).toBeNull();

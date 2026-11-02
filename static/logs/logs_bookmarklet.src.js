@@ -1,4 +1,4 @@
-// Favori « Envoyer vers MyGCFlow » (logs geocaching.com) — source lisible.
+// Favori « MyGCFlow — Mes logs » (logs geocaching.com) — source lisible.
 //
 // blueprints/gc_logs.py en fait le lien `javascript:` : il y inclut
 // logs_collect_core.js, remplace __ORIGIN__ / __TOKEN__ (origine locale

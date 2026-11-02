@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-02 18:30+0100\n"
+"POT-Creation-Date: 2026-11-02 19:52+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -791,7 +791,7 @@ msgstr "Database"
 
 #: blueprints/core.py:198 static/js/evolution_data.js:435
 #: static/js/poses_data.js:336 templates/guide.html:160
-#: templates/guide.html:168 templates/menu_data.html:400
+#: templates/guide.html:168 templates/menu_data.html:406
 #: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:63
 #: test_translations.py:28
 msgid "Filtres"
@@ -803,7 +803,7 @@ msgstr "Settings"
 
 #: templates/app.html:278 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
-#: templates/guide.html:536 templates/menu_animation.html:83
+#: templates/guide.html:540 templates/menu_animation.html:83
 #: templates/menu_animation.html:113 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:93 templates/menu_filtre.html:109
 #: templates/menu_filtre.html:118 test_translations.py:30
@@ -812,7 +812,7 @@ msgstr "Data"
 
 #: templates/app.html:279 templates/guide.html:50 templates/guide.html:95
 #: templates/guide.html:112 templates/guide.html:182 templates/guide.html:184
-#: templates/guide.html:549 test_translations.py:31
+#: templates/guide.html:553 test_translations.py:31
 msgid "Style"
 msgstr "Style"
 
@@ -864,8 +864,8 @@ msgid "Confirmer"
 msgstr "Confirm"
 
 #: blueprints/core.py:231 static/js/notifications.js:448
-#: templates/menu_data.html:95 templates/menu_data.html:489
-#: templates/menu_data.html:519 templates/menu_images.html:118
+#: templates/menu_data.html:95 templates/menu_data.html:498
+#: templates/menu_data.html:528 templates/menu_images.html:118
 #: templates/menu_stats.html:71 templates/menu_style.html:268
 #: templates/menu_style.html:293 templates/menu_style.html:318
 #: templates/menu_style.html:346 templates/menu_style.html:377
@@ -1796,7 +1796,7 @@ msgstr "Placed on ${date}"
 
 #: static/js/evolution_data.js:799 static/js/evolution_data.js:803
 #: static/js/evolution_data.js:813 static/js/evolution_data.js:830
-#: templates/menu_data.html:448
+#: templates/menu_data.html:457
 msgid "Import"
 msgstr "Import"
 
@@ -2133,7 +2133,7 @@ msgstr "… and ${n} more"
 msgid "Collecte complète prévue au prochain passage"
 msgstr "Full collect scheduled for the next run"
 
-#: static/js/gc_logs.js:119 templates/menu_data.html:349
+#: static/js/gc_logs.js:119 templates/menu_data.html:355
 msgid "Forcer une collecte complète la prochaine fois"
 msgstr "Force a full collect next time"
 
@@ -2141,7 +2141,7 @@ msgstr "Force a full collect next time"
 msgid "Import de vos logs…"
 msgstr "Importing your logs…"
 
-#: static/js/gc_logs.js:144 templates/menu_data.html:242
+#: static/js/gc_logs.js:144 templates/menu_data.html:245
 msgid "Aucun log importé"
 msgstr "No logs imported"
 
@@ -2433,7 +2433,7 @@ msgstr ""
 "Delete all your imported logs? Your geocaches and Lab Caches are kept. "
 "This cannot be undone."
 
-#: static/js/gc_logs.js:693 templates/menu_data.html:310
+#: static/js/gc_logs.js:693 templates/menu_data.html:316
 msgid "Supprimer mes logs"
 msgstr "Delete my logs"
 
@@ -2453,10 +2453,9 @@ msgstr "Logs deleted"
 msgid "Erreur lors de la suppression"
 msgstr "Error while deleting"
 
-#: static/js/gc_logs.js:726 static/js/gc_logs.js:833 static/js/labs.js:163
-#: static/js/labs.js:1300 templates/guide.html:495
-msgid "Envoyer vers MyGCFlow"
-msgstr "Send to MyGCFlow"
+#: static/js/gc_logs.js:726 static/js/gc_logs.js:833
+msgid "MyGCFlow — Mes logs"
+msgstr "MyGCFlow — My logs"
 
 #: static/js/gc_logs.js:744 static/js/labs.js:1320
 msgid "Favori indisponible"
@@ -2475,17 +2474,17 @@ msgid "La collecte complète n'a pas pu être prévue"
 msgstr "The full collect could not be scheduled"
 
 #: static/js/gc_logs.js:776 static/js/gc_logs.js:798
-#: templates/menu_data.html:237
+#: templates/menu_data.html:240
 msgid "Mes logs"
 msgstr "My logs"
 
-#: static/js/gc_logs.js:784 static/js/labs.js:1351
+#: static/js/gc_logs.js:784
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
-"glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris."
+"glisser à nouveau le bouton « MyGCFlow — Mes logs » dans vos favoris."
 msgstr ""
-"Regenerate the token? The current bookmarklet will stop working: you will"
-" have to drag the \"Send to MyGCFlow\" button into your bookmarks again."
+"Regenerate the token? The current bookmarklet will stop working: you will "
+"have to drag the \"MyGCFlow — My logs\" button into your bookmarks again."
 
 #: static/js/gc_logs.js:785 static/js/labs.js:1352
 msgid "Jeton du favori"
@@ -2851,6 +2850,10 @@ msgstr ""
 "Drag this button into your browser's bookmarks bar, then click it from "
 "your Adventure Lab logs page."
 
+#: static/js/labs.js:163 static/js/labs.js:1300 templates/guide.html:495
+msgid "MyGCFlow — Lab Caches"
+msgstr "MyGCFlow — Lab Caches"
+
 #: static/js/labs.js:345
 msgid "Statut indisponible"
 msgstr "Status unavailable"
@@ -2927,7 +2930,7 @@ msgstr "Cancelling…"
 #: static/js/labs.js:517 static/js/labs.js:1155 static/js/labs.js:1157
 #: static/js/labs.js:1200 static/js/labs.js:1365 static/js/labs.js:1400
 #: static/js/labs.js:1416 static/js/labs.js:1426
-#: templates/_filter_cache_attrs.html:37 templates/guide.html:514
+#: templates/_filter_cache_attrs.html:37 templates/guide.html:518
 #: templates/menu_filtre.html:13
 msgid "Lab Caches"
 msgstr "Lab Caches"
@@ -3159,6 +3162,14 @@ msgstr "pending"
 msgid "valeurs existantes conservées."
 msgstr "existing values kept."
 
+#: static/js/labs.js:1351
+msgid ""
+"Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
+"glisser à nouveau le bouton « MyGCFlow — Lab Caches » dans vos favoris."
+msgstr ""
+"Regenerate the token? The current bookmarklet will stop working: you will "
+"have to drag the \"MyGCFlow — Lab Caches\" button into your bookmarks again."
+
 #: static/js/labs.js:1400
 msgid "Réglage non enregistré"
 msgstr "Setting not saved"
@@ -3341,8 +3352,8 @@ msgstr ""
 "Delete all your Lab Cache stages? Your geocaches are kept. This action "
 "cannot be undone."
 
-#: static/js/labs.js:2069 templates/guide.html:173 templates/guide.html:520
-#: templates/menu_data.html:170
+#: static/js/labs.js:2069 templates/guide.html:173 templates/guide.html:524
+#: templates/menu_data.html:173
 msgid "Supprimer mes Lab Caches"
 msgstr "Delete my Lab Caches"
 
@@ -3798,10 +3809,10 @@ msgid "Flash"
 msgstr "Flash"
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: templates/menu_data.html:418 templates/menu_data.html:457
-#: templates/menu_data.html:469 templates/menu_data.html:503
-#: templates/menu_data.html:534 templates/menu_data.html:551
-#: templates/menu_data.html:563 templates/menu_data.html:580
+#: templates/menu_data.html:424 templates/menu_data.html:466
+#: templates/menu_data.html:478 templates/menu_data.html:512
+#: templates/menu_data.html:543 templates/menu_data.html:560
+#: templates/menu_data.html:572 templates/menu_data.html:589
 #: templates/menu_stats.html:565 templates/menu_style.html:52
 #: templates/menu_style.html:255 templates/menu_style.html:287
 #: templates/menu_style.html:312 templates/menu_style.html:340
@@ -4023,7 +4034,7 @@ msgid "Évolution"
 msgstr "Evolution"
 
 #: static/js/profiles.js:48 templates/app.html:62 templates/app.html:64
-#: templates/guide.html:155 templates/guide.html:536 templates/menu_data.html:8
+#: templates/guide.html:155 templates/guide.html:540 templates/menu_data.html:8
 msgid "Mes Géocaches"
 msgstr "My Geocaches"
 
@@ -4139,8 +4150,8 @@ msgstr "Rename"
 
 #: static/js/profiles.js:973 templates/app.html:291 templates/app.html:292
 #: templates/guide.html:117 templates/guide.html:320 templates/guide.html:326
-#: templates/guide.html:520 templates/menu_animation.html:47
-#: templates/menu_data.html:189 templates/menu_data.html:328
+#: templates/guide.html:524 templates/menu_animation.html:47
+#: templates/menu_data.html:192 templates/menu_data.html:334
 msgid "Exporter"
 msgstr "Export"
 
@@ -6952,7 +6963,7 @@ msgstr "Settings"
 
 #: templates/app.html:287 templates/app.html:288 templates/guide.html:117
 #: templates/guide.html:319 templates/guide.html:326
-#: templates/menu_animation.html:44 templates/menu_data.html:375
+#: templates/menu_animation.html:44 templates/menu_data.html:381
 msgid "Prévisualiser"
 msgstr "Preview"
 
@@ -7024,7 +7035,7 @@ msgstr "My Lab Caches"
 msgid "Autre mode"
 msgstr "Other mode"
 
-#: templates/guide.html:72 templates/guide.html:536
+#: templates/guide.html:72 templates/guide.html:540
 msgid "Évolution d'une zone"
 msgstr "Evolution of an area"
 
@@ -7166,7 +7177,7 @@ msgstr ""
 msgid "Chargez le fichier dans MyGCFlow"
 msgstr "Load the file into MyGCFlow"
 
-#: templates/guide.html:155 templates/guide.html:549
+#: templates/guide.html:155 templates/guide.html:553
 msgid "Dans l'onglet"
 msgstr "In the"
 
@@ -7237,7 +7248,7 @@ msgstr "by country or region"
 msgid "En tête du panneau, le sélecteur"
 msgstr "At the top of the panel, the"
 
-#: templates/guide.html:167 templates/guide.html:514
+#: templates/guide.html:167 templates/guide.html:518
 #: templates/menu_filtre.html:10 templates/menu_filtre.html:11
 msgid "Découvertes affichées"
 msgstr "Discoveries shown"
@@ -7285,7 +7296,7 @@ msgstr "Start over (optional)"
 
 #: templates/guide.html:173 templates/guide.html:299 templates/guide.html:300
 #: templates/guide.html:331 templates/guide.html:364 templates/guide.html:411
-#: templates/guide.html:500
+#: templates/guide.html:504
 msgid "Le bouton"
 msgstr "The button"
 
@@ -7498,7 +7509,7 @@ msgstr "Switch between the"
 msgid "Titre"
 msgstr "Title"
 
-#: templates/guide.html:226 templates/guide.html:549
+#: templates/guide.html:226 templates/guide.html:553
 #: templates/menu_informations.html:25
 msgid "Infos"
 msgstr "Info"
@@ -7623,8 +7634,8 @@ msgstr "New"
 msgid "crée un thème,"
 msgstr "creates a theme,"
 
-#: templates/guide.html:241 templates/menu_data.html:490
-#: templates/menu_data.html:520 templates/menu_style.html:64
+#: templates/guide.html:241 templates/menu_data.html:499
+#: templates/menu_data.html:529 templates/menu_style.html:64
 #: templates/modal_evolution.html:61
 msgid "Importer"
 msgstr "Import"
@@ -8993,7 +9004,7 @@ msgid "L'import de fichiers"
 msgstr "File import"
 
 #: templates/guide.html:496 templates/menu_data.html:135
-#: templates/menu_data.html:186
+#: templates/menu_data.html:189
 msgid "Importer des fichiers…"
 msgstr "Import files…"
 
@@ -9007,12 +9018,23 @@ msgstr ""
 "exports), together or separately. A preview shows what the batch will "
 "change before you confirm."
 
-#: templates/guide.html:500 templates/menu_data.html:167
-#: templates/menu_data.html:307
+#: templates/guide.html:500
+msgid ""
+"La collecte par un favori n'est pas recommandée par Groundspeak et peut "
+"entrer en conflit avec les conditions d'utilisation de geocaching.com : "
+"utilisez-la à vos propres risques. L'import de fichiers, lui, ne touche "
+"pas au site."
+msgstr ""
+"Collecting through a bookmarklet is not recommended by Groundspeak and "
+"may conflict with the geocaching.com terms of use: use it at your own "
+"risk. Importing files, on the other hand, does not touch the site."
+
+#: templates/guide.html:504 templates/menu_data.html:170
+#: templates/menu_data.html:313
 msgid "Afficher les instructions d'import"
 msgstr "Show import instructions"
 
-#: templates/guide.html:500
+#: templates/guide.html:504
 msgid ""
 "détaille comment obtenir ces fichiers, dont le script qui télécharge "
 "l'historique .json depuis la page de vos logs."
@@ -9020,11 +9042,11 @@ msgstr ""
 "explains how to get these files, including the script that downloads the "
 ".json history from your logs page."
 
-#: templates/guide.html:504
+#: templates/guide.html:508
 msgid "Laissez les étapes se placer"
 msgstr "Let the stages get placed"
 
-#: templates/guide.html:505
+#: templates/guide.html:509
 msgid ""
 "Après un import, l'application récupère seule les positions des étapes "
 "auprès du service public lab2gpx — seuls les identifiants d'Adventures "
@@ -9035,28 +9057,28 @@ msgstr ""
 "the public lab2gpx service — only Adventure identifiers are sent, never "
 "an account identifier. This automatic placement can be turned off in the"
 
-#: templates/guide.html:505 templates/menu_data.html:177
-#: templates/menu_data.html:317
+#: templates/guide.html:509 templates/menu_data.html:180
+#: templates/menu_data.html:323
 msgid "Options avancées"
 msgstr "Advanced options"
 
-#: templates/guide.html:505
+#: templates/guide.html:509
 msgid ""
 "de la carte (« Placer automatiquement les étapes sur la carte après un "
 "import »)."
 msgstr "of the card (“Automatically place stages on the map after an import”)."
 
-#: templates/guide.html:506
+#: templates/guide.html:510
 msgid ""
 "Les étapes que le service ne connaît pas restent « en attente » : "
 "conservées mais non affichées."
 msgstr "Stages the service doesn't know stay “pending”: kept but not shown."
 
-#: templates/guide.html:506 templates/menu_data.html:113
+#: templates/guide.html:510 templates/menu_data.html:113
 msgid "Compléter à la main"
 msgstr "Fill in manually"
 
-#: templates/guide.html:506
+#: templates/guide.html:510
 msgid ""
 "les liste regroupées par Adventure : saisissez une position — une seule "
 "suffit pour toutes les étapes d'une même Adventure — ou une date, aux "
@@ -9067,45 +9089,45 @@ msgstr ""
 " the stages of the same Adventure — or a date, in geocacher formats (N "
 "48° 51.504 E 002° 17.670, decimal or degrees-minutes-seconds)."
 
-#: templates/guide.html:506 templates/menu_data.html:110
+#: templates/guide.html:510 templates/menu_data.html:110
 msgid "Récupérer les positions"
 msgstr "Fetch positions"
 
-#: templates/guide.html:506
+#: templates/guide.html:510
 msgid "relance la récupération automatique à la demande."
 msgstr "re-runs the automatic fetch on demand."
 
-#: templates/guide.html:509
+#: templates/guide.html:513
 msgid ""
 "Vos corrections manuelles sont précieuses : un réimport ultérieur ne les "
 "efface jamais."
 msgstr "Your manual corrections are precious: a later re-import never erases them."
 
-#: templates/guide.html:513
+#: templates/guide.html:517
 msgid "Choisissez ce que la carte affiche"
 msgstr "Choose what the map shows"
 
-#: templates/guide.html:514
+#: templates/guide.html:518
 msgid "En tête des Filtres, le sélecteur"
 msgstr "At the top of the Filters, the"
 
-#: templates/guide.html:514
+#: templates/guide.html:518
 msgid "offre trois sources :"
 msgstr "selector offers three sources:"
 
-#: templates/guide.html:514 templates/menu_filtre.html:12
+#: templates/guide.html:518 templates/menu_filtre.html:12
 msgid "Géocaches"
 msgstr "Geocaches"
 
-#: templates/guide.html:514
+#: templates/guide.html:518
 msgid "ou"
 msgstr "or"
 
-#: templates/guide.html:514 templates/menu_filtre.html:14
+#: templates/guide.html:518 templates/menu_filtre.html:14
 msgid "Géocaches et Lab Caches"
 msgstr "Geocaches and Lab Caches"
 
-#: templates/guide.html:514
+#: templates/guide.html:518
 msgid ""
 "mélangées chronologiquement. Les étapes participent à tout le reste — "
 "compteur, trajet, caméra et vidéo — comme des trouvailles ordinaires."
@@ -9113,7 +9135,7 @@ msgstr ""
 "blended chronologically. Stages take part in everything else — counter, "
 "trail, camera and video — like ordinary finds."
 
-#: templates/guide.html:516
+#: templates/guide.html:520
 msgid ""
 "« Adventure Lab » est un type de cache comme les autres ; taille, "
 "difficulté et terrain ne s'appliquent pas aux étapes (désactivés quand "
@@ -9122,7 +9144,7 @@ msgstr ""
 "“Adventure Lab” is a cache type like the others; size, difficulty and "
 "terrain don't apply to stages (disabled when only Lab Caches are shown)."
 
-#: templates/guide.html:517
+#: templates/guide.html:521
 msgid ""
 "Pays et région d'une étape sont empruntés à la géocache la plus proche de"
 " votre base — les fichiers de coordonnées n'en portent pas ; au-delà de "
@@ -9132,7 +9154,7 @@ msgstr ""
 "your database — coordinate files don't carry them; beyond ten kilometres "
 "they stay “Not specified”."
 
-#: templates/guide.html:518
+#: templates/guide.html:522
 msgid ""
 "Le clic sur un point montre son image, le titre de l'étape, celui de son "
 "Adventure et votre avancement (« 3/5 étapes trouvées »)."
@@ -9140,24 +9162,24 @@ msgstr ""
 "Clicking a point shows its image, the stage title, its Adventure's title "
 "and your progress (“3/5 stages found”)."
 
-#: templates/guide.html:520
+#: templates/guide.html:524
 msgid "Côté gestion :"
 msgstr "For housekeeping:"
 
-#: templates/guide.html:520
+#: templates/guide.html:524
 msgid "produit un fichier réimportable pour sauvegarde ou transfert,"
 msgstr "produces a re-importable file for backup or transfer,"
 
-#: templates/guide.html:520
+#: templates/guide.html:524
 msgid "vide la collection sans toucher aux géocaches, et"
 msgstr "empties the collection without touching the geocaches, and"
 
-#: templates/guide.html:520 templates/menu_data.html:221
-#: templates/menu_data.html:338
+#: templates/guide.html:524 templates/menu_data.html:224
+#: templates/menu_data.html:344
 msgid "Régénérer le jeton du favori"
 msgstr "Regenerate the bookmarklet token"
 
-#: templates/guide.html:520
+#: templates/guide.html:524
 msgid ""
 "(options avancées) invalide un favori perdu ou partagé par erreur — il "
 "faudra alors glisser le nouveau dans la barre de favoris."
@@ -9165,11 +9187,11 @@ msgstr ""
 "(advanced options) invalidates a bookmark that was lost or shared by "
 "mistake — you'll then have to drag the new one into the bookmarks bar."
 
-#: templates/guide.html:529
+#: templates/guide.html:533
 msgid "Autre mode : évolution d'une zone"
 msgstr "Other mode: evolution of an area"
 
-#: templates/guide.html:531
+#: templates/guide.html:535
 msgid ""
 "Au lieu de vos trouvailles, animez toutes les caches d'une zone : chacune"
 " apparaît à sa date de placement et disparaît à son archivage, et le "
@@ -9179,27 +9201,27 @@ msgstr ""
 "appears on its placement date and disappears when archived, and the "
 "counter follows the number of active caches."
 
-#: templates/guide.html:535
+#: templates/guide.html:539
 msgid "Ouvrez le mode Évolution"
 msgstr "Open the Evolution mode"
 
-#: templates/guide.html:536
+#: templates/guide.html:540
 msgid "En haut de l'onglet"
 msgstr "At the top of the"
 
-#: templates/guide.html:536
+#: templates/guide.html:540
 msgid "le sélecteur"
 msgstr "tab, the"
 
-#: templates/guide.html:536
+#: templates/guide.html:540
 msgid "passe d'un mode à l'autre. Chaque mode garde ses propres données."
 msgstr "switches from one mode to the other. Each mode keeps its own data."
 
-#: templates/guide.html:539
+#: templates/guide.html:543
 msgid "Importez les exports CSV de la zone"
 msgstr "Import the CSV exports of the area"
 
-#: templates/guide.html:540
+#: templates/guide.html:544
 msgid ""
 "Sélectionnez ou glissez-déposez un ou plusieurs fichiers CSV (code GC, "
 "latitude, longitude, date de placement et, si possible, date "
@@ -9212,7 +9234,7 @@ msgstr ""
 "merged into a named dataset that you can complete later with a more "
 "recent export: new caches and archivals are added to it."
 
-#: templates/guide.html:543
+#: templates/guide.html:547
 msgid ""
 "Une cache archivée sans date d'archivage n'est pas affichée par défaut : "
 "impossible de la faire disparaître au bon moment. Le réglage « Caches "
@@ -9228,11 +9250,11 @@ msgstr ""
 "arbitrary delay, just to see both flashes. Corrected coordinates are "
 "never used."
 
-#: templates/guide.html:547
+#: templates/guide.html:551
 msgid "Réglez puis exportez"
 msgstr "Adjust, then export"
 
-#: templates/guide.html:548
+#: templates/guide.html:552
 msgid ""
 "Filtrez par pays, région, type, taille, difficulté, terrain ou "
 "département, choisissez un thème (le flash de disparition se règle dans "
@@ -9243,19 +9265,19 @@ msgstr ""
 "choose a theme (the disappearance flash is set in the Style tab) and a "
 "duration: by default, the whole period fits in one minute."
 
-#: templates/guide.html:549
+#: templates/guide.html:553
 msgid "cible"
 msgstr "target"
 
-#: templates/guide.html:549
+#: templates/guide.html:553
 msgid "le champ"
 msgstr "the field"
 
-#: templates/guide.html:549 templates/menu_informations.html:54
+#: templates/guide.html:553 templates/menu_informations.html:54
 msgid "Ligne d'informations"
 msgstr "Information line"
 
-#: templates/guide.html:549
+#: templates/guide.html:553
 #, python-brace-format
 msgid ""
 "compose le cartouche en bas de carte : texte libre et balises {date}, "
@@ -9679,21 +9701,21 @@ msgstr "or drag and drop it onto the page"
 msgid "Sur cet appareil, le plus simple est d'importer vos fichiers :"
 msgstr "On this device, the simplest way is to import your files:"
 
-#: templates/menu_data.html:140 templates/menu_data.html:280
+#: templates/menu_data.html:140 templates/menu_data.html:283
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur (une seule"
 " fois) :"
 msgstr "Drag this button to your browser's bookmarks bar (only once):"
 
-#: templates/menu_data.html:143 templates/menu_data.html:283
+#: templates/menu_data.html:143 templates/menu_data.html:286
 msgid "Préparation du favori…"
 msgstr "Preparing the bookmarklet…"
 
-#: templates/menu_data.html:146 templates/menu_data.html:286
+#: templates/menu_data.html:146 templates/menu_data.html:289
 msgid "Copier le lien"
 msgstr "Copy link"
 
-#: templates/menu_data.html:151 templates/menu_data.html:291
+#: templates/menu_data.html:151 templates/menu_data.html:294
 msgid "Le favori n'a pas pu être préparé."
 msgstr "The bookmarklet could not be prepared."
 
@@ -9701,7 +9723,7 @@ msgstr "The bookmarklet could not be prepared."
 msgid "Importer des fichiers à la place"
 msgstr "Import files instead"
 
-#: templates/menu_data.html:156 templates/menu_data.html:296
+#: templates/menu_data.html:156 templates/menu_data.html:299
 msgid "Ouvrez"
 msgstr "Open"
 
@@ -9709,11 +9731,22 @@ msgstr "Open"
 msgid "vos logs Adventure Lab"
 msgstr "your Adventure Lab logs"
 
-#: templates/menu_data.html:157 templates/menu_data.html:297
+#: templates/menu_data.html:157 templates/menu_data.html:300
 msgid ", connectez-vous, puis cliquez ce favori."
 msgstr ", sign in, then click this bookmark."
 
-#: templates/menu_data.html:161
+#: templates/menu_data.html:161 templates/menu_data.html:304
+#: templates/menu_data.html:442
+msgid ""
+"La collecte par un favori n'est pas recommandée par Groundspeak et peut "
+"entrer en conflit avec les conditions d'utilisation de geocaching.com : "
+"utilisez-la à vos propres risques."
+msgstr ""
+"Collecting through a bookmarklet is not recommended by Groundspeak and "
+"may conflict with the geocaching.com terms of use: use it at your own "
+"risk."
+
+#: templates/menu_data.html:164
 msgid ""
 "Vos étapes arrivent ici et se placent seules sur la carte, grâce au "
 "service public lab2gpx (réglable dans les options avancées)."
@@ -9721,15 +9754,15 @@ msgstr ""
 "Your stages arrive here and are placed on the map automatically, using "
 "the public lab2gpx service (adjustable in the advanced options)."
 
-#: templates/menu_data.html:184
+#: templates/menu_data.html:187
 msgid "Fichiers Lab Caches (.json, .gpx ou .zip)"
 msgstr "Lab Caches files (.json, .gpx or .zip)"
 
-#: templates/menu_data.html:192
+#: templates/menu_data.html:195
 msgid "Comment obtenir mes fichiers ?"
 msgstr "How do I get my files?"
 
-#: templates/menu_data.html:196
+#: templates/menu_data.html:199
 msgid ""
 "Historique de découvertes (.json) et coordonnées des étapes (.gpx ou "
 ".zip), importables ensemble ou séparément."
@@ -9737,11 +9770,11 @@ msgstr ""
 "Discovery history (.json) and stage coordinates (.gpx or .zip), "
 "importable together or separately."
 
-#: templates/menu_data.html:204
+#: templates/menu_data.html:207
 msgid "Placer automatiquement les étapes sur la carte après un import"
 msgstr "Automatically place stages on the map after an import"
 
-#: templates/menu_data.html:208
+#: templates/menu_data.html:211
 msgid ""
 "Interroge le service public lab2gpx avec les identifiants de vos "
 "Adventures — aucun identifiant de compte n'est transmis."
@@ -9749,31 +9782,31 @@ msgstr ""
 "Queries the public lab2gpx service with your Adventure identifiers — no "
 "account credentials are sent."
 
-#: templates/menu_data.html:214
+#: templates/menu_data.html:217
 msgid "Réessayer de récupérer les positions manquantes"
 msgstr "Try fetching the missing positions again"
 
-#: templates/menu_data.html:224 templates/menu_data.html:341
+#: templates/menu_data.html:227
 msgid ""
 "L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « "
-"Envoyer vers MyGCFlow » dans votre barre de favoris."
+"MyGCFlow — Lab Caches » dans votre barre de favoris."
 msgstr ""
-"The old bookmarklet will stop working: drag the \"Send to MyGCFlow\" "
+"The old bookmarklet will stop working: drag the \"MyGCFlow — Lab Caches\" "
 "button into your bookmarks bar again."
 
-#: templates/menu_data.html:247
+#: templates/menu_data.html:250
 msgid "Vos DNF, vos actions de poseur et les logs reçus sur vos caches."
 msgstr "Your DNFs, your owner actions and the logs received on your caches."
 
-#: templates/menu_data.html:265
+#: templates/menu_data.html:268
 msgid "Voir l'aperçu"
 msgstr "View preview"
 
-#: templates/menu_data.html:292
+#: templates/menu_data.html:295
 msgid "Importer un fichier à la place"
 msgstr "Import a file instead"
 
-#: templates/menu_data.html:301
+#: templates/menu_data.html:307
 msgid ""
 "La collecte relit vos journaux et vos caches comme une consultation à la "
 "main : elle peut durer plusieurs minutes. L'export arrive ici ensuite — "
@@ -9783,15 +9816,15 @@ msgstr ""
 "take several minutes. The export then arrives here — a preview must be "
 "validated before import."
 
-#: templates/menu_data.html:323
+#: templates/menu_data.html:329
 msgid "Fichier de logs (.json, .gpx ou .zip)"
 msgstr "Log file (.json, .gpx or .zip)"
 
-#: templates/menu_data.html:325
+#: templates/menu_data.html:331
 msgid "Importer un fichier…"
 msgstr "Import a file…"
 
-#: templates/menu_data.html:332
+#: templates/menu_data.html:338
 msgid ""
 "Fichier mygcflow-logs (.json) ou GPX contenant des logs (.gpx ou .zip). "
 "Les logs de votre fichier My Finds s'ajoutent aussi à chaque import."
@@ -9799,7 +9832,15 @@ msgstr ""
 "A mygcflow-logs file (.json) or GPX containing logs (.gpx or .zip). Logs "
 "from your My Finds file are also added on every import."
 
-#: templates/menu_data.html:352
+#: templates/menu_data.html:347
+msgid ""
+"L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « "
+"MyGCFlow — Mes logs » dans votre barre de favoris."
+msgstr ""
+"The old bookmarklet will stop working: drag the \"MyGCFlow — My logs\" "
+"button into your bookmarks bar again."
+
+#: templates/menu_data.html:358
 msgid ""
 "Par défaut, le favori ne relit que ce qui a pu changer depuis le dernier "
 "export. La collecte complète revérifie aussi les vieux logs (suppressions"
@@ -9809,44 +9850,44 @@ msgstr ""
 " last export. A full collect re-checks old logs too (deletions included) "
 "— it takes longer."
 
-#: templates/menu_data.html:369
+#: templates/menu_data.html:375
 msgid "Vos trouvailles sont prêtes."
 msgstr "Your finds are ready."
 
-#: templates/menu_data.html:372 templates/menu_data_evolution.html:92
+#: templates/menu_data.html:378 templates/menu_data_evolution.html:92
 #: templates/menu_data_poses.html:40
 msgid "Choisir un style"
 msgstr "Choose a style"
 
-#: templates/menu_data.html:386 templates/menu_data_poses.html:51
+#: templates/menu_data.html:392 templates/menu_data_poses.html:51
 msgid "Aucune cache ne correspond aux filtres actuels."
 msgstr "No cache matches the current filters."
 
-#: templates/menu_data.html:388 templates/menu_data_poses.html:53
+#: templates/menu_data.html:394 templates/menu_data_poses.html:53
 msgid "Réinitialiser les filtres"
 msgstr "Reset filters"
 
-#: templates/menu_data.html:417
+#: templates/menu_data.html:423
 msgid "Importer mes Lab Caches"
 msgstr "Import my Lab Caches"
 
-#: templates/menu_data.html:421
+#: templates/menu_data.html:427
 msgid "La méthode simple — en un clic"
 msgstr "The easy way — one click"
 
-#: templates/menu_data.html:424
+#: templates/menu_data.html:430
 msgid ""
-"Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans "
-"la barre de favoris de votre navigateur — une seule fois."
+"Glissez le bouton « MyGCFlow — Lab Caches » dans la barre de favoris de "
+"votre navigateur — une seule fois."
 msgstr ""
-"Drag the “Send to MyGCFlow” button (My Lab Caches card) into your "
-"browser's bookmarks bar — once only."
+"Drag the \"MyGCFlow — Lab Caches\" button into your browser's bookmarks "
+"bar — once only."
 
-#: templates/menu_data.html:427
+#: templates/menu_data.html:433
 msgid "Connectez-vous sur"
 msgstr "Sign in on"
 
-#: templates/menu_data.html:429
+#: templates/menu_data.html:435
 msgid ""
 "puis cliquez ce favori : votre historique est envoyé directement à "
 "l'application."
@@ -9854,7 +9895,7 @@ msgstr ""
 "then click that bookmark: your history is sent straight to the "
 "application."
 
-#: templates/menu_data.html:432
+#: templates/menu_data.html:438
 msgid ""
 "Les étapes se placent seules sur la carte. Si vous avez désactivé ce "
 "placement automatique (options avancées), complétez-les par fichier ou à "
@@ -9863,15 +9904,15 @@ msgstr ""
 "Stages are placed on the map automatically. If you turned this automatic "
 "placement off (advanced options), complete them from a file or by hand."
 
-#: templates/menu_data.html:436
+#: templates/menu_data.html:445
 msgid "La méthode manuelle — deux fichiers"
 msgstr "The manual way — two files"
 
-#: templates/menu_data.html:439
+#: templates/menu_data.html:448
 msgid "Historique des découvertes (.json)"
 msgstr "Discovery history (.json)"
 
-#: templates/menu_data.html:440
+#: templates/menu_data.html:449
 msgid ""
 "Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), "
 "renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
@@ -9881,15 +9922,15 @@ msgstr ""
 " player GUID in the script below and run it: it downloads your full "
 "history."
 
-#: templates/menu_data.html:441
+#: templates/menu_data.html:450
 msgid "Télécharger le script d'export"
 msgstr "Download the export script"
 
-#: templates/menu_data.html:444
+#: templates/menu_data.html:453
 msgid "Coordonnées des étapes (.gpx ou .zip)"
 msgstr "Stage coordinates (.gpx or .zip)"
 
-#: templates/menu_data.html:445
+#: templates/menu_data.html:454
 msgid ""
 "Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode "
 "UUID, une étape par waypoint) — inutile si la récupération automatique "
@@ -9898,7 +9939,7 @@ msgstr ""
 "Generate a Lab2Gpx file containing your Adventure stages (UUID mode, one "
 "stage per waypoint) — unnecessary if automatic retrieval is enabled."
 
-#: templates/menu_data.html:449
+#: templates/menu_data.html:458
 msgid ""
 "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
 "coordonnées restent conservées et complétables ensuite."
@@ -9906,7 +9947,7 @@ msgstr ""
 "Drop the files here — together or separately. Stages without coordinates "
 "are kept and can be completed later."
 
-#: templates/menu_data.html:453
+#: templates/menu_data.html:462
 msgid ""
 "Aucune donnée ne quitte l'application : les fichiers sont analysés "
 "localement. La récupération automatique envoie uniquement les "
@@ -9915,27 +9956,27 @@ msgstr ""
 "No data leaves the application: files are parsed locally. Automatic "
 "retrieval only sends Adventure identifiers to the public lab2gpx service."
 
-#: templates/menu_data.html:468
+#: templates/menu_data.html:477
 msgid "Aperçu de l'import Lab Caches"
 msgstr "Lab Caches import preview"
 
-#: templates/menu_data.html:483
+#: templates/menu_data.html:492
 msgid "Détail des fichiers"
 msgstr "File details"
 
-#: templates/menu_data.html:502
+#: templates/menu_data.html:511
 msgid "Aperçu de l'import de logs"
 msgstr "Log import preview"
 
-#: templates/menu_data.html:510
+#: templates/menu_data.html:519
 msgid "Points d'attention"
 msgstr "Points to note"
 
-#: templates/menu_data.html:533
+#: templates/menu_data.html:542
 msgid "Caches sans position"
 msgstr "Caches without a position"
 
-#: templates/menu_data.html:538
+#: templates/menu_data.html:547
 msgid ""
 "Ces caches ont des logs enregistrés mais aucune position connue : vos DNF"
 " n'y apparaîtront pas tant qu'elles n'en auront pas. La position saisie "
@@ -9945,7 +9986,7 @@ msgstr ""
 " appear on them until they have one. A manually entered position is never"
 " overwritten by an import."
 
-#: templates/menu_data.html:541 templates/menu_data.html:570
+#: templates/menu_data.html:550 templates/menu_data.html:579
 msgid ""
 "Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
 "2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
@@ -9953,19 +9994,19 @@ msgstr ""
 "Accepted formats: N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
 "2.2945 (decimal) or 48°51′30″N 2°17′40″E."
 
-#: templates/menu_data.html:545 templates/menu_data.html:574
+#: templates/menu_data.html:554 templates/menu_data.html:583
 msgid "Précédent"
 msgstr "Previous"
 
-#: templates/menu_data.html:547 templates/menu_data.html:576
+#: templates/menu_data.html:556 templates/menu_data.html:585
 msgid "Suivant"
 msgstr "Next"
 
-#: templates/menu_data.html:562
+#: templates/menu_data.html:571
 msgid "Étapes en attente"
 msgstr "Pending stages"
 
-#: templates/menu_data.html:567
+#: templates/menu_data.html:576
 msgid ""
 "Ces étapes sont conservées mais non affichées : renseignez leur position "
 "ou leur date de découverte pour les rendre affichables. Une seule "
@@ -15916,4 +15957,40 @@ msgstr "Save a copy as…"
 
 #~ msgid "L'archive ne contient ni .json ni .gpx"
 #~ msgstr "The archive contains neither .json nor .gpx"
+
+#~ msgid "Envoyer vers MyGCFlow"
+#~ msgstr "Send to MyGCFlow"
+
+#~ msgid ""
+#~ "Régénérer le jeton ? Le favori "
+#~ "actuel cessera de fonctionner : il "
+#~ "faudra glisser à nouveau le bouton "
+#~ "« Envoyer vers MyGCFlow » dans vos"
+#~ " favoris."
+#~ msgstr ""
+#~ "Regenerate the token? The current "
+#~ "bookmarklet will stop working: you will"
+#~ " have to drag the \"Send to "
+#~ "MyGCFlow\" button into your bookmarks "
+#~ "again."
+
+#~ msgid ""
+#~ "L'ancien favori cessera de fonctionner :"
+#~ " glissez à nouveau le bouton « "
+#~ "Envoyer vers MyGCFlow » dans votre "
+#~ "barre de favoris."
+#~ msgstr ""
+#~ "The old bookmarklet will stop working:"
+#~ " drag the \"Send to MyGCFlow\" button"
+#~ " into your bookmarks bar again."
+
+#~ msgid ""
+#~ "Glissez le bouton « Envoyer vers "
+#~ "MyGCFlow » (carte Mes Lab Caches) "
+#~ "dans la barre de favoris de votre"
+#~ " navigateur — une seule fois."
+#~ msgstr ""
+#~ "Drag the “Send to MyGCFlow” button "
+#~ "(My Lab Caches card) into your "
+#~ "browser's bookmarks bar — once only."
 

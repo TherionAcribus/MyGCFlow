@@ -430,12 +430,12 @@ class AppSettings:
     # Pose, maintenance, désactivation, archivage sont des déplacements du
     # poseur : étapes du trait de déplacement, sauf choix contraire.
     owner_in_trail: bool = True
-    # Jeton embarqué dans le bookmarklet « Envoyer vers MyGCFlow » : protège
+    # Jeton embarqué dans le bookmarklet « MyGCFlow — Lab Caches » : protège
     # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
     # un identifiant d'installation, pas une préférence.
     labs_receive_token: str = ""
-    # Même rôle pour le favori « Mes logs » (/api/logs/receive), distinct du
+    # Même rôle pour le favori « MyGCFlow — Mes logs » (/api/logs/receive), distinct du
     # jeton Labs : révoquer l'un ne casse pas l'autre favori.
     logs_receive_token: str = ""
     # Le favori collecte incrémentalement depuis le dernier export ; ce

@@ -492,9 +492,13 @@
                         <h3>{{ _("Importez votre historique") }}</h3>
                         <p>{{ _("Tout se passe dans la carte") }} <strong>{{ _("Mes Lab Caches") }}</strong> {{ _("de l'onglet Données. Deux méthodes coexistent :") }}</p>
                         <ul class="sub">
-                            <li><strong>{{ _("La plus simple — le favori") }}</strong> — {{ _("glissez le bouton") }} <span class="ui-chip"><i class="ti ti-bookmark"></i> {{ _("Envoyer vers MyGCFlow") }}</span> {{ _("dans la barre de favoris de votre navigateur (une seule fois), ouvrez") }} <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">labs.geocaching.com/logs</a> {{ _("connecté à votre compte, puis cliquez ce favori : votre historique arrive directement dans l'application.") }}</li>
+                            <li><strong>{{ _("La plus simple — le favori") }}</strong> — {{ _("glissez le bouton") }} <span class="ui-chip"><i class="ti ti-bookmark"></i> {{ _("MyGCFlow — Lab Caches") }}</span> {{ _("dans la barre de favoris de votre navigateur (une seule fois), ouvrez") }} <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">labs.geocaching.com/logs</a> {{ _("connecté à votre compte, puis cliquez ce favori : votre historique arrive directement dans l'application.") }}</li>
                             <li><strong>{{ _("L'import de fichiers") }}</strong> — <span class="ui-chip"><i class="ti ti-folder-open"></i> {{ _("Importer des fichiers…") }}</span> {{ _("accepte l'historique .json et les coordonnées .gpx ou .zip (exports Lab2Gpx), ensemble ou séparément. Un aperçu montre ce que le lot changera avant que vous ne validiez.") }}</li>
                         </ul>
+                        <div class="guide-callout warn">
+                            <i class="ti ti-alert-triangle"></i>
+                            <div>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques. L'import de fichiers, lui, ne touche pas au site.") }}</div>
+                        </div>
                         <div class="guide-callout info">
                             <i class="ti ti-help"></i>
                             <div>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-help"></i> {{ _("Afficher les instructions d'import") }}</span> {{ _("détaille comment obtenir ces fichiers, dont le script qui télécharge l'historique .json depuis la page de vos logs.") }}</div>

@@ -16,7 +16,7 @@ import { countLabel } from './utils.js';
 const TASK_POLL_MS = 500;
 const TASK_MAX_ERRORS = 10;
 // Relevé du statut tant que l'onglet Données est affiché : un export déposé
-// par le favori « Envoyer vers MyGCFlow » arrive hors de cette page, et
+// par le favori « MyGCFlow — Mes logs » arrive hors de cette page, et
 // l'onglet peut rester ouvert sans reprendre le focus.
 const STATUS_POLL_MS = 4000;
 
@@ -709,7 +709,7 @@ async function onClear() {
     }
 }
 
-// ------------------------------------------------- favori « Envoyer vers MyGCFlow »
+// ------------------------------------------------- favori « MyGCFlow — Mes logs »
 //
 // Le favori est fait pour être glissé dans la barre de favoris : un clic
 // dessus depuis l'app serait un no-op. Tant que le lien réel n'est pas
@@ -723,7 +723,7 @@ function markBookmarkletReady(link, bookmarklet) {
     link.removeAttribute('aria-disabled');
     link.removeAttribute('tabindex');
     const label = el('gcLogsBookmarkletLabel');
-    if (label) label.textContent = t('Envoyer vers MyGCFlow');
+    if (label) label.textContent = t('MyGCFlow — Mes logs');
     const copyBtn = el('gcLogsCopyLinkBtn');
     if (copyBtn) copyBtn.disabled = false;
     const errBox = el('gcLogsBookmarkletError');
@@ -781,7 +781,7 @@ async function onFullNextCollect() {
 // (confirmation) puis le lien est rechargé avec le nouveau jeton.
 function onRegenBookmarkletToken() {
     showConfirmation(
-        t('Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris.'),
+        t('Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra glisser à nouveau le bouton « MyGCFlow — Mes logs » dans vos favoris.'),
         t('Jeton du favori'),
         async () => {
             try {
@@ -830,7 +830,7 @@ export function initLogsUI() {
             if (bm.getAttribute('aria-disabled') === 'true') return;
             showInfo(
                 t('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez-le depuis une page de geocaching.com.'),
-                t('Envoyer vers MyGCFlow'));
+                t('MyGCFlow — Mes logs'));
         });
         loadBookmarklet(bm);
     }

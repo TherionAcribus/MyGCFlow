@@ -1,4 +1,4 @@
-// Favori « Envoyer vers MyGCFlow » — source lisible.
+// Favori « MyGCFlow — Lab Caches » — source lisible.
 //
 // blueprints/labs.py en fait le lien `javascript:` : il y inclut
 // lab_logs_core.js, remplace __ORIGIN__ / __TOKEN__ (origine locale réelle et

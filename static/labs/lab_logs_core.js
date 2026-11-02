@@ -1,6 +1,6 @@
 // Cœur partagé — parcours paginé de l'historique Adventure Lab.
 //
-// Inclus tel quel dans le favori « Envoyer vers MyGCFlow »
+// Inclus tel quel dans le favori « MyGCFlow — Lab Caches »
 // (bookmarklet.src.js) et dans le script d'export manuel
 // (export_lab_logs.src.js) par blueprints/labs.py : c'est la seule copie de
 // la boucle de pagination. Il s'exécute sur labs.geocaching.com/logs, avec

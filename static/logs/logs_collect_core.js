@@ -1,6 +1,6 @@
 // Cœur partagé — collecte des logs geocaching.com (DNF et caches posées).
 //
-// Inclus tel quel dans le favori « Envoyer vers MyGCFlow »
+// Inclus tel quel dans le favori « MyGCFlow — Mes logs »
 // (logs_bookmarklet.src.js) par blueprints/gc_logs.py : seule copie du
 // moteur de collecte. Il s'exécute sur une page de geocaching.com, avec les
 // cookies de session, et relit les mêmes pages qu'une consultation à la
