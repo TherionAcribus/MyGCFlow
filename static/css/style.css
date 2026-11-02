@@ -35,6 +35,27 @@
     font-style: normal;
     font-display: swap;
 }
+@font-face {
+    font-family: "Merriweather";
+    src: url("../fonts/merriweather-300-900.woff2") format("woff2");
+    font-weight: 300 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("../fonts/jetbrains-mono-100-800.woff2") format("woff2");
+    font-weight: 100 800;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Caveat";
+    src: url("../fonts/caveat-400-700.woff2") format("woff2");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
 
 
 .btn-image {

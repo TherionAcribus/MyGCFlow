@@ -13,13 +13,16 @@
 
 import { hash32, hashString } from './poses_names_model.mjs';
 
+// La première police de chaque pile est servie en local (style.css,
+// static/fonts) : même rendu vidéo sur toutes les machines. Les replis
+// système ne servent qu'en cas de problème de chargement.
 export const FONT_STACKS = Object.freeze({
     sans: '"Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif',
-    serif: 'Georgia, "Times New Roman", "DejaVu Serif", serif',
-    mono: '"Cascadia Mono", Consolas, "DejaVu Sans Mono", "Courier New", monospace',
+    serif: '"Merriweather", Georgia, "Times New Roman", "DejaVu Serif", serif',
+    mono: '"JetBrains Mono", "Cascadia Mono", Consolas, "DejaVu Sans Mono", "Courier New", monospace',
     rounded: '"Nunito", "Arial Rounded MT Bold", "Varela Round", "Segoe UI", sans-serif',
     condensed: '"Oswald", "Arial Narrow", "Roboto Condensed", "Liberation Sans Narrow", sans-serif',
-    handwritten: '"Segoe Print", "Comic Sans MS", "Bradley Hand", "Chalkboard SE", cursive',
+    handwritten: '"Caveat", "Segoe Print", "Comic Sans MS", "Bradley Hand", "Chalkboard SE", cursive',
 });
 
 const EVICT_MS = 250;

@@ -6682,6 +6682,9 @@ function ensureNamesFonts() {
             '400 16px Inter', '700 16px Inter', 'italic 400 16px Inter', 'italic 700 16px Inter',
             '400 16px Nunito', '700 16px Nunito', 'italic 400 16px Nunito', 'italic 700 16px Nunito',
             '400 16px Oswald', '700 16px Oswald', 'italic 400 16px Oswald', 'italic 700 16px Oswald',
+            '400 16px Merriweather', '700 16px Merriweather', 'italic 400 16px Merriweather', 'italic 700 16px Merriweather',
+            '400 16px "JetBrains Mono"', '700 16px "JetBrains Mono"', 'italic 400 16px "JetBrains Mono"', 'italic 700 16px "JetBrains Mono"',
+            '400 16px Caveat', '700 16px Caveat', 'italic 400 16px Caveat', 'italic 700 16px Caveat',
         ]) {
             document.fonts?.load?.(spec);
         }
