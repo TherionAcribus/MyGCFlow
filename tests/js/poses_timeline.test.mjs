@@ -447,6 +447,16 @@ test('tuiles poseur : avant toute trouvaille, délai indéfini et délaissée = 
         { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] });
 });
 
+test('tuiles poseur : le résultat ne dépend pas de l\'ordre des jours demandés', () => {
+    const { base, timeline: tl } = setup();
+    // Curseur incrémental : jours croissants, saut en arrière, ré-avance —
+    // la lecture doit rendre les mêmes valeurs à chaque fois.
+    const asc = posesCounterAtDay(tl, base, 5);
+    posesCounterAtDay(tl, base, 13);
+    assert.deepEqual(posesCounterAtDay(tl, base, 5), asc);
+    assert.deepEqual(posesCounterAtDay(tl, base, 3), posesCounterAtDay(tl, base, 3));
+});
+
 test('filtres : une cache écartée ne compte plus', () => {
     const base = buildPosesBase(payload());
     const rows = filterRows(base, { types: ['Traditional Cache'], undatedMode: 'keep' });

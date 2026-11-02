@@ -781,9 +781,10 @@ export function posesStatsIndex() {
 
 // Tuiles « poseur » des compteurs Stats (délai moyen avant la première
 // trouvaille, cache la plus délaissée) au jour affiché. Mémoïsé par
-// (révision, jour) : le dessin l'appelle à chaque frame ; le calcul reste
-// O(événements ≤ jour), arrêt au premier log postérieur (poses_timeline.mjs
-// › posesCounterAtDay) — les journaux reçus restent modestes.
+// (révision, jour) : le dessin l'appelle à chaque frame ; le parcours des
+// logs est incrémental en plus — un jour nouveau n'avance que sur les logs
+// de la journée, un saut en arrière rescanne depuis le début
+// (poses_timeline.mjs › posesCounterAtDay).
 export function posesCounterStats(day) {
     if (!base || !timeline) return null;
     const d = Number.isFinite(day) ? day : restDayIndex();

@@ -33,7 +33,10 @@ export const APPEAR_FIRST_LOG = 3;
 //   posees       caches apparues (cumul)
 //   archivees    caches archivées à ce jour (une désarchivée en sort)
 //   desactivees  caches désactivées à ce jour
-//   trouvailles  trouvailles reçues (cumul) — favoris, DNF, logs : idem
+//   trouvailles  trouvailles reçues (cumul) — favoris et DNF : idem
+//   logs         toutes les entrées des journaux (notes du poseur et du
+//                relecteur comprises — c'est aussi la pile « autres logs »
+//                de la barre de chronologie : logs − trouvailles)
 //   trouveurs    joueurs distincts ayant trouvé au moins une cache
 export const POSES_COUNTER_TAGS = Object.freeze([
     'actives', 'posees', 'archivees', 'desactivees', 'trouvailles', 'favoris', 'dnf', 'logs', 'trouveurs',
@@ -369,24 +372,50 @@ export function posesCounterMaxes(timeline) {
 //   findsPerCache  trouvailles reçues par cache apparue, en moyenne (null
 //             avant la première apparition) ;
 //   unfound   codes des caches apparues jamais trouvées au jour affiché.
-// `evOrder` est trié par jour : le parcours s'arrête au premier log postérieur.
-export function posesCounterAtDay(timeline, base, day) {
-    const out = { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] };
-    if (!timeline || timeline.count === 0 || !Number.isFinite(day)) return out;
-    const findCode = base.kindCode.find;
+// Parcours incrémental des trouvailles pour `posesCounterAtDay` : `evOrder`
+// est trié par jour — quand `day` avance (animation), seuls les logs des
+// nouvelles journées sont lus au lieu de rescanner tous les logs ≤ jour ;
+// un saut en arrière (barre de chronologie) repart du début. L'état vit par
+// timeline dans une WeakMap (une autre timeline sur la même base — sélection
+// réduite — a son propre curseur).
+const findScanMemo = new WeakMap();
+function findScanUpTo(timeline, base, day) {
     const n = timeline.count;
-    const firstFind = new Int32Array(n).fill(-1);
-    const lastFind = new Int32Array(n).fill(-1);
-    let findTotal = 0;
-    for (const j of timeline.evOrder) {
+    let scan = findScanMemo.get(timeline);
+    if (!scan || scan.base !== base || scan.firstFind.length !== n) {
+        scan = { base, day: -Infinity, cursor: 0, findTotal: 0,
+                 firstFind: new Int32Array(n).fill(-1),
+                 lastFind: new Int32Array(n).fill(-1) };
+        findScanMemo.set(timeline, scan);
+    }
+    if (day < scan.day) {
+        scan.cursor = 0;
+        scan.findTotal = 0;
+        scan.firstFind.fill(-1);
+        scan.lastFind.fill(-1);
+    }
+    const findCode = base.kindCode.find;
+    const order = timeline.evOrder;
+    while (scan.cursor < order.length) {
+        const j = order[scan.cursor];
         if (base.ev.day[j] > day) break;
+        scan.cursor++;
         if (base.ev.kind[j] !== findCode) continue;
         const k = timeline.featureOf[base.ev.cache[j]];
         if (k < 0) continue;
-        findTotal++;
-        if (firstFind[k] < 0) firstFind[k] = base.ev.day[j];
-        lastFind[k] = base.ev.day[j];
+        scan.findTotal++;
+        if (scan.firstFind[k] < 0) scan.firstFind[k] = base.ev.day[j];
+        scan.lastFind[k] = base.ev.day[j];
     }
+    scan.day = day;
+    return scan;
+}
+
+export function posesCounterAtDay(timeline, base, day) {
+    const out = { ftfDelay: null, neglected: null, findsPerCache: null, unfound: [] };
+    if (!timeline || timeline.count === 0 || !Number.isFinite(day)) return out;
+    const n = timeline.count;
+    const { firstFind, lastFind, findTotal } = findScanUpTo(timeline, base, day);
     let delaySum = 0, foundCount = 0, appeared = 0;
     let pick = -1, pickVisit = 0, pickNever = false;
     for (let k = 0; k < n; k++) {

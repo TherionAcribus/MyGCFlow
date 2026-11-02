@@ -19,7 +19,9 @@
 //                                désarchivée en sort : actives + archivees
 //                                = posees), contrairement au cumul d'Évolution ;
 //                  {desactivees} : caches désactivées à la date ;
-//                  {trouvailles}, {favoris}, {dnf}, {logs} : cumuls reçus ;
+//                  {trouvailles}, {favoris}, {dnf} : cumuls reçus ;
+//                  {logs} : cumul de toutes les entrées des journaux
+//                           (notes du poseur et du relecteur comprises) ;
 //                  {trouveurs} : joueurs distincts ayant trouvé une cache.
 
 import { WIDEST_DATE } from './infos_reserve.mjs';

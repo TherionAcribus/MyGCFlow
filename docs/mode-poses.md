@@ -117,7 +117,9 @@ pures vivent dans `poses_timeline.mjs` (tests `tests/js/poses_timeline.test.mjs`
   `{posees}`, `{archivees}` et `{desactivees}` **à la date** (une cache
   désarchivée sort de `{archivees}` : `actives + archivees = posees`, à la
   différence du cumul d'Évolution), `{trouvailles}`, `{favoris}`, `{dnf}`,
-  `{logs}` (cumuls reçus), `{trouveurs}` (joueurs distincts), `{total}`.
+  `{logs}` (cumul de toutes les entrées des journaux — notes du poseur et
+  du relecteur comprises ; c'est aussi la pile « autres logs » de la barre
+  de chronologie), `{trouveurs}` (joueurs distincts), `{total}`.
 - **Barre de chronologie** : histogramme des trouvailles reçues par jour, les
   autres logs empilés dessus ; courbe du cumul des trouvailles reçues ;
   jalons « Nᵉ trouvaille reçue » (losange plein), première trouvaille reçue
