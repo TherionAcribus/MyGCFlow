@@ -11,6 +11,24 @@
     font-display: swap;
 }
 
+/* Polices des étiquettes de pseudos (Mes poses, name_labels.mjs) : servies en
+   local pour qu'une même vidéo ait le même rendu sur toutes les machines
+   (licences OFL dans static/fonts/). */
+@font-face {
+    font-family: "Inter";
+    src: url("../fonts/inter-100-900.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Nunito";
+    src: url("../fonts/nunito-200-1000.woff2") format("woff2");
+    font-weight: 200 1000;
+    font-style: normal;
+    font-display: swap;
+}
+
 
 .btn-image {
     position: relative; /* Position relative pour permettre le positionnement absolu du texte à l'intérieur */

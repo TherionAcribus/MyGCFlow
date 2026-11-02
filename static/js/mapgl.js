@@ -564,6 +564,7 @@ let nameLabelsTimeScale = 1;
 let namesPreview = false;        // aperçu en boucle (onglet Style › Pseudos)
 let namesPreviewWaves = 0;
 let namesMeasureCtx = null;
+let namesFontsWatched = false;   // polices locales préchargées (cf. style.css)
 let trailHeadLayer = null;      // la tête du trait, au-dessus des points
 // var et non let : initUIElements (ui.js) s'exécute pendant l'évaluation des
 // modules, alors que mapgl n'a pas encore fini la sienne (import circulaire
@@ -6659,8 +6660,31 @@ function currentNamesOptions() {
     return normalizePosesNames(pkg.options?.point?.posesNames);
 }
 
+// Les familles « sans » et « arrondie » des étiquettes citent des polices
+// servies en local (style.css) : lancer leur téléchargement dès la création de
+// la couche, puis redessiner quand elles arrivent — les métriques mesurées
+// avec le repli sont invalidées, faute de quoi une étiquette née avant la
+// police garderait la mauvaise largeur jusqu'à sa fin.
+function ensureNamesFonts() {
+    if (namesFontsWatched || typeof document === 'undefined') return;
+    namesFontsWatched = true;
+    try {
+        for (const spec of [
+            '400 16px Inter', '700 16px Inter', 'italic 400 16px Inter', 'italic 700 16px Inter',
+            '400 16px Nunito', '700 16px Nunito', 'italic 400 16px Nunito', 'italic 700 16px Nunito',
+        ]) {
+            document.fonts?.load?.(spec);
+        }
+        document.fonts?.ready?.then(() => {
+            for (const l of nameLabels.labels) { l.metrics = null; l.metricsCss = null; }
+            if (nameLabels.labels.length > 0 || namesPreview) try { map.render(); } catch (_) {}
+        });
+    } catch (_) {}
+}
+
 function ensureNameLabelsLayer() {
     if (!map) return;
+    ensureNamesFonts();
     if (!nameLabelsLayer || !isLayerOnMap(map, nameLabelsLayer)) {
         nameLabelsLayer = new ol.layer.Vector({
             // Au-dessus des flashs (1100) : un pseudo ne se cache pas sous
