@@ -52,7 +52,11 @@
                     <!-- Infos de base et suppression des données importées
                          sur la même ligne : bouton discret (outline) à droite,
                          en vis-à-vis du compteur de trouvailles. -->
-                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
+                    <!-- Sur petit écran le bouton de vidage passe pleine
+                         largeur sous le compteur (flex-column), en ligne
+                         dès ~576 px — même motif que les autres rangées de
+                         l'onglet. -->
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 mt-3">
                         <div id="infosBDD" class="form-hint text-muted">
                             {{ _("Aucune géocache chargée") }}
                         </div>
@@ -60,6 +64,11 @@
                             <i class="ti ti-trash me-1"></i>{{ _("Supprimer mes géocaches") }}
                         </button>
                     </div>
+                    <!-- Bilan de fin d'opération (import, vidage) quand
+                         l'onglet Données est affiché : remplace le toast
+                         qui recouvrirait le panneau (bdd.js). La zone
+                         #infosBDD est réservée aux relevés périodiques. -->
+                    <div id="bddReportNote" class="small text-success" hidden aria-live="polite"></div>
                 </div>
             </div>
 
@@ -76,6 +85,10 @@
                     <div id="labsStatus" class="fw-medium mb-2" aria-live="polite">
                         {{ _("Aucun Lab Cache importé") }}
                     </div>
+                    <!-- Bilan de fin de séquence Labs (import, placement,
+                         mise à jour externe) écrit par labs.js quand
+                         l'onglet est visible — à la place du toast. -->
+                    <div id="labsReportNote" class="small text-success mb-2" hidden aria-live="polite"></div>
 
                     <!-- Activité en cours : analyse, import, récupération des
                          positions. Toujours au même endroit, avec le nom de
@@ -178,7 +191,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center gap-2">
+                    <!-- Boutons pleine largeur empilés sur petit écran,
+                         côte à côte dès ~576 px. -->
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
                         <button type="button" id="labsUpdateBtn" class="btn btn-outline-primary btn-sm" style="display:none;" aria-expanded="false" aria-controls="labsGuide">
                             <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
                         </button>
@@ -258,6 +273,10 @@
                         {{ _("Aucun log importé") }}
                     </div>
                     <ul id="gcLogsDetail" class="list-unstyled small text-muted mb-2" hidden></ul>
+                    <!-- Bilan de fin d'opération « Mes logs » (import,
+                         suppression) quand l'onglet est visible —
+                         remplace le toast (gc_logs.js). -->
+                    <div id="gcLogsReportNote" class="small text-success mb-1" hidden aria-live="polite"></div>
 
                     <div class="form-hint text-muted mb-2">
                         {{ _("Vos DNF, vos actions de poseur et les logs reçus sur vos caches.") }}
@@ -267,9 +286,12 @@
                          de cliquer le favori, relu par celui-ci via
                          /api/logs/receive/state — pas sous « Options
                          avancées » où on ne le verrait pas à temps. -->
-                    <div class="d-flex align-items-center gap-2 mb-1">
+                    <!-- Libellé et select empilés sur petit écran (le
+                         select passe pleine largeur via la classe dédiée,
+                         cf. ui_improvements.css), en ligne dès ~576 px. -->
+                    <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-1 gap-sm-2 mb-1">
                         <label for="gcLogsScopeSelect" class="form-label mb-0">{{ _('Le favori collecte') }}</label>
-                        <select id="gcLogsScopeSelect" class="form-select form-select-sm w-auto">
+                        <select id="gcLogsScopeSelect" class="form-select form-select-sm gc-logs-scope-select">
                             <option value="all">{{ _('Tout : DNF et caches posées') }}</option>
                             <option value="dnf">{{ _('Mes DNF seulement') }}</option>
                             <option value="owned">{{ _('Mes caches posées seulement') }}</option>
@@ -337,7 +359,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center gap-2">
+                    <!-- Boutons pleine largeur empilés sur petit écran,
+                         côte à côte dès ~576 px. -->
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
                         <button type="button" id="gcLogsUpdateBtn" class="btn btn-outline-primary btn-sm" style="display:none;" aria-expanded="false" aria-controls="gcLogsGuide">
                             <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
                         </button>

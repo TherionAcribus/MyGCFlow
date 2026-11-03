@@ -3572,6 +3572,14 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
    (AGENTS.md, piège hidden + classes d'affichage). */
 .gc-logs-ui [hidden] { display: none !important; }
 
+/* Select « Le favori collecte » (carte « Mes logs ») : rangée empilée sur
+   petit écran — pleine largeur sous le libellé jusqu'à ~576 px, largeur
+   automatique ensuite (menu_data.html). */
+.gc-logs-scope-select { width: auto; }
+@media (max-width: 575.98px) {
+    .gc-logs-scope-select { width: 100%; }
+}
+
 /* --- Onglet Stats (templates/menu_stats.html) --------------------------- */
 
 /* Sous-sections du formulaire d'un panneau (Contenu, Position, Apparence). */

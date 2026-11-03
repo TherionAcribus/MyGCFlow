@@ -38,6 +38,13 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   await page.locator('#file-input').setInputFiles(FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
+  // Bilan d'import : écrit dans la note de la carte (onglet Données
+  // visible) — aucun toast de bilan ne recouvre le panneau.
+  const bddNote = page.locator('#bddReportNote');
+  await expect(bddNote).toBeVisible();
+  await expect(bddNote).toContainText('succès');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Fichier chargé' })).toHaveCount(0);
+
   // La zone d'import détaillée disparaît, la commande compacte la remplace
   // et reste fonctionnelle (délégation au même #file-input).
   await expect(page.locator('#data')).toHaveClass(/has-geocaches/);
@@ -61,6 +68,11 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   await expect(page.locator('#data')).not.toHaveClass(/has-geocaches/);
   await expect(page.locator('#data .data-empty-only')).toBeVisible();
   await expect(page.locator('#file-input-btn-compact')).toBeHidden();
+
+  // Le bilan du vidage remplace celui de l'import dans la même note —
+  // toujours sans toast de bilan flottant.
+  await expect(bddNote).toContainText('supprimées');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'supprimées' })).toHaveCount(0);
 });
 
 

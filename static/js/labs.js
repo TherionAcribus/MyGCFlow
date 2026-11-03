@@ -391,6 +391,33 @@ function dataTabVisible() {
     return !!el('data')?.classList.contains('active');
 }
 
+// Bilan de fin d'opération de la carte « Mes Lab Caches » : quand l'onglet
+// Données est affiché, un toast se poserait SUR le panneau en cours de
+// lecture — le bilan s'écrit alors dans #labsReportNote (sous #labsStatus,
+// zone réservée aux relevés périodiques) et AUCUN toast n'est émis. Onglet
+// masqué → toast comme avant. `warning` bascule la note en text-warning
+// (succès sinon ; une info rejoint le succès). Les erreurs ne passent
+// jamais par ici : elles restent des toasts.
+function emitLabsReport(message, { warning = false, info = false, title = t('Lab Caches') } = {}) {
+    const note = el('labsReportNote');
+    if (note && dataTabVisible()) {
+        note.textContent = message;
+        note.classList.toggle('text-success', !warning);
+        note.classList.toggle('text-warning', warning);
+        note.hidden = false;
+        return;
+    }
+    (warning ? showWarning : info ? showInfo : showSuccess)(message, title);
+}
+
+// La note persiste (bilan, pas statut) mais s'efface au démarrage d'une
+// nouvelle opération de la carte — c'est-à-dire dès que le bloc d'activité
+// s'affiche (showActivity).
+function hideLabsReportNote() {
+    const note = el('labsReportNote');
+    if (note) { note.textContent = ''; note.hidden = true; }
+}
+
 // Le toast d'activité n'existe que quand le bloc de la carte n'est pas
 // visible ; il disparaît au retour sur l'onglet Données et au rechargement
 // (l'indicateur générique « Affichage des points » prend le relais).
@@ -414,6 +441,9 @@ function syncActivityToast() {
 
 function showActivity(title, { pct = null, detail = '' } = {}) {
     lastActivity = { title, detail, pct };
+    // Nouvelle opération : le bilan précédent est périmé — la note
+    // s'efface avec l'apparition de l'indicateur d'activité.
+    hideLabsReportNote();
     const box = el('labsActivity');
     if (box) {
         box.hidden = false;
@@ -969,9 +999,9 @@ function finishSequence(suggestInfo, switched) {
         let msg = rep.importMsg || '';
         if (rep.fetch?.msg) msg += (msg ? ' ' : '') + rep.fetch.msg;
         msg += note;
-        (rep.fetch?.warning ? showWarning : showSuccess)(msg, t('Lab Caches'));
+        emitLabsReport(msg, { warning: !!rep.fetch?.warning });
     } else if (suggestInfo?.notifyExternal || switched) {
-        showInfo(t('Vos Lab Caches ont été mis à jour.') + note, t('Lab Caches'));
+        emitLabsReport(t('Vos Lab Caches ont été mis à jour.') + note, { info: true });
     }
 }
 
@@ -1798,6 +1828,8 @@ async function onClearLabs() {
             { danger: true, confirmText: t('Supprimer mes Lab Caches') });
     });
     if (!confirmed) return;
+    // Nouvelle opération de la carte : le bilan précédent est périmé.
+    hideLabsReportNote();
     try {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/clear`, { method: 'POST' });
         const data = await resp.json().catch(() => ({}));
@@ -1806,7 +1838,7 @@ async function onClearLabs() {
         // Les géocaches peuvent subsister : le rechargement affiche la
         // source restante au lieu de laisser un écran vide.
         await updateMapAfterLabsChange('reset');
-        showSuccess(t('Lab Caches supprimés'), t('Suppression réussie'));
+        emitLabsReport(t('Lab Caches supprimés'), { title: t('Suppression réussie') });
     } catch (e) {
         showError(e.message || t('Erreur lors de la suppression'), t('Erreur'));
     }

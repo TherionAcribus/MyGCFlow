@@ -9,7 +9,7 @@
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showConfirmation, showError, showInfo, showSuccess, t } from './notifications.js';
+import { showConfirmation, showError, showInfo, showSuccess, showWarning, t } from './notifications.js';
 import { hideBsModal, showBsModal } from './ui_bootstrap.js';
 import { countLabel } from './utils.js';
 
@@ -453,12 +453,39 @@ async function onResolveCoords(row, item, input, btn, feedback) {
 
 function setBusy(title) {
     busy = !!title;
+    // Nouvelle opération : le bilan précédent de la carte est périmé — la
+    // note s'efface avec l'apparition de l'indicateur d'activité.
+    if (busy) {
+        const repNote = el('gcLogsReportNote');
+        if (repNote) { repNote.textContent = ''; repNote.hidden = true; }
+    }
     const box = el('gcLogsActivity');
     el('gcLogsActivityTitle').textContent = title || '';
     box.hidden = !title;
     el('gc-logs-file-btn').disabled = busy;
     el('gcLogsExportBtn').disabled = busy;
     el('gcLogsClearBtn').disabled = busy;
+}
+
+// Bilan de fin d'opération de la carte « Mes logs » : quand l'onglet
+// Données est affiché, un toast se poserait SUR le panneau en cours de
+// lecture — le bilan s'écrit alors dans #gcLogsReportNote (sous
+// #gcLogsDetail) et AUCUN toast n'est émis. Onglet masqué → toast comme
+// avant. Les erreurs ne passent jamais par ici : elles restent des toasts.
+function dataTabVisible() {
+    return !!el('data')?.classList.contains('active');
+}
+
+function emitLogsReport(message, { warning = false, title = t('Succès') } = {}) {
+    const note = el('gcLogsReportNote');
+    if (note && dataTabVisible()) {
+        note.textContent = message;
+        note.classList.toggle('text-success', !warning);
+        note.classList.toggle('text-warning', warning);
+        note.hidden = false;
+        return;
+    }
+    (warning ? showWarning : showSuccess)(message, title);
 }
 
 // ---------------------------------------------------------------- aperçu
@@ -682,7 +709,7 @@ async function onPreviewConfirm() {
         if (result.status) renderStatus(result.status);
         pkg.reloadDnfData?.();
         pkg.reloadOwnerData?.();
-        showSuccess(resultMessage(result), t('Logs importés'));
+        emitLogsReport(resultMessage(result), { title: t('Logs importés') });
     } catch (e) {
         showError(e.message || t("Erreur lors de l'import"), t('Import de logs'));
     } finally {
@@ -715,7 +742,7 @@ async function onClear() {
         if (!resp.ok || !data.success) throw new Error(data.message || t('Erreur inconnue'));
         pkg.reloadDnfData?.();
         pkg.reloadOwnerData?.();
-        showSuccess(t('Logs supprimés'), t('Suppression réussie'));
+        emitLogsReport(t('Logs supprimés'), { title: t('Suppression réussie') });
     } catch (e) {
         showError(e.message || t('Erreur lors de la suppression'), t('Erreur'));
     } finally {

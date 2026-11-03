@@ -76,6 +76,12 @@ test('aperçu puis import : le statut reflète les logs', async ({ page }) => {
   await confirmImport(page);
   await expect(status).toContainText('7 logs enregistrés');
   await expect(status).toContainText('Joueur_Fictif');
+  // Le bilan d'import tient dans la note de la carte (onglet visible) —
+  // aucun toast de bilan ne recouvre le panneau.
+  const reportNote = page.locator('#gcLogsReportNote');
+  await expect(reportNote).toBeVisible();
+  await expect(reportNote).toContainText('7 nouveaux logs');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'nouveaux logs' })).toHaveCount(0);
   const detail = page.locator('#gcLogsDetail');
   await expect(detail).toContainText('À vous : 2 DNF, 1 trouvaille, 1 autre');
   await expect(detail).toContainText("3 logs d'autres joueurs");
@@ -301,4 +307,7 @@ test('« Supprimer mes logs » vide la collection après confirmation', async ({
   await expect(page.locator('#gcLogsStatus')).toHaveText('Aucun log importé');
   await expect(page.locator('#gcLogsClearBtn')).toBeHidden();
   await expect(page.locator('#gcLogsDetail')).toBeHidden();
+  // Le bilan du vidage remplace celui de l'import dans la note, sans toast.
+  await expect(page.locator('#gcLogsReportNote')).toContainText('Logs supprimés');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Logs supprimés' })).toHaveCount(0);
 });

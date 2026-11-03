@@ -1,6 +1,6 @@
 ﻿import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showSuccess, showError, showInfo, t } from './notifications.js';
+import { showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
 import { showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
@@ -134,6 +134,36 @@ function setImportControlsDisabled(disabled) {
     if (fileInputBtn) fileInputBtn.disabled = disabled;
     if (clearDatabaseBtn) clearDatabaseBtn.disabled = disabled;
     if (emptyStateImportBtn) emptyStateImportBtn.disabled = disabled;
+}
+
+// --- Bilan de fin d'opération « Mes Géocaches » ---------------------------
+// Quand l'onglet Données est affiché, un toast de bilan (import réussi,
+// vidage) se poserait SUR le panneau en cours de lecture : il s'écrit alors
+// dans #bddReportNote (sous #infosBDD — celle-ci est réservée aux relevés
+// périodiques) et AUCUN toast n'est émis. Onglet masqué → toast comme avant.
+// Les erreurs ne passent jamais par ici : elles restent des toasts.
+function dataTabVisible() {
+    return !!document.getElementById('data')?.classList.contains('active');
+}
+
+// La note persiste (c'est un bilan, pas un statut) mais s'efface au
+// démarrage d'une nouvelle opération de la carte (handleGpxFile,
+// clearDatabase — là où l'indicateur d'activité apparaît).
+function hideBddReportNote() {
+    const note = document.getElementById('bddReportNote');
+    if (note) { note.textContent = ''; note.hidden = true; }
+}
+
+function emitBddReport(message, { warning = false, title = t('Terminé'), duration = 4000 } = {}) {
+    const note = document.getElementById('bddReportNote');
+    if (note && dataTabVisible()) {
+        note.textContent = message;
+        note.classList.toggle('text-success', !warning);
+        note.classList.toggle('text-warning', warning);
+        note.hidden = false;
+        return;
+    }
+    pkg.showToast(message, warning ? 'warning' : 'success', title, duration);
 }
 
 function beginImport() {
@@ -351,6 +381,9 @@ async function handleGpxFile(file) {
     // uploadBdd pour l'envoi et le suivi serveur.
     let earlyToast = null;
     try { earlyToast = pkg.showLoadingToast(t('Analyse du fichier GPX en cours...'), t('Chargement')); } catch (_) {}
+    // Nouvel import : le bilan de l'opération précédente de la carte est
+    // périmé — la note s'efface avec l'apparition des indicateurs.
+    hideBddReportNote();
     // Indicateur inline de l'état vide de la carte (« Chargez votre fichier
     // .gpx pour commencer »), visible justement quand aucune donnée n'est
     // chargée.
@@ -1310,9 +1343,10 @@ function uploadBdd (file, uploadToast){
         checkLoadingProgress(uploadToast, data.task_id, () => {
             console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
-            // Succès d'import : toast brève (4 s), l'information durable est
+            // Succès d'import : note inline quand l'onglet Données est
+            // affiché, sinon toast brève (4 s) — l'information durable est
             // déjà portée par #infosBDD et #dataNextStep.
-            pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"), 4000);
+            emitBddReport(t("Fichier chargé avec succès !"));
 
             // mets à jour les infos de la BDD
             readBddValues();
@@ -1691,8 +1725,10 @@ async function clearDatabase() {
 
     if (!confirmed) return;
 
+    // Nouvelle opération de la carte : le bilan précédent est périmé.
+    hideBddReportNote();
     let clearingToast = null;
-    
+
     try {
         // Afficher un toast de chargement
         clearingToast = pkg.showLoadingToast(t("Suppression des trouvailles..."), t("Suppression"));
@@ -1717,7 +1753,8 @@ async function clearDatabase() {
             if (clearingToast) {
                 pkg.hideToast(clearingToast);
             }
-            showSuccess(t("Trouvailles supprimées avec succès"), t("Suppression réussie"));
+            emitBddReport(t("Trouvailles supprimées avec succès"),
+                { title: t("Suppression réussie"), duration: 5000 });
             
         } else {
             throw new Error(result.message || 'Erreur inconnue');

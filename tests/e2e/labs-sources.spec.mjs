@@ -94,6 +94,19 @@ test('l\'import Labs met à jour le statut et bascule l\'affichage sur les Labs'
 });
 
 
+test('le bilan d\'import s\'écrit en note de la carte, pas en toast', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  // Onglet Données visible : le bilan de fin de séquence remplit la note
+  // de la carte au lieu de se poser en toast flottant sur le panneau.
+  const note = page.locator('#labsReportNote');
+  await expect(note).toBeVisible({ timeout: 60_000 });
+  await expect(note).toContainText('étapes importées');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'étapes importées' })).toHaveCount(0);
+});
+
+
 test('le mode « labs » désactive les filtres non applicables', async ({ page }) => {
   await openReadyApp(page);
   await importLabs(page);
