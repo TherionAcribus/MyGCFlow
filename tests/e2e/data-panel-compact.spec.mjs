@@ -62,3 +62,46 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   await expect(page.locator('#data .data-empty-only')).toBeVisible();
   await expect(page.locator('#file-input-btn-compact')).toBeHidden();
 });
+
+
+// Un réimport écrase TOUTES les géocaches côté serveur (DELETE complet dans
+// uploadBdd, bdd.py) : sur base déjà chargée, une modale de confirmation doit
+// s'interposer avant l'envoi. Sur base vide (premier import), rien ne doit
+// s'afficher — le test « base chargée » ci-dessus le couvre déjà (une modale
+// bloquerait le compteur à « 0 / 0 »), la vérif ci-dessous le rend explicite.
+test('réimport sur base chargée : confirmation requise, annulation sans effet', async ({ page, request }) => {
+  const res = await request.post('/clear_database');
+  expect(res.ok()).toBeTruthy();
+
+  await openReadyApp(page);
+  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+
+  // Premier import sur base vide : aucune modale de remplacement.
+  await expect(page.getByRole('dialog', { name: 'Remplacer mes géocaches' })).toHaveCount(0);
+
+  // Compter les envois POST /upload AVANT le second dépôt : tant que la
+  // confirmation n'est pas validée, aucune requête ne doit partir.
+  let uploads = 0;
+  await page.route('**/upload', (route) => { uploads += 1; route.continue(); });
+
+  // Réimport du même fichier : la confirmation doit s'interposer.
+  await page.locator('#file-input').setInputFiles(FIXTURE);
+  const dialog = page.getByRole('dialog', { name: 'Remplacer mes géocaches' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('remplacera les 6 géocaches');
+  await expect(dialog.getByRole('button', { name: 'Remplacer' })).toBeVisible();
+
+  // Annulation : aucun envoi réseau, les 6 caches affichées sont intactes.
+  await dialog.getByRole('button', { name: 'Annuler' }).click();
+  await expect(dialog).toBeHidden();
+  expect(uploads).toBe(0);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6');
+
+  // Confirmation cette fois : l'upload part et le compteur revient à « 6 / 6 ».
+  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Remplacer' }).click();
+  await expect.poll(() => uploads, { timeout: 45_000 }).toBe(1);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+});

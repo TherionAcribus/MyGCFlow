@@ -361,6 +361,40 @@ async function handleGpxFile(file) {
         showError(result.message, t('Fichier invalide'));
         return;
     }
+
+    // Réimport sur une base non vide : l'upload remplace TOUTES les géocaches
+    // (DELETE complet de la table côté serveur, bdd.py:uploadBdd). Les Lab
+    // Caches et les logs sont conservés (collections séparées) — la modale le
+    // précise. Même pattern que clearDatabase : confirmation AVANT tout envoi,
+    // bouton danger explicite.
+    if (geocachesCount > 0) {
+        const confirmed = await new Promise(resolve => {
+            if (pkg && pkg.showConfirmation) {
+                const message = geocachesCount > 1
+                    ? t('Ce fichier remplacera les ${count} géocaches déjà importées. Vos Lab Caches et vos logs sont conservés.', { count: geocachesCount })
+                    : t('Ce fichier remplacera la géocache déjà importée. Vos Lab Caches et vos logs sont conservés.');
+                pkg.showConfirmation(
+                    message,
+                    t('Remplacer mes géocaches'),
+                    () => resolve(true),
+                    () => resolve(false),
+                    { danger: true, confirmText: t('Remplacer') }
+                );
+            } else {
+                // Fallback : pas de système de confirmation disponible — on
+                // n'écrase pas silencieusement la base (comme clearDatabase).
+                console.warn('showConfirmation indisponible : réimport annulé.');
+                showError(t("Confirmation non disponible, action annulée."), t('Import'));
+                resolve(false);
+            }
+        });
+        if (!confirmed) {
+            // Même nettoyage que le chemin « fichier invalide » ci-dessus.
+            try { pkg.hideToast(earlyToast); } catch (_) {}
+            hideUploadIndicator('emptyStateUploadProgress');
+            return;
+        }
+    }
     uploadBdd(file, earlyToast);
 }
 

@@ -531,11 +531,13 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
             # les objets sont accumulés en mémoire, la BDD n'est pas encore touchée)
             count = len(new_caches)
             if count % 100 == 0:
-                progress_value = (count / max(total_waypoints, 1)) * 100
+                # Phase de lecture/parsing : plafonnée à 90 %, la tranche
+                # 90-99 % étant réservée à l'écriture en base (ci-dessous).
+                progress_value = (count / max(total_waypoints, 1)) * 90
                 _update_progress(
                     status,
                     progress_value,
-                    _('Ajout du point %(count)s sur %(total)s à la base de données',
+                    _('Lecture du point %(count)s sur %(total)s',
                       count=count, total=total_waypoints)
                 )
 
@@ -556,7 +558,6 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # On utilise bulk_insert_mappings (par lots de 1000) au lieu de add_all() :
     # cela bypass l'identity map de la session — pas d'objets ORM, pas de state
     # tracking, juste des INSERTs bruts. Typiquement 5–10× plus rapide sur SQLite.
-    _update_progress(status, 99, _("Enregistrement en base de données..."))
     db.session.query(Geocache).delete()
 
     BATCH_SIZE = 1000
@@ -566,6 +567,11 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         db.session.bulk_insert_mappings(Geocache, batch)
         # flush pour que chaque lot soit envoyé à SQLite sans fermer la transaction
         db.session.flush()
+        # La progression avance réellement de 90 à 99 pendant les INSERT (la
+        # phase de lecture ci-dessus s'arrête à 90, le 100 est posé en fin
+        # d'import).
+        save_progress = 90 + ((i + len(batch)) / max(total_mappings, 1)) * 9
+        _update_progress(status, save_progress, _("Enregistrement en base de données..."))
 
     db.session.commit()
 
