@@ -3923,6 +3923,15 @@ export function setPickerDates(metadata) {
     const startDateElement = document.querySelector('#datePickerStart');
     const endDateElement = document.querySelector('#datePickerEnd');
 
+    // Anciens défauts formatés, capturés AVANT la réassignation des variables
+    // default* ci-dessous : ils distinguent un champ encore « au défaut » (il
+    // suit les nouvelles bornes des données — réimport, vidage) d'une valeur
+    // utilisateur, conservée. Défaut absent → '' (premier chargement).
+    const prevFormattedStartDate = formatDateForPickers(defaultStartDate);
+    const prevFormattedEndDate = formatDateForPickers(defaultEndDate);
+    const prevFormattedPublishedStartDate = formatDateForPickers(defaultPublishedStartDate);
+    const prevFormattedPublishedEndDate = formatDateForPickers(defaultPublishedEndDate);
+
     // Capture des dates par défaut (clonées pour éviter toute mutation)
     defaultStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
     defaultEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
@@ -3930,20 +3939,23 @@ export function setPickerDates(metadata) {
     defaultPublishedStartDate = metadata.publishedStartDate ? new Date(metadata.publishedStartDate) : null;
     defaultPublishedEndDate = metadata.publishedEndDate ? new Date(metadata.publishedEndDate) : null;
 
-    const formattedStartDate = formatDateForPickers(defaultStartDate);
-    const formattedEndDate = formatDateForPickers(defaultEndDate);
+    // La sélection persistée restaurée par restoreSelectedValues ne doit pas
+    // être écrasée par les bornes des données : n'écrire le champ (et l'état
+    // Tempus Dominus) que s'il est vide ou affiche encore l'ANCIEN défaut —
+    // il suit alors les nouvelles bornes (nouveau défaut, ou '' si absent).
+    const applyPickerDefault = (el, newDate, prevFormatted) => {
+        if (!el) return;
+        const current = (el.value || '').trim();
+        if (current && current !== prevFormatted) return;
+        setTdDate(el, newDate);
+        el.value = formatDateForPickers(newDate);
+    };
 
     // Tempus Dominus : définir la date via l'API + l'input texte. Champs absents
     // en mode Évolution (pas de période de découverte) : seules les dates
     // d'animation sont alors réglées.
-    if (startDateElement) {
-        setTdDate(startDateElement, defaultStartDate);
-        startDateElement.value = formattedStartDate;
-    }
-    if (endDateElement) {
-        setTdDate(endDateElement, defaultEndDate);
-        endDateElement.value = formattedEndDate;
-    }
+    applyPickerDefault(startDateElement, defaultStartDate, prevFormattedStartDate);
+    applyPickerDefault(endDateElement, defaultEndDate, prevFormattedEndDate);
 
     updateResetButtonsHighlight();
 
@@ -3959,14 +3971,8 @@ export function setPickerDates(metadata) {
             initTempusDominus(publishedEndElement, { display: { components: { clock: false } }, localization: { format: pkg.tdDatePickerFormat() } });
         }
 
-        setTdDate(publishedStartElement, defaultPublishedStartDate);
-        setTdDate(publishedEndElement, defaultPublishedEndDate);
-
-        const formattedPublishedStartDate = formatDateForPickers(defaultPublishedStartDate);
-        const formattedPublishedEndDate = formatDateForPickers(defaultPublishedEndDate);
-
-        publishedStartElement.value = formattedPublishedStartDate;
-        publishedEndElement.value = formattedPublishedEndDate;
+        applyPickerDefault(publishedStartElement, defaultPublishedStartDate, prevFormattedPublishedStartDate);
+        applyPickerDefault(publishedEndElement, defaultPublishedEndDate, prevFormattedPublishedEndDate);
 
         updatePublishedResetButtonsHighlight();
     }
@@ -3993,6 +3999,15 @@ export function setPickerDates(metadata) {
 
     // Mettre à jour les boutons reset Animation aussi
     updateResetAnimButtonsHighlight();
+
+    // Un champ conservé (valeur restaurée ou personnalisée) n'a émis aucun
+    // change : appliquer explicitement la sélection au jeu chargé — rôle que
+    // jouaient jusqu'ici les change des champs écrasés. Le debounce coalesce
+    // avec les change émis par les setTdDate restants ; les puces « Filtre »/
+    // « Sélection » et les surlignages reflètent alors la valeur conservée.
+    onSelectionChangedDebounced();
+    updateAnimFilterInfo();
+    updatePublishedResetButtonsHighlight();
 }
 
 function formatDateForPickers(date) {
@@ -4741,6 +4756,15 @@ function restoreSelectedValues(){
         const endDate = pkg.parseDateInput(values.dates?.endDate);
         if (start && startDate) { setTdDate(start, startDate); start.value = formatDateForPickers(startDate); }
         if (end && endDate) { setTdDate(end, endDate); end.value = formatDateForPickers(endDate); }
+        // Même restauration pour le filtre « publié le », persisté sous
+        // published_dates par collectSelectedValues (les pickers TD sont déjà
+        // initialisés avant cet appel).
+        const pubStart = document.querySelector('#publishedDatePickerStart');
+        const pubEnd = document.querySelector('#publishedDatePickerEnd');
+        const pubStartDate = pkg.parseDateInput(values.published_dates?.startDate);
+        const pubEndDate = pkg.parseDateInput(values.published_dates?.endDate);
+        if (pubStart && pubStartDate) { setTdDate(pubStart, pubStartDate); pubStart.value = formatDateForPickers(pubStartDate); }
+        if (pubEnd && pubEndDate) { setTdDate(pubEnd, pubEndDate); pubEnd.value = formatDateForPickers(pubEndDate); }
         // refresh UI (Tom Select)
         if (selectType) refreshTomSelect(selectType);
         if (selectDifficulty) refreshTomSelect(selectDifficulty);

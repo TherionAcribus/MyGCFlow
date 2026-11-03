@@ -494,12 +494,9 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
                                 (cache_type in special_cache_types and log_type == special_cache_types[cache_type])
                             )
                             if is_valid_log:
-                                try:
-                                    dt = datetime.strptime(date_el.text, '%Y-%m-%dT%H:%M:%SZ')
-                                    if (last_found_dt is None) or (dt > last_found_dt):
-                                        last_found_dt = dt
-                                except Exception:
-                                    continue
+                                dt = parse_gpx_time(date_el.text)
+                                if dt is not None and (last_found_dt is None or dt > last_found_dt):
+                                    last_found_dt = dt
                     if last_found_dt is not None:
                         found = True
                         date_find = last_found_dt

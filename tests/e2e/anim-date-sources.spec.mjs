@@ -138,12 +138,17 @@ test('filtre hors dates : puces « Sélection » proposent l\u2019étendue réel
   await expect(page.locator('#animSelectionStartInfo')).toBeVisible();
 });
 
-test('rechargement avec un filtre de dates persisté : aucune erreur JS', async ({ page }) => {
+test('rechargement : le filtre de dates persisté est restauré et appliqué, sans erreur JS', async ({ page }) => {
   // Filtre de dates posé et persisté (localStorage filtersSelection) : au
-  // rechargement, l'init des datepickers restaure la valeur et émet change →
-  // updateAnimFilterInfo lit getSelectionDateExtent. Régression : les
-  // compteurs d'étendue de bdd.js étaient en let, encore en zone morte à ce
-  // stade → ReferenceError « Cannot access 'selectionExtentStart' ».
+  // rechargement, restoreSelectedValues le reprend dans les champs et émet
+  // change → updateAnimFilterInfo lit getSelectionDateExtent. Puis
+  // setPickerDates (bornes des données) NE doit PAS écraser les champs déjà
+  // posés : sinon le filtre est perdu, la sélection repart sur toutes les
+  // données et les change émis ré-persistaient la sélection écrasée.
+  // Régressions visées : les compteurs d'étendue de bdd.js étaient en let,
+  // encore en zone morte au moment du change prématuré → ReferenceError
+  // « Cannot access 'selectionExtentStart' » ; et l'écrasement des champs
+  // restaurés par les bornes des données (filtre perdu au reload).
   // Date de filtre DANS la plage des données (la valeur du champ de fin) :
   // une date hors plage serait ramenée à la borne au rechargement et la
   // valeur restaurée ne serait plus lisible dans le champ.
@@ -159,13 +164,30 @@ test('rechargement avec un filtre de dates persisté : aucune erreur JS', async 
     return dates.startDate && dates.startDate === dates.endDate;
   })).toBe(true);
 
+  // Même traitement sur le filtre « publié le » : il était persisté mais
+  // jamais restauré — le champ devait repartir vide puis être écrasé par la
+  // borne des données. Début posé sur la valeur du champ de fin.
+  const publishedDate = await page.locator('#publishedDatePickerEnd').inputValue();
+  await setFieldDate(page, '#publishedDatePickerStart', publishedDate);
+  await expect.poll(() => page.evaluate(() => {
+    const dates = JSON.parse(localStorage.getItem('filtersSelection') || '{}').published_dates || {};
+    return dates.startDate && dates.startDate === dates.endDate;
+  })).toBe(true);
+
+  // Sélection filtrée attendue après rechargement : même compteur « n / 6 »
+  // (n < 6, les deux filtres de dates restreignent le jeu) — preuve que la
+  // sélection restaurée est réellement appliquée, pas seulement relue.
+  await expect(page.locator('#filtersCounter')).not.toContainText('6 / 6');
+  const expectedCounter = await page.locator('#filtersCounter').innerText();
+
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   // La restauration du filtre réécrit le datepicker pendant l'évaluation des
   // modules (scripts deferred, avant DOMContentLoaded) : c'est ce change
-  // prématuré qui lisait selectionExtentStart en zone morte. setPickerDates
-  // émet aussi des change, mais plus tard (après db_status) : on ne compte
-  // que ceux émis avant DOMContentLoaded, preuve que le chemin visé a couru.
+  // prématuré qui lisait selectionExtentStart en zone morte. Depuis le
+  // correctif, setPickerDates n'écrase plus les champs déjà posés : les
+  // change prématurés viennent de la restauration seule — on ne compte que
+  // ceux émis avant DOMContentLoaded, preuve que le chemin visé a couru.
   await page.addInitScript(() => {
     window.__domReady = false;
     window.__dateStartEarlyChanges = 0;
@@ -176,7 +198,12 @@ test('rechargement avec un filtre de dates persisté : aucune erreur JS', async 
   });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
-  await expect(page.locator('#filtersCounter')).not.toBeEmpty();
+
+  // Les champs gardent les valeurs posées (pas réécrasés par les bornes des
+  // données) et la sélection restaurée est appliquée au jeu chargé.
+  await expect(page.locator('#datePickerStart')).toHaveValue(filterDate);
+  await expect(page.locator('#publishedDatePickerStart')).toHaveValue(publishedDate);
+  await expect(page.locator('#filtersCounter')).toHaveText(expectedCounter);
 
   expect(errors).toEqual([]);
   expect(await page.evaluate(() => window.__dateStartEarlyChanges)).toBeGreaterThan(0);
