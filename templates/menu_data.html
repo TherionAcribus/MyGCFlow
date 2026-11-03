@@ -101,6 +101,19 @@
                         </div>
                     </div>
 
+                    <!-- Collecte du favori en cours sur labs.geocaching.com
+                         (collection_in_progress du statut, labs.js). Bloc
+                         SÉPARÉ de #labsActivity : celui-ci est réservé aux
+                         tâches serveur et sa visibilité coupe le relevé
+                         externe (activityRunning → checkOutside), ce qui
+                         gèlerait ces compteurs. -->
+                    <div id="labsCollectProgress" class="alert alert-info py-2 px-3 mb-2" hidden aria-live="polite">
+                        <div class="flex-fill d-flex align-items-center gap-2">
+                            <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                            <span id="labsCollectProgressText"></span>
+                        </div>
+                    </div>
+
                     <!-- Étapes pas encore sur la carte : alerte propre aux
                          Labs — à distinguer de #dataNoResults (filtres). -->
                     <div id="labsPendingAlert" class="alert alert-warning py-2 px-3 mb-2 d-none" role="status">

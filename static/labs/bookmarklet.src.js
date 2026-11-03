@@ -52,6 +52,30 @@
   try {
     say(MESSAGES.start);
 
+    // « Hello » : la collecte est annoncée tout de suite à l'application
+    // (bloc « Collecte en cours » de la carte « Mes Lab Caches »), puis
+    // un ping à chaque page lue, au plus toutes les 3 s — fire-and-forget,
+    // jamais awaité : la collecte n'attend pas le serveur local, et un
+    // ping perdu ne la casse pas. Pas de ping de fin : /api/labs/receive
+    // efface le journal à l'arrivée de l'export. Seuls les deux en-têtes
+    // que le preflight CORS Labs autorise sont envoyés.
+    var lastPingAt = 0;
+    var ping = function (adventures, stages, force) {
+      var now = Date.now();
+      if (!force && now - lastPingAt < 3000) {
+        return;
+      }
+      lastPingAt = now;
+      fetch(ORIGIN + '/api/labs/receive/progress', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': TOKEN },
+        body: JSON.stringify({ adventures: adventures, stages: stages })
+      }).catch(function () {});
+    };
+    ping(0, 0, true);
+
     var ask = function (id) {
       return fetch(API_URL, {
         method: 'POST',
@@ -228,6 +252,7 @@
 
     var result = await mygcflowCollectLabLogs(pick, function (adventures, stages) {
       say(fill(MESSAGES.progress, adventures, stages));
+      ping(adventures, stages, false);
     });
 
     say(MESSAGES.sending);

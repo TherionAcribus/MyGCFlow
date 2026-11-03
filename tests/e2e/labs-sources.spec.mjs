@@ -429,6 +429,59 @@ test('le favori « MyGCFlow — Lab Caches » porte origine locale et jeton', as
 });
 
 
+test('la carte suit la collecte du favori en direct (pings de progression)', async ({ page, request }) => {
+  await openReadyApp(page);
+
+  // Jeton d'installation, lu dans le lien javascript: généré (var TOKEN).
+  const link = page.locator('#labsBookmarkletLink');
+  await expect(link).toBeVisible();
+  const href = await link.getAttribute('href');
+  const token = /var TOKEN = "([^"]+)"/.exec(href)?.[1];
+  expect(token).toBeTruthy();
+
+  // Ping de progression, tel que le favori les envoie pendant sa boucle
+  // (mêmes en-têtes, fire-and-forget côté client).
+  const ping = await request.post('/api/labs/receive/progress', {
+    headers: { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': token },
+    data: { adventures: 3, stages: 7 },
+  });
+  expect(ping.status()).toBe(202);
+
+  // Le statut le remonte aussitôt…
+  await expect.poll(async () => {
+    const status = await (await request.get('/api/labs/status')).json();
+    return status.collection_in_progress?.stages ?? null;
+  }).toBe(7);
+
+  // …et le bloc dédié de la carte « Mes Lab Caches » l'affiche (relevé
+  // périodique ~4 s tant que l'onglet Données est actif). Il est distinct
+  // de #labsActivity, réservé aux tâches serveur.
+  await expect(page.locator('#labsCollectProgress')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#labsCollectProgressText')).toContainText('3 Adventures');
+  await expect(page.locator('#labsCollectProgressText')).toContainText('7 étapes');
+  await expect(page.locator('#labsActivity')).toBeHidden();
+
+  // Fin de collecte : l'envoi final de l'export efface le journal — le
+  // bloc se masque au relevé suivant et l'import prend le relais. Attendre
+  // la fin de l'import pour ne pas laisser une tâche ni le journal traîner
+  // (le bloc « en cours » d'un fantôme s'afficherait au spec suivant).
+  const send = await request.post('/api/labs/receive', {
+    headers: { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': token },
+    data: readFileSync(HISTORY),
+  });
+  expect(send.status()).toBe(202);
+  const taskId = (await send.json()).task_id;
+  await expect.poll(async () =>
+    (await (await request.get(`/tasks/${taskId}`)).json()).state,
+    { timeout: 30_000 }).toBe('finished');
+  await expect.poll(async () => {
+    const status = await (await request.get('/api/labs/status')).json();
+    return status.collection_in_progress;
+  }).toBeNull();
+  await expect(page.locator('#labsCollectProgress')).toBeHidden({ timeout: 20_000 });
+});
+
+
 test('la case de récupération automatique persiste le réglage serveur', async ({ page }) => {
   await openReadyApp(page);
 

@@ -305,6 +305,22 @@ function renderLabsStatus(st) {
                     : t("${count} étapes n'ont pas pu être placées automatiquement : leur position est introuvable. Vous pouvez les compléter à la main.", { count: unresolved }));
         }
     }
+    // Collecte du favori en cours sur labs.geocaching.com : bloc dédié,
+    // jamais #labsActivity — activityRunning() couperait le relevé externe
+    // (checkOutside) qui alimente justement ces compteurs.
+    const collectBox = el('labsCollectProgress');
+    if (collectBox) {
+        const collecting = st?.collection_in_progress;
+        collectBox.hidden = !collecting;
+        if (collecting) {
+            const textEl = el('labsCollectProgressText');
+            if (textEl) {
+                textEl.textContent = t(
+                    'Collecte en cours — ${adv} Adventures, ${disc} étapes reçues…',
+                    { adv: collecting.adventures || 0, disc: collecting.stages || 0 });
+            }
+        }
+    }
     const fetchBtn = el('labsFetchBtn');
     if (fetchBtn) fetchBtn.style.display = canFetch ? '' : 'none';
     const retryBtn = el('labsRetryFetchBtn');

@@ -25,12 +25,14 @@ ALLOWED_HOSTNAMES = frozenset({"127.0.0.1", "localhost", "::1"})
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 # Routes qui font elles-mêmes leur contrôle inter-sites : /api/labs/receive
-# et /api/logs/receive existent précisément pour un POST cross-origin (les
-# bookmarklets s'exécutent sur labs.geocaching.com / geocaching.com) — jeton
-# local + CORS dédié dans les blueprints. Le contrôle Host ci-dessous (DNS
-# rebinding) reste appliqué en amont.
+# (et son ping de progression) et /api/logs/receive existent précisément
+# pour un POST cross-origin (les bookmarklets s'exécutent sur
+# labs.geocaching.com / geocaching.com) — jeton local + CORS dédié dans
+# les blueprints. Le contrôle Host ci-dessous (DNS rebinding) reste
+# appliqué en amont.
 SELF_GUARDED_ENDPOINTS = frozenset({
     "labs.labs_receive",
+    "labs.labs_receive_progress",
     "gc_logs.logs_receive",
     "gc_logs.logs_receive_fragment",
 })

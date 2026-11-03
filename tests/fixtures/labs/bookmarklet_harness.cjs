@@ -24,15 +24,23 @@ if (scenario.remembered) {
   store['mygcflow:playerId'] = scenario.remembered;
 }
 let received = null;
+const pings = [];
 
 const playerId = scenario.playerId === undefined ? null : scenario.playerId;
 const pages = scenario.pages || [];
 
 async function fakeFetch(url, options) {
   const target = String(url);
-  if (target.includes('/api/labs/receive')) {
+  // L'export final seul compte comme « received » : les pings de
+  // progression partagent le préfixe /api/labs/receive/.
+  if (target.endsWith('/api/labs/receive')) {
     received = { url: target, headers: options.headers, body: JSON.parse(options.body),
                  credentials: options.credentials };
+    return { status: 202, ok: true, text: async () => '' };
+  }
+  if (target.endsWith('/api/labs/receive/progress')) {
+    pings.push({ url: target, headers: options.headers,
+                 body: JSON.parse(options.body), credentials: options.credentials });
     return { status: 202, ok: true, text: async () => '' };
   }
   const sent = JSON.parse(options.body);
@@ -85,7 +93,7 @@ sandbox.self = sandbox;
   const body = href.slice('javascript:'.length).replace(/;\s*$/, '');
   await vm.runInNewContext(body, sandbox);
   process.stdout.write(JSON.stringify({
-    said, received, requests, remembered: store['mygcflow:playerId'] || null,
+    said, received, pings, requests, remembered: store['mygcflow:playerId'] || null,
     fetchRestored: sandbox.fetch === fakeFetch,
   }));
 })().catch((error) => {

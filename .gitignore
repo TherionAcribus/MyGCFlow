@@ -21,6 +21,7 @@ mygcflow-logs-*.json
 !tests/fixtures/gc_logs/*.gpx
 captured/
 pending_log_imports/
+pending_lab_imports/
 static/geojson_data.json
 static/json/country_state.json
 video/

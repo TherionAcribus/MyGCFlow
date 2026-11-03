@@ -32,8 +32,29 @@ Aucune connexion à l'API officielle n'est requise. Deux chemins coexistent :
    tout GUID qui n'est pas le joueur.
 3. `/api/labs/receive` n'accepte que l'origine `https://labs.geocaching.com`
    (CORS + Private-Network-Access) **et** le jeton local ; le payload est
-   ensuite importé par la tâche habituelle. C'est la seule route exemptée du
-   garde inter-sites global (`security.py`).
+   ensuite importé par la tâche habituelle. Ce sont les deux seules routes
+   exemptées du garde inter-sites global (`security.py`), avec
+   `/api/labs/receive/progress` ci-dessous.
+
+### Progression de la collecte en direct
+
+La boucle du favori dure le temps de paginer tout l'historique : sans
+retour intermédiaire, l'application n'apprendrait rien avant le POST final.
+Le favori envoie donc des **pings de progression** à
+`POST /api/labs/receive/progress` — même jeton, même CORS restreint —
+fire-and-forget et throttlés (un ping au démarrage `{adventures: 0,
+stages: 0}`, puis au plus toutes les 3 s avec les compteurs courants).
+
+Chaque ping écrase `pending_lab_imports/labs-collect-progress.json` (sous
+le répertoire de données — une seule collecte à la fois, pas de Run-Id).
+`/api/labs/status` le remonte sous `collection_in_progress` tant qu'il a
+moins de **5 minutes** (`COLLECTION_PROGRESS_STALE_SECONDS`) — au-delà, il
+signale une collecte interrompue, pas « en cours ». La carte « Mes Lab
+Caches » l'affiche dans un bloc dédié (`#labsCollectProgress`), distinct
+de `#labsActivity` qui reste réservé aux tâches serveur. Le POST final de
+`/api/labs/receive` supprime le journal : l'`active_task` de l'import
+prend le relais. Un journal abandonné est aussi balayé par le ménage des
+jetons expirés passé un jour.
 
 ### Placement automatique des étapes
 

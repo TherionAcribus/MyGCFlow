@@ -21,7 +21,6 @@ import io
 import json
 import secrets
 import shutil
-import tempfile
 import uuid
 import zipfile
 from contextlib import nullcontext
@@ -69,7 +68,26 @@ MAX_LAB_FILES = 64                           # les exports Lab2Gpx sont batchés
 MAX_LAB_BATCH_BYTES = 128 * 1024 * 1024
 MAX_DETAIL_ITEMS = 100                       # bornage des diagnostics renvoyés
 MAX_OVERRIDES = 1000                         # choix « remplacer » par commit
-PENDING_ROOT = Path(tempfile.gettempdir()) / "mygcflow-lab-imports"
+# Redirigé par les tests ; sinon _pending_root() (sous les données).
+PENDING_ROOT: Path | None = None
+# Journal de progression de la collecte du favori : un fichier seul posé à
+# côté des dossiers de jetons, écrasé à chaque ping — une seule collecte à
+# la fois, pas de Run-Id. Silencieux depuis ce délai, le fichier signale
+# une collecte interrompue, pas « en cours ».
+COLLECT_PROGRESS_FILENAME = "labs-collect-progress.json"
+COLLECTION_PROGRESS_STALE_SECONDS = 5 * 60
+
+
+def _pending_root() -> Path:
+    """Dossier des jetons d'aperçu, sous les données : %TEMP% est partagé
+    entre la vraie application, pytest et le harnais e2e — un jeton ou un
+    journal de collecte d'un run ressortait dans le suivant.
+    MYGCFLOW_DATA_DIR l'isole."""
+    return PENDING_ROOT or (paths.data_dir() / "pending_lab_imports")
+
+
+def _collect_progress_path() -> Path:
+    return _pending_root() / COLLECT_PROGRESS_FILENAME
 
 # Ordre d'application : l'historique crée les découvertes, les coordonnées
 # les enrichissent — un GPX seul ne doit jamais créer de find.
@@ -100,10 +118,22 @@ def _invalidate_after_mutation(reason: str) -> None:
 # ---------------------------------------------------------------------------
 
 def _purge_expired_pending():
-    """Supprime les dossiers de jetons expirés (ménage opportuniste)."""
+    """Supprime les dossiers de jetons expirés (ménage opportuniste), et le
+    journal de collecte passé un jour — une collecte morte ne doit pas
+    traîner même absente du statut."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(seconds=PENDING_TTL_SECONDS)
     try:
-        cutoff = datetime.now(timezone.utc) - timedelta(seconds=PENDING_TTL_SECONDS)
-        for child in PENDING_ROOT.iterdir():
+        for child in _pending_root().iterdir():
+            if child.name == COLLECT_PROGRESS_FILENAME:
+                try:
+                    mtime = datetime.fromtimestamp(
+                        child.stat().st_mtime, timezone.utc)
+                    if now - mtime > timedelta(days=1):
+                        child.unlink()
+                except OSError:
+                    pass
+                continue
             manifest = child / "manifest.json"
             try:
                 created = datetime.fromisoformat(
@@ -163,8 +193,8 @@ def _store_pending(files: list[dict]) -> tuple[str, Path]:
     token = uuid.uuid4().hex
     # Historique de trouvailles : données personnelles, dossiers privés
     # (le mode est ignoré sous Windows).
-    PENDING_ROOT.mkdir(mode=0o700, exist_ok=True)
-    folder = PENDING_ROOT / token
+    _pending_root().mkdir(mode=0o700, exist_ok=True)
+    folder = _pending_root() / token
     folder.mkdir(mode=0o700, exist_ok=True)
     entries = []
     for i, f in enumerate(files):
@@ -187,7 +217,7 @@ def _load_pending(token: str) -> tuple[dict | None, Path | None, str | None]:
     """Charge un manifest valide : (manifest, dossier, message d'erreur)."""
     if not token or not token.isalnum():
         return None, None, _("Jeton d'import invalide")
-    folder = PENDING_ROOT / token
+    folder = _pending_root() / token
     manifest_path = folder / "manifest.json"
     try:
         manifest = json.loads(manifest_path.read_text("utf-8"))
@@ -253,6 +283,29 @@ def _submit_import(folder: Path, manifest: dict):
 
 def _cap_items(items, limit=MAX_DETAIL_ITEMS):
     return items[:limit] + ([{"truncated": len(items) - limit}] if len(items) > limit else [])
+
+
+def _collection_in_progress() -> dict | None:
+    """Collecte du favori encore active, ou None.
+
+    Le favori « MyGCFlow — Lab Caches » ping /api/labs/receive/progress
+    pendant sa boucle ; chaque ping écrase le journal posé à côté des
+    jetons. Un journal silencieux depuis plus de
+    COLLECTION_PROGRESS_STALE_SECONDS signale une collecte interrompue,
+    pas en cours."""
+    try:
+        data = json.loads(_collect_progress_path().read_text("utf-8"))
+        updated = datetime.fromisoformat(data["updated_at"])
+    except Exception:
+        return None
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) - updated > timedelta(
+            seconds=COLLECTION_PROGRESS_STALE_SECONDS):
+        return None
+    return {"adventures": int(data.get("adventures") or 0),
+            "stages": int(data.get("stages") or 0),
+            "updated_at": data.get("updated_at")}
 
 
 # ---------------------------------------------------------------------------
@@ -685,13 +738,21 @@ def labs_status():
     if active is not None:
         payload['active_task'] = active.to_dict()
         task_sig = f'{active.id}:{active.state}'
+    # Collecte du favori en cours sur labs.geocaching.com (journal posé par
+    # /api/labs/receive/progress) : la carte la suit dans un bloc dédié.
+    payload['collection_in_progress'] = _collection_in_progress()
     # ETag révision+tâche : la révision change à TOUTE mutation de la
     # collection, la présence de la tâche est dans le tag car sa fin
     # (disparition) change le payload ; sa progression seule ne l'est pas —
     # le client la suit déjà sur /tasks/<id>. Les sondes répétées sans
     # changement reçoivent 304 et ne recalculent ni ne rechargent rien.
+    # Les compteurs de collecte entrent dans le tag pour la même raison :
+    # un « 12 étapes » qui devient « 20 étapes » est un autre payload.
     revision = payload['collection']['revision'] if payload['collection'] else 0
     etag = f'labs-r{revision}-{task_sig}-{payload["fetchable_adventures"]}'
+    collecting = payload['collection_in_progress']
+    if collecting is not None:
+        etag += f'-cp{collecting["stages"]}'
     if request.if_none_match.contains(etag):
         resp = current_app.response_class(response='', status=304)
         resp.set_etag(etag)
@@ -983,6 +1044,12 @@ def labs_receive():
         return reject(_("Une opération Labs est déjà en cours"), 409)
 
     _purge_expired_pending()
+    # La collecte est finie, l'import prend le relais via `active_task` :
+    # le journal de progression n'a plus lieu d'être.
+    try:
+        _collect_progress_path().unlink(missing_ok=True)
+    except OSError:
+        pass
     _token, folder = _store_pending(
         [{"name": "bookmarklet-lab-finds.json", "format": fmt, "raw": raw}])
     manifest = json.loads((folder / "manifest.json").read_text("utf-8"))
@@ -995,6 +1062,57 @@ def labs_receive():
                     'message': _("Historique Labs reçu — import lancé"),
                     'task_id': task_status.id})
     return _receive_cors_headers(resp), 202
+
+
+@labs_bp.route('/api/labs/receive/progress', methods=['POST', 'OPTIONS'])
+def labs_receive_progress():
+    """Ping de progression envoyé par le favori pendant la collecte
+    (fire-and-forget, throttlé côté client).
+
+    Même porte que /api/labs/receive (jeton local + CORS restreint à
+    labs.geocaching.com). Le journal posé est relu par /api/labs/status :
+    la carte « Mes Lab Caches » suit la collecte en direct, alors que le
+    serveur n'apprendrait sinon rien avant le POST final de l'export.
+    Pas de Run-Id : une seule collecte à la fois, chaque ping écrase le
+    précédent ; /api/labs/receive supprime le journal à l'arrivée de
+    l'export."""
+    if request.method == 'OPTIONS':
+        return _receive_cors_headers(current_app.make_response(('', 204)))
+
+    def reject(message, code):
+        return _receive_cors_headers(
+            jsonify({'success': False, 'message': message})), code
+
+    expected = get_settings_manager().get_app_settings().labs_receive_token
+    token = request.headers.get('X-MyGCFlow-Token', '')
+    if not expected or not secrets.compare_digest(token, expected):
+        return reject(
+            _("Jeton de réception invalide — régénérer le bookmarklet"), 403)
+
+    body = request.get_json(silent=True) or {}
+    adventures, stages = body.get("adventures"), body.get("stages")
+    # bool est un int en Python : les refuser explicitement, comme tout
+    # non-numérique.
+    numeric = (int, float)
+    if isinstance(adventures, bool) or isinstance(stages, bool) \
+            or not isinstance(adventures, numeric) \
+            or not isinstance(stages, numeric):
+        return reject(_("Compteurs de progression invalides"), 400)
+
+    # Mêmes dossiers privés que les jetons (_store_pending) : le journal
+    # porte des compteurs de l'historique personnel.
+    try:
+        _pending_root().mkdir(mode=0o700, exist_ok=True)
+        _collect_progress_path().write_text(
+            json.dumps({"adventures": int(adventures),
+                        "stages": int(stages),
+                        "updated_at": datetime.now(timezone.utc).isoformat()},
+                       ensure_ascii=False), "utf-8")
+    except OSError:
+        # Un ping perdu ne doit jamais casser la collecte : le client l'a
+        # déjà oublié (fire-and-forget), le prochain récrira le journal.
+        pass
+    return _receive_cors_headers(jsonify({'success': True})), 202
 
 
 # Favori « MyGCFlow — Lab Caches » et script d'export manuel : sources JS

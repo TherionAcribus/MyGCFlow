@@ -9,7 +9,7 @@ import unittest
 import urllib.error
 import zipfile
 from dataclasses import replace
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -77,6 +77,13 @@ class LabsApiTests(unittest.TestCase):
             patcher = mock.patch.object(target, attr, value)
             patcher.start()
             self.addCleanup(patcher.stop)
+        # Jetons d'aperçu et journal de collecte dans un tempdir partagé :
+        # les isoler, sinon les dépôts d'un test traînent dans le suivant
+        # (et dans la vraie application — même racine de données).
+        patcher = mock.patch.object(
+            labs_mod, "PENDING_ROOT", Path(self.tmpdir.name) / "pending_labs")
+        patcher.start()
+        self.addCleanup(patcher.stop)
         # Enregistré après les substitutions, donc exécuté avant leur retrait :
         # une tâche qu'un test n'attend pas ne doit pas finir sur les vrais
         # réglages ni déborder sur le test suivant.
@@ -985,6 +992,15 @@ class LabsAutomationTests(LabsApiTests):
         # Joueur déduit de la session : rien à mémoriser.
         self.assertIsNone(out["remembered"])
         self.assertTrue(out["fetchRestored"])
+        # « Hello » de progression, posté dès le démarrage : mêmes jeton et
+        # credentials-omit que l'export, sur la route dédiée. (Le throttling
+        # à 3 s masque les pings suivants, tout tourne en millisecondes ici.)
+        self.assertTrue(out["pings"], out["said"])
+        hello = out["pings"][0]
+        self.assertTrue(hello["url"].endswith("/api/labs/receive/progress"))
+        self.assertEqual(hello["body"], {"adventures": 0, "stages": 0})
+        self.assertEqual(hello["headers"]["X-MyGCFlow-Token"], token)
+        self.assertEqual(hello["credentials"], "omit")
         # Le fichier produit est bien celui que l'import accepte.
         parsed = lf.parse_lab_finds(json.dumps(body))
         self.assertTrue(parsed.ok, parsed.errors)
@@ -1113,6 +1129,105 @@ class LabsAutomationTests(LabsApiTests):
         self.assertEqual(rv.headers.get("Access-Control-Allow-Private-Network"),
                          "true")
         rv = self.client.options('/api/labs/receive',
+                                 headers={"Origin": "https://evil.example"})
+        self.assertIsNone(rv.headers.get("Access-Control-Allow-Origin"))
+
+    # --- /api/labs/receive/progress -----------------------------------------
+
+    def _post_progress(self, body, token="tok-receive", **kw):
+        return self.client.post('/api/labs/receive/progress', json=body,
+                                headers={"X-MyGCFlow-Token": token}, **kw)
+
+    def test_progress_feeds_collection_in_progress_and_etag(self):
+        self._set_token()
+        self.assertIsNone(self.client.get('/api/labs/status')
+                          .get_json()["collection_in_progress"])
+
+        rv = self._post_progress({"adventures": 3, "stages": 7})
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        status = self.client.get('/api/labs/status')
+        cip = status.get_json()["collection_in_progress"]
+        self.assertEqual(cip["adventures"], 3)
+        self.assertEqual(cip["stages"], 7)
+        self.assertTrue(cip["updated_at"])
+        # Les compteurs entrent dans le tag : un ping suivant le fait
+        # bouger, sinon le client recevrait 304 à jamais.
+        self.assertIn("-cp7", status.headers["ETag"])
+        self._post_progress({"adventures": 4, "stages": 9})
+        etag2 = self.client.get('/api/labs/status').headers["ETag"]
+        self.assertIn("-cp9", etag2)
+        self.assertNotEqual(etag2, status.headers["ETag"])
+
+    def test_progress_requires_the_receive_token(self):
+        self._set_token()
+        for headers in ({}, {"X-MyGCFlow-Token": "mauvais"}):
+            rv = self.client.post('/api/labs/receive/progress',
+                                  json={"adventures": 3, "stages": 7},
+                                  headers=headers)
+            self.assertEqual(rv.status_code, 403, headers)
+        # Sans jeton configuré du tout : refusé aussi (pas de bypass).
+        self.manager.update_app_settings(
+            lambda s: replace(s, labs_receive_token=""))
+        self.assertEqual(self._post_progress(
+            {"adventures": 3, "stages": 7}).status_code, 403)
+
+    def test_progress_rejects_non_numeric_counters(self):
+        self._set_token()
+        for body in ({"adventures": 3},
+                     {"stages": 7},
+                     {"adventures": "trois", "stages": 7},
+                     {"adventures": 3, "stages": True},
+                     {}):
+            rv = self._post_progress(body)
+            self.assertEqual(rv.status_code, 400, body)
+
+    def test_progress_stale_journal_is_not_in_progress(self):
+        """Un journal silencieux depuis plus de 5 min signale une collecte
+        interrompue : le statut ne la présente plus « en cours »."""
+        self._set_token()
+        self._post_progress({"adventures": 3, "stages": 7})
+        import blueprints.labs as labs_mod
+        path = labs_mod._collect_progress_path()
+        data = json.loads(path.read_text("utf-8"))
+        data["updated_at"] = (datetime.now(timezone.utc)
+                              - timedelta(minutes=10)).isoformat()
+        path.write_text(json.dumps(data), "utf-8")
+        status = self.client.get('/api/labs/status')
+        self.assertIsNone(status.get_json()["collection_in_progress"])
+        self.assertNotIn("-cp", status.headers["ETag"])
+
+    def test_receive_removes_the_progress_journal(self):
+        """L'export final efface le journal : la collecte est finie,
+        l'import prend le relais via `active_task`."""
+        self._set_token()
+        self._post_progress({"adventures": 3, "stages": 7})
+        rv = self.client.post('/api/labs/receive',
+                              data=HISTORY.read_bytes(),
+                              content_type='application/json',
+                              headers={"X-MyGCFlow-Token": "tok-receive"})
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        import blueprints.labs as labs_mod
+        self.assertFalse(labs_mod._collect_progress_path().exists())
+        status = self.client.get('/api/labs/status').get_json()
+        self.assertIsNone(status["collection_in_progress"])
+        self.assertEqual(status["total"], 12)
+
+    def test_progress_options_grants_only_labs_origin(self):
+        """Preflight : mêmes CORS que /receive — les seuls en-têtes que le
+        favori envoie (Content-Type + jeton) doivent y figurer."""
+        rv = self.client.options('/api/labs/receive/progress',
+                                 headers={"Origin": "https://labs.geocaching.com"})
+        self.assertEqual(rv.status_code, 204)
+        self.assertEqual(rv.headers.get("Access-Control-Allow-Origin"),
+                         "https://labs.geocaching.com")
+        self.assertEqual(rv.headers.get("Access-Control-Allow-Private-Network"),
+                         "true")
+        allowed = {h.strip() for h in
+                   rv.headers["Access-Control-Allow-Headers"].split(",")}
+        self.assertTrue({"Content-Type", "X-MyGCFlow-Token"} <= allowed)
+        rv = self.client.options('/api/labs/receive/progress',
                                  headers={"Origin": "https://evil.example"})
         self.assertIsNone(rv.headers.get("Access-Control-Allow-Origin"))
 
