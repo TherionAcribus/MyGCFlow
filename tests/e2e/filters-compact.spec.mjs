@@ -84,3 +84,51 @@ test('filtres compacts : résumé fermé, actions dans le dropdown, tooltip des 
   expect(partial.title).toContain('Multi-cache');
   expect(partial.title.split(',').length).toBe(typeCount - 1);
 });
+
+test('les options des filtres affichent leur nombre de découvertes', async ({ page, request }) => {
+  // Runtime partagé : repartir d'une base vide puis importer le fixture rend
+  // le test indépendant de l'ordre d'exécution des specs.
+  const res = await request.post('/clear_database');
+  expect(res.ok()).toBeTruthy();
+
+  await openReadyApp(page);
+  await dismissFirstUseModal(page);
+  await importFixture(page);
+
+  // Répartition réelle de my-finds.gpx : Traditional Cache ×3, Multi-cache ×2,
+  // Event Cache ×1 ; côté tailles Other ×2 et une de chaque autre.
+  await page.locator('#selectType').evaluate(el => el.tomselect.open());
+  const typeDropdown = page.locator('.filter-field:has(#selectType) .ts-dropdown');
+  const typeOption = value => typeDropdown.locator(`.option[data-value="${value}"]`);
+  await expect(typeOption('Traditional Cache')).toContainText('Traditional Cache (3)');
+  await expect(typeOption('Multi-cache')).toContainText('Multi-cache (2)');
+  await expect(typeOption('Event Cache')).toContainText('Event Cache (1)');
+
+  // Option absente des données : « (0) » avec le libellé estompé, mais jamais
+  // désactivée — ni côté DOM natif ni côté option du menu (elle reste cochée
+  // et décochable).
+  const letterbox = typeOption('Letterbox Hybrid');
+  await expect(letterbox).toContainText('Letterbox Hybrid (0)');
+  await expect(letterbox.locator('span.text-muted').filter({ hasText: 'Letterbox Hybrid' })).toHaveCount(1);
+  await expect(page.locator('#selectType option[value="Letterbox Hybrid"]')).not.toBeDisabled();
+
+  // Sélection partielle : les compteurs restent ceux de l'univers affichable,
+  // pas recalculés sur la sélection — « Traditional Cache (3) » survit à la
+  // décochage de Letterbox Hybrid (le menu reste ouvert, closeAfterSelect).
+  const typeCount = await page.locator('#selectType option:not([disabled]):not([value=""])').count();
+  await letterbox.click();
+  await expect.poll(async () => (await typeControl(page)).summary).toBe(`${typeCount - 1} / ${typeCount}`);
+  await expect(typeOption('Traditional Cache')).toContainText('Traditional Cache (3)');
+  await expect(letterbox).toContainText('Letterbox Hybrid (0)');
+
+  // L'option à 0 est bien re-cochable : le clic la ré-intègre à la sélection.
+  await letterbox.click();
+  await expect.poll(async () => (await typeControl(page)).summary).toBe(`Tout (${typeCount})`);
+
+  // Même rendu sur un autre select à options fixes (#selectContainer).
+  await page.locator('#selectContainer').evaluate(el => el.tomselect.open());
+  const containerDropdown = page.locator('.filter-field:has(#selectContainer) .ts-dropdown');
+  await expect(containerDropdown.locator('.option[data-value="Other"]')).toContainText('Other (2)');
+  await expect(containerDropdown.locator('.option[data-value="Regular"]')).toContainText('Regular (1)');
+  await expect(containerDropdown.locator('.option[data-value="Not chosen"]')).toContainText('Not chosen (0)');
+});

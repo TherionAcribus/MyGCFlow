@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 20:08+0100\n"
+"POT-Creation-Date: 2026-11-03 20:18+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -1508,7 +1508,7 @@ msgstr "Le fichier sélectionné est vide"
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "Un import est déjà en cours, veuillez patienter."
 
-#: static/js/bdd.js:447 static/js/bdd.js:2090
+#: static/js/bdd.js:447 static/js/bdd.js:2101
 msgid "Import en cours"
 msgstr "Import en cours"
 
@@ -1552,7 +1552,7 @@ msgstr "Remplacer mes géocaches"
 msgid "Remplacer"
 msgstr "Remplacer"
 
-#: static/js/bdd.js:509 static/js/bdd.js:2114
+#: static/js/bdd.js:509 static/js/bdd.js:2125
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation non disponible, action annulée."
 
@@ -1653,7 +1653,7 @@ msgstr "Fichier chargé avec succès !"
 msgid "Terminé"
 msgstr "Terminé"
 
-#: static/js/bdd.js:1665 static/js/bdd.js:2184
+#: static/js/bdd.js:1665 static/js/bdd.js:2195
 msgid "Chargement et affichage des points..."
 msgstr "Chargement et affichage des points..."
 
@@ -1662,7 +1662,7 @@ msgid "Erreur lors du chargement du fichier"
 msgstr "Erreur lors du chargement du fichier"
 
 #: static/js/bdd.js:1686 static/js/bdd.js:1694 static/js/bdd.js:1853
-#: static/js/bdd.js:1861 static/js/bdd.js:2164 static/js/dnf_data.js:191
+#: static/js/bdd.js:1861 static/js/bdd.js:2175 static/js/dnf_data.js:191
 #: static/js/evolution_data.js:252 static/js/evolution_data.js:356
 #: static/js/evolution_data.js:956 static/js/evolution_data.js:960
 #: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
@@ -1703,19 +1703,27 @@ msgstr "masquées"
 msgid "Découvertes masquées par le réglage « Découvertes affichées »"
 msgstr "Découvertes masquées par le réglage « Découvertes affichées »"
 
-#: static/js/bdd.js:2043
+#: static/js/bdd.js:2045
+msgid ""
+"Aucune découverte affichée : le réglage « Découvertes affichées » masque "
+"toutes les sources."
+msgstr ""
+"Aucune découverte affichée : le réglage « Découvertes affichées » masque "
+"toutes les sources."
+
+#: static/js/bdd.js:2046
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 
-#: static/js/bdd.js:2043
+#: static/js/bdd.js:2048
 msgid "Aucune cache visible"
 msgstr "Aucune cache visible"
 
-#: static/js/bdd.js:2090
+#: static/js/bdd.js:2101
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr "Un import est en cours, veuillez patienter avant de supprimer les données."
 
-#: static/js/bdd.js:2103
+#: static/js/bdd.js:2114
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
@@ -1723,47 +1731,47 @@ msgstr ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 
-#: static/js/bdd.js:2104 static/js/gc_logs.js:705 static/js/labs.js:2085
+#: static/js/bdd.js:2115 static/js/gc_logs.js:705 static/js/labs.js:2085
 msgid "Confirmation de suppression"
 msgstr "Confirmation de suppression"
 
-#: static/js/bdd.js:2107 templates/guide.html:173 templates/menu_data.html:60
+#: static/js/bdd.js:2118 templates/guide.html:173 templates/menu_data.html:60
 msgid "Supprimer mes géocaches"
 msgstr "Supprimer mes géocaches"
 
-#: static/js/bdd.js:2114 static/js/bdd.js:2126
+#: static/js/bdd.js:2125 static/js/bdd.js:2137
 msgid "Suppression"
 msgstr "Suppression"
 
-#: static/js/bdd.js:2126
+#: static/js/bdd.js:2137
 msgid "Suppression des trouvailles..."
 msgstr "Suppression des trouvailles..."
 
-#: static/js/bdd.js:2153
+#: static/js/bdd.js:2164
 msgid "Trouvailles supprimées avec succès"
 msgstr "Trouvailles supprimées avec succès"
 
-#: static/js/bdd.js:2153 static/js/gc_logs.js:718 static/js/labs.js:2101
+#: static/js/bdd.js:2164 static/js/gc_logs.js:718 static/js/labs.js:2101
 msgid "Suppression réussie"
 msgstr "Suppression réussie"
 
-#: static/js/bdd.js:2164
+#: static/js/bdd.js:2175
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Erreur lors de la suppression des trouvailles: "
 
-#: static/js/bdd.js:2184 static/js/mapgl.js:1007 static/js/notifications.js:379
+#: static/js/bdd.js:2195 static/js/mapgl.js:1007 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr "Affichage des points"
 
-#: static/js/bdd.js:2190
+#: static/js/bdd.js:2201
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr "Impossible de lancer la génération du GeoJSON"
 
-#: static/js/bdd.js:2202 static/js/bdd.js:2287 static/js/bdd.js:2295
+#: static/js/bdd.js:2213 static/js/bdd.js:2298 static/js/bdd.js:2306
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Erreur lors de l'affichage des points sur la carte"
 
-#: static/js/bdd.js:2202 static/js/bdd.js:2287 static/js/bdd.js:2295
+#: static/js/bdd.js:2213 static/js/bdd.js:2298 static/js/bdd.js:2306
 msgid "Erreur d'affichage"
 msgstr "Erreur d'affichage"
 

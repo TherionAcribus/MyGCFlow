@@ -56,7 +56,9 @@ let lastSelection = null;
 // Jeu de données complet (toutes les caches) conservé en mémoire pour permettre
 // un filtrage 100% côté client, sans aller-retour serveur. Alimenté à chaque
 // chargement complet (readBdd / loadAndDisplayPoints) et remis à null au vidage.
-let baseGeojson = null;
+// Exporté : les compteurs d'options des filtres (refreshFilterOptionCounts,
+// ui.js) comptent sur cet univers complet, pas sur la sélection filtrée.
+export let baseGeojson = null;
 
 // Gestionnaire pour le chargement automatique lors de la sélection de fichier
 const fileInput = document.getElementById('file-input');
@@ -1616,9 +1618,17 @@ function updateFiltersCounter(selected, eligible, { hidden = 0 } = {}){
         // écran vide alors que le stockage n'est pas vide — que la cause soit
         // un filtre qui a tout retiré ou le réglage sources qui masque tout.
         if (selected === 0 && storage > 0) {
-            // Afficher la toast si elle n'existe pas encore
+            // Message selon la cause : eligible === 0 signifie que le réglage
+            // « Découvertes affichées » masque tout (pas un filtre).
+            const noCacheMsg = eligible === 0
+                ? t('Aucune découverte affichée : le réglage « Découvertes affichées » masque toutes les sources.')
+                : t('Aucune cache ne correspond aux critères sélectionnés par les filtres.');
             if (!noCacheToast) {
-                noCacheToast = pkg.showToast(t('Aucune cache ne correspond aux critères sélectionnés par les filtres.'), 'warning', t('Aucune cache visible'), 0);
+                noCacheToast = pkg.showToast(noCacheMsg, 'warning', t('Aucune cache visible'), 0);
+            } else {
+                // La cause a pu basculer (filtre ↔ réglage sources) alors que
+                // la toast est déjà affichée : son message le reflète.
+                try { pkg.updateToastMessage?.(noCacheToast, noCacheMsg); } catch(_) {}
             }
 
         } else {

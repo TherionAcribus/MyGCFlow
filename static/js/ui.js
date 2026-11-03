@@ -111,6 +111,30 @@ let countryToStates = {};
 // Région -> départements (mode Évolution), alimenté par
 // setEvolutionFilterOptions comme countryToStates par setCountryStateTree.
 let regionToCounties = {};
+
+// Comptage des découvertes par option des filtres à options fixes, clé
+// `${selectId}::${value}`. Alimenté par refreshFilterOptionCounts() sur
+// l'UNIVERS AFFICHABLE (features admises par le réglage « Découvertes
+// affichées »), pas sur la sélection filtrée courante — sinon décocher un
+// type afficherait « (0) » sur tous les autres, trompeur. Les selects peuplés
+// dynamiquement (Pays/Région, Mes poses) n'ont pas d'entrée : leur rendu
+// d'option reste sans compteur.
+// Déclaré en tête de module : le render.option de Tom Select peut s'exécuter
+// dès l'init (initUIElements() tourne pendant l'évaluation du module, bien
+// avant l'emplacement des fonctions filtres) — une const plus bas serait
+// encore dans sa zone morte (TDZ) et casserait la sélection restaurée.
+const filterOptionCounts = new Map();
+
+// Dimension de comptage par select : propriété GeoJSON de la feature. Le type
+// est `cache_type` (les Labs portent « Adventure Lab », cf. lab_geojson.py) ;
+// difficulté et terrain sont numériques (Float en base) — comparaison en
+// Number() car l'option porte « 1 » quand la feature vaut 1.0.
+const FILTER_OPTION_COUNT_DIMS = {
+    selectType: { prop: 'cache_type', numeric: false },
+    selectContainer: { prop: 'container', numeric: false },
+    selectDifficulty: { prop: 'difficulty', numeric: true },
+    selectTerrain: { prop: 'terrain', numeric: true },
+};
 var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor, cpFlashBorderColor;
@@ -4353,6 +4377,11 @@ function applySelectionChange(){
     persistSelectedValues(selectedValues);
     updateFilterInfos();
     pkg.changeSelect(selectedValues, pkg.options);
+    // Compteurs « (n) » des options de filtres : à recalculer après chaque
+    // changement — le réglage « Découvertes affichées » change l'univers
+    // compté, et un rechargement de la base passe aussi par ici (debounce
+    // de setPickerDates). Coût négligeable (un comptage linéaire).
+    refreshFilterOptionCounts();
 }
 
 function collectSelectedValues(){
@@ -4387,6 +4416,65 @@ function collectSelectedValues(){
     return selectedValues;
 }
 
+// Rendu d'une option de filtre : le libellé suivi de « (n) », nombre de
+// découvertes de l'univers affichable (filterOptionCounts, déclaré en tête
+// de module pour être hors TDZ quand le render s'exécute pendant l'init).
+// Sans comptage pour ce select+value, le rendu nu des autres selects. À 0,
+// tout l'intitulé est estompé mais l'option reste cochable — jamais disabled,
+// une option bloquée en état dé-sélectionnable serait un piège. Le plugin
+// checkbox_options décore ce rendu (case insérée en tête du div retourné).
+function renderFilterOption(selectId, data, escape) {
+    const text = escape(data.text);
+    const count = filterOptionCounts.get(`${selectId}::${data.value}`);
+    if (count === undefined) return `<div class="option">${text}</div>`;
+    const countHtml = `<span class="filter-option-count text-muted"> (${count})</span>`;
+    const label = count === 0 ? `<span class="text-muted">${text}</span>` : text;
+    return `<div class="option">${label}${countHtml}</div>`;
+}
+
+// Recalcule les compteurs d'options des filtres à options fixes sur l'univers
+// affichable : features du jeu complet (pkg.baseGeojson, bdd.js) admises par
+// le réglage « Découvertes affichées » — même règle que le dénominateur de
+// #filtersCounter dans changeSelect. Une option sans correspondance affiche
+// « (0) » en estompé mais reste sélectionnable ; absence de données → tout à
+// 0 (la donnée n'existe pas dans le jeu). refreshOptions(false) repeint les
+// options sans rouvrir le menu.
+function refreshFilterOptionCounts() {
+    const features = pkg.baseGeojson?.features;
+    const kinds = getDiscoverySourceKinds();
+    const eligible = Array.isArray(features)
+        ? features.filter(f => kinds.includes(f?.properties?.source_kind || 'geocache'))
+        : [];
+    for (const [selectId, dim] of Object.entries(FILTER_OPTION_COUNT_DIMS)) {
+        const selectEl = document.getElementById(selectId);
+        if (!selectEl) continue;
+        // Comptage en une passe : valeur de propriété -> nombre de features.
+        const tally = new Map();
+        for (const f of eligible) {
+            const raw = f?.properties?.[dim.prop];
+            if (raw === null || raw === undefined || raw === '') continue;
+            const key = dim.numeric ? Number(raw) : String(raw);
+            if (dim.numeric && !Number.isFinite(key)) continue;
+            tally.set(key, (tally.get(key) || 0) + 1);
+        }
+        for (const opt of selectEl.options) {
+            if (opt.disabled || opt.value === '') continue;
+            const key = dim.numeric ? Number(opt.value) : String(opt.value);
+            filterOptionCounts.set(`${selectId}::${opt.value}`, tally.get(key) || 0);
+        }
+        const ts = getTomSelect(selectEl);
+        if (ts) {
+            try {
+                // Les options rendues sont mémoïsées par Tom Select
+                // (data.$div, getOption) : invalider le cache pour que le
+                // compteur soit repeint, puis rafraîchir sans rouvrir le menu.
+                ts.clearCache();
+                ts.refreshOptions(false);
+            } catch (_) { /* noop */ }
+        }
+    }
+}
+
 // Affiche un résumé compact dans le champ fermé et place la recherche dans le
 // menu déroulant. La liste reste ouverte pendant les choix multiples et chaque
 // option dispose d'une case à cocher.
@@ -4402,6 +4490,13 @@ function initFilterTomSelect(selectEl){
         hideSelected: false,
         hidePlaceholder: true,
         closeAfterSelect: false,
+        // Le compteur « (n) » n'orne que les options du menu déroulant : ni
+        // l'item sélectionné (render.item par défaut, texte nu — le tooltip
+        // des noms du contrôle fermé reste propre) ni le résumé compact.
+        render: {
+            option: (data, escape) => renderFilterOption(selectEl.id, data, escape),
+            item: (data, escape) => `<div class="item">${escape(data.text)}</div>`,
+        },
     });
     if (!ts) return null;
 

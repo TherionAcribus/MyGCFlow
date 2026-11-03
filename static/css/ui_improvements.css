@@ -2552,6 +2552,11 @@ background: rgba(33, 150, 243, 0.04);
 .filter-select-control .option {
     padding-block: 0.45rem;
 }
+/* Compteur « (n) » des options de filtres (refreshFilterOptionCounts, ui.js) :
+   discrétion — l'estompe est déjà portée par .text-muted. */
+.filter-select-control .option .filter-option-count {
+    font-size: 0.85em;
+}
 .filter-select-control .optgroup-header {
     /* Tom Select utilise --bs-body-bg, qui n'est pas toujours défini dans
        cette vue : sans repli, les titres Events/Autres deviennent transparents. */
