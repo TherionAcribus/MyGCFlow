@@ -118,11 +118,15 @@ test('« géocaches » masque les Labs ; « both » les réaffiche', async ({ pa
 
   const select = page.locator('#selectDiscoverySources');
   await select.selectOption('geocaches');
-  await expect(page.locator('#filtersCounter')).toContainText('0 / 8', { timeout: 20_000 });
+  // Univers affichable vide : le dénominateur ne compte plus les Labs
+  // stockés, la note signale les 8 masquées par le réglage sources.
+  await expect(page.locator('#filtersCounter')).toContainText('0 / 0', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toContainText('8 masquées');
   expect((await readServerSettings(page)).main_discovery_sources).toBe('geocaches');
 
   await select.selectOption('both');
   await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('');
 });
 
 
@@ -202,7 +206,8 @@ test('un réimport Labs préserve un choix manuel « géocaches »', async ({ pa
   // Choix volontaire : ne voir que les géocaches.
   await select.selectOption('geocaches');
   await expect(select).toHaveValue('geocaches');
-  await expect(page.locator('#filtersCounter')).toContainText('0 / 8', { timeout: 20_000 });
+  await expect(page.locator('#filtersCounter')).toContainText('0 / 0', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toContainText('8 masquées');
 
   // Réimport d'un lot enrichi (une découverte de plus — un lot strictement
   // identique est inerte et garde le bouton Importer désactivé) : la
@@ -393,6 +398,7 @@ test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }
   const select = page.locator('#selectDiscoverySources');
   await expect(select).toHaveValue('both');
   await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 60_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('');
 
   // Les deux sources sont dans l'index d'animation.
   const counts = await page.evaluate(async () => {
@@ -407,12 +413,55 @@ test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }
   });
   expect(counts).toEqual({ labs: 8, geocaches: 6 });
 
+  // Le dénominateur est l'univers affichable : la source exclue par le
+  // réglage passe dans la note « n masquée(s) », pas dans le compteur.
   await select.selectOption('geocaches');
-  await expect(page.locator('#filtersCounter')).toContainText('6 / 14', { timeout: 20_000 });
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toContainText('8 masquées');
   await select.selectOption('labs');
-  await expect(page.locator('#filtersCounter')).toContainText('8 / 14', { timeout: 20_000 });
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toContainText('6 masquées');
   await select.selectOption('both');
   await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('');
+});
+
+
+// Le badge « n / total » compte sélection / univers affichable ; les
+// découvertes retirées par le réglage sources (pas par un filtre) sont
+// signalées dans la note accolée, indépendamment des filtres actifs.
+test('le compteur distingue sélection et découvertes masquées par le réglage sources', async ({ page }) => {
+  await openReadyApp(page);
+
+  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+
+  await importLabs(page);
+  const select = page.locator('#selectDiscoverySources');
+  await expect(select).toHaveValue('both');
+  await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 60_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('');
+
+  // « géocaches » : les 8 Labs sortent de l'univers affichable — la note les
+  // signale, le dénominateur n'en garde plus trace.
+  await select.selectOption('geocaches');
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('(8 masquées)');
+
+  // Un vrai filtre (type « Multi-cache » seul, 2 des 6 géocaches du GPX)
+  // réduit la sélection sans toucher l'univers ni la note.
+  await page.locator('#selectType').evaluate(el => el.tomselect.setValue(['Multi-cache']));
+  await expect(page.locator('#filtersCounter')).toContainText('2 / 6', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('(8 masquées)');
+
+  // Filtre retiré puis « both » : tout revient, la note se vide.
+  await page.locator('#selectType').evaluate(el =>
+    el.tomselect.setValue(Array.from(el.options)
+      .filter(o => !o.disabled && o.value !== '').map(o => o.value)));
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 20_000 });
+  await select.selectOption('both');
+  await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 20_000 });
+  await expect(page.locator('#filtersHiddenNote')).toHaveText('');
 });
 
 

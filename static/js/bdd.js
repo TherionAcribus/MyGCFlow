@@ -9,6 +9,7 @@ import { dnfAliveInWindow } from './dnf_model.mjs';
 import { ownerAliveInWindow } from './owner_model.mjs';
 import { isAudioFile } from './music_track.mjs';
 import { isImageFile } from './images_model.mjs';
+import { countLabel } from './utils.js';
 
 export let json_data = null;
 export const metadata = {};
@@ -531,9 +532,10 @@ function formatBddInfos(data) {
     const load = parseBddInfoDate(data.loadDate);
 
     // Libellé singulier/pluriel résolu hors du template literal pour que
-    // l'extracteur Babel voie les deux msgids.
-    const countLabel = total > 1 ? t('caches') : t('cache');
-    const parts = [`${total} ${countLabel}`];
+    // l'extracteur Babel voie les deux msgids (nommé cachesLabel : countLabel
+    // est le helper importé de utils.js).
+    const cachesLabel = total > 1 ? t('caches') : t('cache');
+    const parts = [`${total} ${cachesLabel}`];
     if (start && end) parts.push(formatBddDateRange(start, end, locale));
     if (load) parts.push(t('importé ${when}', { when: formatBddLoadWhen(load, locale) }));
     return parts.join(' · ');
@@ -1456,8 +1458,12 @@ export function readBdd(){
                 // Cadrage « fit » : la vue s'ajuste sur l'emprise des données.
                 fitViewOnData();
 
-                // Mettre à jour le compteur : sélection = total au chargement initial
-                updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+                // Mettre à jour le compteur : sélection = univers affichable au
+                // chargement initial ; les découvertes retirées par le réglage
+                // « Découvertes affichées » sont signalées à part (note
+                // « n masquée(s) »), pas dans le dénominateur.
+                updateFiltersCounter(metadata.numberOfCaches || 0, displayFeatures.length,
+                    { hidden: Math.max(0, totalCaches - displayFeatures.length) });
 
                 const btn = document.getElementById('clearDatabaseBtn');
                 if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
@@ -1516,8 +1522,16 @@ export function changeSelect(selectedValues, optionValues) {
     clearMap();
     pkg.addVector(geojson);
 
-    // Mettre à jour le compteur : sélection courante / total initial
-    updateFiltersCounter(metadata.numberOfCaches || filteredFeatures.length, totalCaches);
+    // Mettre à jour le compteur : sélection courante / univers affichable
+    // (features du jeu complet éligibles au réglage « Découvertes affichées »,
+    // porté par sel.sources — liste de kinds posée par collectSelectedValues).
+    // Les sources masquées sont signalées à part, pas dans le dénominateur.
+    const sourceKinds = Array.isArray(sel.sources) ? sel.sources : null;
+    const eligibleCount = sourceKinds
+        ? baseGeojson.features.filter(f => sourceKinds.includes(f?.properties?.source_kind || 'geocache')).length
+        : applyDiscoverySourcesAtLoad(baseGeojson.features).length;
+    updateFiltersCounter(metadata.numberOfCaches || filteredFeatures.length, eligibleCount,
+        { hidden: Math.max(0, baseGeojson.features.length - eligibleCount) });
 }
 
 // Mode Évolution : les données viennent d'une base de caches importée depuis
@@ -1536,24 +1550,53 @@ export function setExternalDatasetState(meta, { selected = 0, total = 0 } = {}) 
     // « Mes Géocaches » (absente de ce mode) resterait en état vide.
     geocachesCount = 0;
     updateOptionsValues(metadata);
-    updateFiltersCounter(selected, totalCaches);
+    // Pas de sélecteur de sources en mode Évolution/Poses : l'univers
+    // affichable est le jeu entier, rien de masqué.
+    updateFiltersCounter(selected, totalCaches, { hidden: 0 });
     // Boutons « Sélection » de l'onglet Animation : l'étendue a pu changer.
     pkg.updateAnimFilterInfo?.();
 }
 
-function updateFiltersCounter(selected, total){
+// Badge « sélection / univers affichable » : le dénominateur `eligible` ne
+// compte que les découvertes admises par le réglage « Découvertes affichées »,
+// pas tout le stockage — sinon « 6 / 14 » ferait croire qu'un filtre retire
+// les 8 Lab Caches qu'une préférence d'affichage masque. Celles-ci sont
+// signalées à part par `hidden` dans la note discrète #filtersHiddenNote
+// (« (8 masquées) », explication en bulle native via `title` — aucun tooltip
+// Bootstrap n'est branché sur ces éléments, le title suffit).
+function updateFiltersCounter(selected, eligible, { hidden = 0 } = {}){
     try {
+        hidden = Math.max(0, Number(hidden) || 0);
+        // « stockage » = univers affichable + découvertes masquées par le
+        // réglage sources (l'ancien `total`, égal à totalCaches).
+        const storage = eligible + hidden;
         const el = document.getElementById('filtersCounter');
         if (el) {
             // Badge accolé au titre « Filtres » : le préfixe « Sélection »
             // serait redondant, le compteur reste au format compact « n / total ».
-            el.textContent = t('${selected} / ${total}', { selected, total });
+            el.textContent = t('${selected} / ${total}', { selected, total: eligible });
+        }
+
+        const note = document.getElementById('filtersHiddenNote');
+        if (note) {
+            if (hidden > 0) {
+                // Libellé pluriel hors du template literal : l'extracteur
+                // Babel ne lit pas les t() dans une interpolation ${...}.
+                const label = countLabel(hidden, t('masquée'), t('masquées'));
+                note.textContent = `(${label})`;
+                note.title = t('Découvertes masquées par le réglage « Découvertes affichées »');
+            } else {
+                note.textContent = '';
+                note.removeAttribute('title');
+            }
         }
 
         // Bouton « Réinitialiser tous les filtres » : rouge seulement quand
         // un filtre sort de l'état neutre (marqueur data-filters-active lu
-        // par la CSS).
-        updateFilterPanelState(selected, total);
+        // par la CSS). Le repli « sélection partielle » compare à l'univers
+        // affichable : des découvertes masquées par le réglage sources ne
+        // constituent pas un filtre actif.
+        updateFilterPanelState(selected, eligible);
 
         // État vide, filtres et actions Lecture/Enregistrement suivent la
         // présence de données (base chargée et sélection non vide).
@@ -1561,16 +1604,18 @@ function updateFiltersCounter(selected, total){
 
         const badge = document.getElementById('dataTabBadge');
         if (badge) {
-            if (total > 0 && selected < total) {
-                badge.textContent = `${selected}/${total}`;
+            if (eligible > 0 && selected < eligible) {
+                badge.textContent = `${selected}/${eligible}`;
                 badge.style.display = '';
             } else {
                 badge.style.display = 'none';
             }
         }
 
-        // Gérer la toast d'alerte "aucune cache visible"
-        if (selected === 0 && total > 0) {
+        // Gérer la toast d'alerte "aucune cache visible" : elle signale un
+        // écran vide alors que le stockage n'est pas vide — que la cause soit
+        // un filtre qui a tout retiré ou le réglage sources qui masque tout.
+        if (selected === 0 && storage > 0) {
             // Afficher la toast si elle n'existe pas encore
             if (!noCacheToast) {
                 noCacheToast = pkg.showToast(t('Aucune cache ne correspond aux critères sélectionnés par les filtres.'), 'warning', t('Aucune cache visible'), 0);
@@ -1747,8 +1792,12 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
                     // l'emprise des données fraîchement chargées.
                     fitViewOnData();
 
-                    // Mettre à jour le compteur : sélection = total au chargement initial
-                    updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+                    // Mettre à jour le compteur : sélection = univers affichable
+                    // au chargement initial ; les découvertes retirées par le
+                    // réglage « Découvertes affichées » sont signalées à part
+                    // (note « n masquée(s) »), pas dans le dénominateur.
+                    updateFiltersCounter(metadata.numberOfCaches || 0, displayFeatures.length,
+                        { hidden: Math.max(0, totalCaches - displayFeatures.length) });
 
                     const btn = document.getElementById('clearDatabaseBtn');
                     if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
