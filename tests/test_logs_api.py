@@ -8,6 +8,7 @@ import time
 import unittest
 import zipfile
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -386,6 +387,16 @@ class LogsAutomationTests(LogsApiTests):
                     rv.headers["Access-Control-Allow-Origin"], origin)
                 self.assertEqual(
                     rv.headers["Access-Control-Allow-Private-Network"], "true")
+
+        # Les fragments portent des en-têtes propres à la collecte
+        # reprenable : le preflight doit les autoriser, sinon Chrome bloque
+        # l'envoi depuis geocaching.com (mêmes en-têtes CORS que /receive).
+        rv = self.client.open('/api/logs/receive/fragment', method='OPTIONS',
+                              headers={"Origin": "https://www.geocaching.com"})
+        allowed = {h.strip() for h in
+                   rv.headers["Access-Control-Allow-Headers"].split(",")}
+        self.assertTrue({"Content-Type", "X-MyGCFlow-Token",
+                         "X-MyGCFlow-Run-Id", "X-MyGCFlow-Final"} <= allowed)
 
     def test_receive_rejects_bad_format(self):
         self._set_token()
@@ -920,6 +931,57 @@ class LogsAutomationTests(LogsApiTests):
         rv = self._fragment(json.dumps(dict(
             doc, account={"user_id": 999, "username": "Autre"})).encode())
         self.assertEqual(rv.status_code, 409)
+
+    def test_fragment_progress_until_sealed_or_stale(self):
+        """`collection_in_progress` du statut suit les fragments du favori
+        (compteurs fusionnés du manifest, lus sans parser le document) ;
+        le scellement la remplace par `pending_import`, et un run dont le
+        manifest n'a pas été réécrit depuis 5 min n'est plus « en cours »."""
+        self._set_token()
+        doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        first = dict(doc, logs=doc["logs"][:4], caches=doc["caches"][:2],
+                     account={"user_id": 42, "username": "Testeur"})
+        second = dict(doc, logs=doc["logs"][3:], caches=doc["caches"][2:],
+                      account={"user_id": 42, "username": "Testeur"})
+
+        self.assertIsNone(self.client.get("/api/logs/status")
+                          .get_json()["collection_in_progress"])
+
+        rv = self._fragment(json.dumps(first).encode())
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        progress = self.client.get("/api/logs/status").get_json()["collection_in_progress"]
+        self.assertIsNotNone(progress)
+        self.assertEqual((progress["logs"], progress["caches"]), (4, 2))
+        self.assertEqual(progress["username"], "Testeur")
+        self.assertTrue(progress["started_at"])
+        self.assertTrue(progress["updated_at"])
+
+        # Les compteurs suivent la fusion (recouvrement dédoublonné).
+        rv = self._fragment(json.dumps(second).encode())
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        progress = self.client.get("/api/logs/status").get_json()["collection_in_progress"]
+        self.assertEqual((progress["logs"], progress["caches"]), (10, 2))
+
+        # Collecte interrompue : manifest non rafraîchi depuis 10 min —
+        # le TTL de 7 jours garde le dossier pour la reprise, mais le
+        # statut ne doit plus la présenter « en cours ».
+        import blueprints.gc_logs as gc_logs_mod
+        folder = gc_logs_mod.PENDING_ROOT / "frag-run-test-1"
+        manifest = json.loads((folder / "manifest.json").read_text("utf-8"))
+        manifest["updated_at"] = (
+            datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+        (folder / "manifest.json").write_text(json.dumps(manifest), "utf-8")
+        self.assertIsNone(self.client.get("/api/logs/status")
+                          .get_json()["collection_in_progress"])
+
+        # Le scellement supprime le dossier de fragments : la progression
+        # s'éteint et l'import en attente prend le relais.
+        rv = self._fragment(json.dumps(second).encode(),
+                            run_id="run-final-1", final=True)
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        status = self.client.get("/api/logs/status").get_json()
+        self.assertIsNone(status["collection_in_progress"])
+        self.assertIsNotNone(status["pending_import"])
 
     # --- reprise de collecte côté favori (harnais) --------------------------
 

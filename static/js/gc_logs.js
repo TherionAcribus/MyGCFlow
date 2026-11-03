@@ -130,13 +130,21 @@ function renderStatus(st) {
     }
     // Un import peut tourner hors de cette page (validation faite dans un
     // autre onglet) : le bloc d'activité reflète la tâche serveur, et sa fin
-    // relance la lecture des points DNF.
+    // relance la lecture des points DNF. La collecte du favori elle-même
+    // (fragments reçus sous frag-<run>, `collection_in_progress` du statut)
+    // s'y affiche aussi — sans verrouiller les boutons : aucun import ne
+    // tourne côté serveur, l'utilisateur garde la main.
     const taskActive = !!(st && st.active_task);
+    const collecting = st?.collection_in_progress;
     if (!busy) {
         const box = el('gcLogsActivity');
         el('gcLogsActivityTitle').textContent =
-            taskActive ? (st.active_task.message || t('Import de vos logs…')) : '';
-        box.hidden = !taskActive;
+            taskActive ? (st.active_task.message || t('Import de vos logs…'))
+                : collecting
+                    ? t('Collecte en cours — ${logs} logs, ${caches} caches reçus…',
+                        { logs: collecting.logs || 0, caches: collecting.caches || 0 })
+                    : '';
+        box.hidden = !(taskActive || collecting);
         el('gc-logs-file-btn').disabled = taskActive;
         el('gcLogsExportBtn').disabled = taskActive;
         el('gcLogsClearBtn').disabled = taskActive;

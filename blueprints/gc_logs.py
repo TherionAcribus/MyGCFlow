@@ -47,6 +47,10 @@ PENDING_TTL_SECONDS = 30 * 60
 # nuit, contrairement à un aperçu en attente — TTL de 7 jours, aligné sur
 # l'expiration du plan de reprise côté navigateur.
 FRAGMENT_TTL_SECONDS = 7 * 24 * 3600
+# Un run de fragments dont le manifest n'a pas été réécrit depuis ce délai
+# est interrompu, pas « en cours » : sans ce seuil, le TTL de 7 jours
+# l'afficherait une semaine dans le statut.
+COLLECTION_PROGRESS_STALE_SECONDS = 5 * 60
 _RUN_ID_RE = re.compile(r"^[0-9a-zA-Z_-]{8,64}$")
 _FRAGMENT_LOCK = threading.Lock()
 # Redirigé par les tests ; sinon _pending_root() (sous les données).
@@ -232,6 +236,43 @@ def _received_pending() -> dict | None:
             "summary": manifest.get("summary")}
 
 
+def _collection_in_progress() -> dict | None:
+    """Collecte du favori encore active, ou None.
+
+    Les dossiers `frag-<run>` portent dans leur manifest les compteurs déjà
+    fusionnés : le statut les expose sans parser le document. Le plus
+    récent `updated_at` gagne s'il est encore frais — un run silencieux
+    depuis COLLECTION_PROGRESS_STALE_SECONDS est interrompu, pas en cours."""
+    now = datetime.now(timezone.utc)
+    try:
+        children = list(_pending_root().iterdir())
+    except FileNotFoundError:
+        return None
+    newest = None
+    for child in children:
+        if not child.name.startswith("frag-"):
+            continue
+        try:
+            manifest = json.loads((child / "manifest.json").read_text("utf-8"))
+            updated = datetime.fromisoformat(manifest["updated_at"])
+        except Exception:
+            continue
+        if updated.tzinfo is None:
+            updated = updated.replace(tzinfo=timezone.utc)
+        if now - updated > timedelta(seconds=COLLECTION_PROGRESS_STALE_SECONDS):
+            continue
+        if newest is None or updated > newest[0]:
+            newest = (updated, manifest)
+    if newest is None:
+        return None
+    manifest = newest[1]
+    return {"logs": manifest.get("logs") or 0,
+            "caches": manifest.get("caches") or 0,
+            "username": manifest.get("username"),
+            "started_at": manifest.get("created_at"),
+            "updated_at": manifest.get("updated_at")}
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -314,6 +355,9 @@ def logs_status():
     if active is not None:
         payload['active_task'] = active.to_dict()
     payload['pending_import'] = _received_pending()
+    # Collecte du favori en cours (fragments déjà reçus sous frag-<run>) :
+    # la carte la suit dans le même bloc d'activité que les imports.
+    payload['collection_in_progress'] = _collection_in_progress()
     settings = get_settings_manager().get_app_settings()
     payload['full_collect_planned'] = settings.logs_collect_full_once
     # Périmètre choisi pour la prochaine collecte du favori (carte « Mes
@@ -459,7 +503,8 @@ def _receive_cors_headers(resp):
         resp.headers["Access-Control-Allow-Origin"] = origin
         resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = \
-            "Content-Type, X-MyGCFlow-Token"
+            "Content-Type, X-MyGCFlow-Token, " \
+            "X-MyGCFlow-Run-Id, X-MyGCFlow-Final"
         resp.headers["Access-Control-Allow-Private-Network"] = "true"
         resp.headers["Access-Control-Max-Age"] = "600"
         resp.headers["Vary"] = "Origin"
@@ -542,6 +587,11 @@ def _merge_fragment(folder: Path, incoming: dict):
                   "logs": [], "caches": [], "coverage": []}
 
     account = incoming.get("account") or {}
+    if not account.get("user_id") and not account.get("username"):
+        # Compte vide (le « hello » d'ouverture du favori) : ramené à {} —
+        # un dict non vide mais sans identité empêcherait un fragment
+        # « pseudo seul » ultérieur de renseigner le compte.
+        account = {}
     previous = merged.get("account") or {}
     if account.get("user_id") is not None:
         if (previous.get("user_id") is not None
@@ -586,6 +636,9 @@ def _merge_fragment(folder: Path, incoming: dict):
         json.dumps(merged, ensure_ascii=False), "utf-8")
     (folder / "manifest.json").write_text(json.dumps({
         "created_at": created, "kind": "fragments",
+        # Compteurs fusionnés, relus par le statut sans parser doc.json.
+        "logs": len(merged["logs"]), "caches": len(merged["caches"]),
+        "username": (merged.get("account") or {}).get("username"),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }, ensure_ascii=False), "utf-8")
     return merged, None

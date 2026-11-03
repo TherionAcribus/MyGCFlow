@@ -213,6 +213,36 @@
       state.runId = newRunId();
     }
 
+    // « Hello » : la collecte est annoncée tout de suite à l'application
+    // (bloc « Collecte en cours » de la carte) — elle n'apprendrait sinon
+    // l'existence du run qu'au premier point de sauvegarde, ~1 min plus
+    // tard. Document minimal conforme, SANS passer par fragment() :
+    // mygcflowGcLogsOrder figerait state.order sur un échantillon vide.
+    // En échec on continue quand même : les vrais fragments diront tout.
+    try {
+      await fetch(ORIGIN + '/api/logs/receive/fragment', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-MyGCFlow-Token': TOKEN,
+          'X-MyGCFlow-Run-Id': state.runId
+        },
+        body: JSON.stringify({
+          format: LOGS_FORMAT,
+          schema_version: LOGS_SCHEMA_VERSION,
+          exported_at: new Date().toISOString(),
+          account: { username: null, user_id: null },
+          coverage: [],
+          caches: [],
+          logs: []
+        })
+      });
+    } catch (e) {
+      console.warn('[mygcflow-logs] Hello non envoyé : ' + e.message);
+    }
+
     var send = async function (order) {
       var built = mygcflowGcLogsFinish(state, order);
       say(MESSAGES.sending);

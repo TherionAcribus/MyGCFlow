@@ -177,6 +177,62 @@ test('le favori reçoit l\'export : bandeau puis aperçu avant l\'import', async
 });
 
 
+test('la carte suit la progression de la collecte du favori', async ({ page }) => {
+  // Jeton extrait du lien javascript: servi (même méthode que le spec
+  // « bandeau puis aperçu »).
+  const bm = await page.request.get('/api/logs/bookmarklet');
+  const js = (await bm.json()).bookmarklet;
+  const token = /TOKEN\s*=\s*"([^"]+)"/.exec(js)[1];
+  expect(token).toBeTruthy();
+
+  const doc = JSON.parse(readFileSync(CONTRACT, 'utf-8'));
+  const runId = `e2e${Date.now().toString(36)}`;
+  const fragment = (final) => page.request.post('/api/logs/receive/fragment', {
+    headers: {
+      'X-MyGCFlow-Token': token,
+      'X-MyGCFlow-Run-Id': runId,
+      ...(final ? { 'X-MyGCFlow-Final': '1' } : {}),
+    },
+    data: doc,
+  });
+
+  // Un fragment non final : la collecte apparaît dans le statut
+  // (`collection_in_progress`), avec les compteurs fusionnés.
+  const posted = await fragment(false);
+  expect(posted.status()).toBe(202);
+  const counts = await posted.json();
+  await expect.poll(async () =>
+    (await (await page.request.get('/api/logs/status')).json()).collection_in_progress?.logs,
+    { timeout: 15_000 }).toBe(counts.logs);
+
+  await openReadyApp(page);
+  const activity = page.locator('#gcLogsActivity');
+  await expect(activity).toBeVisible({ timeout: 20_000 });
+  await expect(activity).toContainText('Collecte en cours');
+  await expect(activity).toContainText(`${counts.logs} logs`);
+  await expect(activity).toContainText(`${counts.caches} caches`);
+
+  // Scellement : la progression s'éteint, l'aperçu en attente prend le relais.
+  const sealed = await fragment(true);
+  expect(sealed.status()).toBe(202);
+  const importToken = (await sealed.json()).import_token;
+  expect(importToken).toBeTruthy();
+  await expect(activity).toBeHidden({ timeout: 20_000 });
+  await expect(page.locator('#gcLogsPendingAlert')).toBeVisible({ timeout: 20_000 });
+
+  // Les jetons de pending_log_imports/ sont partagés entre les specs :
+  // consommer l'aperçu (validation → import) pour ne pas laisser le
+  // bandeau « export en attente » affiché au spec suivant.
+  const commit = await page.request.post('/api/logs/import/commit',
+    { data: { import_token: importToken } });
+  expect(commit.status()).toBe(202);
+  await expect.poll(async () => {
+    const st = await (await page.request.get('/api/logs/status')).json();
+    return !st.active_task && st.logs > 0 && !st.pending_import;
+  }, { timeout: 30_000 }).toBe(true);
+});
+
+
 test('une cache sans position est placée depuis la modale de complétion', async ({ page }) => {
   await openReadyApp(page);
   await preview(page, CONTRACT);

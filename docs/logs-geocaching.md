@@ -409,6 +409,24 @@ ses fragments ayant expiré, la couverture du scellement serait mensongère.
 Un envoi final qui échoue laisse le plan à `done = file entière` : la
 reprise renvoie l'export sans rien relire.
 
+**Progression dans l'application** — la carte « Mes logs » suit la collecte
+pendant qu'elle tourne : le manifest de chaque `frag-<run>` porte les
+compteurs fusionnés (`logs`, `caches`, `username`, `updated_at`), écrits à
+chaque fragment, et `/api/logs/status` expose le run le plus récent sous
+`collection_in_progress` (`logs`, `caches`, `username`, `started_at`,
+`updated_at`). Le bloc d'activité de la carte affiche alors « Collecte en
+cours — N logs, N caches reçus… » au relevé de 4 s, sans verrouiller les
+boutons (aucun import ne tourne encore). Juste après le choix du run-id
+(reprise ou nouveau passage), le favori poste un fragment « hello » au
+document minimal — l'application sait que la collecte a commencé avant le
+premier point de sauvegarde (~une minute), sans toucher à l'ordre des
+dates : passer par le fragment ordinaire figerait `state.order` sur un
+échantillon vide. Un manifest non réécrit depuis 5 minutes
+(`COLLECTION_PROGRESS_STALE_SECONDS`) n'est plus exposé — un run interrompu
+n'apparaît pas « en cours » alors que son TTL de 7 jours le garde pour la
+reprise. Au scellement, `frag-<run>` est supprimé : la progression
+s'éteint d'elle-même et `pending_import` prend le relais.
+
 **Collecte incrémentale** — `GET /api/logs/receive/state` (mêmes jeton et
 CORS ; une GET, donc hors du garde-fou inter-sites qui ne vise que les
 mutations) répond au favori avant qu'il ne parte :
