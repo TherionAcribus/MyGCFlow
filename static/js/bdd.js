@@ -566,8 +566,12 @@ export function readBddValues({ settleFirstUse = false } = {}){
 // le moteur d'animation réécrit metadata.startDate/endDate avec la plage
 // choisie au démarrage d'une lecture (mapgl.js). Elle alimente les boutons
 // « Sélection » de l'onglet Animation.
-let selectionExtentStart = null;
-let selectionExtentEnd = null;
+// var et non let : ui.js appelle getSelectionDateExtent (updateAnimFilterInfo,
+// déclenché par la restauration des dates des datepickers) pendant sa propre
+// évaluation, avant celle de ce module — un let serait encore en zone morte
+// (ReferenceError).
+var selectionExtentStart = null;
+var selectionExtentEnd = null;
 
 export function getSelectionDateExtent() {
     return { start: selectionExtentStart, end: selectionExtentEnd };

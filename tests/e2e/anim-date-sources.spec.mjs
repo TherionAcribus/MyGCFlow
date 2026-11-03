@@ -138,6 +138,50 @@ test('filtre hors dates : puces « Sélection » proposent l\u2019étendue réel
   await expect(page.locator('#animSelectionStartInfo')).toBeVisible();
 });
 
+test('rechargement avec un filtre de dates persisté : aucune erreur JS', async ({ page }) => {
+  // Filtre de dates posé et persisté (localStorage filtersSelection) : au
+  // rechargement, l'init des datepickers restaure la valeur et émet change →
+  // updateAnimFilterInfo lit getSelectionDateExtent. Régression : les
+  // compteurs d'étendue de bdd.js étaient en let, encore en zone morte à ce
+  // stade → ReferenceError « Cannot access 'selectionExtentStart' ».
+  // Date de filtre DANS la plage des données (la valeur du champ de fin) :
+  // une date hors plage serait ramenée à la borne au rechargement et la
+  // valeur restaurée ne serait plus lisible dans le champ.
+  const filterDate = await page.locator('#datePickerEnd').inputValue();
+  await setFieldDate(page, '#datePickerStart', filterDate);
+  await expect(page.locator('#animFilterStartInfo')).toBeVisible();
+  // La persistance est debouncée (applySelectionChange) : attendre qu'elle
+  // soit effective avant de recharger, sinon la restauration n'a rien à lire.
+  // Début posé sur la valeur du champ de fin : les deux bornes persistées
+  // doivent coïncider — comparaison indépendante du format de date affiché.
+  await expect.poll(() => page.evaluate(() => {
+    const dates = JSON.parse(localStorage.getItem('filtersSelection') || '{}').dates || {};
+    return dates.startDate && dates.startDate === dates.endDate;
+  })).toBe(true);
+
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  // La restauration du filtre réécrit le datepicker pendant l'évaluation des
+  // modules (scripts deferred, avant DOMContentLoaded) : c'est ce change
+  // prématuré qui lisait selectionExtentStart en zone morte. setPickerDates
+  // émet aussi des change, mais plus tard (après db_status) : on ne compte
+  // que ceux émis avant DOMContentLoaded, preuve que le chemin visé a couru.
+  await page.addInitScript(() => {
+    window.__domReady = false;
+    window.__dateStartEarlyChanges = 0;
+    document.addEventListener('DOMContentLoaded', () => { window.__domReady = true; });
+    document.addEventListener('change', (e) => {
+      if (e.target?.id === 'datePickerStart' && !window.__domReady) window.__dateStartEarlyChanges++;
+    }, true);
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await expect(page.locator('#filtersCounter')).not.toBeEmpty();
+
+  expect(errors).toEqual([]);
+  expect(await page.evaluate(() => window.__dateStartEarlyChanges)).toBeGreaterThan(0);
+});
+
 test('les puces sont mutuellement exclusives sur les deux champs', async ({ page }) => {
   const custom = await otherDisplayedDate(page, '#animDateEnd', 2018);
   await setFieldDate(page, '#animDateEnd', custom);
