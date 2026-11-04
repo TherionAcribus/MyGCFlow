@@ -115,6 +115,13 @@ test('le mode « labs » désactive les filtres non applicables', async ({ page 
 
   // D/T/taille désactivés, « Adventure Lab » resté sélectionné dans les types.
   await expect(page.locator('#filterPanel')).toHaveAttribute('data-labs-only', '');
+  // Attributs et propriétaire désactivés comme D/T/taille : les Labs n'ont
+  // ni attributs GPX ni propriétaire filtrable. La recherche reste active —
+  // elle matche aussi le nom des Labs.
+  for (const id of ['selectDifficulty', 'selectTerrain', 'selectContainer', 'selectAttributes', 'selectOwners']) {
+    await expect(page.locator(`#${id}`)).toBeDisabled();
+  }
+  await expect(page.locator('#inputFilterSearch')).toBeEnabled();
   // La période de pose reste utilisable : les Labs portent leur publication.
   await expect(page.locator('#publishedDatePickerStart')).toBeEnabled();
   await expect(page.locator('#publishedDatePickerEnd')).toBeEnabled();
@@ -1087,11 +1094,14 @@ test('un import produit au plus un toast à la fois et un seul bilan final', asy
   expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
 
   // Bilan unique après rechargement : import + bascule de source fusionnés.
-  const toast = page.locator('.gcm-toast.show');
-  await expect(toast).toHaveCount(1);
-  await expect(toast).toContainText('12 étapes importées');
-  await expect(toast).toContainText('affichable');
-  await expect(toast).toContainText('maintenant affichés');
+  // Onglet Données affiché → note de la carte ; masqué → toast : le bilan
+  // vit dans l'un des deux, jamais dans les deux.
+  const bilan = page.locator('#labsReportNote, .gcm-toast.show')
+    .filter({ hasText: 'importée' });
+  await expect(bilan).toHaveCount(1);
+  await expect(bilan).toContainText('12 étapes importées');
+  await expect(bilan).toContainText('affichable');
+  await expect(bilan).toContainText('maintenant affichés');
 });
 
 
@@ -1103,9 +1113,9 @@ test('le même parcours à 390 px n\'empile pas les toasts', async ({ page }) =>
   await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
 
   expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
-  const toast = page.locator('.gcm-toast.show');
-  await expect(toast).toHaveCount(1);
-  await expect(toast).toContainText('importée');
+  // Bilan : note de la carte (onglet visible) ou toast — un seul des deux.
+  await expect(page.locator('#labsReportNote, .gcm-toast.show')
+    .filter({ hasText: 'importée' })).toHaveCount(1);
 });
 
 
@@ -1148,12 +1158,14 @@ test('un import suivi d\'un placement produit un seul bilan final', async ({ pag
   releaseFetch = true;
   await expect(activity).toBeHidden({ timeout: 15_000 });
 
-  // Un seul toast, portant l'import ET le placement.
-  const toast = page.locator('.gcm-toast.show');
-  await expect(toast).toHaveCount(1, { timeout: 20_000 });
-  await expect(toast).toContainText('12 étapes importées');
-  await expect(toast).toContainText('8 étapes placées');
-  await expect(toast).toContainText('4 étapes restent à compléter');
+  // Un seul bilan, portant l'import ET le placement : note de la carte
+  // (onglet visible) ou toast — jamais les deux.
+  const bilan = page.locator('#labsReportNote, .gcm-toast.show')
+    .filter({ hasText: 'importée' });
+  await expect(bilan).toHaveCount(1, { timeout: 20_000 });
+  await expect(bilan).toContainText('12 étapes importées');
+  await expect(bilan).toContainText('8 étapes placées');
+  await expect(bilan).toContainText('4 étapes restent à compléter');
   expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
 });
 
@@ -1257,10 +1269,12 @@ test('une tâche longue qui progresse n\'est jamais interrompue', async ({ page 
   const activity = page.locator('#labsActivity');
   await expect(activity).toBeVisible({ timeout: 15_000 });
 
-  // Aucun toast de blocage : la tâche va à son terme et le bilan arrive.
+  // Aucun toast de blocage : la tâche va à son terme et le bilan arrive
+  // (note de la carte — onglet visible — ou toast hors onglet).
   await expect(activity).toBeHidden({ timeout: 15_000 });
   await expect(page.locator('.gcm-toast.show', { hasText: 'bloquée' })).toHaveCount(0);
-  await expect(page.locator('.gcm-toast.show', { hasText: 'importée' }))
+  await expect(page.locator('#labsReportNote, .gcm-toast.show')
+    .filter({ hasText: 'importée' }))
     .toHaveCount(1, { timeout: 15_000 });
 });
 
@@ -1335,15 +1349,17 @@ test('la récupération est annulable et le bilan le dit', async ({ page }) => {
   await expect(activity).toContainText('Annulation en cours');
   await expect.poll(() => cancelCalls).toBe(1);
 
-  // La tâche finit son lot puis rend un bilan annulé — un seul toast.
+  // La tâche finit son lot puis rend un bilan annulé — un seul bilan :
+  // note de la carte (onglet visible) ou toast hors onglet.
   releaseFetch = true;
   await expect(activity).toBeHidden({ timeout: 15_000 });
   await expect(cancelBtn).toBeHidden();
-  const toast = page.locator('.gcm-toast.show');
-  await expect(toast).toHaveCount(1, { timeout: 20_000 });
-  await expect(toast).toContainText('6 étapes placées sur la carte.');
-  await expect(toast).toContainText('Récupération interrompue');
-  await expect(toast).toContainText('déjà obtenues sont conservées');
+  const bilan = page.locator('#labsReportNote, .gcm-toast.show')
+    .filter({ hasText: 'étapes placées' });
+  await expect(bilan).toHaveCount(1, { timeout: 20_000 });
+  await expect(bilan).toContainText('6 étapes placées sur la carte.');
+  await expect(bilan).toContainText('Récupération interrompue');
+  await expect(bilan).toContainText('déjà obtenues sont conservées');
 });
 
 

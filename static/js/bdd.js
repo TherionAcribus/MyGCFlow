@@ -10,6 +10,7 @@ import { ownerAliveInWindow } from './owner_model.mjs';
 import { isAudioFile } from './music_track.mjs';
 import { isImageFile } from './images_model.mjs';
 import { countLabel } from './utils.js';
+import { featureOwner, matchesAttributes, matchesSearch, normalizeSearchText } from './filter_model.mjs';
 
 export let json_data = null;
 export const metadata = {};
@@ -827,6 +828,9 @@ function clearLocalData() {
     pointsByDateRevision++;
     totalCaches = 0;
     lastDbHasData = false;
+    // Options des filtres inclusifs (attributs, propriétaire) : vidées —
+    // elles sont reconstruites sur le jeu chargé (refreshAttributeOwnerFilters).
+    try { pkg.refreshAttributeOwnerFilters?.(); } catch(e) {}
     pkg.refreshStatsPanels?.();
     pkg.refreshTimelineBar?.();
     pkg.refreshImagesForData?.();
@@ -1042,6 +1046,16 @@ function filterFeaturesClientSide(features, sel) {
     const pEnd = normIsoDate(sel.published_dates?.endDate);
     const pubActive = !!(pStart && pEnd);
 
+    // Filtres INCLUSIFS (attributs, propriétaire, recherche — filter_model.mjs) :
+    // sémantique inversée des listes exclusives ci-dessus — une sélection VIDE
+    // est NEUTRE (le critère ne retire rien), non vide = la feature doit
+    // satisfaire le critère. Attributs et propriétaire ne s'appliquent pas aux
+    // Labs (pas d'attributs GPX ; l'owner qu'ils portent n'est pas filtrable,
+    // cf. applyDiscoverySourceMode) ; la recherche s'applique à tous.
+    const wantedAttrs = new Set(sel.attributes || []);
+    const wantedOwners = new Set(sel.owners || []);
+    const searchNeedle = normalizeSearchText(sel.search || '');
+
     const matchFloat = (val, set) => {
         if (set.size === 0) return true;
         const n = Number(val);
@@ -1067,6 +1081,10 @@ function filterFeaturesClientSide(features, sel) {
                 const pd = normIsoDate(p.published_date);
                 if (!pd || pd < pStart || pd > pEnd) continue;
             }
+            // Attributs : la cache doit porter TOUS ceux demandés (inc ≠ '0').
+            if (wantedAttrs.size && !matchesAttributes(p, wantedAttrs)) continue;
+            // Propriétaire : owner (placed_by en repli) ∈ sélection (ANY).
+            if (wantedOwners.size && !wantedOwners.has(featureOwner(p))) continue;
         } else if (pubActive) {
             // Période de pose : un Lab n'y est soumis que si sa publication
             // est connue — inconnue, elle ne le retire pas.
@@ -1082,6 +1100,9 @@ function filterFeaturesClientSide(features, sel) {
             const df = normIsoDate(p.date_find);
             if (!df || df < dStart || df > dEnd) continue;
         }
+        // Recherche texte : toutes features confondues, Labs comprises — le
+        // match porte sur gc_code ET name, ce qui existe dans les deux cas.
+        if (searchNeedle && !matchesSearch(p, searchNeedle)) continue;
         out.push(f);
     }
     return out;
@@ -1130,7 +1151,11 @@ export function filterLikeCurrentSelection(features) {
         if (p?.source_kind === 'owned') return ownerAliveInWindow(p, range.end);
         return within(p?.date_find, range);
     };
-    const rest = { ...lastSelection, sources: undefined, dates: undefined, published_dates: undefined };
+    // « attributes » écarté : les features annexes (DNF, caches posées) ne
+    // portent pas d'attributs GPX — le critère les retirerait toutes.
+    // « owners » et « search » s'appliquent : elles portent owner, name et
+    // gc_code (dnf_geojson.py / owner_geojson.py).
+    const rest = { ...lastSelection, sources: undefined, dates: undefined, published_dates: undefined, attributes: undefined };
     return filterFeaturesClientSide(features, rest).filter((f) =>
         aliveInWindow(f?.properties, found) && within(f?.properties?.published_date, published));
 }
@@ -1647,6 +1672,11 @@ export function readBdd(){
                 // Conserver le jeu complet pour le filtrage client-side ultérieur.
                 baseGeojson = result.geojson;
                 lastSelection = null;
+                // Options des filtres inclusifs (attributs, propriétaire)
+                // reconstruites sur le jeu frais — avant le filtrage déclenché
+                // par setPickerDates, pour que la sélection persistée
+                // s'applique dès ce premier cycle.
+                try { pkg.refreshAttributeOwnerFilters?.(); } catch(e) { console.warn('refreshAttributeOwnerFilters error:', e); }
                 // La préférence « sources affichées » s'applique dès le
                 // chargement, contrairement aux filtres de sélection qui
                 // attendent le premier changement (comportement historique).
@@ -1991,6 +2021,10 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
 
                     // Conserver le jeu complet pour le filtrage client-side ultérieur.
                     baseGeojson = geojson;
+                    // Options des filtres inclusifs (attributs, propriétaire)
+                    // reconstruites sur le jeu frais (cf. readBdd) — avant le
+                    // filtrage déclenché par setPickerDates.
+                    try { pkg.refreshAttributeOwnerFilters?.(); } catch(e) { console.warn('refreshAttributeOwnerFilters error:', e); }
                     // « Sources affichées » appliquée dès l'affichage initial
                     // (cf. readBdd).
                     const displayFeatures = applyDiscoverySourcesAtLoad(geojson?.features || []);

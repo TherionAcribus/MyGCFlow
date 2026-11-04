@@ -64,6 +64,7 @@ import {
     TRAIL_DEFAULTS,
     TRAIL_DURATION_RANGE,
 } from './travel_trail.mjs';
+import { attributeKey, attributePresent, featureAttributes, featureOwner } from './filter_model.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -89,6 +90,9 @@ var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain,
 // (ReferenceError au démarrage). selectCounty n'existe qu'en mode Évolution.
 var selectType, selectTerrain, selectDifficulty, selectContainer;
 var selectCounty, btnAllCounty, btnNoneCounty;
+// Filtres inclusifs du mode principal (Attributs, Propriétaire, Recherche) —
+// absents des autres pages (options reconstruites sur les données chargées).
+var selectAttributes, selectOwners, inputFilterSearch;
 // Filtres propres à la page Mes poses (/poses), absents des autres pages.
 var selectPosesStatus, selectPosesFinds, btnAllPosesStatus, btnNonePosesStatus, btnAllPosesFinds, btnNonePosesFinds;
 
@@ -134,7 +138,22 @@ const FILTER_OPTION_COUNT_DIMS = {
     selectContainer: { prop: 'container', numeric: false },
     selectDifficulty: { prop: 'difficulty', numeric: true },
     selectTerrain: { prop: 'terrain', numeric: true },
+    // Dimensions multi-valeurs (selects dynamiques) : valuesOf(props) renvoie
+    // les valeurs à compter pour la feature — clés d'attributs présents
+    // (inc ≠ '0') pour selectAttributes, owner/placed_by pour selectOwners.
+    // Les Labs n'ont ni attributs ni propriétaire filtrable : exclus du
+    // comptage, comme du critère (filterFeaturesClientSide, bdd.js).
+    selectAttributes: { valuesOf: (p) => (p?.source_kind === 'lab') ? []
+        : featureAttributes(p).filter(attributePresent).map(attributeKey) },
+    selectOwners: { valuesOf: (p) => (p?.source_kind === 'lab') ? []
+        : [featureOwner(p)].filter(Boolean) },
 };
+
+// Selects des filtres inclusifs : sémantique inversée des listes exclusives —
+// vide = neutre (critère inactif). Résumé compact, état « par défaut » et
+// reset propres : voir updateCompactFilterSummary / filtersAreDefault /
+// resetAllFilters. Déclaré ici pour être hors TDZ pendant l'init.
+const INCLUSIVE_FILTER_SELECTS = new Set(['selectAttributes', 'selectOwners']);
 var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor, cpFlashBorderColor;
@@ -987,6 +1006,16 @@ const selectState = document.getElementById('selectState');
     if (selectCountry) selectCountry.addEventListener('change', onSelectionChangedDebounced);
     if (selectState) selectState.addEventListener('change', onSelectionChangedDebounced);
 
+// Filtres inclusifs (mode principal) : Attributs / Propriétaire / Recherche.
+// Options dynamiques reconstruites à chaque chargement
+// (refreshAttributeOwnerFilters) ; le champ texte suit le même debounce.
+selectAttributes = document.getElementById('selectAttributes');
+selectOwners = document.getElementById('selectOwners');
+    if (selectAttributes) selectAttributes.addEventListener('change', onSelectionChangedDebounced);
+    if (selectOwners) selectOwners.addEventListener('change', onSelectionChangedDebounced);
+inputFilterSearch = document.getElementById('inputFilterSearch');
+    if (inputFilterSearch) inputFilterSearch.addEventListener('input', onSelectionChangedDebounced);
+
 // datepicker (trouvaille)
 const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
@@ -1096,6 +1125,10 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     if (selectContainer) initFilterTomSelect(selectContainer);
     if (selectPosesStatus) initFilterTomSelect(selectPosesStatus);
     if (selectPosesFinds) initFilterTomSelect(selectPosesFinds);
+    // Filtres inclusifs : Tom Select dès l'init (résumé = placeholder tant
+    // qu'aucune donnée n'a peuplé les options — cf. refreshAttributeOwnerFilters).
+    if (selectAttributes) initFilterTomSelect(selectAttributes);
+    if (selectOwners) initFilterTomSelect(selectOwners);
 
     // Initialiser Tempus Dominus sur les datepickers de filtre. Le format
     // affiché suit la préférence de format de date (utils.js) ; les valeurs
@@ -3073,7 +3106,10 @@ async function onDiscoverySourcesChange() {
 function applyDiscoverySourceMode(mode) {
     if (!selectDiscoverySources) return;
     const labsOnly = mode === 'labs';
-    for (const sel of [selectDifficulty, selectTerrain, selectContainer]) {
+    // Attributs et propriétaire sont désactivés comme D/T/taille : les Labs
+    // n'ont pas d'attributs GPX et leur owner n'est pas un critère de
+    // filtrage. La recherche reste active — elle matche aussi le nom des Labs.
+    for (const sel of [selectDifficulty, selectTerrain, selectContainer, selectAttributes, selectOwners]) {
         if (!sel) continue;
         const ts = getTomSelect(sel);
         if (ts) { labsOnly ? ts.disable() : ts.enable(); }
@@ -3087,7 +3123,7 @@ function applyDiscoverySourceMode(mode) {
     const hint = document.getElementById('discoverySourcesHint');
     if (hint) {
         hint.textContent = labsOnly
-            ? t('Difficulté, terrain et taille ne s\'appliquent pas aux Lab Caches.')
+            ? t('Difficulté, terrain, taille, attributs et propriétaire ne s\'appliquent pas aux Lab Caches.')
             : '';
     }
     if (labsOnly && selectType) {
@@ -4396,6 +4432,11 @@ function collectSelectedValues(){
     if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value).filter(v => v !== '');
     // Département : présent seulement en mode Évolution (ignoré sinon).
     if (selectCounty) selectedValues["counties"] = Array.from(selectCounty.selectedOptions).map(o => o.value).filter(v => v !== '');
+    // Filtres inclusifs (attributs / propriétaire / recherche) : sélection
+    // vide = critère neutre — le tableau vide est persisté tel quel.
+    if (selectAttributes) selectedValues["attributes"] = inclusiveSelectValues(selectAttributes, 'attributes');
+    if (selectOwners) selectedValues["owners"] = inclusiveSelectValues(selectOwners, 'owners');
+    if (inputFilterSearch) selectedValues["search"] = (inputFilterSearch.value || '').trim();
     // Les champs affichent le format choisi par l'utilisateur (jj/mm ou mm/jj) :
     // tout ce qui part au serveur ou entre dans le filtrage local est ramené
     // en ISO « yyyy-mm-dd », comparable lexicographiquement (bdd.js/normIsoDate).
@@ -4414,6 +4455,25 @@ function collectSelectedValues(){
         selectedValues["sources"] = getDiscoverySourceKinds();
     }
     return selectedValues;
+}
+
+// Valeurs d'un filtre inclusif à options dynamiques (Attributs, Propriétaire).
+// Quand le select porte de vraies options (peuplées depuis les données par
+// refreshAttributeOwnerFilters), sa sélection fait foi. Tant qu'il n'a que
+// son placeholder — au rechargement, le collect debouncé peut précéder le
+// peuplement ; idem après un vidage de base — la sélection persistée est
+// reconduite telle quelle : collecter « [] » écrirait un vide par-dessus
+// filtersSelection et perdrait la sélection que le peuplement doit restaurer.
+function inclusiveSelectValues(selectEl, key) {
+    const hasRealOptions = Array.from(selectEl.options)
+        .some(o => !o.disabled && o.value !== '');
+    if (hasRealOptions) {
+        return Array.from(selectEl.selectedOptions).map(o => o.value).filter(v => v !== '');
+    }
+    try {
+        const saved = JSON.parse(localStorage.getItem('filtersSelection') || 'null');
+        return Array.isArray(saved?.[key]) ? saved[key] : [];
+    } catch (_) { return []; }
 }
 
 // Rendu d'une option de filtre : le libellé suivi de « (n) », nombre de
@@ -4448,9 +4508,19 @@ function refreshFilterOptionCounts() {
     for (const [selectId, dim] of Object.entries(FILTER_OPTION_COUNT_DIMS)) {
         const selectEl = document.getElementById(selectId);
         if (!selectEl) continue;
-        // Comptage en une passe : valeur de propriété -> nombre de features.
+        // Comptage en une passe : valeur(s) de propriété -> nombre de
+        // features. valuesOf (dimensions multi-valeurs : attributs,
+        // propriétaire) renvoie toutes les valeurs comptées de la feature ;
+        // prop/numeric reste le chemin à valeur unique des options fixes.
         const tally = new Map();
         for (const f of eligible) {
+            if (dim.valuesOf) {
+                for (const v of dim.valuesOf(f?.properties)) {
+                    if (v === null || v === undefined || v === '') continue;
+                    tally.set(v, (tally.get(v) || 0) + 1);
+                }
+                continue;
+            }
             const raw = f?.properties?.[dim.prop];
             if (raw === null || raw === undefined || raw === '') continue;
             const key = dim.numeric ? Number(raw) : String(raw);
@@ -4530,6 +4600,18 @@ function updateCompactFilterSummary(selectEl, all = null, none = null){
     if (!ts) return;
     const options = Array.from(selectEl.options).filter(opt => !opt.disabled && opt.value !== '');
     const selectedCount = options.filter(opt => opt.selected).length;
+    if (INCLUSIVE_FILTER_SELECTS.has(selectEl.id)) {
+        // Filtres inclusifs : vide = NEUTRE (le critère ne filtre rien) —
+        // afficher le placeholder du champ plutôt que « Aucun », qui ferait
+        // croire à une exclusion ; sinon « n / total » comme ailleurs.
+        const placeholderText = selectEl.querySelector('option[disabled][value=""]')?.textContent?.trim()
+            || selectEl.getAttribute('aria-label') || '';
+        const summary = selectedCount === 0 ? placeholderText : `${selectedCount} / ${options.length}`;
+        ts.control.dataset.summary = summary;
+        ts.control.setAttribute('aria-label', `${selectEl.getAttribute('aria-label') || ''}: ${summary}`);
+        ts.control.title = selectedCount > 0 ? getSelectedValuesText(selectEl) : '';
+        return;
+    }
     const isAll = all ?? (options.length > 0 && selectedCount === options.length);
     const isNone = none ?? selectedCount === 0;
     const summary = isAll
@@ -4802,6 +4884,89 @@ function populateCountryStateSelects(tree){
     });
 }
 
+// Attributs et propriétaires : options reconstruites à chaque chargement du
+// jeu principal — comme Pays/Région via /api/country_state, mais calculées
+// ici sur baseGeojson (bdd.js) puisque le jeu complet est déjà en mémoire.
+// Appelée par bdd.js à chaque pose/vidage de baseGeojson. Ce sont des
+// filtres INCLUSIFS : aucune option cochée par défaut (vide = neutre) ;
+// les valeurs persistées dans filtersSelection qui existent encore dans
+// les données sont recochées, les autres disparaissent avec elles. Les
+// Labs n'ont ni attributs ni propriétaire filtrable : exclus des options.
+export function refreshAttributeOwnerFilters() {
+    const selAttrs = document.getElementById('selectAttributes');
+    const selOwners = document.getElementById('selectOwners');
+    if (!selAttrs && !selOwners) return; // pages sans ce panneau (Évolution, poses)
+    const features = Array.isArray(pkg.baseGeojson?.features) ? pkg.baseGeojson.features : [];
+
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem('filtersSelection') || 'null'); } catch (_) {}
+    const savedAttrs = new Set(Array.isArray(saved?.attributes) ? saved.attributes : []);
+    const savedOwners = new Set(Array.isArray(saved?.owners) ? saved.owners : []);
+
+    const attrLabels = new Map(); // clé attributeKey -> libellé (premier nom rencontré)
+    const owners = new Set();
+    for (const f of features) {
+        const p = f?.properties || {};
+        if ((p.source_kind || 'geocache') === 'lab') continue;
+        for (const a of featureAttributes(p)) {
+            const key = attributeKey(a);
+            if (key && !attrLabels.has(key)) attrLabels.set(key, String(a?.name || key));
+        }
+        const ow = featureOwner(p);
+        if (ow) owners.add(ow);
+    }
+    rebuildInclusiveSelect(selAttrs, [...attrLabels.entries()], t('Filtrer par attribut'), savedAttrs);
+    rebuildInclusiveSelect(selOwners, [...owners].map(v => [v, v]), t('Filtrer par propriétaire'), savedOwners);
+    // Assainit la sélection persistée : une valeur sauvegardée absente du
+    // nouveau jeu n'est pas recochée ; sans réécriture, elle resterait dans
+    // filtersSelection et inclusiveSelectValues la reconduirait tant que le
+    // select n'a pas d'option réelle — filtre « invisible » excluant tout
+    // sans option à décocher.
+    if (saved && typeof saved === 'object') {
+        const restoredOf = (sel) => sel
+            ? Array.from(sel.selectedOptions).map(o => o.value).filter(v => v !== '')
+            : [];
+        saved.attributes = restoredOf(selAttrs);
+        saved.owners = restoredOf(selOwners);
+        try { localStorage.setItem('filtersSelection', JSON.stringify(saved)); } catch (_) {}
+    }
+    // Le mode « Labs seuls » désactive ces selects via Tom Select : le
+    // destroy/recreate du peuplement aurait perdu l'état — le reposer.
+    applyDiscoverySourceMode(getDiscoverySourcesMode());
+    // Compteurs « (n) » des options fraîches + résumés des contrôles fermés.
+    refreshFilterOptionCounts();
+    updateFilterInfos();
+}
+
+// Reconstruit les options d'un select de filtre inclusif (Attributs,
+// Propriétaire) : placeholder + options triées par libellé, cochées quand
+// leur valeur est dans `keep` (sélection persistée). Le Tom Select est
+// détruit avant la réécriture du <select> natif — même motif que
+// populateCountryStateSelects — puis recréé s'il reste des options.
+function rebuildInclusiveSelect(selectEl, entries, placeholderText, keep) {
+    if (!selectEl) return;
+    try { const ts = getTomSelect(selectEl); if (ts) ts.destroy(); } catch (_) {}
+    selectEl.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.textContent = placeholderText;
+    selectEl.appendChild(placeholder);
+    const frag = document.createDocumentFragment();
+    const sorted = entries.slice().sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: 'base' }));
+    for (const [value, label] of sorted) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        opt.selected = keep.has(value);
+        frag.appendChild(opt);
+    }
+    selectEl.appendChild(frag);
+    if (selectEl.options.length > 1) {
+        try { initFilterTomSelect(selectEl); } catch (_) {}
+    }
+}
+
 function persistSelectedValues(values){
     try {
         localStorage.setItem('filtersSelection', JSON.stringify(values));
@@ -4860,6 +5025,13 @@ function restoreSelectedValues(){
         const pubEndDate = pkg.parseDateInput(values.published_dates?.endDate);
         if (pubStart && pubStartDate) { setTdDate(pubStart, pubStartDate); pubStart.value = formatDateForPickers(pubStartDate); }
         if (pubEnd && pubEndDate) { setTdDate(pubEnd, pubEndDate); pubEnd.value = formatDateForPickers(pubEndDate); }
+        // Recherche : le champ existe dès l'init, sa valeur se restaure
+        // directement. Attributs et propriétaire, eux, sont restaurés au
+        // peuplement de leurs options (refreshAttributeOwnerFilters) — il
+        // n'y a encore rien à cocher ici.
+        if (inputFilterSearch && typeof values.search === 'string') {
+            inputFilterSearch.value = values.search;
+        }
         // refresh UI (Tom Select)
         if (selectType) refreshTomSelect(selectType);
         if (selectDifficulty) refreshTomSelect(selectDifficulty);
@@ -4933,6 +5105,11 @@ function resetAllFilters(){
         selectAllOptions(selectCounty);
         selectAllOptions(selectPosesStatus);
         selectAllOptions(selectPosesFinds);
+        // Filtres inclusifs : l'état neutre est la sélection VIDE (inverse
+        // des listes exclusives) — « Tout » n'aurait pas de sens ici.
+        deselectAllOptions(selectAttributes);
+        deselectAllOptions(selectOwners);
+        if (inputFilterSearch) inputFilterSearch.value = '';
         // Dates : reset aux valeurs par défaut
         resetStartDateToDefault();
         resetEndDateToDefault();
@@ -4963,6 +5140,10 @@ function updateFilterInfos(){
     updateFilterInfoFor(selectCountryEl, btnAllCountry, btnNoneCountry);
     updateFilterInfoFor(selectStateEl, btnAllState, btnNoneState);
     updateFilterInfoFor(selectCounty, btnAllCounty, btnNoneCounty);
+    // Filtres inclusifs : pas de boutons Tout/Aucun — seul le résumé du
+    // contrôle fermé est rafraîchi (branche dédiée d'updateCompactFilterSummary).
+    updateFilterInfoFor(selectAttributes, null, null);
+    updateFilterInfoFor(selectOwners, null, null);
     updateFilterInfoFor(selectPosesStatus, btnAllPosesStatus, btnNonePosesStatus);
     updateFilterInfoFor(selectPosesFinds, btnAllPosesFinds, btnNonePosesFinds);
 }
@@ -5039,6 +5220,7 @@ export function filtersAreDefault(){
         document.getElementById('selectCountry'),
         document.getElementById('selectState'),
         selectCounty,
+        selectAttributes, selectOwners,
         selectPosesStatus, selectPosesFinds,
     ];
     for (const sel of selects) {
@@ -5046,8 +5228,13 @@ export function filtersAreDefault(){
         // Une liste sans option réelle (base vide, pas de donnée
         // géographique) n'est pas un filtre actif : critère ignoré.
         const hasReal = Array.from(sel.options).some(o => !o.disabled && o.value !== '');
-        if (hasReal && !areAllSelected(sel)) return false;
+        if (!hasReal) continue;
+        // Filtres inclusifs : l'état neutre est la sélection VIDE — toute
+        // option cochée est un filtre actif (inverse des listes exclusives).
+        if (INCLUSIVE_FILTER_SELECTS.has(sel.id) ? !areNoneSelected(sel) : !areAllSelected(sel)) return false;
     }
+    // Recherche : neutre = champ vide.
+    if (inputFilterSearch && (inputFilterSearch.value || '').trim() !== '') return false;
     return datePickerAtDefault('#datePickerStart', defaultStartDate)
         && datePickerAtDefault('#datePickerEnd', defaultEndDate)
         && datePickerAtDefault('#publishedDatePickerStart', defaultPublishedStartDate)

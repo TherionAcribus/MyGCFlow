@@ -124,6 +124,36 @@
     <!-- Ligne 5 : Pays et Régions/États -->
     {% include '_filter_country_state.html' %}
 
+    <!-- Ligne 6 : Attributs / Propriétaire / Recherche — filtres INCLUSIFS,
+         propres au mode principal (absents du gabarit Évolution) : contrairement
+         aux listes ci-dessus, une sélection vide est NEUTRE (critère inactif).
+         Pas de boutons « Tout/Aucun » : « Tout sélectionner » n'aurait pas de
+         sens pour un critère qui exige de cocher pour filtrer. Les options
+         Attributs/Propriétaire sont peuplées depuis les données chargées
+         (refreshAttributeOwnerFilters, ui.js). Attributs = ET logique (la cache
+         doit porter chaque attribut choisi, inc ≠ '0') ; Propriétaire = OU
+         (owner/placed_by dans la sélection) ; Recherche = sous-chaîne sur le
+         code ou le nom, accents ignorés, Labs compris. -->
+    <div class="row g-2">
+        <div class="mb-3 col-12 col-md-4 filter-field">
+            <label class="form-label" for="selectAttributes">{{ _("Attributs") }}</label>
+            <select multiple id="selectAttributes" class="form-select filter-select" aria-label="{{ _('Attributs') }}">
+                <option value="" disabled selected>{{ _("Filtrer par attribut") }}</option>
+            </select>
+            <p class="form-hint text-muted mb-0">{{ _("La cache doit porter tous les attributs choisis.") }}</p>
+        </div>
+        <div class="mb-3 col-12 col-md-4 filter-field">
+            <label class="form-label" for="selectOwners">{{ _("Propriétaire") }}</label>
+            <select multiple id="selectOwners" class="form-select filter-select" aria-label="{{ _('Propriétaire') }}">
+                <option value="" disabled selected>{{ _("Filtrer par propriétaire") }}</option>
+            </select>
+        </div>
+        <div class="mb-3 col-12 col-md-4 filter-field">
+            <label class="form-label" for="inputFilterSearch">{{ _("Recherche") }}</label>
+            <input id="inputFilterSearch" type="search" class="form-control" aria-label="{{ _('Recherche') }}" placeholder="{{ _('Code ou nom de cache') }}">
+        </div>
+    </div>
+
     <!-- Caches « locationless » (ex. GC9FAVE) : leur position dans le GPX est
          fictive — affichée, elle planterait un point (et un trajet) là où
          l'utilisateur n'est jamais allé. Ce n'est pas un filtre (elles restent
