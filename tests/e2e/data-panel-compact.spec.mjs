@@ -39,10 +39,11 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   // Bilan d'import : écrit dans la note de la carte (onglet Données
-  // visible) — aucun toast de bilan ne recouvre le panneau.
+  // visible) — aucun toast de bilan ne recouvre le panneau. La note porte
+  // le résumé remonté par le serveur (compteurs de l'import).
   const bddNote = page.locator('#bddReportNote');
   await expect(bddNote).toBeVisible();
-  await expect(bddNote).toContainText('succès');
+  await expect(bddNote).toContainText('6 géocaches importées');
   await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Fichier chargé' })).toHaveCount(0);
 
   // La zone d'import détaillée disparaît, la commande compacte la remplace
@@ -187,5 +188,5 @@ test('réimport : le diff détaille nouvelles, retirées et inchangées', async 
   await dialog.getByRole('button', { name: 'Remplacer ma base' }).click();
   await expect.poll(() => commits, { timeout: 45_000 }).toBe(1);
   await expect(page.locator('#filtersCounter')).toContainText('2 / 2', { timeout: 45_000 });
-  await expect(page.locator('#bddReportNote')).toContainText('succès');
+  await expect(page.locator('#bddReportNote')).toContainText('2 géocaches importées');
 });

@@ -53,7 +53,8 @@ test('saut de la barre de chronologie sur une grosse base', async ({ page }) => 
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
   await page.locator('#file-input').setInputFiles(file);
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 300_000 });
   await expect.poll(async () => page.evaluate(async () => (await import('/static/js/index.js')).pointsByDate.size),
     { timeout: 300_000 }).toBeGreaterThan(100);

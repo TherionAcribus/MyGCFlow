@@ -30,7 +30,10 @@ async function openWithData(page, logsFile = CONTRACT) {
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
   await page.locator('#file-input').setInputFiles(MY_FINDS);
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  // Bilan d'import : note inline quand l'onglet Données est affiché,
+  // toast sinon — le texte est le même dans les deux cas.
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('#filtersCounter')).toContainText('2 / 2', { timeout: 30_000 });
   // Les filtres se réappliquent encore un peu après l'import, chacun par un

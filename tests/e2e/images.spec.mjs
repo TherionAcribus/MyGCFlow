@@ -40,7 +40,8 @@ async function openWithFixture(page, hash = '') {
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
   await page.locator('#file-input').setInputFiles(FIXTURE);
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6');
 }

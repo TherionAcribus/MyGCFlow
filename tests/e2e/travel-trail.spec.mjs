@@ -24,7 +24,8 @@ async function openWithFixture(page) {
   // sinon son addVector() tardif (qui retire le trait : nouvelles données)
   // tombe pendant la lecture ou l'enregistrement. Le toast « Affichage des
   // points » naît avec le message de succès et disparaît après cet addVector().
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Chargement et affichage des points' }).first())
     .toBeHidden({ timeout: 30_000 });

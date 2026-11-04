@@ -41,7 +41,10 @@ export async function openWithFixture(page, hash = '', fixture = FIXTURE, expect
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
   await page.locator('#file-input').setInputFiles(fixture);
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  // Bilan d'import : note inline quand l'onglet Données est affiché
+  // (hash ''), toast sinon (hash '#stats'…) — même texte dans les deux cas.
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Chargement et affichage des points' }).first())
     .toBeHidden({ timeout: 30_000 });

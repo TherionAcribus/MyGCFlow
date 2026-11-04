@@ -26,7 +26,10 @@ async function openWithFixture(page) {
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
   await page.locator('#file-input').setInputFiles(FIXTURE);
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  // Bilan d'import : note inline quand l'onglet Données est affiché,
+  // toast sinon — même texte dans les deux cas.
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Chargement et affichage des points' }).first())
     .toBeHidden({ timeout: 30_000 });
@@ -566,7 +569,8 @@ async function openWith(page, file, count) {
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
   await page.locator('#file-input').setInputFiles(file);
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
+  await expect(page.locator('#bddReportNote, .gcm-toast')
+    .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('#filtersCounter')).toContainText(`${count} / ${count}`);
   await expect.poll(async () => (await bar(page)).state !== null).toBe(true);

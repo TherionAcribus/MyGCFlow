@@ -10,6 +10,7 @@ import zipfile
 from typing import Optional
 
 import paths
+import lab_formats
 import lab_geojson
 import lab_store
 import log_formats
@@ -279,6 +280,28 @@ def _read_gpx_header(source):
 # l'absence de région, pas une région nommée « None ». Même règle pour le pays,
 # par prudence (jamais observé). Partagé avec la migration v7.
 GEO_PLACEHOLDERS = frozenset({"none"})
+
+# Type GPX des caches « locationless » (ex. GC9FAVE) : leur position dans le
+# fichier est fictive — ce n'est pas un lieu où l'utilisateur est allé.
+# Même constante que LOCATIONLESS_CACHE_TYPE (utils.js) / LOCATIONLESS_TYPE
+# (stats_model.mjs) côté frontend.
+LOCATIONLESS_CACHE_TYPE = 'Locationless (Reverse) Cache'
+
+
+def _has_usable_coords(cache):
+    """Position exploitable pour une cache importée : coordonnées numériques,
+    finies, dans les bornes et différentes de (0,0) — la même règle que
+    findPosition (stats_model.mjs). Une cache « locationless » compte comme
+    sans position même si le fichier en porte une (elle est fictive)."""
+    if cache.get('cache_type') == LOCATIONLESS_CACHE_TYPE:
+        return False
+    check = lab_formats.validate_coordinates(
+        cache.get('latitude'), cache.get('longitude'))
+    if not check.ok:
+        return False
+    # (0,0) est valide pour validate_coordinates (seulement signalé) mais,
+    # comme dans findPosition, c'est une sentinelle « position absente ».
+    return not (check.latitude == 0.0 and check.longitude == 0.0)
 
 
 def clean_geo_text(value):
@@ -577,6 +600,7 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
 
     # Les logs ont leur propre transaction (docs/logs-geocaching.md) : un
     # échec est journalisé sans annuler l'import des trouvailles.
+    log_summary = None
     try:
         log_summary = log_store.merge_myfinds_logs(
             db.session, log_formats.myfinds_parse_result(myfinds_logs, myfinds_rejected))
@@ -608,6 +632,32 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     loading_state.complete()
     _update_progress(status, 100, _("Import terminé"))
     geojson_cache.invalidate("gpx_import")
+
+    # Bilan remonté au frontend via status.set_result (run_import_task) : la
+    # note/toast de fin d'import (emitBddReport, bdd.js) affiche ces compteurs.
+    # Toutes les caches du fichier sont importées — les locationless comprises
+    # (sans position exploitable, elles sont seulement comptées ici).
+    logs_report = None
+    if isinstance(log_summary, dict) and log_summary.get("success"):
+        logs_report = {
+            "added": log_summary.get("added", 0),
+            "updated": log_summary.get("updated", 0),
+            "unchanged": log_summary.get("unchanged", 0),
+            "rejected": log_summary.get("rejected", 0),
+        }
+    return {
+        "imported": len(new_caches),
+        # Pas de log « Found it » (ou équivalent) dans le fichier : la cache
+        # est importée non trouvée, sans date de trouvaille.
+        "without_find_date": sum(
+            1 for c in new_caches
+            if not c.get("found") or c.get("date_find") is None),
+        "without_coords": sum(
+            1 for c in new_caches if not _has_usable_coords(c)),
+        # None quand la fusion a été sautée (aucun log exploitable, autre
+        # compte) ou a échoué — le frontend n'affiche alors rien sur les logs.
+        "logs": logs_report,
+    }
 
 
 def get_progress_step(task_id: Optional[str] = None):
@@ -1059,16 +1109,19 @@ def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db, local
         with app.app_context():
             if locale:
                 with force_locale(locale):
-                    uploadBdd(file_path, Geocache, db, status=status)
+                    summary = uploadBdd(file_path, Geocache, db, status=status)
             else:
-                uploadBdd(file_path, Geocache, db, status=status)
+                summary = uploadBdd(file_path, Geocache, db, status=status)
             # SQLite WAL mode ne met pas à jour le mtime du fichier principal immédiatement.
             # Sans cette invalidation, run_geojson_task verrait le même mtime et servirait
             # le GeoJSON vide du cache de démarrage au lieu de régénérer.
             geojson_cache.invalidate("post_import")
             # pollGeojsonTask() côté JS vérifie status.result pour distinguer succès/échec.
             # Sans set_result(), la tâche serait traitée comme une erreur côté frontend.
-            status.set_result({"success": True})
+            # `summary` (compteurs de l'import) alimente le bilan affiché par
+            # emitBddReport — absent des anciennes tâches, le frontend retombe
+            # alors sur son libellé générique.
+            status.set_result({"success": True, "summary": summary})
     finally:
         try:
             os.remove(file_path)

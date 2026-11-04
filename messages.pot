@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 21:11+0100\n"
+"POT-Creation-Date: 2026-11-04 07:51+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,104 +17,104 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bdd.py:118
+#: bdd.py:119
 msgid "Aucun fichier envoyé"
 msgstr ""
 
-#: bdd.py:122 static/js/bdd.js:124 static/js/evolution_data.js:216
+#: bdd.py:123 static/js/bdd.js:124 static/js/evolution_data.js:216
 #: templates/menu_data.html:31 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr ""
 
-#: bdd.py:140 blueprints/gpx.py:283
+#: bdd.py:141 blueprints/gpx.py:283
 msgid "Le fichier fourni n'est pas un fichier GPX valide"
 msgstr ""
 
-#: bdd.py:162
+#: bdd.py:163
 msgid ""
 "Ce fichier contient des étapes Adventure Lab : importez-le depuis la "
 "section « Mes Lab Caches » de l'onglet Données."
 msgstr ""
 
-#: bdd.py:164 static/js/bdd.js:331
+#: bdd.py:165 static/js/bdd.js:331
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr ""
 
-#: bdd.py:168 static/js/bdd.js:335
+#: bdd.py:169 static/js/bdd.js:335
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr ""
 
-#: bdd.py:170
+#: bdd.py:171
 msgid "Fichier reçu avec succès"
 msgstr ""
 
-#: bdd.py:203
+#: bdd.py:204
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr ""
 
-#: bdd.py:218 bdd.py:229 static/js/bdd.js:354
+#: bdd.py:219 bdd.py:230 static/js/bdd.js:354
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr ""
 
-#: bdd.py:233
+#: bdd.py:234
 msgid "L'archive .zip est illisible ou corrompue."
 msgstr ""
 
-#: bdd.py:293
+#: bdd.py:316
 msgid "Lecture du fichier GPX..."
 msgstr ""
 
-#: bdd.py:346 blueprints/gpx.py:158
+#: bdd.py:369 blueprints/gpx.py:158
 msgid "Fichier GPX invalide"
 msgstr ""
 
-#: bdd.py:353 blueprints/gpx.py:166
+#: bdd.py:376 blueprints/gpx.py:166
 msgid "Aucun waypoint trouvé dans le fichier GPX"
 msgstr ""
 
-#: bdd.py:540
+#: bdd.py:563
 #, python-format
 msgid "Lecture du point %(count)s sur %(total)s"
 msgstr ""
 
-#: bdd.py:574
+#: bdd.py:597
 msgid "Enregistrement en base de données..."
 msgstr ""
 
-#: bdd.py:609
+#: bdd.py:633
 msgid "Import terminé"
 msgstr ""
 
-#: bdd.py:771
+#: bdd.py:821
 #, python-format
 msgid "Génération du GeoJSON (%(idx)s/%(total)s)"
 msgstr ""
 
-#: bdd.py:1095
+#: bdd.py:1148
 msgid "Préparation des données GeoJSON..."
 msgstr ""
 
-#: bdd.py:1105
+#: bdd.py:1158
 msgid "GeoJSON servi depuis le cache"
 msgstr ""
 
-#: bdd.py:1107
+#: bdd.py:1160
 msgid "Génération du GeoJSON complet..."
 msgstr ""
 
-#: bdd.py:1117
+#: bdd.py:1170
 msgid "Résultat filtré servi depuis le cache"
 msgstr ""
 
-#: bdd.py:1120
+#: bdd.py:1173
 msgid "Pré-calcul du GeoJSON complet pour indexer les filtres..."
 msgstr ""
 
-#: bdd.py:1126
+#: bdd.py:1179
 msgid "Application des index mémoire (date/type/région)..."
 msgstr ""
 
-#: bdd.py:1129
+#: bdd.py:1182
 msgid "Filtrage direct en base (fallback)..."
 msgstr ""
 
@@ -1470,7 +1470,7 @@ msgstr ""
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr ""
 
-#: static/js/bdd.js:490 static/js/bdd.js:2321
+#: static/js/bdd.js:490 static/js/bdd.js:2377
 msgid "Import en cours"
 msgstr ""
 
@@ -1478,7 +1478,7 @@ msgstr ""
 msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
-#: static/js/bdd.js:505 static/js/bdd.js:1893 static/js/bdd.js:1964
+#: static/js/bdd.js:505 static/js/bdd.js:1949 static/js/bdd.js:2020
 #: static/js/evolution_data.js:333 static/js/gc_logs.js:310
 #: static/js/labs.js:1563 static/js/notifications.js:297
 #: static/js/notifications.js:342 static/js/poses_data.js:191
@@ -1537,26 +1537,26 @@ msgstr ""
 msgid "… et ${n} autres"
 msgstr ""
 
-#: static/js/bdd.js:683 static/js/bdd.js:1741 static/js/bdd.js:1903
+#: static/js/bdd.js:689 static/js/bdd.js:1753 static/js/bdd.js:1959
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr ""
 
-#: static/js/bdd.js:701 static/js/bdd.js:704 static/js/bdd.js:1767
-#: static/js/bdd.js:1771 static/js/bdd.js:1875
+#: static/js/bdd.js:707 static/js/bdd.js:710 static/js/bdd.js:1779
+#: static/js/bdd.js:1783 static/js/bdd.js:1931
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:712 static/js/gc_logs.js:707 static/js/labs.js:994
+#: static/js/bdd.js:718 static/js/gc_logs.js:707 static/js/labs.js:994
 msgid "Import refusé"
 msgstr ""
 
-#: static/js/bdd.js:722 static/js/bdd.js:1874 static/js/bdd.js:1914
+#: static/js/bdd.js:728 static/js/bdd.js:1930 static/js/bdd.js:1970
 msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
-#: static/js/bdd.js:722 static/js/bdd.js:1874 static/js/bdd.js:1914
-#: static/js/bdd.js:2073 static/js/bdd.js:2081 static/js/bdd.js:2399
+#: static/js/bdd.js:728 static/js/bdd.js:1930 static/js/bdd.js:1970
+#: static/js/bdd.js:2129 static/js/bdd.js:2137 static/js/bdd.js:2455
 #: static/js/dnf_data.js:191 static/js/evolution_data.js:252
 #: static/js/evolution_data.js:356 static/js/evolution_data.js:956
 #: static/js/evolution_data.js:960 static/js/evolution_data.js:1310
@@ -1568,184 +1568,224 @@ msgstr ""
 msgid "Erreur"
 msgstr ""
 
-#: static/js/bdd.js:749
+#: static/js/bdd.js:755
 msgid ""
 "Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, "
 "une musique ou une image"
 msgstr ""
 
-#: static/js/bdd.js:843 static/js/bdd.js:869 static/js/mapgl.js:1233
+#: static/js/bdd.js:849 static/js/bdd.js:875 static/js/mapgl.js:1233
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/bdd.js:856
+#: static/js/bdd.js:862
 #, python-brace-format
 msgid "du ${start} au ${end}"
 msgstr ""
 
-#: static/js/bdd.js:864
+#: static/js/bdd.js:870
 #, python-brace-format
 msgid "aujourd'hui à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:867
+#: static/js/bdd.js:873
 #, python-brace-format
 msgid "hier à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:889 static/js/stats_panels.js:1841
+#: static/js/bdd.js:895 static/js/stats_panels.js:1841
 #: static/js/stats_panels.js:1980
 msgid "caches"
 msgstr ""
 
-#: static/js/bdd.js:889
+#: static/js/bdd.js:895
 msgid "cache"
 msgstr ""
 
-#: static/js/bdd.js:892
+#: static/js/bdd.js:898
 #, python-brace-format
 msgid "importé ${when}"
 msgstr ""
 
-#: static/js/bdd.js:938 static/js/bdd.js:1119 templates/menu_data.html:61
+#: static/js/bdd.js:944 static/js/bdd.js:1125 templates/menu_data.html:61
 msgid "Aucune géocache chargée"
 msgstr ""
 
-#: static/js/bdd.js:1753
+#: static/js/bdd.js:1765
 msgid "Réponse invalide du serveur"
 msgstr ""
 
-#: static/js/bdd.js:1757
+#: static/js/bdd.js:1769
 msgid "Impossible de lancer l'import GPX"
 msgstr ""
 
-#: static/js/bdd.js:1776 static/js/evolution_data.js:909
+#: static/js/bdd.js:1788 static/js/evolution_data.js:909
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1777 static/js/evolution_data.js:910
+#: static/js/bdd.js:1789 static/js/evolution_data.js:910
 msgid "Envoi du fichier annulé"
 msgstr ""
 
-#: static/js/bdd.js:1791
+#: static/js/bdd.js:1803
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr ""
 
-#: static/js/bdd.js:1791
+#: static/js/bdd.js:1803
 msgid "Aucun fichier"
 msgstr ""
 
-#: static/js/bdd.js:1830
+#: static/js/bdd.js:1843
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:1853 static/js/bdd.js:2419
+#: static/js/bdd.js:1849
+msgid "géocache importée"
+msgstr ""
+
+#: static/js/bdd.js:1849
+msgid "géocaches importées"
+msgstr ""
+
+#: static/js/bdd.js:1853
+msgid "géocache sans date de trouvaille"
+msgstr ""
+
+#: static/js/bdd.js:1853
+msgid "géocaches sans date de trouvaille"
+msgstr ""
+
+#: static/js/bdd.js:1857
+msgid "géocache sans position"
+msgstr ""
+
+#: static/js/bdd.js:1857
+msgid "géocaches sans position"
+msgstr ""
+
+#: static/js/bdd.js:1861
+msgid "log ajouté"
+msgstr ""
+
+#: static/js/bdd.js:1861
+msgid "logs ajoutés"
+msgstr ""
+
+#: static/js/bdd.js:1864
+msgid "log rejeté"
+msgstr ""
+
+#: static/js/bdd.js:1864
+msgid "logs rejetés"
+msgstr ""
+
+#: static/js/bdd.js:1909 static/js/bdd.js:2475
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:1893 static/js/bdd.js:1894 static/js/bdd.js:1901
+#: static/js/bdd.js:1949 static/js/bdd.js:1950 static/js/bdd.js:1957
 msgid "Préparation de l'envoi..."
 msgstr ""
 
-#: static/js/bdd.js:1962 static/js/bdd.js:1964
+#: static/js/bdd.js:2018 static/js/bdd.js:2020
 msgid "Chargement de l'application..."
 msgstr ""
 
-#: static/js/bdd.js:1981
+#: static/js/bdd.js:2037
 msgid "Impossible de lancer le chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2073 static/js/bdd.js:2081
+#: static/js/bdd.js:2129 static/js/bdd.js:2137
 msgid "Erreur lors du chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2206
+#: static/js/bdd.js:2262
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr ""
 
-#: static/js/bdd.js:2216
+#: static/js/bdd.js:2272
 msgid "masquée"
 msgstr ""
 
-#: static/js/bdd.js:2216
+#: static/js/bdd.js:2272
 msgid "masquées"
 msgstr ""
 
-#: static/js/bdd.js:2218
+#: static/js/bdd.js:2274
 msgid "Découvertes masquées par le réglage « Découvertes affichées »"
 msgstr ""
 
-#: static/js/bdd.js:2265
+#: static/js/bdd.js:2321
 msgid ""
 "Aucune découverte affichée : le réglage « Découvertes affichées » masque "
 "toutes les sources."
 msgstr ""
 
-#: static/js/bdd.js:2266
+#: static/js/bdd.js:2322
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr ""
 
-#: static/js/bdd.js:2268
+#: static/js/bdd.js:2324
 msgid "Aucune cache visible"
 msgstr ""
 
-#: static/js/bdd.js:2321
+#: static/js/bdd.js:2377
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr ""
 
-#: static/js/bdd.js:2334
+#: static/js/bdd.js:2390
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 msgstr ""
 
-#: static/js/bdd.js:2335 static/js/gc_logs.js:732 static/js/labs.js:2127
+#: static/js/bdd.js:2391 static/js/gc_logs.js:732 static/js/labs.js:2127
 msgid "Confirmation de suppression"
 msgstr ""
 
-#: static/js/bdd.js:2338 templates/guide.html:173 templates/menu_data.html:64
+#: static/js/bdd.js:2394 templates/guide.html:173 templates/menu_data.html:64
 msgid "Supprimer mes géocaches"
 msgstr ""
 
-#: static/js/bdd.js:2345
+#: static/js/bdd.js:2401
 msgid "Confirmation non disponible, action annulée."
 msgstr ""
 
-#: static/js/bdd.js:2345 static/js/bdd.js:2360
+#: static/js/bdd.js:2401 static/js/bdd.js:2416
 msgid "Suppression"
 msgstr ""
 
-#: static/js/bdd.js:2360
+#: static/js/bdd.js:2416
 msgid "Suppression des trouvailles..."
 msgstr ""
 
-#: static/js/bdd.js:2387
+#: static/js/bdd.js:2443
 msgid "Trouvailles supprimées avec succès"
 msgstr ""
 
-#: static/js/bdd.js:2388 static/js/gc_logs.js:745 static/js/labs.js:2146
+#: static/js/bdd.js:2444 static/js/gc_logs.js:745 static/js/labs.js:2146
 msgid "Suppression réussie"
 msgstr ""
 
-#: static/js/bdd.js:2399
+#: static/js/bdd.js:2455
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr ""
 
-#: static/js/bdd.js:2419 static/js/mapgl.js:1007 static/js/notifications.js:379
+#: static/js/bdd.js:2475 static/js/mapgl.js:1007 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr ""
 
-#: static/js/bdd.js:2425
+#: static/js/bdd.js:2481
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr ""
 
-#: static/js/bdd.js:2437 static/js/bdd.js:2522 static/js/bdd.js:2530
+#: static/js/bdd.js:2493 static/js/bdd.js:2578 static/js/bdd.js:2586
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr ""
 
-#: static/js/bdd.js:2437 static/js/bdd.js:2522 static/js/bdd.js:2530
+#: static/js/bdd.js:2493 static/js/bdd.js:2578 static/js/bdd.js:2586
 msgid "Erreur d'affichage"
 msgstr ""
 

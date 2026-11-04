@@ -1321,8 +1321,11 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
                 try { onServerProgress(p); } catch(_) {}
             }
         },
-        onSuccess: () => {
-            if (typeof onSuccess === 'function') onSuccess();
+        onSuccess: (result) => {
+            // Le résultat posé par la tâche (ex. {"success": true, "summary": …}
+            // de run_import_task) est transmis à l'appelant : le bilan de fin
+            // d'import affiche ses compteurs.
+            if (typeof onSuccess === 'function') onSuccess(result);
         },
         onError: (err) => {
             try { if (toast) pkg.hideToast(toast); } catch(_) {}
@@ -1459,17 +1462,52 @@ function uploadBddRequest(e){
     handleGpxFile(selectedFile);
 }
 
+// Message du bilan de fin d'import : compteurs remontés par le serveur dans
+// result.summary (posé par run_import_task, construit par uploadBdd — bdd.py).
+// Une seule chaîne : la note inline est rendue en textContent.
+// « N géocaches importées — X géocache(s) sans date de trouvaille ·
+//  Y géocache(s) sans position · N log(s) ajouté(s) · N log(s) rejeté(s) ».
+// Les compteurs à zéro sont omis ; sans summary (ancienne tâche/serveur),
+// retour au libellé historique.
+function gpxImportReportMessage(result) {
+    const s = result?.summary;
+    if (!s || typeof s.imported !== 'number') {
+        return t("Fichier chargé avec succès !");
+    }
+    // Libellés singulier/pluriel résolus hors de countLabel pour que
+    // l'extracteur Babel voie les msgids (AGENTS.md).
+    const head = countLabel(s.imported, t('géocache importée'), t('géocaches importées'));
+    const details = [];
+    if (s.without_find_date > 0) {
+        details.push(countLabel(s.without_find_date,
+            t('géocache sans date de trouvaille'), t('géocaches sans date de trouvaille')));
+    }
+    if (s.without_coords > 0) {
+        details.push(countLabel(s.without_coords,
+            t('géocache sans position'), t('géocaches sans position')));
+    }
+    if (s.logs) {
+        if (s.logs.added > 0) {
+            details.push(countLabel(s.logs.added, t('log ajouté'), t('logs ajoutés')));
+        }
+        if (s.logs.rejected > 0) {
+            details.push(countLabel(s.logs.rejected, t('log rejeté'), t('logs rejetés')));
+        }
+    }
+    return details.length ? `${head} — ${details.join(' · ')}` : head;
+}
+
 // Suite commune à tout import accepté par le serveur — upload direct
 // (/upload, base vide) ou commit d'un aperçu diff (base déjà chargée) :
 // suivi de la tâche, bilan, relecture des statuts et affichage des points.
 function trackGpxImportTask(uploadToast, taskId, indicatorId) {
-    checkLoadingProgress(uploadToast, taskId, () => {
+    checkLoadingProgress(uploadToast, taskId, (result) => {
         console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
         pkg.hideToast(uploadToast);
         // Succès d'import : note inline quand l'onglet Données est
         // affiché, sinon toast brève (4 s) — l'information durable est
         // déjà portée par #infosBDD et #dataNextStep.
-        emitBddReport(t("Fichier chargé avec succès !"));
+        emitBddReport(gpxImportReportMessage(result));
 
         // mets à jour les infos de la BDD
         readBddValues();
