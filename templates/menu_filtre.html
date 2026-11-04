@@ -57,11 +57,27 @@
     </div>
     <hr class="my-2">
 
-    <!-- Barre d'actions : reset global. Secondaire au repos ; data-filters-active
-         sur #filterPanel (posé par bdd.js quand un filtre sort de l'état neutre)
-         le repasse en rouge via ui_improvements.css. -->
-    <div class="d-flex justify-content-end mb-2">
-        <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-secondary">
+    <!-- Barre d'actions : préréglages nommés puis, à droite, reset global.
+         Un préréglage mémorise la sélection courante (localStorage
+         « filterPresets », même forme que « filtersSelection » SANS la clé
+         sources — les sources affichées sont une préférence d'affichage
+         globale, pas un filtre de sélection : un préréglage ne doit pas les
+         basculer). Le select n'est pas un filtre : pas de classe
+         filter-select, il n'entre ni dans collectSelectedValues ni dans
+         filtersAreDefault/resetAllFilters, et choisir un nom ne fait rien
+         tant qu'« Appliquer » n'est pas cliqué. Le bouton reset est
+         secondaire au repos ; data-filters-active sur #filterPanel (posé par
+         bdd.js quand un filtre sort de l'état neutre) le repasse en rouge
+         via ui_improvements.css. -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="filterPresetGroup">
+        <label for="filterPresetSelect" class="form-label mb-0 small">{{ _("Préréglages") }}</label>
+        <select id="filterPresetSelect" class="form-select form-select-sm" style="width:auto; min-width: 12rem;" aria-label="{{ _('Préréglages') }}">
+            <option value="">{{ _("Aucun préréglage enregistré") }}</option>
+        </select>
+        <button type="button" id="btnApplyFilterPreset" class="btn btn-sm btn-outline-primary" disabled>{{ _("Appliquer") }}</button>
+        <button type="button" id="btnSaveFilterPreset" class="btn btn-sm btn-outline-secondary">{{ _("Enregistrer…") }}</button>
+        <button type="button" id="btnDeleteFilterPreset" class="btn btn-sm btn-outline-danger" disabled>{{ _("Supprimer") }}</button>
+        <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-secondary ms-auto">
             <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
         </button>
     </div>

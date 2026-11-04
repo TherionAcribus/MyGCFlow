@@ -154,6 +154,18 @@ const FILTER_OPTION_COUNT_DIMS = {
 // reset propres : voir updateCompactFilterSummary / filtersAreDefault /
 // resetAllFilters. Déclaré ici pour être hors TDZ pendant l'init.
 const INCLUSIVE_FILTER_SELECTS = new Set(['selectAttributes', 'selectOwners']);
+
+// Préréglages nommés de filtres : localStorage « filterPresets » =
+// { nom: <sélection> }, même forme que « filtersSelection » sans la clé
+// « sources » (les sources affichées sont une préférence d'affichage globale,
+// pas un filtre de sélection). Constantes et vars déclarées ici, en tête de
+// module : refreshFilterPresetSelect() tourne pendant l'init (TDZ).
+const FILTER_PRESETS_KEY = 'filterPresets';
+const FILTER_PRESET_NAME_MAX = 60;
+const FILTER_PRESETS_MAX = 20;
+// Éléments du groupe — absents des pages Évolution et Mes poses (le gabarit
+// menu_filtre.html n'y est pas inclus).
+var filterPresetSelect, btnApplyFilterPreset, btnSaveFilterPreset, btnDeleteFilterPreset;
 var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor, cpFlashBorderColor;
@@ -1117,6 +1129,19 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     if (btnResetFiltersFromData && btnResetAllFilters) {
         btnResetFiltersFromData.addEventListener('click', () => btnResetAllFilters.click());
     }
+
+    // Préréglages nommés de filtres (mode principal uniquement). Le select
+    // n'est pas un filtre : choisir un nom ne fait qu'armer Appliquer/
+    // Supprimer — l'application est explicite.
+    filterPresetSelect = document.getElementById('filterPresetSelect');
+    btnApplyFilterPreset = document.getElementById('btnApplyFilterPreset');
+    btnSaveFilterPreset = document.getElementById('btnSaveFilterPreset');
+    btnDeleteFilterPreset = document.getElementById('btnDeleteFilterPreset');
+    if (filterPresetSelect) filterPresetSelect.addEventListener('change', syncFilterPresetButtons);
+    if (btnApplyFilterPreset) btnApplyFilterPreset.addEventListener('click', applyFilterPreset);
+    if (btnSaveFilterPreset) btnSaveFilterPreset.addEventListener('click', saveFilterPreset);
+    if (btnDeleteFilterPreset) btnDeleteFilterPreset.addEventListener('click', deleteFilterPreset);
+    refreshFilterPresetSelect();
 
     // Initialiser Tom Select
     if (selectType) initFilterTomSelect(selectType);
@@ -4973,6 +4998,133 @@ function persistSelectedValues(values){
     } catch(e) { console.warn('Persist filters error', e); }
 }
 
+// --- Préréglages nommés de filtres ---------------------------------------
+// localStorage « filterPresets » : { nom: sélection } — même forme que
+// « filtersSelection » (collectSelectedValues) SANS la clé « sources » :
+// les sources affichées sont une préférence d'affichage globale (commentaire
+// en tête de menu_filtre.html), pas un filtre de sélection — un préréglage
+// ne doit pas les basculer. Le select du groupe n'est pas un filtre non
+// plus : pas de classe filter-select, hors collectSelectedValues,
+// filtersAreDefault et resetAllFilters.
+
+function loadFilterPresets() {
+    // Validation légère : un contenu qui n'est pas un objet JSON (parse en
+    // échec, tableau, scalaire) est ignoré — comme s'il n'y avait aucun
+    // préréglage.
+    try {
+        const parsed = JSON.parse(localStorage.getItem(FILTER_PRESETS_KEY) || 'null');
+        return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+    } catch (_) { return {}; }
+}
+
+function writeFilterPresets(presets) {
+    try {
+        localStorage.setItem(FILTER_PRESETS_KEY, JSON.stringify(presets));
+    } catch (e) { console.warn('Persist filter presets error', e); }
+}
+
+// Repeuple le select des préréglages (ordre alpha insensible à la casse,
+// nom = value), préserve la valeur courante si elle existe encore et cale
+// l'état des boutons Appliquer/Supprimer sur la présence d'un choix.
+// Appelée à l'init et après chaque enregistrement/suppression.
+function refreshFilterPresetSelect() {
+    if (!filterPresetSelect) return;
+    const current = filterPresetSelect.value;
+    const names = Object.keys(loadFilterPresets())
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    filterPresetSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = names.length ? t('— Choisir —') : t('Aucun préréglage enregistré');
+    // Liste vide : l'unique option est désactivée (rien à choisir) ; le
+    // bouton « Enregistrer… », toujours visible, reste la porte d'entrée.
+    placeholder.disabled = names.length === 0;
+    filterPresetSelect.appendChild(placeholder);
+    const frag = document.createDocumentFragment();
+    for (const name of names) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        frag.appendChild(opt);
+    }
+    filterPresetSelect.appendChild(frag);
+    if (names.includes(current)) filterPresetSelect.value = current;
+    syncFilterPresetButtons();
+}
+
+function syncFilterPresetButtons() {
+    const chosen = Boolean(filterPresetSelect && filterPresetSelect.value);
+    if (btnApplyFilterPreset) btnApplyFilterPreset.disabled = !chosen;
+    if (btnDeleteFilterPreset) btnDeleteFilterPreset.disabled = !chosen;
+}
+
+// « Enregistrer… » : le nom est demandé par window.prompt (pas de modale
+// pour si peu) — vide ou espaces = annulation silencieuse, doublon refusé,
+// ~20 préréglages max. La sélection enregistrée est la sélection COURANTE,
+// privée de « sources ».
+function saveFilterPreset() {
+    const presets = loadFilterPresets();
+    if (Object.keys(presets).length >= FILTER_PRESETS_MAX) {
+        pkg.showError(t('Nombre maximal de préréglages atteint (${max}).', { max: FILTER_PRESETS_MAX }), t('Préréglages'));
+        return;
+    }
+    const name = (window.prompt(t('Nom du préréglage :')) || '').trim().slice(0, FILTER_PRESET_NAME_MAX);
+    if (!name) return;
+    if (Object.prototype.hasOwnProperty.call(presets, name)) {
+        pkg.showError(t('Un préréglage « ${name} » existe déjà.', { name }), t('Préréglages'));
+        return;
+    }
+    const selection = collectSelectedValues();
+    delete selection.sources;
+    presets[name] = selection;
+    writeFilterPresets(presets);
+    refreshFilterPresetSelect();
+    // Le nouveau préréglage devient le choix courant du select — retour
+    // visuel suffisant, pas de toast.
+    if (filterPresetSelect) filterPresetSelect.value = name;
+    syncFilterPresetButtons();
+}
+
+// « Appliquer » : écrit la sélection du préréglage dans « filtersSelection »
+// puis rejoue le même chemin que la restauration au démarrage —
+// restoreSelectedValues pour les selects fixes, la recherche et les
+// datepickers ; refreshAttributeOwnerFilters relit « filtersSelection » pour
+// recocher Attributs/Propriétaire (leurs options sont déjà peuplées ici).
+// « sources » est réécrite avec la préférence courante pour garder à
+// « filtersSelection » sa forme habituelle.
+function applyFilterPreset() {
+    const name = filterPresetSelect ? filterPresetSelect.value : '';
+    if (!name) return;
+    const preset = loadFilterPresets()[name];
+    if (!preset || typeof preset !== 'object') return;
+    persistSelectedValues({ ...preset, sources: getDiscoverySourceKinds() });
+    restoreSelectedValues();
+    refreshAttributeOwnerFilters();
+    updateResetButtonsHighlight();
+    updatePublishedResetButtonsHighlight();
+    updateAnimFilterInfo();
+    updateFilterInfos();
+    onSelectionChangedDebounced();
+}
+
+// « Supprimer » : confirmation modale, retrait, puis retour au placeholder.
+function deleteFilterPreset() {
+    const name = filterPresetSelect ? filterPresetSelect.value : '';
+    if (!name) return;
+    pkg.showConfirmation(
+        t('Supprimer le préréglage « ${name} » ?', { name }),
+        t('Supprimer le préréglage'),
+        () => {
+            const presets = loadFilterPresets();
+            delete presets[name];
+            writeFilterPresets(presets);
+            refreshFilterPresetSelect();
+        },
+        null,
+        { danger: true, confirmText: t('Supprimer') }
+    );
+}
+
 function restoreSelectedValues(){
     // La sélection des pages « cycle de vie » n'est pas persistée : ne pas la
     // polluer avec 'filtersSelection' du mode principal (même clé localStorage).
@@ -5006,6 +5158,27 @@ function restoreSelectedValues(){
         setSelectValues(selectDifficulty, values.difficulty);
         setSelectValues(selectTerrain, values.terrain);
         setSelectValues(selectContainer, values.container);
+        // Pays/régions : options dynamiques — au démarrage elles ne sont pas
+        // encore peuplées (l'arbre arrive en async et
+        // populateCountryStateSelects coche tout), la restauration est alors
+        // un no-op ; à l'application d'un préréglage, en revanche, les
+        // options existent déjà et la sélection sauvegardée peut être
+        // recochée. Sans clé persistée, ne rien toucher.
+        const selCountry = document.getElementById('selectCountry');
+        const selState = document.getElementById('selectState');
+        const countryHasOptions = selCountry
+            && Array.from(selCountry.options).some(o => !o.disabled && o.value !== '');
+        if (countryHasOptions && Array.isArray(values.countries)) {
+            setSelectValues(selCountry, values.countries);
+            refreshTomSelect(selCountry);
+            // Reconstruit la liste des régions des pays retenus (toutes
+            // cochées) — même chemin qu'un changement manuel de pays.
+            selCountry.dispatchEvent(new Event('change'));
+            if (selState && Array.isArray(values.states)) {
+                setSelectValues(selState, values.states);
+                refreshTomSelect(selState);
+            }
+        }
         // dates : la sélection persistée est en ISO « yyyy-mm-dd », le champ
         // affiche le format choisi (jj/mm ou mm/jj). parseDateInput lit les
         // deux, ce qui rend aussi lisibles les sauvegardes écrites par les

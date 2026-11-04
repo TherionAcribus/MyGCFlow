@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 08:15+0100\n"
+"POT-Creation-Date: 2026-11-04 12:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -617,11 +617,11 @@ msgstr ""
 msgid "Nom"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/ui.js:11028
+#: poses_dataset.py:635 static/js/ui.js:11294
 msgid "Type"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/ui.js:11027
+#: poses_dataset.py:635 static/js/ui.js:11293
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
 #: templates/menu_names.html:264
 msgid "Taille"
@@ -716,6 +716,60 @@ msgstr ""
 msgid "Archivée"
 msgstr ""
 
+#: settings_manager.py:2805
+#, python-format
+msgid ""
+"Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
+"lettre ou un chiffre est nécessaire)"
+msgstr ""
+
+#: blueprints/profiles.py:553 settings_manager.py:2845 settings_manager.py:2922
+#: settings_manager.py:2974
+#, python-format
+msgid "Thème '%(name)s' introuvable"
+msgstr ""
+
+#: settings_manager.py:2866
+#, python-format
+msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
+msgstr ""
+
+#: settings_manager.py:2902 settings_manager.py:2927
+#, python-format
+msgid "Un thème nommé '%(name)s' existe déjà"
+msgstr ""
+
+#: settings_manager.py:2939
+#, python-format
+msgid "Thème source '%(name)s' introuvable"
+msgstr ""
+
+#: settings_manager.py:2955
+msgid "Mode de thème inconnu"
+msgstr ""
+
+#: settings_manager.py:2958
+#, python-format
+msgid "Le thème '%(name)s' appartient déjà à ce mode"
+msgstr ""
+
+#: settings_manager.py:3148
+msgid "Payload invalide"
+msgstr ""
+
+#: settings_manager.py:3151
+msgid "Fichier de thème invalide (détrompeur manquant)"
+msgstr ""
+
+#: settings_manager.py:3155
+msgid "Section 'profile' manquante"
+msgstr ""
+
+#: task_manager.py:30
+#, python-format
+msgid "Une tâche '%(type)s' est déjà en cours"
+msgstr ""
+
 #: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
 msgstr ""
@@ -735,9 +789,9 @@ msgstr ""
 #: templates/app.html:278 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
 #: templates/guide.html:540 templates/menu_animation.html:83
-#: templates/menu_animation.html:113 templates/menu_filtre.html:84
-#: templates/menu_filtre.html:93 templates/menu_filtre.html:109
-#: templates/menu_filtre.html:118 test_translations.py:30
+#: templates/menu_animation.html:113 templates/menu_filtre.html:100
+#: templates/menu_filtre.html:109 templates/menu_filtre.html:125
+#: templates/menu_filtre.html:134 test_translations.py:30
 msgid "Données"
 msgstr ""
 
@@ -1306,7 +1360,7 @@ msgstr ""
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr ""
 
-#: blueprints/media.py:295 static/js/ui.js:11541
+#: blueprints/media.py:295 static/js/ui.js:11807
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr ""
 
@@ -1358,11 +1412,6 @@ msgstr ""
 msgid "Nouveau nom manquant"
 msgstr ""
 
-#: blueprints/profiles.py:553
-#, python-format
-msgid "Thème '%(name)s' introuvable"
-msgstr ""
-
 #: blueprints/tasks.py:73
 msgid "Cette tâche ne peut pas être annulée"
 msgstr ""
@@ -1378,11 +1427,11 @@ msgid ""
 msgstr ""
 
 #: static/js/background_audio.js:121 static/js/mapgl.js:5458
-#: static/js/ui.js:912 static/js/ui.js:981 static/js/ui.js:2321
-#: static/js/ui.js:11099 static/js/ui.js:11179 static/js/ui.js:11385
-#: static/js/ui.js:11500 static/js/ui.js:11557 static/js/ui.js:11583
-#: static/js/ui.js:11642 static/js/ui.js:11650 static/js/ui.js:11658
-#: static/js/ui.js:11828 templates/guide.html:289
+#: static/js/ui.js:931 static/js/ui.js:1000 static/js/ui.js:2356
+#: static/js/ui.js:11365 static/js/ui.js:11445 static/js/ui.js:11651
+#: static/js/ui.js:11766 static/js/ui.js:11823 static/js/ui.js:11849
+#: static/js/ui.js:11908 static/js/ui.js:11916 static/js/ui.js:11924
+#: static/js/ui.js:12094 templates/guide.html:289
 #: templates/menu_animation.html:23 templates/menu_animation.html:294
 msgid "Musique"
 msgstr ""
@@ -1393,8 +1442,8 @@ msgid ""
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3401
-#: static/js/ui.js:3448 static/js/ui.js:3470
+#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3436
+#: static/js/ui.js:3483 static/js/ui.js:3505
 msgid "Carte"
 msgstr ""
 
@@ -1515,7 +1564,7 @@ msgstr ""
 #: static/js/gc_logs.js:747 static/js/labs.js:2062 static/js/labs.js:2105
 #: static/js/labs.js:2148 static/js/notifications.js:421
 #: static/js/owner_data.js:185 static/js/poses_data.js:208
-#: static/js/recording_perf.js:187 static/js/ui.js:2325
+#: static/js/recording_perf.js:187 static/js/ui.js:2360
 msgid "Erreur"
 msgstr ""
 
@@ -2671,7 +2720,8 @@ msgstr ""
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
 #: static/js/profiles.js:975 static/js/recent_videos.js:60
 #: static/js/recent_videos.js:121 static/js/stats_ui.js:580
-#: static/js/stats_ui.js:1837 templates/menu_style.html:294
+#: static/js/stats_ui.js:1837 static/js/ui.js:6167
+#: templates/menu_filtre.html:79 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
@@ -3597,7 +3647,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:5754 static/js/ui.js:8529
+#: static/js/mapgl.js:5754 static/js/ui.js:8795
 msgid "Assemblage en cours"
 msgstr ""
 
@@ -4391,7 +4441,7 @@ msgid "Conseil"
 msgstr ""
 
 #: static/js/recording_perf.js:201 templates/guide.html:233
-#: templates/menu_informations.html:379
+#: templates/menu_filtre.html:77 templates/menu_informations.html:379
 msgid "Appliquer"
 msgstr ""
 
@@ -4801,8 +4851,8 @@ msgstr ""
 msgid "Âge des caches trouvées"
 msgstr ""
 
-#: static/js/stats_panels.js:1185 templates/menu_filtre.html:139
-#: templates/menu_filtre.html:140 templates/menu_stats.html:494
+#: static/js/stats_panels.js:1185 templates/menu_filtre.html:155
+#: templates/menu_filtre.html:156 templates/menu_stats.html:494
 msgid "Attributs"
 msgstr ""
 
@@ -5172,7 +5222,7 @@ msgstr ""
 msgid "${n} mois"
 msgstr ""
 
-#: static/js/stats_panels.js:1534 static/js/ui.js:8059
+#: static/js/stats_panels.js:1534 static/js/ui.js:8325
 #, python-brace-format
 msgid "${n} jours"
 msgstr ""
@@ -5674,153 +5724,153 @@ msgstr ""
 msgid "Plage complète"
 msgstr ""
 
-#: static/js/ui.js:727
+#: static/js/ui.js:746
 #, python-brace-format
 msgid "Musique : ${d}"
 msgstr ""
 
-#: static/js/ui.js:728
+#: static/js/ui.js:747
 #, python-brace-format
 msgid "(à partir de ${s})"
 msgstr ""
 
-#: static/js/ui.js:729
+#: static/js/ui.js:748
 #, python-brace-format
 msgid "(jusqu'à ${e})"
 msgstr ""
 
-#: static/js/ui.js:730
+#: static/js/ui.js:749
 msgid "(blanc de fin ignoré)"
 msgstr ""
 
-#: static/js/ui.js:744
+#: static/js/ui.js:763
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
 "appliquée, la musique sera répétée en boucle."
 msgstr ""
 
-#: static/js/ui.js:745
+#: static/js/ui.js:764
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
 "appliquée, la musique s'arrêtera avant la fin."
 msgstr ""
 
-#: static/js/ui.js:746 static/js/ui.js:765
+#: static/js/ui.js:765 static/js/ui.js:784
 msgid "Elle se terminera en fondu."
 msgstr ""
 
-#: static/js/ui.js:748
+#: static/js/ui.js:767
 #, python-brace-format
 msgid "Durée calée sur la musique (${d})."
 msgstr ""
 
-#: static/js/ui.js:751
+#: static/js/ui.js:770
 msgid "Elle commence plus loin pour finir avec la vidéo."
 msgstr ""
 
-#: static/js/ui.js:756
+#: static/js/ui.js:775
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle se terminera"
 " en fondu."
 msgstr ""
 
-#: static/js/ui.js:757
+#: static/js/ui.js:776
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
 "en fin de vidéo."
 msgstr ""
 
-#: static/js/ui.js:761
+#: static/js/ui.js:780
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée"
 " en boucle."
 msgstr ""
 
-#: static/js/ui.js:764
+#: static/js/ui.js:783
 msgid "Les reprises s'enchaînent en fondu."
 msgstr ""
 
-#: static/js/ui.js:767
+#: static/js/ui.js:786
 #, python-brace-format
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr ""
 
-#: static/js/ui.js:771
+#: static/js/ui.js:790
 msgid "Elle commencera en fondu."
 msgstr ""
 
-#: static/js/ui.js:872
+#: static/js/ui.js:891
 msgid "Mesure impossible pour ce format : le curseur règle le volume."
 msgstr ""
 
-#: static/js/ui.js:880
+#: static/js/ui.js:899
 #, python-brace-format
 msgid "Morceau très faible : niveau standard limité à ${p} (il faudrait ${need})."
 msgstr ""
 
-#: static/js/ui.js:884
+#: static/js/ui.js:903
 #, python-brace-format
 msgid "Morceau déjà au niveau standard : ${p} du fichier."
 msgstr ""
 
-#: static/js/ui.js:886
+#: static/js/ui.js:905
 #, python-brace-format
 msgid "Morceau enregistré fort : niveau standard à ${p} du fichier."
 msgstr ""
 
-#: static/js/ui.js:888
+#: static/js/ui.js:907
 #, python-brace-format
 msgid "Morceau enregistré faiblement : niveau standard à ${p} du fichier."
 msgstr ""
 
-#: static/js/ui.js:895
+#: static/js/ui.js:914
 msgid "Les morceaux de l'enchaînement sont déjà équilibrés entre eux."
 msgstr ""
 
-#: static/js/ui.js:912 static/js/ui.js:981
+#: static/js/ui.js:931 static/js/ui.js:1000
 msgid "Arrêtez l'animation pour écouter la musique seule."
 msgstr ""
 
-#: static/js/ui.js:953 templates/guide.html:299
+#: static/js/ui.js:972 templates/guide.html:299
 #: templates/menu_animation.html:419
 msgid "Écouter"
 msgstr ""
 
-#: static/js/ui.js:954 templates/guide.html:299
+#: static/js/ui.js:973 templates/guide.html:299
 #: templates/menu_animation.html:423
 msgid "Écouter la fin"
 msgstr ""
 
-#: static/js/ui.js:962 templates/app.html:300 templates/app.html:301
+#: static/js/ui.js:981 templates/app.html:300 templates/app.html:301
 #: templates/guide.html:117 templates/guide.html:321
 #: templates/menu_animation.html:57
 msgid "Arrêter"
 msgstr ""
 
-#: static/js/ui.js:2153
+#: static/js/ui.js:2188
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2154 static/js/ui.js:3819
+#: static/js/ui.js:2189 static/js/ui.js:3854
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:2321 static/js/ui.js:11179
+#: static/js/ui.js:2356 static/js/ui.js:11445
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:2325 static/js/ui.js:11650
+#: static/js/ui.js:2360 static/js/ui.js:11916
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:2379
+#: static/js/ui.js:2414
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
@@ -5828,7 +5878,7 @@ msgid ""
 "Rendu image par image »."
 msgstr ""
 
-#: static/js/ui.js:2380
+#: static/js/ui.js:2415
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -5836,7 +5886,7 @@ msgid ""
 "par une. La vidéo, elle, ne perdra aucune image."
 msgstr ""
 
-#: static/js/ui.js:2389
+#: static/js/ui.js:2424
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -5844,66 +5894,66 @@ msgid ""
 "image plus propre."
 msgstr ""
 
-#: static/js/ui.js:2393
+#: static/js/ui.js:2428
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr ""
 
-#: static/js/ui.js:3401
+#: static/js/ui.js:3436
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:3448
+#: static/js/ui.js:3483
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:3470
+#: static/js/ui.js:3505
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:3747
+#: static/js/ui.js:3782
 msgid ""
 "Difficulté, terrain, taille, attributs et propriétaire ne s'appliquent "
 "pas aux Lab Caches."
 msgstr ""
 
-#: static/js/ui.js:3818
+#: static/js/ui.js:3853
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:3926
+#: static/js/ui.js:3961
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr ""
 
-#: static/js/ui.js:3927 static/js/ui.js:3930 static/js/ui.js:3950
-#: static/js/ui.js:3957 static/js/ui.js:3965 templates/app.html:98
+#: static/js/ui.js:3962 static/js/ui.js:3965 static/js/ui.js:3985
+#: static/js/ui.js:3992 static/js/ui.js:4000 templates/app.html:98
 msgid "Quitter"
 msgstr ""
 
-#: static/js/ui.js:3950 static/js/ui.js:3965
+#: static/js/ui.js:3985 static/js/ui.js:4000
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr ""
 
-#: static/js/ui.js:3956
+#: static/js/ui.js:3991
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 msgstr ""
 
-#: static/js/ui.js:3960
+#: static/js/ui.js:3995
 msgid "Quitter quand même"
 msgstr ""
 
-#: static/js/ui.js:3980
+#: static/js/ui.js:4015
 msgid "MyGCFlow est fermé"
 msgstr ""
 
-#: static/js/ui.js:3981
+#: static/js/ui.js:4016
 msgid "Vous pouvez fermer cet onglet."
 msgstr ""
 
-#: static/js/ui.js:5513 templates/_filter_cache_attrs.html:44
+#: static/js/ui.js:5574 templates/_filter_cache_attrs.html:44
 #: templates/_filter_cache_attrs.html:62 templates/_filter_cache_attrs.html:86
 #: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
@@ -5913,202 +5963,239 @@ msgstr ""
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:5666 templates/_filter_county.html:10
+#: static/js/ui.js:5727 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr ""
 
-#: static/js/ui.js:5691
+#: static/js/ui.js:5752
 msgid "Non renseigné"
 msgstr ""
 
-#: static/js/ui.js:5715 templates/_filter_country_state.html:8
+#: static/js/ui.js:5776 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:5744 static/js/ui.js:5795
+#: static/js/ui.js:5805 static/js/ui.js:5856
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:5881 templates/menu_filtre.html:141
+#: static/js/ui.js:5942 templates/menu_filtre.html:157
 msgid "Filtrer par attribut"
 msgstr ""
 
-#: static/js/ui.js:5882 templates/menu_filtre.html:148
+#: static/js/ui.js:5943 templates/menu_filtre.html:164
 msgid "Filtrer par propriétaire"
 msgstr ""
 
-#: static/js/ui.js:7410
+#: static/js/ui.js:6065
+msgid "— Choisir —"
+msgstr ""
+
+#: static/js/ui.js:6065 templates/menu_filtre.html:75
+msgid "Aucun préréglage enregistré"
+msgstr ""
+
+#: static/js/ui.js:6101
+#, python-brace-format
+msgid "Nombre maximal de préréglages atteint (${max})."
+msgstr ""
+
+#: static/js/ui.js:6101 static/js/ui.js:6107 templates/menu_filtre.html:73
+#: templates/menu_filtre.html:74 templates/menu_images.html:224
+#: templates/menu_stats.html:365
+msgid "Préréglages"
+msgstr ""
+
+#: static/js/ui.js:6104
+msgid "Nom du préréglage :"
+msgstr ""
+
+#: static/js/ui.js:6107
+#, python-brace-format
+msgid "Un préréglage « ${name} » existe déjà."
+msgstr ""
+
+#: static/js/ui.js:6158
+#, python-brace-format
+msgid "Supprimer le préréglage « ${name} » ?"
+msgstr ""
+
+#: static/js/ui.js:6159
+msgid "Supprimer le préréglage"
+msgstr ""
+
+#: static/js/ui.js:7676
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr ""
 
-#: static/js/ui.js:7956
+#: static/js/ui.js:8222
 msgid "Valeur requise."
 msgstr ""
 
-#: static/js/ui.js:7958
+#: static/js/ui.js:8224
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr ""
 
-#: static/js/ui.js:7959
+#: static/js/ui.js:8225
 msgid "Nombre attendu."
 msgstr ""
 
-#: static/js/ui.js:7960
+#: static/js/ui.js:8226
 msgid "La valeur doit être strictement positive."
 msgstr ""
 
-#: static/js/ui.js:7962
+#: static/js/ui.js:8228
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
-#: static/js/ui.js:7963
+#: static/js/ui.js:8229
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr ""
 
-#: static/js/ui.js:7964
+#: static/js/ui.js:8230
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr ""
 
-#: static/js/ui.js:7965
+#: static/js/ui.js:8231
 msgid "Entre 100 et 10000 ms."
 msgstr ""
 
-#: static/js/ui.js:7966
+#: static/js/ui.js:8232
 msgid "Hors limites."
 msgstr ""
 
-#: static/js/ui.js:7967
+#: static/js/ui.js:8233
 msgid "Valeur invalide."
 msgstr ""
 
-#: static/js/ui.js:8060
+#: static/js/ui.js:8326
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr ""
 
-#: static/js/ui.js:8062
+#: static/js/ui.js:8328
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:8063
+#: static/js/ui.js:8329
 #, python-brace-format
 msgid "animation ${d}"
 msgstr ""
 
-#: static/js/ui.js:8064
+#: static/js/ui.js:8330
 #, python-brace-format
 msgid "fin ${d}"
 msgstr ""
 
-#: static/js/ui.js:8067
+#: static/js/ui.js:8333
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8075
+#: static/js/ui.js:8341
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8081
+#: static/js/ui.js:8347
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8089
+#: static/js/ui.js:8355
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8091
+#: static/js/ui.js:8357
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr ""
 
-#: static/js/ui.js:8093
+#: static/js/ui.js:8359
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:8094
+#: static/js/ui.js:8360
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr ""
 
-#: static/js/ui.js:8096
+#: static/js/ui.js:8362
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr ""
 
-#: static/js/ui.js:8097
+#: static/js/ui.js:8363
 #, python-brace-format
 msgid "${n} images"
 msgstr ""
 
-#: static/js/ui.js:8099
+#: static/js/ui.js:8365
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr ""
 
-#: static/js/ui.js:8124
+#: static/js/ui.js:8390
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr ""
 
-#: static/js/ui.js:8132 templates/menu_animation.html:23
+#: static/js/ui.js:8398 templates/menu_animation.html:23
 msgid "musique incluse"
 msgstr ""
 
-#: static/js/ui.js:8133
+#: static/js/ui.js:8399
 msgid "sans musique"
 msgstr ""
 
-#: static/js/ui.js:8139
+#: static/js/ui.js:8405
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr ""
 
-#: static/js/ui.js:8178
+#: static/js/ui.js:8444
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr ""
 
-#: static/js/ui.js:8181
+#: static/js/ui.js:8447
 msgid "Vide : nom du thème actif."
 msgstr ""
 
-#: static/js/ui.js:8213
+#: static/js/ui.js:8479
 msgid "La plage de dates est invalide ou vide."
 msgstr ""
 
-#: static/js/ui.js:8214
+#: static/js/ui.js:8480
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:8221
+#: static/js/ui.js:8487
 msgid "En attente de la lecture de la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:8232
+#: static/js/ui.js:8498
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 msgstr ""
 
-#: static/js/ui.js:8255
+#: static/js/ui.js:8521
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:8259
+#: static/js/ui.js:8525
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -6116,7 +6203,7 @@ msgid ""
 "posés, baissez le dynamisme ou allongez la vidéo."
 msgstr ""
 
-#: static/js/ui.js:8264
+#: static/js/ui.js:8530
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -6124,7 +6211,7 @@ msgid ""
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:8280
+#: static/js/ui.js:8546
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -6132,149 +6219,149 @@ msgid ""
 "rythme pour l'éviter."
 msgstr ""
 
-#: static/js/ui.js:8327
+#: static/js/ui.js:8593
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 msgstr ""
 
-#: static/js/ui.js:8331
+#: static/js/ui.js:8597
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 msgstr ""
 
-#: static/js/ui.js:8525
+#: static/js/ui.js:8791
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:8525
+#: static/js/ui.js:8791
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:8549
+#: static/js/ui.js:8815
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:8549 static/js/ui.js:8551 static/js/ui.js:8556
+#: static/js/ui.js:8815 static/js/ui.js:8817 static/js/ui.js:8822
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:8551
+#: static/js/ui.js:8817
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:8556
+#: static/js/ui.js:8822
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:10922
+#: static/js/ui.js:11188
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:10972 templates/menu_animation.html:329
+#: static/js/ui.js:11238 templates/menu_animation.html:329
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:11001
+#: static/js/ui.js:11267
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:11028
+#: static/js/ui.js:11294
 msgid "Type inconnu"
 msgstr ""
 
-#: static/js/ui.js:11029
+#: static/js/ui.js:11295
 msgid "Durée"
 msgstr ""
 
-#: static/js/ui.js:11030
+#: static/js/ui.js:11296
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:11072
+#: static/js/ui.js:11338
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:11099 static/js/ui.js:11500 static/js/ui.js:11642
+#: static/js/ui.js:11365 static/js/ui.js:11766 static/js/ui.js:11908
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr ""
 
-#: static/js/ui.js:11224
+#: static/js/ui.js:11490
 msgid "Chargement de la musique..."
 msgstr ""
 
-#: static/js/ui.js:11306
+#: static/js/ui.js:11572
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr ""
 
-#: static/js/ui.js:11321
+#: static/js/ui.js:11587
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr ""
 
-#: static/js/ui.js:11342
+#: static/js/ui.js:11608
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
 msgstr ""
 
-#: static/js/ui.js:11356
+#: static/js/ui.js:11622
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr ""
 
-#: static/js/ui.js:11385
+#: static/js/ui.js:11651
 msgid "La musique n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/ui.js:11465
+#: static/js/ui.js:11731
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:11466
+#: static/js/ui.js:11732
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:11467
+#: static/js/ui.js:11733
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr ""
 
-#: static/js/ui.js:11505
+#: static/js/ui.js:11771
 msgid "Préparation de l'enchaînement…"
 msgstr ""
 
-#: static/js/ui.js:11524 static/js/ui.js:11557
+#: static/js/ui.js:11790 static/js/ui.js:11823
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr ""
 
-#: static/js/ui.js:11576
+#: static/js/ui.js:11842
 msgid "Envoi du morceau…"
 msgstr ""
 
-#: static/js/ui.js:11583
+#: static/js/ui.js:11849
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr ""
 
-#: static/js/ui.js:11657
+#: static/js/ui.js:11923
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr ""
 
-#: static/js/ui.js:11827
+#: static/js/ui.js:12093
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
 msgstr ""
 
-#: static/js/ui.js:11936
+#: static/js/ui.js:12202
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr ""
@@ -7151,8 +7238,8 @@ msgstr ""
 msgid "Sous les filtres, le réglage"
 msgstr ""
 
-#: templates/guide.html:169 templates/menu_filtre.html:168
-#: templates/menu_filtre.html:169
+#: templates/guide.html:169 templates/menu_filtre.html:184
+#: templates/menu_filtre.html:185
 msgid "Caches sans localisation (locationless)"
 msgstr ""
 
@@ -7515,16 +7602,16 @@ msgid "Renseignez la"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:80
-#: templates/menu_filtre.html:81 templates/menu_filtre.html:105
-#: templates/menu_filtre.html:106
+#: templates/menu_animation.html:80 templates/menu_filtre.html:96
+#: templates/menu_filtre.html:97 templates/menu_filtre.html:121
+#: templates/menu_filtre.html:122
 msgid "Date de début"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:109
-#: templates/menu_animation.html:110 templates/menu_filtre.html:89
-#: templates/menu_filtre.html:90 templates/menu_filtre.html:114
-#: templates/menu_filtre.html:115
+#: templates/menu_animation.html:110 templates/menu_filtre.html:105
+#: templates/menu_filtre.html:106 templates/menu_filtre.html:130
+#: templates/menu_filtre.html:131
 msgid "Date de fin"
 msgstr ""
 
@@ -9630,7 +9717,7 @@ msgid "La base est prête."
 msgstr ""
 
 #: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:70
-#: templates/menu_filtre.html:65
+#: templates/menu_filtre.html:81
 msgid "Réinitialiser tous les filtres"
 msgstr ""
 
@@ -9744,44 +9831,48 @@ msgid ""
 "archivage) : les logs des autres joueurs restent sur la page Mes poses."
 msgstr ""
 
-#: templates/menu_filtre.html:77
+#: templates/menu_filtre.html:78
+msgid "Enregistrer…"
+msgstr ""
+
+#: templates/menu_filtre.html:93
 msgid "Période de découverte"
 msgstr ""
 
-#: templates/menu_filtre.html:83 templates/menu_filtre.html:92
-#: templates/menu_filtre.html:108 templates/menu_filtre.html:117
+#: templates/menu_filtre.html:99 templates/menu_filtre.html:108
+#: templates/menu_filtre.html:124 templates/menu_filtre.html:133
 msgid "Date par défaut (toutes les données)"
 msgstr ""
 
-#: templates/menu_filtre.html:102
+#: templates/menu_filtre.html:118
 msgid "Période de pose"
 msgstr ""
 
-#: templates/menu_filtre.html:143
+#: templates/menu_filtre.html:159
 msgid "La cache doit porter tous les attributs choisis."
 msgstr ""
 
-#: templates/menu_filtre.html:146 templates/menu_filtre.html:147
+#: templates/menu_filtre.html:162 templates/menu_filtre.html:163
 msgid "Propriétaire"
 msgstr ""
 
-#: templates/menu_filtre.html:152 templates/menu_filtre.html:153
+#: templates/menu_filtre.html:168 templates/menu_filtre.html:169
 msgid "Recherche"
 msgstr ""
 
-#: templates/menu_filtre.html:153
+#: templates/menu_filtre.html:169
 msgid "Code ou nom de cache"
 msgstr ""
 
-#: templates/menu_filtre.html:170
+#: templates/menu_filtre.html:186
 msgid "Comptées, sans point sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:171
+#: templates/menu_filtre.html:187
 msgid "Comptées et affichées sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:174
+#: templates/menu_filtre.html:190
 msgid ""
 "Leur position dans le fichier est fictive : affichée, elle trace un point"
 " là où vous n'êtes pas allé."
@@ -10154,10 +10245,6 @@ msgstr ""
 
 #: templates/menu_images.html:207
 msgid "Revenir à l'emplacement"
-msgstr ""
-
-#: templates/menu_images.html:224 templates/menu_stats.html:365
-msgid "Préréglages"
 msgstr ""
 
 #: templates/menu_images.html:229
