@@ -3567,10 +3567,12 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     .labs-mobile-import { display: block; }
 }
 
-/* « Mes logs » (gc_logs.js) bascule ses éléments par l'attribut hidden :
-   .btn, .alert et .d-flex posent leur propre display, qui l'emporterait
-   (AGENTS.md, piège hidden + classes d'affichage). */
-.gc-logs-ui [hidden] { display: none !important; }
+/* « Mes logs » (gc_logs.js) et la modale diff « Mes Géocaches » (bdd.js)
+   basculent leurs éléments par l'attribut hidden : .btn, .alert et .d-flex
+   posent leur propre display, qui l'emporterait (AGENTS.md, piège hidden +
+   classes d'affichage). */
+.gc-logs-ui [hidden],
+.gpx-diff-ui [hidden] { display: none !important; }
 
 /* Select « Le favori collecte » (carte « Mes logs ») : rangée empilée sur
    petit écran — pleine largeur sous le libellé jusqu'à ~576 px, largeur

@@ -587,6 +587,36 @@
         </div>
     </div>
 
+    <!-- Aperçu d'un réimport « Mes Géocaches » : diff du fichier contre la
+         base chargée — nouvelles, inchangées, retirées (bdd.js). Le fichier
+         est déjà envoyé (/api/geocaches/import/preview) mais rien n'est
+         importé tant que « Remplacer ma base » n'est pas cliqué (commit). -->
+    <div id="gpxDiffModal" class="modal bs-modal gpx-diff-ui" tabindex="-1" aria-labelledby="gpxDiffModal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="gpxDiffModal-title" class="modal-title">{{ _("Remplacer mes géocaches ?") }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="gpxDiffChanges" class="alert alert-info small mb-3"></div>
+                    <div id="gpxDiffRemovals" class="alert alert-warning small mb-3" hidden></div>
+                    <div class="form-hint text-muted small mb-0">
+                        {{ _("L'import remplace intégralement la base « Mes Géocaches » par le contenu du fichier. Vos Lab Caches et vos logs sont conservés.") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <!-- bdd.js : « À valider avant HH:MM » puis « expiré »
+                         (le jeton d'aperçu vit 30 min) — « Remplacer ma base »
+                         est désactivé à l'échéance plutôt qu'échouer. -->
+                    <span id="gpxDiffExpiry" class="form-hint text-muted me-auto small" hidden></span>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                    <button type="button" id="gpxDiffConfirmBtn" class="btn btn-danger">{{ _("Remplacer ma base") }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Complétion : caches des logs sans position connue (gc_logs.js) —
          une position saisie à la main place les points DNF, et n'est jamais
          écrasée par un import ultérieur. -->

@@ -2,7 +2,7 @@
 import { CONFIG } from './init.js';
 import { showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
-import { showBsModal } from './ui_bootstrap.js';
+import { getBsModal, hideBsModal, showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { isMainPage } from './app_mode.mjs';
 import { dnfAliveInWindow } from './dnf_model.mjs';
@@ -399,39 +399,177 @@ async function handleGpxFile(file) {
     }
 
     // Réimport sur une base non vide : l'upload remplace TOUTES les géocaches
-    // (DELETE complet de la table côté serveur, bdd.py:uploadBdd). Les Lab
-    // Caches et les logs sont conservés (collections séparées) — la modale le
-    // précise. Même pattern que clearDatabase : confirmation AVANT tout envoi,
-    // bouton danger explicite.
+    // (DELETE complet de la table côté serveur, bdd.py:uploadBdd). Avant tout
+    // remplacement, un aperçu diff (preview + modale #gpxDiffModal) montre ce
+    // qui changera — même pattern que les Labs et les logs. Sur base vide,
+    // l'upload direct (/upload) reste le chemin le plus court.
     if (geocachesCount > 0) {
-        const confirmed = await new Promise(resolve => {
-            if (pkg && pkg.showConfirmation) {
-                const message = geocachesCount > 1
-                    ? t('Ce fichier remplacera les ${count} géocaches déjà importées. Vos Lab Caches et vos logs sont conservés.', { count: geocachesCount })
-                    : t('Ce fichier remplacera la géocache déjà importée. Vos Lab Caches et vos logs sont conservés.');
-                pkg.showConfirmation(
-                    message,
-                    t('Remplacer mes géocaches'),
-                    () => resolve(true),
-                    () => resolve(false),
-                    { danger: true, confirmText: t('Remplacer') }
-                );
-            } else {
-                // Fallback : pas de système de confirmation disponible — on
-                // n'écrase pas silencieusement la base (comme clearDatabase).
-                console.warn('showConfirmation indisponible : réimport annulé.');
-                showError(t("Confirmation non disponible, action annulée."), t('Import'));
-                resolve(false);
-            }
-        });
-        if (!confirmed) {
-            // Même nettoyage que le chemin « fichier invalide » ci-dessus.
-            try { pkg.hideToast(earlyToast); } catch (_) {}
-            hideUploadIndicator('emptyStateUploadProgress');
-            return;
-        }
+        await uploadBddWithPreview(file, earlyToast);
+        return;
     }
     uploadBdd(file, earlyToast);
+}
+
+// --- Réimport : aperçu diff avant remplacement ----------------------------
+// Quand la base est déjà chargée, le fichier part vers
+// /api/geocaches/import/preview (conservé sous un jeton à durée limitée
+// côté serveur), la modale #gpxDiffModal montre le diff (« N nouvelles, N
+// retirées, N inchangées »), puis seule la validation envoie le commit —
+// même tâche de fond que l'upload direct. Rien n'est importé si l'aperçu
+// est refermé sans confirmation ; le jeton expire seul côté serveur.
+let gpxDiffExpiryTimer = null;
+
+function renderGpxDiff(preview) {
+    const s = preview.summary || {};
+
+    // Échéance du jeton : annoncée, puis « expiré » + « Remplacer » coupé —
+    // sans elle, le clic échouerait 30 min plus tard sans raison apparente
+    // (même pattern que gcLogsPreviewExpiry, gc_logs.js).
+    if (gpxDiffExpiryTimer) { clearTimeout(gpxDiffExpiryTimer); gpxDiffExpiryTimer = null; }
+    const expiryEl = document.getElementById('gpxDiffExpiry');
+    const confirmBtn = document.getElementById('gpxDiffConfirmBtn');
+    confirmBtn.disabled = false;
+    const expiresAt = Date.now() + (preview.expires_in_seconds || 0) * 1000;
+    const markExpired = () => {
+        gpxDiffExpiryTimer = null;
+        expiryEl.textContent = t("Cet aperçu a expiré — fermez-le et relancez l'import.");
+        expiryEl.className = 'form-hint me-auto small text-warning';
+        expiryEl.hidden = false;
+        confirmBtn.disabled = true;
+    };
+    if (Date.now() >= expiresAt) {
+        markExpired();
+    } else {
+        const deadline = new Date(expiresAt);
+        const hh = String(deadline.getHours()).padStart(2, '0');
+        const mm = String(deadline.getMinutes()).padStart(2, '0');
+        expiryEl.textContent = t("À valider avant ${time} — au-delà, relancez l'aperçu.",
+            { time: `${hh}:${mm}` });
+        expiryEl.className = 'form-hint text-muted me-auto small';
+        expiryEl.hidden = false;
+        gpxDiffExpiryTimer = setTimeout(markExpired, expiresAt - Date.now());
+    }
+
+    const changes = document.getElementById('gpxDiffChanges');
+    changes.textContent = '';
+    const head = document.createElement('div');
+    head.className = 'fw-bold mb-1';
+    head.textContent = preview.name || '';
+    changes.appendChild(head);
+    // Libellés singulier/pluriel résolus hors de countLabel pour que
+    // l'extracteur Babel voie les msgids (AGENTS.md).
+    for (const line of [
+        countLabel(s.added ?? 0, t('nouvelle géocache'), t('nouvelles géocaches')),
+        countLabel(s.unchanged ?? 0, t('géocache inchangée'), t('géocaches inchangées')),
+    ]) {
+        const div = document.createElement('div');
+        div.textContent = line;
+        changes.appendChild(div);
+    }
+
+    // Retraits : visibles avant validation — un My Finds incomplet ne doit
+    // pas effacer des trouvailles en silence.
+    const removalsEl = document.getElementById('gpxDiffRemovals');
+    removalsEl.textContent = '';
+    removalsEl.hidden = !(s.removed > 0);
+    if (s.removed > 0) {
+        const title = document.createElement('div');
+        title.className = 'fw-bold mb-1';
+        title.textContent = countLabel(s.removed, t('géocache sera retirée'), t('géocaches seront retirées'));
+        removalsEl.appendChild(title);
+        const why = document.createElement('div');
+        why.textContent = t("Elles sont absentes du fichier : un My Finds liste toutes vos trouvailles — l'import les retirera donc de la base.");
+        removalsEl.appendChild(why);
+        const list = document.createElement('ul');
+        list.className = 'mb-0 mt-1';
+        for (const code of (s.removed_sample || [])) {
+            const item = document.createElement('li');
+            item.textContent = code;
+            list.appendChild(item);
+        }
+        const more = s.removed - (s.removed_sample || []).length;
+        if (more > 0) {
+            const item = document.createElement('li');
+            item.textContent = more === 1 ? t('… et 1 autre') : t('… et ${n} autres', { n: more });
+            list.appendChild(item);
+        }
+        removalsEl.appendChild(list);
+    }
+}
+
+// Modale diff : résout le jeton d'import à valider, ou null si l'aperçu est
+// refermé sans confirmation (Annuler, croix, Échap, clic de fond).
+function confirmGpxDiff(preview) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('gpxDiffModal');
+        const bsModal = modal ? getBsModal(modal) : null;
+        if (!bsModal) { resolve(null); return; }
+        const confirmBtn = document.getElementById('gpxDiffConfirmBtn');
+        let resolved = false;
+        const done = (token) => {
+            if (resolved) return;
+            resolved = true;
+            modal.removeEventListener('hidden.bs.modal', onHidden);
+            confirmBtn.removeEventListener('click', onConfirm);
+            resolve(token);
+        };
+        const onHidden = () => done(null);
+        // Résoudre AVANT de fermer : sans classe .fade, hide() déclenche
+        // 'hidden.bs.modal' de façon synchrone, qui ferait sinon gagner
+        // onHidden(null) avant que le jeton ne soit rendu.
+        const onConfirm = () => { done(preview.import_token); hideBsModal(modal); };
+        modal.addEventListener('hidden.bs.modal', onHidden);
+        confirmBtn.addEventListener('click', onConfirm);
+        renderGpxDiff(preview);
+        bsModal.show();
+    });
+}
+
+async function uploadBddWithPreview(file, uploadToast) {
+    // Le verrou d'import couvre aussi l'aperçu : un second dépôt/drop pendant
+    // l'analyse ou la modale empilerait les fenêtres — les contrôles restent
+    // désactivés jusqu'à la fin du remplacement (ou son annulation).
+    beginImport();
+    const indicatorId = 'emptyStateUploadProgress';
+    const indicatorHooks = {
+        onProgress: (pct) => updateUploadIndicator(indicatorId, t('Envoi du fichier : ${pct}%', { pct }), pct),
+        onPhase: (msg) => updateUploadIndicator(indicatorId, msg, null),
+    };
+    try {
+        const preview = await uploadGpxWithProgress(file, uploadToast, indicatorHooks,
+            { url: '/api/geocaches/import/preview', requireTaskId: false });
+        const token = await confirmGpxDiff(preview);
+        if (!token) {
+            // Aperçu abandonné : rien n'est importé — même nettoyage que le
+            // chemin « confirmation refusée » historique.
+            endImport();
+            try { pkg.hideToast(uploadToast); } catch (_) {}
+            hideUploadIndicator(indicatorId);
+            return;
+        }
+        try {
+            pkg.updateToastMessage(uploadToast, t('Traitement du fichier en cours...'));
+            pkg.setIndeterminateProgress(uploadToast);
+        } catch (_) {}
+        updateUploadIndicator(indicatorId, t('Traitement du fichier en cours...'), null);
+        const resp = await fetch(`${CONFIG.BASE_URL}/api/geocaches/import/commit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ import_token: token }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data.success || !data.task_id) {
+            throw new Error(data.message || t('Import refusé'));
+        }
+        // Même suite que l'upload direct : suivi de la tâche puis affichage.
+        trackGpxImportTask(uploadToast, data.task_id, indicatorId);
+    } catch (error) {
+        endImport();
+        console.error('[uploadBddWithPreview] Erreur:', error);
+        try { pkg.hideToast(uploadToast); } catch (_) {}
+        hideUploadIndicator(indicatorId);
+        showError(error?.message || t("Erreur lors du chargement du fichier"), t("Erreur"));
+    }
 }
 
 // Vrai si le drag transporte des fichiers (et non du texte/HTML).
@@ -1243,7 +1381,11 @@ function hideUploadIndicator(containerId) {
 // `hooks` (optionnel) permet de répercuter les phases sur un indicateur
 // inline : onProgress(pct) pendant l'envoi, onPhase(message) au passage au
 // traitement serveur.
-function uploadGpxWithProgress(file, toast, hooks = null) {
+// `options` (optionnel) : `url` — endpoint de destination ('/upload' pour un
+// import direct, '/api/geocaches/import/preview' pour l'aperçu diff d'un
+// réimport) ; `requireTaskId` — la réponse doit porter task_id (faux pour
+// l'aperçu, qui rend un import_token).
+function uploadGpxWithProgress(file, toast, hooks = null, { url = '/upload', requireTaskId = true } = {}) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
@@ -1269,7 +1411,7 @@ function uploadGpxWithProgress(file, toast, hooks = null) {
                 reject(new Error(t('Réponse invalide du serveur')));
                 return;
             }
-            if (xhr.status < 200 || xhr.status >= 300 || !data.success || !data.task_id) {
+            if (xhr.status < 200 || xhr.status >= 300 || !data.success || (requireTaskId && !data.task_id)) {
                 reject(new Error(data.message || t("Impossible de lancer l'import GPX")));
                 return;
             }
@@ -1289,7 +1431,7 @@ function uploadGpxWithProgress(file, toast, hooks = null) {
         xhr.addEventListener('error', () => reject(new Error(t("Erreur réseau lors de l'envoi du fichier"))));
         xhr.addEventListener('abort', () => reject(new Error(t('Envoi du fichier annulé'))));
 
-        xhr.open('POST', `${CONFIG.BASE_URL}/upload`);
+        xhr.open('POST', `${CONFIG.BASE_URL}${url}`);
         xhr.send(formData);
     });
 }
@@ -1317,6 +1459,55 @@ function uploadBddRequest(e){
     handleGpxFile(selectedFile);
 }
 
+// Suite commune à tout import accepté par le serveur — upload direct
+// (/upload, base vide) ou commit d'un aperçu diff (base déjà chargée) :
+// suivi de la tâche, bilan, relecture des statuts et affichage des points.
+function trackGpxImportTask(uploadToast, taskId, indicatorId) {
+    checkLoadingProgress(uploadToast, taskId, () => {
+        console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
+        pkg.hideToast(uploadToast);
+        // Succès d'import : note inline quand l'onglet Données est
+        // affiché, sinon toast brève (4 s) — l'information durable est
+        // déjà portée par #infosBDD et #dataNextStep.
+        emitBddReport(t("Fichier chargé avec succès !"));
+
+        // mets à jour les infos de la BDD
+        readBddValues();
+        // Le My Finds apporte aussi ses logs (DNF suivis d'une trouvaille…)
+        // et résout des DNF : statut de « Mes logs » et points DNF relus.
+        pkg.refreshLogsStatus?.();
+        pkg.reloadDnfData?.();
+        pkg.reloadOwnerData?.();
+
+        // L'état vide reste affiché tant que totalCaches n'est pas connu :
+        // garder l'indicateur (et les contrôles verrouillés, endImport est
+        // différé à onDone) pendant tout l'affichage des points — sinon la
+        // carte re-proposerait un import pendant le délai entre la fin de
+        // l'import et l'apparition des points.
+        updateUploadIndicator(indicatorId, t('Chargement et affichage des points...'), null);
+        const finishDisplay = () => {
+            endImport();
+            hideUploadIndicator(indicatorId);
+        };
+        // Charger et afficher les points sur la carte
+        try {
+            loadAndDisplayPoints({
+                onProgress: (p) => updateUploadIndicator(indicatorId, null, p),
+                onDone: finishDisplay,
+            });
+        } catch (e) {
+            console.error('[uploadBdd] loadAndDisplayPoints a levé une erreur:', e);
+            finishDisplay();
+        }
+    }, (message) => {
+        endImport();
+        console.error('[uploadBdd] Erreur import:', message);
+        pkg.hideToast(uploadToast);
+        hideUploadIndicator(indicatorId);
+        pkg.showToast(message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
+    }, { onProgress: (p) => updateUploadIndicator(indicatorId, t('Traitement du fichier en cours...'), p) });
+}
+
 function uploadBdd (file, uploadToast){
     // Verrouiller les contrôles (inputs, bouton de suppression) pour toute la
     // durée de l'import : évite qu'un second import ou un vidage de base ne
@@ -1339,51 +1530,7 @@ function uploadBdd (file, uploadToast){
     };
 
     uploadGpxWithProgress(file, uploadToast, indicatorHooks)
-    .then(data => {
-        checkLoadingProgress(uploadToast, data.task_id, () => {
-            console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
-            pkg.hideToast(uploadToast);
-            // Succès d'import : note inline quand l'onglet Données est
-            // affiché, sinon toast brève (4 s) — l'information durable est
-            // déjà portée par #infosBDD et #dataNextStep.
-            emitBddReport(t("Fichier chargé avec succès !"));
-
-            // mets à jour les infos de la BDD
-            readBddValues();
-            // Le My Finds apporte aussi ses logs (DNF suivis d'une trouvaille…)
-            // et résout des DNF : statut de « Mes logs » et points DNF relus.
-            pkg.refreshLogsStatus?.();
-            pkg.reloadDnfData?.();
-            pkg.reloadOwnerData?.();
-
-            // L'état vide reste affiché tant que totalCaches n'est pas connu :
-            // garder l'indicateur (et les contrôles verrouillés, endImport est
-            // différé à onDone) pendant tout l'affichage des points — sinon la
-            // carte re-proposerait un import pendant le délai entre la fin de
-            // l'import et l'apparition des points.
-            updateUploadIndicator(indicatorId, t('Chargement et affichage des points...'), null);
-            const finishDisplay = () => {
-                endImport();
-                hideUploadIndicator(indicatorId);
-            };
-            // Charger et afficher les points sur la carte
-            try {
-                loadAndDisplayPoints({
-                    onProgress: (p) => updateUploadIndicator(indicatorId, null, p),
-                    onDone: finishDisplay,
-                });
-            } catch (e) {
-                console.error('[uploadBdd] loadAndDisplayPoints a levé une erreur:', e);
-                finishDisplay();
-            }
-        }, (message) => {
-            endImport();
-            console.error('[uploadBdd] Erreur import:', message);
-            pkg.hideToast(uploadToast);
-            hideUploadIndicator(indicatorId);
-            pkg.showToast(message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
-        }, { onProgress: (p) => updateUploadIndicator(indicatorId, t('Traitement du fichier en cours...'), p) });
-    })
+    .then(data => trackGpxImportTask(uploadToast, data.task_id, indicatorId))
     .catch(error => {
         endImport();
         console.error('Error:', error);
