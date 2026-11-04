@@ -3,6 +3,7 @@
 // le menu déroulant ; la liste des noms sélectionnés reste accessible en
 // tooltip sur le contrôle fermé pour une sélection partielle.
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -131,4 +132,44 @@ test('les options des filtres affichent leur nombre de découvertes', async ({ p
   await expect(containerDropdown.locator('.option[data-value="Other"]')).toContainText('Other (2)');
   await expect(containerDropdown.locator('.option[data-value="Regular"]')).toContainText('Regular (1)');
   await expect(containerDropdown.locator('.option[data-value="Not chosen"]')).toContainText('Not chosen (0)');
+});
+
+test('export de la sélection : GPX filtré téléchargé, bouton suivant le compteur', async ({ page, request }) => {
+  // Runtime partagé : repartir d'une base vide puis importer le fixture rend
+  // le test indépendant de l'ordre d'exécution des specs.
+  const res = await request.post('/clear_database');
+  expect(res.ok()).toBeTruthy();
+
+  await openReadyApp(page);
+  await dismissFirstUseModal(page);
+
+  // Base vide : le bouton est désactivé (rien à exporter).
+  const btnExport = page.locator('#btnExportSelection');
+  await expect(btnExport).toBeDisabled();
+
+  await importFixture(page);
+  await expect(btnExport).toBeEnabled();
+
+  // Sélection réduite à une seule cache via la recherche : l'export ne doit
+  // contenir que ce qui est affiché (même ensemble que le compteur).
+  await page.locator('#inputFilterSearch').fill('GCE2E001');
+  await expect(page.locator('#filtersCounter')).toContainText('1 / 6', { timeout: 15_000 });
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    btnExport.click(),
+    page.locator('#exportSelectionGpx').click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^mygcflow-selection-\d{4}-\d{2}-\d{2}\.gpx$/);
+  const gpx = fs.readFileSync(await download.path(), 'utf8');
+  expect(gpx).toContain('creator="MyGCFlow"');
+  expect((gpx.match(/<wpt /g) || [])).toHaveLength(1);
+  expect(gpx).toContain('<name>GCE2E001</name>');
+  expect(gpx).toContain('<urlname>Traditionnelle 1</urlname>');
+  expect(gpx).not.toContain('GCE2E002');
+
+  // Filtre restrictif : sélection retombée à 0 → re-désactivé.
+  await page.locator('#inputFilterSearch').fill('aucune-correspondance');
+  await expect(page.locator('#filtersCounter')).toContainText('0 / 6', { timeout: 15_000 });
+  await expect(btnExport).toBeDisabled();
 });

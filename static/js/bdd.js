@@ -11,6 +11,7 @@ import { isAudioFile } from './music_track.mjs';
 import { isImageFile } from './images_model.mjs';
 import { countLabel } from './utils.js';
 import { featureOwner, matchesAttributes, matchesSearch, normalizeSearchText } from './filter_model.mjs';
+import { exportSelectionFileName, selectionToCsv, selectionToGpx } from './export_selection.mjs';
 
 export let json_data = null;
 export const metadata = {};
@@ -101,6 +102,20 @@ if (fileInput) {
 const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
 if (clearDatabaseBtn) {
     clearDatabaseBtn.addEventListener('click', clearDatabase);
+}
+
+// Export de la sélection filtrée (menu_filtre.html) : GPX/CSV générés côté
+// client depuis les features déjà en mémoire — aucun backend, symétrique
+// des boutons « Exporter » des cartes Labs/logs (qui, elles, vont chercher
+// un fichier serveur). Le gabarit n'est inclus qu'en mode principal ; les
+// gardes couvrent son absence en Évolution / Mes poses.
+const exportSelectionGpxBtn = document.getElementById('exportSelectionGpx');
+const exportSelectionCsvBtn = document.getElementById('exportSelectionCsv');
+if (exportSelectionGpxBtn) {
+    exportSelectionGpxBtn.addEventListener('click', () => downloadSelectionExport('gpx'));
+}
+if (exportSelectionCsvBtn) {
+    exportSelectionCsvBtn.addEventListener('click', () => downloadSelectionExport('csv'));
 }
 
 // Bouton d'import de l'état vide (app.html) : délègue au clic à #file-input,
@@ -859,6 +874,15 @@ export function dataExtentLonLat() {
         if (lat > north) north = lat;
     }
     return west === Infinity ? null : [west, south, east, north];
+}
+
+// Features de la sélection affichée — le même ensemble que le compteur
+// « n / total » (json_data est réécrit à chaque chargement et à chaque
+// application de filtre, cf. readBdd/loadAndDisplayPoints/changeSelect).
+// Tableau vide sans données chargées ou en mode Évolution/Mes poses. Sert
+// à l'export de la sélection (GPX/CSV) et exposé pour les tests.
+export function getFilteredFeatures() {
+    return (json_data && Array.isArray(json_data.features)) ? json_data.features : [];
 }
 
 // Recadre la vue sur l'emprise des données chargées. Sans `force`, ne fait
@@ -1849,6 +1873,13 @@ function updateFiltersCounter(selected, eligible, { hidden = 0 } = {}){
         // constituent pas un filtre actif.
         updateFilterPanelState(selected, eligible);
 
+        // « Exporter la sélection » (menu_filtre.html) : inerte tant que la
+        // sélection affichée est vide — base non chargée ou filtre qui a
+        // tout retiré. Pas un filtre : il exporte l'ensemble que le
+        // compteur vient de compter.
+        const exportBtn = document.getElementById('btnExportSelection');
+        if (exportBtn) exportBtn.disabled = !(selected > 0);
+
         // État vide, filtres et actions Lecture/Enregistrement suivent la
         // présence de données (base chargée et sélection non vide).
         try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) { console.warn('updateDataAvailabilityUI error:', e); }
@@ -1907,6 +1938,38 @@ function updateFilterPanelState(selected, total){
         ? pkg.filtersAreDefault()
         : !(total > 0 && selected < total);
     panel.toggleAttribute('data-filters-active', !atDefault);
+}
+
+// --- Export de la sélection filtrée ---------------------------------------
+// Téléchargement 100 % client : Blob → <a download> cliqué → revoke, comme
+// downloadBlob de stats_ui.js. Pas de toast de bilan : le téléchargement se
+// voit de lui-même.
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function downloadSelectionExport(format) {
+    // Le bouton est désactivé sur sélection vide ; la garde couvre un clic
+    // resté en file (ou un appel programmatique).
+    const features = getFilteredFeatures();
+    if (!features.length) return;
+    try {
+        const isGpx = format === 'gpx';
+        const text = isGpx ? selectionToGpx(features) : selectionToCsv(features);
+        downloadBlob(new Blob([text], {
+            type: isGpx ? 'application/gpx+xml;charset=utf-8' : 'text/csv;charset=utf-8',
+        }), exportSelectionFileName(isGpx ? 'gpx' : 'csv'));
+    } catch (e) {
+        console.warn('[export sélection]', e);
+        showError(t("Erreur lors de l'export de la sélection"), t('Erreur'));
+    }
 }
 
 async function clearDatabase() {

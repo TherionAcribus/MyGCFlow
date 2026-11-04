@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 12:53+0100\n"
+"POT-Creation-Date: 2026-11-04 13:27+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,7 +21,7 @@ msgstr ""
 msgid "Aucun fichier envoyé"
 msgstr ""
 
-#: bdd.py:123 static/js/bdd.js:125 static/js/evolution_data.js:216
+#: bdd.py:123 static/js/bdd.js:126 static/js/evolution_data.js:216
 #: templates/menu_data.html:31 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr ""
@@ -36,11 +36,11 @@ msgid ""
 "section « Mes Lab Caches » de l'onglet Données."
 msgstr ""
 
-#: bdd.py:165 static/js/bdd.js:332
+#: bdd.py:165 static/js/bdd.js:352
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr ""
 
-#: bdd.py:169 static/js/bdd.js:336
+#: bdd.py:169 static/js/bdd.js:356
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr ""
 
@@ -52,7 +52,7 @@ msgstr ""
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr ""
 
-#: bdd.py:219 bdd.py:230 static/js/bdd.js:355
+#: bdd.py:219 bdd.py:230 static/js/bdd.js:375
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr ""
 
@@ -716,60 +716,6 @@ msgstr ""
 msgid "Archivée"
 msgstr ""
 
-#: settings_manager.py:2805
-#, python-format
-msgid ""
-"Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
-"lettre ou un chiffre est nécessaire)"
-msgstr ""
-
-#: blueprints/profiles.py:553 settings_manager.py:2845 settings_manager.py:2922
-#: settings_manager.py:2974
-#, python-format
-msgid "Thème '%(name)s' introuvable"
-msgstr ""
-
-#: settings_manager.py:2866
-#, python-format
-msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
-msgstr ""
-
-#: settings_manager.py:2902 settings_manager.py:2927
-#, python-format
-msgid "Un thème nommé '%(name)s' existe déjà"
-msgstr ""
-
-#: settings_manager.py:2939
-#, python-format
-msgid "Thème source '%(name)s' introuvable"
-msgstr ""
-
-#: settings_manager.py:2955
-msgid "Mode de thème inconnu"
-msgstr ""
-
-#: settings_manager.py:2958
-#, python-format
-msgid "Le thème '%(name)s' appartient déjà à ce mode"
-msgstr ""
-
-#: settings_manager.py:3148
-msgid "Payload invalide"
-msgstr ""
-
-#: settings_manager.py:3151
-msgid "Fichier de thème invalide (détrompeur manquant)"
-msgstr ""
-
-#: settings_manager.py:3155
-msgid "Section 'profile' manquante"
-msgstr ""
-
-#: task_manager.py:30
-#, python-format
-msgid "Une tâche '%(type)s' est déjà en cours"
-msgstr ""
-
 #: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
 msgstr ""
@@ -789,9 +735,9 @@ msgstr ""
 #: templates/app.html:278 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
 #: templates/guide.html:540 templates/menu_animation.html:83
-#: templates/menu_animation.html:113 templates/menu_filtre.html:100
-#: templates/menu_filtre.html:109 templates/menu_filtre.html:125
-#: templates/menu_filtre.html:134 test_translations.py:30
+#: templates/menu_animation.html:113 templates/menu_filtre.html:114
+#: templates/menu_filtre.html:123 templates/menu_filtre.html:139
+#: templates/menu_filtre.html:148 test_translations.py:30
 msgid "Données"
 msgstr ""
 
@@ -1412,6 +1358,11 @@ msgstr ""
 msgid "Nouveau nom manquant"
 msgstr ""
 
+#: blueprints/profiles.py:553
+#, python-format
+msgid "Thème '%(name)s' introuvable"
+msgstr ""
+
 #: blueprints/tasks.py:73
 msgid "Cette tâche ne peut pas être annulée"
 msgstr ""
@@ -1454,338 +1405,343 @@ msgid ""
 "l'enregistrement : la vidéo peut comporter des zones vides."
 msgstr ""
 
-#: static/js/bdd.js:219 static/js/mapgl.js:6769
+#: static/js/bdd.js:239 static/js/mapgl.js:6769
 msgid "Terminé"
 msgstr ""
 
-#: static/js/bdd.js:349
+#: static/js/bdd.js:369
 msgid "Veuillez sélectionner un fichier .gpx ou .zip"
 msgstr ""
 
-#: static/js/bdd.js:352
+#: static/js/bdd.js:372
 msgid "Le fichier sélectionné est vide"
 msgstr ""
 
-#: static/js/bdd.js:491 static/js/gc_logs.js:504
+#: static/js/bdd.js:511 static/js/gc_logs.js:504
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr ""
 
-#: static/js/bdd.js:491 static/js/bdd.js:2427
+#: static/js/bdd.js:511 static/js/bdd.js:2510
 msgid "Import en cours"
 msgstr ""
 
-#: static/js/bdd.js:506 static/js/bdd.js:519 templates/app.html:207
+#: static/js/bdd.js:526 static/js/bdd.js:539 templates/app.html:207
 msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
-#: static/js/bdd.js:506 static/js/bdd.js:1990 static/js/bdd.js:2061
+#: static/js/bdd.js:526 static/js/bdd.js:2024 static/js/bdd.js:2095
 #: static/js/evolution_data.js:333 static/js/gc_logs.js:310
 #: static/js/labs.js:1563 static/js/notifications.js:297
 #: static/js/notifications.js:342 static/js/poses_data.js:191
 msgid "Chargement"
 msgstr ""
 
-#: static/js/bdd.js:525
+#: static/js/bdd.js:545
 msgid "Fichier invalide"
 msgstr ""
 
-#: static/js/bdd.js:578 static/js/gc_logs.js:538
+#: static/js/bdd.js:598 static/js/gc_logs.js:538
 msgid "Cet aperçu a expiré — fermez-le et relancez l'import."
 msgstr ""
 
-#: static/js/bdd.js:589 static/js/gc_logs.js:549
+#: static/js/bdd.js:609 static/js/gc_logs.js:549
 #, python-brace-format
 msgid "À valider avant ${time} — au-delà, relancez l'aperçu."
 msgstr ""
 
-#: static/js/bdd.js:607
+#: static/js/bdd.js:627
 msgid "nouvelle géocache"
 msgstr ""
 
-#: static/js/bdd.js:607
+#: static/js/bdd.js:627
 msgid "nouvelles géocaches"
 msgstr ""
 
-#: static/js/bdd.js:608
+#: static/js/bdd.js:628
 msgid "géocache inchangée"
 msgstr ""
 
-#: static/js/bdd.js:608
+#: static/js/bdd.js:628
 msgid "géocaches inchangées"
 msgstr ""
 
-#: static/js/bdd.js:625
+#: static/js/bdd.js:645
 msgid "géocache sera retirée"
 msgstr ""
 
-#: static/js/bdd.js:625
+#: static/js/bdd.js:645
 msgid "géocaches seront retirées"
 msgstr ""
 
-#: static/js/bdd.js:628
+#: static/js/bdd.js:648
 msgid ""
 "Elles sont absentes du fichier : un My Finds liste toutes vos trouvailles"
 " — l'import les retirera donc de la base."
 msgstr ""
 
-#: static/js/bdd.js:640 static/js/gc_logs.js:68 static/js/labs.js:697
+#: static/js/bdd.js:660 static/js/gc_logs.js:68 static/js/labs.js:697
 msgid "… et 1 autre"
 msgstr ""
 
-#: static/js/bdd.js:640 static/js/gc_logs.js:68 static/js/labs.js:697
+#: static/js/bdd.js:660 static/js/gc_logs.js:68 static/js/labs.js:697
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr ""
 
-#: static/js/bdd.js:690 static/js/bdd.js:1794 static/js/bdd.js:2000
+#: static/js/bdd.js:710 static/js/bdd.js:1828 static/js/bdd.js:2034
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr ""
 
-#: static/js/bdd.js:708 static/js/bdd.js:711 static/js/bdd.js:1820
-#: static/js/bdd.js:1824 static/js/bdd.js:1972
+#: static/js/bdd.js:728 static/js/bdd.js:731 static/js/bdd.js:1854
+#: static/js/bdd.js:1858 static/js/bdd.js:2006
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:719 static/js/gc_logs.js:707 static/js/labs.js:994
+#: static/js/bdd.js:739 static/js/gc_logs.js:707 static/js/labs.js:994
 msgid "Import refusé"
 msgstr ""
 
-#: static/js/bdd.js:729 static/js/bdd.js:1971 static/js/bdd.js:2011
+#: static/js/bdd.js:749 static/js/bdd.js:2005 static/js/bdd.js:2045
 msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
-#: static/js/bdd.js:729 static/js/bdd.js:1971 static/js/bdd.js:2011
-#: static/js/bdd.js:2179 static/js/bdd.js:2187 static/js/bdd.js:2505
-#: static/js/dnf_data.js:191 static/js/evolution_data.js:252
-#: static/js/evolution_data.js:356 static/js/evolution_data.js:956
-#: static/js/evolution_data.js:960 static/js/evolution_data.js:1310
-#: static/js/evolution_data.js:1348 static/js/evolution_data.js:1356
-#: static/js/gc_logs.js:747 static/js/labs.js:2062 static/js/labs.js:2105
-#: static/js/labs.js:2148 static/js/notifications.js:421
-#: static/js/owner_data.js:185 static/js/poses_data.js:208
-#: static/js/recording_perf.js:187 static/js/ui.js:2360
+#: static/js/bdd.js:749 static/js/bdd.js:2005 static/js/bdd.js:2045
+#: static/js/bdd.js:2213 static/js/bdd.js:2221 static/js/bdd.js:2498
+#: static/js/bdd.js:2588 static/js/dnf_data.js:191
+#: static/js/evolution_data.js:252 static/js/evolution_data.js:356
+#: static/js/evolution_data.js:956 static/js/evolution_data.js:960
+#: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
+#: static/js/evolution_data.js:1356 static/js/gc_logs.js:747
+#: static/js/labs.js:2062 static/js/labs.js:2105 static/js/labs.js:2148
+#: static/js/notifications.js:421 static/js/owner_data.js:185
+#: static/js/poses_data.js:208 static/js/recording_perf.js:187
+#: static/js/ui.js:2360
 msgid "Erreur"
 msgstr ""
 
-#: static/js/bdd.js:756
+#: static/js/bdd.js:776
 msgid ""
 "Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, "
 "une musique ou une image"
 msgstr ""
 
-#: static/js/bdd.js:850 static/js/bdd.js:876 static/js/mapgl.js:1233
+#: static/js/bdd.js:870 static/js/bdd.js:896 static/js/mapgl.js:1233
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/bdd.js:863
+#: static/js/bdd.js:883
 #, python-brace-format
 msgid "du ${start} au ${end}"
 msgstr ""
 
-#: static/js/bdd.js:871
+#: static/js/bdd.js:891
 #, python-brace-format
 msgid "aujourd'hui à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:874
+#: static/js/bdd.js:894
 #, python-brace-format
 msgid "hier à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:896 static/js/stats_panels.js:1841
+#: static/js/bdd.js:916 static/js/stats_panels.js:1841
 #: static/js/stats_panels.js:1980
 msgid "caches"
 msgstr ""
 
-#: static/js/bdd.js:896
+#: static/js/bdd.js:916
 msgid "cache"
 msgstr ""
 
-#: static/js/bdd.js:899
+#: static/js/bdd.js:919
 #, python-brace-format
 msgid "importé ${when}"
 msgstr ""
 
-#: static/js/bdd.js:945 static/js/bdd.js:1131 templates/menu_data.html:61
+#: static/js/bdd.js:965 static/js/bdd.js:1165 templates/menu_data.html:61
 msgid "Aucune géocache chargée"
 msgstr ""
 
-#: static/js/bdd.js:1806
+#: static/js/bdd.js:1840
 msgid "Réponse invalide du serveur"
 msgstr ""
 
-#: static/js/bdd.js:1810
+#: static/js/bdd.js:1844
 msgid "Impossible de lancer l'import GPX"
 msgstr ""
 
-#: static/js/bdd.js:1829 static/js/evolution_data.js:909
+#: static/js/bdd.js:1863 static/js/evolution_data.js:909
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1830 static/js/evolution_data.js:910
+#: static/js/bdd.js:1864 static/js/evolution_data.js:910
 msgid "Envoi du fichier annulé"
 msgstr ""
 
-#: static/js/bdd.js:1844
+#: static/js/bdd.js:1878
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr ""
 
-#: static/js/bdd.js:1844
+#: static/js/bdd.js:1878
 msgid "Aucun fichier"
 msgstr ""
 
-#: static/js/bdd.js:1884
+#: static/js/bdd.js:1918
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:1890
+#: static/js/bdd.js:1924
 msgid "géocache importée"
 msgstr ""
 
-#: static/js/bdd.js:1890
+#: static/js/bdd.js:1924
 msgid "géocaches importées"
 msgstr ""
 
-#: static/js/bdd.js:1894
+#: static/js/bdd.js:1928
 msgid "géocache sans date de trouvaille"
 msgstr ""
 
-#: static/js/bdd.js:1894
+#: static/js/bdd.js:1928
 msgid "géocaches sans date de trouvaille"
 msgstr ""
 
-#: static/js/bdd.js:1898
+#: static/js/bdd.js:1932
 msgid "géocache sans position"
 msgstr ""
 
-#: static/js/bdd.js:1898
+#: static/js/bdd.js:1932
 msgid "géocaches sans position"
 msgstr ""
 
-#: static/js/bdd.js:1902
+#: static/js/bdd.js:1936
 msgid "log ajouté"
 msgstr ""
 
-#: static/js/bdd.js:1902
+#: static/js/bdd.js:1936
 msgid "logs ajoutés"
 msgstr ""
 
-#: static/js/bdd.js:1905
+#: static/js/bdd.js:1939
 msgid "log rejeté"
 msgstr ""
 
-#: static/js/bdd.js:1905
+#: static/js/bdd.js:1939
 msgid "logs rejetés"
 msgstr ""
 
-#: static/js/bdd.js:1950 static/js/bdd.js:2525
+#: static/js/bdd.js:1984 static/js/bdd.js:2608
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:1990 static/js/bdd.js:1991 static/js/bdd.js:1998
+#: static/js/bdd.js:2024 static/js/bdd.js:2025 static/js/bdd.js:2032
 msgid "Préparation de l'envoi..."
 msgstr ""
 
-#: static/js/bdd.js:2059 static/js/bdd.js:2061
+#: static/js/bdd.js:2093 static/js/bdd.js:2095
 msgid "Chargement de l'application..."
 msgstr ""
 
-#: static/js/bdd.js:2078
+#: static/js/bdd.js:2112
 msgid "Impossible de lancer le chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2179 static/js/bdd.js:2187
+#: static/js/bdd.js:2213 static/js/bdd.js:2221
 msgid "Erreur lors du chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2312
+#: static/js/bdd.js:2346
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr ""
 
-#: static/js/bdd.js:2322
+#: static/js/bdd.js:2356
 msgid "masquée"
 msgstr ""
 
-#: static/js/bdd.js:2322
+#: static/js/bdd.js:2356
 msgid "masquées"
 msgstr ""
 
-#: static/js/bdd.js:2324
+#: static/js/bdd.js:2358
 msgid "Découvertes masquées par le réglage « Découvertes affichées »"
 msgstr ""
 
-#: static/js/bdd.js:2371
+#: static/js/bdd.js:2416
 msgid ""
 "Aucune découverte affichée : le réglage « Découvertes affichées » masque "
 "toutes les sources."
 msgstr ""
 
-#: static/js/bdd.js:2372
+#: static/js/bdd.js:2417
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr ""
 
-#: static/js/bdd.js:2374
+#: static/js/bdd.js:2419
 msgid "Aucune cache visible"
 msgstr ""
 
-#: static/js/bdd.js:2427
+#: static/js/bdd.js:2498
+msgid "Erreur lors de l'export de la sélection"
+msgstr ""
+
+#: static/js/bdd.js:2510
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr ""
 
-#: static/js/bdd.js:2440
+#: static/js/bdd.js:2523
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 msgstr ""
 
-#: static/js/bdd.js:2441 static/js/gc_logs.js:732 static/js/labs.js:2127
+#: static/js/bdd.js:2524 static/js/gc_logs.js:732 static/js/labs.js:2127
 msgid "Confirmation de suppression"
 msgstr ""
 
-#: static/js/bdd.js:2444 templates/guide.html:173 templates/menu_data.html:64
+#: static/js/bdd.js:2527 templates/guide.html:173 templates/menu_data.html:64
 msgid "Supprimer mes géocaches"
 msgstr ""
 
-#: static/js/bdd.js:2451
+#: static/js/bdd.js:2534
 msgid "Confirmation non disponible, action annulée."
 msgstr ""
 
-#: static/js/bdd.js:2451 static/js/bdd.js:2466
+#: static/js/bdd.js:2534 static/js/bdd.js:2549
 msgid "Suppression"
 msgstr ""
 
-#: static/js/bdd.js:2466
+#: static/js/bdd.js:2549
 msgid "Suppression des trouvailles..."
 msgstr ""
 
-#: static/js/bdd.js:2493
+#: static/js/bdd.js:2576
 msgid "Trouvailles supprimées avec succès"
 msgstr ""
 
-#: static/js/bdd.js:2494 static/js/gc_logs.js:745 static/js/labs.js:2146
+#: static/js/bdd.js:2577 static/js/gc_logs.js:745 static/js/labs.js:2146
 msgid "Suppression réussie"
 msgstr ""
 
-#: static/js/bdd.js:2505
+#: static/js/bdd.js:2588
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr ""
 
-#: static/js/bdd.js:2525 static/js/mapgl.js:1007 static/js/notifications.js:379
+#: static/js/bdd.js:2608 static/js/mapgl.js:1007 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr ""
 
-#: static/js/bdd.js:2531
+#: static/js/bdd.js:2614
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr ""
 
-#: static/js/bdd.js:2543 static/js/bdd.js:2635 static/js/bdd.js:2643
+#: static/js/bdd.js:2626 static/js/bdd.js:2718 static/js/bdd.js:2726
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr ""
 
-#: static/js/bdd.js:2543 static/js/bdd.js:2635 static/js/bdd.js:2643
+#: static/js/bdd.js:2626 static/js/bdd.js:2718 static/js/bdd.js:2726
 msgid "Erreur d'affichage"
 msgstr ""
 
@@ -4851,8 +4807,8 @@ msgstr ""
 msgid "Âge des caches trouvées"
 msgstr ""
 
-#: static/js/stats_panels.js:1185 templates/menu_filtre.html:155
-#: templates/menu_filtre.html:156 templates/menu_stats.html:494
+#: static/js/stats_panels.js:1185 templates/menu_filtre.html:169
+#: templates/menu_filtre.html:170 templates/menu_stats.html:494
 msgid "Attributs"
 msgstr ""
 
@@ -5980,11 +5936,11 @@ msgstr ""
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:5942 templates/menu_filtre.html:157
+#: static/js/ui.js:5942 templates/menu_filtre.html:171
 msgid "Filtrer par attribut"
 msgstr ""
 
-#: static/js/ui.js:5943 templates/menu_filtre.html:164
+#: static/js/ui.js:5943 templates/menu_filtre.html:178
 msgid "Filtrer par propriétaire"
 msgstr ""
 
@@ -7238,8 +7194,8 @@ msgstr ""
 msgid "Sous les filtres, le réglage"
 msgstr ""
 
-#: templates/guide.html:169 templates/menu_filtre.html:184
-#: templates/menu_filtre.html:185
+#: templates/guide.html:169 templates/menu_filtre.html:198
+#: templates/menu_filtre.html:199
 msgid "Caches sans localisation (locationless)"
 msgstr ""
 
@@ -7602,16 +7558,16 @@ msgid "Renseignez la"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:96
-#: templates/menu_filtre.html:97 templates/menu_filtre.html:121
-#: templates/menu_filtre.html:122
+#: templates/menu_animation.html:80 templates/menu_filtre.html:110
+#: templates/menu_filtre.html:111 templates/menu_filtre.html:135
+#: templates/menu_filtre.html:136
 msgid "Date de début"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:109
-#: templates/menu_animation.html:110 templates/menu_filtre.html:105
-#: templates/menu_filtre.html:106 templates/menu_filtre.html:130
-#: templates/menu_filtre.html:131
+#: templates/menu_animation.html:110 templates/menu_filtre.html:119
+#: templates/menu_filtre.html:120 templates/menu_filtre.html:144
+#: templates/menu_filtre.html:145
 msgid "Date de fin"
 msgstr ""
 
@@ -9835,44 +9791,56 @@ msgstr ""
 msgid "Enregistrer…"
 msgstr ""
 
+#: templates/menu_filtre.html:90
+msgid "Exporter la sélection"
+msgstr ""
+
 #: templates/menu_filtre.html:93
+msgid "GPX (.gpx)"
+msgstr ""
+
+#: templates/menu_filtre.html:94
+msgid "CSV (.csv)"
+msgstr ""
+
+#: templates/menu_filtre.html:107
 msgid "Période de découverte"
 msgstr ""
 
-#: templates/menu_filtre.html:99 templates/menu_filtre.html:108
-#: templates/menu_filtre.html:124 templates/menu_filtre.html:133
+#: templates/menu_filtre.html:113 templates/menu_filtre.html:122
+#: templates/menu_filtre.html:138 templates/menu_filtre.html:147
 msgid "Date par défaut (toutes les données)"
 msgstr ""
 
-#: templates/menu_filtre.html:118
+#: templates/menu_filtre.html:132
 msgid "Période de pose"
 msgstr ""
 
-#: templates/menu_filtre.html:159
+#: templates/menu_filtre.html:173
 msgid "La cache doit porter tous les attributs choisis."
 msgstr ""
 
-#: templates/menu_filtre.html:162 templates/menu_filtre.html:163
+#: templates/menu_filtre.html:176 templates/menu_filtre.html:177
 msgid "Propriétaire"
 msgstr ""
 
-#: templates/menu_filtre.html:168 templates/menu_filtre.html:169
+#: templates/menu_filtre.html:182 templates/menu_filtre.html:183
 msgid "Recherche"
 msgstr ""
 
-#: templates/menu_filtre.html:169
+#: templates/menu_filtre.html:183
 msgid "Code ou nom de cache"
 msgstr ""
 
-#: templates/menu_filtre.html:186
+#: templates/menu_filtre.html:200
 msgid "Comptées, sans point sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:187
+#: templates/menu_filtre.html:201
 msgid "Comptées et affichées sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:190
+#: templates/menu_filtre.html:204
 msgid ""
 "Leur position dans le fichier est fictive : affichée, elle trace un point"
 " là où vous n'êtes pas allé."

@@ -80,6 +80,20 @@
         <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-secondary ms-auto">
             <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
         </button>
+        <!-- Export de la sélection affichée (GPX/CSV, généré côté client par
+             bdd.js — pas de backend). Pas un filtre : pas de classe
+             filter-select, hors collectSelectedValues/resetAllFilters.
+             Désactivé quand la sélection est vide — synchronisé par
+             updateFiltersCounter, comme le badge #filtersCounter. -->
+        <div class="dropdown" id="exportSelectionGroup">
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" id="btnExportSelection" disabled>
+                <i class="ti ti-download me-1"></i>{{ _("Exporter la sélection") }}
+            </button>
+            <ul class="dropdown-menu">
+                <li><button type="button" class="dropdown-item" id="exportSelectionGpx">{{ _("GPX (.gpx)") }}</button></li>
+                <li><button type="button" class="dropdown-item" id="exportSelectionCsv">{{ _("CSV (.csv)") }}</button></li>
+            </ul>
+        </div>
     </div>
 
     <!-- Lignes Type / Taille / Difficultés / Terrain (partagées avec le mode Évolution) -->
