@@ -4518,8 +4518,23 @@ function collectSelectedValues(){
     selectedValues["container"] = selectContainer ? Array.from(selectContainer.selectedOptions).map(option => option.value).filter(v => v !== '') : [];
     const selCountry = document.getElementById('selectCountry');
     const selState = document.getElementById('selectState');
-    if (selCountry) selectedValues["countries"] = Array.from(selCountry.selectedOptions).map(o => o.value).filter(v => v !== '');
-    if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value).filter(v => v !== '');
+    // Pays/régions : options dynamiques peuplées en async — tant que le
+    // select n'a que son placeholder (le collect debouncé de setPickerDates
+    // peut précéder le peuplement au rechargement), reconduire la sélection
+    // persistée plutôt qu'écrire « [] » par-dessus filtersSelection, comme
+    // le fait déjà inclusiveSelectValues pour Attributs/Propriétaire.
+    // Clés omises quand rien n'est connu (jamais peuplé ET rien de persisté) :
+    // « [] » signifie « Aucun » pour ces listes exclusives — l'écrire ici
+    // serait restauré au peuplement comme une dé-sélection totale. La clé
+    // *_excluded (options décochées) accompagne la sélection : c'est elle
+    // que populateCountryStateSelects restaure, pour qu'une option apparue
+    // depuis (réimport, nouvelle source) soit cochée par défaut.
+    const countries = selCountry ? geoSelectValues(selCountry, 'countries') : null;
+    if (countries?.selected !== undefined) selectedValues["countries"] = countries.selected;
+    if (countries?.excluded !== undefined) selectedValues["countries_excluded"] = countries.excluded;
+    const states = selState ? geoSelectValues(selState, 'states') : null;
+    if (states?.selected !== undefined) selectedValues["states"] = states.selected;
+    if (states?.excluded !== undefined) selectedValues["states_excluded"] = states.excluded;
     // Département : présent seulement en mode Évolution (ignoré sinon).
     if (selectCounty) selectedValues["counties"] = Array.from(selectCounty.selectedOptions).map(o => o.value).filter(v => v !== '');
     // Filtres inclusifs (attributs / propriétaire / recherche) : sélection
@@ -4564,6 +4579,30 @@ function inclusiveSelectValues(selectEl, key) {
         const saved = JSON.parse(localStorage.getItem('filtersSelection') || 'null');
         return Array.isArray(saved?.[key]) ? saved[key] : [];
     } catch (_) { return []; }
+}
+
+// Lecture Pays/Région pour collectSelectedValues : { selected, excluded } —
+// la sélection cochée (clé historique, consommée par le filtrage et les
+// préréglages) et les options DÉCOCHÉES (clé *_excluded, lue en priorité à
+// la restauration). Tant que le select n'a que son placeholder, les valeurs
+// persistées sont reconduites ; undefined quand rien n'est connu, pour que
+// l'appelant omette la clé plutôt que d'écrire un « [] » restauré comme
+// dé-sélection.
+function geoSelectValues(selectEl, key) {
+    const real = Array.from(selectEl.options).filter(o => !o.disabled && o.value !== '');
+    if (real.length) {
+        return {
+            selected: real.filter(o => o.selected).map(o => o.value),
+            excluded: real.filter(o => !o.selected).map(o => o.value),
+        };
+    }
+    try {
+        const saved = JSON.parse(localStorage.getItem('filtersSelection') || 'null');
+        return {
+            selected: Array.isArray(saved?.[key]) ? saved[key] : undefined,
+            excluded: Array.isArray(saved?.[`${key}_excluded`]) ? saved[`${key}_excluded`] : undefined,
+        };
+    } catch (_) { return { selected: undefined, excluded: undefined }; }
 }
 
 // Rendu d'une option de filtre : le libellé suivi de « (n) », nombre de
@@ -4858,6 +4897,24 @@ function populateCountryStateSelects(tree){
         setTimeout(() => populateCountryStateSelects(tree), 200);
         return;
     }
+    // Sélection en cours capturée AVANT la destruction : le repeuplement
+    // (réimport, changement de base Évolution) recrée toutes les options
+    // cochées — sans ce snapshot le choix de l'utilisateur serait perdu.
+    // On retient les options DÉCOCHÉES (realOptions - selected) : une
+    // option apparue depuis (réimport, nouvelle source — ex. « Non
+    // renseigné » des Labs) est cochée par défaut, seule une dé-sélection
+    // explicite survit. null tant que le select n'a que son placeholder
+    // (premier passage) : le repli est alors la sélection persistée
+    // (page principale, plus bas).
+    const excludedValuesOf = (sel) => {
+        const real = Array.from(sel.options).filter(o => !o.disabled && o.value !== '');
+        return real.length
+            ? real.filter(o => !o.selected).map(o => o.value)
+            : null;
+    };
+    const prevCountriesExcluded = excludedValuesOf(selCountry);
+    const prevStatesExcluded = excludedValuesOf(selState);
+
     // Détruire les instances Tom Select AVANT de modifier le DOM
     try { const ts = getTomSelect(selCountry); if (ts) ts.destroy(); } catch(_) {}
     try { const ts = getTomSelect(selState); if (ts) ts.destroy(); } catch(_) {}
@@ -4913,8 +4970,8 @@ function populateCountryStateSelects(tree){
     // tournait déjà sur une base vide. Le handler lit countryToStates (variable
     // module, mise à jour à chaque fetch) plutôt que le paramètre `tree`,
     // pour rester valide quand l'arbre est rechargé.
-    if (selCountry.dataset.csBound) return;
-    selCountry.dataset.csBound = '1';
+    if (!selCountry.dataset.csBound) {
+        selCountry.dataset.csBound = '1';
 
     selCountry.addEventListener('change', () => {
         // Si des vraies options sont sélectionnées, désélectionner le placeholder
@@ -4972,6 +5029,75 @@ function populateCountryStateSelects(tree){
         if (selectCounty) rebuildCountyOptions();
         onSelectionChangedDebounced();
     });
+    }
+
+    // Restauration de la sélection — en toute fin, à CHAQUE peuplement
+    // (listeners déjà liés) : le « tout coché » du remplissage écraserait
+    // sinon le choix persisté (au rechargement, restoreSelectedValues tourne
+    // alors que les selects n'ont que leur placeholder — garde
+    // countryHasOptions) comme la sélection en cours (réimport). Le snapshot
+    // prime sur la sélection persistée : un changement fait entre le dernier
+    // enregistrement (debouncé) et le repeuplement ne doit pas être perdu.
+    // « filtersSelection » est la sélection du mode principal : les pages
+    // « cycle de vie » n'en tiennent pas compte (leur repeuplement est déjà
+    // couvert par le snapshot) — même cloisonnement que restoreSelectedValues.
+    let persisted = null;
+    if (!isLifecyclePage()) {
+        try { persisted = JSON.parse(localStorage.getItem('filtersSelection') || 'null'); } catch (_) {}
+    }
+    // La dé-sélection fait foi — snapshot d'abord (countries_excluded /
+    // states_excluded écrits par collectSelectedValues ensuite) ; à défaut,
+    // repli sur la liste des cochés (ancien format de persistance, écriture
+    // directe de filtersSelection, préréglage), restaurée en cochés —
+    // setSelectValues assainit aux options existantes : une valeur absente
+    // du nouvel arbre disparaît avec lui, pas d'option fantôme cochée
+    // (même assainissement que refreshAttributeOwnerFilters).
+    const countriesExcluded = prevCountriesExcluded
+        ?? (persisted && Array.isArray(persisted.countries_excluded) ? persisted.countries_excluded : null);
+    const countriesChecked = (!prevCountriesExcluded && countriesExcluded === null
+        && persisted && Array.isArray(persisted.countries)) ? persisted.countries : null;
+    const statesExcluded = prevStatesExcluded
+        ?? (persisted && Array.isArray(persisted.states_excluded) ? persisted.states_excluded : null);
+    const statesChecked = (!prevStatesExcluded && statesExcluded === null
+        && persisted && Array.isArray(persisted.states)) ? persisted.states : null;
+    if (countriesExcluded !== null || countriesChecked !== null) {
+        if (countriesExcluded !== null) {
+            const excluded = new Set(countriesExcluded);
+            Array.from(selCountry.options).forEach(o => {
+                if (!o.disabled) o.selected = !excluded.has(o.value);
+            });
+        } else {
+            setSelectValues(selCountry, countriesChecked);
+        }
+        refreshTomSelect(selCountry);
+        // Sous-sélection : même chemin qu'un changement manuel — le handler
+        // reconstruit #selectState à partir des pays retenus (toutes cochées)
+        // et relance le filtrage debouncé. Tout retenu : la liste des
+        // régions peuplée ci-dessus est déjà la bonne, pas de cycle utile —
+        // le dispatch est sauté pour ne pas refiltrer/re-indexer pour rien.
+        if (!areAllSelected(selCountry)) {
+            selCountry.dispatchEvent(new Event('change'));
+        }
+        if (statesExcluded !== null || statesChecked !== null) {
+            if (statesExcluded !== null) {
+                const excluded = new Set(statesExcluded);
+                Array.from(selState.options).forEach(o => {
+                    if (!o.disabled) o.selected = !excluded.has(o.value);
+                });
+            } else {
+                setSelectValues(selState, statesChecked);
+            }
+            refreshTomSelect(selState);
+            updateFilterInfos();
+            // Pays tous retenus mais régions partielles : aucun change pays
+            // n'a relancé le filtrage — le faire ici.
+            if (areAllSelected(selCountry) && !areAllSelected(selState)) {
+                onSelectionChangedDebounced();
+            }
+        }
+    }
+    // Ni snapshot ni clé persistée : ne rien faire — le défaut « tout coché »
+    // du peuplement est inchangé (première visite, base jamais filtrée).
 }
 
 // Attributs et propriétaires : options reconstruites à chaque chargement du
@@ -5224,11 +5350,12 @@ function restoreSelectedValues(){
         setSelectValues(selectTerrain, values.terrain);
         setSelectValues(selectContainer, values.container);
         // Pays/régions : options dynamiques — au démarrage elles ne sont pas
-        // encore peuplées (l'arbre arrive en async et
-        // populateCountryStateSelects coche tout), la restauration est alors
-        // un no-op ; à l'application d'un préréglage, en revanche, les
-        // options existent déjà et la sélection sauvegardée peut être
-        // recochée. Sans clé persistée, ne rien toucher.
+        // encore peuplées (l'arbre arrive en async), la restauration est
+        // alors un no-op ; populateCountryStateSelects recoche la sélection
+        // persistée en fin de peuplement (clés *_excluded). À l'application
+        // d'un préréglage, en revanche, les options existent déjà et la
+        // sélection sauvegardée peut être recochée ici. Sans clé persistée,
+        // ne rien toucher.
         const selCountry = document.getElementById('selectCountry');
         const selState = document.getElementById('selectState');
         const countryHasOptions = selCountry
