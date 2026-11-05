@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -38,6 +39,8 @@ test('filtres compacts : résumé fermé, actions dans le dropdown, tooltip des 
   await openReadyApp(page);
   await dismissFirstUseModal(page);
   await importFixture(page);
+  // Les filtres vivent dans le sous-onglet « Filtres & affichage ».
+  await openDataSubTab(page, 'filters');
 
   // Fermé : seul le résumé est visible — aucune ligne d'actions sous le champ,
   // aucune pastille d'information. Les actions ont été déplacées dans le
@@ -95,6 +98,7 @@ test('les options des filtres affichent leur nombre de découvertes', async ({ p
   await openReadyApp(page);
   await dismissFirstUseModal(page);
   await importFixture(page);
+  await openDataSubTab(page, 'filters');
 
   // Répartition réelle de my-finds.gpx : Traditional Cache ×3, Multi-cache ×2,
   // Event Cache ×1 ; côté tailles Other ×2 et une de chaque autre.
@@ -148,6 +152,7 @@ test('export de la sélection : GPX filtré téléchargé, bouton suivant le com
   await expect(btnExport).toBeDisabled();
 
   await importFixture(page);
+  await openDataSubTab(page, 'filters');
   await expect(btnExport).toBeEnabled();
 
   // Sélection réduite à une seule cache via la recherche : l'export ne doit

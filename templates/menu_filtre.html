@@ -1,4 +1,10 @@
 <section id="filterPanel">
+    <!-- Deux groupes dans la carte : « Affichage » (réglages globaux, pas
+         des filtres de sélection) puis « Filtres » (préréglages + critères).
+         Intertitres façon onglet Animation (anim-section-divider). -->
+    <div class="anim-section-divider mt-0 mb-2">
+        <span class="anim-section-label">{{ _("Affichage") }}</span>
+    </div>
     <!-- Sources affichées : choix d'affichage global (préférence
          main_discovery_sources dans settings.json), pas un filtre de
          sélection — comme les locationless plus bas. Pas de classe
@@ -55,7 +61,9 @@
             <p class="form-hint text-muted mb-0" id="ownerDisplayHint" aria-live="polite"></p>
         </div>
     </div>
-    <hr class="my-2">
+    <div class="anim-section-divider mt-3 mb-2">
+        <span class="anim-section-label">{{ _("Filtres") }}</span>
+    </div>
 
     <!-- Barre d'actions : préréglages nommés puis, à droite, reset global.
          Un préréglage mémorise la sélection courante (localStorage

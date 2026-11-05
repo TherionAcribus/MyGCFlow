@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -95,6 +96,7 @@ test('« affichées » rend le point et l\'emprise, en gardant le comptage', asy
   await importFixture(page);
 
   await page.locator('a[href="#data"]').click();
+  await openDataSubTab(page, 'filters');
   await page.locator('#selectLocationlessDisplay').selectOption('shown');
 
   // La préférence est persistée côté serveur…

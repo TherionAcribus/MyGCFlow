@@ -8,6 +8,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -53,6 +54,7 @@ test('préréglages : enregistrer, appliquer après reset ; le select n\'est pas
   await clearDb(request);
   await openReadyApp(page);
   await importFixture(page);
+  await openDataSubTab(page, 'filters');
 
   // Repos : rien à appliquer ni à supprimer, seul « Enregistrer… » est actif.
   const presetSelect = page.locator('#filterPresetSelect');
@@ -92,6 +94,7 @@ test('préréglages : la recherche texte fait partie de la sélection enregistr�
   await clearDb(request);
   await openReadyApp(page);
   await importFixture(page);
+  await openDataSubTab(page, 'filters');
 
   const search = page.locator('#inputFilterSearch');
   await search.fill('multi');
@@ -113,6 +116,7 @@ test('préréglages : suppression avec confirmation', async ({ page, request }) 
   await clearDb(request);
   await openReadyApp(page);
   await importFixture(page);
+  await openDataSubTab(page, 'filters');
 
   await uncheckEventType(page);
   await savePreset(page, 'À supprimer');
@@ -137,6 +141,7 @@ test('préréglages : le préréglage survit au rechargement sans s\'appliquer s
   await clearDb(request);
   await openReadyApp(page);
   await importFixture(page);
+  await openDataSubTab(page, 'filters');
 
   await uncheckEventType(page);
   await savePreset(page, 'Hors events');

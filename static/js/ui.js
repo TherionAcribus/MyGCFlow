@@ -2158,6 +2158,53 @@ function initTabMemory() {
     });
 }
 
+// Mémorisation du sous-onglet de l'onglet Données (« Sources » /
+// « Filtres & affichage »), même motif que initTabMemory : sans elle, un
+// rechargement ramènerait toujours sur Sources alors que le réglage visé
+// est dans l'autre pane (un contrôle d'un pane fermé n'est pas visible).
+// Seule la page principale possède ces sous-onglets — ailleurs
+// (Évolution, Mes poses) les boutons n'existent pas et rien n'est lu.
+const DATA_SUBTAB_KEY = 'dataSubTab';
+
+// Basculements programmatiques en cours (restauration du choix mémorisé,
+// retour forcé sur « Sources » quand la base est vide) : leur « shown.bs.tab »
+// ne doit pas écraser le choix mémorisé — même règle que l'onglet principal
+// forcé sur Données (tab-memory.spec.mjs). Un Set par bouton : deux shows
+// programmatiques peuvent se chevaucher (restauration puis forçage).
+const programmaticSubTabShows = new Set();
+
+// Affiche un sous-onglet de Données sans toucher la mémorisation (exporté :
+// le routage d'un dépôt de fichiers dans bdd.js bascule sur « Sources » sans
+// que ce retour imposé ne devienne le choix mémorisé).
+export function showDataSubTabProgrammatic(tab) {
+    if (!tab || tab.classList.contains('active')) return;
+    programmaticSubTabShows.add(tab);
+    showBsTab(tab);
+}
+
+function initDataSubTabMemory() {
+    const sourcesTab = document.getElementById('dataSourcesTab');
+    const filtersTab = document.getElementById('dataFiltersTab');
+    if (!sourcesTab || !filtersTab) return;
+
+    // Restauration : le choix mémorisé l'emporte sur l'état initial du
+    // gabarit (Sources actif). Bootstrap ignore l'appel si le pane est
+    // déjà affiché ; seul « filters » sort du défaut.
+    if (localStorage.getItem(DATA_SUBTAB_KEY) === 'filters') {
+        showDataSubTabProgrammatic(filtersTab);
+    }
+
+    for (const [tab, name] of [[sourcesTab, 'sources'], [filtersTab, 'filters']]) {
+        // Un clic utilisateur pendant un basculement programmatique en
+        // attente reprend la main : son « shown » mémorise normalement.
+        tab.addEventListener('click', () => programmaticSubTabShows.delete(tab));
+        tab.addEventListener('shown.bs.tab', () => {
+            if (programmaticSubTabShows.delete(tab)) return;
+            localStorage.setItem(DATA_SUBTAB_KEY, name);
+        });
+    }
+}
+
 function initMapTabsSplitPane() {
     const container = document.getElementById('mapTabsContainer');
     const mapWithFrames = document.getElementById('mapWithFrames');
@@ -2512,12 +2559,14 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initUIElements();
         initTabMemory();
+        initDataSubTabMemory();
         initMapTabsSplitPane();
     });
 } else {
     // DOM déjà chargé
     initUIElements();
     initTabMemory();
+    initDataSubTabMemory();
     initMapTabsSplitPane();
 }
 
@@ -9102,6 +9151,12 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     if (dataResolved && !hasDb && !window.location.hash) {
         const dataTab = document.querySelector('#mainTabs a[href="#data"]');
         if (dataTab) showBsTab(dataTab);
+        // Base vide = état d'accueil : ramener aussi sur le sous-onglet
+        // Sources — c'est là que se fait l'import — même si « Filtres &
+        // affichage » était le dernier pane mémorisé. Le choix mémorisé
+        // n'est pas écrasé : il reste pour la prochaine visite avec des
+        // données (comme l'onglet principal ci-dessus).
+        showDataSubTabProgrammatic(document.getElementById('dataSourcesTab'));
     }
 
     // Suggestion « prochaine étape », sous les deux cartes de sources :

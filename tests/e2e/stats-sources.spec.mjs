@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_STATS, openWithFixture, putStats, snapshot } from './stats-panels-helpers.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
@@ -199,6 +200,7 @@ test('le taux d\'échec ignore les Lab Caches de la sélection', async ({ page, 
   await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await page.locator('#labsPreviewConfirmBtn').click();
   await expect(page.locator('#labsStatus')).toContainText('8', { timeout: 60_000 });
+  await openDataSubTab(page, 'filters');
   await page.locator('#selectDiscoverySources').selectOption('both');
   await expect(page.locator('#filtersCounter')).toContainText('10', { timeout: 60_000 });
 

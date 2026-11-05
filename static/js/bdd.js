@@ -159,7 +159,14 @@ function setImportControlsDisabled(disabled) {
 // périodiques) et AUCUN toast n'est émis. Onglet masqué → toast comme avant.
 // Les erreurs ne passent jamais par ici : elles restent des toasts.
 function dataTabVisible() {
-    return !!document.getElementById('data')?.classList.contains('active');
+    if (!document.getElementById('data')?.classList.contains('active')) return false;
+    // La note de bilan vit dans le sous-onglet « Sources » : si l'utilisateur
+    // est sur « Filtres & affichage », une note écrite dans le pane fermé ne
+    // se verrait pas — retomber sur le toast. Tolérant quand le pane
+    // n'existe pas (page Évolution, sans sous-onglets).
+    const pane = document.getElementById('dataSourcesPane');
+    if (pane && !pane.classList.contains('active') && !pane.classList.contains('show')) return false;
+    return true;
 }
 
 // La note persiste (c'est un bilan, pas un statut) mais s'efface au
@@ -343,6 +350,19 @@ async function isLabFile(file) {
 // lot part vers l'import Labs — avec les .zip qui l'accompagnent, un GPX
 // Lab2Gpx pouvant être compressé. Sinon, le premier fichier suit le
 // chargement « My Finds ».
+// Un dépôt routé vers une carte source doit être vu : ouvrir le sous-onglet
+// « Sources » de l'onglet Données s'il est fermé — sinon la progression de
+// l'import se déroulerait dans un pane masqué. Les images et les musiques
+// partent ailleurs (onglet Images / musique) : pas de bascule pour elles.
+// Sans effet hors page principale (pas de sous-onglets) ou si déjà affiché.
+function openDataSourcesPane() {
+    const pane = document.getElementById('dataSourcesPane');
+    if (!pane || pane.classList.contains('active') || pane.classList.contains('show')) return;
+    // Bascule imposée par le routage du dépôt, pas un choix de l'utilisateur :
+    // elle ne doit pas écraser le sous-onglet mémorisé.
+    pkg.showDataSubTabProgrammatic(document.getElementById('dataSourcesTab'));
+}
+
 async function routeDroppedFiles(files, point = null) {
     const images = files.filter(isImageFile);
     if (images.length) {
@@ -357,14 +377,17 @@ async function routeDroppedFiles(files, point = null) {
     if (!files.length) return;
     const logs = await Promise.all(files.map(isLogsFile));
     if (logs.some(Boolean)) {
+        openDataSourcesPane();
         pkg.importLogFile?.(files[logs.indexOf(true)]);
         return;
     }
     const isLab = await Promise.all(files.map(isLabFile));
     if (isLab.some(Boolean)) {
+        openDataSourcesPane();
         pkg.importLabFiles?.(files.filter((f, i) => isLab[i] || isZipFile(f)));
         return;
     }
+    openDataSourcesPane();
     handleGpxFile(files[0]);
 }
 

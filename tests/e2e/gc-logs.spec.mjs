@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 
 // Carte « Mes logs » (onglet Données, docs/logs-geocaching.md, lot B) :
@@ -27,6 +28,9 @@ async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
+  // La carte « Mes logs » vit dans le sous-onglet Sources — l'ouvrir
+  // explicitement (ses bilans et boutons n'existent que là).
+  await openDataSubTab(page, 'sources');
 }
 
 

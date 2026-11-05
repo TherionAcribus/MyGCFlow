@@ -1,9 +1,24 @@
 <!-- Onglet Données : Base de données et filtres (Tabler/Bootstrap 5) -->
 <div id="data" class="col-12 tab-pane fade show active">
     {% include '_mode_switch.html' %}
-    <div class="row g-3">
+
+    <!-- Sous-onglets (même motif que l'onglet Animation) : les sources d'un
+         côté, les filtres et les réglages d'affichage de l'autre — l'onglet
+         unique dépassait ~3000 px de défilement. Le choix est mémorisé
+         (localStorage « dataSubTab », ui.js) ; les bilans des cartes
+         sources ne s'écrivent en ligne que si ce pane est visible. -->
+    <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="dataSourcesTab" data-bs-toggle="tab" data-bs-target="#dataSourcesPane" type="button" role="tab" aria-controls="dataSourcesPane" aria-selected="true">{{ _("Sources") }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dataFiltersTab" data-bs-toggle="tab" data-bs-target="#dataFiltersPane" type="button" role="tab" aria-controls="dataFiltersPane" aria-selected="false">{{ _("Filtres & affichage") }}</button>
+        </li>
+    </ul>
+
+    <div class="tab-content pt-3">
+        <div class="tab-pane fade show active" id="dataSourcesPane" role="tabpanel" aria-labelledby="dataSourcesTab" tabindex="0">
         <!-- Section Base de données -->
-        <div class="col-12 col-lg-4">
             <h5 class="gc-section-title">
                 <i class="ti ti-database text-muted me-1"></i>{{ _("Mes Géocaches") }}
             </h5>
@@ -417,7 +432,7 @@
             </div>
 
             <!-- Messages du jeu global (toutes sources confondues) : vivent
-                 sous les deux cartes de sources, pas dans la carte « Mes
+                 sous les cartes de sources, pas dans la carte « Mes
                  Géocaches » — des Lab Caches seuls les concernent aussi
                  (updateDataAvailabilityUI). -->
             <!-- Prochaine étape suggérée après import : affichée tant que
@@ -436,22 +451,13 @@
                 </div>
             </div>
 
-            <!-- Sélection vide : données chargées mais les filtres excluent
-                 toutes les caches (hasDb sans hasData dans
-                 updateDataAvailabilityUI). Distinct de l'état « aucune
-                 donnée importée » : le problème est la sélection, la
-                 solution est la réinitialisation. -->
-            <div id="dataNoResults" class="alert alert-warning mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
-                <span class="small">{{ _("Aucune cache ne correspond aux filtres actuels.") }}</span>
-                <button type="button" id="btnResetFiltersFromData" class="btn btn-sm btn-warning ms-auto">
-                    <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réinitialiser les filtres") }}
-                </button>
-            </div>
-
         </div>
 
-        <!-- Section Filtres -->
-        <div class="col-12 col-lg-8">
+        <!-- Sous-onglet « Filtres & affichage » : préréglages, filtres de
+             sélection ET réglages d'affichage (Découvertes affichées, DNF,
+             caches posées — regroupés sous l'intertitre « Affichage » en
+             tête de menu_filtre.html). -->
+        <div class="tab-pane fade" id="dataFiltersPane" role="tabpanel" aria-labelledby="dataFiltersTab" tabindex="0">
             <!-- Le compteur de sélection vit en badge accolé au titre : la
                  ligne dédiée en bas d'onglet sortait de l'écran. Mis à jour
                  par updateFiltersCounter (bdd.js), qui remplit aussi la note
@@ -464,6 +470,19 @@
                 <div class="card-body">
                     {% include 'menu_filtre.html' %}
                 </div>
+            </div>
+
+            <!-- Sélection vide : données chargées mais les filtres excluent
+                 toutes les caches (hasDb sans hasData dans
+                 updateDataAvailabilityUI). Distinct de l'état « aucune
+                 donnée importée » : le problème est la sélection, la
+                 solution est la réinitialisation. Vit dans ce pane : c'est
+                 un résultat des filtres, pas des sources. -->
+            <div id="dataNoResults" class="alert alert-warning mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
+                <span class="small">{{ _("Aucune cache ne correspond aux filtres actuels.") }}</span>
+                <button type="button" id="btnResetFiltersFromData" class="btn btn-sm btn-warning ms-auto">
+                    <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réinitialiser les filtres") }}
+                </button>
             </div>
         </div>
     </div>

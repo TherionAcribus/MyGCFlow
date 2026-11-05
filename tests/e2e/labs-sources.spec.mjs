@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -69,6 +70,8 @@ test.afterEach(async ({ page, request }) => {
 test('le sélecteur de sources existe avec les trois choix et le défaut géocaches', async ({ page }) => {
   await openReadyApp(page);
 
+  // Le réglage vit dans le sous-onglet « Filtres & affichage ».
+  await openDataSubTab(page, 'filters');
   const select = page.locator('#selectDiscoverySources');
   await expect(select).toBeVisible();
   await expect(select).toHaveValue('geocaches');
@@ -136,6 +139,7 @@ test('« géocaches » masque les Labs ; « both » les réaffiche', async ({ pa
   await openReadyApp(page);
   await importLabs(page);
 
+  await openDataSubTab(page, 'filters');
   const select = page.locator('#selectDiscoverySources');
   await select.selectOption('geocaches');
   // Univers affichable vide : le dénominateur ne compte plus les Labs
@@ -220,6 +224,7 @@ test('un réimport Labs préserve un choix manuel « géocaches »', async ({ pa
   await openReadyApp(page);
   await importLabs(page);
 
+  await openDataSubTab(page, 'filters');
   const select = page.locator('#selectDiscoverySources');
   await expect(select).toHaveValue('labs');
 
@@ -232,7 +237,8 @@ test('un réimport Labs préserve un choix manuel « géocaches »', async ({ pa
   // Réimport d'un lot enrichi (une découverte de plus — un lot strictement
   // identique est inerte et garde le bouton Importer désactivé) : la
   // collection comptait déjà 8 étapes prêtes — le choix explicite ne doit
-  // pas être écrasé.
+  // pas être écrasé. Le bloc d'activité vit dans le pane Sources.
+  await openDataSubTab(page, 'sources');
   await page.locator('#labs-file-input').setInputFiles([HISTORY_PLUS_ONE, COORDS]);
   await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await page.locator('#labsPreviewConfirmBtn').click();
@@ -435,6 +441,7 @@ test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }
 
   // Le dénominateur est l'univers affichable : la source exclue par le
   // réglage passe dans la note « n masquée(s) », pas dans le compteur.
+  await openDataSubTab(page, 'filters');
   await select.selectOption('geocaches');
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 20_000 });
   await expect(page.locator('#filtersHiddenNote')).toContainText('8 masquées');
@@ -464,6 +471,7 @@ test('le compteur distingue sélection et découvertes masquées par le réglage
 
   // « géocaches » : les 8 Labs sortent de l'univers affichable — la note les
   // signale, le dénominateur n'en garde plus trace.
+  await openDataSubTab(page, 'filters');
   await select.selectOption('geocaches');
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 20_000 });
   await expect(page.locator('#filtersHiddenNote')).toHaveText('(8 masquées)');

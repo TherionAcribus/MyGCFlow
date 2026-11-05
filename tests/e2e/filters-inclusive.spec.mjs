@@ -10,6 +10,7 @@
 // <groundspeak:attributes> ni <groundspeak:owner>.
 import { expect, test } from '@playwright/test';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const GPX_HEAD = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.0" creator="Groundspeak Pocket Query"
@@ -66,6 +67,7 @@ test('propriétaire : options peuplées depuis les données, sélection filtre (
   await clearDb(request);
   await openReadyApp(page);
   await importGpx(page);
+  await openDataSubTab(page, 'filters');
 
   // Deux propriétaires distincts, compteurs « (n) » sur l'univers affichable.
   const ownerValues = await page.locator('#selectOwners option:not([disabled]):not([value=""])')
@@ -100,6 +102,7 @@ test('attributs : ET logique, inc="0" ne compte ni ne matche', async ({ page, re
   await clearDb(request);
   await openReadyApp(page);
   await importGpx(page);
+  await openDataSubTab(page, 'filters');
 
   // Trois attributs distincts ; « Needs maintenance » n'existe qu'en
   // inc="0" → option présente mais compteur (0).
@@ -134,6 +137,7 @@ test('recherche : sous-chaîne sur code ou nom, accents ignorés ; reset efface 
   await clearDb(request);
   await openReadyApp(page);
   await importGpx(page);
+  await openDataSubTab(page, 'filters');
 
   const search = page.locator('#inputFilterSearch');
 
@@ -174,6 +178,7 @@ test('persistance : les trois clés de filtersSelection survivent au rechargemen
   await clearDb(request);
   await openReadyApp(page);
   await importGpx(page);
+  await openDataSubTab(page, 'filters');
 
   await pickOption(page, 'selectOwners', 'Alice Poseuse');
   await pickOption(page, 'selectAttributes', '13');

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 // MyGCFlow tourne en local et doit rester utilisable sans connexion. Tant que les
 // bibliothèques venaient d'un CDN, une coupure réseau vidait l'interface de sa
@@ -99,7 +100,10 @@ test('un sélecteur Tom Select et un datepicker restent fonctionnels hors ligne'
   // Tempus Dominus dépend de Popper : le calendrier ne s'affiche que si les
   // deux scripts sont là. Les datepickers sont instanciés par ui.js sur les
   // champs de filtre (cf. initTempusDominus), sans attribut déclaratif.
+  // Le champ vit dans le sous-onglet « Filtres & affichage » : un widget ouvert
+  // sur un input d'un pane masqué ne serait pas visible.
   await page.locator('a[href="#data"]').click();
+  await openDataSubTab(page, 'filters');
   const opened = await page.evaluate(() => {
     const input = document.querySelector('#datePickerStart');
     if (!input || !input._tdInstance) return false;

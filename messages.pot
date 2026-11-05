@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 13:27+0100\n"
+"POT-Creation-Date: 2026-11-04 21:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,7 +22,7 @@ msgid "Aucun fichier envoyé"
 msgstr ""
 
 #: bdd.py:123 static/js/bdd.js:126 static/js/evolution_data.js:216
-#: templates/menu_data.html:31 templates/menu_data_evolution.html:55
+#: templates/menu_data.html:46 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr ""
 
@@ -36,11 +36,11 @@ msgid ""
 "section « Mes Lab Caches » de l'onglet Données."
 msgstr ""
 
-#: bdd.py:165 static/js/bdd.js:352
+#: bdd.py:165 static/js/bdd.js:363
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr ""
 
-#: bdd.py:169 static/js/bdd.js:356
+#: bdd.py:169 static/js/bdd.js:367
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr ""
 
@@ -52,7 +52,7 @@ msgstr ""
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr ""
 
-#: bdd.py:219 bdd.py:230 static/js/bdd.js:375
+#: bdd.py:219 bdd.py:230 static/js/bdd.js:386
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr ""
 
@@ -538,7 +538,7 @@ msgid "%(label)s invalides — ignorées"
 msgstr ""
 
 #: log_formats.py:471 log_formats.py:670 static/js/evolution_data.js:1189
-#: static/js/labs.js:702 static/js/labs.js:846
+#: static/js/labs.js:711 static/js/labs.js:855
 msgid "coordonnées"
 msgstr ""
 
@@ -617,11 +617,11 @@ msgstr ""
 msgid "Nom"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/ui.js:11294
+#: poses_dataset.py:635 static/js/ui.js:11369
 msgid "Type"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/ui.js:11293
+#: poses_dataset.py:635 static/js/ui.js:11368
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
 #: templates/menu_names.html:264
 msgid "Taille"
@@ -716,15 +716,69 @@ msgstr ""
 msgid "Archivée"
 msgstr ""
 
+#: settings_manager.py:2805
+#, python-format
+msgid ""
+"Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
+"lettre ou un chiffre est nécessaire)"
+msgstr ""
+
+#: blueprints/profiles.py:553 settings_manager.py:2845 settings_manager.py:2922
+#: settings_manager.py:2974
+#, python-format
+msgid "Thème '%(name)s' introuvable"
+msgstr ""
+
+#: settings_manager.py:2866
+#, python-format
+msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
+msgstr ""
+
+#: settings_manager.py:2902 settings_manager.py:2927
+#, python-format
+msgid "Un thème nommé '%(name)s' existe déjà"
+msgstr ""
+
+#: settings_manager.py:2939
+#, python-format
+msgid "Thème source '%(name)s' introuvable"
+msgstr ""
+
+#: settings_manager.py:2955
+msgid "Mode de thème inconnu"
+msgstr ""
+
+#: settings_manager.py:2958
+#, python-format
+msgid "Le thème '%(name)s' appartient déjà à ce mode"
+msgstr ""
+
+#: settings_manager.py:3148
+msgid "Payload invalide"
+msgstr ""
+
+#: settings_manager.py:3151
+msgid "Fichier de thème invalide (détrompeur manquant)"
+msgstr ""
+
+#: settings_manager.py:3155
+msgid "Section 'profile' manquante"
+msgstr ""
+
+#: task_manager.py:30
+#, python-format
+msgid "Une tâche '%(type)s' est déjà en cours"
+msgstr ""
+
 #: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
 msgstr ""
 
 #: blueprints/core.py:198 static/js/evolution_data.js:435
 #: static/js/poses_data.js:336 templates/guide.html:160
-#: templates/guide.html:168 templates/menu_data.html:461
+#: templates/guide.html:168 templates/menu_data.html:467
 #: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:63
-#: test_translations.py:28
+#: templates/menu_filtre.html:65 test_translations.py:28
 msgid "Filtres"
 msgstr ""
 
@@ -735,9 +789,9 @@ msgstr ""
 #: templates/app.html:278 templates/guide.html:47 templates/guide.html:90
 #: templates/guide.html:112 templates/guide.html:135 templates/guide.html:155
 #: templates/guide.html:540 templates/menu_animation.html:83
-#: templates/menu_animation.html:113 templates/menu_filtre.html:114
-#: templates/menu_filtre.html:123 templates/menu_filtre.html:139
-#: templates/menu_filtre.html:148 test_translations.py:30
+#: templates/menu_animation.html:113 templates/menu_filtre.html:122
+#: templates/menu_filtre.html:131 templates/menu_filtre.html:147
+#: templates/menu_filtre.html:156 test_translations.py:30
 msgid "Données"
 msgstr ""
 
@@ -793,8 +847,8 @@ msgid "Confirmer"
 msgstr ""
 
 #: blueprints/core.py:231 static/js/notifications.js:448
-#: templates/menu_data.html:108 templates/menu_data.html:553
-#: templates/menu_data.html:583 templates/menu_data.html:613
+#: templates/menu_data.html:123 templates/menu_data.html:572
+#: templates/menu_data.html:602 templates/menu_data.html:632
 #: templates/menu_images.html:118 templates/menu_stats.html:71
 #: templates/menu_style.html:268 templates/menu_style.html:293
 #: templates/menu_style.html:318 templates/menu_style.html:346
@@ -1306,7 +1360,7 @@ msgstr ""
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr ""
 
-#: blueprints/media.py:295 static/js/ui.js:11807
+#: blueprints/media.py:295 static/js/ui.js:11882
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr ""
 
@@ -1358,11 +1412,6 @@ msgstr ""
 msgid "Nouveau nom manquant"
 msgstr ""
 
-#: blueprints/profiles.py:553
-#, python-format
-msgid "Thème '%(name)s' introuvable"
-msgstr ""
-
 #: blueprints/tasks.py:73
 msgid "Cette tâche ne peut pas être annulée"
 msgstr ""
@@ -1379,10 +1428,10 @@ msgstr ""
 
 #: static/js/background_audio.js:121 static/js/mapgl.js:5458
 #: static/js/ui.js:931 static/js/ui.js:1000 static/js/ui.js:2356
-#: static/js/ui.js:11365 static/js/ui.js:11445 static/js/ui.js:11651
-#: static/js/ui.js:11766 static/js/ui.js:11823 static/js/ui.js:11849
-#: static/js/ui.js:11908 static/js/ui.js:11916 static/js/ui.js:11924
-#: static/js/ui.js:12094 templates/guide.html:289
+#: static/js/ui.js:11440 static/js/ui.js:11520 static/js/ui.js:11726
+#: static/js/ui.js:11841 static/js/ui.js:11898 static/js/ui.js:11924
+#: static/js/ui.js:11983 static/js/ui.js:11991 static/js/ui.js:11999
+#: static/js/ui.js:12169 templates/guide.html:289
 #: templates/menu_animation.html:23 templates/menu_animation.html:294
 msgid "Musique"
 msgstr ""
@@ -1393,8 +1442,8 @@ msgid ""
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3436
-#: static/js/ui.js:3483 static/js/ui.js:3505
+#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:3500
+#: static/js/ui.js:3547 static/js/ui.js:3569
 msgid "Carte"
 msgstr ""
 
@@ -1405,343 +1454,343 @@ msgid ""
 "l'enregistrement : la vidéo peut comporter des zones vides."
 msgstr ""
 
-#: static/js/bdd.js:239 static/js/mapgl.js:6769
+#: static/js/bdd.js:250 static/js/mapgl.js:6769
 msgid "Terminé"
 msgstr ""
 
-#: static/js/bdd.js:369
+#: static/js/bdd.js:380
 msgid "Veuillez sélectionner un fichier .gpx ou .zip"
 msgstr ""
 
-#: static/js/bdd.js:372
+#: static/js/bdd.js:383
 msgid "Le fichier sélectionné est vide"
 msgstr ""
 
-#: static/js/bdd.js:511 static/js/gc_logs.js:504
+#: static/js/bdd.js:541 static/js/gc_logs.js:510
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr ""
 
-#: static/js/bdd.js:511 static/js/bdd.js:2510
+#: static/js/bdd.js:541 static/js/bdd.js:2540
 msgid "Import en cours"
 msgstr ""
 
-#: static/js/bdd.js:526 static/js/bdd.js:539 templates/app.html:207
+#: static/js/bdd.js:556 static/js/bdd.js:569 templates/app.html:207
 msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
-#: static/js/bdd.js:526 static/js/bdd.js:2024 static/js/bdd.js:2095
+#: static/js/bdd.js:556 static/js/bdd.js:2054 static/js/bdd.js:2125
 #: static/js/evolution_data.js:333 static/js/gc_logs.js:310
-#: static/js/labs.js:1563 static/js/notifications.js:297
+#: static/js/labs.js:1572 static/js/notifications.js:297
 #: static/js/notifications.js:342 static/js/poses_data.js:191
 msgid "Chargement"
 msgstr ""
 
-#: static/js/bdd.js:545
+#: static/js/bdd.js:575
 msgid "Fichier invalide"
 msgstr ""
 
-#: static/js/bdd.js:598 static/js/gc_logs.js:538
+#: static/js/bdd.js:628 static/js/gc_logs.js:544
 msgid "Cet aperçu a expiré — fermez-le et relancez l'import."
 msgstr ""
 
-#: static/js/bdd.js:609 static/js/gc_logs.js:549
+#: static/js/bdd.js:639 static/js/gc_logs.js:555
 #, python-brace-format
 msgid "À valider avant ${time} — au-delà, relancez l'aperçu."
 msgstr ""
 
-#: static/js/bdd.js:627
+#: static/js/bdd.js:657
 msgid "nouvelle géocache"
 msgstr ""
 
-#: static/js/bdd.js:627
+#: static/js/bdd.js:657
 msgid "nouvelles géocaches"
 msgstr ""
 
-#: static/js/bdd.js:628
+#: static/js/bdd.js:658
 msgid "géocache inchangée"
 msgstr ""
 
-#: static/js/bdd.js:628
+#: static/js/bdd.js:658
 msgid "géocaches inchangées"
 msgstr ""
 
-#: static/js/bdd.js:645
+#: static/js/bdd.js:675
 msgid "géocache sera retirée"
 msgstr ""
 
-#: static/js/bdd.js:645
+#: static/js/bdd.js:675
 msgid "géocaches seront retirées"
 msgstr ""
 
-#: static/js/bdd.js:648
+#: static/js/bdd.js:678
 msgid ""
 "Elles sont absentes du fichier : un My Finds liste toutes vos trouvailles"
 " — l'import les retirera donc de la base."
 msgstr ""
 
-#: static/js/bdd.js:660 static/js/gc_logs.js:68 static/js/labs.js:697
+#: static/js/bdd.js:690 static/js/gc_logs.js:68 static/js/labs.js:706
 msgid "… et 1 autre"
 msgstr ""
 
-#: static/js/bdd.js:660 static/js/gc_logs.js:68 static/js/labs.js:697
+#: static/js/bdd.js:690 static/js/gc_logs.js:68 static/js/labs.js:706
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr ""
 
-#: static/js/bdd.js:710 static/js/bdd.js:1828 static/js/bdd.js:2034
+#: static/js/bdd.js:740 static/js/bdd.js:1858 static/js/bdd.js:2064
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr ""
 
-#: static/js/bdd.js:728 static/js/bdd.js:731 static/js/bdd.js:1854
-#: static/js/bdd.js:1858 static/js/bdd.js:2006
+#: static/js/bdd.js:758 static/js/bdd.js:761 static/js/bdd.js:1884
+#: static/js/bdd.js:1888 static/js/bdd.js:2036
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:739 static/js/gc_logs.js:707 static/js/labs.js:994
+#: static/js/bdd.js:769 static/js/gc_logs.js:713 static/js/labs.js:1003
 msgid "Import refusé"
 msgstr ""
 
-#: static/js/bdd.js:749 static/js/bdd.js:2005 static/js/bdd.js:2045
+#: static/js/bdd.js:779 static/js/bdd.js:2035 static/js/bdd.js:2075
 msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
-#: static/js/bdd.js:749 static/js/bdd.js:2005 static/js/bdd.js:2045
-#: static/js/bdd.js:2213 static/js/bdd.js:2221 static/js/bdd.js:2498
-#: static/js/bdd.js:2588 static/js/dnf_data.js:191
+#: static/js/bdd.js:779 static/js/bdd.js:2035 static/js/bdd.js:2075
+#: static/js/bdd.js:2243 static/js/bdd.js:2251 static/js/bdd.js:2528
+#: static/js/bdd.js:2618 static/js/dnf_data.js:191
 #: static/js/evolution_data.js:252 static/js/evolution_data.js:356
 #: static/js/evolution_data.js:956 static/js/evolution_data.js:960
 #: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
-#: static/js/evolution_data.js:1356 static/js/gc_logs.js:747
-#: static/js/labs.js:2062 static/js/labs.js:2105 static/js/labs.js:2148
+#: static/js/evolution_data.js:1356 static/js/gc_logs.js:753
+#: static/js/labs.js:2071 static/js/labs.js:2114 static/js/labs.js:2157
 #: static/js/notifications.js:421 static/js/owner_data.js:185
 #: static/js/poses_data.js:208 static/js/recording_perf.js:187
 #: static/js/ui.js:2360
 msgid "Erreur"
 msgstr ""
 
-#: static/js/bdd.js:776
+#: static/js/bdd.js:806
 msgid ""
 "Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, "
 "une musique ou une image"
 msgstr ""
 
-#: static/js/bdd.js:870 static/js/bdd.js:896 static/js/mapgl.js:1233
+#: static/js/bdd.js:900 static/js/bdd.js:926 static/js/mapgl.js:1233
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/bdd.js:883
+#: static/js/bdd.js:913
 #, python-brace-format
 msgid "du ${start} au ${end}"
 msgstr ""
 
-#: static/js/bdd.js:891
+#: static/js/bdd.js:921
 #, python-brace-format
 msgid "aujourd'hui à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:894
+#: static/js/bdd.js:924
 #, python-brace-format
 msgid "hier à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:916 static/js/stats_panels.js:1841
+#: static/js/bdd.js:946 static/js/stats_panels.js:1841
 #: static/js/stats_panels.js:1980
 msgid "caches"
 msgstr ""
 
-#: static/js/bdd.js:916
+#: static/js/bdd.js:946
 msgid "cache"
 msgstr ""
 
-#: static/js/bdd.js:919
+#: static/js/bdd.js:949
 #, python-brace-format
 msgid "importé ${when}"
 msgstr ""
 
-#: static/js/bdd.js:965 static/js/bdd.js:1165 templates/menu_data.html:61
+#: static/js/bdd.js:995 static/js/bdd.js:1195 templates/menu_data.html:76
 msgid "Aucune géocache chargée"
 msgstr ""
 
-#: static/js/bdd.js:1840
+#: static/js/bdd.js:1870
 msgid "Réponse invalide du serveur"
 msgstr ""
 
-#: static/js/bdd.js:1844
+#: static/js/bdd.js:1874
 msgid "Impossible de lancer l'import GPX"
 msgstr ""
 
-#: static/js/bdd.js:1863 static/js/evolution_data.js:909
+#: static/js/bdd.js:1893 static/js/evolution_data.js:909
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1864 static/js/evolution_data.js:910
+#: static/js/bdd.js:1894 static/js/evolution_data.js:910
 msgid "Envoi du fichier annulé"
 msgstr ""
 
-#: static/js/bdd.js:1878
+#: static/js/bdd.js:1908
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr ""
 
-#: static/js/bdd.js:1878
+#: static/js/bdd.js:1908
 msgid "Aucun fichier"
 msgstr ""
 
-#: static/js/bdd.js:1918
+#: static/js/bdd.js:1948
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:1924
+#: static/js/bdd.js:1954
 msgid "géocache importée"
 msgstr ""
 
-#: static/js/bdd.js:1924
+#: static/js/bdd.js:1954
 msgid "géocaches importées"
 msgstr ""
 
-#: static/js/bdd.js:1928
+#: static/js/bdd.js:1958
 msgid "géocache sans date de trouvaille"
 msgstr ""
 
-#: static/js/bdd.js:1928
+#: static/js/bdd.js:1958
 msgid "géocaches sans date de trouvaille"
 msgstr ""
 
-#: static/js/bdd.js:1932
+#: static/js/bdd.js:1962
 msgid "géocache sans position"
 msgstr ""
 
-#: static/js/bdd.js:1932
+#: static/js/bdd.js:1962
 msgid "géocaches sans position"
 msgstr ""
 
-#: static/js/bdd.js:1936
+#: static/js/bdd.js:1966
 msgid "log ajouté"
 msgstr ""
 
-#: static/js/bdd.js:1936
+#: static/js/bdd.js:1966
 msgid "logs ajoutés"
 msgstr ""
 
-#: static/js/bdd.js:1939
+#: static/js/bdd.js:1969
 msgid "log rejeté"
 msgstr ""
 
-#: static/js/bdd.js:1939
+#: static/js/bdd.js:1969
 msgid "logs rejetés"
 msgstr ""
 
-#: static/js/bdd.js:1984 static/js/bdd.js:2608
+#: static/js/bdd.js:2014 static/js/bdd.js:2638
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:2024 static/js/bdd.js:2025 static/js/bdd.js:2032
+#: static/js/bdd.js:2054 static/js/bdd.js:2055 static/js/bdd.js:2062
 msgid "Préparation de l'envoi..."
 msgstr ""
 
-#: static/js/bdd.js:2093 static/js/bdd.js:2095
+#: static/js/bdd.js:2123 static/js/bdd.js:2125
 msgid "Chargement de l'application..."
 msgstr ""
 
-#: static/js/bdd.js:2112
+#: static/js/bdd.js:2142
 msgid "Impossible de lancer le chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2213 static/js/bdd.js:2221
+#: static/js/bdd.js:2243 static/js/bdd.js:2251
 msgid "Erreur lors du chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2346
+#: static/js/bdd.js:2376
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr ""
 
-#: static/js/bdd.js:2356
+#: static/js/bdd.js:2386
 msgid "masquée"
 msgstr ""
 
-#: static/js/bdd.js:2356
+#: static/js/bdd.js:2386
 msgid "masquées"
 msgstr ""
 
-#: static/js/bdd.js:2358
+#: static/js/bdd.js:2388
 msgid "Découvertes masquées par le réglage « Découvertes affichées »"
 msgstr ""
 
-#: static/js/bdd.js:2416
+#: static/js/bdd.js:2446
 msgid ""
 "Aucune découverte affichée : le réglage « Découvertes affichées » masque "
 "toutes les sources."
 msgstr ""
 
-#: static/js/bdd.js:2417
+#: static/js/bdd.js:2447
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr ""
 
-#: static/js/bdd.js:2419
+#: static/js/bdd.js:2449
 msgid "Aucune cache visible"
 msgstr ""
 
-#: static/js/bdd.js:2498
+#: static/js/bdd.js:2528
 msgid "Erreur lors de l'export de la sélection"
 msgstr ""
 
-#: static/js/bdd.js:2510
+#: static/js/bdd.js:2540
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr ""
 
-#: static/js/bdd.js:2523
+#: static/js/bdd.js:2553
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 msgstr ""
 
-#: static/js/bdd.js:2524 static/js/gc_logs.js:732 static/js/labs.js:2127
+#: static/js/bdd.js:2554 static/js/gc_logs.js:738 static/js/labs.js:2136
 msgid "Confirmation de suppression"
 msgstr ""
 
-#: static/js/bdd.js:2527 templates/guide.html:173 templates/menu_data.html:64
+#: static/js/bdd.js:2557 templates/guide.html:173 templates/menu_data.html:79
 msgid "Supprimer mes géocaches"
 msgstr ""
 
-#: static/js/bdd.js:2534
+#: static/js/bdd.js:2564
 msgid "Confirmation non disponible, action annulée."
 msgstr ""
 
-#: static/js/bdd.js:2534 static/js/bdd.js:2549
+#: static/js/bdd.js:2564 static/js/bdd.js:2579
 msgid "Suppression"
 msgstr ""
 
-#: static/js/bdd.js:2549
+#: static/js/bdd.js:2579
 msgid "Suppression des trouvailles..."
 msgstr ""
 
-#: static/js/bdd.js:2576
+#: static/js/bdd.js:2606
 msgid "Trouvailles supprimées avec succès"
 msgstr ""
 
-#: static/js/bdd.js:2577 static/js/gc_logs.js:745 static/js/labs.js:2146
+#: static/js/bdd.js:2607 static/js/gc_logs.js:751 static/js/labs.js:2155
 msgid "Suppression réussie"
 msgstr ""
 
-#: static/js/bdd.js:2588
+#: static/js/bdd.js:2618
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr ""
 
-#: static/js/bdd.js:2608 static/js/mapgl.js:1007 static/js/notifications.js:379
+#: static/js/bdd.js:2638 static/js/mapgl.js:1007 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr ""
 
-#: static/js/bdd.js:2614
+#: static/js/bdd.js:2644
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr ""
 
-#: static/js/bdd.js:2626 static/js/bdd.js:2718 static/js/bdd.js:2726
+#: static/js/bdd.js:2656 static/js/bdd.js:2748 static/js/bdd.js:2756
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr ""
 
-#: static/js/bdd.js:2626 static/js/bdd.js:2718 static/js/bdd.js:2726
+#: static/js/bdd.js:2656 static/js/bdd.js:2748 static/js/bdd.js:2756
 msgid "Erreur d'affichage"
 msgstr ""
 
@@ -1760,12 +1809,12 @@ msgid "${n} DNF dans la sélection"
 msgstr ""
 
 #: static/js/dnf_data.js:212 static/js/gc_logs.js:179 static/js/gc_logs.js:286
-#: static/js/gc_logs.js:649 static/js/owner_data.js:215
+#: static/js/gc_logs.js:655 static/js/owner_data.js:215
 msgid "cache sans position connue"
 msgstr ""
 
 #: static/js/dnf_data.js:212 static/js/gc_logs.js:179 static/js/gc_logs.js:286
-#: static/js/gc_logs.js:649 static/js/owner_data.js:215
+#: static/js/gc_logs.js:655 static/js/owner_data.js:215
 msgid "caches sans position connue"
 msgstr ""
 
@@ -1846,7 +1895,7 @@ msgstr ""
 
 #: static/js/evolution_data.js:799 static/js/evolution_data.js:803
 #: static/js/evolution_data.js:813 static/js/evolution_data.js:830
-#: templates/menu_data.html:512
+#: templates/menu_data.html:531
 msgid "Import"
 msgstr ""
 
@@ -1877,7 +1926,7 @@ msgstr ""
 msgid "Import en cours..."
 msgstr ""
 
-#: static/js/evolution_data.js:879 static/js/labs.js:1234
+#: static/js/evolution_data.js:879 static/js/labs.js:1243
 msgid "L'import a échoué"
 msgstr ""
 
@@ -2158,11 +2207,11 @@ msgstr ""
 msgid "Collecte complète prévue au prochain passage"
 msgstr ""
 
-#: static/js/gc_logs.js:126 templates/menu_data.html:408
+#: static/js/gc_logs.js:126 templates/menu_data.html:423
 msgid "Forcer une collecte complète la prochaine fois"
 msgstr ""
 
-#: static/js/gc_logs.js:142 static/js/gc_logs.js:699
+#: static/js/gc_logs.js:142 static/js/gc_logs.js:705
 msgid "Import de vos logs…"
 msgstr ""
 
@@ -2171,7 +2220,7 @@ msgstr ""
 msgid "Collecte en cours — ${logs} logs, ${caches} caches reçus…"
 msgstr ""
 
-#: static/js/gc_logs.js:159 templates/menu_data.html:273
+#: static/js/gc_logs.js:159 templates/menu_data.html:288
 msgid "Aucun log importé"
 msgstr ""
 
@@ -2188,7 +2237,7 @@ msgstr ""
 msgid "logs enregistrés"
 msgstr ""
 
-#: static/js/gc_logs.js:168 static/js/gc_logs.js:622
+#: static/js/gc_logs.js:168 static/js/gc_logs.js:628
 #, python-brace-format
 msgid "À vous : ${list}"
 msgstr ""
@@ -2213,31 +2262,31 @@ msgstr ""
 msgid "compléter"
 msgstr ""
 
-#: static/js/gc_logs.js:206 static/js/gc_logs.js:576 static/js/gc_logs.js:687
+#: static/js/gc_logs.js:206 static/js/gc_logs.js:582 static/js/gc_logs.js:693
 msgid "nouveau log"
 msgstr ""
 
-#: static/js/gc_logs.js:206 static/js/gc_logs.js:576 static/js/gc_logs.js:687
+#: static/js/gc_logs.js:206 static/js/gc_logs.js:582 static/js/gc_logs.js:693
 msgid "nouveaux logs"
 msgstr ""
 
-#: static/js/gc_logs.js:207 static/js/gc_logs.js:577 static/js/gc_logs.js:688
+#: static/js/gc_logs.js:207 static/js/gc_logs.js:583 static/js/gc_logs.js:694
 msgid "log mis à jour"
 msgstr ""
 
-#: static/js/gc_logs.js:207 static/js/gc_logs.js:577 static/js/gc_logs.js:688
+#: static/js/gc_logs.js:207 static/js/gc_logs.js:583 static/js/gc_logs.js:694
 msgid "logs mis à jour"
 msgstr ""
 
-#: static/js/gc_logs.js:208 static/js/gc_logs.js:689
+#: static/js/gc_logs.js:208 static/js/gc_logs.js:695
 msgid "log retiré"
 msgstr ""
 
-#: static/js/gc_logs.js:208 static/js/gc_logs.js:689
+#: static/js/gc_logs.js:208 static/js/gc_logs.js:695
 msgid "logs retirés"
 msgstr ""
 
-#: static/js/gc_logs.js:209 static/js/labs.js:808
+#: static/js/gc_logs.js:209 static/js/labs.js:817
 msgid "aucun changement"
 msgstr ""
 
@@ -2265,7 +2314,7 @@ msgid ""
 "validez l'aperçu avant l'import."
 msgstr ""
 
-#: static/js/gc_logs.js:325 static/js/labs.js:1578
+#: static/js/gc_logs.js:325 static/js/labs.js:1587
 msgid "Chargement impossible"
 msgstr ""
 
@@ -2299,219 +2348,219 @@ msgstr ""
 msgid "Placer"
 msgstr ""
 
-#: static/js/gc_logs.js:433 static/js/labs.js:1895
+#: static/js/gc_logs.js:433 static/js/labs.js:1904
 msgid "Correction refusée"
 msgstr ""
 
-#: static/js/gc_logs.js:479 static/js/notifications.js:417
+#: static/js/gc_logs.js:485 static/js/notifications.js:417
 msgid "Succès"
 msgstr ""
 
-#: static/js/gc_logs.js:504 static/js/gc_logs.js:518 static/js/gc_logs.js:714
+#: static/js/gc_logs.js:510 static/js/gc_logs.js:524 static/js/gc_logs.js:720
 msgid "Import de logs"
 msgstr ""
 
-#: static/js/gc_logs.js:507
+#: static/js/gc_logs.js:513
 msgid "Analyse du fichier…"
 msgstr ""
 
-#: static/js/gc_logs.js:513 static/js/labs.js:682
+#: static/js/gc_logs.js:519 static/js/labs.js:691
 msgid "Import impossible"
 msgstr ""
 
-#: static/js/gc_logs.js:518 static/js/labs.js:669
+#: static/js/gc_logs.js:524 static/js/labs.js:678
 msgid "Erreur lors de l'analyse"
 msgstr ""
 
-#: static/js/gc_logs.js:563
+#: static/js/gc_logs.js:569
 #, python-brace-format
 msgid "${file} — compte ${name}"
 msgstr ""
 
-#: static/js/gc_logs.js:571
+#: static/js/gc_logs.js:577
 msgid ""
 "Ce fichier n'est pas daté : ses données écraseront les versions déjà "
 "enregistrées plutôt que d'être ignorées."
 msgstr ""
 
-#: static/js/gc_logs.js:578
+#: static/js/gc_logs.js:584
 msgid "log déjà connu"
 msgstr ""
 
-#: static/js/gc_logs.js:578
+#: static/js/gc_logs.js:584
 msgid "logs déjà connus"
 msgstr ""
 
-#: static/js/gc_logs.js:579
+#: static/js/gc_logs.js:585
 msgid "log plus ancien que la version enregistrée, ignoré"
 msgstr ""
 
-#: static/js/gc_logs.js:580
+#: static/js/gc_logs.js:586
 msgid "logs plus anciens que la version enregistrée, ignorés"
 msgstr ""
 
-#: static/js/gc_logs.js:581
+#: static/js/gc_logs.js:587
 msgid "nouvelle fiche de cache"
 msgstr ""
 
-#: static/js/gc_logs.js:581
+#: static/js/gc_logs.js:587
 msgid "nouvelles fiches de caches"
 msgstr ""
 
-#: static/js/gc_logs.js:582
+#: static/js/gc_logs.js:588
 msgid "fiche de cache mise à jour"
 msgstr ""
 
-#: static/js/gc_logs.js:582
+#: static/js/gc_logs.js:588
 msgid "fiches de caches mises à jour"
 msgstr ""
 
-#: static/js/gc_logs.js:583
+#: static/js/gc_logs.js:589
 msgid "Rien de nouveau dans ce fichier."
 msgstr ""
 
-#: static/js/gc_logs.js:598
+#: static/js/gc_logs.js:604
 msgid "log sera retiré"
 msgstr ""
 
-#: static/js/gc_logs.js:598
+#: static/js/gc_logs.js:604
 msgid "logs seront retirés"
 msgstr ""
 
-#: static/js/gc_logs.js:601
+#: static/js/gc_logs.js:607
 msgid ""
 "Le fichier déclare contenir tous ces logs : ceux qu'il n'a plus ont été "
 "supprimés sur le site."
 msgstr ""
 
-#: static/js/gc_logs.js:620
+#: static/js/gc_logs.js:626
 msgid "périmètre"
 msgstr ""
 
-#: static/js/gc_logs.js:620
+#: static/js/gc_logs.js:626
 msgid "périmètres"
 msgstr ""
 
-#: static/js/gc_logs.js:623
+#: static/js/gc_logs.js:629
 #, python-brace-format
 msgid "D'autres joueurs : ${list}"
 msgstr ""
 
-#: static/js/gc_logs.js:627
+#: static/js/gc_logs.js:633
 #, python-brace-format
 msgid ""
 "Couverture complète déclarée (${scope}) — les logs stockés dans son "
 "périmètre et absents du fichier seront retirés."
 msgstr ""
 
-#: static/js/gc_logs.js:629
+#: static/js/gc_logs.js:635
 msgid ""
 "Aucune couverture complète déclarée — ce fichier ne retirera aucun log "
 "existant."
 msgstr ""
 
-#: static/js/gc_logs.js:645
+#: static/js/gc_logs.js:651
 msgid "doublon ignoré"
 msgstr ""
 
-#: static/js/gc_logs.js:645
+#: static/js/gc_logs.js:651
 msgid "doublons ignorés"
 msgstr ""
 
-#: static/js/gc_logs.js:668 static/js/labs.js:1073 static/js/profiles.js:333
+#: static/js/gc_logs.js:674 static/js/labs.js:1082 static/js/profiles.js:333
 msgid "Import échoué"
 msgstr ""
 
-#: static/js/gc_logs.js:674 static/js/labs.js:1088
+#: static/js/gc_logs.js:680 static/js/labs.js:1097
 msgid "Le serveur ne répond plus — vérifiez sa disponibilité."
 msgstr ""
 
-#: static/js/gc_logs.js:690
+#: static/js/gc_logs.js:696
 msgid "Aucun changement : vos logs étaient déjà à jour."
 msgstr ""
 
-#: static/js/gc_logs.js:712
+#: static/js/gc_logs.js:718
 msgid "Logs importés"
 msgstr ""
 
-#: static/js/gc_logs.js:714 static/js/labs.js:1000 static/js/labs.js:1244
+#: static/js/gc_logs.js:720 static/js/labs.js:1009 static/js/labs.js:1253
 msgid "Erreur lors de l'import"
 msgstr ""
 
-#: static/js/gc_logs.js:731
+#: static/js/gc_logs.js:737
 msgid ""
 "Supprimer tous vos logs importés ? Vos géocaches et vos Lab Caches sont "
 "conservés. Cette action est irréversible."
 msgstr ""
 
-#: static/js/gc_logs.js:735 templates/menu_data.html:369
+#: static/js/gc_logs.js:741 templates/menu_data.html:384
 msgid "Supprimer mes logs"
 msgstr ""
 
-#: static/js/gc_logs.js:738
+#: static/js/gc_logs.js:744
 msgid "Suppression de vos logs…"
 msgstr ""
 
-#: static/js/gc_logs.js:742 static/js/labs.js:2139
+#: static/js/gc_logs.js:748 static/js/labs.js:2148
 msgid "Erreur inconnue"
 msgstr ""
 
-#: static/js/gc_logs.js:745
+#: static/js/gc_logs.js:751
 msgid "Logs supprimés"
 msgstr ""
 
-#: static/js/gc_logs.js:747 static/js/labs.js:2148
+#: static/js/gc_logs.js:753 static/js/labs.js:2157
 msgid "Erreur lors de la suppression"
 msgstr ""
 
-#: static/js/gc_logs.js:768 static/js/gc_logs.js:899
+#: static/js/gc_logs.js:774 static/js/gc_logs.js:905
 msgid "MyGCFlow — Mes logs"
 msgstr ""
 
-#: static/js/gc_logs.js:786 static/js/labs.js:1381
+#: static/js/gc_logs.js:792 static/js/labs.js:1390
 msgid "Favori indisponible"
 msgstr ""
 
-#: static/js/gc_logs.js:801 static/js/labs.js:1400
+#: static/js/gc_logs.js:807 static/js/labs.js:1409
 msgid "Lien copié"
 msgstr ""
 
-#: static/js/gc_logs.js:803 static/js/labs.js:1402
+#: static/js/gc_logs.js:809 static/js/labs.js:1411
 msgid "Copie impossible — glissez le bouton à la place."
 msgstr ""
 
-#: static/js/gc_logs.js:825
+#: static/js/gc_logs.js:831
 msgid "Le périmètre de collecte n'a pas pu être enregistré"
 msgstr ""
 
-#: static/js/gc_logs.js:825 static/js/gc_logs.js:842 static/js/gc_logs.js:864
-#: templates/menu_data.html:268
+#: static/js/gc_logs.js:831 static/js/gc_logs.js:848 static/js/gc_logs.js:870
+#: templates/menu_data.html:283
 msgid "Mes logs"
 msgstr ""
 
-#: static/js/gc_logs.js:842
+#: static/js/gc_logs.js:848
 msgid "La collecte complète n'a pas pu être prévue"
 msgstr ""
 
-#: static/js/gc_logs.js:850
+#: static/js/gc_logs.js:856
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « MyGCFlow — Mes logs » dans vos favoris."
 msgstr ""
 
-#: static/js/gc_logs.js:851 static/js/labs.js:1413
+#: static/js/gc_logs.js:857 static/js/labs.js:1422
 msgid "Jeton du favori"
 msgstr ""
 
-#: static/js/gc_logs.js:862 static/js/labs.js:1424
+#: static/js/gc_logs.js:868 static/js/labs.js:1433
 msgid "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
 msgstr ""
 
-#: static/js/gc_logs.js:864 static/js/labs.js:1426
+#: static/js/gc_logs.js:870 static/js/labs.js:1435
 msgid "Jeton non régénéré"
 msgstr ""
 
-#: static/js/gc_logs.js:898
+#: static/js/gc_logs.js:904
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis une page de geocaching.com."
@@ -2676,8 +2725,8 @@ msgstr ""
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
 #: static/js/profiles.js:975 static/js/recent_videos.js:60
 #: static/js/recent_videos.js:121 static/js/stats_ui.js:580
-#: static/js/stats_ui.js:1837 static/js/ui.js:6167
-#: templates/menu_filtre.html:79 templates/menu_style.html:294
+#: static/js/stats_ui.js:1837 static/js/ui.js:6231
+#: templates/menu_filtre.html:87 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
@@ -2850,7 +2899,7 @@ msgid ""
 "cliquez-le depuis la page de vos logs Adventure Lab."
 msgstr ""
 
-#: static/js/labs.js:163 static/js/labs.js:1361 templates/guide.html:495
+#: static/js/labs.js:163 static/js/labs.js:1370 templates/guide.html:495
 msgid "MyGCFlow — Lab Caches"
 msgstr ""
 
@@ -2858,15 +2907,15 @@ msgstr ""
 msgid "Statut indisponible"
 msgstr ""
 
-#: static/js/labs.js:373 templates/menu_data.html:86
+#: static/js/labs.js:373 templates/menu_data.html:101
 msgid "Aucun Lab Cache importé"
 msgstr ""
 
-#: static/js/labs.js:381 static/js/labs.js:1273
+#: static/js/labs.js:381 static/js/labs.js:1282
 msgid "étape importée"
 msgstr ""
 
-#: static/js/labs.js:381 static/js/labs.js:1273
+#: static/js/labs.js:381 static/js/labs.js:1282
 msgid "étapes importées"
 msgstr ""
 
@@ -2919,8 +2968,8 @@ msgstr ""
 msgid "Collecte en cours — ${adv} Adventures, ${disc} étapes reçues…"
 msgstr ""
 
-#: static/js/labs.js:501 static/js/labs.js:1240 static/js/labs.js:1256
-#: static/js/labs.js:1466
+#: static/js/labs.js:501 static/js/labs.js:1249 static/js/labs.js:1265
+#: static/js/labs.js:1475
 msgid "Placement de vos étapes sur la carte…"
 msgstr ""
 
@@ -2928,426 +2977,426 @@ msgstr ""
 msgid "Annulation en cours…"
 msgstr ""
 
-#: static/js/labs.js:531 static/js/labs.js:573 static/js/labs.js:1261
-#: static/js/labs.js:1426 static/js/labs.js:1461 static/js/labs.js:1477
-#: static/js/labs.js:1487 templates/_filter_cache_attrs.html:37
-#: templates/guide.html:518 templates/menu_filtre.html:13
+#: static/js/labs.js:540 static/js/labs.js:582 static/js/labs.js:1270
+#: static/js/labs.js:1435 static/js/labs.js:1470 static/js/labs.js:1486
+#: static/js/labs.js:1496 templates/_filter_cache_attrs.html:37
+#: templates/guide.html:518 templates/menu_filtre.html:19
 msgid "Lab Caches"
 msgstr ""
 
-#: static/js/labs.js:656
+#: static/js/labs.js:665
 msgid "Analyse de vos fichiers…"
 msgstr ""
 
-#: static/js/labs.js:669 static/js/labs.js:1000 static/js/labs.js:1244
+#: static/js/labs.js:678 static/js/labs.js:1009 static/js/labs.js:1253
 msgid "Import Lab Caches"
 msgstr ""
 
-#: static/js/labs.js:701
+#: static/js/labs.js:710
 msgid "historique"
 msgstr ""
 
-#: static/js/labs.js:722
+#: static/js/labs.js:731
 msgid "nouvelle découverte"
 msgstr ""
 
-#: static/js/labs.js:722
+#: static/js/labs.js:731
 msgid "nouvelles découvertes"
 msgstr ""
 
-#: static/js/labs.js:723
+#: static/js/labs.js:732
 msgid "étape associée"
 msgstr ""
 
-#: static/js/labs.js:723
+#: static/js/labs.js:732
 msgid "étapes associées"
 msgstr ""
 
-#: static/js/labs.js:725
+#: static/js/labs.js:734
 msgid "découverte mise à jour"
 msgstr ""
 
-#: static/js/labs.js:725
+#: static/js/labs.js:734
 msgid "étape mise à jour"
 msgstr ""
 
-#: static/js/labs.js:725
+#: static/js/labs.js:734
 msgid "élément mis à jour"
 msgstr ""
 
-#: static/js/labs.js:726
+#: static/js/labs.js:735
 msgid "découvertes mises à jour"
 msgstr ""
 
-#: static/js/labs.js:726
+#: static/js/labs.js:735
 msgid "étapes mises à jour"
 msgstr ""
 
-#: static/js/labs.js:726
+#: static/js/labs.js:735
 msgid "éléments mis à jour"
 msgstr ""
 
-#: static/js/labs.js:728
+#: static/js/labs.js:737
 msgid "waypoint sans découverte correspondante"
 msgstr ""
 
-#: static/js/labs.js:729
+#: static/js/labs.js:738
 msgid "waypoints sans découverte correspondante"
 msgstr ""
 
-#: static/js/labs.js:731
+#: static/js/labs.js:740
 msgid "waypoint illisible"
 msgstr ""
 
-#: static/js/labs.js:731
+#: static/js/labs.js:740
 msgid "ligne illisible"
 msgstr ""
 
-#: static/js/labs.js:732
+#: static/js/labs.js:741
 msgid "waypoints illisibles"
 msgstr ""
 
-#: static/js/labs.js:732
+#: static/js/labs.js:741
 msgid "lignes illisibles"
 msgstr ""
 
-#: static/js/labs.js:733
+#: static/js/labs.js:742
 msgid "conflit à trancher"
 msgstr ""
 
-#: static/js/labs.js:733
+#: static/js/labs.js:742
 msgid "conflits à trancher"
 msgstr ""
 
-#: static/js/labs.js:735
+#: static/js/labs.js:744
 msgid "découverte déjà connue"
 msgstr ""
 
-#: static/js/labs.js:735
+#: static/js/labs.js:744
 msgid "étape déjà positionnée"
 msgstr ""
 
-#: static/js/labs.js:735
+#: static/js/labs.js:744
 msgid "élément déjà à jour"
 msgstr ""
 
-#: static/js/labs.js:736
+#: static/js/labs.js:745
 msgid "découvertes déjà connues"
 msgstr ""
 
-#: static/js/labs.js:736
+#: static/js/labs.js:745
 msgid "étapes déjà positionnées"
 msgstr ""
 
-#: static/js/labs.js:736
+#: static/js/labs.js:745
 msgid "éléments déjà à jour"
 msgstr ""
 
-#: static/js/labs.js:759
+#: static/js/labs.js:768
 msgid "Après import"
 msgstr ""
 
-#: static/js/labs.js:762
+#: static/js/labs.js:771
 msgid "découverte enregistrée"
 msgstr ""
 
-#: static/js/labs.js:762
+#: static/js/labs.js:771
 msgid "découvertes enregistrées"
 msgstr ""
 
-#: static/js/labs.js:763
+#: static/js/labs.js:772
 msgid "prête à afficher"
 msgstr ""
 
-#: static/js/labs.js:763
+#: static/js/labs.js:772
 msgid "prêtes à afficher"
 msgstr ""
 
-#: static/js/labs.js:794
+#: static/js/labs.js:803
 msgid "illisible"
 msgstr ""
 
-#: static/js/labs.js:797
+#: static/js/labs.js:806
 msgid "rien de nouveau"
 msgstr ""
 
-#: static/js/labs.js:847
+#: static/js/labs.js:856
 msgid "date"
 msgstr ""
 
-#: static/js/labs.js:848
+#: static/js/labs.js:857
 msgid "identifiant d'Adventure"
 msgstr ""
 
-#: static/js/labs.js:849
+#: static/js/labs.js:858
 msgid "identifiant d'étape"
 msgstr ""
 
-#: static/js/labs.js:870 static/js/labs.js:1290
+#: static/js/labs.js:879 static/js/labs.js:1299
 msgid "conflit"
 msgstr ""
 
-#: static/js/labs.js:870 static/js/labs.js:1290
+#: static/js/labs.js:879 static/js/labs.js:1299
 msgid "conflits"
 msgstr ""
 
-#: static/js/labs.js:871
+#: static/js/labs.js:880
 msgid "sans choix de votre part, la valeur existante est conservée"
 msgstr ""
 
-#: static/js/labs.js:882 static/js/labs.js:1749
+#: static/js/labs.js:891 static/js/labs.js:1758
 msgid "(étape sans titre)"
 msgstr ""
 
-#: static/js/labs.js:894
+#: static/js/labs.js:903
 msgid "conservé"
 msgstr ""
 
-#: static/js/labs.js:895
+#: static/js/labs.js:904
 msgid "reçu"
 msgstr ""
 
-#: static/js/labs.js:896
+#: static/js/labs.js:905
 msgid "(correction manuelle)"
 msgstr ""
 
-#: static/js/labs.js:905
+#: static/js/labs.js:914
 msgid "Garder"
 msgstr ""
 
-#: static/js/labs.js:905 templates/menu_style.html:406
+#: static/js/labs.js:914 templates/menu_style.html:406
 msgid "Remplacer"
 msgstr ""
 
-#: static/js/labs.js:961
+#: static/js/labs.js:970
 #, python-brace-format
 msgid "Avertissements (${n})"
 msgstr ""
 
-#: static/js/labs.js:985 static/js/labs.js:1233
+#: static/js/labs.js:994 static/js/labs.js:1242
 msgid "Import de vos Lab Caches…"
 msgstr ""
 
-#: static/js/labs.js:1055
+#: static/js/labs.js:1064
 msgid "La tâche semble bloquée — aucune progression depuis plusieurs minutes."
 msgstr ""
 
-#: static/js/labs.js:1210
+#: static/js/labs.js:1219
 msgid ""
 "Les Lab Caches sont maintenant affichés (réglable via « Découvertes "
 "affichées »)."
 msgstr ""
 
-#: static/js/labs.js:1218
+#: static/js/labs.js:1227
 msgid "Vos Lab Caches ont été mis à jour."
 msgstr ""
 
-#: static/js/labs.js:1261 static/js/labs.js:1477
+#: static/js/labs.js:1270 static/js/labs.js:1486
 msgid "Erreur de récupération"
 msgstr ""
 
-#: static/js/labs.js:1282
+#: static/js/labs.js:1291
 msgid "affichable"
 msgstr ""
 
-#: static/js/labs.js:1282
+#: static/js/labs.js:1291
 msgid "affichables"
 msgstr ""
 
-#: static/js/labs.js:1283
+#: static/js/labs.js:1292
 msgid "en attente"
 msgstr ""
 
-#: static/js/labs.js:1291
+#: static/js/labs.js:1300
 msgid "valeurs existantes conservées."
 msgstr ""
 
-#: static/js/labs.js:1412
+#: static/js/labs.js:1421
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « MyGCFlow — Lab Caches » dans vos favoris."
 msgstr ""
 
-#: static/js/labs.js:1461
+#: static/js/labs.js:1470
 msgid "Réglage non enregistré"
 msgstr ""
 
-#: static/js/labs.js:1471
+#: static/js/labs.js:1480
 msgid "Récupération refusée"
 msgstr ""
 
-#: static/js/labs.js:1487
+#: static/js/labs.js:1496
 msgid "La récupération a échoué"
 msgstr ""
 
-#: static/js/labs.js:1493
+#: static/js/labs.js:1502
 msgid "étape placée sur la carte"
 msgstr ""
 
-#: static/js/labs.js:1493
+#: static/js/labs.js:1502
 msgid "étapes placées sur la carte"
 msgstr ""
 
-#: static/js/labs.js:1496
+#: static/js/labs.js:1505
 msgid "Adventure introuvable par le service"
 msgstr ""
 
-#: static/js/labs.js:1497
+#: static/js/labs.js:1506
 msgid "Adventures introuvables par le service"
 msgstr ""
 
-#: static/js/labs.js:1501
+#: static/js/labs.js:1510
 msgid "étape reste à compléter"
 msgstr ""
 
-#: static/js/labs.js:1501
+#: static/js/labs.js:1510
 msgid "étapes restent à compléter"
 msgstr ""
 
-#: static/js/labs.js:1507
+#: static/js/labs.js:1516
 msgid "Récupération interrompue — les positions déjà obtenues sont conservées."
 msgstr ""
 
-#: static/js/labs.js:1516
+#: static/js/labs.js:1525
 msgid ""
 "Le service a cessé de répondre avant la fin — relancez la récupération "
 "pour terminer."
 msgstr ""
 
-#: static/js/labs.js:1593
+#: static/js/labs.js:1602
 msgid "Adventure"
 msgstr ""
 
-#: static/js/labs.js:1593
+#: static/js/labs.js:1602
 msgid "Adventures"
 msgstr ""
 
-#: static/js/labs.js:1604
+#: static/js/labs.js:1613
 msgid "Aucune étape en attente sur cette page."
 msgstr ""
 
-#: static/js/labs.js:1630
+#: static/js/labs.js:1639
 msgid "Adventure inconnue"
 msgstr ""
 
-#: static/js/labs.js:1635
+#: static/js/labs.js:1644
 msgid "archivée"
 msgstr ""
 
-#: static/js/labs.js:1641
+#: static/js/labs.js:1650
 msgid "étape en attente"
 msgstr ""
 
-#: static/js/labs.js:1641
+#: static/js/labs.js:1650
 msgid "étapes en attente"
 msgstr ""
 
-#: static/js/labs.js:1663
+#: static/js/labs.js:1672
 msgid "Détail des étapes"
 msgstr ""
 
-#: static/js/labs.js:1687
+#: static/js/labs.js:1696
 msgid "Position de l'Adventure"
 msgstr ""
 
-#: static/js/labs.js:1695 static/js/labs.js:2024
+#: static/js/labs.js:1704 static/js/labs.js:2033
 #, python-brace-format
 msgid "Placer les ${n} étapes ici"
 msgstr ""
 
-#: static/js/labs.js:1703
+#: static/js/labs.js:1712
 msgid ""
 "Toutes ses étapes sans position y seront placées, signalées comme "
 "approximatives."
 msgstr ""
 
-#: static/js/labs.js:1726
+#: static/js/labs.js:1735
 msgid "date manquante"
 msgstr ""
 
-#: static/js/labs.js:1727
+#: static/js/labs.js:1736
 msgid "coordonnées manquantes"
 msgstr ""
 
-#: static/js/labs.js:1728
+#: static/js/labs.js:1737
 msgid "introuvables par le service lab2gpx"
 msgstr ""
 
-#: static/js/labs.js:1729
+#: static/js/labs.js:1738
 msgid "position connue mais ambiguë — à confirmer"
 msgstr ""
 
-#: static/js/labs.js:1730
+#: static/js/labs.js:1739
 msgid "position connue mais invalide — à ressaisir"
 msgstr ""
 
-#: static/js/labs.js:1731
+#: static/js/labs.js:1740
 msgid "position présente mais statut incohérent — à ressaisir"
 msgstr ""
 
-#: static/js/labs.js:1773
+#: static/js/labs.js:1782
 msgid ""
 "Position et date sont présentes mais leur état est incohérent — aucune "
 "correction possible ici."
 msgstr ""
 
-#: static/js/labs.js:1783 templates/guide.html:227
+#: static/js/labs.js:1792 templates/guide.html:227
 #: templates/menu_images.html:163 templates/menu_informations.html:121
 #: templates/menu_stats.html:304
 msgid "Position"
 msgstr ""
 
-#: static/js/labs.js:1801
+#: static/js/labs.js:1810
 #, python-brace-format
 msgid "Suggestion : ${lat}, ${lon} — même titre dans l'Adventure"
 msgstr ""
 
-#: static/js/labs.js:1808
+#: static/js/labs.js:1817
 msgid "Utiliser la suggestion"
 msgstr ""
 
-#: static/js/labs.js:1817
+#: static/js/labs.js:1826
 msgid "Date de découverte"
 msgstr ""
 
-#: static/js/labs.js:1828 templates/menu_images.html:117
+#: static/js/labs.js:1837 templates/menu_images.html:117
 #: templates/menu_stats.html:70
 msgid "Enregistrer"
 msgstr ""
 
-#: static/js/labs.js:2031 static/js/labs.js:2076
+#: static/js/labs.js:2040 static/js/labs.js:2085
 msgid "Rien à enregistrer"
 msgstr ""
 
-#: static/js/labs.js:2054
+#: static/js/labs.js:2063
 msgid "étape placée"
 msgstr ""
 
-#: static/js/labs.js:2054
+#: static/js/labs.js:2063
 msgid "étapes placées"
 msgstr ""
 
-#: static/js/labs.js:2056
+#: static/js/labs.js:2065
 #, python-brace-format
 msgid "en ${lat}, ${lon}."
 msgstr ""
 
-#: static/js/labs.js:2093 static/js/saved_indicator.mjs:119
+#: static/js/labs.js:2102 static/js/saved_indicator.mjs:119
 msgid "Enregistré"
 msgstr ""
 
-#: static/js/labs.js:2126
+#: static/js/labs.js:2135
 msgid ""
 "Supprimer toutes vos étapes Lab Caches ? Vos géocaches sont conservées. "
 "Cette action est irréversible."
 msgstr ""
 
-#: static/js/labs.js:2130 templates/guide.html:173 templates/guide.html:524
-#: templates/menu_data.html:201
+#: static/js/labs.js:2139 templates/guide.html:173 templates/guide.html:524
+#: templates/menu_data.html:216
 msgid "Supprimer mes Lab Caches"
 msgstr ""
 
-#: static/js/labs.js:2146
+#: static/js/labs.js:2155
 msgid "Lab Caches supprimés"
 msgstr ""
 
@@ -3603,7 +3652,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:5754 static/js/ui.js:8795
+#: static/js/mapgl.js:5754 static/js/ui.js:8859
 msgid "Assemblage en cours"
 msgstr ""
 
@@ -3795,11 +3844,11 @@ msgid "Flash"
 msgstr ""
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: templates/menu_data.html:479 templates/menu_data.html:521
-#: templates/menu_data.html:533 templates/menu_data.html:567
-#: templates/menu_data.html:599 templates/menu_data.html:628
-#: templates/menu_data.html:645 templates/menu_data.html:657
-#: templates/menu_data.html:674 templates/menu_stats.html:565
+#: templates/menu_data.html:498 templates/menu_data.html:540
+#: templates/menu_data.html:552 templates/menu_data.html:586
+#: templates/menu_data.html:618 templates/menu_data.html:647
+#: templates/menu_data.html:664 templates/menu_data.html:676
+#: templates/menu_data.html:693 templates/menu_stats.html:565
 #: templates/menu_style.html:52 templates/menu_style.html:255
 #: templates/menu_style.html:287 templates/menu_style.html:312
 #: templates/menu_style.html:340 templates/menu_style.html:363
@@ -4011,7 +4060,8 @@ msgid "Évolution"
 msgstr ""
 
 #: static/js/profiles.js:48 templates/app.html:62 templates/app.html:64
-#: templates/guide.html:155 templates/guide.html:540 templates/menu_data.html:8
+#: templates/guide.html:155 templates/guide.html:540
+#: templates/menu_data.html:23
 msgid "Mes Géocaches"
 msgstr ""
 
@@ -4128,7 +4178,7 @@ msgstr ""
 #: static/js/profiles.js:973 templates/app.html:291 templates/app.html:292
 #: templates/guide.html:117 templates/guide.html:320 templates/guide.html:326
 #: templates/guide.html:524 templates/menu_animation.html:47
-#: templates/menu_data.html:220 templates/menu_data.html:387
+#: templates/menu_data.html:235 templates/menu_data.html:402
 msgid "Exporter"
 msgstr ""
 
@@ -4397,7 +4447,7 @@ msgid "Conseil"
 msgstr ""
 
 #: static/js/recording_perf.js:201 templates/guide.html:233
-#: templates/menu_filtre.html:77 templates/menu_informations.html:379
+#: templates/menu_filtre.html:85 templates/menu_informations.html:379
 msgid "Appliquer"
 msgstr ""
 
@@ -4807,8 +4857,8 @@ msgstr ""
 msgid "Âge des caches trouvées"
 msgstr ""
 
-#: static/js/stats_panels.js:1185 templates/menu_filtre.html:169
-#: templates/menu_filtre.html:170 templates/menu_stats.html:494
+#: static/js/stats_panels.js:1185 templates/menu_filtre.html:177
+#: templates/menu_filtre.html:178 templates/menu_stats.html:494
 msgid "Attributs"
 msgstr ""
 
@@ -5178,7 +5228,7 @@ msgstr ""
 msgid "${n} mois"
 msgstr ""
 
-#: static/js/stats_panels.js:1534 static/js/ui.js:8325
+#: static/js/stats_panels.js:1534 static/js/ui.js:8389
 #, python-brace-format
 msgid "${n} jours"
 msgstr ""
@@ -5316,13 +5366,13 @@ msgid "Mes trouvailles"
 msgstr ""
 
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
-#: templates/menu_filtre.html:25 templates/menu_points.html:204
+#: templates/menu_filtre.html:31 templates/menu_points.html:204
 #: templates/menu_stats.html:102 templates/menu_stats.html:527
 msgid "Mes DNF"
 msgstr ""
 
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
-#: templates/menu_data_poses.html:14 templates/menu_filtre.html:45
+#: templates/menu_data_poses.html:14 templates/menu_filtre.html:51
 #: templates/menu_points.html:165 templates/menu_stats.html:103
 #: templates/menu_stats.html:536
 msgid "Mes caches posées"
@@ -5814,15 +5864,15 @@ msgid ""
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2189 static/js/ui.js:3854
+#: static/js/ui.js:2189 static/js/ui.js:3918
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:2356 static/js/ui.js:11445
+#: static/js/ui.js:2356 static/js/ui.js:11520
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:2360 static/js/ui.js:11916
+#: static/js/ui.js:2360 static/js/ui.js:11991
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
@@ -5855,61 +5905,61 @@ msgstr ""
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr ""
 
-#: static/js/ui.js:3436
+#: static/js/ui.js:3500
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:3483
+#: static/js/ui.js:3547
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:3505
+#: static/js/ui.js:3569
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:3782
+#: static/js/ui.js:3846
 msgid ""
 "Difficulté, terrain, taille, attributs et propriétaire ne s'appliquent "
 "pas aux Lab Caches."
 msgstr ""
 
-#: static/js/ui.js:3853
+#: static/js/ui.js:3917
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:3961
+#: static/js/ui.js:4025
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr ""
 
-#: static/js/ui.js:3962 static/js/ui.js:3965 static/js/ui.js:3985
-#: static/js/ui.js:3992 static/js/ui.js:4000 templates/app.html:98
+#: static/js/ui.js:4026 static/js/ui.js:4029 static/js/ui.js:4049
+#: static/js/ui.js:4056 static/js/ui.js:4064 templates/app.html:98
 msgid "Quitter"
 msgstr ""
 
-#: static/js/ui.js:3985 static/js/ui.js:4000
+#: static/js/ui.js:4049 static/js/ui.js:4064
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr ""
 
-#: static/js/ui.js:3991
+#: static/js/ui.js:4055
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 msgstr ""
 
-#: static/js/ui.js:3995
+#: static/js/ui.js:4059
 msgid "Quitter quand même"
 msgstr ""
 
-#: static/js/ui.js:4015
+#: static/js/ui.js:4079
 msgid "MyGCFlow est fermé"
 msgstr ""
 
-#: static/js/ui.js:4016
+#: static/js/ui.js:4080
 msgid "Vous pouvez fermer cet onglet."
 msgstr ""
 
-#: static/js/ui.js:5574 templates/_filter_cache_attrs.html:44
+#: static/js/ui.js:5638 templates/_filter_cache_attrs.html:44
 #: templates/_filter_cache_attrs.html:62 templates/_filter_cache_attrs.html:86
 #: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
@@ -5919,239 +5969,239 @@ msgstr ""
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:5727 templates/_filter_county.html:10
+#: static/js/ui.js:5791 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr ""
 
-#: static/js/ui.js:5752
+#: static/js/ui.js:5816
 msgid "Non renseigné"
 msgstr ""
 
-#: static/js/ui.js:5776 templates/_filter_country_state.html:8
+#: static/js/ui.js:5840 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:5805 static/js/ui.js:5856
+#: static/js/ui.js:5869 static/js/ui.js:5920
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:5942 templates/menu_filtre.html:171
+#: static/js/ui.js:6006 templates/menu_filtre.html:179
 msgid "Filtrer par attribut"
 msgstr ""
 
-#: static/js/ui.js:5943 templates/menu_filtre.html:178
+#: static/js/ui.js:6007 templates/menu_filtre.html:186
 msgid "Filtrer par propriétaire"
 msgstr ""
 
-#: static/js/ui.js:6065
+#: static/js/ui.js:6129
 msgid "— Choisir —"
 msgstr ""
 
-#: static/js/ui.js:6065 templates/menu_filtre.html:75
+#: static/js/ui.js:6129 templates/menu_filtre.html:83
 msgid "Aucun préréglage enregistré"
 msgstr ""
 
-#: static/js/ui.js:6101
+#: static/js/ui.js:6165
 #, python-brace-format
 msgid "Nombre maximal de préréglages atteint (${max})."
 msgstr ""
 
-#: static/js/ui.js:6101 static/js/ui.js:6107 templates/menu_filtre.html:73
-#: templates/menu_filtre.html:74 templates/menu_images.html:224
+#: static/js/ui.js:6165 static/js/ui.js:6171 templates/menu_filtre.html:81
+#: templates/menu_filtre.html:82 templates/menu_images.html:224
 #: templates/menu_stats.html:365
 msgid "Préréglages"
 msgstr ""
 
-#: static/js/ui.js:6104
+#: static/js/ui.js:6168
 msgid "Nom du préréglage :"
 msgstr ""
 
-#: static/js/ui.js:6107
+#: static/js/ui.js:6171
 #, python-brace-format
 msgid "Un préréglage « ${name} » existe déjà."
 msgstr ""
 
-#: static/js/ui.js:6158
+#: static/js/ui.js:6222
 #, python-brace-format
 msgid "Supprimer le préréglage « ${name} » ?"
 msgstr ""
 
-#: static/js/ui.js:6159
+#: static/js/ui.js:6223
 msgid "Supprimer le préréglage"
 msgstr ""
 
-#: static/js/ui.js:7676
+#: static/js/ui.js:7740
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr ""
 
-#: static/js/ui.js:8222
+#: static/js/ui.js:8286
 msgid "Valeur requise."
 msgstr ""
 
-#: static/js/ui.js:8224
+#: static/js/ui.js:8288
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr ""
 
-#: static/js/ui.js:8225
+#: static/js/ui.js:8289
 msgid "Nombre attendu."
 msgstr ""
 
-#: static/js/ui.js:8226
+#: static/js/ui.js:8290
 msgid "La valeur doit être strictement positive."
 msgstr ""
 
-#: static/js/ui.js:8228
+#: static/js/ui.js:8292
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
-#: static/js/ui.js:8229
+#: static/js/ui.js:8293
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr ""
 
-#: static/js/ui.js:8230
+#: static/js/ui.js:8294
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr ""
 
-#: static/js/ui.js:8231
+#: static/js/ui.js:8295
 msgid "Entre 100 et 10000 ms."
 msgstr ""
 
-#: static/js/ui.js:8232
+#: static/js/ui.js:8296
 msgid "Hors limites."
 msgstr ""
 
-#: static/js/ui.js:8233
+#: static/js/ui.js:8297
 msgid "Valeur invalide."
-msgstr ""
-
-#: static/js/ui.js:8326
-#, python-brace-format
-msgid "${n} jours/s"
-msgstr ""
-
-#: static/js/ui.js:8328
-#, python-brace-format
-msgid "animation minimale ${d}"
-msgstr ""
-
-#: static/js/ui.js:8329
-#, python-brace-format
-msgid "animation ${d}"
-msgstr ""
-
-#: static/js/ui.js:8330
-#, python-brace-format
-msgid "fin ${d}"
-msgstr ""
-
-#: static/js/ui.js:8333
-#, python-brace-format
-msgid "dont trajets de caméra ${d}"
-msgstr ""
-
-#: static/js/ui.js:8341
-#, python-brace-format
-msgid "dont approche caméra ${d}"
-msgstr ""
-
-#: static/js/ui.js:8347
-#, python-brace-format
-msgid "dont pauses caméra ${d}"
-msgstr ""
-
-#: static/js/ui.js:8355
-#, python-brace-format
-msgid "dont retour caméra ${d}"
-msgstr ""
-
-#: static/js/ui.js:8357
-#, python-brace-format
-msgid "+ ${d} additionnel"
-msgstr ""
-
-#: static/js/ui.js:8359
-#, python-brace-format
-msgid "vidéo minimale ${d}"
-msgstr ""
-
-#: static/js/ui.js:8360
-#, python-brace-format
-msgid "vidéo ${d}"
-msgstr ""
-
-#: static/js/ui.js:8362
-#, python-brace-format
-msgid "${n} images minimum"
-msgstr ""
-
-#: static/js/ui.js:8363
-#, python-brace-format
-msgid "${n} images"
-msgstr ""
-
-#: static/js/ui.js:8365
-#, python-brace-format
-msgid "≈ ${n} jours par image"
 msgstr ""
 
 #: static/js/ui.js:8390
 #, python-brace-format
-msgid "Vidéo ~${d}"
+msgid "${n} jours/s"
 msgstr ""
 
-#: static/js/ui.js:8398 templates/menu_animation.html:23
-msgid "musique incluse"
+#: static/js/ui.js:8392
+#, python-brace-format
+msgid "animation minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:8399
-msgid "sans musique"
+#: static/js/ui.js:8393
+#, python-brace-format
+msgid "animation ${d}"
+msgstr ""
+
+#: static/js/ui.js:8394
+#, python-brace-format
+msgid "fin ${d}"
+msgstr ""
+
+#: static/js/ui.js:8397
+#, python-brace-format
+msgid "dont trajets de caméra ${d}"
 msgstr ""
 
 #: static/js/ui.js:8405
 #, python-brace-format
+msgid "dont approche caméra ${d}"
+msgstr ""
+
+#: static/js/ui.js:8411
+#, python-brace-format
+msgid "dont pauses caméra ${d}"
+msgstr ""
+
+#: static/js/ui.js:8419
+#, python-brace-format
+msgid "dont retour caméra ${d}"
+msgstr ""
+
+#: static/js/ui.js:8421
+#, python-brace-format
+msgid "+ ${d} additionnel"
+msgstr ""
+
+#: static/js/ui.js:8423
+#, python-brace-format
+msgid "vidéo minimale ${d}"
+msgstr ""
+
+#: static/js/ui.js:8424
+#, python-brace-format
+msgid "vidéo ${d}"
+msgstr ""
+
+#: static/js/ui.js:8426
+#, python-brace-format
+msgid "${n} images minimum"
+msgstr ""
+
+#: static/js/ui.js:8427
+#, python-brace-format
+msgid "${n} images"
+msgstr ""
+
+#: static/js/ui.js:8429
+#, python-brace-format
+msgid "≈ ${n} jours par image"
+msgstr ""
+
+#: static/js/ui.js:8454
+#, python-brace-format
+msgid "Vidéo ~${d}"
+msgstr ""
+
+#: static/js/ui.js:8462 templates/menu_animation.html:23
+msgid "musique incluse"
+msgstr ""
+
+#: static/js/ui.js:8463
+msgid "sans musique"
+msgstr ""
+
+#: static/js/ui.js:8469
+#, python-brace-format
 msgid "destination : ${d}"
 msgstr ""
 
-#: static/js/ui.js:8444
+#: static/js/ui.js:8508
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr ""
 
-#: static/js/ui.js:8447
+#: static/js/ui.js:8511
 msgid "Vide : nom du thème actif."
 msgstr ""
 
-#: static/js/ui.js:8479
+#: static/js/ui.js:8543
 msgid "La plage de dates est invalide ou vide."
 msgstr ""
 
-#: static/js/ui.js:8480
+#: static/js/ui.js:8544
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:8487
+#: static/js/ui.js:8551
 msgid "En attente de la lecture de la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:8498
+#: static/js/ui.js:8562
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 msgstr ""
 
-#: static/js/ui.js:8521
+#: static/js/ui.js:8585
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:8525
+#: static/js/ui.js:8589
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -6159,7 +6209,7 @@ msgid ""
 "posés, baissez le dynamisme ou allongez la vidéo."
 msgstr ""
 
-#: static/js/ui.js:8530
+#: static/js/ui.js:8594
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -6167,7 +6217,7 @@ msgid ""
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:8546
+#: static/js/ui.js:8610
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -6175,149 +6225,149 @@ msgid ""
 "rythme pour l'éviter."
 msgstr ""
 
-#: static/js/ui.js:8593
+#: static/js/ui.js:8657
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 msgstr ""
 
-#: static/js/ui.js:8597
+#: static/js/ui.js:8661
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 msgstr ""
 
-#: static/js/ui.js:8791
+#: static/js/ui.js:8855
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:8791
+#: static/js/ui.js:8855
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:8815
+#: static/js/ui.js:8879
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:8815 static/js/ui.js:8817 static/js/ui.js:8822
+#: static/js/ui.js:8879 static/js/ui.js:8881 static/js/ui.js:8886
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:8817
+#: static/js/ui.js:8881
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:8822
+#: static/js/ui.js:8886
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:11188
+#: static/js/ui.js:11263
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:11238 templates/menu_animation.html:329
+#: static/js/ui.js:11313 templates/menu_animation.html:329
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:11267
+#: static/js/ui.js:11342
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:11294
+#: static/js/ui.js:11369
 msgid "Type inconnu"
 msgstr ""
 
-#: static/js/ui.js:11295
+#: static/js/ui.js:11370
 msgid "Durée"
 msgstr ""
 
-#: static/js/ui.js:11296
+#: static/js/ui.js:11371
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:11338
+#: static/js/ui.js:11413
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:11365 static/js/ui.js:11766 static/js/ui.js:11908
+#: static/js/ui.js:11440 static/js/ui.js:11841 static/js/ui.js:11983
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr ""
 
-#: static/js/ui.js:11490
+#: static/js/ui.js:11565
 msgid "Chargement de la musique..."
 msgstr ""
 
-#: static/js/ui.js:11572
+#: static/js/ui.js:11647
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr ""
 
-#: static/js/ui.js:11587
+#: static/js/ui.js:11662
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr ""
 
-#: static/js/ui.js:11608
+#: static/js/ui.js:11683
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
 msgstr ""
 
-#: static/js/ui.js:11622
+#: static/js/ui.js:11697
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr ""
 
-#: static/js/ui.js:11651
+#: static/js/ui.js:11726
 msgid "La musique n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/ui.js:11731
+#: static/js/ui.js:11806
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:11732
+#: static/js/ui.js:11807
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:11733
+#: static/js/ui.js:11808
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr ""
 
-#: static/js/ui.js:11771
+#: static/js/ui.js:11846
 msgid "Préparation de l'enchaînement…"
 msgstr ""
 
-#: static/js/ui.js:11790 static/js/ui.js:11823
+#: static/js/ui.js:11865 static/js/ui.js:11898
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr ""
 
-#: static/js/ui.js:11842
+#: static/js/ui.js:11917
 msgid "Envoi du morceau…"
 msgstr ""
 
-#: static/js/ui.js:11849
+#: static/js/ui.js:11924
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr ""
 
-#: static/js/ui.js:11923
+#: static/js/ui.js:11998
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr ""
 
-#: static/js/ui.js:12093
+#: static/js/ui.js:12168
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
 msgstr ""
 
-#: static/js/ui.js:12202
+#: static/js/ui.js:12277
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr ""
@@ -6828,7 +6878,7 @@ msgstr ""
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr ""
 
-#: templates/app.html:197 templates/guide.html:155 templates/menu_data.html:19
+#: templates/app.html:197 templates/guide.html:155 templates/menu_data.html:34
 msgid "Sélectionner et charger un fichier .gpx"
 msgstr ""
 
@@ -6836,7 +6886,7 @@ msgstr ""
 msgid "Comment obtenir mon fichier .gpx ?"
 msgstr ""
 
-#: templates/app.html:213 templates/menu_data.html:34
+#: templates/app.html:213 templates/menu_data.html:49
 msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr ""
 
@@ -6901,7 +6951,7 @@ msgstr ""
 
 #: templates/app.html:287 templates/app.html:288 templates/guide.html:117
 #: templates/guide.html:319 templates/guide.html:326
-#: templates/menu_animation.html:44 templates/menu_data.html:434
+#: templates/menu_animation.html:44 templates/menu_data.html:449
 msgid "Prévisualiser"
 msgstr ""
 
@@ -6965,7 +7015,7 @@ msgid "Autre source"
 msgstr ""
 
 #: templates/guide.html:67 templates/guide.html:156 templates/guide.html:173
-#: templates/guide.html:493 templates/menu_data.html:80
+#: templates/guide.html:493 templates/menu_data.html:95
 msgid "Mes Lab Caches"
 msgstr ""
 
@@ -7168,7 +7218,7 @@ msgid "En tête du panneau, le sélecteur"
 msgstr ""
 
 #: templates/guide.html:167 templates/guide.html:518
-#: templates/menu_filtre.html:10 templates/menu_filtre.html:11
+#: templates/menu_filtre.html:16 templates/menu_filtre.html:17
 msgid "Découvertes affichées"
 msgstr ""
 
@@ -7194,8 +7244,8 @@ msgstr ""
 msgid "Sous les filtres, le réglage"
 msgstr ""
 
-#: templates/guide.html:169 templates/menu_filtre.html:198
-#: templates/menu_filtre.html:199
+#: templates/guide.html:169 templates/menu_filtre.html:206
+#: templates/menu_filtre.html:207
 msgid "Caches sans localisation (locationless)"
 msgstr ""
 
@@ -7517,8 +7567,8 @@ msgstr ""
 msgid "crée un thème,"
 msgstr ""
 
-#: templates/guide.html:241 templates/menu_data.html:554
-#: templates/menu_data.html:584 templates/menu_style.html:64
+#: templates/guide.html:241 templates/menu_data.html:573
+#: templates/menu_data.html:603 templates/menu_style.html:64
 #: templates/modal_evolution.html:61
 msgid "Importer"
 msgstr ""
@@ -7558,16 +7608,16 @@ msgid "Renseignez la"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:110
-#: templates/menu_filtre.html:111 templates/menu_filtre.html:135
-#: templates/menu_filtre.html:136
+#: templates/menu_animation.html:80 templates/menu_filtre.html:118
+#: templates/menu_filtre.html:119 templates/menu_filtre.html:143
+#: templates/menu_filtre.html:144
 msgid "Date de début"
 msgstr ""
 
 #: templates/guide.html:259 templates/menu_animation.html:109
-#: templates/menu_animation.html:110 templates/menu_filtre.html:119
-#: templates/menu_filtre.html:120 templates/menu_filtre.html:144
-#: templates/menu_filtre.html:145
+#: templates/menu_animation.html:110 templates/menu_filtre.html:127
+#: templates/menu_filtre.html:128 templates/menu_filtre.html:152
+#: templates/menu_filtre.html:153
 msgid "Date de fin"
 msgstr ""
 
@@ -7755,7 +7805,7 @@ msgid "puis choisissez un fichier avec"
 msgstr ""
 
 #: templates/guide.html:290 templates/menu_animation.html:309
-#: templates/menu_data.html:29 templates/menu_data_evolution.html:53
+#: templates/menu_data.html:44 templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr ""
 
@@ -8696,8 +8746,8 @@ msgstr ""
 msgid "L'import de fichiers"
 msgstr ""
 
-#: templates/guide.html:496 templates/menu_data.html:161
-#: templates/menu_data.html:217
+#: templates/guide.html:496 templates/menu_data.html:176
+#: templates/menu_data.html:232
 msgid "Importer des fichiers…"
 msgstr ""
 
@@ -8716,8 +8766,8 @@ msgid ""
 "pas au site."
 msgstr ""
 
-#: templates/guide.html:504 templates/menu_data.html:198
-#: templates/menu_data.html:366
+#: templates/guide.html:504 templates/menu_data.html:213
+#: templates/menu_data.html:381
 msgid "Afficher les instructions d'import"
 msgstr ""
 
@@ -8739,8 +8789,8 @@ msgid ""
 " coupe dans les"
 msgstr ""
 
-#: templates/guide.html:509 templates/menu_data.html:208
-#: templates/menu_data.html:376
+#: templates/guide.html:509 templates/menu_data.html:223
+#: templates/menu_data.html:391
 msgid "Options avancées"
 msgstr ""
 
@@ -8756,7 +8806,7 @@ msgid ""
 "conservées mais non affichées."
 msgstr ""
 
-#: templates/guide.html:510 templates/menu_data.html:139
+#: templates/guide.html:510 templates/menu_data.html:154
 msgid "Compléter à la main"
 msgstr ""
 
@@ -8768,7 +8818,7 @@ msgid ""
 "minutes-secondes)."
 msgstr ""
 
-#: templates/guide.html:510 templates/menu_data.html:136
+#: templates/guide.html:510 templates/menu_data.html:151
 msgid "Récupérer les positions"
 msgstr ""
 
@@ -8794,7 +8844,7 @@ msgstr ""
 msgid "offre trois sources :"
 msgstr ""
 
-#: templates/guide.html:518 templates/menu_filtre.html:12
+#: templates/guide.html:518 templates/menu_filtre.html:18
 msgid "Géocaches"
 msgstr ""
 
@@ -8802,7 +8852,7 @@ msgstr ""
 msgid "ou"
 msgstr ""
 
-#: templates/guide.html:518 templates/menu_filtre.html:14
+#: templates/guide.html:518 templates/menu_filtre.html:20
 msgid "Géocaches et Lab Caches"
 msgstr ""
 
@@ -8844,8 +8894,8 @@ msgstr ""
 msgid "vide la collection sans toucher aux géocaches, et"
 msgstr ""
 
-#: templates/guide.html:524 templates/menu_data.html:252
-#: templates/menu_data.html:397
+#: templates/guide.html:524 templates/menu_data.html:267
+#: templates/menu_data.html:412
 msgid "Régénérer le jeton du favori"
 msgstr ""
 
@@ -9300,327 +9350,335 @@ msgstr ""
 msgid "Durée du fondu de sortie, en secondes"
 msgstr ""
 
-#: templates/menu_data.html:25
+#: templates/menu_data.html:12
+msgid "Sources"
+msgstr ""
+
+#: templates/menu_data.html:15
+msgid "Filtres & affichage"
+msgstr ""
+
+#: templates/menu_data.html:40
 msgid "Fichier .gpx"
 msgstr ""
 
-#: templates/menu_data.html:28
+#: templates/menu_data.html:43
 msgid "Choisir un fichier GPX"
 msgstr ""
 
-#: templates/menu_data.html:46
+#: templates/menu_data.html:61
 msgid "Importer un autre fichier…"
 msgstr ""
 
-#: templates/menu_data.html:48
+#: templates/menu_data.html:63
 msgid "ou glissez-déposez sur la page"
 msgstr ""
 
-#: templates/menu_data.html:159
+#: templates/menu_data.html:174
 msgid "Sur cet appareil, le plus simple est d'importer vos fichiers :"
 msgstr ""
 
-#: templates/menu_data.html:166 templates/menu_data.html:334
+#: templates/menu_data.html:181 templates/menu_data.html:349
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur (une seule"
 " fois) :"
 msgstr ""
 
-#: templates/menu_data.html:169 templates/menu_data.html:337
+#: templates/menu_data.html:184 templates/menu_data.html:352
 msgid "Préparation du favori…"
 msgstr ""
 
-#: templates/menu_data.html:172 templates/menu_data.html:340
+#: templates/menu_data.html:187 templates/menu_data.html:355
 msgid "Copier le lien"
 msgstr ""
 
-#: templates/menu_data.html:177 templates/menu_data.html:345
+#: templates/menu_data.html:192 templates/menu_data.html:360
 msgid "Le favori n'a pas pu être préparé."
 msgstr ""
 
-#: templates/menu_data.html:178
+#: templates/menu_data.html:193
 msgid "Importer des fichiers à la place"
 msgstr ""
 
-#: templates/menu_data.html:182 templates/menu_data.html:350
+#: templates/menu_data.html:197 templates/menu_data.html:365
 msgid "Ouvrez"
 msgstr ""
 
-#: templates/menu_data.html:183
+#: templates/menu_data.html:198
 msgid "vos logs Adventure Lab"
 msgstr ""
 
-#: templates/menu_data.html:183 templates/menu_data.html:351
+#: templates/menu_data.html:198 templates/menu_data.html:366
 msgid ", connectez-vous, puis cliquez ce favori."
 msgstr ""
 
-#: templates/menu_data.html:187 templates/menu_data.html:355
-#: templates/menu_data.html:497
+#: templates/menu_data.html:202 templates/menu_data.html:370
+#: templates/menu_data.html:516
 msgid ""
 "La collecte par un favori n'est pas recommandée par Groundspeak et peut "
 "entrer en conflit avec les conditions d'utilisation de geocaching.com : "
 "utilisez-la à vos propres risques."
 msgstr ""
 
-#: templates/menu_data.html:190
+#: templates/menu_data.html:205
 msgid ""
 "Vos étapes arrivent ici et se placent seules sur la carte, grâce au "
 "service public lab2gpx (réglable dans les options avancées)."
 msgstr ""
 
-#: templates/menu_data.html:215
+#: templates/menu_data.html:230
 msgid "Fichiers Lab Caches (.json, .gpx ou .zip)"
 msgstr ""
 
-#: templates/menu_data.html:223
+#: templates/menu_data.html:238
 msgid "Comment obtenir mes fichiers ?"
 msgstr ""
 
-#: templates/menu_data.html:227
+#: templates/menu_data.html:242
 msgid ""
 "Historique de découvertes (.json) et coordonnées des étapes (.gpx ou "
 ".zip), importables ensemble ou séparément."
 msgstr ""
 
-#: templates/menu_data.html:235
+#: templates/menu_data.html:250
 msgid "Placer automatiquement les étapes sur la carte après un import"
 msgstr ""
 
-#: templates/menu_data.html:239
+#: templates/menu_data.html:254
 msgid ""
 "Interroge le service public lab2gpx avec les identifiants de vos "
 "Adventures — aucun identifiant de compte n'est transmis."
 msgstr ""
 
-#: templates/menu_data.html:245
+#: templates/menu_data.html:260
 msgid "Réessayer de récupérer les positions manquantes"
 msgstr ""
 
-#: templates/menu_data.html:255
+#: templates/menu_data.html:270
 msgid ""
 "L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « "
 "MyGCFlow — Lab Caches » dans votre barre de favoris."
 msgstr ""
 
-#: templates/menu_data.html:282
+#: templates/menu_data.html:297
 msgid "Vos DNF, vos actions de poseur et les logs reçus sur vos caches."
 msgstr ""
 
-#: templates/menu_data.html:293
+#: templates/menu_data.html:308
 msgid "Le favori collecte"
 msgstr ""
 
-#: templates/menu_data.html:295
+#: templates/menu_data.html:310
 msgid "Tout : DNF et caches posées"
 msgstr ""
 
-#: templates/menu_data.html:296
+#: templates/menu_data.html:311
 msgid "Mes DNF seulement"
 msgstr ""
 
-#: templates/menu_data.html:297
+#: templates/menu_data.html:312
 msgid "Mes caches posées seulement"
 msgstr ""
 
-#: templates/menu_data.html:301
+#: templates/menu_data.html:316
 msgid ""
 "Un périmètre réduit raccourcit la collecte. Les logs de l'autre famille "
 "déjà importés sont conservés."
 msgstr ""
 
-#: templates/menu_data.html:319
+#: templates/menu_data.html:334
 msgid "Voir l'aperçu"
 msgstr ""
 
-#: templates/menu_data.html:346
+#: templates/menu_data.html:361
 msgid "Importer un fichier à la place"
 msgstr ""
 
-#: templates/menu_data.html:358
+#: templates/menu_data.html:373
 msgid ""
 "La collecte relit vos journaux et vos caches comme une consultation à la "
 "main : elle peut durer plusieurs minutes. L'export arrive ici ensuite — "
 "un aperçu reste à valider avant l'import."
 msgstr ""
 
-#: templates/menu_data.html:382
+#: templates/menu_data.html:397
 msgid "Fichier de logs (.json, .gpx ou .zip)"
 msgstr ""
 
-#: templates/menu_data.html:384
+#: templates/menu_data.html:399
 msgid "Importer un fichier…"
 msgstr ""
 
-#: templates/menu_data.html:391
+#: templates/menu_data.html:406
 msgid ""
 "Fichier mygcflow-logs (.json) ou GPX contenant des logs (.gpx ou .zip). "
 "Les logs de votre fichier My Finds s'ajoutent aussi à chaque import."
 msgstr ""
 
-#: templates/menu_data.html:400
+#: templates/menu_data.html:415
 msgid ""
 "L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « "
 "MyGCFlow — Mes logs » dans votre barre de favoris."
 msgstr ""
 
-#: templates/menu_data.html:411
+#: templates/menu_data.html:426
 msgid ""
 "Par défaut, le favori ne relit que ce qui a pu changer depuis le dernier "
 "export. La collecte complète revérifie aussi les vieux logs (suppressions"
 " comprises) — plus longue."
 msgstr ""
 
-#: templates/menu_data.html:428
+#: templates/menu_data.html:443
 msgid "Vos trouvailles sont prêtes."
 msgstr ""
 
-#: templates/menu_data.html:431 templates/menu_data_evolution.html:92
+#: templates/menu_data.html:446 templates/menu_data_evolution.html:92
 #: templates/menu_data_poses.html:40
 msgid "Choisir un style"
 msgstr ""
 
-#: templates/menu_data.html:445 templates/menu_data_poses.html:51
+#: templates/menu_data.html:482 templates/menu_data_poses.html:51
 msgid "Aucune cache ne correspond aux filtres actuels."
 msgstr ""
 
-#: templates/menu_data.html:447 templates/menu_data_poses.html:53
+#: templates/menu_data.html:484 templates/menu_data_poses.html:53
 msgid "Réinitialiser les filtres"
 msgstr ""
 
-#: templates/menu_data.html:478
+#: templates/menu_data.html:497
 msgid "Importer mes Lab Caches"
 msgstr ""
 
-#: templates/menu_data.html:482
+#: templates/menu_data.html:501
 msgid "La méthode simple — en un clic"
 msgstr ""
 
-#: templates/menu_data.html:485
+#: templates/menu_data.html:504
 msgid ""
 "Glissez le bouton « MyGCFlow — Lab Caches » dans la barre de favoris de "
 "votre navigateur — une seule fois."
 msgstr ""
 
-#: templates/menu_data.html:488
+#: templates/menu_data.html:507
 msgid "Connectez-vous sur"
 msgstr ""
 
-#: templates/menu_data.html:490
+#: templates/menu_data.html:509
 msgid ""
 "puis cliquez ce favori : votre historique est envoyé directement à "
 "l'application."
 msgstr ""
 
-#: templates/menu_data.html:493
+#: templates/menu_data.html:512
 msgid ""
 "Les étapes se placent seules sur la carte. Si vous avez désactivé ce "
 "placement automatique (options avancées), complétez-les par fichier ou à "
 "la main."
 msgstr ""
 
-#: templates/menu_data.html:500
+#: templates/menu_data.html:519
 msgid "La méthode manuelle — deux fichiers"
 msgstr ""
 
-#: templates/menu_data.html:503
+#: templates/menu_data.html:522
 msgid "Historique des découvertes (.json)"
 msgstr ""
 
-#: templates/menu_data.html:504
+#: templates/menu_data.html:523
 msgid ""
 "Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), "
 "renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
 "il télécharge votre historique complet."
 msgstr ""
 
-#: templates/menu_data.html:505
+#: templates/menu_data.html:524
 msgid "Télécharger le script d'export"
 msgstr ""
 
-#: templates/menu_data.html:508
+#: templates/menu_data.html:527
 msgid "Coordonnées des étapes (.gpx ou .zip)"
 msgstr ""
 
-#: templates/menu_data.html:509
+#: templates/menu_data.html:528
 msgid ""
 "Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode "
 "UUID, une étape par waypoint) — inutile si la récupération automatique "
 "est activée."
 msgstr ""
 
-#: templates/menu_data.html:513
+#: templates/menu_data.html:532
 msgid ""
 "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
 "coordonnées restent conservées et complétables ensuite."
 msgstr ""
 
-#: templates/menu_data.html:517
+#: templates/menu_data.html:536
 msgid ""
 "Aucune donnée ne quitte l'application : les fichiers sont analysés "
 "localement. La récupération automatique envoie uniquement les "
 "identifiants d'Adventures au service public lab2gpx."
 msgstr ""
 
-#: templates/menu_data.html:532
+#: templates/menu_data.html:551
 msgid "Aperçu de l'import Lab Caches"
 msgstr ""
 
-#: templates/menu_data.html:547
+#: templates/menu_data.html:566
 msgid "Détail des fichiers"
 msgstr ""
 
-#: templates/menu_data.html:566
+#: templates/menu_data.html:585
 msgid "Aperçu de l'import de logs"
 msgstr ""
 
-#: templates/menu_data.html:574
+#: templates/menu_data.html:593
 msgid "Points d'attention"
 msgstr ""
 
-#: templates/menu_data.html:598
+#: templates/menu_data.html:617
 msgid "Remplacer mes géocaches ?"
 msgstr ""
 
-#: templates/menu_data.html:605
+#: templates/menu_data.html:624
 msgid ""
 "L'import remplace intégralement la base « Mes Géocaches » par le contenu "
 "du fichier. Vos Lab Caches et vos logs sont conservés."
 msgstr ""
 
-#: templates/menu_data.html:614
+#: templates/menu_data.html:633
 msgid "Remplacer ma base"
 msgstr ""
 
-#: templates/menu_data.html:627
+#: templates/menu_data.html:646
 msgid "Caches sans position"
 msgstr ""
 
-#: templates/menu_data.html:632
+#: templates/menu_data.html:651
 msgid ""
 "Ces caches ont des logs enregistrés mais aucune position connue : vos DNF"
 " n'y apparaîtront pas tant qu'elles n'en auront pas. La position saisie "
 "n'est jamais écrasée par un import."
 msgstr ""
 
-#: templates/menu_data.html:635 templates/menu_data.html:664
+#: templates/menu_data.html:654 templates/menu_data.html:683
 msgid ""
 "Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
 "2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
 msgstr ""
 
-#: templates/menu_data.html:639 templates/menu_data.html:668
+#: templates/menu_data.html:658 templates/menu_data.html:687
 msgid "Précédent"
 msgstr ""
 
-#: templates/menu_data.html:641 templates/menu_data.html:670
+#: templates/menu_data.html:660 templates/menu_data.html:689
 msgid "Suivant"
 msgstr ""
 
-#: templates/menu_data.html:656
+#: templates/menu_data.html:675
 msgid "Étapes en attente"
 msgstr ""
 
-#: templates/menu_data.html:661
+#: templates/menu_data.html:680
 msgid ""
 "Ces étapes sont conservées mais non affichées : renseignez leur position "
 "ou leur date de découverte pour les rendre affichables. Une seule "
@@ -9673,7 +9731,7 @@ msgid "La base est prête."
 msgstr ""
 
 #: templates/menu_data_evolution.html:119 templates/menu_data_poses.html:70
-#: templates/menu_filtre.html:81
+#: templates/menu_filtre.html:89
 msgid "Réinitialiser tous les filtres"
 msgstr ""
 
@@ -9761,86 +9819,90 @@ msgstr ""
 msgid "Dans les deux cas, l'archivage joue son flash."
 msgstr ""
 
-#: templates/menu_filtre.html:28
+#: templates/menu_filtre.html:6
+msgid "Affichage"
+msgstr ""
+
+#: templates/menu_filtre.html:34
 msgid "Afficher mes DNF sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:32
+#: templates/menu_filtre.html:38
 msgid "Les inclure dans le trait de déplacement"
 msgstr ""
 
-#: templates/menu_filtre.html:36
+#: templates/menu_filtre.html:42
 msgid "Montrer aussi les DNF trouvés le jour même"
 msgstr ""
 
-#: templates/menu_filtre.html:48
+#: templates/menu_filtre.html:54
 msgid "Afficher mes caches posées sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:52
+#: templates/menu_filtre.html:58
 msgid "Inclure pose et entretien dans le trait de déplacement"
 msgstr ""
 
-#: templates/menu_filtre.html:54
+#: templates/menu_filtre.html:60
 msgid ""
 "Vos étapes de poseur seulement (pose, maintenance, désactivation, "
 "archivage) : les logs des autres joueurs restent sur la page Mes poses."
 msgstr ""
 
-#: templates/menu_filtre.html:78
+#: templates/menu_filtre.html:86
 msgid "Enregistrer…"
 msgstr ""
 
-#: templates/menu_filtre.html:90
+#: templates/menu_filtre.html:98
 msgid "Exporter la sélection"
 msgstr ""
 
-#: templates/menu_filtre.html:93
+#: templates/menu_filtre.html:101
 msgid "GPX (.gpx)"
 msgstr ""
 
-#: templates/menu_filtre.html:94
+#: templates/menu_filtre.html:102
 msgid "CSV (.csv)"
 msgstr ""
 
-#: templates/menu_filtre.html:107
+#: templates/menu_filtre.html:115
 msgid "Période de découverte"
 msgstr ""
 
-#: templates/menu_filtre.html:113 templates/menu_filtre.html:122
-#: templates/menu_filtre.html:138 templates/menu_filtre.html:147
+#: templates/menu_filtre.html:121 templates/menu_filtre.html:130
+#: templates/menu_filtre.html:146 templates/menu_filtre.html:155
 msgid "Date par défaut (toutes les données)"
 msgstr ""
 
-#: templates/menu_filtre.html:132
+#: templates/menu_filtre.html:140
 msgid "Période de pose"
 msgstr ""
 
-#: templates/menu_filtre.html:173
+#: templates/menu_filtre.html:181
 msgid "La cache doit porter tous les attributs choisis."
 msgstr ""
 
-#: templates/menu_filtre.html:176 templates/menu_filtre.html:177
+#: templates/menu_filtre.html:184 templates/menu_filtre.html:185
 msgid "Propriétaire"
 msgstr ""
 
-#: templates/menu_filtre.html:182 templates/menu_filtre.html:183
+#: templates/menu_filtre.html:190 templates/menu_filtre.html:191
 msgid "Recherche"
 msgstr ""
 
-#: templates/menu_filtre.html:183
+#: templates/menu_filtre.html:191
 msgid "Code ou nom de cache"
 msgstr ""
 
-#: templates/menu_filtre.html:200
+#: templates/menu_filtre.html:208
 msgid "Comptées, sans point sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:201
+#: templates/menu_filtre.html:209
 msgid "Comptées et affichées sur la carte"
 msgstr ""
 
-#: templates/menu_filtre.html:204
+#: templates/menu_filtre.html:212
 msgid ""
 "Leur position dans le fichier est fictive : affichée, elle trace un point"
 " là où vous n'êtes pas allé."

@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
@@ -62,6 +63,8 @@ async function openWithData(page, request, { withLogs = true } = {}) {
   await importLogs(request);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForData(page);
+  // Le champ vit dans le sous-onglet « Filtres & affichage ».
+  await openDataSubTab(page, 'filters');
   await expect(page.locator('#ownerDisplayField')).toBeVisible({ timeout: 15_000 });
 }
 
@@ -77,6 +80,8 @@ function mapCodes(page, kind) {
 }
 
 async function showOwner(page) {
+  // La case vit dans le sous-onglet « Filtres & affichage ».
+  await openDataSubTab(page, 'filters');
   await page.locator('#checkOwnerDisplay').check();
   await expect.poll(() => mapCodes(page, 'owner')).toEqual(PLACED);
 }

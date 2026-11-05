@@ -388,7 +388,13 @@ function activityRunning() {
 }
 
 function dataTabVisible() {
-    return !!el('data')?.classList.contains('active');
+    if (!el('data')?.classList.contains('active')) return false;
+    // La note vit dans le pane « Sources » : fermé (« Filtres & affichage »
+    // affiché), elle ne se verrait pas — toast à la place. Tolérant quand
+    // le pane n'existe pas (page Évolution, sans sous-onglets).
+    const pane = el('dataSourcesPane');
+    if (pane && !pane.classList.contains('active') && !pane.classList.contains('show')) return false;
+    return true;
 }
 
 // Bilan de fin d'opération de la carte « Mes Lab Caches » : quand l'onglet

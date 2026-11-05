@@ -11,6 +11,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
@@ -64,6 +65,8 @@ function mapCodes(page, kind) {
 
 
 async function showDnf(page) {
+  // La case vit dans le sous-onglet « Filtres & affichage ».
+  await openDataSubTab(page, 'filters');
   await page.locator('#checkDnfDisplay').check();
   await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC9ZZZZ']);
 }
@@ -299,6 +302,7 @@ test('un DNF trouvé s\'efface pendant la lecture, avec une célébration facult
 // le point apparaît un instant, s'efface et joue la célébration réglée.
 test('option : un DNF trouvé le jour même s\'affiche un instant puis s\'efface', async ({ page, request }) => {
   await openWithData(page, SAMEDAY);
+  await openDataSubTab(page, 'filters');
   await page.locator('#checkDnfDisplay').check();
   await expect(page.locator('#checkDnfSameDay')).not.toBeChecked();
   // Au repos, la cache est affichée : sa résolution (2021) tombe après la
@@ -347,6 +351,7 @@ test('la case « Mes DNF » et ses réglages n\'apparaissent qu\'avec des DNF', 
   await expect(page.locator('#flashDnf')).toHaveJSProperty('hidden', true);
 
   await openWithData(page);
+  await openDataSubTab(page, 'filters');
   await expect(page.locator('#dnfDisplayField')).toBeVisible();
   await expect(page.locator('#flashDnf')).toHaveJSProperty('hidden', false);
 });
@@ -417,6 +422,7 @@ test('la chronologie marque les jours de DNF affichés', async ({ page }) => {
   // Couche masquée : aucun repère DNF.
   expect(await dnfMarks()).toEqual([]);
 
+  await openDataSubTab(page, 'filters');
   await page.locator('#checkDnfDisplay').check();
   await expect.poll(() => mapCodes(page, 'dnf')).toEqual(['GC9MARK']);
   // Un repère par tentative : la seconde est numérotée.

@@ -6,6 +6,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -81,4 +82,57 @@ test('à 390 px, les rangées de l\'onglet Données s\'empilent sans dépasser',
   const labelBox = await page.locator('label[for="gcLogsScopeSelect"]').boundingBox();
   const selectBox = await page.locator('#gcLogsScopeSelect').boundingBox();
   expect(selectBox.y).toBeGreaterThan(labelBox.y);
+});
+
+
+// Sous-onglets de l'onglet Données (lot « réorganisation Données ») :
+// Sources actif par défaut, alternance effective, choix mémorisé au
+// rechargement, et état d'accueil qui force Sources quand la base est vide —
+// sans écraser le choix mémorisé (comme l'onglet principal, tab-memory).
+test('les sous-onglets alternent, le choix survit au rechargement, la base vide force Sources', async ({ page, request }) => {
+  await request.post('/clear_database');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+
+  const sourcesTab = page.locator('#dataSourcesTab');
+  const filtersTab = page.locator('#dataFiltersTab');
+  const sourcesPane = page.locator('#dataSourcesPane');
+  const filtersPane = page.locator('#dataFiltersPane');
+
+  // Base vide : l'arrivée est forcée sur Données — Sources, l'état d'accueil.
+  await expect(sourcesTab).toHaveClass(/active/);
+  await expect(sourcesPane).toHaveClass(/active/);
+  await expect(filtersPane).not.toHaveClass(/active/);
+
+  // L'alternance ne se teste qu'avec des données : tant que la base est
+  // vide, chaque résolution du statut ramène sur Sources (état d'accueil,
+  // comme l'onglet principal forcé sur Données).
+  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+
+  // L'alternance masque un pane et montre l'autre.
+  await openDataSubTab(page, 'filters');
+  await expect(filtersTab).toHaveClass(/active/);
+  await expect(filtersPane).toHaveClass(/active/);
+  await expect(sourcesPane).not.toHaveClass(/active/);
+  await openDataSubTab(page, 'sources');
+  await expect(sourcesPane).toHaveClass(/active/);
+  await expect(filtersPane).not.toHaveClass(/active/);
+
+  // Le dernier pane ouvert survit au rechargement.
+  await openDataSubTab(page, 'filters');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await expect(filtersPane).toHaveClass(/active/);
+  expect(await page.evaluate(() => localStorage.getItem('dataSubTab'))).toBe('filters');
+
+  // Base vide à nouveau : l'état d'accueil force Sources à la résolution du
+  // statut — SANS écraser le choix mémorisé (il servira à la prochaine
+  // visite avec données, comme l'onglet principal).
+  await request.post('/clear_database');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await expect(sourcesPane).toHaveClass(/active/, { timeout: 15_000 });
+  expect(await page.evaluate(() => localStorage.getItem('dataSubTab'))).toBe('filters');
 });
