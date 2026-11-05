@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { openSourceMenu } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -59,9 +60,9 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   await expect(page.locator('#btnGoStyleTab')).toBeVisible();
   await expect(page.locator('#btnGoPreview')).toBeVisible();
 
-  // Après vidage via l'UI (le bouton reste visible en mode compact) :
+  // Après vidage via l'UI (le bouton vit dans le menu ⋯ de l'en-tête) :
   // retour à l'import détaillé.
-  await page.locator('#clearDatabaseBtn').click();
+  await (await openSourceMenu(page, 'geocaches')).locator('#clearDatabaseBtn').click();
   await page.getByRole('dialog', { name: 'Confirmation de suppression' })
     .getByRole('button', { name: 'Supprimer mes géocaches' })
     .click();

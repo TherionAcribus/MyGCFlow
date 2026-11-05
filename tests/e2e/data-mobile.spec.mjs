@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
-import { openDataSubTab } from './data-subtabs.mjs';
+import { openDataSubTab, openSourceMenu } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -68,20 +68,84 @@ test('à 390 px, les rangées de l\'onglet Données s\'empilent sans dépasser',
   await expect(page.locator('#gcLogsStatus')).toContainText('logs enregistrés', { timeout: 30_000 });
 
   // Aucun contrôle des rangées empilées ne déborde de sa carte.
-  for (const selector of ['#gcLogsScopeSelect', '#labsUpdateBtn', '#gcLogsUpdateBtn']) {
-    const locator = page.locator(selector);
+  {
+    const locator = page.locator('#gcLogsScopeSelect');
     const box = await locator.boundingBox();
-    expect(box, `${selector} doit avoir une boîte visible`).not.toBeNull();
+    expect(box, '#gcLogsScopeSelect doit avoir une boîte visible').not.toBeNull();
     const card = await cardBox(locator);
     expect(box.x).toBeGreaterThanOrEqual(card.x - 0.5);
     expect(box.width).toBeLessThanOrEqual(card.width + 0.5);
     expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 0.5);
   }
 
+  // En-têtes « carte source » (hors des cartes, au-dessus) : titre + résumé
+  // + bouton ⋯ — le résumé s'enroule sous le titre plutôt que de déborder
+  // du viewport à 390 px.
+  for (const head of await page.locator('.gc-source-head').all()) {
+    const box = await head.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.x).toBeGreaterThanOrEqual(-0.5);
+    expect(box.x + box.width).toBeLessThanOrEqual(390.5);
+  }
+
+  // Les items des menus ⋯ (nés dans les anciennes rangées de boutons) ne
+  // débordent pas non plus une fois leur menu ouvert.
+  for (const [cardName, itemId] of [['labs', '#labsUpdateBtn'], ['logs', '#gcLogsUpdateBtn']]) {
+    const menu = await openSourceMenu(page, cardName);
+    const box = await menu.locator(itemId).boundingBox();
+    expect(box, `${itemId} doit avoir une boîte visible`).not.toBeNull();
+    expect(box.x).toBeGreaterThanOrEqual(-0.5);
+    expect(box.x + box.width).toBeLessThanOrEqual(390.5);
+  }
+
   // « Le favori collecte » : libellé au-dessus du select (empilés).
   const labelBox = await page.locator('label[for="gcLogsScopeSelect"]').boundingBox();
   const selectBox = await page.locator('#gcLogsScopeSelect').boundingBox();
   expect(selectBox.y).toBeGreaterThan(labelBox.y);
+});
+
+
+// En-têtes « carte source » (lot réorganisation Données) : le menu ⋯ se
+// masque quand tous ses items le sont (collection vide), le résumé vit dans
+// l'en-tête, et l'action destructive se clique via le menu ouvert.
+test('menus ⋯ des cartes sources : masqués à vide, Supprimer via le menu, résumé dans l\'en-tête', async ({ page, request }) => {
+  // Les trois collections doivent être vides pour l'état « menu masqué » —
+  // le runtime de test les partage entre specs.
+  await request.post('/api/labs/clear').catch(() => {});
+  await request.post('/api/logs/clear').catch(() => {});
+  await request.post('/clear_database');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+
+  // Base vide : les trois boutons ⋯ sont masqués ; les résumés vivent dans
+  // les en-têtes de section (pas dans les cartes).
+  for (const id of ['#geocachesSourceMenu', '#labsSourceMenu', '#gcLogsSourceMenu']) {
+    await expect(page.locator(`${id} [data-bs-toggle="dropdown"]`)).toBeHidden();
+  }
+  await expect(page.locator('.gc-source-head #infosBDD')).toHaveText('Aucune géocache chargée');
+  await expect(page.locator('.gc-source-head #labsStatus')).toHaveText('Aucun Lab Cache importé');
+  await expect(page.locator('.gc-source-head #gcLogsStatus')).toHaveText('Aucun log importé');
+
+  // Import GPX : le bouton ⋯ des géocaches apparaît, le résumé se remplit
+  // dans l'en-tête.
+  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+  const toggle = page.locator('#geocachesSourceMenu [data-bs-toggle="dropdown"]');
+  await expect(toggle).toBeVisible();
+  await expect(page.locator('.gc-source-head #infosBDD')).toContainText('6 géocaches');
+
+  // L'item Supprimer n'est cliquable que menu ouvert — et le vidage le
+  // referme (menu vide → bouton ⋯ masqué à nouveau).
+  const menu = await openSourceMenu(page, 'geocaches');
+  await expect(menu.locator('#clearDatabaseBtn')).toBeVisible();
+  await menu.locator('#clearDatabaseBtn').click();
+  await page.getByRole('dialog', { name: 'Confirmation de suppression' })
+    .getByRole('button', { name: 'Supprimer mes géocaches' })
+    .click();
+  await expect(toggle).toBeHidden({ timeout: 30_000 });
+  await expect(page.locator('.gc-source-head #infosBDD')).toHaveText('Aucune géocache chargée');
 });
 
 

@@ -18,10 +18,24 @@
 
     <div class="tab-content pt-3">
         <div class="tab-pane fade show active" id="dataSourcesPane" role="tabpanel" aria-labelledby="dataSourcesTab" tabindex="0">
-        <!-- Section Base de données -->
-            <h5 class="gc-section-title">
-                <i class="ti ti-database text-muted me-1"></i>{{ _("Mes Géocaches") }}
-            </h5>
+        <!-- Section Base de données : en-tête unifié « carte source » —
+             titre + résumé (#infosBDD rempli par bdd.js) + menu ⋯ des
+             actions secondaires/destructives. Le bouton ⋯ se masque quand
+             tous ses items le sont (syncSourceMenuVisibility, ui.js). -->
+            <div class="gc-source-head d-flex align-items-center gap-2">
+                <h5 class="gc-section-title mb-0 flex-grow-1 d-flex align-items-baseline gap-2 flex-wrap">
+                    <span><i class="ti ti-database text-muted me-1"></i>{{ _("Mes Géocaches") }}</span>
+                    <span id="infosBDD" class="gc-source-summary">{{ _("Aucune géocache chargée") }}</span>
+                </h5>
+                <div class="dropdown gc-source-menu" id="geocachesSourceMenu">
+                    <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ _('Actions sur mes géocaches') }}" hidden>
+                        <i class="ti ti-dots-vertical" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button type="button" id="clearDatabaseBtn" class="dropdown-item text-danger" style="display: none;"><i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes géocaches") }}</button></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-body">
                     <form id="uploadBddForm">
@@ -64,26 +78,11 @@
                         </div>
                     </form>
 
-                    <!-- Infos de base et suppression des données importées
-                         sur la même ligne : bouton discret (outline) à droite,
-                         en vis-à-vis du compteur de trouvailles. -->
-                    <!-- Sur petit écran le bouton de vidage passe pleine
-                         largeur sous le compteur (flex-column), en ligne
-                         dès ~576 px — même motif que les autres rangées de
-                         l'onglet. -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 mt-3">
-                        <div id="infosBDD" class="form-hint text-muted">
-                            {{ _("Aucune géocache chargée") }}
-                        </div>
-                        <button id="clearDatabaseBtn" class="btn btn-outline-danger btn-sm flex-shrink-0" style="display: none;">
-                            <i class="ti ti-trash me-1"></i>{{ _("Supprimer mes géocaches") }}
-                        </button>
-                    </div>
                     <!-- Bilan de fin d'opération (import, vidage) quand
                          l'onglet Données est affiché : remplace le toast
-                         qui recouvrirait le panneau (bdd.js). La zone
-                         #infosBDD est réservée aux relevés périodiques. -->
-                    <div id="bddReportNote" class="small text-success" hidden aria-live="polite"></div>
+                         qui recouvrirait le panneau (bdd.js). Le résumé
+                         #infosBDD vit dans l'en-tête de la carte. -->
+                    <div id="bddReportNote" class="small text-success mt-3" hidden aria-live="polite"></div>
                 </div>
             </div>
 
@@ -91,15 +90,25 @@
                  statut et suppression séparés — jamais via le bouton
                  « Supprimer mes géocaches » ni la zone GPX ci-dessus, qui
                  reste réservée aux fichiers de trouvailles). -->
-            <h5 class="gc-section-title mt-3">
-                <i class="ti ti-compass text-muted me-1"></i>{{ _("Mes Lab Caches") }}
-            </h5>
+            <div class="gc-source-head d-flex align-items-center gap-2 mt-3">
+                <h5 class="gc-section-title mb-0 flex-grow-1 d-flex align-items-baseline gap-2 flex-wrap">
+                    <span><i class="ti ti-compass text-muted me-1"></i>{{ _("Mes Lab Caches") }}</span>
+                    <span id="labsStatus" class="gc-source-summary" aria-live="polite">{{ _("Aucun Lab Cache importé") }}</span>
+                </h5>
+                <div class="dropdown gc-source-menu" id="labsSourceMenu">
+                    <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ _('Actions sur mes Lab Caches') }}" hidden>
+                        <i class="ti ti-dots-vertical" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button type="button" id="labsUpdateBtn" class="dropdown-item" style="display:none;" aria-expanded="false" aria-controls="labsGuide"><i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}</button></li>
+                        <li><button type="button" id="labsExportBtn" class="dropdown-item" style="display:none;"><i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button type="button" id="clearLabsBtn" class="dropdown-item text-danger" style="display:none;"><i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes Lab Caches") }}</button></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-body">
-                    <!-- État de la collection, en clair (rempli par labs.js). -->
-                    <div id="labsStatus" class="fw-medium mb-2" aria-live="polite">
-                        {{ _("Aucun Lab Cache importé") }}
-                    </div>
                     <!-- Bilan de fin de séquence Labs (import, placement,
                          mise à jour externe) écrit par labs.js quand
                          l'onglet est visible — à la place du toast. -->
@@ -206,19 +215,9 @@
                         </div>
                     </div>
 
-                    <!-- Boutons pleine largeur empilés sur petit écran,
-                         côte à côte dès ~576 px. -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
-                        <button type="button" id="labsUpdateBtn" class="btn btn-outline-primary btn-sm" style="display:none;" aria-expanded="false" aria-controls="labsGuide">
-                            <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
-                        </button>
-                        <button id="clearLabsBtn" class="btn btn-outline-danger btn-sm ms-auto" style="display:none;">
-                            <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes Lab Caches") }}
-                        </button>
-                    </div>
-
                     <!-- Tout ce dont le parcours en un clic se passe : import
-                         de fichiers, réglage de la récupération, export. -->
+                         de fichiers, réglage de la récupération (l'export et
+                         la suppression vivent dans le menu ⋯ de l'en-tête). -->
                     <details id="labsAdvanced" class="mt-3">
                         <summary class="small text-muted">{{ _("Options avancées") }}</summary>
                         <div class="pt-2">
@@ -230,9 +229,6 @@
                                        aria-label="{{ _('Fichiers Lab Caches (.json, .gpx ou .zip)') }}" />
                                 <button type="button" id="labs-file-btn" class="btn btn-outline-primary btn-sm gcm-file-btn">
                                     <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer des fichiers…") }}
-                                </button>
-                                <button id="labsExportBtn" class="btn btn-outline-secondary btn-sm" style="display:none;">
-                                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
                                 </button>
                                 <button type="button" id="labs-help-btn" class="btn btn-link btn-sm px-1">
                                     {{ _("Comment obtenir mes fichiers ?") }}
@@ -279,14 +275,25 @@
                  caches (docs/logs-geocaching.md). Source indépendante :
                  import avec aperçu, statut, export et suppression propres
                  (gc_logs.js). Rien n'est encore affiché sur la carte. -->
-            <h5 class="gc-section-title mt-3">
-                <i class="ti ti-checklist text-muted me-1"></i>{{ _("Mes logs") }}
-            </h5>
+            <div class="gc-source-head d-flex align-items-center gap-2 mt-3">
+                <h5 class="gc-section-title mb-0 flex-grow-1 d-flex align-items-baseline gap-2 flex-wrap">
+                    <span><i class="ti ti-checklist text-muted me-1"></i>{{ _("Mes logs") }}</span>
+                    <span id="gcLogsStatus" class="gc-source-summary" aria-live="polite">{{ _("Aucun log importé") }}</span>
+                </h5>
+                <div class="dropdown gc-source-menu" id="gcLogsSourceMenu">
+                    <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ _('Actions sur mes logs') }}" hidden>
+                        <i class="ti ti-dots-vertical" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button type="button" id="gcLogsUpdateBtn" class="dropdown-item" style="display:none;" aria-expanded="false" aria-controls="gcLogsGuide"><i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}</button></li>
+                        <li><button type="button" id="gcLogsExportBtn" class="dropdown-item" hidden><i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button type="button" id="gcLogsClearBtn" class="dropdown-item text-danger" hidden><i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes logs") }}</button></li>
+                    </ul>
+                </div>
+            </div>
             <div class="card gc-logs-ui">
                 <div class="card-body">
-                    <div id="gcLogsStatus" class="fw-medium mb-1" aria-live="polite">
-                        {{ _("Aucun log importé") }}
-                    </div>
                     <ul id="gcLogsDetail" class="list-unstyled small text-muted mb-2" hidden></ul>
                     <!-- Bilan de fin d'opération « Mes logs » (import,
                          suppression) quand l'onglet est visible —
@@ -374,19 +381,9 @@
                         </div>
                     </div>
 
-                    <!-- Boutons pleine largeur empilés sur petit écran,
-                         côte à côte dès ~576 px. -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
-                        <button type="button" id="gcLogsUpdateBtn" class="btn btn-outline-primary btn-sm" style="display:none;" aria-expanded="false" aria-controls="gcLogsGuide">
-                            <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
-                        </button>
-                        <button type="button" id="gcLogsClearBtn" class="btn btn-outline-danger btn-sm ms-auto" hidden>
-                            <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes logs") }}
-                        </button>
-                    </div>
-
                     <!-- Tout ce dont le parcours en un clic se passe : import
-                         de fichiers, export, jeton du favori. -->
+                         de fichiers, jeton du favori (l'export et la
+                         suppression vivent dans le menu ⋯ de l'en-tête). -->
                     <details id="gcLogsAdvanced" class="mt-3">
                         <summary class="small text-muted">{{ _("Options avancées") }}</summary>
                         <div class="pt-2">
@@ -397,9 +394,6 @@
                                        aria-label="{{ _('Fichier de logs (.json, .gpx ou .zip)') }}" />
                                 <button type="button" id="gc-logs-file-btn" class="btn btn-outline-primary btn-sm gcm-file-btn">
                                     <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer un fichier…") }}
-                                </button>
-                                <button type="button" id="gcLogsExportBtn" class="btn btn-outline-secondary btn-sm" hidden>
-                                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
                                 </button>
                             </div>
                             <div class="form-hint text-muted mb-3">

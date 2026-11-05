@@ -791,6 +791,7 @@ export function readBddValues({ settleFirstUse = false } = {}){
 
             const btn = document.getElementById('clearDatabaseBtn');
             if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
+            syncGeocachesMenu();
 
             // La présentation compacte/détaillée de la carte dépend de ce
             // compteur : réévaluer sans attendre le prochain recalcul.
@@ -940,12 +941,20 @@ export function refreshLocationlessDisplay() {
     fitViewOnData();
 }
 
+// Menu ⋯ de la carte « Mes Géocaches » (#geocachesSourceMenu) : le bouton ⋯
+// se masque quand tous ses items le sont — resynchronisé à chaque bascule
+// du bouton de suppression (bdd.js est le seul à le piloter).
+function syncGeocachesMenu() {
+    try { pkg.syncSourceMenuVisibility?.(document.getElementById('geocachesSourceMenu')); } catch (e) {}
+}
+
 function updateUIAfterClear() {
     const infos = document.getElementById('infosBDD');
     const btn = document.getElementById('clearDatabaseBtn');
 
     if (infos) infos.textContent = t('Aucune géocache chargée');
     if (btn) btn.style.display = 'none';
+    syncGeocachesMenu();
     // Compteur « 0 / 0 », badge d'onglet, toast « aucune cache » et état
     // « filtre actif » du panneau passent tous par l'écrivain unique.
     updateFiltersCounter(0, 0);
@@ -1765,6 +1774,7 @@ export function readBdd(){
 
                 const btn = document.getElementById('clearDatabaseBtn');
                 if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
+                syncGeocachesMenu();
 
                 finishReadIndicators();
             },
@@ -2153,6 +2163,7 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
 
                     const btn = document.getElementById('clearDatabaseBtn');
                     if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
+                    syncGeocachesMenu();
 
                     // L'arbre pays/régions n'est chargé qu'à l'init : après un
                     // premier import sur base vide il faut le recharger pour

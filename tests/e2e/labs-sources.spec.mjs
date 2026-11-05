@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
-import { openDataSubTab } from './data-subtabs.mjs';
+import { openDataSubTab, openSourceMenu } from './data-subtabs.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -259,7 +259,8 @@ test('après suppression complète, la suggestion de source est rejouée', async
   await expect(page.locator('#selectDiscoverySources')).toHaveValue('labs');
 
   // Suppression complète : le mode revient à « geocaches » (reset).
-  await page.locator('#clearLabsBtn').click();
+  // Le bouton vit dans le menu ⋯ de l'en-tête de la carte.
+  await (await openSourceMenu(page, 'labs')).locator('#clearLabsBtn').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
   await expect(page.locator('#selectDiscoverySources')).toHaveValue('geocaches', { timeout: 30_000 });
@@ -277,8 +278,9 @@ test('« Supprimer mes Lab Caches » vide la collection Labs uniquement', async 
   await importLabs(page);
 
   // La confirmation passe par la modale applicative (showConfirmation,
-  // .gcm-confirm-modal) : cliquer son bouton danger.
-  await page.locator('#clearLabsBtn').click();
+  // .gcm-confirm-modal) : cliquer son bouton danger. L'item de suppression
+  // vit dans le menu ⋯ de l'en-tête de la carte.
+  await (await openSourceMenu(page, 'labs')).locator('#clearLabsBtn').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
 
   await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
@@ -819,18 +821,22 @@ test('la carte montre le parcours du favori, puis le replie une fois des Labs im
   await openReadyApp(page);
 
   // Rien d'importé : état en clair, parcours en deux étapes, pas d'options
-  // avancées dépliées.
+  // avancées dépliées — et le menu ⋯ entier se masque (tous ses items le
+  // sont, syncSourceMenuVisibility).
   await expect(page.locator('#labsStatus')).toHaveText('Aucun Lab Cache importé');
   await expect(page.locator('#labsGuide')).toBeVisible();
   await expect(page.locator('#labsBookmarkletLink')).toBeVisible();
   await expect(page.locator('#labs-file-btn')).toBeHidden();
   await expect(page.locator('#labsUpdateBtn')).toBeHidden();
+  await expect(page.locator('#labsSourceMenu [data-bs-toggle="dropdown"]')).toBeHidden();
 
   await importLabs(page);
 
   await expect(page.locator('#labsStatus')).toHaveText('12 étapes · 8 sur la carte · 4 à compléter');
   await expect(page.locator('#labsGuide')).toBeHidden();
-  const update = page.locator('#labsUpdateBtn');
+  // « Afficher les instructions d'import » vit dans le menu ⋯ de l'en-tête.
+  const menu = await openSourceMenu(page, 'labs');
+  const update = menu.locator('#labsUpdateBtn');
   await expect(update).toBeVisible();
   await update.click();
   await expect(page.locator('#labsGuide')).toBeVisible();
@@ -1474,7 +1480,9 @@ test('le bouton du guide est « Afficher les instructions d\'import »', async (
   await openReadyApp(page);
   await importLabs(page);
 
-  const update = page.locator('#labsUpdateBtn');
+  // L'item vit dans le menu ⋯ de l'en-tête de la carte.
+  const menu = await openSourceMenu(page, 'labs');
+  const update = menu.locator('#labsUpdateBtn');
   await expect(update).toBeVisible();
   await expect(update).toContainText("Afficher les instructions d'import");
   await update.click();

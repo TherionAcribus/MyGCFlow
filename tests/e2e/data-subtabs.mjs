@@ -1,3 +1,5 @@
+import { expect } from '@playwright/test';
+
 // Helper des sous-onglets de l'onglet Données (« Sources » /
 // « Filtres & affichage », lot « réorganisation Données »).
 // Un contrôle d'un pane fermé n'est pas visible : tout test qui interagit
@@ -26,4 +28,31 @@ export async function openDataSubTab(page, name) {
     const selector = SUBTAB_BUTTONS[name];
     if (!selector) throw new Error(`Sous-onglet Données inconnu : ${name}`);
     await page.locator(selector).click();
+}
+
+// Menus ⋯ des en-têtes « carte source » (lot réorganisation Données) : les
+// actions secondaires/destructives (#clearDatabaseBtn, #labsUpdateBtn,
+// #labsExportBtn, #clearLabsBtn, #gcLogsUpdateBtn, #gcLogsExportBtn,
+// #gcLogsClearBtn) ne sont visibles et cliquables que menu ouvert — le
+// bouton ⋯ lui-même est masqué tant que tous ses items le sont
+// (syncSourceMenuVisibility, ui.js).
+const SOURCE_MENUS = {
+    geocaches: '#geocachesSourceMenu',
+    labs: '#labsSourceMenu',
+    logs: '#gcLogsSourceMenu',
+};
+
+/**
+ * Ouvre le menu ⋯ d'une carte source et retourne le locator du menu ouvert
+ * (.dropdown-menu.show) — les items s'y lisent/cliquent ensuite.
+ * @param {import('@playwright/test').Page} page
+ * @param {'geocaches'|'labs'|'logs'} cardName
+ */
+export async function openSourceMenu(page, cardName) {
+    const selector = SOURCE_MENUS[cardName];
+    if (!selector) throw new Error(`Carte source inconnue : ${cardName}`);
+    const menu = page.locator(`${selector} .dropdown-menu`);
+    await page.locator(`${selector} [data-bs-toggle="dropdown"]`).click();
+    await expect(menu).toHaveClass(/show/, { timeout: 10_000 });
+    return menu;
 }

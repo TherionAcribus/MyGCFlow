@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
-import { openDataSubTab } from './data-subtabs.mjs';
+import { openDataSubTab, openSourceMenu } from './data-subtabs.mjs';
 
 
 // Carte « Mes logs » (onglet Données, docs/logs-geocaching.md, lot B) :
@@ -93,10 +93,11 @@ test('aperçu puis import : le statut reflète les logs', async ({ page }) => {
   // Dernier import rappelé dans le détail : date + bilan + source.
   await expect(detail).toContainText('Dernier import le');
   await expect(detail).toContainText('7 nouveaux logs');
-  // Exporter vit dans les options avancées : les ouvrir avant de le lire.
-  await page.locator('#gcLogsAdvanced summary').click();
-  await expect(page.locator('#gcLogsExportBtn')).toBeVisible();
-  await expect(page.locator('#gcLogsClearBtn')).toBeVisible();
+  // Export et suppression vivent dans le menu ⋯ de l'en-tête : ouvrir le
+  // menu avant de lire les items (masqués menu fermé).
+  const menu = await openSourceMenu(page, 'logs');
+  await expect(menu.locator('#gcLogsExportBtn')).toBeVisible();
+  await expect(menu.locator('#gcLogsClearBtn')).toBeVisible();
 });
 
 
@@ -306,7 +307,7 @@ test('« Supprimer mes logs » vide la collection après confirmation', async ({
   await preview(page, CONTRACT);
   await confirmImport(page);
 
-  await page.locator('#gcLogsClearBtn').click();
+  await (await openSourceMenu(page, 'logs')).locator('#gcLogsClearBtn').click();
   await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
   await expect(page.locator('#gcLogsStatus')).toHaveText('Aucun log importé');
   await expect(page.locator('#gcLogsClearBtn')).toBeHidden();

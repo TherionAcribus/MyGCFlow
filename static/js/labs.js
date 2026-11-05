@@ -329,6 +329,8 @@ function renderLabsStatus(st) {
         const btn = el(id);
         if (btn) btn.style.display = total > 0 ? '' : 'none';
     }
+    // Tous les items masqués (collection vide) → le bouton ⋯ se masque.
+    pkg.syncSourceMenuVisibility?.(el('labsSourceMenu'));
     renderGuide();
 }
 

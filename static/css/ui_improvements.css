@@ -1674,16 +1674,11 @@ main.fullscreen-mode #timelineBar .timeline-bar-styles .btn {
    (Les colonnes col-lg-* sont déjà empilées par la règle .layout-sidebar
    plus haut ; en bandeau étroit, le viewport < lg les empile aussi.) */
 #tabsPanel.panel-lt-md .btn { white-space: normal; }
-/* La ligne compteur + bouton de suppression peut passer sur deux lignes
-   (flex-wrap sur le conteneur, :has() évite d'ajouter un id au gabarit). */
-#tabsPanel.panel-lt-md .d-flex:has(> #infosBDD) {
-    flex-wrap: wrap;
-}
+/* Le résumé #infosBDD vit dans l'en-tête « carte source » (menu_data.html,
+   .gc-source-head) : flex-wrap y est déjà posé — min-width:0 reste utile
+   pour laisser le résumé s'enrouler sous le titre sans déborder. */
 #tabsPanel.panel-lt-md #infosBDD {
     min-width: 0;
-}
-#tabsPanel.panel-lt-md #clearDatabaseBtn {
-    flex-shrink: 1;
 }
 #tabsPanel.panel-lt-md #quickActions .btn-label {
     display: none;
@@ -3581,6 +3576,30 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 @media (max-width: 575.98px) {
     .gc-logs-scope-select { width: 100%; }
 }
+
+/* --- En-têtes « carte source » (lot réorganisation Données) --------------
+   Les trois cartes sources de l'onglet Données partagent la même tête :
+   titre + résumé (#infosBDD / #labsStatus / #gcLogsStatus, remplis par
+   bdd.js / labs.js / gc_logs.js) + menu ⋯ des actions secondaires et
+   destructives. La marge basse du titre vit sur la rangée (le h5 porte
+   mb-0). */
+.gc-source-head { margin-bottom: 0.75rem; }
+/* Le résumé est le second enfant flex du h5 (flex-wrap) : sur petit écran
+   il s'enroule sous le titre au lieu de pousser le bouton ⋯ hors champ. */
+.gc-source-head .gc-section-title { min-width: 0; }
+.gc-source-summary {
+    font-size: 0.8rem;
+    font-weight: 400;       /* le h5 est en 700 : le résumé reste discret */
+    color: var(--tblr-muted, var(--color-text-muted));
+    min-width: 0;
+}
+/* Piège hidden + classes d'affichage (AGENTS.md — même motif que
+   .gc-logs-ui [hidden] ci-dessus) : .dropdown-item pose display:block et
+   .btn display:inline-block, qui l'emportent sur l'attribut hidden. Or les
+   items « Mes logs » basculent par hidden (renderStatus, gc_logs.js) et le
+   bouton ⋯ lui-même est masqué par hidden quand TOUS ses items le sont
+   (syncSourceMenuVisibility, ui.js). */
+.gc-source-menu [hidden] { display: none !important; }
 
 /* --- Onglet Stats (templates/menu_stats.html) --------------------------- */
 

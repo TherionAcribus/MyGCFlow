@@ -108,6 +108,8 @@ function renderStatus(st) {
     el('gcLogsClearBtn').hidden = !has;
     const updateBtn = el('gcLogsUpdateBtn');
     if (updateBtn) updateBtn.style.display = has ? '' : 'none';
+    // Tous les items masqués (collection vide) → le bouton ⋯ se masque.
+    pkg.syncSourceMenuVisibility?.(el('gcLogsSourceMenu'));
     renderGuide(has);
     renderPending(st?.pending_import);
     // Périmètre du favori : refléter le réglage serveur, sauf pendant que

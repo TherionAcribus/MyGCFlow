@@ -9122,6 +9122,24 @@ export function hasGeocaches() {
     }
 }
 
+// Menus ⋯ des en-têtes « carte source » (menu_data.html, .gc-source-menu) :
+// quand TOUS les items sont masqués (collection vide — le mécanisme varie
+// selon la source : attribut hidden ou style.display), le bouton ⋯ lui-même
+// se masque — un menu vide ne sert à rien. Chaque module le rappelle après
+// avoir basculé la visibilité de ses items (renderLabsStatus, renderStatus,
+// readBddValues…) ; updateDataAvailabilityUI fait un passage global.
+// Le masquage repose sur l'attribut hidden : la règle .gc-source-menu
+// [hidden] de ui_improvements.css l'emporte sur .btn (piège connu).
+export function syncSourceMenuVisibility(dropdown) {
+    if (!dropdown) return;
+    const toggle = dropdown.querySelector('[data-bs-toggle="dropdown"]');
+    const menu = dropdown.querySelector('.dropdown-menu');
+    if (!toggle || !menu) return;
+    const anyVisible = [...menu.querySelectorAll('.dropdown-item')]
+        .some(b => !b.hidden && b.style.display !== 'none');
+    toggle.hidden = !anyVisible;
+}
+
 // Synchronise l'UI avec la présence de données :
 // - sans base chargée, la carte affiche l'état vide (message + bouton d'import)
 //   et le panneau de filtres est inerte ;
@@ -9175,6 +9193,13 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     // encore été importé.
     const dataPane = document.getElementById('data');
     if (dataPane) dataPane.classList.toggle('has-geocaches', hasGeocaches());
+
+    // Menus ⋯ des cartes sources : masqués tant que tous leurs items le
+    // sont (passage global — les modules resynchronisent aussi au moment où
+    // ils basculent leurs items).
+    for (const menu of document.querySelectorAll('.gc-source-menu')) {
+        syncSourceMenuVisibility(menu);
+    }
 
     // inert bloque interactions, focus et lecture d'écran ; .data-disabled
     // estompe visuellement la section.
