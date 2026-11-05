@@ -1711,3 +1711,60 @@ test('Importer reste inerte quand le lot ne changerait rien', async ({ page }) =
   await details.locator('summary').click();
   await expect(page.locator('#labsPreviewSummary')).toContainText('déjà');
 });
+
+
+// Pastille du sous-onglet « Sources » (#dataSourcesTabDot, alimentée par
+// setDataSourcesDot dans ui.js) : allumée tant qu'une action est en cours
+// ou attendue sur une carte source — ici les étapes Labs à compléter.
+test('la pastille « Sources » suit les étapes à compléter, visibles pane fermé', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Collection vide : rien à signaler.
+  const dot = page.locator('#dataSourcesTabDot');
+  await expect(dot).toBeHidden();
+
+  // L'import laisse 4 étapes à compléter : la pastille s'allume sur le
+  // bouton de l'onglet — toujours visible, pane « Filtres » ouvert compris.
+  await importLabs(page);
+  await expect(page.locator('#labsStatus')).toContainText('4 à compléter');
+  await expect(dot).toBeVisible();
+  await openDataSubTab(page, 'filters');
+  await expect(dot).toBeVisible();
+
+  // Collection vidée : le relevé de statut repasse la raison à zéro.
+  await openDataSubTab(page, 'sources');
+  await (await openSourceMenu(page, 'labs')).locator('#clearLabsBtn').click();
+  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+  await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
+  await expect(dot).toBeHidden();
+});
+
+
+// L'avertissement « collecte par un favori déconseillée par Groundspeak »
+// a été mutualisé : une occurrence en bas du pane « Sources », retirée des
+// deux parcours « un clic » (#labsGuide, #gcLogsGuide).
+test('l\'avertissement Groundspeak est unique dans le pane, absent des guides', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Collections vides : les deux guides sont dépliés d'office — aucun
+  // n'emporte plus l'avertissement, qui vit au fond du pane « Sources ».
+  await expect(page.locator('#labsGuide')).toBeVisible();
+  await expect(page.locator('#gcLogsGuide')).toBeVisible();
+  const warning = page.locator('#dataSourcesPane .form-hint.text-warning')
+    .filter({ hasText: 'Groundspeak' });
+  await expect(warning).toHaveCount(1);
+  await expect(warning).toBeVisible();
+  await expect(page.locator('#labsGuide')).not.toContainText('Groundspeak');
+  await expect(page.locator('#gcLogsGuide')).not.toContainText('Groundspeak');
+
+  // Labs importés : le guide se replie, l'avertissement du pane reste.
+  await importLabs(page);
+  await expect(page.locator('#labsGuide')).toBeHidden();
+  await expect(warning).toBeVisible();
+
+  // Guide rouvert via « Afficher les instructions d'import » (menu ⋯) :
+  // il ne le contient toujours pas.
+  await (await openSourceMenu(page, 'labs')).locator('#labsUpdateBtn').click();
+  await expect(page.locator('#labsGuide')).toBeVisible();
+  await expect(page.locator('#labsGuide')).not.toContainText('Groundspeak');
+});

@@ -2205,6 +2205,22 @@ function initDataSubTabMemory() {
     }
 }
 
+// Pastille du sous-onglet « Sources » : une action est en cours ou attendue
+// sur AU MOINS UNE carte source (étapes Labs à compléter ou opération en
+// cours, export du favori « Mes logs » à valider…). Registre de raisons :
+// plusieurs sources peuvent demander en même temps — la pastille ne
+// s'éteint qu'à la dernière levée. Les rendus de statut (labs.js,
+// gc_logs.js) rappellent le setter à chaque relevé : le vidage d'une
+// collection est couvert par le re-rendu à zéro. La carte « Mes Géocaches »
+// n'alimente rien : un import terminé ne demande aucune action.
+const sourcesDotReasons = new Set();
+export function setDataSourcesDot(reason, active) {
+    if (active) sourcesDotReasons.add(reason);
+    else sourcesDotReasons.delete(reason);
+    const dot = document.getElementById('dataSourcesTabDot');
+    if (dot) dot.hidden = sourcesDotReasons.size === 0;
+}
+
 function initMapTabsSplitPane() {
     const container = document.getElementById('mapTabsContainer');
     const mapWithFrames = document.getElementById('mapWithFrames');

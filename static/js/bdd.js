@@ -1971,6 +1971,11 @@ function updateFilterPanelState(selected, total){
         ? pkg.filtersAreDefault()
         : !(total > 0 && selected < total);
     panel.toggleAttribute('data-filters-active', !atDefault);
+    // Pastille du sous-onglet « Filtres & affichage » : même condition que
+    // le marqueur — un filtre qui sort de l'état neutre s'oublierait vite
+    // une fois le pane fermé.
+    const dot = document.getElementById('dataFiltersTabDot');
+    if (dot) dot.hidden = atDefault;
 }
 
 // --- Export de la sélection filtrée ---------------------------------------

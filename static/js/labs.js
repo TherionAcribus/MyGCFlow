@@ -331,6 +331,10 @@ function renderLabsStatus(st) {
     }
     // Tous les items masqués (collection vide) → le bouton ⋯ se masque.
     pkg.syncSourceMenuVisibility?.(el('labsSourceMenu'));
+    // Pastille du sous-onglet « Sources » : des étapes à compléter ou une
+    // opération en cours demandent l'attention même pane Filtres ouvert.
+    pkg.setDataSourcesDot?.('labs',
+        unresolved > 0 || !!st?.active_task || !!st?.collection_in_progress);
     renderGuide();
 }
 

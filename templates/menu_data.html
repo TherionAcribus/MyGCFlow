@@ -9,10 +9,10 @@
          sources ne s'écrivent en ligne que si ce pane est visible. -->
     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="dataSourcesTab" data-bs-toggle="tab" data-bs-target="#dataSourcesPane" type="button" role="tab" aria-controls="dataSourcesPane" aria-selected="true">{{ _("Sources") }}</button>
+            <button class="nav-link active" id="dataSourcesTab" data-bs-toggle="tab" data-bs-target="#dataSourcesPane" type="button" role="tab" aria-controls="dataSourcesPane" aria-selected="true">{{ _("Sources") }}<span id="dataSourcesTabDot" class="subtab-dot" hidden><span class="visually-hidden">{{ _("action en attente") }}</span></span></button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="dataFiltersTab" data-bs-toggle="tab" data-bs-target="#dataFiltersPane" type="button" role="tab" aria-controls="dataFiltersPane" aria-selected="false">{{ _("Filtres & affichage") }}</button>
+            <button class="nav-link" id="dataFiltersTab" data-bs-toggle="tab" data-bs-target="#dataFiltersPane" type="button" role="tab" aria-controls="dataFiltersPane" aria-selected="false">{{ _("Filtres & affichage") }}<span id="dataFiltersTabDot" class="subtab-dot" hidden><span class="visually-hidden">{{ _("filtre actif") }}</span></span></button>
         </li>
     </ul>
 
@@ -207,9 +207,6 @@
                                 <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">{{ _("vos logs Adventure Lab") }}</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
                             </li>
                         </ol>
-                        <div class="form-hint text-warning mb-2">
-                            <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques.") }}
-                        </div>
                         <div class="form-hint text-muted mb-2">
                             {{ _("Vos étapes arrivent ici et se placent seules sur la carte, grâce au service public lab2gpx (réglable dans les options avancées).") }}
                         </div>
@@ -373,9 +370,6 @@
                                 <a href="https://www.geocaching.com" target="_blank" rel="noopener noreferrer">geocaching.com</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
                             </li>
                         </ol>
-                        <div class="form-hint text-warning mb-2">
-                            <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques.") }}
-                        </div>
                         <div class="form-hint text-muted mb-2">
                             {{ _("La collecte relit vos journaux et vos caches comme une consultation à la main : elle peut durer plusieurs minutes. L'export arrive ici ensuite — un aperçu reste à valider avant l'import.") }}
                         </div>
@@ -443,6 +437,15 @@
                         <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser") }}
                     </button>
                 </div>
+            </div>
+
+            <!-- Avertissement favori mutualisé : il concernait les deux
+                 parcours « un clic » (Labs et Mes logs) — une seule
+                 occurrence au niveau du pane, visible quel que soit le
+                 guide ouvert ou replié (le même msgid vit aussi dans la
+                 modale d'aide Labs). -->
+            <div class="form-hint text-warning mt-3">
+                <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques.") }}
             </div>
 
         </div>

@@ -178,3 +178,40 @@ test('export de la sélection : GPX filtré téléchargé, bouton suivant le com
   await expect(page.locator('#filtersCounter')).toContainText('0 / 6', { timeout: 15_000 });
   await expect(btnExport).toBeDisabled();
 });
+
+
+// Pastille du sous-onglet « Filtres & affichage » (#dataFiltersTabDot) :
+// même condition que data-filters-active sur #filterPanel — un filtre qui
+// sort de l'état neutre l'allume, « Réinitialiser tous les filtres »
+// l'éteint.
+test('la pastille « Filtres » suit l\'activation puis la réinitialisation d\'un filtre', async ({ page, request }) => {
+  const res = await request.post('/clear_database');
+  expect(res.ok()).toBeTruthy();
+
+  await openReadyApp(page);
+  await dismissFirstUseModal(page);
+  await importFixture(page);
+
+  // Aucun filtre actif : la pastille du bouton de sous-onglet est masquée.
+  const dot = page.locator('#dataFiltersTabDot');
+  await expect(dot).toBeHidden();
+  await expect(page.locator('#filterPanel')).not.toHaveAttribute('data-filters-active', '');
+
+  // La recherche est un filtre : la pastille s'allume dès le premier
+  // caractère — elle vit sur le bouton, visible pane ouvert ou fermé.
+  await openDataSubTab(page, 'filters');
+  await page.locator('#inputFilterSearch').fill('GCE2E001');
+  await expect(page.locator('#filtersCounter')).toContainText('1 / 6', { timeout: 15_000 });
+  await expect(page.locator('#filterPanel')).toHaveAttribute('data-filters-active', '');
+  await expect(dot).toBeVisible();
+  await openDataSubTab(page, 'sources');
+  await expect(dot).toBeVisible();
+
+  // Retour au sous-onglet puis reset global : la pastille s'éteint avec le
+  // marqueur.
+  await openDataSubTab(page, 'filters');
+  await page.locator('#btnResetAllFilters').click();
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 15_000 });
+  await expect(page.locator('#filterPanel')).not.toHaveAttribute('data-filters-active', '');
+  await expect(dot).toBeHidden();
+});

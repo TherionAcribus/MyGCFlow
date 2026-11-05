@@ -156,6 +156,10 @@ function renderStatus(st) {
         pkg.reloadOwnerData?.();
     }
     taskWasActive = taskActive;
+    // Pastille du sous-onglet « Sources » : export du favori en attente de
+    // validation ou import en cours — avant le retour anticipé « rien
+    // d'importé », un export en attente pouvant exister sans collection.
+    pkg.setDataSourcesDot?.('logs', !!st?.pending_import || taskActive);
     detail.textContent = '';
     if (!has) {
         statusEl.textContent = t('Aucun log importé');
