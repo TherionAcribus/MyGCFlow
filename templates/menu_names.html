@@ -24,7 +24,10 @@
 
             {# Styles prêts à l'emploi (NAME_PRESETS, poses_names.mjs) : ils
                règlent mouvement et texte d'un coup ; celui que porte exactement
-               le thème est enfoncé (posesNamesPresetOf). #}
+               le thème est enfoncé (posesNamesPresetOf). Chaque carte dessine
+               un pseudo fictif dans son style, animé au survol (vignettes de
+               poses_names_ui.js, names_thumbs.mjs) ; l'icône tient la place
+               tant que le canvas n'est pas dessiné. #}
             <div class="d-flex align-items-center justify-content-between gap-2 mt-3">
                 <span class="form-label mb-0" id="labelPosesNamesPresets">{{ _("Style") }}</span>
                 <button type="button" id="btnPosesNamesPreview" class="btn btn-sm" aria-pressed="false" aria-describedby="helpPosesNamesPreview">
@@ -42,7 +45,7 @@
                     ('leaves', 'ti-leaf', _('Feuilles au vent'), _("Ondule et s'envole")),
                     ('swirl', 'ti-tornado', _('Tourbillon'), _('Tourne autour de la cache'))] %}
                 <button type="button" class="btn image-preset-btn" data-names-preset="{{ name }}" aria-pressed="false" title="{{ hint }}">
-                    <span class="image-preset-thumb" aria-hidden="true"><i class="ti {{ icon }}"></i></span>
+                    <span class="image-preset-thumb" aria-hidden="true"><canvas hidden></canvas><i class="ti {{ icon }}"></i></span>
                     <span class="image-preset-label">{{ label }}</span>
                 </button>
                 {% endfor %}

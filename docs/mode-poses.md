@@ -206,6 +206,15 @@ touchent que le mouvement et le texte (`PRESET_KEYS`). Cartes cliquables :
 celle que porte exactement le thème est enfoncée ; dès qu'un réglage s'en
 écarte, aucune ne l'est et l'onglet rappelle le style le plus proche
 (`posesNamesNearestPreset`, « Style personnalisé, d'après … »).
+Chaque carte est une vignette dessinée par le vrai moteur
+(`names_thumbs.mjs`, pur ; boucle dans `poses_names_ui.js`) : un pseudo
+fictif (Alice, Bob, Chloé — jamais un vrai visiteur) près d'un point, image
+figée au repos, animation en boucle au survol ou au focus clavier (rien
+d'animé avec « réduire les animations » du système). Le trajet est réduit
+d'un facteur `k` pour tenir dans la vignette, le texte garde ~11 px :
+le moteur dessine à `ratio = k × dpr` avec un texte grossi de `1/k`. Les
+réglages hors style (couleurs par événement, opacité) sont ceux du thème.
+Relevé : `posesNamesThumbsSnapshot()`.
 
 **Organisation de l'onglet** : l'essentiel reste visible (interrupteur,
 style, aperçu, quels logs, taille, durée de vie, avertissement de densité) ;

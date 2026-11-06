@@ -4021,8 +4021,25 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 #posesNamesPresets .image-preset-btn { min-width: 0; max-width: none; hyphens: manual; overflow-wrap: normal; }
-#posesNamesPresets .image-preset-thumb { height: 32px; background-image: none; }
-#posesNamesPresets .image-preset-btn.active .image-preset-thumb .ti { color: inherit; }
+/* Vignette : un pseudo fictif dessiné dans le style (poses_names_ui.js ›
+   vignettes), sur un fond sombre neutre qui évoque la carte. Canvas en
+   absolu : sa taille interne ne pèse jamais sur la mise en page. */
+#posesNamesPresets .image-preset-thumb {
+    position: relative;
+    height: 52px;
+    padding: 0;
+    overflow: hidden;
+    background-image: none;
+    background-color: #4b5866;
+}
+#posesNamesPresets .image-preset-thumb canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+#posesNamesPresets .image-preset-thumb .ti { color: rgba(255, 255, 255, 0.75); }
 #posesNamesOptions .stats-form-section:first-of-type { margin-top: 0.5rem; }
 /* Balises du texte de l'étiquette, insérées au curseur. */
 .names-tag {

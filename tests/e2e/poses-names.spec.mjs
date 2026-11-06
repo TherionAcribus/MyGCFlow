@@ -67,6 +67,10 @@ async function openSection(page, name) {
   await expect(section).toHaveAttribute('open', '');
 }
 
+function thumbs(page) {
+  return page.evaluate(async () => (await import('/static/js/index.js')).posesNamesThumbsSnapshot());
+}
+
 function namesDebug(page) {
   return page.evaluate(async () => (await import('/static/js/index.js')).getNameLabelsDebugState());
 }
@@ -132,6 +136,22 @@ test('onglet Pseudos : désactivé par défaut, styles prêts à l’emploi, cha
   await expect(page.locator('#posesNamesDirection')).toBeHidden();
   await expect(page.locator('#posesNamesSectionMotion [data-names-summary]')).toContainText('partent de la cache');
   if (process.env.VISUAL_OUT) await page.locator('#tabNames').screenshot({ path: `${process.env.VISUAL_OUT}/poses-names-tab-collapsed.png` });
+
+  // Vignettes des styles : un pseudo fictif dessiné dans chaque carte,
+  // animé au survol seulement.
+  await expect.poll(async () => (await thumbs(page)).drawn).toBe(8);
+  expect((await thumbs(page)).animating).toBeNull();
+  await preset(page, 'swirl').hover();
+  await expect.poll(async () => (await thumbs(page)).active).toBeGreaterThan(0);
+  expect((await thumbs(page)).animating).toBe('swirl');
+  const framesBefore = (await thumbs(page)).frames;
+  await expect.poll(async () => (await thumbs(page)).frames).toBeGreaterThan(framesBefore + 5);
+  if (process.env.VISUAL_OUT) {
+    await page.waitForTimeout(700);
+    await page.locator('#posesNamesPresets').screenshot({ path: `${process.env.VISUAL_OUT}/poses-names-thumbs.png` });
+  }
+  await page.locator('#posesNamesEnabled').hover();
+  await expect.poll(async () => (await thumbs(page)).animating).toBeNull();
   expect(await namesOverYears(page)).toEqual([]);
 
   // Un style règle mouvement et texte ; la couleur par visiteur masque le

@@ -23,6 +23,8 @@ import {
     posesNamesPresetOf,
     withPosesNamesPreset,
 } from './poses_names.mjs';
+import { createNameLabels, drawNameLabels, nameFont, spawnNameLabels } from './name_labels.mjs';
+import { THUMB_WAVE_GAP_MS, thumbCandidates, thumbLayout, thumbWaveMs } from './names_thumbs.mjs';
 
 // [id du champ, chemin dans le bloc, nature]
 function namesFields() {
@@ -202,6 +204,7 @@ export function syncPosesNamesUI() {
             : `${field.value}${span.dataset.namesUnit || ''}`;
     }
     syncSummaries(names);
+    renderPresetThumbs();
     syncPrivacyUI();
     syncPreviewButton();
 }
@@ -279,6 +282,171 @@ function insertTag(tag) {
     field.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+// --- Vignettes des styles ---------------------------------------------------------
+// Chaque carte de style dessine un pseudo fictif dans ce style, avec le vrai
+// moteur (names_thumbs.mjs) : image figée au repos, boucle au survol ou au
+// focus clavier. Les réglages hors style (couleurs par événement, opacité…)
+// sont ceux du thème : la vignette montre ce que donnerait le clic.
+
+const thumbEntries = new WeakMap();
+let thumbAnimating = null;
+let thumbRaf = 0;
+const thumbStats = { stills: 0, frames: 0 };
+
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+// Prépare le canvas d'une carte : null tant qu'il n'a pas de taille (onglet
+// masqué) — le ResizeObserver redessine à l'affichage.
+function thumbFrame(btn) {
+    const canvas = btn.querySelector('canvas');
+    if (!canvas) return null;
+    const box = canvas.parentElement;
+    const width = box?.clientWidth || 0;
+    const height = box?.clientHeight || 0;
+    if (!width || !height) return null;
+    const dpr = window.devicePixelRatio || 1;
+    const pw = Math.round(width * dpr);
+    const ph = Math.round(height * dpr);
+    if (canvas.width !== pw || canvas.height !== ph) {
+        canvas.width = pw;
+        canvas.height = ph;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const names = withPosesNamesPreset(currentNames(), btn.dataset.namesPreset);
+    // Cadrage mis en cache : recalculé seulement quand le style ou la taille
+    // changent (les mesures de texte coûtent plus que le dessin).
+    let entry = thumbEntries.get(btn);
+    const key = `${JSON.stringify(names)}|${width}x${height}`;
+    if (!entry || entry.key !== key) {
+        const measure = (text, size) => {
+            ctx.font = nameFont({ ...names, size });
+            return ctx.measureText(text).width;
+        };
+        entry = { ...entry, key, layout: thumbLayout(names, { width, height, measure }) };
+        thumbEntries.set(btn, entry);
+    }
+    return { canvas, ctx, dpr, entry };
+}
+
+function paintThumb(frame, state, now) {
+    const { canvas, ctx, dpr, entry } = frame;
+    const { k, anchor, opts } = entry.layout;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // La cache : un point sous l'étiquette, pour lire le trajet.
+    const ax = anchor[0] * dpr;
+    const ay = anchor[1] * dpr;
+    ctx.beginPath();
+    ctx.arc(ax, ay, 2.6 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffd54f';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.lineWidth = dpr;
+    ctx.fill();
+    ctx.stroke();
+    drawNameLabels(ctx, state, { now, opts, ratio: k * dpr, toPixel: () => [ax, ay] });
+    canvas.hidden = false;
+    const icon = canvas.parentElement?.querySelector('.ti');
+    if (icon) icon.hidden = true;
+}
+
+// Image figée : la première vague à mi-vie — en approche pour les pseudos
+// qui arrivent sur la cache (posés, ils la masqueraient).
+function drawThumbStill(btn) {
+    const frame = thumbFrame(btn);
+    if (!frame) return;
+    const { opts } = frame.entry.layout;
+    const state = createNameLabels();
+    state.previewing = true;
+    spawnNameLabels(state, thumbCandidates(opts, 0), { at: 0, opts, anchorOf: () => 'thumb' });
+    paintThumb(frame, state, opts.duration_ms * (opts.path === 'toward' ? 0.3 : 0.5));
+    thumbStats.stills++;
+}
+
+function renderPresetThumbs() {
+    for (const btn of document.querySelectorAll('#posesNames [data-names-preset]')) {
+        if (btn !== thumbAnimating) drawThumbStill(btn);
+    }
+}
+
+function thumbTick(now) {
+    thumbRaf = 0;
+    const btn = thumbAnimating;
+    if (!btn) return;
+    const frame = thumbFrame(btn);
+    if (!frame) {
+        stopThumbAnimation();
+        return;
+    }
+    const { entry } = frame;
+    const { opts } = entry.layout;
+    if (!entry.state) {
+        entry.state = createNameLabels();
+        entry.state.previewing = true;
+        entry.wave = 0;
+        entry.nextWave = now;
+    }
+    if (now >= entry.nextWave) {
+        spawnNameLabels(entry.state, thumbCandidates(opts, entry.wave), { at: now, opts, anchorOf: () => 'thumb' });
+        entry.wave++;
+        entry.nextWave = now + thumbWaveMs(opts) + THUMB_WAVE_GAP_MS;
+    }
+    paintThumb(frame, entry.state, now);
+    thumbStats.frames++;
+    thumbRaf = requestAnimationFrame(thumbTick);
+}
+
+function startThumbAnimation(btn) {
+    if (reducedMotion() || thumbAnimating === btn) return;
+    stopThumbAnimation();
+    thumbAnimating = btn;
+    const entry = thumbEntries.get(btn);
+    if (entry) entry.state = null;
+    thumbRaf = requestAnimationFrame(thumbTick);
+}
+
+function stopThumbAnimation() {
+    if (thumbRaf) cancelAnimationFrame(thumbRaf);
+    thumbRaf = 0;
+    const btn = thumbAnimating;
+    thumbAnimating = null;
+    if (btn) {
+        const entry = thumbEntries.get(btn);
+        if (entry) entry.state = null;
+        drawThumbStill(btn);
+    }
+}
+
+function bindPresetThumbs() {
+    const list = $('posesNamesPresets');
+    if (!list) return;
+    for (const btn of list.querySelectorAll('[data-names-preset]')) {
+        btn.addEventListener('pointerenter', () => startThumbAnimation(btn));
+        btn.addEventListener('pointerleave', () => { if (thumbAnimating === btn) stopThumbAnimation(); });
+        btn.addEventListener('focus', () => startThumbAnimation(btn));
+        btn.addEventListener('blur', () => { if (thumbAnimating === btn) stopThumbAnimation(); });
+    }
+    // Onglet masqué au démarrage (canvas sans taille), polices locales
+    // chargées après coup : redessiner quand l'un ou l'autre change.
+    if (typeof ResizeObserver === 'function') new ResizeObserver(() => renderPresetThumbs()).observe(list);
+    document.fonts?.ready?.then(() => renderPresetThumbs());
+    document.fonts?.addEventListener?.('loadingdone', () => renderPresetThumbs());
+}
+
+// Relevé pour les tests : vignettes dessinées, carte animée, étiquettes en vol.
+export function posesNamesThumbsSnapshot() {
+    const drawn = [...document.querySelectorAll('#posesNames [data-names-preset] canvas')]
+        .filter((c) => !c.hidden).length;
+    const entry = thumbAnimating ? thumbEntries.get(thumbAnimating) : null;
+    return {
+        drawn,
+        animating: thumbAnimating?.dataset.namesPreset || null,
+        active: entry?.state?.labels.length || 0,
+        stills: thumbStats.stills,
+        frames: thumbStats.frames,
+    };
+}
+
 // --- Aperçu -------------------------------------------------------------------
 
 let previewTimer = null;
@@ -347,6 +515,7 @@ export function initPosesNamesUI() {
     for (const btn of document.querySelectorAll('#posesNames [data-names-preset]')) {
         btn.addEventListener('click', () => commitNames(withPosesNamesPreset(currentNames(), btn.dataset.namesPreset)));
     }
+    bindPresetThumbs();
     for (const btn of document.querySelectorAll('#posesNames [data-names-tag]')) {
         btn.addEventListener('click', () => insertTag(btn.dataset.namesTag));
     }

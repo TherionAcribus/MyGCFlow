@@ -247,7 +247,9 @@ Autres repères :
   L'onglet Pseudos range ses réglages dans des `<details>` repliés
   (`#posesNamesSection{Content,Density,Motion,Look}`) : les ouvrir avant
   tout `fill`/`toBeVisible` (helper `openSection`), sinon un `toBeHidden`
-  passe à tort. Styles : cartes `[data-names-preset]` (`aria-pressed`).
+  passe à tort. Styles : cartes `[data-names-preset]` (`aria-pressed`),
+  vignettes animées au survol — relevé `posesNamesThumbsSnapshot()`
+  (`drawn`, `animating`, `active`, `frames`).
 - Icônes : l'app charge un **sous-ensemble** de Tabler Icons
   (`tabler-icons-subset.css`). Une nouvelle classe `ti-*` n'apparaît
   qu'après `generate_icons_subset.py` — sinon case vide, sans erreur (les
