@@ -55,6 +55,18 @@ async function openNamesTab(page) {
   await expect(page.locator('#posesNamesEnabled')).toBeVisible();
 }
 
+// Carte d'un style prêt à l'emploi (NAME_PRESETS).
+function preset(page, name) {
+  return page.locator(`#posesNamesPresets [data-names-preset="${name}"]`);
+}
+
+// Les sections de réglages sont repliées : les ouvrir avant d'agir dessus.
+async function openSection(page, name) {
+  const section = page.locator(`#posesNamesSection${name}`);
+  if (!(await section.evaluate((el) => el.open))) await section.locator('summary').click();
+  await expect(section).toHaveAttribute('open', '');
+}
+
 function namesDebug(page) {
   return page.evaluate(async () => (await import('/static/js/index.js')).getNameLabelsDebugState());
 }
@@ -111,29 +123,60 @@ test('onglet Pseudos : désactivé par défaut, styles prêts à l’emploi, cha
   await openPoses(page);
   await openNamesTab(page);
 
-  // Thème antérieur aux pseudos : désactivés, style « Envol ».
+  // Thème antérieur aux pseudos : désactivés, style « Envol ». Seul
+  // l'essentiel est déplié ; le résumé des sections reprend leurs valeurs.
   await expect(page.locator('#posesNamesEnabled')).not.toBeChecked();
-  await expect(page.locator('#selectPosesNamesPreset')).toHaveValue('rise');
+  await expect(page.locator('#posesNamesDisabledHint')).toBeVisible();
+  await expect(preset(page, 'rise')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#posesNamesPresetCustom')).toBeHidden();
+  await expect(page.locator('#posesNamesDirection')).toBeHidden();
+  await expect(page.locator('#posesNamesSectionMotion [data-names-summary]')).toContainText('partent de la cache');
+  if (process.env.VISUAL_OUT) await page.locator('#tabNames').screenshot({ path: `${process.env.VISUAL_OUT}/poses-names-tab-collapsed.png` });
   expect(await namesOverYears(page)).toEqual([]);
 
   // Un style règle mouvement et texte ; la couleur par visiteur masque le
   // nuancier fixe comme les couleurs par événement.
-  await page.locator('#selectPosesNamesPreset').selectOption('burst');
+  await preset(page, 'burst').click();
+  await expect(preset(page, 'burst')).toHaveAttribute('aria-pressed', 'true');
+  await expect(preset(page, 'rise')).toHaveAttribute('aria-pressed', 'false');
+  await openSection(page, 'Motion');
   await expect(page.locator('#posesNamesDirection')).toHaveValue('radial');
   await expect(page.locator('#posesNamesExit')).toHaveValue('scatter');
+  await openSection(page, 'Density');
+  await expect(page.locator('#posesNamesStagger')).toBeVisible();
   await expect(page.locator('#posesNamesStagger')).toBeEnabled();
+  await openSection(page, 'Look');
+  await expect(page.locator('#posesNamesColorMode')).toBeVisible();
   await expect(page.locator('#posesNamesColorRow')).toBeHidden();
   await expect(page.locator('#posesNamesKindColors')).toBeHidden();
+  await expect(page.locator('#helpPosesNamesColorMode')).toBeVisible();
   await page.locator('#posesNamesColorMode').selectOption('event');
   await expect(page.locator('#posesNamesKindColors')).toBeVisible();
-  await expect(page.locator('#selectPosesNamesPreset')).toHaveValue('');
+  // Écart à un style : aucune carte enfoncée, le style d'origine est rappelé.
+  await expect(page.locator('#posesNamesPresets [aria-pressed="true"]')).toHaveCount(0);
+  await expect(page.locator('#posesNamesPresetCustom')).toBeVisible();
+  await expect(page.locator('#posesNamesPresetCustom')).toContainText('Éclatement');
   await page.locator('#posesNamesColorMode').selectOption('fixed');
   await expect(page.locator('#posesNamesKindColors')).toBeHidden();
   await expect(page.locator('#posesNamesColorRow')).toBeVisible();
 
-  // Champs → réglages en mémoire.
+  // Réglages sans objet masqués : regroupés, pas de décalage ; sur place,
+  // pas de trajet.
+  await preset(page, 'bubbles').click();
+  await expect(page.locator('#posesNamesStagger')).toBeHidden();
+  await expect(page.locator('#posesNamesPath')).toHaveValue('still');
+  await expect(page.locator('#posesNamesDirection')).toBeHidden();
+  await expect(page.locator('#posesNamesEntrance')).toBeVisible();
+  await preset(page, 'burst').click();
+  await expect(page.locator('#posesNamesDirection')).toBeVisible();
+
+  // Champs → réglages en mémoire ; balise insérée au curseur.
   await page.locator('#posesNamesEnabled').check();
-  await page.locator('#posesNamesTemplate').fill('{pseudo} · {n}');
+  await expect(page.locator('#posesNamesDisabledHint')).toBeHidden();
+  await openSection(page, 'Content');
+  await page.locator('#posesNamesTemplate').fill('{pseudo} · ');
+  await page.locator('#posesNamesSectionContent [data-names-tag="{n}"]').click();
+  await expect(page.locator('#posesNamesTemplate')).toHaveValue('{pseudo} · {n}');
   await page.locator('#posesNamesSize').fill('22');
   await page.locator('#posesNamesSize').dispatchEvent('change');
   const names = await page.evaluate(async () => (await import('/static/js/index.js')).options.point.posesNames);
@@ -204,7 +247,7 @@ test('aperçu au repos puis lecture complète : étiquettes dessinées, sans err
   expect(debug.layer).toBe(true);
   expect(debug.history.some((h) => VISITORS.some((v) => h.text.includes(v)) || /Visiteur/.test(h.text))).toBe(true);
   // Chaque réglage s'y voit aussitôt : la vague suivante suit le style.
-  await page.locator('#selectPosesNamesPreset').selectOption('bubbles');
+  await preset(page, 'bubbles').click();
   if (process.env.VISUAL_OUT) {
     await page.waitForTimeout(1200);
     await page.locator('#map').screenshot({ path: `${process.env.VISUAL_OUT}/poses-names-preview.png` });

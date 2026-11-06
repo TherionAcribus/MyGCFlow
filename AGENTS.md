@@ -244,6 +244,14 @@ Autres repères :
   le rendu, `getNameLabelsDebugState()` — exemple dans
   `poses-names.spec.mjs`. La reprise après `#btnQuickPause` se fait en
   recliquant `#btnQuickPause` (`#btnQuickPreview` est masqué en pause).
+  L'onglet Pseudos range ses réglages dans des `<details>` repliés
+  (`#posesNamesSection{Content,Density,Motion,Look}`) : les ouvrir avant
+  tout `fill`/`toBeVisible` (helper `openSection`), sinon un `toBeHidden`
+  passe à tort. Styles : cartes `[data-names-preset]` (`aria-pressed`).
+- Icônes : l'app charge un **sous-ensemble** de Tabler Icons
+  (`tabler-icons-subset.css`). Une nouvelle classe `ti-*` n'apparaît
+  qu'après `generate_icons_subset.py` — sinon case vide, sans erreur (les
+  icônes de l'onglet Pseudos manquaient ainsi jusqu'au 2026-11-06).
 - Trois pages, trois prédicats (`app_mode.mjs`) : `isLifecyclePage()` pour le
   moteur partagé Évolution / Mes poses, `isEvolutionPage()` pour ce qui tient
   aux bases CSV, `isMainPage()` pour GPX, DNF, sources. Les clés de stockage

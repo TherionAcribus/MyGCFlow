@@ -213,6 +213,19 @@ export function posesNamesPresetOf(names) {
     return null;
 }
 
+// Style prêt à l'emploi le plus proche du bloc (le moins de réglages de
+// mouvement et de texte qui diffèrent) et le nombre de ces écarts ; 0 écart
+// = posesNamesPresetOf. Premier style de NAME_PRESETS en cas d'égalité.
+export function posesNamesNearestPreset(names) {
+    const n = normalizePosesNames(names);
+    let best = null;
+    for (const [name, style] of Object.entries(NAME_PRESETS)) {
+        const diff = NAME_PRESET_KEYS.filter((key) => style[key] !== n[key]).length;
+        if (!best || diff < best.diff) best = { name, diff };
+    }
+    return best;
+}
+
 // Préférence globale normalisée : exclusions sans doublon (casse ignorée),
 // bornées en nombre et en longueur. Une chaîne est découpée aux retours à
 // la ligne, virgules et points-virgules (saisie du champ).

@@ -4014,6 +4014,23 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     font-size: 0.8rem;
     margin: 0;
 }
+/* Cartes de style : l'icône suffit, vignette plus basse que celle des
+   images ; 4 par ligne dans le panneau. */
+#posesNamesPresets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+#posesNamesPresets .image-preset-btn { min-width: 0; max-width: none; hyphens: manual; overflow-wrap: normal; }
+#posesNamesPresets .image-preset-thumb { height: 32px; background-image: none; }
+#posesNamesPresets .image-preset-btn.active .image-preset-thumb .ti { color: inherit; }
+#posesNamesOptions .stats-form-section:first-of-type { margin-top: 0.5rem; }
+/* Balises du texte de l'étiquette, insérées au curseur. */
+.names-tag {
+    --tblr-btn-padding-y: 0.05rem;
+    --tblr-btn-padding-x: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
 .names-kind-color .form-control-color {
     width: 2rem;
     height: 1.75rem;

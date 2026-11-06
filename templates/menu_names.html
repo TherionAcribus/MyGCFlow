@@ -2,7 +2,10 @@
 <!-- Mes poses : pseudos des visiteurs qui flottent près des caches à chaque
      log reçu (points.poses_names du thème, poses_names.mjs ; confidentialité :
      préférence globale poses_names_privacy). Piloté par poses_names_ui.js ;
-     docs/mode-poses.md, « Pseudos des visiteurs ». -->
+     docs/mode-poses.md, « Pseudos des visiteurs ».
+     Deux niveaux : l'essentiel (interrupteur, style, logs, taille, durée)
+     toujours visible ; le reste dans des sections repliées dont le résumé
+     reprend les valeurs courantes (syncSummaries). -->
 <div id="posesNames">
     <h5 class="gc-section-title">
         <i class="ti ti-user-heart text-muted me-1"></i>{{ _("Pseudos des visiteurs") }}{{ profile_scope_badge() }}
@@ -15,361 +18,344 @@
                 <label class="form-check-label fw-medium" for="posesNamesEnabled">{{ _("Afficher les pseudos des visiteurs") }}</label>
             </div>
             <small id="helpPosesNamesEnabled" class="form-hint text-muted">{{ _("À chaque log reçu, le pseudo du géocacheur apparaît près de la cache, se déplace puis s'efface — sur la carte comme dans la vidéo.") }}</small>
-            <div class="row g-2 align-items-end mt-1">
-                <div class="col-12 col-md-6">
-                    <label class="form-label" for="selectPosesNamesPreset">{{ _("Style prêt à l'emploi") }}</label>
-                    <select id="selectPosesNamesPreset" class="form-select" aria-describedby="helpPosesNamesPreset">
-                        <option value="" disabled>{{ _("Personnalisé") }}</option>
-                        <option value="rise">{{ _("Envol — s'élève au-dessus de la cache") }}</option>
-                        <option value="bubbles">{{ _("Bulles — bulle de dialogue sur la cache") }}</option>
-                        <option value="burst">{{ _("Éclatement — jaillit dans tous les sens") }}</option>
-                        <option value="landing">{{ _("Atterrissage — arrive de loin et se pose") }}</option>
-                        <option value="typewriter">{{ _("Machine à écrire — lettre à lettre") }}</option>
-                        <option value="arcade">{{ _("Arcade — gros, coloré, rebondissant") }}</option>
-                        <option value="leaves">{{ _("Feuilles au vent — ondule et s'envole") }}</option>
-                        <option value="swirl">{{ _("Tourbillon — tourne autour de la cache") }}</option>
-                    </select>
+            <small id="posesNamesDisabledHint" class="form-hint text-warning" hidden>
+                {{ _("Interrupteur éteint : les pseudos n'apparaîtront ni sur la carte ni dans la vidéo. L'aperçu reste utilisable pour régler le style.") }}
+            </small>
+
+            {# Styles prêts à l'emploi (NAME_PRESETS, poses_names.mjs) : ils
+               règlent mouvement et texte d'un coup ; celui que porte exactement
+               le thème est enfoncé (posesNamesPresetOf). #}
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-3">
+                <span class="form-label mb-0" id="labelPosesNamesPresets">{{ _("Style") }}</span>
+                <button type="button" id="btnPosesNamesPreview" class="btn btn-sm" aria-pressed="false" aria-describedby="helpPosesNamesPreview">
+                    <i class="ti ti-player-play me-1"></i>{{ _("Aperçu des pseudos") }}
+                </button>
+            </div>
+            <div class="image-preset-list mt-2" id="posesNamesPresets" role="group" aria-labelledby="labelPosesNamesPresets">
+                {% for name, icon, label, hint in [
+                    ('rise', 'ti-arrow-up', _('Envol'), _("S'élève au-dessus de la cache")),
+                    ('bubbles', 'ti-message-circle', _('Bulles'), _('Bulle de dialogue sur la cache')),
+                    ('burst', 'ti-sparkles', _('Éclatement'), _('Jaillit dans tous les sens')),
+                    ('landing', 'ti-plane-arrival', _('Atterrissage'), _('Arrive de loin et se pose')),
+                    ('typewriter', 'ti-keyboard', _('Machine à écrire'), _('Lettre à lettre')),
+                    ('arcade', 'ti-device-gamepad-2', _('Arcade'), _('Gros, coloré, rebondissant')),
+                    ('leaves', 'ti-leaf', _('Feuilles au vent'), _("Ondule et s'envole")),
+                    ('swirl', 'ti-tornado', _('Tourbillon'), _('Tourne autour de la cache'))] %}
+                <button type="button" class="btn image-preset-btn" data-names-preset="{{ name }}" aria-pressed="false" title="{{ hint }}">
+                    <span class="image-preset-thumb" aria-hidden="true"><i class="ti {{ icon }}"></i></span>
+                    <span class="image-preset-label">{{ label }}</span>
+                </button>
+                {% endfor %}
+            </div>
+            <small id="posesNamesPresetCustom" class="form-hint text-muted" hidden></small>
+            <small id="helpPosesNamesPreview" class="form-hint text-muted">{{ _("L'aperçu rejoue des pseudos réels sur quelques caches visibles, sans lancer l'animation : chaque réglage s'y voit aussitôt.") }}</small>
+
+            <span class="form-label mt-3">{{ _("Quels logs") }}</span>
+            <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="posesNamesKindFind">
+                    <label class="form-check-label" for="posesNamesKindFind">{{ _("Trouvailles") }}</label>
                 </div>
-                <div class="col-12 col-md-6">
-                    <button type="button" id="btnPosesNamesPreview" class="btn btn-sm" aria-pressed="false" aria-describedby="helpPosesNamesPreview">
-                        <i class="ti ti-player-play me-1"></i>{{ _("Aperçu des pseudos") }}
-                    </button>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="posesNamesKindDnf">
+                    <label class="form-check-label" for="posesNamesKindDnf">{{ _("DNF") }}</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="posesNamesKindNote">
+                    <label class="form-check-label" for="posesNamesKindNote">{{ _("Notes") }}</label>
                 </div>
             </div>
-            <small id="helpPosesNamesPreset" class="form-hint text-muted">{{ _("Un style règle d'un coup le mouvement et le texte ; ajustez ensuite ce que vous voulez. Quels logs, densité et couleurs par événement ne changent pas.") }}</small>
-            <small id="helpPosesNamesPreview" class="form-hint text-muted">{{ _("Rejoue des pseudos réels en boucle sur quelques caches visibles, sans lancer l'animation : chaque réglage s'y voit aussitôt.") }}</small>
+            <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="posesNamesOnlyNotable" role="switch" aria-describedby="helpPosesNamesOnlyNotable">
+                <label class="form-check-label" for="posesNamesOnlyNotable">{{ _("Seulement les logs marquants") }}</label>
+            </div>
+            <small id="helpPosesNamesOnlyNotable" class="form-hint text-muted">{{ _("Première trouvaille, trouvaille ronde (10ᵉ, 50ᵉ…), favori et visiteur fidèle. Utile quand les logs défilent très vite.") }}</small>
+            {# Hors de la section Densité : l'avertissement doit se voir même
+               quand elle est repliée. #}
+            <small id="posesNamesDensityHint" class="form-hint text-warning" hidden></small>
+
+            <div class="row g-2 mt-2">
+                <div class="col-6">
+                    <label class="form-label" for="posesNamesSize">{{ _("Taille du texte") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" id="posesNamesSize" min="8" max="64" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="posesNamesDuration">{{ _("Durée de vie") }} <span class="text-muted" data-names-value="posesNamesDuration" data-names-format="seconds"></span></label>
+                    <input type="range" class="form-range" id="posesNamesDuration" min="500" max="10000" step="100" title="{{ _('En temps vidéo.') }}">
+                </div>
+            </div>
         </div>
     </div>
 
-    <small id="posesNamesDisabledHint" class="form-hint text-warning d-block mb-2" hidden>
-        {{ _("Interrupteur éteint : les pseudos n'apparaîtront ni sur la carte ni dans la vidéo. L'aperçu ci-dessus reste utilisable pour régler le style.") }}
-    </small>
-
     <fieldset id="posesNamesOptions">
-        <div class="row g-3">
-            <!-- Quels logs -->
-            <div class="col-12">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0"><i class="ti ti-filter text-muted me-1"></i>{{ _("Quels logs") }}</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex flex-wrap gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posesNamesKindFind">
-                                <label class="form-check-label" for="posesNamesKindFind">{{ _("Trouvailles") }}</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posesNamesKindDnf">
-                                <label class="form-check-label" for="posesNamesKindDnf">{{ _("DNF") }}</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posesNamesKindNote">
-                                <label class="form-check-label" for="posesNamesKindNote">{{ _("Notes") }}</label>
-                            </div>
-                        </div>
-                        <div class="form-check form-switch mt-3">
-                            <input class="form-check-input" type="checkbox" id="posesNamesOnlyNotable" role="switch" aria-describedby="helpPosesNamesOnlyNotable">
-                            <label class="form-check-label" for="posesNamesOnlyNotable">{{ _("Seulement les logs marquants") }}</label>
-                        </div>
-                        <small id="helpPosesNamesOnlyNotable" class="form-hint text-muted">{{ _("Première trouvaille, trouvaille ronde (10ᵉ, 50ᵉ…), favori et visiteur fidèle. Utile quand les logs défilent très vite.") }}</small>
-                        <div class="row g-2 mt-1">
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label" for="posesNamesLoyalMin">{{ _("Visiteur fidèle dès") }}</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="posesNamesLoyalMin" min="2" max="100" step="1" aria-describedby="helpPosesNamesLoyalMin">
-                                    <span class="input-group-text">{{ _("trouvailles") }}</span>
-                                </div>
-                                <small id="helpPosesNamesLoyalMin" class="form-hint text-muted">{{ _("Comptées sur toutes vos caches.") }}</small>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <div class="form-check form-switch mt-sm-4">
-                                    <input class="form-check-input" type="checkbox" id="posesNamesBadges" role="switch" aria-describedby="helpPosesNamesBadges">
-                                    <label class="form-check-label" for="posesNamesBadges">{{ _("Symboles") }}</label>
-                                </div>
-                                <small id="helpPosesNamesBadges" class="form-hint text-muted">{{ _("♛ première trouvaille, ✦ palier, ♥ favori, ★ fidèle, ✗ DNF, ✎ note.") }}</small>
-                            </div>
-                        </div>
-                        <label class="form-label mt-3" for="posesNamesTemplate">{{ _("Texte de l'étiquette") }}</label>
-                        <input type="text" class="form-control" id="posesNamesTemplate" maxlength="80" spellcheck="false" aria-describedby="helpPosesNamesTemplate">
-                        <small id="helpPosesNamesTemplate" class="form-hint text-muted">{{ _("Balises : {pseudo}, {code} (code GC), {nom} (nom de la cache), {n} (rang de la trouvaille sur la cache), {visites} (rang du visiteur sur vos caches). Exemple : {pseudo} · {n}ᵉ") }}</small>
-                    </div>
-                </div>
-            </div>
+        <span class="gc-subsection-title d-block">{{ _("Personnaliser") }}</span>
 
-            <!-- Densité -->
-            <div class="col-12">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0"><i class="ti ti-stack-2 text-muted me-1"></i>{{ _("Densité") }}</h6>
-                    </div>
-                    <div class="card-body">
-                        <label class="form-label" for="posesNamesMaxVisible">{{ _("Étiquettes à l'écran au plus") }} <span class="text-muted" data-names-value="posesNamesMaxVisible"></span></label>
-                        <input type="range" class="form-range" id="posesNamesMaxVisible" min="1" max="60" step="1" aria-describedby="helpPosesNamesMaxVisible">
-                        <small id="helpPosesNamesMaxVisible" class="form-hint text-muted">{{ _("Quand la place manque, les logs les plus marquants passent devant et écourtent les moins marquants.") }}</small>
-                        <div class="row g-2 mt-1">
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesGrouping">{{ _("Plusieurs logs sur une cache") }}</label>
-                                <select id="posesNamesGrouping" class="form-select form-select-sm">
-                                    <option value="merge">{{ _("Une étiquette « Pseudo +2 »") }}</option>
-                                    <option value="separate">{{ _("Une étiquette par visiteur") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-sm-5">
-                                <label class="form-label" for="posesNamesStagger">{{ _("Décalage entre eux") }}</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="posesNamesStagger" min="0" max="2000" step="10">
-                                    <span class="input-group-text">{{ _("ms") }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-check form-switch mt-3">
-                            <input class="form-check-input" type="checkbox" id="posesNamesAvoidOverlap" role="switch">
-                            <label class="form-check-label" for="posesNamesAvoidOverlap">{{ _("Éviter les chevauchements") }}</label>
-                        </div>
-                        <label class="form-label mt-3" for="posesNamesEmphasis">{{ _("Logs marquants plus grands") }}</label>
-                        <div class="input-group input-group-sm w-auto">
-                            <span class="input-group-text">×</span>
-                            <input type="number" class="form-control" id="posesNamesEmphasis" min="1" max="2.5" step="0.1">
-                        </div>
-                        <small id="posesNamesDensityHint" class="form-hint text-warning d-block mt-2" hidden></small>
-                    </div>
+        <!-- Contenu de l'étiquette -->
+        <details class="stats-form-section names-section" id="posesNamesSectionContent">
+            <summary class="gc-subsection-title"><i class="ti ti-forms text-muted me-1" aria-hidden="true"></i>{{ _("Texte affiché") }}<span class="stats-form-summary-hint" data-names-summary="content"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+            <div class="stats-form-section-body">
+                <label class="form-label" for="posesNamesTemplate">{{ _("Texte de l'étiquette") }}</label>
+                <input type="text" class="form-control" id="posesNamesTemplate" maxlength="80" spellcheck="false" aria-describedby="helpPosesNamesTemplate">
+                {# Balises insérées au curseur (poses_names_ui.js › insertTag). #}
+                <div class="d-flex flex-wrap gap-1 mt-1" role="group" aria-label="{{ _('Insérer une balise') }}">
+                    {% for tag, label in [('{pseudo}', _('Pseudo')), ('{code}', _('Code GC')), ('{nom}', _('Nom de la cache')),
+                                          ('{n}', _('Rang sur la cache')), ('{visites}', _('Rang du visiteur'))] %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary names-tag" data-names-tag="{{ tag }}" title="{{ tag }}">+ {{ label }}</button>
+                    {% endfor %}
                 </div>
+                <small id="helpPosesNamesTemplate" class="form-hint text-muted">{{ _("Rang sur la cache : 1ʳᵉ, 2ᵉ… trouvaille de la cache ; rang du visiteur : sa combientième visite sur vos caches. Exemple : {pseudo} · {n}ᵉ") }}</small>
+                <div class="form-check form-switch mt-3">
+                    <input class="form-check-input" type="checkbox" id="posesNamesBadges" role="switch" aria-describedby="helpPosesNamesBadges">
+                    <label class="form-check-label" for="posesNamesBadges">{{ _("Symboles") }}</label>
+                </div>
+                <small id="helpPosesNamesBadges" class="form-hint text-muted">{{ _("♛ première trouvaille, ✦ palier, ♥ favori, ★ fidèle, ✗ DNF, ✎ note.") }}</small>
+                <label class="form-label mt-2" for="posesNamesLoyalMin">{{ _("Visiteur fidèle dès") }}</label>
+                <div class="input-group input-group-sm w-auto">
+                    <input type="number" class="form-control" id="posesNamesLoyalMin" min="2" max="100" step="1" aria-describedby="helpPosesNamesLoyalMin">
+                    <span class="input-group-text">{{ _("trouvailles") }}</span>
+                </div>
+                <small id="helpPosesNamesLoyalMin" class="form-hint text-muted">{{ _("Comptées sur toutes vos caches.") }}</small>
             </div>
+        </details>
 
-            <!-- Mouvement -->
-            <div class="col-12">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0"><i class="ti ti-arrows-move text-muted me-1"></i>{{ _("Mouvement") }}</h6>
+        <!-- Densité -->
+        <details class="stats-form-section names-section" id="posesNamesSectionDensity">
+            <summary class="gc-subsection-title"><i class="ti ti-stack-2 text-muted me-1" aria-hidden="true"></i>{{ _("Densité") }}<span class="stats-form-summary-hint" data-names-summary="density"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+            <div class="stats-form-section-body">
+                <label class="form-label" for="posesNamesMaxVisible">{{ _("Étiquettes à l'écran au plus") }} <span class="text-muted" data-names-value="posesNamesMaxVisible"></span></label>
+                <input type="range" class="form-range" id="posesNamesMaxVisible" min="1" max="60" step="1" aria-describedby="helpPosesNamesMaxVisible">
+                <small id="helpPosesNamesMaxVisible" class="form-hint text-muted">{{ _("Quand la place manque, les logs les plus marquants passent devant et écourtent les moins marquants.") }}</small>
+                <div class="row g-2 mt-1">
+                    <div class="col-7">
+                        <label class="form-label" for="posesNamesGrouping">{{ _("Plusieurs logs sur une cache") }}</label>
+                        <select id="posesNamesGrouping" class="form-select form-select-sm">
+                            <option value="merge">{{ _("Une étiquette « Pseudo +2 »") }}</option>
+                            <option value="separate">{{ _("Une étiquette par visiteur") }}</option>
+                        </select>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesPath">{{ _("Les pseudos…") }}</label>
-                                <select id="posesNamesPath" class="form-select form-select-sm">
-                                    <option value="away">{{ _("partent de la cache") }}</option>
-                                    <option value="toward">{{ _("arrivent sur la cache") }}</option>
-                                    <option value="still">{{ _("restent sur place") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesDirection">{{ _("Direction") }}</label>
-                                <select id="posesNamesDirection" class="form-select form-select-sm">
-                                    <option value="up">{{ _("Vers le haut") }}</option>
-                                    <option value="down">{{ _("Vers le bas") }}</option>
-                                    <option value="left">{{ _("Vers la gauche") }}</option>
-                                    <option value="right">{{ _("Vers la droite") }}</option>
-                                    <option value="radial">{{ _("En étoile autour de la cache") }}</option>
-                                    <option value="random">{{ _("Dans tous les sens") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesTrajectory">{{ _("Trajectoire") }}</label>
-                                <select id="posesNamesTrajectory" class="form-select form-select-sm">
-                                    <option value="straight">{{ _("Droite") }}</option>
-                                    <option value="arc">{{ _("En arc") }}</option>
-                                    <option value="wave">{{ _("Ondulante") }}</option>
-                                    <option value="spiral">{{ _("En spirale") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesEasing">{{ _("Allure") }}</label>
-                                <select id="posesNamesEasing" class="form-select form-select-sm">
-                                    <option value="smooth">{{ _("Douce (ralentit à la fin)") }}</option>
-                                    <option value="linear">{{ _("Régulière") }}</option>
-                                    <option value="accelerate">{{ _("Accélère") }}</option>
-                                    <option value="elastic">{{ _("Élastique (rebondit)") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesDistance">{{ _("Distance parcourue") }} <span class="text-muted" data-names-value="posesNamesDistance" data-names-unit="px"></span></label>
-                                <input type="range" class="form-range" id="posesNamesDistance" min="0" max="400" step="5">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesEntrance">{{ _("Entrée") }}</label>
-                                <select id="posesNamesEntrance" class="form-select form-select-sm">
-                                    <option value="none">{{ _("Directe") }}</option>
-                                    <option value="fade">{{ _("Fondu") }}</option>
-                                    <option value="pop">{{ _("Surgit (pop)") }}</option>
-                                    <option value="zoom">{{ _("Zoom arrière") }}</option>
-                                    <option value="typewriter">{{ _("Lettre à lettre") }}</option>
-                                    <option value="drop">{{ _("Tombe et rebondit") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesExit">{{ _("Sortie") }}</label>
-                                <select id="posesNamesExit" class="form-select form-select-sm">
-                                    <option value="none">{{ _("Directe") }}</option>
-                                    <option value="fade">{{ _("Fondu") }}</option>
-                                    <option value="shrink">{{ _("Rétrécit") }}</option>
-                                    <option value="grow">{{ _("Grossit et s'évapore") }}</option>
-                                    <option value="scatter">{{ _("Lettres éparpillées") }}</option>
-                                    <option value="blink">{{ _("Clignote") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label" for="posesNamesDuration">{{ _("Durée de vie") }}</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="posesNamesDuration" min="500" max="10000" step="100" aria-describedby="helpPosesNamesDuration">
-                                    <span class="input-group-text">{{ _("ms") }}</span>
-                                </div>
-                                <small id="helpPosesNamesDuration" class="form-hint text-muted">{{ _("En temps vidéo.") }}</small>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label" for="posesNamesOffsetY">{{ _("Départ au-dessus du point") }}</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="posesNamesOffsetY" min="-80" max="80" step="1" aria-describedby="helpPosesNamesOffsetY">
-                                    <span class="input-group-text">{{ _("px") }}</span>
-                                </div>
-                                <small id="helpPosesNamesOffsetY" class="form-hint text-muted">{{ _("Négatif : au-dessus ; positif : en dessous.") }}</small>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label" for="posesNamesWobble">{{ _("Balancement") }} <span class="text-muted" data-names-value="posesNamesWobble" data-names-unit="%"></span></label>
-                                <input type="range" class="form-range" id="posesNamesWobble" min="0" max="100" step="5">
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label" for="posesNamesTilt">{{ _("Inclinaison au hasard") }} <span class="text-muted" data-names-value="posesNamesTilt" data-names-unit="°"></span></label>
-                                <input type="range" class="form-range" id="posesNamesTilt" min="0" max="45" step="1">
-                            </div>
-                        </div>
-                        <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="posesNamesConnector" role="switch">
-                            <label class="form-check-label" for="posesNamesConnector">{{ _("Trait reliant le pseudo à la cache") }}</label>
+                    <div class="col-5" id="posesNamesStaggerRow">
+                        <label class="form-label" for="posesNamesStagger">{{ _("Décalage entre eux") }}</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control" id="posesNamesStagger" min="0" max="2000" step="10">
+                            <span class="input-group-text">{{ _("ms") }}</span>
                         </div>
                     </div>
                 </div>
+                <div class="form-check form-switch mt-3">
+                    <input class="form-check-input" type="checkbox" id="posesNamesAvoidOverlap" role="switch">
+                    <label class="form-check-label" for="posesNamesAvoidOverlap">{{ _("Éviter les chevauchements") }}</label>
+                </div>
+                <label class="form-label mt-2" for="posesNamesEmphasis">{{ _("Logs marquants plus grands") }}</label>
+                <div class="input-group input-group-sm w-auto">
+                    <span class="input-group-text">×</span>
+                    <input type="number" class="form-control" id="posesNamesEmphasis" min="1" max="2.5" step="0.1">
+                </div>
             </div>
+        </details>
 
-            <!-- Texte -->
-            <div class="col-12">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0"><i class="ti ti-typography text-muted me-1"></i>{{ _("Texte") }}</h6>
+        <!-- Mouvement -->
+        <details class="stats-form-section names-section" id="posesNamesSectionMotion">
+            <summary class="gc-subsection-title"><i class="ti ti-arrows-move text-muted me-1" aria-hidden="true"></i>{{ _("Mouvement") }}<span class="stats-form-summary-hint" data-names-summary="motion"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+            <div class="stats-form-section-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label" for="posesNamesPath">{{ _("Les pseudos…") }}</label>
+                        <select id="posesNamesPath" class="form-select form-select-sm">
+                            <option value="away">{{ _("partent de la cache") }}</option>
+                            <option value="toward">{{ _("arrivent sur la cache") }}</option>
+                            <option value="still">{{ _("restent sur place") }}</option>
+                        </select>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesFont">{{ _("Police") }}</label>
-                                <select id="posesNamesFont" class="form-select form-select-sm">
-                                    <option value="sans">{{ _("Sans empattement") }}</option>
-                                    <option value="serif">{{ _("Avec empattement") }}</option>
-                                    <option value="mono">{{ _("Machine à écrire") }}</option>
-                                    <option value="rounded">{{ _("Arrondie") }}</option>
-                                    <option value="condensed">{{ _("Étroite") }}</option>
-                                    <option value="handwritten">{{ _("Manuscrite") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-sm-5">
-                                <label class="form-label" for="posesNamesSize">{{ _("Taille") }}</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="posesNamesSize" min="8" max="64" step="1">
-                                    <span class="input-group-text">{{ _("px") }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex flex-wrap gap-3 mt-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posesNamesBold">
-                                <label class="form-check-label fw-bold" for="posesNamesBold">{{ _("Gras") }}</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posesNamesItalic">
-                                <label class="form-check-label fst-italic" for="posesNamesItalic">{{ _("Italique") }}</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posesNamesUppercase">
-                                <label class="form-check-label text-uppercase" for="posesNamesUppercase">{{ _("Majuscules") }}</label>
-                            </div>
-                        </div>
-                        <label class="form-label mt-2" for="posesNamesOpacity">{{ _("Opacité") }} <span class="text-muted" data-names-value="posesNamesOpacity" data-names-unit="%"></span></label>
-                        <input type="range" class="form-range" id="posesNamesOpacity" min="10" max="100" step="5">
+                    {# Trajet sans objet quand les pseudos restent sur place :
+                       masqué (data-names-travel, syncPosesNamesUI). #}
+                    <div class="col-6" data-names-travel>
+                        <label class="form-label" for="posesNamesDirection">{{ _("Direction") }}</label>
+                        <select id="posesNamesDirection" class="form-select form-select-sm">
+                            <option value="up">{{ _("Vers le haut") }}</option>
+                            <option value="down">{{ _("Vers le bas") }}</option>
+                            <option value="left">{{ _("Vers la gauche") }}</option>
+                            <option value="right">{{ _("Vers la droite") }}</option>
+                            <option value="radial">{{ _("En étoile autour de la cache") }}</option>
+                            <option value="random">{{ _("Dans tous les sens") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6" data-names-travel>
+                        <label class="form-label" for="posesNamesTrajectory">{{ _("Trajectoire") }}</label>
+                        <select id="posesNamesTrajectory" class="form-select form-select-sm">
+                            <option value="straight">{{ _("Droite") }}</option>
+                            <option value="arc">{{ _("En arc") }}</option>
+                            <option value="wave">{{ _("Ondulante") }}</option>
+                            <option value="spiral">{{ _("En spirale") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6" data-names-travel>
+                        <label class="form-label" for="posesNamesEasing">{{ _("Allure") }}</label>
+                        <select id="posesNamesEasing" class="form-select form-select-sm">
+                            <option value="smooth">{{ _("Douce (ralentit à la fin)") }}</option>
+                            <option value="linear">{{ _("Régulière") }}</option>
+                            <option value="accelerate">{{ _("Accélère") }}</option>
+                            <option value="elastic">{{ _("Élastique (rebondit)") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-12" data-names-travel>
+                        <label class="form-label" for="posesNamesDistance">{{ _("Distance parcourue") }} <span class="text-muted" data-names-value="posesNamesDistance" data-names-unit="px"></span></label>
+                        <input type="range" class="form-range" id="posesNamesDistance" min="0" max="400" step="5">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="posesNamesEntrance">{{ _("Entrée") }}</label>
+                        <select id="posesNamesEntrance" class="form-select form-select-sm">
+                            <option value="none">{{ _("Directe") }}</option>
+                            <option value="fade">{{ _("Fondu") }}</option>
+                            <option value="pop">{{ _("Surgit (pop)") }}</option>
+                            <option value="zoom">{{ _("Zoom arrière") }}</option>
+                            <option value="typewriter">{{ _("Lettre à lettre") }}</option>
+                            <option value="drop">{{ _("Tombe et rebondit") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="posesNamesExit">{{ _("Sortie") }}</label>
+                        <select id="posesNamesExit" class="form-select form-select-sm">
+                            <option value="none">{{ _("Directe") }}</option>
+                            <option value="fade">{{ _("Fondu") }}</option>
+                            <option value="shrink">{{ _("Rétrécit") }}</option>
+                            <option value="grow">{{ _("Grossit et s'évapore") }}</option>
+                            <option value="scatter">{{ _("Lettres éparpillées") }}</option>
+                            <option value="blink">{{ _("Clignote") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="posesNamesWobble">{{ _("Balancement") }} <span class="text-muted" data-names-value="posesNamesWobble" data-names-unit="%"></span></label>
+                        <input type="range" class="form-range" id="posesNamesWobble" min="0" max="100" step="5">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="posesNamesTilt">{{ _("Inclinaison au hasard") }} <span class="text-muted" data-names-value="posesNamesTilt" data-names-unit="°"></span></label>
+                        <input type="range" class="form-range" id="posesNamesTilt" min="0" max="45" step="1">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="posesNamesOffsetY">{{ _("Point de départ") }} <span class="text-muted" data-names-value="posesNamesOffsetY" data-names-unit="px"></span></label>
+                        <input type="range" class="form-range" id="posesNamesOffsetY" min="-80" max="80" step="1" aria-describedby="helpPosesNamesOffsetY">
+                        <small id="helpPosesNamesOffsetY" class="form-hint text-muted">{{ _("À gauche : au-dessus du point ; à droite : en dessous.") }}</small>
+                    </div>
+                </div>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="posesNamesConnector" role="switch">
+                    <label class="form-check-label" for="posesNamesConnector">{{ _("Trait reliant le pseudo à la cache") }}</label>
+                </div>
+            </div>
+        </details>
 
-                        <div class="row g-2 mt-1 align-items-end">
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesColorMode">{{ _("Couleur") }}</label>
-                                <select id="posesNamesColorMode" class="form-select form-select-sm" aria-describedby="helpPosesNamesColorMode">
-                                    <option value="fixed">{{ _("Une seule couleur") }}</option>
-                                    <option value="event">{{ _("Selon l'événement") }}</option>
-                                    <option value="finder">{{ _("Une couleur par visiteur") }}</option>
-                                    <option value="cache_type">{{ _("Couleur du type de cache") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-sm-4" id="posesNamesColorRow">
-                                <input type="color" class="form-control form-control-color" id="posesNamesColor" aria-label="{{ _('Couleur du texte') }}">
-                            </div>
-                        </div>
-                        <small id="helpPosesNamesColorMode" class="form-hint text-muted">{{ _("« Une couleur par visiteur » : chaque pseudo garde sa teinte tout au long de la vidéo.") }}</small>
-                        <div id="posesNamesKindColors" class="d-flex flex-wrap gap-2 mt-2" hidden>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorFind"><span>{{ _("Trouvaille") }}</span></label>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorFtf"><span>{{ _("1ʳᵉ trouvaille") }}</span></label>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorMilestone"><span>{{ _("Palier") }}</span></label>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorFavorite"><span>{{ _("Favori") }}</span></label>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorLoyal"><span>{{ _("Fidèle") }}</span></label>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorDnf"><span>{{ _("DNF") }}</span></label>
-                            <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorNote"><span>{{ _("Note") }}</span></label>
-                        </div>
+        <!-- Apparence du texte -->
+        <details class="stats-form-section names-section" id="posesNamesSectionLook">
+            <summary class="gc-subsection-title"><i class="ti ti-typography text-muted me-1" aria-hidden="true"></i>{{ _("Apparence") }}<span class="stats-form-summary-hint" data-names-summary="look"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+            <div class="stats-form-section-body">
+                <label class="form-label" for="posesNamesFont">{{ _("Police") }}</label>
+                <select id="posesNamesFont" class="form-select form-select-sm">
+                    <option value="sans">{{ _("Sans empattement") }}</option>
+                    <option value="serif">{{ _("Avec empattement") }}</option>
+                    <option value="mono">{{ _("Machine à écrire") }}</option>
+                    <option value="rounded">{{ _("Arrondie") }}</option>
+                    <option value="condensed">{{ _("Étroite") }}</option>
+                    <option value="handwritten">{{ _("Manuscrite") }}</option>
+                </select>
+                <div class="d-flex flex-wrap gap-3 mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="posesNamesBold">
+                        <label class="form-check-label fw-bold" for="posesNamesBold">{{ _("Gras") }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="posesNamesItalic">
+                        <label class="form-check-label fst-italic" for="posesNamesItalic">{{ _("Italique") }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="posesNamesUppercase">
+                        <label class="form-check-label text-uppercase" for="posesNamesUppercase">{{ _("Majuscules") }}</label>
+                    </div>
+                </div>
 
-                        <div class="row g-2 mt-2 align-items-end">
-                            <div class="col-8">
-                                <label class="form-label" for="posesNamesOutlineWidth">{{ _("Contour") }} <span class="text-muted" data-names-value="posesNamesOutlineWidth" data-names-unit="px"></span></label>
-                                <input type="range" class="form-range" id="posesNamesOutlineWidth" min="0" max="8" step="1">
-                            </div>
-                            <div class="col-4">
-                                <input type="color" class="form-control form-control-color" id="posesNamesOutlineColor" aria-label="{{ _('Couleur du contour') }}">
-                            </div>
-                            <div class="col-8">
-                                <label class="form-label" for="posesNamesGlow">{{ _("Halo lumineux") }} <span class="text-muted" data-names-value="posesNamesGlow" data-names-unit="px"></span></label>
-                                <input type="range" class="form-range" id="posesNamesGlow" min="0" max="30" step="1">
-                            </div>
-                            <div class="col-4">
-                                <input type="color" class="form-control form-control-color" id="posesNamesGlowColor" aria-label="{{ _('Couleur du halo') }}">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="posesNamesBackground">{{ _("Fond") }}</label>
-                                <select id="posesNamesBackground" class="form-select form-select-sm">
-                                    <option value="none">{{ _("Aucun") }}</option>
-                                    <option value="pill">{{ _("Pastille arrondie") }}</option>
-                                    <option value="box">{{ _("Étiquette rectangulaire") }}</option>
-                                    <option value="bubble">{{ _("Bulle de dialogue") }}</option>
-                                </select>
-                            </div>
-                            <div class="col-4 col-sm-4">
-                                <input type="color" class="form-control form-control-color" id="posesNamesBackgroundColor" aria-label="{{ _('Couleur du fond') }}">
-                            </div>
-                            <div class="col-12" id="posesNamesBackgroundOpacityRow">
-                                <label class="form-label" for="posesNamesBackgroundOpacity">{{ _("Opacité du fond") }} <span class="text-muted" data-names-value="posesNamesBackgroundOpacity" data-names-unit="%"></span></label>
-                                <input type="range" class="form-range" id="posesNamesBackgroundOpacity" min="0" max="100" step="5">
-                            </div>
-                        </div>
+                <label class="form-label mt-2" for="posesNamesColorMode">{{ _("Couleur") }}</label>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="posesNamesColorMode" class="form-select form-select-sm" aria-describedby="helpPosesNamesColorMode">
+                        <option value="fixed">{{ _("Une seule couleur") }}</option>
+                        <option value="event">{{ _("Selon l'événement") }}</option>
+                        <option value="finder">{{ _("Une couleur par visiteur") }}</option>
+                        <option value="cache_type">{{ _("Couleur du type de cache") }}</option>
+                    </select>
+                    <span id="posesNamesColorRow">
+                        <input type="color" class="form-control form-control-color" id="posesNamesColor" aria-label="{{ _('Couleur du texte') }}">
+                    </span>
+                </div>
+                <small id="helpPosesNamesColorMode" class="form-hint text-muted" hidden>{{ _("Chaque pseudo garde sa teinte tout au long de la vidéo.") }}</small>
+                <div id="posesNamesKindColors" class="d-flex flex-wrap gap-2 mt-2" hidden>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorFind"><span>{{ _("Trouvaille") }}</span></label>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorFtf"><span>{{ _("1ʳᵉ trouvaille") }}</span></label>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorMilestone"><span>{{ _("Palier") }}</span></label>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorFavorite"><span>{{ _("Favori") }}</span></label>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorLoyal"><span>{{ _("Fidèle") }}</span></label>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorDnf"><span>{{ _("DNF") }}</span></label>
+                    <label class="names-kind-color"><input type="color" class="form-control form-control-color" id="posesNamesColorNote"><span>{{ _("Note") }}</span></label>
+                </div>
+
+                <label class="form-label mt-2" for="posesNamesOpacity">{{ _("Opacité") }} <span class="text-muted" data-names-value="posesNamesOpacity" data-names-unit="%"></span></label>
+                <input type="range" class="form-range" id="posesNamesOpacity" min="10" max="100" step="5">
+
+                {# Curseur + nuancier sur une ligne ; le nuancier est grisé
+                   tant que l'effet vaut 0. #}
+                <div class="row g-2 mt-1 align-items-end">
+                    <div class="col-9">
+                        <label class="form-label" for="posesNamesOutlineWidth">{{ _("Contour") }} <span class="text-muted" data-names-value="posesNamesOutlineWidth" data-names-unit="px"></span></label>
+                        <input type="range" class="form-range" id="posesNamesOutlineWidth" min="0" max="8" step="1">
+                    </div>
+                    <div class="col-3">
+                        <input type="color" class="form-control form-control-color" id="posesNamesOutlineColor" aria-label="{{ _('Couleur du contour') }}">
+                    </div>
+                    <div class="col-9">
+                        <label class="form-label" for="posesNamesGlow">{{ _("Halo lumineux") }} <span class="text-muted" data-names-value="posesNamesGlow" data-names-unit="px"></span></label>
+                        <input type="range" class="form-range" id="posesNamesGlow" min="0" max="30" step="1">
+                    </div>
+                    <div class="col-3">
+                        <input type="color" class="form-control form-control-color" id="posesNamesGlowColor" aria-label="{{ _('Couleur du halo') }}">
+                    </div>
+                    <div class="col-9">
+                        <label class="form-label" for="posesNamesBackground">{{ _("Fond") }}</label>
+                        <select id="posesNamesBackground" class="form-select form-select-sm">
+                            <option value="none">{{ _("Aucun") }}</option>
+                            <option value="pill">{{ _("Pastille arrondie") }}</option>
+                            <option value="box">{{ _("Étiquette rectangulaire") }}</option>
+                            <option value="bubble">{{ _("Bulle de dialogue") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <input type="color" class="form-control form-control-color" id="posesNamesBackgroundColor" aria-label="{{ _('Couleur du fond') }}">
+                    </div>
+                    <div class="col-12" id="posesNamesBackgroundOpacityRow">
+                        <label class="form-label" for="posesNamesBackgroundOpacity">{{ _("Opacité du fond") }} <span class="text-muted" data-names-value="posesNamesBackgroundOpacity" data-names-unit="%"></span></label>
+                        <input type="range" class="form-range" id="posesNamesBackgroundOpacity" min="0" max="100" step="5">
                     </div>
                 </div>
             </div>
-        </div>
+        </details>
     </fieldset>
 
-    <!-- Confidentialité : préférence globale, indépendante du thème. -->
+    <!-- Confidentialité : préférence globale, indépendante du thème. Reste
+         dépliée : c'est un choix à faire en connaissance de cause. -->
     <h6 class="gc-section-title mt-4">
         <i class="ti ti-shield-lock text-muted me-1"></i>{{ _("Confidentialité") }}{{ global_scope_badge() }}
     </h6>
     <div class="card">
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-12 col-md-5">
-                    <label class="form-label" for="selectPosesNamesPrivacy">{{ _("Pseudos affichés") }}</label>
-                    <select id="selectPosesNamesPrivacy" class="form-select" aria-describedby="helpPosesNamesPrivacy">
-                        <option value="show">{{ _("En entier") }}</option>
-                        <option value="initials">{{ _("Initiales seulement") }}</option>
-                        <option value="hidden">{{ _("Remplacés par « Un visiteur »") }}</option>
-                    </select>
-                    <small id="helpPosesNamesPrivacy" class="form-hint text-muted">{{ _("Les pseudos sont publics sur Geocaching, mais une vidéo les diffuse ailleurs : choisissez ce que vous montrez.") }}</small>
-                </div>
-                <div class="col-12 col-md-7">
-                    <label class="form-label" for="textareaPosesNamesExclude">{{ _("Pseudos à ne jamais afficher") }}</label>
-                    <textarea id="textareaPosesNamesExclude" class="form-control" rows="3" spellcheck="false" aria-describedby="helpPosesNamesExclude"></textarea>
-                    <small id="helpPosesNamesExclude" class="form-hint text-muted">{{ _("Un pseudo par ligne (ou séparés par des virgules), majuscules indifférentes. Leurs logs ne reçoivent aucune étiquette.") }}</small>
-                </div>
-            </div>
+            <label class="form-label" for="selectPosesNamesPrivacy">{{ _("Pseudos affichés") }}</label>
+            <select id="selectPosesNamesPrivacy" class="form-select" aria-describedby="helpPosesNamesPrivacy">
+                <option value="show">{{ _("En entier") }}</option>
+                <option value="initials">{{ _("Initiales seulement") }}</option>
+                <option value="hidden">{{ _("Remplacés par « Un visiteur »") }}</option>
+            </select>
+            <small id="helpPosesNamesPrivacy" class="form-hint text-muted">{{ _("Les pseudos sont publics sur Geocaching, mais une vidéo les diffuse ailleurs : choisissez ce que vous montrez.") }}</small>
+            <label class="form-label mt-3" for="textareaPosesNamesExclude">{{ _("Pseudos à ne jamais afficher") }}</label>
+            <textarea id="textareaPosesNamesExclude" class="form-control" rows="2" spellcheck="false" aria-describedby="helpPosesNamesExclude"></textarea>
+            <small id="helpPosesNamesExclude" class="form-hint text-muted">{{ _("Un pseudo par ligne (ou séparés par des virgules), majuscules indifférentes. Leurs logs ne reçoivent aucune étiquette.") }}</small>
         </div>
     </div>
 </div>

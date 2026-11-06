@@ -202,8 +202,19 @@ chargement.
 
 **Styles prêts à l'emploi** (`PRESETS`) : Envol, Bulles, Éclatement,
 Atterrissage, Machine à écrire, Arcade, Feuilles au vent, Tourbillon. Ils ne
-touchent que le mouvement et le texte (`PRESET_KEYS`) ; le menu affiche
-« Personnalisé » dès qu'un de ces réglages s'en écarte.
+touchent que le mouvement et le texte (`PRESET_KEYS`). Cartes cliquables :
+celle que porte exactement le thème est enfoncée ; dès qu'un réglage s'en
+écarte, aucune ne l'est et l'onglet rappelle le style le plus proche
+(`posesNamesNearestPreset`, « Style personnalisé, d'après … »).
+
+**Organisation de l'onglet** : l'essentiel reste visible (interrupteur,
+style, aperçu, quels logs, taille, durée de vie, avertissement de densité) ;
+le reste vit dans quatre sections repliées — Texte affiché, Densité,
+Mouvement, Apparence — dont le résumé reprend les valeurs courantes
+(`syncSummaries`). Les réglages sans objet sont masqués : trajet (direction,
+trajectoire, allure, distance) quand les pseudos restent sur place,
+décalage quand les logs d'une cache sont regroupés. La confidentialité
+reste dépliée.
 
 **Choix des logs** (`poses_names_model.mjs`, pur) : par lot de jours, les
 logs non « folded » des familles cochées, sans les pseudos exclus ni les

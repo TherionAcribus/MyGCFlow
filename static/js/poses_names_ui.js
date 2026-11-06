@@ -19,6 +19,7 @@ import { saveSettingsPatch } from './settings_api.mjs';
 import {
     normalizeNamesPrivacy,
     normalizePosesNames,
+    posesNamesNearestPreset,
     posesNamesPresetOf,
     withPosesNamesPreset,
 } from './poses_names.mjs';
@@ -158,20 +159,27 @@ export function syncPosesNamesUI() {
         // Ne pas réécrire le champ texte en cours de saisie (curseur).
         else if (!(el === document.activeElement && el.type === 'text')) el.value = String(value);
     }
-    const preset = $('selectPosesNamesPreset');
-    if (preset) preset.value = posesNamesPresetOf(names) || '';
+    syncPresetButtons(names);
     // Réglages sans objet masqués ou grisés.
     const mode = names.color_mode;
     const colorRow = $('posesNamesColorRow');
     if (colorRow) colorRow.hidden = mode === 'event' || mode === 'finder';
     const kindColors = $('posesNamesKindColors');
     if (kindColors) kindColors.hidden = mode !== 'event';
+    const colorHelp = $('helpPosesNamesColorMode');
+    if (colorHelp) colorHelp.hidden = mode !== 'finder';
     const bgColor = $('posesNamesBackgroundColor');
     if (bgColor) bgColor.disabled = names.background === 'none';
     const bgOpacity = $('posesNamesBackgroundOpacityRow');
     if (bgOpacity) bgOpacity.hidden = names.background === 'none';
     const stagger = $('posesNamesStagger');
     if (stagger) stagger.disabled = names.grouping !== 'separate';
+    const staggerRow = $('posesNamesStaggerRow');
+    if (staggerRow) staggerRow.hidden = names.grouping !== 'separate';
+    // Sur place : ni direction, ni trajectoire, ni allure, ni distance.
+    for (const node of document.querySelectorAll('#posesNames [data-names-travel]')) {
+        node.hidden = names.path === 'still';
+    }
     const glowColor = $('posesNamesGlowColor');
     if (glowColor) glowColor.disabled = names.glow <= 0;
     const outlineColor = $('posesNamesOutlineColor');
@@ -188,10 +196,87 @@ export function syncPosesNamesUI() {
     syncDensityHint(names);
     for (const span of document.querySelectorAll('[data-names-value]')) {
         const field = $(span.dataset.namesValue);
-        if (field) span.textContent = `${field.value}${span.dataset.namesUnit || ''}`;
+        if (!field) continue;
+        span.textContent = span.dataset.namesFormat === 'seconds'
+            ? formatSeconds(field.value)
+            : `${field.value}${span.dataset.namesUnit || ''}`;
     }
+    syncSummaries(names);
     syncPrivacyUI();
     syncPreviewButton();
+}
+
+// Durée en secondes, une décimale, au format de la langue de la page.
+function formatSeconds(ms) {
+    const lang = document.documentElement.lang || undefined;
+    const s = (Number(ms) || 0) / 1000;
+    return `${s.toLocaleString(lang, { maximumFractionDigits: 1 })} s`;
+}
+
+// Libellé de l'option choisie d'un <select> (déjà traduit par le gabarit).
+function optionText(id) {
+    return $(id)?.selectedOptions?.[0]?.textContent.trim() || '';
+}
+
+function presetLabel(name) {
+    return document.querySelector(`[data-names-preset="${name}"] .image-preset-label`)?.textContent.trim() || name;
+}
+
+// Cartes de style : celle que porte exactement le thème est enfoncée ; sinon
+// le texte rappelle le style le plus proche.
+function syncPresetButtons(names) {
+    const exact = posesNamesPresetOf(names);
+    for (const btn of document.querySelectorAll('#posesNames [data-names-preset]')) {
+        const on = btn.dataset.namesPreset === exact;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    const custom = $('posesNamesPresetCustom');
+    if (!custom) return;
+    custom.hidden = !!exact;
+    if (!exact) {
+        const nearest = posesNamesNearestPreset(names);
+        const name = presetLabel(nearest?.name);
+        custom.textContent = pkg.t('Style personnalisé, d’après « ${name} ». Cliquez un style pour repartir de lui.', { name });
+    }
+}
+
+// Résumé des sections repliées : leurs valeurs courantes, pour juger d'un
+// coup d'œil sans ouvrir (masqué à l'ouverture, cf. .stats-form-section).
+function syncSummaries(names) {
+    const lower = (text) => text.charAt(0).toLowerCase() + text.slice(1);
+    const parts = {
+        content: [names.template, names.badges ? pkg.t('symboles') : ''],
+        density: [
+            pkg.t('${n} au plus', { n: names.max_visible }),
+            names.grouping === 'merge' ? pkg.t('regroupés') : pkg.t('un par visiteur'),
+        ],
+        motion: [
+            names.path === 'still'
+                ? optionText('posesNamesPath')
+                : `${optionText('posesNamesPath')}, ${lower(optionText('posesNamesDirection'))}`,
+            `${optionText('posesNamesEntrance')} / ${lower(optionText('posesNamesExit'))}`,
+        ],
+        look: [
+            optionText('posesNamesFont'),
+            optionText('posesNamesColorMode'),
+            names.background === 'none' ? '' : optionText('posesNamesBackground'),
+        ],
+    };
+    for (const span of document.querySelectorAll('#posesNames [data-names-summary]')) {
+        span.textContent = (parts[span.dataset.namesSummary] || []).filter(Boolean).join(' · ');
+    }
+}
+
+// Balise insérée au curseur du champ « Texte de l'étiquette ».
+function insertTag(tag) {
+    const field = $('posesNamesTemplate');
+    if (!field) return;
+    const start = field.selectionStart ?? field.value.length;
+    const end = field.selectionEnd ?? start;
+    field.focus();
+    field.setRangeText(tag, start, end, 'end');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 // --- Aperçu -------------------------------------------------------------------
@@ -259,9 +344,12 @@ export function initPosesNamesUI() {
             el.addEventListener('input', () => commitNames(readNamesUI()));
         }
     }
-    $('selectPosesNamesPreset')?.addEventListener('change', (e) => {
-        if (e.target.value) commitNames(withPosesNamesPreset(currentNames(), e.target.value));
-    });
+    for (const btn of document.querySelectorAll('#posesNames [data-names-preset]')) {
+        btn.addEventListener('click', () => commitNames(withPosesNamesPreset(currentNames(), btn.dataset.namesPreset)));
+    }
+    for (const btn of document.querySelectorAll('#posesNames [data-names-tag]')) {
+        btn.addEventListener('click', () => insertTag(btn.dataset.namesTag));
+    }
     $('btnPosesNamesPreview')?.addEventListener('click', () => {
         pkg.togglePosesNamesPreview?.();
         syncPreviewButton();

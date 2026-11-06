@@ -21,6 +21,7 @@ import {
     normalizeNamesPrivacy,
     normalizePosesNames,
     posesNamesDefaults,
+    posesNamesNearestPreset,
     posesNamesPresetOf,
     withPosesNamesPreset,
 } from '../../static/js/poses_names.mjs';
@@ -89,6 +90,14 @@ test('normalisation : bornes, choix, valeur courante gardée', () => {
     const updated = normalizePosesNames({ size: 20 }, current);
     assert.equal(updated.enabled, true);
     assert.equal(updated.exit, 'scatter');
+});
+
+test('style le plus proche : celui dont le moins de réglages s’écartent', () => {
+    assert.deepEqual(posesNamesNearestPreset(posesNamesDefaults()), { name: 'rise', diff: 0 });
+    const burst = withPosesNamesPreset(posesNamesDefaults(), 'burst');
+    assert.deepEqual(posesNamesNearestPreset({ ...burst, size: 30, color_mode: 'event' }), { name: 'burst', diff: 2 });
+    // Réglages hors style (logs, densité) : sans effet.
+    assert.deepEqual(posesNamesNearestPreset({ ...burst, max_visible: 3, only_notable: true }), { name: 'burst', diff: 0 });
 });
 
 test('styles prêts à l’emploi : mouvement et texte seulement, reconnus ensuite', () => {
