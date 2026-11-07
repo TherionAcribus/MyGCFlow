@@ -746,3 +746,52 @@ test('overflow:hidden rogne le texte au bord du cartouche', async ({ page }) => 
   expect(metrics.inside).toBeGreaterThan(0);
   expect(metrics.outside).toBe(0);
 });
+
+
+test('la vidéo garde les retours à la ligne de l’aperçu, à toute échelle', async ({ page }) => {
+  // La boîte du titre (position absolue, largeur auto) fait exactement la
+  // largeur de son texte dans l'aperçu. Le canvas mesurait le texte à la
+  // taille de la vidéo (police × scaleFactor) : un écart de quelques dixièmes
+  // de pixel suffisait à renvoyer le dernier mot à la ligne. Les lignes de la
+  // vidéo sont désormais celles de l'aperçu.
+  const result = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = true;
+    app.options.infos.numberOfCaches.display = false;
+    app.options.infos.currentDate.display = false;
+    document.getElementById('titleFrame').style.display = 'block';
+
+    const container = document.getElementById('mapWithFrames').getBoundingClientRect();
+    const paintedLines = (scale) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(container.width * scale);
+      canvas.height = Math.round(container.height * scale);
+      const ctx = canvas.getContext('2d');
+      const lines = [];
+      const fillText = ctx.fillText.bind(ctx);
+      ctx.fillText = (text, ...rest) => { lines.push(text); return fillText(text, ...rest); };
+      app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, scale);
+      return lines;
+    };
+
+    const out = [];
+    const titles = [
+      'Mes géocaches... ce n\'est pas un bon exemple ',
+      'Mes géocaches… ce n’est pas un bon exemple',
+      'Trouvailles 2012 → 2026 : quatorze ans de balades',
+    ];
+    for (const title of titles) {
+      app.updateTitleFrame(title);
+      for (const scale of [1, 1.25, 1.5, 1.75, 2, 2.37, 3]) {
+        // Passe d'ombre + passe de texte : on ne garde que les lignes
+        // distinctes, dans l'ordre.
+        const lines = paintedLines(scale);
+        out.push({ title, scale, lines: [...new Set(lines)] });
+      }
+    }
+    return out;
+  });
+  for (const { title, scale, lines } of result) {
+    expect(lines, `${title} ×${scale}`).toEqual([title.trim()]);
+  }
+});

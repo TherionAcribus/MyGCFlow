@@ -293,14 +293,32 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const horizontalBorders = borders.left.width + borders.right.width;
             const availableTextWidth = Math.max(1, Math.min(w, availableBoxWidth) - horizontalBorders - padL - padR);
             const noWrap = whiteSpace === 'nowrap' || whiteSpace === 'pre';
-            const sourceLines = whiteSpace === 'nowrap'
-                ? [transformedText.replace(/\s*\r?\n\s*/g, ' ')]
-                : transformedText.split(/\r?\n/);
-            const lines = noWrap
-                ? sourceLines
-                : sourceLines.flatMap(line => wrapOverlayText(
-                    paintCtx, line, availableTextWidth, layoutLetterSpacing, digitWidth,
-                ));
+            const wrapLine = line => wrapOverlayText(
+                paintCtx, line, availableTextWidth, layoutLetterSpacing, digitWidth,
+            );
+            // Les retours à la ligne de l'aperçu font foi. Les recalculer en
+            // mesurant le texte à la taille de la vidéo (police × scaleFactor)
+            // ne donne pas exactement la largeur du DOM : la boîte d'un titre
+            // à largeur auto faisant pile la largeur du texte, quelques
+            // dixièmes de pixel suffisaient à renvoyer le dernier mot à la
+            // ligne. Une ligne de l'aperçu n'est recoupée que si elle déborde
+            // nettement (canvas plus étroit que l'aperçu mis à l'échelle).
+            const domLines = noWrap ? null : getDomLines(cached, String(text));
+            let lines;
+            if (domLines) {
+                const tolerance = availableTextWidth * 1.02 + scaleFactor;
+                lines = domLines.flatMap(line => {
+                    const shown = transformOverlayText(line, textTransform);
+                    return measureOverlayText(paintCtx, shown, layoutLetterSpacing, digitWidth) <= tolerance
+                        ? [shown]
+                        : wrapLine(shown);
+                });
+            } else {
+                const sourceLines = whiteSpace === 'nowrap'
+                    ? [transformedText.replace(/\s*\r?\n\s*/g, ' ')]
+                    : transformedText.split(/\r?\n/);
+                lines = noWrap ? sourceLines : sourceLines.flatMap(wrapLine);
+            }
 
             // CSS aligne le texte dans une boîte de ligne basée sur les métriques de
             // la police, et non sur la seule encre visible de "Mg". Utiliser les
@@ -436,6 +454,77 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
     } catch (error) {
         console.warn('Erreur lors du rendu des overlays:', error);
     }
+}
+
+// Lignes du texte telles que l'aperçu les affiche, mémorisées par texte dans
+// l'entrée du cache (qui est elle-même reconstruite à chaque changement de
+// style ou de taille). null si le DOM ne porte pas ce texte : l'appelant
+// retombe alors sur le calcul canvas.
+function getDomLines(cached, text) {
+    if (cached.domLines?.text === text) return cached.domLines.lines;
+    const collapse = value => String(value || '').replace(/\s+/g, ' ').trim();
+    let lines = null;
+    try {
+        if (collapse(cached.el.textContent) === collapse(text)) {
+            lines = readDomLines(cached.el, cached.whiteSpace);
+        }
+    } catch (_) {
+        lines = null;
+    }
+    cached.domLines = { text, lines };
+    return lines;
+}
+
+// Découpe le texte de `el` en lignes d'après la position de chaque caractère
+// (Range.getClientRects) : un caractère plus bas que la ligne courante en
+// ouvre une nouvelle. Les blancs repliés (sans boîte) restent sur la ligne
+// en cours et sont retirés en bout de ligne, comme en CSS.
+function readDomLines(el, whiteSpace) {
+    const keepSpaces = whiteSpace === 'pre-wrap' || whiteSpace === 'break-spaces';
+    const keepNewlines = keepSpaces || whiteSpace === 'pre-line';
+    const range = document.createRange();
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const lines = [];
+    let current = '';
+    let lineTop = null;
+    let afterNewline = false;
+    const pushLine = () => {
+        lines.push(keepSpaces ? current : current.replace(/\s+/g, ' ').trim());
+        current = '';
+    };
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const data = node.data;
+        for (let i = 0; i < data.length;) {
+            const size = data.codePointAt(i) > 0xffff ? 2 : 1;
+            const glyph = data.slice(i, i + size);
+            if (glyph === '\n' && keepNewlines) {
+                // Saut forcé : la ligne suivante commence au prochain
+                // caractère, sans second saut détecté par la position.
+                pushLine();
+                afterNewline = true;
+                i += size;
+                continue;
+            }
+            range.setStart(node, i);
+            range.setEnd(node, i + size);
+            const rects = Array.from(range.getClientRects()).filter(r => r.width > 0 || r.height > 0);
+            const rect = rects[rects.length - 1];
+            if (rect && /\S/.test(glyph)) {
+                if (lineTop === null || afterNewline) {
+                    lineTop = rect.top;
+                } else if (rect.top > lineTop + rect.height / 2) {
+                    pushLine();
+                    lineTop = rect.top;
+                }
+                afterNewline = false;
+            }
+            current += glyph;
+            i += size;
+        }
+    }
+    if (current || !lines.length) pushLine();
+    // Sans saut forcé, une ligne vide ne peut venir que d'un blanc isolé.
+    return keepNewlines ? lines : lines.filter((line, index) => line || index === 0);
 }
 
 function wrapOverlayText(ctx, text, maxWidth, letterSpacing = 0, digitWidth = 0) {
