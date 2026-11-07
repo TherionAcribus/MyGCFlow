@@ -452,8 +452,17 @@ mutations) répond au favori avant qu'il ne parte :
   propose alors d'annuler plutôt que de relire pour rien ;
 - `logs_collect_full_once` (bouton « Forcer une collecte complète la
   prochaine fois », options avancées ; `POST
-  /api/logs/bookmarklet/full-next`) est consommé à la lecture : la
-  collecte suivante revoit `since`.
+  /api/logs/bookmarklet/full-next`) est consommé à la lecture ; le bouton
+  oublie en plus l'horizon (`log_store.reset_dnf_horizon`) : les collectes
+  restent complètes jusqu'au prochain export qui déclare à nouveau les DNF
+  lus en entier.
+
+Le favori ne déclare la liste « Vos journaux » complète que s'il y a
+reconnu au moins une ligne (`collectJournal`) : une page sans ligne
+reconnue (mise en page changée, session perdue) ne prouve rien. Avant ce
+garde-fou (2026-11-07), un export « 0 DNF, liste complète » posait un
+horizon faux, et toutes les collectes incrémentales suivantes sautaient
+les DNF antérieurs.
 
 Avec `since`, le favori pagine « Vos journaux » **tous types** (pas
 seulement les DNF : une trouvaille récente sur une vieille cache en DNF la

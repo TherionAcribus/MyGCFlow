@@ -864,10 +864,13 @@ def logs_bookmarklet_full_next():
     """Arme « la prochaine collecte sera complète » : l'incrémental ne
     détecte ni les logs anciens supprimés ni les retards d'une fenêtre,
     l'utilisateur doit pouvoir repartir d'un tour complet sans régénérer
-    le favori. Le drapeau est consommé par /api/logs/receive/state."""
+    le favori. Le drapeau est consommé par /api/logs/receive/state ;
+    l'horizon des DNF est oublié en plus, pour que les collectes suivantes
+    restent complètes tant qu'aucune n'a pu le rétablir."""
     from dataclasses import replace
     get_settings_manager().update_app_settings(
         lambda s: replace(s, logs_collect_full_once=True))
+    log_store.reset_dnf_horizon(db.session)
     return jsonify({'success': True})
 
 

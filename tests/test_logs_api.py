@@ -654,7 +654,11 @@ class LogsAutomationTests(LogsApiTests):
         self._receive(CONTRACT.read_bytes())
         self.assertIsNotNone(self._state().get_json()["pending"])
 
-        # « Forcer la prochaine collecte complète » : consommé à la lecture.
+        # « Forcer la prochaine collecte complète » : le drapeau est consommé
+        # à la lecture, et l'horizon des DNF est oublié — les collectes
+        # restent complètes tant qu'aucun export ne déclare à nouveau la
+        # liste des DNF lue en entier (une collecte forcée qui n'y parvient
+        # pas ne doit pas laisser la suivante repartir d'un horizon faux).
         rv = self.client.post('/api/logs/bookmarklet/full-next')
         self.assertTrue(rv.get_json()["success"])
         self.assertTrue(self.client.get("/api/logs/status")
@@ -662,6 +666,10 @@ class LogsAutomationTests(LogsApiTests):
         self.assertIsNone(self._state().get_json()["since"])
         self.assertFalse(self.client.get("/api/logs/status")
                          .get_json()["full_collect_planned"])
+        self.assertIsNone(self._state().get_json()["since"])
+
+        # Un export à couverture DNF complète rétablit l'horizon.
+        self._import(CONTRACT.read_bytes())
         self.assertEqual(self._state().get_json()["since"], "2026-10-24")
 
     def test_bookmarklet_scope_route_round_trips(self):

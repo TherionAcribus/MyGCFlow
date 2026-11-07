@@ -575,6 +575,25 @@ def collection_since(session):
     return collection.dnf_covered_at.date()
 
 
+def reset_dnf_horizon(session) -> None:
+    """Oublie l'horizon des DNF : les collectes repartent en entier jusqu'au
+    prochain export qui déclare la liste des DNF lue en entier. Appelé par
+    « Forcer une collecte complète » — le drapeau à usage unique ne
+    suffisait pas : une collecte complète qui ne pouvait pas se déclarer
+    complète laissait la suivante repartir de l'ancien horizon, peut-être
+    faux (posé par un export qui annonçait « 0 DNF, liste complète »)."""
+    with LOG_MUTATION_LOCK:
+        collection = get_collection(session)
+        if collection is None or collection.dnf_covered_at is None:
+            return
+        try:
+            collection.dnf_covered_at = None
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+
+
 def clear_logs(session) -> dict:
     """Supprime tous les logs, fiches et le compte associé (changement de compte)."""
     with LOG_MUTATION_LOCK:

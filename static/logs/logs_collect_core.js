@@ -555,9 +555,15 @@ var POSTBACK_LINK = 'a[href*="__doPostBack(\'ctl00$ContentBody$pgrTop$ctl08\'"]'
 // la lecture s'arrête dès qu'une page entière en sort.
 //   complete : true quand le périmètre visé a été lu en entier — listing
 //   complet sans since, fenêtre entièrement couverte avec.
+// Une page sans AUCUNE ligne reconnue (mise en page changée, redirection,
+// session perdue) ne prouve rien : complete reste false. Sinon l'export
+// déclarait « 0 DNF, liste complète » et l'application en tirait un
+// horizon qui faisait sauter tous les DNF aux collectes suivantes. Un
+// compte sans aucun DNF n'y perd qu'une relecture d'une page à chaque fois.
 async function collectJournal(url, since, order) {
   var codes = new Set();
   var guids = new Set();
+  var seen = 0;
   var page = await fetchHtml(url);
   for (var n = 0; n < 1000; n++) {
     var before = codes.size + guids.size;
@@ -569,12 +575,17 @@ async function collectJournal(url, since, order) {
       });
       var refs = refsFromHrefs(hrefs);
       if (!refs.codes.length && !refs.guids.length) continue;
+      seen++;
       if (since && !rowInWindow(rows[r], since, order)) continue;
       anyRecent = true;
       refs.codes.forEach(function (c) { codes.add(c); });
       refs.guids.forEach(function (g) { guids.add(g); });
     }
     var next = page.doc.querySelector(POSTBACK_LINK);
+    if (!seen) {
+      console.warn('[mygcflow-logs] « Vos journaux » : aucune ligne reconnue sur ' + page.url + ' — liste non déclarée complète.');
+      return { codes: codes, guids: guids, complete: false };
+    }
     if (!next || (since && !anyRecent)) {
       return { codes: codes, guids: guids, complete: true };
     }
