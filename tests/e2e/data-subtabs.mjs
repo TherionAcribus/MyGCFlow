@@ -30,29 +30,30 @@ export async function openDataSubTab(page, name) {
     await page.locator(selector).click();
 }
 
-// Menus ⋯ des en-têtes « carte source » (lot réorganisation Données) : les
-// actions secondaires/destructives (#clearDatabaseBtn, #labsUpdateBtn,
-// #labsExportBtn, #clearLabsBtn, #gcLogsUpdateBtn, #gcLogsExportBtn,
-// #gcLogsClearBtn) ne sont visibles et cliquables que menu ouvert — le
-// bouton ⋯ lui-même est masqué tant que tous ses items le sont
-// (syncSourceMenuVisibility, ui.js).
-const SOURCE_MENUS = {
-    geocaches: '#geocachesSourceMenu',
-    labs: '#labsSourceMenu',
-    logs: '#gcLogsSourceMenu',
+// « Options avancées » des cartes sources (<details>) : les actions
+// secondaires et destructives de chaque source y vivent, en dernier —
+// #clearDatabaseBtn ; #labsUpdateBtn, #labsExportBtn, #clearLabsBtn ;
+// #gcLogsUpdateBtn, #gcLogsExportBtn, #gcLogsClearBtn. Elles ne sont
+// visibles que section dépliée (et, pour ces actions, collection non vide).
+const SOURCE_ADVANCED = {
+    geocaches: '#geocachesAdvanced',
+    labs: '#labsAdvanced',
+    logs: '#gcLogsAdvanced',
 };
 
 /**
- * Ouvre le menu ⋯ d'une carte source et retourne le locator du menu ouvert
- * (.dropdown-menu.show) — les items s'y lisent/cliquent ensuite.
+ * Déplie les « Options avancées » d'une carte source (sans la replier si
+ * elle l'est déjà) et retourne le locator de la section.
  * @param {import('@playwright/test').Page} page
  * @param {'geocaches'|'labs'|'logs'} cardName
  */
-export async function openSourceMenu(page, cardName) {
-    const selector = SOURCE_MENUS[cardName];
+export async function openSourceAdvanced(page, cardName) {
+    const selector = SOURCE_ADVANCED[cardName];
     if (!selector) throw new Error(`Carte source inconnue : ${cardName}`);
-    const menu = page.locator(`${selector} .dropdown-menu`);
-    await page.locator(`${selector} [data-bs-toggle="dropdown"]`).click();
-    await expect(menu).toHaveClass(/show/, { timeout: 10_000 });
-    return menu;
+    const section = page.locator(selector);
+    if (!(await section.evaluate(el => el.open))) {
+        await section.locator(':scope > summary').click();
+    }
+    await expect(section).toHaveAttribute('open', '');
+    return section;
 }

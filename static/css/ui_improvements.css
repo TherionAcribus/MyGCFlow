@@ -3590,12 +3590,12 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 /* --- En-têtes « carte source » (lot réorganisation Données) --------------
    Les trois cartes sources de l'onglet Données partagent la même tête :
    titre + résumé (#infosBDD / #labsStatus / #gcLogsStatus, remplis par
-   bdd.js / labs.js / gc_logs.js) + menu ⋯ des actions secondaires et
-   destructives. La marge basse du titre vit sur la rangée (le h5 porte
-   mb-0). */
+   bdd.js / labs.js / gc_logs.js). Les actions secondaires et destructives
+   vivent dans les « Options avancées » de chaque carte. La marge basse du
+   titre vit sur la rangée (le h5 porte mb-0). */
 .gc-source-head { margin-bottom: 0.75rem; }
 /* Le résumé est le second enfant flex du h5 (flex-wrap) : sur petit écran
-   il s'enroule sous le titre au lieu de pousser le bouton ⋯ hors champ. */
+   il s'enroule sous le titre au lieu de déborder. */
 .gc-source-head .gc-section-title { min-width: 0; }
 .gc-source-summary {
     font-size: 0.8rem;
@@ -3603,13 +3603,7 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     color: var(--tblr-muted, var(--color-text-muted));
     min-width: 0;
 }
-/* Piège hidden + classes d'affichage (AGENTS.md — même motif que
-   .gc-logs-ui [hidden] ci-dessus) : .dropdown-item pose display:block et
-   .btn display:inline-block, qui l'emportent sur l'attribut hidden. Or les
-   items « Mes logs » basculent par hidden (renderStatus, gc_logs.js) et le
-   bouton ⋯ lui-même est masqué par hidden quand TOUS ses items le sont
-   (syncSourceMenuVisibility, ui.js). */
-.gc-source-menu [hidden] { display: none !important; }
+
 
 /* --- Onglet Stats (templates/menu_stats.html) --------------------------- */
 

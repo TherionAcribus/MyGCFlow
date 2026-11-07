@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
-import { openDataSubTab, openSourceMenu } from './data-subtabs.mjs';
+import { openDataSubTab, openSourceAdvanced } from './data-subtabs.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -259,8 +259,8 @@ test('après suppression complète, la suggestion de source est rejouée', async
   await expect(page.locator('#selectDiscoverySources')).toHaveValue('labs');
 
   // Suppression complète : le mode revient à « geocaches » (reset).
-  // Le bouton vit dans le menu ⋯ de l'en-tête de la carte.
-  await (await openSourceMenu(page, 'labs')).locator('#clearLabsBtn').click();
+  // Le bouton vit à la fin des options avancées de la carte.
+  await (await openSourceAdvanced(page, 'labs')).locator('#clearLabsBtn').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
   await expect(page.locator('#selectDiscoverySources')).toHaveValue('geocaches', { timeout: 30_000 });
@@ -279,8 +279,8 @@ test('« Supprimer mes Lab Caches » vide la collection Labs uniquement', async 
 
   // La confirmation passe par la modale applicative (showConfirmation,
   // .gcm-confirm-modal) : cliquer son bouton danger. L'item de suppression
-  // vit dans le menu ⋯ de l'en-tête de la carte.
-  await (await openSourceMenu(page, 'labs')).locator('#clearLabsBtn').click();
+  // vit à la fin des options avancées de la carte.
+  await (await openSourceAdvanced(page, 'labs')).locator('#clearLabsBtn').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
 
   await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
@@ -821,21 +821,21 @@ test('la carte montre le parcours du favori, puis le replie une fois des Labs im
   await openReadyApp(page);
 
   // Rien d'importé : état en clair, parcours en deux étapes, pas d'options
-  // avancées dépliées — et le menu ⋯ entier se masque (tous ses items le
-  // sont, syncSourceMenuVisibility).
+  // avancées dépliées — et leurs actions sur la collection (instructions,
+  // export, suppression) n'existent pas encore.
   await expect(page.locator('#labsStatus')).toHaveText('Aucun Lab Cache importé');
   await expect(page.locator('#labsGuide')).toBeVisible();
   await expect(page.locator('#labsBookmarkletLink')).toBeVisible();
   await expect(page.locator('#labs-file-btn')).toBeHidden();
   await expect(page.locator('#labsUpdateBtn')).toBeHidden();
-  await expect(page.locator('#labsSourceMenu [data-bs-toggle="dropdown"]')).toBeHidden();
+  await expect(page.locator('#labsDataActions')).toBeHidden();
 
   await importLabs(page);
 
   await expect(page.locator('#labsStatus')).toHaveText('12 étapes · 8 sur la carte · 4 à compléter');
   await expect(page.locator('#labsGuide')).toBeHidden();
-  // « Afficher les instructions d'import » vit dans le menu ⋯ de l'en-tête.
-  const menu = await openSourceMenu(page, 'labs');
+  // « Afficher les instructions d'import » vit dans les options avancées.
+  const menu = await openSourceAdvanced(page, 'labs');
   const update = menu.locator('#labsUpdateBtn');
   await expect(update).toBeVisible();
   await update.click();
@@ -1480,8 +1480,8 @@ test('le bouton du guide est « Afficher les instructions d\'import »', async (
   await openReadyApp(page);
   await importLabs(page);
 
-  // L'item vit dans le menu ⋯ de l'en-tête de la carte.
-  const menu = await openSourceMenu(page, 'labs');
+  // L'action vit dans les options avancées de la carte.
+  const menu = await openSourceAdvanced(page, 'labs');
   const update = menu.locator('#labsUpdateBtn');
   await expect(update).toBeVisible();
   await expect(update).toContainText("Afficher les instructions d'import");
@@ -1733,7 +1733,7 @@ test('la pastille « Sources » suit les étapes à compléter, visibles pane fe
 
   // Collection vidée : le relevé de statut repasse la raison à zéro.
   await openDataSubTab(page, 'sources');
-  await (await openSourceMenu(page, 'labs')).locator('#clearLabsBtn').click();
+  await (await openSourceAdvanced(page, 'labs')).locator('#clearLabsBtn').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
   await expect(dot).toBeHidden();
@@ -1762,9 +1762,10 @@ test('l\'avertissement Groundspeak est unique dans le pane, absent des guides', 
   await expect(page.locator('#labsGuide')).toBeHidden();
   await expect(warning).toBeVisible();
 
-  // Guide rouvert via « Afficher les instructions d'import » (menu ⋯) :
+  // Guide rouvert via « Afficher les instructions d'import » (options
+  // avancées) :
   // il ne le contient toujours pas.
-  await (await openSourceMenu(page, 'labs')).locator('#labsUpdateBtn').click();
+  await (await openSourceAdvanced(page, 'labs')).locator('#labsUpdateBtn').click();
   await expect(page.locator('#labsGuide')).toBeVisible();
   await expect(page.locator('#labsGuide')).not.toContainText('Groundspeak');
 });

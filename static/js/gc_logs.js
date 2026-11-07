@@ -104,12 +104,9 @@ function renderStatus(st) {
     const statusEl = el('gcLogsStatus');
     const detail = el('gcLogsDetail');
     const has = !!(st && st.exists && st.logs > 0);
-    el('gcLogsExportBtn').hidden = !has;
-    el('gcLogsClearBtn').hidden = !has;
-    const updateBtn = el('gcLogsUpdateBtn');
-    if (updateBtn) updateBtn.style.display = has ? '' : 'none';
-    // Tous les items masqués (collection vide) → le bouton ⋯ se masque.
-    pkg.syncSourceMenuVisibility?.(el('gcLogsSourceMenu'));
+    // Instructions, export et suppression (fin des « Options avancées ») :
+    // rien à exporter ni à supprimer sans logs, et le guide est alors déplié.
+    el('gcLogsDataActions').hidden = !has;
     renderGuide(has);
     renderPending(st?.pending_import);
     // Périmètre du favori : refléter le réglage serveur, sauf pendant que

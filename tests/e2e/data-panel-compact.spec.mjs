@@ -7,10 +7,17 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
-import { openSourceMenu } from './data-subtabs.mjs';
+import { openSourceAdvanced } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
+
+// Base laissée vide en sortie : les specs suivants importent leur GPX sans
+// vider d'abord, et une base non vide ouvre la modale « Remplacer mes
+// géocaches ? » qui bloque leur import (dnf-display, juste après).
+test.afterEach(async ({ request }) => {
+  await request.post('/clear_database').catch(() => {});
+});
 
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -60,9 +67,9 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   await expect(page.locator('#btnGoStyleTab')).toBeVisible();
   await expect(page.locator('#btnGoPreview')).toBeVisible();
 
-  // Après vidage via l'UI (le bouton vit dans le menu ⋯ de l'en-tête) :
-  // retour à l'import détaillé.
-  await (await openSourceMenu(page, 'geocaches')).locator('#clearDatabaseBtn').click();
+  // Après vidage via l'UI (le bouton vit dans les « Options avancées » de
+  // la carte) : retour à l'import détaillé.
+  await (await openSourceAdvanced(page, 'geocaches')).locator('#clearDatabaseBtn').click();
   await page.getByRole('dialog', { name: 'Confirmation de suppression' })
     .getByRole('button', { name: 'Supprimer mes géocaches' })
     .click();

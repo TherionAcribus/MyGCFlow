@@ -325,12 +325,10 @@ function renderLabsStatus(st) {
     if (fetchBtn) fetchBtn.style.display = canFetch ? '' : 'none';
     const retryBtn = el('labsRetryFetchBtn');
     if (retryBtn) retryBtn.style.display = (unresolved > 0 && !canFetch) ? '' : 'none';
-    for (const id of ['clearLabsBtn', 'labsExportBtn', 'labsUpdateBtn']) {
-        const btn = el(id);
-        if (btn) btn.style.display = total > 0 ? '' : 'none';
-    }
-    // Tous les items masqués (collection vide) → le bouton ⋯ se masque.
-    pkg.syncSourceMenuVisibility?.(el('labsSourceMenu'));
+    // Instructions, export et suppression (fin des « Options avancées ») :
+    // rien à exporter ni à supprimer sans Labs, et le guide est alors déplié.
+    const dataActions = el('labsDataActions');
+    if (dataActions) dataActions.hidden = total === 0;
     // Pastille du sous-onglet « Sources » : des étapes à compléter ou une
     // opération en cours demandent l'attention même pane Filtres ouvert.
     pkg.setDataSourcesDot?.('labs',

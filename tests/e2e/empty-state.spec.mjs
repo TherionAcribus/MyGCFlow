@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
-import { openSourceMenu } from './data-subtabs.mjs';
+import { openSourceAdvanced } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -63,8 +63,9 @@ test('état vide : verrouillage sans base, déblocage après import, retour apr�
   await expect(btnRecord).toBeEnabled();
 
   // Vidage via le bouton réel (modale de confirmation, cf. showConfirmation) :
-  // retour à l'état vide. Le bouton vit dans le menu ⋯ de la carte source.
-  await (await openSourceMenu(page, 'geocaches')).locator('#clearDatabaseBtn').click();
+  // retour à l'état vide. Le bouton vit dans les « Options avancées » de la
+  // carte source.
+  await (await openSourceAdvanced(page, 'geocaches')).locator('#clearDatabaseBtn').click();
   await page.getByRole('dialog', { name: 'Confirmation de suppression' })
     .getByRole('button', { name: 'Supprimer mes géocaches' })
     .click();

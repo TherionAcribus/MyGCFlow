@@ -789,9 +789,7 @@ export function readBddValues({ settleFirstUse = false } = {}){
 
             if (infos) infos.textContent = text;
 
-            const btn = document.getElementById('clearDatabaseBtn');
-            if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
-            syncGeocachesMenu();
+            setClearDatabaseAvailable(geocachesCount > 0);
 
             // La présentation compacte/détaillée de la carte dépend de ce
             // compteur : réévaluer sans attendre le prochain recalcul.
@@ -941,20 +939,20 @@ export function refreshLocationlessDisplay() {
     fitViewOnData();
 }
 
-// Menu ⋯ de la carte « Mes Géocaches » (#geocachesSourceMenu) : le bouton ⋯
-// se masque quand tous ses items le sont — resynchronisé à chaque bascule
-// du bouton de suppression (bdd.js est le seul à le piloter).
-function syncGeocachesMenu() {
-    try { pkg.syncSourceMenuVisibility?.(document.getElementById('geocachesSourceMenu')); } catch (e) {}
+// « Options avancées » de la carte « Mes Géocaches » : leur seul contenu
+// est la suppression, donc la section n'existe qu'avec des géocaches.
+function setClearDatabaseAvailable(available) {
+    const section = document.getElementById('geocachesAdvanced');
+    if (!section) return;
+    section.hidden = !available;
+    if (!available) section.open = false;
 }
 
 function updateUIAfterClear() {
     const infos = document.getElementById('infosBDD');
-    const btn = document.getElementById('clearDatabaseBtn');
 
     if (infos) infos.textContent = t('Aucune géocache chargée');
-    if (btn) btn.style.display = 'none';
-    syncGeocachesMenu();
+    setClearDatabaseAvailable(false);
     // Compteur « 0 / 0 », badge d'onglet, toast « aucune cache » et état
     // « filtre actif » du panneau passent tous par l'écrivain unique.
     updateFiltersCounter(0, 0);
@@ -1772,9 +1770,7 @@ export function readBdd(){
                 updateFiltersCounter(metadata.numberOfCaches || 0, displayFeatures.length,
                     { hidden: Math.max(0, totalCaches - displayFeatures.length) });
 
-                const btn = document.getElementById('clearDatabaseBtn');
-                if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
-                syncGeocachesMenu();
+                setClearDatabaseAvailable(geocachesCount > 0);
 
                 finishReadIndicators();
             },
@@ -2166,9 +2162,7 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
                     updateFiltersCounter(metadata.numberOfCaches || 0, displayFeatures.length,
                         { hidden: Math.max(0, totalCaches - displayFeatures.length) });
 
-                    const btn = document.getElementById('clearDatabaseBtn');
-                    if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
-                    syncGeocachesMenu();
+                    setClearDatabaseAvailable(geocachesCount > 0);
 
                     // L'arbre pays/régions n'est chargé qu'à l'init : après un
                     // premier import sur base vide il faut le recharger pour
