@@ -32,6 +32,7 @@ import {
     formatNameLabel,
     initialsOf,
     nameCandidates,
+    nameDayCounts,
     nameKindOf,
     namePreviewCandidates,
     visitorNames,
@@ -238,6 +239,34 @@ test('quels logs : familles, logs marquants, logs ramenés à l’apparition', (
     assert.equal(marks[2], 'Bob ♥');
     assert.equal(marks.length, 3);
     assert.deepEqual(nameCandidates(base, timeline, 0, 13, { ...enabled(), enabled: false }, { stats }), []);
+});
+
+test('étiquettes par jour : le compte de la lecture, jour par jour', () => {
+    const { base, timeline, stats } = setup();
+    const isHidden = (i, day) => stateAt(base, i, day) === STATE_ARCHIVED;
+    const variants = [
+        [enabled(), {}],
+        [enabled({ grouping: 'separate' }), {}],
+        [enabled({ only_notable: true, grouping: 'separate' }), {}],
+        [enabled({ kinds: { dnf: true, note: true } }), {}],
+        [enabled(), { isHidden }],
+        [enabled({ grouping: 'separate' }), { privacy: { mode: 'show', exclude: ['bob'] } }],
+    ];
+    for (const [opts, extra] of variants) {
+        const counts = nameDayCounts(base, timeline, opts, { stats, ...extra });
+        const byDay = new Map(counts.map(([day, n]) => [day - base.originDay, n]));
+        // Plafond levé : le compte juge la densité, il ne coupe pas.
+        const open = { ...opts, max_visible: 60 };
+        for (let day = 0; day <= 20; day++) {
+            const expected = nameCandidates(base, timeline, day, day, open, { stats, ...extra }).length;
+            assert.equal(byDay.get(day) || 0, expected, `${JSON.stringify(extra)} ${opts.grouping} jour ${day}`);
+        }
+        assert.ok(counts.every(([, n]) => n > 0));
+        assert.deepEqual(counts.map(([d]) => d), [...counts.map(([d]) => d)].sort((a, b) => a - b));
+    }
+    // `enabled` ignoré : on juge la densité avant d'allumer.
+    assert.deepEqual(nameDayCounts(base, timeline, { ...enabled(), enabled: false }, { stats }),
+        nameDayCounts(base, timeline, enabled(), { stats }));
 });
 
 test('archivées masquées : plus d’étiquette après l’archivage', () => {

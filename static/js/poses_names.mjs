@@ -23,6 +23,8 @@ export const NAME_CHOICES = Object.freeze({
     font: Object.freeze(['sans', 'serif', 'mono', 'rounded', 'condensed', 'handwritten']),
     color_mode: Object.freeze(['fixed', 'event', 'finder', 'cache_type']),
     background: Object.freeze(['none', 'pill', 'box', 'bubble']),
+    // Durée de vie fixe ou selon le rythme (names_density.mjs).
+    duration_mode: Object.freeze(['fixed', 'rhythm']),
 });
 
 export const NAME_RANGES = Object.freeze({
@@ -40,6 +42,9 @@ export const NAME_RANGES = Object.freeze({
     glow: Object.freeze([0, 30]),
     background_opacity: Object.freeze([0, 100]),
     emphasis: Object.freeze([1, 2.5]),
+    duration_days: Object.freeze([1, 120]),
+    duration_min_ms: Object.freeze([500, 10000]),
+    duration_max_ms: Object.freeze([500, 10000]),
 });
 const FLOAT_KEYS = new Set(['emphasis']);
 
@@ -131,6 +136,10 @@ export function posesNamesDefaults() {
         max_visible: 12,
         avoid_overlap: true,
         emphasis: 1.3,
+        duration_mode: 'fixed',
+        duration_days: 10,
+        duration_min_ms: 1000,
+        duration_max_ms: 4000,
         ...BASE_STYLE,
         opacity: 100,
         kind_colors: nameKindColorsDefaults(),

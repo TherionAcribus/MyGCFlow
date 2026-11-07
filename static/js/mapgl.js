@@ -121,6 +121,7 @@ import { isLifecyclePage, isPosesPage } from './app_mode.mjs';
 import { buildPosesActivityStyle, POSES_ACTIVITY_FILTER } from './poses_point_style.mjs';
 import { posesEffectsAnimate } from './poses_effects.mjs';
 import { normalizePosesNames } from './poses_names.mjs';
+import { effectiveNameDurationMs } from './names_density.mjs';
 import {
     clearNameLabels,
     createNameLabels,
@@ -6730,12 +6731,23 @@ function syncNameLabelsAnimating() {
     else mapDirtyTracker.endAnimation();
 }
 
+// Réglages au moment de faire naître des étiquettes : durée de vie
+// effective (fixe, ou selon le rythme — names_density.mjs). Rythme en temps
+// vidéo : en capture rapide, timePerDay et la durée des étiquettes sont tous
+// deux étirés du ralentissement, qu'il ne faut pas compter deux fois.
+function namesSpawnOptions(extra = null) {
+    const opts = currentNamesOptions();
+    if (opts.duration_mode !== 'rhythm') return extra ? { ...opts, ...extra } : opts;
+    const videoMsPerDay = animationMsPerDay() / (nameLabelsTimeScale || 1);
+    return { ...opts, ...extra, duration_ms: effectiveNameDurationMs(opts, videoMsPerDay) };
+}
+
 function spawnPosesNameLabels(candidates, at) {
     ensureNameLabelsLayer();
     nameLabels.previewing = false;
     spawnNameLabels(nameLabels, candidates, {
         at,
-        opts: currentNamesOptions(),
+        opts: namesSpawnOptions(),
         timeScale: nameLabelsTimeScale,
         anchorOf: (c) => c.feature?.getGeometry?.()?.getCoordinates?.() ?? null,
         pixelOf: (coord) => { try { return map.getPixelFromCoordinate(coord); } catch (_) { return null; } },
@@ -6821,7 +6833,7 @@ function queueNamesPreviewWave() {
     spawnNameLabels(nameLabels, candidates, {
         at: sampleAppearClock() + FLASH_PREVIEW_GAP_MS,
         // Plafond ignoré : la vague entière se montre.
-        opts: { ...currentNamesOptions(), max_visible: 60 },
+        opts: namesSpawnOptions({ max_visible: 60 }),
         anchorOf: (c) => c.feature?.getGeometry?.()?.getCoordinates?.() ?? null,
         pixelOf: (coord) => { try { return map.getPixelFromCoordinate(coord); } catch (_) { return null; } },
         measure: measureNameText,

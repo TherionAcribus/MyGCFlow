@@ -189,7 +189,7 @@ remet jamais au jour un pseudo écarté.
 |---|---|
 | Quels logs | trouvailles / DNF / notes ; seulement les logs marquants (première trouvaille, palier rond, favori, visiteur fidèle dès `loyal_min` trouvailles sur toutes les caches) ; symboles ♛ ✦ ♥ ★ ✗ ✎ ; modèle `{pseudo}`, `{code}`, `{nom}`, `{n}` (rang sur la cache), `{visites}` (rang du visiteur) ; texte final borné à `NAME_TEXT_MAX` caractères (ellipse, appliquée avant le « +N » des lots fusionnés) |
 | Densité | plafond d'étiquettes à l'écran (`max_visible`) ; plusieurs logs d'une cache dans un lot : une étiquette « Pseudo +2 » ou une par visiteur, décalées de `stagger_ms` ; anti-chevauchement ; logs marquants agrandis (`emphasis`) |
-| Mouvement | les pseudos partent de la cache / arrivent dessus / restent sur place ; direction (haut, bas, gauche, droite, en étoile, au hasard) ; trajectoire droite, en arc, ondulante, en spirale ; allure ; distance ; durée de vie (temps vidéo) ; entrée (fondu, pop, zoom, lettre à lettre, chute) ; sortie (fondu, rétrécit, s'évapore, lettres éparpillées, clignote) ; balancement, inclinaison, décalage vertical, trait de rappel |
+| Mouvement | les pseudos partent de la cache / arrivent dessus / restent sur place ; direction (haut, bas, gauche, droite, en étoile, au hasard) ; trajectoire droite, en arc, ondulante, en spirale ; allure ; distance ; durée de vie (voir ci-dessous) ; entrée (fondu, pop, zoom, lettre à lettre, chute) ; sortie (fondu, rétrécit, s'évapore, lettres éparpillées, clignote) ; balancement, inclinaison, décalage vertical, trait de rappel |
 | Texte | police (6 familles), taille, gras / italique / majuscules, opacité ; couleur unique, par événement (`kind_colors`), par visiteur (teinte tirée du pseudo, stable) ou du type de cache ; contour, halo, fond (pastille, étiquette, bulle de dialogue) |
 
 Les six familles citent d'abord une police servie en local
@@ -224,6 +224,29 @@ Mouvement, Apparence — dont le résumé reprend les valeurs courantes
 trajectoire, allure, distance) quand les pseudos restent sur place,
 décalage quand les logs d'une cache sont regroupés. La confidentialité
 reste dépliée.
+
+**Durée de vie** (`names_density.mjs`, pur) : fixe (`duration_ms`, temps
+vidéo) ou **selon le rythme** (`duration_mode: rhythm`) — `duration_days`
+jours d'animation, bornés par `duration_min_ms` / `duration_max_ms` pour
+rester lisible (`effectiveNameDurationMs`). Défaut : fixe, un thème
+antérieur garde son rendu. Le mode et les bornes ne font pas partie des
+styles prêts à l'emploi ; en mode rythme, la durée d'un style est sans
+effet. Appliquée à la naissance des étiquettes (`namesSpawnOptions`,
+mapgl.js), sur le rythme en temps vidéo : en capture rapide, `timePerDay`
+et la durée des étiquettes sont tous deux étirés du ralentissement.
+
+**Avertissement de densité** : nombre d'étiquettes qui voudraient
+s'afficher en même temps au moment le plus chargé, au rythme courant —
+compte exact des étiquettes par jour avec les réglages courants
+(`nameDayCounts`, poses_names_model.mjs, même filtre que la lecture ; une
+par cache et par jour en mode regroupé), sur une fenêtre glissante de la
+durée de vie (`peakConcurrentNames`). Au-delà du plafond, des boutons
+proposent une correction avec la densité qu'elle donnerait
+(`nameDensityReport`) : seulement les logs marquants ; raccourcir (la plus
+longue durée qui tient, jamais sous 1 s — en mode rythme, moins de jours ou
+un plancher plus bas) ; monter la limite (60 au plus). Recalculé à chaque
+réglage, au changement de rythme (événement `mygcflow:timing-plan`, ui.js)
+et au chargement des données (`mygcflow:poses-loaded`).
 
 **Choix des logs** (`poses_names_model.mjs`, pur) : par lot de jours, les
 logs non « folded » des familles cochées, sans les pseudos exclus ni les

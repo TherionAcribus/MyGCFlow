@@ -6981,6 +6981,9 @@ export function refreshTimingPlan({ save = true } = {}) {
         // Valeur canonique consommée par le moteur d'animation et les deux
         // pipelines d'enregistrement : toujours issue du plan.
         animation.timePerDay = plan.timePerDayMs;
+        // Rythme recalculé : les modules qui en dépendent hors du moteur
+        // (durée et densité des pseudos, poses_names_ui.js) se resynchronisent.
+        document.dispatchEvent(new CustomEvent('mygcflow:timing-plan', { detail: { timePerDayMs: plan.timePerDayMs } }));
         pkg.options.record.totalTimeInMilliSec = plan.totalDurationMs;
         pkg.options.record.automaticEndHoldMs = plan.endHoldMs;
         // Durée imposée avec suivi de caméra : le moteur tient cette durée

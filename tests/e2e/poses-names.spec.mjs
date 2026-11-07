@@ -298,3 +298,63 @@ test('aperçu au repos puis lecture complète : étiquettes dessinées, sans err
   expect(debug.spawned).toBeGreaterThan(5);
   expect(errors).toEqual([]);
 });
+
+test('durée selon le rythme et corrections de densité', async ({ page, request }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await importPoses(request, { extraFinds: 10 });
+  await openPoses(page);
+  await openNamesTab(page);
+  const msPerDay = await page.evaluate(async () => (await import('/static/js/index.js')).options.animation.timePerDay);
+  expect(msPerDay).toBeGreaterThan(0);
+
+  // Mode rythme : une ligne remplace l'autre, la durée suit le rythme.
+  await page.locator('#posesNamesEnabled').check();
+  await expect(page.locator('#posesNamesDurationRhythmRow')).toBeHidden();
+  await page.locator('#posesNamesDurationMode').selectOption('rhythm');
+  await expect(page.locator('#posesNamesDurationFixedRow')).toBeHidden();
+  await expect(page.locator('#posesNamesDurationDays')).toBeVisible();
+  await page.locator('#posesNamesDurationMin').fill('0.5');
+  await page.locator('#posesNamesDurationMin').dispatchEvent('change');
+  await page.locator('#posesNamesDurationMax').fill('10');
+  await page.locator('#posesNamesDurationMax').dispatchEvent('change');
+  let names = await page.evaluate(async () => (await import('/static/js/index.js')).options.point.posesNames);
+  expect(names.duration_mode).toBe('rhythm');
+  expect(names.duration_min_ms).toBe(500);
+  expect(names.duration_max_ms).toBe(10000);
+  // Jours choisis pour rester dans les bornes au rythme du test.
+  const days = Math.max(1, Math.min(120, Math.round(2000 / msPerDay)));
+  await setNames(page, { duration_days: days });
+  const expected = Math.min(10000, Math.max(500, Math.round(days * msPerDay)));
+  await expect(page.locator('#helpPosesNamesDurationMode')).toContainText('Au rythme actuel');
+  // Les étiquettes (ici de l'aperçu) naissent avec cette durée.
+  await page.locator('#btnPosesNamesPreview').click();
+  await expect.poll(async () => (await namesDebug(page)).active).toBeGreaterThan(0);
+  const debug = await namesDebug(page);
+  expect(debug.labels.every((l) => l.duration === expected)).toBe(true);
+  await page.locator('#btnPosesNamesPreview').click();
+
+  // Densité : plafond trop bas pour des pseudos longs → avertissement et
+  // corrections ; « monter la limite » le fait disparaître.
+  await setNames(page, { duration_mode: 'fixed', duration_ms: 10000, max_visible: 1, grouping: 'separate' });
+  const hint = page.locator('#posesNamesDensityHint');
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('une seule place');
+  const cap = hint.locator('[data-names-fix="cap"]');
+  await expect(cap).toBeVisible();
+  await expect(hint.locator('[data-names-fix="shorten"]')).toContainText('à la fois');
+  await cap.click();
+  names = await page.evaluate(async () => (await import('/static/js/index.js')).options.point.posesNames);
+  expect(names.max_visible).toBeGreaterThan(1);
+  await expect(hint).toBeHidden();
+  // Raccourcir : la durée proposée est appliquée telle quelle.
+  await setNames(page, { max_visible: 1 });
+  const shorten = hint.locator('[data-names-fix="shorten"]');
+  await expect(shorten).toBeVisible();
+  await shorten.click();
+  names = await page.evaluate(async () => (await import('/static/js/index.js')).options.point.posesNames);
+  expect(names.duration_ms).toBeLessThan(10000);
+  expect(names.duration_ms).toBeGreaterThanOrEqual(1000);
+  if (process.env.VISUAL_OUT) await page.locator('#tabNames').screenshot({ path: `${process.env.VISUAL_OUT}/poses-names-density.png` });
+  expect(errors).toEqual([]);
+});

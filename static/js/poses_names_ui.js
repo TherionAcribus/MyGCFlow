@@ -25,6 +25,7 @@ import {
 } from './poses_names.mjs';
 import { createNameLabels, drawNameLabels, nameFont, spawnNameLabels } from './name_labels.mjs';
 import { THUMB_WAVE_GAP_MS, thumbCandidates, thumbLayout, thumbWaveMs } from './names_thumbs.mjs';
+import { effectiveNameDurationMs, nameDensityReport } from './names_density.mjs';
 
 // [id du champ, chemin dans le bloc, nature]
 function namesFields() {
@@ -50,6 +51,11 @@ function namesFields() {
         ['posesNamesEntrance', 'entrance', 'value'],
         ['posesNamesExit', 'exit', 'value'],
         ['posesNamesDuration', 'duration_ms', 'value'],
+        ['posesNamesDurationMode', 'duration_mode', 'value'],
+        ['posesNamesDurationDays', 'duration_days', 'value'],
+        // Bornes saisies en secondes, rangées en millisecondes.
+        ['posesNamesDurationMin', 'duration_min_ms', 'seconds'],
+        ['posesNamesDurationMax', 'duration_max_ms', 'seconds'],
         ['posesNamesOffsetY', 'offset_y', 'value'],
         ['posesNamesWobble', 'wobble', 'value'],
         ['posesNamesTilt', 'tilt', 'value'],
@@ -93,25 +99,104 @@ function disabledHint(boxId, off, text) {
     }
 }
 
-// Avertissement de densité : au rythme courant, le jour le plus chargé peut
-// produire plus d'étiquettes simultanées que le plafond — les moins
-// marquantes seront écourtées ou écartées. Estimation haute : chaque log du
-// lot vit duration_ms, et msPerDay sépare deux jours (les DNF et notes
-// cochés s'ajoutent aux trouvailles comptées par findDayCounts). Recalculé
-// à chaque changement de réglage ; pas quand seul le rythme change.
+// Durée d'un jour d'animation (ms vidéo) : valeur canonique posée par le plan
+// de timing (ui.js), qui signale ses changements par mygcflow:timing-plan.
+function animationMsPerDay() {
+    const n = Number(pkg.options?.animation?.timePerDay);
+    return Number.isFinite(n) && n > 0 ? n : 1000;
+}
+
+// Durée fixe ou selon le rythme : une seule des deux lignes ; en mode
+// rythme, la durée qu'aurait un pseudo à l'allure courante.
+function syncDurationUI(names) {
+    const rhythm = names.duration_mode === 'rhythm';
+    const fixedRow = $('posesNamesDurationFixedRow');
+    if (fixedRow) fixedRow.hidden = rhythm;
+    const rhythmRow = $('posesNamesDurationRhythmRow');
+    if (rhythmRow) rhythmRow.hidden = !rhythm;
+    const help = $('helpPosesNamesDurationMode');
+    if (!help) return;
+    help.textContent = rhythm
+        ? pkg.t('Au rythme actuel : ${s} par pseudo. La durée suit le rythme quand vous changez la durée de la vidéo.', { s: formatSeconds(effectiveNameDurationMs(names, animationMsPerDay())) })
+        : pkg.t('En temps vidéo, quel que soit le rythme.');
+}
+
+// Avertissement de densité : au moment le plus chargé, plus d'étiquettes
+// voudraient s'afficher que le plafond n'en accepte — les moins marquantes
+// seront écourtées ou écartées. Compte exact des étiquettes par jour avec
+// les réglages courants (moteur › nameDayCounts), fenêtre glissante de la
+// durée de vie (names_density.mjs) ; chaque bouton applique une correction.
+let densityFixes = [];
+let densitySignature = '';
+
 function syncDensityHint(names) {
     const el = $('posesNamesDensityHint');
     if (!el) return;
-    el.hidden = true;
-    if (!names?.enabled) return;
-    const counts = lifecycleEngine()?.findDayCounts?.() || [];
-    const peak = counts.reduce((m, [, n]) => Math.max(m, n), 0);
-    const msPerDay = Math.max(1, Number(pkg.options?.animation?.timePerDay) || 1000);
-    const concurrent = peak * (names.duration_ms / msPerDay);
-    if (peak > 0 && concurrent > names.max_visible) {
-        el.textContent = pkg.t('Au rythme actuel, le jour le plus chargé peut produire ~${n} étiquettes simultanées, au-delà du plafond de ${m} : les moins marquantes seront écourtées ou écartées.', { n: Math.ceil(concurrent), m: names.max_visible });
-        el.hidden = false;
+    const engine = lifecycleEngine();
+    const counts = names?.enabled ? engine?.nameDayCounts?.(names) : null;
+    const msPerDay = animationMsPerDay();
+    const report = counts?.length
+        ? nameDensityReport(names, {
+            dayCounts: counts,
+            notableDayCounts: names.only_notable ? null : engine.nameDayCounts({ ...names, only_notable: true }),
+            msPerDay,
+        })
+        : null;
+    if (!report?.over) {
+        el.hidden = true;
+        densityFixes = [];
+        densitySignature = '';
+        return;
     }
+    densityFixes = report.fixes;
+    const signature = JSON.stringify([report.concurrent, names.max_visible, report.fixes]);
+    el.hidden = false;
+    // Inchangé : ne pas reconstruire les boutons (focus clavier gardé).
+    if (signature === densitySignature) return;
+    densitySignature = signature;
+    const text = el.querySelector('[data-names-density-text]');
+    if (text) {
+        const vars = { n: Math.ceil(report.concurrent), m: names.max_visible };
+        text.textContent = names.max_visible === 1
+            ? pkg.t('Au rythme actuel, jusqu’à ~${n} étiquettes voudraient s’afficher en même temps, pour une seule place : les moins marquantes seront écourtées ou écartées.', vars)
+            : pkg.t('Au rythme actuel, jusqu’à ~${n} étiquettes voudraient s’afficher en même temps, pour ${m} places : les moins marquantes seront écourtées ou écartées.', vars);
+    }
+    const box = el.querySelector('[data-names-density-fixes]');
+    if (!box) return;
+    box.replaceChildren();
+    report.fixes.forEach((fix, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-outline-secondary names-density-fix';
+        btn.dataset.namesFix = fix.kind;
+        btn.dataset.namesFixIndex = String(index);
+        btn.textContent = densityFixLabel(fix);
+        box.appendChild(btn);
+    });
+}
+
+function densityFixLabel(fix) {
+    let label;
+    if (fix.kind === 'notable') label = pkg.t('Seulement les logs marquants');
+    else if (fix.kind === 'shorten') label = pkg.t('Raccourcir à ${s}', { s: formatSeconds(fix.durationMs) });
+    else return pkg.t('Monter la limite à ${n}', { n: fix.value });
+    // Densité obtenue : dit d'emblée si la correction suffit.
+    const result = pkg.t('~${n} à la fois', { n: Math.ceil(fix.concurrent) });
+    return `${label} · ${result}`;
+}
+
+function applyDensityFix(index) {
+    const fix = densityFixes[index];
+    if (!fix) return;
+    commitNames(normalizePosesNames(fix.patch, currentNames()));
+}
+
+// Rythme ou données changés : durée affichée et densité recalculées.
+function syncRhythmDependent() {
+    if (!$('posesNamesEnabled')) return;
+    const names = currentNames();
+    syncDurationUI(names);
+    syncDensityHint(names);
 }
 
 function getPath(obj, path) {
@@ -137,7 +222,10 @@ function readNamesUI() {
     for (const [id, path, kind] of namesFields()) {
         const el = $(id);
         if (!el) continue;
-        setPath(raw, path, kind === 'check' ? el.checked === true : el.value);
+        let value = el.value;
+        if (kind === 'check') value = el.checked === true;
+        else if (kind === 'seconds') value = el.value === '' ? '' : Number(el.value) * 1000;
+        setPath(raw, path, value);
     }
     return normalizePosesNames(raw, currentNames());
 }
@@ -159,7 +247,9 @@ export function syncPosesNamesUI() {
         const value = getPath(names, path);
         if (kind === 'check') el.checked = value === true;
         // Ne pas réécrire le champ texte en cours de saisie (curseur).
-        else if (!(el === document.activeElement && el.type === 'text')) el.value = String(value);
+        else if (!(el === document.activeElement && el.type === 'text')) {
+            el.value = kind === 'seconds' ? String(value / 1000) : String(value);
+        }
     }
     syncPresetButtons(names);
     // Réglages sans objet masqués ou grisés.
@@ -195,18 +285,26 @@ export function syncPosesNamesUI() {
     // Rappel quand l'interrupteur est éteint (l'aperçu reste utilisable).
     const disabledHintEl = $('posesNamesDisabledHint');
     if (disabledHintEl) disabledHintEl.hidden = names.enabled === true;
+    syncDurationUI(names);
     syncDensityHint(names);
     for (const span of document.querySelectorAll('[data-names-value]')) {
         const field = $(span.dataset.namesValue);
         if (!field) continue;
-        span.textContent = span.dataset.namesFormat === 'seconds'
-            ? formatSeconds(field.value)
-            : `${field.value}${span.dataset.namesUnit || ''}`;
+        const format = span.dataset.namesFormat;
+        if (format === 'seconds') span.textContent = formatSeconds(field.value);
+        else if (format === 'days') span.textContent = formatDays(field.value);
+        else span.textContent = `${field.value}${span.dataset.namesUnit || ''}`;
     }
     syncSummaries(names);
     renderPresetThumbs();
     syncPrivacyUI();
     syncPreviewButton();
+}
+
+// « 10 jours d'animation ».
+function formatDays(value) {
+    const n = Math.round(Number(value) || 0);
+    return n === 1 ? pkg.t('1 jour d’animation') : pkg.t('${n} jours d’animation', { n });
 }
 
 // Durée en secondes, une décimale, au format de la langue de la page.
@@ -519,6 +617,12 @@ export function initPosesNamesUI() {
     for (const btn of document.querySelectorAll('#posesNames [data-names-tag]')) {
         btn.addEventListener('click', () => insertTag(btn.dataset.namesTag));
     }
+    $('posesNamesDensityHint')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-names-fix-index]');
+        if (btn) applyDensityFix(Number(btn.dataset.namesFixIndex));
+    });
+    document.addEventListener('mygcflow:timing-plan', syncRhythmDependent);
+    window.addEventListener('mygcflow:poses-loaded', syncRhythmDependent);
     $('btnPosesNamesPreview')?.addEventListener('click', () => {
         pkg.togglePosesNamesPreview?.();
         syncPreviewButton();

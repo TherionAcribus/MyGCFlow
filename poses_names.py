@@ -38,6 +38,10 @@ EXITS = ("none", "fade", "shrink", "grow", "scatter", "blink")
 FONTS = ("sans", "serif", "mono", "rounded", "condensed", "handwritten")
 COLOR_MODES = ("fixed", "event", "finder", "cache_type")
 BACKGROUNDS = ("none", "pill", "box", "bubble")
+# Durée de vie : fixe (duration_ms) ou selon le rythme de l'animation
+# (duration_days jours d'animation, bornés par duration_min_ms et
+# duration_max_ms) — calcul dans static/js/names_density.mjs.
+DURATION_MODES = ("fixed", "rhythm")
 # Couleurs par type d'étiquette (mode « event ») : la plus marquante gagne
 # (première trouvaille > palier > favori > visiteur fidèle > trouvaille).
 COLOR_KINDS = ("find", "ftf", "milestone", "favorite", "loyal", "dnf", "note")
@@ -58,6 +62,9 @@ RANGES = {
     "glow": (0, 30),
     "background_opacity": (0, 100),
     "emphasis": (1.0, 2.5),
+    "duration_days": (1, 120),
+    "duration_min_ms": (500, 10000),
+    "duration_max_ms": (500, 10000),
 }
 FLOAT_KEYS = ("emphasis",)
 TEMPLATE_MAX = 80
@@ -141,6 +148,10 @@ def poses_names_defaults() -> dict:
         "max_visible": 12,
         "avoid_overlap": True,
         "emphasis": 1.3,
+        "duration_mode": "fixed",
+        "duration_days": 10,
+        "duration_min_ms": 1000,
+        "duration_max_ms": 4000,
         **dict(_BASE_STYLE),
         "opacity": 100,
         "kind_colors": kind_colors_defaults(),
@@ -193,6 +204,7 @@ _CHOICES = {
     "grouping": GROUPINGS, "path": PATHS, "direction": DIRECTIONS,
     "trajectory": TRAJECTORIES, "easing": EASINGS, "entrance": ENTRANCES, "exit": EXITS,
     "font": FONTS, "color_mode": COLOR_MODES, "background": BACKGROUNDS,
+    "duration_mode": DURATION_MODES,
 }
 _BOOLS = ("enabled", "only_notable", "badges", "avoid_overlap", "connector", "bold", "italic", "uppercase")
 _COLORS = ("color", "outline_color", "glow_color", "background_color")

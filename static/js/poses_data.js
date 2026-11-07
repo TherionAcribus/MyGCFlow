@@ -25,7 +25,7 @@ import { EVO_NEVER_DAY } from './evolution_style.mjs';
 import { EVENT_FLASH_KINDS, flashScale, resolveEventFlash, scaledFlash } from './event_flash.mjs';
 import { normalizePosesEffects } from './poses_effects.mjs';
 import { normalizeNamesPrivacy, normalizePosesNames } from './poses_names.mjs';
-import { buildNameStats, displayPseudo, nameCandidates, namePreviewCandidates } from './poses_names_model.mjs';
+import { buildNameStats, displayPseudo, nameCandidates, nameDayCounts, namePreviewCandidates } from './poses_names_model.mjs';
 import {
     beginEvolution,
     buildCountryRegionTree,
@@ -535,6 +535,30 @@ function namesInRange(first, last) {
     return list;
 }
 
+// Étiquettes par jour avec les réglages `names` (avertissement de densité de
+// l'onglet Pseudos, names_density.mjs). Mémoïsé : l'onglet le redemande à
+// chaque saisie, alors que seuls quelques réglages changent le compte.
+let nameDayCountsMemo = null;
+function posesNameDayCounts(names) {
+    if (!base || !timeline || !names) return [];
+    const opts = normalizePosesNames(names);
+    const privacy = currentNamesPrivacy();
+    const key = JSON.stringify([opts.kinds, opts.only_notable, opts.loyal_min, opts.grouping, archivedDisplay]);
+    const memo = nameDayCountsMemo;
+    if (memo && memo.key === key && memo.base === base && memo.timeline === timeline && memo.privacy === privacy) {
+        return memo.counts;
+    }
+    const hide = archivedDisplay === 'hide';
+    const counts = nameDayCounts(base, timeline, opts, {
+        privacy,
+        stats: ensureNameStats(),
+        hiddenLabel: t('Un visiteur'),
+        isHidden: hide ? (i, day) => stateAt(base, i, day) === STATE_ARCHIVED : null,
+    });
+    nameDayCountsMemo = { key, base, timeline, privacy, counts };
+    return counts;
+}
+
 // Aperçu (onglet Style › Pseudos) : une étiquette par feature visible,
 // pseudos réels pris dans la base.
 function posesNamesPreview(features, round = 0) {
@@ -1009,6 +1033,7 @@ const POSES_ENGINE = Object.freeze({
     hasOwnFlashes: posesHasOwnFlashes,
     styleChanged: refreshPosesEffects,
     namesPreview: posesNamesPreview,
+    nameDayCounts: posesNameDayCounts,
 });
 
 if (isPosesPage()) registerLifecycleEngine(POSES_ENGINE);

@@ -145,6 +145,57 @@ export function hashString(text) {
     return h >>> 0;
 }
 
+// Log j retenu pour une étiquette avec les réglages `opts` : son type, sa
+// cache et son pseudo affichable ; null s'il n'en recevrait pas. Règle
+// commune à nameCandidates (lecture) et nameDayCounts (densité).
+function acceptedNameLog(base, s, j, opts, { privacy, hiddenLabel, excluded, isHidden }) {
+    // Logs ramenés au jour d'apparition : jamais dessinés (cf. flashs).
+    if (base.ev.folded[j]) return null;
+    const kind = nameKindOf(base, s, j, opts.loyal_min);
+    if (!kind || !opts.kinds[nameFamilyOf(kind)]) return null;
+    const notable = NOTABLE_NAME_KINDS.includes(kind);
+    if (opts.only_notable && !notable) return null;
+    const i = base.ev.cache[j];
+    if (isHidden && isHidden(i, base.ev.day[j])) return null;
+    const author = base.ev.author[j];
+    const realName = author >= 0 ? base.authors[author] : '';
+    const pseudo = displayPseudo(realName, privacy, hiddenLabel, excluded);
+    if (pseudo === null) return null;
+    return { kind, notable, i, author, realName, pseudo };
+}
+
+// Étiquettes qui naîtraient chaque jour avec les réglages `opts` (familles,
+// logs marquants, exclusions, archivées masquées ; une par cache et par
+// jour en mode « regroupés ») → [[jour absolu, nombre]] triés, jours vides
+// omis. Sert à l'estimation de densité (names_density.mjs) ; ignore
+// `enabled` et le plafond, qu'elle sert justement à juger.
+export function nameDayCounts(base, timeline, opts, {
+    privacy = null, stats = null, hiddenLabel = '…', isHidden = null,
+} = {}) {
+    const out = [];
+    if (!base || !timeline || !opts || timeline.count === 0) return out;
+    const s = stats || buildNameStats(base);
+    const filter = { privacy, hiddenLabel, excluded: excludedSet(privacy), isHidden };
+    const merge = opts.grouping === 'merge';
+    const seen = new Set();
+    for (let d = 0; d < timeline.span; d++) {
+        let n = 0;
+        seen.clear();
+        for (let e = timeline.evStart[d]; e < timeline.evStart[d + 1]; e++) {
+            const log = acceptedNameLog(base, s, timeline.evOrder[e], opts, filter);
+            if (!log) continue;
+            if (merge) {
+                const k = timeline.featureOf[log.i];
+                if (seen.has(k)) continue;
+                seen.add(k);
+            }
+            n++;
+        }
+        if (n > 0) out.push([base.originDay + timeline.firstDay + d, n]);
+    }
+    return out;
+}
+
 // Étiquettes candidates pour les jours fromDay..toDay (index de la base).
 //   opts        bloc normalisé (poses_names.mjs)
 //   privacy     préférence normalisée ({ mode, exclude })
@@ -166,20 +217,12 @@ export function nameCandidates(base, timeline, fromDay, toDay, opts, {
     const excluded = excludedSet(privacy);
     const s = stats || buildNameStats(base);
     const byCache = new Map();
+    const filter = { privacy, hiddenLabel, excluded, isHidden };
     for (let e = timeline.evStart[a]; e < timeline.evStart[b + 1]; e++) {
         const j = timeline.evOrder[e];
-        // Logs ramenés au jour d'apparition : jamais dessinés (cf. flashs).
-        if (base.ev.folded[j]) continue;
-        const kind = nameKindOf(base, s, j, opts.loyal_min);
-        if (!kind || !opts.kinds[nameFamilyOf(kind)]) continue;
-        const notable = NOTABLE_NAME_KINDS.includes(kind);
-        if (opts.only_notable && !notable) continue;
-        const i = base.ev.cache[j];
-        if (isHidden && isHidden(i, base.ev.day[j])) continue;
-        const author = base.ev.author[j];
-        const realName = author >= 0 ? base.authors[author] : '';
-        const pseudo = displayPseudo(realName, privacy, hiddenLabel, excluded);
-        if (pseudo === null) continue;
+        const log = acceptedNameLog(base, s, j, opts, filter);
+        if (!log) continue;
+        const { kind, notable, i, author, realName, pseudo } = log;
         const k = timeline.featureOf[i];
         let list = byCache.get(k);
         if (!list) byCache.set(k, (list = []));

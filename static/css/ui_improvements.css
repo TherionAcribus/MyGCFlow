@@ -4041,6 +4041,15 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 }
 #posesNamesPresets .image-preset-thumb .ti { color: rgba(255, 255, 255, 0.75); }
 #posesNamesOptions .stats-form-section:first-of-type { margin-top: 0.5rem; }
+/* Bornes de la durée « selon le rythme » (secondes), dans la phrase
+   « entre … et … s ». */
+.names-seconds { width: 4.2rem; }
+/* Corrections proposées par l'avertissement de densité. */
+.names-density-fix {
+    --tblr-btn-padding-y: 0.1rem;
+    --tblr-btn-padding-x: 0.45rem;
+    font-size: 0.75rem;
+}
 /* Balises du texte de l'étiquette, insérées au curseur. */
 .names-tag {
     --tblr-btn-padding-y: 0.05rem;

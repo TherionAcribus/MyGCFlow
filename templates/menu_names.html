@@ -73,9 +73,6 @@
                 <label class="form-check-label" for="posesNamesOnlyNotable">{{ _("Seulement les logs marquants") }}</label>
             </div>
             <small id="helpPosesNamesOnlyNotable" class="form-hint text-muted">{{ _("Première trouvaille, trouvaille ronde (10ᵉ, 50ᵉ…), favori et visiteur fidèle. Utile quand les logs défilent très vite.") }}</small>
-            {# Hors de la section Densité : l'avertissement doit se voir même
-               quand elle est repliée. #}
-            <small id="posesNamesDensityHint" class="form-hint text-warning" hidden></small>
 
             <div class="row g-2 mt-2">
                 <div class="col-6">
@@ -85,10 +82,40 @@
                         <span class="input-group-text">{{ _("px") }}</span>
                     </div>
                 </div>
+                {# Durée de vie fixe, ou selon le rythme de l'animation : un
+                   nombre de jours d'animation, borné pour rester lisible
+                   (names_density.mjs › effectiveNameDurationMs). #}
                 <div class="col-6">
-                    <label class="form-label" for="posesNamesDuration">{{ _("Durée de vie") }} <span class="text-muted" data-names-value="posesNamesDuration" data-names-format="seconds"></span></label>
+                    <label class="form-label" for="posesNamesDurationMode">{{ _("Durée de vie") }}</label>
+                    <select id="posesNamesDurationMode" class="form-select form-select-sm" aria-describedby="helpPosesNamesDurationMode">
+                        <option value="fixed">{{ _("Fixe") }}</option>
+                        <option value="rhythm">{{ _("Selon le rythme") }}</option>
+                    </select>
+                </div>
+                <div class="col-12" id="posesNamesDurationFixedRow">
+                    <label class="form-label" for="posesNamesDuration">{{ _("Chaque pseudo reste") }} <span class="text-muted" data-names-value="posesNamesDuration" data-names-format="seconds"></span></label>
                     <input type="range" class="form-range" id="posesNamesDuration" min="500" max="10000" step="100" title="{{ _('En temps vidéo.') }}">
                 </div>
+                <div class="col-12" id="posesNamesDurationRhythmRow" hidden>
+                    <label class="form-label" for="posesNamesDurationDays">{{ _("Chaque pseudo reste") }} <span class="text-muted" data-names-value="posesNamesDurationDays" data-names-format="days"></span></label>
+                    <input type="range" class="form-range" id="posesNamesDurationDays" min="1" max="120" step="1">
+                    <div class="d-flex flex-wrap align-items-center gap-1 small">
+                        <label for="posesNamesDurationMin">{{ _("entre") }}</label>
+                        <input type="number" class="form-control form-control-sm names-seconds" id="posesNamesDurationMin" min="0.5" max="10" step="0.1">
+                        <label for="posesNamesDurationMax">{{ _("et") }}</label>
+                        <input type="number" class="form-control form-control-sm names-seconds" id="posesNamesDurationMax" min="0.5" max="10" step="0.1">
+                        <span>{{ _("s") }}</span>
+                    </div>
+                </div>
+            </div>
+            <small id="helpPosesNamesDurationMode" class="form-hint text-muted"></small>
+
+            {# Hors de la section Densité : l'avertissement doit se voir même
+               quand elle est repliée. Ses boutons appliquent une correction
+               (names_density.mjs › nameDensityReport). #}
+            <div id="posesNamesDensityHint" class="mt-2" role="status" hidden>
+                <small class="form-hint text-warning" data-names-density-text></small>
+                <div class="d-flex flex-wrap gap-1 mt-1" data-names-density-fixes></div>
             </div>
         </div>
     </div>
