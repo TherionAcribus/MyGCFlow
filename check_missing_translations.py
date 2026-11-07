@@ -3,12 +3,19 @@
 Verifie que toutes les chaines du template messages.pot sont traduites
 dans chaque fichier translations/<lang>/LC_MESSAGES/messages.po.
 Renvoie un code de sortie non nul s'il manque des traductions.
+
+Les entrees marquees « #, fuzzy » comptent comme non traduites : pybabel
+update les cree en rapprochant une chaine nouvelle d'une ancienne voisine
+(traduction souvent fausse), et pybabel compile les ignore — elles
+s'affichent donc dans la langue source. Le script les declarait complètes
+jusqu'au 2026-11-07 (7 cas par catalogue, dont « Mode de theme inconnu »
+traduit par « Unknown Adventure »).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set, Tuple
 
 from config import Config
 
@@ -22,28 +29,36 @@ def po_string_content(segment: str) -> str:
     return segment.strip().strip('"')
 
 
-def parse_po_file(path: Path) -> Dict[str, List[str]]:
+def parse_po_file(path: Path) -> Tuple[Dict[str, List[str]], Set[str]]:
     """
-    Retourne un mapping msgid -> liste de msgstr (pluriels inclus).
+    Retourne (mapping msgid -> liste de msgstr (pluriels inclus),
+    ensemble des msgid marques « fuzzy »).
     Ne gere pas l'integralite du format PO mais suffit pour un controle rapide.
     """
     entries: Dict[str, List[str]] = {}
+    fuzzy: Set[str] = set()
     if not path.exists():
-        return entries
+        return entries, fuzzy
 
     current_id = None
     current_plural = None
     msgstrs: List[str] = []
     current_field = None  # 'msgid', 'msgid_plural', 'msgstr'
+    # Le drapeau « #, fuzzy » precede le msgid qu'il qualifie.
+    pending_fuzzy = False
+    current_fuzzy = False
 
     def flush():
-        nonlocal current_id, current_plural, msgstrs
+        nonlocal current_id, current_plural, msgstrs, current_fuzzy
         if current_id is not None:
             key = current_id
             entries[key] = msgstrs[:] if msgstrs else [""]
+            if current_fuzzy:
+                fuzzy.add(key)
         current_id = None
         current_plural = None
         msgstrs = []
+        current_fuzzy = False
 
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
@@ -52,6 +67,8 @@ def parse_po_file(path: Path) -> Dict[str, List[str]]:
             current_field = None
             continue
         if line.startswith("#"):
+            if line.startswith("#,") and "fuzzy" in line:
+                pending_fuzzy = True
             continue
 
         if line.startswith("msgid_plural"):
@@ -63,6 +80,7 @@ def parse_po_file(path: Path) -> Dict[str, List[str]]:
             flush()
             current_field = "msgid"
             current_id = po_string_content(line.split(" ", 1)[1])
+            current_fuzzy, pending_fuzzy = pending_fuzzy, False
             continue
 
         if line.startswith("msgstr"):
@@ -82,10 +100,12 @@ def parse_po_file(path: Path) -> Dict[str, List[str]]:
 
     flush()
     entries.pop("", None)  # Supprimer l'entete
-    return entries
+    fuzzy.discard("")
+    return entries, fuzzy
 
 
-def report_missing(locale: str, missing: List[str], empty: List[str]) -> None:
+def report_missing(locale: str, missing: List[str], empty: List[str],
+                   doubtful: List[str] = ()) -> None:
     def _print_list(title: str, items: List[str]) -> None:
         if not items:
             return
@@ -98,6 +118,7 @@ def report_missing(locale: str, missing: List[str], empty: List[str]) -> None:
     print(f"[{locale}] Traductions manquantes:")
     _print_list("Absents", missing)
     _print_list("Sans msgstr", empty)
+    _print_list("Douteux (#, fuzzy : ignores a la compilation)", list(doubtful))
     print()
 
 
@@ -106,7 +127,7 @@ def main() -> int:
         print("Fichier messages.pot introuvable, impossible de verifier les traductions.")
         return 1
 
-    pot_entries = parse_po_file(POT_FILE)
+    pot_entries, _ = parse_po_file(POT_FILE)
     if not pot_entries:
         print("Aucune entree trouvee dans messages.pot.")
         return 1
@@ -114,7 +135,7 @@ def main() -> int:
     has_errors = False
     for locale in SUPPORTED_LOCALES:
         po_path = TRANSLATIONS_DIR / locale / "LC_MESSAGES" / "messages.po"
-        po_entries = parse_po_file(po_path)
+        po_entries, po_fuzzy = parse_po_file(po_path)
 
         if not po_entries:
             print(f"[{locale}] Fichier de traduction manquant ou vide: {po_path}")
@@ -128,12 +149,15 @@ def main() -> int:
             if msgid in pot_entries and all(not part.strip() for part in translations)
         ]
 
-        if missing_ids or empty_ids:
+        fuzzy_ids = sorted(msgid for msgid in po_fuzzy if msgid in pot_entries)
+
+        if missing_ids or empty_ids or fuzzy_ids:
             has_errors = True
-            report_missing(locale, missing_ids, empty_ids)
+            report_missing(locale, missing_ids, empty_ids, fuzzy_ids)
 
     if has_errors:
-        print("Des traductions manquent. Completez messages.po puis recompilez.")
+        print("Des traductions manquent ou sont douteuses. Completez messages.po "
+              "(retirer « fuzzy » apres avoir verifie le msgstr) puis recompilez.")
         return 1
 
     print(f"Aucune traduction manquante pour: {', '.join(SUPPORTED_LOCALES)}")
