@@ -93,9 +93,10 @@ if IS_WINDOWS:
 # DLL y sont donc copiées. Sur Linux (roues manylinux), elles vivent dans
 # pillow_heif.libs/, à côté du paquet et non dedans : collect_dynamic_libs ne
 # les voit pas. PyInstaller les embarque déjà par l'analyse des dépendances
-# du module natif, à la racine de _internal/ (dans le chemin de recherche de
-# l'exécutable) : on les déclare au même endroit, pour la vérification
-# ci-dessous, sans les copier deux fois.
+# du module natif (fichiers dans _internal/pillow_heif.libs/, liens
+# symboliques à la racine de _internal/) ; les déclarer ici sert la
+# vérification ci-dessous et ne crée aucune copie supplémentaire (constaté
+# dans l'archive du 2026-11-07).
 import sysconfig
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
