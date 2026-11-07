@@ -52,6 +52,17 @@ Autres repères :
   la résolution arrive parfois APRÈS `mygcflowReady` et reprenait l'onglet
   ouvert juste avant — 9 tests de `global-preferences.spec.mjs` échouaient
   ainsi (clic sur « Réglages » annulé ~20 ms plus tard), corrigé le 2026-11-07.
+- Importer un GPX « My Finds » dans un spec : passer par `importGpx(page,
+  fichier)` (`tests/e2e/gpx-import.mjs`), jamais par un `setInputFiles`
+  direct sur `#file-input`. Sur une base non vide, l'app ouvre l'aperçu
+  « Remplacer mes géocaches ? » (`#gpxDiffModal`) et n'importe rien avant
+  « Remplacer ma base » ; le runtime étant partagé, la base est presque
+  toujours déjà remplie par une spec précédente. Le helper lit
+  `geocachesCount` (la valeur sur laquelle l'app décide) et ne valide la
+  fenêtre que si elle doit s'ouvrir — 63 échecs de 3 min avant son
+  introduction (2026-11-07). Exceptions : un fichier invalide ou un GPX
+  Lab2Gpx (routé vers l'import Labs), et `data-panel-compact.spec.mjs`, qui
+  teste la fenêtre elle-même.
 - Le mode de rythme (`animation.rhythm_mode`) et la durée totale sont des
   préférences globales persistées, partagées par tous les specs d'un run :
   un spec qui quitte le mode jours/seconde (choisir une musique suffit, elle
