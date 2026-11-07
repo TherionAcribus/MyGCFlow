@@ -95,14 +95,29 @@ if IS_WINDOWS:
 import sysconfig
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
+# Échec franc plutôt que paquet incomplet : les notes de version promettent
+# les photos iPhone, et sans ces bibliothèques l'application livrée les
+# refuserait sans que la construction ne dise rien. Deux cas : pillow-heif
+# absent de l'environnement de construction (constaté le 2026-10-24 sur un
+# .venv-build périmé, que build.ps1 resynchronise), ou présent mais ses DLL
+# introuvables (emplacement changé par une future version du paquet).
 binaries = []
-if importlib.util.find_spec("pillow_heif") is not None:
-    binaries += collect_dynamic_libs("pillow_heif")
-    if IS_WINDOWS:
-        _purelib = Path(sysconfig.get_paths()["purelib"])
-        for pattern in ("libheif-*.dll", "libde265-*.dll", "libx265-*.dll",
-                        "libgcc_s_seh-*.dll", "libstdc++-*.dll", "libwinpthread-*.dll"):
-            binaries += [(str(dll), ".") for dll in _purelib.glob(pattern)]
+if importlib.util.find_spec("pillow_heif") is None:
+    raise SystemExit(
+        "pillow-heif introuvable dans l'environnement de construction : "
+        "l'exécutable refuserait les photos HEIC. Resynchroniser les "
+        "dépendances (installer/build.ps1 le fait) puis relancer.")
+binaries += collect_dynamic_libs("pillow_heif")
+if IS_WINDOWS:
+    _purelib = Path(sysconfig.get_paths()["purelib"])
+    for pattern in ("libheif-*.dll", "libde265-*.dll", "libx265-*.dll",
+                    "libgcc_s_seh-*.dll", "libstdc++-*.dll", "libwinpthread-*.dll"):
+        binaries += [(str(dll), ".") for dll in _purelib.glob(pattern)]
+if not any("libheif" in Path(src).name for src, _ in binaries):
+    raise SystemExit(
+        "libheif introuvable parmi les bibliothèques de pillow-heif : "
+        "l'exécutable refuserait les photos HEIC. Vérifier où la version "
+        "installée range ses bibliothèques natives.")
 
 a = Analysis(
     [str(ROOT / "launcher.py")],
