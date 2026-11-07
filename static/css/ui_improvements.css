@@ -2547,6 +2547,16 @@ background: rgba(33, 150, 243, 0.04);
 .filter-select-control .option {
     padding-block: 0.45rem;
 }
+/* Liste coupée (propriétaires, filterOptionLimit dans ui.js) : la note
+   reste sous la zone qui défile. */
+.filter-select-control .filter-more-hint {
+    padding: 0.4rem 0.75rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.85em;
+}
+.filter-select-control .filter-more-hint[hidden] {
+    display: none;
+}
 /* Compteur « (n) » des options de filtres (refreshFilterOptionCounts, ui.js) :
    discrétion — l'estompe est déjà portée par .text-muted. */
 .filter-select-control .option .filter-option-count {

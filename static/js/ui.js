@@ -4674,6 +4674,49 @@ function refreshFilterOptionCounts() {
     }
 }
 
+// Listes trop longues pour être rendues en entier (des milliers de
+// propriétaires) : seules les `max` premières options s'affichent — les plus
+// trouvées d'abord, ordre posé par refreshAttributeOwnerFilters — et la
+// recherche porte sur toutes. Une note en bas du menu le dit. Fonction et non
+// const : initFilterTomSelect tourne pendant l'évaluation de ui.js, avant
+// cette ligne (zone morte, cf. AGENTS.md).
+function filterOptionLimit(selectId) {
+    if (selectId !== 'selectOwners') return null;
+    return {
+        max: 100,
+        idleHint: (vars) => t('Les ${shown} propriétaires les plus trouvés sur ${total} : tapez un nom pour chercher parmi tous.', vars),
+    };
+}
+
+function installFilterMoreHint(ts, limit) {
+    if (!limit || !ts.dropdown) return;
+    const hint = document.createElement('div');
+    hint.className = 'filter-more-hint text-muted';
+    hint.hidden = true;
+    ts.dropdown.appendChild(hint);
+    const lang = document.documentElement.lang || undefined;
+    const update = () => {
+        // currentResults : toutes les options qui répondent à la saisie,
+        // avant la coupe à maxOptions.
+        const total = ts.currentResults?.items?.length || 0;
+        if (total <= limit.max) {
+            hint.hidden = true;
+            return;
+        }
+        const vars = { shown: limit.max.toLocaleString(lang), total: total.toLocaleString(lang) };
+        hint.textContent = ts.inputValue()
+            ? t('${shown} premiers résultats sur ${total} : précisez la recherche.', vars)
+            : limit.idleHint(vars);
+        hint.hidden = false;
+    };
+    const refreshOptions = ts.refreshOptions.bind(ts);
+    ts.refreshOptions = (...args) => {
+        const result = refreshOptions(...args);
+        update();
+        return result;
+    };
+}
+
 // Affiche un résumé compact dans le champ fermé et place la recherche dans le
 // menu déroulant. La liste reste ouverte pendant les choix multiples et chaque
 // option dispose d'une case à cocher.
@@ -4696,10 +4739,14 @@ function initFilterTomSelect(selectEl){
             option: (data, escape) => renderFilterOption(selectEl.id, data, escape),
             item: (data, escape) => `<div class="item">${escape(data.text)}</div>`,
         },
+        // Tom Select n'affiche que 50 options par défaut, sans suite au
+        // défilement : Attributs (~70) et Département (~100) étaient tronqués.
+        maxOptions: filterOptionLimit(selectEl.id)?.max ?? null,
     });
     if (!ts) return null;
 
     ts.wrapper.classList.add('filter-select-control');
+    installFilterMoreHint(ts, filterOptionLimit(selectEl.id));
     const searchInput = ts.dropdown?.querySelector('input');
     if (searchInput) {
         searchInput.placeholder = searchPlaceholder;
@@ -5120,7 +5167,7 @@ export function refreshAttributeOwnerFilters() {
     const savedOwners = new Set(Array.isArray(saved?.owners) ? saved.owners : []);
 
     const attrLabels = new Map(); // clé attributeKey -> libellé (premier nom rencontré)
-    const owners = new Set();
+    const owners = new Map(); // propriétaire -> nombre de caches trouvées
     for (const f of features) {
         const p = f?.properties || {};
         if ((p.source_kind || 'geocache') === 'lab') continue;
@@ -5129,10 +5176,13 @@ export function refreshAttributeOwnerFilters() {
             if (key && !attrLabels.has(key)) attrLabels.set(key, String(a?.name || key));
         }
         const ow = featureOwner(p);
-        if (ow) owners.add(ow);
+        if (ow) owners.set(ow, (owners.get(ow) || 0) + 1);
     }
     rebuildInclusiveSelect(selAttrs, [...attrLabels.entries()], t('Filtrer par attribut'), savedAttrs);
-    rebuildInclusiveSelect(selOwners, [...owners].map(v => [v, v]), t('Filtrer par propriétaire'), savedOwners);
+    // Propriétaires : les plus trouvés d'abord — seuls les premiers sont
+    // affichés sans recherche (filterOptionLimit).
+    rebuildInclusiveSelect(selOwners, [...owners.keys()].map(v => [v, v]), t('Filtrer par propriétaire'), savedOwners,
+        (a, b) => (owners.get(b[0]) - owners.get(a[0])) || compareFilterLabels(a, b));
     // Assainit la sélection persistée : une valeur sauvegardée absente du
     // nouveau jeu n'est pas recochée ; sans réécriture, elle resterait dans
     // filtersSelection et inclusiveSelectValues la reconduirait tant que le
@@ -5159,7 +5209,11 @@ export function refreshAttributeOwnerFilters() {
 // leur valeur est dans `keep` (sélection persistée). Le Tom Select est
 // détruit avant la réécriture du <select> natif — même motif que
 // populateCountryStateSelects — puis recréé s'il reste des options.
-function rebuildInclusiveSelect(selectEl, entries, placeholderText, keep) {
+function compareFilterLabels(a, b) {
+    return a[1].localeCompare(b[1], undefined, { sensitivity: 'base' });
+}
+
+function rebuildInclusiveSelect(selectEl, entries, placeholderText, keep, compare = compareFilterLabels) {
     if (!selectEl) return;
     try { const ts = getTomSelect(selectEl); if (ts) ts.destroy(); } catch (_) {}
     selectEl.innerHTML = '';
@@ -5169,7 +5223,7 @@ function rebuildInclusiveSelect(selectEl, entries, placeholderText, keep) {
     placeholder.textContent = placeholderText;
     selectEl.appendChild(placeholder);
     const frag = document.createDocumentFragment();
-    const sorted = entries.slice().sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: 'base' }));
+    const sorted = entries.slice().sort(compare);
     for (const [value, label] of sorted) {
         const opt = document.createElement('option');
         opt.value = value;

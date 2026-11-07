@@ -203,3 +203,43 @@ test('persistance : les trois clés de filtersSelection survivent au rechargemen
   expect(await page.locator('#selectAttributes').evaluate(el =>
     Array.from(el.selectedOptions).map(o => o.value))).toEqual(['13']);
 });
+
+// Des milliers de propriétaires sont possibles : Tom Select n'en affiche que
+// 50 par défaut, sans suite au défilement ni indication. La liste montre les
+// 100 plus trouvés d'abord, dit qu'elle est coupée, et la recherche porte sur
+// tous (filterOptionLimit, ui.js).
+test('propriétaire : liste longue — les plus trouvés d\'abord, coupe signalée, recherche sur tous', async ({ page, request }) => {
+  const owners = Array.from({ length: 120 }, (_, i) => `Poseur ${String(i + 1).padStart(3, '0')}`);
+  // « Zoé Top » : dernier par ordre alphabétique, mais le plus trouvé.
+  const caches = [...owners, 'Zoé Top', 'Zoé Top', 'Zoé Top'].map((owner, i) => {
+    const day = new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10);
+    const code = `GCL${String(i).padStart(3, '0')}`;
+    return `<wpt lat="${(48 + i / 1000).toFixed(3)}" lon="2.300"><time>${day}T00:00:00Z</time><name>${code}</name><urlname>Cache ${i}</urlname><groundspeak:cache><groundspeak:name>Cache ${i}</groundspeak:name><groundspeak:owner>${owner}</groundspeak:owner><groundspeak:placed_by>${owner}</groundspeak:placed_by><groundspeak:type>Traditional Cache</groundspeak:type><groundspeak:container>Micro</groundspeak:container><groundspeak:difficulty>1.5</groundspeak:difficulty><groundspeak:terrain>1.5</groundspeak:terrain><groundspeak:country>France</groundspeak:country><groundspeak:state>Île-de-France</groundspeak:state><groundspeak:logs><groundspeak:log><groundspeak:date>${day}T10:00:00Z</groundspeak:date><groundspeak:type>Found it</groundspeak:type></groundspeak:log></groundspeak:logs></groundspeak:cache></wpt>`;
+  });
+
+  await clearDb(request);
+  await openReadyApp(page);
+  await page.locator('#file-input').setInputFiles({
+    name: 'my-finds-owners.gpx', mimeType: 'application/gpx+xml',
+    buffer: Buffer.from(GPX_HEAD + caches.join('') + '</gpx>', 'utf-8'),
+  });
+  await expect(page.locator('#filtersCounter')).toContainText('123 / 123', { timeout: 45_000 });
+  await openDataSubTab(page, 'filters');
+
+  await page.locator('#selectOwners').evaluate(el => el.tomselect.open());
+  const dropdown = page.locator('.filter-field:has(#selectOwners) .ts-dropdown');
+  const hint = dropdown.locator('.filter-more-hint');
+  await expect(dropdown.locator('.option').first()).toContainText('Zoé Top (3)');
+  await expect(dropdown.locator('.option')).toHaveCount(100);
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('100');
+  await expect(hint).toContainText('121');
+
+  // Un propriétaire hors des 100 premiers se trouve par la recherche, et la
+  // note disparaît quand tous les résultats tiennent.
+  await dropdown.locator('.dropdown-input').fill('Poseur 11');
+  await expect(dropdown.locator('.option')).toHaveCount(11); // 011, 110…119
+  await expect(hint).toBeHidden();
+  await dropdown.locator('.option[data-value="Poseur 115"]').click();
+  await expect(page.locator('#filtersCounter')).toContainText('1 / 123', { timeout: 15_000 });
+});
