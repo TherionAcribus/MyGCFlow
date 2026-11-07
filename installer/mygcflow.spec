@@ -92,9 +92,10 @@ if IS_WINDOWS:
 # sur son dossier parent. Dans l'exécutable ce parent est _internal/ : les
 # DLL y sont donc copiées. Sur Linux (roues manylinux), elles vivent dans
 # pillow_heif.libs/, à côté du paquet et non dedans : collect_dynamic_libs ne
-# les voit pas. Le module natif les cherche via $ORIGIN/pillow_heif.libs, et
-# il est rangé à la racine de _internal/ : même dossier relatif côté
-# exécutable.
+# les voit pas. PyInstaller les embarque déjà par l'analyse des dépendances
+# du module natif, à la racine de _internal/ (dans le chemin de recherche de
+# l'exécutable) : on les déclare au même endroit, pour la vérification
+# ci-dessous, sans les copier deux fois.
 import sysconfig
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
@@ -118,7 +119,7 @@ if IS_WINDOWS:
         binaries += [(str(dll), ".") for dll in _purelib.glob(pattern)]
 else:
     _libs = Path(sysconfig.get_paths()["purelib"]) / "pillow_heif.libs"
-    binaries += [(str(lib), "pillow_heif.libs") for lib in _libs.glob("*.so*")]
+    binaries += [(str(lib), ".") for lib in _libs.glob("*.so*")]
 if not any("libheif" in Path(src).name for src, _ in binaries):
     raise SystemExit(
         "libheif introuvable parmi les bibliothèques de pillow-heif : "
