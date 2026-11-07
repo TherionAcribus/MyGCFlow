@@ -316,3 +316,31 @@ test('« Supprimer mes logs » vide la collection après confirmation', async ({
   await expect(page.locator('#gcLogsReportNote')).toContainText('Logs supprimés');
   await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Logs supprimés' })).toHaveCount(0);
 });
+
+
+// Logs importés : le parcours du favori est replié. Il se rouvre depuis
+// les options avancées (réinstaller un favori supprimé), et une
+// régénération du jeton l'affiche d'office avec le nouveau bouton.
+test('favori : réaffiché depuis les options avancées, et d\'office après régénération', async ({ page }) => {
+  await openReadyApp(page);
+  await preview(page, CONTRACT);
+  await confirmImport(page);
+  const guide = page.locator('#gcLogsGuide');
+  await expect(guide).toBeHidden();
+
+  const section = await openSourceAdvanced(page, 'logs');
+  const toggle = section.locator('#gcLogsUpdateBtn');
+  await expect(toggle).toContainText('Afficher le favori et les instructions');
+  await toggle.click();
+  await expect(guide).toBeVisible();
+  await expect(page.locator('#gcLogsBookmarkletLink')).toBeInViewport();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle).toContainText('Masquer le favori et les instructions');
+  await toggle.click();
+  await expect(guide).toBeHidden();
+
+  await section.locator('#gcLogsRegenTokenBtn').click();
+  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+  await expect(guide).toBeVisible();
+  await expect(page.locator('#gcLogsBookmarkletStatus')).toContainText('Nouveau favori prêt');
+});

@@ -11,6 +11,7 @@ import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showConfirmation, showError, showInfo, showSuccess, showWarning, t } from './notifications.js';
 import { hideBsModal, showBsModal } from './ui_bootstrap.js';
+import { syncGuideToggle } from './utils.js';
 import { countLabel } from './utils.js';
 
 const TASK_POLL_MS = 500;
@@ -222,12 +223,25 @@ function lastImportLine(info) {
 }
 
 // Le parcours du favori s'affiche d'office tant que rien n'est importé ;
-// ensuite il se replie derrière « Afficher les instructions d'import ».
+// ensuite il se replie derrière « Afficher le favori et les instructions »
+// (options avancées) — c'est là qu'on réinstalle un favori supprimé.
 function renderGuide(hasLogs) {
     const guide = el('gcLogsGuide');
     if (!guide) return;
     guide.hidden = !(!hasLogs || guideOpen);
-    el('gcLogsUpdateBtn')?.setAttribute('aria-expanded', String(!guide.hidden));
+    syncGuideToggle(el('gcLogsUpdateBtn'), !guide.hidden);
+}
+
+function hasLogs() {
+    return !!(lastStatus && lastStatus.exists && lastStatus.logs > 0);
+}
+
+// Ouvre le parcours du favori et l'amène à l'écran : le bouton qui
+// l'ouvre vit plus bas, dans les options avancées.
+function revealGuide() {
+    guideOpen = true;
+    renderGuide(hasLogs());
+    el('gcLogsGuide')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 // Export déposé par le favori : bandeau « à valider » → la même modale
@@ -869,6 +883,9 @@ function onRegenBookmarkletToken() {
                 const statusEl = el('gcLogsBookmarkletStatus');
                 if (statusEl) statusEl.textContent =
                     t('Nouveau favori prêt — remplacez l\'ancien dans vos favoris.');
+                // Le nouveau bouton vit dans le parcours, replié dès que des
+                // logs existent : sans cela, rien de visible ne changeait.
+                revealGuide();
             } catch (e) {
                 showError(t('Jeton non régénéré'), t('Mes logs'));
             }
@@ -895,8 +912,12 @@ export function initLogsUI() {
 
     el('gcLogsPendingViewBtn').addEventListener('click', onPendingView);
     el('gcLogsUpdateBtn').addEventListener('click', () => {
-        guideOpen = !guideOpen;
-        renderGuide(!!(lastStatus && lastStatus.exists && lastStatus.logs > 0));
+        if (guideOpen) {
+            guideOpen = false;
+            renderGuide(hasLogs());
+        } else {
+            revealGuide();
+        }
     });
     const bm = el('gcLogsBookmarkletLink');
     if (bm) {

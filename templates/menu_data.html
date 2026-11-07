@@ -166,7 +166,8 @@
                          depuis labs.geocaching.com/logs. Un clic sur la page
                          serait un no-op trompeur → bloqué côté labs.js.
                          Affiché d'office tant que rien n'est importé ; ensuite
-                         replié derrière « Afficher les instructions d'import ».
+                         replié derrière « Afficher le favori et les
+                         instructions » (options avancées).
                          Avant le chargement du lien, le bouton est inerte
                          (aria-disabled, non glissable, hors tabulation) —
                          « Copier le lien » offre l'alternative clavier. -->
@@ -264,7 +265,7 @@
                             <div id="labsDataActions" class="mt-3 pt-2 border-top" hidden>
                                 <div class="d-flex flex-wrap column-gap-3">
                                     <button type="button" id="labsUpdateBtn" class="btn btn-link btn-sm px-0" aria-expanded="false" aria-controls="labsGuide">
-                                        <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
+                                        <i class="ti ti-bookmark me-1" aria-hidden="true"></i><span class="gc-guide-toggle-label">{{ _("Afficher le favori et les instructions") }}</span>
                                     </button>
                                     <button type="button" id="labsExportBtn" class="btn btn-link btn-sm px-0">
                                         <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
@@ -346,7 +347,8 @@
                          depuis geocaching.com. Un clic sur la page serait un
                          no-op trompeur → bloqué côté gc_logs.js. Affiché
                          d'office tant que rien n'est importé ; ensuite replié
-                         derrière « Afficher les instructions d'import ». -->
+                         derrière « Afficher le favori et les instructions »
+                         (options avancées) — c'est là qu'on le réinstalle. -->
                     <div id="gcLogsGuide">
                         <ol class="ps-3 mb-2">
                             <li class="mb-2">
@@ -419,7 +421,7 @@
                             <div id="gcLogsDataActions" class="mt-3 pt-2 border-top" hidden>
                                 <div class="d-flex flex-wrap column-gap-3">
                                     <button type="button" id="gcLogsUpdateBtn" class="btn btn-link btn-sm px-0" aria-expanded="false" aria-controls="gcLogsGuide">
-                                        <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
+                                        <i class="ti ti-bookmark me-1" aria-hidden="true"></i><span class="gc-guide-toggle-label">{{ _("Afficher le favori et les instructions") }}</span>
                                     </button>
                                     <button type="button" id="gcLogsExportBtn" class="btn btn-link btn-sm px-0">
                                         <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}

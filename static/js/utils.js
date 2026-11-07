@@ -198,3 +198,16 @@ export function convertToMinutesAndSeconds(timeInFraction) {
 export function countLabel(count, singular, plural) {
     return `${count} ${count === 1 ? singular : plural}`;
 }
+
+// Bouton « Afficher / Masquer le favori et les instructions » des cartes
+// Labs et logs (options avancées) : libellé et aria-expanded suivent l'état
+// du parcours du favori.
+export function syncGuideToggle(button, open) {
+    if (!button) return;
+    button.setAttribute('aria-expanded', String(open));
+    const label = button.querySelector('.gc-guide-toggle-label');
+    if (!label) return;
+    label.textContent = open
+        ? pkg.t('Masquer le favori et les instructions')
+        : pkg.t('Afficher le favori et les instructions');
+}

@@ -834,7 +834,7 @@ test('la carte montre le parcours du favori, puis le replie une fois des Labs im
 
   await expect(page.locator('#labsStatus')).toHaveText('12 étapes · 8 sur la carte · 4 à compléter');
   await expect(page.locator('#labsGuide')).toBeHidden();
-  // « Afficher les instructions d'import » vit dans les options avancées.
+  // « Afficher le favori et les instructions » vit dans les options avancées.
   const menu = await openSourceAdvanced(page, 'labs');
   const update = menu.locator('#labsUpdateBtn');
   await expect(update).toBeVisible();
@@ -1476,7 +1476,7 @@ test('« Copier le lien » copie le favori au clavier et l\'annonce en aria-live
 });
 
 
-test('le bouton du guide est « Afficher les instructions d\'import »', async ({ page }) => {
+test('le bouton du guide est « Afficher le favori et les instructions », puis « Masquer… »', async ({ page }) => {
   await openReadyApp(page);
   await importLabs(page);
 
@@ -1484,9 +1484,13 @@ test('le bouton du guide est « Afficher les instructions d\'import »', async (
   const menu = await openSourceAdvanced(page, 'labs');
   const update = menu.locator('#labsUpdateBtn');
   await expect(update).toBeVisible();
-  await expect(update).toContainText("Afficher les instructions d'import");
+  await expect(update).toContainText('Afficher le favori et les instructions');
   await update.click();
   await expect(page.locator('#labsGuide')).toBeVisible();
+  await expect(update).toContainText('Masquer le favori et les instructions');
+  await update.click();
+  await expect(page.locator('#labsGuide')).toBeHidden();
+  await expect(update).toContainText('Afficher le favori et les instructions');
 });
 
 
@@ -1564,6 +1568,24 @@ test('la régénération du jeton invalide l\'ancien favori', async ({ page }) =
     return [await probe(oldT), await probe(newT)];
   }, [oldToken, newToken]);
   expect(results).toEqual([403, 400]);
+});
+
+
+// Avec des Labs importés, le parcours du favori est replié : le nouveau
+// bouton et son message « Nouveau favori prêt » y restaient invisibles.
+test('après régénération avec des Labs importés, le nouveau favori s\'affiche', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#labsGuide')).toBeHidden();
+
+  const section = await openSourceAdvanced(page, 'labs');
+  await section.locator('#labsRegenTokenBtn').click();
+  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+
+  await expect(page.locator('#labsGuide')).toBeVisible();
+  await expect(page.locator('#labsBookmarkletStatus')).toContainText('Nouveau favori prêt');
+  await expect(page.locator('#labsBookmarkletLink')).toBeInViewport();
+  await expect(section.locator('#labsUpdateBtn')).toContainText('Masquer le favori et les instructions');
 });
 
 
@@ -1762,7 +1784,7 @@ test('l\'avertissement Groundspeak est unique dans le pane, absent des guides', 
   await expect(page.locator('#labsGuide')).toBeHidden();
   await expect(warning).toBeVisible();
 
-  // Guide rouvert via « Afficher les instructions d'import » (options
+  // Guide rouvert via « Afficher le favori et les instructions » (options
   // avancées) :
   // il ne le contient toujours pas.
   await (await openSourceAdvanced(page, 'labs')).locator('#labsUpdateBtn').click();

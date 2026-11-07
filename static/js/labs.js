@@ -16,7 +16,7 @@ import {
     showLoadingToast, updateToastMessage, updateToastProgress, setIndeterminateProgress, hideToast,
 } from './notifications.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
-import { countLabel } from './utils.js';
+import { countLabel, syncGuideToggle } from './utils.js';
 
 // Adventures (groupes d'étapes en attente) par page de la modale.
 const PENDING_PAGE_SIZE = 20;
@@ -30,7 +30,7 @@ let pendingGroupTotal = 0;     // Adventures ayant des étapes en attente
 let pendingLoadSeq = 0;        // une réponse ancienne ne doit pas écraser une plus récente
 let fetchableAdventures = 0;   // Adventures qu'une récupération peut encore servir
 let pendingDirty = false;      // une correction a été enregistrée → recharger
-let guideOpen = false;         // parcours du favori rouvert via « Afficher les instructions d'import »
+let guideOpen = false;         // parcours du favori rouvert via « Afficher le favori et les instructions »
 // Dernier statut appliqué : la révision de la collection (absente → 0) change
 // à TOUTE mutation — titre, image, date ou coordonnée corrigée — même quand
 // total/ready restent identiques.
@@ -93,8 +93,12 @@ export function initLabsUI() {
     el('labsFetchBtn')?.addEventListener('click', onFetchNow);
     el('labsRetryFetchBtn')?.addEventListener('click', onFetchNow);
     el('labsUpdateBtn')?.addEventListener('click', () => {
-        guideOpen = !guideOpen;
-        renderGuide();
+        if (guideOpen) {
+            guideOpen = false;
+            renderGuide();
+        } else {
+            revealGuide();
+        }
     });
 
     // Le favori « MyGCFlow — Lab Caches » est fait pour être glissé dans la
@@ -337,13 +341,22 @@ function renderLabsStatus(st) {
 }
 
 // Le parcours du favori s'affiche d'office tant que rien n'est importé ;
-// ensuite il se replie derrière « Afficher les instructions d'import ».
+// ensuite il se replie derrière « Afficher le favori et les instructions »
+// (options avancées) — c'est là qu'on réinstalle un favori supprimé.
 function renderGuide() {
     const guide = el('labsGuide');
     if (!guide) return;
     const empty = knownLabsStatus.total === 0;
     guide.hidden = !(empty || guideOpen);
-    el('labsUpdateBtn')?.setAttribute('aria-expanded', String(!guide.hidden));
+    syncGuideToggle(el('labsUpdateBtn'), !guide.hidden);
+}
+
+// Ouvre le parcours du favori et l'amène à l'écran : le bouton qui
+// l'ouvre vit plus bas, dans les options avancées.
+function revealGuide() {
+    guideOpen = true;
+    renderGuide();
+    el('labsGuide')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 // ---------------------------------------------------------------- activité
@@ -1183,6 +1196,9 @@ function onRegenBookmarkletToken() {
                 const statusEl = el('labsBookmarkletStatus');
                 if (statusEl) statusEl.textContent =
                     t('Nouveau favori prêt — remplacez l\'ancien dans vos favoris.');
+                // Le nouveau bouton vit dans le parcours, replié dès que des
+                // Labs existent : sans cela, rien de visible ne changeait.
+                revealGuide();
             } catch (e) {
                 showError(t('Jeton non régénéré'), t('Lab Caches'));
             }
