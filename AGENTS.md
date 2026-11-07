@@ -361,6 +361,15 @@ Node 22 comme 24) : modules purs de `static/js/*.mjs` sans DOM — pour
 l'instant `timeline_model.mjs`. Un module importable ainsi ne doit tirer
 ni `index.js` ni le DOM dans sa chaîne d'imports.
 
+## Tests Python : import GPX et arbre pays/régions
+
+`uploadBdd` réécrit `paths.country_state_path()` (liste des filtres
+Pays/Région) — une base SQLite temporaire ne suffit pas à l'isoler. Un test
+qui importe doit détourner ce chemin (`mock.patch('paths.country_state_path',
+…)`, cf. `test_log_store.py`), sinon le vrai `instance/country_state.json`
+ne liste plus que les pays de la fixture, et l'app ne le reconstruit que
+s'il manque (cas constaté le 2026-11-07 : filtres réduits à la France).
+
 ## Benchmark saut de la barre de chronologie
 
 `MYGCFLOW_BENCH=1 [BENCH_N=20000] npm run test:e2e -- bench-timeline-seek`

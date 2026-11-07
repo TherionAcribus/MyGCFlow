@@ -4,6 +4,8 @@ import shutil
 import tempfile
 import unittest
 from datetime import date
+from pathlib import Path
+from unittest import mock
 
 import bdd
 import log_formats as lf
@@ -36,6 +38,13 @@ class LogStoreTests(unittest.TestCase):
         self.db_path = os.path.join(self.tmpdir.name, "geocaching.db")
         self.app = create_app({"SQLALCHEMY_DATABASE_URI": f"sqlite:///{self.db_path}"})
         self.addCleanup(self._dispose)
+        # uploadBdd réécrit l'arbre pays/régions des filtres : sans ce
+        # détournement, le fichier du vrai dossier instance/ ne listait plus
+        # que le pays de la fixture (France / Île-de-France).
+        patcher = mock.patch("paths.country_state_path",
+                             return_value=Path(self.tmpdir.name) / "country_state.json")
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.ctx = self.app.app_context()
         self.ctx.push()
 
