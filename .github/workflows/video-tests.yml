@@ -11,11 +11,13 @@ permissions:
 jobs:
   video-tests:
     runs-on: ubuntu-latest
-    # Les tests navigateur demandent à eux seuls ~8 min en local, davantage ici
-    # (un seul worker, machine partagée). Avec le budget de 10 min, le job était
-    # tué en plein milieu de cette étape et finissait « cancelled » : l'interface
-    # n'était plus testée du tout, sans que rien ne le signale.
-    timeout-minutes: 30
+    # Budget à suivre avec la taille de la suite navigateur. Trop court, le job
+    # est tué en pleine étape e2e et finit « cancelled » — pas « failure » :
+    # l'interface n'est plus testée sans que rien ne le signale. C'est arrivé
+    # deux fois : 10 min (2026-10-11, ~160 tests) puis 30 min (2026-11-07, 451
+    # tests, ~28 min en local et davantage ici — un seul worker, machine
+    # partagée). Si les runs repassent en « cancelled », relever ce budget.
+    timeout-minutes: 60
 
     steps:
       - name: Récupérer le dépôt
