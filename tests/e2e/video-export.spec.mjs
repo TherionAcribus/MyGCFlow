@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { wavFile } from './wav.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -39,7 +40,7 @@ async function openReadyApp(page) {
 
 
 async function importFixture(page) {
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await page.waitForFunction(async () => {
     const app = await import('/static/js/index.js');

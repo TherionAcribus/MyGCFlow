@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { openDataSubTab } from './data-subtabs.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +28,7 @@ async function openReadyApp(page) {
 // Par défaut elle est comptée mais hors des index d'affichage : pointsByDate
 // garde les 3 jours parisiens, hiddenPointsByDate retient la locationless.
 async function importFixture(page) {
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('4 / 4', { timeout: 45_000 });
   await page.waitForFunction(async () => {
     const app = await import('/static/js/index.js');

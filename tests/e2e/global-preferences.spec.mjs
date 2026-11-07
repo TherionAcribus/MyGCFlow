@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -524,7 +525,7 @@ test('le format de date se règle dans les préférences et reformate les dates 
   // Les champs de date restent inaccessibles tant qu'aucune base n'est
   // chargée : l'import peuple les datepickers avec les bornes de la BDD
   // (fixture : 2026-01-01 → 2026-01-06).
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   // « auto » + langue fr : jj/mm/aaaa → la fin de plage s'affiche 06/01/2026.

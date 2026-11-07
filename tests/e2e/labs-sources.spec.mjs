@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { openDataSubTab, openSourceAdvanced } from './data-subtabs.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -418,7 +419,7 @@ test('le popup d\'une étape montre son rang, l\'avancement de l\'Adventure et s
 test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }) => {
   await openReadyApp(page);
 
-  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await importGpx(page, GPX_FINDS);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   await importLabs(page);
@@ -462,7 +463,7 @@ test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }
 test('le compteur distingue sélection et découvertes masquées par le réglage sources', async ({ page }) => {
   await openReadyApp(page);
 
-  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await importGpx(page, GPX_FINDS);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   await importLabs(page);

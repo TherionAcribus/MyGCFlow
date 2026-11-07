@@ -20,6 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { openDataSubTab } from './data-subtabs.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'gc_logs');
@@ -54,7 +55,7 @@ async function openWithData(page, request, { withLogs = true } = {}) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(MY_FINDS);
+  await importGpx(page, MY_FINDS);
   await expect(page.locator('#bddReportNote, .gcm-toast')
     .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });

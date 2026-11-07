@@ -6,6 +6,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -61,7 +62,7 @@ test('menu flottant : boutons Lecture/Enregistrement activés par les données',
   await page.locator('#btnToggleFullscreen').click();
   await expect(page.locator('main')).not.toHaveClass(/fullscreen-mode/);
 
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   await page.locator('#btnFullscreenMode').click();

@@ -9,6 +9,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -22,7 +23,7 @@ async function openTitles(page) {
   await page.goto('/#style', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#bddReportNote, .gcm-toast')
     .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });

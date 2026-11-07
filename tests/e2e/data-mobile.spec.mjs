@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { openDataSubTab, openSourceAdvanced } from './data-subtabs.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -54,7 +55,7 @@ test('à 390 px, les rangées de l\'onglet Données s\'empilent sans dépasser',
 
   // Les trois sources sont chargées : les boutons des rangées testées ne
   // sont visibles qu'avec des données (display:none sinon).
-  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await importGpx(page, GPX_FINDS);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   await page.locator('#labs-file-input').setInputFiles([LABS_HISTORY, LABS_COORDS]);
@@ -136,7 +137,7 @@ test('options avancées des cartes sources : actions masquées à vide, Supprime
 
   // Import GPX : les options avancées des géocaches apparaissent, repliées,
   // et le résumé se remplit dans l'en-tête.
-  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await importGpx(page, GPX_FINDS);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await expect(advanced.locator('summary')).toBeVisible();
   await expect(page.locator('#clearDatabaseBtn')).toBeHidden();
@@ -176,7 +177,7 @@ test('les sous-onglets alternent, le choix survit au rechargement, la base vide 
   // L'alternance ne se teste qu'avec des données : tant que la base est
   // vide, chaque résolution du statut ramène sur Sources (état d'accueil,
   // comme l'onglet principal forcé sur Données).
-  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await importGpx(page, GPX_FINDS);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
   // L'alternance masque un pane et montre l'autre.

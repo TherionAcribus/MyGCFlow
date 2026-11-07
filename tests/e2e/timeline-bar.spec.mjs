@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -25,7 +26,7 @@ async function openWithFixture(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   // Bilan d'import : note inline quand l'onglet Données est affiché,
   // toast sinon — même texte dans les deux cas.
   await expect(page.locator('#bddReportNote, .gcm-toast')
@@ -568,7 +569,7 @@ async function openWith(page, file, count) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(file);
+  await importGpx(page, file);
   await expect(page.locator('#bddReportNote, .gcm-toast')
     .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });

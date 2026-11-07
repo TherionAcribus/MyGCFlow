@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -78,7 +79,7 @@ test('import via état vide : toast immédiate et indicateur inline pendant le t
 
   // Sélection directe sur l'input (le bouton de l'état vide lui délègue le
   // clic) : toast + indicateur doivent être visibles pendant l'import.
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(loadingToast(page)).toBeVisible();
   await expect(indicator).toBeVisible();
   // Constat du blocage via la sonde plutôt que par une assertion instantanée :

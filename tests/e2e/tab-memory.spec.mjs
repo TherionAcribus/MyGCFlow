@@ -9,6 +9,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_GPX = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -68,7 +69,7 @@ test('avec données : l\'onglet mémorisé est restauré sur la page principale'
   expect(await page.evaluate(() => localStorage.getItem('activeTab:main'))).toBe('settings');
 
   // Après import + rechargement, l'onglet mémorisé est bien restauré.
-  await page.locator('#file-input').setInputFiles(FIXTURE_GPX);
+  await importGpx(page, FIXTURE_GPX);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await openMain(page);
   await dismissFirstUseModal(page);

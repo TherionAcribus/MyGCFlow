@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const N = Number(process.env.BENCH_N || 20000);
 const DAYS = 3650;
@@ -52,7 +53,7 @@ test('saut de la barre de chronologie sur une grosse base', async ({ page }) => 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(file);
+  await importGpx(page, file);
   await expect(page.locator('#bddReportNote, .gcm-toast')
     .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 300_000 });

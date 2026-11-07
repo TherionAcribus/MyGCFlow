@@ -11,6 +11,8 @@
 import { expect, test } from '@playwright/test';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { openDataSubTab } from './data-subtabs.mjs';
+// Alias : ce fichier a déjà sa propre fonction importGpx (GPX généré).
+import { importGpx as importGpxFile } from './gpx-import.mjs';
 
 const GPX_HEAD = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.0" creator="Groundspeak Pocket Query"
@@ -38,7 +40,7 @@ async function openReadyApp(page) {
 }
 
 async function importGpx(page) {
-  await page.locator('#file-input').setInputFiles({
+  await importGpxFile(page, {
     name: 'my-finds-geo.gpx', mimeType: 'application/gpx+xml',
     buffer: Buffer.from(FIXTURE_GPX, 'utf-8'),
   });

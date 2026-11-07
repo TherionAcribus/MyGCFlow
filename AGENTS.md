@@ -271,8 +271,10 @@ Autres repères :
   `export *` d'index.js écarte EN SILENCE un nom exporté par deux modules.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
-  `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /
-  `pkill -f run_server.py`.
+  `@playwright\test\cli.js`, `run-tests.mjs` ou `run_server.py`. Sous Linux :
+  `pkill -f @playwright/test/cli.js` / `pkill -f run_server.py`. **Pas** le
+  motif nu `cli.js` : il attrape aussi `npm-cli.js`, donc un `npm start`
+  lancé par l'utilisateur dans un autre projet (arrivé le 2026-11-07).
 - Sous Linux, config et données suivent la spec XDG : préférences et thèmes
   dans `$XDG_CONFIG_HOME/MyGCFlow` (`~/.config`), données dans
   `$XDG_DATA_HOME/MyGCFlow` (`~/.local/share`).

@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -39,7 +40,7 @@ async function openWithFixture(page, hash = '') {
   await page.goto(`/${hash}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#bddReportNote, .gcm-toast')
     .filter({ hasText: 'géocaches importées' }).last())
     .toBeVisible({ timeout: 45_000 });
@@ -972,7 +973,7 @@ test('planification par trouvailles : onglet ouvert pendant le chargement, la da
   await expect(page.locator('#inputImageAppearFind')).toHaveValue('3');
   await expect(page.locator('#imageAppearFindDate')).toHaveText('');
   // Données chargées, onglet toujours ouvert : la date apparaît.
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await expect(page.locator('#imageAppearFindDate')).toHaveText('Le 03/01/2026');
 });

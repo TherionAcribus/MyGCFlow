@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -12,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await page.locator('a[href="#animation"]').click();
   await page.locator('#inputDaysPerSecond').fill('20');

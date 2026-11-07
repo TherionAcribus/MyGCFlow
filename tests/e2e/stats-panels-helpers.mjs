@@ -11,6 +11,7 @@ import { expect } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 export const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -40,7 +41,7 @@ export async function openWithFixture(page, hash = '', fixture = FIXTURE, expect
   await page.goto(`/${hash}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(fixture);
+  await importGpx(page, fixture);
   // Bilan d'import : note inline quand l'onglet Données est affiché
   // (hash ''), toast sinon (hash '#stats'…) — même texte dans les deux cas.
   await expect(page.locator('#bddReportNote, .gcm-toast')

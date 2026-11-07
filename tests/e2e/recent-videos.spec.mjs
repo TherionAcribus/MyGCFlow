@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:f
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'my-finds.gpx');
 const RUNTIME = process.env.MYGCFLOW_E2E_RUNTIME;
@@ -115,7 +116,7 @@ test('un nouvel export apparaît dans la liste sans recharger la page', async ({
   const rows = page.locator('#recentVideosList > li');
   await expect(rows).toHaveCount(0);
 
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await page.locator('a[href="#animation"]').click();
   await page.locator('#animationConfigTab').click();

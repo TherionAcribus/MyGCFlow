@@ -10,6 +10,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -18,7 +19,7 @@ async function openWithFixture(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await importGpx(page, FIXTURE);
   // La base du runtime garde les caches du test précédent : au chargement de
   // la page, readBdd() affiche déjà « 6 / 6 ». Seule la fin de l'import compte,
   // sinon son addVector() tardif (qui retire le trait : nouvelles données)
