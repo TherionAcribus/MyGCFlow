@@ -958,7 +958,10 @@ function updateUIAfterClear() {
     updateFiltersCounter(0, 0);
 
     // Sans données, Lecture/Enregistrement n'ont plus rien à animer et
-    // l'état vide revient sur la carte.
+    // l'état vide revient sur la carte. Le vidage est un nouveau départ : le
+    // retour sur Données redevient légitime, même si l'utilisateur avait
+    // choisi un autre onglet plus tôt dans la session.
+    try { pkg.resetMainTabChoice?.(); } catch(e) {}
     try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) { console.warn('updateDataAvailabilityUI error:', e); }
 }
 

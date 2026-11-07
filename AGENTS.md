@@ -47,6 +47,11 @@ Autres repères :
 - Base vide → l'app force le retour sur l'onglet Données à chaque résolution
   du statut ; `updateDataAvailabilityUI` saute ce bascule quand l'URL porte
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.
+  Il le saute aussi dès que l'utilisateur a cliqué un onglet principal depuis
+  le chargement (`userPickedMainTab`, remis à zéro au vidage de la base) :
+  la résolution arrive parfois APRÈS `mygcflowReady` et reprenait l'onglet
+  ouvert juste avant — 9 tests de `global-preferences.spec.mjs` échouaient
+  ainsi (clic sur « Réglages » annulé ~20 ms plus tard), corrigé le 2026-11-07.
 - Le mode de rythme (`animation.rhythm_mode`) et la durée totale sont des
   préférences globales persistées, partagées par tous les specs d'un run :
   un spec qui quitte le mode jours/seconde (choisir une musique suffit, elle

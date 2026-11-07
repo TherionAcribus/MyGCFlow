@@ -176,6 +176,15 @@ var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 let overlayCssDefaultsReady = Promise.resolve();
 let overlayCssDefaultsStarted = false;
+// Onglet principal choisi par l'utilisateur depuis le chargement (clic sur
+// #mainTabs). Le retour automatique sur Données d'une base vide
+// (updateDataAvailabilityUI) ne doit pas l'écraser : la résolution de l'état
+// des données arrive parfois juste APRÈS que la page s'est déclarée prête,
+// et reprenait l'onglet qu'il venait d'ouvrir — « Réglages » restait alors
+// inaccessible à un nouvel utilisateur pendant la première seconde. Déclaré
+// ici, en tête de module : initUIElements s'exécute pendant l'évaluation de
+// ce fichier.
+let userPickedMainTab = false;
 var selectLanguage, selectDateFormat, switchCheckVersionOnline, buttonCheckVersion, buttonHome;
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter;
@@ -2154,6 +2163,7 @@ function initTabMemory() {
         tab.addEventListener('click', function() {
             const tabId = this.getAttribute('href').substring(1); // Enlever le #
             localStorage.setItem(tabKey, tabId);
+            userPickedMainTab = true;
         });
     });
 }
@@ -9330,6 +9340,12 @@ export function hasGeocaches() {
 // Les panes de configuration Animation/Enregistrement restent volontairement
 // actifs : ce sont des préférences globales persistées (recording_configured),
 // que l'utilisateur peut régler avant tout import.
+// Vidage de la base : nouveau départ, le retour sur Données redevient
+// légitime même si l'utilisateur avait choisi un autre onglet avant.
+export function resetMainTabChoice() {
+    userPickedMainTab = false;
+}
+
 export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     if (dataResolved) dataStateResolved = true;
     const hasDb = hasDatabase();
@@ -9348,7 +9364,7 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     // est vide. Un hash explicite dans l'URL garde priorité, et le choix
     // mémorisé n'est pas écrasé : il reste pour la prochaine visite avec
     // des données.
-    if (dataResolved && !hasDb && !window.location.hash) {
+    if (dataResolved && !hasDb && !window.location.hash && !userPickedMainTab) {
         const dataTab = document.querySelector('#mainTabs a[href="#data"]');
         if (dataTab) showBsTab(dataTab);
         // Base vide = état d'accueil : ramener aussi sur le sous-onglet
