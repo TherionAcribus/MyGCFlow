@@ -729,11 +729,13 @@ msgid "Archivée"
 msgstr "Archivée"
 
 #: settings_manager.py:2805
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
-msgstr "Le nom doit contenir au moins une lettre ou un chiffre"
+msgstr ""
+"Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
+"lettre ou un chiffre est nécessaire)"
 
 #: blueprints/profiles.py:553 settings_manager.py:2845 settings_manager.py:2922
 #: settings_manager.py:2974
@@ -747,29 +749,27 @@ msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "Aucun thème trouvé avec l'UUID: %(uid)s"
 
 #: settings_manager.py:2902 settings_manager.py:2927
-#, fuzzy, python-format
+#, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
-msgstr "Un thème nommé « ${name} » existe déjà"
+msgstr "Un thème nommé '%(name)s' existe déjà"
 
 #: settings_manager.py:2939
-#, fuzzy, python-format
+#, python-format
 msgid "Thème source '%(name)s' introuvable"
-msgstr "Thème '%(name)s' introuvable"
+msgstr "Thème source '%(name)s' introuvable"
 
 #: settings_manager.py:2955
-#, fuzzy
 msgid "Mode de thème inconnu"
-msgstr "Adventure inconnue"
+msgstr "Mode de thème inconnu"
 
 #: settings_manager.py:2958
-#, fuzzy, python-format
+#, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
-msgstr "Thème '%(name)s' introuvable"
+msgstr "Le thème '%(name)s' appartient déjà à ce mode"
 
 #: settings_manager.py:3148
-#, fuzzy
 msgid "Payload invalide"
-msgstr "log_id invalide"
+msgstr "Payload invalide"
 
 #: settings_manager.py:3151
 msgid "Fichier de thème invalide (détrompeur manquant)"
@@ -780,9 +780,9 @@ msgid "Section 'profile' manquante"
 msgstr "Section 'profile' manquante"
 
 #: task_manager.py:30
-#, fuzzy, python-format
+#, python-format
 msgid "Une tâche '%(type)s' est déjà en cours"
-msgstr "Un import est déjà en cours"
+msgstr "Une tâche '%(type)s' est déjà en cours"
 
 #: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
@@ -9413,13 +9413,17 @@ msgstr ""
 msgid ""
 "Favori supprimé de votre navigateur ? Inutile de régénérer quoi que ce "
 "soit :"
-msgstr "Favori supprimé de votre navigateur ? Inutile de régénérer quoi que ce soit :"
+msgstr ""
+"Favori supprimé de votre navigateur ? Inutile de régénérer quoi que ce "
+"soit :"
 
 #: templates/guide.html:504
 msgid ""
 "(options avancées de la carte) réaffiche le bouton à glisser à nouveau "
 "dans vos favoris."
-msgstr "(options avancées de la carte) réaffiche le bouton à glisser à nouveau dans vos favoris."
+msgstr ""
+"(options avancées de la carte) réaffiche le bouton à glisser à nouveau "
+"dans vos favoris."
 
 #: templates/guide.html:508
 msgid "Laissez les étapes se placer"
@@ -9571,7 +9575,9 @@ msgstr "Régénérer le jeton du favori"
 msgid ""
 "invalide un favori partagé par erreur — le nouveau s'affiche aussitôt, à "
 "glisser dans la barre de favoris à la place de l'ancien."
-msgstr "invalide un favori partagé par erreur — le nouveau s'affiche aussitôt, à glisser dans la barre de favoris à la place de l'ancien."
+msgstr ""
+"invalide un favori partagé par erreur — le nouveau s'affiche aussitôt, à "
+"glisser dans la barre de favoris à la place de l'ancien."
 
 #: templates/guide.html:533
 msgid "Autre mode : évolution d'une zone"

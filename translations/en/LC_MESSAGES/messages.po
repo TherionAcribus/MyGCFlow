@@ -729,11 +729,13 @@ msgid "Archivée"
 msgstr "Archived"
 
 #: settings_manager.py:2805
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
-msgstr "The name must contain at least one letter or digit"
+msgstr ""
+"The name '%(name)s' contains no usable character (at least one letter or "
+"digit is required)"
 
 #: blueprints/profiles.py:553 settings_manager.py:2845 settings_manager.py:2922
 #: settings_manager.py:2974
@@ -747,29 +749,27 @@ msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "No theme found with UUID: %(uid)s"
 
 #: settings_manager.py:2902 settings_manager.py:2927
-#, fuzzy, python-format
+#, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
-msgstr "A theme named « ${name} » already exists"
+msgstr "A theme named '%(name)s' already exists"
 
 #: settings_manager.py:2939
-#, fuzzy, python-format
+#, python-format
 msgid "Thème source '%(name)s' introuvable"
-msgstr "Theme '%(name)s' not found"
+msgstr "Source theme '%(name)s' not found"
 
 #: settings_manager.py:2955
-#, fuzzy
 msgid "Mode de thème inconnu"
-msgstr "Unknown Adventure"
+msgstr "Unknown theme mode"
 
 #: settings_manager.py:2958
-#, fuzzy, python-format
+#, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
-msgstr "Theme '%(name)s' not found"
+msgstr "Theme '%(name)s' already belongs to this mode"
 
 #: settings_manager.py:3148
-#, fuzzy
 msgid "Payload invalide"
-msgstr "invalid log_id"
+msgstr "Invalid payload"
 
 #: settings_manager.py:3151
 msgid "Fichier de thème invalide (détrompeur manquant)"
@@ -780,9 +780,9 @@ msgid "Section 'profile' manquante"
 msgstr "Missing 'profile' section"
 
 #: task_manager.py:30
-#, fuzzy, python-format
+#, python-format
 msgid "Une tâche '%(type)s' est déjà en cours"
-msgstr "An import is already running"
+msgstr "A '%(type)s' task is already running"
 
 #: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
@@ -9324,7 +9324,9 @@ msgstr "Bookmark deleted from your browser? No need to regenerate anything:"
 msgid ""
 "(options avancées de la carte) réaffiche le bouton à glisser à nouveau "
 "dans vos favoris."
-msgstr "(the card's advanced options) shows the button again, ready to drag back into your bookmarks."
+msgstr ""
+"(the card's advanced options) shows the button again, ready to drag back "
+"into your bookmarks."
 
 #: templates/guide.html:508
 msgid "Laissez les étapes se placer"
@@ -9467,7 +9469,9 @@ msgstr "Regenerate the bookmarklet token"
 msgid ""
 "invalide un favori partagé par erreur — le nouveau s'affiche aussitôt, à "
 "glisser dans la barre de favoris à la place de l'ancien."
-msgstr "invalidates a bookmark shared by mistake — the new one appears right away, to drag into the bookmarks bar in place of the old one."
+msgstr ""
+"invalidates a bookmark shared by mistake — the new one appears right "
+"away, to drag into the bookmarks bar in place of the old one."
 
 #: templates/guide.html:533
 msgid "Autre mode : évolution d'une zone"
