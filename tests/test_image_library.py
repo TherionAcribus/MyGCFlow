@@ -280,13 +280,22 @@ class NamesTests(ImageLibraryTestCase):
         image_library.save_image(self.png(), name='badge.png')
         self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], 'badge')
 
+    def listed_name(self, saved):
+        # L'image est retrouvée par son fichier, pas par sa position : deux
+        # envois coup sur coup peuvent porter la même date sous Linux (horloge
+        # de fichiers grossière, quelques ms), et la liste départage alors par
+        # nom de fichier — ordre arbitraire. Échec constaté sur le runner Linux
+        # (release 0.0.8), jamais sous Windows.
+        files = image_library.list_image_files(set())['files']
+        return next(f['name'] for f in files if f['file'] == saved['file'])
+
     def test_name_is_cleaned(self):
         # Base du chemin (/ et \), sans l'extension finale, espaces bordant
         # retirés, 80 caractères au plus.
-        image_library.save_image(self.png(), name='  C:\\divers\\logo club.png  ')
-        self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], 'logo club')
-        image_library.save_image(self.png(color=(1, 2, 3, 128)), name='a' * 100 + '.png')
-        self.assertEqual(image_library.list_image_files(set())['files'][0]['name'], 'a' * 80)
+        first = image_library.save_image(self.png(), name='  C:\\divers\\logo club.png  ')
+        self.assertEqual(self.listed_name(first), 'logo club')
+        second = image_library.save_image(self.png(color=(1, 2, 3, 128)), name='a' * 100 + '.png')
+        self.assertEqual(self.listed_name(second), 'a' * 80)
 
     def test_save_without_name_keeps_working(self):
         image_library.save_image(self.png())
