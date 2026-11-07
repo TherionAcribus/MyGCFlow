@@ -90,8 +90,11 @@ if IS_WINDOWS:
 # natives (libheif, libde265, libx265…) sont posées par delvewheel à la
 # racine de site-packages, le paquet les retrouve par os.add_dll_directory
 # sur son dossier parent. Dans l'exécutable ce parent est _internal/ : les
-# DLL y sont donc copiées. Sur Linux elles vivent dans pillow_heif.libs/,
-# couvert par collect_dynamic_libs.
+# DLL y sont donc copiées. Sur Linux (roues manylinux), elles vivent dans
+# pillow_heif.libs/, à côté du paquet et non dedans : collect_dynamic_libs ne
+# les voit pas. Le module natif les cherche via $ORIGIN/pillow_heif.libs, et
+# il est rangé à la racine de _internal/ : même dossier relatif côté
+# exécutable.
 import sysconfig
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
@@ -113,6 +116,9 @@ if IS_WINDOWS:
     for pattern in ("libheif-*.dll", "libde265-*.dll", "libx265-*.dll",
                     "libgcc_s_seh-*.dll", "libstdc++-*.dll", "libwinpthread-*.dll"):
         binaries += [(str(dll), ".") for dll in _purelib.glob(pattern)]
+else:
+    _libs = Path(sysconfig.get_paths()["purelib"]) / "pillow_heif.libs"
+    binaries += [(str(lib), "pillow_heif.libs") for lib in _libs.glob("*.so*")]
 if not any("libheif" in Path(src).name for src, _ in binaries):
     raise SystemExit(
         "libheif introuvable parmi les bibliothèques de pillow-heif : "
