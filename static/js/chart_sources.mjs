@@ -168,18 +168,29 @@ const numberOr = (value) => {
     return typeof n === 'number' && Number.isFinite(n) ? n : NaN;
 };
 
-// Enregistrements → table (mêmes colonnes que findsTable). Champs d'un
-// enregistrement : day (numéro de jour, requis), published (jour ou NaN),
-// endDay (jour où l'élément cesse d'être actif, ou NaN), kind (0 géocache,
-// 1 Lab), code, difficulty, terrain, attributes ([] ) et les champs texte de
-// DICT_FIELDS ('' ou absent = inconnu).
-export function tableFromRecords(records, { source = 'records' } = {}) {
-    const rows = records.filter((r) => Number.isFinite(r.day));
-    const n = rows.length;
+// Faits calendaires d'un jour, mémorisés : un gros jeu (Évolution : plus de
+// 460 000 caches) n'a que quelques milliers de jours distincts, et le calcul
+// de l'année et de la semaine ISO (objets Date) dominait la conversion.
+const dayFactsCache = new Map();
+const DAY_FACTS_MAX = 200000;
+
+function dayFacts(day) {
+    let facts = dayFactsCache.get(day);
+    if (facts === undefined) {
+        const { y, m, d } = ymdOfDay(day);
+        facts = { y, m, d, weekday: isoWeekday(day), week: isoWeek(day), doy: dayOfYearSlot(m, d) };
+        if (dayFactsCache.size >= DAY_FACTS_MAX) dayFactsCache.clear();
+        dayFactsCache.set(day, facts);
+    }
+    return facts;
+}
+
+// Table vide de `n` lignes (mêmes colonnes que findsTable).
+function allocTable(n, { source, undated = 0 }) {
     const table = {
         source,
         n,
-        undated: records.length - n,
+        undated,
         day: new Int32Array(n),
         y: new Int16Array(n),
         m: new Uint8Array(n),
@@ -200,58 +211,84 @@ export function tableFromRecords(records, { source = 'records' } = {}) {
         dicts: { attribute: [] },
         extent: null,
     };
-    const indexes = {};
     for (const field of DICT_FIELDS) {
         table[field] = new Int32Array(n);
         table.dicts[field] = [];
-        indexes[field] = new Map();
     }
+    return table;
+}
+
+// Jour de l'événement (et ses faits calendaires) + date de publication
+// (`pub` : numéro de jour ou NaN) et ce qui en dépend (âge, année).
+function writeDates(table, r, day, pub) {
+    const facts = dayFacts(day);
+    table.day[r] = day;
+    table.y[r] = facts.y;
+    table.m[r] = facts.m;
+    table.d[r] = facts.d;
+    table.weekday[r] = facts.weekday;
+    table.week[r] = facts.week;
+    table.doy[r] = facts.doy;
+    table.published[r] = pub;
+    if (Number.isFinite(pub)) {
+        const pubFacts = dayFacts(pub);
+        table.publishedYear[r] = pubFacts.y;
+        const bucket = ageBucket(pubFacts, facts);
+        table.age[r] = bucket === null ? NO_VALUE : bucket;
+        table.ageDays[r] = day >= pub ? day - pub : NaN;
+    } else {
+        table.publishedYear[r] = 0;
+        table.age[r] = NO_VALUE;
+        table.ageDays[r] = NaN;
+    }
+}
+
+// Libellés d'une colonne texte → index dans le dictionnaire de la table, dans
+// l'ordre de première apparition ('' ou absent = inconnu).
+function dictEncoder(table, field) {
+    const index = new Map();
+    const list = table.dicts[field];
+    return (raw) => {
+        const value = raw === null || raw === undefined ? '' : String(raw).trim();
+        if (!value) return NO_VALUE;
+        let idx = index.get(value);
+        if (idx === undefined) {
+            idx = list.length;
+            index.set(value, idx);
+            list.push(value);
+        }
+        return idx;
+    };
+}
+
+// Enregistrements → table (mêmes colonnes que findsTable). Champs d'un
+// enregistrement : day (numéro de jour, requis), published (jour ou NaN),
+// endDay (jour où l'élément cesse d'être actif, ou NaN), kind (0 géocache,
+// 1 Lab), code, difficulty, terrain, attributes ([] ) et les champs texte de
+// DICT_FIELDS ('' ou absent = inconnu).
+export function tableFromRecords(records, { source = 'records' } = {}) {
+    const rows = records.filter((r) => Number.isFinite(r.day));
+    const n = rows.length;
+    const table = allocTable(n, { source, undated: records.length - n });
+    const encoders = DICT_FIELDS.map((field) => [field, dictEncoder(table, field)]);
     let first = Infinity;
     let last = -Infinity;
     for (let r = 0; r < n; r++) {
         const rec = rows[r];
         const day = rec.day;
-        const ymd = ymdOfDay(day);
-        table.day[r] = day;
-        table.y[r] = ymd.y;
-        table.m[r] = ymd.m;
-        table.d[r] = ymd.d;
-        table.weekday[r] = isoWeekday(day);
-        table.week[r] = isoWeek(day);
-        table.doy[r] = dayOfYearSlot(ymd.m, ymd.d);
+        writeDates(table, r, day, Number.isFinite(rec.published) ? rec.published : NaN);
         if (day < first) first = day;
         if (day > last) last = day;
         // Un archivage prolonge l'étendue : « toutes les données » doit
         // couvrir la disparition de la dernière cache.
         if (Number.isFinite(rec.endDay) && rec.endDay > last) last = rec.endDay;
-        const pub = Number.isFinite(rec.published) ? rec.published : NaN;
-        table.published[r] = pub;
-        const pubYmd = Number.isFinite(pub) ? ymdOfDay(pub) : null;
-        table.publishedYear[r] = pubYmd ? pubYmd.y : 0;
-        const bucket = pubYmd ? ageBucket(pubYmd, ymd) : null;
-        table.age[r] = bucket === null ? NO_VALUE : bucket;
-        table.ageDays[r] = Number.isFinite(pub) && day >= pub ? day - pub : NaN;
         table.endDay[r] = Number.isFinite(rec.endDay) ? rec.endDay : NaN;
         table.kind[r] = rec.kind === 1 ? 1 : 0;
         table.code[r] = rec.code || null;
         table.difficulty[r] = numberOr(rec.difficulty);
         table.terrain[r] = numberOr(rec.terrain);
         table.attributes[r] = [];
-        for (const field of DICT_FIELDS) {
-            const raw = rec[field];
-            const value = raw === null || raw === undefined ? '' : String(raw).trim();
-            if (!value) {
-                table[field][r] = NO_VALUE;
-                continue;
-            }
-            let idx = indexes[field].get(value);
-            if (idx === undefined) {
-                idx = table.dicts[field].length;
-                indexes[field].set(value, idx);
-                table.dicts[field].push(value);
-            }
-            table[field][r] = idx;
-        }
+        for (const [field, encode] of encoders) table[field][r] = encode(rec[field]);
     }
     if (n) table.extent = { first, last };
     return table;
@@ -355,32 +392,101 @@ export function posesTables(payload) {
 // jusqu'à leur archivage) et les archivages datés. Une cache archivée sans
 // date d'archivage compte parmi les publiées mais jamais parmi les actives
 // (impossible de dire quand elle a disparu) ni parmi les archivages.
-export function evolutionTables(payload) {
-    const placed = [];
-    const archived = [];
-    if (payload && Number.isInteger(payload.count)) {
-        const origin = isoDay(payload.origin);
-        const dict = (list, i) => (Array.isArray(list) && i >= 0 ? list[i] : '');
-        for (let k = 0; k < payload.count; k++) {
-            const day = origin + payload.placed[k];
-            const archivedOn = payload.archived[k] >= 0 ? origin + payload.archived[k] : NaN;
-            const base = {
-                code: payload.code?.[k] || null,
-                cache_type: dict(payload.types, payload.type?.[k]),
-                container: dict(payload.sizes, payload.size?.[k]),
-                difficulty: dict(payload.difficulties, payload.difficulty?.[k]),
-                terrain: dict(payload.terrains, payload.terrain?.[k]),
-                country: dict(payload.countries, payload.country?.[k]),
-                state: dict(payload.regions, payload.region?.[k]),
-                county: dict(payload.counties, payload.county?.[k]),
-            };
-            const noDate = payload.status?.[k] === 2;
-            placed.push({ ...base, day, endDay: noDate ? day : archivedOn });
-            if (Number.isFinite(archivedOn)) archived.push({ ...base, day: archivedOn });
-        }
+//
+// Conversion directe des colonnes du serveur, sans enregistrement
+// intermédiaire : un jeu national dépasse 460 000 caches (≈ 500 ms par la
+// voie des enregistrements). Résultat identique à tableFromRecords sur les
+// mêmes données (vérifié par chart_query.test.mjs).
+const EVO_DICTS = Object.freeze([
+    ['cache_type', 'types', 'type'],
+    ['container', 'sizes', 'size'],
+    ['country', 'countries', 'country'],
+    ['state', 'regions', 'region'],
+    ['county', 'counties', 'county'],
+]);
+const EVO_DICT_FIELDS = new Set(EVO_DICTS.map(([field]) => field));
+
+function evolutionTable(payload, rows, { source, dayOf, endOf }) {
+    const n = rows.length;
+    const table = allocTable(n, { source });
+    // Index du serveur → index de la table, dans l'ordre de première
+    // apparition (libellés vides ou en double après nettoyage fusionnés,
+    // comme le ferait tableFromRecords).
+    const remaps = EVO_DICTS.map(([field, listKey, colKey]) => {
+        const list = Array.isArray(payload[listKey]) ? payload[listKey] : [];
+        const encode = dictEncoder(table, field);
+        const memo = new Int32Array(list.length).fill(-2);
+        const column = Array.isArray(payload[colKey]) ? payload[colKey] : [];
+        const remap = (i) => {
+            if (!(i >= 0 && i < list.length)) return NO_VALUE;
+            if (memo[i] === -2) memo[i] = encode(list[i]);
+            return memo[i];
+        };
+        return [table[field], column, remap];
+    });
+    const numbers = (list) => (Array.isArray(list) ? list.map(numberOr) : []);
+    const difficulties = numbers(payload.difficulties);
+    const terrains = numbers(payload.terrains);
+    const difficulty = Array.isArray(payload.difficulty) ? payload.difficulty : [];
+    const terrain = Array.isArray(payload.terrain) ? payload.terrain : [];
+    const code = Array.isArray(payload.code) ? payload.code : [];
+    // Jamais modifiée : une seule liste vide pour toutes les lignes.
+    const noAttributes = Object.freeze([]);
+    for (const field of DICT_FIELDS) {
+        if (!EVO_DICT_FIELDS.has(field)) table[field].fill(NO_VALUE);
     }
-    return {
-        placed: tableFromRecords(placed, { source: 'evolution' }),
-        archived: tableFromRecords(archived, { source: 'evolution:archived' }),
-    };
+    let first = Infinity;
+    let last = -Infinity;
+    for (let r = 0; r < n; r++) {
+        const k = rows[r];
+        const day = dayOf(k);
+        writeDates(table, r, day, NaN);
+        const end = endOf(k);
+        table.endDay[r] = end;
+        if (day < first) first = day;
+        if (day > last) last = day;
+        if (Number.isFinite(end) && end > last) last = end;
+        table.code[r] = code[k] || null;
+        table.difficulty[r] = difficulties[difficulty[k]] ?? NaN;
+        table.terrain[r] = terrains[terrain[k]] ?? NaN;
+        table.attributes[r] = noAttributes;
+        for (const [target, column, remap] of remaps) target[r] = remap(column[k]);
+    }
+    if (n) table.extent = { first, last };
+    return table;
+}
+
+export function evolutionTables(payload) {
+    const valid = Boolean(payload) && Number.isInteger(payload.count);
+    const count = valid ? payload.count : 0;
+    const origin = valid ? isoDay(payload.origin) : NaN;
+    const col = (key) => (valid && Array.isArray(payload[key]) ? payload[key] : []);
+    const placedCol = col('placed');
+    const archivedCol = col('archived');
+    const status = col('status');
+    const placedDay = (k) => origin + placedCol[k];
+    const archivedDay = (k) => (archivedCol[k] >= 0 ? origin + archivedCol[k] : NaN);
+    // Publiées : les caches à date valide ; archivages : ceux datés.
+    const placedRows = [];
+    const archivedRows = [];
+    let undated = 0;
+    for (let k = 0; k < count; k++) {
+        if (Number.isFinite(placedDay(k))) placedRows.push(k);
+        else undated++;
+        if (Number.isFinite(archivedDay(k))) archivedRows.push(k);
+    }
+    const source = valid ? payload : {};
+    const placed = evolutionTable(source, placedRows, {
+        source: 'evolution',
+        dayOf: placedDay,
+        // Archivée sans date : fin = jour de publication (jamais active).
+        endOf: (k) => (status[k] === 2 ? placedDay(k) : archivedDay(k)),
+    });
+    placed.undated = undated;
+    const archived = evolutionTable(source, archivedRows, {
+        source: 'evolution:archived',
+        dayOf: archivedDay,
+        endOf: () => NaN,
+    });
+    return { placed, archived };
 }

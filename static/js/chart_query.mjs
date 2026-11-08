@@ -639,27 +639,59 @@ export function runChartQuery(spec, table, options = {}) {
 
 // Groupes des lignes pour la mesure « actives » : par valeur de la 2ᵉ
 // dimension puis par clé (catégories ; null sinon), chacun avec les jours de
-// début et de fin triés.
+// début et de fin triés (Float64Array : tri numérique natif).
+//
+// Chemin chaud sur un jeu Évolution national (460 000 caches) : aucune
+// allocation par ligne dans le cas courant (une clé, pas de 2ᵉ dimension),
+// et le dernier groupe servi est gardé sous la main — les lignes d'une même
+// clé se suivent souvent.
 function activeGroups(rows, { table, kind, groupKey, splitKey, remapGroup, remapSplit }) {
     const groups = new Map();
+    let lastSplit;
+    let lastKey;
+    let lastGroup = null;
+    const groupOf = (s, k) => {
+        if (lastGroup && s === lastSplit && k === lastKey) return lastGroup;
+        let bySplit = groups.get(s);
+        if (!bySplit) groups.set(s, bySplit = new Map());
+        let group = bySplit.get(k);
+        if (!group) bySplit.set(k, group = { starts: [], ends: [] });
+        lastSplit = s;
+        lastKey = k;
+        lastGroup = group;
+        return group;
+    };
+    const add = (s, k, day, end) => {
+        const group = groupOf(s, k);
+        group.starts.push(day);
+        if (end === end) group.ends.push(end); // NaN : pas de fin
+    };
+    const byCategory = kind === 'category';
     for (const r of rows) {
-        const splits = splitKey ? asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)) : [null];
-        const keys = kind === 'category' ? asList(groupKey(r)).map((k) => (remapGroup ? remapGroup(k) : k)) : [null];
-        for (const s of splits) {
-            let bySplit = groups.get(s);
-            if (!bySplit) groups.set(s, bySplit = new Map());
-            for (const k of keys) {
-                let group = bySplit.get(k);
-                if (!group) bySplit.set(k, group = { starts: [], ends: [] });
-                group.starts.push(table.day[r]);
-                if (Number.isFinite(table.endDay[r])) group.ends.push(table.endDay[r]);
+        const day = table.day[r];
+        const end = table.endDay[r];
+        const splitRaw = splitKey ? splitKey(r) : null;
+        const keyRaw = byCategory ? groupKey(r) : null;
+        const splitMany = Array.isArray(splitRaw);
+        const keyMany = Array.isArray(keyRaw);
+        if (!splitMany && !keyMany) {
+            const s = splitKey && remapSplit ? remapSplit(splitRaw) : splitRaw;
+            const k = byCategory && remapGroup ? remapGroup(keyRaw) : keyRaw;
+            add(s, k, day, end);
+            continue;
+        }
+        // Valeurs multiples (attributs) : chaque paire compte.
+        for (const s0 of asList(splitRaw)) {
+            const s = splitKey && remapSplit ? remapSplit(s0) : s0;
+            for (const k0 of asList(keyRaw)) {
+                add(s, byCategory && remapGroup ? remapGroup(k0) : k0, day, end);
             }
         }
     }
     for (const bySplit of groups.values()) {
         for (const group of bySplit.values()) {
-            group.starts.sort((a, b) => a - b);
-            group.ends.sort((a, b) => a - b);
+            group.starts = Float64Array.from(group.starts).sort();
+            group.ends = Float64Array.from(group.ends).sort();
         }
     }
     return groups;

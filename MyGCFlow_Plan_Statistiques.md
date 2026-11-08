@@ -104,9 +104,13 @@ persistée) ; la vidéo s'enregistre en temps réel (une vidéo de 30 s prend
 quand la largeur change sa taille de case, sauvegarde de secours au-delà de
 64 Kio (`PUT /api/dashboards/<id>`), contrôle de révision et écriture sous
 verrou côté serveur, 304 des trouvailles sans construire les colonnes.
-Pistes restantes : charger seulement les sources du tableau ouvert et
-dessiner dès que les trouvailles sont là, ETag des routes DNF / caches
-posées, aperçus dans la galerie, « Annuler » après un ajout depuis la
+Deuxième lot (performance, mesuré sur les données réelles) : le coût est
+dans les tableaux Évolution d'un grand jeu (464 475 caches : ~1,1 s de page
+figée), pas dans le tableau personnel (~100 ms) — conversion Évolution
+524 → 100 ms, mesure « actives » allégée (7 graphiques 550 → 380 ms).
+Écartés après mesure : chargement des seules sources du tableau ouvert,
+ETag DNF / caches posées (20 à 100 ms). Suite possible : calcul dans un
+Web Worker. Pistes restantes : aperçus dans la galerie, « Annuler » après un ajout depuis la
 galerie, bouton « Actualiser », « Reprendre les filtres de la carte » ;
 fonctions : vidéo d'un tableau entier avec musique, grilles de défis (D/T
 81, 366 jours, Jasmer), séries et records, objectif et projection, mode

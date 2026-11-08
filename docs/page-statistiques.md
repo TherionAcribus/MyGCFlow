@@ -243,10 +243,31 @@ autre erreur est relançable, la promesse n'étant pas gardée en cache.
 Archivée sans date (Évolution) : comptée parmi les publiées, jamais
 active ni archivée.
 
-**Performance.** Moteur mesuré le 2026-11-08 (Node, 20 000 trouvailles
-fictives) : moins de 5 ms par question de la galerie, 16 ms pour un cumul
-« depuis toujours » découpé par type sur chaque année ; la table des
-trouvailles se construit en ~20 ms. Côté serveur, `GET /api/stats/finds`
+**Performance.** Mesures du 2026-11-08 sur une copie des données réelles
+(19 591 trouvailles, jeu Évolution « France » de 464 475 caches) :
+
+| | serveur | navigateur |
+|---|---|---|
+| Tableau personnel (8 graphiques par défaut) | trouvailles 56 ms (304 : ~0), DNF ~20 ms, caches posées ~65-100 ms, Mes poses ~10-110 ms, en parallèle | tables 64 ms, graphiques 34 ms |
+| Tableau Évolution « France » (7 graphiques) | 2,9 s au 1ᵉʳ appel après le démarrage (puis en mémoire, 304 aux visites suivantes) ; 24,7 Mo (6,3 Mo compressés) | lecture JSON ~95 ms, tables 524 → **100 ms**, graphiques 550 → **380 ms** |
+
+Ce qui a été fait pour Évolution : `evolutionTables` convertit les colonnes
+du serveur directement (plus d'enregistrement par cache), les faits
+calendaires d'un jour (année, semaine ISO…) sont mémorisés (`dayFacts`,
+chart_sources.mjs — aussi pour les autres sources), et `activeGroups`
+(mesure « actives ») n'alloue plus rien par ligne et trie des
+`Float64Array`. Résultats identiques à l'ancienne version, vérifiés sur le
+jeu réel (tables et 10 requêtes) et par `chart_sources.test.mjs`.
+
+Écarté après mesure : charger seulement les sources du tableau ouvert, et
+ETag des routes DNF / caches posées — ces routes coûtent 20 à 100 ms, en
+parallèle des trouvailles. Le reste du temps Évolution est du calcul sur
+le fil principal (tri, filtres, comptages) : le sortir de la page passerait
+par un Web Worker.
+
+Moteur sur 20 000 trouvailles fictives : moins de 5 ms par question de la
+galerie, 16 ms pour un cumul « depuis toujours » découpé par type sur
+chaque année. Côté serveur, `GET /api/stats/finds`
 compare l'ETag AVANT de construire les colonnes (~60 ms et 1,7 Mo de JSON
 pour 20 000 trouvailles, jetés sinon sur un 304). Trois mécanismes évitent
 le travail redondant dans la page :

@@ -135,6 +135,85 @@ test('Évolution : publiées (actives jusqu\'à l\'archivage), archivages datés
     assert.equal(placed.dicts.county[placed.county[1]], 'Morbihan');
 });
 
+// Ancienne conversion (un enregistrement par cache, puis tableFromRecords) :
+// la conversion directe en colonnes doit rendre exactement la même table.
+function evolutionTablesByRecords(payload) {
+    const placed = [];
+    const archived = [];
+    if (payload && Number.isInteger(payload.count)) {
+        const origin = dayNumber({ y: +payload.origin.slice(0, 4), m: +payload.origin.slice(5, 7), d: +payload.origin.slice(8, 10) });
+        const dict = (list, i) => (Array.isArray(list) && i >= 0 ? list[i] : '');
+        for (let k = 0; k < payload.count; k++) {
+            const d = origin + payload.placed[k];
+            const archivedOn = payload.archived[k] >= 0 ? origin + payload.archived[k] : NaN;
+            const base = {
+                code: payload.code?.[k] || null,
+                cache_type: dict(payload.types, payload.type?.[k]),
+                container: dict(payload.sizes, payload.size?.[k]),
+                difficulty: dict(payload.difficulties, payload.difficulty?.[k]),
+                terrain: dict(payload.terrains, payload.terrain?.[k]),
+                country: dict(payload.countries, payload.country?.[k]),
+                state: dict(payload.regions, payload.region?.[k]),
+                county: dict(payload.counties, payload.county?.[k]),
+            };
+            placed.push({ ...base, day: d, endDay: payload.status?.[k] === 2 ? d : archivedOn });
+            if (Number.isFinite(archivedOn)) archived.push({ ...base, day: archivedOn });
+        }
+    }
+    return {
+        placed: tableFromRecords(placed, { source: 'evolution' }),
+        archived: tableFromRecords(archived, { source: 'evolution:archived' }),
+    };
+}
+
+// Les listes d'attributs (toujours vides ici) comparées par contenu.
+const plain = (table) => ({ ...table, attributes: table.attributes.map((a) => [...a]) });
+
+test('Évolution : la conversion en colonnes rend la même table que par enregistrements', () => {
+    const payload = {
+        origin: '2019-12-30',
+        count: 7,
+        code: ['GC1', '', 'GC3', 'GC4', 'GC5', 'GC6', 'GC7'],
+        placed: [0, 31, 366, 400, 2, 3, 790],
+        archived: [366, -1, -1, 800, -1, 10, -1],
+        status: [1, 0, 2, 1, 0, 1, 0],
+        // Ordre du serveur ≠ ordre d'apparition ; libellé vide ; doublon
+        // après nettoyage (« Earthcache » / « Earthcache  ») ; index hors liste.
+        type: [2, 1, 3, 0, 9, -1, 1], types: ['', 'Earthcache', 'Traditional Cache', 'Earthcache  '],
+        size: [0, 0, 1, 0, 0, 0, 0], sizes: ['Micro', 'Small'],
+        difficulty: [0, 1, 2, 3, -1, 0, 0], difficulties: ['1', '1.5', '', 'x'],
+        terrain: [1, 1, 0, 0, 0, 5, 0], terrains: ['2', '4.5'],
+        country: [0, 0, 0, 0, 0, 0, 0], countries: ['France'],
+        region: [0, 0, 0, 0, 1, 0, 0], regions: ['Bretagne', ' Normandie '],
+        county: [0, 1, 0, 0, 1, 0, 1], counties: ['Finistère', 'Morbihan'],
+    };
+    const fast = evolutionTables(payload);
+    const reference = evolutionTablesByRecords(payload);
+    assert.deepStrictEqual(plain(fast.placed), plain(reference.placed));
+    assert.deepStrictEqual(plain(fast.archived), plain(reference.archived));
+    // Sans données valides : tables vides, comme avant.
+    assert.deepStrictEqual(plain(evolutionTables(null).placed), plain(tableFromRecords([], { source: 'evolution' })));
+    assert.equal(evolutionTables({ count: 'x' }).archived.n, 0);
+});
+
+test('Évolution : actives par catégorie et 2ᵉ dimension = décompte ligne à ligne', () => {
+    const { placed } = evolutionTables(evolutionPayload());
+    const spec = normalizeChartSpec({ source: 'evolution:1', measure: { op: 'active' }, groupBy: 'county', splitBy: 'cache_type' });
+    const result = runChartQuery(spec, placed, { today: TODAY });
+    const end = Math.min(placed.extent.last, TODAY);
+    for (const series of result.series) {
+        result.keys.forEach((county, i) => {
+            let expected = 0;
+            for (let r = 0; r < placed.n; r++) {
+                if (placed.dicts.county[placed.county[r]] !== county) continue;
+                if (placed.dicts.cache_type[placed.cache_type[r]] !== series.split) continue;
+                if (placed.day[r] <= end && !(placed.endDay[r] <= end)) expected++;
+            }
+            assert.equal(series.values[i], expected, `${series.split} / ${county}`);
+        });
+    }
+});
+
 test('actives : commencées et pas encore finies au jour donné', () => {
     const group = { starts: [1, 5, 10], ends: [5, 20] };
     assert.equal(activeAt(group, 0), 0);
