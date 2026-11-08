@@ -104,6 +104,14 @@ const state = {
     today: todayDay(),
     charts: new Map(),          // id de graphique → instance ECharts
     results: new Map(),         // id → { result, spec } (relevé E2E)
+    // Mémoïsation : un résultat ne dépend que de la requête et des données.
+    // Déplacer une carte, renommer, changer de thème… ne recalcule rien.
+    resultCache: new Map(),     // clé de requête → résultat calculé
+    dataRev: 0,                 // révision des tables : toute écriture invalide le cache
+    rendered: new Map(),        // id → { result, tokensRev } : ce qui est réellement dessiné
+    tokensRev: 0,               // révision du thème : un changement impose un redraw
+    deferred: new Set(),        // ids de cartes hors écran, dessinées à l'approche
+    lazyObserver: null,         // IntersectionObserver des cartes différées
     resizeObserver: null,
     saveTimer: null,
     saveRetryTimer: null,
@@ -147,6 +155,7 @@ function readTokens() {
 function watchTheme() {
     const observer = new MutationObserver(() => {
         state.tokens = readTokens();
+        state.tokensRev += 1;
         if (state.ready) renderAllCharts();
         if (state.editor) renderPreview();
     });
@@ -200,16 +209,23 @@ const PERSONAL_LOADERS = [
 ];
 const SOURCE_LOADER = new Map(PERSONAL_LOADERS.flatMap((l) => l.sources.map((s) => [s, l])));
 
+// Toute écriture d'une table change les données : le cache de résultats
+// est invalidé via dataRev (les cartes concernées seront recalculées).
+function setTable(source, table) {
+    state.tables.set(source, table);
+    state.dataRev += 1;
+}
+
 function loadPersonalLoader(loader) {
     return fetchJson(loader.url).then((payload) => {
         for (const [source, table] of loader.apply(payload)) {
-            state.tables.set(source, table);
+            setTable(source, table);
             state.sourceErrors.delete(source);
         }
     }).catch((e) => {
         console.warn('[stats] Source indisponible :', e?.message || e);
         for (const source of loader.sources) {
-            state.tables.set(source, EMPTY_TABLE);
+            setTable(source, EMPTY_TABLE);
             state.sourceErrors.add(source);
         }
     });
@@ -220,7 +236,7 @@ async function loadPersonalSources() {
         fetchJson('/api/stats/finds').then(findsTable),
         ...PERSONAL_LOADERS.map(loadPersonalLoader),
     ]);
-    state.tables.set('finds', finds);
+    setTable('finds', finds);
 }
 
 // Recharge les sources en échec d'un graphique (bouton « Réessayer »), puis
@@ -254,8 +270,8 @@ function ensureEvolution(id) {
         state.evolutionLoads.set(id, fetchJson('/api/evolution/datasets/' + id + '/data')
             .then((payload) => {
                 const { placed, archived } = evolutionTables(payload);
-                state.tables.set('evolution:' + id, placed);
-                state.tables.set('evolution:' + id + ':archived', archived);
+                setTable('evolution:' + id, placed);
+                setTable('evolution:' + id + ':archived', archived);
                 state.sourceErrors.delete('evolution:' + id);
                 state.sourceErrors.delete('evolution:' + id + ':archived');
             })
@@ -268,7 +284,7 @@ function ensureEvolution(id) {
                     // Pas de promesse en cache : la prochaine tentative repart.
                     state.evolutionLoads.delete(id);
                 }
-                for (const source of sources) state.tables.set(source, EMPTY_TABLE);
+                for (const source of sources) setTable(source, EMPTY_TABLE);
             }));
     }
     return state.evolutionLoads.get(id);
@@ -854,19 +870,63 @@ function applyFilters() {
     renderAllCharts();
 }
 
+// Cartes reconstruites ou réutilisées : une carte dont le contenu (item +
+// état de ses sources) n'a pas changé garde son DOM et son instance ECharts —
+// déplacer, renommer ou ajouter une carte ne redessine pas tout le tableau.
+function cardKey(item) {
+    const failed = chartSources(item.spec).some((s) => state.sourceErrors.has(s));
+    return JSON.stringify(item) + (failed ? '|erreur' : '');
+}
+
+function releaseCard(id) {
+    state.charts.get(id)?.dispose();
+    state.charts.delete(id);
+    state.rendered.delete(id);
+    state.deferred.delete(id);
+}
+
+// Les états de menu qui dépendent de la position, pas du contenu.
+function syncCardMenuState(card, index, count) {
+    const set = (action, disabled) => {
+        const button = card.querySelector('[data-action=' + action + ']');
+        if (button) button.disabled = disabled;
+    };
+    set('duplicate', count >= MAX_ITEMS);
+    set('before', index === 0);
+    set('after', index === count - 1);
+}
+
 function renderDashboard() {
     renderToolbar();
     const dashboard = activeDashboard();
     const grid = $('statsGrid');
+    const count = dashboard.items.length;
 
-    // Les cartes sont reconstruites : leurs instances ECharts sont libérées.
-    for (const chart of state.charts.values()) chart.dispose();
-    state.charts.clear();
+    const previous = new Map();
+    for (const el of grid.querySelectorAll('.stats-card')) previous.set(el.dataset.chartId, el);
+
+    const placed = dashboard.items.map((item, index) => {
+        const key = cardKey(item);
+        let card = previous.get(item.spec.id);
+        if (card) previous.delete(item.spec.id);
+        if (card && card.dataset.itemKey !== key) {
+            releaseCard(item.spec.id); // contenu changé : instance libérée
+            card = null;
+        }
+        if (!card) {
+            card = cardElement(item, index, count);
+            card.dataset.itemKey = key;
+        }
+        syncCardMenuState(card, index, count);
+        return card;
+    });
+    // Cartes retirées ou remplacées : leurs instances ECharts sont libérées.
+    for (const [id] of previous) releaseCard(id);
     state.results.clear();
     state.resizeObserver.disconnect();
-    grid.replaceChildren(...dashboard.items.map((item, index) => cardElement(item, index, dashboard.items.length)));
-    $('statsGridEmpty').hidden = dashboard.items.length > 0;
-    $('btnStatsAddChart').disabled = dashboard.items.length >= MAX_ITEMS;
+    grid.replaceChildren(...placed);
+    $('statsGridEmpty').hidden = count > 0;
+    $('btnStatsAddChart').disabled = count >= MAX_ITEMS;
     renderAllCharts();
 }
 
@@ -1043,12 +1103,31 @@ function cardMenu(spec, index, count) {
     return wrap;
 }
 
+// Le résultat ne dépend que de la requête effective et des données : il est
+// mémorisé (dataRev invalide à chaque rechargement de source). Le cache est
+// borné — l'aperçu de l'éditeur génère une clé par frappe.
+const RESULT_CACHE_MAX = 300;
+
 function computeResult(spec, dashboard) {
-    return runChartQueries(spec, tableOf, {
+    const key = JSON.stringify({ spec, period: dashboard.period, filters: dashboard.filters,
+        kind: dashboard.kind, dataset: dashboard.dataset, today: state.today }) + '|' + state.dataRev;
+    const cached = state.resultCache.get(key);
+    if (cached) {
+        // Réinsertion : l'entrée la plus ancienne partira en première.
+        state.resultCache.delete(key);
+        state.resultCache.set(key, cached);
+        return cached;
+    }
+    const result = runChartQueries(spec, tableOf, {
         ...effectiveQueryOptions(spec, dashboard),
         today: state.today,
         labelOf: (dim, key) => state.labels.axisLabel(dim, key, { attributeName }),
     });
+    if (state.resultCache.size >= RESULT_CACHE_MAX) {
+        state.resultCache.delete(state.resultCache.keys().next().value);
+    }
+    state.resultCache.set(key, result);
+    return result;
 }
 
 function chartContext() {
@@ -1136,36 +1215,96 @@ function renderChartInto(host, result, spec) {
     return chart;
 }
 
+// Au-delà de ce nombre de cartes, celles hors écran ne sont dessinées qu'à
+// l'approche (le résultat est calculé quand même : exports et relevés exacts).
+const DEFER_CHARTS_BEYOND = 12;
+const DEFER_MARGIN_PX = 400;
+
+function nearViewport(host) {
+    const rect = host.getBoundingClientRect();
+    return rect.bottom > -DEFER_MARGIN_PX && rect.top < window.innerHeight + DEFER_MARGIN_PX;
+}
+
+// Dessine le contenu d'une carte : bloc « indisponible », chiffre clé ou
+// graphique ECharts (différé si la carte est loin de l'écran).
+function renderCard(item, card, dashboard) {
+    const { spec } = item;
+    const body = card.querySelector('.stats-card-body');
+    const note = card.querySelector('.stats-card-note');
+    const failed = chartSources(spec).filter((s) => state.sourceErrors.has(s));
+    if (failed.length) {
+        state.results.set(spec.id, { result: null, spec, error: failed });
+        state.rendered.delete(spec.id);
+        note.hidden = true;
+        body.replaceChildren(unavailableBlock(failed));
+        return;
+    }
+    const result = computeResult(spec, dashboard);
+    state.results.set(spec.id, { result, spec });
+    // Après un état « indisponible », remettre le conteneur attendu.
+    if (!body.querySelector('.stats-chart, .stats-number')) {
+        body.replaceChildren(cardBodyContent(spec));
+    }
+    note.textContent = cardNote(result, spec);
+    note.hidden = !note.textContent;
+    const seen = state.rendered.get(spec.id);
+    const fresh = seen?.result === result && seen.tokensRev === state.tokensRev;
+    if (spec.view.chart === 'number') {
+        if (!fresh) {
+            renderNumber(card.querySelector('.stats-number'), result, spec, dashboard);
+            state.rendered.set(spec.id, { result, tokensRev: state.tokensRev });
+        }
+        return;
+    }
+    const host = card.querySelector('.stats-chart');
+    if (state.charts.has(spec.id) && fresh) {
+        // Même requête, même thème : l'instance déjà dessinée suffit.
+        state.resizeObserver.observe(host);
+        return;
+    }
+    // Grande collection, carte loin de l'écran : dessin différé à l'approche.
+    if (!window.echarts.getInstanceByDom(host) && dashboard.items.length > DEFER_CHARTS_BEYOND && !nearViewport(host)) {
+        host.classList.add('is-pending');
+        state.deferred.add(spec.id);
+        state.lazyObserver.observe(host);
+        return;
+    }
+    host.classList.remove('is-pending');
+    state.deferred.delete(spec.id);
+    state.lazyObserver?.unobserve(host);
+    state.charts.set(spec.id, renderChartInto(host, result, spec));
+    state.rendered.set(spec.id, { result, tokensRev: state.tokensRev });
+    state.resizeObserver.observe(host);
+}
+
 function renderAllCharts() {
     if (!state.tokens) state.tokens = readTokens();
+    state.deferred.clear();
+    state.lazyObserver?.disconnect();
+    state.lazyObserver ??= new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            const card = entry.target.closest('.stats-card');
+            const item = card && activeDashboard().items.find((i) => i.spec.id === card.dataset.chartId);
+            if (item) renderCard(item, card, activeDashboard());
+        }
+    }, { rootMargin: DEFER_MARGIN_PX + 'px' });
     const dashboard = activeDashboard();
     for (const item of dashboard.items) {
         const card = $('statsGrid').querySelector(cardSelector(item.spec.id));
-        if (!card) continue;
-        const body = card.querySelector('.stats-card-body');
-        const note = card.querySelector('.stats-card-note');
-        const failed = chartSources(item.spec).filter((s) => state.sourceErrors.has(s));
-        if (failed.length) {
-            state.results.set(item.spec.id, { result: null, spec: item.spec, error: failed });
-            note.hidden = true;
-            body.replaceChildren(unavailableBlock(failed));
-            continue;
-        }
-        state.results.set(item.spec.id, { result: computeResult(item.spec, dashboard), spec: item.spec });
-        // Après un état « indisponible », remettre le conteneur attendu.
-        if (!body.querySelector('.stats-chart, .stats-number')) {
-            body.replaceChildren(cardBodyContent(item.spec));
-        }
-        const { result } = state.results.get(item.spec.id);
-        note.textContent = cardNote(result, item.spec);
-        note.hidden = !note.textContent;
-        if (item.spec.view.chart === 'number') {
-            renderNumber(card.querySelector('.stats-number'), result, item.spec, dashboard);
-        } else {
-            const host = card.querySelector('.stats-chart');
-            state.charts.set(item.spec.id, renderChartInto(host, result, item.spec));
-            state.resizeObserver.observe(host);
-        }
+        if (card) renderCard(item, card, dashboard);
+    }
+}
+
+// Cartes différées dessinées d'office : export ou impression. Sans
+// argument, toutes les cartes différées ; sinon une seule.
+function renderDeferred(onlyId = null) {
+    const dashboard = activeDashboard();
+    for (const id of [...state.deferred]) {
+        if (onlyId && id !== onlyId) continue;
+        const card = $('statsGrid').querySelector(cardSelector(id));
+        const item = card && dashboard.items.find((i) => i.spec.id === id);
+        if (item) renderCard(item, card, dashboard);
     }
 }
 
@@ -1655,6 +1794,7 @@ function download(blob, name) {
 // Image vectorielle : le même graphique redessiné hors écran par le moteur
 // SVG d'ECharts, à la taille de la carte, fond de la carte compris.
 export function chartSvg(spec) {
+    renderDeferred(spec.id);
     const entry = state.results.get(spec.id);
     const chart = state.charts.get(spec.id);
     if (!entry || !chart) return null;
@@ -1681,6 +1821,7 @@ function exportSvg(spec) {
 }
 
 function exportPng(spec) {
+    renderDeferred(spec.id);
     const chart = state.charts.get(spec.id);
     if (!chart) return;
     const url = chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: state.tokens.surface });
@@ -1820,11 +1961,14 @@ function startResize(event, card) {
 // ---------------------------------------------------------------------------
 
 function onBeforePrint() {
+    // Les cartes différées hors écran doivent exister sur le papier.
+    renderDeferred();
     const root = document.documentElement;
     if (root.getAttribute('data-bs-theme') === 'dark') {
         state.printTheme = 'dark';
         root.setAttribute('data-bs-theme', 'light');
         state.tokens = readTokens();
+        state.tokensRev += 1;
         if (state.ready) renderAllCharts();
     }
 }
@@ -2399,6 +2543,7 @@ window.getStatsPageSnapshot = () => {
                 measure: measureKey(item.spec.measure),
                 title: chartTitle(item.spec),
                 unavailable: entry?.error ?? null,
+                deferred: state.deferred.has(item.spec.id),
                 keys: entry?.result?.keys ?? null,
                 series: entry?.result?.series.map((s) => s.values) ?? null,
                 periods: entry?.result?.periods.map((p) => state.labels.seriesPeriodLabel(p)) ?? null,

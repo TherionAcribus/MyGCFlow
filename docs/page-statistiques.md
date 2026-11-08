@@ -240,6 +240,24 @@ autre erreur est relançable, la promesse n'étant pas gardée en cache.
 Archivée sans date (Évolution) : comptée parmi les publiées, jamais
 active ni archivée.
 
+**Performance.** Trois mécanismes évitent le travail redondant :
+
+- **Cache de résultats** (`state.resultCache`, borné à 300) : `computeResult`
+  mémorise par clé {requête, période, filtres, données}. Toute écriture de
+  table passe par `setTable` qui incrémente `dataRev` et invalide le cache.
+  Déplacer une carte, renommer le tableau ou changer de thème ne recalcule
+  rien.
+- **Cartes réutilisées** : `renderDashboard` compare chaque carte à son
+  `cardKey` (contenu de l'item + état de ses sources) et garde le DOM et
+  l'instance ECharts d'une carte inchangée ; `state.rendered` mémorise
+  {résultat, révision de thème} — une carte déjà à jour n'est pas
+  redessinée (`setOption` sauté).
+- **Dessin différé** : au-delà de `DEFER_CHARTS_BEYOND` (12) cartes, les
+  graphiques hors écran ne sont dessinés qu'à l'approche
+  (`IntersectionObserver`, marge 400 px, hôte `.is-pending`). Le résultat
+  est calculé quand même : relevés, exports (`renderDeferred` dessine à la
+  demande) et impression (`beforeprint`) restent exacts.
+
 **Barrière** :
 - `chart_spec.mjs` : `sourceFamily`, `sameSourceGroup` (même famille et,
   pour Évolution, même jeu) — `extraSources` n'admet que des sources du

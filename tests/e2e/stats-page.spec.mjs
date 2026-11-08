@@ -772,6 +772,27 @@ test('un jeu supprimé (404) dit « n\'existe plus », sans bloc de relance', as
 });
 
 // ---------------------------------------------------------------------------
+// Performance : cache de résultats, cartes réutilisées, dessin différé
+// ---------------------------------------------------------------------------
+
+test('grand tableau : les cartes lointaines se dessinent au défilement', async ({ page, request }) => {
+  const items = Array.from({ length: 15 }, (_, i) => ({ size: 'S',
+    spec: { id: 'df00' + String(i).padStart(2, '0'), source: 'finds', groupBy: 'year' } }));
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Grand', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  const snap = await snapshot(page);
+  // Tous les résultats sont calculés, seul le dessin est différé.
+  expect(snap.cards.every((c) => c.series)).toBeTruthy();
+  expect(snap.cards[0].rendered).toBe(true);
+  expect(snap.cards.some((c) => c.deferred)).toBe(true);
+  expect(snap.cards.filter((c) => c.deferred).every((c) => !c.rendered)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect.poll(async () => (await snapshot(page)).cards.every((c) => c.rendered)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
 // Organisation (lot 5)
 // ---------------------------------------------------------------------------
 

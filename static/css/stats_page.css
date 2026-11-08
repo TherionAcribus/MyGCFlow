@@ -571,3 +571,25 @@ body > .ts-dropdown {
 }
 .stats-card-unavailable > i { font-size: 1.6rem; }
 .stats-card-unavailable > p { margin: 0; }
+
+/* Carte hors écran en attente de dessin (grands tableaux de bord) :
+   l'emplacement garde sa hauteur pour éviter tout saut de défilement. */
+.stats-chart.is-pending {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--stats-chart-height, 260px);
+}
+.stats-chart.is-pending::after {
+    content: "";
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 2px solid var(--chart-grid, #e1e6ec);
+    border-top-color: var(--color-text-muted, #5b6878);
+    border-radius: 50%;
+    animation: stats-chart-spin 0.9s linear infinite;
+}
+@keyframes stats-chart-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .stats-chart.is-pending::after { animation: none; }
+}
