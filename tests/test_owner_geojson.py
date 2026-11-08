@@ -19,6 +19,7 @@ import owner_geojson
 import poses_dataset as pd
 from app import create_app
 from extensions import db
+from models import CacheRef
 
 FIXTURE = Path(__file__).parent / "fixtures" / "gc_logs" / "logs-poses.json"
 
@@ -45,6 +46,10 @@ class OwnerFeaturesTests(unittest.TestCase):
 
     def _features(self):
         result = owner_geojson.build_owner_features(db.session)
+        return {f["properties"]["gc_code"]: f for f in result["features"]}, result
+
+    def _stats(self):
+        result = owner_geojson.build_owner_stats(db.session)
         return {f["properties"]["gc_code"]: f for f in result["features"]}, result
 
     def test_empty_without_logs(self):
@@ -95,6 +100,45 @@ class OwnerFeaturesTests(unittest.TestCase):
         props = features["GCP0006"]["properties"]
         self.assertEqual(props["owner_events"], [])
         self.assertEqual([state for _day, state in props["owner_states"]], [pd.STATE_ARCHIVED])
+
+    # ----- Source dédiée de la page Statistiques (/api/stats/owned) -----
+
+    def test_stats_serve_every_cache_even_without_a_position(self):
+        self._commit()
+        features, result = self._stats()
+        # GCP0007 : « pending » sur la carte (sans position), servie ici avec
+        # une géométrie nulle ; les statistiques comptent les 8 caches.
+        self.assertEqual(result["ownedTotal"], 8)
+        self.assertEqual(result["undatable"], 0)
+        self.assertEqual(sorted(features), [f"GCP000{i}" for i in range(1, 9)])
+        for feature in features.values():
+            self.assertIsNone(feature["geometry"])
+        props = features["GCP0001"]["properties"]
+        self.assertEqual((props["date_find"], props["published_date"]),
+                         ("2018-03-05", "2018-03-05"))
+
+    def test_stats_serve_an_undatable_cache_with_a_null_date(self):
+        self._commit()
+        # Fiche posée sans log ni date de pose : `appear` reste inconnu.
+        collection = log_store.get_collection(db.session)
+        db.session.add(CacheRef(collection_id=collection.id, gc_code="GCP9999",
+                                name="Sans date", owner_id=1234567,
+                                owner_name="Joueur_Fictif"))
+        db.session.commit()
+        features, result = self._stats()
+        self.assertEqual(result["ownedTotal"], 9)
+        self.assertEqual(result["undatable"], 1)
+        props = features["GCP9999"]["properties"]
+        self.assertIsNone(features["GCP9999"]["geometry"])
+        self.assertIsNone(props["date_find"])
+        self.assertIsNone(props["published_date"])
+        # La cache non datable est servie en dernier (tri par apparition).
+        self.assertEqual(features["GCP9999"], result["features"][-1])
+
+    def test_stats_empty_without_logs(self):
+        features, result = self._stats()
+        self.assertEqual(features, {})
+        self.assertEqual((result["ownedTotal"], result["undatable"]), (0, 0))
 
     def test_api_route(self):
         self._commit()

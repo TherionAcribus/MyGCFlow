@@ -12,7 +12,9 @@ import hashlib
 from flask import Blueprint, jsonify, make_response, request
 
 import dashboards_store
+import dnf_geojson
 import lab_geojson
+import owner_geojson
 import stats_finds
 from bdd import create_geojson, geojson_cache, get_metadata_from_geojson
 from extensions import db
@@ -54,6 +56,20 @@ def stats_finds_data():
     response.set_etag(f"finds-{digest}-p{stats_finds.PAYLOAD_VERSION}", weak=True)
     response.headers['Cache-Control'] = 'no-cache'
     return response.make_conditional(request)
+
+
+@statistics_bp.route('/api/stats/dnf')
+def stats_dnf_data():
+    """Tous les logs DNF — indépendant de la carte : aucune position requise,
+    aucun filtrage par la résolution (dnf_geojson.build_dnf_stats)."""
+    return jsonify(dnf_geojson.build_dnf_stats(db.session))
+
+
+@statistics_bp.route('/api/stats/owned')
+def stats_owned_data():
+    """Toutes les caches posées — position non requise
+    (owner_geojson.build_owner_stats)."""
+    return jsonify(owner_geojson.build_owner_stats(db.session))
 
 
 @statistics_bp.route('/api/dashboards', methods=['GET'])

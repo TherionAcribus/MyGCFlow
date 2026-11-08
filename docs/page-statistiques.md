@@ -56,7 +56,7 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 
 | Fichier | Rôle |
 |---|---|
-| `blueprints/statistics.py` | `/stats`, `GET /api/stats/finds`, `GET/PUT/DELETE /api/dashboards` |
+| `blueprints/statistics.py` | `/stats`, `GET /api/stats/finds`, `GET /api/stats/dnf`, `GET /api/stats/owned`, `GET/PUT/DELETE /api/dashboards` |
 | `stats_finds.py` | Trouvailles en colonnes (chaînes codées par dictionnaire, ETag) |
 | `dashboards_store.py` | `dashboards.json` dans le répertoire de config : forme, version, taille ≤ 1 Mo |
 | `templates/stats_page.html` | Gabarit : barre, grille, galerie, éditeur, renommage |
@@ -210,17 +210,24 @@ ses trouvailles, Évolution jamais) :
 | Famille | Sources | Route |
 |---|---|---|
 | `personal` | `finds` | `GET /api/stats/finds` |
-| | `dnf` (un enregistrement par DNF) | `GET /api/logs/dnf_features` |
-| | `owned` (une par cache posée, au jour de sa pose ; fin = dernier archivage) | `GET /api/logs/owner_features` |
+| | `dnf` (un enregistrement par DNF) | `GET /api/stats/dnf` |
+| | `owned` (une par cache posée, au jour de sa pose ; fin = dernier archivage) | `GET /api/stats/owned` |
 | | `poses.received`, `poses.dnf`, `poses.favorites` (un par log reçu, avec `cache` et `finder`) | `GET /api/poses/data` |
 | `evolution` | `evolution:<id>` (publiées, fin = archivage), `evolution:<id>:archived` (archivages datés) | `GET /api/evolution/datasets/<id>/data` |
 
-Aucune route nouvelle : `chart_sources.mjs` convertit chaque réponse
-(`dnfTable`, `ownedTable`, `posesTables`, `evolutionTables`) en
-enregistrements, puis en table commune (`tableFromRecords`, mêmes colonnes
-que les trouvailles + `endDay`, + champs `cache`, `finder`, `county`). Une
-source absente (pas de logs) donne une table vide ; seules les trouvailles
-sont indispensables au chargement. Les jeux Évolution se chargent à la
+`chart_sources.mjs` convertit chaque réponse (`dnfTable`, `ownedTable`,
+`posesTables`, `evolutionTables`) en enregistrements, puis en table commune
+(`tableFromRecords`, mêmes colonnes que les trouvailles + `endDay`, +
+champs `cache`, `finder`, `county`). DNF et caches posées ont des routes
+dédiées (`dnf_geojson.build_dnf_stats`, `owner_geojson.build_owner_stats`)
+qui comptent toutes les données : aucune position requise et les règles
+d'affichage de la carte ne s'appliquent pas — un DNF postérieur à la
+trouvaille compte, une cache trouvée avant son premier DNF garde ses DNF,
+une cache posée sans date est servie « sans date ». Les routes de la carte
+(`/api/logs/dnf_features`, `/api/logs/owner_features`) écartent au
+contraire les caches sans coordonnées, les DNF résolus et les caches posées
+sans date. Une source absente (pas de logs) donne une table vide ; seules
+les trouvailles sont indispensables au chargement. Les jeux Évolution se chargent à la
 demande (`ensureEvolution`), un jeu supprimé donne des tables vides et une
 note. Archivée sans date (Évolution) : comptée parmi les publiées, jamais
 active ni archivée.

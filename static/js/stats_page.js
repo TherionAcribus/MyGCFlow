@@ -184,8 +184,8 @@ async function loadPersonalSources() {
     });
     const [finds, dnf, owned, poses] = await Promise.all([
         fetchJson('/api/stats/finds').then(findsTable),
-        optional(fetchJson('/api/logs/dnf_features'), dnfTable),
-        optional(fetchJson('/api/logs/owner_features'), ownedTable),
+        optional(fetchJson('/api/stats/dnf'), dnfTable),
+        optional(fetchJson('/api/stats/owned'), ownedTable),
         optional(fetchJson('/api/poses/data'), posesTables),
     ]);
     state.tables.set('finds', finds);

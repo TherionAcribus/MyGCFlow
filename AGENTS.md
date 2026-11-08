@@ -289,6 +289,10 @@ Autres repères :
   absent = tableau de bord par défaut à la visite suivante). Pour un rendu
   sur beaucoup de données sans toucher la base, intercepter
   `GET /api/stats/finds` par `page.route` (format : stats_finds.py).
+  `/api/stats/dnf` et `/api/stats/owned` comptent toutes les données (aucune
+  position requise, DNF post-trouvaille et caches sans date inclus) — ne pas
+  les « corriger » vers la sémantique des routes carte, qui écarte les caches
+  sans coordonnées et les DNF résolus.
   Ses menus de filtres (Tom Select) sont rattachés à `<body>`
   (`dropdownParent`) : les ouvrir par `el.tomselect.open()` puis cliquer
   `.ts-dropdown:visible .option[data-value=…]` — helper `pickFilter` de

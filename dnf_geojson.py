@@ -14,6 +14,10 @@ Ces points ne sont jamais des trouvailles : servis à part du jeu principal
 - position : fiche `cache_ref` (correction manuelle ou fichier), sinon ligne
   `geocache` du My Finds ; sans position, la cache est comptée en attente et
   jamais placée à une position inventée.
+
+La page Statistiques a sa propre source, `build_dnf_stats`
+(`/api/stats/dnf`) : tous les DNF réels, sans aucune de ces règles
+d'affichage — ne pas les y réintroduire.
 """
 
 from __future__ import annotations
@@ -37,6 +41,29 @@ def _as_date(value):
     return value.date() if hasattr(value, "date") else value
 
 
+def _pick(ref, row):
+    """Accesseur des propriétés d'une cache : la fiche `cache_ref` d'abord,
+    la ligne `geocache` du My Finds en repli (`pick("name", "cache_name")`)."""
+    def pick(ref_attr, row_attr=None):
+        value = getattr(ref, ref_attr, None) if ref is not None else None
+        if value is None and row is not None:
+            value = getattr(row, row_attr or ref_attr, None)
+        return value
+    return pick
+
+
+def _load_refs_finds(session, collection, codes):
+    """(fiches `cache_ref`, lignes `geocache` du My Finds) pour `codes`."""
+    refs, finds = {}, {}
+    for chunk in _chunks(codes):
+        for ref in session.query(CacheRef).filter(
+                CacheRef.collection_id == collection.id, CacheRef.gc_code.in_(chunk)):
+            refs[ref.gc_code] = ref
+        for row in session.query(Geocache).filter(Geocache.gc_code.in_(chunk)):
+            finds[row.gc_code] = row
+    return refs, finds
+
+
 def build_dnf_features(session) -> dict:
     """{features, pending, revision} — `revision` : celle de la collection de
     logs (le My Finds, qui résout des DNF, est relu à chaque appel)."""
@@ -57,15 +84,10 @@ def build_dnf_features(session) -> dict:
             find_dates[code].append(log_date)
 
     codes = sorted(dnf_dates)
-    refs, finds = {}, {}
-    for chunk in _chunks(codes):
-        for ref in session.query(CacheRef).filter(
-                CacheRef.collection_id == collection.id, CacheRef.gc_code.in_(chunk)):
-            refs[ref.gc_code] = ref
-        for row in session.query(Geocache).filter(Geocache.gc_code.in_(chunk)):
-            finds[row.gc_code] = row
-            if row.found and row.date_find:
-                find_dates[row.gc_code].append(_as_date(row.date_find))
+    refs, finds = _load_refs_finds(session, collection, codes)
+    for row in finds.values():
+        if row.found and row.date_find:
+            find_dates[row.gc_code].append(_as_date(row.date_find))
 
     features, pending = [], 0
     for code in codes:
@@ -76,14 +98,7 @@ def build_dnf_features(session) -> dict:
         resolved = found[0] if found else None
         dates = sorted(d for d in dnf_dates[code] if resolved is None or d <= resolved)
 
-        ref, row = refs.get(code), finds.get(code)
-
-        def pick(ref_attr, row_attr=None):
-            value = getattr(ref, ref_attr, None) if ref is not None else None
-            if value is None and row is not None:
-                value = getattr(row, row_attr or ref_attr, None)
-            return value
-
+        pick = _pick(refs.get(code), finds.get(code))
         lat, lon = pick("latitude"), pick("longitude")
         if lat is None or lon is None:
             pending += 1
@@ -113,3 +128,57 @@ def build_dnf_features(session) -> dict:
             },
         })
     return {"features": features, "pending": pending, "revision": collection.revision}
+
+
+def build_dnf_stats(session) -> dict:
+    """{features, logs} — tous les logs DNF du joueur pour la page Statistiques.
+
+    Contrairement au GeoJSON de la carte : aucune position requise et les
+    règles d'affichage ne s'appliquent pas — une cache trouvée avant garde
+    ses DNF, un DNF postérieur à la trouvaille compte. Un enregistrement par
+    date de DNF (`dnf_dates` complet), propriétés jointes à la fiche puis au
+    My Finds comme les points de la carte.
+    """
+    collection = log_store.get_collection(session)
+    if collection is None or collection.account_user_id is None:
+        return {"features": [], "logs": 0}
+
+    dnf_dates = defaultdict(list)
+    for code, log_date, type_id in session.query(
+            LogEvent.gc_code, LogEvent.log_date, LogEvent.type_id).filter(
+            LogEvent.collection_id == collection.id,
+            LogEvent.author_id == collection.account_user_id):
+        if log_category(type_id) == CATEGORY_DNF:
+            dnf_dates[code].append(log_date)
+
+    codes = sorted(dnf_dates)
+    refs, finds = _load_refs_finds(session, collection, codes)
+
+    features = []
+    for code in codes:
+        dates = sorted(dnf_dates[code])
+        pick = _pick(refs.get(code), finds.get(code))
+        placed = pick("placed_date", "published_date")
+        features.append({
+            "type": "Feature",
+            "geometry": None,
+            "properties": {
+                "source_kind": SOURCE_KIND_DNF,
+                "record_uid": f"dnf:{code}",
+                "gc_code": code,
+                # Mêmes noms de propriétés que les points de la carte.
+                "name": pick("name", "cache_name"),
+                "owner": pick("owner_name", "owner"),
+                "cache_type": pick("cache_type"),
+                "difficulty": pick("difficulty"),
+                "terrain": pick("terrain"),
+                "container": pick("container"),
+                "country": pick("country"),
+                "state": pick("state"),
+                "published_date": _as_date(placed).isoformat() if placed else None,
+                "date_find": dates[0].isoformat(),
+                "dnf_dates": [d.isoformat() for d in dates],
+                "found": False,
+            },
+        })
+    return {"features": features, "logs": sum(len(dates) for dates in dnf_dates.values())}

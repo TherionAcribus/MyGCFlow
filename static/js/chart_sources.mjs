@@ -149,9 +149,9 @@ export function findsTable(payload) {
 // source : valeur inconnue (-1 / NaN), et chart_spec.mjs › sourceDimensions
 // ne propose pas la dimension.
 //
-//   dnfTable(payload)        GET /api/logs/dnf_features : un enregistrement
+//   dnfTable(payload)        GET /api/stats/dnf : un enregistrement
 //                            par DNF (dnf_dates de chaque cache)
-//   ownedTable(payload)      GET /api/logs/owner_features : un par cache
+//   ownedTable(payload)      GET /api/stats/owned : un par cache
 //                            posée, au jour de sa pose ; endDay = archivage
 //   posesTables(payload)     GET /api/poses/data : { received, dnf,
 //                            favorites } — un par log reçu

@@ -49,6 +49,10 @@ class DnfFeaturesTests(unittest.TestCase):
         result = dnf_geojson.build_dnf_features(db.session)
         return {f["properties"]["gc_code"]: f for f in result["features"]}, result
 
+    def _stats(self):
+        result = dnf_geojson.build_dnf_stats(db.session)
+        return {f["properties"]["gc_code"]: f for f in result["features"]}, result
+
     def _find(self, code, day, lat=48.5, lon=2.5):
         db.session.add(Geocache(gc_code=code, latitude=lat, longitude=lon, found=True,
                                 date_find=datetime.fromisoformat(day + "T20:00:00"),
@@ -110,6 +114,61 @@ class DnfFeaturesTests(unittest.TestCase):
     def test_without_logs(self):
         result = dnf_geojson.build_dnf_features(db.session)
         self.assertEqual((result["features"], result["pending"]), ([], 0))
+
+    # ----- Source dédiée de la page Statistiques (/api/stats/dnf) -----
+
+    def test_stats_count_a_dnf_on_a_cache_found_before(self):
+        # Même scénario que test_found_before_any_dnf_has_no_point : la carte
+        # écarte le point, les statistiques comptent le DNF réel.
+        doc = _doc()
+        doc["coverage"] = []
+        doc["logs"] = [_log(1, "GC1ABCD", 3, "2016-01-01")]
+        self._commit(doc)
+        self._find("GC1ABCD", "2015-06-01")
+        features, result = self._stats()
+        self.assertEqual(list(features), ["GC1ABCD"])
+        props = features["GC1ABCD"]["properties"]
+        self.assertIsNone(features["GC1ABCD"]["geometry"])
+        self.assertEqual(props["dnf_dates"], ["2016-01-01"])
+        self.assertEqual(props["date_find"], "2016-01-01")
+        self.assertEqual(result["logs"], 1)
+
+    def test_stats_keep_every_dnf_even_after_the_find(self):
+        doc = _doc()
+        doc["coverage"] = []
+        doc["logs"] = [
+            _log(1, "GC1ABCD", 3, "2016-01-01"), _log(2, "GC1ABCD", 3, "2016-02-01"),
+            _log(3, "GC1ABCD", 2, "2016-03-01"), _log(4, "GC1ABCD", 3, "2017-01-01"),
+        ]
+        self._commit(doc)
+        features, result = self._stats()
+        props = features["GC1ABCD"]["properties"]
+        # Le DNF postérieur à la résolution compte (dnf_dates complet).
+        self.assertEqual(props["dnf_dates"], ["2016-01-01", "2016-02-01", "2017-01-01"])
+        self.assertNotIn("resolved_date", props)
+        self.assertEqual(result["logs"], 3)
+
+    def test_stats_serve_caches_without_a_position(self):
+        self._commit(_doc())
+        features, result = self._stats()
+        # GC2PR3N : « pending » sur la carte (aucune position), servie ici
+        # avec une géométrie nulle comme les autres.
+        self.assertEqual(sorted(features), ["GC2PR3N", "GC9ZZZZ"])
+        for feature in features.values():
+            self.assertIsNone(feature["geometry"])
+        self.assertIsNone(features["GC2PR3N"]["properties"]["published_date"])
+        self.assertEqual(result["logs"], 2)
+
+    def test_stats_ignore_other_players_and_the_empty_collection(self):
+        self.assertEqual(dnf_geojson.build_dnf_stats(db.session),
+                         {"features": [], "logs": 0})
+        doc = _doc()
+        doc["coverage"] = []
+        doc["logs"] = [_log(1, "GC1ABCD", 3, "2016-01-01", author=42)]
+        self._commit(doc)
+        features, result = self._stats()
+        self.assertEqual(features, {})
+        self.assertEqual(result["logs"], 0)
 
     def test_route(self):
         self._commit(_doc())

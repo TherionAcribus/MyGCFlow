@@ -83,6 +83,29 @@ class StatisticsPageTests(unittest.TestCase):
             again = self.client.get("/api/stats/finds", headers={"If-None-Match": etag})
             self.assertEqual(again.status_code, 304)
 
+    # ----- Sources dédiées (DNF et caches posées, hors règles de la carte) -----
+
+    def test_dnf_route_returns_the_builder_payload(self):
+        payload = {"features": [{"type": "Feature", "geometry": None,
+                                 "properties": {"gc_code": "GC1ABCD"}}], "logs": 3}
+        with mock.patch("blueprints.statistics.dnf_geojson.build_dnf_stats",
+                        return_value=payload) as builder:
+            response = self.client.get("/api/stats/dnf")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json(), payload)
+            builder.assert_called_once()
+
+    def test_owned_route_returns_the_builder_payload(self):
+        payload = {"features": [{"type": "Feature", "geometry": None,
+                                 "properties": {"gc_code": "GCP0001"}}],
+                   "ownedTotal": 1, "undatable": 0, "revision": 2}
+        with mock.patch("blueprints.statistics.owner_geojson.build_owner_stats",
+                        return_value=payload) as builder:
+            response = self.client.get("/api/stats/owned")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json(), payload)
+            builder.assert_called_once()
+
     # ----- Tableaux de bord -----
 
     def test_dashboards_start_empty_then_round_trip(self):
