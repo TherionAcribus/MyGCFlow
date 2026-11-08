@@ -685,6 +685,135 @@ test('Évolution : un tableau à part, lié à son jeu, sans sources personnelle
   }
 });
 
+// ---------------------------------------------------------------------------
+// Organisation (lot 5)
+// ---------------------------------------------------------------------------
+
+async function dashboardAction(page, action) {
+  await page.locator('#btnStatsDashboards').click();
+  await page.locator(`#statsDashboardMenu [data-action="${action}"]`).click();
+}
+
+test('glisser une carte par sa poignée la déplace', async ({ page, request }) => {
+  const errors = await openStats(page);
+  const before = (await snapshot(page)).cards.map((c) => c.id);
+  // La 3ᵉ carte déposée sur la moitié gauche de la 1ʳᵉ : elle passe devant.
+  await card(page, before[2]).locator('.stats-card-grip')
+    .dragTo(card(page, before[0]), { targetPosition: { x: 12, y: 60 } });
+  await expect.poll(async () => (await snapshot(page)).cards.map((c) => c.id).slice(0, 3))
+    .toEqual([before[2], before[0], before[1]]);
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.[0]?.spec?.id).toBe(before[2]);
+  // Plus rien de « glissable » ni de repère d'insertion après le dépôt.
+  await expect(page.locator('.stats-card[draggable="true"], .drop-before, .drop-after')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('le coin de la carte change sa largeur et sa hauteur', async ({ page, request }) => {
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  const errors = await openStats(page);
+  const target = (await snapshot(page)).cards[3];
+  expect(target).toMatchObject({ size: 'M', heightKey: 'M' });
+  const corner = card(page, target.id).locator('.stats-card-resize');
+  await corner.scrollIntoViewIfNeeded();
+  const box = await corner.boundingBox();
+  await page.mouse.move(box.x + 8, box.y + 8);
+  await page.mouse.down();
+  // Environ deux colonnes et demie de plus, et vers le bas.
+  await page.mouse.move(box.x + 8 + 270, box.y + 8 + 120, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(async () => (await snapshot(page)).cards[3]).toMatchObject({ size: 'L', heightKey: 'L' });
+  expect(Math.round((await snapshot(page)).cards[3].height)).toBe(460);
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.[3]?.height).toBe('L');
+  expect(errors).toEqual([]);
+});
+
+test('éditeur : la hauteur se choisit, sauf pour un chiffre clé', async ({ page }) => {
+  await openStats(page);
+  const cards = (await snapshot(page)).cards;
+  await cardAction(page, cards[0].id, 'edit');
+  await expect(page.locator('#statsEdHeightCol')).toBeHidden();
+  await page.locator('#statsEditorModal [data-bs-dismiss="modal"]').last().click();
+  await cardAction(page, cards[3].id, 'edit');
+  await page.locator('#statsEdHeight').selectOption('L');
+  await page.locator('#btnStatsEdSave').click();
+  expect((await snapshot(page)).cards[3].height).toBe(460);
+});
+
+test('exporter un graphique en image vectorielle', async ({ page }) => {
+  await openStats(page);
+  const target = (await snapshot(page)).cards[3];
+  const download = page.waitForEvent('download');
+  await cardAction(page, target.id, 'export-svg');
+  const file = await download;
+  expect(file.suggestedFilename()).toBe(`${target.title}.svg`);
+  const svg = fs.readFileSync(await file.path(), 'utf-8');
+  expect(svg.startsWith('<svg')).toBe(true);
+  expect(svg).toContain('2026');
+});
+
+test('partager un tableau de bord : export, import, duplication', async ({ page, request }) => {
+  const errors = await openStats(page);
+  const original = await snapshot(page);
+
+  const download = page.waitForEvent('download');
+  await dashboardAction(page, 'export-dashboard');
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('Mon tableau de bord.json');
+  const content = JSON.parse(fs.readFileSync(await file.path(), 'utf-8'));
+  expect(content.format).toBe('mygcflow-dashboard');
+  expect(content.dashboard.items.length).toBe(original.cards.length);
+
+  // Réimport : un 2ᵉ tableau, identique, devenu actif.
+  await page.locator('#statsImportInput').setInputFiles({
+    name: 'partage.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(content)),
+  });
+  await expect.poll(async () => (await snapshot(page)).dashboards.length).toBe(2);
+  let snap = await snapshot(page);
+  expect(snap.dashboard.id).not.toBe(original.dashboard.id);
+  expect(snap.cards.map((c) => c.groupBy)).toEqual(original.cards.map((c) => c.groupBy));
+  expect(snap.cards[0].id).not.toBe(original.cards[0].id);
+
+  // Un fichier qui n'est pas un tableau de bord : refusé, rien n'est ajouté.
+  await page.locator('#statsImportInput').setInputFiles({
+    name: 'autre.json', mimeType: 'application/json', buffer: Buffer.from('{"bonjour": 1}'),
+  });
+  await expect(page.locator('.modal.show, .gcm-toast.show').filter({ hasText: "n'est pas un tableau de bord" }).first()).toBeVisible();
+  expect((await snapshot(page)).dashboards.length).toBe(2);
+
+  // Duplication : une copie nommée « (copie) ».
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.modal.show')).toHaveCount(0);
+  await dashboardAction(page, 'duplicate-dashboard');
+  await expect.poll(async () => (await snapshot(page)).dashboards.length).toBe(3);
+  snap = await snapshot(page);
+  expect(snap.dashboard.name).toBe('Mon tableau de bord (copie)');
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.length).toBe(3);
+  expect(errors).toEqual([]);
+});
+
+test('impression : sans les commandes, et toujours sur fond clair', async ({ page, request }) => {
+  await openStats(page);
+  const select = page.locator('#appHeaderTheme');
+  const original = await select.inputValue();
+  try {
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('#btnStatsAddChart')).toBeHidden();
+    await expect(page.locator('.stats-card-menu').first()).toBeHidden();
+    await expect(page.locator('.stats-card').first()).toBeVisible();
+    await page.emulateMedia({ media: 'screen' });
+
+    await select.selectOption('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+    await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
+    await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+  } finally {
+    await select.selectOption(original);
+    await expect.poll(async () => (await (await request.get('/api/settings')).json()).theme).toBe(original);
+  }
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

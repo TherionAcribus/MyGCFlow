@@ -97,6 +97,8 @@
                     <div id="statsFiltersSummary" class="stats-filters-summary" hidden></div>
 
                     <div id="statsGrid" class="stats-grid"></div>
+                    <!-- Import d'un tableau de bord partagé (menu des tableaux). -->
+                    <input type="file" id="statsImportInput" accept=".json,application/json" hidden>
 
                     <section id="statsGridEmpty" class="stats-grid-empty" hidden>
                         <p>{{ _("Ce tableau de bord est vide.") }}</p>
@@ -202,9 +204,18 @@
                                     <label for="statsEdTitle" class="form-label">{{ _("Titre") }}</label>
                                     <input type="text" id="statsEdTitle" class="form-control" maxlength="80">
                                 </div>
-                                <div class="mb-3">
-                                    <label for="statsEdSize" class="form-label">{{ _("Taille") }}</label>
-                                    <select id="statsEdSize" class="form-select"></select>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-7">
+                                        <label for="statsEdSize" class="form-label">{{ _("Taille") }}</label>
+                                        <select id="statsEdSize" class="form-select"></select>
+                                    </div>
+                                    <div class="col-5" id="statsEdHeightCol">
+                                        <label for="statsEdHeight" class="form-label">{{ _("Hauteur") }}</label>
+                                        <select id="statsEdHeight" class="form-select">
+                                            <option value="M">{{ _("Normale") }}</option>
+                                            <option value="L">{{ _("Grande") }}</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <details id="statsEdOptions" class="stats-ed-options">

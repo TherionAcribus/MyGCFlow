@@ -188,6 +188,8 @@
 }
 .stats-card {
     grid-column: span var(--stats-cols, 6);
+    /* Repère du coin de redimensionnement. */
+    position: relative;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -237,7 +239,73 @@
 }
 .stats-chart {
     width: 100%;
-    height: 300px;
+    /* Hauteur de la carte (normale / grande), posée par stats_page.js. */
+    height: var(--stats-chart-height, 300px);
+}
+
+/* ----- Déplacer, redimensionner ----- */
+.stats-card-grip {
+    flex: 0 0 auto;
+    margin-left: -6px;
+    cursor: grab;
+    color: var(--color-text-muted);
+}
+.stats-card.is-dragging {
+    opacity: 0.45;
+}
+/* Repère d'insertion : un trait d'accent avant ou après la carte visée. */
+.stats-card.drop-before { box-shadow: -4px 0 0 0 var(--color-accent); }
+.stats-card.drop-after { box-shadow: 4px 0 0 0 var(--color-accent); }
+.stats-card.drop-before.stats-size-XL { box-shadow: 0 -4px 0 0 var(--color-accent); }
+.stats-card.drop-after.stats-size-XL { box-shadow: 0 4px 0 0 var(--color-accent); }
+.stats-card-resize {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    touch-action: none;
+    /* Deux traits en diagonale, discrets. */
+    background:
+        linear-gradient(135deg, transparent 0 55%, var(--color-text-muted) 55% 62%, transparent 62% 75%,
+            var(--color-text-muted) 75% 82%, transparent 82%);
+    opacity: 0.45;
+    border-bottom-right-radius: 10px;
+}
+.stats-card:hover .stats-card-resize,
+.stats-card.is-resizing .stats-card-resize {
+    opacity: 0.9;
+}
+.stats-card.is-resizing {
+    outline: 2px dashed var(--color-accent-text);
+    outline-offset: 2px;
+}
+
+/* ----- Impression : le tableau, sans les commandes ----- */
+@media print {
+    #appHeader,
+    .stats-toolbar-controls,
+    #btnStatsRename,
+    #btnStatsDashboards,
+    #statsSaveStatus,
+    .stats-card-menu,
+    .stats-card-grip,
+    .stats-card-resize,
+    .stats-filter-chip button,
+    #statsGridEmpty {
+        display: none !important;
+    }
+    body {
+        background: #ffffff !important;
+    }
+    #statsPage {
+        max-width: none;
+        padding: 0;
+    }
+    .stats-card {
+        break-inside: avoid;
+    }
 }
 .stats-card-note {
     margin: 6px 0 0;

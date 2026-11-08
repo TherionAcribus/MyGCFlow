@@ -9,7 +9,7 @@
 
 import { syncThemeFromSettings } from './theme.js';
 import { bindQuitButtons } from './app_quit.js';
-import { showConfirmation, t } from './notifications.js';
+import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { markSaving, reportSave } from './saved_indicator.mjs';
 import {
@@ -39,7 +39,9 @@ import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } 
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
 import { buildChartOption, calendarYears, chartHeight, numberModel } from './chart_echarts.mjs';
 import {
+    DASHBOARD_HEIGHTS,
     DASHBOARD_SIZES,
+    HEIGHT_PIXELS,
     MAX_DASHBOARDS,
     MAX_ITEMS,
     QUESTIONS,
@@ -50,6 +52,9 @@ import {
     dashboardSources,
     defaultDashboard,
     defaultDocument,
+    duplicateDashboard,
+    exportDashboard,
+    importDashboard,
     questionFamily,
     effectiveQueryOptions,
     hasOwnPeriod,
@@ -436,10 +441,74 @@ function renderDashboardMenu() {
     const divider = document.createElement('li');
     divider.innerHTML = '<hr class="dropdown-divider">';
     menu.append(divider);
-    menu.append(menuButton('new-dashboard', 'ti-plus', t('Nouveau tableau de bord…'),
-        { disabled: state.doc.dashboards.length >= MAX_DASHBOARDS }));
+    const full = state.doc.dashboards.length >= MAX_DASHBOARDS;
+    menu.append(menuButton('new-dashboard', 'ti-plus', t('Nouveau tableau de bord…'), { disabled: full }));
+    menu.append(menuButton('duplicate-dashboard', 'ti-copy', t('Dupliquer ce tableau de bord'), { disabled: full }));
+    menu.append(menuButton('export-dashboard', 'ti-file-export', t('Exporter ce tableau de bord (fichier)')));
+    menu.append(menuButton('import-dashboard', 'ti-file-import', t('Importer un tableau de bord…'), { disabled: full }));
+    menu.append(menuButton('print-dashboard', 'ti-printer', t('Imprimer')));
+    const dangerDivider = document.createElement('li');
+    dangerDivider.innerHTML = '<hr class="dropdown-divider">';
+    menu.append(dangerDivider);
     menu.append(menuButton('delete-dashboard', 'ti-trash', t('Supprimer ce tableau de bord'),
         { danger: true, disabled: state.doc.dashboards.length < 2 }));
+}
+
+function duplicateActiveDashboard() {
+    if (state.doc.dashboards.length >= MAX_DASHBOARDS) return;
+    const source = activeDashboard();
+    const copy = duplicateDashboard(source, { name: t('${name} (copie)', { name: source.name }) });
+    state.doc.dashboards.push(copy);
+    state.doc.active = copy.id;
+    scheduleSave({ immediate: true });
+    renderDashboard();
+}
+
+// Fichier d'un tableau de bord, à partager : sans identifiants ; un tableau
+// Évolution emporte le NOM de son jeu.
+function exportActiveDashboard() {
+    const dashboard = activeDashboard();
+    const file = exportDashboard(dashboard, {
+        datasetName: dashboard.kind === 'evolution' ? datasetName(dashboard.dataset) : null,
+    });
+    download(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }),
+        fileSafe(dashboard.name || t('Mon tableau de bord')) + '.json');
+}
+
+const IMPORT_ERRORS = {
+    'not-a-dashboard': () => t("Ce fichier n'est pas un tableau de bord MyGCFlow."),
+    'unknown-version': () => t('Ce tableau de bord vient d\'une version plus récente de MyGCFlow.'),
+    'no-dataset': () => t("Ce tableau de bord porte sur une zone Évolution : importez d'abord un jeu sur la page Évolution."),
+};
+
+async function importDashboardFile(file) {
+    let raw;
+    try {
+        raw = JSON.parse(await file.text());
+    } catch (_) {
+        showError(IMPORT_ERRORS['not-a-dashboard'](), t('Importer un tableau de bord'));
+        return;
+    }
+    if (state.doc.dashboards.length >= MAX_DASHBOARDS) return;
+    const { dashboard, warning, error } = importDashboard(raw, {
+        datasets: state.datasets,
+        defaultName: t('Mon tableau de bord'),
+    });
+    if (error) {
+        showError(IMPORT_ERRORS[error](), t('Importer un tableau de bord'));
+        return;
+    }
+    state.doc.dashboards.push(dashboard);
+    state.doc.active = dashboard.id;
+    scheduleSave({ immediate: true });
+    await ensureEvolution(dashboard.dataset);
+    renderDashboard();
+    if (warning === 'dataset-guessed') {
+        showToast(t('Jeu Évolution d\'origine introuvable : le tableau porte sur « ${name} ».', { name: datasetName(dashboard.dataset) }),
+            'warning', t('Importer un tableau de bord'));
+    } else {
+        showToast(t('Tableau de bord « ${name} » importé.', { name: dashboard.name }), 'success');
+    }
 }
 
 async function switchDashboard(id) {
@@ -458,6 +527,10 @@ function onDashboardMenuClick(event) {
     }
     const action = event.target.closest('[data-action]')?.dataset.action;
     if (action === 'new-dashboard') openNewDashboard();
+    if (action === 'duplicate-dashboard') duplicateActiveDashboard();
+    if (action === 'export-dashboard') exportActiveDashboard();
+    if (action === 'import-dashboard') $('statsImportInput').click();
+    if (action === 'print-dashboard') window.print();
     if (action === 'delete-dashboard') deleteDashboard();
 }
 
@@ -608,11 +681,20 @@ function cardElement(item, index, count) {
     const card = document.createElement('article');
     card.className = `stats-card stats-size-${item.size}`;
     card.style.setProperty('--stats-cols', SIZE_COLUMNS[item.size]);
+    card.style.setProperty('--stats-chart-height', HEIGHT_PIXELS[item.height || 'M'] + 'px');
     card.dataset.chartId = spec.id;
     card.dataset.chart = spec.view.chart;
+    card.dataset.height = item.height || 'M';
 
     const header = document.createElement('header');
     header.className = 'stats-card-header';
+    // Poignée : glisser la carte ailleurs dans la grille (le menu garde
+    // « Déplacer avant / après » pour le clavier).
+    const grip = document.createElement('span');
+    grip.className = 'stats-card-grip ti ti-grip-vertical';
+    grip.title = t('Glisser pour déplacer');
+    grip.setAttribute('aria-hidden', 'true');
+    header.append(grip);
     const title = document.createElement('h2');
     title.className = 'stats-card-title';
     title.textContent = chartTitle(spec);
@@ -658,6 +740,12 @@ function cardElement(item, index, count) {
     note.className = 'stats-card-note';
     note.hidden = true;
     card.append(note);
+    // Coin : glisser pour changer la largeur (S → XL) et la hauteur.
+    const resize = document.createElement('span');
+    resize.className = 'stats-card-resize';
+    resize.title = t('Glisser pour redimensionner');
+    resize.setAttribute('aria-hidden', 'true');
+    card.append(resize);
     return card;
 }
 
@@ -698,6 +786,7 @@ function cardMenu(spec, index, count) {
         menuButton('edit', 'ti-pencil', t('Modifier')),
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
         menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: spec.view.chart === 'number' }),
+        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: spec.view.chart === 'number' }),
         menuButton('before', 'ti-arrow-left', t('Déplacer avant'), { disabled: index === 0 }),
         menuButton('after', 'ti-arrow-right', t('Déplacer après'), { disabled: index === count - 1 }),
         divider,
@@ -831,7 +920,7 @@ function onCardAction(event) {
             break;
         case 'duplicate': {
             if (dashboard.items.length >= MAX_ITEMS) return;
-            const copy = { size: item.size, spec: createChartSpec(structuredClone(item.spec)) };
+            const copy = { size: item.size, height: item.height, spec: createChartSpec(structuredClone(item.spec)) };
             dashboard.items.splice(index + 1, 0, copy);
             scheduleSave({ immediate: true });
             renderDashboard();
@@ -839,6 +928,9 @@ function onCardAction(event) {
         }
         case 'export':
             exportPng(item.spec);
+            break;
+        case 'export-svg':
+            exportSvg(item.spec);
             break;
         case 'before':
         case 'after': {
@@ -873,6 +965,45 @@ function fileSafe(name) {
     return String(name).replace(/[\\/:*?<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'graphique';
 }
 
+function download(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Image vectorielle : le même graphique redessiné hors écran par le moteur
+// SVG d'ECharts, à la taille de la carte, fond de la carte compris.
+export function chartSvg(spec) {
+    const entry = state.results.get(spec.id);
+    const chart = state.charts.get(spec.id);
+    if (!entry || !chart) return null;
+    const host = chart.getDom();
+    const width = Math.max(200, host.clientWidth);
+    const height = Math.max(150, host.clientHeight);
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + width + 'px;height:' + height + 'px';
+    document.body.append(box);
+    const svgChart = window.echarts.init(box, null, { renderer: 'svg', width, height, locale: echartsLocale() });
+    try {
+        const option = buildChartOption(entry.result, spec, { ...chartContext(), width });
+        svgChart.setOption({ ...option, animation: false, backgroundColor: state.tokens.surface });
+        return svgChart.renderToSVGString();
+    } finally {
+        svgChart.dispose();
+        box.remove();
+    }
+}
+
+function exportSvg(spec) {
+    const svg = chartSvg(spec);
+    if (svg) download(new Blob([svg], { type: 'image/svg+xml' }), fileSafe(chartTitle(spec)) + '.svg');
+}
+
 function exportPng(spec) {
     const chart = state.charts.get(spec.id);
     if (!chart) return;
@@ -883,6 +1014,150 @@ function exportPng(spec) {
     document.body.append(link);
     link.click();
     link.remove();
+}
+
+// ---------------------------------------------------------------------------
+// Déplacer et redimensionner à la souris
+// ---------------------------------------------------------------------------
+
+// Glisser-déposer HTML5 : la carte ne devient « glissable » que saisie par
+// sa poignée (sinon la sélection de texte et les graphiques s'en mêlent).
+function onGridPointerDown(event) {
+    const grip = event.target.closest('.stats-card-grip');
+    if (grip) grip.closest('.stats-card').draggable = true;
+    const corner = event.target.closest('.stats-card-resize');
+    if (corner) startResize(event, corner.closest('.stats-card'));
+}
+
+function clearDropMarks() {
+    for (const card of $('statsGrid').querySelectorAll('.drop-before, .drop-after')) {
+        card.classList.remove('drop-before', 'drop-after');
+    }
+}
+
+// Avant ou après la carte visée : moitié gauche / droite, ou haut / bas
+// pour une carte pleine largeur.
+function dropSide(card, event) {
+    const rect = card.getBoundingClientRect();
+    if (card.classList.contains('stats-size-XL')) return event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+    return event.clientX < rect.left + rect.width / 2 ? 'before' : 'after';
+}
+
+function onDragStart(event) {
+    const card = event.target.closest?.('.stats-card');
+    if (!card || !card.draggable) return;
+    state.dragId = card.dataset.chartId;
+    card.classList.add('is-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', state.dragId);
+}
+
+function onDragOver(event) {
+    if (!state.dragId) return;
+    const card = event.target.closest('.stats-card');
+    if (!card || card.dataset.chartId === state.dragId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    clearDropMarks();
+    card.classList.add(dropSide(card, event) === 'before' ? 'drop-before' : 'drop-after');
+}
+
+function onDrop(event) {
+    if (!state.dragId) return;
+    const card = event.target.closest('.stats-card');
+    event.preventDefault();
+    const dragged = state.dragId;
+    endDrag();
+    if (!card || card.dataset.chartId === dragged) return;
+    const items = activeDashboard().items;
+    const from = items.findIndex((item) => item.spec.id === dragged);
+    if (from < 0) return;
+    const [moved] = items.splice(from, 1);
+    let to = items.findIndex((item) => item.spec.id === card.dataset.chartId);
+    if (dropSide(card, event) === 'after') to += 1;
+    items.splice(to, 0, moved);
+    scheduleSave({ immediate: true });
+    renderDashboard();
+}
+
+function endDrag() {
+    state.dragId = null;
+    clearDropMarks();
+    for (const card of $('statsGrid').querySelectorAll('.stats-card')) {
+        card.classList.remove('is-dragging');
+        card.draggable = false;
+    }
+}
+
+// Coin de redimensionnement : la largeur suit la souris par colonnes de la
+// grille et se cale sur la taille la plus proche (S, M, L, XL) ; tirer
+// vers le bas d'au moins 60 px donne la grande hauteur, vers le haut la
+// normale. Validé au relâcher.
+const SIZE_BY_COLUMNS = DASHBOARD_SIZES.map((size) => [SIZE_COLUMNS[size], size]);
+
+function nearestSize(columns) {
+    return SIZE_BY_COLUMNS.reduce((best, [cols, size]) => (
+        Math.abs(cols - columns) < Math.abs(SIZE_COLUMNS[best] - columns) ? size : best), 'M');
+}
+
+function startResize(event, card) {
+    event.preventDefault();
+    const index = itemIndex(card.dataset.chartId);
+    if (index < 0) return;
+    const item = activeDashboard().items[index];
+    const grid = $('statsGrid');
+    const gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
+    const column = (grid.clientWidth - 11 * gap) / 12 + gap;
+    const start = { x: event.clientX, y: event.clientY, cols: SIZE_COLUMNS[item.size], height: item.height || 'M' };
+    let size = item.size;
+    let height = start.height;
+    card.classList.add('is-resizing');
+    const apply = () => {
+        card.classList.remove(...DASHBOARD_SIZES.map((s) => 'stats-size-' + s));
+        card.classList.add('stats-size-' + size);
+        card.style.setProperty('--stats-cols', SIZE_COLUMNS[size]);
+        card.style.setProperty('--stats-chart-height', HEIGHT_PIXELS[height] + 'px');
+        card.dataset.height = height;
+    };
+    const move = (e) => {
+        size = nearestSize(start.cols + (e.clientX - start.x) / column);
+        const dy = e.clientY - start.y;
+        height = dy > 60 ? 'L' : dy < -60 ? 'M' : start.height;
+        apply();
+    };
+    const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        card.classList.remove('is-resizing');
+        if (size === item.size && height === (item.height || 'M')) return;
+        item.size = size;
+        item.height = height;
+        scheduleSave({ immediate: true });
+        renderDashboard();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+}
+
+// ---------------------------------------------------------------------------
+// Impression : toujours sur fond clair
+// ---------------------------------------------------------------------------
+
+function onBeforePrint() {
+    const root = document.documentElement;
+    if (root.getAttribute('data-bs-theme') === 'dark') {
+        state.printTheme = 'dark';
+        root.setAttribute('data-bs-theme', 'light');
+        state.tokens = readTokens();
+        if (state.ready) renderAllCharts();
+    }
+}
+
+function onAfterPrint() {
+    if (state.printTheme) {
+        document.documentElement.setAttribute('data-bs-theme', state.printTheme);
+        state.printTheme = null;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -951,7 +1226,7 @@ function onGalleryPick(event) {
     const dashboard = activeDashboard();
     if (id === 'custom') {
         const source = dashboardSources(dashboard)[0];
-        openEditor({ mode: 'new', item: { size: 'M', spec: createChartSpec({ source, groupBy: 'month' }) } });
+        openEditor({ mode: 'new', item: { size: 'M', height: 'M', spec: createChartSpec({ source, groupBy: 'month' }) } });
         return;
     }
     const item = itemFromQuestion(id, { title: state.labels.question(id).title, dataset: dashboard.dataset });
@@ -1206,6 +1481,8 @@ function syncEditorForm() {
     const size = $('statsEdSize');
     size.replaceChildren(...DASHBOARD_SIZES.map((s) => new Option(state.labels.size(s), s)));
     size.value = item.size;
+    $('statsEdHeight').value = item.height || 'M';
+    $('statsEdHeightCol').hidden = spec.view.chart === 'number';
     $('statsEdOrientation').value = spec.view.orientation;
     $('statsEdTop').value = spec.view.top;
     $('statsEdSort').value = spec.view.sort;
@@ -1287,6 +1564,7 @@ function readEditorForm() {
     if (raw.groupBy !== 'none' && spec.view.chart === 'number') raw.view.chart = 'bar';
     item.spec = normalizeChartSpec(raw);
     item.size = DASHBOARD_SIZES.includes($('statsEdSize').value) ? $('statsEdSize').value : item.size;
+    item.height = DASHBOARD_HEIGHTS.includes($('statsEdHeight').value) ? $('statsEdHeight').value : (item.height || 'M');
     // Un chiffre clé devenu graphique quitte la petite taille (et
     // inversement), sauf si l'utilisateur a choisi la taille lui-même.
     if (!state.editor.sizeTouched) {
@@ -1313,6 +1591,7 @@ function renderPreview() {
     }
     number.hidden = true;
     host.hidden = false;
+    host.style.setProperty('--stats-chart-height', HEIGHT_PIXELS[state.editor.item.height || 'M'] + 'px');
     state.previewChart = renderChartInto(host, result, spec);
     state.previewChart.resize();
 }
@@ -1434,6 +1713,8 @@ window.getStatsPageSnapshot = () => {
             return {
                 id: item.spec.id,
                 size: item.size,
+                // Hauteur choisie (M / L) ; `height` = hauteur affichée en px.
+                heightKey: item.height || 'M',
                 chart: item.spec.view.chart,
                 groupBy: item.spec.groupBy,
                 measure: measureKey(item.spec.measure),
@@ -1478,6 +1759,18 @@ function bindEvents() {
     $('statsRenameForm').addEventListener('submit', submitRename);
     $('statsGlobalPeriod').addEventListener('change', onGlobalPeriodChange);
     $('statsGrid').addEventListener('click', onCardAction);
+    $('statsGrid').addEventListener('pointerdown', onGridPointerDown);
+    $('statsGrid').addEventListener('dragstart', onDragStart);
+    $('statsGrid').addEventListener('dragover', onDragOver);
+    $('statsGrid').addEventListener('drop', onDrop);
+    $('statsGrid').addEventListener('dragend', endDrag);
+    $('statsImportInput').addEventListener('change', () => {
+        const file = $('statsImportInput').files?.[0];
+        $('statsImportInput').value = '';
+        if (file) importDashboardFile(file);
+    });
+    window.addEventListener('beforeprint', onBeforePrint);
+    window.addEventListener('afterprint', onAfterPrint);
     $('statsGalleryList').addEventListener('click', onGalleryPick);
     $('statsDashboardMenu').addEventListener('click', onDashboardMenuClick);
     $('statsNewDashboardForm').addEventListener('submit', submitNewDashboard);
@@ -1495,7 +1788,7 @@ function bindEvents() {
     $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
     for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
-        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdSmooth', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
+        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
         'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList']) {
         $(id).addEventListener('change', onEditorChange);
     }

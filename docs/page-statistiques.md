@@ -28,6 +28,10 @@ incrustés sur la carte et dans la vidéo.
   (trouvailles, DNF, favoris reçus), jeux Évolution — en deux familles
   étanches ; plusieurs tableaux de bord (changer, créer, supprimer) ; un
   graphique sur plusieurs sources ; mesure « caches actives ».
+- Lot 5 (2026-11-08) : organisation — déplacer (glisser par la poignée),
+  redimensionner (coin : largeur S→XL, hauteur normale / grande), export
+  SVG, export / import d'un tableau de bord en fichier, duplication,
+  impression.
 
 ## Parcours des données
 
@@ -258,6 +262,34 @@ sur une période.
 pastille « Évolution · <jeu> », fenêtre de création (famille, jeu, nom
 proposé, « Commencer avec des graphiques prêts »).
 
+## Organisation (lot 5)
+
+- **Déplacer** : glisser-déposer HTML5 ; la carte ne devient `draggable`
+  que saisie par sa poignée (`.stats-card-grip`, `pointerdown`), repère
+  d'insertion `drop-before` / `drop-after` (moitié gauche / droite, haut /
+  bas pour une carte pleine largeur). Le menu garde « Déplacer avant /
+  après » pour le clavier.
+- **Redimensionner** : coin `.stats-card-resize` (pointeur) ; la largeur
+  suit la souris par colonnes de la grille et se cale sur S / M / L / XL
+  (`nearestSize`), 60 px vers le bas donnent la grande hauteur, vers le
+  haut la normale ; appliqué en direct, enregistré au relâcher. Hauteur
+  aussi dans l'éditeur (`item.height` : `M` 300 px / `L` 460 px,
+  `HEIGHT_PIXELS`, variable CSS `--stats-chart-height` ; le calendrier
+  garde sa hauteur calculée).
+- **SVG** : `chartSvg(spec)` redessine le graphique hors écran avec le
+  moteur SVG d'ECharts (`renderer: 'svg'`, `renderToSVGString`), à la
+  taille de la carte, fond de la carte compris.
+- **Partager un tableau** (`exportDashboard` / `importDashboard`,
+  dashboard_model.mjs) : fichier `{ format: 'mygcflow-dashboard', v: 1,
+  dashboard }` sans identifiants ; un tableau Évolution emporte le **nom**
+  de son jeu (l'identifiant ne veut rien dire ailleurs) — à l'import,
+  rattaché au jeu de même nom, sinon au premier (avertissement), refusé
+  sans aucun jeu. Barrière appliquée comme à la lecture du document.
+  « Dupliquer » : `duplicateDashboard` (identifiants neufs, « (copie) »).
+- **Imprimer** : `window.print()` ; `@media print` masque en-tête,
+  commandes, menus, poignées ; `beforeprint` repasse un thème sombre en
+  clair le temps de l'impression (`afterprint` le rétablit).
+
 ## Graphisme et filtres (lot 3)
 
 **Filtres** : `dashboard.filters` (fenêtre « Filtres », pastilles
@@ -322,9 +354,12 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   palettes dans `chart_echarts.test.mjs`.
 - Unitaires du lot 4 : `chart_sources.test.mjs` (tables, actives, plusieurs
   sources) ; familles dans `chart_spec`, `dashboard_model`, `chart_echarts`.
-- E2E : `tests/e2e/stats-page.spec.mjs` (27 tests, fixtures `my-finds.gpx`,
+- Unitaires du lot 5 : hauteur, export / import, duplication dans
+  `dashboard_model.test.mjs`.
+- E2E : `tests/e2e/stats-page.spec.mjs` (33 tests, fixtures `my-finds.gpx`,
   `gc_logs/logs-poses.json`, `evolution-a.csv` ;
   `openWithChart` pose un tableau d'un seul graphique par `PUT`).
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,
-  `layout`, `grids`, `chart`, `rendered`…), `editor`.
+  `layout`, `grids`, `chart`, `rendered`, `size`, `heightKey`, `height` en
+  px…), `editor`, `dashboards`, `sources`.

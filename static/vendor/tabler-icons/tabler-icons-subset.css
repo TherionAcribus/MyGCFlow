@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=e67c14e09f") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=cead17d2a4") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -86,6 +86,8 @@
 .ti-external-link:before { content: "\ea99"; }
 .ti-eye:before { content: "\ea9a"; }
 .ti-eye-off:before { content: "\ecf0"; }
+.ti-file-export:before { content: "\ede9"; }
+.ti-file-import:before { content: "\edea"; }
 .ti-file-type-csv:before { content: "\fb09"; }
 .ti-file-upload:before { content: "\ec91"; }
 .ti-filter:before { content: "\eaa5"; }
@@ -97,6 +99,7 @@
 .ti-folder-search:before { content: "\f918"; }
 .ti-forms:before { content: "\ee8f"; }
 .ti-grid-dots:before { content: "\eaba"; }
+.ti-grip-vertical:before { content: "\ec01"; }
 .ti-hand-click:before { content: "\ef4f"; }
 .ti-hand-move:before { content: "\ef50"; }
 .ti-hash:before { content: "\eabc"; }
@@ -149,6 +152,7 @@
 .ti-plus:before { content: "\eb0b"; }
 .ti-plus-minus:before { content: "\f7ae"; }
 .ti-power:before { content: "\eb0d"; }
+.ti-printer:before { content: "\eb0e"; }
 .ti-refresh:before { content: "\eb13"; }
 .ti-replace:before { content: "\ebc7"; }
 .ti-rocket:before { content: "\ec45"; }

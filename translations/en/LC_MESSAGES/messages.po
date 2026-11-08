@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-08 13:30+0100\n"
+"POT-Creation-Date: 2026-11-08 14:09+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -627,7 +627,7 @@ msgid "Code GC"
 msgstr "GC code"
 
 #: poses_dataset.py:635 templates/menu_images.html:152
-#: templates/stats_page.html:330 templates/stats_page.html:355
+#: templates/stats_page.html:341 templates/stats_page.html:366
 msgid "Nom"
 msgstr "Name"
 
@@ -637,7 +637,7 @@ msgstr "Type"
 
 #: poses_dataset.py:635 static/js/ui.js:11594
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
-#: templates/stats_page.html:206
+#: templates/stats_page.html:209
 msgid "Taille"
 msgstr "Size"
 
@@ -797,7 +797,7 @@ msgstr "Database"
 #: templates/guide.html:173 templates/guide.html:599
 #: templates/menu_data.html:481 templates/menu_data_evolution.html:108
 #: templates/menu_data_poses.html:63 templates/menu_filtre.html:65
-#: templates/stats_page.html:87 templates/stats_page.html:190
+#: templates/stats_page.html:87 templates/stats_page.html:192
 #: test_translations.py:28
 msgid "Filtres"
 msgstr "Filters"
@@ -811,7 +811,7 @@ msgstr "Settings"
 #: templates/guide.html:545 templates/menu_animation.html:83
 #: templates/menu_animation.html:113 templates/menu_filtre.html:122
 #: templates/menu_filtre.html:131 templates/menu_filtre.html:147
-#: templates/menu_filtre.html:156 templates/stats_page.html:308
+#: templates/menu_filtre.html:156 templates/stats_page.html:319
 #: test_translations.py:30
 msgid "Données"
 msgstr "Data"
@@ -879,8 +879,8 @@ msgstr "Confirm"
 #: templates/menu_style.html:377 templates/menu_style.html:405
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
-#: templates/stats_page.html:269 templates/stats_page.html:290
-#: templates/stats_page.html:339 templates/stats_page.html:359
+#: templates/stats_page.html:280 templates/stats_page.html:301
+#: templates/stats_page.html:350 templates/stats_page.html:370
 msgid "Annuler"
 msgstr "Cancel"
 
@@ -2440,7 +2440,7 @@ msgstr "Quarter by quarter from the start"
 msgid "Année par année depuis le début"
 msgstr "Year by year from the start"
 
-#: static/js/chart_labels.mjs:279 templates/stats_page.html:213
+#: static/js/chart_labels.mjs:279 templates/stats_page.html:224
 msgid "Valeurs"
 msgstr "Values"
 
@@ -2971,7 +2971,7 @@ msgid "Les ${n} dernières années"
 msgstr "The last ${n} years"
 
 #: static/js/chart_labels.mjs:502 static/js/chart_labels.mjs:512
-#: static/js/stats_page.js:395
+#: static/js/stats_page.js:400
 msgid "Période du tableau de bord"
 msgstr "Dashboard period"
 
@@ -3995,9 +3995,9 @@ msgstr "This image will be permanently deleted from the library."
 #: static/js/images_ui.js:1104 static/js/images_ui.js:1150
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
 #: static/js/profiles.js:975 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_page.js:569
-#: static/js/stats_page.js:578 static/js/stats_page.js:763
-#: static/js/stats_page.js:921 static/js/stats_page.js:930
+#: static/js/recent_videos.js:121 static/js/stats_page.js:644
+#: static/js/stats_page.js:653 static/js/stats_page.js:857
+#: static/js/stats_page.js:1018 static/js/stats_page.js:1027
 #: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6442
 #: templates/menu_filtre.html:87 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
@@ -4045,7 +4045,7 @@ msgid "Descendre"
 msgstr "Move down"
 
 #: static/js/images_ui.js:1352 static/js/profiles.js:966
-#: static/js/profiles.js:2801 static/js/stats_page.js:758
+#: static/js/profiles.js:2801 static/js/stats_page.js:851
 #: static/js/stats_ui.js:579
 msgid "Dupliquer"
 msgstr "Duplicate"
@@ -4652,7 +4652,7 @@ msgid "Date de découverte"
 msgstr "Discovery date"
 
 #: static/js/labs.js:1866 templates/menu_images.html:117
-#: templates/menu_stats.html:70 templates/stats_page.html:270
+#: templates/menu_stats.html:70 templates/stats_page.html:281
 msgid "Enregistrer"
 msgstr "Save"
 
@@ -5154,9 +5154,9 @@ msgstr "Flash"
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 #: templates/modal_video_ready.html:11 templates/modal_video_ready.html:37
-#: templates/stats_page.html:118 templates/stats_page.html:134
-#: templates/stats_page.html:282 templates/stats_page.html:304
-#: templates/stats_page.html:352
+#: templates/stats_page.html:120 templates/stats_page.html:136
+#: templates/stats_page.html:293 templates/stats_page.html:315
+#: templates/stats_page.html:363
 msgid "Fermer"
 msgstr "Close"
 
@@ -5546,7 +5546,7 @@ msgid "Copier vers « ${mode} »"
 msgstr "Copy to “${mode}”"
 
 #: static/js/profiles.js:972 static/js/profiles.js:2781
-#: templates/stats_page.html:360
+#: templates/stats_page.html:371
 msgid "Renommer"
 msgstr "Rename"
 
@@ -5645,7 +5645,7 @@ msgid "Enregistrer le thème"
 msgstr "Save the theme"
 
 #: static/js/profiles.js:2772 templates/menu_style.html:269
-#: templates/stats_page.html:340
+#: templates/stats_page.html:351
 msgid "Créer"
 msgstr "Create"
 
@@ -5836,7 +5836,7 @@ msgstr "Tip"
 
 #: static/js/recording_perf.js:201 templates/guide.html:238
 #: templates/menu_filtre.html:85 templates/menu_informations.html:379
-#: templates/stats_page.html:291
+#: templates/stats_page.html:302
 msgid "Appliquer"
 msgstr "Apply"
 
@@ -5897,201 +5897,266 @@ msgstr "No filter"
 msgid "Vos trouvailles sont trop homogènes pour être filtrées."
 msgstr "Your finds are too uniform to be filtered."
 
-#: static/js/stats_page.js:267 static/js/stats_page.js:423
-#: static/js/stats_page.js:485 static/js/stats_page.js:530
-#: static/js/stats_page.js:550
+#: static/js/stats_page.js:272 static/js/stats_page.js:428
+#: static/js/stats_page.js:490 static/js/stats_page.js:531
+#: static/js/stats_page.js:551 static/js/stats_page.js:605
+#: static/js/stats_page.js:625
 msgid "Mon tableau de bord"
 msgstr "My dashboard"
 
-#: static/js/stats_page.js:381
+#: static/js/stats_page.js:386
 #, python-brace-format
 msgid "Jeu ${id}"
 msgstr "Dataset ${id}"
 
-#: static/js/stats_page.js:417
+#: static/js/stats_page.js:422
 #, python-brace-format
 msgid "${n} périodes"
 msgstr "${n} periods"
 
-#: static/js/stats_page.js:426
+#: static/js/stats_page.js:431
 #, python-brace-format
 msgid "Évolution · ${name}"
 msgstr "Evolution · ${name}"
 
-#: static/js/stats_page.js:442
+#: static/js/stats_page.js:447
 msgid "Ce jeu Évolution n'existe plus."
 msgstr "This Evolution dataset no longer exists."
 
-#: static/js/stats_page.js:444
+#: static/js/stats_page.js:449
 #, python-brace-format
 msgid "${n} caches publiées"
 msgstr "${n} published caches"
 
-#: static/js/stats_page.js:445
+#: static/js/stats_page.js:450
 #, python-brace-format
 msgid "${n} archivages datés"
 msgstr "${n} dated archivals"
 
-#: static/js/stats_page.js:448
+#: static/js/stats_page.js:453
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} finds"
 
-#: static/js/stats_page.js:450
+#: static/js/stats_page.js:455
 #, python-brace-format
 msgid "${n} DNF"
 msgstr "${n} DNFs"
 
-#: static/js/stats_page.js:451
+#: static/js/stats_page.js:456
 #, python-brace-format
 msgid "${n} caches posées"
 msgstr "${n} hidden caches"
 
-#: static/js/stats_page.js:452
+#: static/js/stats_page.js:457
 #, python-brace-format
 msgid "${n} trouvailles reçues"
 msgstr "${n} finds received"
 
-#: static/js/stats_page.js:461
+#: static/js/stats_page.js:466
 #, python-brace-format
 msgid "${n} avec les filtres"
 msgstr "${n} with the filters"
 
-#: static/js/stats_page.js:465
+#: static/js/stats_page.js:470
 #, python-brace-format
 msgid "${n} sans date de trouvaille, non comptées"
 msgstr "${n} without a find date, not counted"
 
-#: static/js/stats_page.js:493
+#: static/js/stats_page.js:499
 msgid "Nouveau tableau de bord…"
 msgstr "New dashboard…"
 
-#: static/js/stats_page.js:495
+#: static/js/stats_page.js:500
+msgid "Dupliquer ce tableau de bord"
+msgstr "Duplicate this dashboard"
+
+#: static/js/stats_page.js:501
+msgid "Exporter ce tableau de bord (fichier)"
+msgstr "Export this dashboard (file)"
+
+#: static/js/stats_page.js:502
+msgid "Importer un tableau de bord…"
+msgstr "Import a dashboard…"
+
+#: static/js/stats_page.js:503
+msgid "Imprimer"
+msgstr "Print"
+
+#: static/js/stats_page.js:507
 msgid "Supprimer ce tableau de bord"
 msgstr "Delete this dashboard"
 
-#: static/js/stats_page.js:568
+#: static/js/stats_page.js:514
+#, python-brace-format
+msgid "${name} (copie)"
+msgstr "${name} (copy)"
+
+#: static/js/stats_page.js:535
+msgid "Ce fichier n'est pas un tableau de bord MyGCFlow."
+msgstr "This file is not a MyGCFlow dashboard."
+
+#: static/js/stats_page.js:536
+msgid "Ce tableau de bord vient d'une version plus récente de MyGCFlow."
+msgstr "This dashboard comes from a newer version of MyGCFlow."
+
+#: static/js/stats_page.js:537
+msgid ""
+"Ce tableau de bord porte sur une zone Évolution : importez d'abord un jeu"
+" sur la page Évolution."
+msgstr ""
+"This dashboard is about an Evolution area: first import a dataset on the "
+"Evolution page."
+
+#: static/js/stats_page.js:545 static/js/stats_page.js:554
+#: static/js/stats_page.js:564
+msgid "Importer un tableau de bord"
+msgstr "Import a dashboard"
+
+#: static/js/stats_page.js:563
+#, python-brace-format
+msgid "Jeu Évolution d'origine introuvable : le tableau porte sur « ${name} »."
+msgstr "Original Evolution dataset not found: the dashboard now uses “${name}”."
+
+#: static/js/stats_page.js:566
+#, python-brace-format
+msgid "Tableau de bord « ${name} » importé."
+msgstr "Dashboard “${name}” imported."
+
+#: static/js/stats_page.js:643
 #, python-brace-format
 msgid "Supprimer le tableau de bord « ${name} » et ses graphiques ?"
 msgstr "Delete the dashboard “${name}” and its charts?"
 
-#: static/js/stats_page.js:603
+#: static/js/stats_page.js:678
 #, python-brace-format
 msgid "Retirer le filtre ${field}"
 msgstr "Remove the ${field} filter"
 
-#: static/js/stats_page.js:683
+#: static/js/stats_page.js:757
+msgid "Glisser pour déplacer"
+msgstr "Drag to move"
+
+#: static/js/stats_page.js:769
 msgid "Période propre à ce graphique"
 msgstr "This chart has its own period"
 
-#: static/js/stats_page.js:694
+#: static/js/stats_page.js:780
 msgid "Filtres propres à ce graphique"
 msgstr "This chart has its own filters"
 
-#: static/js/stats_page.js:694
+#: static/js/stats_page.js:780
 msgid "aucun"
 msgstr "none"
 
-#: static/js/stats_page.js:746 static/js/stats_page.js:747
+#: static/js/stats_page.js:810
+msgid "Glisser pour redimensionner"
+msgstr "Drag to resize"
+
+#: static/js/stats_page.js:839 static/js/stats_page.js:840
 msgid "Actions du graphique"
 msgstr "Chart actions"
 
-#: static/js/stats_page.js:757
+#: static/js/stats_page.js:850
 msgid "Modifier"
 msgstr "Edit"
 
-#: static/js/stats_page.js:759
+#: static/js/stats_page.js:852
 msgid "Exporter en image (PNG)"
 msgstr "Export as image (PNG)"
 
-#: static/js/stats_page.js:760
+#: static/js/stats_page.js:853
+msgid "Exporter en image vectorielle (SVG)"
+msgstr "Export as vector image (SVG)"
+
+#: static/js/stats_page.js:854
 msgid "Déplacer avant"
 msgstr "Move before"
 
-#: static/js/stats_page.js:761
+#: static/js/stats_page.js:855
 msgid "Déplacer après"
 msgstr "Move after"
 
-#: static/js/stats_page.js:786 static/js/stats_panels.js:1264
+#: static/js/stats_page.js:880 static/js/stats_panels.js:1264
 #, python-brace-format
 msgid "Sans attribut : ${n}"
 msgstr "No attribute: ${n}"
 
-#: static/js/stats_page.js:788
+#: static/js/stats_page.js:882
 msgid "Seules les 8 périodes les plus récentes sont affichées."
 msgstr "Only the 8 most recent periods are shown."
 
-#: static/js/stats_page.js:791
+#: static/js/stats_page.js:885
 msgid "Seule la première période est dessinée."
 msgstr "Only the first period is drawn."
 
-#: static/js/stats_page.js:794
+#: static/js/stats_page.js:888
 msgid "Seules les 3 années les plus récentes sont dessinées."
 msgstr "Only the 3 most recent years are drawn."
 
-#: static/js/stats_page.js:799
+#: static/js/stats_page.js:893
 #, python-brace-format
 msgid "Comparaison à date : chaque période est arrêtée au ${date}."
 msgstr "Year-to-date comparison: every period stops on ${date}."
 
-#: static/js/stats_page.js:801
+#: static/js/stats_page.js:895
 msgid "Aucune donnée sur cette période."
 msgstr "No data in this period."
 
-#: static/js/stats_page.js:920
+#: static/js/stats_page.js:1017
 #, python-brace-format
 msgid "Supprimer le graphique « ${title} » ?"
 msgstr "Delete the chart “${title}”?"
 
-#: static/js/stats_page.js:995
+#: static/js/stats_page.js:1291
 msgid "Partir de zéro"
 msgstr "Start from scratch"
 
-#: static/js/stats_page.js:996
+#: static/js/stats_page.js:1292
 msgid "Graphique personnalisé"
 msgstr "Custom chart"
 
-#: static/js/stats_page.js:996
+#: static/js/stats_page.js:1292
 msgid "Partir de zéro et tout choisir."
 msgstr "Start from scratch and choose everything."
 
-#: static/js/stats_page.js:1050 static/js/stats_ui.js:568
+#: static/js/stats_page.js:1346 static/js/stats_ui.js:568
 msgid "(aucune donnée)"
 msgstr "(no data)"
 
-#: static/js/stats_page.js:1062
+#: static/js/stats_page.js:1358
 msgid "et dans"
 msgstr "and in"
 
-#: static/js/stats_page.js:1075 static/js/stats_page.js:1076
+#: static/js/stats_page.js:1371 static/js/stats_page.js:1372
 msgid "Retirer cette source"
 msgstr "Remove this source"
 
-#: static/js/stats_page.js:1172
+#: static/js/stats_page.js:1468
 msgid "comparé à"
 msgstr "compared with"
 
-#: static/js/stats_page.js:1172
+#: static/js/stats_page.js:1468
 msgid "et à"
 msgstr "and with"
 
-#: static/js/stats_page.js:1184 static/js/stats_page.js:1185
+#: static/js/stats_page.js:1480 static/js/stats_page.js:1481
 msgid "Retirer cette période"
 msgstr "Remove this period"
 
-#: static/js/stats_page.js:1199
+#: static/js/stats_page.js:1495
 msgid "rien"
 msgstr "nothing"
 
-#: static/js/stats_page.js:1241
+#: static/js/stats_page.js:1537
 msgid "propres"
 msgstr "own"
 
-#: static/js/stats_page.js:1458
+#: static/js/stats_page.js:1758
 msgid "Nouveau graphique"
 msgstr "New chart"
 
-#: static/js/stats_page.js:1458 templates/stats_page.html:133
+#: static/js/stats_page.js:1758 templates/stats_page.html:135
 msgid "Modifier le graphique"
 msgstr "Edit chart"
 
@@ -8545,7 +8610,7 @@ msgid "Autre mode"
 msgstr "Other mode"
 
 #: templates/guide.html:72 templates/guide.html:545
-#: templates/stats_page.html:319
+#: templates/stats_page.html:330
 msgid "Évolution d'une zone"
 msgstr "Evolution of an area"
 
@@ -9020,7 +9085,7 @@ msgstr "Switch between the"
 
 #: templates/guide.html:231 templates/menu_informations.html:22
 #: templates/menu_informations.html:45 templates/menu_informations.html:46
-#: templates/menu_stats.html:116 templates/stats_page.html:202
+#: templates/menu_stats.html:116 templates/stats_page.html:204
 msgid "Titre"
 msgstr "Title"
 
@@ -9645,7 +9710,7 @@ msgstr ""
 "framing) and the"
 
 #: templates/guide.html:314 templates/menu_recording.html:46
-#: templates/menu_stats.html:395 templates/stats_page.html:238
+#: templates/menu_stats.html:395 templates/stats_page.html:249
 msgid "Couleurs"
 msgstr "Colours"
 
@@ -10853,7 +10918,7 @@ msgid "Ajoutez et réglez vos graphiques"
 msgstr "Add and adjust your charts"
 
 #: templates/guide.html:583 templates/stats_page.html:91
-#: templates/stats_page.html:104 templates/stats_page.html:117
+#: templates/stats_page.html:106 templates/stats_page.html:119
 msgid "Ajouter un graphique"
 msgstr "Add a chart"
 
@@ -10887,7 +10952,7 @@ msgstr "Compare years, months…"
 msgid "Dans l'éditeur,"
 msgstr "In the editor,"
 
-#: templates/guide.html:591 templates/stats_page.html:166
+#: templates/guide.html:591 templates/stats_page.html:168
 msgid "Comparer à une autre période"
 msgstr "Compare with another period"
 
@@ -10972,6 +11037,23 @@ msgid ""
 msgstr ""
 "menu next to the name creates an “Evolution of an area” dashboard on an "
 "imported dataset: published, archived and active caches over time."
+
+#: templates/guide.html:608
+msgid "Rangez, partagez, imprimez"
+msgstr "Arrange, share, print"
+
+#: templates/guide.html:609
+msgid ""
+"Glissez une carte par sa poignée pour la déplacer, et tirez son coin "
+"inférieur droit pour l'élargir ou l'allonger. Le menu de chaque graphique"
+" l'exporte en image (PNG ou SVG) ; celui du tableau de bord le duplique, "
+"l'exporte dans un fichier à partager, en importe un, ou l'imprime — "
+"toujours sur fond clair."
+msgstr ""
+"Drag a card by its handle to move it, and pull its bottom-right corner to"
+" widen or lengthen it. Each chart's menu exports it as an image (PNG or "
+"SVG); the dashboard menu duplicates it, exports it to a file to share, "
+"imports one, or prints it — always on a light background."
 
 #: templates/menu_animation.html:19
 msgid "suivi activé"
@@ -12732,7 +12814,7 @@ msgstr "Width"
 msgid "Gras"
 msgstr "Bold"
 
-#: templates/menu_informations.html:171 templates/stats_page.html:179
+#: templates/menu_informations.html:171 templates/stats_page.html:181
 msgid "Alignement"
 msgstr "Alignment"
 
@@ -14170,7 +14252,7 @@ msgstr ""
 "A round is complete when every month, from the first to the last find "
 "year, has a find."
 
-#: templates/menu_stats.html:157 templates/stats_page.html:230
+#: templates/menu_stats.html:157 templates/stats_page.html:241
 msgid "Ordre"
 msgstr "Order"
 
@@ -14178,7 +14260,7 @@ msgstr "Order"
 msgid "Ordre naturel"
 msgstr "Natural order"
 
-#: templates/menu_stats.html:161 templates/stats_page.html:234
+#: templates/menu_stats.html:161 templates/stats_page.html:245
 msgid "Alphabétique"
 msgstr "Alphabetical"
 
@@ -14200,11 +14282,11 @@ msgstr ""
 msgid "Barres"
 msgstr "Bars"
 
-#: templates/menu_stats.html:169 templates/stats_page.html:221
+#: templates/menu_stats.html:169 templates/stats_page.html:232
 msgid "Horizontales"
 msgstr "Horizontal"
 
-#: templates/menu_stats.html:170 templates/stats_page.html:220
+#: templates/menu_stats.html:170 templates/stats_page.html:231
 msgid "Verticales"
 msgstr "Vertical"
 
@@ -15333,59 +15415,59 @@ msgstr "Import my finds"
 msgid "Tableaux de bord"
 msgstr "Dashboards"
 
-#: templates/stats_page.html:78 templates/stats_page.html:351
+#: templates/stats_page.html:78 templates/stats_page.html:362
 msgid "Renommer le tableau de bord"
 msgstr "Rename dashboard"
 
-#: templates/stats_page.html:102
+#: templates/stats_page.html:104
 msgid "Ce tableau de bord est vide."
 msgstr "This dashboard is empty."
 
-#: templates/stats_page.html:121
+#: templates/stats_page.html:123
 msgid "Choisissez une question : le graphique se règle ensuite comme vous voulez."
 msgstr "Pick a question: you can then adjust the chart as you like."
 
-#: templates/stats_page.html:139
+#: templates/stats_page.html:141
 msgid "Ce que montre le graphique"
 msgstr "What the chart shows"
 
-#: templates/stats_page.html:141
+#: templates/stats_page.html:143
 msgid "Dans"
 msgstr "In"
 
-#: templates/stats_page.html:147
+#: templates/stats_page.html:149
 msgid "Comparer à une autre source"
 msgstr "Compare with another source"
 
-#: templates/stats_page.html:150
+#: templates/stats_page.html:152
 msgid "afficher"
 msgstr "show"
 
-#: templates/stats_page.html:152
+#: templates/stats_page.html:154
 msgid "Regroupement"
 msgstr "Grouping"
 
-#: templates/stats_page.html:156
+#: templates/stats_page.html:158
 msgid "découpé par"
 msgstr "split by"
 
-#: templates/stats_page.html:159
+#: templates/stats_page.html:161
 msgid "sur"
 msgstr "over"
 
-#: templates/stats_page.html:168
+#: templates/stats_page.html:170
 msgid "en"
 msgstr "as"
 
-#: templates/stats_page.html:175
+#: templates/stats_page.html:177
 msgid "Périodes"
 msgstr "Periods"
 
-#: templates/stats_page.html:184
+#: templates/stats_page.html:186
 msgid "Arrêter les périodes au même jour (« à date »)"
 msgstr "Stop the periods on the same day (“to date”)"
 
-#: templates/stats_page.html:186
+#: templates/stats_page.html:188
 msgid ""
 "Quand une période est en cours, les autres s'arrêtent au même jour : "
 "l'année en cours ne part pas perdante."
@@ -15393,67 +15475,79 @@ msgstr ""
 "When a period is ongoing, the others stop on the same day: the current "
 "year doesn't start at a disadvantage."
 
-#: templates/stats_page.html:192
+#: templates/stats_page.html:194
 msgid "Trouvailles comptées"
 msgstr "Finds counted"
 
-#: templates/stats_page.html:194
+#: templates/stats_page.html:196
 msgid "Selon les filtres du tableau de bord"
 msgstr "Following the dashboard filters"
 
-#: templates/stats_page.html:195
+#: templates/stats_page.html:197
 msgid "Avec des filtres propres à ce graphique"
 msgstr "With filters of its own"
 
-#: templates/stats_page.html:211
+#: templates/stats_page.html:213
+msgid "Hauteur"
+msgstr "Height"
+
+#: templates/stats_page.html:215
+msgid "Normale"
+msgstr "Normal"
+
+#: templates/stats_page.html:216
+msgid "Grande"
+msgstr "Tall"
+
+#: templates/stats_page.html:222
 msgid "Options d'affichage"
 msgstr "Display options"
 
-#: templates/stats_page.html:215
+#: templates/stats_page.html:226
 msgid "En pourcentage, des périodes de tailles différentes se comparent mieux."
 msgstr "As percentages, periods of different lengths compare better."
 
-#: templates/stats_page.html:218
+#: templates/stats_page.html:229
 msgid "Sens des barres"
 msgstr "Bar direction"
 
-#: templates/stats_page.html:225
+#: templates/stats_page.html:236
 msgid "Nombre de valeurs affichées"
 msgstr "Number of values shown"
 
-#: templates/stats_page.html:227
+#: templates/stats_page.html:238
 msgid "Les suivantes sont regroupées dans « Autres »."
 msgstr "The rest are grouped under “Others”."
 
-#: templates/stats_page.html:232
+#: templates/stats_page.html:243
 msgid "Naturel"
 msgstr "Natural"
 
-#: templates/stats_page.html:233
+#: templates/stats_page.html:244
 msgid "Du plus grand au plus petit"
 msgstr "Largest first"
 
-#: templates/stats_page.html:243
+#: templates/stats_page.html:254
 msgid "Empiler les séries"
 msgstr "Stack the series"
 
-#: templates/stats_page.html:247
+#: templates/stats_page.html:258
 msgid "Afficher les valeurs"
 msgstr "Show values"
 
-#: templates/stats_page.html:251
+#: templates/stats_page.html:262
 msgid "Courbe lissée"
 msgstr "Smooth line"
 
-#: templates/stats_page.html:255
+#: templates/stats_page.html:266
 msgid "Échelle logarithmique"
 msgstr "Logarithmic scale"
 
-#: templates/stats_page.html:281
+#: templates/stats_page.html:292
 msgid "Filtres du tableau de bord"
 msgstr "Dashboard filters"
 
-#: templates/stats_page.html:285
+#: templates/stats_page.html:296
 msgid ""
 "Ils s'appliquent à tous les graphiques, sauf à ceux qui ont leurs propres"
 " filtres. Un champ vide ne filtre rien."
@@ -15461,23 +15555,23 @@ msgstr ""
 "They apply to every chart, except those with filters of their own. An "
 "empty field filters nothing."
 
-#: templates/stats_page.html:289
+#: templates/stats_page.html:300
 msgid "Tout effacer"
 msgstr "Clear all"
 
-#: templates/stats_page.html:303
+#: templates/stats_page.html:314
 msgid "Nouveau tableau de bord"
 msgstr "New dashboard"
 
-#: templates/stats_page.html:312
+#: templates/stats_page.html:323
 msgid "Mes données"
 msgstr "My data"
 
-#: templates/stats_page.html:313
+#: templates/stats_page.html:324
 msgid "Mes trouvailles, mes DNF, mes caches posées et ce qu'elles reçoivent."
 msgstr "My finds, my DNFs, my hidden caches and what they receive."
 
-#: templates/stats_page.html:320
+#: templates/stats_page.html:331
 msgid ""
 "Toutes les caches d'un jeu importé sur la page Évolution, sans rapport "
 "avec vos propres données."
@@ -15485,17 +15579,17 @@ msgstr ""
 "All the caches of a dataset imported on the Evolution page, unrelated to "
 "your own data."
 
-#: templates/stats_page.html:325
+#: templates/stats_page.html:336
 msgid "Jeu Évolution"
 msgstr "Evolution dataset"
 
-#: templates/stats_page.html:328
+#: templates/stats_page.html:339
 msgid ""
 "Aucun jeu Évolution : importez d'abord des exports CSV sur la page "
 "Évolution."
 msgstr "No Evolution dataset: first import CSV exports on the Evolution page."
 
-#: templates/stats_page.html:335
+#: templates/stats_page.html:346
 msgid "Commencer avec des graphiques prêts"
 msgstr "Start with ready-made charts"
 

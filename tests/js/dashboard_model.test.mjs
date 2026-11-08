@@ -271,3 +271,65 @@ test('nouveau tableau Évolution : questions de la zone, sur son jeu', () => {
     // Pas de question Évolution sans jeu.
     assert.equal(itemFromQuestion('evo_active', { newId: seqId }), null);
 });
+
+// ---------------------------------------------------------------------------
+// Organisation (lot 5)
+// ---------------------------------------------------------------------------
+
+import {
+    DASHBOARD_FILE_FORMAT,
+    duplicateDashboard,
+    exportDashboard,
+    importDashboard,
+} from '../../static/js/dashboard_model.mjs';
+
+test('hauteur d\'une carte : normale par défaut, grande possible', () => {
+    assert.equal(normalizeItem({ spec: {} }, seqId).height, 'M');
+    assert.equal(normalizeItem({ height: 'L', spec: {} }, seqId).height, 'L');
+    assert.equal(normalizeItem({ height: 'XXL', spec: {} }, seqId).height, 'M');
+});
+
+test('export puis import : même tableau, identifiants neufs', () => {
+    const original = defaultDashboard({ newId: seqId, name: 'Mes stats', titleOf: (id) => id });
+    original.items[0].height = 'L';
+    const file = exportDashboard(original);
+    assert.equal(file.format, DASHBOARD_FILE_FORMAT);
+    assert.equal(file.dashboard.items[0].spec.id, undefined);
+    assert.equal(file.dashboard.id, undefined);
+    const { dashboard, warning } = importDashboard(JSON.parse(JSON.stringify(file)), { newId: seqId });
+    assert.equal(warning, null);
+    assert.equal(dashboard.name, 'Mes stats');
+    assert.notEqual(dashboard.id, original.id);
+    assert.equal(dashboard.items.length, original.items.length);
+    assert.equal(dashboard.items[0].height, 'L');
+    assert.deepEqual(dashboard.items.map((i) => i.spec.groupBy), original.items.map((i) => i.spec.groupBy));
+    assert.ok(dashboard.items.every((item, i) => item.spec.id !== original.items[i].spec.id));
+});
+
+test('import Évolution : jeu retrouvé par son nom, sinon le premier, refusé sans jeu', () => {
+    const zone = defaultDashboard({ newId: seqId, kind: 'evolution', dataset: 3, name: 'Zone' });
+    const file = JSON.parse(JSON.stringify(exportDashboard(zone, { datasetName: 'Bretagne' })));
+    assert.equal(file.dashboard.datasetName, 'Bretagne');
+    const found = importDashboard(file, { newId: seqId, datasets: [{ id: 8, name: 'Alsace' }, { id: 9, name: 'Bretagne' }] });
+    assert.equal(found.dashboard.dataset, 9);
+    assert.ok(found.dashboard.items.every((i) => i.spec.source.startsWith('evolution:9')));
+    const guessed = importDashboard(file, { newId: seqId, datasets: [{ id: 8, name: 'Alsace' }] });
+    assert.equal(guessed.dashboard.dataset, 8);
+    assert.equal(guessed.warning, 'dataset-guessed');
+    assert.deepEqual(importDashboard(file, { newId: seqId, datasets: [] }), { error: 'no-dataset' });
+});
+
+test('import refusé : autre format, version future', () => {
+    assert.deepEqual(importDashboard({ v: 1, dashboard: {} }), { error: 'not-a-dashboard' });
+    assert.deepEqual(importDashboard([1, 2]), { error: 'not-a-dashboard' });
+    assert.deepEqual(importDashboard({ format: DASHBOARD_FILE_FORMAT, v: 9, dashboard: {} }), { error: 'unknown-version' });
+});
+
+test('dupliquer : identifiants neufs, nom donné', () => {
+    const original = defaultDashboard({ newId: seqId, name: 'A' });
+    const copy = duplicateDashboard(original, { newId: seqId, name: 'A (copie)' });
+    assert.equal(copy.name, 'A (copie)');
+    assert.notEqual(copy.id, original.id);
+    assert.equal(copy.items.length, original.items.length);
+    assert.ok(copy.items.every((item, i) => item.spec.id !== original.items[i].spec.id));
+});

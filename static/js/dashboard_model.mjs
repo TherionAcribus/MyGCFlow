@@ -35,6 +35,10 @@ export const DASHBOARD_NAME_MAX = 60;
 export const DASHBOARD_SIZES = Object.freeze(['S', 'M', 'L', 'XL']);
 // Colonnes occupées sur 12.
 export const SIZE_COLUMNS = Object.freeze({ S: 4, M: 6, L: 8, XL: 12 });
+// Hauteur d'une carte : normale ou grande (calendrier sur plusieurs années,
+// longue liste de propriétaires…). Hauteur du graphique en pixels.
+export const DASHBOARD_HEIGHTS = Object.freeze(['M', 'L']);
+export const HEIGHT_PIXELS = Object.freeze({ M: 300, L: 460 });
 const ID_RE = /^[0-9a-f]{6,32}$/;
 const DEFAULT_PERIOD = Object.freeze({ kind: 'all' });
 
@@ -51,7 +55,11 @@ export function normalizeItem(raw, newId = newChartId) {
     if (!isObject(raw)) return null;
     const spec = normalizeChartSpec(raw.spec, newId);
     if (!spec) return null;
-    return { size: DASHBOARD_SIZES.includes(raw.size) ? raw.size : 'M', spec };
+    return {
+        size: DASHBOARD_SIZES.includes(raw.size) ? raw.size : 'M',
+        height: DASHBOARD_HEIGHTS.includes(raw.height) ? raw.height : 'M',
+        spec,
+    };
 }
 
 export const DASHBOARD_KINDS = Object.freeze(['personal', 'evolution']);
@@ -230,7 +238,7 @@ export function itemFromQuestion(id, { newId = newChartId, title = '', dataset =
         if (!dataset) return null;
         spec = { ...rebindEvolution(spec, dataset), id: spec.id };
     }
-    return { size: question.size, spec };
+    return { size: question.size, height: 'M', spec };
 }
 
 // Nouveau tableau : personnel (questions de départ) ou Évolution d'un jeu.
@@ -322,3 +330,60 @@ export function periodOfValue(value) {
     }
 }
 
+
+// ---------------------------------------------------------------------------
+// Partager un tableau de bord (fichier JSON)
+// ---------------------------------------------------------------------------
+
+export const DASHBOARD_FILE_FORMAT = 'mygcflow-dashboard';
+export const DASHBOARD_FILE_VERSION = 1;
+
+// Contenu du fichier d'export : le tableau sans ses identifiants, et pour un
+// tableau Évolution le NOM de son jeu (l'identifiant ne veut rien dire sur
+// une autre installation).
+export function exportDashboard(dashboard, { datasetName = null } = {}) {
+    const body = {
+        name: dashboard.name,
+        kind: dashboard.kind,
+        period: dashboard.period,
+        filters: dashboard.filters,
+        items: dashboard.items.map((item) => ({ size: item.size, height: item.height, spec: { ...item.spec, id: undefined } })),
+    };
+    if (dashboard.kind === 'evolution') body.datasetName = datasetName || '';
+    return { format: DASHBOARD_FILE_FORMAT, v: DASHBOARD_FILE_VERSION, dashboard: JSON.parse(JSON.stringify(body)) };
+}
+
+// Fichier lu → { dashboard, warning } ou { error }. Identifiants neufs ;
+// un tableau Évolution est rattaché au jeu de même nom, sinon au premier
+// jeu (warning: 'dataset-guessed'), et refusé sans aucun jeu
+// (error: 'no-dataset'). La barrière s'applique comme à la lecture du
+// document (normalizeDashboard).
+export function importDashboard(raw, { newId = newChartId, datasets = [], defaultName = '' } = {}) {
+    if (!isObject(raw) || raw.format !== DASHBOARD_FILE_FORMAT || !isObject(raw.dashboard)) {
+        return { error: 'not-a-dashboard' };
+    }
+    if (!Number.isInteger(raw.v) || raw.v < 1 || raw.v > DASHBOARD_FILE_VERSION) return { error: 'unknown-version' };
+    const source = raw.dashboard;
+    let dataset = null;
+    let warning = null;
+    if (source.kind === 'evolution') {
+        if (!datasets.length) return { error: 'no-dataset' };
+        const byName = datasets.find((d) => d.name === source.datasetName);
+        dataset = (byName || datasets[0]).id;
+        if (!byName) warning = 'dataset-guessed';
+    }
+    const items = (Array.isArray(source.items) ? source.items : [])
+        .filter(isObject)
+        .map((item) => ({ ...item, spec: isObject(item.spec) ? { ...item.spec, id: undefined } : item.spec }));
+    const dashboard = normalizeDashboard({ ...source, id: undefined, dataset, items }, { newId, defaultName });
+    return { dashboard, warning };
+}
+
+// Copie d'un tableau : identifiants neufs (tableau et graphiques).
+export function duplicateDashboard(dashboard, { newId = newChartId, name = '' } = {}) {
+    const copy = structuredClone(dashboard);
+    copy.id = undefined;
+    copy.name = name || dashboard.name;
+    copy.items = copy.items.map((item) => ({ ...item, spec: { ...item.spec, id: undefined } }));
+    return normalizeDashboard(copy, { newId });
+}

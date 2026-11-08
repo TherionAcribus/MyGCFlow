@@ -76,8 +76,18 @@ département). Écarts : le choix entre tableaux de bord (prévu au lot 5)
 est fait ici, nécessaire à la barrière ; les données passent par les
 routes existantes (pas de route `/api/stats/*` en plus) ; une cache
 Évolution archivée sans date n'est jamais active ; pas de dimension « durée
-de vie » ni « statut » pour l'instant. Prochain : lot 5 (organisation :
-glisser / redimensionner, export SVG et JSON, impression).
+de vie » ni « statut » pour l'instant.
+
+**Lot 5 fait** le 2026-11-08 (détail : `docs/page-statistiques.md` ›
+Organisation) : glisser par la poignée, coin de redimensionnement (largeur
+S→XL, hauteur normale / grande — tranche la question ouverte « hauteur
+fixe ou réglable »), export SVG, export / import JSON d'un tableau (jeu
+Évolution retrouvé par son nom), duplication, impression toujours en
+clair. Écarts : pas de mode « présentation » plein écran (question
+ouverte, non tranchée) ; l'impression garde la largeur des graphiques à
+l'écran (ECharts n'est pas redessiné à la largeur du papier). Reste : lot 6
+(retour à la carte : clic sur une barre → carte filtrée, envoi en panneau
+vidéo, comparaison animée en vidéo).
 
 Décisions prises avec l'utilisateur :
 
