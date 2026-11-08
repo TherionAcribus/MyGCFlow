@@ -32,6 +32,8 @@ incrustés sur la carte et dans la vidéo.
   redimensionner (coin : largeur S→XL, hauteur normale / grande), export
   SVG, export / import d'un tableau de bord en fichier, duplication,
   impression.
+- Lot 6 (2026-11-08) : retour à la carte — clic sur une valeur → carte
+  filtrée, « Envoyer en panneau vidéo », vidéo animée d'un graphique.
 
 ## Parcours des données
 
@@ -262,6 +264,75 @@ sur une période.
 pastille « Évolution · <jeu> », fenêtre de création (famille, jeu, nom
 proposé, « Commencer avec des graphiques prêts »).
 
+## Retour à la carte (lot 6)
+
+### Clic sur une valeur → carte filtrée
+
+- `clickTarget(result, spec, params)` (chart_echarts.mjs) : l'événement
+  `click` d'ECharts → `{ seriesIndex, keyIndex }` (barre / point :
+  `dataIndex` ; part d'anneau : `keyIndex` posé sur la donnée ; case du
+  calendrier : sa date). Écart, chaleur, radar : rien.
+- `mapSelectionFor(...)` (chart_map_link.mjs, pur) : la sélection
+  `filtersSelection` de la page carte (même forme que
+  `collectSelectedValues`, ui.js) ; une clé absente garde le défaut « tout
+  coché ». Dates : la période de la série ∩ la clé (temps absolu :
+  `timeKeyBounds` ; « depuis le début » : `series.dates` ; cases d'une année
+  : `cyclicBounds`, seulement dans une période d'une année civile) ;
+  « Toute la période » n'écrit pas de dates. Catégories : type, taille, D,
+  T, D/T, pays (`countries` + `countries_excluded`, « Non renseigné »
+  compris), propriétaire, attribut, année de publication ; la série
+  découpée et les filtres du graphique s'ajoutent (intersection).
+- Pas de lien (null) : autre source que les trouvailles, « Autres » /
+  « Inconnu », dimension ou filtre sans équivalent carte (jour de la
+  semaine, âge, région, cache, visiteur, années de publication non
+  contiguës). `chartLinksToMap(spec)` décide du curseur.
+- Géocaches / Labs ne sont pas dans la sélection mais dans la préférence
+  globale `main_discovery_sources` : `discoveryModeFor` donne le mode à poser
+  (un type de cache ou une taille désigne les géocaches, « Adventure Lab »
+  les Labs ; sans contrainte, tous les types présents). La page la change
+  par `PUT /api/settings` seulement si nécessaire.
+- Confirmation (« ses filtres actuels seront remplacés ») puis
+  `localStorage.filtersSelection` et navigation vers `/`.
+
+### Envoyer en panneau vidéo
+
+- `panelFromSpec(spec, { title, periods, filters })` (chart_panel_link.mjs,
+  pur) → `{ list, page, panel, dropped }` ou `{ error }`. Source → liste :
+  trouvailles / DNF / caches posées → `stats.panels` (`options.source`),
+  Mes poses → `stats.poses_panels`, Évolution → `stats.evolution_panels`
+  (`options.counted` : `placed`, `archived` pour la source « archivées »,
+  `active` pour la mesure « caches actives »).
+- Forme : barres / anneau / radar → panneau `bar` / `donut` de la même
+  dimension (mois de l'année → `month`) ; mois (axe de temps) → grille
+  `finds_ym` ; D/T → grille `dt` ; calendrier → grille `activity` ; courbe
+  ou aire sur le temps → `line` (`cumulative`, ou `actives` / `placees` /
+  `archivees`) ; chiffre clé → `counter`. Orientation, nombre d'éléments,
+  tri, palette repris. Refus : plusieurs sources, mesure autre qu'un
+  comptage, dimension sans panneau (trimestre, année de publication…).
+- Un panneau compte au fil de l'animation, avec les filtres de la carte :
+  période, filtres et découpage du graphique ne suivent pas (`dropped`, dit
+  dans la confirmation). Ajout par `GET` puis `PUT /api/settings {stats:
+  {<liste>: [...]}}`, refusé au-delà de `STATS_MAX_PANELS`.
+
+### Vidéo animée
+
+- `chart_video.mjs` (pur) : `chartAnimates` (barres / courbes / aires sur
+  un axe de temps ou les cases d'une année, sans écart), `revealProgress`
+  (linéaire puis `VIDEO_HOLD` = 15 % de pause sur le graphique complet),
+  `revealResult` (clés atteintes pleines, la clé en cours grandit — barre —
+  ou glisse depuis la précédente — courbe), `valueMax` / `niceCeil` /
+  `lockOption` (échelle figée, plus de glissière ni d'animation ECharts).
+- stats_page.js › `videoPainter` : une instance ECharts hors écran, mise en
+  page comme une fenêtre de 540 px de haut puis dessinée en pleine
+  définition (`devicePixelRatio`), recopiée dans un canevas avec le titre et
+  la clé atteinte (« juin »). `captureStream(30)` + `MediaRecorder` (WebM
+  VP9/VP8) en temps réel ; `fixWebmDuration` ; `POST
+  /process_recorded_video` (`slowdown` 1) puis `/tasks/<id>` → MP4 dans le
+  dossier des vidéos, aperçu `/download_video/<f>?inline=1`, « Afficher
+  dans le dossier » (`POST /reveal_video`). Échec serveur : le WebM brut,
+  téléchargeable.
+- Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080), durées 6 à 30 s.
+
 ## Organisation (lot 5)
 
 - **Déplacer** : glisser-déposer HTML5 ; la carte ne devient `draggable`
@@ -356,10 +427,13 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   sources) ; familles dans `chart_spec`, `dashboard_model`, `chart_echarts`.
 - Unitaires du lot 5 : hauteur, export / import, duplication dans
   `dashboard_model.test.mjs`.
-- E2E : `tests/e2e/stats-page.spec.mjs` (33 tests, fixtures `my-finds.gpx`,
+- Unitaires du lot 6 : `chart_map_link.test.mjs`, `chart_panel_link.test.mjs`,
+  `chart_video.test.mjs`, `clickTarget` dans `chart_echarts.test.mjs`.
+- E2E : `tests/e2e/stats-page.spec.mjs` (38 tests, fixtures `my-finds.gpx`,
   `gc_logs/logs-poses.json`, `evolution-a.csv` ;
   `openWithChart` pose un tableau d'un seul graphique par `PUT`).
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,
   `layout`, `grids`, `chart`, `rendered`, `size`, `heightKey`, `height` en
-  px…), `editor`, `dashboards`, `sources`.
+  px…, `linksToMap`), `editor`, `dashboards`, `sources`, `video` (`phase`
+  setup / recording / done, `file`, `folder`).

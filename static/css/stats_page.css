@@ -539,3 +539,16 @@ body > .ts-dropdown {
     .stats-chart { height: 260px; }
     .stats-toolbar-controls .form-select { min-width: 0; flex: 1 1 auto; }
 }
+
+/* Vidéo animée (lot 6) : aperçu de l'enregistrement, puis la vidéo prête. */
+.stats-video-stage canvas,
+.stats-video-player {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid var(--chart-grid);
+}
+.stats-video-player { background: #000; }

@@ -814,6 +814,121 @@ test('impression : sans les commandes, et toujours sur fond clair', async ({ pag
   }
 });
 
+// ---------------------------------------------------------------------------
+// Retour à la carte (lot 6)
+// ---------------------------------------------------------------------------
+
+// Position à l'écran d'une valeur (barre ou point) d'un graphique ECharts.
+async function markPosition(page, chartId, seriesIndex, key) {
+  return page.evaluate(({ chartId, seriesIndex, key }) => {
+    const host = document.querySelector(`.stats-card[data-chart-id="${chartId}"] .stats-chart`);
+    const chart = window.echarts.getInstanceByDom(host);
+    const card = window.getStatsPageSnapshot().cards.find((c) => c.id === chartId);
+    const k = card.keys.indexOf(key);
+    const value = card.series[seriesIndex][k];
+    const [x, y] = chart.convertToPixel({ seriesIndex }, [k, value / 2]);
+    const rect = host.getBoundingClientRect();
+    return { x: rect.left + x, y: rect.top + y };
+  }, { chartId, seriesIndex, key });
+}
+
+test('un clic sur une barre ouvre la carte filtrée sur ces trouvailles', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'cache_type', view: { chart: 'bar', orientation: 'vertical' },
+  });
+  expect(target.linksToMap).toBe(true);
+  const { x, y } = await markPosition(page, target.id, 0, 'Multi-cache');
+  await page.mouse.click(x, y);
+  const modal = page.locator('.gcm-confirm-modal');
+  await expect(modal).toBeVisible();
+  await expect(modal).toContainText('Multi-cache');
+  await modal.locator('[data-gcm-role="confirm"]').click();
+
+  await expect(page).toHaveURL(/\/$/);
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await expect(page.locator('#filtersCounter')).toContainText('2 / 6', { timeout: 30_000 });
+  const selection = await page.evaluate(() => JSON.parse(localStorage.getItem('filtersSelection')));
+  expect(selection.type).toEqual(['Multi-cache']);
+  expect(errors).toEqual([]);
+});
+
+test("une valeur sans équivalent sur la carte : pas de lien", async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, { groupBy: 'weekday', view: { chart: 'bar' } });
+  expect(target.linksToMap).toBe(false);
+  const k = target.series[0].findIndex((v) => v > 0);
+  const { x, y } = await markPosition(page, target.id, 0, target.keys[k]);
+  await page.mouse.click(x, y);
+  await page.waitForTimeout(300);
+  await expect(page.locator('.gcm-confirm-modal')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/stats$/);
+  expect(errors).toEqual([]);
+});
+
+test('envoyer un graphique en panneau vidéo de la carte', async ({ page, request }) => {
+  const reset = () => request.put('/api/settings', { data: { stats: { enabled: true, panels: [] } } });
+  await reset();
+  try {
+    const { errors, card: target } = await openWithChart(page, request, {
+      groupBy: 'cache_type', view: { chart: 'donut' }, periods: [{ kind: 'year', year: 2026 }],
+    });
+    // Un anneau ne s'anime pas : la vidéo est grisée.
+    await card(page, target.id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
+    await expect(card(page, target.id).locator('[data-action="video"]')).toBeDisabled();
+    await card(page, target.id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
+
+    await cardAction(page, target.id, 'to-panel');
+    const modal = page.locator('.gcm-confirm-modal');
+    // La période du graphique ne suit pas : c'est dit.
+    await expect(modal).toContainText(/période/);
+    await modal.locator('[data-gcm-role="confirm"]').click();
+    await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Mes Géocaches' })).toBeVisible();
+    const panels = (await (await request.get('/api/settings')).json()).stats.panels;
+    expect(panels).toHaveLength(1);
+    expect(panels[0]).toMatchObject({ kind: 'donut', metric: 'cache_type', title: target.title });
+    expect(errors).toEqual([]);
+  } finally {
+    await reset();
+  }
+});
+
+test('un graphique sans panneau équivalent ne peut pas être envoyé', async ({ page, request }) => {
+  const { card: target } = await openWithChart(page, request, { groupBy: 'published_year', view: { chart: 'bar' } });
+  await card(page, target.id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
+  await expect(card(page, target.id).locator('[data-action="to-panel"]')).toBeDisabled();
+});
+
+test('créer une vidéo animée d\'une comparaison', async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', measure: { op: 'cumulative' }, view: { chart: 'line' },
+    periods: [{ kind: 'year', year: 2026 }, { kind: 'year', year: 2025 }],
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect(page.locator('#statsVideoStage canvas')).toBeVisible();
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 90_000 }).toBe('done');
+  const video = (await snapshot(page)).video;
+  try {
+    // Converti par le serveur : un MP4 dans le dossier des vidéos.
+    expect(video.file).toMatch(/\.mp4$/);
+    await expect(page.locator('#btnStatsVideoDownload')).toHaveAttribute('href', `/download_video/${encodeURIComponent(video.file)}`);
+    await expect(page.locator('#btnStatsVideoReveal')).toBeVisible();
+    const head = await request.get(`/download_video/${encodeURIComponent(video.file)}`);
+    expect(head.ok()).toBeTruthy();
+    expect((await head.body()).length).toBeGreaterThan(1000);
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect((await snapshot(page)).video).toBeNull();
+    expect(errors).toEqual([]);
+  } finally {
+    if (video?.file && video.folder) fs.rmSync(path.join(video.folder, video.file), { force: true });
+  }
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

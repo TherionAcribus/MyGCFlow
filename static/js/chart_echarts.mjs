@@ -159,7 +159,7 @@ function seriesIdentity(result, spec, ctx, { side = false } = {}) {
 }
 
 // Libellés de l'axe des clés : rang « depuis le début » (Mois 1…) ou clé.
-function axisLabels(result, ctx, { long = false } = {}) {
+export function axisLabels(result, ctx, { long = false } = {}) {
     return result.keys.map((key) => (result.align === 'elapsed'
         ? ctx.labels.elapsedLabel(result.elapsedUnit, key)
         : ctx.labels.axisLabel(result.dim, key, { long, attributeName: ctx.attributeName })));
@@ -598,7 +598,7 @@ function donutOption(result, spec, ctx) {
             .map((d) => {
                 const name = labels.axisLabel(result.dim, d.key, { attributeName: ctx.attributeName });
                 legendNames.add(name);
-                return { name, value: d.value, itemStyle: { color: colors[d.k] } };
+                return { name, value: d.value, keyIndex: d.k, itemStyle: { color: colors[d.k] } };
             });
         const total = data.reduce((sum, d) => sum + d.value, 0);
         const single = n === 1;
@@ -650,6 +650,29 @@ function donutOption(result, spec, ctx) {
         }));
     }
     return option;
+}
+
+// Clic sur une marque (barre, point, part, case) → { seriesIndex, keyIndex }
+// dans le résultat, ou null (écart, chaleur, radar : pas une valeur d'une
+// série). `params` : l'événement « click » d'ECharts.
+export function clickTarget(result, spec, params) {
+    if (!params || params.componentType !== 'series') return null;
+    const chart = spec.view.chart;
+    if (chart === 'number' || chart === 'heatmap' || chart === 'radar' || result.delta) return null;
+    if (chart === 'donut') {
+        const keyIndex = params.data?.keyIndex;
+        return Number.isInteger(keyIndex) ? { seriesIndex: params.seriesIndex, keyIndex } : null;
+    }
+    if (chart === 'calendar') {
+        const iso = Array.isArray(params.value) ? params.value[0] : null;
+        if (typeof iso !== 'string') return null;
+        const day = Date.parse(iso + 'T00:00:00Z') / 86400000;
+        const days = result.align === 'elapsed' ? (result.series[0]?.dates || []) : result.keys;
+        const keyIndex = days.indexOf(day);
+        return keyIndex < 0 ? null : { seriesIndex: 0, keyIndex };
+    }
+    if (!result.series[params.seriesIndex] || !Number.isInteger(params.dataIndex)) return null;
+    return { seriesIndex: params.seriesIndex, keyIndex: params.dataIndex };
 }
 
 export function buildChartOption(result, spec, ctx) {

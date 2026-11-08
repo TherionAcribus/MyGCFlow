@@ -85,9 +85,19 @@ fixe ou réglable »), export SVG, export / import JSON d'un tableau (jeu
 Évolution retrouvé par son nom), duplication, impression toujours en
 clair. Écarts : pas de mode « présentation » plein écran (question
 ouverte, non tranchée) ; l'impression garde la largeur des graphiques à
-l'écran (ECharts n'est pas redessiné à la largeur du papier). Reste : lot 6
-(retour à la carte : clic sur une barre → carte filtrée, envoi en panneau
-vidéo, comparaison animée en vidéo).
+l'écran (ECharts n'est pas redessiné à la largeur du papier).
+
+**Lot 6 fait** le 2026-11-08 (détail : `docs/page-statistiques.md` › Retour
+à la carte) : clic sur une barre, un point, une part ou une case d'un
+graphique de trouvailles → confirmation → carte « Mes Géocaches » filtrée
+(sélection `filtersSelection`, préférence géocaches / Labs ajustée si
+besoin) ; « Envoyer en panneau vidéo » (panneau Stats de la page de la
+source, période / filtres / découpage non repris et signalés) ; « Créer une
+vidéo animée » (révélation le long de l'axe, MP4 par le traitement serveur
+des vidéos de la carte, repli WebM). Écarts : pas de lien carte pour DNF,
+caches posées, Mes poses et Évolution (leurs pages n'ont pas de sélection
+persistée) ; la vidéo s'enregistre en temps réel (une vidéo de 30 s prend
+30 s) et sans musique. Le plan initial est entièrement livré.
 
 Décisions prises avec l'utilisateur :
 

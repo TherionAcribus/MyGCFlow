@@ -374,6 +374,62 @@
             </div>
         </div>
 
+        <!-- Vidéo animée d'un graphique (lot 6) : réglages, enregistrement
+             (aperçu en direct), puis la vidéo prête. -->
+        <div class="modal fade" id="statsVideoModal" tabindex="-1" aria-labelledby="statsVideoTitle" aria-hidden="true"
+             data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsVideoTitle">{{ _("Vidéo animée") }}</h2>
+                        <button type="button" class="btn-close" id="btnStatsVideoClose" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="statsVideoSetup">
+                            <p class="text-secondary">{{ _("Les valeurs apparaissent au fil de l'axe, puis le graphique complet reste affiché quelques instants.") }}</p>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label for="statsVideoSize" class="form-label">{{ _("Format") }}</label>
+                                    <select id="statsVideoSize" class="form-select">
+                                        <option value="hd">{{ _("Paysage HD (1280 × 720)") }}</option>
+                                        <option value="fullhd">{{ _("Paysage Full HD (1920 × 1080)") }}</option>
+                                        <option value="square">{{ _("Carré (1080 × 1080)") }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label for="statsVideoDuration" class="form-label">{{ _("Durée") }}</label>
+                                    <select id="statsVideoDuration" class="form-select"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="statsVideoRecording" hidden>
+                            <div class="stats-video-stage" id="statsVideoStage"></div>
+                            <div class="progress mt-3" role="progressbar" aria-labelledby="statsVideoStatus" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar" id="statsVideoProgress" style="width: 0%"></div>
+                            </div>
+                            <p class="text-secondary small mt-2 mb-0" id="statsVideoStatus" aria-live="polite"></p>
+                        </div>
+                        <div id="statsVideoDone" hidden>
+                            <video id="statsVideoPlayer" class="stats-video-player" controls playsinline preload="metadata"></video>
+                            <p class="text-secondary small mt-2 mb-0" id="statsVideoDoneNote"></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="btnStatsVideoCancel">{{ _("Annuler") }}</button>
+                        <button type="button" class="btn btn-secondary" id="btnStatsVideoReveal" hidden>
+                            <i class="ti ti-folder me-1" aria-hidden="true"></i>{{ _("Afficher dans le dossier") }}
+                        </button>
+                        <a class="btn btn-primary" id="btnStatsVideoDownload" hidden download>
+                            <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Télécharger") }}
+                        </a>
+                        <button type="button" class="btn btn-primary" id="btnStatsVideoStart">
+                            <i class="ti ti-player-record me-1" aria-hidden="true"></i>{{ _("Créer la vidéo") }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tabler JS (inclut Bootstrap 5) : modales de confirmation. -->
         <script src="../static/vendor/tabler/tabler.min.js"></script>
 

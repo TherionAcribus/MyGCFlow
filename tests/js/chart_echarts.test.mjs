@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, calendarYears, chartHeight, contrastRatio, escapeHtml, numberModel, rampColor,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, escapeHtml, numberModel, rampColor,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -395,4 +395,32 @@ test('titres par défaut selon la source', () => {
         'Trouvailles / Trouvailles reçues par année');
     assert.equal(labels.sourceLabel('evolution:3:archived'), 'Caches archivées');
     assert.equal(labels.sourceNoun('evolution:3'), 'Caches publiées');
+});
+
+// ---------------------------------------------------------------------------
+// Retour à la carte (lot 6) : le clic désigne une série et une clé
+// ---------------------------------------------------------------------------
+
+test("clic : barre, part d'anneau, case du calendrier, écart", () => {
+    const bars = option({ groupBy: 'year' });
+    assert.deepEqual(clickTarget(bars.result, bars.spec, { componentType: 'series', seriesIndex: 0, dataIndex: 1 }),
+        { seriesIndex: 0, keyIndex: 1 });
+    assert.equal(clickTarget(bars.result, bars.spec, { componentType: 'xAxis' }), null);
+
+    // Anneau : les parts nulles sont retirées, la part porte sa clé.
+    const donut = option({ groupBy: 'cache_type', view: { chart: 'donut' } });
+    const slice = donut.option.series[0].data.at(-1);
+    const target = clickTarget(donut.result, donut.spec, { componentType: 'series', seriesIndex: 0, dataIndex: 99, data: slice });
+    assert.equal(donut.result.keys[target.keyIndex], donut.result.keys[slice.keyIndex]);
+
+    const calendar = option({ groupBy: 'day', view: { chart: 'calendar' }, periods: [{ kind: 'year', year: 2025 }] });
+    const hit = clickTarget(calendar.result, calendar.spec, { componentType: 'series', seriesIndex: 0, value: ['2025-03-03', 1] });
+    assert.equal(calendar.result.keys[hit.keyIndex], dayNumber({ y: 2025, m: 3, d: 3 }));
+
+    const delta = option({
+        groupBy: 'month_of_year', periods: [{ kind: 'year', year: 2026 }, { kind: 'year', year: 2025 }],
+        compare: { layout: 'delta', toDate: false },
+    });
+    assert.ok(delta.result.delta);
+    assert.equal(clickTarget(delta.result, delta.spec, { componentType: 'series', seriesIndex: 0, dataIndex: 0 }), null);
 });

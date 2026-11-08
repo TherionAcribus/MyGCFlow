@@ -37,7 +37,16 @@ import { ELAPSED_UNITS, filterMask, runChartQueries } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
-import { buildChartOption, calendarYears, chartHeight, numberModel } from './chart_echarts.mjs';
+import { axisLabels, buildChartOption, calendarYears, chartHeight, clickTarget, numberModel } from './chart_echarts.mjs';
+import {
+    VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, chartAnimates, lockOption, niceCeil, revealIndex, revealProgress,
+    revealResult, valueMax,
+} from './chart_video.mjs';
+import fixWebmDuration from './fix-webm-duration.js';
+import { SOURCE_KIND_VALUES } from './chart_sources.mjs';
+import { chartLinksToMap, discoveryModeFor, mapSelectionFor } from './chart_map_link.mjs';
+import { panelFromSpec } from './chart_panel_link.mjs';
+import { STATS_MAX_PANELS } from './stats_model.mjs';
 import {
     DASHBOARD_HEIGHTS,
     DASHBOARD_SIZES,
@@ -96,6 +105,7 @@ const state = {
     saveTimer: null,
     savePending: false,
     editor: null,               // { mode: 'edit'|'new', index, item }
+    video: null,                // vidéo animée en cours (openVideo)
     previewChart: null,
     ready: false,
 };
@@ -764,6 +774,19 @@ function menuButton(action, icon, label, { danger = false, disabled = false } = 
     return li;
 }
 
+// « Envoyer en panneau vidéo » : grisé (avec la raison en bulle) quand le
+// graphique n'a pas d'équivalent.
+function panelMenuButton(spec) {
+    const out = panelFromSpec(spec, { title: '' });
+    const li = menuButton('to-panel', 'ti-movie', t('Envoyer en panneau vidéo'), { disabled: Boolean(out.error) });
+    if (out.error) {
+        li.title = out.error === 'several-sources'
+            ? t("Un panneau vidéo ne compte qu'une source.")
+            : t("Ce graphique n'a pas d'équivalent en panneau vidéo.");
+    }
+    return li;
+}
+
 function cardMenu(spec, index, count) {
     const wrap = document.createElement('div');
     wrap.className = 'dropdown stats-card-menu';
@@ -787,6 +810,8 @@ function cardMenu(spec, index, count) {
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
         menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: spec.view.chart === 'number' }),
         menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: spec.view.chart === 'number' }),
+        panelMenuButton(spec),
+        menuButton('video', 'ti-video', t('Créer une vidéo animée'), { disabled: !chartAnimates(spec) }),
         menuButton('before', 'ti-arrow-left', t('Déplacer avant'), { disabled: index === 0 }),
         menuButton('after', 'ti-arrow-right', t('Déplacer après'), { disabled: index === count - 1 }),
         divider,
@@ -864,14 +889,26 @@ function deltaLine(delta) {
     return line;
 }
 
+// Les marques d'un graphique ouvrent-elles la carte ? (curseur « main »)
+const TIME_DIMS = new Set(['year', 'quarter', 'month', 'week', 'day']);
+function chartClickable(spec, result) {
+    return chartLinksToMap(spec) && !['heatmap', 'radar', 'number'].includes(spec.view.chart) && !result.delta;
+}
+
 function renderChartInto(host, result, spec) {
     const width = host.clientWidth || host.parentElement?.clientWidth || 0;
     const option = buildChartOption(result, spec, { ...chartContext(), width });
+    if (!chartClickable(spec, result)) {
+        for (const series of option.series || []) series.cursor = 'default';
+    }
     // Calendrier : un bandeau par année, la carte s'allonge.
     const height = chartHeight(result, spec, width);
     host.style.height = height ? height + 'px' : '';
     let chart = window.echarts.getInstanceByDom(host);
-    if (!chart) chart = window.echarts.init(host, null, { locale: echartsLocale(), renderer: 'canvas' });
+    if (!chart) {
+        chart = window.echarts.init(host, null, { locale: echartsLocale(), renderer: 'canvas' });
+        chart.on('click', (params) => onChartClick(host, params));
+    }
     chart.setOption(option, true);
     chart.resize();
     return chart;
@@ -896,6 +933,398 @@ function renderAllCharts() {
             state.resizeObserver.observe(host);
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Retour à la carte : clic sur une valeur → carte filtrée sur ces trouvailles
+// ---------------------------------------------------------------------------
+
+// Ce que la carte montrera, en clair : « février 2024 · Taille : Micro ».
+function mapLinkSummary(spec, result, target, link) {
+    const parts = [];
+    const fmt = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const dates = link.selection.dates;
+    if (dates) {
+        const from = fmt.format(new Date(dates.startDate + 'T00:00:00Z'));
+        const to = fmt.format(new Date(dates.endDate + 'T00:00:00Z'));
+        parts.push(from === to ? from : t('du ${from} au ${to}', { from, to }));
+    }
+    const category = (dim, key) => {
+        if (dim === 'none' || TIME_DIMS.has(dim) || ELAPSED_UNITS[dim]) return;
+        parts.push(state.labels.dimension(dim) + ' : ' + state.labels.axisLabel(dim, key, { long: true, attributeName }));
+    };
+    category(result.dim, result.keys[target.keyIndex]);
+    const series = result.series[target.seriesIndex];
+    if (series.split !== null && series.split !== undefined) category(spec.splitBy, series.split);
+    if (activeFilterCount(effectiveQueryOptions(spec, activeDashboard()).filters)) {
+        parts.push(t('filtres du graphique'));
+    }
+    return parts.join(' · ') || t('toutes vos trouvailles');
+}
+
+// Sélection de la carte pour un clic, ou null (pas de lien).
+function mapLinkFor(chartId, target) {
+    const entry = state.results.get(chartId);
+    if (!entry || !target) return null;
+    const { spec, result } = entry;
+    if (!chartClickable(spec, result)) return null;
+    const finds = tableOf('finds');
+    return mapSelectionFor({
+        spec,
+        result,
+        seriesIndex: target.seriesIndex,
+        keyIndex: target.keyIndex,
+        filters: effectiveQueryOptions(spec, activeDashboard()).filters,
+        countries: finds.dicts?.country || [],
+    });
+}
+
+function presentKinds() {
+    const finds = tableOf('finds');
+    const seen = new Set();
+    for (let r = 0; r < finds.n && seen.size < SOURCE_KIND_VALUES.length; r++) seen.add(finds.kind[r]);
+    return SOURCE_KIND_VALUES.filter((_, i) => seen.has(i));
+}
+
+async function openMapWith(link) {
+    try {
+        localStorage.setItem('filtersSelection', JSON.stringify(link.selection));
+    } catch (e) {
+        showError(t('Impossible de préparer les filtres de la carte.'));
+        return;
+    }
+    // Géocaches / Labs : préférence globale de la carte, posée si le
+    // graphique compte un autre type de points que ceux affichés.
+    const current = window.userSettings?.main_discovery_sources || 'geocaches';
+    const mode = discoveryModeFor(link.kinds, presentKinds(), current);
+    if (mode) {
+        try {
+            await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ main_discovery_sources: mode }),
+            });
+        } catch (e) {
+            console.warn('[stats] Sources de la carte non changées :', e?.message || e);
+        }
+    }
+    window.location.assign('/');
+}
+
+function onChartClick(host, params) {
+    const card = host.closest('.stats-card');
+    const entry = card ? state.results.get(card.dataset.chartId) : null;
+    if (!entry || !chartClickable(entry.spec, entry.result)) return;
+    const target = clickTarget(entry.result, entry.spec, params);
+    if (!target) return;
+    const link = mapLinkFor(card.dataset.chartId, target);
+    if (!link) {
+        showToast(t("Cette valeur n'a pas d'équivalent dans les filtres de la carte."), 'info');
+        return;
+    }
+    showConfirmation(
+        t('La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront remplacés.', {
+            what: mapLinkSummary(entry.spec, entry.result, target, link),
+        }),
+        t('Voir sur la carte'),
+        () => openMapWith(link),
+        null,
+        { confirmText: t('Ouvrir la carte') },
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Envoyer en panneau vidéo (onglet Stats des pages carte)
+// ---------------------------------------------------------------------------
+
+const PANEL_PAGE_NAMES = {
+    main: () => t('Mes Géocaches'),
+    poses: () => t('Mes poses'),
+    evolution: () => t('Évolution'),
+};
+
+async function appendPanel(out) {
+    const pageName = PANEL_PAGE_NAMES[out.page]();
+    try {
+        const settings = await fetchJson('/api/settings');
+        const list = Array.isArray(settings?.stats?.[out.list]) ? settings.stats[out.list] : [];
+        if (list.length >= STATS_MAX_PANELS) {
+            showError(t('La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet Stats.', {
+                page: pageName, n: STATS_MAX_PANELS,
+            }));
+            return false;
+        }
+        const response = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stats: { [out.list]: [...list, out.panel] } }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (e) {
+        console.warn('[stats] Panneau non envoyé :', e?.message || e);
+        showError(t("L'envoi du panneau a échoué."));
+        return false;
+    }
+    showToast(t('Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans la vidéo.', { page: pageName }), 'success');
+    return true;
+}
+
+function sendToPanel(spec) {
+    const { periods, filters } = effectiveQueryOptions(spec, activeDashboard());
+    const out = panelFromSpec(spec, { title: chartTitle(spec), periods, filters });
+    if (out.error) return;
+    const pageName = PANEL_PAGE_NAMES[out.page]();
+    const intro = t("Le graphique devient un panneau de la page « ${page} », qui se remplit au fil de l'animation.", { page: pageName });
+    const warning = out.dropped.length
+        ? ' ' + t('Il suit la période et les filtres de la carte : la période, les filtres et le découpage de ce graphique ne sont pas repris.')
+        : '';
+    showConfirmation(intro + warning, t('Envoyer en panneau vidéo'), () => appendPanel(out), null, { confirmText: t('Envoyer') });
+}
+
+// ---------------------------------------------------------------------------
+// Vidéo animée : le graphique dessiné image par image hors écran, enregistré
+// (MediaRecorder), puis converti en MP4 par le serveur (même traitement que
+// les vidéos de la carte). Repli : le WebM brut, téléchargeable.
+// ---------------------------------------------------------------------------
+
+const videoModal = () => getBsModal($('statsVideoModal'));
+
+// setup → recording → done ; « Annuler » devient « Fermer » à la fin.
+function setVideoPhase(phase) {
+    if (state.video) state.video.phase = phase;
+    $('statsVideoSetup').hidden = phase !== 'setup';
+    $('statsVideoRecording').hidden = phase !== 'recording';
+    $('statsVideoDone').hidden = phase !== 'done';
+    $('btnStatsVideoStart').hidden = phase !== 'setup';
+    $('btnStatsVideoReveal').hidden = phase !== 'done' || !state.video?.file;
+    $('btnStatsVideoDownload').hidden = phase !== 'done';
+    $('btnStatsVideoCancel').textContent = phase === 'done' ? t('Fermer') : t('Annuler');
+}
+
+function setVideoStatus(text, percent = null) {
+    $('statsVideoStatus').textContent = text;
+    if (percent !== null) {
+        const bar = $('statsVideoProgress');
+        bar.style.width = Math.round(percent) + '%';
+        bar.parentElement.setAttribute('aria-valuenow', String(Math.round(percent)));
+    }
+}
+
+function releaseVideo() {
+    const video = state.video;
+    if (!video) return;
+    video.cancelled = true;
+    const player = $('statsVideoPlayer');
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    if (video.objectUrl) URL.revokeObjectURL(video.objectUrl);
+    $('statsVideoStage').replaceChildren();
+    state.video = null;
+}
+
+function openVideo(spec) {
+    const entry = state.results.get(spec.id);
+    if (!entry || !chartAnimates(spec, entry.result)) {
+        showToast(t('Ce graphique ne peut pas être animé.'), 'info');
+        return;
+    }
+    releaseVideo();
+    const select = $('statsVideoDuration');
+    if (!select.options.length) {
+        for (const seconds of VIDEO_DURATIONS) select.add(new Option(t('${n} secondes', { n: seconds }), String(seconds)));
+        select.value = '10';
+    }
+    state.video = { spec, phase: 'setup', cancelled: false, file: null, objectUrl: null };
+    setVideoPhase('setup');
+    videoModal().show();
+}
+
+function videoMimeType() {
+    const recorder = window.MediaRecorder;
+    if (!recorder?.isTypeSupported) return null;
+    return ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((type) => recorder.isTypeSupported(type)) || null;
+}
+
+// Une image : titre, repère de l'axe atteint (« Mars »), graphique partiel.
+function videoPainter(spec, result, { width, height }) {
+    const tokens = state.tokens || readTokens();
+    // Les polices d'ECharts (12 px) sont pensées pour l'écran : le graphique
+    // est mis en page comme sur une fenêtre de 540 px de haut puis dessiné en
+    // pleine définition (devicePixelRatio) — textes lisibles dans la vidéo.
+    const scale = Math.min(width, height) / 540;
+    const pad = Math.round(28 * scale);
+    const titleSize = Math.round(24 * scale);
+    const top = pad * 2 + titleSize;
+    const chartW = width - pad * 2;
+    const chartH = height - top - pad;
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-20000px;top:0;width:' + Math.round(chartW / scale) + 'px;height:' + Math.round(chartH / scale) + 'px';
+    document.body.append(box);
+    const chart = window.echarts.init(box, null, {
+        renderer: 'canvas', devicePixelRatio: scale, locale: echartsLocale(),
+        width: Math.round(chartW / scale), height: Math.round(chartH / scale),
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const g = canvas.getContext('2d');
+    const stacked = spec.view.stack && result.series.length > 1;
+    const max = spec.view.log ? undefined : niceCeil(valueMax(result, { stacked }));
+    const kind = spec.view.chart === 'bar' ? 'bar' : 'line';
+    const ctx = { ...chartContext(), tokens, width: chartW / scale };
+    const heads = axisLabels(result, ctx, { long: true });
+    const title = chartTitle(spec);
+    const font = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
+    const paint = (progress) => {
+        const option = lockOption(buildChartOption(revealResult(result, progress, { chart: kind }), spec, ctx), max);
+        chart.setOption(option, true);
+        g.fillStyle = tokens.surface;
+        g.fillRect(0, 0, width, height);
+        g.textBaseline = 'alphabetic';
+        g.textAlign = 'left';
+        g.fillStyle = tokens.text;
+        g.font = '600 ' + titleSize + 'px ' + font;
+        g.fillText(title, pad, pad + titleSize * 0.9, width - pad * 2 - titleSize * 6);
+        g.textAlign = 'right';
+        g.fillStyle = tokens.textMuted;
+        g.font = '700 ' + Math.round(titleSize * 1.15) + 'px ' + font;
+        g.fillText(heads[revealIndex(result, progress)] ?? '', width - pad, pad + titleSize * 0.9);
+        const source = box.querySelector('canvas');
+        if (source) g.drawImage(source, pad, top, chartW, chartH);
+    };
+    const dispose = () => {
+        chart.dispose();
+        box.remove();
+    };
+    return { canvas, paint, dispose };
+}
+
+// Avance du temps de la vidéo : requestAnimationFrame quand la page est
+// visible, minuteur sinon (un onglet masqué n'a plus d'images).
+const nextFrame = (fn) => (document.hidden ? setTimeout(fn, 1000 / VIDEO_FPS) : requestAnimationFrame(fn));
+
+async function recordVideo() {
+    const video = state.video;
+    const entry = video && state.results.get(video.spec.id);
+    if (!entry) return;
+    const mimeType = videoMimeType();
+    if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
+        showError(t("Ce navigateur ne sait pas enregistrer de vidéo."));
+        return;
+    }
+    const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
+    const duration = (Number($('statsVideoDuration').value) || 10) * 1000;
+    const { spec, result } = entry;
+    setVideoPhase('recording');
+    setVideoStatus(t('Enregistrement…'), 0);
+    const painter = videoPainter(spec, result, size);
+    $('statsVideoStage').replaceChildren(painter.canvas);
+    painter.paint(0);
+    const stream = painter.canvas.captureStream(VIDEO_FPS);
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+    const chunks = [];
+    recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
+    const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
+    recorder.start(1000);
+    const start = performance.now();
+    await new Promise((resolve) => {
+        const tick = () => {
+            if (video.cancelled) return resolve();
+            const elapsed = performance.now() - start;
+            painter.paint(revealProgress(elapsed, duration));
+            setVideoStatus(t('Enregistrement…'), Math.min(100, (elapsed / duration) * 100));
+            if (elapsed >= duration) return resolve();
+            return nextFrame(tick);
+        };
+        nextFrame(tick);
+    });
+    const recorded = performance.now() - start;
+    recorder.stop();
+    await stopped;
+    stream.getTracks().forEach((track) => track.stop());
+    painter.dispose();
+    if (video.cancelled) return;
+
+    let blob = new Blob(chunks, { type: 'video/webm' });
+    try {
+        blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
+    } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
+    await convertVideo(video, blob, fileSafe(chartTitle(spec)));
+}
+
+async function pollTask(id, onProgress) {
+    const started = Date.now();
+    for (;;) {
+        if (Date.now() - started > 10 * 60 * 1000) throw new Error('timeout');
+        const response = await fetch('/tasks/' + encodeURIComponent(id) + '?include_result=true');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const status = await response.json();
+        if (typeof status.progress === 'number') onProgress(status.progress);
+        if (status.state === 'finished') return status.result || {};
+        if (status.state === 'failed') throw new Error(status.error || status.message || 'failed');
+        await new Promise((resolve) => setTimeout(resolve, 700));
+    }
+}
+
+// Conversion MP4 par le serveur ; à défaut, le WebM enregistré.
+async function convertVideo(video, blob, name) {
+    setVideoStatus(t('Conversion en MP4…'), 0);
+    let result = null;
+    try {
+        const form = new FormData();
+        form.append('video', blob, 'statistiques.webm');
+        form.append('fileName', name);
+        form.append('fps', String(VIDEO_FPS));
+        form.append('slowdown', '1');
+        const response = await fetch('/process_recorded_video', { method: 'POST', body: form });
+        const data = await response.json();
+        if (!data?.task_id) throw new Error(data?.message || 'no task');
+        result = await pollTask(data.task_id, (p) => { if (!video.cancelled) setVideoStatus(t('Conversion en MP4…'), p); });
+    } catch (e) {
+        console.warn('[stats] Conversion vidéo impossible :', e?.message || e);
+    }
+    if (video.cancelled) return;
+    const player = $('statsVideoPlayer');
+    const download = $('btnStatsVideoDownload');
+    if (result?.file) {
+        video.file = result.file;
+        video.folder = result.folder || null;
+        const url = '/download_video/' + encodeURIComponent(result.file);
+        player.src = url + '?inline=1';
+        download.href = url;
+        download.removeAttribute('download');
+        $('statsVideoDoneNote').textContent = result.folder
+            ? t('Vidéo enregistrée : ${file}, dans ${folder}.', { file: result.file, folder: result.folder })
+            : result.file;
+    } else {
+        video.objectUrl = URL.createObjectURL(blob);
+        player.src = video.objectUrl;
+        download.href = video.objectUrl;
+        download.download = name + '.webm';
+        $('statsVideoDoneNote').textContent = t('La conversion en MP4 a échoué : la vidéo est proposée au format WebM.');
+    }
+    $('statsVideoStage').replaceChildren();
+    setVideoPhase('done');
+}
+
+async function revealVideo() {
+    const file = state.video?.file;
+    if (!file) return;
+    try {
+        const response = await fetch('/reveal_video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file }),
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+    } catch (e) {
+        showError(t("Impossible d'ouvrir le dossier des vidéos."));
+    }
+}
+
+function closeVideo() {
+    videoModal().hide();
 }
 
 // ---------------------------------------------------------------------------
@@ -931,6 +1360,12 @@ function onCardAction(event) {
             break;
         case 'export-svg':
             exportSvg(item.spec);
+            break;
+        case 'to-panel':
+            sendToPanel(item.spec);
+            break;
+        case 'video':
+            openVideo(item.spec);
             break;
         case 'before':
         case 'after': {
@@ -1741,9 +2176,13 @@ window.getStatsPageSnapshot = () => {
                     return Array.isArray(grid) ? grid.length : null;
                 })(),
                 rendered: item.spec.view.chart === 'number' || state.charts.has(item.spec.id),
+                linksToMap: entry ? chartClickable(item.spec, entry.result) : false,
             };
         }) : [],
         editor: state.editor ? { mode: state.editor.mode, spec: state.editor.item.spec, size: state.editor.item.size } : null,
+        video: state.video ? {
+            chartId: state.video.spec.id, phase: state.video.phase, file: state.video.file, folder: state.video.folder || null,
+        } : null,
     };
 };
 
@@ -1753,6 +2192,11 @@ window.getStatsPageSnapshot = () => {
 
 function bindEvents() {
     $('btnStatsRetry').addEventListener('click', loadPage);
+    $('btnStatsVideoStart').addEventListener('click', () => { recordVideo(); });
+    $('btnStatsVideoCancel').addEventListener('click', closeVideo);
+    $('btnStatsVideoClose').addEventListener('click', closeVideo);
+    $('btnStatsVideoReveal').addEventListener('click', revealVideo);
+    $('statsVideoModal').addEventListener('hidden.bs.modal', releaseVideo);
     $('btnStatsAddChart').addEventListener('click', openGallery);
     $('btnStatsAddChartEmpty').addEventListener('click', openGallery);
     $('btnStatsRename').addEventListener('click', openRename);

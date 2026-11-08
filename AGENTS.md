@@ -297,6 +297,16 @@ Autres repères :
   Mes poses (`POST /api/logs/clear` en entrée et en sortie) et créent un jeu
   Évolution par l'API (import = tâche à suivre sur `/tasks/<id>`), supprimé
   en sortie.
+  Retour à la carte (lot 6) : cliquer une valeur ECharts à l'écran via
+  `chart.convertToPixel({ seriesIndex }, [index de clé, valeur])` + la
+  position du conteneur (helper `markPosition`) ; le lien écrit
+  `localStorage.filtersSelection` (propre au contexte du test, rien à
+  remettre). « Envoyer en panneau vidéo » écrit `stats.panels` : remettre
+  `{stats: {enabled: true, panels: []}}` en sortie. La vidéo animée
+  s'enregistre en temps réel (durée minimale 6 s) puis passe par
+  `/process_recorded_video` : attendre `getStatsPageSnapshot().video.phase
+  === 'done'` et supprimer le MP4 (`video.folder` / `video.file`) par `fs`
+  — pas par `/api/videos/delete`, qui l'enverrait dans la Corbeille.
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

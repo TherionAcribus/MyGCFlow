@@ -256,10 +256,10 @@ function rowUnitIndex(unit, table, r) {
 }
 
 // Case inexistante cette année-là (29 février d'une année ordinaire).
-const ABSENT = 'absent';
+export const ABSENT = 'absent';
 
 // Jours couverts par une clé cyclique dans l'année `y`.
-function cyclicBounds(dim, key, y) {
+export function cyclicBounds(dim, key, y) {
     const jan1 = dayNumber({ y, m: 1, d: 1 });
     if (dim === 'month_of_year') {
         return [dayNumber({ y, m: key, d: 1 }), dayNumber({ y, m: key, d: daysInMonth(y, key) })];
