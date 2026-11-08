@@ -60,6 +60,14 @@
     --chart-empty: #223044;
 }
 
+/* Place de la barre de défilement toujours réservée : la largeur des cartes
+   ne dépend pas de la hauteur de la page. Sinon un calendrier redessiné à
+   une nouvelle largeur (taille de case) pouvait faire apparaître la barre,
+   rétrécir la grille, se redessiner plus petit, la faire disparaître… */
+html {
+    scrollbar-gutter: stable;
+}
+
 #statsMain {
     display: flex;
     flex-direction: column;

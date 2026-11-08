@@ -8,6 +8,8 @@ gabarits.
 import json
 import os
 import tempfile
+import threading
+import time
 import unittest
 from unittest import mock
 
@@ -82,6 +84,21 @@ class StatisticsPageTests(unittest.TestCase):
             etag = response.headers["ETag"]
             again = self.client.get("/api/stats/finds", headers={"If-None-Match": etag})
             self.assertEqual(again.status_code, 304)
+            self.assertEqual(again.headers["ETag"], etag)
+
+    def test_known_finds_version_is_not_rebuilt(self):
+        features = [_feature(date_find="2024-03-01")]
+        with mock.patch("blueprints.statistics._base_features", return_value=(features, 123.0)):
+            etag = self.client.get("/api/stats/finds").headers["ETag"]
+            with mock.patch("blueprints.statistics.stats_finds.build_finds_payload") as build:
+                again = self.client.get("/api/stats/finds", headers={"If-None-Match": etag})
+                self.assertEqual(again.status_code, 304)
+                build.assert_not_called()
+        # Base modifiée : nouvelle version, colonnes reconstruites.
+        with mock.patch("blueprints.statistics._base_features", return_value=(features, 456.0)):
+            changed = self.client.get("/api/stats/finds", headers={"If-None-Match": etag})
+            self.assertEqual(changed.status_code, 200)
+            self.assertNotEqual(changed.headers["ETag"], etag)
 
     # ----- Sources dédiées (DNF et caches posées, hors règles de la carte) -----
 
@@ -245,6 +262,76 @@ class StatisticsPageTests(unittest.TestCase):
         # Le corrompu est conservé sous .corrupt, la .bak reste intacte.
         self.assertEqual(path.with_name(path.name + ".corrupt").read_bytes(), b"{corrompu")
         self.assertTrue(self._status()["backup_available"])
+
+    # ----- Écritures simultanées -----
+
+    def test_simultaneous_puts_with_the_same_rev_cannot_both_win(self):
+        rev = self.client.put("/api/dashboards", json=self._doc()).get_json()["rev"]
+        real_write = dashboards_store.atomic_write
+
+        def slow_write(*args, **kwargs):
+            time.sleep(0.05)  # élargit la fenêtre entre contrôle et écriture
+            return real_write(*args, **kwargs)
+
+        outcomes = []
+
+        def save(ident):
+            try:
+                dashboards_store.save_document(self._doc(ident), expected_rev=rev)
+                outcomes.append("ok")
+            except dashboards_store.RevisionConflict:
+                outcomes.append("conflict")
+
+        with mock.patch("dashboards_store.atomic_write", side_effect=slow_write):
+            threads = [threading.Thread(target=save, args=(ident,)) for ident in ("a", "b")]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        self.assertEqual(sorted(outcomes), ["conflict", "ok"])
+
+    # ----- Sauvegarde d'un seul tableau (secours à la fermeture) -----
+
+    def _two_dashboards(self):
+        return {"v": 1, "active": "d1", "dashboards": [
+            {"id": "d1", "name": "Un", "items": []},
+            {"id": "d2", "name": "Deux", "items": []},
+        ]}
+
+    def test_put_one_dashboard_replaces_it_and_keeps_the_others(self):
+        rev = self.client.put("/api/dashboards", json=self._two_dashboards()).get_json()["rev"]
+        changed = {"id": "d2", "name": "Deux bis", "items": [{"size": "M", "spec": {"v": 1}}]}
+        response = self.client.put("/api/dashboards/d2", json={"dashboard": changed, "active": "d2"},
+                                   headers={"X-Dashboard-Rev": rev})
+        self.assertEqual(response.status_code, 200)
+        body = self._status()
+        self.assertEqual(response.get_json()["rev"], body["rev"])
+        self.assertEqual(body["document"]["active"], "d2")
+        self.assertEqual([d["name"] for d in body["document"]["dashboards"]], ["Un", "Deux bis"])
+        self.assertEqual(body["document"]["dashboards"][1], changed)
+
+    def test_put_one_dashboard_checks_the_rev(self):
+        rev = self.client.put("/api/dashboards", json=self._two_dashboards()).get_json()["rev"]
+        self.client.put("/api/dashboards", json=self._two_dashboards() | {"active": "d2"})
+        response = self.client.put("/api/dashboards/d1", json={"dashboard": {"id": "d1", "items": []}},
+                                   headers={"X-Dashboard-Rev": rev})
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.get_json()["rev"], self._status()["rev"])
+
+    def test_put_one_dashboard_refusals(self):
+        response = self.client.put("/api/dashboards/d1", json={"dashboard": {"id": "d1", "items": []}})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_json()["error"], "no-document")
+        self.client.put("/api/dashboards", json=self._two_dashboards())
+        unknown = self.client.put("/api/dashboards/d9", json={"dashboard": {"id": "d9", "items": []}})
+        self.assertEqual(unknown.status_code, 404)
+        self.assertEqual(unknown.get_json()["error"], "unknown-dashboard")
+        mismatch = self.client.put("/api/dashboards/d1", json={"dashboard": {"id": "d2", "items": []}})
+        self.assertEqual(mismatch.status_code, 400)
+        too_many = {"id": "d1", "items": [{}] * (dashboards_store.MAX_ITEMS + 1)}
+        self.assertEqual(self.client.put("/api/dashboards/d1", json={"dashboard": too_many}).status_code, 400)
+        # Rien n'a bougé.
+        self.assertEqual(self._status()["document"], self._two_dashboards())
 
     def test_restore_without_a_backup_is_404(self):
         path = dashboards_store.dashboards_path()

@@ -56,10 +56,10 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 
 | Fichier | Rôle |
 |---|---|
-| `blueprints/statistics.py` | `/stats`, `GET /api/stats/finds`, `GET /api/stats/dnf`, `GET /api/stats/owned`, `GET/PUT/DELETE /api/dashboards` |
+| `blueprints/statistics.py` | `/stats`, `GET /api/stats/finds`, `GET /api/stats/dnf`, `GET /api/stats/owned`, `GET/PUT/DELETE /api/dashboards`, `PUT /api/dashboards/<id>` (secours à la fermeture) |
 | `stats_finds.py` | Trouvailles en colonnes (chaînes codées par dictionnaire, ETag) |
 | `dashboards_store.py` | `dashboards.json` dans le répertoire de config : forme, version, taille ≤ 1 Mo, révision (sha1), restauration `.bak` |
-| `dashboard_saver.mjs` | File d'écriture : une requête en vol, rétention après échec |
+| `dashboard_saver.mjs` | File d'écriture : une requête en vol, rétention après échec ; requête de secours à la fermeture (`closingSaveRequest`) |
 | `templates/stats_page.html` | Gabarit : barre, grille, galerie, éditeur, renommage |
 | `templates/_app_header.html` | En-tête commun aux quatre pages (lien actif selon `mode`) |
 | `static/js/stats_page.js` | Point d'entrée et câblage DOM |
@@ -112,7 +112,10 @@ vocabulaire en tête du module, détail dans le plan (§ 2).
 ## Moteur (`chart_query.mjs`)
 
 - Dates en **numéros de jour** (jours depuis 1970, UTC) : pas de fuseau.
-  « Aujourd'hui » vient de `todayDay()` (jour local).
+  « Aujourd'hui » vient de `todayDay()` (jour local), relu par la page au
+  retour sur l'onglet et chaque minute (`refreshToday`) : une page restée
+  ouverte passé minuit ou le 31 décembre suit la nouvelle date sans
+  rechargement (la date fait partie de la clé du cache de résultats).
 - Clés : nombres pour le temps (`year` 2024, `quarter` 20242, `month`
   202403, `week` = lundi, `day`), les dimensions cycliques
   (`day_of_year` sur 366 cases, 29 février = 60), l'âge et l'année de
@@ -240,7 +243,13 @@ autre erreur est relançable, la promesse n'étant pas gardée en cache.
 Archivée sans date (Évolution) : comptée parmi les publiées, jamais
 active ni archivée.
 
-**Performance.** Trois mécanismes évitent le travail redondant :
+**Performance.** Moteur mesuré le 2026-11-08 (Node, 20 000 trouvailles
+fictives) : moins de 5 ms par question de la galerie, 16 ms pour un cumul
+« depuis toujours » découpé par type sur chaque année ; la table des
+trouvailles se construit en ~20 ms. Côté serveur, `GET /api/stats/finds`
+compare l'ETag AVANT de construire les colonnes (~60 ms et 1,7 Mo de JSON
+pour 20 000 trouvailles, jetés sinon sur un 304). Trois mécanismes évitent
+le travail redondant dans la page :
 
 - **Cache de résultats** (`state.resultCache`, borné à 300) : `computeResult`
   mémorise par clé {requête, période, filtres, données}. Toute écriture de
@@ -441,7 +450,13 @@ changement couperait la saisie dans Tom Select.
 - `calendar` : regroupement par jour, un bandeau par année de la première
   période (3 au plus, `calendarYears`), cases carrées calculées sur la
   largeur (`calendarCell`, 8–18 px) ; `chartHeight(result, spec, width)`
-  allonge la carte. Noms de jours rangés du dimanche au samedi (convention
+  allonge la carte. La taille de case dessinée est notée sur l'hôte
+  (`data-calendar-cell`) : quand un redimensionnement la change,
+  `onHostsResized` redessine le calendrier au cadre suivant (un `resize()`
+  seul l'étirait et le coupait à droite). La place de la barre de
+  défilement est réservée (`scrollbar-gutter: stable`) : sans cela, un
+  calendrier qui grandit pouvait faire apparaître la barre, rétrécir la
+  grille et osciller. Noms de jours rangés du dimanche au samedi (convention
   ECharts) ; petites cases : lun. / mer. / ven. seulement.
 - `radar` : une forme par série, même maximum pour tous les axes.
 - Grille et calendrier ne dessinent que la première période (note sous la
@@ -461,7 +476,17 @@ pas 1 se fond volontairement dans le fond : case proche de zéro).
 12 colonnes sur 12. Première visite (fichier absent) : `defaultDocument`,
 enregistré aussitôt. Sauvegarde : PUT du document entier, débouncée (500 ms)
 pour la période, immédiate pour les actions discrètes, `keepalive` à la
-fermeture de la page.
+fermeture de la page. Le navigateur refuse un envoi `keepalive` de plus de
+64 Kio (atteint vers 130 graphiques au total) : `closingSaveRequest`
+(dashboard_saver.mjs) envoie alors seulement le tableau affiché à
+`PUT /api/dashboards/<id>` (`{dashboard, active}`, même contrôle de
+révision ; 404 si le document ou le tableau n'existe pas).
+
+Côté serveur, contrôle de révision et écriture forment un seul bloc sous
+verrou (`dashboards_store._lock`, `save_document(doc, expected_rev)` →
+`RevisionConflict`) : l'application traite plusieurs requêtes à la fois, et
+deux onglets qui enregistraient au même instant pouvaient tous deux passer
+le contrôle. Le contrôle ne relit que le sha1 du fichier (`current_rev`).
 
 File d'écriture (`dashboard_saver.mjs`) : une seule requête en vol, la
 dernière version du document gagne ; l'échec (réseau, refus) conserve le

@@ -99,6 +99,19 @@ caches posées, Mes poses et Évolution (leurs pages n'ont pas de sélection
 persistée) ; la vidéo s'enregistre en temps réel (une vidéo de 30 s prend
 30 s) et sans musique. Le plan initial est entièrement livré.
 
+**Après le plan — analyse du 2026-11-08** : premier lot d'améliorations fait
+(fiabilité) — date du jour relue sans rechargement, calendrier redessiné
+quand la largeur change sa taille de case, sauvegarde de secours au-delà de
+64 Kio (`PUT /api/dashboards/<id>`), contrôle de révision et écriture sous
+verrou côté serveur, 304 des trouvailles sans construire les colonnes.
+Pistes restantes : charger seulement les sources du tableau ouvert et
+dessiner dès que les trouvailles sont là, ETag des routes DNF / caches
+posées, aperçus dans la galerie, « Annuler » après un ajout depuis la
+galerie, bouton « Actualiser », « Reprendre les filtres de la carte » ;
+fonctions : vidéo d'un tableau entier avec musique, grilles de défis (D/T
+81, 366 jours, Jasmer), séries et records, objectif et projection, mode
+présentation, lien carte pour les autres sources.
+
 Décisions prises avec l'utilisateur :
 
 1. **Une seule page `/stats`**, multi-sources (chaque graphique choisit sa

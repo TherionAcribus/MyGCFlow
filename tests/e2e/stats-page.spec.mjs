@@ -1150,6 +1150,84 @@ test('un échec d\'enregistrement reste affiché et le clic relance', async ({ p
   await page.unroute('**/api/dashboards');
 });
 
+// ---------------------------------------------------------------------------
+// Fiabilité : date du jour, calendrier redimensionné, sauvegarde de secours
+// ---------------------------------------------------------------------------
+
+test('passage à une nouvelle année : la page suit la date du jour sans rechargement', async ({ page, request }) => {
+  // Horloge figée (les minuteurs tournent normalement) : la veille du nouvel an.
+  await page.clock.setFixedTime(new Date(2026, 11, 31, 23, 59));
+  const { errors, card: before } = await openWithChart(page, request, {
+    groupBy: 'none', periods: [{ kind: 'current', unit: 'year' }], view: { chart: 'number' },
+  }, 'S');
+  expect(before.series).toEqual([[6]]);
+  // Le 31 décembre, l'année n'a plus de case à venir : pas « en cours ».
+  expect(before.periods).toEqual(['2026']);
+  const day = (await snapshot(page)).today;
+
+  // Minuit passe pendant que la page est ouverte ; retour sur l'onglet.
+  await page.clock.setFixedTime(new Date(2027, 0, 1, 0, 1));
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect.poll(async () => (await snapshot(page)).today).toBe(day + 1);
+  const after = (await snapshot(page)).cards[0];
+  expect(after.series).toEqual([[0]]);
+  expect(after.periods).toEqual(['2027 (en cours)']);
+  // Le menu global propose la nouvelle année en cours.
+  await expect(page.locator('#statsGlobalPeriod option', { hasText: '2026' })).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test('calendrier : la taille des cases suit la largeur de la fenêtre', async ({ page, request }) => {
+  await page.setViewportSize({ width: 1500, height: 900 });
+  const { errors, card: wide } = await openWithChart(page, request, {
+    groupBy: 'day', periods: [{ kind: 'current', unit: 'year' }], view: { chart: 'calendar' },
+  }, 'XL');
+  expect(wide.calendarCell).toBeGreaterThan(12);
+  expect(Math.round(wide.height)).toBe(78 + 7 * wide.calendarCell);
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  await expect.poll(async () => (await snapshot(page)).cards[0].calendarCell).toBeLessThan(wide.calendarCell);
+  const narrow = (await snapshot(page)).cards[0];
+  // Redessiné (pas seulement étiré) : la hauteur suit la nouvelle case et le
+  // calendrier tient dans la carte.
+  expect(Math.round(narrow.height)).toBe(78 + 7 * narrow.calendarCell);
+  const fits = await page.evaluate(() => {
+    const host = document.querySelector('.stats-card .stats-chart');
+    return host.scrollWidth <= host.clientWidth + 1;
+  });
+  expect(fits).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('fermeture : un document de plus de 64 Ko enregistre quand même le tableau affiché', async ({ page, request }) => {
+  // Un tableau affiché d'un graphique + 7 tableaux de 24 graphiques : le
+  // document normalisé par la page (~550 octets par graphique, titres de
+  // 80 caractères) dépasse la limite d'un envoi keepalive.
+  const hex = (n) => n.toString(16).padStart(6, '0');
+  const dashboards = [{ id: 'aaaaaa', name: 'Affiché', period: { kind: 'all' },
+    items: [{ size: 'S', spec: { id: 'c0ffee', groupBy: 'none', view: { chart: 'number' } } }] }];
+  for (let d = 1; d <= 7; d++) {
+    dashboards.push({ id: hex(0xb00000 + d), name: 'Autre ' + d, period: { kind: 'all' },
+      items: Array.from({ length: 24 }, (_, i) => ({ size: 'M', spec: {
+        id: hex(0xd00000 + d * 100 + i), groupBy: 'year', title: ('Graphique ' + i + ' ').padEnd(80, '·') } })) });
+  }
+  expect((await request.put('/api/dashboards', { data: { v: 1, active: 'aaaaaa', dashboards } })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+
+  // La période globale s'enregistre après 500 ms : on quitte avant. L'envoi
+  // de secours prend la route du tableau seul (le document est trop gros).
+  const closingPut = page.waitForRequest((r) => r.method() === 'PUT' && r.url().endsWith('/api/dashboards/aaaaaa'));
+  await page.locator('#statsGlobalPeriod').selectOption({ label: 'Cette année' });
+  await page.goto('about:blank');
+  await closingPut;
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.period).toEqual({ kind: 'current', unit: 'year' });
+  const saved = await savedDoc(request);
+  // Les autres tableaux sont intacts.
+  expect(saved.dashboards).toHaveLength(8);
+  expect(saved.dashboards[7].items).toHaveLength(24);
+  expect(errors).toEqual([]);
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

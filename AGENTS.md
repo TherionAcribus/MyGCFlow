@@ -315,6 +315,11 @@ Autres repères :
   `/process_recorded_video` : attendre `getStatsPageSnapshot().video.phase
   === 'done'` et supprimer le MP4 (`video.folder` / `video.file`) par `fs`
   — pas par `/api/videos/delete`, qui l'enverrait dans la Corbeille.
+  Date du jour (périodes relatives, « à date ») : `page.clock.setFixedTime`
+  avant d'ouvrir la page, puis une autre date et un `visibilitychange`
+  envoyé au document — la page relit la date sans rechargement (exemple :
+  « passage à une nouvelle année » dans stats-page.spec.mjs). Le dernier
+  test du fichier vide la base : un nouveau test va AVANT lui.
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

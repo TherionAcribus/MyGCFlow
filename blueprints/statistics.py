@@ -50,12 +50,18 @@ def _base_features():
 @statistics_bp.route('/api/stats/finds', methods=['GET'])
 def stats_finds_data():
     features, db_mtime = _base_features()
-    response = make_response(jsonify(stats_finds.build_finds_payload(features)))
-    # Faible : Flask-Compress le conserve tel quel sur la réponse compressée.
     digest = hashlib.sha1(repr((db_mtime, len(features))).encode('utf-8')).hexdigest()[:16]
-    response.set_etag(f"finds-{digest}-p{stats_finds.PAYLOAD_VERSION}", weak=True)
+    etag = f"finds-{digest}-p{stats_finds.PAYLOAD_VERSION}"
+    # Version déjà connue du navigateur : 304 SANS construire les colonnes
+    # (~60 ms et 1,7 Mo de JSON pour 20 000 trouvailles, jetés sinon).
+    if request.if_none_match.contains_weak(etag):
+        response = make_response('', 304)
+    else:
+        response = make_response(jsonify(stats_finds.build_finds_payload(features)))
+    # Faible : Flask-Compress le conserve tel quel sur la réponse compressée.
+    response.set_etag(etag, weak=True)
     response.headers['Cache-Control'] = 'no-cache'
-    return response.make_conditional(request)
+    return response
 
 
 @statistics_bp.route('/api/stats/dnf')
@@ -83,16 +89,38 @@ def put_dashboards():
     # En-tête de comparaison : la révision que le client a chargée ('none'
     # = fichier absent à ce moment-là). Sans en-tête, l'écriture reste
     # inconditionnelle (anciens clients, outils).
+    # Comparaison et écriture sous un même verrou (dashboards_store).
     expected = request.headers.get('X-Dashboard-Rev')
-    if expected is not None:
-        current = dashboards_store.read_status()['rev'] or 'none'
-        if expected != current:
-            return jsonify({'success': False, 'error': 'conflict',
-                            'rev': None if current == 'none' else current}), 409
     try:
-        rev = dashboards_store.save_document(doc)
+        rev = dashboards_store.save_document(doc, expected_rev=expected)
+    except dashboards_store.RevisionConflict as conflict:
+        return _conflict(conflict)
     except dashboards_store.InvalidDocument as error:
         status = 413 if error.code == 'too-large' else 400
+        return jsonify({'success': False, 'error': error.code}), status
+    return jsonify({'success': True, 'rev': rev})
+
+
+def _conflict(conflict):
+    return jsonify({'success': False, 'error': 'conflict', 'rev': conflict.rev}), 409
+
+
+@statistics_bp.route('/api/dashboards/<dashboard_id>', methods=['PUT'])
+def put_one_dashboard(dashboard_id):
+    """Sauvegarde de secours à la fermeture de la page : un seul tableau
+    ({dashboard, active}), quand le document entier dépasse la limite d'un
+    envoi `keepalive` (64 Ko). Même contrôle de révision que le PUT complet."""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not isinstance(body.get('dashboard'), dict)             or body['dashboard'].get('id') != dashboard_id:
+        return jsonify({'success': False, 'error': 'bad-dashboard'}), 400
+    try:
+        rev = dashboards_store.save_dashboard(
+            body['dashboard'], active=body.get('active'),
+            expected_rev=request.headers.get('X-Dashboard-Rev'))
+    except dashboards_store.RevisionConflict as conflict:
+        return _conflict(conflict)
+    except dashboards_store.InvalidDocument as error:
+        status = {'too-large': 413, 'no-document': 404, 'unknown-dashboard': 404}.get(error.code, 400)
         return jsonify({'success': False, 'error': error.code}), status
     return jsonify({'success': True, 'rev': rev})
 

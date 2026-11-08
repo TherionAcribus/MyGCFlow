@@ -12,7 +12,7 @@ import { bindQuitButtons } from './app_quit.js';
 import { showActionToast, showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { markSaving, markSaved, markSaveError } from './saved_indicator.mjs';
-import { createSaveQueue } from './dashboard_saver.mjs';
+import { closingSaveRequest, createSaveQueue } from './dashboard_saver.mjs';
 import {
     MAX_SERIES,
     allowedAligns,
@@ -38,7 +38,7 @@ import { ELAPSED_UNITS, filterMask, runChartQueries } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
-import { axisLabels, buildChartOption, calendarYears, chartHeight, clickTarget, numberModel, seriesIdentity } from './chart_echarts.mjs';
+import { axisLabels, buildChartOption, calendarCell, calendarYears, chartHeight, clickTarget, numberModel, seriesIdentity } from './chart_echarts.mjs';
 import {
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, chartAnimates, lockOption, niceCeil, revealIndex, revealProgress,
     revealResult, valueMax,
@@ -163,6 +163,34 @@ function watchTheme() {
         if (state.editor) renderPreview();
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+}
+
+// La date du jour fixe les périodes relatives (« Cette année »), la coupe
+// « à date » et la case en cours. Relue au retour sur l'onglet et chaque
+// minute : une page restée ouverte passé minuit — ou le 31 décembre —
+// suivait sinon l'ancienne date jusqu'au rechargement. La clé du cache de
+// résultats contient la date : un changement recalcule les graphiques.
+const TODAY_CHECK_MS = 60 * 1000;
+
+function refreshToday() {
+    const today = todayDay();
+    if (today === state.today) return;
+    state.today = today;
+    if (state.ready) {
+        renderToolbar();
+        renderAllCharts();
+    }
+    if (state.editor) {
+        syncEditorForm();
+        renderPreview();
+    }
+}
+
+function watchToday() {
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshToday();
+    });
+    setInterval(refreshToday, TODAY_CHECK_MS);
 }
 
 // « Réduire les animations » (réglage système) : suivi comme le thème —
@@ -530,14 +558,18 @@ window.addEventListener('pagehide', () => {
     if (!state.docDirty) return;
     // Dernière chance : keepalive survit au déchargement de la page. La
     // révision voyage aussi : un conflit est refusé plutôt qu'écrasé.
+    // Au-delà de 64 Kio, le navigateur refuse l'envoi keepalive : seul le
+    // tableau affiché part alors (closingSaveRequest).
+    const request = closingSaveRequest(state.doc);
+    if (!request) return;
     try {
-        fetch('/api/dashboards', {
+        fetch(request.url, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json',
                        'X-Dashboard-Rev': state.docRev === null ? 'none' : state.docRev },
-            body: JSON.stringify(state.doc),
+            body: request.body,
             keepalive: true,
-        });
+        }).catch(() => {});
     } catch (_) {}
 });
 
@@ -1230,6 +1262,11 @@ function renderChartInto(host, result, spec) {
     // Calendrier : un bandeau par année, la carte s'allonge.
     const height = chartHeight(result, spec, width);
     host.style.height = height ? height + 'px' : '';
+    // Les cases du calendrier ont une taille en pixels, calculée sur la
+    // largeur : un redimensionnement qui la change impose un nouveau dessin
+    // (onHostsResized), pas un simple resize().
+    if (spec.view.chart === 'calendar') host.dataset.calendarCell = String(calendarCell(width));
+    else delete host.dataset.calendarCell;
     let chart = window.echarts.getInstanceByDom(host);
     if (!chart) {
         chart = window.echarts.init(host, null, { locale: echartsLocale(), renderer: 'canvas' });
@@ -1330,6 +1367,39 @@ function renderDeferred(onlyId = null) {
         const card = $('statsGrid').querySelector(cardSelector(id));
         const item = card && dashboard.items.find((i) => i.spec.id === id);
         if (item) renderCard(item, card, dashboard);
+    }
+}
+
+// Redimensionnement d'un graphique (fenêtre, carte) : ECharts suit la
+// nouvelle taille ; un calendrier dont la taille de case change est redessiné
+// — au cadre suivant, car le redessin change la hauteur de l'hôte et
+// relancerait l'observateur pendant sa propre notification.
+const resizedCalendars = new Set();
+
+function onHostsResized(entries) {
+    for (const { target: host } of entries) {
+        const drawn = host.dataset.calendarCell;
+        if (drawn !== undefined && Number(drawn) !== calendarCell(host.clientWidth)) {
+            if (!resizedCalendars.size) requestAnimationFrame(redrawResizedCalendars);
+            resizedCalendars.add(host);
+            continue;
+        }
+        window.echarts.getInstanceByDom(host)?.resize();
+    }
+}
+
+function redrawResizedCalendars() {
+    const hosts = [...resizedCalendars];
+    resizedCalendars.clear();
+    for (const host of hosts) {
+        if (!host.isConnected) continue;
+        if (host === $('statsEdPreview')) {
+            renderPreview();
+            continue;
+        }
+        const id = host.closest('.stats-card')?.dataset.chartId;
+        const entry = id && state.results.get(id);
+        if (entry?.result) state.charts.set(id, renderChartInto(host, entry.result, entry.spec));
     }
 }
 
@@ -2542,6 +2612,8 @@ function renderPreview() {
     host.style.setProperty('--stats-chart-height', HEIGHT_PIXELS[state.editor.item.height || 'M'] + 'px');
     state.previewChart = renderChartInto(host, result, spec);
     state.previewChart.resize();
+    // Fenêtre redimensionnée : l'aperçu suit (calendrier redessiné).
+    state.resizeObserver.observe(host);
 }
 
 function onEditorChange() {
@@ -2641,6 +2713,7 @@ window.getStatsPageSnapshot = () => {
         echartsVersion: window.echarts?.version || null,
         locale: echartsLocale(),
         ready: state.ready,
+        today: state.today,
         reduceMotion: state.reduceMotion,
         sourceErrors: [...state.sourceErrors],
         rows: state.tables.has('finds') ? tableOf('finds').n : null,
@@ -2692,6 +2765,11 @@ window.getStatsPageSnapshot = () => {
                     return Array.isArray(grid) ? grid.length : null;
                 })(),
                 rendered: item.spec.view.chart === 'number' || state.charts.has(item.spec.id),
+                // Calendrier : taille de case du dernier dessin (px).
+                calendarCell: (() => {
+                    const host = $('statsGrid').querySelector(cardSelector(item.spec.id) + ' .stats-chart');
+                    return host?.dataset.calendarCell ? Number(host.dataset.calendarCell) : null;
+                })(),
                 linksToMap: entry?.result ? chartClickable(item.spec, entry.result) : false,
             };
         }) : [],
@@ -2782,14 +2860,13 @@ function bindEvents() {
         if (state.docDirty) flushSave();
     });
 
-    state.resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) window.echarts.getInstanceByDom(entry.target)?.resize();
-    });
+    state.resizeObserver = new ResizeObserver(onHostsResized);
 }
 
 bindQuitButtons();
 bindEvents();
 watchTheme();
+watchToday();
 watchReducedMotion();
 state.tokens = readTokens();
 Promise.all([loadUserSettings(), loadPage()]).finally(() => {

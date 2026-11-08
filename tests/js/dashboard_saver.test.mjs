@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createSaveQueue } from '../../static/js/dashboard_saver.mjs';
+import { KEEPALIVE_MAX_BYTES, closingSaveRequest, createSaveQueue } from '../../static/js/dashboard_saver.mjs';
 
 // send pilotable : chaque appel est enregistré, la promesse résout au déblocage.
 function recorder(results = []) {
@@ -81,4 +81,44 @@ test('setRev adopte une révision sans écrire', async () => {
     queue.setRev('rX');
     await queue.push({ v: 1 });
     assert.equal(calls[0].rev, 'rX');
+});
+
+// ----- Sauvegarde de secours à la fermeture (limite keepalive) -----
+
+const docOf = (sizes, active = 'd1') => ({
+    v: 1,
+    active,
+    dashboards: sizes.map((n, i) => ({
+        id: 'd' + (i + 1), name: 'T' + (i + 1),
+        items: Array.from({ length: n }, () => ({ size: 'M', spec: { v: 1, title: 'x'.repeat(400) } })),
+    })),
+});
+
+test('fermeture : le document entier part quand il tient', () => {
+    const doc = docOf([2, 2]);
+    const out = closingSaveRequest(doc);
+    assert.equal(out.url, '/api/dashboards');
+    assert.deepEqual(JSON.parse(out.body), doc);
+});
+
+test('fermeture : trop gros, seul le tableau affiché part', () => {
+    const doc = docOf([24, 24, 24, 24, 24, 24], 'd3');
+    assert.ok(new TextEncoder().encode(JSON.stringify(doc)).length > KEEPALIVE_MAX_BYTES);
+    const out = closingSaveRequest(doc);
+    assert.equal(out.url, '/api/dashboards/d3');
+    const body = JSON.parse(out.body);
+    assert.equal(body.active, 'd3');
+    assert.deepEqual(body.dashboard, doc.dashboards[2]);
+});
+
+test('fermeture : la limite compte des octets, pas des caractères', () => {
+    // 3 octets par « é » en UTF-8 : sous la limite en caractères, au-dessus en octets.
+    const doc = { v: 1, active: 'd1', dashboards: [{ id: 'd1', name: 'é'.repeat(30), items: [] }] };
+    const chars = JSON.stringify(doc).length;
+    assert.equal(closingSaveRequest(doc, { maxBytes: chars + 10 }), null);
+});
+
+test('fermeture : rien à envoyer sans document ni tableau', () => {
+    assert.equal(closingSaveRequest(null), null);
+    assert.equal(closingSaveRequest({ v: 1, dashboards: [] }, { maxBytes: 5 }), null);
 });

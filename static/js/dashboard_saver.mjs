@@ -53,3 +53,25 @@ export function createSaveQueue(send) {
         },
     };
 }
+
+// Sauvegarde de secours à la fermeture de la page (`fetch` keepalive). Le
+// navigateur refuse un envoi keepalive de plus de 64 Kio (en-têtes compris) :
+// la promesse échoue, rien n'est écrit, sans un mot. Le document entier peut
+// dépasser cette limite (jusqu'à 20 tableaux de 24 graphiques, ~480 octets
+// par graphique) ; il part alors réduit au tableau affiché — c'est lui que
+// touchent les modifications débouncées encore en attente (période globale).
+// Renvoie { url, body } ou null (même le tableau seul est trop gros).
+export const KEEPALIVE_MAX_BYTES = 60 * 1024;
+
+const byteLength = (text) => new TextEncoder().encode(text).length;
+
+export function closingSaveRequest(doc, { maxBytes = KEEPALIVE_MAX_BYTES } = {}) {
+    if (!doc) return null;
+    const whole = JSON.stringify(doc);
+    if (byteLength(whole) <= maxBytes) return { url: '/api/dashboards', body: whole };
+    const dashboard = (doc.dashboards || []).find((d) => d.id === doc.active) || doc.dashboards?.[0];
+    if (!dashboard) return null;
+    const one = JSON.stringify({ dashboard, active: dashboard.id });
+    if (byteLength(one) > maxBytes) return null;
+    return { url: '/api/dashboards/' + encodeURIComponent(dashboard.id), body: one };
+}
