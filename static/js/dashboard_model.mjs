@@ -88,42 +88,66 @@ export function normalizeDocument(raw, options = {}) {
 
 // Périodes et filtres effectifs d'un graphique : les siens, sinon ceux du
 // tableau de bord.
+// « Période du tableau de bord » dans une comparaison (`{ kind: 'dashboard' }`)
+// est remplacée par celle du tableau.
 export function effectiveQueryOptions(spec, dashboard) {
+    const base = dashboard?.period || DEFAULT_PERIOD;
     return {
-        periods: spec.periods || [dashboard?.period || DEFAULT_PERIOD],
+        periods: spec.periods
+            ? spec.periods.map((period) => (period.kind === 'dashboard' ? base : period))
+            : [base],
         filters: spec.filters || dashboard?.filters || {},
     };
 }
 
-// Le graphique a-t-il une période propre (badge sur la carte) ?
-export const hasOwnPeriod = (spec) => Array.isArray(spec.periods);
+// Le graphique a-t-il une période propre (badge sur la carte) ? Comparer la
+// période du tableau de bord à la précédente n'en est pas une : elle suit.
+export const hasOwnPeriod = (spec) => Array.isArray(spec.periods) && spec.periods[0].kind !== 'dashboard';
 
 // ---------------------------------------------------------------------------
 // Questions toutes faites
 // ---------------------------------------------------------------------------
 
 // `spec` : modèle partiel passé à createChartSpec ; `periods` propres quand la
-// question n'a de sens que sur tout l'historique (« ma meilleure année »).
+// question n'a de sens que sur tout l'historique (« ma meilleure année ») ou
+// compare des périodes précises (« cette année contre l'an dernier »).
+// `group` : section de la galerie (QUESTION_GROUPS).
+const THIS_AND_LAST_YEAR = [{ kind: 'current', unit: 'year' }, { kind: 'previous' }];
+const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
+
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'places']);
+
 export const QUESTIONS = Object.freeze([
-    { id: 'total', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
-    { id: 'days', icon: 'ti-calendar-event', size: 'S', spec: { groupBy: 'none', measure: { op: 'distinct', field: 'days' }, view: { chart: 'number' } } },
-    { id: 'countries_count', icon: 'ti-world', size: 'S', spec: { groupBy: 'none', measure: { op: 'distinct', field: 'country' }, view: { chart: 'number' } } },
-    { id: 'by_year', icon: 'ti-chart-bar', size: 'M', spec: { groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar', labels: true } } },
-    { id: 'progress', icon: 'ti-chart-line', size: 'M', spec: { groupBy: 'month', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'area' } } },
-    { id: 'months', icon: 'ti-calendar-month', size: 'M', spec: { groupBy: 'month_of_year', view: { chart: 'bar' } } },
-    { id: 'weekdays', icon: 'ti-calendar-week', size: 'M', spec: { groupBy: 'weekday', view: { chart: 'bar' } } },
-    { id: 'types', icon: 'ti-chart-donut', size: 'M', spec: { groupBy: 'cache_type', view: { chart: 'donut' } } },
-    { id: 'countries', icon: 'ti-flag', size: 'M', spec: { groupBy: 'country', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
-    { id: 'owners', icon: 'ti-users', size: 'M', spec: { groupBy: 'owner', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
-    { id: 'difficulty', icon: 'ti-stairs-up', size: 'M', spec: { groupBy: 'difficulty', view: { chart: 'bar' } } },
-    { id: 'terrain', icon: 'ti-mountain', size: 'M', spec: { groupBy: 'terrain', view: { chart: 'bar' } } },
-    { id: 'containers', icon: 'ti-box', size: 'M', spec: { groupBy: 'container', view: { chart: 'bar' } } },
-    { id: 'age', icon: 'ti-hourglass', size: 'M', spec: { groupBy: 'age', view: { chart: 'bar' } } },
-    { id: 'record', icon: 'ti-trophy', size: 'M', spec: { groupBy: 'year', measure: { op: 'max_per_day' }, periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
+    { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
+    { id: 'days', group: 'overview', icon: 'ti-calendar-event', size: 'S', spec: { groupBy: 'none', measure: { op: 'distinct', field: 'days' }, view: { chart: 'number' } } },
+    { id: 'countries_count', group: 'overview', icon: 'ti-world', size: 'S', spec: { groupBy: 'none', measure: { op: 'distinct', field: 'country' }, view: { chart: 'number' } } },
+    { id: 'by_year', group: 'overview', icon: 'ti-chart-bar', size: 'M', spec: { groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar', labels: true } } },
+    { id: 'progress', group: 'overview', icon: 'ti-chart-line', size: 'M', spec: { groupBy: 'month', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'area' } } },
+    { id: 'record', group: 'overview', icon: 'ti-trophy', size: 'M', spec: { groupBy: 'year', measure: { op: 'max_per_day' }, periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
+
+    { id: 'ahead', group: 'compare', icon: 'ti-run', size: 'M', spec: { groupBy: 'day_of_year', measure: { op: 'cumulative' }, periods: THIS_AND_LAST_YEAR, view: { chart: 'line' }, compare: { toDate: false } } },
+    { id: 'year_vs_last', group: 'compare', icon: 'ti-arrows-diff', size: 'M', spec: { groupBy: 'month_of_year', periods: THIS_AND_LAST_YEAR, view: { chart: 'bar' }, compare: { toDate: false } } },
+    { id: 'year_delta', group: 'compare', icon: 'ti-plus-minus', size: 'M', spec: { groupBy: 'month_of_year', periods: THIS_AND_LAST_YEAR, view: { chart: 'bar' }, compare: { layout: 'delta' } } },
+    { id: 'vs_previous_12', group: 'compare', icon: 'ti-scale', size: 'S', spec: { groupBy: 'none', periods: [{ kind: 'rolling', unit: 'month', count: 12 }, { kind: 'previous' }], view: { chart: 'number' } } },
+    { id: 'all_years', group: 'compare', icon: 'ti-chart-arrows-vertical', size: 'L', spec: { groupBy: 'day_of_year', measure: { op: 'cumulative' }, periods: EACH_YEAR, view: { chart: 'line' }, compare: { toDate: false } } },
+    { id: 'months_by_year', group: 'compare', icon: 'ti-chart-dots', size: 'L', spec: { groupBy: 'month_of_year', periods: EACH_YEAR, view: { chart: 'line' }, compare: { toDate: false } } },
+    { id: 'types_vs_last', group: 'compare', icon: 'ti-chart-donut-2', size: 'L', spec: { groupBy: 'cache_type', periods: THIS_AND_LAST_YEAR, view: { chart: 'donut' }, compare: { layout: 'side' } } },
+
+    { id: 'months', group: 'when', icon: 'ti-calendar-month', size: 'M', spec: { groupBy: 'month_of_year', view: { chart: 'bar' } } },
+    { id: 'weekdays', group: 'when', icon: 'ti-calendar-week', size: 'M', spec: { groupBy: 'weekday', view: { chart: 'bar' } } },
+
+    { id: 'types', group: 'caches', icon: 'ti-chart-donut', size: 'M', spec: { groupBy: 'cache_type', view: { chart: 'donut' } } },
+    { id: 'difficulty', group: 'caches', icon: 'ti-stairs-up', size: 'M', spec: { groupBy: 'difficulty', view: { chart: 'bar' } } },
+    { id: 'terrain', group: 'caches', icon: 'ti-mountain', size: 'M', spec: { groupBy: 'terrain', view: { chart: 'bar' } } },
+    { id: 'containers', group: 'caches', icon: 'ti-box', size: 'M', spec: { groupBy: 'container', view: { chart: 'bar' } } },
+    { id: 'age', group: 'caches', icon: 'ti-hourglass', size: 'M', spec: { groupBy: 'age', view: { chart: 'bar' } } },
+
+    { id: 'countries', group: 'places', icon: 'ti-flag', size: 'M', spec: { groupBy: 'country', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
+    { id: 'owners', group: 'places', icon: 'ti-users', size: 'M', spec: { groupBy: 'owner', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
 ]);
 
 // Tableau de bord de la première visite.
-export const DEFAULT_QUESTIONS = Object.freeze(['total', 'days', 'countries_count', 'by_year', 'progress', 'types', 'months']);
+export const DEFAULT_QUESTIONS = Object.freeze(['total', 'days', 'countries_count', 'by_year', 'progress', 'ahead', 'types', 'months']);
 
 export function questionById(id) {
     return QUESTIONS.find((q) => q.id === id) || null;
@@ -157,23 +181,35 @@ export function defaultDocument(options = {}) {
 // Périodes proposées dans les menus
 // ---------------------------------------------------------------------------
 
-// Toutes les données, les 12 derniers mois, l'année en cours, puis chaque
-// année des données (de la plus récente à la plus ancienne).
+// Toutes les données, les 12 derniers mois, l'année et le mois en cours
+// (relatifs : ils suivent le calendrier), puis chaque année passée des
+// données, de la plus récente à la plus ancienne.
 export function periodChoices(extent, today) {
     const current = ymdOfDay(today).y;
     const choices = [
         { kind: 'all' },
         { kind: 'rolling', unit: 'month', count: 12 },
-        { kind: 'year', year: current },
+        { kind: 'current', unit: 'year' },
+        { kind: 'current', unit: 'month' },
     ];
     if (extent) {
         const first = ymdOfDay(extent.first).y;
-        const last = Math.min(ymdOfDay(extent.last).y, current);
-        for (let y = last; y >= first; y--) {
-            if (y !== current) choices.push({ kind: 'year', year: y });
-        }
+        const last = Math.min(ymdOfDay(extent.last).y, current - 1);
+        for (let y = last; y >= first; y--) choices.push({ kind: 'year', year: y });
     }
     return choices;
+}
+
+// Périodes d'un graphique (éditeur) : celles du tableau de bord, plus
+// « chaque année / chaque mois » (une série par année ou mois des données).
+export function chartPeriodChoices(extent, today) {
+    return [...periodChoices(extent, today), { kind: 'each', unit: 'year' }, { kind: 'each', unit: 'month' }];
+}
+
+// Périodes « comparé à » : la période précédente d'abord (la plus courante),
+// puis les mêmes que pour le graphique.
+export function comparePeriodChoices(extent, today) {
+    return [{ kind: 'previous' }, ...chartPeriodChoices(extent, today)];
 }
 
 // Valeur stable d'une période pour un <select> (null = héritée).

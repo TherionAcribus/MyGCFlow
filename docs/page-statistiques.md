@@ -16,6 +16,11 @@ incrustés sur la carte et dans la vidéo.
   barres / courbe / aire / anneau / chiffre clé, un tableau de bord
   enregistré, période globale, galerie de 15 questions, éditeur en phrase,
   export PNG.
+- Lot 2 (2026-11-08) : comparer — périodes relatives (en cours,
+  précédente, celle du tableau de bord), plusieurs périodes par graphique,
+  superposées / côte à côte / en écart, alignement, « à date »,
+  pourcentage ou par jour, case en cours repérée, 7 questions de
+  comparaison, galerie par sections.
 
 ## Parcours des données
 
@@ -106,9 +111,59 @@ vocabulaire en tête du module, détail dans le plan (§ 2).
   requis (comme la carte, `matchesAttributes`).
 - Cumul : depuis le début de la période, ou depuis toujours
   (`measure.from: 'all'`, lignes filtrées antérieures ajoutées au départ).
-- Lot 1 : plusieurs périodes se superposent sans alignement (même axe pour
-  catégories et cycliques, vraie date sur un axe de temps). Alignement, « à
-  date », normalisation, écart : lot 2.
+
+## Comparer des périodes (lot 2)
+
+**Périodes relatives** (`chart_spec.mjs`, résolues par `chart_periods.mjs`) :
+`current` (année ou mois en cours, suit le calendrier), `previous` (la
+période juste avant l'entrée qui la précède : 2025 avant 2026, les 12 mois
+avant les 12 derniers — nommée « Les 12 mois précédents »), `dashboard`
+(la période du tableau de bord quand le graphique la compare :
+`[dashboard, previous]` suit le menu global ; `[dashboard]` seul se
+normalise en `null`). Chaque entrée déployée porte `as` (ce qu'elle est,
+pour la nommer), `step` (pas d'un décalage), `ongoing`, `fullTo`.
+
+**Moteur** (`runChartQuery`) :
+- `toDate` : avec plusieurs périodes dont une en cours, les autres sont
+  coupées au même point (`toDateCut` : même jour du calendrier pour des
+  années ou des mois, sinon même nombre de jours ; 29 février → 28).
+  `result.toDate`, `entry.cut` ; note sous la carte.
+- `align` : `calendar` (clés communes : catégories, mois de l'année…),
+  `absolute` (vraies dates), `elapsed` (rang depuis le début de chaque
+  période : `ELAPSED_UNITS`, clés 0…n-1, `series.dates` = vrai premier jour
+  de chaque case pour l'infobulle). Une seule période : toujours dates
+  réelles. Le jour de la semaine n'a que `calendar`.
+- Cases sans valeur : hors période, au-delà de la coupe, à venir ; sur une
+  dimension cyclique, seulement si la période tient dans une année civile
+  (sinon pas de dates). 29 février d'une année ordinaire : `null`, sauf
+  pour un cumul (valeur de la veille).
+- `series.partial` : case incomplète (période en cours ou coupée).
+- `normalize` (`allowedNormalize`) : `percent` (total de la série ; d'un
+  cumul : sa valeur finale) pour les comptes, valeurs distinctes et
+  cumuls ; `per_day` (jours écoulés de la période) pour les comptes et
+  caches distinctes sans axe de temps.
+- `layout: 'delta'` (`allowedLayouts` : deux périodes fixes, pas de
+  2ᵉ dimension, ni anneau) : `delta.values` = première − seconde,
+  `delta.ratios` en proportion de la seconde.
+
+**Rendu** : `side` = un repère ECharts par période (au plus 4 par ligne),
+même maximum d'axe, titre par repère ; anneaux côte à côte (un anneau ne
+se superpose pas : `side` imposé) avec une teinte par catégorie stable
+d'un anneau à l'autre (`keyColors`) ; écart = barres `--chart-up` (bleu)
+au-dessus de zéro, `--chart-down` (rouge) en dessous, signe toujours
+écrit, infobulle avec les deux valeurs. Case incomplète : barre atténuée à
+bord en tirets. Séries nommées « 2026 (en cours) », « 2025 (au 8 nov.) ».
+Chiffre clé : une valeur par période, la première avec l'écart
+(« +60 (+25 %) par rapport aux 12 mois précédents », flèche colorée,
+texte neutre).
+
+**Éditeur** : « sur [période] comparé à [la période précédente] [×] /
++ Comparer à une autre période » (lignes en `display: contents` dans la
+grille de la phrase) ; bloc « Périodes / Alignement / à date » visible
+dès plusieurs périodes ; « Valeurs » dans les options. Menus : global =
+tout, 12 derniers mois, cette année, ce mois-ci, années passées ;
+graphique = + chaque année / chaque mois ; « comparé à » = + la période
+précédente.
 
 ## Rendu (`chart_echarts.mjs`)
 
@@ -153,6 +208,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   `chart_echarts`, `dashboard_model` (et libellés) — `npm run test:unit`.
 - Python : `tests/test_statistics_page.py` — route, en-tête, « Quitter »,
   colonnes des trouvailles, aller-retour et refus des tableaux de bord.
-- E2E : `tests/e2e/stats-page.spec.mjs` (15 tests, fixture `my-finds.gpx`).
+- E2E : `tests/e2e/stats-page.spec.mjs` (20 tests, fixture `my-finds.gpx` ;
+  `openWithChart` pose un tableau d'un seul graphique par `PUT`).
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
-  (`keys`, `series`, `chart`, `rendered`…), `editor`.
+  (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,
+  `layout`, `grids`, `chart`, `rendered`…), `editor`.

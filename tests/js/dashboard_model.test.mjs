@@ -15,6 +15,9 @@ import {
     normalizeDashboard,
     normalizeDocument,
     normalizeItem,
+    QUESTION_GROUPS,
+    chartPeriodChoices,
+    comparePeriodChoices,
     periodChoices,
     periodOfValue,
     periodValue,
@@ -54,6 +57,27 @@ test('chaque question donne un graphique valide, dessinable au lot 1', () => {
     }
     assert.equal(itemFromQuestion('bogus'), null);
     for (const id of DEFAULT_QUESTIONS) assert.ok(ids.has(id), id);
+    for (const question of QUESTIONS) assert.ok(QUESTION_GROUPS.includes(question.group), question.id);
+});
+
+test('questions de comparaison : périodes relatives gardées telles quelles', () => {
+    const ahead = itemFromQuestion('ahead', { newId: seqId }).spec;
+    assert.deepEqual(ahead.periods, [{ kind: 'current', unit: 'year' }, { kind: 'previous' }]);
+    assert.equal(ahead.compare.toDate, false);
+    const delta = itemFromQuestion('year_delta', { newId: seqId }).spec;
+    assert.equal(delta.compare.layout, 'delta');
+    // Le mois en cours contre le même nombre de jours l'an dernier.
+    assert.equal(delta.compare.toDate, true);
+    assert.equal(itemFromQuestion('types_vs_last', { newId: seqId }).spec.compare.layout, 'side');
+    assert.deepEqual(itemFromQuestion('all_years', { newId: seqId }).spec.periods, [{ kind: 'each', unit: 'year' }]);
+});
+
+test('période du tableau de bord comparée : remplacée au calcul, pas de pastille', () => {
+    const spec = { periods: [{ kind: 'dashboard' }, { kind: 'previous' }], filters: null };
+    const dashboard = { period: { kind: 'year', year: 2024 }, filters: {} };
+    assert.deepEqual(effectiveQueryOptions(spec, dashboard).periods, [{ kind: 'year', year: 2024 }, { kind: 'previous' }]);
+    assert.equal(hasOwnPeriod(spec), false);
+    assert.equal(hasOwnPeriod({ periods: [{ kind: 'year', year: 2024 }, { kind: 'previous' }] }), true);
 });
 
 test('élément : taille inconnue → M, description future écartée', () => {
@@ -100,19 +124,23 @@ test('héritage : périodes et filtres du graphique, sinon du tableau de bord', 
     assert.deepEqual(effectiveQueryOptions(inherited, null), { periods: [{ kind: 'all' }], filters: {} });
 });
 
-test('périodes proposées : tout, 12 mois, année en cours, puis les années des données', () => {
+test('périodes proposées : tout, 12 mois, année et mois en cours, puis les années passées', () => {
     const choices = periodChoices({ first: day(2021, 5, 1), last: day(2026, 1, 6) }, day(2026, 11, 8));
     assert.deepEqual(choices, [
         { kind: 'all' },
         { kind: 'rolling', unit: 'month', count: 12 },
-        { kind: 'year', year: 2026 },
+        { kind: 'current', unit: 'year' },
+        { kind: 'current', unit: 'month' },
         { kind: 'year', year: 2025 },
         { kind: 'year', year: 2024 },
         { kind: 'year', year: 2023 },
         { kind: 'year', year: 2022 },
         { kind: 'year', year: 2021 },
     ]);
-    assert.equal(periodChoices(null, day(2026, 11, 8)).length, 3);
+    assert.equal(periodChoices(null, day(2026, 11, 8)).length, 4);
+    const chart = chartPeriodChoices(null, day(2026, 11, 8));
+    assert.deepEqual(chart.slice(-2), [{ kind: 'each', unit: 'year' }, { kind: 'each', unit: 'month' }]);
+    assert.deepEqual(comparePeriodChoices(null, day(2026, 11, 8))[0], { kind: 'previous' });
     for (const period of choices) assert.deepEqual(periodOfValue(periodValue(period)), period);
     assert.equal(periodValue(null), '');
     assert.equal(periodOfValue(''), null);
@@ -164,4 +192,27 @@ test('libellés : clés d\'axe, périodes et valeurs en français', () => {
     assert.equal(labels.formatValue(null, { op: 'count' }), '—');
     assert.equal(labels.defaultTitle({ measure: { op: 'count' }, groupBy: 'year' }), 'Trouvailles par année');
     assert.equal(labels.defaultTitle({ measure: { op: 'count' }, groupBy: 'none' }), 'Trouvailles');
+});
+
+test('libellés de comparaison : en cours, coupée, rang depuis le début', () => {
+    const labels = makeLabels({ locale: 'fr' });
+    const entry = { period: { kind: 'current', unit: 'year' }, as: { kind: 'year', year: 2026 }, ongoing: true };
+    assert.equal(labels.seriesPeriodLabel(entry), '2026 (en cours)');
+    const cut = { period: { kind: 'previous' }, as: { kind: 'year', year: 2025 }, cut: true, to: dayNumber({ y: 2025, m: 11, d: 8 }) };
+    assert.equal(labels.seriesPeriodLabel(cut), '2025 (au 8 nov.)');
+    assert.equal(labels.periodLabel(cut), '2025');
+    assert.equal(labels.elapsedLabel('month', 0), 'Mois 1');
+    const before = { period: { kind: 'previous' }, as: { kind: 'previous_rolling', unit: 'month', count: 12 } };
+    assert.equal(labels.periodLabel(before), 'Les 12 mois précédents');
+    assert.equal(labels.comparedTo(before), 'par rapport aux 12 mois précédents');
+    assert.equal(labels.comparedTo({ period: { kind: 'year', year: 2025 }, as: { kind: 'year', year: 2025 } }), 'par rapport à 2025');
+    assert.equal(labels.elapsedLabel('day', 9), 'Jour 10');
+    assert.equal(labels.periodChoiceLabel({ kind: 'previous' }), 'La période précédente');
+    assert.equal(labels.periodChoiceLabel({ kind: 'current', unit: 'month' }), 'Ce mois-ci');
+    assert.equal(labels.formatValue(12.345, { op: 'count' }, { normalize: 'percent' }), '12,3 %');
+    assert.equal(labels.formatValue(0.4567, { op: 'count' }, { normalize: 'per_day' }), '0,46 / jour');
+    assert.equal(labels.formatDelta(-3, { op: 'count' }), '−3');
+    assert.equal(labels.formatDelta(5, { op: 'count' }), '+5');
+    assert.match(labels.formatRatio(0.18), /\+18\s?%/);
+    assert.equal(labels.formatRatio(null), '');
 });

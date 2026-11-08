@@ -12,18 +12,26 @@
 //     labelOf  (dim, key) → libellé, pour le tri « par libellé »
 //
 // Résultat :
-//   { dim, kind, keys, series: [{ id, periodIndex, split, values }],
-//     periods, truncated, meta: { rows, undated, noAttribute } }
+//   { dim, kind, align, elapsedUnit, keys,
+//     series: [{ id, periodIndex, split, values, partial, dates }],
+//     periods, truncated, toDate, delta, normalize,
+//     meta: { rows, undated, noAttribute } }
 // `values[i]` correspond à `keys[i]` ; null = pas de valeur (moyenne sans
-// donnée, jour futur, hors de la période sur un axe de temps).
+// donnée, jour futur, hors de la période ou de sa coupe « à date »).
+// `partial` : case encore incomplète (période en cours ou coupée), -1 sinon.
 //
-// Lot 1 : les périodes se superposent telles quelles — même axe pour les
-// catégories et les dimensions cycliques, vraie date sur un axe de temps.
-// Alignement en jours écoulés, « à date », normalisation et écart : lot 2.
+// Comparer plusieurs périodes (spec.compare) :
+//   align     calendar  même axe (catégories, mois de l'année…) ;
+//             absolute  vraies dates sur un axe de temps ;
+//             elapsed   rang depuis le début de chaque période (jour 1, 2…) ;
+//   toDate    les autres périodes coupées au même point que celle en cours ;
+//   normalize pourcentage du total de chaque série, ou par jour ;
+//   layout    delta : `delta.values` = première − seconde, `delta.ratios`
+//             en proportion de la seconde. Côte à côte : affaire du rendu.
 
-import { CONTAINER_ORDER, OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
+import { CONTAINER_ORDER, OTHERS_KEY, UNKNOWN_KEY, dayNumber, ymdOfDay } from './stats_model.mjs';
 import { MAX_SERIES, dimensionKind } from './chart_spec.mjs';
-import { expandPeriods } from './chart_periods.mjs';
+import { daysInMonth, expandPeriods, toDateCut } from './chart_periods.mjs';
 import { DICT_FIELDS, SOURCE_KIND_VALUES, weekStart } from './chart_sources.mjs';
 
 export { OTHERS_KEY, UNKNOWN_KEY };
@@ -205,6 +213,72 @@ function tailRank(key) {
 }
 
 // ---------------------------------------------------------------------------
+// Alignement des périodes
+// ---------------------------------------------------------------------------
+
+// Unité de l'alignement « depuis le début de chaque période » : l'axe compte
+// des jours, semaines, mois… écoulés depuis le début de chaque période.
+export const ELAPSED_UNITS = Object.freeze({
+    year: 'year', quarter: 'quarter', month: 'month', week: 'week', day: 'day',
+    month_of_year: 'month', week_of_year: 'week', day_of_year: 'day',
+});
+
+// Lundi de référence : le 05/01/1970 (jour 4) — la semaine n vaut
+// (lundi − 4) / 7.
+const MONDAY_ZERO = 4;
+
+// Rang d'un jour dans une unité (jours, semaines, mois… depuis une origine
+// commune) : deux jours d'une même unité ont le même rang.
+export function unitIndexOfDay(unit, day) {
+    if (unit === 'day') return day;
+    if (unit === 'week') return (weekStart(day) - MONDAY_ZERO) / 7;
+    const { y, m } = ymdOfDay(day);
+    if (unit === 'month') return y * 12 + m - 1;
+    if (unit === 'quarter') return y * 4 + quarterOf(m) - 1;
+    return y;
+}
+
+// Premier jour d'un rang (inverse de unitIndexOfDay).
+export function unitStartDay(unit, index) {
+    if (unit === 'day') return index;
+    if (unit === 'week') return index * 7 + MONDAY_ZERO;
+    if (unit === 'month') return dayNumber({ y: Math.floor(index / 12), m: (index % 12) + 1, d: 1 });
+    if (unit === 'quarter') return dayNumber({ y: Math.floor(index / 4), m: (index % 4) * 3 + 1, d: 1 });
+    return dayNumber({ y: index, m: 1, d: 1 });
+}
+
+function rowUnitIndex(unit, table, r) {
+    if (unit === 'day') return table.day[r];
+    if (unit === 'week') return (weekStart(table.day[r]) - MONDAY_ZERO) / 7;
+    if (unit === 'month') return table.y[r] * 12 + table.m[r] - 1;
+    if (unit === 'quarter') return table.y[r] * 4 + quarterOf(table.m[r]) - 1;
+    return table.y[r];
+}
+
+// Case inexistante cette année-là (29 février d'une année ordinaire).
+const ABSENT = 'absent';
+
+// Jours couverts par une clé cyclique dans l'année `y`.
+function cyclicBounds(dim, key, y) {
+    const jan1 = dayNumber({ y, m: 1, d: 1 });
+    if (dim === 'month_of_year') {
+        return [dayNumber({ y, m: key, d: 1 }), dayNumber({ y, m: key, d: daysInMonth(y, key) })];
+    }
+    if (dim === 'day_of_year') {
+        const leap = daysInMonth(y, 2) === 29;
+        if (leap || key < 60) return [jan1 + key - 1, jan1 + key - 1];
+        if (key === 60) return ABSENT;
+        return [jan1 + key - 2, jan1 + key - 2];
+    }
+    if (dim === 'week_of_year') {
+        // Semaine ISO 1 : celle du 4 janvier.
+        const start = weekStart(dayNumber({ y, m: 1, d: 4 })) + (key - 1) * 7;
+        return [start, start + 6];
+    }
+    return null;
+}
+
+// ---------------------------------------------------------------------------
 // Calcul
 // ---------------------------------------------------------------------------
 
@@ -218,6 +292,24 @@ function newCell(op) {
 // Liste des clés d'une ligne (une dimension multi-valuée en donne plusieurs).
 const asList = (key) => (Array.isArray(key) ? key : [key]);
 
+// Comparaison « à date » : avec plusieurs périodes dont une en cours, les
+// autres sont coupées au même point (au 8 novembre pour des années) — sans
+// cela l'année en cours perd toujours. Renvoie le jour de référence, ou null.
+function applyToDate(entries, spec, today) {
+    if (entries.length < 2 || !spec.compare.toDate) return null;
+    const current = entries.find((e) => e.ongoing);
+    if (!current) return null;
+    for (const entry of entries) {
+        if (entry === current) continue;
+        const cut = toDateCut(entry, current, today);
+        if (cut < entry.to) {
+            entry.to = Math.max(entry.from, cut);
+            entry.cut = true;
+        }
+    }
+    return { day: today };
+}
+
 export function runChartQuery(spec, table, options = {}) {
     const { today, labelOf = null } = options;
     // Périodes et filtres : ceux passés par l'appelant (héritage du tableau
@@ -230,6 +322,18 @@ export function runChartQuery(spec, table, options = {}) {
     const { periods: entries, truncated } = expandPeriods(periods || [{ kind: 'all' }], {
         extent: table.extent, today,
     });
+    const toDate = applyToDate(entries, spec, today);
+
+    // Alignement « depuis le début de chaque période » : la clé d'une ligne
+    // devient son rang depuis le début de SA période.
+    const elapsedUnit = entries.length > 1 && spec.compare.align === 'elapsed' ? ELAPSED_UNITS[dim] : null;
+    if (elapsedUnit) {
+        for (const entry of entries) {
+            entry.startIndex = unitIndexOfDay(elapsedUnit, entry.from);
+            entry.units = unitIndexOfDay(elapsedUnit, entry.fullTo) - entry.startIndex + 1;
+        }
+    }
+    const align = elapsedUnit ? 'elapsed' : (kind === 'time' ? 'absolute' : 'calendar');
 
     const mask = filterMask(table, filters);
     const groupKey = keyAccessor(dim, table);
@@ -280,9 +384,12 @@ export function runChartQuery(spec, table, options = {}) {
     let remapGroup = null;
     if (kind === 'none') {
         axisKeys = ['total'];
+    } else if (elapsedUnit) {
+        const longest = Math.max(0, ...entries.map((e) => e.units));
+        axisKeys = rangeKeys(Math.min(longest, MAX_AXIS_KEYS)).map((i) => i - 1);
     } else if (kind === 'time') {
         const from = Math.min(...entries.map((e) => e.from));
-        const to = Math.max(...entries.map((e) => e.to));
+        const to = Math.max(...entries.map((e) => e.fullTo));
         axisKeys = entries.length ? timeKeys(dim, from, to) : [];
     } else if (kind === 'cyclic') {
         axisKeys = rangeKeys(CYCLIC_DOMAINS[dim]);
@@ -328,11 +435,29 @@ export function runChartQuery(spec, table, options = {}) {
     const distinctOf = op === 'distinct' ? distinctAccessor(spec.measure.field, table) : null;
     const meanOf = op === 'mean' ? meanAccessor(spec.measure.field, table) : null;
 
+    // Jours couverts par la case i pour une période (null : pas de dates —
+    // catégories, cycliques sur plusieurs années, jour de la semaine).
+    const boundsOf = (i, entry) => {
+        const key = axisKeys[i];
+        if (elapsedUnit) {
+            const unitIndex = entry.startIndex + key;
+            return [unitStartDay(elapsedUnit, unitIndex), unitStartDay(elapsedUnit, unitIndex + 1) - 1];
+        }
+        if (kind === 'time') return timeKeyBounds(dim, key);
+        if (kind === 'cyclic') {
+            const y = ymdOfDay(entry.from).y;
+            if (ymdOfDay(entry.fullTo).y !== y) return null;
+            return cyclicBounds(dim, key, y);
+        }
+        return null;
+    };
+
     for (const entry of entries) {
+        const keyOf = elapsedUnit ? (r) => rowUnitIndex(elapsedUnit, table, r) - entry.startIndex : groupKey;
         const cells = new Map(splitValues.map((s) => [s, axisKeys.map(() => newCell(op))]));
         for (const r of inPeriod[entry.index]) {
             const split = splitKey ? asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)) : [null];
-            for (let key of asList(groupKey(r))) {
+            for (let key of asList(keyOf(r))) {
                 if (remapGroup) key = remapGroup(key);
                 const i = index.get(key);
                 if (i === undefined) continue;
@@ -352,6 +477,14 @@ export function runChartQuery(spec, table, options = {}) {
                     }
                 }
             }
+        }
+
+        const bounds = axisKeys.map((_, i) => boundsOf(i, entry));
+        // Fin effective : la coupe « à date », ou aujourd'hui.
+        const end = Math.min(entry.to, today);
+        let partial = -1;
+        if (entry.ongoing || entry.cut) {
+            partial = bounds.findIndex((b) => Array.isArray(b) && b[0] <= end && end < b[1]);
         }
 
         for (const s of splitValues) {
@@ -377,20 +510,28 @@ export function runChartQuery(spec, table, options = {}) {
                 values = values.map((v) => (running += v));
             }
 
-            if (kind === 'time') {
-                // Hors de la période, ou à venir : pas de valeur.
-                values = values.map((v, i) => {
-                    const [lo, hi] = timeKeyBounds(dim, axisKeys[i]);
-                    if (hi < entry.from || lo > entry.to || lo > today) return null;
-                    return v;
-                });
-            }
+            // Hors de la période (ou de sa coupe), ou à venir : pas de valeur.
+            // Le 29 février d'une année ordinaire n'existe pas — sauf pour un
+            // cumul, qui garde la valeur de la veille.
+            values = values.map((v, i) => {
+                const b = bounds[i];
+                if (b === ABSENT) return op === 'cumulative' ? v : null;
+                if (!b) return v;
+                if (b[1] < entry.from || b[0] > entry.to || b[0] > today) return null;
+                return v;
+            });
+
+            values = scaleValues(values, spec, op, entry, today);
 
             series.push({
                 id: s === null ? `p${entry.index}` : `p${entry.index}:${s}`,
                 periodIndex: entry.index,
                 split: s,
                 values,
+                partial,
+                // Premier jour de chaque case (alignement « depuis le début » :
+                // l'infobulle rappelle la vraie date de chaque série).
+                dates: elapsedUnit ? bounds.map((b) => (Array.isArray(b) ? b[0] : null)) : null,
             });
         }
     }
@@ -408,13 +549,45 @@ export function runChartQuery(spec, table, options = {}) {
         for (const s of series) s.values = order.map((i) => s.values[i]);
     }
 
+    // Écart entre deux périodes : première − seconde, et en proportion de la
+    // seconde (« +18 % par rapport à 2025 »).
+    let delta = null;
+    if (spec.compare.layout === 'delta' && entries.length === 2 && !splitKey) {
+        const [a, b] = [series[0].values, series[1].values];
+        delta = {
+            values: a.map((v, i) => (v === null || b[i] === null ? null : v - b[i])),
+            ratios: a.map((v, i) => (v === null || b[i] === null || b[i] === 0 ? null : (v - b[i]) / b[i])),
+        };
+    }
+
     return {
         dim,
         kind,
+        align,
+        elapsedUnit,
         keys: axisKeys,
         series,
         periods: entries,
         truncated,
+        toDate,
+        delta,
+        normalize: spec.compare.normalize,
         meta: { rows, undated: table.undated, noAttribute },
     };
+}
+
+// Mise à l'échelle d'une série : en pourcentage de son total (d'un cumul :
+// de sa valeur finale), ou par jour de période écoulé.
+function scaleValues(values, spec, op, entry, today) {
+    const mode = spec.compare.normalize;
+    if (mode === 'percent') {
+        const present = values.filter((v) => v !== null);
+        const total = op === 'cumulative' ? (present.at(-1) ?? 0) : present.reduce((a, b) => a + b, 0);
+        return values.map((v) => (v === null ? null : (total ? (v * 100) / total : 0)));
+    }
+    if (mode === 'per_day') {
+        const days = Math.max(1, Math.min(entry.to, today) - entry.from + 1);
+        return values.map((v) => (v === null ? null : v / days));
+    }
+    return values;
 }

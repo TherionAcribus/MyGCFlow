@@ -66,6 +66,8 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
     const decFmt = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const halfFmt = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
     const compactFmt = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 });
+    const perDayFmt = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+    const signedPctFmt = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0, signDisplay: 'exceptZero' });
     const fromDay = (day) => new Date(day * UTC_DAY);
 
     const AGE = [
@@ -175,6 +177,30 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         radar: t('radar'),
     };
 
+    const LAYOUTS = {
+        overlay: t('superposées'),
+        side: t('côte à côte'),
+        delta: t('en écart'),
+    };
+
+    const ALIGNS = {
+        calendar: t('Sur le calendrier (janvier avec janvier)'),
+        absolute: t('À leurs vraies dates'),
+    };
+    const ELAPSED_ALIGN = {
+        day: t('Jour par jour depuis le début'),
+        week: t('Semaine par semaine depuis le début'),
+        month: t('Mois par mois depuis le début'),
+        quarter: t('Trimestre par trimestre depuis le début'),
+        year: t('Année par année depuis le début'),
+    };
+
+    const NORMALIZE = {
+        none: t('Valeurs'),
+        percent: t('En pourcentage du total'),
+        per_day: t('Par jour de la période'),
+    };
+
     const SIZES = {
         S: t('Petit'),
         M: t('Moyen'),
@@ -199,6 +225,21 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         containers: [t('Tailles des caches'), t('Nano, micro, petite… : les contenants trouvés.')],
         age: [t('Âge des caches à la trouvaille'), t('Trouvées le jour de leur publication, ou des années après.')],
         record: [t('Mon record par année'), t('Le plus grand nombre de trouvailles en une journée, chaque année.')],
+        ahead: [t("Suis-je en avance sur l'an dernier ?"), t("Le cumul de cette année et celui de l'an dernier, jour après jour.")],
+        year_vs_last: [t("Cette année contre l'an dernier"), t("Vos trouvailles mois par mois, cette année et l'an dernier.")],
+        year_delta: [t("Écart avec l'an dernier"), t("Combien de trouvailles en plus ou en moins que l'an dernier, chaque mois.")],
+        vs_previous_12: [t('12 derniers mois'), t('Comparés aux 12 mois précédents.')],
+        all_years: [t('Toutes mes années'), t('Le cumul de chaque année, superposé jour après jour.')],
+        months_by_year: [t('Mes années mois par mois'), t('Une courbe par année, de janvier à décembre.')],
+        types_vs_last: [t("Mes types cette année et l'an dernier"), t('Les parts de chaque type, côte à côte.')],
+    };
+
+    const QUESTION_GROUPS = {
+        overview: t("Vue d'ensemble"),
+        compare: t('Comparer les périodes'),
+        when: t('Quand je cache'),
+        caches: t('Les caches trouvées'),
+        places: t('Lieux et poseurs'),
     };
 
     function categoryLabel(dim, key, attributeName) {
@@ -242,21 +283,82 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         }
     }
 
+    // Nom d'une période déployée (chart_periods.mjs) : son libellé
+    // personnalisé, sinon ce qu'elle est concrètement (`as`) — « 2025 » pour
+    // « la période précédente » de 2026.
     function periodLabel(entry) {
         const period = entry.period || {};
         if (period.label) return period.label;
-        switch (period.kind) {
+        const as = entry.as || period;
+        switch (as.kind) {
             case 'all': return t('Toutes mes trouvailles');
-            case 'year': return String(entry.year);
-            case 'month': return monthYearLongFmt.format(Date.UTC(entry.year, entry.month - 1, 1));
-            case 'each':
-                return entry.month
-                    ? monthYearLongFmt.format(Date.UTC(entry.year, entry.month - 1, 1))
-                    : String(entry.year);
-            case 'rolling': return rollingLabel(period);
+            case 'year': return String(as.year);
+            case 'month': return monthYearLongFmt.format(Date.UTC(as.year, as.month - 1, 1));
+            case 'rolling': return rollingLabel(as);
+            case 'previous_rolling': return previousRollingLabel(as);
             default:
-                return t('${from} – ${to}', { from: dayFmt.format(fromDay(entry.from)), to: dayFmt.format(fromDay(entry.to)) });
+                return t('${from} – ${to}', { from: dayFmt.format(fromDay(entry.from)), to: dayFmt.format(fromDay(entry.fullTo ?? entry.to)) });
         }
+    }
+
+    function previousRollingLabel({ unit, count }) {
+        if (count === 1) {
+            if (unit === 'day') return t('La veille');
+            if (unit === 'month') return t('Le mois précédent');
+            return t("L'année précédente");
+        }
+        if (unit === 'day') return t('Les ${n} jours précédents', { n: count });
+        if (unit === 'month') return t('Les ${n} mois précédents', { n: count });
+        return t('Les ${n} années précédentes', { n: count });
+    }
+
+    // « par rapport à 2025 », « par rapport aux 12 mois précédents » : la
+    // fin de phrase de l'écart d'un chiffre clé.
+    function comparedTo(entry) {
+        const as = entry.as || entry.period || {};
+        if (!entry.period?.label && as.kind === 'previous_rolling') {
+            if (as.count === 1) {
+                if (as.unit === 'day') return t('par rapport à la veille');
+                if (as.unit === 'month') return t('par rapport au mois précédent');
+                return t("par rapport à l'année précédente");
+            }
+            if (as.unit === 'day') return t('par rapport aux ${n} jours précédents', { n: as.count });
+            if (as.unit === 'month') return t('par rapport aux ${n} mois précédents', { n: as.count });
+            return t('par rapport aux ${n} années précédentes', { n: as.count });
+        }
+        return t('par rapport à ${period}', { period: periodLabel(entry) });
+    }
+
+    // Nom d'une série de comparaison : la période, marquée « en cours » ou
+    // « au 8 nov. » quand la comparaison à date l'a coupée.
+    function seriesPeriodLabel(entry) {
+        const label = periodLabel(entry);
+        if (entry.ongoing) return t('${period} (en cours)', { period: label });
+        if (entry.cut) return t('${period} (au ${date})', { period: label, date: dayMonthFmt.format(fromDay(entry.to)) });
+        return label;
+    }
+
+    // Axe « depuis le début de chaque période » : rang 0 → « Mois 1 ».
+    function elapsedLabel(unit, key) {
+        const n = key + 1;
+        switch (unit) {
+            case 'day': return t('Jour ${n}', { n });
+            case 'week': return t('Semaine ${n}', { n });
+            case 'month': return t('Mois ${n}', { n });
+            case 'quarter': return t('Trimestre ${n}', { n });
+            default: return t('Année ${n}', { n });
+        }
+    }
+
+    // Vraie date d'une case (infobulle d'un axe « depuis le début »).
+    function dateInUnit(unit, day) {
+        const date = fromDay(day);
+        if (unit === 'month') return monthYearFmt.format(date);
+        if (unit === 'quarter') {
+            return t('T${q} ${y}', { q: Math.floor(date.getUTCMonth() / 3) + 1, y: date.getUTCFullYear() });
+        }
+        if (unit === 'year') return String(date.getUTCFullYear());
+        return dayFmt.format(date);
     }
 
     function rollingLabel({ unit, count }) {
@@ -281,6 +383,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
             case 'month': return monthYearLongFmt.format(Date.UTC(period.year, period.month - 1, 1));
             case 'rolling': return rollingLabel(period);
             case 'each': return period.unit === 'month' ? t('Chaque mois') : t('Chaque année');
+            case 'current': return period.unit === 'month' ? t('Ce mois-ci') : t('Cette année');
+            case 'previous': return t('La période précédente');
+            case 'dashboard': return t('Période du tableau de bord');
             case 'range':
                 return t('${from} – ${to}', {
                     from: dayFmt.format(Date.parse(period.from + 'T00:00:00Z')),
@@ -292,14 +397,30 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
 
     // Valeur affichée : moyennes de D/T à une décimale, âge en jours entiers,
     // le reste en entiers. `compact` pour les graduations (12,3 k).
-    function formatValue(value, measure, { compact = false } = {}) {
+    function formatValue(value, measure, { compact = false, normalize = 'none' } = {}) {
         if (value === null || value === undefined || Number.isNaN(value)) return '—';
+        if (normalize === 'percent') return t('${n} %', { n: decFmt.format(value) });
+        if (normalize === 'per_day') return t('${n} / jour', { n: perDayFmt.format(value) });
         if (measure?.op === 'mean' && measure.field !== 'age') return decFmt.format(value);
         if (measure?.op === 'mean' && measure.field === 'age') {
             return t('${n} j', { n: intFmt.format(Math.round(value)) });
         }
         if (compact && Math.abs(value) >= 10000) return compactFmt.format(value);
         return intFmt.format(value);
+    }
+
+    // Écart signé : « +12 », « −3 » ; proportion : « +18 % ».
+    function formatDelta(value, measure, normalize = 'none') {
+        if (value === null || value === undefined || Number.isNaN(value)) return '—';
+        const text = formatValue(Math.abs(value), measure, { normalize });
+        if (value > 0) return '+' + text;
+        if (value < 0) return '−' + text;
+        return text;
+    }
+
+    function formatRatio(ratio) {
+        if (ratio === null || ratio === undefined || Number.isNaN(ratio)) return '';
+        return signedPctFmt.format(ratio);
     }
 
     function measureName(measure) {
@@ -324,10 +445,20 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         chart: (chart) => CHARTS[chart] || chart,
         size: (size) => SIZES[size] || size,
         question: (id) => ({ title: QUESTIONS[id]?.[0] || id, description: QUESTIONS[id]?.[1] || '' }),
+        questionGroup: (group) => QUESTION_GROUPS[group] || group,
+        layout: (layout) => LAYOUTS[layout] || layout,
+        align: (align, unit) => (align === 'elapsed' ? ELAPSED_ALIGN[unit] || ELAPSED_ALIGN.day : ALIGNS[align]) || align,
+        normalize: (mode) => NORMALIZE[mode] || mode,
         axisLabel,
         periodLabel,
+        seriesPeriodLabel,
+        comparedTo,
+        elapsedLabel,
+        dateInUnit,
         periodChoiceLabel,
         formatValue,
+        formatDelta,
+        formatRatio,
         defaultTitle,
     };
 }

@@ -43,7 +43,19 @@ plafond de séries 8 au lieu de 12 (taille de la palette validée) ; route
 déjà superposer plusieurs périodes et découper par 2ᵉ dimension (sans
 alignement ni interface : lot 2 / lot 3) ; couleurs des types = valeurs par
 défaut de la carte, pas celles du thème actif ; `generate_icons_subset.py`
-lit aussi les `.mjs`. Prochain : lot 2 (comparer).
+lit aussi les `.mjs`.
+
+**Lot 2 fait** le 2026-11-08 (détail : `docs/page-statistiques.md` › Comparer
+des périodes) : périodes relatives `current` / `previous` / `dashboard`,
+coupe « à date », alignements, pourcentage / par jour, superposé / côte à
+côte / écart, case en cours repérée, 7 questions de comparaison (dont
+« Suis-je en avance sur l'an dernier ? », ajoutée au tableau par défaut),
+galerie par sections, éditeur « comparé à ». Écarts : périodes relatives
+ajoutées au format v1 (rien n'était publié) ; le menu global propose
+« Cette année » / « Ce mois-ci » (relatifs) au lieu de l'année en cours
+figée ; « par jour » réservé aux graphiques sans axe de temps ; écart
+réservé à deux périodes sans 2ᵉ dimension. Prochain : lot 3 (graphisme et
+filtres).
 
 Décisions prises avec l'utilisateur :
 

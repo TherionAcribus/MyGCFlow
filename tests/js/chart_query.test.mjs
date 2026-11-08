@@ -5,8 +5,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import { dayOfYearSlot, findsTable, isoWeek, isoWeekday, weekStart } from '../../static/js/chart_sources.mjs';
-import { expandPeriods, periodLength, todayDay } from '../../static/js/chart_periods.mjs';
-import { OTHERS_KEY, UNKNOWN_KEY, filterMask, runChartQuery, timeKeyBounds } from '../../static/js/chart_query.mjs';
+import { expandPeriods, periodLength, toDateCut, todayDay } from '../../static/js/chart_periods.mjs';
+import {
+    OTHERS_KEY, UNKNOWN_KEY, filterMask, runChartQuery, timeKeyBounds, unitIndexOfDay, unitStartDay,
+} from '../../static/js/chart_query.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
 const day = (iso) => {
@@ -129,15 +131,15 @@ test('périodes : année, mois, plage, glissante, toutes', () => {
 
 test('périodes « chaque » : une entrée par année ou mois des données, plafonnée aux plus récentes', () => {
     const years = expandPeriods([{ kind: 'each', unit: 'year' }], { extent: table.extent, today: TODAY });
-    assert.deepEqual(years.periods.map((p) => p.year), [2023, 2024]);
+    assert.deepEqual(years.periods.map((p) => p.as.year), [2023, 2024]);
     assert.equal(years.truncated, false);
     const months = expandPeriods([{ kind: 'each', unit: 'month' }], { extent: table.extent, today: TODAY });
     assert.equal(months.truncated, true);
     assert.equal(months.periods.length, 8);
-    assert.deepEqual([months.periods[0].year, months.periods[0].month], [2024, 5]);
+    assert.deepEqual([months.periods[0].as.year, months.periods[0].as.month], [2024, 5]);
     assert.deepEqual(months.periods.map((p) => p.index), [...Array(8).keys()]);
     const bounded = expandPeriods([{ kind: 'each', unit: 'year', from: '2024-03-01' }], { extent: table.extent, today: TODAY });
-    assert.deepEqual(bounded.periods.map((p) => p.year), [2024]);
+    assert.deepEqual(bounded.periods.map((p) => p.as.year), [2024]);
     assert.deepEqual(expandPeriods([{ kind: 'each', unit: 'year' }], { extent: null, today: TODAY }).periods, []);
 });
 
@@ -313,7 +315,12 @@ test('plusieurs périodes : une série chacune, même axe catégoriel', () => {
 });
 
 test('plusieurs périodes sur un axe de temps : chacune à sa vraie date', () => {
-    const result = run({ groupBy: 'year', periods: [{ kind: 'year', year: 2023 }, { kind: 'year', year: 2024 }] });
+    const result = run({
+        groupBy: 'year',
+        periods: [{ kind: 'year', year: 2023 }, { kind: 'year', year: 2024 }],
+        compare: { align: 'absolute' },
+    });
+    assert.equal(result.align, 'absolute');
     assert.deepEqual(result.keys, [2023, 2024]);
     assert.deepEqual(values(result, 0), [3, null]);
     assert.deepEqual(values(result, 1), [null, 4]);
@@ -346,4 +353,138 @@ test('base vide : axe vide ou zéro, sans erreur', () => {
     assert.deepEqual(total.series[0].values, [0]);
     const years = runChartQuery(normalizeChartSpec({ groupBy: 'year' }), empty, { today: TODAY });
     assert.deepEqual(years.keys, [2026]);
+});
+
+// ---------------------------------------------------------------------------
+// Comparaison (lot 2)
+// ---------------------------------------------------------------------------
+
+test('périodes relatives : en cours, précédente (année, mois, glissante, plage)', () => {
+    const expand = (periods, today = TODAY) => expandPeriods(periods, { extent: table.extent, today }).periods;
+    const [cur, prev] = expand([{ kind: 'current', unit: 'year' }, { kind: 'previous' }]);
+    assert.deepEqual([cur.from, cur.to, cur.ongoing], [day('2026-01-01'), day('2026-12-31'), true]);
+    assert.deepEqual([prev.from, prev.to, prev.ongoing], [day('2025-01-01'), day('2025-12-31'), false]);
+    assert.deepEqual(prev.as, { kind: 'year', year: 2025 });
+    // Chaîne : la précédente de la précédente.
+    assert.deepEqual(expand([{ kind: 'year', year: 2024 }, { kind: 'previous' }, { kind: 'previous' }]).map((e) => e.as.year),
+        [2024, 2023, 2022]);
+    const [mar, feb] = expand([{ kind: 'month', year: 2024, month: 3 }, { kind: 'previous' }]);
+    assert.deepEqual([feb.from, feb.to], [day('2024-02-01'), day('2024-02-29')]);
+    assert.deepEqual(feb.as, { kind: 'month', year: 2024, month: 2 });
+    const [, before] = expand([{ kind: 'rolling', unit: 'month', count: 12 }, { kind: 'previous' }]);
+    assert.deepEqual([before.from, before.to], [day('2024-11-09'), day('2025-11-08')]);
+    assert.deepEqual(before.as, { kind: 'previous_rolling', unit: 'month', count: 12 });
+    const [, range] = expand([{ kind: 'range', from: '2024-01-11', to: '2024-01-20' }, { kind: 'previous' }]);
+    assert.deepEqual([range.from, range.to], [day('2024-01-01'), day('2024-01-10')]);
+    // La précédente de « tout » n'existe pas.
+    assert.equal(expand([{ kind: 'all' }, { kind: 'previous' }]).length, 1);
+    const [month] = expand([{ kind: 'current', unit: 'month' }]);
+    assert.deepEqual([month.from, month.to], [day('2026-11-01'), day('2026-11-30')]);
+    // Les 12 derniers mois se terminent aujourd'hui : pas « en cours ».
+    assert.equal(expand([{ kind: 'rolling', unit: 'month', count: 12 }])[0].ongoing, false);
+});
+
+test('coupe « à date » : même jour du calendrier, 29 février ramené au 28', () => {
+    const cut = (entry, current, today) => toDateCut(
+        { from: day(entry) }, { from: day(current) }, day(today));
+    assert.equal(cut('2025-01-01', '2026-01-01', '2026-11-08'), day('2025-11-08'));
+    assert.equal(cut('2023-01-01', '2024-01-01', '2024-02-29'), day('2023-02-28'));
+    assert.equal(cut('2025-10-01', '2026-11-01', '2026-11-08'), day('2025-10-08'));
+    assert.equal(cut('2025-03-10', '2026-03-12', '2026-03-20'), day('2025-03-18'));
+});
+
+test('à date : la période passée est coupée au même jour, la note le signale', () => {
+    const tbl = findsTable({
+        count: 4, date: ['2025-03-01', '2025-12-01', '2026-02-01', '2026-03-01'],
+        dicts: {},
+    });
+    const spec = (toDate) => normalizeChartSpec({
+        groupBy: 'none', periods: [{ kind: 'current', unit: 'year' }, { kind: 'previous' }],
+        view: { chart: 'number' }, compare: { toDate },
+    });
+    const today = day('2026-06-15');
+    const cut = runChartQuery(spec(true), tbl, { today });
+    assert.deepEqual(cut.series.map((s) => s.values[0]), [2, 1]);
+    assert.deepEqual(cut.toDate, { day: today });
+    assert.equal(cut.periods[1].cut, true);
+    assert.equal(cut.periods[1].to, day('2025-06-15'));
+    const full = runChartQuery(spec(false), tbl, { today });
+    assert.deepEqual(full.series.map((s) => s.values[0]), [2, 2]);
+    assert.equal(full.toDate, null);
+});
+
+test('à date sur des mois de l\'année : mois coupés et futurs sans valeur, case en cours repérée', () => {
+    const tbl = findsTable({
+        count: 3, date: ['2025-06-10', '2025-06-20', '2025-09-01'], dicts: {},
+    });
+    const result = runChartQuery(normalizeChartSpec({
+        groupBy: 'month_of_year', periods: [{ kind: 'current', unit: 'year' }, { kind: 'previous' }],
+    }), tbl, { today: day('2026-06-15') });
+    const [now, before] = result.series;
+    assert.deepEqual(now.values.slice(4, 8), [0, 0, null, null]);
+    // 2025 coupé au 15 juin : la trouvaille du 20 juin et septembre ne
+    // comptent pas, juillet et après sans valeur.
+    assert.deepEqual(before.values.slice(4, 9), [0, 1, null, null, null]);
+    assert.equal(now.partial, 5);
+    assert.equal(before.partial, 5);
+});
+
+test('alignement « depuis le début » : rangs, longueur de la plus longue période', () => {
+    assert.equal(unitStartDay('month', unitIndexOfDay('month', day('2024-02-17'))), day('2024-02-01'));
+    assert.equal(unitStartDay('week', unitIndexOfDay('week', day('2024-01-07'))), day('2024-01-01'));
+    assert.equal(unitStartDay('quarter', unitIndexOfDay('quarter', day('2024-05-17'))), day('2024-04-01'));
+    const result = run({
+        groupBy: 'month', periods: [{ kind: 'year', year: 2024 }, { kind: 'year', year: 2023 }],
+        compare: { align: 'elapsed' },
+    });
+    assert.equal(result.align, 'elapsed');
+    assert.equal(result.elapsedUnit, 'month');
+    assert.deepEqual(result.keys, [...Array(12).keys()]);
+    assert.deepEqual(values(result, 0).slice(0, 3), [1, 2, 0]);
+    assert.deepEqual(values(result, 1).slice(0, 6), [2, 0, 0, 0, 0, 1]);
+    assert.equal(result.series[0].dates[1], day('2024-02-01'));
+    assert.equal(result.series[1].dates[1], day('2023-02-01'));
+    // Glissantes : les 2 derniers mois contre les 2 d'avant, en jours.
+    const rolling = runChartQuery(normalizeChartSpec({
+        groupBy: 'day', periods: [{ kind: 'rolling', unit: 'day', count: 3 }, { kind: 'previous' }],
+        compare: { align: 'elapsed' },
+    }), table, { today: day('2024-03-02') });
+    assert.deepEqual(rolling.keys, [0, 1, 2]);
+    assert.deepEqual(values(rolling, 0), [2, 0, 0]);
+});
+
+test('alignement calendrier d\'un cumul par jour de l\'année : le 29 février d\'une année ordinaire garde la valeur de la veille', () => {
+    const result = run({
+        groupBy: 'day_of_year', measure: { op: 'cumulative' },
+        periods: [{ kind: 'year', year: 2024 }, { kind: 'year', year: 2023 }],
+        compare: { toDate: false },
+    });
+    assert.equal(values(result, 1)[59], values(result, 1)[58]);
+    const counts = run({
+        groupBy: 'day_of_year', periods: [{ kind: 'year', year: 2023 }, { kind: 'year', year: 2024 }],
+        compare: { toDate: false },
+    });
+    assert.equal(values(counts, 0)[59], null);
+    assert.equal(values(counts, 1)[59], 2);
+});
+
+test('pourcentages et valeurs par jour', () => {
+    const percent = run({ groupBy: 'cache_type', compare: { normalize: 'percent' } });
+    assert.deepEqual(values(percent).map((v) => Math.round(v * 10) / 10), [57.1, 28.6, 14.3]);
+    assert.equal(percent.normalize, 'percent');
+    const cumulative = run({ groupBy: 'year', measure: { op: 'cumulative' }, compare: { normalize: 'percent' } });
+    assert.deepEqual(values(cumulative).map((v) => Math.round(v)), [43, 100]);
+    const perDay = run({ groupBy: 'none', periods: [{ kind: 'year', year: 2024 }], compare: { normalize: 'per_day' } });
+    assert.equal(values(perDay)[0], 4 / 366);
+});
+
+test('écart : première période moins la seconde, et en proportion', () => {
+    const result = run({
+        groupBy: 'cache_type', periods: [{ kind: 'year', year: 2024 }, { kind: 'year', year: 2023 }],
+        compare: { layout: 'delta' },
+    });
+    assert.deepEqual(result.keys, ['Traditional Cache', 'Unknown Cache', 'Adventure Lab']);
+    assert.deepEqual(result.delta.values, [0, 0, 1]);
+    assert.deepEqual(result.delta.ratios, [0, 0, null]);
+    assert.equal(run({ groupBy: 'cache_type', compare: { layout: 'delta' } }).delta, null);
 });

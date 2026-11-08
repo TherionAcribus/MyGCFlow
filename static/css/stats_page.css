@@ -22,6 +22,10 @@
     --chart-others: #a9b1bb;
     --chart-unknown: #cfd5dc;
     --chart-grid: #e8ecf1;
+    /* Écarts : au-dessus de zéro / en dessous (paire divergente bleu-rouge,
+       toujours accompagnée d'un signe). */
+    --chart-up: #2a78d6;
+    --chart-down: #e34948;
 }
 [data-bs-theme="dark"] {
     --chart-series-1: #3987e5;
@@ -35,6 +39,8 @@
     --chart-others: #5f6b7a;
     --chart-unknown: #445162;
     --chart-grid: #2a3747;
+    --chart-up: #3987e5;
+    --chart-down: #e66767;
 }
 
 #statsMain {
@@ -163,7 +169,11 @@
     white-space: nowrap;
 }
 .stats-card-period {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     padding: 2px 8px;
     font-size: 0.72rem;
     font-weight: 500;
@@ -213,6 +223,20 @@
 .stats-number-caption {
     margin-top: 4px;
     font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+.stats-number-delta {
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--color-text);
+}
+.stats-number-delta .ti { font-size: 1rem; vertical-align: -2px; }
+.stats-number-delta.is-up .ti { color: var(--chart-up); }
+.stats-number-delta.is-down .ti { color: var(--chart-down); }
+.stats-number-delta.is-flat .ti { color: var(--color-text-muted); }
+/* Plusieurs périodes : la première en grand, les suivantes plus discrètes. */
+.stats-number-block + .stats-number-block .stats-number-value {
+    font-size: 1.6rem;
     color: var(--color-text-muted);
 }
 
@@ -290,6 +314,43 @@
 .stats-phrase #statsEdGroupBy {
     grid-column: 2;
 }
+/* Lignes « comparé à … » : elles rejoignent la grille de la phrase. */
+.stats-compare-list {
+    display: contents;
+}
+.stats-compare-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+.stats-compare-row .form-select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.stats-add-compare {
+    justify-self: start;
+}
+.stats-ed-compare {
+    margin-bottom: 20px;
+    padding: 12px 14px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+}
+
+/* Galerie par sections. */
+.stats-gallery-section + .stats-gallery-section {
+    margin-top: 18px;
+}
+.stats-gallery-heading {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
 .stats-ed-options summary {
     margin-bottom: 10px;
     font-weight: 600;

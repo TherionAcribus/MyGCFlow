@@ -104,8 +104,14 @@ export const SOURCE_KINDS = Object.freeze(['geocache', 'lab']);
 export const FILTER_VALUES_MAX = 500;
 export const FILTER_VALUE_MAX = 200;
 
-// Périodes.
-export const PERIOD_KINDS = Object.freeze(['all', 'year', 'month', 'range', 'rolling', 'each']);
+// Périodes. Trois sortes relatives, résolues au calcul :
+//   current   l'année (ou le mois) en cours — suit le calendrier ;
+//   previous  la période juste avant l'entrée qui la précède dans la liste
+//             (2024 avant 2025, les 12 mois avant les 12 derniers…) ;
+//   dashboard la période du tableau de bord, quand le graphique la compare
+//             à d'autres (periods: null = héritage sans comparaison).
+export const PERIOD_KINDS = Object.freeze(['all', 'year', 'month', 'range', 'rolling', 'each', 'current', 'previous', 'dashboard']);
+export const CURRENT_UNITS = Object.freeze(['year', 'month']);
 export const ROLLING_UNITS = Object.freeze(['day', 'month', 'year']);
 export const EACH_UNITS = Object.freeze(['year', 'month']);
 export const PERIOD_YEAR_RANGE = Object.freeze([1990, 2100]);
@@ -282,6 +288,10 @@ export function normalizePeriod(raw) {
         if (from && to && from > to) [from, to] = [to, from];
         if (from) period.from = from;
         if (to) period.to = to;
+    } else if (kind === 'current') {
+        period = { kind, unit: choice(raw.unit, CURRENT_UNITS, 'year') };
+    } else if (kind === 'previous' || kind === 'dashboard') {
+        period = { kind };
     }
     if (!period) return null;
     const label = flatText(raw.label, PERIOD_LABEL_MAX);
@@ -290,16 +300,27 @@ export function normalizePeriod(raw) {
 }
 
 // null = période du tableau de bord (héritée). Une liste dont aucune entrée
-// n'est valide retombe aussi sur l'héritage.
+// n'est valide retombe aussi sur l'héritage. « La période précédente » en
+// tête de liste ne précède rien : écartée.
 export function normalizePeriods(raw) {
     if (!Array.isArray(raw)) return null;
     const periods = [];
     for (const item of raw) {
         const period = normalizePeriod(item);
-        if (period) periods.push(period);
+        if (!period || (period.kind === 'previous' && !periods.length)) continue;
+        periods.push(period);
         if (periods.length >= MAX_PERIODS) break;
     }
-    return periods.length ? periods : null;
+    if (!periods.length) return null;
+    // La période du tableau de bord seule = l'héritage simple.
+    if (periods.length === 1 && periods[0].kind === 'dashboard' && !periods[0].label) return null;
+    return periods;
+}
+
+// La liste donne-t-elle plusieurs séries (plusieurs entrées, ou « chaque
+// année / mois ») ? null (héritée) : une seule.
+export function periodsAreMultiple(periods) {
+    return Array.isArray(periods) && (periods.length > 1 || periods.some((p) => p.kind === 'each'));
 }
 
 // ---------------------------------------------------------------------------
@@ -327,8 +348,36 @@ export function allowedSplitBy(groupBy) {
 export function allowedAligns(groupBy) {
     const kind = dimensionKind(groupBy);
     if (kind === 'time') return ['elapsed', 'absolute'];
-    if (kind === 'cyclic') return ['calendar', 'elapsed'];
+    // Le jour de la semaine n'a pas de « depuis le début » : lundi est lundi.
+    if (kind === 'cyclic' && groupBy !== 'weekday') return ['calendar', 'elapsed'];
     return ['calendar'];
+}
+
+// Mise à l'échelle des valeurs : en pourcentage du total de chaque série
+// (comptes, valeurs distinctes, cumul → part atteinte), ou par jour de
+// période (comptes et caches distinctes, sur un chiffre clé ou des
+// catégories — un axe de temps a déjà ses intervalles).
+export function allowedNormalize({ measure, groupBy } = {}) {
+    const out = ['none'];
+    if (['count', 'distinct', 'cumulative'].includes(measure?.op)) out.push('percent');
+    const kind = dimensionKind(groupBy);
+    if ((measure?.op === 'count' || (measure?.op === 'distinct' && measure.field === 'caches'))
+        && (kind === 'none' || kind === 'category')) out.push('per_day');
+    return out;
+}
+
+// Présentations d'une comparaison. L'écart oppose exactement deux périodes
+// fixes, sans 2ᵉ dimension, sur un graphique qui sait le montrer ; un anneau
+// ne se superpose pas (côte à côte seulement). Périodes héritées (null) :
+// rien à vérifier, tout reste possible sauf ce que le graphique exclut.
+export function allowedLayouts({ periods, splitBy, view } = {}) {
+    const chart = view?.chart;
+    const layouts = chart === 'donut' ? ['side'] : ['overlay', 'side'];
+    const deltaCharts = ['bar', 'line', 'area', 'number'];
+    const known = Array.isArray(periods);
+    const pair = !known || (periods.length === 2 && !periods.some((p) => p.kind === 'each'));
+    if (pair && !splitBy && deltaCharts.includes(chart)) layouts.push('delta');
+    return layouts;
 }
 
 // Le cumul et la moyenne ne s'additionnent pas en parts d'un tout.
@@ -357,21 +406,16 @@ export function allowedCharts({ measure, groupBy, splitBy } = {}) {
 // Description complète
 // ---------------------------------------------------------------------------
 
-function normalizeCompare(raw, groupBy, periods) {
+function normalizeCompare(raw, spec) {
     const src = isObject(raw) ? raw : {};
     const defaults = CHART_SPEC_DEFAULTS.compare;
-    let layout = choice(src.layout, COMPARE_LAYOUTS, defaults.layout);
-    // L'écart oppose exactement deux périodes fixes. Avec des périodes
-    // héritées (null), le contrôle revient au calcul : on garde le choix.
-    if (layout === 'delta' && periods
-        && (periods.length !== 2 || periods.some((p) => p.kind === 'each'))) {
-        layout = defaults.layout;
-    }
-    const aligns = allowedAligns(groupBy);
+    const layouts = allowedLayouts(spec);
+    const aligns = allowedAligns(spec.groupBy);
+    const normalizes = allowedNormalize(spec);
     return {
-        layout,
+        layout: choice(src.layout, layouts, layouts[0]),
         align: choice(src.align, aligns, aligns[0]),
-        normalize: choice(src.normalize, COMPARE_NORMALIZE, defaults.normalize),
+        normalize: choice(src.normalize, normalizes, defaults.normalize),
         toDate: bool(src.toDate, defaults.toDate),
     };
 }
@@ -425,9 +469,11 @@ export function normalizeChartSpec(raw, newId = newChartId) {
         splitBy,
         filters: normalizeFilters(src.filters),
         periods,
-        compare: normalizeCompare(src.compare, groupBy, periods),
     };
-    spec.view = normalizeView(src.view, spec);
+    // La vue d'abord : la présentation de la comparaison dépend du graphique.
+    const view = normalizeView(src.view, spec);
+    spec.compare = normalizeCompare(src.compare, { ...spec, view });
+    spec.view = view;
     return spec;
 }
 

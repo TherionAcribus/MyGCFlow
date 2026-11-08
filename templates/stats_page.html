@@ -125,8 +125,32 @@
                                     <select id="statsEdGroupBy" class="form-select"></select>
                                     <label for="statsEdPeriod" class="stats-phrase-word">{{ _("sur") }}</label>
                                     <select id="statsEdPeriod" class="form-select"></select>
+                                    <!-- « comparé à … » : lignes posées par stats_page.js
+                                         (display: contents — elles rejoignent la grille). -->
+                                    <div id="statsEdCompareList" class="stats-compare-list"></div>
+                                    <span aria-hidden="true"></span>
+                                    <button type="button" id="btnStatsEdAddCompare" class="btn btn-sm btn-ghost-primary stats-add-compare">
+                                        <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Comparer à une autre période") }}
+                                    </button>
                                     <label for="statsEdChart" class="stats-phrase-word">{{ _("en") }}</label>
                                     <select id="statsEdChart" class="form-select"></select>
+                                </div>
+
+                                <!-- Comparaison : visible dès que le graphique compare plusieurs périodes. -->
+                                <div id="statsEdCompareBlock" class="stats-ed-compare" hidden>
+                                    <div class="mb-3">
+                                        <label for="statsEdLayout" class="form-label">{{ _("Périodes") }}</label>
+                                        <select id="statsEdLayout" class="form-select"></select>
+                                    </div>
+                                    <div class="mb-3" id="statsEdAlignRow">
+                                        <label for="statsEdAlign" class="form-label">{{ _("Alignement") }}</label>
+                                        <select id="statsEdAlign" class="form-select"></select>
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input type="checkbox" id="statsEdToDate" class="form-check-input">
+                                        <label for="statsEdToDate" class="form-check-label">{{ _("Arrêter les périodes au même jour (« à date »)") }}</label>
+                                    </div>
+                                    <div class="form-hint">{{ _("Quand une période est en cours, les autres s'arrêtent au même jour : l'année en cours ne part pas perdante.") }}</div>
                                 </div>
 
                                 <div class="mb-3">
@@ -140,6 +164,11 @@
 
                                 <details id="statsEdOptions" class="stats-ed-options">
                                     <summary>{{ _("Options d'affichage") }}</summary>
+                                    <div class="mb-3" id="statsEdNormalizeRow">
+                                        <label for="statsEdNormalize" class="form-label">{{ _("Valeurs") }}</label>
+                                        <select id="statsEdNormalize" class="form-select"></select>
+                                        <div class="form-hint">{{ _("En pourcentage, des périodes de tailles différentes se comparent mieux.") }}</div>
+                                    </div>
                                     <div class="mb-3" id="statsEdOrientationRow">
                                         <label for="statsEdOrientation" class="form-label">{{ _("Sens des barres") }}</label>
                                         <select id="statsEdOrientation" class="form-select">

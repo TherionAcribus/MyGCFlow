@@ -9,6 +9,9 @@ import {
     MAX_PERIODS,
     allowedAligns,
     allowedCharts,
+    allowedLayouts,
+    allowedNormalize,
+    periodsAreMultiple,
     allowedGroupBy,
     allowedSplitBy,
     createChartSpec,
@@ -54,7 +57,7 @@ test('une description valide ressort identique (point fixe)', () => {
         source: 'finds',
         measure: { op: 'count' },
         groupBy: 'month_of_year',
-        splitBy: 'cache_type',
+        splitBy: null,
         filters: { cache_type: ['Traditional Cache'], country: ['France'] },
         periods: [{ kind: 'year', year: 2025 }, { kind: 'year', year: 2024, label: 'L\'an dernier' }],
         compare: { layout: 'delta', align: 'elapsed', normalize: 'percent', toDate: false },
@@ -161,6 +164,46 @@ test('alignements selon l\'axe', () => {
     assert.equal(normalizeChartSpec({ groupBy: 'weekday', compare: { align: 'absolute' } }).compare.align, 'calendar');
 });
 
+test('périodes relatives : en cours, précédente, tableau de bord', () => {
+    assert.deepEqual(normalizePeriod({ kind: 'current' }), { kind: 'current', unit: 'year' });
+    assert.deepEqual(normalizePeriod({ kind: 'current', unit: 'month' }), { kind: 'current', unit: 'month' });
+    assert.deepEqual(normalizePeriod({ kind: 'current', unit: 'week' }), { kind: 'current', unit: 'year' });
+    assert.deepEqual(normalizePeriod({ kind: 'previous', year: 3 }), { kind: 'previous' });
+    assert.deepEqual(normalizePeriod({ kind: 'dashboard' }), { kind: 'dashboard' });
+    // « La précédente » en tête ne précède rien ; le tableau de bord seul
+    // revient à l'héritage simple.
+    assert.deepEqual(normalizePeriods([{ kind: 'previous' }, { kind: 'year', year: 2024 }, { kind: 'previous' }]),
+        [{ kind: 'year', year: 2024 }, { kind: 'previous' }]);
+    assert.equal(normalizePeriods([{ kind: 'dashboard' }]), null);
+    assert.deepEqual(normalizePeriods([{ kind: 'dashboard' }, { kind: 'previous' }]),
+        [{ kind: 'dashboard' }, { kind: 'previous' }]);
+    assert.equal(periodsAreMultiple(null), false);
+    assert.equal(periodsAreMultiple([{ kind: 'year', year: 2024 }]), false);
+    assert.equal(periodsAreMultiple([{ kind: 'each', unit: 'year' }]), true);
+    assert.equal(periodsAreMultiple([{ kind: 'dashboard' }, { kind: 'previous' }]), true);
+});
+
+test('mise à l\'échelle : pourcentage pour les comptes et cumuls, par jour sans axe de temps', () => {
+    assert.deepEqual(allowedNormalize({ measure: { op: 'count' }, groupBy: 'cache_type' }), ['none', 'percent', 'per_day']);
+    assert.deepEqual(allowedNormalize({ measure: { op: 'count' }, groupBy: 'month' }), ['none', 'percent']);
+    assert.deepEqual(allowedNormalize({ measure: { op: 'cumulative' }, groupBy: 'day_of_year' }), ['none', 'percent']);
+    assert.deepEqual(allowedNormalize({ measure: { op: 'distinct', field: 'caches' }, groupBy: 'none' }), ['none', 'percent', 'per_day']);
+    assert.deepEqual(allowedNormalize({ measure: { op: 'distinct', field: 'country' }, groupBy: 'none' }), ['none', 'percent']);
+    assert.deepEqual(allowedNormalize({ measure: { op: 'mean', field: 'difficulty' }, groupBy: 'none' }), ['none']);
+    assert.equal(normalizeChartSpec({ measure: { op: 'mean' }, compare: { normalize: 'percent' } }).compare.normalize, 'none');
+});
+
+test('présentations : anneau côte à côte seulement, écart sans 2ᵉ dimension', () => {
+    const two = [{ kind: 'year', year: 2024 }, { kind: 'previous' }];
+    assert.deepEqual(allowedLayouts({ periods: two, view: { chart: 'bar' } }), ['overlay', 'side', 'delta']);
+    assert.deepEqual(allowedLayouts({ periods: two, view: { chart: 'donut' } }), ['side']);
+    assert.deepEqual(allowedLayouts({ periods: two, splitBy: 'country', view: { chart: 'bar' } }), ['overlay', 'side']);
+    assert.deepEqual(allowedLayouts({ periods: null, view: { chart: 'number' } }), ['overlay', 'side', 'delta']);
+    const donut = normalizeChartSpec({ groupBy: 'cache_type', periods: two, view: { chart: 'donut' }, compare: { layout: 'overlay' } });
+    assert.equal(donut.compare.layout, 'side');
+    assert.deepEqual(allowedAligns('weekday'), ['calendar']);
+});
+
 test('écart : exactement deux périodes fixes, sinon superposé ; gardé si les périodes sont héritées', () => {
     const two = [{ kind: 'year', year: 2024 }, { kind: 'year', year: 2025 }];
     assert.equal(normalizeChartSpec({ periods: two, compare: { layout: 'delta' } }).compare.layout, 'delta');
@@ -261,7 +304,7 @@ test('liste de périodes : null hérite, invalides écartées, plafond', () => {
 
 test('comparaison : normalisation et « à date »', () => {
     const compare = normalizeChartSpec({
-        groupBy: 'weekday', compare: { normalize: 'per_day', toDate: false, layout: 'side' },
+        groupBy: 'country', compare: { normalize: 'per_day', toDate: false, layout: 'side' },
     }).compare;
     assert.deepEqual(compare, { layout: 'side', align: 'calendar', normalize: 'per_day', toDate: false });
     assert.equal(normalizeChartSpec({ compare: { normalize: 'log' } }).compare.normalize, 'none');

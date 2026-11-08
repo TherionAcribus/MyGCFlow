@@ -90,7 +90,7 @@ test('anneau : une part par catégorie non vide, légende, pourcentages en infob
     assert.equal(o.series[0].data.length, 4);
     assert.equal(o.series[0].data[0].itemStyle.color, '#008000');
     assert.notEqual(o.legend.show, false);
-    const tip = o.tooltip.formatter({ color: '#008000', name: 'Traditionnelle', value: 2 });
+    const tip = o.tooltip.formatter({ color: '#008000', name: 'Traditionnelle', value: 2, seriesIndex: 0 });
     assert.match(tip, /40\s?%/);
 });
 
@@ -114,7 +114,9 @@ test('plusieurs périodes : une série chacune, nommée par sa période, légend
         groupBy: 'month_of_year',
         periods: [{ kind: 'year', year: 2025 }, { kind: 'year', year: 2026 }],
     });
-    assert.deepEqual(o.series.map((s) => s.name), ['2025', '2026']);
+    // 2026 est en cours (aujourd'hui = 8 novembre 2026) : 2025 est coupé
+    // au même jour (« à date », par défaut).
+    assert.deepEqual(o.series.map((s) => s.name), ['2025 (au 8 nov.)', '2026 (en cours)']);
     assert.deepEqual(o.series.map((s) => s.color), [tokens.series[0], tokens.series[1]]);
     assert.notEqual(o.legend.show, false);
     assert.equal(o.grid.top, 36);
@@ -149,11 +151,99 @@ test('infobulle : clé en toutes lettres, valeur formatée, HTML échappé', () 
 test('chiffre clé : pas d\'option ECharts, valeur formatée', () => {
     const { spec, result, option: o } = option({ groupBy: 'none', view: { chart: 'number' } });
     assert.equal(o, null);
-    assert.deepEqual(numberModel(result, spec, ctx), [{ label: '', value: 5, text: '5' }]);
+    assert.deepEqual(numberModel(result, spec, ctx), [{ label: '', value: 5, text: '5', delta: null }]);
 });
 
 test('contraste', () => {
     assert.equal(Math.round(contrastRatio('#ffffff', '#000000')), 21);
     assert.equal(contrastRatio('#fff', '#ffffff'), 1);
     assert.equal(contrastRatio('rouge', '#ffffff'), null);
+});
+
+// ---------------------------------------------------------------------------
+// Comparaison (lot 2)
+// ---------------------------------------------------------------------------
+
+const twoYears = [{ kind: 'year', year: 2026 }, { kind: 'previous' }];
+
+test('côte à côte : un repère par période, même échelle, titre par période', () => {
+    const { option: o } = option({
+        groupBy: 'cache_type', periods: twoYears, compare: { layout: 'side', toDate: false },
+    });
+    assert.equal(o.grid.length, 2);
+    assert.equal(o.xAxis.length, 2);
+    assert.deepEqual(o.series.map((s) => s.xAxisIndex), [0, 1]);
+    assert.equal(o.yAxis[0].max, o.yAxis[1].max);
+    assert.deepEqual(o.title.map((t) => t.text), ['2026 (en cours)', '2025']);
+    assert.equal(o.legend.show, false);
+});
+
+test('anneaux côte à côte : la même catégorie garde sa teinte', () => {
+    const { option: o } = option({
+        groupBy: 'cache_type', periods: twoYears, view: { chart: 'donut' }, compare: { toDate: false },
+    });
+    assert.equal(o.series.length, 2);
+    assert.deepEqual(o.series.map((s) => s.center[0]), ['25%', '75%']);
+    const color = (s, name) => s.data.find((d) => d.name === name)?.itemStyle.color;
+    assert.equal(color(o.series[0], 'Locationless (Reverse) Cache'), tokens.textMuted);
+    assert.equal(o.title.length, 2);
+});
+
+test('écart : barres bleues au-dessus de zéro, rouges en dessous, infobulle complète', () => {
+    const { result, option: o } = option({
+        groupBy: 'month_of_year', periods: twoYears, compare: { layout: 'delta', toDate: false },
+    });
+    assert.ok(result.delta);
+    const [bar] = o.series;
+    const colors = bar.data.map((d) => d.itemStyle.color);
+    // Janvier : 1 (2026) − 2 (2025) = −1 → rouge ; février : 1 − 0 → bleu.
+    assert.equal(bar.data[0].value, -1);
+    assert.equal(colors[0], tokens.down);
+    assert.equal(bar.data[1].value, 1);
+    assert.equal(colors[1], tokens.up);
+    assert.deepEqual(bar.data[0].itemStyle.borderRadius, [0, 0, 4, 4]);
+    const html = o.tooltip.formatter([{ dataIndex: 0 }]);
+    assert.match(html, /2026/);
+    assert.match(html, /−1/);
+    assert.match(html, /-50\s?%/);
+});
+
+test('axe « depuis le début » : Mois 1…, vraie date de chaque série dans l\'infobulle', () => {
+    const { option: o } = option({
+        groupBy: 'month', periods: twoYears, compare: { align: 'elapsed', toDate: false },
+    });
+    assert.equal(o.xAxis.data[0], 'Mois 1');
+    assert.equal(o.xAxis.data.length, 12);
+    const html = o.tooltip.formatter([
+        { dataIndex: 0, seriesIndex: 0, value: 1, color: '#000' },
+        { dataIndex: 0, seriesIndex: 1, value: 2, color: '#111' },
+    ]);
+    assert.match(html, /janv\. 2026/);
+    assert.match(html, /janv\. 2025/);
+});
+
+test('case en cours : remplissage atténué, bord en tirets', () => {
+    const { result, option: o } = option({ groupBy: 'month', periods: [{ kind: 'current', unit: 'year' }] });
+    const partial = result.series[0].partial;
+    assert.equal(result.keys[partial], 202611);
+    const item = o.series[0].data[partial];
+    assert.equal(item.itemStyle.borderType, 'dashed');
+    assert.equal(item.itemStyle.opacity, 0.45);
+});
+
+test('pourcentages : axe et valeurs en %', () => {
+    const { option: o } = option({ groupBy: 'cache_type', compare: { normalize: 'percent' } });
+    assert.equal(o.yAxis.axisLabel.formatter(40), '40,0 %');
+});
+
+test('chiffre clé comparé : l\'écart avec la deuxième période sur la première', () => {
+    const { spec, result } = option({ groupBy: 'none', view: { chart: 'number' }, periods: twoYears, compare: { toDate: false } });
+    const blocks = numberModel(result, spec, ctx);
+    assert.equal(blocks.length, 2);
+    assert.deepEqual(blocks.map((b) => b.value), [2, 3]);
+    assert.equal(blocks[0].delta.text, '−1');
+    assert.equal(blocks[0].delta.sign, -1);
+    assert.match(blocks[0].delta.ratio, /-33\s?%/);
+    assert.equal(blocks[0].delta.versus, 'par rapport à 2025');
+    assert.equal(blocks[1].delta, null);
 });
