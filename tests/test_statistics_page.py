@@ -151,7 +151,108 @@ class StatisticsPageTests(unittest.TestCase):
         path = dashboards_store.dashboards_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("{pas du json", encoding="utf-8")
-        self.assertIsNone(self.client.get("/api/dashboards").get_json()["document"])
+        body = self.client.get("/api/dashboards").get_json()
+        self.assertIsNone(body["document"])
+        # …mais signalé corrompu, pas confondu avec une première visite.
+        self.assertTrue(body["corrupt"])
+
+    # ----- Révision, conflit entre onglets, restauration -----
+
+    def _doc(self, ident="d1"):
+        return {"v": 1, "active": ident,
+                "dashboards": [{"id": ident, "name": "T", "items": []}]}
+
+    def _status(self):
+        return self.client.get("/api/dashboards").get_json()
+
+    def test_get_reports_rev_and_flags(self):
+        body = self._status()
+        self.assertIsNone(body["document"])
+        self.assertIsNone(body["rev"])
+        self.assertFalse(body["corrupt"])
+        self.assertFalse(body["backup_available"])
+        rev = self.client.put("/api/dashboards", json=self._doc()).get_json()["rev"]
+        self.assertTrue(rev)
+        body = self._status()
+        self.assertEqual(body["rev"], rev)
+        self.assertFalse(body["corrupt"])
+
+    def test_put_with_matching_rev_returns_the_new_rev(self):
+        first = self.client.put("/api/dashboards", json=self._doc()).get_json()["rev"]
+        response = self.client.put("/api/dashboards", json=self._doc("d2"),
+                                   headers={"X-Dashboard-Rev": first})
+        self.assertEqual(response.status_code, 200)
+        second = response.get_json()["rev"]
+        self.assertTrue(second)
+        self.assertNotEqual(second, first)
+
+    def test_put_with_a_stale_rev_is_refused(self):
+        first = self.client.put("/api/dashboards", json=self._doc()).get_json()["rev"]
+        # Un autre onglet écrit entre-temps.
+        self.client.put("/api/dashboards", json=self._doc("d2"))
+        response = self.client.put("/api/dashboards", json=self._doc("d3"),
+                                   headers={"X-Dashboard-Rev": first})
+        self.assertEqual(response.status_code, 409)
+        body = response.get_json()
+        self.assertEqual(body["error"], "conflict")
+        self.assertEqual(body["rev"], self._status()["rev"])
+        # Le fichier garde la version de l'autre onglet.
+        self.assertEqual(self._status()["document"]["dashboards"][0]["id"], "d2")
+
+    def test_put_after_a_delete_conflicts_with_none(self):
+        rev = self.client.put("/api/dashboards", json=self._doc()).get_json()["rev"]
+        self.client.delete("/api/dashboards")
+        response = self.client.put("/api/dashboards", json=self._doc(),
+                                   headers={"X-Dashboard-Rev": rev})
+        self.assertEqual(response.status_code, 409)
+        self.assertIsNone(response.get_json()["rev"])
+        # 'none' = « le fichier était absent » : l'écriture repart.
+        response = self.client.put("/api/dashboards", json=self._doc(),
+                                   headers={"X-Dashboard-Rev": "none"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_corrupt_file_is_flagged_with_backup(self):
+        self.client.put("/api/dashboards", json=self._doc("d1"))
+        self.client.put("/api/dashboards", json=self._doc("d2"))  # .bak = d1
+        path = dashboards_store.dashboards_path()
+        path.write_bytes(b"{corrompu")
+        body = self._status()
+        self.assertIsNone(body["document"])
+        self.assertTrue(body["corrupt"])
+        self.assertTrue(body["backup_available"])
+
+    def test_overwriting_a_corrupt_file_keeps_the_proof(self):
+        self.client.put("/api/dashboards", json=self._doc("d1"))
+        path = dashboards_store.dashboards_path()
+        path.write_bytes(b"{corrompu")
+        response = self.client.put("/api/dashboards", json=self._doc())
+        self.assertEqual(response.status_code, 200)
+        corrupt = path.with_name(path.name + ".corrupt")
+        self.assertTrue(corrupt.exists())
+        self.assertEqual(corrupt.read_bytes(), b"{corrompu")
+
+    def test_restore_brings_back_the_backup(self):
+        self.client.put("/api/dashboards", json=self._doc("d1"))
+        self.client.put("/api/dashboards", json=self._doc("d2"))  # .bak = d1
+        path = dashboards_store.dashboards_path()
+        path.write_bytes(b"{corrompu")
+        response = self.client.post("/api/dashboards/restore")
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["document"]["dashboards"][0]["id"], "d1")
+        self.assertEqual(body["rev"], self._status()["rev"])
+        # Le corrompu est conservé sous .corrupt, la .bak reste intacte.
+        self.assertEqual(path.with_name(path.name + ".corrupt").read_bytes(), b"{corrompu")
+        self.assertTrue(self._status()["backup_available"])
+
+    def test_restore_without_a_backup_is_404(self):
+        path = dashboards_store.dashboards_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"{corrompu")
+        response = self.client.post("/api/dashboards/restore")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_json()["error"], "no-backup")
 
 
 def _feature(**props):

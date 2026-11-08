@@ -74,18 +74,38 @@ def stats_owned_data():
 
 @statistics_bp.route('/api/dashboards', methods=['GET'])
 def get_dashboards():
-    return jsonify({'success': True, 'document': dashboards_store.load_document()})
+    return jsonify({'success': True, **dashboards_store.read_status()})
 
 
 @statistics_bp.route('/api/dashboards', methods=['PUT'])
 def put_dashboards():
     doc = request.get_json(silent=True)
+    # En-tête de comparaison : la révision que le client a chargée ('none'
+    # = fichier absent à ce moment-là). Sans en-tête, l'écriture reste
+    # inconditionnelle (anciens clients, outils).
+    expected = request.headers.get('X-Dashboard-Rev')
+    if expected is not None:
+        current = dashboards_store.read_status()['rev'] or 'none'
+        if expected != current:
+            return jsonify({'success': False, 'error': 'conflict',
+                            'rev': None if current == 'none' else current}), 409
     try:
-        dashboards_store.save_document(doc)
+        rev = dashboards_store.save_document(doc)
     except dashboards_store.InvalidDocument as error:
         status = 413 if error.code == 'too-large' else 400
         return jsonify({'success': False, 'error': error.code}), status
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'rev': rev})
+
+
+@statistics_bp.route('/api/dashboards/restore', methods=['POST'])
+def restore_dashboards():
+    """Rétablit le document depuis la copie `.bak` (fichier corrompu)."""
+    try:
+        doc = dashboards_store.restore_backup()
+    except dashboards_store.InvalidDocument as error:
+        return jsonify({'success': False, 'error': error.code}), 404
+    return jsonify({'success': True, 'document': doc,
+                    'rev': dashboards_store.read_status()['rev']})
 
 
 @statistics_bp.route('/api/dashboards', methods=['DELETE'])

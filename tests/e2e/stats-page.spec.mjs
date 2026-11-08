@@ -929,6 +929,61 @@ test('créer une vidéo animée d\'une comparaison', async ({ page, request }) =
   }
 });
 
+// ---------------------------------------------------------------------------
+// Sauvegarde : conflit entre onglets, échec et relance
+// ---------------------------------------------------------------------------
+
+async function renameDashboard(page, name) {
+  await page.locator('#btnStatsRename').click();
+  await page.locator('#statsRenameInput').fill(name);
+  await page.locator('#statsRenameForm button[type="submit"]').click();
+  await expect(page.locator('#statsRenameModal')).toBeHidden();
+}
+
+test('un enregistrement concurrent ouvre le dialogue de conflit', async ({ page, request }) => {
+  await openStats(page);
+  const doc = await savedDoc(request);
+  // « Autre onglet » : écrit directement, la révision du fichier bouge.
+  doc.dashboards[0].name = 'Version de l’autre onglet';
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  // Notre écriture part sur l'ancienne révision : refusée (409), dialogue.
+  await renameDashboard(page, 'Ma version');
+  await expect(page.locator('.gcm-confirm-modal')).toBeVisible();
+  // « Reprendre l'autre version » : le tableau affiche son contenu.
+  await page.locator('.gcm-confirm-modal [data-gcm-role="cancel"]').click();
+  await expect(page.locator('#statsDashboardName')).toHaveText('Version de l’autre onglet');
+  const snap = await snapshot(page);
+  expect(snap.save.dirty).toBe(false);
+  expect(snap.dashboard.name).toBe('Version de l’autre onglet');
+});
+
+test('conflit : « Écraser » impose notre version au fichier', async ({ page, request }) => {
+  await openStats(page);
+  const doc = await savedDoc(request);
+  doc.dashboards[0].name = 'Version de l’autre onglet';
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  await renameDashboard(page, 'Ma version');
+  await expect(page.locator('.gcm-confirm-modal')).toBeVisible();
+  await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.name).toBe('Ma version');
+});
+
+test('un échec d\'enregistrement reste affiché et le clic relance', async ({ page, request }) => {
+  await openStats(page);
+  let fail = true;
+  await page.route('**/api/dashboards', async (route) => {
+    if (fail && route.request().method() === 'PUT') return route.abort();
+    return route.continue();
+  });
+  await renameDashboard(page, 'Perdu ?');
+  await expect(page.locator('#statsSaveStatus')).toContainText('Non enregistré');
+  expect((await snapshot(page)).save.dirty).toBe(true);
+  fail = false;
+  await page.locator('#statsSaveStatus').click();
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.name).toBe('Perdu ?');
+  await page.unroute('**/api/dashboards');
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

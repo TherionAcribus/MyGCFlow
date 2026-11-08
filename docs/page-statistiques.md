@@ -58,7 +58,8 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 |---|---|
 | `blueprints/statistics.py` | `/stats`, `GET /api/stats/finds`, `GET /api/stats/dnf`, `GET /api/stats/owned`, `GET/PUT/DELETE /api/dashboards` |
 | `stats_finds.py` | Trouvailles en colonnes (chaînes codées par dictionnaire, ETag) |
-| `dashboards_store.py` | `dashboards.json` dans le répertoire de config : forme, version, taille ≤ 1 Mo |
+| `dashboards_store.py` | `dashboards.json` dans le répertoire de config : forme, version, taille ≤ 1 Mo, révision (sha1), restauration `.bak` |
+| `dashboard_saver.mjs` | File d'écriture : une requête en vol, rétention après échec |
 | `templates/stats_page.html` | Gabarit : barre, grille, galerie, éditeur, renommage |
 | `templates/_app_header.html` | En-tête commun aux quatre pages (lien actif selon `mode`) |
 | `static/js/stats_page.js` | Point d'entrée et câblage DOM |
@@ -421,6 +422,21 @@ enregistré aussitôt. Sauvegarde : PUT du document entier, débouncée (500 ms)
 pour la période, immédiate pour les actions discrètes, `keepalive` à la
 fermeture de la page.
 
+File d'écriture (`dashboard_saver.mjs`) : une seule requête en vol, la
+dernière version du document gagne ; l'échec (réseau, refus) conserve le
+document en file — « Non enregistré » reste affiché, une relance automatique
+part à 5 s et un clic sur l'état en propose une autre. Chaque PUT porte la
+révision lue au chargement (`X-Dashboard-Rev`, sha1 du fichier, 'none' =
+absent) : si le fichier a bougé entre-temps — autre onglet — le serveur
+répond 409 et la page propose « Écraser » ou « Reprendre l'autre version »
+plutôt que d'écraser à l'aveugle (sans en-tête, l'écriture reste
+inconditionnelle, pour les anciens clients). Le GET renvoie aussi `corrupt`
+et `backup_available` : un `dashboards.json` illisible est distingué d'un
+fichier absent, la page propose de restaurer la copie `.bak`
+(`POST /api/dashboards/restore` ; le corrompu est conservé sous `.corrupt`,
+comme à toute écriture par-dessus un fichier illisible — la `.bak` reste la
+dernière copie valide).
+
 Éditeur : le formulaire est relu en description, normalisé, puis recalé
 dessus (une combinaison impossible est réparée sous les yeux de
 l'utilisateur). Titre et taille restent automatiques tant que l'utilisateur
@@ -441,11 +457,14 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   `dashboard_model.test.mjs`.
 - Unitaires du lot 6 : `chart_map_link.test.mjs`, `chart_panel_link.test.mjs`,
   `chart_video.test.mjs`, `clickTarget` dans `chart_echarts.test.mjs`.
-- E2E : `tests/e2e/stats-page.spec.mjs` (38 tests, fixtures `my-finds.gpx`,
+- Unitaires du lot 7 : `dashboard_saver.test.mjs` (file d'écriture) ;
+  révision, conflit 409 et restauration dans `test_statistics_page.py`.
+- E2E : `tests/e2e/stats-page.spec.mjs` (fixtures `my-finds.gpx`,
   `gc_logs/logs-poses.json`, `evolution-a.csv` ;
   `openWithChart` pose un tableau d'un seul graphique par `PUT`).
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,
   `layout`, `grids`, `chart`, `rendered`, `size`, `heightKey`, `height` en
-  px…, `linksToMap`), `editor`, `dashboards`, `sources`, `video` (`phase`
-  setup / recording / done, `file`, `folder`).
+  px…, `linksToMap`), `editor`, `dashboards`, `sources`, `save` (`dirty`,
+  `failed`, `pending`), `video` (`phase` setup / recording / done, `file`,
+  `folder`).

@@ -552,3 +552,7 @@ body > .ts-dropdown {
     border: 1px solid var(--chart-grid);
 }
 .stats-video-player { background: #000; }
+
+/* « Non enregistré » est cliquable : relance l'écriture en attente (les
+   autres états de l'indicateur restent passifs — pointer-events: none). */
+#statsSaveStatus.is-error.is-visible { cursor: pointer; pointer-events: auto; }

@@ -292,7 +292,11 @@ Autres repères :
   `/api/stats/dnf` et `/api/stats/owned` comptent toutes les données (aucune
   position requise, DNF post-trouvaille et caches sans date inclus) — ne pas
   les « corriger » vers la sémantique des routes carte, qui écarte les caches
-  sans coordonnées et les DNF résolus.
+  sans coordonnées et les DNF résolus. `PUT /api/dashboards` sans en-tête
+  `X-Dashboard-Rev` reste inconditionnel ; la page l'envoie (révision = sha1
+  du fichier au chargement) → un PUT direct dans un spec fait échouer la
+  sauvegarde suivante de la page (409 → dialogue de conflit, testé dans
+  stats-page.spec.mjs).
   Ses menus de filtres (Tom Select) sont rattachés à `<body>`
   (`dropdownParent`) : les ouvrir par `el.tomselect.open()` puis cliquer
   `.ts-dropdown:visible .option[data-value=…]` — helper `pickFilter` de
