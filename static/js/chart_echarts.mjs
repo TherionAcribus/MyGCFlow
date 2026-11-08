@@ -131,8 +131,9 @@ export function seriesName(result, s, spec, labels, { withPeriod = true } = {}) 
 
 // Nom et couleur de chaque série. Une série par période, par source et, le
 // cas échéant, par valeur de la 2ᵉ dimension — la couleur suit cette valeur
-// (ou la période, ou la source), jamais le rang d'affichage.
-function seriesIdentity(result, spec, ctx, { side = false } = {}) {
+// (ou la période, ou la source), jamais le rang d'affichage. Exporté pour
+// le tableau « Voir les valeurs » (mêmes noms que la légende).
+export function seriesIdentity(result, spec, ctx, { side = false } = {}) {
     const { labels, tokens, typeColors, attributeName } = ctx;
     const multiSource = (result.sources?.length || 1) > 1;
     const periods = result.periods.length;
@@ -257,8 +258,9 @@ function legendOption(tokens, extra = {}) {
 function common(ctx, showLegend) {
     const { tokens } = ctx;
     return {
-        animationDuration: 400,
-        animationDurationUpdate: 300,
+        // « Réduire les animations » : les graphiques sont posés d'un coup.
+        animationDuration: ctx.reduceMotion ? 0 : 400,
+        animationDurationUpdate: ctx.reduceMotion ? 0 : 300,
         backgroundColor: 'transparent',
         textStyle: { color: tokens.text, fontFamily: 'inherit' },
         aria: { enabled: true },

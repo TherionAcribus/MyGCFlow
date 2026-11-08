@@ -258,6 +258,22 @@ active ni archivée.
   est calculé quand même : relevés, exports (`renderDeferred` dessine à la
   demande) et impression (`beforeprint`) restent exacts.
 
+**Confort et accessibilité.**
+
+- **« Voir les valeurs »** (menu d'une carte) : les données du graphique
+  dans un tableau accessible (`valuesModel` — noms de séries partagés avec
+  la légende via `seriesIdentity`), export CSV « français » (`;` + BOM).
+- **Périmètre visible** : les filtres propres d'une carte s'affichent en
+  clair sous le titre (`.stats-card-scope`), pas seulement en infobulle —
+  ils remplacent ceux du tableau.
+- **Annuler** (`withUndo`) : supprimer, déplacer, dupliquer, redimensionner
+  ou enregistrer un graphique propose « Annuler » dans un toast d'action —
+  la copie d'avant la mutation est restaurée, un seul niveau.
+- **Réduire les animations** : `watchReducedMotion` suit
+  `prefers-reduced-motion` ; `chartContext().reduceMotion` met les durées
+  ECharts à 0 (`common` de chart_echarts.mjs) et coupe les défilements
+  doux.
+
 **Barrière** :
 - `chart_spec.mjs` : `sourceFamily`, `sameSourceGroup` (même famille et,
   pour Évolution, même jeu) — `extraSources` n'admet que des sources du

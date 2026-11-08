@@ -393,6 +393,33 @@
     flex: 0 0 auto;
     color: var(--color-accent-text);
 }
+/* Périmètre propre à la carte (filtres qui remplacent ceux du tableau) :
+   lisible sans infobulle, rogné en une ligne. */
+.stats-card-scope {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: -0.15rem 0 0.35rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    min-width: 0;
+}
+.stats-card-scope-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* « Voir les valeurs » : en-tête collant sur les longues listes. */
+.stats-values-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface, #fff);
+    z-index: 1;
+}
+.stats-values-table th,
+.stats-values-table td { white-space: nowrap; }
+.stats-values-table tbody th { font-weight: 500; }
 .stats-ed-filters {
     margin-bottom: 20px;
 }

@@ -793,6 +793,65 @@ test('grand tableau : les cartes lointaines se dessinent au défilement', async 
 });
 
 // ---------------------------------------------------------------------------
+// Confort : périmètre visible, valeurs + CSV, Annuler, animations réduites
+// ---------------------------------------------------------------------------
+
+test('les filtres propres sont lisibles sur la carte, sans infobulle', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request,
+    { groupBy: 'cache_type', filters: { cache_type: ['Multi-cache'] } });
+  const scope = card(page, target.id).locator('.stats-card-scope');
+  await expect(scope).toBeVisible();
+  await expect(scope).toContainText('Filtres propres');
+  await expect(scope).toContainText('Multi-cache');
+  expect(errors).toEqual([]);
+});
+
+test('« Voir les valeurs » : tableau fidèle au graphique, export CSV', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, { groupBy: 'cache_type' });
+  const shown = (await snapshot(page)).cards[0];
+  await cardAction(page, target.id, 'values');
+  await expect(page.locator('#statsValuesModal')).toBeVisible();
+  const rows = page.locator('#statsValuesTable tbody tr');
+  await expect(rows).toHaveCount(shown.keys.length);
+  await expect(page.locator('#statsValuesTable')).toContainText('Multi-cache');
+  const download = page.waitForEvent('download');
+  await page.locator('#btnStatsValuesCsv').click();
+  expect((await download).suggestedFilename()).toBe(`${shown.title}.csv`);
+  expect(errors).toEqual([]);
+});
+
+test('« Annuler » restaure la carte supprimée', async ({ page, request }) => {
+  const errors = await openStats(page);
+  const before = (await snapshot(page)).cards;
+  const victim = before[0];
+  await cardAction(page, victim.id, 'delete');
+  await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
+  await expect(card(page, victim.id)).toHaveCount(0);
+  const undo = page.locator('.gcm-toast.show .gcm-toast-action');
+  await expect(undo).toHaveText('Annuler');
+  await undo.click();
+  const restored = (await snapshot(page)).cards;
+  expect(restored.length).toBe(before.length);
+  expect(restored[0].id).toBe(victim.id);
+  await expect(card(page, victim.id)).toHaveCount(1);
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.length).toBe(before.length);
+  expect(errors).toEqual([]);
+});
+
+test('« réduire les animations » est respecté par les graphiques', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const errors = await openStats(page);
+  expect((await snapshot(page)).reduceMotion).toBe(true);
+  const durations = await page.evaluate(() => {
+    const chart = window.echarts.getInstanceByDom(document.querySelector('.stats-chart'));
+    const option = chart.getOption();
+    return [option.animationDuration, option.animationDurationUpdate];
+  });
+  expect(durations).toEqual([0, 0]);
+  expect(errors).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
 // Organisation (lot 5)
 // ---------------------------------------------------------------------------
 

@@ -305,6 +305,28 @@
             </div>
         </div>
 
+        <!-- « Voir les valeurs » : les données d'un graphique en tableau
+             accessible, exportables en CSV. -->
+        <div class="modal fade" id="statsValuesModal" tabindex="-1" aria-labelledby="statsValuesTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsValuesTitle">{{ _("Valeurs du graphique") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table id="statsValuesTable" class="table table-sm stats-values-table"></table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="btnStatsValuesCsv" class="btn btn-outline-primary me-auto">{{ _("Exporter en CSV") }}</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Nouveau tableau de bord : « Mes données » ou un jeu Évolution —
              deux familles qui ne se mélangent jamais. -->
         <div class="modal fade" id="statsNewDashboardModal" tabindex="-1" aria-labelledby="statsNewDashboardTitle" aria-hidden="true">

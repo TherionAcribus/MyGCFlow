@@ -9,7 +9,7 @@
 
 import { syncThemeFromSettings } from './theme.js';
 import { bindQuitButtons } from './app_quit.js';
-import { showConfirmation, showError, showToast, t } from './notifications.js';
+import { showActionToast, showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { markSaving, markSaved, markSaveError } from './saved_indicator.mjs';
 import { createSaveQueue } from './dashboard_saver.mjs';
@@ -38,7 +38,7 @@ import { ELAPSED_UNITS, filterMask, runChartQueries } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
-import { axisLabels, buildChartOption, calendarYears, chartHeight, clickTarget, numberModel } from './chart_echarts.mjs';
+import { axisLabels, buildChartOption, calendarYears, chartHeight, clickTarget, numberModel, seriesIdentity } from './chart_echarts.mjs';
 import {
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, chartAnimates, lockOption, niceCeil, revealIndex, revealProgress,
     revealResult, valueMax,
@@ -126,6 +126,9 @@ const state = {
     video: null,                // vidéo animée en cours (openVideo)
     previewChart: null,
     ready: false,
+    // Préférence d'accessibilité : les graphiques sont posés sans animation.
+    reduceMotion: false,
+    valuesSpec: null,           // graphique dont la modale « valeurs » est ouverte
 };
 
 // ---------------------------------------------------------------------------
@@ -160,6 +163,18 @@ function watchTheme() {
         if (state.editor) renderPreview();
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+}
+
+// « Réduire les animations » (réglage système) : suivi comme le thème —
+// un changement redessine sans animation, les résultats restent en cache.
+function watchReducedMotion() {
+    const query = matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => {
+        state.reduceMotion = query.matches;
+        if (state.ready) renderAllCharts();
+    };
+    apply();
+    query.addEventListener('change', apply);
 }
 
 // ---------------------------------------------------------------------------
@@ -967,19 +982,27 @@ function cardElement(item, index, count) {
             : badge.textContent;
         header.append(badge);
     }
-    if (spec.filters !== null) {
-        // Filtres propres : ceux du tableau de bord ne s'appliquent pas.
-        const icon = document.createElement('i');
-        icon.className = 'ti ti-filter stats-card-filter';
-        const described = describeFilters(spec.filters, filterValueLabel)
-            .map(({ field, values }) => state.labels.filterField(field) + ' : ' + values.join(', '));
-        icon.title = t('Filtres propres à ce graphique') + ' — ' + (described.length ? described.join(' · ') : t('aucun'));
-        icon.setAttribute('role', 'img');
-        icon.setAttribute('aria-label', icon.title);
-        header.append(icon);
-    }
     header.append(cardMenu(spec, index, count));
     card.append(header);
+    if (spec.filters !== null) {
+        // Filtres propres, VISIBLES (plus seulement en infobulle) : ils
+        // remplacent ceux du tableau de bord — le périmètre se lit d'un coup.
+        const scope = document.createElement('p');
+        scope.className = 'stats-card-scope';
+        const icon = document.createElement('i');
+        icon.className = 'ti ti-filter stats-card-filter';
+        icon.setAttribute('aria-hidden', 'true');
+        const described = describeFilters(spec.filters, filterValueLabel)
+            .map(({ field, values }) => state.labels.filterField(field) + ' : ' + values.join(', '));
+        const text = document.createElement('span');
+        text.className = 'stats-card-scope-text';
+        text.textContent = t('Filtres propres') + ' : '
+            + (described.length ? described.join(' · ') : t('aucun — les filtres du tableau sont ignorés'));
+        scope.append(icon, text);
+        scope.title = t('Ces filtres remplacent ceux du tableau de bord : ${what}',
+            { what: text.textContent.slice(t('Filtres propres').length + 3) });
+        card.append(scope);
+    }
 
     const body = document.createElement('div');
     body.className = 'stats-card-body';
@@ -1090,6 +1113,7 @@ function cardMenu(spec, index, count) {
     menu.append(
         menuButton('edit', 'ti-pencil', t('Modifier')),
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
+        menuButton('values', 'ti-table', t('Voir les valeurs'), { disabled: unavailable }),
         menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || spec.view.chart === 'number' }),
         menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || spec.view.chart === 'number' }),
         panelMenuButton(spec),
@@ -1131,7 +1155,8 @@ function computeResult(spec, dashboard) {
 }
 
 function chartContext() {
-    return { labels: state.labels, tokens: state.tokens, typeColors: state.typeColors, attributeName };
+    return { labels: state.labels, tokens: state.tokens, typeColors: state.typeColors, attributeName,
+        reduceMotion: state.reduceMotion };
 }
 
 // Note sous un graphique : ce qui n'est pas compté ou a été coupé.
@@ -1708,6 +1733,24 @@ function itemIndex(id) {
     return activeDashboard().items.findIndex((item) => item.spec.id === id);
 }
 
+// La dernière organisation des cartes est annulable : la copie d'avant la
+// mutation est restaurée par « Annuler » dans le toast (un seul niveau —
+// l'action la plus récente remplace la précédente).
+function withUndo(message, mutate) {
+    const dashboard = activeDashboard();
+    const before = structuredClone(dashboard.items);
+    mutate();
+    scheduleSave({ immediate: true });
+    renderDashboard();
+    showActionToast(message, { label: t('Annuler'), onClick: () => {
+        const current = state.doc?.dashboards.find((d) => d.id === dashboard.id);
+        if (!current) return;
+        current.items = structuredClone(before);
+        scheduleSave({ immediate: true });
+        renderDashboard();
+    } });
+}
+
 function onCardAction(event) {
     const card = event.target.closest('.stats-card');
     if (!card) return;
@@ -1730,11 +1773,12 @@ function onCardAction(event) {
         case 'duplicate': {
             if (dashboard.items.length >= MAX_ITEMS) return;
             const copy = { size: item.size, height: item.height, spec: createChartSpec(structuredClone(item.spec)) };
-            dashboard.items.splice(index + 1, 0, copy);
-            scheduleSave({ immediate: true });
-            renderDashboard();
+            withUndo(t('Graphique dupliqué.'), () => dashboard.items.splice(index + 1, 0, copy));
             break;
         }
+        case 'values':
+            openValues(item.spec);
+            break;
         case 'export':
             exportPng(item.spec);
             break;
@@ -1751,9 +1795,9 @@ function onCardAction(event) {
         case 'after': {
             const target = button.dataset.action === 'before' ? index - 1 : index + 1;
             if (target < 0 || target >= dashboard.items.length) return;
-            [dashboard.items[index], dashboard.items[target]] = [dashboard.items[target], dashboard.items[index]];
-            scheduleSave({ immediate: true });
-            renderDashboard();
+            withUndo(t('Graphique déplacé.'), () => {
+                [dashboard.items[index], dashboard.items[target]] = [dashboard.items[target], dashboard.items[index]];
+            });
             break;
         }
         case 'delete':
@@ -1763,9 +1807,8 @@ function onCardAction(event) {
                 () => {
                     const i = itemIndex(item.spec.id);
                     if (i < 0) return;
-                    activeDashboard().items.splice(i, 1);
-                    scheduleSave({ immediate: true });
-                    renderDashboard();
+                    withUndo(t('Graphique « ${title} » supprimé.', { title: chartTitle(item.spec) }),
+                        () => activeDashboard().items.splice(i, 1));
                 },
                 null,
                 { danger: true, confirmText: t('Supprimer') },
@@ -1789,6 +1832,88 @@ function download(blob, name) {
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------------------------------------------------------------------------
+// « Voir les valeurs » : les données du graphique en tableau, export CSV
+// ---------------------------------------------------------------------------
+
+// Lignes du tableau : affichage (cells) et valeurs brutes pour le CSV (raw).
+function valuesModel(result, spec, dashboard) {
+    const ctx = chartContext();
+    if (spec.view.chart === 'number') {
+        const { periods } = effectiveQueryOptions(spec, dashboard);
+        return {
+            head: [t('Période'), t('Valeur'), t('Écart')],
+            rows: numberModel(result, spec, ctx).map((entry) => {
+                const label = entry.label || state.labels.periodChoiceLabel(periods[0]);
+                return {
+                    cells: [label, entry.text, entry.delta ? entry.delta.text + ' ' + entry.delta.versus : ''],
+                    raw: [label, entry.value ?? '', ''],
+                };
+            }),
+        };
+    }
+    const fmt = (v) => state.labels.formatValue(v, spec.measure, { normalize: result.normalize });
+    const columns = seriesIdentity(result, spec, ctx).map((s) => s.name);
+    const delta = result.delta?.values || null;
+    if (delta) columns.push(t('Écart'));
+    const keys = axisLabels(result, ctx, { long: true });
+    return {
+        head: [state.labels.dimension(result.dim), ...columns],
+        rows: result.keys.map((key, i) => ({
+            cells: [keys[i], ...result.series.map((s) => fmt(s.values[i])),
+                    ...(delta ? [fmt(delta[i])] : [])],
+            raw: [keys[i], ...result.series.map((s) => s.values[i] ?? ''),
+                    ...(delta ? [delta[i] ?? ''] : [])],
+        })),
+    };
+}
+
+function openValues(spec) {
+    renderDeferred(spec.id);
+    const entry = state.results.get(spec.id);
+    if (!entry?.result) return;
+    state.valuesSpec = spec;
+    $('statsValuesTitle').textContent = chartTitle(spec);
+    const { head, rows } = valuesModel(entry.result, spec, activeDashboard());
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    for (const name of head) {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = name;
+        hr.append(th);
+    }
+    thead.append(hr);
+    const tbody = document.createElement('tbody');
+    for (const row of rows) {
+        const tr = document.createElement('tr');
+        row.cells.forEach((text, i) => {
+            const cell = i === 0 ? document.createElement('th') : document.createElement('td');
+            if (i === 0) cell.scope = 'row';
+            cell.textContent = text;
+            tr.append(cell);
+        });
+        tbody.append(tr);
+    }
+    $('statsValuesTable').replaceChildren(thead, tbody);
+    getBsModal('statsValuesModal')?.show();
+}
+
+// CSV « français » : séparateur ; et BOM pour qu'Excel lise l'UTF-8.
+function downloadValuesCsv() {
+    const spec = state.valuesSpec;
+    const entry = spec && state.results.get(spec.id);
+    if (!entry?.result) return;
+    const { head, rows } = valuesModel(entry.result, spec, activeDashboard());
+    const cell = (v) => {
+        const s = v === null || v === undefined ? '' : String(v);
+        return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const csv = String.fromCharCode(0xFEFF)
+        + [head, ...rows.map((r) => r.raw)].map((r) => r.map(cell).join(';')).join('\r\n');
+    download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), fileSafe(chartTitle(spec)) + '.csv');
 }
 
 // Image vectorielle : le même graphique redessiné hors écran par le moteur
@@ -1889,12 +2014,12 @@ function onDrop(event) {
     const items = activeDashboard().items;
     const from = items.findIndex((item) => item.spec.id === dragged);
     if (from < 0) return;
-    const [moved] = items.splice(from, 1);
-    let to = items.findIndex((item) => item.spec.id === card.dataset.chartId);
-    if (dropSide(card, event) === 'after') to += 1;
-    items.splice(to, 0, moved);
-    scheduleSave({ immediate: true });
-    renderDashboard();
+    withUndo(t('Graphique déplacé.'), () => {
+        const [moved] = items.splice(from, 1);
+        let to = items.findIndex((item) => item.spec.id === card.dataset.chartId);
+        if (dropSide(card, event) === 'after') to += 1;
+        items.splice(to, 0, moved);
+    });
 }
 
 function endDrag() {
@@ -1947,10 +2072,10 @@ function startResize(event, card) {
         window.removeEventListener('pointerup', up);
         card.classList.remove('is-resizing');
         if (size === item.size && height === (item.height || 'M')) return;
-        item.size = size;
-        item.height = height;
-        scheduleSave({ immediate: true });
-        renderDashboard();
+        withUndo(t('Taille du graphique modifiée.'), () => {
+            item.size = size;
+            item.height = height;
+        });
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -2054,7 +2179,8 @@ function onGalleryPick(event) {
     dashboard.items.push(item);
     scheduleSave({ immediate: true });
     renderDashboard();
-    $('statsGrid').querySelector(cardSelector(item.spec.id))?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('statsGrid').querySelector(cardSelector(item.spec.id))
+        ?.scrollIntoView({ block: 'nearest', behavior: state.reduceMotion ? 'auto' : 'smooth' });
 }
 
 // ---------------------------------------------------------------------------
@@ -2469,14 +2595,13 @@ function saveEditor() {
     readEditorForm();
     const { mode, index, item } = state.editor;
     const dashboard = activeDashboard();
-    if (mode === 'new') {
-        if (dashboard.items.length < MAX_ITEMS) dashboard.items.push(item);
-    } else if (dashboard.items[index]) {
-        dashboard.items[index] = item;
-    }
-    scheduleSave({ immediate: true });
     getBsModal('statsEditorModal')?.hide();
-    renderDashboard();
+    if (mode === 'new') {
+        if (dashboard.items.length >= MAX_ITEMS) return;
+        withUndo(t('Graphique ajouté.'), () => dashboard.items.push(item));
+    } else if (dashboard.items[index]) {
+        withUndo(t('Graphique enregistré.'), () => { dashboard.items[index] = item; });
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -2516,6 +2641,7 @@ window.getStatsPageSnapshot = () => {
         echartsVersion: window.echarts?.version || null,
         locale: echartsLocale(),
         ready: state.ready,
+        reduceMotion: state.reduceMotion,
         sourceErrors: [...state.sourceErrors],
         rows: state.tables.has('finds') ? tableOf('finds').n : null,
         undated: state.tables.has('finds') ? tableOf('finds').undated : null,
@@ -2617,6 +2743,7 @@ function bindEvents() {
     $('btnStatsEdAddSource').addEventListener('click', addSource);
     $('statsEdSourceList').addEventListener('click', onSourceListClick);
     $('btnStatsFilters').addEventListener('click', openFilters);
+    $('btnStatsValuesCsv').addEventListener('click', downloadValuesCsv);
     $('btnStatsFiltersApply').addEventListener('click', applyFilters);
     $('btnStatsFiltersClear').addEventListener('click', () => clearFilterForm($('statsFiltersForm')));
     $('statsFiltersModal').addEventListener('hidden.bs.modal', () => destroyFilterForm($('statsFiltersForm')));
@@ -2663,6 +2790,7 @@ function bindEvents() {
 bindQuitButtons();
 bindEvents();
 watchTheme();
+watchReducedMotion();
 state.tokens = readTokens();
 Promise.all([loadUserSettings(), loadPage()]).finally(() => {
     window.mygcflowStatsReady = true;
