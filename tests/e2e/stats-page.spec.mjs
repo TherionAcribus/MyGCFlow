@@ -686,6 +686,92 @@ test('Évolution : un tableau à part, lié à son jeu, sans sources personnelle
 });
 
 // ---------------------------------------------------------------------------
+// Sources indisponibles : expliquer, relancer (jamais un faux zéro)
+// ---------------------------------------------------------------------------
+
+test('une source en échec : la carte explique et « Réessayer » recharge', async ({ page, request }) => {
+  let fail = true;
+  await page.route('**/api/stats/dnf', async (route) => {
+    if (fail) return route.abort();
+    return route.fulfill({ json: { features: [{ type: 'Feature', geometry: null, properties: {
+      source_kind: 'dnf', record_uid: 'dnf:GC1ABCD', gc_code: 'GC1ABCD', name: 'Sans issue',
+      cache_type: 'Traditional Cache', date_find: '2024-03-05', dnf_dates: ['2024-03-05'],
+      found: false } }], logs: 1 } });
+  });
+  const { errors, card: target } = await openWithChart(page, request, { source: 'dnf', groupBy: 'year' });
+  const me = card(page, target.id);
+  await expect(me.locator('.stats-card-unavailable')).toBeVisible();
+  await expect(me.locator('.stats-card-unavailable')).toContainText('Mes DNF');
+  await expect(page.locator('#statsDataNote')).toContainText('données indisponibles');
+  let snap = await snapshot(page);
+  expect(snap.sourceErrors).toEqual(['dnf']);
+  expect(snap.cards[0].unavailable).toEqual(['dnf']);
+  expect(snap.cards[0].series).toBeNull();
+
+  fail = false;
+  await me.locator('.stats-card-retry').click();
+  await expect(me.locator('.stats-chart')).toBeVisible();
+  snap = await snapshot(page);
+  expect(snap.sourceErrors).toEqual([]);
+  expect(snap.cards[0].unavailable).toBeNull();
+  expect(snap.cards[0].series).toEqual([[1]]);
+  await expect(page.locator('#statsDataNote')).toContainText('1 DNF');
+  expect(errors).toEqual([]);
+});
+
+test('un jeu Évolution en erreur (≠ 404) est relançable', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  const datasetId = await createDataset(request, 'Zone de test');
+  try {
+    let fail = true;
+    await page.route(`**/api/evolution/datasets/${datasetId}/data`, async (route) => {
+      if (fail) return route.fulfill({ status: 500, json: { error: 'x' } });
+      return route.continue();
+    });
+    const doc = { v: 1, active: 'e1', dashboards: [{ id: 'e1', name: 'Zone', kind: 'evolution',
+      dataset: datasetId, period: { kind: 'all' }, items: [
+        { size: 'M', spec: { id: 'c0ff01', source: `evolution:${datasetId}`, groupBy: 'year' } }] }] };
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+    const errors = await openStats(page);
+    const snap = await snapshot(page);
+    expect(snap.sourceErrors).toContain(`evolution:${datasetId}`);
+    expect(snap.cards[0].unavailable).toContain(`evolution:${datasetId}`);
+    // Erreur temporaire : pas « n'existe plus », pas de comptes nuls.
+    await expect(page.locator('#statsDataNote')).toContainText('indisponibles');
+    await expect(page.locator('#statsDataNote')).not.toContainText("n'existe plus");
+
+    fail = false;
+    await card(page, snap.cards[0].id).locator('.stats-card-retry').click();
+    await expect.poll(async () => (await snapshot(page)).sourceErrors).toEqual([]);
+    expect((await snapshot(page)).cards[0].series).not.toBeNull();
+    expect(errors).toEqual([]);
+  } finally {
+    await deleteAllDatasets(request);
+  }
+});
+
+test('un jeu supprimé (404) dit « n\'existe plus », sans bloc de relance', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  const datasetId = await createDataset(request, 'Zone de test');
+  try {
+    await page.route(`**/api/evolution/datasets/${datasetId}/data`,
+      (route) => route.fulfill({ status: 404, json: { error: 'x' } }));
+    const doc = { v: 1, active: 'e1', dashboards: [{ id: 'e1', name: 'Zone', kind: 'evolution',
+      dataset: datasetId, period: { kind: 'all' }, items: [
+        { size: 'M', spec: { id: 'c0ff01', source: `evolution:${datasetId}`, groupBy: 'year' } }] }] };
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+    await openStats(page);
+    const snap = await snapshot(page);
+    expect(snap.sourceErrors).toEqual([]);
+    expect(snap.cards[0].unavailable).toBeNull();
+    await expect(page.locator('#statsDataNote')).toContainText("n'existe plus");
+    await expect(card(page, snap.cards[0].id).locator('.stats-card-retry')).toHaveCount(0);
+  } finally {
+    await deleteAllDatasets(request);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Organisation (lot 5)
 // ---------------------------------------------------------------------------
 

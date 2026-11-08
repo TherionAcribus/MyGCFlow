@@ -93,6 +93,7 @@ const PERSONAL_SOURCES = ['finds', 'dnf', 'owned', 'poses.received', 'poses.dnf'
 const state = {
     // Tables par source (« finds », « poses.received », « evolution:3 »…).
     tables: new Map(),
+    sourceErrors: new Set(),  // sources dont le chargement a échoué (pas des zéros)
     datasets: [],               // jeux Évolution [{ id, name, … }]
     evolutionLoads: new Map(),  // id de jeu → promesse de chargement
     missingDatasets: new Set(), // jeux supprimés depuis
@@ -184,25 +185,55 @@ async function fetchJson(url) {
 }
 
 // Sources personnelles : les trouvailles sont indispensables (échec = page
-// en erreur) ; DNF, caches posées et Mes poses sont facultatifs (pas de logs
-// importés = tables vides).
-async function loadPersonalSources() {
-    const optional = (promise, build) => promise.then(build).catch((e) => {
+// en erreur) ; DNF, caches posées et Mes poses sont facultatifs — pas de
+// logs importés = tables vides, mais un ÉCHEC n'est pas un zéro : la source
+// est marquée indisponible (sourceErrors) et le graphique propose une relance.
+const PERSONAL_LOADERS = [
+    { url: '/api/stats/dnf', sources: ['dnf'], apply: (p) => [['dnf', dnfTable(p)]] },
+    { url: '/api/stats/owned', sources: ['owned'], apply: (p) => [['owned', ownedTable(p)]] },
+    { url: '/api/poses/data', sources: ['poses.received', 'poses.dnf', 'poses.favorites'],
+      apply: (p) => {
+          const tables = posesTables(p);
+          return [['poses.received', tables.received], ['poses.dnf', tables.dnf],
+                  ['poses.favorites', tables.favorites]];
+      } },
+];
+const SOURCE_LOADER = new Map(PERSONAL_LOADERS.flatMap((l) => l.sources.map((s) => [s, l])));
+
+function loadPersonalLoader(loader) {
+    return fetchJson(loader.url).then((payload) => {
+        for (const [source, table] of loader.apply(payload)) {
+            state.tables.set(source, table);
+            state.sourceErrors.delete(source);
+        }
+    }).catch((e) => {
         console.warn('[stats] Source indisponible :', e?.message || e);
-        return null;
+        for (const source of loader.sources) {
+            state.tables.set(source, EMPTY_TABLE);
+            state.sourceErrors.add(source);
+        }
     });
-    const [finds, dnf, owned, poses] = await Promise.all([
+}
+
+async function loadPersonalSources() {
+    const [finds] = await Promise.all([
         fetchJson('/api/stats/finds').then(findsTable),
-        optional(fetchJson('/api/stats/dnf'), dnfTable),
-        optional(fetchJson('/api/stats/owned'), ownedTable),
-        optional(fetchJson('/api/poses/data'), posesTables),
+        ...PERSONAL_LOADERS.map(loadPersonalLoader),
     ]);
     state.tables.set('finds', finds);
-    state.tables.set('dnf', dnf || EMPTY_TABLE);
-    state.tables.set('owned', owned || EMPTY_TABLE);
-    state.tables.set('poses.received', poses?.received || EMPTY_TABLE);
-    state.tables.set('poses.dnf', poses?.dnf || EMPTY_TABLE);
-    state.tables.set('poses.favorites', poses?.favorites || EMPTY_TABLE);
+}
+
+// Recharge les sources en échec d'un graphique (bouton « Réessayer »), puis
+// redessine tout : la note des données et le résumé des filtres en dépendent.
+function retrySources(spec) {
+    const failed = chartSources(spec).filter((s) => state.sourceErrors.has(s));
+    const loaders = [...new Set(failed.map((s) => SOURCE_LOADER.get(s)).filter(Boolean))];
+    const datasets = failed.filter((s) => s.startsWith('evolution:'))
+        .map((s) => s.split(':')[1]);
+    // L'échec n'est pas gardé en cache : ensureEvolution relancera le GET.
+    for (const id of datasets) state.evolutionLoads.delete(id);
+    return Promise.all([...loaders.map(loadPersonalLoader), ...datasets.map(ensureEvolution)])
+        .then(renderDashboard);
 }
 
 async function loadDatasets() {
@@ -214,7 +245,9 @@ async function loadDatasets() {
 }
 
 // Jeu Évolution chargé à la demande (premier affichage d'un tableau qui
-// l'utilise). Un jeu supprimé depuis donne des tables vides.
+// l'utilise). Un jeu supprimé (404) donne des tables vides et la mention
+// « n'existe plus » ; toute autre erreur est temporaire : la source est
+// marquée indisponible et la promesse n'est pas gardée — une relance repart.
 function ensureEvolution(id) {
     if (!id) return Promise.resolve();
     if (!state.evolutionLoads.has(id)) {
@@ -223,11 +256,19 @@ function ensureEvolution(id) {
                 const { placed, archived } = evolutionTables(payload);
                 state.tables.set('evolution:' + id, placed);
                 state.tables.set('evolution:' + id + ':archived', archived);
+                state.sourceErrors.delete('evolution:' + id);
+                state.sourceErrors.delete('evolution:' + id + ':archived');
             })
-            .catch(() => {
-                state.missingDatasets.add(id);
-                state.tables.set('evolution:' + id, EMPTY_TABLE);
-                state.tables.set('evolution:' + id + ':archived', EMPTY_TABLE);
+            .catch((e) => {
+                const sources = ['evolution:' + id, 'evolution:' + id + ':archived'];
+                if (/^HTTP 404\b/.test(e?.message || '')) {
+                    state.missingDatasets.add(id);
+                } else {
+                    for (const source of sources) state.sourceErrors.add(source);
+                    // Pas de promesse en cache : la prochaine tentative repart.
+                    state.evolutionLoads.delete(id);
+                }
+                for (const source of sources) state.tables.set(source, EMPTY_TABLE);
             }));
     }
     return state.evolutionLoads.get(id);
@@ -538,6 +579,10 @@ function dataNote(dashboard) {
     let main;
     if (dashboard.kind === 'evolution') {
         if (state.missingDatasets.has(dashboard.dataset)) return t("Ce jeu Évolution n'existe plus.");
+        // Jeu en erreur : pas de comptes nuls trompeurs, l'état suffit.
+        if (state.sourceErrors.has('evolution:' + dashboard.dataset)) {
+            return t('Jeu « ${name} » : données indisponibles', { name: datasetName(dashboard.dataset) });
+        }
         main = tableOf('evolution:' + dashboard.dataset);
         parts.push(t('${n} caches publiées', { n: nf.format(main.n) }));
         parts.push(t('${n} archivages datés', { n: nf.format(tableOf('evolution:' + dashboard.dataset + ':archived').n) }));
@@ -561,6 +606,14 @@ function dataNote(dashboard) {
     const undated = tableOf('finds').undated;
     if (dashboard.kind !== 'evolution' && undated) {
         parts.push(t('${n} sans date de trouvaille, non comptées', { n: nf.format(undated) }));
+    }
+    // Sources dont le chargement a échoué : signalées, pas confondues avec 0.
+    const failed = dashboardSources(dashboard).filter((s) => state.sourceErrors.has(s));
+    if (failed.length) {
+        const names = [...new Set(failed.map((s) => s.startsWith('evolution:')
+            ? t('Jeu « ${name} »', { name: datasetName(s.split(':')[1]) })
+            : state.labels.sourceLabel(s)))];
+        parts.push(t('${names} : données indisponibles', { names: names.join(', ') }));
     }
     return parts.join(' · ');
 }
@@ -870,17 +923,7 @@ function cardElement(item, index, count) {
 
     const body = document.createElement('div');
     body.className = 'stats-card-body';
-    if (spec.view.chart === 'number') {
-        const number = document.createElement('div');
-        number.className = 'stats-number';
-        body.append(number);
-    } else {
-        const host = document.createElement('div');
-        host.className = 'stats-chart';
-        host.setAttribute('role', 'img');
-        host.setAttribute('aria-label', chartTitle(spec));
-        body.append(host);
-    }
+    body.append(cardBodyContent(spec));
     card.append(body);
     const note = document.createElement('p');
     note.className = 'stats-card-note';
@@ -893,6 +936,47 @@ function cardElement(item, index, count) {
     resize.setAttribute('aria-hidden', 'true');
     card.append(resize);
     return card;
+}
+
+// Contenu d'un corps de carte : le chiffre clé ou l'hôte du graphique.
+// Réutilisé par renderAllCharts pour restaurer le conteneur après un état
+// « indisponible » affiché à sa place.
+function cardBodyContent(spec) {
+    if (spec.view.chart === 'number') {
+        const number = document.createElement('div');
+        number.className = 'stats-number';
+        return number;
+    }
+    const host = document.createElement('div');
+    host.className = 'stats-chart';
+    host.setAttribute('role', 'img');
+    host.setAttribute('aria-label', chartTitle(spec));
+    return host;
+}
+
+// Une source n'a pas pu être chargée : le graphique affiche l'explication et
+// une relance plutôt qu'un rendu qui ressemblerait à un vrai zéro.
+function unavailableBlock(failed) {
+    const box = document.createElement('div');
+    box.className = 'stats-card-unavailable';
+    const icon = document.createElement('i');
+    icon.className = 'ti ti-cloud-off';
+    icon.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('p');
+    const names = failed.map((source) => source.startsWith('evolution:')
+        ? t('Jeu « ${name} »', { name: datasetName(source.split(':')[1]) })
+        : state.labels.sourceLabel(source)).join(' · ');
+    text.textContent = t('${names} : données indisponibles', { names });
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn btn-sm btn-outline-secondary stats-card-retry';
+    retry.textContent = t('Réessayer');
+    const refresh = document.createElement('i');
+    refresh.className = 'ti ti-refresh me-1';
+    refresh.setAttribute('aria-hidden', 'true');
+    retry.prepend(refresh);
+    box.append(icon, text, retry);
+    return box;
 }
 
 function menuButton(action, icon, label, { danger = false, disabled = false } = {}) {
@@ -941,13 +1025,15 @@ function cardMenu(spec, index, count) {
     menu.className = 'dropdown-menu dropdown-menu-end';
     const divider = document.createElement('li');
     divider.innerHTML = '<hr class="dropdown-divider">';
+    // Source en échec : pas d'image ni de vidéo à produire.
+    const unavailable = chartSources(spec).some((s) => state.sourceErrors.has(s));
     menu.append(
         menuButton('edit', 'ti-pencil', t('Modifier')),
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
-        menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: spec.view.chart === 'number' }),
-        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: spec.view.chart === 'number' }),
+        menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || spec.view.chart === 'number' }),
+        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || spec.view.chart === 'number' }),
         panelMenuButton(spec),
-        menuButton('video', 'ti-video', t('Créer une vidéo animée'), { disabled: !chartAnimates(spec) }),
+        menuButton('video', 'ti-video', t('Créer une vidéo animée'), { disabled: unavailable || !chartAnimates(spec) }),
         menuButton('before', 'ti-arrow-left', t('Déplacer avant'), { disabled: index === 0 }),
         menuButton('after', 'ti-arrow-right', t('Déplacer après'), { disabled: index === count - 1 }),
         divider,
@@ -1056,9 +1142,21 @@ function renderAllCharts() {
     for (const item of dashboard.items) {
         const card = $('statsGrid').querySelector(cardSelector(item.spec.id));
         if (!card) continue;
-        const result = computeResult(item.spec, dashboard);
-        state.results.set(item.spec.id, { result, spec: item.spec });
+        const body = card.querySelector('.stats-card-body');
         const note = card.querySelector('.stats-card-note');
+        const failed = chartSources(item.spec).filter((s) => state.sourceErrors.has(s));
+        if (failed.length) {
+            state.results.set(item.spec.id, { result: null, spec: item.spec, error: failed });
+            note.hidden = true;
+            body.replaceChildren(unavailableBlock(failed));
+            continue;
+        }
+        state.results.set(item.spec.id, { result: computeResult(item.spec, dashboard), spec: item.spec });
+        // Après un état « indisponible », remettre le conteneur attendu.
+        if (!body.querySelector('.stats-chart, .stats-number')) {
+            body.replaceChildren(cardBodyContent(item.spec));
+        }
+        const { result } = state.results.get(item.spec.id);
         note.textContent = cardNote(result, item.spec);
         note.hidden = !note.textContent;
         if (item.spec.view.chart === 'number') {
@@ -1103,7 +1201,7 @@ function mapLinkFor(chartId, target) {
     const entry = state.results.get(chartId);
     if (!entry || !target) return null;
     const { spec, result } = entry;
-    if (!chartClickable(spec, result)) return null;
+    if (!result || !chartClickable(spec, result)) return null;
     const finds = tableOf('finds');
     return mapSelectionFor({
         spec,
@@ -1150,7 +1248,7 @@ async function openMapWith(link) {
 function onChartClick(host, params) {
     const card = host.closest('.stats-card');
     const entry = card ? state.results.get(card.dataset.chartId) : null;
-    if (!entry || !chartClickable(entry.spec, entry.result)) return;
+    if (!entry?.result || !chartClickable(entry.spec, entry.result)) return;
     const target = clickTarget(entry.result, entry.spec, params);
     if (!target) return;
     const link = mapLinkFor(card.dataset.chartId, target);
@@ -1261,7 +1359,7 @@ function releaseVideo() {
 
 function openVideo(spec) {
     const entry = state.results.get(spec.id);
-    if (!entry || !chartAnimates(spec, entry.result)) {
+    if (!entry?.result || !chartAnimates(spec, entry.result)) {
         showToast(t('Ce graphique ne peut pas être animé.'), 'info');
         return;
     }
@@ -1343,7 +1441,7 @@ const nextFrame = (fn) => (document.hidden ? setTimeout(fn, 1000 / VIDEO_FPS) : 
 async function recordVideo() {
     const video = state.video;
     const entry = video && state.results.get(video.spec.id);
-    if (!entry) return;
+    if (!entry?.result) return;
     const mimeType = videoMimeType();
     if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
         showError(t("Ce navigateur ne sait pas enregistrer de vidéo."));
@@ -1472,9 +1570,16 @@ function itemIndex(id) {
 }
 
 function onCardAction(event) {
-    const button = event.target.closest('[data-action]');
     const card = event.target.closest('.stats-card');
-    if (!button || !card) return;
+    if (!card) return;
+    const retry = event.target.closest('.stats-card-retry');
+    if (retry) {
+        const item = activeDashboard().items[itemIndex(card.dataset.chartId)];
+        if (item) retrySources(item.spec);
+        return;
+    }
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
     const dashboard = activeDashboard();
     const index = itemIndex(card.dataset.chartId);
     if (index < 0) return;
@@ -1818,7 +1923,9 @@ function fillSourceSelects(spec) {
     const allowed = dashboardSources(activeDashboard());
     const option = (source) => {
         const empty = tableOf(source).n === 0;
-        const text = state.labels.sourceLabel(source) + (empty ? ' ' + t('(aucune donnée)') : '');
+        const suffix = state.sourceErrors.has(source) ? t('(indisponible)')
+            : empty ? t('(aucune donnée)') : '';
+        const text = state.labels.sourceLabel(source) + (suffix ? ' ' + suffix : '');
         return new Option(text, source);
     };
     const main = $('statsEdSource');
@@ -2265,6 +2372,7 @@ window.getStatsPageSnapshot = () => {
         echartsVersion: window.echarts?.version || null,
         locale: echartsLocale(),
         ready: state.ready,
+        sourceErrors: [...state.sourceErrors],
         rows: state.tables.has('finds') ? tableOf('finds').n : null,
         undated: state.tables.has('finds') ? tableOf('finds').undated : null,
         sources: Object.fromEntries([...state.tables].map(([source, table]) => [source, table.n])),
@@ -2290,18 +2398,19 @@ window.getStatsPageSnapshot = () => {
                 groupBy: item.spec.groupBy,
                 measure: measureKey(item.spec.measure),
                 title: chartTitle(item.spec),
-                keys: entry?.result.keys ?? null,
-                series: entry?.result.series.map((s) => s.values) ?? null,
-                periods: entry?.result.periods.map((p) => state.labels.seriesPeriodLabel(p)) ?? null,
-                align: entry?.result.align ?? null,
-                toDate: Boolean(entry?.result.toDate),
-                delta: entry?.result.delta?.values ?? null,
-                partial: entry?.result.series.map((s) => s.partial) ?? null,
+                unavailable: entry?.error ?? null,
+                keys: entry?.result?.keys ?? null,
+                series: entry?.result?.series.map((s) => s.values) ?? null,
+                periods: entry?.result?.periods.map((p) => state.labels.seriesPeriodLabel(p)) ?? null,
+                align: entry?.result?.align ?? null,
+                toDate: Boolean(entry?.result?.toDate),
+                delta: entry?.result?.delta?.values ?? null,
+                partial: entry?.result?.series.map((s) => s.partial) ?? null,
                 layout: item.spec.compare.layout,
                 splitBy: item.spec.splitBy,
                 source: item.spec.source,
                 extraSources: item.spec.extraSources,
-                seriesSources: entry?.result.series.map((s) => s.source) ?? null,
+                seriesSources: entry?.result?.series.map((s) => s.source) ?? null,
                 filters: item.spec.filters,
                 height: (() => {
                     const host = $('statsGrid').querySelector(cardSelector(item.spec.id) + ' .stats-chart');
@@ -2312,7 +2421,7 @@ window.getStatsPageSnapshot = () => {
                     return Array.isArray(grid) ? grid.length : null;
                 })(),
                 rendered: item.spec.view.chart === 'number' || state.charts.has(item.spec.id),
-                linksToMap: entry ? chartClickable(item.spec, entry.result) : false,
+                linksToMap: entry?.result ? chartClickable(item.spec, entry.result) : false,
             };
         }) : [],
         save: { dirty: state.docDirty, failed: state.saveFailed, pending: saveQueue.pending },

@@ -228,9 +228,16 @@ une cache posée sans date est servie « sans date ». Les routes de la carte
 (`/api/logs/dnf_features`, `/api/logs/owner_features`) écartent au
 contraire les caches sans coordonnées, les DNF résolus et les caches posées
 sans date. Une source absente (pas de logs) donne une table vide ; seules
-les trouvailles sont indispensables au chargement. Les jeux Évolution se chargent à la
-demande (`ensureEvolution`), un jeu supprimé donne des tables vides et une
-note. Archivée sans date (Évolution) : comptée parmi les publiées, jamais
+les trouvailles sont indispensables au chargement.
+
+Un ÉCHEC de chargement n'est pas un zéro : la source est marquée
+`sourceErrors`, chaque graphique qui en dépend affiche « données
+indisponibles » avec un bouton **Réessayer** (`retrySources`, recharge
+ciblée puis `renderDashboard`), la note de périmètre la signale et
+l'éditeur la suffixe « (indisponible) ». Pour Évolution, seul le 404 est
+traité comme un jeu supprimé (« n'existe plus », pas de relance) — toute
+autre erreur est relançable, la promesse n'étant pas gardée en cache.
+Archivée sans date (Évolution) : comptée parmi les publiées, jamais
 active ni archivée.
 
 **Barrière** :
@@ -465,6 +472,7 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,
   `layout`, `grids`, `chart`, `rendered`, `size`, `heightKey`, `height` en
-  px…, `linksToMap`), `editor`, `dashboards`, `sources`, `save` (`dirty`,
+  px…, `linksToMap`, `unavailable` = sources en échec de la carte),
+  `editor`, `dashboards`, `sources`, `sourceErrors`, `save` (`dirty`,
   `failed`, `pending`), `video` (`phase` setup / recording / done, `file`,
   `folder`).
