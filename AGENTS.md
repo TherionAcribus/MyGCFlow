@@ -280,6 +280,12 @@ Autres repères :
   par page passent par `statsPanelsKey(mode)` / `imagesItemsKey(mode)` /
   `perPage(...)`. Un module de page exporte des noms uniques (`posesXxx`) :
   `export *` d'index.js écarte EN SILENCE un nom exporté par deux modules.
+- Page Statistiques (`/stats`, docs/page-statistiques.md) : sans carte ni
+  `index.js` — signal `window.mygcflowStatsReady` (pas `mygcflowReady`),
+  relevé `getStatsPageSnapshot()`, pas de modale de première utilisation.
+  L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
+  « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
+  un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `@playwright\test\cli.js`, `run-tests.mjs` ou `run_server.py`. Sous Linux :

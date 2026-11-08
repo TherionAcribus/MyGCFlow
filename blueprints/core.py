@@ -33,10 +33,7 @@ def render_app_page(mode: str):
     le moteur « cycle de vie » (Évolution, Mes poses : ni caméra, ni trajet,
     ligne d'infos à balises).
     """
-    current_locale = get_locale()
-    # `can_quit` : le bouton « Quitter » n'a de sens que lancé par launcher.py.
-    # Sous `python app.py`, le serveur de développement se ferme par sa console.
-    response = make_response(render_template(
+    return render_page(
         'app.html',
         mode=mode,
         lifecycle=mode in ('evolution', 'poses'),
@@ -45,10 +42,23 @@ def render_app_page(mode: str):
         event_flash_modes=event_flash.EVENT_FLASH_MODES,
         # Étapes du poseur (onglet Style › Flash de la page principale).
         owner_flash_kinds=event_flash.owner_flash_kinds_for_template() if mode == 'main' else [],
-        can_quit=bool(current_app.config.get('QUIT_HOOK')),
         repo_url=options.REPO_URL,
-        lang=(current_locale or 'fr').split('_')[0],
-    ))
+    )
+
+
+def render_page(template: str, **context):
+    """Rend une page de l'application dans la langue courante.
+
+    Ajoute `lang` (code court) et `can_quit` au contexte, et mémorise la
+    langue dans le cookie `mygcflow_lang`. Utilisée par les pages carte
+    (`render_app_page`), le guide et la page Statistiques.
+    """
+    current_locale = get_locale()
+    # `can_quit` : le bouton « Quitter » n'a de sens que lancé par launcher.py.
+    # Sous `python app.py`, le serveur de développement se ferme par sa console.
+    context.setdefault('can_quit', bool(current_app.config.get('QUIT_HOOK')))
+    context.setdefault('lang', (current_locale or 'fr').split('_')[0])
+    response = make_response(render_template(template, **context))
     if current_locale:
         response.set_cookie(
             'mygcflow_lang',
@@ -63,18 +73,7 @@ def render_app_page(mode: str):
 @core_bp.route('/guide')
 def guide():
     """Mode d'emploi pas-à-pas, ouvert dans une page séparée."""
-    current_locale = get_locale()
-    response = make_response(render_template(
-        'guide.html', lang=(current_locale or 'fr').split('_')[0]))
-    if current_locale:
-        response.set_cookie(
-            'mygcflow_lang',
-            current_locale,
-            max_age=60 * 60 * 24 * 365,
-            samesite='Lax',
-            path='/'
-        )
-    return response
+    return render_page('guide.html')
 
 
 # Textes de licence servis par /license : celui de MyGCFlow (LICENSE, à la

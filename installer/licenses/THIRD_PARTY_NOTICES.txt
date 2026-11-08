@@ -31,6 +31,11 @@ Bibliothèques de l'interface (dossier static/vendor)
   - Tempus Dominus 6.10.4 ........ MIT            https://getdatepicker.com
   - Popper 2.11.8 ................ MIT            https://popper.js.org
   - htmx 2.0.10 .................. 0BSD           https://htmx.org
+  - Apache ECharts 6.1.0 ......... Apache 2.0     https://echarts.apache.org
+      Copyright 2017-2026 The Apache Software Foundation. This product
+      includes software developed at The Apache Software Foundation
+      (https://www.apache.org/). Licence et NOTICE complètes :
+      static/vendor/echarts/LICENSE et NOTICE.
   - html2canvas .................. MIT            https://html2canvas.hertzen.com
   - fix-webm-duration ............ MIT            https://github.com/yusitnikov/fix-webm-duration
   - Material Icons (police) ...... Apache 2.0     https://fonts.google.com/icons

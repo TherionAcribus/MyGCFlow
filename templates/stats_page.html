@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+{# Page « Statistiques » (/stats) : tableaux de bord de graphiques, sans carte.
+   Plan : MyGCFlow_Plan_Statistiques.md ; doc : docs/page-statistiques.md.
+   Ne charge ni OpenLayers ni index.js : point d'entrée propre
+   (static/js/stats_page.js), modules purs chart_*.mjs, rendu ECharts. #}
+<html lang="{{ lang or 'fr' }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% include '_theme_boot.html' %}
+
+        <!-- Bibliothèques tierces servies en local (static/vendor/README.md). -->
+        <link rel="stylesheet" href="../static/vendor/tabler/tabler.min.css">
+        <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons-subset.css?v={{ icons_css_version }}">
+
+        <!-- Styles de l'application : en-tête, indicateur « Enregistré »,
+             modales et palette de l'identité (aucune règle globale de la
+             page carte n'y touche <body> ni <main>). -->
+        <link rel="stylesheet" href="../static/css/ui_improvements.css" />
+        <link rel="stylesheet" href="../static/css/theme.css" />
+        <link rel="stylesheet" href="../static/css/tabler_theme.css" />
+        <link rel="stylesheet" href="../static/css/stats_page.css" />
+
+        <title>MyGCFlow – {{ _("Statistiques") }}</title>
+        {% include '_branding_head.html' %}
+    </head>
+
+    <body data-dev="{{ 1 if config.DEBUG else 0 }}" data-page="stats">
+        <main id="statsMain">
+            {% include '_app_header.html' %}
+
+            <div id="statsPage">
+                <section id="statsEmptyState" class="stats-empty-state">
+                    <i class="ti ti-chart-bar stats-empty-icon" aria-hidden="true"></i>
+                    <h1 class="stats-empty-title">{{ _("Statistiques") }}</h1>
+                    <p class="stats-empty-text">
+                        {{ _("Vos tableaux de bord s'afficheront ici : choisissez vos graphiques, vos périodes et vos filtres, et comparez les années ou les mois entre eux.") }}
+                    </p>
+                    <p class="stats-empty-hint text-muted">{{ _("Page en construction.") }}</p>
+                </section>
+            </div>
+        </main>
+
+        <!-- Tabler JS (inclut Bootstrap 5) : modales de confirmation. -->
+        <script src="../static/vendor/tabler/tabler.min.js"></script>
+
+        <!-- Apache ECharts 6.1.0 (rendu des graphiques) + libellés français
+             de ses outils (l'anglais est inclus dans echarts.min.js). -->
+        <script src="../static/vendor/echarts/echarts.min.js"></script>
+        <script src="../static/vendor/echarts/langFR.js"></script>
+
+        <!-- Traductions JavaScript (cf. app.html pour le paramètre ?lang=). -->
+        <script src="/js_translations.js?lang={{ lang or 'fr' }}"></script>
+
+        <script type="module" src="../static/js/stats_page.js"></script>
+    </body>
+</html>

@@ -22,6 +22,7 @@ templates. Aucun fichier n'est modifié par rapport à l'original publié sur np
 | `popperjs/` | `@popperjs/core` | 2.11.8 | `popper.min.js` (requis par Tempus Dominus) |
 | `ol/` | `ol` | 10.6.0 | `ol.css`, `ol.js` |
 | `htmx/` | `htmx.org` | 2.0.10 | `htmx.min.js` |
+| `echarts/` | `echarts` | 6.1.0 | `echarts.min.js`, `i18n/langFR.js` → `langFR.js` (libellés français ; l'anglais est inclus), `LICENSE` + `NOTICE` (Apache 2.0 : à redistribuer avec). Chargé par la seule page Statistiques (`stats_page.html`). |
 
 `static/js/vendor/html2canvas.min.js` est également vendoré, mais reste à part :
 il n'est pas chargé par les templates, `loadHtml2Canvas()` (dans

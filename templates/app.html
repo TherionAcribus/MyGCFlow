@@ -51,55 +51,7 @@
                  « En-tête d'application » en fin de ui_improvements.css.
                  En plein écran il est masqué par la règle
                  `main.fullscreen-mode > *`. -->
-            <header id="appHeader">
-                <div class="app-header-brand">
-                    {% with logo_class='app-header-logo' %}{% include '_brand_logo.html' %}{% endwith %}
-                    <!-- Sélecteur de mode : remplace le nav.mode-switch qui
-                         était en tête de l'onglet Données (le libellé du mode
-                         reste visible quelle que soit la vue active). -->
-                    <nav class="app-header-mode" aria-label="{{ _('Mode') }}">
-                        <a href="/" id="linkMainMode" class="app-mode-link {{ 'active' if mode == 'main' }}"
-                           aria-label="{{ _('Mes Géocaches') }}"
-                           {% if mode == 'main' %}aria-current="page"{% endif %}>
-                            <i class="ti ti-database" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes Géocaches") }}</span>
-                        </a>
-                        <a href="/evolution" id="linkEvolutionMode" class="app-mode-link {{ 'active' if mode == 'evolution' }}"
-                           aria-label="{{ _('Évolution') }}"
-                           {% if mode == 'evolution' %}aria-current="page"{% endif %}>
-                            <i class="ti ti-stack" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Évolution") }}</span>
-                        </a>
-                        <a href="/poses" id="linkPosesMode" class="app-mode-link {{ 'active' if mode == 'poses' }}"
-                           aria-label="{{ _('Mes poses') }}"
-                           {% if mode == 'poses' %}aria-current="page"{% endif %}>
-                            <i class="ti ti-map-pin" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes poses") }}</span>
-                        </a>
-                    </nav>
-                </div>
-                <div class="app-header-actions">
-                    <a class="app-header-link" href="/guide" target="_blank" rel="noopener" aria-label="{{ _('Guide') }}">
-                        <i class="ti ti-help" aria-hidden="true"></i><span class="app-header-link-label" aria-hidden="true">{{ _("Guide") }}</span>
-                    </a>
-                    <div class="app-header-theme">
-                        <!-- L'icône suit la préférence (system/light/dark) :
-                             synchronisée par theme.js via `theme:applied`. -->
-                        <i id="appHeaderThemeIcon" class="ti ti-device-desktop-analytics" aria-hidden="true"></i>
-                        <select id="appHeaderTheme" class="form-select form-select-sm" aria-label="{{ _('Apparence') }}">
-                            <option value="system">{{ _("Système") }}</option>
-                            <option value="light">{{ _("Clair") }}</option>
-                            <option value="dark">{{ _("Sombre") }}</option>
-                        </select>
-                    </div>
-                    {% if can_quit %}
-                    <!-- Sortie de l'application, visible quel que soit l'onglet :
-                         le bouton du bas de l'onglet Préférences restait
-                         introuvable sans le chercher. -->
-                    <button type="button" id="buttonQuitAppHeader" class="app-header-link app-header-quit"
-                            aria-label="{{ _('Quitter MyGCFlow') }}" title="{{ _('Quitter MyGCFlow') }}">
-                        <i class="ti ti-power" aria-hidden="true"></i><span class="app-header-link-label" aria-hidden="true">{{ _("Quitter") }}</span>
-                    </button>
-                    {% endif %}
-                </div>
-            </header>
+            {% include '_app_header.html' %}
 
             <div id="mapTabsContainer">
                 <div id="mapWithFrames">
