@@ -26,7 +26,24 @@ LICENSE/NOTICE, notices tierces), en-tête extrait dans
 route, spec E2E `stats-page.spec.mjs` (5 tests). Écarts au plan : le
 `<body>` porte `data-page="stats"` et non `data-mode` (les prédicats
 d'`app_mode.mjs` restent réservés aux pages carte) ; l'alignement par
-défaut est `elapsed` (celui de l'axe par défaut, l'année). Prochain : lot 1.
+défaut est `elapsed` (celui de l'axe par défaut, l'année).
+
+**Lot 1 fait** le 2026-11-08 : `GET /api/stats/finds` (`stats_finds.py`,
+colonnes + dictionnaires, ETag), `dashboards.json` (`dashboards_store.py`,
+`GET/PUT/DELETE /api/dashboards`), modules `chart_sources` / `chart_periods`
+/ `chart_query` / `chart_labels` / `chart_echarts` / `dashboard_model`,
+page complète (barre, période globale, grille S/M/L/XL, galerie de 15
+questions + « Graphique personnalisé », éditeur en phrase avec aperçu,
+dupliquer / déplacer / supprimer / exporter PNG / renommer). Tests :
+unitaires (chart_spec, chart_query, chart_echarts, dashboard_model), Python
+(test_statistics_page.py), E2E (stats-page.spec.mjs, 15 tests). Écarts :
+pas de dimension « heure » (heure de trouvaille factice à l'import GPX) ;
+plafond de séries 8 au lieu de 12 (taille de la palette validée) ; route
+`DELETE /api/dashboards` en plus (réinitialisation, tests) ; le moteur sait
+déjà superposer plusieurs périodes et découper par 2ᵉ dimension (sans
+alignement ni interface : lot 2 / lot 3) ; couleurs des types = valeurs par
+défaut de la carte, pas celles du thème actif ; `generate_icons_subset.py`
+lit aussi les `.mjs`. Prochain : lot 2 (comparer).
 
 Décisions prises avec l'utilisateur :
 
@@ -136,7 +153,8 @@ propriétés de la cache, `actor` (joueur, pour Mes poses).
 - **Temps** : `year`, `quarter`, `month` (axe continu), `week`, `day` ;
   **cycliques** (indépendantes de l'année, faites pour comparer) :
   `month_of_year`, `week_of_year`, `day_of_year` (366 cases, 29 février
-  compris), `weekday` (lundi → dimanche ISO), `hour` (`time_find`, si présent).
+  compris), `weekday` (lundi → dimanche ISO). Pas d'heure : `time_find` des
+  géocaches est factice (19 h / 20 h UTC posés à l'import).
 - **Catégories** : `cache_type`, `container`, `difficulty`, `terrain`, `dt`
   (paire D/T), `country`, `state`, `owner`, `attribute` (multi-valuée : une
   trouvaille compte dans chaque attribut porté), `age` (tranches de
@@ -174,7 +192,8 @@ Une période sans `label` reçoit un libellé calculé (« 2025 », « mars 2024
   La période en cours est marquée visuellement (barres hachurées, courbe en
   pointillés après aujourd'hui).
 
-Plafond : **12 séries** par graphique (périodes × valeurs de `splitBy`) ;
+Plafond : **8 séries** par graphique (taille de la palette catégorielle
+validée pour les daltoniens ; 12 dans la première version du plan) (périodes × valeurs de `splitBy`) ;
 au-delà, message clair et proposition de passer en `side` ou de réduire `top`.
 
 ### 2.6 Vue (`view`)

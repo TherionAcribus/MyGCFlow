@@ -2,6 +2,41 @@
    L'en-tête (#appHeader) garde ses styles de ui_improvements.css ; la page
    occupe le reste de la hauteur et défile seule. */
 
+/* ----- Couleurs des graphiques (lues par stats_page.js › readTokens) -----
+   Palette catégorielle à 8 teintes, dans un ordre fixe : l'ordre est ce qui
+   garde les séries voisines distinctes pour les daltoniens. Clair et sombre
+   sont deux réglages des mêmes teintes, chacun vérifié sur le fond de l'app
+   (#ffffff / #1b2635) : séparation daltonisme, écart en vision normale,
+   contraste (en clair, l'aqua, le jaune et le rose sont sous 3:1 — les
+   infobulles et les valeurs affichables compensent). Jamais plus de huit
+   séries : au-delà, « Autres » (MAX_SERIES, chart_spec.mjs). */
+:root {
+    --chart-series-1: #2a78d6;
+    --chart-series-2: #eb6834;
+    --chart-series-3: #1baf7a;
+    --chart-series-4: #eda100;
+    --chart-series-5: #e87ba4;
+    --chart-series-6: #008300;
+    --chart-series-7: #6250d6;
+    --chart-series-8: #e34948;
+    --chart-others: #a9b1bb;
+    --chart-unknown: #cfd5dc;
+    --chart-grid: #e8ecf1;
+}
+[data-bs-theme="dark"] {
+    --chart-series-1: #3987e5;
+    --chart-series-2: #d95926;
+    --chart-series-3: #199e70;
+    --chart-series-4: #c98500;
+    --chart-series-5: #d55181;
+    --chart-series-6: #008300;
+    --chart-series-7: #9085e9;
+    --chart-series-8: #e66767;
+    --chart-others: #5f6b7a;
+    --chart-unknown: #445162;
+    --chart-grid: #2a3747;
+}
+
 #statsMain {
     display: flex;
     flex-direction: column;
@@ -10,10 +45,21 @@
 
 #statsPage {
     flex: 1 1 auto;
-    padding: 24px 16px;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px 16px 32px;
 }
 
-/* ----- État vide ----- */
+/* ----- Chargement, états vides ----- */
+.stats-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12vh;
+    color: var(--color-text-muted);
+}
 .stats-empty-state {
     max-width: 560px;
     margin: 8vh auto 0;
@@ -34,10 +80,239 @@
     color: var(--color-heading);
 }
 .stats-empty-text {
-    margin-bottom: 8px;
+    margin-bottom: 16px;
     color: var(--color-text);
 }
-.stats-empty-hint {
-    margin-bottom: 0;
+
+/* ----- Barre du tableau de bord ----- */
+.stats-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.stats-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    /* Repère de l'indicateur « Enregistré » posé hors flux. */
+    position: relative;
+}
+.stats-dashboard-name {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--color-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.stats-toolbar-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.stats-toolbar-label {
     font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+.stats-toolbar-controls .form-select {
+    width: auto;
+    min-width: 12rem;
+}
+.stats-data-note {
+    margin: 6px 0 16px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* ----- Grille de cartes : 12 colonnes, taille S/M/L/XL = 4/6/8/12 ----- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 16px;
+}
+.stats-card {
+    grid-column: span var(--stats-cols, 6);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 14px 16px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+}
+.stats-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.stats-card-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.stats-card-period {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--color-accent-on-weak);
+    background: var(--color-accent-weak);
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.stats-card-menu {
+    flex: 0 0 auto;
+}
+.stats-card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 8px;
+}
+.stats-chart {
+    width: 100%;
+    height: 300px;
+}
+.stats-card-note {
+    margin: 6px 0 0;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+/* Chiffre clé : une seule valeur forte par carte, dans la police de l'app. */
+.stats-number {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px 28px;
+    min-height: 120px;
+    height: 100%;
+}
+.stats-number-block {
+    text-align: center;
+}
+.stats-number-value {
+    font-size: 2.6rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+.stats-number-caption {
+    margin-top: 4px;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.stats-grid-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    border: 1px dashed var(--color-border);
+    border-radius: 12px;
+}
+
+/* ----- Galerie « Ajouter un graphique » ----- */
+.stats-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 10px;
+}
+.stats-gallery-card {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    text-align: left;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    cursor: pointer;
+}
+.stats-gallery-card:hover,
+.stats-gallery-card:focus-visible {
+    border-color: var(--color-accent-text);
+    background: var(--color-accent-weak);
+}
+.stats-gallery-icon {
+    flex: 0 0 auto;
+    line-height: 1;
+    font-size: 1.4rem;
+    color: var(--color-accent-text);
+}
+.stats-gallery-text {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.stats-gallery-text strong {
+    font-size: 0.9rem;
+}
+.stats-gallery-text span {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+/* ----- Éditeur : la phrase à compléter ----- */
+.stats-phrase {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+    margin-bottom: 20px;
+    padding: 14px;
+    background: var(--color-accent-weak);
+    border-radius: 10px;
+}
+.stats-phrase-word {
+    font-weight: 600;
+    color: var(--color-accent-on-weak);
+}
+/* Le regroupement suit la mesure sur la même ligne logique : il prend la
+   colonne des menus, sous elle. */
+.stats-phrase #statsEdGroupBy {
+    grid-column: 2;
+}
+.stats-ed-options summary {
+    margin-bottom: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.stats-ed-preview-frame {
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+}
+.stats-ed-preview-frame .stats-chart {
+    height: 340px;
+}
+
+/* ----- Fenêtres plus étroites ----- */
+@media (max-width: 1199.98px) {
+    .stats-card.stats-size-S { grid-column: span 6; }
+    .stats-card.stats-size-M,
+    .stats-card.stats-size-L { grid-column: span 12; }
+}
+@media (max-width: 767.98px) {
+    .stats-card { grid-column: span 12 !important; }
+    .stats-chart { height: 260px; }
+    .stats-toolbar-controls .form-select { min-width: 0; flex: 1 1 auto; }
 }

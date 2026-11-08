@@ -1,0 +1,420 @@
+// Moteur de la page Statistiques : description d'un graphique + table
+// d'événements → jeu de séries. Module pur (ni DOM ni ECharts), testé par
+// tests/js/chart_query.test.mjs.
+//
+//   runChartQuery(spec, table, { periods, filters, today, labelOf })
+//     spec     description normalisée (chart_spec.mjs)
+//     table    table d'événements (chart_sources.mjs)
+//     periods  périodes effectives (héritage du tableau de bord résolu) ;
+//              non passées → celles du graphique ; null → toutes les données
+//     filters  filtres effectifs (même règle ; null → aucun)
+//     today    numéro du jour courant (chart_periods.mjs › todayDay)
+//     labelOf  (dim, key) → libellé, pour le tri « par libellé »
+//
+// Résultat :
+//   { dim, kind, keys, series: [{ id, periodIndex, split, values }],
+//     periods, truncated, meta: { rows, undated, noAttribute } }
+// `values[i]` correspond à `keys[i]` ; null = pas de valeur (moyenne sans
+// donnée, jour futur, hors de la période sur un axe de temps).
+//
+// Lot 1 : les périodes se superposent telles quelles — même axe pour les
+// catégories et les dimensions cycliques, vraie date sur un axe de temps.
+// Alignement en jours écoulés, « à date », normalisation et écart : lot 2.
+
+import { CONTAINER_ORDER, OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
+import { MAX_SERIES, dimensionKind } from './chart_spec.mjs';
+import { expandPeriods } from './chart_periods.mjs';
+import { DICT_FIELDS, SOURCE_KIND_VALUES, weekStart } from './chart_sources.mjs';
+
+export { OTHERS_KEY, UNKNOWN_KEY };
+
+// Catégories plafonnées par `view.top` (les autres ont un domaine fixe).
+const TOP_DIMENSIONS = new Set(['cache_type', 'container', 'country', 'state', 'owner', 'attribute', 'dt']);
+const DT_VALUES = Array.from({ length: 9 }, (_, i) => String(1 + i / 2));
+// Garde-fou : un axe « jour » sur 25 ans compte ~9 000 cases.
+export const MAX_AXIS_KEYS = 20000;
+
+// ---------------------------------------------------------------------------
+// Clés
+// ---------------------------------------------------------------------------
+
+const quarterOf = (m) => Math.floor((m - 1) / 3) + 1;
+
+// Clé(s) d'une ligne pour une dimension : nombre (temps, cycliques, âge,
+// année de publication), chaîne (catégories), tableau (attributs, multi-
+// valués), UNKNOWN_KEY si la valeur manque.
+export function keyAccessor(dim, table) {
+    const dict = (field) => {
+        const values = table.dicts[field] || [];
+        const column = table[field];
+        return (r) => (column[r] >= 0 ? values[column[r]] : UNKNOWN_KEY);
+    };
+    const halfStep = (column) => (r) => (Number.isNaN(column[r]) ? UNKNOWN_KEY : String(column[r]));
+    switch (dim) {
+        case 'none': return () => 'total';
+        case 'year': return (r) => table.y[r];
+        case 'quarter': return (r) => table.y[r] * 10 + quarterOf(table.m[r]);
+        case 'month': return (r) => table.y[r] * 100 + table.m[r];
+        case 'week': return (r) => weekStart(table.day[r]);
+        case 'day': return (r) => table.day[r];
+        case 'month_of_year': return (r) => table.m[r];
+        case 'week_of_year': return (r) => table.week[r];
+        case 'day_of_year': return (r) => table.doy[r];
+        case 'weekday': return (r) => table.weekday[r];
+        case 'difficulty': return halfStep(table.difficulty);
+        case 'terrain': return halfStep(table.terrain);
+        case 'dt': return (r) => (Number.isNaN(table.difficulty[r]) || Number.isNaN(table.terrain[r])
+            ? UNKNOWN_KEY : `${table.difficulty[r]}|${table.terrain[r]}`);
+        case 'age': return (r) => (table.age[r] < 0 ? UNKNOWN_KEY : table.age[r]);
+        case 'published_year': return (r) => (table.publishedYear[r] ? table.publishedYear[r] : UNKNOWN_KEY);
+        case 'attribute': {
+            const attrs = table.dicts.attribute || [];
+            return (r) => table.attributes[r].map((i) => attrs[i]?.key).filter((k) => k !== undefined);
+        }
+        default:
+            if (DICT_FIELDS.includes(dim)) return dict(dim);
+            return () => UNKNOWN_KEY;
+    }
+}
+
+// Valeur d'une ligne pour une mesure « distinct » (null = ne compte pas).
+function distinctAccessor(field, table) {
+    switch (field) {
+        case 'caches': return (r) => table.code[r] ?? `#${r}`;
+        case 'days': return (r) => table.day[r];
+        default: {
+            const column = table[field];
+            return column ? (r) => (column[r] >= 0 ? column[r] : null) : () => null;
+        }
+    }
+}
+
+// Valeur d'une ligne pour une moyenne (NaN = ignorée).
+function meanAccessor(field, table) {
+    if (field === 'age') return (r) => table.ageDays[r];
+    const column = table[field];
+    return column ? (r) => column[r] : () => NaN;
+}
+
+// ---------------------------------------------------------------------------
+// Filtres
+// ---------------------------------------------------------------------------
+
+// Masque des lignes retenues. Sélection vide = neutre ; plusieurs valeurs
+// d'un même champ = « l'une ou l'autre », sauf les attributs : tous requis
+// (même règle que la carte, filter_model.mjs › matchesAttributes).
+export function filterMask(table, filters) {
+    const mask = new Uint8Array(table.n).fill(1);
+    if (!filters) return mask;
+    const tests = [];
+    for (const [field, values] of Object.entries(filters)) {
+        if (!Array.isArray(values) || !values.length) continue;
+        if (field === 'source_kind') {
+            const kinds = new Set(values.map((v) => SOURCE_KIND_VALUES.indexOf(v)).filter((i) => i >= 0));
+            tests.push((r) => kinds.has(table.kind[r]));
+        } else if (DICT_FIELDS.includes(field)) {
+            const dict = table.dicts[field] || [];
+            const wanted = new Set(values.map((v) => dict.indexOf(v)).filter((i) => i >= 0));
+            tests.push((r) => wanted.has(table[field][r]));
+        } else if (field === 'difficulty' || field === 'terrain') {
+            const wanted = new Set(values.map(Number));
+            tests.push((r) => wanted.has(table[field][r]));
+        } else if (field === 'published_year') {
+            const wanted = new Set(values.map(Number));
+            tests.push((r) => wanted.has(table.publishedYear[r]));
+        } else if (field === 'attribute') {
+            const attrs = table.dicts.attribute || [];
+            const wanted = values.map((v) => attrs.findIndex((a) => a.key === v));
+            tests.push((r) => wanted.every((i) => i >= 0 && table.attributes[r].includes(i)));
+        }
+    }
+    if (!tests.length) return mask;
+    for (let r = 0; r < table.n; r++) {
+        if (!tests.every((test) => test(r))) mask[r] = 0;
+    }
+    return mask;
+}
+
+// ---------------------------------------------------------------------------
+// Axe
+// ---------------------------------------------------------------------------
+
+function timeKeys(dim, from, to) {
+    const keys = [];
+    const start = new Date(from * 86400000);
+    const end = new Date(to * 86400000);
+    const [y0, m0] = [start.getUTCFullYear(), start.getUTCMonth() + 1];
+    const [y1, m1] = [end.getUTCFullYear(), end.getUTCMonth() + 1];
+    if (dim === 'year') {
+        for (let y = y0; y <= y1; y++) keys.push(y);
+    } else if (dim === 'quarter') {
+        for (let i = y0 * 4 + quarterOf(m0) - 1; i <= y1 * 4 + quarterOf(m1) - 1; i++) {
+            keys.push(Math.floor(i / 4) * 10 + (i % 4) + 1);
+        }
+    } else if (dim === 'month') {
+        for (let i = y0 * 12 + m0 - 1; i <= y1 * 12 + m1 - 1; i++) keys.push(Math.floor(i / 12) * 100 + (i % 12) + 1);
+    } else if (dim === 'week') {
+        for (let day = weekStart(from); day <= to && keys.length < MAX_AXIS_KEYS; day += 7) keys.push(day);
+    } else {
+        for (let day = from; day <= to && keys.length < MAX_AXIS_KEYS; day++) keys.push(day);
+    }
+    return keys;
+}
+
+// Premier et dernier jour couverts par une clé de temps.
+export function timeKeyBounds(dim, key) {
+    const utc = (y, m, d) => Date.UTC(y, m - 1, d) / 86400000;
+    switch (dim) {
+        case 'year': return [utc(key, 1, 1), utc(key, 12, 31)];
+        case 'quarter': {
+            const y = Math.floor(key / 10);
+            const q = key % 10;
+            return [utc(y, q * 3 - 2, 1), utc(y, q * 3 + 1, 1) - 1];
+        }
+        case 'month': {
+            const y = Math.floor(key / 100);
+            const m = key % 100;
+            return [utc(y, m, 1), utc(y, m + 1, 1) - 1];
+        }
+        case 'week': return [key, key + 6];
+        default: return [key, key];
+    }
+}
+
+const CYCLIC_DOMAINS = {
+    month_of_year: 12,
+    week_of_year: 53,
+    day_of_year: 366,
+    weekday: 7,
+};
+
+function rangeKeys(count) {
+    return Array.from({ length: count }, (_, i) => i + 1);
+}
+
+function containerRank(key) {
+    const i = CONTAINER_ORDER.findIndex((v) => v.toLowerCase() === String(key).toLowerCase());
+    return i < 0 ? CONTAINER_ORDER.length : i;
+}
+
+// Rejette « Autres » puis « Inconnu » en fin d'axe.
+function tailRank(key) {
+    if (key === UNKNOWN_KEY) return 2;
+    if (key === OTHERS_KEY) return 1;
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// Calcul
+// ---------------------------------------------------------------------------
+
+function newCell(op) {
+    if (op === 'distinct') return new Set();
+    if (op === 'mean') return { sum: 0, n: 0 };
+    if (op === 'max_per_day') return new Map();
+    return 0;
+}
+
+// Liste des clés d'une ligne (une dimension multi-valuée en donne plusieurs).
+const asList = (key) => (Array.isArray(key) ? key : [key]);
+
+export function runChartQuery(spec, table, options = {}) {
+    const { today, labelOf = null } = options;
+    // Périodes et filtres : ceux passés par l'appelant (héritage du tableau
+    // de bord résolu, dashboard_model.mjs), sinon ceux du graphique.
+    const periods = options.periods !== undefined ? options.periods : spec.periods;
+    const filters = options.filters !== undefined ? options.filters : spec.filters;
+    const dim = spec.groupBy;
+    const kind = dimensionKind(dim);
+    const op = spec.measure.op;
+    const { periods: entries, truncated } = expandPeriods(periods || [{ kind: 'all' }], {
+        extent: table.extent, today,
+    });
+
+    const mask = filterMask(table, filters);
+    const groupKey = keyAccessor(dim, table);
+    const splitKey = spec.splitBy ? keyAccessor(spec.splitBy, table) : null;
+
+    // Lignes de chaque période (une ligne peut appartenir à plusieurs).
+    const inPeriod = entries.map(() => []);
+    let rows = 0;
+    let noAttribute = 0;
+    for (let r = 0; r < table.n; r++) {
+        if (!mask[r]) continue;
+        let hit = false;
+        for (const entry of entries) {
+            if (table.day[r] >= entry.from && table.day[r] <= entry.to) {
+                inPeriod[entry.index].push(r);
+                hit = true;
+            }
+        }
+        if (!hit) continue;
+        rows++;
+        if (dim === 'attribute' && groupKey(r).length === 0) noAttribute++;
+    }
+
+    // Plafonds de cardinalité : top N de l'axe, et des valeurs de la 2ᵉ
+    // dimension pour tenir dans MAX_SERIES séries. Rang = nombre de lignes,
+    // toutes périodes confondues.
+    const rank = (accessor) => {
+        const counts = new Map();
+        for (const list of inPeriod) {
+            for (const r of list) {
+                for (const key of asList(accessor(r))) counts.set(key, (counts.get(key) || 0) + 1);
+            }
+        }
+        return counts;
+    };
+    const capped = (counts, limit) => {
+        const ordered = [...counts.keys()].sort((a, b) => tailRank(a) - tailRank(b)
+            || counts.get(b) - counts.get(a) || String(a).localeCompare(String(b)));
+        const named = ordered.filter((k) => k !== UNKNOWN_KEY);
+        if (named.length <= limit) return { keys: ordered, remap: null };
+        const kept = new Set(named.slice(0, limit));
+        const keys = [...kept, OTHERS_KEY];
+        if (counts.has(UNKNOWN_KEY)) keys.push(UNKNOWN_KEY);
+        return { keys, remap: (key) => (key === UNKNOWN_KEY || kept.has(key) ? key : OTHERS_KEY) };
+    };
+
+    let axisKeys;
+    let remapGroup = null;
+    if (kind === 'none') {
+        axisKeys = ['total'];
+    } else if (kind === 'time') {
+        const from = Math.min(...entries.map((e) => e.from));
+        const to = Math.max(...entries.map((e) => e.to));
+        axisKeys = entries.length ? timeKeys(dim, from, to) : [];
+    } else if (kind === 'cyclic') {
+        axisKeys = rangeKeys(CYCLIC_DOMAINS[dim]);
+    } else {
+        const counts = rank(groupKey);
+        if (dim === 'difficulty' || dim === 'terrain') {
+            axisKeys = [...DT_VALUES];
+        } else if (dim === 'age') {
+            axisKeys = Array.from({ length: 10 }, (_, i) => i);
+        } else if (dim === 'published_year') {
+            const years = [...counts.keys()].filter((k) => k !== UNKNOWN_KEY);
+            axisKeys = years.length ? rangeKeys(Math.max(...years) - Math.min(...years) + 1)
+                .map((i) => Math.min(...years) + i - 1) : [];
+        } else {
+            // Un anneau ou un radar colore chaque part : pas plus de parts que
+            // de teintes (MAX_SERIES), « Autres » compris.
+            const parts = spec.view.chart === 'donut' || spec.view.chart === 'radar';
+            const top = !TOP_DIMENSIONS.has(dim) ? Infinity
+                : parts ? Math.min(spec.view.top, MAX_SERIES - 1) : spec.view.top;
+            const result = capped(counts, top);
+            axisKeys = result.keys.filter((k) => k !== UNKNOWN_KEY);
+            remapGroup = result.remap;
+            if (dim === 'container') {
+                axisKeys.sort((a, b) => tailRank(a) - tailRank(b) || containerRank(a) - containerRank(b)
+                    || String(a).localeCompare(String(b)));
+            }
+        }
+        if (counts.has(UNKNOWN_KEY)) axisKeys.push(UNKNOWN_KEY);
+    }
+
+    // Séries : période × valeur de la 2ᵉ dimension.
+    let splitValues = [null];
+    let remapSplit = null;
+    if (splitKey) {
+        const perPeriod = Math.max(1, Math.floor(MAX_SERIES / Math.max(1, entries.length)));
+        const result = capped(rank(splitKey), perPeriod - 1);
+        splitValues = result.keys;
+        remapSplit = result.remap;
+    }
+
+    const index = new Map(axisKeys.map((key, i) => [key, i]));
+    const series = [];
+    const distinctOf = op === 'distinct' ? distinctAccessor(spec.measure.field, table) : null;
+    const meanOf = op === 'mean' ? meanAccessor(spec.measure.field, table) : null;
+
+    for (const entry of entries) {
+        const cells = new Map(splitValues.map((s) => [s, axisKeys.map(() => newCell(op))]));
+        for (const r of inPeriod[entry.index]) {
+            const split = splitKey ? asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)) : [null];
+            for (let key of asList(groupKey(r))) {
+                if (remapGroup) key = remapGroup(key);
+                const i = index.get(key);
+                if (i === undefined) continue;
+                for (const s of split) {
+                    const row = cells.get(s);
+                    if (!row) continue;
+                    if (op === 'distinct') {
+                        const value = distinctOf(r);
+                        if (value !== null) row[i].add(value);
+                    } else if (op === 'mean') {
+                        const value = meanOf(r);
+                        if (!Number.isNaN(value)) { row[i].sum += value; row[i].n++; }
+                    } else if (op === 'max_per_day') {
+                        row[i].set(table.day[r], (row[i].get(table.day[r]) || 0) + 1);
+                    } else {
+                        row[i] += 1;
+                    }
+                }
+            }
+        }
+
+        for (const s of splitValues) {
+            const row = cells.get(s);
+            let values = row.map((cell) => {
+                if (op === 'distinct') return cell.size;
+                if (op === 'mean') return cell.n ? cell.sum / cell.n : null;
+                if (op === 'max_per_day') return cell.size ? Math.max(...cell.values()) : 0;
+                return cell;
+            });
+
+            if (op === 'cumulative') {
+                // Cumul depuis le début de la période, ou depuis toujours
+                // (lignes filtrées antérieures à la période ajoutées au départ).
+                let running = 0;
+                if (spec.measure.from === 'all') {
+                    for (let r = 0; r < table.n; r++) {
+                        if (!mask[r] || table.day[r] >= entry.from) continue;
+                        if (splitKey && !asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)).includes(s)) continue;
+                        running++;
+                    }
+                }
+                values = values.map((v) => (running += v));
+            }
+
+            if (kind === 'time') {
+                // Hors de la période, ou à venir : pas de valeur.
+                values = values.map((v, i) => {
+                    const [lo, hi] = timeKeyBounds(dim, axisKeys[i]);
+                    if (hi < entry.from || lo > entry.to || lo > today) return null;
+                    return v;
+                });
+            }
+
+            series.push({
+                id: s === null ? `p${entry.index}` : `p${entry.index}:${s}`,
+                periodIndex: entry.index,
+                split: s,
+                values,
+            });
+        }
+    }
+
+    // Tri de l'axe (catégories seulement : un axe de temps ou cyclique garde
+    // son ordre).
+    if (kind === 'category' && spec.view.sort !== 'natural' && axisKeys.length > 1) {
+        const total = (i) => series.reduce((sum, s) => sum + (s.values[i] || 0), 0);
+        const label = (key) => String(labelOf ? labelOf(dim, key) : key);
+        const order = axisKeys.map((key, i) => i).sort((a, b) => tailRank(axisKeys[a]) - tailRank(axisKeys[b])
+            || (spec.view.sort === 'value'
+                ? total(b) - total(a)
+                : label(axisKeys[a]).localeCompare(label(axisKeys[b]))));
+        axisKeys = order.map((i) => axisKeys[i]);
+        for (const s of series) s.values = order.map((i) => s.values[i]);
+    }
+
+    return {
+        dim,
+        kind,
+        keys: axisKeys,
+        series,
+        periods: entries,
+        truncated,
+        meta: { rows, undated: table.undated, noAttribute },
+    };
+}

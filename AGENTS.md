@@ -282,7 +282,13 @@ Autres repères :
   `export *` d'index.js écarte EN SILENCE un nom exporté par deux modules.
 - Page Statistiques (`/stats`, docs/page-statistiques.md) : sans carte ni
   `index.js` — signal `window.mygcflowStatsReady` (pas `mygcflowReady`),
-  relevé `getStatsPageSnapshot()`, pas de modale de première utilisation.
+  relevé `getStatsPageSnapshot()` (`cards[].keys/series`), pas de modale de
+  première utilisation. Les tableaux de bord (`dashboards.json`, préférence
+  globale hors `settings.json`) sont partagés par le run : un spec qui en
+  pose appelle `DELETE /api/dashboards` en entrée et en sortie (fichier
+  absent = tableau de bord par défaut à la visite suivante). Pour un rendu
+  sur beaucoup de données sans toucher la base, intercepter
+  `GET /api/stats/finds` par `page.route` (format : stats_finds.py).
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

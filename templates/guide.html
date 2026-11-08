@@ -71,6 +71,11 @@
                 <a href="#evolution" class="guide-nav-link">
                     <i class="ti ti-stack"></i>{{ _("Évolution d'une zone") }}
                 </a>
+
+                <div class="guide-nav-section-title">{{ _("Autre page") }}</div>
+                <a href="#statspage" class="guide-nav-link">
+                    <i class="ti ti-chart-bar"></i>{{ _("Statistiques") }}
+                </a>
             </nav>
         </aside>
 
@@ -555,6 +560,34 @@
                 </ol>
             </section>
 
+
+            <!-- ===================== AUTRE PAGE : STATISTIQUES ===================== -->
+            <section id="statspage" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-chart-bar"></i></span>
+                    <h2>{{ _("Autre page : vos statistiques") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Sans carte cette fois : un tableau de bord de graphiques sur vos trouvailles, que vous composez comme vous voulez.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Ouvrez la page Statistiques") }}</h3>
+                        <p>{{ _("Le lien") }} <span class="ui-chip"><i class="ti ti-chart-bar"></i> {{ _("Statistiques") }}</span> {{ _("de l'en-tête l'ouvre. À la première visite, un tableau de bord est déjà rempli : total, jours de cache, pays, meilleure année, progression, types de caches, mois les plus actifs.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Choisissez la période") }}</h3>
+                        <p>{{ _("Le menu") }} <strong>{{ _("Période") }}</strong> {{ _("s'applique à tous les graphiques : toutes vos trouvailles, les 12 derniers mois ou une année. Un graphique peut garder sa propre période — il porte alors une pastille, comme « Ma meilleure année », qui couvre tout votre historique.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Ajoutez et réglez vos graphiques") }}</h3>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter un graphique") }}</span> {{ _("propose des questions toutes faites. Le menu") }} <span class="ui-chip"><i class="ti ti-dots"></i></span> {{ _("de chaque graphique permet de le modifier : une phrase à compléter dit ce qu'il montre — « Afficher le nombre de trouvailles par mois de l'année sur 2025 en barres » — avec un aperçu immédiat.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="ti ti-info-circle"></i>
+                            <div>{{ _("Le même menu duplique, déplace, supprime un graphique ou l'exporte en image. Tout est enregistré automatiquement.") }}</div>
+                        </div>
+                    </li>
+                </ol>
+            </section>
         </main>
     </div>
 

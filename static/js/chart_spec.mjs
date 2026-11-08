@@ -72,7 +72,9 @@ function activeAllowed(source) {
 // Dimensions (axe des graphiques, ou découpage en séries).
 export const TIME_DIMENSIONS = Object.freeze(['year', 'quarter', 'month', 'week', 'day']);
 // Cycliques : indépendantes de l'année — faites pour comparer des périodes.
-export const CYCLIC_DIMENSIONS = Object.freeze(['month_of_year', 'week_of_year', 'day_of_year', 'weekday', 'hour']);
+// Pas d'heure : l'import GPX pose une heure de trouvaille factice (19 h / 20 h
+// UTC, bdd.py), qui ne dit rien de l'heure réelle.
+export const CYCLIC_DIMENSIONS = Object.freeze(['month_of_year', 'week_of_year', 'day_of_year', 'weekday']);
 export const CATEGORY_DIMENSIONS = Object.freeze([
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
     'owner', 'attribute', 'age', 'published_year',
@@ -110,8 +112,10 @@ export const PERIOD_YEAR_RANGE = Object.freeze([1990, 2100]);
 export const ROLLING_COUNT_RANGE = Object.freeze([1, 3650]);
 export const MAX_PERIODS = 12;
 // Plafond de séries d'un graphique (périodes déployées × valeurs de splitBy),
-// appliqué au calcul (chart_query.mjs).
-export const MAX_SERIES = 12;
+// appliqué au calcul (chart_query.mjs) : huit, la taille de la palette
+// catégorielle validée pour les daltoniens (stats_page.css) — une 9ᵉ série
+// rejoint « Autres », on ne génère jamais de teinte de plus.
+export const MAX_SERIES = 8;
 export const PERIOD_LABEL_MAX = 40;
 
 // Comparaison.
@@ -330,7 +334,7 @@ export function allowedAligns(groupBy) {
 // Le cumul et la moyenne ne s'additionnent pas en parts d'un tout.
 const ADDITIVE_OPS = ['count', 'distinct', 'max_per_day'];
 // Catégories assez peu nombreuses et sans ordre pour un anneau / un radar.
-const PART_CYCLIC = ['weekday', 'month_of_year', 'hour'];
+const PART_CYCLIC = ['weekday', 'month_of_year'];
 
 // Types de graphiques compatibles, dans l'ordre de préférence (le premier
 // sert de repli à la normalisation).

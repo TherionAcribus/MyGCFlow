@@ -15,7 +15,7 @@ Usage : .venv\Scripts\python.exe generate_icons_subset.py   (Windows)
         .venv/bin/python generate_icons_subset.py           (Linux)
 
 À relancer après toute mise à jour de @tabler/icons-webfont ou ajout d'une
-classe `ti-*` dans templates/, static/js/ ou static/css/. Les icônes listées
+classe `ti-*` dans templates/, static/js/ (.js et .mjs) ou static/css/. Les icônes listées
 dans ICON_MAP (ui_bootstrap.js) sont incluses même si aucune n'est utilisée
 aujourd'hui : elles servent au mapping Material → Tabler.
 
@@ -40,6 +40,9 @@ FONT_OUT = VENDOR_DIR / 'fonts' / 'tabler-icons-subset.woff2'
 SCAN_PATTERNS = [
     (ROOT / 'templates', '**/*.html'),
     (ROOT / 'static' / 'js', '**/*.js'),
+    # Modules ES (.mjs) : icônes posées par des modules purs (questions de la
+    # page Statistiques, dashboard_model.mjs).
+    (ROOT / 'static' / 'js', '**/*.mjs'),
     (ROOT / 'static' / 'css', '**/*.css'),
 ]
 VENDOR_PARTS = ('vendor', 'node_modules')

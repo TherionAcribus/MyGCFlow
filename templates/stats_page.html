@@ -31,16 +31,185 @@
             {% include '_app_header.html' %}
 
             <div id="statsPage">
-                <section id="statsEmptyState" class="stats-empty-state">
-                    <i class="ti ti-chart-bar stats-empty-icon" aria-hidden="true"></i>
-                    <h1 class="stats-empty-title">{{ _("Statistiques") }}</h1>
-                    <p class="stats-empty-text">
-                        {{ _("Vos tableaux de bord s'afficheront ici : choisissez vos graphiques, vos périodes et vos filtres, et comparez les années ou les mois entre eux.") }}
-                    </p>
-                    <p class="stats-empty-hint text-muted">{{ _("Page en construction.") }}</p>
+                <!-- Chargement des trouvailles et des tableaux de bord. -->
+                <section id="statsLoading" class="stats-status" role="status">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span>{{ _("Chargement de vos trouvailles…") }}</span>
                 </section>
+
+                <section id="statsLoadError" class="stats-empty-state" hidden>
+                    <i class="ti ti-alert-triangle stats-empty-icon" aria-hidden="true"></i>
+                    <h1 class="stats-empty-title">{{ _("Statistiques indisponibles") }}</h1>
+                    <p class="stats-empty-text">{{ _("Vos trouvailles n'ont pas pu être chargées.") }}</p>
+                    <button type="button" id="btnStatsRetry" class="btn btn-primary">
+                        <i class="ti ti-refresh" aria-hidden="true"></i> {{ _("Réessayer") }}
+                    </button>
+                </section>
+
+                <!-- Base vide : rien à compter. -->
+                <section id="statsEmptyState" class="stats-empty-state" hidden>
+                    <i class="ti ti-chart-bar stats-empty-icon" aria-hidden="true"></i>
+                    <h1 class="stats-empty-title">{{ _("Aucune trouvaille pour l'instant") }}</h1>
+                    <p class="stats-empty-text">
+                        {{ _("Importez votre fichier « My Finds » sur la page Mes Géocaches : vos graphiques apparaîtront ici.") }}
+                    </p>
+                    <a href="/" class="btn btn-primary">
+                        <i class="ti ti-upload" aria-hidden="true"></i> {{ _("Importer mes trouvailles") }}
+                    </a>
+                </section>
+
+                <div id="statsDashboard" hidden>
+                    <div class="stats-toolbar">
+                        <div class="stats-toolbar-title">
+                            <h1 id="statsDashboardName" class="stats-dashboard-name"></h1>
+                            <button type="button" id="btnStatsRename" class="btn btn-ghost-secondary btn-icon btn-sm"
+                                    aria-label="{{ _("Renommer le tableau de bord") }}" title="{{ _("Renommer le tableau de bord") }}">
+                                <i class="ti ti-pencil" aria-hidden="true"></i>
+                            </button>
+                            <span id="statsSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
+                        </div>
+                        <div class="stats-toolbar-controls">
+                            <label for="statsGlobalPeriod" class="stats-toolbar-label">{{ _("Période") }}</label>
+                            <select id="statsGlobalPeriod" class="form-select form-select-sm"></select>
+                            <button type="button" id="btnStatsAddChart" class="btn btn-primary btn-sm">
+                                <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Ajouter un graphique") }}
+                            </button>
+                        </div>
+                    </div>
+                    <p id="statsDataNote" class="stats-data-note"></p>
+
+                    <div id="statsGrid" class="stats-grid"></div>
+
+                    <section id="statsGridEmpty" class="stats-grid-empty" hidden>
+                        <p>{{ _("Ce tableau de bord est vide.") }}</p>
+                        <button type="button" id="btnStatsAddChartEmpty" class="btn btn-primary btn-sm">
+                            <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Ajouter un graphique") }}
+                        </button>
+                    </section>
+                </div>
             </div>
         </main>
+
+        <!-- Galerie « Ajouter un graphique » : questions toutes faites
+             (dashboard_model.mjs › QUESTIONS), remplie par stats_page.js. -->
+        <div class="modal fade" id="statsGalleryModal" tabindex="-1" aria-labelledby="statsGalleryTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsGalleryTitle">{{ _("Ajouter un graphique") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">{{ _("Choisissez une question : le graphique se règle ensuite comme vous voulez.") }}</p>
+                        <div id="statsGalleryList" class="stats-gallery"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Éditeur d'un graphique : une phrase à compléter, aperçu en direct. -->
+        <div class="modal fade" id="statsEditorModal" tabindex="-1" aria-labelledby="statsEditorTitle" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsEditorTitle">{{ _("Modifier le graphique") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-4">
+                            <div class="col-lg-5">
+                                <div class="stats-phrase" role="group" aria-label="{{ _("Ce que montre le graphique") }}">
+                                    <label for="statsEdMeasure" class="stats-phrase-word">{{ _("Afficher") }}</label>
+                                    <select id="statsEdMeasure" class="form-select"></select>
+                                    <label for="statsEdGroupBy" class="visually-hidden">{{ _("Regroupement") }}</label>
+                                    <select id="statsEdGroupBy" class="form-select"></select>
+                                    <label for="statsEdPeriod" class="stats-phrase-word">{{ _("sur") }}</label>
+                                    <select id="statsEdPeriod" class="form-select"></select>
+                                    <label for="statsEdChart" class="stats-phrase-word">{{ _("en") }}</label>
+                                    <select id="statsEdChart" class="form-select"></select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="statsEdTitle" class="form-label">{{ _("Titre") }}</label>
+                                    <input type="text" id="statsEdTitle" class="form-control" maxlength="80">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="statsEdSize" class="form-label">{{ _("Taille") }}</label>
+                                    <select id="statsEdSize" class="form-select"></select>
+                                </div>
+
+                                <details id="statsEdOptions" class="stats-ed-options">
+                                    <summary>{{ _("Options d'affichage") }}</summary>
+                                    <div class="mb-3" id="statsEdOrientationRow">
+                                        <label for="statsEdOrientation" class="form-label">{{ _("Sens des barres") }}</label>
+                                        <select id="statsEdOrientation" class="form-select">
+                                            <option value="vertical">{{ _("Verticales") }}</option>
+                                            <option value="horizontal">{{ _("Horizontales") }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3" id="statsEdTopRow">
+                                        <label for="statsEdTop" class="form-label">{{ _("Nombre de valeurs affichées") }}</label>
+                                        <input type="number" id="statsEdTop" class="form-control" min="3" max="50" step="1">
+                                        <div class="form-hint">{{ _("Les suivantes sont regroupées dans « Autres ».") }}</div>
+                                    </div>
+                                    <div class="mb-3" id="statsEdSortRow">
+                                        <label for="statsEdSort" class="form-label">{{ _("Ordre") }}</label>
+                                        <select id="statsEdSort" class="form-select">
+                                            <option value="natural">{{ _("Naturel") }}</option>
+                                            <option value="value">{{ _("Du plus grand au plus petit") }}</option>
+                                            <option value="label">{{ _("Alphabétique") }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input type="checkbox" id="statsEdLabels" class="form-check-input">
+                                        <label for="statsEdLabels" class="form-check-label">{{ _("Afficher les valeurs") }}</label>
+                                    </div>
+                                    <div class="form-check mb-2" id="statsEdSmoothRow">
+                                        <input type="checkbox" id="statsEdSmooth" class="form-check-input">
+                                        <label for="statsEdSmooth" class="form-check-label">{{ _("Courbe lissée") }}</label>
+                                    </div>
+                                    <div class="form-check mb-2" id="statsEdLogRow">
+                                        <input type="checkbox" id="statsEdLog" class="form-check-input">
+                                        <label for="statsEdLog" class="form-check-label">{{ _("Échelle logarithmique") }}</label>
+                                    </div>
+                                </details>
+                            </div>
+                            <div class="col-lg-7">
+                                <div class="stats-ed-preview-frame">
+                                    <h3 id="statsEdPreviewTitle" class="stats-card-title"></h3>
+                                    <div id="statsEdPreview" class="stats-chart"></div>
+                                    <div id="statsEdPreviewNumber" class="stats-number" hidden></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="button" id="btnStatsEdSave" class="btn btn-primary">{{ _("Enregistrer") }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Renommer le tableau de bord. -->
+        <div class="modal fade" id="statsRenameModal" tabindex="-1" aria-labelledby="statsRenameTitle" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <form class="modal-content" id="statsRenameForm">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsRenameTitle">{{ _("Renommer le tableau de bord") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="statsRenameInput" class="form-label">{{ _("Nom") }}</label>
+                        <input type="text" id="statsRenameInput" class="form-control" maxlength="60" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="submit" class="btn btn-primary">{{ _("Renommer") }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- Tabler JS (inclut Bootstrap 5) : modales de confirmation. -->
         <script src="../static/vendor/tabler/tabler.min.js"></script>
