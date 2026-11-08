@@ -30,14 +30,14 @@
 //             en proportion de la seconde. Côte à côte : affaire du rendu.
 
 import { CONTAINER_ORDER, OTHERS_KEY, UNKNOWN_KEY, dayNumber, ymdOfDay } from './stats_model.mjs';
-import { MAX_SERIES, dimensionKind } from './chart_spec.mjs';
+import { MAX_SERIES, chartSources, dimensionKind } from './chart_spec.mjs';
 import { daysInMonth, expandPeriods, toDateCut } from './chart_periods.mjs';
 import { DICT_FIELDS, SOURCE_KIND_VALUES, weekStart } from './chart_sources.mjs';
 
 export { OTHERS_KEY, UNKNOWN_KEY };
 
 // Catégories plafonnées par `view.top` (les autres ont un domaine fixe).
-const TOP_DIMENSIONS = new Set(['cache_type', 'container', 'country', 'state', 'owner', 'attribute', 'dt']);
+const TOP_DIMENSIONS = new Set(['cache_type', 'container', 'country', 'state', 'owner', 'attribute', 'dt', 'cache', 'finder', 'county']);
 const DT_VALUES = Array.from({ length: 9 }, (_, i) => String(1 + i / 2));
 // Garde-fou : un axe « jour » sur 25 ans compte ~9 000 cases.
 export const MAX_AXIS_KEYS = 20000;
@@ -319,8 +319,10 @@ export function runChartQuery(spec, table, options = {}) {
     const dim = spec.groupBy;
     const kind = dimensionKind(dim);
     const op = spec.measure.op;
+    // `extent` : étendue commune quand plusieurs sources partagent l'axe
+    // (« toutes les données » = de la première à la dernière, toutes sources).
     const { periods: entries, truncated } = expandPeriods(periods || [{ kind: 'all' }], {
-        extent: table.extent, today,
+        extent: options.extent !== undefined ? options.extent : table.extent, today,
     });
     const toDate = applyToDate(entries, spec, today);
 
@@ -343,11 +345,14 @@ export function runChartQuery(spec, table, options = {}) {
     const inPeriod = entries.map(() => []);
     let rows = 0;
     let noAttribute = 0;
+    // « Caches actives » : un stock — toutes les lignes comptent, la période
+    // ne fixe que les dates où on le lit.
+    const stock = op === 'active';
     for (let r = 0; r < table.n; r++) {
         if (!mask[r]) continue;
         let hit = false;
         for (const entry of entries) {
-            if (table.day[r] >= entry.from && table.day[r] <= entry.to) {
+            if (stock || (table.day[r] >= entry.from && table.day[r] <= entry.to)) {
                 inPeriod[entry.index].push(r);
                 hit = true;
             }
@@ -457,7 +462,8 @@ export function runChartQuery(spec, table, options = {}) {
     for (const entry of entries) {
         const keyOf = elapsedUnit ? (r) => rowUnitIndex(elapsedUnit, table, r) - entry.startIndex : groupKey;
         const cells = new Map(splitValues.map((s) => [s, axisKeys.map(() => newCell(op))]));
-        for (const r of inPeriod[entry.index]) {
+        // Un stock ne compte pas les événements de la période.
+        for (const r of stock ? [] : inPeriod[entry.index]) {
             const split = splitKey ? asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)) : [null];
             for (let key of asList(keyOf(r))) {
                 if (remapGroup) key = remapGroup(key);
@@ -489,8 +495,36 @@ export function runChartQuery(spec, table, options = {}) {
             partial = bounds.findIndex((b) => Array.isArray(b) && b[0] <= end && end < b[1]);
         }
 
+        const actives = stock ? activeGroups(inPeriod[entry.index], {
+            table, kind, groupKey, splitKey, remapGroup, remapSplit,
+        }) : null;
+
         for (const s of splitValues) {
             const row = cells.get(s);
+            if (stock) {
+                // Caches actives à la fin de chaque case (temps) ou de la
+                // période (total, catégories), sans dépasser aujourd'hui.
+                const values = axisKeys.map((key, i) => {
+                    const b = bounds[i];
+                    if (b === ABSENT) return null;
+                    let end = Math.min(entry.to, today);
+                    if (Array.isArray(b)) {
+                        if (b[1] < entry.from || b[0] > entry.to || b[0] > today) return null;
+                        end = Math.min(b[1], end);
+                    }
+                    const group = actives.get(s)?.get(kind === 'category' ? key : null);
+                    return group ? activeAt(group, end) : 0;
+                });
+                series.push({
+                    id: s === null ? `p${entry.index}` : `p${entry.index}:${s}`,
+                    periodIndex: entry.index,
+                    split: s,
+                    values,
+                    partial,
+                    dates: elapsedUnit ? bounds.map((b) => (Array.isArray(b) ? b[0] : null)) : null,
+                });
+                continue;
+            }
             let values = row.map((cell) => {
                 if (op === 'distinct') return cell.size;
                 if (op === 'mean') return cell.n ? cell.sum / cell.n : null;
@@ -575,6 +609,139 @@ export function runChartQuery(spec, table, options = {}) {
         delta,
         normalize: spec.compare.normalize,
         meta: { rows, undated: table.undated, noAttribute },
+    };
+}
+
+// Groupes des lignes pour la mesure « actives » : par valeur de la 2ᵉ
+// dimension puis par clé (catégories ; null sinon), chacun avec les jours de
+// début et de fin triés.
+function activeGroups(rows, { table, kind, groupKey, splitKey, remapGroup, remapSplit }) {
+    const groups = new Map();
+    for (const r of rows) {
+        const splits = splitKey ? asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)) : [null];
+        const keys = kind === 'category' ? asList(groupKey(r)).map((k) => (remapGroup ? remapGroup(k) : k)) : [null];
+        for (const s of splits) {
+            let bySplit = groups.get(s);
+            if (!bySplit) groups.set(s, bySplit = new Map());
+            for (const k of keys) {
+                let group = bySplit.get(k);
+                if (!group) bySplit.set(k, group = { starts: [], ends: [] });
+                group.starts.push(table.day[r]);
+                if (Number.isFinite(table.endDay[r])) group.ends.push(table.endDay[r]);
+            }
+        }
+    }
+    for (const bySplit of groups.values()) {
+        for (const group of bySplit.values()) {
+            group.starts.sort((a, b) => a - b);
+            group.ends.sort((a, b) => a - b);
+        }
+    }
+    return groups;
+}
+
+// Nombre de valeurs ≤ x dans un tableau trié.
+function countUpTo(sorted, x) {
+    let lo = 0;
+    let hi = sorted.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (sorted[mid] <= x) lo = mid + 1;
+        else hi = mid;
+    }
+    return lo;
+}
+
+// Actives au jour `day` : commencées ce jour ou avant, pas encore finies
+// (une fin le jour même retire l'élément).
+export function activeAt(group, day) {
+    return countUpTo(group.starts, day) - countUpTo(group.ends, day);
+}
+
+// ---------------------------------------------------------------------------
+// Plusieurs sources
+// ---------------------------------------------------------------------------
+
+function unionExtent(tables) {
+    const extents = tables.map((t) => t?.extent).filter(Boolean);
+    if (!extents.length) return null;
+    return { first: Math.min(...extents.map((e) => e.first)), last: Math.max(...extents.map((e) => e.last)) };
+}
+
+// Graphique sur une ou plusieurs sources (spec.source + spec.extraSources).
+// `tableOf(source)` rend la table d'une source. Chaque source est calculée
+// à part sur les mêmes périodes et la même étendue, puis les séries sont
+// réunies sur un axe commun ; chaque série porte `source` et
+// `sourceIndex`. Au plus MAX_SERIES séries.
+export function runChartQueries(spec, tableOf, options = {}) {
+    const sources = chartSources(spec);
+    if (sources.length === 1) {
+        const result = runChartQuery(spec, tableOf(spec.source), options);
+        for (const s of result.series) {
+            s.source = spec.source;
+            s.sourceIndex = 0;
+        }
+        return { ...result, sources };
+    }
+    const tables = sources.map((source) => tableOf(source));
+    const extent = unionExtent(tables);
+    const single = { ...spec, extraSources: [], compare: { ...spec.compare, layout: spec.compare.layout === 'delta' ? 'overlay' : spec.compare.layout } };
+    const results = sources.map((source, i) => runChartQuery({ ...single, source }, tables[i], { ...options, extent }));
+    const base = results[0];
+
+    // Axe commun : celui de la première source, complété des clés des
+    // autres (catégories), « Autres » puis « Inconnu » en fin.
+    let keys = base.keys;
+    if (base.kind === 'category') {
+        const seen = new Set(keys);
+        const extra = [];
+        for (const result of results.slice(1)) {
+            for (const key of result.keys) {
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    extra.push(key);
+                }
+            }
+        }
+        keys = [...keys, ...extra].sort((a, b) => tailRank(a) - tailRank(b));
+    }
+    const series = [];
+    results.forEach((result, sourceIndex) => {
+        const index = new Map(result.keys.map((key, i) => [key, i]));
+        for (const s of result.series) {
+            const values = keys.map((key) => {
+                const i = index.get(key);
+                return i === undefined ? (base.kind === 'category' ? 0 : null) : s.values[i];
+            });
+            const dates = s.dates ? keys.map((key) => {
+                const i = index.get(key);
+                return i === undefined ? null : s.dates[i];
+            }) : null;
+            series.push({ ...s, id: `s${sourceIndex}:${s.id}`, source: sources[sourceIndex], sourceIndex, values, dates });
+        }
+    });
+    const cut = series.length > MAX_SERIES;
+    const kept = cut ? series.slice(0, MAX_SERIES) : series;
+    let delta = null;
+    if (spec.compare.layout === 'delta' && kept.length === 2 && !spec.splitBy) {
+        const [a, b] = [kept[0].values, kept[1].values];
+        delta = {
+            values: a.map((v, i) => (v === null || b[i] === null ? null : v - b[i])),
+            ratios: a.map((v, i) => (v === null || b[i] === null || b[i] === 0 ? null : (v - b[i]) / b[i])),
+        };
+    }
+    return {
+        ...base,
+        keys,
+        series: kept,
+        sources,
+        truncated: base.truncated || cut,
+        delta,
+        meta: {
+            rows: results.reduce((sum, r) => sum + r.meta.rows, 0),
+            undated: results.reduce((sum, r) => sum + r.meta.undated, 0),
+            noAttribute: results.reduce((sum, r) => sum + r.meta.noAttribute, 0),
+        },
     };
 }
 

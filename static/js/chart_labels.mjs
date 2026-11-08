@@ -21,12 +21,15 @@ export const MEASURE_CHOICES = Object.freeze([
     { key: 'distinct:country', measure: { op: 'distinct', field: 'country' } },
     { key: 'distinct:state', measure: { op: 'distinct', field: 'state' } },
     { key: 'distinct:owner', measure: { op: 'distinct', field: 'owner' } },
+    { key: 'distinct:finder', measure: { op: 'distinct', field: 'finder' } },
+    { key: 'distinct:county', measure: { op: 'distinct', field: 'county' } },
     { key: 'mean:difficulty', measure: { op: 'mean', field: 'difficulty' } },
     { key: 'mean:terrain', measure: { op: 'mean', field: 'terrain' } },
     { key: 'mean:age', measure: { op: 'mean', field: 'age' } },
     { key: 'max_per_day', measure: { op: 'max_per_day' } },
     { key: 'cumulative:all', measure: { op: 'cumulative', from: 'all' } },
     { key: 'cumulative', measure: { op: 'cumulative' } },
+    { key: 'active', measure: { op: 'active' } },
 ]);
 
 export function measureKey(measure) {
@@ -44,7 +47,7 @@ export const GROUP_CHOICES = Object.freeze([
     { family: 'none', dims: ['none'] },
     { family: 'time', dims: ['year', 'quarter', 'month', 'week', 'day'] },
     { family: 'cyclic', dims: ['month_of_year', 'week_of_year', 'day_of_year', 'weekday'] },
-    { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'owner', 'attribute', 'age', 'published_year'] },
+    { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'age', 'published_year'] },
 ]);
 
 // Graphiques proposés par l'éditeur (tous ceux que l'adaptateur dessine).
@@ -98,6 +101,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         attribute: t('Attribut'),
         age: t('Âge de la cache'),
         published_year: t('Année de publication'),
+        cache: t('Cache'),
+        finder: t('Visiteur'),
+        county: t('Département'),
     };
 
     // Option du menu « regroupement » dans la phrase (« par année »).
@@ -123,6 +129,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         attribute: t('par attribut'),
         age: t('par âge de la cache'),
         published_year: t('par année de publication'),
+        cache: t('par cache'),
+        finder: t('par visiteur'),
+        county: t('par département'),
     };
 
     const GROUP_FAMILIES = {
@@ -132,39 +141,90 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         category: t('Par caractéristique'),
     };
 
-    // Option du menu « mesure » dans la phrase (« le nombre de trouvailles »).
+    // Option du menu « mesure » de la phrase. La source se choisit à part
+    // (« Dans [mes trouvailles], afficher [le nombre] [par année] ») : les
+    // mesures ne la nomment pas.
     const MEASURE_PHRASES = {
-        count: t('le nombre de trouvailles'),
+        count: t('le nombre'),
         'distinct:caches': t('le nombre de caches différentes'),
-        'distinct:days': t('le nombre de jours de cache'),
+        'distinct:days': t('le nombre de jours différents'),
         'distinct:cache_type': t('le nombre de types de caches'),
         'distinct:country': t('le nombre de pays'),
         'distinct:state': t('le nombre de régions'),
         'distinct:owner': t('le nombre de propriétaires'),
+        'distinct:finder': t('le nombre de visiteurs différents'),
+        'distinct:county': t('le nombre de départements'),
         'mean:difficulty': t('la difficulté moyenne'),
         'mean:terrain': t('le terrain moyen'),
-        'mean:age': t("l'âge moyen des caches à la trouvaille"),
+        'mean:age': t("l'âge moyen des caches"),
         max_per_day: t('le record sur une journée'),
-        'cumulative:all': t('le cumul de mes trouvailles'),
+        'cumulative:all': t('le cumul depuis le début'),
         cumulative: t('le cumul sur la période'),
+        active: t('les caches actives'),
     };
 
-    // Nom court d'une mesure (titre par défaut, infobulles, chiffre clé).
+    // Nom court d'une mesure (titre par défaut, infobulles, chiffre clé). Le
+    // compte prend le nom de la source (sourceNoun).
     const MEASURE_NAMES = {
-        count: t('Trouvailles'),
         'distinct:caches': t('Caches différentes'),
         'distinct:days': t('Jours de cache'),
         'distinct:cache_type': t('Types de caches'),
         'distinct:country': t('Pays'),
         'distinct:state': t('Régions'),
         'distinct:owner': t('Propriétaires'),
+        'distinct:finder': t('Visiteurs différents'),
+        'distinct:county': t('Départements'),
         'mean:difficulty': t('Difficulté moyenne'),
         'mean:terrain': t('Terrain moyen'),
-        'mean:age': t('Âge moyen à la trouvaille'),
+        'mean:age': t('Âge moyen des caches'),
         max_per_day: t('Record sur une journée'),
-        'cumulative:all': t('Cumul des trouvailles'),
+        'cumulative:all': t('Cumul depuis le début'),
         cumulative: t('Cumul sur la période'),
+        active: t('Caches actives'),
     };
+
+    // Sources : nom dans les menus, nom de ce qu'on compte (légendes,
+    // titres), fin de phrase d'un écart.
+    const SOURCE_LABELS = {
+        finds: t('Mes trouvailles'),
+        dnf: t('Mes DNF'),
+        owned: t('Mes caches posées'),
+        'poses.received': t('Trouvailles reçues sur mes caches'),
+        'poses.dnf': t('DNF reçus sur mes caches'),
+        'poses.favorites': t('Favoris reçus sur mes caches'),
+        evolution: t('Caches publiées'),
+        'evolution:archived': t('Caches archivées'),
+    };
+    const SOURCE_NOUNS = {
+        finds: t('Trouvailles'),
+        dnf: t('DNF'),
+        owned: t('Caches posées'),
+        'poses.received': t('Trouvailles reçues'),
+        'poses.dnf': t('DNF reçus'),
+        'poses.favorites': t('Favoris reçus'),
+        evolution: t('Caches publiées'),
+        'evolution:archived': t('Caches archivées'),
+    };
+    const SOURCE_COMPARED = {
+        finds: t('par rapport à mes trouvailles'),
+        dnf: t('par rapport à mes DNF'),
+        owned: t('par rapport à mes caches posées'),
+        'poses.received': t('par rapport aux trouvailles reçues'),
+        'poses.dnf': t('par rapport aux DNF reçus'),
+        'poses.favorites': t('par rapport aux favoris reçus'),
+        evolution: t('par rapport aux caches publiées'),
+        'evolution:archived': t('par rapport aux caches archivées'),
+    };
+    // Clé de libellé d'une source : « evolution:12:archived » →
+    // « evolution:archived ».
+    const sourceKey = (source) => {
+        const text = String(source || 'finds');
+        if (!text.startsWith('evolution:')) return text;
+        return text.endsWith(':archived') ? 'evolution:archived' : 'evolution';
+    };
+    const sourceLabel = (source) => SOURCE_LABELS[sourceKey(source)] || String(source);
+    const sourceNoun = (source) => SOURCE_NOUNS[sourceKey(source)] || String(source);
+    const comparedToSource = (source) => SOURCE_COMPARED[sourceKey(source)] || '';
 
     const CHARTS = {
         bar: t('barres'),
@@ -240,6 +300,21 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         all_years: [t('Toutes mes années'), t('Le cumul de chaque année, superposé jour après jour.')],
         months_by_year: [t('Mes années mois par mois'), t('Une courbe par année, de janvier à décembre.')],
         types_vs_last: [t("Mes types cette année et l'an dernier"), t('Les parts de chaque type, côte à côte.')],
+        received_by_month: [t('Trouvailles reçues par mois'), t('Les visites sur vos caches posées, mois après mois.')],
+        favorites_total: [t('Favoris reçus'), t('Les points favoris laissés sur vos caches.')],
+        top_caches: [t('Mes caches les plus visitées'), t('Vos caches posées qui reçoivent le plus de trouvailles.')],
+        top_finders: [t('Mes visiteurs les plus fidèles'), t('Les joueurs qui ont trouvé le plus de vos caches.')],
+        owned_active: [t('Mes caches actives'), t('Combien de vos caches étaient en place, mois après mois.')],
+        finds_vs_received: [t('Trouvées et reçues'), t('Vos trouvailles et celles reçues sur vos caches, année par année.')],
+        dnf_by_year: [t('Mes DNF par année'), t('Vos recherches infructueuses, année par année.')],
+        finds_vs_dnf: [t('Trouvailles et DNF'), t('Vos réussites et vos échecs, année par année.')],
+        evo_active_now: [t('Caches actives'), t('Les caches en place dans la zone, à la fin de la période.')],
+        evo_active: [t('Caches actives au fil du temps'), t('Le nombre de caches en place, mois après mois.')],
+        evo_flows: [t('Publications et archivages'), t('Les caches qui apparaissent et celles qui disparaissent, chaque année.')],
+        evo_published: [t('Publications par année'), t('Les nouvelles caches de la zone, année par année.')],
+        evo_types: [t('Types des caches actives'), t('La part de chaque type parmi les caches en place.')],
+        evo_counties: [t('Caches actives par département'), t('Où se trouvent les caches en place.')],
+        evo_dt: [t('Grille D/T de la zone'), t('Difficulté et terrain des caches en place.')],
     };
 
     const QUESTION_GROUPS = {
@@ -248,6 +323,10 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         when: t('Quand je cache'),
         caches: t('Les caches trouvées'),
         places: t('Lieux et poseurs'),
+        poses: t('Mes caches posées'),
+        dnf: t('Mes DNF'),
+        zone: t('La zone au fil du temps'),
+        zone_caches: t('Les caches de la zone'),
     };
 
     function categoryLabel(dim, key, attributeName) {
@@ -299,7 +378,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         if (period.label) return period.label;
         const as = entry.as || period;
         switch (as.kind) {
-            case 'all': return t('Toutes mes trouvailles');
+            case 'all': return t('Toute la période');
             case 'year': return String(as.year);
             case 'month': return monthYearLongFmt.format(Date.UTC(as.year, as.month - 1, 1));
             case 'rolling': return rollingLabel(as);
@@ -386,7 +465,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         if (!period) return t('Période du tableau de bord');
         if (period.label) return period.label;
         switch (period.kind) {
-            case 'all': return t('Toutes mes trouvailles');
+            case 'all': return t('Toute la période');
             case 'year': return String(period.year);
             case 'month': return monthYearLongFmt.format(Date.UTC(period.year, period.month - 1, 1));
             case 'rolling': return rollingLabel(period);
@@ -449,13 +528,25 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         return signedPctFmt.format(ratio);
     }
 
-    function measureName(measure) {
-        return MEASURE_NAMES[measureKey(measure)] || MEASURE_NAMES.count;
+    function measureName(measure, source = 'finds') {
+        if (measure?.op === 'count') return sourceNoun(source);
+        return MEASURE_NAMES[measureKey(measure)] || sourceNoun(source);
     }
 
-    // Titre par défaut d'un graphique sans titre : « Trouvailles par année ».
+    // Titre par défaut d'un graphique sans titre : « Trouvailles par
+    // année », « Caches actives par mois ». Une autre mesure qu'un compte,
+    // hors des trouvailles, nomme sa source : « Visiteurs différents par
+    // mois — Trouvailles reçues ».
     function defaultTitle(spec) {
-        const name = measureName(spec.measure);
+        const source = spec.source || 'finds';
+        let name = measureName(spec.measure, source);
+        const others = spec.extraSources || [];
+        if (others.length) {
+            name = [source, ...others].map(sourceNoun).join(' / ');
+            if (spec.measure.op !== 'count') name = measureName(spec.measure, source) + ' — ' + name;
+        } else if (spec.measure.op !== 'count' && spec.measure.op !== 'active' && source !== 'finds') {
+            name = name + ' — ' + sourceNoun(source);
+        }
         if (spec.groupBy === 'none') return name;
         return t('${measure} ${group}', { measure: name, group: GROUP_PHRASES[spec.groupBy] || '' });
     }
@@ -484,6 +575,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         periodLabel,
         seriesPeriodLabel,
         comparedTo,
+        comparedToSource,
+        sourceLabel,
+        sourceNoun,
         elapsedLabel,
         dateInUnit,
         periodChoiceLabel,

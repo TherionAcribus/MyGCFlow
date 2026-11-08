@@ -5,17 +5,26 @@
 //
 // Document :
 //   { v: 1, active: '<id>', dashboards: [
-//       { id, name, period, filters, items: [{ size, spec }] } ] }
+//       { id, name, kind, dataset, period, filters, items: [{ size, spec }] } ] }
+// `kind` : 'personal' (trouvailles, DNF, caches posées, Mes poses) ou
+// 'evolution' (un jeu CSV, `dataset`). Barrière : un tableau ne contient que
+// des graphiques de sa famille — un graphique d'une autre famille est
+// écarté à la lecture, un graphique Évolution d'un autre jeu rattaché au jeu
+// du tableau.
 // `period` : une période (chart_spec.mjs › normalizePeriod), celle que les
 // graphiques sans période propre héritent. `filters` : idem pour les filtres
 // (lot 3 pour l'interface ; `{}` = aucun).
 
 import {
     createChartSpec,
+    evolutionDatasetOf,
+    evolutionSource,
+    isEvolutionSource,
     newChartId,
     normalizeChartSpec,
     normalizeFilters,
     normalizePeriod,
+    sourceFamily,
 } from './chart_spec.mjs';
 import { ymdOfDay } from './stats_model.mjs';
 
@@ -45,12 +54,38 @@ export function normalizeItem(raw, newId = newChartId) {
     return { size: DASHBOARD_SIZES.includes(raw.size) ? raw.size : 'M', spec };
 }
 
+export const DASHBOARD_KINDS = Object.freeze(['personal', 'evolution']);
+
+// Rattache une description Évolution au jeu `datasetId` (sources
+// « evolution:<id> » et « :archived » conservées).
+export function rebindEvolution(spec, datasetId) {
+    const rebind = (source) => evolutionSource(datasetId, { archived: String(source).endsWith(':archived') });
+    return normalizeChartSpec({
+        ...spec,
+        source: rebind(spec.source),
+        extraSources: (spec.extraSources || []).map(rebind),
+    });
+}
+
+// Un élément dans la famille du tableau : tel quel, rattaché au jeu, ou
+// null (écarté).
+function fitItem(item, kind, dataset) {
+    const family = sourceFamily(item.spec.source);
+    if (kind === 'personal') return family === 'personal' ? item : null;
+    if (family !== 'evolution') return null;
+    if (evolutionDatasetOf(item.spec.source) === dataset) return item;
+    return { ...item, spec: rebindEvolution(item.spec, dataset) };
+}
+
 export function normalizeDashboard(raw, { newId = newChartId, defaultName = '' } = {}) {
     if (!isObject(raw)) return null;
+    const dataset = Number.isInteger(raw.dataset) && raw.dataset >= 1 ? raw.dataset : null;
+    const kind = raw.kind === 'evolution' && dataset ? 'evolution' : 'personal';
     const items = [];
     const seen = new Set();
     for (const entry of Array.isArray(raw.items) ? raw.items : []) {
-        const item = normalizeItem(entry, newId);
+        const normalized = normalizeItem(entry, newId);
+        const item = normalized ? fitItem(normalized, kind, dataset) : null;
         if (!item) continue;
         // Identifiants uniques dans le tableau : ils nomment les cartes.
         while (seen.has(item.spec.id)) item.spec.id = newId();
@@ -61,6 +96,8 @@ export function normalizeDashboard(raw, { newId = newChartId, defaultName = '' }
     return {
         id: typeof raw.id === 'string' && ID_RE.test(raw.id) ? raw.id : newId(),
         name: flatName(raw.name) || defaultName,
+        kind,
+        dataset: kind === 'evolution' ? dataset : null,
         period: normalizePeriod(raw.period) || { ...DEFAULT_PERIOD },
         filters: normalizeFilters(raw.filters) || {},
         items,
@@ -114,8 +151,12 @@ export const hasOwnPeriod = (spec) => Array.isArray(spec.periods) && spec.period
 // `group` : section de la galerie (QUESTION_GROUPS).
 const THIS_AND_LAST_YEAR = [{ kind: 'current', unit: 'year' }, { kind: 'previous' }];
 const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
+// Source des questions Évolution : remplacée par le jeu du tableau
+// (itemFromQuestion › dataset).
+const EVO = 'evolution:1';
+const EVO_ARCHIVED = 'evolution:1:archived';
 
-export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'places']);
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
 
 export const QUESTIONS = Object.freeze([
     { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
@@ -144,10 +185,35 @@ export const QUESTIONS = Object.freeze([
 
     { id: 'countries', group: 'places', icon: 'ti-flag', size: 'M', spec: { groupBy: 'country', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
     { id: 'owners', group: 'places', icon: 'ti-users', size: 'M', spec: { groupBy: 'owner', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
+
+    // Mes poses et mes caches posées.
+    { id: 'received_by_month', group: 'poses', icon: 'ti-map-pin-check', size: 'M', spec: { source: 'poses.received', groupBy: 'month', view: { chart: 'bar' } } },
+    { id: 'favorites_total', group: 'poses', icon: 'ti-heart', size: 'S', spec: { source: 'poses.favorites', groupBy: 'none', view: { chart: 'number' } } },
+    { id: 'top_caches', group: 'poses', icon: 'ti-map-pins', size: 'M', spec: { source: 'poses.received', groupBy: 'cache', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
+    { id: 'top_finders', group: 'poses', icon: 'ti-user-heart', size: 'M', spec: { source: 'poses.received', groupBy: 'finder', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
+    { id: 'owned_active', group: 'poses', icon: 'ti-activity', size: 'M', spec: { source: 'owned', measure: { op: 'active' }, groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'area' } } },
+    { id: 'finds_vs_received', group: 'poses', icon: 'ti-arrows-exchange', size: 'M', spec: { source: 'finds', extraSources: ['poses.received'], groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
+
+    // Mes DNF.
+    { id: 'dnf_by_year', group: 'dnf', icon: 'ti-mood-sad', size: 'M', spec: { source: 'dnf', groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
+    { id: 'finds_vs_dnf', group: 'dnf', icon: 'ti-scale', size: 'M', spec: { source: 'finds', extraSources: ['dnf'], groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'line' } } },
+
+    // Évolution d'une zone.
+    { id: 'evo_active_now', family: 'evolution', group: 'zone', icon: 'ti-map-pin', size: 'S', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'none', view: { chart: 'number' } } },
+    { id: 'evo_active', family: 'evolution', group: 'zone', icon: 'ti-activity', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'month', view: { chart: 'area' } } },
+    { id: 'evo_flows', family: 'evolution', group: 'zone', icon: 'ti-arrows-exchange', size: 'M', spec: { source: EVO, extraSources: [EVO_ARCHIVED], groupBy: 'year', view: { chart: 'bar' } } },
+    { id: 'evo_published', family: 'evolution', group: 'zone', icon: 'ti-chart-bar', size: 'M', spec: { source: EVO, groupBy: 'year', view: { chart: 'bar' } } },
+    { id: 'evo_types', family: 'evolution', group: 'zone_caches', icon: 'ti-chart-donut', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'cache_type', view: { chart: 'donut' } } },
+    { id: 'evo_counties', family: 'evolution', group: 'zone_caches', icon: 'ti-map', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'county', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
+    { id: 'evo_dt', family: 'evolution', group: 'zone_caches', icon: 'ti-grid-dots', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'dt', view: { chart: 'heatmap' } } },
 ]);
 
-// Tableau de bord de la première visite.
+// Famille d'une question (personnelle par défaut).
+export const questionFamily = (question) => question.family || 'personal';
+
+// Tableau de bord de la première visite, et d'un nouveau tableau Évolution.
 export const DEFAULT_QUESTIONS = Object.freeze(['total', 'days', 'countries_count', 'by_year', 'progress', 'ahead', 'types', 'months']);
+export const DEFAULT_EVOLUTION_QUESTIONS = Object.freeze(['evo_active_now', 'evo_active', 'evo_flows', 'evo_types', 'evo_counties']);
 
 export function questionById(id) {
     return QUESTIONS.find((q) => q.id === id) || null;
@@ -156,21 +222,51 @@ export function questionById(id) {
 // Nouvel élément depuis une question (titre laissé vide : le titre par
 // défaut suit la mesure et le regroupement ; celui de la question est posé
 // par l'appelant, qui a la traduction).
-export function itemFromQuestion(id, { newId = newChartId, title = '' } = {}) {
+export function itemFromQuestion(id, { newId = newChartId, title = '', dataset = null } = {}) {
     const question = questionById(id);
     if (!question) return null;
-    return { size: question.size, spec: createChartSpec({ ...question.spec, title }, newId) };
+    let spec = createChartSpec({ ...question.spec, title }, newId);
+    if (questionFamily(question) === 'evolution') {
+        if (!dataset) return null;
+        spec = { ...rebindEvolution(spec, dataset), id: spec.id };
+    }
+    return { size: question.size, spec };
 }
 
-export function defaultDashboard({ newId = newChartId, name = '', titleOf = () => '' } = {}) {
+// Nouveau tableau : personnel (questions de départ) ou Évolution d'un jeu.
+// `withCharts: false` : vide.
+export function defaultDashboard({
+    newId = newChartId, name = '', titleOf = () => '', kind = 'personal', dataset = null, withCharts = true,
+} = {}) {
+    const evolution = kind === 'evolution' && Number.isInteger(dataset) && dataset >= 1;
+    const questions = withCharts ? (evolution ? DEFAULT_EVOLUTION_QUESTIONS : DEFAULT_QUESTIONS) : [];
     return {
         id: newId(),
         name,
+        kind: evolution ? 'evolution' : 'personal',
+        dataset: evolution ? dataset : null,
         period: { ...DEFAULT_PERIOD },
         filters: {},
-        items: DEFAULT_QUESTIONS.map((id) => itemFromQuestion(id, { newId, title: titleOf(id) })),
+        items: questions.map((id) => itemFromQuestion(id, { newId, title: titleOf(id), dataset })).filter(Boolean),
     };
 }
+
+// Sources proposées dans un tableau : les siennes, jamais celles de l'autre
+// famille.
+export function dashboardSources(dashboard) {
+    if (dashboard?.kind === 'evolution' && dashboard.dataset) {
+        return [evolutionSource(dashboard.dataset), evolutionSource(dashboard.dataset, { archived: true })];
+    }
+    return ['finds', 'dnf', 'owned', 'poses.received', 'poses.dnf', 'poses.favorites'];
+}
+
+// La description respecte-t-elle la famille du tableau ?
+export function specFitsDashboard(spec, dashboard) {
+    const allowed = new Set(dashboardSources(dashboard));
+    return [spec.source, ...(spec.extraSources || [])].every((s) => allowed.has(s));
+}
+
+export { isEvolutionSource };
 
 export function defaultDocument(options = {}) {
     const dashboard = defaultDashboard(options);

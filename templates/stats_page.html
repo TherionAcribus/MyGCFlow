@@ -64,6 +64,16 @@
                     <div class="stats-toolbar">
                         <div class="stats-toolbar-title">
                             <h1 id="statsDashboardName" class="stats-dashboard-name"></h1>
+                            <span id="statsDashboardKind" class="stats-dashboard-kind" hidden></span>
+                            <!-- Tableaux de bord : changer, créer, supprimer. -->
+                            <div class="dropdown">
+                                <button type="button" id="btnStatsDashboards" class="btn btn-ghost-secondary btn-icon btn-sm"
+                                        data-bs-toggle="dropdown" aria-expanded="false"
+                                        aria-label="{{ _("Tableaux de bord") }}" title="{{ _("Tableaux de bord") }}">
+                                    <i class="ti ti-chevron-down" aria-hidden="true"></i>
+                                </button>
+                                <ul id="statsDashboardMenu" class="dropdown-menu"></ul>
+                            </div>
                             <button type="button" id="btnStatsRename" class="btn btn-ghost-secondary btn-icon btn-sm"
                                     aria-label="{{ _("Renommer le tableau de bord") }}" title="{{ _("Renommer le tableau de bord") }}">
                                 <i class="ti ti-pencil" aria-hidden="true"></i>
@@ -127,7 +137,17 @@
                         <div class="row g-4">
                             <div class="col-lg-5">
                                 <div class="stats-phrase" role="group" aria-label="{{ _("Ce que montre le graphique") }}">
-                                    <label for="statsEdMeasure" class="stats-phrase-word">{{ _("Afficher") }}</label>
+                                    <!-- Sources : celles de la famille du tableau seulement. -->
+                                    <label for="statsEdSource" class="stats-phrase-word">{{ _("Dans") }}</label>
+                                    <select id="statsEdSource" class="form-select"></select>
+                                    <div id="statsEdSourceList" class="stats-compare-list"></div>
+                                    <div id="statsEdAddSourceRow" class="stats-compare-list">
+                                        <span aria-hidden="true"></span>
+                                        <button type="button" id="btnStatsEdAddSource" class="btn btn-sm btn-ghost-primary stats-add-compare">
+                                            <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Comparer à une autre source") }}
+                                        </button>
+                                    </div>
+                                    <label for="statsEdMeasure" class="stats-phrase-word">{{ _("afficher") }}</label>
                                     <select id="statsEdMeasure" class="form-select"></select>
                                     <label for="statsEdGroupBy" class="visually-hidden">{{ _("Regroupement") }}</label>
                                     <select id="statsEdGroupBy" class="form-select"></select>
@@ -271,6 +291,55 @@
                         <button type="button" id="btnStatsFiltersApply" class="btn btn-primary">{{ _("Appliquer") }}</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Nouveau tableau de bord : « Mes données » ou un jeu Évolution —
+             deux familles qui ne se mélangent jamais. -->
+        <div class="modal fade" id="statsNewDashboardModal" tabindex="-1" aria-labelledby="statsNewDashboardTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form class="modal-content" id="statsNewDashboardForm">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsNewDashboardTitle">{{ _("Nouveau tableau de bord") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <fieldset class="mb-3">
+                            <legend class="form-label">{{ _("Données") }}</legend>
+                            <label class="form-check stats-kind-choice">
+                                <input type="radio" class="form-check-input" name="statsNewKind" id="statsNewKindPersonal" value="personal" checked>
+                                <span class="form-check-label">
+                                    <strong>{{ _("Mes données") }}</strong>
+                                    <span class="form-hint">{{ _("Mes trouvailles, mes DNF, mes caches posées et ce qu'elles reçoivent.") }}</span>
+                                </span>
+                            </label>
+                            <label class="form-check stats-kind-choice">
+                                <input type="radio" class="form-check-input" name="statsNewKind" id="statsNewKindEvolution" value="evolution">
+                                <span class="form-check-label">
+                                    <strong>{{ _("Évolution d'une zone") }}</strong>
+                                    <span class="form-hint">{{ _("Toutes les caches d'un jeu importé sur la page Évolution, sans rapport avec vos propres données.") }}</span>
+                                </span>
+                            </label>
+                        </fieldset>
+                        <div class="mb-3" id="statsNewDatasetRow" hidden>
+                            <label for="statsNewDataset" class="form-label">{{ _("Jeu Évolution") }}</label>
+                            <select id="statsNewDataset" class="form-select"></select>
+                        </div>
+                        <p id="statsNewNoDataset" class="text-muted small" hidden>{{ _("Aucun jeu Évolution : importez d'abord des exports CSV sur la page Évolution.") }}</p>
+                        <div class="mb-3">
+                            <label for="statsNewName" class="form-label">{{ _("Nom") }}</label>
+                            <input type="text" id="statsNewName" class="form-control" maxlength="60" required>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="statsNewWithCharts" class="form-check-input" checked>
+                            <label for="statsNewWithCharts" class="form-check-label">{{ _("Commencer avec des graphiques prêts") }}</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="submit" id="btnStatsNewDashboardCreate" class="btn btn-primary">{{ _("Créer") }}</button>
+                    </div>
+                </form>
             </div>
         </div>
 

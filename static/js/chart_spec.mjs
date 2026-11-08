@@ -34,9 +34,14 @@ export const CHART_SPEC_VERSION = 1;
 // Vocabulaire
 // ---------------------------------------------------------------------------
 
-// Sources : les trois jeux de données de l'app. « evolution:<id> » désigne un
-// jeu CSV de la page Évolution. Seule `finds` est branchée au lot 1, mais le
-// format les accepte toutes dès la v1 (pas de migration au lot 4).
+// Sources, en deux familles étanches :
+//   personal   les données du joueur — trouvailles, DNF, caches posées
+//              (page Mes Géocaches) et logs reçus sur ses caches (Mes
+//              poses) ; elles se comparent entre elles ;
+//   evolution  un jeu CSV de la page Évolution : « evolution:<id> » (caches
+//              publiées) et « evolution:<id>:archived » (caches archivées).
+//              Toutes les caches d'une zone, rien à voir avec le joueur :
+//              jamais mêlées aux sources personnelles, ni à un autre jeu.
 export const CHART_SOURCES = Object.freeze([
     'finds',            // mes trouvailles (page Mes Géocaches)
     'dnf',              // mes DNF
@@ -45,7 +50,9 @@ export const CHART_SOURCES = Object.freeze([
     'poses.dnf',        // DNF reçus
     'poses.favorites',  // favoris reçus
 ]);
-const EVOLUTION_SOURCE_RE = /^evolution:[1-9][0-9]{0,9}$/;
+export const SOURCE_FAMILIES = Object.freeze(['personal', 'evolution']);
+const EVOLUTION_SOURCE_RE = /^evolution:([1-9][0-9]{0,9})(:archived)?$/;
+export const MAX_EXTRA_SOURCES = 3;
 
 export function isChartSource(value) {
     return typeof value === 'string'
@@ -56,17 +63,39 @@ export function isEvolutionSource(value) {
     return typeof value === 'string' && EVOLUTION_SOURCE_RE.test(value);
 }
 
+export function sourceFamily(source) {
+    return isEvolutionSource(source) ? 'evolution' : 'personal';
+}
+
+// Jeu Évolution d'une source (nombre), ou null.
+export function evolutionDatasetOf(source) {
+    const match = typeof source === 'string' ? EVOLUTION_SOURCE_RE.exec(source) : null;
+    return match ? Number(match[1]) : null;
+}
+
+export function evolutionSource(datasetId, { archived = false } = {}) {
+    return 'evolution:' + datasetId + (archived ? ':archived' : '');
+}
+
+// Deux sources peuvent-elles partager un graphique ? Même famille et, pour
+// Évolution, même jeu.
+export function sameSourceGroup(a, b) {
+    if (sourceFamily(a) !== sourceFamily(b)) return false;
+    return sourceFamily(a) === 'personal' || evolutionDatasetOf(a) === evolutionDatasetOf(b);
+}
+
 // Mesures. « Flux » : comptées dans chaque intervalle. « Stock » : valeur
 // lue en fin d'intervalle (cumul, caches vivantes).
 export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'cumulative', 'active']);
 export const STOCK_OPS = Object.freeze(['cumulative', 'active']);
-// `days` = jours avec au moins un événement.
-export const DISTINCT_FIELDS = Object.freeze(['caches', 'days', 'cache_type', 'country', 'state', 'owner']);
+// `days` = jours avec au moins un événement ; `finder` = visiteurs
+// différents (Mes poses).
+export const DISTINCT_FIELDS = Object.freeze(['caches', 'days', 'cache_type', 'country', 'state', 'owner', 'finder', 'county']);
 export const MEAN_FIELDS = Object.freeze(['difficulty', 'terrain', 'age']);
-// « Caches vivantes à la date » n'a de sens que pour un ensemble qui naît et
-// meurt : jeux Évolution et caches posées.
+// « Caches actives à la date » n'a de sens que pour un ensemble qui naît et
+// meurt : caches posées et caches publiées d'un jeu Évolution.
 function activeAllowed(source) {
-    return source === 'owned' || isEvolutionSource(source);
+    return source === 'owned' || (isEvolutionSource(source) && !source.endsWith(':archived'));
 }
 
 // Dimensions (axe des graphiques, ou découpage en séries).
@@ -75,9 +104,11 @@ export const TIME_DIMENSIONS = Object.freeze(['year', 'quarter', 'month', 'week'
 // Pas d'heure : l'import GPX pose une heure de trouvaille factice (19 h / 20 h
 // UTC, bdd.py), qui ne dit rien de l'heure réelle.
 export const CYCLIC_DIMENSIONS = Object.freeze(['month_of_year', 'week_of_year', 'day_of_year', 'weekday']);
+// `cache` : la cache posée visitée, `finder` : le visiteur (Mes poses) ;
+// `county` : le département (jeux Évolution).
 export const CATEGORY_DIMENSIONS = Object.freeze([
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
-    'owner', 'attribute', 'age', 'published_year',
+    'owner', 'attribute', 'age', 'published_year', 'cache', 'finder', 'county',
 ]);
 // Catégories ordonnées : une courbe y a un sens.
 export const ORDINAL_CATEGORIES = Object.freeze(['difficulty', 'terrain', 'age', 'published_year']);
@@ -86,6 +117,46 @@ export const GROUP_DIMENSIONS = Object.freeze(['none', ...TIME_DIMENSIONS, ...CY
 export const SPLIT_DIMENSIONS = Object.freeze(['year', ...CATEGORY_DIMENSIONS]);
 // Dimensions qui suivent l'écoulement du temps : seules à porter un cumul.
 export const SEQUENTIAL_DIMENSIONS = Object.freeze([...TIME_DIMENSIONS, 'month_of_year', 'week_of_year', 'day_of_year']);
+
+// Dimensions disponibles selon la source : chacune n'a que les propriétés
+// que ses données portent (pas d'attributs hors des trouvailles, pas de
+// propriétaire pour ses propres caches, pas de visiteur hors de Mes poses…).
+const COMMON_DIMENSIONS = Object.freeze([
+    ...TIME_DIMENSIONS, ...CYCLIC_DIMENSIONS,
+    'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
+]);
+const EXTRA_DIMENSIONS = Object.freeze({
+    finds: ['owner', 'attribute', 'age', 'published_year'],
+    dnf: ['owner', 'age', 'published_year'],
+    owned: [],
+    poses: ['cache', 'finder', 'age'],
+    evolution: ['county'],
+});
+
+function sourceKey(source) {
+    if (isEvolutionSource(source)) return 'evolution';
+    if (String(source).startsWith('poses.')) return 'poses';
+    return source;
+}
+
+// Dimensions d'une source, ou communes à plusieurs (`none` compris).
+export function sourceDimensions(sources) {
+    const list = (Array.isArray(sources) ? sources : [sources]).filter(isChartSource);
+    if (!list.length) list.push('finds');
+    const sets = list.map((source) => new Set([...COMMON_DIMENSIONS, ...(EXTRA_DIMENSIONS[sourceKey(source)] || [])]));
+    return ['none', ...GROUP_DIMENSIONS.filter((dim) => dim !== 'none' && sets.every((set) => set.has(dim)))];
+}
+
+// Valeurs distinctes et moyennes possibles pour des sources.
+export function sourceDistinctFields(sources) {
+    const dims = new Set(sourceDimensions(sources));
+    return DISTINCT_FIELDS.filter((field) => field === 'caches' || field === 'days' || dims.has(field));
+}
+
+export function sourceMeanFields(sources) {
+    const dims = new Set(sourceDimensions(sources));
+    return MEAN_FIELDS.filter((field) => field !== 'age' || dims.has('age'));
+}
 
 export function dimensionKind(dim) {
     if (dim === 'none') return 'none';
@@ -98,7 +169,7 @@ export function dimensionKind(dim) {
 // Filtres : sélection vide = neutre (le critère ne retire rien).
 export const FILTER_FIELDS = Object.freeze([
     'source_kind', 'cache_type', 'container', 'difficulty', 'terrain',
-    'country', 'state', 'owner', 'attribute', 'published_year',
+    'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'published_year',
 ]);
 export const SOURCE_KINDS = Object.freeze(['geocache', 'lab']);
 export const FILTER_VALUES_MAX = 500;
@@ -144,6 +215,7 @@ export const CHART_SPEC_DEFAULTS = Object.freeze({
     v: CHART_SPEC_VERSION,
     title: '',
     source: 'finds',
+    extraSources: Object.freeze([]),
     measure: Object.freeze({ op: 'count' }),
     groupBy: 'year',
     splitBy: null,
@@ -205,11 +277,14 @@ export function newChartId(random = Math.random) {
 // Blocs
 // ---------------------------------------------------------------------------
 
-export function normalizeMeasure(raw, source = 'finds') {
+// `sources` : la source du graphique, ou toutes celles qu'il compare — une
+// mesure doit valoir pour chacune.
+export function normalizeMeasure(raw, sources = 'finds') {
+    const list = Array.isArray(sources) ? sources : [sources];
     const op = choice(isObject(raw) ? raw.op : raw, MEASURE_OPS, 'count');
-    if (op === 'active' && !activeAllowed(source)) return { op: 'count' };
-    if (op === 'distinct') return { op, field: choice(raw?.field, DISTINCT_FIELDS, 'caches') };
-    if (op === 'mean') return { op, field: choice(raw?.field, MEAN_FIELDS, 'difficulty') };
+    if (op === 'active' && !list.every(activeAllowed)) return { op: 'count' };
+    if (op === 'distinct') return { op, field: choice(raw?.field, sourceDistinctFields(list), 'caches') };
+    if (op === 'mean') return { op, field: choice(raw?.field, sourceMeanFields(list), 'difficulty') };
     if (op === 'cumulative') {
         // Cumul depuis le début de chaque période (défaut) ou depuis toujours.
         return raw?.from === 'all' ? { op, from: 'all' } : { op };
@@ -327,19 +402,49 @@ export function periodsAreMultiple(periods) {
 // Compatibilités
 // ---------------------------------------------------------------------------
 
-// Regroupements possibles pour une mesure : un cumul (ou un état « actives »)
-// suit le temps.
-export function allowedGroupBy(measure) {
-    return STOCK_OPS.includes(measure?.op) ? [...SEQUENTIAL_DIMENSIONS] : [...GROUP_DIMENSIONS];
+// Regroupements possibles pour une mesure et des sources : un cumul suit le
+// temps ; « caches actives » se lit en fin d'intervalle (temps) ou de
+// période (total, catégories) ; seules les dimensions de toutes les sources.
+export function allowedGroupBy(measure, sources = 'finds') {
+    const dims = sourceDimensions(sources);
+    if (measure?.op === 'cumulative') return dims.filter((dim) => SEQUENTIAL_DIMENSIONS.includes(dim));
+    if (measure?.op === 'active') {
+        return dims.filter((dim) => dim === 'none' || SEQUENTIAL_DIMENSIONS.includes(dim) || CATEGORY_DIMENSIONS.includes(dim));
+    }
+    return dims;
 }
 
 // 2ᵉ dimension possible : jamais la même que l'axe ; « par année » n'a pas
 // de sens sur un axe de temps continu (il le découpe déjà) ; pas de
-// découpage d'un chiffre clé.
-export function allowedSplitBy(groupBy) {
+// découpage d'un chiffre clé ; seulement celles des sources.
+export function allowedSplitBy(groupBy, sources = 'finds') {
     if (groupBy === 'none') return [];
-    return SPLIT_DIMENSIONS.filter((dim) => dim !== groupBy
+    const dims = new Set(sourceDimensions(sources));
+    return SPLIT_DIMENSIONS.filter((dim) => dim !== groupBy && dims.has(dim)
         && !(dim === 'year' && dimensionKind(groupBy) === 'time'));
+}
+
+// Sources ajoutées à un graphique (« mes trouvailles et les trouvailles
+// reçues ») : même groupe que la source principale (sameSourceGroup), sans
+// doublon, MAX_EXTRA_SOURCES au plus.
+export function normalizeExtraSources(raw, source) {
+    if (!Array.isArray(raw)) return [];
+    const out = [];
+    for (const item of raw) {
+        if (!isChartSource(item) || item === source || out.includes(item)) continue;
+        if (!sameSourceGroup(source, item)) continue;
+        out.push(item);
+        if (out.length >= MAX_EXTRA_SOURCES) break;
+    }
+    return out;
+}
+
+// Toutes les sources d'un graphique.
+export const chartSources = (spec) => [spec.source, ...(spec.extraSources || [])];
+
+// Le graphique a-t-il plusieurs séries (périodes ou sources) ?
+export function hasSeveralSeries(spec) {
+    return periodsAreMultiple(spec.periods) || (spec.extraSources || []).length > 0;
 }
 
 // Alignements de périodes pour un axe : temps continu → jours écoulés ou
@@ -370,7 +475,7 @@ export function allowedNormalize({ measure, groupBy } = {}) {
 // fixes, sans 2ᵉ dimension, sur un graphique qui sait le montrer ; un anneau
 // ne se superpose pas (côte à côte seulement). Périodes héritées (null) :
 // rien à vérifier, tout reste possible sauf ce que le graphique exclut.
-export function allowedLayouts({ periods, splitBy, view } = {}) {
+export function allowedLayouts({ periods, splitBy, view, extraSources = [] } = {}) {
     const chart = view?.chart;
     // Calendrier et grille ne dessinent qu'une période (la première) ; le
     // radar superpose ses polygones.
@@ -378,13 +483,19 @@ export function allowedLayouts({ periods, splitBy, view } = {}) {
     const layouts = chart === 'donut' ? ['side'] : ['overlay', 'side'];
     const deltaCharts = ['bar', 'line', 'area', 'number'];
     const known = Array.isArray(periods);
-    const pair = !known || (periods.length === 2 && !periods.some((p) => p.kind === 'each'));
+    const extra = (extraSources || []).length;
+    // Deux séries exactement : deux périodes d'une source, ou une période
+    // de deux sources.
+    let pair = false;
+    if (extra === 0) pair = !known || (periods.length === 2 && !periods.some((p) => p.kind === 'each'));
+    else if (extra === 1) pair = !known || (periods.length === 1 && periods[0].kind !== 'each');
     if (pair && !splitBy && deltaCharts.includes(chart)) layouts.push('delta');
     return layouts;
 }
 
-// Le cumul et la moyenne ne s'additionnent pas en parts d'un tout.
-const ADDITIVE_OPS = ['count', 'distinct', 'max_per_day'];
+// Le cumul et la moyenne ne s'additionnent pas en parts d'un tout ; les
+// caches actives d'une date, si.
+const ADDITIVE_OPS = ['count', 'distinct', 'max_per_day', 'active'];
 // Catégories assez peu nombreuses et sans ordre pour un anneau / un radar.
 const PART_CYCLIC = ['weekday', 'month_of_year'];
 
@@ -454,12 +565,14 @@ export function normalizeChartSpec(raw, newId = newChartId) {
     if (src === null) return null;
 
     const source = isChartSource(src.source) ? src.source : CHART_SPEC_DEFAULTS.source;
-    const measure = normalizeMeasure(src.measure, source);
+    const extraSources = normalizeExtraSources(src.extraSources, source);
+    const sources = [source, ...extraSources];
+    const measure = normalizeMeasure(src.measure, sources);
     // Repli d'un cumul sur le mois, lisible sur toute durée (une courbe par
     // année n'aurait que quelques points).
     const fallbackGroup = STOCK_OPS.includes(measure.op) ? 'month' : CHART_SPEC_DEFAULTS.groupBy;
-    const groupBy = choice(src.groupBy, allowedGroupBy(measure), fallbackGroup);
-    const splitBy = choice(src.splitBy, allowedSplitBy(groupBy), null);
+    const groupBy = choice(src.groupBy, allowedGroupBy(measure, sources), fallbackGroup);
+    const splitBy = choice(src.splitBy, allowedSplitBy(groupBy, sources), null);
     const periods = normalizePeriods(src.periods);
 
     const spec = {
@@ -467,6 +580,7 @@ export function normalizeChartSpec(raw, newId = newChartId) {
         id: typeof src.id === 'string' && ID_RE.test(src.id) ? src.id : newId(),
         title: flatText(src.title, CHART_TITLE_MAX),
         source,
+        extraSources,
         measure,
         groupBy,
         splitBy,

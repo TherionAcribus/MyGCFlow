@@ -343,3 +343,56 @@ test('radar : un indicateur par clé, une forme par série, même maximum', () =
     assert.ok(new Set(o.radar.indicator.map((i) => i.max)).size === 1);
     assert.notEqual(o.legend.show, false);
 });
+
+// ---------------------------------------------------------------------------
+// Sources (lot 4)
+// ---------------------------------------------------------------------------
+
+import { runChartQueries } from '../../static/js/chart_query.mjs';
+import { tableFromRecords } from '../../static/js/chart_sources.mjs';
+
+const received = tableFromRecords([
+    { day: dayNumber({ y: 2025, m: 2, d: 1 }) },
+    { day: dayNumber({ y: 2026, m: 3, d: 1 }) },
+    { day: dayNumber({ y: 2026, m: 4, d: 1 }) },
+], { source: 'poses.received' });
+const tableOf = (source) => (source === 'finds' ? table : received);
+
+function multi(raw) {
+    const spec = normalizeChartSpec({ source: 'finds', extraSources: ['poses.received'], ...raw }, () => 'abcdef');
+    const result = runChartQueries(spec, tableOf, { today: TODAY });
+    return { spec, result, option: buildChartOption(result, spec, ctx) };
+}
+
+test('plusieurs sources : une série nommée par source, légende', () => {
+    const { option: o } = multi({ groupBy: 'year' });
+    assert.deepEqual(o.series.map((s) => s.name), ['Trouvailles', 'Trouvailles reçues']);
+    assert.deepEqual(o.series.map((s) => s.color), [tokens.series[0], tokens.series[1]]);
+    assert.notEqual(o.legend.show, false);
+});
+
+test('écart entre deux sources : infobulle avec les deux sources', () => {
+    const { result, option: o } = multi({ groupBy: 'year', compare: { layout: 'delta' } });
+    assert.deepEqual(result.delta.values, [2, 0]);
+    assert.match(o.title.text, /Trouvailles par rapport à Trouvailles reçues/);
+});
+
+test('chiffre clé sur deux sources : l\'écart nomme l\'autre source', () => {
+    const { spec, result } = multi({ groupBy: 'none', view: { chart: 'number' } });
+    const blocks = numberModel(result, spec, ctx);
+    assert.deepEqual(blocks.map((b) => b.label), ['Trouvailles', 'Trouvailles reçues']);
+    assert.equal(blocks[0].delta.versus, 'par rapport aux trouvailles reçues');
+    assert.equal(blocks[0].delta.text, '+2');
+});
+
+test('titres par défaut selon la source', () => {
+    const labels = ctx.labels;
+    assert.equal(labels.defaultTitle(normalizeChartSpec({ source: 'poses.received', groupBy: 'month' })), 'Trouvailles reçues par mois');
+    assert.equal(labels.defaultTitle(normalizeChartSpec({ source: 'owned', measure: { op: 'active' }, groupBy: 'year' })), 'Caches actives par année');
+    assert.equal(labels.defaultTitle(normalizeChartSpec({ source: 'poses.received', measure: { op: 'distinct', field: 'finder' }, groupBy: 'month' })),
+        'Visiteurs différents — Trouvailles reçues par mois');
+    assert.equal(labels.defaultTitle(normalizeChartSpec({ source: 'finds', extraSources: ['poses.received'], groupBy: 'year' })),
+        'Trouvailles / Trouvailles reçues par année');
+    assert.equal(labels.sourceLabel('evolution:3:archived'), 'Caches archivées');
+    assert.equal(labels.sourceNoun('evolution:3'), 'Caches publiées');
+});

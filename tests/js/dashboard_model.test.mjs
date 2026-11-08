@@ -48,11 +48,13 @@ test('chaque question donne un graphique valide, dessinable au lot 1', () => {
     for (const question of QUESTIONS) {
         assert.ok(!ids.has(question.id), question.id);
         ids.add(question.id);
-        const item = itemFromQuestion(question.id, { newId: seqId });
+        const item = itemFromQuestion(question.id, { newId: seqId, dataset: 7 });
         assert.equal(item.size, question.size);
         assert.equal(item.spec.v, CHART_SPEC_VERSION);
         assert.ok(allowedCharts(item.spec).includes(item.spec.view.chart), question.id);
-        assert.ok(['bar', 'line', 'area', 'donut', 'number'].includes(item.spec.view.chart), question.id);
+        assert.ok(['bar', 'line', 'area', 'donut', 'number', 'heatmap'].includes(item.spec.view.chart), question.id);
+        // La question garde sa source (et son jeu, pour Évolution).
+        assert.equal(item.spec.source, (question.spec.source || 'finds').replace('evolution:1', 'evolution:7'), question.id);
         assert.match(question.icon, /^ti-[a-z0-9-]+$/);
     }
     assert.equal(itemFromQuestion('bogus'), null);
@@ -182,7 +184,7 @@ test('libellés : clés d\'axe, périodes et valeurs en français', () => {
     assert.equal(labels.axisLabel('cache_type', '__others__'), 'Autres');
     assert.equal(labels.axisLabel('owner', 'unknown'), 'Inconnu');
     assert.equal(labels.axisLabel('attribute', '6', { attributeName: () => 'Kids' }), 'Kids');
-    assert.equal(labels.periodLabel({ period: { kind: 'all' } }), 'Toutes mes trouvailles');
+    assert.equal(labels.periodLabel({ period: { kind: 'all' } }), 'Toute la période');
     assert.equal(labels.periodLabel({ period: { kind: 'year', year: 2024 }, year: 2024 }), '2024');
     assert.equal(labels.periodLabel({ period: { kind: 'rolling', unit: 'month', count: 12 } }), 'Les 12 derniers mois');
     assert.equal(labels.periodLabel({ period: { kind: 'year', year: 2024, label: 'Mon année' }, year: 2024 }), 'Mon année');
@@ -215,4 +217,57 @@ test('libellés de comparaison : en cours, coupée, rang depuis le début', () =
     assert.equal(labels.formatDelta(5, { op: 'count' }), '+5');
     assert.match(labels.formatRatio(0.18), /\+18\s?%/);
     assert.equal(labels.formatRatio(null), '');
+});
+
+// ---------------------------------------------------------------------------
+// Familles de tableaux (lot 4)
+// ---------------------------------------------------------------------------
+
+import {
+    DEFAULT_EVOLUTION_QUESTIONS,
+    dashboardSources,
+    defaultDashboard,
+    rebindEvolution,
+    specFitsDashboard,
+} from '../../static/js/dashboard_model.mjs';
+import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
+
+test('barrière : un tableau personnel écarte Évolution, un tableau Évolution écarte le reste', () => {
+    const items = [
+        { spec: { id: 'aaaaa1', source: 'finds' } },
+        { spec: { id: 'aaaaa2', source: 'poses.received' } },
+        { spec: { id: 'aaaaa3', source: 'evolution:4' } },
+        { spec: { id: 'aaaaa4', source: 'evolution:9:archived', extraSources: ['evolution:9'] } },
+    ];
+    const personal = normalizeDashboard({ id: 'bbbbbb', items }, { newId: seqId });
+    assert.equal(personal.kind, 'personal');
+    assert.deepEqual(personal.items.map((i) => i.spec.source), ['finds', 'poses.received']);
+    const evolution = normalizeDashboard({ id: 'cccccc', kind: 'evolution', dataset: 4, items }, { newId: seqId });
+    assert.equal(evolution.kind, 'evolution');
+    assert.equal(evolution.dataset, 4);
+    // Un graphique d'un autre jeu est rattaché à celui du tableau.
+    assert.deepEqual(evolution.items.map((i) => [i.spec.source, i.spec.extraSources]),
+        [['evolution:4', []], ['evolution:4:archived', ['evolution:4']]]);
+    // Sans jeu, un tableau Évolution redevient personnel.
+    assert.equal(normalizeDashboard({ id: 'dddddd', kind: 'evolution' }).kind, 'personal');
+});
+
+test('sources proposées et respect de la famille', () => {
+    const evo = { kind: 'evolution', dataset: 3 };
+    assert.deepEqual(dashboardSources(evo), ['evolution:3', 'evolution:3:archived']);
+    assert.ok(dashboardSources({ kind: 'personal' }).includes('poses.favorites'));
+    assert.ok(specFitsDashboard(normalizeChartSpec({ source: 'evolution:3' }), evo));
+    assert.ok(!specFitsDashboard(normalizeChartSpec({ source: 'evolution:2' }), evo));
+    assert.ok(!specFitsDashboard(normalizeChartSpec({ source: 'finds' }), evo));
+    assert.equal(rebindEvolution(normalizeChartSpec({ source: 'evolution:2:archived' }), 5).source, 'evolution:5:archived');
+});
+
+test('nouveau tableau Évolution : questions de la zone, sur son jeu', () => {
+    const dashboard = defaultDashboard({ newId: seqId, kind: 'evolution', dataset: 6, name: 'Zone' });
+    assert.equal(dashboard.kind, 'evolution');
+    assert.equal(dashboard.items.length, DEFAULT_EVOLUTION_QUESTIONS.length);
+    assert.ok(dashboard.items.every((i) => i.spec.source.startsWith('evolution:6')));
+    assert.equal(defaultDashboard({ newId: seqId, withCharts: false }).items.length, 0);
+    // Pas de question Évolution sans jeu.
+    assert.equal(itemFromQuestion('evo_active', { newId: seqId }), null);
 });

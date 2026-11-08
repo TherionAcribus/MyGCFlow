@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=695a7af5cc") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=e67c14e09f") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -20,6 +20,7 @@
     -moz-osx-font-smoothing: grayscale;
 }
 .ti-123:before { content: "\f554"; }
+.ti-activity:before { content: "\ed23"; }
 .ti-adjustments:before { content: "\ea03"; }
 .ti-alert-circle:before { content: "\ea05"; }
 .ti-alert-triangle:before { content: "\ea06"; }
@@ -95,6 +96,7 @@
 .ti-folder-open:before { content: "\faf7"; }
 .ti-folder-search:before { content: "\f918"; }
 .ti-forms:before { content: "\ee8f"; }
+.ti-grid-dots:before { content: "\eaba"; }
 .ti-hand-click:before { content: "\ef4f"; }
 .ti-hand-move:before { content: "\ef50"; }
 .ti-hash:before { content: "\eabc"; }
@@ -107,6 +109,7 @@
 .ti-keyboard:before { content: "\ebd6"; }
 .ti-layout-board-split:before { content: "\ef94"; }
 .ti-layout-bottombar:before { content: "\ead3"; }
+.ti-layout-dashboard:before { content: "\f02c"; }
 .ti-layout-grid:before { content: "\edba"; }
 .ti-layout-sidebar-right:before { content: "\ead9"; }
 .ti-leaf:before { content: "\ed4f"; }
@@ -119,13 +122,16 @@
 .ti-mail:before { content: "\eae5"; }
 .ti-map:before { content: "\eae9"; }
 .ti-map-pin:before { content: "\eae8"; }
+.ti-map-pin-check:before { content: "\f94c"; }
 .ti-map-pin-plus:before { content: "\f956"; }
+.ti-map-pins:before { content: "\ed5e"; }
 .ti-map-route:before { content: "\fc79"; }
 .ti-maximize:before { content: "\eaea"; }
 .ti-menu-2:before { content: "\ec42"; }
 .ti-message-circle:before { content: "\eaed"; }
 .ti-minimize:before { content: "\eaf1"; }
 .ti-minus:before { content: "\eaf2"; }
+.ti-mood-sad:before { content: "\eaf6"; }
 .ti-moon:before { content: "\eaf8"; }
 .ti-mountain:before { content: "\ef97"; }
 .ti-movie:before { content: "\eafa"; }

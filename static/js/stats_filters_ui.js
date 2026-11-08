@@ -11,12 +11,13 @@ import { FILTER_FORM_FIELDS, cleanFilters, filterChoices } from './chart_filters
 
 // Construit le formulaire dans `container` (vidé). `onChange` est appelé à
 // chaque changement de sélection.
-export function renderFilterForm(container, { table, filters, labels, attributeName, idPrefix, onChange = null }) {
+// `tables` : les tables des sources du tableau de bord (valeurs réunies).
+export function renderFilterForm(container, { tables, filters, labels, attributeName, idPrefix, onChange = null }) {
     destroyFilterForm(container);
     container.replaceChildren();
     const nf = new Intl.NumberFormat(labels.locale);
     for (const field of FILTER_FORM_FIELDS) {
-        const choices = filterChoices(table, field);
+        const choices = filterChoices(tables, field);
         // Un champ à une seule valeur ne filtre rien : masqué (sauf s'il
         // porte déjà une sélection, à pouvoir retirer).
         const selected = new Set(filters?.[field] || []);

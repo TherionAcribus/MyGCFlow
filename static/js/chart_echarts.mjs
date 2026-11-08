@@ -119,21 +119,31 @@ function barColors(result, spec, ctx, values) {
     return result.keys.map((key) => (key === OTHERS_KEY ? ctx.tokens.others : key === UNKNOWN_KEY ? ctx.tokens.unknown : base));
 }
 
-// Nom et couleur de chaque série. Une série par période et, le cas échéant,
-// par valeur de la 2ᵉ dimension — la couleur suit cette valeur (ou la
-// période), jamais le rang d'affichage.
+// Nom d'une série sans 2ᵉ dimension : sa source quand le graphique en
+// compare plusieurs, sa période quand il en compare plusieurs (sauf côte à
+// côte, où chaque repère porte déjà la sienne), sinon la mesure.
+export function seriesName(result, s, spec, labels, { withPeriod = true } = {}) {
+    const parts = [];
+    if ((result.sources?.length || 1) > 1) parts.push(labels.sourceNoun(s.source));
+    if (withPeriod && result.periods.length > 1) parts.push(labels.seriesPeriodLabel(result.periods[s.periodIndex]));
+    return parts.length ? parts.join(' · ') : labels.measureName(spec.measure, spec.source);
+}
+
+// Nom et couleur de chaque série. Une série par période, par source et, le
+// cas échéant, par valeur de la 2ᵉ dimension — la couleur suit cette valeur
+// (ou la période, ou la source), jamais le rang d'affichage.
 function seriesIdentity(result, spec, ctx, { side = false } = {}) {
     const { labels, tokens, typeColors, attributeName } = ctx;
-    const many = result.periods.length > 1;
+    const multiSource = (result.sources?.length || 1) > 1;
+    const periods = result.periods.length;
     let splitIndex = 0;
     const splitColors = new Map();
     return result.series.map((s) => {
-        const period = result.periods[s.periodIndex];
-        const periodName = period ? labels.seriesPeriodLabel(period) : '';
         if (s.split === null) {
+            const index = multiSource ? (s.sourceIndex || 0) * periods + s.periodIndex : s.periodIndex;
             return {
-                name: many && !side ? periodName : labels.measureName(spec.measure),
-                color: tokens.series[s.periodIndex % tokens.series.length],
+                name: seriesName(result, s, spec, labels, { withPeriod: !side }),
+                color: tokens.series[index % tokens.series.length],
             };
         }
         if (!splitColors.has(s.split)) {
@@ -141,7 +151,10 @@ function seriesIdentity(result, spec, ctx, { side = false } = {}) {
             splitColors.set(s.split, categoryColor(spec.splitBy, s.split, special ? 0 : splitIndex++, tokens, typeColors));
         }
         const splitName = labels.axisLabel(spec.splitBy, s.split, { attributeName });
-        return { name: many && !side ? `${periodName} · ${splitName}` : splitName, color: splitColors.get(s.split) };
+        const prefix = [];
+        if (multiSource) prefix.push(labels.sourceNoun(s.source));
+        if (periods > 1 && !side) prefix.push(labels.seriesPeriodLabel(result.periods[s.periodIndex]));
+        return { name: [...prefix, splitName].join(' · '), color: splitColors.get(s.split) };
     });
 }
 
@@ -495,9 +508,9 @@ function sharedMax(result, stacked) {
 function deltaOption(result, spec, ctx) {
     const { tokens, labels } = ctx;
     const horizontal = spec.view.chart === 'bar' && spec.view.orientation === 'horizontal';
-    const [a, b] = result.periods;
-    const nameA = labels.seriesPeriodLabel(a);
-    const nameB = labels.seriesPeriodLabel(b);
+    // Deux périodes d'une source, ou une période de deux sources.
+    const nameA = seriesName(result, result.series[0], spec, labels);
+    const nameB = seriesName(result, result.series[1], spec, labels);
     const heads = axisLabels(result, ctx, { long: true });
     const format = valueFormatter(spec, result, ctx);
     const data = result.delta.values.map((v) => ({
@@ -591,7 +604,7 @@ function donutOption(result, spec, ctx) {
         const single = n === 1;
         return {
             type: 'pie',
-            name: single ? labels.measureName(spec.measure) : labels.seriesPeriodLabel(result.periods[s.periodIndex]),
+            name: seriesName(result, s, spec, labels),
             radius: [`${single ? 48 : inner}%`, `${single ? 72 : outer}%`],
             center: single
                 ? (data.length > 1 ? ['38%', '50%'] : ['50%', '50%'])
@@ -651,12 +664,14 @@ export function buildChartOption(result, spec, ctx) {
     return overlayOption(result, spec, ctx);
 }
 
-// Chiffre clé : une valeur par période ; la première porte l'écart avec la
-// deuxième (« +18 % par rapport à 2025 »).
+// Chiffre clé : une valeur par période (ou par source) ; la première porte
+// l'écart avec la deuxième (« +18 % par rapport à 2025 », « par rapport aux
+// trouvailles reçues »).
 export function numberModel(result, spec, { labels }) {
-    const many = result.periods.length > 1;
+    const multiSource = (result.sources?.length || 1) > 1;
+    const many = result.periods.length > 1 || multiSource;
     const blocks = result.series.map((s) => ({
-        label: many ? labels.seriesPeriodLabel(result.periods[s.periodIndex]) : '',
+        label: many ? seriesName(result, s, spec, labels) : '',
         value: s.values[0] ?? null,
         text: labels.formatValue(s.values[0] ?? null, spec.measure, { normalize: result.normalize }),
         delta: null,
@@ -668,7 +683,9 @@ export function numberModel(result, spec, { labels }) {
             sign: Math.sign(diff),
             text: labels.formatDelta(diff, spec.measure, result.normalize),
             ratio: labels.formatRatio(ratio),
-            versus: labels.comparedTo(result.periods[1]),
+            versus: multiSource && result.series[1].source !== result.series[0].source
+                ? labels.comparedToSource(result.series[1].source)
+                : labels.comparedTo(result.periods[result.series[1].periodIndex]),
         };
     }
     return blocks;
@@ -741,7 +758,7 @@ function heatmapOption(result, spec, ctx) {
         const rows = result.series.filter((s) => s.periodIndex === 0);
         xLabels = axisLabels(result, ctx);
         yLabels = rows.map((s) => (s.split === null
-            ? labels.measureName(spec.measure)
+            ? labels.measureName(spec.measure, spec.source)
             : labels.axisLabel(spec.splitBy, s.split, { attributeName })));
         rows.forEach((s, j) => s.values.forEach((v, i) => cells.push([i, j, v ?? 0])));
     }

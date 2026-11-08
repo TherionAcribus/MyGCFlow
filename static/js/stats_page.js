@@ -20,26 +20,37 @@ import {
     allowedLayouts,
     allowedNormalize,
     allowedSplitBy,
+    chartSources,
     createChartSpec,
+    hasSeveralSeries,
+    MAX_EXTRA_SOURCES,
     normalizeChartSpec,
+    normalizeMeasure,
     periodsAreMultiple,
+    sourceDimensions,
 } from './chart_spec.mjs';
-import { findsTable } from './chart_sources.mjs';
+import {
+    dnfTable, evolutionTables, findsTable, ownedTable, posesTables, tableFromRecords,
+} from './chart_sources.mjs';
 import { todayDay } from './chart_periods.mjs';
-import { ELAPSED_UNITS, filterMask, runChartQuery } from './chart_query.mjs';
+import { ELAPSED_UNITS, filterMask, runChartQueries } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
 import { buildChartOption, calendarYears, chartHeight, numberModel } from './chart_echarts.mjs';
 import {
     DASHBOARD_SIZES,
+    MAX_DASHBOARDS,
     MAX_ITEMS,
     QUESTIONS,
     QUESTION_GROUPS,
     SIZE_COLUMNS,
     chartPeriodChoices,
     comparePeriodChoices,
+    dashboardSources,
+    defaultDashboard,
     defaultDocument,
+    questionFamily,
     effectiveQueryOptions,
     hasOwnPeriod,
     itemFromQuestion,
@@ -59,8 +70,16 @@ export function echartsLocale(lang = document.documentElement.lang) {
 const SAVE_DELAY_MS = 500;
 const $ = (id) => document.getElementById(id);
 
+// Table vide : source sans données (ou injoignable).
+const EMPTY_TABLE = tableFromRecords([]);
+const PERSONAL_SOURCES = ['finds', 'dnf', 'owned', 'poses.received', 'poses.dnf', 'poses.favorites'];
+
 const state = {
-    table: null,
+    // Tables par source (« finds », « poses.received », « evolution:3 »…).
+    tables: new Map(),
+    datasets: [],               // jeux Évolution [{ id, name, … }]
+    evolutionLoads: new Map(),  // id de jeu → promesse de chargement
+    missingDatasets: new Set(), // jeux supprimés depuis
     doc: null,
     labels: makeLabels({ t, locale: document.documentElement.lang || 'fr' }),
     tokens: null,
@@ -134,11 +153,73 @@ async function loadTypeColors() {
     }
 }
 
-async function loadFinds() {
-    const response = await fetch('/api/stats/finds');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return findsTable(await response.json());
+async function fetchJson(url) {
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status} ${url}`);
+    return response.json();
 }
+
+// Sources personnelles : les trouvailles sont indispensables (échec = page
+// en erreur) ; DNF, caches posées et Mes poses sont facultatifs (pas de logs
+// importés = tables vides).
+async function loadPersonalSources() {
+    const optional = (promise, build) => promise.then(build).catch((e) => {
+        console.warn('[stats] Source indisponible :', e?.message || e);
+        return null;
+    });
+    const [finds, dnf, owned, poses] = await Promise.all([
+        fetchJson('/api/stats/finds').then(findsTable),
+        optional(fetchJson('/api/logs/dnf_features'), dnfTable),
+        optional(fetchJson('/api/logs/owner_features'), ownedTable),
+        optional(fetchJson('/api/poses/data'), posesTables),
+    ]);
+    state.tables.set('finds', finds);
+    state.tables.set('dnf', dnf || EMPTY_TABLE);
+    state.tables.set('owned', owned || EMPTY_TABLE);
+    state.tables.set('poses.received', poses?.received || EMPTY_TABLE);
+    state.tables.set('poses.dnf', poses?.dnf || EMPTY_TABLE);
+    state.tables.set('poses.favorites', poses?.favorites || EMPTY_TABLE);
+}
+
+async function loadDatasets() {
+    try {
+        state.datasets = (await fetchJson('/api/evolution/datasets')).datasets || [];
+    } catch (_) {
+        state.datasets = [];
+    }
+}
+
+// Jeu Évolution chargé à la demande (premier affichage d'un tableau qui
+// l'utilise). Un jeu supprimé depuis donne des tables vides.
+function ensureEvolution(id) {
+    if (!id) return Promise.resolve();
+    if (!state.evolutionLoads.has(id)) {
+        state.evolutionLoads.set(id, fetchJson('/api/evolution/datasets/' + id + '/data')
+            .then((payload) => {
+                const { placed, archived } = evolutionTables(payload);
+                state.tables.set('evolution:' + id, placed);
+                state.tables.set('evolution:' + id + ':archived', archived);
+            })
+            .catch(() => {
+                state.missingDatasets.add(id);
+                state.tables.set('evolution:' + id, EMPTY_TABLE);
+                state.tables.set('evolution:' + id + ':archived', EMPTY_TABLE);
+            }));
+    }
+    return state.evolutionLoads.get(id);
+}
+
+const tableOf = (source) => state.tables.get(source) || EMPTY_TABLE;
+
+// Étendue des données d'un tableau (menus de périodes) : réunion de ses
+// sources.
+function dashboardExtent(dashboard = activeDashboard()) {
+    const extents = dashboardSources(dashboard).map((source) => tableOf(source).extent).filter(Boolean);
+    if (!extents.length) return null;
+    return { first: Math.min(...extents.map((e) => e.first)), last: Math.max(...extents.map((e) => e.last)) };
+}
+
+const dashboardTables = (dashboard = activeDashboard()) => dashboardSources(dashboard).map(tableOf);
 
 async function loadDashboards() {
     const response = await fetch('/api/dashboards');
@@ -163,9 +244,10 @@ function showSection(id) {
 async function loadPage() {
     showSection('statsLoading');
     try {
-        const [table, doc] = await Promise.all([loadFinds(), loadDashboards(), loadTypeColors()]);
-        state.table = table;
-        if (!table.n) {
+        const [, doc] = await Promise.all([loadPersonalSources(), loadDashboards(), loadTypeColors(), loadDatasets()]);
+        // Rien à compter nulle part : la page invite à importer.
+        const personal = PERSONAL_SOURCES.some((source) => tableOf(source).n > 0);
+        if (!personal && !state.datasets.length) {
             showSection('statsEmptyState');
             return;
         }
@@ -176,6 +258,7 @@ async function loadPage() {
             state.doc = newDefaultDocument();
             scheduleSave({ immediate: true });
         }
+        await ensureEvolution(activeDashboard().dataset);
         state.ready = true;
         showSection('statsDashboard');
         renderDashboard();
@@ -244,8 +327,12 @@ function activeDashboard() {
 }
 
 function attributeName(key) {
-    const attr = (state.table?.dicts.attribute || []).find((a) => a.key === key);
+    const attr = (tableOf('finds').dicts.attribute || []).find((a) => a.key === key);
     return attr ? attr.name : key;
+}
+
+function datasetName(id) {
+    return state.datasets.find((d) => d.id === id)?.name || t('Jeu ${id}', { id });
 }
 
 function chartTitle(spec) {
@@ -255,7 +342,7 @@ function chartTitle(spec) {
 // Menu de périodes. `choices` : la liste proposée ; `inherit` ajoute
 // « Période du tableau de bord » (valeur vide).
 function fillPeriodSelect(select, current, { inherit = false, choices = null } = {}) {
-    const list = choices || periodChoices(state.table.extent, state.today);
+    const list = choices || periodChoices(dashboardExtent(), state.today);
     select.replaceChildren();
     if (inherit) select.append(new Option(t('Période du tableau de bord'), ''));
     const values = new Set();
@@ -283,17 +370,158 @@ function periodsBadge(spec) {
 function renderToolbar() {
     const dashboard = activeDashboard();
     $('statsDashboardName').textContent = dashboard.name || t('Mon tableau de bord');
+    const kind = $('statsDashboardKind');
+    kind.hidden = dashboard.kind !== 'evolution';
+    kind.textContent = dashboard.kind === 'evolution' ? t('Évolution · ${name}', { name: datasetName(dashboard.dataset) }) : '';
+    renderDashboardMenu();
     fillPeriodSelect($('statsGlobalPeriod'), dashboard.period);
-    const { n, undated } = state.table;
-    const nf = new Intl.NumberFormat(state.labels.locale);
-    let note = t('${n} trouvailles', { n: nf.format(n) });
-    if (activeFilterCount(dashboard.filters)) {
-        const kept = filterMask(state.table, dashboard.filters).reduce((sum, v) => sum + v, 0);
-        note += ' · ' + t('${n} avec les filtres', { n: nf.format(kept) });
-    }
-    if (undated) note += ' · ' + t('${n} sans date de trouvaille, non comptées', { n: nf.format(undated) });
-    $('statsDataNote').textContent = note;
+    $('statsDataNote').textContent = dataNote(dashboard);
     renderFiltersSummary(dashboard);
+}
+
+// Ce que contient le tableau : « 6 trouvailles · 2 DNF · 12 trouvailles
+// reçues » ou, pour un jeu Évolution, ses publications et archivages.
+function dataNote(dashboard) {
+    const nf = new Intl.NumberFormat(state.labels.locale);
+    const parts = [];
+    let main;
+    if (dashboard.kind === 'evolution') {
+        if (state.missingDatasets.has(dashboard.dataset)) return t("Ce jeu Évolution n'existe plus.");
+        main = tableOf('evolution:' + dashboard.dataset);
+        parts.push(t('${n} caches publiées', { n: nf.format(main.n) }));
+        parts.push(t('${n} archivages datés', { n: nf.format(tableOf('evolution:' + dashboard.dataset + ':archived').n) }));
+    } else {
+        main = tableOf('finds');
+        parts.push(t('${n} trouvailles', { n: nf.format(main.n) }));
+        const others = [
+            ['dnf', (n) => t('${n} DNF', { n })],
+            ['owned', (n) => t('${n} caches posées', { n })],
+            ['poses.received', (n) => t('${n} trouvailles reçues', { n })],
+        ];
+        for (const [source, text] of others) {
+            const n = tableOf(source).n;
+            if (n) parts.push(text(nf.format(n)));
+        }
+    }
+    if (activeFilterCount(dashboard.filters)) {
+        const kept = filterMask(main, dashboard.filters).reduce((sum, v) => sum + v, 0);
+        parts.push(t('${n} avec les filtres', { n: nf.format(kept) }));
+    }
+    const undated = tableOf('finds').undated;
+    if (dashboard.kind !== 'evolution' && undated) {
+        parts.push(t('${n} sans date de trouvaille, non comptées', { n: nf.format(undated) }));
+    }
+    return parts.join(' · ');
+}
+
+// ----- Plusieurs tableaux de bord
+
+function renderDashboardMenu() {
+    const menu = $('statsDashboardMenu');
+    menu.replaceChildren();
+    for (const dashboard of state.doc.dashboards) {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'dropdown-item' + (dashboard.id === state.doc.active ? ' active' : '');
+        button.dataset.dashboardId = dashboard.id;
+        const icon = document.createElement('i');
+        icon.className = 'ti ' + (dashboard.kind === 'evolution' ? 'ti-stack' : 'ti-layout-dashboard') + ' me-2';
+        icon.setAttribute('aria-hidden', 'true');
+        button.append(icon, document.createTextNode(dashboard.name || t('Mon tableau de bord')));
+        if (dashboard.id === state.doc.active) button.setAttribute('aria-current', 'true');
+        li.append(button);
+        menu.append(li);
+    }
+    const divider = document.createElement('li');
+    divider.innerHTML = '<hr class="dropdown-divider">';
+    menu.append(divider);
+    menu.append(menuButton('new-dashboard', 'ti-plus', t('Nouveau tableau de bord…'),
+        { disabled: state.doc.dashboards.length >= MAX_DASHBOARDS }));
+    menu.append(menuButton('delete-dashboard', 'ti-trash', t('Supprimer ce tableau de bord'),
+        { danger: true, disabled: state.doc.dashboards.length < 2 }));
+}
+
+async function switchDashboard(id) {
+    if (!state.doc.dashboards.some((d) => d.id === id) || id === state.doc.active) return;
+    state.doc.active = id;
+    scheduleSave({ immediate: true });
+    await ensureEvolution(activeDashboard().dataset);
+    renderDashboard();
+}
+
+function onDashboardMenuClick(event) {
+    const pick = event.target.closest('[data-dashboard-id]');
+    if (pick) {
+        switchDashboard(pick.dataset.dashboardId);
+        return;
+    }
+    const action = event.target.closest('[data-action]')?.dataset.action;
+    if (action === 'new-dashboard') openNewDashboard();
+    if (action === 'delete-dashboard') deleteDashboard();
+}
+
+function syncNewDashboardForm() {
+    const evolution = $('statsNewKindEvolution').checked;
+    const hasDatasets = state.datasets.length > 0;
+    $('statsNewDatasetRow').hidden = !evolution || !hasDatasets;
+    $('statsNewNoDataset').hidden = !evolution || hasDatasets;
+    $('btnStatsNewDashboardCreate').disabled = evolution && !hasDatasets;
+    const name = $('statsNewName');
+    // Nom proposé tant que l'utilisateur n'a pas écrit le sien.
+    if (!name.dataset.touched) {
+        name.value = evolution && hasDatasets
+            ? datasetName(Number($('statsNewDataset').value))
+            : t('Mon tableau de bord');
+    }
+}
+
+function openNewDashboard() {
+    $('statsNewDataset').replaceChildren(...state.datasets.map((d) => new Option(d.name, String(d.id))));
+    $('statsNewKindPersonal').checked = true;
+    $('statsNewWithCharts').checked = true;
+    delete $('statsNewName').dataset.touched;
+    syncNewDashboardForm();
+    getBsModal('statsNewDashboardModal')?.show();
+}
+
+async function submitNewDashboard(event) {
+    event.preventDefault();
+    const evolution = $('statsNewKindEvolution').checked;
+    const dataset = evolution ? Number($('statsNewDataset').value) : null;
+    if (evolution && !dataset) return;
+    const name = Array.from($('statsNewName').value.replace(/[\r\n\t]+/g, ' ').trim()).slice(0, 60).join('');
+    const dashboard = defaultDashboard({
+        name: name || t('Mon tableau de bord'),
+        kind: evolution ? 'evolution' : 'personal',
+        dataset,
+        withCharts: $('statsNewWithCharts').checked,
+        titleOf: (id) => state.labels.question(id).title,
+    });
+    state.doc.dashboards.push(dashboard);
+    state.doc.active = dashboard.id;
+    scheduleSave({ immediate: true });
+    getBsModal('statsNewDashboardModal')?.hide();
+    await ensureEvolution(dataset);
+    renderDashboard();
+}
+
+function deleteDashboard() {
+    if (state.doc.dashboards.length < 2) return;
+    const dashboard = activeDashboard();
+    showConfirmation(
+        t('Supprimer le tableau de bord « ${name} » et ses graphiques ?', { name: dashboard.name }),
+        t('Supprimer'),
+        async () => {
+            state.doc.dashboards = state.doc.dashboards.filter((d) => d.id !== dashboard.id);
+            state.doc.active = state.doc.dashboards[0].id;
+            scheduleSave({ immediate: true });
+            await ensureEvolution(activeDashboard().dataset);
+            renderDashboard();
+        },
+        null,
+        { danger: true, confirmText: t('Supprimer') },
+    );
 }
 
 const filterValueLabel = (field, value) => state.labels.filterValue(field, value, { attributeName });
@@ -337,7 +565,7 @@ function onFiltersSummaryClick(event) {
 
 function openFilters() {
     renderFilterForm($('statsFiltersForm'), {
-        table: state.table,
+        tables: dashboardTables(),
         filters: activeDashboard().filters,
         labels: state.labels,
         attributeName,
@@ -480,7 +708,7 @@ function cardMenu(spec, index, count) {
 }
 
 function computeResult(spec, dashboard) {
-    return runChartQuery(spec, state.table, {
+    return runChartQueries(spec, tableOf, {
         ...effectiveQueryOptions(spec, dashboard),
         today: state.today,
         labelOf: (dim, key) => state.labels.axisLabel(dim, key, { attributeName }),
@@ -510,7 +738,7 @@ function cardNote(result, spec) {
             .format(new Date(result.toDate.day * 86400000));
         notes.push(t('Comparaison à date : chaque période est arrêtée au ${date}.', { date }));
     }
-    if (!result.meta.rows) notes.push(t('Aucune trouvaille sur cette période.'));
+    if (!result.meta.rows) notes.push(t('Aucune donnée sur cette période.'));
     return notes.join(' · ');
 }
 
@@ -698,8 +926,10 @@ function renderGallery() {
     list.append(section(t('Partir de zéro'), [
         card('custom', 'ti-adjustments', t('Graphique personnalisé'), t('Partir de zéro et tout choisir.')),
     ]));
+    // Questions de la famille du tableau seulement.
+    const family = activeDashboard().kind;
     for (const group of QUESTION_GROUPS) {
-        const cards = QUESTIONS.filter((q) => q.group === group).map((question) => {
+        const cards = QUESTIONS.filter((q) => q.group === group && questionFamily(q) === family).map((question) => {
             const { title, description } = state.labels.question(question.id);
             return card(question.id, question.icon, title, description);
         });
@@ -718,13 +948,14 @@ function onGalleryPick(event) {
     if (!button) return;
     const id = button.dataset.question;
     getBsModal('statsGalleryModal')?.hide();
+    const dashboard = activeDashboard();
     if (id === 'custom') {
-        openEditor({ mode: 'new', item: { size: 'M', spec: createChartSpec({ groupBy: 'month' }) } });
+        const source = dashboardSources(dashboard)[0];
+        openEditor({ mode: 'new', item: { size: 'M', spec: createChartSpec({ source, groupBy: 'month' }) } });
         return;
     }
-    const item = itemFromQuestion(id, { title: state.labels.question(id).title });
+    const item = itemFromQuestion(id, { title: state.labels.question(id).title, dataset: dashboard.dataset });
     if (!item) return;
-    const dashboard = activeDashboard();
     dashboard.items.push(item);
     scheduleSave({ immediate: true });
     renderDashboard();
@@ -735,24 +966,107 @@ function onGalleryPick(event) {
 // Éditeur
 // ---------------------------------------------------------------------------
 
+// Sources de la phrase : la principale, puis chaque « et [source] ». Les
+// menus ne proposent que les sources de la famille du tableau (barrière).
+function fillSourceSelects(spec) {
+    const allowed = dashboardSources(activeDashboard());
+    const option = (source) => {
+        const empty = tableOf(source).n === 0;
+        const text = state.labels.sourceLabel(source) + (empty ? ' ' + t('(aucune donnée)') : '');
+        return new Option(text, source);
+    };
+    const main = $('statsEdSource');
+    main.replaceChildren(...allowed.map(option));
+    main.value = spec.source;
+    const list = $('statsEdSourceList');
+    list.replaceChildren();
+    spec.extraSources.forEach((source, i) => {
+        const label = document.createElement('label');
+        label.className = 'stats-phrase-word';
+        label.htmlFor = 'statsEdExtraSource' + i;
+        label.textContent = t('et dans');
+        const row = document.createElement('div');
+        row.className = 'stats-compare-row';
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        select.id = 'statsEdExtraSource' + i;
+        select.dataset.extraSource = String(i);
+        select.replaceChildren(...allowed.map(option));
+        select.value = source;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn btn-ghost-secondary btn-icon';
+        remove.dataset.removeSource = String(i);
+        remove.setAttribute('aria-label', t('Retirer cette source'));
+        remove.title = t('Retirer cette source');
+        remove.innerHTML = '<i class="ti ti-x" aria-hidden="true"></i>';
+        row.append(select, remove);
+        list.append(label, row);
+    });
+    const free = allowed.filter((source) => !chartSources(spec).includes(source));
+    $('statsEdAddSourceRow').hidden = !free.length || spec.extraSources.length >= MAX_EXTRA_SOURCES;
+}
+
+function readEditorSources() {
+    const source = $('statsEdSource').value;
+    const extraSources = [...$('statsEdSourceList').querySelectorAll('select')].map((select) => select.value);
+    return { source, extraSources };
+}
+
+function addSource() {
+    if (!state.editor) return;
+    readEditorForm();
+    const { item } = state.editor;
+    const free = dashboardSources(activeDashboard()).filter((source) => !chartSources(item.spec).includes(source));
+    if (!free.length) return;
+    // De préférence une source qui a des données.
+    const next = free.find((source) => tableOf(source).n > 0) || free[0];
+    item.spec = normalizeChartSpec({ ...item.spec, extraSources: [...item.spec.extraSources, next] });
+    syncEditorForm();
+    renderPreview();
+    $('statsEdExtraSource' + (item.spec.extraSources.length - 1))?.focus();
+}
+
+function onSourceListClick(event) {
+    const button = event.target.closest('[data-remove-source]');
+    if (!button || !state.editor) return;
+    readEditorForm();
+    const { item } = state.editor;
+    const extraSources = [...item.spec.extraSources];
+    extraSources.splice(Number(button.dataset.removeSource), 1);
+    item.spec = normalizeChartSpec({ ...item.spec, extraSources });
+    syncEditorForm();
+    renderPreview();
+    $('btnStatsEdAddSource').focus();
+}
+
+// Mesures valables pour toutes les sources du graphique.
 function fillMeasureSelect(spec) {
+    const sources = chartSources(spec);
+    const choices = MEASURE_CHOICES.filter((choice) => measureKey(normalizeMeasure(choice.measure, sources)) === choice.key);
     const select = $('statsEdMeasure');
-    select.replaceChildren(...MEASURE_CHOICES.map((choice) => new Option(state.labels.measurePhrase(choice.key), choice.key)));
+    select.replaceChildren(...choices.map((choice) => new Option(state.labels.measurePhrase(choice.key), choice.key)));
     select.value = measureKey(spec.measure);
 }
 
+// Regroupements : ceux des sources (les autres n'apparaissent pas), grisés
+// quand la mesure les exclut.
 function fillGroupSelect(spec) {
+    const sources = chartSources(spec);
+    const available = new Set(sourceDimensions(sources));
+    const allowed = new Set(allowedGroupBy(spec.measure, sources));
     const select = $('statsEdGroupBy');
-    const allowed = new Set(allowedGroupBy(spec.measure));
     select.replaceChildren();
     for (const { family, dims } of GROUP_CHOICES) {
-        const group = document.createElement('optgroup');
-        group.label = state.labels.groupFamily(family);
-        for (const dim of dims) {
+        const options = dims.filter((dim) => available.has(dim)).map((dim) => {
             const option = new Option(state.labels.groupPhrase(dim), dim);
             option.disabled = !allowed.has(dim);
-            group.append(option);
-        }
+            return option;
+        });
+        if (!options.length) continue;
+        const group = document.createElement('optgroup');
+        group.label = state.labels.groupFamily(family);
+        group.append(...options);
         select.append(group);
     }
     select.value = spec.groupBy;
@@ -770,7 +1084,7 @@ function renderCompareRows(spec) {
     const list = $('statsEdCompareList');
     list.replaceChildren();
     const compares = Array.isArray(spec.periods) ? spec.periods.slice(1) : [];
-    const choices = comparePeriodChoices(state.table.extent, state.today);
+    const choices = comparePeriodChoices(dashboardExtent(), state.today);
     compares.forEach((period, i) => {
         const label = document.createElement('label');
         label.className = 'stats-phrase-word';
@@ -800,7 +1114,7 @@ function renderCompareRows(spec) {
 }
 
 function fillSplitSelect(spec) {
-    const dims = allowedSplitBy(spec.groupBy);
+    const dims = allowedSplitBy(spec.groupBy, chartSources(spec));
     const select = $('statsEdSplitBy');
     select.replaceChildren(new Option(t('rien'), ''), ...dims.map((dim) => new Option(state.labels.dimension(dim), dim)));
     select.value = spec.splitBy || '';
@@ -810,7 +1124,7 @@ function fillSplitSelect(spec) {
 // Palettes proposées : pour des barres d'une seule série ou un anneau.
 function paletteChoices(spec) {
     const chart = spec.view.chart;
-    const single = !spec.splitBy && !periodsAreMultiple(spec.periods);
+    const single = !spec.splitBy && !hasSeveralSeries(spec);
     if (chart === 'donut') return ['auto', 'multi'];
     if (chart === 'bar' && single && spec.compare.layout !== 'delta') return ['auto', 'accent', 'multi', 'heat'];
     return [];
@@ -829,7 +1143,7 @@ function syncEditorFilters({ rebuild = false } = {}) {
         container.replaceChildren();
         if (own) {
             renderFilterForm(container, {
-                table: state.table,
+                tables: dashboardTables(),
                 filters: spec.filters,
                 labels: state.labels,
                 attributeName,
@@ -863,21 +1177,21 @@ function fillChoiceSelect(select, values, labelOf, current) {
 function syncEditorForm() {
     const { item } = state.editor;
     const { spec } = item;
+    fillSourceSelects(spec);
     fillMeasureSelect(spec);
     fillGroupSelect(spec);
     const first = spec.periods?.[0];
     fillPeriodSelect($('statsEdPeriod'), first && first.kind !== 'dashboard' ? first : null, {
         inherit: true,
-        choices: chartPeriodChoices(state.table.extent, state.today),
+        choices: chartPeriodChoices(dashboardExtent(), state.today),
     });
     renderCompareRows(spec);
     fillSplitSelect(spec);
     fillChartSelect(spec);
 
     // Comparaison : présentation, alignement, « à date » — seulement quand
-    // le graphique compare plusieurs périodes.
-    const multiple = periodsAreMultiple(spec.periods);
-    $('statsEdCompareBlock').hidden = !multiple;
+    // le graphique compare plusieurs périodes ou plusieurs sources.
+    $('statsEdCompareBlock').hidden = !hasSeveralSeries(spec);
     fillChoiceSelect($('statsEdLayout'), allowedLayouts(spec), state.labels.layout, spec.compare.layout);
     const aligns = allowedAligns(spec.groupBy);
     fillChoiceSelect($('statsEdAlign'), aligns,
@@ -900,7 +1214,7 @@ function syncEditorForm() {
     $('statsEdLog').checked = spec.view.log;
 
     const chart = spec.view.chart;
-    const category = ['cache_type', 'container', 'country', 'state', 'owner', 'attribute', 'dt'].includes(spec.groupBy);
+    const category = ['cache_type', 'container', 'country', 'state', 'owner', 'attribute', 'dt', 'cache', 'finder', 'county'].includes(spec.groupBy);
     $('statsEdOrientationRow').hidden = chart !== 'bar';
     $('statsEdTopRow').hidden = !category;
     $('statsEdSortRow').hidden = !category || chart === 'number';
@@ -910,7 +1224,7 @@ function syncEditorForm() {
     fillChoiceSelect($('statsEdPalette'), palettes.length ? palettes : ['auto'], state.labels.palette, spec.view.palette);
     $('statsEdPaletteRow').hidden = palettes.length < 2;
     // Empiler : plusieurs séries superposées en barres, courbe ou aire.
-    const several = Boolean(spec.splitBy) || periodsAreMultiple(spec.periods);
+    const several = Boolean(spec.splitBy) || hasSeveralSeries(spec);
     $('statsEdStack').checked = spec.view.stack;
     $('statsEdStackRow').hidden = !several || !['bar', 'line', 'area'].includes(chart)
         || spec.compare.layout === 'delta';
@@ -935,6 +1249,7 @@ function readEditorForm() {
     const spec = item.spec;
     const raw = {
         ...spec,
+        ...readEditorSources(),
         title: $('statsEdTitle').value,
         measure: measureOfKey($('statsEdMeasure').value),
         groupBy: $('statsEdGroupBy').value,
@@ -964,7 +1279,8 @@ function readEditorForm() {
     // Titre venu d'une question (« Nombre de trouvailles ») : il ne décrit
     // plus le graphique dès que la mesure ou le regroupement change. Tant
     // que l'utilisateur n'a pas écrit le sien, il redevient automatique.
-    const content = raw.groupBy !== spec.groupBy || measureKey(raw.measure) !== measureKey(spec.measure);
+    const content = raw.groupBy !== spec.groupBy || measureKey(raw.measure) !== measureKey(spec.measure)
+        || raw.source !== spec.source || raw.extraSources.join() !== spec.extraSources.join();
     if (content && !state.editor.titleTouched) raw.title = '';
     // Passer à « au total » propose le chiffre clé ; le quitter, les barres.
     if (raw.groupBy === 'none' && spec.groupBy !== 'none') raw.view.chart = 'number';
@@ -1099,13 +1415,18 @@ window.getStatsPageSnapshot = () => {
         echartsVersion: window.echarts?.version || null,
         locale: echartsLocale(),
         ready: state.ready,
-        rows: state.table?.n ?? null,
-        undated: state.table?.undated ?? null,
+        rows: state.tables.has('finds') ? tableOf('finds').n : null,
+        undated: state.tables.has('finds') ? tableOf('finds').undated : null,
+        sources: Object.fromEntries([...state.tables].map(([source, table]) => [source, table.n])),
+        datasets: state.datasets.map((d) => ({ id: d.id, name: d.name })),
+        dashboards: state.doc ? state.doc.dashboards.map((d) => ({ id: d.id, name: d.name, kind: d.kind, dataset: d.dataset, items: d.items.length })) : [],
         dashboard: dashboard ? {
             id: dashboard.id,
             name: dashboard.name,
             period: dashboard.period,
             filters: dashboard.filters,
+            kind: dashboard.kind,
+            dataset: dashboard.dataset,
             items: dashboard.items.length,
         } : null,
         cards: dashboard ? dashboard.items.map((item) => {
@@ -1126,6 +1447,9 @@ window.getStatsPageSnapshot = () => {
                 partial: entry?.result.series.map((s) => s.partial) ?? null,
                 layout: item.spec.compare.layout,
                 splitBy: item.spec.splitBy,
+                source: item.spec.source,
+                extraSources: item.spec.extraSources,
+                seriesSources: entry?.result.series.map((s) => s.source) ?? null,
                 filters: item.spec.filters,
                 height: (() => {
                     const host = $('statsGrid').querySelector(cardSelector(item.spec.id) + ' .stats-chart');
@@ -1155,13 +1479,22 @@ function bindEvents() {
     $('statsGlobalPeriod').addEventListener('change', onGlobalPeriodChange);
     $('statsGrid').addEventListener('click', onCardAction);
     $('statsGalleryList').addEventListener('click', onGalleryPick);
+    $('statsDashboardMenu').addEventListener('click', onDashboardMenuClick);
+    $('statsNewDashboardForm').addEventListener('submit', submitNewDashboard);
+    for (const id of ['statsNewKindPersonal', 'statsNewKindEvolution', 'statsNewDataset']) {
+        $(id).addEventListener('change', syncNewDashboardForm);
+    }
+    $('statsNewName').addEventListener('input', () => { $('statsNewName').dataset.touched = '1'; });
+    $('statsNewDashboardModal').addEventListener('shown.bs.modal', () => $('statsNewName').select());
+    $('btnStatsEdAddSource').addEventListener('click', addSource);
+    $('statsEdSourceList').addEventListener('click', onSourceListClick);
     $('btnStatsFilters').addEventListener('click', openFilters);
     $('btnStatsFiltersApply').addEventListener('click', applyFilters);
     $('btnStatsFiltersClear').addEventListener('click', () => clearFilterForm($('statsFiltersForm')));
     $('statsFiltersModal').addEventListener('hidden.bs.modal', () => destroyFilterForm($('statsFiltersForm')));
     $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
-    for (const id of ['statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
+    for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
         'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdSmooth', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
         'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList']) {
         $(id).addEventListener('change', onEditorChange);

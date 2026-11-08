@@ -15,7 +15,7 @@ import { FILTER_FIELDS, normalizeFilters } from './chart_spec.mjs';
 // Champs du formulaire, dans l'ordre d'affichage.
 export const FILTER_FORM_FIELDS = Object.freeze([
     'source_kind', 'cache_type', 'container', 'difficulty', 'terrain',
-    'country', 'state', 'owner', 'attribute', 'published_year',
+    'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'published_year',
 ]);
 
 function containerRank(value) {
@@ -23,11 +23,8 @@ function containerRank(value) {
     return i < 0 ? CONTAINER_ORDER.length : i;
 }
 
-// Valeurs d'un champ présentes dans la table, avec leur nombre de
-// trouvailles : [{ value, count }]. Ordre : naturel pour ce qui en a un
-// (D/T croissants, années décroissantes, contenants du plus petit au plus
-// grand), sinon du plus fréquent au plus rare.
-export function filterChoices(table, field) {
+// Nombre de lignes par valeur d'un champ dans une table.
+function countValues(table, field) {
     const counts = new Map();
     const add = (value) => counts.set(value, (counts.get(value) || 0) + 1);
     for (let r = 0; r < table.n; r++) {
@@ -45,6 +42,20 @@ export function filterChoices(table, field) {
                 if (key !== undefined) add(key);
             }
         }
+    }
+    return counts;
+}
+
+// Valeurs d'un champ présentes dans une ou plusieurs tables (les sources
+// d'un tableau de bord), avec leur nombre de lignes : [{ value, count }].
+// Ordre : naturel pour ce qui en a un (D/T croissants, années
+// décroissantes, contenants du plus petit au plus grand), sinon du plus
+// fréquent au plus rare.
+export function filterChoices(tables, field) {
+    const counts = new Map();
+    for (const table of Array.isArray(tables) ? tables : [tables]) {
+        if (!table) continue;
+        for (const [value, count] of countValues(table, field)) counts.set(value, (counts.get(value) || 0) + count);
     }
     const choices = [...counts].map(([value, count]) => ({ value, count }));
     const byCount = (a, b) => b.count - a.count || String(a.value).localeCompare(String(b.value));

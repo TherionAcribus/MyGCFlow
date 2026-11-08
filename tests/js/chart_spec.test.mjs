@@ -34,6 +34,7 @@ test('une entrée vide donne la description par défaut, avec un identifiant neu
         id: 'abc123',
         title: '',
         source: 'finds',
+        extraSources: [],
         measure: { op: 'count' },
         groupBy: 'year',
         splitBy: null,
@@ -55,6 +56,7 @@ test('une description valide ressort identique (point fixe)', () => {
         id: 'a3f09c12',
         title: 'Cette année contre l\'an dernier',
         source: 'finds',
+        extraSources: [],
         measure: { op: 'count' },
         groupBy: 'month_of_year',
         splitBy: null,
@@ -325,4 +327,83 @@ test('la normalisation est idempotente sur des entrées abîmées', () => {
         const once = normalizeChartSpec(input, fixedId);
         assert.deepEqual(normalizeChartSpec(once, fixedId), once, JSON.stringify(input));
     }
+});
+
+// ---------------------------------------------------------------------------
+// Sources (lot 4)
+// ---------------------------------------------------------------------------
+
+import {
+    evolutionDatasetOf,
+    evolutionSource,
+    hasSeveralSeries,
+    sameSourceGroup,
+    sourceDimensions,
+    sourceFamily,
+} from '../../static/js/chart_spec.mjs';
+
+test('familles de sources : personnelles d\'un côté, chaque jeu Évolution de l\'autre', () => {
+    assert.equal(sourceFamily('finds'), 'personal');
+    assert.equal(sourceFamily('poses.favorites'), 'personal');
+    assert.equal(sourceFamily('evolution:3'), 'evolution');
+    assert.equal(sourceFamily('evolution:3:archived'), 'evolution');
+    assert.equal(evolutionDatasetOf('evolution:12:archived'), 12);
+    assert.equal(evolutionDatasetOf('finds'), null);
+    assert.equal(evolutionSource(4), 'evolution:4');
+    assert.equal(evolutionSource(4, { archived: true }), 'evolution:4:archived');
+    assert.ok(isChartSource('evolution:4:archived'));
+    assert.ok(!isChartSource('evolution:4:placed'));
+    assert.ok(sameSourceGroup('finds', 'poses.received'));
+    assert.ok(sameSourceGroup('evolution:2', 'evolution:2:archived'));
+    assert.ok(!sameSourceGroup('evolution:2', 'evolution:3'));
+    assert.ok(!sameSourceGroup('finds', 'evolution:2'));
+});
+
+test('sources ajoutées : même groupe, sans doublon, plafonnées', () => {
+    const spec = normalizeChartSpec({
+        source: 'finds',
+        extraSources: ['poses.received', 'finds', 'evolution:2', 'poses.received', 'dnf', 'owned', 'poses.dnf'],
+    });
+    assert.deepEqual(spec.extraSources, ['poses.received', 'dnf', 'owned']);
+    const evo = normalizeChartSpec({ source: 'evolution:2', extraSources: ['evolution:2:archived', 'evolution:3', 'finds'] });
+    assert.deepEqual(evo.extraSources, ['evolution:2:archived']);
+    assert.equal(hasSeveralSeries(evo), true);
+    assert.equal(hasSeveralSeries(normalizeChartSpec({})), false);
+});
+
+test('dimensions selon la source, communes à plusieurs sources', () => {
+    assert.ok(sourceDimensions('finds').includes('attribute'));
+    assert.ok(!sourceDimensions('owned').includes('owner'));
+    assert.ok(sourceDimensions('poses.received').includes('finder'));
+    assert.ok(sourceDimensions('evolution:2').includes('county'));
+    assert.ok(!sourceDimensions('evolution:2').includes('age'));
+    const shared = sourceDimensions(['finds', 'poses.received']);
+    assert.ok(shared.includes('age'));
+    assert.ok(!shared.includes('finder'));
+    assert.ok(!shared.includes('owner'));
+    // Une dimension étrangère à la source est remplacée.
+    assert.equal(normalizeChartSpec({ source: 'owned', groupBy: 'owner' }).groupBy, 'year');
+    assert.equal(normalizeChartSpec({ source: 'poses.received', groupBy: 'finder' }).groupBy, 'finder');
+    assert.equal(normalizeChartSpec({ source: 'finds', extraSources: ['poses.received'], groupBy: 'finder' }).groupBy, 'year');
+    assert.equal(normalizeChartSpec({ source: 'finds', groupBy: 'year', splitBy: 'county' }).splitBy, null);
+});
+
+test('mesures selon la source : actives pour les caches posées et publiées, visiteurs pour Mes poses', () => {
+    assert.deepEqual(normalizeChartSpec({ source: 'owned', measure: { op: 'active' }, groupBy: 'cache_type' }).measure, { op: 'active' });
+    assert.equal(normalizeChartSpec({ source: 'owned', measure: { op: 'active' }, groupBy: 'cache_type' }).groupBy, 'cache_type');
+    assert.deepEqual(normalizeChartSpec({ source: 'evolution:2:archived', measure: { op: 'active' } }).measure, { op: 'count' });
+    assert.deepEqual(normalizeChartSpec({ source: 'owned', extraSources: ['finds'], measure: { op: 'active' } }).measure, { op: 'count' });
+    assert.deepEqual(normalizeChartSpec({ source: 'poses.received', measure: { op: 'distinct', field: 'finder' } }).measure,
+        { op: 'distinct', field: 'finder' });
+    assert.deepEqual(normalizeChartSpec({ source: 'finds', measure: { op: 'distinct', field: 'finder' } }).measure,
+        { op: 'distinct', field: 'caches' });
+    assert.deepEqual(normalizeChartSpec({ source: 'owned', measure: { op: 'mean', field: 'age' } }).measure,
+        { op: 'mean', field: 'difficulty' });
+});
+
+test('écart entre deux sources sur une période', () => {
+    const spec = { periods: [{ kind: 'year', year: 2024 }], extraSources: ['poses.received'], view: { chart: 'bar' } };
+    assert.ok(allowedLayouts(spec).includes('delta'));
+    assert.ok(!allowedLayouts({ ...spec, periods: [{ kind: 'year', year: 2024 }, { kind: 'previous' }] }).includes('delta'));
+    assert.ok(!allowedLayouts({ ...spec, extraSources: ['poses.received', 'dnf'] }).includes('delta'));
 });

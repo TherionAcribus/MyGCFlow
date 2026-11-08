@@ -132,6 +132,34 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* Famille d'un tableau Évolution : « Évolution · Jeu ». */
+.stats-dashboard-kind {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    white-space: nowrap;
+}
+#statsDashboardMenu .dropdown-item.active .ti {
+    color: inherit;
+}
+.stats-kind-choice {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px 10px 36px;
+    margin-bottom: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    cursor: pointer;
+}
+.stats-kind-choice .form-check-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .stats-toolbar-controls {
     display: flex;
     flex-wrap: wrap;

@@ -24,6 +24,10 @@ incrustés sur la carte et dans la vidéo.
 - Lot 3 (2026-11-08) : filtres du tableau de bord et propres à un
   graphique, 2ᵉ dimension (« découpé par ») et empilement, grille (D/T ou
   deux dimensions), calendrier de l'année, radar, palettes.
+- Lot 4 (2026-11-08) : toutes les sources — DNF, caches posées, Mes poses
+  (trouvailles, DNF, favoris reçus), jeux Évolution — en deux familles
+  étanches ; plusieurs tableaux de bord (changer, créer, supprimer) ; un
+  graphique sur plusieurs sources ; mesure « caches actives ».
 
 ## Parcours des données
 
@@ -192,6 +196,68 @@ distinguent.
 Le thème change (attribut `data-bs-theme` de `<html>`) → couleurs relues,
 graphiques redessinés.
 
+## Sources (lot 4)
+
+**Deux familles étanches** (choix de l'utilisateur : Mes poses se mêle à
+ses trouvailles, Évolution jamais) :
+
+| Famille | Sources | Route |
+|---|---|---|
+| `personal` | `finds` | `GET /api/stats/finds` |
+| | `dnf` (un enregistrement par DNF) | `GET /api/logs/dnf_features` |
+| | `owned` (une par cache posée, au jour de sa pose ; fin = dernier archivage) | `GET /api/logs/owner_features` |
+| | `poses.received`, `poses.dnf`, `poses.favorites` (un par log reçu, avec `cache` et `finder`) | `GET /api/poses/data` |
+| `evolution` | `evolution:<id>` (publiées, fin = archivage), `evolution:<id>:archived` (archivages datés) | `GET /api/evolution/datasets/<id>/data` |
+
+Aucune route nouvelle : `chart_sources.mjs` convertit chaque réponse
+(`dnfTable`, `ownedTable`, `posesTables`, `evolutionTables`) en
+enregistrements, puis en table commune (`tableFromRecords`, mêmes colonnes
+que les trouvailles + `endDay`, + champs `cache`, `finder`, `county`). Une
+source absente (pas de logs) donne une table vide ; seules les trouvailles
+sont indispensables au chargement. Les jeux Évolution se chargent à la
+demande (`ensureEvolution`), un jeu supprimé donne des tables vides et une
+note. Archivée sans date (Évolution) : comptée parmi les publiées, jamais
+active ni archivée.
+
+**Barrière** :
+- `chart_spec.mjs` : `sourceFamily`, `sameSourceGroup` (même famille et,
+  pour Évolution, même jeu) — `extraSources` n'admet que des sources du
+  même groupe que `source`.
+- `dashboard_model.mjs` : un tableau a un `kind` (`personal` /
+  `evolution` + `dataset`) ; à la normalisation, un graphique d'une autre
+  famille est écarté, un graphique Évolution d'un autre jeu rattaché au jeu
+  du tableau (`rebindEvolution`). `dashboardSources` donne les sources
+  proposées par l'éditeur ; la galerie filtre ses questions par famille
+  (`questionFamily`) ; les questions Évolution sont écrites sur
+  `evolution:1` et rattachées au jeu à la création (`itemFromQuestion` ›
+  `dataset`).
+
+**Dimensions et mesures par source** (`sourceDimensions`,
+`sourceDistinctFields`, `sourceMeanFields`) : chaque source n'offre que ce
+que ses données portent (attributs et année de publication : trouvailles ;
+propriétaire : trouvailles et DNF ; cache et visiteur : Mes poses ;
+département : Évolution). Plusieurs sources : l'intersection. L'éditeur
+masque les dimensions absentes, grise celles que la mesure exclut.
+
+**« Caches actives »** (`measure.op: 'active'`, caches posées et publiées
+Évolution) : un stock lu à la fin de chaque case de temps, ou de la période
+pour un total ou des catégories (`activeGroups` + `activeAt` : jours de
+début et de fin triés, recherche dichotomique — rapide sur un gros jeu).
+L'étendue d'une table court jusqu'à son dernier archivage.
+
+**Plusieurs sources dans un graphique** (`runChartQueries`) : chaque
+source est calculée à part sur les mêmes périodes et la même étendue
+(réunion des étendues), puis les séries sont réunies sur un axe commun
+(catégories : union des clés). Séries nommées par source (« Trouvailles /
+Trouvailles reçues »), couleur par position ; l'écart d'un chiffre clé dit
+« par rapport aux trouvailles reçues ». Écart possible entre deux sources
+sur une période.
+
+**Plusieurs tableaux de bord** (avancé du lot 5) : menu à côté du nom
+(changer, « Nouveau tableau de bord… », supprimer — pas le dernier),
+pastille « Évolution · <jeu> », fenêtre de création (famille, jeu, nom
+proposé, « Commencer avec des graphiques prêts »).
+
 ## Graphisme et filtres (lot 3)
 
 **Filtres** : `dashboard.filters` (fenêtre « Filtres », pastilles
@@ -254,7 +320,10 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   colonnes des trouvailles, aller-retour et refus des tableaux de bord.
 - Unitaires du lot 3 : `chart_filters.test.mjs` ; grille, calendrier, radar,
   palettes dans `chart_echarts.test.mjs`.
-- E2E : `tests/e2e/stats-page.spec.mjs` (25 tests, fixture `my-finds.gpx` ;
+- Unitaires du lot 4 : `chart_sources.test.mjs` (tables, actives, plusieurs
+  sources) ; familles dans `chart_spec`, `dashboard_model`, `chart_echarts`.
+- E2E : `tests/e2e/stats-page.spec.mjs` (27 tests, fixtures `my-finds.gpx`,
+  `gc_logs/logs-poses.json`, `evolution-a.csv` ;
   `openWithChart` pose un tableau d'un seul graphique par `PUT`).
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,

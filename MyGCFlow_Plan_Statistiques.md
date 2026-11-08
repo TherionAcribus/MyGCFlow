@@ -64,7 +64,20 @@ grille D/T ou deux dimensions, calendrier de l'année, radar, palettes
 calendrier ne dessinent que la première période ; calendrier limité aux 3
 dernières années ; la palette `gc` reste au format mais n'est pas proposée
 (« automatique » fait de même) ; pas encore d'échelle de couleur réglable.
-Prochain : lot 4 (toutes les sources).
+
+**Lot 4 fait** le 2026-11-08 (détail : `docs/page-statistiques.md` ›
+Sources) : DNF, caches posées, Mes poses (reçues, DNF reçus, favoris),
+jeux Évolution. **Décision utilisateur (2026-11-08)** : Mes poses et les
+trouvailles se mêlent librement, Évolution est à part — deux familles de
+tableaux de bord, jamais mélangées (barrière dans le format, le modèle,
+l'éditeur et la galerie). Plusieurs sources dans un graphique (même
+famille), mesure « caches actives », dimensions propres (cache, visiteur,
+département). Écarts : le choix entre tableaux de bord (prévu au lot 5)
+est fait ici, nécessaire à la barrière ; les données passent par les
+routes existantes (pas de route `/api/stats/*` en plus) ; une cache
+Évolution archivée sans date n'est jamais active ; pas de dimension « durée
+de vie » ni « statut » pour l'instant. Prochain : lot 5 (organisation :
+glisser / redimensionner, export SVG et JSON, impression).
 
 Décisions prises avec l'utilisateur :
 

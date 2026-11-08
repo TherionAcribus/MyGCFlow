@@ -10,6 +10,7 @@
 // les tableaux de bord (`dashboards.json`) sont effacés avant chaque test et
 // en sortie ; le thème est remis à sa valeur et sa persistance attendue.
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -17,6 +18,12 @@ import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
+// Logs fictifs de Mes poses (compte 1234567) : 7 caches posées, 12
+// trouvailles reçues dont 3 avec un favori.
+const LOGS_FIXTURE = path.join(HERE, '..', 'fixtures', 'gc_logs', 'logs-poses.json');
+// Jeu Évolution : 6 caches publiées, archivées le 6/1/2020 (GC1A02) et le
+// 8/1/2020 (GC1A05), une archivée sans date (GC1A03) → 3 actives.
+const EVOLUTION_FIXTURE = path.join(HERE, 'fixtures', 'evolution-a.csv');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -190,8 +197,10 @@ test('galerie : une question ajoute son graphique, qui survit au rechargement', 
   await page.locator('#btnStatsAddChart').click();
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
-  await expect(gallery.locator('[data-question]')).toHaveCount(23);
-  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(6);
+  // Questions de la famille « Mes données » seulement (pas celles d'Évolution).
+  await expect(gallery.locator('[data-question]')).toHaveCount(31);
+  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(8);
+  await expect(gallery.locator('[data-question^="evo_"]')).toHaveCount(0);
   await gallery.locator('[data-question="weekdays"]').click();
   await expect(gallery).toBeHidden();
 
@@ -531,6 +540,149 @@ test('éditeur : la palette se choisit pour des barres d\'une série', async ({ 
   await page.locator('#btnStatsEdSave').click();
   const doc = await savedDoc(request);
   expect(doc.dashboards[0].items[0].spec.view.palette).toBe('heat');
+});
+
+// ---------------------------------------------------------------------------
+// Toutes les sources (lot 4)
+// ---------------------------------------------------------------------------
+
+async function waitTask(request, taskId) {
+  await expect.poll(async () => (await (await request.get(`/tasks/${taskId}`)).json()).state,
+    { timeout: 30_000 }).toBe('finished');
+}
+
+// Les logs vivent hors de /clear_database : vidés en entrée et en sortie.
+async function clearLogs(request) {
+  expect((await request.post('/api/logs/clear')).ok()).toBeTruthy();
+}
+
+async function importPosesLogs(request) {
+  await clearLogs(request);
+  const preview = await request.post('/api/logs/import/preview', {
+    multipart: { file: { name: 'logs-poses.json', mimeType: 'application/json', buffer: fs.readFileSync(LOGS_FIXTURE) } },
+  });
+  expect(preview.ok()).toBeTruthy();
+  const { import_token: token } = await preview.json();
+  const commit = await request.post('/api/logs/import/commit', { data: { import_token: token } });
+  expect(commit.status()).toBe(202);
+  await waitTask(request, (await commit.json()).task_id);
+}
+
+async function deleteAllDatasets(request) {
+  const res = await request.get('/api/evolution/datasets');
+  for (const dataset of (await res.json()).datasets) {
+    expect((await request.delete(`/api/evolution/datasets/${dataset.id}`)).ok()).toBeTruthy();
+  }
+}
+
+async function createDataset(request, name) {
+  const created = await request.post('/api/evolution/datasets', { data: { name } });
+  expect(created.status()).toBe(201);
+  const { dataset } = await created.json();
+  const imported = await request.post(`/api/evolution/datasets/${dataset.id}/import`, {
+    multipart: { files: { name: 'evolution-a.csv', mimeType: 'text/csv', buffer: fs.readFileSync(EVOLUTION_FIXTURE) } },
+  });
+  expect(imported.status()).toBe(202);
+  await waitTask(request, (await imported.json()).task_id);
+  return dataset.id;
+}
+
+test('Mes poses : trouvailles et favoris reçus, comparés à mes trouvailles', async ({ page, request }) => {
+  await importPosesLogs(request);
+  try {
+    let { errors, card: received } = await openWithChart(page, request, {
+      source: 'poses.received', groupBy: 'none', view: { chart: 'number' },
+    }, 'M');
+    const snap = await snapshot(page);
+    expect(snap.sources['poses.received']).toBe(12);
+    expect(snap.sources['poses.favorites']).toBe(3);
+    expect(received.series).toEqual([[12]]);
+    await expect(card(page, received.id).locator('.stats-card-title')).toHaveText('Trouvailles reçues');
+    await expect(page.locator('#statsDataNote')).toContainText('12 trouvailles reçues');
+
+    // Éditeur : six sources personnelles, aucune source Évolution ; une 2ᵉ
+    // source s'ajoute (mes trouvailles).
+    await cardAction(page, received.id, 'edit');
+    await expect(page.locator('#statsEdSource option')).toHaveCount(6);
+    await expect(page.locator('#statsEdSource option[value^="evolution"]')).toHaveCount(0);
+    await page.locator('#statsEdSource').selectOption('poses.favorites');
+    await expect(page.locator('#statsEdPreviewNumber .stats-number-value')).toHaveText('3');
+    await page.locator('#statsEdSource').selectOption('finds');
+    await page.locator('#btnStatsEdAddSource').click();
+    await page.locator('#statsEdExtraSource0').selectOption('poses.received');
+    await expect(page.locator('#statsEdPreviewNumber .stats-number-block')).toHaveCount(2);
+    await expect(page.locator('#statsEdPreviewNumber .stats-number-delta')).toHaveText(/−6 \(-50\s?%\) par rapport aux trouvailles reçues/);
+    await page.locator('#btnStatsEdSave').click();
+    const saved = (await snapshot(page)).cards[0];
+    expect(saved.extraSources).toEqual(['poses.received']);
+    expect(saved.seriesSources).toEqual(['finds', 'poses.received']);
+    expect(saved.series).toEqual([[6], [12]]);
+
+    // Mes visiteurs : une dimension propre à Mes poses.
+    ({ card: received } = await openWithChart(page, request, {
+      source: 'poses.received', groupBy: 'finder', view: { chart: 'bar', orientation: 'horizontal' },
+    }));
+    expect(received.keys.length).toBeGreaterThan(1);
+    expect(received.series[0].reduce((a, b) => a + b, 0)).toBe(12);
+    expect(errors).toEqual([]);
+  } finally {
+    await clearLogs(request);
+  }
+});
+
+test('Évolution : un tableau à part, lié à son jeu, sans sources personnelles', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  const datasetId = await createDataset(request, 'Zone de test');
+  try {
+    const errors = await openStats(page);
+    await page.locator('#btnStatsDashboards').click();
+    await page.locator('#statsDashboardMenu [data-action="new-dashboard"]').click();
+    const modal = page.locator('#statsNewDashboardModal');
+    await expect(modal).toBeVisible();
+    await page.locator('#statsNewKindEvolution').check();
+    await expect(page.locator('#statsNewDataset')).toHaveValue(String(datasetId));
+    await expect(page.locator('#statsNewName')).toHaveValue('Zone de test');
+    await page.locator('#btnStatsNewDashboardCreate').click();
+    await expect(modal).toBeHidden();
+
+    let snap = await snapshot(page);
+    expect(snap.dashboard).toMatchObject({ kind: 'evolution', dataset: datasetId, name: 'Zone de test' });
+    expect(snap.cards.length).toBe(5);
+    expect(snap.cards.every((c) => c.source.startsWith(`evolution:${datasetId}`))).toBe(true);
+    // Caches actives : 3 ; publications et archivages datés par année (2020).
+    expect(snap.cards[0].series).toEqual([[3]]);
+    expect(snap.cards[2].seriesSources).toEqual([`evolution:${datasetId}`, `evolution:${datasetId}:archived`]);
+    expect(snap.cards[2].series).toEqual([[6], [2]]);
+    await expect(page.locator('#statsDashboardKind')).toHaveText('Évolution · Zone de test');
+    await expect(page.locator('#statsDataNote')).toContainText('6 caches publiées');
+
+    // Galerie et éditeur : seulement ce qui concerne la zone.
+    await page.locator('#btnStatsAddChart').click();
+    await expect(page.locator('#statsGalleryModal [data-question^="evo_"]')).toHaveCount(7);
+    await expect(page.locator('#statsGalleryModal [data-question="total"]')).toHaveCount(0);
+    await page.locator('#statsGalleryModal [data-question="custom"]').click();
+    await expect(page.locator('#statsEdSource option')).toHaveCount(2);
+    await expect(page.locator('#statsEdSource option[value="finds"]')).toHaveCount(0);
+    await page.locator('#statsEditorModal [data-bs-dismiss="modal"]').last().click();
+
+    // Retour au tableau personnel par le menu.
+    await page.locator('#btnStatsDashboards').click();
+    await page.locator(`#statsDashboardMenu [data-dashboard-id="${snap.dashboards[0].id}"]`).click();
+    await expect.poll(async () => (await snapshot(page)).dashboard.kind).toBe('personal');
+
+    // Barrière à la lecture : un graphique Évolution posé dans un tableau
+    // personnel est écarté.
+    const doc = await savedDoc(request);
+    doc.dashboards[0].items.push({ size: 'M', spec: { source: `evolution:${datasetId}`, groupBy: 'year' } });
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+    await page.reload();
+    await page.waitForFunction(() => window.mygcflowStatsReady === true);
+    snap = await snapshot(page);
+    expect(snap.cards.every((c) => !c.source.startsWith('evolution'))).toBe(true);
+    expect(errors).toEqual([]);
+  } finally {
+    await deleteAllDatasets(request);
+  }
 });
 
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {

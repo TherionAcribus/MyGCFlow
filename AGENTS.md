@@ -293,7 +293,10 @@ Autres repères :
   (`dropdownParent`) : les ouvrir par `el.tomselect.open()` puis cliquer
   `.ts-dropdown:visible .option[data-value=…]` — helper `pickFilter` de
   `stats-page.spec.mjs` ; le `<select>` d'origine est masqué, pas de
-  `selectOption` dessus.
+  `selectOption` dessus. Les tests de sources (lot 4) importent les logs de
+  Mes poses (`POST /api/logs/clear` en entrée et en sortie) et créent un jeu
+  Évolution par l'API (import = tâche à suivre sur `/tasks/<id>`), supprimé
+  en sortie.
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

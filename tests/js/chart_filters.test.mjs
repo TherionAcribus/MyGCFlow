@@ -77,3 +77,9 @@ test('filtres lus d\'un formulaire : listes vides retirées, valeurs canoniques'
     assert.deepEqual(cleanFilters({ country: [], difficulty: ['2.0', '1.5'], bogus: ['x'] }), { difficulty: ['2', '1.5'] });
     assert.deepEqual(cleanFilters(null), {});
 });
+
+test('valeurs proposées sur plusieurs tables : comptes additionnés', () => {
+    const merged = filterChoices([table, table], 'cache_type');
+    assert.deepEqual(merged[0], { value: 'Traditional Cache', count: 6 });
+    assert.deepEqual(filterChoices([table, null], 'country').map((c) => c.count), [3, 1]);
+});
