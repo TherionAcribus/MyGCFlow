@@ -8,7 +8,7 @@ import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
     dnfTable, evolutionTables, findsTable, ownedTable, posesTables, tableFromRecords,
 } from '../../static/js/chart_sources.mjs';
-import { activeAt, runChartQueries, runChartQuery } from '../../static/js/chart_query.mjs';
+import { OTHERS_KEY, activeAt, runChartQueries, runChartQuery } from '../../static/js/chart_query.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
 const day = (iso) => {
@@ -184,4 +184,66 @@ test('plusieurs sources : un axe commun, une série par source, écart', () => {
     // Une seule source : même résultat que runChartQuery, avec la source.
     const one = runChartQueries(normalizeChartSpec({ groupBy: 'year' }), () => finds, { today: TODAY });
     assert.equal(one.series[0].source, 'finds');
+});
+
+test('plusieurs sources : top N commun — pas de valeur « Autres » affichée à zéro', () => {
+    // Trouvailles {A 5, B 4, C 3, D 1}, DNF {D 5, B 4, C 3, A 1} : un top 3
+    // choisi par source mettait D « Autres » pour les trouvailles et en tête
+    // des DNF — elle s'affichait à 0 pour les trouvailles. Le top est choisi
+    // sur les comptages réunis (B 8, puis A / C / D à 6, ordre des libellés).
+    const rows = (counts) => Object.entries(counts).flatMap(([country, n]) =>
+        Array.from({ length: n }, () => ({ day: day('2024-06-01'), country })));
+    const tables = {
+        finds: tableFromRecords(rows({ A: 5, B: 4, C: 3, D: 1 }), { source: 'finds' }),
+        dnf: tableFromRecords(rows({ D: 5, B: 4, C: 3, A: 1 }), { source: 'dnf' }),
+    };
+    const spec = normalizeChartSpec({
+        source: 'finds', extraSources: ['dnf'], groupBy: 'country',
+        periods: [{ kind: 'all' }], view: { chart: 'bar', top: 3 },
+    });
+    const result = runChartQueries(spec, (s) => tables[s], { today: TODAY });
+    assert.deepEqual(result.keys, ['B', 'A', 'C', OTHERS_KEY]);
+    assert.deepEqual(result.series.map((s) => s.values), [[4, 5, 3, 1], [4, 1, 3, 5]]);
+});
+
+test('plusieurs sources : la 2ᵉ dimension est aussi plafonnée sur les comptes réunis', () => {
+    // Chaque source plafonnait ses valeurs de découpage : une valeur « Autres »
+    // pour l'une n'avait pas de série pour l'autre. Série à zéro explicite.
+    const rows = (types) => types.flatMap(([type, n]) =>
+        Array.from({ length: n }, () => ({ day: day('2024-06-01'), cache_type: type })));
+    const tables = {
+        finds: tableFromRecords(rows([['A', 2], ['B', 1]]), { source: 'finds' }),
+        dnf: tableFromRecords(rows([['B', 1], ['C', 2]]), { source: 'dnf' }),
+    };
+    const spec = normalizeChartSpec({
+        source: 'finds', extraSources: ['dnf'], groupBy: 'year', splitBy: 'cache_type',
+        periods: [{ kind: 'all' }],
+    });
+    const result = runChartQueries(spec, (s) => tables[s], { today: TODAY });
+    assert.deepEqual(result.series.map((s) => [s.source, s.split]), [
+        ['finds', 'A'], ['finds', 'B'], ['finds', 'C'],
+        ['dnf', 'A'], ['dnf', 'B'], ['dnf', 'C'],
+    ]);
+    assert.deepEqual(result.series[2].values, [0]);  // pas de C dans les trouvailles
+    assert.deepEqual(result.series[3].values, [0]);  // pas de A dans les DNF
+});
+
+test('plusieurs sources : années de publication sur une étendue commune ordonnée', () => {
+    // Chaque source fixait sa propre étendue (2020-2022 vs 2019 et 2023) :
+    // l'union n'était pas triée ([2020, 2021, 2022, 2019, 2023]).
+    const finds = tableFromRecords([
+        { day: day('2024-01-05'), published: day('2020-01-01') },
+        { day: day('2024-01-06'), published: day('2022-01-01') },
+    ], { source: 'finds' });
+    const dnf = tableFromRecords([
+        { day: day('2024-01-07'), published: day('2019-01-01') },
+        { day: day('2024-01-08'), published: day('2023-01-01') },
+    ], { source: 'dnf' });
+    const spec = normalizeChartSpec({
+        source: 'finds', extraSources: ['dnf'], groupBy: 'published_year',
+        periods: [{ kind: 'all' }],
+    });
+    const result = runChartQueries(spec, (s) => ({ finds, dnf })[s], { today: TODAY });
+    assert.deepEqual(result.keys, [2019, 2020, 2021, 2022, 2023]);
+    assert.deepEqual(result.series.map((s) => s.values), [[0, 1, 0, 1, 0], [1, 0, 0, 0, 1]]);
 });

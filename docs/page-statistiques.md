@@ -253,11 +253,16 @@ L'étendue d'une table court jusqu'à son dernier archivage.
 
 **Plusieurs sources dans un graphique** (`runChartQueries`) : chaque
 source est calculée à part sur les mêmes périodes et la même étendue
-(réunion des étendues), puis les séries sont réunies sur un axe commun
-(catégories : union des clés). Séries nommées par source (« Trouvailles /
-Trouvailles reçues »), couleur par position ; l'écart d'un chiffre clé dit
-« par rapport aux trouvailles reçues ». Écart possible entre deux sources
-sur une période.
+(réunion des étendues), puis les séries sont réunies sur un axe commun.
+Les plafonds sont choisis sur les comptages **réunis** des sources
+(`sharedAxisCaps` : top N de l'axe et de la 2ᵉ dimension, étendue des
+années de publication) — un plafond par source mettrait une valeur
+« Autres » ici et principale là, affichée à zéro pour la première alors
+qu'elle compte ; chaque source émet alors une série à zéro explicite pour
+les valeurs de découpage qu'elle n'a pas. Séries nommées par source
+(« Trouvailles / Trouvailles reçues »), couleur par position ; l'écart
+d'un chiffre clé dit « par rapport aux trouvailles reçues ». Écart
+possible entre deux sources sur une période.
 
 **Plusieurs tableaux de bord** (avancé du lot 5) : menu à côté du nom
 (changer, « Nouveau tableau de bord… », supprimer — pas le dernier),

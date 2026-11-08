@@ -310,8 +310,11 @@ function applyToDate(entries, spec, today) {
     return { day: today };
 }
 
-export function runChartQuery(spec, table, options = {}) {
-    const { today, labelOf = null } = options;
+// Phase commune : périodes résolues (coupe « à date » comprise), masque de
+// filtres et lignes de chaque période. Sert aussi à compter les catégories
+// avant de choisir un top N commun à plusieurs sources (sharedAxisCaps).
+function prepareQuery(spec, table, options = {}) {
+    const { today } = options;
     // Périodes et filtres : ceux passés par l'appelant (héritage du tableau
     // de bord résolu, dashboard_model.mjs), sinon ceux du graphique.
     const periods = options.periods !== undefined ? options.periods : spec.periods;
@@ -361,29 +364,56 @@ export function runChartQuery(spec, table, options = {}) {
         rows++;
         if (dim === 'attribute' && groupKey(r).length === 0) noAttribute++;
     }
+    return { today, dim, kind, op, entries, truncated, toDate, elapsedUnit, align,
+        mask, groupKey, splitKey, inPeriod, rows, noAttribute, stock };
+}
 
-    // Plafonds de cardinalité : top N de l'axe, et des valeurs de la 2ᵉ
-    // dimension pour tenir dans MAX_SERIES séries. Rang = nombre de lignes,
-    // toutes périodes confondues.
-    const rank = (accessor) => {
-        const counts = new Map();
-        for (const list of inPeriod) {
-            for (const r of list) {
-                for (const key of asList(accessor(r))) counts.set(key, (counts.get(key) || 0) + 1);
-            }
+// Plafonds de cardinalité : top N de l'axe, et des valeurs de la 2ᵉ
+// dimension pour tenir dans MAX_SERIES séries. Rang = nombre de lignes,
+// toutes périodes confondues.
+function rankCounts(accessor, inPeriod) {
+    const counts = new Map();
+    for (const list of inPeriod) {
+        for (const r of list) {
+            for (const key of asList(accessor(r))) counts.set(key, (counts.get(key) || 0) + 1);
         }
-        return counts;
-    };
-    const capped = (counts, limit) => {
-        const ordered = [...counts.keys()].sort((a, b) => tailRank(a) - tailRank(b)
-            || counts.get(b) - counts.get(a) || String(a).localeCompare(String(b)));
-        const named = ordered.filter((k) => k !== UNKNOWN_KEY);
-        if (named.length <= limit) return { keys: ordered, remap: null };
-        const kept = new Set(named.slice(0, limit));
-        const keys = [...kept, OTHERS_KEY];
-        if (counts.has(UNKNOWN_KEY)) keys.push(UNKNOWN_KEY);
-        return { keys, remap: (key) => (key === UNKNOWN_KEY || kept.has(key) ? key : OTHERS_KEY) };
-    };
+    }
+    return counts;
+}
+
+function capCounts(counts, limit) {
+    const ordered = [...counts.keys()].sort((a, b) => tailRank(a) - tailRank(b)
+        || counts.get(b) - counts.get(a) || String(a).localeCompare(String(b)));
+    const named = ordered.filter((k) => k !== UNKNOWN_KEY);
+    if (named.length <= limit) return { keys: ordered, remap: null };
+    const kept = new Set(named.slice(0, limit));
+    const keys = [...kept, OTHERS_KEY];
+    if (counts.has(UNKNOWN_KEY)) keys.push(UNKNOWN_KEY);
+    return { keys, remap: (key) => (key === UNKNOWN_KEY || kept.has(key) ? key : OTHERS_KEY) };
+}
+
+// Domaine d'années de publication des comptages (min / max), null sans
+// aucune année connue.
+function yearDomainOf(counts) {
+    const years = [...counts.keys()].filter((k) => k !== UNKNOWN_KEY);
+    return years.length ? { min: Math.min(...years), max: Math.max(...years) } : null;
+}
+
+// Plafond « top N » de l'axe pour cette dimension et cette vue.
+function axisTopLimit(spec, dim) {
+    // Un anneau ou un radar colore chaque part : pas plus de parts que de
+    // teintes (MAX_SERIES), « Autres » compris.
+    const parts = spec.view.chart === 'donut' || spec.view.chart === 'radar';
+    // La grille D/T montre toutes ses combinaisons : pas d'« Autres ».
+    const fullGrid = dim === 'dt' && spec.view.chart === 'heatmap';
+    return !TOP_DIMENSIONS.has(dim) || fullGrid ? Infinity
+        : parts ? Math.min(spec.view.top, MAX_SERIES - 1) : spec.view.top;
+}
+
+export function runChartQuery(spec, table, options = {}) {
+    const { labelOf = null } = options;
+    const { today, dim, kind, op, entries, truncated, toDate, elapsedUnit, align,
+        mask, groupKey, splitKey, inPeriod, rows, noAttribute, stock } = prepareQuery(spec, table, options);
 
     let axisKeys;
     let remapGroup = null;
@@ -399,24 +429,19 @@ export function runChartQuery(spec, table, options = {}) {
     } else if (kind === 'cyclic') {
         axisKeys = rangeKeys(CYCLIC_DOMAINS[dim]);
     } else {
-        const counts = rank(groupKey);
+        const counts = rankCounts(groupKey, inPeriod);
         if (dim === 'difficulty' || dim === 'terrain') {
             axisKeys = [...DT_VALUES];
         } else if (dim === 'age') {
             axisKeys = Array.from({ length: 10 }, (_, i) => i);
         } else if (dim === 'published_year') {
-            const years = [...counts.keys()].filter((k) => k !== UNKNOWN_KEY);
-            axisKeys = years.length ? rangeKeys(Math.max(...years) - Math.min(...years) + 1)
-                .map((i) => Math.min(...years) + i - 1) : [];
+            // Plusieurs sources : domaine commun passé par `yearDomain`.
+            const domain = options.yearDomain || yearDomainOf(counts);
+            axisKeys = domain ? rangeKeys(domain.max - domain.min + 1)
+                .map((i) => domain.min + i - 1) : [];
         } else {
-            // Un anneau ou un radar colore chaque part : pas plus de parts que
-            // de teintes (MAX_SERIES), « Autres » compris.
-            const parts = spec.view.chart === 'donut' || spec.view.chart === 'radar';
-            // La grille D/T montre toutes ses combinaisons : pas d'« Autres ».
-            const fullGrid = dim === 'dt' && spec.view.chart === 'heatmap';
-            const top = !TOP_DIMENSIONS.has(dim) || fullGrid ? Infinity
-                : parts ? Math.min(spec.view.top, MAX_SERIES - 1) : spec.view.top;
-            const result = capped(counts, top);
+            // Plusieurs sources : top N commun passé par `axisCap`.
+            const result = options.axisCap || capCounts(counts, axisTopLimit(spec, dim));
             axisKeys = result.keys.filter((k) => k !== UNKNOWN_KEY);
             remapGroup = result.remap;
             if (dim === 'container') {
@@ -432,7 +457,7 @@ export function runChartQuery(spec, table, options = {}) {
     let remapSplit = null;
     if (splitKey) {
         const perPeriod = Math.max(1, Math.floor(MAX_SERIES / Math.max(1, entries.length)));
-        const result = capped(rank(splitKey), perPeriod - 1);
+        const result = options.splitCap || capCounts(rankCounts(splitKey, inPeriod), perPeriod - 1);
         splitValues = result.keys;
         remapSplit = result.remap;
     }
@@ -668,6 +693,41 @@ function unionExtent(tables) {
     return { first: Math.min(...extents.map((e) => e.first)), last: Math.max(...extents.map((e) => e.last)) };
 }
 
+// Somme des comptages de catégories sur toutes les sources.
+function sumCounts(preps, accessorName) {
+    const combined = new Map();
+    for (const prep of preps) {
+        for (const [key, n] of rankCounts(prep[accessorName], prep.inPeriod)) {
+            combined.set(key, (combined.get(key) || 0) + n);
+        }
+    }
+    return combined;
+}
+
+// Plafonds communs à plusieurs sources : top N de l'axe, top N de la 2ᵉ
+// dimension, étendue des années de publication. Un plafond choisi source
+// par source laisserait une valeur « Autres » ici et principale là — elle
+// s'afficherait à zéro pour la première source alors qu'elle compte.
+function sharedAxisCaps(spec, tables, options) {
+    const dim = spec.groupBy;
+    const fixed = dim === 'difficulty' || dim === 'terrain' || dim === 'age';
+    const cappedGroup = dimensionKind(dim) === 'category' && !fixed;
+    if (!cappedGroup && !spec.splitBy) return {};
+    const preps = tables.map((table) => prepareQuery(spec, table, options));
+    const shared = {};
+    if (dim === 'published_year') {
+        const domain = yearDomainOf(sumCounts(preps, 'groupKey'));
+        if (domain) shared.yearDomain = domain;
+    } else if (cappedGroup) {
+        shared.axisCap = capCounts(sumCounts(preps, 'groupKey'), axisTopLimit(spec, dim));
+    }
+    if (spec.splitBy) {
+        const perPeriod = Math.max(1, Math.floor(MAX_SERIES / Math.max(1, preps[0].entries.length)));
+        shared.splitCap = capCounts(sumCounts(preps, 'splitKey'), perPeriod - 1);
+    }
+    return shared;
+}
+
 // Graphique sur une ou plusieurs sources (spec.source + spec.extraSources).
 // `tableOf(source)` rend la table d'une source. Chaque source est calculée
 // à part sur les mêmes périodes et la même étendue, puis les séries sont
@@ -686,7 +746,8 @@ export function runChartQueries(spec, tableOf, options = {}) {
     const tables = sources.map((source) => tableOf(source));
     const extent = unionExtent(tables);
     const single = { ...spec, extraSources: [], compare: { ...spec.compare, layout: spec.compare.layout === 'delta' ? 'overlay' : spec.compare.layout } };
-    const results = sources.map((source, i) => runChartQuery({ ...single, source }, tables[i], { ...options, extent }));
+    const shared = sharedAxisCaps(single, tables, { ...options, extent });
+    const results = sources.map((source, i) => runChartQuery({ ...single, source }, tables[i], { ...options, extent, ...shared }));
     const base = results[0];
 
     // Axe commun : celui de la première source, complété des clés des
