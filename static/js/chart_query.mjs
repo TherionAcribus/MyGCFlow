@@ -407,7 +407,9 @@ export function runChartQuery(spec, table, options = {}) {
             // Un anneau ou un radar colore chaque part : pas plus de parts que
             // de teintes (MAX_SERIES), « Autres » compris.
             const parts = spec.view.chart === 'donut' || spec.view.chart === 'radar';
-            const top = !TOP_DIMENSIONS.has(dim) ? Infinity
+            // La grille D/T montre toutes ses combinaisons : pas d'« Autres ».
+            const fullGrid = dim === 'dt' && spec.view.chart === 'heatmap';
+            const top = !TOP_DIMENSIONS.has(dim) || fullGrid ? Infinity
                 : parts ? Math.min(spec.view.top, MAX_SERIES - 1) : spec.view.top;
             const result = capped(counts, top);
             axisKeys = result.keys.filter((k) => k !== UNKNOWN_KEY);

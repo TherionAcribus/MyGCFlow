@@ -372,6 +372,9 @@ export function allowedNormalize({ measure, groupBy } = {}) {
 // rien à vérifier, tout reste possible sauf ce que le graphique exclut.
 export function allowedLayouts({ periods, splitBy, view } = {}) {
     const chart = view?.chart;
+    // Calendrier et grille ne dessinent qu'une période (la première) ; le
+    // radar superpose ses polygones.
+    if (chart === 'calendar' || chart === 'heatmap' || chart === 'radar') return ['overlay'];
     const layouts = chart === 'donut' ? ['side'] : ['overlay', 'side'];
     const deltaCharts = ['bar', 'line', 'area', 'number'];
     const known = Array.isArray(periods);

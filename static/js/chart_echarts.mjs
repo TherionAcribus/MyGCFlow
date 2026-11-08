@@ -7,7 +7,8 @@
 //     labels      makeLabels(...) (chart_labels.mjs)
 //     tokens      couleurs du thème courant, lues dans stats_page.css :
 //                 { text, textMuted, grid, surface, others, unknown, up, down,
-//                   series: [8 teintes, dans l'ordre fixe de la palette] }
+//                   empty, heat: [rampe d'une teinte, du plus faible au plus
+//                   fort], series: [8 teintes, dans l'ordre fixe de la palette] }
 //     typeColors  { 'Traditional Cache': '#008000', … } — mêmes couleurs que
 //                 les points de la carte (static/json/defaultGcColors.json)
 //
@@ -83,13 +84,39 @@ function categoryColor(dim, key, index, tokens, typeColors) {
 }
 
 // Teinte de chaque clé de l'axe, dans l'ordre de l'axe : la même clé garde
-// la même couleur d'un graphique côte à côte à l'autre.
-function keyColors(result, ctx) {
+// la même couleur d'un graphique côte à côte à l'autre. `palette` :
+//   multi  une teinte de la palette par clé (types compris) ;
+//   gc / auto  couleurs de la carte pour les types, sinon une teinte par clé.
+function keyColors(result, ctx, palette = 'auto') {
     let index = 0;
+    const typeColors = palette === 'multi' ? null : ctx.typeColors;
     return result.keys.map((key) => {
         const special = key === OTHERS_KEY || key === UNKNOWN_KEY;
-        return categoryColor(result.dim, key, special ? 0 : index++, ctx.tokens, ctx.typeColors);
+        return categoryColor(result.dim, key, special ? 0 : index++, ctx.tokens, typeColors);
     });
+}
+
+// Couleurs par barre d'une série seule (null : une seule teinte pour toutes).
+//   auto / gc  types de caches aux couleurs de la carte ; autres catégories
+//              d'une seule teinte (l'axe les nomme), « Autres » / « Inconnu »
+//              en gris ;
+//   multi      une teinte par clé ;
+//   heat       dégradé selon la valeur ;
+//   accent     une seule teinte, sans exception.
+function barColors(result, spec, ctx, values) {
+    const palette = spec.view.palette;
+    if (palette === 'accent') return null;
+    if (palette === 'heat') {
+        // Sans le premier pas : une barre proche de zéro resterait visible.
+        const ramp = ctx.tokens.heat.length > 2 ? ctx.tokens.heat.slice(1) : ctx.tokens.heat;
+        const max = Math.max(0, ...values.map((v) => v ?? 0));
+        return values.map((v) => rampColor(ramp, max ? (v ?? 0) / max : 0));
+    }
+    if (palette === 'multi') return keyColors(result, ctx, 'multi');
+    if (result.kind !== 'category') return null;
+    if (result.dim === 'cache_type') return keyColors(result, ctx, 'gc');
+    const base = ctx.tokens.series[0];
+    return result.keys.map((key) => (key === OTHERS_KEY ? ctx.tokens.others : key === UNKNOWN_KEY ? ctx.tokens.unknown : base));
 }
 
 // Nom et couleur de chaque série. Une série par période et, le cas échéant,
@@ -235,7 +262,7 @@ function partialStyle(color) {
 function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stacked, single, perItem, axisIndex }) {
     const { tokens, labels } = ctx;
     const log = spec.view.log;
-    const colors = perItem ? keyColors(result, ctx) : null;
+    const colors = perItem ? barColors(result, spec, ctx, s.values) : null;
     const data = s.values.map((value, k) => {
         const v = log && value !== null && value <= 0 ? null : value;
         const color = colors ? colors[k] : identity.color;
@@ -345,10 +372,9 @@ function overlayOption(result, spec, ctx) {
     const identities = seriesIdentity(result, spec, ctx);
     const single = identities.length === 1;
     const stacked = spec.view.stack && identities.length > 1;
-    // Une série seule par catégorie : chaque barre à la couleur de sa
-    // catégorie (types aux couleurs de la carte, « Autres » / « Inconnu »
-    // en gris).
-    const perItem = single && isBar && result.kind === 'category';
+    // Une série seule : couleurs par barre selon la palette (types aux
+    // couleurs de la carte, « Autres » / « Inconnu » en gris…).
+    const perItem = single && isBar;
     const zoom = zoomOption(result, tokens);
     const slider = zoom && zoom.length > 1;
 
@@ -393,7 +419,7 @@ function sideOption(result, spec, ctx) {
     const identities = seriesIdentity(result, spec, ctx, { side: true });
     const stacked = spec.view.stack && Boolean(spec.splitBy);
     const splits = Boolean(spec.splitBy);
-    const perItem = !splits && isBar && result.kind === 'category';
+    const perItem = !splits && isBar;
     const cells = sideCells(result.periods.length);
     const max = sharedMax(result, stacked);
     const legendHeight = splits ? 8 : 0;
@@ -545,7 +571,7 @@ function deltaOption(result, spec, ctx) {
 // teinte d'un anneau à l'autre.
 function donutOption(result, spec, ctx) {
     const { tokens, labels } = ctx;
-    const colors = keyColors(result, ctx);
+    const colors = keyColors(result, ctx, spec.view.palette === 'multi' ? 'multi' : 'gc');
     const pct = new Intl.NumberFormat(labels.locale, { style: 'percent', maximumFractionDigits: 1 });
     const n = result.series.length;
     const format = valueFormatter(spec, result, ctx);
@@ -617,11 +643,12 @@ export function buildChartOption(result, spec, ctx) {
     const chart = spec.view.chart;
     if (chart === 'number') return null;
     if (chart === 'donut') return donutOption(result, spec, ctx);
-    // Calendrier, grille, radar : lot 3 — dessinés en barres d'ici là.
-    const drawn = ['bar', 'line', 'area'].includes(chart) ? spec : { ...spec, view: { ...spec.view, chart: 'bar' } };
-    if (result.delta) return deltaOption(result, drawn, ctx);
-    if (spec.compare.layout === 'side' && result.periods.length > 1) return sideOption(result, drawn, ctx);
-    return overlayOption(result, drawn, ctx);
+    if (chart === 'heatmap') return heatmapOption(result, spec, ctx);
+    if (chart === 'calendar') return calendarOption(result, spec, ctx);
+    if (chart === 'radar') return radarOption(result, spec, ctx);
+    if (result.delta) return deltaOption(result, spec, ctx);
+    if (spec.compare.layout === 'side' && result.periods.length > 1) return sideOption(result, spec, ctx);
+    return overlayOption(result, spec, ctx);
 }
 
 // Chiffre clé : une valeur par période ; la première porte l'écart avec la
@@ -645,4 +672,257 @@ export function numberModel(result, spec, { labels }) {
         };
     }
     return blocks;
+}
+
+// ---------------------------------------------------------------------------
+// Dégradé (palette « heat », grille, calendrier)
+// ---------------------------------------------------------------------------
+
+function hexToRgb(hex) {
+    const raw = String(hex || '').replace('#', '');
+    const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+    return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+}
+
+// Couleur d'un niveau 0…1 le long d'une rampe (teinte unique, du clair au
+// foncé en mode clair, du sombre au clair en mode sombre).
+export function rampColor(ramp, level) {
+    if (!ramp?.length) return '#888888';
+    const x = Math.max(0, Math.min(1, Number.isFinite(level) ? level : 0)) * (ramp.length - 1);
+    const i = Math.min(ramp.length - 2, Math.floor(x));
+    if (ramp.length === 1) return ramp[0];
+    const a = hexToRgb(ramp[i]);
+    const b = hexToRgb(ramp[i + 1]);
+    const f = x - i;
+    const mix = a.map((c, k) => Math.round(c + (b[k] - c) * f));
+    return '#' + mix.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
+function visualMapOption(max, spec, result, ctx, extra = {}) {
+    const { tokens } = ctx;
+    return {
+        type: 'continuous',
+        min: 0,
+        max: max || 1,
+        calculable: false,
+        orient: 'horizontal',
+        itemWidth: 10,
+        itemHeight: 120,
+        inRange: { color: tokens.heat },
+        textStyle: { color: tokens.textMuted, fontSize: 11 },
+        formatter: (v) => ctx.labels.formatValue(v, spec.measure, { compact: true, normalize: result.normalize }),
+        ...extra,
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Grille (carte de chaleur)
+// ---------------------------------------------------------------------------
+
+const HALF_STEPS = Array.from({ length: 9 }, (_, i) => String(1 + i / 2));
+
+// Grille : difficulté × terrain (regroupement D/T), ou regroupement × 2ᵉ
+// dimension. Une seule période : la première.
+function heatmapOption(result, spec, ctx) {
+    const { tokens, labels, attributeName } = ctx;
+    const format = valueFormatter(spec, result, ctx);
+    let xLabels;
+    let yLabels;
+    const cells = [];
+    if (result.dim === 'dt') {
+        xLabels = HALF_STEPS.map((v) => labels.axisLabel('difficulty', v));
+        yLabels = HALF_STEPS.map((v) => labels.axisLabel('terrain', v));
+        const values = result.series[0]?.values || [];
+        const byKey = new Map(result.keys.map((key, i) => [key, values[i]]));
+        HALF_STEPS.forEach((d, i) => HALF_STEPS.forEach((tr, j) => {
+            cells.push([i, j, byKey.get(`${Number(d)}|${Number(tr)}`) ?? 0]);
+        }));
+    } else {
+        const rows = result.series.filter((s) => s.periodIndex === 0);
+        xLabels = axisLabels(result, ctx);
+        yLabels = rows.map((s) => (s.split === null
+            ? labels.measureName(spec.measure)
+            : labels.axisLabel(spec.splitBy, s.split, { attributeName })));
+        rows.forEach((s, j) => s.values.forEach((v, i) => cells.push([i, j, v ?? 0])));
+    }
+    const max = Math.max(0, ...cells.map((c) => c[2]));
+    const xName = result.dim === 'dt' ? labels.dimension('difficulty') : '';
+    const yName = result.dim === 'dt' ? labels.dimension('terrain') : '';
+    return {
+        ...common(ctx, false),
+        tooltip: {
+            ...tooltipBase(tokens),
+            trigger: 'item',
+            formatter: (p) => {
+                const [x, y, v] = p.value;
+                const head = result.dim === 'dt'
+                    ? labels.axisLabel('dt', `${Number(HALF_STEPS[x])}|${Number(HALF_STEPS[y])}`)
+                    : `${xLabels[x]} · ${yLabels[y]}`;
+                return `<div style="font-weight:600;margin-bottom:4px">${escapeHtml(head)}</div><b>${escapeHtml(format(v === '-' ? 0 : v))}</b>`;
+            },
+        },
+        // Les titres d'axe sortent du rectangle « containLabel » : place
+        // réservée à gauche et en bas.
+        grid: { left: yName ? 30 : 8, right: 16, top: 12, bottom: xName ? 62 : 44, containLabel: true },
+        xAxis: {
+            type: 'category', data: xLabels, name: xName, nameLocation: 'middle', nameGap: 24,
+            nameTextStyle: { color: tokens.textMuted }, ...axisStyle(tokens), splitArea: { show: false },
+        },
+        yAxis: {
+            type: 'category', data: yLabels, name: yName, nameLocation: 'middle', nameGap: 28, nameRotate: 90,
+            nameTextStyle: { color: tokens.textMuted }, ...axisStyle(tokens), splitArea: { show: false },
+        },
+        visualMap: visualMapOption(max, spec, result, ctx, { left: 'center', bottom: 0 }),
+        series: [{
+            type: 'heatmap',
+            // Les cases vides restent au fond : seule une valeur colore.
+            data: cells.map(([x, y, v]) => [x, y, v ? v : '-']),
+            itemStyle: { borderColor: tokens.surface, borderWidth: 2, borderRadius: 3 },
+            label: {
+                show: spec.view.labels && cells.length <= 150,
+                color: '#ffffff',
+                textBorderColor: 'rgba(0,0,0,0.45)',
+                textBorderWidth: 2,
+                fontSize: 10,
+                formatter: (p) => labels.formatValue(p.value[2], spec.measure, { compact: true, normalize: result.normalize }),
+            },
+            emphasis: { itemStyle: { borderColor: tokens.text, borderWidth: 1 } },
+        }],
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Calendrier (regroupement par jour)
+// ---------------------------------------------------------------------------
+
+// Au plus trois années dessinées, les plus récentes de la première période.
+export const CALENDAR_MAX_YEARS = 3;
+// Cases carrées : 53 semaines dans la largeur disponible, entre 8 et 18 px.
+const CALENDAR_CELL = 13;
+const CALENDAR_LEFT = 72;
+export function calendarCell(width) {
+    if (!width) return CALENDAR_CELL;
+    return Math.max(8, Math.min(18, Math.floor((width - CALENDAR_LEFT - 8) / 53)));
+}
+const calendarBlock = (cell) => cell * 7 + 38;
+
+function utcYear(day) {
+    return new Date(day * 86400000).getUTCFullYear();
+}
+
+function isoDate(day) {
+    return new Date(day * 86400000).toISOString().slice(0, 10);
+}
+
+// Années du calendrier : { years, truncated }.
+export function calendarYears(result) {
+    const entry = result.periods[0];
+    if (!entry) return { years: [], truncated: false };
+    const first = utcYear(entry.from);
+    const last = utcYear(entry.fullTo ?? entry.to);
+    const all = [];
+    for (let y = last; y >= first; y--) all.push(y);
+    return { years: all.slice(0, CALENDAR_MAX_YEARS), truncated: all.length > CALENDAR_MAX_YEARS };
+}
+
+// Hauteur du graphique en pixels quand elle dépend des données (calendrier :
+// un bandeau par année) ; null = hauteur par défaut de la carte.
+export function chartHeight(result, spec, width = 0) {
+    if (spec.view.chart !== 'calendar') return null;
+    const { years } = calendarYears(result);
+    return 40 + Math.max(1, years.length) * calendarBlock(calendarCell(width));
+}
+
+function calendarOption(result, spec, ctx) {
+    const { tokens, labels } = ctx;
+    const series0 = result.series[0];
+    const days = result.align === 'elapsed' ? (series0?.dates || []) : result.keys;
+    const { years } = calendarYears(result);
+    const points = [];
+    days.forEach((day, i) => {
+        const v = series0?.values[i];
+        if (day === null || day === undefined || !v) return;
+        points.push({ year: utcYear(day), value: [isoDate(day), v] });
+    });
+    const max = Math.max(0, ...points.map((p) => p.value[1]));
+    const format = valueFormatter(spec, result, ctx);
+    const dateFmt = new Intl.DateTimeFormat(labels.locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const cell = calendarCell(ctx.width);
+    const block = calendarBlock(cell);
+    // ECharts range les noms de jours du dimanche au samedi, quel que soit
+    // le premier jour affiché.
+    // Petites cases : un jour sur deux nommé (lun., mer., ven.), comme
+    // GitHub — sinon les noms débordent des rangées.
+    const weekdays = labels.weekdayNames().map((name, i) => (cell < 13 && (i % 2 || i === 6) ? '' : name));
+    const dayNames = [weekdays[6], ...weekdays.slice(0, 6)];
+    return {
+        ...common(ctx, false),
+        tooltip: {
+            ...tooltipBase(tokens),
+            trigger: 'item',
+            formatter: (p) => `<div style="font-weight:600;margin-bottom:4px">${escapeHtml(dateFmt.format(new Date(p.value[0] + 'T00:00:00Z')))}</div><b>${escapeHtml(format(p.value[1]))}</b>`,
+        },
+        visualMap: visualMapOption(max, spec, result, ctx, { right: 0, top: 0, itemHeight: 90 }),
+        calendar: years.map((year, i) => ({
+            range: String(year),
+            top: 40 + i * block + 18,
+            left: CALENDAR_LEFT,
+            cellSize: [cell, cell],
+            splitLine: { show: false },
+            itemStyle: { color: tokens.empty, borderColor: tokens.surface, borderWidth: 2 },
+            yearLabel: { show: true, position: 'left', margin: 44, color: tokens.textMuted, fontSize: 12 },
+            dayLabel: { firstDay: 1, nameMap: dayNames, color: tokens.textMuted, fontSize: 10, margin: 6 },
+            monthLabel: { nameMap: labels.monthNames(), color: tokens.textMuted, fontSize: 10 },
+        })),
+        series: years.map((year, i) => ({
+            type: 'heatmap',
+            coordinateSystem: 'calendar',
+            calendarIndex: i,
+            data: points.filter((p) => p.year === year).map((p) => p.value),
+            itemStyle: { borderColor: tokens.surface, borderWidth: 2 },
+        })),
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Radar
+// ---------------------------------------------------------------------------
+
+function radarOption(result, spec, ctx) {
+    const { tokens } = ctx;
+    const identities = seriesIdentity(result, spec, ctx);
+    const names = axisLabels(result, ctx);
+    const top = sharedMax(result, false) || 1;
+    const format = valueFormatter(spec, result, ctx);
+    return {
+        ...common(ctx, identities.length > 1),
+        tooltip: {
+            ...tooltipBase(tokens),
+            trigger: 'item',
+            formatter: (p) => {
+                const rows = names.map((name, i) => `<div>${escapeHtml(name)} : <b>${escapeHtml(format(p.value[i]))}</b></div>`);
+                return `<div style="font-weight:600;margin-bottom:4px">${marker(p.color)}${escapeHtml(p.name)}</div>${rows.join('')}`;
+            },
+        },
+        radar: {
+            indicator: names.map((name) => ({ name, max: top })),
+            radius: '66%',
+            center: ['50%', identities.length > 1 ? '56%' : '52%'],
+            axisName: { color: tokens.textMuted, fontSize: 11 },
+            splitLine: { lineStyle: { color: tokens.grid } },
+            splitArea: { show: false },
+            axisLine: { lineStyle: { color: tokens.grid } },
+        },
+        series: [{
+            type: 'radar',
+            symbolSize: 6,
+            data: result.series.map((s, i) => ({
+                name: identities[i].name,
+                value: s.values.map((v) => v ?? 0),
+                itemStyle: { color: identities[i].color },
+                lineStyle: { width: 2, color: identities[i].color },
+                areaStyle: { opacity: 0.1, color: identities[i].color },
+            })),
+        }],
+    };
 }

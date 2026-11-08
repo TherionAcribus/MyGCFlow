@@ -7,7 +7,9 @@ import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
-import { buildChartOption, contrastRatio, escapeHtml, numberModel } from '../../static/js/chart_echarts.mjs';
+import {
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, calendarYears, chartHeight, contrastRatio, escapeHtml, numberModel, rampColor,
+} from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
 const TODAY = dayNumber({ y: 2026, m: 11, d: 8 });
@@ -19,6 +21,10 @@ const tokens = {
     others: '#a9b1bb',
     unknown: '#cfd5dc',
     series: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'],
+    up: '#2a78d6',
+    down: '#e34948',
+    empty: '#eef1f5',
+    heat: ['#e8f1fc', '#104281'],
 };
 const typeColors = { 'Traditional Cache': '#008000', 'Multi-cache': '#FFA500', 'Locationless (Reverse) Cache': '#FFFFFF' };
 const ctx = { labels: makeLabels({ locale: 'fr' }), tokens, typeColors, attributeName: (k) => k };
@@ -246,4 +252,94 @@ test('chiffre clé comparé : l\'écart avec la deuxième période sur la premi�
     assert.match(blocks[0].delta.ratio, /-33\s?%/);
     assert.equal(blocks[0].delta.versus, 'par rapport à 2025');
     assert.equal(blocks[1].delta, null);
+});
+
+// ---------------------------------------------------------------------------
+// Graphisme (lot 3)
+// ---------------------------------------------------------------------------
+
+test('palettes d\'une série de barres : automatique, une couleur, une par valeur, dégradé', () => {
+    const colorsOf = (o) => o.series[0].data.map((d) => (typeof d === 'object' && d !== null ? d.itemStyle.color : o.series[0].color));
+    // Automatique : propriétaires d'une seule teinte (l'axe les nomme).
+    const auto = option({ groupBy: 'owner' }).option;
+    assert.deepEqual([...new Set(colorsOf(auto))], [tokens.series[0]]);
+    // Une par valeur : teintes de la palette dans l'ordre.
+    const multi = option({ groupBy: 'owner', view: { palette: 'multi' } }).option;
+    assert.deepEqual(colorsOf(multi).slice(0, 3), tokens.series.slice(0, 3));
+    // Une par valeur sur les types : la palette, pas les couleurs de la carte.
+    const typesMulti = option({ groupBy: 'cache_type', view: { palette: 'multi' } }).option;
+    assert.equal(colorsOf(typesMulti)[0], tokens.series[0]);
+    // Une seule couleur, même pour les types.
+    const accent = option({ groupBy: 'cache_type', view: { palette: 'accent' } }).option;
+    assert.ok(accent.series[0].data.every((d) => typeof d !== 'object' || d === null));
+    // Dégradé : la plus grande barre a la couleur la plus forte.
+    const heat = option({ groupBy: 'year', view: { palette: 'heat' } }).option;
+    assert.equal(colorsOf(heat)[0], '#104281');
+});
+
+test('dégradé : interpolation le long de la rampe', () => {
+    assert.equal(rampColor(['#000000', '#ffffff'], 0), '#000000');
+    assert.equal(rampColor(['#000000', '#ffffff'], 1), '#ffffff');
+    assert.equal(rampColor(['#000000', '#ffffff'], 0.5), '#808080');
+    assert.equal(rampColor(['#000000', '#ffffff'], 7), '#ffffff');
+});
+
+test('grille D/T : 9 × 9 cases, difficulté en x, terrain en y, cases vides au fond', () => {
+    const { option: o } = option({ groupBy: 'dt', view: { chart: 'heatmap' } });
+    assert.equal(o.xAxis.data.length, 9);
+    assert.equal(o.yAxis.data.length, 9);
+    assert.equal(o.series[0].type, 'heatmap');
+    assert.equal(o.series[0].data.length, 81);
+    // D1/T1 (rangée 0, colonne 0) : une trouvaille.
+    assert.deepEqual(o.series[0].data[0], [0, 0, 1]);
+    assert.deepEqual(o.series[0].data[1], [0, 1, '-']);
+    assert.equal(o.visualMap.max, 1);
+    assert.deepEqual(o.visualMap.inRange.color, tokens.heat);
+});
+
+test('grille regroupement × 2ᵉ dimension : une rangée par valeur', () => {
+    const { option: o } = option({ groupBy: 'year', splitBy: 'cache_type', view: { chart: 'heatmap' } });
+    assert.deepEqual(o.xAxis.data, ['2025', '2026']);
+    assert.equal(o.yAxis.data.length, 4);
+    assert.equal(o.series[0].data.length, 8);
+});
+
+test('calendrier : un bandeau par année, au plus trois, hauteur suivant les années', () => {
+    const { result, spec, option: o } = option({ groupBy: 'day', view: { chart: 'calendar' } });
+    assert.deepEqual(calendarYears(result).years, [2026, 2025]);
+    assert.equal(o.calendar.length, 2);
+    assert.equal(o.calendar[0].range, '2026');
+    assert.equal(o.calendar[0].dayLabel.firstDay, 1);
+    // Noms rangés du dimanche au samedi (convention ECharts).
+    assert.equal(o.calendar[0].dayLabel.nameMap[0], 'dim.');
+    assert.equal(o.calendar[0].dayLabel.nameMap[1], 'lun.');
+    assert.deepEqual(o.calendar[0].cellSize, [13, 13]);
+    assert.equal(o.series.length, 2);
+    assert.deepEqual(o.series[1].data[0], ['2025-01-01', 1]);
+    assert.equal(chartHeight(result, spec), 40 + 2 * (13 * 7 + 38));
+    assert.equal(chartHeight(result, { view: { chart: 'bar' } }), null);
+    // Cases carrées selon la largeur, bornées.
+    assert.equal(calendarCell(1000), 17);
+    assert.equal(calendarCell(300), 8);
+    assert.equal(calendarCell(4000), 18);
+    assert.equal(chartHeight(result, spec, 1000), 40 + 2 * (17 * 7 + 38));
+    // Petites cases : un jour sur deux nommé.
+    const narrow = buildChartOption(result, spec, { ...ctx, width: 600 });
+    assert.deepEqual(narrow.calendar[0].dayLabel.nameMap, ['', 'lun.', '', 'mer.', '', 'ven.', '']);
+    const long = calendarYears({ periods: [{ from: dayNumber({ y: 2015, m: 1, d: 1 }), to: dayNumber({ y: 2026, m: 1, d: 1 }) }] });
+    assert.equal(long.years.length, CALENDAR_MAX_YEARS);
+    assert.equal(long.truncated, true);
+});
+
+test('radar : un indicateur par clé, une forme par série, même maximum', () => {
+    const { option: o } = option({
+        groupBy: 'weekday', view: { chart: 'radar' },
+        periods: [{ kind: 'year', year: 2026 }, { kind: 'previous' }], compare: { toDate: false },
+    });
+    assert.equal(o.radar.indicator.length, 7);
+    assert.equal(o.radar.indicator[0].name, 'lun.');
+    assert.equal(o.series[0].type, 'radar');
+    assert.equal(o.series[0].data.length, 2);
+    assert.ok(new Set(o.radar.indicator.map((i) => i.max)).size === 1);
+    assert.notEqual(o.legend.show, false);
 });

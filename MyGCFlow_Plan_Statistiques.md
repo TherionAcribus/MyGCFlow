@@ -54,8 +54,17 @@ galerie par sections, éditeur « comparé à ». Écarts : périodes relatives
 ajoutées au format v1 (rien n'était publié) ; le menu global propose
 « Cette année » / « Ce mois-ci » (relatifs) au lieu de l'année en cours
 figée ; « par jour » réservé aux graphiques sans axe de temps ; écart
-réservé à deux périodes sans 2ᵉ dimension. Prochain : lot 3 (graphisme et
-filtres).
+réservé à deux périodes sans 2ᵉ dimension.
+
+**Lot 3 fait** le 2026-11-08 (détail : `docs/page-statistiques.md` ›
+Graphisme et filtres) : filtres du tableau de bord (fenêtre, pastilles) et
+propres à un graphique (éditeur, Tom Select), « découpé par » + empilement,
+grille D/T ou deux dimensions, calendrier de l'année, radar, palettes
+(automatique, une couleur, une par valeur, dégradé). Écarts : grille et
+calendrier ne dessinent que la première période ; calendrier limité aux 3
+dernières années ; la palette `gc` reste au format mais n'est pas proposée
+(« automatique » fait de même) ; pas encore d'échelle de couleur réglable.
+Prochain : lot 4 (toutes les sources).
 
 Décisions prises avec l'utilisateur :
 

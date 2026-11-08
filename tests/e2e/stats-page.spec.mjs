@@ -416,6 +416,123 @@ test('chiffre clé comparé : valeur, période précédente et écart', async ({
   await expect(blocks.first().locator('.stats-number-delta')).toHaveClass(/is-up/);
 });
 
+// ---------------------------------------------------------------------------
+// Graphisme et filtres (lot 3)
+// ---------------------------------------------------------------------------
+
+// Menu Tom Select ouvert hors de la modale (rattaché à <body>) : on l'ouvre
+// par son API, on clique l'option par sa valeur, on le referme.
+async function pickFilter(page, selectId, value) {
+  await page.locator(`#${selectId}`).evaluate((el) => el.tomselect.open());
+  await page.locator(`.ts-dropdown:visible .option[data-value="${value}"]`).click();
+  await page.locator(`#${selectId}`).evaluate((el) => el.tomselect.close());
+}
+
+test('filtres du tableau de bord : appliqués partout, résumés en pastilles, retirables', async ({ page, request }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsFilters').click();
+  await expect(page.locator('#statsFiltersModal')).toBeVisible();
+  // Champs à une seule valeur (pays, source…) masqués ; types proposés avec leur nombre.
+  await expect(page.locator('#statsFilter-country')).toHaveCount(0);
+  await expect(page.locator('#statsFilter-cache_type option[value="Traditional Cache"]')).toHaveText('Traditional Cache (3)');
+  await pickFilter(page, 'statsFilter-cache_type', 'Traditional Cache');
+  await page.locator('#btnStatsFiltersApply').click();
+  await expect(page.locator('#statsFiltersModal')).toBeHidden();
+
+  await expect(page.locator('.stats-number-value').first()).toHaveText('3');
+  await expect(page.locator('#statsFiltersCount')).toHaveText('1');
+  await expect(page.locator('.stats-filter-chip')).toHaveText(/Type de cache : Traditional Cache/);
+  await expect(page.locator('#statsDataNote')).toContainText('3 avec les filtres');
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters)
+    .toEqual({ cache_type: ['Traditional Cache'] });
+
+  await page.locator('.stats-filter-chip [data-remove-filter="cache_type"]').click();
+  await expect(page.locator('.stats-number-value').first()).toHaveText('6');
+  await expect(page.locator('#statsFiltersSummary')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('filtres propres à un graphique : partent de ceux du tableau, ignorent les suivants', async ({ page, request }) => {
+  const errors = await openStats(page);
+  const target = (await snapshot(page)).cards[0];
+  await cardAction(page, target.id, 'edit');
+  await page.locator('#statsEdFiltersSection summary').click();
+  await page.locator('#statsEdFilterMode').selectOption('own');
+  await expect(page.locator('#statsEdFilter-cache_type')).toBeAttached();
+  await pickFilter(page, 'statsEdFilter-cache_type', 'Multi-cache');
+  await expect(page.locator('#statsEdPreviewNumber .stats-number-value')).toHaveText('2');
+  await expect(page.locator('#statsEdFiltersBadge')).toHaveText('1');
+  await page.locator('#btnStatsEdSave').click();
+  await expect(page.locator('#statsEditorModal')).toBeHidden();
+
+  const saved = (await snapshot(page)).cards[0];
+  expect(saved.filters).toEqual({ cache_type: ['Multi-cache'] });
+  expect(saved.series).toEqual([[2]]);
+  await expect(card(page, target.id).locator('.stats-card-filter')).toBeVisible();
+
+  // Un filtre du tableau de bord ne le touche pas.
+  const doc = await savedDoc(request);
+  doc.dashboards[0].filters = { cache_type: ['Event Cache'] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  await page.reload();
+  await page.waitForFunction(() => window.mygcflowStatsReady === true);
+  const cards = (await snapshot(page)).cards;
+  expect(cards[0].series).toEqual([[2]]);
+  expect(cards[1].series).toEqual([[1]]);
+  expect(errors).toEqual([]);
+});
+
+test('2ᵉ dimension : par année découpé par type, empilé', async ({ page }) => {
+  const errors = await openStats(page);
+  const target = (await snapshot(page)).cards[3];
+  await cardAction(page, target.id, 'edit');
+  await expect(page.locator('#statsEdSplitRow')).toBeVisible();
+  await page.locator('#statsEdSplitBy').selectOption('cache_type');
+  await page.locator('#statsEdOptions summary').click();
+  await expect(page.locator('#statsEdStackRow')).toBeVisible();
+  await page.locator('#statsEdStack').check();
+  await page.locator('#btnStatsEdSave').click();
+  const saved = (await snapshot(page)).cards[3];
+  expect(saved.splitBy).toBe('cache_type');
+  expect(saved.series).toEqual([[3], [2], [1]]);
+  expect(errors).toEqual([]);
+});
+
+test('grille D/T, calendrier et radar se dessinent', async ({ page, request }) => {
+  let { errors, card: grid } = await openWithChart(page, request, { groupBy: 'dt', view: { chart: 'heatmap' } });
+  expect(grid.chart).toBe('heatmap');
+  expect(grid.rendered).toBe(true);
+  expect(grid.keys.length).toBe(6);
+  expect(errors).toEqual([]);
+
+  ({ errors, card: grid } = await openWithChart(page, request, {
+    groupBy: 'day', periods: [{ kind: 'current', unit: 'year' }], view: { chart: 'calendar' },
+  }));
+  expect(grid.chart).toBe('calendar');
+  // Une année : un bandeau de 7 cases carrées, la hauteur suit
+  // (40 + 7 × case + 38, case entre 8 et 18 px selon la largeur).
+  const cell = (Math.round(grid.height) - 78) / 7;
+  expect(Number.isInteger(cell) && cell >= 8 && cell <= 18).toBe(true);
+  expect(errors).toEqual([]);
+
+  ({ errors, card: grid } = await openWithChart(page, request, { groupBy: 'weekday', view: { chart: 'radar' } }));
+  expect(grid.chart).toBe('radar');
+  expect(grid.keys.length).toBe(7);
+  expect(errors).toEqual([]);
+});
+
+test('éditeur : la palette se choisit pour des barres d\'une série', async ({ page, request }) => {
+  const { card: target } = await openWithChart(page, request, { groupBy: 'container', view: { chart: 'bar' } }, 'M');
+  await cardAction(page, target.id, 'edit');
+  await page.locator('#statsEdOptions summary').click();
+  await expect(page.locator('#statsEdPaletteRow')).toBeVisible();
+  await expect(page.locator('#statsEdPalette option')).toHaveCount(4);
+  await page.locator('#statsEdPalette').selectOption('heat');
+  await page.locator('#btnStatsEdSave').click();
+  const doc = await savedDoc(request);
+  expect(doc.dashboards[0].items[0].spec.view.palette).toBe('heat');
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

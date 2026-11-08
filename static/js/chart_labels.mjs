@@ -47,8 +47,8 @@ export const GROUP_CHOICES = Object.freeze([
     { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'owner', 'attribute', 'age', 'published_year'] },
 ]);
 
-// Graphiques proposés au lot 1 (les autres arrivent avec leur rendu).
-export const LOT1_CHARTS = Object.freeze(['bar', 'line', 'area', 'donut', 'number']);
+// Graphiques proposés par l'éditeur (tous ceux que l'adaptateur dessine).
+export const EDITOR_CHARTS = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar']);
 
 const UTC_DAY = 86400000;
 
@@ -199,6 +199,14 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         none: t('Valeurs'),
         percent: t('En pourcentage du total'),
         per_day: t('Par jour de la période'),
+    };
+
+    const PALETTES = {
+        auto: t('Automatique'),
+        accent: t('Une seule couleur'),
+        multi: t('Une couleur par valeur'),
+        gc: t('Couleurs des types (carte)'),
+        heat: t('Dégradé selon la valeur'),
     };
 
     const SIZES = {
@@ -395,6 +403,24 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         }
     }
 
+    // Champ d'un filtre et valeur proposée.
+    function filterField(field) {
+        if (field === 'source_kind') return t('Source');
+        return DIMENSIONS[field] || field;
+    }
+
+    function filterValue(field, value, { attributeName = null } = {}) {
+        if (field === 'source_kind') return value === 'lab' ? t('Lab Caches') : t('Géocaches');
+        if (field === 'difficulty' || field === 'terrain') return halfFmt.format(Number(value));
+        if (field === 'published_year') return String(value);
+        return categoryLabel(field, value, attributeName);
+    }
+
+    // Noms courts des mois (janvier en tête) et des jours (lundi en tête),
+    // pour le calendrier.
+    const monthNames = () => Array.from({ length: 12 }, (_, i) => monthFmt.format(Date.UTC(2024, i, 1)));
+    const weekdayNames = () => Array.from({ length: 7 }, (_, i) => weekdayFmt.format(Date.UTC(2024, 0, 1 + i)));
+
     // Valeur affichée : moyennes de D/T à une décimale, âge en jours entiers,
     // le reste en entiers. `compact` pour les graduations (12,3 k).
     function formatValue(value, measure, { compact = false, normalize = 'none' } = {}) {
@@ -449,6 +475,11 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         layout: (layout) => LAYOUTS[layout] || layout,
         align: (align, unit) => (align === 'elapsed' ? ELAPSED_ALIGN[unit] || ELAPSED_ALIGN.day : ALIGNS[align]) || align,
         normalize: (mode) => NORMALIZE[mode] || mode,
+        palette: (palette) => PALETTES[palette] || palette,
+        filterField,
+        filterValue,
+        monthNames,
+        weekdayNames,
         axisLabel,
         periodLabel,
         seriesPeriodLabel,

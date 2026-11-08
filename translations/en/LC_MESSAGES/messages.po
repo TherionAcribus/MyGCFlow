@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-08 10:16+0100\n"
+"POT-Creation-Date: 2026-11-08 11:05+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -627,7 +627,7 @@ msgid "Code GC"
 msgstr "GC code"
 
 #: poses_dataset.py:635 templates/menu_images.html:152
-#: templates/stats_page.html:232
+#: templates/stats_page.html:286
 msgid "Nom"
 msgstr "Name"
 
@@ -637,7 +637,7 @@ msgstr "Type"
 
 #: poses_dataset.py:635 static/js/ui.js:11594
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
-#: templates/stats_page.html:161
+#: templates/stats_page.html:186
 msgid "Taille"
 msgstr "Size"
 
@@ -794,9 +794,11 @@ msgstr "Database"
 
 #: blueprints/core.py:197 static/js/evolution_data.js:435
 #: static/js/poses_data.js:286 templates/guide.html:165
-#: templates/guide.html:173 templates/menu_data.html:481
-#: templates/menu_data_evolution.html:108 templates/menu_data_poses.html:63
-#: templates/menu_filtre.html:65 test_translations.py:28
+#: templates/guide.html:173 templates/guide.html:599
+#: templates/menu_data.html:481 templates/menu_data_evolution.html:108
+#: templates/menu_data_poses.html:63 templates/menu_filtre.html:65
+#: templates/stats_page.html:77 templates/stats_page.html:170
+#: test_translations.py:28
 msgid "Filtres"
 msgstr "Filters"
 
@@ -876,7 +878,8 @@ msgstr "Confirm"
 #: templates/menu_style.html:377 templates/menu_style.html:405
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
-#: templates/stats_page.html:216 templates/stats_page.html:236
+#: templates/stats_page.html:249 templates/stats_page.html:270
+#: templates/stats_page.html:290
 msgid "Annuler"
 msgstr "Cancel"
 
@@ -1870,16 +1873,16 @@ msgstr "Error while displaying the points on the map"
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/chart_echarts.mjs:198
+#: static/js/chart_echarts.mjs:236
 msgid "en cours"
 msgstr "ongoing"
 
-#: static/js/chart_echarts.mjs:548
+#: static/js/chart_echarts.mjs:584
 #, python-brace-format
 msgid "Écart : ${a} par rapport à ${b}"
 msgstr "Difference: ${a} compared with ${b}"
 
-#: static/js/chart_echarts.mjs:583
+#: static/js/chart_echarts.mjs:619
 msgid "Écart"
 msgstr "Difference"
 
@@ -2162,7 +2165,7 @@ msgstr "the running total over the period"
 msgid "Caches différentes"
 msgstr "Distinct caches"
 
-#: static/js/chart_labels.mjs:169 static/js/chart_labels.mjs:228
+#: static/js/chart_labels.mjs:169 static/js/chart_labels.mjs:236
 msgid "Jours de cache"
 msgstr "Caching days"
 
@@ -2279,7 +2282,7 @@ msgstr "Quarter by quarter from the start"
 msgid "Année par année depuis le début"
 msgstr "Year by year from the start"
 
-#: static/js/chart_labels.mjs:212 templates/stats_page.html:168
+#: static/js/chart_labels.mjs:212 templates/stats_page.html:193
 msgid "Valeurs"
 msgstr "Values"
 
@@ -2291,423 +2294,462 @@ msgstr "As a percentage of the total"
 msgid "Par jour de la période"
 msgstr "Per day of the period"
 
-#: static/js/chart_labels.mjs:218
+#: static/js/chart_labels.mjs:218 templates/menu_flash.html:68
+#: templates/menu_flash_disappear.html:49 templates/menu_flash_dnf.html:56
+#: templates/menu_flash_dnf.html:125
+msgid "Automatique"
+msgstr "Automatic"
+
+#: static/js/chart_labels.mjs:219 templates/menu_names.html:311
+msgid "Une seule couleur"
+msgstr "Single color"
+
+#: static/js/chart_labels.mjs:220
+msgid "Une couleur par valeur"
+msgstr "One color per value"
+
+#: static/js/chart_labels.mjs:221
+msgid "Couleurs des types (carte)"
+msgstr "Cache type colors (map)"
+
+#: static/js/chart_labels.mjs:222
+msgid "Dégradé selon la valeur"
+msgstr "Gradient by value"
+
+#: static/js/chart_labels.mjs:226
 msgid "Petit"
 msgstr "Small"
 
-#: static/js/chart_labels.mjs:219
+#: static/js/chart_labels.mjs:227
 msgid "Moyen"
 msgstr "Medium"
 
-#: static/js/chart_labels.mjs:220
+#: static/js/chart_labels.mjs:228
 msgid "Grand"
 msgstr "Large"
 
-#: static/js/chart_labels.mjs:221
+#: static/js/chart_labels.mjs:229
 msgid "Toute la largeur"
 msgstr "Full width"
 
-#: static/js/chart_labels.mjs:227 templates/menu_stats.html:130
+#: static/js/chart_labels.mjs:235 templates/menu_stats.html:130
 #: templates/menu_stats.html:160
 msgid "Nombre de trouvailles"
 msgstr "Number of finds"
 
-#: static/js/chart_labels.mjs:227
+#: static/js/chart_labels.mjs:235
 msgid "Le total de la période."
 msgstr "The total for the period."
 
-#: static/js/chart_labels.mjs:228
+#: static/js/chart_labels.mjs:236
 msgid "Les jours où vous avez trouvé au moins une cache."
 msgstr "The days on which you found at least one cache."
 
-#: static/js/chart_labels.mjs:229
+#: static/js/chart_labels.mjs:237
 msgid "Pays visités"
 msgstr "Countries visited"
 
-#: static/js/chart_labels.mjs:229
+#: static/js/chart_labels.mjs:237
 msgid "Le nombre de pays de vos trouvailles."
 msgstr "The number of countries of your finds."
 
-#: static/js/chart_labels.mjs:230
+#: static/js/chart_labels.mjs:238
 msgid "Ma meilleure année"
 msgstr "My best year"
 
-#: static/js/chart_labels.mjs:230
+#: static/js/chart_labels.mjs:238
 msgid "Vos trouvailles année par année, sur tout votre historique."
 msgstr "Your finds year by year, over your whole history."
 
-#: static/js/chart_labels.mjs:231
+#: static/js/chart_labels.mjs:239
 msgid "Ma progression"
 msgstr "My progress"
 
-#: static/js/chart_labels.mjs:231
+#: static/js/chart_labels.mjs:239
 msgid "Le total de vos trouvailles, mois après mois."
 msgstr "Your total number of finds, month after month."
 
-#: static/js/chart_labels.mjs:232
+#: static/js/chart_labels.mjs:240
 msgid "Mes mois les plus actifs"
 msgstr "My busiest months"
 
-#: static/js/chart_labels.mjs:232
+#: static/js/chart_labels.mjs:240
 msgid "Janvier, février… : quels mois de l'année vous cachez le plus."
 msgstr "January, February…: which months of the year you cache the most."
 
-#: static/js/chart_labels.mjs:233
+#: static/js/chart_labels.mjs:241
 msgid "Mes jours de la semaine"
 msgstr "My days of the week"
 
-#: static/js/chart_labels.mjs:233
+#: static/js/chart_labels.mjs:241
 msgid "Du lundi au dimanche : quand vous trouvez vos caches."
 msgstr "From Monday to Sunday: when you find your caches."
 
-#: static/js/chart_labels.mjs:234
+#: static/js/chart_labels.mjs:242
 msgid "Mes types de caches"
 msgstr "My cache types"
 
-#: static/js/chart_labels.mjs:234
+#: static/js/chart_labels.mjs:242
 msgid "La part de chaque type, avec les couleurs de la carte."
 msgstr "The share of each type, in the map's colors."
 
-#: static/js/chart_labels.mjs:235
+#: static/js/chart_labels.mjs:243
 msgid "Mes pays"
 msgstr "My countries"
 
-#: static/js/chart_labels.mjs:235
+#: static/js/chart_labels.mjs:243
 msgid "Les pays où vous avez le plus trouvé."
 msgstr "The countries where you found the most."
 
-#: static/js/chart_labels.mjs:236
+#: static/js/chart_labels.mjs:244
 msgid "Mes propriétaires favoris"
 msgstr "My favorite owners"
 
-#: static/js/chart_labels.mjs:236
+#: static/js/chart_labels.mjs:244
 msgid "Les poseurs dont vous avez trouvé le plus de caches."
 msgstr "The hiders whose caches you found the most."
 
-#: static/js/chart_labels.mjs:237
+#: static/js/chart_labels.mjs:245
 msgid "Difficulté des caches"
 msgstr "Cache difficulty"
 
-#: static/js/chart_labels.mjs:237
+#: static/js/chart_labels.mjs:245
 msgid "Vos trouvailles par niveau de difficulté."
 msgstr "Your finds by difficulty level."
 
-#: static/js/chart_labels.mjs:238
+#: static/js/chart_labels.mjs:246
 msgid "Terrain des caches"
 msgstr "Cache terrain"
 
-#: static/js/chart_labels.mjs:238
+#: static/js/chart_labels.mjs:246
 msgid "Vos trouvailles par niveau de terrain."
 msgstr "Your finds by terrain level."
 
-#: static/js/chart_labels.mjs:239
+#: static/js/chart_labels.mjs:247
 msgid "Tailles des caches"
 msgstr "Cache sizes"
 
-#: static/js/chart_labels.mjs:239
+#: static/js/chart_labels.mjs:247
 msgid "Nano, micro, petite… : les contenants trouvés."
 msgstr "Nano, micro, small…: the containers you found."
 
-#: static/js/chart_labels.mjs:240
+#: static/js/chart_labels.mjs:248
 msgid "Âge des caches à la trouvaille"
 msgstr "Cache age when found"
 
-#: static/js/chart_labels.mjs:240
+#: static/js/chart_labels.mjs:248
 msgid "Trouvées le jour de leur publication, ou des années après."
 msgstr "Found on publication day, or years later."
 
-#: static/js/chart_labels.mjs:241
+#: static/js/chart_labels.mjs:249
 msgid "Mon record par année"
 msgstr "My best day each year"
 
-#: static/js/chart_labels.mjs:241
+#: static/js/chart_labels.mjs:249
 msgid "Le plus grand nombre de trouvailles en une journée, chaque année."
 msgstr "The most finds in a single day, for each year."
 
-#: static/js/chart_labels.mjs:242
+#: static/js/chart_labels.mjs:250
 msgid "Suis-je en avance sur l'an dernier ?"
 msgstr "Am I ahead of last year?"
 
-#: static/js/chart_labels.mjs:242
+#: static/js/chart_labels.mjs:250
 msgid "Le cumul de cette année et celui de l'an dernier, jour après jour."
 msgstr "This year's running total and last year's, day by day."
 
-#: static/js/chart_labels.mjs:243
+#: static/js/chart_labels.mjs:251
 msgid "Cette année contre l'an dernier"
 msgstr "This year vs. last year"
 
-#: static/js/chart_labels.mjs:243
+#: static/js/chart_labels.mjs:251
 msgid "Vos trouvailles mois par mois, cette année et l'an dernier."
 msgstr "Your finds month by month, this year and last year."
 
-#: static/js/chart_labels.mjs:244
+#: static/js/chart_labels.mjs:252
 msgid "Écart avec l'an dernier"
 msgstr "Difference from last year"
 
-#: static/js/chart_labels.mjs:244
+#: static/js/chart_labels.mjs:252
 msgid "Combien de trouvailles en plus ou en moins que l'an dernier, chaque mois."
 msgstr "How many more or fewer finds than last year, each month."
 
-#: static/js/chart_labels.mjs:245
+#: static/js/chart_labels.mjs:253
 msgid "12 derniers mois"
 msgstr "Last 12 months"
 
-#: static/js/chart_labels.mjs:245
+#: static/js/chart_labels.mjs:253
 msgid "Comparés aux 12 mois précédents."
 msgstr "Compared with the previous 12 months."
 
-#: static/js/chart_labels.mjs:246
+#: static/js/chart_labels.mjs:254
 msgid "Toutes mes années"
 msgstr "All my years"
 
-#: static/js/chart_labels.mjs:246
+#: static/js/chart_labels.mjs:254
 msgid "Le cumul de chaque année, superposé jour après jour."
 msgstr "Each year's running total, overlaid day by day."
 
-#: static/js/chart_labels.mjs:247
+#: static/js/chart_labels.mjs:255
 msgid "Mes années mois par mois"
 msgstr "My years month by month"
 
-#: static/js/chart_labels.mjs:247
+#: static/js/chart_labels.mjs:255
 msgid "Une courbe par année, de janvier à décembre."
 msgstr "One line per year, from January to December."
 
-#: static/js/chart_labels.mjs:248
+#: static/js/chart_labels.mjs:256
 msgid "Mes types cette année et l'an dernier"
 msgstr "My cache types this year and last year"
 
-#: static/js/chart_labels.mjs:248
+#: static/js/chart_labels.mjs:256
 msgid "Les parts de chaque type, côte à côte."
 msgstr "The share of each type, side by side."
 
-#: static/js/chart_labels.mjs:252
+#: static/js/chart_labels.mjs:260
 msgid "Vue d'ensemble"
 msgstr "Overview"
 
-#: static/js/chart_labels.mjs:253
+#: static/js/chart_labels.mjs:261
 msgid "Comparer les périodes"
 msgstr "Compare periods"
 
-#: static/js/chart_labels.mjs:254
+#: static/js/chart_labels.mjs:262
 msgid "Quand je cache"
 msgstr "When I cache"
 
-#: static/js/chart_labels.mjs:255
+#: static/js/chart_labels.mjs:263
 msgid "Les caches trouvées"
 msgstr "The caches I found"
 
-#: static/js/chart_labels.mjs:256
+#: static/js/chart_labels.mjs:264
 msgid "Lieux et poseurs"
 msgstr "Places and hiders"
 
-#: static/js/chart_labels.mjs:260 static/js/chart_labels.mjs:274
+#: static/js/chart_labels.mjs:268 static/js/chart_labels.mjs:282
 #: static/js/stats_panels.js:1203 static/js/stats_panels.js:1238
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr "Others"
 
-#: static/js/chart_labels.mjs:261 static/js/chart_labels.mjs:275
+#: static/js/chart_labels.mjs:269 static/js/chart_labels.mjs:283
 #: static/js/stats_panels.js:1204
 msgid "Inconnu"
 msgstr "Unknown"
 
-#: static/js/chart_labels.mjs:277 static/js/stats_panels.js:3032
+#: static/js/chart_labels.mjs:285 static/js/stats_panels.js:3032
 #: static/js/stats_panels.js:3086 templates/menu_informations.html:73
 #: templates/menu_informations.html:103
 msgid "Total"
 msgstr "Total"
 
-#: static/js/chart_labels.mjs:279 static/js/chart_labels.mjs:386
+#: static/js/chart_labels.mjs:287 static/js/chart_labels.mjs:394
 #, python-brace-format
 msgid "T${q} ${y}"
 msgstr "Q${q} ${y}"
 
-#: static/js/chart_labels.mjs:285
+#: static/js/chart_labels.mjs:293
 #, python-brace-format
 msgid "Semaine du ${date}"
 msgstr "Week of ${date}"
 
-#: static/js/chart_labels.mjs:288
+#: static/js/chart_labels.mjs:296
 #, python-brace-format
 msgid "S${n}"
 msgstr "W${n}"
 
-#: static/js/chart_labels.mjs:298
+#: static/js/chart_labels.mjs:306
 #, python-brace-format
 msgid "D${d} / T${t}"
 msgstr "D${d} / T${t}"
 
-#: static/js/chart_labels.mjs:316 static/js/chart_labels.mjs:411
+#: static/js/chart_labels.mjs:324 static/js/chart_labels.mjs:419
 msgid "Toutes mes trouvailles"
 msgstr "All my finds"
 
-#: static/js/chart_labels.mjs:322 static/js/chart_labels.mjs:422
+#: static/js/chart_labels.mjs:330 static/js/chart_labels.mjs:430
 #, python-brace-format
 msgid "${from} – ${to}"
 msgstr "${from} – ${to}"
 
-#: static/js/chart_labels.mjs:328
+#: static/js/chart_labels.mjs:336
 msgid "La veille"
 msgstr "The day before"
 
-#: static/js/chart_labels.mjs:329
+#: static/js/chart_labels.mjs:337
 msgid "Le mois précédent"
 msgstr "The previous month"
 
-#: static/js/chart_labels.mjs:330
+#: static/js/chart_labels.mjs:338
 msgid "L'année précédente"
 msgstr "The previous year"
 
-#: static/js/chart_labels.mjs:332
+#: static/js/chart_labels.mjs:340
 #, python-brace-format
 msgid "Les ${n} jours précédents"
 msgstr "The previous ${n} days"
 
-#: static/js/chart_labels.mjs:333
+#: static/js/chart_labels.mjs:341
 #, python-brace-format
 msgid "Les ${n} mois précédents"
 msgstr "The previous ${n} months"
 
-#: static/js/chart_labels.mjs:334
+#: static/js/chart_labels.mjs:342
 #, python-brace-format
 msgid "Les ${n} années précédentes"
 msgstr "The previous ${n} years"
 
-#: static/js/chart_labels.mjs:345
+#: static/js/chart_labels.mjs:353
 msgid "par rapport à la veille"
 msgstr "compared with the day before"
 
-#: static/js/chart_labels.mjs:346
+#: static/js/chart_labels.mjs:354
 msgid "par rapport au mois précédent"
 msgstr "compared with the previous month"
 
-#: static/js/chart_labels.mjs:347
+#: static/js/chart_labels.mjs:355
 msgid "par rapport à l'année précédente"
 msgstr "compared with the previous year"
 
-#: static/js/chart_labels.mjs:349
+#: static/js/chart_labels.mjs:357
 #, python-brace-format
 msgid "par rapport aux ${n} jours précédents"
 msgstr "compared with the previous ${n} days"
 
-#: static/js/chart_labels.mjs:350
+#: static/js/chart_labels.mjs:358
 #, python-brace-format
 msgid "par rapport aux ${n} mois précédents"
 msgstr "compared with the previous ${n} months"
 
-#: static/js/chart_labels.mjs:351
+#: static/js/chart_labels.mjs:359
 #, python-brace-format
 msgid "par rapport aux ${n} années précédentes"
 msgstr "compared with the previous ${n} years"
 
-#: static/js/chart_labels.mjs:353
+#: static/js/chart_labels.mjs:361
 #, python-brace-format
 msgid "par rapport à ${period}"
 msgstr "compared with ${period}"
 
-#: static/js/chart_labels.mjs:362
+#: static/js/chart_labels.mjs:370
 #, python-brace-format
 msgid "${period} (en cours)"
 msgstr "${period} (ongoing)"
 
-#: static/js/chart_labels.mjs:363
+#: static/js/chart_labels.mjs:371
 #, python-brace-format
 msgid "${period} (au ${date})"
 msgstr "${period} (to ${date})"
 
-#: static/js/chart_labels.mjs:372
+#: static/js/chart_labels.mjs:380
 #, python-brace-format
 msgid "Jour ${n}"
 msgstr "Day ${n}"
 
-#: static/js/chart_labels.mjs:373
+#: static/js/chart_labels.mjs:381
 #, python-brace-format
 msgid "Semaine ${n}"
 msgstr "Week ${n}"
 
-#: static/js/chart_labels.mjs:374
+#: static/js/chart_labels.mjs:382
 #, python-brace-format
 msgid "Mois ${n}"
 msgstr "Month ${n}"
 
-#: static/js/chart_labels.mjs:375
+#: static/js/chart_labels.mjs:383
 #, python-brace-format
 msgid "Trimestre ${n}"
 msgstr "Quarter ${n}"
 
-#: static/js/chart_labels.mjs:376
+#: static/js/chart_labels.mjs:384
 #, python-brace-format
 msgid "Année ${n}"
 msgstr "Year ${n}"
 
-#: static/js/chart_labels.mjs:394
+#: static/js/chart_labels.mjs:402
 msgid "Aujourd'hui"
 msgstr "Today"
 
-#: static/js/chart_labels.mjs:395
+#: static/js/chart_labels.mjs:403
 msgid "Le dernier mois"
 msgstr "The last month"
 
-#: static/js/chart_labels.mjs:396
+#: static/js/chart_labels.mjs:404
 msgid "La dernière année"
 msgstr "The last year"
 
-#: static/js/chart_labels.mjs:398
+#: static/js/chart_labels.mjs:406
 #, python-brace-format
 msgid "Les ${n} derniers jours"
 msgstr "The last ${n} days"
 
-#: static/js/chart_labels.mjs:399
+#: static/js/chart_labels.mjs:407
 #, python-brace-format
 msgid "Les ${n} derniers mois"
 msgstr "The last ${n} months"
 
-#: static/js/chart_labels.mjs:400
+#: static/js/chart_labels.mjs:408
 #, python-brace-format
 msgid "Les ${n} dernières années"
 msgstr "The last ${n} years"
 
-#: static/js/chart_labels.mjs:408 static/js/chart_labels.mjs:418
-#: static/js/stats_page.js:290
+#: static/js/chart_labels.mjs:416 static/js/chart_labels.mjs:426
+#: static/js/stats_page.js:295
 msgid "Période du tableau de bord"
 msgstr "Dashboard period"
 
-#: static/js/chart_labels.mjs:415
+#: static/js/chart_labels.mjs:423
 msgid "Chaque mois"
 msgstr "Each month"
 
-#: static/js/chart_labels.mjs:415
+#: static/js/chart_labels.mjs:423
 msgid "Chaque année"
 msgstr "Each year"
 
-#: static/js/chart_labels.mjs:416
+#: static/js/chart_labels.mjs:424
 msgid "Ce mois-ci"
 msgstr "This month"
 
-#: static/js/chart_labels.mjs:416
+#: static/js/chart_labels.mjs:424
 msgid "Cette année"
 msgstr "This year"
 
-#: static/js/chart_labels.mjs:417
+#: static/js/chart_labels.mjs:425
 msgid "La période précédente"
 msgstr "The previous period"
 
-#: static/js/chart_labels.mjs:434
+#: static/js/chart_labels.mjs:439
+msgid "Source"
+msgstr "Source"
+
+#: static/js/chart_labels.mjs:444 static/js/labs.js:564 static/js/labs.js:606
+#: static/js/labs.js:1294 static/js/labs.js:1464 static/js/labs.js:1499
+#: static/js/labs.js:1515 static/js/labs.js:1525
+#: templates/_filter_cache_attrs.html:37 templates/guide.html:523
+#: templates/menu_filtre.html:19
+msgid "Lab Caches"
+msgstr "Lab Caches"
+
+#: static/js/chart_labels.mjs:444 templates/guide.html:523
+#: templates/menu_filtre.html:18
+msgid "Géocaches"
+msgstr "Geocaches"
+
+#: static/js/chart_labels.mjs:463
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n}%"
 
-#: static/js/chart_labels.mjs:435
+#: static/js/chart_labels.mjs:464
 #, python-brace-format
 msgid "${n} / jour"
 msgstr "${n} / day"
 
-#: static/js/chart_labels.mjs:438
+#: static/js/chart_labels.mjs:467
 #, python-brace-format
 msgid "${n} j"
 msgstr "${n} d"
 
-#: static/js/chart_labels.mjs:468
+#: static/js/chart_labels.mjs:497
 #, python-brace-format
 msgid "${measure} ${group}"
 msgstr "${measure} ${group}"
@@ -3675,8 +3717,8 @@ msgstr "This image will be permanently deleted from the library."
 #: static/js/images_ui.js:1104 static/js/images_ui.js:1150
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
 #: static/js/profiles.js:975 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_page.js:437
-#: static/js/stats_page.js:582 static/js/stats_page.js:591
+#: static/js/recent_videos.js:121 static/js/stats_page.js:518
+#: static/js/stats_page.js:676 static/js/stats_page.js:685
 #: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6442
 #: templates/menu_filtre.html:87 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
@@ -3724,7 +3766,7 @@ msgid "Descendre"
 msgstr "Move down"
 
 #: static/js/images_ui.js:1352 static/js/profiles.js:966
-#: static/js/profiles.js:2801 static/js/stats_page.js:432
+#: static/js/profiles.js:2801 static/js/stats_page.js:513
 #: static/js/stats_ui.js:579
 msgid "Dupliquer"
 msgstr "Duplicate"
@@ -3945,13 +3987,6 @@ msgstr "Placing your stages on the map…"
 #: static/js/labs.js:526
 msgid "Annulation en cours…"
 msgstr "Cancelling…"
-
-#: static/js/labs.js:564 static/js/labs.js:606 static/js/labs.js:1294
-#: static/js/labs.js:1464 static/js/labs.js:1499 static/js/labs.js:1515
-#: static/js/labs.js:1525 templates/_filter_cache_attrs.html:37
-#: templates/guide.html:523 templates/menu_filtre.html:19
-msgid "Lab Caches"
-msgstr "Lab Caches"
 
 #: static/js/labs.js:689
 msgid "Analyse de vos fichiers…"
@@ -4338,7 +4373,7 @@ msgid "Date de découverte"
 msgstr "Discovery date"
 
 #: static/js/labs.js:1866 templates/menu_images.html:117
-#: templates/menu_stats.html:70 templates/stats_page.html:217
+#: templates/menu_stats.html:70 templates/stats_page.html:250
 msgid "Enregistrer"
 msgstr "Save"
 
@@ -4840,8 +4875,8 @@ msgstr "Flash"
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 #: templates/modal_video_ready.html:11 templates/modal_video_ready.html:37
-#: templates/stats_page.html:100 templates/stats_page.html:116
-#: templates/stats_page.html:229
+#: templates/stats_page.html:108 templates/stats_page.html:124
+#: templates/stats_page.html:262 templates/stats_page.html:283
 msgid "Fermer"
 msgstr "Close"
 
@@ -5238,7 +5273,7 @@ msgid "Copier vers « ${mode} »"
 msgstr "Copy to “${mode}”"
 
 #: static/js/profiles.js:972 static/js/profiles.js:2781
-#: templates/stats_page.html:237
+#: templates/stats_page.html:291
 msgid "Renommer"
 msgstr "Rename"
 
@@ -5527,6 +5562,7 @@ msgstr "Tip"
 
 #: static/js/recording_perf.js:201 templates/guide.html:238
 #: templates/menu_filtre.html:85 templates/menu_informations.html:379
+#: templates/stats_page.html:271
 msgid "Appliquer"
 msgstr "Apply"
 
@@ -5575,101 +5611,147 @@ msgstr "Saving…"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/stats_page.js:169 static/js/stats_page.js:318
+#: static/js/stats_filters_ui.js:63
+msgid "Plusieurs attributs : une cache doit les porter tous."
+msgstr "Several attributes: a cache must have all of them."
+
+#: static/js/stats_filters_ui.js:68
+msgid "Aucun filtre"
+msgstr "No filter"
+
+#: static/js/stats_filters_ui.js:78
+msgid "Vos trouvailles sont trop homogènes pour être filtrées."
+msgstr "Your finds are too uniform to be filtered."
+
+#: static/js/stats_page.js:174 static/js/stats_page.js:323
 msgid "Mon tableau de bord"
 msgstr "My dashboard"
 
-#: static/js/stats_page.js:312
+#: static/js/stats_page.js:317
 #, python-brace-format
 msgid "${n} périodes"
 msgstr "${n} periods"
 
-#: static/js/stats_page.js:322
+#: static/js/stats_page.js:327
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} finds"
 
-#: static/js/stats_page.js:323
+#: static/js/stats_page.js:330
+#, python-brace-format
+msgid "${n} avec les filtres"
+msgstr "${n} with the filters"
+
+#: static/js/stats_page.js:332
 #, python-brace-format
 msgid "${n} sans date de trouvaille, non comptées"
 msgstr "${n} without a find date, not counted"
 
-#: static/js/stats_page.js:369
+#: static/js/stats_page.js:358
+#, python-brace-format
+msgid "Retirer le filtre ${field}"
+msgstr "Remove the ${field} filter"
+
+#: static/js/stats_page.js:438
 msgid "Période propre à ce graphique"
 msgstr "This chart has its own period"
 
-#: static/js/stats_page.js:420 static/js/stats_page.js:421
+#: static/js/stats_page.js:449
+msgid "Filtres propres à ce graphique"
+msgstr "This chart has its own filters"
+
+#: static/js/stats_page.js:449
+msgid "aucun"
+msgstr "none"
+
+#: static/js/stats_page.js:501 static/js/stats_page.js:502
 msgid "Actions du graphique"
 msgstr "Chart actions"
 
-#: static/js/stats_page.js:431
+#: static/js/stats_page.js:512
 msgid "Modifier"
 msgstr "Edit"
 
-#: static/js/stats_page.js:433
+#: static/js/stats_page.js:514
 msgid "Exporter en image (PNG)"
 msgstr "Export as image (PNG)"
 
-#: static/js/stats_page.js:434
+#: static/js/stats_page.js:515
 msgid "Déplacer avant"
 msgstr "Move before"
 
-#: static/js/stats_page.js:435
+#: static/js/stats_page.js:516
 msgid "Déplacer après"
 msgstr "Move after"
 
-#: static/js/stats_page.js:460 static/js/stats_panels.js:1264
+#: static/js/stats_page.js:541 static/js/stats_panels.js:1264
 #, python-brace-format
 msgid "Sans attribut : ${n}"
 msgstr "No attribute: ${n}"
 
-#: static/js/stats_page.js:462
+#: static/js/stats_page.js:543
 msgid "Seules les 8 périodes les plus récentes sont affichées."
 msgstr "Only the 8 most recent periods are shown."
 
-#: static/js/stats_page.js:466
+#: static/js/stats_page.js:546
+msgid "Seule la première période est dessinée."
+msgstr "Only the first period is drawn."
+
+#: static/js/stats_page.js:549
+msgid "Seules les 3 années les plus récentes sont dessinées."
+msgstr "Only the 3 most recent years are drawn."
+
+#: static/js/stats_page.js:554
 #, python-brace-format
 msgid "Comparaison à date : chaque période est arrêtée au ${date}."
 msgstr "Year-to-date comparison: every period stops on ${date}."
 
-#: static/js/stats_page.js:468
+#: static/js/stats_page.js:556
 msgid "Aucune trouvaille sur cette période."
 msgstr "No finds in this period."
 
-#: static/js/stats_page.js:581
+#: static/js/stats_page.js:675
 #, python-brace-format
 msgid "Supprimer le graphique « ${title} » ?"
 msgstr "Delete the chart “${title}”?"
 
-#: static/js/stats_page.js:656
+#: static/js/stats_page.js:750
 msgid "Partir de zéro"
 msgstr "Start from scratch"
 
-#: static/js/stats_page.js:657
+#: static/js/stats_page.js:751
 msgid "Graphique personnalisé"
 msgstr "Custom chart"
 
-#: static/js/stats_page.js:657
+#: static/js/stats_page.js:751
 msgid "Partir de zéro et tout choisir."
 msgstr "Start from scratch and choose everything."
 
-#: static/js/stats_page.js:740
+#: static/js/stats_page.js:834
 msgid "comparé à"
 msgstr "compared with"
 
-#: static/js/stats_page.js:740
+#: static/js/stats_page.js:834
 msgid "et à"
 msgstr "and with"
 
-#: static/js/stats_page.js:752 static/js/stats_page.js:753
+#: static/js/stats_page.js:846 static/js/stats_page.js:847
 msgid "Retirer cette période"
 msgstr "Remove this period"
 
-#: static/js/stats_page.js:948
+#: static/js/stats_page.js:861
+msgid "rien"
+msgstr "nothing"
+
+#: static/js/stats_page.js:903
+msgid "propres"
+msgstr "own"
+
+#: static/js/stats_page.js:1118
 msgid "Nouveau graphique"
 msgstr "New chart"
 
-#: static/js/stats_page.js:948 templates/stats_page.html:115
+#: static/js/stats_page.js:1118 templates/stats_page.html:123
 msgid "Modifier le graphique"
 msgstr "Edit chart"
 
@@ -7639,7 +7721,7 @@ msgstr "My hides"
 
 #: templates/_app_header.html:31 templates/_app_header.html:33
 #: templates/guide.html:77 templates/guide.html:575
-#: templates/stats_page.html:25
+#: templates/stats_page.html:27
 msgid "Statistiques"
 msgstr "Statistics"
 
@@ -8448,7 +8530,7 @@ msgstr "Start over (optional)"
 
 #: templates/guide.html:178 templates/guide.html:304 templates/guide.html:305
 #: templates/guide.html:336 templates/guide.html:369 templates/guide.html:416
-#: templates/guide.html:583
+#: templates/guide.html:583 templates/guide.html:599
 msgid "Le bouton"
 msgstr "The button"
 
@@ -8661,7 +8743,7 @@ msgstr "Switch between the"
 
 #: templates/guide.html:231 templates/menu_informations.html:22
 #: templates/menu_informations.html:45 templates/menu_informations.html:46
-#: templates/menu_stats.html:116 templates/stats_page.html:157
+#: templates/menu_stats.html:116 templates/stats_page.html:182
 msgid "Titre"
 msgstr "Title"
 
@@ -9286,7 +9368,7 @@ msgstr ""
 "framing) and the"
 
 #: templates/guide.html:314 templates/menu_recording.html:46
-#: templates/menu_stats.html:395
+#: templates/menu_stats.html:395 templates/stats_page.html:218
 msgid "Couleurs"
 msgstr "Colours"
 
@@ -10271,10 +10353,6 @@ msgstr "At the top of the Filters, the"
 msgid "offre trois sources :"
 msgstr "selector offers three sources:"
 
-#: templates/guide.html:523 templates/menu_filtre.html:18
-msgid "Géocaches"
-msgstr "Geocaches"
-
 #: templates/guide.html:523
 msgid "ou"
 msgstr "or"
@@ -10478,7 +10556,7 @@ msgstr ""
 msgid "Choisissez la période"
 msgstr "Choose the period"
 
-#: templates/guide.html:579 templates/stats_page.html:72
+#: templates/guide.html:579 templates/stats_page.html:74
 msgid "Période"
 msgstr "Period"
 
@@ -10497,8 +10575,8 @@ msgstr ""
 msgid "Ajoutez et réglez vos graphiques"
 msgstr "Add and adjust your charts"
 
-#: templates/guide.html:583 templates/stats_page.html:75
-#: templates/stats_page.html:86 templates/stats_page.html:99
+#: templates/guide.html:583 templates/stats_page.html:81
+#: templates/stats_page.html:94 templates/stats_page.html:107
 msgid "Ajouter un graphique"
 msgstr "Add a chart"
 
@@ -10532,7 +10610,7 @@ msgstr "Compare years, months…"
 msgid "Dans l'éditeur,"
 msgstr "In the editor,"
 
-#: templates/guide.html:591 templates/stats_page.html:133
+#: templates/guide.html:591 templates/stats_page.html:146
 msgid "Comparer à une autre période"
 msgstr "Compare with another period"
 
@@ -10559,6 +10637,32 @@ msgstr ""
 "first 8 months this year against the first 8 months last year. The "
 "gallery offers ready-made comparisons, such as “Am I ahead of last "
 "year?”."
+
+#: templates/guide.html:598
+msgid "Filtrez et changez de forme"
+msgstr "Filter and change the shape"
+
+#: templates/guide.html:599
+msgid ""
+"limite tout le tableau de bord à certains types, pays, difficultés, "
+"propriétaires… Un graphique peut avoir ses propres filtres (section « "
+"Filtres » de l'éditeur) : il porte alors une petite icône d'entonnoir."
+msgstr ""
+"button limits the whole dashboard to some types, countries, difficulties,"
+" owners… A chart can have its own filters (“Filters” section of the "
+"editor): it then shows a small funnel icon."
+
+#: templates/guide.html:600
+msgid ""
+"Dans la phrase, « découpé par » ajoute une deuxième dimension (une série "
+"par type, par année…), à empiler si besoin. Formes possibles : barres, "
+"courbe, aire, anneau, chiffre clé, calendrier de l'année, grille "
+"(difficulté × terrain, ou deux dimensions croisées) et radar."
+msgstr ""
+"In the sentence, “split by” adds a second dimension (one series per type,"
+" per year…), which can be stacked. Available shapes: bars, line, area, "
+"donut, key figure, year calendar, grid (difficulty × terrain, or two "
+"crossed dimensions) and radar."
 
 #: templates/menu_animation.html:19
 msgid "suivi activé"
@@ -11649,11 +11753,6 @@ msgstr "Choose the flash color"
 msgid "Couleur du contour"
 msgstr "Outline color"
 
-#: templates/menu_flash.html:68 templates/menu_flash_disappear.html:49
-#: templates/menu_flash_dnf.html:56 templates/menu_flash_dnf.html:125
-msgid "Automatique"
-msgstr "Automatic"
-
 #: templates/menu_flash.html:84
 msgid "Choisir la couleur du contour"
 msgstr "Choose the outline color"
@@ -11843,7 +11942,7 @@ msgstr "No image uploaded yet."
 msgid "La bibliothèque n'a pas pu être chargée."
 msgstr "The library could not be loaded."
 
-#: templates/menu_images.html:86 templates/stats_page.html:45
+#: templates/menu_images.html:86 templates/stats_page.html:47
 msgid "Réessayer"
 msgstr "Retry"
 
@@ -12324,7 +12423,7 @@ msgstr "Width"
 msgid "Gras"
 msgstr "Bold"
 
-#: templates/menu_informations.html:171 templates/stats_page.html:146
+#: templates/menu_informations.html:171 templates/stats_page.html:159
 msgid "Alignement"
 msgstr "Alignment"
 
@@ -12881,10 +12980,6 @@ msgstr "Italic"
 #: templates/menu_names.html:304
 msgid "Majuscules"
 msgstr "Uppercase"
-
-#: templates/menu_names.html:311
-msgid "Une seule couleur"
-msgstr "Single color"
 
 #: templates/menu_names.html:312
 msgid "Selon l'événement"
@@ -13766,7 +13861,7 @@ msgstr ""
 "A round is complete when every month, from the first to the last find "
 "year, has a find."
 
-#: templates/menu_stats.html:157 templates/stats_page.html:185
+#: templates/menu_stats.html:157 templates/stats_page.html:210
 msgid "Ordre"
 msgstr "Order"
 
@@ -13774,7 +13869,7 @@ msgstr "Order"
 msgid "Ordre naturel"
 msgstr "Natural order"
 
-#: templates/menu_stats.html:161 templates/stats_page.html:189
+#: templates/menu_stats.html:161 templates/stats_page.html:214
 msgid "Alphabétique"
 msgstr "Alphabetical"
 
@@ -13796,11 +13891,11 @@ msgstr ""
 msgid "Barres"
 msgstr "Bars"
 
-#: templates/menu_stats.html:169 templates/stats_page.html:176
+#: templates/menu_stats.html:169 templates/stats_page.html:201
 msgid "Horizontales"
 msgstr "Horizontal"
 
-#: templates/menu_stats.html:170 templates/stats_page.html:175
+#: templates/menu_stats.html:170 templates/stats_page.html:200
 msgid "Verticales"
 msgstr "Vertical"
 
@@ -14901,23 +14996,23 @@ msgstr "Open in player"
 msgid "Enregistrer une copie sous…"
 msgstr "Save a copy as…"
 
-#: templates/stats_page.html:37
+#: templates/stats_page.html:39
 msgid "Chargement de vos trouvailles…"
 msgstr "Loading your finds…"
 
-#: templates/stats_page.html:42
+#: templates/stats_page.html:44
 msgid "Statistiques indisponibles"
 msgstr "Statistics unavailable"
 
-#: templates/stats_page.html:43
+#: templates/stats_page.html:45
 msgid "Vos trouvailles n'ont pas pu être chargées."
 msgstr "Your finds could not be loaded."
 
-#: templates/stats_page.html:52
+#: templates/stats_page.html:54
 msgid "Aucune trouvaille pour l'instant"
 msgstr "No finds yet"
 
-#: templates/stats_page.html:54
+#: templates/stats_page.html:56
 msgid ""
 "Importez votre fichier « My Finds » sur la page Mes Géocaches : vos "
 "graphiques apparaîtront ici."
@@ -14925,51 +15020,55 @@ msgstr ""
 "Import your “My Finds” file on the My Geocaches page: your charts will "
 "appear here."
 
-#: templates/stats_page.html:57
+#: templates/stats_page.html:59
 msgid "Importer mes trouvailles"
 msgstr "Import my finds"
 
-#: templates/stats_page.html:66 templates/stats_page.html:228
+#: templates/stats_page.html:68 templates/stats_page.html:282
 msgid "Renommer le tableau de bord"
 msgstr "Rename dashboard"
 
-#: templates/stats_page.html:84
+#: templates/stats_page.html:92
 msgid "Ce tableau de bord est vide."
 msgstr "This dashboard is empty."
 
-#: templates/stats_page.html:103
+#: templates/stats_page.html:111
 msgid "Choisissez une question : le graphique se règle ensuite comme vous voulez."
 msgstr "Pick a question: you can then adjust the chart as you like."
 
-#: templates/stats_page.html:121
+#: templates/stats_page.html:129
 msgid "Ce que montre le graphique"
 msgstr "What the chart shows"
 
-#: templates/stats_page.html:122
+#: templates/stats_page.html:130
 msgid "Afficher"
 msgstr "Show"
 
-#: templates/stats_page.html:124
+#: templates/stats_page.html:132
 msgid "Regroupement"
 msgstr "Grouping"
 
-#: templates/stats_page.html:126
+#: templates/stats_page.html:136
+msgid "découpé par"
+msgstr "split by"
+
+#: templates/stats_page.html:139
 msgid "sur"
 msgstr "over"
 
-#: templates/stats_page.html:135
+#: templates/stats_page.html:148
 msgid "en"
 msgstr "as"
 
-#: templates/stats_page.html:142
+#: templates/stats_page.html:155
 msgid "Périodes"
 msgstr "Periods"
 
-#: templates/stats_page.html:151
+#: templates/stats_page.html:164
 msgid "Arrêter les périodes au même jour (« à date »)"
 msgstr "Stop the periods on the same day (“to date”)"
 
-#: templates/stats_page.html:153
+#: templates/stats_page.html:166
 msgid ""
 "Quand une période est en cours, les autres s'arrêtent au même jour : "
 "l'année en cours ne part pas perdante."
@@ -14977,45 +15076,77 @@ msgstr ""
 "When a period is ongoing, the others stop on the same day: the current "
 "year doesn't start at a disadvantage."
 
-#: templates/stats_page.html:166
+#: templates/stats_page.html:172
+msgid "Trouvailles comptées"
+msgstr "Finds counted"
+
+#: templates/stats_page.html:174
+msgid "Selon les filtres du tableau de bord"
+msgstr "Following the dashboard filters"
+
+#: templates/stats_page.html:175
+msgid "Avec des filtres propres à ce graphique"
+msgstr "With filters of its own"
+
+#: templates/stats_page.html:191
 msgid "Options d'affichage"
 msgstr "Display options"
 
-#: templates/stats_page.html:170
+#: templates/stats_page.html:195
 msgid "En pourcentage, des périodes de tailles différentes se comparent mieux."
 msgstr "As percentages, periods of different lengths compare better."
 
-#: templates/stats_page.html:173
+#: templates/stats_page.html:198
 msgid "Sens des barres"
 msgstr "Bar direction"
 
-#: templates/stats_page.html:180
+#: templates/stats_page.html:205
 msgid "Nombre de valeurs affichées"
 msgstr "Number of values shown"
 
-#: templates/stats_page.html:182
+#: templates/stats_page.html:207
 msgid "Les suivantes sont regroupées dans « Autres »."
 msgstr "The rest are grouped under “Others”."
 
-#: templates/stats_page.html:187
+#: templates/stats_page.html:212
 msgid "Naturel"
 msgstr "Natural"
 
-#: templates/stats_page.html:188
+#: templates/stats_page.html:213
 msgid "Du plus grand au plus petit"
 msgstr "Largest first"
 
-#: templates/stats_page.html:194
+#: templates/stats_page.html:223
+msgid "Empiler les séries"
+msgstr "Stack the series"
+
+#: templates/stats_page.html:227
 msgid "Afficher les valeurs"
 msgstr "Show values"
 
-#: templates/stats_page.html:198
+#: templates/stats_page.html:231
 msgid "Courbe lissée"
 msgstr "Smooth line"
 
-#: templates/stats_page.html:202
+#: templates/stats_page.html:235
 msgid "Échelle logarithmique"
 msgstr "Logarithmic scale"
+
+#: templates/stats_page.html:261
+msgid "Filtres du tableau de bord"
+msgstr "Dashboard filters"
+
+#: templates/stats_page.html:265
+msgid ""
+"Ils s'appliquent à tous les graphiques, sauf à ceux qui ont leurs propres"
+" filtres. Un champ vide ne filtre rien."
+msgstr ""
+"They apply to every chart, except those with filters of their own. An "
+"empty field filters nothing."
+
+#: templates/stats_page.html:269
+msgid "Tout effacer"
+msgstr "Clear all"
 
 #~ msgid "Informations"
 #~ msgstr "Information"

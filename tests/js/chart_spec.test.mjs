@@ -202,6 +202,9 @@ test('présentations : anneau côte à côte seulement, écart sans 2ᵉ dimensi
     const donut = normalizeChartSpec({ groupBy: 'cache_type', periods: two, view: { chart: 'donut' }, compare: { layout: 'overlay' } });
     assert.equal(donut.compare.layout, 'side');
     assert.deepEqual(allowedAligns('weekday'), ['calendar']);
+    for (const chart of ['calendar', 'heatmap', 'radar']) {
+        assert.deepEqual(allowedLayouts({ periods: two, view: { chart } }), ['overlay'], chart);
+    }
 });
 
 test('écart : exactement deux périodes fixes, sinon superposé ; gardé si les périodes sont héritées', () => {

@@ -19,15 +19,18 @@ import {
     allowedGroupBy,
     allowedLayouts,
     allowedNormalize,
+    allowedSplitBy,
     createChartSpec,
     normalizeChartSpec,
     periodsAreMultiple,
 } from './chart_spec.mjs';
 import { findsTable } from './chart_sources.mjs';
 import { todayDay } from './chart_periods.mjs';
-import { ELAPSED_UNITS, runChartQuery } from './chart_query.mjs';
-import { GROUP_CHOICES, LOT1_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
-import { buildChartOption, numberModel } from './chart_echarts.mjs';
+import { ELAPSED_UNITS, filterMask, runChartQuery } from './chart_query.mjs';
+import { activeFilterCount, describeFilters } from './chart_filters.mjs';
+import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
+import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
+import { buildChartOption, calendarYears, chartHeight, numberModel } from './chart_echarts.mjs';
 import {
     DASHBOARD_SIZES,
     MAX_ITEMS,
@@ -91,6 +94,8 @@ function readTokens() {
         unknown: v('--chart-unknown', '#cfd5dc'),
         up: v('--chart-up', '#2a78d6'),
         down: v('--chart-down', '#e34948'),
+        empty: v('--chart-empty', '#eef1f5'),
+        heat: Array.from({ length: 5 }, (_, i) => v(`--chart-heat-${i + 1}`, '#3987e5')),
         series: Array.from({ length: 8 }, (_, i) => v(`--chart-series-${i + 1}`, '#2a78d6')),
     };
 }
@@ -282,8 +287,71 @@ function renderToolbar() {
     const { n, undated } = state.table;
     const nf = new Intl.NumberFormat(state.labels.locale);
     let note = t('${n} trouvailles', { n: nf.format(n) });
+    if (activeFilterCount(dashboard.filters)) {
+        const kept = filterMask(state.table, dashboard.filters).reduce((sum, v) => sum + v, 0);
+        note += ' · ' + t('${n} avec les filtres', { n: nf.format(kept) });
+    }
     if (undated) note += ' · ' + t('${n} sans date de trouvaille, non comptées', { n: nf.format(undated) });
     $('statsDataNote').textContent = note;
+    renderFiltersSummary(dashboard);
+}
+
+const filterValueLabel = (field, value) => state.labels.filterValue(field, value, { attributeName });
+
+// Pastilles des filtres du tableau de bord : « Type de cache : … » ×.
+function renderFiltersSummary(dashboard) {
+    const count = activeFilterCount(dashboard.filters);
+    const badge = $('statsFiltersCount');
+    badge.hidden = !count;
+    badge.textContent = String(count);
+    const summary = $('statsFiltersSummary');
+    summary.replaceChildren();
+    summary.hidden = !count;
+    for (const { field, values } of describeFilters(dashboard.filters, filterValueLabel)) {
+        const chip = document.createElement('span');
+        chip.className = 'stats-filter-chip';
+        const text = document.createElement('span');
+        text.textContent = state.labels.filterField(field) + ' : ' + values.join(', ');
+        text.title = text.textContent;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.dataset.removeFilter = field;
+        remove.setAttribute('aria-label', t('Retirer le filtre ${field}', { field: state.labels.filterField(field) }));
+        remove.innerHTML = '<i class="ti ti-x" aria-hidden="true"></i>';
+        chip.append(text, remove);
+        summary.append(chip);
+    }
+}
+
+function onFiltersSummaryClick(event) {
+    const button = event.target.closest('[data-remove-filter]');
+    if (!button) return;
+    const dashboard = activeDashboard();
+    const filters = { ...dashboard.filters };
+    delete filters[button.dataset.removeFilter];
+    dashboard.filters = filters;
+    scheduleSave({ immediate: true });
+    renderToolbar();
+    renderAllCharts();
+}
+
+function openFilters() {
+    renderFilterForm($('statsFiltersForm'), {
+        table: state.table,
+        filters: activeDashboard().filters,
+        labels: state.labels,
+        attributeName,
+        idPrefix: 'statsFilter-',
+    });
+    getBsModal('statsFiltersModal')?.show();
+}
+
+function applyFilters() {
+    activeDashboard().filters = readFilterForm($('statsFiltersForm'));
+    scheduleSave({ immediate: true });
+    getBsModal('statsFiltersModal')?.hide();
+    renderToolbar();
+    renderAllCharts();
 }
 
 function renderDashboard() {
@@ -329,6 +397,17 @@ function cardElement(item, index, count) {
             ? t('Période propre à ce graphique') + ' : ' + badge.textContent
             : badge.textContent;
         header.append(badge);
+    }
+    if (spec.filters !== null) {
+        // Filtres propres : ceux du tableau de bord ne s'appliquent pas.
+        const icon = document.createElement('i');
+        icon.className = 'ti ti-filter stats-card-filter';
+        const described = describeFilters(spec.filters, filterValueLabel)
+            .map(({ field, values }) => state.labels.filterField(field) + ' : ' + values.join(', '));
+        icon.title = t('Filtres propres à ce graphique') + ' — ' + (described.length ? described.join(' · ') : t('aucun'));
+        icon.setAttribute('role', 'img');
+        icon.setAttribute('aria-label', icon.title);
+        header.append(icon);
     }
     header.append(cardMenu(spec, index, count));
     card.append(header);
@@ -419,6 +498,13 @@ function cardNote(result, spec) {
         notes.push(t('Sans attribut : ${n}', { n: result.meta.noAttribute }));
     }
     if (result.truncated) notes.push(t('Seules les 8 périodes les plus récentes sont affichées.'));
+    const chart = spec.view.chart;
+    if ((chart === 'calendar' || chart === 'heatmap') && result.periods.length > 1) {
+        notes.push(t('Seule la première période est dessinée.'));
+    }
+    if (chart === 'calendar' && calendarYears(result).truncated) {
+        notes.push(t('Seules les 3 années les plus récentes sont dessinées.'));
+    }
     if (result.toDate) {
         const date = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
             .format(new Date(result.toDate.day * 86400000));
@@ -462,10 +548,15 @@ function deltaLine(delta) {
 }
 
 function renderChartInto(host, result, spec) {
-    const option = buildChartOption(result, spec, chartContext());
+    const width = host.clientWidth || host.parentElement?.clientWidth || 0;
+    const option = buildChartOption(result, spec, { ...chartContext(), width });
+    // Calendrier : un bandeau par année, la carte s'allonge.
+    const height = chartHeight(result, spec, width);
+    host.style.height = height ? height + 'px' : '';
     let chart = window.echarts.getInstanceByDom(host);
     if (!chart) chart = window.echarts.init(host, null, { locale: echartsLocale(), renderer: 'canvas' });
     chart.setOption(option, true);
+    chart.resize();
     return chart;
 }
 
@@ -669,7 +760,7 @@ function fillGroupSelect(spec) {
 
 function fillChartSelect(spec) {
     const select = $('statsEdChart');
-    const charts = allowedCharts(spec).filter((chart) => LOT1_CHARTS.includes(chart));
+    const charts = allowedCharts(spec).filter((chart) => EDITOR_CHARTS.includes(chart));
     select.replaceChildren(...charts.map((chart) => new Option(state.labels.chart(chart), chart)));
     select.value = charts.includes(spec.view.chart) ? spec.view.chart : charts[0];
 }
@@ -708,6 +799,62 @@ function renderCompareRows(spec) {
     $('btnStatsEdAddCompare').disabled = (spec.periods?.length || 1) >= MAX_SERIES;
 }
 
+function fillSplitSelect(spec) {
+    const dims = allowedSplitBy(spec.groupBy);
+    const select = $('statsEdSplitBy');
+    select.replaceChildren(new Option(t('rien'), ''), ...dims.map((dim) => new Option(state.labels.dimension(dim), dim)));
+    select.value = spec.splitBy || '';
+    $('statsEdSplitRow').hidden = !dims.length;
+}
+
+// Palettes proposées : pour des barres d'une seule série ou un anneau.
+function paletteChoices(spec) {
+    const chart = spec.view.chart;
+    const single = !spec.splitBy && !periodsAreMultiple(spec.periods);
+    if (chart === 'donut') return ['auto', 'multi'];
+    if (chart === 'bar' && single && spec.compare.layout !== 'delta') return ['auto', 'accent', 'multi', 'heat'];
+    return [];
+}
+
+// Filtres de l'éditeur : mode (hérités / propres) et formulaire. Le
+// formulaire n'est construit qu'à l'ouverture ou au changement de mode — le
+// reconstruire à chaque changement couperait la saisie dans Tom Select.
+function syncEditorFilters({ rebuild = false } = {}) {
+    const { spec } = state.editor.item;
+    const own = spec.filters !== null;
+    $('statsEdFilterMode').value = own ? 'own' : 'inherit';
+    const container = $('statsEdFiltersForm');
+    if (rebuild) {
+        destroyFilterForm(container);
+        container.replaceChildren();
+        if (own) {
+            renderFilterForm(container, {
+                table: state.table,
+                filters: spec.filters,
+                labels: state.labels,
+                attributeName,
+                idPrefix: 'statsEdFilter-',
+                onChange: onEditorChange,
+            });
+        }
+    }
+    const count = activeFilterCount(spec.filters);
+    $('statsEdFiltersBadge').hidden = !own;
+    $('statsEdFiltersBadge').textContent = count ? String(count) : t('propres');
+}
+
+function onFilterModeChange() {
+    if (!state.editor) return;
+    readEditorForm();
+    const { item } = state.editor;
+    // Filtres propres : on part de ceux du tableau de bord.
+    const filters = $('statsEdFilterMode').value === 'own' ? structuredClone(activeDashboard().filters || {}) : null;
+    item.spec = normalizeChartSpec({ ...item.spec, filters });
+    syncEditorForm();
+    syncEditorFilters({ rebuild: true });
+    renderPreview();
+}
+
 function fillChoiceSelect(select, values, labelOf, current) {
     select.replaceChildren(...values.map((value) => new Option(labelOf(value), value)));
     select.value = values.includes(current) ? current : values[0];
@@ -724,6 +871,7 @@ function syncEditorForm() {
         choices: chartPeriodChoices(state.table.extent, state.today),
     });
     renderCompareRows(spec);
+    fillSplitSelect(spec);
     fillChartSelect(spec);
 
     // Comparaison : présentation, alignement, « à date » — seulement quand
@@ -757,7 +905,15 @@ function syncEditorForm() {
     $('statsEdTopRow').hidden = !category;
     $('statsEdSortRow').hidden = !category || chart === 'number';
     $('statsEdSmoothRow').hidden = chart !== 'line' && chart !== 'area';
-    $('statsEdLogRow').hidden = chart === 'number' || chart === 'donut';
+    $('statsEdLogRow').hidden = !['bar', 'line', 'area'].includes(chart);
+    const palettes = paletteChoices(spec);
+    fillChoiceSelect($('statsEdPalette'), palettes.length ? palettes : ['auto'], state.labels.palette, spec.view.palette);
+    $('statsEdPaletteRow').hidden = palettes.length < 2;
+    // Empiler : plusieurs séries superposées en barres, courbe ou aire.
+    const several = Boolean(spec.splitBy) || periodsAreMultiple(spec.periods);
+    $('statsEdStack').checked = spec.view.stack;
+    $('statsEdStackRow').hidden = !several || !['bar', 'line', 'area'].includes(chart)
+        || spec.compare.layout === 'delta';
 }
 
 // Périodes de la phrase : la première (vide = celle du tableau de bord),
@@ -782,7 +938,9 @@ function readEditorForm() {
         title: $('statsEdTitle').value,
         measure: measureOfKey($('statsEdMeasure').value),
         groupBy: $('statsEdGroupBy').value,
+        splitBy: $('statsEdSplitBy').value || null,
         periods: readEditorPeriods(),
+        filters: $('statsEdFilterMode').value === 'own' ? readFilterForm($('statsEdFiltersForm')) : null,
         compare: {
             ...spec.compare,
             layout: $('statsEdLayout').value || spec.compare.layout,
@@ -799,6 +957,8 @@ function readEditorForm() {
             labels: $('statsEdLabels').checked,
             smooth: $('statsEdSmooth').checked,
             log: $('statsEdLog').checked,
+            stack: $('statsEdStack').checked,
+            palette: $('statsEdPaletteRow').hidden ? spec.view.palette : $('statsEdPalette').value,
         },
     };
     // Titre venu d'une question (« Nombre de trouvailles ») : il ne décrit
@@ -844,6 +1004,7 @@ function renderPreview() {
 function onEditorChange() {
     readEditorForm();
     syncEditorForm();
+    syncEditorFilters();
     renderPreview();
 }
 
@@ -879,6 +1040,9 @@ function openEditor({ mode, index = -1, item }) {
     state.editor = { mode, index, item: structuredClone(item), titleTouched: false, sizeTouched: false };
     $('statsEditorTitle').textContent = mode === 'new' ? t('Nouveau graphique') : t('Modifier le graphique');
     syncEditorForm();
+    syncEditorFilters({ rebuild: true });
+    // Section des filtres ouverte d'office quand le graphique en a.
+    $('statsEdFiltersSection').open = state.editor.item.spec.filters !== null;
     const modal = getBsModal('statsEditorModal');
     modal?.show();
 }
@@ -941,6 +1105,7 @@ window.getStatsPageSnapshot = () => {
             id: dashboard.id,
             name: dashboard.name,
             period: dashboard.period,
+            filters: dashboard.filters,
             items: dashboard.items.length,
         } : null,
         cards: dashboard ? dashboard.items.map((item) => {
@@ -960,6 +1125,12 @@ window.getStatsPageSnapshot = () => {
                 delta: entry?.result.delta?.values ?? null,
                 partial: entry?.result.series.map((s) => s.partial) ?? null,
                 layout: item.spec.compare.layout,
+                splitBy: item.spec.splitBy,
+                filters: item.spec.filters,
+                height: (() => {
+                    const host = $('statsGrid').querySelector(cardSelector(item.spec.id) + ' .stats-chart');
+                    return host ? host.getBoundingClientRect().height : null;
+                })(),
                 grids: (() => {
                     const grid = state.charts.get(item.spec.id)?.getOption().grid;
                     return Array.isArray(grid) ? grid.length : null;
@@ -984,8 +1155,14 @@ function bindEvents() {
     $('statsGlobalPeriod').addEventListener('change', onGlobalPeriodChange);
     $('statsGrid').addEventListener('click', onCardAction);
     $('statsGalleryList').addEventListener('click', onGalleryPick);
-    for (const id of ['statsEdMeasure', 'statsEdGroupBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
-        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdSmooth', 'statsEdLog',
+    $('btnStatsFilters').addEventListener('click', openFilters);
+    $('btnStatsFiltersApply').addEventListener('click', applyFilters);
+    $('btnStatsFiltersClear').addEventListener('click', () => clearFilterForm($('statsFiltersForm')));
+    $('statsFiltersModal').addEventListener('hidden.bs.modal', () => destroyFilterForm($('statsFiltersForm')));
+    $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
+    $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
+    for (const id of ['statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
+        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdSmooth', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
         'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList']) {
         $(id).addEventListener('change', onEditorChange);
     }
@@ -1006,6 +1183,7 @@ function bindEvents() {
     // conteneur, nul tant que la modale est masquée.
     editor.addEventListener('shown.bs.modal', renderPreview);
     editor.addEventListener('hidden.bs.modal', () => {
+        destroyFilterForm($('statsEdFiltersForm'));
         state.previewChart?.dispose();
         state.previewChart = null;
         state.editor = null;

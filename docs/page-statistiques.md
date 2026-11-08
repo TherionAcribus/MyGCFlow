@@ -21,6 +21,9 @@ incrustés sur la carte et dans la vidéo.
   superposées / côte à côte / en écart, alignement, « à date »,
   pourcentage ou par jour, case en cours repérée, 7 questions de
   comparaison, galerie par sections.
+- Lot 3 (2026-11-08) : filtres du tableau de bord et propres à un
+  graphique, 2ᵉ dimension (« découpé par ») et empilement, grille (D/T ou
+  deux dimensions), calendrier de l'année, radar, palettes.
 
 ## Parcours des données
 
@@ -49,6 +52,8 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 | `templates/stats_page.html` | Gabarit : barre, grille, galerie, éditeur, renommage |
 | `templates/_app_header.html` | En-tête commun aux quatre pages (lien actif selon `mode`) |
 | `static/js/stats_page.js` | Point d'entrée et câblage DOM |
+| `static/js/stats_filters_ui.js` | Formulaire de filtres (Tom Select) : tableau de bord et éditeur |
+| `static/js/chart_filters.mjs` | Pur : valeurs proposées par champ (avec comptes), résumé, nettoyage |
 | `static/js/app_quit.js` | « Quitter » (sorti de ui.js, partagé avec les pages carte) |
 | `static/js/chart_spec.mjs` | Format versionné d'un graphique, normalisation, compatibilités |
 | `static/js/chart_sources.mjs` | Colonnes du serveur → table d'événements |
@@ -187,6 +192,45 @@ distinguent.
 Le thème change (attribut `data-bs-theme` de `<html>`) → couleurs relues,
 graphiques redessinés.
 
+## Graphisme et filtres (lot 3)
+
+**Filtres** : `dashboard.filters` (fenêtre « Filtres », pastilles
+retirables sous la barre, badge du nombre de champs) et `spec.filters`
+(section « Filtres » de l'éditeur : `null` = ceux du tableau de bord ; un
+objet = propres, partant d'une copie de ceux du tableau ; icône d'entonnoir
+sur la carte). Formulaire : `renderFilterForm` (stats_filters_ui.js), un
+`<select multiple class="form-select">` + Tom Select par champ, garni par
+`filterChoices` (valeurs présentes et leur nombre ; un champ à une seule
+valeur est masqué), menus rattachés à `<body>` (`dropdownParent`, z-index
+au-dessus des modales). Dans l'éditeur, le formulaire n'est reconstruit
+qu'à l'ouverture ou au changement de mode : le reconstruire à chaque
+changement couperait la saisie dans Tom Select.
+
+**2ᵉ dimension** : « découpé par » dans la phrase (`allowedSplitBy`),
+« Empiler les séries » dans les options dès plusieurs séries
+(barres / courbe / aire, hors écart).
+
+**Nouvelles formes** (`chart_echarts.mjs`) :
+- `heatmap` : difficulté × terrain (regroupement `dt` : 9 × 9 cases, sans
+  « Autres » — `fullGrid` dans chart_query) ou regroupement × 2ᵉ dimension ;
+  cases vides au fond (`'-'`), dégradé `--chart-heat-*`, échelle sous la
+  grille.
+- `calendar` : regroupement par jour, un bandeau par année de la première
+  période (3 au plus, `calendarYears`), cases carrées calculées sur la
+  largeur (`calendarCell`, 8–18 px) ; `chartHeight(result, spec, width)`
+  allonge la carte. Noms de jours rangés du dimanche au samedi (convention
+  ECharts) ; petites cases : lun. / mer. / ven. seulement.
+- `radar` : une forme par série, même maximum pour tous les axes.
+- Grille et calendrier ne dessinent que la première période (note sous la
+  carte) ; `allowedLayouts` = `overlay` pour les trois.
+
+**Palettes** (`view.palette`, barres d'une série ou anneau) : `auto` (types
+aux couleurs de la carte, autres catégories d'une seule teinte), `accent`,
+`multi` (une teinte par valeur, types compris), `heat` (dégradé selon la
+valeur, à partir du 2ᵉ pas de la rampe : contraste ≥ 2:1 sur le fond).
+Rampe `--chart-heat-1…5` vérifiée au validateur dans les deux modes (le
+pas 1 se fond volontairement dans le fond : case proche de zéro).
+
 ## Tableaux de bord (`dashboard_model.mjs`)
 
 `{ v: 1, active, dashboards: [{ id, name, period, filters, items: [{ size, spec }] }] }`
@@ -208,7 +252,9 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   `chart_echarts`, `dashboard_model` (et libellés) — `npm run test:unit`.
 - Python : `tests/test_statistics_page.py` — route, en-tête, « Quitter »,
   colonnes des trouvailles, aller-retour et refus des tableaux de bord.
-- E2E : `tests/e2e/stats-page.spec.mjs` (20 tests, fixture `my-finds.gpx` ;
+- Unitaires du lot 3 : `chart_filters.test.mjs` ; grille, calendrier, radar,
+  palettes dans `chart_echarts.test.mjs`.
+- E2E : `tests/e2e/stats-page.spec.mjs` (25 tests, fixture `my-finds.gpx` ;
   `openWithChart` pose un tableau d'un seul graphique par `PUT`).
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,

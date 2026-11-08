@@ -289,6 +289,11 @@ Autres repères :
   absent = tableau de bord par défaut à la visite suivante). Pour un rendu
   sur beaucoup de données sans toucher la base, intercepter
   `GET /api/stats/finds` par `page.route` (format : stats_finds.py).
+  Ses menus de filtres (Tom Select) sont rattachés à `<body>`
+  (`dropdownParent`) : les ouvrir par `el.tomselect.open()` puis cliquer
+  `.ts-dropdown:visible .option[data-value=…]` — helper `pickFilter` de
+  `stats-page.spec.mjs` ; le `<select>` d'origine est masqué, pas de
+  `selectOption` dessus.
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

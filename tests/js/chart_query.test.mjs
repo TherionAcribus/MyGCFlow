@@ -488,3 +488,11 @@ test('écart : première période moins la seconde, et en proportion', () => {
     assert.deepEqual(result.delta.ratios, [0, 0, null]);
     assert.equal(run({ groupBy: 'cache_type', compare: { layout: 'delta' } }).delta, null);
 });
+
+test('grille D/T : toutes les combinaisons présentes, sans « Autres »', () => {
+    const grid = run({ groupBy: 'dt', view: { chart: 'heatmap', top: 3 } });
+    assert.ok(!grid.keys.includes(OTHERS_KEY));
+    assert.equal(grid.keys.filter((k) => k !== UNKNOWN_KEY).length, 5);
+    const bars = run({ groupBy: 'dt', view: { chart: 'bar', top: 3 } });
+    assert.ok(bars.keys.includes(OTHERS_KEY));
+});

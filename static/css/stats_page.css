@@ -26,6 +26,17 @@
        toujours accompagnée d'un signe). */
     --chart-up: #2a78d6;
     --chart-down: #e34948;
+    /* Dégradé d'une teinte (bleu), du plus faible au plus fort : grille,
+       calendrier, palette « dégradé ». En clair, le faible se fond dans le
+       fond blanc ; en sombre, dans le fond marine — voulu pour une case
+       proche de zéro. Les barres partent du pas 2 (contraste ≥ 2:1 sur le
+       fond, vérifié dans les deux modes). */
+    --chart-heat-1: #cde2fb;
+    --chart-heat-2: #86b6ef;
+    --chart-heat-3: #3987e5;
+    --chart-heat-4: #1c5cab;
+    --chart-heat-5: #0d366b;
+    --chart-empty: #eef1f5;
 }
 [data-bs-theme="dark"] {
     --chart-series-1: #3987e5;
@@ -41,6 +52,12 @@
     --chart-grid: #2a3747;
     --chart-up: #3987e5;
     --chart-down: #e66767;
+    --chart-heat-1: #1c3554;
+    --chart-heat-2: #1c5cab;
+    --chart-heat-3: #2a78d6;
+    --chart-heat-4: #5598e7;
+    --chart-heat-5: #9ec5f4;
+    --chart-empty: #223044;
 }
 
 #statsMain {
@@ -238,6 +255,55 @@
 .stats-number-block + .stats-number-block .stats-number-value {
     font-size: 1.6rem;
     color: var(--color-text-muted);
+}
+
+/* Filtres actifs du tableau de bord : une pastille par champ. */
+.stats-filters-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: -8px 0 16px;
+}
+.stats-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 2px 4px 2px 10px;
+    font-size: 0.8rem;
+    color: var(--color-accent-on-weak);
+    background: var(--color-accent-weak);
+    border-radius: 999px;
+}
+.stats-filter-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.stats-filter-chip button {
+    padding: 0 4px;
+    line-height: 1;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 999px;
+}
+.stats-filter-chip button:hover,
+.stats-filter-chip button:focus-visible {
+    background: rgba(127, 127, 127, 0.2);
+}
+.stats-card-filter {
+    flex: 0 0 auto;
+    color: var(--color-accent-text);
+}
+.stats-ed-filters {
+    margin-bottom: 20px;
+}
+/* Menu Tom Select ouvert hors de la modale (dropdownParent: body) : au-dessus
+   d'elle. */
+body > .ts-dropdown {
+    z-index: 1080;
 }
 
 .stats-grid-empty {
