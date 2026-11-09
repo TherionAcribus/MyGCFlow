@@ -63,6 +63,9 @@ datas = (
     + resource_tree("static")
     # Seuls les catalogues compilés sont lus à l'exécution.
     + resource_tree("translations", suffixes={".mo"})
+    # Géométries de rattachement des zones (zones.py) ; l'affichage est dans
+    # static/geo. Les recettes et le cache de geo/ ne servent qu'à les produire.
+    + resource_tree("geo/match", suffixes={".gz"})
     + [(str(ROOT / "installer" / "licenses"), "licenses")]
     # Licence de MyGCFlow, servie par la route /license.
     + [(str(ROOT / "LICENSE"), ".")]

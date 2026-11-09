@@ -389,6 +389,45 @@ class FindsPayloadTests(unittest.TestCase):
         self.assertEqual(payload["count"], 0)
         self.assertEqual(payload["date"], [])
 
+    def test_zone_columns(self):
+        calls = []
+
+        class Index:
+            def assign(self, **kw):
+                calls.append(kw)
+                if kw["country"] == "France":
+                    return ("FR", "FR-BRE", "FR-29", ("name", "name", "position"))
+                return (None, None, None, (None, None, None))
+
+        features = [
+            _feature(country="France", state="Bretagne"),
+            {"type": "Feature", "geometry": None, "properties": {"source_kind": "lab", "country": "Mars"}},
+            _feature(country="France", state="Bretagne"),
+        ]
+        payload = stats_finds.build_finds_payload(features, Index())
+        self.assertEqual(calls[0], {"country": "France", "state": "Bretagne", "lat": 48.8, "lon": 2.3})
+        self.assertEqual(calls[1]["lat"], None)
+        self.assertEqual(payload["dicts"]["zone_country"], ["FR"])
+        self.assertEqual(payload["zone_country"], [0, -1, 0])
+        self.assertEqual(payload["zone_region"], [0, -1, 0])
+        self.assertEqual(payload["dicts"]["zone_subregion"], ["FR-29"])
+
+    def test_unreadable_zone_data_leaves_the_page_working(self):
+        class Broken:
+            def __init__(self):
+                self.calls = 0
+
+            def assign(self, **kw):
+                self.calls += 1
+                raise ValueError("fichier corrompu")
+
+        broken = Broken()
+        with self.assertLogs("stats_finds", level="ERROR"):
+            payload = stats_finds.build_finds_payload([_feature(country="France")] * 3, broken)
+        self.assertEqual(broken.calls, 1)          # pas une trace par trouvaille
+        self.assertEqual(payload["zone_country"], [-1, -1, -1])
+        self.assertEqual(payload["count"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()

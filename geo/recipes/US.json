@@ -1,0 +1,45 @@
+{
+  "kind": "country",
+  "country": "US",
+  "comment": "Counties (et équivalents : parishes, boroughs, villes indépendantes) des 50 États et du district de Columbia. Le niveau 1 (États) vient de Natural Earth. Porto Rico et les territoires sont des pays pour Geocaching.com : exclus.",
+  "sources": {
+    "census-counties": {
+      "url": "https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip",
+      "sha256": "99d6597b1fc7767deef62e01d28d8b5dcbd578e151855f7dc0d173cbf5bf0868",
+      "member": "cb_2023_us_county_500k.shp",
+      "title": "US Census Bureau — Cartographic Boundary Files 2023, counties 1:500 000",
+      "licence": "public-domain",
+      "attribution": "U.S. Census Bureau",
+      "homepage": "https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html"
+    }
+  },
+  "levels": {
+    "subregion": {
+      "source": "census-counties",
+      "filter": "![\"60\", \"66\", \"69\", \"72\", \"78\"].includes(STATEFP)",
+      "label": { "fr": "comtés", "en": "counties", "local": "counties" },
+      "id": ["US-{GEOID}"],
+      "parent": "US-{STUSPS}",
+      "name": "{NAMELSAD}",
+      "aliases": ["NAME", "NAMELSAD"],
+      "simplify": { "display": 2500, "match": 100 }
+    }
+  },
+  "aliases": {
+    "country": ["United States of America", "Vereinigte Staaten", "États-Unis"]
+  },
+  "insets": [
+    { "name": "Alaska", "zones": ["US-AK"] },
+    { "name": "Hawaii", "zones": ["US-HI"] }
+  ],
+  "samples": [
+    { "label": "Seattle (King County)", "lat": 47.6062, "lon": -122.3321, "region": "US-WA", "subregion": "US-53033" },
+    { "label": "Houston (Harris County)", "lat": 29.7604, "lon": -95.3698, "region": "US-TX", "subregion": "US-48201" },
+    { "label": "Manhattan (New York County)", "lat": 40.7831, "lon": -73.9712, "region": "US-NY", "subregion": "US-36061" },
+    { "label": "Honolulu", "lat": 21.3069, "lon": -157.8583, "region": "US-HI", "subregion": "US-15003" },
+    { "label": "Anchorage", "lat": 61.2181, "lon": -149.9003, "region": "US-AK", "subregion": "US-02020" },
+    { "label": "Key West (Monroe County)", "lat": 24.5551, "lon": -81.78, "region": "US-FL", "subregion": "US-12087" },
+    { "label": "Washington, D.C.", "lat": 38.8977, "lon": -77.0365, "region": "US-DC", "subregion": "US-11001" },
+    { "label": "Baltimore (ville indépendante)", "lat": 39.2904, "lon": -76.6122, "region": "US-MD", "subregion": "US-24510" }
+  ]
+}

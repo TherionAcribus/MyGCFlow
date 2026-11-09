@@ -1,0 +1,81 @@
+{
+  "kind": "country",
+  "country": "FR",
+  "comment": "Régions (remplacent le découpage de Natural Earth, qui est en départements) et départements, outre-mer compris. Tracés IGN Admin Express COG 2018 via france-geojson (commit figé).",
+  "sources": {
+    "ign-regions": {
+      "url": "https://raw.githubusercontent.com/gregoiredavid/france-geojson/5d34ee6d0140c29f785fdb047d9329f1aab58833/regions-avec-outre-mer.geojson",
+      "sha256": "a573b672264184d11a2f98220867653b092fe3a964433e30e3a0a4708d72d167",
+      "title": "IGN Admin Express COG 2018 — régions (france-geojson)",
+      "licence": "etalab-2.0",
+      "attribution": "IGN — Admin Express COG (2018), via france-geojson (Grégoire David)",
+      "homepage": "https://github.com/gregoiredavid/france-geojson"
+    },
+    "ign-departements": {
+      "url": "https://raw.githubusercontent.com/gregoiredavid/france-geojson/5d34ee6d0140c29f785fdb047d9329f1aab58833/departements-avec-outre-mer.geojson",
+      "sha256": "0c331e85eef244d8014f68a4c256bb732e28776aceec53ddf849624f2eb6c163",
+      "title": "IGN Admin Express COG 2018 — départements (france-geojson)",
+      "licence": "etalab-2.0",
+      "attribution": "IGN — Admin Express COG (2018), via france-geojson (Grégoire David)",
+      "homepage": "https://github.com/gregoiredavid/france-geojson"
+    }
+  },
+  "levels": {
+    "region": {
+      "source": "ign-regions",
+      "label": { "fr": "régions", "en": "regions", "local": "régions" },
+      "id": ["FR-{code}"],
+      "id_map": {
+        "FR-11": "FR-IDF", "FR-24": "FR-CVL", "FR-27": "FR-BFC", "FR-28": "FR-NOR",
+        "FR-32": "FR-HDF", "FR-44": "FR-GES", "FR-52": "FR-PDL", "FR-53": "FR-BRE",
+        "FR-75": "FR-NAQ", "FR-76": "FR-OCC", "FR-84": "FR-ARA", "FR-93": "FR-PAC",
+        "FR-94": "FR-20R",
+        "FR-01": "FR-971", "FR-02": "FR-972", "FR-03": "FR-973", "FR-04": "FR-974", "FR-06": "FR-976"
+      },
+      "name": "{nom}",
+      "aliases": ["nom"],
+      "simplify": { "display": 1500, "match": 100 }
+    },
+    "subregion": {
+      "source": "ign-departements",
+      "label": { "fr": "départements", "en": "departments", "local": "départements" },
+      "id": ["FR-{code}"],
+      "name": "{nom}",
+      "aliases": ["nom"],
+      "simplify": { "display": 1500, "match": 100 }
+    }
+  },
+  "aliases": {
+    "country": ["Frankreich", "Francia"],
+    "as_region": {
+      "FR-971": ["Guadeloupe"],
+      "FR-972": ["Martinique"],
+      "FR-973": ["French Guiana", "Guyane", "Guyane française"],
+      "FR-974": ["Réunion", "La Réunion", "Reunion"],
+      "FR-976": ["Mayotte"]
+    },
+    "zones": {
+      "FR-IDF": ["Ile de France"],
+      "FR-PAC": ["PACA", "Provence-Alpes-Côte d'Azur"],
+      "FR-ARA": ["Auvergne-Rhône-Alpes"]
+    }
+  },
+  "insets": [
+    { "name": "Guadeloupe", "zones": ["FR-971"] },
+    { "name": "Martinique", "zones": ["FR-972"] },
+    { "name": "Guyane", "zones": ["FR-973"] },
+    { "name": "La Réunion", "zones": ["FR-974"] },
+    { "name": "Mayotte", "zones": ["FR-976"] }
+  ],
+  "samples": [
+    { "label": "Nantes", "lat": 47.2184, "lon": -1.5536, "region": "FR-PDL", "subregion": "FR-44" },
+    { "label": "Paris", "lat": 48.8566, "lon": 2.3522, "region": "FR-IDF", "subregion": "FR-75" },
+    { "label": "Strasbourg", "lat": 48.5734, "lon": 7.7521, "region": "FR-GES", "subregion": "FR-67" },
+    { "label": "Ajaccio (Corse-du-Sud)", "lat": 41.9192, "lon": 8.7386, "region": "FR-20R", "subregion": "FR-2A" },
+    { "label": "Bastia (Haute-Corse)", "lat": 42.6977, "lon": 9.45, "region": "FR-20R", "subregion": "FR-2B" },
+    { "label": "Saint-Denis (La Réunion)", "lat": -20.8821, "lon": 55.4504, "region": "FR-974", "subregion": "FR-974" },
+    { "label": "Hendaye (frontière espagnole)", "lat": 43.3586, "lon": -1.7744, "region": "FR-NAQ", "subregion": "FR-64" },
+    { "label": "Mont-Saint-Michel (près du Couesnon)", "lat": 48.6361, "lon": -1.5115, "region": "FR-NOR", "subregion": "FR-50" },
+    { "label": "Île de Sein (côte)", "lat": 48.0386, "lon": -4.8508, "region": "FR-BRE", "subregion": "FR-29" }
+  ]
+}

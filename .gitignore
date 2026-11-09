@@ -52,3 +52,6 @@ nul
 # seules les fixtures anonymisées dérivées dans tests/fixtures/labs/ sont
 # versionnées.
 labs_sources/
+
+# Sources téléchargées par tools/build_geo_zones.py (re-téléchargeables).
+geo/.cache/

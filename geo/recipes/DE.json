@@ -1,0 +1,40 @@
+{
+  "kind": "country",
+  "country": "DE",
+  "comment": "Landkreise et kreisfreie Städte (400). Le niveau 1 (Länder) vient de Natural Earth. Source BKG VG1000 au 31/12/2025, couches terrestres seulement (GF = 4).",
+  "sources": {
+    "bkg-vg1000": {
+      "url": "https://daten.gdz.bkg.bund.de/produkte/vg/vg1000_ebenen_1231/2025/vg1000_12-31.utm32s.shape.ebenen.zip",
+      "sha256": "7e23943d3c0fada3a1848c8aff0a10bddb9210ecfd56a6dba950e238e827731a",
+      "member": "vg1000_ebenen_1231/VG1000_KRS.shp",
+      "title": "BKG — Verwaltungsgebiete 1:1 000 000 (VG1000), Stand 31.12.2025",
+      "licence": "dl-de-by-2.0",
+      "attribution": "© GeoBasis-DE / BKG (2025)",
+      "homepage": "https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-1-000-000-stand-31-12-vg1000-31-12.html"
+    }
+  },
+  "levels": {
+    "subregion": {
+      "source": "bkg-vg1000",
+      "filter": "GF == 4",
+      "label": { "fr": "arrondissements (Kreise)", "en": "districts (Kreise)", "local": "Landkreise" },
+      "id": ["DE-{AGS}"],
+      "name": "{GEN}",
+      "name_unique": "{GEN} ({BEZ})",
+      "aliases": ["GEN", "{BEZ} {GEN}"],
+      "simplify": { "display": 1500, "match": 100 }
+    }
+  },
+  "aliases": {
+    "country": ["Deutschland", "Allemagne"]
+  },
+  "insets": [],
+  "samples": [
+    { "label": "München (kreisfreie Stadt)", "lat": 48.1374, "lon": 11.5755, "region": "DE-BY", "subregion": "DE-09162" },
+    { "label": "Unterhaching (Landkreis München)", "lat": 48.0658, "lon": 11.6155, "region": "DE-BY", "subregion": "DE-09184" },
+    { "label": "Berlin", "lat": 52.52, "lon": 13.405, "region": "DE-BE", "subregion": "DE-11000" },
+    { "label": "Hamburg", "lat": 53.5511, "lon": 9.9937, "region": "DE-HH", "subregion": "DE-02000" },
+    { "label": "Köln", "lat": 50.9375, "lon": 6.9603, "region": "DE-NW", "subregion": "DE-05315" },
+    { "label": "Helgoland (île, Kreis Pinneberg)", "lat": 54.182, "lon": 7.886, "region": "DE-SH", "subregion": "DE-01056" }
+  ]
+}

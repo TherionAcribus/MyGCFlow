@@ -9,6 +9,7 @@
     "test:e2e:headed": "node tests/e2e/run-tests.mjs --headed"
   },
   "devDependencies": {
-    "@playwright/test": "1.52.0"
+    "@playwright/test": "1.52.0",
+    "mapshaper": "0.7.94"
   }
 }

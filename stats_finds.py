@@ -8,12 +8,22 @@ Le client (`static/js/chart_sources.mjs`) relit ce format.
 
 Source : le jeu de base du cache GeoJSON (`bdd.geojson_cache`), le même que
 celui de la page carte — trouvailles et étapes Lab, sans filtre.
-"""
 
-PAYLOAD_VERSION = 1
+Version 2 : colonnes `zone_country`, `zone_region`, `zone_subregion` (ids de
+zone de zones.py, codés par dictionnaire, -1 = hors carte) pour les cartes
+par zones (MyGCFlow_Plan_Carte_Zones.md).
+"""
+import logging
+
+import zones
+
+PAYLOAD_VERSION = 2
+
+_log = logging.getLogger(__name__)
 
 # Colonnes codées par dictionnaire : valeur absente ou vide → -1.
 _DICT_COLUMNS = ("cache_type", "container", "country", "state", "owner")
+_ZONE_COLUMNS = ("zone_country", "zone_region", "zone_subregion")
 
 
 def _attribute_key(attr):
@@ -43,11 +53,31 @@ def _number(value):
         return None
 
 
-def build_finds_payload(features):
+def _position(feature):
+    coords = ((feature or {}).get("geometry") or {}).get("coordinates") or ()
+    if len(coords) < 2:
+        return None, None
+    return _number(coords[1]), _number(coords[0])
+
+
+def build_finds_payload(features, zone_index=None):
     """Colonnes des trouvailles, dans l'ordre des features."""
-    dicts = {name: [] for name in _DICT_COLUMNS}
-    indexes = {name: {} for name in _DICT_COLUMNS}
-    columns = {name: [] for name in _DICT_COLUMNS}
+    dicts = {name: [] for name in _DICT_COLUMNS + _ZONE_COLUMNS}
+    indexes = {name: {} for name in _DICT_COLUMNS + _ZONE_COLUMNS}
+    columns = {name: [] for name in _DICT_COLUMNS + _ZONE_COLUMNS}
+    zone_index = zone_index or zones.get_index()
+    zones_ok = True
+
+    def encode(name, value):
+        if not value:
+            columns[name].append(-1)
+            return
+        idx = indexes[name].get(value)
+        if idx is None:
+            idx = indexes[name][value] = len(dicts[name])
+            dicts[name].append(value)
+        columns[name].append(idx)
+
     attribute_dict = []      # [{key, name}]
     attribute_index = {}
 
@@ -67,15 +97,21 @@ def build_finds_payload(features):
 
         for name in _DICT_COLUMNS:
             value = props.get(name)
-            value = str(value).strip() if value not in (None, "") else ""
-            if not value:
-                columns[name].append(-1)
-                continue
-            idx = indexes[name].get(value)
-            if idx is None:
-                idx = indexes[name][value] = len(dicts[name])
-                dicts[name].append(value)
-            columns[name].append(idx)
+            encode(name, str(value).strip() if value not in (None, "") else "")
+
+        # Zones : un fichier de rattachement illisible ne doit pas priver la
+        # page de ses graphiques — colonnes « hors carte », une trace.
+        assigned = (None, None, None)
+        if zones_ok:
+            lat, lon = _position(feature)
+            try:
+                assigned = zone_index.assign(country=props.get("country"), state=props.get("state"),
+                                             lat=lat, lon=lon)[:3]
+            except Exception:  # noqa: BLE001
+                _log.exception("rattachement des zones impossible")
+                zones_ok = False
+        for name, value in zip(_ZONE_COLUMNS, assigned):
+            encode(name, value)
 
         present = []
         for attr in props.get("attributes") or []:

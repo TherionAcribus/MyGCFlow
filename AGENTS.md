@@ -439,6 +439,19 @@ l'`update` suivant obsolète tout le catalogue (`#~` partout). Vérifier
 du fichier : `cmd //c "del nul"` échoue, utiliser
 `python -c "import os; os.remove(r'\\?\C:\chemin\nul')"`.
 
+## Cartes par zones : données générées
+
+`static/geo/` et `geo/match/` sont **produits** par
+`python tools/build_geo_zones.py` à partir de `geo/recipes/*.json` : ne
+jamais les modifier à la main, corriger la recette et relancer (mapshaper
+vient de `npm install`, Node 24 convient ; `--offline` réutilise
+`geo/.cache/`). La construction est reproductible à l'octet : un diff git
+après reconstruction signale un vrai changement. Les ids de zone ne doivent
+jamais changer (ils seront stockés dans les tableaux de bord). Ajouter un
+pays : `docs/zones-ajouter-un-pays.md` ; moteur : `docs/carte-zones.md`.
+Tests : `tests.test_geo_zones` (générique, points témoins) et
+`tests.test_zones` (synthétique).
+
 ## Tests unitaires JS
 
 `npm run test:unit` (`node --test "tests/js/*.test.mjs"`, aucune dépendance,

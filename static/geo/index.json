@@ -1,0 +1,3774 @@
+{
+ "v": 1,
+ "countries": {
+  "file": "countries.json",
+  "rev": "3a1cb434b9",
+  "count": 242,
+  "bytes": 818462
+ },
+ "by_country": {
+  "AD": {
+   "region": {
+    "file": "regions/AD.json",
+    "rev": "a1cefea4c9",
+    "count": 7,
+    "bytes": 2130,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AE": {
+   "region": {
+    "file": "regions/AE.json",
+    "rev": "2274a1b106",
+    "count": 9,
+    "bytes": 5343,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AF": {
+   "region": {
+    "file": "regions/AF.json",
+    "rev": "b8a6e20a01",
+    "count": 34,
+    "bytes": 28822,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AG": {
+   "region": {
+    "file": "regions/AG.json",
+    "rev": "737dc6dbb1",
+    "count": 8,
+    "bytes": 2438,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AI": {
+   "region": {
+    "file": "regions/AI.json",
+    "rev": "2d4b86e111",
+    "count": 15,
+    "bytes": 4786,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AL": {
+   "region": {
+    "file": "regions/AL.json",
+    "rev": "5debf8d659",
+    "count": 12,
+    "bytes": 5763,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AM": {
+   "region": {
+    "file": "regions/AM.json",
+    "rev": "5c05d12991",
+    "count": 11,
+    "bytes": 5390,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AO": {
+   "region": {
+    "file": "regions/AO.json",
+    "rev": "af2e1dc2aa",
+    "count": 18,
+    "bytes": 23183,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AQ": {
+   "region": {
+    "file": "regions/AQ.json",
+    "rev": "41f0d39986",
+    "count": 2,
+    "bytes": 68009,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AR": {
+   "region": {
+    "file": "regions/AR.json",
+    "rev": "82b50e7cea",
+    "count": 24,
+    "bytes": 36522,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AS": {
+   "region": {
+    "file": "regions/AS.json",
+    "rev": "7896aed517",
+    "count": 5,
+    "bytes": 1585,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AT": {
+   "region": {
+    "file": "regions/AT.json",
+    "rev": "c7f1a6372b",
+    "count": 9,
+    "bytes": 7129,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AW": {
+   "region": {
+    "file": "regions/AW.json",
+    "rev": "e5b9fa0aa6",
+    "count": 1,
+    "bytes": 329,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AX": {
+   "region": {
+    "file": "regions/AX.json",
+    "rev": "1c83e17fae",
+    "count": 11,
+    "bytes": 3171,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AZ": {
+   "region": {
+    "file": "regions/AZ.json",
+    "rev": "e4e844a3eb",
+    "count": 78,
+    "bytes": 31293,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BA": {
+   "region": {
+    "file": "regions/BA.json",
+    "rev": "1db57a9927",
+    "count": 18,
+    "bytes": 9852,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BB": {
+   "region": {
+    "file": "regions/BB.json",
+    "rev": "c61e942422",
+    "count": 11,
+    "bytes": 3519,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BD": {
+   "region": {
+    "file": "regions/BD.json",
+    "rev": "387b7a725c",
+    "count": 7,
+    "bytes": 7329,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BE": {
+   "region": {
+    "file": "regions/BE.json",
+    "rev": "bf804f610d",
+    "count": 11,
+    "bytes": 5550,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BF": {
+   "region": {
+    "file": "regions/BF.json",
+    "rev": "91f8ceea6a",
+    "count": 45,
+    "bytes": 26979,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BG": {
+   "region": {
+    "file": "regions/BG.json",
+    "rev": "4858cf2dae",
+    "count": 28,
+    "bytes": 15420,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BH": {
+   "region": {
+    "file": "regions/BH.json",
+    "rev": "69b0e2cb5f",
+    "count": 5,
+    "bytes": 1543,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BI": {
+   "region": {
+    "file": "regions/BI.json",
+    "rev": "69e00d0976",
+    "count": 17,
+    "bytes": 6977,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BJ": {
+   "region": {
+    "file": "regions/BJ.json",
+    "rev": "5fe29559ae",
+    "count": 12,
+    "bytes": 6197,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BL": {
+   "region": {
+    "file": "regions/BL.json",
+    "rev": "2e1e197794",
+    "count": 1,
+    "bytes": 349,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BM": {
+   "region": {
+    "file": "regions/BM.json",
+    "rev": "863af87002",
+    "count": 11,
+    "bytes": 3776,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BN": {
+   "region": {
+    "file": "regions/BN.json",
+    "rev": "689d089e93",
+    "count": 4,
+    "bytes": 1550,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BO": {
+   "region": {
+    "file": "regions/BO.json",
+    "rev": "9066f5190a",
+    "count": 9,
+    "bytes": 14735,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BR": {
+   "region": {
+    "file": "regions/BR.json",
+    "rev": "b337c62001",
+    "count": 27,
+    "bytes": 77801,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BS": {
+   "region": {
+    "file": "regions/BS.json",
+    "rev": "00db5425ae",
+    "count": 30,
+    "bytes": 10674,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BT": {
+   "region": {
+    "file": "regions/BT.json",
+    "rev": "e868283538",
+    "count": 20,
+    "bytes": 9307,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BW": {
+   "region": {
+    "file": "regions/BW.json",
+    "rev": "961c577001",
+    "count": 15,
+    "bytes": 9082,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BY": {
+   "region": {
+    "file": "regions/BY.json",
+    "rev": "64c9c33f1a",
+    "count": 7,
+    "bytes": 7958,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "BZ": {
+   "region": {
+    "file": "regions/BZ.json",
+    "rev": "2fde040ce5",
+    "count": 6,
+    "bytes": 2985,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CA": {
+   "region": {
+    "file": "regions/CA.json",
+    "rev": "8e0e950877",
+    "count": 13,
+    "bytes": 107102,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CD": {
+   "region": {
+    "file": "regions/CD.json",
+    "rev": "f3775b6b18",
+    "count": 11,
+    "bytes": 24187,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CF": {
+   "region": {
+    "file": "regions/CF.json",
+    "rev": "a037df00ba",
+    "count": 17,
+    "bytes": 17881,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CG": {
+   "region": {
+    "file": "regions/CG.json",
+    "rev": "5571c82acd",
+    "count": 12,
+    "bytes": 11924,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CH": {
+   "region": {
+    "file": "regions/CH.json",
+    "rev": "fbec0a1892",
+    "count": 26,
+    "bytes": 12151,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CI": {
+   "region": {
+    "file": "regions/CI.json",
+    "rev": "bcc5e1a943",
+    "count": 19,
+    "bytes": 15355,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CK": {
+   "region": {
+    "file": "regions/CK.json",
+    "rev": "cf8bf9a884",
+    "count": 11,
+    "bytes": 3331,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CL": {
+   "region": {
+    "file": "regions/CL.json",
+    "rev": "6794c15d53",
+    "count": 16,
+    "bytes": 36871,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CM": {
+   "region": {
+    "file": "regions/CM.json",
+    "rev": "3500d3fb51",
+    "count": 10,
+    "bytes": 11294,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CN": {
+   "region": {
+    "file": "regions/CN.json",
+    "rev": "83d07b4067",
+    "count": 32,
+    "bytes": 110226,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CO": {
+   "region": {
+    "file": "regions/CO.json",
+    "rev": "96fb39724f",
+    "count": 34,
+    "bytes": 37827,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CR": {
+   "region": {
+    "file": "regions/CR.json",
+    "rev": "3aeb2ffc38",
+    "count": 7,
+    "bytes": 5408,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CU": {
+   "region": {
+    "file": "regions/CU.json",
+    "rev": "cfee51ae19",
+    "count": 16,
+    "bytes": 11020,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CV": {
+   "region": {
+    "file": "regions/CV.json",
+    "rev": "ef0d9182b2",
+    "count": 22,
+    "bytes": 7190,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CW": {
+   "region": {
+    "file": "regions/CW.json",
+    "rev": "f346a9e502",
+    "count": 1,
+    "bytes": 422,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CY": {
+   "region": {
+    "file": "regions/CY.json",
+    "rev": "1758d7e096",
+    "count": 5,
+    "bytes": 1995,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "CZ": {
+   "region": {
+    "file": "regions/CZ.json",
+    "rev": "b75a805f25",
+    "count": 14,
+    "bytes": 8694,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "DE": {
+   "region": {
+    "file": "regions/DE.json",
+    "rev": "3c72fed214",
+    "count": 16,
+    "bytes": 16201,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   },
+   "subregion": {
+    "file": "subregions/DE.json",
+    "rev": "ca53fa558f",
+    "count": 400,
+    "bytes": 262735,
+    "label": {
+     "fr": "arrondissements (Kreise)",
+     "en": "districts (Kreise)",
+     "local": "Landkreise"
+    },
+    "sources": [
+     "bkg-vg1000"
+    ]
+   }
+  },
+  "DJ": {
+   "region": {
+    "file": "regions/DJ.json",
+    "rev": "5ca9e1a70b",
+    "count": 6,
+    "bytes": 2605,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "DK": {
+   "region": {
+    "file": "regions/DK.json",
+    "rev": "ef6b6cbd92",
+    "count": 5,
+    "bytes": 4595,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "DM": {
+   "region": {
+    "file": "regions/DM.json",
+    "rev": "78c5985c0d",
+    "count": 10,
+    "bytes": 3194,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "DO": {
+   "region": {
+    "file": "regions/DO.json",
+    "rev": "d9c80eb9a0",
+    "count": 32,
+    "bytes": 14475,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "DZ": {
+   "region": {
+    "file": "regions/DZ.json",
+    "rev": "12d53cece8",
+    "count": 48,
+    "bytes": 31626,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "EC": {
+   "region": {
+    "file": "regions/EC.json",
+    "rev": "cab3e4cfbb",
+    "count": 24,
+    "bytes": 19278,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "EE": {
+   "region": {
+    "file": "regions/EE.json",
+    "rev": "e545c5dbee",
+    "count": 15,
+    "bytes": 7562,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "EG": {
+   "region": {
+    "file": "regions/EG.json",
+    "rev": "d8008156f1",
+    "count": 27,
+    "bytes": 17812,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "EH": {
+   "region": {
+    "file": "regions/EH.json",
+    "rev": "003854ad02",
+    "count": 1,
+    "bytes": 1638,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ER": {
+   "region": {
+    "file": "regions/ER.json",
+    "rev": "8cfeff1db6",
+    "count": 6,
+    "bytes": 5263,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ES": {
+   "region": {
+    "file": "regions/ES.json",
+    "rev": "74d6746ce3",
+    "count": 19,
+    "bytes": 20174,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ET": {
+   "region": {
+    "file": "regions/ET.json",
+    "rev": "65562e124d",
+    "count": 11,
+    "bytes": 18758,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "FI": {
+   "region": {
+    "file": "regions/FI.json",
+    "rev": "17fa1d0426",
+    "count": 18,
+    "bytes": 16353,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "FJ": {
+   "region": {
+    "file": "regions/FJ.json",
+    "rev": "1ce670fd8c",
+    "count": 5,
+    "bytes": 3133,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "FK": {
+   "region": {
+    "file": "regions/FK.json",
+    "rev": "1a995311d5",
+    "count": 1,
+    "bytes": 1610,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "FM": {
+   "region": {
+    "file": "regions/FM.json",
+    "rev": "eeaf2e0f8c",
+    "count": 4,
+    "bytes": 1221,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "FO": {
+   "region": {
+    "file": "regions/FO.json",
+    "rev": "cc8b990012",
+    "count": 1,
+    "bytes": 700,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "FR": {
+   "region": {
+    "file": "regions/FR.json",
+    "rev": "d06ab399cd",
+    "count": 18,
+    "bytes": 50034,
+    "label": {
+     "fr": "régions",
+     "en": "regions",
+     "local": "régions"
+    },
+    "sources": [
+     "ign-regions"
+    ]
+   },
+   "subregion": {
+    "file": "subregions/FR.json",
+    "rev": "b1edf2bd77",
+    "count": 101,
+    "bytes": 130480,
+    "label": {
+     "fr": "départements",
+     "en": "departments",
+     "local": "départements"
+    },
+    "sources": [
+     "ign-departements"
+    ]
+   },
+   "insets": [
+    {
+     "name": "Guadeloupe",
+     "zones": [
+      "FR-971"
+     ]
+    },
+    {
+     "name": "Martinique",
+     "zones": [
+      "FR-972"
+     ]
+    },
+    {
+     "name": "Guyane",
+     "zones": [
+      "FR-973"
+     ]
+    },
+    {
+     "name": "La Réunion",
+     "zones": [
+      "FR-974"
+     ]
+    },
+    {
+     "name": "Mayotte",
+     "zones": [
+      "FR-976"
+     ]
+    }
+   ]
+  },
+  "GA": {
+   "region": {
+    "file": "regions/GA.json",
+    "rev": "a4fc6e00c4",
+    "count": 9,
+    "bytes": 8370,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GB": {
+   "region": {
+    "file": "regions/GB.json",
+    "rev": "3144373150",
+    "count": 4,
+    "bytes": 9990,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GD": {
+   "region": {
+    "file": "regions/GD.json",
+    "rev": "a7ec8a5c3d",
+    "count": 7,
+    "bytes": 2330,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GE": {
+   "region": {
+    "file": "regions/GE.json",
+    "rev": "d3cd2dca96",
+    "count": 12,
+    "bytes": 7359,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GG": {
+   "region": {
+    "file": "regions/GG.json",
+    "rev": "4481808860",
+    "count": 1,
+    "bytes": 305,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GH": {
+   "region": {
+    "file": "regions/GH.json",
+    "rev": "37b613a45b",
+    "count": 10,
+    "bytes": 9961,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GL": {
+   "region": {
+    "file": "regions/GL.json",
+    "rev": "73ce5c5e51",
+    "count": 6,
+    "bytes": 26503,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GM": {
+   "region": {
+    "file": "regions/GM.json",
+    "rev": "9e3b7c44f2",
+    "count": 6,
+    "bytes": 2916,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GN": {
+   "region": {
+    "file": "regions/GN.json",
+    "rev": "94d30c8e32",
+    "count": 34,
+    "bytes": 21172,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GQ": {
+   "region": {
+    "file": "regions/GQ.json",
+    "rev": "23064f4c4a",
+    "count": 7,
+    "bytes": 3192,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GR": {
+   "region": {
+    "file": "regions/GR.json",
+    "rev": "60db5cfcdb",
+    "count": 14,
+    "bytes": 13440,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GS": {
+   "region": {
+    "file": "regions/GS.json",
+    "rev": "fde45221ca",
+    "count": 1,
+    "bytes": 805,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GT": {
+   "region": {
+    "file": "regions/GT.json",
+    "rev": "1df5f8430b",
+    "count": 22,
+    "bytes": 11953,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GU": {
+   "region": {
+    "file": "regions/GU.json",
+    "rev": "39b7ea3c29",
+    "count": 1,
+    "bytes": 425,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GW": {
+   "region": {
+    "file": "regions/GW.json",
+    "rev": "b919229191",
+    "count": 9,
+    "bytes": 4898,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "GY": {
+   "region": {
+    "file": "regions/GY.json",
+    "rev": "cc3099e162",
+    "count": 10,
+    "bytes": 8623,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "HK": {
+   "region": {
+    "file": "regions/HK.json",
+    "rev": "22ab9b6ed8",
+    "count": 18,
+    "bytes": 5806,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "HM": {
+   "region": {
+    "file": "regions/HM.json",
+    "rev": "6945f47f9e",
+    "count": 1,
+    "bytes": 421,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "HN": {
+   "region": {
+    "file": "regions/HN.json",
+    "rev": "452725c7dd",
+    "count": 18,
+    "bytes": 11264,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "HR": {
+   "region": {
+    "file": "regions/HR.json",
+    "rev": "a0299ecf39",
+    "count": 21,
+    "bytes": 12203,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "HT": {
+   "region": {
+    "file": "regions/HT.json",
+    "rev": "8e2ccf5f65",
+    "count": 10,
+    "bytes": 5191,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "HU": {
+   "region": {
+    "file": "regions/HU.json",
+    "rev": "2e29489541",
+    "count": 43,
+    "bytes": 20491,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ID": {
+   "region": {
+    "file": "regions/ID.json",
+    "rev": "12f1b612d5",
+    "count": 33,
+    "bytes": 63485,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IE": {
+   "region": {
+    "file": "regions/IE.json",
+    "rev": "f2cf335237",
+    "count": 34,
+    "bytes": 15745,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IL": {
+   "region": {
+    "file": "regions/IL.json",
+    "rev": "5b04b1aab6",
+    "count": 6,
+    "bytes": 2842,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IM": {
+   "region": {
+    "file": "regions/IM.json",
+    "rev": "1d2a39a8e7",
+    "count": 1,
+    "bytes": 373,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IN": {
+   "region": {
+    "file": "regions/IN.json",
+    "rev": "7315210c11",
+    "count": 36,
+    "bytes": 66969,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IO": {
+   "region": {
+    "file": "regions/IO.json",
+    "rev": "cd2840c808",
+    "count": 1,
+    "bytes": 521,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IQ": {
+   "region": {
+    "file": "regions/IQ.json",
+    "rev": "4ef23b932a",
+    "count": 18,
+    "bytes": 14268,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IR": {
+   "region": {
+    "file": "regions/IR.json",
+    "rev": "33690e6cc2",
+    "count": 31,
+    "bytes": 35454,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IS": {
+   "region": {
+    "file": "regions/IS.json",
+    "rev": "4a7178ae81",
+    "count": 9,
+    "bytes": 6825,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "IT": {
+   "region": {
+    "file": "regions/IT.json",
+    "rev": "f3e9ce6749",
+    "count": 20,
+    "bytes": 19042,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "JE": {
+   "region": {
+    "file": "regions/JE.json",
+    "rev": "1c7e8e758c",
+    "count": 1,
+    "bytes": 325,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "JM": {
+   "region": {
+    "file": "regions/JM.json",
+    "rev": "b1e4091721",
+    "count": 14,
+    "bytes": 5167,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "JO": {
+   "region": {
+    "file": "regions/JO.json",
+    "rev": "ee45fff7cd",
+    "count": 12,
+    "bytes": 5497,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "JP": {
+   "region": {
+    "file": "regions/JP.json",
+    "rev": "cbf0180f56",
+    "count": 47,
+    "bytes": 35878,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KE": {
+   "region": {
+    "file": "regions/KE.json",
+    "rev": "330962602d",
+    "count": 8,
+    "bytes": 9658,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KG": {
+   "region": {
+    "file": "regions/KG.json",
+    "rev": "357259dad6",
+    "count": 8,
+    "bytes": 8446,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KH": {
+   "region": {
+    "file": "regions/KH.json",
+    "rev": "45c4072f82",
+    "count": 24,
+    "bytes": 15761,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KI": {
+   "region": {
+    "file": "regions/KI.json",
+    "rev": "80d14cb110",
+    "count": 2,
+    "bytes": 669,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KM": {
+   "region": {
+    "file": "regions/KM.json",
+    "rev": "24507dd7a8",
+    "count": 3,
+    "bytes": 1034,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KN": {
+   "region": {
+    "file": "regions/KN.json",
+    "rev": "b2a3cc290f",
+    "count": 14,
+    "bytes": 4685,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KP": {
+   "region": {
+    "file": "regions/KP.json",
+    "rev": "58d3e7c0c8",
+    "count": 11,
+    "bytes": 9227,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KR": {
+   "region": {
+    "file": "regions/KR.json",
+    "rev": "74b12f2cf4",
+    "count": 17,
+    "bytes": 10587,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KW": {
+   "region": {
+    "file": "regions/KW.json",
+    "rev": "aab072beaf",
+    "count": 6,
+    "bytes": 2439,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KY": {
+   "region": {
+    "file": "regions/KY.json",
+    "rev": "5d4c85d39e",
+    "count": 1,
+    "bytes": 357,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "KZ": {
+   "region": {
+    "file": "regions/KZ.json",
+    "rev": "16d7137b44",
+    "count": 16,
+    "bytes": 30668,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LA": {
+   "region": {
+    "file": "regions/LA.json",
+    "rev": "e09200c831",
+    "count": 17,
+    "bytes": 15405,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LB": {
+   "region": {
+    "file": "regions/LB.json",
+    "rev": "4b247e7647",
+    "count": 6,
+    "bytes": 2613,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LC": {
+   "region": {
+    "file": "regions/LC.json",
+    "rev": "f54f0f19b8",
+    "count": 11,
+    "bytes": 3485,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LI": {
+   "region": {
+    "file": "regions/LI.json",
+    "rev": "52577e34e8",
+    "count": 11,
+    "bytes": 3780,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LK": {
+   "region": {
+    "file": "regions/LK.json",
+    "rev": "fabb937c0c",
+    "count": 25,
+    "bytes": 11840,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LR": {
+   "region": {
+    "file": "regions/LR.json",
+    "rev": "4a308baaf9",
+    "count": 15,
+    "bytes": 8778,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LS": {
+   "region": {
+    "file": "regions/LS.json",
+    "rev": "ec9e3ef089",
+    "count": 10,
+    "bytes": 5500,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LT": {
+   "region": {
+    "file": "regions/LT.json",
+    "rev": "385a76b36b",
+    "count": 10,
+    "bytes": 6556,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LU": {
+   "region": {
+    "file": "regions/LU.json",
+    "rev": "3fa69c210f",
+    "count": 3,
+    "bytes": 1217,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LV": {
+   "region": {
+    "file": "regions/LV.json",
+    "rev": "44467451af",
+    "count": 119,
+    "bytes": 42886,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "LY": {
+   "region": {
+    "file": "regions/LY.json",
+    "rev": "42ba985cc5",
+    "count": 22,
+    "bytes": 18038,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MA": {
+   "region": {
+    "file": "regions/MA.json",
+    "rev": "919cc8736a",
+    "count": 16,
+    "bytes": 16845,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MC": {
+   "region": {
+    "file": "regions/MC.json",
+    "rev": "5c8899e1b5",
+    "count": 1,
+    "bytes": 312,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MD": {
+   "region": {
+    "file": "regions/MD.json",
+    "rev": "d5fdbc8dcb",
+    "count": 40,
+    "bytes": 15851,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ME": {
+   "region": {
+    "file": "regions/ME.json",
+    "rev": "862b5ea954",
+    "count": 21,
+    "bytes": 7494,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MF": {
+   "region": {
+    "file": "regions/MF.json",
+    "rev": "4033c72292",
+    "count": 1,
+    "bytes": 333,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MG": {
+   "region": {
+    "file": "regions/MG.json",
+    "rev": "6a27a69d1e",
+    "count": 22,
+    "bytes": 23570,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MH": {
+   "region": {
+    "file": "regions/MH.json",
+    "rev": "daa9d25cea",
+    "count": 2,
+    "bytes": 778,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MK": {
+   "region": {
+    "file": "regions/MK.json",
+    "rev": "4007da2fd6",
+    "count": 84,
+    "bytes": 28265,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ML": {
+   "region": {
+    "file": "regions/ML.json",
+    "rev": "1a1ac08a02",
+    "count": 9,
+    "bytes": 12319,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MM": {
+   "region": {
+    "file": "regions/MM.json",
+    "rev": "498eefed91",
+    "count": 14,
+    "bytes": 21914,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MN": {
+   "region": {
+    "file": "regions/MN.json",
+    "rev": "29790af90c",
+    "count": 22,
+    "bytes": 28126,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MO": {
+   "region": {
+    "file": "regions/MO.json",
+    "rev": "673804e1ea",
+    "count": 1,
+    "bytes": 328,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MP": {
+   "region": {
+    "file": "regions/MP.json",
+    "rev": "5b8a810e46",
+    "count": 4,
+    "bytes": 1196,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MR": {
+   "region": {
+    "file": "regions/MR.json",
+    "rev": "689d3ddb17",
+    "count": 13,
+    "bytes": 9741,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MS": {
+   "region": {
+    "file": "regions/MS.json",
+    "rev": "3aef85047d",
+    "count": 3,
+    "bytes": 911,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MT": {
+   "region": {
+    "file": "regions/MT.json",
+    "rev": "2df64d170b",
+    "count": 68,
+    "bytes": 20862,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MU": {
+   "region": {
+    "file": "regions/MU.json",
+    "rev": "e762d16618",
+    "count": 16,
+    "bytes": 5362,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MV": {
+   "region": {
+    "file": "regions/MV.json",
+    "rev": "e81e907ccf",
+    "count": 21,
+    "bytes": 5986,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MW": {
+   "region": {
+    "file": "regions/MW.json",
+    "rev": "a17c35b54e",
+    "count": 28,
+    "bytes": 14242,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MX": {
+   "region": {
+    "file": "regions/MX.json",
+    "rev": "5cd230d5bd",
+    "count": 33,
+    "bytes": 49496,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MY": {
+   "region": {
+    "file": "regions/MY.json",
+    "rev": "d4f4dba31a",
+    "count": 16,
+    "bytes": 13549,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "MZ": {
+   "region": {
+    "file": "regions/MZ.json",
+    "rev": "d16cf4df43",
+    "count": 11,
+    "bytes": 15471,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NA": {
+   "region": {
+    "file": "regions/NA.json",
+    "rev": "dbd37c9d7f",
+    "count": 13,
+    "bytes": 14179,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NC": {
+   "region": {
+    "file": "regions/NC.json",
+    "rev": "130748583d",
+    "count": 3,
+    "bytes": 2530,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NE": {
+   "region": {
+    "file": "regions/NE.json",
+    "rev": "a9b12e2783",
+    "count": 8,
+    "bytes": 8028,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NF": {
+   "region": {
+    "file": "regions/NF.json",
+    "rev": "7a8e9ff7d0",
+    "count": 1,
+    "bytes": 362,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NG": {
+   "region": {
+    "file": "regions/NG.json",
+    "rev": "90f87edf21",
+    "count": 37,
+    "bytes": 33456,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NI": {
+   "region": {
+    "file": "regions/NI.json",
+    "rev": "8cacda59f5",
+    "count": 17,
+    "bytes": 10566,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NL": {
+   "region": {
+    "file": "regions/NL.json",
+    "rev": "c0cd821218",
+    "count": 15,
+    "bytes": 7509,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NO": {
+   "region": {
+    "file": "regions/NO.json",
+    "rev": "c2d5359c62",
+    "count": 21,
+    "bytes": 26706,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NP": {
+   "region": {
+    "file": "regions/NP.json",
+    "rev": "ff05ccbfdb",
+    "count": 14,
+    "bytes": 10804,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NR": {
+   "region": {
+    "file": "regions/NR.json",
+    "rev": "35f4d055ab",
+    "count": 14,
+    "bytes": 4155,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NU": {
+   "region": {
+    "file": "regions/NU.json",
+    "rev": "b604f630b5",
+    "count": 1,
+    "bytes": 357,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "NZ": {
+   "region": {
+    "file": "regions/NZ.json",
+    "rev": "0c7ed8b0a0",
+    "count": 24,
+    "bytes": 18962,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "OM": {
+   "region": {
+    "file": "regions/OM.json",
+    "rev": "1262e687d6",
+    "count": 11,
+    "bytes": 6857,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PA": {
+   "region": {
+    "file": "regions/PA.json",
+    "rev": "b14d4c94b7",
+    "count": 12,
+    "bytes": 8789,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PE": {
+   "region": {
+    "file": "regions/PE.json",
+    "rev": "3e8df1c582",
+    "count": 26,
+    "bytes": 33567,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PF": {
+   "region": {
+    "file": "regions/PF.json",
+    "rev": "a72da6c9cc",
+    "count": 5,
+    "bytes": 1947,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PG": {
+   "region": {
+    "file": "regions/PG.json",
+    "rev": "2eb22c73af",
+    "count": 20,
+    "bytes": 19717,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PH": {
+   "region": {
+    "file": "regions/PH.json",
+    "rev": "ecb409f5fc",
+    "count": 118,
+    "bytes": 58144,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PK": {
+   "region": {
+    "file": "regions/PK.json",
+    "rev": "10d736e110",
+    "count": 8,
+    "bytes": 14427,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PL": {
+   "region": {
+    "file": "regions/PL.json",
+    "rev": "ea4257be32",
+    "count": 16,
+    "bytes": 14756,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PM": {
+   "region": {
+    "file": "regions/PM.json",
+    "rev": "98ca298118",
+    "count": 2,
+    "bytes": 718,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PN": {
+   "region": {
+    "file": "regions/PN.json",
+    "rev": "1cdf623cac",
+    "count": 1,
+    "bytes": 388,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PR": {
+   "region": {
+    "file": "regions/PR.json",
+    "rev": "6d4d496682",
+    "count": 1,
+    "bytes": 717,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PS": {
+   "region": {
+    "file": "regions/PS.json",
+    "rev": "658c0b4411",
+    "count": 2,
+    "bytes": 955,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PT": {
+   "region": {
+    "file": "regions/PT.json",
+    "rev": "ff49c6df8b",
+    "count": 20,
+    "bytes": 11902,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PW": {
+   "region": {
+    "file": "regions/PW.json",
+    "rev": "5135ad1cd7",
+    "count": 16,
+    "bytes": 4674,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "PY": {
+   "region": {
+    "file": "regions/PY.json",
+    "rev": "f176fbfc27",
+    "count": 18,
+    "bytes": 14844,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "QA": {
+   "region": {
+    "file": "regions/QA.json",
+    "rev": "19cca64995",
+    "count": 7,
+    "bytes": 2841,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "RO": {
+   "region": {
+    "file": "regions/RO.json",
+    "rev": "69e969ff0f",
+    "count": 42,
+    "bytes": 24594,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "RS": {
+   "region": {
+    "file": "regions/RS.json",
+    "rev": "a185284c2b",
+    "count": 25,
+    "bytes": 13247,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "RU": {
+   "region": {
+    "file": "regions/RU.json",
+    "rev": "ed6b09555f",
+    "count": 86,
+    "bytes": 226275,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "RW": {
+   "region": {
+    "file": "regions/RW.json",
+    "rev": "3fb98df23e",
+    "count": 5,
+    "bytes": 2715,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SA": {
+   "region": {
+    "file": "regions/SA.json",
+    "rev": "d693ef2d38",
+    "count": 13,
+    "bytes": 19690,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SB": {
+   "region": {
+    "file": "regions/SB.json",
+    "rev": "6bcab36d11",
+    "count": 10,
+    "bytes": 5948,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SC": {
+   "region": {
+    "file": "regions/SC.json",
+    "rev": "6b0ad9278e",
+    "count": 26,
+    "bytes": 7962,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SD": {
+   "region": {
+    "file": "regions/SD.json",
+    "rev": "449ab40c25",
+    "count": 17,
+    "bytes": 17237,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SE": {
+   "region": {
+    "file": "regions/SE.json",
+    "rev": "070643b9ae",
+    "count": 21,
+    "bytes": 17486,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SG": {
+   "region": {
+    "file": "regions/SG.json",
+    "rev": "ce1fceb9c2",
+    "count": 5,
+    "bytes": 1677,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SH": {
+   "region": {
+    "file": "regions/SH.json",
+    "rev": "0a4de33389",
+    "count": 3,
+    "bytes": 964,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SI": {
+   "region": {
+    "file": "regions/SI.json",
+    "rev": "13731abf91",
+    "count": 12,
+    "bytes": 8446,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SK": {
+   "region": {
+    "file": "regions/SK.json",
+    "rev": "bae46f460d",
+    "count": 8,
+    "bytes": 5198,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SL": {
+   "region": {
+    "file": "regions/SL.json",
+    "rev": "5ae6cc2f99",
+    "count": 4,
+    "bytes": 3169,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SM": {
+   "region": {
+    "file": "regions/SM.json",
+    "rev": "0450e3f872",
+    "count": 9,
+    "bytes": 2804,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SN": {
+   "region": {
+    "file": "regions/SN.json",
+    "rev": "995ba95893",
+    "count": 14,
+    "bytes": 11228,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SO": {
+   "region": {
+    "file": "regions/SO.json",
+    "rev": "e96e4e1c96",
+    "count": 13,
+    "bytes": 7205,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SR": {
+   "region": {
+    "file": "regions/SR.json",
+    "rev": "1737b3fed9",
+    "count": 10,
+    "bytes": 5946,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SS": {
+   "region": {
+    "file": "regions/SS.json",
+    "rev": "3cef0cdc6e",
+    "count": 10,
+    "bytes": 10160,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ST": {
+   "region": {
+    "file": "regions/ST.json",
+    "rev": "5fa1c90bd3",
+    "count": 2,
+    "bytes": 641,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SV": {
+   "region": {
+    "file": "regions/SV.json",
+    "rev": "d5dd341ac9",
+    "count": 14,
+    "bytes": 6398,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SX": {
+   "region": {
+    "file": "regions/SX.json",
+    "rev": "147b1f11b6",
+    "count": 1,
+    "bytes": 333,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SY": {
+   "region": {
+    "file": "regions/SY.json",
+    "rev": "c1e22db527",
+    "count": 15,
+    "bytes": 8750,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "SZ": {
+   "region": {
+    "file": "regions/SZ.json",
+    "rev": "236e4f58e6",
+    "count": 4,
+    "bytes": 2187,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TC": {
+   "region": {
+    "file": "regions/TC.json",
+    "rev": "58f7548ffc",
+    "count": 6,
+    "bytes": 1965,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TD": {
+   "region": {
+    "file": "regions/TD.json",
+    "rev": "bdbf910a00",
+    "count": 22,
+    "bytes": 19228,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TF": {
+   "region": {
+    "file": "regions/TF.json",
+    "rev": "bc99da328c",
+    "count": 4,
+    "bytes": 2261,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TG": {
+   "region": {
+    "file": "regions/TG.json",
+    "rev": "853ce235b4",
+    "count": 5,
+    "bytes": 3232,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TH": {
+   "region": {
+    "file": "regions/TH.json",
+    "rev": "e8c09d226d",
+    "count": 77,
+    "bytes": 50685,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TJ": {
+   "region": {
+    "file": "regions/TJ.json",
+    "rev": "55892a1fc2",
+    "count": 5,
+    "bytes": 6139,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TL": {
+   "region": {
+    "file": "regions/TL.json",
+    "rev": "88407bbd83",
+    "count": 13,
+    "bytes": 5298,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TM": {
+   "region": {
+    "file": "regions/TM.json",
+    "rev": "8a6ef0e747",
+    "count": 5,
+    "bytes": 7647,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TN": {
+   "region": {
+    "file": "regions/TN.json",
+    "rev": "792fefee15",
+    "count": 23,
+    "bytes": 12574,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TO": {
+   "region": {
+    "file": "regions/TO.json",
+    "rev": "6ff497bf0b",
+    "count": 5,
+    "bytes": 1534,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TR": {
+   "region": {
+    "file": "regions/TR.json",
+    "rev": "6906c2c5ad",
+    "count": 81,
+    "bytes": 54939,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TT": {
+   "region": {
+    "file": "regions/TT.json",
+    "rev": "c904d0c66f",
+    "count": 16,
+    "bytes": 5596,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TV": {
+   "region": {
+    "file": "regions/TV.json",
+    "rev": "f74ce0ab76",
+    "count": 1,
+    "bytes": 317,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TW": {
+   "region": {
+    "file": "regions/TW.json",
+    "rev": "49c8c88e5f",
+    "count": 21,
+    "bytes": 9468,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "TZ": {
+   "region": {
+    "file": "regions/TZ.json",
+    "rev": "0c77762c99",
+    "count": 30,
+    "bytes": 28062,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "UA": {
+   "region": {
+    "file": "regions/UA.json",
+    "rev": "7438788984",
+    "count": 25,
+    "bytes": 26322,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "UG": {
+   "region": {
+    "file": "regions/UG.json",
+    "rev": "c51c38bd7b",
+    "count": 112,
+    "bytes": 46444,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "US": {
+   "region": {
+    "file": "regions/US.json",
+    "rev": "ac38079b33",
+    "count": 51,
+    "bytes": 89335,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   },
+   "subregion": {
+    "file": "subregions/US.json",
+    "rev": "de95b53e28",
+    "count": 3144,
+    "bytes": 1551656,
+    "label": {
+     "fr": "comtés",
+     "en": "counties",
+     "local": "counties"
+    },
+    "sources": [
+     "census-counties"
+    ]
+   },
+   "insets": [
+    {
+     "name": "Alaska",
+     "zones": [
+      "US-AK"
+     ]
+    },
+    {
+     "name": "Hawaii",
+     "zones": [
+      "US-HI"
+     ]
+    }
+   ]
+  },
+  "UY": {
+   "region": {
+    "file": "regions/UY.json",
+    "rev": "a180cf2a93",
+    "count": 19,
+    "bytes": 13466,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "UZ": {
+   "region": {
+    "file": "regions/UZ.json",
+    "rev": "4c300a40da",
+    "count": 14,
+    "bytes": 12653,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VA": {
+   "region": {
+    "file": "regions/VA.json",
+    "rev": "9056bfcab3",
+    "count": 1,
+    "bytes": 337,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VC": {
+   "region": {
+    "file": "regions/VC.json",
+    "rev": "6e1c80f798",
+    "count": 6,
+    "bytes": 1856,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VE": {
+   "region": {
+    "file": "regions/VE.json",
+    "rev": "8377aba4e3",
+    "count": 26,
+    "bytes": 27185,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VG": {
+   "region": {
+    "file": "regions/VG.json",
+    "rev": "1e5be21bea",
+    "count": 1,
+    "bytes": 383,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VI": {
+   "region": {
+    "file": "regions/VI.json",
+    "rev": "50f9338f3c",
+    "count": 3,
+    "bytes": 994,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VN": {
+   "region": {
+    "file": "regions/VN.json",
+    "rev": "d5c3cd2d15",
+    "count": 63,
+    "bytes": 38684,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "VU": {
+   "region": {
+    "file": "regions/VU.json",
+    "rev": "b5f74ea964",
+    "count": 6,
+    "bytes": 3621,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "WF": {
+   "region": {
+    "file": "regions/WF.json",
+    "rev": "e0365abaad",
+    "count": 3,
+    "bytes": 915,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "WS": {
+   "region": {
+    "file": "regions/WS.json",
+    "rev": "093d09666c",
+    "count": 11,
+    "bytes": 4079,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "X-ATC": {
+   "region": {
+    "file": "regions/X-ATC.json",
+    "rev": "2b4c7cc4de",
+    "count": 1,
+    "bytes": 404,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "X-AUS": {
+   "region": {
+    "file": "regions/X-AUS.json",
+    "rev": "8796b9c107",
+    "count": 11,
+    "bytes": 34019,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "X-CYN": {
+   "region": {
+    "file": "regions/X-CYN.json",
+    "rev": "608c072f82",
+    "count": 1,
+    "bytes": 621,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "X-IOA": {
+   "region": {
+    "file": "regions/X-IOA.json",
+    "rev": "29738afe6e",
+    "count": 2,
+    "bytes": 755,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "X-KAS": {
+   "region": {
+    "file": "regions/X-KAS.json",
+    "rev": "28f7789ce5",
+    "count": 1,
+    "bytes": 408,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "X-SOL": {
+   "region": {
+    "file": "regions/X-SOL.json",
+    "rev": "e9119d4bf8",
+    "count": 1,
+    "bytes": 1304,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "XK": {
+   "region": {
+    "file": "regions/XK.json",
+    "rev": "eeddb2f1ee",
+    "count": 30,
+    "bytes": 10384,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "YE": {
+   "region": {
+    "file": "regions/YE.json",
+    "rev": "ec12c2fa53",
+    "count": 21,
+    "bytes": 14838,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ZA": {
+   "region": {
+    "file": "regions/ZA.json",
+    "rev": "7708a6e6c2",
+    "count": 9,
+    "bytes": 19955,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ZM": {
+   "region": {
+    "file": "regions/ZM.json",
+    "rev": "924d3e92af",
+    "count": 10,
+    "bytes": 15713,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "ZW": {
+   "region": {
+    "file": "regions/ZW.json",
+    "rev": "0ce834e645",
+    "count": 10,
+    "bytes": 12445,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  }
+ },
+ "sources": {
+  "bkg-vg1000": {
+   "title": "BKG — Verwaltungsgebiete 1:1 000 000 (VG1000), Stand 31.12.2025",
+   "licence": "dl-de-by-2.0",
+   "licence_title": "Datenlizenz Deutschland – Namensnennung 2.0",
+   "attribution": "© GeoBasis-DE / BKG (2025)",
+   "homepage": "https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-1-000-000-stand-31-12-vg1000-31-12.html"
+  },
+  "census-counties": {
+   "title": "US Census Bureau — Cartographic Boundary Files 2023, counties 1:500 000",
+   "licence": "public-domain",
+   "licence_title": "Domaine public",
+   "attribution": "U.S. Census Bureau",
+   "homepage": "https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html"
+  },
+  "ign-departements": {
+   "title": "IGN Admin Express COG 2018 — départements (france-geojson)",
+   "licence": "etalab-2.0",
+   "licence_title": "Licence Ouverte 2.0 (Etalab)",
+   "attribution": "IGN — Admin Express COG (2018), via france-geojson (Grégoire David)",
+   "homepage": "https://github.com/gregoiredavid/france-geojson"
+  },
+  "ign-regions": {
+   "title": "IGN Admin Express COG 2018 — régions (france-geojson)",
+   "licence": "etalab-2.0",
+   "licence_title": "Licence Ouverte 2.0 (Etalab)",
+   "attribution": "IGN — Admin Express COG (2018), via france-geojson (Grégoire David)",
+   "homepage": "https://github.com/gregoiredavid/france-geojson"
+  },
+  "ne-admin0": {
+   "title": "Natural Earth 5.1.2 — Admin 0 Countries 1:50m",
+   "licence": "public-domain",
+   "licence_title": "Domaine public",
+   "attribution": "Made with Natural Earth",
+   "homepage": "https://www.naturalearthdata.com"
+  },
+  "ne-admin1": {
+   "title": "Natural Earth 5.1.2 — Admin 1 States, Provinces 1:10m",
+   "licence": "public-domain",
+   "licence_title": "Domaine public",
+   "attribution": "Made with Natural Earth",
+   "homepage": "https://www.naturalearthdata.com"
+  }
+ }
+}

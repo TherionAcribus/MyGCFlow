@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"id":"VA-X01~","name":"Vatican","name_fr":"Vatican","name_en":"Vatican City","area_km2":0.012,"ix":12.4534,"iy":41.9033,"parent":"VA"},"geometry":{"type":"Polygon","coordinates":[[[12.453,41.904],[12.453,41.903],[12.454,41.903],[12.454,41.904],[12.453,41.904]]]}}]}

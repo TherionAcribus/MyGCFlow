@@ -47,6 +47,30 @@ Les licences des paquets Python embarqués (Flask, SQLAlchemy, Pillow,
 waitress, pystray…) sont copiées dans le dossier python/ lors de la
 construction de l'exécutable.
 
+Contours des zones (dossiers static/geo et geo/match)
+-----------------------------------------------------
+[Section générée par tools/build_geo_zones.py — ne pas modifier à la main.]
+Données géographiques simplifiées par MyGCFlow (mapshaper) à partir de :
+  - BKG — Verwaltungsgebiete 1:1 000 000 (VG1000), Stand 31.12.2025
+      Datenlizenz Deutschland – Namensnennung 2.0 — © GeoBasis-DE / BKG (2025)
+      https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-1-000-000-stand-31-12-vg1000-31-12.html
+  - US Census Bureau — Cartographic Boundary Files 2023, counties 1:500 000
+      Domaine public — U.S. Census Bureau
+      https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html
+  - IGN Admin Express COG 2018 — départements (france-geojson)
+      Licence Ouverte 2.0 (Etalab) — IGN — Admin Express COG (2018), via france-geojson (Grégoire David)
+      https://github.com/gregoiredavid/france-geojson
+  - IGN Admin Express COG 2018 — régions (france-geojson)
+      Licence Ouverte 2.0 (Etalab) — IGN — Admin Express COG (2018), via france-geojson (Grégoire David)
+      https://github.com/gregoiredavid/france-geojson
+  - Natural Earth 5.1.2 — Admin 0 Countries 1:50m
+      Domaine public — Made with Natural Earth
+      https://www.naturalearthdata.com
+  - Natural Earth 5.1.2 — Admin 1 States, Provinces 1:10m
+      Domaine public — Made with Natural Earth
+      https://www.naturalearthdata.com
+[Fin de la section générée.]
+
 Fonds de carte
 --------------
 Les tuiles cartographiques sont téléchargées à l'utilisation depuis les
