@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 09:25+0100\n"
+"POT-Creation-Date: 2026-11-09 09:44+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -873,8 +873,8 @@ msgid "Confirmer"
 msgstr "Confirmer"
 
 #: blueprints/core.py:230 static/js/notifications.js:448
-#: static/js/stats_page.js:1165 static/js/stats_page.js:2078
-#: static/js/stats_page.js:2341 templates/menu_data.html:127
+#: static/js/stats_page.js:1170 static/js/stats_page.js:2083
+#: static/js/stats_page.js:2649 templates/menu_data.html:127
 #: templates/menu_data.html:586 templates/menu_data.html:616
 #: templates/menu_data.html:646 templates/menu_images.html:118
 #: templates/menu_stats.html:71 templates/menu_style.html:268
@@ -884,7 +884,7 @@ msgstr "Confirmer"
 #: templates/modal_evolution.html:60 templates/modal_evolution.html:84
 #: templates/modal_loading.html:14 templates/stats_page.html:305
 #: templates/stats_page.html:375 templates/stats_page.html:446
-#: templates/stats_page.html:466 templates/stats_page.html:514
+#: templates/stats_page.html:466 templates/stats_page.html:522
 msgid "Annuler"
 msgstr "Annuler"
 
@@ -1518,6 +1518,7 @@ msgstr ""
 #: static/js/ui.js:12209 static/js/ui.js:12217 static/js/ui.js:12225
 #: static/js/ui.js:12395 templates/guide.html:294
 #: templates/menu_animation.html:23 templates/menu_animation.html:294
+#: templates/stats_page.html:501
 msgid "Musique"
 msgstr "Musique"
 
@@ -1910,8 +1911,8 @@ msgstr "Objectif : ${n}"
 msgid "Écart : ${a} par rapport à ${b}"
 msgstr "Écart : ${a} par rapport à ${b}"
 
-#: static/js/chart_echarts.mjs:742 static/js/stats_page.js:2454
-#: static/js/stats_page.js:2467
+#: static/js/chart_echarts.mjs:742 static/js/stats_page.js:2762
+#: static/js/stats_page.js:2775
 msgid "Écart"
 msgstr "Écart"
 
@@ -3159,7 +3160,7 @@ msgid "Les ${n} dernières années"
 msgstr "Les ${n} dernières années"
 
 #: static/js/chart_labels.mjs:531 static/js/chart_labels.mjs:541
-#: static/js/stats_page.js:735
+#: static/js/stats_page.js:738
 msgid "Période du tableau de bord"
 msgstr "Période du tableau de bord"
 
@@ -3270,7 +3271,7 @@ msgstr "Il manque ${count} cases"
 msgid "Pour le tour ${round}, encore ${count} cases"
 msgstr "Pour le tour ${round}, encore ${count} cases"
 
-#: static/js/chart_labels.mjs:657 static/js/stats_page.js:1907
+#: static/js/chart_labels.mjs:657 static/js/stats_page.js:1912
 #, python-brace-format
 msgid "du ${from} au ${to}"
 msgstr "du ${from} au ${to}"
@@ -4273,9 +4274,9 @@ msgstr "Cette image sera supprimée définitivement de la bibliothèque."
 #: static/js/images_ui.js:1104 static/js/images_ui.js:1150
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
 #: static/js/profiles.js:975 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_page.js:1074
-#: static/js/stats_page.js:1083 static/js/stats_page.js:1537
-#: static/js/stats_page.js:2405 static/js/stats_page.js:2413
+#: static/js/recent_videos.js:121 static/js/stats_page.js:1079
+#: static/js/stats_page.js:1088 static/js/stats_page.js:1542
+#: static/js/stats_page.js:2713 static/js/stats_page.js:2721
 #: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6442
 #: templates/menu_filtre.html:87 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
@@ -4323,7 +4324,7 @@ msgid "Descendre"
 msgstr "Descendre"
 
 #: static/js/images_ui.js:1352 static/js/profiles.js:966
-#: static/js/profiles.js:2801 static/js/stats_page.js:1527
+#: static/js/profiles.js:2801 static/js/stats_page.js:1532
 #: static/js/stats_ui.js:579
 msgid "Dupliquer"
 msgstr "Dupliquer"
@@ -5437,7 +5438,7 @@ msgid "Flash"
 msgstr "Flash"
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: static/js/stats_page.js:2078 templates/menu_data.html:512
+#: static/js/stats_page.js:2083 templates/menu_data.html:512
 #: templates/menu_data.html:554 templates/menu_data.html:566
 #: templates/menu_data.html:600 templates/menu_data.html:632
 #: templates/menu_data.html:661 templates/menu_data.html:678
@@ -5731,13 +5732,13 @@ msgstr "regroupés"
 msgid "un par visiteur"
 msgstr "un par visiteur"
 
-#: static/js/profiles.js:48 static/js/stats_page.js:2013
+#: static/js/profiles.js:48 static/js/stats_page.js:2018
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41
 msgid "Évolution"
 msgstr "Évolution"
 
-#: static/js/profiles.js:48 static/js/stats_page.js:2011
+#: static/js/profiles.js:48 static/js/stats_page.js:2016
 #: templates/_app_header.html:14 templates/_app_header.html:16
 #: templates/guide.html:160 templates/guide.html:545
 #: templates/menu_data.html:27
@@ -6068,7 +6069,7 @@ msgid "La vidéo n’a pas pu être supprimée."
 msgstr "La vidéo n’a pas pu être supprimée."
 
 #: static/js/recent_videos.js:119 templates/modal_video_ready.html:26
-#: templates/stats_page.html:516
+#: templates/stats_page.html:524
 msgid "Afficher dans le dossier"
 msgstr "Afficher dans le dossier"
 
@@ -6188,8 +6189,8 @@ msgstr ""
 "Performance d'enregistrement instable (${pct}% de frames lentes). "
 "${suggestion}"
 
-#: static/js/saved_indicator.mjs:115 static/js/stats_page.js:2207
-#: static/js/stats_page.js:2223
+#: static/js/saved_indicator.mjs:115 static/js/stats_page.js:2511
+#: static/js/stats_page.js:2527
 msgid "Enregistrement…"
 msgstr "Enregistrement…"
 
@@ -6209,23 +6210,24 @@ msgstr "Aucun filtre"
 msgid "Vos trouvailles sont trop homogènes pour être filtrées."
 msgstr "Vos trouvailles sont trop homogènes pour être filtrées."
 
-#: static/js/stats_page.js:451 static/js/stats_page.js:763
-#: static/js/stats_page.js:839 static/js/stats_page.js:880
-#: static/js/stats_page.js:900 static/js/stats_page.js:1035
-#: static/js/stats_page.js:1055
+#: static/js/stats_page.js:454 static/js/stats_page.js:766
+#: static/js/stats_page.js:842 static/js/stats_page.js:884
+#: static/js/stats_page.js:904 static/js/stats_page.js:1040
+#: static/js/stats_page.js:1060 static/js/stats_page.js:2336
+#: static/js/stats_page.js:2488
 msgid "Mon tableau de bord"
 msgstr "Mon tableau de bord"
 
-#: static/js/stats_page.js:463 templates/stats_page.html:40
+#: static/js/stats_page.js:466 templates/stats_page.html:40
 msgid "Chargement de vos statistiques…"
 msgstr "Chargement de vos statistiques…"
 
-#: static/js/stats_page.js:494 static/js/stats_page.js:925
+#: static/js/stats_page.js:497 static/js/stats_page.js:929
 #, python-brace-format
 msgid "Chargement du jeu Évolution « ${name} »…"
 msgstr "Chargement du jeu Évolution « ${name} »…"
 
-#: static/js/stats_page.js:601
+#: static/js/stats_page.js:604
 msgid ""
 "Ce tableau de bord a été modifié dans un autre onglet. Écraser ces "
 "modifications par les vôtres ?"
@@ -6233,19 +6235,19 @@ msgstr ""
 "Ce tableau de bord a été modifié dans un autre onglet. Écraser ces "
 "modifications par les vôtres ?"
 
-#: static/js/stats_page.js:602
+#: static/js/stats_page.js:605
 msgid "Conflit de sauvegarde"
 msgstr "Conflit de sauvegarde"
 
-#: static/js/stats_page.js:627
+#: static/js/stats_page.js:630
 msgid "Écraser"
 msgstr "Écraser"
 
-#: static/js/stats_page.js:627
+#: static/js/stats_page.js:630
 msgid "Reprendre l'autre version"
 msgstr "Reprendre l'autre version"
 
-#: static/js/stats_page.js:652
+#: static/js/stats_page.js:655
 msgid ""
 "Le fichier des tableaux de bord est illisible et aucune sauvegarde "
 "n'existe : un tableau neuf sera créé."
@@ -6253,7 +6255,7 @@ msgstr ""
 "Le fichier des tableaux de bord est illisible et aucune sauvegarde "
 "n'existe : un tableau neuf sera créé."
 
-#: static/js/stats_page.js:657
+#: static/js/stats_page.js:660
 msgid ""
 "Le fichier des tableaux de bord est illisible. Restaurer la dernière "
 "sauvegarde ?"
@@ -6261,134 +6263,138 @@ msgstr ""
 "Le fichier des tableaux de bord est illisible. Restaurer la dernière "
 "sauvegarde ?"
 
-#: static/js/stats_page.js:658 templates/stats_page.html:73
+#: static/js/stats_page.js:661 templates/stats_page.html:73
 msgid "Tableaux de bord"
 msgstr "Tableaux de bord"
 
-#: static/js/stats_page.js:661
+#: static/js/stats_page.js:664
 msgid "Restaurer"
 msgstr "Restaurer"
 
-#: static/js/stats_page.js:661
+#: static/js/stats_page.js:664
 msgid "Repartir à zéro"
 msgstr "Repartir à zéro"
 
-#: static/js/stats_page.js:677
+#: static/js/stats_page.js:680
 msgid "La restauration de la sauvegarde a échoué."
 msgstr "La restauration de la sauvegarde a échoué."
 
-#: static/js/stats_page.js:721
+#: static/js/stats_page.js:724
 #, python-brace-format
 msgid "Jeu ${id}"
 msgstr "Jeu ${id}"
 
-#: static/js/stats_page.js:757
+#: static/js/stats_page.js:760
 #, python-brace-format
 msgid "${n} périodes"
 msgstr "${n} périodes"
 
-#: static/js/stats_page.js:766
+#: static/js/stats_page.js:769
 #, python-brace-format
 msgid "Évolution · ${name}"
 msgstr "Évolution · ${name}"
 
-#: static/js/stats_page.js:782
+#: static/js/stats_page.js:785
 msgid "Ce jeu Évolution n'existe plus."
 msgstr "Ce jeu Évolution n'existe plus."
 
-#: static/js/stats_page.js:786
+#: static/js/stats_page.js:789
 #, python-brace-format
 msgid "Jeu « ${name} » : données indisponibles"
 msgstr "Jeu « ${name} » : données indisponibles"
 
-#: static/js/stats_page.js:789
+#: static/js/stats_page.js:792
 #, python-brace-format
 msgid "${n} caches publiées"
 msgstr "${n} caches publiées"
 
-#: static/js/stats_page.js:790
+#: static/js/stats_page.js:793
 #, python-brace-format
 msgid "${n} archivages datés"
 msgstr "${n} archivages datés"
 
-#: static/js/stats_page.js:793
+#: static/js/stats_page.js:796
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} trouvailles"
 
-#: static/js/stats_page.js:795
+#: static/js/stats_page.js:798
 #, python-brace-format
 msgid "${n} DNF"
 msgstr "${n} DNF"
 
-#: static/js/stats_page.js:796
+#: static/js/stats_page.js:799
 #, python-brace-format
 msgid "${n} caches posées"
 msgstr "${n} caches posées"
 
-#: static/js/stats_page.js:797
+#: static/js/stats_page.js:800
 #, python-brace-format
 msgid "${n} trouvailles reçues"
 msgstr "${n} trouvailles reçues"
 
-#: static/js/stats_page.js:806
+#: static/js/stats_page.js:809
 #, python-brace-format
 msgid "${n} avec les filtres"
 msgstr "${n} avec les filtres"
 
-#: static/js/stats_page.js:810
+#: static/js/stats_page.js:813
 #, python-brace-format
 msgid "${n} sans date de trouvaille, non comptées"
 msgstr "${n} sans date de trouvaille, non comptées"
 
-#: static/js/stats_page.js:817 static/js/stats_page.js:1459
+#: static/js/stats_page.js:820 static/js/stats_page.js:1464
 #, python-brace-format
 msgid "Jeu « ${name} »"
 msgstr "Jeu « ${name} »"
 
-#: static/js/stats_page.js:819 static/js/stats_page.js:1461
+#: static/js/stats_page.js:822 static/js/stats_page.js:1466
 #, python-brace-format
 msgid "${names} : données indisponibles"
 msgstr "${names} : données indisponibles"
 
-#: static/js/stats_page.js:848
+#: static/js/stats_page.js:851
 msgid "Nouveau tableau de bord…"
 msgstr "Nouveau tableau de bord…"
 
-#: static/js/stats_page.js:849
+#: static/js/stats_page.js:852
 msgid "Dupliquer ce tableau de bord"
 msgstr "Dupliquer ce tableau de bord"
 
-#: static/js/stats_page.js:850
+#: static/js/stats_page.js:853
 msgid "Exporter ce tableau de bord (fichier)"
 msgstr "Exporter ce tableau de bord (fichier)"
 
-#: static/js/stats_page.js:851
+#: static/js/stats_page.js:854
 msgid "Importer un tableau de bord…"
 msgstr "Importer un tableau de bord…"
 
-#: static/js/stats_page.js:852
+#: static/js/stats_page.js:855
 msgid "Imprimer"
 msgstr "Imprimer"
 
 #: static/js/stats_page.js:856
+msgid "Créer la vidéo du tableau…"
+msgstr "Créer la vidéo du tableau…"
+
+#: static/js/stats_page.js:860
 msgid "Supprimer ce tableau de bord"
 msgstr "Supprimer ce tableau de bord"
 
-#: static/js/stats_page.js:863
+#: static/js/stats_page.js:867
 #, python-brace-format
 msgid "${name} (copie)"
 msgstr "${name} (copie)"
 
-#: static/js/stats_page.js:884
+#: static/js/stats_page.js:888
 msgid "Ce fichier n'est pas un tableau de bord MyGCFlow."
 msgstr "Ce fichier n'est pas un tableau de bord MyGCFlow."
 
-#: static/js/stats_page.js:885
+#: static/js/stats_page.js:889
 msgid "Ce tableau de bord vient d'une version plus récente de MyGCFlow."
 msgstr "Ce tableau de bord vient d'une version plus récente de MyGCFlow."
 
-#: static/js/stats_page.js:886
+#: static/js/stats_page.js:890
 msgid ""
 "Ce tableau de bord porte sur une zone Évolution : importez d'abord un jeu"
 " sur la page Évolution."
@@ -6396,70 +6402,70 @@ msgstr ""
 "Ce tableau de bord porte sur une zone Évolution : importez d'abord un jeu"
 " sur la page Évolution."
 
-#: static/js/stats_page.js:894 static/js/stats_page.js:903
-#: static/js/stats_page.js:913
+#: static/js/stats_page.js:898 static/js/stats_page.js:907
+#: static/js/stats_page.js:917
 msgid "Importer un tableau de bord"
 msgstr "Importer un tableau de bord"
 
-#: static/js/stats_page.js:912
+#: static/js/stats_page.js:916
 #, python-brace-format
 msgid "Jeu Évolution d'origine introuvable : le tableau porte sur « ${name} »."
 msgstr "Jeu Évolution d'origine introuvable : le tableau porte sur « ${name} »."
 
-#: static/js/stats_page.js:915
+#: static/js/stats_page.js:919
 #, python-brace-format
 msgid "Tableau de bord « ${name} » importé."
 msgstr "Tableau de bord « ${name} » importé."
 
-#: static/js/stats_page.js:981
+#: static/js/stats_page.js:985
 msgid "Actualisation des données…"
 msgstr "Actualisation des données…"
 
-#: static/js/stats_page.js:997
+#: static/js/stats_page.js:1001
 msgid "Données actualisées."
 msgstr "Données actualisées."
 
-#: static/js/stats_page.js:1001
+#: static/js/stats_page.js:1005
 msgid "Les données n'ont pas pu être relues : les précédentes restent affichées."
 msgstr "Les données n'ont pas pu être relues : les précédentes restent affichées."
 
-#: static/js/stats_page.js:1001 templates/stats_page.html:97
+#: static/js/stats_page.js:1005 templates/stats_page.html:97
 msgid "Actualiser les données"
 msgstr "Actualiser les données"
 
-#: static/js/stats_page.js:1073
+#: static/js/stats_page.js:1078
 #, python-brace-format
 msgid "Supprimer le tableau de bord « ${name} » et ses graphiques ?"
 msgstr "Supprimer le tableau de bord « ${name} » et ses graphiques ?"
 
-#: static/js/stats_page.js:1108
+#: static/js/stats_page.js:1113
 #, python-brace-format
 msgid "Retirer le filtre ${field}"
 msgstr "Retirer le filtre ${field}"
 
-#: static/js/stats_page.js:1165
+#: static/js/stats_page.js:1170
 msgid "Filtres de la carte appliqués."
 msgstr "Filtres de la carte appliqués."
 
-#: static/js/stats_page.js:1188
+#: static/js/stats_page.js:1193
 #, python-brace-format
 msgid "la recherche « ${text} »"
 msgstr "la recherche « ${text} »"
 
-#: static/js/stats_page.js:1191
+#: static/js/stats_page.js:1196
 #, python-brace-format
 msgid "les dates de pose ${range} : la page filtre par année entière"
 msgstr "les dates de pose ${range} : la page filtre par année entière"
 
-#: static/js/stats_page.js:1193
+#: static/js/stats_page.js:1198
 msgid "les trouvailles sans pays, que la carte garde"
 msgstr "les trouvailles sans pays, que la carte garde"
 
-#: static/js/stats_page.js:1194
+#: static/js/stats_page.js:1199
 msgid "les trouvailles sans région, que la carte garde"
 msgstr "les trouvailles sans région, que la carte garde"
 
-#: static/js/stats_page.js:1195
+#: static/js/stats_page.js:1200
 msgid ""
 "les Lab Caches, que la carte garde malgré les filtres propres aux "
 "géocaches"
@@ -6467,7 +6473,7 @@ msgstr ""
 "les Lab Caches, que la carte garde malgré les filtres propres aux "
 "géocaches"
 
-#: static/js/stats_page.js:1234
+#: static/js/stats_page.js:1239
 msgid ""
 "Avec ses filtres actuels, la carte n'affiche aucune trouvaille : rien "
 "n'est repris."
@@ -6475,15 +6481,15 @@ msgstr ""
 "Avec ses filtres actuels, la carte n'affiche aucune trouvaille : rien "
 "n'est repris."
 
-#: static/js/stats_page.js:1242
+#: static/js/stats_page.js:1247
 msgid "La carte montre toutes vos trouvailles : aucun filtre à reprendre."
 msgstr "La carte montre toutes vos trouvailles : aucun filtre à reprendre."
 
-#: static/js/stats_page.js:1246
+#: static/js/stats_page.js:1251
 msgid "Filtres de la carte repris (1 trouvaille) : vérifiez-les, puis appliquez."
 msgstr "Filtres de la carte repris (1 trouvaille) : vérifiez-les, puis appliquez."
 
-#: static/js/stats_page.js:1247
+#: static/js/stats_page.js:1252
 #, python-brace-format
 msgid ""
 "Filtres de la carte repris (${n} trouvailles) : vérifiez-les, puis "
@@ -6492,150 +6498,150 @@ msgstr ""
 "Filtres de la carte repris (${n} trouvailles) : vérifiez-les, puis "
 "appliquez."
 
-#: static/js/stats_page.js:1261
+#: static/js/stats_page.js:1266
 #, python-brace-format
 msgid "Période du tableau de bord : ${range} (dates de trouvaille de la carte)"
 msgstr "Période du tableau de bord : ${range} (dates de trouvaille de la carte)"
 
-#: static/js/stats_page.js:1268
+#: static/js/stats_page.js:1273
 msgid "Sans équivalent ici :"
 msgstr "Sans équivalent ici :"
 
-#: static/js/stats_page.js:1370
+#: static/js/stats_page.js:1375
 msgid "Glisser pour déplacer"
 msgstr "Glisser pour déplacer"
 
-#: static/js/stats_page.js:1382
+#: static/js/stats_page.js:1387
 msgid "Période propre à ce graphique"
 msgstr "Période propre à ce graphique"
 
-#: static/js/stats_page.js:1402
+#: static/js/stats_page.js:1407
 msgid "Filtres propres"
 msgstr "Filtres propres"
 
-#: static/js/stats_page.js:1403
+#: static/js/stats_page.js:1408
 msgid "aucun — les filtres du tableau sont ignorés"
 msgstr "aucun — les filtres du tableau sont ignorés"
 
-#: static/js/stats_page.js:1406
+#: static/js/stats_page.js:1411
 #, python-brace-format
 msgid "Ces filtres remplacent ceux du tableau de bord : ${what}"
 msgstr "Ces filtres remplacent ceux du tableau de bord : ${what}"
 
-#: static/js/stats_page.js:1422
+#: static/js/stats_page.js:1427
 msgid "Glisser pour redimensionner"
 msgstr "Glisser pour redimensionner"
 
-#: static/js/stats_page.js:1465 templates/menu_images.html:86
+#: static/js/stats_page.js:1470 templates/menu_images.html:86
 #: templates/stats_page.html:48
 msgid "Réessayer"
 msgstr "Réessayer"
 
-#: static/js/stats_page.js:1495 static/js/stats_page.js:2052
+#: static/js/stats_page.js:1500 static/js/stats_page.js:2057
 msgid "Envoyer en panneau vidéo"
 msgstr "Envoyer en panneau vidéo"
 
-#: static/js/stats_page.js:1498
+#: static/js/stats_page.js:1503
 msgid "Un panneau vidéo ne compte qu'une source."
 msgstr "Un panneau vidéo ne compte qu'une source."
 
-#: static/js/stats_page.js:1499
+#: static/js/stats_page.js:1504
 msgid "Ce graphique n'a pas d'équivalent en panneau vidéo."
 msgstr "Ce graphique n'a pas d'équivalent en panneau vidéo."
 
-#: static/js/stats_page.js:1512 static/js/stats_page.js:1513
+#: static/js/stats_page.js:1517 static/js/stats_page.js:1518
 msgid "Actions du graphique"
 msgstr "Actions du graphique"
 
-#: static/js/stats_page.js:1526
+#: static/js/stats_page.js:1531
 msgid "Modifier"
 msgstr "Modifier"
 
-#: static/js/stats_page.js:1528
+#: static/js/stats_page.js:1533
 msgid "Présenter à partir d'ici"
 msgstr "Présenter à partir d'ici"
 
-#: static/js/stats_page.js:1529
+#: static/js/stats_page.js:1534
 msgid "Voir les valeurs"
 msgstr "Voir les valeurs"
 
-#: static/js/stats_page.js:1530
+#: static/js/stats_page.js:1535
 msgid "Exporter en image (PNG)"
 msgstr "Exporter en image (PNG)"
 
-#: static/js/stats_page.js:1531
+#: static/js/stats_page.js:1536
 msgid "Exporter en image vectorielle (SVG)"
 msgstr "Exporter en image vectorielle (SVG)"
 
-#: static/js/stats_page.js:1533
+#: static/js/stats_page.js:1538
 msgid "Créer une vidéo animée"
 msgstr "Créer une vidéo animée"
 
-#: static/js/stats_page.js:1534
+#: static/js/stats_page.js:1539
 msgid "Déplacer avant"
 msgstr "Déplacer avant"
 
-#: static/js/stats_page.js:1535
+#: static/js/stats_page.js:1540
 msgid "Déplacer après"
 msgstr "Déplacer après"
 
-#: static/js/stats_page.js:1584 static/js/stats_panels.js:1264
+#: static/js/stats_page.js:1589 static/js/stats_panels.js:1264
 #, python-brace-format
 msgid "Sans attribut : ${n}"
 msgstr "Sans attribut : ${n}"
 
-#: static/js/stats_page.js:1586
+#: static/js/stats_page.js:1591
 msgid "Seules les 8 périodes les plus récentes sont affichées."
 msgstr "Seules les 8 périodes les plus récentes sont affichées."
 
-#: static/js/stats_page.js:1590 static/js/stats_panels.js:1258
+#: static/js/stats_page.js:1595 static/js/stats_panels.js:1258
 #, python-brace-format
 msgid "Sans D/T : ${n}"
 msgstr "Sans D/T : ${n}"
 
-#: static/js/stats_page.js:1590 static/js/stats_panels.js:1261
+#: static/js/stats_page.js:1595 static/js/stats_panels.js:1261
 #, python-brace-format
 msgid "Sans date de publication : ${n}"
 msgstr "Sans date de publication : ${n}"
 
-#: static/js/stats_page.js:1593
+#: static/js/stats_page.js:1598
 msgid "Seule la première période est dessinée."
 msgstr "Seule la première période est dessinée."
 
-#: static/js/stats_page.js:1596
+#: static/js/stats_page.js:1601
 msgid "Seules les 3 années les plus récentes sont dessinées."
 msgstr "Seules les 3 années les plus récentes sont dessinées."
 
-#: static/js/stats_page.js:1601
+#: static/js/stats_page.js:1606
 #, python-brace-format
 msgid "Comparaison à date : chaque période est arrêtée au ${date}."
 msgstr "Comparaison à date : chaque période est arrêtée au ${date}."
 
-#: static/js/stats_page.js:1603
+#: static/js/stats_page.js:1608
 msgid "Aucune donnée sur cette période."
 msgstr "Aucune donnée sur cette période."
 
-#: static/js/stats_page.js:1633 static/js/stats_page.js:1996
+#: static/js/stats_page.js:1638 static/js/stats_page.js:2001
 msgid "Voir sur la carte"
 msgstr "Voir sur la carte"
 
-#: static/js/stats_page.js:1917
+#: static/js/stats_page.js:1922
 msgid "filtres du graphique"
 msgstr "filtres du graphique"
 
-#: static/js/stats_page.js:1919
+#: static/js/stats_page.js:1924
 msgid "toutes vos trouvailles"
 msgstr "toutes vos trouvailles"
 
-#: static/js/stats_page.js:1951
+#: static/js/stats_page.js:1956
 msgid "Impossible de préparer les filtres de la carte."
 msgstr "Impossible de préparer les filtres de la carte."
 
-#: static/js/stats_page.js:1989
+#: static/js/stats_page.js:1994
 msgid "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
 msgstr "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
 
-#: static/js/stats_page.js:1994
+#: static/js/stats_page.js:1999
 #, python-brace-format
 msgid ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
@@ -6644,16 +6650,16 @@ msgstr ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
 "remplacés."
 
-#: static/js/stats_page.js:1999
+#: static/js/stats_page.js:2004
 msgid "Ouvrir la carte"
 msgstr "Ouvrir la carte"
 
-#: static/js/stats_page.js:2012 templates/_app_header.html:24
+#: static/js/stats_page.js:2017 templates/_app_header.html:24
 #: templates/_app_header.html:26 templates/app.html:41
 msgid "Mes poses"
 msgstr "Mes poses"
 
-#: static/js/stats_page.js:2022
+#: static/js/stats_page.js:2027
 #, python-brace-format
 msgid ""
 "La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet "
@@ -6662,11 +6668,11 @@ msgstr ""
 "La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet "
 "Stats."
 
-#: static/js/stats_page.js:2035
+#: static/js/stats_page.js:2040
 msgid "L'envoi du panneau a échoué."
 msgstr "L'envoi du panneau a échoué."
 
-#: static/js/stats_page.js:2038
+#: static/js/stats_page.js:2043
 #, python-brace-format
 msgid ""
 "Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
@@ -6675,7 +6681,7 @@ msgstr ""
 "Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
 " la vidéo."
 
-#: static/js/stats_page.js:2047
+#: static/js/stats_page.js:2052
 #, python-brace-format
 msgid ""
 "Le graphique devient un panneau de la page « ${page} », qui se remplit au"
@@ -6684,7 +6690,7 @@ msgstr ""
 "Le graphique devient un panneau de la page « ${page} », qui se remplit au"
 " fil de l'animation."
 
-#: static/js/stats_page.js:2049
+#: static/js/stats_page.js:2054
 msgid ""
 "Il suit la période et les filtres de la carte : la période, les filtres "
 "et le découpage de ce graphique ne sont pas repris."
@@ -6692,158 +6698,220 @@ msgstr ""
 "Il suit la période et les filtres de la carte : la période, les filtres "
 "et le découpage de ce graphique ne sont pas repris."
 
-#: static/js/stats_page.js:2051
+#: static/js/stats_page.js:2056
 msgid "L'objectif et la projection restent sur cette page."
 msgstr "L'objectif et la projection restent sur cette page."
 
-#: static/js/stats_page.js:2052
+#: static/js/stats_page.js:2057
 msgid "Envoyer"
 msgstr "Envoyer"
 
-#: static/js/stats_page.js:2106
-msgid "Ce graphique ne peut pas être animé."
-msgstr "Ce graphique ne peut pas être animé."
+#: static/js/stats_page.js:2118
+msgid "Vidéo du tableau de bord"
+msgstr "Vidéo du tableau de bord"
 
-#: static/js/stats_page.js:2112
+#: static/js/stats_page.js:2118 templates/stats_page.html:480
+msgid "Vidéo animée"
+msgstr "Vidéo animée"
+
+#: static/js/stats_page.js:2121 templates/stats_page.html:337
+#: templates/stats_page.html:338
+msgid "Durée de chaque graphique"
+msgstr "Durée de chaque graphique"
+
+#: static/js/stats_page.js:2121 static/js/ui.js:11596
+#: templates/stats_page.html:497
+msgid "Durée"
+msgstr "Durée"
+
+#: static/js/stats_page.js:2125 static/js/stats_page.js:2128
 #, python-brace-format
 msgid "${n} secondes"
 msgstr "${n} secondes"
 
-#: static/js/stats_page.js:2200
+#: static/js/stats_page.js:2140
+msgid "Ce graphique ne peut pas être animé."
+msgstr "Ce graphique ne peut pas être animé."
+
+#: static/js/stats_page.js:2150
+msgid "Aucun graphique à mettre en vidéo."
+msgstr "Aucun graphique à mettre en vidéo."
+
+#: static/js/stats_page.js:2167
+#, python-brace-format
+msgid ""
+"${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps "
+"réel."
+msgstr ""
+"${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps "
+"réel."
+
+#: static/js/stats_page.js:2177
+msgid "Sans musique"
+msgstr "Sans musique"
+
+#: static/js/stats_page.js:2195
+msgid "Musiques récentes"
+msgstr "Musiques récentes"
+
+#: static/js/stats_page.js:2203
+msgid "Un fichier de mon ordinateur…"
+msgstr "Un fichier de mon ordinateur…"
+
+#: static/js/stats_page.js:2338
+#, python-brace-format
+msgid "${n} graphiques"
+msgstr "${n} graphiques"
+
+#: static/js/stats_page.js:2417 static/js/stats_page.js:2504
 msgid "Ce navigateur ne sait pas enregistrer de vidéo."
 msgstr "Ce navigateur ne sait pas enregistrer de vidéo."
 
-#: static/js/stats_page.js:2260 static/js/stats_page.js:2271
+#: static/js/stats_page.js:2470
+msgid "ouverture"
+msgstr "ouverture"
+
+#: static/js/stats_page.js:2471
+#, python-brace-format
+msgid "graphique ${n} / ${count}"
+msgstr "graphique ${n} / ${count}"
+
+#: static/js/stats_page.js:2472
+#, python-brace-format
+msgid "Enregistrement… (${where})"
+msgstr "Enregistrement… (${where})"
+
+#: static/js/stats_page.js:2564 static/js/stats_page.js:2579
 msgid "Conversion en MP4…"
 msgstr "Conversion en MP4…"
 
-#: static/js/stats_page.js:2286
+#: static/js/stats_page.js:2594
 #, python-brace-format
 msgid "Vidéo enregistrée : ${file}, dans ${folder}."
 msgstr "Vidéo enregistrée : ${file}, dans ${folder}."
 
-#: static/js/stats_page.js:2293
+#: static/js/stats_page.js:2601
 msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 msgstr "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 
-#: static/js/stats_page.js:2310
+#: static/js/stats_page.js:2618
 msgid "Impossible d'ouvrir le dossier des vidéos."
 msgstr "Impossible d'ouvrir le dossier des vidéos."
 
-#: static/js/stats_page.js:2372
+#: static/js/stats_page.js:2680
 msgid "Graphique dupliqué."
 msgstr "Graphique dupliqué."
 
-#: static/js/stats_page.js:2397 static/js/stats_page.js:2638
+#: static/js/stats_page.js:2705 static/js/stats_page.js:2946
 msgid "Graphique déplacé."
 msgstr "Graphique déplacé."
 
-#: static/js/stats_page.js:2404
+#: static/js/stats_page.js:2712
 #, python-brace-format
 msgid "Supprimer le graphique « ${title} » ?"
 msgstr "Supprimer le graphique « ${title} » ?"
 
-#: static/js/stats_page.js:2409
+#: static/js/stats_page.js:2717
 #, python-brace-format
 msgid "Graphique « ${title} » supprimé."
 msgstr "Graphique « ${title} » supprimé."
 
-#: static/js/stats_page.js:2454 templates/guide.html:579
+#: static/js/stats_page.js:2762 templates/guide.html:579
 #: templates/stats_page.html:90
 msgid "Période"
 msgstr "Période"
 
-#: static/js/stats_page.js:2454 static/js/stats_panels.js:3015
+#: static/js/stats_page.js:2762 static/js/stats_panels.js:3015
 #: static/js/stats_panels.js:3078
 msgid "Valeur"
 msgstr "Valeur"
 
-#: static/js/stats_page.js:2700
+#: static/js/stats_page.js:3008
 msgid "Taille du graphique modifiée."
 msgstr "Taille du graphique modifiée."
 
-#: static/js/stats_page.js:2801
+#: static/js/stats_page.js:3109
 msgid "Partir de zéro"
 msgstr "Partir de zéro"
 
-#: static/js/stats_page.js:2802
+#: static/js/stats_page.js:3110
 msgid "Graphique personnalisé"
 msgstr "Graphique personnalisé"
 
-#: static/js/stats_page.js:2802
+#: static/js/stats_page.js:3110
 msgid "Partir de zéro et tout choisir."
 msgstr "Partir de zéro et tout choisir."
 
-#: static/js/stats_page.js:2884
+#: static/js/stats_page.js:3192
 msgid "Données indisponibles"
 msgstr "Données indisponibles"
 
-#: static/js/stats_page.js:2889
+#: static/js/stats_page.js:3197
 msgid "Aucune donnée pour l’instant"
 msgstr "Aucune donnée pour l’instant"
 
-#: static/js/stats_page.js:2940
+#: static/js/stats_page.js:3248
 #, python-brace-format
 msgid "Graphique ajouté : ${title}."
 msgstr "Graphique ajouté : ${title}."
 
-#: static/js/stats_page.js:2960
+#: static/js/stats_page.js:3268
 msgid "(indisponible)"
 msgstr "(indisponible)"
 
-#: static/js/stats_page.js:2961 static/js/stats_ui.js:568
+#: static/js/stats_page.js:3269 static/js/stats_ui.js:568
 msgid "(aucune donnée)"
 msgstr "(aucune donnée)"
 
-#: static/js/stats_page.js:2974
+#: static/js/stats_page.js:3282
 msgid "et dans"
 msgstr "et dans"
 
-#: static/js/stats_page.js:2987 static/js/stats_page.js:2988
+#: static/js/stats_page.js:3295 static/js/stats_page.js:3296
 msgid "Retirer cette source"
 msgstr "Retirer cette source"
 
-#: static/js/stats_page.js:3084
+#: static/js/stats_page.js:3392
 msgid "comparé à"
 msgstr "comparé à"
 
-#: static/js/stats_page.js:3084
+#: static/js/stats_page.js:3392
 msgid "et à"
 msgstr "et à"
 
-#: static/js/stats_page.js:3096 static/js/stats_page.js:3097
+#: static/js/stats_page.js:3404 static/js/stats_page.js:3405
 msgid "Retirer cette période"
 msgstr "Retirer cette période"
 
-#: static/js/stats_page.js:3111
+#: static/js/stats_page.js:3419
 msgid "rien"
 msgstr "rien"
 
-#: static/js/stats_page.js:3153
+#: static/js/stats_page.js:3461
 msgid "propres"
 msgstr "propres"
 
-#: static/js/stats_page.js:3391
+#: static/js/stats_page.js:3699
 msgid "Nouveau graphique"
 msgstr "Nouveau graphique"
 
-#: static/js/stats_page.js:3391 templates/stats_page.html:148
+#: static/js/stats_page.js:3699 templates/stats_page.html:148
 msgid "Modifier le graphique"
 msgstr "Modifier le graphique"
 
-#: static/js/stats_page.js:3409
+#: static/js/stats_page.js:3717
 msgid "Graphique ajouté."
 msgstr "Graphique ajouté."
 
-#: static/js/stats_page.js:3411
+#: static/js/stats_page.js:3719
 msgid "Graphique enregistré."
 msgstr "Graphique enregistré."
 
-#: static/js/stats_page.js:3468
+#: static/js/stats_page.js:3776
 msgid "Aucun graphique à présenter."
 msgstr "Aucun graphique à présenter."
 
-#: static/js/stats_page.js:3549
+#: static/js/stats_page.js:3857
 #, python-brace-format
 msgid "${n} / ${count}"
 msgstr "${n} / ${count}"
@@ -8486,10 +8554,6 @@ msgstr "Non disponible"
 #: static/js/ui.js:11595
 msgid "Type inconnu"
 msgstr "Type inconnu"
-
-#: static/js/ui.js:11596 templates/stats_page.html:496
-msgid "Durée"
-msgstr "Durée"
 
 #: static/js/ui.js:11597
 msgid "Modifié"
@@ -16326,10 +16390,6 @@ msgstr "Graphique suivant"
 msgid "Défilement automatique"
 msgstr "Défilement automatique"
 
-#: templates/stats_page.html:337 templates/stats_page.html:338
-msgid "Durée de chaque graphique"
-msgstr "Durée de chaque graphique"
-
 #: templates/stats_page.html:345
 msgid "Quitter la présentation (Échap)"
 msgstr "Quitter la présentation (Échap)"
@@ -16394,10 +16454,6 @@ msgstr ""
 msgid "Commencer avec des graphiques prêts"
 msgstr "Commencer avec des graphiques prêts"
 
-#: templates/stats_page.html:480
-msgid "Vidéo animée"
-msgstr "Vidéo animée"
-
 #: templates/stats_page.html:485
 msgid ""
 "Les valeurs apparaissent au fil de l'axe, puis le graphique complet reste"
@@ -16406,27 +16462,43 @@ msgstr ""
 "Les valeurs apparaissent au fil de l'axe, puis le graphique complet reste"
 " affiché quelques instants."
 
-#: templates/stats_page.html:488
+#: templates/stats_page.html:486
+msgid ""
+"Un écran d'ouverture, puis chaque graphique du tableau à tour de rôle : "
+"les courbes et les barres se dessinent, les chiffres clés comptent."
+msgstr ""
+"Un écran d'ouverture, puis chaque graphique du tableau à tour de rôle : "
+"les courbes et les barres se dessinent, les chiffres clés comptent."
+
+#: templates/stats_page.html:489
 msgid "Format"
 msgstr "Format"
 
-#: templates/stats_page.html:490
+#: templates/stats_page.html:491
 msgid "Paysage HD (1280 × 720)"
 msgstr "Paysage HD (1280 × 720)"
 
-#: templates/stats_page.html:491
+#: templates/stats_page.html:492
 msgid "Paysage Full HD (1920 × 1080)"
 msgstr "Paysage Full HD (1920 × 1080)"
 
-#: templates/stats_page.html:492
+#: templates/stats_page.html:493
 msgid "Carré (1080 × 1080)"
 msgstr "Carré (1080 × 1080)"
 
-#: templates/stats_page.html:519
+#: templates/stats_page.html:504
+msgid ""
+"Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface "
+"doucement à la fin."
+msgstr ""
+"Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface "
+"doucement à la fin."
+
+#: templates/stats_page.html:527
 msgid "Télécharger"
 msgstr "Télécharger"
 
-#: templates/stats_page.html:522
+#: templates/stats_page.html:530
 msgid "Créer la vidéo"
 msgstr "Créer la vidéo"
 

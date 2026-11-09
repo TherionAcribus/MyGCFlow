@@ -482,7 +482,8 @@
                     </div>
                     <div class="modal-body">
                         <div id="statsVideoSetup">
-                            <p class="text-secondary">{{ _("Les valeurs apparaissent au fil de l'axe, puis le graphique complet reste affiché quelques instants.") }}</p>
+                            <p class="text-secondary" id="statsVideoIntroChart">{{ _("Les valeurs apparaissent au fil de l'axe, puis le graphique complet reste affiché quelques instants.") }}</p>
+                            <p class="text-secondary" id="statsVideoIntroDashboard" hidden>{{ _("Un écran d'ouverture, puis chaque graphique du tableau à tour de rôle : les courbes et les barres se dessinent, les chiffres clés comptent.") }}</p>
                             <div class="row g-3">
                                 <div class="col-sm-6">
                                     <label for="statsVideoSize" class="form-label">{{ _("Format") }}</label>
@@ -493,10 +494,17 @@
                                     </select>
                                 </div>
                                 <div class="col-sm-6">
-                                    <label for="statsVideoDuration" class="form-label">{{ _("Durée") }}</label>
+                                    <label for="statsVideoDuration" class="form-label" id="statsVideoDurationLabel">{{ _("Durée") }}</label>
                                     <select id="statsVideoDuration" class="form-select"></select>
                                 </div>
+                                <div class="col-12">
+                                    <label for="statsVideoMusic" class="form-label">{{ _("Musique") }}</label>
+                                    <select id="statsVideoMusic" class="form-select"></select>
+                                    <input type="file" id="statsVideoMusicFile" accept="audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.flac,.wma" hidden>
+                                    <div class="form-hint">{{ _("Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface doucement à la fin.") }}</div>
+                                </div>
                             </div>
+                            <p class="text-secondary small mt-3 mb-0" id="statsVideoTotal" aria-live="polite"></p>
                         </div>
                         <div id="statsVideoRecording" hidden>
                             <div class="stats-video-stage" id="statsVideoStage"></div>

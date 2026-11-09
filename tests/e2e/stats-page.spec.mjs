@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { importGpx } from './gpx-import.mjs';
 import { openDataSubTab } from './data-subtabs.mjs';
+import { wavFile } from './wav.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -1090,6 +1091,49 @@ test('créer une vidéo animée d\'une comparaison', async ({ page, request }) =
     await page.locator('#btnStatsVideoCancel').click();
     await expect(page.locator('#statsVideoModal')).toBeHidden();
     expect((await snapshot(page)).video).toBeNull();
+    expect(errors).toEqual([]);
+  } finally {
+    if (video?.file && video.folder) fs.rmSync(path.join(video.folder, video.file), { force: true });
+  }
+});
+
+test('vidéo du tableau entier : ouverture, chaque graphique, musique choisie', async ({ page, request }) => {
+  test.setTimeout(150_000);
+  // Trois graphiques : un chiffre clé (compte), des barres (révélées), un
+  // anneau (entier) — 3 s d'ouverture + 3 × 4 s.
+  const items = [
+    { size: 'S', spec: { id: 'dddd01', groupBy: 'none', view: { chart: 'number' } } },
+    { size: 'M', spec: { id: 'dddd02', groupBy: 'month_of_year', view: { chart: 'bar' } } },
+    { size: 'M', spec: { id: 'dddd03', groupBy: 'cache_type', view: { chart: 'donut' } } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await expect(page.locator('#statsVideoTitle')).toHaveText('Vidéo du tableau de bord');
+  await expect(page.locator('#statsVideoDurationLabel')).toHaveText('Durée de chaque graphique');
+  await page.locator('#statsVideoDuration').selectOption('4');
+  await expect(page.locator('#statsVideoTotal')).toContainText('3 graphiques, 15 secondes en tout');
+  // Musique : un fichier de l'ordinateur (2 s, bouclé par le serveur).
+  await page.locator('#statsVideoMusicFile').setInputFiles(wavFile('fond.wav', 2, 0));
+  await expect(page.locator('#statsVideoMusic')).toHaveValue('upload');
+  expect((await snapshot(page)).video).toMatchObject({ mode: 'dashboard', slides: 3, music: { kind: 'upload', file: 'fond.wav' } });
+
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect(page.locator('#statsVideoStage canvas')).toBeVisible();
+  await expect(page.locator('#statsVideoStatus')).toContainText('graphique', { timeout: 10_000 });
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 120_000 }).toBe('done');
+  const video = (await snapshot(page)).video;
+  try {
+    expect(video.file).toMatch(/^Mon_bilan.*\.mp4$/);
+    const body = await (await request.get(`/download_video/${encodeURIComponent(video.file)}`)).body();
+    // Piste audio AAC présente : la musique a bien été posée.
+    expect(body.includes(Buffer.from('mp4a'))).toBe(true);
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
     expect(errors).toEqual([]);
   } finally {
     if (video?.file && video.folder) fs.rmSync(path.join(video.folder, video.file), { force: true });

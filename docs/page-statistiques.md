@@ -468,6 +468,31 @@ effacer » le retire avec la période proposée.
   téléchargeable.
 - Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080), durées 6 à 30 s.
 
+### Vidéo du tableau entier, musique
+
+« Créer la vidéo du tableau… » (menu du tableau de bord) : la même fenêtre
+que la vidéo d'un graphique (`state.video.mode` : `chart` / `dashboard`),
+le même enregistrement en temps réel et la même conversion serveur.
+
+- Déroulé (`videoMoment`, dashboard_video.mjs) : ouverture de 3 s (nom du
+  tableau, période, nombre de graphiques), puis un écran par graphique
+  (4, 6, 8 ou 10 s, durée totale annoncée), chacun en fondu (0,5 s) ;
+  l'animation occupe 70 % de l'écran, le graphique complet reste ensuite.
+  Diapositives : celles de la présentation (`presentSlides`).
+- Écrans (`slidePainter`) : barres / courbes / aires sur un axe ordonné
+  révélées au fil de l'axe (`videoPainter`, comme la vidéo d'un
+  graphique) ; chiffre clé qui compte de 0 à sa valeur (`countUp`) puis
+  sa période, son record ou son objectif ; autres formes (anneau, grille,
+  défi…) entières dès la première image (`reveal: false`).
+- Musique, pour les deux modes : aucune, une des musiques récentes de la
+  carte (`recording.audio_recent` / `audio_file`, envoyée par son nom dans
+  `audio/`), ou un fichier de l'ordinateur (joint à
+  `/process_recorded_video`) ; bouclée si elle est plus courte, fondue sur
+  2 s à la fin (`musicFields`). Un fichier envoyé n'est pas ajouté aux
+  musiques récentes : sa copie dans `audio/` sera balayée plus tard.
+- Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
+  `music` (`kind`, `file`).
+
 ## Organisation (lot 5)
 
 - **Déplacer** : glisser-déposer HTML5 ; la carte ne devient `draggable`
@@ -747,6 +772,9 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   textes, cumul prolongé, axe, spec).
 - Présentation : `present_model.test.mjs` (diapositives, navigation,
   touches, délais).
+- Vidéo du tableau : `dashboard_video.test.mjs` (durées, moments, fondus,
+  comptage, champs de la musique) ; E2E : MP4 avec piste audio (atome
+  `mp4a`), musique générée par `wavFile` (tests/e2e/wav.mjs).
 - Vignettes de la galerie : `thumbnailOption` dans `chart_echarts.test.mjs`
   (chaque forme : barres, aire, anneau, écart, côte à côte, grille, radar,
   calendrier).

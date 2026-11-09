@@ -130,8 +130,11 @@ chiffre clé ou d'un cumul, barre de progression, date estimée « à ce
 rythme », courbe prolongée en tirets ; « Mon prochain cap »). Mode
 présentation fait le 2026-11-09 (plein écran, un graphique par écran,
 clavier, défilement automatique ; tranche la question ouverte du lot 5).
-Pistes restantes, fonctions : vidéo d'un tableau entier avec musique (le
-même enchaînement enregistré), lien carte pour les autres sources.
+Vidéo d'un tableau entier faite le 2026-11-09 (ouverture puis chaque
+graphique, chiffres qui comptent, fondus ; musique récente de la carte ou
+fichier, aussi pour la vidéo d'un graphique). Piste restante : lien carte
+pour les autres sources (DNF, caches posées, Mes poses, Évolution — leurs
+pages n'ont pas de sélection persistée).
 
 Décisions prises avec l'utilisateur :
 
