@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 12:14+0100\n"
+"POT-Creation-Date: 2026-11-09 13:13+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -794,7 +794,7 @@ msgstr "Database"
 
 #: blueprints/core.py:197 static/js/evolution_data.js:435
 #: static/js/poses_data.js:286 static/js/stats_page.js:2912
-#: templates/guide.html:165 templates/guide.html:173 templates/guide.html:599
+#: templates/guide.html:165 templates/guide.html:173 templates/guide.html:600
 #: templates/menu_data.html:481 templates/menu_data_evolution.html:108
 #: templates/menu_data_poses.html:63 templates/menu_filtre.html:65
 #: templates/stats_page.html:93 templates/stats_page.html:205
@@ -2963,11 +2963,11 @@ msgstr "The area over time"
 msgid "Les caches de la zone"
 msgstr "The area's caches"
 
-#: static/js/chart_labels.mjs:377
+#: static/js/chart_labels.mjs:377 templates/guide.html:611
 msgid "Mes défis"
 msgstr "My challenges"
 
-#: static/js/chart_labels.mjs:378
+#: static/js/chart_labels.mjs:378 templates/guide.html:622
 msgid "Séries et records"
 msgstr "Streaks and records"
 
@@ -6326,15 +6326,15 @@ msgstr "Import a dashboard…"
 msgid "Imprimer"
 msgstr "Print"
 
-#: static/js/stats_page.js:860
+#: static/js/stats_page.js:860 templates/guide.html:632
 msgid "Enregistrer le tableau en image (PNG)"
 msgstr "Save the dashboard as an image (PNG)"
 
-#: static/js/stats_page.js:861
+#: static/js/stats_page.js:861 templates/guide.html:632
 msgid "Copier l'image du tableau"
 msgstr "Copy the dashboard image"
 
-#: static/js/stats_page.js:862
+#: static/js/stats_page.js:862 templates/guide.html:646
 msgid "Créer la vidéo du tableau…"
 msgstr "Create a video of the dashboard…"
 
@@ -6767,7 +6767,7 @@ msgstr "Delete the chart “${title}”?"
 msgid "Graphique « ${title} » supprimé."
 msgstr "Chart “${title}” deleted."
 
-#: static/js/stats_page.js:2770 templates/guide.html:579
+#: static/js/stats_page.js:2770 templates/guide.html:580
 #: templates/stats_page.html:90
 msgid "Période"
 msgstr "Period"
@@ -9538,7 +9538,7 @@ msgstr "Start over (optional)"
 
 #: templates/guide.html:178 templates/guide.html:304 templates/guide.html:305
 #: templates/guide.html:336 templates/guide.html:369 templates/guide.html:416
-#: templates/guide.html:583 templates/guide.html:599
+#: templates/guide.html:584 templates/guide.html:600 templates/guide.html:636
 msgid "Le bouton"
 msgstr "The button"
 
@@ -10830,7 +10830,7 @@ msgstr ""
 msgid "Enregistrez et exportez vos panneaux"
 msgstr "Save and export your panels"
 
-#: templates/guide.html:399 templates/guide.html:438 templates/guide.html:579
+#: templates/guide.html:399 templates/guide.html:438 templates/guide.html:580
 msgid "Le menu"
 msgstr "The"
 
@@ -11361,7 +11361,7 @@ msgstr "At the top of the Filters, the"
 msgid "offre trois sources :"
 msgstr "selector offers three sources:"
 
-#: templates/guide.html:523
+#: templates/guide.html:523 templates/guide.html:632
 msgid "ou"
 msgstr "or"
 
@@ -11560,11 +11560,19 @@ msgstr ""
 "filled in: total, caching days, countries, best year, progress, cache "
 "types, busiest months."
 
-#: templates/guide.html:578
+#: templates/guide.html:576
+msgid "Après un nouvel import sur la carte, le bouton"
+msgstr "After a new import on the map, the"
+
+#: templates/guide.html:576
+msgid "de la barre relit vos données sans recharger la page."
+msgstr "button in the bar reloads your data without reloading the page."
+
+#: templates/guide.html:579
 msgid "Choisissez la période"
 msgstr "Choose the period"
 
-#: templates/guide.html:579
+#: templates/guide.html:580
 msgid ""
 "s'applique à tous les graphiques : toutes vos trouvailles, les 12 "
 "derniers mois ou une année. Un graphique peut garder sa propre période — "
@@ -11575,20 +11583,20 @@ msgstr ""
 "given year. A chart can keep its own period — it then shows a badge, like"
 " “My best year”, which covers your whole history."
 
-#: templates/guide.html:582
+#: templates/guide.html:583
 msgid "Ajoutez et réglez vos graphiques"
 msgstr "Add and adjust your charts"
 
-#: templates/guide.html:583 templates/stats_page.html:104
+#: templates/guide.html:584 templates/stats_page.html:104
 #: templates/stats_page.html:119 templates/stats_page.html:132
 msgid "Ajouter un graphique"
 msgstr "Add a chart"
 
-#: templates/guide.html:583
+#: templates/guide.html:584
 msgid "propose des questions toutes faites. Le menu"
 msgstr "button offers ready-made questions. The"
 
-#: templates/guide.html:583
+#: templates/guide.html:584
 msgid ""
 "de chaque graphique permet de le modifier : une phrase à compléter dit ce"
 " qu'il montre — « Afficher le nombre de trouvailles par mois de l'année "
@@ -11598,7 +11606,7 @@ msgstr ""
 "shows — “Show the number of finds by month of the year over 2025 as bars”"
 " — with an instant preview."
 
-#: templates/guide.html:586
+#: templates/guide.html:587
 msgid ""
 "Le même menu duplique, déplace, supprime un graphique ou l'exporte en "
 "image. Tout est enregistré automatiquement."
@@ -11606,19 +11614,25 @@ msgstr ""
 "The same menu duplicates, moves or deletes a chart, or exports it as an "
 "image. Everything is saved automatically."
 
-#: templates/guide.html:590
+#: templates/guide.html:587
+msgid ""
+"« Voir les valeurs » affiche ses chiffres dans un tableau, exportable en "
+"CSV."
+msgstr "“Show values” lists its figures in a table you can export to CSV."
+
+#: templates/guide.html:591
 msgid "Comparez les années, les mois…"
 msgstr "Compare years, months…"
 
-#: templates/guide.html:591
+#: templates/guide.html:592
 msgid "Dans l'éditeur,"
 msgstr "In the editor,"
 
-#: templates/guide.html:591 templates/stats_page.html:181
+#: templates/guide.html:592 templates/stats_page.html:181
 msgid "Comparer à une autre période"
 msgstr "Compare with another period"
 
-#: templates/guide.html:591
+#: templates/guide.html:592
 msgid ""
 "ajoute une ligne « comparé à » : la période précédente, une année, les 12"
 " derniers mois… ou « chaque année » pour une courbe par année. Les "
@@ -11630,7 +11644,7 @@ msgstr ""
 "placed side by side on the same scale, or shown as a difference (blue "
 "above zero, red below)."
 
-#: templates/guide.html:594
+#: templates/guide.html:595
 msgid ""
 "Avec une période en cours, « à date » arrête les autres au même jour : "
 "vos 8 premiers mois de cette année contre les 8 premiers de l'an dernier."
@@ -11642,11 +11656,11 @@ msgstr ""
 "gallery offers ready-made comparisons, such as “Am I ahead of last "
 "year?”."
 
-#: templates/guide.html:598
+#: templates/guide.html:599
 msgid "Filtrez et changez de forme"
 msgstr "Filter and change the shape"
 
-#: templates/guide.html:599
+#: templates/guide.html:600
 msgid ""
 "limite tout le tableau de bord à certains types, pays, difficultés, "
 "propriétaires… Un graphique peut avoir ses propres filtres (section « "
@@ -11656,7 +11670,25 @@ msgstr ""
 " owners… A chart can have its own filters (“Filters” section of the "
 "editor): it then shows a small funnel icon."
 
-#: templates/guide.html:600
+#: templates/guide.html:601
+msgid "Vous avez déjà filtré la carte ? Dans la fenêtre Filtres,"
+msgstr "Already filtered the map? In the Filters window,"
+
+#: templates/guide.html:601 templates/stats_page.html:367
+msgid "Reprendre les filtres de la carte"
+msgstr "Use the map filters"
+
+#: templates/guide.html:601
+msgid ""
+"remplit le formulaire avec la même sélection ; ses dates deviennent la "
+"période du tableau. Ce qui n'a pas d'équivalent ici, comme la recherche "
+"par nom, vous est signalé."
+msgstr ""
+"fills in the form with the same selection; its dates become the dashboard"
+" period. Anything with no equivalent here, such as the name search, is "
+"pointed out."
+
+#: templates/guide.html:602
 msgid ""
 "Dans la phrase, « découpé par » ajoute une deuxième dimension (une série "
 "par type, par année…), à empiler si besoin. Formes possibles : barres, "
@@ -11668,11 +11700,11 @@ msgstr ""
 "donut, key figure, year calendar, grid (difficulty × terrain, or two "
 "crossed dimensions) and radar."
 
-#: templates/guide.html:603
+#: templates/guide.html:605
 msgid "Mes poses, mes DNF… et les zones Évolution"
 msgstr "My hides, my DNFs… and Evolution areas"
 
-#: templates/guide.html:604
+#: templates/guide.html:606
 msgid ""
 "En tête de la phrase, « Dans » choisit ce qu'on compte : mes trouvailles,"
 " mes DNF, mes caches posées, ou les trouvailles, DNF et favoris reçus sur"
@@ -11684,7 +11716,7 @@ msgstr ""
 "caches. “Compare with another source” puts them side by side, for example"
 " my finds and those received."
 
-#: templates/guide.html:605
+#: templates/guide.html:607
 msgid ""
 "Les caches d'une zone (page Évolution) n'ont rien à voir avec vos propres"
 " données : elles ont leurs tableaux de bord à part. Le menu"
@@ -11692,7 +11724,7 @@ msgstr ""
 "The caches of an area (Evolution page) have nothing to do with your own "
 "data: they have dashboards of their own. The"
 
-#: templates/guide.html:605
+#: templates/guide.html:607
 msgid ""
 "à côté du nom crée un tableau « Évolution d'une zone » sur un jeu importé"
 " : caches publiées, archivées, actives au fil du temps."
@@ -11700,11 +11732,106 @@ msgstr ""
 "menu next to the name creates an “Evolution of an area” dashboard on an "
 "imported dataset: published, archived and active caches over time."
 
-#: templates/guide.html:608
+#: templates/guide.html:610
+msgid "Relevez vos défis"
+msgstr "Take on your challenges"
+
+#: templates/guide.html:611 templates/guide.html:622
+msgid "Le groupe"
+msgstr "The"
+
+#: templates/guide.html:611
+msgid "de la galerie propose quatre grilles à remplir :"
+msgstr "group in the gallery offers four grids to fill:"
+
+#: templates/guide.html:613
+msgid "la grille D/T : les 81 combinaisons de difficulté et de terrain ;"
+msgstr "the D/T grid: the 81 combinations of difficulty and terrain;"
+
+#: templates/guide.html:614
+msgid ""
+"le calendrier 366 : une trouvaille chaque jour de l'année, toutes années "
+"confondues ;"
+msgstr "the 366-day calendar: a find on every day of the year, all years combined;"
+
+#: templates/guide.html:615
+msgid "la grille Jasmer : une cache publiée chaque mois depuis mai 2000 ;"
+msgstr "the Jasmer grid: a cache published in every month since May 2000;"
+
+#: templates/guide.html:616
+msgid "les mois de cache : chaque mois depuis votre première trouvaille."
+msgstr "caching months: every month since your first find."
+
+#: templates/guide.html:618
+msgid ""
+"Au-dessus de la grille, le bilan : cases remplies, tours complets, et les"
+" cases qui manquent pour le tour suivant. Sur la grille D/T, Jasmer ou "
+"des mois, cliquez sur une case remplie pour voir ses caches sur la carte."
+" Dans l'éditeur, c'est la forme « grille de défi »."
+msgstr ""
+"Above the grid, the summary: filled cells, completed rounds, and the "
+"cells still missing for the next round. On the D/T, Jasmer or months "
+"grid, click a filled cell to see its caches on the map. In the editor, "
+"this is the “challenge grid” shape."
+
+#: templates/guide.html:621
+msgid "Séries, records et objectifs"
+msgstr "Streaks, records and goals"
+
+#: templates/guide.html:622
+msgid ""
+"date vos exploits : meilleure journée, plus longue série de jours "
+"d'affilée, série en cours, plus longue pause. Les jours concernés "
+"s'affichent sous le chiffre, et « Voir sur la carte » montre les caches "
+"de la journée ou de la série. Sur des barres ou une courbe, l'option « "
+"Mettre le record en avant » épingle la plus haute valeur."
+msgstr ""
+"group dates your feats: best day, longest streak of consecutive days, "
+"current streak, longest break. The days involved appear under the figure,"
+" and “Show on the map” displays the caches of that day or streak. On bars"
+" or a line, the “Highlight the record” option pins the highest value."
+
+#: templates/guide.html:623
+msgid "Dans les"
+msgstr "In the"
+
+#: templates/guide.html:623 templates/stats_page.html:235
+msgid "Options d'affichage"
+msgstr "Display options"
+
+#: templates/guide.html:623
+msgid "de l'éditeur, un"
+msgstr "of the editor, a"
+
+#: templates/guide.html:623 templates/stats_page.html:278
+msgid "Objectif"
+msgstr "Goal"
+
+#: templates/guide.html:623
+msgid ""
+"ajoute à un chiffre clé une barre de progression et la date où vous "
+"l'atteindrez à ce rythme. « Prolonger à ce rythme » poursuit en "
+"pointillés une courbe de cumul de la période en cours jusqu'à sa fin."
+msgstr ""
+"adds a progress bar to a key figure, and the date you will reach it at "
+"this pace. “Extend at this pace” continues a cumulative line for the "
+"current period as a dashed line up to its end."
+
+#: templates/guide.html:626
+msgid ""
+"Le groupe « Objectifs et projections » en propose de tout prêts : « Mon "
+"prochain cap » vise le prochain nombre rond, « Mon année à ce rythme » "
+"annonce où vous finirez au 31 décembre."
+msgstr ""
+"The “Goals and projections” group offers ready-made ones: “My next "
+"milestone” aims for the next round number, “My year at this pace” tells "
+"you where you will end up on December 31."
+
+#: templates/guide.html:630
 msgid "Rangez, partagez, imprimez"
 msgstr "Arrange, share, print"
 
-#: templates/guide.html:609
+#: templates/guide.html:631
 msgid ""
 "Glissez une carte par sa poignée pour la déplacer, et tirez son coin "
 "inférieur droit pour l'élargir ou l'allonger. Le menu de chaque graphique"
@@ -11717,11 +11844,49 @@ msgstr ""
 "SVG); the dashboard menu duplicates it, exports it to a file to share, "
 "imports one, or prints it — always on a light background."
 
-#: templates/guide.html:612
+#: templates/guide.html:632
+msgid ""
+"Le menu du tableau de bord fait aussi une image du tableau entier, tel "
+"qu'il est affiché, avec son nom, sa période et ses filtres :"
+msgstr ""
+"The dashboard menu also makes an image of the whole dashboard, as "
+"displayed, with its name, period and filters:"
+
+#: templates/guide.html:632
+msgid "pour la coller directement dans un message ou sur un forum."
+msgstr "to paste it straight into a message or a forum post."
+
+#: templates/guide.html:635
+msgid "Présentez vos statistiques"
+msgstr "Present your statistics"
+
+#: templates/guide.html:636 templates/stats_page.html:101
+msgid "Présenter"
+msgstr "Present"
+
+#: templates/guide.html:636
+msgid ""
+"affiche un graphique par écran, en plein écran. Les flèches ou la barre "
+"d'espace passent au suivant, Échap quitte. Le défilement automatique "
+"enchaîne les graphiques en boucle, toutes les 5 à 30 secondes ; la souris"
+" se cache quand elle ne bouge plus."
+msgstr ""
+"shows one chart per screen, full screen. The arrow keys or the space bar "
+"move to the next one, Esc exits. Autoplay cycles through the charts in a "
+"loop, every 5 to 30 seconds; the mouse pointer hides when it stops "
+"moving."
+
+#: templates/guide.html:637
+msgid ""
+"« Présenter à partir d'ici », dans le menu d'un graphique, commence par "
+"celui-ci."
+msgstr "“Present from here”, in a chart's menu, starts with that chart."
+
+#: templates/guide.html:640
 msgid "Revenez à la carte"
 msgstr "Go back to the map"
 
-#: templates/guide.html:613
+#: templates/guide.html:641
 msgid ""
 "Cliquez sur une barre, un point ou une part d'un graphique de vos "
 "trouvailles : la carte s'ouvre filtrée sur ces caches (le mois, le type, "
@@ -11732,18 +11897,56 @@ msgstr ""
 "filtered on those caches (the month, the type, the country…). Its "
 "previous filters are replaced; a confirmation reminds you."
 
-#: templates/guide.html:614
+#: templates/guide.html:642
 msgid ""
 "Dans le menu d'un graphique, « Envoyer en panneau vidéo » l'ajoute aux "
 "panneaux Stats de la page correspondante : il se remplira au fil de "
-"l'animation de la carte. « Créer une vidéo animée » enregistre le "
-"graphique qui se dessine mois après mois — idéal pour voir les années "
-"faire la course — en MP4, dans votre dossier des vidéos."
+"l'animation de la carte."
 msgstr ""
 "In a chart's menu, “Send to video panel” adds it to the Stats panels of "
-"the matching page: it will fill up as the map animation plays. “Create an"
-" animated video” records the chart drawing itself month after month — "
-"ideal to watch the years race — as an MP4, in your videos folder."
+"the matching page: it will fill up as the map animation plays."
+
+#: templates/guide.html:645
+msgid "Faites-en une vidéo"
+msgstr "Turn it into a video"
+
+#: templates/guide.html:646
+msgid ""
+"« Créer une vidéo animée », dans le menu d'un graphique, enregistre le "
+"graphique qui se dessine mois après mois — idéal pour voir les années "
+"faire la course."
+msgstr ""
+"“Create an animated video”, in a chart's menu, records the chart drawing "
+"itself month after month — perfect for watching the years race each "
+"other."
+
+#: templates/guide.html:646
+msgid ""
+"dans le menu du tableau de bord, enchaîne tous ses graphiques : une "
+"ouverture avec le nom du tableau, puis chaque graphique en fondu, les "
+"chiffres clés qui comptent jusqu'à leur valeur."
+msgstr ""
+"in the dashboard menu, plays all its charts in turn: an opening with the "
+"dashboard name, then each chart fading in, with key figures counting up "
+"to their value."
+
+#: templates/guide.html:647
+msgid ""
+"Ajoutez une musique : une de celles déjà choisies pour les vidéos de la "
+"carte, ou un fichier de votre ordinateur. Trop courte, elle est répétée ;"
+" elle s'éteint en fondu à la fin."
+msgstr ""
+"Add music: one of the tracks already chosen for the map videos, or a file"
+" from your computer. If it is too short, it loops; it fades out at the "
+"end."
+
+#: templates/guide.html:650
+msgid ""
+"La vidéo s'enregistre en temps réel : 30 secondes de vidéo prennent 30 "
+"secondes. Le MP4 arrive ensuite dans votre dossier des vidéos."
+msgstr ""
+"The video records in real time: 30 seconds of video take 30 seconds. The "
+"MP4 then lands in your videos folder."
 
 #: templates/menu_animation.html:19
 msgid "suivi activé"
@@ -16097,10 +16300,6 @@ msgstr "Import my finds"
 msgid "Renommer le tableau de bord"
 msgstr "Rename dashboard"
 
-#: templates/stats_page.html:101
-msgid "Présenter"
-msgstr "Present"
-
 #: templates/stats_page.html:117
 msgid "Ce tableau de bord est vide."
 msgstr "This dashboard is empty."
@@ -16181,10 +16380,6 @@ msgstr "Normal"
 msgid "Grande"
 msgstr "Tall"
 
-#: templates/stats_page.html:235
-msgid "Options d'affichage"
-msgstr "Display options"
-
 #: templates/stats_page.html:239
 msgid "En pourcentage, des périodes de tailles différentes se comparent mieux."
 msgstr "As percentages, periods of different lengths compare better."
@@ -16220,10 +16415,6 @@ msgstr "Show values"
 #: templates/stats_page.html:275
 msgid "Courbe lissée"
 msgstr "Smooth line"
-
-#: templates/stats_page.html:278
-msgid "Objectif"
-msgstr "Goal"
 
 #: templates/stats_page.html:283
 msgid "Prolonger à ce rythme"
@@ -16264,10 +16455,6 @@ msgid ""
 msgstr ""
 "They apply to every chart, except those with filters of their own. An "
 "empty field filters nothing."
-
-#: templates/stats_page.html:367
-msgid "Reprendre les filtres de la carte"
-msgstr "Use the map filters"
 
 #: templates/stats_page.html:374
 msgid "Tout effacer"
@@ -19023,4 +19210,26 @@ msgstr "Create the video"
 
 #~ msgid "Chargement de vos trouvailles…"
 #~ msgstr "Loading your finds…"
+
+#~ msgid ""
+#~ "Dans le menu d'un graphique, « "
+#~ "Envoyer en panneau vidéo » l'ajoute "
+#~ "aux panneaux Stats de la page "
+#~ "correspondante : il se remplira au "
+#~ "fil de l'animation de la carte. «"
+#~ " Créer une vidéo animée » enregistre"
+#~ " le graphique qui se dessine mois "
+#~ "après mois — idéal pour voir les"
+#~ " années faire la course — en "
+#~ "MP4, dans votre dossier des vidéos."
+#~ msgstr ""
+#~ "In a chart's menu, “Send to video"
+#~ " panel” adds it to the Stats "
+#~ "panels of the matching page: it "
+#~ "will fill up as the map animation"
+#~ " plays. “Create an animated video” "
+#~ "records the chart drawing itself month"
+#~ " after month — ideal to watch "
+#~ "the years race — as an MP4, "
+#~ "in your videos folder."
 

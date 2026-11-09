@@ -133,7 +133,11 @@ clavier, défilement automatique ; tranche la question ouverte du lot 5).
 Vidéo d'un tableau entier faite le 2026-11-09 (ouverture puis chaque
 graphique, chiffres qui comptent, fondus ; musique récente de la carte ou
 fichier, aussi pour la vidéo d'un graphique). Image du tableau entier
-(PNG ou presse-papiers) faite le 2026-11-09. Piste restante : lien carte
+(PNG ou presse-papiers) faite le 2026-11-09. Guide (`/guide` ›
+Statistiques) rattrapé le 2026-11-09 : il s'arrêtait au lot 6 — ajout
+d'« Actualiser », « Voir les valeurs », « Reprendre les filtres de la
+carte », défis, séries / records / objectifs, image du tableau,
+présentation, vidéos et musique. Piste restante : lien carte
 pour les autres sources (DNF, caches posées, Mes poses, Évolution — leurs
 pages n'ont pas de sélection persistée).
 
