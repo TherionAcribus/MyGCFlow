@@ -271,6 +271,14 @@
                                         <input type="checkbox" id="statsEdSmooth" class="form-check-input">
                                         <label for="statsEdSmooth" class="form-check-label">{{ _("Courbe lissée") }}</label>
                                     </div>
+                                    <div class="mb-2" id="statsEdGoalRow">
+                                        <label for="statsEdGoal" class="form-label">{{ _("Objectif") }}</label>
+                                        <input type="number" id="statsEdGoal" class="form-control form-control-sm stats-ed-goal" min="1" max="10000000" step="1" inputmode="numeric" placeholder="{{ _("Aucun") }}">
+                                    </div>
+                                    <div class="form-check mb-2" id="statsEdProjectionRow">
+                                        <input type="checkbox" id="statsEdProjection" class="form-check-input">
+                                        <label for="statsEdProjection" class="form-check-label">{{ _("Prolonger à ce rythme") }}</label>
+                                    </div>
                                     <div class="form-check mb-2" id="statsEdRecordRow">
                                         <input type="checkbox" id="statsEdRecord" class="form-check-input">
                                         <label for="statsEdRecord" class="form-check-label">{{ _("Mettre le record en avant") }}</label>

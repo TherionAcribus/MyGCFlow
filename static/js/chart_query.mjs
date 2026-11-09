@@ -298,6 +298,16 @@ function newCell(op) {
     return 0;
 }
 
+// Jour où un compte atteint `goal` (null : pas atteint).
+function goalDayOf(tally, goal) {
+    let running = 0;
+    for (const day of [...tally.keys()].sort((a, b) => a - b)) {
+        running += tally.get(day);
+        if (running >= goal) return day;
+    }
+    return null;
+}
+
 // Mesures calculées sur les jours d'une case (jour → nombre de lignes).
 const BY_DAY_OPS = ['max_per_day', 'streak', 'gap'];
 
@@ -554,6 +564,9 @@ export function runChartQuery(spec, table, options = {}) {
     for (const entry of entries) {
         const keyOf = elapsedUnit ? (r) => rowUnitIndex(elapsedUnit, table, r) - entry.startIndex : groupKey;
         const cells = new Map(splitValues.map((s) => [s, axisKeys.map(() => newCell(op))]));
+        // Objectif d'un comptage au total : jour par jour, pour dater le
+        // moment où il a été atteint.
+        const goalTally = spec.goal && kind === 'none' && op === 'count' && !splitKey ? new Map() : null;
         // Un stock ne compte pas les événements de la période.
         for (const r of stock ? [] : inPeriod[entry.index]) {
             const split = splitKey ? asList(splitKey(r)).map((k) => (remapSplit ? remapSplit(k) : k)) : [null];
@@ -574,6 +587,7 @@ export function runChartQuery(spec, table, options = {}) {
                         row[i].set(table.day[r], (row[i].get(table.day[r]) || 0) + 1);
                     } else {
                         row[i] += 1;
+                        if (goalTally) goalTally.set(table.day[r], (goalTally.get(table.day[r]) || 0) + 1);
                     }
                 }
             }
@@ -624,6 +638,7 @@ export function runChartQuery(spec, table, options = {}) {
             const records = BY_DAY_OPS.includes(op)
                 ? row.map((cell) => dayRecord(op, cell, { current: spec.measure.current, end: runEnd }))
                 : null;
+            let base = 0;
             let values = row.map((cell, i) => {
                 if (op === 'distinct') return cell.size;
                 if (op === 'mean') return cell.n ? cell.sum / cell.n : null;
@@ -642,6 +657,9 @@ export function runChartQuery(spec, table, options = {}) {
                         running++;
                     }
                 }
+                // Point de départ : le rythme d'une projection se compte
+                // sur ce que la période ajoute.
+                base = running;
                 values = values.map((v) => (running += v));
             }
 
@@ -671,6 +689,8 @@ export function runChartQuery(spec, table, options = {}) {
                 // record ou case hors période).
                 records: records ? records.map((rec, i) => (values[i] === null || rec.from === null
                     ? null : { from: rec.from, to: rec.to })) : null,
+                base,
+                goalDay: goalTally ? goalDayOf(goalTally, spec.goal.value) : null,
             });
         }
     }

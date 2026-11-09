@@ -334,6 +334,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         gap_longest: [t('Ma plus longue pause'), t('Le plus de jours sans trouvaille entre deux caches.')],
         streak_by_year: [t('Mes séries année par année'), t("La plus longue série de chaque année.")],
         best_month: [t('Mon meilleur mois'), t('Vos trouvailles mois par mois, le record mis en avant.')],
+        next_milestone: [t('Mon prochain cap'), t('Le prochain nombre rond, et quand vous y serez à ce rythme.')],
+        year_pace: [t('Mon année à ce rythme'), t("Vos trouvailles de l'année, et où vous finirez au 31 décembre.")],
+        year_curve: [t("Ma courbe de l'année, prolongée"), t("Le cumul de l'année, prolongé jusqu'au 31 décembre au rythme actuel.")],
         challenge_dt: [t('Ma grille D/T'), t('Les 81 combinaisons de difficulté et de terrain : celles qui manquent.')],
         challenge_calendar: [t('Mon calendrier 366'), t("Un jour de l'année sans trouvaille ? Les 366 jours, toutes années confondues.")],
         challenge_jasmer: [t('Ma grille Jasmer'), t('Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent.')],
@@ -352,6 +355,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         zone_caches: t('Les caches de la zone'),
         challenges: t('Mes défis'),
         records: t('Séries et records'),
+        goals: t('Objectifs et projections'),
     };
 
     function categoryLabel(dim, key, attributeName) {
@@ -605,6 +609,36 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         return t('du ${from} au ${to}', { from: dayFmt.format(fromDay(record.from)), to: dayFmt.format(fromDay(record.to)) });
     }
 
+    // Objectif et projection d'un chiffre clé (chart_goal.mjs › numberOutlook) :
+    // { progress, lines } — « 812 / 1 000 · 81 % », puis la date atteinte, la
+    // date estimée ou la fin de période à ce rythme.
+    function outlookLines(outlook, measure, { projection = false } = {}) {
+        const value = (v) => formatValue(v, measure);
+        const day = (d) => dayFmt.format(fromDay(d));
+        const lines = [];
+        let progress = '';
+        if (outlook.goal) {
+            progress = t('${value} / ${goal} · ${pct}', {
+                value: value(outlook.value), goal: value(outlook.goal), pct: pctFmt.format(outlook.ratio),
+            });
+            if (outlook.reached) {
+                lines.push(outlook.reachedDay !== null && outlook.reachedDay !== undefined
+                    ? t('Objectif atteint le ${date}', { date: day(outlook.reachedDay) })
+                    : t('Objectif atteint'));
+            } else if (outlook.eta !== null) {
+                lines.push(t('À ce rythme : ${goal} le ${date}', { goal: value(outlook.goal), date: day(outlook.eta) }));
+            } else if (outlook.short !== null) {
+                lines.push(t("À ce rythme : ${n} en fin de période, ${short} de moins que l'objectif", {
+                    n: value(outlook.projected), short: value(outlook.short),
+                }));
+            }
+        }
+        if (projection && outlook.projected !== null && !(outlook.goal && outlook.short !== null)) {
+            lines.push(t('À ce rythme : ${n} en fin de période', { n: value(outlook.projected) }));
+        }
+        return { progress, lines };
+    }
+
     // Titre par défaut d'un graphique sans titre : « Trouvailles par
     // année », « Caches actives par mois ». Une autre mesure qu'un compte,
     // hors des trouvailles, nomme sa source : « Visiteurs différents par
@@ -660,5 +694,6 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         challengeLines,
         challengeCellLabel,
         recordText,
+        outlookLines,
     };
 }

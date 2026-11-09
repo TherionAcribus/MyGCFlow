@@ -40,6 +40,7 @@ test('une entrée vide donne la description par défaut, avec un identifiant neu
         splitBy: null,
         filters: null,
         periods: null,
+        goal: null,
         compare: { layout: 'overlay', align: 'elapsed', normalize: 'none', toDate: true },
         view: { ...CHART_SPEC_DEFAULTS.view },
     });
@@ -62,10 +63,11 @@ test('une description valide ressort identique (point fixe)', () => {
         splitBy: null,
         filters: { cache_type: ['Traditional Cache'], country: ['France'] },
         periods: [{ kind: 'year', year: 2025 }, { kind: 'year', year: 2024, label: 'L\'an dernier' }],
+        goal: null,
         compare: { layout: 'delta', align: 'elapsed', normalize: 'percent', toDate: false },
         view: {
             chart: 'line', orientation: 'horizontal', stack: true, palette: 'gc',
-            labels: true, log: true, top: 20, sort: 'value', smooth: true, record: true,
+            labels: true, log: true, top: 20, sort: 'value', smooth: true, record: true, projection: false,
         },
     };
     const spec = normalizeChartSpec(raw);

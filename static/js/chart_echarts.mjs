@@ -29,6 +29,7 @@
 
 import { OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
 import { challengeSummary } from './chart_challenge.mjs';
+import { niceAxisMax, numberOutlook, projectionValues } from './chart_goal.mjs';
 
 // Au-delà, les étiquettes de valeur sur chaque barre deviennent du bruit.
 const MAX_LABELLED_BARS = 24;
@@ -207,7 +208,12 @@ function axisTooltipFormatter(result, spec, ctx, identities) {
         const list = Array.isArray(params) ? params : [params];
         if (!list.length) return '';
         const i = list[0].dataIndex;
-        const rows = list.map((p) => {
+        const rows = list.filter((p) => {
+            // Projection : seulement là où elle a une valeur.
+            if (p.seriesIndex < result.series.length) return true;
+            const raw = typeof p.value === 'object' && p.value !== null ? p.value.value : p.value;
+            return raw !== null && raw !== undefined && raw !== '-';
+        }).map((p) => {
             const identity = identities[p.seriesIndex] || {};
             const s = result.series[p.seriesIndex];
             const raw = typeof p.value === 'object' && p.value !== null ? p.value.value : p.value;
@@ -441,8 +447,41 @@ function overlayOption(result, spec, ctx) {
     const series = result.series.map((s, i) => seriesOption(s, identities[i], result, spec, ctx, {
         chart, horizontal, stacked, single, perItem,
     }));
+    // Projection et objectif (courbe de cumul) : courbes prolongées en
+    // tirets, ligne de l'objectif, axe qui les contient.
+    const tooltipIdentities = [...identities];
+    const goal = spec.goal?.value ?? null;
+    let reach = goal ?? 0;
+    if (spec.view.projection && !stacked && ctx.today !== null && ctx.today !== undefined) {
+        result.series.forEach((s, i) => {
+            const values = projectionValues(result, s, ctx.today);
+            if (!values) return;
+            reach = Math.max(reach, ...values.filter((v) => v !== null));
+            const color = identities[i].color;
+            const name = identities[i].name + ' — ' + ctx.labels.t('à ce rythme');
+            tooltipIdentities.push({ name, color });
+            series.push({
+                type: 'line', name, data: values, color, silent: true, showSymbol: false, symbol: 'none',
+                lineStyle: { width: 2, type: 'dashed', color }, connectNulls: true, z: 1,
+                emphasis: { disabled: true },
+            });
+        });
+    }
+    if (goal && series[0]) {
+        series[0].markLine = {
+            silent: true,
+            symbol: 'none',
+            lineStyle: { type: 'dashed', color: tokens.text, width: 1 },
+            label: { position: 'insideEndTop', color: tokens.text, formatter: () => ctx.labels.t('Objectif : ${n}', { n: ctx.labels.formatValue(goal, spec.measure) }) },
+            data: [{ yAxis: goal }],
+        };
+    }
     const keys = categoryAxis(result, ctx, { isBar, horizontal });
-    const values = valueAxis(spec, result, ctx, { log: spec.view.log });
+    const values = valueAxis(spec, result, ctx, {
+        log: spec.view.log,
+        // L'objectif et la fin projetée restent dans le cadre.
+        max: reach ? (extent) => niceAxisMax(Math.max(extent.max, reach)) : undefined,
+    });
     const option = {
         ...common(ctx, identities.length > 1),
         grid: {
@@ -452,11 +491,12 @@ function overlayOption(result, spec, ctx) {
             right: horizontal ? 32 : (isBar ? 16 : 36),
             // Record épinglé au-dessus de la plus haute valeur : place pour
             // l'épingle.
-            top: identities.length > 1 ? 36 : (spec.view.record && !horizontal ? 52 : 16),
+            // Objectif : place pour son étiquette, au-dessus de la ligne.
+            top: Math.max(identities.length > 1 ? 36 : (spec.view.record && !horizontal ? 52 : 16), goal ? 34 : 0),
             bottom: slider ? 40 : 8,
             containLabel: true,
         },
-        tooltip: axisTooltip(result, spec, ctx, identities, isBar),
+        tooltip: axisTooltip(result, spec, ctx, tooltipIdentities, isBar),
         xAxis: horizontal ? values : keys,
         yAxis: horizontal ? keys : values,
         series,
@@ -742,7 +782,8 @@ export function buildChartOption(result, spec, ctx) {
 // Chiffre clé : une valeur par période (ou par source) ; la première porte
 // l'écart avec la deuxième (« +18 % par rapport à 2025 », « par rapport aux
 // trouvailles reçues »).
-export function numberModel(result, spec, { labels }) {
+export function numberModel(result, spec, ctx) {
+    const { labels } = ctx;
     const multiSource = (result.sources?.length || 1) > 1;
     const many = result.periods.length > 1 || multiSource;
     const blocks = result.series.map((s) => ({
@@ -753,6 +794,15 @@ export function numberModel(result, spec, { labels }) {
         record: labels.recordText(s.records?.[0]),
         delta: null,
     }));
+    // Objectif / projection : sur la première valeur.
+    const s0 = result.series[0];
+    if (s0 && blocks[0] && (spec.goal || spec.view.projection) && ctx.today !== null && ctx.today !== undefined) {
+        const outlook = numberOutlook({
+            value: s0.values[0] ?? 0, goal: spec.goal?.value ?? null,
+            entry: result.periods[s0.periodIndex], today: ctx.today, goalDay: s0.goalDay ?? null,
+        });
+        blocks[0].outlook = { ...outlook, ...labels.outlookLines(outlook, spec.measure, { projection: spec.view.projection }) };
+    }
     if (many && blocks.length >= 2 && blocks[0].value !== null && blocks[1].value !== null) {
         const diff = blocks[0].value - blocks[1].value;
         const ratio = blocks[1].value ? diff / blocks[1].value : null;

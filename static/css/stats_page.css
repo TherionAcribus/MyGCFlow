@@ -358,6 +358,34 @@ html {
     margin-top: 2px;
     font-size: 0.8rem;
 }
+/* Objectif d'un chiffre clé : barre de progression (accent), texte, date
+   estimée à ce rythme. */
+.stats-number-outlook {
+    width: min(100%, 260px);
+    margin: 8px auto 0;
+}
+.stats-goal {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--chart-empty, #eef1f5);
+    overflow: hidden;
+}
+.stats-goal-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--chart-series-1, #2a78d6);
+}
+.stats-goal-text {
+    margin-top: 4px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+.stats-goal-line {
+    margin-top: 2px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
 .stats-number-delta {
     margin-top: 6px;
     font-size: 0.82rem;

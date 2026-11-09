@@ -22,6 +22,7 @@ import {
     allowedNormalize,
     allowedSplitBy,
     chartSources,
+    goalApplies,
     createChartSpec,
     hasSeveralSeries,
     MAX_EXTRA_SOURCES,
@@ -1399,7 +1400,7 @@ function computeResult(spec, dashboard) {
 
 function chartContext() {
     return { labels: state.labels, tokens: state.tokens, typeColors: state.typeColors, attributeName,
-        reduceMotion: state.reduceMotion };
+        reduceMotion: state.reduceMotion, today: state.today };
 }
 
 // Note sous un graphique : ce qui n'est pas compté ou a été coupé.
@@ -1460,9 +1461,41 @@ function renderNumber(container, result, spec, dashboard) {
                 block.append(button);
             }
         }
+        if (entry.outlook) block.append(outlookBlock(entry.outlook));
         if (entry.delta) block.append(deltaLine(entry.delta));
         container.append(block);
     }
+}
+
+// Objectif (barre de progression) et projection d'un chiffre clé.
+function outlookBlock(outlook) {
+    const wrap = document.createElement('div');
+    wrap.className = 'stats-number-outlook';
+    if (outlook.goal) {
+        const bar = document.createElement('div');
+        bar.className = 'stats-goal';
+        bar.setAttribute('role', 'progressbar');
+        bar.setAttribute('aria-valuemin', '0');
+        bar.setAttribute('aria-valuemax', String(outlook.goal));
+        bar.setAttribute('aria-valuenow', String(Math.min(outlook.value, outlook.goal)));
+        bar.setAttribute('aria-valuetext', outlook.progress);
+        bar.classList.toggle('is-reached', outlook.reached);
+        const fill = document.createElement('div');
+        fill.className = 'stats-goal-fill';
+        fill.style.width = (outlook.ratio * 100).toFixed(1) + '%';
+        bar.append(fill);
+        const progress = document.createElement('div');
+        progress.className = 'stats-goal-text';
+        progress.textContent = outlook.progress;
+        wrap.append(bar, progress);
+    }
+    for (const text of outlook.lines) {
+        const line = document.createElement('div');
+        line.className = 'stats-goal-line';
+        line.textContent = text;
+        wrap.append(line);
+    }
+    return wrap;
 }
 
 // « ▲ +12 (+18 %) par rapport à 2025 » : la flèche porte le sens (et sa
@@ -1798,9 +1831,10 @@ function sendToPanel(spec) {
     if (out.error) return;
     const pageName = PANEL_PAGE_NAMES[out.page]();
     const intro = t("Le graphique devient un panneau de la page « ${page} », qui se remplit au fil de l'animation.", { page: pageName });
-    const warning = out.dropped.length
+    let warning = out.dropped.some((d) => d !== 'goal')
         ? ' ' + t('Il suit la période et les filtres de la carte : la période, les filtres et le découpage de ce graphique ne sont pas repris.')
         : '';
+    if (out.dropped.includes('goal')) warning += ' ' + t("L'objectif et la projection restent sur cette page.");
     showConfirmation(intro + warning, t('Envoyer en panneau vidéo'), () => appendPanel(out), null, { confirmText: t('Envoyer') });
 }
 
@@ -1895,7 +1929,9 @@ function videoPainter(spec, result, { width, height }) {
     const stacked = spec.view.stack && result.series.length > 1;
     const max = spec.view.log ? undefined : niceCeil(valueMax(result, { stacked }));
     const kind = spec.view.chart === 'bar' ? 'bar' : 'line';
-    const ctx = { ...chartContext(), tokens, width: chartW / scale };
+    // Sans « aujourd'hui » : pas de projection prolongeant une courbe à
+    // moitié révélée.
+    const ctx = { ...chartContext(), tokens, width: chartW / scale, today: null };
     const heads = axisLabels(result, ctx, { long: true });
     const title = chartTitle(spec);
     const font = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
@@ -2506,7 +2542,9 @@ function renderGallery() {
             const { title, description } = state.labels.question(question.id);
             // L'élément de l'aperçu est celui qui sera ajouté : son résultat
             // est déjà en cache au moment du choix.
-            const item = previous.get(question.id) || itemFromQuestion(question.id, { title, dataset: dashboard.dataset });
+            // « Mon prochain cap » : au-dessus du total des trouvailles.
+            const item = previous.get(question.id)
+                || itemFromQuestion(question.id, { title, dataset: dashboard.dataset, total: tableOf('finds').n });
             if (item) state.gallery.items.set(question.id, item);
             return card(question.id, question.icon, title, description, { preview: Boolean(item) });
         });
@@ -2874,6 +2912,12 @@ function syncEditorForm() {
     $('statsEdLabels').checked = spec.view.labels;
     $('statsEdSmooth').checked = spec.view.smooth;
     $('statsEdRecord').checked = spec.view.record;
+    // Objectif, projection : chiffre clé qui compte, courbe de cumul.
+    const goalable = goalApplies(spec);
+    $('statsEdGoalRow').hidden = !goalable;
+    $('statsEdProjectionRow').hidden = !goalable;
+    $('statsEdGoal').value = spec.goal ? String(spec.goal.value) : '';
+    $('statsEdProjection').checked = spec.view.projection;
     $('statsEdLog').checked = spec.view.log;
 
     const chart = spec.view.chart;
@@ -2921,6 +2965,7 @@ function readEditorForm() {
         splitBy: $('statsEdSplitBy').value || null,
         periods: readEditorPeriods(),
         filters: $('statsEdFilterMode').value === 'own' ? readFilterForm($('statsEdFiltersForm')) : null,
+        goal: Number($('statsEdGoal').value) > 0 ? { value: Math.round(Number($('statsEdGoal').value)) } : null,
         compare: {
             ...spec.compare,
             layout: $('statsEdLayout').value || spec.compare.layout,
@@ -2937,6 +2982,7 @@ function readEditorForm() {
             labels: $('statsEdLabels').checked,
             smooth: $('statsEdSmooth').checked,
             record: $('statsEdRecord').checked,
+            projection: $('statsEdProjection').checked,
             log: $('statsEdLog').checked,
             stack: $('statsEdStack').checked,
             palette: $('statsEdPaletteRow').hidden ? spec.view.palette : $('statsEdPalette').value,
@@ -3219,7 +3265,7 @@ function bindEvents() {
     $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
     for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
-        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdRecord', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
+        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdRecord', 'statsEdGoal', 'statsEdProjection', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
         'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList']) {
         $(id).addEventListener('change', onEditorChange);
     }

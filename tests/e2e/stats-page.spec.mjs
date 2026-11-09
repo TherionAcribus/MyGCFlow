@@ -199,8 +199,8 @@ test('galerie : une question ajoute son graphique, qui survit au rechargement', 
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
   // Questions de la famille « Mes données » seulement (pas celles d'Évolution).
-  await expect(gallery.locator('[data-question]')).toHaveCount(41);
-  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(10);
+  await expect(gallery.locator('[data-question]')).toHaveCount(44);
+  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(11);
   await expect(gallery.locator('[data-question^="evo_"]')).toHaveCount(0);
   await gallery.locator('[data-question="weekdays"]').click();
   await expect(gallery).toBeHidden();
@@ -1238,8 +1238,8 @@ test('galerie : chaque question montre un aperçu sur mes données, l\'ajout s\'
   await page.locator('#btnStatsAddChart').click();
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
-  // « Partir de zéro » n'a pas d'aperçu ; les 40 questions en ont un.
-  await expect(gallery.locator('[data-preview]')).toHaveCount(40);
+  // « Partir de zéro » n'a pas d'aperçu ; les 43 questions en ont un.
+  await expect(gallery.locator('[data-preview]')).toHaveCount(43);
   await expect(gallery.locator('[data-question="custom"] [data-preview]')).toHaveCount(0);
   const preview = async (id) => (await snapshot(page)).gallery.find((g) => g.id === id);
   // Haut de la galerie : dessiné dès l'ouverture.
@@ -1569,6 +1569,60 @@ test('séries et records : jours datés, série en cours, record épinglé, cart
   await expect(page).toHaveURL(/\/$/);
   const selection = await page.evaluate(() => JSON.parse(localStorage.getItem('filtersSelection')));
   expect(selection.dates).toEqual({ startDate: '2026-01-01', endDate: '2026-01-06' });
+});
+
+// ---------------------------------------------------------------------------
+// Objectifs et projections
+// ---------------------------------------------------------------------------
+
+// Fixture : 6 trouvailles du 1ᵉʳ au 6 janvier 2026 ; on est le 11 janvier
+// (11 jours écoulés, 6/11 trouvaille par jour).
+test('objectifs et projections : prochain cap, année à ce rythme, courbe prolongée', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-01-11T10:00:00'));
+  const errors = await openStats(page);
+  const add = async (id) => {
+    await page.locator('#btnStatsAddChart').click();
+    await expect(page.locator('#statsGalleryModal')).toBeVisible();
+    await page.locator(`#statsGalleryModal [data-question="${id}"]`).click();
+    await expect(page.locator('#statsGalleryModal')).toBeHidden();
+  };
+  for (const id of ['next_milestone', 'year_pace', 'year_curve']) await add(id);
+  const cards = async () => (await snapshot(page)).cards.slice(-3);
+  await expect.poll(async () => (await cards()).every((c) => c.rendered)).toBe(true);
+  const [milestone, pace, curve] = await cards();
+
+  // Prochain cap : 10, atteint à ce rythme le 19 janvier.
+  const cap = card(page, milestone.id);
+  await expect(cap.locator('.stats-goal')).toHaveAttribute('aria-valuenow', '6');
+  await expect(cap.locator('.stats-goal')).toHaveAttribute('aria-valuemax', '10');
+  await expect(cap.locator('.stats-goal-text')).toHaveText(/^6 \/ 10 · 60\s%$/);
+  await expect(cap.locator('.stats-goal-line')).toHaveText('À ce rythme : 10 le 19 janv. 2026');
+  // Année : 6 + 6/11 × 354 jours restants.
+  await expect(card(page, pace.id).locator('.stats-goal-line')).toHaveText('À ce rythme : 199 en fin de période');
+
+  // Courbe de l'année : prolongée en tirets jusqu'au 31 décembre.
+  const option = async () => page.evaluate((id) => {
+    const host = document.querySelector(`.stats-card[data-chart-id="${id}"] .stats-chart`);
+    const o = window.echarts.getInstanceByDom(host).getOption();
+    return { count: o.series.length, dashed: o.series[1]?.lineStyle?.type, last: o.series[1]?.data.at(-1), goal: o.series[0].markLine?.data?.[0]?.yAxis };
+  }, curve.id);
+  let drawn = await option();
+  expect(drawn.count).toBe(2);
+  expect(drawn.dashed).toBe('dashed');
+  expect(Math.round(drawn.last)).toBe(199);
+
+  // Un objectif posé dans l'éditeur : la ligne apparaît.
+  await cardAction(page, curve.id, 'edit');
+  await expect(page.locator('#statsEditorModal')).toBeVisible();
+  await page.locator('#statsEdOptions').evaluate((el) => { el.open = true; });
+  await expect(page.locator('#statsEdGoalRow')).toBeVisible();
+  await expect(page.locator('#statsEdProjection')).toBeChecked();
+  await page.locator('#statsEdGoal').fill('300');
+  await page.locator('#statsEdGoal').dispatchEvent('change');
+  await page.locator('#btnStatsEdSave').click();
+  await expect(page.locator('#statsEditorModal')).toBeHidden();
+  await expect.poll(async () => (await option()).goal).toBe(300);
+  expect(errors).toEqual([]);
 });
 
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {

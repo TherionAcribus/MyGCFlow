@@ -623,6 +623,40 @@ vient de jours précis, que le résultat garde (`series.records[i]` =
   `streak_current`, `gap_longest`, `record`, `streak_by_year`,
   `best_month`).
 
+## Objectifs et projections
+
+`spec.goal` (`{ value }`, 1 à 10 000 000) et `view.projection`, là où ils
+ont un sens (`goalApplies`) : un chiffre clé qui compte (`count`,
+`distinct`) ou une courbe / aire de cumul. Calculs purs dans
+chart_goal.mjs.
+
+- **Rythme** (`periodPace`) : ce que la période a ajouté, divisé par ses
+  jours écoulés (aujourd'hui compris). « Toute la période » finit à la
+  dernière trouvaille : son rythme court jusqu'à aujourd'hui, et elle n'a
+  pas de fin à projeter.
+- **Chiffre clé** (`numberOutlook`, `outlookLines`) : barre de progression
+  (`role="progressbar"`) et « 812 / 1 000 · 81 % » ; puis « Objectif
+  atteint le … » (jour daté par le moteur, `series.goalDay`, pour un
+  comptage), « À ce rythme : 1 000 le … », ou « … en fin de période, N de
+  moins que l'objectif » ; avec la projection, « À ce rythme : N en fin de
+  période ». Période finie : la progression seulement.
+- **Courbe de cumul** (`projectionValues`) : prolongée en tirets depuis la
+  case d'aujourd'hui (la première qui finit aujourd'hui ou après — un
+  29 février d'année ordinaire garde une valeur de cumul) jusqu'à la fin
+  de la période, au rythme de ce que la période a ajouté (`series.base` :
+  départ d'un cumul « depuis le début »). Ligne d'objectif en tirets ;
+  l'axe contient objectif et fin projetée (`niceAxisMax`, borne ronde).
+  Seulement une période en cours, des valeurs non mises à l'échelle, et
+  hors vidéo (`ctx.today` absent : une courbe à moitié révélée ne se
+  prolonge pas).
+- Éditeur : champ « Objectif » et case « Prolonger à ce rythme » dans les
+  options. Panneau vidéo : objectif et projection ne suivent pas
+  (`dropped: 'goal'`, signalé).
+- Galerie : groupe « Objectifs et projections » — `next_milestone` (objectif
+  posé à l'ajout : le cap rond au-dessus du total, `nextMilestone`),
+  `year_pace`, `year_curve` ; « Suis-je en avance sur l'an dernier ? »
+  prolonge l'année en cours.
+
 ## Tableaux de bord (`dashboard_model.mjs`)
 
 `{ v: 1, active, dashboards: [{ id, name, period, filters, items: [{ size, spec }] }] }`
@@ -684,6 +718,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   dessin, liens carte et panneau).
 - Séries et records : `chart_records.test.mjs` (`dayRecord`, calcul par
   case, libellés, épingle, liens carte et panneau).
+- Objectifs et projections : `chart_goal.test.mjs` (caps, rythme, bilan,
+  textes, cumul prolongé, axe, spec).
 - Vignettes de la galerie : `thumbnailOption` dans `chart_echarts.test.mjs`
   (chaque forme : barres, aire, anneau, écart, côte à côte, grille, radar,
   calendrier).

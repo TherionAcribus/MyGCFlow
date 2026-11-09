@@ -125,9 +125,12 @@ des graphiques (un canvas refusait « inherit » : tout le texte sortait en
 10 px sans-serif). Séries et records faits le 2026-11-09 (plus longue
 série, série en cours, plus longue pause, meilleure journée datées ; « Voir
 sur la carte » de la série ; record épinglé ; groupe « Séries et records »
-de la galerie). Pistes restantes, fonctions : objectif et projection,
-vidéo d'un tableau entier avec musique, mode présentation, lien carte pour
-les autres sources.
+de la galerie). Objectifs et projections faits le 2026-11-09 (objectif d'un
+chiffre clé ou d'un cumul, barre de progression, date estimée « à ce
+rythme », courbe prolongée en tirets ; « Mon prochain cap »). Pistes
+restantes, fonctions : mode présentation (plein écran, un graphique par
+écran), puis vidéo d'un tableau entier avec musique (le même
+enchaînement enregistré), lien carte pour les autres sources.
 
 Décisions prises avec l'utilisateur :
 

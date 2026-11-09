@@ -131,5 +131,6 @@ export function panelFromSpec(spec, { title = '', periods = null, filters = null
     if (used.length > 1 || used.some((p) => p.kind !== 'all' && p.kind !== 'dashboard')) dropped.push('periods');
     if (Object.values(filters || spec.filters || {}).some((v) => Array.isArray(v) && v.length)) dropped.push('filters');
     if (spec.splitBy) dropped.push('split');
+    if (spec.goal || spec.view.projection) dropped.push('goal');
     return { list: target.list, page: target.page, panel, dropped };
 }

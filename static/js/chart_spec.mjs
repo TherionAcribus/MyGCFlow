@@ -226,11 +226,13 @@ export const CHART_SPEC_DEFAULTS = Object.freeze({
     splitBy: null,
     filters: null,
     periods: null,
+    // Objectif ({ value }) : un chiffre clé (compte) ou une courbe de cumul.
+    goal: null,
     // Alignement par défaut = celui de l'axe par défaut (l'année, axe de temps).
     compare: Object.freeze({ layout: 'overlay', align: 'elapsed', normalize: 'none', toDate: true }),
     view: Object.freeze({
         chart: 'bar', orientation: 'vertical', stack: false, palette: 'auto',
-        labels: false, log: false, top: 12, sort: 'natural', smooth: false, record: false,
+        labels: false, log: false, top: 12, sort: 'natural', smooth: false, record: false, projection: false,
     }),
 });
 
@@ -558,12 +560,28 @@ function normalizeCompare(raw, spec) {
     };
 }
 
+// Objectif et projection : un chiffre clé qui compte (trouvailles, caches,
+// jours…) ou une courbe de cumul.
+export const GOAL_RANGE = Object.freeze([1, 10000000]);
+export function goalApplies({ measure, groupBy, view } = {}) {
+    const chart = view?.chart;
+    if (groupBy === 'none' && chart === 'number') return ['count', 'distinct'].includes(measure?.op);
+    return measure?.op === 'cumulative' && (chart === 'line' || chart === 'area');
+}
+
+function normalizeGoal(raw, spec) {
+    if (!isObject(raw) || !goalApplies(spec)) return null;
+    const value = strictInt(raw.value, GOAL_RANGE);
+    return value === null ? null : { value };
+}
+
 function normalizeView(raw, spec) {
     const src = isObject(raw) ? raw : {};
     const defaults = CHART_SPEC_DEFAULTS.view;
     const charts = allowedCharts(spec);
+    const chart = choice(src.chart, charts, charts[0]);
     return {
-        chart: choice(src.chart, charts, charts[0]),
+        chart,
         orientation: choice(src.orientation, CHART_ORIENTATIONS, defaults.orientation),
         stack: bool(src.stack, defaults.stack),
         palette: choice(src.palette, CHART_PALETTES, defaults.palette),
@@ -574,6 +592,8 @@ function normalizeView(raw, spec) {
         smooth: bool(src.smooth, defaults.smooth),
         // Mettre le record en avant (barres, courbes, aires d'une série).
         record: bool(src.record, defaults.record),
+        // Prolonger à ce rythme (chart_goal.mjs), là où un objectif a un sens.
+        projection: bool(src.projection, defaults.projection) && goalApplies({ ...spec, view: { chart } }),
     };
 }
 
@@ -619,6 +639,7 @@ export function normalizeChartSpec(raw, newId = newChartId) {
     const view = normalizeView(src.view, spec);
     spec.compare = normalizeCompare(src.compare, { ...spec, view });
     spec.view = view;
+    spec.goal = normalizeGoal(src.goal, spec);
     return spec;
 }
 

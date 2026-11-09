@@ -27,6 +27,7 @@ import {
     sourceFamily,
 } from './chart_spec.mjs';
 import { ymdOfDay } from './stats_model.mjs';
+import { nextMilestone } from './chart_goal.mjs';
 
 export const DASHBOARDS_VERSION = 1;
 export const MAX_DASHBOARDS = 20;
@@ -164,7 +165,7 @@ const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
 const EVO = 'evolution:1';
 const EVO_ARCHIVED = 'evolution:1:archived';
 
-export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'challenges', 'records', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'challenges', 'records', 'goals', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
 
 export const QUESTIONS = Object.freeze([
     { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
@@ -173,7 +174,7 @@ export const QUESTIONS = Object.freeze([
     { id: 'by_year', group: 'overview', icon: 'ti-chart-bar', size: 'M', spec: { groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar', labels: true } } },
     { id: 'progress', group: 'overview', icon: 'ti-chart-line', size: 'M', spec: { groupBy: 'month', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'area' } } },
 
-    { id: 'ahead', group: 'compare', icon: 'ti-run', size: 'M', spec: { groupBy: 'day_of_year', measure: { op: 'cumulative' }, periods: THIS_AND_LAST_YEAR, view: { chart: 'line' }, compare: { toDate: false } } },
+    { id: 'ahead', group: 'compare', icon: 'ti-run', size: 'M', spec: { groupBy: 'day_of_year', measure: { op: 'cumulative' }, periods: THIS_AND_LAST_YEAR, view: { chart: 'line', projection: true }, compare: { toDate: false } } },
     { id: 'year_vs_last', group: 'compare', icon: 'ti-arrows-diff', size: 'M', spec: { groupBy: 'month_of_year', periods: THIS_AND_LAST_YEAR, view: { chart: 'bar' }, compare: { toDate: false } } },
     { id: 'year_delta', group: 'compare', icon: 'ti-plus-minus', size: 'M', spec: { groupBy: 'month_of_year', periods: THIS_AND_LAST_YEAR, view: { chart: 'bar' }, compare: { layout: 'delta' } } },
     { id: 'vs_previous_12', group: 'compare', icon: 'ti-scale', size: 'S', spec: { groupBy: 'none', periods: [{ kind: 'rolling', unit: 'month', count: 12 }, { kind: 'previous' }], view: { chart: 'number' } } },
@@ -217,6 +218,12 @@ export const QUESTIONS = Object.freeze([
     { id: 'streak_by_year', group: 'records', icon: 'ti-flame', size: 'M', spec: { groupBy: 'year', measure: { op: 'streak' }, periods: [{ kind: 'all' }], view: { chart: 'bar', record: true } } },
     { id: 'best_month', group: 'records', icon: 'ti-chart-bar', size: 'L', spec: { groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'bar', record: true } } },
 
+    // Objectifs et projections (chart_goal.mjs). `goal: 'next'` : le cap rond
+    // au-dessus du total, posé à l'ajout (itemFromQuestion › total).
+    { id: 'next_milestone', group: 'goals', icon: 'ti-target-arrow', size: 'S', goal: 'next', spec: { groupBy: 'none', periods: [{ kind: 'all' }], view: { chart: 'number' } } },
+    { id: 'year_pace', group: 'goals', icon: 'ti-gauge', size: 'S', spec: { groupBy: 'none', periods: [{ kind: 'current', unit: 'year' }], view: { chart: 'number', projection: true } } },
+    { id: 'year_curve', group: 'goals', icon: 'ti-chart-line', size: 'M', spec: { groupBy: 'day_of_year', measure: { op: 'cumulative' }, periods: [{ kind: 'current', unit: 'year' }], view: { chart: 'area', projection: true } } },
+
     // Mes DNF.
     { id: 'dnf_by_year', group: 'dnf', icon: 'ti-mood-sad', size: 'M', spec: { source: 'dnf', groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
     { id: 'finds_vs_dnf', group: 'dnf', icon: 'ti-scale', size: 'M', spec: { source: 'finds', extraSources: ['dnf'], groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'line' } } },
@@ -245,10 +252,11 @@ export function questionById(id) {
 // Nouvel élément depuis une question (titre laissé vide : le titre par
 // défaut suit la mesure et le regroupement ; celui de la question est posé
 // par l'appelant, qui a la traduction).
-export function itemFromQuestion(id, { newId = newChartId, title = '', dataset = null } = {}) {
+export function itemFromQuestion(id, { newId = newChartId, title = '', dataset = null, total = 0 } = {}) {
     const question = questionById(id);
     if (!question) return null;
-    let spec = createChartSpec({ ...question.spec, title }, newId);
+    const goal = question.goal === 'next' ? { value: nextMilestone(total) } : question.spec.goal;
+    let spec = createChartSpec({ ...question.spec, title, goal }, newId);
     if (questionFamily(question) === 'evolution') {
         if (!dataset) return null;
         spec = { ...rebindEvolution(spec, dataset), id: spec.id };
