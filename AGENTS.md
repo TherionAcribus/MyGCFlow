@@ -323,6 +323,9 @@ Autres repères :
   envoyé au document — la page relit la date sans rechargement (exemple :
   « passage à une nouvelle année » dans stats-page.spec.mjs). Le dernier
   test du fichier vide la base : un nouveau test va AVANT lui.
+  Mode présentation : relevé `presentation` du même instantané ; le
+  défilement automatique se teste avec le délai de 5 s (`expect.poll`
+  avec un délai de 8 s), sans horloge figée.
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

@@ -753,3 +753,139 @@ body > .ts-dropdown {
 .stats-map-filters-report ul {
     padding-left: 1.2rem;
 }
+
+/* ------------------------------------------------------------------------
+   Mode présentation : un graphique par écran (stats_page.js › Mode
+   présentation). Plein écran si le navigateur l'accorde, sinon toute la
+   fenêtre.
+   ------------------------------------------------------------------------ */
+.stats-present {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: grid;
+    /* Titre, graphique, note, commandes (la barre de progression est en
+       position absolue, hors de la grille). */
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 8px;
+    padding: 20px clamp(16px, 4vw, 56px) 16px;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+.stats-present[hidden] {
+    display: none;
+}
+body.is-presenting {
+    overflow: hidden;
+}
+/* La place réservée à la barre de défilement resterait visible à droite. */
+html:has(body.is-presenting) {
+    overflow: hidden;
+    scrollbar-gutter: auto;
+}
+.stats-present-progress {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: transparent;
+}
+.stats-present-progress > div {
+    width: 0;
+    height: 100%;
+    background: var(--chart-series-1, #2a78d6);
+}
+.stats-present-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+.stats-present-title {
+    margin: 0;
+    font-size: clamp(1.3rem, 2.4vw, 2rem);
+    font-weight: 600;
+    color: var(--color-heading);
+}
+.stats-present-body {
+    min-height: 0;
+    overflow: auto;
+    transition: opacity 0.35s ease;
+}
+.stats-present-body.is-entering {
+    opacity: 0;
+    transition: none;
+}
+.stats-present-chart {
+    width: 100%;
+}
+.stats-present-number {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.stats-present-number .stats-number-value {
+    font-size: clamp(4rem, 14vw, 10rem);
+}
+.stats-present-number .stats-number-caption,
+.stats-present-number .stats-number-record,
+.stats-present-number .stats-goal-text,
+.stats-present-number .stats-goal-line,
+.stats-present-number .stats-number-delta {
+    font-size: clamp(1rem, 1.8vw, 1.4rem);
+}
+.stats-present-number .stats-number-outlook {
+    width: min(100%, 520px);
+}
+.stats-present-number .stats-goal {
+    height: 14px;
+    border-radius: 7px;
+}
+/* Pas de lien vers la carte pendant une présentation. */
+.stats-present .stats-number-map {
+    display: none;
+}
+.stats-present-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+.stats-present-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    transition: opacity 0.3s ease;
+}
+.stats-present-controls .form-select {
+    width: auto;
+}
+.stats-present-controls .btn-icon {
+    width: 34px;
+    height: 31px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.stats-present-count {
+    min-width: 4.5em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+}
+.stats-present.is-idle {
+    cursor: none;
+}
+.stats-present.is-idle .stats-present-controls:not(:focus-within) {
+    opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+    .stats-present-body,
+    .stats-present-controls {
+        transition: none;
+    }
+}
+

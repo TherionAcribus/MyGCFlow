@@ -127,10 +127,11 @@ série, série en cours, plus longue pause, meilleure journée datées ; « Voir
 sur la carte » de la série ; record épinglé ; groupe « Séries et records »
 de la galerie). Objectifs et projections faits le 2026-11-09 (objectif d'un
 chiffre clé ou d'un cumul, barre de progression, date estimée « à ce
-rythme », courbe prolongée en tirets ; « Mon prochain cap »). Pistes
-restantes, fonctions : mode présentation (plein écran, un graphique par
-écran), puis vidéo d'un tableau entier avec musique (le même
-enchaînement enregistré), lien carte pour les autres sources.
+rythme », courbe prolongée en tirets ; « Mon prochain cap »). Mode
+présentation fait le 2026-11-09 (plein écran, un graphique par écran,
+clavier, défilement automatique ; tranche la question ouverte du lot 5).
+Pistes restantes, fonctions : vidéo d'un tableau entier avec musique (le
+même enchaînement enregistré), lien carte pour les autres sources.
 
 Décisions prises avec l'utilisateur :
 
@@ -446,5 +447,6 @@ suite E2E complète en fin de lot seulement.
 ## 8. Questions ouvertes
 
 - Hauteur des cartes : fixe par taille, ou réglable ?
-- Faut-il un mode « présentation » plein écran d'un graphique ?
+- Faut-il un mode « présentation » plein écran d'un graphique ? → oui,
+  fait le 2026-11-09 (tout le tableau, un graphique par écran).
 - Le tableau de bord par défaut : liste exacte à valider au lot 1.

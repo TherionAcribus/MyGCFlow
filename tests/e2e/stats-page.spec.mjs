@@ -1625,6 +1625,63 @@ test('objectifs et projections : prochain cap, année à ce rythme, courbe prolo
   expect(errors).toEqual([]);
 });
 
+// ---------------------------------------------------------------------------
+// Mode présentation
+// ---------------------------------------------------------------------------
+
+test('présentation : un graphique par écran, clavier, défilement automatique, sortie', async ({ page }) => {
+  const errors = await openStats(page);
+  const cards = (await snapshot(page)).cards;
+  const present = async () => (await snapshot(page)).presentation;
+
+  await page.locator('#btnStatsPresent').click();
+  const screen = page.locator('#statsPresent');
+  await expect(screen).toBeVisible();
+  await expect.poll(async () => (await present())?.drawn).toBe(true);
+  let state = await present();
+  expect(state).toMatchObject({ index: 0, count: cards.length, chartId: cards[0].id, auto: false });
+  await expect(page.locator('#statsPresentTitle')).toHaveText(cards[0].title);
+  await expect(page.locator('#statsPresentCount')).toHaveText(`1 / ${cards.length}`);
+  await expect(page.locator('#btnStatsPresentPrev')).toBeDisabled();
+  // Chiffre clé en grand.
+  await expect(page.locator('#statsPresentBody .stats-number-value')).toHaveText('6');
+
+  // Clavier : suivant, dernier, précédent.
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => (await present()).index).toBe(1);
+  await page.keyboard.press('End');
+  await expect.poll(async () => (await present()).index).toBe(cards.length - 1);
+  await expect(page.locator('#btnStatsPresentNext')).toBeDisabled();
+  await expect(page.locator('#statsPresentBody .stats-chart')).toHaveCount(1);
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(async () => (await present()).index).toBe(cards.length - 2);
+
+  // Défilement automatique (5 s), en boucle ; commandes masquées sans
+  // mouvement de souris.
+  await page.locator('#statsPresentDelay').selectOption('5');
+  await page.locator('#btnStatsPresentPlay').click();
+  await expect(page.locator('#btnStatsPresentPlay')).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await present()).index, { timeout: 8_000 }).toBe(cards.length - 1);
+  await expect.poll(async () => (await present()).idle).toBe(true);
+  await expect.poll(async () => (await present()).index, { timeout: 8_000 }).toBe(0);
+  await page.mouse.move(200, 200);
+  await expect.poll(async () => (await present()).idle).toBe(false);
+
+  // Échap : la page revient telle quelle.
+  await page.keyboard.press('Escape');
+  await expect(screen).toBeHidden();
+  expect(await present()).toBeNull();
+  await expect(page.locator('.stats-card')).toHaveCount(cards.length);
+
+  // Depuis le menu d'une carte : la présentation commence par elle.
+  await cardAction(page, cards[3].id, 'present');
+  await expect(screen).toBeVisible();
+  await expect.poll(async () => (await present())?.chartId).toBe(cards[3].id);
+  await page.locator('#btnStatsPresentExit').click();
+  await expect(screen).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

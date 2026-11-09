@@ -97,6 +97,9 @@
                                     aria-label="{{ _("Actualiser les données") }}" title="{{ _("Actualiser les données") }}">
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
+                            <button type="button" id="btnStatsPresent" class="btn btn-outline-secondary btn-sm">
+                                <i class="ti ti-presentation" aria-hidden="true"></i> {{ _("Présenter") }}
+                            </button>
                             <button type="button" id="btnStatsAddChart" class="btn btn-primary btn-sm">
                                 <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Ajouter un graphique") }}
                             </button>
@@ -307,6 +310,44 @@
         </div>
 
         <!-- Filtres du tableau de bord : formulaire posé par stats_filters_ui.js. -->
+        <!-- Mode présentation : un graphique par écran, en plein écran
+             (present_model.mjs pour la navigation). -->
+        <div id="statsPresent" class="stats-present" role="dialog" aria-modal="true" aria-labelledby="statsPresentTitle" hidden>
+            <div class="stats-present-progress" aria-hidden="true"><div id="statsPresentProgress"></div></div>
+            <header class="stats-present-head">
+                <h2 id="statsPresentTitle" class="stats-present-title"></h2>
+                <span id="statsPresentPeriod" class="stats-card-period"></span>
+            </header>
+            <div id="statsPresentBody" class="stats-present-body"></div>
+            <p id="statsPresentNote" class="stats-present-note" hidden></p>
+            <div id="statsPresentControls" class="stats-present-controls">
+                <button type="button" id="btnStatsPresentPrev" class="btn btn-outline-secondary btn-sm btn-icon"
+                        aria-label="{{ _("Graphique précédent") }}" title="{{ _("Graphique précédent") }}">
+                    <i class="ti ti-chevron-left" aria-hidden="true"></i>
+                </button>
+                <span id="statsPresentCount" class="stats-present-count" aria-live="polite"></span>
+                <button type="button" id="btnStatsPresentNext" class="btn btn-outline-secondary btn-sm btn-icon"
+                        aria-label="{{ _("Graphique suivant") }}" title="{{ _("Graphique suivant") }}">
+                    <i class="ti ti-chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" id="btnStatsPresentPlay" class="btn btn-outline-secondary btn-sm" aria-pressed="false">
+                    <i class="ti ti-player-play" aria-hidden="true"></i>
+                    <span>{{ _("Défilement automatique") }}</span>
+                </button>
+                <label for="statsPresentDelay" class="visually-hidden">{{ _("Durée de chaque graphique") }}</label>
+                <select id="statsPresentDelay" class="form-select form-select-sm" title="{{ _("Durée de chaque graphique") }}">
+                    <option value="5">5 s</option>
+                    <option value="10" selected>10 s</option>
+                    <option value="20">20 s</option>
+                    <option value="30">30 s</option>
+                </select>
+                <button type="button" id="btnStatsPresentExit" class="btn btn-outline-secondary btn-sm btn-icon"
+                        aria-label="{{ _("Quitter la présentation (Échap)") }}" title="{{ _("Quitter la présentation (Échap)") }}">
+                    <i class="ti ti-x" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
         <div class="modal fade" id="statsFiltersModal" tabindex="-1" aria-labelledby="statsFiltersTitle" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">

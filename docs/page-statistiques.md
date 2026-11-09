@@ -657,6 +657,31 @@ chart_goal.mjs.
   `year_pace`, `year_curve` ; « Suis-je en avance sur l'an dernier ? »
   prolonge l'année en cours.
 
+## Mode présentation
+
+Bouton « Présenter » de la barre, ou « Présenter à partir d'ici » dans le
+menu d'une carte : un graphique par écran (`#statsPresent`), en plein écran
+si le navigateur l'accorde (`requestFullscreen` ; sinon toute la fenêtre).
+
+- Diapositives (`presentSlides`, present_model.mjs) : les graphiques du
+  tableau dans leur ordre, sauf ceux dont une source a échoué ; résultats
+  déjà calculés (cartes différées comprises).
+- Titre, période (celle du graphique, sinon celle du tableau), note sous le
+  graphique ; chiffre clé en grand (record, objectif, sans lien vers la
+  carte) ; graphique à toute la hauteur (`renderChartInto(…, { fill })`),
+  calendrier et grille de défi gardant la leur (défilement).
+- Clavier (`keyAction`) : → ↓ Page suivante Espace Entrée = suivant, ← ↑
+  Page précédente Retour arrière = précédent, Début / Fin, P = défilement
+  automatique, Échap = quitter (la sortie du plein écran quitte aussi).
+  Les boutons gardent Espace / Entrée.
+- Défilement automatique : 5, 10, 20 ou 30 s, en boucle, barre de
+  progression en haut (sans animation si « réduire les animations »).
+- Souris immobile 2,5 s : commandes et curseur masqués (une commande qui a
+  le focus clavier reste visible).
+- Thème changé ou fenêtre redimensionnée : la diapositive est redessinée.
+- Relevé : `getStatsPageSnapshot().presentation` (`index`, `count`,
+  `chartId`, `auto`, `delay`, `fullscreen`, `idle`, `drawn`).
+
 ## Tableaux de bord (`dashboard_model.mjs`)
 
 `{ v: 1, active, dashboards: [{ id, name, period, filters, items: [{ size, spec }] }] }`
@@ -720,6 +745,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   case, libellés, épingle, liens carte et panneau).
 - Objectifs et projections : `chart_goal.test.mjs` (caps, rythme, bilan,
   textes, cumul prolongé, axe, spec).
+- Présentation : `present_model.test.mjs` (diapositives, navigation,
+  touches, délais).
 - Vignettes de la galerie : `thumbnailOption` dans `chart_echarts.test.mjs`
   (chaque forme : barres, aire, anneau, écart, côte à côte, grille, radar,
   calendrier).
