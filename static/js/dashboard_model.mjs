@@ -165,7 +165,7 @@ const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
 const EVO = 'evolution:1';
 const EVO_ARCHIVED = 'evolution:1:archived';
 
-export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'challenges', 'records', 'goals', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'maps', 'challenges', 'records', 'goals', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
 
 export const QUESTIONS = Object.freeze([
     { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
@@ -201,6 +201,16 @@ export const QUESTIONS = Object.freeze([
     { id: 'top_finders', group: 'poses', icon: 'ti-user-heart', size: 'M', spec: { source: 'poses.received', groupBy: 'finder', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
     { id: 'owned_active', group: 'poses', icon: 'ti-activity', size: 'M', spec: { source: 'owned', measure: { op: 'active' }, groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'area' } } },
     { id: 'finds_vs_received', group: 'poses', icon: 'ti-arrows-exchange', size: 'M', spec: { source: 'finds', extraSources: ['poses.received'], groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
+
+    // Mes cartes : zones colorées (chart_zones.mjs), sur tout l'historique.
+    // Le niveau le plus fin s'adapte aux données : un pays sans découpage plus
+    // fin y montre ses régions.
+    { id: 'zones_conquest', group: 'maps', icon: 'ti-flag-3', size: 'L', spec: { groupBy: 'zone_subregion', measure: { op: 'first_day' }, periods: [{ kind: 'all' }], view: { chart: 'map' } } },
+    { id: 'zones_by_year', group: 'maps', icon: 'ti-map-2', size: 'XL', spec: { groupBy: 'zone_subregion', measure: { op: 'cumulative', from: 'all' }, periods: [{ kind: 'moments', rule: 'year_end' }], view: { chart: 'map' } } },
+    { id: 'zones_milestones', group: 'maps', icon: 'ti-stairs-up', size: 'XL', spec: { groupBy: 'zone_subregion', measure: { op: 'cumulative', from: 'all' }, periods: [{ kind: 'moments', rule: 'milestones' }], view: { chart: 'map' } } },
+    { id: 'zones_countries', group: 'maps', icon: 'ti-world', size: 'L', spec: { groupBy: 'zone_country', periods: [{ kind: 'all' }], view: { chart: 'map' } } },
+    { id: 'zones_types', group: 'maps', icon: 'ti-category', size: 'L', spec: { groupBy: 'zone_region', measure: { op: 'distinct', field: 'cache_type' }, periods: [{ kind: 'all' }], view: { chart: 'map' } } },
+    { id: 'zones_dt', group: 'maps', icon: 'ti-grid-dots', size: 'L', spec: { groupBy: 'zone_region', measure: { op: 'dt_coverage' }, periods: [{ kind: 'all' }], view: { chart: 'map' } } },
 
     // Mes défis : grilles à remplir (chart_challenge.mjs), sur tout
     // l'historique.

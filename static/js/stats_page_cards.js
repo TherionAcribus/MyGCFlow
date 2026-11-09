@@ -4,6 +4,7 @@
 import { t } from './notifications.js';
 import { chartSources, periodsAreMultiple } from './chart_spec.mjs';
 import { runChartQueries } from './chart_query.mjs';
+import { runZoneQuery } from './chart_zones.mjs';
 import { describeFilters } from './chart_filters.mjs';
 import {
     buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel,
@@ -21,6 +22,7 @@ import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
 import { confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { fallbackCountries, setGeoListener, zoneAreas, zoneMapFor } from './stats_page_geo.js';
 
 // Cartes reconstruites ou réutilisées : une carte dont le contenu (item +
 // état de ses sources) n'a pas changé garde son DOM et son instance ECharts —
@@ -271,8 +273,12 @@ function cardMenu(spec, index, count) {
 const RESULT_CACHE_MAX = 300;
 
 export function computeResult(spec, dashboard) {
+    const map = spec.view.chart === 'map';
+    // Carte : le résultat dépend aussi des contours chargés (surfaces pour la
+    // densité, pays sans niveau 2).
     const key = JSON.stringify({ spec, period: dashboard.period, filters: dashboard.filters,
-        kind: dashboard.kind, dataset: dashboard.dataset, today: state.today }) + '|' + state.dataRev;
+        kind: dashboard.kind, dataset: dashboard.dataset, today: state.today }) + '|' + state.dataRev
+        + (map ? '|g' + state.geoRev : '');
     const cached = state.resultCache.get(key);
     if (cached) {
         // Réinsertion : l'entrée la plus ancienne partira en première.
@@ -280,11 +286,18 @@ export function computeResult(spec, dashboard) {
         state.resultCache.set(key, cached);
         return cached;
     }
-    const result = runChartQueries(spec, tableOf, {
-        ...effectiveQueryOptions(spec, dashboard),
-        today: state.today,
-        labelOf: (dim, key) => state.labels.axisLabel(dim, key, { attributeName }),
-    });
+    const result = map
+        ? runZoneQuery(spec, tableOf(spec.source), {
+            ...effectiveQueryOptions(spec, dashboard),
+            today: state.today,
+            areas: spec.compare.normalize === 'per_km2' ? zoneAreas() : null,
+            fallbackCountries: fallbackCountries(),
+        })
+        : runChartQueries(spec, tableOf, {
+            ...effectiveQueryOptions(spec, dashboard),
+            today: state.today,
+            labelOf: (dim, key) => state.labels.axisLabel(dim, key, { attributeName }),
+        });
     if (state.resultCache.size >= RESULT_CACHE_MAX) {
         state.resultCache.delete(state.resultCache.keys().next().value);
     }
@@ -294,7 +307,7 @@ export function computeResult(spec, dashboard) {
 
 export function chartContext() {
     return { labels: state.labels, tokens: state.tokens, typeColors: state.typeColors, attributeName,
-        reduceMotion: state.reduceMotion, today: state.today };
+        reduceMotion: state.reduceMotion, today: state.today, zoneMapOf: zoneMapFor };
 }
 
 // Note sous un graphique : ce qui n'est pas compté ou a été coupé.
@@ -314,6 +327,9 @@ export function cardNote(result, spec) {
     }
     if (chart === 'calendar' && calendarYears(result).truncated) {
         notes.push(t('Seules les 3 années les plus récentes sont dessinées.'));
+    }
+    if (chart === 'map' && result.meta.unknown) {
+        notes.push(t('Hors carte : ${n}', { n: result.meta.unknown }));
     }
     if (result.toDate) {
         const date = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
@@ -409,6 +425,8 @@ function deltaLine(delta) {
 // Les marques d'un graphique ouvrent-elles la carte ? (curseur « main »)
 export const TIME_DIMS = new Set(['year', 'quarter', 'month', 'week', 'day']);
 export function chartClickable(spec, result) {
+    // Carte par zones : une zone ouvre la carte à la date de sa vignette.
+    if (spec.view.chart === 'map') return Boolean(result?.keys?.length);
     if (!chartLinksToMap(spec) || result.delta) return false;
     // Chiffre clé : seulement un record daté (« Voir sur la carte »).
     if (spec.view.chart === 'number') return spec.measure.op === 'max_per_day' || spec.measure.op === 'streak';
@@ -486,7 +504,8 @@ function renderCard(item, card, dashboard) {
     note.textContent = cardNote(result, spec);
     note.hidden = !note.textContent;
     const seen = state.rendered.get(spec.id);
-    const fresh = seen?.result === result && seen.tokensRev === state.tokensRev;
+    const fresh = seen?.result === result && seen.tokensRev === state.tokensRev
+        && (spec.view.chart !== 'map' || seen.geoRev === state.geoRev);
     if (spec.view.chart === 'number') {
         if (!fresh) {
             renderNumber(card.querySelector('.stats-number'), result, spec, dashboard);
@@ -511,9 +530,25 @@ function renderCard(item, card, dashboard) {
     state.deferred.delete(spec.id);
     state.lazyObserver?.unobserve(host);
     state.charts.set(spec.id, renderChartInto(host, result, spec));
-    state.rendered.set(spec.id, { result, tokensRev: state.tokensRev });
+    state.rendered.set(spec.id, { result, tokensRev: state.tokensRev, geoRev: state.geoRev });
     state.resizeObserver.observe(host);
 }
+
+// Contours arrivés (ou en échec) : les cartes et l'aperçu de l'éditeur sont
+// recalculés et redessinés, une fois par image même si plusieurs fichiers
+// arrivent ensemble.
+let geoRedraw = 0;
+setGeoListener(() => {
+    if (geoRedraw) return;
+    geoRedraw = requestAnimationFrame(() => {
+        geoRedraw = 0;
+        state.geoRev++;
+        if (!state.doc) return;
+        renderAllCharts();
+        if (state.editor?.item?.spec?.view?.chart === 'map') renderPreview();
+        window.dispatchEvent(new Event('mygcflow:stats-geo'));
+    });
+});
 
 export function renderAllCharts() {
     if (!state.tokens) state.tokens = readTokens();

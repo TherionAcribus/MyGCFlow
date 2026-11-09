@@ -14,6 +14,8 @@ import { chartClickable, TIME_DIMS } from './stats_page_cards.js';
 import { activeDashboard, attributeName, chartTitle } from './stats_page_dashboard.js';
 import { fetchJson, tableOf } from './stats_page_data.js';
 import { state } from './stats_page_state.js';
+import { zoneBounds } from './stats_page_geo.js';
+import { isoOfDay } from './chart_map_link.mjs';
 
 // ---------------------------------------------------------------------------
 // Retour à la carte : clic sur une valeur → carte filtrée sur ces trouvailles
@@ -97,7 +99,44 @@ export function onChartClick(host, params) {
     if (!entry?.result || !chartClickable(entry.spec, entry.result)) return;
     const target = clickTarget(entry.result, entry.spec, params);
     if (!target) return;
+    if (entry.spec.view.chart === 'map') {
+        confirmZoneLink(entry, target);
+        return;
+    }
     confirmMapLink(card.dataset.chartId, target);
+}
+
+// ---------------------------------------------------------------------------
+// Carte par zones : une zone → la carte en pause à la date de la vignette,
+// cadrée sur la zone (lien d'entrée « ?at=…&bbox=… », lu par init.js).
+// ---------------------------------------------------------------------------
+
+export function zoneLinkUrl(entry, target) {
+    const { spec, result } = entry;
+    const series = result.series[target.seriesIndex];
+    const id = result.keys[target.keyIndex];
+    if (!series || !id || !Number.isFinite(series.day)) return null;
+    const page = spec.source.startsWith('evolution:') ? '/evolution' : '/';
+    const params = new URLSearchParams({ at: isoOfDay(series.day) });
+    const box = zoneBounds(id);
+    if (box && box.every(Number.isFinite)) params.set('bbox', box.map((v) => v.toFixed(4)).join(','));
+    return page + '?' + params.toString();
+}
+
+function confirmZoneLink(entry, target) {
+    const url = zoneLinkUrl(entry, target);
+    if (!url) return;
+    const series = entry.result.series[target.seriesIndex];
+    const zone = state.labels.axisLabel(entry.result.dim, entry.result.keys[target.keyIndex]);
+    const date = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(series.day * 86400000));
+    showConfirmation(
+        t("La carte s'ouvrira en pause au ${date}, cadrée sur ${zone}. Ses filtres ne changent pas.", { date, zone }),
+        t('Voir sur la carte'),
+        () => window.location.assign(url),
+        null,
+        { confirmText: t('Ouvrir la carte') },
+    );
 }
 
 // Confirmation puis carte filtrée sur une valeur (ou un record daté).

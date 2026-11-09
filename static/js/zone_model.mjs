@@ -24,7 +24,8 @@ export const ZONE_COLUMNS = Object.freeze({
 // jusqu'au jour) ou `active` (lignes vivantes ce jour-là : Évolution, caches
 // posées — la valeur monte ET descend).
 export const ZONE_OPS = Object.freeze(['count', 'distinct', 'dt_coverage', 'mean', 'first_day']);
-export const ZONE_DISTINCT_FIELDS = Object.freeze(['cache_type', 'container', 'owner']);
+// `code` : caches différentes ; `day` : jours différents.
+export const ZONE_DISTINCT_FIELDS = Object.freeze(['cache_type', 'container', 'owner', 'code', 'day']);
 export const ZONE_MEAN_FIELDS = Object.freeze(['difficulty', 'terrain']);
 export const ZONE_MODES = Object.freeze(['cumulative', 'active']);
 export const DT_CELLS = 81;
@@ -128,8 +129,9 @@ function makeAccumulator(spec, table, slots) {
             n,
             add(z, r, sign) {
                 n[z] += sign;
-                const v = column ? column[r] : -1;
-                if (v < 0) return;
+                const v = column ? column[r] : null;
+                // -1 : valeur inconnue d'une colonne codée ; null : code absent.
+                if (v === null || v === undefined || v === -1) return;
                 const map = seen[z];
                 const c = (map.get(v) || 0) + sign;
                 if (c > 0) map.set(v, c);

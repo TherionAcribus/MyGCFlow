@@ -27,7 +27,7 @@
 // texte toujours dans les couleurs de texte, jamais dans celle d'une série.
 // Case incomplète (mois en cours…) : remplissage atténué, bord en tirets.
 
-import { OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
+import { OTHERS_KEY, UNKNOWN_KEY, ymdOfDay } from './stats_model.mjs';
 import { challengeSummary } from './chart_challenge.mjs';
 import { niceAxisMax, numberOutlook, projectionValues } from './chart_goal.mjs';
 
@@ -748,6 +748,10 @@ export function clickTarget(result, spec, params) {
     if (!params || params.componentType !== 'series') return null;
     const chart = spec.view.chart;
     if (chart === 'number' || chart === 'heatmap' || chart === 'radar' || result.delta) return null;
+    if (chart === 'map') {
+        const keyIndex = result.keys.indexOf(params.name);
+        return keyIndex < 0 ? null : { seriesIndex: params.seriesIndex, keyIndex };
+    }
     if (chart === 'donut' || chart === 'challenge') {
         // Grille de défi : une case vide n'a rien à montrer sur la carte.
         if (chart === 'challenge' && !params.value?.[2]) return null;
@@ -766,9 +770,200 @@ export function clickTarget(result, spec, params) {
     return { seriesIndex: params.seriesIndex, keyIndex: params.dataIndex };
 }
 
+// ---------------------------------------------------------------------------
+// Carte par zones (chart_zones.mjs)
+// ---------------------------------------------------------------------------
+//
+// `ctx.zoneMap` (stats_page_geo.js) : { name, bounds, nameOf(id),
+// levelNoun(n) } quand les contours sont prêts — `name` est la carte
+// enregistrée dans ECharts (registerMap), `bounds` le cadrage
+// ([[ouest, nord], [est, sud]], null = toute la carte) ; sinon
+// { loading: true } ou { error: true }.
+
+// Mesures dont les valeurs s'additionnent (total sous chaque vignette) et
+// sont entières (classes « 4–7 » plutôt que « 4 – 8 »).
+const ZONE_ADDITIVE = ['count', 'cumulative', 'active'];
+const ZONE_INTEGER = ['count', 'cumulative', 'active', 'distinct', 'dt_coverage'];
+
+// Classes de la légende : couleur et libellé, du plus faible au plus fort.
+export function zoneLegend(result, spec, ctx) {
+    const { tokens, labels } = ctx;
+    const { breaks, classes, min, max, mode } = result.zones.scale;
+    const ramp = tokens.heat.length > 2 ? tokens.heat.slice(1) : tokens.heat;
+    const integer = ZONE_INTEGER.includes(spec.measure.op) && result.normalize === 'none';
+    const fmt = (v) => labels.formatValue(v, spec.measure, { compact: true, normalize: result.normalize, bare: true });
+    const unit = labels.valueUnit(spec.measure, result.normalize);
+    const year = (day) => ymdOfDay(day).y;
+    const out = Array.from({ length: classes }, (_, c) => {
+        const lower = c === 0 ? null : breaks[c - 1];
+        const upper = c === classes - 1 ? null : breaks[c];
+        const lo = lower ?? min;
+        let label;
+        if (min === null) label = '';
+        else if (mode === 'year') {
+            const a = year(lo);
+            const b = upper === null ? year(max) : year(upper) - 1;
+            label = a === b ? String(a) : `${a}–${b}`;
+        } else if (integer) {
+            const b = upper === null ? max : upper - 1;
+            label = lo === b ? fmt(lo) : `${fmt(lo)}–${fmt(b)}`;
+        } else {
+            label = `${fmt(lo)} – ${fmt(upper ?? max)}`;
+        }
+        return { lower, upper, label, color: rampColor(ramp, classes === 1 ? 1 : c / (classes - 1)) };
+    });
+    if (unit && out.length && out.at(-1).label) out.at(-1).label += ' ' + unit;
+    return out;
+}
+
+function zoneTooltip(result, spec, ctx, zm) {
+    const { labels } = ctx;
+    const nameOf = zm?.nameOf || ((id) => id);
+    const fmt = valueFormatter(spec, result, ctx);
+    const rank = result.series.map((s) => {
+        const order = s.values.map((v, i) => [v, i]).filter(([v]) => v !== null).sort((a, b) => b[0] - a[0]);
+        const out = new Map();
+        order.forEach(([, i], r) => out.set(i, r + 1));
+        return { of: order.length, at: out };
+    });
+    return {
+        ...tooltipBase(ctx.tokens),
+        trigger: 'item',
+        formatter: (params) => {
+            const k = result.keys.indexOf(params.name);
+            const s = result.series[params.seriesIndex];
+            const head = `<div style="font-weight:600;margin-bottom:2px">${escapeHtml(nameOf(params.name))}</div>`;
+            if (k < 0 || !s || s.values[k] === null) return head + escapeHtml(labels.t('Aucune donnée'));
+            const lines = [`<b>${escapeHtml(fmt(s.values[k]))}</b>`];
+            const r = rank[params.seriesIndex];
+            if (r.of > 1 && spec.measure.op !== 'first_day') {
+                lines.push(escapeHtml(labels.t('rang ${n} sur ${of}', { n: r.at.get(k), of: r.of })));
+            }
+            const prev = params.seriesIndex > 0 ? result.series[params.seriesIndex - 1].values[k] : undefined;
+            if (prev !== undefined && spec.measure.op !== 'first_day') {
+                const since = labels.seriesPeriodLabel(result.periods[params.seriesIndex - 1]);
+                lines.push(escapeHtml(prev === null
+                    ? labels.t('nouvelle depuis ${period}', { period: since })
+                    : labels.t('${delta} depuis ${period}', {
+                        delta: labels.formatDelta(s.values[k] - prev, spec.measure, result.normalize), period: since,
+                    })));
+            }
+            return head + lines.join('<br>');
+        },
+    };
+}
+
+function mapPlaceholder(ctx, text) {
+    return {
+        ...common(ctx, false),
+        title: { text, left: 'center', top: 'middle', textStyle: { color: ctx.tokens.textMuted, fontSize: 13, fontWeight: 400 } },
+        series: [],
+    };
+}
+
+// Une vignette par période (ou moment), même échelle pour toutes ; la
+// légende des classes en bas.
+function mapOption(result, spec, ctx) {
+    const { tokens, labels } = ctx;
+    const zm = ctx.zoneMap || ctx.zoneMapOf?.(result, spec);
+    if (zm?.error) return mapPlaceholder(ctx, labels.t('Contours des zones indisponibles.'));
+    if (!zm?.name) return mapPlaceholder(ctx, labels.t('Chargement de la carte…'));
+    const legend = zoneLegend(result, spec, ctx);
+    const cells = sideCells(Math.max(1, result.series.length));
+    const many = result.series.length > 1;
+    const legendBand = 12;
+    const titleBand = many ? 13 : 0;
+    const highlight = spec.view.map?.highlight !== false;
+    const additive = ZONE_ADDITIVE.includes(spec.measure.op) && result.normalize === 'none';
+    const geo = [];
+    const titles = [];
+    const series = result.series.map((s, i) => {
+        const cell = cells[i];
+        const width = 100 / cell.cols;
+        const height = (100 - legendBand) / cell.rows;
+        const top = cell.row * height;
+        geo.push({
+            map: zm.name,
+            roam: false,
+            ...(zm.aspectScale ? { aspectScale: zm.aspectScale } : {}),
+            left: `${cell.col * width + 1}%`,
+            top: `${top + titleBand}%`,
+            width: `${width - 2}%`,
+            height: `${height - titleBand - 2}%`,
+            ...(zm.bounds ? { boundingCoords: zm.bounds } : {}),
+            itemStyle: { areaColor: tokens.empty, borderColor: tokens.grid, borderWidth: 0.6 },
+            emphasis: { label: { show: false }, itemStyle: { areaColor: tokens.empty, borderColor: tokens.text, borderWidth: 1.2 } },
+            select: { disabled: true },
+            // Zones qui ont changé depuis la vignette précédente : contour.
+            regions: highlight ? s.changed.map((name) => ({
+                name, itemStyle: { borderColor: tokens.text, borderWidth: 1.4 },
+            })) : [],
+        });
+        if (many) {
+            const count = s.values.filter((v) => v !== null).length;
+            const total = s.values.reduce((sum, v) => sum + (v || 0), 0);
+            const sub = zm.levelNoun ? zm.levelNoun(count) : String(count);
+            // « zones : 5 · Trouvailles : 6 »
+            const noun = spec.measure.op === 'active' ? labels.measureName(spec.measure, spec.source) : labels.sourceNoun(spec.source);
+            titles.push({
+                text: labels.seriesPeriodLabel(result.periods[i]),
+                subtext: additive ? `${sub} · ${noun} : ${labels.formatValue(total, spec.measure, { compact: true })}` : sub,
+                left: `${cell.col * width + width / 2}%`,
+                top: `${top}%`,
+                textAlign: 'center',
+                itemGap: 2,
+                textStyle: { fontSize: 12, fontWeight: 600, color: tokens.text },
+                subtextStyle: { fontSize: 11, color: tokens.textMuted },
+            });
+        }
+        return {
+            type: 'map',
+            geoIndex: i,
+            name: labels.seriesPeriodLabel(result.periods[i]),
+            data: result.keys.map((name, k) => ({ name, value: s.values[k] })).filter((d) => d.value !== null),
+        };
+    });
+    return {
+        ...common(ctx, false),
+        title: titles,
+        tooltip: zoneTooltip(result, spec, ctx, zm),
+        geo,
+        visualMap: {
+            type: 'piecewise',
+            seriesIndex: series.map((_, i) => i),
+            pieces: legend.map(({ lower, upper, label, color }) => ({
+                ...(lower !== null ? { gte: lower } : {}),
+                ...(upper !== null ? { lt: upper } : {}),
+                label,
+                color,
+            })),
+            orient: 'horizontal',
+            left: 'center',
+            bottom: 0,
+            itemWidth: 14,
+            itemHeight: 10,
+            itemGap: 8,
+            selectedMode: false,
+            textStyle: { color: tokens.textMuted, fontSize: 11 },
+        },
+        series,
+    };
+}
+
+// Hauteur d'une carte à plusieurs vignettes : chacune garde une taille
+// lisible, la carte du tableau s'allonge.
+function mapHeight(result, width) {
+    const n = result.series.length;
+    if (n <= 1 || !width) return null;
+    const { cols, rows } = sideCells(n)[0];
+    const cell = Math.round(Math.min(320, Math.max(170, (width / cols) * 0.8)));
+    return rows * cell + 48;
+}
+
 export function buildChartOption(result, spec, ctx) {
     const chart = spec.view.chart;
     if (chart === 'number') return null;
+    if (chart === 'map') return mapOption(result, spec, ctx);
     if (chart === 'donut') return donutOption(result, spec, ctx);
     if (chart === 'heatmap') return heatmapOption(result, spec, ctx);
     if (chart === 'calendar') return calendarOption(result, spec, ctx);
@@ -973,6 +1168,7 @@ export function calendarYears(result) {
 // un bandeau par année) ; null = hauteur par défaut de la carte.
 export function chartHeight(result, spec, width = 0) {
     if (spec.view.chart === 'challenge') return challengeHeight(result, width);
+    if (spec.view.chart === 'map') return mapHeight(result, width);
     if (spec.view.chart !== 'calendar') return null;
     const { years } = calendarYears(result);
     return 40 + Math.max(1, years.length) * calendarBlock(calendarCell(width));

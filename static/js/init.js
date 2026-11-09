@@ -183,7 +183,41 @@ document.addEventListener('DOMContentLoaded', async function() {
     // profil les réinitialise encore.
     window.mygcflowReady = true;
     window.dispatchEvent(new CustomEvent('mygcflow:ready'));
+    applyEntryLink();
 });
+
+
+// Lien d'entrée venu de la page Statistiques (clic sur une zone d'une
+// carte) : « ?at=AAAA-MM-JJ&bbox=ouest,sud,est,nord » ouvre l'aperçu en
+// pause à cette date, cadré sur la zone. Les données arrivent après
+// mygcflowReady : l'aperçu est tenté jusqu'à ce qu'elles soient là. Les
+// paramètres quittent l'adresse aussitôt (un rechargement ne rejoue rien).
+const ENTRY_LINK_TIMEOUT_MS = 20000;
+
+function applyEntryLink() {
+    const params = new URLSearchParams(window.location.search);
+    const at = params.get('at');
+    if (!at || !/^\d{4}-\d{2}-\d{2}$/.test(at)) return;
+    const box = (params.get('bbox') || '').split(',').map(Number);
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+    const [y, m, d] = at.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const started = Date.now();
+    const attempt = () => {
+        if (pkg.startPausedPreview?.()) {
+            pkg.seekAnimationToDate?.(date);
+            if (box.length === 4 && box.every(Number.isFinite)) pkg.fitMapView?.(box);
+            window.mygcflowEntryLink = { at, applied: true };
+            return;
+        }
+        if (Date.now() - started > ENTRY_LINK_TIMEOUT_MS) {
+            window.mygcflowEntryLink = { at, applied: false };
+            return;
+        }
+        setTimeout(attempt, 250);
+    };
+    attempt();
+}
 
 
 // Applique centre/zoom depuis les préférences utilisateur (settings).

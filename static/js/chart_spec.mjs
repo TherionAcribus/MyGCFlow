@@ -86,12 +86,16 @@ export function sameSourceGroup(a, b) {
 
 // Mesures. « Flux » : comptées dans chaque intervalle. « Stock » : valeur
 // lue en fin d'intervalle (cumul, caches vivantes).
-export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'streak', 'gap', 'cumulative', 'active']);
+export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'streak', 'gap', 'cumulative', 'active', 'dt_coverage', 'first_day']);
 // Records datés : la valeur d'une case vient de jours précis (la meilleure
 // journée, la plus longue série de jours consécutifs avec une trouvaille,
 // la plus longue pause entre deux) — le résultat garde ces dates.
 export const RECORD_OPS = Object.freeze(['max_per_day', 'streak', 'gap']);
 export const STOCK_OPS = Object.freeze(['cumulative', 'active']);
+// Mesures propres aux cartes par zones (zone_model.mjs) : combinaisons D/T
+// différentes (sur 81) et jour de la première ligne de la zone (la
+// « conquête »).
+export const ZONE_ONLY_OPS = Object.freeze(['dt_coverage', 'first_day']);
 // `days` = jours avec au moins un événement ; `finder` = visiteurs
 // différents (Mes poses).
 export const DISTINCT_FIELDS = Object.freeze(['caches', 'days', 'cache_type', 'country', 'state', 'owner', 'finder', 'county']);
@@ -114,9 +118,13 @@ export const CATEGORY_DIMENSIONS = Object.freeze([
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
     'owner', 'attribute', 'age', 'published_year', 'published_month', 'cache', 'finder', 'county',
 ]);
+// Zones géographiques (zones.py, colonnes zone_* des tables) : seulement
+// dessinées en carte (`map`), jamais en 2ᵉ dimension. Plan :
+// MyGCFlow_Plan_Carte_Zones.md.
+export const ZONE_DIMENSIONS = Object.freeze(['zone_country', 'zone_region', 'zone_subregion']);
 // Catégories ordonnées : une courbe y a un sens.
 export const ORDINAL_CATEGORIES = Object.freeze(['difficulty', 'terrain', 'age', 'published_year']);
-export const GROUP_DIMENSIONS = Object.freeze(['none', ...TIME_DIMENSIONS, ...CYCLIC_DIMENSIONS, ...CATEGORY_DIMENSIONS]);
+export const GROUP_DIMENSIONS = Object.freeze(['none', ...TIME_DIMENSIONS, ...CYCLIC_DIMENSIONS, ...CATEGORY_DIMENSIONS, ...ZONE_DIMENSIONS]);
 // 2ᵉ dimension : une catégorie, ou l'année (« une série par année »).
 // (Pas le mois de publication : il n'existe que pour la grille Jasmer.)
 export const SPLIT_DIMENSIONS = Object.freeze(['year', ...CATEGORY_DIMENSIONS.filter((dim) => dim !== 'published_month')]);
@@ -131,7 +139,7 @@ const COMMON_DIMENSIONS = Object.freeze([
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
 ]);
 const EXTRA_DIMENSIONS = Object.freeze({
-    finds: ['owner', 'attribute', 'age', 'published_year', 'published_month'],
+    finds: ['owner', 'attribute', 'age', 'published_year', 'published_month', ...ZONE_DIMENSIONS],
     dnf: ['owner', 'age', 'published_year', 'published_month'],
     owned: [],
     poses: ['cache', 'finder', 'age'],
@@ -168,6 +176,7 @@ export function dimensionKind(dim) {
     if (TIME_DIMENSIONS.includes(dim)) return 'time';
     if (CYCLIC_DIMENSIONS.includes(dim)) return 'cyclic';
     if (CATEGORY_DIMENSIONS.includes(dim)) return 'category';
+    if (ZONE_DIMENSIONS.includes(dim)) return 'zone';
     return null;
 }
 
@@ -186,7 +195,10 @@ export const FILTER_VALUE_MAX = 200;
 //             (2024 avant 2025, les 12 mois avant les 12 derniers…) ;
 //   dashboard la période du tableau de bord, quand le graphique la compare
 //             à d'autres (periods: null = héritage sans comparaison).
-export const PERIOD_KINDS = Object.freeze(['all', 'year', 'month', 'range', 'rolling', 'each', 'current', 'previous', 'dashboard']);
+export const PERIOD_KINDS = Object.freeze(['all', 'year', 'month', 'range', 'rolling', 'each', 'current', 'previous', 'dashboard', 'moments']);
+// « Moments clés » (cartes seulement) : une vignette par moment, déployés
+// sur les données par zone_model.mjs › keyMoments.
+export const MOMENT_PERIOD_RULES = Object.freeze(['year_end', 'quarter_end', 'milestones', 'new_zone']);
 export const CURRENT_UNITS = Object.freeze(['year', 'month']);
 export const ROLLING_UNITS = Object.freeze(['day', 'month', 'year']);
 export const EACH_UNITS = Object.freeze(['year', 'month']);
@@ -203,10 +215,15 @@ export const PERIOD_LABEL_MAX = 40;
 // Comparaison.
 export const COMPARE_LAYOUTS = Object.freeze(['overlay', 'side', 'delta']);
 export const COMPARE_ALIGNS = Object.freeze(['calendar', 'elapsed', 'absolute']);
-export const COMPARE_NORMALIZE = Object.freeze(['none', 'percent', 'per_day']);
+export const COMPARE_NORMALIZE = Object.freeze(['none', 'percent', 'per_day', 'per_km2']);
 
 // Vue.
-export const CHART_TYPES = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar', 'challenge']);
+export const CHART_TYPES = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar', 'challenge', 'map']);
+// Carte par zones : échelle de couleurs (zone_model.mjs › zoneScale),
+// nombre de classes, cadrage.
+export const MAP_SCALES = Object.freeze(['quantile', 'linear', 'log']);
+export const MAP_CLASSES_RANGE = Object.freeze([3, 7]);
+export const MAP_FRAMES = Object.freeze(['auto', 'world']);
 export const CHART_ORIENTATIONS = Object.freeze(['vertical', 'horizontal']);
 export const CHART_PALETTES = Object.freeze(['auto', 'accent', 'gc', 'multi', 'heat']);
 export const CHART_SORTS = Object.freeze(['natural', 'value', 'label']);
@@ -377,6 +394,8 @@ export function normalizePeriod(raw) {
         period = { kind, unit: choice(raw.unit, CURRENT_UNITS, 'year') };
     } else if (kind === 'previous' || kind === 'dashboard') {
         period = { kind };
+    } else if (kind === 'moments') {
+        period = { kind, rule: choice(raw.rule, MOMENT_PERIOD_RULES, 'year_end') };
     }
     if (!period) return null;
     const label = flatText(raw.label, PERIOD_LABEL_MAX);
@@ -419,14 +438,29 @@ export function periodsAreMultiple(periods) {
 // semaine n'en contient pas.
 const NO_RUN_DIMS = ['day', 'week', 'day_of_year', 'week_of_year', 'weekday', 'published_month'];
 
+// Mesures qu'une carte par zones sait calculer (zone_model.mjs) : comptes,
+// cumul, caches actives, valeurs distinctes (caches, jours, types,
+// propriétaires), moyenne de D ou de T, et ses deux mesures propres. Les
+// records datés n'ont pas d'équivalent par zone.
+const ZONE_DISTINCT = ['caches', 'days', 'cache_type', 'owner'];
+export function zoneMeasureAllowed(measure) {
+    const op = measure?.op;
+    if (op === 'distinct') return ZONE_DISTINCT.includes(measure.field);
+    if (op === 'mean') return measure.field === 'difficulty' || measure.field === 'terrain';
+    return ['count', 'cumulative', 'active', ...ZONE_ONLY_OPS].includes(op);
+}
+
 export function allowedGroupBy(measure, sources = 'finds') {
-    const dims = sourceDimensions(sources);
+    const all = sourceDimensions(sources);
+    if (ZONE_ONLY_OPS.includes(measure?.op)) return all.filter((dim) => ZONE_DIMENSIONS.includes(dim));
+    const dims = zoneMeasureAllowed(measure) ? all : all.filter((dim) => !ZONE_DIMENSIONS.includes(dim));
+    const zones = dims.filter((dim) => ZONE_DIMENSIONS.includes(dim));
     if (measure?.op === 'streak' && measure.current) return ['none'];
     if (measure?.op === 'streak' || measure?.op === 'gap') return dims.filter((dim) => !NO_RUN_DIMS.includes(dim));
-    if (measure?.op === 'cumulative') return dims.filter((dim) => SEQUENTIAL_DIMENSIONS.includes(dim));
+    if (measure?.op === 'cumulative') return [...dims.filter((dim) => SEQUENTIAL_DIMENSIONS.includes(dim)), ...zones];
     if (measure?.op === 'active') {
         return dims.filter((dim) => dim === 'none' || SEQUENTIAL_DIMENSIONS.includes(dim)
-            || (CATEGORY_DIMENSIONS.includes(dim) && dim !== 'published_month'));
+            || (CATEGORY_DIMENSIONS.includes(dim) && dim !== 'published_month') || ZONE_DIMENSIONS.includes(dim));
     }
     return dims;
 }
@@ -435,7 +469,7 @@ export function allowedGroupBy(measure, sources = 'finds') {
 // de sens sur un axe de temps continu (il le découpe déjà) ; pas de
 // découpage d'un chiffre clé ; seulement celles des sources.
 export function allowedSplitBy(groupBy, sources = 'finds') {
-    if (groupBy === 'none' || groupBy === 'published_month') return [];
+    if (groupBy === 'none' || groupBy === 'published_month' || ZONE_DIMENSIONS.includes(groupBy)) return [];
     const dims = new Set(sourceDimensions(sources));
     return SPLIT_DIMENSIONS.filter((dim) => dim !== groupBy && dims.has(dim)
         && !(dim === 'year' && dimensionKind(groupBy) === 'time'));
@@ -481,6 +515,11 @@ export function allowedAligns(groupBy) {
 // catégories — un axe de temps a déjà ses intervalles).
 export function allowedNormalize({ measure, groupBy } = {}) {
     const out = ['none'];
+    // Carte : densité (par km²) pour ce qui se compte.
+    if (dimensionKind(groupBy) === 'zone') {
+        if (['count', 'cumulative', 'active', 'distinct'].includes(measure?.op)) out.push('per_km2');
+        return out;
+    }
     if (['count', 'distinct', 'cumulative'].includes(measure?.op)) out.push('percent');
     const kind = dimensionKind(groupBy);
     if ((measure?.op === 'count' || (measure?.op === 'distinct' && measure.field === 'caches'))
@@ -494,6 +533,8 @@ export function allowedNormalize({ measure, groupBy } = {}) {
 // rien à vérifier, tout reste possible sauf ce que le graphique exclut.
 export function allowedLayouts({ periods, splitBy, view, extraSources = [] } = {}) {
     const chart = view?.chart;
+    // Carte : une vignette par période.
+    if (chart === 'map') return ['side'];
     // Calendrier et grille ne dessinent qu'une période (la première) ; le
     // radar superpose ses polygones.
     if (chart === 'calendar' || chart === 'heatmap' || chart === 'radar' || chart === 'challenge') return ['overlay'];
@@ -527,6 +568,7 @@ export function allowedCharts({ measure, groupBy, splitBy, extraSources = [] } =
     // Le mois de publication n'existe que pour la grille Jasmer.
     if (groupBy === 'published_month') return ['challenge'];
     const kind = dimensionKind(groupBy);
+    if (kind === 'zone') return ['map'];
     if (kind === 'none') return ['number', 'bar'];
     const charts = ['bar'];
     if (kind === 'time' || kind === 'cyclic' || ORDINAL_CATEGORIES.includes(groupBy)) {
@@ -594,6 +636,23 @@ function normalizeView(raw, spec) {
         record: bool(src.record, defaults.record),
         // Prolonger à ce rythme (chart_goal.mjs), là où un objectif a un sens.
         projection: bool(src.projection, defaults.projection) && goalApplies({ ...spec, view: { chart } }),
+        // Réglages de carte, seulement sur une carte (les autres graphiques
+        // gardent leur forme).
+        ...(chart === 'map' ? { map: normalizeMapView(src.map) } : {}),
+    };
+}
+
+export const MAP_VIEW_DEFAULTS = Object.freeze({ scale: 'quantile', classes: 5, frame: 'auto', highlight: true });
+
+function normalizeMapView(raw) {
+    const src = isObject(raw) ? raw : {};
+    const d = MAP_VIEW_DEFAULTS;
+    return {
+        scale: choice(src.scale, MAP_SCALES, d.scale),
+        classes: intIn(src.classes, d.classes, MAP_CLASSES_RANGE),
+        frame: choice(src.frame, MAP_FRAMES, d.frame),
+        // Contour des zones qui ont changé depuis la vignette précédente.
+        highlight: bool(src.highlight, d.highlight),
     };
 }
 
@@ -637,6 +696,16 @@ export function normalizeChartSpec(raw, newId = newChartId) {
     };
     // La vue d'abord : la présentation de la comparaison dépend du graphique.
     const view = normalizeView(src.view, spec);
+    // Moments clés : carte seulement, et seuls (ils remplacent la liste).
+    if (spec.periods) {
+        const moments = spec.periods.find((p) => p.kind === 'moments');
+        if (view.chart !== 'map') {
+            const kept = spec.periods.filter((p) => p.kind !== 'moments');
+            spec.periods = kept.length ? kept : null;
+        } else if (moments) {
+            spec.periods = [moments];
+        }
+    }
     spec.compare = normalizeCompare(src.compare, { ...spec, view });
     spec.view = view;
     spec.goal = normalizeGoal(src.goal, spec);

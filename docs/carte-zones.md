@@ -6,9 +6,13 @@ et en mini-cartes dans la page Statistiques (lot 3).
 Plan : `MyGCFlow_Plan_Carte_Zones.md`. Ajouter un pays :
 [zones-ajouter-un-pays.md](zones-ajouter-un-pays.md).
 
-État au 2026-11-09 : **lots 1 et 2 livrés**. Le lot 1 couvre les données,
-le rattachement et les colonnes de `/api/stats/finds`. Le lot 2 est le
-calcul partagé (`zone_model.mjs`). Rien n'est encore affiché.
+État au 2026-11-09 : **lots 1 à 3 livrés**.
+- Lot 1 : données, rattachement et colonnes de `/api/stats/finds`.
+- Lot 2 : calcul partagé (`zone_model.mjs`).
+- Lot 3 : mini-cartes de la page Statistiques. Elles portent sur les
+  trouvailles seulement ; Évolution viendra au lot 5.
+
+La couche animée de la carte principale est le lot 4.
 
 ## Niveaux
 
@@ -157,7 +161,123 @@ milestones, minGapDays })`.
 - Le retour est de la donnée (`kind`, `year`, `value`, `zones`), sans
   libellé : la traduction est faite par l'appelant.
 
+## Mini-cartes de la page Statistiques
+
+### Dans la description d'un graphique (`chart_spec.mjs`)
+
+- **Dimensions** `zone_country`, `zone_region`, `zone_subregion`
+  (`ZONE_DIMENSIONS`, `dimensionKind` = `zone`), proposées pour la source
+  `finds` seulement. Elles ne servent jamais de 2ᵉ dimension.
+- **Graphique** `map`, le seul permis avec une zone, et permis seulement
+  avec une zone (`allowedCharts`). La présentation est toujours `side` : une
+  vignette par période.
+- **`view.map`**, présent seulement sur une carte (les autres graphiques
+  gardent leur forme) : `scale` (`quantile` / `linear` / `log`), `classes`
+  (3 à 7, défaut 5), `frame` (`auto` / `world`), `highlight` (contour des
+  zones changées).
+- **Mesures** : `count`, `cumulative`, `active`, `distinct` (caches, jours,
+  types, propriétaires), `mean` (D ou T), plus deux mesures propres aux
+  cartes, `dt_coverage` et `first_day` (`ZONE_ONLY_OPS`). Les records
+  datés n'ont pas d'équivalent par zone.
+- **`compare.normalize: 'per_km2'`** : densité, affichée par 1 000 km².
+- **Période `{ kind: 'moments', rule }`** (`year_end`, `quarter_end`,
+  `milestones`, `new_zone`) : carte seulement, et seule dans la liste. La
+  normalisation retire une période « moments » d'un autre graphique.
+
+### Calcul (`chart_zones.mjs` › `runZoneQuery`)
+
+`computeResult` (stats_page_cards.js) l'appelle à la place de
+`runChartQueries` pour une carte. Le résultat a la forme habituelle :
+- `keys` : ids de zones, les plus fortes de la dernière vignette d'abord ;
+- une série par vignette, avec `day` (jour lu), `outside` et `changed`
+  (zones nouvelles ou modifiées depuis la vignette précédente) ;
+- en plus, `zones` : `{ level, countries, scale }`.
+
+« Voir les valeurs », l'export CSV et la présentation marchent donc sans
+changement.
+
+Correspondance des mesures (`zoneMeasureOf`) :
+- **Portée `all`** (tout jusqu'à la fin de la vignette) : `cumulative` avec
+  `from: 'all'`, `active` et `first_day`. Un seul état `zone_model`, déplacé
+  d'une vignette à l'autre.
+- **Portée `period`** : le reste, sur les lignes de la période (un état par
+  vignette).
+
+Vignettes : `expandPeriods` (8 au plus, `MAX_SERIES`), ou `keyMoments` pour
+une période « moments ». Une échelle commune est calculée sur toutes les
+valeurs de toutes les vignettes. Au niveau 2, un pays sans découpage plus
+fin (`fallbackCountries`) montre ses régions : la colonne lue mélange
+sous-régions et régions de ces pays.
+
+### Contours (`stats_page_geo.js`)
+
+- **Chargement à la demande** : `index.json`, puis les fichiers des pays
+  présents (`result.zones.countries`). Tant qu'il manque quelque chose,
+  `zoneMapFor` répond `{ loading: true }` et la carte affiche « Chargement de
+  la carte… ».
+- **À l'arrivée**, `setGeoListener` incrémente `state.geoRev`. Celui-ci
+  entre dans la clé du cache de résultats des cartes et dans le test
+  « déjà dessiné ». Cartes, aperçu de l'éditeur et aperçus de la galerie
+  (événement `mygcflow:stats-geo`) sont alors redessinés.
+- **Composition** (`echarts.registerMap`, nom `mgz-<hash>`, cache de 40
+  cartes) :
+  - les zones dont le rectangle touche le cadre, plus une marge de 4 %. Les
+    autres déborderaient sur les vignettes voisines : ECharts ne découpe pas
+    une `geo` ;
+  - les encarts (Outre-mer, Alaska, Hawaï), déplacés sous le cadre
+    seulement quand le même pays a aussi des données hors encarts. Leur
+    taille vaut 18 % du plus petit côté du pays, agrandis 2,5 fois au plus.
+- **`aspectScale`** = cos(latitude du milieu du cadre) : la France n'est pas
+  écrasée.
+- **Noms** (`zoneName`, langue de la page) et **surfaces** (`zoneAreas`)
+  viennent des fichiers chargés.
+
+### Rendu (`chart_echarts.mjs` › `mapOption`)
+
+- Une `geo` et une série `map` par vignette, dans une seule instance
+  ECharts.
+- `visualMap` `piecewise` commun, légende de `zoneLegend` (classes entières
+  « 4–7 », années, ou intervalles avec l'unité sur la dernière classe).
+- Contour des zones changées par `geo.regions`.
+- Titre de vignette : « départements : 41 · Trouvailles : 312 ».
+- Infobulle : nom, valeur, rang, écart avec la vignette précédente.
+- `mapHeight` : la carte du tableau s'allonge avec le nombre de rangées de
+  vignettes.
+
+### Lien vers la carte
+
+Un clic sur une zone (`clickTarget`, puis `confirmZoneLink` dans
+stats_page_links.js) ouvre `/?at=AAAA-MM-JJ&bbox=o,s,e,n`, ou
+`/evolution?…` pour une source Évolution. Côté carte, `init.js` ›
+`applyEntryLink` tente `startPausedPreview` toutes les 250 ms (les données
+arrivent après `mygcflowReady`, 20 s au plus), puis `seekAnimationToDate`
+et `fitMapView`. Les paramètres quittent l'adresse aussitôt. Relevé :
+`window.mygcflowEntryLink`.
+
+### Questions toutes faites (groupe « Mes cartes »)
+
+Ma conquête (`first_day`), Mes zones année par année (moments `year_end`),
+Mes zones à chaque palier (`milestones`), Ma carte du monde, Types de
+caches par région, Grille D/T par région.
+
+### Tests
+
+- `tests/js/chart_zones.test.mjs` : règles de la description, calcul,
+  options ECharts, libellés.
+- `tests/e2e/stats-zones.spec.mjs` : contours chargés et vignettes, encart
+  de La Réunion, éditeur, lien vers la carte en pause. Les trouvailles y
+  sont servies par `page.route` (jeu synthétique sur trois pays). Relevé :
+  `getStatsPageSnapshot().cards[].zones`.
+
 ## Limites connues
+
+- **Rapport de rattachement** (noms GC non reconnus, « Copier le rapport »)
+  pas encore fait. Il viendra avec les pays suivants. La note « Hors carte :
+  N » sous la carte en donne le total.
+- **Résumé textuel accessible** propre aux cartes pas encore fait :
+  `aria` d'ECharts seulement.
+- **Vidéo animée d'un graphique et panneau vidéo** : sans objet pour une
+  carte. La couche animée de la carte principale prendra ce rôle au lot 4.
 
 - **Royaume-Uni** : niveau 1 provisoire en nations (Angleterre, Écosse…). Les
   régions anglaises de Geocaching.com (« London ») ne sont pas reconnues par

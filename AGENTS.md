@@ -331,6 +331,16 @@ Autres repères :
   Mode présentation : relevé `presentation` du même instantané ; le
   défilement automatique se teste avec le délai de 5 s (`expect.poll`
   avec un délai de 8 s), sans horloge figée.
+  Cartes par zones (forme `map`, docs/carte-zones.md) : les contours
+  arrivent APRÈS le premier dessin (« Chargement de la carte… ») — attendre
+  `getStatsPageSnapshot().cards[i].zones.drawn > 0`, pas `rendered`. La
+  fixture my-finds.gpx ne couvre que Paris : `stats-zones.spec.mjs` sert un
+  jeu synthétique sur trois pays par `page.route('**/api/stats/finds')`
+  (colonnes `zone_*`). Un clic de zone se simule par
+  `echarts.getInstanceByDom(host).trigger('click', { componentType: 'series',
+  name: '<id>', seriesIndex })` ; il ouvre `/?at=…&bbox=…`, appliqué par
+  init.js (`window.mygcflowEntryLink.applied`), qui laisse l'aperçu EN
+  PAUSE : l'arrêter (`#btnQuickStop`) en fin de test.
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).

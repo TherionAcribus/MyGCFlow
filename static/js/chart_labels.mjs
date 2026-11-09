@@ -33,6 +33,9 @@ export const MEASURE_CHOICES = Object.freeze([
     { key: 'cumulative:all', measure: { op: 'cumulative', from: 'all' } },
     { key: 'cumulative', measure: { op: 'cumulative' } },
     { key: 'active', measure: { op: 'active' } },
+    // Cartes par zones seulement (chart_spec.mjs › ZONE_ONLY_OPS).
+    { key: 'dt_coverage', measure: { op: 'dt_coverage' } },
+    { key: 'first_day', measure: { op: 'first_day' } },
 ]);
 
 export function measureKey(measure) {
@@ -52,14 +55,18 @@ export const GROUP_CHOICES = Object.freeze([
     { family: 'time', dims: ['year', 'quarter', 'month', 'week', 'day'] },
     { family: 'cyclic', dims: ['month_of_year', 'week_of_year', 'day_of_year', 'weekday'] },
     { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'age', 'published_year', 'published_month'] },
+    { family: 'zone', dims: ['zone_country', 'zone_region', 'zone_subregion'] },
 ]);
 
 // Graphiques proposés par l'éditeur (tous ceux que l'adaptateur dessine).
-export const EDITOR_CHARTS = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar', 'challenge']);
+export const EDITOR_CHARTS = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar', 'challenge', 'map']);
 
 const UTC_DAY = 86400000;
 
-export function makeLabels({ t = identity, locale = 'fr' } = {}) {
+// `zoneName(id)` : nom d'une zone (pays, région…) dans la langue de la page,
+// lu dans les contours chargés (stats_page_geo.js) ; null tant qu'ils ne le
+// sont pas — l'id est alors affiché.
+export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}) {
     const dateFmt = (options) => new Intl.DateTimeFormat(locale, { timeZone: 'UTC', ...options });
     const dayFmt = dateFmt({ day: 'numeric', month: 'short', year: 'numeric' });
     const dayMonthFmt = dateFmt({ day: 'numeric', month: 'short' });
@@ -74,6 +81,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
     const halfFmt = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
     const compactFmt = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 });
     const perDayFmt = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+    const perKm2Fmt = new Intl.NumberFormat(locale, { maximumSignificantDigits: 2 });
     const signedPctFmt = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0, signDisplay: 'exceptZero' });
     const fromDay = (day) => new Date(day * UTC_DAY);
 
@@ -109,6 +117,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         cache: t('Cache'),
         finder: t('Visiteur'),
         county: t('Département'),
+        zone_country: t('Pays (carte)'),
+        zone_region: t('Région (carte)'),
+        zone_subregion: t('Département, comté… (carte)'),
     };
 
     // Option du menu « regroupement » dans la phrase (« par année »).
@@ -138,6 +149,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         cache: t('par cache'),
         finder: t('par visiteur'),
         county: t('par département'),
+        zone_country: t('sur une carte des pays'),
+        zone_region: t('sur une carte des régions'),
+        zone_subregion: t('sur une carte des départements, comtés…'),
     };
 
     const GROUP_FAMILIES = {
@@ -145,6 +159,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         time: t('Au fil du temps'),
         cyclic: t('Pour comparer les périodes'),
         category: t('Par caractéristique'),
+        zone: t('Sur une carte'),
     };
 
     // Option du menu « mesure » de la phrase. La source se choisit à part
@@ -170,6 +185,8 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         'cumulative:all': t('le cumul depuis le début'),
         cumulative: t('le cumul sur la période'),
         active: t('les caches actives'),
+        dt_coverage: t('le nombre de combinaisons D/T'),
+        first_day: t('la date de la première trouvaille'),
     };
 
     // Nom court d'une mesure (titre par défaut, infobulles, chiffre clé). Le
@@ -193,6 +210,8 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         'cumulative:all': t('Cumul depuis le début'),
         cumulative: t('Cumul sur la période'),
         active: t('Caches actives'),
+        dt_coverage: t('Combinaisons D/T'),
+        first_day: t('Première trouvaille'),
     };
 
     // Sources : nom dans les menus, nom de ce qu'on compte (légendes,
@@ -248,6 +267,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         heatmap: t('grille'),
         radar: t('radar'),
         challenge: t('grille de défi'),
+        map: t('carte'),
     };
 
     const LAYOUTS = {
@@ -272,6 +292,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         none: t('Valeurs'),
         percent: t('En pourcentage du total'),
         per_day: t('Par jour de la période'),
+        per_km2: t('Par km² (densité)'),
     };
 
     const PALETTES = {
@@ -341,6 +362,12 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         challenge_calendar: [t('Mon calendrier 366'), t("Un jour de l'année sans trouvaille ? Les 366 jours, toutes années confondues.")],
         challenge_jasmer: [t('Ma grille Jasmer'), t('Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent.')],
         challenge_months: [t('Mes mois de cache'), t('Chaque mois depuis votre première trouvaille : en avez-vous sauté un ?')],
+        zones_conquest: [t('Ma conquête'), t('Quand vous avez trouvé votre première cache dans chaque département, comté…')],
+        zones_by_year: [t('Mes zones année par année'), t("La carte de vos trouvailles à la fin de chaque année.")],
+        zones_milestones: [t('Mes zones à chaque palier'), t('La carte à votre 100ᵉ, 500ᵉ, 1 000ᵉ trouvaille…')],
+        zones_countries: [t('Ma carte du monde'), t('Vos trouvailles pays par pays.')],
+        zones_types: [t('Types de caches par région'), t('Le nombre de types différents trouvés dans chaque région.')],
+        zones_dt: [t('Grille D/T par région'), t('Combien des 81 combinaisons de difficulté et de terrain dans chaque région.')],
     };
 
     const QUESTION_GROUPS = {
@@ -354,6 +381,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         zone: t('La zone au fil du temps'),
         zone_caches: t('Les caches de la zone'),
         challenges: t('Mes défis'),
+        maps: t('Mes cartes'),
         records: t('Séries et records'),
         goals: t('Objectifs et projections'),
     };
@@ -363,6 +391,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         if (key === UNKNOWN_KEY) return t('Inconnu');
         if (dim === 'attribute') return t(String(attributeName ? attributeName(key) : key));
         if (dim === 'owner') return String(key);
+        if (dim.startsWith('zone_')) return (zoneName && zoneName(key)) || String(key);
         // Types, contenants, pays, régions : noms du GPX, traduits par le
         // catalogue comme dans les panneaux de la carte.
         return t(String(key));
@@ -412,8 +441,25 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
             case 'month': return monthYearLongFmt.format(Date.UTC(as.year, as.month - 1, 1));
             case 'rolling': return rollingLabel(as);
             case 'previous_rolling': return previousRollingLabel(as);
+            case 'moment': return momentLabel(as.moment);
             default:
                 return t('${from} – ${to}', { from: dayFmt.format(fromDay(entry.from)), to: dayFmt.format(fromDay(entry.fullTo ?? entry.to)) });
+        }
+    }
+
+    // Vignette d'une carte aux moments clés (zone_model.mjs › keyMoments).
+    function momentLabel(moment) {
+        const date = dayFmt.format(fromDay(moment.day));
+        switch (moment.kind) {
+            case 'year_end': return String(moment.year);
+            case 'quarter_end': return t('T${q} ${y}', { q: moment.quarter, y: moment.year });
+            case 'milestone': return t('${n}ᵉ trouvaille', { n: intFmt.format(moment.value) });
+            case 'new_zone': return t('Nouvelle zone · ${date}', { date });
+            default: {
+                // Dernier jour : nommé par ce qu'il a fusionné (« 2026 »).
+                const year = (moment.also || []).find((m) => m.kind === 'year_end');
+                return year ? String(year.year) : t('Au ${date}', { date });
+            }
         }
     }
 
@@ -502,6 +548,11 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
             case 'current': return period.unit === 'month' ? t('Ce mois-ci') : t('Cette année');
             case 'previous': return t('La période précédente');
             case 'dashboard': return t('Période du tableau de bord');
+            case 'moments':
+                if (period.rule === 'quarter_end') return t('Moments clés : fins de trimestre');
+                if (period.rule === 'milestones') return t('Moments clés : paliers (100ᵉ, 1 000ᵉ…)');
+                if (period.rule === 'new_zone') return t('Moments clés : nouvelles zones');
+                return t("Moments clés : fins d'année");
             case 'range':
                 return t('${from} – ${to}', {
                     from: dayFmt.format(Date.parse(period.from + 'T00:00:00Z')),
@@ -531,16 +582,29 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
 
     // Valeur affichée : moyennes de D/T à une décimale, âge en jours entiers,
     // le reste en entiers. `compact` pour les graduations (12,3 k).
-    function formatValue(value, measure, { compact = false, normalize = 'none' } = {}) {
+    // `bare` : sans unité (légende d'une carte, qui la donne une fois).
+    function formatValue(value, measure, { compact = false, normalize = 'none', bare = false } = {}) {
         if (value === null || value === undefined || Number.isNaN(value)) return '—';
         if (normalize === 'percent') return t('${n} %', { n: decFmt.format(value) });
         if (normalize === 'per_day') return t('${n} / jour', { n: perDayFmt.format(value) });
+        // Densité : par 1 000 km² (des trouvailles par km² ne s'écrivent
+        // qu'avec cinq zéros).
+        if (normalize === 'per_km2') {
+            const n = perKm2Fmt.format(value * 1000);
+            return bare ? n : t('${n} / 1 000 km²', { n });
+        }
+        if (measure?.op === 'first_day') return dayFmt.format(fromDay(value));
         if (measure?.op === 'mean' && measure.field !== 'age') return decFmt.format(value);
         if ((measure?.op === 'mean' && measure.field === 'age') || measure?.op === 'streak' || measure?.op === 'gap') {
             return t('${n} j', { n: intFmt.format(Math.round(value)) });
         }
         if (compact && Math.abs(value) >= 10000) return compactFmt.format(value);
         return intFmt.format(value);
+    }
+
+    // Unité d'une valeur affichée sans elle (`bare`), ou ''.
+    function valueUnit(measure, normalize = 'none') {
+        return normalize === 'per_km2' ? t('/ 1 000 km²') : '';
     }
 
     // Écart signé : « +12 », « −3 » ; proportion : « +18 % ».
@@ -688,6 +752,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         dateInUnit,
         periodChoiceLabel,
         formatValue,
+        valueUnit,
         formatDelta,
         formatRatio,
         defaultTitle,

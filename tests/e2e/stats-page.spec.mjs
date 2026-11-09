@@ -200,8 +200,8 @@ test('galerie : une question ajoute son graphique, qui survit au rechargement', 
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
   // Questions de la famille « Mes données » seulement (pas celles d'Évolution).
-  await expect(gallery.locator('[data-question]')).toHaveCount(44);
-  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(11);
+  await expect(gallery.locator('[data-question]')).toHaveCount(50);
+  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(12);
   await expect(gallery.locator('[data-question^="evo_"]')).toHaveCount(0);
   await gallery.locator('[data-question="weekdays"]').click();
   await expect(gallery).toBeHidden();
@@ -1332,8 +1332,8 @@ test('galerie : chaque question montre un aperçu sur mes données, l\'ajout s\'
   await page.locator('#btnStatsAddChart').click();
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
-  // « Partir de zéro » n'a pas d'aperçu ; les 43 questions en ont un.
-  await expect(gallery.locator('[data-preview]')).toHaveCount(43);
+  // « Partir de zéro » n'a pas d'aperçu ; les 49 questions en ont un.
+  await expect(gallery.locator('[data-preview]')).toHaveCount(49);
   await expect(gallery.locator('[data-question="custom"] [data-preview]')).toHaveCount(0);
   const preview = async (id) => (await snapshot(page)).gallery.find((g) => g.id === id);
   // Haut de la galerie : dessiné dès l'ouverture.

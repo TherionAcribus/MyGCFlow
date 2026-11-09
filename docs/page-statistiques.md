@@ -73,6 +73,7 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 | `static/js/chart_query.mjs` | Moteur : jeu de séries |
 | `static/js/chart_labels.mjs` | Libellés (traduction et locale injectées) |
 | `static/js/chart_echarts.mjs` | Adaptateur ECharts |
+| `static/js/chart_zones.mjs`, `zone_model.mjs`, `stats_page_geo.js` | Cartes par zones (forme `map`) : calcul, contours, encarts — doc dédiée [carte-zones.md](carte-zones.md) |
 | `static/js/dashboard_model.mjs` | Document des tableaux de bord, héritage, questions |
 | `static/css/stats_page.css` | Mise en page et palette des graphiques |
 | `static/vendor/echarts/` | ECharts 6.1.0 + `langFR.js` (+ LICENSE, NOTICE) |
@@ -587,6 +588,14 @@ aux couleurs de la carte, autres catégories d'une seule teinte), `accent`,
 valeur, à partir du 2ᵉ pas de la rampe : contraste ≥ 2:1 sur le fond).
 Rampe `--chart-heat-1…5` vérifiée au validateur dans les deux modes (le
 pas 1 se fond volontairement dans le fond : case proche de zéro).
+
+## Cartes par zones
+
+Forme `map` : pays, régions ou sous-régions colorés, une vignette par
+période ou par moment clé. Le détail (dimensions `zone_*`, mesures
+`dt_coverage` / `first_day`, densité, période « moments », contours chargés
+à la demande, lien vers la carte en pause) est dans
+[carte-zones.md](carte-zones.md).
 
 ## Grilles de défis
 

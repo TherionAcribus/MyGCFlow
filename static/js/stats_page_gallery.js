@@ -13,6 +13,7 @@ import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
 import { tableOf } from './stats_page_data.js';
 import { openEditor } from './stats_page_editor.js';
 import { $, echartsLocale, state } from './stats_page_state.js';
+import { zoneMapFor } from './stats_page_geo.js';
 
 // ---------------------------------------------------------------------------
 // Galerie
@@ -156,6 +157,12 @@ function renderGalleryPreview(box) {
         setPreviewState(box, 'number', first?.text ?? '');
         return;
     }
+    // Carte dont les contours arrivent : l'aperçu attend (relancé par
+    // l'événement « mygcflow:stats-geo »).
+    if (spec.view.chart === 'map' && zoneMapFor(result, spec).loading) {
+        state.gallery.geoWaiting.add(box);
+        return;
+    }
     setPreviewState(box, 'chart');
     const width = box.clientWidth;
     const option = thumbnailOption(buildChartOption(result, spec, { ...chartContext(), width }));
@@ -170,9 +177,18 @@ export function releaseGalleryPreviews() {
     if (state.gallery.frame) cancelAnimationFrame(state.gallery.frame);
     state.gallery.frame = 0;
     state.gallery.queue = [];
+    state.gallery.geoWaiting.clear();
     for (const chart of state.gallery.charts) chart.dispose();
     state.gallery.charts = [];
 }
+
+window.addEventListener('mygcflow:stats-geo', () => {
+    const waiting = [...state.gallery.geoWaiting].filter((box) => box.isConnected);
+    state.gallery.geoWaiting.clear();
+    if (!waiting.length) return;
+    state.gallery.queue.push(...waiting);
+    scheduleGalleryPreviews();
+});
 
 export function openGallery() {
     if (activeDashboard().items.length >= MAX_ITEMS) return;

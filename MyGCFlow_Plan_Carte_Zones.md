@@ -75,6 +75,28 @@ Tests : `tests/js/zone_model.test.mjs`. Écarts avec le § 5 :
 - **Les moments proches se fondent depuis le plus récent** : une suite
   régulière ne s'effondre pas en un seul moment.
 
+**Lot 3 livré le 2026-11-09** : mini-cartes de la page Statistiques
+(`chart_zones.mjs`, `stats_page_geo.js`, forme `map` dans
+`chart_echarts.mjs`), six questions « Mes cartes », lien vers la carte en
+pause (`/?at=…&bbox=…`, `init.js` › `applyEntryLink`), guide, traductions.
+Tests : `tests/js/chart_zones.test.mjs`, `tests/e2e/stats-zones.spec.mjs`.
+Doc : `docs/carte-zones.md` › Mini-cartes. Écarts avec les § 6 et 9 :
+- **8 vignettes au plus** (`MAX_SERIES`, comme les autres comparaisons), et
+  non 12.
+- **Dimensions `zone_*`** au lieu de `department` ; trouvailles seulement.
+  Évolution viendra au lot 5, avec ses colonnes de zones.
+- **Pas de `view.map.frame` `country:<ISO>` ni `continent`** : `auto` et
+  `world` suffisent pour l'instant.
+- **Encarts déplacés seulement** quand le même pays a aussi des données hors
+  encarts. Taille : 18 % du pays, agrandis 2,5 fois au plus. Les zones hors
+  cadre sont retirées de la carte composée : ECharts ne découpe pas une
+  `geo`, elles débordaient sur les vignettes voisines.
+- **Densité affichée par 1 000 km²** : par km², il fallait cinq zéros.
+- **Lien vers la carte** : centrage sur la zone, sans filtre (pays compris).
+  La confirmation le dit : « Ses filtres ne changent pas ».
+- **Reportés** : rapport de rattachement (lot 7) et résumé textuel
+  accessible propre aux cartes.
+
 À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre
@@ -515,7 +537,7 @@ Rédigées sans référence à un pays : le pays vient des données.
 |---|---|---|
 | **1. Données de zones** ✅ | Format § 2, `build_geo_zones.py` + mapshaper, recettes **FR, DE, US** (niveau 2 avec encarts : outre-mer, Alaska, Hawaï), pays + régions du monde (Natural Earth), alias générés + corrections, `zones.py` (rattachement § 4), colonnes `zone_*`, tests génériques § 3.4, doc **« Ajouter un pays »** | Rien de visible : tests et doc |
 | **2. `zone_model.mjs`** ✅ | Mesures § 5.1 sauf `found_share`, état + saut, échelle, `keyMoments` | Rien de visible |
-| **3. Mini-cartes** | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
+| **3. Mini-cartes** ✅ | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
 | **4. Couche animée** | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
 | **5. Évolution, Mes poses, grille** | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
 | **6. Croisement** | `found_share` | % de caches trouvées par zone, animé |

@@ -5,6 +5,7 @@ import { t } from './notifications.js';
 import { tableFromRecords } from './chart_sources.mjs';
 import { todayDay } from './chart_periods.mjs';
 import { makeLabels } from './chart_labels.mjs';
+import { zoneName } from './stats_page_geo.js';
 
 
 // Locale ECharts (libellés de ses outils) selon la langue de l'interface. Le
@@ -35,7 +36,7 @@ export const state = {
     evolutionLoads: new Map(),  // id de jeu → promesse de chargement
     missingDatasets: new Set(), // jeux supprimés depuis
     doc: null,
-    labels: makeLabels({ t, locale: document.documentElement.lang || 'fr' }),
+    labels: makeLabels({ t, locale: document.documentElement.lang || 'fr', zoneName }),
     tokens: null,
     typeColors: {},
     today: todayDay(),
@@ -47,6 +48,7 @@ export const state = {
     dataRev: 0,                 // révision des tables : toute écriture invalide le cache
     rendered: new Map(),        // id → { result, tokensRev } : ce qui est réellement dessiné
     tokensRev: 0,               // révision du thème : un changement impose un redraw
+    geoRev: 0,                  // révision des contours chargés (cartes par zones)
     deferred: new Set(),        // ids de cartes hors écran, dessinées à l'approche
     lazyObserver: null,         // IntersectionObserver des cartes différées
     resizeObserver: null,
@@ -70,7 +72,7 @@ export const state = {
     busy: 0,                    // attentes en cours (whileBusy)
     // Galerie : éléments prêts à ajouter (id de question → élément) et
     // aperçus dessinés à l'approche.
-    gallery: { items: new Map(), dashboardId: null, charts: [], queue: [], observer: null, frame: 0 },
+    gallery: { items: new Map(), dashboardId: null, charts: [], queue: [], observer: null, frame: 0, geoWaiting: new Set() },
 };
 
 // Couleurs lues dans les variables CSS (stats_page.css, palette clair /

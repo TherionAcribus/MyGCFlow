@@ -195,6 +195,23 @@ window.getStatsPageSnapshot = () => {
                 // Records datés de la première série ({ from, to } en jours).
                 records: entry?.result?.series[0]?.records ?? null,
                 recordText: document.querySelector(`.stats-card[data-chart-id="${item.spec.id}"] .stats-number-record`)?.textContent ?? null,
+                // Carte par zones : niveau, pays chargés, classes, zones
+                // contournées par vignette ; `drawn` = vignettes dessinées
+                // (0 tant que les contours se chargent).
+                zones: entry?.result?.zones ? (() => {
+                    const option = state.charts.get(item.spec.id)?.getOption();
+                    return {
+                        level: entry.result.zones.level,
+                        countries: entry.result.zones.countries,
+                        classes: entry.result.zones.scale.classes,
+                        changed: entry.result.series.map((s) => s.changed),
+                        days: entry.result.series.map((s) => s.day),
+                        unknown: entry.result.meta.unknown,
+                        drawn: Array.isArray(option?.geo) ? option.geo.length : 0,
+                        map: Array.isArray(option?.geo) ? option.geo[0]?.map ?? null : null,
+                        legend: option?.visualMap?.[0]?.pieces?.map((p) => p.label) ?? null,
+                    };
+                })() : null,
             };
         }) : [],
         save: { dirty: state.docDirty, failed: state.saveFailed, pending: saveQueue.pending },
