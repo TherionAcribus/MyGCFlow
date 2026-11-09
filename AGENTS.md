@@ -33,7 +33,12 @@ Autres repères :
   chaque reconstruction de l'index (`clearLocalData`, `buildPointsByDateIndex`,
   `changeSelect`…), donc plusieurs fois par rechargement. Pour compter les
   rechargements du jeu de données, intercepter `POST /get_geojson_points`
-  (un par rechargement) — exemple dans `labs-sources.spec.mjs`.
+  (un par rechargement) — exemple dans `labs-sources.spec.mjs`. Il bouge
+  encore ~200 ms APRÈS l'affichage du compteur `#filtersCounter` final
+  (réapplication différée des filtres via `setPickerDates`) : avant de lire
+  une révision de référence, attendre qu'elle soit stable (`expect.poll` à
+  700 ms, cf. `openWithFixture` de `flash-preview.spec.mjs`) — sinon échec
+  intermittent « 5 → 6 » (labs-sources, corrigé le 2026-11-09).
 - Le relevé périodique du statut Labs (`refreshLabsStatus`, toutes les 4 s)
   ne tourne que quand l'onglet Données porte la classe `active`. Un test qui
   veut une fenêtre de mesure déterministe peut geler ce relevé via

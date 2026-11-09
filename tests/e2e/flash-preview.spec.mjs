@@ -133,5 +133,14 @@ test("la lecture ferme l'aperçu", async ({ page }) => {
   await page.locator('#btnQuickPreview').click();
   await expect(page.locator('#btnQuickPause')).toBeVisible({ timeout: 15_000 });
   await expect.poll(async () => (await previewState(page)).preview).toBe(false);
-  await page.locator('#btnQuickStop').click();
+  // Les 6 jours de la fixture défilent en moins d'une seconde au rythme par
+  // défaut (20 j/s) : l'aperçu peut être fini avant le clic, et
+  // #btnQuickStop est alors masqué. Arrêter seulement s'il tourne encore,
+  // dans le même tour JS que la vérification (pas de course).
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    if (app.previewPlaybackState() !== 'idle') document.getElementById('btnQuickStop').click();
+  });
+  await expect.poll(async () => page.evaluate(async () =>
+    (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
 });

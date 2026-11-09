@@ -948,6 +948,17 @@ test('une mutation à compteurs identiques est détectée par la révision', asy
   await openReadyApp(page);
   await importLabs(page);
   await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+  // « 8 / 8 » s'affiche ~200 ms avant la réapplication différée des filtres
+  // (setPickerDates → changeSelect), qui reconstruit l'index une fois de
+  // plus sans nouveau rechargement : attendre que la révision soit stable,
+  // sinon ce bump tombe entre rev0 et la relecture (échec 5 → 6).
+  let previous = -1;
+  await expect.poll(async () => {
+    const revision = await readPointsRevision(page);
+    const stable = revision === previous;
+    previous = revision;
+    return stable;
+  }, { intervals: [700], timeout: 15_000 }).toBe(true);
 
   // Lectures répétées sans changement de révision : la carte ne recharge pas.
   const rev0 = await readPointsRevision(page);
