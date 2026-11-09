@@ -163,6 +163,10 @@ function renderGalleryPreview(box) {
         state.gallery.geoWaiting.add(box);
         return;
     }
+    // Galerie qui se ferme (choix immédiat d'une question) : boîte sans
+    // taille. ECharts lève une erreur en posant une carte (geo) dans 0 × 0 ;
+    // l'aperçu est simplement abandonné, la galerie le refera à l'ouverture.
+    if (spec.view.chart === 'map' && (!box.clientWidth || !box.clientHeight)) return;
     setPreviewState(box, 'chart');
     const width = box.clientWidth;
     const option = thumbnailOption(buildChartOption(result, spec, { ...chartContext(), width }));

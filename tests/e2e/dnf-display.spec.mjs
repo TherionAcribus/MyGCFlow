@@ -52,6 +52,20 @@ async function openWithData(page, logsFile = CONTRACT) {
   await expect(page.locator('#gcLogsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await page.locator('#gcLogsPreviewConfirmBtn').click();
   await expect(page.locator('#gcLogsStatus')).toContainText('logs enregistrés', { timeout: 30_000 });
+  // Le rechargement des DNF (reloadDnfData › applyChange) remet la couche au
+  // repos quand il arrive : un saut fait avant serait annulé (la ligne
+  // d'infos repassait à « DNF:1 » après syncDnfToDay). Attendre que l'index
+  // DNF et celui des points ne bougent plus.
+  let before = '';
+  await expect.poll(async () => {
+    const now = await page.evaluate(async () => {
+      const app = await import('/static/js/index.js');
+      return `${app.dnfRevision}|${app.pointsByDateRevision}`;
+    });
+    const stable = now === before && !now.startsWith('0|');
+    before = now;
+    return stable;
+  }, { intervals: [700], timeout: 15_000 }).toBe(true);
 }
 
 

@@ -1,0 +1,500 @@
+// Couche de zones colorées de la carte « Mes Géocaches » (onglet Zones,
+// docs/carte-zones.md › Couche de la carte).
+//
+// Les zones (pays, régions, départements…) se colorent jour après jour
+// pendant l'aperçu et dans la vidéo. Les valeurs viennent de zone_model.mjs,
+// le même calcul que les mini-cartes de la page Statistiques ; les ids de
+// zones sont posés dans chaque point par le serveur (zones.py,
+// bdd.create_geojson) ; les contours viennent de zone_geo.js.
+//
+// Branchements (mapgl.js), comme les panneaux Stats :
+//   resetZonesForAnimation   départ (aperçu, deux pipelines vidéo)
+//   accumulateZonesForDates  lot de jours affichés (fondus)
+//   seekZonesToDate          saut de la barre de chronologie (sans fondu)
+//   showZonesRest            arrêt : état final
+//   updateZoneLayer          chaque rendu : fondus en cours, données changées
+//   addZoneLegendToCanvas    légende peinte dans la vidéo
+//
+// L'échelle de couleurs est calculée sur l'état à la FIN de l'animation :
+// une teinte garde le même sens tout du long.
+//
+// Affichage : préférence globale `zones_display` ; apparence : thème
+// (pkg.options.zones, zone_layer_model.mjs). Page principale seulement.
+
+import * as pkg from './index.js';
+import { t } from './notifications.js';
+import { isMainPage } from './app_mode.mjs';
+import { tableFromRecords } from './chart_sources.mjs';
+import { mixedZoneTable } from './chart_zones.mjs';
+import { createZoneState, zoneScale } from './zone_model.mjs';
+import { addGeoListener, fallbackCountries, zoneFeatures } from './zone_geo.js';
+import { dayNumberOfDate } from './stats_model.mjs';
+import {
+    LEGEND_STYLE, classColors, dayOfDate, fadeProgress, legendEntries, legendOrigin, legendSize, mixHex,
+    normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
+} from './zone_layer_model.mjs';
+
+// Sous le trait (1000), les points (1001) et les flashs : au-dessus du fond.
+const LAYER_Z_INDEX = 500;
+// Révisions de l'index en rafale au rechargement : on attend qu'il se pose.
+const REBUILD_DELAY_MS = 300;
+const OUTLINE = 'rgba(40, 52, 66, 0.35)';
+const EMPTY_OUTLINE = 'rgba(40, 52, 66, 0.18)';
+
+let layer = null;
+let featuresKey = null;
+let model = null;            // { key, revision, state, countries, level }
+let scale = null;            // zone_model.mjs › zoneScale
+let scaleKey = null;
+const classes = new Map();   // id → classe affichée
+const fades = new Map();     // id → { from, start, rise }
+let clock = 0;
+let animating = false;
+let refDay = null;           // jour de référence de l'échelle (fin)
+let shownDay = null;
+let status = 'off';          // off | loading | ready | error | empty
+let revision = 0;            // signature vidéo (pipeline MediaRecorder)
+let rebuildTimer = 0;
+const styleCache = new Map();
+let legendCanvas = null;
+let legendKey = '';
+
+const opts = () => normalizeZoneLayerOptions(pkg.options?.zones);
+
+function enabled() {
+    return isMainPage() && window.userSettings?.zones_display === true;
+}
+
+function getMap() {
+    try { return pkg.getMap?.() || null; } catch (_) { return null; }
+}
+
+// Jour de fin : celle de l'animation, sinon la dernière trouvaille.
+function endDay() {
+    const end = pkg.options?.animation?.dateEnd instanceof Date ? pkg.options.animation.dateEnd : pkg.metadata?.endDate;
+    const day = end instanceof Date ? dayOfDate(end) : (end ? dayOfDate(new Date(end)) : null);
+    return Number.isFinite(day) ? day : model?.state?.extent?.last ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Données : index des points → table → état zone_model
+
+function propsOf(feature) {
+    return feature?.properties || feature?.getProperties?.() || {};
+}
+
+function buildModel() {
+    const o = opts();
+    const fallback = fallbackCountries();
+    const rev = Number(pkg.pointsByDateRevision) || 0;
+    const key = `${rev}|${o.level}|${o.measure}|${fallback ? 'f' : '-'}`;
+    if (model?.key === key) return model;
+    const records = [];
+    for (const byDate of [pkg.pointsByDate, pkg.hiddenPointsByDate]) {
+        if (!byDate) continue;
+        for (const [dateKey, list] of byDate.entries()) {
+            const day = dayNumberOfDate(new Date(dateKey));
+            if (!Number.isFinite(day) || !list?.length) continue;
+            for (const feature of list) {
+                const p = propsOf(feature);
+                records.push({
+                    day,
+                    zone_country: p.zone_country, zone_region: p.zone_region, zone_subregion: p.zone_subregion,
+                    cache_type: p.cache_type, difficulty: p.difficulty, terrain: p.terrain, code: p.gc_code,
+                });
+            }
+        }
+    }
+    const table = mixedZoneTable(tableFromRecords(records, { source: 'finds' }), o.level, fallback);
+    const state = createZoneState({ table, level: o.level, measure: zoneMeasureFor(o.measure) });
+    const countries = (table.dicts?.zone_country || []).filter(Boolean);
+    model = { key, revision: rev, state, countries, level: o.level, rows: records.length };
+    scaleKey = null;
+    return model;
+}
+
+// ---------------------------------------------------------------------------
+// Contours → features OpenLayers
+
+function ensureLayer(map) {
+    if (!layer) {
+        layer = new ol.layer.Vector({
+            source: new ol.source.Vector(),
+            style: styleFor,
+            zIndex: LAYER_Z_INDEX,
+            updateWhileAnimating: true,
+            updateWhileInteracting: true,
+        });
+        layer.set('name', 'zones');
+    }
+    if (!map.getLayers().getArray().includes(layer)) map.addLayer(layer);
+    return layer;
+}
+
+function ensureFeatures(level, countries) {
+    const geo = zoneFeatures(level, countries);
+    if (geo.status !== 'ready') return geo.status;
+    const key = level + '|' + countries.join(',');
+    if (featuresKey === key) return 'ready';
+    const format = new ol.format.GeoJSON({ featureProjection: 'EPSG:3857' });
+    const list = format.readFeatures({ type: 'FeatureCollection', features: geo.features });
+    for (const feature of list) feature.setId(feature.get('id'));
+    const source = layer.getSource();
+    source.clear(true);
+    source.addFeatures(list);
+    featuresKey = key;
+    return 'ready';
+}
+
+// ---------------------------------------------------------------------------
+// Classes et fondus
+
+function computeScale() {
+    const o = opts();
+    const day = endDay();
+    const key = `${model.key}|${day}|${o.scale}|${o.classes}`;
+    if (scaleKey === key) return;
+    refDay = day;
+    const values = model.state.seek(day ?? Infinity).values();
+    scale = zoneScale(values, { mode: o.measure === 'first_day' ? 'year' : o.scale, classes: o.classes });
+    scaleKey = key;
+    model.state.drainChanged();
+    shownDay = null;
+}
+
+const classOfValue = (v) => (scale && v !== null && v !== undefined ? scale.classOf(v) : null);
+
+function colorOf(cls) {
+    if (cls === null || cls === undefined) return null;
+    return classColors(opts().color, scale?.classes || 1)[cls] || null;
+}
+
+// Couleur affichée d'une zone à l'instant `now` (fondu compris).
+function displayedColor(id, now) {
+    const target = colorOf(classes.get(id));
+    const fade = fades.get(id);
+    if (!fade) return target;
+    const k = fadeProgress(fade.start, now);
+    if (k >= 1) return target;
+    if (fade.from === null) return target;
+    if (target === null) return fade.from;
+    return mixHex(fade.from, target, k);
+}
+
+// État complet au jour `day`, sans fondu (départ, saut, repos).
+function showDay(day) {
+    const state = model.state;
+    state.seek(day ?? Infinity);
+    state.drainChanged();
+    classes.clear();
+    fades.clear();
+    for (const [id, v] of state.values()) {
+        const cls = classOfValue(v);
+        if (cls !== null) classes.set(id, cls);
+    }
+    shownDay = day;
+    touch();
+}
+
+// Avancée au jour `day` : les zones qui changent de classe passent en fondu.
+function advanceTo(day, now) {
+    const state = model.state;
+    state.seek(day);
+    shownDay = day;
+    let changed = false;
+    for (const id of state.drainChanged()) {
+        const cls = classOfValue(state.valueOf(id));
+        const prev = classes.has(id) ? classes.get(id) : null;
+        if (cls === prev) continue;
+        const from = displayedColor(id, now);
+        if (cls === null) classes.delete(id);
+        else classes.set(id, cls);
+        fades.set(id, { from, start: now, rise: prev === null || (cls !== null && cls > prev) });
+        changed = true;
+    }
+    if (changed) touch();
+}
+
+function touch() {
+    revision++;
+    layer?.changed();
+}
+
+// ---------------------------------------------------------------------------
+// Style
+
+function staticStyle(cls) {
+    const o = opts();
+    const key = `${cls}|${o.color}|${o.opacity}|${o.outline}|${scale?.classes}`;
+    let style = styleCache.get(key);
+    if (!style) {
+        const color = colorOf(cls);
+        style = new ol.style.Style({
+            fill: color ? new ol.style.Fill({ color: rgbaOf(color, o.opacity / 100) }) : undefined,
+            stroke: o.outline ? new ol.style.Stroke({ color: color ? OUTLINE : EMPTY_OUTLINE, width: color ? 0.8 : 0.6 }) : undefined,
+        });
+        if (styleCache.size > 200) styleCache.clear();
+        styleCache.set(key, style);
+    }
+    return style;
+}
+
+function styleFor(feature) {
+    const id = feature.getId();
+    const fade = fades.get(id);
+    const cls = classes.has(id) ? classes.get(id) : null;
+    if (!fade || fadeProgress(fade.start, clock) >= 1) {
+        return cls === null && !opts().outline ? null : staticStyle(cls);
+    }
+    const o = opts();
+    const k = fadeProgress(fade.start, clock);
+    const target = colorOf(cls);
+    const alpha = o.opacity / 100;
+    let fill;
+    if (fade.from === null && target) fill = rgbaOf(target, alpha * k);
+    else if (target === null && fade.from) fill = rgbaOf(fade.from, alpha * (1 - k));
+    else fill = rgbaOf(mixHex(fade.from, target, k), alpha);
+    let stroke = o.outline ? new ol.style.Stroke({ color: OUTLINE, width: 0.8 }) : undefined;
+    // Éclat : le contour s'allume puis s'éteint quand la zone monte de classe.
+    if (o.glow && fade.rise && target) {
+        stroke = new ol.style.Stroke({ color: rgbaOf(target, 0.25 + 0.7 * (1 - k)), width: 1 + 3.5 * (1 - k) });
+    }
+    return new ol.style.Style({ fill: new ol.style.Fill({ color: fill }), stroke });
+}
+
+// ---------------------------------------------------------------------------
+// Légende (à l'écran : canvas dans #mapWithFrames ; vidéo : même dessin)
+
+function legendTitle() {
+    const o = opts();
+    if (o.measure === 'distinct_types') return t('Types de caches différents');
+    if (o.measure === 'dt_coverage') return t('Combinaisons D/T');
+    if (o.measure === 'first_day') return t('Première trouvaille');
+    return t('Trouvailles');
+}
+
+function legendModel() {
+    const o = opts();
+    if (!o.legend || status !== 'ready' || !scale || scale.min === null) return null;
+    const fmt = new Intl.NumberFormat(document.documentElement.lang || 'fr', { maximumFractionDigits: 0 });
+    const entries = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v) });
+    return entries.length ? { title: legendTitle(), entries, position: o.legendPosition } : null;
+}
+
+const FONT = () => getComputedStyle(document.body).fontFamily || 'sans-serif';
+
+function measureFn(ctx) {
+    return (text, size) => {
+        ctx.font = `${size === LEGEND_STYLE.titleSize ? '600 ' : ''}${size}px ${FONT()}`;
+        return ctx.measureText(text).width;
+    };
+}
+
+// Dessine la légende dans `ctx`, coin haut-gauche (x, y), à l'échelle `k`.
+function drawLegend(ctx, legend, size, x, y, k) {
+    const s = LEGEND_STYLE;
+    const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(k, k);
+    ctx.fillStyle = dark ? 'rgba(24, 30, 38, 0.86)' : 'rgba(255, 255, 255, 0.88)';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, size.width, size.height, s.radius);
+    ctx.fill();
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = dark ? '#e6ebf1' : '#1f2b38';
+    ctx.font = `600 ${s.titleSize}px ${FONT()}`;
+    ctx.fillText(legend.title, s.padding, s.padding + s.row / 2);
+    ctx.font = `${s.labelSize}px ${FONT()}`;
+    legend.entries.forEach((entry, i) => {
+        const cy = s.padding + s.row * (i + 1) + s.row / 2;
+        ctx.fillStyle = rgbaOf(entry.color, Math.max(0.55, opts().opacity / 100));
+        ctx.fillRect(s.padding, cy - s.swatch / 2, s.swatch, s.swatch);
+        ctx.fillStyle = dark ? '#c9d1db' : '#3b4757';
+        ctx.fillText(entry.label, s.padding + s.swatch + s.gap, cy);
+    });
+    ctx.restore();
+}
+
+function syncLegend() {
+    const host = document.getElementById('mapWithFrames');
+    const legend = enabled() ? legendModel() : null;
+    const key = legend ? JSON.stringify(legend) + '|' + document.documentElement.getAttribute('data-bs-theme') : '';
+    if (!legend) {
+        if (legendCanvas) legendCanvas.hidden = true;
+        legendKey = '';
+        return;
+    }
+    if (!host) return;
+    if (!legendCanvas) {
+        legendCanvas = document.createElement('canvas');
+        legendCanvas.id = 'zoneLegend';
+        legendCanvas.className = 'zone-legend';
+        legendCanvas.setAttribute('role', 'img');
+        const map = document.getElementById('map');
+        host.insertBefore(legendCanvas, map ? map.nextSibling : host.firstChild);
+    }
+    legendCanvas.hidden = false;
+    legendCanvas.setAttribute('aria-label', legend.title + ' : ' + legend.entries.map((e) => e.label).join(', '));
+    if (key === legendKey) return;
+    legendKey = key;
+    const ctx = legendCanvas.getContext('2d');
+    const size = legendSize(legend.entries, legend.title, measureFn(ctx));
+    const dpr = window.devicePixelRatio || 1;
+    legendCanvas.width = Math.ceil(size.width * dpr);
+    legendCanvas.height = Math.ceil(size.height * dpr);
+    legendCanvas.style.width = size.width + 'px';
+    legendCanvas.style.height = size.height + 'px';
+    const m = LEGEND_STYLE.margin + 'px';
+    const [vertical, horizontal] = legend.position.split('-');
+    legendCanvas.style.top = vertical === 'top' ? m : '';
+    legendCanvas.style.bottom = vertical === 'bottom' ? m : '';
+    legendCanvas.style.left = horizontal === 'left' ? m : '';
+    legendCanvas.style.right = horizontal === 'right' ? m : '';
+    ctx.clearRect(0, 0, legendCanvas.width, legendCanvas.height);
+    drawLegend(ctx, legend, size, 0, 0, dpr);
+    revision++;
+}
+
+// Légende dans une image de la vidéo (w × h, échelle `scaleFactor`).
+export function addZoneLegendToCanvas(ctx, w, h, scaleFactor = 1) {
+    if (!enabled() || !layer?.getVisible()) return;
+    const legend = legendModel();
+    if (!legend) return;
+    const size = legendSize(legend.entries, legend.title, measureFn(ctx));
+    const scaled = { width: size.width * scaleFactor, height: size.height * scaleFactor };
+    const origin = legendOrigin(legend.position, scaled, w, h, LEGEND_STYLE.margin * scaleFactor);
+    drawLegend(ctx, legend, size, origin.x, origin.y, scaleFactor);
+}
+
+// ---------------------------------------------------------------------------
+// Cycle de vie
+
+// Prépare la couche : données, contours, échelle. Vrai si elle est prête.
+function prepare() {
+    const map = getMap();
+    if (!enabled() || !map) {
+        if (layer) layer.setVisible(false);
+        status = 'off';
+        syncLegend();
+        return false;
+    }
+    const m = buildModel();
+    ensureLayer(map);
+    if (!m.rows) {
+        status = 'empty';
+        layer.setVisible(false);
+        syncLegend();
+        return false;
+    }
+    const geo = ensureFeatures(m.level, m.countries);
+    status = geo;
+    if (geo !== 'ready') {
+        layer.setVisible(false);
+        syncLegend();
+        return false;
+    }
+    computeScale();
+    layer.setVisible(true);
+    return true;
+}
+
+// Options, préférence ou données changées : tout est recalculé, la couche
+// montre le jour courant (animation) ou l'état final (repos).
+export function refreshZoneLayer() {
+    styleCache.clear();
+    if (prepare()) showDay(animating && shownDay !== null ? shownDay : endDay());
+    syncLegend();
+}
+
+// `startDate` : début effectif de l'animation (mapgl.js › animationStartDate).
+export function resetZonesForAnimation({ startDate = null } = {}) {
+    animating = true;
+    if (!prepare()) return;
+    const start = startDate instanceof Date ? dayOfDate(startDate) : null;
+    showDay(Number.isFinite(start) ? start - 1 : -Infinity);
+    syncLegend();
+}
+
+export function accumulateZonesForDates(dates, now) {
+    if (!animating || status !== 'ready' || !dates?.length || !model) return;
+    if (Number.isFinite(now)) clock = now;
+    const day = dayNumberOfDate(dates[dates.length - 1]);
+    if (Number.isFinite(day)) advanceTo(day, clock);
+}
+
+export function seekZonesToDate(date) {
+    if (status !== 'ready' || !model) return;
+    const day = date instanceof Date ? dayOfDate(date) : null;
+    if (Number.isFinite(day)) showDay(day);
+}
+
+export function showZonesRest() {
+    animating = false;
+    if (status === 'ready' && model) showDay(endDay());
+}
+
+// À chaque rendu : fondus en cours (vrai = encore une frame), données
+// changées depuis le dernier calcul (rechargement, filtre).
+export function updateZoneLayer(now) {
+    if (Number.isFinite(now)) clock = now;
+    // Fin naturelle de l'aperçu (sans passage par l'arrêt) : la carte garde
+    // son état final, la couche aussi, mais elle redevient « au repos ».
+    if (animating && pkg.isAnimationInProgress?.() === false) animating = false;
+    if (!animating && enabled() && model && model.revision !== (Number(pkg.pointsByDateRevision) || 0)) {
+        clearTimeout(rebuildTimer);
+        rebuildTimer = setTimeout(refreshZoneLayer, REBUILD_DELAY_MS);
+    }
+    if (!fades.size) return false;
+    let running = false;
+    for (const [id, fade] of fades) {
+        if (fadeProgress(fade.start, clock) >= 1) fades.delete(id);
+        else running = true;
+    }
+    touch();
+    return running;
+}
+
+export function getZoneLayerRevision() {
+    return revision;
+}
+
+// Relevé E2E.
+export function getZoneLayerDebugState() {
+    const values = model?.state ? Object.fromEntries(model.state.values()) : {};
+    return {
+        enabled: enabled(),
+        status,
+        visible: Boolean(layer?.getVisible()),
+        onMap: Boolean(layer && getMap()?.getLayers().getArray().includes(layer)),
+        options: opts(),
+        level: model?.level ?? null,
+        countries: model?.countries ?? [],
+        features: layer ? layer.getSource().getFeatures().length : 0,
+        day: shownDay,
+        refDay,
+        animating,
+        values,
+        classes: Object.fromEntries(classes),
+        fading: fades.size,
+        scale: scale ? { mode: scale.mode, breaks: scale.breaks, classes: scale.classes } : null,
+        legend: legendCanvas && !legendCanvas.hidden ? legendModel() : null,
+        revision,
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Démarrage : contours arrivés → recalcul ; préférences prêtes au jalon
+// mygcflow:ready. S'initialise lui-même (cf. AGENTS.md, ordre d'évaluation).
+
+function initZoneLayer() {
+    if (!isMainPage()) return;
+    addGeoListener(() => { if (enabled()) refreshZoneLayer(); });
+    refreshZoneLayer();
+}
+
+if (window.mygcflowReady) {
+    initZoneLayer();
+} else {
+    window.addEventListener('mygcflow:ready', initZoneLayer, { once: true });
+}

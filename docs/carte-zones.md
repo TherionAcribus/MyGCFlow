@@ -6,13 +6,12 @@ et en mini-cartes dans la page Statistiques (lot 3).
 Plan : `MyGCFlow_Plan_Carte_Zones.md`. Ajouter un pays :
 [zones-ajouter-un-pays.md](zones-ajouter-un-pays.md).
 
-État au 2026-11-09 : **lots 1 à 3 livrés**.
+État au 2026-11-09 : **lots 1 à 4 livrés**.
 - Lot 1 : données, rattachement et colonnes de `/api/stats/finds`.
 - Lot 2 : calcul partagé (`zone_model.mjs`).
 - Lot 3 : mini-cartes de la page Statistiques. Elles portent sur les
   trouvailles seulement ; Évolution viendra au lot 5.
-
-La couche animée de la carte principale est le lot 4.
+- Lot 4 : couche animée de la carte « Mes Géocaches » (onglet Zones).
 
 ## Niveaux
 
@@ -269,6 +268,80 @@ caches par région, Grille D/T par région.
   sont servies par `page.route` (jeu synthétique sur trois pays). Relevé :
   `getStatsPageSnapshot().cards[].zones`.
 
+## Couche de la carte (« Mes Géocaches », onglet Zones)
+
+**Ids de zones dans les points** : `bdd.create_geojson` appelle
+`zones.annotate_features`, qui pose `zone_country`, `zone_region` et
+`zone_subregion` dans les propriétés de chaque point (trouvailles et
+étapes Lab). Le cache GeoJSON persisté est passé en version 3
+(`geojson_cache.PERSIST_VERSION`) : une ancienne base est reconstruite
+une fois. `stats_finds` réutilise ces propriétés au lieu de refaire le
+rattachement.
+
+**Réglages** :
+- `zones_display` : préférence globale (AppSettings, `GET/PUT
+  /api/settings`), coupée par défaut. Interrupteur de l'onglet, enregistré
+  tout de suite.
+- Bloc `zones` du thème (`ZoneLayerOptions` ↔ `pkg.options.zones`,
+  `zone_layer_model.mjs`) : `level`, `measure` (`count`,
+  `distinct_types`, `dt_coverage`, `first_day`), `scale`, `classes` (3 à
+  7), `color`, `opacity` (20 à 85 %), `outline`, `glow`, `legend`,
+  `legend_position`. Défauts identiques dans `settings_manager.py`,
+  `defaultValues.json` et le module (vérifié par les tests). Le suivi
+  « thème modifié » écoute aussi l'onglet `#zones` (profiles.js).
+
+**Fichiers** :
+- `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,
+  couleurs (rampe du blanc mêlé à la teinte choisie), fondus, légende.
+- `zone_layer.js` : couche OpenLayers et cycle de vie.
+- `zone_layer_ui.js` : onglet.
+- `zone_geo.js` : contours, partagés avec la page Statistiques.
+- `templates/menu_zones.html` : onglet, page principale seulement.
+
+**Calcul** : la couche relit l'index des points (`pointsByDate` et
+`hiddenPointsByDate`), en fait une table (`tableFromRecords`) puis un
+état `zone_model`. Au niveau 2, la colonne est mêlée aux régions des pays
+sans découpage fin (`chart_zones.mixedZoneTable`, comme les mini-cartes).
+L'état est recalculé quand `pointsByDateRevision`, le niveau ou la mesure
+change. Hors animation, `updateZoneLayer` (appelé à chaque rendu) voit une
+révision nouvelle et relance le calcul 300 ms plus tard : l'index bouge
+plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
+(`options.animation.dateEnd`, sinon la dernière trouvaille).
+
+**Branchements dans mapgl.js**, aux mêmes endroits que les panneaux Stats :
+
+| Moment | Fonction | Effet |
+|---|---|---|
+| Départ (aperçu, deux pipelines vidéo) | `resetZonesForAnimation({ startDate })` | état de la veille du départ, sans fondu |
+| Lot de jours affichés | `accumulateZonesForDates(dates, now)` | les zones qui changent de classe passent en fondu (600 ms, horloge des points) |
+| Saut de la barre de chronologie | `seekZonesToDate(day)` | état du jour, sans fondu |
+| Arrêt (`showRestInfos`) | `showZonesRest()` | état final |
+| Chaque rendu (`updatePointAppearClock`) | `updateZoneLayer(now)` | fondus en cours : la frame suivante est demandée, et `mapDirtyTracker` empêche MediaRecorder d'en sauter une ; fin naturelle de l'aperçu détectée par `isAnimationInProgress` |
+| Signature de contenu MediaRecorder | `getZoneLayerRevision()` | une légende ou un fondu sur carte immobile produit des frames |
+| Peinture vidéo (deux pipelines) | `addZoneLegendToCanvas(ctx, w, h, échelle)` | légende, sous les panneaux Stats |
+
+**Rendu** :
+- `ol.layer.Vector`, `zIndex` 500 (sous le trait, les points et les
+  flashs), features du niveau pour les pays présents, en EPSG:3857.
+- Style par classe, mis en cache. Pendant un fondu, couleur mêlée ; une
+  zone qui monte de classe voit son contour s'allumer puis s'éteindre
+  (`glow`).
+- Une zone sans valeur n'a que sa frontière (si `outline`).
+- **Légende** : canvas `#zoneLegend` dans `#mapWithFrames` (z-index 89).
+  Le même dessin est repeint dans chaque image de la vidéo, au même coin et
+  aux mêmes marges, multipliés par l'échelle.
+
+**Relevé E2E** : `getZoneLayerDebugState()` donne `status` (`off`,
+`loading`, `ready`, `error`, `empty`), `visible`, `features`, `values`,
+`classes`, `day`, `animating`, `fading`, `scale`, `legend` et `revision`.
+
+**Tests** :
+- `tests/js/zone_layer_model.test.mjs` ;
+- `tests/test_zone_layer_settings.py` ;
+- `tests/test_zones.py` (`annotate_features`) ;
+- `tests/e2e/zone-layer.spec.mjs` : fixture `my-finds-zones.gpx`, 8
+  trouvailles sur 4 départements.
+
 ## Limites connues
 
 - **Rapport de rattachement** (noms GC non reconnus, « Copier le rapport »)
@@ -277,7 +350,16 @@ caches par région, Grille D/T par région.
 - **Résumé textuel accessible** propre aux cartes pas encore fait :
   `aria` d'ECharts seulement.
 - **Vidéo animée d'un graphique et panneau vidéo** : sans objet pour une
-  carte. La couche animée de la carte principale prendra ce rôle au lot 4.
+  carte de Statistiques. La couche de la carte principale joue ce rôle.
+- **Couche de la carte** :
+  - page « Mes Géocaches » seulement ; Évolution et Mes poses viendront au
+    lot 5 ;
+  - simplification d'affichage de 1,5 à 2,5 km, visible en zoomant fort sur
+    une frontière ;
+  - pendant les fondus, tout le calque est redessiné à chaque image, ce
+    qui reste à mesurer avec les 3 144 comtés américains ;
+  - les petits départements (Paris) sont couverts par leurs points aux
+    échelles nationales.
 
 - **Royaume-Uni** : niveau 1 provisoire en nations (Angleterre, Écosse…). Les
   régions anglaises de Geocaching.com (« London ») ne sont pas reconnues par

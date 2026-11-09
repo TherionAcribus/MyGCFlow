@@ -48,7 +48,8 @@ export function zoneMeasureOf(spec) {
 // Colonne de zones à lire. Au niveau 2, un pays sans découpage plus fin
 // (`fallbackCountries`) s'affiche à son niveau 1 : la colonne lue est alors
 // un mélange (sous-région quand elle existe, sinon la région de ces pays).
-function zoneTable(table, level, fallbackCountries) {
+// Partagé avec la couche de zones de la carte (zone_layer.js).
+export function mixedZoneTable(table, level, fallbackCountries) {
     if (level !== 'subregion' || !fallbackCountries?.size) return table;
     const sub = table[ZONE_COLUMNS.subregion];
     const region = table[ZONE_COLUMNS.region];
@@ -116,7 +117,7 @@ function zoneEntries(spec, table, rows, level, options) {
 export function runZoneQuery(spec, rawTable, options = {}) {
     const today = options.today ?? Infinity;
     const level = LEVEL_OF_DIMENSION[spec.groupBy] || 'country';
-    const table = zoneTable(rawTable, level, options.fallbackCountries);
+    const table = mixedZoneTable(rawTable, level, options.fallbackCountries);
     const filters = options.filters !== undefined ? options.filters : spec.filters;
     const mask = filterMask(table, filters);
     const rows = [];

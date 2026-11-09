@@ -166,6 +166,19 @@ class IndexTests(unittest.TestCase):
         for lat, lon in ((0, 0), (95, 2), (None, 2), (2, None)):
             self.assertIsNone(self.index.assign(lat=lat, lon=lon).country)
 
+    def test_annotate_features(self):
+        features = [
+            {"geometry": {"type": "Point", "coordinates": [2, 2]}, "properties": {"country": "Alpha"}},
+            {"geometry": None, "properties": {"country": "Bravo", "state": "Un"}},
+            {"geometry": {"type": "Point", "coordinates": ["x", 2]}, "properties": {}},
+        ]
+        self.assertTrue(zones.annotate_features(features, self.index))
+        self.assertEqual([f["properties"]["zone_subregion"] for f in features], ["AA-W1", None, None])
+        self.assertEqual(features[1]["properties"]["zone_region"], "BB-1")
+        self.assertIsNone(features[2]["properties"]["zone_country"])
+        empty = zones.ZoneIndex(self.dir / "absent")
+        self.assertFalse(zones.annotate_features([{"properties": {}}], empty))
+
     def test_missing_data_is_never_an_error(self):
         empty = zones.ZoneIndex(self.dir / "absent")
         self.assertFalse(empty.available())

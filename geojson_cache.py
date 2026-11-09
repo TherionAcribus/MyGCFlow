@@ -19,9 +19,10 @@ FILTER_CACHE_MAX_SIZE = 32
 UNKNOWN_GEO = "__unknown__"
 
 # Version du contenu persisté (geojson_data.json + index). Une base écrite
-# par une ancienne version n'a ni features Labs ni index source : le mtime
-# de la base ne changeant pas, seul un numéro de version l'invalide.
-PERSIST_VERSION = 2
+# par une ancienne version n'a ni features Labs ni index source (v2), ni ids
+# de zones (v3) : le mtime de la base ne changeant pas, seul un numéro de
+# version l'invalide.
+PERSIST_VERSION = 3
 
 
 def _parse_date(value) -> Optional[date]:

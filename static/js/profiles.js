@@ -6,6 +6,7 @@
 import * as pkg from './index.js';
 import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal, getBsModal } from './ui_bootstrap.js';
 import { markSaved, markSaveError } from './saved_indicator.mjs';
+import { zoneLayerFromProfile, zoneLayerToProfile } from './zone_layer_model.mjs';
 import { normalizeTrailOptions } from './travel_trail.mjs';
 import { buildThemeThumbnail } from './theme_thumbs.js';
 import { appMode } from './app_mode.mjs';
@@ -1041,6 +1042,10 @@ class ProfileManager {
         // au lieu de poser un drapeau, un clic sans effet sur les réglages (un
         // onglet, un bouton d'action) ne rend pas le profil « modifié ».
         container.addEventListener('click', recompute, true);
+        // Onglet Zones : son apparence est aussi un réglage de thème.
+        const zones = document.getElementById('zones');
+        zones?.addEventListener('input', recompute, true);
+        zones?.addEventListener('change', recompute, true);
     }
 
     // Compare l'état courant à la référence enregistrée et met l'indicateur à
@@ -1733,6 +1738,9 @@ class ProfileManager {
             // Trajet n'existe pas en mode Évolution, mais un thème enregistré
             // depuis celui-ci ne doit pas perdre le réglage.
             const trailSettings = trailSettingsForProfile(pkg.options?.trail);
+            // Couche de zones (onglet Zones) : son apparence est un réglage de
+            // thème ; l'affichage on/off est une préférence globale.
+            const zonesSettings = zoneLayerToProfile(pkg.options?.zones);
 
             this.currentSettings = {
                 map: mapSettings,
@@ -1740,6 +1748,7 @@ class ProfileManager {
                 flash: flashSettings,
                 infos: infosSettings,
                 trail: trailSettings,
+                zones: zonesSettings,
             };
 
             dbgProfiles('PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
@@ -1814,6 +1823,7 @@ class ProfileManager {
         if (profile.flash) applyFlashState(profile.flash);
         if (profile.infos) applyInfosState(profile.infos);
         if (profile.trail) applyTrailState(profile.trail);
+        if (profile.zones) pkg.options.zones = zoneLayerFromProfile(profile.zones);
 
         // ---- 2. Interface ----
         // La carte fait exception : switchLayer() écrit lui-même son option et
@@ -1822,6 +1832,7 @@ class ProfileManager {
         if (profile.points) pkg.syncPointOptionsUI();
         if (profile.flash) pkg.syncFlashOptionsUI();
         if (profile.trail) pkg.syncTrailOptionsUI();
+        if (profile.zones) pkg.syncZoneLayerUI?.();
         if (profile.infos) {
             pkg.syncInfosOptionsUI();
             applyInfosCss(profile.infos);
@@ -1836,6 +1847,7 @@ class ProfileManager {
         // Un trait déjà affiché (animation en cours ou terminée) prend le style
         // du thème sans attendre la frame suivante.
         if (profile.trail) pkg.refreshTravelTrailStyle?.();
+        if (profile.zones) pkg.refreshZoneLayer?.();
         // Les compteurs d'images dépendent de l'animation ET du flash : un profil
         // sans bloc animation doit quand même les recalculer.
         pkg.updateInfosForPictures();
@@ -1881,6 +1893,7 @@ class ProfileManager {
             flash: this.currentSettings.flash,
             infos: this.currentSettings.infos,
             trail: this.currentSettings.trail,
+            zones: this.currentSettings.zones,
         };
     }
 

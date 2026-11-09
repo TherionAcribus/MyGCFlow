@@ -1219,6 +1219,20 @@ function updateStatsPanels(now) {
     return active;
 }
 
+// Couche de zones : un fondu en cours entretient le rendu, et le pipeline
+// MediaRecorder ne doit sauter aucune frame (comme les panneaux de stats).
+let zonesFading = false;
+function updateZones(now) {
+    let active = false;
+    try { active = pkg.updateZoneLayer?.(now) === true; } catch (e) { console.warn('updateZoneLayer error:', e); }
+    if (active !== zonesFading) {
+        zonesFading = active;
+        if (active) mapDirtyTracker.beginAnimation();
+        else mapDirtyTracker.endAnimation();
+    }
+    return active;
+}
+
 // Avant chaque rendu : avance l'horloge des points, et entretient le rendu tant
 // qu'une apparition est en cours (en lecture live, rien d'autre ne redemande de
 // rendu si le flash est désactivé).
@@ -1257,6 +1271,7 @@ function updatePointAppearClock() {
     if (updateCameraFollow(now)) pending = true;
     if (updateTravelTrail(now)) pending = true;
     if (updateStatsPanels(now)) pending = true;
+    if (updateZones(now)) pending = true;
 
     // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
     if (pending && !isRecording && !isMediaRecording) map.render();
@@ -2302,6 +2317,7 @@ function showRestInfos() {
     resetCacheCount(Math.max(0, Number(pkg.metadata?.numberOfCaches) || 0));
     if (pkg.metadata?.endDate) pkg.updateCurrentDate(pkg.metadata.endDate);
     pkg.showStatsTotals?.();
+    pkg.showZonesRest?.();
     // Au repos, le planing d'apparition des images est ignoré.
     pkg.syncImagesToRest?.();
 }
@@ -2444,6 +2460,9 @@ function resetStatsPanelsForAnimation() {
     } catch (e) { console.warn('resetStatsForAnimation error:', e); }
     try { pkg.resetImagesForAnimation?.(animationStartDate()); }
     catch (e) { console.warn('resetImagesForAnimation error:', e); }
+    // Couche de zones : état au jour précédant le départ, échelle de la fin.
+    try { pkg.resetZonesForAnimation?.({ startDate: animationStartDate() }); }
+    catch (e) { console.warn('resetZonesForAnimation error:', e); }
 }
 
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
@@ -3609,6 +3628,7 @@ export function seekAnimationToDate(date) {
         seekTravelTrail(dateToDayNumber(day), now);
     }
     pkg.seekStatsToDate?.(day);
+    pkg.seekZonesToDate?.(day);
     // Planing des images : état instantané à la fin du jour sauté.
     pkg.syncImagesToDate?.(day, null);
 
@@ -4955,7 +4975,9 @@ function startMrDrawLoop() {
             const h = mrOutCanvas.height;
             mrOutCtx.clearRect(0, 0, w, h);
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
-            // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
+            // Légende des zones, puis panneaux de stats sous le titre et les
+            // infos, comme dans l'aperçu.
+            pkg.addZoneLegendToCanvas?.(mrOutCtx, w, h, effScale);
             pkg.addStatsPanelsToCanvas?.(mrOutCtx, w, h, effScale);
             // Images de l'utilisateur : au-dessus des stats, sous les cartouches.
             pkg.addImagePanelsToCanvas?.(mrOutCtx, w, h, effScale, sampleAppearClock());
@@ -4986,9 +5008,10 @@ function overlayContentSignature() {
         // MediaRecorder n'attend pas imagesReady) apparaît dès que possible.
         const stats = pkg.getStatsRevision?.() ?? 0;
         const images = pkg.getImagesRevision?.() ?? 0;
+        const zones = pkg.getZoneLayerRevision?.() ?? 0;
         // Un fondu d'image en cours dessine des frames même sur carte immobile.
         const imagesAlpha = pkg.getImagesAlphaSignature?.() ?? '';
-        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${images}\u0000${imagesAlpha}\u0000${title}\u0000${infos}`;
+        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${zones}\u0000${images}\u0000${imagesAlpha}\u0000${title}\u0000${infos}`;
     } catch(_) {
         // Contenu illisible : on ne prend pas le risque d'une frame périmée.
         mapDirtyTracker.markDirty();
@@ -5633,7 +5656,9 @@ async function captureElement() {
                     });
 
                     // Ajouter les overlays (titre, date, nombre de caches) à l'échelle dpr
-                    // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
+                    // Légende des zones, puis panneaux de stats sous le titre et
+                    // les infos, comme dans l'aperçu.
+                    pkg.addZoneLegendToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
                     pkg.addStatsPanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
                     // Images de l'utilisateur : au-dessus des stats, sous les cartouches.
                     pkg.addImagePanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr, sampleAppearClock());
@@ -5808,6 +5833,8 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // Panneaux de stats : mêmes caches que le compteur (locationless masquées
     // comprises), relues dans l'index par stats_panels.js.
     pkg.accumulateStatsForDates?.(dates, sampleAppearClock());
+    // Couche de zones : les zones qui changent de classe passent en fondu.
+    pkg.accumulateZonesForDates?.(dates, sampleAppearClock());
     // Images planifiées : fondus à la date du dernier jour du lot.
     pkg.syncImagesToDate?.(dates[dates.length - 1], sampleAppearClock());
 

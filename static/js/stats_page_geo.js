@@ -1,9 +1,7 @@
-// Page Statistiques : contours des cartes par zones.
+// Page Statistiques : cartes ECharts des cartes par zones.
 //
-// Les fichiers de static/geo/ (produits par tools/build_geo_zones.py, cf.
-// docs/carte-zones.md) sont chargés à la demande : le catalogue
-// (index.json), puis les pays, régions ou sous-régions dont un résultat a
-// besoin. Pour chaque carte, une carte ECharts est composée (zones du
+// Les contours sont chargés par zone_geo.js (partagé avec la couche de zones
+// de la carte). Pour chaque carte, une carte ECharts est composée (zones du
 // cadrage, encarts des territoires lointains) et enregistrée
 // (echarts.registerMap) ; chart_echarts.mjs › mapOption la dessine.
 //
@@ -11,7 +9,14 @@
 // { loading: true } et la carte affiche « Chargement… » ; à l'arrivée,
 // l'écouteur posé par setGeoListener redessine.
 
-const GEO_BASE = '/static/geo/';
+import {
+    addGeoListener, featureBBox, geoFailed, geoIndex, levelNoun, loadFile, loadIndex, requiredFiles, zoneName, zoneProps,
+} from './zone_geo.js';
+
+export {
+    fallbackCountries, zoneAreas, zoneBounds, zoneName,
+} from './zone_geo.js';
+
 // Marge autour des zones cadrées, en part de la taille du cadre.
 const FRAME_MARGIN = 0.04;
 // Encarts : côté de chaque boîte, en part du plus petit côté du pays, et
@@ -20,130 +25,14 @@ const INSET_SIZE = 0.18;
 const INSET_MAX_ZOOM = 2.5;
 const MAP_CACHE_MAX = 40;
 
-let indexPromise = null;
-let index = null;
-let failed = false;
-let listener = null;
-const files = new Map();      // chemin → { promise, data, error }
-const props = new Map();      // id → propriétés (nom, surface, parent) — tous niveaux
-const bboxes = new Map();     // feature → [x0, y0, x1, y1]
 const maps = new Map();       // clé de composition → nom enregistré
+const bboxes = { get: featureBBox };
 
-const english = () => String(document.documentElement.lang || 'fr').toLowerCase().startsWith('en');
-
+// Un seul écouteur pour la page (stats_page_cards.js redessine).
+let unlisten = null;
 export function setGeoListener(fn) {
-    listener = fn;
-}
-
-function notify() {
-    listener?.();
-}
-
-export function geoIndex() {
-    return index;
-}
-
-function loadIndex() {
-    indexPromise ??= fetch(GEO_BASE + 'index.json')
-        .then((resp) => {
-            if (!resp.ok) throw new Error('index.json : ' + resp.status);
-            return resp.json();
-        })
-        .then((data) => {
-            index = data;
-            notify();
-        })
-        .catch((err) => {
-            console.warn('[zones] catalogue indisponible', err);
-            failed = true;
-            notify();
-        });
-    return indexPromise;
-}
-
-// Révision d'un fichier (cache navigateur long, invalidé à chaque contenu).
-function fileUrl(rel) {
-    const entry = rel === 'countries.json' ? index?.countries
-        : Object.values(index?.by_country || {}).flatMap((c) => [c.region, c.subregion]).find((e) => e?.file === rel);
-    return GEO_BASE + rel + (entry?.rev ? '?v=' + entry.rev : '');
-}
-
-function loadFile(rel) {
-    let entry = files.get(rel);
-    if (entry) return entry;
-    entry = { promise: null, data: null, error: false };
-    files.set(rel, entry);
-    entry.promise = fetch(fileUrl(rel))
-        .then((resp) => {
-            if (!resp.ok) throw new Error(rel + ' : ' + resp.status);
-            return resp.json();
-        })
-        .then((data) => {
-            for (const feature of data.features || []) {
-                props.set(feature.properties.id, feature.properties);
-                bboxes.set(feature, bboxOf(feature.geometry));
-            }
-            entry.data = data;
-            notify();
-        })
-        .catch((err) => {
-            console.warn('[zones] contours indisponibles', err);
-            entry.error = true;
-            notify();
-        });
-    return entry;
-}
-
-// ---------------------------------------------------------------------------
-// Noms, surfaces, pays sans niveau 2
-
-export function zoneName(id) {
-    const p = props.get(id);
-    if (!p) return null;
-    return (english() ? p.name_en : p.name_fr) || p.name || null;
-}
-
-// Surfaces (km²) des zones chargées, pour la densité.
-export function zoneAreas() {
-    const out = new Map();
-    for (const [id, p] of props) out.set(id, p.area_km2);
-    return out;
-}
-
-// Pays qui n'ont pas de niveau 2 : affichés à leur niveau 1 sur une carte
-// des sous-régions. null tant que le catalogue n'est pas là.
-export function fallbackCountries() {
-    if (!index) return null;
-    return new Set(Object.entries(index.by_country).filter(([, c]) => !c.subregion).map(([cc]) => cc));
-}
-
-// « départements : 41 », « régions : 13 », « zones : 52 » (plusieurs pays).
-export function levelNoun(level, countries, n) {
-    const lang = english() ? 'en' : 'fr';
-    if (level === 'country') return (english() ? 'countries: ' : 'pays : ') + n;
-    const labels = new Set(countries.map((cc) => index?.by_country?.[cc]?.[level]?.label?.[lang]).filter(Boolean));
-    const fallback = level === 'region' ? (english() ? 'regions' : 'régions') : (english() ? 'zones' : 'zones');
-    const label = labels.size === 1 ? [...labels][0] : fallback;
-    return `${label} : ${n}`;
-}
-
-// ---------------------------------------------------------------------------
-// Géométrie
-
-function bboxOf(geometry) {
-    let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
-    const polys = geometry?.type === 'MultiPolygon' ? geometry.coordinates : geometry ? [geometry.coordinates] : [];
-    for (const poly of polys) {
-        for (const ring of poly) {
-            for (const [x, y] of ring) {
-                if (x < x0) x0 = x;
-                if (x > x1) x1 = x;
-                if (y < y0) y0 = y;
-                if (y > y1) y1 = y;
-            }
-        }
-    }
-    return [x0, y0, x1, y1];
+    unlisten?.();
+    unlisten = addGeoListener(fn);
 }
 
 function union(boxes) {
@@ -182,31 +71,17 @@ function hashKey(text) {
 // ---------------------------------------------------------------------------
 // Carte d'un résultat
 
-// Fichiers nécessaires : pays du monde, ou niveau 1 / 2 des pays présents (un
-// pays sans niveau 2 donne son niveau 1).
-function requiredFiles(level, countries) {
-    if (level === 'country') return ['countries.json'];
-    const out = [];
-    for (const cc of countries) {
-        const entry = index.by_country[cc];
-        if (!entry) continue;
-        const file = (level === 'subregion' && entry.subregion ? entry.subregion : entry.region)?.file;
-        if (file) out.push(file);
-    }
-    return [...new Set(out)];
-}
-
 // Groupe d'encart d'une zone : { cc, name, zones } ou null.
 function insetGroups(countries) {
     const groups = [];
     for (const cc of countries) {
-        for (const inset of index.by_country[cc]?.insets || []) groups.push({ cc, ...inset, ids: new Set(inset.zones) });
+        for (const inset of geoIndex().by_country[cc]?.insets || []) groups.push({ cc, ...inset, ids: new Set(inset.zones) });
     }
     return groups;
 }
 
 function groupOf(groups, id) {
-    const parent = props.get(id)?.parent;
+    const parent = zoneProps(id)?.parent;
     return groups.find((g) => g.ids.has(id) || (parent && g.ids.has(parent))) || null;
 }
 
@@ -216,8 +91,8 @@ export function zoneMapFor(result, spec) {
     const echarts = window.echarts;
     const zones = result?.zones;
     if (!zones || !echarts) return { error: true };
-    if (failed) return { error: true };
-    if (!index) {
+    if (geoFailed()) return { error: true };
+    if (!geoIndex()) {
         loadIndex();
         return { loading: true };
     }
@@ -334,10 +209,3 @@ function register(echarts, key, features) {
     return name;
 }
 
-// Emprise d'une zone (lien vers la carte : cadrer la zone cliquée).
-export function zoneBounds(id) {
-    for (const [feature, box] of bboxes) {
-        if (feature.properties.id === id) return box;
-    }
-    return null;
-}

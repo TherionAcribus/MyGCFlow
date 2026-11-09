@@ -1,0 +1,99 @@
+{% from '_scope_badges.html' import global_scope_badge, profile_scope_badge with context %}
+<!-- Couche de zones colorées (docs/carte-zones.md › Couche de la carte).
+     Affichage : préférence globale (zones_display), enregistrée
+     automatiquement. Apparence : thème (bloc `zones`, bouton « Sauvegarder »).
+     Contrôles pilotés par static/js/zone_layer_ui.js ; dessin par
+     zone_layer.js. Page « Mes Géocaches » seulement. -->
+<div id="zones" class="col-12 tab-pane fade">
+    <h5 class="gc-section-title">
+        <i class="ti ti-map-2 text-muted me-1"></i>{{ _("Zones sur la carte") }}{{ global_scope_badge() }}
+    </h5>
+    <p class="form-hint text-muted mb-2">
+        {{ _("Les pays, régions ou départements se colorent au fil de vos trouvailles, sur la carte et dans la vidéo. Le même calcul que les cartes de la page Statistiques.") }}
+    </p>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="switchZonesDisplay" role="switch">
+                <label class="form-check-label" for="switchZonesDisplay">{{ _("Afficher les zones sur la carte") }}</label>
+                <span id="zonesSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
+            </div>
+            <p id="zonesStatus" class="form-hint text-muted mt-2 mb-0" role="status" aria-live="polite" hidden></p>
+        </div>
+    </div>
+
+    <h6 class="gc-section-title">
+        <i class="ti ti-palette text-muted me-1"></i>{{ _("Apparence") }}{{ profile_scope_badge() }}
+    </h6>
+    <div class="card mb-3">
+        <div class="card-body">
+            <fieldset id="zonesAppearance">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="zonesLevel">{{ _("Découpage") }}</label>
+                        <select class="form-select" id="zonesLevel">
+                            <option value="country">{{ _("Pays") }}</option>
+                            <option value="region">{{ _("Régions") }}</option>
+                            <option value="subregion">{{ _("Départements, comtés… (sinon régions)") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="zonesMeasure">{{ _("Couleur selon") }}</label>
+                        <select class="form-select" id="zonesMeasure">
+                            <option value="count">{{ _("Le nombre de trouvailles") }}</option>
+                            <option value="distinct_types">{{ _("Le nombre de types de caches") }}</option>
+                            <option value="dt_coverage">{{ _("Le nombre de combinaisons D/T") }}</option>
+                            <option value="first_day">{{ _("La date de la première trouvaille") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="zonesScale">{{ _("Échelle des couleurs") }}</label>
+                        <select class="form-select" id="zonesScale">
+                            <option value="quantile">{{ _("Équilibrée (autant de zones par couleur)") }}</option>
+                            <option value="linear">{{ _("Régulière") }}</option>
+                            <option value="log">{{ _("Logarithmique (grands écarts)") }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label" for="zonesClasses">{{ _("Nuances") }}</label>
+                        <input type="number" class="form-control" id="zonesClasses" min="3" max="7" step="1">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label" for="zonesColor">{{ _("Couleur") }}</label>
+                        <input type="color" class="form-control form-control-color" id="zonesColor">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="zonesOpacity">{{ _("Opacité") }} <span id="zonesOpacityValue" class="text-muted"></span></label>
+                        <input type="range" class="form-range" id="zonesOpacity" min="20" max="85" step="5">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="zonesOutline">
+                            <label class="form-check-label" for="zonesOutline">{{ _("Frontières des zones") }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="zonesGlow">
+                            <label class="form-check-label" for="zonesGlow">{{ _("Éclat quand une zone fonce") }}</label>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="zonesLegend">
+                            <label class="form-check-label" for="zonesLegend">{{ _("Légende") }}</label>
+                        </div>
+                        <select class="form-select form-select-sm mt-1" id="zonesLegendPosition" aria-label="{{ _('Position de la légende') }}">
+                            <option value="bottom-left">{{ _("En bas à gauche") }}</option>
+                            <option value="bottom-right">{{ _("En bas à droite") }}</option>
+                            <option value="top-left">{{ _("En haut à gauche") }}</option>
+                            <option value="top-right">{{ _("En haut à droite") }}</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+    <p class="form-hint text-muted">
+        <i class="ti ti-world me-1" aria-hidden="true"></i>{{ _("Le découpage le plus fin existe pour la France, l'Allemagne et les États-Unis ; ailleurs, la carte montre les régions.") }}
+    </p>
+</div>

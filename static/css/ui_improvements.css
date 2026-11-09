@@ -786,6 +786,15 @@ main.fullscreen-mode ~ .tooltip {
        chargement) — rejouée à chaque insertion. */
     animation: stats-panel-in 0.28s ease-out;
 }
+/* Légende de la couche de zones (zone_layer.js) : dessinée dans un canvas,
+   repeinte telle quelle dans la vidéo (addZoneLegendToCanvas). Coin posé
+   par le script (top/bottom/left/right). */
+#mapWithFrames > .zone-legend {
+    position: absolute;
+    z-index: 89;
+    pointer-events: none;
+}
+#mapWithFrames > .zone-legend[hidden] { display: none; }
 /* Onglet Images (images_ui.js) : vignettes sur damier (la transparence se
    voit), bibliothèque en grille, zone de dépôt d'un fichier sur la liste. */
 .images-thumb,

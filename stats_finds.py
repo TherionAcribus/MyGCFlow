@@ -102,7 +102,10 @@ def build_finds_payload(features, zone_index=None):
         # Zones : un fichier de rattachement illisible ne doit pas priver la
         # page de ses graphiques — colonnes « hors carte », une trace.
         assigned = (None, None, None)
-        if zones_ok:
+        if "zone_country" in props:
+            # Déjà rattachée à la construction du GeoJSON (bdd.create_geojson).
+            assigned = tuple(props.get(name) for name in zones.ZONE_PROPERTIES)
+        elif zones_ok:
             lat, lon = _position(feature)
             try:
                 assigned = zone_index.assign(country=props.get("country"), state=props.get("state"),

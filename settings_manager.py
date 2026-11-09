@@ -430,6 +430,10 @@ class AppSettings:
     # Pose, maintenance, désactivation, archivage sont des déplacements du
     # poseur : étapes du trait de déplacement, sauf choix contraire.
     owner_in_trail: bool = True
+    # Couche de zones colorées de la carte principale (onglet Zones,
+    # docs/carte-zones.md) : choix d'affichage global, comme les DNF ; son
+    # apparence (niveau, mesure, couleurs) est dans le thème (ZoneLayerOptions).
+    zones_display: bool = False
     # Jeton embarqué dans le bookmarklet « MyGCFlow — Lab Caches » : protège
     # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
@@ -665,6 +669,27 @@ class FlashOptions:
 
 
 @dataclass
+class ZoneLayerOptions:
+    """Couche de zones colorées (onglet Zones, docs/carte-zones.md) : son
+    apparence. L'affichage on/off est une préférence globale (zones_display).
+
+    Mêmes valeurs par défaut que ZONE_LAYER_DEFAULTS
+    (static/js/zone_layer_model.mjs) et le bloc `zones` de
+    static/json/defaultValues.json.
+    """
+    level: str = "subregion"   # "country", "region", "subregion"
+    measure: str = "count"     # "count", "distinct_types", "dt_coverage", "first_day"
+    scale: str = "quantile"    # "quantile", "linear", "log"
+    classes: int = 5
+    color: str = "#1E6FD9"     # teinte la plus forte ; les classes vont du clair à elle
+    opacity: int = 60          # en %
+    outline: bool = True       # frontières des zones
+    glow: bool = True          # éclat d'une zone qui change de classe
+    legend: bool = True
+    legend_position: str = "bottom-left"
+
+
+@dataclass
 class TrailOptions:
     """Traits de déplacement : le trajet du géocacheur d'une étape à l'autre.
 
@@ -774,6 +799,7 @@ class MapProfile:
     flash: FlashOptions = field(default_factory=FlashOptions)
     infos: InfosOptions = field(default_factory=InfosOptions)
     trail: TrailOptions = field(default_factory=TrailOptions)
+    zones: ZoneLayerOptions = field(default_factory=ZoneLayerOptions)
 
 
 class InvalidProfileNameError(ValueError):
@@ -887,6 +913,13 @@ TRAIL_CLUSTER_KM_RANGE = (0.1, 100.0)
 TRAIL_JUMP_KM_RANGE = (10, 5000)
 TRAIL_WIDTH_RANGE = (1, 20)
 TRAIL_OPACITY_RANGE = (10, 100)
+# Couche de zones : miroir de static/js/zone_layer_model.mjs (ZONE_LAYER_*).
+ZONE_LAYER_LEVELS = ("country", "region", "subregion")
+ZONE_LAYER_MEASURES = ("count", "distinct_types", "dt_coverage", "first_day")
+ZONE_LAYER_SCALES = ("quantile", "linear", "log")
+ZONE_LAYER_CLASSES_RANGE = (3, 7)
+ZONE_LAYER_OPACITY_RANGE = (20, 85)
+ZONE_LAYER_LEGEND_POSITIONS = ("bottom-left", "bottom-right", "top-left", "top-right")
 
 
 THEMES = ("system", "light", "dark")
@@ -1235,7 +1268,7 @@ def coerce_settings(d: dict) -> AppSettings:
             s.labs_auto_fetch_coords = raw_fetch is True
         # Booléens stricts : une valeur corrompue coupe l'option.
         for name in ("dnf_display", "dnf_in_trail", "dnf_same_day_display",
-                     "owner_display", "owner_in_trail"):
+                     "owner_display", "owner_in_trail", "zones_display"):
             raw = d.get(name)
             if raw is not None:
                 setattr(s, name, raw is True)
@@ -1467,6 +1500,30 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             effect=_coerce_choice(tr.get("effect"), TRAIL_EFFECTS, pt.effect),
             head=_coerce_choice(tr.get("head"), TRAIL_HEADS, pt.head),
             persist_days=persist if persist in TRAIL_PERSIST_DAYS else pt.persist_days,
+        )
+
+        # Couche de zones : absente des thèmes antérieurs (valeurs par défaut).
+        zn = d.get("zones", {}) if isinstance(d.get("zones", {}), dict) else {}
+        pz = p.zones
+
+        def _zbool(key, fallback):
+            v = zn.get(key)
+            return v if isinstance(v, bool) else fallback
+
+        def _zint(key, fallback, bounds):
+            v = zn.get(key, fallback)
+            return fallback if isinstance(v, bool) else _clamp_int(v, fallback, *bounds)
+        p.zones = ZoneLayerOptions(
+            level=_coerce_choice(zn.get("level"), ZONE_LAYER_LEVELS, pz.level),
+            measure=_coerce_choice(zn.get("measure"), ZONE_LAYER_MEASURES, pz.measure),
+            scale=_coerce_choice(zn.get("scale"), ZONE_LAYER_SCALES, pz.scale),
+            classes=_zint("classes", pz.classes, ZONE_LAYER_CLASSES_RANGE),
+            color=_expand_hex_color(_coerce_hex_color(zn.get("color"), pz.color)),
+            opacity=_zint("opacity", pz.opacity, ZONE_LAYER_OPACITY_RANGE),
+            outline=_zbool("outline", pz.outline),
+            glow=_zbool("glow", pz.glow),
+            legend=_zbool("legend", pz.legend),
+            legend_position=_coerce_choice(zn.get("legend_position"), ZONE_LAYER_LEGEND_POSITIONS, pz.legend_position),
         )
 
     return p
@@ -3126,6 +3183,7 @@ class SettingsManager:
                 'head': prof.trail.head,
                 'persist_days': prof.trail.persist_days,
             },
+            'zones': asdict(prof.zones),
         }
 
     def export_profile_payload(self, name: str, app_version: str) -> dict:

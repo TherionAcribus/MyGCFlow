@@ -15,6 +15,7 @@ import lab_geojson
 import lab_store
 import log_formats
 import log_store
+import zones
 from extensions import db
 from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
@@ -822,6 +823,14 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist
 
     if extra_features:
         features = lab_geojson.merge_sorted(features, extra_features)
+
+    # Zones (pays, région, sous-région) de chaque point : la couche de zones
+    # de la carte et la page Statistiques lisent les mêmes (zones.py). Un
+    # fichier de zones illisible ne doit pas empêcher la carte de s'afficher.
+    try:
+        zones.annotate_features(features)
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).exception("zones : rattachement des points impossible")
 
     geojson = {
         "type": "FeatureCollection",

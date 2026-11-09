@@ -45,6 +45,10 @@ export * from './dnf_data.js';
 export * from './owner_data.js';
 // Après ui.js : s'initialise lui-même (cf. AGENTS.md, ordre d'évaluation).
 export * from './timeline_bar.js';
+// Couche de zones (onglet Zones) ; s'initialisent eux-mêmes au jalon
+// mygcflow:ready.
+export * from './zone_layer.js';
+export * from './zone_layer_ui.js';
 
 // Scripts de démonstration (fonctions window.demo*/test* à appeler depuis la
 // console), réservés au développement. Le drapeau vient de Flask : tester

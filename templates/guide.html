@@ -58,8 +58,11 @@
                 <a href="#images" class="guide-nav-link">
                     <span class="nav-num">5</span>{{ _("Images") }}
                 </a>
+                <a href="#zones" class="guide-nav-link">
+                    <span class="nav-num">6</span>{{ _("Zones") }}
+                </a>
                 <a href="#settings" class="guide-nav-link">
-                    <span class="nav-num">6</span>{{ _("Préférences") }}
+                    <span class="nav-num">7</span>{{ _("Préférences") }}
                 </a>
 
                 <div class="guide-nav-section-title">{{ _("Autre source") }}</div>
@@ -441,10 +444,32 @@
                 </ol>
             </section>
 
+            <section id="zones" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-map-2"></i></span>
+                    <h2>6. {{ _("Zones") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Coloriez les pays, régions ou départements où vous avez trouvé des caches : pendant l'animation, chaque zone fonce au fil de vos trouvailles, et la vidéo la reprend avec sa légende. C'est le même calcul que les cartes de la page Statistiques.") }}</p>
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Affichez les zones") }}</h3>
+                        <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Zones") }}</span>{{ _(", l'interrupteur « Afficher les zones sur la carte » est enregistré tout de suite, quel que soit le thème.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Réglez leur apparence") }}</h3>
+                        <p>{{ _("Choisissez le découpage (pays, régions, départements — Kreise en Allemagne, comtés aux États-Unis), ce qui fait foncer une zone (trouvailles, types de caches, combinaisons D/T, date de la première trouvaille), la couleur, l'opacité et la légende. Ces réglages font partie du thème : pensez à « Sauvegarder ».") }}</p>
+                        <div class="guide-callout tip">
+                            <i class="ti ti-palette"></i>
+                            <div>{{ _("Les couleurs sont calculées sur la fin de l'animation : une teinte garde le même sens du premier au dernier jour. Une zone qui change de nuance passe en fondu, avec un bref éclat de son contour.") }}</div>
+                        </div>
+                    </li>
+                </ol>
+            </section>
+
             <section id="settings" class="guide-section">
                 <div class="guide-section-head">
                     <span class="sec-badge"><i class="ti ti-settings"></i></span>
-                    <h2>6. {{ _("Préférences") }}</h2>
+                    <h2>7. {{ _("Préférences") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application dans l'onglet") }} <span class="ui-chip">{{ _("Préférences") }}</span>.</p>
 

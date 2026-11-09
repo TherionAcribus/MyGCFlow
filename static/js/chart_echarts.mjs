@@ -805,8 +805,10 @@ export function zoneLegend(result, spec, ctx) {
             const b = upper === null ? year(max) : year(upper) - 1;
             label = a === b ? String(a) : `${a}–${b}`;
         } else if (integer) {
-            const b = upper === null ? max : upper - 1;
-            label = lo === b ? fmt(lo) : `${fmt(lo)}–${fmt(b)}`;
+            // Borne non entière (échelle linéaire, log) : [3,33 ; 5,67[ = 4–5.
+            const a = c === 0 ? min : Math.ceil(lo);
+            const b = upper === null ? max : Math.ceil(upper) - 1;
+            label = a >= b ? fmt(a) : `${fmt(a)}–${fmt(b)}`;
         } else {
             label = `${fmt(lo)} – ${fmt(upper ?? max)}`;
         }

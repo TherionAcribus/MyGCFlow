@@ -402,6 +402,34 @@ class ZoneIndex:
 
 
 _NEIGHBOUR_DEG = 0.5
+ZONE_PROPERTIES = ("zone_country", "zone_region", "zone_subregion")
+
+
+def annotate_features(features, index=None) -> bool:
+    """Pose les ids de zones dans les propriétés de features GeoJSON (points
+    de la carte, trouvailles et étapes Lab) : `zone_country`, `zone_region`,
+    `zone_subregion` (None = hors carte). Faux si les données de zones sont
+    absentes (les features restent sans ces propriétés)."""
+    index = index or get_index()
+    if not index.available():
+        return False
+    for feature in features or ():
+        props = (feature or {}).get("properties")
+        if props is None:
+            continue
+        coords = ((feature.get("geometry") or {}).get("coordinates")) or ()
+        lon, lat = (coords[0], coords[1]) if len(coords) >= 2 else (None, None)
+        try:
+            lat = float(lat) if lat is not None else None
+            lon = float(lon) if lon is not None else None
+        except (TypeError, ValueError):
+            lat = lon = None
+        assigned = index.assign(country=props.get("country"), state=props.get("state"), lat=lat, lon=lon)
+        for name, value in zip(ZONE_PROPERTIES, assigned[:3]):
+            props[name] = value
+    return True
+
+
 _index = None
 _index_lock = threading.Lock()
 

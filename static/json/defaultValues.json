@@ -145,5 +145,17 @@
         "head": "dot",
         "persistDays": 30,
         "duration": 800
+    },
+    "zones": {
+        "level": "subregion",
+        "measure": "count",
+        "scale": "quantile",
+        "classes": 5,
+        "color": "#1E6FD9",
+        "opacity": 60,
+        "outline": true,
+        "glow": true,
+        "legend": true,
+        "legendPosition": "bottom-left"
     }
 }

@@ -182,6 +182,16 @@ Autres repères :
   puis `page.reload()` (ou `reloadOwnerData()`) — exemple dans
   `owner-display.spec.mjs`, dont la fixture `my-finds-poses.gpx` cale la plage
   d'animation sur la vie des caches de `logs-poses.json`.
+- Couche de zones de la carte (onglet Zones, docs/carte-zones.md) :
+  `zones_display` est une préférence globale à remettre à `false` en
+  sortant (attendre `GET /api/settings`) ; l'apparence (`pkg.options.zones`)
+  est du thème, posée en mémoire — rien à remettre. Les ids de zones
+  viennent des points eux-mêmes (`zone_*`, posés par le serveur à la
+  construction du GeoJSON) : la fixture `my-finds-zones.gpx` couvre quatre
+  départements. Un type de cache inconnu (« Mystery Cache » au lieu de
+  « Unknown Cache ») est filtré de la carte tout en restant compté dans
+  `#filtersCounter`. Relevé : `getZoneLayerDebugState()` (attendre
+  `status === 'ready'` : contours chargés après le premier rendu).
 - Panneaux Stats par source (`options.source` : `dnf` / `owned`) : les
   données DNF et caches posées sont chargées au démarrage même si leur
   affichage carte est coupé — un spec qui importe des logs recharge la page
@@ -195,6 +205,11 @@ Autres repères :
   case répondait (visible grâce au DNF du My Finds) mais `mapCodes` lisait
   l'ancien chargement. Attendre le point attendu par `expect.poll`, pas une
   lecture directe — cas de `dnf-display.spec.mjs` (2026-10-26).
+  Même course pour un saut (`syncDnfToDay`) fait juste après l'import des
+  logs : `applyChange` remet ensuite la couche au repos. `openWithData`
+  attend donc que `dnfRevision` et `pointsByDateRevision` soient stables
+  (corrigé le 2026-11-09, révélé par un décalage de minutage du lot 4 des
+  zones).
 - L'onglet Style → « Titres » contient l'assistant CSS à DEUX cibles :
   « Titre » (`#gcCssTargetTitle`, active par défaut) et « Infos »
   (`#gcCssTargetInfos`). Les cases infos (`cbDisplayNumberofCaches`,

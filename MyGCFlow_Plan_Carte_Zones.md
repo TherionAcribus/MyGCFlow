@@ -97,7 +97,41 @@ Doc : `docs/carte-zones.md` › Mini-cartes. Écarts avec les § 6 et 9 :
 - **Reportés** : rapport de rattachement (lot 7) et résumé textuel
   accessible propre aux cartes.
 
-À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
+**Lot 4 livré le 2026-11-09** : couche animée de la carte « Mes Géocaches ».
+- Fichiers : `zone_layer.js`, `zone_layer_model.mjs`, `zone_layer_ui.js`,
+  `menu_zones.html`.
+- Ids de zones posés dans les points par le serveur
+  (`zones.annotate_features`, cache GeoJSON v3).
+- Préférence globale `zones_display`, bloc `zones` du thème
+  (`ZoneLayerOptions`).
+- Légende à l'écran et dans les deux pipelines vidéo.
+- Tests : `tests/js/zone_layer_model.test.mjs`,
+  `tests/test_zone_layer_settings.py`, `tests/e2e/zone-layer.spec.mjs`.
+- Doc : `docs/carte-zones.md` › Couche de la carte. Guide : section 6
+  « Zones ».
+
+Écarts avec le § 7 :
+- **Ids de zones** : choix « côté serveur » (propriétés de chaque point,
+  calculées une fois avec le cache GeoJSON), plutôt qu'une jointure avec
+  `/api/stats/finds` sur la page carte.
+- **Chargement des contours** sorti dans `zone_geo.js`, partagé avec
+  `stats_page_geo.js`, qui ne garde que la composition ECharts.
+- **Pas de rafraîchissement par événement** : il n'existe pas d'événement
+  « données rechargées » sur la carte. La couche compare
+  `pointsByDateRevision` à chaque rendu au repos et se recalcule 300 ms
+  après le dernier changement.
+- **Paramètre d'éclat** : seulement on/off (`glow`), pas de réglage de
+  durée. Fondu fixe de 600 ms.
+- **Rampe de couleurs** : du blanc mêlé à la teinte choisie (40 %) jusqu'à
+  elle, une seule teinte réglable. Opacité par défaut à 60 %, après
+  capture : à 55 % la classe claire disparaissait sur le fond OSM.
+- **Légende** : canvas indépendant (comme les panneaux Stats), pas dans
+  `overlay_canvas.js`, qui ne sait peindre que le titre et les infos.
+- **Correction annexe** : bornes de légende arrondies aux entiers pour les
+  échelles linéaire et log, ici et sur les mini-cartes de Statistiques
+  (« 1–2,33 » devenait possible).
+
+(Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre
 `/api/stats/finds` par code GC sur la page carte.
@@ -538,7 +572,7 @@ Rédigées sans référence à un pays : le pays vient des données.
 | **1. Données de zones** ✅ | Format § 2, `build_geo_zones.py` + mapshaper, recettes **FR, DE, US** (niveau 2 avec encarts : outre-mer, Alaska, Hawaï), pays + régions du monde (Natural Earth), alias générés + corrections, `zones.py` (rattachement § 4), colonnes `zone_*`, tests génériques § 3.4, doc **« Ajouter un pays »** | Rien de visible : tests et doc |
 | **2. `zone_model.mjs`** ✅ | Mesures § 5.1 sauf `found_share`, état + saut, échelle, `keyMoments` | Rien de visible |
 | **3. Mini-cartes** ✅ | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
-| **4. Couche animée** | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
+| **4. Couche animée** ✅ | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
 | **5. Évolution, Mes poses, grille** | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
 | **6. Croisement** | `found_share` | % de caches trouvées par zone, animé |
 | **7. Pays suivants** | Royaume-Uni (`dissolve`), puis pays demandés par les joueurs, modèle d'issue GitHub | Nouveaux pays à chaque mise à jour |
