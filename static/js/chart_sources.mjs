@@ -10,8 +10,12 @@ import { ageBucket, dayNumber, parseYmd, ymdOfDay } from './stats_model.mjs';
 
 // Colonnes codées par dictionnaire dans le format serveur (stats_finds.py).
 // `cache`, `finder` (Mes poses) et `county` (Évolution) : absentes des
-// trouvailles, toujours inconnues dans findsTable.
-export const DICT_FIELDS = Object.freeze(['cache_type', 'container', 'country', 'state', 'owner', 'cache', 'finder', 'county']);
+// trouvailles, toujours inconnues dans findsTable. `zone_*` : ids de zones
+// (zones.py, format v2 des trouvailles), lus par zone_model.mjs.
+export const ZONE_FIELDS = Object.freeze(['zone_country', 'zone_region', 'zone_subregion']);
+export const DICT_FIELDS = Object.freeze([
+    'cache_type', 'container', 'country', 'state', 'owner', 'cache', 'finder', 'county', ...ZONE_FIELDS,
+]);
 export const SOURCE_KIND_VALUES = Object.freeze(['geocache', 'lab']);
 
 const NO_VALUE = -1;

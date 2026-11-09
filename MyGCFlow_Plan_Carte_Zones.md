@@ -59,6 +59,27 @@ ouvertes en § 12.
 - **Colonnes Évolution** reportées à la source Évolution des mini-cartes :
   ~3,5 s de rattachement pour 464 000 caches, à faire à l'import.
 
+**Lot 2 livré le 2026-11-09** : `static/js/zone_model.mjs`, et les
+colonnes `zone_*` lues par `findsTable` (`ZONE_FIELDS` dans `DICT_FIELDS`).
+Tests : `tests/js/zone_model.test.mjs`. Écarts avec le § 5 :
+- **`active` est un mode, pas une mesure** : toute mesure (sauf
+  `first_day`) se calcule en cumul ou sur les lignes actives. Cela donne
+  aussi « types différents parmi les caches actives » pour Évolution.
+- **Pas de points de reprise** : avancer ou défaire les événements, ou
+  repartir de zéro si c'est plus court, suffit. Un saut sur 464 000 caches
+  prend au plus 16 ms.
+- **`drainChanged()`** remplace `changedSince(token)` : un seul
+  consommateur par état.
+- **Les moments clés sont de la donnée** (`kind`, `year`, `value`, `zones`,
+  `also`) : les libellés seront traduits par l'appelant, au lot 3.
+- **Les moments proches se fondent depuis le plus récent** : une suite
+  régulière ne s'effondre pas en un seul moment.
+
+À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
+d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
+(rattachement à la construction du cache GeoJSON), soit joindre
+`/api/stats/finds` par code GC sur la page carte.
+
 ## 1. Contexte constaté dans le code
 
 - **Colonnes déjà là** : les tables de `chart_sources.mjs` ont `country`,
@@ -493,7 +514,7 @@ Rédigées sans référence à un pays : le pays vient des données.
 | Lot | Contenu | Livrable visible |
 |---|---|---|
 | **1. Données de zones** ✅ | Format § 2, `build_geo_zones.py` + mapshaper, recettes **FR, DE, US** (niveau 2 avec encarts : outre-mer, Alaska, Hawaï), pays + régions du monde (Natural Earth), alias générés + corrections, `zones.py` (rattachement § 4), colonnes `zone_*`, tests génériques § 3.4, doc **« Ajouter un pays »** | Rien de visible : tests et doc |
-| **2. `zone_model.mjs`** | Mesures § 5.1 sauf `found_share`, état + saut, échelle, `keyMoments` | Rien de visible |
+| **2. `zone_model.mjs`** ✅ | Mesures § 5.1 sauf `found_share`, état + saut, échelle, `keyMoments` | Rien de visible |
 | **3. Mini-cartes** | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
 | **4. Couche animée** | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
 | **5. Évolution, Mes poses, grille** | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
