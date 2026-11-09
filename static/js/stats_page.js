@@ -55,6 +55,7 @@ import {
     DEFAULT_SLIDE_SECONDS, SLIDE_SECONDS, countUp, dashboardVideoDuration, musicFields, slideSeconds, videoMoment,
 } from './dashboard_video.mjs';
 import { panelFromSpec } from './chart_panel_link.mjs';
+import { paintDashboardImage } from './stats_image.js';
 import { STATS_MAX_PANELS } from './stats_model.mjs';
 import {
     DASHBOARD_HEIGHTS,
@@ -137,6 +138,7 @@ const state = {
     conflictOpen: false,    // dialogue « autre onglet » déjà affiché
     editor: null,               // { mode: 'edit'|'new', index, item }
     video: null,                // vidéo animée en cours (openVideo)
+    lastImage: null,            // dernière image du tableau (relevé E2E)
     previewChart: null,
     ready: false,
     // Préférence d'accessibilité : les graphiques sont posés sans animation.
@@ -736,6 +738,9 @@ function renderDashboardMenu() {
     menu.append(menuButton('export-dashboard', 'ti-file-export', t('Exporter ce tableau de bord (fichier)')));
     menu.append(menuButton('import-dashboard', 'ti-file-import', t('Importer un tableau de bord…'), { disabled: full }));
     menu.append(menuButton('print-dashboard', 'ti-printer', t('Imprimer')));
+    const noCards = !activeDashboard().items.length;
+    menu.append(menuButton('image-dashboard', 'ti-photo', t('Enregistrer le tableau en image (PNG)'), { disabled: noCards }));
+    menu.append(menuButton('copy-image-dashboard', 'ti-copy', t("Copier l'image du tableau"), { disabled: noCards }));
     menu.append(menuButton('video-dashboard', 'ti-movie', t('Créer la vidéo du tableau…')));
     const dangerDivider = document.createElement('li');
     dangerDivider.innerHTML = '<hr class="dropdown-divider">';
@@ -890,6 +895,8 @@ function onDashboardMenuClick(event) {
     if (action === 'export-dashboard') exportActiveDashboard();
     if (action === 'import-dashboard') $('statsImportInput').click();
     if (action === 'print-dashboard') window.print();
+    if (action === 'image-dashboard') saveDashboardImage();
+    if (action === 'copy-image-dashboard') copyDashboardImage();
     if (action === 'video-dashboard') openDashboardVideo();
     if (action === 'delete-dashboard') deleteDashboard();
 }
@@ -2580,6 +2587,23 @@ function downloadValuesCsv() {
     download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), fileSafe(chartTitle(spec)) + '.csv');
 }
 
+// Un graphique redessiné hors écran, sans animation (état final), à la
+// taille donnée : `use` reçoit l'instance ECharts, libérée ensuite.
+function withOffscreenChart(result, spec, { renderer, width, height, ratio = 1, background }, use) {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + width + 'px;height:' + height + 'px';
+    document.body.append(box);
+    const chart = window.echarts.init(box, null, { renderer, width, height, devicePixelRatio: ratio, locale: echartsLocale() });
+    try {
+        const option = buildChartOption(result, spec, { ...chartContext(), width });
+        chart.setOption({ ...option, animation: false, backgroundColor: background });
+        return use(chart);
+    } finally {
+        chart.dispose();
+        box.remove();
+    }
+}
+
 // Image vectorielle : le même graphique redessiné hors écran par le moteur
 // SVG d'ECharts, à la taille de la carte, fond de la carte compris.
 export function chartSvg(spec) {
@@ -2590,17 +2614,91 @@ export function chartSvg(spec) {
     const host = chart.getDom();
     const width = Math.max(200, host.clientWidth);
     const height = Math.max(150, host.clientHeight);
-    const box = document.createElement('div');
-    box.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + width + 'px;height:' + height + 'px';
-    document.body.append(box);
-    const svgChart = window.echarts.init(box, null, { renderer: 'svg', width, height, locale: echartsLocale() });
+    return withOffscreenChart(entry.result, spec, { renderer: 'svg', width, height, background: state.tokens.surface },
+        (svgChart) => svgChart.renderToSVGString());
+}
+
+// ---------------------------------------------------------------------------
+// Image du tableau entier (stats_image.js) : enregistrée en PNG ou copiée
+// ---------------------------------------------------------------------------
+
+// Graphique d'une carte pour l'image : redessiné à la netteté de l'image,
+// fond transparent (celui de la carte est déjà peint).
+function chartImageCanvas(chartId, width, height, ratio) {
+    const entry = state.results.get(chartId);
+    if (!entry?.result) return null;
+    return withOffscreenChart(entry.result, entry.spec, { renderer: 'canvas', width, height, ratio, background: 'transparent' },
+        (chart) => chart.getRenderedCanvas({ pixelRatio: ratio, backgroundColor: 'transparent' }));
+}
+
+// En-tête de l'image : de quoi parle le tableau (période, données,
+// filtres) ; « MyGCFlow · date » en pied de page.
+function dashboardImageHeader(dashboard) {
+    const first = [];
+    if (dashboard.kind === 'evolution') first.push(t('Évolution · ${name}', { name: datasetName(dashboard.dataset) }));
+    first.push(state.labels.periodChoiceLabel(dashboard.period));
+    const data = dataNote(dashboard);
+    if (data) first.push(data);
+    const filters = describeFilters(dashboard.filters, filterValueLabel)
+        .map(({ field, values }) => state.labels.filterField(field) + ' : ' + values.join(', '));
+    return [first.join(' · '), filters.length ? t('Filtres') + ' : ' + filters.join(' · ') : ''];
+}
+
+async function dashboardImageBlob() {
+    if (!state.ready || !activeDashboard().items.length) throw new Error('no dashboard');
+    // Cartes encore différées : dessinées d'abord, la disposition est finale.
+    renderDeferred();
+    const dashboard = activeDashboard();
+    const tokens = state.tokens || readTokens();
+    const root = getComputedStyle(document.documentElement);
+    const page = getComputedStyle(document.body).backgroundColor;
+    const date = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+    const out = await paintDashboardImage({
+        grid: $('statsGrid'),
+        title: dashboard.name || t('Mon tableau de bord'),
+        lines: dashboardImageHeader(dashboard),
+        footer: 'MyGCFlow · ' + date,
+        colors: {
+            background: page && page !== 'rgba(0, 0, 0, 0)' ? page : tokens.surface,
+            heading: root.getPropertyValue('--color-heading').trim() || tokens.text,
+            muted: tokens.textMuted,
+            font: tokens.font,
+        },
+        chartCanvas: chartImageCanvas,
+    });
+    const blob = await new Promise((resolve) => out.canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('toBlob');
+    state.lastImage = {
+        width: out.canvas.width, height: out.canvas.height, ratio: out.ratio,
+        cards: out.cards, charts: out.charts, bytes: blob.size,
+    };
+    return blob;
+}
+
+async function saveDashboardImage() {
     try {
-        const option = buildChartOption(entry.result, spec, { ...chartContext(), width });
-        svgChart.setOption({ ...option, animation: false, backgroundColor: state.tokens.surface });
-        return svgChart.renderToSVGString();
-    } finally {
-        svgChart.dispose();
-        box.remove();
+        const blob = await dashboardImageBlob();
+        download(blob, fileSafe(activeDashboard().name || t('Mon tableau de bord')) + '.png');
+    } catch (e) {
+        console.warn('[stats] Image du tableau :', e?.message || e);
+        showError(t("L'image du tableau n'a pas pu être créée."));
+    }
+}
+
+// Copie dans le presse-papiers, à coller dans un message ou un forum. La
+// promesse est passée telle quelle à ClipboardItem : le geste de
+// l'utilisateur reste valable pendant le dessin.
+async function copyDashboardImage() {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+        showError(t('Ce navigateur ne sait pas copier une image : enregistrez-la plutôt en PNG.'));
+        return;
+    }
+    try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': dashboardImageBlob() })]);
+        showToast(t('Image du tableau copiée : collez-la où vous voulez.'), 'success');
+    } catch (e) {
+        console.warn('[stats] Copie de l’image du tableau :', e?.message || e);
+        showError(t("L'image du tableau n'a pas pu être copiée."));
     }
 }
 
@@ -3645,6 +3743,9 @@ window.getStatsPageSnapshot = () => {
         reduceMotion: state.reduceMotion,
         sourceErrors: [...state.sourceErrors],
         busy: state.busy > 0,
+        // Dernière image du tableau : taille en pixels, netteté, cartes et
+        // graphiques dessinés.
+        image: state.lastImage,
         presentation: state.present ? {
             index: state.present.index,
             count: state.present.slides.length,

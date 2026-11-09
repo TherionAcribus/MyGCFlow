@@ -132,7 +132,8 @@ présentation fait le 2026-11-09 (plein écran, un graphique par écran,
 clavier, défilement automatique ; tranche la question ouverte du lot 5).
 Vidéo d'un tableau entier faite le 2026-11-09 (ouverture puis chaque
 graphique, chiffres qui comptent, fondus ; musique récente de la carte ou
-fichier, aussi pour la vidéo d'un graphique). Piste restante : lien carte
+fichier, aussi pour la vidéo d'un graphique). Image du tableau entier
+(PNG ou presse-papiers) faite le 2026-11-09. Piste restante : lien carte
 pour les autres sources (DNF, caches posées, Mes poses, Évolution — leurs
 pages n'ont pas de sélection persistée).
 

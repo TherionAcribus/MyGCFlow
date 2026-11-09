@@ -235,7 +235,7 @@ export const QUESTIONS = Object.freeze([
     { id: 'evo_published', family: 'evolution', group: 'zone', icon: 'ti-chart-bar', size: 'M', spec: { source: EVO, groupBy: 'year', view: { chart: 'bar' } } },
     { id: 'evo_types', family: 'evolution', group: 'zone_caches', icon: 'ti-chart-donut', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'cache_type', view: { chart: 'donut' } } },
     { id: 'evo_counties', family: 'evolution', group: 'zone_caches', icon: 'ti-map', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'county', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
-    { id: 'evo_dt', family: 'evolution', group: 'zone_caches', icon: 'ti-grid-dots', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'dt', view: { chart: 'heatmap' } } },
+    { id: 'evo_dt', family: 'evolution', group: 'zone_caches', icon: 'ti-grid-dots', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'dt', view: { chart: 'heatmap', labels: true } } },
 ]);
 
 // Famille d'une question (personnelle par défaut).

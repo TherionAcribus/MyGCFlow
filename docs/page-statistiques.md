@@ -493,6 +493,27 @@ le même enregistrement en temps réel et la même conversion serveur.
 - Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
   `music` (`kind`, `file`).
 
+### Image du tableau entier
+
+« Enregistrer le tableau en image (PNG) » et « Copier l'image du tableau »
+(menu du tableau de bord, grisés sans carte) : une seule image du tableau
+tel qu'il est affiché — même disposition, même thème clair ou sombre.
+
+- En-tête : nom du tableau, puis période, données (« 812 trouvailles »…)
+  et filtres du tableau ; pied de page « MyGCFlow · date ».
+- Dessin (`paintDashboardImage`, stats_image.js) : les cartes sont relues
+  dans le DOM — fonds et bordures, textes à la position de leurs lignes
+  (coupures et « … » compris), icônes Tabler (glyphe du `::before`). Les
+  commandes (poignée, menu, boutons) ne sont pas reprises.
+- Graphiques : redessinés hors écran, sans animation, à la netteté de
+  l'image (`withOffscreenChart`, partagé avec l'export SVG) ; les cartes
+  différées sont dessinées d'abord (`renderDeferred`).
+- Netteté ×2, réduite pour un très grand tableau (côté ≤ 16 000 px,
+  surface ≤ 100 Mpx, `imageRatio`, dashboard_image.mjs).
+- Copie : `ClipboardItem` reçoit la promesse de l'image (le geste de
+  l'utilisateur reste valable pendant le dessin).
+- Relevé `image` : `width`, `height`, `ratio`, `cards`, `charts`, `bytes`.
+
 ## Organisation (lot 5)
 
 - **Déplacer** : glisser-déposer HTML5 ; la carte ne devient `draggable`
@@ -772,6 +793,9 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   textes, cumul prolongé, axe, spec).
 - Présentation : `present_model.test.mjs` (diapositives, navigation,
   touches, délais).
+- Image du tableau : `dashboard_image.test.mjs` (netteté bornée, « … »,
+  mots répartis sur les lignes, glyphes, couleurs) ; E2E : PNG téléchargé
+  (taille = grille + marges, ×2), copie dans le presse-papiers.
 - Vidéo du tableau : `dashboard_video.test.mjs` (durées, moments, fondus,
   comptage, champs de la musique) ; E2E : MP4 avec piste audio (atome
   `mp4a`), musique générée par `wavFile` (tests/e2e/wav.mjs).

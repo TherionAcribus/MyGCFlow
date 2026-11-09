@@ -1097,6 +1097,56 @@ test('créer une vidéo animée d\'une comparaison', async ({ page, request }) =
   }
 });
 
+// Image du tableau entier : la disposition affichée, redessinée dans un PNG
+// (en-tête, cartes, graphiques ECharts à la netteté ×2).
+const IMAGE_ITEMS = [
+  { size: 'S', spec: { id: 'eeee01', groupBy: 'none', view: { chart: 'number' }, goal: { value: 10 } } },
+  { size: 'S', spec: { id: 'eeee02', groupBy: 'none', measure: { op: 'max_per_day' }, view: { chart: 'number', record: true } } },
+  { size: 'M', spec: { id: 'eeee03', groupBy: 'month_of_year', view: { chart: 'bar' } } },
+  { size: 'M', spec: { id: 'eeee04', groupBy: 'cache_type', view: { chart: 'donut' }, filters: { cache_type: ['Multi-cache'] } } },
+  { size: 'L', spec: { id: 'eeee05', groupBy: 'dt', view: { chart: 'challenge' } } },
+];
+
+test('image du tableau entier : un PNG avec toutes les cartes', async ({ page, request }, testInfo) => {
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items: IMAGE_ITEMS }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+
+  const downloading = page.waitForEvent('download');
+  await dashboardAction(page, 'image-dashboard');
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe('Mon bilan.png');
+  const file = testInfo.outputPath('tableau.png');
+  await download.saveAs(file);
+  const png = fs.readFileSync(file);
+  expect(png.subarray(1, 4).toString()).toBe('PNG');
+  const width = png.readUInt32BE(16);
+  const height = png.readUInt32BE(20);
+  // Cinq cartes, dont trois graphiques ECharts (les chiffres clés sont du texte).
+  expect((await snapshot(page)).image).toMatchObject({ width, height, ratio: 2, cards: 5, charts: 3 });
+  // Largeur : celle de la grille affichée, plus les marges, ×2.
+  const gridWidth = await page.locator('#statsGrid').evaluate((el) => el.getBoundingClientRect().width);
+  expect(width).toBe(Math.ceil(gridWidth + 48) * 2);
+  expect(errors).toEqual([]);
+});
+
+test("copier l'image du tableau la met dans le presse-papiers", async ({ page, request, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items: IMAGE_ITEMS.slice(0, 3) }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  await dashboardAction(page, 'copy-image-dashboard');
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'Image du tableau copiée' })).toBeVisible();
+  const copied = await page.evaluate(async () => {
+    const [item] = await navigator.clipboard.read();
+    const blob = await item.getType('image/png');
+    return { types: item.types, size: blob.size };
+  });
+  expect(copied.types).toContain('image/png');
+  expect(copied.size).toBeGreaterThan(1000);
+  expect(errors).toEqual([]);
+});
+
 test('vidéo du tableau entier : ouverture, chaque graphique, musique choisie', async ({ page, request }) => {
   test.setTimeout(150_000);
   // Trois graphiques : un chiffre clé (compte), des barres (révélées), un
