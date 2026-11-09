@@ -968,3 +968,80 @@ function radarOption(result, spec, ctx) {
         }],
     };
 }
+
+// ---------------------------------------------------------------------------
+// Vignette de la galerie
+// ---------------------------------------------------------------------------
+
+const noLabel = (part) => ({ ...(part || {}), show: false });
+
+function thumbnailAxis(axis) {
+    if (!axis) return axis;
+    if (Array.isArray(axis)) return axis.map(thumbnailAxis);
+    return {
+        ...axis,
+        name: '',
+        axisLabel: noLabel(axis.axisLabel),
+        axisTick: noLabel(axis.axisTick),
+        splitLine: noLabel(axis.splitLine),
+    };
+}
+
+function thumbnailGrid(grid) {
+    if (Array.isArray(grid)) return grid.map((g) => ({ ...g, containLabel: false }));
+    return { left: 2, right: 2, top: 4, bottom: 2, containLabel: false };
+}
+
+function thumbnailSeries(series, single) {
+    const { markLine, markPoint, markArea, endLabel, ...rest } = series;
+    const out = {
+        ...rest,
+        silent: true,
+        label: noLabel(series.label),
+        labelLine: noLabel(series.labelLine),
+        emphasis: { disabled: true },
+    };
+    if (series.type === 'line') {
+        out.symbol = 'none';
+        out.lineStyle = { ...(series.lineStyle || {}), width: Math.min(series.lineStyle?.width ?? 2, 1.5) };
+    }
+    // Anneau seul : sans légende à côté, il occupe la vignette.
+    if (series.type === 'pie' && single) {
+        out.radius = ['45%', '90%'];
+        out.center = ['50%', '50%'];
+    }
+    return out;
+}
+
+// Option d'un graphique réduite à sa forme : ni texte, ni légende, ni
+// interaction, ni animation. Sert aux aperçus de la galerie (quelques
+// dizaines de pixels de haut, données réelles de l'utilisateur).
+export function thumbnailOption(option) {
+    if (!option) return null;
+    const { dataZoom, title, toolbox, ...rest } = option;
+    const out = {
+        ...rest,
+        animation: false,
+        aria: { enabled: false },
+        tooltip: { show: false },
+        legend: { show: false },
+    };
+    if (option.grid) out.grid = thumbnailGrid(option.grid);
+    if (option.xAxis) out.xAxis = thumbnailAxis(option.xAxis);
+    if (option.yAxis) out.yAxis = thumbnailAxis(option.yAxis);
+    if (option.visualMap) {
+        out.visualMap = Array.isArray(option.visualMap)
+            ? option.visualMap.map((v) => ({ ...v, show: false }))
+            : { ...option.visualMap, show: false };
+    }
+    if (option.radar) {
+        out.radar = { ...option.radar, radius: '85%', center: ['50%', '50%'], axisName: { show: false } };
+    }
+    if (option.calendar) {
+        out.calendar = (Array.isArray(option.calendar) ? option.calendar : [option.calendar])
+            .map((c) => ({ ...c, dayLabel: noLabel(c.dayLabel), monthLabel: noLabel(c.monthLabel), yearLabel: noLabel(c.yearLabel) }));
+    }
+    const series = Array.isArray(option.series) ? option.series : option.series ? [option.series] : [];
+    out.series = series.map((s) => thumbnailSeries(s, series.length === 1));
+    return out;
+}

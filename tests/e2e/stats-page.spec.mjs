@@ -1228,6 +1228,170 @@ test('fermeture : un document de plus de 64 Ko enregistre quand même le tableau
   expect(errors).toEqual([]);
 });
 
+// ---------------------------------------------------------------------------
+// Ergonomie : aperçus de la galerie, « Annuler », « Actualiser », attente
+// ---------------------------------------------------------------------------
+
+test('galerie : chaque question montre un aperçu sur mes données, l\'ajout s\'annule', async ({ page, request }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsAddChart').click();
+  const gallery = page.locator('#statsGalleryModal');
+  await expect(gallery).toBeVisible();
+  // « Partir de zéro » n'a pas d'aperçu ; les 30 questions en ont un.
+  await expect(gallery.locator('[data-preview]')).toHaveCount(30);
+  await expect(gallery.locator('[data-question="custom"] [data-preview]')).toHaveCount(0);
+  const preview = async (id) => (await snapshot(page)).gallery.find((g) => g.id === id);
+  // Haut de la galerie : dessiné dès l'ouverture.
+  await expect.poll(async () => (await preview('total'))?.state).toBe('number');
+  expect((await preview('total')).text).toBe('6');
+  await expect.poll(async () => (await preview('by_year'))?.drawn).toBe(true);
+  expect((await preview('by_year')).state).toBe('chart');
+  // Bas de la galerie : dessiné à l'approche. Sans logs Mes poses, la
+  // question le dit au lieu d'un graphique vide.
+  await gallery.locator('[data-question="received_by_month"]').scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await preview('received_by_month'))?.state).toBe('empty');
+  expect((await preview('received_by_month')).text).toBe('Aucune donnée pour l’instant');
+  await expect(gallery.locator('[data-question="received_by_month"]')).toHaveClass(/is-empty/);
+  // Les questions sautées par le défilement ne sont pas dessinées (pas de
+  // calcul inutile) ; la dernière l'est en y arrivant.
+  expect((await snapshot(page)).gallery.some((g) => g.state === 'pending')).toBe(true);
+  await gallery.locator('[data-question="finds_vs_dnf"]').scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await preview('finds_vs_dnf'))?.drawn).toBe(true);
+
+  // L'ajout reprend le résultat de l'aperçu, et s'annule par le toast.
+  const before = (await snapshot(page)).cards.length;
+  await gallery.locator('[data-question="weekdays"]').click();
+  await expect(gallery).toBeHidden();
+  await expect(page.locator('.stats-card')).toHaveCount(before + 1);
+  const added = (await snapshot(page)).cards.at(-1);
+  // Modale fermée : les instances ECharts des aperçus sont libérées.
+  // (à l'événement hidden.bs.modal, après le fondu du fond).
+  await expect.poll(async () => (await snapshot(page)).gallery.some((g) => g.drawn)).toBe(false);
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.length).toBe(before + 1);
+  const undo = page.locator('.gcm-toast.show', { hasText: 'Graphique ajouté' })
+    .locator('.gcm-toast-action');
+  await expect(undo).toHaveText('Annuler');
+  await undo.click();
+  await expect(page.locator('.stats-card')).toHaveCount(before);
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.length).toBe(before);
+
+  // Rouverte, la galerie garde ses éléments (aperçus repris du cache), sauf
+  // celui déjà ajouté : le même choix donne une nouvelle carte.
+  const firstId = added.id;
+  await page.locator('#btnStatsAddChart').click();
+  await expect.poll(async () => (await preview('total'))?.state).toBe('number');
+  await gallery.locator('[data-question="weekdays"]').click();
+  await expect(page.locator('.stats-card')).toHaveCount(before + 1);
+  const again = (await snapshot(page)).cards.at(-1);
+  expect(again.groupBy).toBe('weekday');
+  expect(again.id).not.toBe(firstId);
+  expect(errors).toEqual([]);
+});
+
+// Trouvailles servies sans les `keep` dernières : simule un import fait
+// ailleurs pendant que la page est ouverte.
+async function serveFinds(page, { keep = null, delay = 0, fail = false } = {}) {
+  await page.unroute('**/api/stats/finds');
+  await page.route('**/api/stats/finds', async (route) => {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    if (fail) return route.abort();
+    const response = await route.fetch({ headers: { ...route.request().headers(), 'if-none-match': '' } });
+    const payload = await response.json();
+    if (keep !== null) {
+      for (const [key, value] of Object.entries(payload)) {
+        if (Array.isArray(value) && value.length === payload.count) payload[key] = value.slice(0, keep);
+      }
+      payload.count = keep;
+    }
+    return route.fulfill({ json: payload });
+  });
+}
+
+test('« Actualiser » relit les données sans recharger la page', async ({ page }) => {
+  const errors = await openStats(page);
+  const total = (await snapshot(page)).cards.find((c) => c.chart === 'number' && c.measure === 'count');
+  expect(total.series).toEqual([[6]]);
+
+  // Les données ont changé côté serveur : la page les relit, en montrant
+  // qu'elle travaille tant que la réponse n'est pas là.
+  await serveFinds(page, { keep: 4, delay: 800 });
+  await page.locator('#btnStatsRefresh').click();
+  await expect(page.locator('#statsBusy')).toBeVisible();
+  await expect(page.locator('#statsBusyText')).toHaveText('Actualisation des données…');
+  await expect(page.locator('#statsGrid')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#btnStatsRefresh')).toBeDisabled();
+  await expect(page.locator('.gcm-toast.show', { hasText: 'Données actualisées.' })).toBeVisible();
+  await expect(page.locator('#statsBusy')).toBeHidden();
+  await expect(page.locator('#statsGrid')).not.toHaveAttribute('aria-busy', /.*/);
+  let snap = await snapshot(page);
+  expect(snap.rows).toBe(4);
+  expect(snap.cards.find((c) => c.id === total.id).series).toEqual([[4]]);
+  await expect(page.locator('#statsDataNote')).toContainText('4 trouvailles');
+
+  // Échec : les données affichées restent, l'erreur est dite.
+  await serveFinds(page, { fail: true });
+  await page.locator('#btnStatsRefresh').click();
+  await expect(page.locator('.gcm-toast.show', { hasText: 'les précédentes restent affichées' })).toBeVisible();
+  snap = await snapshot(page);
+  expect(snap.rows).toBe(4);
+  expect(snap.sourceErrors).toEqual([]);
+  await expect(page.locator('#btnStatsRefresh')).toBeEnabled();
+
+  // Retour aux vraies données.
+  await page.unroute('**/api/stats/finds');
+  await page.locator('#btnStatsRefresh').click();
+  await expect.poll(async () => (await snapshot(page)).rows).toBe(6);
+  expect(errors).toEqual([]);
+});
+
+test('jeu Évolution long à charger : l\'attente est dite, au démarrage comme au changement de tableau', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  const datasetId = await createDataset(request, 'Zone lente');
+  try {
+    // Un tableau personnel (actif) et un tableau Évolution.
+    await openStats(page);
+    const doc = await savedDoc(request);
+    doc.dashboards.push({ id: 'e1e1e1', name: 'Zone lente', kind: 'evolution', dataset: datasetId, items: [] });
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+
+    let release;
+    const held = new Promise((resolve) => { release = resolve; });
+    await page.route('**/api/evolution/datasets/*/data', async (route) => {
+      await held;
+      return route.continue();
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.mygcflowStatsReady === true);
+    await page.locator('#btnStatsDashboards').click();
+    await page.locator('#statsDashboardMenu [data-dashboard-id="e1e1e1"]').click();
+    await expect(page.locator('#statsBusy')).toBeVisible();
+    await expect(page.locator('#statsBusyText')).toHaveText('Chargement du jeu Évolution « Zone lente »…');
+    await expect(page.locator('#statsGrid')).toHaveClass(/is-busy/);
+    release();
+    await expect.poll(async () => (await snapshot(page)).dashboard.kind).toBe('evolution');
+    await expect(page.locator('#statsBusy')).toBeHidden();
+    await expect(page.locator('#statsGrid')).not.toHaveClass(/is-busy/);
+
+    // Démarrage sur ce tableau : l'écran de chargement nomme le jeu.
+    let releaseAgain;
+    const heldAgain = new Promise((resolve) => { releaseAgain = resolve; });
+    await page.unroute('**/api/evolution/datasets/*/data');
+    await page.route('**/api/evolution/datasets/*/data', async (route) => {
+      await heldAgain;
+      return route.continue();
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#statsLoadingText')).toHaveText('Chargement du jeu Évolution « Zone lente »…');
+    releaseAgain();
+    await page.waitForFunction(() => window.mygcflowStatsReady === true);
+    await expect(page.locator('#statsDashboard')).toBeVisible();
+    expect((await snapshot(page)).dashboard.kind).toBe('evolution');
+  } finally {
+    await page.unroute('**/api/evolution/datasets/*/data');
+    await deleteAllDatasets(request);
+  }
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

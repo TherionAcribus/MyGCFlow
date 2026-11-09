@@ -296,9 +296,31 @@ le travail redondant dans la page :
 - **Périmètre visible** : les filtres propres d'une carte s'affichent en
   clair sous le titre (`.stats-card-scope`), pas seulement en infobulle —
   ils remplacent ceux du tableau.
-- **Annuler** (`withUndo`) : supprimer, déplacer, dupliquer, redimensionner
-  ou enregistrer un graphique propose « Annuler » dans un toast d'action —
-  la copie d'avant la mutation est restaurée, un seul niveau.
+- **Annuler** (`withUndo`) : supprimer, déplacer, dupliquer, redimensionner,
+  enregistrer ou ajouter un graphique depuis la galerie propose « Annuler »
+  dans un toast d'action — la copie d'avant la mutation est restaurée, un
+  seul niveau.
+- **Aperçus de la galerie** : chaque question montre sa forme sur les
+  données réelles, avec la période et les filtres du tableau
+  (`thumbnailOption` de chart_echarts.mjs : ni texte, ni légende, ni
+  interaction ; chiffre clé en texte ; « Aucune donnée pour l'instant » ou
+  « Données indisponibles » sinon, carte grisée). Dessin à l'approche
+  (`IntersectionObserver` sur le corps de la modale, démarré à
+  `shown.bs.modal`), au plus ~12 ms par image ; instances libérées à
+  `hidden.bs.modal`. L'élément de l'aperçu est celui qui est ajouté : son
+  résultat est déjà dans le cache.
+- **« Actualiser les données »** (`refreshData`, bouton à côté de
+  « Filtres ») : relit trouvailles, DNF, caches posées, Mes poses, la liste
+  des jeux et le jeu Évolution du tableau (les autres jeux au prochain
+  passage) sans recharger la page — pour un import fait sur la carte
+  entre-temps. Un échec des trouvailles garde les données affichées et le
+  dit ; les autres sources suivent la règle « échec ≠ zéro ».
+- **Attente visible** (`whileBusy`) : changement vers un tableau Évolution
+  dont le jeu n'est pas encore chargé (~3 s pour un jeu national au premier
+  appel), actualisation — rien sous 200 ms, puis un message
+  (`#statsBusy`) et la grille atténuée, non cliquable (`aria-busy`).
+  L'écran de chargement nomme le jeu quand la page démarre sur un tableau
+  Évolution (`#statsLoadingText`).
 - **Réduire les animations** : `watchReducedMotion` suit
   `prefers-reduced-motion` ; `chartContext().reduceMotion` met les durées
   ECharts à 0 (`common` de chart_echarts.mjs) et coupe les défilements
@@ -546,6 +568,9 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   `chart_video.test.mjs`, `clickTarget` dans `chart_echarts.test.mjs`.
 - Unitaires du lot 7 : `dashboard_saver.test.mjs` (file d'écriture) ;
   révision, conflit 409 et restauration dans `test_statistics_page.py`.
+- Vignettes de la galerie : `thumbnailOption` dans `chart_echarts.test.mjs`
+  (chaque forme : barres, aire, anneau, écart, côte à côte, grille, radar,
+  calendrier).
 - E2E : `tests/e2e/stats-page.spec.mjs` (fixtures `my-finds.gpx`,
   `gc_logs/logs-poses.json`, `evolution-a.csv` ;
   `openWithChart` pose un tableau d'un seul graphique par `PUT`).
@@ -555,4 +580,6 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   px…, `linksToMap`, `unavailable` = sources en échec de la carte),
   `editor`, `dashboards`, `sources`, `sourceErrors`, `save` (`dirty`,
   `failed`, `pending`), `video` (`phase` setup / recording / done, `file`,
-  `folder`).
+  `folder`), `busy` (attente affichée ou en cours), `gallery` (aperçus de la
+  galerie : `id`, `state` pending / chart / number / empty / error, `text`,
+  `drawn`).

@@ -628,3 +628,72 @@ body > .ts-dropdown {
 @media (prefers-reduced-motion: reduce) {
     .stats-chart.is-pending::after { animation: none; }
 }
+
+/* ----- Attente visible (changement de tableau, actualisation) ----- */
+.stats-busy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+.stats-busy[hidden] {
+    display: none;
+}
+.stats-grid.is-busy {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+#btnStatsRefresh.is-running .ti {
+    animation: stats-chart-spin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    #btnStatsRefresh.is-running .ti { animation: none; }
+    .stats-grid.is-busy { transition: none; }
+}
+
+/* ----- Galerie : aperçu sur les données réelles ----- */
+/* La liste empile les sections ; la grille est celle de chaque section
+   (sinon les sections elles-mêmes se rangeaient en colonnes étroites). */
+#statsGalleryList {
+    display: block;
+}
+.stats-gallery-card {
+    flex-direction: column;
+    align-items: stretch;
+}
+.stats-gallery-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+}
+.stats-gallery-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 64px;
+    border-radius: 6px;
+    background: rgba(127, 127, 127, 0.06);
+    overflow: hidden;
+    pointer-events: none;
+}
+.stats-gallery-preview.is-pending {
+    background: linear-gradient(90deg, rgba(127, 127, 127, 0.06), rgba(127, 127, 127, 0.12), rgba(127, 127, 127, 0.06));
+}
+.stats-gallery-preview-text {
+    padding: 0 8px;
+    font-size: 0.78rem;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+.stats-gallery-preview-text.is-number {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+}
+.stats-gallery-card.is-empty .stats-gallery-icon {
+    color: var(--color-text-muted);
+}

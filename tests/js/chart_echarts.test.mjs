@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, escapeHtml, numberModel, rampColor,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, escapeHtml, numberModel, rampColor, thumbnailOption,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -423,4 +423,42 @@ test("clic : barre, part d'anneau, case du calendrier, écart", () => {
     });
     assert.ok(delta.result.delta);
     assert.equal(clickTarget(delta.result, delta.spec, { componentType: 'series', seriesIndex: 0, dataIndex: 0 }), null);
+});
+
+test('vignette de la galerie : la forme seule, sans texte ni interaction', () => {
+    const shapes = [
+        { groupBy: 'year', view: { chart: 'bar', labels: true } },
+        { groupBy: 'month', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'area' } },
+        { groupBy: 'cache_type', view: { chart: 'donut', labels: true } },
+        { groupBy: 'month_of_year', periods: [{ kind: 'current', unit: 'year' }, { kind: 'previous' }], view: { chart: 'bar' }, compare: { layout: 'delta' } },
+        { groupBy: 'cache_type', periods: [{ kind: 'current', unit: 'year' }, { kind: 'previous' }], view: { chart: 'donut' }, compare: { layout: 'side' } },
+        { groupBy: 'dt', view: { chart: 'heatmap' } },
+        { groupBy: 'weekday', view: { chart: 'radar' } },
+        { groupBy: 'day', view: { chart: 'calendar' } },
+    ];
+    for (const raw of shapes) {
+        const { option: o } = option(raw);
+        const thumb = thumbnailOption(o);
+        const what = raw.view.chart + '/' + (raw.compare?.layout || '-');
+        assert.equal(thumb.animation, false, what);
+        assert.equal(thumb.tooltip.show, false, what);
+        assert.equal(thumb.legend.show, false, what);
+        assert.equal(thumb.title, undefined, what);
+        assert.equal(thumb.dataZoom, undefined, what);
+        for (const axis of [thumb.xAxis, thumb.yAxis].flat().filter(Boolean)) {
+            assert.equal(axis.axisLabel.show, false, what);
+        }
+        for (const s of thumb.series) {
+            assert.equal(s.silent, true, what);
+            assert.equal(s.label.show, false, what);
+            assert.equal(s.markLine, undefined, what);
+        }
+        for (const v of [thumb.visualMap].flat().filter(Boolean)) assert.equal(v.show, false, what);
+        // L'option d'origine n'est pas touchée (elle peut servir ailleurs).
+        assert.notEqual(o.animation, false, what);
+    }
+    // Anneau seul recentré (sa légende à droite a disparu).
+    const donut = thumbnailOption(option({ groupBy: 'cache_type', view: { chart: 'donut' } }).option);
+    assert.deepEqual(donut.series[0].center, ['50%', '50%']);
+    assert.equal(thumbnailOption(null), null);
 });

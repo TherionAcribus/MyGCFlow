@@ -110,8 +110,13 @@ figée), pas dans le tableau personnel (~100 ms) — conversion Évolution
 524 → 100 ms, mesure « actives » allégée (7 graphiques 550 → 380 ms).
 Écartés après mesure : chargement des seules sources du tableau ouvert,
 ETag DNF / caches posées (20 à 100 ms). Suite possible : calcul dans un
-Web Worker. Pistes restantes : aperçus dans la galerie, « Annuler » après un ajout depuis la
-galerie, bouton « Actualiser », « Reprendre les filtres de la carte » ;
+Web Worker. Troisième lot (ergonomie) : aperçus de la galerie sur les
+données réelles, « Annuler » après un ajout depuis la galerie, bouton
+« Actualiser les données », attente visible au passage vers un tableau
+Évolution et écran de chargement qui nomme le jeu ; au passage, 38 textes
+de la page n'étaient pas traduits (deux regex faisaient dérailler
+l'extraction pybabel). Pistes restantes : « Reprendre les filtres de la
+carte » ;
 fonctions : vidéo d'un tableau entier avec musique, grilles de défis (D/T
 81, 366 jours, Jasmer), séries et records, objectif et projection, mode
 présentation, lien carte pour les autres sources.

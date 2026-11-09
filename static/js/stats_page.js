@@ -38,7 +38,7 @@ import { ELAPSED_UNITS, filterMask, runChartQueries } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
-import { axisLabels, buildChartOption, calendarCell, calendarYears, chartHeight, clickTarget, numberModel, seriesIdentity } from './chart_echarts.mjs';
+import { axisLabels, buildChartOption, calendarCell, calendarYears, chartHeight, clickTarget, numberModel, seriesIdentity, thumbnailOption } from './chart_echarts.mjs';
 import {
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, chartAnimates, lockOption, niceCeil, revealIndex, revealProgress,
     revealResult, valueMax,
@@ -129,6 +129,10 @@ const state = {
     // Préférence d'accessibilité : les graphiques sont posés sans animation.
     reduceMotion: false,
     valuesSpec: null,           // graphique dont la modale « valeurs » est ouverte
+    busy: 0,                    // attentes en cours (whileBusy)
+    // Galerie : éléments prêts à ajouter (id de question → élément) et
+    // aperçus dessinés à l'approche.
+    gallery: { items: new Map(), dashboardId: null, charts: [], queue: [], observer: null, frame: 0 },
 };
 
 // ---------------------------------------------------------------------------
@@ -369,6 +373,7 @@ function showSection(id) {
 }
 
 async function loadPage() {
+    $('statsLoadingText').textContent = t('Chargement de vos statistiques…');
     showSection('statsLoading');
     try {
         const [, doc] = await Promise.all([loadPersonalSources(), loadDashboards(), loadTypeColors(), loadDatasets()]);
@@ -389,7 +394,13 @@ async function loadPage() {
             state.doc = newDefaultDocument();
             scheduleSave({ immediate: true });
         }
-        await ensureEvolution(activeDashboard().dataset);
+        const { dataset } = activeDashboard();
+        if (dataset) {
+            // Premier appel après le démarrage : le serveur prépare le jeu
+            // (~3 s pour un jeu national) — dire ce qui se passe.
+            $('statsLoadingText').textContent = t('Chargement du jeu Évolution « ${name} »…', { name: datasetName(dataset) });
+            await ensureEvolution(dataset);
+        }
         state.ready = true;
         showSection('statsDashboard');
         renderDashboard();
@@ -777,8 +788,77 @@ async function switchDashboard(id) {
     if (!state.doc.dashboards.some((d) => d.id === id) || id === state.doc.active) return;
     state.doc.active = id;
     scheduleSave({ immediate: true });
-    await ensureEvolution(activeDashboard().dataset);
+    const { dataset } = activeDashboard();
+    if (dataset) {
+        await whileBusy(t('Chargement du jeu Évolution « ${name} »…', { name: datasetName(dataset) }),
+            () => ensureEvolution(dataset));
+        // Un autre tableau a été choisi pendant l'attente : il se dessinera
+        // lui-même.
+        if (state.doc.active !== id) return;
+    }
     renderDashboard();
+}
+
+// Attente visible (changement de tableau, actualisation) : rien sous
+// BUSY_DELAY_MS — un passage instantané ne clignote pas —, puis un message
+// et la grille atténuée (non cliquable : elle montre encore l'ancien état).
+const BUSY_DELAY_MS = 200;
+
+async function whileBusy(text, work) {
+    state.busy += 1;
+    const timer = setTimeout(() => {
+        $('statsBusyText').textContent = text;
+        $('statsBusy').hidden = false;
+        $('statsGrid').classList.add('is-busy');
+        $('statsGrid').setAttribute('aria-busy', 'true');
+    }, BUSY_DELAY_MS);
+    try {
+        return await work();
+    } finally {
+        clearTimeout(timer);
+        state.busy -= 1;
+        if (!state.busy) {
+            $('statsBusy').hidden = true;
+            $('statsGrid').classList.remove('is-busy');
+            $('statsGrid').removeAttribute('aria-busy');
+        }
+    }
+}
+
+// « Actualiser » : relit toutes les sources sans recharger la page (un
+// import fait sur la carte entre-temps). Les trouvailles et les jeux
+// Évolution répondent 304 s'ils n'ont pas bougé. Un échec des trouvailles
+// garde les données affichées ; les autres sources suivent la règle
+// habituelle (échec = indisponible, pas zéro).
+async function refreshData() {
+    const button = $('btnStatsRefresh');
+    if (button.disabled || !state.ready) return;
+    button.disabled = true;
+    button.classList.add('is-running');
+    try {
+        await whileBusy(t('Actualisation des données…'), async () => {
+            // Jeux Évolution : tous à relire, l'actif tout de suite, les
+            // autres au prochain passage sur leur tableau.
+            state.evolutionLoads.clear();
+            state.missingDatasets.clear();
+            const [finds] = await Promise.all([
+                fetchJson('/api/stats/finds').then(findsTable),
+                ...PERSONAL_LOADERS.map(loadPersonalLoader),
+                loadDatasets(),
+            ]);
+            setTable('finds', finds);
+            await ensureEvolution(activeDashboard().dataset);
+        });
+        renderDashboard();
+        showToast(t('Données actualisées.'), 'success');
+    } catch (e) {
+        console.warn('[stats] Actualisation impossible :', e?.message || e);
+        renderDashboard();
+        showError(t("Les données n'ont pas pu être relues : les précédentes restent affichées."), t('Actualiser les données'));
+    } finally {
+        button.disabled = false;
+        button.classList.remove('is-running');
+    }
 }
 
 function onDashboardMenuClick(event) {
@@ -1890,7 +1970,9 @@ function onCardAction(event) {
 }
 
 function fileSafe(name) {
-    return String(name).replace(/[\\/:*?<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'graphique';
+    // « \/ » échappé dans la classe : sinon le lexer JS de pybabel ferme la
+    // regex à ce « / » et perd les t() des ~500 lignes suivantes.
+    return String(name).replace(/[\\\/:*?<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'graphique';
 }
 
 function download(blob, name) {
@@ -1979,7 +2061,9 @@ function downloadValuesCsv() {
     const { head, rows } = valuesModel(entry.result, spec, activeDashboard());
     const cell = (v) => {
         const s = v === null || v === undefined ? '' : String(v);
-        return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        // « \x22 » et non un guillemet littéral dans les regex : sinon le
+        // lexer JS de pybabel croit qu'une chaîne s'ouvre (AGENTS.md).
+        return /[;\x22\n]/.test(s) ? '"' + s.replace(/\x22/g, '""') + '"' : s;
     };
     const csv = String.fromCharCode(0xFEFF)
         + [head, ...rows.map((r) => r.raw)].map((r) => r.map(cell).join(';')).join('\r\n');
@@ -2179,14 +2263,30 @@ function onAfterPrint() {
 // Galerie
 // ---------------------------------------------------------------------------
 
+// Chaque question montre un aperçu sur les données réelles, avec la période
+// et les filtres du tableau : ce qui sera ajouté. Les aperçus se dessinent
+// à l'approche (IntersectionObserver), quelques-uns par image — une
+// question « actives » sur un jeu Évolution national coûte ~50 ms.
+const GALLERY_FRAME_BUDGET_MS = 12;
+
 function renderGallery() {
+    releaseGalleryPreviews();
     const list = $('statsGalleryList');
     list.replaceChildren();
-    const card = (id, icon, title, description) => {
+    const card = (id, icon, title, description, { preview = true } = {}) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'stats-gallery-card';
         button.dataset.question = id;
+        if (preview) {
+            const box = document.createElement('span');
+            box.className = 'stats-gallery-preview is-pending';
+            box.dataset.preview = id;
+            box.setAttribute('aria-hidden', 'true');
+            button.append(box);
+        }
+        const row = document.createElement('span');
+        row.className = 'stats-gallery-row';
         const i = document.createElement('i');
         i.className = `ti ${icon} stats-gallery-icon`;
         i.setAttribute('aria-hidden', 'true');
@@ -2195,9 +2295,11 @@ function renderGallery() {
         const strong = document.createElement('strong');
         strong.textContent = title;
         const small = document.createElement('span');
+        small.className = 'stats-gallery-description';
         small.textContent = description;
         text.append(strong, small);
-        button.append(i, text);
+        row.append(i, text);
+        button.append(row);
         return button;
     };
     // Une section par thème, « Graphique personnalisé » en tête.
@@ -2214,17 +2316,105 @@ function renderGallery() {
         return wrap;
     };
     list.append(section(t('Partir de zéro'), [
-        card('custom', 'ti-adjustments', t('Graphique personnalisé'), t('Partir de zéro et tout choisir.')),
+        card('custom', 'ti-adjustments', t('Graphique personnalisé'), t('Partir de zéro et tout choisir.'), { preview: false }),
     ]));
     // Questions de la famille du tableau seulement.
-    const family = activeDashboard().kind;
+    const dashboard = activeDashboard();
+    // Éléments gardés d'une ouverture à l'autre sur le même tableau : mêmes
+    // identifiants, donc aperçus repris du cache de résultats. Un élément
+    // ajouté en sort (le suivant aura un nouvel identifiant).
+    const previous = state.gallery.dashboardId === dashboard.id ? state.gallery.items : new Map();
+    state.gallery.items = new Map();
+    state.gallery.dashboardId = dashboard.id;
     for (const group of QUESTION_GROUPS) {
-        const cards = QUESTIONS.filter((q) => q.group === group && questionFamily(q) === family).map((question) => {
+        const cards = QUESTIONS.filter((q) => q.group === group && questionFamily(q) === dashboard.kind).map((question) => {
             const { title, description } = state.labels.question(question.id);
-            return card(question.id, question.icon, title, description);
+            // L'élément de l'aperçu est celui qui sera ajouté : son résultat
+            // est déjà en cache au moment du choix.
+            const item = previous.get(question.id) || itemFromQuestion(question.id, { title, dataset: dashboard.dataset });
+            if (item) state.gallery.items.set(question.id, item);
+            return card(question.id, question.icon, title, description, { preview: Boolean(item) });
         });
         if (cards.length) list.append(section(state.labels.questionGroup(group), cards));
     }
+}
+
+// Aperçus : observés une fois la modale visible (avant, ECharts mesurerait
+// des conteneurs de taille nulle).
+function startGalleryPreviews() {
+    const root = $('statsGalleryModal').querySelector('.modal-body');
+    state.gallery.observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            state.gallery.observer.unobserve(entry.target);
+            state.gallery.queue.push(entry.target);
+        }
+        scheduleGalleryPreviews();
+    }, { root, rootMargin: '200px 0px' });
+    for (const box of $('statsGalleryList').querySelectorAll('[data-preview]')) state.gallery.observer.observe(box);
+}
+
+function scheduleGalleryPreviews() {
+    if (state.gallery.frame || !state.gallery.queue.length) return;
+    state.gallery.frame = requestAnimationFrame(() => {
+        state.gallery.frame = 0;
+        const until = performance.now() + GALLERY_FRAME_BUDGET_MS;
+        // Au moins un aperçu par image, même s'il dépasse le budget.
+        do {
+            const box = state.gallery.queue.shift();
+            if (box?.isConnected) renderGalleryPreview(box);
+        } while (state.gallery.queue.length && performance.now() < until);
+        scheduleGalleryPreviews();
+    });
+}
+
+function setPreviewState(box, status, text = '') {
+    box.classList.remove('is-pending');
+    box.dataset.state = status;
+    box.closest('.stats-gallery-card')?.classList.toggle('is-empty', status === 'empty' || status === 'error');
+    if (text) {
+        const span = document.createElement('span');
+        span.className = 'stats-gallery-preview-text';
+        if (status === 'number') span.classList.add('is-number');
+        span.textContent = text;
+        box.replaceChildren(span);
+    }
+}
+
+function renderGalleryPreview(box) {
+    const item = state.gallery.items.get(box.dataset.preview);
+    if (!item) return;
+    const { spec } = item;
+    if (chartSources(spec).some((s) => state.sourceErrors.has(s))) {
+        setPreviewState(box, 'error', t('Données indisponibles'));
+        return;
+    }
+    const result = computeResult(spec, activeDashboard());
+    if (!result.meta.rows) {
+        setPreviewState(box, 'empty', t('Aucune donnée pour l’instant'));
+        return;
+    }
+    if (spec.view.chart === 'number') {
+        const [first] = numberModel(result, spec, chartContext());
+        setPreviewState(box, 'number', first?.text ?? '');
+        return;
+    }
+    setPreviewState(box, 'chart');
+    const width = box.clientWidth;
+    const option = thumbnailOption(buildChartOption(result, spec, { ...chartContext(), width }));
+    const chart = window.echarts.init(box, null, { locale: echartsLocale(), renderer: 'canvas' });
+    chart.setOption(option, true);
+    state.gallery.charts.push(chart);
+}
+
+function releaseGalleryPreviews() {
+    state.gallery.observer?.disconnect();
+    state.gallery.observer = null;
+    if (state.gallery.frame) cancelAnimationFrame(state.gallery.frame);
+    state.gallery.frame = 0;
+    state.gallery.queue = [];
+    for (const chart of state.gallery.charts) chart.dispose();
+    state.gallery.charts = [];
 }
 
 function openGallery() {
@@ -2244,11 +2434,13 @@ function onGalleryPick(event) {
         openEditor({ mode: 'new', item: { size: 'M', height: 'M', spec: createChartSpec({ source, groupBy: 'month' }) } });
         return;
     }
-    const item = itemFromQuestion(id, { title: state.labels.question(id).title, dataset: dashboard.dataset });
-    if (!item) return;
-    dashboard.items.push(item);
-    scheduleSave({ immediate: true });
-    renderDashboard();
+    const item = state.gallery.items.get(id);
+    if (!item || dashboard.items.length >= MAX_ITEMS) return;
+    // Un même élément ne s'ajoute qu'une fois (nouvel identifiant à la
+    // prochaine ouverture de la galerie).
+    state.gallery.items.delete(id);
+    const title = chartTitle(item.spec);
+    withUndo(t('Graphique ajouté : ${title}.', { title }), () => dashboard.items.push(item));
     $('statsGrid').querySelector(cardSelector(item.spec.id))
         ?.scrollIntoView({ block: 'nearest', behavior: state.reduceMotion ? 'auto' : 'smooth' });
 }
@@ -2716,6 +2908,15 @@ window.getStatsPageSnapshot = () => {
         today: state.today,
         reduceMotion: state.reduceMotion,
         sourceErrors: [...state.sourceErrors],
+        busy: state.busy > 0,
+        // Aperçus de la galerie ouverte : état de chacun (pending, chart,
+        // number, empty, error) et texte affiché.
+        gallery: [...document.querySelectorAll('#statsGalleryList [data-preview]')].map((box) => ({
+            id: box.dataset.preview,
+            state: box.dataset.state || 'pending',
+            text: box.textContent,
+            drawn: Boolean(window.echarts?.getInstanceByDom(box)),
+        })),
         rows: state.tables.has('finds') ? tableOf('finds').n : null,
         undated: state.tables.has('finds') ? tableOf('finds').undated : null,
         sources: Object.fromEntries([...state.tables].map(([source, table]) => [source, table.n])),
@@ -2787,6 +2988,7 @@ window.getStatsPageSnapshot = () => {
 
 function bindEvents() {
     $('btnStatsRetry').addEventListener('click', loadPage);
+    $('btnStatsRefresh').addEventListener('click', refreshData);
     $('btnStatsVideoStart').addEventListener('click', () => { recordVideo(); });
     $('btnStatsVideoCancel').addEventListener('click', closeVideo);
     $('btnStatsVideoClose').addEventListener('click', closeVideo);
@@ -2811,6 +3013,8 @@ function bindEvents() {
     window.addEventListener('beforeprint', onBeforePrint);
     window.addEventListener('afterprint', onAfterPrint);
     $('statsGalleryList').addEventListener('click', onGalleryPick);
+    $('statsGalleryModal').addEventListener('shown.bs.modal', startGalleryPreviews);
+    $('statsGalleryModal').addEventListener('hidden.bs.modal', releaseGalleryPreviews);
     $('statsDashboardMenu').addEventListener('click', onDashboardMenuClick);
     $('statsNewDashboardForm').addEventListener('submit', submitNewDashboard);
     for (const id of ['statsNewKindPersonal', 'statsNewKindEvolution', 'statsNewDataset']) {

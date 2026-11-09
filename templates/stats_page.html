@@ -33,10 +33,11 @@
             {% include '_app_header.html' %}
 
             <div id="statsPage">
-                <!-- Chargement des trouvailles et des tableaux de bord. -->
+                <!-- Chargement des données et des tableaux de bord (texte
+                     précisé par stats_page.js pour un jeu Évolution). -->
                 <section id="statsLoading" class="stats-status" role="status">
                     <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                    <span>{{ _("Chargement de vos trouvailles…") }}</span>
+                    <span id="statsLoadingText">{{ _("Chargement de vos statistiques…") }}</span>
                 </section>
 
                 <section id="statsLoadError" class="stats-empty-state" hidden>
@@ -79,6 +80,11 @@
                                 <i class="ti ti-pencil" aria-hidden="true"></i>
                             </button>
                             <span id="statsSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
+                            <!-- Attente visible : changement de tableau, actualisation. -->
+                            <span id="statsBusy" class="stats-busy" role="status" hidden>
+                                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                <span id="statsBusyText"></span>
+                            </span>
                         </div>
                         <div class="stats-toolbar-controls">
                             <label for="statsGlobalPeriod" class="stats-toolbar-label">{{ _("Période") }}</label>
@@ -86,6 +92,10 @@
                             <button type="button" id="btnStatsFilters" class="btn btn-outline-secondary btn-sm">
                                 <i class="ti ti-filter" aria-hidden="true"></i> {{ _("Filtres") }}
                                 <span id="statsFiltersCount" class="badge bg-primary text-white ms-1" hidden></span>
+                            </button>
+                            <button type="button" id="btnStatsRefresh" class="btn btn-outline-secondary btn-sm btn-icon"
+                                    aria-label="{{ _("Actualiser les données") }}" title="{{ _("Actualiser les données") }}">
+                                <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
                             <button type="button" id="btnStatsAddChart" class="btn btn-primary btn-sm">
                                 <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Ajouter un graphique") }}
