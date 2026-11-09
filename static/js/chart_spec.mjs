@@ -108,13 +108,14 @@ export const CYCLIC_DIMENSIONS = Object.freeze(['month_of_year', 'week_of_year',
 // `county` : le département (jeux Évolution).
 export const CATEGORY_DIMENSIONS = Object.freeze([
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
-    'owner', 'attribute', 'age', 'published_year', 'cache', 'finder', 'county',
+    'owner', 'attribute', 'age', 'published_year', 'published_month', 'cache', 'finder', 'county',
 ]);
 // Catégories ordonnées : une courbe y a un sens.
 export const ORDINAL_CATEGORIES = Object.freeze(['difficulty', 'terrain', 'age', 'published_year']);
 export const GROUP_DIMENSIONS = Object.freeze(['none', ...TIME_DIMENSIONS, ...CYCLIC_DIMENSIONS, ...CATEGORY_DIMENSIONS]);
 // 2ᵉ dimension : une catégorie, ou l'année (« une série par année »).
-export const SPLIT_DIMENSIONS = Object.freeze(['year', ...CATEGORY_DIMENSIONS]);
+// (Pas le mois de publication : il n'existe que pour la grille Jasmer.)
+export const SPLIT_DIMENSIONS = Object.freeze(['year', ...CATEGORY_DIMENSIONS.filter((dim) => dim !== 'published_month')]);
 // Dimensions qui suivent l'écoulement du temps : seules à porter un cumul.
 export const SEQUENTIAL_DIMENSIONS = Object.freeze([...TIME_DIMENSIONS, 'month_of_year', 'week_of_year', 'day_of_year']);
 
@@ -126,8 +127,8 @@ const COMMON_DIMENSIONS = Object.freeze([
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state',
 ]);
 const EXTRA_DIMENSIONS = Object.freeze({
-    finds: ['owner', 'attribute', 'age', 'published_year'],
-    dnf: ['owner', 'age', 'published_year'],
+    finds: ['owner', 'attribute', 'age', 'published_year', 'published_month'],
+    dnf: ['owner', 'age', 'published_year', 'published_month'],
     owned: [],
     poses: ['cache', 'finder', 'age'],
     evolution: ['county'],
@@ -201,7 +202,7 @@ export const COMPARE_ALIGNS = Object.freeze(['calendar', 'elapsed', 'absolute'])
 export const COMPARE_NORMALIZE = Object.freeze(['none', 'percent', 'per_day']);
 
 // Vue.
-export const CHART_TYPES = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar']);
+export const CHART_TYPES = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar', 'challenge']);
 export const CHART_ORIENTATIONS = Object.freeze(['vertical', 'horizontal']);
 export const CHART_PALETTES = Object.freeze(['auto', 'accent', 'gc', 'multi', 'heat']);
 export const CHART_SORTS = Object.freeze(['natural', 'value', 'label']);
@@ -409,7 +410,8 @@ export function allowedGroupBy(measure, sources = 'finds') {
     const dims = sourceDimensions(sources);
     if (measure?.op === 'cumulative') return dims.filter((dim) => SEQUENTIAL_DIMENSIONS.includes(dim));
     if (measure?.op === 'active') {
-        return dims.filter((dim) => dim === 'none' || SEQUENTIAL_DIMENSIONS.includes(dim) || CATEGORY_DIMENSIONS.includes(dim));
+        return dims.filter((dim) => dim === 'none' || SEQUENTIAL_DIMENSIONS.includes(dim)
+            || (CATEGORY_DIMENSIONS.includes(dim) && dim !== 'published_month'));
     }
     return dims;
 }
@@ -418,7 +420,7 @@ export function allowedGroupBy(measure, sources = 'finds') {
 // de sens sur un axe de temps continu (il le découpe déjà) ; pas de
 // découpage d'un chiffre clé ; seulement celles des sources.
 export function allowedSplitBy(groupBy, sources = 'finds') {
-    if (groupBy === 'none') return [];
+    if (groupBy === 'none' || groupBy === 'published_month') return [];
     const dims = new Set(sourceDimensions(sources));
     return SPLIT_DIMENSIONS.filter((dim) => dim !== groupBy && dims.has(dim)
         && !(dim === 'year' && dimensionKind(groupBy) === 'time'));
@@ -479,7 +481,7 @@ export function allowedLayouts({ periods, splitBy, view, extraSources = [] } = {
     const chart = view?.chart;
     // Calendrier et grille ne dessinent qu'une période (la première) ; le
     // radar superpose ses polygones.
-    if (chart === 'calendar' || chart === 'heatmap' || chart === 'radar') return ['overlay'];
+    if (chart === 'calendar' || chart === 'heatmap' || chart === 'radar' || chart === 'challenge') return ['overlay'];
     const layouts = chart === 'donut' ? ['side'] : ['overlay', 'side'];
     const deltaCharts = ['bar', 'line', 'area', 'number'];
     const known = Array.isArray(periods);
@@ -498,10 +500,17 @@ export function allowedLayouts({ periods, splitBy, view, extraSources = [] } = {
 const ADDITIVE_OPS = ['count', 'distinct', 'max_per_day', 'active'];
 // Catégories assez peu nombreuses et sans ordre pour un anneau / un radar.
 const PART_CYCLIC = ['weekday', 'month_of_year'];
+// Grilles de défis (chart_challenge.mjs › CHALLENGE_GRIDS) : D/T 81,
+// Calendrier 366, Jasmer, mois de trouvaille — des cases trouvées ou non,
+// donc un comptage, d'une seule source et sans 2ᵉ dimension.
+const CHALLENGE_GROUPS = ['dt', 'day_of_year', 'published_month', 'month'];
+const CHALLENGE_OPS = ['count', 'distinct'];
 
 // Types de graphiques compatibles, dans l'ordre de préférence (le premier
 // sert de repli à la normalisation).
-export function allowedCharts({ measure, groupBy, splitBy } = {}) {
+export function allowedCharts({ measure, groupBy, splitBy, extraSources = [] } = {}) {
+    // Le mois de publication n'existe que pour la grille Jasmer.
+    if (groupBy === 'published_month') return ['challenge'];
     const kind = dimensionKind(groupBy);
     if (kind === 'none') return ['number', 'bar'];
     const charts = ['bar'];
@@ -513,6 +522,8 @@ export function allowedCharts({ measure, groupBy, splitBy } = {}) {
     if (groupBy === 'day') charts.push('calendar');
     if (groupBy === 'dt' || splitBy) charts.push('heatmap');
     if (parts) charts.push('radar');
+    if (CHALLENGE_GROUPS.includes(groupBy) && !splitBy && !(extraSources || []).length
+        && CHALLENGE_OPS.includes(measure?.op)) charts.push('challenge');
     return charts;
 }
 

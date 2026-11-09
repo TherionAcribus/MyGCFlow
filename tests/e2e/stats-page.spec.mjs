@@ -199,8 +199,8 @@ test('galerie : une question ajoute son graphique, qui survit au rechargement', 
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
   // Questions de la famille « Mes données » seulement (pas celles d'Évolution).
-  await expect(gallery.locator('[data-question]')).toHaveCount(31);
-  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(8);
+  await expect(gallery.locator('[data-question]')).toHaveCount(35);
+  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(9);
   await expect(gallery.locator('[data-question^="evo_"]')).toHaveCount(0);
   await gallery.locator('[data-question="weekdays"]').click();
   await expect(gallery).toBeHidden();
@@ -1238,8 +1238,8 @@ test('galerie : chaque question montre un aperçu sur mes données, l\'ajout s\'
   await page.locator('#btnStatsAddChart').click();
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
-  // « Partir de zéro » n'a pas d'aperçu ; les 30 questions en ont un.
-  await expect(gallery.locator('[data-preview]')).toHaveCount(30);
+  // « Partir de zéro » n'a pas d'aperçu ; les 34 questions en ont un.
+  await expect(gallery.locator('[data-preview]')).toHaveCount(34);
   await expect(gallery.locator('[data-question="custom"] [data-preview]')).toHaveCount(0);
   const preview = async (id) => (await snapshot(page)).gallery.find((g) => g.id === id);
   // Haut de la galerie : dessiné dès l'ouverture.
@@ -1467,6 +1467,55 @@ test('« Reprendre les filtres de la carte » : aller-retour carte → Statistiq
   dashboard = (await snapshot(page)).dashboard;
   expect(dashboard.filters).toEqual({});
   expect(dashboard.period.kind).not.toBe('range');
+  expect(errors).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// Grilles de défis : D/T 81, Calendrier 366, Jasmer, mois de trouvaille
+// ---------------------------------------------------------------------------
+
+// Fixture : D/T 1/1 et 1,5/1,5 → 3,5/3,5 (6 combinaisons), trouvées du 1ᵉʳ au
+// 6 janvier 2026, publiées en janvier 2025.
+test('grilles de défis : ajoutées depuis la galerie, bilan et cases qui manquent', async ({ page }) => {
+  const errors = await openStats(page);
+  const add = async (id) => {
+    await page.locator('#btnStatsAddChart').click();
+    await expect(page.locator('#statsGalleryModal')).toBeVisible();
+    await page.locator(`#statsGalleryModal [data-question="${id}"]`).click();
+    await expect(page.locator('#statsGalleryModal')).toBeHidden();
+  };
+  // Le groupe « Mes défis » existe, avec ses aperçus.
+  await page.locator('#btnStatsAddChart').click();
+  const gallery = page.locator('#statsGalleryModal');
+  await expect(gallery).toContainText('Mes défis');
+  await gallery.locator('[data-question="challenge_jasmer"]').scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await snapshot(page)).gallery.find((g) => g.id === 'challenge_jasmer')?.drawn).toBe(true);
+  await gallery.locator('[data-bs-dismiss="modal"]').first().click();
+  await expect(gallery).toBeHidden();
+
+  for (const id of ['challenge_dt', 'challenge_calendar', 'challenge_jasmer', 'challenge_months']) await add(id);
+  const cards = async () => (await snapshot(page)).cards.filter((c) => c.chart === 'challenge');
+  await expect.poll(async () => (await cards()).length).toBe(4);
+  await expect.poll(async () => (await cards()).every((c) => c.rendered)).toBe(true);
+  const byMetric = Object.fromEntries((await cards()).map((c) => [c.challenge.metric, c.challenge]));
+
+  expect(byMetric.dt).toMatchObject({ filled: 6, available: 81, loops: 0, next: 75 });
+  expect(byMetric.dt.missing).toBe('Il manque 75 cases');
+  expect(byMetric.calendar).toMatchObject({ filled: 6, available: 366, loops: 0 });
+  // Jasmer : mai 2000 → janvier 2026 (dernière trouvaille), un mois rempli.
+  expect(byMetric.jasmer).toMatchObject({ filled: 1, available: 8 + 25 * 12 + 1, loops: 0 });
+  // Un seul mois de trouvaille, six trouvailles : grille pleine, six tours.
+  expect(byMetric.finds_ym).toMatchObject({ filled: 1, available: 1, loops: 6 });
+  expect(byMetric.finds_ym.tours).toBe('Tours année × mois : 6');
+
+  // La grille D/T s'allonge en cases carrées ; son bilan est dessiné.
+  const dtCard = (await cards()).find((c) => c.challenge.metric === 'dt');
+  expect(dtCard.height).toBeGreaterThan(300);
+  const title = await page.evaluate((id) => {
+    const host = document.querySelector(`.stats-card[data-chart-id="${id}"] .stats-chart`);
+    return window.echarts.getInstanceByDom(host).getOption().title[0].text;
+  }, dtCard.id);
+  expect(title).toContain('Combinaisons : 6/81');
   expect(errors).toEqual([]);
 });
 

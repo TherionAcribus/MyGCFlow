@@ -28,6 +28,7 @@
 // Case incomplète (mois en cours…) : remplissage atténué, bord en tirets.
 
 import { OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
+import { challengeSummary } from './chart_challenge.mjs';
 
 // Au-delà, les étiquettes de valeur sur chaque barre deviennent du bruit.
 const MAX_LABELLED_BARS = 24;
@@ -65,6 +66,15 @@ export function contrastRatio(a, b) {
     if (la === null || lb === null) return null;
     const [hi, lo] = la > lb ? [la, lb] : [lb, la];
     return (hi + 0.05) / (lo + 0.05);
+}
+
+// Texte posé sur une case colorée : blanc ou presque noir, le plus lisible
+// (dégradé clair en mode sombre).
+const DARK_LABEL = '#111827';
+export function labelColorOn(color) {
+    const white = contrastRatio(color, '#ffffff');
+    const dark = contrastRatio(color, DARK_LABEL);
+    return white === null || dark === null || white >= dark ? '#ffffff' : DARK_LABEL;
 }
 
 // Une couleur de type quasi invisible sur le fond (le blanc des
@@ -262,7 +272,10 @@ function common(ctx, showLegend) {
         animationDuration: ctx.reduceMotion ? 0 : 400,
         animationDurationUpdate: ctx.reduceMotion ? 0 : 300,
         backgroundColor: 'transparent',
-        textStyle: { color: tokens.text, fontFamily: 'inherit' },
+        // Police de la page (stats_page.js › readTokens) : un canvas refuse
+        // « inherit » et retombait sur 10 px sans-serif, quelle que soit la
+        // taille demandée.
+        textStyle: { color: tokens.text, fontFamily: tokens.font || 'sans-serif' },
         aria: { enabled: true },
         legend: showLegend ? legendOption(tokens) : { show: false },
     };
@@ -661,7 +674,9 @@ export function clickTarget(result, spec, params) {
     if (!params || params.componentType !== 'series') return null;
     const chart = spec.view.chart;
     if (chart === 'number' || chart === 'heatmap' || chart === 'radar' || result.delta) return null;
-    if (chart === 'donut') {
+    if (chart === 'donut' || chart === 'challenge') {
+        // Grille de défi : une case vide n'a rien à montrer sur la carte.
+        if (chart === 'challenge' && !params.value?.[2]) return null;
         const keyIndex = params.data?.keyIndex;
         return Number.isInteger(keyIndex) ? { seriesIndex: params.seriesIndex, keyIndex } : null;
     }
@@ -684,6 +699,7 @@ export function buildChartOption(result, spec, ctx) {
     if (chart === 'heatmap') return heatmapOption(result, spec, ctx);
     if (chart === 'calendar') return calendarOption(result, spec, ctx);
     if (chart === 'radar') return radarOption(result, spec, ctx);
+    if (chart === 'challenge') return challengeOption(result, spec, ctx);
     if (result.delta) return deltaOption(result, spec, ctx);
     if (spec.compare.layout === 'side' && result.periods.length > 1) return sideOption(result, spec, ctx);
     return overlayOption(result, spec, ctx);
@@ -870,6 +886,7 @@ export function calendarYears(result) {
 // Hauteur du graphique en pixels quand elle dépend des données (calendrier :
 // un bandeau par année) ; null = hauteur par défaut de la carte.
 export function chartHeight(result, spec, width = 0) {
+    if (spec.view.chart === 'challenge') return challengeHeight(result, width);
     if (spec.view.chart !== 'calendar') return null;
     const { years } = calendarYears(result);
     return 40 + Math.max(1, years.length) * calendarBlock(calendarCell(width));
@@ -923,6 +940,152 @@ function calendarOption(result, spec, ctx) {
             data: points.filter((p) => p.year === year).map((p) => p.value),
             itemStyle: { borderColor: tokens.surface, borderWidth: 2 },
         })),
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Grille de défi (D/T 81, Calendrier 366, Jasmer, mois de trouvaille)
+// ---------------------------------------------------------------------------
+
+// Taille d'une case selon la grille (au plus).
+const CHALLENGE_MAX_CELL = { dt: 36, calendar: 24, jasmer: 26, finds_ym: 36 };
+const CHALLENGE_MIN_CELL = 6;
+
+// Années × mois plus hautes que larges (Jasmer : 27 années) : couchées, une
+// colonne par année, une ligne par mois — la grille tient dans la largeur
+// d'une carte au lieu de s'étirer en hauteur.
+function challengeTransposed(grid) {
+    return (grid.metric === 'jasmer' || grid.metric === 'finds_ym') && grid.rows > grid.cols;
+}
+
+// Mise en page : cases carrées, grille centrée sous les deux lignes du
+// bilan.
+function challengeLayout(result, width) {
+    const grid = result.grid;
+    const transposed = challengeTransposed(grid);
+    const cols = transposed ? grid.rows : grid.cols;
+    const rows = transposed ? grid.cols : grid.rows;
+    const dt = grid.metric === 'dt';
+    const left = dt ? 52 : 46;
+    const right = 8;
+    const top = 56;
+    const bottom = dt ? 44 : 26;
+    const avail = Math.max(0, (width || 480) - left - right);
+    const cell = Math.max(CHALLENGE_MIN_CELL, Math.min(CHALLENGE_MAX_CELL[grid.metric] || 24, Math.floor(avail / cols)));
+    const offset = Math.max(0, Math.floor((avail - cell * cols) / 2));
+    return { transposed, cell, rows, cols, left: left + offset, top, width: cell * cols, height: cell * rows, bottom };
+}
+
+function challengeHeight(result, width) {
+    if (!result.grid) return null;
+    const layout = challengeLayout(result, width);
+    return layout.top + layout.height + layout.bottom;
+}
+
+// Bilan affiché au-dessus de la grille (première série).
+export function challengeText(result, ctx) {
+    if (!result.grid) return null;
+    const summary = challengeSummary(result.series[0]?.values || []);
+    return { summary, ...ctx.labels.challengeLines(result.grid.metric, summary, result.keys) };
+}
+
+function challengeOption(result, spec, ctx) {
+    const { tokens, labels } = ctx;
+    const grid = result.grid;
+    if (!grid) return null;
+    const metric = grid.metric;
+    const values = result.series[0]?.values || [];
+    const text = challengeText(result, ctx);
+    const { summary } = text;
+    const next = new Set(summary.loops > 0 ? summary.next : []);
+    const layout = challengeLayout(result, ctx.width);
+    const format = valueFormatter(spec, result, ctx);
+    const max = Math.max(0, ...values.map((v) => v || 0));
+
+    // Mois en toutes lettres abrégées si la case le permet, sinon l'initiale.
+    const monthFmt = new Intl.DateTimeFormat(labels.locale, { month: layout.cell >= 30 ? 'short' : 'narrow', timeZone: 'UTC' });
+    const month = (m) => monthFmt.format(Date.UTC(2024, m - 1, 1));
+    const half = (v) => labels.axisLabel('difficulty', String(v));
+    let rowLabels;
+    let colLabels;
+    if (metric === 'dt') {
+        rowLabels = grid.rowKeys.map(half);
+        colLabels = grid.colKeys.map(half);
+    } else if (metric === 'calendar') {
+        rowLabels = labels.monthNames();
+        colLabels = grid.colKeys.map(String);
+    } else {
+        rowLabels = grid.rowKeys.map(String);
+        colLabels = grid.colKeys.map(month);
+    }
+    const xLabels = layout.transposed ? rowLabels : colLabels;
+    const yLabels = layout.transposed ? colLabels : rowLabels;
+    // Jours du calendrier : 1, 5, 10… ; années en colonnes : ECharts écarte
+    // celles qui se chevauchent.
+    let xInterval = 0;
+    if (metric === 'calendar') xInterval = (i) => i === 0 || (i + 1) % 5 === 0;
+    else if (layout.transposed) xInterval = 'auto';
+    const yInterval = !layout.transposed && layout.cell < 14 && metric !== 'calendar' ? 1 : 0;
+
+    const data = grid.cells.map((cell, i) => {
+        const n = values[i] || 0;
+        const level = max ? 0.25 + 0.75 * (n / max) : 0;
+        const style = { color: n ? rampColor(tokens.heat, level) : tokens.empty };
+        // Cases du prochain tour (déjà trouvées) : liseré.
+        if (next.has(i)) Object.assign(style, { borderColor: tokens.text, borderWidth: 2 });
+        const [x, y] = layout.transposed ? [cell.r, cell.c] : [cell.c, cell.r];
+        const item = { value: [x, y, n], keyIndex: i, itemStyle: style };
+        if (n && labelColorOn(style.color) !== '#ffffff') {
+            item.label = { color: labelColorOn(style.color), textBorderWidth: 0 };
+        }
+        return item;
+    });
+    const xName = metric === 'dt' ? labels.dimension('terrain') : '';
+    const yName = metric === 'dt' ? labels.dimension('difficulty') : '';
+    const axis = (data, name, interval, extra = {}) => ({
+        type: 'category', data, name, nameLocation: 'middle',
+        nameTextStyle: { color: tokens.textMuted }, ...axisStyle(tokens), splitArea: { show: false },
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: tokens.textMuted, fontSize: 11, interval },
+        ...extra,
+    });
+    return {
+        ...common(ctx, false),
+        title: {
+            text: text.coverage + '   ·   ' + text.tours,
+            subtext: text.missing,
+            left: 0,
+            top: 4,
+            itemGap: 6,
+            textStyle: { color: tokens.text, fontSize: 13, fontWeight: 600 },
+            subtextStyle: { color: tokens.textMuted, fontSize: 12, width: Math.max(120, (ctx.width || 480) - 8), overflow: 'truncate' },
+        },
+        tooltip: {
+            ...tooltipBase(tokens),
+            trigger: 'item',
+            formatter: (p) => {
+                const i = p.data?.keyIndex;
+                const head = labels.challengeCellLabel(metric, result.keys[i]);
+                return `<div style="font-weight:600;margin-bottom:4px">${escapeHtml(head)}</div><b>${escapeHtml(format(p.value[2]))}</b>`;
+            },
+        },
+        grid: { left: layout.left, top: layout.top, width: layout.width, height: layout.height, containLabel: false },
+        xAxis: axis(xLabels, xName, xInterval, { nameGap: 26 }),
+        yAxis: axis(yLabels, yName, yInterval, { inverse: true, nameGap: 34, nameRotate: 90 }),
+        series: [{
+            type: 'heatmap',
+            data,
+            itemStyle: { borderColor: tokens.surface, borderWidth: layout.cell >= 12 ? 2 : 1, borderRadius: layout.cell >= 16 ? 3 : 1 },
+            label: {
+                show: spec.view.labels && layout.cell >= 20,
+                color: '#ffffff',
+                textBorderColor: 'rgba(0,0,0,0.45)',
+                textBorderWidth: 2,
+                fontSize: 10,
+                formatter: (p) => (p.value[2] ? labels.formatValue(p.value[2], spec.measure, { compact: true }) : ''),
+            },
+            emphasis: { itemStyle: { borderColor: tokens.text, borderWidth: 1 } },
+        }],
     };
 }
 

@@ -357,6 +357,15 @@ en JS quand l'opérande est fixe, ou passer par `clamp`). Les styles purs
 `tests/js/poses_point_style.test.mjs` contient un petit interprète pour
 vérifier les valeurs calculées, pas seulement la forme des expressions.
 
+## ECharts : police des graphiques
+
+Un graphique ECharts en canvas compose `font` à partir de `fontFamily` :
+`'inherit'` y est invalide, le canvas l'ignore et garde **10 px
+sans-serif**, quelles que soient les tailles demandées — sans erreur. La
+page Statistiques passe la police réelle de la page
+(`getComputedStyle(document.body).fontFamily`, jeton `font` de
+`readTokens`) à `common()` de chart_echarts.mjs (corrigé le 2026-11-09).
+
 ## Piège `hidden` + classes d'affichage Bootstrap
 
 Un élément qui porte `hidden` ET une classe `d-block`/`d-flex`/`d-grid`…

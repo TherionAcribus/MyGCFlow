@@ -164,7 +164,7 @@ const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
 const EVO = 'evolution:1';
 const EVO_ARCHIVED = 'evolution:1:archived';
 
-export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'challenges', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
 
 export const QUESTIONS = Object.freeze([
     { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
@@ -201,6 +201,13 @@ export const QUESTIONS = Object.freeze([
     { id: 'top_finders', group: 'poses', icon: 'ti-user-heart', size: 'M', spec: { source: 'poses.received', groupBy: 'finder', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
     { id: 'owned_active', group: 'poses', icon: 'ti-activity', size: 'M', spec: { source: 'owned', measure: { op: 'active' }, groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'area' } } },
     { id: 'finds_vs_received', group: 'poses', icon: 'ti-arrows-exchange', size: 'M', spec: { source: 'finds', extraSources: ['poses.received'], groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
+
+    // Mes défis : grilles à remplir (chart_challenge.mjs), sur tout
+    // l'historique.
+    { id: 'challenge_dt', group: 'challenges', icon: 'ti-grid-dots', size: 'M', spec: { groupBy: 'dt', periods: [{ kind: 'all' }], view: { chart: 'challenge', labels: true } } },
+    { id: 'challenge_calendar', group: 'challenges', icon: 'ti-calendar-month', size: 'L', spec: { groupBy: 'day_of_year', periods: [{ kind: 'all' }], view: { chart: 'challenge' } } },
+    { id: 'challenge_jasmer', group: 'challenges', icon: 'ti-calendar-stats', size: 'L', spec: { groupBy: 'published_month', periods: [{ kind: 'all' }], view: { chart: 'challenge' } } },
+    { id: 'challenge_months', group: 'challenges', icon: 'ti-calendar-check', size: 'M', spec: { groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'challenge' } } },
 
     // Mes DNF.
     { id: 'dnf_by_year', group: 'dnf', icon: 'ti-mood-sad', size: 'M', spec: { source: 'dnf', groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },

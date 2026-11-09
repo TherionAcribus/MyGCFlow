@@ -38,7 +38,10 @@ import { ELAPSED_UNITS, filterMask, runChartQueries } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { clearFilterForm, destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { GROUP_CHOICES, EDITOR_CHARTS, MEASURE_CHOICES, makeLabels, measureKey, measureOfKey } from './chart_labels.mjs';
-import { axisLabels, buildChartOption, calendarCell, calendarYears, chartHeight, clickTarget, numberModel, seriesIdentity, thumbnailOption } from './chart_echarts.mjs';
+import {
+    axisLabels, buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, clickTarget, numberModel,
+    seriesIdentity, thumbnailOption,
+} from './chart_echarts.mjs';
 import {
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, chartAnimates, lockOption, niceCeil, revealIndex, revealProgress,
     revealResult, valueMax,
@@ -149,6 +152,8 @@ function readTokens() {
     const v = (name, fallback) => style.getPropertyValue(name).trim() || fallback;
     return {
         text: v('--color-text', '#1f2b38'),
+        // Police réelle de la page : un canvas ne sait pas « hériter ».
+        font: getComputedStyle(document.body).fontFamily || 'sans-serif',
         textMuted: v('--color-text-muted', '#5b6878'),
         grid: v('--chart-grid', '#e1e6ec'),
         surface: v('--color-surface', '#ffffff'),
@@ -1405,7 +1410,11 @@ function cardNote(result, spec) {
     }
     if (result.truncated) notes.push(t('Seules les 8 périodes les plus récentes sont affichées.'));
     const chart = spec.view.chart;
-    if ((chart === 'calendar' || chart === 'heatmap') && result.periods.length > 1) {
+    if (chart === 'challenge' && result.meta.unknown) {
+        const n = result.meta.unknown;
+        notes.push(spec.groupBy === 'dt' ? t('Sans D/T : ${n}', { n }) : t('Sans date de publication : ${n}', { n }));
+    }
+    if ((chart === 'calendar' || chart === 'heatmap' || chart === 'challenge') && result.periods.length > 1) {
         notes.push(t('Seule la première période est dessinée.'));
     }
     if (chart === 'calendar' && calendarYears(result).truncated) {
@@ -1459,6 +1468,15 @@ function chartClickable(spec, result) {
     return chartLinksToMap(spec) && !['heatmap', 'radar', 'number'].includes(spec.view.chart) && !result.delta;
 }
 
+// Bilan d'une grille de défi (relevé E2E).
+function challengeSnapshot(result) {
+    const text = result?.grid ? challengeText(result, chartContext()) : null;
+    if (!text) return null;
+    const { filled, available, loops, next } = text.summary;
+    return { metric: result.grid.metric, filled, available, loops, next: next.length,
+        coverage: text.coverage, tours: text.tours, missing: text.missing };
+}
+
 function renderChartInto(host, result, spec) {
     const width = host.clientWidth || host.parentElement?.clientWidth || 0;
     const option = buildChartOption(result, spec, { ...chartContext(), width });
@@ -1473,6 +1491,9 @@ function renderChartInto(host, result, spec) {
     // (onHostsResized), pas un simple resize().
     if (spec.view.chart === 'calendar') host.dataset.calendarCell = String(calendarCell(width));
     else delete host.dataset.calendarCell;
+    // Grille de défi : cases carrées et centrées sur la largeur dessinée.
+    if (spec.view.chart === 'challenge') host.dataset.challengeWidth = String(width);
+    else delete host.dataset.challengeWidth;
     let chart = window.echarts.getInstanceByDom(host);
     if (!chart) {
         chart = window.echarts.init(host, null, { locale: echartsLocale(), renderer: 'canvas' });
@@ -1585,7 +1606,9 @@ const resizedCalendars = new Set();
 function onHostsResized(entries) {
     for (const { target: host } of entries) {
         const drawn = host.dataset.calendarCell;
-        if (drawn !== undefined && Number(drawn) !== calendarCell(host.clientWidth)) {
+        const challengeWidth = host.dataset.challengeWidth;
+        if ((drawn !== undefined && Number(drawn) !== calendarCell(host.clientWidth))
+            || (challengeWidth !== undefined && Number(challengeWidth) !== host.clientWidth)) {
             if (!resizedCalendars.size) requestAnimationFrame(redrawResizedCalendars);
             resizedCalendars.add(host);
             continue;
@@ -3098,6 +3121,7 @@ window.getStatsPageSnapshot = () => {
                     return host?.dataset.calendarCell ? Number(host.dataset.calendarCell) : null;
                 })(),
                 linksToMap: entry?.result ? chartClickable(item.spec, entry.result) : false,
+                challenge: challengeSnapshot(entry?.result),
             };
         }) : [],
         save: { dirty: state.docDirty, failed: state.saveFailed, pending: saveQueue.pending },

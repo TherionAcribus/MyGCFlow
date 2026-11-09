@@ -221,14 +221,31 @@ test('écart : exactement deux périodes fixes, sinon superposé ; gardé si les
 
 test('graphiques compatibles selon l\'axe et la mesure', () => {
     assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'none' }), ['number', 'bar']);
-    assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'month' }), ['bar', 'line', 'area']);
+    assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'month' }), ['bar', 'line', 'area', 'challenge']);
     assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'day' }), ['bar', 'line', 'area', 'calendar']);
     assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'cache_type' }), ['bar', 'donut', 'radar']);
     assert.deepEqual(allowedCharts({ measure: { op: 'mean' }, groupBy: 'cache_type' }), ['bar', 'radar']);
     assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'difficulty' }), ['bar', 'line', 'area', 'donut', 'radar']);
-    assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'dt' }), ['bar', 'donut', 'heatmap', 'radar']);
+    assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'dt' }), ['bar', 'donut', 'heatmap', 'radar', 'challenge']);
     assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'weekday' }), ['bar', 'line', 'area', 'donut', 'radar']);
     assert.ok(allowedCharts({ measure: { op: 'count' }, groupBy: 'month_of_year', splitBy: 'year' }).includes('heatmap'));
+});
+
+test('grille de défi : un comptage d’une source, sans 2ᵉ dimension ; Jasmer n’a qu’elle', () => {
+    assert.ok(allowedCharts({ measure: { op: 'count' }, groupBy: 'day_of_year' }).includes('challenge'));
+    assert.ok(allowedCharts({ measure: { op: 'distinct', field: 'caches' }, groupBy: 'dt' }).includes('challenge'));
+    assert.ok(!allowedCharts({ measure: { op: 'mean', field: 'difficulty' }, groupBy: 'month' }).includes('challenge'));
+    assert.ok(!allowedCharts({ measure: { op: 'count' }, groupBy: 'dt', splitBy: 'cache_type' }).includes('challenge'));
+    assert.ok(!allowedCharts({ measure: { op: 'count' }, groupBy: 'dt', extraSources: ['dnf'] }).includes('challenge'));
+    assert.ok(!allowedCharts({ measure: { op: 'count' }, groupBy: 'year' }).includes('challenge'));
+    assert.deepEqual(allowedCharts({ measure: { op: 'count' }, groupBy: 'published_month' }), ['challenge']);
+    const jasmer = normalizeChartSpec({ groupBy: 'published_month', splitBy: 'cache_type', view: { chart: 'bar' } });
+    assert.equal(jasmer.view.chart, 'challenge');
+    assert.equal(jasmer.splitBy, null);
+    assert.deepEqual(jasmer.compare.layout, 'overlay');
+    // Mois de publication : trouvailles et DNF seulement, jamais en 2ᵉ dimension.
+    assert.equal(normalizeChartSpec({ source: 'owned', groupBy: 'published_month' }).groupBy, 'year');
+    assert.equal(normalizeChartSpec({ groupBy: 'dt', splitBy: 'published_month' }).splitBy, null);
 });
 
 test('un graphique incompatible est remplacé par le premier compatible', () => {

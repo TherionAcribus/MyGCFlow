@@ -93,6 +93,11 @@ function applyDimension(state, dim, key, { result, series, keyIndex = null }) {
         case 'published_year':
             selection.published_dates = { startDate: `${key}-01-01`, endDate: `${key}-12-31` };
             return true;
+        case 'published_month': {
+            const [lo, hi] = timeKeyBounds('month', key);
+            selection.published_dates = { startDate: isoOfDay(lo), endDate: isoOfDay(hi) };
+            return true;
+        }
         case 'year':
         case 'quarter':
         case 'month':
@@ -208,6 +213,7 @@ export function discoveryModeFor(kinds, present, current) {
 const LINKABLE = new Set([
     'none', 'year', 'quarter', 'month', 'week', 'day', 'month_of_year', 'week_of_year', 'day_of_year',
     'cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'owner', 'attribute', 'published_year',
+    'published_month',
 ]);
 export function chartLinksToMap(spec) {
     return chartSources(spec).every((source) => source === 'finds') && LINKABLE.has(spec.groupBy)

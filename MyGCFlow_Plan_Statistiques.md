@@ -118,8 +118,12 @@ de la page n'étaient pas traduits (deux regex faisaient dérailler
 l'extraction pybabel). « Reprendre les filtres de la carte » fait le
 2026-11-09 (fenêtre Filtres : la sélection de la carte remplit le
 formulaire, ses dates deviennent la période, ce qui n'a pas d'équivalent
-est dit). Pistes restantes, fonctions : vidéo d'un tableau entier avec musique, grilles de défis (D/T
-81, 366 jours, Jasmer), séries et records, objectif et projection, mode
+est dit). Grilles de défis faites le 2026-11-09 (forme « grille de défi » :
+D/T 81, Calendrier 366, Jasmer, mois de trouvaille ; bilan, tours, cases
+qui manquent ; groupe « Mes défis » de la galerie) ; au passage, la police
+des graphiques (un canvas refusait « inherit » : tout le texte sortait en
+10 px sans-serif). Pistes restantes, fonctions : vidéo d'un tableau entier
+avec musique, séries et records, objectif et projection, mode
 présentation, lien carte pour les autres sources.
 
 Décisions prises avec l'utilisateur :

@@ -541,6 +541,52 @@ valeur, à partir du 2ᵉ pas de la rampe : contraste ≥ 2:1 sur le fond).
 Rampe `--chart-heat-1…5` vérifiée au validateur dans les deux modes (le
 pas 1 se fond volontairement dans le fond : case proche de zéro).
 
+## Grilles de défis
+
+Forme `challenge` (« grille de défi ») : des cases trouvées ou non, avec le
+bilan au-dessus. Quatre grilles, selon le regroupement
+(`CHALLENGE_GRIDS`, chart_challenge.mjs) :
+
+| regroupement | grille | cases |
+|---|---|---|
+| `dt` | D/T 81 (lignes : difficulté, colonnes : terrain) | 81 |
+| `day_of_year` | Calendrier 366 (mois × jour, 30 février exclu) | 366 |
+| `published_month` | Jasmer (année × mois de publication, depuis mai 2000) | jusqu'au mois de fin |
+| `month` | mois de trouvaille de la période | mois de la période |
+
+- Géométrie reprise des panneaux vidéo de la carte (`gridSpec` de
+  stats_model.mjs) ; `challengeGrid(dim, entry, today)` donne les cases
+  disponibles et leurs clés du moteur. La fin (Jasmer, mois) est celle de
+  la période sans dépasser aujourd'hui : ni mois à venir, ni mois d'une
+  cache pas encore trouvable.
+- Moteur : avec `view.chart === 'challenge'`, l'axe est la liste des cases
+  (trouvées ou non, une valeur par case) et `result.grid` porte la
+  géométrie ; `meta.unknown` compte les lignes sans valeur (sans D/T, sans
+  date de publication ou avant mai 2000), dites sous la carte.
+- `published_month` (année × 100 + mois) n'existe que pour Jasmer :
+  trouvailles et DNF, jamais en 2ᵉ dimension, et seule forme proposée.
+- Forme permise pour un comptage (`count`, `distinct`) d'une seule source,
+  sans 2ᵉ dimension ; une seule période dessinée (la première).
+- Bilan (`challengeSummary`, `challengeLines` de chart_labels) : cases
+  trouvées / disponibles, tours complets (le plus petit compte : chaque
+  case trouvée une fois de plus), cases qui manquent au tour suivant —
+  nommées jusqu'à 8, comptées au-delà. Mêmes textes que les panneaux de la
+  carte pour les deux premiers. Bilan en titre ECharts : il suit les
+  exports PNG / SVG.
+- Dessin (`challengeOption`) : cases carrées et centrées (taille plafonnée
+  par grille), la carte s'allonge (`chartHeight`) et se redessine quand sa
+  largeur change (`data-challenge-width`). Case vide au fond `--chart-empty`,
+  case trouvée dans le dégradé (à partir du 2ᵉ quart), cases restées au
+  minimum cerclées quand un tour est déjà complet. Années × mois plus hautes
+  que larges (Jasmer) : couchées, une colonne par année.
+- Clic : une case trouvée ouvre la carte filtrée (D/T, mois, mois de
+  publication → `published_dates` du mois ; jour de l'année : seulement sur
+  une période d'une année civile) ; « Envoyer en panneau vidéo » donne la
+  même grille dans les panneaux de la carte (`dt`, `calendar`, `jasmer`,
+  `finds_ym`).
+- Galerie : groupe « Mes défis » (`challenge_dt`, `challenge_calendar`,
+  `challenge_jasmer`, `challenge_months`), sur tout l'historique.
+
 ## Tableaux de bord (`dashboard_model.mjs`)
 
 `{ v: 1, active, dashboards: [{ id, name, period, filters, items: [{ size, spec }] }] }`
@@ -598,6 +644,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   `chart_video.test.mjs`, `clickTarget` dans `chart_echarts.test.mjs`.
 - Unitaires du lot 7 : `dashboard_saver.test.mjs` (file d'écriture) ;
   révision, conflit 409 et restauration dans `test_statistics_page.py`.
+- Grilles de défis : `chart_challenge.test.mjs` (géométrie, calcul, bilan,
+  dessin, liens carte et panneau).
 - Vignettes de la galerie : `thumbnailOption` dans `chart_echarts.test.mjs`
   (chaque forme : barres, aire, anneau, écart, côte à côte, grille, radar,
   calendrier).
@@ -607,7 +655,9 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   Relevé `window.getStatsPageSnapshot()` : `rows`, `dashboard`, `cards`
   (`keys`, `series`, `periods`, `align`, `toDate`, `delta`, `partial`,
   `layout`, `grids`, `chart`, `rendered`, `size`, `heightKey`, `height` en
-  px…, `linksToMap`, `unavailable` = sources en échec de la carte),
+  px…, `linksToMap`, `unavailable` = sources en échec de la carte,
+  `challenge` = bilan d'une grille de défi : `metric`, `filled`,
+  `available`, `loops`, `next`, textes),
   `editor`, `dashboards`, `sources`, `sourceErrors`, `save` (`dirty`,
   `failed`, `pending`), `video` (`phase` setup / recording / done, `file`,
   `folder`), `busy` (attente affichée ou en cours), `gallery` (aperçus de la

@@ -47,11 +47,11 @@ export const GROUP_CHOICES = Object.freeze([
     { family: 'none', dims: ['none'] },
     { family: 'time', dims: ['year', 'quarter', 'month', 'week', 'day'] },
     { family: 'cyclic', dims: ['month_of_year', 'week_of_year', 'day_of_year', 'weekday'] },
-    { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'age', 'published_year'] },
+    { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'age', 'published_year', 'published_month'] },
 ]);
 
 // Graphiques proposés par l'éditeur (tous ceux que l'adaptateur dessine).
-export const EDITOR_CHARTS = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar']);
+export const EDITOR_CHARTS = Object.freeze(['bar', 'line', 'area', 'donut', 'number', 'calendar', 'heatmap', 'radar', 'challenge']);
 
 const UTC_DAY = 86400000;
 
@@ -101,6 +101,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         attribute: t('Attribut'),
         age: t('Âge de la cache'),
         published_year: t('Année de publication'),
+        published_month: t('Mois de publication'),
         cache: t('Cache'),
         finder: t('Visiteur'),
         county: t('Département'),
@@ -129,6 +130,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         attribute: t('par attribut'),
         age: t('par âge de la cache'),
         published_year: t('par année de publication'),
+        published_month: t('par mois de publication'),
         cache: t('par cache'),
         finder: t('par visiteur'),
         county: t('par département'),
@@ -235,6 +237,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         calendar: t('calendrier'),
         heatmap: t('grille'),
         radar: t('radar'),
+        challenge: t('grille de défi'),
     };
 
     const LAYOUTS = {
@@ -315,6 +318,10 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         evo_types: [t('Types des caches actives'), t('La part de chaque type parmi les caches en place.')],
         evo_counties: [t('Caches actives par département'), t('Où se trouvent les caches en place.')],
         evo_dt: [t('Grille D/T de la zone'), t('Difficulté et terrain des caches en place.')],
+        challenge_dt: [t('Ma grille D/T'), t('Les 81 combinaisons de difficulté et de terrain : celles qui manquent.')],
+        challenge_calendar: [t('Mon calendrier 366'), t("Un jour de l'année sans trouvaille ? Les 366 jours, toutes années confondues.")],
+        challenge_jasmer: [t('Ma grille Jasmer'), t('Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent.')],
+        challenge_months: [t('Mes mois de cache'), t('Chaque mois depuis votre première trouvaille : en avez-vous sauté un ?')],
     };
 
     const QUESTION_GROUPS = {
@@ -327,6 +334,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         dnf: t('Mes DNF'),
         zone: t('La zone au fil du temps'),
         zone_caches: t('Les caches de la zone'),
+        challenges: t('Mes défis'),
     };
 
     function categoryLabel(dim, key, attributeName) {
@@ -347,7 +355,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
             case 'none': return t('Total');
             case 'year': case 'published_year': return String(key);
             case 'quarter': return t('T${q} ${y}', { q: key % 10, y: Math.floor(key / 10) });
-            case 'month': {
+            case 'month': case 'published_month': {
                 const date = Date.UTC(Math.floor(key / 100), (key % 100) - 1, 1);
                 return (long ? monthYearLongFmt : monthYearFmt).format(date);
             }
@@ -537,6 +545,45 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
     // année », « Caches actives par mois ». Une autre mesure qu'un compte,
     // hors des trouvailles, nomme sa source : « Visiteurs différents par
     // mois — Trouvailles reçues ».
+    // Grille de défi (chart_challenge.mjs) : couverture, tours complets et
+    // cases qui manquent au tour suivant. Mêmes textes que les panneaux de
+    // la carte (stats_panels.js) pour les deux premiers.
+    const pctFmt = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 });
+    const CHALLENGE_LIST_MAX = 8;
+    function challengeCellLabel(metric, key) {
+        if (metric === 'dt') return axisLabel('dt', key);
+        if (metric === 'calendar') return axisLabel('day_of_year', key);
+        return axisLabel('month', key, { long: true });
+    }
+    function challengeLines(metric, { filled, available, loops, next }, keys) {
+        const values = { filled: intFmt.format(filled), available: intFmt.format(available),
+            pct: pctFmt.format(available ? filled / available : 0) };
+        let coverage;
+        if (metric === 'dt') coverage = t('Combinaisons : ${filled}/${available} (${pct})', values);
+        else if (metric === 'calendar') coverage = t('Jours : ${filled}/${available} (${pct})', values);
+        else coverage = t('Mois : ${filled}/${available} (${pct})', values);
+        const n = intFmt.format(loops);
+        let tours;
+        if (metric === 'jasmer') tours = t('Tours de Jasmer : ${n}', { n });
+        else if (metric === 'finds_ym') tours = t('Tours année × mois : ${n}', { n });
+        else if (metric === 'calendar') tours = t('Tours de calendrier : ${n}', { n });
+        else tours = t('Tours de matrice : ${n}', { n });
+        let missing = '';
+        if (available && next.length) {
+            const count = intFmt.format(next.length);
+            const round = intFmt.format(loops + 1);
+            if (next.length <= CHALLENGE_LIST_MAX) {
+                const list = next.map((i) => challengeCellLabel(metric, keys[i])).join(' · ');
+                missing = loops === 0 ? t('Il manque : ${list}', { list })
+                    : t('Pour le tour ${round} : ${list}', { round, list });
+            } else {
+                missing = loops === 0 ? t('Il manque ${count} cases', { count })
+                    : t('Pour le tour ${round}, encore ${count} cases', { round, count });
+            }
+        }
+        return { coverage, tours, missing };
+    }
+
     function defaultTitle(spec) {
         const source = spec.source || 'finds';
         let name = measureName(spec.measure, source);
@@ -585,5 +632,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         formatDelta,
         formatRatio,
         defaultTitle,
+        challengeLines,
+        challengeCellLabel,
     };
 }

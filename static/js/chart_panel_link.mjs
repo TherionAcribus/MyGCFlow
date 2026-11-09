@@ -16,6 +16,7 @@ import {
     statsSourceRegistry,
 } from './stats_model.mjs';
 import { evolutionDatasetOf } from './chart_spec.mjs';
+import { CHALLENGE_GRIDS } from './chart_challenge.mjs';
 
 // Source du graphique → liste de panneaux (page) et source du panneau.
 export function panelTarget(source) {
@@ -58,6 +59,11 @@ function shapeOf(spec, target, registry) {
     const op = spec.measure.op;
     const has = (kind, metric) => (registry[kind] || []).includes(metric);
     if (chart === 'number') return op === 'count' || op === 'active' ? { kind: 'counter', metric: 'summary' } : null;
+    // Grille de défi : la même grille dans les panneaux de la carte.
+    if (chart === 'challenge') {
+        const metric = CHALLENGE_GRIDS[spec.groupBy];
+        return op === 'count' && metric && has('grid', metric) ? { kind: 'grid', metric } : null;
+    }
     if (spec.groupBy === 'dt' && has('grid', 'dt') && op === 'count') return { kind: 'grid', metric: 'dt' };
     if (chart === 'calendar') return op === 'count' && has('grid', 'activity') ? { kind: 'grid', metric: 'activity' } : null;
     if (chart === 'line' || chart === 'area') {

@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=ceb4f11f4c") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=879d5eaa9d") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -44,8 +44,10 @@
 .ti-brush:before { content: "\ebb8"; }
 .ti-bulb:before { content: "\ea51"; }
 .ti-calendar:before { content: "\ea53"; }
+.ti-calendar-check:before { content: "\f824"; }
 .ti-calendar-event:before { content: "\ea52"; }
 .ti-calendar-month:before { content: "\fd2f"; }
+.ti-calendar-stats:before { content: "\ee20"; }
 .ti-calendar-time:before { content: "\ee21"; }
 .ti-calendar-week:before { content: "\fd30"; }
 .ti-chart-arrows-vertical:before { content: "\ee29"; }
@@ -65,6 +67,7 @@
 .ti-circle-filled:before { content: "\f671"; }
 .ti-clock:before { content: "\ea70"; }
 .ti-cloud-download:before { content: "\ea71"; }
+.ti-cloud-off:before { content: "\ed3e"; }
 .ti-cloud-upload:before { content: "\ea75"; }
 .ti-color-swatch:before { content: "\eb61"; }
 .ti-compass:before { content: "\ea79"; }
@@ -176,6 +179,7 @@
 .ti-star:before { content: "\eb2e"; }
 .ti-star-filled:before { content: "\f6a6"; }
 .ti-sun-high:before { content: "\f236"; }
+.ti-table:before { content: "\eba1"; }
 .ti-timeline:before { content: "\f031"; }
 .ti-tornado:before { content: "\ece2"; }
 .ti-trash:before { content: "\eb41"; }

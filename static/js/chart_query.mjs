@@ -33,6 +33,7 @@ import { CONTAINER_ORDER, OTHERS_KEY, UNKNOWN_KEY, dayNumber, ymdOfDay } from '.
 import { MAX_SERIES, chartSources, dimensionKind } from './chart_spec.mjs';
 import { daysInMonth, expandPeriods, toDateCut } from './chart_periods.mjs';
 import { DICT_FIELDS, SOURCE_KIND_VALUES, weekStart } from './chart_sources.mjs';
+import { challengeGrid } from './chart_challenge.mjs';
 
 export { OTHERS_KEY, UNKNOWN_KEY };
 
@@ -75,6 +76,14 @@ export function keyAccessor(dim, table) {
             ? UNKNOWN_KEY : `${table.difficulty[r]}|${table.terrain[r]}`);
         case 'age': return (r) => (table.age[r] < 0 ? UNKNOWN_KEY : table.age[r]);
         case 'published_year': return (r) => (table.publishedYear[r] ? table.publishedYear[r] : UNKNOWN_KEY);
+        // Année × 100 + mois ; avant mai 2000 : date corrompue (JASMER_START).
+        case 'published_month': return (r) => {
+            const day = table.published[r];
+            if (Number.isNaN(day)) return UNKNOWN_KEY;
+            const { y, m } = ymdOfDay(day);
+            const key = y * 100 + m;
+            return key < 200005 ? UNKNOWN_KEY : key;
+        };
         case 'attribute': {
             const attrs = table.dicts.attribute || [];
             return (r) => table.attributes[r].map((i) => attrs[i]?.key).filter((k) => k !== undefined);
@@ -417,6 +426,9 @@ export function runChartQuery(spec, table, options = {}) {
 
     let axisKeys;
     let remapGroup = null;
+    // Lignes de la période sans valeur pour une catégorie (sans D/T, sans
+    // date de publication…) : signalées sous une grille de défi.
+    let unknownRows = 0;
     if (kind === 'none') {
         axisKeys = ['total'];
     } else if (elapsedUnit) {
@@ -450,6 +462,15 @@ export function runChartQuery(spec, table, options = {}) {
             }
         }
         if (counts.has(UNKNOWN_KEY)) axisKeys.push(UNKNOWN_KEY);
+        unknownRows = counts.get(UNKNOWN_KEY) || 0;
+    }
+    // Grille de défi : toutes les cases disponibles, trouvées ou non, dans
+    // l'ordre de la grille (première période).
+    let grid = null;
+    if (spec.view.chart === 'challenge') {
+        grid = challengeGrid(dim, entries[0], today);
+        axisKeys = grid ? grid.cells.map((cell) => cell.key) : [];
+        remapGroup = null;
     }
 
     // Séries : période × valeur de la 2ᵉ dimension.
@@ -633,7 +654,8 @@ export function runChartQuery(spec, table, options = {}) {
         toDate,
         delta,
         normalize: spec.compare.normalize,
-        meta: { rows, undated: table.undated, noAttribute },
+        grid,
+        meta: { rows, undated: table.undated, noAttribute, unknown: unknownRows },
     };
 }
 

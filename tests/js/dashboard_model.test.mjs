@@ -52,7 +52,7 @@ test('chaque question donne un graphique valide, dessinable au lot 1', () => {
         assert.equal(item.size, question.size);
         assert.equal(item.spec.v, CHART_SPEC_VERSION);
         assert.ok(allowedCharts(item.spec).includes(item.spec.view.chart), question.id);
-        assert.ok(['bar', 'line', 'area', 'donut', 'number', 'heatmap'].includes(item.spec.view.chart), question.id);
+        assert.ok(['bar', 'line', 'area', 'donut', 'number', 'heatmap', 'challenge'].includes(item.spec.view.chart), question.id);
         // La question garde sa source (et son jeu, pour Évolution).
         assert.equal(item.spec.source, (question.spec.source || 'finds').replace('evolution:1', 'evolution:7'), question.id);
         assert.match(question.icon, /^ti-[a-z0-9-]+$/);
