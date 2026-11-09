@@ -45,7 +45,7 @@ import {
 } from './chart_video.mjs';
 import fixWebmDuration from './fix-webm-duration.js';
 import { SOURCE_KIND_VALUES } from './chart_sources.mjs';
-import { chartLinksToMap, discoveryModeFor, mapSelectionFor } from './chart_map_link.mjs';
+import { chartLinksToMap, discoveryModeFor, filtersFromMapSelection, mapSelectionFor } from './chart_map_link.mjs';
 import { panelFromSpec } from './chart_panel_link.mjs';
 import { STATS_MAX_PANELS } from './stats_model.mjs';
 import {
@@ -94,6 +94,9 @@ const state = {
     // Tables par source (« finds », « poses.received », « evolution:3 »…).
     tables: new Map(),
     sourceErrors: new Set(),  // sources dont le chargement a échoué (pas des zéros)
+    // Filtres repris de la carte, en attente d'« Appliquer » : { period }
+    // (période proposée ou null), null quand le formulaire n'en vient pas.
+    mapTake: null,
     datasets: [],               // jeux Évolution [{ id, name, … }]
     evolutionLoads: new Map(),  // id de jeu → promesse de chargement
     missingDatasets: new Set(), // jeux supprimés depuis
@@ -978,23 +981,146 @@ function onFiltersSummaryClick(event) {
     renderAllCharts();
 }
 
-function openFilters() {
+function renderDashboardFilterForm(filters) {
     renderFilterForm($('statsFiltersForm'), {
         tables: dashboardTables(),
-        filters: activeDashboard().filters,
+        filters,
         labels: state.labels,
         attributeName,
         idPrefix: 'statsFilter-',
     });
+}
+
+function openFilters() {
+    const dashboard = activeDashboard();
+    renderDashboardFilterForm(dashboard.filters);
+    resetMapFiltersReport();
+    // La carte filtre « Mes Géocaches » : rien à reprendre pour un tableau
+    // Évolution, ni sans trouvailles.
+    $('statsMapFilters').hidden = dashboard.kind === 'evolution' || !tableOf('finds').n;
     getBsModal('statsFiltersModal')?.show();
 }
 
 function applyFilters() {
-    activeDashboard().filters = readFilterForm($('statsFiltersForm'));
+    const dashboard = activeDashboard();
+    const take = state.mapTake;
+    const before = { filters: structuredClone(dashboard.filters), period: structuredClone(dashboard.period) };
+    dashboard.filters = readFilterForm($('statsFiltersForm'));
+    if (take?.period && $('statsMapPeriod')?.checked) dashboard.period = take.period;
+    state.mapTake = null;
     scheduleSave({ immediate: true });
     getBsModal('statsFiltersModal')?.hide();
     renderToolbar();
     renderAllCharts();
+    // Filtres (et période) de la carte : ils remplacent les précédents,
+    // « Annuler » les rend.
+    if (take) {
+        showActionToast(t('Filtres de la carte appliqués.'), { label: t('Annuler'), onClick: () => {
+            const current = state.doc?.dashboards.find((d) => d.id === dashboard.id);
+            if (!current) return;
+            current.filters = before.filters;
+            current.period = before.period;
+            scheduleSave({ immediate: true });
+            renderToolbar();
+            renderAllCharts();
+        } });
+    }
+}
+
+function resetMapFiltersReport() {
+    state.mapTake = null;
+    const report = $('statsMapFiltersReport');
+    report.replaceChildren();
+    report.hidden = true;
+}
+
+// Phrase de compte rendu d'un critère de la carte sans équivalent ici.
+function mapFilterNote(note) {
+    switch (note.code) {
+        case 'search': return t('la recherche « ${text} »', { text: note.text });
+        case 'published_dates':
+            return t('les dates de pose ${range} : la page filtre par année entière', {
+                range: state.labels.periodChoiceLabel({ kind: 'range', from: note.from, to: note.to }),
+            });
+        case 'unknown_country': return t('les trouvailles sans pays, que la carte garde');
+        case 'unknown_state': return t('les trouvailles sans région, que la carte garde');
+        case 'labs': return t('les Lab Caches, que la carte garde malgré les filtres propres aux géocaches');
+        default: return '';
+    }
+}
+
+// « Reprendre les filtres de la carte » : la sélection enregistrée par la
+// carte (localStorage filtersSelection) remplit le formulaire ; ses dates de
+// trouvaille sont proposées comme période. Rien n'est appliqué avant
+// « Appliquer ».
+async function takeMapFilters() {
+    let selection = null;
+    try { selection = JSON.parse(localStorage.getItem('filtersSelection') || 'null'); } catch (_) { /* illisible : aucun filtre */ }
+    // Géocaches / Labs : préférence de la carte, relue (elle a pu changer
+    // depuis l'ouverture de la page).
+    try {
+        window.userSettings = await fetchJson('/api/settings');
+    } catch (e) {
+        console.warn('[stats] Préférences non relues :', e?.message || e);
+    }
+    const discovery = window.userSettings?.main_discovery_sources || 'geocaches';
+    const out = filtersFromMapSelection(selection, { table: tableOf('finds'), discovery });
+    resetMapFiltersReport();
+    const report = $('statsMapFiltersReport');
+    const line = (text, className = '') => {
+        const p = document.createElement('p');
+        p.className = 'mb-1 ' + className;
+        p.textContent = text;
+        report.append(p);
+        return p;
+    };
+    report.hidden = false;
+    if (out.empty) {
+        report.dataset.state = 'empty';
+        line(t("Avec ses filtres actuels, la carte n'affiche aucune trouvaille : rien n'est repris."), 'text-warning-emphasis');
+        return;
+    }
+    renderDashboardFilterForm(out.filters);
+    state.mapTake = { period: out.period };
+    const nf = new Intl.NumberFormat(state.labels.locale);
+    if (!Object.keys(out.filters).length && !out.period) {
+        report.dataset.state = 'none';
+        line(t('La carte montre toutes vos trouvailles : aucun filtre à reprendre.'));
+    } else {
+        report.dataset.state = 'taken';
+        line(out.count === 1
+            ? t('Filtres de la carte repris (1 trouvaille) : vérifiez-les, puis appliquez.')
+            : t('Filtres de la carte repris (${n} trouvailles) : vérifiez-les, puis appliquez.', { n: nf.format(out.count) }));
+    }
+    if (out.period) {
+        const row = document.createElement('div');
+        row.className = 'form-check mb-1';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'form-check-input';
+        input.id = 'statsMapPeriod';
+        input.checked = true;
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = input.id;
+        label.textContent = t('Période du tableau de bord : ${range} (dates de trouvaille de la carte)', {
+            range: state.labels.periodChoiceLabel(out.period),
+        });
+        row.append(input, label);
+        report.append(row);
+    }
+    const notes = out.notes.map(mapFilterNote).filter(Boolean);
+    if (notes.length) {
+        line(t('Sans équivalent ici :'), 'text-muted');
+        const list = document.createElement('ul');
+        list.className = 'text-muted mb-1';
+        for (const text of notes) {
+            const li = document.createElement('li');
+            li.textContent = text;
+            list.append(li);
+        }
+        report.append(list);
+    }
 }
 
 // Cartes reconstruites ou réutilisées : une carte dont le contenu (item +
@@ -3027,7 +3153,11 @@ function bindEvents() {
     $('btnStatsFilters').addEventListener('click', openFilters);
     $('btnStatsValuesCsv').addEventListener('click', downloadValuesCsv);
     $('btnStatsFiltersApply').addEventListener('click', applyFilters);
-    $('btnStatsFiltersClear').addEventListener('click', () => clearFilterForm($('statsFiltersForm')));
+    $('btnStatsFiltersClear').addEventListener('click', () => {
+        clearFilterForm($('statsFiltersForm'));
+        resetMapFiltersReport();
+    });
+    $('btnStatsFiltersFromMap').addEventListener('click', takeMapFilters);
     $('statsFiltersModal').addEventListener('hidden.bs.modal', () => destroyFilterForm($('statsFiltersForm')));
     $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);

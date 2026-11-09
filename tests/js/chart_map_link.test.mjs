@@ -6,7 +6,9 @@ import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import { findsTable } from '../../static/js/chart_sources.mjs';
 import { OTHERS_KEY, UNKNOWN_KEY, runChartQuery } from '../../static/js/chart_query.mjs';
-import { chartLinksToMap, discoveryModeFor, isoOfDay, mapSelectionFor } from '../../static/js/chart_map_link.mjs';
+import {
+    UNKNOWN_GEO, chartLinksToMap, discoveryModeFor, filtersFromMapSelection, isoOfDay, mapSelectionFor,
+} from '../../static/js/chart_map_link.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
 const day = (iso) => {
@@ -166,4 +168,115 @@ test('mode des sources affichées sur la carte', () => {
 
 test('isoOfDay', () => {
     assert.equal(isoOfDay(day('2024-02-29')), '2024-02-29');
+});
+
+// ---------------------------------------------------------------------------
+// Sens inverse : « Reprendre les filtres de la carte »
+// ---------------------------------------------------------------------------
+
+const fromMap = (selection, discovery = 'both') => filtersFromMapSelection(selection, { table, discovery });
+
+// Ce que la carte enregistre quand rien n'est filtré : tout coché, dates
+// sur l'étendue des trouvailles.
+const ALL_CHECKED = {
+    type: ['Traditional Cache', 'Unknown Cache', 'Adventure Lab', 'Earthcache'],
+    container: ['Small', 'Micro', 'Regular'],
+    difficulty: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5'],
+    terrain: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5'],
+    countries: ['France', 'Belgique', UNKNOWN_GEO], countries_excluded: [],
+    states: ['Bretagne', 'Normandie', UNKNOWN_GEO], states_excluded: [],
+    owners: [], attributes: [], search: '',
+    dates: { startDate: '2023-01-15', endDate: '2024-12-31' },
+    published_dates: { startDate: '2010-05-01', endDate: '2024-12-25' },
+};
+
+test('carte sans filtre : rien à reprendre (sauf les points cachés par la préférence)', () => {
+    for (const selection of [null, {}, ALL_CHECKED]) {
+        const out = fromMap(selection);
+        assert.deepEqual(out.filters, {});
+        assert.equal(out.period, null);
+        assert.deepEqual(out.notes, []);
+        assert.equal(out.count, 7);
+    }
+    // La carte ne montre que les géocaches : les Labs sont écartés ici aussi.
+    const geocaches = fromMap({}, 'geocaches');
+    assert.deepEqual(geocaches.filters, { source_kind: ['geocache'] });
+    assert.equal(geocaches.count, 6);
+    assert.deepEqual(fromMap({}, 'labs').filters, { source_kind: ['lab'] });
+});
+
+test('listes, pays, propriétaires et dates de la carte → filtres et période du tableau', () => {
+    const out = fromMap({
+        ...ALL_CHECKED,
+        type: ['Traditional Cache', 'Earthcache'],
+        difficulty: ['1.5', '2.0'],
+        countries: ['France'], countries_excluded: ['Belgique'],
+        owners: ['Alice', 'Zoé'],
+        dates: { startDate: '2023-01-01', endDate: '2023-12-31' },
+        published_dates: { startDate: '', endDate: '' },
+        search: ' lac ',
+    }, 'geocaches');
+    assert.deepEqual(out.filters, {
+        cache_type: ['Traditional Cache'], difficulty: ['1.5', '2'], country: ['France'],
+        owner: ['Alice'], source_kind: ['geocache'],
+    });
+    assert.deepEqual(out.period, { kind: 'range', from: '2023-01-01', to: '2023-12-31' });
+    assert.deepEqual(out.notes, [{ code: 'search', text: 'lac' }]);
+    assert.equal(out.count, 1);
+});
+
+test('un filtre propre aux géocaches : la carte garde les Labs, la page le signale', () => {
+    const out = fromMap({ difficulty: ['1.5'] });
+    assert.deepEqual(out.filters, { difficulty: ['1.5'] });
+    assert.deepEqual(out.notes, [{ code: 'labs' }]);
+    // Carte en géocaches seules : rien à signaler.
+    assert.deepEqual(fromMap({ difficulty: ['1.5'] }, 'geocaches').notes, []);
+    // « Aucune » difficulté : il ne reste que les Labs.
+    const labs = fromMap({ difficulty: [], container: ['Small'] });
+    assert.deepEqual(labs.filters, { source_kind: ['lab'] });
+    assert.equal(labs.count, 1);
+    assert.equal(fromMap({ difficulty: [] }, 'geocaches').empty, true);
+    // Propriétaire ou attribut absent des trouvailles : idem.
+    assert.deepEqual(fromMap({ owners: ['Zoé'] }).filters, { source_kind: ['lab'] });
+    assert.deepEqual(fromMap({ attributes: ['6', '8'] }).filters, { attribute: ['6', '8'] });
+    assert.deepEqual(fromMap({ attributes: ['99'] }).filters, { source_kind: ['lab'] });
+});
+
+test('« Non renseigné » des pays / régions', () => {
+    // Région écartée, « Non renseigné » gardé : pas d'équivalent, signalé.
+    const out = fromMap({ states_excluded: ['Normandie'] });
+    assert.deepEqual(out.filters, { state: ['Bretagne'] });
+    assert.deepEqual(out.notes, [{ code: 'unknown_state' }]);
+    // « Non renseigné » seul écarté : toutes les régions nommées.
+    assert.deepEqual(fromMap({ states_excluded: [UNKNOWN_GEO] }).filters, { state: ['Bretagne', 'Normandie'] });
+    // Ancien format (cochés seulement).
+    assert.deepEqual(fromMap({ countries: ['Belgique'] }).filters, { country: ['Belgique'] });
+    // Rien de coché : la carte n'affiche rien.
+    assert.equal(fromMap({ countries: [] }).empty, true);
+});
+
+test('dates de pose : années entières reprises, autres bornes signalées', () => {
+    const years = fromMap({ published_dates: { startDate: '2023-01-01', endDate: '2024-12-31' } }, 'geocaches');
+    assert.deepEqual(years.filters, { published_year: ['2024', '2023'], source_kind: ['geocache'] });
+    assert.equal(years.count, 3);
+    const odd = fromMap({ published_dates: { startDate: '2015-03-01', endDate: '2024-12-31' } }, 'geocaches');
+    assert.deepEqual(odd.filters, { source_kind: ['geocache'] });
+    assert.deepEqual(odd.notes, [{ code: 'published_dates', from: '2015-03-01', to: '2024-12-31' }]);
+    // Années sans trouvaille : rien.
+    assert.equal(fromMap({ published_dates: { startDate: '2001-01-01', endDate: '2002-12-31' } }).empty, true);
+});
+
+test('la carte n’affiche aucune trouvaille : rien n’est repris', () => {
+    for (const selection of [
+        { type: [] },
+        { type: ['Earthcache'] },
+        { dates: { startDate: '2025-01-01', endDate: '2025-12-31' } },
+        { dates: { startDate: '2024-12-31', endDate: '2023-01-01' } },
+        { type: ['Adventure Lab'] },
+    ]) {
+        const out = fromMap(selection, 'geocaches');
+        assert.equal(out.empty, true, JSON.stringify(selection));
+        assert.equal(out.filters, null);
+        assert.equal(out.count, 0);
+    }
 });

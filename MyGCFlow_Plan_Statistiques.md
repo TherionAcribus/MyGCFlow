@@ -115,9 +115,10 @@ données réelles, « Annuler » après un ajout depuis la galerie, bouton
 « Actualiser les données », attente visible au passage vers un tableau
 Évolution et écran de chargement qui nomme le jeu ; au passage, 38 textes
 de la page n'étaient pas traduits (deux regex faisaient dérailler
-l'extraction pybabel). Pistes restantes : « Reprendre les filtres de la
-carte » ;
-fonctions : vidéo d'un tableau entier avec musique, grilles de défis (D/T
+l'extraction pybabel). « Reprendre les filtres de la carte » fait le
+2026-11-09 (fenêtre Filtres : la sélection de la carte remplit le
+formulaire, ses dates deviennent la période, ce qui n'a pas d'équivalent
+est dit). Pistes restantes, fonctions : vidéo d'un tableau entier avec musique, grilles de défis (D/T
 81, 366 jours, Jasmer), séries et records, objectif et projection, mode
 présentation, lien carte pour les autres sources.
 
@@ -135,8 +136,8 @@ Décisions prises avec l'utilisateur :
    (calendrier/matrice par greffons inégaux), Plotly (~3,5 Mo, style
    « labo »), Observable Plot et Vega-Lite (interactions moins abouties).
    Le moteur de calcul ne connaît pas ECharts : seul l'adaptateur en dépend.
-3. **Filtres propres à la page**, indépendants de ceux de la carte (un
-   bouton « Reprendre les filtres de la carte » pourra venir plus tard).
+3. **Filtres propres à la page**, indépendants de ceux de la carte (bouton
+   « Reprendre les filtres de la carte » ajouté le 2026-11-09).
 4. **Commencer par « Mes Géocaches »** (trouvailles) ; DNF, caches posées,
    Mes poses et Évolution au lot 4.
 

@@ -400,6 +400,35 @@ proposé, « Commencer avec des graphiques prêts »).
 - Confirmation (« ses filtres actuels seront remplacés ») puis
   `localStorage.filtersSelection` et navigation vers `/`.
 
+### Sens inverse : « Reprendre les filtres de la carte »
+
+Bouton de la fenêtre Filtres (masqué pour un tableau Évolution et sans
+trouvailles). `filtersFromMapSelection(selection, { table, discovery })`
+(chart_map_link.mjs, pur) lit `localStorage.filtersSelection` avec les
+règles de la carte (bdd.js › `filterFeaturesClientSide`) et la préférence
+`main_discovery_sources` (relue par `GET /api/settings` au clic) :
+
+- type, taille, D, T : listes exclusives — tout coché = pas de filtre,
+  rien de coché = aucun point. Taille, D, T, propriétaires et attributs ne
+  s'appliquent pas aux Labs sur la carte : « aucun » ne laisse que les
+  Labs (`source_kind`), une restriction les écarte ici (signalé) ;
+- pays / régions : options décochées (`*_excluded`, sinon déduites des
+  cochées) ; « Non renseigné » gardé par la carte n'a pas d'équivalent
+  (signalé) ;
+- dates de trouvaille → période `range` du tableau, proposée par une case
+  cochée ; dates de pose → années de publication si elles tombent sur des
+  années entières (sinon signalé) ;
+- recherche texte : sans équivalent (la page n'a pas les noms), signalée ;
+- un critère qui ne retire aucune trouvaille n'est pas repris : la carte
+  enregistre ses dates et dates de pose même au défaut. Une plage de pose
+  au défaut écarte pourtant, sur la carte, les géocaches sans date de pose ;
+  elle n'est reprise que si elle écarte une date connue.
+
+Le formulaire est rempli, rien n'est appliqué avant « Appliquer » ; ensuite
+un toast propose « Annuler » (filtres et période d'avant). Compte rendu
+`#statsMapFiltersReport` (`data-state` none / taken / empty) ; « Tout
+effacer » le retire avec la période proposée.
+
 ### Envoyer en panneau vidéo
 
 - `panelFromSpec(spec, { title, periods, filters })` (chart_panel_link.mjs,
@@ -564,7 +593,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   sources) ; familles dans `chart_spec`, `dashboard_model`, `chart_echarts`.
 - Unitaires du lot 5 : hauteur, export / import, duplication dans
   `dashboard_model.test.mjs`.
-- Unitaires du lot 6 : `chart_map_link.test.mjs`, `chart_panel_link.test.mjs`,
+- Unitaires du lot 6 : `chart_map_link.test.mjs` (et le sens inverse,
+  `filtersFromMapSelection`), `chart_panel_link.test.mjs`,
   `chart_video.test.mjs`, `clickTarget` dans `chart_echarts.test.mjs`.
 - Unitaires du lot 7 : `dashboard_saver.test.mjs` (file d'écriture) ;
   révision, conflit 409 et restauration dans `test_statistics_page.py`.

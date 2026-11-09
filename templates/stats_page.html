@@ -304,6 +304,17 @@
                     </div>
                     <div class="modal-body">
                         <p class="text-muted small mb-3">{{ _("Ils s'appliquent à tous les graphiques, sauf à ceux qui ont leurs propres filtres. Un champ vide ne filtre rien.") }}</p>
+                        <!-- « Reprendre les filtres de la carte » : remplit le
+                             formulaire depuis la sélection de la carte Mes
+                             Géocaches (localStorage filtersSelection) ; rien
+                             n'est appliqué avant « Appliquer ». -->
+                        <div id="statsMapFilters" class="stats-map-filters mb-3">
+                            <button type="button" id="btnStatsFiltersFromMap" class="btn btn-outline-secondary btn-sm">
+                                <i class="ti ti-map" aria-hidden="true"></i>
+                                {{ _("Reprendre les filtres de la carte") }}
+                            </button>
+                            <div id="statsMapFiltersReport" class="stats-map-filters-report small" role="status" hidden></div>
+                        </div>
                         <div id="statsFiltersForm" class="stats-filters-form"></div>
                     </div>
                     <div class="modal-footer">

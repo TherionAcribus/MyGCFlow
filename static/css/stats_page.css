@@ -697,3 +697,19 @@ body > .ts-dropdown {
 .stats-gallery-card.is-empty .stats-gallery-icon {
     color: var(--color-text-muted);
 }
+
+/* « Reprendre les filtres de la carte » (fenêtre Filtres) : compte rendu
+   sous le bouton — période proposée, critères sans équivalent. */
+.stats-map-filters-report {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--color-accent-text);
+    background: rgba(127, 127, 127, 0.06);
+    border-radius: 4px;
+}
+.stats-map-filters-report[hidden] {
+    display: none;
+}
+.stats-map-filters-report ul {
+    padding-left: 1.2rem;
+}

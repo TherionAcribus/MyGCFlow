@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { importGpx } from './gpx-import.mjs';
+import { openDataSubTab } from './data-subtabs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -1390,6 +1391,83 @@ test('jeu Évolution long à charger : l\'attente est dite, au démarrage comme 
     await page.unroute('**/api/evolution/datasets/*/data');
     await deleteAllDatasets(request);
   }
+});
+
+// « Reprendre les filtres de la carte » : la sélection réellement écrite par
+// la carte (localStorage filtersSelection, propre au contexte du test — rien
+// à remettre) remplit la fenêtre Filtres ; ses dates deviennent la période.
+test('« Reprendre les filtres de la carte » : aller-retour carte → Statistiques', async ({ page }) => {
+  // Contexte neuf : la carte n'a encore rien enregistré.
+  let errors = await openStats(page);
+  await page.locator('#btnStatsFilters').click();
+  const report = page.locator('#statsMapFiltersReport');
+  await expect(report).toBeHidden();
+  await page.locator('#btnStatsFiltersFromMap').click();
+  await expect(report).toHaveAttribute('data-state', 'none');
+  await expect(report).toContainText('aucun filtre à reprendre');
+  await page.locator('#statsFiltersModal [data-bs-dismiss="modal"]').last().click();
+  await expect(page.locator('#statsFiltersModal')).toBeHidden();
+  expect(errors).toEqual([]);
+
+  // Sur la carte : l'événement décoché, par l'interface.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+  await openDataSubTab(page, 'filters');
+  await page.locator('#selectType').evaluate((el) => el.tomselect.open());
+  await page.locator('.filter-field:has(#selectType) .ts-dropdown .option[data-value="Event Cache"]').click();
+  await expect(page.locator('#filtersCounter')).toContainText('5 / 6', { timeout: 15_000 });
+  await expect.poll(async () => {
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('filtersSelection') || '{}'));
+    return Array.isArray(saved.type) && !saved.type.includes('Event Cache');
+  }, { timeout: 15_000 }).toBe(true);
+
+  // Retour aux Statistiques : seul le type est repris — les dates et les
+  // dates de pose, au défaut sur la carte, ne retirent rien.
+  errors = await openStats(page);
+  await page.locator('#btnStatsFilters').click();
+  await page.locator('#btnStatsFiltersFromMap').click();
+  await expect(report).toHaveAttribute('data-state', 'taken');
+  await expect(report).toContainText('5 trouvailles');
+  await expect(page.locator('#statsMapPeriod')).toHaveCount(0);
+  await expect(report).not.toContainText('Sans équivalent');
+  const selected = () => page.locator('#statsFilter-cache_type').evaluate((el) => [...el.selectedOptions].map((o) => o.value));
+  expect((await selected()).sort()).toEqual(['Multi-cache', 'Traditional Cache']);
+
+  // Dates de trouvaille et recherche posées sur la carte : période proposée,
+  // recherche signalée.
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('filtersSelection'));
+    saved.dates = { startDate: '2026-01-02', endDate: '2026-01-04' };
+    saved.search = 'multi';
+    localStorage.setItem('filtersSelection', JSON.stringify(saved));
+  });
+  await page.locator('#btnStatsFiltersFromMap').click();
+  await expect(report).toContainText('3 trouvailles');
+  await expect(page.locator('#statsMapPeriod')).toBeChecked();
+  await expect(report).toContainText('dates de trouvaille de la carte');
+  await expect(report.locator('li')).toHaveText(['la recherche « multi »']);
+  // « Tout effacer » retire aussi la période proposée.
+  await page.locator('#btnStatsFiltersClear').click();
+  await expect(report).toBeHidden();
+  await page.locator('#btnStatsFiltersFromMap').click();
+  await page.locator('#btnStatsFiltersApply').click();
+  await expect(page.locator('#statsFiltersModal')).toBeHidden();
+
+  await expect(page.locator('.stats-number-value').first()).toHaveText('3');
+  let dashboard = (await snapshot(page)).dashboard;
+  expect(dashboard.filters).toEqual({ cache_type: ['Traditional Cache', 'Multi-cache'] });
+  expect(dashboard.period).toEqual({ kind: 'range', from: '2026-01-02', to: '2026-01-04' });
+
+  // « Annuler » rend les filtres et la période d'avant.
+  const toast = page.locator('.gcm-toast.show', { hasText: 'Filtres de la carte appliqués.' });
+  await toast.getByRole('button', { name: 'Annuler' }).click();
+  await expect(page.locator('.stats-number-value').first()).toHaveText('6');
+  dashboard = (await snapshot(page)).dashboard;
+  expect(dashboard.filters).toEqual({});
+  expect(dashboard.period.kind).not.toBe('range');
+  expect(errors).toEqual([]);
 });
 
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
