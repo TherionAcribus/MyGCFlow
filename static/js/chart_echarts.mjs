@@ -280,7 +280,7 @@ function common(ctx, showLegend) {
         animationDuration: ctx.reduceMotion ? 0 : 400,
         animationDurationUpdate: ctx.reduceMotion ? 0 : 300,
         backgroundColor: 'transparent',
-        // Police de la page (stats_page.js › readTokens) : un canvas refuse
+        // Police de la page (stats_page_state.js › readTokens) : un canvas refuse
         // « inherit » et retombait sur 10 px sans-serif, quelle que soit la
         // taille demandée.
         textStyle: { color: tokens.text, fontFamily: tokens.font || 'sans-serif' },

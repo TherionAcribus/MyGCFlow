@@ -1,7 +1,7 @@
 // Vidéo d'un tableau de bord entier : un écran d'ouverture puis chaque
 // graphique à tour de rôle, comme le mode présentation, enregistré. Logique
 // pure (découpage du temps, fondus, comptage des chiffres clés), testée par
-// tests/js/dashboard_video.test.mjs ; le dessin vit dans stats_page.js.
+// tests/js/dashboard_video.test.mjs ; le dessin vit dans stats_page_video.js.
 
 // Durée de chaque graphique, en secondes (défaut : 6).
 export const SLIDE_SECONDS = Object.freeze([4, 6, 8, 10]);

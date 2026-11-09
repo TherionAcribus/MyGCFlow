@@ -137,7 +137,7 @@ fichier, aussi pour la vidéo d'un graphique). Image du tableau entier
 Statistiques) rattrapé le 2026-11-09 : il s'arrêtait au lot 6 — ajout
 d'« Actualiser », « Voir les valeurs », « Reprendre les filtres de la
 carte », défis, séries / records / objectifs, image du tableau,
-présentation, vidéos et musique. Piste restante : lien carte
+présentation, vidéos et musique. Découpage de `stats_page.js` (3 950 lignes) le 2026-11-09 : point d'entrée de ~320 lignes et 12 modules `stats_page_*.js` par fonction (sections déplacées telles quelles, imports calculés par analyse des portées ; doc › Fichiers). Piste restante : lien carte
 pour les autres sources (DNF, caches posées, Mes poses, Évolution — leurs
 pages n'ont pas de sélection persistée).
 

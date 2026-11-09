@@ -46,7 +46,7 @@ runChartQuery()           chart_query.mjs : filtres → périodes → regroupeme
         │                   (périodes déployées par chart_periods.mjs)
 buildChartOption()        chart_echarts.mjs : options ECharts (null pour le chiffre clé)
         │
-stats_page.js             câblage DOM : cartes, éditeur, galerie, sauvegarde
+stats_page*.js            câblage DOM : cartes, éditeur, galerie, sauvegarde…
 ```
 
 Tout le calcul est côté navigateur, dans des modules purs testés sous Node.
@@ -62,7 +62,8 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 | `dashboard_saver.mjs` | File d'écriture : une requête en vol, rétention après échec ; requête de secours à la fermeture (`closingSaveRequest`) |
 | `templates/stats_page.html` | Gabarit : barre, grille, galerie, éditeur, renommage |
 | `templates/_app_header.html` | En-tête commun aux quatre pages (lien actif selon `mode`) |
-| `static/js/stats_page.js` | Point d'entrée et câblage DOM |
+| `static/js/stats_page.js` | Point d'entrée : suivi du thème et de la date du jour, relevé E2E (`getStatsPageSnapshot`), démarrage |
+| `static/js/stats_page_*.js` | Câblage DOM, un module par fonction : `state` (état partagé, constantes, `readTokens`), `data` (chargement des sources), `save` (sauvegarde), `dashboard` (barre, tableaux, filtres, renommer), `cards` (cartes et dessin), `card_actions` (menu d'une carte, glisser, redimensionner), `links` (carte filtrée, panneau vidéo), `video`, `exports` (valeurs, PNG, SVG, image du tableau, impression), `gallery`, `editor`, `present` |
 | `static/js/stats_filters_ui.js` | Formulaire de filtres (Tom Select) : tableau de bord et éditeur |
 | `static/js/chart_filters.mjs` | Pur : valeurs proposées par champ (avec comptes), résumé, nettoyage |
 | `static/js/app_quit.js` | « Quitter » (sorti de ui.js, partagé avec les pages carte) |
@@ -457,7 +458,7 @@ effacer » le retire avec la période proposée.
   `revealResult` (clés atteintes pleines, la clé en cours grandit — barre —
   ou glisse depuis la précédente — courbe), `valueMax` / `niceCeil` /
   `lockOption` (échelle figée, plus de glissière ni d'animation ECharts).
-- stats_page.js › `videoPainter` : une instance ECharts hors écran, mise en
+- stats_page_video.js › `videoPainter` : une instance ECharts hors écran, mise en
   page comme une fenêtre de 540 px de haut puis dessinée en pleine
   définition (`devicePixelRatio`), recopiée dans un canevas avec le titre et
   la clé atteinte (« juin »). `captureStream(30)` + `MediaRecorder` (WebM

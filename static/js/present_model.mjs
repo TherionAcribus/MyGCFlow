@@ -1,6 +1,6 @@
 // Mode présentation de la page Statistiques : un graphique par écran, en
 // plein écran. Logique pure (diapositives, navigation, délais), testée par
-// tests/js/present_model.test.mjs ; l'affichage vit dans stats_page.js.
+// tests/js/present_model.test.mjs ; l'affichage vit dans stats_page_present.js.
 
 // Délais du défilement automatique, en secondes.
 export const PRESENT_DELAYS = Object.freeze([5, 10, 20, 30]);

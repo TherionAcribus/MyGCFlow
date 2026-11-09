@@ -418,7 +418,7 @@ disparaissent de `messages.pot`, sans erreur, jusqu'à ce qu'un autre
 guillemet le resynchronise (cas de l'export CSV de `stats_panels.js`,
 corrigé le 2026-10-19). Écrire `\x22` dans la regex. Même famille : un `/`
 non échappé dans une classe (`/[\\/:*?]/`) ferme la regex pour pybabel —
-écrire `\/` (cas de `fileSafe` dans `stats_page.js` ; avec un guillemet
+écrire `\/` (cas de `fileSafe` dans `stats_page.js`, aujourd'hui `stats_page_card_actions.js` ; avec un guillemet
 dans la regex de son export CSV, 38 textes de la page Statistiques
 n'étaient pas traduits, corrigé le 2026-11-08). Contrôle : une ligne
 `t('…')` sans référence `#: fichier:ligne` dans la pot.

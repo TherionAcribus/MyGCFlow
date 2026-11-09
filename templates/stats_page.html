@@ -3,7 +3,7 @@
 {# Page « Statistiques » (/stats) : tableaux de bord de graphiques, sans carte.
    Plan : MyGCFlow_Plan_Statistiques.md ; doc : docs/page-statistiques.md.
    Ne charge ni OpenLayers ni index.js : point d'entrée propre
-   (static/js/stats_page.js), modules purs chart_*.mjs, rendu ECharts. #}
+   (static/js/stats_page.js et ses modules stats_page_*.js), modules purs chart_*.mjs, rendu ECharts. #}
 <html lang="{{ lang or 'fr' }}">
     <head>
         <meta charset="utf-8">
@@ -34,7 +34,7 @@
 
             <div id="statsPage">
                 <!-- Chargement des données et des tableaux de bord (texte
-                     précisé par stats_page.js pour un jeu Évolution). -->
+                     précisé par stats_page_data.js pour un jeu Évolution). -->
                 <section id="statsLoading" class="stats-status" role="status">
                     <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                     <span id="statsLoadingText">{{ _("Chargement de vos statistiques…") }}</span>
@@ -124,7 +124,7 @@
         </main>
 
         <!-- Galerie « Ajouter un graphique » : questions toutes faites
-             (dashboard_model.mjs › QUESTIONS), remplie par stats_page.js. -->
+             (dashboard_model.mjs › QUESTIONS), remplie par stats_page_gallery.js. -->
         <div class="modal fade" id="statsGalleryModal" tabindex="-1" aria-labelledby="statsGalleryTitle" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
@@ -173,7 +173,7 @@
                                     </div>
                                     <label for="statsEdPeriod" class="stats-phrase-word">{{ _("sur") }}</label>
                                     <select id="statsEdPeriod" class="form-select"></select>
-                                    <!-- « comparé à … » : lignes posées par stats_page.js
+                                    <!-- « comparé à … » : lignes posées par stats_page_editor.js
                                          (display: contents — elles rejoignent la grille). -->
                                     <div id="statsEdCompareList" class="stats-compare-list"></div>
                                     <span aria-hidden="true"></span>

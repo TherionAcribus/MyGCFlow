@@ -3,7 +3,7 @@
 // mois, les années « font la course »). Module pur : il ne fait que dériver,
 // pour une avancée donnée, un résultat partiel et figer l'échelle — le
 // dessin (ECharts) et l'enregistrement (MediaRecorder) sont dans
-// stats_page.js. Testé par tests/js/chart_video.test.mjs.
+// stats_page_video.js. Testé par tests/js/chart_video.test.mjs.
 
 // Formats proposés : paysage HD, Full HD, carré (réseaux sociaux).
 export const VIDEO_SIZES = Object.freeze({
