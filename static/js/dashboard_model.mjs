@@ -164,7 +164,7 @@ const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
 const EVO = 'evolution:1';
 const EVO_ARCHIVED = 'evolution:1:archived';
 
-export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'challenges', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'challenges', 'records', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
 
 export const QUESTIONS = Object.freeze([
     { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
@@ -172,7 +172,6 @@ export const QUESTIONS = Object.freeze([
     { id: 'countries_count', group: 'overview', icon: 'ti-world', size: 'S', spec: { groupBy: 'none', measure: { op: 'distinct', field: 'country' }, view: { chart: 'number' } } },
     { id: 'by_year', group: 'overview', icon: 'ti-chart-bar', size: 'M', spec: { groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar', labels: true } } },
     { id: 'progress', group: 'overview', icon: 'ti-chart-line', size: 'M', spec: { groupBy: 'month', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'area' } } },
-    { id: 'record', group: 'overview', icon: 'ti-trophy', size: 'M', spec: { groupBy: 'year', measure: { op: 'max_per_day' }, periods: [{ kind: 'all' }], view: { chart: 'bar' } } },
 
     { id: 'ahead', group: 'compare', icon: 'ti-run', size: 'M', spec: { groupBy: 'day_of_year', measure: { op: 'cumulative' }, periods: THIS_AND_LAST_YEAR, view: { chart: 'line' }, compare: { toDate: false } } },
     { id: 'year_vs_last', group: 'compare', icon: 'ti-arrows-diff', size: 'M', spec: { groupBy: 'month_of_year', periods: THIS_AND_LAST_YEAR, view: { chart: 'bar' }, compare: { toDate: false } } },
@@ -208,6 +207,15 @@ export const QUESTIONS = Object.freeze([
     { id: 'challenge_calendar', group: 'challenges', icon: 'ti-calendar-month', size: 'L', spec: { groupBy: 'day_of_year', periods: [{ kind: 'all' }], view: { chart: 'challenge' } } },
     { id: 'challenge_jasmer', group: 'challenges', icon: 'ti-calendar-stats', size: 'L', spec: { groupBy: 'published_month', periods: [{ kind: 'all' }], view: { chart: 'challenge' } } },
     { id: 'challenge_months', group: 'challenges', icon: 'ti-calendar-check', size: 'M', spec: { groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'challenge' } } },
+
+    // Séries et records : jours datés (meilleure journée, séries, pauses).
+    { id: 'best_day', group: 'records', icon: 'ti-trophy', size: 'S', spec: { groupBy: 'none', measure: { op: 'max_per_day' }, periods: [{ kind: 'all' }], view: { chart: 'number' } } },
+    { id: 'streak_longest', group: 'records', icon: 'ti-flame', size: 'S', spec: { groupBy: 'none', measure: { op: 'streak' }, periods: [{ kind: 'all' }], view: { chart: 'number' } } },
+    { id: 'streak_current', group: 'records', icon: 'ti-calendar-star', size: 'S', spec: { groupBy: 'none', measure: { op: 'streak', current: true }, periods: [{ kind: 'all' }], view: { chart: 'number' } } },
+    { id: 'gap_longest', group: 'records', icon: 'ti-player-pause', size: 'S', spec: { groupBy: 'none', measure: { op: 'gap' }, periods: [{ kind: 'all' }], view: { chart: 'number' } } },
+    { id: 'record', group: 'records', icon: 'ti-medal', size: 'M', spec: { groupBy: 'year', measure: { op: 'max_per_day' }, periods: [{ kind: 'all' }], view: { chart: 'bar', record: true } } },
+    { id: 'streak_by_year', group: 'records', icon: 'ti-flame', size: 'M', spec: { groupBy: 'year', measure: { op: 'streak' }, periods: [{ kind: 'all' }], view: { chart: 'bar', record: true } } },
+    { id: 'best_month', group: 'records', icon: 'ti-chart-bar', size: 'L', spec: { groupBy: 'month', periods: [{ kind: 'all' }], view: { chart: 'bar', record: true } } },
 
     // Mes DNF.
     { id: 'dnf_by_year', group: 'dnf', icon: 'ti-mood-sad', size: 'M', spec: { source: 'dnf', groupBy: 'year', periods: [{ kind: 'all' }], view: { chart: 'bar' } } },

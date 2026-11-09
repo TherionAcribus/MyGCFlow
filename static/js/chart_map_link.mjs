@@ -189,6 +189,9 @@ export function mapSelectionFor({ spec, result, seriesIndex, keyIndex, filters =
     if (series.split !== null && series.split !== undefined
         && !applyDimension(state, spec.splitBy, series.split, { result, series })) return null;
     if (!applyFilters(state, filters)) return null;
+    // Record daté (meilleure journée, série) : ses jours seulement.
+    const record = series.records?.[keyIndex];
+    if (record) state.range = intersectRange(state.range, record.from, record.to);
     if (state.range[0] > state.range[1] || (state.kinds && !state.kinds.length)) return null;
     if (Number.isFinite(state.range[0]) && Number.isFinite(state.range[1])) {
         selection.dates = { startDate: isoOfDay(state.range[0]), endDate: isoOfDay(state.range[1]) };
@@ -216,6 +219,8 @@ const LINKABLE = new Set([
     'published_month',
 ]);
 export function chartLinksToMap(spec) {
+    // Une pause n'a aucune trouvaille à montrer.
+    if (spec.measure?.op === 'gap') return false;
     return chartSources(spec).every((source) => source === 'finds') && LINKABLE.has(spec.groupBy)
         && (!spec.splitBy || LINKABLE.has(spec.splitBy));
 }

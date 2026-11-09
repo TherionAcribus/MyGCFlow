@@ -294,8 +294,54 @@ export function cyclicBounds(dim, key, y) {
 function newCell(op) {
     if (op === 'distinct') return new Set();
     if (op === 'mean') return { sum: 0, n: 0 };
-    if (op === 'max_per_day') return new Map();
+    if (BY_DAY_OPS.includes(op)) return new Map();
     return 0;
+}
+
+// Mesures calculées sur les jours d'une case (jour → nombre de lignes).
+const BY_DAY_OPS = ['max_per_day', 'streak', 'gap'];
+
+// Record d'une case : { value, from, to } (numéros de jour), from / to null
+// sans record.
+//   max_per_day      la meilleure journée (la plus ancienne à égalité) ;
+//   streak           la plus longue suite de jours consécutifs (la plus
+//                    ancienne à égalité) ; `current` : celle qui court
+//                    jusqu'à `end` ou la veille, sinon 0 ;
+//   gap              la plus longue pause entre deux jours (jours sans).
+export function dayRecord(op, counts, { current = false, end = null } = {}) {
+    const none = { value: 0, from: null, to: null };
+    if (!counts?.size) return none;
+    if (op === 'max_per_day') {
+        let best = none;
+        for (const [day, n] of counts) {
+            if (n > best.value || (n === best.value && day < best.from)) best = { value: n, from: day, to: day };
+        }
+        return best;
+    }
+    const days = [...counts.keys()].sort((a, b) => a - b);
+    if (op === 'gap') {
+        let best = none;
+        for (let i = 1; i < days.length; i++) {
+            const length = days[i] - days[i - 1] - 1;
+            if (length > best.value) best = { value: length, from: days[i - 1] + 1, to: days[i] - 1 };
+        }
+        return best;
+    }
+    if (current) {
+        const last = days.at(-1);
+        if (end === null || last < end - 1 || last > end) return none;
+        let start = last;
+        for (let i = days.length - 2; i >= 0 && days[i] === start - 1; i--) start = days[i];
+        return { value: last - start + 1, from: start, to: last };
+    }
+    let best = none;
+    let start = days[0];
+    for (let i = 0; i < days.length; i++) {
+        if (i > 0 && days[i] !== days[i - 1] + 1) start = days[i];
+        const length = days[i] - start + 1;
+        if (length > best.value) best = { value: length, from: start, to: days[i] };
+    }
+    return best;
 }
 
 // Liste des clés d'une ligne (une dimension multi-valuée en donne plusieurs).
@@ -524,7 +570,7 @@ export function runChartQuery(spec, table, options = {}) {
                     } else if (op === 'mean') {
                         const value = meanOf(r);
                         if (!Number.isNaN(value)) { row[i].sum += value; row[i].n++; }
-                    } else if (op === 'max_per_day') {
+                    } else if (BY_DAY_OPS.includes(op)) {
                         row[i].set(table.day[r], (row[i].get(table.day[r]) || 0) + 1);
                     } else {
                         row[i] += 1;
@@ -571,10 +617,17 @@ export function runChartQuery(spec, table, options = {}) {
                 });
                 continue;
             }
-            let values = row.map((cell) => {
+            // Records datés : la valeur et ses jours.
+            // « Toute la période » finit à la dernière trouvaille : une série
+            // en cours se juge à aujourd'hui.
+            const runEnd = entry.as?.kind === 'all' ? today : end;
+            const records = BY_DAY_OPS.includes(op)
+                ? row.map((cell) => dayRecord(op, cell, { current: spec.measure.current, end: runEnd }))
+                : null;
+            let values = row.map((cell, i) => {
                 if (op === 'distinct') return cell.size;
                 if (op === 'mean') return cell.n ? cell.sum / cell.n : null;
-                if (op === 'max_per_day') return cell.size ? Math.max(...cell.values()) : 0;
+                if (records) return records[i].value;
                 return cell;
             });
 
@@ -614,6 +667,10 @@ export function runChartQuery(spec, table, options = {}) {
                 // Premier jour de chaque case (alignement « depuis le début » :
                 // l'infobulle rappelle la vraie date de chaque série).
                 dates: elapsedUnit ? bounds.map((b) => (Array.isArray(b) ? b[0] : null)) : null,
+                // Jours du record de chaque case ({ from, to }, null : pas de
+                // record ou case hors période).
+                records: records ? records.map((rec, i) => (values[i] === null || rec.from === null
+                    ? null : { from: rec.from, to: rec.to })) : null,
             });
         }
     }
@@ -628,7 +685,10 @@ export function runChartQuery(spec, table, options = {}) {
                 ? total(b) - total(a)
                 : label(axisKeys[a]).localeCompare(label(axisKeys[b]))));
         axisKeys = order.map((i) => axisKeys[i]);
-        for (const s of series) s.values = order.map((i) => s.values[i]);
+        for (const s of series) {
+            s.values = order.map((i) => s.values[i]);
+            if (s.records) s.records = order.map((i) => s.records[i]);
+        }
     }
 
     // Écart entre deux périodes : première − seconde, et en proportion de la
@@ -832,7 +892,11 @@ export function runChartQueries(spec, tableOf, options = {}) {
                 const i = index.get(key);
                 return i === undefined ? null : s.dates[i];
             }) : null;
-            series.push({ ...s, id: `s${sourceIndex}:${s.id}`, source: sources[sourceIndex], sourceIndex, values, dates });
+            const records = s.records ? keys.map((key) => {
+                const i = index.get(key);
+                return i === undefined ? null : s.records[i];
+            }) : null;
+            series.push({ ...s, id: `s${sourceIndex}:${s.id}`, source: sources[sourceIndex], sourceIndex, values, dates, records });
         }
     });
     const cut = series.length > MAX_SERIES;

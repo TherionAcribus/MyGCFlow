@@ -65,7 +65,7 @@ test('une description valide ressort identique (point fixe)', () => {
         compare: { layout: 'delta', align: 'elapsed', normalize: 'percent', toDate: false },
         view: {
             chart: 'line', orientation: 'horizontal', stack: true, palette: 'gc',
-            labels: true, log: true, top: 20, sort: 'value', smooth: true,
+            labels: true, log: true, top: 20, sort: 'value', smooth: true, record: true,
         },
     };
     const spec = normalizeChartSpec(raw);

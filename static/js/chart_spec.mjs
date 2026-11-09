@@ -86,7 +86,11 @@ export function sameSourceGroup(a, b) {
 
 // Mesures. « Flux » : comptées dans chaque intervalle. « Stock » : valeur
 // lue en fin d'intervalle (cumul, caches vivantes).
-export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'cumulative', 'active']);
+export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'streak', 'gap', 'cumulative', 'active']);
+// Records datés : la valeur d'une case vient de jours précis (la meilleure
+// journée, la plus longue série de jours consécutifs avec une trouvaille,
+// la plus longue pause entre deux) — le résultat garde ces dates.
+export const RECORD_OPS = Object.freeze(['max_per_day', 'streak', 'gap']);
 export const STOCK_OPS = Object.freeze(['cumulative', 'active']);
 // `days` = jours avec au moins un événement ; `finder` = visiteurs
 // différents (Mes poses).
@@ -226,7 +230,7 @@ export const CHART_SPEC_DEFAULTS = Object.freeze({
     compare: Object.freeze({ layout: 'overlay', align: 'elapsed', normalize: 'none', toDate: true }),
     view: Object.freeze({
         chart: 'bar', orientation: 'vertical', stack: false, palette: 'auto',
-        labels: false, log: false, top: 12, sort: 'natural', smooth: false,
+        labels: false, log: false, top: 12, sort: 'natural', smooth: false, record: false,
     }),
 });
 
@@ -286,6 +290,9 @@ export function normalizeMeasure(raw, sources = 'finds') {
     if (op === 'active' && !list.every(activeAllowed)) return { op: 'count' };
     if (op === 'distinct') return { op, field: choice(raw?.field, sourceDistinctFields(list), 'caches') };
     if (op === 'mean') return { op, field: choice(raw?.field, sourceMeanFields(list), 'difficulty') };
+    // Série « en cours » : celle qui court jusqu'à la fin de la période (ou
+    // la veille — la journée n'est pas finie).
+    if (op === 'streak') return raw?.current === true ? { op, current: true } : { op };
     if (op === 'cumulative') {
         // Cumul depuis le début de chaque période (défaut) ou depuis toujours.
         return raw?.from === 'all' ? { op, from: 'all' } : { op };
@@ -406,8 +413,14 @@ export function periodsAreMultiple(periods) {
 // Regroupements possibles pour une mesure et des sources : un cumul suit le
 // temps ; « caches actives » se lit en fin d'intervalle (temps) ou de
 // période (total, catégories) ; seules les dimensions de toutes les sources.
+// Séries et pauses se comptent en jours : une case d'un jour ou d'une
+// semaine n'en contient pas.
+const NO_RUN_DIMS = ['day', 'week', 'day_of_year', 'week_of_year', 'weekday', 'published_month'];
+
 export function allowedGroupBy(measure, sources = 'finds') {
     const dims = sourceDimensions(sources);
+    if (measure?.op === 'streak' && measure.current) return ['none'];
+    if (measure?.op === 'streak' || measure?.op === 'gap') return dims.filter((dim) => !NO_RUN_DIMS.includes(dim));
     if (measure?.op === 'cumulative') return dims.filter((dim) => SEQUENTIAL_DIMENSIONS.includes(dim));
     if (measure?.op === 'active') {
         return dims.filter((dim) => dim === 'none' || SEQUENTIAL_DIMENSIONS.includes(dim)
@@ -559,6 +572,8 @@ function normalizeView(raw, spec) {
         top: intIn(src.top, defaults.top, CHART_TOP_RANGE),
         sort: choice(src.sort, CHART_SORTS, defaults.sort),
         smooth: bool(src.smooth, defaults.smooth),
+        // Mettre le record en avant (barres, courbes, aires d'une série).
+        record: bool(src.record, defaults.record),
     };
 }
 
@@ -582,7 +597,9 @@ export function normalizeChartSpec(raw, newId = newChartId) {
     // Repli d'un cumul sur le mois, lisible sur toute durée (une courbe par
     // année n'aurait que quelques points).
     const fallbackGroup = STOCK_OPS.includes(measure.op) ? 'month' : CHART_SPEC_DEFAULTS.groupBy;
-    const groupBy = choice(src.groupBy, allowedGroupBy(measure, sources), fallbackGroup);
+    const groups = allowedGroupBy(measure, sources);
+    // (Série en cours : « au total » seulement.)
+    const groupBy = choice(src.groupBy, groups, groups.includes(fallbackGroup) ? fallbackGroup : groups[0]);
     const splitBy = choice(src.splitBy, allowedSplitBy(groupBy, sources), null);
     const periods = normalizePeriods(src.periods);
 

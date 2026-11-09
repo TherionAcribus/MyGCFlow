@@ -215,6 +215,8 @@ function axisTooltipFormatter(result, spec, ctx, identities) {
             const notes = [];
             if (s?.dates?.[i] !== null && s?.dates?.[i] !== undefined) notes.push(labels.dateInUnit(result.elapsedUnit, s.dates[i]));
             if (s && s.partial === i) notes.push(ongoing);
+            // Record daté : ses jours (« du 3 au 25 juil. 2024 »).
+            if (s?.records?.[i]) notes.push(labels.recordText(s.records[i]));
             const note = notes.length ? ` <span style="opacity:.7">(${escapeHtml(notes.join(', '))})</span>` : '';
             const name = identities.length > 1 ? `${escapeHtml(identity.name)} : ` : '';
             return `<div>${marker(color)}${name}<b>${escapeHtml(format(raw))}</b>${note}</div>`;
@@ -286,6 +288,35 @@ function partialStyle(color) {
     return { opacity: 0.45, borderColor: color, borderWidth: 1, borderType: 'dashed' };
 }
 
+// Record mis en avant (`view.record`) : une épingle sur la plus grande
+// valeur (la première à égalité), qui porte cette valeur.
+export function recordIndex(values) {
+    let best = -1;
+    values.forEach((v, i) => {
+        if (v !== null && v !== undefined && v > 0 && (best < 0 || v > values[best])) best = i;
+    });
+    return best;
+}
+
+function recordMark(s, ctx, spec, result, horizontal, color) {
+    const k = recordIndex(s.values);
+    if (k < 0) return undefined;
+    const v = s.values[k];
+    return {
+        symbol: 'pin',
+        symbolSize: 46,
+        silent: true,
+        itemStyle: { color },
+        label: {
+            color: labelColorOn(color),
+            fontSize: 11,
+            fontWeight: 600,
+            formatter: () => ctx.labels.formatValue(v, spec.measure, { compact: true, normalize: result.normalize }),
+        },
+        data: [{ coord: horizontal ? [v, k] : [k, v], value: v }],
+    };
+}
+
 // Série ECharts d'une série de résultat (barre ou courbe).
 function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stacked, single, perItem, axisIndex }) {
     const { tokens, labels } = ctx;
@@ -300,6 +331,7 @@ function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stack
         return { value: v, itemStyle };
     });
     const base = { name: identity.name, data, color: identity.color, ...axisIndex };
+    if (spec.view.record && single && !stacked) base.markPoint = recordMark(s, ctx, spec, result, horizontal, identity.color);
     const labelFormatter = (p) => labels.formatValue(typeof p.value === 'object' ? p.value?.value : p.value, spec.measure, {
         compact: true, normalize: result.normalize,
     });
@@ -418,7 +450,9 @@ function overlayOption(result, spec, ctx) {
             // Barres horizontales : place de l'étiquette de valeur ; courbe :
             // la dernière date est centrée sur le bord droit.
             right: horizontal ? 32 : (isBar ? 16 : 36),
-            top: identities.length > 1 ? 36 : 16,
+            // Record épinglé au-dessus de la plus haute valeur : place pour
+            // l'épingle.
+            top: identities.length > 1 ? 36 : (spec.view.record && !horizontal ? 52 : 16),
             bottom: slider ? 40 : 8,
             containLabel: true,
         },
@@ -715,6 +749,8 @@ export function numberModel(result, spec, { labels }) {
         label: many ? seriesName(result, s, spec, labels) : '',
         value: s.values[0] ?? null,
         text: labels.formatValue(s.values[0] ?? null, spec.measure, { normalize: result.normalize }),
+        // Jours du record (meilleure journée, série, pause).
+        record: labels.recordText(s.records?.[0]),
         delta: null,
     }));
     if (many && blocks.length >= 2 && blocks[0].value !== null && blocks[1].value !== null) {

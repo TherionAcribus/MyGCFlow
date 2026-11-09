@@ -199,8 +199,8 @@ test('galerie : une question ajoute son graphique, qui survit au rechargement', 
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
   // Questions de la famille « Mes données » seulement (pas celles d'Évolution).
-  await expect(gallery.locator('[data-question]')).toHaveCount(35);
-  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(9);
+  await expect(gallery.locator('[data-question]')).toHaveCount(41);
+  await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(10);
   await expect(gallery.locator('[data-question^="evo_"]')).toHaveCount(0);
   await gallery.locator('[data-question="weekdays"]').click();
   await expect(gallery).toBeHidden();
@@ -1238,8 +1238,8 @@ test('galerie : chaque question montre un aperçu sur mes données, l\'ajout s\'
   await page.locator('#btnStatsAddChart').click();
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
-  // « Partir de zéro » n'a pas d'aperçu ; les 34 questions en ont un.
-  await expect(gallery.locator('[data-preview]')).toHaveCount(34);
+  // « Partir de zéro » n'a pas d'aperçu ; les 40 questions en ont un.
+  await expect(gallery.locator('[data-preview]')).toHaveCount(40);
   await expect(gallery.locator('[data-question="custom"] [data-preview]')).toHaveCount(0);
   const preview = async (id) => (await snapshot(page)).gallery.find((g) => g.id === id);
   // Haut de la galerie : dessiné dès l'ouverture.
@@ -1517,6 +1517,58 @@ test('grilles de défis : ajoutées depuis la galerie, bilan et cases qui manque
   }, dtCard.id);
   expect(title).toContain('Combinaisons : 6/81');
   expect(errors).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// Séries et records
+// ---------------------------------------------------------------------------
+
+// Fixture : une trouvaille par jour du 1ᵉʳ au 6 janvier 2026. Le 7 janvier,
+// la série court encore (la journée n'est pas finie).
+test('séries et records : jours datés, série en cours, record épinglé, carte de la série', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-01-07T10:00:00'));
+  const errors = await openStats(page);
+  const add = async (id) => {
+    await page.locator('#btnStatsAddChart').click();
+    await expect(page.locator('#statsGalleryModal')).toBeVisible();
+    await page.locator(`#statsGalleryModal [data-question="${id}"]`).click();
+    await expect(page.locator('#statsGalleryModal')).toBeHidden();
+  };
+  for (const id of ['best_day', 'streak_longest', 'streak_current', 'gap_longest', 'best_month']) await add(id);
+  const cards = async () => (await snapshot(page)).cards.slice(-5);
+  await expect.poll(async () => (await cards()).every((c) => c.rendered)).toBe(true);
+  const [best, longest, current, gap, month] = await cards();
+
+  expect(best.measure).toBe('max_per_day');
+  expect(best.recordText).toBe('le 1 janv. 2026');
+  expect(longest.series[0]).toEqual([6]);
+  expect(longest.recordText).toBe('du 1 janv. 2026 au 6 janv. 2026');
+  expect(current.series[0]).toEqual([6]);
+  // Aucune pause entre deux trouvailles : zéro, sans date.
+  expect(gap.series[0]).toEqual([0]);
+  expect(gap.recordText).toBeNull();
+  await expect(card(page, longest.id).locator('.stats-number-value')).toHaveText('6 j');
+
+  // Meilleur mois : l'épingle sur janvier 2026.
+  const pin = await page.evaluate((id) => {
+    const host = document.querySelector(`.stats-card[data-chart-id="${id}"] .stats-chart`);
+    return window.echarts.getInstanceByDom(host).getOption().series[0].markPoint?.data;
+  }, month.id);
+  expect(pin).toHaveLength(1);
+  expect(pin[0].value).toBe(6);
+
+  // La série sur la carte : ses jours, et seulement eux.
+  await expect(card(page, gap.id).locator('.stats-number-map')).toHaveCount(0);
+  await card(page, longest.id).locator('.stats-number-map').click();
+  const modal = page.locator('.gcm-confirm-modal');
+  await expect(modal).toContainText('du 1 janvier 2026 au 6 janvier 2026');
+  // (Erreurs relevées avant la carte : son sélecteur de dates n'aime pas
+  // l'horloge figée du test.)
+  expect(errors).toEqual([]);
+  await modal.locator('[data-gcm-role="confirm"]').click();
+  await expect(page).toHaveURL(/\/$/);
+  const selection = await page.evaluate(() => JSON.parse(localStorage.getItem('filtersSelection')));
+  expect(selection.dates).toEqual({ startDate: '2026-01-01', endDate: '2026-01-06' });
 });
 
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {

@@ -122,9 +122,12 @@ est dit). Grilles de défis faites le 2026-11-09 (forme « grille de défi » :
 D/T 81, Calendrier 366, Jasmer, mois de trouvaille ; bilan, tours, cases
 qui manquent ; groupe « Mes défis » de la galerie) ; au passage, la police
 des graphiques (un canvas refusait « inherit » : tout le texte sortait en
-10 px sans-serif). Pistes restantes, fonctions : vidéo d'un tableau entier
-avec musique, séries et records, objectif et projection, mode
-présentation, lien carte pour les autres sources.
+10 px sans-serif). Séries et records faits le 2026-11-09 (plus longue
+série, série en cours, plus longue pause, meilleure journée datées ; « Voir
+sur la carte » de la série ; record épinglé ; groupe « Séries et records »
+de la galerie). Pistes restantes, fonctions : objectif et projection,
+vidéo d'un tableau entier avec musique, mode présentation, lien carte pour
+les autres sources.
 
 Décisions prises avec l'utilisateur :
 

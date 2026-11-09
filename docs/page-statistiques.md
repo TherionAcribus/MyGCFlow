@@ -587,6 +587,42 @@ bilan au-dessus. Quatre grilles, selon le regroupement
 - Galerie : groupe « Mes défis » (`challenge_dt`, `challenge_calendar`,
   `challenge_jasmer`, `challenge_months`), sur tout l'historique.
 
+## Séries et records
+
+Mesures datées (`RECORD_OPS` de chart_spec.mjs) : la valeur d'une case
+vient de jours précis, que le résultat garde (`series.records[i]` =
+`{ from, to }` en numéros de jour, null sans record).
+
+| mesure | valeur | jours |
+|---|---|---|
+| `max_per_day` | le plus de lignes en un jour | ce jour (le plus ancien à égalité) |
+| `streak` | la plus longue suite de jours consécutifs avec une ligne | la série (la plus ancienne à égalité) |
+| `streak` + `current` | la série qui court jusqu'à la fin de la période, ou la veille ; sinon 0 | la série |
+| `gap` | la plus longue pause entre deux jours avec une ligne | les jours sans |
+
+- Calcul : `dayRecord(op, jour → nombre, { current, end })` (chart_query.mjs)
+  sur les jours de chaque case. Une série est coupée aux bords d'une case
+  (« par année » : celle du 31 décembre au 2 janvier compte dans les deux).
+  Série en cours sur « Toute la période » : jugée à aujourd'hui (la
+  période finit à la dernière trouvaille).
+- Regroupements : pas de jour, de semaine, de jour de l'année ni de jour
+  de la semaine (une case trop courte) ; série en cours : au total
+  seulement. Valeurs en jours (« 23 j »), pas de pourcentage.
+- Chiffre clé : les jours sous la valeur (`recordText` : « le 12 juil.
+  2024 », « du 3 au 25 juil. 2024 ») et « Voir sur la carte » (meilleure
+  journée, série) ; infobulles d'un axe : les jours de chaque case.
+- Carte : `mapSelectionFor` réduit les dates aux jours du record ; une
+  pause n'a pas de lien (rien à montrer).
+- Panneau vidéo : un chiffre clé « série » ou « meilleure journée » donne
+  la tuile du même nom de la carte (`streak`, `best_day`) ; série en cours
+  et pause n'en ont pas.
+- `view.record` (« Mettre le record en avant ») : une épingle sur la plus
+  grande valeur d'une série seule en barres, courbe ou aire (marge haute
+  agrandie pour qu'elle ne soit pas coupée).
+- Galerie : groupe « Séries et records » (`best_day`, `streak_longest`,
+  `streak_current`, `gap_longest`, `record`, `streak_by_year`,
+  `best_month`).
+
 ## Tableaux de bord (`dashboard_model.mjs`)
 
 `{ v: 1, active, dashboards: [{ id, name, period, filters, items: [{ size, spec }] }] }`
@@ -646,6 +682,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   révision, conflit 409 et restauration dans `test_statistics_page.py`.
 - Grilles de défis : `chart_challenge.test.mjs` (géométrie, calcul, bilan,
   dessin, liens carte et panneau).
+- Séries et records : `chart_records.test.mjs` (`dayRecord`, calcul par
+  case, libellés, épingle, liens carte et panneau).
 - Vignettes de la galerie : `thumbnailOption` dans `chart_echarts.test.mjs`
   (chaque forme : barres, aire, anneau, écart, côte à côte, grille, radar,
   calendrier).
@@ -657,7 +695,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
   `layout`, `grids`, `chart`, `rendered`, `size`, `heightKey`, `height` en
   px…, `linksToMap`, `unavailable` = sources en échec de la carte,
   `challenge` = bilan d'une grille de défi : `metric`, `filled`,
-  `available`, `loops`, `next`, textes),
+  `available`, `loops`, `next`, textes ; `records` = jours des records de
+  la première série, `recordText` = texte affiché sous un chiffre clé),
   `editor`, `dashboards`, `sources`, `sourceErrors`, `save` (`dirty`,
   `failed`, `pending`), `video` (`phase` setup / recording / done, `file`,
   `folder`), `busy` (attente affichée ou en cours), `gallery` (aperçus de la

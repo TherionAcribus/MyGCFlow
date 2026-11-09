@@ -1443,6 +1443,23 @@ function renderNumber(container, result, spec, dashboard) {
         const { periods } = effectiveQueryOptions(spec, dashboard);
         caption.textContent = entry.label || state.labels.periodChoiceLabel(periods[0]);
         block.append(value, caption);
+        // Record daté : ses jours, et la carte de ces jours-là.
+        if (entry.record) {
+            const record = document.createElement('div');
+            record.className = 'stats-number-record';
+            record.textContent = entry.record;
+            block.append(record);
+            if (chartClickable(spec, result)) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn btn-link btn-sm stats-number-map';
+                button.innerHTML = '<i class="ti ti-map me-1" aria-hidden="true"></i>';
+                button.append(document.createTextNode(t('Voir sur la carte')));
+                const seriesIndex = entries.indexOf(entry);
+                button.addEventListener('click', () => confirmMapLink(spec.id, { seriesIndex, keyIndex: 0 }));
+                block.append(button);
+            }
+        }
         if (entry.delta) block.append(deltaLine(entry.delta));
         container.append(block);
     }
@@ -1465,7 +1482,10 @@ function deltaLine(delta) {
 // Les marques d'un graphique ouvrent-elles la carte ? (curseur « main »)
 const TIME_DIMS = new Set(['year', 'quarter', 'month', 'week', 'day']);
 function chartClickable(spec, result) {
-    return chartLinksToMap(spec) && !['heatmap', 'radar', 'number'].includes(spec.view.chart) && !result.delta;
+    if (!chartLinksToMap(spec) || result.delta) return false;
+    // Chiffre clé : seulement un record daté (« Voir sur la carte »).
+    if (spec.view.chart === 'number') return spec.measure.op === 'max_per_day' || spec.measure.op === 'streak';
+    return !['heatmap', 'radar'].includes(spec.view.chart);
 }
 
 // Bilan d'une grille de défi (relevé E2E).
@@ -1714,8 +1734,14 @@ function onChartClick(host, params) {
     if (!entry?.result || !chartClickable(entry.spec, entry.result)) return;
     const target = clickTarget(entry.result, entry.spec, params);
     if (!target) return;
-    const link = mapLinkFor(card.dataset.chartId, target);
-    if (!link) {
+    confirmMapLink(card.dataset.chartId, target);
+}
+
+// Confirmation puis carte filtrée sur une valeur (ou un record daté).
+function confirmMapLink(chartId, target) {
+    const entry = state.results.get(chartId);
+    const link = mapLinkFor(chartId, target);
+    if (!entry || !link) {
         showToast(t("Cette valeur n'a pas d'équivalent dans les filtres de la carte."), 'info');
         return;
     }
@@ -2847,6 +2873,7 @@ function syncEditorForm() {
     $('statsEdSort').value = spec.view.sort;
     $('statsEdLabels').checked = spec.view.labels;
     $('statsEdSmooth').checked = spec.view.smooth;
+    $('statsEdRecord').checked = spec.view.record;
     $('statsEdLog').checked = spec.view.log;
 
     const chart = spec.view.chart;
@@ -2864,6 +2891,8 @@ function syncEditorForm() {
     $('statsEdStack').checked = spec.view.stack;
     $('statsEdStackRow').hidden = !several || !['bar', 'line', 'area'].includes(chart)
         || spec.compare.layout === 'delta';
+    // Record mis en avant : une seule série, en barres, courbe ou aire.
+    $('statsEdRecordRow').hidden = several || !['bar', 'line', 'area'].includes(chart) || spec.compare.layout === 'delta';
 }
 
 // Périodes de la phrase : la première (vide = celle du tableau de bord),
@@ -2907,6 +2936,7 @@ function readEditorForm() {
             sort: $('statsEdSort').value,
             labels: $('statsEdLabels').checked,
             smooth: $('statsEdSmooth').checked,
+            record: $('statsEdRecord').checked,
             log: $('statsEdLog').checked,
             stack: $('statsEdStack').checked,
             palette: $('statsEdPaletteRow').hidden ? spec.view.palette : $('statsEdPalette').value,
@@ -3122,6 +3152,9 @@ window.getStatsPageSnapshot = () => {
                 })(),
                 linksToMap: entry?.result ? chartClickable(item.spec, entry.result) : false,
                 challenge: challengeSnapshot(entry?.result),
+                // Records datés de la première série ({ from, to } en jours).
+                records: entry?.result?.series[0]?.records ?? null,
+                recordText: document.querySelector(`.stats-card[data-chart-id="${item.spec.id}"] .stats-number-record`)?.textContent ?? null,
             };
         }) : [],
         save: { dirty: state.docDirty, failed: state.saveFailed, pending: saveQueue.pending },
@@ -3186,7 +3219,7 @@ function bindEvents() {
     $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
     for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
-        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
+        'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdRecord', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
         'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList']) {
         $(id).addEventListener('change', onEditorChange);
     }

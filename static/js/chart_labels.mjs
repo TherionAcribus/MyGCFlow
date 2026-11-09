@@ -27,6 +27,9 @@ export const MEASURE_CHOICES = Object.freeze([
     { key: 'mean:terrain', measure: { op: 'mean', field: 'terrain' } },
     { key: 'mean:age', measure: { op: 'mean', field: 'age' } },
     { key: 'max_per_day', measure: { op: 'max_per_day' } },
+    { key: 'streak', measure: { op: 'streak' } },
+    { key: 'streak:current', measure: { op: 'streak', current: true } },
+    { key: 'gap', measure: { op: 'gap' } },
     { key: 'cumulative:all', measure: { op: 'cumulative', from: 'all' } },
     { key: 'cumulative', measure: { op: 'cumulative' } },
     { key: 'active', measure: { op: 'active' } },
@@ -35,6 +38,7 @@ export const MEASURE_CHOICES = Object.freeze([
 export function measureKey(measure) {
     if (measure.op === 'distinct' || measure.op === 'mean') return `${measure.op}:${measure.field}`;
     if (measure.op === 'cumulative' && measure.from === 'all') return 'cumulative:all';
+    if (measure.op === 'streak' && measure.current) return 'streak:current';
     return measure.op;
 }
 
@@ -160,6 +164,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         'mean:terrain': t('le terrain moyen'),
         'mean:age': t("l'âge moyen des caches"),
         max_per_day: t('le record sur une journée'),
+        streak: t('la plus longue série de jours de cache'),
+        'streak:current': t('la série de jours de cache en cours'),
+        gap: t('la plus longue pause sans trouvaille'),
         'cumulative:all': t('le cumul depuis le début'),
         cumulative: t('le cumul sur la période'),
         active: t('les caches actives'),
@@ -180,6 +187,9 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         'mean:terrain': t('Terrain moyen'),
         'mean:age': t('Âge moyen des caches'),
         max_per_day: t('Record sur une journée'),
+        streak: t('Plus longue série'),
+        'streak:current': t('Série en cours'),
+        gap: t('Plus longue pause'),
         'cumulative:all': t('Cumul depuis le début'),
         cumulative: t('Cumul sur la période'),
         active: t('Caches actives'),
@@ -318,6 +328,12 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         evo_types: [t('Types des caches actives'), t('La part de chaque type parmi les caches en place.')],
         evo_counties: [t('Caches actives par département'), t('Où se trouvent les caches en place.')],
         evo_dt: [t('Grille D/T de la zone'), t('Difficulté et terrain des caches en place.')],
+        best_day: [t('Ma meilleure journée'), t('Le plus de trouvailles en un jour, et quel jour.')],
+        streak_longest: [t('Ma plus longue série'), t("Le plus de jours d'affilée avec au moins une trouvaille.")],
+        streak_current: [t('Ma série en cours'), t("Les jours d'affilée jusqu'à aujourd'hui (ou hier : la journée n'est pas finie).")],
+        gap_longest: [t('Ma plus longue pause'), t('Le plus de jours sans trouvaille entre deux caches.')],
+        streak_by_year: [t('Mes séries année par année'), t("La plus longue série de chaque année.")],
+        best_month: [t('Mon meilleur mois'), t('Vos trouvailles mois par mois, le record mis en avant.')],
         challenge_dt: [t('Ma grille D/T'), t('Les 81 combinaisons de difficulté et de terrain : celles qui manquent.')],
         challenge_calendar: [t('Mon calendrier 366'), t("Un jour de l'année sans trouvaille ? Les 366 jours, toutes années confondues.")],
         challenge_jasmer: [t('Ma grille Jasmer'), t('Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent.')],
@@ -335,6 +351,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         zone: t('La zone au fil du temps'),
         zone_caches: t('Les caches de la zone'),
         challenges: t('Mes défis'),
+        records: t('Séries et records'),
     };
 
     function categoryLabel(dim, key, attributeName) {
@@ -515,7 +532,7 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         if (normalize === 'percent') return t('${n} %', { n: decFmt.format(value) });
         if (normalize === 'per_day') return t('${n} / jour', { n: perDayFmt.format(value) });
         if (measure?.op === 'mean' && measure.field !== 'age') return decFmt.format(value);
-        if (measure?.op === 'mean' && measure.field === 'age') {
+        if ((measure?.op === 'mean' && measure.field === 'age') || measure?.op === 'streak' || measure?.op === 'gap') {
             return t('${n} j', { n: intFmt.format(Math.round(value)) });
         }
         if (compact && Math.abs(value) >= 10000) return compactFmt.format(value);
@@ -541,10 +558,6 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         return MEASURE_NAMES[measureKey(measure)] || sourceNoun(source);
     }
 
-    // Titre par défaut d'un graphique sans titre : « Trouvailles par
-    // année », « Caches actives par mois ». Une autre mesure qu'un compte,
-    // hors des trouvailles, nomme sa source : « Visiteurs différents par
-    // mois — Trouvailles reçues ».
     // Grille de défi (chart_challenge.mjs) : couverture, tours complets et
     // cases qui manquent au tour suivant. Mêmes textes que les panneaux de
     // la carte (stats_panels.js) pour les deux premiers.
@@ -584,6 +597,18 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         return { coverage, tours, missing };
     }
 
+    // Jours d'un record (meilleure journée, série, pause) : « le 12 juil.
+    // 2024 », « du 3 au 25 juil. 2024 ».
+    function recordText(record) {
+        if (!record || record.from === null || record.from === undefined) return '';
+        if (record.from === record.to) return t('le ${date}', { date: dayFmt.format(fromDay(record.from)) });
+        return t('du ${from} au ${to}', { from: dayFmt.format(fromDay(record.from)), to: dayFmt.format(fromDay(record.to)) });
+    }
+
+    // Titre par défaut d'un graphique sans titre : « Trouvailles par
+    // année », « Caches actives par mois ». Une autre mesure qu'un compte,
+    // hors des trouvailles, nomme sa source : « Visiteurs différents par
+    // mois — Trouvailles reçues ».
     function defaultTitle(spec) {
         const source = spec.source || 'finds';
         let name = measureName(spec.measure, source);
@@ -634,5 +659,6 @@ export function makeLabels({ t = identity, locale = 'fr' } = {}) {
         defaultTitle,
         challengeLines,
         challengeCellLabel,
+        recordText,
     };
 }

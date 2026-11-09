@@ -157,7 +157,7 @@ test('infobulle : clé en toutes lettres, valeur formatée, HTML échappé', () 
 test('chiffre clé : pas d\'option ECharts, valeur formatée', () => {
     const { spec, result, option: o } = option({ groupBy: 'none', view: { chart: 'number' } });
     assert.equal(o, null);
-    assert.deepEqual(numberModel(result, spec, ctx), [{ label: '', value: 5, text: '5', delta: null }]);
+    assert.deepEqual(numberModel(result, spec, ctx), [{ label: '', value: 5, text: '5', record: '', delta: null }]);
 });
 
 test('contraste', () => {

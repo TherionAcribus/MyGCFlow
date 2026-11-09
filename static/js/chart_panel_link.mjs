@@ -58,7 +58,12 @@ function shapeOf(spec, target, registry) {
     const { chart } = spec.view;
     const op = spec.measure.op;
     const has = (kind, metric) => (registry[kind] || []).includes(metric);
-    if (chart === 'number') return op === 'count' || op === 'active' ? { kind: 'counter', metric: 'summary' } : null;
+    if (chart === 'number') {
+        if (op === 'count' || op === 'active') return { kind: 'counter', metric: 'summary' };
+        // Records datés : la tuile du même nom (« record », « série »).
+        const item = { max_per_day: 'best_day', streak: 'streak' }[op];
+        return item && !spec.measure.current ? { kind: 'counter', metric: 'summary', items: [item] } : null;
+    }
     // Grille de défi : la même grille dans les panneaux de la carte.
     if (chart === 'challenge') {
         const metric = CHALLENGE_GRIDS[spec.groupBy];
@@ -111,6 +116,10 @@ export function panelFromSpec(spec, { title = '', periods = null, filters = null
         if (SORT_OF[spec.view.sort] && spec.view.sort !== 'natural') options.sort = SORT_OF[spec.view.sort];
     }
     if (shape.kind === 'donut') options.max_items = clampItems(spec.view.top);
+    if (shape.items) {
+        options.items = shape.items;
+        options.columns = 1;
+    }
     if (PALETTE_OF[spec.view.palette] && shape.kind !== 'line' && shape.kind !== 'counter') {
         style.palette = PALETTE_OF[spec.view.palette];
     }

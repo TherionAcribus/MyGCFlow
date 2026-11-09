@@ -346,6 +346,18 @@ html {
     font-size: 0.82rem;
     color: var(--color-text-muted);
 }
+/* Record daté (meilleure journée, série, pause) : ses jours, et le lien
+   vers la carte de ces jours-là. */
+.stats-number-record {
+    margin-top: 2px;
+    font-size: 0.82rem;
+    color: var(--color-text);
+}
+.stats-number-map {
+    padding: 0;
+    margin-top: 2px;
+    font-size: 0.8rem;
+}
 .stats-number-delta {
     margin-top: 6px;
     font-size: 0.82rem;
