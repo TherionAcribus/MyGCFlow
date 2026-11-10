@@ -22,6 +22,12 @@
 // sélection du jeu ouvert (« Évolution », caches actives : une zone pâlit
 // quand ses caches sont archivées).
 //
+// Part trouvée (`found_share`, croisement d'un jeu Évolution et de mes
+// trouvailles) : sur « Évolution », la sélection du jeu ouvert croisée avec
+// mes trouvailles (GET /api/stats/finds) ; sur « Mes Géocaches », le jeu
+// choisi dans l'onglet, agrégé par le serveur (GET /api/stats/found_share,
+// zone_share.py) — la carte ne charge pas ses centaines de milliers de caches.
+//
 // Affichage : préférence globale par page (`zones_display`,
 // `evolution_zones_display`) ; apparence : thème (pkg.options.zones,
 // zone_layer_model.mjs).
@@ -29,9 +35,9 @@
 import * as pkg from './index.js';
 import { t } from './notifications.js';
 import { isEvolutionPage, isMainPage } from './app_mode.mjs';
-import { tableFromRecords } from './chart_sources.mjs';
-import { mixedZoneTable } from './chart_zones.mjs';
-import { createZoneState, zoneScale } from './zone_model.mjs';
+import { findsTable, tableFromRecords } from './chart_sources.mjs';
+import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
+import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, zoneScale } from './zone_model.mjs';
 import { addGeoListener, fallbackCountries, zoneFeatures } from './zone_geo.js';
 import { cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate } from './stats_model.mjs';
@@ -112,15 +118,153 @@ function propsOf(feature) {
     return feature?.properties || feature?.getProperties?.() || {};
 }
 
+// ---------------------------------------------------------------------------
+// Part trouvée : données attendues (jeu agrégé, ou mes trouvailles)
+
+const SHARE_CACHE_MAX = 4;
+const shareCache = new Map();   // url → { status, events, ids, rows, etag, rev, version }
+let findsEntry = null;          // { status, found, version }
+
+function readShare(entry, payload, etag) {
+    const p = payload || {};
+    const col = (name) => Int32Array.from(Array.isArray(p[name]) ? p[name] : []);
+    entry.events = {
+        day: col('day'), zone: col('zone'), placed: col('placed'),
+        archived: col('archived'), found: col('found'), lost: col('lost'),
+    };
+    entry.ids = Array.isArray(p.ids) ? p.ids : [];
+    entry.rows = p.counts?.caches || 0;
+    entry.etag = etag;
+    entry.status = 'ready';
+}
+
+// Charge (ou revalide quand les données de la page ont changé) les
+// événements agrégés d'un jeu. Une revalidation garde l'entrée prête : la
+// couche ne clignote pas à chaque filtre.
+function shareEntry(url, rev) {
+    let entry = shareCache.get(url);
+    if (!entry) {
+        entry = { status: 'loading', version: 0, rev: null, fetching: false };
+        shareCache.set(url, entry);
+        while (shareCache.size > SHARE_CACHE_MAX) shareCache.delete(shareCache.keys().next().value);
+    }
+    if (entry.rev === rev || entry.fetching) return entry;
+    entry.rev = rev;
+    entry.fetching = true;
+    const done = () => {
+        entry.fetching = false;
+        entry.version++;
+        refreshZoneLayer();
+    };
+    fetch(url, { headers: { Accept: 'application/json' } }).then(async (response) => {
+        if (response.status === 404) {
+            entry.status = 'missing';
+            return done();
+        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const etag = response.headers.get('ETag');
+        // Même version (revalidation après un filtre) : rien à relire.
+        if (etag && etag === entry.etag && entry.status === 'ready') {
+            entry.fetching = false;
+            return undefined;
+        }
+        readShare(entry, await response.json(), etag);
+        return done();
+    }).catch((e) => {
+        console.warn('[zones] Part trouvée indisponible :', e?.message || e);
+        // Une revalidation ratée garde la version déjà affichée.
+        if (entry.status !== 'ready') entry.status = 'error';
+        done();
+    });
+    return entry;
+}
+
+// Mes trouvailles (code → jour de la première), pour la page Évolution.
+function findsDays() {
+    if (findsEntry) return findsEntry;
+    const entry = { status: 'loading', found: null, version: 0 };
+    findsEntry = entry;
+    fetch('/api/stats/finds', { headers: { Accept: 'application/json' } })
+        .then((response) => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then((payload) => {
+            entry.found = foundDaysOf(findsTable(payload));
+            entry.status = 'ready';
+        })
+        .catch((e) => {
+            console.warn('[zones] Trouvailles indisponibles :', e?.message || e);
+            entry.status = 'error';
+        })
+        .finally(() => {
+            entry.version++;
+            refreshZoneLayer();
+        });
+    return entry;
+}
+
+// Pays des contours à charger, d'après les ids de zones (« FR-29 » → FR).
+const countriesOfIds = (ids) => [...new Set(ids.filter(Boolean).map((id) => String(id).split('-')[0]))].sort();
+
+function waiting(key, rev, level, wait) {
+    model = { key, wait, revision: rev, level, countries: [], rows: 0 };
+    return model;
+}
+
+function buildShareModel(o, rev, fallback, zoneTable) {
+    if (zoneLayerPage() === 'evolution') {
+        const finds = findsDays();
+        const key = ['share', 'evolution', rev, o.level, o.gridSize, o.shareBase, fallback ? 'f' : '-', finds.version].join('|');
+        if (model?.key === key) return model;
+        if (finds.status !== 'ready') return waiting(key, rev, o.level, finds.status);
+        const source = pkg.evolutionZoneTable?.();
+        const raw = source?.table || { n: 0, day: new Int32Array(0), endDay: new Float64Array(0), dicts: {} };
+        const table = zoneTable(raw);
+        const ids = table.dicts?.[ZONE_COLUMNS[o.level]] || [];
+        const events = shareEventsOfTable(table, {
+            column: table[ZONE_COLUMNS[o.level]], foundDay: (code) => finds.found.get(code),
+        });
+        const state = createShareState({ ids, events, base: o.shareBase });
+        const countries = (table.dicts?.zone_country || []).filter(Boolean);
+        model = { key, revision: rev, state, countries, level: o.level, rows: raw.n, cells: table.dicts.zone_grid || null };
+        scaleKey = null;
+        return model;
+    }
+    if (!o.shareDataset) {
+        const key = 'share|none|' + rev;
+        return model?.key === key ? model : waiting(key, rev, o.level, 'no-dataset');
+    }
+    let url = '/api/stats/found_share?dataset=' + o.shareDataset + '&level=' + o.level;
+    if (o.level === 'grid') url += '&grid=' + o.gridSize;
+    const entry = shareEntry(url, rev);
+    const key = ['share', 'main', url, o.shareBase, entry.version].join('|');
+    if (model?.key === key) {
+        // Revalidation sans changement : la couche reste telle quelle.
+        model.revision = rev;
+        return model;
+    }
+    if (entry.status !== 'ready') return waiting(key, rev, o.level, entry.status);
+    const grid = o.level === 'grid';
+    model = {
+        key, revision: rev, level: o.level, rows: entry.rows,
+        state: createShareState({ ids: entry.ids, events: entry.events, base: o.shareBase }),
+        countries: grid ? [] : countriesOfIds(entry.ids), cells: grid ? entry.ids : null,
+    };
+    scaleKey = null;
+    return model;
+}
+
 function buildModel() {
     const o = opts();
     const fallback = fallbackCountries();
     const rev = dataRevision();
-    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.gridSize}|${o.measure}|${fallback ? 'f' : '-'}`;
     // Niveau « grille » : colonne de cases calculée sur les coordonnées.
     const zoneTable = (table) => (o.level === 'grid'
         ? withGridColumn(table, o.gridSize)
         : mixedZoneTable(table, o.level, fallback));
+    if (o.measure === 'found_share') return buildShareModel(o, rev, fallback, zoneTable);
+    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.gridSize}|${o.measure}|${fallback ? 'f' : '-'}`;
     if (model?.key === key) return model;
     if (zoneLayerPage() === 'evolution') {
         // Caches actives (sauf « première cache », qui n'a pas de fin).
@@ -339,6 +483,9 @@ function legendTitle() {
     if (o.measure === 'distinct_types') return t('Types de caches différents');
     if (o.measure === 'dt_coverage') return t('Combinaisons D/T');
     if (o.measure === 'first_day') return evolution ? t('Première cache posée') : t('Première trouvaille');
+    if (o.measure === 'found_share') {
+        return o.shareBase === 'all' ? t('Part des caches publiées trouvées') : t('Part des caches actives trouvées');
+    }
     return evolution ? t('Caches actives') : t('Trouvailles');
 }
 
@@ -346,7 +493,7 @@ function legendModel() {
     const o = opts();
     if (!o.legend || status !== 'ready' || !scale || scale.min === null) return null;
     const fmt = new Intl.NumberFormat(document.documentElement.lang || 'fr', { maximumFractionDigits: 0 });
-    const entries = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v) });
+    const entries = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), percent: o.measure === 'found_share' });
     return entries.length ? { title: legendTitle(), entries, position: o.legendPosition } : null;
 }
 
@@ -450,6 +597,13 @@ function prepare() {
     }
     const m = buildModel();
     ensureLayer(map);
+    // Part trouvée : jeu agrégé ou trouvailles pas encore là, jeu à choisir.
+    if (m.wait) {
+        status = m.wait;
+        layer.setVisible(false);
+        syncLegend();
+        return false;
+    }
     if (!m.rows) {
         status = 'empty';
         layer.setVisible(false);
@@ -474,6 +628,8 @@ export function refreshZoneLayer() {
     styleCache.clear();
     if (prepare()) showDay(animating && shownDay !== null ? shownDay : endDay());
     syncLegend();
+    // Ligne d'état de l'onglet (données arrivées après coup).
+    pkg.syncZoneStatus?.();
 }
 
 // `startDate` : début effectif de l'animation (mapgl.js › animationStartDate).
@@ -531,7 +687,11 @@ export function getZoneLayerRevision() {
 // Relevé E2E.
 export function getZoneLayerDebugState() {
     const values = model?.state ? Object.fromEntries(model.state.values()) : {};
+    // Part trouvée : [trouvées, base] par zone.
+    const parts = model?.state?.parts
+        ? Object.fromEntries(Object.keys(values).map((id) => [id, model.state.parts(id)])) : null;
     return {
+        parts,
         enabled: enabled(),
         status,
         visible: Boolean(layer?.getVisible()),

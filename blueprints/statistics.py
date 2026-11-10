@@ -8,14 +8,19 @@ colonnes et le fichier des tableaux de bord.
 """
 
 import hashlib
+import threading
+from collections import OrderedDict
 
 from flask import Blueprint, jsonify, make_response, request
 
 import dashboards_store
 import dnf_geojson
+import evolution_store
 import lab_geojson
 import owner_geojson
 import stats_finds
+import zone_share
+import zones
 from bdd import create_geojson, geojson_cache, get_metadata_from_geojson
 from extensions import db
 from models import Geocache
@@ -47,10 +52,14 @@ def _base_features():
     return features, db_mtime
 
 
+def _finds_digest(features, db_mtime):
+    return hashlib.sha1(repr((db_mtime, len(features))).encode('utf-8')).hexdigest()[:16]
+
+
 @statistics_bp.route('/api/stats/finds', methods=['GET'])
 def stats_finds_data():
     features, db_mtime = _base_features()
-    digest = hashlib.sha1(repr((db_mtime, len(features))).encode('utf-8')).hexdigest()[:16]
+    digest = _finds_digest(features, db_mtime)
     etag = f"finds-{digest}-p{stats_finds.PAYLOAD_VERSION}"
     # Version déjà connue du navigateur : 304 SANS construire les colonnes
     # (~60 ms et 1,7 Mo de JSON pour 20 000 trouvailles, jetés sinon).
@@ -59,6 +68,69 @@ def stats_finds_data():
     else:
         response = make_response(jsonify(stats_finds.build_finds_payload(features)))
     # Faible : Flask-Compress le conserve tel quel sur la réponse compressée.
+    response.set_etag(etag, weak=True)
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
+# Part des caches trouvées par zone (couche de zones de la carte, mesure
+# « found_share ») : une charge par (jeu, révision, zones, trouvailles, niveau,
+# taille de case). Quelques-unes gardées : un retour sur la carte, ou un
+# changement de niveau aller-retour, ne relit pas les 400 000 caches.
+_SHARE_CACHE: "OrderedDict[tuple, dict]" = OrderedDict()
+_SHARE_CACHE_SIZE = 6
+_share_lock = threading.Lock()
+
+
+def _has_subregions(cc):
+    index = zones.get_index()
+    if not index.available():
+        return True
+    country = index.country(cc)
+    return bool(country and 'subregion' in country.levels)
+
+
+@statistics_bp.route('/api/stats/found_share', methods=['GET'])
+def stats_found_share():
+    from .evolution import _db_path, _store_error
+    dataset_id = request.args.get('dataset', type=int)
+    level = request.args.get('level', 'subregion')
+    grid = request.args.get('grid', type=int) or zone_share.GRID_DEFAULT_SIZE
+    if not dataset_id or level not in zone_share.LEVELS:
+        return jsonify({'success': False, 'error': 'bad-request'}), 400
+    if level != 'grid':
+        grid = None
+    elif grid not in zone_share.GRID_SIZES:
+        grid = zone_share.GRID_DEFAULT_SIZE
+    db_path = _db_path()
+    try:
+        dataset = evolution_store.get_dataset(db_path, dataset_id)
+    except evolution_store.EvolutionStoreError as exc:
+        return _store_error(exc)
+    features, db_mtime = _base_features()
+    etag = (f"share-{dataset['id']}-{dataset['revision']}-{_finds_digest(features, db_mtime)}"
+            f"-{level}-{grid}-v{zone_share.FORMAT_VERSION}-z{zones.data_signature()}")
+    if request.if_none_match.contains_weak(etag):
+        response = make_response('', 304)
+    else:
+        with _share_lock:
+            payload = _SHARE_CACHE.get(etag)
+            if payload is not None:
+                _SHARE_CACHE.move_to_end(etag)
+        if payload is None:
+            try:
+                dataset, rows = evolution_store.load_share_rows(db_path, dataset_id)
+            except evolution_store.EvolutionStoreError as exc:
+                return _store_error(exc)
+            payload = zone_share.build_share_payload(
+                rows, zone_share.found_days(features), level=level,
+                grid_size=grid or zone_share.GRID_DEFAULT_SIZE, has_subregions=_has_subregions)
+            payload['dataset'] = {'id': dataset['id'], 'name': dataset['name'], 'revision': dataset['revision']}
+            with _share_lock:
+                _SHARE_CACHE[etag] = payload
+                while len(_SHARE_CACHE) > _SHARE_CACHE_SIZE:
+                    _SHARE_CACHE.popitem(last=False)
+        response = make_response(jsonify(payload))
     response.set_etag(etag, weak=True)
     response.headers['Cache-Control'] = 'no-cache'
     return response

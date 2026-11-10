@@ -57,6 +57,22 @@
                             <option value="distinct_types">{{ _("Le nombre de types de caches") }}</option>
                             <option value="dt_coverage">{{ _("Le nombre de combinaisons D/T") }}</option>
                             <option value="first_day">{% if mode == 'evolution' %}{{ _("La date de la première cache posée") }}{% else %}{{ _("La date de la première trouvaille") }}{% endif %}</option>
+                            <option value="found_share">{% if mode == 'evolution' %}{{ _("La part des caches que j'ai trouvées") }}{% else %}{{ _("La part trouvée d'un jeu Évolution") }}{% endif %}</option>
+                        </select>
+                    </div>
+                    {% if mode != 'evolution' %}
+                    <div class="col-12 col-md-6" id="zonesShareDatasetRow" hidden>
+                        <label class="form-label" for="zonesShareDataset">{{ _("Jeu Évolution") }}</label>
+                        <select class="form-select" id="zonesShareDataset">
+                            <option value="0">{{ _("Choisir un jeu…") }}</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="col-12 col-md-6" id="zonesShareBaseRow" hidden>
+                        <label class="form-label" for="zonesShareBase">{{ _("Part de quelles caches") }}</label>
+                        <select class="form-select" id="zonesShareBase">
+                            <option value="active">{{ _("Les caches actives à la date") }}</option>
+                            <option value="all">{{ _("Toutes les caches publiées jusque-là") }}</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-6">
@@ -107,5 +123,8 @@
     </div>
     <p class="form-hint text-muted">
         <i class="ti ti-world me-1" aria-hidden="true"></i>{{ _("Le découpage le plus fin existe pour la France, l'Allemagne et les États-Unis ; ailleurs, la carte montre les régions.") }}
+    </p>
+    <p class="form-hint text-muted">
+        <i class="ti ti-target-arrow me-1" aria-hidden="true"></i>{% if mode == 'evolution' %}{{ _("Part trouvée : vos trouvailles croisées avec les caches affichées, par code GC.") }}{% else %}{{ _("Part trouvée : vos trouvailles croisées par code GC avec un jeu de la page Évolution, quels que soient les filtres de la carte.") }}{% endif %}
     </p>
 </div>

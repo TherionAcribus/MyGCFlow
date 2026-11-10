@@ -12,6 +12,10 @@ import { normalizeZoneLayerOptions } from './zone_layer_model.mjs';
 
 let bound = false;
 const el = (id) => document.getElementById(id);
+// Jeux Évolution proposés pour la part trouvée (« Mes Géocaches ») : null
+// tant que la liste n'est pas chargée.
+let datasets = null;
+let datasetsLoading = false;
 
 // Reflète pkg.options.zones et la préférence dans l'onglet. N'écrit que le
 // DOM (appelé aussi par profiles.js au chargement d'un thème).
@@ -43,6 +47,13 @@ export function syncZoneLayerUI() {
     set('zonesGridSize', o.gridSize);
     const gridRow = el('zonesGridSizeRow');
     if (gridRow) gridRow.hidden = o.level !== 'grid';
+    const share = o.measure === 'found_share';
+    for (const id of ['zonesShareDatasetRow', 'zonesShareBaseRow']) {
+        const row = el(id);
+        if (row) row.hidden = !share;
+    }
+    set('zonesShareBase', o.shareBase);
+    if (share) syncDatasetChoices(o.shareDataset);
     const value = el('zonesOpacityValue');
     if (value) value.textContent = o.opacity + ' %';
     const position = el('zonesLegendPosition');
@@ -60,8 +71,12 @@ export function syncZoneStatus() {
     const state = pkg.getZoneLayerDebugState?.();
     let text = '';
     if (state?.enabled) {
-        if (state.status === 'loading') text = t('Chargement des contours…');
-        else if (state.status === 'error') text = t('Contours des zones indisponibles.');
+        if (state.status === 'loading') {
+            text = state.options?.measure === 'found_share' ? t('Chargement de la part trouvée…') : t('Chargement des contours…');
+        } else if (state.status === 'error') {
+            text = state.options?.measure === 'found_share' ? t('Part trouvée indisponible.') : t('Contours des zones indisponibles.');
+        } else if (state.status === 'no-dataset') text = t('Choisissez le jeu Évolution à croiser avec vos trouvailles.');
+        else if (state.status === 'missing') text = t("Ce jeu Évolution n'existe plus : choisissez-en un autre.");
         else if (state.status === 'empty') {
             text = page() === 'evolution'
                 ? t('Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données.')
@@ -87,7 +102,40 @@ function readOptions() {
         legend: checked('zonesLegend'),
         legendPosition: value('zonesLegendPosition'),
         gridSize: value('zonesGridSize'),
+        // Page Évolution : pas de choix, le jeu ouvert ; l'option est gardée.
+        shareDataset: el('zonesShareDataset') ? value('zonesShareDataset') : pkg.options?.zones?.shareDataset,
+        shareBase: value('zonesShareBase'),
     });
+}
+
+// Liste des jeux du menu « Jeu Évolution », chargée à la première demande.
+// Un jeu supprimé reste choisi (la couche le signale) jusqu'au prochain choix.
+function syncDatasetChoices(selected) {
+    const select = el('zonesShareDataset');
+    if (!select) return;
+    if (datasets === null) {
+        if (!datasetsLoading) {
+            datasetsLoading = true;
+            fetch('/api/evolution/datasets', { headers: { Accept: 'application/json' } })
+                .then((response) => (response.ok ? response.json() : { datasets: [] }))
+                .catch(() => ({ datasets: [] }))
+                .then((body) => {
+                    datasets = Array.isArray(body?.datasets) ? body.datasets : [];
+                    datasetsLoading = false;
+                    syncDatasetChoices(normalizeZoneLayerOptions(pkg.options?.zones).shareDataset);
+                });
+        }
+        return;
+    }
+    const wanted = [{ id: 0, name: datasets.length ? t('Choisir un jeu…') : t('Aucun jeu : importez-en un sur la page Évolution') }]
+        .concat(datasets.map((d) => ({ id: d.id, name: d.name })));
+    if (selected && !datasets.some((d) => d.id === selected)) wanted.push({ id: selected, name: t('Jeu supprimé') });
+    const signature = JSON.stringify(wanted);
+    if (select.dataset.choices !== signature) {
+        select.replaceChildren(...wanted.map((d) => new Option(d.name, String(d.id))));
+        select.dataset.choices = signature;
+    }
+    select.value = String(selected || 0);
 }
 
 function onOptionChange() {
@@ -122,7 +170,7 @@ export function initZoneLayerUI() {
     syncZoneLayerUI();
     display.addEventListener('change', onDisplayToggle);
     for (const id of ['zonesLevel', 'zonesMeasure', 'zonesScale', 'zonesClasses', 'zonesColor', 'zonesOutline',
-        'zonesGlow', 'zonesLegend', 'zonesLegendPosition', 'zonesGridSize']) {
+        'zonesGlow', 'zonesLegend', 'zonesLegendPosition', 'zonesGridSize', 'zonesShareDataset', 'zonesShareBase']) {
         el(id)?.addEventListener('change', onOptionChange);
     }
     // Opacité : suivie pendant le glissement.

@@ -454,6 +454,71 @@ Mesuré sur un jeu de 464 475 caches (France) :
 - `tests/e2e/zone-layer.spec.mjs` › Évolution (fixture `evolution-a.csv` :
   le Finistère pâlit le 6 janvier 2020).
 
+## Part trouvée (croisement Évolution × mes trouvailles)
+
+Mesure `found_share` : la part des caches d'un jeu Évolution que j'ai
+trouvées, zone par zone. Jointure par code GC (les étapes Lab n'en ont pas).
+
+**Règles** (`zone_model.mjs` › `shareEventsOfTable`, `zone_share.py`,
+identiques et testées des deux côtés) :
+- une cache trouvée compte au numérateur à partir de ma **première**
+  trouvaille, ou de son apparition dans le jeu si l'export la date après ;
+- **base `active`** (défaut, tranché au lot 6) : caches actives à la date.
+  Une cache trouvée puis archivée sort des deux comptes : la part ne dépasse
+  jamais 100 %. Trouvée après son archivage (dates d'export décalées) : jamais
+  comptée au numérateur ;
+- **base `all`** : toutes les caches apparues jusqu'à la date, archivées
+  comprises ;
+- valeur en pourcentage ; une zone sans cache dans la base n'a pas de
+  valeur, une zone sans trouvaille vaut 0 %.
+
+**Format des événements** (agrégés par jour et par zone, triés par jour) :
+`day`, `zone` (indice dans `ids`, -1 = hors carte), `placed`, `archived`,
+`found`, `lost`. `createShareState({ ids, events, base })` a la même
+interface que `createZoneState`, plus `parts(id)` → `[trouvées, base]` et
+`totals()`.
+
+**Statistiques** :
+- `measure: { op: 'found_share', base?: 'all' }`, seulement pour les caches
+  publiées d'un jeu Évolution, seulement en carte (`ZONE_ONLY_OPS`) ;
+- `computeResult` passe `found` = `foundDaysOf(tableOf('finds'))` (code →
+  jour de la première trouvaille) ;
+- les moments clés viennent de mes trouvailles dans le jeu
+  (`foundRowsTable`) : pas de vignettes à 0 % avant ma première. La dernière
+  vignette reste la fin du jeu (les archivages suivants changent encore la
+  part) ;
+- infobulle « N sur M caches », sous-titre des vignettes = part sur tout le
+  jeu, légende en % ;
+- questions « Ma couverture » et « Ma couverture, année par année » (groupe
+  « Cartes de la zone »).
+
+**Carte « Mes Géocaches »** : le jeu se choisit dans l'onglet Zones
+(`zones.share_dataset`, thème ; `share_base`). La page ne charge pas les
+caches du jeu : `GET /api/stats/found_share?dataset=&level=&grid=` renvoie
+les événements agrégés, avec un ETag (jeu, révision, trouvailles, niveau,
+taille de case, empreinte des zones) et un cache en mémoire de 6 charges.
+Les filtres de la carte ne s'appliquent pas : la part compare toutes mes
+trouvailles au jeu entier. Au niveau 2, un pays sans niveau 2 passe à ses
+régions (comme `mixedZoneTable`). Grille : cases calculées par le serveur
+(`zone_share.grid_cell`, même calcul que `cellOf`, latitude de référence
+tirée du jeu) ; le client ne fait que dessiner les ids reçus.
+
+Mesuré sur 464 475 caches (France), 20 000 trouvailles : lecture de la base
+1,1 s, puis départements 1,9 s / 316 Ko compressés, grille 25 km 3 s /
+665 Ko. Une fois par version des données.
+
+**Carte « Évolution »** : la sélection filtrée du jeu ouvert est croisée dans
+la page avec mes trouvailles (`GET /api/stats/finds`, chargé une fois).
+
+**États de la couche** (`getZoneLayerDebugState().status`) : `no-dataset`
+(aucun jeu choisi), `missing` (jeu supprimé), `loading`, `error`. Le relevé
+donne aussi `parts`.
+
+**Tests** : `tests/js/zone_share.test.mjs`, `tests/test_zone_share.py`
+(mêmes cas, cases de grille identiques au navigateur, route),
+`tests/e2e/zone-layer.spec.mjs` › part trouvée (fixture
+`evolution-share.csv`, dont les codes croisent `my-finds-zones.gpx`).
+
 ## Limites connues
 
 - **Rapport de rattachement** (noms GC non reconnus, « Copier le rapport »)

@@ -248,6 +248,9 @@ export const QUESTIONS = Object.freeze([
     // Cartes de la zone : caches actives par département (ou région, pays).
     { id: 'evo_zones_active', family: 'evolution', group: 'zone_maps', icon: 'ti-map-2', size: 'XL', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'zone_subregion', periods: [{ kind: 'moments', rule: 'year_end' }], view: { chart: 'map' } } },
     { id: 'evo_zones_density', family: 'evolution', group: 'zone_maps', icon: 'ti-grid-4x4', size: 'L', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'zone_subregion', periods: [{ kind: 'all' }], compare: { normalize: 'per_km2' }, view: { chart: 'map' } } },
+    // Croisement avec mes trouvailles (part des caches trouvées).
+    { id: 'evo_zones_coverage', family: 'evolution', group: 'zone_maps', icon: 'ti-target-arrow', size: 'L', spec: { source: EVO, measure: { op: 'found_share' }, groupBy: 'zone_subregion', periods: [{ kind: 'all' }], view: { chart: 'map' } } },
+    { id: 'evo_zones_coverage_years', family: 'evolution', group: 'zone_maps', icon: 'ti-calendar-stats', size: 'XL', spec: { source: EVO, measure: { op: 'found_share' }, groupBy: 'zone_subregion', periods: [{ kind: 'moments', rule: 'year_end' }], view: { chart: 'map' } } },
     { id: 'evo_dt', family: 'evolution', group: 'zone_caches', icon: 'ti-grid-dots', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'dt', view: { chart: 'heatmap', labels: true } } },
 ]);
 

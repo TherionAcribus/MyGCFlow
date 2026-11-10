@@ -493,3 +493,188 @@ function pickMoments(classes, max, gap) {
     }
     return chosen.sort((a, b) => a.day - b.day);
 }
+
+// ---------------------------------------------------------------------------
+// Part des caches trouvées (`found_share`) : croisement d'un jeu Évolution
+// et de mes trouvailles (plan § 8).
+//
+// Événements agrégés par (jour, zone), triés par jour — le format que le
+// serveur envoie à la carte (zone_share.py) et que shareEventsOfTable
+// construit pour les mini-cartes :
+//   placed    caches du jeu apparues ce jour-là ;
+//   archived  caches disparues (archivage daté) ;
+//   found     caches du jeu que j'ai trouvées, comptées à partir de ma
+//             trouvaille (ou de leur apparition, si l'export la date après) ;
+//   lost      caches trouvées qui disparaissent ce jour-là.
+// `zone` : indice dans `ids`, -1 = hors carte.
+//
+// Base (dénominateur) :
+//   active  caches actives à la date (défaut) — au numérateur, les trouvées
+//           encore actives : la part ne dépasse jamais 100 % ;
+//   all     toutes les caches apparues jusqu'à la date, archivées comprises.
+export const SHARE_BASES = Object.freeze(['active', 'all']);
+
+const EMPTY_SHARE_EVENTS = Object.freeze({
+    day: new Int32Array(0), zone: new Int32Array(0), placed: new Int32Array(0),
+    archived: new Int32Array(0), found: new Int32Array(0), lost: new Int32Array(0),
+});
+
+// Événements d'une table Évolution (chart_sources.mjs : `day` = placement,
+// `endDay` = archivage, `code`) : `column` = colonne de zones lue (indices
+// dans `ids`), `rows` = lignes retenues (toutes par défaut), `foundDay` =
+// code → jour de ma première trouvaille (undefined si jamais trouvée).
+export function shareEventsOfTable(table, { column, rows = null, foundDay }) {
+    const n = rows ? rows.length : (table?.n || 0);
+    if (!n) return EMPTY_SHARE_EVENTS;
+    const rowAt = rows ? (i) => rows[i] : (i) => i;
+    // Clé numérique jour × 2²¹ + zone : sous 2⁵³ jusqu'à l'an 6000 et
+    // 2 millions de zones.
+    const ZONE_SPAN = 2097152;
+    const sums = new Map();
+    const bump = (day, z, slot) => {
+        const key = day * ZONE_SPAN + (z + 1);
+        let entry = sums.get(key);
+        if (!entry) {
+            entry = [0, 0, 0, 0];
+            sums.set(key, entry);
+        }
+        entry[slot]++;
+    };
+    for (let i = 0; i < n; i++) {
+        const r = rowAt(i);
+        const z = column && column[r] >= 0 ? column[r] : -1;
+        const placed = table.day[r];
+        const rawEnd = table.endDay[r];
+        const end = rawEnd === rawEnd ? Math.max(rawEnd, placed) : NaN;
+        bump(placed, z, 0);
+        if (end === end) bump(end, z, 1);
+        const f = foundDay(table.code?.[r]);
+        if (f === undefined || f === null || f !== f) continue;
+        const start = Math.max(f, placed);
+        bump(start, z, 2);
+        // Trouvée après l'archivage (dates d'export décalées) : jamais active
+        // au numérateur — apparition et disparition le même jour.
+        if (end === end) bump(Math.max(end, start), z, 3);
+    }
+    const keys = [...sums.keys()].sort((a, b) => a - b);
+    const out = {
+        day: new Int32Array(keys.length), zone: new Int32Array(keys.length),
+        placed: new Int32Array(keys.length), archived: new Int32Array(keys.length),
+        found: new Int32Array(keys.length), lost: new Int32Array(keys.length),
+    };
+    keys.forEach((key, k) => {
+        const zone = (key % ZONE_SPAN) - 1;
+        const [placed, archived, found, lost] = sums.get(key);
+        out.day[k] = (key - zone - 1) / ZONE_SPAN;
+        out.zone[k] = zone;
+        out.placed[k] = placed;
+        out.archived[k] = archived;
+        out.found[k] = found;
+        out.lost[k] = lost;
+    });
+    return out;
+}
+
+// État de la part trouvée, même interface que createZoneState (seek,
+// values, valueOf, outside, drainChanged, snapshots, extent) ; `parts(id)`
+// donne en plus [trouvées, base]. Valeurs en pourcentage (0 à 100) ; une
+// zone dont la base est vide n'a pas de valeur, une zone sans trouvaille
+// vaut 0 %.
+export function createShareState({ ids, events = EMPTY_SHARE_EVENTS, base = 'active' }) {
+    const active = base !== 'all';
+    const outside = ids.length;
+    const num = new Int32Array(outside + 1);
+    const den = new Int32Array(outside + 1);
+    const indexOf = new Map(ids.map((id, i) => [id, i]));
+    const changed = new Set();
+    const days = events.day;
+    let pos = 0;
+    let currentDay = -Infinity;
+
+    const apply = (k, sign) => {
+        const zk = events.zone[k];
+        const z = zk >= 0 && zk < outside ? zk : outside;
+        const dDen = events.placed[k] - (active ? events.archived[k] : 0);
+        const dNum = events.found[k] - (active ? events.lost[k] : 0);
+        if (!dDen && !dNum) return;
+        den[z] += sign * dDen;
+        num[z] += sign * dNum;
+        if (z !== outside) changed.add(z);
+    };
+    const valueAt = (z) => (den[z] > 0 ? (100 * num[z]) / den[z] : null);
+
+    return {
+        spec: { op: 'found_share', mode: active ? 'active' : 'cumulative', per: null },
+        base: active ? 'active' : 'all',
+        ids,
+        get day() { return currentDay; },
+        get size() { return days.length; },
+        get extent() {
+            return days.length ? { first: days[0], last: days[days.length - 1] } : null;
+        },
+        seek(day) {
+            const target = upperBound(days, day);
+            if (target < pos && pos - target > target) {
+                for (let z = 0; z < outside; z++) if (den[z] !== 0 || num[z] !== 0) changed.add(z);
+                num.fill(0);
+                den.fill(0);
+                pos = 0;
+            }
+            while (pos < target) apply(pos++, 1);
+            while (pos > target) apply(--pos, -1);
+            currentDay = day;
+            return this;
+        },
+        valueOf(id) {
+            const z = indexOf.get(id);
+            return z === undefined ? null : valueAt(z);
+        },
+        parts(id) {
+            const z = indexOf.get(id);
+            return z === undefined || den[z] <= 0 ? null : [num[z], den[z]];
+        },
+        values() {
+            const out = new Map();
+            for (let z = 0; z < outside; z++) {
+                const v = valueAt(z);
+                if (v !== null) out.set(ids[z], v);
+            }
+            return out;
+        },
+        // Caches du jeu hors carte comptées dans la base à ce jour.
+        get outside() { return den[outside]; },
+        // Total des zones (et hors carte) : [trouvées, base].
+        totals() {
+            let a = 0;
+            let b = 0;
+            for (let z = 0; z <= outside; z++) { a += num[z]; b += den[z]; }
+            return [a, b];
+        },
+        drainChanged() {
+            const out = [...changed].map((z) => ids[z]);
+            changed.clear();
+            return out;
+        },
+        snapshots(list) {
+            return [...list].sort((a, b) => a - b).map((d) => ({ day: d, values: this.seek(d).values() }));
+        },
+    };
+}
+
+// Table des seules caches trouvées, datées de leur trouvaille (moments clés
+// d'une carte de part trouvée : paliers, nouvelles zones, fins d'année à
+// partir de ma première trouvaille dans le jeu). Nouvelle table : `day`
+// remplacé, colonnes partagées.
+export function foundRowsTable(table, { rows = null, foundDay }) {
+    const n = rows ? rows.length : (table?.n || 0);
+    const day = Int32Array.from(table?.day || []);
+    const kept = [];
+    for (let i = 0; i < n; i++) {
+        const r = rows ? rows[i] : i;
+        const f = foundDay(table.code?.[r]);
+        if (f === undefined || f === null || f !== f) continue;
+        day[r] = Math.max(f, table.day[r]);
+        kept.push(r);
+    }
+    return { table: { ...table, day }, rows: Int32Array.from(kept) };
+}

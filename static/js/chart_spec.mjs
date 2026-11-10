@@ -87,7 +87,7 @@ export function sameSourceGroup(a, b) {
 
 // Mesures. « Flux » : comptées dans chaque intervalle. « Stock » : valeur
 // lue en fin d'intervalle (cumul, caches vivantes).
-export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'streak', 'gap', 'cumulative', 'active', 'dt_coverage', 'first_day']);
+export const MEASURE_OPS = Object.freeze(['count', 'distinct', 'mean', 'max_per_day', 'streak', 'gap', 'cumulative', 'active', 'dt_coverage', 'first_day', 'found_share']);
 // Records datés : la valeur d'une case vient de jours précis (la meilleure
 // journée, la plus longue série de jours consécutifs avec une trouvaille,
 // la plus longue pause entre deux) — le résultat garde ces dates.
@@ -95,8 +95,12 @@ export const RECORD_OPS = Object.freeze(['max_per_day', 'streak', 'gap']);
 export const STOCK_OPS = Object.freeze(['cumulative', 'active']);
 // Mesures propres aux cartes par zones (zone_model.mjs) : combinaisons D/T
 // différentes (sur 81) et jour de la première ligne de la zone (la
-// « conquête »).
-export const ZONE_ONLY_OPS = Object.freeze(['dt_coverage', 'first_day']);
+// « conquête »). `found_share` : part des caches d'un jeu Évolution que j'ai
+// trouvées (croisement avec mes trouvailles, zone_model.mjs › createShareState).
+export const ZONE_ONLY_OPS = Object.freeze(['dt_coverage', 'first_day', 'found_share']);
+// Base de la part trouvée : caches actives à la date (défaut), ou toutes
+// celles apparues jusque-là (`all`).
+export const FOUND_SHARE_BASES = Object.freeze(['active', 'all']);
 // `days` = jours avec au moins un événement ; `finder` = visiteurs
 // différents (Mes poses).
 export const DISTINCT_FIELDS = Object.freeze(['caches', 'days', 'cache_type', 'country', 'state', 'owner', 'finder', 'county']);
@@ -105,6 +109,11 @@ export const MEAN_FIELDS = Object.freeze(['difficulty', 'terrain', 'age']);
 // meurt : caches posées et caches publiées d'un jeu Évolution.
 function activeAllowed(source) {
     return source === 'owned' || (isEvolutionSource(source) && !source.endsWith(':archived'));
+}
+// Part trouvée : les caches publiées d'un jeu Évolution, croisées avec mes
+// trouvailles.
+function foundShareAllowed(source) {
+    return isEvolutionSource(source) && !source.endsWith(':archived');
 }
 
 // Dimensions (axe des graphiques, ou découpage en séries).
@@ -310,6 +319,10 @@ export function normalizeMeasure(raw, sources = 'finds') {
     const list = Array.isArray(sources) ? sources : [sources];
     const op = choice(isObject(raw) ? raw.op : raw, MEASURE_OPS, 'count');
     if (op === 'active' && !list.every(activeAllowed)) return { op: 'count' };
+    if (op === 'found_share') {
+        if (!list.every(foundShareAllowed)) return { op: 'count' };
+        return raw?.base === 'all' ? { op, base: 'all' } : { op };
+    }
     if (op === 'distinct') return { op, field: choice(raw?.field, sourceDistinctFields(list), 'caches') };
     if (op === 'mean') return { op, field: choice(raw?.field, sourceMeanFields(list), 'difficulty') };
     // Série « en cours » : celle qui court jusqu'à la fin de la période (ou

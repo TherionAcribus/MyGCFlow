@@ -809,6 +809,11 @@ export function zoneLegend(result, spec, ctx) {
             const a = c === 0 ? min : Math.ceil(lo);
             const b = upper === null ? max : Math.ceil(upper) - 1;
             label = a >= b ? fmt(a) : `${fmt(a)}–${fmt(b)}`;
+        } else if (spec.measure.op === 'found_share') {
+            // Pourcentages : bornes arrondies, « 50 » plutôt que « 50,0 – 50,0 ».
+            const a = Math.round(lo);
+            const b = Math.round(upper ?? max);
+            label = a === b ? String(a) : `${a} – ${b}`;
         } else {
             label = `${fmt(lo)} – ${fmt(upper ?? max)}`;
         }
@@ -837,6 +842,13 @@ function zoneTooltip(result, spec, ctx, zm) {
             const head = `<div style="font-weight:600;margin-bottom:2px">${escapeHtml(nameOf(params.name))}</div>`;
             if (k < 0 || !s || s.values[k] === null) return head + escapeHtml(labels.t('Aucune donnée'));
             const lines = [`<b>${escapeHtml(fmt(s.values[k]))}</b>`];
+            // Part trouvée : les deux comptes derrière le pourcentage.
+            const part = s.parts?.[k];
+            if (part) {
+                lines.push(escapeHtml(labels.t('${n} sur ${of} caches', {
+                    n: labels.formatValue(part[0], { op: 'count' }), of: labels.formatValue(part[1], { op: 'count' }),
+                })));
+            }
             const r = rank[params.seriesIndex];
             if (r.of > 1 && spec.measure.op !== 'first_day') {
                 lines.push(escapeHtml(labels.t('rang ${n} sur ${of}', { n: r.at.get(k), of: r.of })));
@@ -908,9 +920,12 @@ function mapOption(result, spec, ctx) {
             const sub = zm.levelNoun ? zm.levelNoun(count) : String(count);
             // « zones : 5 · Trouvailles : 6 »
             const noun = spec.measure.op === 'active' ? labels.measureName(spec.measure, spec.source) : labels.sourceNoun(spec.source);
+            // Part trouvée : la part sur tout le jeu à cette date.
+            const overall = s.totals?.[1] > 0 ? labels.formatValue((100 * s.totals[0]) / s.totals[1], spec.measure) : null;
             titles.push({
                 text: labels.seriesPeriodLabel(result.periods[i]),
-                subtext: additive ? `${sub} · ${noun} : ${labels.formatValue(total, spec.measure, { compact: true })}` : sub,
+                subtext: additive ? `${sub} · ${noun} : ${labels.formatValue(total, spec.measure, { compact: true })}`
+                    : overall ? `${sub} · ${overall}` : sub,
                 left: `${cell.col * width + width / 2}%`,
                 top: `${top}%`,
                 textAlign: 'center',

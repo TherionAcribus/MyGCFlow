@@ -680,7 +680,7 @@ class ZoneLayerOptions:
     static/json/defaultValues.json.
     """
     level: str = "subregion"   # "country", "region", "subregion", "grid"
-    measure: str = "count"     # "count", "distinct_types", "dt_coverage", "first_day"
+    measure: str = "count"     # "count", "distinct_types", "dt_coverage", "first_day", "found_share"
     scale: str = "quantile"    # "quantile", "linear", "log"
     classes: int = 5
     color: str = "#1E6FD9"     # teinte la plus forte ; les classes vont du clair à elle
@@ -690,6 +690,11 @@ class ZoneLayerOptions:
     legend: bool = True
     legend_position: str = "bottom-left"
     grid_size: int = 25        # km entre deux centres de cases (niveau « grid »)
+    # Mesure « found_share » (part des caches d'un jeu Évolution trouvées) :
+    # jeu croisé sur la carte « Mes Géocaches » (0 = aucun ; la page
+    # Évolution croise toujours le jeu ouvert) et base du pourcentage.
+    share_dataset: int = 0
+    share_base: str = "active"  # "active" (actives à la date) ou "all"
 
 
 @dataclass
@@ -919,7 +924,8 @@ TRAIL_OPACITY_RANGE = (10, 100)
 # Couche de zones : miroir de static/js/zone_layer_model.mjs (ZONE_LAYER_*).
 ZONE_LAYER_LEVELS = ("country", "region", "subregion", "grid")
 ZONE_LAYER_GRID_SIZES = (5, 10, 25, 50, 100)
-ZONE_LAYER_MEASURES = ("count", "distinct_types", "dt_coverage", "first_day")
+ZONE_LAYER_MEASURES = ("count", "distinct_types", "dt_coverage", "first_day", "found_share")
+ZONE_LAYER_SHARE_BASES = ("active", "all")
 ZONE_LAYER_SCALES = ("quantile", "linear", "log")
 ZONE_LAYER_CLASSES_RANGE = (3, 7)
 ZONE_LAYER_OPACITY_RANGE = (20, 85)
@@ -1530,6 +1536,10 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             legend_position=_coerce_choice(zn.get("legend_position"), ZONE_LAYER_LEGEND_POSITIONS, pz.legend_position),
             grid_size=(zn["grid_size"] if not isinstance(zn.get("grid_size"), bool)
                        and zn.get("grid_size") in ZONE_LAYER_GRID_SIZES else pz.grid_size),
+            share_dataset=(zn["share_dataset"] if isinstance(zn.get("share_dataset"), int)
+                           and not isinstance(zn.get("share_dataset"), bool)
+                           and 0 <= zn["share_dataset"] < 10 ** 10 else pz.share_dataset),
+            share_base=_coerce_choice(zn.get("share_base"), ZONE_LAYER_SHARE_BASES, pz.share_base),
         )
 
     return p

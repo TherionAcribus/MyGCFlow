@@ -580,6 +580,26 @@ def load_payload(db_path, dataset_id: int) -> tuple:
     return dataset, body
 
 
+def load_share_rows(db_path, dataset_id: int) -> tuple:
+    """(base, lignes) pour la part des caches trouvées par zone
+    (zone_share.py) : code, position, dates, zones. Rattache d'abord aux zones
+    les caches qui ne le sont pas encore, comme load_payload."""
+    dataset = get_dataset(db_path, dataset_id)
+    with _closing(connect(db_path)) as conn:
+        try:
+            _ensure_zones(conn, dataset_id)
+        except Exception:  # noqa: BLE001 — part calculée sans zones (hors carte)
+            import logging
+            logging.getLogger(__name__).exception("zones : rattachement du jeu %s impossible", dataset_id)
+        rows = conn.execute(
+            "SELECT gc_code, lat, lon, placed, archived_on, is_archived, "
+            "zone_country, zone_region, zone_subregion "
+            "FROM caches WHERE dataset_id = ?",
+            (dataset_id,),
+        ).fetchall()
+    return dataset, rows
+
+
 def get_cache(db_path, dataset_id: int, gc_code: str) -> dict:
     with _closing(connect(db_path)) as conn:
         _get_dataset(conn, dataset_id)

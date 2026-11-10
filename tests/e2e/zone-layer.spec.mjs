@@ -9,6 +9,7 @@
 // Préférence globale partagée (AGENTS.md) : `zones_display` remise à false
 // en sortie, persistance attendue ; la base est rendue à my-finds.gpx.
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -206,4 +207,99 @@ test('Évolution : les zones suivent les caches actives, et pâlissent aux archi
   await expect(page.locator('#switchZonesDisplay')).toBeChecked();
   await expect(page.locator('#zonesMeasure option[value="count"]')).toHaveText('Le nombre de caches actives');
   expect(errors).toEqual([]);
+});
+
+// Part trouvée (lot 6) : jeu evolution-share.csv, dont les codes croisent
+// my-finds-zones.gpx. Finistère : GCZON004 (trouvée le 4), GCZON005 (trouvée
+// le 5, archivée le 7), GCZS0001 ; Loire-Atlantique : GCZON003 (trouvée le
+// 3), GCZS0002, GCZS0003 (publiée le 5). Toutes publiées en 2025 sauf GCZS0003.
+const SHARE_FIXTURE = path.join(HERE, 'fixtures', 'evolution-share.csv');
+
+async function createShareDataset(request) {
+  const created = await request.post('/api/evolution/datasets', { data: { name: 'Ouest' } });
+  expect(created.status()).toBe(201);
+  const { dataset } = await created.json();
+  const imported = await request.post(`/api/evolution/datasets/${dataset.id}/import`, {
+    multipart: { files: { name: 'evolution-share.csv', mimeType: 'text/csv', buffer: fs.readFileSync(SHARE_FIXTURE) } },
+  });
+  expect(imported.status()).toBe(202);
+  const task = (await imported.json()).task_id;
+  await expect.poll(async () => (await (await request.get(`/tasks/${task}`)).json()).state, { timeout: 30_000 }).toBe('finished');
+  return dataset.id;
+}
+
+const rounded = (values) => Object.fromEntries(Object.entries(values).map(([id, v]) => [id, Math.round(v * 10) / 10]));
+
+test('part trouvée : un jeu Évolution croisé avec mes trouvailles, sur la carte et dans Statistiques', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  const datasetId = await createShareDataset(request);
+  try {
+    await setDisplay(request, true);
+    const errors = await openMap(page);
+    await page.locator('a[href="#zones"]').click();
+    await page.locator('#zonesMeasure').selectOption('found_share');
+    // Pas encore de jeu choisi : la couche attend, l'onglet le dit.
+    await expect(page.locator('#zonesStatus')).toContainText('Choisissez le jeu Évolution');
+    await expect(page.locator('#zonesShareDataset option')).toHaveText(['Choisir un jeu…', 'Ouest']);
+    await page.locator('#zonesShareDataset').selectOption(String(datasetId));
+    await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+    await expect(page.locator('#zonesStatus')).toBeHidden();
+
+    // Au repos (8 janvier) : Finistère 1 sur 2 (GCZON005 archivée),
+    // Loire-Atlantique 1 sur 3.
+    let state = await zones(page);
+    expect(rounded(state.values)).toEqual({ 'FR-29': 50, 'FR-44': 33.3 });
+    expect(state.parts).toEqual({ 'FR-29': [1, 2], 'FR-44': [1, 3] });
+    expect(state.legend.title).toBe('Part des caches actives trouvées');
+    expect(state.legend.entries.every((e) => e.label.endsWith('%'))).toBe(true);
+
+    // Dans l'aperçu : la part monte avec mes trouvailles, baisse quand une
+    // cache est publiée, remonte quand une cache trouvée est archivée.
+    expect(await app(page, 'return pkg.startPausedPreview();')).toBe(true);
+    await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 2));');
+    expect(rounded((await zones(page)).values)).toEqual({ 'FR-29': 0, 'FR-44': 0 });
+    await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 4));');
+    expect(rounded((await zones(page)).values)).toEqual({ 'FR-29': 33.3, 'FR-44': 50 });
+    await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 5));');
+    expect(rounded((await zones(page)).values)).toEqual({ 'FR-29': 66.7, 'FR-44': 33.3 });
+    await page.locator('#btnQuickStop').click();
+    await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('idle');
+
+    // Base « toutes les caches publiées » : l'archivée reste comptée.
+    await page.locator('#zonesShareBase').selectOption('all');
+    await expect.poll(async () => rounded((await zones(page)).values)).toEqual({ 'FR-29': 66.7, 'FR-44': 33.3 });
+    expect((await zones(page)).legend.title).toBe('Part des caches publiées trouvées');
+
+    // Statistiques : la même part, calculée dans la page.
+    const doc = { v: 1, active: 'e1', dashboards: [{ id: 'e1', name: 'Ouest', kind: 'evolution',
+      dataset: datasetId, period: { kind: 'all' }, items: [{ size: 'XL', height: 'L', spec: {
+        id: 'abcdef01', source: `evolution:${datasetId}`, measure: { op: 'found_share' },
+        groupBy: 'zone_subregion', periods: [{ kind: 'all' }], view: { chart: 'map' } } }] }] };
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+    await page.goto('/stats', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.mygcflowStatsReady === true);
+    await expect.poll(async () => (await page.evaluate(() => window.getStatsPageSnapshot())).cards[0]?.zones?.drawn ?? 0,
+      { timeout: 15_000 }).toBeGreaterThan(0);
+    const card = (await page.evaluate(() => window.getStatsPageSnapshot())).cards[0];
+    const at = (id) => Math.round(card.series[0][card.keys.indexOf(id)] * 10) / 10;
+    expect([at('FR-29'), at('FR-44')]).toEqual([50, 33.3]);
+    expect(card.zones.legend.at(-1)).toMatch(/%$/);
+
+    // Page Évolution : le jeu ouvert croisé dans la page avec mes trouvailles.
+    await setDisplay(request, true, 'evolution_zones_display');
+    await page.goto('/evolution', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+    await app(page, `pkg.options.zones = { ...pkg.options.zones, measure: 'found_share', shareBase: 'active' };
+      pkg.syncZoneLayerUI(); pkg.refreshZoneLayer();`);
+    await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+    state = await zones(page);
+    expect(rounded(state.values)).toEqual({ 'FR-29': 50, 'FR-44': 33.3 });
+    await page.locator('a[href="#zones"]').click();
+    await expect(page.locator('#zonesShareDataset')).toHaveCount(0);
+    await expect(page.locator('#zonesShareBase')).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.delete('/api/dashboards');
+    await deleteAllDatasets(request);
+  }
 });

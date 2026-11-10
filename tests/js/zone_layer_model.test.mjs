@@ -36,6 +36,22 @@ test('thème (snake_case) ↔ options', () => {
     assert.deepEqual(zoneLayerFromProfile(profile), { ...ZONE_LAYER_DEFAULTS, legendPosition: 'top-left', measure: 'first_day' });
 });
 
+test('part trouvée : jeu, base, légende en pourcentage', () => {
+    const o = normalizeZoneLayerOptions({ measure: 'found_share', shareDataset: '4', shareBase: 'all' });
+    assert.equal(o.measure, 'found_share');
+    assert.equal(o.shareDataset, 4);
+    assert.equal(o.shareBase, 'all');
+    assert.equal(normalizeZoneLayerOptions({ shareDataset: true, shareBase: 'x' }).shareDataset, 0);
+    assert.equal(normalizeZoneLayerOptions({ shareBase: 'x' }).shareBase, 'active');
+    const profile = zoneLayerToProfile(o);
+    assert.deepEqual([profile.share_dataset, profile.share_base], [4, 'all']);
+    assert.deepEqual(zoneLayerFromProfile(profile), o);
+    const scale = zoneScale([0, 10, 12.4, 30.9, 55, 100], { mode: 'quantile', classes: 3 });
+    const fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 0 });
+    const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), percent: true }).map((e) => e.label);
+    assert.deepEqual(labels, ['0–12 %', '12–55 %', '55–100 %']);
+});
+
 test('mesures de zone_model', () => {
     assert.deepEqual(zoneMeasureFor('distinct_types'), { op: 'distinct', field: 'cache_type' });
     assert.deepEqual(zoneMeasureFor('first_day'), { op: 'first_day' });

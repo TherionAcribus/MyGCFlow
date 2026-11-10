@@ -160,6 +160,29 @@ Doc : `docs/carte-zones.md` › Mini-cartes. Écarts avec les § 6 et 9 :
 - **Mes poses** : pas de couche de zones (intérêt non confirmé). Le lot 5
   est clos.
 
+**Lot 6 livré le 2026-11-10 : part trouvée (`found_share`).**
+- Calcul : `createShareState`, `shareEventsOfTable`, `foundRowsTable` dans
+  `zone_model.mjs` ; côté serveur `zone_share.py` et
+  `GET /api/stats/found_share`.
+- Statistiques : mesure des jeux Évolution, en carte seulement ; questions
+  « Ma couverture » et « Ma couverture, année par année ».
+- Carte « Mes Géocaches » : jeu choisi dans l'onglet Zones, agrégé par le
+  serveur. Carte « Évolution » : le jeu ouvert, croisé dans la page.
+- Doc : `docs/carte-zones.md` › Part trouvée.
+
+Écarts et décisions :
+- **Dénominateur tranché** : caches actives à la date par défaut ; « toutes
+  les caches publiées jusque-là » en option (`base: 'all'`). Au numérateur,
+  seulement les trouvées encore actives : jamais plus de 100 %.
+- **Agrégat serveur** : événements par (jour, zone), pas une série
+  journalière complète. 316 Ko compressés pour 96 départements et 464 000
+  caches.
+- **Filtres de la carte** ignorés sur « Mes Géocaches » (toutes mes
+  trouvailles contre le jeu entier) ; appliqués sur « Évolution » (sélection
+  du jeu ouvert).
+- **Moments clés** tirés de mes trouvailles dans le jeu, dernière vignette à
+  la fin du jeu.
+
 (Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre
@@ -603,7 +626,7 @@ Rédigées sans référence à un pays : le pays vient des données.
 | **3. Mini-cartes** ✅ | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
 | **4. Couche animée** ✅ | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
 | **5. Évolution, Mes poses, grille** ✅ (sans Mes poses) | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
-| **6. Croisement** | `found_share` | % de caches trouvées par zone, animé |
+| **6. Croisement** ✅ | `found_share` | % de caches trouvées par zone, animé |
 | **7. Pays suivants** | Royaume-Uni (`dissolve`), puis pays demandés par les joueurs, modèle d'issue GitHub | Nouveaux pays à chaque mise à jour |
 
 Faire FR, DE et US ensemble dès le lot 1 éprouve le format sur trois cas
@@ -667,7 +690,9 @@ Tranchées le 2026-11-09 :
 - **Réglages de la couche** : **onglet à part « Zones »** (§ 7.3).
 - **Bascule on/off** : **préférence globale**, une clé par page (§ 7.3).
 
+Tranchée le 2026-11-10 :
+- **Dénominateur de `found_share`** : actives à la date par défaut, toutes
+  celles publiées jusque-là en option.
+
 Restent ouvertes :
-- **Dénominateur de `found_share`** par défaut : actives à la date (proposé),
-  ou toutes celles ayant existé ? À trancher au lot 6.
 - **Seuil du téléchargement à la demande** : ~20 Mo d'embarqué (§ 2.3).

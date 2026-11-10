@@ -37,12 +37,16 @@ export const MEASURE_CHOICES = Object.freeze([
     // Cartes par zones seulement (chart_spec.mjs › ZONE_ONLY_OPS).
     { key: 'dt_coverage', measure: { op: 'dt_coverage' } },
     { key: 'first_day', measure: { op: 'first_day' } },
+    // Jeux Évolution croisés avec mes trouvailles.
+    { key: 'found_share', measure: { op: 'found_share' } },
+    { key: 'found_share:all', measure: { op: 'found_share', base: 'all' } },
 ]);
 
 export function measureKey(measure) {
     if (measure.op === 'distinct' || measure.op === 'mean') return `${measure.op}:${measure.field}`;
     if (measure.op === 'cumulative' && measure.from === 'all') return 'cumulative:all';
     if (measure.op === 'streak' && measure.current) return 'streak:current';
+    if (measure.op === 'found_share' && measure.base === 'all') return 'found_share:all';
     return measure.op;
 }
 
@@ -190,6 +194,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         active: t('les caches actives'),
         dt_coverage: t('le nombre de combinaisons D/T'),
         first_day: t('la date de la première trouvaille'),
+        found_share: t("la part des caches actives que j'ai trouvées"),
+        'found_share:all': t("la part des caches publiées que j'ai trouvées"),
     };
 
     // Nom court d'une mesure (titre par défaut, infobulles, chiffre clé). Le
@@ -215,6 +221,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         active: t('Caches actives'),
         dt_coverage: t('Combinaisons D/T'),
         first_day: t('Première trouvaille'),
+        found_share: t('Part des actives trouvées'),
+        'found_share:all': t('Part des publiées trouvées'),
     };
 
     // Sources : nom dans les menus, nom de ce qu'on compte (légendes,
@@ -372,6 +380,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         zones_types: [t('Types de caches par région'), t('Le nombre de types différents trouvés dans chaque région.')],
         evo_zones_active: [t('Caches actives, année par année'), t('La carte des caches en place à la fin de chaque année.')],
         evo_zones_density: [t('Densité des caches actives'), t('Les caches en place pour 1 000 km², zone par zone.')],
+        evo_zones_coverage: [t('Ma couverture'), t('La part des caches actives que vous avez trouvées, zone par zone.')],
+        evo_zones_coverage_years: [t('Ma couverture, année par année'), t('Votre part des caches actives à la fin de chaque année.')],
         zones_dt: [t('Grille D/T par région'), t('Combien des 81 combinaisons de difficulté et de terrain dans chaque région.')],
     };
 
@@ -604,6 +614,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
             return bare ? n : t('${n} / 1 000 km²', { n });
         }
         if (measure?.op === 'first_day') return dayFmt.format(fromDay(value));
+        // Part trouvée : pourcentage à une décimale (0,4 % se distingue de 0).
+        if (measure?.op === 'found_share') return bare ? decFmt.format(value) : t('${n} %', { n: decFmt.format(value) });
         if (measure?.op === 'mean' && measure.field !== 'age') return decFmt.format(value);
         if ((measure?.op === 'mean' && measure.field === 'age') || measure?.op === 'streak' || measure?.op === 'gap') {
             return t('${n} j', { n: intFmt.format(Math.round(value)) });
@@ -614,6 +626,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
 
     // Unité d'une valeur affichée sans elle (`bare`), ou ''.
     function valueUnit(measure, normalize = 'none') {
+        if (measure?.op === 'found_share') return '%';
         return normalize === 'per_km2' ? t('/ 1 000 km²') : '';
     }
 

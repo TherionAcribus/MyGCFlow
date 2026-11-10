@@ -196,6 +196,13 @@ Autres repères :
   remise à `false`), données = sélection du jeu ouvert en caches actives —
   un spec qui importe un jeu le supprime en sortie
   (`DELETE /api/evolution/datasets/<id>`).
+  Part trouvée (`found_share`, croisement d'un jeu Évolution et de mes
+  trouvailles) : fixture `evolution-share.csv`, dont les codes croisent
+  `my-finds-zones.gpx`. Sur « Mes Géocaches », le jeu vient de
+  `pkg.options.zones.shareDataset` (thème, en mémoire) et la couche attend
+  `GET /api/stats/found_share` (`status` : `no-dataset`, `loading`,
+  `missing`, puis `ready`) ; relevé `parts` (`[trouvées, base]` par zone).
+  Exemple dans `zone-layer.spec.mjs`.
 - Panneaux Stats par source (`options.source` : `dnf` / `owned`) : les
   données DNF et caches posées sont chargées au démarrage même si leur
   affichage carte est coupé — un spec qui importe des logs recharge la page

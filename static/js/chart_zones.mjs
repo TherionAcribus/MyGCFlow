@@ -12,7 +12,9 @@
 import { MAX_SERIES } from './chart_spec.mjs';
 import { expandPeriods } from './chart_periods.mjs';
 import { filterMask } from './chart_query.mjs';
-import { ZONE_COLUMNS, createZoneState, keyMoments, zoneScale } from './zone_model.mjs';
+import {
+    ZONE_COLUMNS, createShareState, createZoneState, foundRowsTable, keyMoments, shareEventsOfTable, zoneScale,
+} from './zone_model.mjs';
 import { cellArea, withGridColumn } from './zone_grid.mjs';
 
 export const LEVEL_OF_DIMENSION = Object.freeze({
@@ -41,6 +43,8 @@ export function zoneMeasureOf(spec) {
         return { measure: { op: 'dt_coverage' }, scope: 'period' };
     case 'first_day':
         return { measure: { op: 'first_day' }, scope: 'all' };
+    case 'found_share':
+        return { measure: { op: 'found_share', base: spec.measure.base === 'all' ? 'all' : 'active' }, scope: 'all' };
     default:
         return { measure: { op: 'count', per }, scope: 'period' };
     }
@@ -89,12 +93,48 @@ export function mixedZoneTable(table, level, fallbackCountries) {
     };
 }
 
-// Vignettes : périodes déployées, ou moments clés tirés des données.
-function zoneEntries(spec, table, rows, level, options) {
+// Jour de ma première trouvaille de chaque code (Map code → jour), depuis la
+// table de mes trouvailles. Mémorisé par table.
+const foundDaysMemo = new WeakMap();
+export function foundDaysOf(findsTable) {
+    if (!findsTable || typeof findsTable !== 'object') return new Map();
+    let out = foundDaysMemo.get(findsTable);
+    if (out) return out;
+    out = new Map();
+    const codes = findsTable.code || [];
+    for (let r = 0; r < (findsTable.n || 0); r++) {
+        const code = codes[r];
+        const day = findsTable.day[r];
+        if (!code || day !== day) continue;
+        const known = out.get(code);
+        if (known === undefined || day < known) out.set(code, day);
+    }
+    foundDaysMemo.set(findsTable, out);
+    return out;
+}
+
+// Vignettes : périodes déployées, ou moments clés tirés des données. Part
+// trouvée : moments tirés de mes trouvailles dans le jeu (`momentsOf()`,
+// calculé seulement s'il y a des moments).
+function zoneEntries(spec, table, rows, level, options, momentsOf = null) {
     const periods = options.periods !== undefined ? options.periods : spec.periods;
     const moments = (periods || []).find((p) => p?.kind === 'moments');
     if (moments) {
-        const list = keyMoments(table, { rules: [moments.rule], level, rows, max: MAX_SERIES });
+        // Aucune trouvaille dans le jeu : moments du jeu lui-même (cartes à 0 %).
+        const found = momentsOf?.();
+        const source = found?.rows.length ? found : { table, rows };
+        const list = keyMoments(source.table, { rules: [moments.rule], level, rows: source.rows, max: MAX_SERIES });
+        if (source === found) {
+            // Dernière vignette : la fin du jeu, pas ma dernière trouvaille —
+            // les archivages qui suivent changent encore la part.
+            let end = -Infinity;
+            for (const r of rows) {
+                const e = table.endDay[r];
+                end = Math.max(end, table.day[r], e === e ? e : -Infinity);
+            }
+            const last = list.find((m) => m.kind === 'last');
+            if (last && end > last.day) last.day = end;
+        }
         // (Boucle, pas Math.min(...) : un jeu Évolution dépasse la pile.)
         let first = Infinity;
         for (const r of rows) if (table.day[r] < first) first = table.day[r];
@@ -114,7 +154,8 @@ function zoneEntries(spec, table, rows, level, options) {
 
 // `options` : periods, filters (résolus par l'appelant, comme
 // runChartQueries), today, areas (km² par id, pour la densité),
-// fallbackCountries (Set des pays sans niveau 2).
+// fallbackCountries (Set des pays sans niveau 2), found (Map code → jour de
+// ma première trouvaille : mesure `found_share`).
 export function runZoneQuery(spec, rawTable, options = {}) {
     const today = options.today ?? Infinity;
     const level = LEVEL_OF_DIMENSION[spec.groupBy] || 'country';
@@ -127,8 +168,12 @@ export function runZoneQuery(spec, rawTable, options = {}) {
     const rows = [];
     for (let r = 0; r < table.n; r++) if (mask[r]) rows.push(r);
 
-    const { entries, truncated } = zoneEntries(spec, table, rows, level, options);
     const { measure, scope } = zoneMeasureOf(spec);
+    const share = measure.op === 'found_share';
+    const found = options.found instanceof Map ? options.found : new Map();
+    const foundDay = (code) => found.get(code);
+    const { entries, truncated } = zoneEntries(spec, table, rows, level, options,
+        share ? () => foundRowsTable(table, { rows, foundDay }) : null);
     // Densité d'une grille : surface calculée de chaque case.
     const areas = level === 'grid'
         ? new Map((table.dicts.zone_grid || []).map((id) => [id, cellArea(id)]))
@@ -138,7 +183,15 @@ export function runZoneQuery(spec, rawTable, options = {}) {
     const frames = entries.map((entry) => {
         const end = Math.min(entry.to, today);
         let state;
-        if (scope === 'all') {
+        if (share) {
+            shared ??= createShareState({
+                ids: table.dicts?.[ZONE_COLUMNS[level]] || [],
+                events: shareEventsOfTable(table, { column: table[ZONE_COLUMNS[level]], rows, foundDay }),
+                base: measure.base,
+            });
+            state = shared;
+            for (const r of rows) if (table.day[r] <= end) counted[r] = 1;
+        } else if (scope === 'all') {
             shared ??= createZoneState({ table, level, measure, rows: Int32Array.from(rows), areas });
             state = shared;
             for (const r of rows) if (table.day[r] <= end) counted[r] = 1;
@@ -148,7 +201,10 @@ export function runZoneQuery(spec, rawTable, options = {}) {
             state = createZoneState({ table, level, measure, rows: Int32Array.from(inPeriod), areas });
         }
         state.seek(end);
-        return { values: state.values(), outside: state.outside, day: end };
+        const values = state.values();
+        // Part trouvée : [trouvées, base] par zone (infobulle, valeurs).
+        const parts = share ? new Map([...values.keys()].map((id) => [id, state.parts(id)])) : null;
+        return { values, outside: state.outside, day: end, parts, totals: share ? state.totals() : null };
     });
 
     // Zones de l'axe : toutes celles qui ont une valeur dans une vignette,
@@ -174,6 +230,7 @@ export function runZoneQuery(spec, rawTable, options = {}) {
             day: frame.day,
             outside: frame.outside,
             changed,
+            ...(share ? { parts: keys.map((id) => frame.parts.get(id) ?? null), totals: frame.totals } : {}),
         };
     });
 

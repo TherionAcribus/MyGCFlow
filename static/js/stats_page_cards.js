@@ -4,7 +4,7 @@
 import { t } from './notifications.js';
 import { chartSources, periodsAreMultiple } from './chart_spec.mjs';
 import { runChartQueries } from './chart_query.mjs';
-import { runZoneQuery } from './chart_zones.mjs';
+import { foundDaysOf, runZoneQuery } from './chart_zones.mjs';
 import { describeFilters } from './chart_filters.mjs';
 import {
     buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel,
@@ -292,6 +292,8 @@ export function computeResult(spec, dashboard) {
             today: state.today,
             areas: spec.compare.normalize === 'per_km2' ? zoneAreas() : null,
             fallbackCountries: fallbackCountries(),
+            // Part trouvée : mes trouvailles, croisées par code GC.
+            found: spec.measure.op === 'found_share' ? foundDaysOf(tableOf('finds')) : null,
         })
         : runChartQueries(spec, tableOf, {
             ...effectiveQueryOptions(spec, dashboard),

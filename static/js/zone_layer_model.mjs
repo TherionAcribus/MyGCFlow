@@ -10,7 +10,9 @@ import { GRID_DEFAULT_SIZE, normalizeGridSize } from './zone_grid.mjs';
 // Miroir de ZoneLayerOptions (settings_manager.py) et du bloc `zones` de
 // static/json/defaultValues.json.
 export const ZONE_LAYER_LEVELS = Object.freeze(['country', 'region', 'subregion', 'grid']);
-export const ZONE_LAYER_MEASURES = Object.freeze(['count', 'distinct_types', 'dt_coverage', 'first_day']);
+export const ZONE_LAYER_MEASURES = Object.freeze(['count', 'distinct_types', 'dt_coverage', 'first_day', 'found_share']);
+// Part trouvée : caches actives à la date (défaut) ou toutes celles apparues.
+export const ZONE_LAYER_SHARE_BASES = Object.freeze(['active', 'all']);
 export const ZONE_LAYER_SCALES = Object.freeze(['quantile', 'linear', 'log']);
 export const ZONE_LAYER_CLASSES_RANGE = Object.freeze([3, 7]);
 export const ZONE_LAYER_OPACITY_RANGE = Object.freeze([20, 85]);
@@ -27,6 +29,9 @@ export const ZONE_LAYER_DEFAULTS = Object.freeze({
     legend: true,
     legendPosition: 'bottom-left',
     gridSize: GRID_DEFAULT_SIZE,
+    // Jeu Évolution croisé sur « Mes Géocaches » (0 = aucun).
+    shareDataset: 0,
+    shareBase: 'active',
 });
 // Fondu d'une zone qui change de classe, et éclat de son contour (ms).
 export const ZONE_FADE_MS = 600;
@@ -66,6 +71,8 @@ export function normalizeZoneLayerOptions(raw) {
         legend: bool(src.legend, d.legend),
         legendPosition: choice(src.legendPosition, ZONE_LAYER_LEGEND_POSITIONS, d.legendPosition),
         gridSize: normalizeGridSize(src.gridSize),
+        shareDataset: clampInt(src.shareDataset, d.shareDataset, [0, 9999999999]),
+        shareBase: choice(src.shareBase, ZONE_LAYER_SHARE_BASES, d.shareBase),
     };
 }
 
@@ -75,13 +82,16 @@ export function zoneLayerToProfile(options) {
     return {
         level: o.level, measure: o.measure, scale: o.scale, classes: o.classes, color: o.color,
         opacity: o.opacity, outline: o.outline, glow: o.glow, legend: o.legend, legend_position: o.legendPosition,
-        grid_size: o.gridSize,
+        grid_size: o.gridSize, share_dataset: o.shareDataset, share_base: o.shareBase,
     };
 }
 
 export function zoneLayerFromProfile(profile) {
     const p = profile && typeof profile === 'object' ? profile : {};
-    return normalizeZoneLayerOptions({ ...p, legendPosition: p.legend_position, gridSize: p.grid_size });
+    return normalizeZoneLayerOptions({
+        ...p, legendPosition: p.legend_position, gridSize: p.grid_size,
+        shareDataset: p.share_dataset, shareBase: p.share_base,
+    });
 }
 
 // Mesure de zone_model.mjs.
@@ -135,7 +145,8 @@ export function fadeProgress(start, now, duration = ZONE_FADE_MS) {
 // Entrées de la légende : { color, label } du plus faible au plus fort.
 // `scale` : zone_model.mjs › zoneScale. `formatNumber(v)` : nombre de la
 // page (Intl) ; les années n'en ont pas besoin.
-export function legendEntries(scale, options, { formatNumber = (v) => String(v) } = {}) {
+// `percent` : valeurs continues en pourcentage (part trouvée) — « 12–31 % ».
+export function legendEntries(scale, options, { formatNumber = (v) => String(v), percent = false } = {}) {
     if (!scale || scale.min === null || scale.min === undefined) return [];
     const colors = classColors(options.color, scale.classes);
     const { breaks, min, max } = scale;
@@ -144,7 +155,11 @@ export function legendEntries(scale, options, { formatNumber = (v) => String(v) 
         const lo = c === 0 ? min : breaks[c - 1];
         const upper = c === scale.classes - 1 ? null : breaks[c];
         let label;
-        if (scale.mode === 'year') {
+        if (percent) {
+            const a = formatNumber(lo);
+            const b = formatNumber(upper ?? max);
+            label = `${a === b ? a : `${a}–${b}`} %`;
+        } else if (scale.mode === 'year') {
             const a = year(lo);
             const b = upper === null ? year(max) : year(upper) - 1;
             label = a === b ? String(a) : `${a}–${b}`;
