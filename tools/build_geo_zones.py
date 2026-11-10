@@ -350,6 +350,52 @@ def unit_groups(spec, levels, where):
     return mapping
 
 
+def merged_inputs(spec, source_path) -> Path:
+    """Plusieurs sources pour un même niveau (« inputs ») : chacune réduite à
+    son champ d'unité (`mgz_u`), puis réunies en un GeoJSON du cache. Ex. :
+    comtés de la République d'Irlande (Tailte Éireann) et districts
+    d'Irlande du Nord (ONS) pour les provinces de Geocaching.com."""
+    paths = [source_path(i["source"]) for i in spec["inputs"]]
+    key = hashlib.sha1(json.dumps([spec["inputs"], [p.name for p in paths]], sort_keys=True).encode("utf-8"))
+    target = CACHE / f"merge-v2-{key.hexdigest()[:12]}.geojson"
+    if target.exists():
+        return target
+    features = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for n, (inp, path) in enumerate(zip(spec["inputs"], paths)):
+            out = Path(tmp) / f"in{n}.json"
+            args = ["-i", str(path), "-proj", "wgs84"]
+            if inp.get("filter"):
+                args += ["-filter", inp["filter"]]
+            args += ["-each", f"mgz_u = String(this.properties[{json.dumps(inp['unit'])}])",
+                     "-filter-fields", "mgz_u", "-o", str(out), "format=geojson", "force"]
+            mapshaper(args)
+            features += json.loads(out.read_text(encoding="utf-8"))["features"]
+        # Deux sources ne se rejoignent jamais au mètre près : -clean comble
+        # les interstices et partage les chevauchements le long de leur limite.
+        combined = Path(tmp) / "combined.json"
+        combined.write_text(json.dumps({"type": "FeatureCollection", "features": features}), encoding="utf-8")
+        mapshaper(["-i", str(combined), "snap", "-clean", f"gap-fill-area={spec.get('gap_fill_km2', 1)}km2",
+                   "-o", str(target), "format=geojson", "force"])
+    return target
+
+
+def level_records(spec, levels, source_path, where):
+    """Enregistrements d'un niveau de recette : source unique ou « inputs »,
+    unités telles quelles ou regroupées (« groups »)."""
+    if spec.get("inputs"):
+        if not spec.get("groups"):
+            raise BuildError(f"{where} : « inputs » demande « groups ».")
+        spec = {**spec, "group_by": "mgz_u", "filter": None}
+        return build_grouped_level(merged_inputs(spec, source_path), spec, levels, where)
+    path = source_path(spec["source"])
+    return build_grouped_level(path, spec, levels, where) if spec.get("groups") else build_level(path, spec)
+
+
+def level_sources(spec):
+    return [i["source"] for i in spec["inputs"]] if spec.get("inputs") else [spec["source"]]
+
+
 def build_grouped_level(src_path, spec, levels, where):
     """Niveau composé d'unités de la source fusionnées par groupe (comtés
     cérémoniaux faits d'autorités unitaires, régions faites de comtés).
@@ -585,14 +631,13 @@ def build(offline=False):
         manual = recipe.get("aliases", {}).get("zones", {})
         if "region" in levels:
             spec = levels["region"]
-            records = (build_grouped_level(source_path(spec["source"]), spec, levels, f"{cc} region")
-                       if spec.get("groups") else build_level(source_path(spec["source"]), spec))
+            records = level_records(spec, levels, source_path, f"{cc} region")
             finish_records(records, spec, manual_aliases=manual)
             for r in records:
                 r["parent"] = cc
             regions_by_country[cc] = records
             region_label[cc] = spec.get("label")
-            region_sources[cc] = [spec["source"]]
+            region_sources[cc] = level_sources(spec)
         elif manual:
             for r in regions_by_country.get(cc, []):
                 r["names"] += [(0, zones.normalize_name(n)) for n in manual.get(r["id"], [])]
@@ -601,13 +646,12 @@ def build(offline=False):
             parents = regions_by_country.get(cc)
             if not parents:
                 raise BuildError(f"{cc} : pas de niveau 1 pour rattacher les sous-régions.")
-            records = (build_grouped_level(source_path(spec["source"]), spec, levels, f"{cc} subregion")
-                       if spec.get("groups") else build_level(source_path(spec["source"]), spec))
+            records = level_records(spec, levels, source_path, f"{cc} subregion")
             finish_records(records, spec, manual_aliases=manual)
             compute_parents(records, parents, spec, cc)
             sub_by_country[cc] = records
             sub_label[cc] = spec.get("label")
-            sub_sources[cc] = [spec["source"]]
+            sub_sources[cc] = level_sources(spec)
         for rid, names in recipe.get("aliases", {}).get("as_region", {}).items():
             if rid not in {r["id"] for r in regions_by_country.get(cc, [])}:
                 raise BuildError(f"{recipe['_file']} : as_region vers une région inconnue ({rid}).")

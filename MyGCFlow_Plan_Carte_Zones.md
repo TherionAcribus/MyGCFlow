@@ -205,8 +205,8 @@ formulaire d'issue `.github/ISSUE_TEMPLATE/zones.yml`. Écarts :
   « UK Regional Map » du wiki Geocaching (KMZ par comté, couleurs par
   région), recoupée par un événement « all 14 UK regions ».
 - **L'Irlande du Nord n'est pas au Royaume-Uni chez GC** : « Ulster,
-  Ireland ». Elle reste une région géographique (`GB-northernireland`) ;
-  l'Irlande et ses provinces sont une recette à faire.
+  Ireland ». D'abord gardée comme région géographique, elle est passée à
+  l'Irlande avec sa recette (troisième partie).
 - **Niveau 2 = comtés** : cérémoniaux en Angleterre (47, City of London
   dans Greater London), council areas (32), principal areas (22), districts
   d'Irlande du Nord (11).
@@ -222,6 +222,25 @@ formulaire d'issue `.github/ISSUE_TEMPLATE/zones.yml`. Écarts :
   les anciennes données ; il note maintenant l'empreinte des données de
   zones et se recalcule quand elles changent.
 - Sur les données de développement : plus aucun nom non reconnu.
+
+**Lot 7, troisième partie, livrée le 2026-11-10 : recette de l'Irlande**
+(`geo/recipes/IE.json`). Constats et choix :
+- **Régions de Geocaching.com** : 5 pour l'île entière — Connacht, Dublin
+  (le comté seul), Leinster (sans Dublin), Munster, Ulster (Irlande du Nord
+  + Cavan, Donegal, Monaghan). Composition lue sur la carte du wiki
+  Geocaching ; « in Dublin, Ireland » et « in Ulster, Ireland » vérifiés sur
+  des caches.
+- **L'Irlande du Nord suit GC** : retirée de `GB.json` (filtre sur les codes
+  ONS `N…`, `GB-northernireland` disparaît — aucune version publiée ne
+  l'avait), rangée dans `IE-ulster`. Le niveau 0 reste Natural Earth : un
+  point d'Irlande du Nord sans nom de GC tombe au Royaume-Uni, sans région.
+- **Niveau 2** : 26 comtés de la République (ids ISO `IE-D`, `IE-CO`…) et
+  11 districts d'Irlande du Nord (`IE-belfast`…), pas les 6 comtés
+  historiques (licence OSNI à examiner à part).
+- **Sources** : Tailte Éireann, comtés 2019 généralisés à 20 m (CC BY 4.0),
+  par requête ArcGIS ; districts ONS déjà déclarés par `GB.json`. Nouveau
+  mécanisme générique `inputs` (plusieurs sources par niveau), réparé par
+  `mapshaper -clean` : sans lui, 35 trous le long de la frontière.
 
 (Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base

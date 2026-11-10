@@ -1136,9 +1136,9 @@
   "GB": {
    "region": {
     "file": "regions/GB.json",
-    "rev": "94e2a24a39",
-    "count": 15,
-    "bytes": 53341,
+    "rev": "a80e8ad3e2",
+    "count": 14,
+    "bytes": 51294,
     "label": {
      "fr": "régions",
      "en": "regions",
@@ -1150,9 +1150,9 @@
    },
    "subregion": {
     "file": "subregions/GB.json",
-    "rev": "f9f6c98857",
-    "count": 112,
-    "bytes": 113703,
+    "rev": "cec86eb03e",
+    "count": 101,
+    "bytes": 105092,
     "label": {
      "fr": "comtés",
      "en": "counties",
@@ -1481,15 +1481,32 @@
   "IE": {
    "region": {
     "file": "regions/IE.json",
-    "rev": "f2cf335237",
-    "count": 34,
-    "bytes": 15745,
+    "rev": "1ad0be0966",
+    "count": 5,
+    "bytes": 12809,
     "label": {
-     "fr": "régions",
-     "en": "regions"
+     "fr": "provinces",
+     "en": "provinces",
+     "local": "provinces"
     },
     "sources": [
-     "ne-admin1"
+     "tailte-counties-2019",
+     "ons-ctyua-2024"
+    ]
+   },
+   "subregion": {
+    "file": "subregions/IE.json",
+    "rev": "93e3ae3b9a",
+    "count": 37,
+    "bytes": 35946,
+    "label": {
+     "fr": "comtés",
+     "en": "counties",
+     "local": "counties"
+    },
+    "sources": [
+     "tailte-counties-2019",
+     "ons-ctyua-2024"
     ]
    }
   },
@@ -3791,6 +3808,13 @@
    "licence_title": "Open Government Licence v3.0",
    "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v.3.0. Contains OS data © Crown copyright and database right 2024",
    "homepage": "https://geoportal.statistics.gov.uk/datasets/1727a405c51046deaadc23ecf94c3b98"
+  },
+  "tailte-counties-2019": {
+   "title": "Tailte Éireann — Counties, National Statutory Boundaries 2019, Generalised 20m",
+   "licence": "cc-by-4.0",
+   "licence_title": "CC BY 4.0",
+   "attribution": "© Tailte Éireann, CC BY 4.0",
+   "homepage": "https://data-osi.opendata.arcgis.com/datasets/7ef9c5102d61424295e98505a00251ea"
   }
  }
 }

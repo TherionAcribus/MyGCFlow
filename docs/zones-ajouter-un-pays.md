@@ -3,7 +3,7 @@
 Les cartes par zones colorent des **pays**, des **régions** et des
 **sous-régions** (départements, Landkreise, counties…). Pays et régions
 couvrent déjà le monde entier. Les sous-régions s'ajoutent pays par pays (France, Allemagne, Royaume-Uni,
-États-Unis à ce jour),
+Irlande, États-Unis à ce jour),
 avec **une recette, une commande, et des tests qui passent tout seuls**. Il
 n'y a pas de code à écrire.
 
@@ -109,6 +109,7 @@ Natural Earth alors que GC utilise les régions.
 | `aliases` | Champs, ou modèles `"{BEZ} {GEN}"`, dont les valeurs servent à reconnaître les noms donnés par Geocaching.com et par les CSV d'Évolution. Les valeurs `a\|b` sont dépliées. |
 | `simplify` | Tolérance en mètres : `display` pour les cartes (1 500 à 2 500), `match` pour le rattachement (100). |
 | `group_by`, `groups`, `groups_of` | Zones faites de plusieurs unités de la source (§ Regrouper des unités). |
+| `inputs` | Plusieurs sources pour un même niveau, à la place de `source` (§ Plusieurs sources). |
 
 **Identifiants** : ISO 3166-2 quand il existe (`DE-BY`, `US-TX`, `FR-44`).
 Sinon un code officiel préfixé par le pays (`DE-09162`, `US-48201`). Un id ne
@@ -150,6 +151,35 @@ les comtés cérémoniaux anglais sont faits d'autorités unitaires (Kent = Kent
   construction.
 - Le parent d'une sous-région est toujours trouvé par son point intérieur :
   des régions faites des mêmes unités le contiennent forcément.
+
+### Plusieurs sources
+
+Quand aucune source ne couvre tout le découpage de Geocaching.com, un niveau
+en réunit plusieurs. Exemple, `IE.json` : GC traite l'île d'Irlande comme un
+seul pays, avec l'Irlande du Nord dans « Ulster ». Les comtés de la
+République viennent de Tailte Éireann, les districts d'Irlande du Nord de
+l'ONS (source déjà déclarée par `GB.json`).
+
+```json
+"inputs": [
+  { "source": "tailte-counties-2019", "unit": "COUNTY" },
+  { "source": "ons-ctyua-2024", "unit": "CTYUA24CD", "filter": "CTYUA24CD.startsWith('N')" }
+],
+"groups": { "Cork": ["CORK"], "Belfast": ["N09000003"] }
+```
+
+- `unit` : le champ qui identifie une unité dans cette source. Les membres
+  des `groups` sont ces valeurs ; elles ne doivent pas se recouper d'une
+  source à l'autre.
+- `inputs` va toujours avec `groups`, et remplace `source`, `filter` et
+  `group_by` du niveau.
+- Les sources sont réunies puis réparées par `mapshaper -clean` : deux
+  sources ne se rejoignent jamais au mètre près, les interstices (jusqu'à
+  `gap_fill_km2`, 1 km² par défaut) sont comblés et les chevauchements
+  partagés. Sans cela, l'Ulster avait 35 trous le long de la frontière.
+- Le résultat est gardé dans `geo/.cache/merge-*.geojson`.
+- Un pays d'une source peut ainsi être ailleurs dans une autre : l'Irlande
+  du Nord est retirée de `GB.json` par un `filter`.
 
 ### `aliases` (de la recette)
 
@@ -247,7 +277,8 @@ Mesures du 2026-11-09 :
 | Régions du monde (242 fichiers) | ~3,3 Mo | ~2,4 Mo |
 | FR (101 départements) | 127 Ko | 403 Ko |
 | DE (400 Kreise) | 256 Ko | 344 Ko |
-| GB (112 comtés ; régions : 52 Ko) | 111 Ko | 369 Ko |
+| GB (101 comtés) | 102 Ko | 351 Ko |
+| IE (37 comtés et districts) | 35 Ko | 121 Ko |
 | US (3 144 counties) | 1 515 Ko | 1 766 Ko |
 
 Si un pays dépasse : augmenter `simplify.display` (2 500 → 3 500), puis

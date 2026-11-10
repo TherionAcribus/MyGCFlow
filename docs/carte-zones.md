@@ -24,8 +24,8 @@ Plan : `MyGCFlow_Plan_Carte_Zones.md`. Ajouter un pays :
 | Niveau | Clé | Couverture | Source |
 |---|---|---|---|
 | 0 | `country` | monde (242 pays) | Natural Earth admin-0, 1:50m |
-| 1 | `region` | monde | Natural Earth admin-1, 1:10m, sauf pays à recette (FR : IGN ; GB : régions de Geocaching.com, ONS) |
-| 2 | `subregion` | FR, DE, GB, US | recettes de pays |
+| 1 | `region` | monde | Natural Earth admin-1, 1:10m, sauf pays à recette (FR : IGN ; GB, IE : régions de Geocaching.com) |
+| 2 | `subregion` | FR, DE, GB, IE, US | recettes de pays |
 
 Le code ne connaît que ces trois clés. Le nom affiché d'un niveau
 (« départements », « Landkreise ») vient de `index.json`.
@@ -565,12 +565,12 @@ Géocaches ») ou pour le jeu ouvert (« Évolution »).
   - les petits départements (Paris) sont couverts par leurs points aux
     échelles nationales.
 
-- **Irlande du Nord** : Geocaching.com la range dans « Ireland › Ulster ».
-  Le pays est donc l'Irlande (par le nom), sans région : les provinces de
-  GC (Connacht, Leinster, Munster, Ulster) ne sont pas reconnues tant que
-  l'Irlande n'a pas sa recette, et la géométrie de l'Irlande du Nord est
-  dans le Royaume-Uni (région `GB-northernireland`, rattachée par position
-  seulement).
+- **Irlande du Nord** : Geocaching.com la range dans « Ireland › Ulster »,
+  et la recette `IE.json` fait de même (province d'Ulster, districts
+  `IE-belfast`…). Le niveau 0 reste celui de Natural Earth : sur une carte
+  des pays, l'Irlande du Nord est dessinée dans le Royaume-Uni, et un point
+  d'Irlande du Nord rattaché par la seule position (sans nom de GC) tombe au
+  Royaume-Uni, sans région.
 - **Royaume-Uni, Stockton-on-Tees** : l'autorité unitaire est entière dans
   County Durham, alors que sa partie sud (Thornaby, Yarm) est dans le comté
   de North Yorkshire. Une trouvaille « Yorkshire » y est placée dans le

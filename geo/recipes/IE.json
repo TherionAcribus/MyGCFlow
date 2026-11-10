@@ -1,0 +1,481 @@
+{
+  "kind": "country",
+  "country": "IE",
+  "comment": "Régions de Geocaching.com, qui traite l'île entière comme un seul pays : Connacht, Dublin, Leinster (sans Dublin), Munster, Ulster (Irlande du Nord comprise). Composition relevée sur la carte du wiki Geocaching (« UK Regional Map »). Sous-régions : les 26 comtés de la République (Tailte Éireann 2019, 20 m) et les 11 districts d'Irlande du Nord (ONS 2024). Le niveau 0 reste celui de Natural Earth : un point d'Irlande du Nord rattaché par la seule position tombe au Royaume-Uni ; avec le nom de GC (« Ulster, Ireland »), il est ici.",
+  "sources": {
+    "tailte-counties-2019": {
+      "url": "https://services-eu1.arcgis.com/FH5XCsx8rYXqnjF5/arcgis/rest/services/Counties___OSi_National_Statutory_Boundaries___Generalised_20m/FeatureServer/0/query?where=1%3D1&outFields=CO_ID%2CENGLISH%2CGAEILGE%2CCOUNTY%2CCONTAE%2CPROVINCE&outSR=4326&orderByFields=CO_ID&f=geojson",
+      "file": "counties_2019_gen20m.geojson",
+      "sha256": "2adf39e604cec67ceb10f585ff20ed7ad2436ac7f0e561eefc9e15545688ffee",
+      "title": "Tailte Éireann — Counties, National Statutory Boundaries 2019, Generalised 20m",
+      "licence": "cc-by-4.0",
+      "attribution": "© Tailte Éireann, CC BY 4.0",
+      "homepage": "https://data-osi.opendata.arcgis.com/datasets/7ef9c5102d61424295e98505a00251ea"
+    }
+  },
+  "levels": {
+    "region": {
+      "inputs": [
+        {
+          "source": "tailte-counties-2019",
+          "unit": "COUNTY"
+        },
+        {
+          "source": "ons-ctyua-2024",
+          "unit": "CTYUA24CD",
+          "filter": "CTYUA24CD.startsWith('N')"
+        }
+      ],
+      "label": {
+        "fr": "provinces",
+        "en": "provinces",
+        "local": "provinces"
+      },
+      "groups_of": "subregion",
+      "groups": {
+        "Connacht": [
+          "Galway",
+          "Leitrim",
+          "Mayo",
+          "Roscommon",
+          "Sligo"
+        ],
+        "Dublin": [
+          "Dublin"
+        ],
+        "Leinster": [
+          "Carlow",
+          "Kildare",
+          "Kilkenny",
+          "Laois",
+          "Longford",
+          "Louth",
+          "Meath",
+          "Offaly",
+          "Westmeath",
+          "Wexford",
+          "Wicklow"
+        ],
+        "Munster": [
+          "Clare",
+          "Cork",
+          "Kerry",
+          "Limerick",
+          "Tipperary",
+          "Waterford"
+        ],
+        "Ulster": [
+          "Cavan",
+          "Donegal",
+          "Monaghan",
+          "Antrim and Newtownabbey",
+          "Ards and North Down",
+          "Armagh City, Banbridge and Craigavon",
+          "Belfast",
+          "Causeway Coast and Glens",
+          "Derry City and Strabane",
+          "Fermanagh and Omagh",
+          "Lisburn and Castlereagh",
+          "Mid Ulster",
+          "Mid and East Antrim",
+          "Newry, Mourne and Down"
+        ]
+      },
+      "id": [
+        "IE-{group_key}"
+      ],
+      "name": "{group}",
+      "simplify": {
+        "display": 1500,
+        "match": 100
+      }
+    },
+    "subregion": {
+      "inputs": [
+        {
+          "source": "tailte-counties-2019",
+          "unit": "COUNTY"
+        },
+        {
+          "source": "ons-ctyua-2024",
+          "unit": "CTYUA24CD",
+          "filter": "CTYUA24CD.startsWith('N')"
+        }
+      ],
+      "label": {
+        "fr": "comtés",
+        "en": "counties",
+        "local": "counties"
+      },
+      "groups": {
+        "Antrim and Newtownabbey": [
+          "N09000001"
+        ],
+        "Ards and North Down": [
+          "N09000011"
+        ],
+        "Armagh City, Banbridge and Craigavon": [
+          "N09000002"
+        ],
+        "Belfast": [
+          "N09000003"
+        ],
+        "Carlow": [
+          "CARLOW"
+        ],
+        "Causeway Coast and Glens": [
+          "N09000004"
+        ],
+        "Cavan": [
+          "CAVAN"
+        ],
+        "Clare": [
+          "CLARE"
+        ],
+        "Cork": [
+          "CORK"
+        ],
+        "Derry City and Strabane": [
+          "N09000005"
+        ],
+        "Donegal": [
+          "DONEGAL"
+        ],
+        "Dublin": [
+          "DUBLIN"
+        ],
+        "Fermanagh and Omagh": [
+          "N09000006"
+        ],
+        "Galway": [
+          "GALWAY"
+        ],
+        "Kerry": [
+          "KERRY"
+        ],
+        "Kildare": [
+          "KILDARE"
+        ],
+        "Kilkenny": [
+          "KILKENNY"
+        ],
+        "Laois": [
+          "LAOIS"
+        ],
+        "Leitrim": [
+          "LEITRIM"
+        ],
+        "Limerick": [
+          "LIMERICK"
+        ],
+        "Lisburn and Castlereagh": [
+          "N09000007"
+        ],
+        "Longford": [
+          "LONGFORD"
+        ],
+        "Louth": [
+          "LOUTH"
+        ],
+        "Mayo": [
+          "MAYO"
+        ],
+        "Meath": [
+          "MEATH"
+        ],
+        "Mid Ulster": [
+          "N09000009"
+        ],
+        "Mid and East Antrim": [
+          "N09000008"
+        ],
+        "Monaghan": [
+          "MONAGHAN"
+        ],
+        "Newry, Mourne and Down": [
+          "N09000010"
+        ],
+        "Offaly": [
+          "OFFALY"
+        ],
+        "Roscommon": [
+          "ROSCOMMON"
+        ],
+        "Sligo": [
+          "SLIGO"
+        ],
+        "Tipperary": [
+          "TIPPERARY"
+        ],
+        "Waterford": [
+          "WATERFORD"
+        ],
+        "Westmeath": [
+          "WESTMEATH"
+        ],
+        "Wexford": [
+          "WEXFORD"
+        ],
+        "Wicklow": [
+          "WICKLOW"
+        ]
+      },
+      "id": [
+        "IE-{group_key}"
+      ],
+      "id_map": {
+        "IE-carlow": "IE-CW",
+        "IE-cavan": "IE-CN",
+        "IE-clare": "IE-CE",
+        "IE-cork": "IE-CO",
+        "IE-donegal": "IE-DL",
+        "IE-dublin": "IE-D",
+        "IE-galway": "IE-G",
+        "IE-kerry": "IE-KY",
+        "IE-kildare": "IE-KE",
+        "IE-kilkenny": "IE-KK",
+        "IE-laois": "IE-LS",
+        "IE-leitrim": "IE-LM",
+        "IE-limerick": "IE-LK",
+        "IE-longford": "IE-LD",
+        "IE-louth": "IE-LH",
+        "IE-mayo": "IE-MO",
+        "IE-meath": "IE-MH",
+        "IE-monaghan": "IE-MN",
+        "IE-offaly": "IE-OY",
+        "IE-roscommon": "IE-RN",
+        "IE-sligo": "IE-SO",
+        "IE-tipperary": "IE-TA",
+        "IE-waterford": "IE-WD",
+        "IE-westmeath": "IE-WH",
+        "IE-wexford": "IE-WX",
+        "IE-wicklow": "IE-WW"
+      },
+      "name": "{group}",
+      "simplify": {
+        "display": 1500,
+        "match": 100
+      }
+    }
+  },
+  "aliases": {
+    "country": [
+      "Irlande",
+      "Éire",
+      "Republic of Ireland"
+    ],
+    "zones": {
+      "IE-connacht": [
+        "Connaught",
+        "Cúige Chonnacht"
+      ],
+      "IE-leinster": [
+        "Cúige Laighean"
+      ],
+      "IE-munster": [
+        "Cúige Mumhan"
+      ],
+      "IE-ulster": [
+        "Cúige Uladh"
+      ],
+      "IE-dublin": [
+        "Baile Átha Cliath",
+        "County Dublin",
+        "Co. Dublin"
+      ],
+      "IE-CW": [
+        "Ceatharlach",
+        "County Carlow",
+        "Co. Carlow"
+      ],
+      "IE-CN": [
+        "An Cabhán",
+        "County Cavan",
+        "Co. Cavan"
+      ],
+      "IE-CE": [
+        "An Clár",
+        "County Clare",
+        "Co. Clare"
+      ],
+      "IE-CO": [
+        "Corcaigh",
+        "County Cork",
+        "Co. Cork"
+      ],
+      "IE-DL": [
+        "Dún na nGall",
+        "County Donegal",
+        "Co. Donegal"
+      ],
+      "IE-D": [
+        "Baile Átha Cliath",
+        "County Dublin",
+        "Co. Dublin"
+      ],
+      "IE-G": [
+        "Gaillimh",
+        "County Galway",
+        "Co. Galway"
+      ],
+      "IE-KY": [
+        "Ciarraí",
+        "County Kerry",
+        "Co. Kerry"
+      ],
+      "IE-KE": [
+        "Cill Dara",
+        "County Kildare",
+        "Co. Kildare"
+      ],
+      "IE-KK": [
+        "Cill Chainnigh",
+        "County Kilkenny",
+        "Co. Kilkenny"
+      ],
+      "IE-LS": [
+        "Laois",
+        "County Laois",
+        "Co. Laois"
+      ],
+      "IE-LM": [
+        "Liatroim",
+        "County Leitrim",
+        "Co. Leitrim"
+      ],
+      "IE-LK": [
+        "Luimneach",
+        "County Limerick",
+        "Co. Limerick"
+      ],
+      "IE-LD": [
+        "An Longfort",
+        "County Longford",
+        "Co. Longford"
+      ],
+      "IE-LH": [
+        "Lú",
+        "County Louth",
+        "Co. Louth"
+      ],
+      "IE-MO": [
+        "Maigh Eo",
+        "County Mayo",
+        "Co. Mayo"
+      ],
+      "IE-MH": [
+        "An Mhí",
+        "County Meath",
+        "Co. Meath"
+      ],
+      "IE-MN": [
+        "Muineachán",
+        "County Monaghan",
+        "Co. Monaghan"
+      ],
+      "IE-OY": [
+        "Uíbh Fhailí",
+        "County Offaly",
+        "Co. Offaly"
+      ],
+      "IE-RN": [
+        "Ros Comáin",
+        "County Roscommon",
+        "Co. Roscommon"
+      ],
+      "IE-SO": [
+        "Sligeach",
+        "County Sligo",
+        "Co. Sligo"
+      ],
+      "IE-TA": [
+        "Tiobraid Árann",
+        "County Tipperary",
+        "Co. Tipperary"
+      ],
+      "IE-WD": [
+        "Port Láirge",
+        "County Waterford",
+        "Co. Waterford"
+      ],
+      "IE-WH": [
+        "An Iarmhí",
+        "County Westmeath",
+        "Co. Westmeath"
+      ],
+      "IE-WX": [
+        "Loch Garman",
+        "County Wexford",
+        "Co. Wexford"
+      ],
+      "IE-WW": [
+        "Cill Mhantáin",
+        "County Wicklow",
+        "Co. Wicklow"
+      ],
+      "IE-derrycityandstrabane": [
+        "Derry and Strabane",
+        "Londonderry"
+      ]
+    }
+  },
+  "insets": [],
+  "samples": [
+    {
+      "label": "Dublin (O'Connell Bridge)",
+      "lat": 53.3472,
+      "lon": -6.2592,
+      "region": "IE-dublin",
+      "subregion": "IE-D"
+    },
+    {
+      "label": "Cork",
+      "lat": 51.8985,
+      "lon": -8.4756,
+      "region": "IE-munster",
+      "subregion": "IE-CO"
+    },
+    {
+      "label": "Galway",
+      "lat": 53.2707,
+      "lon": -9.0568,
+      "region": "IE-connacht",
+      "subregion": "IE-G"
+    },
+    {
+      "label": "Kilkenny",
+      "lat": 52.6541,
+      "lon": -7.2448,
+      "region": "IE-leinster",
+      "subregion": "IE-KK"
+    },
+    {
+      "label": "Letterkenny (Donegal, Ulster)",
+      "lat": 54.9503,
+      "lon": -7.7337,
+      "region": "IE-ulster",
+      "subregion": "IE-DL"
+    },
+    {
+      "label": "Carrick-on-Shannon (à 1 km de Roscommon)",
+      "lat": 53.9469,
+      "lon": -8.09,
+      "region": "IE-connacht",
+      "subregion": "IE-LM"
+    },
+    {
+      "label": "Keel (île d'Achill)",
+      "lat": 53.9737,
+      "lon": -10.0844,
+      "region": "IE-connacht",
+      "subregion": "IE-MO"
+    },
+    {
+      "label": "Swords (nord du comté de Dublin)",
+      "lat": 53.4597,
+      "lon": -6.2181,
+      "region": "IE-dublin",
+      "subregion": "IE-D"
+    }
+  ]
+}

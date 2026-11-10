@@ -1,7 +1,7 @@
 {
   "kind": "country",
   "country": "GB",
-  "comment": "Régions de Geocaching.com : 14 pour la Grande-Bretagne, faites de comtés entiers (composition relevée sur la carte « UK Regional Map » du wiki Geocaching). L'Irlande du Nord, rangée par GC dans « Ireland › Ulster », reste ici une région géographique. Sous-régions : comtés cérémoniaux en Angleterre (City of London comprise dans Greater London ; Stockton-on-Tees, à cheval sur la Tees, entier dans County Durham), council areas en Écosse, principal areas au pays de Galles, districts en Irlande du Nord. Tracés ONS décembre 2024 (20 m), unités regroupées par la recette.",
+  "comment": "Régions de Geocaching.com : 14, faites de comtés entiers (composition relevée sur la carte « UK Regional Map » du wiki Geocaching). L'Irlande du Nord n'en fait pas partie : GC la range dans « Ireland › Ulster », elle est dans IE.json. Sous-régions : comtés cérémoniaux en Angleterre (City of London comprise dans Greater London ; Stockton-on-Tees, à cheval sur la Tees, entier dans County Durham), council areas en Écosse, principal areas au pays de Galles. Tracés ONS décembre 2024 (20 m), unités regroupées par la recette.",
   "sources": {
     "ons-ctyua-2024": {
       "url": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Counties_and_Unitary_Authorities_December_2024_Boundaries_UK_BGC/FeatureServer/0/query?where=1%3D1&outFields=CTYUA24CD%2CCTYUA24NM%2CCTYUA24NMW&outSR=4326&orderByFields=CTYUA24CD&f=geojson",
@@ -16,6 +16,7 @@
   "levels": {
     "region": {
       "source": "ons-ctyua-2024",
+      "filter": "!CTYUA24CD.startsWith('N')",
       "label": {
         "fr": "régions",
         "en": "regions",
@@ -62,19 +63,6 @@
           "Greater Manchester",
           "Lancashire",
           "Merseyside"
-        ],
-        "Northern Ireland": [
-          "Antrim and Newtownabbey",
-          "Ards and North Down",
-          "Armagh City, Banbridge and Craigavon",
-          "Belfast",
-          "Causeway Coast and Glens",
-          "Derry City and Strabane",
-          "Fermanagh and Omagh",
-          "Lisburn and Castlereagh",
-          "Mid Ulster",
-          "Mid and East Antrim",
-          "Newry, Mourne and Down"
         ],
         "Northern Scotland": [
           "Aberdeen",
@@ -178,6 +166,7 @@
     },
     "subregion": {
       "source": "ons-ctyua-2024",
+      "filter": "!CTYUA24CD.startsWith('N')",
       "label": {
         "fr": "comtés",
         "en": "counties",
@@ -194,25 +183,13 @@
         "Angus": [
           "S12000041"
         ],
-        "Antrim and Newtownabbey": [
-          "N09000001"
-        ],
-        "Ards and North Down": [
-          "N09000011"
-        ],
         "Argyll and Bute": [
           "S12000035"
-        ],
-        "Armagh City, Banbridge and Craigavon": [
-          "N09000002"
         ],
         "Bedfordshire": [
           "E06000055",
           "E06000056",
           "E06000032"
-        ],
-        "Belfast": [
-          "N09000003"
         ],
         "Berkshire": [
           "E06000036",
@@ -247,9 +224,6 @@
         ],
         "Carmarthenshire": [
           "W06000010"
-        ],
-        "Causeway Coast and Glens": [
-          "N09000004"
         ],
         "Ceredigion": [
           "W06000008"
@@ -286,9 +260,6 @@
         "Derbyshire": [
           "E10000007",
           "E06000015"
-        ],
-        "Derry City and Strabane": [
-          "N09000005"
         ],
         "Devon": [
           "E10000008",
@@ -335,9 +306,6 @@
         ],
         "Falkirk": [
           "S12000014"
-        ],
-        "Fermanagh and Omagh": [
-          "N09000006"
         ],
         "Fife": [
           "S12000047"
@@ -443,9 +411,6 @@
           "E06000012",
           "E06000013"
         ],
-        "Lisburn and Castlereagh": [
-          "N09000007"
-        ],
         "Merseyside": [
           "E08000011",
           "E08000012",
@@ -455,12 +420,6 @@
         ],
         "Merthyr Tydfil": [
           "W06000024"
-        ],
-        "Mid Ulster": [
-          "N09000009"
-        ],
-        "Mid and East Antrim": [
-          "N09000008"
         ],
         "Midlothian": [
           "S12000019"
@@ -479,9 +438,6 @@
         ],
         "Newport": [
           "W06000022"
-        ],
-        "Newry, Mourne and Down": [
-          "N09000010"
         ],
         "Norfolk": [
           "E10000020"
@@ -761,13 +717,6 @@
       "lon": -6.3138,
       "region": "GB-southwestengland",
       "subregion": "GB-cornwall"
-    },
-    {
-      "label": "Belfast",
-      "lat": 54.597,
-      "lon": -5.93,
-      "region": "GB-northernireland",
-      "subregion": "GB-belfast"
     }
   ]
 }

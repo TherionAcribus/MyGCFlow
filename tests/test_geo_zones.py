@@ -63,6 +63,13 @@ GB_GC_REGIONS = {
     "Northern Scotland": "GB-northernscotland", "Southern Scotland": "GB-southernscotland",
 }
 
+# Les 5 régions de Geocaching.com sur l'île d'Irlande, Irlande du Nord comprise
+# (« Ulster, Ireland »).
+IE_GC_REGIONS = {
+    "Connacht": "IE-connacht", "Connaught": "IE-connacht", "Dublin": "IE-dublin",
+    "Leinster": "IE-leinster", "Munster": "IE-munster", "Ulster": "IE-ulster",
+}
+
 
 def _load(path):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -183,7 +190,24 @@ class GeoDataTests(unittest.TestCase):
                 a = self.zone_index.assign(country="United Kingdom", state=state)
                 self.assertEqual((a.country, a.region, a.via[1]), ("GB", expected, "name"))
         shown = {f["properties"]["id"] for f in self._display(self.index["by_country"]["GB"]["region"]["file"])["features"]}
-        self.assertEqual(shown, set(GB_GC_REGIONS.values()) | {"GB-northernireland"})
+        self.assertEqual(shown, set(GB_GC_REGIONS.values()))
+
+    def test_ireland_regions_are_the_geocaching_ones(self):
+        for state, expected in IE_GC_REGIONS.items():
+            with self.subTest(region=state):
+                a = self.zone_index.assign(country="Ireland", state=state)
+                self.assertEqual((a.country, a.region, a.via[1]), ("IE", expected, "name"))
+        shown = {f["properties"]["id"] for f in self._display(self.index["by_country"]["IE"]["region"]["file"])["features"]}
+        self.assertEqual(shown, set(IE_GC_REGIONS.values()))
+
+    def test_northern_ireland_follows_geocaching(self):
+        # Belfast : « Ulster, Ireland » chez GC → province d'Ulster, district
+        # de Belfast. Sans nom, la position seule le met au Royaume-Uni
+        # (niveau 0 de Natural Earth), sans région.
+        a = self.zone_index.assign(country="Ireland", state="Ulster", lat=54.597, lon=-5.93)
+        self.assertEqual((a.country, a.region, a.subregion), ("IE", "IE-ulster", "IE-belfast"))
+        a = self.zone_index.assign(lat=54.597, lon=-5.93)
+        self.assertEqual((a.country, a.region), ("GB", None))
 
     def test_dissolved_ids_follow_the_documented_rule(self):
         # « IT-sicily » = pays + nom normalisé (docs/zones-ajouter-un-pays.md).
