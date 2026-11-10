@@ -5974,6 +5974,7 @@ export function showLifecycleRestState() {
     resetLifecycleCounters(rest.values);
     // Panneaux Stats : retour aux totaux de l'état de fin (repos).
     pkg.refreshStatsPanels?.();
+    pkg.showZonesRest?.();
     mapDirtyTracker.markDirty();
     try { map.render(); } catch (_) {}
 }
@@ -5986,8 +5987,12 @@ function beginLifecycleTimeline(startDate) {
     const disappear = pkg.options.flash?.disappear;
     if (disappear?.color) disappear.rgb = pkg.hexToRgb(disappear.color);
     if (disappear?.border_color) disappear.border_rgb = pkg.hexToRgb(disappear.border_color);
-    return lifecycleEngine()?.begin?.(startDate, pkg.metadata.endDate, sampleAppearClock(),
+    const counters = lifecycleEngine()?.begin?.(startDate, pkg.metadata.endDate, sampleAppearClock(),
         { stagger: pkg.options.flash?.mode === 'impulse' }) || {};
+    // Couche de zones (Évolution) : état de la veille du départ.
+    try { pkg.resetZonesForAnimation?.({ startDate }); }
+    catch (e) { console.warn('resetZonesForAnimation error:', e); }
+    return counters;
 }
 
 function endLifecycleTimeline() {
@@ -6024,6 +6029,8 @@ function displayLifecycleDates(dates, flashOptions, record, infos) {
     // Panneaux Stats : le lot du moteur (poses, archivages, événements)
     // alimente les accumulateurs de la page.
     pkg.accumulateLifecycleStats?.(dates, ev, at);
+    // Couche de zones : caches posées et archivées du lot (fondus).
+    pkg.accumulateZonesForDates?.(dates, at);
     // Images planifiées : fondus à la date du dernier jour du lot.
     pkg.syncImagesToDate?.(dates[dates.length - 1], at);
 

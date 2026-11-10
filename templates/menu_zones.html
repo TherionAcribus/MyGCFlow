@@ -3,13 +3,14 @@
      Affichage : préférence globale (zones_display), enregistrée
      automatiquement. Apparence : thème (bloc `zones`, bouton « Sauvegarder »).
      Contrôles pilotés par static/js/zone_layer_ui.js ; dessin par
-     zone_layer.js. Page « Mes Géocaches » seulement. -->
+     zone_layer.js. Pages « Mes Géocaches » (zones_display) et « Évolution »
+     (evolution_zones_display, caches actives). -->
 <div id="zones" class="col-12 tab-pane fade">
     <h5 class="gc-section-title">
         <i class="ti ti-map-2 text-muted me-1"></i>{{ _("Zones sur la carte") }}{{ global_scope_badge() }}
     </h5>
     <p class="form-hint text-muted mb-2">
-        {{ _("Les pays, régions ou départements se colorent au fil de vos trouvailles, sur la carte et dans la vidéo. Le même calcul que les cartes de la page Statistiques.") }}
+        {% if mode == 'evolution' %}{{ _("Les pays, régions ou départements se colorent selon les caches actives de la zone : ils foncent quand des caches sont posées, pâlissent quand elles sont archivées. Sur la carte et dans la vidéo.") }}{% else %}{{ _("Les pays, régions ou départements se colorent au fil de vos trouvailles, sur la carte et dans la vidéo. Le même calcul que les cartes de la page Statistiques.") }}{% endif %}
     </p>
 
     <div class="card mb-3">
@@ -41,10 +42,10 @@
                     <div class="col-12 col-md-6">
                         <label class="form-label" for="zonesMeasure">{{ _("Couleur selon") }}</label>
                         <select class="form-select" id="zonesMeasure">
-                            <option value="count">{{ _("Le nombre de trouvailles") }}</option>
+                            <option value="count">{% if mode == 'evolution' %}{{ _("Le nombre de caches actives") }}{% else %}{{ _("Le nombre de trouvailles") }}{% endif %}</option>
                             <option value="distinct_types">{{ _("Le nombre de types de caches") }}</option>
                             <option value="dt_coverage">{{ _("Le nombre de combinaisons D/T") }}</option>
-                            <option value="first_day">{{ _("La date de la première trouvaille") }}</option>
+                            <option value="first_day">{% if mode == 'evolution' %}{{ _("La date de la première cache posée") }}{% else %}{{ _("La date de la première trouvaille") }}{% endif %}</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-6">

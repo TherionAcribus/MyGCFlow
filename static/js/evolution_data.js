@@ -42,6 +42,7 @@ import {
     setUndatedArchivedDelay,
     stepEvolution,
 } from './evolution_timeline.mjs';
+import { EVO_NEVER_DAY } from './evolution_style.mjs';
 
 // Au-delà, le fichier n'est vraisemblablement pas un export de caches (même
 // borne que le serveur, blueprints/evolution.py).
@@ -541,6 +542,57 @@ export function evolutionStatsIndex() {
         restDay: dayIndexOf(base, restEndDate()),
         dayOf: (date) => dayIndexOf(base, date),
     };
+}
+
+// Table des caches de la sélection pour la couche de zones (zone_layer.js),
+// au format des tables de chart_sources.mjs : jour de pose et fin d'activité
+// en numéros de jour absolus, zones, type, D/T. Mémorisée par révision de la
+// sélection ; `restDay` : jour du repos (fin de l'animation).
+let zoneTableMemo = null;
+const ZONE_COLUMNS = [['zone_country', 'zone_countries'], ['zone_region', 'zone_regions'],
+    ['zone_subregion', 'zone_subregions']];
+export function evolutionZoneTable() {
+    if (!base || !timeline) return null;
+    const restDate = restEndDate();
+    const restDay = restDate ? base.originDay + dayIndexOf(base, restDate) : null;
+    if (zoneTableMemo?.revision === dataRevision) return { ...zoneTableMemo, restDay };
+    const n = rows.length;
+    const table = {
+        source: 'evolution', n, undated: 0,
+        day: new Int32Array(n), endDay: new Float64Array(n),
+        cache_type: new Int32Array(n), difficulty: new Float64Array(n), terrain: new Float64Array(n),
+        code: new Array(n), dicts: { cache_type: base.types }, extent: null,
+    };
+    const rating = (list) => list.map((label) => (label === '' ? NaN : Number(label)));
+    const difficulties = rating(base.difficulties);
+    const terrains = rating(base.terrains);
+    for (const [name, labels] of ZONE_COLUMNS) {
+        table[name] = new Int32Array(n);
+        table.dicts[name] = base[labels];
+    }
+    let first = Infinity;
+    let last = -Infinity;
+    for (let k = 0; k < n; k++) {
+        const i = rows[k];
+        const day = base.originDay + base.placed[i];
+        table.day[k] = day;
+        const end = base.archived[i] >= EVO_NEVER_DAY ? NaN : base.originDay + base.archived[i];
+        table.endDay[k] = end;
+        if (day < first) first = day;
+        if (day > last) last = day;
+        if (end > last) last = end;
+        table.cache_type[k] = base.type[i];
+        table.difficulty[k] = difficulties[base.difficulty[i]] ?? NaN;
+        table.terrain[k] = terrains[base.terrain[i]] ?? NaN;
+        table.code[k] = base.code[i];
+        for (const [name, labels] of ZONE_COLUMNS) {
+            const idx = base[name][i];
+            table[name][k] = base[labels][idx] ? idx : -1;
+        }
+    }
+    if (n) table.extent = { first, last };
+    zoneTableMemo = { revision: dataRevision, table };
+    return { ...zoneTableMemo, restDay };
 }
 
 // Changements reportés pendant l'animation : base à recharger (import terminé,

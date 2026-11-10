@@ -17,6 +17,10 @@ import { importGpx } from './gpx-import.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds-zones.gpx');
 const DEFAULT_FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
+// Jeu Évolution : Finistère (GC1A01 01/01/2020 ; GC1A02 03/01, archivée le
+// 06/01) et Bas-Rhin (GC1A04 02/01 ; GC1A05 04/01, archivée le 08/01 ;
+// GC1A06 07/01) ; GC1A03, archivée sans date, masquée par défaut.
+const EVOLUTION_FIXTURE = path.join(HERE, 'fixtures', 'evolution-a.csv');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -35,9 +39,14 @@ const app = (page, fn, arg) => page.evaluate(async ({ body, arg }) => {
   return new Function('pkg', 'arg', body)(pkg, arg);
 }, { body: fn, arg });
 
-async function setDisplay(request, on) {
-  expect((await request.put('/api/settings', { data: { zones_display: on } })).ok()).toBeTruthy();
-  await expect.poll(async () => (await (await request.get('/api/settings')).json()).zones_display).toBe(on);
+async function setDisplay(request, on, key = 'zones_display') {
+  expect((await request.put('/api/settings', { data: { [key]: on } })).ok()).toBeTruthy();
+  await expect.poll(async () => (await (await request.get('/api/settings')).json())[key]).toBe(on);
+}
+
+async function deleteAllDatasets(request) {
+  const res = await request.get('/api/evolution/datasets');
+  for (const dataset of (await res.json()).datasets) await request.delete(`/api/evolution/datasets/${dataset.id}`);
 }
 
 test.beforeAll(async ({ browser }, testInfo) => {
@@ -51,6 +60,8 @@ test.beforeAll(async ({ browser }, testInfo) => {
 
 test.afterAll(async ({ browser, request }, testInfo) => {
   await setDisplay(request, false);
+  await setDisplay(request, false, 'evolution_zones_display');
+  await deleteAllDatasets(request);
   const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL });
   const page = await context.newPage();
   await openMap(page);
@@ -146,5 +157,43 @@ test('thème : découpage, couleur selon la date, légende ; légende peinte dan
   await page.locator('#switchZonesDisplay').uncheck();
   await expect.poll(async () => (await zones(page)).visible).toBe(false);
   await expect.poll(async () => (await (await request.get('/api/settings')).json()).zones_display).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('Évolution : les zones suivent les caches actives, et pâlissent aux archivages', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  await request.put('/api/settings', { data: { evolution_undated_archives: 'hide' } });
+  await setDisplay(request, true, 'evolution_zones_display');
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/evolution', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+  const loaded = page.evaluate(() => new Promise((resolve) => {
+    window.addEventListener('mygcflow:evolution-loaded', (e) => resolve(e.detail), { once: true });
+  }));
+  await page.locator('#evolutionCsvInput').setInputFiles([EVOLUTION_FIXTURE]);
+  expect((await loaded).selected).toBe(5);
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  // Au repos : 1 cache active dans le Finistère, 2 dans le Bas-Rhin.
+  let state = await zones(page);
+  expect(state.values).toEqual({ 'FR-29': 1, 'FR-67': 2 });
+  expect(state.classes).toEqual({ 'FR-29': 0, 'FR-67': 1 });
+  expect(state.legend.title).toBe('Caches actives');
+
+  expect(await app(page, 'return pkg.startPausedPreview();')).toBe(true);
+  await app(page, 'pkg.seekAnimationToDate(new Date(2020, 0, 5));');
+  expect((await zones(page)).classes).toEqual({ 'FR-29': 1, 'FR-67': 1 });
+  // GC1A02 archivée le 6 : le Finistère pâlit.
+  await app(page, 'pkg.seekAnimationToDate(new Date(2020, 0, 6));');
+  state = await zones(page);
+  expect(state.values).toEqual({ 'FR-29': 1, 'FR-67': 2 });
+  expect(state.classes).toEqual({ 'FR-29': 0, 'FR-67': 1 });
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('idle');
+
+  // L'onglet Zones existe aussi ici, avec la préférence de la page.
+  await page.locator('a[href="#zones"]').click();
+  await expect(page.locator('#switchZonesDisplay')).toBeChecked();
+  await expect(page.locator('#zonesMeasure option[value="count"]')).toHaveText('Le nombre de caches actives');
   expect(errors).toEqual([]);
 });

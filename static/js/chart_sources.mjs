@@ -407,6 +407,10 @@ const EVO_DICTS = Object.freeze([
     ['country', 'countries', 'country'],
     ['state', 'regions', 'region'],
     ['county', 'counties', 'county'],
+    // Ids de zones (evolution_store.py, format v3 ; '' = hors carte).
+    ['zone_country', 'zone_countries', 'zone_country'],
+    ['zone_region', 'zone_regions', 'zone_region'],
+    ['zone_subregion', 'zone_subregions', 'zone_subregion'],
 ]);
 const EVO_DICT_FIELDS = new Set(EVO_DICTS.map(([field]) => field));
 

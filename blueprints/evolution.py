@@ -15,6 +15,7 @@ from flask import (Blueprint, Response, current_app, jsonify, make_response,
 from flask_babel import force_locale, gettext as _
 
 import evolution_store as store
+import zones
 import paths
 from .core import render_app_page
 from evolution_csv import CsvFormatError, FileReport, read_header
@@ -276,7 +277,7 @@ def dataset_data(dataset_id):
     # La version du format y figure : une mise à jour du code qui change la
     # charge utile invalide le corps 304 gardé par le navigateur.
     response.set_etag(
-        f"evo-{dataset['id']}-{dataset['revision']}-p{store.PAYLOAD_VERSION}", weak=True)
+        f"evo-{dataset['id']}-{dataset['revision']}-p{store.PAYLOAD_VERSION}-z{zones.data_signature()}", weak=True)
     response.headers['Cache-Control'] = 'no-cache'
     return response.make_conditional(request)
 

@@ -1,11 +1,11 @@
 // Onglet Zones (templates/menu_zones.html) : affichage de la couche
 // (préférence globale zones_display, enregistrée tout de suite) et son
 // apparence (thème, pkg.options.zones — « Sauvegarder » dans l'onglet Style).
-// La couche elle-même : zone_layer.js. Page « Mes Géocaches » seulement.
+// La couche elle-même : zone_layer.js. Pages « Mes Géocaches » et
+// « Évolution », chacune avec sa préférence d'affichage.
 
 import * as pkg from './index.js';
 import { t } from './notifications.js';
-import { isMainPage } from './app_mode.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import { normalizeZoneLayerOptions } from './zone_layer_model.mjs';
@@ -15,8 +15,11 @@ const el = (id) => document.getElementById(id);
 
 // Reflète pkg.options.zones et la préférence dans l'onglet. N'écrit que le
 // DOM (appelé aussi par profiles.js au chargement d'un thème).
+const page = () => pkg.zoneLayerPage?.() ?? null;
+const displayKey = () => pkg.zoneDisplayKey?.() ?? 'zones_display';
+
 export function syncZoneLayerUI() {
-    if (!isMainPage()) return;
+    if (!page()) return;
     const o = normalizeZoneLayerOptions(pkg.options?.zones);
     const set = (id, value) => {
         const node = el(id);
@@ -26,7 +29,7 @@ export function syncZoneLayerUI() {
         const node = el(id);
         if (node) node.checked = value;
     };
-    check('switchZonesDisplay', window.userSettings?.zones_display === true);
+    check('switchZonesDisplay', window.userSettings?.[displayKey()] === true);
     set('zonesLevel', o.level);
     set('zonesMeasure', o.measure);
     set('zonesScale', o.scale);
@@ -56,7 +59,11 @@ export function syncZoneStatus() {
     if (state?.enabled) {
         if (state.status === 'loading') text = t('Chargement des contours…');
         else if (state.status === 'error') text = t('Contours des zones indisponibles.');
-        else if (state.status === 'empty') text = t('Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet Données.');
+        else if (state.status === 'empty') {
+            text = page() === 'evolution'
+                ? t('Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données.')
+                : t('Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet Données.');
+        }
     }
     node.textContent = text;
     node.hidden = !text;
@@ -89,21 +96,22 @@ function onOptionChange() {
 async function onDisplayToggle(event) {
     const box = event.currentTarget;
     const on = box.checked;
-    if (window.userSettings) window.userSettings.zones_display = on;
+    const key = displayKey();
+    if (window.userSettings) window.userSettings[key] = on;
     pkg.refreshZoneLayer?.();
     syncZoneStatus();
-    const ok = await reportSave(el('zonesSaveStatus'), saveSettingsPatch({ zones_display: on }));
+    const ok = await reportSave(el('zonesSaveStatus'), saveSettingsPatch({ [key]: on }));
     if (!ok) {
         // Échec : la case et la carte reviennent à la valeur du disque.
         box.checked = !on;
-        if (window.userSettings) window.userSettings.zones_display = !on;
+        if (window.userSettings) window.userSettings[key] = !on;
         pkg.refreshZoneLayer?.();
         syncZoneStatus();
     }
 }
 
 export function initZoneLayerUI() {
-    if (bound || !isMainPage()) return;
+    if (bound || !page()) return;
     const display = el('switchZonesDisplay');
     if (!display) return;
     bound = true;

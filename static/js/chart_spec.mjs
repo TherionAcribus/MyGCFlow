@@ -143,7 +143,7 @@ const EXTRA_DIMENSIONS = Object.freeze({
     dnf: ['owner', 'age', 'published_year', 'published_month'],
     owned: [],
     poses: ['cache', 'finder', 'age'],
-    evolution: ['county'],
+    evolution: ['county', ...ZONE_DIMENSIONS],
 });
 
 function sourceKey(source) {

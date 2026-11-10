@@ -192,6 +192,10 @@ Autres repères :
   « Unknown Cache ») est filtré de la carte tout en restant compté dans
   `#filtersCounter`. Relevé : `getZoneLayerDebugState()` (attendre
   `status === 'ready'` : contours chargés après le premier rendu).
+  Page Évolution : préférence à part, `evolution_zones_display` (même
+  remise à `false`), données = sélection du jeu ouvert en caches actives —
+  un spec qui importe un jeu le supprime en sortie
+  (`DELETE /api/evolution/datasets/<id>`).
 - Panneaux Stats par source (`options.source` : `dnf` / `owned`) : les
   données DNF et caches posées sont chargées au démarrage même si leur
   affichage carte est coupé — un spec qui importe des logs recharge la page

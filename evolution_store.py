@@ -29,13 +29,17 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional
 
+import zones
 from evolution_csv import FileReport, ROW_FIELDS, iter_batches
 
-SCHEMA_VERSION = 1
+# v2 : zones de chaque cache (zone_country, zone_region, zone_subregion :
+# ids de zones.py, '' = hors carte, NULL = à calculer) et empreinte des
+# données de zones ayant servi (datasets.zones_signature).
+SCHEMA_VERSION = 2
 NAME_MAX_LENGTH = 100
 # À incrémenter quand le format de load_payload change : entre dans l'ETag,
-# sinon le navigateur garderait un corps 304 périmé.
-PAYLOAD_VERSION = 2
+# sinon le navigateur garderait un corps 304 périmé. v3 : colonnes de zones.
+PAYLOAD_VERSION = 3
 
 # Nombre maximal de paramètres par requête IN (...) : SQLite en accepte 999
 # dans les versions anciennes.
@@ -48,7 +52,8 @@ CREATE TABLE IF NOT EXISTS datasets (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     revision INTEGER NOT NULL DEFAULT 0,
-    stats TEXT NOT NULL DEFAULT '{}'
+    stats TEXT NOT NULL DEFAULT '{}',
+    zones_signature TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS imports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,6 +83,9 @@ CREATE TABLE IF NOT EXISTS caches (
     is_archived INTEGER NOT NULL,
     exported_at TEXT NOT NULL,
     import_seq INTEGER NOT NULL,
+    zone_country TEXT,
+    zone_region TEXT,
+    zone_subregion TEXT,
     PRIMARY KEY (dataset_id, gc_code)
 ) WITHOUT ROWID;
 """
@@ -95,6 +103,9 @@ _UPSERT = (
     f"VALUES ({', '.join('?' * (len(_COLUMNS) + 1))}) "
     "ON CONFLICT (dataset_id, gc_code) DO UPDATE SET "
     + ", ".join(f"{c} = excluded.{c}" for c in _COLUMNS[1:])
+    # Position ou noms peut-être changés : zones recalculées au prochain
+    # affichage (_ensure_zones).
+    + ", zone_country = NULL, zone_region = NULL, zone_subregion = NULL"
     # Filet de sécurité : jamais d'écrasement par un export plus ancien.
     + " WHERE excluded.exported_at >= caches.exported_at"
 )
@@ -131,6 +142,12 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     # WAL : les lectures (liste des bases, données d'une autre base) restent
     # possibles pendant la longue transaction d'un import.
     conn.execute("PRAGMA journal_mode = WAL")
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if "caches" in tables and version < 2:
+        # v1 → v2 : colonnes de zones (vides : calculées au premier affichage).
+        for column in ("zone_country", "zone_region", "zone_subregion"):
+            conn.execute(f"ALTER TABLE caches ADD COLUMN {column} TEXT")
+        conn.execute("ALTER TABLE datasets ADD COLUMN zones_signature TEXT NOT NULL DEFAULT ''")
     conn.executescript(_SCHEMA)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
@@ -404,6 +421,36 @@ def _forget_payloads(db_path, dataset_id: int) -> None:
             del _PAYLOAD_CACHE[key]
 
 
+def _ensure_zones(conn: sqlite3.Connection, dataset_id: int) -> int:
+    """Rattache aux zones les caches qui ne le sont pas encore (nouvelles,
+    modifiées par un import), ou toutes si les données de zones ont changé
+    depuis le dernier calcul. Nombre de caches traitées ; 0 sans données de
+    zones (colonnes laissées vides)."""
+    index = zones.get_index()
+    signature = zones.data_signature()
+    if not signature or not index.available():
+        return 0
+    stored = conn.execute("SELECT zones_signature FROM datasets WHERE id = ?", (dataset_id,)).fetchone()
+    full = stored is None or stored[0] != signature
+    where = "" if full else " AND zone_country IS NULL"
+    rows = conn.execute(
+        "SELECT gc_code, country, region, county, lat, lon FROM caches WHERE dataset_id = ?" + where,
+        (dataset_id,),
+    ).fetchall()
+    updates = []
+    for r in rows:
+        a = index.assign(country=r["country"], state=r["region"], county=r["county"], lat=r["lat"], lon=r["lon"])
+        updates.append((a.country or "", a.region or "", a.subregion or "", dataset_id, r["gc_code"]))
+    with conn:
+        if updates:
+            conn.executemany(
+                "UPDATE caches SET zone_country = ?, zone_region = ?, zone_subregion = ? "
+                "WHERE dataset_id = ? AND gc_code = ?", updates)
+        if full:
+            conn.execute("UPDATE datasets SET zones_signature = ? WHERE id = ?", (signature, dataset_id))
+    return len(updates)
+
+
 def load_payload(db_path, dataset_id: int) -> tuple:
     """(base, JSON en colonnes encodé en UTF-8) pour l'affichage d'une base.
 
@@ -430,9 +477,17 @@ def load_payload(db_path, dataset_id: int) -> tuple:
             return dataset, cached
 
     with _closing(connect(db_path)) as conn:
+        # Zones (cartes par zones, docs/carte-zones.md) : calculées une fois,
+        # puis gardées dans la base.
+        try:
+            _ensure_zones(conn, dataset_id)
+        except Exception:  # noqa: BLE001 — la carte s'affiche sans zones
+            import logging
+            logging.getLogger(__name__).exception("zones : rattachement du jeu %s impossible", dataset_id)
         rows = conn.execute(
             "SELECT gc_code, lon, lat, placed, archived_on, is_archived, "
-            "type, size, difficulty, terrain, country, region, county "
+            "type, size, difficulty, terrain, country, region, county, "
+            "zone_country, zone_region, zone_subregion "
             "FROM caches WHERE dataset_id = ? ORDER BY placed, gc_code",
             (dataset_id,),
         ).fetchall()
@@ -450,7 +505,8 @@ def load_payload(db_path, dataset_id: int) -> tuple:
         return value
 
     tables = {"type": {}, "size": {}, "difficulty": {}, "terrain": {},
-              "country": {}, "region": {}, "county": {}}
+              "country": {}, "region": {}, "county": {},
+              "zone_country": {}, "zone_region": {}, "zone_subregion": {}}
 
     def index_of(kind: str, value) -> int:
         table = tables[kind]
@@ -472,6 +528,7 @@ def load_payload(db_path, dataset_id: int) -> tuple:
         "code": [], "lon": [], "lat": [], "placed": [], "archived": [], "status": [],
         "type": [], "size": [], "difficulty": [], "terrain": [],
         "country": [], "region": [], "county": [],
+        "zone_country": [], "zone_region": [], "zone_subregion": [],
     }
     for r in rows:
         payload["code"].append(r["gc_code"])
@@ -491,6 +548,8 @@ def load_payload(db_path, dataset_id: int) -> tuple:
         payload["country"].append(index_of("country", r["country"]))
         payload["region"].append(index_of("region", r["region"]))
         payload["county"].append(index_of("county", r["county"]))
+        for name in ("zone_country", "zone_region", "zone_subregion"):
+            payload[name].append(index_of(name, r[name]))
     payload["types"] = list(tables["type"])
     payload["sizes"] = list(tables["size"])
     payload["difficulties"] = list(tables["difficulty"])
@@ -498,6 +557,10 @@ def load_payload(db_path, dataset_id: int) -> tuple:
     payload["countries"] = list(tables["country"])
     payload["regions"] = list(tables["region"])
     payload["counties"] = list(tables["county"])
+    # Ids de zones ('' = hors carte ou pas calculé) : « zone_countries »… .
+    payload["zone_countries"] = list(tables["zone_country"])
+    payload["zone_regions"] = list(tables["zone_region"])
+    payload["zone_subregions"] = list(tables["zone_subregion"])
     payload["meta"] = {
         "total": stats.get("total", len(rows)),
         "active": stats.get("active", 0),

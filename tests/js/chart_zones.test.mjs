@@ -206,3 +206,26 @@ test('libellés : zones, première trouvaille, densité, moments', () => {
     assert.equal(labels.defaultTitle(spec({ groupBy: 'zone_subregion', measure: { op: 'first_day' } })),
         'Première trouvaille sur une carte des départements, comtés…');
 });
+
+test('jeu Évolution : carte des caches actives, qui redescend', async () => {
+    const { evolutionTables } = await import('../../static/js/chart_sources.mjs');
+    // origin 2020-01-01 ; A placée j0 archivée j10, B j5 active, C (autre
+    // région) j20 active.
+    const { placed } = evolutionTables({
+        count: 3, origin: '2020-01-01', code: ['GCA', 'GCB', 'GCC'],
+        placed: [0, 5, 20], archived: [10, -1, -1], status: [1, 0, 0],
+        type: [0, 0, 0], types: ['Traditional Cache'], size: [], sizes: [], difficulty: [], difficulties: [],
+        terrain: [], terrains: [], country: [], countries: [], region: [], regions: [], county: [], counties: [],
+        zone_country: [0, 0, 0], zone_countries: ['FR'],
+        zone_region: [0, 0, 1], zone_regions: ['FR-BRE', 'FR-PDL'],
+        zone_subregion: [0, 0, 1], zone_subregions: ['FR-29', 'FR-44'],
+    });
+    const s = spec({ source: 'evolution:1', measure: { op: 'active' }, groupBy: 'zone_region',
+        periods: [{ kind: 'range', from: '2020-01-01', to: '2020-01-08' }, { kind: 'range', from: '2020-01-01', to: '2020-01-31' }] });
+    assert.equal(s.view.chart, 'map');
+    const result = runZoneQuery(s, placed, { today: TODAY });
+    const at = (i, id) => result.series[i].values[result.keys.indexOf(id)];
+    assert.equal(at(0, 'FR-BRE'), 2);
+    assert.equal(at(1, 'FR-BRE'), 1);     // A archivée le 11 janvier
+    assert.equal(at(1, 'FR-PDL'), 1);
+});

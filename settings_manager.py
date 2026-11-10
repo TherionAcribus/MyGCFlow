@@ -434,6 +434,8 @@ class AppSettings:
     # docs/carte-zones.md) : choix d'affichage global, comme les DNF ; son
     # apparence (niveau, mesure, couleurs) est dans le thème (ZoneLayerOptions).
     zones_display: bool = False
+    # Même couche sur la page Évolution (caches actives du jeu ouvert).
+    evolution_zones_display: bool = False
     # Jeton embarqué dans le bookmarklet « MyGCFlow — Lab Caches » : protège
     # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
@@ -1268,7 +1270,7 @@ def coerce_settings(d: dict) -> AppSettings:
             s.labs_auto_fetch_coords = raw_fetch is True
         # Booléens stricts : une valeur corrompue coupe l'option.
         for name in ("dnf_display", "dnf_in_trail", "dnf_same_day_display",
-                     "owner_display", "owner_in_trail", "zones_display"):
+                     "owner_display", "owner_in_trail", "zones_display", "evolution_zones_display"):
             raw = d.get(name)
             if raw is not None:
                 setattr(s, name, raw is True)

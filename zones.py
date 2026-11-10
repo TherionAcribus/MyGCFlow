@@ -404,6 +404,30 @@ class ZoneIndex:
 _NEIGHBOUR_DEG = 0.5
 ZONE_PROPERTIES = ("zone_country", "zone_region", "zone_subregion")
 
+_signature = None
+
+
+def data_signature(directory: Path | None = None) -> str:
+    """Empreinte courte des données de rattachement (geo/match) : un
+    rattachement stocké (jeux Évolution) est à refaire quand elle change.
+    '' sans données."""
+    global _signature
+    if directory is None and _signature is not None:
+        return _signature
+    folder = Path(directory) if directory else match_dir()
+    files = sorted(folder.glob("*.json.gz")) if folder.is_dir() else []
+    if not files:
+        return ""
+    import hashlib
+    digest = hashlib.sha1()
+    for path in files:
+        digest.update(path.name.encode("utf-8"))
+        digest.update(hashlib.sha1(path.read_bytes()).digest())
+    value = digest.hexdigest()[:12]
+    if directory is None:
+        _signature = value
+    return value
+
 
 def annotate_features(features, index=None) -> bool:
     """Pose les ids de zones dans les propriétés de features GeoJSON (points

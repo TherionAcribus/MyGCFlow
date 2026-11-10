@@ -93,6 +93,13 @@ export function buildEvolutionBase(payload) {
         regions: Array.isArray(payload?.regions) ? payload.regions : [],
         county: Uint16Array.from(payload?.county || [], Number),
         counties: Array.isArray(payload?.counties) ? payload.counties : [],
+        // Zones (cartes par zones, format v3 ; libellé '' = hors carte).
+        zone_country: Int32Array.from(payload?.zone_country || [], Number),
+        zone_countries: Array.isArray(payload?.zone_countries) ? payload.zone_countries : [],
+        zone_region: Int32Array.from(payload?.zone_region || [], Number),
+        zone_regions: Array.isArray(payload?.zone_regions) ? payload.zone_regions : [],
+        zone_subregion: Int32Array.from(payload?.zone_subregion || [], Number),
+        zone_subregions: Array.isArray(payload?.zone_subregions) ? payload.zone_subregions : [],
         meta: payload?.meta || {},
         clampedArchives,
         // Positions des caches archivées sans date (status 2) : exclues de la

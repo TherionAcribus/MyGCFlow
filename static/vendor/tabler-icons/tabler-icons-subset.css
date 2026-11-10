@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=a7a3190b83") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=313e274fd5") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -107,6 +107,7 @@
 .ti-folder-search:before { content: "\f918"; }
 .ti-forms:before { content: "\ee8f"; }
 .ti-gauge:before { content: "\eab1"; }
+.ti-grid-4x4:before { content: "\fca5"; }
 .ti-grid-dots:before { content: "\eaba"; }
 .ti-grip-vertical:before { content: "\ec01"; }
 .ti-hand-click:before { content: "\ef4f"; }

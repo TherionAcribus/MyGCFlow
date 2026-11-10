@@ -131,6 +131,22 @@ Doc : `docs/carte-zones.md` › Mini-cartes. Écarts avec les § 6 et 9 :
   échelles linéaire et log, ici et sur les mini-cartes de Statistiques
   (« 1–2,33 » devenait possible).
 
+**Lot 5, première partie, livrée le 2026-11-10 : jeux Évolution.**
+- Zones stockées dans `evolution.db` (schéma v2, `_ensure_zones`, empreinte
+  `zones.data_signature()`), et données de la page en v3.
+- Mini-cartes des jeux dans Statistiques : questions « Caches actives,
+  année par année » et « Densité des caches actives ».
+- Couche de la page Évolution en caches actives, avec sa préférence
+  `evolution_zones_display` et l'onglet Zones.
+
+Écarts :
+- **Rattachement** : pas pendant l'import, mais au premier affichage qui le
+  suit. Il est gardé en base et refait seulement pour les caches modifiées
+  ou si les données de zones changent. Le premier affichage d'un jeu
+  existant prend environ 6 s de plus, une seule fois (464 000 caches).
+- **Restent du lot 5** : le niveau grille, et Mes poses (couche des caches
+  posées, intérêt à confirmer).
+
 (Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre
@@ -573,7 +589,7 @@ Rédigées sans référence à un pays : le pays vient des données.
 | **2. `zone_model.mjs`** ✅ | Mesures § 5.1 sauf `found_share`, état + saut, échelle, `keyMoments` | Rien de visible |
 | **3. Mini-cartes** ✅ | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
 | **4. Couche animée** ✅ | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
-| **5. Évolution, Mes poses, grille** | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
+| **5. Évolution, Mes poses, grille** (Évolution ✅) | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
 | **6. Croisement** | `found_share` | % de caches trouvées par zone, animé |
 | **7. Pays suivants** | Royaume-Uni (`dissolve`), puis pays demandés par les joueurs, modèle d'issue GitHub | Nouveaux pays à chaque mise à jour |
 

@@ -367,6 +367,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         zones_milestones: [t('Mes zones à chaque palier'), t('La carte à votre 100ᵉ, 500ᵉ, 1 000ᵉ trouvaille…')],
         zones_countries: [t('Ma carte du monde'), t('Vos trouvailles pays par pays.')],
         zones_types: [t('Types de caches par région'), t('Le nombre de types différents trouvés dans chaque région.')],
+        evo_zones_active: [t('Caches actives, année par année'), t('La carte des caches en place à la fin de chaque année.')],
+        evo_zones_density: [t('Densité des caches actives'), t('Les caches en place pour 1 000 km², zone par zone.')],
         zones_dt: [t('Grille D/T par région'), t('Combien des 81 combinaisons de difficulté et de terrain dans chaque région.')],
     };
 
@@ -380,6 +382,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         dnf: t('Mes DNF'),
         zone: t('La zone au fil du temps'),
         zone_caches: t('Les caches de la zone'),
+        zone_maps: t('Cartes de la zone'),
         challenges: t('Mes défis'),
         maps: t('Mes cartes'),
         records: t('Séries et records'),

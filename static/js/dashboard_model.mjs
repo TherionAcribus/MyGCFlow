@@ -165,7 +165,7 @@ const EACH_YEAR = [{ kind: 'each', unit: 'year' }];
 const EVO = 'evolution:1';
 const EVO_ARCHIVED = 'evolution:1:archived';
 
-export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'maps', 'challenges', 'records', 'goals', 'places', 'poses', 'dnf', 'zone', 'zone_caches']);
+export const QUESTION_GROUPS = Object.freeze(['overview', 'compare', 'when', 'caches', 'maps', 'challenges', 'records', 'goals', 'places', 'poses', 'dnf', 'zone', 'zone_maps', 'zone_caches']);
 
 export const QUESTIONS = Object.freeze([
     { id: 'total', group: 'overview', icon: 'ti-hash', size: 'S', spec: { groupBy: 'none', view: { chart: 'number' } } },
@@ -245,6 +245,9 @@ export const QUESTIONS = Object.freeze([
     { id: 'evo_published', family: 'evolution', group: 'zone', icon: 'ti-chart-bar', size: 'M', spec: { source: EVO, groupBy: 'year', view: { chart: 'bar' } } },
     { id: 'evo_types', family: 'evolution', group: 'zone_caches', icon: 'ti-chart-donut', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'cache_type', view: { chart: 'donut' } } },
     { id: 'evo_counties', family: 'evolution', group: 'zone_caches', icon: 'ti-map', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'county', view: { chart: 'bar', orientation: 'horizontal', top: 10 } } },
+    // Cartes de la zone : caches actives par département (ou région, pays).
+    { id: 'evo_zones_active', family: 'evolution', group: 'zone_maps', icon: 'ti-map-2', size: 'XL', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'zone_subregion', periods: [{ kind: 'moments', rule: 'year_end' }], view: { chart: 'map' } } },
+    { id: 'evo_zones_density', family: 'evolution', group: 'zone_maps', icon: 'ti-grid-4x4', size: 'L', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'zone_subregion', periods: [{ kind: 'all' }], compare: { normalize: 'per_km2' }, view: { chart: 'map' } } },
     { id: 'evo_dt', family: 'evolution', group: 'zone_caches', icon: 'ti-grid-dots', size: 'M', spec: { source: EVO, measure: { op: 'active' }, groupBy: 'dt', view: { chart: 'heatmap', labels: true } } },
 ]);
 

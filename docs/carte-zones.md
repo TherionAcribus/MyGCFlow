@@ -12,6 +12,9 @@ Plan : `MyGCFlow_Plan_Carte_Zones.md`. Ajouter un pays :
 - Lot 3 : mini-cartes de la page Statistiques. Elles portent sur les
   trouvailles seulement ; Évolution viendra au lot 5.
 - Lot 4 : couche animée de la carte « Mes Géocaches » (onglet Zones).
+- Lot 5 (première partie, 2026-11-10) : jeux Évolution. Zones stockées dans
+  `evolution.db`, mini-cartes des jeux dans Statistiques, couche animée de
+  la page Évolution en caches actives. Restent la grille et Mes poses.
 
 ## Niveaux
 
@@ -342,6 +345,65 @@ plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
 - `tests/e2e/zone-layer.spec.mjs` : fixture `my-finds-zones.gpx`, 8
   trouvailles sur 4 départements.
 
+## Jeux Évolution
+
+**Stockage** (`evolution_store.py`, schéma v2) :
+- colonnes `zone_country`, `zone_region` et `zone_subregion` par cache :
+  `''` = hors carte, `NULL` = à calculer ;
+- `datasets.zones_signature` = empreinte des données de zones ayant servi
+  (`zones.data_signature()`, sha1 de `geo/match/*.json.gz`).
+
+`_ensure_zones`, appelé par `load_payload`, rattache les caches à `NULL`, ou
+tout le jeu si l'empreinte a changé (nouvelles données de zones). Les noms du
+CSV (pays, région, département) passent d'abord, la position ensuite. Un
+import qui met une cache à jour remet ses zones à `NULL` (`_UPSERT`). Une
+v1 est migrée par `ALTER TABLE` à l'ouverture.
+
+Mesuré sur un jeu de 464 475 caches (France) :
+- premier affichage : 9,9 s au lieu de 3,9, une seule fois ;
+- affichages suivants : 3,9 s ;
+- résultat : 97 départements, 20 caches hors carte au niveau 2.
+
+**Format des données** (`PAYLOAD_VERSION` 3) :
+- `zone_country`, `zone_region`, `zone_subregion` (index) et
+  `zone_countries`, `zone_regions`, `zone_subregions` (libellés, `''` =
+  hors carte) ;
+- l'ETag de `/api/evolution/datasets/<id>/data` porte aussi l'empreinte des
+  zones.
+
+**Statistiques** :
+- les dimensions `zone_*` sont proposées pour les jeux Évolution ;
+- `evolutionTables` lit les colonnes (`EVO_DICTS`) ;
+- une carte des caches actives (`measure.op: 'active'`) passe par le mode
+  `active` de `zone_model`, et une zone pâlit après des archivages ;
+- questions du groupe « Cartes de la zone » : Caches actives année par
+  année, Densité des caches actives.
+
+**Couche de la page Évolution** :
+- **Données** : `zone_layer.js` lit `evolutionZoneTable()`
+  (evolution_data.js), la sélection filtrée du jeu ouvert au format des
+  tables de chart_sources (jours absolus, `endDay` = archivage). Elle est
+  mémorisée par révision de la sélection.
+- **Mesures** : toutes en mode `active`, sauf « première cache posée »
+  (cumul).
+- **Préférence d'affichage** : `evolution_zones_display` (globale). Le
+  thème Évolution a son propre bloc `zones`.
+- **Branchements** (moteur de cycle de vie, mapgl.js) :
+  - départ dans `beginLifecycleTimeline` (les trois démarrages et le saut) ;
+  - lot de jours dans `displayLifecycleDates` ;
+  - repos dans `showLifecycleRestState` ;
+  - saut (`seekZonesToDate`) commun aux deux pages.
+- **Jour de référence de l'échelle** : `restDay` du jeu (fin de
+  l'animation).
+
+**Tests** :
+- `tests/test_evolution_store.py` › `ZonesTests` (colonnes, recalcul après
+  import, nouvelle empreinte, migration v1) ;
+- `tests/js/chart_zones.test.mjs` (carte des caches actives qui
+  redescend) ;
+- `tests/e2e/zone-layer.spec.mjs` › Évolution (fixture `evolution-a.csv` :
+  le Finistère pâlit le 6 janvier 2020).
+
 ## Limites connues
 
 - **Rapport de rattachement** (noms GC non reconnus, « Copier le rapport »)
@@ -352,8 +414,7 @@ plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
 - **Vidéo animée d'un graphique et panneau vidéo** : sans objet pour une
   carte de Statistiques. La couche de la carte principale joue ce rôle.
 - **Couche de la carte** :
-  - page « Mes Géocaches » seulement ; Évolution et Mes poses viendront au
-    lot 5 ;
+  - pages « Mes Géocaches » et « Évolution » ; Mes poses n'en a pas ;
   - simplification d'affichage de 1,5 à 2,5 km, visible en zoomant fort sur
     une frontière ;
   - pendant les fondus, tout le calque est redessiné à chaque image, ce

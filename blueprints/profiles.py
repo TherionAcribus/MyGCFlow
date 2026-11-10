@@ -110,6 +110,7 @@ def api_get_settings():
         'owner_display': s.owner_display,
         'owner_in_trail': s.owner_in_trail,
         'zones_display': s.zones_display,
+        'evolution_zones_display': s.evolution_zones_display,
         'labs_receive_token': s.labs_receive_token,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
@@ -357,6 +358,9 @@ def api_put_settings():
                             else current.owner_in_trail),
             zones_display=(data['zones_display'] if isinstance(data.get('zones_display'), bool)
                            else current.zones_display),
+            evolution_zones_display=(data['evolution_zones_display']
+                                     if isinstance(data.get('evolution_zones_display'), bool)
+                                     else current.evolution_zones_display),
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

@@ -1,5 +1,5 @@
-// Couche de zones colorées de la carte « Mes Géocaches » (onglet Zones,
-// docs/carte-zones.md › Couche de la carte).
+// Couche de zones colorées des cartes « Mes Géocaches » et « Évolution »
+// (onglet Zones, docs/carte-zones.md › Couche de la carte).
 //
 // Les zones (pays, régions, départements…) se colorent jour après jour
 // pendant l'aperçu et dans la vidéo. Les valeurs viennent de zone_model.mjs,
@@ -18,12 +18,17 @@
 // L'échelle de couleurs est calculée sur l'état à la FIN de l'animation :
 // une teinte garde le même sens tout du long.
 //
-// Affichage : préférence globale `zones_display` ; apparence : thème
-// (pkg.options.zones, zone_layer_model.mjs). Page principale seulement.
+// Données : l'index des trouvailles (« Mes Géocaches », cumul) ou la
+// sélection du jeu ouvert (« Évolution », caches actives : une zone pâlit
+// quand ses caches sont archivées).
+//
+// Affichage : préférence globale par page (`zones_display`,
+// `evolution_zones_display`) ; apparence : thème (pkg.options.zones,
+// zone_layer_model.mjs).
 
 import * as pkg from './index.js';
 import { t } from './notifications.js';
-import { isMainPage } from './app_mode.mjs';
+import { isEvolutionPage, isMainPage } from './app_mode.mjs';
 import { tableFromRecords } from './chart_sources.mjs';
 import { mixedZoneTable } from './chart_zones.mjs';
 import { createZoneState, zoneScale } from './zone_model.mjs';
@@ -61,16 +66,39 @@ let legendKey = '';
 
 const opts = () => normalizeZoneLayerOptions(pkg.options?.zones);
 
+// Page qui a une couche de zones : 'main', 'evolution' ou null.
+export function zoneLayerPage() {
+    if (isMainPage()) return 'main';
+    if (isEvolutionPage()) return 'evolution';
+    return null;
+}
+
+// Préférence d'affichage de la page.
+export function zoneDisplayKey() {
+    return zoneLayerPage() === 'evolution' ? 'evolution_zones_display' : 'zones_display';
+}
+
 function enabled() {
-    return isMainPage() && window.userSettings?.zones_display === true;
+    return zoneLayerPage() !== null && window.userSettings?.[zoneDisplayKey()] === true;
+}
+
+// Révision des données de la page (index des trouvailles, sélection du jeu).
+function dataRevision() {
+    if (zoneLayerPage() === 'evolution') return pkg.evolutionStatsIndex?.()?.revision ?? 0;
+    return Number(pkg.pointsByDateRevision) || 0;
 }
 
 function getMap() {
     try { return pkg.getMap?.() || null; } catch (_) { return null; }
 }
 
-// Jour de fin : celle de l'animation, sinon la dernière trouvaille.
+// Jour de fin : celle de l'animation, sinon la dernière trouvaille (le
+// jour de repos du jeu en Évolution).
 function endDay() {
+    if (zoneLayerPage() === 'evolution') {
+        const rest = pkg.evolutionZoneTable?.()?.restDay;
+        return Number.isFinite(rest) ? rest : model?.state?.extent?.last ?? null;
+    }
     const end = pkg.options?.animation?.dateEnd instanceof Date ? pkg.options.animation.dateEnd : pkg.metadata?.endDate;
     const day = end instanceof Date ? dayOfDate(end) : (end ? dayOfDate(new Date(end)) : null);
     return Number.isFinite(day) ? day : model?.state?.extent?.last ?? null;
@@ -86,9 +114,21 @@ function propsOf(feature) {
 function buildModel() {
     const o = opts();
     const fallback = fallbackCountries();
-    const rev = Number(pkg.pointsByDateRevision) || 0;
-    const key = `${rev}|${o.level}|${o.measure}|${fallback ? 'f' : '-'}`;
+    const rev = dataRevision();
+    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.measure}|${fallback ? 'f' : '-'}`;
     if (model?.key === key) return model;
+    if (zoneLayerPage() === 'evolution') {
+        // Caches actives (sauf « première cache », qui n'a pas de fin).
+        const source = pkg.evolutionZoneTable?.();
+        const raw = source?.table || { n: 0, day: new Int32Array(0), endDay: new Float64Array(0), dicts: {} };
+        const table = mixedZoneTable(raw, o.level, fallback);
+        const measure = { ...zoneMeasureFor(o.measure), mode: o.measure === 'first_day' ? 'cumulative' : 'active' };
+        const state = createZoneState({ table, level: o.level, measure });
+        const countries = (table.dicts?.zone_country || []).filter(Boolean);
+        model = { key, revision: rev, state, countries, level: o.level, rows: raw.n };
+        scaleKey = null;
+        return model;
+    }
     const records = [];
     for (const byDate of [pkg.pointsByDate, pkg.hiddenPointsByDate]) {
         if (!byDate) continue;
@@ -267,10 +307,11 @@ function styleFor(feature) {
 
 function legendTitle() {
     const o = opts();
+    const evolution = zoneLayerPage() === 'evolution';
     if (o.measure === 'distinct_types') return t('Types de caches différents');
     if (o.measure === 'dt_coverage') return t('Combinaisons D/T');
-    if (o.measure === 'first_day') return t('Première trouvaille');
-    return t('Trouvailles');
+    if (o.measure === 'first_day') return evolution ? t('Première cache posée') : t('Première trouvaille');
+    return evolution ? t('Caches actives') : t('Trouvailles');
 }
 
 function legendModel() {
@@ -441,7 +482,7 @@ export function updateZoneLayer(now) {
     // Fin naturelle de l'aperçu (sans passage par l'arrêt) : la carte garde
     // son état final, la couche aussi, mais elle redevient « au repos ».
     if (animating && pkg.isAnimationInProgress?.() === false) animating = false;
-    if (!animating && enabled() && model && model.revision !== (Number(pkg.pointsByDateRevision) || 0)) {
+    if (!animating && enabled() && model && model.revision !== dataRevision()) {
         clearTimeout(rebuildTimer);
         rebuildTimer = setTimeout(refreshZoneLayer, REBUILD_DELAY_MS);
     }
@@ -488,7 +529,7 @@ export function getZoneLayerDebugState() {
 // mygcflow:ready. S'initialise lui-même (cf. AGENTS.md, ordre d'évaluation).
 
 function initZoneLayer() {
-    if (!isMainPage()) return;
+    if (!zoneLayerPage()) return;
     addGeoListener(() => { if (enabled()) refreshZoneLayer(); });
     refreshZoneLayer();
 }

@@ -218,5 +218,73 @@ class PayloadTests(StoreTestCase):
             store.get_cache(self.db, self.dataset['id'], 'GC404')
 
 
+class ZonesTests(StoreTestCase):
+    """Zones des caches (docs/carte-zones.md) : calculées au premier
+    affichage, gardées dans la base, refaites quand il le faut."""
+
+    def zones_in_db(self):
+        conn = sqlite3.connect(self.db)
+        try:
+            return {r[0]: r[1:] for r in conn.execute(
+                'SELECT gc_code, zone_country, zone_region, zone_subregion FROM caches')}
+        finally:
+            conn.close()
+
+    def payload(self):
+        return json.loads(store.load_payload(self.db, self.dataset['id'])[1])
+
+    def test_payload_carries_zone_columns(self):
+        # Essonne (CSV) ; Brest par la position, région GC « Bretagne ».
+        self.import_rows([row('GC1'), row('GC2', lat='48.3904', lon='-4.4861', region='Bretagne')])
+        self.assertEqual(self.zones_in_db()['GC1'], (None, None, None))   # pas encore calculées
+        data = self.payload()
+        zone = lambda col, labels: [data[labels][i] for i in data[col]]
+        self.assertEqual(zone('zone_country', 'zone_countries'), ['FR', 'FR'])
+        self.assertEqual(zone('zone_region', 'zone_regions'), ['FR-IDF', 'FR-BRE'])
+        # Le CSV dit « Essonne » pour les deux : GC2, en Bretagne, n'a pas de
+        # département de l'Île-de-France (noms contradictoires) → par position.
+        self.assertEqual(zone('zone_subregion', 'zone_subregions'), ['FR-91', 'FR-29'])
+        self.assertEqual(self.zones_in_db()['GC1'], ('FR', 'FR-IDF', 'FR-91'))
+
+    def test_an_updated_cache_is_assigned_again(self):
+        self.import_rows([row('GC1')])
+        self.payload()
+        self.import_rows([row('GC1', lat='48.3904', lon='-4.4861', region='Bretagne',
+                              added='2026-10-30 06:09:21')])
+        self.assertEqual(self.zones_in_db()['GC1'], (None, None, None))
+        data = self.payload()
+        self.assertEqual(data['zone_subregions'][data['zone_subregion'][0]], 'FR-29')
+
+    def test_new_zone_data_redoes_every_cache(self):
+        self.import_rows([row('GC1')])
+        self.payload()
+        conn = sqlite3.connect(self.db)
+        with conn:
+            conn.execute("UPDATE caches SET zone_subregion = 'XX'")
+            conn.execute("UPDATE datasets SET zones_signature = 'ancienne'")
+        conn.close()
+        store._PAYLOAD_CACHE.clear()
+        self.assertEqual(self.payload()['zone_subregions'], ['FR-91'])
+
+    def test_v1_database_is_migrated(self):
+        path = os.path.join(self.tmp.name, 'v1.db')
+        conn = sqlite3.connect(path)
+        conn.executescript(store._SCHEMA.replace(
+            ",\n    zone_country TEXT,\n    zone_region TEXT,\n    zone_subregion TEXT", "").replace(
+            ",\n    zones_signature TEXT NOT NULL DEFAULT ''", ""))
+        conn.execute('PRAGMA user_version = 1')
+        conn.commit()
+        conn.close()
+        dataset = store.create_dataset(path, 'Ancienne')
+        conn = sqlite3.connect(path)
+        try:
+            self.assertEqual(conn.execute('PRAGMA user_version').fetchone()[0], store.SCHEMA_VERSION)
+            columns = {r[1] for r in conn.execute('PRAGMA table_info(caches)')}
+            self.assertTrue({'zone_country', 'zone_region', 'zone_subregion'} <= columns)
+        finally:
+            conn.close()
+        self.assertEqual(json.loads(store.load_payload(path, dataset['id'])[1])['count'], 0)
+
+
 if __name__ == '__main__':
     unittest.main()

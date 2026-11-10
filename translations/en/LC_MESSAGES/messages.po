@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-09 19:53+0100\n"
+"POT-Creation-Date: 2026-11-10 07:51+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -22,7 +22,7 @@ msgstr ""
 msgid "Aucun fichier envoyé"
 msgstr "No file was sent"
 
-#: bdd.py:124 static/js/bdd.js:126 static/js/evolution_data.js:216
+#: bdd.py:124 static/js/bdd.js:126 static/js/evolution_data.js:160
 #: templates/menu_data.html:52 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr "No file selected"
@@ -316,7 +316,7 @@ msgid "Maintenance du poseur"
 msgstr "Owner maintenance"
 
 #: event_flash.py:61 poses_dataset.py:639 static/js/chart_labels.mjs:234
-#: static/js/zone_layer.js:318
+#: static/js/zone_layer.js:369
 msgid "Première trouvaille"
 msgstr "First find"
 
@@ -549,7 +549,7 @@ msgstr "incomplete %(label)s — ignored"
 msgid "%(label)s invalides — ignorées"
 msgstr "invalid %(label)s — ignored"
 
-#: log_formats.py:471 log_formats.py:670 static/js/evolution_data.js:1189
+#: log_formats.py:471 log_formats.py:670 static/js/evolution_data.js:1086
 #: static/js/labs.js:735 static/js/labs.js:879
 msgid "coordonnées"
 msgstr "coordinates"
@@ -650,11 +650,11 @@ msgstr "D"
 msgid "T"
 msgstr "T"
 
-#: blueprints/evolution.py:40 poses_dataset.py:636
+#: blueprints/evolution.py:41 poses_dataset.py:636
 msgid "Latitude"
 msgstr "Latitude"
 
-#: blueprints/evolution.py:41 poses_dataset.py:636
+#: blueprints/evolution.py:42 poses_dataset.py:636
 msgid "Longitude"
 msgstr "Longitude"
 
@@ -662,7 +662,7 @@ msgstr "Longitude"
 #: static/js/chart_labels.mjs:218 static/js/stats_panels.js:1187
 #: static/js/stats_panels.js:1433 templates/_filter_country_state.html:6
 #: templates/_filter_country_state.html:7 templates/menu_stats.html:233
-#: templates/menu_stats.html:502 templates/menu_zones.html:36
+#: templates/menu_stats.html:502 templates/menu_zones.html:37
 msgid "Pays"
 msgstr "Country"
 
@@ -684,7 +684,7 @@ msgstr "Status"
 
 #: poses_dataset.py:638 static/js/chart_labels.mjs:252
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
-#: static/js/zone_layer.js:319 templates/menu_informations.html:64
+#: static/js/zone_layer.js:370 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Finds"
@@ -718,7 +718,7 @@ msgstr "Beta find"
 msgid "Premier log"
 msgstr "First log"
 
-#: poses_dataset.py:666 static/js/evolution_data.js:753 static/js/mapgl.js:3828
+#: poses_dataset.py:666 static/js/evolution_data.js:676 static/js/mapgl.js:3828
 #: static/js/poses_data.js:917 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Active"
@@ -733,7 +733,7 @@ msgstr "Disabled"
 msgid "Archivée"
 msgstr "Archived"
 
-#: settings_manager.py:2862
+#: settings_manager.py:2864
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -742,45 +742,45 @@ msgstr ""
 "The name '%(name)s' contains no usable character (at least one letter or "
 "digit is required)"
 
-#: blueprints/profiles.py:556 settings_manager.py:2902 settings_manager.py:2979
-#: settings_manager.py:3031
+#: blueprints/profiles.py:560 settings_manager.py:2904 settings_manager.py:2981
+#: settings_manager.py:3033
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Theme '%(name)s' not found"
 
-#: settings_manager.py:2923
+#: settings_manager.py:2925
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "No theme found with UUID: %(uid)s"
 
-#: settings_manager.py:2959 settings_manager.py:2984
+#: settings_manager.py:2961 settings_manager.py:2986
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "A theme named '%(name)s' already exists"
 
-#: settings_manager.py:2996
+#: settings_manager.py:2998
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Source theme '%(name)s' not found"
 
-#: settings_manager.py:3012
+#: settings_manager.py:3014
 msgid "Mode de thème inconnu"
 msgstr "Unknown theme mode"
 
-#: settings_manager.py:3015
+#: settings_manager.py:3017
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Theme '%(name)s' already belongs to this mode"
 
-#: settings_manager.py:3206
+#: settings_manager.py:3208
 msgid "Payload invalide"
 msgstr "Invalid payload"
 
-#: settings_manager.py:3209
+#: settings_manager.py:3211
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Invalid theme file (missing marker)"
 
-#: settings_manager.py:3213
+#: settings_manager.py:3215
 msgid "Section 'profile' manquante"
 msgstr "Missing 'profile' section"
 
@@ -793,9 +793,9 @@ msgstr "A '%(type)s' task is already running"
 msgid "Base de données"
 msgstr "Database"
 
-#: blueprints/core.py:197 static/js/evolution_data.js:435
+#: blueprints/core.py:197 static/js/evolution_data.js:350
 #: static/js/poses_data.js:286 static/js/stats_page_exports.js:173
-#: templates/guide.html:168 templates/guide.html:176 templates/guide.html:625
+#: templates/guide.html:168 templates/guide.html:176 templates/guide.html:626
 #: templates/menu_data.html:481 templates/menu_data_evolution.html:108
 #: templates/menu_data_poses.html:63 templates/menu_filtre.html:65
 #: templates/stats_page.html:93 templates/stats_page.html:205
@@ -809,7 +809,7 @@ msgstr "Settings"
 
 #: templates/app.html:230 templates/guide.html:47 templates/guide.html:98
 #: templates/guide.html:120 templates/guide.html:143 templates/guide.html:163
-#: templates/guide.html:570 templates/menu_animation.html:83
+#: templates/guide.html:571 templates/menu_animation.html:83
 #: templates/menu_animation.html:113 templates/menu_filtre.html:122
 #: templates/menu_filtre.html:131 templates/menu_filtre.html:147
 #: templates/menu_filtre.html:156 templates/stats_page.html:415
@@ -819,7 +819,7 @@ msgstr "Data"
 
 #: templates/app.html:231 templates/guide.html:50 templates/guide.html:103
 #: templates/guide.html:120 templates/guide.html:190 templates/guide.html:192
-#: templates/guide.html:583 templates/menu_names.html:32
+#: templates/guide.html:584 templates/menu_names.html:32
 #: test_translations.py:31
 msgid "Style"
 msgstr "Style"
@@ -888,75 +888,75 @@ msgstr "Confirm"
 msgid "Annuler"
 msgstr "Cancel"
 
-#: blueprints/evolution.py:39
+#: blueprints/evolution.py:40
 msgid "GC code"
 msgstr "GC code"
 
-#: blueprints/evolution.py:42
+#: blueprints/evolution.py:43
 msgid "Date de placement"
 msgstr "Placement date"
 
-#: blueprints/evolution.py:48 blueprints/evolution.py:254
+#: blueprints/evolution.py:49 blueprints/evolution.py:255
 msgid "Base introuvable"
 msgstr "Dataset not found"
 
-#: blueprints/evolution.py:49
+#: blueprints/evolution.py:50
 msgid "Cache introuvable dans cette base"
 msgstr "Cache not found in this dataset"
 
-#: blueprints/evolution.py:50
+#: blueprints/evolution.py:51
 msgid "Le nom de la base est obligatoire"
 msgstr "The dataset name is required"
 
-#: blueprints/evolution.py:51
+#: blueprints/evolution.py:52
 #, python-format
 msgid "Le nom de la base est trop long (%(max)s caractères au plus)"
 msgstr "The dataset name is too long (%(max)s characters at most)"
 
-#: blueprints/evolution.py:53
+#: blueprints/evolution.py:54
 msgid "Une base porte déjà ce nom"
 msgstr "A dataset already has this name"
 
-#: blueprints/evolution.py:111
+#: blueprints/evolution.py:112
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr "An import is running: try again once it is done"
 
-#: blueprints/evolution.py:158 blueprints/gc_logs.py:284 blueprints/gpx.py:186
+#: blueprints/evolution.py:159 blueprints/gc_logs.py:284 blueprints/gpx.py:186
 #: blueprints/gpx.py:251 blueprints/labs.py:565
 msgid "Aucun fichier fourni"
 msgstr "No file provided"
 
-#: blueprints/evolution.py:178
+#: blueprints/evolution.py:179
 #, python-format
 msgid "%(name)s : seuls les fichiers .csv sont acceptés"
 msgstr "%(name)s: only .csv files are accepted"
 
-#: blueprints/evolution.py:185
+#: blueprints/evolution.py:186
 #, python-format
 msgid "%(name)s : fichier vide"
 msgstr "%(name)s: empty file"
 
-#: blueprints/evolution.py:187
+#: blueprints/evolution.py:188
 #, python-format
 msgid "%(name)s : fichier trop volumineux (500 Mo au plus)"
 msgstr "%(name)s: file too large (500 MB at most)"
 
-#: blueprints/evolution.py:194
+#: blueprints/evolution.py:195
 #, python-format
 msgid "%(name)s : colonnes obligatoires absentes (%(columns)s)"
 msgstr "%(name)s: required columns missing (%(columns)s)"
 
-#: blueprints/evolution.py:207 blueprints/gpx.py:317
-#: static/js/evolution_data.js:799
+#: blueprints/evolution.py:208 blueprints/gpx.py:317
+#: static/js/evolution_data.js:719
 msgid "Un import est déjà en cours"
 msgstr "An import is already running"
 
-#: blueprints/evolution.py:238
+#: blueprints/evolution.py:239
 #, python-format
 msgid "Import de %(name)s (%(index)s/%(count)s)…"
 msgstr "Importing %(name)s (%(index)s/%(count)s)…"
 
-#: blueprints/evolution.py:251
+#: blueprints/evolution.py:252
 #, python-format
 msgid "Colonnes obligatoires absentes (%(columns)s)"
 msgstr "Required columns missing (%(columns)s)"
@@ -1442,13 +1442,13 @@ msgstr "A folder selection window is already open."
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "The folder picker is not available: type the path."
 
-#: blueprints/profiles.py:462
+#: blueprints/profiles.py:466
 msgid ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
 "/api/profiles/<name>/rename"
 msgstr "Renaming is not allowed via this endpoint, use /api/profiles/<name>/rename"
 
-#: blueprints/profiles.py:490
+#: blueprints/profiles.py:494
 msgid "Nouveau nom manquant"
 msgstr "New name missing"
 
@@ -1556,7 +1556,7 @@ msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyzing GPX file..."
 
 #: static/js/bdd.js:560 static/js/bdd.js:2072 static/js/bdd.js:2143
-#: static/js/evolution_data.js:333 static/js/gc_logs.js:387
+#: static/js/evolution_data.js:261 static/js/gc_logs.js:387
 #: static/js/labs.js:1601 static/js/notifications.js:297
 #: static/js/notifications.js:342 static/js/poses_data.js:155
 msgid "Chargement"
@@ -1637,10 +1637,10 @@ msgstr "Error while uploading the file"
 #: static/js/bdd.js:783 static/js/bdd.js:2053 static/js/bdd.js:2093
 #: static/js/bdd.js:2260 static/js/bdd.js:2268 static/js/bdd.js:2553
 #: static/js/bdd.js:2643 static/js/dnf_data.js:191
-#: static/js/evolution_data.js:252 static/js/evolution_data.js:356
-#: static/js/evolution_data.js:956 static/js/evolution_data.js:960
-#: static/js/evolution_data.js:1310 static/js/evolution_data.js:1348
-#: static/js/evolution_data.js:1356 static/js/gc_logs.js:866
+#: static/js/evolution_data.js:190 static/js/evolution_data.js:282
+#: static/js/evolution_data.js:866 static/js/evolution_data.js:870
+#: static/js/evolution_data.js:1205 static/js/evolution_data.js:1240
+#: static/js/evolution_data.js:1248 static/js/gc_logs.js:866
 #: static/js/labs.js:2100 static/js/labs.js:2143 static/js/labs.js:2186
 #: static/js/notifications.js:421 static/js/owner_data.js:185
 #: static/js/poses_data.js:172 static/js/recording_perf.js:187
@@ -1656,7 +1656,7 @@ msgstr ""
 "Drop your file (.gpx, .zip or Lab Caches export) to load it, a music "
 "track or an image"
 
-#: static/js/bdd.js:904 static/js/bdd.js:930 static/js/chart_labels.mjs:730
+#: static/js/bdd.js:904 static/js/bdd.js:930 static/js/chart_labels.mjs:733
 #: static/js/mapgl.js:1234
 #, python-brace-format
 msgid "le ${date}"
@@ -1703,11 +1703,11 @@ msgstr "Invalid server response"
 msgid "Impossible de lancer l'import GPX"
 msgstr "Unable to start the GPX import"
 
-#: static/js/bdd.js:1911 static/js/evolution_data.js:909
+#: static/js/bdd.js:1911 static/js/evolution_data.js:822
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Network error while uploading the file"
 
-#: static/js/bdd.js:1912 static/js/evolution_data.js:910
+#: static/js/bdd.js:1912 static/js/evolution_data.js:823
 msgid "Envoi du fichier annulé"
 msgstr "File upload cancelled"
 
@@ -1922,7 +1922,7 @@ msgstr "new since ${period}"
 msgid "${delta} depuis ${period}"
 msgstr "${delta} since ${period}"
 
-#: static/js/chart_echarts.mjs:983 static/js/zone_layer_ui.js:58
+#: static/js/chart_echarts.mjs:983 static/js/zone_layer_ui.js:70
 msgid "Contours des zones indisponibles."
 msgstr "Zone outlines unavailable."
 
@@ -2210,7 +2210,7 @@ msgstr "To compare periods"
 msgid "Par caractéristique"
 msgstr "By characteristic"
 
-#: static/js/chart_labels.mjs:177 templates/guide.html:648
+#: static/js/chart_labels.mjs:177 templates/guide.html:649
 msgid "Sur une carte"
 msgstr "On a map"
 
@@ -2313,7 +2313,7 @@ msgstr "Cache types"
 
 #: static/js/chart_labels.mjs:219 static/js/stats_panels.js:1188
 #: static/js/stats_panels.js:1434 templates/menu_stats.html:234
-#: templates/menu_stats.html:505 templates/menu_zones.html:37
+#: templates/menu_stats.html:505 templates/menu_zones.html:38
 msgid "Régions"
 msgstr "Regions"
 
@@ -2371,12 +2371,12 @@ msgstr "Running total over the period"
 #: static/js/chart_labels.mjs:232 static/js/chart_labels.mjs:370
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
-#: templates/menu_stats.html:177 templates/menu_stats.html:243
-#: templates/menu_stats.html:262
+#: static/js/zone_layer.js:370 templates/menu_stats.html:177
+#: templates/menu_stats.html:243 templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Active caches"
 
-#: static/js/chart_labels.mjs:233 static/js/zone_layer.js:317
+#: static/js/chart_labels.mjs:233 static/js/zone_layer.js:368
 msgid "Combinaisons D/T"
 msgstr "D/T combinations"
 
@@ -2385,14 +2385,14 @@ msgstr "D/T combinations"
 msgid "Mes trouvailles"
 msgstr "My finds"
 
-#: static/js/chart_labels.mjs:243 static/js/chart_labels.mjs:405
+#: static/js/chart_labels.mjs:243 static/js/chart_labels.mjs:407
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
 #: templates/menu_filtre.html:31 templates/menu_points.html:204
 #: templates/menu_stats.html:102 templates/menu_stats.html:527
 msgid "Mes DNF"
 msgstr "My DNFs"
 
-#: static/js/chart_labels.mjs:244 static/js/chart_labels.mjs:404
+#: static/js/chart_labels.mjs:244 static/js/chart_labels.mjs:406
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
 #: templates/menu_data_poses.html:14 templates/menu_filtre.html:51
 #: templates/menu_points.html:165 templates/menu_stats.html:103
@@ -3055,414 +3055,434 @@ msgid "Le nombre de types différents trouvés dans chaque région."
 msgstr "The number of different types found in each region."
 
 #: static/js/chart_labels.mjs:395
+msgid "Caches actives, année par année"
+msgstr "Active caches, year by year"
+
+#: static/js/chart_labels.mjs:395
+msgid "La carte des caches en place à la fin de chaque année."
+msgstr "The map of the caches in place at the end of each year."
+
+#: static/js/chart_labels.mjs:396
+msgid "Densité des caches actives"
+msgstr "Density of active caches"
+
+#: static/js/chart_labels.mjs:396
+msgid "Les caches en place pour 1 000 km², zone par zone."
+msgstr "Caches in place per 1,000 km², area by area."
+
+#: static/js/chart_labels.mjs:397
 msgid "Grille D/T par région"
 msgstr "D/T grid by region"
 
-#: static/js/chart_labels.mjs:395
+#: static/js/chart_labels.mjs:397
 msgid ""
 "Combien des 81 combinaisons de difficulté et de terrain dans chaque "
 "région."
 msgstr "How many of the 81 difficulty and terrain combinations in each region."
 
-#: static/js/chart_labels.mjs:399
+#: static/js/chart_labels.mjs:401
 msgid "Vue d'ensemble"
 msgstr "Overview"
 
-#: static/js/chart_labels.mjs:400
+#: static/js/chart_labels.mjs:402
 msgid "Comparer les périodes"
 msgstr "Compare periods"
 
-#: static/js/chart_labels.mjs:401
+#: static/js/chart_labels.mjs:403
 msgid "Quand je cache"
 msgstr "When I cache"
 
-#: static/js/chart_labels.mjs:402
+#: static/js/chart_labels.mjs:404
 msgid "Les caches trouvées"
 msgstr "The caches I found"
 
-#: static/js/chart_labels.mjs:403
+#: static/js/chart_labels.mjs:405
 msgid "Lieux et poseurs"
 msgstr "Places and hiders"
 
-#: static/js/chart_labels.mjs:406
+#: static/js/chart_labels.mjs:408
 msgid "La zone au fil du temps"
 msgstr "The area over time"
 
-#: static/js/chart_labels.mjs:407
+#: static/js/chart_labels.mjs:409
 msgid "Les caches de la zone"
 msgstr "The area's caches"
 
-#: static/js/chart_labels.mjs:408 templates/guide.html:636
+#: static/js/chart_labels.mjs:410
+msgid "Cartes de la zone"
+msgstr "Maps of the area"
+
+#: static/js/chart_labels.mjs:411 templates/guide.html:637
 msgid "Mes défis"
 msgstr "My challenges"
 
-#: static/js/chart_labels.mjs:409 templates/guide.html:647
+#: static/js/chart_labels.mjs:412 templates/guide.html:648
 msgid "Mes cartes"
 msgstr "My maps"
 
-#: static/js/chart_labels.mjs:410 templates/guide.html:657
+#: static/js/chart_labels.mjs:413 templates/guide.html:658
 msgid "Séries et records"
 msgstr "Streaks and records"
 
-#: static/js/chart_labels.mjs:411
+#: static/js/chart_labels.mjs:414
 msgid "Objectifs et projections"
 msgstr "Goals and projections"
 
-#: static/js/chart_labels.mjs:415 static/js/chart_labels.mjs:430
+#: static/js/chart_labels.mjs:418 static/js/chart_labels.mjs:433
 #: static/js/stats_panels.js:1203 static/js/stats_panels.js:1238
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr "Others"
 
-#: static/js/chart_labels.mjs:416 static/js/chart_labels.mjs:431
+#: static/js/chart_labels.mjs:419 static/js/chart_labels.mjs:434
 #: static/js/stats_panels.js:1204
 msgid "Inconnu"
 msgstr "Unknown"
 
-#: static/js/chart_labels.mjs:433 static/js/stats_panels.js:3032
+#: static/js/chart_labels.mjs:436 static/js/stats_panels.js:3032
 #: static/js/stats_panels.js:3086 templates/menu_informations.html:73
 #: templates/menu_informations.html:103
 msgid "Total"
 msgstr "Total"
 
-#: static/js/chart_labels.mjs:435 static/js/chart_labels.mjs:489
-#: static/js/chart_labels.mjs:561
+#: static/js/chart_labels.mjs:438 static/js/chart_labels.mjs:492
+#: static/js/chart_labels.mjs:564
 #, python-brace-format
 msgid "T${q} ${y}"
 msgstr "Q${q} ${y}"
 
-#: static/js/chart_labels.mjs:441
+#: static/js/chart_labels.mjs:444
 #, python-brace-format
 msgid "Semaine du ${date}"
 msgstr "Week of ${date}"
 
-#: static/js/chart_labels.mjs:444
+#: static/js/chart_labels.mjs:447
 #, python-brace-format
 msgid "S${n}"
 msgstr "W${n}"
 
-#: static/js/chart_labels.mjs:454
+#: static/js/chart_labels.mjs:457
 #, python-brace-format
 msgid "D${d} / T${t}"
 msgstr "D${d} / T${t}"
 
-#: static/js/chart_labels.mjs:472 static/js/chart_labels.mjs:586
+#: static/js/chart_labels.mjs:475 static/js/chart_labels.mjs:589
 msgid "Toute la période"
 msgstr "The whole period"
 
-#: static/js/chart_labels.mjs:479 static/js/chart_labels.mjs:602
+#: static/js/chart_labels.mjs:482 static/js/chart_labels.mjs:605
 #, python-brace-format
 msgid "${from} – ${to}"
 msgstr "${from} – ${to}"
 
-#: static/js/chart_labels.mjs:490
+#: static/js/chart_labels.mjs:493
 #, python-brace-format
 msgid "${n}ᵉ trouvaille"
 msgstr "${n}th find"
 
-#: static/js/chart_labels.mjs:491
+#: static/js/chart_labels.mjs:494
 #, python-brace-format
 msgid "Nouvelle zone · ${date}"
 msgstr "New area · ${date}"
 
-#: static/js/chart_labels.mjs:496
+#: static/js/chart_labels.mjs:499
 #, python-brace-format
 msgid "Au ${date}"
 msgstr "At ${date}"
 
-#: static/js/chart_labels.mjs:503
+#: static/js/chart_labels.mjs:506
 msgid "La veille"
 msgstr "The day before"
 
-#: static/js/chart_labels.mjs:504
+#: static/js/chart_labels.mjs:507
 msgid "Le mois précédent"
 msgstr "The previous month"
 
-#: static/js/chart_labels.mjs:505
+#: static/js/chart_labels.mjs:508
 msgid "L'année précédente"
 msgstr "The previous year"
 
-#: static/js/chart_labels.mjs:507
+#: static/js/chart_labels.mjs:510
 #, python-brace-format
 msgid "Les ${n} jours précédents"
 msgstr "The previous ${n} days"
 
-#: static/js/chart_labels.mjs:508
+#: static/js/chart_labels.mjs:511
 #, python-brace-format
 msgid "Les ${n} mois précédents"
 msgstr "The previous ${n} months"
 
-#: static/js/chart_labels.mjs:509
+#: static/js/chart_labels.mjs:512
 #, python-brace-format
 msgid "Les ${n} années précédentes"
 msgstr "The previous ${n} years"
 
-#: static/js/chart_labels.mjs:520
+#: static/js/chart_labels.mjs:523
 msgid "par rapport à la veille"
 msgstr "compared with the day before"
 
-#: static/js/chart_labels.mjs:521
+#: static/js/chart_labels.mjs:524
 msgid "par rapport au mois précédent"
 msgstr "compared with the previous month"
 
-#: static/js/chart_labels.mjs:522
+#: static/js/chart_labels.mjs:525
 msgid "par rapport à l'année précédente"
 msgstr "compared with the previous year"
 
-#: static/js/chart_labels.mjs:524
+#: static/js/chart_labels.mjs:527
 #, python-brace-format
 msgid "par rapport aux ${n} jours précédents"
 msgstr "compared with the previous ${n} days"
 
-#: static/js/chart_labels.mjs:525
+#: static/js/chart_labels.mjs:528
 #, python-brace-format
 msgid "par rapport aux ${n} mois précédents"
 msgstr "compared with the previous ${n} months"
 
-#: static/js/chart_labels.mjs:526
+#: static/js/chart_labels.mjs:529
 #, python-brace-format
 msgid "par rapport aux ${n} années précédentes"
 msgstr "compared with the previous ${n} years"
 
-#: static/js/chart_labels.mjs:528
+#: static/js/chart_labels.mjs:531
 #, python-brace-format
 msgid "par rapport à ${period}"
 msgstr "compared with ${period}"
 
-#: static/js/chart_labels.mjs:537
+#: static/js/chart_labels.mjs:540
 #, python-brace-format
 msgid "${period} (en cours)"
 msgstr "${period} (ongoing)"
 
-#: static/js/chart_labels.mjs:538
+#: static/js/chart_labels.mjs:541
 #, python-brace-format
 msgid "${period} (au ${date})"
 msgstr "${period} (to ${date})"
 
-#: static/js/chart_labels.mjs:547
+#: static/js/chart_labels.mjs:550
 #, python-brace-format
 msgid "Jour ${n}"
 msgstr "Day ${n}"
 
-#: static/js/chart_labels.mjs:548
+#: static/js/chart_labels.mjs:551
 #, python-brace-format
 msgid "Semaine ${n}"
 msgstr "Week ${n}"
 
-#: static/js/chart_labels.mjs:549
+#: static/js/chart_labels.mjs:552
 #, python-brace-format
 msgid "Mois ${n}"
 msgstr "Month ${n}"
 
-#: static/js/chart_labels.mjs:550
+#: static/js/chart_labels.mjs:553
 #, python-brace-format
 msgid "Trimestre ${n}"
 msgstr "Quarter ${n}"
 
-#: static/js/chart_labels.mjs:551
+#: static/js/chart_labels.mjs:554
 #, python-brace-format
 msgid "Année ${n}"
 msgstr "Year ${n}"
 
-#: static/js/chart_labels.mjs:569
+#: static/js/chart_labels.mjs:572
 msgid "Aujourd'hui"
 msgstr "Today"
 
-#: static/js/chart_labels.mjs:570
+#: static/js/chart_labels.mjs:573
 msgid "Le dernier mois"
 msgstr "The last month"
 
-#: static/js/chart_labels.mjs:571
+#: static/js/chart_labels.mjs:574
 msgid "La dernière année"
 msgstr "The last year"
 
-#: static/js/chart_labels.mjs:573
+#: static/js/chart_labels.mjs:576
 #, python-brace-format
 msgid "Les ${n} derniers jours"
 msgstr "The last ${n} days"
 
-#: static/js/chart_labels.mjs:574
+#: static/js/chart_labels.mjs:577
 #, python-brace-format
 msgid "Les ${n} derniers mois"
 msgstr "The last ${n} months"
 
-#: static/js/chart_labels.mjs:575
+#: static/js/chart_labels.mjs:578
 #, python-brace-format
 msgid "Les ${n} dernières années"
 msgstr "The last ${n} years"
 
-#: static/js/chart_labels.mjs:583 static/js/chart_labels.mjs:593
+#: static/js/chart_labels.mjs:586 static/js/chart_labels.mjs:596
 #: static/js/stats_page_dashboard.js:57
 msgid "Période du tableau de bord"
 msgstr "Dashboard period"
 
-#: static/js/chart_labels.mjs:590
+#: static/js/chart_labels.mjs:593
 msgid "Chaque mois"
 msgstr "Each month"
 
-#: static/js/chart_labels.mjs:590
+#: static/js/chart_labels.mjs:593
 msgid "Chaque année"
 msgstr "Each year"
 
-#: static/js/chart_labels.mjs:591
+#: static/js/chart_labels.mjs:594
 msgid "Ce mois-ci"
 msgstr "This month"
 
-#: static/js/chart_labels.mjs:591
+#: static/js/chart_labels.mjs:594
 msgid "Cette année"
 msgstr "This year"
 
-#: static/js/chart_labels.mjs:592
+#: static/js/chart_labels.mjs:595
 msgid "La période précédente"
 msgstr "The previous period"
 
-#: static/js/chart_labels.mjs:595
+#: static/js/chart_labels.mjs:598
 msgid "Moments clés : fins de trimestre"
 msgstr "Key moments: end of each quarter"
 
-#: static/js/chart_labels.mjs:596
+#: static/js/chart_labels.mjs:599
 msgid "Moments clés : paliers (100ᵉ, 1 000ᵉ…)"
 msgstr "Key moments: milestones (100th, 1,000th…)"
 
-#: static/js/chart_labels.mjs:597
+#: static/js/chart_labels.mjs:600
 msgid "Moments clés : nouvelles zones"
 msgstr "Key moments: new areas"
 
-#: static/js/chart_labels.mjs:598
+#: static/js/chart_labels.mjs:601
 msgid "Moments clés : fins d'année"
 msgstr "Key moments: end of each year"
 
-#: static/js/chart_labels.mjs:611
+#: static/js/chart_labels.mjs:614
 msgid "Source"
 msgstr "Source"
 
-#: static/js/chart_labels.mjs:616 static/js/labs.js:564 static/js/labs.js:606
+#: static/js/chart_labels.mjs:619 static/js/labs.js:564 static/js/labs.js:606
 #: static/js/labs.js:1294 static/js/labs.js:1464 static/js/labs.js:1499
 #: static/js/labs.js:1515 static/js/labs.js:1525
-#: templates/_filter_cache_attrs.html:37 templates/guide.html:548
+#: templates/_filter_cache_attrs.html:37 templates/guide.html:549
 #: templates/menu_filtre.html:19
 msgid "Lab Caches"
 msgstr "Lab Caches"
 
-#: static/js/chart_labels.mjs:616 templates/guide.html:548
+#: static/js/chart_labels.mjs:619 templates/guide.html:549
 #: templates/menu_filtre.html:18
 msgid "Géocaches"
 msgstr "Geocaches"
 
-#: static/js/chart_labels.mjs:637
+#: static/js/chart_labels.mjs:640
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n}%"
 
-#: static/js/chart_labels.mjs:638
+#: static/js/chart_labels.mjs:641
 #, python-brace-format
 msgid "${n} / jour"
 msgstr "${n} / day"
 
-#: static/js/chart_labels.mjs:645
+#: static/js/chart_labels.mjs:648
 #, python-brace-format
 msgid "${n} / 1 000 km²"
 msgstr "${n} / 1,000 km²"
 
-#: static/js/chart_labels.mjs:650
+#: static/js/chart_labels.mjs:653
 #, python-brace-format
 msgid "${n} j"
 msgstr "${n} d"
 
-#: static/js/chart_labels.mjs:659
+#: static/js/chart_labels.mjs:662
 msgid "/ 1 000 km²"
 msgstr "/ 1,000 km²"
 
-#: static/js/chart_labels.mjs:699 static/js/stats_panels.js:1271
+#: static/js/chart_labels.mjs:702 static/js/stats_panels.js:1271
 #, python-brace-format
 msgid "Combinaisons : ${filled}/${available} (${pct})"
 msgstr "Combinations: ${filled}/${available} (${pct})"
 
-#: static/js/chart_labels.mjs:700 static/js/stats_panels.js:1273
+#: static/js/chart_labels.mjs:703 static/js/stats_panels.js:1273
 #, python-brace-format
 msgid "Jours : ${filled}/${available} (${pct})"
 msgstr "Days: ${filled}/${available} (${pct})"
 
-#: static/js/chart_labels.mjs:701 static/js/stats_panels.js:1272
+#: static/js/chart_labels.mjs:704 static/js/stats_panels.js:1272
 #, python-brace-format
 msgid "Mois : ${filled}/${available} (${pct})"
 msgstr "Months: ${filled}/${available} (${pct})"
 
-#: static/js/chart_labels.mjs:704 static/js/stats_panels.js:1279
+#: static/js/chart_labels.mjs:707 static/js/stats_panels.js:1279
 #, python-brace-format
 msgid "Tours de Jasmer : ${n}"
 msgstr "Jasmer rounds: ${n}"
 
-#: static/js/chart_labels.mjs:705 static/js/stats_panels.js:1280
+#: static/js/chart_labels.mjs:708 static/js/stats_panels.js:1280
 #, python-brace-format
 msgid "Tours année × mois : ${n}"
 msgstr "Year × month rounds: ${n}"
 
-#: static/js/chart_labels.mjs:706 static/js/stats_panels.js:1281
+#: static/js/chart_labels.mjs:709 static/js/stats_panels.js:1281
 #, python-brace-format
 msgid "Tours de calendrier : ${n}"
 msgstr "Calendar rounds: ${n}"
 
-#: static/js/chart_labels.mjs:707 static/js/stats_panels.js:1282
+#: static/js/chart_labels.mjs:710 static/js/stats_panels.js:1282
 #, python-brace-format
 msgid "Tours de matrice : ${n}"
 msgstr "Matrix loops: ${n}"
 
-#: static/js/chart_labels.mjs:714
+#: static/js/chart_labels.mjs:717
 #, python-brace-format
 msgid "Il manque : ${list}"
 msgstr "Missing: ${list}"
 
-#: static/js/chart_labels.mjs:715
+#: static/js/chart_labels.mjs:718
 #, python-brace-format
 msgid "Pour le tour ${round} : ${list}"
 msgstr "For round ${round}: ${list}"
 
-#: static/js/chart_labels.mjs:717
+#: static/js/chart_labels.mjs:720
 #, python-brace-format
 msgid "Il manque ${count} cases"
 msgstr "${count} cells missing"
 
-#: static/js/chart_labels.mjs:718
+#: static/js/chart_labels.mjs:721
 #, python-brace-format
 msgid "Pour le tour ${round}, encore ${count} cases"
 msgstr "For round ${round}, ${count} cells to go"
 
-#: static/js/chart_labels.mjs:731 static/js/stats_page_links.js:38
+#: static/js/chart_labels.mjs:734 static/js/stats_page_links.js:38
 #, python-brace-format
 msgid "du ${from} au ${to}"
 msgstr "from ${from} to ${to}"
 
-#: static/js/chart_labels.mjs:747
+#: static/js/chart_labels.mjs:750
 #, python-brace-format
 msgid "${value} / ${goal} · ${pct}"
 msgstr "${value} / ${goal} · ${pct}"
 
-#: static/js/chart_labels.mjs:751
+#: static/js/chart_labels.mjs:754
 #, python-brace-format
 msgid "Objectif atteint le ${date}"
 msgstr "Goal reached on ${date}"
 
-#: static/js/chart_labels.mjs:752
+#: static/js/chart_labels.mjs:755
 msgid "Objectif atteint"
 msgstr "Goal reached"
 
-#: static/js/chart_labels.mjs:754
+#: static/js/chart_labels.mjs:757
 #, python-brace-format
 msgid "À ce rythme : ${goal} le ${date}"
 msgstr "At this pace: ${goal} on ${date}"
 
-#: static/js/chart_labels.mjs:757
+#: static/js/chart_labels.mjs:760
 #, python-brace-format
 msgid "À ce rythme : ${n} en fin de période, ${short} de moins que l'objectif"
 msgstr "At this pace: ${n} by the end of the period, ${short} short of the goal"
 
-#: static/js/chart_labels.mjs:762
+#: static/js/chart_labels.mjs:765
 #, python-brace-format
 msgid "À ce rythme : ${n} en fin de période"
 msgstr "At this pace: ${n} by the end of the period"
 
-#: static/js/chart_labels.mjs:786
+#: static/js/chart_labels.mjs:789
 #, python-brace-format
 msgid "${measure} ${group}"
 msgstr "${measure} ${group}"
@@ -3495,53 +3515,53 @@ msgstr "caches without a known position"
 msgid "Actif quand les DNF sont affichés"
 msgstr "Active when DNF are shown"
 
-#: static/js/evolution_data.js:218
+#: static/js/evolution_data.js:162
 #, python-brace-format
 msgid "${n} fichiers sélectionnés"
 msgstr "${n} files selected"
 
-#: static/js/evolution_data.js:252
+#: static/js/evolution_data.js:190
 msgid "Impossible de lire la liste des bases"
 msgstr "Unable to read the list of datasets"
 
-#: static/js/evolution_data.js:280 static/js/evolution_data.js:1009
+#: static/js/evolution_data.js:217 static/js/evolution_data.js:915
 #, python-brace-format
 msgid "${name} (${n} caches)"
 msgstr "${name} (${n} caches)"
 
-#: static/js/evolution_data.js:312
+#: static/js/evolution_data.js:244
 msgid "La base sera affichée à la fin de l'animation."
 msgstr "The database will be shown when the animation ends."
 
-#: static/js/evolution_data.js:312 templates/menu_data_evolution.html:14
+#: static/js/evolution_data.js:244 templates/menu_data_evolution.html:14
 #: templates/menu_data_evolution.html:20
 msgid "Base de caches"
 msgstr "Cache dataset"
 
-#: static/js/evolution_data.js:314
+#: static/js/evolution_data.js:246
 msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Stop the animation before switching datasets."
 
-#: static/js/evolution_data.js:314 static/js/evolution_data.js:1340
+#: static/js/evolution_data.js:246 static/js/evolution_data.js:1232
 #: static/js/mapgl.js:4821 static/js/mapgl.js:4873 static/js/mapgl.js:4880
 #: static/js/mapgl.js:6030 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Warning"
 
-#: static/js/evolution_data.js:333
+#: static/js/evolution_data.js:261
 msgid "Chargement de la base..."
 msgstr "Loading the dataset..."
 
-#: static/js/evolution_data.js:356
+#: static/js/evolution_data.js:282
 #, python-brace-format
 msgid "Impossible de charger la base : ${message}"
 msgstr "Unable to load the dataset: ${message}"
 
-#: static/js/evolution_data.js:435 static/js/poses_data.js:286
+#: static/js/evolution_data.js:350 static/js/poses_data.js:286
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr "The filter will apply when the animation ends."
 
-#: static/js/evolution_data.js:482
+#: static/js/evolution_data.js:388
 #, python-brace-format
 msgid ""
 "${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou "
@@ -3550,103 +3570,103 @@ msgstr ""
 "${n} caches displayed: the map may slow down. Filter by country or region"
 " to lighten it."
 
-#: static/js/evolution_data.js:483
+#: static/js/evolution_data.js:389
 msgid "Grosse sélection"
 msgstr "Large selection"
 
-#: static/js/evolution_data.js:752
+#: static/js/evolution_data.js:675
 #, python-brace-format
 msgid "Archivée le ${date}"
 msgstr "Archived on ${date}"
 
-#: static/js/evolution_data.js:753
+#: static/js/evolution_data.js:676
 msgid "Archivée (date inconnue)"
 msgstr "Archived (unknown date)"
 
-#: static/js/evolution_data.js:771
+#: static/js/evolution_data.js:694
 #, python-brace-format
 msgid "Placée le ${date}"
 msgstr "Placed on ${date}"
 
-#: static/js/evolution_data.js:799 static/js/evolution_data.js:803
-#: static/js/evolution_data.js:813 static/js/evolution_data.js:830
+#: static/js/evolution_data.js:719 static/js/evolution_data.js:723
+#: static/js/evolution_data.js:733 static/js/evolution_data.js:748
 #: templates/menu_data.html:545
 msgid "Import"
 msgstr "Import"
 
-#: static/js/evolution_data.js:803 static/js/evolution_data.js:830
+#: static/js/evolution_data.js:723 static/js/evolution_data.js:748
 msgid "Arrêtez l'animation avant d'importer."
 msgstr "Stop the animation before importing."
 
-#: static/js/evolution_data.js:808
+#: static/js/evolution_data.js:728
 #, python-brace-format
 msgid "${name} : seuls les fichiers .csv sont acceptés"
 msgstr "${name}: only .csv files are accepted"
 
-#: static/js/evolution_data.js:809
+#: static/js/evolution_data.js:729
 #, python-brace-format
 msgid "${name} : fichier vide"
 msgstr "${name}: empty file"
 
-#: static/js/evolution_data.js:810
+#: static/js/evolution_data.js:730
 #, python-brace-format
 msgid "${name} : fichier trop volumineux (500 Mo au plus)"
 msgstr "${name}: file too large (500 MB at most)"
 
-#: static/js/evolution_data.js:846
+#: static/js/evolution_data.js:762
 msgid "Envoi des fichiers..."
 msgstr "Uploading files..."
 
-#: static/js/evolution_data.js:861 static/js/evolution_data.js:874
+#: static/js/evolution_data.js:777 static/js/evolution_data.js:790
 msgid "Import en cours..."
 msgstr "Import in progress..."
 
-#: static/js/evolution_data.js:879 static/js/labs.js:1267
+#: static/js/evolution_data.js:795 static/js/labs.js:1267
 msgid "L'import a échoué"
 msgstr "The import failed"
 
-#: static/js/evolution_data.js:898
+#: static/js/evolution_data.js:811
 #, python-brace-format
 msgid "Envoi des fichiers : ${pct}%"
 msgstr "Uploading files: ${pct}%"
 
-#: static/js/evolution_data.js:906
+#: static/js/evolution_data.js:819
 msgid "Impossible de lancer l'import"
 msgstr "Unable to start the import"
 
-#: static/js/evolution_data.js:940
+#: static/js/evolution_data.js:850
 msgid "Ma zone"
 msgstr "My area"
 
-#: static/js/evolution_data.js:956 static/js/evolution_data.js:960
+#: static/js/evolution_data.js:866 static/js/evolution_data.js:870
 msgid "Impossible de créer la base"
 msgstr "Unable to create the dataset"
 
-#: static/js/evolution_data.js:984
+#: static/js/evolution_data.js:890
 #, python-brace-format
 msgid "${files} ne correspondent pas aux exports déjà importés dans « ${name} »."
 msgstr "${files} do not match the exports already imported into “${name}”."
 
-#: static/js/evolution_data.js:985
+#: static/js/evolution_data.js:891
 #, python-brace-format
 msgid "${file} ne correspond pas aux exports déjà importés dans « ${name} »."
 msgstr "${file} does not match the exports already imported into “${name}”."
 
-#: static/js/evolution_data.js:990
+#: static/js/evolution_data.js:896
 #, python-brace-format
 msgid "Créer une nouvelle base « ${name} »"
 msgstr "Create a new database “${name}”"
 
-#: static/js/evolution_data.js:997
+#: static/js/evolution_data.js:903
 #, python-brace-format
 msgid "Ajouter à la base ouverte « ${name} » (${n} caches)"
 msgstr "Add to the open database “${name}” (${n} caches)"
 
-#: static/js/evolution_data.js:1096
+#: static/js/evolution_data.js:999
 msgid "Erreur d'import"
 msgstr "Import error"
 
-#: static/js/evolution_data.js:1129
+#: static/js/evolution_data.js:1031
 #, python-brace-format
 msgid ""
 "${read} lignes lues : ${added} nouvelles, ${updated} mises à jour, "
@@ -3655,22 +3675,22 @@ msgstr ""
 "${read} rows read: ${added} new, ${updated} updated, ${unchanged} "
 "unchanged"
 
-#: static/js/evolution_data.js:1133
+#: static/js/evolution_data.js:1035
 #, python-brace-format
 msgid "${n} caches archivées depuis le précédent export"
 msgstr "${n} caches archived since the previous export"
 
-#: static/js/evolution_data.js:1136
+#: static/js/evolution_data.js:1038
 #, python-brace-format
 msgid "${n} lignes plus anciennes que la version déjà connue, ignorées"
 msgstr "${n} rows older than the version already known, ignored"
 
-#: static/js/evolution_data.js:1139
+#: static/js/evolution_data.js:1041
 #, python-brace-format
 msgid "${n} doublons dans le fichier (version la plus récente retenue)"
 msgstr "${n} duplicates in the file (most recent version kept)"
 
-#: static/js/evolution_data.js:1142
+#: static/js/evolution_data.js:1044
 #, python-brace-format
 msgid ""
 "${n} caches archivées sans date d'archivage : non affichées (option dans "
@@ -3679,12 +3699,12 @@ msgstr ""
 "${n} caches archived without an archive date: not displayed (option in "
 "the filters)"
 
-#: static/js/evolution_data.js:1146
+#: static/js/evolution_data.js:1048
 #, python-brace-format
 msgid "${n} lignes invalides ignorées (${reasons})"
 msgstr "${n} invalid rows ignored (${reasons})"
 
-#: static/js/evolution_data.js:1149
+#: static/js/evolution_data.js:1051
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage antérieures au placement (disparition le jour du "
@@ -3693,12 +3713,12 @@ msgstr ""
 "${n} archive dates earlier than placement (disappearance on the placement"
 " day)"
 
-#: static/js/evolution_data.js:1152
+#: static/js/evolution_data.js:1054
 #, python-brace-format
 msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 msgstr "${n} reactivated caches: their former archive date is ignored"
 
-#: static/js/evolution_data.js:1159
+#: static/js/evolution_data.js:1059
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, "
@@ -3707,7 +3727,7 @@ msgstr ""
 "${n} unreadable archive dates, ignored (accepted formats: YYYY-MM-DD, "
 "DD/MM/YYYY)"
 
-#: static/js/evolution_data.js:1170
+#: static/js/evolution_data.js:1067
 msgid ""
 "Colonne « Ajouté » absente ou vide : les caches déjà connues par un "
 "export daté ne sont pas mises à jour"
@@ -3715,7 +3735,7 @@ msgstr ""
 "“Ajouté” column missing or empty: caches already known from a dated "
 "export are not updated"
 
-#: static/js/evolution_data.js:1171
+#: static/js/evolution_data.js:1068
 #, python-brace-format
 msgid ""
 "${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent "
@@ -3724,82 +3744,82 @@ msgstr ""
 "${n} rows without an export date (“Ajouté” column): they do not update "
 "caches already known from a dated export"
 
-#: static/js/evolution_data.js:1177
+#: static/js/evolution_data.js:1074
 #, python-brace-format
 msgid "Types non reconnus (couleur par défaut) : ${types}"
 msgstr "Unrecognized types (default color): ${types}"
 
-#: static/js/evolution_data.js:1181
+#: static/js/evolution_data.js:1078
 #, python-brace-format
 msgid "Tailles non reconnues (gardées telles quelles) : ${sizes}"
 msgstr "Unrecognized sizes (kept as is): ${sizes}"
 
-#: static/js/evolution_data.js:1188
+#: static/js/evolution_data.js:1085
 msgid "code GC"
 msgstr "GC code"
 
-#: static/js/evolution_data.js:1190
+#: static/js/evolution_data.js:1087
 msgid "date de placement"
 msgstr "placement date"
 
-#: static/js/evolution_data.js:1203
+#: static/js/evolution_data.js:1099
 msgid "Base vide : importez un export CSV."
 msgstr "Empty dataset: import a CSV export."
 
-#: static/js/evolution_data.js:1207
+#: static/js/evolution_data.js:1103
 #, python-brace-format
 msgid "${n} caches"
 msgstr "${n} caches"
 
-#: static/js/evolution_data.js:1208
+#: static/js/evolution_data.js:1104
 #, python-brace-format
 msgid "${n} actives"
 msgstr "${n} active"
 
-#: static/js/evolution_data.js:1209
+#: static/js/evolution_data.js:1105
 #, python-brace-format
 msgid "${n} archivées"
 msgstr "${n} archived"
 
-#: static/js/evolution_data.js:1212
+#: static/js/evolution_data.js:1108
 #, python-brace-format
 msgid "${n} archivées sans date"
 msgstr "${n} archived without a date"
 
-#: static/js/evolution_data.js:1217
+#: static/js/evolution_data.js:1113
 #, python-brace-format
 msgid "placements du ${from} au ${to}"
 msgstr "placed from ${from} to ${to}"
 
-#: static/js/evolution_data.js:1221
+#: static/js/evolution_data.js:1117
 #, python-brace-format
 msgid "export du ${date}"
 msgstr "exported on ${date}"
 
-#: static/js/evolution_data.js:1254
+#: static/js/evolution_data.js:1150
 #, python-brace-format
 msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 msgstr "${date} · ${file}: ${added} new, ${updated} updated"
 
-#: static/js/evolution_data.js:1268 templates/menu_data_evolution.html:26
+#: static/js/evolution_data.js:1163 templates/menu_data_evolution.html:26
 msgid "Renommer la base"
 msgstr "Rename the dataset"
 
-#: static/js/evolution_data.js:1268 templates/menu_data_evolution.html:22
+#: static/js/evolution_data.js:1163 templates/menu_data_evolution.html:22
 #: templates/modal_evolution.html:8
 msgid "Nouvelle base"
 msgstr "New dataset"
 
-#: static/js/evolution_data.js:1297
+#: static/js/evolution_data.js:1192
 msgid "Nom refusé"
 msgstr "Name rejected"
 
-#: static/js/evolution_data.js:1310 static/js/evolution_data.js:1356
+#: static/js/evolution_data.js:1205 static/js/evolution_data.js:1248
 #, python-brace-format
 msgid "Erreur : ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/evolution_data.js:1331
+#: static/js/evolution_data.js:1223
 #, python-brace-format
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
@@ -3808,15 +3828,15 @@ msgstr ""
 "Delete the dataset “${name}” and its ${n} caches? The original CSV files "
 "are not affected."
 
-#: static/js/evolution_data.js:1340
+#: static/js/evolution_data.js:1232
 msgid "Arrêtez l'animation avant de supprimer la base."
 msgstr "Stop the animation before deleting the dataset."
 
-#: static/js/evolution_data.js:1348
+#: static/js/evolution_data.js:1240
 msgid "Suppression impossible"
 msgstr "Unable to delete"
 
-#: static/js/evolution_data.js:1375
+#: static/js/evolution_data.js:1266
 msgid ""
 "Déposez vos exports CSV pour les ajouter à la base, une musique ou une "
 "image"
@@ -4166,7 +4186,7 @@ msgstr "duplicate ignored"
 msgid "doublons ignorés"
 msgstr "duplicates ignored"
 
-#: static/js/gc_logs.js:784 static/js/labs.js:1106 static/js/profiles.js:259
+#: static/js/gc_logs.js:784 static/js/labs.js:1106 static/js/profiles.js:334
 msgid "Import échoué"
 msgstr "Import failed"
 
@@ -4429,7 +4449,7 @@ msgstr "This image will be permanently deleted from the library."
 
 #: static/js/images_ui.js:1104 static/js/images_ui.js:1150
 #: static/js/images_ui.js:1353 static/js/images_ui.js:2450
-#: static/js/profiles.js:800 static/js/recent_videos.js:60
+#: static/js/profiles.js:976 static/js/recent_videos.js:60
 #: static/js/recent_videos.js:121 static/js/stats_page_card_actions.js:105
 #: static/js/stats_page_card_actions.js:113 static/js/stats_page_cards.js:286
 #: static/js/stats_page_dashboard.js:403 static/js/stats_page_dashboard.js:412
@@ -4479,8 +4499,8 @@ msgstr "Move up"
 msgid "Descendre"
 msgstr "Move down"
 
-#: static/js/images_ui.js:1352 static/js/profiles.js:791
-#: static/js/profiles.js:2226 static/js/stats_page_cards.js:276
+#: static/js/images_ui.js:1352 static/js/profiles.js:967
+#: static/js/profiles.js:2817 static/js/stats_page_cards.js:276
 #: static/js/stats_ui.js:579
 msgid "Dupliquer"
 msgstr "Duplicate"
@@ -4620,7 +4640,7 @@ msgstr ""
 "Drag this button into your browser's bookmarks bar, then click it from "
 "your Adventure Lab logs page."
 
-#: static/js/labs.js:167 static/js/labs.js:1394 templates/guide.html:525
+#: static/js/labs.js:167 static/js/labs.js:1394 templates/guide.html:526
 msgid "MyGCFlow — Lab Caches"
 msgstr "MyGCFlow — Lab Caches"
 
@@ -5120,7 +5140,7 @@ msgstr ""
 "Delete all your Lab Cache stages? Your geocaches are kept. This action "
 "cannot be undone."
 
-#: static/js/labs.js:2168 templates/guide.html:181 templates/guide.html:554
+#: static/js/labs.js:2168 templates/guide.html:181 templates/guide.html:555
 #: templates/menu_data.html:275
 msgid "Supprimer mes Lab Caches"
 msgstr "Delete my Lab Caches"
@@ -5542,36 +5562,36 @@ msgstr "No canvas found in the map"
 msgid "Échec conversion canvas en blob"
 msgstr "Canvas to blob conversion failed"
 
-#: static/js/mapgl.js:7962 static/js/mapgl.js:8054
+#: static/js/mapgl.js:7971 static/js/mapgl.js:8063
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
-#: static/js/mapgl.js:7962 static/js/mapgl.js:7964 static/js/mapgl.js:8054
+#: static/js/mapgl.js:7971 static/js/mapgl.js:7973 static/js/mapgl.js:8063
 #: templates/guide.html:219 templates/menu_style.html:86
 msgid "Trajet"
 msgstr "Route"
 
-#: static/js/mapgl.js:7964
+#: static/js/mapgl.js:7973
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 msgstr "Very busy days: automatic grouping applied at the chosen radius."
 
-#: static/js/mapgl.js:8621 static/js/mapgl.js:8914
+#: static/js/mapgl.js:8630 static/js/mapgl.js:8923
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
 msgstr "No cache visible on screen: move the map over your points."
 
-#: static/js/mapgl.js:8621 templates/menu_style.html:82
+#: static/js/mapgl.js:8630 templates/menu_style.html:82
 msgid "Pseudos"
 msgstr "Names"
 
-#: static/js/mapgl.js:8910
+#: static/js/mapgl.js:8919
 msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
-#: static/js/mapgl.js:8910 static/js/mapgl.js:8914 templates/guide.html:215
+#: static/js/mapgl.js:8919 static/js/mapgl.js:8923 templates/guide.html:215
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
@@ -5865,199 +5885,199 @@ msgstr "grouped"
 msgid "un par visiteur"
 msgstr "one per visitor"
 
-#: static/js/profiles.js:42 static/js/stats_page_links.js:185
+#: static/js/profiles.js:49 static/js/stats_page_links.js:185
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41
 msgid "Évolution"
 msgstr "Evolution"
 
-#: static/js/profiles.js:42 static/js/stats_page_links.js:183
+#: static/js/profiles.js:49 static/js/stats_page_links.js:183
 #: templates/_app_header.html:14 templates/_app_header.html:16
-#: templates/guide.html:163 templates/guide.html:570
+#: templates/guide.html:163 templates/guide.html:571
 #: templates/menu_data.html:27
 msgid "Mes Géocaches"
 msgstr "My Geocaches"
 
-#: static/js/profiles.js:96
+#: static/js/profiles.js:123
 msgid "espace"
 msgstr "space"
 
-#: static/js/profiles.js:266
+#: static/js/profiles.js:344
 #, python-brace-format
 msgid "Thème \"${name}\" importé dans le mode « ${mode} »"
 msgstr "Theme \"${name}\" imported into the “${mode}” mode"
 
-#: static/js/profiles.js:270
+#: static/js/profiles.js:348
 #, python-brace-format
 msgid "Thème \"${name}\" importé"
 msgstr "Theme \"${name}\" imported"
 
-#: static/js/profiles.js:275
+#: static/js/profiles.js:353
 msgid "Erreur import du thème"
 msgstr "Theme import error"
 
-#: static/js/profiles.js:300
+#: static/js/profiles.js:379
 msgid "Erreur API"
 msgstr "API error"
 
-#: static/js/profiles.js:306
+#: static/js/profiles.js:385
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:415 static/js/profiles.js:1299
+#: static/js/profiles.js:518 static/js/profiles.js:1630
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr "Theme \"${name}\" loaded"
 
-#: static/js/profiles.js:445
+#: static/js/profiles.js:555
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr "Theme \"${name}\" saved"
 
-#: static/js/profiles.js:485
+#: static/js/profiles.js:610
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr "Theme \"${name}\" created, but its settings could not be saved"
 
-#: static/js/profiles.js:495
+#: static/js/profiles.js:620
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr "Theme \"${name}\" created"
 
-#: static/js/profiles.js:510
+#: static/js/profiles.js:636
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr "Theme duplicated: \"${name}\""
 
-#: static/js/profiles.js:530
+#: static/js/profiles.js:660
 #, python-brace-format
 msgid "Thème copié dans le mode « ${mode} » : \"${name}\""
 msgstr "Theme copied to the “${mode}” mode: \"${name}\""
 
-#: static/js/profiles.js:545
+#: static/js/profiles.js:676
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr "Theme \"${name}\" deleted"
 
-#: static/js/profiles.js:600
+#: static/js/profiles.js:746
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr "Theme \"${name}\" reset"
 
-#: static/js/profiles.js:627
+#: static/js/profiles.js:781
 msgid "Export échoué"
 msgstr "Export failed"
 
-#: static/js/profiles.js:638
+#: static/js/profiles.js:792
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr "Theme \"${name}\" exported"
 
-#: static/js/profiles.js:641
+#: static/js/profiles.js:795
 msgid "Erreur export du thème"
 msgstr "Theme export error"
 
-#: static/js/profiles.js:661
+#: static/js/profiles.js:815
 msgid "Thème introuvable ou UID manquant"
 msgstr "Theme not found or missing UID"
 
-#: static/js/profiles.js:674
+#: static/js/profiles.js:830
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr "Failed to save the default theme"
 
-#: static/js/profiles.js:679
+#: static/js/profiles.js:835
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr "Theme \"${name}\" set as the default theme"
 
-#: static/js/profiles.js:689
+#: static/js/profiles.js:848
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr "Error while setting the default theme"
 
-#: static/js/profiles.js:703 static/js/profiles.js:943
+#: static/js/profiles.js:863 static/js/profiles.js:1162
 msgid "Aucun thème"
 msgstr "No theme"
 
-#: static/js/profiles.js:794
+#: static/js/profiles.js:970
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
 msgstr "Copy to “${mode}”"
 
-#: static/js/profiles.js:797 static/js/profiles.js:2211
+#: static/js/profiles.js:973 static/js/profiles.js:2797
 #: templates/stats_page.html:467
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:798 templates/app.html:246 templates/app.html:247
+#: static/js/profiles.js:974 templates/app.html:246 templates/app.html:247
 #: templates/guide.html:125 templates/guide.html:328 templates/guide.html:334
-#: templates/guide.html:554 templates/menu_animation.html:47
+#: templates/guide.html:555 templates/menu_animation.html:47
 #: templates/menu_data.html:271 templates/menu_data.html:427
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:799 templates/menu_style.html:319
+#: static/js/profiles.js:975 templates/menu_style.html:319
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:804
+#: static/js/profiles.js:980
 msgid "Définir comme par défaut"
 msgstr "Set as default"
 
-#: static/js/profiles.js:866
+#: static/js/profiles.js:1066
 msgid "Thème par défaut"
 msgstr "Default theme"
 
-#: static/js/profiles.js:913 templates/menu_style.html:336
+#: static/js/profiles.js:1125 templates/menu_style.html:336
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:954
+#: static/js/profiles.js:1173
 msgid "Choisir un thème"
 msgstr "Choose a theme"
 
-#: static/js/profiles.js:1130
+#: static/js/profiles.js:1425
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Theme \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1131
+#: static/js/profiles.js:1426
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1303
+#: static/js/profiles.js:1634
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr "Error while loading the default theme"
 
-#: static/js/profiles.js:1330
+#: static/js/profiles.js:1667
 msgid "Aucun thème par défaut"
 msgstr "No default theme"
 
-#: static/js/profiles.js:1416
+#: static/js/profiles.js:1774
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr "Theme \"${selectedProfile}\" applied and set as default theme"
 
-#: static/js/profiles.js:1417
+#: static/js/profiles.js:1775
 msgid "Aucun thème par défaut défini"
 msgstr "No default theme set"
 
-#: static/js/profiles.js:1586
+#: static/js/profiles.js:2000
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr "The theme could not be loaded: no theme is active."
 
-#: static/js/profiles.js:1976
+#: static/js/profiles.js:2498
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr "Create the theme \"${name}\""
 
-#: static/js/profiles.js:2061 static/js/profiles.js:2405
+#: static/js/profiles.js:2613 static/js/profiles.js:3034
 msgid "Veuillez saisir un nom de thème"
 msgstr "Please enter a theme name"
 
-#: static/js/profiles.js:2114
+#: static/js/profiles.js:2676
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
@@ -6066,75 +6086,75 @@ msgstr ""
 "The theme « ${name} » already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2154
+#: static/js/profiles.js:2722
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2198
+#: static/js/profiles.js:2782
 msgid "Enregistrer dans un nouveau thème"
 msgstr "Save to a new theme"
 
-#: static/js/profiles.js:2198 templates/menu_style.html:254
+#: static/js/profiles.js:2782 templates/menu_style.html:254
 msgid "Nouveau thème"
 msgstr "New theme"
 
-#: static/js/profiles.js:2202 templates/menu_style.html:378
+#: static/js/profiles.js:2788 templates/menu_style.html:378
 msgid "Enregistrer le thème"
 msgstr "Save the theme"
 
-#: static/js/profiles.js:2202 templates/menu_style.html:269
+#: static/js/profiles.js:2788 templates/menu_style.html:269
 #: templates/stats_page.html:447
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2209
+#: static/js/profiles.js:2795
 msgid "Renommer le thème"
 msgstr "Rename the theme"
 
-#: static/js/profiles.js:2224
+#: static/js/profiles.js:2815
 msgid "Dupliquer le thème"
 msgstr "Duplicate the theme"
 
-#: static/js/profiles.js:2240
+#: static/js/profiles.js:2836
 #, python-brace-format
 msgid "Copier le thème vers « ${mode} »"
 msgstr "Copy the theme to “${mode}”"
 
-#: static/js/profiles.js:2242
+#: static/js/profiles.js:2838
 msgid "Copier"
 msgstr "Copy"
 
-#: static/js/profiles.js:2283
+#: static/js/profiles.js:2892
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2303 static/js/profiles.js:2321
+#: static/js/profiles.js:2917 static/js/profiles.js:2937
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2309
+#: static/js/profiles.js:2923
 #, python-brace-format
 msgid "Ce nom est déjà pris par un thème du mode « ${mode} »"
 msgstr "This name is already taken by a theme of the “${mode}” mode"
 
-#: static/js/profiles.js:2333
+#: static/js/profiles.js:2953
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr "« ${name} » is the active theme: its settings will be updated"
 
-#: static/js/profiles.js:2339
+#: static/js/profiles.js:2959
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2346
+#: static/js/profiles.js:2966
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr "A theme named « ${name} » already exists"
 
-#: static/js/profiles.js:2347
+#: static/js/profiles.js:2967
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -6143,22 +6163,22 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2356
+#: static/js/profiles.js:2976
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr "Ignored characters (${dropped}): the theme will be saved as « ${key} »"
 
-#: static/js/profiles.js:2458
+#: static/js/profiles.js:3095
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr "Theme renamed to \"${name}\""
 
-#: static/js/profiles.js:2471
+#: static/js/profiles.js:3109
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr "Are you sure you want to delete the theme \"${name}\"?"
 
-#: static/js/profiles.js:2490
+#: static/js/profiles.js:3128
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -6588,15 +6608,15 @@ msgstr "Import a dashboard…"
 msgid "Imprimer"
 msgstr "Print"
 
-#: static/js/stats_page_dashboard.js:176 templates/guide.html:667
+#: static/js/stats_page_dashboard.js:176 templates/guide.html:668
 msgid "Enregistrer le tableau en image (PNG)"
 msgstr "Save the dashboard as an image (PNG)"
 
-#: static/js/stats_page_dashboard.js:177 templates/guide.html:667
+#: static/js/stats_page_dashboard.js:177 templates/guide.html:668
 msgid "Copier l'image du tableau"
 msgstr "Copy the dashboard image"
 
-#: static/js/stats_page_dashboard.js:178 templates/guide.html:681
+#: static/js/stats_page_dashboard.js:178 templates/guide.html:682
 msgid "Créer la vidéo du tableau…"
 msgstr "Create a video of the dashboard…"
 
@@ -6785,7 +6805,7 @@ msgstr "Chart added."
 msgid "Graphique enregistré."
 msgstr "Chart saved."
 
-#: static/js/stats_page_exports.js:31 templates/guide.html:605
+#: static/js/stats_page_exports.js:31 templates/guide.html:606
 #: templates/stats_page.html:90
 msgid "Période"
 msgstr "Period"
@@ -6831,7 +6851,7 @@ msgstr "Data unavailable"
 msgid "Aucune donnée pour l’instant"
 msgstr "No data yet"
 
-#: static/js/stats_page_gallery.js:239
+#: static/js/stats_page_gallery.js:246
 #, python-brace-format
 msgid "Graphique ajouté : ${title}."
 msgstr "Chart added: ${title}."
@@ -7568,7 +7588,7 @@ msgstr "Days with finds"
 msgid "Plus longue série (jours)"
 msgstr "Longest streak (days)"
 
-#: static/js/stats_panels.js:1432 static/js/zone_layer.js:316
+#: static/js/stats_panels.js:1432 static/js/zone_layer.js:367
 #: templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Different cache types"
@@ -8802,7 +8822,7 @@ msgstr "${s} s of silence detected at the end of the music."
 msgid "Masquer le favori et les instructions"
 msgstr "Hide the bookmark and instructions"
 
-#: static/js/utils.js:256 templates/guide.html:534 templates/menu_data.html:268
+#: static/js/utils.js:256 templates/guide.html:535 templates/menu_data.html:268
 #: templates/menu_data.html:424
 msgid "Afficher le favori et les instructions"
 msgstr "Show the bookmark and instructions"
@@ -8917,11 +8937,19 @@ msgstr "Unable to open the video stream"
 msgid "Aucun flux vidéo ouvert"
 msgstr "No video stream open"
 
-#: static/js/zone_layer_ui.js:57
+#: static/js/zone_layer.js:369
+msgid "Première cache posée"
+msgstr "First cache placed"
+
+#: static/js/zone_layer_ui.js:69
 msgid "Chargement des contours…"
 msgstr "Loading area outlines…"
 
-#: static/js/zone_layer_ui.js:59
+#: static/js/zone_layer_ui.js:73
+msgid "Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données."
+msgstr "No caches to colour: open or import a dataset in the Data tab."
+
+#: static/js/zone_layer_ui.js:74
 msgid ""
 "Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet "
 "Données."
@@ -8932,7 +8960,7 @@ msgid "Mode"
 msgstr "Mode"
 
 #: templates/_app_header.html:31 templates/_app_header.html:33
-#: templates/guide.html:80 templates/guide.html:600
+#: templates/guide.html:80 templates/guide.html:601
 #: templates/stats_page.html:27
 msgid "Statistiques"
 msgstr "Statistics"
@@ -8942,10 +8970,10 @@ msgid "Guide"
 msgstr "Guide"
 
 #: templates/_app_header.html:45 templates/guide.html:222
-#: templates/guide.html:482 templates/menu_images.html:215
+#: templates/guide.html:483 templates/menu_images.html:215
 #: templates/menu_names.html:282 templates/menu_options.html:30
 #: templates/menu_stats.html:356 templates/menu_trail.html:94
-#: templates/menu_zones.html:27
+#: templates/menu_zones.html:28
 msgid "Apparence"
 msgstr "Appearance"
 
@@ -8963,7 +8991,7 @@ msgstr "Light"
 msgid "Sombre"
 msgstr "Dark"
 
-#: templates/_app_header.html:56 templates/guide.html:485
+#: templates/_app_header.html:56 templates/guide.html:486
 #: templates/menu_options.html:146
 msgid "Quitter MyGCFlow"
 msgstr "Quit MyGCFlow"
@@ -9400,7 +9428,7 @@ msgid "Zones"
 msgstr "Areas"
 
 #: templates/app.html:238 templates/guide.html:65 templates/guide.html:113
-#: templates/guide.html:120 templates/guide.html:472 templates/guide.html:474
+#: templates/guide.html:120 templates/guide.html:473 templates/guide.html:475
 msgid "Préférences"
 msgstr "Preferences"
 
@@ -9453,7 +9481,7 @@ msgstr "Fullscreen"
 msgid "Mode d'emploi"
 msgstr "User guide"
 
-#: templates/guide.html:29 templates/guide.html:507
+#: templates/guide.html:29 templates/guide.html:508
 msgid "Retour à l'application"
 msgstr "Back to the application"
 
@@ -9474,7 +9502,7 @@ msgid "Autre source"
 msgstr "Another source"
 
 #: templates/guide.html:70 templates/guide.html:164 templates/guide.html:181
-#: templates/guide.html:523 templates/menu_data.html:101
+#: templates/guide.html:524 templates/menu_data.html:101
 msgid "Mes Lab Caches"
 msgstr "My Lab Caches"
 
@@ -9482,7 +9510,7 @@ msgstr "My Lab Caches"
 msgid "Autre mode"
 msgstr "Other mode"
 
-#: templates/guide.html:75 templates/guide.html:570
+#: templates/guide.html:75 templates/guide.html:571
 #: templates/stats_page.html:426
 msgid "Évolution d'une zone"
 msgstr "Evolution of an area"
@@ -9523,7 +9551,7 @@ msgid "Astuce : en haut de l'application, des onglets"
 msgstr "Tip: at the top of the application, the tabs"
 
 #: templates/guide.html:120 templates/guide.html:234 templates/guide.html:300
-#: templates/guide.html:329 templates/guide.html:486
+#: templates/guide.html:329 templates/guide.html:487
 #: templates/menu_names.html:105
 msgid "et"
 msgstr "and"
@@ -9626,7 +9654,7 @@ msgstr ""
 msgid "Chargez le fichier dans MyGCFlow"
 msgstr "Load the file into MyGCFlow"
 
-#: templates/guide.html:163 templates/guide.html:456 templates/guide.html:583
+#: templates/guide.html:163 templates/guide.html:456 templates/guide.html:584
 msgid "Dans l'onglet"
 msgstr "In the"
 
@@ -9697,7 +9725,7 @@ msgstr "by country or region"
 msgid "En tête du panneau, le sélecteur"
 msgstr "At the top of the panel, the"
 
-#: templates/guide.html:175 templates/guide.html:548
+#: templates/guide.html:175 templates/guide.html:549
 #: templates/menu_filtre.html:16 templates/menu_filtre.html:17
 msgid "Découvertes affichées"
 msgstr "Discoveries shown"
@@ -9745,7 +9773,7 @@ msgstr "Start over (optional)"
 
 #: templates/guide.html:181 templates/guide.html:307 templates/guide.html:308
 #: templates/guide.html:339 templates/guide.html:372 templates/guide.html:419
-#: templates/guide.html:609 templates/guide.html:625 templates/guide.html:671
+#: templates/guide.html:610 templates/guide.html:626 templates/guide.html:672
 msgid "Le bouton"
 msgstr "The button"
 
@@ -9962,7 +9990,7 @@ msgstr "Switch between the"
 msgid "Titre"
 msgstr "Title"
 
-#: templates/guide.html:234 templates/guide.html:583
+#: templates/guide.html:234 templates/guide.html:584
 #: templates/menu_informations.html:25
 msgid "Infos"
 msgstr "Info"
@@ -11037,7 +11065,7 @@ msgstr ""
 msgid "Enregistrez et exportez vos panneaux"
 msgstr "Save and export your panels"
 
-#: templates/guide.html:402 templates/guide.html:441 templates/guide.html:605
+#: templates/guide.html:402 templates/guide.html:441 templates/guide.html:606
 msgid "Le menu"
 msgstr "The"
 
@@ -11300,11 +11328,21 @@ msgstr ""
 " tab, the “Show areas on the map” switch is saved straight away, whatever"
 " the theme."
 
-#: templates/guide.html:459
+#: templates/guide.html:457
+msgid ""
+"Sur la page Évolution, l'onglet existe aussi : les zones y suivent les "
+"caches actives du jeu ouvert, elles foncent quand des caches sont posées "
+"et pâlissent quand elles sont archivées."
+msgstr ""
+"The tab also exists on the Evolution page: areas follow the active caches"
+" of the open dataset, darkening when caches are placed and fading when "
+"they are archived."
+
+#: templates/guide.html:460
 msgid "Réglez leur apparence"
 msgstr "Set how they look"
 
-#: templates/guide.html:460
+#: templates/guide.html:461
 msgid ""
 "Choisissez le découpage (pays, régions, départements — Kreise en "
 "Allemagne, comtés aux États-Unis), ce qui fait foncer une zone "
@@ -11317,7 +11355,7 @@ msgstr ""
 " D/T combinations, date of the first find), the colour, the opacity and "
 "the legend. These settings belong to the theme: remember to “Save”."
 
-#: templates/guide.html:463
+#: templates/guide.html:464
 msgid ""
 "Les couleurs sont calculées sur la fin de l'animation : une teinte garde "
 "le même sens du premier au dernier jour. Une zone qui change de nuance "
@@ -11327,56 +11365,56 @@ msgstr ""
 "meaning from the first day to the last. An area that changes shade fades "
 "into it, with a brief glow of its outline."
 
-#: templates/guide.html:474
+#: templates/guide.html:475
 msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
 msgstr "Configure the application's behavior once and for all in the"
 
-#: templates/guide.html:478
+#: templates/guide.html:479
 msgid "Préférences générales"
 msgstr "General preferences"
 
-#: templates/guide.html:480 templates/menu_options.html:13
+#: templates/guide.html:481 templates/menu_options.html:13
 msgid "Choix de la langue"
 msgstr "Language choice"
 
-#: templates/guide.html:480
+#: templates/guide.html:481
 msgid "basculez entre français et anglais."
 msgstr "switch between French and English."
 
-#: templates/guide.html:481 templates/menu_options.html:21
+#: templates/guide.html:482 templates/menu_options.html:21
 #: templates/menu_options.html:22
 msgid "Format des dates"
 msgstr "Date format"
 
-#: templates/guide.html:481
+#: templates/guide.html:482
 msgid "automatique selon la langue, ou jour/mois/année contre mois/jour/année."
 msgstr "automatic based on language, or day/month/year vs month/day/year."
 
-#: templates/guide.html:482
+#: templates/guide.html:483
 msgid "interface claire, sombre ou alignée sur le système."
 msgstr "light, dark or system-matching interface."
 
-#: templates/guide.html:483 templates/menu_options.html:45
+#: templates/guide.html:484 templates/menu_options.html:45
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr "Check for new versions at startup"
 
-#: templates/guide.html:483
+#: templates/guide.html:484
 msgid "soyez prévenu d'une nouvelle version ; le bouton"
 msgstr "be notified of a new version; the"
 
-#: templates/guide.html:483 templates/menu_options.html:132
+#: templates/guide.html:484 templates/menu_options.html:132
 msgid "Vérifier les mises à jour"
 msgstr "Check for updates"
 
-#: templates/guide.html:483
+#: templates/guide.html:484
 msgid "lance la même vérification à la demande."
 msgstr "runs the same check on demand."
 
-#: templates/guide.html:484 templates/menu_options.html:50
+#: templates/guide.html:485 templates/menu_options.html:50
 msgid "Thème visuel par défaut au démarrage"
 msgstr "Default visual theme at startup"
 
-#: templates/guide.html:484
+#: templates/guide.html:485
 msgid ""
 "par défaut, MyGCFlow rouvre le dernier thème utilisé. Cochez « Toujours "
 "démarrer sur ce thème » pour repartir à chaque fois du thème choisi ici "
@@ -11386,7 +11424,7 @@ msgstr ""
 " this theme\" to start every time on the theme chosen here (if none is "
 "chosen, the active theme is used)."
 
-#: templates/guide.html:485
+#: templates/guide.html:486
 msgid ""
 "arrête l'application depuis l'interface, en plus de l'icône de la zone de"
 " notification. Le même bouton, en rouge, reste visible dans le bandeau du"
@@ -11396,15 +11434,15 @@ msgstr ""
 "icon. The same button, in red, stays visible in the top header whichever "
 "tab is shown."
 
-#: templates/guide.html:486 templates/menu_options.html:174
+#: templates/guide.html:487 templates/menu_options.html:174
 msgid "Licence MIT"
 msgstr "MIT License"
 
-#: templates/guide.html:486 templates/menu_options.html:177
+#: templates/guide.html:487 templates/menu_options.html:177
 msgid "Composants tiers"
 msgstr "Third-party components"
 
-#: templates/guide.html:486
+#: templates/guide.html:487
 msgid ""
 "en bas de l'onglet, à côté du numéro de version : le texte de la licence "
 "de MyGCFlow et celui des composants qu'il embarque."
@@ -11412,11 +11450,11 @@ msgstr ""
 "at the bottom of the tab, next to the version number: the text of the "
 "MyGCFlow license and that of the components it bundles."
 
-#: templates/guide.html:490
+#: templates/guide.html:491
 msgid "Cadrage de la carte"
 msgstr "Map framing"
 
-#: templates/guide.html:491
+#: templates/guide.html:492
 msgid ""
 "Par défaut, la carte se cadre automatiquement sur les Geocaches chargées."
 " Vous pouvez choisir « Centre et zoom personnalisés » : la carte "
@@ -11428,27 +11466,27 @@ msgstr ""
 "saved center (latitude, longitude — combined input or two separate "
 "fields) and zoom."
 
-#: templates/guide.html:493 templates/menu_options.html:121
+#: templates/guide.html:494 templates/menu_options.html:121
 msgid "Enregistrer le cadrage"
 msgstr "Save the framing"
 
-#: templates/guide.html:493
+#: templates/guide.html:494
 msgid "mémorise la vue actuelle comme centre et zoom personnalisés."
 msgstr "saves the current view as the custom center and zoom."
 
-#: templates/guide.html:494 templates/menu_options.html:83
+#: templates/guide.html:495 templates/menu_options.html:83
 msgid "Cadrer sur les Geocaches"
 msgstr "Fit to the geocaches"
 
-#: templates/guide.html:494
+#: templates/guide.html:495
 msgid "recadre la carte sur les données chargées, à la demande."
 msgstr "reframes the map on the loaded data, on demand."
 
-#: templates/guide.html:501
+#: templates/guide.html:502
 msgid "Vous êtes prêt !"
 msgstr "You're all set!"
 
-#: templates/guide.html:501
+#: templates/guide.html:502
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
@@ -11456,11 +11494,11 @@ msgstr ""
 "Load your data, compose your style, run the animation, and share your "
 "geocaching map."
 
-#: templates/guide.html:516
+#: templates/guide.html:517
 msgid "Autre source : les Lab Caches"
 msgstr "Another source: Lab Caches"
 
-#: templates/guide.html:518
+#: templates/guide.html:519
 msgid ""
 "Les étapes d'Adventure Lab que vous avez découvertes peuvent rejoindre "
 "vos géocaches sur la carte : chaque étape compte pour une trouvaille et "
@@ -11470,31 +11508,31 @@ msgstr ""
 "map: each stage counts as a find and appears at its date, in the same "
 "animation and the same video."
 
-#: templates/guide.html:522
+#: templates/guide.html:523
 msgid "Importez votre historique"
 msgstr "Import your history"
 
-#: templates/guide.html:523
+#: templates/guide.html:524
 msgid "Tout se passe dans la carte"
 msgstr "Everything happens in the"
 
-#: templates/guide.html:523
+#: templates/guide.html:524
 msgid "de l'onglet Données. Deux méthodes coexistent :"
 msgstr "card of the Data tab. Two methods coexist:"
 
-#: templates/guide.html:525
+#: templates/guide.html:526
 msgid "La plus simple — le favori"
 msgstr "The simplest — the bookmark"
 
-#: templates/guide.html:525
+#: templates/guide.html:526
 msgid "glissez le bouton"
 msgstr "drag the button"
 
-#: templates/guide.html:525
+#: templates/guide.html:526
 msgid "dans la barre de favoris de votre navigateur (une seule fois), ouvrez"
 msgstr "into your browser's bookmarks bar (only once), open"
 
-#: templates/guide.html:525
+#: templates/guide.html:526
 msgid ""
 "connecté à votre compte, puis cliquez ce favori : votre historique arrive"
 " directement dans l'application."
@@ -11502,16 +11540,16 @@ msgstr ""
 "while signed in, then click that bookmark: your history goes straight "
 "into the application."
 
-#: templates/guide.html:526
+#: templates/guide.html:527
 msgid "L'import de fichiers"
 msgstr "File import"
 
-#: templates/guide.html:526 templates/menu_data.html:181
+#: templates/guide.html:527 templates/menu_data.html:181
 #: templates/menu_data.html:225
 msgid "Importer des fichiers…"
 msgstr "Import files…"
 
-#: templates/guide.html:526
+#: templates/guide.html:527
 msgid ""
 "accepte l'historique .json et les coordonnées .gpx ou .zip (exports "
 "Lab2Gpx), ensemble ou séparément. Un aperçu montre ce que le lot changera"
@@ -11521,7 +11559,7 @@ msgstr ""
 "exports), together or separately. A preview shows what the batch will "
 "change before you confirm."
 
-#: templates/guide.html:530
+#: templates/guide.html:531
 msgid ""
 "La collecte par un favori n'est pas recommandée par Groundspeak et peut "
 "entrer en conflit avec les conditions d'utilisation de geocaching.com : "
@@ -11532,13 +11570,13 @@ msgstr ""
 "may conflict with the geocaching.com terms of use: use it at your own "
 "risk. Importing files, on the other hand, does not touch the site."
 
-#: templates/guide.html:534
+#: templates/guide.html:535
 msgid ""
 "Favori supprimé de votre navigateur ? Inutile de régénérer quoi que ce "
 "soit :"
 msgstr "Bookmark deleted from your browser? No need to regenerate anything:"
 
-#: templates/guide.html:534
+#: templates/guide.html:535
 msgid ""
 "(options avancées de la carte) réaffiche le bouton à glisser à nouveau "
 "dans vos favoris."
@@ -11546,11 +11584,11 @@ msgstr ""
 "(the card's advanced options) shows the button again, ready to drag back "
 "into your bookmarks."
 
-#: templates/guide.html:538
+#: templates/guide.html:539
 msgid "Laissez les étapes se placer"
 msgstr "Let the stages get placed"
 
-#: templates/guide.html:539
+#: templates/guide.html:540
 msgid ""
 "Après un import, l'application récupère seule les positions des étapes "
 "auprès du service public lab2gpx — seuls les identifiants d'Adventures "
@@ -11561,28 +11599,28 @@ msgstr ""
 "the public lab2gpx service — only Adventure identifiers are sent, never "
 "an account identifier. This automatic placement can be turned off in the"
 
-#: templates/guide.html:539 templates/menu_data.html:82
+#: templates/guide.html:540 templates/menu_data.html:82
 #: templates/menu_data.html:216 templates/menu_data.html:384
 msgid "Options avancées"
 msgstr "Advanced options"
 
-#: templates/guide.html:539
+#: templates/guide.html:540
 msgid ""
 "de la carte (« Placer automatiquement les étapes sur la carte après un "
 "import »)."
 msgstr "of the card (“Automatically place stages on the map after an import”)."
 
-#: templates/guide.html:540
+#: templates/guide.html:541
 msgid ""
 "Les étapes que le service ne connaît pas restent « en attente » : "
 "conservées mais non affichées."
 msgstr "Stages the service doesn't know stay “pending”: kept but not shown."
 
-#: templates/guide.html:540 templates/menu_data.html:158
+#: templates/guide.html:541 templates/menu_data.html:158
 msgid "Compléter à la main"
 msgstr "Fill in manually"
 
-#: templates/guide.html:540
+#: templates/guide.html:541
 msgid ""
 "les liste regroupées par Adventure : saisissez une position — une seule "
 "suffit pour toutes les étapes d'une même Adventure — ou une date, aux "
@@ -11593,41 +11631,41 @@ msgstr ""
 " the stages of the same Adventure — or a date, in geocacher formats (N "
 "48° 51.504 E 002° 17.670, decimal or degrees-minutes-seconds)."
 
-#: templates/guide.html:540 templates/menu_data.html:155
+#: templates/guide.html:541 templates/menu_data.html:155
 msgid "Récupérer les positions"
 msgstr "Fetch positions"
 
-#: templates/guide.html:540
+#: templates/guide.html:541
 msgid "relance la récupération automatique à la demande."
 msgstr "re-runs the automatic fetch on demand."
 
-#: templates/guide.html:543
+#: templates/guide.html:544
 msgid ""
 "Vos corrections manuelles sont précieuses : un réimport ultérieur ne les "
 "efface jamais."
 msgstr "Your manual corrections are precious: a later re-import never erases them."
 
-#: templates/guide.html:547
+#: templates/guide.html:548
 msgid "Choisissez ce que la carte affiche"
 msgstr "Choose what the map shows"
 
-#: templates/guide.html:548
+#: templates/guide.html:549
 msgid "En tête des Filtres, le sélecteur"
 msgstr "At the top of the Filters, the"
 
-#: templates/guide.html:548
+#: templates/guide.html:549
 msgid "offre trois sources :"
 msgstr "selector offers three sources:"
 
-#: templates/guide.html:548 templates/guide.html:667
+#: templates/guide.html:549 templates/guide.html:668
 msgid "ou"
 msgstr "or"
 
-#: templates/guide.html:548 templates/menu_filtre.html:20
+#: templates/guide.html:549 templates/menu_filtre.html:20
 msgid "Géocaches et Lab Caches"
 msgstr "Geocaches and Lab Caches"
 
-#: templates/guide.html:548
+#: templates/guide.html:549
 msgid ""
 "mélangées chronologiquement. Les étapes participent à tout le reste — "
 "compteur, trajet, caméra et vidéo — comme des trouvailles ordinaires."
@@ -11635,7 +11673,7 @@ msgstr ""
 "blended chronologically. Stages take part in everything else — counter, "
 "trail, camera and video — like ordinary finds."
 
-#: templates/guide.html:550
+#: templates/guide.html:551
 msgid ""
 "« Adventure Lab » est un type de cache comme les autres ; taille, "
 "difficulté et terrain ne s'appliquent pas aux étapes (désactivés quand "
@@ -11644,7 +11682,7 @@ msgstr ""
 "“Adventure Lab” is a cache type like the others; size, difficulty and "
 "terrain don't apply to stages (disabled when only Lab Caches are shown)."
 
-#: templates/guide.html:551
+#: templates/guide.html:552
 msgid ""
 "Pays et région d'une étape sont empruntés à la géocache la plus proche de"
 " votre base — les fichiers de coordonnées n'en portent pas ; au-delà de "
@@ -11654,7 +11692,7 @@ msgstr ""
 "your database — coordinate files don't carry them; beyond ten kilometres "
 "they stay “Not specified”."
 
-#: templates/guide.html:552
+#: templates/guide.html:553
 msgid ""
 "Le clic sur un point montre son image, le titre de l'étape, celui de son "
 "Adventure et votre avancement (« 3/5 étapes trouvées »)."
@@ -11662,24 +11700,24 @@ msgstr ""
 "Clicking a point shows its image, the stage title, its Adventure's title "
 "and your progress (“3/5 stages found”)."
 
-#: templates/guide.html:554
+#: templates/guide.html:555
 msgid "Côté gestion, dans les options avancées de la carte :"
 msgstr "For management, in the card's advanced options:"
 
-#: templates/guide.html:554
+#: templates/guide.html:555
 msgid "produit un fichier réimportable pour sauvegarde ou transfert,"
 msgstr "produces a re-importable file for backup or transfer,"
 
-#: templates/guide.html:554
+#: templates/guide.html:555
 msgid "vide la collection sans toucher aux géocaches, et"
 msgstr "empties the collection without touching the geocaches, and"
 
-#: templates/guide.html:554 templates/menu_data.html:257
+#: templates/guide.html:555 templates/menu_data.html:257
 #: templates/menu_data.html:402
 msgid "Régénérer le jeton du favori"
 msgstr "Regenerate the bookmarklet token"
 
-#: templates/guide.html:554
+#: templates/guide.html:555
 msgid ""
 "invalide un favori partagé par erreur — le nouveau s'affiche aussitôt, à "
 "glisser dans la barre de favoris à la place de l'ancien."
@@ -11687,11 +11725,11 @@ msgstr ""
 "invalidates a bookmark shared by mistake — the new one appears right "
 "away, to drag into the bookmarks bar in place of the old one."
 
-#: templates/guide.html:563
+#: templates/guide.html:564
 msgid "Autre mode : évolution d'une zone"
 msgstr "Other mode: evolution of an area"
 
-#: templates/guide.html:565
+#: templates/guide.html:566
 msgid ""
 "Au lieu de vos trouvailles, animez toutes les caches d'une zone : chacune"
 " apparaît à sa date de placement et disparaît à son archivage, et le "
@@ -11701,27 +11739,27 @@ msgstr ""
 "appears on its placement date and disappears when archived, and the "
 "counter follows the number of active caches."
 
-#: templates/guide.html:569
+#: templates/guide.html:570
 msgid "Ouvrez le mode Évolution"
 msgstr "Open the Evolution mode"
 
-#: templates/guide.html:570
+#: templates/guide.html:571
 msgid "En haut de l'onglet"
 msgstr "At the top of the"
 
-#: templates/guide.html:570
+#: templates/guide.html:571
 msgid "le sélecteur"
 msgstr "tab, the"
 
-#: templates/guide.html:570
+#: templates/guide.html:571
 msgid "passe d'un mode à l'autre. Chaque mode garde ses propres données."
 msgstr "switches from one mode to the other. Each mode keeps its own data."
 
-#: templates/guide.html:573
+#: templates/guide.html:574
 msgid "Importez les exports CSV de la zone"
 msgstr "Import the CSV exports of the area"
 
-#: templates/guide.html:574
+#: templates/guide.html:575
 msgid ""
 "Sélectionnez ou glissez-déposez un ou plusieurs fichiers CSV (code GC, "
 "latitude, longitude, date de placement et, si possible, date "
@@ -11734,7 +11772,7 @@ msgstr ""
 "merged into a named dataset that you can complete later with a more "
 "recent export: new caches and archivals are added to it."
 
-#: templates/guide.html:577
+#: templates/guide.html:578
 msgid ""
 "Une cache archivée sans date d'archivage n'est pas affichée par défaut : "
 "impossible de la faire disparaître au bon moment. Le réglage « Caches "
@@ -11750,11 +11788,11 @@ msgstr ""
 "arbitrary delay, just to see both flashes. Corrected coordinates are "
 "never used."
 
-#: templates/guide.html:581
+#: templates/guide.html:582
 msgid "Réglez puis exportez"
 msgstr "Adjust, then export"
 
-#: templates/guide.html:582
+#: templates/guide.html:583
 msgid ""
 "Filtrez par pays, région, type, taille, difficulté, terrain ou "
 "département, choisissez un thème (le flash de disparition se règle dans "
@@ -11765,19 +11803,19 @@ msgstr ""
 "choose a theme (the disappearance flash is set in the Style tab) and a "
 "duration: by default, the whole period fits in one minute."
 
-#: templates/guide.html:583
+#: templates/guide.html:584
 msgid "cible"
 msgstr "target"
 
-#: templates/guide.html:583
+#: templates/guide.html:584
 msgid "le champ"
 msgstr "the field"
 
-#: templates/guide.html:583 templates/menu_informations.html:54
+#: templates/guide.html:584 templates/menu_informations.html:54
 msgid "Ligne d'informations"
 msgstr "Information line"
 
-#: templates/guide.html:583
+#: templates/guide.html:584
 #, python-brace-format
 msgid ""
 "compose le cartouche en bas de carte : texte libre et balises {date}, "
@@ -11788,11 +11826,11 @@ msgstr ""
 "{actives}, {placees}, {archivees}, {total} placeholders replaced by the "
 "current values."
 
-#: templates/guide.html:593
+#: templates/guide.html:594
 msgid "Autre page : vos statistiques"
 msgstr "Another page: your statistics"
 
-#: templates/guide.html:595
+#: templates/guide.html:596
 msgid ""
 "Sans carte cette fois : un tableau de bord de graphiques sur vos "
 "trouvailles, que vous composez comme vous voulez."
@@ -11800,15 +11838,15 @@ msgstr ""
 "No map this time: a dashboard of charts about your finds, laid out the "
 "way you want."
 
-#: templates/guide.html:599
+#: templates/guide.html:600
 msgid "Ouvrez la page Statistiques"
 msgstr "Open the Statistics page"
 
-#: templates/guide.html:600
+#: templates/guide.html:601
 msgid "Le lien"
 msgstr "The"
 
-#: templates/guide.html:600
+#: templates/guide.html:601
 msgid ""
 "de l'en-tête l'ouvre. À la première visite, un tableau de bord est déjà "
 "rempli : total, jours de cache, pays, meilleure année, progression, types"
@@ -11818,19 +11856,19 @@ msgstr ""
 "filled in: total, caching days, countries, best year, progress, cache "
 "types, busiest months."
 
-#: templates/guide.html:601
+#: templates/guide.html:602
 msgid "Après un nouvel import sur la carte, le bouton"
 msgstr "After a new import on the map, the"
 
-#: templates/guide.html:601
+#: templates/guide.html:602
 msgid "de la barre relit vos données sans recharger la page."
 msgstr "button in the bar reloads your data without reloading the page."
 
-#: templates/guide.html:604
+#: templates/guide.html:605
 msgid "Choisissez la période"
 msgstr "Choose the period"
 
-#: templates/guide.html:605
+#: templates/guide.html:606
 msgid ""
 "s'applique à tous les graphiques : toutes vos trouvailles, les 12 "
 "derniers mois ou une année. Un graphique peut garder sa propre période — "
@@ -11841,20 +11879,20 @@ msgstr ""
 "given year. A chart can keep its own period — it then shows a badge, like"
 " “My best year”, which covers your whole history."
 
-#: templates/guide.html:608
+#: templates/guide.html:609
 msgid "Ajoutez et réglez vos graphiques"
 msgstr "Add and adjust your charts"
 
-#: templates/guide.html:609 templates/stats_page.html:104
+#: templates/guide.html:610 templates/stats_page.html:104
 #: templates/stats_page.html:119 templates/stats_page.html:132
 msgid "Ajouter un graphique"
 msgstr "Add a chart"
 
-#: templates/guide.html:609
+#: templates/guide.html:610
 msgid "propose des questions toutes faites. Le menu"
 msgstr "button offers ready-made questions. The"
 
-#: templates/guide.html:609
+#: templates/guide.html:610
 msgid ""
 "de chaque graphique permet de le modifier : une phrase à compléter dit ce"
 " qu'il montre — « Afficher le nombre de trouvailles par mois de l'année "
@@ -11864,7 +11902,7 @@ msgstr ""
 "shows — “Show the number of finds by month of the year over 2025 as bars”"
 " — with an instant preview."
 
-#: templates/guide.html:612
+#: templates/guide.html:613
 msgid ""
 "Le même menu duplique, déplace, supprime un graphique ou l'exporte en "
 "image. Tout est enregistré automatiquement."
@@ -11872,25 +11910,25 @@ msgstr ""
 "The same menu duplicates, moves or deletes a chart, or exports it as an "
 "image. Everything is saved automatically."
 
-#: templates/guide.html:612
+#: templates/guide.html:613
 msgid ""
 "« Voir les valeurs » affiche ses chiffres dans un tableau, exportable en "
 "CSV."
 msgstr "“Show values” lists its figures in a table you can export to CSV."
 
-#: templates/guide.html:616
+#: templates/guide.html:617
 msgid "Comparez les années, les mois…"
 msgstr "Compare years, months…"
 
-#: templates/guide.html:617
+#: templates/guide.html:618
 msgid "Dans l'éditeur,"
 msgstr "In the editor,"
 
-#: templates/guide.html:617 templates/stats_page.html:181
+#: templates/guide.html:618 templates/stats_page.html:181
 msgid "Comparer à une autre période"
 msgstr "Compare with another period"
 
-#: templates/guide.html:617
+#: templates/guide.html:618
 msgid ""
 "ajoute une ligne « comparé à » : la période précédente, une année, les 12"
 " derniers mois… ou « chaque année » pour une courbe par année. Les "
@@ -11902,7 +11940,7 @@ msgstr ""
 "placed side by side on the same scale, or shown as a difference (blue "
 "above zero, red below)."
 
-#: templates/guide.html:620
+#: templates/guide.html:621
 msgid ""
 "Avec une période en cours, « à date » arrête les autres au même jour : "
 "vos 8 premiers mois de cette année contre les 8 premiers de l'an dernier."
@@ -11914,11 +11952,11 @@ msgstr ""
 "gallery offers ready-made comparisons, such as “Am I ahead of last "
 "year?”."
 
-#: templates/guide.html:624
+#: templates/guide.html:625
 msgid "Filtrez et changez de forme"
 msgstr "Filter and change the shape"
 
-#: templates/guide.html:625
+#: templates/guide.html:626
 msgid ""
 "limite tout le tableau de bord à certains types, pays, difficultés, "
 "propriétaires… Un graphique peut avoir ses propres filtres (section « "
@@ -11928,15 +11966,15 @@ msgstr ""
 " owners… A chart can have its own filters (“Filters” section of the "
 "editor): it then shows a small funnel icon."
 
-#: templates/guide.html:626
+#: templates/guide.html:627
 msgid "Vous avez déjà filtré la carte ? Dans la fenêtre Filtres,"
 msgstr "Already filtered the map? In the Filters window,"
 
-#: templates/guide.html:626 templates/stats_page.html:367
+#: templates/guide.html:627 templates/stats_page.html:367
 msgid "Reprendre les filtres de la carte"
 msgstr "Use the map filters"
 
-#: templates/guide.html:626
+#: templates/guide.html:627
 msgid ""
 "remplit le formulaire avec la même sélection ; ses dates deviennent la "
 "période du tableau. Ce qui n'a pas d'équivalent ici, comme la recherche "
@@ -11946,7 +11984,7 @@ msgstr ""
 " period. Anything with no equivalent here, such as the name search, is "
 "pointed out."
 
-#: templates/guide.html:627
+#: templates/guide.html:628
 msgid ""
 "Dans la phrase, « découpé par » ajoute une deuxième dimension (une série "
 "par type, par année…), à empiler si besoin. Formes possibles : barres, "
@@ -11958,11 +11996,11 @@ msgstr ""
 "donut, key figure, year calendar, grid (difficulty × terrain, or two "
 "crossed dimensions) and radar."
 
-#: templates/guide.html:630
+#: templates/guide.html:631
 msgid "Mes poses, mes DNF… et les zones Évolution"
 msgstr "My hides, my DNFs… and Evolution areas"
 
-#: templates/guide.html:631
+#: templates/guide.html:632
 msgid ""
 "En tête de la phrase, « Dans » choisit ce qu'on compte : mes trouvailles,"
 " mes DNF, mes caches posées, ou les trouvailles, DNF et favoris reçus sur"
@@ -11974,7 +12012,7 @@ msgstr ""
 "caches. “Compare with another source” puts them side by side, for example"
 " my finds and those received."
 
-#: templates/guide.html:632
+#: templates/guide.html:633
 msgid ""
 "Les caches d'une zone (page Évolution) n'ont rien à voir avec vos propres"
 " données : elles ont leurs tableaux de bord à part. Le menu"
@@ -11982,7 +12020,7 @@ msgstr ""
 "The caches of an area (Evolution page) have nothing to do with your own "
 "data: they have dashboards of their own. The"
 
-#: templates/guide.html:632
+#: templates/guide.html:633
 msgid ""
 "à côté du nom crée un tableau « Évolution d'une zone » sur un jeu importé"
 " : caches publiées, archivées, actives au fil du temps."
@@ -11990,37 +12028,37 @@ msgstr ""
 "menu next to the name creates an “Evolution of an area” dashboard on an "
 "imported dataset: published, archived and active caches over time."
 
-#: templates/guide.html:635
+#: templates/guide.html:636
 msgid "Relevez vos défis"
 msgstr "Take on your challenges"
 
-#: templates/guide.html:636 templates/guide.html:647 templates/guide.html:657
+#: templates/guide.html:637 templates/guide.html:648 templates/guide.html:658
 msgid "Le groupe"
 msgstr "The"
 
-#: templates/guide.html:636
+#: templates/guide.html:637
 msgid "de la galerie propose quatre grilles à remplir :"
 msgstr "group in the gallery offers four grids to fill:"
 
-#: templates/guide.html:638
+#: templates/guide.html:639
 msgid "la grille D/T : les 81 combinaisons de difficulté et de terrain ;"
 msgstr "the D/T grid: the 81 combinations of difficulty and terrain;"
 
-#: templates/guide.html:639
+#: templates/guide.html:640
 msgid ""
 "le calendrier 366 : une trouvaille chaque jour de l'année, toutes années "
 "confondues ;"
 msgstr "the 366-day calendar: a find on every day of the year, all years combined;"
 
-#: templates/guide.html:640
+#: templates/guide.html:641
 msgid "la grille Jasmer : une cache publiée chaque mois depuis mai 2000 ;"
 msgstr "the Jasmer grid: a cache published in every month since May 2000;"
 
-#: templates/guide.html:641
+#: templates/guide.html:642
 msgid "les mois de cache : chaque mois depuis votre première trouvaille."
 msgstr "caching months: every month since your first find."
 
-#: templates/guide.html:643
+#: templates/guide.html:644
 msgid ""
 "Au-dessus de la grille, le bilan : cases remplies, tours complets, et les"
 " cases qui manquent pour le tour suivant. Sur la grille D/T, Jasmer ou "
@@ -12032,11 +12070,11 @@ msgstr ""
 "grid, click a filled cell to see its caches on the map. In the editor, "
 "this is the “challenge grid” shape."
 
-#: templates/guide.html:646
+#: templates/guide.html:647
 msgid "Coloriez vos zones"
 msgstr "Colour your areas"
 
-#: templates/guide.html:647
+#: templates/guide.html:648
 msgid ""
 "colore les pays, les régions ou les départements (Kreise en Allemagne, "
 "comtés aux États-Unis) selon vos trouvailles : « Ma conquête » date votre"
@@ -12048,11 +12086,11 @@ msgstr ""
 "dates your first cache in each area, “My areas year by year” shows the "
 "map at the end of each year."
 
-#: templates/guide.html:648
+#: templates/guide.html:649
 msgid "Dans l'éditeur, choisissez un regroupement"
 msgstr "In the editor, pick a grouping"
 
-#: templates/guide.html:648
+#: templates/guide.html:649
 msgid ""
 ": la forme devient « carte ». Comptez vos trouvailles, vos types "
 "différents, vos combinaisons D/T, ou la densité (par 1 000 km²). La "
@@ -12067,7 +12105,7 @@ msgstr ""
 "find…) or per new area, all on the same scale; areas that changed since "
 "the previous small map are outlined."
 
-#: templates/guide.html:649
+#: templates/guide.html:650
 msgid ""
 "Cliquez sur une zone : la carte s'ouvre en pause à la date de la "
 "vignette, cadrée sur la zone."
@@ -12075,7 +12113,7 @@ msgstr ""
 "Click an area: the map opens paused on the date of that small map, framed"
 " on the area."
 
-#: templates/guide.html:652
+#: templates/guide.html:653
 msgid ""
 "Chaque pays a ses régions. Le découpage plus fin existe pour la France, "
 "l'Allemagne et les États-Unis ; ailleurs, la carte montre les régions. "
@@ -12086,11 +12124,11 @@ msgstr ""
 " and the United States; elsewhere the map shows regions. Finds that fall "
 "in no area are counted under the map (“Off the map”)."
 
-#: templates/guide.html:656
+#: templates/guide.html:657
 msgid "Séries, records et objectifs"
 msgstr "Streaks, records and goals"
 
-#: templates/guide.html:657
+#: templates/guide.html:658
 msgid ""
 "date vos exploits : meilleure journée, plus longue série de jours "
 "d'affilée, série en cours, plus longue pause. Les jours concernés "
@@ -12103,23 +12141,23 @@ msgstr ""
 " and “Show on the map” displays the caches of that day or streak. On bars"
 " or a line, the “Highlight the record” option pins the highest value."
 
-#: templates/guide.html:658
+#: templates/guide.html:659
 msgid "Dans les"
 msgstr "In the"
 
-#: templates/guide.html:658 templates/stats_page.html:235
+#: templates/guide.html:659 templates/stats_page.html:235
 msgid "Options d'affichage"
 msgstr "Display options"
 
-#: templates/guide.html:658
+#: templates/guide.html:659
 msgid "de l'éditeur, un"
 msgstr "of the editor, a"
 
-#: templates/guide.html:658 templates/stats_page.html:278
+#: templates/guide.html:659 templates/stats_page.html:278
 msgid "Objectif"
 msgstr "Goal"
 
-#: templates/guide.html:658
+#: templates/guide.html:659
 msgid ""
 "ajoute à un chiffre clé une barre de progression et la date où vous "
 "l'atteindrez à ce rythme. « Prolonger à ce rythme » poursuit en "
@@ -12129,7 +12167,7 @@ msgstr ""
 "this pace. “Extend at this pace” continues a cumulative line for the "
 "current period as a dashed line up to its end."
 
-#: templates/guide.html:661
+#: templates/guide.html:662
 msgid ""
 "Le groupe « Objectifs et projections » en propose de tout prêts : « Mon "
 "prochain cap » vise le prochain nombre rond, « Mon année à ce rythme » "
@@ -12139,11 +12177,11 @@ msgstr ""
 "milestone” aims for the next round number, “My year at this pace” tells "
 "you where you will end up on December 31."
 
-#: templates/guide.html:665
+#: templates/guide.html:666
 msgid "Rangez, partagez, imprimez"
 msgstr "Arrange, share, print"
 
-#: templates/guide.html:666
+#: templates/guide.html:667
 msgid ""
 "Glissez une carte par sa poignée pour la déplacer, et tirez son coin "
 "inférieur droit pour l'élargir ou l'allonger. Le menu de chaque graphique"
@@ -12156,7 +12194,7 @@ msgstr ""
 "SVG); the dashboard menu duplicates it, exports it to a file to share, "
 "imports one, or prints it — always on a light background."
 
-#: templates/guide.html:667
+#: templates/guide.html:668
 msgid ""
 "Le menu du tableau de bord fait aussi une image du tableau entier, tel "
 "qu'il est affiché, avec son nom, sa période et ses filtres :"
@@ -12164,19 +12202,19 @@ msgstr ""
 "The dashboard menu also makes an image of the whole dashboard, as "
 "displayed, with its name, period and filters:"
 
-#: templates/guide.html:667
+#: templates/guide.html:668
 msgid "pour la coller directement dans un message ou sur un forum."
 msgstr "to paste it straight into a message or a forum post."
 
-#: templates/guide.html:670
+#: templates/guide.html:671
 msgid "Présentez vos statistiques"
 msgstr "Present your statistics"
 
-#: templates/guide.html:671 templates/stats_page.html:101
+#: templates/guide.html:672 templates/stats_page.html:101
 msgid "Présenter"
 msgstr "Present"
 
-#: templates/guide.html:671
+#: templates/guide.html:672
 msgid ""
 "affiche un graphique par écran, en plein écran. Les flèches ou la barre "
 "d'espace passent au suivant, Échap quitte. Le défilement automatique "
@@ -12188,17 +12226,17 @@ msgstr ""
 "loop, every 5 to 30 seconds; the mouse pointer hides when it stops "
 "moving."
 
-#: templates/guide.html:672
+#: templates/guide.html:673
 msgid ""
 "« Présenter à partir d'ici », dans le menu d'un graphique, commence par "
 "celui-ci."
 msgstr "“Present from here”, in a chart's menu, starts with that chart."
 
-#: templates/guide.html:675
+#: templates/guide.html:676
 msgid "Revenez à la carte"
 msgstr "Go back to the map"
 
-#: templates/guide.html:676
+#: templates/guide.html:677
 msgid ""
 "Cliquez sur une barre, un point ou une part d'un graphique de vos "
 "trouvailles : la carte s'ouvre filtrée sur ces caches (le mois, le type, "
@@ -12209,7 +12247,7 @@ msgstr ""
 "filtered on those caches (the month, the type, the country…). Its "
 "previous filters are replaced; a confirmation reminds you."
 
-#: templates/guide.html:677
+#: templates/guide.html:678
 msgid ""
 "Dans le menu d'un graphique, « Envoyer en panneau vidéo » l'ajoute aux "
 "panneaux Stats de la page correspondante : il se remplira au fil de "
@@ -12218,11 +12256,11 @@ msgstr ""
 "In a chart's menu, “Send to video panel” adds it to the Stats panels of "
 "the matching page: it will fill up as the map animation plays."
 
-#: templates/guide.html:680
+#: templates/guide.html:681
 msgid "Faites-en une vidéo"
 msgstr "Turn it into a video"
 
-#: templates/guide.html:681
+#: templates/guide.html:682
 msgid ""
 "« Créer une vidéo animée », dans le menu d'un graphique, enregistre le "
 "graphique qui se dessine mois après mois — idéal pour voir les années "
@@ -12232,7 +12270,7 @@ msgstr ""
 "itself month after month — perfect for watching the years race each "
 "other."
 
-#: templates/guide.html:681
+#: templates/guide.html:682
 msgid ""
 "dans le menu du tableau de bord, enchaîne tous ses graphiques : une "
 "ouverture avec le nom du tableau, puis chaque graphique en fondu, les "
@@ -12242,7 +12280,7 @@ msgstr ""
 "dashboard name, then each chart fading in, with key figures counting up "
 "to their value."
 
-#: templates/guide.html:682
+#: templates/guide.html:683
 msgid ""
 "Ajoutez une musique : une de celles déjà choisies pour les vidéos de la "
 "carte, ou un fichier de votre ordinateur. Trop courte, elle est répétée ;"
@@ -12252,7 +12290,7 @@ msgstr ""
 " from your computer. If it is too short, it loops; it fades out at the "
 "end."
 
-#: templates/guide.html:685
+#: templates/guide.html:686
 msgid ""
 "La vidéo s'enregistre en temps réel : 30 secondes de vidéo prennent 30 "
 "secondes. Le MP4 arrive ensuite dans votre dossier des vidéos."
@@ -13582,7 +13620,7 @@ msgid "Emplacement"
 msgstr "Placement"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:88
+#: templates/menu_stats.html:310 templates/menu_zones.html:89
 msgid "En haut à gauche"
 msgstr "Top left"
 
@@ -13592,7 +13630,7 @@ msgid "En haut au centre"
 msgstr "Top center"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:89
+#: templates/menu_stats.html:310 templates/menu_zones.html:90
 msgid "En haut à droite"
 msgstr "Top right"
 
@@ -13605,7 +13643,7 @@ msgid "Au milieu à droite"
 msgstr "Middle right"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:86
+#: templates/menu_stats.html:312 templates/menu_zones.html:87
 msgid "En bas à gauche"
 msgstr "Bottom left"
 
@@ -13615,7 +13653,7 @@ msgid "En bas au centre"
 msgstr "Bottom center"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:87
+#: templates/menu_stats.html:312 templates/menu_zones.html:88
 msgid "En bas à droite"
 msgstr "Bottom right"
 
@@ -13990,7 +14028,7 @@ msgstr ""
 #: templates/menu_informations.html:128 templates/menu_informations.html:216
 #: templates/menu_informations.html:252 templates/menu_informations.html:280
 #: templates/menu_names.html:308 templates/menu_points.html:310
-#: templates/menu_zones.html:63
+#: templates/menu_zones.html:64
 msgid "Couleur"
 msgstr "Color"
 
@@ -14130,7 +14168,7 @@ msgid "Gauche (px)"
 msgstr "Left (px)"
 
 #: templates/menu_informations.html:362 templates/menu_names.html:331
-#: templates/menu_trail.html:114 templates/menu_zones.html:67
+#: templates/menu_trail.html:114 templates/menu_zones.html:68
 msgid "Opacité"
 msgstr "Opacity"
 
@@ -14470,7 +14508,7 @@ msgstr "Pace"
 msgid "Douce (ralentit à la fin)"
 msgstr "Smooth (slows down at the end)"
 
-#: templates/menu_names.html:228 templates/menu_zones.html:54
+#: templates/menu_names.html:228 templates/menu_zones.html:55
 msgid "Régulière"
 msgstr "Steady"
 
@@ -16511,11 +16549,21 @@ msgstr ""
 "The trail fades day after day; “Whole route” keeps the full route, faded "
 "after 30 days."
 
-#: templates/menu_zones.html:9
+#: templates/menu_zones.html:10
 msgid "Zones sur la carte"
 msgstr "Areas on the map"
 
-#: templates/menu_zones.html:12
+#: templates/menu_zones.html:13
+msgid ""
+"Les pays, régions ou départements se colorent selon les caches actives de"
+" la zone : ils foncent quand des caches sont posées, pâlissent quand "
+"elles sont archivées. Sur la carte et dans la vidéo."
+msgstr ""
+"Countries, regions or districts take on colour according to the active "
+"caches of the area: they darken when caches are placed and fade when they"
+" are archived. On the map and in the video."
+
+#: templates/menu_zones.html:13
 msgid ""
 "Les pays, régions ou départements se colorent au fil de vos trouvailles, "
 "sur la carte et dans la vidéo. Le même calcul que les cartes de la page "
@@ -16525,71 +16573,79 @@ msgstr ""
 " map and in the video. The same calculation as the maps of the Statistics"
 " page."
 
-#: templates/menu_zones.html:19
+#: templates/menu_zones.html:20
 msgid "Afficher les zones sur la carte"
 msgstr "Show areas on the map"
 
-#: templates/menu_zones.html:34
+#: templates/menu_zones.html:35
 msgid "Découpage"
 msgstr "Level"
 
-#: templates/menu_zones.html:38
+#: templates/menu_zones.html:39
 msgid "Départements, comtés… (sinon régions)"
 msgstr "Districts, counties… (otherwise regions)"
 
-#: templates/menu_zones.html:42
+#: templates/menu_zones.html:43
 msgid "Couleur selon"
 msgstr "Colour by"
 
-#: templates/menu_zones.html:44
+#: templates/menu_zones.html:45
+msgid "Le nombre de caches actives"
+msgstr "The number of active caches"
+
+#: templates/menu_zones.html:45
 msgid "Le nombre de trouvailles"
 msgstr "The number of finds"
 
-#: templates/menu_zones.html:45
+#: templates/menu_zones.html:46
 msgid "Le nombre de types de caches"
 msgstr "The number of cache types"
 
-#: templates/menu_zones.html:46
+#: templates/menu_zones.html:47
 msgid "Le nombre de combinaisons D/T"
 msgstr "The number of D/T combinations"
 
-#: templates/menu_zones.html:47
+#: templates/menu_zones.html:48
+msgid "La date de la première cache posée"
+msgstr "The date of the first cache placed"
+
+#: templates/menu_zones.html:48
 msgid "La date de la première trouvaille"
 msgstr "The date of the first find"
 
-#: templates/menu_zones.html:51
+#: templates/menu_zones.html:52
 msgid "Échelle des couleurs"
 msgstr "Colour scale"
 
-#: templates/menu_zones.html:53
+#: templates/menu_zones.html:54
 msgid "Équilibrée (autant de zones par couleur)"
 msgstr "Balanced (as many areas per colour)"
 
-#: templates/menu_zones.html:55
+#: templates/menu_zones.html:56
 msgid "Logarithmique (grands écarts)"
 msgstr "Logarithmic (large gaps)"
 
-#: templates/menu_zones.html:59
+#: templates/menu_zones.html:60
 msgid "Nuances"
 msgstr "Shades"
 
-#: templates/menu_zones.html:73
+#: templates/menu_zones.html:74
 msgid "Frontières des zones"
 msgstr "Area borders"
 
-#: templates/menu_zones.html:77
+#: templates/menu_zones.html:78
 msgid "Éclat quand une zone fonce"
 msgstr "Glow when an area darkens"
 
-#: templates/menu_zones.html:83
+#: templates/menu_zones.html:84
 msgid "Légende"
 msgstr "Legend"
 
-#: templates/menu_zones.html:85
+#: templates/menu_zones.html:86
 msgid "Position de la légende"
 msgstr "Legend position"
 
-#: templates/menu_zones.html:97
+#: templates/menu_zones.html:98
 msgid ""
 "Le découpage le plus fin existe pour la France, l'Allemagne et les États-"
 "Unis ; ailleurs, la carte montre les régions."
