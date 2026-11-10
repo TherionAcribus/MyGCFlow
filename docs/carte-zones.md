@@ -24,8 +24,8 @@ Plan : `MyGCFlow_Plan_Carte_Zones.md`. Ajouter un pays :
 | Niveau | Clé | Couverture | Source |
 |---|---|---|---|
 | 0 | `country` | monde (242 pays) | Natural Earth admin-0, 1:50m |
-| 1 | `region` | monde | Natural Earth admin-1, 1:10m, sauf pays à recette (FR : IGN) |
-| 2 | `subregion` | FR, DE, US | recettes de pays |
+| 1 | `region` | monde | Natural Earth admin-1, 1:10m, sauf pays à recette (FR : IGN ; GB : régions de Geocaching.com, ONS) |
+| 2 | `subregion` | FR, DE, GB, US | recettes de pays |
 
 Le code ne connaît que ces trois clés. Le nom affiché d'un niveau
 (« départements », « Landkreise ») vient de `index.json`.
@@ -543,8 +543,9 @@ Géocaches ») ou pour le jeu ouvert (« Évolution »).
   texte à coller dans le formulaire d'issue `.github/ISSUE_TEMPLATE/zones.yml`
   (lien « Demander un pays ou un nom »). Relevé E2E :
   `getZoneReportSnapshot()`.
-- Sur les 24 365 trouvailles de développement : seul « London » (53, Royaume-Uni)
-  n'est pas reconnu ; 9 trouvailles hors carte au niveau 2 (mystères).
+- Sur les 24 365 trouvailles de développement : tout est reconnu depuis la
+  recette du Royaume-Uni (« London », 53, était le seul nom inconnu) ; 9
+  trouvailles hors carte au niveau 2 (mystères).
 
 **Tests** : `tests/test_zone_report.py` (vraies données de zones, route),
 `tests/e2e/zone-layer.spec.mjs` › rapport de rattachement.
@@ -564,9 +565,16 @@ Géocaches ») ou pour le jeu ouvert (« Évolution »).
   - les petits départements (Paris) sont couverts par leurs points aux
     échelles nationales.
 
-- **Royaume-Uni** : niveau 1 provisoire en nations (Angleterre, Écosse…). Les
-  régions anglaises de Geocaching.com (« London ») ne sont pas reconnues par
-  leur nom, et passent par la position.
+- **Irlande du Nord** : Geocaching.com la range dans « Ireland › Ulster ».
+  Le pays est donc l'Irlande (par le nom), sans région : les provinces de
+  GC (Connacht, Leinster, Munster, Ulster) ne sont pas reconnues tant que
+  l'Irlande n'a pas sa recette, et la géométrie de l'Irlande du Nord est
+  dans le Royaume-Uni (région `GB-northernireland`, rattachée par position
+  seulement).
+- **Royaume-Uni, Stockton-on-Tees** : l'autorité unitaire est entière dans
+  County Durham, alors que sa partie sud (Thornaby, Yarm) est dans le comté
+  de North Yorkshire. Une trouvaille « Yorkshire » y est placée dans le
+  comté de North Yorkshire le plus proche (règle des 5 km).
 - **Simplification** : le niveau 2 d'affichage est à ~1,5-2,5 km. Assez pour
   des cartes de synthèse, visible si l'on zoome fort sur une frontière dans
   la carte principale.

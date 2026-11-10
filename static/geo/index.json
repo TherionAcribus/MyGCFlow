@@ -1136,15 +1136,30 @@
   "GB": {
    "region": {
     "file": "regions/GB.json",
-    "rev": "3144373150",
-    "count": 4,
-    "bytes": 9990,
+    "rev": "94e2a24a39",
+    "count": 15,
+    "bytes": 53341,
     "label": {
      "fr": "régions",
-     "en": "regions"
+     "en": "regions",
+     "local": "regions"
     },
     "sources": [
-     "ne-admin1"
+     "ons-ctyua-2024"
+    ]
+   },
+   "subregion": {
+    "file": "subregions/GB.json",
+    "rev": "f9f6c98857",
+    "count": 112,
+    "bytes": 113703,
+    "label": {
+     "fr": "comtés",
+     "en": "counties",
+     "local": "counties"
+    },
+    "sources": [
+     "ons-ctyua-2024"
     ]
    }
   },
@@ -3769,6 +3784,13 @@
    "licence_title": "Domaine public",
    "attribution": "Made with Natural Earth",
    "homepage": "https://www.naturalearthdata.com"
+  },
+  "ons-ctyua-2024": {
+   "title": "ONS — Counties and Unitary Authorities (December 2024) Boundaries UK BGC",
+   "licence": "ogl-uk-3.0",
+   "licence_title": "Open Government Licence v3.0",
+   "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v.3.0. Contains OS data © Crown copyright and database right 2024",
+   "homepage": "https://geoportal.statistics.gov.uk/datasets/1727a405c51046deaadc23ecf94c3b98"
   }
  }
 }

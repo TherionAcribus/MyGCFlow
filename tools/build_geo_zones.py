@@ -51,6 +51,7 @@ LICENCES = {
     "cc-by-4.0": "CC BY 4.0",
     "etalab-2.0": "Licence Ouverte 2.0 (Etalab)",
     "dl-de-by-2.0": "Datenlizenz Deutschland – Namensnennung 2.0",
+    "ogl-uk-3.0": "Open Government Licence v3.0",
 }
 DISPLAY_PRECISION = 0.001      # ~100 m : assez pour des cartes de synthèse
 MATCH_PRECISION = 0.0001       # ~11 m, aligné sur zones.COORD_SCALE
@@ -108,7 +109,8 @@ def _sha256(path: Path) -> str:
 def fetch(sid: str, src: dict, offline: bool) -> Path:
     """Fichier source vérifié (sha256), extrait si c'est une archive."""
     CACHE.mkdir(parents=True, exist_ok=True)
-    name = Path(urlparse(src["url"]).path).name
+    # « file » : nom local quand l'adresse n'en donne pas (requête d'API).
+    name = src.get("file") or Path(urlparse(src["url"]).path).name
     target = CACHE / f"{sid}-{src['sha256'][:12]}-{name}"
     if not target.exists():
         if offline:
@@ -312,6 +314,61 @@ def build_level(src_path, spec, *, pre=(), extra_fields=()):
             "area_km2": _area_km2(props.get("mgz_area")),
             "inner": [round(props.get("mgz_ix") or 0, 4), round(props.get("mgz_iy") or 0, 4)],
         })
+    return records
+
+
+def source_values(src: Path, field: str, filter_expr: str | None = None) -> set[str]:
+    """Valeurs d'un champ de la source (après le filtre du niveau)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out.json"
+        args = ["-i", str(src)]
+        if filter_expr:
+            args += ["-filter", filter_expr]
+        mapshaper(args + ["-o", str(out), "format=json", "force"])
+        return {str(row.get(field)) for row in json.loads(out.read_text(encoding="utf-8"))}
+
+
+def unit_groups(spec, levels, where):
+    """Table unité de la source → groupe, d'après « groups » du niveau.
+
+    Avec « groups_of », les membres sont des groupes de cet autre niveau de la
+    recette (régions composées de comtés), sinon des valeurs de « group_by »."""
+    nested = None
+    if spec.get("groups_of"):
+        nested = (levels.get(spec["groups_of"]) or {}).get("groups")
+        if not nested:
+            raise BuildError(f"{where} : « groups_of » vers un niveau sans « groups ».")
+    mapping = {}
+    for group, members in spec["groups"].items():
+        for member in members:
+            if nested is not None and member not in nested:
+                raise BuildError(f"{where} : « {member} » (groupe {group}) n'est pas un groupe de {spec['groups_of']}.")
+            for unit in (nested[member] if nested is not None else [member]):
+                if unit in mapping:
+                    raise BuildError(f"{where} : unité {unit} dans deux groupes ({mapping[unit]}, {group}).")
+                mapping[unit] = group
+    return mapping
+
+
+def build_grouped_level(src_path, spec, levels, where):
+    """Niveau composé d'unités de la source fusionnées par groupe (comtés
+    cérémoniaux faits d'autorités unitaires, régions faites de comtés).
+    Champs disponibles pour les modèles : {group} et {group_key} (normalisé)."""
+    field = spec["group_by"]
+    mapping = unit_groups(spec, levels, where)
+    unknown = sorted(set(mapping) - source_values(src_path, field, spec.get("filter")))
+    if unknown:
+        raise BuildError(f"{where} : unités absentes de la source : {', '.join(unknown)}.")
+    pre = ["-each", (f"mgz_g = ({json.dumps(mapping, ensure_ascii=False)})[this.properties[{json.dumps(field)}]] "
+                     f"|| ('?' + this.properties[{json.dumps(field)}])"),
+           "-dissolve", "mgz_g"]
+    records = build_level(src_path, spec, pre=pre)
+    orphans = sorted(r["props"]["mgz_g"][1:] for r in records if r["props"]["mgz_g"].startswith("?"))
+    if orphans:
+        raise BuildError(f"{where} : unités de la source sans groupe : {', '.join(orphans)}.")
+    for r in records:
+        r["props"]["group"] = r["props"]["mgz_g"]
+        r["props"]["group_key"] = zones.normalize_name(r["props"]["mgz_g"])
     return records
 
 
@@ -528,7 +585,8 @@ def build(offline=False):
         manual = recipe.get("aliases", {}).get("zones", {})
         if "region" in levels:
             spec = levels["region"]
-            records = build_level(source_path(spec["source"]), spec)
+            records = (build_grouped_level(source_path(spec["source"]), spec, levels, f"{cc} region")
+                       if spec.get("groups") else build_level(source_path(spec["source"]), spec))
             finish_records(records, spec, manual_aliases=manual)
             for r in records:
                 r["parent"] = cc
@@ -543,7 +601,8 @@ def build(offline=False):
             parents = regions_by_country.get(cc)
             if not parents:
                 raise BuildError(f"{cc} : pas de niveau 1 pour rattacher les sous-régions.")
-            records = build_level(source_path(spec["source"]), spec)
+            records = (build_grouped_level(source_path(spec["source"]), spec, levels, f"{cc} subregion")
+                       if spec.get("groups") else build_level(source_path(spec["source"]), spec))
             finish_records(records, spec, manual_aliases=manual)
             compute_parents(records, parents, spec, cc)
             sub_by_country[cc] = records

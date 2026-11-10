@@ -22,7 +22,7 @@ NOTICES = ROOT / "installer" / "licenses" / "THIRD_PARTY_NOTICES.txt"
 # Budgets par fichier (docs/zones-ajouter-un-pays.md › Poids).
 DISPLAY_MAX_BYTES = 1600 * 1024
 MATCH_MAX_BYTES = 2048 * 1024
-ACCEPTED_LICENCES = {"public-domain", "cc0", "cc-by-4.0", "etalab-2.0", "dl-de-by-2.0"}
+ACCEPTED_LICENCES = {"public-domain", "cc0", "cc-by-4.0", "etalab-2.0", "dl-de-by-2.0", "ogl-uk-3.0"}
 
 # Noms de régions relevés dans de vraies trouvailles (country_state.json) :
 # ils doivent être reconnus par leur nom, sans la position.
@@ -47,6 +47,20 @@ GC_NAMES = {
     ("Switzerland", "Basel Stadt"): ("CH", "CH-BS"),
     ("Austria", "Steiermark"): ("AT", "AT-6"),
     ("Denmark", "Region Syddanmark"): ("DK", "DK-83"),
+    ("United Kingdom", "London"): ("GB", "GB-london"),
+}
+
+# Les 14 régions de Geocaching.com en Grande-Bretagne (« UK Regional Map » du
+# wiki Geocaching ; l'orthographe varie : « Northwest » / « North West »).
+GB_GC_REGIONS = {
+    "London": "GB-london", "South East England": "GB-southeastengland",
+    "Southern England": "GB-southernengland", "South West England": "GB-southwestengland",
+    "Eastern England": "GB-easternengland", "East Midlands": "GB-eastmidlands",
+    "West Midlands": "GB-westmidlands", "Northwest England": "GB-northwestengland",
+    "North West England": "GB-northwestengland", "Northeast England": "GB-northeastengland",
+    "North East England": "GB-northeastengland", "Yorkshire": "GB-yorkshire",
+    "North Wales": "GB-northwales", "South Wales": "GB-southwales",
+    "Northern Scotland": "GB-northernscotland", "Southern Scotland": "GB-southernscotland",
 }
 
 
@@ -162,6 +176,14 @@ class GeoDataTests(unittest.TestCase):
                 a = self.zone_index.assign(country=country, state=state)
                 self.assertEqual((a.country, a.region), expected)
                 self.assertEqual(a.via[0], "name")
+
+    def test_gb_regions_are_the_geocaching_ones(self):
+        for state, expected in GB_GC_REGIONS.items():
+            with self.subTest(region=state):
+                a = self.zone_index.assign(country="United Kingdom", state=state)
+                self.assertEqual((a.country, a.region, a.via[1]), ("GB", expected, "name"))
+        shown = {f["properties"]["id"] for f in self._display(self.index["by_country"]["GB"]["region"]["file"])["features"]}
+        self.assertEqual(shown, set(GB_GC_REGIONS.values()) | {"GB-northernireland"})
 
     def test_dissolved_ids_follow_the_documented_rule(self):
         # « IT-sicily » = pays + nom normalisé (docs/zones-ajouter-un-pays.md).

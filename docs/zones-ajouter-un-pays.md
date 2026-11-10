@@ -2,7 +2,8 @@
 
 Les cartes par zones colorent des **pays**, des **régions** et des
 **sous-régions** (départements, Landkreise, counties…). Pays et régions
-couvrent déjà le monde entier. Les sous-régions s'ajoutent pays par pays,
+couvrent déjà le monde entier. Les sous-régions s'ajoutent pays par pays (France, Allemagne, Royaume-Uni,
+États-Unis à ce jour),
 avec **une recette, une commande, et des tests qui passent tout seuls**. Il
 n'y a pas de code à écrire.
 
@@ -77,6 +78,7 @@ Les sources téléchargées sont gardées dans `geo/.cache/` (non versionné).
 | `url` | Adresse **figée** : un millésime, un commit, jamais « latest » ou « aktuell » s'il existe mieux. |
 | `sha256` | Empreinte du fichier. Si la source change, la construction s'arrête et affiche la nouvelle empreinte : vérifier ce qui a changé avant de la recopier. |
 | `member` | Pour une archive ZIP : le fichier à lire dedans (`.shp`, `.geojson`). |
+| `file` | Nom du fichier en cache, quand l'adresse n'en donne pas (requête d'API : `…/query?…&f=geojson`). L'extension dit le format à mapshaper. |
 | `title`, `attribution`, `homepage` | Recopiés dans les notices de licence et dans `index.json`. `attribution` est le texte exact que demande la licence. |
 | `licence` | Une des clés du tableau ci-dessous. |
 
@@ -106,12 +108,48 @@ Natural Earth alors que GC utilise les régions.
 | `name_unique` | Nom utilisé quand deux zones du pays portent le même `name` (München ville / München Landkreis). |
 | `aliases` | Champs, ou modèles `"{BEZ} {GEN}"`, dont les valeurs servent à reconnaître les noms donnés par Geocaching.com et par les CSV d'Évolution. Les valeurs `a\|b` sont dépliées. |
 | `simplify` | Tolérance en mètres : `display` pour les cartes (1 500 à 2 500), `match` pour le rattachement (100). |
+| `group_by`, `groups`, `groups_of` | Zones faites de plusieurs unités de la source (§ Regrouper des unités). |
 
 **Identifiants** : ISO 3166-2 quand il existe (`DE-BY`, `US-TX`, `FR-44`).
 Sinon un code officiel préfixé par le pays (`DE-09162`, `US-48201`). Un id ne
 doit jamais changer : il est stocké dans les tableaux de bord des joueurs.
 Unique par niveau ; une région et une sous-région peuvent le partager quand
 c'est la même entité (La Réunion : `FR-974` aux deux niveaux).
+
+### Regrouper des unités
+
+Quand les zones voulues n'existent pas telles quelles dans une source ouverte,
+la recette les compose à partir d'unités plus petites. Exemple, `GB.json` :
+les comtés cérémoniaux anglais sont faits d'autorités unitaires (Kent = Kent
++ Medway), et les régions de Geocaching.com sont faites de comtés.
+
+```json
+"subregion": {
+  "group_by": "CTYUA24CD",
+  "groups": { "Kent": ["E10000016", "E06000035"], "Fife": ["S12000047"] },
+  "id": ["GB-{group_key}"],
+  "name": "{group}"
+},
+"region": {
+  "group_by": "CTYUA24CD",
+  "groups_of": "subregion",
+  "groups": { "South East England": ["East Sussex", "Kent", "Surrey", "West Sussex"] },
+  "id": ["GB-{group_key}"],
+  "name": "{group}"
+}
+```
+
+- `group_by` : champ de la source qui identifie une unité.
+- `groups` : nom du groupe → valeurs de `group_by`. Avec `groups_of`, les
+  membres sont des groupes de cet autre niveau de la recette.
+- Les modèles disposent de `{group}` (le nom) et `{group_key}` (le nom
+  normalisé, comme les ids de `dissolve`).
+- La construction s'arrête si une unité de la source n'est dans aucun
+  groupe, si elle est dans deux groupes, ou si un groupe cite une unité
+  absente de la source. Une liste complète est donc vérifiée à chaque
+  construction.
+- Le parent d'une sous-région est toujours trouvé par son point intérieur :
+  des régions faites des mêmes unités le contiennent forcément.
 
 ### `aliases` (de la recette)
 
@@ -179,6 +217,7 @@ synthétiques.
 | `cc-by-4.0` | CC BY 4.0 | geoBoundaries (repli générique, un fichier par pays) |
 | `etalab-2.0` | Licence Ouverte 2.0 | IGN Admin Express |
 | `dl-de-by-2.0` | Datenlizenz Deutschland – Namensnennung 2.0 | BKG VG250 / VG1000 |
+| `ogl-uk-3.0` | Open Government Licence v3.0 | ONS (Royaume-Uni) |
 
 **Refusées** : ODbL (OpenStreetMap : partage à l'identique de la base), et
 toute licence non commerciale (GADM, CC BY-NC). Une nouvelle licence
@@ -208,6 +247,7 @@ Mesures du 2026-11-09 :
 | Régions du monde (242 fichiers) | ~3,3 Mo | ~2,4 Mo |
 | FR (101 départements) | 127 Ko | 403 Ko |
 | DE (400 Kreise) | 256 Ko | 344 Ko |
+| GB (112 comtés ; régions : 52 Ko) | 111 Ko | 369 Ko |
 | US (3 144 counties) | 1 515 Ko | 1 766 Ko |
 
 Si un pays dépasse : augmenter `simplify.display` (2 500 → 3 500), puis
@@ -222,10 +262,10 @@ toujours comme Geocaching.com :
   région de Geocaching.com dans un champ, ajouter le pays à `dissolve` dans
   `world.json` (`"ITA": "region"`). Les unités sont fusionnées par ce champ.
   L'id devient `<CC>-<nom normalisé>` (`IT-sicily`).
-  C'est déjà fait pour l'Italie, l'Espagne et la Slovénie. Le Royaume-Uni
-  est regroupé provisoirement en nations.
+  C'est déjà fait pour l'Italie, l'Espagne et la Slovénie.
 - **Sinon** : une recette de pays avec son propre niveau `region`, comme
-  `FR.json`.
+  `FR.json`, ou composé de sous-régions comme `GB.json` (§ Regrouper des
+  unités), quand les régions de Geocaching.com ne sont pas officielles.
 
 Pour repérer ces pays : le rapport de rattachement de l'app (onglet Zones,
 carte « Noms reconnus » : noms de régions non reconnus et zones où la position

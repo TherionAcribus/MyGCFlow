@@ -6,6 +6,7 @@ from datetime import date, datetime
 from typing import Dict, List, Optional, Tuple
 
 import paths
+import zones
 
 
 # Taille max du cache LRU des résultats filtrés (combinaisons de filtres).
@@ -21,7 +22,9 @@ UNKNOWN_GEO = "__unknown__"
 # Version du contenu persisté (geojson_data.json + index). Une base écrite
 # par une ancienne version n'a ni features Labs ni index source (v2), ni ids
 # de zones (v3) : le mtime de la base ne changeant pas, seul un numéro de
-# version l'invalide.
+# version l'invalide. Les ids de zones dépendent aussi des données de
+# rattachement livrées avec l'app (geo/match) : leur empreinte est notée, et
+# une mise à jour de ces données fait recalculer le GeoJSON.
 PERSIST_VERSION = 3
 
 
@@ -203,6 +206,7 @@ class GeojsonIndexCache:
             os.makedirs(os.path.dirname(self.persist_path), exist_ok=True)
             payload = {
                 "version": PERSIST_VERSION,
+                "zones": zones.data_signature(),
                 "db_mtime": self._db_mtime,
                 "indexes": {
                     name: {k: v for k, v in idx.items()} for name, idx in self._indexes.items()
@@ -226,6 +230,8 @@ class GeojsonIndexCache:
             # Version du contenu persisté : un fichier d'avant Labs est ignoré
             # même si le mtime de la base correspond.
             if data.get("version") != PERSIST_VERSION:
+                return False
+            if data.get("zones", "") != zones.data_signature():
                 return False
 
             persisted_mtime = data.get("db_mtime")

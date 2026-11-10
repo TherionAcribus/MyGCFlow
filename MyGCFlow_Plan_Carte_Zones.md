@@ -195,6 +195,34 @@ formulaire d'issue `.github/ISSUE_TEMPLATE/zones.yml`. Écarts :
 - Premier résultat sur les données de développement : « London » (53), à
   corriger par la recette du Royaume-Uni (suite du lot 7).
 
+**Lot 7, deuxième partie, livrée le 2026-11-10 : recette du Royaume-Uni**
+(`geo/recipes/GB.json`). Écarts et constats :
+- **Régions de Geocaching.com** : 14 en Grande-Bretagne (London, South East
+  England, Southern England, South West England, Eastern England, East
+  Midlands, West Midlands, North West England, North East England,
+  Yorkshire, North Wales, South Wales, Northern Scotland, Southern
+  Scotland), faites de comtés entiers. Composition relevée sur la carte
+  « UK Regional Map » du wiki Geocaching (KMZ par comté, couleurs par
+  région), recoupée par un événement « all 14 UK regions ».
+- **L'Irlande du Nord n'est pas au Royaume-Uni chez GC** : « Ulster,
+  Ireland ». Elle reste une région géographique (`GB-northernireland`) ;
+  l'Irlande et ses provinces sont une recette à faire.
+- **Niveau 2 = comtés** : cérémoniaux en Angleterre (47, City of London
+  dans Greater London), council areas (32), principal areas (22), districts
+  d'Irlande du Nord (11).
+- **Source** : ONS « Counties and Unitary Authorities (December 2024) UK
+  BGC » (20 m, OGL v3, nouvelle licence acceptée), lue par la requête de
+  l'API ArcGIS (réponse identique d'un appel à l'autre ; le lien de
+  téléchargement du portail est régénéré à la demande). geoBoundaries
+  écarté : contours ONS ultra-généralisés (segments de 2,2 km).
+- **Pas de `dissolve` Natural Earth** (§ 3.6) : nouveau mécanisme générique
+  `groups` des recettes (unités de la source → groupes, groupes de groupes),
+  vérifié complet à chaque construction.
+- **Cache GeoJSON de la carte** : il gardait les ids de zones calculés avec
+  les anciennes données ; il note maintenant l'empreinte des données de
+  zones et se recalcule quand elles changent.
+- Sur les données de développement : plus aucun nom non reconnu.
+
 (Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre
@@ -423,9 +451,9 @@ un sur la côte). Le test les vérifie avec le vrai code de rattachement.
 Ordre de préférence : la source officielle du pays si sa licence est
 acceptée, sinon geoBoundaries. La doc garde cette table à jour.
 
-**Royaume-Uni** (plus tard) : les régions de Geocaching.com ne sont pas un
-découpage standard. Recette avec `dissolve` (comtés → régions GC). C'est le
-seul pays connu qui en a besoin, mais le mécanisme est générique.
+**Royaume-Uni** (fait au lot 7) : les régions de Geocaching.com ne sont pas
+un découpage standard. Recette avec `groups` (unités ONS → comtés → régions
+GC), mécanisme générique.
 
 ## 4. Rattachement de chaque cache à sa zone
 

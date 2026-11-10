@@ -321,8 +321,8 @@ test('rapport de rattachement : noms reconnus, noms à signaler, copie', async (
   // Un nom de région inconnu (réponse simulée) : liste, hors carte, copie.
   await page.route('**/api/zones/report*', (route) => route.fulfill({ json: {
     v: 1, available: true, total: 60, signature: 'abc123', source: 'finds', app_version: '9.9.9',
-    unrecognized: [{ level: 'region', country: 'GB', country_name: 'United Kingdom', name: 'London', count: 53,
-      zones: [['GB-england', 53]] }],
+    unrecognized: [{ level: 'region', country: 'GB', country_name: 'United Kingdom', name: 'Kernow', count: 53,
+      zones: [['GB-southwestengland', 53]] }],
     outside: { country: 0, region: 0, subregion: 9 },
   } }));
   await page.locator('a[href="#style"]').click();
@@ -330,14 +330,14 @@ test('rapport de rattachement : noms reconnus, noms à signaler, copie', async (
   await expect(page.locator('#zonesReportSummary')).toContainText('Noms non reconnus : 1 (53 trouvailles)');
   await page.locator('#zonesReportDetails summary').click();
   await expect(page.locator('#zonesReportList li')).toHaveCount(1);
-  await expect(page.locator('#zonesReportList li')).toContainText('Région « London »');
-  await expect(page.locator('#zonesReportList li')).toContainText('England (GB-england) : 53');
+  await expect(page.locator('#zonesReportList li')).toContainText('Région « Kernow »');
+  await expect(page.locator('#zonesReportList li')).toContainText('South West England (GB-southwestengland) : 53');
   await expect(page.locator('#zonesReportOutside')).toContainText('sans département ni comté : 9');
   await page.locator('#btnZonesReportCopy').click();
   await expect(page.locator('#btnZonesReportCopy')).toContainText('Rapport copié');
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain('MyGCFlow 9.9.9');
-  expect(copied).toContain('- region « London » [GB / United Kingdom] : 53 → GB-england (53)');
+  expect(copied).toContain('- region « Kernow » [GB / United Kingdom] : 53 → GB-southwestengland (53)');
   expect(copied).toContain('sous-région 9');
   expect(errors).toEqual([]);
 });

@@ -69,6 +69,9 @@ Données géographiques simplifiées par MyGCFlow (mapshaper) à partir de :
   - Natural Earth 5.1.2 — Admin 1 States, Provinces 1:10m
       Domaine public — Made with Natural Earth
       https://www.naturalearthdata.com
+  - ONS — Counties and Unitary Authorities (December 2024) Boundaries UK BGC
+      Open Government Licence v3.0 — Source: Office for National Statistics licensed under the Open Government Licence v.3.0. Contains OS data © Crown copyright and database right 2024
+      https://geoportal.statistics.gov.uk/datasets/1727a405c51046deaadc23ecf94c3b98
 [Fin de la section générée.]
 
 Fonds de carte

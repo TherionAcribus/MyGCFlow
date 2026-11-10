@@ -39,8 +39,8 @@
     "aliases": ["name", "name_en", "name_local", "name_alt", "gn_name", "woe_name", "name_fr", "name_de", "name_es", "name_it", "name_nl", "name_pt"],
     "label": { "fr": "régions", "en": "regions" },
     "simplify": { "display": 4000, "match": 500 },
-    "comment_dissolve": "Pays où Natural Earth découpe plus finement que Geocaching.com : les unités sont regroupées par ce champ (Italie, Espagne : provinces → régions). Royaume-Uni : nations, en attendant une recette dédiée.",
-    "dissolve": { "ITA": "region", "ESP": "region", "SVN": "region", "GBR": "geonunit" }
+    "comment_dissolve": "Pays où Natural Earth découpe plus finement que Geocaching.com : les unités sont regroupées par ce champ (Italie, Espagne : provinces → régions). Le Royaume-Uni a sa recette (GB.json).",
+    "dissolve": { "ITA": "region", "ESP": "region", "SVN": "region" }
   },
   "aliases": {
     "countries": {
