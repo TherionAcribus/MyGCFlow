@@ -13,9 +13,10 @@ import { MAX_SERIES } from './chart_spec.mjs';
 import { expandPeriods } from './chart_periods.mjs';
 import { filterMask } from './chart_query.mjs';
 import { ZONE_COLUMNS, createZoneState, keyMoments, zoneScale } from './zone_model.mjs';
+import { cellArea, withGridColumn } from './zone_grid.mjs';
 
 export const LEVEL_OF_DIMENSION = Object.freeze({
-    zone_country: 'country', zone_region: 'region', zone_subregion: 'subregion',
+    zone_country: 'country', zone_region: 'region', zone_subregion: 'subregion', zone_grid: 'grid',
 });
 
 // Mesure du graphique → mesure de zone_model et portée des lignes :
@@ -117,7 +118,10 @@ function zoneEntries(spec, table, rows, level, options) {
 export function runZoneQuery(spec, rawTable, options = {}) {
     const today = options.today ?? Infinity;
     const level = LEVEL_OF_DIMENSION[spec.groupBy] || 'country';
-    const table = mixedZoneTable(rawTable, level, options.fallbackCountries);
+    const gridSize = spec.view.map?.gridSize;
+    const table = level === 'grid'
+        ? withGridColumn(rawTable, gridSize)
+        : mixedZoneTable(rawTable, level, options.fallbackCountries);
     const filters = options.filters !== undefined ? options.filters : spec.filters;
     const mask = filterMask(table, filters);
     const rows = [];
@@ -125,7 +129,10 @@ export function runZoneQuery(spec, rawTable, options = {}) {
 
     const { entries, truncated } = zoneEntries(spec, table, rows, level, options);
     const { measure, scope } = zoneMeasureOf(spec);
-    const areas = options.areas || null;
+    // Densité d'une grille : surface calculée de chaque case.
+    const areas = level === 'grid'
+        ? new Map((table.dicts.zone_grid || []).map((id) => [id, cellArea(id)]))
+        : options.areas || null;
     let shared = null;
     const counted = new Uint8Array(table.n);
     const frames = entries.map((entry) => {
@@ -203,6 +210,7 @@ export function runZoneQuery(spec, rawTable, options = {}) {
         meta: { rows: rowsCounted, undated: table.undated || 0, noAttribute: 0, unknown: series.at(-1)?.outside || 0 },
         zones: {
             level,
+            ...(level === 'grid' ? { gridSize } : {}),
             countries: [...countries].sort(),
             scale: { mode: scale.mode, breaks: scale.breaks, classes: scale.classes, min: scale.min, max: scale.max },
         },

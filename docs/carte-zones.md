@@ -14,7 +14,10 @@ Plan : `MyGCFlow_Plan_Carte_Zones.md`. Ajouter un pays :
 - Lot 4 : couche animée de la carte « Mes Géocaches » (onglet Zones).
 - Lot 5 (première partie, 2026-11-10) : jeux Évolution. Zones stockées dans
   `evolution.db`, mini-cartes des jeux dans Statistiques, couche animée de
-  la page Évolution en caches actives. Restent la grille et Mes poses.
+  la page Évolution en caches actives.
+- Lot 5 (seconde partie, 2026-11-10) : niveau « grille », des cases
+  hexagonales calculées partout (Statistiques et couche de la carte). Mes
+  poses reste sans couche de zones.
 
 ## Niveaux
 
@@ -344,6 +347,53 @@ plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
 - `tests/test_zones.py` (`annotate_features`) ;
 - `tests/e2e/zone-layer.spec.mjs` : fixture `my-finds-zones.gpx`, 8
   trouvailles sur 4 départements.
+
+## Grille de cases
+
+`static/js/zone_grid.mjs` (pur) : hexagones « pointe en haut » dans une
+projection locale équirectangulaire autour de `lat0` (médiane des latitudes
+des données, arrondie à 5°, bornée à ±70°).
+- **Tailles** : 5, 10, 25 (défaut), 50 ou 100 km entre deux centres
+  (`GRID_SIZES`).
+- **Id d'une case** : `h<taille>/<lat0>/<q>/<r>`. Deux grilles ne mélangent
+  jamais leurs cases.
+- **Fonctions** :
+  - `cellOf(lon, lat, taille, lat0)` ;
+  - `cellRing` (contour lon/lat) et `cellCenter` ;
+  - `cellArea` (km² réels, corrigés par cos(lat)/cos(lat0)) ;
+  - `cellLabel` (« 47,2° N · 1,5° O ») ;
+  - `withGridColumn(table, taille)`, qui ajoute la colonne `zone_grid` à
+    une table qui porte `lat` et `lon`.
+
+**Coordonnées dans les tables** :
+- `/api/stats/finds` v3 envoie `lat` et `lon` (5 décimales, null sans
+  position) ;
+- `findsTable`, `tableFromRecords` et `evolutionTable` remplissent
+  `table.lat` et `table.lon` (NaN sans position).
+
+**Statistiques** :
+- dimension `zone_grid` (« sur une grille de cases »), taille dans
+  `view.map.gridSize` ;
+- l'éditeur affiche la taille dans la phrase quand le regroupement est la
+  grille, et l'échelle et les nuances de toute carte dans « Options
+  d'affichage » ;
+- densité : surface calculée de chaque case ;
+- `stats_page_geo.js` › `composeGrid` dessine les cases avec, dessous et
+  sans couleur, les régions des pays présents (repères).
+
+**Couche de la carte** :
+- niveau `grid` et `grid_size` dans le thème (`ZoneLayerOptions`,
+  `pkg.options.zones.gridSize`) ;
+- les cases ayant des données deviennent des features OpenLayers
+  (`ensureGridFeatures`) ;
+- coordonnées lues dans les points (« Mes Géocaches ») ou la base
+  (Évolution, `evolutionZoneTable` › `lat`/`lon`).
+
+**Tests** :
+- `tests/js/zone_grid.test.mjs` ;
+- `tests/e2e/stats-zones.spec.mjs` › grille ;
+- `tests/e2e/zone-layer.spec.mjs` (passage au niveau grille, changement de
+  taille).
 
 ## Jeux Évolution
 

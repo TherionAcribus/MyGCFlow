@@ -27,6 +27,7 @@
 // devine pas un format futur, l'appelant garde l'original intact.
 
 import { parseYmd } from './stats_model.mjs';
+import { GRID_DEFAULT_SIZE, normalizeGridSize } from './zone_grid.mjs';
 
 export const CHART_SPEC_VERSION = 1;
 
@@ -121,7 +122,9 @@ export const CATEGORY_DIMENSIONS = Object.freeze([
 // Zones géographiques (zones.py, colonnes zone_* des tables) : seulement
 // dessinées en carte (`map`), jamais en 2ᵉ dimension. Plan :
 // MyGCFlow_Plan_Carte_Zones.md.
-export const ZONE_DIMENSIONS = Object.freeze(['zone_country', 'zone_region', 'zone_subregion']);
+// `zone_grid` : cases hexagonales calculées sur les coordonnées
+// (zone_grid.mjs), taille dans view.map.gridSize.
+export const ZONE_DIMENSIONS = Object.freeze(['zone_country', 'zone_region', 'zone_subregion', 'zone_grid']);
 // Catégories ordonnées : une courbe y a un sens.
 export const ORDINAL_CATEGORIES = Object.freeze(['difficulty', 'terrain', 'age', 'published_year']);
 export const GROUP_DIMENSIONS = Object.freeze(['none', ...TIME_DIMENSIONS, ...CYCLIC_DIMENSIONS, ...CATEGORY_DIMENSIONS, ...ZONE_DIMENSIONS]);
@@ -642,7 +645,9 @@ function normalizeView(raw, spec) {
     };
 }
 
-export const MAP_VIEW_DEFAULTS = Object.freeze({ scale: 'quantile', classes: 5, frame: 'auto', highlight: true });
+export const MAP_VIEW_DEFAULTS = Object.freeze({
+    scale: 'quantile', classes: 5, frame: 'auto', highlight: true, gridSize: GRID_DEFAULT_SIZE,
+});
 
 function normalizeMapView(raw) {
     const src = isObject(raw) ? raw : {};
@@ -653,6 +658,8 @@ function normalizeMapView(raw) {
         frame: choice(src.frame, MAP_FRAMES, d.frame),
         // Contour des zones qui ont changé depuis la vignette précédente.
         highlight: bool(src.highlight, d.highlight),
+        // Grille : km entre deux centres de cases (zone_grid.mjs › GRID_SIZES).
+        gridSize: normalizeGridSize(src.gridSize),
     };
 }
 

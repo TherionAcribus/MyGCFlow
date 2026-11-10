@@ -13,9 +13,20 @@ import {
     addGeoListener, featureBBox, geoFailed, geoIndex, levelNoun, loadFile, loadIndex, requiredFiles, zoneName, zoneProps,
 } from './zone_geo.js';
 
+import { cellLabel, cellRing } from './zone_grid.mjs';
+
 export {
-    fallbackCountries, zoneAreas, zoneBounds, zoneName,
+    fallbackCountries, zoneAreas, zoneName,
 } from './zone_geo.js';
+import { zoneBounds as geoZoneBounds } from './zone_geo.js';
+
+// Emprise d'une zone (lien vers la carte) : contours chargés, ou case de
+// grille calculée.
+export function zoneBounds(id) {
+    const ring = cellRing(id);
+    if (ring) return union(ring.map(([x, y]) => [x, y, x, y]));
+    return geoZoneBounds(id);
+}
 
 // Marge autour des zones cadrées, en part de la taille du cadre.
 const FRAME_MARGIN = 0.04;
@@ -97,6 +108,7 @@ export function zoneMapFor(result, spec) {
         return { loading: true };
     }
     const level = zones.level;
+    if (level === 'grid') return composeGrid(echarts, result);
     const countries = zones.countries;
     if (level !== 'country' && !countries.length) {
         // Aucune ligne rattachée : rien à cadrer, carte vide du monde.
@@ -187,6 +199,45 @@ export function zoneMapFor(result, spec) {
         aspectScale: aspectOf(bounds),
         nameOf: (id) => zoneName(id) || id,
         levelNoun: (n) => levelNoun(level, countries, n),
+    };
+}
+
+// Grille : les cases qui ont une valeur, calculées (zone_grid.mjs).
+function composeGrid(echarts, result) {
+    const lang = String(document.documentElement.lang || 'fr');
+    const features = [];
+    for (const id of result.keys) {
+        const ring = cellRing(id);
+        if (ring) features.push({ type: 'Feature', properties: { name: id }, geometry: { type: 'Polygon', coordinates: [ring] } });
+    }
+    if (!features.length) return { empty: true };
+    const frame = union(features.flatMap((f) => f.geometry.coordinates[0].map(([x, y]) => [x, y, x, y])));
+    const w = frame[2] - frame[0] || 1;
+    const h = frame[3] - frame[1] || 1;
+    const bounds = [frame[0] - w * FRAME_MARGIN, frame[1] - h * FRAME_MARGIN, frame[2] + w * FRAME_MARGIN, frame[3] + h * FRAME_MARGIN];
+    // Repères : les régions des pays présents, dessinées SOUS les cases
+    // (sans donnée, donc sans couleur) — sans elles, les cases flottent.
+    const countries = result.zones.countries || [];
+    let backdrop = [];
+    if (countries.length && !geoFailed()) {
+        if (!geoIndex()) {
+            loadIndex();
+            return { loading: true };
+        }
+        const entries = requiredFiles('region', countries).map(loadFile);
+        if (entries.some((e) => !e.data && !e.error)) return { loading: true };
+        backdrop = entries.filter((e) => e.data).flatMap((e) => e.data.features)
+            .filter((f) => intersects(bboxes.get(f), bounds))
+            .map((f) => ({ type: 'Feature', properties: { name: f.properties.id }, geometry: f.geometry }));
+    }
+    const name = register(echarts, 'grid|' + backdrop.length + '|' + result.keys.join(','), [...backdrop, ...features]);
+    const english = lang.toLowerCase().startsWith('en');
+    return {
+        name,
+        bounds: [[bounds[0], bounds[3]], [bounds[2], bounds[1]]],
+        aspectScale: aspectOf(bounds),
+        nameOf: (id) => cellLabel(id, { locale: lang, west: english ? 'W' : 'O' }),
+        levelNoun: (n) => (english ? 'cells: ' : 'cases : ') + n,
     };
 }
 

@@ -262,6 +262,18 @@ export function syncEditorForm() {
     const normalizes = allowedNormalize(spec);
     fillChoiceSelect($('statsEdNormalize'), normalizes, state.labels.normalize, spec.compare.normalize);
     $('statsEdNormalizeRow').hidden = normalizes.length < 2;
+    // Carte par zones : taille des cases (grille), échelle et nuances.
+    const map = spec.view.chart === 'map' ? spec.view.map : null;
+    $('statsEdGridRow').hidden = spec.groupBy !== 'zone_grid';
+    $('statsEdMapScaleRow').hidden = !map;
+    $('statsEdMapClassesRow').hidden = !map;
+    if (map) {
+        $('statsEdGridSize').value = String(map.gridSize);
+        $('statsEdMapScale').value = map.scale;
+        // Une date de première trouvaille se classe par années.
+        $('statsEdMapScale').disabled = spec.measure.op === 'first_day';
+        $('statsEdMapClasses').value = String(map.classes);
+    }
     $('statsEdTitle').value = spec.title;
     $('statsEdTitle').placeholder = state.labels.defaultTitle(spec);
     const size = $('statsEdSize');
@@ -349,6 +361,14 @@ export function readEditorForm() {
             log: $('statsEdLog').checked,
             stack: $('statsEdStack').checked,
             palette: $('statsEdPaletteRow').hidden ? spec.view.palette : $('statsEdPalette').value,
+            ...(spec.view.map ? {
+                map: {
+                    ...spec.view.map,
+                    gridSize: Number($('statsEdGridSize').value),
+                    scale: $('statsEdMapScale').value,
+                    classes: Number($('statsEdMapClasses').value),
+                },
+            } : {}),
         },
     };
     // Titre venu d'une question (« Nombre de trouvailles ») : il ne décrit

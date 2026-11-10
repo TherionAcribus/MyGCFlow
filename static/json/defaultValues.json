@@ -156,6 +156,7 @@
         "outline": true,
         "glow": true,
         "legend": true,
-        "legendPosition": "bottom-left"
+        "legendPosition": "bottom-left",
+        "gridSize": 25
     }
 }

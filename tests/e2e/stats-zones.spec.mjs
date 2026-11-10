@@ -21,15 +21,15 @@ const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 
 test.describe.configure({ mode: 'serial' });
 
-// date, zone_country, zone_region, zone_subregion (ids), D, T
+// date, zone_country, zone_region, zone_subregion (ids), D, T, lat, lon
 const ROWS = [
-  ['2022-03-01', 'FR', 'FR-BRE', 'FR-29', 1.5, 2],
-  ['2023-05-05', 'FR', 'FR-BRE', 'FR-29', 2, 2],
-  ['2023-06-06', 'FR', 'FR-PDL', 'FR-44', 1, 1],
-  ['2024-02-02', 'FR', 'FR-974', 'FR-974', 3, 4],
-  ['2024-08-08', 'DE', 'DE-BY', 'DE-09162', 2, 1.5],
-  ['2025-01-10', 'US', 'US-TX', 'US-48201', 1.5, 1.5],
-  ['2025-02-02', null, null, null, 1, 1],
+  ['2022-03-01', 'FR', 'FR-BRE', 'FR-29', 1.5, 2, 48.3904, -4.4861],
+  ['2023-05-05', 'FR', 'FR-BRE', 'FR-29', 2, 2, 48.3950, -4.4900],
+  ['2023-06-06', 'FR', 'FR-PDL', 'FR-44', 1, 1, 47.2184, -1.5536],
+  ['2024-02-02', 'FR', 'FR-974', 'FR-974', 3, 4, -20.8821, 55.4504],
+  ['2024-08-08', 'DE', 'DE-BY', 'DE-09162', 2, 1.5, 48.1374, 11.5755],
+  ['2025-01-10', 'US', 'US-TX', 'US-48201', 1.5, 1.5, 29.7604, -95.3698],
+  ['2025-02-02', null, null, null, 1, 1, null, null],
 ];
 
 function syntheticFinds() {
@@ -56,6 +56,8 @@ function syntheticFinds() {
     code: ROWS.map((_, i) => `GCZ${i}`),
     difficulty: ROWS.map((r) => r[4]),
     terrain: ROWS.map((r) => r[5]),
+    lat: ROWS.map((r) => r[6] ?? null),
+    lon: ROWS.map((r) => r[7] ?? null),
     cache_type: Array(n).fill(0),
     container: none, country: none, state: none, owner: none,
     attributes: Array(n).fill([]),
@@ -160,7 +162,7 @@ test('éditeur : un regroupement par zones ne propose que la carte', async ({ pa
   await page.locator('#statsGalleryModal [data-question="custom"]').click();
   await expect(page.locator('#statsEditorModal')).toBeVisible();
   const zoneOptions = await page.locator('#statsEdGroupBy optgroup[label="Sur une carte"] option').evaluateAll((list) => list.map((o) => o.value));
-  expect(zoneOptions).toEqual(['zone_country', 'zone_region', 'zone_subregion']);
+  expect(zoneOptions).toEqual(['zone_country', 'zone_region', 'zone_subregion', 'zone_grid']);
   await page.locator('#statsEdGroupBy').selectOption('zone_region');
   await expect(page.locator('#statsEdChart option')).toHaveText(['carte']);
   // Mesures propres aux cartes proposées, densité possible.
@@ -194,4 +196,21 @@ test('clic sur une zone : la carte s\'ouvre en pause, cadrée sur la zone', asyn
   expect(new URL(page.url()).search).toBe('');
   await page.locator('#btnQuickStop').click();
   await expect.poll(() => page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
+});
+
+test('grille : cases calculées, sans fichier de contours, taille réglable', async ({ page, request }) => {
+  const errors = await openStats(page);
+  await seed(page, request, [{
+    groupBy: 'zone_grid', periods: [{ kind: 'all' }], view: { chart: 'map', map: { gridSize: 50 } },
+  }]);
+  const card = await mapCard(page);
+  expect(card.zones.level).toBe('grid');
+  // Brest (2), Nantes, La Réunion, Munich, Houston : 5 cases ; une ligne
+  // sans position hors carte.
+  expect(card.keys).toHaveLength(5);
+  expect(card.keys.every((id) => /^h50\//.test(id))).toBe(true);
+  expect(card.series[0][0]).toBe(2);
+  expect(card.zones.unknown).toBe(1);
+  expect(card.zones.map).toMatch(/^mgz-/);
+  expect(errors).toEqual([]);
 });

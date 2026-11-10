@@ -17,7 +17,7 @@ class ZoneLayerProfileTests(unittest.TestCase):
         self.assertEqual(
             {"level": d.level, "measure": d.measure, "scale": d.scale, "classes": d.classes, "color": d.color,
              "opacity": d.opacity, "outline": d.outline, "glow": d.glow, "legend": d.legend,
-             "legendPosition": d.legend_position},
+             "legendPosition": d.legend_position, "gridSize": d.grid_size},
             js)
 
     def test_older_themes_get_defaults(self):
@@ -36,6 +36,11 @@ class ZoneLayerProfileTests(unittest.TestCase):
         self.assertTrue(z.outline)                                    # valeur corrompue : défaut
         self.assertFalse(z.glow)
         self.assertEqual(z.legend_position, "top-right")
+
+    def test_grid_size_is_a_known_size(self):
+        self.assertEqual(sm.coerce_profile({"zones": {"level": "grid", "grid_size": 50}}).zones.grid_size, 50)
+        self.assertEqual(sm.coerce_profile({"zones": {"grid_size": 7}}).zones.grid_size, 25)
+        self.assertEqual(sm.coerce_profile({"zones": {"grid_size": True}}).zones.grid_size, 25)
 
     def test_round_trip_through_the_theme_payload(self):
         manager = sm.SettingsManager.__new__(sm.SettingsManager)

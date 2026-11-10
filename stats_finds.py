@@ -11,13 +11,14 @@ celui de la page carte — trouvailles et étapes Lab, sans filtre.
 
 Version 2 : colonnes `zone_country`, `zone_region`, `zone_subregion` (ids de
 zone de zones.py, codés par dictionnaire, -1 = hors carte) pour les cartes
-par zones (MyGCFlow_Plan_Carte_Zones.md).
+par zones (MyGCFlow_Plan_Carte_Zones.md). Version 3 : `lat`, `lon` (degrés,
+5 décimales ; null sans position) pour le niveau « grille ».
 """
 import logging
 
 import zones
 
-PAYLOAD_VERSION = 2
+PAYLOAD_VERSION = 3
 
 _log = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ def build_finds_payload(features, zone_index=None):
     attribute_index = {}
 
     date, published, kind, code = [], [], [], []
+    lat_col, lon_col = [], []
     difficulty, terrain, attributes = [], [], []
 
     for feature in features:
@@ -98,6 +100,11 @@ def build_finds_payload(features, zone_index=None):
         for name in _DICT_COLUMNS:
             value = props.get(name)
             encode(name, str(value).strip() if value not in (None, "") else "")
+
+        lat, lon = _position(feature)
+        valid = lat is not None and lon is not None and not (lat == 0 and lon == 0)
+        lat_col.append(round(lat, 5) if valid else None)
+        lon_col.append(round(lon, 5) if valid else None)
 
         # Zones : un fichier de rattachement illisible ne doit pas priver la
         # page de ses graphiques — colonnes « hors carte », une trace.
@@ -136,6 +143,8 @@ def build_finds_payload(features, zone_index=None):
         "published": published,
         "kind": kind,
         "code": code,
+        "lat": lat_col,
+        "lon": lon_col,
         "difficulty": difficulty,
         "terrain": terrain,
         **columns,

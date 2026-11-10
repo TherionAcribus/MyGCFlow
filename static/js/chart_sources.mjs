@@ -86,6 +86,9 @@ export function findsTable(payload) {
         kind: new Uint8Array(n),
         difficulty: new Float64Array(n),
         terrain: new Float64Array(n),
+        // Position (degrés ; NaN sans position) : niveau « grille » des cartes.
+        lat: new Float64Array(n),
+        lon: new Float64Array(n),
         code: new Array(n),
         attributes: new Array(n),
         dicts: {
@@ -103,6 +106,8 @@ export function findsTable(payload) {
     const code = col('code');
     const difficulty = col('difficulty');
     const terrain = col('terrain');
+    const lats = col('lat');
+    const lons = col('lon');
     const attributes = col('attributes');
     const dictCols = Object.fromEntries(DICT_FIELDS.map((f) => [f, col(f)]));
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : NaN);
@@ -134,6 +139,8 @@ export function findsTable(payload) {
         table.code[r] = typeof code[i] === 'string' && code[i] ? code[i] : null;
         table.difficulty[r] = num(difficulty[i]);
         table.terrain[r] = num(terrain[i]);
+        table.lat[r] = num(lats[i]);
+        table.lon[r] = num(lons[i]);
         table.attributes[r] = Array.isArray(attributes[i]) ? attributes[i] : [];
         for (const field of DICT_FIELDS) {
             const idx = dictCols[field][i];
@@ -210,6 +217,8 @@ function allocTable(n, { source, undated = 0 }) {
         kind: new Uint8Array(n),
         difficulty: new Float64Array(n),
         terrain: new Float64Array(n),
+        lat: new Float64Array(n).fill(NaN),
+        lon: new Float64Array(n).fill(NaN),
         code: new Array(n),
         attributes: new Array(n),
         dicts: { attribute: [] },
@@ -291,6 +300,8 @@ export function tableFromRecords(records, { source = 'records' } = {}) {
         table.code[r] = rec.code || null;
         table.difficulty[r] = numberOr(rec.difficulty);
         table.terrain[r] = numberOr(rec.terrain);
+        table.lat[r] = numberOr(rec.lat);
+        table.lon[r] = numberOr(rec.lon);
         table.attributes[r] = [];
         for (const [field, encode] of encoders) table[field][r] = encode(rec[field]);
     }
@@ -438,6 +449,8 @@ function evolutionTable(payload, rows, { source, dayOf, endOf }) {
     const difficulty = Array.isArray(payload.difficulty) ? payload.difficulty : [];
     const terrain = Array.isArray(payload.terrain) ? payload.terrain : [];
     const code = Array.isArray(payload.code) ? payload.code : [];
+    const lats = Array.isArray(payload.lat) ? payload.lat : [];
+    const lons = Array.isArray(payload.lon) ? payload.lon : [];
     // Jamais modifiée : une seule liste vide pour toutes les lignes.
     const noAttributes = Object.freeze([]);
     for (const field of DICT_FIELDS) {
@@ -457,6 +470,8 @@ function evolutionTable(payload, rows, { source, dayOf, endOf }) {
         table.code[r] = code[k] || null;
         table.difficulty[r] = difficulties[difficulty[k]] ?? NaN;
         table.terrain[r] = terrains[terrain[k]] ?? NaN;
+        table.lat[r] = numberOr(lats[k]);
+        table.lon[r] = numberOr(lons[k]);
         table.attributes[r] = noAttributes;
         for (const [target, column, remap] of remaps) target[r] = remap(column[k]);
     }

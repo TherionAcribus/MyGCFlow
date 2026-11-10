@@ -6,6 +6,7 @@
 // literal, jamais `t?.(…)`) : c'est ce que pybabel extrait (AGENTS.md).
 
 import { OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
+import { cellLabel } from './zone_grid.mjs';
 
 const identity = (s, vars) => (vars
     ? String(s).replace(/\$\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m))
@@ -55,7 +56,7 @@ export const GROUP_CHOICES = Object.freeze([
     { family: 'time', dims: ['year', 'quarter', 'month', 'week', 'day'] },
     { family: 'cyclic', dims: ['month_of_year', 'week_of_year', 'day_of_year', 'weekday'] },
     { family: 'category', dims: ['cache_type', 'container', 'difficulty', 'terrain', 'dt', 'country', 'state', 'county', 'owner', 'cache', 'finder', 'attribute', 'age', 'published_year', 'published_month'] },
-    { family: 'zone', dims: ['zone_country', 'zone_region', 'zone_subregion'] },
+    { family: 'zone', dims: ['zone_country', 'zone_region', 'zone_subregion', 'zone_grid'] },
 ]);
 
 // Graphiques proposés par l'éditeur (tous ceux que l'adaptateur dessine).
@@ -120,6 +121,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         zone_country: t('Pays (carte)'),
         zone_region: t('Région (carte)'),
         zone_subregion: t('Département, comté… (carte)'),
+        zone_grid: t('Case de la grille (carte)'),
     };
 
     // Option du menu « regroupement » dans la phrase (« par année »).
@@ -152,6 +154,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         zone_country: t('sur une carte des pays'),
         zone_region: t('sur une carte des régions'),
         zone_subregion: t('sur une carte des départements, comtés…'),
+        zone_grid: t('sur une grille de cases'),
     };
 
     const GROUP_FAMILIES = {
@@ -394,6 +397,10 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         if (key === UNKNOWN_KEY) return t('Inconnu');
         if (dim === 'attribute') return t(String(attributeName ? attributeName(key) : key));
         if (dim === 'owner') return String(key);
+        // Case de grille : ses coordonnées (« 47,2° N · 1,5° O »).
+        if (dim === 'zone_grid') {
+            return cellLabel(key, { locale, north: t('N'), south: t('S'), east: t('E'), west: t('O') });
+        }
         if (dim.startsWith('zone_')) return (zoneName && zoneName(key)) || String(key);
         // Types, contenants, pays, régions : noms du GPX, traduits par le
         // catalogue comme dans les panneaux de la carte.

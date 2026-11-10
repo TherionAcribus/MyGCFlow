@@ -660,7 +660,7 @@ test('Évolution : un tableau à part, lié à son jeu, sans sources personnelle
 
     // Galerie et éditeur : seulement ce qui concerne la zone.
     await page.locator('#btnStatsAddChart').click();
-    await expect(page.locator('#statsGalleryModal [data-question^="evo_"]')).toHaveCount(7);
+    await expect(page.locator('#statsGalleryModal [data-question^="evo_"]')).toHaveCount(9);
     await expect(page.locator('#statsGalleryModal [data-question="total"]')).toHaveCount(0);
     await page.locator('#statsGalleryModal [data-question="custom"]').click();
     await expect(page.locator('#statsEdSource option')).toHaveCount(2);

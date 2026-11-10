@@ -132,6 +132,16 @@ test('thème : découpage, couleur selon la date, légende ; légende peinte dan
     .toEqual(['FR-ARA', 'FR-BRE', 'FR-IDF', 'FR-PDL']);
   expect((await zones(page)).features).toBe(18);
 
+  // Grille : une case par groupe de trouvailles proches (Paris, Nantes,
+  // Brest, Lyon à 25 km), cases calculées.
+  await page.locator('#zonesLevel').selectOption('grid');
+  await expect(page.locator('#zonesGridSize')).toBeVisible();
+  await expect.poll(async () => (await zones(page)).features, { timeout: 20_000 }).toBe(4);
+  expect(Object.keys((await zones(page)).classes).every((id) => /^h25\//.test(id))).toBe(true);
+  await page.locator('#zonesGridSize').selectOption('100');
+  await expect.poll(async () => Object.keys((await zones(page)).classes).every((id) => /^h100\//.test(id))).toBe(true);
+  await page.locator('#zonesLevel').selectOption('region');
+
   await page.locator('#zonesMeasure').selectOption('first_day');
   await expect.poll(async () => (await zones(page)).scale?.mode).toBe('year');
   await expect(page.locator('#zonesScale')).toBeDisabled();

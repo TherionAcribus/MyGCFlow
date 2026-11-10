@@ -56,7 +56,7 @@ test('description : zones seulement en carte, carte seulement avec des zones', (
     assert.equal(s.view.chart, 'map');
     assert.equal(s.splitBy, null);
     assert.equal(s.compare.layout, 'side');
-    assert.deepEqual(s.view.map, { scale: 'quantile', classes: 5, frame: 'auto', highlight: true });
+    assert.deepEqual(s.view.map, { scale: 'quantile', classes: 5, frame: 'auto', highlight: true, gridSize: 25 });
     assert.deepEqual(allowedCharts({ groupBy: 'zone_region' }), ['map']);
     assert.ok(!allowedCharts({ groupBy: 'cache_type' }).includes('map'));
     assert.deepEqual(allowedSplitBy('zone_country'), []);
@@ -66,7 +66,7 @@ test('description : zones seulement en carte, carte seulement avec des zones', (
 });
 
 test('description : mesures propres aux cartes et compatibilités', () => {
-    assert.deepEqual(allowedGroupBy({ op: 'dt_coverage' }), ['zone_country', 'zone_region', 'zone_subregion']);
+    assert.deepEqual(allowedGroupBy({ op: 'dt_coverage' }), ['zone_country', 'zone_region', 'zone_subregion', 'zone_grid']);
     assert.equal(spec({ measure: { op: 'first_day' }, groupBy: 'year' }).groupBy, 'zone_country');
     assert.ok(!allowedGroupBy({ op: 'streak' }).includes('zone_region'));
     assert.ok(!allowedGroupBy({ op: 'distinct', field: 'country' }).includes('zone_region'));

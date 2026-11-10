@@ -171,6 +171,17 @@
                                         <label for="statsEdSplitBy" class="stats-phrase-word">{{ _("découpé par") }}</label>
                                         <select id="statsEdSplitBy" class="form-select"></select>
                                     </div>
+                                    <!-- Grille (regroupement « sur une grille de cases ») : taille des cases. -->
+                                    <div id="statsEdGridRow" class="stats-compare-list" hidden>
+                                        <label for="statsEdGridSize" class="stats-phrase-word">{{ _("de") }}</label>
+                                        <select id="statsEdGridSize" class="form-select">
+                                            <option value="5">{{ _("5 km") }}</option>
+                                            <option value="10">{{ _("10 km") }}</option>
+                                            <option value="25">{{ _("25 km") }}</option>
+                                            <option value="50">{{ _("50 km") }}</option>
+                                            <option value="100">{{ _("100 km") }}</option>
+                                        </select>
+                                    </div>
                                     <label for="statsEdPeriod" class="stats-phrase-word">{{ _("sur") }}</label>
                                     <select id="statsEdPeriod" class="form-select"></select>
                                     <!-- « comparé à … » : lignes posées par stats_page_editor.js
@@ -237,6 +248,19 @@
                                         <label for="statsEdNormalize" class="form-label">{{ _("Valeurs") }}</label>
                                         <select id="statsEdNormalize" class="form-select"></select>
                                         <div class="form-hint">{{ _("En pourcentage, des périodes de tailles différentes se comparent mieux.") }}</div>
+                                    </div>
+                                    <!-- Carte par zones : échelle et nuances de la légende. -->
+                                    <div class="mb-3" id="statsEdMapScaleRow" hidden>
+                                        <label for="statsEdMapScale" class="form-label">{{ _("Échelle des couleurs") }}</label>
+                                        <select id="statsEdMapScale" class="form-select">
+                                            <option value="quantile">{{ _("Équilibrée (autant de zones par couleur)") }}</option>
+                                            <option value="linear">{{ _("Régulière") }}</option>
+                                            <option value="log">{{ _("Logarithmique (grands écarts)") }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3" id="statsEdMapClassesRow" hidden>
+                                        <label for="statsEdMapClasses" class="form-label">{{ _("Nuances") }}</label>
+                                        <input type="number" id="statsEdMapClasses" class="form-control" min="3" max="7" step="1">
                                     </div>
                                     <div class="mb-3" id="statsEdOrientationRow">
                                         <label for="statsEdOrientation" class="form-label">{{ _("Sens des barres") }}</label>

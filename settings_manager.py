@@ -679,7 +679,7 @@ class ZoneLayerOptions:
     (static/js/zone_layer_model.mjs) et le bloc `zones` de
     static/json/defaultValues.json.
     """
-    level: str = "subregion"   # "country", "region", "subregion"
+    level: str = "subregion"   # "country", "region", "subregion", "grid"
     measure: str = "count"     # "count", "distinct_types", "dt_coverage", "first_day"
     scale: str = "quantile"    # "quantile", "linear", "log"
     classes: int = 5
@@ -689,6 +689,7 @@ class ZoneLayerOptions:
     glow: bool = True          # éclat d'une zone qui change de classe
     legend: bool = True
     legend_position: str = "bottom-left"
+    grid_size: int = 25        # km entre deux centres de cases (niveau « grid »)
 
 
 @dataclass
@@ -916,7 +917,8 @@ TRAIL_JUMP_KM_RANGE = (10, 5000)
 TRAIL_WIDTH_RANGE = (1, 20)
 TRAIL_OPACITY_RANGE = (10, 100)
 # Couche de zones : miroir de static/js/zone_layer_model.mjs (ZONE_LAYER_*).
-ZONE_LAYER_LEVELS = ("country", "region", "subregion")
+ZONE_LAYER_LEVELS = ("country", "region", "subregion", "grid")
+ZONE_LAYER_GRID_SIZES = (5, 10, 25, 50, 100)
 ZONE_LAYER_MEASURES = ("count", "distinct_types", "dt_coverage", "first_day")
 ZONE_LAYER_SCALES = ("quantile", "linear", "log")
 ZONE_LAYER_CLASSES_RANGE = (3, 7)
@@ -1526,6 +1528,8 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             glow=_zbool("glow", pz.glow),
             legend=_zbool("legend", pz.legend),
             legend_position=_coerce_choice(zn.get("legend_position"), ZONE_LAYER_LEGEND_POSITIONS, pz.legend_position),
+            grid_size=(zn["grid_size"] if not isinstance(zn.get("grid_size"), bool)
+                       and zn.get("grid_size") in ZONE_LAYER_GRID_SIZES else pz.grid_size),
         )
 
     return p

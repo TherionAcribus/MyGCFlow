@@ -33,6 +33,7 @@ import { tableFromRecords } from './chart_sources.mjs';
 import { mixedZoneTable } from './chart_zones.mjs';
 import { createZoneState, zoneScale } from './zone_model.mjs';
 import { addGeoListener, fallbackCountries, zoneFeatures } from './zone_geo.js';
+import { cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate } from './stats_model.mjs';
 import {
     LEGEND_STYLE, classColors, dayOfDate, fadeProgress, legendEntries, legendOrigin, legendSize, mixHex,
@@ -115,17 +116,21 @@ function buildModel() {
     const o = opts();
     const fallback = fallbackCountries();
     const rev = dataRevision();
-    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.measure}|${fallback ? 'f' : '-'}`;
+    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.gridSize}|${o.measure}|${fallback ? 'f' : '-'}`;
+    // Niveau « grille » : colonne de cases calculée sur les coordonnées.
+    const zoneTable = (table) => (o.level === 'grid'
+        ? withGridColumn(table, o.gridSize)
+        : mixedZoneTable(table, o.level, fallback));
     if (model?.key === key) return model;
     if (zoneLayerPage() === 'evolution') {
         // Caches actives (sauf « première cache », qui n'a pas de fin).
         const source = pkg.evolutionZoneTable?.();
         const raw = source?.table || { n: 0, day: new Int32Array(0), endDay: new Float64Array(0), dicts: {} };
-        const table = mixedZoneTable(raw, o.level, fallback);
+        const table = zoneTable(raw);
         const measure = { ...zoneMeasureFor(o.measure), mode: o.measure === 'first_day' ? 'cumulative' : 'active' };
         const state = createZoneState({ table, level: o.level, measure });
         const countries = (table.dicts?.zone_country || []).filter(Boolean);
-        model = { key, revision: rev, state, countries, level: o.level, rows: raw.n };
+        model = { key, revision: rev, state, countries, level: o.level, rows: raw.n, cells: table.dicts.zone_grid || null };
         scaleKey = null;
         return model;
     }
@@ -137,18 +142,20 @@ function buildModel() {
             if (!Number.isFinite(day) || !list?.length) continue;
             for (const feature of list) {
                 const p = propsOf(feature);
+                const [lon, lat] = feature?.geometry?.coordinates
+                    || (feature?.getGeometry ? ol.proj.toLonLat(feature.getGeometry().getCoordinates()) : []);
                 records.push({
-                    day,
+                    day, lat, lon,
                     zone_country: p.zone_country, zone_region: p.zone_region, zone_subregion: p.zone_subregion,
                     cache_type: p.cache_type, difficulty: p.difficulty, terrain: p.terrain, code: p.gc_code,
                 });
             }
         }
     }
-    const table = mixedZoneTable(tableFromRecords(records, { source: 'finds' }), o.level, fallback);
+    const table = zoneTable(tableFromRecords(records, { source: 'finds' }));
     const state = createZoneState({ table, level: o.level, measure: zoneMeasureFor(o.measure) });
     const countries = (table.dicts?.zone_country || []).filter(Boolean);
-    model = { key, revision: rev, state, countries, level: o.level, rows: records.length };
+    model = { key, revision: rev, state, countries, level: o.level, rows: records.length, cells: table.dicts.zone_grid || null };
     scaleKey = null;
     return model;
 }
@@ -172,6 +179,7 @@ function ensureLayer(map) {
 }
 
 function ensureFeatures(level, countries) {
+    if (level === 'grid') return ensureGridFeatures();
     const geo = zoneFeatures(level, countries);
     if (geo.status !== 'ready') return geo.status;
     const key = level + '|' + countries.join(',');
@@ -179,6 +187,26 @@ function ensureFeatures(level, countries) {
     const format = new ol.format.GeoJSON({ featureProjection: 'EPSG:3857' });
     const list = format.readFeatures({ type: 'FeatureCollection', features: geo.features });
     for (const feature of list) feature.setId(feature.get('id'));
+    const source = layer.getSource();
+    source.clear(true);
+    source.addFeatures(list);
+    featuresKey = key;
+    return 'ready';
+}
+
+// Grille : une case par id présent dans les données, calculée
+// (zone_grid.mjs), sans fichier de contours.
+function ensureGridFeatures() {
+    const key = 'grid|' + model.key;
+    if (featuresKey === key) return 'ready';
+    const list = [];
+    for (const id of model.cells || []) {
+        const ring = cellRing(id);
+        if (!ring) continue;
+        const feature = new ol.Feature(new ol.geom.Polygon([ring.map((c) => ol.proj.fromLonLat(c))]));
+        feature.setId(id);
+        list.push(feature);
+    }
     const source = layer.getSource();
     source.clear(true);
     source.addFeatures(list);

@@ -40,6 +40,9 @@ export function syncZoneLayerUI() {
     check('zonesGlow', o.glow);
     check('zonesLegend', o.legend);
     set('zonesLegendPosition', o.legendPosition);
+    set('zonesGridSize', o.gridSize);
+    const gridRow = el('zonesGridSizeRow');
+    if (gridRow) gridRow.hidden = o.level !== 'grid';
     const value = el('zonesOpacityValue');
     if (value) value.textContent = o.opacity + ' %';
     const position = el('zonesLegendPosition');
@@ -83,6 +86,7 @@ function readOptions() {
         glow: checked('zonesGlow'),
         legend: checked('zonesLegend'),
         legendPosition: value('zonesLegendPosition'),
+        gridSize: value('zonesGridSize'),
     });
 }
 
@@ -118,7 +122,7 @@ export function initZoneLayerUI() {
     syncZoneLayerUI();
     display.addEventListener('change', onDisplayToggle);
     for (const id of ['zonesLevel', 'zonesMeasure', 'zonesScale', 'zonesClasses', 'zonesColor', 'zonesOutline',
-        'zonesGlow', 'zonesLegend', 'zonesLegendPosition']) {
+        'zonesGlow', 'zonesLegend', 'zonesLegendPosition', 'zonesGridSize']) {
         el(id)?.addEventListener('change', onOptionChange);
     }
     // Opacité : suivie pendant le glissement.

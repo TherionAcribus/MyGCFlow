@@ -561,6 +561,7 @@ export function evolutionZoneTable() {
         source: 'evolution', n, undated: 0,
         day: new Int32Array(n), endDay: new Float64Array(n),
         cache_type: new Int32Array(n), difficulty: new Float64Array(n), terrain: new Float64Array(n),
+        lat: new Float64Array(n), lon: new Float64Array(n),
         code: new Array(n), dicts: { cache_type: base.types }, extent: null,
     };
     const rating = (list) => list.map((label) => (label === '' ? NaN : Number(label)));
@@ -585,6 +586,8 @@ export function evolutionZoneTable() {
         table.difficulty[k] = difficulties[base.difficulty[i]] ?? NaN;
         table.terrain[k] = terrains[base.terrain[i]] ?? NaN;
         table.code[k] = base.code[i];
+        table.lat[k] = base.lat[i];
+        table.lon[k] = base.lon[i];
         for (const [name, labels] of ZONE_COLUMNS) {
             const idx = base[name][i];
             table[name][k] = base[labels][idx] ? idx : -1;

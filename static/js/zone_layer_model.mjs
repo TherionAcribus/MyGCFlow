@@ -5,10 +5,11 @@
 // page Statistiques). Doc : docs/carte-zones.md › Couche de la carte.
 
 import { dayNumber, ymdOfDay } from './stats_model.mjs';
+import { GRID_DEFAULT_SIZE, normalizeGridSize } from './zone_grid.mjs';
 
 // Miroir de ZoneLayerOptions (settings_manager.py) et du bloc `zones` de
 // static/json/defaultValues.json.
-export const ZONE_LAYER_LEVELS = Object.freeze(['country', 'region', 'subregion']);
+export const ZONE_LAYER_LEVELS = Object.freeze(['country', 'region', 'subregion', 'grid']);
 export const ZONE_LAYER_MEASURES = Object.freeze(['count', 'distinct_types', 'dt_coverage', 'first_day']);
 export const ZONE_LAYER_SCALES = Object.freeze(['quantile', 'linear', 'log']);
 export const ZONE_LAYER_CLASSES_RANGE = Object.freeze([3, 7]);
@@ -25,6 +26,7 @@ export const ZONE_LAYER_DEFAULTS = Object.freeze({
     glow: true,
     legend: true,
     legendPosition: 'bottom-left',
+    gridSize: GRID_DEFAULT_SIZE,
 });
 // Fondu d'une zone qui change de classe, et éclat de son contour (ms).
 export const ZONE_FADE_MS = 600;
@@ -63,6 +65,7 @@ export function normalizeZoneLayerOptions(raw) {
         glow: bool(src.glow, d.glow),
         legend: bool(src.legend, d.legend),
         legendPosition: choice(src.legendPosition, ZONE_LAYER_LEGEND_POSITIONS, d.legendPosition),
+        gridSize: normalizeGridSize(src.gridSize),
     };
 }
 
@@ -72,12 +75,13 @@ export function zoneLayerToProfile(options) {
     return {
         level: o.level, measure: o.measure, scale: o.scale, classes: o.classes, color: o.color,
         opacity: o.opacity, outline: o.outline, glow: o.glow, legend: o.legend, legend_position: o.legendPosition,
+        grid_size: o.gridSize,
     };
 }
 
 export function zoneLayerFromProfile(profile) {
     const p = profile && typeof profile === 'object' ? profile : {};
-    return normalizeZoneLayerOptions({ ...p, legendPosition: p.legend_position });
+    return normalizeZoneLayerOptions({ ...p, legendPosition: p.legend_position, gridSize: p.grid_size });
 }
 
 // Mesure de zone_model.mjs.

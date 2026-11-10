@@ -869,6 +869,7 @@ function mapOption(result, spec, ctx) {
     const { tokens, labels } = ctx;
     const zm = ctx.zoneMap || ctx.zoneMapOf?.(result, spec);
     if (zm?.error) return mapPlaceholder(ctx, labels.t('Contours des zones indisponibles.'));
+    if (zm?.empty) return mapPlaceholder(ctx, labels.t('Aucune donnée'));
     if (!zm?.name) return mapPlaceholder(ctx, labels.t('Chargement de la carte…'));
     const legend = zoneLegend(result, spec, ctx);
     const cells = sideCells(Math.max(1, result.series.length));

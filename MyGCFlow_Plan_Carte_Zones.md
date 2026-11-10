@@ -147,6 +147,19 @@ Doc : `docs/carte-zones.md` › Mini-cartes. Écarts avec les § 6 et 9 :
 - **Restent du lot 5** : le niveau grille, et Mes poses (couche des caches
   posées, intérêt à confirmer).
 
+**Lot 5, seconde partie, livrée le 2026-11-10 : grille.**
+- Fichiers : `zone_grid.mjs`, niveau `grid` dans `zone_model`,
+  `chart_zones`, la couche et le thème.
+- Coordonnées dans `/api/stats/finds` (v3) et dans les tables.
+- Éditeur : taille des cases, et échelle et nuances d'une carte.
+- Mini-cartes avec les régions en fond.
+
+Écarts :
+- **Hexagones seulement** (pas de carrés), en projection locale autour de
+  la latitude médiane des données (arrondie à 5°).
+- **Mes poses** : pas de couche de zones (intérêt non confirmé). Le lot 5
+  est clos.
+
 (Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre
@@ -589,7 +602,7 @@ Rédigées sans référence à un pays : le pays vient des données.
 | **2. `zone_model.mjs`** ✅ | Mesures § 5.1 sauf `found_share`, état + saut, échelle, `keyMoments` | Rien de visible |
 | **3. Mini-cartes** ✅ | `view.chart: "map"`, dimensions `zone_*`, période `moments`, rendu ECharts, éditeur, questions toutes faites, lien `?at=`, rapport de rattachement | Conquête et zones année par année dans Statistiques |
 | **4. Couche animée** ✅ | `zone_layer.js` sur « Mes Géocaches », effets, légende, onglet « Zones » (bascule globale, apparence au profil), vidéo | Les zones se colorent pendant l'animation et dans la vidéo |
-| **5. Évolution, Mes poses, grille** (Évolution ✅) | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
+| **5. Évolution, Mes poses, grille** ✅ (sans Mes poses) | Couche sur `/evolution` (`active`), coordonnées dans `/api/stats/finds`, niveau grille | Densité des caches actives qui évolue |
 | **6. Croisement** | `found_share` | % de caches trouvées par zone, animé |
 | **7. Pays suivants** | Royaume-Uni (`dissolve`), puis pays demandés par les joueurs, modèle d'issue GitHub | Nouveaux pays à chaque mise à jour |
 

@@ -15,9 +15,11 @@
 
 import { dayNumber, dtIndex, ymdOfDay } from './stats_model.mjs';
 
-export const ZONE_LEVELS = Object.freeze(['country', 'region', 'subregion']);
+// `grid` : cases hexagonales (zone_grid.mjs › withGridColumn ajoute la
+// colonne à la table).
+export const ZONE_LEVELS = Object.freeze(['country', 'region', 'subregion', 'grid']);
 export const ZONE_COLUMNS = Object.freeze({
-    country: 'zone_country', region: 'zone_region', subregion: 'zone_subregion',
+    country: 'zone_country', region: 'zone_region', subregion: 'zone_subregion', grid: 'zone_grid',
 });
 
 // Mesures (§ 5.1 du plan). `mode` : `cumulative` (tout ce qui s'est passé
