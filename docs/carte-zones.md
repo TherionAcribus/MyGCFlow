@@ -519,11 +519,38 @@ donne aussi `parts`.
 `tests/e2e/zone-layer.spec.mjs` › part trouvée (fixture
 `evolution-share.csv`, dont les codes croisent `my-finds-zones.gpx`).
 
+## Rapport de rattachement (onglet Zones)
+
+Carte « Noms reconnus » de l'onglet Zones : les noms de Geocaching.com que les
+données de zones ne reconnaissent pas, pour mes trouvailles (« Mes
+Géocaches ») ou pour le jeu ouvert (« Évolution »).
+
+- **Calcul** (`zone_report.py`, `GET /api/zones/report?source=finds` ou
+  `?source=evolution&dataset=<id>`) : lignes regroupées par noms bruts et zones
+  retenues (un `GROUP BY` pour un jeu Évolution, ~1 s pour 464 000 caches,
+  rattachement compris). Chaque nom distinct passe par `ZoneIndex.assign`
+  **sans position** : seuls les noms parlent. Un niveau est « non reconnu »
+  quand son nom est donné, que le niveau existe dans le pays, et que le nom
+  ne donne pas la zone (une région déduite du département ne compte pas
+  comme reconnue). Le pays de contexte : celui du nom, sinon celui de la
+  position.
+- **Réponse** : `unrecognized` (`level`, `country`, `country_name`, `name`,
+  `count`, `zones` = les 3 zones où la position les a placés, `null` = hors
+  carte), `outside` (lignes hors carte par niveau, seulement là où le niveau
+  existe), `total`, `signature` des données de zones, `app_version`.
+- **Onglet** (`zone_report_ui.js`) : rechargé à chaque ouverture de l'onglet
+  et quand un autre jeu Évolution s'ouvre. « Copier le rapport » copie un
+  texte à coller dans le formulaire d'issue `.github/ISSUE_TEMPLATE/zones.yml`
+  (lien « Demander un pays ou un nom »). Relevé E2E :
+  `getZoneReportSnapshot()`.
+- Sur les 24 365 trouvailles de développement : seul « London » (53, Royaume-Uni)
+  n'est pas reconnu ; 9 trouvailles hors carte au niveau 2 (mystères).
+
+**Tests** : `tests/test_zone_report.py` (vraies données de zones, route),
+`tests/e2e/zone-layer.spec.mjs` › rapport de rattachement.
+
 ## Limites connues
 
-- **Rapport de rattachement** (noms GC non reconnus, « Copier le rapport »)
-  pas encore fait. Il viendra avec les pays suivants. La note « Hors carte :
-  N » sous la carte en donne le total.
 - **Résumé textuel accessible** propre aux cartes pas encore fait :
   `aria` d'ECharts seulement.
 - **Vidéo animée d'un graphique et panneau vidéo** : sans objet pour une

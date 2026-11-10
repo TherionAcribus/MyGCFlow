@@ -227,8 +227,10 @@ toujours comme Geocaching.com :
 - **Sinon** : une recette de pays avec son propre niveau `region`, comme
   `FR.json`.
 
-Pour repérer ces pays : le rapport de rattachement de l'app (noms de régions
-non reconnus, à venir au lot 3), ou un joueur qui le signale.
+Pour repérer ces pays : le rapport de rattachement de l'app (onglet Zones,
+carte « Noms reconnus » : noms de régions non reconnus et zones où la position
+les a placés), ou un joueur qui le signale avec le formulaire d'issue « Zones »
+(`.github/ISSUE_TEMPLATE/zones.yml`), rapport collé.
 
 ## Rattachement : règles à connaître
 

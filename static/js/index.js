@@ -49,6 +49,7 @@ export * from './timeline_bar.js';
 // mygcflow:ready.
 export * from './zone_layer.js';
 export * from './zone_layer_ui.js';
+export * from './zone_report_ui.js';
 
 // Scripts de démonstration (fonctions window.demo*/test* à appeler depuis la
 // console), réservés au développement. Le drapeau vient de Flask : tester

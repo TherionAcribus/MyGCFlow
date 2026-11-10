@@ -600,6 +600,26 @@ def load_share_rows(db_path, dataset_id: int) -> tuple:
     return dataset, rows
 
 
+def zone_name_groups(db_path, dataset_id: int) -> tuple:
+    """(base, groupes) pour le rapport de rattachement (zone_report.py) :
+    caches comptées par noms bruts (pays, région, département) et zones
+    retenues. Rattache d'abord les caches qui ne le sont pas encore."""
+    dataset = get_dataset(db_path, dataset_id)
+    with _closing(connect(db_path)) as conn:
+        try:
+            _ensure_zones(conn, dataset_id)
+        except Exception:  # noqa: BLE001 — rapport sans zones (hors carte)
+            import logging
+            logging.getLogger(__name__).exception("zones : rattachement du jeu %s impossible", dataset_id)
+        rows = conn.execute(
+            "SELECT country, region, county, zone_country, zone_region, zone_subregion, COUNT(*) "
+            "FROM caches WHERE dataset_id = ? "
+            "GROUP BY country, region, county, zone_country, zone_region, zone_subregion",
+            (dataset_id,),
+        ).fetchall()
+    return dataset, [tuple(r) for r in rows]
+
+
 def get_cache(db_path, dataset_id: int, gc_code: str) -> dict:
     with _closing(connect(db_path)) as conn:
         _get_dataset(conn, dataset_id)

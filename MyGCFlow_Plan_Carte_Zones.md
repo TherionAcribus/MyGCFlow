@@ -183,6 +183,18 @@ Doc : `docs/carte-zones.md` › Mini-cartes. Écarts avec les § 6 et 9 :
 - **Moments clés** tirés de mes trouvailles dans le jeu, dernière vignette à
   la fin du jeu.
 
+**Lot 7, première partie, livrée le 2026-11-10 : rapport de rattachement**
+(§ 3.5). Carte « Noms reconnus » de l'onglet Zones (`zone_report.py`,
+`GET /api/zones/report`, `zone_report_ui.js`), bouton « Copier le rapport »,
+formulaire d'issue `.github/ISSUE_TEMPLATE/zones.yml`. Écarts :
+- **Dans l'onglet Zones**, pas dans Statistiques : la note « Hors carte : N »
+  des mini-cartes reste un simple total.
+- **Vérification par nom seul**, une fois par nom distinct, et zones tirées
+  de celles déjà retenues : le rapport coûte un regroupement, pas un
+  nouveau rattachement.
+- Premier résultat sur les données de développement : « London » (53), à
+  corriger par la recette du Royaume-Uni (suite du lot 7).
+
 (Note d'origine) À prévoir au lot 4 : les features de la carte (`create_geojson`) n'ont pas
 d'ids de zone. Il faudra soit les ajouter aux propriétés du jeu de base
 (rattachement à la construction du cache GeoJSON), soit joindre

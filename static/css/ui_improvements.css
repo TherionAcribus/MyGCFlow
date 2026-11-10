@@ -795,6 +795,14 @@ main.fullscreen-mode ~ .tooltip {
     pointer-events: none;
 }
 #mapWithFrames > .zone-legend[hidden] { display: none; }
+/* Rapport de rattachement de l'onglet Zones (zone_report_ui.js). */
+.zones-report-list {
+    padding-left: 1.1rem;
+    max-height: 16rem;
+    overflow-y: auto;
+}
+.zones-report-list > li + li { margin-top: 0.35rem; }
+#zonesReport summary { cursor: pointer; }
 /* Onglet Images (images_ui.js) : vignettes sur damier (la transparence se
    voit), bibliothèque en grille, zone de dépôt d'un fichier sur la liste. */
 .images-thumb,

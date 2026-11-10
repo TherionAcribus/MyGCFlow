@@ -11,7 +11,7 @@ import hashlib
 import threading
 from collections import OrderedDict
 
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, current_app, jsonify, make_response, request
 
 import dashboards_store
 import dnf_geojson
@@ -133,6 +133,35 @@ def stats_found_share():
         response = make_response(jsonify(payload))
     response.set_etag(etag, weak=True)
     response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
+# Rapport de rattachement (onglet Zones, zone_report.py) : noms de
+# Geocaching.com non reconnus, pour mes trouvailles ou un jeu Évolution.
+@statistics_bp.route('/api/zones/report', methods=['GET'])
+def zones_report():
+    import zone_report
+    source = request.args.get('source', 'finds')
+    if source == 'finds':
+        features, _ = _base_features()
+        report = zone_report.build_report(zone_report.finds_groups(features))
+    elif source == 'evolution':
+        from .evolution import _db_path, _store_error
+        dataset_id = request.args.get('dataset', type=int)
+        if not dataset_id:
+            return jsonify({'success': False, 'error': 'bad-request'}), 400
+        try:
+            dataset, groups = evolution_store.zone_name_groups(_db_path(), dataset_id)
+        except evolution_store.EvolutionStoreError as exc:
+            return _store_error(exc)
+        report = zone_report.build_report(groups)
+        report['dataset'] = {'id': dataset['id'], 'name': dataset['name']}
+    else:
+        return jsonify({'success': False, 'error': 'bad-request'}), 400
+    report['source'] = source
+    report['app_version'] = current_app.config.get('APP_VERSION')
+    response = make_response(jsonify(report))
+    response.headers['Cache-Control'] = 'no-store'
     return response
 
 

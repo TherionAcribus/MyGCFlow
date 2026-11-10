@@ -121,6 +121,32 @@
             </fieldset>
         </div>
     </div>
+    <!-- Rapport de rattachement (zone_report.py, zone_report_ui.js) : noms de
+         Geocaching.com que les données de zones ne reconnaissent pas. -->
+    <h6 class="gc-section-title">
+        <i class="ti ti-list-check text-muted me-1"></i>{{ _("Noms reconnus") }}
+    </h6>
+    <div class="card mb-3" id="zonesReport">
+        <div class="card-body">
+            <p id="zonesReportSummary" class="mb-0" role="status" aria-live="polite"></p>
+            <details id="zonesReportDetails" class="mt-2" hidden>
+                <summary>{{ _("Voir les noms non reconnus") }}</summary>
+                <ul id="zonesReportList" class="zones-report-list mt-2 mb-0"></ul>
+            </details>
+            <p id="zonesReportOutside" class="form-hint text-muted mt-2 mb-0" hidden></p>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZonesReportCopy" disabled>
+                    <i class="ti ti-copy me-1" aria-hidden="true"></i><span>{{ _("Copier le rapport") }}</span>
+                </button>
+                <a class="btn btn-sm btn-outline-secondary" id="linkZonesReportIssue"
+                   href="{{ repo_url }}/issues/new?template=zones.yml" target="_blank" rel="noopener noreferrer">
+                    <i class="ti ti-brand-github me-1" aria-hidden="true"></i>{{ _("Demander un pays ou un nom") }}
+                </a>
+            </div>
+            <p class="form-hint text-muted mt-2 mb-0">{{ _("Un nom non reconnu n'empêche pas l'affichage : la cache est placée d'après sa position. Copiez le rapport et collez-le dans la demande pour que le pays soit ajouté ou le nom corrigé.") }}</p>
+        </div>
+    </div>
+
     <p class="form-hint text-muted">
         <i class="ti ti-world me-1" aria-hidden="true"></i>{{ _("Le découpage le plus fin existe pour la France, l'Allemagne et les États-Unis ; ailleurs, la carte montre les régions.") }}
     </p>

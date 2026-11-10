@@ -460,6 +460,11 @@ function buildMeta() {
 
 // --- Interface avec le moteur d'animation (mapgl.js) -------------------------------------
 
+// Id du jeu ouvert, ou null (rapport de rattachement de l'onglet Zones).
+export function evolutionDatasetId() {
+    return current?.id ?? null;
+}
+
 export function evolutionHasData() {
     return !!(timeline && timeline.count > 0);
 }

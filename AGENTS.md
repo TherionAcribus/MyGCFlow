@@ -203,6 +203,12 @@ Autres repères :
   `GET /api/stats/found_share` (`status` : `no-dataset`, `loading`,
   `missing`, puis `ready`) ; relevé `parts` (`[trouvées, base]` par zone).
   Exemple dans `zone-layer.spec.mjs`.
+  Rapport de rattachement (carte « Noms reconnus » de l'onglet Zones) :
+  chargé à l'ouverture de l'onglet — pour un autre contenu, intercepter
+  `GET /api/zones/report*` puis rouvrir l'onglet (cliquer un autre onglet
+  d'abord) ; relevé `getZoneReportSnapshot()` (`text` = texte copié). Les
+  fixtures sont toutes reconnues : un nom inconnu se teste par réponse
+  simulée.
 - Panneaux Stats par source (`options.source` : `dnf` / `owned`) : les
   données DNF et caches posées sont chargées au démarrage même si leur
   affichage carte est coupé — un spec qui importe des logs recharge la page

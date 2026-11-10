@@ -1,0 +1,46 @@
+name: "Zones : ajouter un pays / corriger un nom — Zones: add a country / fix a name"
+description: "Cartes par zones : un pays à découper plus finement, ou un nom de région de Geocaching.com non reconnu. — Zone maps: a country to split more finely, or an unrecognised Geocaching.com region name."
+title: "[Zones] "
+labels: ["zones"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci ! Dans l'onglet **Zones** de l'app, la carte « Noms reconnus » a un bouton **« Copier le rapport »** : collez-le ci-dessous.
+        Thank you! In the app's **Zones** tab, the "Recognised names" card has a **"Copy the report"** button: paste it below.
+
+        Pour proposer vous-même une recette de pays : [docs/zones-ajouter-un-pays.md](https://github.com/TherionAcribus/MyGCFlow/blob/main/docs/zones-ajouter-un-pays.md).
+  - type: dropdown
+    id: kind
+    attributes:
+      label: "Demande — Request"
+      options:
+        - "Ajouter un pays (découpage plus fin) — Add a country (finer level)"
+        - "Corriger un nom non reconnu — Fix an unrecognised name"
+        - "Corriger une frontière ou un rattachement — Fix a border or an assignment"
+    validations:
+      required: true
+  - type: input
+    id: country
+    attributes:
+      label: "Pays — Country"
+      placeholder: "Belgique / Belgium"
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: "Rapport de rattachement — Assignment report"
+      description: "Collé depuis l'onglet Zones (bouton « Copier le rapport »). — Pasted from the Zones tab (\"Copy the report\" button)."
+      render: text
+  - type: textarea
+    id: levels
+    attributes:
+      label: "Découpage souhaité — Wanted level"
+      description: "Ex. : provinces, Landkreise, comtés… et leurs noms sur Geocaching.com. — E.g. provinces, districts, counties… and their names on Geocaching.com."
+  - type: input
+    id: source
+    attributes:
+      label: "Source des contours (facultatif) — Boundary source (optional)"
+      description: "Données ouvertes officielles, avec leur licence. Pas d'OpenStreetMap (ODbL) ni de licence non commerciale. — Official open data, with its licence. No OpenStreetMap (ODbL) or non-commercial licence."
+      placeholder: "https://…"

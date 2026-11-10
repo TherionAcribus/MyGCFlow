@@ -303,3 +303,41 @@ test('part trouvée : un jeu Évolution croisé avec mes trouvailles, sur la car
     await deleteAllDatasets(request);
   }
 });
+
+test('rapport de rattachement : noms reconnus, noms à signaler, copie', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const errors = await openMap(page);
+  const report = () => app(page, 'return pkg.getZoneReportSnapshot();');
+  await page.locator('a[href="#zones"]').click();
+  // Fixture : 8 trouvailles en France, toutes reconnues par leur nom.
+  await expect.poll(async () => (await report()).status).toBe('ready');
+  let snap = await report();
+  expect(snap.report.total).toBe(8);
+  expect(snap.report.unrecognized).toEqual([]);
+  await expect(page.locator('#zonesReportSummary')).toContainText('vos 8 trouvailles sont reconnus');
+  await expect(page.locator('#zonesReportDetails')).toBeHidden();
+  await expect(page.locator('#linkZonesReportIssue')).toHaveAttribute('href', /\/issues\/new\?template=zones\.yml$/);
+
+  // Un nom de région inconnu (réponse simulée) : liste, hors carte, copie.
+  await page.route('**/api/zones/report*', (route) => route.fulfill({ json: {
+    v: 1, available: true, total: 60, signature: 'abc123', source: 'finds', app_version: '9.9.9',
+    unrecognized: [{ level: 'region', country: 'GB', country_name: 'United Kingdom', name: 'London', count: 53,
+      zones: [['GB-england', 53]] }],
+    outside: { country: 0, region: 0, subregion: 9 },
+  } }));
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#zones"]').click();
+  await expect(page.locator('#zonesReportSummary')).toContainText('Noms non reconnus : 1 (53 trouvailles)');
+  await page.locator('#zonesReportDetails summary').click();
+  await expect(page.locator('#zonesReportList li')).toHaveCount(1);
+  await expect(page.locator('#zonesReportList li')).toContainText('Région « London »');
+  await expect(page.locator('#zonesReportList li')).toContainText('England (GB-england) : 53');
+  await expect(page.locator('#zonesReportOutside')).toContainText('sans département ni comté : 9');
+  await page.locator('#btnZonesReportCopy').click();
+  await expect(page.locator('#btnZonesReportCopy')).toContainText('Rapport copié');
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain('MyGCFlow 9.9.9');
+  expect(copied).toContain('- region « London » [GB / United Kingdom] : 53 → GB-england (53)');
+  expect(copied).toContain('sous-région 9');
+  expect(errors).toEqual([]);
+});
