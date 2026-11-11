@@ -235,6 +235,19 @@ sous-régions et régions de ces pays.
     taille vaut 18 % du plus petit côté du pays, agrandis 2,5 fois au plus.
 - **`aspectScale`** = cos(latitude du milieu du cadre) : la France n'est pas
   écrasée.
+- **Place de chaque vignette en pixels** (`mapCellBoxes`, chart_echarts.mjs) :
+  une `geo` à qui l'on donne une boîte complète (gauche, haut, largeur,
+  hauteur) s'étire pour la remplir, quelles que soient ses proportions —
+  pays aplati dans une tuile large, allongé dans une tuile haute. La
+  vignette prend donc la plus grande taille qui tient dans sa case aux
+  proportions du cadre (`mapAspect` : largeur × `aspectScale` / hauteur),
+  centrée. Il faut la hauteur réelle du graphique (`ctx.height`, passée
+  par les tuiles, l'aperçu, la présentation, l'export, la galerie et la
+  vidéo) ; une tuile redimensionnée est redessinée (`data-map-size`,
+  `onHostsResized`). Sans hauteur connue, repli sur la boîte en %. Le
+  monde vide a aussi un cadre (`composeEmpty`), sans quoi ses proportions
+  seraient inconnues. Test E2E : `stats-zones.spec.mjs` › bonnes
+  proportions (vue ECharts comparée au cadre, deux largeurs de fenêtre).
 - **Noms** (`zoneName`, langue de la page) et **surfaces** (`zoneAreas`)
   viennent des fichiers chargés.
 

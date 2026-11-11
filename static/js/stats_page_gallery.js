@@ -169,7 +169,7 @@ function renderGalleryPreview(box) {
     if (spec.view.chart === 'map' && (!box.clientWidth || !box.clientHeight)) return;
     setPreviewState(box, 'chart');
     const width = box.clientWidth;
-    const option = thumbnailOption(buildChartOption(result, spec, { ...chartContext(), width }));
+    const option = thumbnailOption(buildChartOption(result, spec, { ...chartContext(), width, height: box.clientHeight }));
     const chart = window.echarts.init(box, null, { locale: echartsLocale(), renderer: 'canvas' });
     chart.setOption(option, true);
     state.gallery.charts.push(chart);

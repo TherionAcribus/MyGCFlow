@@ -247,7 +247,16 @@ function composeEmpty(echarts, level) {
     if (entry.error) return { error: true };
     if (!entry.data) return { loading: true };
     const out = entry.data.features.map((f) => ({ type: 'Feature', properties: { name: f.properties.id }, geometry: f.geometry }));
-    return { name: register(echarts, 'country|*', out), bounds: null, nameOf: (id) => zoneName(id) || id, levelNoun: (n) => levelNoun(level, [], n) };
+    // Un cadre (le monde) : sans lui, les proportions de la carte sont
+    // inconnues et la vignette s'étirerait à la taille de la tuile.
+    const frame = union(entry.data.features.map((f) => bboxes.get(f)));
+    return {
+        name: register(echarts, 'country|*', out),
+        bounds: frame ? [[frame[0], frame[3]], [frame[2], frame[1]]] : null,
+        ...(frame ? { aspectScale: aspectOf(frame) } : {}),
+        nameOf: (id) => zoneName(id) || id,
+        levelNoun: (n) => levelNoun(level, [], n),
+    };
 }
 
 function register(echarts, key, features) {

@@ -878,6 +878,44 @@ function mapPlaceholder(ctx, text) {
     };
 }
 
+// Proportions d'une carte telles qu'ECharts la projette : largeur du cadre
+// (longitudes × aspectScale) sur sa hauteur (latitudes). null sans cadre.
+export function mapAspect(zm) {
+    if (!zm?.bounds) return null;
+    const [[west, north], [east, south]] = zm.bounds;
+    const height = north - south;
+    const width = (east - west) * (zm.aspectScale ?? 0.75);
+    return width > 0 && height > 0 ? width / height : null;
+}
+
+// Place des vignettes en pixels : une case par vignette (bandeau de titre
+// au-dessus quand il y en a plusieurs, légende en bas), et dans chaque case
+// la plus grande carte AUX BONNES PROPORTIONS, centrée. Une boîte en %
+// étirait la carte pour la remplir : pays aplati dans une tuile large,
+// allongé dans une tuile haute. null quand la taille du graphique n'est
+// pas connue.
+export function mapCellBoxes(count, { width, height, aspect, titled }) {
+    if (!(width > 0 && height > 0 && aspect > 0)) return null;
+    const cells = sideCells(Math.max(1, count));
+    const legend = Math.min(40, Math.max(24, height * 0.12));
+    const title = titled ? 34 : 0;
+    const pad = 4;
+    return cells.map((cell) => {
+        const cellW = width / cell.cols;
+        const cellH = (height - legend) / cell.rows;
+        const x = cell.col * cellW + pad;
+        const y = cell.row * cellH + title + pad / 2;
+        const w = Math.max(1, cellW - 2 * pad);
+        const h = Math.max(1, cellH - title - pad * 1.5);
+        const fitW = Math.min(w, h * aspect);
+        const fitH = fitW / aspect;
+        return {
+            geo: { left: x + (w - fitW) / 2, top: y + (h - fitH) / 2, width: fitW, height: fitH },
+            title: { left: cell.col * cellW + cellW / 2, top: cell.row * cellH },
+        };
+    });
+}
+
 // Une vignette par période (ou moment), même échelle pour toutes ; la
 // légende des classes en bas.
 function mapOption(result, spec, ctx) {
@@ -893,6 +931,9 @@ function mapOption(result, spec, ctx) {
     const titleBand = many ? 13 : 0;
     const highlight = spec.view.map?.highlight !== false;
     const additive = ZONE_ADDITIVE.includes(spec.measure.op) && result.normalize === 'none';
+    const boxes = mapCellBoxes(result.series.length, {
+        width: ctx.width, height: ctx.height, aspect: mapAspect(zm), titled: many,
+    });
     const geo = [];
     const titles = [];
     const series = result.series.map((s, i) => {
@@ -900,14 +941,18 @@ function mapOption(result, spec, ctx) {
         const width = 100 / cell.cols;
         const height = (100 - legendBand) / cell.rows;
         const top = cell.row * height;
-        geo.push({
-            map: zm.name,
-            roam: false,
-            ...(zm.aspectScale ? { aspectScale: zm.aspectScale } : {}),
+        // Repli sans taille connue : boîte en %, la carte s'y étire.
+        const place = boxes ? boxes[i].geo : {
             left: `${cell.col * width + 1}%`,
             top: `${top + titleBand}%`,
             width: `${width - 2}%`,
             height: `${height - titleBand - 2}%`,
+        };
+        geo.push({
+            map: zm.name,
+            roam: false,
+            ...(zm.aspectScale ? { aspectScale: zm.aspectScale } : {}),
+            ...place,
             ...(zm.bounds ? { boundingCoords: zm.bounds } : {}),
             itemStyle: { areaColor: tokens.empty, borderColor: tokens.grid, borderWidth: 0.6 },
             emphasis: { label: { show: false }, itemStyle: { areaColor: tokens.empty, borderColor: tokens.text, borderWidth: 1.2 } },
@@ -929,8 +974,8 @@ function mapOption(result, spec, ctx) {
                 text: labels.seriesPeriodLabel(result.periods[i]),
                 subtext: additive ? `${sub} · ${noun} : ${labels.formatValue(total, spec.measure, { compact: true })}`
                     : overall ? `${sub} · ${overall}` : sub,
-                left: `${cell.col * width + width / 2}%`,
-                top: `${top}%`,
+                left: boxes ? boxes[i].title.left : `${cell.col * width + width / 2}%`,
+                top: boxes ? boxes[i].title.top : `${top}%`,
                 textAlign: 'center',
                 itemGap: 2,
                 textStyle: { fontSize: 12, fontWeight: 600, color: tokens.text },

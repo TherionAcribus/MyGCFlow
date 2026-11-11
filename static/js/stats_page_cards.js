@@ -448,13 +448,19 @@ export function challengeSnapshot(result) {
 // (présentation : tout l'écran).
 export function renderChartInto(host, result, spec, { fill = 0 } = {}) {
     const width = host.clientWidth || host.parentElement?.clientWidth || 0;
-    const option = buildChartOption(result, spec, { ...chartContext(), width });
-    if (!chartClickable(spec, result)) {
-        for (const series of option.series || []) series.cursor = 'default';
-    }
     // Calendrier : un bandeau par année, la carte s'allonge.
     const height = chartHeight(result, spec, width);
     host.style.height = height ? height + 'px' : (fill ? fill + 'px' : '');
+    // Carte par zones : placée en pixels aux bonnes proportions (hauteur
+    // réelle de l'hôte, une fois sa hauteur posée), redessinée quand la
+    // taille change (onHostsResized).
+    const drawnHeight = height || fill || host.clientHeight || 0;
+    const option = buildChartOption(result, spec, { ...chartContext(), width, height: drawnHeight });
+    if (!chartClickable(spec, result)) {
+        for (const series of option.series || []) series.cursor = 'default';
+    }
+    if (spec.view.chart === 'map') host.dataset.mapSize = `${width}x${drawnHeight}`;
+    else delete host.dataset.mapSize;
     // Les cases du calendrier ont une taille en pixels, calculée sur la
     // largeur : un redimensionnement qui la change impose un nouveau dessin
     // (onHostsResized), pas un simple resize().
@@ -593,8 +599,10 @@ export function onHostsResized(entries) {
     for (const { target: host } of entries) {
         const drawn = host.dataset.calendarCell;
         const challengeWidth = host.dataset.challengeWidth;
+        const mapSize = host.dataset.mapSize;
         if ((drawn !== undefined && Number(drawn) !== calendarCell(host.clientWidth))
-            || (challengeWidth !== undefined && Number(challengeWidth) !== host.clientWidth)) {
+            || (challengeWidth !== undefined && Number(challengeWidth) !== host.clientWidth)
+            || (mapSize !== undefined && mapSize !== `${host.clientWidth}x${host.clientHeight}`)) {
             if (!resizedCalendars.size) requestAnimationFrame(redrawResizedCalendars);
             resizedCalendars.add(host);
             continue;

@@ -156,6 +156,46 @@ test('carte aux fins d\'année : contours chargés, vignettes, encart de La Réu
   expect(errors).toEqual([]);
 });
 
+// Proportions dessinées par ECharts pour chaque vignette : largeur / hauteur
+// de la vue, rapportées à celles du cadre projeté (1 = pas de déformation).
+async function mapDistortion(page, index = 0) {
+  return page.evaluate((i) => {
+    const host = document.querySelectorAll('.stats-card')[i].querySelector('.stats-chart');
+    const chart = window.echarts.getInstanceByDom(host);
+    const { width, height } = host.getBoundingClientRect();
+    return chart.getModel().getComponent('geo') ? chart.getModel().findComponents({ mainType: 'geo' }).map((model) => {
+      const geo = model.coordinateSystem;
+      const view = geo.getViewRect();
+      const rect = geo.getBoundingRect();
+      const aspect = (rect.width * (model.get('aspectScale') ?? 0.75)) / rect.height;
+      return { ratio: view.width / view.height / aspect, inside: view.x >= -1 && view.y >= -1
+        && view.x + view.width <= width + 1 && view.y + view.height <= height + 1 };
+    }) : [];
+  }, index);
+}
+
+test('carte aux bonnes proportions, entière, quelle que soit la taille de la tuile', async ({ page, request }) => {
+  const errors = await openStats(page);
+  await seed(page, request, [{
+    groupBy: 'zone_region', measure: { op: 'count' }, view: { chart: 'map' },
+  }, {
+    groupBy: 'zone_subregion', measure: { op: 'cumulative', from: 'all' },
+    periods: [{ kind: 'moments', rule: 'year_end' }], view: { chart: 'map' },
+  }]);
+  await mapCard(page, 0);
+  await mapCard(page, 1);
+  for (const viewport of [{ width: 1600, height: 900 }, { width: 700, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    for (const index of [0, 1]) {
+      await expect.poll(async () => {
+        const geos = await mapDistortion(page, index);
+        return geos.length > 0 && geos.every((g) => Math.abs(g.ratio - 1) < 0.01 && g.inside);
+      }, { message: `carte ${index}, ${viewport.width}px` }).toBe(true);
+    }
+  }
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : un regroupement par zones ne propose que la carte', async ({ page }) => {
   const errors = await openStats(page);
   await page.locator('#btnStatsAddChart').click();

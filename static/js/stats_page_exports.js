@@ -106,7 +106,7 @@ function withOffscreenChart(result, spec, { renderer, width, height, ratio = 1, 
     document.body.append(box);
     const chart = window.echarts.init(box, null, { renderer, width, height, devicePixelRatio: ratio, locale: echartsLocale() });
     try {
-        const option = buildChartOption(result, spec, { ...chartContext(), width });
+        const option = buildChartOption(result, spec, { ...chartContext(), width, height });
         chart.setOption({ ...option, animation: false, backgroundColor: background });
         return use(chart);
     } finally {

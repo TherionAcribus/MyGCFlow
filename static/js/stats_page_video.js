@@ -217,7 +217,7 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const kind = spec.view.chart === 'bar' ? 'bar' : 'line';
     // Sans « aujourd'hui » : pas de projection prolongeant une courbe à
     // moitié révélée.
-    const ctx = { ...chartContext(), tokens, width: chartW / scale, today: null };
+    const ctx = { ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null };
     const heads = reveal ? axisLabels(result, ctx, { long: true }) : [];
     const title = chartTitle(spec);
     const font = videoFont();

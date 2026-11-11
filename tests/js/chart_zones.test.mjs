@@ -8,7 +8,9 @@ import {
 } from '../../static/js/chart_spec.mjs';
 import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runZoneQuery, zoneClassOf, zoneMeasureOf } from '../../static/js/chart_zones.mjs';
-import { buildChartOption, chartHeight, clickTarget, thumbnailOption, zoneLegend } from '../../static/js/chart_echarts.mjs';
+import {
+    buildChartOption, chartHeight, clickTarget, mapAspect, mapCellBoxes, thumbnailOption, zoneLegend,
+} from '../../static/js/chart_echarts.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import { chartAnimates } from '../../static/js/chart_video.mjs';
 import { panelFromSpec } from '../../static/js/chart_panel_link.mjs';
@@ -157,6 +159,41 @@ test('échelle commune et classes', () => {
     assert.equal(zoneClassOf(result.zones.scale, 4), 2);
     const s = spec({ groupBy: 'zone_region', measure: { op: 'cumulative', from: 'all' } });
     assert.deepEqual(zoneLegend(result, s, ctx).map((c) => c.label), ['1', '2', '3–4']);
+});
+
+test('cartes aux bonnes proportions, quelle que soit la forme de la tuile', () => {
+    // Cadre de 5° × 3° à aspectScale 0,6 : 3 / 3 → carré.
+    assert.equal(mapAspect({ bounds: [[-5, 49], [0, 46]], aspectScale: 0.6 }), 1);
+    assert.equal(mapAspect({ bounds: null }), null);
+    const aspect = mapAspect({ bounds: [[-5, 49], [0, 46]] }); // aspectScale par défaut 0,75 → 1,25
+    for (const [width, height] of [[900, 300], [300, 900], [500, 500], [1200, 200]]) {
+        for (const count of [1, 3, 6]) {
+            const boxes = mapCellBoxes(count, { width, height, aspect, titled: count > 1 });
+            assert.equal(boxes.length, count);
+            for (const { geo } of boxes) {
+                assert.ok(Math.abs(geo.width / geo.height - aspect) < 1e-9, `${width}×${height}, ${count} : proportions`);
+                assert.ok(geo.left >= 0 && geo.top >= 0, 'dans la tuile');
+                assert.ok(geo.left + geo.width <= width + 1e-9 && geo.top + geo.height <= height + 1e-9, 'carte entière');
+            }
+        }
+    }
+    // Une seule vignette dans une tuile large : toute la hauteur utile,
+    // centrée en largeur.
+    const [one] = mapCellBoxes(1, { width: 900, height: 300, aspect, titled: false });
+    assert.ok(Math.abs(one.geo.left + one.geo.width / 2 - 450) < 1e-9);
+    assert.ok(one.geo.height > 240);
+    assert.equal(mapCellBoxes(1, { width: 900, height: 0, aspect }), null);
+
+    // Dans les options : pixels avec la hauteur, % sans (repli).
+    const s = spec({ groupBy: 'zone_region', measure: { op: 'cumulative', from: 'all' }, periods: [{ kind: 'each', unit: 'year' }] });
+    const result = runZoneQuery(s, table, { today: TODAY });
+    const sized = buildChartOption(result, s, { ...ctx, zoneMap, width: 900, height: 400 });
+    for (const g of sized.geo) {
+        assert.equal(typeof g.width, 'number');
+        assert.ok(Math.abs(g.width / g.height - mapAspect(zoneMap)) < 1e-9);
+    }
+    assert.equal(typeof sized.title[0].left, 'number');
+    assert.match(buildChartOption(result, s, { ...ctx, zoneMap, width: 900 }).geo[0].width, /%$/);
 });
 
 test('options ECharts : vignettes, légende, contours des zones changées', () => {
