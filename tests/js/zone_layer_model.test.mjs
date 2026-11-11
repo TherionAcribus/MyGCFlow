@@ -49,7 +49,7 @@ test('part trouvée : jeu, base, légende en pourcentage', () => {
     const scale = zoneScale([0, 10, 12.4, 30.9, 55, 100], { mode: 'quantile', classes: 3 });
     const fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 0 });
     const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), percent: true }).map((e) => e.label);
-    assert.deepEqual(labels, ['0–12 %', '12–55 %', '55–100 %']);
+    assert.deepEqual(labels, ['< 12 %', '12–55 %', '≥ 55 %']);
 });
 
 test('mesures de zone_model', () => {
@@ -73,9 +73,13 @@ test('couleurs : rampe vers la teinte choisie, fondu, rgba', () => {
 test('légende : classes entières, années, taille et coin', () => {
     const scale = zoneScale([1, 1, 3, 3, 8], { classes: 3 });
     const entries = legendEntries(scale, ZONE_LAYER_DEFAULTS);
-    assert.deepEqual(entries.map((e) => e.label), ['1–2', '3–8']);   // quantiles : 2 classes
+    // Bornes extrêmes ouvertes : l'échelle est celle de l'état final, des
+    // valeurs plus faibles ou plus fortes tombent dedans pendant l'animation.
+    assert.deepEqual(entries.map((e) => e.label), ['≤ 2', '≥ 3']);   // quantiles : 2 classes
     const linear = legendEntries(zoneScale([1, 1, 3, 3, 8], { mode: 'linear', classes: 3 }), ZONE_LAYER_DEFAULTS);
-    assert.deepEqual(linear.map((e) => e.label), ['1–3', '4–5', '6–8']);
+    assert.deepEqual(linear.map((e) => e.label), ['≤ 3', '4–5', '≥ 6']);
+    // Une seule classe : la valeur observée reste la seule borne affichable.
+    assert.deepEqual(legendEntries(zoneScale([5, 5], { classes: 3 }), ZONE_LAYER_DEFAULTS).map((e) => e.label), ['5']);
     const day = (y) => dayNumber({ y, m: 6, d: 1 });
     const years = legendEntries(zoneScale([day(2015), day(2018), day(2024)], { mode: 'year', classes: 3 }), ZONE_LAYER_DEFAULTS);
     assert.deepEqual(years.map((e) => e.label), ['2015–2018', '2019–2022', '2023–2024']);

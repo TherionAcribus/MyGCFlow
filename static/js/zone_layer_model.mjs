@@ -146,28 +146,41 @@ export function fadeProgress(start, now, duration = ZONE_FADE_MS) {
 // `scale` : zone_model.mjs › zoneScale. `formatNumber(v)` : nombre de la
 // page (Intl) ; les années n'en ont pas besoin.
 // `percent` : valeurs continues en pourcentage (part trouvée) — « 12–31 % ».
+// Classes extrêmes ouvertes : l'échelle est celle de l'état final, mais des
+// valeurs plus basses (cumul qui démarre) ou plus fortes (caches actives
+// d'Évolution) tombent dedans pendant l'animation — « ≤ 2 », « ≥ 3 ».
 export function legendEntries(scale, options, { formatNumber = (v) => String(v), percent = false } = {}) {
     if (!scale || scale.min === null || scale.min === undefined) return [];
     const colors = classColors(options.color, scale.classes);
     const { breaks, min, max } = scale;
     const year = (day) => ymdOfDay(day).y;
+    const last = scale.classes - 1;
     return colors.map((color, c) => {
         const lo = c === 0 ? min : breaks[c - 1];
-        const upper = c === scale.classes - 1 ? null : breaks[c];
+        const upper = c === last ? null : breaks[c];
         let label;
         if (percent) {
             const a = formatNumber(lo);
             const b = formatNumber(upper ?? max);
-            label = `${a === b ? a : `${a}–${b}`} %`;
+            if (c === 0 && last === 0) label = `${a} %`;
+            else if (c === 0) label = `< ${formatNumber(upper)} %`;
+            else if (upper === null) label = `≥ ${a} %`;
+            else label = `${a === b ? a : `${a}–${b}`} %`;
         } else if (scale.mode === 'year') {
             const a = year(lo);
             const b = upper === null ? year(max) : year(upper) - 1;
             label = a === b ? String(a) : `${a}–${b}`;
+        } else if (last === 0) {
+            label = formatNumber(min);
+        } else if (c === 0) {
+            label = `≤ ${formatNumber(Math.ceil(upper) - 1)}`;
+        } else if (upper === null) {
+            label = `≥ ${formatNumber(Math.ceil(lo))}`;
         } else {
             // Mesures entières : « 4–7 ». Une borne d'échelle linéaire ou
             // logarithmique n'est pas entière : classe [3,33 ; 5,67[ = 4–5.
-            const a = c === 0 ? min : Math.ceil(lo);
-            const b = upper === null ? max : Math.ceil(upper) - 1;
+            const a = Math.ceil(lo);
+            const b = Math.ceil(upper) - 1;
             label = a >= b ? formatNumber(a) : `${formatNumber(a)}–${formatNumber(b)}`;
         }
         return { color, label };

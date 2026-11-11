@@ -86,7 +86,7 @@ test('onglet Zones : la couche s\'affiche à l\'état final, la préférence est
   expect(state.features).toBe(101);
   expect(state.values).toEqual({ 'FR-75': 3, 'FR-44': 1, 'FR-29': 3, 'FR-69': 1 });
   expect(state.classes).toEqual({ 'FR-75': 1, 'FR-44': 0, 'FR-29': 1, 'FR-69': 0 });
-  expect(state.legend.entries.map((e) => e.label)).toEqual(['1–2', '3']);
+  expect(state.legend.entries.map((e) => e.label)).toEqual(['≤ 2', '≥ 3']);
   await expect(page.locator('#zoneLegend')).toBeVisible();
   await expect.poll(async () => (await (await request.get('/api/settings')).json()).zones_display).toBe(true);
   expect(errors).toEqual([]);
@@ -105,6 +105,17 @@ test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({
   expect(state.values).toEqual({ 'FR-75': 2, 'FR-44': 1, 'FR-29': 2 });
   // Échelle de la fin : 2 reste dans la classe basse.
   expect(state.classes).toEqual({ 'FR-75': 0, 'FR-44': 0, 'FR-29': 0 });
+
+  // Un changement de mesure en pause ne ramène pas la couche au jour de fin.
+  const pausedDay = state.day;
+  await page.locator('a[href="#zones"]').click();
+  await page.locator('#zonesMeasure').selectOption('distinct_types');
+  await expect.poll(async () => (await zones(page)).options.measure).toBe('distinct_types');
+  expect((await zones(page)).day).toBe(pausedDay);
+  await page.locator('#zonesMeasure').selectOption('count');
+  await expect.poll(async () => (await zones(page)).values).toEqual({ 'FR-75': 2, 'FR-44': 1, 'FR-29': 2 });
+  expect((await zones(page)).day).toBe(pausedDay);
+
   await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 8));');
   expect((await zones(page)).classes).toEqual({ 'FR-75': 1, 'FR-44': 0, 'FR-29': 1, 'FR-69': 0 });
 

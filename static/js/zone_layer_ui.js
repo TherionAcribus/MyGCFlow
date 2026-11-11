@@ -145,6 +145,19 @@ function onOptionChange() {
     syncZoneStatus();
 }
 
+// Réglages d'apparence seuls (couleur, opacité, contours, lueur, légende) :
+// ni les données ni l'échelle ne changent — la couche ne fait que repeindre,
+// pas de reconstruction ni de relevé d'état à chaque cran du curseur.
+function onAppearanceChange() {
+    readOptions();
+    const o = normalizeZoneLayerOptions(pkg.options?.zones);
+    const value = el('zonesOpacityValue');
+    if (value) value.textContent = o.opacity + ' %';
+    const position = el('zonesLegendPosition');
+    if (position) position.disabled = !o.legend;
+    pkg.refreshZoneLayerAppearance?.();
+}
+
 async function onDisplayToggle(event) {
     const box = event.currentTarget;
     const on = box.checked;
@@ -169,12 +182,15 @@ export function initZoneLayerUI() {
     bound = true;
     syncZoneLayerUI();
     display.addEventListener('change', onDisplayToggle);
-    for (const id of ['zonesLevel', 'zonesMeasure', 'zonesScale', 'zonesClasses', 'zonesColor', 'zonesOutline',
-        'zonesGlow', 'zonesLegend', 'zonesLegendPosition', 'zonesGridSize', 'zonesShareDataset', 'zonesShareBase']) {
+    for (const id of ['zonesLevel', 'zonesMeasure', 'zonesScale', 'zonesClasses',
+        'zonesGridSize', 'zonesShareDataset', 'zonesShareBase']) {
         el(id)?.addEventListener('change', onOptionChange);
     }
+    for (const id of ['zonesColor', 'zonesOutline', 'zonesGlow', 'zonesLegend', 'zonesLegendPosition']) {
+        el(id)?.addEventListener('change', onAppearanceChange);
+    }
     // Opacité : suivie pendant le glissement.
-    el('zonesOpacity')?.addEventListener('input', onOptionChange);
+    el('zonesOpacity')?.addEventListener('input', onAppearanceChange);
     // L'état (contours arrivés…) se lit à l'ouverture de l'onglet.
     document.querySelector('a[href="#zones"]')?.addEventListener('shown.bs.tab', syncZoneStatus);
 }

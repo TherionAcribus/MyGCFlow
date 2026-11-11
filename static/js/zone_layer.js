@@ -535,7 +535,7 @@ function drawLegend(ctx, legend, size, x, y, k) {
 function syncLegend() {
     const host = document.getElementById('mapWithFrames');
     const legend = enabled() ? legendModel() : null;
-    const key = legend ? JSON.stringify(legend) + '|' + document.documentElement.getAttribute('data-bs-theme') : '';
+    const key = legend ? JSON.stringify(legend) + '|' + opts().opacity + '|' + document.documentElement.getAttribute('data-bs-theme') : '';
     if (!legend) {
         if (legendCanvas) legendCanvas.hidden = true;
         legendKey = '';
@@ -626,10 +626,23 @@ function prepare() {
 // montre le jour courant (animation) ou l'état final (repos).
 export function refreshZoneLayer() {
     styleCache.clear();
-    if (prepare()) showDay(animating && shownDay !== null ? shownDay : endDay());
+    // Jour lu avant la reconstruction : computeScale efface shownDay, et un
+    // réglage changé pendant un aperçu (ou des contours arrivés en route)
+    // ne doit pas ramener la couche au jour de fin.
+    const day = animating ? shownDay : null;
+    if (prepare()) showDay(day ?? endDay());
     syncLegend();
     // Ligne d'état de l'onglet (données arrivées après coup).
     pkg.syncZoneStatus?.();
+}
+
+// Réglages d'apparence seuls (couleur, opacité, contours, lueur, légende) :
+// ni les données ni l'échelle ne changent — on repeint, sans reconstruire
+// le modèle ni reclasser les zones (curseur d'opacité suivi en direct).
+export function refreshZoneLayerAppearance() {
+    styleCache.clear();
+    touch();
+    syncLegend();
 }
 
 // `startDate` : début effectif de l'animation (mapgl.js › animationStartDate).

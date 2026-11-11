@@ -299,8 +299,13 @@ rattachement.
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,
   couleurs (rampe du blanc mêlé à la teinte choisie), fondus, légende.
-- `zone_layer.js` : couche OpenLayers et cycle de vie.
-- `zone_layer_ui.js` : onglet.
+- `zone_layer.js` : couche OpenLayers et cycle de vie. Un changement de
+  réglage conserve le jour affiché (en pause ou en lecture, la couche ne
+  saute pas au jour de fin) ; `refreshZoneLayerAppearance` repeint seul
+  pour les réglages qui ne changent ni données ni échelle (couleur,
+  opacité, contours, lueur, légende).
+- `zone_layer_ui.js` : onglet (réglages structurels → `refreshZoneLayer`,
+  apparence → `refreshZoneLayerAppearance`).
 - `zone_geo.js` : contours, partagés avec la page Statistiques.
 - `templates/menu_zones.html` : onglet, page principale seulement.
 
@@ -335,7 +340,11 @@ plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
 - Une zone sans valeur n'a que sa frontière (si `outline`).
 - **Légende** : canvas `#zoneLegend` dans `#mapWithFrames` (z-index 89).
   Le même dessin est repeint dans chaque image de la vidéo, au même coin et
-  aux mêmes marges, multipliés par l'échelle.
+  aux mêmes marges, multipliés par l'échelle. L'échelle étant celle de
+  l'état final, les classes extrêmes affichent des bornes ouvertes
+  (« ≤ 2 », « ≥ 3 », « < 12 % », « ≥ 55 % ») : des valeurs plus basses
+  (cumul qui démarre) ou plus fortes (caches actives qui redescendent) y
+  tombent pendant l'animation.
 
 **Relevé E2E** : `getZoneLayerDebugState()` donne `status` (`off`,
 `loading`, `ready`, `error`, `empty`), `visible`, `features`, `values`,
