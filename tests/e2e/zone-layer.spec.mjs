@@ -203,6 +203,20 @@ test('thème : découpage, couleur selon la date, légende ; légende peinte dan
   await expect.poll(async () => (await zones(page)).scale?.mode).toBe('year');
   await expect(page.locator('#zonesScale')).toBeDisabled();
 
+  // Préréglages : un lot de réglages posé d'un coup, le périmètre rappelé
+  // sous « Couleur selon » suit la mesure.
+  await expect(page.locator('#zonesScopeHint')).toContainText('trouvailles filtrées');
+  await page.locator('#zonesPreset').selectOption('conquest');
+  await expect.poll(async () => (await zones(page)).options.scale).toBe('log');
+  expect((await zones(page)).options.measure).toBe('count');
+  await page.locator('#zonesPreset').selectOption('visited');
+  await expect.poll(async () => (await zones(page)).options.measure).toBe('first_day');
+  await expect(page.locator('#zonesScale')).toBeDisabled();
+  // « Sauvegarder le thème » est accessible sans quitter l'onglet.
+  await expect(page.locator('#btnZonesSaveTheme')).toBeVisible();
+  await page.locator('#zonesPreset').selectOption('conquest');
+  await expect.poll(async () => (await zones(page)).options.measure).toBe('count');
+
   // Légende dans une image de la vidéo : coin bas-gauche peint.
   const painted = await app(page, `
     const canvas = document.createElement('canvas');
@@ -294,8 +308,10 @@ test('part trouvée : un jeu Évolution croisé avec mes trouvailles, sur la car
     const errors = await openMap(page);
     await page.locator('a[href="#zones"]').click();
     await page.locator('#zonesMeasure').selectOption('found_share');
-    // Pas encore de jeu choisi : la couche attend, l'onglet le dit.
+    // Pas encore de jeu choisi : la couche attend, l'onglet le dit ; le
+    // périmètre rappelle que le jeu entier est croisé, filtres ignorés.
     await expect(page.locator('#zonesStatus')).toContainText('Choisissez le jeu Évolution');
+    await expect(page.locator('#zonesScopeHint')).toContainText('jeu Évolution choisi');
     await expect(page.locator('#zonesShareDataset option')).toHaveText(['Choisir un jeu…', 'Ouest']);
     await page.locator('#zonesShareDataset').selectOption(String(datasetId));
     await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');

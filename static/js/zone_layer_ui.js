@@ -61,6 +61,20 @@ export function syncZoneLayerUI() {
     // L'échelle n'a pas de sens pour une date (une couleur par période).
     const scale = el('zonesScale');
     if (scale) scale.disabled = o.measure === 'first_day';
+    // Périmètre des données de la mesure choisie, rappelé sous le contrôle :
+    // la part trouvée lit tout le jeu Évolution, les autres mesures suivent
+    // les données filtrées de la carte.
+    const scope = el('zonesScopeHint');
+    if (scope) {
+        const evolution = page() === 'evolution';
+        scope.textContent = o.measure === 'found_share'
+            ? (evolution
+                ? t('Vos trouvailles croisées avec les caches affichées, par code GC.')
+                : t('Tout le jeu Évolution choisi, quels que soient les filtres de la carte.'))
+            : (evolution
+                ? t('Calculé sur les caches du jeu affiché, à la date montrée.')
+                : t('Calculé sur vos trouvailles filtrées, à la date montrée.'));
+    }
     syncZoneStatus();
 }
 
@@ -145,6 +159,25 @@ function onOptionChange() {
     syncZoneStatus();
 }
 
+// Préréglages du menu « Préréglages » : un lot de réglages cohérent posé
+// d'un coup (structurels → rafraîchissement complet). Le contrôle revient à
+// sa place : il lance une action, il n'étale pas un état.
+const ZONE_PRESETS = {
+    visited: { measure: 'first_day' },
+    conquest: { measure: 'count', scale: 'log' },
+    coverage: { measure: 'dt_coverage', scale: 'linear' },
+};
+
+function onPresetChange(event) {
+    const preset = ZONE_PRESETS[event.currentTarget.value];
+    event.currentTarget.value = '';
+    if (!preset) return;
+    pkg.options.zones = normalizeZoneLayerOptions({ ...pkg.options?.zones, ...preset });
+    syncZoneLayerUI();
+    pkg.refreshZoneLayer?.();
+    syncZoneStatus();
+}
+
 // Réglages d'apparence seuls (couleur, opacité, contours, lueur, légende) :
 // ni les données ni l'échelle ne changent — la couche ne fait que repeindre,
 // pas de reconstruction ni de relevé d'état à chaque cran du curseur.
@@ -191,6 +224,11 @@ export function initZoneLayerUI() {
     }
     // Opacité : suivie pendant le glissement.
     el('zonesOpacity')?.addEventListener('input', onAppearanceChange);
+    el('zonesPreset')?.addEventListener('change', onPresetChange);
+    // « Sauvegarder le thème » : même action que le bouton de l'onglet Style.
+    el('btnZonesSaveTheme')?.addEventListener('click', () => {
+        window.profileManager?.saveCurrentAsProfile();
+    });
     // L'état (contours arrivés…) se lit à l'ouverture de l'onglet.
     document.querySelector('a[href="#zones"]')?.addEventListener('shown.bs.tab', syncZoneStatus);
 }

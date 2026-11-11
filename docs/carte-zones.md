@@ -305,9 +305,18 @@ rattachement.
   pour les réglages qui ne changent ni données ni échelle (couleur,
   opacité, contours, lueur, légende).
 - `zone_layer_ui.js` : onglet (réglages structurels → `refreshZoneLayer`,
-  apparence → `refreshZoneLayerAppearance`).
+  apparence → `refreshZoneLayerAppearance`). L'onglet est en deux cartes :
+  « Données et mesure » (découpage, mesure, jeu Évolution, préréglages —
+  lots `ZONE_PRESETS` posés d'un coup —, échelle et nuances repliées dans
+  `#zonesAdvanced`) et « Apparence » (couleur, opacité, contours, lueur,
+  légende, bouton « Sauvegarder le thème » qui appelle
+  `profileManager.saveCurrentAsProfile`, comme dans l'onglet Style). Le
+  périmètre des données de la mesure choisie est rappelé sous « Couleur
+  selon » (`#zonesScopeHint` : trouvailles filtrées vs jeu Évolution
+  entier).
 - `zone_geo.js` : contours, partagés avec la page Statistiques.
-- `templates/menu_zones.html` : onglet, page principale seulement.
+- `templates/menu_zones.html` : onglet des deux pages (variantes via
+  `mode == 'evolution'` : pas de choix de jeu, mesures en « caches »).
 
 **Calcul** : la couche relit l'index des points (`pointsByDate` et
 `hiddenPointsByDate`), en fait une table (`tableFromRecords`) puis un
