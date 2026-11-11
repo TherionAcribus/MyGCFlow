@@ -251,6 +251,7 @@ function bindEvents() {
     $('btnStatsRename').addEventListener('click', openRename);
     $('statsRenameForm').addEventListener('submit', submitRename);
     $('statsGlobalPeriod').addEventListener('change', onGlobalPeriodChange);
+    $('statsGlobalUpTo').addEventListener('change', onGlobalPeriodChange);
     $('statsGrid').addEventListener('click', onCardAction);
     $('statsGrid').addEventListener('pointerdown', onGridPointerDown);
     $('statsGrid').addEventListener('dragstart', onDragStart);
@@ -297,7 +298,7 @@ function bindEvents() {
     $('statsFiltersModal').addEventListener('hidden.bs.modal', () => destroyFilterForm($('statsFiltersForm')));
     $('statsFiltersSummary').addEventListener('click', onFiltersSummaryClick);
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
-    for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
+    for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdUpTo', 'statsEdChart', 'statsEdSize',
         'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdRecord', 'statsEdGoal', 'statsEdProjection', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
         'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList',
         'statsEdMapFrame', 'statsEdMapScale', 'statsEdMapClasses', 'statsEdGridSize']) {

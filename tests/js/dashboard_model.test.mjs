@@ -211,6 +211,19 @@ test('libellés de comparaison : en cours, coupée, rang depuis le début', () =
     assert.equal(labels.elapsedLabel('day', 9), 'Jour 10');
     assert.equal(labels.periodChoiceLabel({ kind: 'previous' }), 'La période précédente');
     assert.equal(labels.periodChoiceLabel({ kind: 'current', unit: 'month' }), 'Ce mois-ci');
+    // « Depuis le début » : nommée par sa fin.
+    assert.equal(labels.periodChoiceLabel({ kind: 'year', year: 2011, upTo: true }), "Jusqu'à fin 2011");
+    assert.equal(labels.periodChoiceLabel({ kind: 'month', year: 2025, month: 3, upTo: true }), "Jusqu'à fin mars 2025");
+    assert.equal(labels.periodChoiceLabel({ kind: 'current', unit: 'year', upTo: true }), "Jusqu'à aujourd'hui");
+    assert.equal(labels.periodChoiceLabel({ kind: 'range', from: '2024-01-01', to: '2024-02-10', upTo: true }), "Jusqu'au 10 févr. 2024");
+    const upToNow = { period: { kind: 'current', unit: 'year', upTo: true }, as: { kind: 'year', year: 2026, upTo: true }, ongoing: true };
+    assert.equal(labels.seriesPeriodLabel(upToNow), "Jusqu'à aujourd'hui");
+    const upToCut = { period: { kind: 'previous' }, as: { kind: 'year', year: 2025, upTo: true }, cut: true, to: dayNumber({ y: 2025, m: 11, d: 8 }) };
+    assert.equal(labels.seriesPeriodLabel(upToCut), "Jusqu'au 8 nov. 2025");
+    assert.equal(labels.comparedTo(upToCut), 'par rapport au 8 nov. 2025');
+    const upTo2024 = { period: { kind: 'previous' }, as: { kind: 'year', year: 2024, upTo: true } };
+    assert.equal(labels.periodLabel(upTo2024), "Jusqu'à fin 2024");
+    assert.equal(labels.comparedTo(upTo2024), 'par rapport à fin 2024');
     assert.equal(labels.formatValue(12.345, { op: 'count' }, { normalize: 'percent' }), '12,3 %');
     assert.equal(labels.formatValue(0.4567, { op: 'count' }, { normalize: 'per_day' }), '0,46 / jour');
     assert.equal(labels.formatDelta(-3, { op: 'count' }), '−3');

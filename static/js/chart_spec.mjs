@@ -211,6 +211,21 @@ export const PERIOD_KINDS = Object.freeze(['all', 'year', 'month', 'range', 'rol
 // « Moments clés » (cartes seulement) : une vignette par moment, déployés
 // sur les données par zone_model.mjs › keyMoments.
 export const MOMENT_PERIOD_RULES = Object.freeze(['year_end', 'quarter_end', 'milestones', 'new_zone']);
+// « Depuis le début » (`upTo: true`) : la période ne fixe plus que la fin —
+// tout ce qui précède compte aussi (2011 → du début jusqu'à fin 2011). Pour
+// les périodes qui ont une fin propre ; « la période précédente » suit sa
+// base (jusqu'à fin 2024 avant jusqu'à fin 2025).
+export const UP_TO_KINDS = Object.freeze(['year', 'month', 'current', 'range']);
+
+export const periodAcceptsUpTo = (period) => Boolean(period) && UP_TO_KINDS.includes(period.kind);
+
+// La période avec ou sans « depuis le début » (sans effet là où il ne
+// s'applique pas).
+export function withUpTo(period, on) {
+    if (!period) return period;
+    const { upTo, ...rest } = period;
+    return on && periodAcceptsUpTo(period) ? { ...rest, upTo: true } : rest;
+}
 export const CURRENT_UNITS = Object.freeze(['year', 'month']);
 export const ROLLING_UNITS = Object.freeze(['day', 'month', 'year']);
 export const EACH_UNITS = Object.freeze(['year', 'month']);
@@ -241,7 +256,8 @@ export const MAP_CLASSES_RANGE = Object.freeze([3, 7]);
 // « hors du cadre »).
 export const MAP_CONTINENTS = Object.freeze(['europe', 'northamerica', 'southamerica', 'africa', 'asia', 'oceania']);
 export const MAP_FRAMES = Object.freeze(['auto', 'world', ...MAP_CONTINENTS]);
-const COUNTRY_FRAME_RE = /^country:([A-Z]{2}|X-[A-Z]{3})$/;
+// Pays sans code ISO : « X » + code à trois lettres (XKOS…).
+const COUNTRY_FRAME_RE = /^country:([A-Z]{2}|X[A-Z]{3})$/;
 
 export function mapFrameCountry(frame) {
     return COUNTRY_FRAME_RE.exec(String(frame || ''))?.[1] || null;
@@ -432,6 +448,7 @@ export function normalizePeriod(raw) {
         period = { kind, rule: choice(raw.rule, MOMENT_PERIOD_RULES, 'year_end') };
     }
     if (!period) return null;
+    if (raw.upTo === true && periodAcceptsUpTo(period)) period.upTo = true;
     const label = flatText(raw.label, PERIOD_LABEL_MAX);
     if (label) period.label = label;
     return period;

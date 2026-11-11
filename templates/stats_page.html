@@ -89,6 +89,12 @@
                         <div class="stats-toolbar-controls">
                             <label for="statsGlobalPeriod" class="stats-toolbar-label">{{ _("Période") }}</label>
                             <select id="statsGlobalPeriod" class="form-select form-select-sm"></select>
+                            <!-- « Depuis le début » : tout jusqu'à la fin de la période (année, mois…). -->
+                            <div id="statsGlobalUpToRow" class="form-check form-switch stats-upto" hidden
+                                 title="{{ _("Compter aussi tout ce qui précède : du début jusqu'à la fin de la période choisie.") }}">
+                                <input class="form-check-input" type="checkbox" role="switch" id="statsGlobalUpTo">
+                                <label class="form-check-label" for="statsGlobalUpTo">{{ _("Depuis le début") }}</label>
+                            </div>
                             <button type="button" id="btnStatsFilters" class="btn btn-outline-secondary btn-sm">
                                 <i class="ti ti-filter" aria-hidden="true"></i> {{ _("Filtres") }}
                                 <span id="statsFiltersCount" class="badge bg-primary text-white ms-1" hidden></span>
@@ -184,6 +190,16 @@
                                     </div>
                                     <label for="statsEdPeriod" class="stats-phrase-word">{{ _("sur") }}</label>
                                     <select id="statsEdPeriod" class="form-select"></select>
+                                    <!-- « Depuis le début » : visible quand le graphique a ses
+                                         propres périodes à fin propre ; vaut pour toutes. -->
+                                    <div id="statsEdUpToRow" class="stats-compare-list" hidden>
+                                        <span aria-hidden="true"></span>
+                                        <div class="form-check form-switch stats-upto"
+                                             title="{{ _("Compter aussi tout ce qui précède : du début jusqu'à la fin de la période choisie.") }}">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="statsEdUpTo">
+                                            <label class="form-check-label" for="statsEdUpTo">{{ _("Depuis le début") }}</label>
+                                        </div>
+                                    </div>
                                     <!-- « comparé à … » : lignes posées par stats_page_editor.js
                                          (display: contents — elles rejoignent la grille). -->
                                     <div id="statsEdCompareList" class="stats-compare-list"></div>

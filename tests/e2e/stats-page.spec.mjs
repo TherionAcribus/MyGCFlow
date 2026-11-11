@@ -194,6 +194,74 @@ test('période globale : les graphiques suivent, sauf ceux qui ont la leur', asy
   await expect(card(page, snap.cards[3].id).locator('.stats-card-period')).toBeVisible();
 });
 
+test('période globale « Depuis le début » : tout jusqu\'à la fin de la période choisie', async ({ page, request }) => {
+  // Février 2026 : aucune trouvaille dans le mois, les 6 de janvier avant.
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{
+    id: 'aaaaaa', name: 'Test', period: { kind: 'month', year: 2026, month: 2 },
+    items: [{ size: 'S', spec: { id: 'c0ffee', groupBy: 'none', view: { chart: 'number' } } }],
+  }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  const value = card(page, 'c0ffee').locator('.stats-number-value');
+  const caption = card(page, 'c0ffee').locator('.stats-number-caption');
+  const row = page.locator('#statsGlobalUpToRow');
+  const upTo = page.locator('#statsGlobalUpTo');
+  await expect(value).toHaveText('0');
+  await expect(row).toBeVisible();
+  await expect(upTo).not.toBeChecked();
+
+  await upTo.check();
+  await expect(value).toHaveText('6');
+  await expect(caption).toHaveText('Jusqu\'à fin février 2026');
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.period)
+    .toEqual({ kind: 'month', year: 2026, month: 2, upTo: true });
+
+  // « Toute la période » : la case disparaît, décochée.
+  await page.locator('#statsGlobalPeriod').selectOption({ label: 'Toute la période' });
+  await expect(row).toBeHidden();
+  await expect(upTo).not.toBeChecked();
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.period).toEqual({ kind: 'all' });
+
+  // Cette année, depuis le début : tout jusqu'à aujourd'hui.
+  await page.locator('#statsGlobalPeriod').selectOption({ label: 'Cette année' });
+  await expect(row).toBeVisible();
+  await upTo.check();
+  await expect(caption).toHaveText('Jusqu\'à aujourd\'hui');
+  await expect(value).toHaveText('6');
+
+  // Rechargement : menu et case relus du document.
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.period)
+    .toEqual({ kind: 'current', unit: 'year', upTo: true });
+  await page.reload();
+  await page.waitForFunction(() => window.mygcflowStatsReady === true);
+  await expect(page.locator('#statsGlobalPeriod')).toHaveValue('{"kind":"current","unit":"year"}');
+  await expect(upTo).toBeChecked();
+  expect(errors).toEqual([]);
+});
+
+test('éditeur : « Depuis le début » pour la période propre d\'un graphique', async ({ page, request }) => {
+  const { errors } = await openWithChart(page, request, { groupBy: 'none', view: { chart: 'number' } }, 'S');
+  await cardAction(page, 'c0ffee', 'edit');
+  await expect(page.locator('#statsEditorModal')).toBeVisible();
+  // Période du tableau de bord : c'est sa case qui décide.
+  await expect(page.locator('#statsEdUpToRow')).toBeHidden();
+
+  // Ce mois-ci (novembre 2026 ou après) : aucune trouvaille ; depuis le
+  // début : les 6 de janvier 2026.
+  await page.locator('#statsEdPeriod').selectOption({ label: 'Ce mois-ci' });
+  await expect(page.locator('#statsEdUpToRow')).toBeVisible();
+  await page.locator('#statsEdUpTo').check();
+  await expect.poll(async () => (await snapshot(page)).editor.spec.periods)
+    .toEqual([{ kind: 'current', unit: 'month', upTo: true }]);
+  await page.locator('#btnStatsEdSave').click();
+
+  await expect(card(page, 'c0ffee').locator('.stats-number-value')).toHaveText('6');
+  await expect(card(page, 'c0ffee').locator('.stats-card-period')).toHaveText('Jusqu\'à aujourd\'hui');
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.[0]?.spec?.periods)
+    .toEqual([{ kind: 'current', unit: 'month', upTo: true }]);
+  expect(errors).toEqual([]);
+});
+
 test('galerie : une question ajoute son graphique, qui survit au rechargement', async ({ page }) => {
   const errors = await openStats(page);
   await page.locator('#btnStatsAddChart').click();

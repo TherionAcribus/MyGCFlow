@@ -14,6 +14,8 @@
 //   ongoing  la période contient aujourd'hui et n'est pas finie
 //   fullTo   fin d'origine (`to` peut être raccourci par la comparaison « à
 //            date », chart_query.mjs)
+//   anchor   (« depuis le début » seulement) début de la période elle-même,
+//            `from` étant celui des données ; `as.upTo` vaut alors true
 
 import { dayNumber, parseYmd, ymdOfDay } from './stats_model.mjs';
 import { MAX_SERIES } from './chart_spec.mjs';
@@ -86,9 +88,25 @@ function previousEntry(base) {
     return { from, to, as, step: base.step };
 }
 
+// « Depuis le début » : l'entrée part des premières données (ou de son
+// propre début s'il est antérieur). `anchor` garde le début de la période
+// elle-même — la « période précédente » et la coupe « à date » se calculent
+// dessus.
+function fromStart(entry, extent) {
+    const from = extent ? Math.min(extent.first, entry.from) : entry.from;
+    return { ...entry, from, anchor: entry.from, as: { ...entry.as, upTo: true } };
+}
+
 // Une période → zéro, une ou plusieurs entrées concrètes. `previous` est
 // l'entrée qui la précède dans la liste (pour « la période précédente »).
 function expandOne(period, extent, today, previous) {
+    const entries = expandBase(period, extent, today, previous);
+    // « La période précédente » d'une base « depuis le début » l'est aussi.
+    const upTo = period.upTo || (period.kind === 'previous' && previous?.anchor !== undefined);
+    return upTo ? entries.map((entry) => fromStart(entry, extent)) : entries;
+}
+
+function expandBase(period, extent, today, previous) {
     switch (period.kind) {
         case 'all':
         // Période du tableau de bord non résolue par l'appelant : tout.
@@ -105,7 +123,8 @@ function expandOne(period, extent, today, previous) {
             return [period.unit === 'month' ? monthEntry(y, m) : yearEntry(y)];
         }
         case 'previous': {
-            const entry = previousEntry(previous);
+            const base = previous?.anchor !== undefined ? { ...previous, from: previous.anchor } : previous;
+            const entry = previousEntry(base);
             return entry ? [entry] : [];
         }
         case 'range': {
@@ -164,8 +183,11 @@ export function periodLength(entry) {
 // jour et même mois) ou un 1ᵉʳ du mois (même quantième), sinon même nombre
 // de jours écoulés. Le 29 février d'une année ordinaire devient le 28.
 export function toDateCut(entry, current, today) {
-    const a = ymdOfDay(entry.from);
-    const c = ymdOfDay(current.from);
+    // Début propre de la période (pas celui des données, « depuis le début »).
+    const entryFrom = entry.anchor ?? entry.from;
+    const currentFrom = current.anchor ?? current.from;
+    const a = ymdOfDay(entryFrom);
+    const c = ymdOfDay(currentFrom);
     const t = ymdOfDay(today);
     if (a.d === 1 && c.d === 1 && a.m === 1 && c.m === 1) {
         // Même mois et même jour, l'année de l'entrée (+ les années d'écart
@@ -180,5 +202,5 @@ export function toDateCut(entry, current, today) {
         const m = (index % 12) + 1;
         return dayNumber({ y, m, d: Math.min(t.d, daysInMonth(y, m)) });
     }
-    return entry.from + (today - current.from);
+    return entryFrom + (today - currentFrom);
 }

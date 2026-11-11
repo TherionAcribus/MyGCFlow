@@ -3,7 +3,7 @@
 // Lancer : npm run test:unit (node --test, aucune dépendance).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
+import { normalizeChartSpec, withUpTo } from '../../static/js/chart_spec.mjs';
 import { dayOfYearSlot, findsTable, isoWeek, isoWeekday, weekStart } from '../../static/js/chart_sources.mjs';
 import { expandPeriods, periodLength, toDateCut, todayDay } from '../../static/js/chart_periods.mjs';
 import {
@@ -411,6 +411,61 @@ test('à date : la période passée est coupée au même jour, la note le signal
     const full = runChartQuery(spec(false), tbl, { today });
     assert.deepEqual(full.series.map((s) => s.values[0]), [2, 2]);
     assert.equal(full.toDate, null);
+});
+
+test('« depuis le début » : admis pour une période à fin propre, retiré ailleurs', () => {
+    const periodsOf = (periods) => normalizeChartSpec({ periods }).periods;
+    assert.deepEqual(periodsOf([{ kind: 'year', year: 2024, upTo: true }]), [{ kind: 'year', year: 2024, upTo: true }]);
+    assert.deepEqual(periodsOf([{ kind: 'current', unit: 'year', upTo: true }])[0].upTo, true);
+    assert.deepEqual(periodsOf([{ kind: 'range', from: '2024-01-01', to: '2024-02-01', upTo: true }])[0].upTo, true);
+    for (const kind of [{ kind: 'all' }, { kind: 'rolling', unit: 'month', count: 12 }, { kind: 'each', unit: 'year' }]) {
+        assert.equal(periodsOf([{ ...kind, upTo: true }])[0].upTo, undefined, kind.kind);
+    }
+    // Seul `true` compte.
+    assert.equal(periodsOf([{ kind: 'year', year: 2024, upTo: 'oui' }])[0].upTo, undefined);
+    assert.deepEqual(withUpTo({ kind: 'year', year: 2024 }, true), { kind: 'year', year: 2024, upTo: true });
+    assert.deepEqual(withUpTo({ kind: 'year', year: 2024, upTo: true }, false), { kind: 'year', year: 2024 });
+    assert.deepEqual(withUpTo({ kind: 'all' }, true), { kind: 'all' });
+});
+
+test('« depuis le début » : du début des données à la fin de la période, la précédente aussi', () => {
+    const expand = (periods, today = TODAY) => expandPeriods(periods, { extent: table.extent, today }).periods;
+    const [y2024, y2023] = expand([{ kind: 'year', year: 2024, upTo: true }, { kind: 'previous' }]);
+    assert.deepEqual([y2024.from, y2024.to, y2024.anchor], [day('2023-01-15'), day('2024-12-31'), day('2024-01-01')]);
+    assert.deepEqual(y2024.as, { kind: 'year', year: 2024, upTo: true });
+    // La précédente suit sa base : jusqu'à fin 2023 (depuis le 1ᵉʳ janvier,
+    // antérieur aux données).
+    assert.deepEqual([y2023.from, y2023.to], [day('2023-01-01'), day('2023-12-31')]);
+    assert.deepEqual(y2023.as, { kind: 'year', year: 2023, upTo: true });
+    // Une base ordinaire garde une précédente ordinaire.
+    assert.equal(expand([{ kind: 'year', year: 2024 }, { kind: 'previous' }])[1].as.upTo, undefined);
+    // Période antérieure aux données : son propre début.
+    const [old] = expand([{ kind: 'year', year: 2020, upTo: true }]);
+    assert.deepEqual([old.from, old.to], [day('2020-01-01'), day('2020-12-31')]);
+    // Sans données : la période elle-même.
+    const [bare] = expandPeriods([{ kind: 'year', year: 2024, upTo: true }], { extent: null, today: TODAY }).periods;
+    assert.equal(bare.from, day('2024-01-01'));
+});
+
+test('« depuis le début » : chiffres cumulés, coupe « à date » sur le début de la période', () => {
+    const count = (period) => run({ groupBy: 'none', periods: [period], view: { chart: 'number' } }).series[0].values[0];
+    assert.equal(count({ kind: 'year', year: 2024 }), 4);
+    assert.equal(count({ kind: 'year', year: 2024, upTo: true }), 7);
+    assert.equal(count({ kind: 'year', year: 2023, upTo: true }), 3);
+    assert.equal(count({ kind: 'month', year: 2024, month: 1, upTo: true }), 4);
+
+    // Cette année face à l'an dernier, à date : tout au 15 juin 2026 contre
+    // tout au 15 juin 2025.
+    const tbl = findsTable({
+        count: 4, date: ['2025-03-01', '2025-12-01', '2026-02-01', '2026-03-01'], dicts: {},
+    });
+    const result = runChartQuery(normalizeChartSpec({
+        groupBy: 'none', periods: [{ kind: 'current', unit: 'year', upTo: true }, { kind: 'previous' }],
+        view: { chart: 'number' },
+    }), tbl, { today: day('2026-06-15') });
+    assert.deepEqual(result.series.map((s) => s.values[0]), [4, 1]);
+    assert.equal(result.periods[1].to, day('2025-06-15'));
+    assert.equal(result.periods[1].cut, true);
 });
 
 test('à date sur des mois de l\'année : mois coupés et futurs sans valeur, case en cours repérée', () => {

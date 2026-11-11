@@ -5,7 +5,7 @@ import { getBsModal } from './ui_bootstrap.js';
 import {
     allowedAligns, allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy,
     chartSources, goalApplies, hasSeveralSeries, MAP_CONTINENTS, mapFrameCountry, MAX_EXTRA_SOURCES, MAX_SERIES,
-    normalizeChartSpec, normalizeMeasure, sourceDimensions,
+    normalizeChartSpec, normalizeMeasure, periodAcceptsUpTo, sourceDimensions, withUpTo,
 } from './chart_spec.mjs';
 import { loadFile, zoneName } from './zone_geo.js';
 import { ELAPSED_UNITS } from './chart_query.mjs';
@@ -247,6 +247,11 @@ export function syncEditorForm() {
         inherit: true,
         choices: chartPeriodChoices(dashboardExtent(), state.today),
     });
+    // « Depuis le début » : pour les périodes propres au graphique (celle du
+    // tableau de bord suit sa propre case, « la précédente » suit sa base).
+    const upToAble = (spec.periods || []).filter(periodAcceptsUpTo);
+    $('statsEdUpToRow').hidden = !upToAble.length;
+    $('statsEdUpTo').checked = upToAble.some((p) => p.upTo);
     renderCompareRows(spec);
     fillSplitSelect(spec);
     fillChartSelect(spec);
@@ -321,9 +326,10 @@ export function syncEditorForm() {
 // puis chaque « comparé à ». Sans comparaison, la période du tableau de
 // bord s'écrit null (héritage simple).
 function readEditorPeriods() {
-    const first = periodOfValue($('statsEdPeriod').value);
+    const upTo = $('statsEdUpTo').checked;
+    const first = withUpTo(periodOfValue($('statsEdPeriod').value), upTo);
     const compares = [...$('statsEdCompareList').querySelectorAll('select')]
-        .map((select) => periodOfValue(select.value))
+        .map((select) => withUpTo(periodOfValue(select.value), upTo))
         .filter(Boolean);
     if (compares.length) return [first || { kind: 'dashboard' }, ...compares];
     return first ? [first] : null;

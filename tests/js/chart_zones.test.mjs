@@ -167,8 +167,9 @@ test('cadrage : valeurs admises, pays et continents', () => {
     assert.equal(frameOf('europe'), 'europe');
     assert.equal(frameOf('world'), 'world');
     assert.equal(frameOf('country:FR'), 'country:FR');
-    assert.equal(frameOf('country:X-KOS'), 'country:X-KOS');
-    for (const bad of ['country:fr', 'country:', 'mars', 'country:FRA']) assert.equal(frameOf(bad), 'auto', bad);
+    // Pays sans code ISO : « X » + trois lettres, sans tiret.
+    assert.equal(frameOf('country:XATC'), 'country:XATC');
+    for (const bad of ['country:fr', 'country:', 'mars', 'country:FRA', 'country:X-KOS']) assert.equal(frameOf(bad), 'auto', bad);
     assert.equal(mapFrameCountry('country:DE'), 'DE');
     assert.equal(mapFrameCountry('europe'), null);
     assert.equal(mapFrameContinent('asia'), 'asia');

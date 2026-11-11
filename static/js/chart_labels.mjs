@@ -455,6 +455,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         const period = entry.period || {};
         if (period.label) return period.label;
         const as = entry.as || period;
+        if (as.upTo) return upToLabel(as, entry.fullTo ?? entry.to);
         switch (as.kind) {
             case 'all': return t('Toute la période');
             case 'year': return String(as.year);
@@ -465,6 +466,16 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
             default:
                 return t('${from} – ${to}', { from: dayFmt.format(fromDay(entry.from)), to: dayFmt.format(fromDay(entry.fullTo ?? entry.to)) });
         }
+    }
+
+    // Période « depuis le début » : nommée par sa fin — « Jusqu'à fin 2011 »,
+    // « Jusqu'à fin mars 2025 », « Jusqu'au 8 nov. 2025 ».
+    function upToLabel(as, endDay) {
+        if (as.kind === 'year') return t("Jusqu'à fin ${period}", { period: String(as.year) });
+        if (as.kind === 'month') {
+            return t("Jusqu'à fin ${period}", { period: monthYearLongFmt.format(Date.UTC(as.year, as.month - 1, 1)) });
+        }
+        return t("Jusqu'au ${date}", { date: dayFmt.format(fromDay(endDay)) });
     }
 
     // Vignette d'une carte aux moments clés (zone_model.mjs › keyMoments).
@@ -508,12 +519,24 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
             if (as.unit === 'month') return t('par rapport aux ${n} mois précédents', { n: as.count });
             return t('par rapport aux ${n} années précédentes', { n: as.count });
         }
+        if (!entry.period?.label && as.upTo) {
+            // « par rapport à fin 2024 », « par rapport au 11 nov. 2025 ».
+            if (!entry.cut && as.kind === 'year') return t('par rapport à fin ${period}', { period: String(as.year) });
+            if (!entry.cut && as.kind === 'month') {
+                return t('par rapport à fin ${period}', { period: monthYearLongFmt.format(Date.UTC(as.year, as.month - 1, 1)) });
+            }
+            return t('par rapport au ${date}', { date: dayFmt.format(fromDay(entry.to)) });
+        }
         return t('par rapport à ${period}', { period: periodLabel(entry) });
     }
 
     // Nom d'une série de comparaison : la période, marquée « en cours » ou
     // « au 8 nov. » quand la comparaison à date l'a coupée.
     function seriesPeriodLabel(entry) {
+        if (entry.as?.upTo && !entry.period?.label) {
+            if (entry.ongoing) return t("Jusqu'à aujourd'hui");
+            if (entry.cut) return t("Jusqu'au ${date}", { date: dayFmt.format(fromDay(entry.to)) });
+        }
         const label = periodLabel(entry);
         if (entry.ongoing) return t('${period} (en cours)', { period: label });
         if (entry.cut) return t('${period} (au ${date})', { period: label, date: dayMonthFmt.format(fromDay(entry.to)) });
@@ -559,6 +582,13 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
     function periodChoiceLabel(period) {
         if (!period) return t('Période du tableau de bord');
         if (period.label) return period.label;
+        if (period.upTo) {
+            if (period.kind === 'current') return t("Jusqu'à aujourd'hui");
+            if (period.kind === 'range') {
+                return t("Jusqu'au ${date}", { date: dayFmt.format(Date.parse(period.to + 'T00:00:00Z')) });
+            }
+            return upToLabel(period, null);
+        }
         switch (period.kind) {
             case 'all': return t('Toute la période');
             case 'year': return String(period.year);

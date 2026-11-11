@@ -8,6 +8,7 @@ import { filterMask } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { filtersFromMapSelection } from './chart_map_link.mjs';
+import { periodAcceptsUpTo, withUpTo } from './chart_spec.mjs';
 import {
     dashboardSources, defaultDashboard, duplicateDashboard, exportDashboard, importDashboard, MAX_DASHBOARDS,
     periodChoices, periodOfValue, periodValue,
@@ -45,8 +46,11 @@ export function chartTitle(spec) {
 }
 
 // Menu de périodes. `choices` : la liste proposée ; `inherit` ajoute
-// « Période du tableau de bord » (valeur vide).
-export function fillPeriodSelect(select, current, { inherit = false, choices = null } = {}) {
+// « Période du tableau de bord » (valeur vide). « Depuis le début » n'est
+// pas dans le menu (case à part, `syncUpToSwitch`) : la période y est
+// choisie sans lui.
+export function fillPeriodSelect(select, period, { inherit = false, choices = null } = {}) {
+    const current = withUpTo(period, false);
     const list = choices || periodChoices(dashboardExtent(), state.today);
     select.replaceChildren();
     if (inherit) select.append(new Option(t('Période du tableau de bord'), ''));
@@ -62,6 +66,15 @@ export function fillPeriodSelect(select, current, { inherit = false, choices = n
         select.append(new Option(state.labels.periodChoiceLabel(current), currentValue));
     }
     select.value = currentValue;
+}
+
+// Case « Depuis le début » d'un menu de périodes : visible quand la période
+// choisie a une fin propre (une année, un mois, cette année…), décochée
+// sinon (« Toute la période » ne la garde pas en réserve).
+export function syncUpToSwitch(row, input, period, on) {
+    const accepts = periodAcceptsUpTo(period);
+    row.hidden = !accepts;
+    input.checked = accepts && Boolean(on);
 }
 
 // Pastille d'un graphique qui a ses propres périodes ou en compare
@@ -80,6 +93,7 @@ export function renderToolbar() {
     kind.textContent = dashboard.kind === 'evolution' ? t('Évolution · ${name}', { name: datasetName(dashboard.dataset) }) : '';
     renderDashboardMenu();
     fillPeriodSelect($('statsGlobalPeriod'), dashboard.period);
+    syncUpToSwitch($('statsGlobalUpToRow'), $('statsGlobalUpTo'), dashboard.period, dashboard.period?.upTo);
     $('statsDataNote').textContent = dataNote(dashboard);
     renderFiltersSummary(dashboard);
 }
@@ -586,10 +600,13 @@ export function submitRename(event) {
     renderToolbar();
 }
 
+// Menu « Période » ou case « Depuis le début » du tableau de bord.
 export function onGlobalPeriodChange() {
     const period = periodOfValue($('statsGlobalPeriod').value);
     if (!period) return;
-    activeDashboard().period = period;
+    const upTo = $('statsGlobalUpTo').checked;
+    activeDashboard().period = withUpTo(period, upTo);
+    syncUpToSwitch($('statsGlobalUpToRow'), $('statsGlobalUpTo'), period, upTo);
     scheduleSave();
     renderAllCharts();
 }

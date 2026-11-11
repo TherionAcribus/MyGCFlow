@@ -186,6 +186,31 @@ tout, 12 derniers mois, cette année, ce mois-ci, années passées ;
 graphique = + chaque année / chaque mois ; « comparé à » = + la période
 précédente.
 
+## « Depuis le début » (2026-11-11)
+
+Une période à fin propre (`UP_TO_KINDS` : année, mois, cette année / ce
+mois-ci, plage) peut porter `upTo: true` : elle ne fixe plus que la fin, et
+tout ce qui précède compte aussi (2011 → du début jusqu'à fin 2011 : total,
+carte par zones, types… à cette date). Pas pour « tout », les périodes
+glissantes ni « chaque année / mois ».
+
+- `chart_periods.mjs › fromStart` : `from` = premières données (ou le début
+  de la période s'il est antérieur), `anchor` = début de la période
+  elle-même, `as.upTo = true`. `previous` d'une base « depuis le début »
+  l'est aussi (calculée sur `anchor` : jusqu'à fin 2024 avant jusqu'à fin
+  2025) ; `toDateCut` coupe sur `anchor` (tout au 11 nov. 2026 contre tout
+  au 11 nov. 2025).
+- Libellés (`chart_labels.mjs`) : « Jusqu'à fin 2011 », « Jusqu'à fin mars
+  2025 », « Jusqu'au 10 févr. 2024 » (plage), « Jusqu'à aujourd'hui »
+  (période en cours) ; écart d'un chiffre clé « par rapport à fin 2024 » /
+  « par rapport au 11 nov. 2025 » (coupe à date).
+- Interface : case « Depuis le début » à côté du menu « Période » du tableau
+  de bord (`#statsGlobalUpTo`) et sous la période de l'éditeur
+  (`#statsEdUpTo`, pour les périodes propres au graphique — elle vaut pour
+  toutes ; celle du tableau de bord suit sa propre case). Les menus restent
+  sans `upTo` (`fillPeriodSelect` le retire, `withUpTo` le repose) ;
+  masquée et décochée pour une période qui ne l'accepte pas.
+
 ## Rendu (`chart_echarts.mjs`)
 
 Règles : barres de 24 px au plus, bout arrondi 4 px et base carrée ;
