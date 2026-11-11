@@ -430,7 +430,13 @@ comme en pause — la boucle rAF étant arrêtée dans les deux cas,
 
 `static/js/zone_grid.mjs` (pur) : hexagones « pointe en haut » dans une
 projection locale équirectangulaire autour de `lat0` (médiane des latitudes
-des données, arrondie à 5°, bornée à ±70°).
+des données, arrondie à 5°, bornée à ±70° — `gridReference`). Sur la page
+principale, `zone_layer.js` impose la médiane du jeu **complet**
+(`stableGridLat0`, lue sur `pkg.baseGeojson`, mémoïsée tant que l'objet
+n'est pas remplacé) : un filtre ne décale pas les cases — sans cela la
+médiane de la sélection du moment ferait bouger toute la grille, l'id de
+chaque case portant `lat0`. La page Évolution et les tables Statistiques
+gardent la médiane de leur propre univers (déjà stable).
 - **Tailles** : 5, 10, 25 (défaut), 50 ou 100 km entre deux centres
   (`GRID_SIZES`).
 - **Id d'une case** : `h<taille>/<lat0>/<q>/<r>`. Deux grilles ne mélangent
@@ -440,8 +446,9 @@ des données, arrondie à 5°, bornée à ±70°).
   - `cellRing` (contour lon/lat) et `cellCenter` ;
   - `cellArea` (km² réels, corrigés par cos(lat)/cos(lat0)) ;
   - `cellLabel` (« 47,2° N · 1,5° O ») ;
-  - `withGridColumn(table, taille)`, qui ajoute la colonne `zone_grid` à
-    une table qui porte `lat` et `lon`.
+  - `withGridColumn(table, taille, { lat0 })`, qui ajoute la colonne
+    `zone_grid` à une table qui porte `lat` et `lon` (`lat0` nul =
+    référence calculée sur la table).
 
 **Coordonnées dans les tables** :
 - `/api/stats/finds` v3 envoie `lat` et `lon` (5 décimales, null sans

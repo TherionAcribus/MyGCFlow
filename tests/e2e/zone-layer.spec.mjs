@@ -213,6 +213,41 @@ test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({
   expect(errors).toEqual([]);
 });
 
+// La référence de la grille est ancrée au jeu complet : un filtre ne fait
+// pas dériver les cases (l'id d'une case porte sa latitude de référence).
+test('grille stable : un filtre ne décale pas les cases', async ({ page, request }) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await page.locator('a[href="#zones"]').click();
+  await expect.poll(async () => (await zones(page)).status).toBe('ready');
+  await page.locator('#zonesLevel').selectOption('grid');
+  await expect.poll(async () => Object.keys((await zones(page)).values)[0] || '').toMatch(/^h25\//);
+  const fullIds = new Set(Object.keys((await zones(page)).values));
+  const lat0Of = (id) => id.split('/')[1];
+  // Sélection du seul 7 janvier (le Rhône) : la médiane des trouvailles
+  // restantes passerait la référence de 50° à 45° ; ancrée au jeu complet,
+  // la case du Rhône garde son id — grille immobile.
+  const sel = (dates) => app(page, `
+    const all = (id) => Array.from(document.getElementById(id)?.options || [])
+      .filter(o => !o.disabled && o.value !== '').map(o => o.value);
+    pkg.changeSelect({
+      type: all('selectType'), terrain: all('selectTerrain'), difficulty: all('selectDifficulty'),
+      container: all('selectContainer'), countries: all('selectCountry'), states: all('selectState'),
+      attributes: [], owners: [], search: '', dates: arg,
+      published_dates: { startDate: null, endDate: null }, sources: ['geocache'],
+    }, pkg.options);
+    return true;`, dates);
+  await sel({ startDate: '2026-01-07', endDate: '2026-01-07' });
+  await expect.poll(async () => Object.keys((await zones(page)).values).length).toBe(1);
+  const [onlyId] = Object.keys((await zones(page)).values);
+  expect(lat0Of(onlyId)).toBe('50');
+  expect(fullIds.has(onlyId)).toBe(true);
+  // Retour à la sélection complète : mêmes cases qu'au départ.
+  await sel({ startDate: null, endDate: null });
+  await expect.poll(async () => Object.keys((await zones(page)).values).sort()).toEqual([...fullIds].sort());
+  expect(errors).toEqual([]);
+});
+
 // « prefers-reduced-motion » : les zones changent de classe d'un coup, sans
 // fondu ni éclat, en lecture live (les vidéos gardent le mouvement complet).
 test('réduction des mouvements : changements de classe sans fondu', async ({ page, request }) => {

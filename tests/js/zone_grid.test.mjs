@@ -67,6 +67,23 @@ test('colonne de cases d\'une table', () => {
     assert.deepEqual(table.dicts.cache_type, ['T']);
 });
 
+test('référence de grille imposée : stable quand la sélection change', () => {
+    // La carte principale passe le lat0 du jeu complet (baseGeojson) :
+    // un sous-ensemble filtré garde les mêmes cases.
+    const full = { n: 4, lat: Float64Array.from([47.2184, 48.3904, 48.8534, 45.7640]),
+        lon: Float64Array.from([-1.5536, -4.4861, 2.3522, 4.8357]) };
+    const sub = { n: 1, lat: Float64Array.from([45.7640]), lon: Float64Array.from([4.8357]) };
+    // Sans lat0, le sous-ensemble seul changerait de référence (45 au lieu
+    // de 50) — l'id de la case du Rhône ne serait pas le même.
+    assert.notEqual(
+        withGridColumn(sub, 25).dicts.zone_grid[0].split('/')[1],
+        withGridColumn(full, 25).dicts.zone_grid.at(-1).split('/')[1],
+    );
+    const lat0 = gridReference(full.lat);
+    const ref = withGridColumn(full, 25, { lat0 }).dicts.zone_grid.at(-1);
+    assert.equal(withGridColumn(sub, 25, { lat0 }).dicts.zone_grid[0], ref);
+});
+
 test('mini-carte en grille : cases, densité par surface de case, libellés', () => {
     const table = findsTable({
         count: 4, date: ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04'],

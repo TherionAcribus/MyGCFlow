@@ -39,7 +39,7 @@ import { findsTable, tableFromRecords } from './chart_sources.mjs';
 import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
 import { DT_CELLS, ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, shareScaleThresholds, zoneScale } from './zone_model.mjs';
 import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName, zoneProps } from './zone_geo.js';
-import { cellArea, cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
+import { cellArea, cellLabel, cellRing, gridReference, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
 import {
     LEGEND_STYLE, ZONE_LAYER_DENSITY_MEASURES, classColors, compareClassColors, dayOfDate, fadeProgress,
@@ -296,13 +296,36 @@ function buildShareModel(o, rev, fallback, zoneTable) {
     return model;
 }
 
+// Latitude de référence de la grille sur « Mes Géocaches » : médiane du jeu
+// COMPLET (baseGeojson), pas de la sélection du moment — sinon les cases se
+// décalent d'un filtre à l'autre, l'id de chaque case portant sa référence
+// (« h<taille>/<lat0>/<q>/<r> »). Mémoïsée : le jeu ne change qu'au
+// rechargement, qui remplace l'objet baseGeojson. Évolution et part trouvée
+// gardent leur propre référence (leur univers diffère).
+let gridRefCache = { geo: undefined, lat0: null };
+function stableGridLat0() {
+    const geo = pkg.baseGeojson;
+    if (gridRefCache.geo !== geo) {
+        const lats = [];
+        for (const f of geo?.features || []) {
+            const lat = f?.geometry?.coordinates?.[1];
+            if (Number.isFinite(lat)) lats.push(lat);
+        }
+        gridRefCache = { geo, lat0: lats.length ? gridReference(lats) : null };
+    }
+    return gridRefCache.lat0;
+}
+
 function buildModel() {
     const o = opts();
     const fallback = fallbackCountries();
     const rev = dataRevision();
-    // Niveau « grille » : colonne de cases calculée sur les coordonnées.
+    // Niveau « grille » : colonne de cases calculée sur les coordonnées —
+    // référence du jeu complet sur la page principale (stable sous filtres) ;
+    // Évolution garde la sienne (son univers diffère de mes trouvailles).
+    const gridLat0 = zoneLayerPage() === 'evolution' ? null : stableGridLat0();
     const zoneTable = (table) => (o.level === 'grid'
-        ? withGridColumn(table, o.gridSize)
+        ? withGridColumn(table, o.gridSize, { lat0: gridLat0 })
         : mixedZoneTable(table, o.level, fallback));
     if (o.measure === 'found_share') return buildShareModel(o, rev, fallback, zoneTable);
     const density = densityOf(o);
