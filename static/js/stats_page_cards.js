@@ -509,7 +509,11 @@ function renderCard(item, card, dashboard, { force = false } = {}) {
         body.replaceChildren(unavailableBlock(failed));
         return;
     }
+    const computeStart = performance.now();
     const result = computeResult(spec, dashboard);
+    // Mesures lisibles dans devtools et moissonnables par les tests
+    // (performance.getEntriesByType('measure')) : coût calcul / dessin.
+    performance.measure('stats:compute', { start: computeStart, detail: { id: spec.id, chart: spec.view.chart } });
     state.results.set(spec.id, { result, spec });
     // Après un état « indisponible », remettre le conteneur attendu.
     if (!body.querySelector('.stats-chart, .stats-number')) {
@@ -544,7 +548,9 @@ function renderCard(item, card, dashboard, { force = false } = {}) {
     host.classList.remove('is-pending');
     state.deferred.delete(spec.id);
     state.lazyObserver?.unobserve(host);
+    const drawStart = performance.now();
     state.charts.set(spec.id, renderChartInto(host, result, spec));
+    performance.measure('stats:draw', { start: drawStart, detail: { id: spec.id, chart: spec.view.chart } });
     state.rendered.set(spec.id, { result, tokensRev: state.tokensRev, geoRev: state.geoRev });
     state.resizeObserver.observe(host);
 }
