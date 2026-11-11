@@ -160,6 +160,7 @@
         "legendPosition": "bottom-left",
         "gridSize": 25,
         "shareDataset": 0,
-        "shareBase": "active"
+        "shareBase": "active",
+        "compareDate": ""
     }
 }

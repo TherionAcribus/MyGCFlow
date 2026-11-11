@@ -698,6 +698,9 @@ class ZoneLayerOptions:
     # Densité (valeur par km², affichée pour 1 000 km²) : seulement pour
     # les mesures qui se comptent ("count", "distinct_types").
     per_km2: bool = False
+    # Comparaison à une date ("AAAA-MM-JJ", "" = état du jour) : la couleur
+    # montre alors le gain ou la perte depuis cette date.
+    compare_date: str = ""
 
 
 @dataclass
@@ -1544,6 +1547,9 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                            and 0 <= zn["share_dataset"] < 10 ** 10 else pz.share_dataset),
             share_base=_coerce_choice(zn.get("share_base"), ZONE_LAYER_SHARE_BASES, pz.share_base),
             per_km2=_zbool("per_km2", pz.per_km2),
+            compare_date=(zn["compare_date"] if isinstance(zn.get("compare_date"), str)
+                          and (zn["compare_date"] == ""
+                               or re.fullmatch(r"\d{4}-\d{2}-\d{2}", zn["compare_date"])) else pz.compare_date),
         )
 
     return p

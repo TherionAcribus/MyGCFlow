@@ -122,6 +122,32 @@ test('densité : trouvailles par km², case réservée aux mesures qui se compte
   expect(errors).toEqual([]);
 });
 
+test('comparaison à une date : écarts signés, zones inchangées sans couleur', async ({ page, request }) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await page.locator('a[href="#zones"]').click();
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  await expect(page.locator('#zonesCompareRow')).toBeVisible();
+  await page.locator('#zonesCompareDate').fill('2026-01-04');
+  await page.locator('#zonesCompareDate').dispatchEvent('change');
+  await expect.poll(async () => (await zones(page)).compareDay).not.toBeNull();
+  const state = await zones(page);
+  // Depuis le 4 janvier : Finistère +2 (5 et 6), Paris +1 (8), Rhône +1
+  // (7) ; la Loire-Atlantique (trouvaille du 3) est inchangée : ni valeur
+  // ni classe, donc pas de remplissage.
+  expect(state.values).toEqual({ 'FR-75': 1, 'FR-29': 2, 'FR-69': 1 });
+  expect(state.classes['FR-29']).toBe(1);
+  expect(state.classes['FR-75']).toBe(0);
+  expect(state.classes['FR-44']).toBeUndefined();
+  expect(state.legend.title).toContain('depuis le');
+  expect(state.legend.entries.map((e) => e.label)).toEqual(['< +2', '≥ +2']);
+  // La date vidée ramène à l'état du jour.
+  await page.locator('#zonesCompareDate').fill('');
+  await page.locator('#zonesCompareDate').dispatchEvent('change');
+  await expect.poll(async () => (await zones(page)).values['FR-75']).toBe(3);
+  expect(errors).toEqual([]);
+});
+
 test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({ page, request }) => {
   await setDisplay(request, true);
   const errors = await openMap(page);
@@ -198,7 +224,14 @@ test('fiche de zone : clic sur la carte, au repos et en pause', async ({ page, r
 
   // Le clic sur une cache garde sa propre fiche : GCZON003 à Nantes, seule
   // de son département — les trois points du Finistère se chevauchent à
-  // ce zoom. Trouvée le 3, donc visible en pause au 5.
+  // ce zoom. Trouvée le 3, donc visible en pause au 5. La détection de
+  // clic (WebGL) prend un instant après le saut : attendre que le point
+  // soit « cliquable » pour ne pas tomber sur la fiche de zone.
+  await expect.poll(async () => app(page, `
+    const px = pkg.getMap().getPixelFromCoordinate(ol.proj.fromLonLat(arg));
+    return pkg.getMap().forEachFeatureAtPixel(px,
+      (ft) => ft.getGeometry()?.getType() === 'Point' ? ft.get('name') : undefined);`,
+    [-1.5536, 47.2184])).toBe('Zone 3');
   await clickAt(-1.5536, 47.2184);
   await expect(popup).toContainText('Zone 3');
 

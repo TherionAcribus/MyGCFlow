@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import {
-    ZONE_LAYER_DEFAULTS, classColors, fadeProgress, legendEntries, legendOrigin, legendSize, mixHex,
-    normalizeHex, normalizeZoneLayerOptions, rgbaOf, zoneLayerFromProfile, zoneLayerToProfile, zoneMeasureFor,
+    ZONE_LAYER_DEFAULTS, classColors, compareClassColors, fadeProgress, legendEntries, legendOrigin,
+    legendSize, mixHex, normalizeHex, normalizeZoneLayerOptions, rgbaOf, zoneLayerFromProfile,
+    zoneLayerToProfile, zoneMeasureFor,
 } from '../../static/js/zone_layer_model.mjs';
 import { shareScaleThresholds, zoneScale } from '../../static/js/zone_model.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
@@ -75,6 +76,27 @@ test('densité : option gardée, légende fractionnaire', () => {
     assert.equal(labels[0][0], '<');
     assert.equal(labels[labels.length - 1][0], '≥');
     assert.ok(labels.every((label) => !label.includes('%')));
+});
+
+test('comparaison à une date : option, rampe divergente, libellés signés', () => {
+    const o = normalizeZoneLayerOptions({ compareDate: '2026-01-03' });
+    assert.equal(o.compareDate, '2026-01-03');
+    assert.equal(normalizeZoneLayerOptions({ compareDate: 'hier' }).compareDate, '');
+    assert.equal(normalizeZoneLayerOptions({ compareDate: 42 }).compareDate, '');
+    const profile = zoneLayerToProfile(o);
+    assert.equal(profile.compare_date, '2026-01-03');
+    assert.deepEqual(zoneLayerFromProfile(profile), o);
+    // Deltas [-5, -2, +1, +3, +4] en quantiles 4 : deux classes sous zéro
+    // (rouge, plus foncé au plus fort recul), deux au-dessus (teinte).
+    const scale = zoneScale([-5, -2, 1, 3, 4], { mode: 'quantile', classes: 4 });
+    const colors = compareClassColors(scale, '#1E6FD9');
+    assert.equal(colors[0], '#C0392B');
+    assert.equal(colors[3], '#1E6FD9');
+    assert.equal(colors[1], mixHex('#FFFFFF', '#C0392B', 0.4));
+    assert.equal(colors[2], mixHex('#FFFFFF', '#1E6FD9', 0.4));
+    const fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 0 });
+    const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), signed: true }).map((e) => e.label);
+    assert.deepEqual(labels, ['< −2', '−2–+1', '+1–+3', '≥ +3']);
 });
 
 test('mesures de zone_model', () => {

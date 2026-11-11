@@ -291,7 +291,7 @@ rattachement.
 - Bloc `zones` du thème (`ZoneLayerOptions` ↔ `pkg.options.zones`,
   `zone_layer_model.mjs`) : `level`, `measure` (`count`,
   `distinct_types`, `dt_coverage`, `first_day`, `found_share`), `per_km2`,
-  `scale`, `classes` (3 à 7), `color`, `opacity` (20 à 85 %), `outline`,
+  `compare_date`, `scale`, `classes` (3 à 7), `color`, `opacity` (20 à 85 %), `outline`,
   `glow`, `legend`, `legend_position`. Défauts identiques dans
   `settings_manager.py`, `defaultValues.json` et le module (vérifié par
   les tests). Le suivi « thème modifié » écoute aussi l'onglet `#zones`
@@ -306,6 +306,17 @@ rattachement.
   Valeurs et libellés affichés **pour 1 000 km²**, même convention que la
   normalisation `per_km2` des mini-cartes Statistiques — la case de
   l'onglet réutilise le libellé « Par km² (densité) » des panneaux.
+- `compare_date` (« Comparer à une date », champ `AAAA-MM-JJ` vide = off) :
+  la valeur montrée devient l'écart `valeur(jour) − valeur(référence)` —
+  la palette est **divergente** (`compareClassColors` : rouge sous zéro,
+  teinte choisie au-dessus, clair vers zéro), les zones inchangées ne sont
+  pas colorées ni dans l'échelle ni dans la légende (libellés signés
+  « +3 », « −2 »). La référence est un instantané `state.seek(compare)`
+  (`compareMap`), recalculé avec l'échelle ; une zone vidée depuis la
+  référence garde un écart négatif (union des deux états dans `showDay`).
+  Sans effet pour `first_day` (champ masqué, un écart de dates ne veut
+  rien dire) ; marche pour les comptes, la couverture D/T, la densité et
+  la part trouvée (écart en points).
 
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,

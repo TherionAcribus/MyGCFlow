@@ -61,6 +61,10 @@ export function syncZoneLayerUI() {
     const densityRow = el('zonesPerKm2Row');
     if (densityRow) densityRow.hidden = !['count', 'distinct_types'].includes(o.measure);
     check('zonesPerKm2', o.perKm2);
+    // Comparaison à une date : sans effet pour « première trouvaille ».
+    const compareRow = el('zonesCompareRow');
+    if (compareRow) compareRow.hidden = o.measure === 'first_day';
+    set('zonesCompareDate', o.compareDate);
     const value = el('zonesOpacityValue');
     if (value) value.textContent = o.opacity + ' %';
     const position = el('zonesLegendPosition');
@@ -138,6 +142,7 @@ function readOptions() {
         // Page Évolution : pas de choix, le jeu ouvert ; l'option est gardée.
         shareDataset: el('zonesShareDataset') ? value('zonesShareDataset') : pkg.options?.zones?.shareDataset,
         shareBase: value('zonesShareBase'),
+        compareDate: value('zonesCompareDate'),
     });
 }
 
@@ -258,7 +263,7 @@ export function initZoneLayerUI() {
     syncZoneLayerUI();
     display.addEventListener('change', onDisplayToggle);
     for (const id of ['zonesLevel', 'zonesMeasure', 'zonesScale', 'zonesClasses',
-        'zonesGridSize', 'zonesShareDataset', 'zonesShareBase', 'zonesPerKm2']) {
+        'zonesGridSize', 'zonesShareDataset', 'zonesShareBase', 'zonesPerKm2', 'zonesCompareDate']) {
         el(id)?.addEventListener('change', onOptionChange);
     }
     for (const id of ['zonesColor', 'zonesOutline', 'zonesGlow', 'zonesLegend', 'zonesLegendPosition']) {

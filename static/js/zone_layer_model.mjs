@@ -35,6 +35,9 @@ export const ZONE_LAYER_DEFAULTS = Object.freeze({
     // Jeu Évolution croisé sur « Mes Géocaches » (0 = aucun).
     shareDataset: 0,
     shareBase: 'active',
+    // Comparaison à une date ('AAAA-MM-JJ', '' = état du jour) : la couleur
+    // montre alors le gain ou la perte depuis cette date (rouge/teinte).
+    compareDate: '',
 });
 // Fondu d'une zone qui change de classe, et éclat de son contour (ms).
 export const ZONE_FADE_MS = 600;
@@ -81,8 +84,12 @@ export function normalizeZoneLayerOptions(raw) {
         gridSize: normalizeGridSize(src.gridSize),
         shareDataset: clampInt(src.shareDataset, d.shareDataset, [0, 9999999999]),
         shareBase: choice(src.shareBase, ZONE_LAYER_SHARE_BASES, d.shareBase),
+        compareDate: typeof src.compareDate === 'string' && COMPARE_DATE_RE.test(src.compareDate) ? src.compareDate : '',
     };
 }
+
+// Référence de la comparaison, en « AAAA-MM-JJ » (champ date du navigateur).
+const COMPARE_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Thème (snake_case, ZoneLayerOptions) ↔ options.
 export function zoneLayerToProfile(options) {
@@ -90,7 +97,7 @@ export function zoneLayerToProfile(options) {
     return {
         level: o.level, measure: o.measure, per_km2: o.perKm2, scale: o.scale, classes: o.classes, color: o.color,
         opacity: o.opacity, outline: o.outline, glow: o.glow, legend: o.legend, legend_position: o.legendPosition,
-        grid_size: o.gridSize, share_dataset: o.shareDataset, share_base: o.shareBase,
+        grid_size: o.gridSize, share_dataset: o.shareDataset, share_base: o.shareBase, compare_date: o.compareDate,
     };
 }
 
@@ -98,7 +105,7 @@ export function zoneLayerFromProfile(profile) {
     const p = profile && typeof profile === 'object' ? profile : {};
     return normalizeZoneLayerOptions({
         ...p, legendPosition: p.legend_position, gridSize: p.grid_size, perKm2: p.per_km2,
-        shareDataset: p.share_dataset, shareBase: p.share_base,
+        shareDataset: p.share_dataset, shareBase: p.share_base, compareDate: p.compare_date,
     });
 }
 
@@ -140,6 +147,25 @@ export function classColors(color, classes) {
     return Array.from({ length: n }, (_, c) => mixHex('#FFFFFF', color, n === 1 ? 1 : 0.4 + (0.6 * c) / (n - 1)));
 }
 
+// Teinte des classes négatives en comparaison à une date (les positives
+// gardent la couleur du thème).
+export const COMPARE_NEGATIVE_COLOR = '#C0392B';
+
+// Rampe divergente de la comparaison à une date : les classes sous zéro
+// descendent en rouge, celles au-dessus montent dans la teinte choisie —
+// dans les deux cas, plus la valeur s'éloigne de zéro, plus elle est foncée.
+// Le signe d'une classe est celui de sa borne basse.
+export function compareClassColors(scale, color) {
+    const n = Math.max(1, scale?.classes || 0);
+    const signs = Array.from({ length: n }, (_, c) => ((c === 0 ? scale.min : scale.breaks[c - 1]) < 0 ? -1 : 1));
+    const neg = signs.filter((s) => s < 0).length;
+    const posRamp = classColors(color, Math.max(1, n - neg));
+    const negRamp = classColors(COMPARE_NEGATIVE_COLOR, Math.max(1, neg));
+    let up = 0;
+    let down = 0;
+    return signs.map((s) => (s < 0 ? negRamp[neg - 1 - down++] : posRamp[up++]));
+}
+
 // Éclat : 1 au changement de classe, 0 après ZONE_FADE_MS.
 export function fadeProgress(start, now, duration = ZONE_FADE_MS) {
     if (!Number.isFinite(start) || !Number.isFinite(now)) return 1;
@@ -156,25 +182,29 @@ export function fadeProgress(start, now, duration = ZONE_FADE_MS) {
 // `percent` : valeurs continues en pourcentage (part trouvée) — « 12–31 % ».
 // `float` : valeurs fractionnaires (densité) — mêmes bornes ouvertes, sans
 // « % » ; `formatNumber` les met dans l'unité affichée (pour 1 000 km²).
+// `signed` : écarts d'une comparaison à une date — signe explicite
+// (« +3 », « −2 ») et rampe divergente (compareClassColors).
 // Classes extrêmes ouvertes : l'échelle est celle de l'état final, mais des
 // valeurs plus basses (cumul qui démarre) ou plus fortes (caches actives
 // d'Évolution) tombent dedans pendant l'animation — « ≤ 2 », « ≥ 3 ».
-export function legendEntries(scale, options, { formatNumber = (v) => String(v), percent = false, float = false } = {}) {
+export function legendEntries(scale, options, { formatNumber = (v) => String(v), percent = false, float = false, signed = false } = {}) {
     if (!scale || scale.min === null || scale.min === undefined) return [];
-    const colors = classColors(options.color, scale.classes);
+    const colors = signed ? compareClassColors(scale, options.color) : classColors(options.color, scale.classes);
     const { breaks, min, max } = scale;
     const year = (day) => ymdOfDay(day).y;
     const last = scale.classes - 1;
+    const signedNumber = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + formatNumber(Math.abs(v));
     return colors.map((color, c) => {
         const lo = c === 0 ? min : breaks[c - 1];
         const upper = c === last ? null : breaks[c];
         let label;
-        if (percent || float) {
+        if (percent || float || signed) {
             const suffix = percent ? ' %' : '';
-            const a = formatNumber(lo);
-            const b = formatNumber(upper ?? max);
+            const n = signed ? signedNumber : formatNumber;
+            const a = n(lo);
+            const b = n(upper ?? max);
             if (c === 0 && last === 0) label = `${a}${suffix}`;
-            else if (c === 0) label = `< ${formatNumber(upper)}${suffix}`;
+            else if (c === 0) label = `< ${n(upper)}${suffix}`;
             else if (upper === null) label = `≥ ${a}${suffix}`;
             else label = `${a === b ? a : `${a}–${b}`}${suffix}`;
         } else if (scale.mode === 'year') {

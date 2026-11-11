@@ -213,6 +213,11 @@ Autres repères :
   relevé sont dans l'unité affichée, pour 1 000 km² (Paris de la fixture :
   3 / 105 km² ≈ 28,6) ; les surfaces viennent de `zoneProps(id).area_km2`
   (contours chargés après le modèle) ou de `cellArea` en grille.
+  Comparaison à une date (`compare_date`, champ date de l'onglet, vide =
+  off, sans effet pour `first_day`) : `values`/`classes` deviennent des
+  écarts signés depuis la référence — les zones inchangées n'ont ni
+  valeur ni classe — et `compareDay` donne la référence ; palette
+  divergente (rouge/teinte).
   Rapport de rattachement (carte « Noms reconnus » de l'onglet Zones) :
   chargé à l'ouverture de l'onglet — pour un autre contenu, intercepter
   `GET /api/zones/report*` puis rouvrir l'onglet (cliquer un autre onglet

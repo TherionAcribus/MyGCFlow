@@ -42,8 +42,8 @@ import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName
 import { cellArea, cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
 import {
-    LEGEND_STYLE, ZONE_LAYER_DENSITY_MEASURES, classColors, dayOfDate, fadeProgress, legendEntries,
-    legendOrigin, legendSize, mixHex, normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
+    LEGEND_STYLE, ZONE_LAYER_DENSITY_MEASURES, classColors, compareClassColors, dayOfDate, fadeProgress,
+    legendEntries, legendOrigin, legendSize, mixHex, normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
 } from './zone_layer_model.mjs';
 
 // Sous le trait (1000), les points (1001) et les flashs : au-dessus du fond.
@@ -64,6 +64,7 @@ let clock = 0;
 let animating = false;
 let refDay = null;           // jour de référence de l'échelle (fin)
 let shownDay = null;
+let compareMap = null;       // valeurs à la date de comparaison (null : état du jour)
 let status = 'off';          // off | loading | ready | error | empty
 let revision = 0;            // signature vidéo (pipeline MediaRecorder)
 let rebuildTimer = 0;
@@ -77,6 +78,27 @@ const opts = () => normalizeZoneLayerOptions(pkg.options?.zones);
 // mesure qui ne se compte pas — elle n'est appliquée que pour celles de
 // ZONE_LAYER_DENSITY_MEASURES (le reste affiche la valeur brute).
 const densityOf = (o) => o.perKm2 && ZONE_LAYER_DENSITY_MEASURES.includes(o.measure);
+
+function compareDateObj(o) {
+    const [y, m, d] = o.compareDate.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+// Jour de référence de la comparaison (option compare_date), null sinon —
+// sans effet pour « première trouvaille » (un écart de dates ne veut rien dire).
+function compareDayOf(o) {
+    if (o.measure === 'first_day' || !o.compareDate) return null;
+    return dayOfDate(compareDateObj(o));
+}
+
+// Valeur affichée : écart depuis la référence quand la comparaison est
+// active ; 0 → null (la zone n'est pas colorée). `v` vient de l'état au
+// jour montré (null compte pour 0 : une zone évolution peut s'être vidée).
+function deltaOf(id, v) {
+    if (!compareMap) return v;
+    const d = (v ?? 0) - (compareMap.get(id) ?? 0);
+    return d === 0 ? null : d;
+}
 
 // Page qui a une couche de zones : 'main', 'evolution' ou null.
 export function zoneLayerPage() {
@@ -373,19 +395,34 @@ function ensureGridFeatures() {
 function computeScale() {
     const o = opts();
     const day = endDay();
-    const key = `${model.key}|${day}|${o.scale}|${o.classes}`;
+    const compare = compareDayOf(o);
+    const key = `${model.key}|${day}|${o.scale}|${o.classes}|${compare ?? ''}`;
     if (scaleKey === key) return;
     refDay = day;
+    compareMap = compare === null ? null : model.state.seek(compare).values();
     const values = model.state.seek(day ?? Infinity).values();
-    // Part trouvée : échelle fixe 0–100 % (seuils ronds de
-    // shareScaleThresholds), le réglage « Échelle des couleurs » est sans
-    // effet et l'onglet le grise comme pour une date.
-    const share = o.measure === 'found_share';
-    scale = zoneScale(values, {
-        mode: o.measure === 'first_day' ? 'year' : share ? 'fixed' : o.scale,
-        classes: o.classes,
-        thresholds: share ? shareScaleThresholds(o.classes) : [],
-    });
+    if (compareMap) {
+        // Comparaison à une date : l'échelle porte sur les écarts non nuls
+        // (les zones inchangées ne sont ni colorées ni dans la légende) ;
+        // le réglage « Échelle des couleurs » s'applique.
+        const ids = new Set([...values.keys(), ...compareMap.keys()]);
+        const deltas = [];
+        for (const id of ids) {
+            const d = (values.get(id) ?? 0) - (compareMap.get(id) ?? 0);
+            if (d !== 0) deltas.push(d);
+        }
+        scale = zoneScale(deltas, { mode: o.scale, classes: o.classes });
+    } else {
+        // Part trouvée : échelle fixe 0–100 % (seuils ronds de
+        // shareScaleThresholds), le réglage « Échelle des couleurs » est sans
+        // effet et l'onglet le grise comme pour une date.
+        const share = o.measure === 'found_share';
+        scale = zoneScale(values, {
+            mode: o.measure === 'first_day' ? 'year' : share ? 'fixed' : o.scale,
+            classes: o.classes,
+            thresholds: share ? shareScaleThresholds(o.classes) : [],
+        });
+    }
     scaleKey = key;
     model.state.drainChanged();
     shownDay = null;
@@ -394,8 +431,11 @@ function computeScale() {
 const classOfValue = (v) => (scale && v !== null && v !== undefined ? scale.classOf(v) : null);
 
 function colorOf(cls) {
-    if (cls === null || cls === undefined) return null;
-    return classColors(opts().color, scale?.classes || 1)[cls] || null;
+    if (cls === null || cls === undefined || !scale) return null;
+    const color = opts().color;
+    // Comparaison : rampe divergente (rouge sous zéro, teinte au-dessus).
+    const ramp = compareMap ? compareClassColors(scale, color) : classColors(color, scale.classes);
+    return ramp[cls] || null;
 }
 
 // Couleur affichée d'une zone à l'instant `now` (fondu compris).
@@ -417,8 +457,12 @@ function showDay(day) {
     state.drainChanged();
     classes.clear();
     fades.clear();
-    for (const [id, v] of state.values()) {
-        const cls = classOfValue(v);
+    const vals = state.values();
+    // En comparaison, une zone vidée depuis la référence garde un écart
+    // (Évolution : toutes ses caches archivées) — union des deux états.
+    const ids = compareMap ? new Set([...vals.keys(), ...compareMap.keys()]) : vals.keys();
+    for (const id of ids) {
+        const cls = classOfValue(deltaOf(id, vals.get(id)));
         if (cls !== null) classes.set(id, cls);
     }
     shownDay = day;
@@ -432,7 +476,7 @@ function advanceTo(day, now) {
     shownDay = day;
     let changed = false;
     for (const id of state.drainChanged()) {
-        const cls = classOfValue(state.valueOf(id));
+        const cls = classOfValue(deltaOf(id, state.valueOf(id)));
         const prev = classes.has(id) ? classes.get(id) : null;
         if (cls === prev) continue;
         const from = displayedColor(id, now);
@@ -508,6 +552,14 @@ function legendTitle() {
     return (evolution ? t('Caches actives') : t('Trouvailles')) + unit;
 }
 
+// Suffixe « depuis le JJ/MM/AAAA » du titre quand une date de comparaison
+// est choisie (compareMap est posé par computeScale).
+function compareSuffix(o) {
+    if (!compareMap || !o.compareDate) return '';
+    const date = pkg.formatDateDisplay?.(compareDateObj(o)) || o.compareDate;
+    return ' ' + t('depuis le ${date}', { date });
+}
+
 function legendModel() {
     const o = opts();
     if (!o.legend || status !== 'ready' || !scale || scale.min === null) return null;
@@ -520,8 +572,9 @@ function legendModel() {
         formatNumber: (v) => fmt.format(density ? v * 1000 : v),
         percent: o.measure === 'found_share',
         float: density,
+        signed: compareMap !== null,
     });
-    return entries.length ? { title: legendTitle(), entries, position: o.legendPosition } : null;
+    return entries.length ? { title: legendTitle() + compareSuffix(o), entries, position: o.legendPosition } : null;
 }
 
 const FONT = () => getComputedStyle(document.body).fontFamily || 'sans-serif';
@@ -770,7 +823,36 @@ export function zonePopupAt(pixel) {
     const density = densityOf(o);
     const fmt = new Intl.NumberFormat(lang, density ? { maximumSignificantDigits: 2 } : { maximumFractionDigits: 1 });
     const title = (o.level === 'grid' ? cellLabel(id, { locale: lang }) : zoneName(id)) || String(id);
-    const value = model.state.valueOf(id);
+    const raw = model.state.valueOf(id);
+    // Comparaison à une date : la ligne montre l'écart signé, le détail
+    // « avant → aujourd'hui » (ou jour montré).
+    if (compareMap) {
+        const since = pkg.formatDateDisplay?.(compareDateObj(o)) || o.compareDate;
+        const d = deltaOf(id, raw);
+        let main;
+        let detail = '';
+        if (d === null) {
+            main = t('Aucune évolution depuis cette date');
+        } else {
+            const k = density ? 1000 : 1;
+            const signed = (d > 0 ? '+' : '−') + fmt.format(Math.abs(d * k));
+            if (o.measure === 'found_share') main = t('${n} %', { n: signed });
+            else if (o.measure === 'distinct_types') {
+                main = density ? t('${n} types de caches / 1 000 km²', { n: signed }) : t('${n} types de caches', { n: signed });
+            } else if (o.measure === 'dt_coverage') {
+                main = t('${n} combinaisons D/T sur 81', { n: signed });
+            } else {
+                main = density
+                    ? (evolution ? t('${n} caches actives / 1 000 km²', { n: signed }) : t('${n} trouvailles / 1 000 km²', { n: signed }))
+                    : (evolution ? t('${n} caches actives', { n: signed }) : t('${n} trouvailles', { n: signed }));
+            }
+            const before = compareMap.get(id) ?? 0;
+            const suffix = o.measure === 'found_share' ? ' %' : '';
+            detail = `${fmt.format(before * k)}${suffix} → ${fmt.format((raw ?? 0) * k)}${suffix}`;
+        }
+        return { title, main, detail, subtitle: t('Depuis le ${date}', { date: since }) };
+    }
+    const value = raw;
     let main;
     let detail = '';
     if (value === null || value === undefined) {
@@ -803,11 +885,18 @@ export function zonePopupAt(pixel) {
     };
 }
 
-// Relevé E2E. `values` : dans l'unité affichée (pour 1 000 km² en densité).
+// Relevé E2E. `values` : dans l'unité affichée (pour 1 000 km² en densité),
+// en écart depuis la référence quand une comparaison est active.
 export function getZoneLayerDebugState() {
     const density = densityOf(opts());
-    const values = model?.state
-        ? Object.fromEntries([...model.state.values()].map(([id, v]) => [id, density ? v * 1000 : v])) : {};
+    const k = density ? 1000 : 1;
+    const rawValues = model?.state ? model.state.values() : new Map();
+    const values = {};
+    const ids = compareMap ? new Set([...rawValues.keys(), ...compareMap.keys()]) : rawValues.keys();
+    for (const id of ids) {
+        const v = deltaOf(id, rawValues.get(id));
+        if (v !== null) values[id] = v * k;
+    }
     // Part trouvée : [trouvées, base] par zone.
     const parts = model?.state?.parts
         ? Object.fromEntries(Object.keys(values).map((id) => [id, model.state.parts(id)])) : null;
@@ -823,6 +912,7 @@ export function getZoneLayerDebugState() {
         features: layer ? layer.getSource().getFeatures().length : 0,
         day: shownDay,
         refDay,
+        compareDay: compareMap ? compareDayOf(opts()) : null,
         animating,
         values,
         classes: Object.fromEntries(classes),
