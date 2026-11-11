@@ -312,6 +312,23 @@ export function createZoneState({ table, level, measure, rows = null, areas = nu
 export const SCALE_MODES = Object.freeze(['quantile', 'linear', 'log', 'fixed', 'year']);
 export const SCALE_CLASSES_RANGE = Object.freeze([2, 9]);
 
+// Part trouvée : échelle fixe 0–100 % (mode `fixed`), seuils ronds et
+// symétriques autour de 50 selon le nombre de classes demandé. Carte
+// (zone_layer) et mini-cartes (chart_zones) partagent ces seuils : une
+// même part donne la même teinte, et la légende reste lisible
+// (« < 20 % » … « ≥ 80 % ») quelles que soient les valeurs du moment.
+export function shareScaleThresholds(classes) {
+    const k = Math.min(Math.max(Math.round(classes) || 5, SCALE_CLASSES_RANGE[0]), SCALE_CLASSES_RANGE[1]);
+    const fixed = {
+        3: [25, 75],
+        4: [25, 50, 75],
+        5: [20, 40, 60, 80],
+        6: [10, 25, 50, 75, 90],
+        7: [10, 20, 35, 50, 65, 80],
+    };
+    return fixed[k] || Array.from({ length: k - 1 }, (_, j) => Math.round((100 * (j + 1)) / k));
+}
+
 export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds = [] } = {}) {
     const list = [...(values instanceof Map ? values.values() : values)]
         .filter((v) => typeof v === 'number' && Number.isFinite(v))

@@ -7,7 +7,7 @@ import {
     ZONE_LAYER_DEFAULTS, classColors, fadeProgress, legendEntries, legendOrigin, legendSize, mixHex,
     normalizeHex, normalizeZoneLayerOptions, rgbaOf, zoneLayerFromProfile, zoneLayerToProfile, zoneMeasureFor,
 } from '../../static/js/zone_layer_model.mjs';
-import { zoneScale } from '../../static/js/zone_model.mjs';
+import { shareScaleThresholds, zoneScale } from '../../static/js/zone_model.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
 test('défauts identiques à defaultValues.json', () => {
@@ -50,6 +50,10 @@ test('part trouvée : jeu, base, légende en pourcentage', () => {
     const fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 0 });
     const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), percent: true }).map((e) => e.label);
     assert.deepEqual(labels, ['< 12 %', '12–55 %', '≥ 55 %']);
+    // Échelle fixe 0–100 % de la couche : seuils ronds, extrêmes ouvertes.
+    const fixed = zoneScale([10, 30, 55, 90], { mode: 'fixed', classes: 4, thresholds: shareScaleThresholds(4) });
+    const fixedLabels = legendEntries(fixed, o, { formatNumber: (v) => fmt.format(v), percent: true }).map((e) => e.label);
+    assert.deepEqual(fixedLabels, ['< 25 %', '25–50 %', '50–75 %', '≥ 75 %']);
 });
 
 test('mesures de zone_model', () => {

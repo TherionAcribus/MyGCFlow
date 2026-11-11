@@ -503,7 +503,13 @@ identiques et testées des deux côtés) :
 - **base `all`** : toutes les caches apparues jusqu'à la date, archivées
   comprises ;
 - valeur en pourcentage ; une zone sans cache dans la base n'a pas de
-  valeur, une zone sans trouvaille vaut 0 %.
+  valeur, une zone sans trouvaille vaut 0 % ;
+- **échelle fixe 0–100 %** (`zone_model.mjs` › `shareScaleThresholds`,
+  mode `fixed`) : seuils ronds et symétriques autour de 50 selon le nombre
+  de nuances (`[20, 40, 60, 80]` pour 5), partagés par la carte et les
+  mini-cartes — une même part donne la même teinte, quelles que soient les
+  valeurs du moment. Le réglage « Échelle des couleurs » est sans effet et
+  grisé, comme pour une date.
 
 **Format des événements** (agrégés par jour et par zone, triés par jour) :
 `day`, `zone` (indice dans `ids`, -1 = hors carte), `placed`, `archived`,

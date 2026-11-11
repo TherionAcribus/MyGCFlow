@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { findsTable, tableFromRecords } from '../../static/js/chart_sources.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 import {
-    ZONE_COLUMNS, createZoneState, keyMoments, normalizeZoneMeasure, zoneScale,
+    ZONE_COLUMNS, createZoneState, keyMoments, normalizeZoneMeasure, shareScaleThresholds, zoneScale,
 } from '../../static/js/zone_model.mjs';
 
 const day = (iso) => {
@@ -233,6 +233,17 @@ test('échelle : valeurs égales, linéaire, log, seuils, années', () => {
     const log = zoneScale([0, 999], { mode: 'log', classes: 3 });
     assert.ok(Math.abs(log.breaks[0] - 9) < 1e-9 && Math.abs(log.breaks[1] - 99) < 1e-9);
     assert.deepEqual(zoneScale([1, 50], { mode: 'fixed', thresholds: [10, 5, 20] }).breaks, [5, 10, 20]);
+    // Part trouvée : seuils fixes ronds 0–100 %, symétriques autour de 50,
+    // partagés par la carte et les mini-cartes.
+    assert.deepEqual(shareScaleThresholds(5), [20, 40, 60, 80]);
+    assert.deepEqual(shareScaleThresholds(4), [25, 50, 75]);
+    assert.deepEqual(shareScaleThresholds(2), [50]);
+    const share = zoneScale([33.3, 50], { mode: 'fixed', classes: 5, thresholds: shareScaleThresholds(5) });
+    assert.equal(share.classes, 5);
+    assert.equal(share.classOf(0), 0);
+    assert.equal(share.classOf(33.3), 1);
+    assert.equal(share.classOf(50), 2);
+    assert.equal(share.classOf(100), 4);
     const years = zoneScale([day('2015-06-01'), day('2017-03-01'), day('2020-12-31')], { mode: 'year', classes: 3 });
     assert.deepEqual(years.breaks, [day('2017-01-01'), day('2019-01-01')]);
     assert.equal(years.classOf(day('2016-12-31')), 0);

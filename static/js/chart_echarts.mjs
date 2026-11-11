@@ -810,10 +810,13 @@ export function zoneLegend(result, spec, ctx) {
             const b = upper === null ? max : Math.ceil(upper) - 1;
             label = a >= b ? fmt(a) : `${fmt(a)}–${fmt(b)}`;
         } else if (spec.measure.op === 'found_share') {
-            // Pourcentages : bornes arrondies, « 50 » plutôt que « 50,0 – 50,0 ».
+            // Pourcentages à seuils fixes : extrêmes ouvertes « < 20 »,
+            // « ≥ 80 » — comme la légende de la couche de la carte.
             const a = Math.round(lo);
             const b = Math.round(upper ?? max);
-            label = a === b ? String(a) : `${a} – ${b}`;
+            if (c === 0 && upper !== null) label = `< ${b}`;
+            else if (upper === null && c > 0) label = `≥ ${a}`;
+            else label = a === b ? String(a) : `${a} – ${b}`;
         } else {
             label = `${fmt(lo)} – ${fmt(upper ?? max)}`;
         }

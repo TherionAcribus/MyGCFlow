@@ -309,9 +309,11 @@ test('part trouvée : un jeu Évolution croisé avec mes trouvailles, sur la car
     await page.locator('a[href="#zones"]').click();
     await page.locator('#zonesMeasure').selectOption('found_share');
     // Pas encore de jeu choisi : la couche attend, l'onglet le dit ; le
-    // périmètre rappelle que le jeu entier est croisé, filtres ignorés.
+    // périmètre rappelle que le jeu entier est croisé, filtres ignorés ;
+    // l'échelle est fixe (0–100 %), le réglage est grisé.
     await expect(page.locator('#zonesStatus')).toContainText('Choisissez le jeu Évolution');
     await expect(page.locator('#zonesScopeHint')).toContainText('jeu Évolution choisi');
+    await expect(page.locator('#zonesScale')).toBeDisabled();
     await expect(page.locator('#zonesShareDataset option')).toHaveText(['Choisir un jeu…', 'Ouest']);
     await page.locator('#zonesShareDataset').selectOption(String(datasetId));
     await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
@@ -323,7 +325,10 @@ test('part trouvée : un jeu Évolution croisé avec mes trouvailles, sur la car
     expect(rounded(state.values)).toEqual({ 'FR-29': 50, 'FR-44': 33.3 });
     expect(state.parts).toEqual({ 'FR-29': [1, 2], 'FR-44': [1, 3] });
     expect(state.legend.title).toBe('Part des caches actives trouvées');
+    // Échelle fixe 0–100 % : extrêmes ouvertes, seuils ronds.
     expect(state.legend.entries.every((e) => e.label.endsWith('%'))).toBe(true);
+    expect(state.legend.entries[0].label).toMatch(/^< /);
+    expect(state.legend.entries.at(-1).label).toMatch(/^≥ /);
 
     // Dans l'aperçu : la part monte avec mes trouvailles, baisse quand une
     // cache est publiée, remonte quand une cache trouvée est archivée.
@@ -355,7 +360,7 @@ test('part trouvée : un jeu Évolution croisé avec mes trouvailles, sur la car
     const card = (await page.evaluate(() => window.getStatsPageSnapshot())).cards[0];
     const at = (id) => Math.round(card.series[0][card.keys.indexOf(id)] * 10) / 10;
     expect([at('FR-29'), at('FR-44')]).toEqual([50, 33.3]);
-    expect(card.zones.legend.at(-1)).toMatch(/%$/);
+    expect(card.zones.legend.at(-1)).toMatch(/^≥ .*%$/);
 
     // Page Évolution : le jeu ouvert croisé dans la page avec mes trouvailles.
     await setDisplay(request, true, 'evolution_zones_display');

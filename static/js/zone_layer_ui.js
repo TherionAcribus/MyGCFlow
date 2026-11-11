@@ -61,9 +61,10 @@ export function syncZoneLayerUI() {
     if (value) value.textContent = o.opacity + ' %';
     const position = el('zonesLegendPosition');
     if (position) position.disabled = !o.legend;
-    // L'échelle n'a pas de sens pour une date (une couleur par période).
+    // L'échelle n'a pas de sens pour une date (une couleur par période),
+    // ni pour la part trouvée (échelle fixe 0–100 %).
     const scale = el('zonesScale');
-    if (scale) scale.disabled = o.measure === 'first_day';
+    if (scale) scale.disabled = o.measure === 'first_day' || o.measure === 'found_share';
     // Périmètre des données de la mesure choisie, rappelé sous le contrôle :
     // la part trouvée lit tout le jeu Évolution, les autres mesures suivent
     // les données filtrées de la carte.

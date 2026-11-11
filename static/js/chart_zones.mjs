@@ -13,7 +13,8 @@ import { MAX_SERIES } from './chart_spec.mjs';
 import { expandPeriods } from './chart_periods.mjs';
 import { filterMask } from './chart_query.mjs';
 import {
-    ZONE_COLUMNS, createShareState, createZoneState, foundRowsTable, keyMoments, shareEventsOfTable, zoneScale,
+    ZONE_COLUMNS, createShareState, createZoneState, foundRowsTable, keyMoments, shareEventsOfTable,
+    shareScaleThresholds, zoneScale,
 } from './zone_model.mjs';
 import { cellArea, withGridColumn } from './zone_grid.mjs';
 
@@ -234,10 +235,12 @@ export function runZoneQuery(spec, rawTable, options = {}) {
         };
     });
 
-    // Échelle commune à toutes les vignettes.
+    // Échelle commune à toutes les vignettes. Part trouvée : échelle fixe
+    // 0–100 %, mêmes seuils que la carte (shareScaleThresholds).
     const pooled = series.flatMap((s) => s.values.filter((v) => v !== null));
-    const scaleMode = measure.op === 'first_day' ? 'year' : (spec.view.map?.scale || 'quantile');
-    const scale = zoneScale(pooled, { mode: scaleMode, classes: spec.view.map?.classes || 5 });
+    const classes = spec.view.map?.classes || 5;
+    const scaleMode = measure.op === 'first_day' ? 'year' : share ? 'fixed' : (spec.view.map?.scale || 'quantile');
+    const scale = zoneScale(pooled, { mode: scaleMode, classes, thresholds: share ? shareScaleThresholds(classes) : [] });
 
     // Pays présents : les contours à charger.
     const countryCol = table[ZONE_COLUMNS.country];

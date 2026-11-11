@@ -37,7 +37,7 @@ import { t } from './notifications.js';
 import { isEvolutionPage, isMainPage } from './app_mode.mjs';
 import { findsTable, tableFromRecords } from './chart_sources.mjs';
 import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
-import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, zoneScale } from './zone_model.mjs';
+import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, shareScaleThresholds, zoneScale } from './zone_model.mjs';
 import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName } from './zone_geo.js';
 import { cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
@@ -368,7 +368,15 @@ function computeScale() {
     if (scaleKey === key) return;
     refDay = day;
     const values = model.state.seek(day ?? Infinity).values();
-    scale = zoneScale(values, { mode: o.measure === 'first_day' ? 'year' : o.scale, classes: o.classes });
+    // Part trouvée : échelle fixe 0–100 % (seuils ronds de
+    // shareScaleThresholds), le réglage « Échelle des couleurs » est sans
+    // effet et l'onglet le grise comme pour une date.
+    const share = o.measure === 'found_share';
+    scale = zoneScale(values, {
+        mode: o.measure === 'first_day' ? 'year' : share ? 'fixed' : o.scale,
+        classes: o.classes,
+        thresholds: share ? shareScaleThresholds(o.classes) : [],
+    });
     scaleKey = key;
     model.state.drainChanged();
     shownDay = null;
