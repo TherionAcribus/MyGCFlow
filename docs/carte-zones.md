@@ -346,6 +346,16 @@ plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
   (cumul qui démarre) ou plus fortes (caches actives qui redescendent) y
   tombent pendant l'animation.
 
+**Fiche de zone au clic** : `zonePopupAt(pixel)` décrit la zone sous le
+clic — nom (`zoneName`, ou libellé de case pour la grille), date du jour
+montré (`shownDay` : jour courant en pause, jour de fin au repos), valeur
+de la mesure active et détail (comptes `[trouvées, base]` de la part
+trouvée). `inspectZoneAt` (mapgl.js) la montre dans la popup `#gcPopup`,
+après les points et l'étape de trajet qui gardent la priorité. Au repos
+comme en pause — la boucle rAF étant arrêtée dans les deux cas,
+`isIdleState` laisse passer les clics. Une zone sans valeur affiche
+« Aucune trouvaille à ce jour ».
+
 **Relevé E2E** : `getZoneLayerDebugState()` donne `status` (`off`,
 `loading`, `ready`, `error`, `empty`), `visible`, `features`, `values`,
 `classes`, `day`, `animating`, `fading`, `scale`, `legend` et `revision`.

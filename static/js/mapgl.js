@@ -789,6 +789,25 @@ function inspectTrailStopAt(pixel, coordinate) {
     return true;
 }
 
+// Couche de zones affichée : la zone sous le clic décrit sa valeur au jour
+// montré (repos : état final ; aperçu en pause : jour courant — la boucle
+// rAF étant arrêtée, isIdleState laisse passer les deux). Contenu calculé
+// par zone_layer.js › zonePopupAt ; retourne vrai si une zone a été touchée.
+function inspectZoneAt(pixel, coordinate) {
+    if (!map) return false;
+    const info = pkg.zonePopupAt?.(pixel);
+    if (!info) return false;
+    const html = '<div class="gc-popup-title">' + sanitize(info.title) + '</div>'
+        + (info.subtitle ? '<div class="gc-popup-note">' + sanitize(info.subtitle) + '</div>' : '')
+        + '<div>' + sanitize(info.main) + '</div>'
+        + (info.detail ? '<div class="gc-popup-note">' + sanitize(info.detail) + '</div>' : '');
+    const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+    contentEl.innerHTML = html;
+    popupEl.classList.add('is-visible');
+    popupOverlay.setPosition(coordinate);
+    return true;
+}
+
 // Initialise l'overlay de popup et les interactions de clic
 // Exportée pour createMap() (basemaps.js), qui l'appelle une fois la carte créée.
 export function initPopupOverlay(){
@@ -841,6 +860,8 @@ export function initPopupOverlay(){
             // Aperçu du trajet : un clic près d'une étape (sans cache touchée)
             // décrit le groupe de caches qu'elle représente.
             if (inspectTrailStopAt(pixel, evt.coordinate)) return;
+            // Couche de zones affichée : fiche de la zone sous le clic.
+            if (inspectZoneAt(pixel, evt.coordinate)) return;
             hidePopup();
             return;
         }

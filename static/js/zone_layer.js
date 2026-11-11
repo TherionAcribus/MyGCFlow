@@ -38,9 +38,9 @@ import { isEvolutionPage, isMainPage } from './app_mode.mjs';
 import { findsTable, tableFromRecords } from './chart_sources.mjs';
 import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
 import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, zoneScale } from './zone_model.mjs';
-import { addGeoListener, fallbackCountries, zoneFeatures } from './zone_geo.js';
-import { cellRing, withGridColumn } from './zone_grid.mjs';
-import { dayNumberOfDate } from './stats_model.mjs';
+import { addGeoListener, fallbackCountries, zoneFeatures, zoneName } from './zone_geo.js';
+import { cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
+import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
 import {
     LEGEND_STYLE, classColors, dayOfDate, fadeProgress, legendEntries, legendOrigin, legendSize, mixHex,
     normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
@@ -695,6 +695,63 @@ export function updateZoneLayer(now) {
 
 export function getZoneLayerRevision() {
     return revision;
+}
+
+// ---------------------------------------------------------------------------
+// Fiche de zone au clic (mapgl.js › inspectZoneAt)
+
+// Date du jour montré (aperçu en pause : jour courant ; repos : jour de fin).
+function shownDate() {
+    if (!Number.isFinite(shownDay)) return null;
+    const { y, m, d } = ymdOfDay(shownDay);
+    return new Date(y, m - 1, d);
+}
+
+// Contenu de la fiche de la zone sous le pixel : nom, date du jour montré,
+// valeur de la mesure active et détail éventuel (comptes de la part trouvée).
+// Les points et le trait restent prioritaires : mapgl.js n'appelle ceci que
+// quand aucun d'eux n'est touché.
+export function zonePopupAt(pixel) {
+    const map = getMap();
+    if (!map || !enabled() || status !== 'ready' || !layer?.getVisible() || !model) return null;
+    // Test géométrique et non forEachFeatureAtPixel : celui-ci détecte le
+    // style rendu, et une zone sans valeur n'a que sa frontière — son
+    // intérieur ne serait pas cliquable.
+    const coordinate = map.getCoordinateFromPixel(pixel);
+    if (!coordinate) return null;
+    const feature = layer.getSource().getFeaturesAtCoordinate(coordinate)[0] || null;
+    if (!feature) return null;
+    const id = feature.getId();
+    const o = opts();
+    const evolution = zoneLayerPage() === 'evolution';
+    const lang = document.documentElement.lang || 'fr';
+    const fmt = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+    const title = (o.level === 'grid' ? cellLabel(id, { locale: lang }) : zoneName(id)) || String(id);
+    const value = model.state.valueOf(id);
+    let main;
+    let detail = '';
+    if (value === null || value === undefined) {
+        main = evolution ? t('Aucune cache à ce jour') : t('Aucune trouvaille à ce jour');
+    } else if (o.measure === 'first_day') {
+        const { y, m, d } = ymdOfDay(value);
+        const first = pkg.formatDateDisplay?.(new Date(y, m - 1, d)) || String(value);
+        main = evolution ? t('Première cache posée : ${date}', { date: first }) : t('Première trouvaille : ${date}', { date: first });
+    } else if (o.measure === 'distinct_types') {
+        main = t('${n} types de caches', { n: fmt.format(value) });
+    } else if (o.measure === 'dt_coverage') {
+        main = t('${n} combinaisons D/T sur 81', { n: fmt.format(value) });
+    } else if (o.measure === 'found_share') {
+        main = fmt.format(value) + ' %';
+        const part = model.state.parts?.(id);
+        if (part) detail = t('${n} sur ${of} caches', { n: fmt.format(part[0]), of: fmt.format(part[1]) });
+    } else {
+        main = evolution ? t('${n} caches actives', { n: fmt.format(value) }) : t('${n} trouvailles', { n: fmt.format(value) });
+    }
+    const date = shownDate();
+    return {
+        title, main, detail,
+        subtitle: date ? t('Au ${date}', { date: pkg.formatDateDisplay?.(date) || '' }) : '',
+    };
 }
 
 // Relevé E2E.

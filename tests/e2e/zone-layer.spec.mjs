@@ -133,6 +133,51 @@ test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({
   expect(errors).toEqual([]);
 });
 
+test('fiche de zone : clic sur la carte, au repos et en pause', async ({ page, request }) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  const popup = page.locator('#gcPopup .gc-popup-content');
+  // Vue sur la France entière : les deux clics de zones restent dans le cadre.
+  await app(page, `pkg.getMap().getView().setCenter(ol.proj.fromLonLat([1.8, 46.6]));
+    pkg.getMap().getView().setZoom(6);`);
+  const clickAt = async (lon, lat) => {
+    const p = await app(page, `
+      const px = pkg.getMap().getPixelFromCoordinate(ol.proj.fromLonLat(arg));
+      const r = document.getElementById('map').getBoundingClientRect();
+      return { x: r.left + px[0], y: r.top + px[1] };`, [lon, lat]);
+    await page.mouse.click(p.x, p.y);
+  };
+
+  // Au repos : le Finistère compte 3 trouvailles au jour de fin (8 janvier).
+  await clickAt(-4.0, 48.2);
+  await expect(popup).toContainText('Finistère');
+  await expect(popup).toContainText('Au 08/01/2026');
+  await expect(popup).toContainText('3 trouvailles');
+
+  // En pause au 5 janvier : 2 trouvailles, la date du jour s'affiche.
+  expect(await app(page, 'return pkg.startPausedPreview();')).toBe(true);
+  await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 5));');
+  await clickAt(-4.0, 48.2);
+  await expect(popup).toContainText('2 trouvailles');
+  await expect(popup).toContainText('Au 05/01/2026');
+
+  // Zone sans valeur ce jour-là : la fiche le dit au lieu de rester muette.
+  await clickAt(1.85, 45.35);
+  await expect(popup).toContainText('Aucune trouvaille à ce jour');
+
+  // Le clic sur une cache garde sa propre fiche : GCZON003 à Nantes, seule
+  // de son département — les trois points du Finistère se chevauchent à
+  // ce zoom. Trouvée le 3, donc visible en pause au 5.
+  await clickAt(-1.5536, 47.2184);
+  await expect(popup).toContainText('Zone 3');
+
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('idle');
+  await expect(page.locator('#gcPopup')).not.toHaveClass(/is-visible/);
+  expect(errors).toEqual([]);
+});
+
 test('thème : découpage, couleur selon la date, légende ; légende peinte dans la vidéo', async ({ page, request }) => {
   await setDisplay(request, true);
   const errors = await openMap(page);

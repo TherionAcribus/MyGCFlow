@@ -202,7 +202,13 @@ Autres repères :
   `pkg.options.zones.shareDataset` (thème, en mémoire) et la couche attend
   `GET /api/stats/found_share` (`status` : `no-dataset`, `loading`,
   `missing`, puis `ready`) ; relevé `parts` (`[trouvées, base]` par zone).
-  Exemple dans `zone-layer.spec.mjs`.
+  Exemple dans `zone-layer.spec.mjs`. Fiche de zone au clic
+  (`zonePopupAt` → `inspectZoneAt` de mapgl.js, popup `#gcPopup`) : les
+  points et les étapes de trajet gardent la priorité ; marche au repos et
+  en pause (rAF arrêté = `isIdleState` vrai dans les deux cas). Légende :
+  les classes extrêmes ont des bornes ouvertes (« ≤ 2 », « ≥ 3 ») car
+  l'échelle est celle de l'état final — un test qui attend « 1–2 » doit
+  viser les classes du milieu.
   Rapport de rattachement (carte « Noms reconnus » de l'onglet Zones) :
   chargé à l'ouverture de l'onglet — pour un autre contenu, intercepter
   `GET /api/zones/report*` puis rouvrir l'onglet (cliquer un autre onglet
