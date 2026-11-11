@@ -920,7 +920,32 @@ export function runChartQueries(spec, tableOf, options = {}) {
         }
     });
     const cut = series.length > MAX_SERIES;
-    const kept = cut ? series.slice(0, MAX_SERIES) : series;
+    let kept = series;
+    if (cut) {
+        // Le budget est partagé entre les sources : à tour de rôle, chacune
+        // garde une série de plus en partant des périodes les plus récentes —
+        // sinon la première remplissait les MAX_SERIES places et les autres
+        // disparaissaient du graphique.
+        const bySource = new Map();
+        for (const s of series) {
+            const group = bySource.get(s.sourceIndex) || [];
+            group.push(s);
+            bySource.set(s.sourceIndex, group);
+        }
+        const keep = new Set();
+        for (let budget = MAX_SERIES; budget > 0;) {
+            let took = false;
+            for (const group of bySource.values()) {
+                if (budget <= 0) break;
+                if (!group.length) continue;
+                keep.add(group.pop());
+                budget--;
+                took = true;
+            }
+            if (!took) break;
+        }
+        kept = series.filter((s) => keep.has(s));
+    }
     let delta = null;
     if (spec.compare.layout === 'delta' && kept.length === 2 && !spec.splitBy) {
         const [a, b] = [kept[0].values, kept[1].values];

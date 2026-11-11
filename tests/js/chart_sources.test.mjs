@@ -326,3 +326,26 @@ test('plusieurs sources : années de publication sur une étendue commune ordonn
     assert.deepEqual(result.keys, [2019, 2020, 2021, 2022, 2023]);
     assert.deepEqual(result.series.map((s) => s.values), [[0, 1, 0, 1, 0], [1, 0, 0, 0, 1]]);
 });
+
+test('plusieurs sources : le plafond de séries est partagé entre les sources', () => {
+    // 8 années × 2 sources = 16 séries > MAX_SERIES : la coupe gardait les 8
+    // premières — toutes « finds » — et les DNF disparaissaient du graphique.
+    const table = (source) => tableFromRecords(
+        Array.from({ length: 8 }, (_, i) => ({ day: day(`${2018 + i}-06-01`) })),
+        { source });
+    const tables = { finds: table('finds'), dnf: table('dnf') };
+    const spec = normalizeChartSpec({
+        source: 'finds', extraSources: ['dnf'], groupBy: 'month_of_year',
+        periods: Array.from({ length: 8 }, (_, i) => ({ kind: 'year', year: 2018 + i })),
+        view: { chart: 'line' },
+    });
+    const result = runChartQueries(spec, (s) => tables[s], { today: TODAY });
+    assert.equal(result.truncated, true);
+    assert.equal(result.series.length, 8);
+    assert.deepEqual(result.series.map((s) => s.source), [
+        'finds', 'finds', 'finds', 'finds', 'dnf', 'dnf', 'dnf', 'dnf',
+    ]);
+    // Les périodes conservées sont les plus récentes de chaque source.
+    assert.deepEqual(result.series.filter((s) => s.source === 'finds').map((s) => s.periodIndex), [4, 5, 6, 7]);
+    assert.deepEqual(result.series.filter((s) => s.source === 'dnf').map((s) => s.periodIndex), [4, 5, 6, 7]);
+});
