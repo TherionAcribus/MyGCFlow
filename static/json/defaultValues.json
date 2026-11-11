@@ -161,6 +161,7 @@
         "gridSize": 25,
         "shareDataset": 0,
         "shareBase": "active",
-        "compareDate": ""
+        "compareDate": "",
+        "solo": false
     }
 }

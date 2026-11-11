@@ -46,6 +46,7 @@ export function syncZoneLayerUI() {
     check('zonesOutline', o.outline);
     check('zonesGlow', o.glow);
     check('zonesLegend', o.legend);
+    check('zonesSolo', o.solo);
     set('zonesLegendPosition', o.legendPosition);
     set('zonesGridSize', o.gridSize);
     const gridRow = el('zonesGridSizeRow');
@@ -143,6 +144,7 @@ function readOptions() {
         shareDataset: el('zonesShareDataset') ? value('zonesShareDataset') : pkg.options?.zones?.shareDataset,
         shareBase: value('zonesShareBase'),
         compareDate: value('zonesCompareDate'),
+        solo: checked('zonesSolo'),
     });
 }
 
@@ -267,7 +269,7 @@ export function initZoneLayerUI() {
         'zonesGridSize', 'zonesShareDataset', 'zonesShareBase', 'zonesPerKm2', 'zonesCompareDate']) {
         el(id)?.addEventListener('change', onOptionChange);
     }
-    for (const id of ['zonesColor', 'zonesOutline', 'zonesGlow', 'zonesLegend', 'zonesLegendPosition']) {
+    for (const id of ['zonesColor', 'zonesOutline', 'zonesGlow', 'zonesLegend', 'zonesLegendPosition', 'zonesSolo']) {
         el(id)?.addEventListener('change', onAppearanceChange);
     }
     // Opacité : suivie pendant le glissement.

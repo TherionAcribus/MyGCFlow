@@ -79,6 +79,13 @@ const opts = () => normalizeZoneLayerOptions(pkg.options?.zones);
 // ZONE_LAYER_DENSITY_MEASURES (le reste affiche la valeur brute).
 const densityOf = (o) => o.perKm2 && ZONE_LAYER_DENSITY_MEASURES.includes(o.measure);
 
+// Mode « zones seules » (option du thème) : la carte colorée se lit seule,
+// les autres couches (points, trajet, flashs) sont masquées par mapgl
+// (pkg.syncSoloLayers, rappelé à chaque état de la couche).
+export function zonesOnly() {
+    return enabled() && opts().solo === true && layer?.getVisible() === true;
+}
+
 function compareDateObj(o) {
     const [y, m, d] = o.compareDate.split('-').map(Number);
     return new Date(y, m - 1, d);
@@ -675,6 +682,7 @@ function prepare() {
         if (layer) layer.setVisible(false);
         status = 'off';
         syncLegend();
+        pkg.syncSoloLayers?.();
         return false;
     }
     const m = buildModel();
@@ -684,12 +692,14 @@ function prepare() {
         status = m.wait;
         layer.setVisible(false);
         syncLegend();
+        pkg.syncSoloLayers?.();
         return false;
     }
     if (!m.rows) {
         status = 'empty';
         layer.setVisible(false);
         syncLegend();
+        pkg.syncSoloLayers?.();
         return false;
     }
     const geo = ensureFeatures(m.level, m.countries);
@@ -697,10 +707,12 @@ function prepare() {
     if (geo !== 'ready') {
         layer.setVisible(false);
         syncLegend();
+        pkg.syncSoloLayers?.();
         return false;
     }
     computeScale();
     layer.setVisible(true);
+    pkg.syncSoloLayers?.();
     return true;
 }
 
@@ -740,6 +752,7 @@ export function refreshZoneLayerAppearance() {
     styleCache.clear();
     touch();
     syncLegend();
+    pkg.syncSoloLayers?.();
 }
 
 // `startDate` : début effectif de l'animation (mapgl.js › animationStartDate).
@@ -918,6 +931,7 @@ export function getZoneLayerDebugState() {
         day: shownDay,
         refDay,
         compareDay: compareMap ? compareDayOf(opts()) : null,
+        solo: zonesOnly(),
         animating,
         values,
         classes: Object.fromEntries(classes),

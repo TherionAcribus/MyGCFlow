@@ -6187,11 +6187,27 @@ function ensureTrailLayers() {
 }
 
 function setTrailLayersVisible(visible) {
+    const solo = !!pkg.zonesOnly?.();
     for (const layer of [trailLayer, trailHeadLayer]) {
         if (!layer) continue;
-        layer.setVisible(visible);
+        layer.setVisible(visible && !solo);
         if (visible) layer.changed();
     }
+}
+
+// Mode « zones seules » (option du thème, onglet Zones) : points, trajet et
+// flashs masqués pour lire la carte colorée seule. La visibilité de base du
+// trajet est reproduite ici (trait : aperçu ou animation ; tête : animation
+// seulement) ; les points et leurs pendants (poses, DNF) sont toujours
+// visibles hors mode solo.
+export function syncSoloLayers() {
+    const solo = !!pkg.zonesOnly?.();
+    for (const layer of [vectorLayer, ownerLayer, dnfLayer]) {
+        if (layer) layer.setVisible(!solo);
+    }
+    if (trailLayer) trailLayer.setVisible(!solo && !!(trailState || trailPreview));
+    if (trailHeadLayer) trailHeadLayer.setVisible(!solo && !!trailState);
+    if (animationLayer) animationLayer.setVisible(!solo);
 }
 
 // Clé de mémoïsation du trajet : révision de l'index des jours, réglages de
@@ -6383,7 +6399,7 @@ export function toggleTrailPreview() {
     trailPreview = { route: geometry.route, path: geometry.path };
     ensureTrailLayers();
     // La couche de tête reste cachée : pas de géocacheur dans l'aperçu.
-    trailLayer.setVisible(true);
+    trailLayer.setVisible(!pkg.zonesOnly?.());
     trailLayer.changed();
     return true;
 }
@@ -7110,7 +7126,7 @@ export function toggleFlashPreview() {
     // doit pouvoir s'ouvrir avant toute lecture ; les nettoyages de fin
     // l'avaient éventuellement laissée masquée.
     if (!animationLayer) createFlashElements();
-    else if (!animationLayer.getVisible()) animationLayer.setVisible(true);
+    else if (!animationLayer.getVisible()) animationLayer.setVisible(!pkg.zonesOnly?.());
     flashPreview = true;
     flashPreviewWaves = 0;
     map.render();

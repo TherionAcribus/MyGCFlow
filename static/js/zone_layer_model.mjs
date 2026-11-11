@@ -38,6 +38,9 @@ export const ZONE_LAYER_DEFAULTS = Object.freeze({
     // Comparaison à une date ('AAAA-MM-JJ', '' = état du jour) : la couleur
     // montre alors le gain ou la perte depuis cette date (rouge/teinte).
     compareDate: '',
+    // « Zones seules » : masque points, trajet et flashs pour lire la carte
+    // colorée seule (mapgl.syncSoloLayers).
+    solo: false,
 });
 // Fondu d'une zone qui change de classe, et éclat de son contour (ms).
 export const ZONE_FADE_MS = 600;
@@ -85,6 +88,7 @@ export function normalizeZoneLayerOptions(raw) {
         shareDataset: clampInt(src.shareDataset, d.shareDataset, [0, 9999999999]),
         shareBase: choice(src.shareBase, ZONE_LAYER_SHARE_BASES, d.shareBase),
         compareDate: typeof src.compareDate === 'string' && COMPARE_DATE_RE.test(src.compareDate) ? src.compareDate : '',
+        solo: bool(src.solo, d.solo),
     };
 }
 
@@ -98,6 +102,7 @@ export function zoneLayerToProfile(options) {
         level: o.level, measure: o.measure, per_km2: o.perKm2, scale: o.scale, classes: o.classes, color: o.color,
         opacity: o.opacity, outline: o.outline, glow: o.glow, legend: o.legend, legend_position: o.legendPosition,
         grid_size: o.gridSize, share_dataset: o.shareDataset, share_base: o.shareBase, compare_date: o.compareDate,
+        solo: o.solo,
     };
 }
 
@@ -105,7 +110,7 @@ export function zoneLayerFromProfile(profile) {
     const p = profile && typeof profile === 'object' ? profile : {};
     return normalizeZoneLayerOptions({
         ...p, legendPosition: p.legend_position, gridSize: p.grid_size, perKm2: p.per_km2,
-        shareDataset: p.share_dataset, shareBase: p.share_base, compareDate: p.compare_date,
+        shareDataset: p.share_dataset, shareBase: p.share_base, compareDate: p.compare_date, solo: p.solo,
     });
 }
 

@@ -99,6 +99,16 @@ test('comparaison à une date : option, rampe divergente, libellés signés', ()
     assert.deepEqual(labels, ['< −2', '−2–+1', '+1–+3', '≥ +3']);
 });
 
+test('zones seules : option booléenne, aller-retour thème', () => {
+    const o = normalizeZoneLayerOptions({ solo: true });
+    assert.equal(o.solo, true);
+    assert.equal(normalizeZoneLayerOptions({}).solo, false);
+    assert.equal(normalizeZoneLayerOptions({ solo: 'oui' }).solo, false);
+    const profile = zoneLayerToProfile(o);
+    assert.equal(profile.solo, true);
+    assert.deepEqual(zoneLayerFromProfile(profile), o);
+});
+
 test('mesures de zone_model', () => {
     assert.deepEqual(zoneMeasureFor('distinct_types'), { op: 'distinct', field: 'cache_type' });
     assert.deepEqual(zoneMeasureFor('dt_missing'), { op: 'dt_missing' });

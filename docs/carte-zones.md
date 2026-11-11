@@ -324,6 +324,14 @@ rattachement.
   81 − combinaisons couvertes, zones jamais visitées non colorées (pas de
   ligne). La fiche de `dt_coverage` rappelle le complément (« Il en
   manque ${n} »).
+- `solo` (« Zones seules », carte Apparence) : les autres couches de la
+  carte — trouvailles, caches posées, DNF, trajet et sa tête, flashs —
+  sont masquées pour lire la carte colorée seule. `zonesOnly()` de
+  `zone_layer.js` (option + couche de zones effectivement visible) est
+  le prédicat ; `syncSoloLayers()` de `mapgl.js` applique la visibilité,
+  rappelé à chaque état de la couche (`prepare`, repeinture d'apparence)
+  et respecté par `setTrailLayersVisible` : l'aperçu du trajet repart
+  masqué sous le mode solo. Rien n'est détruit — décocher réaffiche.
 
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,

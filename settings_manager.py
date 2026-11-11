@@ -701,6 +701,9 @@ class ZoneLayerOptions:
     # Comparaison à une date ("AAAA-MM-JJ", "" = état du jour) : la couleur
     # montre alors le gain ou la perte depuis cette date.
     compare_date: str = ""
+    # « Zones seules » : masque points, trajet et flashs pour lire la carte
+    # colorée seule.
+    solo: bool = False
 
 
 @dataclass
@@ -1550,6 +1553,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             compare_date=(zn["compare_date"] if isinstance(zn.get("compare_date"), str)
                           and (zn["compare_date"] == ""
                                or re.fullmatch(r"\d{4}-\d{2}-\d{2}", zn["compare_date"])) else pz.compare_date),
+            solo=_zbool("solo", pz.solo),
         )
 
     return p

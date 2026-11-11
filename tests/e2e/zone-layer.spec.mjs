@@ -249,14 +249,25 @@ test('fiche de zone : clic sur la carte, au repos et en pause', async ({ page, r
   // Le clic sur une cache garde sa propre fiche : GCZON003 à Nantes, seule
   // de son département — les trois points du Finistère se chevauchent à
   // ce zoom. Trouvée le 3, donc visible en pause au 5. La détection de
-  // clic (WebGL) prend un instant après le saut : attendre que le point
-  // soit « cliquable » pour ne pas tomber sur la fiche de zone.
-  await expect.poll(async () => app(page, `
-    const px = pkg.getMap().getPixelFromCoordinate(ol.proj.fromLonLat(arg));
-    return pkg.getMap().forEachFeatureAtPixel(px,
-      (ft) => ft.getGeometry()?.getType() === 'Point' ? ft.get('name') : undefined);`,
-    [-1.5536, 47.2184])).toBe('Zone 3');
-  await clickAt(-1.5536, 47.2184);
+  // clic (WebGL) prend un instant après le saut et l'icône est étroite :
+  // on cherche le pixel voisin où la couche de points répond « Zone 3 »
+  // (même filtre que le gestionnaire de clic), puis on clique ce pixel.
+  const hit = await page.waitForFunction(async (arg) => {
+    const pkg = await import('/static/js/index.js');
+    const c = pkg.getMap().getPixelFromCoordinate(ol.proj.fromLonLat(arg));
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
+      const px = [c[0] + dx, c[1] + dy];
+      const name = pkg.getMap().forEachFeatureAtPixel(px,
+        (ft, l) => l instanceof ol.layer.WebGLPoints ? ft.get('name') : undefined);
+      if (name === 'Zone 3') {
+        const r = document.getElementById('map').getBoundingClientRect();
+        return { x: r.left + px[0], y: r.top + px[1] };
+      }
+    }
+    return null;
+  }, [-1.5536, 47.2184]);
+  const hp = await hit.jsonValue();
+  await page.mouse.click(hp.x, hp.y);
   await expect(popup).toContainText('Zone 3');
 
   await page.locator('#btnQuickStop').click();
@@ -504,6 +515,31 @@ test('rapport de rattachement : noms reconnus, noms à signaler, copie', async (
   expect(copied).toContain('- region « Kernow » [GB / United Kingdom] : 53 → GB-southwestengland (53)');
   expect(copied).toContain('sous-région 9');
   expect(errors).toEqual([]);
+});
+
+// « Zones seules » masque points et trajet pour lire la carte colorée.
+test('zones seules : points et trajet masqués, couche de zones intacte', async ({ page, request }) => {
+    await setDisplay(request, true);
+    const errors = await openMap(page);
+    await page.locator('a[href="#zones"]').click();
+    await expect.poll(async () => (await zones(page)).status).toBe('ready');
+    const visibilities = () => app(page, `
+        const layers = pkg.getMap().getLayers().getArray();
+        const pts = layers.find((l) => l instanceof ol.layer.WebGLPoints);
+        const trail = layers.find((l) => l.getZIndex && l.getZIndex() === 1000);
+        return { pts: pts ? pts.getVisible() : null, trail: trail ? trail.getVisible() : null };`);
+    expect((await visibilities()).pts).toBe(true);
+    // L'aperçu du trajet est affiché puis masqué par le mode solo.
+    await app(page, 'pkg.toggleTrailPreview(); return true;');
+    expect((await visibilities()).trail).toBe(true);
+    await page.locator('#zonesSolo').check();
+    await expect.poll(async () => (await zones(page)).solo).toBe(true);
+    expect(await visibilities()).toEqual({ pts: false, trail: false });
+    await page.locator('#zonesSolo').uncheck();
+    await expect.poll(async () => (await zones(page)).solo).toBe(false);
+    expect(await visibilities()).toEqual({ pts: true, trail: true });
+    await app(page, 'pkg.toggleTrailPreview(); return true;');
+    expect(errors).toEqual([]);
 });
 
 test('erreurs : « Réessayer » recharge contours et liste des jeux', async ({ page, request }) => {
