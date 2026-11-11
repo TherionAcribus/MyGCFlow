@@ -23,8 +23,9 @@ import {
 } from './stats_page_cards.js';
 import {
     activeDashboard, applyFilters, chartTitle, importDashboardFile, onDashboardMenuClick,
-    onFiltersSummaryClick, onGlobalPeriodChange, openFilters, openRename, refreshData, renderToolbar,
-    resetMapFiltersReport, submitNewDashboard, submitRename, syncNewDashboardForm, takeMapFilters,
+    onFiltersSummaryClick, onGlobalPeriodChange, openFilters, openRename, refreshData, releaseRangePick,
+    renderToolbar, resetMapFiltersReport, submitNewDashboard, submitRangePick, submitRename,
+    syncNewDashboardForm, takeMapFilters,
 } from './stats_page_dashboard.js';
 import { loadPage, loadUserSettings, retrySources, tableOf } from './stats_page_data.js';
 import {
@@ -252,6 +253,8 @@ function bindEvents() {
     $('statsRenameForm').addEventListener('submit', submitRename);
     $('statsGlobalPeriod').addEventListener('change', onGlobalPeriodChange);
     $('statsGlobalUpTo').addEventListener('change', onGlobalPeriodChange);
+    $('statsRangeForm').addEventListener('submit', submitRangePick);
+    $('statsRangeModal').addEventListener('hidden.bs.modal', releaseRangePick);
     $('statsGrid').addEventListener('click', onCardAction);
     $('statsGrid').addEventListener('pointerdown', onGridPointerDown);
     $('statsGrid').addEventListener('dragstart', onDragStart);

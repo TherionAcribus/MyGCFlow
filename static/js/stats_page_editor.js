@@ -18,7 +18,7 @@ import {
 } from './dashboard_model.mjs';
 import { withUndo } from './stats_page_card_actions.js';
 import { computeResult, renderChartInto, renderNumber, unavailableBlock } from './stats_page_cards.js';
-import { activeDashboard, attributeName, chartTitle, fillPeriodSelect } from './stats_page_dashboard.js';
+import { activeDashboard, attributeName, chartTitle, fillPeriodSelect, pickRangeIfCustom } from './stats_page_dashboard.js';
 import { dashboardExtent, dashboardTables, tableOf } from './stats_page_data.js';
 import { $, state } from './stats_page_state.js';
 
@@ -481,7 +481,10 @@ function fillMapFrameSelect(current) {
     }
 }
 
-export function onEditorChange() {
+export function onEditorChange(event) {
+    // Un menu de périodes demande « Personnalisée… » : la modale de bornes
+    // prend le relais ; le formulaire sera relu au choix effectif.
+    if (pickRangeIfCustom(event?.target)) return;
     readEditorForm();
     syncEditorForm();
     syncEditorFilters();

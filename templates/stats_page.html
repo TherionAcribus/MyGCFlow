@@ -515,6 +515,29 @@
             </div>
         </div>
 
+        <!-- Période personnalisée : borne de début et de fin, choisie depuis
+             « Personnalisée… » d'un menu de périodes. -->
+        <div class="modal fade" id="statsRangeModal" tabindex="-1" aria-labelledby="statsRangeTitle" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <form class="modal-content" id="statsRangeForm">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsRangeTitle">{{ _("Période personnalisée") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="statsRangeFrom" class="form-label">{{ _("Du") }}</label>
+                        <input type="date" id="statsRangeFrom" class="form-control" required>
+                        <label for="statsRangeTo" class="form-label mt-2">{{ _("au") }}</label>
+                        <input type="date" id="statsRangeTo" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="submit" class="btn btn-primary">{{ _("Appliquer") }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Vidéo animée d'un graphique (lot 6) : réglages, enregistrement
              (aperçu en direct), puis la vidéo prête. -->
         <div class="modal fade" id="statsVideoModal" tabindex="-1" aria-labelledby="statsVideoTitle" aria-hidden="true"

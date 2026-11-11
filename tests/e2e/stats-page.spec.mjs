@@ -1951,6 +1951,45 @@ test('présentation : un graphique par écran, clavier, défilement automatique,
   expect(errors).toEqual([]);
 });
 
+test('période personnalisée « du … au … » : tableau de bord et éditeur', async ({ page }) => {
+  const errors = await openStats(page);
+
+  // Période du tableau : « Personnalisée… » ouvre le sélecteur de bornes.
+  await page.locator('#statsGlobalPeriod').selectOption('custom');
+  await expect(page.locator('#statsRangeModal')).toBeVisible();
+  await page.locator('#statsRangeFrom').fill('2024-01-01');
+  await page.locator('#statsRangeTo').fill('2024-06-30');
+  await page.locator('#statsRangeForm button[type="submit"]').click();
+  await expect(page.locator('#statsRangeModal')).toBeHidden();
+  let snap = await snapshot(page);
+  expect(snap.dashboard.period).toMatchObject({ kind: 'range', from: '2024-01-01', to: '2024-06-30' });
+  await expect(page.locator('#statsGlobalPeriod')).not.toHaveValue('custom');
+  await expect(page.locator('#statsGlobalPeriod')).not.toHaveValue('');
+
+  // Annuler la fenêtre : le menu revient à la période appliquée.
+  await page.locator('#statsGlobalPeriod').selectOption('custom');
+  await expect(page.locator('#statsRangeModal')).toBeVisible();
+  // Les bornes de la plage en cours sont reprises.
+  await expect(page.locator('#statsRangeFrom')).toHaveValue('2024-01-01');
+  await expect(page.locator('#statsRangeTo')).toHaveValue('2024-06-30');
+  await page.locator('#statsRangeModal .btn-secondary').click();
+  await expect(page.locator('#statsRangeModal')).toBeHidden();
+  await expect(page.locator('#statsGlobalPeriod')).not.toHaveValue('custom');
+
+  // Dans l'éditeur : le graphique adopte sa propre plage.
+  await cardAction(page, snap.cards[0].id, 'edit');
+  await page.locator('#statsEdPeriod').selectOption('custom');
+  await expect(page.locator('#statsRangeModal')).toBeVisible();
+  await page.locator('#statsRangeFrom').fill('2023-03-01');
+  await page.locator('#statsRangeTo').fill('2023-03-31');
+  await page.locator('#statsRangeForm button[type="submit"]').click();
+  await expect(page.locator('#statsRangeModal')).toBeHidden();
+  await expect.poll(async () => (await snapshot(page)).editor?.spec?.periods?.[0]?.kind).toBe('range');
+  snap = await snapshot(page);
+  expect(snap.editor.spec.periods[0]).toMatchObject({ from: '2023-03-01', to: '2023-03-31' });
+  expect(errors).toEqual([]);
+});
+
 test('base vide : la page invite à importer ses trouvailles', async ({ page, request }) => {
   // Dernier test du fichier : vide la base (les specs suivants importent la
   // leur avec importGpx, qui gère la base vide).

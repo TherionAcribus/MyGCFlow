@@ -34,6 +34,7 @@ export const state = {
     present: null,
     datasets: [],               // jeux Évolution [{ id, name, … }]
     datasetsFailed: false,      // la liste des jeux n'a pas pu être lue
+    rangeTarget: null,          // menu de périodes qui compose « du … au … »
     evolutionLoads: new Map(),  // id de jeu → promesse de chargement
     missingDatasets: new Set(), // jeux supprimés depuis
     doc: null,

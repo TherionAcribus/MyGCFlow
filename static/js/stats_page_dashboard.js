@@ -8,7 +8,7 @@ import { filterMask } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { filtersFromMapSelection } from './chart_map_link.mjs';
-import { periodAcceptsUpTo, withUpTo } from './chart_spec.mjs';
+import { normalizePeriod, periodAcceptsUpTo, withUpTo } from './chart_spec.mjs';
 import {
     dashboardSources, defaultDashboard, duplicateDashboard, exportDashboard, importDashboard, MAX_DASHBOARDS,
     periodChoices, periodOfValue, periodValue,
@@ -65,7 +65,48 @@ export function fillPeriodSelect(select, period, { inherit = false, choices = nu
     if (current && !values.has(currentValue)) {
         select.append(new Option(state.labels.periodChoiceLabel(current), currentValue));
     }
+    // En fin de liste : composer une période « du … au … » à la demande.
+    select.append(new Option(t('Personnalisée…'), 'custom'));
     select.value = currentValue;
+    select.dataset.applied = currentValue;
+}
+
+// « Personnalisée… » choisi dans un menu de périodes : ouvre le sélecteur de
+// bornes. La cible est mémorisée ; à la fermeture sans choix, le menu revient
+// à la valeur appliquée. Renvoie true quand le menu demandait une plage.
+export function pickRangeIfCustom(select) {
+    if (select?.value !== 'custom') return false;
+    state.rangeTarget = select;
+    const current = periodOfValue(select.dataset.applied || '');
+    $('statsRangeFrom').value = current?.kind === 'range' ? current.from : '';
+    $('statsRangeTo').value = current?.kind === 'range' ? current.to : '';
+    getBsModal('statsRangeModal').show();
+    return true;
+}
+
+// Bornes choisies : la plage devient une vraie option du menu d'origine,
+// dont le « change » repart avec une valeur réelle.
+export function submitRangePick(event) {
+    event.preventDefault();
+    const select = state.rangeTarget;
+    const period = normalizePeriod({ kind: 'range', from: $('statsRangeFrom').value, to: $('statsRangeTo').value });
+    if (!select || !period) return;
+    const value = periodValue(period);
+    if (![...select.options].some((option) => option.value === value)) {
+        // Juste avant « Personnalisée… », qui reste en fin de liste.
+        select.add(new Option(state.labels.periodChoiceLabel(period), value), select.options.length - 1);
+    }
+    select.value = value;
+    select.dataset.applied = value;
+    getBsModal('statsRangeModal').hide();
+    select.dispatchEvent(new Event('change'));
+}
+
+// Fenêtre refermée sans choix : le menu ne reste pas sur « Personnalisée… ».
+export function releaseRangePick() {
+    const select = state.rangeTarget;
+    if (select && select.value === 'custom') select.value = select.dataset.applied || '';
+    state.rangeTarget = null;
 }
 
 // Case « Depuis le début » d'un menu de périodes : visible quand la période
@@ -603,6 +644,7 @@ export function submitRename(event) {
 
 // Menu « Période » ou case « Depuis le début » du tableau de bord.
 export function onGlobalPeriodChange() {
+    if (pickRangeIfCustom($('statsGlobalPeriod'))) return;
     const period = periodOfValue($('statsGlobalPeriod').value);
     if (!period) return;
     const upTo = $('statsGlobalUpTo').checked;
