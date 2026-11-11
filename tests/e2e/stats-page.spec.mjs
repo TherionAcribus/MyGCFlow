@@ -1276,6 +1276,76 @@ test('un clic sur une barre ouvre la carte filtrée sur ces trouvailles', async 
   expect(errors).toEqual([]);
 });
 
+test('un clic sur une barre peut filtrer le tableau de bord', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'cache_type', view: { chart: 'bar', orientation: 'vertical' },
+  });
+  const { x, y } = await markPosition(page, target.id, 0, 'Multi-cache');
+  await page.mouse.click(x, y);
+  const modal = page.locator('.gcm-confirm-modal');
+  await expect(modal).toBeVisible();
+  await expect(modal).toContainText('Multi-cache');
+  await modal.locator('[data-gcm-role="filter"]').click();
+  // La valeur s'ajoute aux filtres du tableau, la pastille le montre.
+  await expect(page.locator('#statsFiltersSummary')).toContainText('Multi-cache');
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters)
+    .toEqual({ cache_type: ['Multi-cache'] });
+  await expect(page).toHaveURL(/\/stats$/);
+  // « Annuler » dans le toast restaure les filtres.
+  await page.locator('.gcm-toast.show .gcm-toast-action').click();
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters)
+    .toEqual({});
+  expect(errors).toEqual([]);
+});
+
+test('un clic sur une année règle la période du tableau', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'year', view: { chart: 'bar' },
+  });
+  const year = target.keys.at(-1);
+  const { x, y } = await markPosition(page, target.id, 0, year);
+  await page.mouse.click(x, y);
+  const modal = page.locator('.gcm-confirm-modal');
+  await expect(modal).toContainText(String(year));
+  await modal.locator('[data-gcm-role="filter"]').click();
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.period)
+    .toEqual({ kind: 'year', year });
+  await expect(page.locator('#statsGlobalPeriod')).toHaveValue(JSON.stringify({ kind: 'year', year }));
+  expect(errors).toEqual([]);
+});
+
+test('un clic sur une case D/T filtre difficulté et terrain ensemble', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'dt', view: { chart: 'challenge' },
+  }, 'L');
+  const filled = target.keys.findIndex((k, i) => target.series[0][i] > 0);
+  expect(filled).toBeGreaterThanOrEqual(0);
+  const cell = card(page, target.id).locator('.stats-chart');
+  const pos = await cell.evaluate((host, { keyIndex }) => {
+    const chart = window.echarts.getInstanceByDom(host);
+    const option = chart.getOption();
+    const d = option.series[0].data.find((item) => item.keyIndex === keyIndex);
+    const [cx, cy] = d.value;
+    // Centre de la case : grille + demi-case (y inversé : l'index 0 est en haut).
+    const grid = option.grid[0];
+    const rect = host.getBoundingClientRect();
+    return {
+        x: rect.left + grid.left + (cx + 0.5) * (grid.width / option.xAxis[0].data.length),
+        y: rect.top + grid.top + (cy + 0.5) * (grid.height / option.yAxis[0].data.length),
+    };
+  }, { keyIndex: filled });
+  await page.mouse.click(pos.x, pos.y);
+  const modal = page.locator('.gcm-confirm-modal');
+  await expect(modal).toBeVisible();
+  await modal.locator('[data-gcm-role="filter"]').click();
+  const [d, te] = String(target.keys[filled]).split('|');
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters?.difficulty)
+    .toEqual([d]);
+  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters?.terrain)
+    .toEqual([te]);
+  expect(errors).toEqual([]);
+});
+
 test("une valeur sans équivalent sur la carte : pas de lien", async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, { groupBy: 'weekday', view: { chart: 'bar' } });
   expect(target.linksToMap).toBe(false);

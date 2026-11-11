@@ -1,17 +1,22 @@
 // Page Statistiques : liens vers les pages carte — carte filtrée sur une
 // valeur, envoi en panneau vidéo.
 
-import { showConfirmation, showError, showToast, t } from './notifications.js';
+import { showActionToast, showConfirmation, showError, showToast, t } from './notifications.js';
+import { getBsModal } from './ui_bootstrap.js';
 import { SOURCE_KIND_VALUES } from './chart_sources.mjs';
-import { ELAPSED_UNITS } from './chart_query.mjs';
+import { ELAPSED_UNITS, OTHERS_KEY, UNKNOWN_KEY, timeKeyBounds } from './chart_query.mjs';
+import { FILTER_FIELDS } from './chart_spec.mjs';
 import { activeFilterCount } from './chart_filters.mjs';
 import { clickTarget } from './chart_echarts.mjs';
 import { discoveryModeFor, mapSelectionFor } from './chart_map_link.mjs';
 import { panelFromSpec } from './chart_panel_link.mjs';
 import { STATS_MAX_PANELS } from './stats_model.mjs';
 import { effectiveQueryOptions } from './dashboard_model.mjs';
-import { chartClickable, TIME_DIMS } from './stats_page_cards.js';
-import { activeDashboard, attributeName, chartTitle } from './stats_page_dashboard.js';
+import { chartClickable, renderAllCharts, TIME_DIMS } from './stats_page_cards.js';
+import {
+    activeDashboard, attributeName, chartTitle, filterValueLabel, renderToolbar,
+} from './stats_page_dashboard.js';
+import { scheduleSave } from './stats_page_save.js';
 import { fetchJson, tableOf } from './stats_page_data.js';
 import { state } from './stats_page_state.js';
 import { zoneBounds } from './stats_page_geo.js';
@@ -103,7 +108,172 @@ export function onChartClick(host, params) {
         confirmZoneLink(entry, target);
         return;
     }
-    confirmMapLink(card.dataset.chartId, target);
+    // La valeur cliquée a un équivalent en filtres/période du tableau :
+    // proposer « Filtrer ce tableau » à côté de « Voir sur la carte ».
+    const scope = dashboardScope(entry, target);
+    if (!scope) {
+        confirmMapLink(card.dataset.chartId, target);
+        return;
+    }
+    showScopeChoice(card.dataset.chartId, target, scope);
+}
+
+// ---------------------------------------------------------------------------
+// « Filtrer ce tableau » : une marque du graphique → filtres ou période du
+// tableau de bord. Une dimension de catégorie devient un filtre (D/T en pose
+// deux), une dimension de temps devient la période ; la période de la série
+// cliquée fait de même dans une comparaison.
+// ---------------------------------------------------------------------------
+
+const FILTERABLE = new Set(FILTER_FIELDS);
+
+function periodForTimeKey(dim, key) {
+    if (dim === 'year') return { kind: 'year', year: key };
+    if (dim === 'month') return { kind: 'month', year: Math.floor(key / 100), month: key % 100 };
+    const b = timeKeyBounds(dim, key);
+    return b ? { kind: 'range', from: isoOfDay(b[0]), to: isoOfDay(b[1]) } : null;
+}
+
+// Période d'une entrée de comparaison : la période nommée quand elle existe
+// (2024, mars 2024, plage) sinon la plage résolue.
+function periodForEntry(entry) {
+    const as = entry?.as || entry?.period;
+    if (as?.kind === 'year') return { kind: 'year', year: as.year };
+    if (as?.kind === 'month') return { kind: 'month', year: as.year, month: as.month };
+    if (as?.kind === 'range') return { kind: 'range', from: as.from, to: as.to };
+    if (!entry) return null;
+    return { kind: 'range', from: isoOfDay(entry.from), to: isoOfDay(entry.to) };
+}
+
+const isCategory = (key) => key !== null && key !== undefined && key !== OTHERS_KEY && key !== UNKNOWN_KEY;
+
+export function dashboardScope(entry, target) {
+    const { spec, result } = entry;
+    const key = result.keys?.[target.keyIndex];
+    const series = result.series?.[target.seriesIndex];
+    const adds = {};
+    let period = null;
+    const push = (field, value) => { if (FILTERABLE.has(field)) (adds[field] ??= []).push(String(value)); };
+    const pushDim = (dim, value) => {
+        if (dim === 'dt' && typeof value === 'string' && value.includes('|')) {
+            const [d, te] = value.split('|');
+            push('difficulty', d);
+            push('terrain', te);
+        } else push(dim, value);
+    };
+    if (isCategory(key)) {
+        if (result.dim === 'dt' || FILTERABLE.has(result.dim)) pushDim(result.dim, key);
+        else if (TIME_DIMS.has(result.dim) && !result.elapsedUnit) period = periodForTimeKey(result.dim, key);
+    }
+    const split = series?.split;
+    if (isCategory(split)) {
+        if (spec.splitBy === 'year') { if (!period) period = { kind: 'year', year: split }; }
+        else pushDim(spec.splitBy, split);
+    }
+    // Clic sur une série d'une comparaison : sa période devient celle du tableau.
+    if (!period && result.periods.length > 1 && Number.isInteger(series?.periodIndex)) {
+        period = periodForEntry(result.periods[series.periodIndex]);
+    }
+    if (!period && !Object.keys(adds).length) return null;
+    const parts = [];
+    if (period) parts.push(t('Période : ${p}', { p: state.labels.periodChoiceLabel(period) }));
+    for (const [field, values] of Object.entries(adds)) {
+        parts.push(state.labels.filterField(field) + ' : '
+            + values.map((v) => filterValueLabel(field, v)).join(', '));
+    }
+    return { filters: adds, period, label: parts.join(' · ') };
+}
+
+// Applique le périmètre cliqué au tableau : les valeurs s'AJOUTENT aux
+// filtres existants, la période est remplacée — « Annuler » rend les deux.
+function applyDashboardScope(scope) {
+    const dashboard = activeDashboard();
+    const before = { filters: structuredClone(dashboard.filters), period: structuredClone(dashboard.period) };
+    if (scope.period) dashboard.period = scope.period;
+    if (Object.keys(scope.filters).length) {
+        const filters = { ...(dashboard.filters || {}) };
+        for (const [field, values] of Object.entries(scope.filters)) {
+            filters[field] = [...new Set([...(filters[field] || []), ...values])];
+        }
+        dashboard.filters = filters;
+    }
+    scheduleSave({ immediate: true });
+    renderToolbar();
+    renderAllCharts();
+    showActionToast(t('Périmètre appliqué : ${what}', { what: scope.label }), {
+        label: t('Annuler'),
+        onClick: () => {
+            const current = state.doc?.dashboards.find((d) => d.id === dashboard.id);
+            if (!current) return;
+            current.filters = before.filters;
+            current.period = before.period;
+            scheduleSave({ immediate: true });
+            renderToolbar();
+            renderAllCharts();
+        },
+    });
+}
+
+// Choix après un clic : filtrer ce tableau, ou ouvrir la carte filtrée sur
+// ces trouvailles (mêmes rôles data-gcm-role que la modale de confirmation).
+let scopeSeq = 0;
+function showScopeChoice(chartId, target, scope) {
+    const entry = state.results.get(chartId);
+    const link = mapLinkFor(chartId, target);
+    const key = entry.result.keys?.[target.keyIndex];
+    const title = isCategory(key)
+        ? state.labels.axisLabel(entry.result.dim, key, { long: true, attributeName })
+        : chartTitle(entry.spec);
+    const titleId = `stats-scope-title-${++scopeSeq}`;
+    const modalEl = document.createElement('div');
+    modalEl.className = 'modal bs-modal fade gcm-confirm-modal';
+    modalEl.tabIndex = -1;
+    modalEl.setAttribute('aria-labelledby', titleId);
+    modalEl.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="${titleId}"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body"><p class="mb-0" data-gcm-role="message"></p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-gcm-role="cancel"></button>
+                    <button type="button" class="btn btn-outline-primary" data-gcm-role="confirm"></button>
+                    <button type="button" class="btn btn-primary" data-gcm-role="filter"></button>
+                </div>
+            </div>
+        </div>`;
+    modalEl.querySelector(`#${titleId}`).textContent = title;
+    modalEl.querySelector('[data-gcm-role="message"]').textContent = link
+        ? t('Filtrer ce tableau sur « ${scope} », ou afficher ces trouvailles sur la carte (ses filtres seront remplacés).', { scope: scope.label })
+        : t('Filtrer ce tableau sur « ${scope} ».', { scope: scope.label });
+    const cancelBtn = modalEl.querySelector('[data-gcm-role="cancel"]');
+    cancelBtn.textContent = t('Annuler');
+    cancelBtn.addEventListener('click', () => modal.hide());
+    const filterBtn = modalEl.querySelector('[data-gcm-role="filter"]');
+    filterBtn.textContent = t('Filtrer ce tableau');
+    filterBtn.addEventListener('click', () => {
+        modal.hide();
+        applyDashboardScope(scope);
+    });
+    const mapBtn = modalEl.querySelector('[data-gcm-role="confirm"]');
+    if (link) {
+        mapBtn.textContent = t('Voir sur la carte');
+        mapBtn.addEventListener('click', () => {
+            modal.hide();
+            openMapWith(link);
+        });
+    } else mapBtn.remove();
+    modalEl.querySelector('.btn-close').setAttribute('aria-label', t('Fermer'));
+    document.body.appendChild(modalEl);
+    const modal = getBsModal(modalEl);
+    if (!modal) {
+        modalEl.remove();
+        return;
+    }
+    modalEl.addEventListener('hidden.bs.modal', () => modalEl.remove(), { once: true });
+    modal.show();
 }
 
 // ---------------------------------------------------------------------------
