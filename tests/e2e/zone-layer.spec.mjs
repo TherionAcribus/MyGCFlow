@@ -598,6 +598,41 @@ test('zones seules : points et trajet masqués, couche de zones intacte', async 
     expect(errors).toEqual([]);
 });
 
+// Les couches des flashs, des DNF, des caches posées (et leurs anneaux) naissent
+// au lancement ou au premier élément affiché : créées visibles, elles
+// réapparaissaient en pleine lecture malgré « Zones seules ».
+test('zones seules : rien ne réapparaît pendant la lecture', async ({ page, request }) => {
+    await setDisplay(request, true);
+    const errors = await openMap(page);
+    await page.locator('a[href="#zones"]').click();
+    await expect.poll(async () => (await zones(page)).status).toBe('ready');
+    await page.locator('#zonesSolo').check();
+    await expect.poll(async () => (await zones(page)).solo).toBe(true);
+    // Toutes les couches au-dessus des zones (points 1001, DNF 1000, poses
+    // 1000.6, anneaux, trajet, flashs 1100), sauf les valeurs des zones (1040).
+    const shown = () => app(page, `
+        const layers = pkg.getMap().getLayers().getArray();
+        return {
+            visible: layers.filter((l) => l.getZIndex() >= 999 && l.getZIndex() !== 1040 && l.getVisible())
+                .map((l) => l.getZIndex()),
+            flashes: pkg.getFlashPreviewDebugState().queued,
+        };`);
+    await page.locator('#btnQuickPreview').click();
+    await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('playing');
+    for (let i = 0; i < 8; i++) {
+        expect(await shown()).toEqual({ visible: [], flashes: 0 });
+        await page.waitForTimeout(250);
+    }
+    // Huit jours de données : la lecture peut déjà être finie.
+    await app(page, `if (pkg.previewPlaybackState() !== 'idle') document.getElementById('btnQuickStop').click();
+        return true;`);
+    await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('idle');
+    await page.locator('#zonesSolo').uncheck();
+    await expect.poll(async () => (await zones(page)).solo).toBe(false);
+    expect((await shown()).visible).toContain(1001);
+    expect(errors).toEqual([]);
+});
+
 test('erreurs : « Réessayer » recharge contours et liste des jeux', async ({ page, request }) => {
   await setDisplay(request, true);
   // Catalogue des contours en échec : ligne d'état + bouton.

@@ -1085,6 +1085,7 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
             ...(evolution ? { filter: EVO_FILTER } : {}),
             variables: pointStyleVariables,
             zIndex: 1001,
+            visible: !soloActive(),
         });
         map.addLayer(vectorLayer);
         if (isPosesPage()) {
@@ -1096,6 +1097,7 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
                     filter: POSES_ACTIVITY_FILTER,
                     variables: pointStyleVariables,
                     zIndex: 1000.95,
+                    visible: !soloActive(),
                 });
                 map.addLayer(posesActivityLayer);
             }
@@ -2660,6 +2662,7 @@ function ensureDnfLayer() {
             style: dnfStyleUsed,
             variables: pointStyleVariables,
             zIndex: 1000,
+            visible: !soloActive(),
         });
     }
     if (!dnfRingChecked) {
@@ -2671,6 +2674,7 @@ function ensureDnfLayer() {
                 style: ringStyle,
                 variables: pointStyleVariables,
                 zIndex: 999.9,
+                visible: !soloActive(),
             });
         }
     }
@@ -2887,6 +2891,7 @@ function ensureOwnerLayers() {
             style: buildPointStyle(pkg.options.point, { owner: true }),
             variables: pointStyleVariables,
             zIndex: 1000.6,
+            visible: !soloActive(),
         });
     }
     if (!ownerRingChecked) {
@@ -2898,6 +2903,7 @@ function ensureOwnerLayers() {
                 style: ringStyle,
                 variables: pointStyleVariables,
                 zIndex: 1000.5,
+                visible: !soloActive(),
             });
         }
     }
@@ -6154,6 +6160,7 @@ function displayLifecycleDates(dates, flashOptions, record, infos) {
 // flashFeatures, sans reconversion des coordonnées. Le décalage de vague est
 // précalculé sur chaque feature (attribut 'stagger', en ms).
 function pushFeatureFlashes(olFeatures, flashOptions, record, useStagger) {
+    if (soloActive()) return;
     const durationMs = Math.max(0, Number(pkg.options.flash?.duration) || 0);
     if (record) {
         const maxFrames = Math.max(1, pkg.options.record.flashFrames || 1);
@@ -6249,16 +6256,28 @@ function setTrailLayersVisible(visible) {
 // Mode « zones seules » (option du thème, onglet Zones) : points, trajet et
 // flashs masqués pour lire la carte colorée seule. La visibilité de base du
 // trajet est reproduite ici (trait : aperçu ou animation ; tête : animation
-// seulement) ; les points et leurs pendants (poses, DNF) sont toujours
-// visibles hors mode solo.
+// seulement) ; les points et leurs pendants (poses, DNF, anneaux) sont
+// toujours visibles hors mode solo. Ces couches naissent à la demande (lancement,
+// saut, premier DNF affiché…) : chacune est créée avec `visible: !soloActive()`,
+// sinon elle réapparaîtrait en cours de lecture.
+function soloActive() {
+    return !!pkg.zonesOnly?.();
+}
+
 export function syncSoloLayers() {
-    const solo = !!pkg.zonesOnly?.();
-    for (const layer of [vectorLayer, ownerLayer, dnfLayer]) {
+    const solo = soloActive();
+    for (const layer of [vectorLayer, posesActivityLayer, ownerLayer, ownerRingLayer, dnfLayer, dnfRingLayer]) {
         if (layer) layer.setVisible(!solo);
     }
     if (trailLayer) trailLayer.setVisible(!solo && !!(trailState || trailPreview));
     if (trailHeadLayer) trailHeadLayer.setVisible(!solo && !!trailState);
     if (animationLayer) animationLayer.setVisible(!solo);
+    // Couche masquée = plus de postrender : les flashs en cours ne seraient
+    // jamais retirés de la file ni décomptés (mapDirtyTracker).
+    if (solo && activeFlashes.length) {
+        for (let i = 0; i < activeFlashes.length; i++) mapDirtyTracker.endAnimation();
+        activeFlashes = [];
+    }
 }
 
 // Clé de mémoïsation du trajet : révision de l'index des jours, réglages de
@@ -6989,6 +7008,9 @@ function flashGeometry(featureData) {
 // Enregistrement : l'avancement d'un flash se compte en captures
 // (globalRecordFrame), pas en temps réel, pour rester déterministe.
 function flashRecord(features, flashOptions = pkg.options.flash) {
+    // Zones seules : couche des flashs masquée, donc jamais dessinée — un
+    // flash enfilé ne serait jamais retiré de la file (cf. drawActiveFlashes).
+    if (soloActive()) return;
     const maxFrames = Math.max(1, pkg.options.record.flashFrames || 1);
     // Capturer la valeur de globalRecordFrame au moment de l'appel (frame de départ du flash)
     const startFrame = globalRecordFrame;
@@ -7014,6 +7036,7 @@ function flashRecord(features, flashOptions = pkg.options.flash) {
 // (sampleAppearClock), qui exclut les pauses : un flash se fige avec les
 // points au lieu de se terminer pendant la pause.
 function flashFeatures(features, flashOptions) {
+    if (soloActive()) return;
     const start = sampleAppearClock();
     // Durée figée au lancement du flash ; forme, taille et couleur restent relues
     // à chaque frame (voir flashStyleAt).
@@ -7112,7 +7135,8 @@ function createFlashElements(){
     animationLayer = new ol.layer.Vector({
         source: animationSource,
         style: null,
-        zIndex: 1100
+        zIndex: 1100,
+        visible: !soloActive(),
     });
     map.addLayer(animationLayer);
     // Les flashs de l'ancienne couche ne seront plus dessinés : on repart à vide.
