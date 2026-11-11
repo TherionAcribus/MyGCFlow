@@ -63,7 +63,7 @@ export function syncZoneLayerUI() {
     check('zonesPerKm2', o.perKm2);
     // Comparaison à une date : sans effet pour « première trouvaille ».
     const compareRow = el('zonesCompareRow');
-    if (compareRow) compareRow.hidden = o.measure === 'first_day';
+    if (compareRow) compareRow.hidden = o.measure === 'first_day' || o.measure === 'dt_missing';
     set('zonesCompareDate', o.compareDate);
     const value = el('zonesOpacityValue');
     if (value) value.textContent = o.opacity + ' %';
@@ -213,6 +213,7 @@ const ZONE_PRESETS = {
     visited: { measure: 'first_day' },
     conquest: { measure: 'count', scale: 'log' },
     coverage: { measure: 'dt_coverage', scale: 'linear' },
+    missing: { measure: 'dt_missing', scale: 'linear' },
 };
 
 function onPresetChange(event) {

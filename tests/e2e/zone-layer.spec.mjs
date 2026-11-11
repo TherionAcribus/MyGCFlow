@@ -148,6 +148,30 @@ test('comparaison à une date : écarts signés, zones inchangées sans couleur'
   expect(errors).toEqual([]);
 });
 
+test('objectif D/T : combinaisons manquantes par zone', async ({ page, request }) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await page.locator('a[href="#zones"]').click();
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+
+  // Préréglage « Objectif : D/T à compléter » → mesure des manquantes.
+  await page.locator('#zonesPreset').selectOption('missing');
+  await expect.poll(async () => (await zones(page)).options.measure).toBe('dt_missing');
+  // La comparaison est sans objet ici : son contrôle se masque.
+  await expect(page.locator('#zonesCompareRow')).toBeHidden();
+  // Paris et Finistère : 3 combinaisons couvertes → 78 manquantes ;
+  // Loire-Atlantique et Rhône : 1 → 80. Zones jamais visitées : non colorées.
+  await expect.poll(async () => (await zones(page)).values).toEqual(
+    { 'FR-75': 78, 'FR-29': 78, 'FR-44': 80, 'FR-69': 80 });
+  expect((await zones(page)).legend.title).toContain('manquantes');
+
+  // La mesure « couverture » affiche le complément dans la fiche de zone.
+  await page.locator('#zonesMeasure').selectOption('dt_coverage');
+  await expect.poll(async () => (await zones(page)).values['FR-75']).toBe(3);
+  await expect(page.locator('#zonesCompareRow')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({ page, request }) => {
   await setDisplay(request, true);
   const errors = await openMap(page);

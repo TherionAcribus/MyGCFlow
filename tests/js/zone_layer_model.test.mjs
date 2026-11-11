@@ -101,6 +101,7 @@ test('comparaison à une date : option, rampe divergente, libellés signés', ()
 
 test('mesures de zone_model', () => {
     assert.deepEqual(zoneMeasureFor('distinct_types'), { op: 'distinct', field: 'cache_type' });
+    assert.deepEqual(zoneMeasureFor('dt_missing'), { op: 'dt_missing' });
     assert.deepEqual(zoneMeasureFor('first_day'), { op: 'first_day' });
     assert.deepEqual(zoneMeasureFor('??'), { op: 'count' });
 });

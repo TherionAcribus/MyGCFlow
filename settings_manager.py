@@ -680,7 +680,7 @@ class ZoneLayerOptions:
     static/json/defaultValues.json.
     """
     level: str = "subregion"   # "country", "region", "subregion", "grid"
-    measure: str = "count"     # "count", "distinct_types", "dt_coverage", "first_day", "found_share"
+    measure: str = "count"     # "count", "distinct_types", "dt_coverage", "dt_missing", "first_day", "found_share"
     scale: str = "quantile"    # "quantile", "linear", "log"
     classes: int = 5
     color: str = "#1E6FD9"     # teinte la plus forte ; les classes vont du clair à elle
@@ -930,7 +930,7 @@ TRAIL_OPACITY_RANGE = (10, 100)
 # Couche de zones : miroir de static/js/zone_layer_model.mjs (ZONE_LAYER_*).
 ZONE_LAYER_LEVELS = ("country", "region", "subregion", "grid")
 ZONE_LAYER_GRID_SIZES = (5, 10, 25, 50, 100)
-ZONE_LAYER_MEASURES = ("count", "distinct_types", "dt_coverage", "first_day", "found_share")
+ZONE_LAYER_MEASURES = ("count", "distinct_types", "dt_coverage", "dt_missing", "first_day", "found_share")
 ZONE_LAYER_SHARE_BASES = ("active", "all")
 ZONE_LAYER_SCALES = ("quantile", "linear", "log")
 ZONE_LAYER_CLASSES_RANGE = (3, 7)

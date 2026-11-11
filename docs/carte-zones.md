@@ -123,6 +123,7 @@ sera le lot 3.
 | `count` | nombre de lignes |
 | `distinct` + `field` (`cache_type`, `container`, `owner`) | valeurs différentes |
 | `dt_coverage` | combinaisons D/T différentes, sur 81 (Labs écartés) |
+| `dt_missing` | combinaisons D/T restant à trouver (81 − couvertes) |
 | `mean` + `field` (`difficulty`, `terrain`) | moyenne, `null` si aucune valeur |
 | `first_day` | jour de la première ligne (la « conquête ») |
 
@@ -290,7 +291,7 @@ rattachement.
   tout de suite.
 - Bloc `zones` du thème (`ZoneLayerOptions` ↔ `pkg.options.zones`,
   `zone_layer_model.mjs`) : `level`, `measure` (`count`,
-  `distinct_types`, `dt_coverage`, `first_day`, `found_share`), `per_km2`,
+  `distinct_types`, `dt_coverage`, `dt_missing`, `first_day`, `found_share`), `per_km2`,
   `compare_date`, `scale`, `classes` (3 à 7), `color`, `opacity` (20 à 85 %), `outline`,
   `glow`, `legend`, `legend_position`. Défauts identiques dans
   `settings_manager.py`, `defaultValues.json` et le module (vérifié par
@@ -315,8 +316,14 @@ rattachement.
   (`compareMap`), recalculé avec l'échelle ; une zone vidée depuis la
   référence garde un écart négatif (union des deux états dans `showDay`).
   Sans effet pour `first_day` (champ masqué, un écart de dates ne veut
-  rien dire) ; marche pour les comptes, la couverture D/T, la densité et
-  la part trouvée (écart en points).
+  rien dire) ni `dt_missing` (masqué aussi : une progression serait un
+  écart négatif, rouge — contre-sens) ; marche pour les comptes, la
+  couverture D/T, la densité et la part trouvée (écart en points).
+- `dt_missing` (« Les combinaisons D/T manquantes », préréglage «
+  Objectif : D/T à compléter ») : lecture « ce qui reste à faire » —
+  81 − combinaisons couvertes, zones jamais visitées non colorées (pas de
+  ligne). La fiche de `dt_coverage` rappelle le complément (« Il en
+  manque ${n} »).
 
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,

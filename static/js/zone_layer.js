@@ -37,7 +37,7 @@ import { t } from './notifications.js';
 import { isEvolutionPage, isMainPage } from './app_mode.mjs';
 import { findsTable, tableFromRecords } from './chart_sources.mjs';
 import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
-import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, shareScaleThresholds, zoneScale } from './zone_model.mjs';
+import { DT_CELLS, ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, shareScaleThresholds, zoneScale } from './zone_model.mjs';
 import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName, zoneProps } from './zone_geo.js';
 import { cellArea, cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
@@ -85,9 +85,10 @@ function compareDateObj(o) {
 }
 
 // Jour de référence de la comparaison (option compare_date), null sinon —
-// sans effet pour « première trouvaille » (un écart de dates ne veut rien dire).
+// sans effet pour « première trouvaille » (un écart de dates ne veut rien dire)
+// ni pour les D/T manquantes (une progression serait rouge, contre-sens).
 function compareDayOf(o) {
-    if (o.measure === 'first_day' || !o.compareDate) return null;
+    if (o.measure === 'first_day' || o.measure === 'dt_missing' || !o.compareDate) return null;
     return dayOfDate(compareDateObj(o));
 }
 
@@ -545,6 +546,7 @@ function legendTitle() {
     const unit = densityOf(o) ? ' ' + t('/ 1 000 km²') : '';
     if (o.measure === 'distinct_types') return t('Types de caches différents') + unit;
     if (o.measure === 'dt_coverage') return t('Combinaisons D/T');
+    if (o.measure === 'dt_missing') return t('Combinaisons D/T manquantes');
     if (o.measure === 'first_day') return evolution ? t('Première cache posée') : t('Première trouvaille');
     if (o.measure === 'found_share') {
         return o.shareBase === 'all' ? t('Part des caches publiées trouvées') : t('Part des caches actives trouvées');
@@ -867,6 +869,9 @@ export function zonePopupAt(pixel) {
             : t('${n} types de caches', { n: fmt.format(value) });
     } else if (o.measure === 'dt_coverage') {
         main = t('${n} combinaisons D/T sur 81', { n: fmt.format(value) });
+        detail = t('Il en manque ${n}', { n: fmt.format(DT_CELLS - value) });
+    } else if (o.measure === 'dt_missing') {
+        main = t('${n} combinaisons D/T manquantes', { n: fmt.format(value) });
     } else if (o.measure === 'found_share') {
         main = fmt.format(value) + ' %';
         const part = model.state.parts?.(id);

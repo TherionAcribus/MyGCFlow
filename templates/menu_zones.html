@@ -61,6 +61,7 @@
                             <option value="count">{% if mode == 'evolution' %}{{ _("Le nombre de caches actives") }}{% else %}{{ _("Le nombre de trouvailles") }}{% endif %}</option>
                             <option value="distinct_types">{{ _("Le nombre de types de caches") }}</option>
                             <option value="dt_coverage">{{ _("Le nombre de combinaisons D/T") }}</option>
+                            <option value="dt_missing">{{ _("Les combinaisons D/T manquantes") }}</option>
                             <option value="first_day">{% if mode == 'evolution' %}{{ _("La date de la première cache posée") }}{% else %}{{ _("La date de la première trouvaille") }}{% endif %}</option>
                             <option value="found_share">{% if mode == 'evolution' %}{{ _("La part des caches que j'ai trouvées") }}{% else %}{{ _("La part trouvée d'un jeu Évolution") }}{% endif %}</option>
                         </select>
@@ -77,6 +78,7 @@
                             <option value="visited">{% if mode == 'evolution' %}{{ _("Découverte des zones (première cache posée)") }}{% else %}{{ _("Territoires visités (première trouvaille)") }}{% endif %}</option>
                             <option value="conquest">{% if mode == 'evolution' %}{{ _("Densité des caches (échelle logarithmique)") }}{% else %}{{ _("Ma conquête (volumes, échelle logarithmique)") }}{% endif %}</option>
                             <option value="coverage">{{ _("Couverture D/T (combinaisons)") }}</option>
+                            <option value="missing">{{ _("Objectif : D/T à compléter") }}</option>
                         </select>
                     </div>
                     {% if mode != 'evolution' %}

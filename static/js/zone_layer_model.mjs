@@ -10,7 +10,7 @@ import { GRID_DEFAULT_SIZE, normalizeGridSize } from './zone_grid.mjs';
 // Miroir de ZoneLayerOptions (settings_manager.py) et du bloc `zones` de
 // static/json/defaultValues.json.
 export const ZONE_LAYER_LEVELS = Object.freeze(['country', 'region', 'subregion', 'grid']);
-export const ZONE_LAYER_MEASURES = Object.freeze(['count', 'distinct_types', 'dt_coverage', 'first_day', 'found_share']);
+export const ZONE_LAYER_MEASURES = Object.freeze(['count', 'distinct_types', 'dt_coverage', 'dt_missing', 'first_day', 'found_share']);
 // Mesures qui acceptent la densité (valeur par km²) : ce qui se compte.
 export const ZONE_LAYER_DENSITY_MEASURES = Object.freeze(['count', 'distinct_types']);
 // Part trouvée : caches actives à la date (défaut) ou toutes celles apparues.
@@ -113,6 +113,7 @@ export function zoneLayerFromProfile(profile) {
 export function zoneMeasureFor(measure) {
     if (measure === 'distinct_types') return { op: 'distinct', field: 'cache_type' };
     if (measure === 'dt_coverage') return { op: 'dt_coverage' };
+    if (measure === 'dt_missing') return { op: 'dt_missing' };
     if (measure === 'first_day') return { op: 'first_day' };
     return { op: 'count' };
 }

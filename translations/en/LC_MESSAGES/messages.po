@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 10:32+0100\n"
+"POT-Creation-Date: 2026-11-11 11:31+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -316,7 +316,7 @@ msgid "Maintenance du poseur"
 msgstr "Owner maintenance"
 
 #: event_flash.py:61 poses_dataset.py:639 static/js/chart_labels.mjs:244
-#: static/js/zone_layer.js:646
+#: static/js/zone_layer.js:649
 msgid "Première trouvaille"
 msgstr "First find"
 
@@ -686,7 +686,7 @@ msgstr "Status"
 
 #: poses_dataset.py:638 static/js/chart_labels.mjs:264
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
-#: static/js/zone_layer.js:650 templates/menu_informations.html:64
+#: static/js/zone_layer.js:653 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Finds"
@@ -740,9 +740,7 @@ msgstr "Archived"
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
-msgstr ""
-"The name '%(name)s' contains no usable character (at least one letter or "
-"digit is required)"
+msgstr "The name '%(name)s' contains no usable character (at least one letter or digit is required)"
 
 #: blueprints/profiles.py:560 settings_manager.py:2928 settings_manager.py:3005
 #: settings_manager.py:3057
@@ -1480,9 +1478,7 @@ msgstr "MyGCFlow could not be stopped."
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
-msgstr ""
-"An import or a video processing task is running. It will be interrupted. "
-"Quit anyway?"
+msgstr "An import or a video processing task is running. It will be interrupted. Quit anyway?"
 
 #: static/js/app_quit.js:56
 msgid "Quitter quand même"
@@ -1529,9 +1525,7 @@ msgstr "Map"
 msgid ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
 "l'enregistrement : la vidéo peut comporter des zones vides."
-msgstr ""
-"${count} map tile(s) could not be loaded during recording: the video may "
-"contain blank areas."
+msgstr "${count} map tile(s) could not be loaded during recording: the video may contain blank areas."
 
 #: static/js/bdd.js:250 static/js/mapgl.js:6823
 msgid "Terminé"
@@ -1605,9 +1599,7 @@ msgstr "geocaches will be removed"
 msgid ""
 "Elles sont absentes du fichier : un My Finds liste toutes vos trouvailles"
 " — l'import les retirera donc de la base."
-msgstr ""
-"They are missing from the file: a My Finds lists all your finds — the "
-"import will therefore remove them from the database."
+msgstr "They are missing from the file: a My Finds lists all your finds — the import will therefore remove them from the database."
 
 #: static/js/bdd.js:694 static/js/gc_logs.js:89 static/js/labs.js:730
 msgid "… et 1 autre"
@@ -1654,9 +1646,7 @@ msgstr "Error"
 msgid ""
 "Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, "
 "une musique ou une image"
-msgstr ""
-"Drop your file (.gpx, .zip or Lab Caches export) to load it, a music "
-"track or an image"
+msgstr "Drop your file (.gpx, .zip or Lab Caches export) to load it, a music track or an image"
 
 #: static/js/bdd.js:904 static/js/bdd.js:930 static/js/chart_labels.mjs:756
 #: static/js/mapgl.js:1260
@@ -1782,6 +1772,7 @@ msgid "Impossible de lancer le chargement des données"
 msgstr "Unable to start loading the data"
 
 #: static/js/bdd.js:2260 static/js/bdd.js:2268
+#, python-format
 msgid "Erreur lors du chargement des données"
 msgstr "Error while loading data"
 
@@ -1806,9 +1797,7 @@ msgstr "Discoveries hidden by the “Displayed discoveries” setting"
 msgid ""
 "Aucune découverte affichée : le réglage « Découvertes affichées » masque "
 "toutes les sources."
-msgstr ""
-"No discovery displayed: the “Displayed discoveries” setting hides all "
-"sources."
+msgstr "No discovery displayed: the “Displayed discoveries” setting hides all sources."
 
 #: static/js/bdd.js:2464
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
@@ -1830,9 +1819,7 @@ msgstr "An import is in progress, please wait before deleting the data."
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
-msgstr ""
-"Are you sure you want to delete all your finds? This action is "
-"irreversible."
+msgstr "Are you sure you want to delete all your finds? This action is irreversible."
 
 #: static/js/bdd.js:2579 static/js/gc_logs.js:851 static/js/labs.js:2165
 msgid "Confirmation de suppression"
@@ -1909,7 +1896,7 @@ msgstr "Difference"
 msgid "Aucune donnée"
 msgstr "No data"
 
-#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1013
+#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1019
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} of ${of} caches"
@@ -2394,12 +2381,12 @@ msgstr "Running total over the period"
 #: static/js/chart_labels.mjs:242 static/js/chart_labels.mjs:382
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
-#: static/js/zone_layer.js:650 templates/menu_stats.html:177
+#: static/js/zone_layer.js:653 templates/menu_stats.html:177
 #: templates/menu_stats.html:243 templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Active caches"
 
-#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:645
+#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:647
 msgid "Combinaisons D/T"
 msgstr "D/T combinations"
 
@@ -2606,7 +2593,7 @@ msgstr "As a percentage of the total"
 msgid "Par jour de la période"
 msgstr "Per day of the period"
 
-#: static/js/chart_labels.mjs:331 templates/menu_zones.html:70
+#: static/js/chart_labels.mjs:331 templates/menu_zones.html:71
 msgid "Par km² (densité)"
 msgstr "Per km² (density)"
 
@@ -3031,9 +3018,7 @@ msgstr "My Jasmer grid"
 
 #: static/js/chart_labels.mjs:400
 msgid "Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent."
-msgstr ""
-"A cache published in every month since May 2000: the months you are "
-"missing."
+msgstr "A cache published in every month since May 2000: the months you are missing."
 
 #: static/js/chart_labels.mjs:401
 msgid "Mes mois de cache"
@@ -3248,7 +3233,7 @@ msgstr "${n}th find"
 msgid "Nouvelle zone · ${date}"
 msgstr "New area · ${date}"
 
-#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1024
+#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1030
 #, python-brace-format
 msgid "Au ${date}"
 msgstr "At ${date}"
@@ -3433,7 +3418,7 @@ msgid "Géocaches"
 msgstr "Geocaches"
 
 #: static/js/chart_labels.mjs:659 static/js/chart_labels.mjs:672
-#: static/js/zone_layer.js:979
+#: static/js/zone_layer.js:982
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n}%"
@@ -3453,7 +3438,7 @@ msgstr "${n} / 1,000 km²"
 msgid "${n} j"
 msgstr "${n} d"
 
-#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:643
+#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:645
 msgid "/ 1 000 km²"
 msgstr "/ 1,000 km²"
 
@@ -3630,9 +3615,7 @@ msgstr "The filter will apply when the animation ends."
 msgid ""
 "${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou "
 "région pour alléger."
-msgstr ""
-"${n} caches displayed: the map may slow down. Filter by country or region"
-" to lighten it."
+msgstr "${n} caches displayed: the map may slow down. Filter by country or region to lighten it."
 
 #: static/js/evolution_data.js:484
 msgid "Grosse sélection"
@@ -3663,17 +3646,17 @@ msgid "Arrêtez l'animation avant d'importer."
 msgstr "Stop the animation before importing."
 
 #: static/js/evolution_data.js:873
-#, python-brace-format
+#, python-brace-format, python-format
 msgid "${name} : seuls les fichiers .csv sont acceptés"
 msgstr "${name}: only .csv files are accepted"
 
 #: static/js/evolution_data.js:874
-#, python-brace-format
+#, python-brace-format, python-format
 msgid "${name} : fichier vide"
 msgstr "${name}: empty file"
 
 #: static/js/evolution_data.js:875
-#, python-brace-format
+#, python-brace-format, python-format
 msgid "${name} : fichier trop volumineux (500 Mo au plus)"
 msgstr "${name}: file too large (500 MB at most)"
 
@@ -3735,9 +3718,7 @@ msgstr "Import error"
 msgid ""
 "${read} lignes lues : ${added} nouvelles, ${updated} mises à jour, "
 "${unchanged} inchangées"
-msgstr ""
-"${read} rows read: ${added} new, ${updated} updated, ${unchanged} "
-"unchanged"
+msgstr "${read} rows read: ${added} new, ${updated} updated, ${unchanged} unchanged"
 
 #: static/js/evolution_data.js:1198
 #, python-brace-format
@@ -3759,12 +3740,10 @@ msgstr "${n} duplicates in the file (most recent version kept)"
 msgid ""
 "${n} caches archivées sans date d'archivage : non affichées (option dans "
 "les filtres)"
-msgstr ""
-"${n} caches archived without an archive date: not displayed (option in "
-"the filters)"
+msgstr "${n} caches archived without an archive date: not displayed (option in the filters)"
 
 #: static/js/evolution_data.js:1211
-#, python-brace-format
+#, python-brace-format, python-format
 msgid "${n} lignes invalides ignorées (${reasons})"
 msgstr "${n} invalid rows ignored (${reasons})"
 
@@ -3773,9 +3752,7 @@ msgstr "${n} invalid rows ignored (${reasons})"
 msgid ""
 "${n} dates d'archivage antérieures au placement (disparition le jour du "
 "placement)"
-msgstr ""
-"${n} archive dates earlier than placement (disappearance on the placement"
-" day)"
+msgstr "${n} archive dates earlier than placement (disappearance on the placement day)"
 
 #: static/js/evolution_data.js:1217
 #, python-brace-format
@@ -3787,26 +3764,20 @@ msgstr "${n} reactivated caches: their former archive date is ignored"
 msgid ""
 "${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, "
 "JJ/MM/AAAA)"
-msgstr ""
-"${n} unreadable archive dates, ignored (accepted formats: YYYY-MM-DD, "
-"DD/MM/YYYY)"
+msgstr "${n} unreadable archive dates, ignored (accepted formats: YYYY-MM-DD, DD/MM/YYYY)"
 
 #: static/js/evolution_data.js:1235
 msgid ""
 "Colonne « Ajouté » absente ou vide : les caches déjà connues par un "
 "export daté ne sont pas mises à jour"
-msgstr ""
-"“Ajouté” column missing or empty: caches already known from a dated "
-"export are not updated"
+msgstr "“Ajouté” column missing or empty: caches already known from a dated export are not updated"
 
 #: static/js/evolution_data.js:1236
 #, python-brace-format
 msgid ""
 "${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent "
 "pas à jour les caches déjà connues par un export daté"
-msgstr ""
-"${n} rows without an export date (“Ajouté” column): they do not update "
-"caches already known from a dated export"
+msgstr "${n} rows without an export date (“Ajouté” column): they do not update caches already known from a dated export"
 
 #: static/js/evolution_data.js:1242
 #, python-brace-format
@@ -3888,9 +3859,7 @@ msgstr "Error: ${message}"
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
 "d'origine ne sont pas touchés."
-msgstr ""
-"Delete the dataset “${name}” and its ${n} caches? The original CSV files "
-"are not affected."
+msgstr "Delete the dataset “${name}” and its ${n} caches? The original CSV files are not affected."
 
 #: static/js/evolution_data.js:1405
 msgid "Arrêtez l'animation avant de supprimer la base."
@@ -3904,9 +3873,7 @@ msgstr "Unable to delete"
 msgid ""
 "Déposez vos exports CSV pour les ajouter à la base, une musique ou une "
 "image"
-msgstr ""
-"Drop your CSV exports to add them to the database, a music track or an "
-"image"
+msgstr "Drop your CSV exports to add them to the database, a music track or an image"
 
 #: static/js/fetch_with_timeout.mjs:41
 msgid "Le serveur local ne répond pas (délai dépassé)"
@@ -4087,9 +4054,7 @@ msgstr "Last import on ${date}: ${changes}${via}"
 msgid ""
 "Un export a été reçu de votre favori (${count} nouveaux logs annoncés) — "
 "validez l'aperçu avant l'import."
-msgstr ""
-"An export was received from your bookmarklet (${count} new logs "
-"announced) — validate the preview before importing."
+msgstr "An export was received from your bookmarklet (${count} new logs announced) — validate the preview before importing."
 
 #: static/js/gc_logs.js:403 static/js/labs.js:1616
 msgid "Chargement impossible"
@@ -4146,6 +4111,7 @@ msgid "Import impossible"
 msgstr "Import not possible"
 
 #: static/js/gc_logs.js:621 static/js/labs.js:702
+#, python-format
 msgid "Erreur lors de l'analyse"
 msgstr "Error while analyzing"
 
@@ -4158,9 +4124,7 @@ msgstr "${file} — account ${name}"
 msgid ""
 "Ce fichier n'est pas daté : ses données écraseront les versions déjà "
 "enregistrées plutôt que d'être ignorées."
-msgstr ""
-"This file is not dated: its data will overwrite stored versions instead "
-"of being ignored."
+msgstr "This file is not dated: its data will overwrite stored versions instead of being ignored."
 
 #: static/js/gc_logs.js:687
 msgid "log déjà connu"
@@ -4210,9 +4174,7 @@ msgstr "logs will be removed"
 msgid ""
 "Le fichier déclare contenir tous ces logs : ceux qu'il n'a plus ont été "
 "supprimés sur le site."
-msgstr ""
-"The file states that it contains all of these logs: those it no longer "
-"has were deleted on the website."
+msgstr "The file states that it contains all of these logs: those it no longer has were deleted on the website."
 
 #: static/js/gc_logs.js:733
 msgid "périmètre"
@@ -4232,9 +4194,7 @@ msgstr "Other players: ${list}"
 msgid ""
 "Couverture complète déclarée (${scope}) — les logs stockés dans son "
 "périmètre et absents du fichier seront retirés."
-msgstr ""
-"Full coverage declared (${scope}) — stored logs within its scope but "
-"absent from the file will be removed."
+msgstr "Full coverage declared (${scope}) — stored logs within its scope but absent from the file will be removed."
 
 #: static/js/gc_logs.js:744
 msgid ""
@@ -4267,6 +4227,7 @@ msgid "Logs importés"
 msgstr "Logs imported"
 
 #: static/js/gc_logs.js:831 static/js/labs.js:1033 static/js/labs.js:1277
+#, python-format
 msgid "Erreur lors de l'import"
 msgstr "Error while importing"
 
@@ -4274,9 +4235,7 @@ msgstr "Error while importing"
 msgid ""
 "Supprimer tous vos logs importés ? Vos géocaches et vos Lab Caches sont "
 "conservés. Cette action est irréversible."
-msgstr ""
-"Delete all your imported logs? Your geocaches and Lab Caches are kept. "
-"This cannot be undone."
+msgstr "Delete all your imported logs? Your geocaches and Lab Caches are kept. This cannot be undone."
 
 #: static/js/gc_logs.js:854 templates/menu_data.html:431
 msgid "Supprimer mes logs"
@@ -4291,6 +4250,7 @@ msgid "Erreur inconnue"
 msgstr "Unknown error"
 
 #: static/js/gc_logs.js:864
+#, python-format
 msgid "Logs supprimés"
 msgstr "Logs deleted"
 
@@ -4331,10 +4291,7 @@ msgstr "The full collect could not be scheduled"
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « MyGCFlow — Mes logs » dans vos favoris."
-msgstr ""
-"Regenerate the token? The current bookmarklet will stop working: you will"
-" have to drag the \"MyGCFlow — My logs\" button into your bookmarks "
-"again."
+msgstr "Regenerate the token? The current bookmarklet will stop working: you will have to drag the \"MyGCFlow — My logs\" button into your bookmarks again."
 
 #: static/js/gc_logs.js:990 static/js/labs.js:1446
 msgid "Jeton du favori"
@@ -4352,9 +4309,7 @@ msgstr "Token not regenerated"
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis une page de geocaching.com."
-msgstr ""
-"Drag this button into your browser's bookmark bar, then click it from a "
-"geocaching.com page."
+msgstr "Drag this button into your browser's bookmark bar, then click it from a geocaching.com page."
 
 #: static/js/images_panels.js:563
 msgid "Image"
@@ -4634,9 +4589,7 @@ msgstr "Never reached: ${total} find(s) in total"
 msgid ""
 "La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
 "ne sera pas visible."
-msgstr ""
-"Find no. ${n} is never reached (${total} in total): the image will not be"
-" visible."
+msgstr "Find no. ${n} is never reached (${total} in total): the image will not be visible."
 
 #: static/js/images_ui.js:1932
 msgid ""
@@ -4648,27 +4601,21 @@ msgstr "It disappears on the day it appears: the image will never be visible."
 msgid ""
 "« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
-msgstr ""
-"“Disappears on” falls on the day it appears: the image will never be "
-"visible."
+msgstr "“Disappears on” falls on the day it appears: the image will never be visible."
 
 #: static/js/images_ui.js:1937
 #, python-brace-format
 msgid ""
 "L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
 "sera pas visible dans la vidéo."
-msgstr ""
-"The image only appears after the end of the animation (${date}): it will "
-"not be visible in the video."
+msgstr "The image only appears after the end of the animation (${date}): it will not be visible in the video."
 
 #: static/js/images_ui.js:1940
 #, python-brace-format
 msgid ""
 "L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
 "pas visible dans la vidéo."
-msgstr ""
-"The image disappears before the start of the animation (${date}): it will"
-" not be visible in the video."
+msgstr "The image disappears before the start of the animation (${date}): it will not be visible in the video."
 
 #: static/js/images_ui.js:1968
 msgid "Attendez la fin de l'enregistrement."
@@ -4678,9 +4625,7 @@ msgstr "Wait for the recording to finish."
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
-msgstr ""
-"Start the preview and pause it on the day you want (timeline bar), then "
-"click again."
+msgstr "Start the preview and pause it on the day you want (timeline bar), then click again."
 
 #: static/js/images_ui.js:2014 static/js/stats_ui.js:1971
 #, python-brace-format
@@ -4700,9 +4645,7 @@ msgstr "Clean up the library"
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis la page de vos logs Adventure Lab."
-msgstr ""
-"Drag this button into your browser's bookmarks bar, then click it from "
-"your Adventure Lab logs page."
+msgstr "Drag this button into your browser's bookmarks bar, then click it from your Adventure Lab logs page."
 
 #: static/js/labs.js:167 static/js/labs.js:1394 templates/guide.html:536
 msgid "MyGCFlow — Lab Caches"
@@ -4759,18 +4702,14 @@ msgstr "${count} stages are not on the map yet: missing position or date."
 msgid ""
 "Une étape n'a pas pu être placée automatiquement : sa position est "
 "introuvable. Vous pouvez la compléter à la main."
-msgstr ""
-"One stage couldn't be placed automatically: its position can't be found. "
-"You can fill it in manually."
+msgstr "One stage couldn't be placed automatically: its position can't be found. You can fill it in manually."
 
 #: static/js/labs.js:412
 #, python-brace-format
 msgid ""
 "${count} étapes n'ont pas pu être placées automatiquement : leur position"
 " est introuvable. Vous pouvez les compléter à la main."
-msgstr ""
-"${count} stages couldn't be placed automatically: their position can't be"
-" found. You can fill them in manually."
+msgstr "${count} stages couldn't be placed automatically: their position can't be found. You can fill them in manually."
 
 #: static/js/labs.js:428
 #, python-brace-format
@@ -5017,10 +4956,7 @@ msgstr "existing values kept."
 msgid ""
 "Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
 "glisser à nouveau le bouton « MyGCFlow — Lab Caches » dans vos favoris."
-msgstr ""
-"Regenerate the token? The current bookmarklet will stop working: you will"
-" have to drag the \"MyGCFlow — Lab Caches\" button into your bookmarks "
-"again."
+msgstr "Regenerate the token? The current bookmarklet will stop working: you will have to drag the \"MyGCFlow — Lab Caches\" button into your bookmarks again."
 
 #: static/js/labs.js:1499
 msgid "Réglage non enregistré"
@@ -5066,9 +5002,7 @@ msgstr "Retrieval interrupted — positions already obtained are kept."
 msgid ""
 "Le service a cessé de répondre avant la fin — relancez la récupération "
 "pour terminer."
-msgstr ""
-"The service stopped responding before the end — run the fetch again to "
-"finish."
+msgstr "The service stopped responding before the end — run the fetch again to finish."
 
 #: static/js/labs.js:1631
 msgid "Adventure"
@@ -5115,9 +5049,7 @@ msgstr "Place the ${n} stages here"
 msgid ""
 "Toutes ses étapes sans position y seront placées, signalées comme "
 "approximatives."
-msgstr ""
-"All its stages without a position will be placed there, marked as "
-"approximate."
+msgstr "All its stages without a position will be placed there, marked as approximate."
 
 #: static/js/labs.js:1764
 msgid "date manquante"
@@ -5147,9 +5079,7 @@ msgstr "position present but inconsistent state — please re-enter"
 msgid ""
 "Position et date sont présentes mais leur état est incohérent — aucune "
 "correction possible ici."
-msgstr ""
-"Position and date are present but their state is inconsistent — no "
-"correction possible here."
+msgstr "Position and date are present but their state is inconsistent — no correction possible here."
 
 #: static/js/labs.js:1821 templates/guide.html:235
 #: templates/menu_images.html:163 templates/menu_informations.html:121
@@ -5200,9 +5130,7 @@ msgstr "Saved"
 msgid ""
 "Supprimer toutes vos étapes Lab Caches ? Vos géocaches sont conservées. "
 "Cette action est irréversible."
-msgstr ""
-"Delete all your Lab Cache stages? Your geocaches are kept. This action "
-"cannot be undone."
+msgstr "Delete all your Lab Cache stages? Your geocaches are kept. This action cannot be undone."
 
 #: static/js/labs.js:2168 templates/guide.html:181 templates/guide.html:565
 #: templates/menu_data.html:275
@@ -5404,6 +5332,7 @@ msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "The initial map render did not complete (timeout)"
 
 #: static/js/mapgl.js:5379
+#, python-format
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
@@ -5430,9 +5359,7 @@ msgstr "Recording"
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
-msgstr ""
-"The music could not be sent to the server: the video was created without "
-"music."
+msgstr "The music could not be sent to the server: the video was created without music."
 
 #: static/js/mapgl.js:5524
 msgid ""
@@ -5543,9 +5470,7 @@ msgstr "Copying the video failed. Stopping the recording."
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
-msgstr ""
-"Video encoder error. Stopping the recording and recovering the captured "
-"sequence."
+msgstr "Video encoder error. Stopping the recording and recovering the captured sequence."
 
 #: static/js/mapgl.js:6645
 msgid ""
@@ -5682,6 +5607,7 @@ msgid "Fermer"
 msgstr "Close"
 
 #: static/js/notifications.js:297 static/js/notifications.js:342
+#, python-format
 msgid "Chargement en cours..."
 msgstr "Loading..."
 
@@ -5800,9 +5726,7 @@ msgstr "The account of your logs is unknown: import an export of your logs"
 msgid ""
 "Vos caches posées sont dans vos logs, mais aucune n'a de position et de "
 "date connues"
-msgstr ""
-"Your hidden caches are in your logs, but none has a known position and "
-"date"
+msgstr "Your hidden caches are in your logs, but none has a known position and date"
 
 #: static/js/poses_data.js:207 templates/app.html:138
 msgid "Aucune cache posée trouvée dans vos logs importés"
@@ -5865,9 +5789,7 @@ msgstr "First to find: ${name} (${date})"
 msgid ""
 "Au rythme actuel : ${s} par pseudo. La durée suit le rythme quand vous "
 "changez la durée de la vidéo."
-msgstr ""
-"At the current pace: ${s} per name. The duration follows the pace when "
-"you change the video length."
+msgstr "At the current pace: ${s} per name. The duration follows the pace when you change the video length."
 
 #: static/js/poses_names_ui.js:121
 msgid "En temps vidéo, quel que soit le rythme."
@@ -5879,9 +5801,7 @@ msgid ""
 "Au rythme actuel, jusqu’à ~${n} étiquettes voudraient s’afficher en même "
 "temps, pour une seule place : les moins marquantes seront écourtées ou "
 "écartées."
-msgstr ""
-"At the current pace, up to ~${n} labels would show at the same time, for "
-"a single slot: the least notable ones will be cut short or skipped."
+msgstr "At the current pace, up to ~${n} labels would show at the same time, for a single slot: the least notable ones will be cut short or skipped."
 
 #: static/js/poses_names_ui.js:162
 #, python-brace-format
@@ -5889,9 +5809,7 @@ msgid ""
 "Au rythme actuel, jusqu’à ~${n} étiquettes voudraient s’afficher en même "
 "temps, pour ${m} places : les moins marquantes seront écourtées ou "
 "écartées."
-msgstr ""
-"At the current pace, up to ~${n} labels would show at the same time, for "
-"${m} slots: the least notable ones will be cut short or skipped."
+msgstr "At the current pace, up to ~${n} labels would show at the same time, for ${m} slots: the least notable ones will be cut short or skipped."
 
 #: static/js/poses_names_ui.js:180 templates/menu_names.html:73
 msgid "Seulement les logs marquants"
@@ -6146,9 +6064,7 @@ msgstr "Please enter a theme name"
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
 " enregistrés."
-msgstr ""
-"The theme « ${name} » already exists. The displayed settings will replace"
-" the saved ones."
+msgstr "The theme « ${name} » already exists. The displayed settings will replace the saved ones."
 
 #: static/js/profiles.js:2722
 #, python-brace-format
@@ -6223,9 +6139,7 @@ msgstr "A theme named « ${name} » already exists"
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
-msgstr ""
-"This name is already taken by “${conflict}”: both reduce to the file "
-"“${key}”"
+msgstr "This name is already taken by “${conflict}”: both reduce to the file “${key}”"
 
 #: static/js/profiles.js:2976
 #, python-brace-format
@@ -6247,9 +6161,7 @@ msgstr "Are you sure you want to delete the theme \"${name}\"?"
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
 "par défaut ?"
-msgstr ""
-"Are you sure you want to reset the theme \"${name}\" to its default "
-"values?"
+msgstr "Are you sure you want to reset the theme \"${name}\" to its default values?"
 
 #: static/js/recent_videos.js:52 static/js/video_ready.js:116
 msgid "Impossible d’afficher la vidéo dans son dossier"
@@ -6319,9 +6231,7 @@ msgid ""
 "Performance d'enregistrement instable (${pct}% de frames lentes). "
 "Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement"
 " ?"
-msgstr ""
-"Recording performance is unstable (${pct}% de slow frames). Would you "
-"like to automatically increase slowdown to x${slowdown}?"
+msgstr "Recording performance is unstable (${pct}% de slow frames). Would you like to automatically increase slowdown to x${slowdown}?"
 
 #: static/js/recording_perf.js:164 static/js/recording_perf.js:217
 #: static/js/recording_perf.js:243
@@ -6333,9 +6243,7 @@ msgstr "Recording performance"
 msgid ""
 "Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour "
 "appliquer le changement."
-msgstr ""
-"Slowdown increased to x${slowdown}. Restart the recording to apply the "
-"change."
+msgstr "Slowdown increased to x${slowdown}. Restart the recording to apply the change."
 
 #: static/js/recording_perf.js:182
 msgid "Paramètre mis à jour"
@@ -6350,9 +6258,7 @@ msgstr "Error while updating the setting."
 msgid ""
 "Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans "
 "les paramètres d'enregistrement."
-msgstr ""
-"You can manually increase slowdown to x${slowdown} in the recording "
-"settings."
+msgstr "You can manually increase slowdown to x${slowdown} in the recording settings."
 
 #: static/js/recording_perf.js:196
 msgid "Conseil"
@@ -6373,26 +6279,20 @@ msgstr "Ignore"
 msgid ""
 "Performance instable (${pct}% de frames lentes). Augmentez le "
 "ralentissement à x${slowdown} dans les paramètres."
-msgstr ""
-"Unstable performance (${pct}% de slow frames). Increase slowdown to "
-"x${slowdown} in the settings."
+msgstr "Unstable performance (${pct}% de slow frames). Increase slowdown to x${slowdown} in the settings."
 
 #: static/js/recording_perf.js:224
 #, python-brace-format
 msgid ""
 "Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre "
 "de points affichés ou la résolution."
-msgstr ""
-"Slowdown is already at the maximum (x${slowdown}). Reduce the number of "
-"displayed points or the resolution."
+msgstr "Slowdown is already at the maximum (x${slowdown}). Reduce the number of displayed points or the resolution."
 
 #: static/js/recording_perf.js:229
 msgid ""
 "Réduisez la vitesse d'animation (augmentez la durée par jour) ou le "
 "nombre de points affichés."
-msgstr ""
-"Reduce animation speed (increase duration per day) or the number of "
-"displayed points."
+msgstr "Reduce animation speed (increase duration per day) or the number of displayed points."
 
 #: static/js/recording_perf.js:234
 #, python-brace-format, python-format
@@ -6622,8 +6522,8 @@ msgstr "${n} published caches"
 msgid "${n} archivages datés"
 msgstr "${n} dated archivals"
 
-#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:987
-#: static/js/zone_layer.js:1019 static/js/zone_report_ui.js:86
+#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:990
+#: static/js/zone_layer.js:1025 static/js/zone_report_ui.js:86
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} finds"
@@ -6706,9 +6606,7 @@ msgstr "This dashboard comes from a newer version of MyGCFlow."
 msgid ""
 "Ce tableau de bord porte sur une zone Évolution : importez d'abord un jeu"
 " sur la page Évolution."
-msgstr ""
-"This dashboard is about an Evolution area: first import a dataset on the "
-"Evolution page."
+msgstr "This dashboard is about an Evolution area: first import a dataset on the Evolution page."
 
 #: static/js/stats_page_dashboard.js:220 static/js/stats_page_dashboard.js:229
 #: static/js/stats_page_dashboard.js:239
@@ -6938,9 +6836,7 @@ msgstr "Could not prepare the map filters."
 msgid ""
 "La carte s'ouvrira en pause au ${date}, cadrée sur ${zone}. Ses filtres "
 "ne changent pas."
-msgstr ""
-"The map will open paused on ${date}, framed on ${zone}. Its filters stay "
-"as they are."
+msgstr "The map will open paused on ${date}, framed on ${zone}. Its filters stay as they are."
 
 #: static/js/stats_page_links.js:151 static/js/stats_page_links.js:171
 msgid "Ouvrir la carte"
@@ -6955,9 +6851,7 @@ msgstr "This value has no equivalent in the map filters."
 msgid ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
 "remplacés."
-msgstr ""
-"The map will show these finds: ${what}. Its current filters will be "
-"replaced."
+msgstr "The map will show these finds: ${what}. Its current filters will be replaced."
 
 #: static/js/stats_page_links.js:184 templates/_app_header.html:24
 #: templates/_app_header.html:26 templates/app.html:41
@@ -6980,26 +6874,20 @@ msgstr "Sending the panel failed."
 msgid ""
 "Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
 " la vidéo."
-msgstr ""
-"Panel added to the “${page}” page: it will appear on the map and in the "
-"video."
+msgstr "Panel added to the “${page}” page: it will appear on the map and in the video."
 
 #: static/js/stats_page_links.js:219
 #, python-brace-format
 msgid ""
 "Le graphique devient un panneau de la page « ${page} », qui se remplit au"
 " fil de l'animation."
-msgstr ""
-"The chart becomes a panel of the “${page}” page, filling up as the "
-"animation plays."
+msgstr "The chart becomes a panel of the “${page}” page, filling up as the animation plays."
 
 #: static/js/stats_page_links.js:221
 msgid ""
 "Il suit la période et les filtres de la carte : la période, les filtres "
 "et le découpage de ce graphique ne sont pas repris."
-msgstr ""
-"It follows the map's period and filters: this chart's period, filters and"
-" breakdown are not carried over."
+msgstr "It follows the map's period and filters: this chart's period, filters and breakdown are not carried over."
 
 #: static/js/stats_page_links.js:223
 msgid "L'objectif et la projection restent sur cette page."
@@ -7022,9 +6910,7 @@ msgstr "${n} / ${count}"
 msgid ""
 "Ce tableau de bord a été modifié dans un autre onglet. Écraser ces "
 "modifications par les vôtres ?"
-msgstr ""
-"This dashboard was changed in another tab. Overwrite those changes with "
-"yours?"
+msgstr "This dashboard was changed in another tab. Overwrite those changes with yours?"
 
 #: static/js/stats_page_save.js:107
 msgid "Conflit de sauvegarde"
@@ -7042,9 +6928,7 @@ msgstr "Use the other version"
 msgid ""
 "Le fichier des tableaux de bord est illisible et aucune sauvegarde "
 "n'existe : un tableau neuf sera créé."
-msgstr ""
-"The dashboards file is unreadable and there is no backup: a new dashboard"
-" will be created."
+msgstr "The dashboards file is unreadable and there is no backup: a new dashboard will be created."
 
 #: static/js/stats_page_save.js:162
 msgid ""
@@ -7653,7 +7537,7 @@ msgstr "Days with finds"
 msgid "Plus longue série (jours)"
 msgstr "Longest streak (days)"
 
-#: static/js/stats_panels.js:1432 static/js/zone_layer.js:644
+#: static/js/stats_panels.js:1432 static/js/zone_layer.js:646
 #: templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Different cache types"
@@ -7885,25 +7769,19 @@ msgstr "Counted data: my owned caches"
 msgid ""
 "Les logs importés ne contiennent rien pour cette source (carte « Mes logs"
 " » de l'onglet Données)."
-msgstr ""
-"The imported logs contain nothing for this source (the \"My logs\" card "
-"of the Data tab)."
+msgstr "The imported logs contain nothing for this source (the \"My logs\" card of the Data tab)."
 
 #: static/js/stats_ui.js:590
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
-msgstr ""
-"No panels. Start with a preset: the timeline counters, forexample, count "
-"active, placed and archived caches."
+msgstr "No panels. Start with a preset: the timeline counters, forexample, count active, placed and archived caches."
 
 #: static/js/stats_ui.js:592
 msgid ""
 "Aucun panneau. Commencez par un modèle : la course des caches les plus "
 "trouvées, par exemple, suit les visites de vos poses."
-msgstr ""
-"No panel. Start with a template: the race of the most found caches, for "
-"example, follows the visits to your hides."
+msgstr "No panel. Start with a template: the race of the most found caches, for example, follows the visits to your hides."
 
 #: static/js/stats_ui.js:593 templates/menu_stats.html:63
 msgid ""
@@ -7938,9 +7816,7 @@ msgstr "“${name}” deleted"
 msgid ""
 "Les DNF et les favoris reçus sont comptés à part, avec les mêmes "
 "statistiques que les trouvailles reçues."
-msgstr ""
-"Received DNFs and favorites are counted separately, with the same "
-"statistics as received finds."
+msgstr "Received DNFs and favorites are counted separately, with the same statistics as received finds."
 
 #: static/js/stats_ui.js:833 templates/menu_stats.html:105
 msgid ""
@@ -7976,9 +7852,7 @@ msgstr "Appearance applied to ${n} other panels"
 msgid ""
 "Panneaux réorganisés, mais la place manque : réduisez-en la taille ou "
 "masquez-en un."
-msgstr ""
-"Panels rearranged, but there is not enough room: make some smaller or "
-"hide one."
+msgstr "Panels rearranged, but there is not enough room: make some smaller or hide one."
 
 #: static/js/stats_ui.js:2025
 msgid "Panneaux réorganisés"
@@ -8243,18 +8117,14 @@ msgstr "(trailing silence ignored)"
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
 "appliquée, la musique sera répétée en boucle."
-msgstr ""
-"Music shorter than the minimum duration (${min}): duration ${d} applied, "
-"the music will be looped."
+msgstr "Music shorter than the minimum duration (${min}): duration ${d} applied, the music will be looped."
 
 #: static/js/ui.js:782
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
 "appliquée, la musique s'arrêtera avant la fin."
-msgstr ""
-"Music shorter than the minimum duration (${min}): duration ${d} applied, "
-"the music will stop before the end."
+msgstr "Music shorter than the minimum duration (${min}): duration ${d} applied, the music will stop before the end."
 
 #: static/js/ui.js:783 static/js/ui.js:802
 msgid "Elle se terminera en fondu."
@@ -8274,18 +8144,14 @@ msgstr "It starts later so that it ends with the video."
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle se terminera"
 " en fondu."
-msgstr ""
-"The music (${m}) is longer than the video (${v}): it will fade out at the"
-" end."
+msgstr "The music (${m}) is longer than the video (${v}): it will fade out at the end."
 
 #: static/js/ui.js:794
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
 "en fin de vidéo."
-msgstr ""
-"The music (${m}) is longer than the video (${v}): it will be cut at the "
-"end of the video."
+msgstr "The music (${m}) is longer than the video (${v}): it will be cut at the end of the video."
 
 #: static/js/ui.js:798
 #, python-brace-format
@@ -8359,9 +8225,7 @@ msgstr "Stop"
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
-msgstr ""
-"This video format is not supported by your browser and will be ignored "
-"when recording starts."
+msgstr "This video format is not supported by your browser and will be ignored when recording starts."
 
 #: static/js/ui.js:2204 static/js/ui.js:3962
 msgid "Format non supporté"
@@ -8381,10 +8245,7 @@ msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
 " la vidéo saccade, choisissez une résolution plus basse ou passez en « "
 "Rendu image par image »."
-msgstr ""
-"Estimated output: ${size}. Fast capture records in real time: if the "
-"video stutters, choose a lower resolution or switch to frame-by-frame "
-"rendering."
+msgstr "Estimated output: ${size}. Fast capture records in real time: if the video stutters, choose a lower resolution or switch to frame-by-frame rendering."
 
 #: static/js/ui.js:2430
 #, python-brace-format
@@ -8392,10 +8253,7 @@ msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
 "beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
 "par une. La vidéo, elle, ne perdra aucune image."
-msgstr ""
-"Estimated output: ${size}. In images mode, recording becomes much slower:"
-" every frame is captured, encoded and uploaded one by one. The video "
-"itself will not drop a single frame."
+msgstr "Estimated output: ${size}. In images mode, recording becomes much slower: every frame is captured, encoded and uploaded one by one. The video itself will not drop a single frame."
 
 #: static/js/ui.js:2439
 #, python-brace-format
@@ -8403,10 +8261,7 @@ msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
 "compressée : baisser les images par seconde ou la résolution donnera une "
 "image plus propre."
-msgstr ""
-"Even at the maximum bitrate (${max} Mbit/s), this resolution will stay "
-"compressed: lowering the frame rate or the resolution will give a cleaner"
-" image."
+msgstr "Even at the maximum bitrate (${max} Mbit/s), this resolution will stay compressed: lowering the frame rate or the resolution will give a cleaner image."
 
 #: static/js/ui.js:2443
 #, python-brace-format
@@ -8429,9 +8284,7 @@ msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 msgid ""
 "Difficulté, terrain, taille, attributs et propriétaire ne s'appliquent "
 "pas aux Lab Caches."
-msgstr ""
-"Difficulty, terrain, size, attributes and owner do not apply to Lab "
-"Caches."
+msgstr "Difficulty, terrain, size, attributes and owner do not apply to Lab Caches."
 
 #: static/js/ui.js:3961
 #, python-brace-format
@@ -8443,9 +8296,7 @@ msgstr "The saved video format (${mime}) is not supported by this browser."
 msgid ""
 "Les ${shown} propriétaires les plus trouvés sur ${total} : tapez un nom "
 "pour chercher parmi tous."
-msgstr ""
-"Showing the ${shown} most found owners out of ${total}: type a name to "
-"search them all."
+msgstr "Showing the ${shown} most found owners out of ${total}: type a name to search them all."
 
 #: static/js/ui.js:5612
 #, python-brace-format
@@ -8503,7 +8354,7 @@ msgstr "Maximum number of presets reached (${max})."
 
 #: static/js/ui.js:6376 static/js/ui.js:6382 templates/menu_filtre.html:81
 #: templates/menu_filtre.html:82 templates/menu_images.html:224
-#: templates/menu_stats.html:365 templates/menu_zones.html:74
+#: templates/menu_stats.html:365 templates/menu_zones.html:75
 msgid "Préréglages"
 msgstr "Presets"
 
@@ -8686,19 +8537,14 @@ msgstr "Waiting for the music duration to be read."
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
-msgstr ""
-"Requested duration (${req}) too short to show every day (minimum ${min}):"
-" ${app} applied."
+msgstr "Requested duration (${req}) too short to show every day (minimum ${min}): ${app} applied."
 
 #: static/js/ui.js:8803
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
-msgstr ""
-"Camera follow pauses the dates during each move. The displayed duration "
-"and frame count are minimums; the result will be longer and may exceed "
-"the music duration."
+msgstr "Camera follow pauses the dates during each move. The displayed duration and frame count are minimums; the result will be longer and may exceed the music duration."
 
 #: static/js/ui.js:8807
 #, python-brace-format
@@ -8706,10 +8552,7 @@ msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
 " ils sont accélérés pour tenir en ${applied}. Pour des déplacements plus "
 "posés, baissez le dynamisme ou allongez la vidéo."
-msgstr ""
-"Camera travel would take ${travel}, too long for the requested duration: "
-"it is sped up to fit in ${applied}. For calmer moves, lower the dynamism "
-"or lengthen the video."
+msgstr "Camera travel would take ${travel}, too long for the requested duration: it is sped up to fit in ${applied}. For calmer moves, lower the dynamism or lengthen the video."
 
 #: static/js/ui.js:8812
 #, python-brace-format
@@ -8717,10 +8560,7 @@ msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
 "depuis ce cadrage, ${n} trajets ajoutent environ ${d} à la vidéo. Pour "
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
-msgstr ""
-"Camera follow pauses the dates during each move: from this framing, ${n} "
-"moves add about ${d} to the video. To hit an exact duration, choose “By "
-"duration” or “Sync to music”."
+msgstr "Camera follow pauses the dates during each move: from this framing, ${n} moves add about ${d} to the video. To hit an exact duration, choose “By duration” or “Sync to music”."
 
 #: static/js/ui.js:8828
 #, python-brace-format
@@ -8728,27 +8568,21 @@ msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
 "que chaque jour soit cadré à son affichage. Réduisez le dynamisme ou le "
 "rythme pour l'éviter."
-msgstr ""
-"${n} camera journeys will pause the dates (+${d} in total) so each day is"
-" framed when it appears. Reduce the dynamism or the pace to avoid it."
+msgstr "${n} camera journeys will pause the dates (+${d} in total) so each day is framed when it appears. Reduce the dynamism or the pace to avoid it."
 
 #: static/js/ui.js:8875
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
-msgstr ""
-"High load: up to ~${n} simultaneous flashes. Suggestions: shorten the "
-"flash duration, slow down the animation, or use Images mode."
+msgstr "High load: up to ~${n} simultaneous flashes. Suggestions: shorten the flash duration, slow down the animation, or use Images mode."
 
 #: static/js/ui.js:8879
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
-msgstr ""
-"${n} frames to produce (~${d} in Images mode). Consider a lower fps or a "
-"shorter animation."
+msgstr "${n} frames to produce (~${d} in Images mode). Consider a lower fps or a shorter animation."
 
 #: static/js/ui.js:9073
 msgid "Images de capture supprimées"
@@ -8821,9 +8655,7 @@ msgstr "Remove “${name}” from recent music"
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
-msgstr ""
-"Selected music is copied for export; copies that are no longer used are "
-"deleted."
+msgstr "Selected music is copied for export; copies that are no longer used are deleted."
 
 #: static/js/ui.js:11923
 #, python-brace-format
@@ -8874,9 +8706,7 @@ msgstr "“${name}” is no longer available: it has been removed from the list.
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
-msgstr ""
-"This music cannot be read (unknown format or damaged file): it will not "
-"be added to the video."
+msgstr "This music cannot be read (unknown format or damaged file): it will not be added to the video."
 
 #: static/js/ui.js:12503
 #, python-brace-format
@@ -8897,9 +8727,7 @@ msgstr "Show the bookmark and instructions"
 msgid ""
 "Le dossier choisi (${folder}) est inaccessible : les vidéos sont "
 "enregistrées dans le dossier par défaut en attendant."
-msgstr ""
-"The chosen folder (${folder}) cannot be reached: videos are saved to the "
-"default folder in the meantime."
+msgstr "The chosen folder (${folder}) cannot be reached: videos are saved to the default folder in the meantime."
 
 #: static/js/video_folder.js:82 static/js/video_folder.js:86
 #: static/js/video_folder.js:101 static/js/video_folder.js:105
@@ -8913,10 +8741,7 @@ msgid ""
 "Le navigateur limite l'accélération à x${effective} (x${requested} "
 "demandé) : la vidéo restera environ ${ratio}x plus lente que prévu. "
 "Utilisez le traitement serveur pour un rythme exact."
-msgstr ""
-"The browser caps acceleration at x${effective} (x${requested} requested):"
-" the video will be about ${ratio}x slower than expected. Use server "
-"processing for an exact speed."
+msgstr "The browser caps acceleration at x${effective} (x${requested} requested): the video will be about ${ratio}x slower than expected. Use server processing for an exact speed."
 
 #: static/js/video_postprocess.js:82
 msgid "captureStream non supporté pour la normalisation"
@@ -9002,82 +8827,93 @@ msgstr "Unable to open the video stream"
 msgid "Aucun flux vidéo ouvert"
 msgstr "No video stream open"
 
-#: static/js/zone_layer.js:646
+#: static/js/zone_layer.js:648
+msgid "Combinaisons D/T manquantes"
+msgstr "Missing D/T combinations"
+
+#: static/js/zone_layer.js:649
 msgid "Première cache posée"
 msgstr "First cache placed"
 
-#: static/js/zone_layer.js:648
+#: static/js/zone_layer.js:651
 msgid "Part des caches publiées trouvées"
 msgstr "Share of published caches found"
 
-#: static/js/zone_layer.js:648
+#: static/js/zone_layer.js:651
 msgid "Part des caches actives trouvées"
 msgstr "Share of active caches found"
 
-#: static/js/zone_layer.js:660
+#: static/js/zone_layer.js:663
 #, python-brace-format
 msgid "depuis le ${date}"
 msgstr "since ${date}"
 
-
-#: static/js/zone_layer.js:975
-#, msgid "Aucune évolution depuis cette date"
+#: static/js/zone_layer.js:978
+msgid "Aucune évolution depuis cette date"
 msgstr "No change since this date"
 
-
-#: static/js/zone_layer.js:981 static/js/zone_layer.js:1006
+#: static/js/zone_layer.js:984 static/js/zone_layer.js:1009
 #, python-brace-format
 msgid "${n} types de caches / 1 000 km²"
-msgstr "${n} cache types / 1,000 km²"
+msgstr "No change since this date"
 
-#: static/js/zone_layer.js:981 static/js/zone_layer.js:1007
+#: static/js/zone_layer.js:984 static/js/zone_layer.js:1010
 #, python-brace-format
 msgid "${n} types de caches"
 msgstr "${n} cache types"
 
-#: static/js/zone_layer.js:983 static/js/zone_layer.js:1009
+#: static/js/zone_layer.js:986 static/js/zone_layer.js:1012
 #, python-brace-format
 msgid "${n} combinaisons D/T sur 81"
 msgstr "${n} of 81 D/T combinations"
 
-#: static/js/zone_layer.js:986 static/js/zone_layer.js:1016
+#: static/js/zone_layer.js:989 static/js/zone_layer.js:1022
 #, python-brace-format
 msgid "${n} caches actives / 1 000 km²"
 msgstr "${n} active caches / 1,000 km²"
 
-#: static/js/zone_layer.js:986 static/js/zone_layer.js:1017
+#: static/js/zone_layer.js:989 static/js/zone_layer.js:1023
 #, python-brace-format
 msgid "${n} trouvailles / 1 000 km²"
 msgstr "${n} finds / 1,000 km²"
 
-#: static/js/zone_layer.js:987 static/js/zone_layer.js:1019
+#: static/js/zone_layer.js:990 static/js/zone_layer.js:1025
 #, python-brace-format
 msgid "${n} caches actives"
 msgstr "${n} active caches"
 
-#: static/js/zone_layer.js:993
+#: static/js/zone_layer.js:996
 #, python-brace-format
 msgid "Depuis le ${date}"
 msgstr "Since ${date}"
 
-
-#: static/js/zone_layer.js:999
+#: static/js/zone_layer.js:1002
 msgid "Aucune cache à ce jour"
 msgstr "No cache yet"
 
-#: static/js/zone_layer.js:999
+#: static/js/zone_layer.js:1002
 msgid "Aucune trouvaille à ce jour"
 msgstr "No find yet"
 
-#: static/js/zone_layer.js:1003
+#: static/js/zone_layer.js:1006
 #, python-brace-format
 msgid "Première cache posée : ${date}"
 msgstr "First cache placed: ${date}"
 
-#: static/js/zone_layer.js:1003
+#: static/js/zone_layer.js:1006
 #, python-brace-format
 msgid "Première trouvaille : ${date}"
 msgstr "First find: ${date}"
+
+#: static/js/zone_layer.js:1013
+#, python-brace-format
+msgid "Il en manque ${n}"
+msgstr "${n} missing"
+
+#: static/js/zone_layer.js:1015
+#, python-brace-format
+msgid "${n} combinaisons D/T manquantes"
+msgstr "${n} missing D/T combinations"
 
 #: static/js/zone_layer_ui.js:84
 msgid "Vos trouvailles croisées avec les caches affichées, par code GC."
@@ -9133,7 +8969,7 @@ msgstr "No finds to colour: import your finds in the Data tab."
 msgid "Liste des jeux indisponible"
 msgstr "Set list unavailable"
 
-#: static/js/zone_layer_ui.js:191 templates/menu_zones.html:86
+#: static/js/zone_layer_ui.js:191 templates/menu_zones.html:88
 msgid "Choisir un jeu…"
 msgstr "Choose a set…"
 
@@ -9202,36 +9038,28 @@ msgstr "This set contains no cache."
 msgid ""
 "Tous les pays et régions des ${n} caches du jeu sont reconnus par leur "
 "nom."
-msgstr ""
-"All the countries and regions of the ${n} caches in the set are "
-"recognised by their name."
+msgstr "All the countries and regions of the ${n} caches in the set are recognised by their name."
 
 #: static/js/zone_report_ui.js:152
 #, python-brace-format
 msgid ""
 "Tous les pays et régions de vos ${n} trouvailles sont reconnus par leur "
 "nom."
-msgstr ""
-"All the countries and regions of your ${n} finds are recognised by their "
-"name."
+msgstr "All the countries and regions of your ${n} finds are recognised by their name."
 
 #: static/js/zone_report_ui.js:157
 #, python-brace-format
 msgid ""
 "Noms non reconnus : ${k} (${rows}). Ces caches sont placées par leur "
 "position."
-msgstr ""
-"Unrecognised names: ${k} (${rows}). These caches are placed by their "
-"position."
+msgstr "Unrecognised names: ${k} (${rows}). These caches are placed by their position."
 
 #: static/js/zone_report_ui.js:180
 #, python-brace-format
 msgid ""
 "Hors carte — ${parts}. Position absente, ou contraire à la région de "
 "Geocaching.com (souvent des mystères)."
-msgstr ""
-"Off the map — ${parts}. Missing position, or one contradicting the "
-"Geocaching.com region (often mysteries)."
+msgstr "Off the map — ${parts}. Missing position, or one contradicting the Geocaching.com region (often mysteries)."
 
 #: static/js/zone_report_ui.js:188
 #, python-brace-format
@@ -9266,7 +9094,7 @@ msgstr "Unrecognised names:"
 msgid "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
 msgstr "Off the map: country ${a} · region ${b} · subregion ${c}"
 
-#: static/js/zone_report_ui.js:238 templates/menu_zones.html:186
+#: static/js/zone_report_ui.js:238 templates/menu_zones.html:188
 msgid "Copier le rapport"
 msgstr "Copy the report"
 
@@ -9296,7 +9124,7 @@ msgstr "Guide"
 #: templates/guide.html:493 templates/menu_images.html:215
 #: templates/menu_names.html:282 templates/menu_options.html:30
 #: templates/menu_stats.html:356 templates/menu_trail.html:94
-#: templates/menu_zones.html:125
+#: templates/menu_zones.html:127
 msgid "Apparence"
 msgstr "Appearance"
 
@@ -11669,24 +11497,16 @@ msgstr "Set how they look"
 msgid ""
 "Choisissez le découpage (pays, régions, départements — Kreise en "
 "Allemagne, comtés au Royaume-Uni, en Irlande et aux États-Unis), ce qui "
-"fait foncer une zone (trouvailles, types de caches, combinaisons D/T, "
-"date de la première trouvaille), la couleur, l'opacité et la légende. "
-"Pour comparer des territoires de tailles très différentes, la case « Par "
-"km² » affiche la densité (pour 1 000 km², comme dans les cartes de la "
-"page Statistiques). « Comparer à une date » colore le gain (teinte) ou la"
-" perte (rouge) de chaque zone depuis cette date. Ces réglages font partie"
-" du thème : « Sauvegarder le thème », en bas de l'onglet, les conserve "
-"(comme « Sauvegarder » dans l'onglet Style)."
-msgstr ""
-"Choose the breakdown (countries, regions, départements — Kreise in "
-"Germany, counties in the United Kingdom, Ireland and the United States), "
-"what darkens a zone (finds, cache types, D/T combinations, first find "
-"date), the color, opacity and legend. To compare territories of very "
-"different sizes, the \"Per km²\" checkbox shows density (per 1,000 km², "
-"as on the Statistics page maps). \"Compare to a date\" colors each "
-"zone's gain (tint) or loss (red) since that date. These settings are "
-"part of the theme: \"Save the theme\", at the bottom of the tab, keeps "
-"them (like \"Save\" in the Style tab)."
+"fait foncer une zone (trouvailles, types de caches, combinaisons D/T "
+"couvertes ou manquantes, date de la première trouvaille), la couleur, "
+"l'opacité et la légende. Pour comparer des territoires de tailles très "
+"différentes, la case « Par km² » affiche la densité (pour 1 000 km², "
+"comme dans les cartes de la page Statistiques). « Comparer à une date » "
+"colore le gain (teinte) ou la perte (rouge) de chaque zone depuis cette "
+"date. Ces réglages font partie du thème : « Sauvegarder le thème », en "
+"bas de l'onglet, les conserve (comme « Sauvegarder » dans l'onglet "
+"Style)."
+msgstr "Choose the breakdown (countries, regions, départements — Kreise in Germany, counties in the United Kingdom, Ireland and the United States), what darkens a zone (finds, cache types, covered or missing D/T combinations, first find date), the color, opacity and legend. To compare territories of very different sizes, the \"Per km²\" checkbox shows density (per 1,000 km², as on the Statistics page maps). \"Compare to a date\" colors each zone's gain (tint) or loss (red) since that date. These settings are part of the theme: \"Save the theme\", at the bottom of the tab, keeps them (like \"Save\" in the Style tab)."
 
 #: templates/guide.html:462
 msgid ""
@@ -14012,7 +13832,7 @@ msgid "Emplacement"
 msgstr "Placement"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:157
+#: templates/menu_stats.html:310 templates/menu_zones.html:159
 msgid "En haut à gauche"
 msgstr "Top left"
 
@@ -14022,7 +13842,7 @@ msgid "En haut au centre"
 msgstr "Top center"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:158
+#: templates/menu_stats.html:310 templates/menu_zones.html:160
 msgid "En haut à droite"
 msgstr "Top right"
 
@@ -14035,7 +13855,7 @@ msgid "Au milieu à droite"
 msgstr "Middle right"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:155
+#: templates/menu_stats.html:312 templates/menu_zones.html:157
 msgid "En bas à gauche"
 msgstr "Bottom left"
 
@@ -14045,7 +13865,7 @@ msgid "En bas au centre"
 msgstr "Bottom center"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:156
+#: templates/menu_stats.html:312 templates/menu_zones.html:158
 msgid "En bas à droite"
 msgstr "Bottom right"
 
@@ -14420,7 +14240,7 @@ msgstr ""
 #: templates/menu_informations.html:128 templates/menu_informations.html:216
 #: templates/menu_informations.html:252 templates/menu_informations.html:280
 #: templates/menu_names.html:308 templates/menu_points.html:310
-#: templates/menu_zones.html:132
+#: templates/menu_zones.html:134
 msgid "Couleur"
 msgstr "Color"
 
@@ -14560,7 +14380,7 @@ msgid "Gauche (px)"
 msgstr "Left (px)"
 
 #: templates/menu_informations.html:362 templates/menu_names.html:331
-#: templates/menu_trail.html:114 templates/menu_zones.html:136
+#: templates/menu_trail.html:114 templates/menu_zones.html:138
 msgid "Opacité"
 msgstr "Opacity"
 
@@ -14900,7 +14720,7 @@ msgstr "Pace"
 msgid "Douce (ralentit à la fin)"
 msgstr "Smooth (slows down at the end)"
 
-#: templates/menu_names.html:228 templates/menu_zones.html:110
+#: templates/menu_names.html:228 templates/menu_zones.html:112
 #: templates/stats_page.html:257
 msgid "Régulière"
 msgstr "Steady"
@@ -17031,129 +16851,138 @@ msgid "Le nombre de combinaisons D/T"
 msgstr "The number of D/T combinations"
 
 #: templates/menu_zones.html:64
+msgid "Les combinaisons D/T manquantes"
+msgstr "The missing D/T combinations"
+
+#: templates/menu_zones.html:65
 msgid "La date de la première cache posée"
 msgstr "The date of the first cache placed"
 
-#: templates/menu_zones.html:64
+#: templates/menu_zones.html:65
 msgid "La date de la première trouvaille"
 msgstr "The date of the first find"
 
-#: templates/menu_zones.html:65
+#: templates/menu_zones.html:66
 msgid "La part des caches que j'ai trouvées"
 msgstr "The share of caches I have found"
 
-#: templates/menu_zones.html:65
+#: templates/menu_zones.html:66
 msgid "La part trouvée d'un jeu Évolution"
 msgstr "The share found of an Evolution set"
 
-#: templates/menu_zones.html:76
+#: templates/menu_zones.html:77
 msgid "Choisir un préréglage…"
 msgstr "Choose a preset…"
 
-#: templates/menu_zones.html:77
+#: templates/menu_zones.html:78
 msgid "Découverte des zones (première cache posée)"
 msgstr "Zone discovery (first cache placed)"
 
-#: templates/menu_zones.html:77
+#: templates/menu_zones.html:78
 msgid "Territoires visités (première trouvaille)"
 msgstr "Visited territories (first find)"
 
-#: templates/menu_zones.html:78
+#: templates/menu_zones.html:79
 msgid "Densité des caches (échelle logarithmique)"
 msgstr "Cache density (logarithmic scale)"
 
-#: templates/menu_zones.html:78
+#: templates/menu_zones.html:79
 msgid "Ma conquête (volumes, échelle logarithmique)"
 msgstr "My conquest (volumes, logarithmic scale)"
 
-#: templates/menu_zones.html:79
+#: templates/menu_zones.html:80
 msgid "Couverture D/T (combinaisons)"
 msgstr "D/T coverage (combinations)"
 
-#: templates/menu_zones.html:84 templates/stats_page.html:456
+#: templates/menu_zones.html:81
+msgid "Objectif : D/T à compléter"
+msgstr "Objective: D/T to complete"
+
+#: templates/menu_zones.html:86 templates/stats_page.html:456
 msgid "Jeu Évolution"
 msgstr "Evolution dataset"
 
-#: templates/menu_zones.html:91
+#: templates/menu_zones.html:93
 msgid "Part de quelles caches"
 msgstr "Share of which caches"
 
-#: templates/menu_zones.html:93
+#: templates/menu_zones.html:95
 msgid "Les caches actives à la date"
 msgstr "The caches active on the date"
 
-#: templates/menu_zones.html:94
+#: templates/menu_zones.html:96
 msgid "Toutes les caches publiées jusque-là"
 msgstr "All the caches published so far"
 
-#: templates/menu_zones.html:98
-#, msgid "Comparer à une date"
+#: templates/menu_zones.html:100
+msgid "Comparer à une date"
 msgstr "Compare to a date"
 
-
-#: templates/menu_zones.html:100
+#: templates/menu_zones.html:102
 msgid ""
 "Une date : la couleur montre le gain (teinte) ou la perte (rouge) depuis."
 " Vide : l'état du jour."
 msgstr ""
+"A date: the color shows the gain (tint) or the loss (red) since. Blank: "
+"the current state."
 
-#: templates/menu_zones.html:104
+#: templates/menu_zones.html:106
 msgid "Échelle et nombre de nuances"
 msgstr "Scale and number of shades"
 
-#: templates/menu_zones.html:107 templates/stats_page.html:254
+#: templates/menu_zones.html:109 templates/stats_page.html:254
 msgid "Échelle des couleurs"
 msgstr "Colour scale"
 
-#: templates/menu_zones.html:109 templates/stats_page.html:256
+#: templates/menu_zones.html:111 templates/stats_page.html:256
 msgid "Équilibrée (autant de zones par couleur)"
 msgstr "Balanced (as many areas per colour)"
 
-#: templates/menu_zones.html:111 templates/stats_page.html:258
+#: templates/menu_zones.html:113 templates/stats_page.html:258
 msgid "Logarithmique (grands écarts)"
 msgstr "Logarithmic (large gaps)"
 
-#: templates/menu_zones.html:115 templates/stats_page.html:262
+#: templates/menu_zones.html:117 templates/stats_page.html:262
 msgid "Nuances"
 msgstr "Shades"
 
-#: templates/menu_zones.html:142
+#: templates/menu_zones.html:144
 msgid "Frontières des zones"
 msgstr "Area borders"
 
-#: templates/menu_zones.html:146
+#: templates/menu_zones.html:148
 msgid "Éclat quand une zone fonce"
 msgstr "Glow when an area darkens"
 
-#: templates/menu_zones.html:152
+#: templates/menu_zones.html:154
 msgid "Légende"
 msgstr "Legend"
 
-#: templates/menu_zones.html:154
+#: templates/menu_zones.html:156
 msgid "Position de la légende"
 msgstr "Legend position"
 
-#: templates/menu_zones.html:165
+#: templates/menu_zones.html:167
 msgid "Sauvegarder le thème"
 msgstr "Save the theme"
 
-#: templates/menu_zones.html:167
+#: templates/menu_zones.html:169
 msgid "Ces réglages font partie du thème actif."
 msgstr "These settings are part of the active theme."
 
-#: templates/menu_zones.html:174
+#: templates/menu_zones.html:176
 msgid "Noms reconnus"
 msgstr "Recognised names"
 
-#: templates/menu_zones.html:180
+#: templates/menu_zones.html:182
 msgid "Voir les noms non reconnus"
 msgstr "See the unrecognised names"
 
-#: templates/menu_zones.html:190
+#: templates/menu_zones.html:192
 msgid "Demander un pays ou un nom"
 msgstr "Request a country or a name"
 
-#: templates/menu_zones.html:193
+#: templates/menu_zones.html:195
 msgid ""
 "Un nom non reconnu n'empêche pas l'affichage : la cache est placée "
 "d'après sa position. Copiez le rapport et collez-le dans la demande pour "
@@ -17163,7 +16992,7 @@ msgstr ""
 " position. Copy the report and paste it into the request so the country "
 "gets added or the name fixed."
 
-#: templates/menu_zones.html:198
+#: templates/menu_zones.html:200
 msgid ""
 "Le découpage le plus fin existe pour la France, l'Allemagne, le Royaume-"
 "Uni, l'Irlande et les États-Unis ; ailleurs, la carte montre les régions."
@@ -17818,7 +17647,7 @@ msgstr "Create the video"
 #~ msgstr "Missing 'profile' section"
 
 #~ msgid "Une tâche '%(type)s' est déjà en cours"
-#~ msgstr "A task '%(type)s' is already running"
+#~ msgstr "A '%(type)s' task is already running"
 
 #~ msgid "Aucune base de données chargée"
 #~ msgstr "No database loaded"
@@ -19334,7 +19163,7 @@ msgstr "Create the video"
 #~ msgstr "Theme '%(name)s' already belongs to this mode"
 
 #~ msgid "Fichier de thème invalide (détrompeur manquant)"
-#~ msgstr "Invalid theme file (missing disambiguator)"
+#~ msgstr "Invalid theme file (missing marker)"
 
 #~ msgid ""
 #~ "Deux fichiers suffisent pour afficher "
@@ -20355,4 +20184,4347 @@ msgstr "Create the video"
 #~ "GC code with a set from the "
 #~ "Evolution page, whatever the map "
 #~ "filters."
+
+#~ msgid "Archivage"
+#~ msgstr "Archive"
+
+#~ msgid "Désactivation"
+#~ msgstr "Disable"
+
+#~ msgid "Réactivation"
+#~ msgstr "Enable"
+
+#~ msgid "Palier de trouvailles"
+#~ msgstr "Find milestone"
+
+#~ msgid "Signalement (maintenance demandée)"
+#~ msgstr "Report (needs maintenance)"
+
+#~ msgid "Maintenance du poseur"
+#~ msgstr "Owner maintenance"
+
+#~ msgid "Point favori"
+#~ msgstr "Favorite point"
+
+#~ msgid "Note du relecteur"
+#~ msgstr "Reviewer note"
+
+#~ msgid "Pose de la cache"
+#~ msgstr "Cache placed"
+
+#~ msgid "Maintenance"
+#~ msgstr "Maintenance"
+
+#~ msgid ""
+#~ "Cette musique ne peut pas être lue"
+#~ " (format non pris en charge ou "
+#~ "fichier endommagé)."
+#~ msgstr "This music cannot be played (unsupported format or damaged file)."
+
+#~ msgid "Cet aperçu a expiré — fermez-le et relancez l'import."
+#~ msgstr "This preview has expired — close it and restart the import."
+
+#~ msgid "À valider avant ${time} — au-delà, relancez l'aperçu."
+#~ msgstr "Validate before ${time} — after that, restart the preview."
+
+#~ msgid "nouvelle géocache"
+#~ msgstr "new geocache"
+
+#~ msgid "nouvelles géocaches"
+#~ msgstr "new geocaches"
+
+#~ msgid "géocache inchangée"
+#~ msgstr "unchanged geocache"
+
+#~ msgid "géocaches inchangées"
+#~ msgstr "unchanged geocaches"
+
+#~ msgid "géocache sera retirée"
+#~ msgstr "geocache will be removed"
+
+#~ msgid "géocaches seront retirées"
+#~ msgstr "geocaches will be removed"
+
+#~ msgid ""
+#~ "Elles sont absentes du fichier : "
+#~ "un My Finds liste toutes vos "
+#~ "trouvailles — l'import les retirera donc"
+#~ " de la base."
+#~ msgstr ""
+#~ "They are missing from the file: a"
+#~ " My Finds lists all your finds "
+#~ "— the import will therefore remove "
+#~ "them from the database."
+
+#~ msgid "… et 1 autre"
+#~ msgstr "… and 1 more"
+
+#~ msgid "… et ${n} autres"
+#~ msgstr "… and ${n} more"
+
+#~ msgid "Import refusé"
+#~ msgstr "Import refused"
+
+#~ msgid ""
+#~ "Déposez votre fichier (.gpx, .zip ou "
+#~ "export Lab Caches) pour le charger, "
+#~ "une musique ou une image"
+#~ msgstr ""
+#~ "Drop your file (.gpx, .zip or Lab"
+#~ " Caches export) to load it, a "
+#~ "music track or an image"
+
+#~ msgid "géocache importée"
+#~ msgstr "geocache imported"
+
+#~ msgid "géocaches importées"
+#~ msgstr "geocaches imported"
+
+#~ msgid "géocache sans date de trouvaille"
+#~ msgstr "geocache without a find date"
+
+#~ msgid "géocaches sans date de trouvaille"
+#~ msgstr "geocaches without a find date"
+
+#~ msgid "géocache sans position"
+#~ msgstr "geocache without a position"
+
+#~ msgid "géocaches sans position"
+#~ msgstr "geocaches without a position"
+
+#~ msgid "log ajouté"
+#~ msgstr "log added"
+
+#~ msgid "logs ajoutés"
+#~ msgstr "logs added"
+
+#~ msgid "log rejeté"
+#~ msgstr "log rejected"
+
+#~ msgid "logs rejetés"
+#~ msgstr "logs rejected"
+
+#~ msgid "${selected} / ${total}"
+#~ msgstr "${selected} / ${total}"
+
+#~ msgid "masquée"
+#~ msgstr "hidden"
+
+#~ msgid "masquées"
+#~ msgstr "hidden"
+
+#~ msgid "Découvertes masquées par le réglage « Découvertes affichées »"
+#~ msgstr "Discoveries hidden by the “Displayed discoveries” setting"
+
+#~ msgid ""
+#~ "Aucune découverte affichée : le réglage"
+#~ " « Découvertes affichées » masque "
+#~ "toutes les sources."
+#~ msgstr ""
+#~ "No discovery displayed: the “Displayed "
+#~ "discoveries” setting hides all sources."
+
+#~ msgid "Erreur lors de l'export de la sélection"
+#~ msgstr "Error while exporting the selection"
+
+#~ msgid "en cours"
+#~ msgstr "ongoing"
+
+#~ msgid "à ce rythme"
+#~ msgstr "at this pace"
+
+#~ msgid "Objectif : ${n}"
+#~ msgstr "Goal: ${n}"
+
+#~ msgid "Écart : ${a} par rapport à ${b}"
+#~ msgstr "Difference: ${a} compared with ${b}"
+
+#~ msgid "Écart"
+#~ msgstr "Difference"
+
+#~ msgid "Aucune donnée"
+#~ msgstr "No data"
+
+#~ msgid "${n} sur ${of} caches"
+#~ msgstr "${n} of ${of} caches"
+
+#~ msgid "rang ${n} sur ${of}"
+#~ msgstr "rank ${n} of ${of}"
+
+#~ msgid "nouvelle depuis ${period}"
+#~ msgstr "new since ${period}"
+
+#~ msgid "${delta} depuis ${period}"
+#~ msgstr "${delta} since ${period}"
+
+#~ msgid "Contours des zones indisponibles."
+#~ msgstr "Zone outlines unavailable."
+
+#~ msgid "Chargement de la carte…"
+#~ msgstr "Loading the map…"
+
+#~ msgid "Le jour même"
+#~ msgstr "Same day"
+
+#~ msgid "1 à 7 jours"
+#~ msgstr "1 to 7 days"
+
+#~ msgid "8 jours à 1 mois"
+#~ msgstr "8 days to 1 month"
+
+#~ msgid "1 à 6 mois"
+#~ msgstr "1 to 6 months"
+
+#~ msgid "6 à 12 mois"
+#~ msgstr "6 to 12 months"
+
+#~ msgid "1 à 2 ans"
+#~ msgstr "1 to 2 years"
+
+#~ msgid "2 à 5 ans"
+#~ msgstr "2 to 5 years"
+
+#~ msgid "5 à 10 ans"
+#~ msgstr "5 to 10 years"
+
+#~ msgid "10 à 15 ans"
+#~ msgstr "10 to 15 years"
+
+#~ msgid "15 ans et plus"
+#~ msgstr "15 years and more"
+
+#~ msgid "Au total"
+#~ msgstr "Overall"
+
+#~ msgid "Année"
+#~ msgstr "Year"
+
+#~ msgid "Trimestre"
+#~ msgstr "Quarter"
+
+#~ msgid "Mois"
+#~ msgstr "Month"
+
+#~ msgid "Semaine"
+#~ msgstr "Week"
+
+#~ msgid "Jour"
+#~ msgstr "Day"
+
+#~ msgid "Mois de l'année"
+#~ msgstr "Month of the year"
+
+#~ msgid "Semaine de l'année"
+#~ msgstr "Week of the year"
+
+#~ msgid "Jour de l'année"
+#~ msgstr "Day of the year"
+
+#~ msgid "Jour de la semaine"
+#~ msgstr "Day of the week"
+
+#~ msgid "Contenant"
+#~ msgstr "Container"
+
+#~ msgid "Difficulté / terrain"
+#~ msgstr "Difficulty / terrain"
+
+#~ msgid "Attribut"
+#~ msgstr "Attribute"
+
+#~ msgid "Âge de la cache"
+#~ msgstr "Cache age"
+
+#~ msgid "Année de publication"
+#~ msgstr "Publication year"
+
+#~ msgid "Mois de publication"
+#~ msgstr "Publication month"
+
+#~ msgid "Cache"
+#~ msgstr "Cache"
+
+#~ msgid "Visiteur"
+#~ msgstr "Visitor"
+
+#~ msgid "Pays (carte)"
+#~ msgstr "Country (map)"
+
+#~ msgid "Région (carte)"
+#~ msgstr "Region (map)"
+
+#~ msgid "Département, comté… (carte)"
+#~ msgstr "District, county… (map)"
+
+#~ msgid "Case de la grille (carte)"
+#~ msgstr "Grid cell (map)"
+
+#~ msgid "au total"
+#~ msgstr "overall"
+
+#~ msgid "par année"
+#~ msgstr "by year"
+
+#~ msgid "par trimestre"
+#~ msgstr "by quarter"
+
+#~ msgid "par mois"
+#~ msgstr "by month"
+
+#~ msgid "par semaine"
+#~ msgstr "by week"
+
+#~ msgid "par jour"
+#~ msgstr "by day"
+
+#~ msgid "par mois de l'année"
+#~ msgstr "by month of the year"
+
+#~ msgid "par semaine de l'année"
+#~ msgstr "by week of the year"
+
+#~ msgid "par jour de l'année"
+#~ msgstr "by day of the year"
+
+#~ msgid "par jour de la semaine"
+#~ msgstr "by day of the week"
+
+#~ msgid "par type de cache"
+#~ msgstr "by cache type"
+
+#~ msgid "par contenant"
+#~ msgstr "by container"
+
+#~ msgid "par difficulté"
+#~ msgstr "by difficulty"
+
+#~ msgid "par terrain"
+#~ msgstr "by terrain"
+
+#~ msgid "par difficulté / terrain"
+#~ msgstr "by difficulty / terrain"
+
+#~ msgid "par pays"
+#~ msgstr "by country"
+
+#~ msgid "par région"
+#~ msgstr "by region"
+
+#~ msgid "par propriétaire"
+#~ msgstr "by owner"
+
+#~ msgid "par attribut"
+#~ msgstr "by attribute"
+
+#~ msgid "par âge de la cache"
+#~ msgstr "by cache age"
+
+#~ msgid "par année de publication"
+#~ msgstr "by publication year"
+
+#~ msgid "par mois de publication"
+#~ msgstr "by publication month"
+
+#~ msgid "par cache"
+#~ msgstr "by cache"
+
+#~ msgid "par visiteur"
+#~ msgstr "by visitor"
+
+#~ msgid "par département"
+#~ msgstr "by county"
+
+#~ msgid "sur une carte des pays"
+#~ msgstr "on a map of countries"
+
+#~ msgid "sur une carte des régions"
+#~ msgstr "on a map of regions"
+
+#~ msgid "sur une carte des départements, comtés…"
+#~ msgstr "on a map of districts, counties…"
+
+#~ msgid "sur une grille de cases"
+#~ msgstr "on a grid of cells"
+
+#~ msgid "Un seul chiffre"
+#~ msgstr "A single number"
+
+#~ msgid "Au fil du temps"
+#~ msgstr "Over time"
+
+#~ msgid "Pour comparer les périodes"
+#~ msgstr "To compare periods"
+
+#~ msgid "Par caractéristique"
+#~ msgstr "By characteristic"
+
+#~ msgid "le nombre"
+#~ msgstr "the number"
+
+#~ msgid "le nombre de caches différentes"
+#~ msgstr "the number of distinct caches"
+
+#~ msgid "le nombre de jours différents"
+#~ msgstr "the number of distinct days"
+
+#~ msgid "le nombre de types de caches"
+#~ msgstr "the number of cache types"
+
+#~ msgid "le nombre de pays"
+#~ msgstr "the number of countries"
+
+#~ msgid "le nombre de régions"
+#~ msgstr "the number of regions"
+
+#~ msgid "le nombre de propriétaires"
+#~ msgstr "the number of owners"
+
+#~ msgid "le nombre de visiteurs différents"
+#~ msgstr "the number of distinct visitors"
+
+#~ msgid "le nombre de départements"
+#~ msgstr "the number of counties"
+
+#~ msgid "la difficulté moyenne"
+#~ msgstr "the average difficulty"
+
+#~ msgid "le terrain moyen"
+#~ msgstr "the average terrain"
+
+#~ msgid "l'âge moyen des caches"
+#~ msgstr "the average cache age"
+
+#~ msgid "le record sur une journée"
+#~ msgstr "the best single day"
+
+#~ msgid "la plus longue série de jours de cache"
+#~ msgstr "the longest caching streak"
+
+#~ msgid "la série de jours de cache en cours"
+#~ msgstr "the current caching streak"
+
+#~ msgid "la plus longue pause sans trouvaille"
+#~ msgstr "the longest break without a find"
+
+#~ msgid "le cumul depuis le début"
+#~ msgstr "the running total from the start"
+
+#~ msgid "le cumul sur la période"
+#~ msgstr "the running total over the period"
+
+#~ msgid "les caches actives"
+#~ msgstr "the active caches"
+
+#~ msgid "le nombre de combinaisons D/T"
+#~ msgstr "the number of D/T combinations"
+
+#~ msgid "la date de la première trouvaille"
+#~ msgstr "the date of the first find"
+
+#~ msgid "la part des caches actives que j'ai trouvées"
+#~ msgstr "the share of active caches I have found"
+
+#~ msgid "la part des caches publiées que j'ai trouvées"
+#~ msgstr "the share of published caches I have found"
+
+#~ msgid "Caches différentes"
+#~ msgstr "Distinct caches"
+
+#~ msgid "Jours de cache"
+#~ msgstr "Caching days"
+
+#~ msgid "Visiteurs différents"
+#~ msgstr "Distinct visitors"
+
+#~ msgid "Difficulté moyenne"
+#~ msgstr "Average difficulty"
+
+#~ msgid "Terrain moyen"
+#~ msgstr "Average terrain"
+
+#~ msgid "Âge moyen des caches"
+#~ msgstr "Average cache age"
+
+#~ msgid "Plus longue série"
+#~ msgstr "Longest streak"
+
+#~ msgid "Série en cours"
+#~ msgstr "Current streak"
+
+#~ msgid "Plus longue pause"
+#~ msgstr "Longest break"
+
+#~ msgid "Cumul depuis le début"
+#~ msgstr "Running total from the start"
+
+#~ msgid "Cumul sur la période"
+#~ msgstr "Running total over the period"
+
+#~ msgid "Part des actives trouvées"
+#~ msgstr "Share of active caches found"
+
+#~ msgid "Part des publiées trouvées"
+#~ msgstr "Share of published caches found"
+
+#~ msgid "Trouvailles reçues sur mes caches"
+#~ msgstr "Finds received on my caches"
+
+#~ msgid "DNF reçus sur mes caches"
+#~ msgstr "DNFs received on my caches"
+
+#~ msgid "Favoris reçus sur mes caches"
+#~ msgstr "Favorites received on my caches"
+
+#~ msgid "Caches publiées"
+#~ msgstr "Published caches"
+
+#~ msgid "par rapport à mes trouvailles"
+#~ msgstr "compared with my finds"
+
+#~ msgid "par rapport à mes DNF"
+#~ msgstr "compared with my DNFs"
+
+#~ msgid "par rapport à mes caches posées"
+#~ msgstr "compared with my hidden caches"
+
+#~ msgid "par rapport aux trouvailles reçues"
+#~ msgstr "compared with the finds received"
+
+#~ msgid "par rapport aux DNF reçus"
+#~ msgstr "compared with the DNFs received"
+
+#~ msgid "par rapport aux favoris reçus"
+#~ msgstr "compared with the favorites received"
+
+#~ msgid "par rapport aux caches publiées"
+#~ msgstr "compared with the published caches"
+
+#~ msgid "par rapport aux caches archivées"
+#~ msgstr "compared with the archived caches"
+
+#~ msgid "barres"
+#~ msgstr "bars"
+
+#~ msgid "courbe"
+#~ msgstr "line"
+
+#~ msgid "aire"
+#~ msgstr "area"
+
+#~ msgid "anneau"
+#~ msgstr "donut"
+
+#~ msgid "chiffre clé"
+#~ msgstr "key figure"
+
+#~ msgid "calendrier"
+#~ msgstr "calendar"
+
+#~ msgid "grille"
+#~ msgstr "grid"
+
+#~ msgid "radar"
+#~ msgstr "radar"
+
+#~ msgid "grille de défi"
+#~ msgstr "challenge grid"
+
+#~ msgid "carte"
+#~ msgstr "map"
+
+#~ msgid "superposées"
+#~ msgstr "overlaid"
+
+#~ msgid "côte à côte"
+#~ msgstr "side by side"
+
+#~ msgid "en écart"
+#~ msgstr "as a difference"
+
+#~ msgid "Sur le calendrier (janvier avec janvier)"
+#~ msgstr "On the calendar (January with January)"
+
+#~ msgid "À leurs vraies dates"
+#~ msgstr "On their actual dates"
+
+#~ msgid "Jour par jour depuis le début"
+#~ msgstr "Day by day from the start"
+
+#~ msgid "Semaine par semaine depuis le début"
+#~ msgstr "Week by week from the start"
+
+#~ msgid "Mois par mois depuis le début"
+#~ msgstr "Month by month from the start"
+
+#~ msgid "Trimestre par trimestre depuis le début"
+#~ msgstr "Quarter by quarter from the start"
+
+#~ msgid "Année par année depuis le début"
+#~ msgstr "Year by year from the start"
+
+#~ msgid "En pourcentage du total"
+#~ msgstr "As a percentage of the total"
+
+#~ msgid "Par jour de la période"
+#~ msgstr "Per day of the period"
+
+#~ msgid "Une couleur par valeur"
+#~ msgstr "One color per value"
+
+#~ msgid "Couleurs des types (carte)"
+#~ msgstr "Cache type colors (map)"
+
+#~ msgid "Dégradé selon la valeur"
+#~ msgstr "Gradient by value"
+
+#~ msgid "Petit"
+#~ msgstr "Small"
+
+#~ msgid "Moyen"
+#~ msgstr "Medium"
+
+#~ msgid "Grand"
+#~ msgstr "Large"
+
+#~ msgid "Toute la largeur"
+#~ msgstr "Full width"
+
+#~ msgid "Le total de la période."
+#~ msgstr "The total for the period."
+
+#~ msgid "Les jours où vous avez trouvé au moins une cache."
+#~ msgstr "The days on which you found at least one cache."
+
+#~ msgid "Pays visités"
+#~ msgstr "Countries visited"
+
+#~ msgid "Le nombre de pays de vos trouvailles."
+#~ msgstr "The number of countries of your finds."
+
+#~ msgid "Ma meilleure année"
+#~ msgstr "My best year"
+
+#~ msgid "Vos trouvailles année par année, sur tout votre historique."
+#~ msgstr "Your finds year by year, over your whole history."
+
+#~ msgid "Ma progression"
+#~ msgstr "My progress"
+
+#~ msgid "Le total de vos trouvailles, mois après mois."
+#~ msgstr "Your total number of finds, month after month."
+
+#~ msgid "Mes mois les plus actifs"
+#~ msgstr "My busiest months"
+
+#~ msgid "Janvier, février… : quels mois de l'année vous cachez le plus."
+#~ msgstr "January, February…: which months of the year you cache the most."
+
+#~ msgid "Mes jours de la semaine"
+#~ msgstr "My days of the week"
+
+#~ msgid "Du lundi au dimanche : quand vous trouvez vos caches."
+#~ msgstr "From Monday to Sunday: when you find your caches."
+
+#~ msgid "Mes types de caches"
+#~ msgstr "My cache types"
+
+#~ msgid "La part de chaque type, avec les couleurs de la carte."
+#~ msgstr "The share of each type, in the map's colors."
+
+#~ msgid "Mes pays"
+#~ msgstr "My countries"
+
+#~ msgid "Les pays où vous avez le plus trouvé."
+#~ msgstr "The countries where you found the most."
+
+#~ msgid "Mes propriétaires favoris"
+#~ msgstr "My favorite owners"
+
+#~ msgid "Les poseurs dont vous avez trouvé le plus de caches."
+#~ msgstr "The hiders whose caches you found the most."
+
+#~ msgid "Difficulté des caches"
+#~ msgstr "Cache difficulty"
+
+#~ msgid "Vos trouvailles par niveau de difficulté."
+#~ msgstr "Your finds by difficulty level."
+
+#~ msgid "Terrain des caches"
+#~ msgstr "Cache terrain"
+
+#~ msgid "Vos trouvailles par niveau de terrain."
+#~ msgstr "Your finds by terrain level."
+
+#~ msgid "Tailles des caches"
+#~ msgstr "Cache sizes"
+
+#~ msgid "Nano, micro, petite… : les contenants trouvés."
+#~ msgstr "Nano, micro, small…: the containers you found."
+
+#~ msgid "Âge des caches à la trouvaille"
+#~ msgstr "Cache age when found"
+
+#~ msgid "Trouvées le jour de leur publication, ou des années après."
+#~ msgstr "Found on publication day, or years later."
+
+#~ msgid "Mon record par année"
+#~ msgstr "My best day each year"
+
+#~ msgid "Le plus grand nombre de trouvailles en une journée, chaque année."
+#~ msgstr "The most finds in a single day, for each year."
+
+#~ msgid "Suis-je en avance sur l'an dernier ?"
+#~ msgstr "Am I ahead of last year?"
+
+#~ msgid "Le cumul de cette année et celui de l'an dernier, jour après jour."
+#~ msgstr "This year's running total and last year's, day by day."
+
+#~ msgid "Cette année contre l'an dernier"
+#~ msgstr "This year vs. last year"
+
+#~ msgid "Vos trouvailles mois par mois, cette année et l'an dernier."
+#~ msgstr "Your finds month by month, this year and last year."
+
+#~ msgid "Écart avec l'an dernier"
+#~ msgstr "Difference from last year"
+
+#~ msgid ""
+#~ "Combien de trouvailles en plus ou "
+#~ "en moins que l'an dernier, chaque "
+#~ "mois."
+#~ msgstr "How many more or fewer finds than last year, each month."
+
+#~ msgid "12 derniers mois"
+#~ msgstr "Last 12 months"
+
+#~ msgid "Comparés aux 12 mois précédents."
+#~ msgstr "Compared with the previous 12 months."
+
+#~ msgid "Toutes mes années"
+#~ msgstr "All my years"
+
+#~ msgid "Le cumul de chaque année, superposé jour après jour."
+#~ msgstr "Each year's running total, overlaid day by day."
+
+#~ msgid "Mes années mois par mois"
+#~ msgstr "My years month by month"
+
+#~ msgid "Une courbe par année, de janvier à décembre."
+#~ msgstr "One line per year, from January to December."
+
+#~ msgid "Mes types cette année et l'an dernier"
+#~ msgstr "My cache types this year and last year"
+
+#~ msgid "Les parts de chaque type, côte à côte."
+#~ msgstr "The share of each type, side by side."
+
+#~ msgid "Trouvailles reçues par mois"
+#~ msgstr "Finds received per month"
+
+#~ msgid "Les visites sur vos caches posées, mois après mois."
+#~ msgstr "Visits to your hidden caches, month after month."
+
+#~ msgid "Les points favoris laissés sur vos caches."
+#~ msgstr "The favorite points left on your caches."
+
+#~ msgid "Mes caches les plus visitées"
+#~ msgstr "My most visited caches"
+
+#~ msgid "Vos caches posées qui reçoivent le plus de trouvailles."
+#~ msgstr "Your hidden caches that receive the most finds."
+
+#~ msgid "Mes visiteurs les plus fidèles"
+#~ msgstr "My most loyal visitors"
+
+#~ msgid "Mes caches actives"
+#~ msgstr "My active caches"
+
+#~ msgid "Combien de vos caches étaient en place, mois après mois."
+#~ msgstr "How many of your caches were in place, month after month."
+
+#~ msgid "Trouvées et reçues"
+#~ msgstr "Found and received"
+
+#~ msgid "Vos trouvailles et celles reçues sur vos caches, année par année."
+#~ msgstr "Your finds and those received on your caches, year by year."
+
+#~ msgid "Mes DNF par année"
+#~ msgstr "My DNFs by year"
+
+#~ msgid "Vos recherches infructueuses, année par année."
+#~ msgstr "Your unsuccessful searches, year by year."
+
+#~ msgid "Trouvailles et DNF"
+#~ msgstr "Finds and DNFs"
+
+#~ msgid "Vos réussites et vos échecs, année par année."
+#~ msgstr "Your successes and failures, year by year."
+
+#~ msgid "Les caches en place dans la zone, à la fin de la période."
+#~ msgstr "The caches in place in the area at the end of the period."
+
+#~ msgid "Caches actives au fil du temps"
+#~ msgstr "Active caches over time"
+
+#~ msgid "Le nombre de caches en place, mois après mois."
+#~ msgstr "The number of caches in place, month after month."
+
+#~ msgid "Publications et archivages"
+#~ msgstr "Publications and archivals"
+
+#~ msgid "Les caches qui apparaissent et celles qui disparaissent, chaque année."
+#~ msgstr "Caches that appear and those that disappear, each year."
+
+#~ msgid "Publications par année"
+#~ msgstr "Publications by year"
+
+#~ msgid "Les nouvelles caches de la zone, année par année."
+#~ msgstr "The area's new caches, year by year."
+
+#~ msgid "Types des caches actives"
+#~ msgstr "Types of active caches"
+
+#~ msgid "La part de chaque type parmi les caches en place."
+#~ msgstr "The share of each type among the caches in place."
+
+#~ msgid "Caches actives par département"
+#~ msgstr "Active caches by county"
+
+#~ msgid "Où se trouvent les caches en place."
+#~ msgstr "Where the caches in place are."
+
+#~ msgid "Grille D/T de la zone"
+#~ msgstr "Area D/T grid"
+
+#~ msgid "Difficulté et terrain des caches en place."
+#~ msgstr "Difficulty and terrain of the caches in place."
+
+#~ msgid "Ma meilleure journée"
+#~ msgstr "My best day"
+
+#~ msgid "Le plus de trouvailles en un jour, et quel jour."
+#~ msgstr "The most finds in one day, and which day."
+
+#~ msgid "Ma plus longue série"
+#~ msgstr "My longest streak"
+
+#~ msgid "Le plus de jours d'affilée avec au moins une trouvaille."
+#~ msgstr "The most consecutive days with at least one find."
+
+#~ msgid "Ma série en cours"
+#~ msgstr "My current streak"
+
+#~ msgid ""
+#~ "Les jours d'affilée jusqu'à aujourd'hui "
+#~ "(ou hier : la journée n'est pas"
+#~ " finie)."
+#~ msgstr "Consecutive days up to today (or yesterday: the day isn't over yet)."
+
+#~ msgid "Ma plus longue pause"
+#~ msgstr "My longest break"
+
+#~ msgid "Le plus de jours sans trouvaille entre deux caches."
+#~ msgstr "The most days without a find between two caches."
+
+#~ msgid "Mes séries année par année"
+#~ msgstr "My streaks year by year"
+
+#~ msgid "La plus longue série de chaque année."
+#~ msgstr "The longest streak of each year."
+
+#~ msgid "Mon meilleur mois"
+#~ msgstr "My best month"
+
+#~ msgid "Vos trouvailles mois par mois, le record mis en avant."
+#~ msgstr "Your finds month by month, with the record highlighted."
+
+#~ msgid "Mon prochain cap"
+#~ msgstr "My next milestone"
+
+#~ msgid "Le prochain nombre rond, et quand vous y serez à ce rythme."
+#~ msgstr "The next round number, and when you will get there at this pace."
+
+#~ msgid "Mon année à ce rythme"
+#~ msgstr "My year at this pace"
+
+#~ msgid "Vos trouvailles de l'année, et où vous finirez au 31 décembre."
+#~ msgstr "This year's finds, and where you will end up on December 31."
+
+#~ msgid "Ma courbe de l'année, prolongée"
+#~ msgstr "My year's curve, extended"
+
+#~ msgid "Le cumul de l'année, prolongé jusqu'au 31 décembre au rythme actuel."
+#~ msgstr "This year's running total, extended to December 31 at the current pace."
+
+#~ msgid "Ma grille D/T"
+#~ msgstr "My D/T grid"
+
+#~ msgid "Les 81 combinaisons de difficulté et de terrain : celles qui manquent."
+#~ msgstr "The 81 difficulty and terrain combinations: the ones you are missing."
+
+#~ msgid "Mon calendrier 366"
+#~ msgstr "My 366-day calendar"
+
+#~ msgid ""
+#~ "Un jour de l'année sans trouvaille "
+#~ "? Les 366 jours, toutes années "
+#~ "confondues."
+#~ msgstr "A day of the year without a find? All 366 days, across every year."
+
+#~ msgid "Ma grille Jasmer"
+#~ msgstr "My Jasmer grid"
+
+#~ msgid "Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent."
+#~ msgstr ""
+#~ "A cache published in every month "
+#~ "since May 2000: the months you are"
+#~ " missing."
+
+#~ msgid "Mes mois de cache"
+#~ msgstr "My caching months"
+
+#~ msgid "Chaque mois depuis votre première trouvaille : en avez-vous sauté un ?"
+#~ msgstr "Every month since your first find: did you skip one?"
+
+#~ msgid "Ma conquête"
+#~ msgstr "My conquest"
+
+#~ msgid ""
+#~ "Quand vous avez trouvé votre première"
+#~ " cache dans chaque département, comté…"
+#~ msgstr "When you found your first cache in each district, county…"
+
+#~ msgid "Mes zones année par année"
+#~ msgstr "My areas year by year"
+
+#~ msgid "La carte de vos trouvailles à la fin de chaque année."
+#~ msgstr "The map of your finds at the end of each year."
+
+#~ msgid "Mes zones à chaque palier"
+#~ msgstr "My areas at each milestone"
+
+#~ msgid "La carte à votre 100ᵉ, 500ᵉ, 1 000ᵉ trouvaille…"
+#~ msgstr "The map at your 100th, 500th, 1,000th find…"
+
+#~ msgid "Ma carte du monde"
+#~ msgstr "My world map"
+
+#~ msgid "Vos trouvailles pays par pays."
+#~ msgstr "Your finds country by country."
+
+#~ msgid "Types de caches par région"
+#~ msgstr "Cache types by region"
+
+#~ msgid "Le nombre de types différents trouvés dans chaque région."
+#~ msgstr "The number of different types found in each region."
+
+#~ msgid "Caches actives, année par année"
+#~ msgstr "Active caches, year by year"
+
+#~ msgid "La carte des caches en place à la fin de chaque année."
+#~ msgstr "The map of the caches in place at the end of each year."
+
+#~ msgid "Densité des caches actives"
+#~ msgstr "Density of active caches"
+
+#~ msgid "Les caches en place pour 1 000 km², zone par zone."
+#~ msgstr "Caches in place per 1,000 km², area by area."
+
+#~ msgid "Ma couverture"
+#~ msgstr "My coverage"
+
+#~ msgid "La part des caches actives que vous avez trouvées, zone par zone."
+#~ msgstr "The share of active caches you have found, zone by zone."
+
+#~ msgid "Ma couverture, année par année"
+#~ msgstr "My coverage, year by year"
+
+#~ msgid "Votre part des caches actives à la fin de chaque année."
+#~ msgstr "Your share of the active caches at the end of each year."
+
+#~ msgid "Grille D/T par région"
+#~ msgstr "D/T grid by region"
+
+#~ msgid ""
+#~ "Combien des 81 combinaisons de "
+#~ "difficulté et de terrain dans chaque "
+#~ "région."
+#~ msgstr "How many of the 81 difficulty and terrain combinations in each region."
+
+#~ msgid "Vue d'ensemble"
+#~ msgstr "Overview"
+
+#~ msgid "Comparer les périodes"
+#~ msgstr "Compare periods"
+
+#~ msgid "Quand je cache"
+#~ msgstr "When I cache"
+
+#~ msgid "Les caches trouvées"
+#~ msgstr "The caches I found"
+
+#~ msgid "Lieux et poseurs"
+#~ msgstr "Places and hiders"
+
+#~ msgid "La zone au fil du temps"
+#~ msgstr "The area over time"
+
+#~ msgid "Les caches de la zone"
+#~ msgstr "The area's caches"
+
+#~ msgid "Cartes de la zone"
+#~ msgstr "Maps of the area"
+
+#~ msgid "Objectifs et projections"
+#~ msgstr "Goals and projections"
+
+#~ msgid "Inconnu"
+#~ msgstr "Unknown"
+
+#~ msgid "N"
+#~ msgstr "N"
+
+#~ msgid "S"
+#~ msgstr "S"
+
+#~ msgid "E"
+#~ msgstr "E"
+
+#~ msgid "O"
+#~ msgstr "W"
+
+#~ msgid "T${q} ${y}"
+#~ msgstr "Q${q} ${y}"
+
+#~ msgid "Semaine du ${date}"
+#~ msgstr "Week of ${date}"
+
+#~ msgid "S${n}"
+#~ msgstr "W${n}"
+
+#~ msgid "D${d} / T${t}"
+#~ msgstr "D${d} / T${t}"
+
+#~ msgid "Toute la période"
+#~ msgstr "The whole period"
+
+#~ msgid "${from} – ${to}"
+#~ msgstr "${from} – ${to}"
+
+#~ msgid "${n}ᵉ trouvaille"
+#~ msgstr "${n}th find"
+
+#~ msgid "Nouvelle zone · ${date}"
+#~ msgstr "New area · ${date}"
+
+#~ msgid "Au ${date}"
+#~ msgstr "At ${date}"
+
+#~ msgid "La veille"
+#~ msgstr "The day before"
+
+#~ msgid "Le mois précédent"
+#~ msgstr "The previous month"
+
+#~ msgid "L'année précédente"
+#~ msgstr "The previous year"
+
+#~ msgid "Les ${n} jours précédents"
+#~ msgstr "The previous ${n} days"
+
+#~ msgid "Les ${n} mois précédents"
+#~ msgstr "The previous ${n} months"
+
+#~ msgid "Les ${n} années précédentes"
+#~ msgstr "The previous ${n} years"
+
+#~ msgid "par rapport à la veille"
+#~ msgstr "compared with the day before"
+
+#~ msgid "par rapport au mois précédent"
+#~ msgstr "compared with the previous month"
+
+#~ msgid "par rapport à l'année précédente"
+#~ msgstr "compared with the previous year"
+
+#~ msgid "par rapport aux ${n} jours précédents"
+#~ msgstr "compared with the previous ${n} days"
+
+#~ msgid "par rapport aux ${n} mois précédents"
+#~ msgstr "compared with the previous ${n} months"
+
+#~ msgid "par rapport aux ${n} années précédentes"
+#~ msgstr "compared with the previous ${n} years"
+
+#~ msgid "par rapport à ${period}"
+#~ msgstr "compared with ${period}"
+
+#~ msgid "${period} (en cours)"
+#~ msgstr "${period} (ongoing)"
+
+#~ msgid "${period} (au ${date})"
+#~ msgstr "${period} (to ${date})"
+
+#~ msgid "Jour ${n}"
+#~ msgstr "Day ${n}"
+
+#~ msgid "Semaine ${n}"
+#~ msgstr "Week ${n}"
+
+#~ msgid "Mois ${n}"
+#~ msgstr "Month ${n}"
+
+#~ msgid "Trimestre ${n}"
+#~ msgstr "Quarter ${n}"
+
+#~ msgid "Année ${n}"
+#~ msgstr "Year ${n}"
+
+#~ msgid "Aujourd'hui"
+#~ msgstr "Today"
+
+#~ msgid "Le dernier mois"
+#~ msgstr "The last month"
+
+#~ msgid "La dernière année"
+#~ msgstr "The last year"
+
+#~ msgid "Les ${n} derniers jours"
+#~ msgstr "The last ${n} days"
+
+#~ msgid "Les ${n} derniers mois"
+#~ msgstr "The last ${n} months"
+
+#~ msgid "Les ${n} dernières années"
+#~ msgstr "The last ${n} years"
+
+#~ msgid "Période du tableau de bord"
+#~ msgstr "Dashboard period"
+
+#~ msgid "Chaque mois"
+#~ msgstr "Each month"
+
+#~ msgid "Chaque année"
+#~ msgstr "Each year"
+
+#~ msgid "Ce mois-ci"
+#~ msgstr "This month"
+
+#~ msgid "Cette année"
+#~ msgstr "This year"
+
+#~ msgid "La période précédente"
+#~ msgstr "The previous period"
+
+#~ msgid "Moments clés : fins de trimestre"
+#~ msgstr "Key moments: end of each quarter"
+
+#~ msgid "Moments clés : paliers (100ᵉ, 1 000ᵉ…)"
+#~ msgstr "Key moments: milestones (100th, 1,000th…)"
+
+#~ msgid "Moments clés : nouvelles zones"
+#~ msgstr "Key moments: new areas"
+
+#~ msgid "Moments clés : fins d'année"
+#~ msgstr "Key moments: end of each year"
+
+#~ msgid "Source"
+#~ msgstr "Source"
+
+#~ msgid "${n} %"
+#~ msgstr "${n}%"
+
+#~ msgid "${n} / jour"
+#~ msgstr "${n} / day"
+
+#~ msgid "${n} / 1 000 km²"
+#~ msgstr "${n} / 1,000 km²"
+
+#~ msgid "${n} j"
+#~ msgstr "${n} d"
+
+#~ msgid "/ 1 000 km²"
+#~ msgstr "/ 1,000 km²"
+
+#~ msgid "Combinaisons : ${filled}/${available} (${pct})"
+#~ msgstr "Combinations: ${filled}/${available} (${pct})"
+
+#~ msgid "Jours : ${filled}/${available} (${pct})"
+#~ msgstr "Days: ${filled}/${available} (${pct})"
+
+#~ msgid "Mois : ${filled}/${available} (${pct})"
+#~ msgstr "Months: ${filled}/${available} (${pct})"
+
+#~ msgid "Tours de Jasmer : ${n}"
+#~ msgstr "Jasmer rounds: ${n}"
+
+#~ msgid "Tours année × mois : ${n}"
+#~ msgstr "Year × month rounds: ${n}"
+
+#~ msgid "Tours de calendrier : ${n}"
+#~ msgstr "Calendar rounds: ${n}"
+
+#~ msgid "Tours de matrice : ${n}"
+#~ msgstr "Matrix loops: ${n}"
+
+#~ msgid "Il manque : ${list}"
+#~ msgstr "Missing: ${list}"
+
+#~ msgid "Pour le tour ${round} : ${list}"
+#~ msgstr "For round ${round}: ${list}"
+
+#~ msgid "Il manque ${count} cases"
+#~ msgstr "${count} cells missing"
+
+#~ msgid "Pour le tour ${round}, encore ${count} cases"
+#~ msgstr "For round ${round}, ${count} cells to go"
+
+#~ msgid "du ${from} au ${to}"
+#~ msgstr "from ${from} to ${to}"
+
+#~ msgid "${value} / ${goal} · ${pct}"
+#~ msgstr "${value} / ${goal} · ${pct}"
+
+#~ msgid "Objectif atteint le ${date}"
+#~ msgstr "Goal reached on ${date}"
+
+#~ msgid "Objectif atteint"
+#~ msgstr "Goal reached"
+
+#~ msgid "À ce rythme : ${goal} le ${date}"
+#~ msgstr "At this pace: ${goal} on ${date}"
+
+#~ msgid "À ce rythme : ${n} en fin de période, ${short} de moins que l'objectif"
+#~ msgstr "At this pace: ${n} by the end of the period, ${short} short of the goal"
+
+#~ msgid "À ce rythme : ${n} en fin de période"
+#~ msgstr "At this pace: ${n} by the end of the period"
+
+#~ msgid "${measure} ${group}"
+#~ msgstr "${measure} ${group}"
+
+#~ msgid "Impossible de charger vos DNF : ${message}"
+#~ msgstr "Unable to load your DNFs: ${message}"
+
+#~ msgid "Aucun DNF importé : voir la carte « Mes logs »."
+#~ msgstr "No DNF imported: see the “My logs” card."
+
+#~ msgid "${n} DNF dans la sélection"
+#~ msgstr "${n} DNFs in the selection"
+
+#~ msgid "cache sans position connue"
+#~ msgstr "cache without a known position"
+
+#~ msgid "caches sans position connue"
+#~ msgstr "caches without a known position"
+
+#~ msgid "Actif quand les DNF sont affichés"
+#~ msgstr "Active when DNF are shown"
+
+#~ msgid "${n} fichiers sélectionnés"
+#~ msgstr "${n} files selected"
+
+#~ msgid "Impossible de lire la liste des bases"
+#~ msgstr "Unable to read the list of datasets"
+
+#~ msgid "${name} (${n} caches)"
+#~ msgstr "${name} (${n} caches)"
+
+#~ msgid "La base sera affichée à la fin de l'animation."
+#~ msgstr "The database will be shown when the animation ends."
+
+#~ msgid "Arrêtez l'animation avant de changer de base."
+#~ msgstr "Stop the animation before switching datasets."
+
+#~ msgid "Chargement de la base..."
+#~ msgstr "Loading the dataset..."
+
+#~ msgid "Impossible de charger la base : ${message}"
+#~ msgstr "Unable to load the dataset: ${message}"
+
+#~ msgid "Le filtre s'appliquera à la fin de l'animation."
+#~ msgstr "The filter will apply when the animation ends."
+
+#~ msgid ""
+#~ "${n} caches affichées : la carte "
+#~ "peut devenir lente. Filtrez par pays "
+#~ "ou région pour alléger."
+#~ msgstr ""
+#~ "${n} caches displayed: the map may "
+#~ "slow down. Filter by country or "
+#~ "region to lighten it."
+
+#~ msgid "Grosse sélection"
+#~ msgstr "Large selection"
+
+#~ msgid "Archivée le ${date}"
+#~ msgstr "Archived on ${date}"
+
+#~ msgid "Archivée (date inconnue)"
+#~ msgstr "Archived (unknown date)"
+
+#~ msgid "Placée le ${date}"
+#~ msgstr "Placed on ${date}"
+
+#~ msgid "Arrêtez l'animation avant d'importer."
+#~ msgstr "Stop the animation before importing."
+
+#~ msgid "${name} : seuls les fichiers .csv sont acceptés"
+#~ msgstr "${name}: only .csv files are accepted"
+
+#~ msgid "${name} : fichier vide"
+#~ msgstr "${name}: empty file"
+
+#~ msgid "${name} : fichier trop volumineux (500 Mo au plus)"
+#~ msgstr "${name}: file too large (500 MB at most)"
+
+#~ msgid "Envoi des fichiers..."
+#~ msgstr "Uploading files..."
+
+#~ msgid "Import en cours..."
+#~ msgstr "Import in progress..."
+
+#~ msgid "L'import a échoué"
+#~ msgstr "The import failed"
+
+#~ msgid "Envoi des fichiers : ${pct}%"
+#~ msgstr "Uploading files: ${pct}%"
+
+#~ msgid "Impossible de lancer l'import"
+#~ msgstr "Unable to start the import"
+
+#~ msgid "Ma zone"
+#~ msgstr "My area"
+
+#~ msgid "Impossible de créer la base"
+#~ msgstr "Unable to create the dataset"
+
+#~ msgid ""
+#~ "${files} ne correspondent pas aux "
+#~ "exports déjà importés dans « ${name} "
+#~ "»."
+#~ msgstr "${files} do not match the exports already imported into “${name}”."
+
+#~ msgid "${file} ne correspond pas aux exports déjà importés dans « ${name} »."
+#~ msgstr "${file} does not match the exports already imported into “${name}”."
+
+#~ msgid "Créer une nouvelle base « ${name} »"
+#~ msgstr "Create a new database “${name}”"
+
+#~ msgid "Ajouter à la base ouverte « ${name} » (${n} caches)"
+#~ msgstr "Add to the open database “${name}” (${n} caches)"
+
+#~ msgid "Erreur d'import"
+#~ msgstr "Import error"
+
+#~ msgid ""
+#~ "${read} lignes lues : ${added} "
+#~ "nouvelles, ${updated} mises à jour, "
+#~ "${unchanged} inchangées"
+#~ msgstr ""
+#~ "${read} rows read: ${added} new, "
+#~ "${updated} updated, ${unchanged} unchanged"
+
+#~ msgid "${n} caches archivées depuis le précédent export"
+#~ msgstr "${n} caches archived since the previous export"
+
+#~ msgid "${n} lignes plus anciennes que la version déjà connue, ignorées"
+#~ msgstr "${n} rows older than the version already known, ignored"
+
+#~ msgid "${n} doublons dans le fichier (version la plus récente retenue)"
+#~ msgstr "${n} duplicates in the file (most recent version kept)"
+
+#~ msgid ""
+#~ "${n} caches archivées sans date "
+#~ "d'archivage : non affichées (option dans"
+#~ " les filtres)"
+#~ msgstr ""
+#~ "${n} caches archived without an archive"
+#~ " date: not displayed (option in the"
+#~ " filters)"
+
+#~ msgid "${n} lignes invalides ignorées (${reasons})"
+#~ msgstr "${n} invalid rows ignored (${reasons})"
+
+#~ msgid ""
+#~ "${n} dates d'archivage antérieures au "
+#~ "placement (disparition le jour du "
+#~ "placement)"
+#~ msgstr ""
+#~ "${n} archive dates earlier than "
+#~ "placement (disappearance on the placement "
+#~ "day)"
+
+#~ msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
+#~ msgstr "${n} reactivated caches: their former archive date is ignored"
+
+#~ msgid ""
+#~ "${n} dates d'archivage illisibles, ignorées"
+#~ " (formats lus : AAAA-MM-JJ, "
+#~ "JJ/MM/AAAA)"
+#~ msgstr ""
+#~ "${n} unreadable archive dates, ignored "
+#~ "(accepted formats: YYYY-MM-DD, "
+#~ "DD/MM/YYYY)"
+
+#~ msgid ""
+#~ "Colonne « Ajouté » absente ou vide"
+#~ " : les caches déjà connues par "
+#~ "un export daté ne sont pas mises"
+#~ " à jour"
+#~ msgstr ""
+#~ "“Ajouté” column missing or empty: caches"
+#~ " already known from a dated export"
+#~ " are not updated"
+
+#~ msgid ""
+#~ "${n} lignes sans date d'export (colonne"
+#~ " « Ajouté ») : elles ne mettent"
+#~ " pas à jour les caches déjà "
+#~ "connues par un export daté"
+#~ msgstr ""
+#~ "${n} rows without an export date "
+#~ "(“Ajouté” column): they do not update"
+#~ " caches already known from a dated"
+#~ " export"
+
+#~ msgid "Types non reconnus (couleur par défaut) : ${types}"
+#~ msgstr "Unrecognized types (default color): ${types}"
+
+#~ msgid "Tailles non reconnues (gardées telles quelles) : ${sizes}"
+#~ msgstr "Unrecognized sizes (kept as is): ${sizes}"
+
+#~ msgid "code GC"
+#~ msgstr "GC code"
+
+#~ msgid "date de placement"
+#~ msgstr "placement date"
+
+#~ msgid "Base vide : importez un export CSV."
+#~ msgstr "Empty dataset: import a CSV export."
+
+#~ msgid "${n} caches"
+#~ msgstr "${n} caches"
+
+#~ msgid "${n} actives"
+#~ msgstr "${n} active"
+
+#~ msgid "${n} archivées"
+#~ msgstr "${n} archived"
+
+#~ msgid "${n} archivées sans date"
+#~ msgstr "${n} archived without a date"
+
+#~ msgid "placements du ${from} au ${to}"
+#~ msgstr "placed from ${from} to ${to}"
+
+#~ msgid "export du ${date}"
+#~ msgstr "exported on ${date}"
+
+#~ msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
+#~ msgstr "${date} · ${file}: ${added} new, ${updated} updated"
+
+#~ msgid "Nom refusé"
+#~ msgstr "Name rejected"
+
+#~ msgid "Erreur : ${message}"
+#~ msgstr "Error: ${message}"
+
+#~ msgid ""
+#~ "Supprimer la base « ${name} » et"
+#~ " ses ${n} caches ? Les fichiers "
+#~ "CSV d'origine ne sont pas touchés."
+#~ msgstr ""
+#~ "Delete the dataset “${name}” and its "
+#~ "${n} caches? The original CSV files "
+#~ "are not affected."
+
+#~ msgid "Arrêtez l'animation avant de supprimer la base."
+#~ msgstr "Stop the animation before deleting the dataset."
+
+#~ msgid "Suppression impossible"
+#~ msgstr "Unable to delete"
+
+#~ msgid ""
+#~ "Déposez vos exports CSV pour les "
+#~ "ajouter à la base, une musique ou"
+#~ " une image"
+#~ msgstr ""
+#~ "Drop your CSV exports to add them"
+#~ " to the database, a music track "
+#~ "or an image"
+
+#~ msgid "trouvaille"
+#~ msgstr "find"
+
+#~ msgid "action de poseur"
+#~ msgstr "owner action"
+
+#~ msgid "actions de poseur"
+#~ msgstr "owner actions"
+
+#~ msgid "note"
+#~ msgstr "note"
+
+#~ msgid "notes"
+#~ msgstr "notes"
+
+#~ msgid "signalement"
+#~ msgstr "report"
+
+#~ msgid "signalements"
+#~ msgstr "reports"
+
+#~ msgid "log de relecteur"
+#~ msgstr "reviewer log"
+
+#~ msgid "logs de relecteur"
+#~ msgstr "reviewer logs"
+
+#~ msgid "log d'événement"
+#~ msgstr "event log"
+
+#~ msgid "logs d'événement"
+#~ msgstr "event logs"
+
+#~ msgid "autre"
+#~ msgstr "other"
+
+#~ msgid "autres"
+#~ msgstr "others"
+
+#~ msgid "log"
+#~ msgstr "log"
+
+#~ msgid "Collecte complète prévue au prochain passage"
+#~ msgstr "Full collect scheduled for the next run"
+
+#~ msgid "Import de vos logs…"
+#~ msgstr "Importing your logs…"
+
+#~ msgid "Collecte en cours — ${logs} logs, ${caches} caches reçus…"
+#~ msgstr "Collection in progress — ${logs} logs, ${caches} caches received…"
+
+#~ msgid "${count} — compte ${name}"
+#~ msgstr "${count} — account ${name}"
+
+#~ msgid "log enregistré"
+#~ msgstr "log saved"
+
+#~ msgid "logs enregistrés"
+#~ msgstr "logs saved"
+
+#~ msgid "À vous : ${list}"
+#~ msgstr "Yours: ${list}"
+
+#~ msgid "log d'autres joueurs"
+#~ msgstr "log from other players"
+
+#~ msgid "logs d'autres joueurs"
+#~ msgstr "logs from other players"
+
+#~ msgid "fiche de cache"
+#~ msgstr "cache record"
+
+#~ msgid "fiches de caches"
+#~ msgstr "cache records"
+
+#~ msgid "compléter"
+#~ msgstr "fill in"
+
+#~ msgid "nouveau log"
+#~ msgstr "new log"
+
+#~ msgid "nouveaux logs"
+#~ msgstr "new logs"
+
+#~ msgid "log mis à jour"
+#~ msgstr "log updated"
+
+#~ msgid "logs mis à jour"
+#~ msgstr "logs updated"
+
+#~ msgid "log retiré"
+#~ msgstr "log removed"
+
+#~ msgid "logs retirés"
+#~ msgstr "logs removed"
+
+#~ msgid "aucun changement"
+#~ msgstr "no change"
+
+#~ msgid "fichier GPX"
+#~ msgstr "GPX file"
+
+#~ msgid "favori"
+#~ msgstr "bookmarklet"
+
+#~ msgid "fichier mygcflow-logs"
+#~ msgstr "mygcflow-logs file"
+
+#~ msgid "Dernier import le ${date} : ${changes}${via}"
+#~ msgstr "Last import on ${date}: ${changes}${via}"
+
+#~ msgid ""
+#~ "Un export a été reçu de votre "
+#~ "favori (${count} nouveaux logs annoncés) "
+#~ "— validez l'aperçu avant l'import."
+#~ msgstr ""
+#~ "An export was received from your "
+#~ "bookmarklet (${count} new logs announced) "
+#~ "— validate the preview before importing."
+
+#~ msgid "Chargement impossible"
+#~ msgstr "Unable to load"
+
+#~ msgid "Aucune cache sans position sur cette page."
+#~ msgstr "No cache without a position on this page."
+
+#~ msgid "de ${name}"
+#~ msgstr "by ${name}"
+
+#~ msgid "DNF à vous"
+#~ msgstr "DNF of yours"
+
+#~ msgid "autre log"
+#~ msgstr "other log"
+
+#~ msgid "autres logs"
+#~ msgstr "other logs"
+
+#~ msgid "Position de ${code}"
+#~ msgstr "${code} position"
+
+#~ msgid "Placer"
+#~ msgstr "Place"
+
+#~ msgid "Correction refusée"
+#~ msgstr "Correction refused"
+
+#~ msgid "Import de logs"
+#~ msgstr "Log import"
+
+#~ msgid "Analyse du fichier…"
+#~ msgstr "Analyzing the file…"
+
+#~ msgid "Import impossible"
+#~ msgstr "Import not possible"
+
+#~ msgid "Erreur lors de l'analyse"
+#~ msgstr "Error while analyzing"
+
+#~ msgid "${file} — compte ${name}"
+#~ msgstr "${file} — account ${name}"
+
+#~ msgid ""
+#~ "Ce fichier n'est pas daté : ses"
+#~ " données écraseront les versions déjà "
+#~ "enregistrées plutôt que d'être ignorées."
+#~ msgstr ""
+#~ "This file is not dated: its data"
+#~ " will overwrite stored versions instead "
+#~ "of being ignored."
+
+#~ msgid "log déjà connu"
+#~ msgstr "log already known"
+
+#~ msgid "logs déjà connus"
+#~ msgstr "logs already known"
+
+#~ msgid "log plus ancien que la version enregistrée, ignoré"
+#~ msgstr "log older than the saved version, ignored"
+
+#~ msgid "logs plus anciens que la version enregistrée, ignorés"
+#~ msgstr "logs older than the saved version, ignored"
+
+#~ msgid "nouvelle fiche de cache"
+#~ msgstr "new cache record"
+
+#~ msgid "nouvelles fiches de caches"
+#~ msgstr "new cache records"
+
+#~ msgid "fiche de cache mise à jour"
+#~ msgstr "cache record updated"
+
+#~ msgid "fiches de caches mises à jour"
+#~ msgstr "cache records updated"
+
+#~ msgid "Rien de nouveau dans ce fichier."
+#~ msgstr "Nothing new in this file."
+
+#~ msgid "log sera retiré"
+#~ msgstr "log will be removed"
+
+#~ msgid "logs seront retirés"
+#~ msgstr "logs will be removed"
+
+#~ msgid ""
+#~ "Le fichier déclare contenir tous ces "
+#~ "logs : ceux qu'il n'a plus ont "
+#~ "été supprimés sur le site."
+#~ msgstr ""
+#~ "The file states that it contains "
+#~ "all of these logs: those it no "
+#~ "longer has were deleted on the "
+#~ "website."
+
+#~ msgid "périmètre"
+#~ msgstr "scope"
+
+#~ msgid "périmètres"
+#~ msgstr "scopes"
+
+#~ msgid "D'autres joueurs : ${list}"
+#~ msgstr "Other players: ${list}"
+
+#~ msgid ""
+#~ "Couverture complète déclarée (${scope}) — "
+#~ "les logs stockés dans son périmètre "
+#~ "et absents du fichier seront retirés."
+#~ msgstr ""
+#~ "Full coverage declared (${scope}) — "
+#~ "stored logs within its scope but "
+#~ "absent from the file will be "
+#~ "removed."
+
+#~ msgid ""
+#~ "Aucune couverture complète déclarée — ce"
+#~ " fichier ne retirera aucun log "
+#~ "existant."
+#~ msgstr "No full coverage declared — this file will not remove any existing log."
+
+#~ msgid "doublon ignoré"
+#~ msgstr "duplicate ignored"
+
+#~ msgid "doublons ignorés"
+#~ msgstr "duplicates ignored"
+
+#~ msgid "Le serveur ne répond plus — vérifiez sa disponibilité."
+#~ msgstr "The server is no longer responding — check its availability."
+
+#~ msgid "Aucun changement : vos logs étaient déjà à jour."
+#~ msgstr "No change: your logs were already up to date."
+
+#~ msgid "Logs importés"
+#~ msgstr "Logs imported"
+
+#~ msgid "Erreur lors de l'import"
+#~ msgstr "Error while importing"
+
+#~ msgid ""
+#~ "Supprimer tous vos logs importés ? "
+#~ "Vos géocaches et vos Lab Caches "
+#~ "sont conservés. Cette action est "
+#~ "irréversible."
+#~ msgstr ""
+#~ "Delete all your imported logs? Your "
+#~ "geocaches and Lab Caches are kept. "
+#~ "This cannot be undone."
+
+#~ msgid "Suppression de vos logs…"
+#~ msgstr "Deleting your logs…"
+
+#~ msgid "Erreur inconnue"
+#~ msgstr "Unknown error"
+
+#~ msgid "Logs supprimés"
+#~ msgstr "Logs deleted"
+
+#~ msgid "Erreur lors de la suppression"
+#~ msgstr "Error while deleting"
+
+#~ msgid "MyGCFlow — Mes logs"
+#~ msgstr "MyGCFlow — My logs"
+
+#~ msgid "Favori indisponible"
+#~ msgstr "Bookmarklet unavailable"
+
+#~ msgid "Lien copié"
+#~ msgstr "Link copied"
+
+#~ msgid "Copie impossible — glissez le bouton à la place."
+#~ msgstr "Copy failed — drag the button instead."
+
+#~ msgid "Le périmètre de collecte n'a pas pu être enregistré"
+#~ msgstr "The collect scope could not be saved"
+
+#~ msgid "La collecte complète n'a pas pu être prévue"
+#~ msgstr "The full collect could not be scheduled"
+
+#~ msgid ""
+#~ "Régénérer le jeton ? Le favori "
+#~ "actuel cessera de fonctionner : il "
+#~ "faudra glisser à nouveau le bouton "
+#~ "« MyGCFlow — Mes logs » dans "
+#~ "vos favoris."
+#~ msgstr ""
+#~ "Regenerate the token? The current "
+#~ "bookmarklet will stop working: you will"
+#~ " have to drag the \"MyGCFlow — "
+#~ "My logs\" button into your bookmarks "
+#~ "again."
+
+#~ msgid "Jeton du favori"
+#~ msgstr "Bookmarklet token"
+
+#~ msgid "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
+#~ msgstr "New bookmarklet ready — replace the old one in your bookmarks."
+
+#~ msgid "Jeton non régénéré"
+#~ msgstr "Token not regenerated"
+
+#~ msgid ""
+#~ "Glissez ce bouton dans la barre de"
+#~ " favoris de votre navigateur, puis "
+#~ "cliquez-le depuis une page de "
+#~ "geocaching.com."
+#~ msgstr ""
+#~ "Drag this button into your browser's "
+#~ "bookmark bar, then click it from a"
+#~ " geocaching.com page."
+
+#~ msgid "Image"
+#~ msgstr "Image"
+
+#~ msgid "Image ${n}"
+#~ msgstr "Image ${n}"
+
+#~ msgid "Attendez la fin de l'enregistrement pour modifier les images."
+#~ msgstr "Wait for the recording to finish before editing the images."
+
+#~ msgid "L'image SVG n'a pas pu être lue."
+#~ msgstr "The SVG image could not be read."
+
+#~ msgid "L'image n'a pas pu être envoyée."
+#~ msgstr "The image could not be uploaded."
+
+#~ msgid "Attendez la fin de l'enregistrement pour ajouter une image."
+#~ msgstr "Wait for the recording to finish before adding an image."
+
+#~ msgid "${n} Mo"
+#~ msgstr "${n} MB"
+
+#~ msgid "${n} Ko"
+#~ msgstr "${n} KB"
+
+#~ msgid "Utilisée sur cette page"
+#~ msgstr "Used on this page"
+
+#~ msgid "Utilisée dans « Mes Géocaches »"
+#~ msgstr "Used in “My Geocaches”"
+
+#~ msgid "Utilisée dans « Évolution »"
+#~ msgstr "Used in “Evolution”"
+
+#~ msgid "Utilisée dans « Mes poses »"
+#~ msgstr "Used in “My hides”"
+
+#~ msgid "Ajouter ${name} (${w} × ${h})"
+#~ msgstr "Add ${name} (${w} × ${h})"
+
+#~ msgid "Ajouter cette image (${w} × ${h})"
+#~ msgstr "Add this image (${w} × ${h})"
+
+#~ msgid "Sélectionner ${name}"
+#~ msgstr "Select ${name}"
+
+#~ msgid "Retirer de la bibliothèque"
+#~ msgstr "Remove from library"
+
+#~ msgid "${n} image(s) · ${size}"
+#~ msgstr "${n} image(s) · ${size}"
+
+#~ msgid "${n} sélectionnée(s) · ${size}"
+#~ msgstr "${n} selected · ${size}"
+
+#~ msgid "${n} image(s) retirée(s) de la bibliothèque."
+#~ msgstr "${n} image(s) removed from the library."
+
+#~ msgid "${n} image(s) n'ont pas pu être retirées."
+#~ msgstr "${n} image(s) could not be removed."
+
+#~ msgid "Import impossible : fichier d'images invalide"
+#~ msgstr "Import failed: invalid images file"
+
+#~ msgid "${n} image(s) non importée(s) : quatre au maximum."
+#~ msgstr "${n} image(s) not imported: four at most."
+
+#~ msgid "${n} configuration(s) non importée(s) : douze au maximum."
+#~ msgstr "${n} configuration(s) not imported: twelve at most."
+
+#~ msgid "${count} image(s) et ${n} configuration(s) importée(s)"
+#~ msgstr "${count} image(s) and ${n} configuration(s) imported"
+
+#~ msgid "${n} configuration(s) importée(s)"
+#~ msgstr "${n} configuration(s) imported"
+
+#~ msgid "${count} image(s) importée(s)"
+#~ msgstr "${count} image(s) imported"
+
+#~ msgid "Image retirée de la bibliothèque."
+#~ msgstr "Image removed from the library."
+
+#~ msgid "L'image n'a pas pu être retirée."
+#~ msgstr "The image could not be removed."
+
+#~ msgid "« ${name} » sera supprimée définitivement de la bibliothèque."
+#~ msgstr "“${name}” will be permanently deleted from the library."
+
+#~ msgid "Cette image sera supprimée définitivement de la bibliothèque."
+#~ msgstr "This image will be permanently deleted from the library."
+
+#~ msgid ""
+#~ "Douze configurations au maximum : "
+#~ "supprimez-en une, ou réutilisez un "
+#~ "nom."
+#~ msgstr "Twelve configurations at most: delete one, or reuse a name."
+
+#~ msgid "Configuration « ${name} » enregistrée"
+#~ msgstr "Configuration “${name}” saved"
+
+#~ msgid "Configuration « ${name} » appliquée"
+#~ msgstr "Configuration “${name}” applied"
+
+#~ msgid "« ${name} » supprimée"
+#~ msgstr "“${name}” deleted"
+
+#~ msgid "Afficher cette image"
+#~ msgstr "Show this image"
+
+#~ msgid "(manquante)"
+#~ msgstr "(missing)"
+
+#~ msgid "Apparition planifiée"
+#~ msgstr "Scheduled appearance"
+
+#~ msgid "Monter"
+#~ msgstr "Move up"
+
+#~ msgid "Descendre"
+#~ msgstr "Move down"
+
+#~ msgid "Toujours visible"
+#~ msgstr "Always visible"
+
+#~ msgid "Trouvailles n°${from} à n°${to}"
+#~ msgstr "Finds no. ${from} to no. ${to}"
+
+#~ msgid "Dès la trouvaille n°${n}"
+#~ msgstr "From find no. ${n}"
+
+#~ msgid "Jusqu'à la trouvaille n°${n}"
+#~ msgstr "Until find no. ${n}"
+
+#~ msgid "Du ${from} au ${to}"
+#~ msgstr "From ${from} to ${to}"
+
+#~ msgid "À partir du ${date}"
+#~ msgstr "From ${date}"
+
+#~ msgid "Jusqu'au ${date}"
+#~ msgstr "Until ${date}"
+
+#~ msgid "Position libre"
+#~ msgstr "Free position"
+
+#~ msgid "fond"
+#~ msgstr "background"
+
+#~ msgid "bordure"
+#~ msgstr "border"
+
+#~ msgid "ombre"
+#~ msgstr "shadow"
+
+#~ msgid "Le ${date}"
+#~ msgstr "On ${date}"
+
+#~ msgid "Jamais atteinte : ${total} trouvaille(s) au total"
+#~ msgstr "Never reached: ${total} find(s) in total"
+
+#~ msgid ""
+#~ "La trouvaille n°${n} n'est jamais "
+#~ "atteinte (${total} au total) : l'image"
+#~ " ne sera pas visible."
+#~ msgstr ""
+#~ "Find no. ${n} is never reached "
+#~ "(${total} in total): the image will "
+#~ "not be visible."
+
+#~ msgid ""
+#~ "La disparition tombe le jour de "
+#~ "l'apparition : l'image ne sera jamais"
+#~ " visible."
+#~ msgstr "It disappears on the day it appears: the image will never be visible."
+
+#~ msgid ""
+#~ "« Disparaît le » tombe le jour "
+#~ "de l'apparition : l'image ne sera "
+#~ "jamais visible."
+#~ msgstr ""
+#~ "“Disappears on” falls on the day "
+#~ "it appears: the image will never "
+#~ "be visible."
+
+#~ msgid ""
+#~ "L'image n'apparaît qu'après la fin de"
+#~ " l'animation (${date}) : elle ne sera"
+#~ " pas visible dans la vidéo."
+#~ msgstr ""
+#~ "The image only appears after the "
+#~ "end of the animation (${date}): it "
+#~ "will not be visible in the video."
+
+#~ msgid ""
+#~ "L'image disparaît avant le début de "
+#~ "l'animation (${date}) : elle ne sera "
+#~ "pas visible dans la vidéo."
+#~ msgstr ""
+#~ "The image disappears before the start"
+#~ " of the animation (${date}): it will"
+#~ " not be visible in the video."
+
+#~ msgid "Attendez la fin de l'enregistrement."
+#~ msgstr "Wait for the recording to finish."
+
+#~ msgid ""
+#~ "Lancez l'aperçu et mettez-le en "
+#~ "pause sur le jour voulu (barre de"
+#~ " chronologie), puis recliquez."
+#~ msgstr ""
+#~ "Start the preview and pause it on"
+#~ " the day you want (timeline bar), "
+#~ "then click again."
+
+#~ msgid "Préréglage « ${name} » appliqué"
+#~ msgstr "Preset “${name}” applied"
+
+#~ msgid "${n} image(s) seront supprimées définitivement de la bibliothèque."
+#~ msgstr "${n} image(s) will be permanently deleted from the library."
+
+#~ msgid "Nettoyer la bibliothèque"
+#~ msgstr "Clean up the library"
+
+#~ msgid ""
+#~ "Glissez ce bouton dans la barre de"
+#~ " favoris de votre navigateur, puis "
+#~ "cliquez-le depuis la page de vos "
+#~ "logs Adventure Lab."
+#~ msgstr ""
+#~ "Drag this button into your browser's "
+#~ "bookmarks bar, then click it from "
+#~ "your Adventure Lab logs page."
+
+#~ msgid "Statut indisponible"
+#~ msgstr "Status unavailable"
+
+#~ msgid "aucune encore prête"
+#~ msgstr "none ready yet"
+
+#~ msgid "étapes"
+#~ msgstr "stages"
+
+#~ msgid "étape"
+#~ msgstr "stage"
+
+#~ msgid "sur la carte"
+#~ msgstr "on the map"
+
+#~ msgid "à compléter"
+#~ msgstr "to complete"
+
+#~ msgid "Une étape n'est pas encore sur la carte : position ou date manquante."
+#~ msgstr "One stage isn't on the map yet: missing position or date."
+
+#~ msgid ""
+#~ "${count} étapes ne sont pas encore "
+#~ "sur la carte : position ou date"
+#~ " manquante."
+#~ msgstr "${count} stages are not on the map yet: missing position or date."
+
+#~ msgid ""
+#~ "Une étape n'a pas pu être placée"
+#~ " automatiquement : sa position est "
+#~ "introuvable. Vous pouvez la compléter à"
+#~ " la main."
+#~ msgstr ""
+#~ "One stage couldn't be placed "
+#~ "automatically: its position can't be "
+#~ "found. You can fill it in "
+#~ "manually."
+
+#~ msgid ""
+#~ "${count} étapes n'ont pas pu être "
+#~ "placées automatiquement : leur position "
+#~ "est introuvable. Vous pouvez les "
+#~ "compléter à la main."
+#~ msgstr ""
+#~ "${count} stages couldn't be placed "
+#~ "automatically: their position can't be "
+#~ "found. You can fill them in "
+#~ "manually."
+
+#~ msgid "Collecte en cours — ${adv} Adventures, ${disc} étapes reçues…"
+#~ msgstr "Collection in progress — ${adv} Adventures, ${disc} stages received…"
+
+#~ msgid "Placement de vos étapes sur la carte…"
+#~ msgstr "Placing your stages on the map…"
+
+#~ msgid "Annulation en cours…"
+#~ msgstr "Cancelling…"
+
+#~ msgid "Analyse de vos fichiers…"
+#~ msgstr "Analysing your files…"
+
+#~ msgid "Import Lab Caches"
+#~ msgstr "Lab Caches import"
+
+#~ msgid "historique"
+#~ msgstr "history"
+
+#~ msgid "nouvelle découverte"
+#~ msgstr "new discovery"
+
+#~ msgid "nouvelles découvertes"
+#~ msgstr "new discoveries"
+
+#~ msgid "étape associée"
+#~ msgstr "matched stage"
+
+#~ msgid "étapes associées"
+#~ msgstr "matched stages"
+
+#~ msgid "découverte mise à jour"
+#~ msgstr "updated discovery"
+
+#~ msgid "étape mise à jour"
+#~ msgstr "updated stage"
+
+#~ msgid "élément mis à jour"
+#~ msgstr "updated item"
+
+#~ msgid "découvertes mises à jour"
+#~ msgstr "updated discoveries"
+
+#~ msgid "étapes mises à jour"
+#~ msgstr "updated stages"
+
+#~ msgid "éléments mis à jour"
+#~ msgstr "updated items"
+
+#~ msgid "waypoint sans découverte correspondante"
+#~ msgstr "waypoint with no matching discovery"
+
+#~ msgid "waypoints sans découverte correspondante"
+#~ msgstr "waypoints with no matching discovery"
+
+#~ msgid "waypoint illisible"
+#~ msgstr "unreadable waypoint"
+
+#~ msgid "ligne illisible"
+#~ msgstr "unreadable line"
+
+#~ msgid "waypoints illisibles"
+#~ msgstr "unreadable waypoints"
+
+#~ msgid "lignes illisibles"
+#~ msgstr "unreadable lines"
+
+#~ msgid "conflit à trancher"
+#~ msgstr "conflict to resolve"
+
+#~ msgid "conflits à trancher"
+#~ msgstr "conflicts to resolve"
+
+#~ msgid "découverte déjà connue"
+#~ msgstr "discovery already known"
+
+#~ msgid "étape déjà positionnée"
+#~ msgstr "stage already placed"
+
+#~ msgid "élément déjà à jour"
+#~ msgstr "item already up to date"
+
+#~ msgid "découvertes déjà connues"
+#~ msgstr "discoveries already known"
+
+#~ msgid "étapes déjà positionnées"
+#~ msgstr "stages already placed"
+
+#~ msgid "éléments déjà à jour"
+#~ msgstr "items already up to date"
+
+#~ msgid "Après import"
+#~ msgstr "After import"
+
+#~ msgid "découverte enregistrée"
+#~ msgstr "recorded discovery"
+
+#~ msgid "découvertes enregistrées"
+#~ msgstr "recorded discoveries"
+
+#~ msgid "prête à afficher"
+#~ msgstr "ready to show"
+
+#~ msgid "prêtes à afficher"
+#~ msgstr "ready to show"
+
+#~ msgid "illisible"
+#~ msgstr "unreadable"
+
+#~ msgid "rien de nouveau"
+#~ msgstr "nothing new"
+
+#~ msgid "date"
+#~ msgstr "date"
+
+#~ msgid "identifiant d'Adventure"
+#~ msgstr "Adventure identifier"
+
+#~ msgid "identifiant d'étape"
+#~ msgstr "stage identifier"
+
+#~ msgid "conflit"
+#~ msgstr "conflict"
+
+#~ msgid "conflits"
+#~ msgstr "conflicts"
+
+#~ msgid "sans choix de votre part, la valeur existante est conservée"
+#~ msgstr "without your choice, the existing value is kept"
+
+#~ msgid "(étape sans titre)"
+#~ msgstr "(untitled stage)"
+
+#~ msgid "conservé"
+#~ msgstr "kept"
+
+#~ msgid "reçu"
+#~ msgstr "received"
+
+#~ msgid "(correction manuelle)"
+#~ msgstr "(manual correction)"
+
+#~ msgid "Garder"
+#~ msgstr "Keep"
+
+#~ msgid "Avertissements (${n})"
+#~ msgstr "Warnings (${n})"
+
+#~ msgid "Import de vos Lab Caches…"
+#~ msgstr "Importing your Lab Caches…"
+
+#~ msgid "La tâche semble bloquée — aucune progression depuis plusieurs minutes."
+#~ msgstr "The task seems stuck — no progress for several minutes."
+
+#~ msgid ""
+#~ "Les Lab Caches sont maintenant affichés"
+#~ " (réglable via « Découvertes affichées "
+#~ "»)."
+#~ msgstr "Lab Caches are now displayed (adjustable via “Discoveries shown”)."
+
+#~ msgid "Vos Lab Caches ont été mis à jour."
+#~ msgstr "Your Lab Caches have been updated."
+
+#~ msgid "Erreur de récupération"
+#~ msgstr "Retrieval error"
+
+#~ msgid "en attente"
+#~ msgstr "pending"
+
+#~ msgid "valeurs existantes conservées."
+#~ msgstr "existing values kept."
+
+#~ msgid ""
+#~ "Régénérer le jeton ? Le favori "
+#~ "actuel cessera de fonctionner : il "
+#~ "faudra glisser à nouveau le bouton "
+#~ "« MyGCFlow — Lab Caches » dans "
+#~ "vos favoris."
+#~ msgstr ""
+#~ "Regenerate the token? The current "
+#~ "bookmarklet will stop working: you will"
+#~ " have to drag the \"MyGCFlow — "
+#~ "Lab Caches\" button into your bookmarks"
+#~ " again."
+
+#~ msgid "Réglage non enregistré"
+#~ msgstr "Setting not saved"
+
+#~ msgid "Récupération refusée"
+#~ msgstr "Retrieval refused"
+
+#~ msgid "La récupération a échoué"
+#~ msgstr "The retrieval failed"
+
+#~ msgid "étape placée sur la carte"
+#~ msgstr "stage placed on the map"
+
+#~ msgid "étapes placées sur la carte"
+#~ msgstr "stages placed on the map"
+
+#~ msgid "Adventure introuvable par le service"
+#~ msgstr "Adventure not found by the service"
+
+#~ msgid "Adventures introuvables par le service"
+#~ msgstr "Adventures not found by the service"
+
+#~ msgid "étapes restent à compléter"
+#~ msgstr "stages left to complete"
+
+#~ msgid "Récupération interrompue — les positions déjà obtenues sont conservées."
+#~ msgstr "Retrieval interrupted — positions already obtained are kept."
+
+#~ msgid ""
+#~ "Le service a cessé de répondre "
+#~ "avant la fin — relancez la "
+#~ "récupération pour terminer."
+#~ msgstr ""
+#~ "The service stopped responding before "
+#~ "the end — run the fetch again "
+#~ "to finish."
+
+#~ msgid "Adventure"
+#~ msgstr "Adventure"
+
+#~ msgid "Adventures"
+#~ msgstr "Adventures"
+
+#~ msgid "Aucune étape en attente sur cette page."
+#~ msgstr "No pending stage on this page."
+
+#~ msgid "Adventure inconnue"
+#~ msgstr "Unknown Adventure"
+
+#~ msgid "archivée"
+#~ msgstr "archived"
+
+#~ msgid "étape en attente"
+#~ msgstr "pending stage"
+
+#~ msgid "étapes en attente"
+#~ msgstr "pending stages"
+
+#~ msgid "Détail des étapes"
+#~ msgstr "Stage details"
+
+#~ msgid "Position de l'Adventure"
+#~ msgstr "Adventure position"
+
+#~ msgid "Placer les ${n} étapes ici"
+#~ msgstr "Place the ${n} stages here"
+
+#~ msgid ""
+#~ "Toutes ses étapes sans position y "
+#~ "seront placées, signalées comme "
+#~ "approximatives."
+#~ msgstr ""
+#~ "All its stages without a position "
+#~ "will be placed there, marked as "
+#~ "approximate."
+
+#~ msgid "date manquante"
+#~ msgstr "missing date"
+
+#~ msgid "coordonnées manquantes"
+#~ msgstr "missing coordinates"
+
+#~ msgid "introuvables par le service lab2gpx"
+#~ msgstr "not found by the lab2gpx service"
+
+#~ msgid "position connue mais ambiguë — à confirmer"
+#~ msgstr "known but ambiguous position — please confirm"
+
+#~ msgid "position connue mais invalide — à ressaisir"
+#~ msgstr "known but invalid position — please re-enter"
+
+#~ msgid "position présente mais statut incohérent — à ressaisir"
+#~ msgstr "position present but inconsistent state — please re-enter"
+
+#~ msgid ""
+#~ "Position et date sont présentes mais "
+#~ "leur état est incohérent — aucune "
+#~ "correction possible ici."
+#~ msgstr ""
+#~ "Position and date are present but "
+#~ "their state is inconsistent — no "
+#~ "correction possible here."
+
+#~ msgid "Suggestion : ${lat}, ${lon} — même titre dans l'Adventure"
+#~ msgstr "Suggestion: ${lat}, ${lon} — same title in the Adventure"
+
+#~ msgid "Utiliser la suggestion"
+#~ msgstr "Use suggestion"
+
+#~ msgid "Date de découverte"
+#~ msgstr "Discovery date"
+
+#~ msgid "Rien à enregistrer"
+#~ msgstr "Nothing to save"
+
+#~ msgid "étape placée"
+#~ msgstr "stage placed"
+
+#~ msgid "étapes placées"
+#~ msgstr "stages placed"
+
+#~ msgid "en ${lat}, ${lon}."
+#~ msgstr "at ${lat}, ${lon}."
+
+#~ msgid ""
+#~ "Supprimer toutes vos étapes Lab Caches"
+#~ " ? Vos géocaches sont conservées. "
+#~ "Cette action est irréversible."
+#~ msgstr ""
+#~ "Delete all your Lab Cache stages? "
+#~ "Your geocaches are kept. This action "
+#~ "cannot be undone."
+
+#~ msgid "Lab Caches supprimés"
+#~ msgstr "Lab Caches deleted"
+
+#~ msgid "${count} caches regroupées"
+#~ msgstr "${count} grouped caches"
+
+#~ msgid "1 cache"
+#~ msgstr "1 cache"
+
+#~ msgid "Étape ${index} sur ${total}"
+#~ msgstr "Stop ${index} of ${total}"
+
+#~ msgid "${n} DNF, le premier le ${date}"
+#~ msgstr "${n} DNFs, the first on ${date}"
+
+#~ msgid "DNF le ${date}"
+#~ msgstr "DNF on ${date}"
+
+#~ msgid "Trouvée ensuite, le ${date}"
+#~ msgstr "Found later, on ${date}"
+
+#~ msgid "Pas encore trouvée"
+#~ msgstr "Not found yet"
+
+#~ msgid "Étape ${n}/${total}"
+#~ msgstr "Stage ${n}/${total}"
+
+#~ msgid "Étape ${n}"
+#~ msgstr "Stage ${n}"
+
+#~ msgid "Adventure complète"
+#~ msgstr "Adventure completed"
+
+#~ msgid "${found}/${total} étapes trouvées"
+#~ msgstr "${found}/${total} stages found"
+
+#~ msgid "Position approximative (centre de l’Adventure)"
+#~ msgstr "Approximate position (Adventure center)"
+
+#~ msgid "Publiée le ${date}"
+#~ msgstr "Published on ${date}"
+
+#~ msgid "Posée le ${date}"
+#~ msgstr "Placed on ${date}"
+
+#~ msgid "Trouvée avant sa publication le ${date}"
+#~ msgstr "Found before its publication on ${date}"
+
+#~ msgid "Premier log le ${date}"
+#~ msgstr "First log on ${date}"
+
+#~ msgid "Dernière maintenance le ${date}"
+#~ msgstr "Last maintenance on ${date}"
+
+#~ msgid "Aucune maintenance enregistrée"
+#~ msgstr "No maintenance recorded"
+
+#~ msgid "Ma cache"
+#~ msgstr "My cache"
+
+#~ msgid "Aucune vidéo n'a été créée."
+#~ msgstr "No video was created."
+
+#~ msgid "Arrêt de l'enregistrement"
+#~ msgstr "Recording stopped"
+
+#~ msgid ""
+#~ "La musique n'a pas pu être envoyée"
+#~ " au serveur : la vidéo a été"
+#~ " créée sans musique."
+#~ msgstr ""
+#~ "The music could not be sent to "
+#~ "the server: the video was created "
+#~ "without music."
+
+#~ msgid ""
+#~ "La musique n'a pas pu être ajoutée"
+#~ " à la vidéo : elle a été "
+#~ "créée sans musique."
+#~ msgstr ""
+#~ "The music could not be added to"
+#~ " the video: it was created without"
+#~ " music."
+
+#~ msgid ""
+#~ "Format ${wanted} non pris en charge "
+#~ "par ce navigateur : enregistrement en"
+#~ " ${used}."
+#~ msgstr "${wanted} format not supported by this browser: recording in ${used}."
+
+#~ msgid "Aucun déplacement à tracer pour cette sélection."
+#~ msgstr "No movement to draw for this selection."
+
+#~ msgid ""
+#~ "Journées très chargées : regroupement "
+#~ "automatique appliqué sur le rayon "
+#~ "choisi."
+#~ msgstr "Very busy days: automatic grouping applied at the chosen radius."
+
+#~ msgid ""
+#~ "Aucune cache visible à l’écran : "
+#~ "déplacez la carte au-dessus de vos"
+#~ " points."
+#~ msgstr "No cache visible on screen: move the map over your points."
+
+#~ msgid "Choisissez d’abord une forme de flash."
+#~ msgstr "First choose a flash shape."
+
+#~ msgid "Impossible de charger vos caches posées : ${message}"
+#~ msgstr "Unable to load your hidden caches: ${message}"
+
+#~ msgid "cache posée dans la sélection"
+#~ msgstr "hidden cache in the selection"
+
+#~ msgid "caches posées dans la sélection"
+#~ msgstr "hidden caches in the selection"
+
+#~ msgid "cache sans date"
+#~ msgstr "cache without a date"
+
+#~ msgid "caches sans date"
+#~ msgstr "caches without a date"
+
+#~ msgid "Actif quand les caches posées sont affichées"
+#~ msgstr "Active when owned caches are shown"
+
+#~ msgid "Le réglage s'appliquera à la fin de l'animation."
+#~ msgstr "The setting will apply at the end of the animation."
+
+#~ msgid "Chargement de vos caches posées..."
+#~ msgstr "Loading your hidden caches..."
+
+#~ msgid "Aucun log importé pour l'instant"
+#~ msgstr "No logs imported yet"
+
+#~ msgid "Le compte de vos logs est inconnu : importez un export de vos logs"
+#~ msgstr "The account of your logs is unknown: import an export of your logs"
+
+#~ msgid ""
+#~ "Vos caches posées sont dans vos "
+#~ "logs, mais aucune n'a de position "
+#~ "et de date connues"
+#~ msgstr ""
+#~ "Your hidden caches are in your "
+#~ "logs, but none has a known "
+#~ "position and date"
+
+#~ msgid "${n} caches reconnues à votre pseudo (identifiant du poseur manquant)"
+#~ msgstr "${n} caches recognized by your username only (missing owner id)"
+
+#~ msgid "${n} caches sans position (complétez-les depuis la carte « Mes logs »)"
+#~ msgstr "${n} caches without a position (complete them from the “My logs” card)"
+
+#~ msgid "${n} caches sans date de publication ni de pose"
+#~ msgstr "${n} caches without a publication or placed date"
+
+#~ msgid "${n} changements d'état déduits du statut à l'export (sans log)"
+#~ msgstr "${n} status changes inferred from the status at export (no log)"
+
+#~ msgid "Logs importés le ${date}"
+#~ msgstr "Logs imported on ${date}"
+
+#~ msgid ""
+#~ "${caches} caches posées · ${finds} "
+#~ "trouvailles reçues · ${favorites} favoris"
+#~ msgstr ""
+#~ "${caches} hidden caches · ${finds} finds"
+#~ " received · ${favorites} favorites"
+
+#~ msgid "Un visiteur"
+#~ msgstr "A visitor"
+
+#~ msgid "${finds} trouvailles · ${favorites} favoris · ${dnf} DNF"
+#~ msgstr "${finds} finds · ${favorites} favorites · ${dnf} DNF"
+
+#~ msgid "Pays et région déduits des trouvailles voisines"
+#~ msgstr "Country and region deduced from nearby finds"
+
+#~ msgid "Premier trouveur : ${name} (${date})"
+#~ msgstr "First to find: ${name} (${date})"
+
+#~ msgid ""
+#~ "Au rythme actuel : ${s} par "
+#~ "pseudo. La durée suit le rythme "
+#~ "quand vous changez la durée de la"
+#~ " vidéo."
+#~ msgstr ""
+#~ "At the current pace: ${s} per "
+#~ "name. The duration follows the pace "
+#~ "when you change the video length."
+
+#~ msgid "En temps vidéo, quel que soit le rythme."
+#~ msgstr "In video time, whatever the pace."
+
+#~ msgid ""
+#~ "Au rythme actuel, jusqu’à ~${n} "
+#~ "étiquettes voudraient s’afficher en même "
+#~ "temps, pour une seule place : les"
+#~ " moins marquantes seront écourtées ou "
+#~ "écartées."
+#~ msgstr ""
+#~ "At the current pace, up to ~${n}"
+#~ " labels would show at the same "
+#~ "time, for a single slot: the least"
+#~ " notable ones will be cut short "
+#~ "or skipped."
+
+#~ msgid ""
+#~ "Au rythme actuel, jusqu’à ~${n} "
+#~ "étiquettes voudraient s’afficher en même "
+#~ "temps, pour ${m} places : les "
+#~ "moins marquantes seront écourtées ou "
+#~ "écartées."
+#~ msgstr ""
+#~ "At the current pace, up to ~${n}"
+#~ " labels would show at the same "
+#~ "time, for ${m} slots: the least "
+#~ "notable ones will be cut short or"
+#~ " skipped."
+
+#~ msgid "Raccourcir à ${s}"
+#~ msgstr "Shorten to ${s}"
+
+#~ msgid "Monter la limite à ${n}"
+#~ msgstr "Raise the limit to ${n}"
+
+#~ msgid "~${n} à la fois"
+#~ msgstr "~${n} at once"
+
+#~ msgid "Sans objet : un DNF ou une note n’est jamais un log marquant."
+#~ msgstr "No effect: a DNF or a note is never a notable log."
+
+#~ msgid "1 jour d’animation"
+#~ msgstr "1 animation day"
+
+#~ msgid "${n} jours d’animation"
+#~ msgstr "${n} animation days"
+
+#~ msgid ""
+#~ "Style personnalisé, d’après « ${name} »."
+#~ " Cliquez un style pour repartir de"
+#~ " lui."
+#~ msgstr "Custom style, based on “${name}”. Click a style to start over from it."
+
+#~ msgid "symboles"
+#~ msgstr "symbols"
+
+#~ msgid "${n} au plus"
+#~ msgstr "up to ${n}"
+
+#~ msgid "regroupés"
+#~ msgstr "grouped"
+
+#~ msgid "un par visiteur"
+#~ msgstr "one per visitor"
+
+#~ msgid "Thème \"${name}\" importé dans le mode « ${mode} »"
+#~ msgstr "Theme \"${name}\" imported into the “${mode}” mode"
+
+#~ msgid "Thème \"${name}\" importé"
+#~ msgstr "Theme \"${name}\" imported"
+
+#~ msgid "Erreur import du thème"
+#~ msgstr "Theme import error"
+
+#~ msgid "Thème \"${name}\" chargé"
+#~ msgstr "Theme \"${name}\" loaded"
+
+#~ msgid "Thème \"${name}\" sauvegardé"
+#~ msgstr "Theme \"${name}\" saved"
+
+#~ msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+#~ msgstr "Theme \"${name}\" created, but its settings could not be saved"
+
+#~ msgid "Thème \"${name}\" créé"
+#~ msgstr "Theme \"${name}\" created"
+
+#~ msgid "Thème dupliqué: \"${name}\""
+#~ msgstr "Theme duplicated: \"${name}\""
+
+#~ msgid "Thème copié dans le mode « ${mode} » : \"${name}\""
+#~ msgstr "Theme copied to the “${mode}” mode: \"${name}\""
+
+#~ msgid "Thème \"${name}\" supprimé"
+#~ msgstr "Theme \"${name}\" deleted"
+
+#~ msgid "Thème \"${name}\" réinitialisé"
+#~ msgstr "Theme \"${name}\" reset"
+
+#~ msgid "Thème \"${name}\" exporté"
+#~ msgstr "Theme \"${name}\" exported"
+
+#~ msgid "Erreur export du thème"
+#~ msgstr "Theme export error"
+
+#~ msgid "Thème introuvable ou UID manquant"
+#~ msgstr "Theme not found or missing UID"
+
+#~ msgid "Échec de la sauvegarde du thème par défaut"
+#~ msgstr "Failed to save the default theme"
+
+#~ msgid "Thème \"${name}\" défini comme thème par défaut"
+#~ msgstr "Theme \"${name}\" set as the default theme"
+
+#~ msgid "Erreur lors de la définition du thème par défaut"
+#~ msgstr "Error while setting the default theme"
+
+#~ msgid "Aucun thème"
+#~ msgstr "No theme"
+
+#~ msgid "Copier vers « ${mode} »"
+#~ msgstr "Copy to “${mode}”"
+
+#~ msgid "Choisir un thème"
+#~ msgstr "Choose a theme"
+
+#~ msgid ""
+#~ "Le thème \"${name}\" contient des "
+#~ "modifications non enregistrées. Que voulez-"
+#~ "vous faire ?"
+#~ msgstr "Theme \"${name}\" has unsaved changes. What do you want to do?"
+
+#~ msgid "Erreur lors du chargement du thème par défaut"
+#~ msgstr "Error while loading the default theme"
+
+#~ msgid "Aucun thème par défaut"
+#~ msgstr "No default theme"
+
+#~ msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
+#~ msgstr "Theme \"${selectedProfile}\" applied and set as default theme"
+
+#~ msgid "Aucun thème par défaut défini"
+#~ msgstr "No default theme set"
+
+#~ msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
+#~ msgstr "The theme could not be loaded: no theme is active."
+
+#~ msgid "Créer le thème \"${name}\""
+#~ msgstr "Create the theme \"${name}\""
+
+#~ msgid "Veuillez saisir un nom de thème"
+#~ msgstr "Please enter a theme name"
+
+#~ msgid ""
+#~ "Le thème « ${name} » existe déjà."
+#~ " Les réglages affichés remplaceront ceux"
+#~ " enregistrés."
+#~ msgstr ""
+#~ "The theme « ${name} » already "
+#~ "exists. The displayed settings will "
+#~ "replace the saved ones."
+
+#~ msgid "Réglages enregistrés dans \"${name}\""
+#~ msgstr "Settings saved to \"${name}\""
+
+#~ msgid "Enregistrer dans un nouveau thème"
+#~ msgstr "Save to a new theme"
+
+#~ msgid "Renommer le thème"
+#~ msgstr "Rename the theme"
+
+#~ msgid "Dupliquer le thème"
+#~ msgstr "Duplicate the theme"
+
+#~ msgid "Copier le thème vers « ${mode} »"
+#~ msgstr "Copy the theme to “${mode}”"
+
+#~ msgid "Copier"
+#~ msgstr "Copy"
+
+#~ msgid "Ce nom est déjà pris par un thème du mode « ${mode} »"
+#~ msgstr "This name is already taken by a theme of the “${mode}” mode"
+
+#~ msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
+#~ msgstr "« ${name} » is the active theme: its settings will be updated"
+
+#~ msgid "« ${name} » existe déjà : ses réglages seront remplacés"
+#~ msgstr "“${name}” already exists: its settings will be replaced"
+
+#~ msgid "Un thème nommé « ${name} » existe déjà"
+#~ msgstr "A theme named « ${name} » already exists"
+
+#~ msgid ""
+#~ "Caractères ignorés (${dropped}) : le "
+#~ "thème sera enregistré sous « ${key} "
+#~ "»"
+#~ msgstr "Ignored characters (${dropped}): the theme will be saved as « ${key} »"
+
+#~ msgid "Thème renommé en \"${name}\""
+#~ msgstr "Theme renamed to \"${name}\""
+
+#~ msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
+#~ msgstr "Are you sure you want to delete the theme \"${name}\"?"
+
+#~ msgid ""
+#~ "Êtes-vous sûr de vouloir réinitialiser"
+#~ " le thème \"${name}\" aux valeurs par"
+#~ " défaut ?"
+#~ msgstr ""
+#~ "Are you sure you want to reset "
+#~ "the theme \"${name}\" to its default "
+#~ "values?"
+
+#~ msgid "Impossible d’afficher la vidéo dans son dossier"
+#~ msgstr "Unable to show the video in its folder"
+
+#~ msgid "Supprimer ?"
+#~ msgstr "Delete?"
+
+#~ msgid "Confirmer la suppression de ${name}"
+#~ msgstr "Confirm deletion of ${name}"
+
+#~ msgid "Vidéo envoyée à la Corbeille."
+#~ msgstr "Video sent to the Recycle Bin."
+
+#~ msgid "Vidéo supprimée."
+#~ msgstr "Video deleted."
+
+#~ msgid "La vidéo n’a pas pu être supprimée."
+#~ msgstr "The video could not be deleted."
+
+#~ msgid "${n} autres vidéos dans le dossier."
+#~ msgstr "${n} more videos in the folder."
+
+#~ msgid "1 autre vidéo dans le dossier."
+#~ msgstr "1 more video in the folder."
+
+#~ msgid "Plusieurs attributs : une cache doit les porter tous."
+#~ msgstr "Several attributes: a cache must have all of them."
+
+#~ msgid "Aucun filtre"
+#~ msgstr "No filter"
+
+#~ msgid "Vos trouvailles sont trop homogènes pour être filtrées."
+#~ msgstr "Your finds are too uniform to be filtered."
+
+#~ msgid "Graphique dupliqué."
+#~ msgstr "Chart duplicated."
+
+#~ msgid "Graphique déplacé."
+#~ msgstr "Chart moved."
+
+#~ msgid "Supprimer le graphique « ${title} » ?"
+#~ msgstr "Delete the chart “${title}”?"
+
+#~ msgid "Graphique « ${title} » supprimé."
+#~ msgstr "Chart “${title}” deleted."
+
+#~ msgid "Taille du graphique modifiée."
+#~ msgstr "Chart size changed."
+
+#~ msgid "Glisser pour déplacer"
+#~ msgstr "Drag to move"
+
+#~ msgid "Période propre à ce graphique"
+#~ msgstr "This chart has its own period"
+
+#~ msgid "Filtres propres"
+#~ msgstr "Own filters"
+
+#~ msgid "aucun — les filtres du tableau sont ignorés"
+#~ msgstr "none — the dashboard filters are ignored"
+
+#~ msgid "Ces filtres remplacent ceux du tableau de bord : ${what}"
+#~ msgstr "These filters replace the dashboard ones: ${what}"
+
+#~ msgid "Glisser pour redimensionner"
+#~ msgstr "Drag to resize"
+
+#~ msgid "Jeu « ${name} »"
+#~ msgstr "Dataset “${name}”"
+
+#~ msgid "${names} : données indisponibles"
+#~ msgstr "${names}: data unavailable"
+
+#~ msgid "Envoyer en panneau vidéo"
+#~ msgstr "Send to video panel"
+
+#~ msgid "Un panneau vidéo ne compte qu'une source."
+#~ msgstr "A video panel counts a single source."
+
+#~ msgid "Ce graphique n'a pas d'équivalent en panneau vidéo."
+#~ msgstr "This chart has no video panel equivalent."
+
+#~ msgid "Actions du graphique"
+#~ msgstr "Chart actions"
+
+#~ msgid "Modifier"
+#~ msgstr "Edit"
+
+#~ msgid "Présenter à partir d'ici"
+#~ msgstr "Present from here"
+
+#~ msgid "Voir les valeurs"
+#~ msgstr "Show values"
+
+#~ msgid "Exporter en image (PNG)"
+#~ msgstr "Export as image (PNG)"
+
+#~ msgid "Exporter en image vectorielle (SVG)"
+#~ msgstr "Export as vector image (SVG)"
+
+#~ msgid "Créer une vidéo animée"
+#~ msgstr "Create an animated video"
+
+#~ msgid "Déplacer avant"
+#~ msgstr "Move before"
+
+#~ msgid "Déplacer après"
+#~ msgstr "Move after"
+
+#~ msgid "Sans attribut : ${n}"
+#~ msgstr "No attribute: ${n}"
+
+#~ msgid "Seules les 8 périodes les plus récentes sont affichées."
+#~ msgstr "Only the 8 most recent periods are shown."
+
+#~ msgid "Sans D/T : ${n}"
+#~ msgstr "No D/T: ${n}"
+
+#~ msgid "Sans date de publication : ${n}"
+#~ msgstr "No publication date: ${n}"
+
+#~ msgid "Seule la première période est dessinée."
+#~ msgstr "Only the first period is drawn."
+
+#~ msgid "Seules les 3 années les plus récentes sont dessinées."
+#~ msgstr "Only the 3 most recent years are drawn."
+
+#~ msgid "Hors carte : ${n}"
+#~ msgstr "Off the map: ${n}"
+
+#~ msgid "Comparaison à date : chaque période est arrêtée au ${date}."
+#~ msgstr "Year-to-date comparison: every period stops on ${date}."
+
+#~ msgid "Aucune donnée sur cette période."
+#~ msgstr "No data in this period."
+
+#~ msgid "Voir sur la carte"
+#~ msgstr "Show on the map"
+
+#~ msgid "Jeu ${id}"
+#~ msgstr "Dataset ${id}"
+
+#~ msgid "${n} périodes"
+#~ msgstr "${n} periods"
+
+#~ msgid "Mon tableau de bord"
+#~ msgstr "My dashboard"
+
+#~ msgid "Évolution · ${name}"
+#~ msgstr "Evolution · ${name}"
+
+#~ msgid "Ce jeu Évolution n'existe plus."
+#~ msgstr "This Evolution dataset no longer exists."
+
+#~ msgid "Jeu « ${name} » : données indisponibles"
+#~ msgstr "Dataset “${name}”: data unavailable"
+
+#~ msgid "${n} caches publiées"
+#~ msgstr "${n} published caches"
+
+#~ msgid "${n} archivages datés"
+#~ msgstr "${n} dated archivals"
+
+#~ msgid "${n} trouvailles"
+#~ msgstr "${n} finds"
+
+#~ msgid "${n} DNF"
+#~ msgstr "${n} DNFs"
+
+#~ msgid "${n} caches posées"
+#~ msgstr "${n} hidden caches"
+
+#~ msgid "${n} trouvailles reçues"
+#~ msgstr "${n} finds received"
+
+#~ msgid "${n} avec les filtres"
+#~ msgstr "${n} with the filters"
+
+#~ msgid "${n} sans date de trouvaille, non comptées"
+#~ msgstr "${n} without a find date, not counted"
+
+#~ msgid "Nouveau tableau de bord…"
+#~ msgstr "New dashboard…"
+
+#~ msgid "Dupliquer ce tableau de bord"
+#~ msgstr "Duplicate this dashboard"
+
+#~ msgid "Exporter ce tableau de bord (fichier)"
+#~ msgstr "Export this dashboard (file)"
+
+#~ msgid "Importer un tableau de bord…"
+#~ msgstr "Import a dashboard…"
+
+#~ msgid "Imprimer"
+#~ msgstr "Print"
+
+#~ msgid "Supprimer ce tableau de bord"
+#~ msgstr "Delete this dashboard"
+
+#~ msgid "${name} (copie)"
+#~ msgstr "${name} (copy)"
+
+#~ msgid "Ce fichier n'est pas un tableau de bord MyGCFlow."
+#~ msgstr "This file is not a MyGCFlow dashboard."
+
+#~ msgid "Ce tableau de bord vient d'une version plus récente de MyGCFlow."
+#~ msgstr "This dashboard comes from a newer version of MyGCFlow."
+
+#~ msgid ""
+#~ "Ce tableau de bord porte sur une"
+#~ " zone Évolution : importez d'abord un"
+#~ " jeu sur la page Évolution."
+#~ msgstr ""
+#~ "This dashboard is about an Evolution "
+#~ "area: first import a dataset on "
+#~ "the Evolution page."
+
+#~ msgid "Importer un tableau de bord"
+#~ msgstr "Import a dashboard"
+
+#~ msgid "Jeu Évolution d'origine introuvable : le tableau porte sur « ${name} »."
+#~ msgstr "Original Evolution dataset not found: the dashboard now uses “${name}”."
+
+#~ msgid "Tableau de bord « ${name} » importé."
+#~ msgstr "Dashboard “${name}” imported."
+
+#~ msgid "Chargement du jeu Évolution « ${name} »…"
+#~ msgstr "Loading Evolution dataset “${name}”…"
+
+#~ msgid "Actualisation des données…"
+#~ msgstr "Refreshing data…"
+
+#~ msgid "Données actualisées."
+#~ msgstr "Data refreshed."
+
+#~ msgid ""
+#~ "Les données n'ont pas pu être "
+#~ "relues : les précédentes restent "
+#~ "affichées."
+#~ msgstr "The data could not be reloaded: the previous data is still shown."
+
+#~ msgid "Supprimer le tableau de bord « ${name} » et ses graphiques ?"
+#~ msgstr "Delete the dashboard “${name}” and its charts?"
+
+#~ msgid "Retirer le filtre ${field}"
+#~ msgstr "Remove the ${field} filter"
+
+#~ msgid "Filtres de la carte appliqués."
+#~ msgstr "Map filters applied."
+
+#~ msgid "la recherche « ${text} »"
+#~ msgstr "the search “${text}”"
+
+#~ msgid "les dates de pose ${range} : la page filtre par année entière"
+#~ msgstr "the placement dates ${range}: this page filters by whole years"
+
+#~ msgid "les trouvailles sans pays, que la carte garde"
+#~ msgstr "finds without a country, which the map keeps"
+
+#~ msgid "les trouvailles sans région, que la carte garde"
+#~ msgstr "finds without a region, which the map keeps"
+
+#~ msgid ""
+#~ "les Lab Caches, que la carte garde"
+#~ " malgré les filtres propres aux "
+#~ "géocaches"
+#~ msgstr "Lab Caches, which the map keeps despite the geocache-only filters"
+
+#~ msgid ""
+#~ "Avec ses filtres actuels, la carte "
+#~ "n'affiche aucune trouvaille : rien n'est"
+#~ " repris."
+#~ msgstr "With its current filters, the map shows no finds: nothing was taken."
+
+#~ msgid "La carte montre toutes vos trouvailles : aucun filtre à reprendre."
+#~ msgstr "The map shows all your finds: no filters to take."
+
+#~ msgid ""
+#~ "Filtres de la carte repris (1 "
+#~ "trouvaille) : vérifiez-les, puis "
+#~ "appliquez."
+#~ msgstr "Map filters taken (1 find): check them, then apply."
+
+#~ msgid ""
+#~ "Filtres de la carte repris (${n} "
+#~ "trouvailles) : vérifiez-les, puis "
+#~ "appliquez."
+#~ msgstr "Map filters taken (${n} finds): check them, then apply."
+
+#~ msgid "Période du tableau de bord : ${range} (dates de trouvaille de la carte)"
+#~ msgstr "Dashboard period: ${range} (find dates from the map)"
+
+#~ msgid "Sans équivalent ici :"
+#~ msgstr "No equivalent here:"
+
+#~ msgid "(indisponible)"
+#~ msgstr "(unavailable)"
+
+#~ msgid "(aucune donnée)"
+#~ msgstr "(no data)"
+
+#~ msgid "comparé à"
+#~ msgstr "compared with"
+
+#~ msgid "et à"
+#~ msgstr "and with"
+
+#~ msgid "Retirer cette période"
+#~ msgstr "Remove this period"
+
+#~ msgid "rien"
+#~ msgstr "nothing"
+
+#~ msgid "propres"
+#~ msgstr "own"
+
+#~ msgid "Nouveau graphique"
+#~ msgstr "New chart"
+
+#~ msgid "Graphique ajouté."
+#~ msgstr "Chart added."
+
+#~ msgid "Graphique enregistré."
+#~ msgstr "Chart saved."
+
+#~ msgid "L'image du tableau n'a pas pu être créée."
+#~ msgstr "The dashboard image could not be created."
+
+#~ msgid ""
+#~ "Ce navigateur ne sait pas copier "
+#~ "une image : enregistrez-la plutôt "
+#~ "en PNG."
+#~ msgstr "This browser cannot copy an image: save it as a PNG instead."
+
+#~ msgid "Image du tableau copiée : collez-la où vous voulez."
+#~ msgstr "Dashboard image copied: paste it wherever you like."
+
+#~ msgid "L'image du tableau n'a pas pu être copiée."
+#~ msgstr "The dashboard image could not be copied."
+
+#~ msgid "Données indisponibles"
+#~ msgstr "Data unavailable"
+
+#~ msgid "Aucune donnée pour l’instant"
+#~ msgstr "No data yet"
+
+#~ msgid "Graphique ajouté : ${title}."
+#~ msgstr "Chart added: ${title}."
+
+#~ msgid "filtres du graphique"
+#~ msgstr "chart filters"
+
+#~ msgid "toutes vos trouvailles"
+#~ msgstr "all your finds"
+
+#~ msgid "Impossible de préparer les filtres de la carte."
+#~ msgstr "Could not prepare the map filters."
+
+#~ msgid ""
+#~ "La carte s'ouvrira en pause au "
+#~ "${date}, cadrée sur ${zone}. Ses filtres"
+#~ " ne changent pas."
+#~ msgstr ""
+#~ "The map will open paused on "
+#~ "${date}, framed on ${zone}. Its filters"
+#~ " stay as they are."
+
+#~ msgid "Ouvrir la carte"
+#~ msgstr "Open the map"
+
+#~ msgid "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
+#~ msgstr "This value has no equivalent in the map filters."
+
+#~ msgid ""
+#~ "La carte affichera ces trouvailles : "
+#~ "${what}. Ses filtres actuels seront "
+#~ "remplacés."
+#~ msgstr ""
+#~ "The map will show these finds: "
+#~ "${what}. Its current filters will be "
+#~ "replaced."
+
+#~ msgid ""
+#~ "La page « ${page} » a déjà "
+#~ "${n} panneaux : retirez-en un dans"
+#~ " son onglet Stats."
+#~ msgstr ""
+#~ "The “${page}” page already has ${n} "
+#~ "panels: remove one in its Stats "
+#~ "tab."
+
+#~ msgid "L'envoi du panneau a échoué."
+#~ msgstr "Sending the panel failed."
+
+#~ msgid ""
+#~ "Panneau ajouté à la page « ${page}"
+#~ " » : il apparaîtra sur la carte"
+#~ " et dans la vidéo."
+#~ msgstr ""
+#~ "Panel added to the “${page}” page: "
+#~ "it will appear on the map and "
+#~ "in the video."
+
+#~ msgid ""
+#~ "Le graphique devient un panneau de "
+#~ "la page « ${page} », qui se "
+#~ "remplit au fil de l'animation."
+#~ msgstr ""
+#~ "The chart becomes a panel of the"
+#~ " “${page}” page, filling up as the"
+#~ " animation plays."
+
+#~ msgid ""
+#~ "Il suit la période et les filtres"
+#~ " de la carte : la période, les"
+#~ " filtres et le découpage de ce "
+#~ "graphique ne sont pas repris."
+#~ msgstr ""
+#~ "It follows the map's period and "
+#~ "filters: this chart's period, filters "
+#~ "and breakdown are not carried over."
+
+#~ msgid "L'objectif et la projection restent sur cette page."
+#~ msgstr "The goal and the projection stay on this page."
+
+#~ msgid "Aucun graphique à présenter."
+#~ msgstr "No chart to present."
+
+#~ msgid "${n} / ${count}"
+#~ msgstr "${n} / ${count}"
+
+#~ msgid ""
+#~ "Ce tableau de bord a été modifié"
+#~ " dans un autre onglet. Écraser ces"
+#~ " modifications par les vôtres ?"
+#~ msgstr ""
+#~ "This dashboard was changed in another"
+#~ " tab. Overwrite those changes with "
+#~ "yours?"
+
+#~ msgid "Conflit de sauvegarde"
+#~ msgstr "Save conflict"
+
+#~ msgid "Écraser"
+#~ msgstr "Overwrite"
+
+#~ msgid "Reprendre l'autre version"
+#~ msgstr "Use the other version"
+
+#~ msgid ""
+#~ "Le fichier des tableaux de bord "
+#~ "est illisible et aucune sauvegarde "
+#~ "n'existe : un tableau neuf sera "
+#~ "créé."
+#~ msgstr ""
+#~ "The dashboards file is unreadable and"
+#~ " there is no backup: a new "
+#~ "dashboard will be created."
+
+#~ msgid ""
+#~ "Le fichier des tableaux de bord "
+#~ "est illisible. Restaurer la dernière "
+#~ "sauvegarde ?"
+#~ msgstr "The dashboards file is unreadable. Restore the latest backup?"
+
+#~ msgid "Restaurer"
+#~ msgstr "Restore"
+
+#~ msgid "Repartir à zéro"
+#~ msgstr "Start over"
+
+#~ msgid "La restauration de la sauvegarde a échoué."
+#~ msgstr "Restoring the backup failed."
+
+#~ msgid "Vidéo du tableau de bord"
+#~ msgstr "Dashboard video"
+
+#~ msgid "${n} secondes"
+#~ msgstr "${n} seconds"
+
+#~ msgid "Ce graphique ne peut pas être animé."
+#~ msgstr "This chart cannot be animated."
+
+#~ msgid "Aucun graphique à mettre en vidéo."
+#~ msgstr "No chart to put in a video."
+
+#~ msgid ""
+#~ "${n} graphiques, ${s} secondes en tout"
+#~ " : la vidéo s'enregistre en temps "
+#~ "réel."
+#~ msgstr "${n} charts, ${s} seconds in all: the video is recorded in real time."
+
+#~ msgid "Sans musique"
+#~ msgstr "No music"
+
+#~ msgid "Musiques récentes"
+#~ msgstr "Recent music"
+
+#~ msgid "Un fichier de mon ordinateur…"
+#~ msgstr "A file from my computer…"
+
+#~ msgid "${n} graphiques"
+#~ msgstr "${n} charts"
+
+#~ msgid "Ce navigateur ne sait pas enregistrer de vidéo."
+#~ msgstr "This browser cannot record video."
+
+#~ msgid "ouverture"
+#~ msgstr "opening"
+
+#~ msgid "graphique ${n} / ${count}"
+#~ msgstr "chart ${n} / ${count}"
+
+#~ msgid "Enregistrement… (${where})"
+#~ msgstr "Recording… (${where})"
+
+#~ msgid "Conversion en MP4…"
+#~ msgstr "Converting to MP4…"
+
+#~ msgid "Vidéo enregistrée : ${file}, dans ${folder}."
+#~ msgstr "Video saved: ${file}, in ${folder}."
+
+#~ msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
+#~ msgstr "MP4 conversion failed: the video is offered in WebM format."
+
+#~ msgid "Impossible d'ouvrir le dossier des vidéos."
+#~ msgstr "Could not open the videos folder."
+
+#~ msgid "DNF mois × année"
+#~ msgstr "DNFs month × year"
+
+#~ msgid "Activité DNF"
+#~ msgstr "DNF activity"
+
+#~ msgid "DNF par taille"
+#~ msgstr "DNFs by size"
+
+#~ msgid "DNF par terrain"
+#~ msgstr "DNFs by terrain"
+
+#~ msgid "DNF par mois"
+#~ msgstr "DNFs by month"
+
+#~ msgid "DNF par jour de la semaine"
+#~ msgstr "DNFs by day of the week"
+
+#~ msgid "DNF par pays"
+#~ msgstr "DNFs by country"
+
+#~ msgid "DNF par région"
+#~ msgstr "DNFs by region"
+
+#~ msgid "DNF par propriétaire"
+#~ msgstr "DNFs by owner"
+
+#~ msgid "DNF cumulés"
+#~ msgstr "Cumulative DNFs"
+
+#~ msgid "Chiffres clés des DNF"
+#~ msgstr "DNF key figures"
+
+#~ msgid "Poses mois × année"
+#~ msgstr "Hides month × year"
+
+#~ msgid "Calendrier des poses"
+#~ msgstr "Hide calendar"
+
+#~ msgid "Activité de poseur"
+#~ msgstr "Hider activity"
+
+#~ msgid "Mes caches par type"
+#~ msgstr "My caches by type"
+
+#~ msgid "Mes caches par taille"
+#~ msgstr "My caches by size"
+
+#~ msgid "Mes caches par difficulté"
+#~ msgstr "My caches by difficulty"
+
+#~ msgid "Mes caches par terrain"
+#~ msgstr "My caches by terrain"
+
+#~ msgid "Poses par mois"
+#~ msgstr "Hides by month"
+
+#~ msgid "Poses par jour de la semaine"
+#~ msgstr "Hides by day of the week"
+
+#~ msgid "Mes caches par pays"
+#~ msgstr "My caches by country"
+
+#~ msgid "Mes caches par région"
+#~ msgstr "My caches by region"
+
+#~ msgid "Caches posées cumulées"
+#~ msgstr "Cumulative hidden caches"
+
+#~ msgid "Chiffres clés de mes caches"
+#~ msgstr "My caches key figures"
+
+#~ msgid "Matrice D/T des DNF reçus"
+#~ msgstr "D/T matrix of received DNFs"
+
+#~ msgid "DNF reçus mois × année"
+#~ msgstr "Received DNFs month × year"
+
+#~ msgid "Calendrier des DNF reçus"
+#~ msgstr "Received DNFs calendar"
+
+#~ msgid "Activité des DNF reçus"
+#~ msgstr "Received DNF activity"
+
+#~ msgid "DNF reçus par cache"
+#~ msgstr "Received DNFs per cache"
+
+#~ msgid "DNF reçus par joueur"
+#~ msgstr "Received DNFs per player"
+
+#~ msgid "DNF reçus par année"
+#~ msgstr "Received DNFs per year"
+
+#~ msgid "DNF reçus par mois"
+#~ msgstr "Received DNFs per month"
+
+#~ msgid "DNF reçus par jour de la semaine"
+#~ msgstr "Received DNFs by day of the week"
+
+#~ msgid "Âge des caches au DNF"
+#~ msgstr "Cache age at the DNF"
+
+#~ msgid "DNF reçus par type"
+#~ msgstr "Received DNFs by type"
+
+#~ msgid "DNF reçus par taille"
+#~ msgstr "Received DNFs by size"
+
+#~ msgid "DNF reçus par difficulté"
+#~ msgstr "Received DNFs by difficulty"
+
+#~ msgid "DNF reçus par terrain"
+#~ msgstr "Received DNFs by terrain"
+
+#~ msgid "DNF reçus par pays"
+#~ msgstr "Received DNFs by country"
+
+#~ msgid "DNF reçus par région"
+#~ msgstr "Received DNFs by region"
+
+#~ msgid "Chiffres clés des DNF reçus"
+#~ msgstr "Received DNF key figures"
+
+#~ msgid "Matrice D/T des favoris"
+#~ msgstr "D/T matrix of favorites"
+
+#~ msgid "Favoris reçus mois × année"
+#~ msgstr "Favorites received month × year"
+
+#~ msgid "Calendrier des favoris reçus"
+#~ msgstr "Favorites received calendar"
+
+#~ msgid "Activité des favoris reçus"
+#~ msgstr "Favorites received activity"
+
+#~ msgid "Favoris reçus par cache"
+#~ msgstr "Favorites received per cache"
+
+#~ msgid "Joueurs favorisants"
+#~ msgstr "Favoriting players"
+
+#~ msgid "Favoris reçus par année"
+#~ msgstr "Favorites received per year"
+
+#~ msgid "Favoris reçus par mois"
+#~ msgstr "Favorites received per month"
+
+#~ msgid "Favoris reçus par jour de la semaine"
+#~ msgstr "Favorites received by day of the week"
+
+#~ msgid "Âge des caches au favori"
+#~ msgstr "Cache age at the favorite"
+
+#~ msgid "Favoris reçus par type"
+#~ msgstr "Favorites received by type"
+
+#~ msgid "Favoris reçus par taille"
+#~ msgstr "Favorites received by size"
+
+#~ msgid "Favoris reçus par difficulté"
+#~ msgstr "Favorites received by difficulty"
+
+#~ msgid "Favoris reçus par terrain"
+#~ msgstr "Favorites received by terrain"
+
+#~ msgid "Favoris reçus par pays"
+#~ msgstr "Favorites received by country"
+
+#~ msgid "Favoris reçus par région"
+#~ msgstr "Favorites received by region"
+
+#~ msgid "Chiffres clés des favoris reçus"
+#~ msgstr "Received favorites key figures"
+
+#~ msgid "Trouvailles reçues par année"
+#~ msgstr "Finds received per year"
+
+#~ msgid "Trouvailles reçues mois × année"
+#~ msgstr "Finds received month × year"
+
+#~ msgid "Chiffres clés de mes poses"
+#~ msgstr "Key figures of my hides"
+
+#~ msgid "Moins d'un an"
+#~ msgstr "Less than a year"
+
+#~ msgid "2 à 3 ans"
+#~ msgstr "2 to 3 years"
+
+#~ msgid "3 à 5 ans"
+#~ msgstr "3 to 5 years"
+
+#~ msgid "10 ans et plus"
+#~ msgstr "10 years and more"
+
+#~ msgid "Sans difficulté : ${n}"
+#~ msgstr "No difficulty: ${n}"
+
+#~ msgid "Sans terrain : ${n}"
+#~ msgstr "No terrain: ${n}"
+
+#~ msgid "Sans date de trouvaille : ${n}"
+#~ msgstr "No find date: ${n}"
+
+#~ msgid "Jamais archivées : ${n}"
+#~ msgstr "Never archived: ${n}"
+
+#~ msgid "Sans date : ${n}"
+#~ msgstr "No date: ${n}"
+
+#~ msgid "Chercheurs distincts"
+#~ msgstr "Distinct seekers"
+
+#~ msgid "Délai moyen avant maintenance"
+#~ msgstr "Average time to maintenance"
+
+#~ msgid "Caches en attente de maintenance"
+#~ msgstr "Caches awaiting maintenance"
+
+#~ msgid "Caches sauvées"
+#~ msgstr "Rescued caches"
+
+#~ msgid "Cache la plus favorisée"
+#~ msgstr "Most favorited cache"
+
+#~ msgid "Caches en échec"
+#~ msgstr "Caches not found"
+
+#~ msgid "Caches favorisées"
+#~ msgstr "Favorited caches"
+
+#~ msgid "Jours avec DNF"
+#~ msgstr "Days with a DNF"
+
+#~ msgid "Jours de pose"
+#~ msgstr "Hide days"
+
+#~ msgid "Jours avec favori"
+#~ msgstr "Days with a favorite"
+
+#~ msgid "${dnf} DNF · ${finds} trouvailles"
+#~ msgstr "${dnf} DNF · ${finds} finds"
+
+#~ msgid "${n} ans"
+#~ msgstr "${n} years"
+
+#~ msgid "${n} mois"
+#~ msgstr "${n} months"
+
+#~ msgid "jamais trouvée"
+#~ msgstr "never found"
+
+#~ msgid "DNF reçus ${year}"
+#~ msgstr "Received DNFs ${year}"
+
+#~ msgid "DNF ${year}"
+#~ msgstr "DNFs ${year}"
+
+#~ msgid "Favoris ${year}"
+#~ msgstr "Favorites ${year}"
+
+#~ msgid "Poses ${year}"
+#~ msgstr "Hides ${year}"
+
+#~ msgid "Activité ${year}"
+#~ msgstr "Activity ${year}"
+
+#~ msgid "favoris"
+#~ msgstr "favorites"
+
+#~ msgid "${n} DNF au ${date}"
+#~ msgstr "${n} DNFs on ${date}"
+
+#~ msgid "${n} caches posées au ${date}"
+#~ msgstr "${n} hidden caches on ${date}"
+
+#~ msgid "${n} favoris au ${date}"
+#~ msgstr "${n} favorites on ${date}"
+
+#~ msgid "${n} trouvailles au ${date}"
+#~ msgstr "${n} finds on ${date}"
+
+#~ msgid "Paliers : ${list}"
+#~ msgstr "Milestones: ${list}"
+
+#~ msgid "Aucune cache"
+#~ msgstr "No cache"
+
+#~ msgid "Aucune trouvaille"
+#~ msgstr "No finds"
+
+#~ msgid "Nombre"
+#~ msgstr "Count"
+
+#~ msgid "Catégorie"
+#~ msgstr "Category"
+
+#~ msgid "Grille"
+#~ msgstr "Grid"
+
+#~ msgid "Histogramme"
+#~ msgstr "Bar chart"
+
+#~ msgid "Anneau"
+#~ msgstr "Donut"
+
+#~ msgid "Courbe"
+#~ msgstr "Curve"
+
+#~ msgid "Afficher ce panneau"
+#~ msgstr "Show this panel"
+
+#~ msgid "Pas affiché dans ce mode"
+#~ msgstr "Not shown in this mode"
+
+#~ msgid "Données comptées : DNF reçus"
+#~ msgstr "Counted data: received DNFs"
+
+#~ msgid "Données comptées : mes DNF"
+#~ msgstr "Counted data: my DNFs"
+
+#~ msgid "Données comptées : favoris reçus"
+#~ msgstr "Counted data: favorites received"
+
+#~ msgid "Données comptées : mes caches posées"
+#~ msgstr "Counted data: my owned caches"
+
+#~ msgid ""
+#~ "Les logs importés ne contiennent rien"
+#~ " pour cette source (carte « Mes "
+#~ "logs » de l'onglet Données)."
+#~ msgstr ""
+#~ "The imported logs contain nothing for"
+#~ " this source (the \"My logs\" card"
+#~ " of the Data tab)."
+
+#~ msgid ""
+#~ "Aucun panneau. Commencez par un modèle"
+#~ " : les chiffres de la chronologie,"
+#~ " par exemple, comptent actives, poses "
+#~ "et archivages."
+#~ msgstr ""
+#~ "No panels. Start with a preset: "
+#~ "the timeline counters, forexample, count "
+#~ "active, placed and archived caches."
+
+#~ msgid ""
+#~ "Aucun panneau. Commencez par un modèle"
+#~ " : la course des caches les "
+#~ "plus trouvées, par exemple, suit les "
+#~ "visites de vos poses."
+#~ msgstr ""
+#~ "No panel. Start with a template: "
+#~ "the race of the most found caches,"
+#~ " for example, follows the visits to"
+#~ " your hides."
+
+#~ msgid "Places libres : ${n} sur ${max}"
+#~ msgstr "Free slots: ${n} of ${max}"
+
+#~ msgid ""
+#~ "Plus de place : six panneaux au"
+#~ " maximum. Supprimez-en un pour en "
+#~ "ajouter un autre."
+#~ msgstr "No room left: six panels at most. Remove one to add another."
+
+#~ msgid "${n} places requises"
+#~ msgstr "${n} slots required"
+
+#~ msgid "« ${name} » supprimé"
+#~ msgstr "“${name}” deleted"
+
+#~ msgid ""
+#~ "Les DNF et les favoris reçus sont"
+#~ " comptés à part, avec les mêmes "
+#~ "statistiques que les trouvailles reçues."
+#~ msgstr ""
+#~ "Received DNFs and favorites are counted"
+#~ " separately, with the same statistics "
+#~ "as received finds."
+
+#~ msgid "Import impossible : fichier de panneaux invalide"
+#~ msgstr "Import failed: invalid panels file"
+
+#~ msgid "${count} panneau(x) importé(s)"
+#~ msgstr "${count} panel(s) imported"
+
+#~ msgid "Les autres panneaux ont déjà cette apparence."
+#~ msgstr "The other panels already have this appearance."
+
+#~ msgid "Apparence appliquée à un autre panneau"
+#~ msgstr "Appearance applied to one other panel"
+
+#~ msgid "Apparence appliquée à ${n} autres panneaux"
+#~ msgstr "Appearance applied to ${n} other panels"
+
+#~ msgid ""
+#~ "Panneaux réorganisés, mais la place "
+#~ "manque : réduisez-en la taille ou"
+#~ " masquez-en un."
+#~ msgstr ""
+#~ "Panels rearranged, but there is not "
+#~ "enough room: make some smaller or "
+#~ "hide one."
+
+#~ msgid "Panneaux réorganisés"
+#~ msgstr "Panels rearranged"
+
+#~ msgid ""
+#~ "« ${name} » dépasse de la carte"
+#~ " : réduisez sa largeur ou changez "
+#~ "de coin."
+#~ msgstr "“${name}” overflows the map: reduce its width or pick another corner."
+
+#~ msgid "le titre"
+#~ msgstr "the title"
+
+#~ msgid "une image"
+#~ msgstr "an image"
+
+#~ msgid "les infos"
+#~ msgstr "the info box"
+
+#~ msgid "« ${name} » chevauche ${other}."
+#~ msgstr "“${name}” overlaps ${other}."
+
+#~ msgid ""
+#~ "« ${name} » chevauche « ${other} »"
+#~ " : changez de coin ou réduisez "
+#~ "une largeur."
+#~ msgstr "“${name}” overlaps “${other}”: pick another corner or reduce a width."
+
+#~ msgid "Réorganiser automatiquement"
+#~ msgstr "Reorganize automatically"
+
+#~ msgid "${count}ᵉ trouvaille reçue"
+#~ msgstr "${count}th find received"
+
+#~ msgid "${count}ᵉ trouvaille"
+#~ msgstr "${count}th find"
+
+#~ msgid "Première trouvaille : ${code}"
+#~ msgstr "First find: ${code}"
+
+#~ msgid "${count}ᵉ trouvaille : ${code}"
+#~ msgstr "${count}th find: ${code}"
+
+#~ msgid "Disparition : ${name}"
+#~ msgstr "Disappears: ${name}"
+
+#~ msgid "Apparition : ${name}"
+#~ msgstr "Appears: ${name}"
+
+#~ msgid "Cache archivée : ${code}"
+#~ msgstr "Cache archived: ${code}"
+
+#~ msgid "Cache désarchivée : ${code}"
+#~ msgstr "Cache unarchived: ${code}"
+
+#~ msgid "Cache désactivée : ${code}"
+#~ msgstr "Cache disabled: ${code}"
+
+#~ msgid "Cache réactivée : ${code}"
+#~ msgstr "Cache reactivated: ${code}"
+
+#~ msgid "Maintenance : ${code}"
+#~ msgstr "Maintenance: ${code}"
+
+#~ msgid "Étape du poseur : ${code}"
+#~ msgstr "Owner step: ${code}"
+
+#~ msgid "DNF : ${code}"
+#~ msgstr "DNF: ${code}"
+
+#~ msgid "DNF n°${count} : ${code}"
+#~ msgstr "DNF #${count}: ${code}"
+
+#~ msgid "Cache posée : ${code}"
+#~ msgstr "Cache hidden: ${code}"
+
+#~ msgid "${count} actives"
+#~ msgstr "${count} active"
+
+#~ msgid "${count} active"
+#~ msgstr "${count} active"
+
+#~ msgid "${count} trouvailles reçues"
+#~ msgstr "${count} finds received"
+
+#~ msgid "${count} trouvaille reçue"
+#~ msgstr "${count} find received"
+
+#~ msgid "${count} caches"
+#~ msgstr "${count} caches"
+
+#~ msgid "${count} cache"
+#~ msgstr "${count} cache"
+
+#~ msgid "${count} poses"
+#~ msgstr "${count} placements"
+
+#~ msgid "${count} pose"
+#~ msgstr "${count} placement"
+
+#~ msgid "${count} archivages"
+#~ msgstr "${count} archivals"
+
+#~ msgid "${count} archivage"
+#~ msgstr "${count} archival"
+
+#~ msgid "${count} trouvailles"
+#~ msgstr "${count} finds"
+
+#~ msgid "${count} trouvaille"
+#~ msgstr "${count} find"
+
+#~ msgid "${count} autres logs"
+#~ msgstr "${count} other logs"
+
+#~ msgid "${count} autre log"
+#~ msgstr "${count} other log"
+
+#~ msgid "aucune trouvaille"
+#~ msgstr "no finds"
+
+#~ msgid "Aucune donnée à parcourir"
+#~ msgstr "No data to browse"
+
+#~ msgid "Début : ${date}"
+#~ msgstr "Start: ${date}"
+
+#~ msgid "Fin : ${date}"
+#~ msgstr "End: ${date}"
+
+#~ msgid "${date} — hors de l'animation"
+#~ msgstr "${date} — outside the animation"
+
+#~ msgid "Ce jour : ${text}"
+#~ msgstr "This day: ${text}"
+
+#~ msgid "Du ${from} au ${to} : ${text}"
+#~ msgstr "${from} to ${to}: ${text}"
+
+#~ msgid "Total : ${text}"
+#~ msgstr "Total: ${text}"
+
+#~ msgid "Vidéo : ${time}"
+#~ msgstr "Video: ${time}"
+
+#~ msgid "Début de l'animation ici (${date})"
+#~ msgstr "Animation start here (${date})"
+
+#~ msgid "Fin de l'animation ici (${date})"
+#~ msgstr "Animation end here (${date})"
+
+#~ msgid "Plage complète"
+#~ msgstr "Full range"
+
+#~ msgid "(à partir de ${s})"
+#~ msgstr "(from ${s})"
+
+#~ msgid "(jusqu'à ${e})"
+#~ msgstr "(until ${e})"
+
+#~ msgid "(blanc de fin ignoré)"
+#~ msgstr "(trailing silence ignored)"
+
+#~ msgid ""
+#~ "Musique plus courte que la durée "
+#~ "minimale (${min}) : durée ${d} "
+#~ "appliquée, la musique sera répétée en"
+#~ " boucle."
+#~ msgstr ""
+#~ "Music shorter than the minimum duration"
+#~ " (${min}): duration ${d} applied, the "
+#~ "music will be looped."
+
+#~ msgid "Elle se terminera en fondu."
+#~ msgstr "It will fade out at the end."
+
+#~ msgid "Elle commence plus loin pour finir avec la vidéo."
+#~ msgstr "It starts later so that it ends with the video."
+
+#~ msgid ""
+#~ "La musique (${m}) est plus longue "
+#~ "que la vidéo (${v}) : elle se "
+#~ "terminera en fondu."
+#~ msgstr ""
+#~ "The music (${m}) is longer than "
+#~ "the video (${v}): it will fade out"
+#~ " at the end."
+
+#~ msgid ""
+#~ "La musique (${m}) est plus courte "
+#~ "que la vidéo (${v}) : elle sera"
+#~ " répétée en boucle."
+#~ msgstr "The music (${m}) is shorter than the video (${v}): it will be looped."
+
+#~ msgid "Les reprises s'enchaînent en fondu."
+#~ msgstr "Each repeat crossfades into the next."
+
+#~ msgid "Elle commencera en fondu."
+#~ msgstr "It will fade in."
+
+#~ msgid "Mesure impossible pour ce format : le curseur règle le volume."
+#~ msgstr "Cannot be measured for this format: the slider sets the volume."
+
+#~ msgid ""
+#~ "Morceau très faible : niveau standard"
+#~ " limité à ${p} (il faudrait ${need})."
+#~ msgstr ""
+#~ "Very quiet track: standard level capped"
+#~ " at ${p} (it would need ${need})."
+
+#~ msgid "Morceau déjà au niveau standard : ${p} du fichier."
+#~ msgstr "Track already at the standard level: ${p} of the file."
+
+#~ msgid "Morceau enregistré fort : niveau standard à ${p} du fichier."
+#~ msgstr "Loud recording: standard level at ${p} of the file."
+
+#~ msgid "Morceau enregistré faiblement : niveau standard à ${p} du fichier."
+#~ msgstr "Quiet recording: standard level at ${p} of the file."
+
+#~ msgid "Les morceaux de l'enchaînement sont déjà équilibrés entre eux."
+#~ msgstr "The tracks in the sequence are already balanced with each other."
+
+#~ msgid "Arrêtez l'animation pour écouter la musique seule."
+#~ msgstr "Stop the animation to listen to the music on its own."
+
+#~ msgid ""
+#~ "Difficulté, terrain, taille, attributs et "
+#~ "propriétaire ne s'appliquent pas aux Lab"
+#~ " Caches."
+#~ msgstr ""
+#~ "Difficulty, terrain, size, attributes and "
+#~ "owner do not apply to Lab Caches."
+
+#~ msgid ""
+#~ "Les ${shown} propriétaires les plus "
+#~ "trouvés sur ${total} : tapez un "
+#~ "nom pour chercher parmi tous."
+#~ msgstr ""
+#~ "Showing the ${shown} most found owners"
+#~ " out of ${total}: type a name "
+#~ "to search them all."
+
+#~ msgid "${shown} premiers résultats sur ${total} : précisez la recherche."
+#~ msgstr "First ${shown} results out of ${total}: refine your search."
+
+#~ msgid "Non renseigné"
+#~ msgstr "Not specified"
+
+#~ msgid "— Choisir —"
+#~ msgstr "— Choose —"
+
+#~ msgid "Nombre maximal de préréglages atteint (${max})."
+#~ msgstr "Maximum number of presets reached (${max})."
+
+#~ msgid "Nom du préréglage :"
+#~ msgstr "Preset name:"
+
+#~ msgid "Un préréglage « ${name} » existe déjà."
+#~ msgstr "A preset “${name}” already exists."
+
+#~ msgid "Supprimer le préréglage « ${name} » ?"
+#~ msgstr "Delete the preset “${name}”?"
+
+#~ msgid "Supprimer le préréglage"
+#~ msgstr "Delete preset"
+
+#~ msgid "dont trajets de caméra ${d}"
+#~ msgstr "incl. camera travel ${d}"
+
+#~ msgid "dont approche caméra ${d}"
+#~ msgstr "incl. camera lead-in ${d}"
+
+#~ msgid "dont pauses caméra ${d}"
+#~ msgstr "incl. camera pauses ${d}"
+
+#~ msgid "dont retour caméra ${d}"
+#~ msgstr "incl. camera return ${d}"
+
+#~ msgid "≈ ${n} jours par image"
+#~ msgstr "≈ ${n} days per frame"
+
+#~ msgid "Exemple : ${name}"
+#~ msgstr "Example: ${name}"
+
+#~ msgid "Vide : nom du thème actif."
+#~ msgstr "Empty: name of the active theme."
+
+#~ msgid ""
+#~ "Les trajets de caméra dureraient "
+#~ "${travel}, trop pour la durée demandée"
+#~ " : ils sont accélérés pour tenir "
+#~ "en ${applied}. Pour des déplacements "
+#~ "plus posés, baissez le dynamisme ou "
+#~ "allongez la vidéo."
+#~ msgstr ""
+#~ "Camera travel would take ${travel}, too"
+#~ " long for the requested duration: it"
+#~ " is sped up to fit in "
+#~ "${applied}. For calmer moves, lower the"
+#~ " dynamism or lengthen the video."
+
+#~ msgid ""
+#~ "Le suivi de caméra met les dates"
+#~ " en pause pendant chaque déplacement "
+#~ ": depuis ce cadrage, ${n} trajets "
+#~ "ajoutent environ ${d} à la vidéo. "
+#~ "Pour tenir une durée précise, choisissez"
+#~ " « Par durée » ou « Sur "
+#~ "la musique »."
+#~ msgstr ""
+#~ "Camera follow pauses the dates during"
+#~ " each move: from this framing, ${n}"
+#~ " moves add about ${d} to the "
+#~ "video. To hit an exact duration, "
+#~ "choose “By duration” or “Sync to "
+#~ "music”."
+
+#~ msgid ""
+#~ "${n} trajets de caméra mettront les "
+#~ "dates en pause (+${d} au total) "
+#~ "pour que chaque jour soit cadré à"
+#~ " son affichage. Réduisez le dynamisme "
+#~ "ou le rythme pour l'éviter."
+#~ msgstr ""
+#~ "${n} camera journeys will pause the "
+#~ "dates (+${d} in total) so each day"
+#~ " is framed when it appears. Reduce"
+#~ " the dynamism or the pace to "
+#~ "avoid it."
+
+#~ msgid "Type inconnu"
+#~ msgstr "Unknown type"
+
+#~ msgid "Attendez la fin de l'enregistrement pour changer de musique."
+#~ msgstr "Wait for the recording to finish before changing the music."
+
+#~ msgid "à partir de ${s}"
+#~ msgstr "from ${s}"
+
+#~ msgid "Retirer « ${name} » des musiques récentes"
+#~ msgstr "Remove “${name}” from recent music"
+
+#~ msgid ""
+#~ "Les musiques choisies sont copiées pour"
+#~ " l'export ; les copies qui ne "
+#~ "servent plus sont supprimées."
+#~ msgstr ""
+#~ "Selected music is copied for export; "
+#~ "copies that are no longer used are"
+#~ " deleted."
+
+#~ msgid "Copies des musiques : ${size}"
+#~ msgstr "Music copies: ${size}"
+
+#~ msgid "La musique n'a pas pu être retirée."
+#~ msgstr "The music could not be removed."
+
+#~ msgid "Monter « ${name} »"
+#~ msgstr "Move “${name}” up"
+
+#~ msgid "Descendre « ${name} »"
+#~ msgstr "Move “${name}” down"
+
+#~ msgid "Retirer « ${name} » de l'enchaînement"
+#~ msgstr "Remove “${name}” from the sequence"
+
+#~ msgid "Préparation de l'enchaînement…"
+#~ msgstr "Preparing the sequence…"
+
+#~ msgid "Les morceaux n'ont pas pu être enchaînés."
+#~ msgstr "The tracks could not be joined."
+
+#~ msgid "Envoi du morceau…"
+#~ msgstr "Sending the track…"
+
+#~ msgid "Le morceau n'a pas pu être envoyé au serveur."
+#~ msgstr "The track could not be sent to the server."
+
+#~ msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
+#~ msgstr "“${name}” is no longer available: it has been removed from the list."
+
+#~ msgid ""
+#~ "Cette musique est illisible (format "
+#~ "inconnu ou fichier endommagé) : elle "
+#~ "ne sera pas ajoutée à la vidéo."
+#~ msgstr ""
+#~ "This music cannot be read (unknown "
+#~ "format or damaged file): it will "
+#~ "not be added to the video."
+
+#~ msgid "Blanc de ${s} s détecté à la fin de la musique."
+#~ msgstr "${s} s of silence detected at the end of the music."
+
+#~ msgid "Masquer le favori et les instructions"
+#~ msgstr "Hide the bookmark and instructions"
+
+#~ msgid ""
+#~ "Le dossier choisi (${folder}) est "
+#~ "inaccessible : les vidéos sont "
+#~ "enregistrées dans le dossier par défaut"
+#~ " en attendant."
+#~ msgstr ""
+#~ "The chosen folder (${folder}) cannot be"
+#~ " reached: videos are saved to the "
+#~ "default folder in the meantime."
+
+#~ msgid "Le dossier des vidéos n’a pas pu être modifié."
+#~ msgstr "The videos folder could not be changed."
+
+#~ msgid "${n} Go"
+#~ msgstr "${n} GB"
+
+#~ msgid "Copie enregistrée : ${name}"
+#~ msgstr "Copy saved: ${name}"
+
+#~ msgid "La copie de la vidéo a échoué."
+#~ msgstr "Copying the video failed."
+
+#~ msgid "Impossible d’ouvrir la vidéo"
+#~ msgstr "Unable to open the video"
+
+#~ msgid "Première cache posée"
+#~ msgstr "First cache placed"
+
+#~ msgid "Part des caches publiées trouvées"
+#~ msgstr "Share of published caches found"
+
+#~ msgid "Part des caches actives trouvées"
+#~ msgstr "Share of active caches found"
+
+#~ msgid "depuis le ${date}"
+#~ msgstr "since ${date}"
+
+#~ msgid "${n} types de caches / 1 000 km²"
+#~ msgstr "No change since this date"
+
+#~ msgid "${n} types de caches"
+#~ msgstr "${n} cache types"
+
+#~ msgid "${n} combinaisons D/T sur 81"
+#~ msgstr "${n} of 81 D/T combinations"
+
+#~ msgid "${n} caches actives / 1 000 km²"
+#~ msgstr "${n} active caches / 1,000 km²"
+
+#~ msgid "${n} trouvailles / 1 000 km²"
+#~ msgstr "${n} finds / 1,000 km²"
+
+#~ msgid "${n} caches actives"
+#~ msgstr "${n} active caches"
+
+#~ msgid "Depuis le ${date}"
+#~ msgstr "Since ${date}"
+
+#~ msgid "Aucune cache à ce jour"
+#~ msgstr "No cache yet"
+
+#~ msgid "Aucune trouvaille à ce jour"
+#~ msgstr "No find yet"
+
+#~ msgid "Première cache posée : ${date}"
+#~ msgstr "First cache placed: ${date}"
+
+#~ msgid "Première trouvaille : ${date}"
+#~ msgstr "First find: ${date}"
+
+#~ msgid "Vos trouvailles croisées avec les caches affichées, par code GC."
+#~ msgstr "Your finds crossed with the caches shown, by GC code."
+
+#~ msgid "Tout le jeu Évolution choisi, quels que soient les filtres de la carte."
+#~ msgstr "The whole chosen Evolution dataset, regardless of the map filters."
+
+#~ msgid "Calculé sur les caches du jeu affiché, à la date montrée."
+#~ msgstr "Computed on the caches of the dataset shown, at the displayed date."
+
+#~ msgid "Calculé sur vos trouvailles filtrées, à la date montrée."
+#~ msgstr "Computed on your filtered finds, at the displayed date."
+
+#~ msgid "Impossible de charger la liste des jeux."
+#~ msgstr "Unable to load the set list."
+
+#~ msgid "Chargement de la part trouvée…"
+#~ msgstr "Loading the share found…"
+
+#~ msgid "Chargement des contours…"
+#~ msgstr "Loading area outlines…"
+
+#~ msgid "Part trouvée indisponible."
+#~ msgstr "Share found unavailable."
+
+#~ msgid "Choisissez le jeu Évolution à croiser avec vos trouvailles."
+#~ msgstr "Choose the Evolution set to compare with your finds."
+
+#~ msgid "Ce jeu Évolution n'existe plus : choisissez-en un autre."
+#~ msgstr "This Evolution set no longer exists: choose another one."
+
+#~ msgid ""
+#~ "Aucune cache à colorer : ouvrez ou"
+#~ " importez un jeu dans l’onglet "
+#~ "Données."
+#~ msgstr "No caches to colour: open or import a dataset in the Data tab."
+
+#~ msgid ""
+#~ "Aucune trouvaille à colorer : importez"
+#~ " vos trouvailles dans l’onglet Données."
+#~ msgstr "No finds to colour: import your finds in the Data tab."
+
+#~ msgid "Liste des jeux indisponible"
+#~ msgstr "Set list unavailable"
+
+#~ msgid "Aucun jeu : importez-en un sur la page Évolution"
+#~ msgstr "No set: import one on the Evolution page"
+
+#~ msgid "Jeu supprimé"
+#~ msgstr "Deleted set"
+
+#~ msgid "Département, comté…"
+#~ msgstr "Department, county…"
+
+#~ msgid "hors carte"
+#~ msgstr "off the map"
+
+#~ msgid "placées par leur position : ${where}"
+#~ msgstr "placed by their position: ${where}"
+
+#~ msgid "sans pays : ${n}"
+#~ msgstr "no country: ${n}"
+
+#~ msgid "sans région : ${n}"
+#~ msgstr "no region: ${n}"
+
+#~ msgid "sans département ni comté : ${n}"
+#~ msgstr "no department or county: ${n}"
+
+#~ msgid "Vérification des noms…"
+#~ msgstr "Checking names…"
+
+#~ msgid "Rapport indisponible."
+#~ msgstr "Report unavailable."
+
+#~ msgid "Ouvrez un jeu pour vérifier ses noms."
+#~ msgstr "Open a set to check its names."
+
+#~ msgid "Importez vos trouvailles pour vérifier leurs noms."
+#~ msgstr "Import your finds to check their names."
+
+#~ msgid "Données de zones absentes : rien à vérifier."
+#~ msgstr "Zone data missing: nothing to check."
+
+#~ msgid "Ce jeu ne contient aucune cache."
+#~ msgstr "This set contains no cache."
+
+#~ msgid ""
+#~ "Tous les pays et régions des ${n}"
+#~ " caches du jeu sont reconnus par "
+#~ "leur nom."
+#~ msgstr ""
+#~ "All the countries and regions of "
+#~ "the ${n} caches in the set are "
+#~ "recognised by their name."
+
+#~ msgid ""
+#~ "Tous les pays et régions de vos"
+#~ " ${n} trouvailles sont reconnus par "
+#~ "leur nom."
+#~ msgstr ""
+#~ "All the countries and regions of "
+#~ "your ${n} finds are recognised by "
+#~ "their name."
+
+#~ msgid ""
+#~ "Noms non reconnus : ${k} (${rows}). "
+#~ "Ces caches sont placées par leur "
+#~ "position."
+#~ msgstr ""
+#~ "Unrecognised names: ${k} (${rows}). These "
+#~ "caches are placed by their position."
+
+#~ msgid ""
+#~ "Hors carte — ${parts}. Position absente,"
+#~ " ou contraire à la région de "
+#~ "Geocaching.com (souvent des mystères)."
+#~ msgstr ""
+#~ "Off the map — ${parts}. Missing "
+#~ "position, or one contradicting the "
+#~ "Geocaching.com region (often mysteries)."
+
+#~ msgid "MyGCFlow ${version} — rapport de rattachement aux zones"
+#~ msgstr "MyGCFlow ${version} — zone assignment report"
+
+#~ msgid "Source : jeu Évolution « ${name} » (${n} caches)"
+#~ msgstr "Source: Evolution set “${name}” (${n} caches)"
+
+#~ msgid "Source : mes trouvailles (${n})"
+#~ msgstr "Source: my finds (${n})"
+
+#~ msgid "Données de zones : ${signature}"
+#~ msgstr "Zone data: ${signature}"
+
+#~ msgid "Aucun nom non reconnu."
+#~ msgstr "No unrecognised name."
+
+#~ msgid "Noms non reconnus :"
+#~ msgstr "Unrecognised names:"
+
+#~ msgid "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
+#~ msgstr "Off the map: country ${a} · region ${b} · subregion ${c}"
+
+#~ msgid "Rapport copié"
+#~ msgstr "Report copied"
+
+#~ msgid "Copie impossible"
+#~ msgstr "Copy failed"
 

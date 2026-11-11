@@ -25,7 +25,7 @@ export const ZONE_COLUMNS = Object.freeze({
 // Mesures (§ 5.1 du plan). `mode` : `cumulative` (tout ce qui s'est passé
 // jusqu'au jour) ou `active` (lignes vivantes ce jour-là : Évolution, caches
 // posées — la valeur monte ET descend).
-export const ZONE_OPS = Object.freeze(['count', 'distinct', 'dt_coverage', 'mean', 'first_day']);
+export const ZONE_OPS = Object.freeze(['count', 'distinct', 'dt_coverage', 'dt_missing', 'mean', 'first_day']);
 // `code` : caches différentes ; `day` : jours différents.
 export const ZONE_DISTINCT_FIELDS = Object.freeze(['cache_type', 'container', 'owner', 'code', 'day']);
 export const ZONE_MEAN_FIELDS = Object.freeze(['difficulty', 'terrain']);
@@ -143,9 +143,13 @@ function makeAccumulator(spec, table, slots) {
             reset() { n.fill(0); for (const m of seen) m.clear(); },
         };
     }
-    case 'dt_coverage': {
+    case 'dt_coverage':
+    case 'dt_missing': {
         const cells = new Int32Array(slots * DT_CELLS);
         const covered = new Int32Array(slots);
+        // dt_missing : objectif de complétude — combinaisons restant à
+        // trouver (zones sans ligne : null, donc non colorées).
+        const missing = spec.op === 'dt_missing';
         return {
             n,
             add(z, r, sign) {
@@ -159,7 +163,7 @@ function makeAccumulator(spec, table, slots) {
                 if (before === 0 && cells[k] > 0) covered[z]++;
                 else if (before > 0 && cells[k] === 0) covered[z]--;
             },
-            value: (z) => covered[z],
+            value: (z) => (missing ? (n[z] > 0 ? DT_CELLS - covered[z] : null) : covered[z]),
             reset() { n.fill(0); cells.fill(0); covered.fill(0); },
         };
     }

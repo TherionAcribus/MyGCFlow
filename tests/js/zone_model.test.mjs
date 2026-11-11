@@ -50,6 +50,10 @@ test('types différents, couverture D/T et moyenne (Labs écartés)', () => {
     assert.equal(at({ op: 'distinct', field: 'cache_type' }).valueOf('FR-BRE'), 3);
     // D/T : (2,2), (4,1.5), (3,2) ; le Lab n'en a pas.
     assert.equal(at({ op: 'dt_coverage' }).valueOf('FR-BRE'), 3);
+    // Objectif de complétude : 81 − couvertes ; zone sans ligne : null.
+    const missing = at({ op: 'dt_missing' });
+    assert.equal(missing.valueOf('FR-BRE'), 78);
+    assert.equal(missing.valueOf('FR-29'), null);
     assert.equal(at({ op: 'mean', field: 'difficulty' }).valueOf('FR-BRE'), 3);
     assert.equal(at({ op: 'first_day' }).valueOf('FR-PDL'), day('2021-06-10'));
     // Zone dont aucune ligne n'a de D : pas de moyenne (et non 0).
