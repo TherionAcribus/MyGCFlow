@@ -627,3 +627,18 @@ test('erreurs : « Réessayer » recharge contours et liste des jeux', async ({ 
   await expect.poll(async () => (await zones(page)).values).toEqual({ 'FR-75': 3, 'FR-44': 1, 'FR-29': 3, 'FR-69': 1 });
   expect(errors).toEqual([]);
 });
+
+test('« Exporter la carte en image » télécharge un PNG de la carte', async ({ page, request }) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  await page.locator('a[href="#zones"]').click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnZonesExportImage').click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^mygcflow-carte-\d{4}-\d{2}-\d{2}\.png$/);
+  const buf = await fs.promises.readFile(await download.path());
+  expect(buf.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  expect(errors).toEqual([]);
+});

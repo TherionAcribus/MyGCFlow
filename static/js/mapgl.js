@@ -3097,6 +3097,57 @@ function getCaptureDpr() {
 let highResRatio = null;
 let highResPreviousPixelRatio = null;
 
+// ---------------------------------------------------------------------------
+// Export PNG de la carte (bouton « Exporter la carte en image » de l'onglet
+// Zones) : une frame composite identique à celle de la vidéo — fonds, zones,
+// points et trajet visibles, légende des zones, panneaux et cartouches.
+// « Zones seules » donne donc une image épurée, et en pause c'est le jour
+// montré qui est capturé.
+let mapExportCanvas = null;
+export async function exportMapImage() {
+    if (!map) return false;
+    // Haute résolution : la densité réglée pour la vidéo. Pendant un
+    // enregistrement, elle est déjà posée — ne pas y toucher.
+    const capturing = isRecordingActive();
+    if (!capturing) beginHighResCapture({ multiplier: 1 });
+    try {
+        const viewport = map.getViewport();
+        const allCanvases = viewport.querySelectorAll('canvas');
+        const rect = viewport.getBoundingClientRect();
+        const dpr = getCaptureRatio();
+        const w = Math.max(1, Math.floor(rect.width * dpr));
+        const h = Math.max(1, Math.floor(rect.height * dpr));
+        if (!mapExportCanvas) mapExportCanvas = document.createElement('canvas');
+        if (mapExportCanvas.width !== w || mapExportCanvas.height !== h) {
+            mapExportCanvas.width = w;
+            mapExportCanvas.height = h;
+        }
+        const ctx = mapExportCanvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        // Chaque canvas OL couvre le même viewport : l'étirer à la densité de
+        // capture mappe correctement les sources de résolution différente.
+        allCanvases.forEach((c) => { if (c.width > 0 && c.height > 0) ctx.drawImage(c, 0, 0, w, h); });
+        // Légende des zones, panneaux, images et cartouches — comme la vidéo.
+        pkg.addZoneLegendToCanvas?.(ctx, w, h, dpr);
+        pkg.addStatsPanelsToCanvas?.(ctx, w, h, dpr);
+        pkg.addImagePanelsToCanvas?.(ctx, w, h, dpr, sampleAppearClock());
+        addOverlaysToCanvas(ctx, w, h, dpr);
+        const blob = await new Promise((resolve) => mapExportCanvas.toBlob(resolve, 'image/png'));
+        if (!blob) return false;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mygcflow-carte-${new Date().toISOString().slice(0, 10)}.png`;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        return true;
+    } finally {
+        if (!capturing) endHighResCapture();
+    }
+}
+
 // Densité à laquelle la frame courante est composée.
 function getCaptureRatio() {
     return highResRatio || getCaptureDpr();

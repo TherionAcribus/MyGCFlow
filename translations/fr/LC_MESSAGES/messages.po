@@ -1,13 +1,9 @@
-# French translations for PROJECT.
-# Copyright (C) 2024 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 11:56+0100\n"
+"POT-Creation-Date: 2026-11-11 13:28+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -248,7 +244,7 @@ msgstr "Traitement vidéo"
 msgid "Traitement ffmpeg"
 msgstr "Traitement ffmpeg"
 
-#: capture.py:1226 static/js/mapgl.js:5507 templates/guide.html:351
+#: capture.py:1226 static/js/mapgl.js:5564 templates/guide.html:351
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Vidéo prête"
@@ -318,7 +314,7 @@ msgid "Maintenance du poseur"
 msgstr "Maintenance du poseur"
 
 #: event_flash.py:61 poses_dataset.py:639 static/js/chart_labels.mjs:244
-#: static/js/zone_layer.js:669
+#: static/js/zone_layer.js:700
 msgid "Première trouvaille"
 msgstr "Première trouvaille"
 
@@ -686,7 +682,7 @@ msgstr "Statut"
 
 #: poses_dataset.py:638 static/js/chart_labels.mjs:264
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
-#: static/js/zone_layer.js:673 templates/menu_informations.html:64
+#: static/js/zone_layer.js:704 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Trouvailles"
@@ -1515,7 +1511,7 @@ msgstr ""
 "Cette musique ne peut pas être lue (format non pris en charge ou fichier "
 "endommagé)."
 
-#: static/js/background_audio.js:121 static/js/mapgl.js:5508
+#: static/js/background_audio.js:121 static/js/mapgl.js:5565
 #: static/js/ui.js:949 static/js/ui.js:1018 static/js/ui.js:2371
 #: static/js/ui.js:11666 static/js/ui.js:11746 static/js/ui.js:11952
 #: static/js/ui.js:12067 static/js/ui.js:12124 static/js/ui.js:12150
@@ -1548,7 +1544,7 @@ msgstr ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
 "l'enregistrement : la vidéo peut comporter des zones vides."
 
-#: static/js/bdd.js:250 static/js/mapgl.js:6823
+#: static/js/bdd.js:250 static/js/mapgl.js:6880
 msgid "Terminé"
 msgstr "Terminé"
 
@@ -1924,7 +1920,7 @@ msgstr "Écart"
 msgid "Aucune donnée"
 msgstr "Aucune donnée"
 
-#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1045
+#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1076
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} sur ${of} caches"
@@ -2409,12 +2405,12 @@ msgstr "Cumul sur la période"
 #: static/js/chart_labels.mjs:242 static/js/chart_labels.mjs:382
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
-#: static/js/zone_layer.js:673 templates/menu_stats.html:177
+#: static/js/zone_layer.js:704 templates/menu_stats.html:177
 #: templates/menu_stats.html:243 templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Caches actives"
 
-#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:667
+#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:698
 msgid "Combinaisons D/T"
 msgstr "Combinaisons D/T"
 
@@ -3269,7 +3265,7 @@ msgstr "${n}ᵉ trouvaille"
 msgid "Nouvelle zone · ${date}"
 msgstr "Nouvelle zone · ${date}"
 
-#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1056
+#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1087
 #, python-brace-format
 msgid "Au ${date}"
 msgstr "Au ${date}"
@@ -3454,7 +3450,7 @@ msgid "Géocaches"
 msgstr "Géocaches"
 
 #: static/js/chart_labels.mjs:659 static/js/chart_labels.mjs:672
-#: static/js/zone_layer.js:1008
+#: static/js/zone_layer.js:1039
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n} %"
@@ -3474,7 +3470,7 @@ msgstr "${n} / 1 000 km²"
 msgid "${n} j"
 msgstr "${n} j"
 
-#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:665
+#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:696
 msgid "/ 1 000 km²"
 msgstr "/ 1 000 km²"
 
@@ -3628,8 +3624,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Arrêtez l'animation avant de changer de base."
 
 #: static/js/evolution_data.js:315 static/js/evolution_data.js:1405
-#: static/js/mapgl.js:4847 static/js/mapgl.js:4899 static/js/mapgl.js:4906
-#: static/js/mapgl.js:6056 static/js/notifications.js:425
+#: static/js/mapgl.js:4904 static/js/mapgl.js:4956 static/js/mapgl.js:4963
+#: static/js/mapgl.js:6113 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Attention"
 
@@ -5350,110 +5346,110 @@ msgstr "Aucune maintenance enregistrée"
 msgid "Ma cache"
 msgstr "Ma cache"
 
-#: static/js/mapgl.js:4432
+#: static/js/mapgl.js:4489
 msgid "Aucune vidéo n'a été créée."
 msgstr "Aucune vidéo n'a été créée."
 
-#: static/js/mapgl.js:4432
+#: static/js/mapgl.js:4489
 msgid "Arrêt de l'enregistrement"
 msgstr "Arrêt de l'enregistrement"
 
-#: static/js/mapgl.js:4838
+#: static/js/mapgl.js:4895
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Capture rapide non supportée, bascule en mode image par image."
 
-#: static/js/mapgl.js:4838 static/js/mapgl.js:6412
+#: static/js/mapgl.js:4895 static/js/mapgl.js:6469
 msgid "Compatibilité"
 msgstr "Compatibilité"
 
-#: static/js/mapgl.js:4847
+#: static/js/mapgl.js:4904
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Données en cours de chargement. Veuillez réessayer."
 
-#: static/js/mapgl.js:4867
+#: static/js/mapgl.js:4924
 msgid "Préparation de l'enregistrement..."
 msgstr "Préparation de l'enregistrement..."
 
-#: static/js/mapgl.js:4867
+#: static/js/mapgl.js:4924
 msgid "Nettoyage initial"
 msgstr "Nettoyage initial"
 
-#: static/js/mapgl.js:4891
+#: static/js/mapgl.js:4948
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 
-#: static/js/mapgl.js:4892
+#: static/js/mapgl.js:4949
 msgid "Enregistrement annulé"
 msgstr "Enregistrement annulé"
 
-#: static/js/mapgl.js:4897
+#: static/js/mapgl.js:4954
 msgid "Répertoire d’images nettoyé."
 msgstr "Répertoire d’images nettoyé."
 
-#: static/js/mapgl.js:4897
+#: static/js/mapgl.js:4954
 msgid "Préparation"
 msgstr "Préparation"
 
-#: static/js/mapgl.js:4899
+#: static/js/mapgl.js:4956
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Nettoyage initial impossible. Poursuite de l'enregistrement."
 
-#: static/js/mapgl.js:4906
+#: static/js/mapgl.js:4963
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Erreur nettoyage initial. Poursuite."
 
-#: static/js/mapgl.js:5092
+#: static/js/mapgl.js:5149
 msgid "0% | préparation..."
 msgstr "0% | préparation..."
 
-#: static/js/mapgl.js:5101 static/js/mapgl.js:6068
+#: static/js/mapgl.js:5158 static/js/mapgl.js:6125
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ La musique sera intégrée automatiquement après la capture."
 
-#: static/js/mapgl.js:5108
+#: static/js/mapgl.js:5165
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Capture en cours – Ne pas bouger la fenêtre"
 
-#: static/js/mapgl.js:5109
+#: static/js/mapgl.js:5166
 msgid "Préparation de la capture..."
 msgstr "Préparation de la capture..."
 
-#: static/js/mapgl.js:5141
+#: static/js/mapgl.js:5198
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture en pause : revenez sur cet onglet pour la poursuivre."
 
-#: static/js/mapgl.js:5141 static/js/mapgl.js:6645
+#: static/js/mapgl.js:5198 static/js/mapgl.js:6702
 msgid "Onglet masqué"
 msgstr "Onglet masqué"
 
-#: static/js/mapgl.js:5252
+#: static/js/mapgl.js:5309
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "Le rendu initial de la carte n'a pas abouti (timeout)"
 
-#: static/js/mapgl.js:5379
+#: static/js/mapgl.js:5436
 msgid "Nettoyage en cours..."
 msgstr "Nettoyage en cours..."
 
-#: static/js/mapgl.js:5479
+#: static/js/mapgl.js:5536
 msgid "erreur inconnue"
 msgstr "erreur inconnue"
 
-#: static/js/mapgl.js:5481
+#: static/js/mapgl.js:5538
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "La capture a été interrompue suite à une erreur : ${message}"
 
-#: static/js/mapgl.js:5483
+#: static/js/mapgl.js:5540
 msgid "Capture interrompue"
 msgstr "Capture interrompue"
 
-#: static/js/mapgl.js:5507 static/js/mapgl.js:6222 static/js/mapgl.js:6519
-#: static/js/mapgl.js:6537 static/js/mapgl.js:6946 static/js/mapgl.js:7052
-#: static/js/mapgl.js:7056
+#: static/js/mapgl.js:5564 static/js/mapgl.js:6279 static/js/mapgl.js:6576
+#: static/js/mapgl.js:6594 static/js/mapgl.js:7003 static/js/mapgl.js:7109
+#: static/js/mapgl.js:7113
 msgid "Enregistrement"
 msgstr "Enregistrement"
 
-#: static/js/mapgl.js:5520
+#: static/js/mapgl.js:5577
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
@@ -5461,7 +5457,7 @@ msgstr ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
 
-#: static/js/mapgl.js:5524
+#: static/js/mapgl.js:5581
 msgid ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
@@ -5469,23 +5465,23 @@ msgstr ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
 
-#: static/js/mapgl.js:5562
+#: static/js/mapgl.js:5619
 msgid "task_id manquant"
 msgstr "task_id manquant"
 
-#: static/js/mapgl.js:5563
+#: static/js/mapgl.js:5620
 msgid "Délai d'assemblage dépassé"
 msgstr "Délai d'assemblage dépassé"
 
-#: static/js/mapgl.js:5576
+#: static/js/mapgl.js:5633
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 
-#: static/js/mapgl.js:5590
+#: static/js/mapgl.js:5647
 msgid "Tâche échouée"
 msgstr "Tâche échouée"
 
-#: static/js/mapgl.js:5597
+#: static/js/mapgl.js:5654
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
@@ -5494,68 +5490,68 @@ msgstr ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 
-#: static/js/mapgl.js:5709
+#: static/js/mapgl.js:5766
 msgid "Envoi des dernières images..."
 msgstr "Envoi des dernières images..."
 
-#: static/js/mapgl.js:5804 static/js/ui.js:9077
+#: static/js/mapgl.js:5861 static/js/ui.js:9077
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
-#: static/js/mapgl.js:5804
+#: static/js/mapgl.js:5861
 msgid "Création de la vidéo à partir des images..."
 msgstr "Création de la vidéo à partir des images..."
 
-#: static/js/mapgl.js:5888
+#: static/js/mapgl.js:5945
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Impossible de lancer l'assemblage vidéo"
 
-#: static/js/mapgl.js:5895
+#: static/js/mapgl.js:5952
 msgid "Création de la vidéo..."
 msgstr "Création de la vidéo..."
 
-#: static/js/mapgl.js:5902
+#: static/js/mapgl.js:5959
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Vidéo créée. Nettoyage des images..."
 
-#: static/js/mapgl.js:5903
+#: static/js/mapgl.js:5960
 msgid "Nettoyage en cours"
 msgstr "Nettoyage en cours"
 
-#: static/js/mapgl.js:5903
+#: static/js/mapgl.js:5960
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Vidéo créée avec succès. Nettoyage des images..."
 
-#: static/js/mapgl.js:5920
+#: static/js/mapgl.js:5977
 msgid "Nettoyage terminé"
 msgstr "Nettoyage terminé"
 
-#: static/js/mapgl.js:5934
+#: static/js/mapgl.js:5991
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Erreur lors du traitement automatique: ${message}"
 
-#: static/js/mapgl.js:5936
+#: static/js/mapgl.js:5993
 msgid "Erreur chaîne"
 msgstr "Erreur chaîne"
 
-#: static/js/mapgl.js:6056
+#: static/js/mapgl.js:6113
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Données en cours de chargement. Réessayez."
 
-#: static/js/mapgl.js:6169
+#: static/js/mapgl.js:6226
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Enregistrement en cours – Ne pas bouger la fenêtre"
 
-#: static/js/mapgl.js:6170
+#: static/js/mapgl.js:6227
 msgid "Démarrage de la capture..."
 msgstr "Démarrage de la capture..."
 
-#: static/js/mapgl.js:6222
+#: static/js/mapgl.js:6279
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Erreur de la capture rapide, bascule en mode image par image."
 
-#: static/js/mapgl.js:6411
+#: static/js/mapgl.js:6468
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
@@ -5564,15 +5560,15 @@ msgstr ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
 " ${used}."
 
-#: static/js/mapgl.js:6473
+#: static/js/mapgl.js:6530
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Résolution réduite aux capacités du navigateur."
 
-#: static/js/mapgl.js:6519
+#: static/js/mapgl.js:6576
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 
-#: static/js/mapgl.js:6537
+#: static/js/mapgl.js:6594
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -5580,7 +5576,7 @@ msgstr ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
 
-#: static/js/mapgl.js:6645
+#: static/js/mapgl.js:6702
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
@@ -5588,89 +5584,89 @@ msgstr ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 
-#: static/js/mapgl.js:6847
+#: static/js/mapgl.js:6904
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Copie vers le dossier vidéo échouée"
 
-#: static/js/mapgl.js:6871
+#: static/js/mapgl.js:6928
 msgid "Finalisation"
 msgstr "Finalisation"
 
-#: static/js/mapgl.js:6871
+#: static/js/mapgl.js:6928
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Écriture de la durée de la vidéo..."
 
-#: static/js/mapgl.js:6887
+#: static/js/mapgl.js:6944
 msgid "Ajout audio"
 msgstr "Ajout audio"
 
-#: static/js/mapgl.js:6887
+#: static/js/mapgl.js:6944
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Fusion de la piste audio avec la vidéo en cours..."
 
-#: static/js/mapgl.js:6931 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:6988 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalisation"
 
-#: static/js/mapgl.js:6931
+#: static/js/mapgl.js:6988
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Accélération x${applicable} pour lecture à vitesse normale..."
 
-#: static/js/mapgl.js:6946
+#: static/js/mapgl.js:7003
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "La vidéo n'a pas pu être assemblée."
 
-#: static/js/mapgl.js:6955
+#: static/js/mapgl.js:7012
 msgid "Traitement serveur"
 msgstr "Traitement serveur"
 
-#: static/js/mapgl.js:6955
+#: static/js/mapgl.js:7012
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Envoi de la vidéo au serveur..."
 
-#: static/js/mapgl.js:7000 static/js/mapgl.js:7007
+#: static/js/mapgl.js:7057 static/js/mapgl.js:7064
 msgid "Traitement serveur..."
 msgstr "Traitement serveur..."
 
-#: static/js/mapgl.js:7005
+#: static/js/mapgl.js:7062
 msgid "Traitement serveur non démarré"
 msgstr "Traitement serveur non démarré"
 
-#: static/js/mapgl.js:7052
+#: static/js/mapgl.js:7109
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr "L'enregistrement a été interrompu : la copie des données a échoué."
 
-#: static/js/mapgl.js:7056
+#: static/js/mapgl.js:7113
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Traitement serveur indisponible, repli local..."
 
-#: static/js/mapgl.js:7112
+#: static/js/mapgl.js:7169
 msgid "Élément non trouvé"
 msgstr "Élément non trouvé"
 
-#: static/js/mapgl.js:7133
+#: static/js/mapgl.js:7190
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
 
-#: static/js/mapgl.js:7154
+#: static/js/mapgl.js:7211
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "Aucun canvas trouvé dans la carte"
 
-#: static/js/mapgl.js:7222
+#: static/js/mapgl.js:7279
 msgid "Échec conversion canvas en blob"
 msgstr "Échec conversion canvas en blob"
 
-#: static/js/mapgl.js:8018 static/js/mapgl.js:8110
+#: static/js/mapgl.js:8075 static/js/mapgl.js:8167
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "Aucun déplacement à tracer pour cette sélection."
 
-#: static/js/mapgl.js:8018 static/js/mapgl.js:8020 static/js/mapgl.js:8110
+#: static/js/mapgl.js:8075 static/js/mapgl.js:8077 static/js/mapgl.js:8167
 #: templates/guide.html:219 templates/menu_style.html:86
 msgid "Trajet"
 msgstr "Trajet"
 
-#: static/js/mapgl.js:8020
+#: static/js/mapgl.js:8077
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
@@ -5678,7 +5674,7 @@ msgstr ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 
-#: static/js/mapgl.js:8677 static/js/mapgl.js:8970
+#: static/js/mapgl.js:8734 static/js/mapgl.js:9027
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -5686,15 +5682,15 @@ msgstr ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
 
-#: static/js/mapgl.js:8677 templates/menu_style.html:82
+#: static/js/mapgl.js:8734 templates/menu_style.html:82
 msgid "Pseudos"
 msgstr "Pseudos"
 
-#: static/js/mapgl.js:8966
+#: static/js/mapgl.js:9023
 msgid "Choisissez d’abord une forme de flash."
 msgstr "Choisissez d’abord une forme de flash."
 
-#: static/js/mapgl.js:8966 static/js/mapgl.js:8970 templates/guide.html:215
+#: static/js/mapgl.js:9023 static/js/mapgl.js:9027 templates/guide.html:215
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
@@ -6672,8 +6668,8 @@ msgstr "${n} caches publiées"
 msgid "${n} archivages datés"
 msgstr "${n} archivages datés"
 
-#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1016
-#: static/js/zone_layer.js:1051 static/js/zone_report_ui.js:86
+#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1047
+#: static/js/zone_layer.js:1082 static/js/zone_report_ui.js:86
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} trouvailles"
@@ -7715,7 +7711,7 @@ msgstr "Jours avec trouvaille"
 msgid "Plus longue série (jours)"
 msgstr "Plus longue série (jours)"
 
-#: static/js/stats_panels.js:1432 static/js/zone_layer.js:666
+#: static/js/stats_panels.js:1432 static/js/zone_layer.js:697
 #: templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Types de caches différents"
@@ -9071,90 +9067,90 @@ msgstr "Ouverture du flux vidéo impossible"
 msgid "Aucun flux vidéo ouvert"
 msgstr "Aucun flux vidéo ouvert"
 
-#: static/js/zone_layer.js:668
+#: static/js/zone_layer.js:699
 msgid "Combinaisons D/T manquantes"
 msgstr "Combinaisons D/T manquantes"
 
-#: static/js/zone_layer.js:669
+#: static/js/zone_layer.js:700
 msgid "Première cache posée"
 msgstr "Première cache posée"
 
-#: static/js/zone_layer.js:671
+#: static/js/zone_layer.js:702
 msgid "Part des caches publiées trouvées"
 msgstr "Part des caches publiées trouvées"
 
-#: static/js/zone_layer.js:671
+#: static/js/zone_layer.js:702
 msgid "Part des caches actives trouvées"
 msgstr "Part des caches actives trouvées"
 
-#: static/js/zone_layer.js:683
+#: static/js/zone_layer.js:714
 #, python-brace-format
 msgid "depuis le ${date}"
 msgstr "depuis le ${date}"
 
-#: static/js/zone_layer.js:1004
+#: static/js/zone_layer.js:1035
 msgid "Aucune évolution depuis cette date"
 msgstr "Aucune évolution depuis cette date"
 
-#: static/js/zone_layer.js:1010 static/js/zone_layer.js:1035
+#: static/js/zone_layer.js:1041 static/js/zone_layer.js:1066
 #, python-brace-format
 msgid "${n} types de caches / 1 000 km²"
 msgstr "${n} types de caches / 1 000 km²"
 
-#: static/js/zone_layer.js:1010 static/js/zone_layer.js:1036
+#: static/js/zone_layer.js:1041 static/js/zone_layer.js:1067
 #, python-brace-format
 msgid "${n} types de caches"
 msgstr "${n} types de caches"
 
-#: static/js/zone_layer.js:1012 static/js/zone_layer.js:1038
+#: static/js/zone_layer.js:1043 static/js/zone_layer.js:1069
 #, python-brace-format
 msgid "${n} combinaisons D/T sur 81"
 msgstr "${n} combinaisons D/T sur 81"
 
-#: static/js/zone_layer.js:1015 static/js/zone_layer.js:1048
+#: static/js/zone_layer.js:1046 static/js/zone_layer.js:1079
 #, python-brace-format
 msgid "${n} caches actives / 1 000 km²"
 msgstr "${n} caches actives / 1 000 km²"
 
-#: static/js/zone_layer.js:1015 static/js/zone_layer.js:1049
+#: static/js/zone_layer.js:1046 static/js/zone_layer.js:1080
 #, python-brace-format
 msgid "${n} trouvailles / 1 000 km²"
 msgstr "${n} trouvailles / 1 000 km²"
 
-#: static/js/zone_layer.js:1016 static/js/zone_layer.js:1051
+#: static/js/zone_layer.js:1047 static/js/zone_layer.js:1082
 #, python-brace-format
 msgid "${n} caches actives"
 msgstr "${n} caches actives"
 
-#: static/js/zone_layer.js:1022
+#: static/js/zone_layer.js:1053
 #, python-brace-format
 msgid "Depuis le ${date}"
 msgstr "Depuis le ${date}"
 
-#: static/js/zone_layer.js:1028
+#: static/js/zone_layer.js:1059
 msgid "Aucune cache à ce jour"
 msgstr "Aucune cache à ce jour"
 
-#: static/js/zone_layer.js:1028
+#: static/js/zone_layer.js:1059
 msgid "Aucune trouvaille à ce jour"
 msgstr "Aucune trouvaille à ce jour"
 
-#: static/js/zone_layer.js:1032
+#: static/js/zone_layer.js:1063
 #, python-brace-format
 msgid "Première cache posée : ${date}"
 msgstr "Première cache posée : ${date}"
 
-#: static/js/zone_layer.js:1032
+#: static/js/zone_layer.js:1063
 #, python-brace-format
 msgid "Première trouvaille : ${date}"
 msgstr "Première trouvaille : ${date}"
 
-#: static/js/zone_layer.js:1039
+#: static/js/zone_layer.js:1070
 #, python-brace-format
 msgid "Il en manque ${n}"
 msgstr "Il en manque ${n}"
 
-#: static/js/zone_layer.js:1041
+#: static/js/zone_layer.js:1072
 #, python-brace-format
 msgid "${n} combinaisons D/T manquantes"
 msgstr "${n} combinaisons D/T manquantes"
@@ -9226,6 +9222,10 @@ msgstr "Aucun jeu : importez-en un sur la page Évolution"
 #: static/js/zone_layer_ui.js:195
 msgid "Jeu supprimé"
 msgstr "Jeu supprimé"
+
+#: static/js/zone_layer_ui.js:294
+msgid "L'image de la carte n'a pas pu être créée."
+msgstr "L'image de la carte n'a pas pu être créée."
 
 #: static/js/zone_report_ui.js:67
 msgid "Département, comté…"
@@ -9348,7 +9348,7 @@ msgstr "Noms non reconnus :"
 msgid "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
 msgstr "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
 
-#: static/js/zone_report_ui.js:238 templates/menu_zones.html:193
+#: static/js/zone_report_ui.js:238 templates/menu_zones.html:199
 msgid "Copier le rapport"
 msgstr "Copier le rapport"
 
@@ -11830,9 +11830,15 @@ msgstr ""
 msgid ""
 "Pour lire la carte colorée sans surcharge, « Zones seules » masque les "
 "trouvailles, les poses, le trajet et les flashs : seules les zones "
-"restent, cliquables comme avant. Décoché, tout réapparaît — rien n'est "
-"rechargé."
+"restent, cliquables comme avant — décoché, tout réapparaît. « Exporter la"
+" carte en image » télécharge un PNG de la carte telle qu'affichée, "
+"légende comprise ; en « Zones seules », l'image est épurée."
 msgstr ""
+"Pour lire la carte colorée sans surcharge, « Zones seules » masque les "
+"trouvailles, les poses, le trajet et les flashs : seules les zones "
+"restent, cliquables comme avant — décoché, tout réapparaît. « Exporter la"
+" carte en image » télécharge un PNG de la carte telle qu'affichée, "
+"légende comprise ; en « Zones seules », l'image est épurée."
 
 #: templates/guide.html:466
 msgid ""
@@ -11843,8 +11849,8 @@ msgid ""
 msgstr ""
 "Les couleurs sont calculées sur la fin de l'animation : une teinte garde "
 "le même sens du premier au dernier jour. Une zone qui change de nuance "
-"passe en fondu, avec un bref éclat de son contour — sauf si votre "
-"système demande de réduire les animations."
+"passe en fondu, avec un bref éclat de son contour — sauf si votre système"
+" demande de réduire les animations."
 
 #: templates/guide.html:470
 msgid "Signalez un nom ou demandez un pays"
@@ -17358,19 +17364,31 @@ msgstr "Sauvegarder le thème"
 msgid "Ces réglages font partie du thème actif."
 msgstr "Ces réglages font partie du thème actif."
 
-#: templates/menu_zones.html:181
+#: templates/menu_zones.html:178
+msgid "Exporter la carte en image"
+msgstr "Exporter la carte en image"
+
+#: templates/menu_zones.html:180
+msgid ""
+"PNG de la carte telle qu'affichée : zones, légende et couches visibles. «"
+" Zones seules » donne une image épurée."
+msgstr ""
+"PNG de la carte telle qu'affichée : zones, légende et couches visibles. «"
+" Zones seules » donne une image épurée."
+
+#: templates/menu_zones.html:187
 msgid "Noms reconnus"
 msgstr "Noms reconnus"
 
-#: templates/menu_zones.html:187
+#: templates/menu_zones.html:193
 msgid "Voir les noms non reconnus"
 msgstr "Voir les noms non reconnus"
 
-#: templates/menu_zones.html:197
+#: templates/menu_zones.html:203
 msgid "Demander un pays ou un nom"
 msgstr "Demander un pays ou un nom"
 
-#: templates/menu_zones.html:200
+#: templates/menu_zones.html:206
 msgid ""
 "Un nom non reconnu n'empêche pas l'affichage : la cache est placée "
 "d'après sa position. Copiez le rapport et collez-le dans la demande pour "
@@ -17380,7 +17398,7 @@ msgstr ""
 "d'après sa position. Copiez le rapport et collez-le dans la demande pour "
 "que le pays soit ajouté ou le nom corrigé."
 
-#: templates/menu_zones.html:205
+#: templates/menu_zones.html:211
 msgid ""
 "Le découpage le plus fin existe pour la France, l'Allemagne, le Royaume-"
 "Uni, l'Irlande et les États-Unis ; ailleurs, la carte montre les régions."
@@ -25090,4 +25108,14 @@ msgstr "Créer la vidéo"
 
 #~ msgid "Copie impossible"
 #~ msgstr "Copie impossible"
+
+#~ msgid ""
+#~ "Pour lire la carte colorée sans "
+#~ "surcharge, « Zones seules » masque "
+#~ "les trouvailles, les poses, le trajet"
+#~ " et les flashs : seules les "
+#~ "zones restent, cliquables comme avant. "
+#~ "Décoché, tout réapparaît — rien n'est"
+#~ " rechargé."
+#~ msgstr ""
 

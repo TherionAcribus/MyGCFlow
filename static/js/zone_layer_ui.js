@@ -287,6 +287,12 @@ export function initZoneLayerUI() {
         syncZoneLayerUI();
         pkg.retryZoneLayer?.();
     });
+    // « Exporter la carte en image » : PNG de la carte telle qu'affichée
+    // (mapgl.js compose la frame comme pour la vidéo).
+    el('btnZonesExportImage')?.addEventListener('click', async () => {
+        const ok = await pkg.exportMapImage?.();
+        if (ok === false) pkg.showError?.(t("L'image de la carte n'a pas pu être créée."));
+    });
     // Réouverture : l'état se relit, et la liste des jeux se recharge si
     // « part trouvée » est active (import/suppression dans un autre onglet).
     document.querySelector('a[href="#zones"]')?.addEventListener('shown.bs.tab', () => {

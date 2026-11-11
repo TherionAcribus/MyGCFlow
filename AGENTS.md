@@ -223,6 +223,11 @@ Autres repères :
   `reducedMotion` (prefers-reduced-motion, sauf enregistrement) —
   `fading` reste à 0 en lecture réduite (test via
   `page.emulateMedia({ reducedMotion: 'reduce' })`).
+  « Exporter la carte en image » (`exportMapImage` de mapgl.js, bouton
+  `btnZonesExportImage`) télécharge un PNG composé comme une frame vidéo
+  (canevas + légende zones + panneaux + habillage, haute résolution
+  `beginHighResCapture` restauré dans un `finally`) — en spec, capter
+  `page.waitForEvent('download')` au clic.
   Rapport de rattachement (carte « Noms reconnus » de l'onglet Zones) :
   chargé à l'ouverture de l'onglet — pour un autre contenu, intercepter
   `GET /api/zones/report*` puis rouvrir l'onglet (cliquer un autre onglet

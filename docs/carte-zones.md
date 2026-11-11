@@ -339,6 +339,16 @@ rattachement.
   Comme le dynamisme caméra, les enregistrements sont exemptés
   (`pkg.isRecordingActive`) : la vidéo produite est identique quel que
   soit le poste.
+- `Exporter la carte en image` (bouton de la carte Apparence) :
+  `exportMapImage()` de `mapgl.js` télécharge un PNG de la carte telle
+  qu'affichée — canevas des couches visibles, légende des zones, panneaux
+  et habillage composés comme pour la vidéo (`addZoneLegendToCanvas`,
+  `addStatsPanelsToCanvas`, `addImagePanelsToCanvas`,
+  `addOverlaysToCanvas`). `beginHighResCapture`/`endHighResCapture`
+  encadrent la composition : le fichier est plus net que l'écran et l'état
+  de la carte est restauré même en cas d'échec ; le jour capturé est celui
+  affiché (en pause, le jour de pause — pas la fin). En « Zones seules »,
+  l'image est épurée puisque les autres couches sont déjà masquées.
 
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,
