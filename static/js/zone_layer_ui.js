@@ -57,6 +57,10 @@ export function syncZoneLayerUI() {
     }
     set('zonesShareBase', o.shareBase);
     if (share) syncDatasetChoices(o.shareDataset);
+    // Densité : proposée seulement pour les mesures qui se comptent.
+    const densityRow = el('zonesPerKm2Row');
+    if (densityRow) densityRow.hidden = !['count', 'distinct_types'].includes(o.measure);
+    check('zonesPerKm2', o.perKm2);
     const value = el('zonesOpacityValue');
     if (value) value.textContent = o.opacity + ' %';
     const position = el('zonesLegendPosition');
@@ -121,6 +125,7 @@ function readOptions() {
     pkg.options.zones = normalizeZoneLayerOptions({
         level: value('zonesLevel'),
         measure: value('zonesMeasure'),
+        perKm2: checked('zonesPerKm2'),
         scale: value('zonesScale'),
         classes: value('zonesClasses'),
         color: value('zonesColor'),
@@ -253,7 +258,7 @@ export function initZoneLayerUI() {
     syncZoneLayerUI();
     display.addEventListener('change', onDisplayToggle);
     for (const id of ['zonesLevel', 'zonesMeasure', 'zonesScale', 'zonesClasses',
-        'zonesGridSize', 'zonesShareDataset', 'zonesShareBase']) {
+        'zonesGridSize', 'zonesShareDataset', 'zonesShareBase', 'zonesPerKm2']) {
         el(id)?.addEventListener('change', onOptionChange);
     }
     for (const id of ['zonesColor', 'zonesOutline', 'zonesGlow', 'zonesLegend', 'zonesLegendPosition']) {

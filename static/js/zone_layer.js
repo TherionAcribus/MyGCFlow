@@ -38,12 +38,12 @@ import { isEvolutionPage, isMainPage } from './app_mode.mjs';
 import { findsTable, tableFromRecords } from './chart_sources.mjs';
 import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
 import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, shareScaleThresholds, zoneScale } from './zone_model.mjs';
-import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName } from './zone_geo.js';
-import { cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
+import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName, zoneProps } from './zone_geo.js';
+import { cellArea, cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
 import {
-    LEGEND_STYLE, classColors, dayOfDate, fadeProgress, legendEntries, legendOrigin, legendSize, mixHex,
-    normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
+    LEGEND_STYLE, ZONE_LAYER_DENSITY_MEASURES, classColors, dayOfDate, fadeProgress, legendEntries,
+    legendOrigin, legendSize, mixHex, normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
 } from './zone_layer_model.mjs';
 
 // Sous le trait (1000), les points (1001) et les flashs : au-dessus du fond.
@@ -72,6 +72,11 @@ let legendCanvas = null;
 let legendKey = '';
 
 const opts = () => normalizeZoneLayerOptions(pkg.options?.zones);
+
+// Densité effective : la case « Par km² » peut rester cochée pour une
+// mesure qui ne se compte pas — elle n'est appliquée que pour celles de
+// ZONE_LAYER_DENSITY_MEASURES (le reste affiche la valeur brute).
+const densityOf = (o) => o.perKm2 && ZONE_LAYER_DENSITY_MEASURES.includes(o.measure);
 
 // Page qui a une couche de zones : 'main', 'evolution' ou null.
 export function zoneLayerPage() {
@@ -264,15 +269,19 @@ function buildModel() {
         ? withGridColumn(table, o.gridSize)
         : mixedZoneTable(table, o.level, fallback));
     if (o.measure === 'found_share') return buildShareModel(o, rev, fallback, zoneTable);
-    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.gridSize}|${o.measure}|${fallback ? 'f' : '-'}`;
+    const density = densityOf(o);
+    const key = `${zoneLayerPage()}|${rev}|${o.level}|${o.gridSize}|${o.measure}|${density ? 'k' : '-'}|${fallback ? 'f' : '-'}`;
     if (model?.key === key) return model;
+    // Densité : surfaces lues à chaque valeur (les contours arrivent après
+    // le modèle) ; en grille, la surface d'une case est calculée.
+    const areas = density ? (o.level === 'grid' ? cellArea : (id) => zoneProps(id)?.area_km2) : null;
     if (zoneLayerPage() === 'evolution') {
         // Caches actives (sauf « première cache », qui n'a pas de fin).
         const source = pkg.evolutionZoneTable?.();
         const raw = source?.table || { n: 0, day: new Int32Array(0), endDay: new Float64Array(0), dicts: {} };
         const table = zoneTable(raw);
-        const measure = { ...zoneMeasureFor(o.measure), mode: o.measure === 'first_day' ? 'cumulative' : 'active' };
-        const state = createZoneState({ table, level: o.level, measure });
+        const measure = { ...zoneMeasureFor(o.measure), mode: o.measure === 'first_day' ? 'cumulative' : 'active', per: areas ? 'km2' : null };
+        const state = createZoneState({ table, level: o.level, measure, areas });
         const countries = (table.dicts?.zone_country || []).filter(Boolean);
         model = { key, revision: rev, state, countries, level: o.level, rows: raw.n, cells: table.dicts.zone_grid || null };
         scaleKey = null;
@@ -297,7 +306,7 @@ function buildModel() {
         }
     }
     const table = zoneTable(tableFromRecords(records, { source: 'finds' }));
-    const state = createZoneState({ table, level: o.level, measure: zoneMeasureFor(o.measure) });
+    const state = createZoneState({ table, level: o.level, measure: { ...zoneMeasureFor(o.measure), per: areas ? 'km2' : null }, areas });
     const countries = (table.dicts?.zone_country || []).filter(Boolean);
     model = { key, revision: rev, state, countries, level: o.level, rows: records.length, cells: table.dicts.zone_grid || null };
     scaleKey = null;
@@ -488,20 +497,30 @@ function styleFor(feature) {
 function legendTitle() {
     const o = opts();
     const evolution = zoneLayerPage() === 'evolution';
-    if (o.measure === 'distinct_types') return t('Types de caches différents');
+    // Densité : même unité que les mini-cartes Statistiques, pour 1 000 km².
+    const unit = densityOf(o) ? ' ' + t('/ 1 000 km²') : '';
+    if (o.measure === 'distinct_types') return t('Types de caches différents') + unit;
     if (o.measure === 'dt_coverage') return t('Combinaisons D/T');
     if (o.measure === 'first_day') return evolution ? t('Première cache posée') : t('Première trouvaille');
     if (o.measure === 'found_share') {
         return o.shareBase === 'all' ? t('Part des caches publiées trouvées') : t('Part des caches actives trouvées');
     }
-    return evolution ? t('Caches actives') : t('Trouvailles');
+    return (evolution ? t('Caches actives') : t('Trouvailles')) + unit;
 }
 
 function legendModel() {
     const o = opts();
     if (!o.legend || status !== 'ready' || !scale || scale.min === null) return null;
-    const fmt = new Intl.NumberFormat(document.documentElement.lang || 'fr', { maximumFractionDigits: 0 });
-    const entries = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), percent: o.measure === 'found_share' });
+    const lang = document.documentElement.lang || 'fr';
+    const density = densityOf(o);
+    // Densité : bornes en valeurs/km², affichées pour 1 000 km² (2 chiffres
+    // significatifs : « 0,44 », « 29 »).
+    const fmt = new Intl.NumberFormat(lang, density ? { maximumSignificantDigits: 2 } : { maximumFractionDigits: 0 });
+    const entries = legendEntries(scale, o, {
+        formatNumber: (v) => fmt.format(density ? v * 1000 : v),
+        percent: o.measure === 'found_share',
+        float: density,
+    });
     return entries.length ? { title: legendTitle(), entries, position: o.legendPosition } : null;
 }
 
@@ -748,7 +767,8 @@ export function zonePopupAt(pixel) {
     const o = opts();
     const evolution = zoneLayerPage() === 'evolution';
     const lang = document.documentElement.lang || 'fr';
-    const fmt = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+    const density = densityOf(o);
+    const fmt = new Intl.NumberFormat(lang, density ? { maximumSignificantDigits: 2 } : { maximumFractionDigits: 1 });
     const title = (o.level === 'grid' ? cellLabel(id, { locale: lang }) : zoneName(id)) || String(id);
     const value = model.state.valueOf(id);
     let main;
@@ -760,13 +780,19 @@ export function zonePopupAt(pixel) {
         const first = pkg.formatDateDisplay?.(new Date(y, m - 1, d)) || String(value);
         main = evolution ? t('Première cache posée : ${date}', { date: first }) : t('Première trouvaille : ${date}', { date: first });
     } else if (o.measure === 'distinct_types') {
-        main = t('${n} types de caches', { n: fmt.format(value) });
+        main = density
+            ? t('${n} types de caches / 1 000 km²', { n: fmt.format(value * 1000) })
+            : t('${n} types de caches', { n: fmt.format(value) });
     } else if (o.measure === 'dt_coverage') {
         main = t('${n} combinaisons D/T sur 81', { n: fmt.format(value) });
     } else if (o.measure === 'found_share') {
         main = fmt.format(value) + ' %';
         const part = model.state.parts?.(id);
         if (part) detail = t('${n} sur ${of} caches', { n: fmt.format(part[0]), of: fmt.format(part[1]) });
+    } else if (density) {
+        main = evolution
+            ? t('${n} caches actives / 1 000 km²', { n: fmt.format(value * 1000) })
+            : t('${n} trouvailles / 1 000 km²', { n: fmt.format(value * 1000) });
     } else {
         main = evolution ? t('${n} caches actives', { n: fmt.format(value) }) : t('${n} trouvailles', { n: fmt.format(value) });
     }
@@ -777,9 +803,11 @@ export function zonePopupAt(pixel) {
     };
 }
 
-// Relevé E2E.
+// Relevé E2E. `values` : dans l'unité affichée (pour 1 000 km² en densité).
 export function getZoneLayerDebugState() {
-    const values = model?.state ? Object.fromEntries(model.state.values()) : {};
+    const density = densityOf(opts());
+    const values = model?.state
+        ? Object.fromEntries([...model.state.values()].map(([id, v]) => [id, density ? v * 1000 : v])) : {};
     // Part trouvée : [trouvées, base] par zone.
     const parts = model?.state?.parts
         ? Object.fromEntries(Object.keys(values).map((id) => [id, model.state.parts(id)])) : null;

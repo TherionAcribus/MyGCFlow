@@ -56,6 +56,27 @@ test('part trouvée : jeu, base, légende en pourcentage', () => {
     assert.deepEqual(fixedLabels, ['< 25 %', '25–50 %', '50–75 %', '≥ 75 %']);
 });
 
+test('densité : option gardée, légende fractionnaire', () => {
+    const o = normalizeZoneLayerOptions({ measure: 'count', perKm2: true });
+    assert.equal(o.perKm2, true);
+    // L'option est conservée quelle que soit la mesure (l'utilisateur la
+    // retrouve en revenant à un décompte) ; la couche ne l'applique que
+    // pour « count » et « distinct_types » (ZONE_LAYER_DENSITY_MEASURES).
+    assert.equal(normalizeZoneLayerOptions({ measure: 'first_day', perKm2: true }).perKm2, true);
+    assert.equal(normalizeZoneLayerOptions({ perKm2: 'oui' }).perKm2, false);
+    const profile = zoneLayerToProfile(o);
+    assert.equal(profile.per_km2, true);
+    assert.deepEqual(zoneLayerFromProfile(profile), o);
+    // Légende : bornes ouvertes comme la part trouvée, sans « % » (le
+    // formatNumber de la couche affiche pour 1 000 km²).
+    const fmt = new Intl.NumberFormat('fr', { maximumSignificantDigits: 2 });
+    const scale = zoneScale([0.0001, 0.0003, 0.0004, 0.028], { mode: 'quantile', classes: 3 });
+    const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v * 1000), float: true }).map((e) => e.label);
+    assert.equal(labels[0][0], '<');
+    assert.equal(labels[labels.length - 1][0], '≥');
+    assert.ok(labels.every((label) => !label.includes('%')));
+});
+
 test('mesures de zone_model', () => {
     assert.deepEqual(zoneMeasureFor('distinct_types'), { op: 'distinct', field: 'cache_type' });
     assert.deepEqual(zoneMeasureFor('first_day'), { op: 'first_day' });

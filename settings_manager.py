@@ -695,6 +695,9 @@ class ZoneLayerOptions:
     # Évolution croise toujours le jeu ouvert) et base du pourcentage.
     share_dataset: int = 0
     share_base: str = "active"  # "active" (actives à la date) ou "all"
+    # Densité (valeur par km², affichée pour 1 000 km²) : seulement pour
+    # les mesures qui se comptent ("count", "distinct_types").
+    per_km2: bool = False
 
 
 @dataclass
@@ -1540,6 +1543,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                            and not isinstance(zn.get("share_dataset"), bool)
                            and 0 <= zn["share_dataset"] < 10 ** 10 else pz.share_dataset),
             share_base=_coerce_choice(zn.get("share_base"), ZONE_LAYER_SHARE_BASES, pz.share_base),
+            per_km2=_zbool("per_km2", pz.per_km2),
         )
 
     return p

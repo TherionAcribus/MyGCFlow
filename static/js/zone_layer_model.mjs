@@ -11,6 +11,8 @@ import { GRID_DEFAULT_SIZE, normalizeGridSize } from './zone_grid.mjs';
 // static/json/defaultValues.json.
 export const ZONE_LAYER_LEVELS = Object.freeze(['country', 'region', 'subregion', 'grid']);
 export const ZONE_LAYER_MEASURES = Object.freeze(['count', 'distinct_types', 'dt_coverage', 'first_day', 'found_share']);
+// Mesures qui acceptent la densité (valeur par km²) : ce qui se compte.
+export const ZONE_LAYER_DENSITY_MEASURES = Object.freeze(['count', 'distinct_types']);
 // Part trouvée : caches actives à la date (défaut) ou toutes celles apparues.
 export const ZONE_LAYER_SHARE_BASES = Object.freeze(['active', 'all']);
 export const ZONE_LAYER_SCALES = Object.freeze(['quantile', 'linear', 'log']);
@@ -20,6 +22,7 @@ export const ZONE_LAYER_LEGEND_POSITIONS = Object.freeze(['bottom-left', 'bottom
 export const ZONE_LAYER_DEFAULTS = Object.freeze({
     level: 'subregion',
     measure: 'count',
+    perKm2: false,
     scale: 'quantile',
     classes: 5,
     color: '#1E6FD9',
@@ -59,9 +62,14 @@ export function normalizeHex(value, fallback) {
 export function normalizeZoneLayerOptions(raw) {
     const src = raw && typeof raw === 'object' ? raw : {};
     const d = ZONE_LAYER_DEFAULTS;
+    const measure = choice(src.measure, ZONE_LAYER_MEASURES, d.measure);
     return {
         level: choice(src.level, ZONE_LAYER_LEVELS, d.level),
-        measure: choice(src.measure, ZONE_LAYER_MEASURES, d.measure),
+        measure,
+        // Gardée quelle que soit la mesure (l'utilisateur la retrouve en
+        // revenant à un décompte) ; appliquée seulement pour les mesures
+        // de ZONE_LAYER_DENSITY_MEASURES — voir zone_layer.js.
+        perKm2: bool(src.perKm2, d.perKm2),
         scale: choice(src.scale, ZONE_LAYER_SCALES, d.scale),
         classes: clampInt(src.classes, d.classes, ZONE_LAYER_CLASSES_RANGE),
         color: normalizeHex(src.color, d.color),
@@ -80,7 +88,7 @@ export function normalizeZoneLayerOptions(raw) {
 export function zoneLayerToProfile(options) {
     const o = normalizeZoneLayerOptions(options);
     return {
-        level: o.level, measure: o.measure, scale: o.scale, classes: o.classes, color: o.color,
+        level: o.level, measure: o.measure, per_km2: o.perKm2, scale: o.scale, classes: o.classes, color: o.color,
         opacity: o.opacity, outline: o.outline, glow: o.glow, legend: o.legend, legend_position: o.legendPosition,
         grid_size: o.gridSize, share_dataset: o.shareDataset, share_base: o.shareBase,
     };
@@ -89,7 +97,7 @@ export function zoneLayerToProfile(options) {
 export function zoneLayerFromProfile(profile) {
     const p = profile && typeof profile === 'object' ? profile : {};
     return normalizeZoneLayerOptions({
-        ...p, legendPosition: p.legend_position, gridSize: p.grid_size,
+        ...p, legendPosition: p.legend_position, gridSize: p.grid_size, perKm2: p.per_km2,
         shareDataset: p.share_dataset, shareBase: p.share_base,
     });
 }
@@ -146,10 +154,12 @@ export function fadeProgress(start, now, duration = ZONE_FADE_MS) {
 // `scale` : zone_model.mjs › zoneScale. `formatNumber(v)` : nombre de la
 // page (Intl) ; les années n'en ont pas besoin.
 // `percent` : valeurs continues en pourcentage (part trouvée) — « 12–31 % ».
+// `float` : valeurs fractionnaires (densité) — mêmes bornes ouvertes, sans
+// « % » ; `formatNumber` les met dans l'unité affichée (pour 1 000 km²).
 // Classes extrêmes ouvertes : l'échelle est celle de l'état final, mais des
 // valeurs plus basses (cumul qui démarre) ou plus fortes (caches actives
 // d'Évolution) tombent dedans pendant l'animation — « ≤ 2 », « ≥ 3 ».
-export function legendEntries(scale, options, { formatNumber = (v) => String(v), percent = false } = {}) {
+export function legendEntries(scale, options, { formatNumber = (v) => String(v), percent = false, float = false } = {}) {
     if (!scale || scale.min === null || scale.min === undefined) return [];
     const colors = classColors(options.color, scale.classes);
     const { breaks, min, max } = scale;
@@ -159,13 +169,14 @@ export function legendEntries(scale, options, { formatNumber = (v) => String(v),
         const lo = c === 0 ? min : breaks[c - 1];
         const upper = c === last ? null : breaks[c];
         let label;
-        if (percent) {
+        if (percent || float) {
+            const suffix = percent ? ' %' : '';
             const a = formatNumber(lo);
             const b = formatNumber(upper ?? max);
-            if (c === 0 && last === 0) label = `${a} %`;
-            else if (c === 0) label = `< ${formatNumber(upper)} %`;
-            else if (upper === null) label = `≥ ${a} %`;
-            else label = `${a === b ? a : `${a}–${b}`} %`;
+            if (c === 0 && last === 0) label = `${a}${suffix}`;
+            else if (c === 0) label = `< ${formatNumber(upper)}${suffix}`;
+            else if (upper === null) label = `≥ ${a}${suffix}`;
+            else label = `${a === b ? a : `${a}–${b}`}${suffix}`;
         } else if (scale.mode === 'year') {
             const a = year(lo);
             const b = upper === null ? year(max) : year(upper) - 1;

@@ -65,6 +65,10 @@
                             <option value="found_share">{% if mode == 'evolution' %}{{ _("La part des caches que j'ai trouvées") }}{% else %}{{ _("La part trouvée d'un jeu Évolution") }}{% endif %}</option>
                         </select>
                         <p id="zonesScopeHint" class="form-hint text-muted mt-1 mb-0"></p>
+                        <div class="form-check mt-1" id="zonesPerKm2Row" hidden>
+                            <input class="form-check-input" type="checkbox" id="zonesPerKm2">
+                            <label class="form-check-label" for="zonesPerKm2">{{ _("Par km² (densité)") }}</label>
+                        </div>
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label" for="zonesPreset">{{ _("Préréglages") }}</label>

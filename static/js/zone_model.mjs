@@ -206,8 +206,9 @@ function makeAccumulator(spec, table, slots) {
 
 // `table` : table de chart_sources.mjs ; `level` : niveau de zone ;
 // `measure` : { op, field?, mode?, per? } ; `rows` : lignes retenues (filtres
-// de la page), toutes par défaut ; `areas` : surface (km²) par id de zone,
-// Map ou objet, pour la densité.
+// de la page), toutes par défaut ; `areas` : surface (km²) par id de zone —
+// Map, objet ou fonction (les contours de la carte arrivent après le
+// modèle : une fonction relit la surface à chaque valeur).
 export function createZoneState({ table, level, measure, rows = null, areas = null }) {
     const spec = normalizeZoneMeasure(measure);
     const columnName = ZONE_COLUMNS[level];
@@ -216,7 +217,7 @@ export function createZoneState({ table, level, measure, rows = null, areas = nu
     const outside = ids.length;
     const slots = ids.length + 1;
     const indexOf = new Map(ids.map((id, i) => [id, i]));
-    const area = (id) => (areas instanceof Map ? areas.get(id) : areas?.[id]);
+    const area = typeof areas === 'function' ? areas : (id) => (areas instanceof Map ? areas.get(id) : areas?.[id]);
     const events = table ? buildEvents(table, rows, spec.mode === 'active') : { day: new Int32Array(0), code: new Int32Array(0) };
     const acc = makeAccumulator(spec, table || {}, slots);
     const changed = new Set();

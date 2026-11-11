@@ -149,6 +149,7 @@
     "zones": {
         "level": "subregion",
         "measure": "count",
+        "perKm2": false,
         "scale": "quantile",
         "classes": 5,
         "color": "#1E6FD9",

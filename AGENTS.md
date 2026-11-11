@@ -208,7 +208,11 @@ Autres repères :
   en pause (rAF arrêté = `isIdleState` vrai dans les deux cas). Légende :
   les classes extrêmes ont des bornes ouvertes (« ≤ 2 », « ≥ 3 ») car
   l'échelle est celle de l'état final — un test qui attend « 1–2 » doit
-  viser les classes du milieu.
+  viser les classes du milieu. Densité (`per_km2`, case « Par km² » sous
+  la mesure, seulement pour `count`/`distinct_types`) : les valeurs du
+  relevé sont dans l'unité affichée, pour 1 000 km² (Paris de la fixture :
+  3 / 105 km² ≈ 28,6) ; les surfaces viennent de `zoneProps(id).area_km2`
+  (contours chargés après le modèle) ou de `cellArea` en grille.
   Rapport de rattachement (carte « Noms reconnus » de l'onglet Zones) :
   chargé à l'ouverture de l'onglet — pour un autre contenu, intercepter
   `GET /api/zones/report*` puis rouvrir l'onglet (cliquer un autre onglet

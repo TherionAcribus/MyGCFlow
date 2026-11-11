@@ -290,11 +290,22 @@ rattachement.
   tout de suite.
 - Bloc `zones` du thème (`ZoneLayerOptions` ↔ `pkg.options.zones`,
   `zone_layer_model.mjs`) : `level`, `measure` (`count`,
-  `distinct_types`, `dt_coverage`, `first_day`), `scale`, `classes` (3 à
-  7), `color`, `opacity` (20 à 85 %), `outline`, `glow`, `legend`,
-  `legend_position`. Défauts identiques dans `settings_manager.py`,
-  `defaultValues.json` et le module (vérifié par les tests). Le suivi
-  « thème modifié » écoute aussi l'onglet `#zones` (profiles.js).
+  `distinct_types`, `dt_coverage`, `first_day`, `found_share`), `per_km2`,
+  `scale`, `classes` (3 à 7), `color`, `opacity` (20 à 85 %), `outline`,
+  `glow`, `legend`, `legend_position`. Défauts identiques dans
+  `settings_manager.py`, `defaultValues.json` et le module (vérifié par
+  les tests). Le suivi « thème modifié » écoute aussi l'onglet `#zones`
+  (profiles.js).
+- `per_km2` (« Par km² », case sous la mesure) : densité — la valeur
+  divisée par la surface de la zone (`areas` : `zoneProps(id).area_km2`,
+  relue à chaque valeur car les contours arrivent après le modèle ; en
+  grille, `cellArea`). Appliquée seulement aux mesures qui se comptent
+  (`count`, `distinct_types`) ; pour les autres, l'option reste cochée
+  mais sans effet — l'utilisateur la retrouve en revenant à un décompte
+  (`densityOf` de `zone_layer.js`).
+  Valeurs et libellés affichés **pour 1 000 km²**, même convention que la
+  normalisation `per_km2` des mini-cartes Statistiques — la case de
+  l'onglet réutilise le libellé « Par km² (densité) » des panneaux.
 
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,
@@ -313,7 +324,8 @@ rattachement.
   `profileManager.saveCurrentAsProfile`, comme dans l'onglet Style). Le
   périmètre des données de la mesure choisie est rappelé sous « Couleur
   selon » (`#zonesScopeHint` : trouvailles filtrées vs jeu Évolution
-  entier). Le bouton « Réessayer » (`#btnZonesRetry`) apparaît sur les
+  entier), la case « Par km² » (`#zonesPerKm2Row`) n'apparaît que pour les
+  mesures qui se comptent. Le bouton « Réessayer » (`#btnZonesRetry`) apparaît sur les
   erreurs de chargement : `retryZoneLayer` relance les contours en échec
   (`retryZoneGeo` : l'échec du catalogue ou d'un fichier était mémorisé
   pour la page) et les entrées `found_share`/`finds` en erreur. La liste

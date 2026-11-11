@@ -92,6 +92,36 @@ test('onglet Zones : la couche s\'affiche à l\'état final, la préférence est
   expect(errors).toEqual([]);
 });
 
+test('densité : trouvailles par km², case réservée aux mesures qui se comptent', async ({ page, request }) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await page.locator('a[href="#zones"]').click();
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  await expect(page.locator('#zonesPerKm2Row')).toBeVisible();
+  await page.locator('#zonesPerKm2').check();
+  await expect.poll(async () => (await zones(page)).options.perKm2).toBe(true);
+  const state = await zones(page);
+  // Valeurs relevées pour 1 000 km² (unité des mini-cartes Statistiques) :
+  // Paris 3 / 105 km² ≈ 28,6 ; Finistère 3 / 6 762 km² ≈ 0,44.
+  expect(state.values['FR-75']).toBeGreaterThan(25);
+  expect(state.values['FR-75']).toBeLessThan(32);
+  expect(state.values['FR-29']).toBeGreaterThan(0.4);
+  expect(state.values['FR-29']).toBeLessThan(0.5);
+  expect(state.values['FR-44']).toBeGreaterThan(0.1);
+  expect(state.values['FR-69']).toBeGreaterThan(0.28);
+  expect(state.legend.title).toContain('km²');
+  // Pas de densité pour une date : la case disparaît (et l'option revient
+  // en revenant à « nombre de trouvailles », la case étant restée cochée).
+  await page.locator('#zonesMeasure').selectOption('first_day');
+  await expect(page.locator('#zonesPerKm2Row')).toBeHidden();
+  await page.locator('#zonesMeasure').selectOption('count');
+  await expect(page.locator('#zonesPerKm2Row')).toBeVisible();
+  expect((await zones(page)).options.perKm2).toBe(true);
+  await page.locator('#zonesPerKm2').uncheck();
+  await expect.poll(async () => (await zones(page)).values['FR-75']).toBe(3);
+  expect(errors).toEqual([]);
+});
+
 test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({ page, request }) => {
   await setDisplay(request, true);
   const errors = await openMap(page);
