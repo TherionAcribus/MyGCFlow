@@ -178,7 +178,7 @@ function cardBodyContent(spec) {
 
 // Une source n'a pas pu être chargée : le graphique affiche l'explication et
 // une relance plutôt qu'un rendu qui ressemblerait à un vrai zéro.
-function unavailableBlock(failed) {
+export function unavailableBlock(failed) {
     const box = document.createElement('div');
     box.className = 'stats-card-unavailable';
     const icon = document.createElement('i');

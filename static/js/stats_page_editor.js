@@ -17,7 +17,7 @@ import {
     HEIGHT_PIXELS, MAX_ITEMS, periodOfValue,
 } from './dashboard_model.mjs';
 import { withUndo } from './stats_page_card_actions.js';
-import { computeResult, renderChartInto, renderNumber } from './stats_page_cards.js';
+import { computeResult, renderChartInto, renderNumber, unavailableBlock } from './stats_page_cards.js';
 import { activeDashboard, attributeName, chartTitle, fillPeriodSelect } from './stats_page_dashboard.js';
 import { dashboardExtent, dashboardTables, tableOf } from './stats_page_data.js';
 import { $, state } from './stats_page_state.js';
@@ -407,10 +407,21 @@ export function renderPreview() {
     if (!state.editor) return;
     const { spec } = state.editor.item;
     const dashboard = activeDashboard();
-    const result = computeResult(spec, dashboard);
     $('statsEdPreviewTitle').textContent = chartTitle(spec);
     const host = $('statsEdPreview');
     const number = $('statsEdPreviewNumber');
+    // Même règle que la carte : une source en échec n'est pas un zéro —
+    // l'aperçu affiche l'explication et la relance, pas une valeur fausse.
+    const failed = chartSources(spec).filter((s) => state.sourceErrors.has(s));
+    if (failed.length) {
+        state.previewChart?.dispose();
+        state.previewChart = null;
+        host.hidden = true;
+        number.hidden = false;
+        number.replaceChildren(unavailableBlock(failed));
+        return;
+    }
+    const result = computeResult(spec, dashboard);
     if (spec.view.chart === 'number') {
         host.hidden = true;
         number.hidden = false;

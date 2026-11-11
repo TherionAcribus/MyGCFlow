@@ -789,6 +789,33 @@ test('une source en échec : la carte explique et « Réessayer » recharge', as
   expect(errors).toEqual([]);
 });
 
+test('une source en échec : l\'aperçu de l\'éditeur le dit aussi, et relance', async ({ page, request }) => {
+  let fail = true;
+  await page.route('**/api/stats/dnf', async (route) => {
+    if (fail) return route.abort();
+    return route.fulfill({ json: { features: [{ type: 'Feature', geometry: null, properties: {
+      source_kind: 'dnf', record_uid: 'dnf:GC1ABCD', gc_code: 'GC1ABCD', name: 'Sans issue',
+      cache_type: 'Traditional Cache', date_find: '2024-03-05', dnf_dates: ['2024-03-05'],
+      found: false } }], logs: 1 } });
+  });
+  const { errors, card: target } = await openWithChart(page, request,
+    { source: 'dnf', groupBy: 'none', view: { chart: 'number' } }, 'S');
+  // Même explication que la carte : pas de « 0 » qui ressemble à un vrai zéro.
+  await cardAction(page, target.id, 'edit');
+  const preview = page.locator('#statsEdPreviewNumber');
+  await expect(preview.locator('.stats-card-unavailable')).toBeVisible();
+  await expect(preview.locator('.stats-card-unavailable')).toContainText('Mes DNF');
+  await expect(preview.locator('.stats-number-value')).toHaveCount(0);
+
+  fail = false;
+  await preview.locator('.stats-card-retry').click();
+  await expect(preview.locator('.stats-number-value')).toHaveText('1');
+  await expect.poll(async () => (await snapshot(page)).sourceErrors).toEqual([]);
+  // La carte derrière s'est redessinée avec la vraie valeur.
+  await expect(card(page, target.id).locator('.stats-number-value')).toHaveText('1');
+  expect(errors).toEqual([]);
+});
+
 test('un jeu Évolution en erreur (≠ 404) est relançable', async ({ page, request }) => {
   await deleteAllDatasets(request);
   const datasetId = await createDataset(request, 'Zone de test');

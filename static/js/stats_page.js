@@ -26,7 +26,7 @@ import {
     onFiltersSummaryClick, onGlobalPeriodChange, openFilters, openRename, refreshData, renderToolbar,
     resetMapFiltersReport, submitNewDashboard, submitRename, syncNewDashboardForm, takeMapFilters,
 } from './stats_page_dashboard.js';
-import { loadPage, loadUserSettings, tableOf } from './stats_page_data.js';
+import { loadPage, loadUserSettings, retrySources, tableOf } from './stats_page_data.js';
 import {
     addComparePeriod, addSource, onCompareListClick, onEditorChange, onFilterModeChange, onSourceListClick,
     readEditorForm, renderPreview, saveEditor, syncEditorForm,
@@ -275,6 +275,12 @@ function bindEvents() {
     }
     $('statsNewName').addEventListener('input', () => { $('statsNewName').dataset.touched = '1'; });
     $('statsNewDashboardModal').addEventListener('shown.bs.modal', () => $('statsNewName').select());
+    // « Réessayer » de l'aperçu quand une source du graphique est en échec :
+    // mêmes sources que la carte, puis l'aperçu se redessine.
+    $('statsEdPreviewNumber').addEventListener('click', (event) => {
+        if (!event.target.closest('.stats-card-retry') || !state.editor) return;
+        retrySources(state.editor.item.spec).then(renderPreview);
+    });
     $('btnStatsEdAddSource').addEventListener('click', addSource);
     $('statsEdSourceList').addEventListener('click', onSourceListClick);
     $('btnStatsFilters').addEventListener('click', openFilters);
