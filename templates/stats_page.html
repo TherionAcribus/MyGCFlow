@@ -106,6 +106,14 @@
                             <button type="button" id="btnStatsPresent" class="btn btn-outline-secondary btn-sm">
                                 <i class="ti ti-presentation" aria-hidden="true"></i> {{ _("Présenter") }}
                             </button>
+                            <!-- Sorties du tableau : imprimer, image, vidéo, fichier à partager. -->
+                            <div class="dropdown">
+                                <button type="button" id="btnStatsShare" class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ti ti-share" aria-hidden="true"></i> {{ _("Exporter") }}
+                                </button>
+                                <ul id="statsShareMenu" class="dropdown-menu dropdown-menu-end"></ul>
+                            </div>
                             <button type="button" id="btnStatsAddChart" class="btn btn-primary btn-sm">
                                 <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Ajouter un graphique") }}
                             </button>
@@ -139,7 +147,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted small mb-3">{{ _("Choisissez une question : le graphique se règle ensuite comme vous voulez.") }}</p>
+                        <p class="text-muted small mb-2">{{ _("Choisissez une question : le graphique se règle ensuite comme vous voulez.") }}</p>
+                        <input type="search" id="statsGallerySearch" class="form-control form-control-sm mb-3"
+                               placeholder="{{ _("Rechercher un graphique…") }}"
+                               aria-label="{{ _("Rechercher un graphique") }}">
                         <div id="statsGalleryList" class="stats-gallery"></div>
                     </div>
                 </div>

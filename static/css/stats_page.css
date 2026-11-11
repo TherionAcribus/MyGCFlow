@@ -510,6 +510,9 @@ body > .ts-dropdown {
     border-radius: 10px;
     cursor: pointer;
 }
+.stats-gallery-card[hidden] {
+    display: none;
+}
 .stats-gallery-card:hover,
 .stats-gallery-card:focus-visible {
     border-color: var(--color-accent-text);

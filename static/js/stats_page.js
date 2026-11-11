@@ -34,7 +34,7 @@ import {
 } from './stats_page_editor.js';
 import { downloadValuesCsv, onAfterPrint, onBeforePrint } from './stats_page_exports.js';
 import {
-    onGalleryPick, openGallery, releaseGalleryPreviews, startGalleryPreviews,
+    filterGallery, onGalleryPick, openGallery, releaseGalleryPreviews, startGalleryPreviews,
 } from './stats_page_gallery.js';
 import {
     closePresentation, openPresentation, presentEl, presentGo, scheduleAutoAdvance, showSlide,
@@ -269,9 +269,11 @@ function bindEvents() {
     window.addEventListener('beforeprint', onBeforePrint);
     window.addEventListener('afterprint', onAfterPrint);
     $('statsGalleryList').addEventListener('click', onGalleryPick);
+    $('statsGallerySearch').addEventListener('input', filterGallery);
     $('statsGalleryModal').addEventListener('shown.bs.modal', startGalleryPreviews);
     $('statsGalleryModal').addEventListener('hidden.bs.modal', releaseGalleryPreviews);
     $('statsDashboardMenu').addEventListener('click', onDashboardMenuClick);
+    $('statsShareMenu').addEventListener('click', onDashboardMenuClick);
     $('statsNewDashboardForm').addEventListener('submit', submitNewDashboard);
     for (const id of ['statsNewKindPersonal', 'statsNewKindEvolution', 'statsNewDataset']) {
         $(id).addEventListener('change', syncNewDashboardForm);

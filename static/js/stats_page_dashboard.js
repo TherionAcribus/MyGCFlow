@@ -211,18 +211,25 @@ function renderDashboardMenu() {
     const full = state.doc.dashboards.length >= MAX_DASHBOARDS;
     menu.append(menuButton('new-dashboard', 'ti-plus', t('Nouveau tableau de bord…'), { disabled: full }));
     menu.append(menuButton('duplicate-dashboard', 'ti-copy', t('Dupliquer ce tableau de bord'), { disabled: full }));
-    menu.append(menuButton('export-dashboard', 'ti-file-export', t('Exporter ce tableau de bord (fichier)')));
     menu.append(menuButton('import-dashboard', 'ti-file-import', t('Importer un tableau de bord…'), { disabled: full }));
-    menu.append(menuButton('print-dashboard', 'ti-printer', t('Imprimer')));
-    const noCards = !activeDashboard().items.length;
-    menu.append(menuButton('image-dashboard', 'ti-photo', t('Enregistrer le tableau en image (PNG)'), { disabled: noCards }));
-    menu.append(menuButton('copy-image-dashboard', 'ti-copy', t("Copier l'image du tableau"), { disabled: noCards }));
-    menu.append(menuButton('video-dashboard', 'ti-movie', t('Créer la vidéo du tableau…')));
     const dangerDivider = document.createElement('li');
     dangerDivider.innerHTML = '<hr class="dropdown-divider">';
     menu.append(dangerDivider);
     menu.append(menuButton('delete-dashboard', 'ti-trash', t('Supprimer ce tableau de bord'),
         { danger: true, disabled: state.doc.dashboards.length < 2 }));
+
+    // Sorties du tableau actif : menu « Exporter » de la barre d'outils.
+    const share = $('statsShareMenu');
+    share.replaceChildren();
+    share.append(menuButton('print-dashboard', 'ti-printer', t('Imprimer')));
+    const noCards = !activeDashboard().items.length;
+    share.append(menuButton('image-dashboard', 'ti-photo', t('Enregistrer le tableau en image (PNG)'), { disabled: noCards }));
+    share.append(menuButton('copy-image-dashboard', 'ti-copy', t("Copier l'image du tableau"), { disabled: noCards }));
+    share.append(menuButton('video-dashboard', 'ti-movie', t('Créer la vidéo du tableau…')));
+    const shareDivider = document.createElement('li');
+    shareDivider.innerHTML = '<hr class="dropdown-divider">';
+    share.append(shareDivider);
+    share.append(menuButton('export-dashboard', 'ti-file-export', t('Exporter ce tableau de bord (fichier)')));
 }
 
 function duplicateActiveDashboard() {

@@ -196,8 +196,25 @@ window.addEventListener('mygcflow:stats-geo', () => {
 
 export function openGallery() {
     if (activeDashboard().items.length >= MAX_ITEMS) return;
+    $('statsGallerySearch').value = '';
     renderGallery();
     getBsModal('statsGalleryModal')?.show();
+}
+
+// Recherche dans la galerie : sur le titre et la description des questions
+// (sans tenir compte de la casse ni des accents) ; une section vide se masque.
+export function filterGallery() {
+    const fold = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    const query = fold($('statsGallerySearch').value.trim());
+    for (const section of $('statsGalleryList').querySelectorAll('.stats-gallery-section')) {
+        let visible = 0;
+        for (const card of section.querySelectorAll('.stats-gallery-card')) {
+            const show = !query || fold(card.textContent).includes(query);
+            card.hidden = !show;
+            if (show) visible++;
+        }
+        section.hidden = !visible;
+    }
 }
 
 export function onGalleryPick(event) {

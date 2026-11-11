@@ -356,6 +356,33 @@ test('graphique personnalisé depuis la galerie', async ({ page }) => {
   expect(added.series).toEqual([[3, 2, 1]]);
 });
 
+test('galerie : la recherche filtre les questions et leurs sections', async ({ page }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsAddChart').click();
+  const cards = page.locator('#statsGalleryList .stats-gallery-card');
+  const total = await cards.count();
+  expect(total).toBeGreaterThan(10);
+  const visibleCards = page.locator('#statsGalleryList .stats-gallery-card:visible');
+
+  // « dnf » : seules les questions qui en parlent restent, sans leur section
+  // vide ; la casse ne compte pas.
+  await page.locator('#statsGallerySearch').fill('dnf');
+  const count = await visibleCards.count();
+  expect(count).toBeGreaterThan(0);
+  expect(count).toBeLessThan(total);
+  await expect(visibleCards.filter({ hasText: /dnf/i })).toHaveCount(count);
+  const sections = page.locator('#statsGalleryList .stats-gallery-section');
+  expect(await page.locator('#statsGalleryList .stats-gallery-section:visible').count()).toBeLessThan(await sections.count());
+
+  // Aucune correspondance : tout masqué ; vider le champ rend tout.
+  await page.locator('#statsGallerySearch').fill('zorglub');
+  await expect(visibleCards).toHaveCount(0);
+  await page.locator('#statsGallerySearch').fill('');
+  expect(await visibleCards.count()).toBe(total);
+  await page.locator('#statsGalleryModal .btn-close').click();
+  expect(errors).toEqual([]);
+});
+
 test('supprimer, déplacer, dupliquer un graphique', async ({ page, request }) => {
   await openStats(page);
   let cards = (await snapshot(page)).cards;
@@ -1011,9 +1038,13 @@ test('« réduire les animations » est respecté par les graphiques', async ({ 
 // Organisation (lot 5)
 // ---------------------------------------------------------------------------
 
+// Actions des menus du titre : les sorties (imprimer, image, vidéo, fichier)
+// vivent dans « Exporter », la gestion des tableaux dans le chevron.
 async function dashboardAction(page, action) {
-  await page.locator('#btnStatsDashboards').click();
-  await page.locator(`#statsDashboardMenu [data-action="${action}"]`).click();
+  const share = ['export-dashboard', 'print-dashboard', 'image-dashboard',
+    'copy-image-dashboard', 'video-dashboard'].includes(action);
+  await page.locator(share ? '#btnStatsShare' : '#btnStatsDashboards').click();
+  await page.locator(`${share ? '#statsShareMenu' : '#statsDashboardMenu'} [data-action="${action}"]`).click();
 }
 
 test('glisser une carte par sa poignée la déplace', async ({ page, request }) => {
@@ -1110,6 +1141,29 @@ test('partager un tableau de bord : export, import, duplication', async ({ page,
   snap = await snapshot(page);
   expect(snap.dashboard.name).toBe('Mon tableau de bord (copie)');
   await expect.poll(async () => (await savedDoc(request))?.dashboards?.length).toBe(3);
+  expect(errors).toEqual([]);
+});
+
+test('« Exporter » réunit les sorties ; le chevron gère les tableaux', async ({ page }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsShare').click();
+  const share = page.locator('#statsShareMenu');
+  await expect(share).toBeVisible();
+  for (const action of ['print-dashboard', 'image-dashboard', 'copy-image-dashboard',
+    'video-dashboard', 'export-dashboard']) {
+    await expect(share.locator(`[data-action="${action}"]`)).toBeVisible();
+  }
+  await page.keyboard.press('Escape');
+
+  // Le menu du titre garde la gestion : changer, créer, importer, supprimer.
+  await page.locator('#btnStatsDashboards').click();
+  const manage = page.locator('#statsDashboardMenu');
+  await expect(manage).toBeVisible();
+  for (const action of ['new-dashboard', 'duplicate-dashboard', 'import-dashboard', 'delete-dashboard']) {
+    await expect(manage.locator(`[data-action="${action}"]`)).toBeVisible();
+  }
+  expect(await manage.locator('[data-action="print-dashboard"]').count()).toBe(0);
+  await page.keyboard.press('Escape');
   expect(errors).toEqual([]);
 });
 
