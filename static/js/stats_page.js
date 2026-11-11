@@ -212,6 +212,11 @@ window.getStatsPageSnapshot = () => {
                         drawn: Array.isArray(option?.geo) ? option.geo.length : 0,
                         map: Array.isArray(option?.geo) ? option.geo[0]?.map ?? null : null,
                         legend: option?.visualMap?.[0]?.pieces?.map((p) => p.label) ?? null,
+                        // Valeurs écrites sur les zones (« Afficher les
+                        // valeurs »), par vignette : { geo, values: [{ name,
+                        // text }] } — avant le masquage des chevauchements.
+                        values: (option?.series || []).filter((s) => s.type === 'scatter')
+                            .map((s) => ({ geo: s.geoIndex, values: s.data.map((d) => ({ name: d.name, text: d.text })) })),
                     };
                 })() : null,
             };

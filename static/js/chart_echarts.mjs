@@ -774,11 +774,12 @@ export function clickTarget(result, spec, params) {
 // Carte par zones (chart_zones.mjs)
 // ---------------------------------------------------------------------------
 //
-// `ctx.zoneMap` (stats_page_geo.js) : { name, bounds, nameOf(id),
+// `ctx.zoneMap` (stats_page_geo.js) : { name, bounds, anchors, nameOf(id),
 // levelNoun(n) } quand les contours sont prêts — `name` est la carte
 // enregistrée dans ECharts (registerMap), `bounds` le cadrage
-// ([[ouest, nord], [est, sud]], null = toute la carte) ; sinon
-// { loading: true } ou { error: true }.
+// ([[ouest, nord], [est, sud]], null = toute la carte), `anchors` les points
+// d'étiquette (Map id → [x, y, largeur, hauteur], coordonnées de la carte) ;
+// sinon { loading: true } ou { error: true }.
 
 // Mesures dont les valeurs s'additionnent (total sous chaque vignette) et
 // sont entières (classes « 4–7 » plutôt que « 4 – 8 »).
@@ -870,6 +871,92 @@ function zoneTooltip(result, spec, ctx, zm) {
     };
 }
 
+// Valeurs écrites sur les zones (« Afficher les valeurs ») : au plus tant
+// par vignette — au-delà (comtés des États-Unis), seules les plus grandes
+// zones gardent la leur.
+const MAX_MAP_LABELS = 300;
+// Largeur moyenne d'un chiffre, en part de la taille du texte.
+const DIGIT_WIDTH = 0.6;
+
+// Texte d'une valeur sur sa zone : comme la légende (sans unité, qu'elle
+// donne une fois), l'année seule pour une première trouvaille.
+function zoneValueText(value, spec, result, ctx) {
+    if (spec.measure.op === 'first_day') return String(ymdOfDay(value).y);
+    return ctx.labels.formatValue(value, spec.measure, { compact: true, normalize: result.normalize, bare: true });
+}
+
+// Couleur de la classe d'une valeur (mêmes bornes que visualMap).
+function legendColorOf(legend, value) {
+    const entry = legend.find((c) => (c.lower === null || value >= c.lower) && (c.upper === null || value < c.upper));
+    return (entry || legend.at(-1))?.color;
+}
+
+// Série d'étiquettes d'une vignette : un point invisible par zone, au point
+// intérieur de ses contours. ECharts masque les étiquettes qui se
+// chevauchent (hideOverlap) en gardant celles dont le point est le plus
+// grand : le point a donc la taille de sa zone, la grande zone l'emporte.
+// Avec la taille du graphique (`place` en pixels), une valeur plus large
+// que sa zone n'est pas écrite (elle mangerait les voisines).
+function zoneValueSeries(result, spec, ctx, zm, legend, i, place) {
+    if (!spec.view.labels || !zm.anchors?.size || !zm.bounds) return null;
+    const [[west, north], [east, south]] = zm.bounds;
+    if (!(east > west && north > south)) return null;
+    const s = result.series[i];
+    const fontSize = result.series.length > 1 ? 10 : 11;
+    const sized = typeof place.width === 'number' && typeof place.height === 'number';
+    // Pixels par unité de la carte ; sans taille connue, une échelle
+    // arbitraire suffit à classer les zones.
+    const sx = sized ? place.width / (east - west) : 400 / Math.max(east - west, north - south);
+    const sy = sized ? place.height / (north - south) : sx;
+    const points = [];
+    result.keys.forEach((name, k) => {
+        const value = s.values[k];
+        const anchor = zm.anchors.get(name);
+        if (value === null || !anchor) return;
+        const text = zoneValueText(value, spec, result, ctx);
+        const w = anchor[2] * sx;
+        const h = anchor[3] * sy;
+        if (sized && (text.length * fontSize * DIGIT_WIDTH > w || fontSize > h)) return;
+        const color = labelColorOn(legendColorOf(legend, value));
+        points.push({
+            name,
+            value: [anchor[0], anchor[1], value],
+            text,
+            symbolSize: [Math.max(1, w), Math.max(1, h)],
+            label: {
+                color,
+                textBorderColor: color === '#ffffff' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.55)',
+            },
+        });
+    });
+    if (!points.length) return null;
+    points.sort((a, b) => b.symbolSize[0] * b.symbolSize[1] - a.symbolSize[0] * a.symbolSize[1]);
+    return {
+        type: 'scatter',
+        coordinateSystem: 'geo',
+        geoIndex: i,
+        // Ni infobulle ni clic : ceux de la zone dessous répondent.
+        silent: true,
+        symbol: 'rect',
+        // Point transparent par sa couleur : une opacité 0 s'appliquerait
+        // aussi à l'étiquette.
+        itemStyle: { color: 'rgba(0,0,0,0)' },
+        z: 5,
+        animation: false,
+        data: points.slice(0, MAX_MAP_LABELS),
+        label: {
+            show: true,
+            position: 'inside',
+            fontSize,
+            fontWeight: 600,
+            textBorderWidth: 2,
+            formatter: (p) => p.data.text,
+        },
+        labelLayout: { hideOverlap: true },
+        emphasis: { disabled: true },
+    };
+}
+
 function mapPlaceholder(ctx, text) {
     return {
         ...common(ctx, false),
@@ -936,6 +1023,7 @@ function mapOption(result, spec, ctx) {
     });
     const geo = [];
     const titles = [];
+    const valueSeries = [];
     const series = result.series.map((s, i) => {
         const cell = cells[i];
         const width = 100 / cell.cols;
@@ -970,6 +1058,8 @@ function mapOption(result, spec, ctx) {
                 })) : []),
             ],
         });
+        const values = zoneValueSeries(result, spec, ctx, zm, legend, i, place);
+        if (values) valueSeries.push(values);
         if (many) {
             const count = s.values.filter((v) => v !== null).length;
             const total = s.values.reduce((sum, v) => sum + (v || 0), 0);
@@ -1020,7 +1110,9 @@ function mapOption(result, spec, ctx) {
             selectedMode: false,
             textStyle: { color: tokens.textMuted, fontSize: 11 },
         },
-        series,
+        // Les valeurs après les zones : l'index d'une vignette reste celui
+        // de sa série de zones (infobulle, clic).
+        series: [...series, ...valueSeries],
     };
 }
 

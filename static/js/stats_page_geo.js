@@ -185,6 +185,77 @@ function mainPartBBox(geometry) {
     return best;
 }
 
+// ---------------------------------------------------------------------------
+// Points d'étiquette (valeurs écrites sur les zones)
+//
+// [x, y, largeur, hauteur] dans les coordonnées de la carte composée : le
+// point intérieur des contours (`ix` / `iy`, posé par build_geo_zones.py) et
+// l'emprise de la partie qui le contient — pas celle de toute la zone (la
+// France avec la Guyane). La taille décide si la valeur tient dans la zone.
+
+function ringBox(ring) {
+    let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
+    for (const [x, y] of ring) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+    }
+    return x0 <= x1 ? [x0, y0, x1, y1] : null;
+}
+
+const polygonsOf = (geometry) => (geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates]);
+const boxArea = (b) => (b[2] - b[0]) * (b[3] - b[1]);
+const boxHas = (b, x, y) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3];
+
+const anchorCache = new WeakMap();
+function anchorOf(f) {
+    if (anchorCache.has(f)) return anchorCache.get(f);
+    const { ix, iy } = f.properties || {};
+    let out = null;
+    if (Number.isFinite(ix) && Number.isFinite(iy)) {
+        // Plus petite partie qui contient le point (une île dans une baie
+        // n'emprunte pas l'emprise de la côte qui l'entoure).
+        let best = null;
+        for (const poly of polygonsOf(f.geometry)) {
+            const box = ringBox(poly[0]);
+            if (box && boxHas(box, ix, iy) && (!best || boxArea(box) < boxArea(best))) best = box;
+        }
+        best ||= bboxes.get(f);
+        if (best) out = { x: ix, y: iy, box: best };
+    }
+    anchorCache.set(f, out);
+    return out;
+}
+
+const anchorAt = (x, y, box) => [x, y, box[2] - box[0], box[3] - box[1]];
+
+// Zone entière, éventuellement déplacée en encart (`fn`, `scale`).
+function placedAnchor(f, fn = null, scale = 1) {
+    const a = anchorOf(f);
+    if (!a) return null;
+    if (!fn) return anchorAt(a.x, a.y, a.box);
+    const [x, y] = fn(a.x, a.y);
+    return [x, y, (a.box[2] - a.box[0]) * scale, (a.box[3] - a.box[1]) * scale];
+}
+
+// Zone découpée par le cadre : le point intérieur s'il y est resté (emprise
+// réduite à la partie gardée), sinon le centre de la plus grande partie
+// gardée (la Russie d'Europe sur la carte de l'Europe).
+function clippedAnchor(f, geometry, frame) {
+    const a = anchorOf(f);
+    if (a && boxHas(frame, a.x, a.y)) {
+        const box = [Math.max(frame[0], a.box[0]), Math.max(frame[1], a.box[1]), Math.min(frame[2], a.box[2]), Math.min(frame[3], a.box[3])];
+        return anchorAt(a.x, a.y, box);
+    }
+    let best = null;
+    for (const poly of polygonsOf(geometry)) {
+        const box = ringBox(poly[0]);
+        if (box && (!best || boxArea(box) > boxArea(best))) best = box;
+    }
+    return best ? [(best[0] + best[2]) / 2, (best[1] + best[3]) / 2, best[2] - best[0], best[3] - best[1]] : null;
+}
+
 function withMargin(box) {
     const w = box[2] - box[0] || 1;
     const h = box[3] - box[1] || 1;
@@ -289,9 +360,12 @@ export function zoneMapFor(result, spec) {
     // cadre, de gauche à droite.
     const out = [];
     const keyParts = [level, frameSpec];
-    const place = (f, geometry) => {
+    // Points d'étiquette des zones qui ont une valeur (pas du fond).
+    const anchors = new Map();
+    const place = (f, geometry, anchor = null) => {
         out.push({ type: 'Feature', properties: { name: f.properties.id }, geometry });
         keyParts.push(f.properties.id);
+        if (anchor && data.has(f.properties.id)) anchors.set(f.properties.id, anchor);
     };
     const backdropIds = [];
     if (backdropEntry) {
@@ -311,7 +385,11 @@ export function zoneMapFor(result, spec) {
         if (g && moved.has(g)) continue;
         if (!ofFrame(f) || !intersects(bboxes.get(f), frame)) continue;
         const geometry = framed ? clipGeometry(f.geometry, frame) : f.geometry;
-        if (geometry) place(f, geometry);
+        if (geometry && data.has(f.properties.id)) {
+            place(f, geometry, framed ? clippedAnchor(f, geometry, frame) : placedAnchor(f));
+        } else if (geometry) {
+            place(f, geometry);
+        }
     }
     let bounds = frame;
     if (moveInsets) {
@@ -329,7 +407,7 @@ export function zoneMapFor(result, spec) {
             const box = union(members.map((f) => bboxes.get(f)));
             const scale = Math.min(INSET_MAX_ZOOM, side / Math.max(box[2] - box[0], box[3] - box[1], 1e-6));
             const fn = (px, py) => [x + (px - box[0]) * scale, y + (py - box[1]) * scale];
-            for (const f of members) place(f, transformGeometry(f.geometry, fn));
+            for (const f of members) place(f, transformGeometry(f.geometry, fn), data.has(f.properties.id) ? placedAnchor(f, fn, scale) : null);
             keyParts.push(`${g.cc}:${g.name}@${x.toFixed(3)},${y.toFixed(3)},${scale.toFixed(4)}`);
             x += side + gap;
         }
@@ -342,6 +420,7 @@ export function zoneMapFor(result, spec) {
         aspectScale: aspectOf(bounds),
         // Pays voisins (fond d'un cadrage) : habillés à part, inertes.
         backdrop: backdropIds,
+        anchors,
         nameOf: (id) => zoneName(id) || id,
         levelNoun: (n) => levelNoun(level, countries, n),
     };
@@ -395,6 +474,13 @@ function composeGrid(echarts, result, { fixedBox = null, frameCountry = null } =
         .map(clip).filter(Boolean);
     const backdrop = [...neighbours, ...regions.filter(near).map(clip).filter(Boolean)];
     features = features.map(clip).filter(Boolean);
+    // Points d'étiquette : centre de la case (ou de ce qui en reste dans le
+    // cadre).
+    const anchors = new Map();
+    for (const f of features) {
+        const box = ringBox(polygonsOf(f.geometry)[0][0]);
+        if (box) anchors.set(f.properties.name, anchorAt((box[0] + box[2]) / 2, (box[1] + box[3]) / 2, box));
+    }
     const name = register(echarts, 'grid|' + (fixedBox || frameCountry || 'auto') + '|' + backdrop.length + '|' + result.keys.join(','),
         [...backdrop, ...features]);
     const english = lang.toLowerCase().startsWith('en');
@@ -403,6 +489,7 @@ function composeGrid(echarts, result, { fixedBox = null, frameCountry = null } =
         bounds: [[bounds[0], bounds[3]], [bounds[2], bounds[1]]],
         aspectScale: aspectOf(bounds),
         backdrop: neighbours.map((f) => f.properties.name),
+        anchors,
         nameOf: (id) => cellLabel(id, { locale: lang, west: english ? 'W' : 'O' }),
         levelNoun: (n) => (english ? 'cells: ' : 'cases : ') + n,
     };

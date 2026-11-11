@@ -444,6 +444,12 @@ page Statistiques passe la police réelle de la page
 (`getComputedStyle(document.body).fontFamily`, jeton `font` de
 `readTokens`) à `common()` de chart_echarts.mjs (corrigé le 2026-11-09).
 
+Autre piège : `itemStyle.opacity: 0` sur un symbole s'applique aussi à son
+étiquette — elle est dans la liste d'affichage, non masquée, mais
+invisible. Un symbole porteur d'étiquette se rend transparent par sa
+couleur (`rgba(0,0,0,0)`) : valeurs des mini-cartes par zones
+(`zoneValueSeries`, docs/carte-zones.md).
+
 ## Piège `hidden` + classes d'affichage Bootstrap
 
 Un élément qui porte `hidden` ET une classe `d-block`/`d-flex`/`d-grid`…

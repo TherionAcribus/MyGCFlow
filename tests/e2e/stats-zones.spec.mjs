@@ -314,6 +314,59 @@ test('clic sur une zone : la carte s\'ouvre en pause, cadrée sur la zone', asyn
   await expect.poll(() => page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('idle');
 });
 
+// Textes peints par ECharts sur la carte d'une tuile (étiquettes non
+// masquées par le tri des chevauchements).
+async function paintedTexts(page, index = 0) {
+  return page.evaluate((i) => {
+    const host = document.querySelectorAll('.stats-card')[i].querySelector('.stats-chart');
+    const chart = window.echarts.getInstanceByDom(host);
+    const out = [];
+    for (const el of chart.getZr().storage.getDisplayList(true)) {
+      const label = el.getTextContent?.();
+      // Opacité héritée du symbole : une étiquette « affichée » à 0 ne se
+      // voit pas.
+      const opacity = (label?.style?.opacity ?? 1) * (el.style?.opacity ?? 1);
+      if (label && !label.ignore && !label.invisible && opacity > 0 && label.style?.text) out.push(label.style.text);
+    }
+    return out;
+  }, index);
+}
+
+test('« Afficher les valeurs » : valeurs écrites sur les zones et sur les cases', async ({ page, request }, testInfo) => {
+  const errors = await openStats(page);
+  await seed(page, request, [{
+    groupBy: 'zone_region', measure: { op: 'count' }, periods: [{ kind: 'all' }],
+    view: { chart: 'map', labels: true, map: { frame: 'country:FR' } },
+  }, {
+    groupBy: 'zone_grid', periods: [{ kind: 'all' }],
+    view: { chart: 'map', labels: true, map: { gridSize: 50, frame: 'country:FR' } },
+  }, {
+    groupBy: 'zone_grid', periods: [{ kind: 'all' }], view: { chart: 'map', labels: true, map: { gridSize: 50 } },
+  }, {
+    groupBy: 'zone_region', measure: { op: 'count' }, periods: [{ kind: 'all' }], view: { chart: 'map' },
+  }]);
+  const regions = await mapCard(page, 0);
+  // France cadrée : Bretagne 2, Pays de la Loire 1, La Réunion (encart) 1.
+  const byName = Object.fromEntries(regions.zones.values[0].values.map((v) => [v.name, v.text]));
+  expect(byName).toEqual({ 'FR-BRE': '2', 'FR-PDL': '1', 'FR-974': '1' });
+  await expect.poll(async () => (await paintedTexts(page, 0)).sort()).toEqual(['1', '1', '2']);
+
+  // Grille sur la France : Brest 2, Nantes 1 (La Réunion hors du cadre).
+  const grid = await mapCard(page, 1);
+  expect(grid.zones.values[0].values.map((v) => v.text).sort()).toEqual(['1', '2']);
+  // Grille de Brest à Houston : des cases de quelques pixels, trop petites
+  // pour leur valeur — aucune écrite.
+  const wide = await mapCard(page, 2);
+  expect(wide.zones.values).toEqual([]);
+
+  // Case décochée : aucune valeur.
+  const plain = await mapCard(page, 3);
+  expect(plain.zones.values).toEqual([]);
+  await page.locator('.stats-card').nth(0).screenshot({ path: testInfo.outputPath('valeurs-regions.png') });
+  await page.locator('.stats-card').nth(1).screenshot({ path: testInfo.outputPath('valeurs-grille.png') });
+  expect(errors).toEqual([]);
+});
+
 test('grille : cases calculées, sans fichier de contours, taille réglable', async ({ page, request }) => {
   const errors = await openStats(page);
   await seed(page, request, [{

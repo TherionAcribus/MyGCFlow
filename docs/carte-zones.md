@@ -294,6 +294,35 @@ sous-régions et régions de ces pays.
 - Infobulle : nom, valeur, rang, écart avec la vignette précédente.
 - `mapHeight` : la carte du tableau s'allonge avec le nombre de rangées de
   vignettes.
+- **Valeurs sur les zones** (case « Afficher les valeurs » des options
+  d'affichage, `view.labels`, la même que pour les barres) :
+  `zoneValueSeries` ajoute une série `scatter` par vignette, APRÈS les
+  séries `map` (l'index d'une vignette reste celui de sa série de zones :
+  infobulle, clic ; `visualMap.seriesIndex` ne vise que les zones).
+  - **Point d'étiquette** (`zm.anchors`, composé par `stats_page_geo.js`) :
+    `[x, y, largeur, hauteur]` dans les coordonnées de la carte composée —
+    le point intérieur `ix` / `iy` des contours et l'emprise de la partie
+    qui le contient (la France sans la Guyane) ; déplacé et agrandi avec
+    un encart ; dans un cadrage découpé, l'emprise réduite au cadre, ou le
+    centre de la plus grande partie gardée quand le point est dehors ; en
+    grille, le centre de la case.
+  - **Tri** : avec la taille du graphique (`place` en pixels), une valeur
+    plus large que sa zone (≈ 0,6 × taille du texte par caractère) ou plus
+    haute n'est pas écrite. Les autres se chevauchent parfois : ECharts
+    les trie (`labelLayout.hideOverlap`) en gardant celle dont l'élément
+    porteur est le plus grand — le point invisible a donc la taille de sa
+    zone à l'écran, la grande zone l'emporte. 300 au plus par vignette.
+  - **Texte** : comme la légende (sans unité, compact au-delà de 10 000),
+    l'année seule pour `first_day` ; blanc ou presque noir selon la couleur
+    de la classe (`labelColorOn`), avec un léger halo pour un débordement.
+  - **Piège** : le point est transparent par sa couleur
+    (`rgba(0,0,0,0)`), pas par `itemStyle.opacity: 0`, qui masquerait
+    aussi l'étiquette (présente dans la liste d'affichage, invisible).
+  - Les aperçus de la galerie retirent les étiquettes (`thumbnailOption`).
+  - Relevé E2E : `zones.values` de `getStatsPageSnapshot()` (valeurs
+    posées par vignette, avant le tri des chevauchements) ; textes
+    réellement peints lus dans la liste d'affichage zrender
+    (`paintedTexts` de `stats-zones.spec.mjs`).
 
 ### Lien vers la carte
 
@@ -314,9 +343,10 @@ caches par région, Grille D/T par région.
 ### Tests
 
 - `tests/js/chart_zones.test.mjs` : règles de la description, calcul,
-  options ECharts, libellés.
+  options ECharts, libellés, valeurs sur les zones.
 - `tests/e2e/stats-zones.spec.mjs` : contours chargés et vignettes, encart
-  de La Réunion, éditeur, lien vers la carte en pause. Les trouvailles y
+  de La Réunion, éditeur, lien vers la carte en pause, valeurs sur les
+  zones et la grille (textes peints). Les trouvailles y
   sont servies par `page.route` (jeu synthétique sur trois pays). Relevé :
   `getStatsPageSnapshot().cards[].zones`.
 

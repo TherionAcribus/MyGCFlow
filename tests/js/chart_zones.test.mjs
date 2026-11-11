@@ -268,6 +268,58 @@ test('options ECharts : vignettes, légende, contours des zones changées', () =
     assert.equal(chartHeight(single, spec({ groupBy: 'zone_region' }), 900), null);
 });
 
+test('valeurs écrites sur les zones (« Afficher les valeurs »)', () => {
+    // Bretagne grande, Pays de la Loire moyenne, Flandre minuscule.
+    const anchors = new Map([
+        ['FR-BRE', [-3, 48, 3, 1.5]],
+        ['FR-PDL', [-1, 47.3, 1.5, 1]],
+        ['BE-VLI', [-0.5, 46.5, 0.05, 0.05]],
+    ]);
+    const zm = { ...zoneMap, anchors };
+    const s0 = spec({ groupBy: 'zone_region', measure: { op: 'cumulative', from: 'all' }, periods: [{ kind: 'each', unit: 'year' }] });
+    const result = runZoneQuery(s0, table, { today: TODAY });
+    // Case décochée : rien de plus que les zones.
+    const off = buildChartOption(result, s0, { ...ctx, zoneMap: zm, width: 900, height: 400 });
+    assert.equal(off.series.length, 3);
+
+    const s = spec({ ...s0, view: { chart: 'map', labels: true } });
+    const option = buildChartOption(result, s, { ...ctx, zoneMap: zm, width: 900, height: 400 });
+    // Une série de valeurs par vignette, APRÈS les séries de zones : index
+    // de vignette inchangé (infobulle, clic), légende sur les zones seules.
+    assert.deepEqual(option.series.map((x) => x.type), ['map', 'map', 'map', 'scatter', 'scatter', 'scatter']);
+    assert.deepEqual(option.series.slice(3).map((x) => x.geoIndex), [0, 1, 2]);
+    assert.deepEqual(option.visualMap.seriesIndex, [0, 1, 2]);
+    const last = option.series[5];
+    assert.equal(last.coordinateSystem, 'geo');
+    assert.equal(last.silent, true);
+    assert.deepEqual(last.labelLayout, { hideOverlap: true });
+    // Flandre trop petite pour sa valeur : pas écrite. Grande zone d'abord.
+    assert.deepEqual(last.data.map((d) => [d.name, d.text]), [['FR-BRE', '4'], ['FR-PDL', '1']]);
+    assert.deepEqual(last.data[0].value.slice(0, 2), [-3, 48]);
+    assert.equal(last.label.formatter({ data: last.data[0] }), '4');
+    // Texte lisible sur la couleur de sa classe.
+    for (const d of last.data) assert.match(d.label.color, /^#(ffffff|111827)$/);
+    // Taille du point = taille de la zone à l'écran (priorité des
+    // chevauchements) : la Bretagne plus grande que les Pays de la Loire.
+    assert.ok(last.data[0].symbolSize[0] > last.data[1].symbolSize[0]);
+
+    // Sans taille connue : aucune zone écartée (ECharts trie les
+    // chevauchements), toujours la plus grande d'abord.
+    const unsized = buildChartOption(result, s, { ...ctx, zoneMap: zm, width: 900 });
+    assert.deepEqual(unsized.series[5].data.map((d) => d.name), ['FR-BRE', 'FR-PDL', 'BE-VLI']);
+    // Contours sans points d'étiquette (ancienne composition) : rien.
+    assert.equal(buildChartOption(result, s, { ...ctx, zoneMap, width: 900, height: 400 }).series.length, 3);
+
+    // Première trouvaille : l'année, comme la légende.
+    const first = spec({ groupBy: 'zone_region', measure: { op: 'first_day' }, view: { chart: 'map', labels: true } });
+    const firstResult = runZoneQuery(first, table, { today: TODAY });
+    const firstOption = buildChartOption(firstResult, first, { ...ctx, zoneMap: zm, width: 900, height: 400 });
+    assert.deepEqual(firstOption.series.at(-1).data.map((d) => [d.name, d.text]), [['FR-BRE', '2023'], ['FR-PDL', '2024']]);
+
+    // Aperçu de la galerie : aucun texte.
+    assert.ok(thumbnailOption(option).series.every((x) => x.label.show === false));
+});
+
 test('libellés : zones, première trouvaille, densité, moments', () => {
     assert.equal(labels.axisLabel('zone_subregion', 'FR-29'), 'Finistère');
     assert.equal(labels.axisLabel('zone_subregion', 'FR-56'), 'FR-56');   // contours pas encore chargés
