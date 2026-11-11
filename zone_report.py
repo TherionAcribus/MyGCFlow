@@ -127,10 +127,14 @@ def build_report(groups, index=None) -> dict:
 def finds_groups(features):
     """Groupes des trouvailles (features du jeu de base de la carte, zones
     posées par zones.annotate_features). Les étapes Lab n'ont ni pays ni
-    région de Geocaching.com : seules leurs zones comptent."""
+    région de Geocaching.com : seules leurs zones comptent. Les locationless
+    (pays et position fictifs, jamais rattachées) ne sont pas un défaut des
+    données de zones : écartées."""
     counter = Counter()
     for feature in features or ():
         props = (feature or {}).get("properties") or {}
+        if zones.is_locationless(props.get("cache_type")):
+            continue
         counter[(
             _clean(props.get("country")), _clean(props.get("state")), None,
             props.get("zone_country"), props.get("zone_region"), props.get("zone_subregion"),

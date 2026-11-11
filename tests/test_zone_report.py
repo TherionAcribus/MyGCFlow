@@ -64,6 +64,8 @@ class BuildReportTests(unittest.TestCase):
             feature(country="France", state="Bretagne", zone_country="FR", zone_region="FR-BRE", zone_subregion="FR-29"),
             feature(country="France", state="Bretagne ", zone_country="FR", zone_region="FR-BRE", zone_subregion="FR-29"),
             feature(source_kind="lab", zone_country="FR", zone_region="FR-IDF", zone_subregion="FR-75"),
+            # Locationless : pays fictif, rien à signaler.
+            feature(country="United States", state="Washington", cache_type="Locationless (Reverse) Cache"),
         ])
         self.assertIn(("France", "Bretagne", None, "FR", "FR-BRE", "FR-29", 2), groups)
         self.assertEqual(len(groups), 2)

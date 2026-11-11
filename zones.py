@@ -404,6 +404,22 @@ class ZoneIndex:
 _NEIGHBOUR_DEG = 0.5
 ZONE_PROPERTIES = ("zone_country", "zone_region", "zone_subregion")
 
+# Caches « locationless » : position ET pays/région fictifs (le siège de
+# Geocaching.com, « United States › Washington »). Jamais rattachées à une
+# zone — hors carte, comme une cache sans position (bdd._has_usable_coords).
+# Même chaîne que bdd.LOCATIONLESS_CACHE_TYPE.
+LOCATIONLESS_CACHE_TYPE = "Locationless (Reverse) Cache"
+NO_ZONE = Assignment(None, None, None, (None, None, None))
+
+# Version des règles de rattachement, comprise dans data_signature() : la
+# changer fait recalculer tout rattachement stocké (cache GeoJSON de la
+# carte, jeux Évolution). 2 : locationless hors carte.
+RULES_VERSION = 2
+
+
+def is_locationless(cache_type) -> bool:
+    return cache_type == LOCATIONLESS_CACHE_TYPE
+
 _signature = None
 
 
@@ -419,7 +435,7 @@ def data_signature(directory: Path | None = None) -> str:
     if not files:
         return ""
     import hashlib
-    digest = hashlib.sha1()
+    digest = hashlib.sha1(f"rules-{RULES_VERSION}".encode("utf-8"))
     for path in files:
         digest.update(path.name.encode("utf-8"))
         digest.update(hashlib.sha1(path.read_bytes()).digest())
@@ -448,7 +464,10 @@ def annotate_features(features, index=None) -> bool:
             lon = float(lon) if lon is not None else None
         except (TypeError, ValueError):
             lat = lon = None
-        assigned = index.assign(country=props.get("country"), state=props.get("state"), lat=lat, lon=lon)
+        if is_locationless(props.get("cache_type")):
+            assigned = NO_ZONE
+        else:
+            assigned = index.assign(country=props.get("country"), state=props.get("state"), lat=lat, lon=lon)
         for name, value in zip(ZONE_PROPERTIES, assigned[:3]):
             props[name] = value
     return True

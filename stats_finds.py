@@ -112,6 +112,8 @@ def build_finds_payload(features, zone_index=None):
         if "zone_country" in props:
             # Déjà rattachée à la construction du GeoJSON (bdd.create_geojson).
             assigned = tuple(props.get(name) for name in zones.ZONE_PROPERTIES)
+        elif zones.is_locationless(props.get("cache_type")):
+            pass  # position et pays fictifs : hors carte
         elif zones_ok:
             lat, lon = _position(feature)
             try:

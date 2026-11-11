@@ -18,7 +18,8 @@ class ZoneLayerProfileTests(unittest.TestCase):
             {"level": d.level, "measure": d.measure, "scale": d.scale, "classes": d.classes, "color": d.color,
              "opacity": d.opacity, "outline": d.outline, "glow": d.glow, "legend": d.legend,
              "legendPosition": d.legend_position, "gridSize": d.grid_size,
-             "shareDataset": d.share_dataset, "shareBase": d.share_base},
+             "shareDataset": d.share_dataset, "shareBase": d.share_base,
+             "perKm2": d.per_km2, "compareDate": d.compare_date, "solo": d.solo},
             js)
 
     def test_older_themes_get_defaults(self):

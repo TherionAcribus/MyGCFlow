@@ -434,12 +434,14 @@ def _ensure_zones(conn: sqlite3.Connection, dataset_id: int) -> int:
     full = stored is None or stored[0] != signature
     where = "" if full else " AND zone_country IS NULL"
     rows = conn.execute(
-        "SELECT gc_code, country, region, county, lat, lon FROM caches WHERE dataset_id = ?" + where,
+        "SELECT gc_code, type, country, region, county, lat, lon FROM caches WHERE dataset_id = ?" + where,
         (dataset_id,),
     ).fetchall()
     updates = []
     for r in rows:
-        a = index.assign(country=r["country"], state=r["region"], county=r["county"], lat=r["lat"], lon=r["lon"])
+        # Locationless : position et pays fictifs, hors carte.
+        a = zones.NO_ZONE if zones.is_locationless(r["type"]) else index.assign(
+            country=r["country"], state=r["region"], county=r["county"], lat=r["lat"], lon=r["lon"])
         updates.append((a.country or "", a.region or "", a.subregion or "", dataset_id, r["gc_code"]))
     with conn:
         if updates:
@@ -603,7 +605,8 @@ def load_share_rows(db_path, dataset_id: int) -> tuple:
 def zone_name_groups(db_path, dataset_id: int) -> tuple:
     """(base, groupes) pour le rapport de rattachement (zone_report.py) :
     caches comptées par noms bruts (pays, région, département) et zones
-    retenues. Rattache d'abord les caches qui ne le sont pas encore."""
+    retenues, sans les locationless (pays fictif, rien à signaler). Rattache
+    d'abord les caches qui ne le sont pas encore."""
     dataset = get_dataset(db_path, dataset_id)
     with _closing(connect(db_path)) as conn:
         try:
@@ -613,9 +616,9 @@ def zone_name_groups(db_path, dataset_id: int) -> tuple:
             logging.getLogger(__name__).exception("zones : rattachement du jeu %s impossible", dataset_id)
         rows = conn.execute(
             "SELECT country, region, county, zone_country, zone_region, zone_subregion, COUNT(*) "
-            "FROM caches WHERE dataset_id = ? "
+            "FROM caches WHERE dataset_id = ? AND COALESCE(type, '') != ? "
             "GROUP BY country, region, county, zone_country, zone_region, zone_subregion",
-            (dataset_id,),
+            (dataset_id, zones.LOCATIONLESS_CACHE_TYPE),
         ).fetchall()
     return dataset, [tuple(r) for r in rows]
 

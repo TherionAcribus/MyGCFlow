@@ -314,5 +314,6 @@ Détail dans [carte-zones.md](carte-zones.md). En résumé :
   aux coordonnées corrigées ;
 - un point hors de tout polygone prend la zone la plus proche à moins de
   5 km (côtes, îlots) ;
+- une cache locationless n'est jamais rattachée (position et pays fictifs) ;
 - un îlot absent du contour simplifié des pays est retrouvé dans les niveaux
   fins des pays voisins (Helgoland, île de Sein).

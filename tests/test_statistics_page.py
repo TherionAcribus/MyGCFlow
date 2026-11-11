@@ -100,6 +100,18 @@ class StatisticsPageTests(unittest.TestCase):
             self.assertEqual(changed.status_code, 200)
             self.assertNotEqual(changed.headers["ETag"], etag)
 
+    def test_new_zone_rules_refresh_the_finds_in_the_browser(self):
+        # Même base, données ou règles de zones changées (mise à jour de
+        # l'app) : les colonnes zone_* changent, le navigateur doit les
+        # recevoir — un 304 gardait les locationless aux États-Unis.
+        features = [_feature(date_find="2024-03-01")]
+        with mock.patch("blueprints.statistics._base_features", return_value=(features, 123.0)):
+            etag = self.client.get("/api/stats/finds").headers["ETag"]
+            with mock.patch("blueprints.statistics.zones.data_signature", return_value="autre"):
+                changed = self.client.get("/api/stats/finds", headers={"If-None-Match": etag})
+            self.assertEqual(changed.status_code, 200)
+            self.assertNotEqual(changed.headers["ETag"], etag)
+
     # ----- Sources dédiées (DNF et caches posées, hors règles de la carte) -----
 
     def test_dnf_route_returns_the_builder_payload(self):
@@ -411,6 +423,15 @@ class FindsPayloadTests(unittest.TestCase):
         self.assertEqual(payload["zone_country"], [0, -1, 0])
         self.assertEqual(payload["zone_region"], [0, -1, 0])
         self.assertEqual(payload["dicts"]["zone_subregion"], ["FR-29"])
+
+    def test_locationless_finds_have_no_zone(self):
+        class Index:
+            def assign(self, **kw):
+                raise AssertionError("une locationless ne se rattache pas")
+
+        payload = stats_finds.build_finds_payload(
+            [_feature(country="United States", state="Washington", cache_type="Locationless (Reverse) Cache")], Index())
+        self.assertEqual(payload["zone_country"], [-1])
 
     def test_unreadable_zone_data_leaves_the_page_working(self):
         class Broken:

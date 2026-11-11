@@ -255,6 +255,14 @@ class ZonesTests(StoreTestCase):
         data = self.payload()
         self.assertEqual(data['zone_subregions'][data['zone_subregion'][0]], 'FR-29')
 
+    def test_locationless_caches_stay_off_the_map(self):
+        # Siège de Geocaching.com à Seattle : ni les États-Unis, ni la France.
+        self.import_rows([row('GC1'), row('GC2', type_='Locationless', lat='47.6218', lon='-122.3525')])
+        data = self.payload()
+        self.assertEqual([data['zone_countries'][i] if i >= 0 else None for i in data['zone_country']], ['FR', ''])
+        dataset, groups = store.zone_name_groups(self.db, self.dataset['id'])
+        self.assertEqual(sum(g[-1] for g in groups), 1)
+
     def test_new_zone_data_redoes_every_cache(self):
         self.import_rows([row('GC1')])
         self.payload()

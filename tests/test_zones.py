@@ -7,6 +7,7 @@ import json
 import shutil
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import zones
@@ -178,6 +179,21 @@ class IndexTests(unittest.TestCase):
         self.assertIsNone(features[2]["properties"]["zone_country"])
         empty = zones.ZoneIndex(self.dir / "absent")
         self.assertFalse(zones.annotate_features([{"properties": {}}], empty))
+
+    def test_locationless_caches_are_never_placed(self):
+        # Position et pays fictifs (siège de Geocaching.com) : hors carte,
+        # même avec un nom et une position que l'index reconnaîtrait.
+        features = [{"geometry": {"type": "Point", "coordinates": [2, 2]},
+                     "properties": {"country": "Alpha", "cache_type": zones.LOCATIONLESS_CACHE_TYPE}}]
+        self.assertTrue(zones.annotate_features(features, self.index))
+        props = features[0]["properties"]
+        self.assertEqual((props["zone_country"], props["zone_region"], props["zone_subregion"]), (None, None, None))
+
+    def test_signature_carries_the_rules_version(self):
+        # Changer les règles fait recalculer les rattachements stockés.
+        before = zones.data_signature(self.dir)
+        with unittest.mock.patch.object(zones, "RULES_VERSION", zones.RULES_VERSION + 1):
+            self.assertNotEqual(zones.data_signature(self.dir), before)
 
     def test_missing_data_is_never_an_error(self):
         empty = zones.ZoneIndex(self.dir / "absent")

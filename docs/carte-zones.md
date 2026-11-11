@@ -82,6 +82,16 @@ niveau a été trouvé : `name`, `position`, `nearest`, `parent` ou `None`.
    donnée : position (0, 0) ou hors bornes ignorée, fichiers absents →
    `available()` faux, tout à `None`.
 
+**Locationless** (`Locationless (Reverse) Cache`) : jamais rattachées.
+Geocaching.com leur donne la position ET le pays de son siège (Seattle,
+« United States › Washington ») : elles mettaient les États-Unis sur la
+carte d'un joueur qui n'y est jamais allé. Hors carte partout
+(`zones.is_locationless` dans `annotate_features`, le repli de
+`stats_finds.py` et `_ensure_zones` d'Évolution), comme pour l'import GPX
+(`bdd._has_usable_coords`) ; écartées du rapport de rattachement (rien à
+signaler). `zones.RULES_VERSION` entre dans `data_signature()` : un
+changement de règle fait recalculer le cache GeoJSON et les jeux Évolution.
+
 **Performances** (base de dev, 24 365 trouvailles) : 1,1 s au premier appel
 (chargement de FR, DE, US et index des bandes), puis ~80 ms de plus que sans
 zones grâce à la mémoïsation par (noms, position). Évolution : ~0,75 s pour

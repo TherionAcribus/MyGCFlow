@@ -60,7 +60,11 @@ def _finds_digest(features, db_mtime):
 def stats_finds_data():
     features, db_mtime = _base_features()
     digest = _finds_digest(features, db_mtime)
-    etag = f"finds-{digest}-p{stats_finds.PAYLOAD_VERSION}"
+    # Les ids de zones des colonnes zone_* dépendent aussi des données et des
+    # règles de rattachement (zones.data_signature) : sans elles, un 304
+    # gardait dans le navigateur des zones d'avant une mise à jour (les
+    # locationless restaient aux États-Unis).
+    etag = f"finds-{digest}-p{stats_finds.PAYLOAD_VERSION}-z{zones.data_signature()}"
     # Version déjà connue du navigateur : 304 SANS construire les colonnes
     # (~60 ms et 1,7 Mo de JSON pour 20 000 trouvailles, jetés sinon).
     if request.if_none_match.contains_weak(etag):
