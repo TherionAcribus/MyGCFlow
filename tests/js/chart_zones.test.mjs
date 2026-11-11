@@ -4,7 +4,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-    allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy, normalizeChartSpec,
+    allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy, mapFrameContinent, mapFrameCountry,
+    normalizeChartSpec,
 } from '../../static/js/chart_spec.mjs';
 import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runZoneQuery, zoneClassOf, zoneMeasureOf } from '../../static/js/chart_zones.mjs';
@@ -159,6 +160,40 @@ test('échelle commune et classes', () => {
     assert.equal(zoneClassOf(result.zones.scale, 4), 2);
     const s = spec({ groupBy: 'zone_region', measure: { op: 'cumulative', from: 'all' } });
     assert.deepEqual(zoneLegend(result, s, ctx).map((c) => c.label), ['1', '2', '3–4']);
+});
+
+test('cadrage : valeurs admises, pays et continents', () => {
+    const frameOf = (frame) => spec({ groupBy: 'zone_region', view: { chart: 'map', map: { frame } } }).view.map.frame;
+    assert.equal(frameOf('europe'), 'europe');
+    assert.equal(frameOf('world'), 'world');
+    assert.equal(frameOf('country:FR'), 'country:FR');
+    assert.equal(frameOf('country:X-KOS'), 'country:X-KOS');
+    for (const bad of ['country:fr', 'country:', 'mars', 'country:FRA']) assert.equal(frameOf(bad), 'auto', bad);
+    assert.equal(mapFrameCountry('country:DE'), 'DE');
+    assert.equal(mapFrameCountry('europe'), null);
+    assert.equal(mapFrameContinent('asia'), 'asia');
+    assert.equal(mapFrameContinent('country:DE'), null);
+});
+
+test('cadrage sur un pays : les autres pays sortent du calcul, comptés hors du cadre', () => {
+    const s = spec({ groupBy: 'zone_region', measure: { op: 'cumulative', from: 'all' }, periods: [{ kind: 'each', unit: 'year' }] });
+    const all = runZoneQuery(s, table, { today: TODAY });
+    assert.ok(all.keys.includes('BE-VLI'));
+    assert.equal(all.meta.outOfFrame, 0);
+    const fr = runZoneQuery(s, table, { today: TODAY, frameCountries: new Set(['FR']) });
+    assert.deepEqual([...fr.keys].sort(), ['FR-BRE', 'FR-PDL']);
+    assert.deepEqual(fr.zones.countries, ['FR']);
+    assert.equal(fr.meta.outOfFrame, 1);          // GC5, en Belgique
+    assert.equal(fr.meta.unknown, 1);             // GC7, sans pays : toujours hors carte
+    // Échelle sur les seules zones du cadre.
+    assert.equal(fr.zones.scale.max, 4);
+    // Vignette d'une année : seules les lignes de la période comptent.
+    const y2024 = runZoneQuery(spec({ groupBy: 'zone_region', periods: [{ kind: 'year', year: 2024 }] }), table,
+        { today: TODAY, frameCountries: new Set(['FR']) });
+    assert.equal(y2024.meta.outOfFrame, 0);
+    const be = runZoneQuery(s, table, { today: TODAY, frameCountries: new Set(['BE']) });
+    assert.deepEqual(be.keys, ['BE-VLI']);
+    assert.equal(be.meta.outOfFrame, 5);
 });
 
 test('cartes aux bonnes proportions, quelle que soit la forme de la tuile', () => {

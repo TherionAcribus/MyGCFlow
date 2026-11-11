@@ -14,6 +14,7 @@ import {
 } from './zone_geo.js';
 
 import { cellLabel, cellRing } from './zone_grid.mjs';
+import { mapFrameContinent, mapFrameCountry } from './chart_spec.mjs';
 
 export {
     fallbackCountries, zoneAreas, zoneName,
@@ -96,6 +97,100 @@ function groupOf(groups, id) {
     return groups.find((g) => g.ids.has(id) || (parent && g.ids.has(parent))) || null;
 }
 
+// Cadrages fixes ([ouest, sud, est, nord]) : le monde et les continents
+// (chart_spec.mjs › MAP_CONTINENTS). Ce qui dépasse est découpé.
+const FIXED_FRAMES = {
+    world: [-180, -58, 180, 84],
+    europe: [-25, 27, 45, 71.5],
+    northamerica: [-168, 7, -52, 72],
+    southamerica: [-82, -56.5, -34, 13.5],
+    africa: [-26, -35.5, 58, 38],
+    asia: [25, -11, 150, 56],
+    oceania: [110, -48, 180, 1],
+};
+
+// Pays gardés par le cadrage d'une carte (chart_zones.mjs › frameCountries) :
+// null = tous. Un continent attend le catalogue (index.json › continents) ;
+// tant qu'il manque, le résultat est calculé sans filtre puis recalculé à son
+// arrivée (geoRev entre dans la clé du cache des résultats).
+export function frameCountriesOf(spec) {
+    const frame = spec?.view?.map?.frame;
+    const cc = mapFrameCountry(frame);
+    if (cc) return new Set([cc]);
+    const continent = mapFrameContinent(frame);
+    if (!continent) return null;
+    const index = geoIndex();
+    if (!index) {
+        if (!geoFailed()) loadIndex();
+        return null;
+    }
+    return new Set(Object.entries(index.continents || {}).filter(([, c]) => c === continent).map(([id]) => id));
+}
+
+// Découpe d'un anneau par un rectangle (Sutherland–Hodgman, un bord après
+// l'autre) : ECharts ne découpe pas une `geo`, une zone qui dépasse du cadre
+// déborderait sur les vignettes voisines.
+function clipRing(ring, [x0, y0, x1, y1]) {
+    const edges = [
+        [(p) => p[0] >= x0, (a, b) => [x0, a[1] + ((b[1] - a[1]) * (x0 - a[0])) / (b[0] - a[0])]],
+        [(p) => p[0] <= x1, (a, b) => [x1, a[1] + ((b[1] - a[1]) * (x1 - a[0])) / (b[0] - a[0])]],
+        [(p) => p[1] >= y0, (a, b) => [a[0] + ((b[0] - a[0]) * (y0 - a[1])) / (b[1] - a[1]), y0]],
+        [(p) => p[1] <= y1, (a, b) => [a[0] + ((b[0] - a[0]) * (y1 - a[1])) / (b[1] - a[1]), y1]],
+    ];
+    let out = ring;
+    for (const [inside, cut] of edges) {
+        const input = out;
+        out = [];
+        for (let i = 0; i < input.length; i++) {
+            const cur = input[i];
+            const prev = input[(i + input.length - 1) % input.length];
+            if (inside(cur)) {
+                if (!inside(prev)) out.push(cut(prev, cur));
+                out.push(cur);
+            } else if (inside(prev)) {
+                out.push(cut(prev, cur));
+            }
+        }
+        if (!out.length) return null;
+    }
+    return out.length >= 3 ? [...out, out[0]] : null;
+}
+
+export function clipGeometry(geometry, box) {
+    const polys = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
+    const kept = [];
+    for (const poly of polys) {
+        const outer = clipRing(poly[0], box);
+        if (!outer) continue;
+        kept.push([outer, ...poly.slice(1).map((ring) => clipRing(ring, box)).filter(Boolean)]);
+    }
+    if (!kept.length) return null;
+    return kept.length === 1 ? { type: 'Polygon', coordinates: kept[0] } : { type: 'MultiPolygon', coordinates: kept };
+}
+
+// Emprise de la plus grande partie d'un pays (cadrage sur un pays au niveau
+// des pays : la France sans la Guyane).
+function mainPartBBox(geometry) {
+    const polys = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
+    let best = null;
+    let bestArea = -1;
+    for (const poly of polys) {
+        const box = union(poly[0].map(([x, y]) => [x, y, x, y]));
+        const area = (box[2] - box[0]) * (box[3] - box[1]) * Math.cos((((box[1] + box[3]) / 2) * Math.PI) / 180);
+        if (area > bestArea) {
+            best = box;
+            bestArea = area;
+        }
+    }
+    return best;
+}
+
+function withMargin(box) {
+    const w = box[2] - box[0] || 1;
+    const h = box[3] - box[1] || 1;
+    return [box[0] - w * FRAME_MARGIN, box[1] - h * FRAME_MARGIN, box[2] + w * FRAME_MARGIN, box[3] + h * FRAME_MARGIN];
+}
+
 // Carte prête pour un résultat ({ name, bounds, nameOf, levelNoun }), ou
 // { loading: true } / { error: true }.
 export function zoneMapFor(result, spec) {
@@ -108,65 +203,115 @@ export function zoneMapFor(result, spec) {
         return { loading: true };
     }
     const level = zones.level;
-    if (level === 'grid') return composeGrid(echarts, result);
+    const frameSpec = spec?.view?.map?.frame || 'auto';
+    const frameCountry = mapFrameCountry(frameSpec);
+    const fixedBox = FIXED_FRAMES[frameSpec] || null;
+    if (level === 'grid') return composeGrid(echarts, result, { fixedBox, frameCountry });
     const countries = zones.countries;
-    if (level !== 'country' && !countries.length) {
+    // Pays dessinés : ceux des données, plus le pays du cadrage (montré en
+    // entier même sans donnée).
+    const drawn = [...new Set([...countries, ...(frameCountry ? [frameCountry] : [])])].sort();
+    if (level !== 'country' && !drawn.length && !fixedBox) {
         // Aucune ligne rattachée : rien à cadrer, carte vide du monde.
         return composeEmpty(echarts, level);
     }
-    const rels = requiredFiles(level, countries);
+    // Fond (monde, continent, pays) : les pays voisins, sans couleur.
+    const framed = Boolean(fixedBox || frameCountry);
+    const backdrop = framed && level !== 'country';
+    const rels = [...new Set([...requiredFiles(level, drawn), ...(backdrop ? ['countries.json'] : [])])];
     const entries = rels.map(loadFile);
     if (entries.some((e) => e.error)) return { error: true };
     if (entries.some((e) => !e.data)) return { loading: true };
 
-    const features = entries.flatMap((e) => e.data.features);
+    const backdropEntry = backdrop ? loadFile('countries.json') : null;
+    const features = entries.filter((e) => e !== backdropEntry).flatMap((e) => e.data.features);
     const data = new Set(result.keys);
-    const frameWorld = spec?.view?.map?.frame === 'world';
-    const groups = frameWorld ? [] : insetGroups(countries);
+    const countryOf = (id) => String(id).split('-')[0];
+    // Au niveau des pays, un cadrage sur un pays garde ses voisins (fond) ;
+    // aux autres niveaux, seules les zones du pays sont dessinées.
+    const ofFrame = (f) => !frameCountry || level === 'country' || countryOf(f.properties.id) === frameCountry;
+    // Encarts (Outre-mer, Alaska…) : pas sur le monde, où ils sont à leur place.
+    const groups = frameSpec === 'world' ? [] : insetGroups(drawn);
     const main = [];
     const insets = new Map();
     const mainCountries = new Set();
-    const countryOf = (id) => String(id).split('-')[0];
     for (const f of features) {
-        if (!data.has(f.properties.id)) continue;
+        if (!ofFrame(f)) continue;
+        if (!framed && !data.has(f.properties.id)) continue;
         const g = groupOf(groups, f.properties.id);
         if (g) {
             if (!insets.has(g)) insets.set(g, []);
             insets.get(g).push(f);
-        } else {
+        } else if (data.has(f.properties.id)) {
             main.push(f);
             mainCountries.add(countryOf(f.properties.id));
         }
     }
-    // Un encart seulement pour un pays qui a aussi des zones « normales »
-    // avec des données : la seule Réunion est cadrée telle quelle, et la
-    // Réunion d'une carte des États-Unis reste à sa place.
+    // Encarts déplacés sous le cadre :
+    // - pays : tous ceux du pays (le pays en entier) ;
+    // - continent : ceux qui ont des données hors de la boîte ;
+    // - automatique : ceux d'un pays qui a aussi des zones « normales » avec
+    //   des données (la seule Réunion est cadrée telle quelle, et la Réunion
+    //   d'une carte des États-Unis reste à sa place).
     for (const g of [...insets.keys()]) {
-        if (!mainCountries.has(g.cc)) {
-            main.push(...insets.get(g));
+        const members = insets.get(g);
+        let keep;
+        if (frameCountry) keep = g.cc === frameCountry;
+        else if (fixedBox) keep = members.some((f) => data.has(f.properties.id)) && !members.some((f) => intersects(bboxes.get(f), fixedBox));
+        else keep = mainCountries.has(g.cc);
+        if (!keep) {
+            if (!framed) main.push(...members);
             insets.delete(g);
         }
     }
-    const moveInsets = main.length > 0 && insets.size > 0;
+    const moveInsets = insets.size > 0 && (main.length > 0 || framed);
     let frame;
-    if (frameWorld || !data.size) frame = union(features.map((f) => bboxes.get(f)));
-    else frame = union((moveInsets ? main : features.filter((f) => data.has(f.properties.id))).map((f) => bboxes.get(f)));
+    if (fixedBox) {
+        frame = [...fixedBox];
+    } else if (frameCountry) {
+        // Le pays en entier (hors encarts), qu'il ait des données ou non.
+        const home = level === 'country'
+            ? features.filter((f) => f.properties.id === frameCountry).map((f) => mainPartBBox(f.geometry))
+            : features.filter((f) => countryOf(f.properties.id) === frameCountry && !groupOf(groups, f.properties.id))
+                .map((f) => bboxes.get(f));
+        frame = union(home);
+        if (frame) frame = withMargin(frame);
+    } else if (frameSpec === 'world' || !data.size) {
+        frame = withMargin(union(features.map((f) => bboxes.get(f))) || [0, 0, 0, 0]);
+    } else {
+        const box = union((moveInsets ? main : features.filter((f) => data.has(f.properties.id))).map((f) => bboxes.get(f)));
+        frame = box ? withMargin(box) : null;
+    }
     if (!frame) return composeEmpty(echarts, level);
-    const w = frame[2] - frame[0] || 1;
-    const h = frame[3] - frame[1] || 1;
-    frame = [frame[0] - w * FRAME_MARGIN, frame[1] - h * FRAME_MARGIN, frame[2] + w * FRAME_MARGIN, frame[3] + h * FRAME_MARGIN];
 
     // Zones du cadre (les autres débordaient sur les vignettes voisines),
-    // puis les encarts, déplacés sous le cadre, de gauche à droite.
+    // découpées sur un cadrage choisi ; puis les encarts, déplacés sous le
+    // cadre, de gauche à droite.
     const out = [];
-    const keyParts = [level];
+    const keyParts = [level, frameSpec];
+    const place = (f, geometry) => {
+        out.push({ type: 'Feature', properties: { name: f.properties.id }, geometry });
+        keyParts.push(f.properties.id);
+    };
+    const backdropIds = [];
+    if (backdropEntry) {
+        const own = new Set(drawn);
+        for (const f of backdropEntry.data.features) {
+            if (own.has(f.properties.id) || !intersects(bboxes.get(f), frame)) continue;
+            const geometry = clipGeometry(f.geometry, frame);
+            if (geometry) {
+                place(f, geometry);
+                backdropIds.push(f.properties.id);
+            }
+        }
+    }
     const moved = moveInsets ? new Set([...insets.keys()]) : new Set();
     for (const f of features) {
         const g = moved.size ? groupOf(groups, f.properties.id) : null;
         if (g && moved.has(g)) continue;
-        if (!intersects(bboxes.get(f), frame)) continue;
-        out.push({ type: 'Feature', properties: { name: f.properties.id }, geometry: f.geometry });
-        keyParts.push(f.properties.id);
+        if (!ofFrame(f) || !intersects(bboxes.get(f), frame)) continue;
+        const geometry = framed ? clipGeometry(f.geometry, frame) : f.geometry;
+        if (geometry) place(f, geometry);
     }
     let bounds = frame;
     if (moveInsets) {
@@ -180,13 +325,11 @@ export function zoneMapFor(result, spec) {
         let x = frame[0];
         const y = frame[1] - gap - side;
         for (const g of moved) {
-            const members = features.filter((f) => groupOf(groups, f.properties.id) === g);
-            const box = union(insets.get(g).map((f) => bboxes.get(f)));
+            const members = insets.get(g);
+            const box = union(members.map((f) => bboxes.get(f)));
             const scale = Math.min(INSET_MAX_ZOOM, side / Math.max(box[2] - box[0], box[3] - box[1], 1e-6));
             const fn = (px, py) => [x + (px - box[0]) * scale, y + (py - box[1]) * scale];
-            for (const f of members) {
-                out.push({ type: 'Feature', properties: { name: f.properties.id }, geometry: transformGeometry(f.geometry, fn) });
-            }
+            for (const f of members) place(f, transformGeometry(f.geometry, fn));
             keyParts.push(`${g.cc}:${g.name}@${x.toFixed(3)},${y.toFixed(3)},${scale.toFixed(4)}`);
             x += side + gap;
         }
@@ -197,45 +340,69 @@ export function zoneMapFor(result, spec) {
         name,
         bounds: [[bounds[0], bounds[3]], [bounds[2], bounds[1]]],
         aspectScale: aspectOf(bounds),
+        // Pays voisins (fond d'un cadrage) : habillés à part, inertes.
+        backdrop: backdropIds,
         nameOf: (id) => zoneName(id) || id,
         levelNoun: (n) => levelNoun(level, countries, n),
     };
 }
 
 // Grille : les cases qui ont une valeur, calculées (zone_grid.mjs).
-function composeGrid(echarts, result) {
+function composeGrid(echarts, result, { fixedBox = null, frameCountry = null } = {}) {
     const lang = String(document.documentElement.lang || 'fr');
-    const features = [];
+    const framed = Boolean(fixedBox || frameCountry);
+    let features = [];
     for (const id of result.keys) {
         const ring = cellRing(id);
         if (ring) features.push({ type: 'Feature', properties: { name: id }, geometry: { type: 'Polygon', coordinates: [ring] } });
     }
-    if (!features.length) return { empty: true };
-    const frame = union(features.flatMap((f) => f.geometry.coordinates[0].map(([x, y]) => [x, y, x, y])));
-    const w = frame[2] - frame[0] || 1;
-    const h = frame[3] - frame[1] || 1;
-    const bounds = [frame[0] - w * FRAME_MARGIN, frame[1] - h * FRAME_MARGIN, frame[2] + w * FRAME_MARGIN, frame[3] + h * FRAME_MARGIN];
-    // Repères : les régions des pays présents, dessinées SOUS les cases
-    // (sans donnée, donc sans couleur) — sans elles, les cases flottent.
-    const countries = result.zones.countries || [];
-    let backdrop = [];
-    if (countries.length && !geoFailed()) {
+    if (!features.length && !framed) return { empty: true };
+    // Repères : les régions des pays présents (et du pays cadré), dessinées
+    // SOUS les cases (sans donnée, donc sans couleur) — sans elles, les
+    // cases flottent ; sur un cadrage choisi, les pays voisins en plus.
+    const countries = [...new Set([...(result.zones.countries || []), ...(frameCountry ? [frameCountry] : [])])].sort();
+    let regions = [];
+    let world = null;
+    if ((countries.length || framed) && !geoFailed()) {
         if (!geoIndex()) {
             loadIndex();
             return { loading: true };
         }
         const entries = requiredFiles('region', countries).map(loadFile);
-        if (entries.some((e) => !e.data && !e.error)) return { loading: true };
-        backdrop = entries.filter((e) => e.data).flatMap((e) => e.data.features)
-            .filter((f) => intersects(bboxes.get(f), bounds))
-            .map((f) => ({ type: 'Feature', properties: { name: f.properties.id }, geometry: f.geometry }));
+        if (framed) world = loadFile('countries.json');
+        if ([...entries, ...(world ? [world] : [])].some((e) => !e.data && !e.error)) return { loading: true };
+        regions = entries.filter((e) => e.data).flatMap((e) => e.data.features);
     }
-    const name = register(echarts, 'grid|' + backdrop.length + '|' + result.keys.join(','), [...backdrop, ...features]);
+    let bounds;
+    if (fixedBox) {
+        bounds = [...fixedBox];
+    } else if (frameCountry) {
+        const groups = insetGroups([frameCountry]);
+        const home = union(regions.filter((f) => String(f.properties.id).split('-')[0] === frameCountry
+            && !groupOf(groups, f.properties.id)).map((f) => bboxes.get(f)));
+        if (!home) return features.length ? composeGrid(echarts, result) : { empty: true };
+        bounds = withMargin(home);
+    } else {
+        bounds = withMargin(union(features.flatMap((f) => f.geometry.coordinates[0].map(([x, y]) => [x, y, x, y]))));
+    }
+    const clip = (f) => {
+        const geometry = framed ? clipGeometry(f.geometry, bounds) : f.geometry;
+        return geometry ? { type: 'Feature', properties: { name: f.properties.id ?? f.properties.name }, geometry } : null;
+    };
+    const near = (f) => intersects(bboxes.get(f), bounds);
+    const own = new Set(countries);
+    const neighbours = (world?.data ? world.data.features.filter((f) => !own.has(f.properties.id) && near(f)) : [])
+        .map(clip).filter(Boolean);
+    const backdrop = [...neighbours, ...regions.filter(near).map(clip).filter(Boolean)];
+    features = features.map(clip).filter(Boolean);
+    const name = register(echarts, 'grid|' + (fixedBox || frameCountry || 'auto') + '|' + backdrop.length + '|' + result.keys.join(','),
+        [...backdrop, ...features]);
     const english = lang.toLowerCase().startsWith('en');
     return {
         name,
         bounds: [[bounds[0], bounds[3]], [bounds[2], bounds[1]]],
         aspectScale: aspectOf(bounds),
+        backdrop: neighbours.map((f) => f.properties.name),
         nameOf: (id) => cellLabel(id, { locale: lang, west: english ? 'W' : 'O' }),
         levelNoun: (n) => (english ? 'cells: ' : 'cases : ') + n,
     };

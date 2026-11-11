@@ -249,7 +249,12 @@
                                         <select id="statsEdNormalize" class="form-select"></select>
                                         <div class="form-hint">{{ _("En pourcentage, des périodes de tailles différentes se comparent mieux.") }}</div>
                                     </div>
-                                    <!-- Carte par zones : échelle et nuances de la légende. -->
+                                    <!-- Carte par zones : cadrage, échelle et nuances de la légende. -->
+                                    <div class="mb-3" id="statsEdMapFrameRow" hidden>
+                                        <label for="statsEdMapFrame" class="form-label">{{ _("Cadrage de la carte") }}</label>
+                                        <select id="statsEdMapFrame" class="form-select"></select>
+                                        <div class="form-hint">{{ _("Un continent ou un pays ne garde que ses trouvailles : les autres sont comptées sous la carte (« Hors du cadre »).") }}</div>
+                                    </div>
                                     <div class="mb-3" id="statsEdMapScaleRow" hidden>
                                         <label for="statsEdMapScale" class="form-label">{{ _("Échelle des couleurs") }}</label>
                                         <select id="statsEdMapScale" class="form-select">

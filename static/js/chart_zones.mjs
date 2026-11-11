@@ -166,8 +166,21 @@ export function runZoneQuery(spec, rawTable, options = {}) {
         : mixedZoneTable(rawTable, level, options.fallbackCountries);
     const filters = options.filters !== undefined ? options.filters : spec.filters;
     const mask = filterMask(table, filters);
+    // Cadrage sur un pays ou un continent (options.frameCountries) : les
+    // lignes d'un autre pays sortent du calcul — ni valeur, ni échelle —
+    // et sont comptées « hors du cadre ». Une ligne sans pays reste « hors
+    // carte ».
+    const frameCountries = options.frameCountries instanceof Set ? options.frameCountries : null;
+    const frameCol = table[ZONE_COLUMNS.country];
+    const frameIds = table.dicts?.[ZONE_COLUMNS.country] || [];
     const rows = [];
-    for (let r = 0; r < table.n; r++) if (mask[r]) rows.push(r);
+    const framedOut = [];
+    for (let r = 0; r < table.n; r++) {
+        if (!mask[r]) continue;
+        const c = frameCountries && frameCol ? frameIds[frameCol[r]] : null;
+        if (c && !frameCountries.has(c)) framedOut.push(r);
+        else rows.push(r);
+    }
 
     const { measure, scope } = zoneMeasureOf(spec);
     const share = measure.op === 'found_share';
@@ -253,6 +266,10 @@ export function runZoneQuery(spec, rawTable, options = {}) {
         const c = countryCol ? countryIds[countryCol[r]] : undefined;
         if (c) countries.add(c);
     }
+    // Hors du cadre : sur la fenêtre de temps des vignettes.
+    const lo = scope === 'all' || share ? -Infinity : Math.min(...entries.map((e) => e.from));
+    const hi = Math.max(-Infinity, ...entries.map((e) => Math.min(e.to, today)));
+    const outOfFrame = framedOut.filter((r) => table.day[r] >= lo && table.day[r] <= hi).length;
     return {
         dim: spec.groupBy,
         kind: 'zone',
@@ -267,7 +284,8 @@ export function runZoneQuery(spec, rawTable, options = {}) {
         normalize: spec.compare?.normalize || 'none',
         grid: null,
         sources: [spec.source],
-        meta: { rows: rowsCounted, undated: table.undated || 0, noAttribute: 0, unknown: series.at(-1)?.outside || 0 },
+        meta: { rows: rowsCounted, undated: table.undated || 0, noAttribute: 0, unknown: series.at(-1)?.outside || 0,
+            outOfFrame },
         zones: {
             level,
             ...(level === 'grid' ? { gridSize } : {}),

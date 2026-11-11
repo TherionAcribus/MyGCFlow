@@ -957,10 +957,18 @@ function mapOption(result, spec, ctx) {
             itemStyle: { areaColor: tokens.empty, borderColor: tokens.grid, borderWidth: 0.6 },
             emphasis: { label: { show: false }, itemStyle: { areaColor: tokens.empty, borderColor: tokens.text, borderWidth: 1.2 } },
             select: { disabled: true },
-            // Zones qui ont changé depuis la vignette précédente : contour.
-            regions: highlight ? s.changed.map((name) => ({
-                name, itemStyle: { borderColor: tokens.text, borderWidth: 1.4 },
-            })) : [],
+            regions: [
+                // Pays voisins d'un cadrage choisi : fond clair, sans survol
+                // ni infobulle — les zones du cadre se détachent.
+                ...(zm.backdrop || []).map((name) => ({
+                    name, silent: true,
+                    itemStyle: { areaColor: tokens.surface, borderColor: tokens.grid, borderWidth: 0.5 },
+                })),
+                // Zones qui ont changé depuis la vignette précédente : contour.
+                ...(highlight ? s.changed.map((name) => ({
+                    name, itemStyle: { borderColor: tokens.text, borderWidth: 1.4 },
+                })) : []),
+            ],
         });
         if (many) {
             const count = s.values.filter((v) => v !== null).length;

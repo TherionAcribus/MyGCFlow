@@ -207,6 +207,8 @@ window.getStatsPageSnapshot = () => {
                         changed: entry.result.series.map((s) => s.changed),
                         days: entry.result.series.map((s) => s.day),
                         unknown: entry.result.meta.unknown,
+                        outOfFrame: entry.result.meta.outOfFrame || 0,
+                        frame: item.spec.view.map?.frame ?? null,
                         drawn: Array.isArray(option?.geo) ? option.geo.length : 0,
                         map: Array.isArray(option?.geo) ? option.geo[0]?.map ?? null : null,
                         legend: option?.visualMap?.[0]?.pieces?.map((p) => p.label) ?? null,
@@ -292,7 +294,8 @@ function bindEvents() {
     $('statsEdFilterMode').addEventListener('change', onFilterModeChange);
     for (const id of ['statsEdSource', 'statsEdSourceList', 'statsEdMeasure', 'statsEdGroupBy', 'statsEdSplitBy', 'statsEdPeriod', 'statsEdChart', 'statsEdSize',
         'statsEdOrientation', 'statsEdSort', 'statsEdLabels', 'statsEdHeight', 'statsEdSmooth', 'statsEdRecord', 'statsEdGoal', 'statsEdProjection', 'statsEdLog', 'statsEdStack', 'statsEdPalette',
-        'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList']) {
+        'statsEdLayout', 'statsEdAlign', 'statsEdToDate', 'statsEdNormalize', 'statsEdCompareList',
+        'statsEdMapFrame', 'statsEdMapScale', 'statsEdMapClasses', 'statsEdGridSize']) {
         $(id).addEventListener('change', onEditorChange);
     }
     $('statsEdCompareList').addEventListener('click', onCompareListClick);

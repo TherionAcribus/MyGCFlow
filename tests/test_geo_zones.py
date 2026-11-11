@@ -209,6 +209,31 @@ class GeoDataTests(unittest.TestCase):
         a = self.zone_index.assign(lat=54.597, lon=-5.93)
         self.assertEqual((a.country, a.region), ("GB", None))
 
+    def test_zone_ids_start_with_their_country(self):
+        # Le client lit le pays d'une zone avant le premier « - » de son id
+        # (fichiers à charger) : l'Australie était « X-AUS » avec des régions
+        # « AU-… », jamais dessinées.
+        countries = {f["properties"]["id"] for f in self._display(self.index["countries"]["file"])["features"]}
+        self.assertFalse([c for c in countries if "-" in c])
+        self.assertIn("AU", countries)
+        for cc, entry in self.index["by_country"].items():
+            for level in ("region", "subregion"):
+                if level not in entry:
+                    continue
+                bad = [f["properties"]["id"] for f in self._display(entry[level]["file"])["features"]
+                       if not f["properties"]["id"].startswith(cc + "-")]
+                self.assertEqual(bad, [], f"{cc} {level}")
+
+    def test_every_country_has_a_continent(self):
+        # Cadrage des cartes de Statistiques sur un continent.
+        continents = self.index["continents"]
+        countries = {f["properties"]["id"] for f in self._display(self.index["countries"]["file"])["features"]}
+        self.assertEqual(set(continents), countries)
+        expected = {"FR": "europe", "DE": "europe", "US": "northamerica", "BR": "southamerica", "MA": "africa",
+                    "JP": "asia", "AU": "oceania", "NZ": "oceania", "MU": "africa", "MV": "asia"}
+        for cc, continent in expected.items():
+            self.assertEqual(continents[cc], continent, cc)
+
     def test_dissolved_ids_follow_the_documented_rule(self):
         # « IT-sicily » = pays + nom normalisé (docs/zones-ajouter-un-pays.md).
         for f in self._display(self.index["by_country"]["IT"]["region"]["file"])["features"]:

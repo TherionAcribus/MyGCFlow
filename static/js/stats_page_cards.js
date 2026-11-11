@@ -22,7 +22,7 @@ import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
 import { confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
-import { fallbackCountries, setGeoListener, zoneAreas, zoneMapFor } from './stats_page_geo.js';
+import { fallbackCountries, frameCountriesOf, setGeoListener, zoneAreas, zoneMapFor } from './stats_page_geo.js';
 
 // Cartes reconstruites ou réutilisées : une carte dont le contenu (item +
 // état de ses sources) n'a pas changé garde son DOM et son instance ECharts —
@@ -292,6 +292,8 @@ export function computeResult(spec, dashboard) {
             today: state.today,
             areas: spec.compare.normalize === 'per_km2' ? zoneAreas() : null,
             fallbackCountries: fallbackCountries(),
+            // Cadrage sur un pays ou un continent : les autres pays sortent.
+            frameCountries: frameCountriesOf(spec),
             // Part trouvée : mes trouvailles, croisées par code GC.
             found: spec.measure.op === 'found_share' ? foundDaysOf(tableOf('finds')) : null,
         })
@@ -332,6 +334,9 @@ export function cardNote(result, spec) {
     }
     if (chart === 'map' && result.meta.unknown) {
         notes.push(t('Hors carte : ${n}', { n: result.meta.unknown }));
+    }
+    if (chart === 'map' && result.meta.outOfFrame) {
+        notes.push(t('Hors du cadre : ${n}', { n: result.meta.outOfFrame }));
     }
     if (result.toDate) {
         const date = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })

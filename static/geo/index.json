@@ -2,9 +2,9 @@
  "v": 1,
  "countries": {
   "file": "countries.json",
-  "rev": "3a1cb434b9",
+  "rev": "921abc9b7f",
   "count": 242,
-  "bytes": 818462
+  "bytes": 818454
  },
  "by_country": {
   "AD": {
@@ -178,6 +178,21 @@
     "rev": "c7f1a6372b",
     "count": 9,
     "bytes": 7129,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "AU": {
+   "region": {
+    "file": "regions/AU.json",
+    "rev": "0a027290df",
+    "count": 11,
+    "bytes": 33986,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -2518,9 +2533,9 @@
   "NZ": {
    "region": {
     "file": "regions/NZ.json",
-    "rev": "0c7ed8b0a0",
+    "rev": "02b67bc865",
     "count": 24,
-    "bytes": 18962,
+    "bytes": 18965,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -2683,9 +2698,9 @@
   "PR": {
    "region": {
     "file": "regions/PR.json",
-    "rev": "6d4d496682",
+    "rev": "bd7e143f6e",
     "count": 1,
-    "bytes": 717,
+    "bytes": 722,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -2803,9 +2818,9 @@
   "RU": {
    "region": {
     "file": "regions/RU.json",
-    "rev": "ed6b09555f",
+    "rev": "e2701d2963",
     "count": 86,
-    "bytes": 226275,
+    "bytes": 226284,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -3088,9 +3103,9 @@
   "SX": {
    "region": {
     "file": "regions/SX.json",
-    "rev": "147b1f11b6",
+    "rev": "186c21f648",
     "count": 1,
-    "bytes": 333,
+    "bytes": 338,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -3593,12 +3608,12 @@
     ]
    }
   },
-  "X-ATC": {
+  "XATC": {
    "region": {
-    "file": "regions/X-ATC.json",
-    "rev": "2b4c7cc4de",
+    "file": "regions/XATC.json",
+    "rev": "8a6e1779e5",
     "count": 1,
-    "bytes": 404,
+    "bytes": 406,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -3608,27 +3623,12 @@
     ]
    }
   },
-  "X-AUS": {
+  "XCYN": {
    "region": {
-    "file": "regions/X-AUS.json",
-    "rev": "8796b9c107",
-    "count": 11,
-    "bytes": 34019,
-    "label": {
-     "fr": "régions",
-     "en": "regions"
-    },
-    "sources": [
-     "ne-admin1"
-    ]
-   }
-  },
-  "X-CYN": {
-   "region": {
-    "file": "regions/X-CYN.json",
-    "rev": "608c072f82",
+    "file": "regions/XCYN.json",
+    "rev": "f92271e3d7",
     "count": 1,
-    "bytes": 621,
+    "bytes": 622,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -3638,42 +3638,12 @@
     ]
    }
   },
-  "X-IOA": {
+  "XIOA": {
    "region": {
-    "file": "regions/X-IOA.json",
-    "rev": "29738afe6e",
+    "file": "regions/XIOA.json",
+    "rev": "9d0c98cc6e",
     "count": 2,
-    "bytes": 755,
-    "label": {
-     "fr": "régions",
-     "en": "regions"
-    },
-    "sources": [
-     "ne-admin1"
-    ]
-   }
-  },
-  "X-KAS": {
-   "region": {
-    "file": "regions/X-KAS.json",
-    "rev": "28f7789ce5",
-    "count": 1,
-    "bytes": 408,
-    "label": {
-     "fr": "régions",
-     "en": "regions"
-    },
-    "sources": [
-     "ne-admin1"
-    ]
-   }
-  },
-  "X-SOL": {
-   "region": {
-    "file": "regions/X-SOL.json",
-    "rev": "e9119d4bf8",
-    "count": 1,
-    "bytes": 1304,
+    "bytes": 761,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -3689,6 +3659,36 @@
     "rev": "eeddb2f1ee",
     "count": 30,
     "bytes": 10384,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "XKAS": {
+   "region": {
+    "file": "regions/XKAS.json",
+    "rev": "8dce7bde41",
+    "count": 1,
+    "bytes": 409,
+    "label": {
+     "fr": "régions",
+     "en": "regions"
+    },
+    "sources": [
+     "ne-admin1"
+    ]
+   }
+  },
+  "XSOL": {
+   "region": {
+    "file": "regions/XSOL.json",
+    "rev": "42505fdab9",
+    "count": 1,
+    "bytes": 1305,
     "label": {
      "fr": "régions",
      "en": "regions"
@@ -3758,6 +3758,250 @@
     ]
    }
   }
+ },
+ "continents": {
+  "AD": "europe",
+  "AE": "asia",
+  "AF": "asia",
+  "AG": "northamerica",
+  "AI": "northamerica",
+  "AL": "europe",
+  "AM": "asia",
+  "AO": "africa",
+  "AQ": "antarctica",
+  "AR": "southamerica",
+  "AS": "oceania",
+  "AT": "europe",
+  "AU": "oceania",
+  "AW": "northamerica",
+  "AX": "europe",
+  "AZ": "asia",
+  "BA": "europe",
+  "BB": "northamerica",
+  "BD": "asia",
+  "BE": "europe",
+  "BF": "africa",
+  "BG": "europe",
+  "BH": "asia",
+  "BI": "africa",
+  "BJ": "africa",
+  "BL": "northamerica",
+  "BM": "northamerica",
+  "BN": "asia",
+  "BO": "southamerica",
+  "BR": "southamerica",
+  "BS": "northamerica",
+  "BT": "asia",
+  "BW": "africa",
+  "BY": "europe",
+  "BZ": "northamerica",
+  "CA": "northamerica",
+  "CD": "africa",
+  "CF": "africa",
+  "CG": "africa",
+  "CH": "europe",
+  "CI": "africa",
+  "CK": "oceania",
+  "CL": "southamerica",
+  "CM": "africa",
+  "CN": "asia",
+  "CO": "southamerica",
+  "CR": "northamerica",
+  "CU": "northamerica",
+  "CV": "africa",
+  "CW": "northamerica",
+  "CY": "asia",
+  "CZ": "europe",
+  "DE": "europe",
+  "DJ": "africa",
+  "DK": "europe",
+  "DM": "northamerica",
+  "DO": "northamerica",
+  "DZ": "africa",
+  "EC": "southamerica",
+  "EE": "europe",
+  "EG": "africa",
+  "EH": "africa",
+  "ER": "africa",
+  "ES": "europe",
+  "ET": "africa",
+  "FI": "europe",
+  "FJ": "oceania",
+  "FK": "southamerica",
+  "FM": "oceania",
+  "FO": "europe",
+  "FR": "europe",
+  "GA": "africa",
+  "GB": "europe",
+  "GD": "northamerica",
+  "GE": "asia",
+  "GG": "europe",
+  "GH": "africa",
+  "GL": "northamerica",
+  "GM": "africa",
+  "GN": "africa",
+  "GQ": "africa",
+  "GR": "europe",
+  "GS": "southamerica",
+  "GT": "northamerica",
+  "GU": "oceania",
+  "GW": "africa",
+  "GY": "southamerica",
+  "HK": "asia",
+  "HM": "sevenseasopenocean",
+  "HN": "northamerica",
+  "HR": "europe",
+  "HT": "northamerica",
+  "HU": "europe",
+  "ID": "asia",
+  "IE": "europe",
+  "IL": "asia",
+  "IM": "europe",
+  "IN": "asia",
+  "IO": "asia",
+  "IQ": "asia",
+  "IR": "asia",
+  "IS": "europe",
+  "IT": "europe",
+  "JE": "europe",
+  "JM": "northamerica",
+  "JO": "asia",
+  "JP": "asia",
+  "KE": "africa",
+  "KG": "asia",
+  "KH": "asia",
+  "KI": "oceania",
+  "KM": "africa",
+  "KN": "northamerica",
+  "KP": "asia",
+  "KR": "asia",
+  "KW": "asia",
+  "KY": "northamerica",
+  "KZ": "asia",
+  "LA": "asia",
+  "LB": "asia",
+  "LC": "northamerica",
+  "LI": "europe",
+  "LK": "asia",
+  "LR": "africa",
+  "LS": "africa",
+  "LT": "europe",
+  "LU": "europe",
+  "LV": "europe",
+  "LY": "africa",
+  "MA": "africa",
+  "MC": "europe",
+  "MD": "europe",
+  "ME": "europe",
+  "MF": "northamerica",
+  "MG": "africa",
+  "MH": "oceania",
+  "MK": "europe",
+  "ML": "africa",
+  "MM": "asia",
+  "MN": "asia",
+  "MO": "asia",
+  "MP": "oceania",
+  "MR": "africa",
+  "MS": "northamerica",
+  "MT": "europe",
+  "MU": "africa",
+  "MV": "asia",
+  "MW": "africa",
+  "MX": "northamerica",
+  "MY": "asia",
+  "MZ": "africa",
+  "NA": "africa",
+  "NC": "oceania",
+  "NE": "africa",
+  "NF": "oceania",
+  "NG": "africa",
+  "NI": "northamerica",
+  "NL": "europe",
+  "NO": "europe",
+  "NP": "asia",
+  "NR": "oceania",
+  "NU": "oceania",
+  "NZ": "oceania",
+  "OM": "asia",
+  "PA": "northamerica",
+  "PE": "southamerica",
+  "PF": "oceania",
+  "PG": "oceania",
+  "PH": "asia",
+  "PK": "asia",
+  "PL": "europe",
+  "PM": "northamerica",
+  "PN": "oceania",
+  "PR": "northamerica",
+  "PS": "asia",
+  "PT": "europe",
+  "PW": "oceania",
+  "PY": "southamerica",
+  "QA": "asia",
+  "RO": "europe",
+  "RS": "europe",
+  "RU": "europe",
+  "RW": "africa",
+  "SA": "asia",
+  "SB": "oceania",
+  "SC": "africa",
+  "SD": "africa",
+  "SE": "europe",
+  "SG": "asia",
+  "SH": "africa",
+  "SI": "europe",
+  "SK": "europe",
+  "SL": "africa",
+  "SM": "europe",
+  "SN": "africa",
+  "SO": "africa",
+  "SR": "southamerica",
+  "SS": "africa",
+  "ST": "africa",
+  "SV": "northamerica",
+  "SX": "northamerica",
+  "SY": "asia",
+  "SZ": "africa",
+  "TC": "northamerica",
+  "TD": "africa",
+  "TF": "sevenseasopenocean",
+  "TG": "africa",
+  "TH": "asia",
+  "TJ": "asia",
+  "TL": "asia",
+  "TM": "asia",
+  "TN": "africa",
+  "TO": "oceania",
+  "TR": "asia",
+  "TT": "northamerica",
+  "TV": "oceania",
+  "TW": "asia",
+  "TZ": "africa",
+  "UA": "europe",
+  "UG": "africa",
+  "US": "northamerica",
+  "UY": "southamerica",
+  "UZ": "asia",
+  "VA": "europe",
+  "VC": "northamerica",
+  "VE": "southamerica",
+  "VG": "northamerica",
+  "VI": "northamerica",
+  "VN": "asia",
+  "VU": "oceania",
+  "WF": "oceania",
+  "WS": "oceania",
+  "XATC": "oceania",
+  "XCYN": "asia",
+  "XIOA": "asia",
+  "XK": "europe",
+  "XKAS": "asia",
+  "XSOL": "africa",
+  "YE": "asia",
+  "ZA": "africa",
+  "ZM": "africa",
+  "ZW": "africa"
  },
  "sources": {
   "bkg-vg1000": {

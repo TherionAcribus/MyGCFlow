@@ -235,6 +235,28 @@ sous-régions et régions de ces pays.
   entre dans la clé du cache de résultats des cartes et dans le test
   « déjà dessiné ». Cartes, aperçu de l'éditeur et aperçus de la galerie
   (événement `mygcflow:stats-geo`) sont alors redessinés.
+- **Cadrage** (`view.map.frame`, menu « Cadrage de la carte » des options
+  d'affichage) :
+  - `auto` (défaut) : les zones qui ont des données ;
+  - `world` : boîte fixe du monde, tous les pays en fond, pas d'encarts ;
+  - un continent (`europe`, `northamerica`, `southamerica`, `africa`,
+    `asia`, `oceania`) : boîte fixe (`FIXED_FRAMES`, stats_page_geo.js),
+    pays voisins en fond ; encarts déplacés seulement s'ils ont des
+    données hors de la boîte ;
+  - un pays (`country:FR`) : le pays en entier (hors encarts, avec ou sans
+    données), tous ses encarts sous le cadre, voisins en fond.
+  Un continent ou un pays **filtre les données** (`frameCountriesOf` →
+  `runZoneQuery` › `frameCountries`) : les lignes d'un autre pays ne
+  comptent ni dans les valeurs ni dans l'échelle, et sont annoncées sous
+  la carte (« Hors du cadre : N », `meta.outOfFrame`, sur la fenêtre de
+  temps des vignettes) ; une ligne sans pays reste « Hors carte ». Le
+  continent d'un pays vient de Natural Earth (`CONTINENT`, quelques îles
+  « Seven seas » rattachées à la main), écrit dans `index.json ›
+  continents` par la construction. Tout ce qui dépasse d'un cadrage choisi
+  est **découpé** (Sutherland–Hodgman, `clipGeometry`) ; les pays de fond
+  sont habillés à part (`zm.backdrop` → `regions` en blanc, `silent`).
+  Relevé E2E : `zones.frame` et `zones.outOfFrame` de
+  `getStatsPageSnapshot()` ; tests dans `stats-zones.spec.mjs`.
 - **Composition** (`echarts.registerMap`, nom `mgz-<hash>`, cache de 40
   cartes) :
   - les zones dont le rectangle touche le cadre, plus une marge de 4 %. Les
@@ -704,6 +726,14 @@ Géocaches ») ou pour le jeu ouvert (« Évolution »).
   la carte principale.
 - **Natural Earth** : ids parfois étranges pour de très petits pays
   (`VA-X01~`), mais stables.
+- **Id d'une zone = id de son pays + « - » + …** : le client lit le pays
+  avant le premier tiret (fichiers à charger). Corrigé le 2026-11-11 :
+  l'Australie était `X-AUS` (code AU partagé avec deux territoires) et ses
+  régions `AU-…` ne se dessinaient jamais ; les pays sans code ISO sont
+  désormais `XATC`, `XCYN`… (sans tiret), et une région dont Natural Earth
+  donne le code d'un autre pays (Sébastopol `UA-40` en Russie, `US-PR`)
+  prend `<pays>-<adm1_code>`. Vérifié par
+  `test_zone_ids_start_with_their_country`.
 
 ## Tests
 

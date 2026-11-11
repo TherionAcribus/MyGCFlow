@@ -196,6 +196,82 @@ test('carte aux bonnes proportions, entière, quelle que soit la taille de la tu
   expect(errors).toEqual([]);
 });
 
+// Zones d'une carte enregistrée et emprise de toutes ses coordonnées.
+async function mapContents(page, name) {
+  return page.evaluate((n) => {
+    const features = window.echarts.getMap(n).geoJSON.features;
+    const xs = [];
+    const ys = [];
+    for (const f of features) {
+      const flat = f.geometry.coordinates.flat(3);
+      for (let i = 0; i < flat.length; i += 2) { xs.push(flat[i]); ys.push(flat[i + 1]); }
+    }
+    return { ids: features.map((f) => f.properties.name), box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] };
+  }, name);
+}
+
+test('cadrage : un pays, un continent, le monde ; trouvailles hors du cadre', async ({ page, request }) => {
+  const errors = await openStats(page);
+  const map = (frame) => ({ groupBy: 'zone_region', measure: { op: 'count' }, periods: [{ kind: 'all' }],
+    view: { chart: 'map', map: { frame } } });
+  await seed(page, request, [map('country:FR'), map('europe'), map('world')]);
+  const [fr, europe, world] = [await mapCard(page, 0), await mapCard(page, 1), await mapCard(page, 2)];
+
+  // La France seule : ses régions, la Bavière et le Texas hors du cadre.
+  expect(fr.zones.frame).toBe('country:FR');
+  expect(fr.zones.countries).toEqual(['FR']);
+  expect(fr.keys.every((id) => id.startsWith('FR-'))).toBe(true);
+  expect(fr.zones.outOfFrame).toBe(2);
+  expect(fr.zones.unknown).toBe(1);
+  await expect(page.locator('.stats-card').nth(0).locator('.stats-card-note')).toContainText('Hors du cadre : 2');
+  const frMap = await mapContents(page, fr.zones.map);
+  // Toutes les régions françaises (le pays en entier), les voisins en fond,
+  // rien au-delà du cadre (découpé), La Réunion en encart.
+  expect(frMap.ids).toEqual(expect.arrayContaining(['FR-IDF', 'FR-GES', 'FR-974', 'DE', 'ES']));
+  expect(frMap.ids).not.toContain('FR');
+  expect(frMap.box[0]).toBeGreaterThan(-7);
+  expect(frMap.box[2]).toBeLessThan(11);
+
+  // L'Europe : France et Allemagne, le Texas dehors ; la Russie découpée.
+  expect(europe.zones.countries).toEqual(['DE', 'FR']);
+  expect(europe.zones.outOfFrame).toBe(1);
+  const euMap = await mapContents(page, europe.zones.map);
+  expect(euMap.ids).toEqual(expect.arrayContaining(['DE-BY', 'FR-BRE', 'RU', 'IT']));
+  expect(euMap.box[2]).toBeLessThanOrEqual(45 + 1e-6);
+
+  // Le monde : toutes les trouvailles, tous les pays en fond.
+  expect(world.zones.countries).toEqual(['DE', 'FR', 'US']);
+  expect(world.zones.outOfFrame).toBe(0);
+  const worldMap = await mapContents(page, world.zones.map);
+  expect(worldMap.ids).toEqual(expect.arrayContaining(['US-TX', 'BR', 'AU', 'JP']));
+  expect(errors).toEqual([]);
+});
+
+test('éditeur : menu « Cadrage de la carte » (continents, pays par leur nom)', async ({ page }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsAddChart').click();
+  await page.locator('#statsGalleryModal [data-question="custom"]').click();
+  await expect(page.locator('#statsEditorModal')).toBeVisible();
+  await page.locator('#statsEdGroupBy').selectOption('zone_region');
+  await page.locator('#statsEdOptions summary').click();
+  await expect(page.locator('#statsEdMapFrame')).toBeVisible();
+  await expect(page.locator('#statsEdMapFrame')).toHaveValue('auto');
+  await expect.poll(() => page.locator('#statsEdMapFrame option[value="country:FR"]').count(), { timeout: 15_000 }).toBe(1);
+  await expect(page.locator('#statsEdMapFrame option[value="country:FR"]')).toHaveText('France');
+  await expect(page.locator('#statsEdMapFrame option[value="europe"]')).toHaveText('Europe');
+  await page.locator('#statsEdMapFrame').selectOption('country:DE');
+  // L'aperçu suit : l'Allemagne en entier, ses voisins en fond, aucune
+  // région française.
+  await expect.poll(async () => {
+    const name = await page.evaluate(() => window.echarts.getInstanceByDom(document.getElementById('statsEdPreview'))
+      ?.getOption()?.geo?.[0]?.map ?? null);
+    if (!name) return false;
+    const { ids } = await mapContents(page, name);
+    return ids.includes('DE-BY') && ids.includes('DE-SH') && ids.includes('FR') && !ids.some((id) => id.startsWith('FR-'));
+  }, { timeout: 15_000 }).toBe(true);
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : un regroupement par zones ne propose que la carte', async ({ page }) => {
   const errors = await openStats(page);
   await page.locator('#btnStatsAddChart').click();

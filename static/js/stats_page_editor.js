@@ -4,9 +4,10 @@ import { t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
     allowedAligns, allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy,
-    chartSources, goalApplies, hasSeveralSeries, MAX_EXTRA_SOURCES, MAX_SERIES, normalizeChartSpec,
-    normalizeMeasure, sourceDimensions,
+    chartSources, goalApplies, hasSeveralSeries, MAP_CONTINENTS, mapFrameCountry, MAX_EXTRA_SOURCES, MAX_SERIES,
+    normalizeChartSpec, normalizeMeasure, sourceDimensions,
 } from './chart_spec.mjs';
+import { loadFile, zoneName } from './zone_geo.js';
 import { ELAPSED_UNITS } from './chart_query.mjs';
 import { activeFilterCount } from './chart_filters.mjs';
 import { destroyFilterForm, readFilterForm, renderFilterForm } from './stats_filters_ui.js';
@@ -267,6 +268,8 @@ export function syncEditorForm() {
     $('statsEdGridRow').hidden = spec.groupBy !== 'zone_grid';
     $('statsEdMapScaleRow').hidden = !map;
     $('statsEdMapClassesRow').hidden = !map;
+    $('statsEdMapFrameRow').hidden = !map;
+    if (map) fillMapFrameSelect(map.frame);
     if (map) {
         $('statsEdGridSize').value = String(map.gridSize);
         $('statsEdMapScale').value = map.scale;
@@ -365,6 +368,7 @@ export function readEditorForm() {
                 map: {
                     ...spec.view.map,
                     gridSize: Number($('statsEdGridSize').value),
+                    frame: $('statsEdMapFrame').value || spec.view.map.frame,
                     scale: $('statsEdMapScale').value,
                     classes: Number($('statsEdMapClasses').value),
                 },
@@ -414,6 +418,50 @@ export function renderPreview() {
     state.previewChart.resize();
     // Fenêtre redimensionnée : l'aperçu suit (calendrier redessiné).
     state.resizeObserver.observe(host);
+}
+
+// Cadrage d'une carte : automatique, monde, continents, puis tous les pays
+// (noms de countries.json, chargé à la demande ; le menu se remplit à son
+// arrivée, la valeur choisie restant affichée en attendant).
+function continentLabel(id) {
+    switch (id) {
+        case 'europe': return t('Europe');
+        case 'northamerica': return t('Amérique du Nord');
+        case 'southamerica': return t('Amérique du Sud');
+        case 'africa': return t('Afrique');
+        case 'asia': return t('Asie');
+        case 'oceania': return t('Océanie');
+        default: return id;
+    }
+}
+
+function fillMapFrameSelect(current) {
+    const select = $('statsEdMapFrame');
+    const auto = t('Automatique (zones avec des données)');
+    const world = t('Monde entier');
+    const continentsLabel = t('Continents');
+    const countriesLabel = t('Pays');
+    const continents = document.createElement('optgroup');
+    continents.label = continentsLabel;
+    continents.append(...MAP_CONTINENTS.map((id) => new Option(continentLabel(id), id)));
+    const countries = document.createElement('optgroup');
+    countries.label = countriesLabel;
+    const entry = loadFile('countries.json');
+    const ids = entry.data
+        ? entry.data.features.map((f) => f.properties.id)
+        : [mapFrameCountry(current)].filter(Boolean);
+    const locale = state.labels?.locale || document.documentElement.lang || 'fr';
+    countries.append(...ids
+        .map((id) => ({ id, name: zoneName(id) || id }))
+        .sort((a, b) => a.name.localeCompare(b.name, locale))
+        .map(({ id, name }) => new Option(name, 'country:' + id)));
+    select.replaceChildren(new Option(auto, 'auto'), new Option(world, 'world'), continents, countries);
+    select.value = current;
+    if (!entry.data && !entry.error) {
+        entry.promise?.then(() => {
+            if (!$('statsEdMapFrameRow').hidden) fillMapFrameSelect(select.value || current);
+        });
+    }
 }
 
 export function onEditorChange() {

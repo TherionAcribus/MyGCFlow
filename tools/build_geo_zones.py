@@ -609,6 +609,13 @@ def build(offline=False):
         merged = [r for r in records if r["props"].get("mgz_dv")]
         if plain:
             finish_records(plain, spec, manual_aliases=manual)
+            # L'id d'une zone commence par celui de son pays : le client en
+            # déduit les contours à charger. Natural Earth donne parfois le
+            # code ISO d'un autre pays (Sébastopol « UA-40 » en Russie, « US-PR »
+            # à Porto Rico) ou aucun (« -99-X04~ ») : id tiré de adm1_code.
+            for r in plain:
+                if not r["id"].startswith(cid + "-"):
+                    r["id"] = f"{cid}-{zones.normalize_name(r['props'].get('adm1_code') or r['id'])}"
         for r in merged:
             value = r["props"]["mgz_dv"]
             r["id"] = f"{cid}-{zones.normalize_name(value)}"
@@ -686,6 +693,12 @@ def build(offline=False):
         "v": zones.FORMAT_VERSION,
         "countries": {"file": "countries.json", "rev": _rev(blob), "count": len(countries), "bytes": len(blob)},
         "by_country": {},
+        # Continent de chaque pays (« europe », « northamerica »…) : cadrage
+        # des cartes de Statistiques sur un continent.
+        "continents": {r["id"]: zones.normalize_name(world["countries"].get("continent_fix", {}).get(r["id"])
+                                                     or fill(world["countries"]["continent"], r["props"]) or "")
+                       for r in sorted(countries, key=lambda r: r["id"])
+                       if world["countries"].get("continent")},
         "sources": {sid: {"title": s["title"], "licence": s["licence"], "licence_title": LICENCES[s["licence"]],
                           "attribution": s["attribution"], "homepage": s["homepage"]}
                     for sid, s in sorted(used.items())},

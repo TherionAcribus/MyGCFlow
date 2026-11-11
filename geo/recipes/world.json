@@ -21,12 +21,17 @@
   },
   "countries": {
     "source": "ne-admin0",
-    "id": ["{ISO_A2_EH}", "X-{ADM0_A3}"],
+    "id": ["{ISO_A2_EH}", "X{ADM0_A3}"],
+    "comment_id": "Sans tiret : le client lit le pays d'une zone dans ce qui précède le premier « - » de son id. AU est partagé par l'Australie, Ashmore et les territoires de l'océan Indien : la règle des doublons les envoie tous au second modèle, id_map rend AU à l'Australie.",
+    "id_map": { "XAUS": "AU" },
     "key": "{ADM0_A3}",
     "name": "{NAME}",
     "name_fr": "{NAME_FR}",
     "name_en": "{NAME_EN}",
     "aliases": ["NAME", "NAME_EN", "NAME_LONG", "ADMIN", "GEOUNIT", "NAME_CIAWF", "NAME_SORT", "FORMAL_EN", "NAME_ALT", "NAME_FR", "NAME_DE", "NAME_ES", "NAME_IT", "NAME_NL", "NAME_PT"],
+    "continent": "{CONTINENT}",
+    "comment_continent": "Continent de chaque pays (cadrage des cartes de Statistiques). Natural Earth range quelques îles en « Seven seas (open ocean) » : rattachées au continent voisin.",
+    "continent_fix": { "SC": "Africa", "MU": "Africa", "SH": "Africa", "MV": "Asia", "IO": "Asia", "GS": "South America" },
     "simplify": { "display": 4000, "match": 500 }
   },
   "regions": {

@@ -235,7 +235,25 @@ export const CHART_TYPES = Object.freeze(['bar', 'line', 'area', 'donut', 'numbe
 // nombre de classes, cadrage.
 export const MAP_SCALES = Object.freeze(['quantile', 'linear', 'log']);
 export const MAP_CLASSES_RANGE = Object.freeze([3, 7]);
-export const MAP_FRAMES = Object.freeze(['auto', 'world']);
+// Cadrage : « auto » (les zones qui ont des données), le monde entier, un
+// continent (index.json › continents), ou un pays (« country:FR »). Un
+// continent ou un pays ne garde que ses trouvailles (les autres sont
+// « hors du cadre »).
+export const MAP_CONTINENTS = Object.freeze(['europe', 'northamerica', 'southamerica', 'africa', 'asia', 'oceania']);
+export const MAP_FRAMES = Object.freeze(['auto', 'world', ...MAP_CONTINENTS]);
+const COUNTRY_FRAME_RE = /^country:([A-Z]{2}|X-[A-Z]{3})$/;
+
+export function mapFrameCountry(frame) {
+    return COUNTRY_FRAME_RE.exec(String(frame || ''))?.[1] || null;
+}
+
+export function mapFrameContinent(frame) {
+    return MAP_CONTINENTS.includes(frame) ? frame : null;
+}
+
+function normalizeFrame(value, fallback) {
+    return MAP_FRAMES.includes(value) || mapFrameCountry(value) ? value : fallback;
+}
 export const CHART_ORIENTATIONS = Object.freeze(['vertical', 'horizontal']);
 export const CHART_PALETTES = Object.freeze(['auto', 'accent', 'gc', 'multi', 'heat']);
 export const CHART_SORTS = Object.freeze(['natural', 'value', 'label']);
@@ -668,7 +686,7 @@ function normalizeMapView(raw) {
     return {
         scale: choice(src.scale, MAP_SCALES, d.scale),
         classes: intIn(src.classes, d.classes, MAP_CLASSES_RANGE),
-        frame: choice(src.frame, MAP_FRAMES, d.frame),
+        frame: normalizeFrame(src.frame, d.frame),
         // Contour des zones qui ont changé depuis la vignette précédente.
         highlight: bool(src.highlight, d.highlight),
         // Grille : km entre deux centres de cases (zone_grid.mjs › GRID_SIZES).
