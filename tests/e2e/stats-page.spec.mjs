@@ -868,6 +868,65 @@ test('un jeu supprimé (404) dit « n\'existe plus », sans bloc de relance', as
   }
 });
 
+test('trouvailles en échec au démarrage : erreur avec relance, pas une base vide', async ({ page }) => {
+  // Avant : l'échec des trouvailles était fatal à la page, et tout vide
+  // affichait « importer ses trouvailles ». Maintenant : écran d'erreur.
+  await serveFinds(page, { fail: true });
+  const errors = await openStats(page);
+  await expect(page.locator('#statsLoadError')).toBeVisible();
+  await expect(page.locator('#statsLoadErrorText')).toHaveText("Vos trouvailles n'ont pas pu être chargées.");
+  await expect(page.locator('#statsEmptyState')).toBeHidden();
+
+  // La relance recharge la page : le tableau s'ouvre avec les données.
+  await serveFinds(page);
+  await page.locator('#btnStatsRetry').click();
+  await expect(page.locator('#statsDashboard')).toBeVisible();
+  expect((await snapshot(page)).rows).toBe(6);
+  expect(errors).toEqual([]);
+});
+
+test('liste des jeux Évolution en échec : erreur, pas une base vide', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  await page.route('**/api/stats/finds', (route) => route.fulfill({ json: { count: 0 } }));
+  await page.route('**/api/evolution/datasets', (route) => route.abort());
+  const errors = await openStats(page);
+  await expect(page.locator('#statsLoadError')).toBeVisible();
+  await expect(page.locator('#statsLoadErrorText')).toHaveText("Vos jeux Évolution n'ont pas pu être chargés.");
+  await expect(page.locator('#statsEmptyState')).toBeHidden();
+
+  // Relance avec les routes réparées : les trouvailles ouvrent le tableau.
+  await page.unroute('**/api/evolution/datasets');
+  await page.unroute('**/api/stats/finds');
+  await page.locator('#btnStatsRetry').click();
+  await expect(page.locator('#statsDashboard')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('trouvailles en échec : un tableau Évolution reste ouvrable', async ({ page, request }) => {
+  // Le chargement des trouvailles n'est plus obligatoire : le tableau dont
+  // la source fonctionne s'ouvre, l'échec reste relevé dans sourceErrors.
+  await deleteAllDatasets(request);
+  const datasetId = await createDataset(request, 'Zone de test');
+  try {
+    await page.route('**/api/stats/finds', (route) => route.abort());
+    const doc = { v: 1, active: 'e1', dashboards: [{ id: 'e1', name: 'Zone', kind: 'evolution',
+      dataset: datasetId, period: { kind: 'all' }, items: [
+        { size: 'M', spec: { id: 'c0ff01', source: `evolution:${datasetId}`, groupBy: 'year' } }] }] };
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+    const errors = await openStats(page);
+    await expect(page.locator('#statsDashboard')).toBeVisible();
+    const snap = await snapshot(page);
+    expect(snap.dashboard.kind).toBe('evolution');
+    expect(snap.sourceErrors).toContain('finds');
+    expect(snap.cards[0].unavailable).toBeNull();
+    expect(snap.cards[0].keys.length).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+  } finally {
+    await page.unroute('**/api/stats/finds');
+    await deleteAllDatasets(request);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Performance : cache de résultats, cartes réutilisées, dessin différé
 // ---------------------------------------------------------------------------
@@ -1075,6 +1134,27 @@ test('impression : sans les commandes, et toujours sur fond clair', async ({ pag
     await select.selectOption(original);
     await expect.poll(async () => (await (await request.get('/api/settings')).json()).theme).toBe(original);
   }
+});
+
+test('impression : les graphiques différés hors écran sont dessinés', async ({ page, request }) => {
+  // Seize cartes XL : seules celles proches de l'écran sont dessinées au
+  // chargement ; l'impression doit toutes les produire — sans quoi les
+  // cartes jamais défilées sortaient vides sur le papier.
+  const items = Array.from({ length: 16 }, (_, i) => ({ size: 'XL', spec: {
+    id: (0xaaaa00 + i).toString(16), groupBy: 'year', view: { chart: 'bar' } } }));
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Grand tableau',
+    period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  let snap = await snapshot(page);
+  expect(snap.cards.filter((c) => c.deferred).length).toBeGreaterThan(0);
+
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+  snap = await snapshot(page);
+  expect(snap.cards.every((c) => !c.deferred)).toBe(true);
+  expect(snap.cards.every((c) => c.rendered)).toBe(true);
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  expect(errors).toEqual([]);
 });
 
 // ---------------------------------------------------------------------------

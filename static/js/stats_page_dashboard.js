@@ -304,6 +304,7 @@ export async function refreshData() {
                 loadDatasets(),
             ]);
             setTable('finds', finds);
+            state.sourceErrors.delete('finds');
             await ensureEvolution(activeDashboard().dataset);
         });
         renderDashboard();

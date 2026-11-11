@@ -496,7 +496,7 @@ function nearViewport(host) {
 
 // Dessine le contenu d'une carte : bloc « indisponible », chiffre clé ou
 // graphique ECharts (différé si la carte est loin de l'écran).
-function renderCard(item, card, dashboard) {
+function renderCard(item, card, dashboard, { force = false } = {}) {
     const { spec } = item;
     const body = card.querySelector('.stats-card-body');
     const note = card.querySelector('.stats-card-note');
@@ -532,8 +532,9 @@ function renderCard(item, card, dashboard) {
         state.resizeObserver.observe(host);
         return;
     }
-    // Grande collection, carte loin de l'écran : dessin différé à l'approche.
-    if (!window.echarts.getInstanceByDom(host) && dashboard.items.length > DEFER_CHARTS_BEYOND && !nearViewport(host)) {
+    // Grande collection, carte loin de l'écran : dessin différé à l'approche —
+    // sauf pour un dessin forcé (export, impression : tout doit être là).
+    if (!force && !window.echarts.getInstanceByDom(host) && dashboard.items.length > DEFER_CHARTS_BEYOND && !nearViewport(host)) {
         host.classList.add('is-pending');
         state.deferred.add(spec.id);
         state.lazyObserver.observe(host);
@@ -590,7 +591,7 @@ export function renderDeferred(onlyId = null) {
         if (onlyId && id !== onlyId) continue;
         const card = $('statsGrid').querySelector(cardSelector(id));
         const item = card && dashboard.items.find((i) => i.spec.id === id);
-        if (item) renderCard(item, card, dashboard);
+        if (item) renderCard(item, card, dashboard, { force: true });
     }
 }
 

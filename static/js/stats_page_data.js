@@ -42,10 +42,12 @@ export async function fetchJson(url) {
     return response.json();
 }
 
-// Sources personnelles : les trouvailles sont indispensables (échec = page
-// en erreur) ; DNF, caches posées et Mes poses sont facultatifs — pas de
-// logs importés = tables vides, mais un ÉCHEC n'est pas un zéro : la source
-// est marquée indisponible (sourceErrors) et le graphique propose une relance.
+// Sources personnelles : pas de logs importés = tables vides, mais un ÉCHEC
+// n'est pas un zéro — la source est marquée indisponible (sourceErrors) et le
+// graphique propose une relance. Les trouvailles ont leur propre chargeur :
+// une erreur de lecture n'interdit pas l'ouverture des tableaux dont les
+// sources fonctionnent (Évolution notamment).
+const FINDS_LOADER = { url: '/api/stats/finds', sources: ['finds'], apply: (p) => [['finds', findsTable(p)]] };
 export const PERSONAL_LOADERS = [
     { url: '/api/stats/dnf', sources: ['dnf'], apply: (p) => [['dnf', dnfTable(p)]] },
     { url: '/api/stats/owned', sources: ['owned'], apply: (p) => [['owned', ownedTable(p)]] },
@@ -56,7 +58,7 @@ export const PERSONAL_LOADERS = [
                   ['poses.favorites', tables.favorites]];
       } },
 ];
-const SOURCE_LOADER = new Map(PERSONAL_LOADERS.flatMap((l) => l.sources.map((s) => [s, l])));
+const SOURCE_LOADER = new Map([FINDS_LOADER, ...PERSONAL_LOADERS].flatMap((l) => l.sources.map((s) => [s, l])));
 
 // Toute écriture d'une table change les données : le cache de résultats
 // est invalidé via dataRev (les cartes concernées seront recalculées).
@@ -81,11 +83,7 @@ export function loadPersonalLoader(loader) {
 }
 
 async function loadPersonalSources() {
-    const [finds] = await Promise.all([
-        fetchJson('/api/stats/finds').then(findsTable),
-        ...PERSONAL_LOADERS.map(loadPersonalLoader),
-    ]);
-    setTable('finds', finds);
+    await Promise.all([loadPersonalLoader(FINDS_LOADER), ...PERSONAL_LOADERS.map(loadPersonalLoader)]);
 }
 
 // Recharge les sources en échec d'un graphique (bouton « Réessayer »), puis
@@ -104,8 +102,10 @@ export function retrySources(spec) {
 export async function loadDatasets() {
     try {
         state.datasets = (await fetchJson('/api/evolution/datasets')).datasets || [];
+        state.datasetsFailed = false;
     } catch (_) {
         state.datasets = [];
+        state.datasetsFailed = true;
     }
 }
 
@@ -179,10 +179,18 @@ export async function loadPage() {
     showSection('statsLoading');
     try {
         const [, doc] = await Promise.all([loadPersonalSources(), loadDashboards(), loadTypeColors(), loadDatasets()]);
-        // Rien à compter nulle part : la page invite à importer.
+        // Rien à compter nulle part : la page invite à importer — sauf si ce
+        // vide vient d'un chargement en échec, qui relance plutôt qu'importer.
         const personal = PERSONAL_SOURCES.some((source) => tableOf(source).n > 0);
         if (!personal && !state.datasets.length) {
-            showSection('statsEmptyState');
+            if (state.sourceErrors.size || state.datasetsFailed) {
+                $('statsLoadErrorText').textContent = state.sourceErrors.has('finds')
+                    ? t("Vos trouvailles n'ont pas pu être chargées.")
+                    : t("Vos jeux Évolution n'ont pas pu être chargés.");
+                showSection('statsLoadError');
+            } else {
+                showSection('statsEmptyState');
+            }
             return;
         }
         state.doc = doc;
@@ -208,6 +216,7 @@ export async function loadPage() {
         renderDashboard();
     } catch (e) {
         console.error('[stats] Chargement impossible :', e);
+        $('statsLoadErrorText').textContent = t("Les statistiques n'ont pas pu être chargées.");
         showSection('statsLoadError');
     }
 }
