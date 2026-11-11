@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 15:19+0100\n"
+"POT-Creation-Date: 2026-11-11 16:20+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -314,7 +314,7 @@ msgid "Maintenance du poseur"
 msgstr "Maintenance du poseur"
 
 #: event_flash.py:61 poses_dataset.py:639 static/js/chart_labels.mjs:244
-#: static/js/zone_layer.js:700
+#: static/js/zone_layer.js:878
 msgid "Première trouvaille"
 msgstr "Première trouvaille"
 
@@ -682,7 +682,7 @@ msgstr "Statut"
 
 #: poses_dataset.py:638 static/js/chart_labels.mjs:264
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
-#: static/js/zone_layer.js:704 templates/menu_informations.html:64
+#: static/js/zone_layer.js:882 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Trouvailles"
@@ -731,7 +731,7 @@ msgstr "Désactivée"
 msgid "Archivée"
 msgstr "Archivée"
 
-#: settings_manager.py:2892
+#: settings_manager.py:2895
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -740,45 +740,45 @@ msgstr ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
 
-#: blueprints/profiles.py:560 settings_manager.py:2932 settings_manager.py:3009
-#: settings_manager.py:3061
+#: blueprints/profiles.py:560 settings_manager.py:2935 settings_manager.py:3012
+#: settings_manager.py:3064
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Thème '%(name)s' introuvable"
 
-#: settings_manager.py:2953
+#: settings_manager.py:2956
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "Aucun thème trouvé avec l'UUID: %(uid)s"
 
-#: settings_manager.py:2989 settings_manager.py:3014
+#: settings_manager.py:2992 settings_manager.py:3017
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "Un thème nommé '%(name)s' existe déjà"
 
-#: settings_manager.py:3026
+#: settings_manager.py:3029
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Thème source '%(name)s' introuvable"
 
-#: settings_manager.py:3042
+#: settings_manager.py:3045
 msgid "Mode de thème inconnu"
 msgstr "Mode de thème inconnu"
 
-#: settings_manager.py:3045
+#: settings_manager.py:3048
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Le thème '%(name)s' appartient déjà à ce mode"
 
-#: settings_manager.py:3236
+#: settings_manager.py:3239
 msgid "Payload invalide"
 msgstr "Payload invalide"
 
-#: settings_manager.py:3239
+#: settings_manager.py:3242
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Fichier de thème invalide (détrompeur manquant)"
 
-#: settings_manager.py:3243
+#: settings_manager.py:3246
 msgid "Section 'profile' manquante"
 msgstr "Section 'profile' manquante"
 
@@ -1916,35 +1916,35 @@ msgstr "Écart : ${a} par rapport à ${b}"
 msgid "Écart"
 msgstr "Écart"
 
-#: static/js/chart_echarts.mjs:958 static/js/chart_echarts.mjs:1048
+#: static/js/chart_echarts.mjs:960 static/js/chart_echarts.mjs:1154
 msgid "Aucune donnée"
 msgstr "Aucune donnée"
 
-#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1076
+#: static/js/chart_echarts.mjs:967 static/js/zone_layer.js:1259
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} sur ${of} caches"
 
-#: static/js/chart_echarts.mjs:970
+#: static/js/chart_echarts.mjs:972
 #, python-brace-format
 msgid "rang ${n} sur ${of}"
 msgstr "rang ${n} sur ${of}"
 
-#: static/js/chart_echarts.mjs:976
+#: static/js/chart_echarts.mjs:978
 #, python-brace-format
 msgid "nouvelle depuis ${period}"
 msgstr "nouvelle depuis ${period}"
 
-#: static/js/chart_echarts.mjs:978
+#: static/js/chart_echarts.mjs:980
 #, python-brace-format
 msgid "${delta} depuis ${period}"
 msgstr "${delta} depuis ${period}"
 
-#: static/js/chart_echarts.mjs:1047 static/js/zone_layer_ui.js:112
+#: static/js/chart_echarts.mjs:1153 static/js/zone_layer_ui.js:113
 msgid "Contours des zones indisponibles."
 msgstr "Contours des zones indisponibles."
 
-#: static/js/chart_echarts.mjs:1049
+#: static/js/chart_echarts.mjs:1155
 msgid "Chargement de la carte…"
 msgstr "Chargement de la carte…"
 
@@ -2405,12 +2405,12 @@ msgstr "Cumul sur la période"
 #: static/js/chart_labels.mjs:242 static/js/chart_labels.mjs:382
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
-#: static/js/zone_layer.js:704 templates/menu_stats.html:177
+#: static/js/zone_layer.js:882 templates/menu_stats.html:177
 #: templates/menu_stats.html:243 templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Caches actives"
 
-#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:698
+#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:876
 msgid "Combinaisons D/T"
 msgstr "Combinaisons D/T"
 
@@ -3265,7 +3265,7 @@ msgstr "${n}ᵉ trouvaille"
 msgid "Nouvelle zone · ${date}"
 msgstr "Nouvelle zone · ${date}"
 
-#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1087
+#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1270
 #, python-brace-format
 msgid "Au ${date}"
 msgstr "Au ${date}"
@@ -3450,7 +3450,7 @@ msgid "Géocaches"
 msgstr "Géocaches"
 
 #: static/js/chart_labels.mjs:659 static/js/chart_labels.mjs:672
-#: static/js/zone_layer.js:1039
+#: static/js/zone_layer.js:1222
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n} %"
@@ -3470,7 +3470,7 @@ msgstr "${n} / 1 000 km²"
 msgid "${n} j"
 msgstr "${n} j"
 
-#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:696
+#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:874
 msgid "/ 1 000 km²"
 msgstr "/ 1 000 km²"
 
@@ -6673,8 +6673,8 @@ msgstr "${n} caches publiées"
 msgid "${n} archivages datés"
 msgstr "${n} archivages datés"
 
-#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1047
-#: static/js/zone_layer.js:1082 static/js/zone_report_ui.js:86
+#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1230
+#: static/js/zone_layer.js:1265 static/js/zone_report_ui.js:86
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} trouvailles"
@@ -7752,7 +7752,7 @@ msgstr "Jours avec trouvaille"
 msgid "Plus longue série (jours)"
 msgstr "Plus longue série (jours)"
 
-#: static/js/stats_panels.js:1432 static/js/zone_layer.js:697
+#: static/js/stats_panels.js:1432 static/js/zone_layer.js:875
 #: templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Types de caches différents"
@@ -9108,139 +9108,139 @@ msgstr "Ouverture du flux vidéo impossible"
 msgid "Aucun flux vidéo ouvert"
 msgstr "Aucun flux vidéo ouvert"
 
-#: static/js/zone_layer.js:699
+#: static/js/zone_layer.js:877
 msgid "Combinaisons D/T manquantes"
 msgstr "Combinaisons D/T manquantes"
 
-#: static/js/zone_layer.js:700
+#: static/js/zone_layer.js:878
 msgid "Première cache posée"
 msgstr "Première cache posée"
 
-#: static/js/zone_layer.js:702
+#: static/js/zone_layer.js:880
 msgid "Part des caches publiées trouvées"
 msgstr "Part des caches publiées trouvées"
 
-#: static/js/zone_layer.js:702
+#: static/js/zone_layer.js:880
 msgid "Part des caches actives trouvées"
 msgstr "Part des caches actives trouvées"
 
-#: static/js/zone_layer.js:714
+#: static/js/zone_layer.js:892
 #, python-brace-format
 msgid "depuis le ${date}"
 msgstr "depuis le ${date}"
 
-#: static/js/zone_layer.js:1035
+#: static/js/zone_layer.js:1218
 msgid "Aucune évolution depuis cette date"
 msgstr "Aucune évolution depuis cette date"
 
-#: static/js/zone_layer.js:1041 static/js/zone_layer.js:1066
+#: static/js/zone_layer.js:1224 static/js/zone_layer.js:1249
 #, python-brace-format
 msgid "${n} types de caches / 1 000 km²"
 msgstr "${n} types de caches / 1 000 km²"
 
-#: static/js/zone_layer.js:1041 static/js/zone_layer.js:1067
+#: static/js/zone_layer.js:1224 static/js/zone_layer.js:1250
 #, python-brace-format
 msgid "${n} types de caches"
 msgstr "${n} types de caches"
 
-#: static/js/zone_layer.js:1043 static/js/zone_layer.js:1069
+#: static/js/zone_layer.js:1226 static/js/zone_layer.js:1252
 #, python-brace-format
 msgid "${n} combinaisons D/T sur 81"
 msgstr "${n} combinaisons D/T sur 81"
 
-#: static/js/zone_layer.js:1046 static/js/zone_layer.js:1079
+#: static/js/zone_layer.js:1229 static/js/zone_layer.js:1262
 #, python-brace-format
 msgid "${n} caches actives / 1 000 km²"
 msgstr "${n} caches actives / 1 000 km²"
 
-#: static/js/zone_layer.js:1046 static/js/zone_layer.js:1080
+#: static/js/zone_layer.js:1229 static/js/zone_layer.js:1263
 #, python-brace-format
 msgid "${n} trouvailles / 1 000 km²"
 msgstr "${n} trouvailles / 1 000 km²"
 
-#: static/js/zone_layer.js:1047 static/js/zone_layer.js:1082
+#: static/js/zone_layer.js:1230 static/js/zone_layer.js:1265
 #, python-brace-format
 msgid "${n} caches actives"
 msgstr "${n} caches actives"
 
-#: static/js/zone_layer.js:1053
+#: static/js/zone_layer.js:1236
 #, python-brace-format
 msgid "Depuis le ${date}"
 msgstr "Depuis le ${date}"
 
-#: static/js/zone_layer.js:1059
+#: static/js/zone_layer.js:1242
 msgid "Aucune cache à ce jour"
 msgstr "Aucune cache à ce jour"
 
-#: static/js/zone_layer.js:1059
+#: static/js/zone_layer.js:1242
 msgid "Aucune trouvaille à ce jour"
 msgstr "Aucune trouvaille à ce jour"
 
-#: static/js/zone_layer.js:1063
+#: static/js/zone_layer.js:1246
 #, python-brace-format
 msgid "Première cache posée : ${date}"
 msgstr "Première cache posée : ${date}"
 
-#: static/js/zone_layer.js:1063
+#: static/js/zone_layer.js:1246
 #, python-brace-format
 msgid "Première trouvaille : ${date}"
 msgstr "Première trouvaille : ${date}"
 
-#: static/js/zone_layer.js:1070
+#: static/js/zone_layer.js:1253
 #, python-brace-format
 msgid "Il en manque ${n}"
 msgstr "Il en manque ${n}"
 
-#: static/js/zone_layer.js:1072
+#: static/js/zone_layer.js:1255
 #, python-brace-format
 msgid "${n} combinaisons D/T manquantes"
 msgstr "${n} combinaisons D/T manquantes"
 
-#: static/js/zone_layer_ui.js:85
+#: static/js/zone_layer_ui.js:86
 msgid "Vos trouvailles croisées avec les caches affichées, par code GC."
 msgstr "Vos trouvailles croisées avec les caches affichées, par code GC."
 
-#: static/js/zone_layer_ui.js:86
+#: static/js/zone_layer_ui.js:87
 msgid "Tout le jeu Évolution choisi, quels que soient les filtres de la carte."
 msgstr "Tout le jeu Évolution choisi, quels que soient les filtres de la carte."
 
-#: static/js/zone_layer_ui.js:88
+#: static/js/zone_layer_ui.js:89
 msgid "Calculé sur les caches du jeu affiché, à la date montrée."
 msgstr "Calculé sur les caches du jeu affiché, à la date montrée."
 
-#: static/js/zone_layer_ui.js:89
+#: static/js/zone_layer_ui.js:90
 msgid "Calculé sur vos trouvailles filtrées, à la date montrée."
 msgstr "Calculé sur vos trouvailles filtrées, à la date montrée."
 
-#: static/js/zone_layer_ui.js:107
+#: static/js/zone_layer_ui.js:108
 msgid "Impossible de charger la liste des jeux."
 msgstr "Impossible de charger la liste des jeux."
 
-#: static/js/zone_layer_ui.js:110
+#: static/js/zone_layer_ui.js:111
 msgid "Chargement de la part trouvée…"
 msgstr "Chargement de la part trouvée…"
 
-#: static/js/zone_layer_ui.js:110
+#: static/js/zone_layer_ui.js:111
 msgid "Chargement des contours…"
 msgstr "Chargement des contours…"
 
-#: static/js/zone_layer_ui.js:112
+#: static/js/zone_layer_ui.js:113
 msgid "Part trouvée indisponible."
 msgstr "Part trouvée indisponible."
 
-#: static/js/zone_layer_ui.js:114
+#: static/js/zone_layer_ui.js:115
 msgid "Choisissez le jeu Évolution à croiser avec vos trouvailles."
 msgstr "Choisissez le jeu Évolution à croiser avec vos trouvailles."
 
-#: static/js/zone_layer_ui.js:115
+#: static/js/zone_layer_ui.js:116
 msgid "Ce jeu Évolution n'existe plus : choisissez-en un autre."
 msgstr "Ce jeu Évolution n'existe plus : choisissez-en un autre."
 
-#: static/js/zone_layer_ui.js:118
+#: static/js/zone_layer_ui.js:119
 msgid "Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données."
 msgstr "Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données."
 
-#: static/js/zone_layer_ui.js:119
+#: static/js/zone_layer_ui.js:120
 msgid ""
 "Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet "
 "Données."
@@ -9248,23 +9248,23 @@ msgstr ""
 "Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet "
 "Données."
 
-#: static/js/zone_layer_ui.js:183
+#: static/js/zone_layer_ui.js:185
 msgid "Liste des jeux indisponible"
 msgstr "Liste des jeux indisponible"
 
-#: static/js/zone_layer_ui.js:193 templates/menu_zones.html:88
+#: static/js/zone_layer_ui.js:195 templates/menu_zones.html:88
 msgid "Choisir un jeu…"
 msgstr "Choisir un jeu…"
 
-#: static/js/zone_layer_ui.js:193
+#: static/js/zone_layer_ui.js:195
 msgid "Aucun jeu : importez-en un sur la page Évolution"
 msgstr "Aucun jeu : importez-en un sur la page Évolution"
 
-#: static/js/zone_layer_ui.js:195
+#: static/js/zone_layer_ui.js:197
 msgid "Jeu supprimé"
 msgstr "Jeu supprimé"
 
-#: static/js/zone_layer_ui.js:294
+#: static/js/zone_layer_ui.js:296
 msgid "L'image de la carte n'a pas pu être créée."
 msgstr "L'image de la carte n'a pas pu être créée."
 
@@ -9389,7 +9389,7 @@ msgstr "Noms non reconnus :"
 msgid "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
 msgstr "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
 
-#: static/js/zone_report_ui.js:238 templates/menu_zones.html:199
+#: static/js/zone_report_ui.js:238 templates/menu_zones.html:204
 msgid "Copier le rapport"
 msgstr "Copier le rapport"
 
@@ -14238,7 +14238,7 @@ msgid "Emplacement"
 msgstr "Emplacement"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:164
+#: templates/menu_stats.html:310 templates/menu_zones.html:169
 msgid "En haut à gauche"
 msgstr "En haut à gauche"
 
@@ -14248,7 +14248,7 @@ msgid "En haut au centre"
 msgstr "En haut au centre"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:165
+#: templates/menu_stats.html:310 templates/menu_zones.html:170
 msgid "En haut à droite"
 msgstr "En haut à droite"
 
@@ -14261,7 +14261,7 @@ msgid "Au milieu à droite"
 msgstr "Au milieu à droite"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:162
+#: templates/menu_stats.html:312 templates/menu_zones.html:167
 msgid "En bas à gauche"
 msgstr "En bas à gauche"
 
@@ -14271,7 +14271,7 @@ msgid "En bas au centre"
 msgstr "En bas au centre"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:163
+#: templates/menu_stats.html:312 templates/menu_zones.html:168
 msgid "En bas à droite"
 msgstr "En bas à droite"
 
@@ -17381,35 +17381,43 @@ msgstr "Frontières des zones"
 msgid "Éclat quand une zone fonce"
 msgstr "Éclat quand une zone fonce"
 
-#: templates/menu_zones.html:152
+#: templates/menu_zones.html:152 templates/stats_page.html:300
+msgid "Afficher les valeurs"
+msgstr "Afficher les valeurs"
+
+#: templates/menu_zones.html:153
+msgid "Écrites sur les zones assez grandes pour les contenir."
+msgstr "Écrites sur les zones assez grandes pour les contenir."
+
+#: templates/menu_zones.html:157
 msgid "Zones seules"
 msgstr "Zones seules"
 
-#: templates/menu_zones.html:153
+#: templates/menu_zones.html:158
 msgid "Masque trouvailles et trajet pour lire la carte colorée."
 msgstr "Masque trouvailles et trajet pour lire la carte colorée."
 
-#: templates/menu_zones.html:159
+#: templates/menu_zones.html:164
 msgid "Légende"
 msgstr "Légende"
 
-#: templates/menu_zones.html:161
+#: templates/menu_zones.html:166
 msgid "Position de la légende"
 msgstr "Position de la légende"
 
-#: templates/menu_zones.html:172
+#: templates/menu_zones.html:177
 msgid "Sauvegarder le thème"
 msgstr "Sauvegarder le thème"
 
-#: templates/menu_zones.html:174
+#: templates/menu_zones.html:179
 msgid "Ces réglages font partie du thème actif."
 msgstr "Ces réglages font partie du thème actif."
 
-#: templates/menu_zones.html:178
+#: templates/menu_zones.html:183
 msgid "Exporter la carte en image"
 msgstr "Exporter la carte en image"
 
-#: templates/menu_zones.html:180
+#: templates/menu_zones.html:185
 msgid ""
 "PNG de la carte telle qu'affichée : zones, légende et couches visibles. «"
 " Zones seules » donne une image épurée."
@@ -17417,19 +17425,19 @@ msgstr ""
 "PNG de la carte telle qu'affichée : zones, légende et couches visibles. «"
 " Zones seules » donne une image épurée."
 
-#: templates/menu_zones.html:187
+#: templates/menu_zones.html:192
 msgid "Noms reconnus"
 msgstr "Noms reconnus"
 
-#: templates/menu_zones.html:193
+#: templates/menu_zones.html:198
 msgid "Voir les noms non reconnus"
 msgstr "Voir les noms non reconnus"
 
-#: templates/menu_zones.html:203
+#: templates/menu_zones.html:208
 msgid "Demander un pays ou un nom"
 msgstr "Demander un pays ou un nom"
 
-#: templates/menu_zones.html:206
+#: templates/menu_zones.html:211
 msgid ""
 "Un nom non reconnu n'empêche pas l'affichage : la cache est placée "
 "d'après sa position. Copiez le rapport et collez-le dans la demande pour "
@@ -17439,7 +17447,7 @@ msgstr ""
 "d'après sa position. Copiez le rapport et collez-le dans la demande pour "
 "que le pays soit ajouté ou le nom corrigé."
 
-#: templates/menu_zones.html:211
+#: templates/menu_zones.html:216
 msgid ""
 "Le découpage le plus fin existe pour la France, l'Allemagne, le Royaume-"
 "Uni, l'Irlande et les États-Unis ; ailleurs, la carte montre les régions."
@@ -17672,10 +17680,6 @@ msgstr "Du plus grand au plus petit"
 #: templates/stats_page.html:296
 msgid "Empiler les séries"
 msgstr "Empiler les séries"
-
-#: templates/stats_page.html:300
-msgid "Afficher les valeurs"
-msgstr "Afficher les valeurs"
 
 #: templates/stats_page.html:304
 msgid "Courbe lissée"

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 15:19+0100\n"
+"POT-Creation-Date: 2026-11-11 16:20+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -312,7 +312,7 @@ msgid "Maintenance du poseur"
 msgstr "Owner maintenance"
 
 #: event_flash.py:61 poses_dataset.py:639 static/js/chart_labels.mjs:244
-#: static/js/zone_layer.js:700
+#: static/js/zone_layer.js:878
 msgid "Première trouvaille"
 msgstr "First find"
 
@@ -682,7 +682,7 @@ msgstr "Status"
 
 #: poses_dataset.py:638 static/js/chart_labels.mjs:264
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
-#: static/js/zone_layer.js:704 templates/menu_informations.html:64
+#: static/js/zone_layer.js:882 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Finds"
@@ -731,7 +731,7 @@ msgstr "Disabled"
 msgid "Archivée"
 msgstr "Archived"
 
-#: settings_manager.py:2892
+#: settings_manager.py:2895
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -740,45 +740,45 @@ msgstr ""
 "The name '%(name)s' contains no usable character (at least one letter or "
 "digit is required)"
 
-#: blueprints/profiles.py:560 settings_manager.py:2932 settings_manager.py:3009
-#: settings_manager.py:3061
+#: blueprints/profiles.py:560 settings_manager.py:2935 settings_manager.py:3012
+#: settings_manager.py:3064
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Theme '%(name)s' not found"
 
-#: settings_manager.py:2953
+#: settings_manager.py:2956
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "No theme found with UUID: %(uid)s"
 
-#: settings_manager.py:2989 settings_manager.py:3014
+#: settings_manager.py:2992 settings_manager.py:3017
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "A theme named '%(name)s' already exists"
 
-#: settings_manager.py:3026
+#: settings_manager.py:3029
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Source theme '%(name)s' not found"
 
-#: settings_manager.py:3042
+#: settings_manager.py:3045
 msgid "Mode de thème inconnu"
 msgstr "Unknown theme mode"
 
-#: settings_manager.py:3045
+#: settings_manager.py:3048
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Theme '%(name)s' already belongs to this mode"
 
-#: settings_manager.py:3236
+#: settings_manager.py:3239
 msgid "Payload invalide"
 msgstr "Invalid payload"
 
-#: settings_manager.py:3239
+#: settings_manager.py:3242
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Invalid theme file (missing marker)"
 
-#: settings_manager.py:3243
+#: settings_manager.py:3246
 msgid "Section 'profile' manquante"
 msgstr "Missing 'profile' section"
 
@@ -1901,35 +1901,35 @@ msgstr "Difference: ${a} compared with ${b}"
 msgid "Écart"
 msgstr "Difference"
 
-#: static/js/chart_echarts.mjs:958 static/js/chart_echarts.mjs:1048
+#: static/js/chart_echarts.mjs:960 static/js/chart_echarts.mjs:1154
 msgid "Aucune donnée"
 msgstr "No data"
 
-#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1076
+#: static/js/chart_echarts.mjs:967 static/js/zone_layer.js:1259
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} of ${of} caches"
 
-#: static/js/chart_echarts.mjs:970
+#: static/js/chart_echarts.mjs:972
 #, python-brace-format
 msgid "rang ${n} sur ${of}"
 msgstr "rank ${n} of ${of}"
 
-#: static/js/chart_echarts.mjs:976
+#: static/js/chart_echarts.mjs:978
 #, python-brace-format
 msgid "nouvelle depuis ${period}"
 msgstr "new since ${period}"
 
-#: static/js/chart_echarts.mjs:978
+#: static/js/chart_echarts.mjs:980
 #, python-brace-format
 msgid "${delta} depuis ${period}"
 msgstr "${delta} since ${period}"
 
-#: static/js/chart_echarts.mjs:1047 static/js/zone_layer_ui.js:112
+#: static/js/chart_echarts.mjs:1153 static/js/zone_layer_ui.js:113
 msgid "Contours des zones indisponibles."
 msgstr "Zone outlines unavailable."
 
-#: static/js/chart_echarts.mjs:1049
+#: static/js/chart_echarts.mjs:1155
 msgid "Chargement de la carte…"
 msgstr "Loading the map…"
 
@@ -2390,12 +2390,12 @@ msgstr "Running total over the period"
 #: static/js/chart_labels.mjs:242 static/js/chart_labels.mjs:382
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
-#: static/js/zone_layer.js:704 templates/menu_stats.html:177
+#: static/js/zone_layer.js:882 templates/menu_stats.html:177
 #: templates/menu_stats.html:243 templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Active caches"
 
-#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:698
+#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:876
 msgid "Combinaisons D/T"
 msgstr "D/T combinations"
 
@@ -3244,7 +3244,7 @@ msgstr "${n}th find"
 msgid "Nouvelle zone · ${date}"
 msgstr "New area · ${date}"
 
-#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1087
+#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1270
 #, python-brace-format
 msgid "Au ${date}"
 msgstr "At ${date}"
@@ -3429,7 +3429,7 @@ msgid "Géocaches"
 msgstr "Geocaches"
 
 #: static/js/chart_labels.mjs:659 static/js/chart_labels.mjs:672
-#: static/js/zone_layer.js:1039
+#: static/js/zone_layer.js:1222
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n}%"
@@ -3449,7 +3449,7 @@ msgstr "${n} / 1,000 km²"
 msgid "${n} j"
 msgstr "${n} d"
 
-#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:696
+#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:874
 msgid "/ 1 000 km²"
 msgstr "/ 1,000 km²"
 
@@ -6623,8 +6623,8 @@ msgstr "${n} published caches"
 msgid "${n} archivages datés"
 msgstr "${n} dated archivals"
 
-#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1047
-#: static/js/zone_layer.js:1082 static/js/zone_report_ui.js:86
+#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1230
+#: static/js/zone_layer.js:1265 static/js/zone_report_ui.js:86
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} finds"
@@ -7690,7 +7690,7 @@ msgstr "Days with finds"
 msgid "Plus longue série (jours)"
 msgstr "Longest streak (days)"
 
-#: static/js/stats_panels.js:1432 static/js/zone_layer.js:697
+#: static/js/stats_panels.js:1432 static/js/zone_layer.js:875
 #: templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Different cache types"
@@ -9039,161 +9039,161 @@ msgstr "Unable to open the video stream"
 msgid "Aucun flux vidéo ouvert"
 msgstr "No video stream open"
 
-#: static/js/zone_layer.js:699
+#: static/js/zone_layer.js:877
 msgid "Combinaisons D/T manquantes"
 msgstr "Missing D/T combinations"
 
-#: static/js/zone_layer.js:700
+#: static/js/zone_layer.js:878
 msgid "Première cache posée"
 msgstr "First cache placed"
 
-#: static/js/zone_layer.js:702
+#: static/js/zone_layer.js:880
 msgid "Part des caches publiées trouvées"
 msgstr "Share of published caches found"
 
-#: static/js/zone_layer.js:702
+#: static/js/zone_layer.js:880
 msgid "Part des caches actives trouvées"
 msgstr "Share of active caches found"
 
-#: static/js/zone_layer.js:714
+#: static/js/zone_layer.js:892
 #, python-brace-format
 msgid "depuis le ${date}"
 msgstr "since ${date}"
 
-#: static/js/zone_layer.js:1035
+#: static/js/zone_layer.js:1218
 msgid "Aucune évolution depuis cette date"
 msgstr "No change since this date"
 
-#: static/js/zone_layer.js:1041 static/js/zone_layer.js:1066
+#: static/js/zone_layer.js:1224 static/js/zone_layer.js:1249
 #, python-brace-format
 msgid "${n} types de caches / 1 000 km²"
 msgstr "No change since this date"
 
-#: static/js/zone_layer.js:1041 static/js/zone_layer.js:1067
+#: static/js/zone_layer.js:1224 static/js/zone_layer.js:1250
 #, python-brace-format
 msgid "${n} types de caches"
 msgstr "${n} cache types"
 
-#: static/js/zone_layer.js:1043 static/js/zone_layer.js:1069
+#: static/js/zone_layer.js:1226 static/js/zone_layer.js:1252
 #, python-brace-format
 msgid "${n} combinaisons D/T sur 81"
 msgstr "${n} of 81 D/T combinations"
 
-#: static/js/zone_layer.js:1046 static/js/zone_layer.js:1079
+#: static/js/zone_layer.js:1229 static/js/zone_layer.js:1262
 #, python-brace-format
 msgid "${n} caches actives / 1 000 km²"
 msgstr "${n} active caches / 1,000 km²"
 
-#: static/js/zone_layer.js:1046 static/js/zone_layer.js:1080
+#: static/js/zone_layer.js:1229 static/js/zone_layer.js:1263
 #, python-brace-format
 msgid "${n} trouvailles / 1 000 km²"
 msgstr "${n} finds / 1,000 km²"
 
-#: static/js/zone_layer.js:1047 static/js/zone_layer.js:1082
+#: static/js/zone_layer.js:1230 static/js/zone_layer.js:1265
 #, python-brace-format
 msgid "${n} caches actives"
 msgstr "${n} active caches"
 
-#: static/js/zone_layer.js:1053
+#: static/js/zone_layer.js:1236
 #, python-brace-format
 msgid "Depuis le ${date}"
 msgstr "Since ${date}"
 
-#: static/js/zone_layer.js:1059
+#: static/js/zone_layer.js:1242
 msgid "Aucune cache à ce jour"
 msgstr "No cache yet"
 
-#: static/js/zone_layer.js:1059
+#: static/js/zone_layer.js:1242
 msgid "Aucune trouvaille à ce jour"
 msgstr "No find yet"
 
-#: static/js/zone_layer.js:1063
+#: static/js/zone_layer.js:1246
 #, python-brace-format
 msgid "Première cache posée : ${date}"
 msgstr "First cache placed: ${date}"
 
-#: static/js/zone_layer.js:1063
+#: static/js/zone_layer.js:1246
 #, python-brace-format
 msgid "Première trouvaille : ${date}"
 msgstr "First find: ${date}"
 
-#: static/js/zone_layer.js:1070
+#: static/js/zone_layer.js:1253
 #, python-brace-format
 msgid "Il en manque ${n}"
 msgstr "${n} missing"
 
-#: static/js/zone_layer.js:1072
+#: static/js/zone_layer.js:1255
 #, python-brace-format
 msgid "${n} combinaisons D/T manquantes"
 msgstr "${n} missing D/T combinations"
 
-#: static/js/zone_layer_ui.js:85
+#: static/js/zone_layer_ui.js:86
 msgid "Vos trouvailles croisées avec les caches affichées, par code GC."
 msgstr "Your finds crossed with the caches shown, by GC code."
 
-#: static/js/zone_layer_ui.js:86
+#: static/js/zone_layer_ui.js:87
 msgid "Tout le jeu Évolution choisi, quels que soient les filtres de la carte."
 msgstr "The whole chosen Evolution dataset, regardless of the map filters."
 
-#: static/js/zone_layer_ui.js:88
+#: static/js/zone_layer_ui.js:89
 msgid "Calculé sur les caches du jeu affiché, à la date montrée."
 msgstr "Computed on the caches of the dataset shown, at the displayed date."
 
-#: static/js/zone_layer_ui.js:89
+#: static/js/zone_layer_ui.js:90
 msgid "Calculé sur vos trouvailles filtrées, à la date montrée."
 msgstr "Computed on your filtered finds, at the displayed date."
 
-#: static/js/zone_layer_ui.js:107
+#: static/js/zone_layer_ui.js:108
 msgid "Impossible de charger la liste des jeux."
 msgstr "Unable to load the set list."
 
-#: static/js/zone_layer_ui.js:110
+#: static/js/zone_layer_ui.js:111
 msgid "Chargement de la part trouvée…"
 msgstr "Loading the share found…"
 
-#: static/js/zone_layer_ui.js:110
+#: static/js/zone_layer_ui.js:111
 msgid "Chargement des contours…"
 msgstr "Loading area outlines…"
 
-#: static/js/zone_layer_ui.js:112
+#: static/js/zone_layer_ui.js:113
 msgid "Part trouvée indisponible."
 msgstr "Share found unavailable."
 
-#: static/js/zone_layer_ui.js:114
+#: static/js/zone_layer_ui.js:115
 msgid "Choisissez le jeu Évolution à croiser avec vos trouvailles."
 msgstr "Choose the Evolution set to compare with your finds."
 
-#: static/js/zone_layer_ui.js:115
+#: static/js/zone_layer_ui.js:116
 msgid "Ce jeu Évolution n'existe plus : choisissez-en un autre."
 msgstr "This Evolution set no longer exists: choose another one."
 
-#: static/js/zone_layer_ui.js:118
+#: static/js/zone_layer_ui.js:119
 msgid "Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données."
 msgstr "No caches to colour: open or import a dataset in the Data tab."
 
-#: static/js/zone_layer_ui.js:119
+#: static/js/zone_layer_ui.js:120
 msgid ""
 "Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet "
 "Données."
 msgstr "No finds to colour: import your finds in the Data tab."
 
-#: static/js/zone_layer_ui.js:183
+#: static/js/zone_layer_ui.js:185
 msgid "Liste des jeux indisponible"
 msgstr "Set list unavailable"
 
-#: static/js/zone_layer_ui.js:193 templates/menu_zones.html:88
+#: static/js/zone_layer_ui.js:195 templates/menu_zones.html:88
 msgid "Choisir un jeu…"
 msgstr "Choose a set…"
 
-#: static/js/zone_layer_ui.js:193
+#: static/js/zone_layer_ui.js:195
 msgid "Aucun jeu : importez-en un sur la page Évolution"
 msgstr "No set: import one on the Evolution page"
 
-#: static/js/zone_layer_ui.js:195
+#: static/js/zone_layer_ui.js:197
 msgid "Jeu supprimé"
 msgstr "Deleted set"
 
-#: static/js/zone_layer_ui.js:294
+#: static/js/zone_layer_ui.js:296
 msgid "L'image de la carte n'a pas pu être créée."
 msgstr "The map image could not be created."
 
@@ -9318,7 +9318,7 @@ msgstr "Unrecognised names:"
 msgid "Hors carte : pays ${a} · région ${b} · sous-région ${c}"
 msgstr "Off the map: country ${a} · region ${b} · subregion ${c}"
 
-#: static/js/zone_report_ui.js:238 templates/menu_zones.html:199
+#: static/js/zone_report_ui.js:238 templates/menu_zones.html:204
 msgid "Copier le rapport"
 msgstr "Copy the report"
 
@@ -14081,7 +14081,7 @@ msgid "Emplacement"
 msgstr "Placement"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:164
+#: templates/menu_stats.html:310 templates/menu_zones.html:169
 msgid "En haut à gauche"
 msgstr "Top left"
 
@@ -14091,7 +14091,7 @@ msgid "En haut au centre"
 msgstr "Top center"
 
 #: templates/menu_images.html:170 templates/menu_informations.html:298
-#: templates/menu_stats.html:310 templates/menu_zones.html:165
+#: templates/menu_stats.html:310 templates/menu_zones.html:170
 msgid "En haut à droite"
 msgstr "Top right"
 
@@ -14104,7 +14104,7 @@ msgid "Au milieu à droite"
 msgstr "Middle right"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:162
+#: templates/menu_stats.html:312 templates/menu_zones.html:167
 msgid "En bas à gauche"
 msgstr "Bottom left"
 
@@ -14114,7 +14114,7 @@ msgid "En bas au centre"
 msgstr "Bottom center"
 
 #: templates/menu_images.html:172 templates/menu_informations.html:300
-#: templates/menu_stats.html:312 templates/menu_zones.html:163
+#: templates/menu_stats.html:312 templates/menu_zones.html:168
 msgid "En bas à droite"
 msgstr "Bottom right"
 
@@ -17203,35 +17203,43 @@ msgstr "Area borders"
 msgid "Éclat quand une zone fonce"
 msgstr "Glow when an area darkens"
 
-#: templates/menu_zones.html:152
+#: templates/menu_zones.html:152 templates/stats_page.html:300
+msgid "Afficher les valeurs"
+msgstr "Show values"
+
+#: templates/menu_zones.html:153
+msgid "Écrites sur les zones assez grandes pour les contenir."
+msgstr "Written on zones large enough to hold them."
+
+#: templates/menu_zones.html:157
 msgid "Zones seules"
 msgstr "Zones only"
 
-#: templates/menu_zones.html:153
+#: templates/menu_zones.html:158
 msgid "Masque trouvailles et trajet pour lire la carte colorée."
 msgstr "Hides finds and the travel path so the colored map can be read alone."
 
-#: templates/menu_zones.html:159
+#: templates/menu_zones.html:164
 msgid "Légende"
 msgstr "Legend"
 
-#: templates/menu_zones.html:161
+#: templates/menu_zones.html:166
 msgid "Position de la légende"
 msgstr "Legend position"
 
-#: templates/menu_zones.html:172
+#: templates/menu_zones.html:177
 msgid "Sauvegarder le thème"
 msgstr "Save the theme"
 
-#: templates/menu_zones.html:174
+#: templates/menu_zones.html:179
 msgid "Ces réglages font partie du thème actif."
 msgstr "These settings are part of the active theme."
 
-#: templates/menu_zones.html:178
+#: templates/menu_zones.html:183
 msgid "Exporter la carte en image"
 msgstr "Export the map as an image"
 
-#: templates/menu_zones.html:180
+#: templates/menu_zones.html:185
 msgid ""
 "PNG de la carte telle qu'affichée : zones, légende et couches visibles. «"
 " Zones seules » donne une image épurée."
@@ -17239,19 +17247,19 @@ msgstr ""
 "PNG of the map as displayed: zones, legend, and visible layers. « Zones "
 "only » produces a clean image."
 
-#: templates/menu_zones.html:187
+#: templates/menu_zones.html:192
 msgid "Noms reconnus"
 msgstr "Recognised names"
 
-#: templates/menu_zones.html:193
+#: templates/menu_zones.html:198
 msgid "Voir les noms non reconnus"
 msgstr "See the unrecognised names"
 
-#: templates/menu_zones.html:203
+#: templates/menu_zones.html:208
 msgid "Demander un pays ou un nom"
 msgstr "Request a country or a name"
 
-#: templates/menu_zones.html:206
+#: templates/menu_zones.html:211
 msgid ""
 "Un nom non reconnu n'empêche pas l'affichage : la cache est placée "
 "d'après sa position. Copiez le rapport et collez-le dans la demande pour "
@@ -17261,7 +17269,7 @@ msgstr ""
 " position. Copy the report and paste it into the request so the country "
 "gets added or the name fixed."
 
-#: templates/menu_zones.html:211
+#: templates/menu_zones.html:216
 msgid ""
 "Le découpage le plus fin existe pour la France, l'Allemagne, le Royaume-"
 "Uni, l'Irlande et les États-Unis ; ailleurs, la carte montre les régions."
@@ -17490,10 +17498,6 @@ msgstr "Largest first"
 #: templates/stats_page.html:296
 msgid "Empiler les séries"
 msgstr "Stack the series"
-
-#: templates/stats_page.html:300
-msgid "Afficher les valeurs"
-msgstr "Show values"
 
 #: templates/stats_page.html:304
 msgid "Courbe lissée"

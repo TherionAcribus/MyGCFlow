@@ -19,7 +19,7 @@ class ZoneLayerProfileTests(unittest.TestCase):
              "opacity": d.opacity, "outline": d.outline, "glow": d.glow, "legend": d.legend,
              "legendPosition": d.legend_position, "gridSize": d.grid_size,
              "shareDataset": d.share_dataset, "shareBase": d.share_base,
-             "perKm2": d.per_km2, "compareDate": d.compare_date, "solo": d.solo},
+             "perKm2": d.per_km2, "compareDate": d.compare_date, "solo": d.solo, "labels": d.labels},
             js)
 
     def test_older_themes_get_defaults(self):
@@ -50,6 +50,11 @@ class ZoneLayerProfileTests(unittest.TestCase):
         for bad in (True, -1, "3", 1.5):
             self.assertEqual(sm.coerce_profile({"zones": {"share_dataset": bad}}).zones.share_dataset, 0)
         self.assertEqual(sm.coerce_profile({"zones": {"share_base": "x"}}).zones.share_base, "active")
+
+    def test_labels_option(self):
+        self.assertFalse(sm.ZoneLayerOptions().labels)
+        self.assertTrue(sm.coerce_profile({"zones": {"labels": True}}).zones.labels)
+        self.assertFalse(sm.coerce_profile({"zones": {"labels": "oui"}}).zones.labels)
 
     def test_round_trip_through_the_theme_payload(self):
         manager = sm.SettingsManager.__new__(sm.SettingsManager)

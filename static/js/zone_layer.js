@@ -43,17 +43,22 @@ import { cellArea, cellLabel, cellRing, gridReference, withGridColumn } from './
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
 import {
     LEGEND_STYLE, ZONE_LAYER_DENSITY_MEASURES, classColors, compareClassColors, dayOfDate, fadeProgress,
-    legendEntries, legendOrigin, legendSize, mixHex, normalizeZoneLayerOptions, rgbaOf, zoneMeasureFor,
+    labelFits, legendEntries, legendOrigin, legendSize, mixHex, normalizeZoneLayerOptions, rgbaOf, zoneLabelColors,
+    zoneLabelText, zoneMeasureFor,
 } from './zone_layer_model.mjs';
 
 // Sous le trait (1000), les points (1001) et les flashs : au-dessus du fond.
 const LAYER_Z_INDEX = 500;
+// Valeurs écrites sur les zones : au-dessus des points (1001) et du trait
+// (1000), sous la tête du géocacheur (1050) et les flashs (1100).
+const LABEL_Z_INDEX = 1040;
 // Révisions de l'index en rafale au rechargement : on attend qu'il se pose.
 const REBUILD_DELAY_MS = 300;
 const OUTLINE = 'rgba(40, 52, 66, 0.35)';
 const EMPTY_OUTLINE = 'rgba(40, 52, 66, 0.18)';
 
 let layer = null;
+let labelLayer = null;
 let featuresKey = null;
 let model = null;            // { key, revision, state, countries, level }
 let scale = null;            // zone_model.mjs › zoneScale
@@ -385,9 +390,34 @@ function ensureLayer(map) {
             updateWhileInteracting: true,
         });
         layer.set('name', 'zones');
+        // Valeurs écrites sur les zones : couche à part, mêmes features, AU-
+        // DESSUS des points et du trait — sous la couche de zones, des
+        // trouvailles denses les recouvraient toutes. Sous la tête du
+        // géocacheur (1050) et les flashs (1100). Une étiquette qui en
+        // chevauche une autre est masquée ; la première dessinée l'emporte,
+        // d'où l'ordre : les plus grandes zones d'abord.
+        labelLayer = new ol.layer.Vector({
+            source: layer.getSource(),
+            style: labelStyleFor,
+            zIndex: LABEL_Z_INDEX,
+            updateWhileAnimating: true,
+            updateWhileInteracting: true,
+            declutter: true,
+            renderOrder: (a, b) => labelPriority(b) - labelPriority(a),
+            visible: false,
+        });
+        labelLayer.set('name', 'zone-labels');
     }
-    if (!map.getLayers().getArray().includes(layer)) map.addLayer(layer);
+    const onMap = map.getLayers().getArray();
+    if (!onMap.includes(layer)) map.addLayer(layer);
+    if (!onMap.includes(labelLayer)) map.addLayer(labelLayer);
     return layer;
+}
+
+// Couche de zones et couche des valeurs (seulement avec l'option).
+function setVisible(on) {
+    layer?.setVisible(on);
+    labelLayer?.setVisible(on && opts().labels);
 }
 
 function ensureFeatures(level, countries) {
@@ -528,6 +558,7 @@ function advanceTo(day, now) {
 function touch() {
     revision++;
     layer?.changed();
+    labelLayer?.changed();
 }
 
 // ---------------------------------------------------------------------------
@@ -549,10 +580,12 @@ function staticStyle(cls) {
     return style;
 }
 
+const classOfId = (id) => (classes.has(id) ? classes.get(id) : null);
+
 function styleFor(feature) {
     const id = feature.getId();
+    const cls = classOfId(id);
     const fade = fades.get(id);
-    const cls = classes.has(id) ? classes.get(id) : null;
     if (!fade || fadeProgress(fade.start, clock) >= 1) {
         return cls === null && !opts().outline ? null : staticStyle(cls);
     }
@@ -570,6 +603,121 @@ function styleFor(feature) {
         stroke = new ol.style.Stroke({ color: rgbaOf(target, 0.25 + 0.7 * (1 - k)), width: 1 + 3.5 * (1 - k) });
     }
     return new ol.style.Style({ fill: new ol.style.Fill({ color: fill }), stroke });
+}
+
+// ---------------------------------------------------------------------------
+// Valeurs écrites sur les zones (option `labels`)
+//
+// Une étiquette par zone colorée, au point intérieur de ses contours (`ix` /
+// `iy`, posés par build_geo_zones.py ; centre de la case en grille). Elle
+// n'est écrite que si elle tient dans l'emprise de la partie qui porte ce
+// point (la France sans la Guyane), à la résolution du rendu : en dézoomant,
+// les petites zones perdent la leur. Les chevauchements restants sont
+// masqués par OpenLayers (`declutter`, plus grande zone d'abord). Le texte
+// est peint par une couche à part (`labelLayer`, au-dessus des points) : la
+// vidéo et l'export PNG, qui assemblent les canevas de la carte, le
+// reprennent tel quel. Elle reste visible en « Zones seules ».
+
+const LABEL_FONT_SIZE = 12;
+const anchors = new WeakMap();      // feature → { point, w, h } (coordonnées carte) | null
+const labelStyles = new WeakMap();  // feature → { key, style }
+const textWidths = new Map();       // police|texte → largeur (px)
+let measureCtx = null;
+let labelFontCache = '';
+
+const labelFont = () => (labelFontCache ||= `600 ${LABEL_FONT_SIZE}px ${FONT()}`);
+
+function anchorOf(feature) {
+    let a = anchors.get(feature);
+    if (a !== undefined) return a;
+    a = null;
+    const geometry = feature.getGeometry();
+    if (geometry) {
+        const ix = feature.get('ix');
+        const iy = feature.get('iy');
+        let at = null;
+        let box = null;
+        if (Number.isFinite(ix) && Number.isFinite(iy)) {
+            at = ol.proj.fromLonLat([ix, iy]);
+            // Plus petite partie qui contient le point (une île dans une
+            // baie n'emprunte pas l'emprise de la côte qui l'entoure).
+            const parts = geometry.getType() === 'MultiPolygon' ? geometry.getPolygons() : [geometry];
+            for (const part of parts) {
+                const e = part.getExtent();
+                if (ol.extent.containsCoordinate(e, at) && (!box || ol.extent.getArea(e) < ol.extent.getArea(box))) box = e;
+            }
+        }
+        box ||= geometry.getExtent();
+        at ||= ol.extent.getCenter(box);
+        a = { point: new ol.geom.Point(at), w: ol.extent.getWidth(box), h: ol.extent.getHeight(box) };
+    }
+    anchors.set(feature, a);
+    return a;
+}
+
+// Priorité d'une étiquette dans le tri des chevauchements : surface de
+// l'emprise qui la porte.
+function labelPriority(feature) {
+    const a = anchorOf(feature);
+    return a ? a.w * a.h : 0;
+}
+
+function textWidth(text) {
+    const font = labelFont();
+    const key = font + '|' + text;
+    let w = textWidths.get(key);
+    if (w === undefined) {
+        measureCtx ||= document.createElement('canvas').getContext('2d');
+        measureCtx.font = font;
+        w = measureCtx.measureText(text).width;
+        if (textWidths.size > 2000) textWidths.clear();
+        textWidths.set(key, w);
+    }
+    return w;
+}
+
+// Texte de la zone `id` au jour montré ('' sans valeur).
+function labelText(id) {
+    const o = opts();
+    return zoneLabelText(deltaOf(id, model.state.valueOf(id)), {
+        measure: o.measure,
+        density: densityOf(o),
+        signed: compareMap !== null,
+        locale: document.documentElement.lang || 'fr',
+    });
+}
+
+// Étiquette d'une zone si elle s'écrit à cette résolution, sinon null.
+function labelInfo(feature, id, cls, resolution) {
+    if (cls === null || !model?.state || !(resolution > 0) || !opts().labels) return null;
+    const text = labelText(id);
+    if (!text) return null;
+    const a = anchorOf(feature);
+    if (!a || !labelFits(textWidth(text), LABEL_FONT_SIZE, a.w / resolution, a.h / resolution)) return null;
+    return { text, anchor: a };
+}
+
+function labelStyleFor(feature, resolution) {
+    const id = feature.getId();
+    const cls = classOfId(id);
+    const info = labelInfo(feature, id, cls, resolution);
+    if (!info) return null;
+    const colors = zoneLabelColors(colorOf(cls), opts().opacity / 100);
+    const font = labelFont();
+    const key = `${info.text}|${colors.fill}|${font}`;
+    const cached = labelStyles.get(feature);
+    if (cached?.key === key) return cached.style;
+    const style = new ol.style.Style({
+        geometry: info.anchor.point,
+        text: new ol.style.Text({
+            text: info.text,
+            font,
+            fill: new ol.style.Fill({ color: colors.fill }),
+            stroke: new ol.style.Stroke({ color: colors.stroke, width: 3 }),
+        }),
+    });
+    labelStyles.set(feature, { key, style });
+    return style;
 }
 
 // ---------------------------------------------------------------------------
@@ -708,7 +856,7 @@ export function addZoneLegendToCanvas(ctx, w, h, scaleFactor = 1) {
 function prepare() {
     const map = getMap();
     if (!enabled() || !map) {
-        if (layer) layer.setVisible(false);
+        setVisible(false);
         status = 'off';
         syncLegend();
         pkg.syncSoloLayers?.();
@@ -719,14 +867,14 @@ function prepare() {
     // Part trouvée : jeu agrégé ou trouvailles pas encore là, jeu à choisir.
     if (m.wait) {
         status = m.wait;
-        layer.setVisible(false);
+        setVisible(false);
         syncLegend();
         pkg.syncSoloLayers?.();
         return false;
     }
     if (!m.rows) {
         status = 'empty';
-        layer.setVisible(false);
+        setVisible(false);
         syncLegend();
         pkg.syncSoloLayers?.();
         return false;
@@ -734,13 +882,13 @@ function prepare() {
     const geo = ensureFeatures(m.level, m.countries);
     status = geo;
     if (geo !== 'ready') {
-        layer.setVisible(false);
+        setVisible(false);
         syncLegend();
         pkg.syncSoloLayers?.();
         return false;
     }
     computeScale();
-    layer.setVisible(true);
+    setVisible(true);
     pkg.syncSoloLayers?.();
     return true;
 }
@@ -749,6 +897,7 @@ function prepare() {
 // montre le jour courant (animation) ou l'état final (repos).
 export function refreshZoneLayer() {
     styleCache.clear();
+    labelFontCache = '';
     // Jour lu avant la reconstruction : computeScale efface shownDay, et un
     // réglage changé pendant un aperçu (ou des contours arrivés en route)
     // ne doit pas ramener la couche au jour de fin.
@@ -779,6 +928,9 @@ export function retryZoneLayer() {
 // le modèle ni reclasser les zones (curseur d'opacité suivi en direct).
 export function refreshZoneLayerAppearance() {
     styleCache.clear();
+    labelFontCache = '';
+    // Case « Afficher les valeurs » : la couche des valeurs suit.
+    if (layer) setVisible(layer.getVisible());
     touch();
     syncLegend();
     pkg.syncSoloLayers?.();
@@ -968,8 +1120,23 @@ export function getZoneLayerDebugState() {
         fading: fades.size,
         scale: scale ? { mode: scale.mode, breaks: scale.breaks, classes: scale.classes } : null,
         legend: legendCanvas && !legendCanvas.hidden ? legendModel() : null,
+        // Valeurs écrites (option `labels`) à la résolution de la vue : id →
+        // texte, avant le masquage des chevauchements par OpenLayers.
+        labels: labelsSnapshot(),
         revision,
     };
+}
+
+function labelsSnapshot() {
+    const resolution = getMap()?.getView()?.getResolution();
+    const out = {};
+    if (!labelLayer?.getVisible()) return out;
+    for (const feature of layer.getSource().getFeatures()) {
+        const id = feature.getId();
+        const info = labelInfo(feature, id, classes.has(id) ? classes.get(id) : null, resolution);
+        if (info) out[id] = info.text;
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------------------

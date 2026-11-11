@@ -5,8 +5,8 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import {
     ZONE_LAYER_DEFAULTS, classColors, compareClassColors, fadeProgress, legendEntries, legendOrigin,
-    legendSize, mixHex, normalizeHex, normalizeZoneLayerOptions, rgbaOf, zoneLayerFromProfile,
-    zoneLayerToProfile, zoneMeasureFor,
+    labelFits, legendSize, mixHex, normalizeHex, normalizeZoneLayerOptions, rgbaOf, zoneLabelColors, zoneLabelText,
+    zoneLayerFromProfile, zoneLayerToProfile, zoneMeasureFor,
 } from '../../static/js/zone_layer_model.mjs';
 import { shareScaleThresholds, zoneScale } from '../../static/js/zone_model.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
@@ -107,6 +107,41 @@ test('zones seules : option booléenne, aller-retour thème', () => {
     const profile = zoneLayerToProfile(o);
     assert.equal(profile.solo, true);
     assert.deepEqual(zoneLayerFromProfile(profile), o);
+});
+
+test('valeurs sur les zones : option, texte, couleurs, place', () => {
+    // Option du thème, décochée par défaut, aller-retour.
+    assert.equal(normalizeZoneLayerOptions({}).labels, false);
+    assert.equal(normalizeZoneLayerOptions({ labels: 'oui' }).labels, false);
+    const o = normalizeZoneLayerOptions({ labels: true });
+    assert.equal(zoneLayerToProfile(o).labels, true);
+    assert.deepEqual(zoneLayerFromProfile(zoneLayerToProfile(o)), o);
+
+    // Texte : court, l'unité est dans la légende.
+    const nbsp = (s) => s.replace(/[  ]/g, ' ');
+    assert.equal(zoneLabelText(7), '7');
+    assert.equal(nbsp(zoneLabelText(1234)), '1 234');
+    assert.match(nbsp(zoneLabelText(12345)), /^12,3 k/);
+    assert.equal(zoneLabelText(42.4, { measure: 'found_share' }), '42');
+    assert.equal(zoneLabelText(dayNumber({ y: 2019, m: 5, d: 3 }), { measure: 'first_day' }), '2019');
+    assert.equal(zoneLabelText(0.0286, { density: true }), '29');      // pour 1 000 km²
+    assert.equal(zoneLabelText(0.00044, { density: true }), '0,44');
+    assert.equal(zoneLabelText(3, { signed: true }), '+3');
+    assert.equal(zoneLabelText(-2, { signed: true }), '−2');
+    assert.equal(zoneLabelText(null), '');
+    assert.equal(zoneLabelText(5, { locale: 'en' }), '5');
+
+    // Couleurs : texte foncé sur une teinte claire, blanc sur une foncée ;
+    // une teinte foncée très transparente reste claire à l'œil.
+    assert.equal(zoneLabelColors('#E8F1FC', 0.6).fill, '#1F2B38');
+    assert.equal(zoneLabelColors('#0B2E5C', 0.85).fill, '#FFFFFF');
+    assert.equal(zoneLabelColors('#0B2E5C', 0.2).fill, '#1F2B38');
+    assert.match(zoneLabelColors('#0B2E5C', 0.85).stroke, /^rgba\(0,0,0/);
+
+    // Place : 30 px de texte dans une zone de 40 × 20 px, pas de 30 × 20.
+    assert.equal(labelFits(30, 12, 40, 20), true);
+    assert.equal(labelFits(30, 12, 30, 20), false);
+    assert.equal(labelFits(10, 12, 40, 12), false);
 });
 
 test('mesures de zone_model', () => {

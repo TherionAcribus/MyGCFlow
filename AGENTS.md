@@ -223,6 +223,11 @@ Autres repères :
   `reducedMotion` (prefers-reduced-motion, sauf enregistrement) —
   `fading` reste à 0 en lecture réduite (test via
   `page.emulateMedia({ reducedMotion: 'reduce' })`).
+  « Afficher les valeurs » (`labels`, thème, en mémoire) : relevé `labels`
+  (id → texte) calculé à la résolution de la vue — poser la vue
+  (`setView` de `zone-layer.spec.mjs`) avant de le lire ; les valeurs
+  vivent dans une couche à part (`zone-labels`, z 1040, au-dessus des
+  points).
   « Exporter la carte en image » (`exportMapImage` de mapgl.js, bouton
   `btnZonesExportImage`) télécharge un PNG composé comme une frame vidéo
   (canevas + légende zones + panneaux + habillage, haute résolution

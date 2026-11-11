@@ -704,6 +704,8 @@ class ZoneLayerOptions:
     # « Zones seules » : masque points, trajet et flashs pour lire la carte
     # colorée seule.
     solo: bool = False
+    # Valeur de chaque zone écrite sur la carte (et dans la vidéo).
+    labels: bool = False
 
 
 @dataclass
@@ -1554,6 +1556,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
                           and (zn["compare_date"] == ""
                                or re.fullmatch(r"\d{4}-\d{2}-\d{2}", zn["compare_date"])) else pz.compare_date),
             solo=_zbool("solo", pz.solo),
+            labels=_zbool("labels", pz.labels),
         )
 
     return p

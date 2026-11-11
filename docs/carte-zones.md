@@ -368,7 +368,7 @@ rattachement.
   `zone_layer_model.mjs`) : `level`, `measure` (`count`,
   `distinct_types`, `dt_coverage`, `dt_missing`, `first_day`, `found_share`), `per_km2`,
   `compare_date`, `scale`, `classes` (3 à 7), `color`, `opacity` (20 à 85 %), `outline`,
-  `glow`, `legend`, `legend_position`. Défauts identiques dans
+  `glow`, `legend`, `legend_position`, `solo`, `labels`. Défauts identiques dans
   `settings_manager.py`, `defaultValues.json` et le module (vérifié par
   les tests). Le suivi « thème modifié » écoute aussi l'onglet `#zones`
   (profiles.js).
@@ -407,6 +407,9 @@ rattachement.
   rappelé à chaque état de la couche (`prepare`, repeinture d'apparence)
   et respecté par `setTrailLayersVisible` : l'aperçu du trajet repart
   masqué sous le mode solo. Rien n'est détruit — décocher réaffiche.
+- `labels` (« Afficher les valeurs », carte Apparence, décochée par
+  défaut) : la valeur de chaque zone colorée est écrite sur la carte —
+  voir **Valeurs sur les zones** ci-dessous.
 - Réduction des mouvements : quand le système demande
   `prefers-reduced-motion`, `advanceTo` ne crée ni fondu ni éclat — les
   zones changent de classe d'un coup (`reducedMotion()` de
@@ -482,6 +485,30 @@ plusieurs fois par rechargement. L'échelle est calculée sur le jour de fin
   zone qui monte de classe voit son contour s'allumer puis s'éteindre
   (`glow`).
 - Une zone sans valeur n'a que sa frontière (si `outline`).
+- **Valeurs sur les zones** (option `labels`) : couche à part
+  `labelLayer` (nom `zone-labels`), même source que la couche de zones,
+  `zIndex` 1040 — au-dessus des points (1001) et du trait (1000), sous la
+  tête du géocacheur (1050) et les flashs (1100). Sous la couche de zones,
+  des trouvailles denses recouvraient toutes les valeurs. Elle reste
+  visible en « Zones seules » ; `setVisible()` bascule les deux couches.
+  - Texte (`zoneLabelText`, zone_layer_model.mjs) : court, l'unité est
+    dans la légende — année pour `first_day`, densité pour 1 000 km² à
+    2 chiffres significatifs, part trouvée arrondie sans « % », « 12 k »
+    au-delà de 10 000, écart signé en comparaison à une date. Formateurs
+    `Intl` réutilisés (la valeur est réécrite à chaque image).
+  - Place : point intérieur `ix` / `iy` des contours (centre de la case en
+    grille), et emprise de la partie qui le contient (`anchorOf`, mise en
+    cache par feature). La valeur n'est écrite que si elle tient dans
+    cette emprise à la résolution du rendu (`labelFits`) : en dézoomant,
+    les petites zones perdent la leur. Les chevauchements restants sont
+    masqués par OpenLayers (`declutter`), la plus grande zone d'abord
+    (`renderOrder` : la première dessinée l'emporte).
+  - Couleurs (`zoneLabelColors`) : blanc ou presque noir selon le contraste
+    avec la teinte de la classe posée à l'opacité choisie sur un fond
+    clair, halo opposé.
+  - Vidéo et export PNG : peintes dans le canevas de la couche, repris par
+    la composition comme les autres. Coût mesuré (Chromium logiciel de
+    Playwright, 76 départements écrits) : ~0,9 ms de plus par rendu.
 - **Légende** : canvas `#zoneLegend` dans `#mapWithFrames` (z-index 89).
   Le même dessin est repeint dans chaque image de la vidéo, au même coin et
   aux mêmes marges, multipliés par l'échelle. L'échelle étant celle de
@@ -502,7 +529,9 @@ comme en pause — la boucle rAF étant arrêtée dans les deux cas,
 
 **Relevé E2E** : `getZoneLayerDebugState()` donne `status` (`off`,
 `loading`, `ready`, `error`, `empty`), `visible`, `features`, `values`,
-`classes`, `day`, `animating`, `fading`, `scale`, `legend` et `revision`.
+`classes`, `day`, `animating`, `fading`, `scale`, `legend`, `labels`
+(id → texte écrit à la résolution de la vue, avant le masquage des
+chevauchements) et `revision`.
 
 **Tests** :
 - `tests/js/zone_layer_model.test.mjs` ;

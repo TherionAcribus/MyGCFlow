@@ -41,6 +41,8 @@ export const ZONE_LAYER_DEFAULTS = Object.freeze({
     // « Zones seules » : masque points, trajet et flashs pour lire la carte
     // colorée seule (mapgl.syncSoloLayers).
     solo: false,
+    // Valeur de chaque zone écrite sur la carte (zone_layer.js › labelStyle).
+    labels: false,
 });
 // Fondu d'une zone qui change de classe, et éclat de son contour (ms).
 export const ZONE_FADE_MS = 600;
@@ -89,6 +91,7 @@ export function normalizeZoneLayerOptions(raw) {
         shareBase: choice(src.shareBase, ZONE_LAYER_SHARE_BASES, d.shareBase),
         compareDate: typeof src.compareDate === 'string' && COMPARE_DATE_RE.test(src.compareDate) ? src.compareDate : '',
         solo: bool(src.solo, d.solo),
+        labels: bool(src.labels, d.labels),
     };
 }
 
@@ -102,7 +105,7 @@ export function zoneLayerToProfile(options) {
         level: o.level, measure: o.measure, per_km2: o.perKm2, scale: o.scale, classes: o.classes, color: o.color,
         opacity: o.opacity, outline: o.outline, glow: o.glow, legend: o.legend, legend_position: o.legendPosition,
         grid_size: o.gridSize, share_dataset: o.shareDataset, share_base: o.shareBase, compare_date: o.compareDate,
-        solo: o.solo,
+        solo: o.solo, labels: o.labels,
     };
 }
 
@@ -111,6 +114,7 @@ export function zoneLayerFromProfile(profile) {
     return normalizeZoneLayerOptions({
         ...p, legendPosition: p.legend_position, gridSize: p.grid_size, perKm2: p.per_km2,
         shareDataset: p.share_dataset, shareBase: p.share_base, compareDate: p.compare_date, solo: p.solo,
+        labels: p.labels,
     });
 }
 
@@ -256,6 +260,71 @@ export function legendOrigin(position, size, w, h, margin = LEGEND_STYLE.margin)
         x: left ? margin : w - margin - size.width,
         y: top ? margin : h - margin - size.height,
     };
+}
+
+// ---------------------------------------------------------------------------
+// Valeurs écrites sur les zones (option `labels`)
+
+// Texte d'une valeur sur sa zone, court comme la légende qui donne l'unité :
+// année d'une première trouvaille, densité pour 1 000 km² (2 chiffres
+// significatifs), pourcentage arrondi sans « % », « 12 k » au-delà de
+// 10 000, signe explicite pour un écart (comparaison à une date).
+// Formateurs réutilisés : la couche écrit chaque valeur à chaque image de
+// l'animation, et créer un Intl.NumberFormat coûte des dizaines de µs.
+const numberFormats = new Map();
+function numberFormat(locale, kind) {
+    const key = locale + '|' + kind;
+    let fmt = numberFormats.get(key);
+    if (!fmt) {
+        const options = kind === 'density' ? { maximumSignificantDigits: 2 }
+            : kind === 'compact' ? { notation: 'compact', maximumFractionDigits: 1 }
+                : { maximumFractionDigits: 0 };
+        fmt = new Intl.NumberFormat(locale, options);
+        numberFormats.set(key, fmt);
+    }
+    return fmt;
+}
+
+export function zoneLabelText(value, { measure = 'count', density = false, signed = false, locale = 'fr' } = {}) {
+    if (value === null || value === undefined || !Number.isFinite(value)) return '';
+    if (measure === 'first_day' && !signed) return String(ymdOfDay(value).y);
+    const v = density ? value * 1000 : value;
+    const abs = Math.abs(v);
+    const kind = density ? 'density' : abs >= 10000 ? 'compact' : 'integer';
+    const text = numberFormat(locale, kind).format(signed ? abs : v);
+    if (!signed) return text;
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + text;
+}
+
+const DARK_TEXT = '#1F2B38';
+
+function luminance(hex) {
+    const channel = (c) => {
+        const x = c / 255;
+        return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    };
+    const [r, g, b] = rgbOf(hex);
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+// Couleurs du texte sur une zone de teinte `hex` posée à l'opacité `alpha`
+// sur un fond de carte clair : blanc (halo sombre) ou presque noir (halo
+// blanc), selon le meilleur contraste WCAG. Le halo garde la valeur lisible
+// quand elle déborde sur une voisine ou sur un fond sombre.
+export function zoneLabelColors(hex, alpha = 1) {
+    const seen = mixHex('#FFFFFF', hex, alpha);
+    const l = luminance(seen);
+    const onWhite = 1.05 / (l + 0.05);
+    const onDark = (l + 0.05) / (luminance(DARK_TEXT) + 0.05);
+    return onWhite >= onDark
+        ? { fill: '#FFFFFF', stroke: 'rgba(0,0,0,0.45)' }
+        : { fill: DARK_TEXT, stroke: 'rgba(255,255,255,0.8)' };
+}
+
+// Une valeur tient dans sa zone : texte (largeur `textWidth`, taille
+// `fontSize`) dans l'emprise de la partie qui porte l'étiquette, en pixels.
+export function labelFits(textWidth, fontSize, widthPx, heightPx) {
+    return textWidth <= widthPx * 0.9 && fontSize * 1.1 <= heightPx;
 }
 
 // Jour de fin d'un instant (Date locale) en numéro de jour.

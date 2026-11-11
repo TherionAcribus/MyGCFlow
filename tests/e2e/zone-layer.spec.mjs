@@ -628,6 +628,82 @@ test('erreurs : « Réessayer » recharge contours et liste des jeux', async ({ 
   expect(errors).toEqual([]);
 });
 
+// Vue de la carte : centre (lon, lat) et zoom, sans animation.
+async function setView(page, lonLat, zoom) {
+  await app(page, `
+    const view = pkg.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat(arg.lonLat));
+    view.setZoom(arg.zoom);`, { lonLat, zoom });
+  await page.evaluate(() => new Promise((resolve) => window.requestAnimationFrame(() => resolve())));
+}
+
+test('« Afficher les valeurs » : valeurs sur les zones assez grandes, à la date montrée', async ({ page, request }, testInfo) => {
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  await page.locator('a[href="#zones"]').click();
+  expect((await zones(page)).labels).toEqual({});
+  await page.locator('#zonesLabels').check();
+  expect((await zones(page)).options.labels).toBe(true);
+  // Couche des valeurs au-dessus des points (sinon des trouvailles denses
+  // les recouvrent), sous la tête du trajet et les flashs.
+  const stack = await app(page, `
+    const layers = pkg.getMap().getLayers().getArray();
+    const labels = layers.find((l) => l.get('name') === 'zone-labels');
+    return { visible: labels.getVisible(), z: labels.getZIndex(),
+      points: Math.max(...layers.filter((l) => l instanceof ol.layer.WebGLPoints).map((l) => l.getZIndex())) };`);
+  expect(stack.visible).toBe(true);
+  expect(stack.z).toBeGreaterThan(stack.points);
+  expect(stack.z).toBeLessThan(1050);
+
+  // La France entière : les départements de la fixture ont leur valeur,
+  // sauf Paris, trop petit à cette échelle.
+  await setView(page, [2.5, 46.6], 6);
+  await expect.poll(async () => (await zones(page)).labels).toEqual({ 'FR-29': '3', 'FR-44': '1', 'FR-69': '1' });
+  await page.locator('#map').screenshot({ path: testInfo.outputPath('valeurs-france.png') });
+  // Paris de près : sa valeur s'écrit.
+  await setView(page, [2.35, 48.86], 11);
+  await expect.poll(async () => (await zones(page)).labels['FR-75']).toBe('3');
+  // Le monde : plus aucune zone ne contient sa valeur.
+  await setView(page, [0, 20], 2);
+  await expect.poll(async () => (await zones(page)).labels).toEqual({});
+
+  // Régions : valeurs de la région (Bretagne 3, Île-de-France 3…).
+  await setView(page, [2.5, 46.6], 6);
+  await page.locator('#zonesLevel').selectOption('region');
+  await expect.poll(async () => (await zones(page)).labels, { timeout: 20_000 })
+    .toEqual({ 'FR-BRE': '3', 'FR-IDF': '3', 'FR-PDL': '1', 'FR-ARA': '1' });
+
+  // Export PNG : réussit avec les valeurs (peintes dans le canevas de la
+  // couche, repris par la composition).
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnZonesExportImage').click(),
+  ]);
+  await download.saveAs(testInfo.outputPath('export-valeurs.png'));
+
+  // Les valeurs sont celles du jour montré (saut de la chronologie) : avant
+  // la première trouvaille, aucune ; retour à l'état final.
+  await app(page, 'pkg.seekZonesToDate(new Date(1990, 0, 1));');
+  await expect.poll(async () => (await zones(page)).labels).toEqual({});
+  await app(page, 'pkg.showZonesRest();');
+  await expect.poll(async () => Object.keys((await zones(page)).labels).length).toBe(4);
+
+  // Lecture de l'aperçu avec les valeurs (fondus, style redemandé à chaque
+  // image) : sans erreur, puis arrêt.
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await zones(page)).animating).toBe(true);
+  await page.waitForTimeout(1500);
+  // Aperçu court (8 trouvailles) : il peut être déjà fini.
+  if (await page.locator('#btnQuickStop').isVisible()) await page.locator('#btnQuickStop').click();
+  await expect.poll(() => page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState()), { timeout: 30_000 }).toBe('idle');
+
+  await page.locator('#zonesLabels').uncheck();
+  await expect.poll(async () => (await zones(page)).labels).toEqual({});
+  await page.locator('#zonesLevel').selectOption('subregion');
+  expect(errors).toEqual([]);
+});
+
 test('« Exporter la carte en image » télécharge un PNG de la carte', async ({ page, request }) => {
   await setDisplay(request, true);
   const errors = await openMap(page);
