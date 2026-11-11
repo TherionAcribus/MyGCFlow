@@ -463,6 +463,26 @@ html {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* « Comprendre ce chiffre » : terme en petit libellé, définition dessous. */
+.stats-explain {
+    margin: 0;
+}
+.stats-explain dt {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+}
+.stats-explain dt:first-child {
+    margin-top: 0;
+}
+.stats-explain dd {
+    margin: 2px 0 0;
+    white-space: pre-line;
+}
+
 /* « Voir les valeurs » : en-tête collant sur les longues listes. */
 .stats-values-table thead th {
     position: sticky;

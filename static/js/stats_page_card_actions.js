@@ -8,7 +8,7 @@ import { renderDashboard } from './stats_page_cards.js';
 import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
 import { retrySources } from './stats_page_data.js';
 import { openEditor } from './stats_page_editor.js';
-import { exportPng, exportSvg, openValues } from './stats_page_exports.js';
+import { exportPng, exportSvg, openExplain, openValues } from './stats_page_exports.js';
 import { sendToPanel } from './stats_page_links.js';
 import { openPresentation } from './stats_page_present.js';
 import { scheduleSave } from './stats_page_save.js';
@@ -68,6 +68,9 @@ export function onCardAction(event) {
         }
         case 'values':
             openValues(item.spec);
+            break;
+        case 'explain':
+            openExplain(item.spec);
             break;
         case 'present':
             openPresentation(item.spec.id);

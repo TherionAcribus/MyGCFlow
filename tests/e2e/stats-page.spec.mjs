@@ -1003,6 +1003,32 @@ test('« Voir les valeurs » : tableau fidèle au graphique, export CSV', async 
   expect(errors).toEqual([]);
 });
 
+test('« Comprendre ce chiffre » : source, période et périmètre du calcul', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, { groupBy: 'cache_type' });
+  await cardAction(page, target.id, 'explain');
+  await expect(page.locator('#statsExplainModal')).toBeVisible();
+  const dl = page.locator('#statsExplainList');
+  await expect(dl).toContainText('Mes trouvailles');
+  await expect(dl).toContainText('Toute la période');
+  await expect(dl).toContainText('enregistrements comptés');
+  await expect(dl).toContainText('par type de cache');
+  expect(errors).toEqual([]);
+});
+
+test('« Comprendre ce chiffre » distingue période du tableau et période propre', async ({ page, request }) => {
+  // Le graphique a sa propre période (« Toute la période ») : elle prime sur
+  // celle du tableau (« Cette année »).
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'cache_type', periods: [{ kind: 'all' }],
+  });
+  await page.locator('#statsGlobalPeriod').selectOption({ label: 'Cette année' });
+  await cardAction(page, target.id, 'explain');
+  const dl = page.locator('#statsExplainList');
+  await expect(dl).toContainText('Toute la période');
+  await expect(dl).not.toContainText('Cette année');
+  expect(errors).toEqual([]);
+});
+
 test('« Annuler » restaure la carte supprimée', async ({ page, request }) => {
   const errors = await openStats(page);
   const before = (await snapshot(page)).cards;

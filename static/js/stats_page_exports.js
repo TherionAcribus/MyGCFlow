@@ -4,11 +4,12 @@
 import { showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { describeFilters } from './chart_filters.mjs';
+import { chartSources } from './chart_spec.mjs';
 import { axisLabels, buildChartOption, numberModel, seriesIdentity } from './chart_echarts.mjs';
 import { paintDashboardImage } from './stats_image.js';
 import { effectiveQueryOptions } from './dashboard_model.mjs';
 import { download, fileSafe } from './stats_page_card_actions.js';
-import { chartContext, renderAllCharts, renderDeferred } from './stats_page_cards.js';
+import { cardNote, chartContext, renderAllCharts, renderDeferred } from './stats_page_cards.js';
 import {
     activeDashboard, chartTitle, dataNote, datasetName, filterValueLabel,
 } from './stats_page_dashboard.js';
@@ -79,6 +80,89 @@ export function openValues(spec) {
     }
     $('statsValuesTable').replaceChildren(thead, tbody);
     getBsModal('statsValuesModal')?.show();
+}
+
+// ---------------------------------------------------------------------------
+// « Comprendre ce chiffre » : comment le résultat affiché a été obtenu —
+// source, périmètre exact, filtres, données prises en compte et limites.
+// ---------------------------------------------------------------------------
+
+const explainDayFmt = () => new Intl.DateTimeFormat(state.labels.locale || 'fr',
+    { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+const explainDay = (day) => explainDayFmt().format(new Date(day * 86400000));
+
+export function openExplain(spec) {
+    renderDeferred(spec.id);
+    const entry = state.results.get(spec.id);
+    if (!entry?.result) return;
+    const { result } = entry;
+    const dashboard = activeDashboard();
+    const labels = state.labels;
+    $('statsExplainTitle').textContent = chartTitle(spec);
+    const dl = $('statsExplainList');
+    dl.replaceChildren();
+    const row = (label, text) => {
+        if (!text) return;
+        const dt = document.createElement('dt');
+        dt.textContent = label;
+        const dd = document.createElement('dd');
+        dd.textContent = text;
+        dl.append(dt, dd);
+    };
+
+    // Ce qui est compté, et sous quelle forme.
+    let what = labels.defaultTitle(spec);
+    if (spec.splitBy) what += t(', découpé par ${dim}', { dim: labels.dimension(spec.splitBy) });
+    what += t(' — ${chart}', { chart: labels.chart(spec.view.chart) });
+    row(t('Ce qui est compté'), what);
+
+    // Sources réelles (un jeu Évolution est nommé).
+    row(t('Sources'), chartSources(spec).map((source) => {
+        const name = source.startsWith('evolution:')
+            ? datasetName(Number(source.split(':')[1])) : null;
+        return name ? t('${label} « ${name} »', { label: labels.sourceLabel(source), name })
+                    : labels.sourceLabel(source);
+    }).join(' · '));
+
+    // Périodes résolues : le libellé ET les dates exactes qu'il recouvre.
+    const SHOWN = 4;
+    const periodText = result.periods.slice(0, SHOWN)
+        .map((entry) => t('${label} : ${from} → ${to}', {
+            label: labels.seriesPeriodLabel(entry),
+            from: explainDay(entry.from),
+            to: explainDay(entry.to),
+        }))
+        .concat(result.periods.length > SHOWN ? [t('… ${n} autres', { n: result.periods.length - SHOWN })] : [])
+        .join('\n');
+    row(t('Période'), periodText);
+
+    // Comparaison entre périodes, s'il y en a plusieurs.
+    if (result.periods.length > 1) {
+        const parts = [labels.layout(spec.compare.layout), labels.align(spec.compare.align, result.elapsedUnit || 'day')];
+        if (spec.compare.normalize !== 'none') parts.push(labels.normalize(spec.compare.normalize));
+        if (result.toDate) parts.push(t('à date du jour'));
+        row(t('Comparaison'), parts.join(' · '));
+    }
+
+    // Filtres : ceux du tableau, puis ceux propres au graphique.
+    const fmtFilters = (filters) => describeFilters(filters, filterValueLabel)
+        .map(({ field, values }) => labels.filterField(field) + ' : ' + values.join(', '))
+        .join(' · ');
+    // spec.filters non nul REMPLACE les filtres du tableau (même vide).
+    const ownFilters = spec.filters !== null && spec.filters !== undefined;
+    row(t('Filtres du tableau'), ownFilters
+        ? t('remplacés par les filtres propres du graphique')
+        : fmtFilters(dashboard.filters) || t('aucun'));
+    if (ownFilters) row(t('Filtres du graphique'), fmtFilters(spec.filters) || t('aucun'));
+
+    // Données prises en compte, puis tout ce qui est laissé de côté.
+    row(t('Données'), t('${n} enregistrements comptés', { n: result.meta.rows }));
+    const aside = [];
+    if (result.meta.undated) aside.push(t('${n} sans date, non comptés', { n: result.meta.undated }));
+    row(t('Hors périmètre'), aside.join(' · ') || null);
+    row(t('Limites'), cardNote(result, spec) || null);
+
+    getBsModal('statsExplainModal')?.show();
 }
 
 // CSV « français » : séparateur ; et BOM pour qu'Excel lise l'UTF-8.

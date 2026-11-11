@@ -254,6 +254,7 @@ function cardMenu(spec, index, count) {
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
         menuButton('present', 'ti-presentation', t("Présenter à partir d'ici"), { disabled: unavailable }),
         menuButton('values', 'ti-table', t('Voir les valeurs'), { disabled: unavailable }),
+        menuButton('explain', 'ti-info-circle', t('Comprendre ce chiffre'), { disabled: unavailable }),
         menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || spec.view.chart === 'number' }),
         menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || spec.view.chart === 'number' }),
         panelMenuButton(spec),

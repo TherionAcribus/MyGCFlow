@@ -457,6 +457,22 @@
             </div>
         </div>
 
+        <!-- « Comprendre ce chiffre » : le périmètre exact du résultat
+             (source, période, filtres, données, limites). -->
+        <div class="modal fade" id="statsExplainModal" tabindex="-1" aria-labelledby="statsExplainTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsExplainTitle">{{ _("Comprendre ce chiffre") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl id="statsExplainList" class="stats-explain"></dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Nouveau tableau de bord : « Mes données » ou un jeu Évolution —
              deux familles qui ne se mélangent jamais. -->
         <div class="modal fade" id="statsNewDashboardModal" tabindex="-1" aria-labelledby="statsNewDashboardTitle" aria-hidden="true">
