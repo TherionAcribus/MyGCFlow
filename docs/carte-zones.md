@@ -313,7 +313,12 @@ rattachement.
   `profileManager.saveCurrentAsProfile`, comme dans l'onglet Style). Le
   périmètre des données de la mesure choisie est rappelé sous « Couleur
   selon » (`#zonesScopeHint` : trouvailles filtrées vs jeu Évolution
-  entier).
+  entier). Le bouton « Réessayer » (`#btnZonesRetry`) apparaît sur les
+  erreurs de chargement : `retryZoneLayer` relance les contours en échec
+  (`retryZoneGeo` : l'échec du catalogue ou d'un fichier était mémorisé
+  pour la page) et les entrées `found_share`/`finds` en erreur. La liste
+  des jeux est relue à la réouverture de l'onglet ; son échec
+  (`datasetsError`) est distingué de « aucun jeu ».
 - `zone_geo.js` : contours, partagés avec la page Statistiques.
 - `templates/menu_zones.html` : onglet des deux pages (variantes via
   `mode == 'evolution'` : pas de choix de jeu, mesures en « caches »).

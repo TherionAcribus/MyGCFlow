@@ -38,7 +38,7 @@ import { isEvolutionPage, isMainPage } from './app_mode.mjs';
 import { findsTable, tableFromRecords } from './chart_sources.mjs';
 import { foundDaysOf, mixedZoneTable } from './chart_zones.mjs';
 import { ZONE_COLUMNS, createShareState, createZoneState, shareEventsOfTable, zoneScale } from './zone_model.mjs';
-import { addGeoListener, fallbackCountries, zoneFeatures, zoneName } from './zone_geo.js';
+import { addGeoListener, fallbackCountries, retryZoneGeo, zoneFeatures, zoneName } from './zone_geo.js';
 import { cellLabel, cellRing, withGridColumn } from './zone_grid.mjs';
 import { dayNumberOfDate, ymdOfDay } from './stats_model.mjs';
 import {
@@ -634,6 +634,21 @@ export function refreshZoneLayer() {
     syncLegend();
     // Ligne d'état de l'onglet (données arrivées après coup).
     pkg.syncZoneStatus?.();
+}
+
+// Bouton « Réessayer » de l'onglet Zones (ligne d'état en erreur) : les
+// chargements en échec — contours (zone_geo), jeu agrégé ou trouvailles
+// (part trouvée) — repartent à zéro, puis la couche se reconstruit.
+// « missing » (jeu supprimé) n'est pas retenté : il faut un autre choix.
+export function retryZoneLayer() {
+    // D'abord les caches de données (le notify() de retryZoneGeo relance
+    // déjà un refreshZoneLayer via les écouteurs).
+    for (const [url, entry] of shareCache) {
+        if (entry.status === 'error') shareCache.delete(url);
+    }
+    if (findsEntry?.status === 'error') findsEntry = null;
+    retryZoneGeo();
+    refreshZoneLayer();
 }
 
 // Réglages d'apparence seuls (couleur, opacité, contours, lueur, légende) :

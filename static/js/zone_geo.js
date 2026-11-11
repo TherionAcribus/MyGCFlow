@@ -107,6 +107,21 @@ export function requiredFiles(level, countries) {
     return [...new Set(out)];
 }
 
+// Échec mémorisé (catalogue ou fichier) : l'entrée fautive repart à zéro
+// et les écouteurs sont prévenus pour que la couche relance son chargement.
+// Appelé par le bouton « Réessayer » de l'onglet Zones (retryZoneLayer).
+export function retryZoneGeo() {
+    if (failed) {
+        failed = false;
+        indexPromise = null;
+        loadIndex();
+    }
+    for (const [rel, entry] of files) {
+        if (entry.error) files.delete(rel);
+    }
+    notify();
+}
+
 // Fichiers d'un niveau pour des pays : { status: 'ready' | 'loading' |
 // 'error', features }. Lance les chargements manquants.
 export function zoneFeatures(level, countries) {

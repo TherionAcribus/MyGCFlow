@@ -20,7 +20,12 @@
                 <label class="form-check-label" for="switchZonesDisplay">{{ _("Afficher les zones sur la carte") }}</label>
                 <span id="zonesSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
             </div>
-            <p id="zonesStatus" class="form-hint text-muted mt-2 mb-0" role="status" aria-live="polite" hidden></p>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                <p id="zonesStatus" class="form-hint text-muted mb-0" role="status" aria-live="polite" hidden></p>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZonesRetry" hidden>
+                    <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réessayer") }}
+                </button>
+            </div>
         </div>
     </div>
 

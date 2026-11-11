@@ -13,9 +13,12 @@ import { normalizeZoneLayerOptions } from './zone_layer_model.mjs';
 let bound = false;
 const el = (id) => document.getElementById(id);
 // Jeux Évolution proposés pour la part trouvée (« Mes Géocaches ») : null
-// tant que la liste n'est pas chargée.
+// tant que la liste n'est pas chargée, datasetsError si sa lecture a
+// échoué (distinct de « aucun jeu » — la ligne d'état propose alors
+// « Réessayer »).
 let datasets = null;
 let datasetsLoading = false;
+let datasetsError = false;
 
 // Reflète pkg.options.zones et la préférence dans l'onglet. N'écrit que le
 // DOM (appelé aussi par profiles.js au chargement d'un thème).
@@ -79,16 +82,25 @@ export function syncZoneLayerUI() {
 }
 
 // Ligne d'état sous l'interrupteur : contours en chargement, rien à montrer…
+// « Réessayer » n'apparaît que pour les états où une nouvelle tentative a
+// du sens (erreurs de chargement), pas pour les choix à faire (jeu
+// manquant, base vide).
 export function syncZoneStatus() {
     const node = el('zonesStatus');
     if (!node) return;
+    const retry = el('btnZonesRetry');
     const state = pkg.getZoneLayerDebugState?.();
     let text = '';
+    let canRetry = false;
     if (state?.enabled) {
-        if (state.status === 'loading') {
+        if (normalizeZoneLayerOptions(pkg.options?.zones).measure === 'found_share' && datasetsError) {
+            text = t('Impossible de charger la liste des jeux.');
+            canRetry = true;
+        } else if (state.status === 'loading') {
             text = state.options?.measure === 'found_share' ? t('Chargement de la part trouvée…') : t('Chargement des contours…');
         } else if (state.status === 'error') {
             text = state.options?.measure === 'found_share' ? t('Part trouvée indisponible.') : t('Contours des zones indisponibles.');
+            canRetry = true;
         } else if (state.status === 'no-dataset') text = t('Choisissez le jeu Évolution à croiser avec vos trouvailles.');
         else if (state.status === 'missing') text = t("Ce jeu Évolution n'existe plus : choisissez-en un autre.");
         else if (state.status === 'empty') {
@@ -99,6 +111,7 @@ export function syncZoneStatus() {
     }
     node.textContent = text;
     node.hidden = !text;
+    if (retry) retry.hidden = !canRetry;
 }
 
 function readOptions() {
@@ -122,23 +135,46 @@ function readOptions() {
     });
 }
 
-// Liste des jeux du menu « Jeu Évolution », chargée à la première demande.
-// Un jeu supprimé reste choisi (la couche le signale) jusqu'au prochain choix.
+// Liste des jeux du menu « Jeu Évolution », chargée à la première demande
+// et relue à la réouverture de l'onglet (jeu importé dans un autre onglet
+// du navigateur). Un jeu supprimé reste choisi (la couche le signale)
+// jusqu'au prochain choix ; un échec de lecture est distingué de « aucun
+// jeu » (ligne d'état + « Réessayer », voir syncZoneStatus).
+function loadDatasets() {
+    if (datasets !== null || datasetsLoading) return;
+    datasetsLoading = true;
+    fetch('/api/evolution/datasets', { headers: { Accept: 'application/json' } })
+        .then((response) => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        })
+        .then((body) => {
+            datasets = Array.isArray(body?.datasets) ? body.datasets : [];
+            datasetsError = false;
+        })
+        .catch(() => {
+            datasetsError = true;
+        })
+        .finally(() => {
+            datasetsLoading = false;
+            syncDatasetChoices(normalizeZoneLayerOptions(pkg.options?.zones).shareDataset);
+            syncZoneStatus();
+        });
+}
+
 function syncDatasetChoices(selected) {
     const select = el('zonesShareDataset');
     if (!select) return;
     if (datasets === null) {
-        if (!datasetsLoading) {
-            datasetsLoading = true;
-            fetch('/api/evolution/datasets', { headers: { Accept: 'application/json' } })
-                .then((response) => (response.ok ? response.json() : { datasets: [] }))
-                .catch(() => ({ datasets: [] }))
-                .then((body) => {
-                    datasets = Array.isArray(body?.datasets) ? body.datasets : [];
-                    datasetsLoading = false;
-                    syncDatasetChoices(normalizeZoneLayerOptions(pkg.options?.zones).shareDataset);
-                });
+        if (datasetsError) {
+            const wanted = t('Liste des jeux indisponible');
+            if (select.dataset.choices !== wanted) {
+                select.replaceChildren(new Option(wanted, '0'));
+                select.dataset.choices = wanted;
+            }
+            return;
         }
+        loadDatasets();
         return;
     }
     const wanted = [{ id: 0, name: datasets.length ? t('Choisir un jeu…') : t('Aucun jeu : importez-en un sur la page Évolution') }]
@@ -229,8 +265,23 @@ export function initZoneLayerUI() {
     el('btnZonesSaveTheme')?.addEventListener('click', () => {
         window.profileManager?.saveCurrentAsProfile();
     });
-    // L'état (contours arrivés…) se lit à l'ouverture de l'onglet.
-    document.querySelector('a[href="#zones"]')?.addEventListener('shown.bs.tab', syncZoneStatus);
+    // « Réessayer » : chargements de la couche (contours, part trouvée) et
+    // de la liste des jeux relancés.
+    el('btnZonesRetry')?.addEventListener('click', () => {
+        datasets = null;
+        datasetsError = false;
+        syncZoneLayerUI();
+        pkg.retryZoneLayer?.();
+    });
+    // Réouverture : l'état se relit, et la liste des jeux se recharge si
+    // « part trouvée » est active (import/suppression dans un autre onglet).
+    document.querySelector('a[href="#zones"]')?.addEventListener('shown.bs.tab', () => {
+        if (!datasetsLoading && (datasets !== null || datasetsError)) {
+            datasets = null;
+            datasetsError = false;
+        }
+        syncZoneLayerUI();
+    });
 }
 
 // Préférences prêtes au jalon mygcflow:ready. S'initialise lui-même (cf.

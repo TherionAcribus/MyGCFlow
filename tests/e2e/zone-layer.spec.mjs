@@ -413,3 +413,33 @@ test('rapport de rattachement : noms reconnus, noms à signaler, copie', async (
   expect(copied).toContain('sous-région 9');
   expect(errors).toEqual([]);
 });
+
+test('erreurs : « Réessayer » recharge contours et liste des jeux', async ({ page, request }) => {
+  await setDisplay(request, true);
+  // Catalogue des contours en échec : ligne d'état + bouton.
+  await page.route('**/static/geo/index.json', (route) => route.fulfill({ status: 500, body: 'ko' }));
+  const errors = await openMap(page);
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('error');
+  await page.locator('a[href="#zones"]').click();
+  await expect(page.locator('#zonesStatus')).toContainText('Contours des zones indisponibles');
+  await expect(page.locator('#btnZonesRetry')).toBeVisible();
+  await page.unroute('**/static/geo/index.json');
+  await page.locator('#btnZonesRetry').click();
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+
+  // Liste des jeux en échec : distinguée de « aucun jeu », retentée pareil.
+  await page.route('**/api/evolution/datasets', (route) => route.fulfill({ status: 500, body: '{}' }));
+  await page.locator('#zonesMeasure').selectOption('found_share');
+  await expect(page.locator('#zonesStatus')).toContainText('Impossible de charger la liste des jeux');
+  await expect(page.locator('#btnZonesRetry')).toBeVisible();
+  await expect(page.locator('#zonesShareDataset')).toContainText('Liste des jeux indisponible');
+  await page.unroute('**/api/evolution/datasets');
+  await page.locator('#btnZonesRetry').click();
+  // Plus aucun jeu dans le runtime (la spec « part trouvée » a nettoyé) :
+  // la liste relue affiche « Aucun jeu » et la couche attend un choix.
+  await expect(page.locator('#zonesShareDataset')).toContainText('Aucun jeu');
+  await expect(page.locator('#zonesStatus')).toContainText('Choisissez le jeu Évolution');
+  await page.locator('#zonesMeasure').selectOption('count');
+  await expect.poll(async () => (await zones(page)).values).toEqual({ 'FR-75': 3, 'FR-44': 1, 'FR-29': 3, 'FR-69': 1 });
+  expect(errors).toEqual([]);
+});
