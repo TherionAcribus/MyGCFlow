@@ -332,6 +332,13 @@ rattachement.
   rappelé à chaque état de la couche (`prepare`, repeinture d'apparence)
   et respecté par `setTrailLayersVisible` : l'aperçu du trajet repart
   masqué sous le mode solo. Rien n'est détruit — décocher réaffiche.
+- Réduction des mouvements : quand le système demande
+  `prefers-reduced-motion`, `advanceTo` ne crée ni fondu ni éclat — les
+  zones changent de classe d'un coup (`reducedMotion()` de
+  `zone_layer.js`, qui lit `pkg.prefersReducedMotion` de `mapgl.js`).
+  Comme le dynamisme caméra, les enregistrements sont exemptés
+  (`pkg.isRecordingActive`) : la vidéo produite est identique quel que
+  soit le poste.
 
 **Fichiers** :
 - `zone_layer_model.mjs` (pur) : options, conversions thème ↔ options,

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 11:44+0100\n"
+"POT-Creation-Date: 2026-11-11 11:56+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -318,7 +318,7 @@ msgid "Maintenance du poseur"
 msgstr "Maintenance du poseur"
 
 #: event_flash.py:61 poses_dataset.py:639 static/js/chart_labels.mjs:244
-#: static/js/zone_layer.js:659
+#: static/js/zone_layer.js:669
 msgid "Première trouvaille"
 msgstr "Première trouvaille"
 
@@ -686,7 +686,7 @@ msgstr "Statut"
 
 #: poses_dataset.py:638 static/js/chart_labels.mjs:264
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
-#: static/js/zone_layer.js:663 templates/menu_informations.html:64
+#: static/js/zone_layer.js:673 templates/menu_informations.html:64
 #: templates/menu_names.html:60 templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Trouvailles"
@@ -1924,7 +1924,7 @@ msgstr "Écart"
 msgid "Aucune donnée"
 msgstr "Aucune donnée"
 
-#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1035
+#: static/js/chart_echarts.mjs:965 static/js/zone_layer.js:1045
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} sur ${of} caches"
@@ -2409,12 +2409,12 @@ msgstr "Cumul sur la période"
 #: static/js/chart_labels.mjs:242 static/js/chart_labels.mjs:382
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
-#: static/js/zone_layer.js:663 templates/menu_stats.html:177
+#: static/js/zone_layer.js:673 templates/menu_stats.html:177
 #: templates/menu_stats.html:243 templates/menu_stats.html:262
 msgid "Caches actives"
 msgstr "Caches actives"
 
-#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:657
+#: static/js/chart_labels.mjs:243 static/js/zone_layer.js:667
 msgid "Combinaisons D/T"
 msgstr "Combinaisons D/T"
 
@@ -3269,7 +3269,7 @@ msgstr "${n}ᵉ trouvaille"
 msgid "Nouvelle zone · ${date}"
 msgstr "Nouvelle zone · ${date}"
 
-#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1046
+#: static/js/chart_labels.mjs:518 static/js/zone_layer.js:1056
 #, python-brace-format
 msgid "Au ${date}"
 msgstr "Au ${date}"
@@ -3454,7 +3454,7 @@ msgid "Géocaches"
 msgstr "Géocaches"
 
 #: static/js/chart_labels.mjs:659 static/js/chart_labels.mjs:672
-#: static/js/zone_layer.js:998
+#: static/js/zone_layer.js:1008
 #, python-brace-format
 msgid "${n} %"
 msgstr "${n} %"
@@ -3474,7 +3474,7 @@ msgstr "${n} / 1 000 km²"
 msgid "${n} j"
 msgstr "${n} j"
 
-#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:655
+#: static/js/chart_labels.mjs:685 static/js/zone_layer.js:665
 msgid "/ 1 000 km²"
 msgstr "/ 1 000 km²"
 
@@ -6672,8 +6672,8 @@ msgstr "${n} caches publiées"
 msgid "${n} archivages datés"
 msgstr "${n} archivages datés"
 
-#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1006
-#: static/js/zone_layer.js:1041 static/js/zone_report_ui.js:86
+#: static/js/stats_page_dashboard.js:115 static/js/zone_layer.js:1016
+#: static/js/zone_layer.js:1051 static/js/zone_report_ui.js:86
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} trouvailles"
@@ -7715,7 +7715,7 @@ msgstr "Jours avec trouvaille"
 msgid "Plus longue série (jours)"
 msgstr "Plus longue série (jours)"
 
-#: static/js/stats_panels.js:1432 static/js/zone_layer.js:656
+#: static/js/stats_panels.js:1432 static/js/zone_layer.js:666
 #: templates/menu_stats.html:232
 msgid "Types de caches différents"
 msgstr "Types de caches différents"
@@ -9071,90 +9071,90 @@ msgstr "Ouverture du flux vidéo impossible"
 msgid "Aucun flux vidéo ouvert"
 msgstr "Aucun flux vidéo ouvert"
 
-#: static/js/zone_layer.js:658
+#: static/js/zone_layer.js:668
 msgid "Combinaisons D/T manquantes"
 msgstr "Combinaisons D/T manquantes"
 
-#: static/js/zone_layer.js:659
+#: static/js/zone_layer.js:669
 msgid "Première cache posée"
 msgstr "Première cache posée"
 
-#: static/js/zone_layer.js:661
+#: static/js/zone_layer.js:671
 msgid "Part des caches publiées trouvées"
 msgstr "Part des caches publiées trouvées"
 
-#: static/js/zone_layer.js:661
+#: static/js/zone_layer.js:671
 msgid "Part des caches actives trouvées"
 msgstr "Part des caches actives trouvées"
 
-#: static/js/zone_layer.js:673
+#: static/js/zone_layer.js:683
 #, python-brace-format
 msgid "depuis le ${date}"
 msgstr "depuis le ${date}"
 
-#: static/js/zone_layer.js:994
+#: static/js/zone_layer.js:1004
 msgid "Aucune évolution depuis cette date"
 msgstr "Aucune évolution depuis cette date"
 
-#: static/js/zone_layer.js:1000 static/js/zone_layer.js:1025
+#: static/js/zone_layer.js:1010 static/js/zone_layer.js:1035
 #, python-brace-format
 msgid "${n} types de caches / 1 000 km²"
 msgstr "${n} types de caches / 1 000 km²"
 
-#: static/js/zone_layer.js:1000 static/js/zone_layer.js:1026
+#: static/js/zone_layer.js:1010 static/js/zone_layer.js:1036
 #, python-brace-format
 msgid "${n} types de caches"
 msgstr "${n} types de caches"
 
-#: static/js/zone_layer.js:1002 static/js/zone_layer.js:1028
+#: static/js/zone_layer.js:1012 static/js/zone_layer.js:1038
 #, python-brace-format
 msgid "${n} combinaisons D/T sur 81"
 msgstr "${n} combinaisons D/T sur 81"
 
-#: static/js/zone_layer.js:1005 static/js/zone_layer.js:1038
+#: static/js/zone_layer.js:1015 static/js/zone_layer.js:1048
 #, python-brace-format
 msgid "${n} caches actives / 1 000 km²"
 msgstr "${n} caches actives / 1 000 km²"
 
-#: static/js/zone_layer.js:1005 static/js/zone_layer.js:1039
+#: static/js/zone_layer.js:1015 static/js/zone_layer.js:1049
 #, python-brace-format
 msgid "${n} trouvailles / 1 000 km²"
 msgstr "${n} trouvailles / 1 000 km²"
 
-#: static/js/zone_layer.js:1006 static/js/zone_layer.js:1041
+#: static/js/zone_layer.js:1016 static/js/zone_layer.js:1051
 #, python-brace-format
 msgid "${n} caches actives"
 msgstr "${n} caches actives"
 
-#: static/js/zone_layer.js:1012
+#: static/js/zone_layer.js:1022
 #, python-brace-format
 msgid "Depuis le ${date}"
 msgstr "Depuis le ${date}"
 
-#: static/js/zone_layer.js:1018
+#: static/js/zone_layer.js:1028
 msgid "Aucune cache à ce jour"
 msgstr "Aucune cache à ce jour"
 
-#: static/js/zone_layer.js:1018
+#: static/js/zone_layer.js:1028
 msgid "Aucune trouvaille à ce jour"
 msgstr "Aucune trouvaille à ce jour"
 
-#: static/js/zone_layer.js:1022
+#: static/js/zone_layer.js:1032
 #, python-brace-format
 msgid "Première cache posée : ${date}"
 msgstr "Première cache posée : ${date}"
 
-#: static/js/zone_layer.js:1022
+#: static/js/zone_layer.js:1032
 #, python-brace-format
 msgid "Première trouvaille : ${date}"
 msgstr "Première trouvaille : ${date}"
 
-#: static/js/zone_layer.js:1029
+#: static/js/zone_layer.js:1039
 #, python-brace-format
 msgid "Il en manque ${n}"
 msgstr "Il en manque ${n}"
 
-#: static/js/zone_layer.js:1031
+#: static/js/zone_layer.js:1041
 #, python-brace-format
 msgid "${n} combinaisons D/T manquantes"
 msgstr "${n} combinaisons D/T manquantes"
@@ -11838,11 +11838,13 @@ msgstr ""
 msgid ""
 "Les couleurs sont calculées sur la fin de l'animation : une teinte garde "
 "le même sens du premier au dernier jour. Une zone qui change de nuance "
-"passe en fondu, avec un bref éclat de son contour."
+"passe en fondu, avec un bref éclat de son contour — sauf si votre système"
+" demande de réduire les animations."
 msgstr ""
 "Les couleurs sont calculées sur la fin de l'animation : une teinte garde "
 "le même sens du premier au dernier jour. Une zone qui change de nuance "
-"passe en fondu, avec un bref éclat de son contour."
+"passe en fondu, avec un bref éclat de son contour — sauf si votre "
+"système demande de réduire les animations."
 
 #: templates/guide.html:470
 msgid "Signalez un nom ou demandez un pays"

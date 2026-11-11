@@ -1800,7 +1800,7 @@ function resetCameraFollow() {
 // et hors navigateur (tests, workers) l'absence de window/matchMedia vaut
 // « pas de réduction » plutôt qu'une erreur.
 let reducedMotionQuery;
-function prefersReducedMotion() {
+export function prefersReducedMotion() {
     if (reducedMotionQuery === undefined) {
         try {
             reducedMotionQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')

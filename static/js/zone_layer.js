@@ -79,6 +79,12 @@ const opts = () => normalizeZoneLayerOptions(pkg.options?.zones);
 // ZONE_LAYER_DENSITY_MEASURES (le reste affiche la valeur brute).
 const densityOf = (o) => o.perKm2 && ZONE_LAYER_DENSITY_MEASURES.includes(o.measure);
 
+// Réduction des mouvements (réglage système) : pas de fondu ni d'éclat,
+// les zones changent de classe d'un coup. Comme le dynamisme caméra, les
+// enregistrements gardent le mouvement complet : la vidéo produite doit
+// être identique quel que soit le poste qui la génère.
+const reducedMotion = () => !!pkg.prefersReducedMotion?.() && !pkg.isRecordingActive?.();
+
 // Mode « zones seules » (option du thème) : la carte colorée se lit seule,
 // les autres couches (points, trajet, flashs) sont masquées par mapgl
 // (pkg.syncSoloLayers, rappelé à chaque état de la couche).
@@ -490,7 +496,7 @@ function advanceTo(day, now) {
         const from = displayedColor(id, now);
         if (cls === null) classes.delete(id);
         else classes.set(id, cls);
-        fades.set(id, { from, start: now, rise: prev === null || (cls !== null && cls > prev) });
+        if (!reducedMotion()) fades.set(id, { from, start: now, rise: prev === null || (cls !== null && cls > prev) });
         changed = true;
     }
     if (changed) touch();
@@ -932,6 +938,7 @@ export function getZoneLayerDebugState() {
         refDay,
         compareDay: compareMap ? compareDayOf(opts()) : null,
         solo: zonesOnly(),
+        reducedMotion: reducedMotion(),
         animating,
         values,
         classes: Object.fromEntries(classes),

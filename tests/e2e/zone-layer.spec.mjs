@@ -213,6 +213,27 @@ test('aperçu : les zones suivent les jours, sauts et lecture compris', async ({
   expect(errors).toEqual([]);
 });
 
+// « prefers-reduced-motion » : les zones changent de classe d'un coup, sans
+// fondu ni éclat, en lecture live (les vidéos gardent le mouvement complet).
+test('réduction des mouvements : changements de classe sans fondu', async ({ page, request }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await setDisplay(request, true);
+  const errors = await openMap(page);
+  await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
+  expect((await zones(page)).reducedMotion).toBe(true);
+  // Aperçu : l'avancée au 8 (Paris et Finistère montent de classe) se fait
+  // d'un coup — aucun fondu ne démarre (fading reste à zéro).
+  expect(await app(page, 'return pkg.startPausedPreview();')).toBe(true);
+  await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 1));');
+  await app(page, 'pkg.accumulateZonesForDates([new Date(2026, 0, 8)], Date.now());');
+  const state = await zones(page);
+  expect(state.classes).toEqual({ 'FR-75': 1, 'FR-44': 0, 'FR-29': 1, 'FR-69': 0 });
+  expect(state.fading).toBe(0);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('idle');
+  expect(errors).toEqual([]);
+});
+
 test('fiche de zone : clic sur la carte, au repos et en pause', async ({ page, request }) => {
   await setDisplay(request, true);
   const errors = await openMap(page);

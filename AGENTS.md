@@ -217,7 +217,12 @@ Autres repères :
   off, sans effet pour `first_day`) : `values`/`classes` deviennent des
   écarts signés depuis la référence — les zones inchangées n'ont ni
   valeur ni classe — et `compareDay` donne la référence ; palette
-  divergente (rouge/teinte).
+  divergente (rouge/teinte). « Zones seules » (`solo`, thème) : relevé
+  `solo` ; `syncSoloLayers` de mapgl masque points/trajet/flashs tant que
+  `zonesOnly()` est vrai. Réduction des mouvements : relevé
+  `reducedMotion` (prefers-reduced-motion, sauf enregistrement) —
+  `fading` reste à 0 en lecture réduite (test via
+  `page.emulateMedia({ reducedMotion: 'reduce' })`).
   Rapport de rattachement (carte « Noms reconnus » de l'onglet Zones) :
   chargé à l'ouverture de l'onglet — pour un autre contenu, intercepter
   `GET /api/zones/report*` puis rouvrir l'onglet (cliquer un autre onglet
