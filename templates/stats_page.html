@@ -222,27 +222,32 @@
                                     <select id="statsEdChart" class="form-select"></select>
                                 </div>
 
-                                <!-- Comparaison : visible dès que le graphique compare plusieurs périodes. -->
+                                <!-- Comparaison : visible dès que le graphique compare plusieurs périodes
+                                     ou plusieurs sources (le libellé dit alors « Séries »). -->
                                 <div id="statsEdCompareBlock" class="stats-ed-compare" hidden>
                                     <div class="mb-3">
-                                        <label for="statsEdLayout" class="form-label">{{ _("Périodes") }}</label>
+                                        <label for="statsEdLayout" id="statsEdLayoutLabel" class="form-label">{{ _("Périodes") }}</label>
                                         <select id="statsEdLayout" class="form-select"></select>
                                     </div>
                                     <div class="mb-3" id="statsEdAlignRow">
                                         <label for="statsEdAlign" class="form-label">{{ _("Alignement") }}</label>
                                         <select id="statsEdAlign" class="form-select"></select>
                                     </div>
-                                    <div class="form-check mb-1">
-                                        <input type="checkbox" id="statsEdToDate" class="form-check-input">
-                                        <label for="statsEdToDate" class="form-check-label">{{ _("Arrêter les périodes au même jour (« à date »)") }}</label>
+                                    <!-- « à date » ne coupe que des périodes : masqué quand la
+                                         comparaison porte sur des sources (une seule période). -->
+                                    <div id="statsEdToDateRow">
+                                        <div class="form-check mb-1">
+                                            <input type="checkbox" id="statsEdToDate" class="form-check-input">
+                                            <label for="statsEdToDate" class="form-check-label">{{ _("Arrêter les périodes au même jour (« à date »)") }}</label>
+                                        </div>
+                                        <div class="form-hint">{{ _("Quand une période est en cours, les autres s'arrêtent au même jour : l'année en cours ne part pas perdante.") }}</div>
                                     </div>
-                                    <div class="form-hint">{{ _("Quand une période est en cours, les autres s'arrêtent au même jour : l'année en cours ne part pas perdante.") }}</div>
                                 </div>
 
                                 <details id="statsEdFiltersSection" class="stats-ed-options stats-ed-filters">
                                     <summary>{{ _("Filtres") }} <span id="statsEdFiltersBadge" class="badge bg-primary text-white ms-1" hidden></span></summary>
                                     <div class="mb-3">
-                                        <label for="statsEdFilterMode" class="form-label">{{ _("Trouvailles comptées") }}</label>
+                                        <label for="statsEdFilterMode" class="form-label">{{ _("Données comptées") }}</label>
                                         <select id="statsEdFilterMode" class="form-select">
                                             <option value="inherit">{{ _("Selon les filtres du tableau de bord") }}</option>
                                             <option value="own">{{ _("Avec des filtres propres à ce graphique") }}</option>
@@ -322,7 +327,7 @@
                                         <input type="checkbox" id="statsEdStack" class="form-check-input">
                                         <label for="statsEdStack" class="form-check-label">{{ _("Empiler les séries") }}</label>
                                     </div>
-                                    <div class="form-check mb-2">
+                                    <div class="form-check mb-2" id="statsEdLabelsRow">
                                         <input type="checkbox" id="statsEdLabels" class="form-check-input">
                                         <label for="statsEdLabels" class="form-check-label">{{ _("Afficher les valeurs") }}</label>
                                     </div>

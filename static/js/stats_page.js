@@ -14,6 +14,7 @@ import { bindQuitButtons } from './app_quit.js';
 import { todayDay } from './chart_periods.mjs';
 import { clearFilterForm, destroyFilterForm } from './stats_filters_ui.js';
 import { measureKey } from './chart_labels.mjs';
+import { showConfirmation, t } from './notifications.js';
 import { presentDelay } from './present_model.mjs';
 import {
     endDrag, onCardAction, onDragOver, onDragStart, onDrop, onGridPointerDown,
@@ -42,6 +43,7 @@ import {
 } from './stats_page_present.js';
 import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { getBsModal } from './ui_bootstrap.js';
 import {
     closeVideo, onMusicChange, onMusicFile, recordVideo, releaseVideo, revealVideo, syncVideoTotal,
 } from './stats_page_video.js';
@@ -331,6 +333,25 @@ function bindEvents() {
     // L'aperçu se dessine une fois la modale visible : ECharts mesure son
     // conteneur, nul tant que la modale est masquée.
     editor.addEventListener('shown.bs.modal', renderPreview);
+    // Fermer avec des modifications non enregistrées les perdrait : on
+    // confirme d'abord (« Enregistrer » pose `discard`, une sortie sans
+    // changement reste immédiate — la comparaison porte sur le contenu
+    // posé à l'ouverture).
+    editor.addEventListener('hide.bs.modal', (event) => {
+        if (!state.editor || state.editor.discard) return;
+        if (JSON.stringify(state.editor.item) === state.editor.snapshot) return;
+        event.preventDefault();
+        showConfirmation(
+            t('Fermer sans enregistrer les modifications ?'),
+            t('Modifications non enregistrées'),
+            () => {
+                if (state.editor) state.editor.discard = true;
+                getBsModal('statsEditorModal')?.hide();
+            },
+            null,
+            { confirmText: t('Fermer sans enregistrer'), danger: true },
+        );
+    });
     editor.addEventListener('hidden.bs.modal', () => {
         destroyFilterForm($('statsEdFiltersForm'));
         state.previewChart?.dispose();

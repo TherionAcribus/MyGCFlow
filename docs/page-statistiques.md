@@ -327,6 +327,15 @@ le travail redondant dans la page :
   enregistrer ou ajouter un graphique depuis la galerie propose « Annuler »
   dans un toast d'action — la copie d'avant la mutation est restaurée, un
   seul niveau.
+- **Fermeture de l'éditeur** : avec des modifications non enregistrées,
+  « Annuler », la croix ou Échap demandent confirmation avant de les perdre
+  (`hide.bs.modal` + `snapshot` posé à l'ouverture) ; sans changement, la
+  fermeture est immédiate.
+- **Titre du graphique** : un titre écrit par l'utilisateur survit au
+  changement de mesure, de regroupement ou de source (`titleTouched`, posé
+  à l'ouverture quand le titre n'est celui d'aucune question) ; le titre
+  venu d'une question de la galerie redevient automatique — il ne décrivait
+  plus le graphique.
 - **Aperçus de la galerie** : chaque question montre sa forme sur les
   données réelles, avec la période et les filtres du tableau
   (`thumbnailOption` de chart_echarts.mjs : ni texte, ni légende, ni

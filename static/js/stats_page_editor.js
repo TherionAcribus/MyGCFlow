@@ -5,7 +5,7 @@ import { getBsModal } from './ui_bootstrap.js';
 import {
     allowedAligns, allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy,
     chartSources, goalApplies, hasSeveralSeries, MAP_CONTINENTS, mapFrameCountry, MAX_EXTRA_SOURCES, MAX_SERIES,
-    normalizeChartSpec, normalizeMeasure, periodAcceptsUpTo, sourceDimensions, withUpTo,
+    normalizeChartSpec, normalizeMeasure, periodAcceptsUpTo, periodsAreMultiple, sourceDimensions, withUpTo,
 } from './chart_spec.mjs';
 import { loadFile, zoneName } from './zone_geo.js';
 import { ELAPSED_UNITS } from './chart_query.mjs';
@@ -14,10 +14,12 @@ import { destroyFilterForm, readFilterForm, renderFilterForm } from './stats_fil
 import { EDITOR_CHARTS, GROUP_CHOICES, MEASURE_CHOICES, measureKey, measureOfKey } from './chart_labels.mjs';
 import {
     chartPeriodChoices, comparePeriodChoices, DASHBOARD_HEIGHTS, DASHBOARD_SIZES, dashboardSources,
-    HEIGHT_PIXELS, MAX_ITEMS, periodOfValue,
+    HEIGHT_PIXELS, MAX_ITEMS, periodOfValue, QUESTIONS,
 } from './dashboard_model.mjs';
 import { withUndo } from './stats_page_card_actions.js';
-import { computeResult, renderChartInto, renderNumber, unavailableBlock } from './stats_page_cards.js';
+import {
+    cardSelector, computeResult, renderChartInto, renderNumber, unavailableBlock,
+} from './stats_page_cards.js';
 import { activeDashboard, attributeName, chartTitle, fillPeriodSelect, pickRangeIfCustom } from './stats_page_dashboard.js';
 import { dashboardExtent, dashboardTables, tableOf } from './stats_page_data.js';
 import { $, state } from './stats_page_state.js';
@@ -259,6 +261,11 @@ export function syncEditorForm() {
     // Comparaison : présentation, alignement, « à date » — seulement quand
     // le graphique compare plusieurs périodes ou plusieurs sources.
     $('statsEdCompareBlock').hidden = !hasSeveralSeries(spec);
+    // Avec une seule période, ce sont des sources qu'on compare : le menu
+    // dit « Séries », et « à date » (qui coupe les périodes) est sans objet.
+    const multiplePeriods = periodsAreMultiple(spec.periods);
+    $('statsEdLayoutLabel').textContent = multiplePeriods ? t('Périodes') : t('Séries');
+    $('statsEdToDateRow').hidden = !multiplePeriods;
     fillChoiceSelect($('statsEdLayout'), allowedLayouts(spec), state.labels.layout, spec.compare.layout);
     const aligns = allowedAligns(spec.groupBy);
     fillChoiceSelect($('statsEdAlign'), aligns,
@@ -306,8 +313,12 @@ export function syncEditorForm() {
     const chart = spec.view.chart;
     const category = ['cache_type', 'container', 'country', 'state', 'owner', 'attribute', 'dt', 'cache', 'finder', 'county'].includes(spec.groupBy);
     $('statsEdOrientationRow').hidden = chart !== 'bar';
-    $('statsEdTopRow').hidden = !category;
+    // « Nombre de valeurs affichées » : sans effet sur la grille D/T, qui
+    // dessine toutes ses cases (fullGrid dans chart_query.mjs › axisTopLimit).
+    $('statsEdTopRow').hidden = !category || (spec.groupBy === 'dt' && chart === 'heatmap');
     $('statsEdSortRow').hidden = !category || chart === 'number';
+    // Un chiffre clé n'a rien à « afficher » comme valeurs sur le graphique.
+    $('statsEdLabelsRow').hidden = chart === 'number';
     $('statsEdSmoothRow').hidden = chart !== 'line' && chart !== 'area';
     $('statsEdLogRow').hidden = !['bar', 'line', 'area'].includes(chart);
     const palettes = paletteChoices(spec);
@@ -520,7 +531,19 @@ export function onCompareListClick(event) {
 }
 
 export function openEditor({ mode, index = -1, item }) {
-    state.editor = { mode, index, item: structuredClone(item), titleTouched: false, sizeTouched: false };
+    // Un titre qui n'est celui d'aucune question de la galerie (dans la
+    // langue affichée) est présumé écrit par l'utilisateur : il survit à un
+    // changement de mesure, de regroupement ou de source — alors que le
+    // titre d'une question redevient automatique (il ne décrivait plus le
+    // graphique). Voir readEditorForm.
+    const questionTitle = QUESTIONS.some((q) => state.labels.question(q.id).title === item.spec?.title);
+    state.editor = {
+        mode, index, item: structuredClone(item),
+        titleTouched: Boolean(item.spec?.title) && !questionTitle, sizeTouched: false,
+        // Contenu à l'ouverture : sert à distinguer une fermeture qui perd
+        // des modifications (confirmation) d'une sortie sans changement.
+        snapshot: JSON.stringify(item), discard: false,
+    };
     $('statsEditorTitle').textContent = mode === 'new' ? t('Nouveau graphique') : t('Modifier le graphique');
     syncEditorForm();
     syncEditorFilters({ rebuild: true });
@@ -535,10 +558,16 @@ export function saveEditor() {
     readEditorForm();
     const { mode, index, item } = state.editor;
     const dashboard = activeDashboard();
+    // Enregistrer n'est pas une perte : la fermeture ne demande rien.
+    state.editor.discard = true;
     getBsModal('statsEditorModal')?.hide();
     if (mode === 'new') {
         if (dashboard.items.length >= MAX_ITEMS) return;
         withUndo(t('Graphique ajouté.'), () => dashboard.items.push(item));
+        // Même geste qu'à l'ajout depuis la galerie : la nouvelle carte
+        // rejoint la vue (elle peut naître tout en bas du tableau).
+        $('statsGrid').querySelector(cardSelector(item.spec.id))
+            ?.scrollIntoView({ block: 'nearest', behavior: state.reduceMotion ? 'auto' : 'smooth' });
     } else if (dashboard.items[index]) {
         withUndo(t('Graphique enregistré.'), () => { dashboard.items[index] = item; });
     }

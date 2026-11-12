@@ -336,10 +336,49 @@ test('éditeur : annuler ne change rien', async ({ page }) => {
   const before = (await snapshot(page)).cards[3];
   await cardAction(page, before.id, 'edit');
   await page.locator('#statsEdGroupBy').selectOption('weekday');
+  // Modifications non enregistrées : fermer demande confirmation.
   await page.locator('#statsEditorModal [data-bs-dismiss="modal"]').last().click();
+  const confirm = page.locator('.gcm-confirm-modal');
+  await expect(confirm).toContainText('Fermer sans enregistrer les modifications ?');
+  // Refuser la fermeture garde l'éditeur et le formulaire.
+  await confirm.locator('[data-gcm-role="cancel"]').click();
+  await expect(page.locator('#statsEditorModal')).toBeVisible();
+  await expect(page.locator('#statsEdGroupBy')).toHaveValue('weekday');
+  await expect(page.locator('.gcm-confirm-modal')).toHaveCount(0);
+  // Confirmer ferme, sans toucher au graphique.
+  await page.locator('#statsEditorModal [data-bs-dismiss="modal"]').last().click();
+  await expect(page.locator('.gcm-confirm-modal')).toBeVisible();
+  await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
   await expect(page.locator('#statsEditorModal')).toBeHidden();
   const after = (await snapshot(page)).cards[3];
   expect(after.groupBy).toBe(before.groupBy);
+
+  // Sans modification, « Annuler » ferme directement — pas de confirmation.
+  await cardAction(page, before.id, 'edit');
+  await page.locator('#statsEditorModal [data-bs-dismiss="modal"]').last().click();
+  await expect(page.locator('#statsEditorModal')).toBeHidden();
+  await expect(page.locator('.gcm-confirm-modal')).toHaveCount(0);
+});
+
+test('éditeur : un titre écrit est conservé à la réédition', async ({ page }) => {
+  const errors = await openStats(page);
+  const before = (await snapshot(page)).cards[3];
+  await cardAction(page, before.id, 'edit');
+  await page.locator('#statsEdTitle').fill('Mon titre à moi');
+  await page.locator('#btnStatsEdSave').click();
+  await expect(page.locator('#statsEditorModal')).toBeHidden();
+
+  // Réouvert puis mesure changée : le titre posé par l'utilisateur reste —
+  // seul celui d'une question de la galerie redevient automatique.
+  await cardAction(page, before.id, 'edit');
+  await expect(page.locator('#statsEdTitle')).toHaveValue('Mon titre à moi');
+  await page.locator('#statsEdMeasure').selectOption('distinct:days');
+  await expect(page.locator('#statsEdTitle')).toHaveValue('Mon titre à moi');
+  await expect(page.locator('#statsEdPreviewTitle')).toHaveText('Mon titre à moi');
+  await page.locator('#btnStatsEdSave').click();
+  await expect(page.locator('#statsEditorModal')).toBeHidden();
+  await expect(card(page, before.id).locator('.stats-card-title')).toHaveText('Mon titre à moi');
+  expect(errors).toEqual([]);
 });
 
 test('graphique personnalisé depuis la galerie', async ({ page }) => {
@@ -460,6 +499,9 @@ test('éditeur : comparer à la période précédente, puis présenter en écart
   await page.locator('#btnStatsEdAddCompare').click();
   await expect(page.locator('#statsEdCompare0')).toHaveValue('{"kind":"previous"}');
   await expect(page.locator('#statsEdCompareBlock')).toBeVisible();
+  // Plusieurs périodes : le bloc parle de « périodes », « à date » proposé.
+  await expect(page.locator('#statsEdLayoutLabel')).toHaveText('Périodes');
+  await expect(page.locator('#statsEdToDateRow')).toBeVisible();
   await expect(page.locator('#statsEdLayout option')).toHaveCount(3);
 
   await page.locator('#statsEdToDate').uncheck();
@@ -706,6 +748,11 @@ test('Mes poses : trouvailles et favoris reçus, comparés à mes trouvailles', 
     await expect(page.locator('#statsEdPreviewNumber .stats-number-value')).toHaveText('3');
     await page.locator('#statsEdSource').selectOption('finds');
     await page.locator('#btnStatsEdAddSource').click();
+    // Une seule période, deux sources : le bloc de comparaison parle de
+    // « séries », et « à date » (qui coupe des périodes) est masqué.
+    await expect(page.locator('#statsEdCompareBlock')).toBeVisible();
+    await expect(page.locator('#statsEdLayoutLabel')).toHaveText('Séries');
+    await expect(page.locator('#statsEdToDateRow')).toBeHidden();
     await page.locator('#statsEdExtraSource0').selectOption('poses.received');
     await expect(page.locator('#statsEdPreviewNumber .stats-number-block')).toHaveCount(2);
     await expect(page.locator('#statsEdPreviewNumber .stats-number-delta')).toHaveText(/−6 \(-50\s?%\) par rapport aux trouvailles reçues/);

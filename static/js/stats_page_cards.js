@@ -114,6 +114,8 @@ function cardElement(item, index, count) {
     const title = document.createElement('h2');
     title.className = 'stats-card-title';
     title.textContent = chartTitle(spec);
+    // Le titre est tronqué à l'affichage : la bulle le donne en entier.
+    title.title = chartTitle(spec);
     header.append(title);
     if (hasOwnPeriod(spec) || periodsAreMultiple(spec.periods)) {
         const badge = document.createElement('span');
@@ -228,8 +230,11 @@ export function geoErrorBlock() {
     return box;
 }
 
-export function menuButton(action, icon, label, { danger = false, disabled = false } = {}) {
+export function menuButton(action, icon, label, { danger = false, disabled = false, title = '' } = {}) {
     const li = document.createElement('li');
+    // La raison d'une entrée grisée va sur le <li> : un bouton disabled ne
+    // montre pas sa propre bulle.
+    if (title) li.title = title;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = danger ? 'dropdown-item text-danger' : 'dropdown-item';
@@ -272,23 +277,41 @@ function cardMenu(spec, index, count) {
     toggle.append(icon);
     const menu = document.createElement('ul');
     menu.className = 'dropdown-menu dropdown-menu-end';
-    const divider = document.createElement('li');
-    divider.innerHTML = '<hr class="dropdown-divider">';
+    const divider = () => {
+        const li = document.createElement('li');
+        li.innerHTML = '<hr class="dropdown-divider">';
+        return li;
+    };
     // Source en échec : pas d'image ni de vidéo à produire.
     const unavailable = chartSources(spec).some((s) => state.sourceErrors.has(s));
+    // Un chiffre clé n'est pas un graphique : rien à exporter en image, et
+    // la raison se lit en bulle (le bouton grisé ne la porterait pas).
+    const number = spec.view.chart === 'number';
+    const numberHint = number && !unavailable
+        ? t("Un chiffre clé n'est pas un graphique : ses valeurs s'exportent en CSV via « Voir les valeurs ».")
+        : '';
+    const animates = chartAnimates(spec);
+    // Entrées groupées : édition | lecture | sorties | déplacement | suppression.
     menu.append(
         menuButton('edit', 'ti-pencil', t('Modifier')),
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
+        divider(),
         menuButton('present', 'ti-presentation', t("Présenter à partir d'ici"), { disabled: unavailable }),
         menuButton('values', 'ti-table', t('Voir les valeurs'), { disabled: unavailable }),
         menuButton('explain', 'ti-info-circle', t('Comprendre ce chiffre'), { disabled: unavailable }),
-        menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || spec.view.chart === 'number' }),
-        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || spec.view.chart === 'number' }),
+        divider(),
+        menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || number, title: numberHint }),
+        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || number, title: numberHint }),
         panelMenuButton(spec),
-        menuButton('video', 'ti-video', t('Créer une vidéo animée'), { disabled: unavailable || !chartAnimates(spec) }),
+        menuButton('video', 'ti-video', t('Créer une vidéo animée'), {
+            disabled: unavailable || !animates,
+            title: !animates && !unavailable
+                ? t('Possible pour des barres, une courbe ou une aire sur un axe de temps, hors écart.') : '',
+        }),
+        divider(),
         menuButton('before', 'ti-arrow-left', t('Déplacer avant'), { disabled: index === 0 }),
         menuButton('after', 'ti-arrow-right', t('Déplacer après'), { disabled: index === count - 1 }),
-        divider,
+        divider(),
         menuButton('delete', 'ti-trash', t('Supprimer'), { danger: true }),
     );
     wrap.append(toggle, menu);
