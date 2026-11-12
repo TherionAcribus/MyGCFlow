@@ -205,9 +205,10 @@ glissantes ni « chaque année / mois ».
   (période en cours) ; écart d'un chiffre clé « par rapport à fin 2024 » /
   « par rapport au 11 nov. 2025 » (coupe à date).
 - Interface : case « Depuis le début » à côté du menu « Période » du tableau
-  de bord (`#statsGlobalUpTo`) et sous la période de l'éditeur
-  (`#statsEdUpTo`, pour les périodes propres au graphique — elle vaut pour
-  toutes ; celle du tableau de bord suit sa propre case). Les menus restent
+  de bord (`#statsGlobalUpTo`) et en fin de bloc des périodes de l'éditeur
+  (`#statsEdUpTo`, pour les périodes propres au graphique — sa place dit sa
+  portée : elle vaut pour toutes ; celle du tableau de bord suit sa propre
+  case). Les menus restent
   sans `upTo` (`fillPeriodSelect` le retire, `withUpTo` le repose) ;
   masquée et décochée pour une période qui ne l'accepte pas.
 
@@ -557,6 +558,13 @@ tel qu'il est affiché — même disposition, même thème clair ou sombre.
   d'insertion `drop-before` / `drop-after` (moitié gauche / droite, haut /
   bas pour une carte pleine largeur). Le menu garde « Déplacer avant /
   après » pour le clavier.
+- **Menu d'une carte** : les quatre sorties (PNG, SVG, panneau vidéo,
+  vidéo animée) sont groupées dans un sous-menu « Exporter »
+  (`.dropdown-submenu`), ouvert à gauche — le menu est
+  `dropdown-menu-end`, à droite il sortirait de l'écran — au survol ou au
+  focus (CSS `:hover` / `:focus-within`) et au clic (`.show`, utile au
+  tactile ; `stopPropagation`, sinon Bootstrap referme le menu au clic sur
+  un `.dropdown-item`). Replié à la fermeture du menu parent.
 - **Redimensionner** : coin `.stats-card-resize` (pointeur) ; la largeur
   suit la souris par colonnes de la grille et se cale sur S / M / L / XL
   (`nearestSize`), 60 px vers le bas donnent la grande hauteur, vers le
@@ -742,8 +750,11 @@ chart_goal.mjs.
   Seulement une période en cours, des valeurs non mises à l'échelle, et
   hors vidéo (`ctx.today` absent : une courbe à moitié révélée ne se
   prolonge pas).
-- Éditeur : champ « Objectif » et case « Prolonger à ce rythme » dans les
-  options. Panneau vidéo : objectif et projection ne suivent pas
+- Éditeur : champ « Objectif » et case « Prolonger à ce rythme » dans leur
+  propre section « Objectif » (`#statsEdGoalSection`, à la suite de
+  « Options d'affichage », masquée quand `goalApplies` est faux, ouverte
+  quand le graphique en a un) — découvrable sans ouvrir les options.
+  Panneau vidéo : objectif et projection ne suivent pas
   (`dropped: 'goal'`, signalé).
 - Galerie : groupe « Objectifs et projections » — `next_milestone` (objectif
   posé à l'ajout : le cap rond au-dessus du total, `nextMilestone`),

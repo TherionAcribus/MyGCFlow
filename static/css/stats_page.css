@@ -621,6 +621,47 @@ body > .ts-dropdown {
     font-weight: 600;
     cursor: pointer;
 }
+/* Sous-groupes des « Options d'affichage » (« Données », « Apparence ») :
+   petit titre de section, même style que les sections de la galerie. */
+.stats-ed-group + .stats-ed-group {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+}
+.stats-ed-group-title {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+/* Sous-menu « Exporter » du menu d'une carte : ouvert à GAUCHE (le menu
+   est dropdown-menu-end : à droite, il sortirait de l'écran), au survol,
+   au focus clavier (:focus-within) ou au clic (.show, tactile). */
+.dropdown-submenu {
+    position: relative;
+}
+.dropdown-submenu > .dropdown-item {
+    display: flex;
+    align-items: center;
+}
+.dropdown-submenu > .dropdown-item .ti-chevron-left {
+    margin-left: auto;
+}
+.dropdown-submenu > .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 100%;
+    left: auto;
+    margin-top: 0;
+}
+.dropdown-submenu:hover > .dropdown-menu,
+.dropdown-submenu:focus-within > .dropdown-menu,
+.dropdown-submenu > .dropdown-menu.show {
+    display: block;
+}
 .stats-ed-preview-frame {
     padding: 14px 16px;
     border: 1px solid var(--color-border);

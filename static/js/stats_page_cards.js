@@ -291,6 +291,50 @@ function cardMenu(spec, index, count) {
         ? t("Un chiffre clé n'est pas un graphique : ses valeurs s'exportent en CSV via « Voir les valeurs ».")
         : '';
     const animates = chartAnimates(spec);
+    // « Exporter » : les quatre sorties regroupées dans un sous-menu, ouvert
+    // à GAUCHE (le menu est dropdown-menu-end : à droite il sortirait de
+    // l'écran). Montré au survol et au focus (CSS, stats_page.css) ; au
+    // clic, la classe .show fait le même office pour le tactile — le clic
+    // ne monte pas, sinon Bootstrap referme le menu au clic sur un
+    // .dropdown-item (autoClose).
+    const exportItem = document.createElement('li');
+    exportItem.className = 'dropdown-submenu';
+    const exportToggle = document.createElement('button');
+    exportToggle.type = 'button';
+    exportToggle.className = 'dropdown-item';
+    exportToggle.setAttribute('aria-haspopup', 'true');
+    exportToggle.setAttribute('aria-expanded', 'false');
+    const exportIcon = document.createElement('i');
+    exportIcon.className = 'ti ti-share me-2';
+    exportIcon.setAttribute('aria-hidden', 'true');
+    const exportChevron = document.createElement('i');
+    exportChevron.className = 'ti ti-chevron-left';
+    exportChevron.setAttribute('aria-hidden', 'true');
+    exportToggle.append(exportIcon, document.createTextNode(t('Exporter')), exportChevron);
+    const exportMenu = document.createElement('ul');
+    exportMenu.className = 'dropdown-menu';
+    exportMenu.append(
+        menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || number, title: numberHint }),
+        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || number, title: numberHint }),
+        panelMenuButton(spec),
+        menuButton('video', 'ti-video', t('Créer une vidéo animée'), {
+            disabled: unavailable || !animates,
+            title: !animates && !unavailable
+                ? t('Possible pour des barres, une courbe ou une aire sur un axe de temps, hors écart.') : '',
+        }),
+    );
+    exportToggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const open = exportMenu.classList.toggle('show');
+        exportToggle.setAttribute('aria-expanded', String(open));
+    });
+    // Replié à la fermeture du menu parent : la prochaine ouverture repart
+    // propre (le DOM d'une carte inchangée survit à un réaffichage).
+    wrap.addEventListener('hidden.bs.dropdown', () => {
+        exportMenu.classList.remove('show');
+        exportToggle.setAttribute('aria-expanded', 'false');
+    });
+    exportItem.append(exportToggle, exportMenu);
     // Entrées groupées : édition | lecture | sorties | déplacement | suppression.
     menu.append(
         menuButton('edit', 'ti-pencil', t('Modifier')),
@@ -300,14 +344,7 @@ function cardMenu(spec, index, count) {
         menuButton('values', 'ti-table', t('Voir les valeurs'), { disabled: unavailable }),
         menuButton('explain', 'ti-info-circle', t('Comprendre ce chiffre'), { disabled: unavailable }),
         divider(),
-        menuButton('export', 'ti-download', t('Exporter en image (PNG)'), { disabled: unavailable || number, title: numberHint }),
-        menuButton('export-svg', 'ti-vector', t('Exporter en image vectorielle (SVG)'), { disabled: unavailable || number, title: numberHint }),
-        panelMenuButton(spec),
-        menuButton('video', 'ti-video', t('Créer une vidéo animée'), {
-            disabled: unavailable || !animates,
-            title: !animates && !unavailable
-                ? t('Possible pour des barres, une courbe ou une aire sur un axe de temps, hors écart.') : '',
-        }),
+        exportItem,
         divider(),
         menuButton('before', 'ti-arrow-left', t('Déplacer avant'), { disabled: index === 0 }),
         menuButton('after', 'ti-arrow-right', t('Déplacer après'), { disabled: index === count - 1 }),

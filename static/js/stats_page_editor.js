@@ -1,7 +1,7 @@
 // Page Statistiques : éditeur d'un graphique (phrase, options, aperçu).
 
 import { t } from './notifications.js';
-import { getBsModal } from './ui_bootstrap.js';
+import { getBsModal, hideBsModal } from './ui_bootstrap.js';
 import {
     allowedAligns, allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy,
     chartSources, goalApplies, hasSeveralSeries, MAP_CONTINENTS, mapFrameCountry, MAX_EXTRA_SOURCES, MAX_SERIES,
@@ -201,6 +201,8 @@ function syncEditorFilters({ rebuild = false } = {}) {
     const { spec } = state.editor.item;
     const own = spec.filters !== null;
     $('statsEdFilterMode').value = own ? 'own' : 'inherit';
+    // Avec des filtres propres, le tableau de bord n'y touche plus : dit.
+    $('statsEdFilterOwnHint').hidden = !own;
     const container = $('statsEdFiltersForm');
     if (rebuild) {
         destroyFilterForm(container);
@@ -302,8 +304,11 @@ export function syncEditorForm() {
     $('statsEdLabels').checked = spec.view.labels;
     $('statsEdSmooth').checked = spec.view.smooth;
     $('statsEdRecord').checked = spec.view.record;
-    // Objectif, projection : chiffre clé qui compte, courbe de cumul.
+    // Objectif, projection : chiffre clé qui compte, courbe de cumul. La
+    // section entière disparaît quand le graphique n'en a pas ; les lignes
+    // gardent leur propre masquage (relevé par les tests).
     const goalable = goalApplies(spec);
+    $('statsEdGoalSection').hidden = !goalable;
     $('statsEdGoalRow').hidden = !goalable;
     $('statsEdProjectionRow').hidden = !goalable;
     $('statsEdGoal').value = spec.goal ? String(spec.goal.value) : '';
@@ -547,8 +552,10 @@ export function openEditor({ mode, index = -1, item }) {
     $('statsEditorTitle').textContent = mode === 'new' ? t('Nouveau graphique') : t('Modifier le graphique');
     syncEditorForm();
     syncEditorFilters({ rebuild: true });
-    // Section des filtres ouverte d'office quand le graphique en a.
+    // Section des filtres ouverte d'office quand le graphique en a ;
+    // « Objectif » ouverte quand il en a un (ou une projection).
     $('statsEdFiltersSection').open = state.editor.item.spec.filters !== null;
+    $('statsEdGoalSection').open = Boolean(item.spec?.goal || item.spec?.view?.projection);
     const modal = getBsModal('statsEditorModal');
     modal?.show();
 }
@@ -559,8 +566,11 @@ export function saveEditor() {
     const { mode, index, item } = state.editor;
     const dashboard = activeDashboard();
     // Enregistrer n'est pas une perte : la fermeture ne demande rien.
+    // hideBsModal (pas hide() nu) : Bootstrap ignore hide() tant que le
+    // fondu d'ouverture n'est pas fini (_isTransitioning) — un « Enregistrer »
+    // très rapide laissait la modale ouverte.
     state.editor.discard = true;
-    getBsModal('statsEditorModal')?.hide();
+    hideBsModal('statsEditorModal');
     if (mode === 'new') {
         if (dashboard.items.length >= MAX_ITEMS) return;
         withUndo(t('Graphique ajouté.'), () => dashboard.items.push(item));

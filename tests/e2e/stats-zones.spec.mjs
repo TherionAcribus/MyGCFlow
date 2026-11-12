@@ -313,6 +313,8 @@ test('export SVG : attend la fin du chargement des contours', async ({ page, req
   const downloadPromise = page.waitForEvent('download');
   const started = Date.now();
   await page.locator('.stats-card').first().locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
+  // Les sorties sont groupées dans un sous-menu « Exporter » à ouvrir.
+  await page.locator('.stats-card').first().locator('.dropdown-submenu > .dropdown-item').click();
   await page.locator('.stats-card').first().locator('[data-action="export-svg"]').click();
   const download = await downloadPromise;
   const elapsed = Date.now() - started;

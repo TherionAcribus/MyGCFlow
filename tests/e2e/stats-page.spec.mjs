@@ -60,9 +60,17 @@ const snapshot = (page) => page.evaluate(() => window.getStatsPageSnapshot());
 const savedDoc = async (request) => (await (await request.get('/api/dashboards')).json()).document;
 const card = (page, id) => page.locator(`.stats-card[data-chart-id="${id}"]`);
 
+// Les quatre sorties vivent dans un sous-menu « Exporter » : leurs entrées
+// sont invisibles tant qu'il n'est pas ouvert.
+const EXPORT_SUBMENU_ACTIONS = ['export', 'export-svg', 'to-panel', 'video'];
+
 async function cardAction(page, id, action) {
-  await card(page, id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
-  await card(page, id).locator(`[data-action="${action}"]`).click();
+  const menu = card(page, id).locator('.stats-card-menu');
+  await menu.locator('[data-bs-toggle="dropdown"]').click();
+  if (EXPORT_SUBMENU_ACTIONS.includes(action)) {
+    await menu.locator('.dropdown-submenu > .dropdown-item').click();
+  }
+  await menu.locator(`[data-action="${action}"]`).click();
 }
 
 // ---------------------------------------------------------------------------
@@ -296,8 +304,10 @@ test('éditeur : la phrase se recale, l\'aperçu suit, l\'enregistrement remplac
   const editor = page.locator('#statsEditorModal');
   await expect(editor).toBeVisible();
 
-  // Jours de cache, au total : chiffre clé.
+  // Jours de cache, au total : chiffre clé — la section « Objectif » est
+  // là (un chiffre clé qui compte en a un), hors de « Options d'affichage ».
   await expect(page.locator('#statsEdTitle')).toHaveValue('Nombre de trouvailles');
+  await expect(page.locator('#statsEdGoalSection')).toBeVisible();
   await page.locator('#statsEdMeasure').selectOption('distinct:days');
   await expect(page.locator('#statsEdPreviewNumber .stats-number-value')).toHaveText('6');
   // Le titre de la question ne décrit plus le graphique : il redevient
@@ -310,9 +320,11 @@ test('éditeur : la phrase se recale, l\'aperçu suit, l\'enregistrement remplac
   await expect(page.locator('#statsEdGroupBy option[value="cache_type"]')).toBeDisabled();
   await expect(page.locator('#statsEdGroupBy')).toHaveValue('month');
 
-  // Par jour de la semaine, en barres.
+  // Par jour de la semaine, en barres — pas d'objectif possible pour des
+  // barres par catégories : la section disparaît entièrement.
   await page.locator('#statsEdMeasure').selectOption('count');
   await page.locator('#statsEdGroupBy').selectOption('weekday');
+  await expect(page.locator('#statsEdGoalSection')).toBeHidden();
   await expect(page.locator('#statsEdChart option[value="number"]')).toHaveCount(0);
   await expect(page.locator('#statsEdChart')).toHaveValue('bar');
   await expect(page.locator('#statsEdPreview canvas')).toHaveCount(1);
@@ -448,8 +460,16 @@ test('supprimer, déplacer, dupliquer un graphique', async ({ page, request }) =
 test('exporter un graphique en image', async ({ page }) => {
   await openStats(page);
   const target = (await snapshot(page)).cards[3];
+  const menu = card(page, target.id).locator('.stats-card-menu');
+  await menu.locator('[data-bs-toggle="dropdown"]').click();
+  // Les sorties sont groupées dans un sous-menu « Exporter » : invisibles
+  // tant qu'il n'est pas ouvert, cliquables ensuite.
+  await expect(menu.locator('[data-action="export"]')).toBeHidden();
+  await menu.locator('.dropdown-submenu > .dropdown-item').click();
+  const png = menu.locator('[data-action="export"]');
+  await expect(png).toBeVisible();
   const download = page.waitForEvent('download');
-  await cardAction(page, target.id, 'export');
+  await png.click();
   expect((await download).suggestedFilename()).toBe(`${target.title}.png`);
 });
 
@@ -605,7 +625,11 @@ test('filtres propres à un graphique : partent de ceux du tableau, ignorent les
   const target = (await snapshot(page)).cards[0];
   await cardAction(page, target.id, 'edit');
   await page.locator('#statsEdFiltersSection summary').click();
+  // En héritage, pas d'avertissement ; en filtres propres, il dit que le
+  // tableau de bord n'y touchera plus.
+  await expect(page.locator('#statsEdFilterOwnHint')).toBeHidden();
   await page.locator('#statsEdFilterMode').selectOption('own');
+  await expect(page.locator('#statsEdFilterOwnHint')).toBeVisible();
   await expect(page.locator('#statsEdFilter-cache_type')).toBeAttached();
   await pickFilter(page, 'statsEdFilter-cache_type', 'Multi-cache');
   await expect(page.locator('#statsEdPreviewNumber .stats-number-value')).toHaveText('2');
@@ -2118,10 +2142,13 @@ test('objectifs et projections : prochain cap, année à ce rythme, courbe prolo
   expect(drawn.dashed).toBe('dashed');
   expect(Math.round(drawn.last)).toBe(199);
 
-  // Un objectif posé dans l'éditeur : la ligne apparaît.
+  // Un objectif posé dans l'éditeur : la ligne apparaît. « Objectif » est
+  // sa propre section (visible pour une courbe de cumul), pas enfouie dans
+  // « Options d'affichage » — et ouverte d'office, la projection est posée.
   await cardAction(page, curve.id, 'edit');
   await expect(page.locator('#statsEditorModal')).toBeVisible();
-  await page.locator('#statsEdOptions').evaluate((el) => { el.open = true; });
+  await expect(page.locator('#statsEdGoalSection')).toBeVisible();
+  await expect(page.locator('#statsEdGoalSection')).toHaveJSProperty('open', true);
   await expect(page.locator('#statsEdGoalRow')).toBeVisible();
   await expect(page.locator('#statsEdProjection')).toBeChecked();
   await page.locator('#statsEdGoal').fill('300');

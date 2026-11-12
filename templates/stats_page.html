@@ -201,16 +201,6 @@
                                     </div>
                                     <label for="statsEdPeriod" class="stats-phrase-word">{{ _("sur") }}</label>
                                     <select id="statsEdPeriod" class="form-select"></select>
-                                    <!-- « Depuis le début » : visible quand le graphique a ses
-                                         propres périodes à fin propre ; vaut pour toutes. -->
-                                    <div id="statsEdUpToRow" class="stats-compare-list" hidden>
-                                        <span aria-hidden="true"></span>
-                                        <div class="form-check form-switch stats-upto"
-                                             title="{{ _("Compter aussi tout ce qui précède : du début jusqu'à la fin de la période choisie.") }}">
-                                            <input class="form-check-input" type="checkbox" role="switch" id="statsEdUpTo">
-                                            <label class="form-check-label" for="statsEdUpTo">{{ _("Depuis le début") }}</label>
-                                        </div>
-                                    </div>
                                     <!-- « comparé à … » : lignes posées par stats_page_editor.js
                                          (display: contents — elles rejoignent la grille). -->
                                     <div id="statsEdCompareList" class="stats-compare-list"></div>
@@ -218,8 +208,37 @@
                                     <button type="button" id="btnStatsEdAddCompare" class="btn btn-sm btn-ghost-primary stats-add-compare">
                                         <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Comparer à une autre période") }}
                                     </button>
+                                    <!-- « Depuis le début » : en fin de bloc des périodes — sa place
+                                         dit sa portée, elle vaut pour chacune (visible quand le
+                                         graphique a ses propres périodes à fin propre). -->
+                                    <div id="statsEdUpToRow" class="stats-compare-list" hidden>
+                                        <span aria-hidden="true"></span>
+                                        <div class="form-check form-switch stats-upto"
+                                             title="{{ _("Compter aussi tout ce qui précède : du début jusqu'à la fin de chaque période du graphique.") }}">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="statsEdUpTo">
+                                            <label class="form-check-label" for="statsEdUpTo">{{ _("Depuis le début") }}</label>
+                                        </div>
+                                    </div>
                                     <label for="statsEdChart" class="stats-phrase-word">{{ _("en") }}</label>
                                     <select id="statsEdChart" class="form-select"></select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="statsEdTitle" class="form-label">{{ _("Titre") }}</label>
+                                    <input type="text" id="statsEdTitle" class="form-control" maxlength="80">
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-7">
+                                        <label for="statsEdSize" class="form-label">{{ _("Taille") }}</label>
+                                        <select id="statsEdSize" class="form-select"></select>
+                                    </div>
+                                    <div class="col-5" id="statsEdHeightCol">
+                                        <label for="statsEdHeight" class="form-label">{{ _("Hauteur") }}</label>
+                                        <select id="statsEdHeight" class="form-select">
+                                            <option value="M">{{ _("Normale") }}</option>
+                                            <option value="L">{{ _("Grande") }}</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <!-- Comparaison : visible dès que le graphique compare plusieurs périodes
@@ -252,89 +271,93 @@
                                             <option value="inherit">{{ _("Selon les filtres du tableau de bord") }}</option>
                                             <option value="own">{{ _("Avec des filtres propres à ce graphique") }}</option>
                                         </select>
+                                        <div class="form-hint" id="statsEdFilterOwnHint" hidden>{{ _("Ces filtres ne suivront plus les filtres du tableau de bord.") }}</div>
                                     </div>
                                     <div id="statsEdFiltersForm" class="stats-filters-form"></div>
                                 </details>
 
-                                <div class="mb-3">
-                                    <label for="statsEdTitle" class="form-label">{{ _("Titre") }}</label>
-                                    <input type="text" id="statsEdTitle" class="form-control" maxlength="80">
-                                </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-7">
-                                        <label for="statsEdSize" class="form-label">{{ _("Taille") }}</label>
-                                        <select id="statsEdSize" class="form-select"></select>
-                                    </div>
-                                    <div class="col-5" id="statsEdHeightCol">
-                                        <label for="statsEdHeight" class="form-label">{{ _("Hauteur") }}</label>
-                                        <select id="statsEdHeight" class="form-select">
-                                            <option value="M">{{ _("Normale") }}</option>
-                                            <option value="L">{{ _("Grande") }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <details id="statsEdOptions" class="stats-ed-options">
                                     <summary>{{ _("Options d'affichage") }}</summary>
-                                    <div class="mb-3" id="statsEdNormalizeRow">
-                                        <label for="statsEdNormalize" class="form-label">{{ _("Valeurs") }}</label>
-                                        <select id="statsEdNormalize" class="form-select"></select>
-                                        <div class="form-hint">{{ _("En pourcentage, des périodes de tailles différentes se comparent mieux.") }}</div>
+                                    <div class="stats-ed-group">
+                                        <div class="stats-ed-group-title">{{ _("Données") }}</div>
+                                        <div class="mb-3" id="statsEdNormalizeRow">
+                                            <label for="statsEdNormalize" class="form-label">{{ _("Valeurs") }}</label>
+                                            <select id="statsEdNormalize" class="form-select"></select>
+                                            <div class="form-hint">{{ _("En pourcentage, des périodes de tailles différentes se comparent mieux.") }}</div>
+                                        </div>
+                                        <div class="mb-3" id="statsEdTopRow">
+                                            <label for="statsEdTop" class="form-label">{{ _("Nombre de valeurs affichées") }}</label>
+                                            <input type="number" id="statsEdTop" class="form-control" min="3" max="50" step="1">
+                                            <div class="form-hint">{{ _("Les suivantes sont regroupées dans « Autres ».") }}</div>
+                                        </div>
+                                        <div class="mb-3" id="statsEdSortRow">
+                                            <label for="statsEdSort" class="form-label">{{ _("Ordre") }}</label>
+                                            <select id="statsEdSort" class="form-select">
+                                                <option value="natural">{{ _("Par défaut") }}</option>
+                                                <option value="value">{{ _("Du plus grand au plus petit") }}</option>
+                                                <option value="label">{{ _("Alphabétique") }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-check mb-2" id="statsEdStackRow">
+                                            <input type="checkbox" id="statsEdStack" class="form-check-input">
+                                            <label for="statsEdStack" class="form-check-label">{{ _("Empiler les séries") }}</label>
+                                        </div>
+                                        <!-- Carte par zones : cadrage, échelle et nuances de la légende. -->
+                                        <div class="mb-3" id="statsEdMapFrameRow" hidden>
+                                            <label for="statsEdMapFrame" class="form-label">{{ _("Cadrage de la carte") }}</label>
+                                            <select id="statsEdMapFrame" class="form-select"></select>
+                                            <div class="form-hint">{{ _("Un continent ou un pays ne garde que ses trouvailles : les autres sont comptées sous la carte (« Hors du cadre »).") }}</div>
+                                        </div>
+                                        <div class="mb-3" id="statsEdMapScaleRow" hidden>
+                                            <label for="statsEdMapScale" class="form-label">{{ _("Échelle des couleurs") }}</label>
+                                            <select id="statsEdMapScale" class="form-select">
+                                                <option value="quantile">{{ _("Équilibrée (autant de zones par couleur)") }}</option>
+                                                <option value="linear">{{ _("Régulière") }}</option>
+                                                <option value="log">{{ _("Logarithmique (grands écarts)") }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3" id="statsEdMapClassesRow" hidden>
+                                            <label for="statsEdMapClasses" class="form-label">{{ _("Nuances") }}</label>
+                                            <input type="number" id="statsEdMapClasses" class="form-control" min="3" max="7" step="1">
+                                        </div>
                                     </div>
-                                    <!-- Carte par zones : cadrage, échelle et nuances de la légende. -->
-                                    <div class="mb-3" id="statsEdMapFrameRow" hidden>
-                                        <label for="statsEdMapFrame" class="form-label">{{ _("Cadrage de la carte") }}</label>
-                                        <select id="statsEdMapFrame" class="form-select"></select>
-                                        <div class="form-hint">{{ _("Un continent ou un pays ne garde que ses trouvailles : les autres sont comptées sous la carte (« Hors du cadre »).") }}</div>
+                                    <div class="stats-ed-group">
+                                        <div class="stats-ed-group-title">{{ _("Apparence") }}</div>
+                                        <div class="mb-3" id="statsEdOrientationRow">
+                                            <label for="statsEdOrientation" class="form-label">{{ _("Sens des barres") }}</label>
+                                            <select id="statsEdOrientation" class="form-select">
+                                                <option value="vertical">{{ _("Verticales") }}</option>
+                                                <option value="horizontal">{{ _("Horizontales") }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3" id="statsEdPaletteRow">
+                                            <label for="statsEdPalette" class="form-label">{{ _("Couleurs") }}</label>
+                                            <select id="statsEdPalette" class="form-select"></select>
+                                        </div>
+                                        <div class="form-check mb-2" id="statsEdLabelsRow">
+                                            <input type="checkbox" id="statsEdLabels" class="form-check-input">
+                                            <label for="statsEdLabels" class="form-check-label">{{ _("Afficher les valeurs") }}</label>
+                                        </div>
+                                        <div class="form-check mb-2" id="statsEdSmoothRow">
+                                            <input type="checkbox" id="statsEdSmooth" class="form-check-input">
+                                            <label for="statsEdSmooth" class="form-check-label">{{ _("Courbe lissée") }}</label>
+                                        </div>
+                                        <div class="form-check mb-2" id="statsEdLogRow">
+                                            <input type="checkbox" id="statsEdLog" class="form-check-input">
+                                            <label for="statsEdLog" class="form-check-label">{{ _("Échelle logarithmique") }}</label>
+                                        </div>
+                                        <div class="form-check mb-2" id="statsEdRecordRow">
+                                            <input type="checkbox" id="statsEdRecord" class="form-check-input">
+                                            <label for="statsEdRecord" class="form-check-label">{{ _("Mettre le record en avant") }}</label>
+                                        </div>
                                     </div>
-                                    <div class="mb-3" id="statsEdMapScaleRow" hidden>
-                                        <label for="statsEdMapScale" class="form-label">{{ _("Échelle des couleurs") }}</label>
-                                        <select id="statsEdMapScale" class="form-select">
-                                            <option value="quantile">{{ _("Équilibrée (autant de zones par couleur)") }}</option>
-                                            <option value="linear">{{ _("Régulière") }}</option>
-                                            <option value="log">{{ _("Logarithmique (grands écarts)") }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3" id="statsEdMapClassesRow" hidden>
-                                        <label for="statsEdMapClasses" class="form-label">{{ _("Nuances") }}</label>
-                                        <input type="number" id="statsEdMapClasses" class="form-control" min="3" max="7" step="1">
-                                    </div>
-                                    <div class="mb-3" id="statsEdOrientationRow">
-                                        <label for="statsEdOrientation" class="form-label">{{ _("Sens des barres") }}</label>
-                                        <select id="statsEdOrientation" class="form-select">
-                                            <option value="vertical">{{ _("Verticales") }}</option>
-                                            <option value="horizontal">{{ _("Horizontales") }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3" id="statsEdTopRow">
-                                        <label for="statsEdTop" class="form-label">{{ _("Nombre de valeurs affichées") }}</label>
-                                        <input type="number" id="statsEdTop" class="form-control" min="3" max="50" step="1">
-                                        <div class="form-hint">{{ _("Les suivantes sont regroupées dans « Autres ».") }}</div>
-                                    </div>
-                                    <div class="mb-3" id="statsEdSortRow">
-                                        <label for="statsEdSort" class="form-label">{{ _("Ordre") }}</label>
-                                        <select id="statsEdSort" class="form-select">
-                                            <option value="natural">{{ _("Naturel") }}</option>
-                                            <option value="value">{{ _("Du plus grand au plus petit") }}</option>
-                                            <option value="label">{{ _("Alphabétique") }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3" id="statsEdPaletteRow">
-                                        <label for="statsEdPalette" class="form-label">{{ _("Couleurs") }}</label>
-                                        <select id="statsEdPalette" class="form-select"></select>
-                                    </div>
-                                    <div class="form-check mb-2" id="statsEdStackRow">
-                                        <input type="checkbox" id="statsEdStack" class="form-check-input">
-                                        <label for="statsEdStack" class="form-check-label">{{ _("Empiler les séries") }}</label>
-                                    </div>
-                                    <div class="form-check mb-2" id="statsEdLabelsRow">
-                                        <input type="checkbox" id="statsEdLabels" class="form-check-input">
-                                        <label for="statsEdLabels" class="form-check-label">{{ _("Afficher les valeurs") }}</label>
-                                    </div>
-                                    <div class="form-check mb-2" id="statsEdSmoothRow">
-                                        <input type="checkbox" id="statsEdSmooth" class="form-check-input">
-                                        <label for="statsEdSmooth" class="form-check-label">{{ _("Courbe lissée") }}</label>
-                                    </div>
+                                </details>
+
+                                <!-- Objectif et projection : leur propre section, découvrable sans
+                                     ouvrir « Options d'affichage » ; masquée quand le graphique
+                                     n'a pas d'objectif possible (goalApplies). -->
+                                <details id="statsEdGoalSection" class="stats-ed-options">
+                                    <summary>{{ _("Objectif") }}</summary>
                                     <div class="mb-2" id="statsEdGoalRow">
                                         <label for="statsEdGoal" class="form-label">{{ _("Objectif") }}</label>
                                         <input type="number" id="statsEdGoal" class="form-control form-control-sm stats-ed-goal" min="1" max="10000000" step="1" inputmode="numeric" placeholder="{{ _("Aucun") }}">
@@ -342,14 +365,6 @@
                                     <div class="form-check mb-2" id="statsEdProjectionRow">
                                         <input type="checkbox" id="statsEdProjection" class="form-check-input">
                                         <label for="statsEdProjection" class="form-check-label">{{ _("Prolonger à ce rythme") }}</label>
-                                    </div>
-                                    <div class="form-check mb-2" id="statsEdRecordRow">
-                                        <input type="checkbox" id="statsEdRecord" class="form-check-input">
-                                        <label for="statsEdRecord" class="form-check-label">{{ _("Mettre le record en avant") }}</label>
-                                    </div>
-                                    <div class="form-check mb-2" id="statsEdLogRow">
-                                        <input type="checkbox" id="statsEdLog" class="form-check-input">
-                                        <label for="statsEdLog" class="form-check-label">{{ _("Échelle logarithmique") }}</label>
                                     </div>
                                 </details>
                             </div>
