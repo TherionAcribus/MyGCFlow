@@ -39,6 +39,12 @@ export function geoFailed() {
     return failed;
 }
 
+// Un échec géo est mémorisé (catalogue ou un fichier) : porte bon marché
+// pour les cartes, qui ne relancent zoneMapFor que dans ce cas.
+export function geoFilesFailed() {
+    return failed || [...files.values()].some((e) => e.error);
+}
+
 export function loadIndex() {
     indexPromise ??= fetch(GEO_BASE + 'index.json')
         .then((resp) => {

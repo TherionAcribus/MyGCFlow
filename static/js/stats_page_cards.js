@@ -22,7 +22,9 @@ import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
 import { confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
-import { fallbackCountries, frameCountriesOf, setGeoListener, zoneAreas, zoneMapFor } from './stats_page_geo.js';
+import {
+    fallbackCountries, frameCountriesOf, geoFilesFailed, retryZoneGeo, setGeoListener, zoneAreas, zoneMapFor,
+} from './stats_page_geo.js';
 
 // Cartes reconstruites ou réutilisées : une carte dont le contenu (item +
 // état de ses sources) n'a pas changé garde son DOM et son instance ECharts —
@@ -197,6 +199,30 @@ export function unavailableBlock(failed) {
     refresh.className = 'ti ti-refresh me-1';
     refresh.setAttribute('aria-hidden', 'true');
     retry.prepend(refresh);
+    box.append(icon, text, retry);
+    return box;
+}
+
+// Contours des zones en échec : bloc explicite avec relance (la classe
+// stats-geo-retry est volontairement distincte de stats-card-retry, qui est
+// gérée par onCardAction comme relance des sources — pas de la géométrie).
+export function geoErrorBlock() {
+    const box = document.createElement('div');
+    box.className = 'stats-card-unavailable';
+    const icon = document.createElement('i');
+    icon.className = 'ti ti-cloud-off';
+    icon.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('p');
+    text.textContent = t('Contours des zones indisponibles.');
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn btn-sm btn-outline-secondary stats-geo-retry';
+    retry.textContent = t('Réessayer');
+    const refresh = document.createElement('i');
+    refresh.className = 'ti ti-refresh me-1';
+    refresh.setAttribute('aria-hidden', 'true');
+    retry.prepend(refresh);
+    retry.addEventListener('click', () => retryZoneGeo());
     box.append(icon, text, retry);
     return box;
 }
@@ -548,6 +574,15 @@ function renderCard(item, card, dashboard, { force = false } = {}) {
     host.classList.remove('is-pending');
     state.deferred.delete(spec.id);
     state.lazyObserver?.unobserve(host);
+    // Contours en échec : bloc explicite avec relance plutôt que le
+    // placeholder ECharts sans issue. geoFilesFailed() évite un second
+    // zoneMapFor quand rien n'a échoué.
+    if (spec.view.chart === 'map' && geoFilesFailed() && zoneMapFor(result, spec).error) {
+        releaseCard(spec.id);
+        note.hidden = true;
+        body.replaceChildren(geoErrorBlock());
+        return;
+    }
     const drawStart = performance.now();
     state.charts.set(spec.id, renderChartInto(host, result, spec));
     performance.measure('stats:draw', { start: drawStart, detail: { id: spec.id, chart: spec.view.chart } });

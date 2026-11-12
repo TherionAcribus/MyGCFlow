@@ -272,6 +272,28 @@ test('carte vide : région sans aucune ligne, cadrage automatique → « Aucune 
   expect(errors).toEqual([]);
 });
 
+test('contours en échec : « Réessayer » recharge la carte', async ({ page, request }) => {
+  const errors = await openStats(page);
+  // Le catalogue des contours en erreur : zoneMapFor répond { error: true }
+  // et la carte affiche le bloc avec relance (la route survit au
+  // page.reload() de seed).
+  await page.route('**/static/geo/index.json', (route) => route.fulfill({ status: 500, body: 'indisponible' }));
+  await seed(page, request, [{
+    groupBy: 'zone_region', measure: { op: 'count' }, view: { chart: 'map' },
+  }]);
+  const card = page.locator('.stats-card .stats-card-unavailable');
+  await expect(card).toContainText('Contours des zones indisponibles.', { timeout: 15_000 });
+  const retry = page.locator('.stats-card .stats-geo-retry');
+  await expect(retry).toBeVisible();
+  await page.unroute('**/static/geo/index.json');
+  await retry.click();
+  // retryZoneGeo efface l'échec mémorisé : l'écouteur geo incrémente
+  // geoRev et relance renderAllCharts — la carte se dessine.
+  await mapCard(page);
+  await expect(page.locator('.stats-card .stats-card-unavailable')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : menu « Cadrage de la carte » (continents, pays par leur nom)', async ({ page }) => {
   const errors = await openStats(page);
   await page.locator('#btnStatsAddChart').click();

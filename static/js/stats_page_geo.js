@@ -19,7 +19,7 @@ import { cellLabel, cellRing } from './zone_grid.mjs';
 import { mapFrameContinent, mapFrameCountry } from './chart_spec.mjs';
 
 export {
-    fallbackCountries, zoneAreas, zoneName,
+    fallbackCountries, geoFilesFailed, retryZoneGeo, zoneAreas, zoneName,
 } from './zone_geo.js';
 import { zoneBounds as geoZoneBounds } from './zone_geo.js';
 
