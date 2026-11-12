@@ -112,7 +112,11 @@ export async function initEvolutionPage() {
         const mode = window.userSettings?.evolution_undated_archives;
         undatedSel.value = ['hide', 'keep', 'expire'].includes(mode) ? mode : 'hide';
     }
-    const preferred = Number(window.userSettings?.evolution_dataset_id) || null;
+    // Lien d'entrée « ?dataset=<id> » (zone d'une carte Statistiques) : ce
+    // jeu plutôt que le dernier mémorisé — loadDataset le mémorise ensuite
+    // comme un choix manuel. Lu avant applyEntryLink qui purge l'adresse.
+    const wanted = Number(new URLSearchParams(window.location.search).get('dataset')) || null;
+    const preferred = wanted || Number(window.userSettings?.evolution_dataset_id) || null;
     // Les préférences arrivent après l'évaluation du module : le modèle de la
     // ligne d'infos est (re)lu ici, à coup sûr, puis reflété dans le champ.
     infosTemplate = normalizeInfosTemplate(window.userSettings?.evolution_infos_template);

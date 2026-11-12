@@ -895,6 +895,47 @@ test('un jeu supprimé (404) dit « n\'existe plus », sans bloc de relance', as
   }
 });
 
+test('carte par zones Évolution : « Voir sur la carte » ouvre le jeu du graphique', async ({ page, request }) => {
+  await deleteAllDatasets(request);
+  const datasetId = await createDataset(request, 'Jeu zones');
+  const otherId = await createDataset(request, 'Autre jeu');
+  try {
+    // Le dernier jeu mémorisé est l'AUTRE : sans le paramètre « dataset »,
+    // la page Évolution ouvrirait celui-là.
+    expect((await request.put('/api/settings', { data: { evolution_dataset_id: otherId } })).ok()).toBeTruthy();
+    const doc = { v: 1, active: 'e1', dashboards: [{ id: 'e1', name: 'Zone', kind: 'evolution',
+      dataset: datasetId, period: { kind: 'all' }, items: [
+        { size: 'XL', spec: { id: 'c0ff02', source: `evolution:${datasetId}`,
+            measure: { op: 'active' }, groupBy: 'zone_subregion',
+            periods: [{ kind: 'all' }], view: { chart: 'map' } } }] }] };
+    expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+    const errors = await openStats(page);
+    // Les contours arrivent après le premier rendu : attendre le dessin.
+    await expect.poll(async () => (await snapshot(page)).cards[0]?.zones?.drawn ?? 0,
+      { timeout: 15_000 }).toBeGreaterThan(0);
+    const snap = await snapshot(page);
+
+    await page.evaluate((id) => {
+      const host = document.querySelector(`.stats-card[data-chart-id="${id}"] .stats-chart`);
+      window.echarts.getInstanceByDom(host).trigger('click', { componentType: 'series', seriesType: 'map', name: 'FR-29', seriesIndex: 0 });
+    }, snap.cards[0].id);
+    const modal = page.locator('.gcm-confirm-modal');
+    await expect(modal).toContainText('Finistère');
+    await modal.locator('[data-gcm-role="confirm"]').click();
+    await page.waitForURL(new RegExp(`/evolution\\?dataset=${datasetId}&`));
+    await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+    // Le bon jeu est ouvert (et devient le mémorisé), l'aperçu est en pause.
+    await expect(page.locator('#selectEvolutionDataset')).toHaveValue(String(datasetId));
+    await expect.poll(() => page.evaluate(() => window.mygcflowEntryLink?.applied ?? null), { timeout: 30_000 }).toBe(true);
+    expect(await page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('paused');
+    expect(new URL(page.url()).search).toBe('');
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { evolution_dataset_id: null } });
+    await deleteAllDatasets(request);
+  }
+});
+
 test('trouvailles en échec au démarrage : erreur avec relance, pas une base vide', async ({ page }) => {
   // Avant : l'échec des trouvailles était fatal à la page, et tout vide
   // affichait « importer ses trouvailles ». Maintenant : écran d'erreur.

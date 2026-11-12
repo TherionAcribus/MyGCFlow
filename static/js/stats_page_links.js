@@ -5,7 +5,7 @@ import { showActionToast, showConfirmation, showError, showToast, t } from './no
 import { getBsModal } from './ui_bootstrap.js';
 import { SOURCE_KIND_VALUES } from './chart_sources.mjs';
 import { ELAPSED_UNITS, OTHERS_KEY, UNKNOWN_KEY, timeKeyBounds } from './chart_query.mjs';
-import { FILTER_FIELDS } from './chart_spec.mjs';
+import { evolutionDatasetOf, FILTER_FIELDS } from './chart_spec.mjs';
 import { activeFilterCount } from './chart_filters.mjs';
 import { clickTarget } from './chart_echarts.mjs';
 import { discoveryModeFor, mapSelectionFor } from './chart_map_link.mjs';
@@ -286,8 +286,13 @@ export function zoneLinkUrl(entry, target) {
     const series = result.series[target.seriesIndex];
     const id = result.keys[target.keyIndex];
     if (!series || !id || !Number.isFinite(series.day)) return null;
-    const page = spec.source.startsWith('evolution:') ? '/evolution' : '/';
-    const params = new URLSearchParams({ at: isoOfDay(series.day) });
+    // Source Évolution : « dataset » dit à la page quel jeu ouvrir — le
+    // sien, pas le dernier mémorisé (lu par initEvolutionPage).
+    const datasetId = evolutionDatasetOf(spec.source);
+    const page = datasetId ? '/evolution' : '/';
+    const params = new URLSearchParams();
+    if (datasetId) params.set('dataset', String(datasetId));
+    params.set('at', isoOfDay(series.day));
     const box = zoneBounds(id);
     if (box && box.every(Number.isFinite)) params.set('bbox', box.map((v) => v.toFixed(4)).join(','));
     return page + '?' + params.toString();

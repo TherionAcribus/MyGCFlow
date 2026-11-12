@@ -330,7 +330,10 @@ sous-régions et régions de ces pays.
 
 Un clic sur une zone (`clickTarget`, puis `confirmZoneLink` dans
 stats_page_links.js) ouvre `/?at=AAAA-MM-JJ&bbox=o,s,e,n`, ou
-`/evolution?…` pour une source Évolution. Côté carte, `init.js` ›
+`/evolution?dataset=<id>&at=…&bbox=…` pour une source Évolution — le
+paramètre `dataset` fait ouvrir le jeu du graphique (et non le dernier
+mémorisé) ; `initEvolutionPage` le lit avant `applyEntryLink`, qui purge
+les paramètres. Côté carte, `init.js` ›
 `applyEntryLink` tente `startPausedPreview` toutes les 250 ms (les données
 arrivent après `mygcflowReady`, 20 s au plus), puis `seekAnimationToDate`
 et `fitMapView`. Les paramètres quittent l'adresse aussitôt. Relevé :
