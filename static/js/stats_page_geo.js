@@ -7,7 +7,9 @@
 //
 // Rien ne bloque : tant que les contours manquent, zoneMapFor répond
 // { loading: true } et la carte affiche « Chargement… » ; à l'arrivée,
-// l'écouteur posé par setGeoListener redessine.
+// l'écouteur posé par setGeoListener redessine. Sans aucune zone à cadrer
+// (sélection vide en cadrage automatique), il répond { empty: true } et la
+// carte affiche « Aucune donnée ».
 
 import {
     addGeoListener, featureBBox, geoFailed, geoIndex, levelNoun, loadFile, loadIndex, requiredFiles, zoneName, zoneProps,
@@ -263,7 +265,7 @@ function withMargin(box) {
 }
 
 // Carte prête pour un résultat ({ name, bounds, nameOf, levelNoun }), ou
-// { loading: true } / { error: true }.
+// { loading: true } / { error: true } / { empty: true }.
 export function zoneMapFor(result, spec) {
     const echarts = window.echarts;
     const zones = result?.zones;
@@ -283,8 +285,9 @@ export function zoneMapFor(result, spec) {
     // entier même sans donnée).
     const drawn = [...new Set([...countries, ...(frameCountry ? [frameCountry] : [])])].sort();
     if (level !== 'country' && !drawn.length && !fixedBox) {
-        // Aucune ligne rattachée : rien à cadrer, carte vide du monde.
-        return composeEmpty(echarts, level);
+        // Aucune ligne rattachée : rien à cadrer — état vide, pas une erreur
+        // de contours (la grille répond { empty: true } dans le même cas).
+        return { empty: true };
     }
     // Fond (monde, continent, pays) : les pays voisins, sans couleur.
     const framed = Boolean(fixedBox || frameCountry);

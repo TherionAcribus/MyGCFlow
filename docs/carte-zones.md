@@ -230,7 +230,9 @@ sous-régions et régions de ces pays.
 - **Chargement à la demande** : `index.json`, puis les fichiers des pays
   présents (`result.zones.countries`). Tant qu'il manque quelque chose,
   `zoneMapFor` répond `{ loading: true }` et la carte affiche « Chargement de
-  la carte… ».
+  la carte… ». Sans zone à cadrer en cadrage automatique (région ou
+  sous-région sans donnée), `zoneMapFor` répond `{ empty: true }` et la
+  carte affiche « Aucune donnée » — distinct d'une erreur de contours.
 - **À l'arrivée**, `setGeoListener` incrémente `state.geoRev`. Celui-ci
   entre dans la clé du cache de résultats des cartes et dans le test
   « déjà dessiné ». Cartes, aperçu de l'éditeur et aperçus de la galerie

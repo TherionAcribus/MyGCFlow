@@ -247,6 +247,31 @@ test('cadrage : un pays, un continent, le monde ; trouvailles hors du cadre', as
   expect(errors).toEqual([]);
 });
 
+test('carte vide : région sans aucune ligne, cadrage automatique → « Aucune donnée »', async ({ page, request }) => {
+  const errors = await openStats(page);
+  // Période future : aucune ligne rattachée, rien à cadrer — état vide,
+  // pas une erreur de contours.
+  await seed(page, request, [{
+    groupBy: 'zone_region', measure: { op: 'count' },
+    periods: [{ kind: 'range', from: '2030-01-01', to: '2030-12-31' }],
+    view: { chart: 'map' },
+  }]);
+  // Placeholder : titre centré ; une vraie carte a un titre par vignette.
+  await expect.poll(async () => page.evaluate(() => {
+    const host = document.querySelector('.stats-card .stats-chart');
+    const chart = window.echarts.getInstanceByDom(host);
+    const title = chart?.getOption()?.title;
+    const texts = (Array.isArray(title) ? title : [title]).map((x) => x?.text).filter(Boolean);
+    return texts.length ? texts.join(' | ') : null;
+  }), { timeout: 15_000 }).toBe('Aucune donnée');
+  const card = (await snapshot(page)).cards[0];
+  expect(card.zones.countries).toEqual([]);
+  expect(card.zones.drawn).toBe(0);
+  expect(card.zones.map).toBeNull();
+  await expect(page.locator('.stats-card').first().locator('.stats-card-note')).toContainText('Aucune donnée sur cette période.');
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : menu « Cadrage de la carte » (continents, pays par leur nom)', async ({ page }) => {
   const errors = await openStats(page);
   await page.locator('#btnStatsAddChart').click();

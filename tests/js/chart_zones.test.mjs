@@ -239,6 +239,9 @@ test('options ECharts : vignettes, légende, contours des zones changées', () =
     assert.equal(loading.series.length, 0);
     assert.match(loading.title.text, /Chargement/);
     assert.match(buildChartOption(result, s, { ...ctx, zoneMap: { error: true } }).title.text, /indisponibles/);
+    const empty = buildChartOption(result, s, { ...ctx, zoneMap: { empty: true } });
+    assert.match(empty.title.text, /Aucune donnée/);
+    assert.equal(empty.series.length, 0);
 
     const option = buildChartOption(result, s, { ...ctx, zoneMap, width: 900 });
     assert.equal(option.geo.length, 3);
