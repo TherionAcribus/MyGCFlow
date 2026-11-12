@@ -22,6 +22,7 @@ import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
 import { confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { addGeoListener } from './zone_geo.js';
 import {
     fallbackCountries, frameCountriesOf, geoFilesFailed, retryZoneGeo, setGeoListener, zoneAreas, zoneMapFor,
 } from './stats_page_geo.js';
@@ -634,6 +635,42 @@ export function renderDeferred(onlyId = null) {
         const card = $('statsGrid').querySelector(cardSelector(id));
         const item = card && dashboard.items.find((i) => i.spec.id === id);
         if (item) renderCard(item, card, dashboard, { force: true });
+    }
+}
+
+// Export : une carte « Chargement de la carte… » ne doit pas partir dans
+// une image. On attend que plus aucune carte visée ne soit en chargement
+// (prête, vide ou en erreur), borné pour ne pas pendre sur une requête
+// bloquée — l'export se fait alors avec le placeholder.
+const GEO_EXPORT_TIMEOUT_MS = 15000;
+
+function mapZoneLoading(spec) {
+    const entry = state.results.get(spec.id);
+    return spec.view.chart === 'map' && entry?.result
+        && zoneMapFor(entry.result, spec).loading === true;
+}
+
+export async function whenZoneMapsReady(specs) {
+    const maps = specs.filter((s) => s?.view?.chart === 'map');
+    if (!maps.length) return;
+    const deadline = Date.now() + GEO_EXPORT_TIMEOUT_MS;
+    while (maps.some(mapZoneLoading)) {
+        const left = deadline - Date.now();
+        if (left <= 0) return;
+        await new Promise((resolve) => {
+            let settled = false;
+            let off;
+            let timer;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                off?.();
+                resolve();
+            };
+            off = addGeoListener(finish);
+            timer = setTimeout(finish, left);
+        });
     }
 }
 

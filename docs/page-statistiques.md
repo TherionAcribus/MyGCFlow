@@ -555,9 +555,12 @@ tel qu'il est affiché — même disposition, même thème clair ou sombre.
   aussi dans l'éditeur (`item.height` : `M` 300 px / `L` 460 px,
   `HEIGHT_PIXELS`, variable CSS `--stats-chart-height` ; le calendrier
   garde sa hauteur calculée).
-- **SVG** : `chartSvg(spec)` redessine le graphique hors écran avec le
-  moteur SVG d'ECharts (`renderer: 'svg'`, `renderToSVGString`), à la
-  taille de la carte, fond de la carte compris.
+- **SVG** : `chartSvg(spec)` (async) redessine le graphique hors écran
+  avec le moteur SVG d'ECharts (`renderer: 'svg'`, `renderToSVGString`),
+  à la taille de la carte, fond de la carte compris. PNG, SVG et image
+  du tableau attendent d'abord la fin du chargement des contours de
+  zones (`whenZoneMapsReady`, bornée à 15 s) : un export ne capture pas
+  le placeholder « Chargement de la carte… ».
 - **Partager un tableau** (`exportDashboard` / `importDashboard`,
   dashboard_model.mjs) : fichier `{ format: 'mygcflow-dashboard', v: 1,
   dashboard }` sans identifiants ; un tableau Évolution emporte le **nom**

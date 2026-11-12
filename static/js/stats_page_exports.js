@@ -9,7 +9,7 @@ import { axisLabels, buildChartOption, numberModel, seriesIdentity } from './cha
 import { paintDashboardImage } from './stats_image.js';
 import { effectiveQueryOptions } from './dashboard_model.mjs';
 import { download, fileSafe } from './stats_page_card_actions.js';
-import { cardNote, chartContext, renderAllCharts, renderDeferred } from './stats_page_cards.js';
+import { cardNote, chartContext, renderAllCharts, renderDeferred, whenZoneMapsReady } from './stats_page_cards.js';
 import {
     activeDashboard, chartTitle, dataNote, datasetName, filterValueLabel,
 } from './stats_page_dashboard.js';
@@ -201,8 +201,9 @@ function withOffscreenChart(result, spec, { renderer, width, height, ratio = 1, 
 
 // Image vectorielle : le même graphique redessiné hors écran par le moteur
 // SVG d'ECharts, à la taille de la carte, fond de la carte compris.
-export function chartSvg(spec) {
+export async function chartSvg(spec) {
     renderDeferred(spec.id);
+    await whenZoneMapsReady([spec]);
     const entry = state.results.get(spec.id);
     const chart = state.charts.get(spec.id);
     if (!entry || !chart) return null;
@@ -239,10 +240,12 @@ function dashboardImageHeader(dashboard) {
     return [first.join(' · '), filters.length ? t('Filtres') + ' : ' + filters.join(' · ') : ''];
 }
 
-async function dashboardImageBlob() {
+export async function dashboardImageBlob() {
     if (!state.ready || !activeDashboard().items.length) throw new Error('no dashboard');
     // Cartes encore différées : dessinées d'abord, la disposition est finale.
     renderDeferred();
+    // Et les contours de zones arrivés, pour ne pas figer « Chargement… ».
+    await whenZoneMapsReady(activeDashboard().items.map((item) => item.spec));
     const dashboard = activeDashboard();
     const tokens = state.tokens || readTokens();
     const root = getComputedStyle(document.documentElement);
@@ -297,22 +300,33 @@ export async function copyDashboardImage() {
     }
 }
 
-export function exportSvg(spec) {
-    const svg = chartSvg(spec);
-    if (svg) download(new Blob([svg], { type: 'image/svg+xml' }), fileSafe(chartTitle(spec)) + '.svg');
+export async function exportSvg(spec) {
+    try {
+        const svg = await chartSvg(spec);
+        if (svg) download(new Blob([svg], { type: 'image/svg+xml' }), fileSafe(chartTitle(spec)) + '.svg');
+    } catch (e) {
+        console.warn('[stats] Export SVG :', e?.message || e);
+        showError(t('Export échoué'));
+    }
 }
 
-export function exportPng(spec) {
-    renderDeferred(spec.id);
-    const chart = state.charts.get(spec.id);
-    if (!chart) return;
-    const url = chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: state.tokens.surface });
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileSafe(chartTitle(spec)) + '.png';
-    document.body.append(link);
-    link.click();
-    link.remove();
+export async function exportPng(spec) {
+    try {
+        renderDeferred(spec.id);
+        await whenZoneMapsReady([spec]);
+        const chart = state.charts.get(spec.id);
+        if (!chart) return;
+        const url = chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: state.tokens.surface });
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileSafe(chartTitle(spec)) + '.png';
+        document.body.append(link);
+        link.click();
+        link.remove();
+    } catch (e) {
+        console.warn('[stats] Export PNG :', e?.message || e);
+        showError(t('Export échoué'));
+    }
 }
 
 

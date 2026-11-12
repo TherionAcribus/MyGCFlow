@@ -11,6 +11,7 @@
 // Préférences globales partagées (AGENTS.md) : tableaux de bord effacés avant
 // chaque test et en sortie.
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -291,6 +292,34 @@ test('contours en échec : « Réessayer » recharge la carte', async ({ page, r
   // geoRev et relance renderAllCharts — la carte se dessine.
   await mapCard(page);
   await expect(page.locator('.stats-card .stats-card-unavailable')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('export SVG : attend la fin du chargement des contours', async ({ page, request }) => {
+  const errors = await openStats(page);
+  // Contours volontairement lents (~1,2 s par fichier) : l'export cliqué
+  // pendant « Chargement de la carte… » doit attendre leur arrivée — la
+  // route survit au page.reload() de seed.
+  await page.route('**/static/geo/**', async (route) => {
+    const response = await route.fetch();
+    await new Promise((r) => setTimeout(r, 1200));
+    await route.fulfill({ response });
+  });
+  await seed(page, request, [{
+    groupBy: 'zone_region', measure: { op: 'count' }, view: { chart: 'map' },
+  }]);
+  // Export pendant le chargement (sans attendre mapCard) : le téléchargement
+  // ne part qu'une fois les contours arrivés.
+  const downloadPromise = page.waitForEvent('download');
+  const started = Date.now();
+  await page.locator('.stats-card').first().locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
+  await page.locator('.stats-card').first().locator('[data-action="export-svg"]').click();
+  const download = await downloadPromise;
+  const elapsed = Date.now() - started;
+  const svg = fs.readFileSync(await download.path(), 'utf-8');
+  expect(svg).not.toContain('Chargement');
+  expect(svg).toContain('<path');
+  expect(elapsed).toBeGreaterThanOrEqual(900);
   expect(errors).toEqual([]);
 });
 
