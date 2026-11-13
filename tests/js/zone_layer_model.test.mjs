@@ -98,13 +98,17 @@ test('comparaison à une date : option, rampe divergente, libellés signés', ()
     assert.equal(colors[2], mixHex('#FFFFFF', '#1E6FD9', 0.4));
     const fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 0 });
     const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), signed: true }).map((e) => e.label);
-    assert.deepEqual(labels, ['< −2', '−2–0', '0–+3', '≥ +3']);
+    assert.deepEqual(labels, ['< −2', '−2–−1', '0–+2', '≥ +3']);
     // Échelle finale toute positive (cumul) : une première classe rouge
     // reçoit les pertes vues pendant l'animation, avant la référence.
     const gains = zoneScale([1, 1, 2], { classes: 5, signed: true });
     assert.equal(gains.breaks[0], 0);
     assert.equal(gains.classOf(-4), 0);
     assert.equal(compareClassColors(gains, '#1E6FD9')[0], '#C0392B');
+    // Part trouvée comparée : l'écart s'affiche en points, pas en « % ».
+    const shareDelta = legendEntries(zoneScale([-10, 5, 20], { classes: 3, signed: true }), o,
+        { formatNumber: (v) => fmt.format(v), percent: true, signed: true }).map((e) => e.label);
+    assert.deepEqual(shareDelta, ['< 0 pts', '0–+20 pts', '≥ +20 pts']);
 });
 
 test('zones seules : option booléenne, aller-retour thème', () => {

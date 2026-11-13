@@ -1035,7 +1035,8 @@ export function zonePopupAt(pixel) {
         } else {
             const k = density ? 1000 : 1;
             const signed = (d > 0 ? '+' : '−') + fmt.format(Math.abs(d * k));
-            if (o.measure === 'found_share') main = t('${n} %', { n: signed });
+            // Écart d'une part : ce sont des points de pourcentage.
+            if (o.measure === 'found_share') main = t('${n} points', { n: signed });
             else if (o.measure === 'distinct_types') {
                 main = density ? t('${n} types de caches / 1 000 km²', { n: signed }) : t('${n} types de caches', { n: signed });
             } else if (o.measure === 'dt_coverage') {
@@ -1149,6 +1150,13 @@ function labelsSnapshot() {
 function initZoneLayer() {
     if (!zoneLayerPage()) return;
     addGeoListener(() => { if (enabled()) refreshZoneLayer(); });
+    // Zoom du navigateur ou déplacement vers un écran d'une autre densité :
+    // la légende est redessinée au nouveau devicePixelRatio.
+    const watchDpr = () => {
+        window.matchMedia?.(`(resolution: ${window.devicePixelRatio}dppx)`)
+            ?.addEventListener('change', () => { legendKey = ''; syncLegend(); watchDpr(); }, { once: true });
+    };
+    watchDpr();
     refreshZoneLayer();
 }
 

@@ -137,11 +137,11 @@ test('comparaison à une date : écarts signés, zones inchangées sans couleur'
   // ni classe, donc pas de remplissage. L'échelle divergente ouvre par une
   // classe « perte » (coupure à 0), inutilisée à la fin.
   expect(state.values).toEqual({ 'FR-75': 1, 'FR-29': 2, 'FR-69': 1 });
-  expect(state.classes['FR-29']).toBe(3);
-  expect(state.classes['FR-75']).toBe(2);
+  expect(state.classes['FR-29']).toBe(2);
+  expect(state.classes['FR-75']).toBe(1);
   expect(state.classes['FR-44']).toBeUndefined();
   expect(state.legend.title).toContain('depuis le');
-  expect(state.legend.entries.map((e) => e.label)).toEqual(['< 0', '0–+1', '+1–+2', '≥ +2']);
+  expect(state.legend.entries.map((e) => e.label)).toEqual(['< 0', '0–+1', '≥ +2']);
   // Avant la date de référence : les écarts négatifs tombent dans la
   // première classe, celle des pertes (rouge), pas dans une classe de gain.
   await app(page, 'pkg.seekZonesToDate?.(new Date(2026, 0, 1));');

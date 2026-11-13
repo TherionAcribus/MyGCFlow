@@ -355,7 +355,12 @@ export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds =
         const pos = list.filter((v) => v >= 0);
         const negK = neg.length ? Math.min(k - 1, Math.max(1, Math.round((k * neg.length) / list.length))) : 1;
         const posK = Math.max(1, k - negK);
-        breaks = [...sideBreaks(kind, neg, negK).filter((b) => b < 0), 0, ...sideBreaks(kind, pos, posK).filter((b) => b > 0)];
+        // Comme la passe « clean » non divergente, les bornes d'un côté sont
+        // gardées au-dessus de son minimum : sans quoi une classe [0, min)
+        // vide de valeurs réelles apparaîtrait sous la coupure à 0.
+        const negB = sideBreaks(kind, neg, negK).filter((b) => b < 0 && b > (neg[0] ?? -Infinity));
+        const posB = sideBreaks(kind, pos, posK).filter((b) => b > 0 && b > (pos[0] ?? Infinity));
+        breaks = [...negB, 0, ...posB];
     } else if (kind === 'fixed') {
         breaks = [...thresholds].filter(Number.isFinite).sort((a, b) => a - b);
     } else if (list.length && min < max) {

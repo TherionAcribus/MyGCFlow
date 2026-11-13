@@ -216,14 +216,21 @@ export function legendEntries(scale, options, { formatNumber = (v) => String(v),
         const upper = c === last ? null : breaks[c];
         let label;
         if (percent || float || signed) {
-            const suffix = percent ? ' %' : '';
+            // Une part comparée s'écarte en points (« pts »), la part
+            // courante en « % » ; rien pour la densité (unité au titre).
+            const suffix = percent ? (signed ? ' pts' : ' %') : '';
             const n = signed ? signedNumber : formatNumber;
-            const a = n(lo);
-            const b = n(upper ?? max);
-            if (c === 0 && last === 0) label = `${a}${suffix}`;
+            // Écarts entiers : bornes non répétées, comme les classes non
+            // signées (« +3–+4 », « +5–+7 », « −2–−1 »).
+            const integer = signed && !percent && !float;
+            if (c === 0 && last === 0) label = `${n(lo)}${suffix}`;
             else if (c === 0) label = `< ${n(upper)}${suffix}`;
-            else if (upper === null) label = `≥ ${a}${suffix}`;
-            else label = `${a === b ? a : `${a}–${b}`}${suffix}`;
+            else if (upper === null) label = `≥ ${n(integer ? Math.ceil(lo) : lo)}${suffix}`;
+            else {
+                const a = n(integer ? Math.ceil(lo) : lo);
+                const b = integer ? n(Math.ceil(upper) - 1) : n(upper ?? max);
+                label = `${a === b ? a : `${a}–${b}`}${suffix}`;
+            }
         } else if (scale.mode === 'year') {
             const a = year(lo);
             const b = upper === null ? year(max) : year(upper) - 1;
