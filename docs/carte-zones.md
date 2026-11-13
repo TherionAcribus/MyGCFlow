@@ -428,7 +428,8 @@ rattachement.
   Comme le dynamisme caméra, les enregistrements sont exemptés
   (`pkg.isRecordingActive`) : la vidéo produite est identique quel que
   soit le poste.
-- `Exporter la carte en image` (bouton de la carte Apparence) :
+- `Exporter la carte en image` (bouton de la carte « Exporter » de
+  l'onglet — le PNG compose toute la carte, pas seulement les zones) :
   `exportMapImage()` de `mapgl.js` télécharge un PNG de la carte telle
   qu'affichée — canevas des couches visibles, légende des zones, panneaux
   et habillage composés comme pour la vidéo (`addZoneLegendToCanvas`,
@@ -448,12 +449,20 @@ rattachement.
   pour les réglages qui ne changent ni données ni échelle (couleur,
   opacité, contours, lueur, légende).
 - `zone_layer_ui.js` : onglet (réglages structurels → `refreshZoneLayer`,
-  apparence → `refreshZoneLayerAppearance`). L'onglet est en deux cartes :
-  « Données et mesure » (découpage, mesure, jeu Évolution, préréglages —
-  lots `ZONE_PRESETS` posés d'un coup —, échelle et nuances repliées dans
+  apparence → `refreshZoneLayerAppearance`). L'onglet est en deux cartes
+  de réglages : « Données et mesure » (découpage, mesure, jeu Évolution,
+  préréglages — boutons `#zonesPresets` posant les lots `ZONE_PRESETS`
+  d'un coup, le lot actif restant marqué tant que ses valeurs
+  correspondent aux options —, échelle et nuances repliées dans
   `#zonesAdvanced`) et « Apparence » (couleur, opacité, contours, lueur,
-  légende, bouton « Sauvegarder le thème » qui appelle
-  `profileManager.saveCurrentAsProfile`, comme dans l'onglet Style). Le
+  légende). Les deux `fieldset` sont désactivés quand la couche est
+  coupée — réglages visibles mais inertes. « Sauvegarder le thème » vit
+  sous les deux cartes (les réglages des deux font partie du thème, même
+  action `profileManager.saveCurrentAsProfile` que dans l'onglet Style),
+  et « Exporter » a sa carte. L'option « Départements, comtés… » du
+  découpage fin prend le vrai nom du niveau 2 (`index.json ›
+  by_country › subregion › label`) quand les pays présents partagent le
+  même (« Départements » pour la France seule). Le
   périmètre des données de la mesure choisie est rappelé sous « Couleur
   selon » (`#zonesScopeHint` : trouvailles filtrées vs jeu Évolution
   entier), la case « Par km² » (`#zonesPerKm2Row`) n'apparaît que pour les
@@ -536,7 +545,9 @@ trouvée). `inspectZoneAt` (mapgl.js) la montre dans la popup `#gcPopup`,
 après les points et l'étape de trajet qui gardent la priorité. Au repos
 comme en pause — la boucle rAF étant arrêtée dans les deux cas,
 `isIdleState` laisse passer les clics. Une zone sans valeur affiche
-« Aucune trouvaille à ce jour ».
+« Aucune trouvaille à ce jour ». Le survol pose le curseur « main »
+(même gestionnaire `pointermove` que les points), pour annoncer que la
+zone est cliquable.
 
 **Relevé E2E** : `getZoneLayerDebugState()` donne `status` (`off`,
 `loading`, `ready`, `error`, `empty`), `visible`, `features`, `values`,

@@ -34,7 +34,9 @@
     </h6>
     <div class="card mb-3">
         <div class="card-body">
-            <fieldset>
+            {# Les deux fieldsets sont grisés quand la couche est coupée
+               (zone_layer_ui.js › syncZoneLayerUI). #}
+            <fieldset id="zonesDataFields">
                 <div class="row g-3">
                     <div class="col-12 col-md-6">
                         <label class="form-label" for="zonesLevel">{{ _("Découpage") }}</label>
@@ -71,15 +73,14 @@
                             <label class="form-check-label" for="zonesPerKm2">{{ _("Par km² (densité)") }}</label>
                         </div>
                     </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label" for="zonesPreset">{{ _("Préréglages") }}</label>
-                        <select class="form-select" id="zonesPreset">
-                            <option value="">{{ _("Choisir un préréglage…") }}</option>
-                            <option value="visited">{% if mode == 'evolution' %}{{ _("Découverte des zones (première cache posée)") }}{% else %}{{ _("Territoires visités (première trouvaille)") }}{% endif %}</option>
-                            <option value="conquest">{% if mode == 'evolution' %}{{ _("Densité des caches (échelle logarithmique)") }}{% else %}{{ _("Ma conquête (volumes, échelle logarithmique)") }}{% endif %}</option>
-                            <option value="coverage">{{ _("Couverture D/T (combinaisons)") }}</option>
-                            <option value="missing">{{ _("Objectif : D/T à compléter") }}</option>
-                        </select>
+                    <div class="col-12">
+                        <span class="form-label d-block" id="zonesPresetsLabel">{{ _("Préréglages") }}</span>
+                        <div class="d-flex flex-wrap gap-1" id="zonesPresets" role="group" aria-labelledby="zonesPresetsLabel">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="visited">{% if mode == 'evolution' %}{{ _("Découverte des zones") }}{% else %}{{ _("Territoires visités") }}{% endif %}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="conquest">{% if mode == 'evolution' %}{{ _("Densité des caches") }}{% else %}{{ _("Ma conquête") }}{% endif %}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="coverage">{{ _("Couverture D/T") }}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="missing">{{ _("D/T à compléter") }}</button>
+                        </div>
                     </div>
                     {% if mode != 'evolution' %}
                     <div class="col-12 col-md-6" id="zonesShareDatasetRow" hidden>
@@ -128,7 +129,7 @@
     </h6>
     <div class="card mb-3">
         <div class="card-body">
-            <fieldset>
+            <fieldset id="zonesAppearanceFields">
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
                         <label class="form-label" for="zonesColor">{{ _("Couleur") }}</label>
@@ -172,15 +173,25 @@
                     </div>
                 </div>
             </fieldset>
-            <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZonesSaveTheme">
-                    <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Sauvegarder le thème") }}
-                </button>
-                <span class="form-hint text-muted mb-0">{{ _("Ces réglages font partie du thème actif.") }}</span>
-            </div>
-            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+        </div>
+    </div>
+    {# Actions de l'onglet : « Sauvegarder le thème » couvre « Données et
+       mesure » comme « Apparence » (les deux sont dans le bloc `zones` du
+       thème) ; l'export PNG compose toute la carte, pas seulement les zones. #}
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZonesSaveTheme">
+            <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Sauvegarder le thème") }}
+        </button>
+        <span class="form-hint text-muted mb-0">{{ _("Les réglages de l'onglet font partie du thème actif.") }}</span>
+    </div>
+    <h6 class="gc-section-title">
+        <i class="ti ti-download text-muted me-1"></i>{{ _("Exporter") }}
+    </h6>
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap align-items-center gap-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZonesExportImage">
-                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter la carte en image") }}
+                    <i class="ti ti-photo me-1" aria-hidden="true"></i>{{ _("Exporter la carte en image") }}
                 </button>
                 <span class="form-hint text-muted mb-0">{{ _("PNG de la carte telle qu'affichée : zones, légende et couches visibles. « Zones seules » donne une image épurée.") }}</span>
             </div>

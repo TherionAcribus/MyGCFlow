@@ -1009,7 +1009,8 @@ export function initPopupOverlay(){
     map.on('pointermove', function(evt){
         if (!isIdleState()) return; // pas de survol en mode non-idle
         const hit = map.hasFeatureAtPixel(evt.pixel, { layerFilter: l => l === vectorLayer || l === ownerLayer || l === dnfLayer });
-        map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+        // Une zone colorée est cliquable (fiche de zone) : même affordance.
+        map.getTargetElement().style.cursor = (hit || pkg.zonePopupAt?.(evt.pixel)) ? 'pointer' : '';
     });
 }
 

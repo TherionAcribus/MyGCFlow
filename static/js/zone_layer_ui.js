@@ -9,6 +9,7 @@ import { t } from './notifications.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import { normalizeZoneLayerOptions } from './zone_layer_model.mjs';
+import { geoIndex } from './zone_geo.js';
 
 let bound = false;
 const el = (id) => document.getElementById(id);
@@ -36,7 +37,13 @@ export function syncZoneLayerUI() {
         const node = el(id);
         if (node) node.checked = value;
     };
-    check('switchZonesDisplay', window.userSettings?.[displayKey()] === true);
+    const on = window.userSettings?.[displayKey()] === true;
+    check('switchZonesDisplay', on);
+    // Couche coupée : les réglages restent visibles mais inertes.
+    for (const id of ['zonesDataFields', 'zonesAppearanceFields']) {
+        const fields = el(id);
+        if (fields) fields.disabled = !on;
+    }
     set('zonesLevel', o.level);
     set('zonesMeasure', o.measure);
     set('zonesScale', o.scale);
@@ -76,6 +83,16 @@ export function syncZoneLayerUI() {
     // à une date : l'échelle des écarts suit bien ce réglage.
     const scale = el('zonesScale');
     if (scale) scale.disabled = o.measure === 'first_day' || (o.measure === 'found_share' && !o.compareDate);
+    // Préréglage actif : le lot s'applique tel quel ; il est « actif » quand
+    // chacune de ses valeurs correspond à l'option courante.
+    document.querySelectorAll('#zonesPresets [data-preset]').forEach((btn) => {
+        const p = btn.dataset.preset === 'conquest' && page() === 'evolution'
+            ? { ...ZONE_PRESETS.conquest, perKm2: true }
+            : ZONE_PRESETS[btn.dataset.preset];
+        const active = !!p && Object.entries(p).every(([key, v]) => o[key] === v);
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
     // Périmètre des données de la mesure choisie, rappelé sous le contrôle :
     // la part trouvée lit tout le jeu Évolution, les autres mesures suivent
     // les données filtrées de la carte.
@@ -91,6 +108,28 @@ export function syncZoneLayerUI() {
                 : t('Calculé sur vos trouvailles filtrées, à la date montrée.'));
     }
     syncZoneStatus();
+}
+
+// Libellé du découpage fin : le nom réel du niveau 2 pour les pays présents
+// (« Départements », « Landkreise »…) quand il est unique ; « (sinon
+// régions) » quand des pays n'ont pas de niveau 2 ; texte du gabarit le
+// reste du temps (catalogue absent ou plusieurs pays).
+function syncLevelLabel(countries) {
+    const opt = document.querySelector('#zonesLevel option[value="subregion"]');
+    if (!opt) return;
+    opt.dataset.defaultLabel ??= opt.textContent;
+    const lang = document.documentElement.lang?.toLowerCase().startsWith('en') ? 'en' : 'fr';
+    const labels = new Set();
+    let missing = false;
+    for (const cc of countries || []) {
+        const entry = geoIndex()?.by_country?.[cc];
+        if (!entry) continue;
+        if (entry.subregion?.label?.[lang]) labels.add(entry.subregion.label[lang]);
+        else missing = true;
+    }
+    opt.textContent = labels.size === 1
+        ? [...labels][0] + (missing ? ' ' + t('(sinon régions)') : '')
+        : opt.dataset.defaultLabel;
 }
 
 // Ligne d'état sous l'interrupteur : contours en chargement, rien à montrer…
@@ -119,8 +158,13 @@ export function syncZoneStatus() {
             text = page() === 'evolution'
                 ? t('Aucune cache à colorer : ouvrez ou importez un jeu dans l’onglet Données.')
                 : t('Aucune trouvaille à colorer : importez vos trouvailles dans l’onglet Données.');
+        } else if (state.status === 'ready' && state.compareDay !== null
+                   && !Object.keys(state.values || {}).length) {
+            // Référence après la fin (ou sans écart) : la carte reste incolore.
+            text = t('Aucune évolution entre cette date et la fin : la carte ne se colore pas.');
         }
     }
+    syncLevelLabel(state?.countries);
     node.textContent = text;
     node.hidden = !text;
     if (retry) retry.hidden = !canRetry;
@@ -211,11 +255,11 @@ function onOptionChange() {
     syncZoneStatus();
 }
 
-// Préréglages du menu « Préréglages » : un lot de réglages cohérent posé
-// d'un coup (structurels → rafraîchissement complet). Le contrôle revient à
-// sa place : il lance une action, il n'étale pas un état. perKm2 et
-// compareDate sont remis dans chaque lot : le résultat ne dépend pas des
-// réglages en place.
+// Préréglages : un lot de réglages cohérent posé d'un coup (structurels →
+// rafraîchissement complet). Des boutons — pas un menu — pour que le lot
+// actif reste visible (« actif » = ses valeurs correspondent aux options
+// courantes). perKm2 et compareDate sont remis dans chaque lot : le
+// résultat ne dépend pas des réglages en place.
 const ZONE_PRESETS = {
     visited: { measure: 'first_day', perKm2: false, compareDate: '' },
     conquest: { measure: 'count', scale: 'log', perKm2: false, compareDate: '' },
@@ -223,10 +267,8 @@ const ZONE_PRESETS = {
     missing: { measure: 'dt_missing', scale: 'linear', perKm2: false, compareDate: '' },
 };
 
-function onPresetChange(event) {
-    const key = event.currentTarget.value;
+function onPresetChange(key) {
     const preset = ZONE_PRESETS[key];
-    event.currentTarget.value = '';
     if (!preset) return;
     // Sur Évolution, le préréglage s'annonce « Densité des caches » : la
     // case « Par km² » fait donc partie du lot.
@@ -256,14 +298,14 @@ async function onDisplayToggle(event) {
     const key = displayKey();
     if (window.userSettings) window.userSettings[key] = on;
     pkg.refreshZoneLayer?.();
-    syncZoneStatus();
+    syncZoneLayerUI();
     const ok = await reportSave(el('zonesSaveStatus'), saveSettingsPatch({ [key]: on }));
     if (!ok) {
         // Échec : la case et la carte reviennent à la valeur du disque.
         box.checked = !on;
         if (window.userSettings) window.userSettings[key] = !on;
         pkg.refreshZoneLayer?.();
-        syncZoneStatus();
+        syncZoneLayerUI();
     }
 }
 
@@ -283,7 +325,11 @@ export function initZoneLayerUI() {
     }
     // Opacité : suivie pendant le glissement.
     el('zonesOpacity')?.addEventListener('input', onAppearanceChange);
-    el('zonesPreset')?.addEventListener('change', onPresetChange);
+    // Préréglages : délégation sur le groupe de boutons.
+    el('zonesPresets')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-preset]');
+        if (btn) onPresetChange(btn.dataset.preset);
+    });
     // « Sauvegarder le thème » : même action que le bouton de l'onglet Style.
     el('btnZonesSaveTheme')?.addEventListener('click', () => {
         window.profileManager?.saveCurrentAsProfile();

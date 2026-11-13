@@ -76,7 +76,11 @@ test('onglet Zones : la couche s\'affiche à l\'état final, la préférence est
   const errors = await openMap(page);
   expect((await zones(page)).visible).toBe(false);
   await page.locator('a[href="#zones"]').click();
+  // Couche coupée : les réglages de l'onglet sont inertes ; ils se
+  // réveillent avec l'interrupteur.
+  await expect(page.locator('#zonesMeasure')).toBeDisabled();
   await page.locator('#switchZonesDisplay').check();
+  await expect(page.locator('#zonesMeasure')).toBeEnabled();
   await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
   const state = await zones(page);
   expect(state.visible).toBe(true);
@@ -150,6 +154,12 @@ test('comparaison à une date : écarts signés, zones inchangées sans couleur'
   expect(before.classes).toEqual({ 'FR-75': 0, 'FR-29': 0, 'FR-44': 0 });
   await app(page, 'pkg.showZonesRest?.();');
   await expect.poll(async () => (await zones(page)).values['FR-29']).toBe(2);
+  // Référence après la fin : aucun écart, la carte reste incolore et la
+  // ligne d'état l'explique au lieu de laisser une carte muette.
+  await page.locator('#zonesCompareDate').fill('2026-02-01');
+  await page.locator('#zonesCompareDate').dispatchEvent('change');
+  await expect.poll(async () => (await zones(page)).values).toEqual({});
+  await expect(page.locator('#zonesStatus')).toContainText('Aucune évolution');
   // La date vidée ramène à l'état du jour.
   await page.locator('#zonesCompareDate').fill('');
   await page.locator('#zonesCompareDate').dispatchEvent('change');
@@ -163,9 +173,11 @@ test('objectif D/T : combinaisons manquantes par zone', async ({ page, request }
   await page.locator('a[href="#zones"]').click();
   await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
 
-  // Préréglage « Objectif : D/T à compléter » → mesure des manquantes.
-  await page.locator('#zonesPreset').selectOption('missing');
+  // Préréglage « D/T à compléter » → mesure des manquantes ; le bouton
+  // porte l'état actif tant que ses réglages sont en place.
+  await page.locator('#zonesPresets [data-preset="missing"]').click();
   await expect.poll(async () => (await zones(page)).options.measure).toBe('dt_missing');
+  await expect(page.locator('#zonesPresets [data-preset="missing"]')).toHaveClass(/active/);
   // La comparaison est sans objet ici : son contrôle se masque.
   await expect(page.locator('#zonesCompareRow')).toBeHidden();
   // Paris et Finistère : 3 combinaisons couvertes → 78 manquantes ;
@@ -295,6 +307,13 @@ test('fiche de zone : clic sur la carte, au repos et en pause', async ({ page, r
   };
 
   // Au repos : le Finistère compte 3 trouvailles au jour de fin (8 janvier).
+  // Une zone survolée annonce qu'elle est cliquable (curseur « main »).
+  const finisterPixel = await app(page, `
+    const px = pkg.getMap().getPixelFromCoordinate(ol.proj.fromLonLat([-4.0, 48.2]));
+    const r = document.getElementById('map').getBoundingClientRect();
+    return { x: r.left + px[0], y: r.top + px[1] };`);
+  await page.mouse.move(finisterPixel.x, finisterPixel.y);
+  await expect.poll(() => app(page, `return document.getElementById('map').style.cursor;`)).toBe('pointer');
   await clickAt(-4.0, 48.2);
   await expect(popup).toContainText('Finistère');
   await expect(popup).toContainText('Au 08/01/2026');
@@ -369,15 +388,15 @@ test('thème : découpage, couleur selon la date, légende ; légende peinte dan
   // Préréglages : un lot de réglages posé d'un coup, le périmètre rappelé
   // sous « Couleur selon » suit la mesure.
   await expect(page.locator('#zonesScopeHint')).toContainText('trouvailles filtrées');
-  await page.locator('#zonesPreset').selectOption('conquest');
+  await page.locator('#zonesPresets [data-preset="conquest"]').click();
   await expect.poll(async () => (await zones(page)).options.scale).toBe('log');
   expect((await zones(page)).options.measure).toBe('count');
-  await page.locator('#zonesPreset').selectOption('visited');
+  await page.locator('#zonesPresets [data-preset="visited"]').click();
   await expect.poll(async () => (await zones(page)).options.measure).toBe('first_day');
   await expect(page.locator('#zonesScale')).toBeDisabled();
   // « Sauvegarder le thème » est accessible sans quitter l'onglet.
   await expect(page.locator('#btnZonesSaveTheme')).toBeVisible();
-  await page.locator('#zonesPreset').selectOption('conquest');
+  await page.locator('#zonesPresets [data-preset="conquest"]').click();
   await expect.poll(async () => (await zones(page)).options.measure).toBe('count');
 
   // Légende dans une image de la vidéo : coin bas-gauche peint.
