@@ -401,6 +401,11 @@ test('graphique personnalisé depuis la galerie', async ({ page }) => {
   await expect(page.locator('#statsEditorTitle')).toHaveText(/Nouveau graphique|New chart/);
   await page.locator('#statsEdGroupBy').selectOption('cache_type');
   await page.locator('#statsEdChart').selectOption('donut');
+  // Un anneau colore chaque part : au-delà de 7 valeurs, « Autres » —
+  // le champ « Nombre de valeurs affichées » est borné et le dit.
+  await page.locator('#statsEdOptions summary').click();
+  await expect(page.locator('#statsEdTop')).toHaveAttribute('max', '7');
+  await expect(page.locator('#statsEdTopHint')).toContainText('7');
   await page.locator('#btnStatsEdSave').click();
   const added = (await snapshot(page)).cards.at(-1);
   expect(added).toMatchObject({ chart: 'donut', groupBy: 'cache_type' });

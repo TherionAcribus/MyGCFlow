@@ -4,7 +4,7 @@ import { t } from './notifications.js';
 import { getBsModal, hideBsModal } from './ui_bootstrap.js';
 import {
     allowedAligns, allowedCharts, allowedGroupBy, allowedLayouts, allowedNormalize, allowedSplitBy,
-    chartSources, goalApplies, hasSeveralSeries, MAP_CONTINENTS, mapFrameCountry, MAX_EXTRA_SOURCES, MAX_SERIES,
+    CHART_TOP_RANGE, chartSources, goalApplies, hasSeveralSeries, MAP_CONTINENTS, mapFrameCountry, MAX_EXTRA_SOURCES, MAX_SERIES,
     normalizeChartSpec, normalizeMeasure, periodAcceptsUpTo, periodsAreMultiple, sourceDimensions, withUpTo,
 } from './chart_spec.mjs';
 import { loadFile, zoneName } from './zone_geo.js';
@@ -321,6 +321,14 @@ export function syncEditorForm() {
     // « Nombre de valeurs affichées » : sans effet sur la grille D/T, qui
     // dessine toutes ses cases (fullGrid dans chart_query.mjs › axisTopLimit).
     $('statsEdTopRow').hidden = !category || (spec.groupBy === 'dt' && chart === 'heatmap');
+    // Anneau et radar colorent chaque part : au-delà de MAX_SERIES - 1
+    // valeurs, le moteur regroupe dans « Autres » quoi qu'on saisisse
+    // (axisTopLimit) — le champ et son indice le disent.
+    const topCap = ['donut', 'radar'].includes(chart) ? MAX_SERIES - 1 : CHART_TOP_RANGE[1];
+    $('statsEdTop').max = String(topCap);
+    $('statsEdTopHint').textContent = topCap === CHART_TOP_RANGE[1]
+        ? t('Les suivantes sont regroupées dans « Autres ».')
+        : t('Au-delà de ${max} valeurs, les suivantes sont regroupées dans « Autres ».', { max: topCap });
     $('statsEdSortRow').hidden = !category || chart === 'number';
     // Un chiffre clé n'a rien à « afficher » comme valeurs sur le graphique.
     $('statsEdLabelsRow').hidden = chart === 'number';
