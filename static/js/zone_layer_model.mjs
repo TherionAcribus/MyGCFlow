@@ -164,10 +164,17 @@ export const COMPARE_NEGATIVE_COLOR = '#C0392B';
 // Rampe divergente de la comparaison à une date : les classes sous zéro
 // descendent en rouge, celles au-dessus montent dans la teinte choisie —
 // dans les deux cas, plus la valeur s'éloigne de zéro, plus elle est foncée.
-// Le signe d'une classe est celui de sa borne basse.
+// Le signe d'une classe est celui de sa borne HAUTE : une classe qui finit
+// à 0 ou sous 0 est négative. Avec l'échelle divergente (zoneScale ›
+// signed), aucune classe n'est à cheval sur zéro, et la classe « vide »
+// d'un côté absent ([min, 0) sur une échelle de gains) prend bien le rouge
+// des pertes vues pendant l'animation.
 export function compareClassColors(scale, color) {
     const n = Math.max(1, scale?.classes || 0);
-    const signs = Array.from({ length: n }, (_, c) => ((c === 0 ? scale.min : scale.breaks[c - 1]) < 0 ? -1 : 1));
+    const signs = Array.from({ length: n }, (_, c) => {
+        const upper = c === n - 1 ? null : scale.breaks[c];
+        return upper !== null && upper <= 0 ? -1 : 1;
+    });
     const neg = signs.filter((s) => s < 0).length;
     const posRamp = classColors(color, Math.max(1, n - neg));
     const negRamp = classColors(COMPARE_NEGATIVE_COLOR, Math.max(1, neg));

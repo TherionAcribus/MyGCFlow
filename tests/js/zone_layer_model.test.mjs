@@ -86,9 +86,11 @@ test('comparaison à une date : option, rampe divergente, libellés signés', ()
     const profile = zoneLayerToProfile(o);
     assert.equal(profile.compare_date, '2026-01-03');
     assert.deepEqual(zoneLayerFromProfile(profile), o);
-    // Deltas [-5, -2, +1, +3, +4] en quantiles 4 : deux classes sous zéro
-    // (rouge, plus foncé au plus fort recul), deux au-dessus (teinte).
-    const scale = zoneScale([-5, -2, 1, 3, 4], { mode: 'quantile', classes: 4 });
+    // Deltas [-5, -2, +1, +3, +4] en quantiles 4, échelle signée : coupure
+    // à 0 garantie — aucune classe à cheval, deux classes sous zéro (rouge,
+    // plus foncé au plus fort recul), deux au-dessus (teinte).
+    const scale = zoneScale([-5, -2, 1, 3, 4], { mode: 'quantile', classes: 4, signed: true });
+    assert.ok(scale.breaks.includes(0));
     const colors = compareClassColors(scale, '#1E6FD9');
     assert.equal(colors[0], '#C0392B');
     assert.equal(colors[3], '#1E6FD9');
@@ -96,7 +98,13 @@ test('comparaison à une date : option, rampe divergente, libellés signés', ()
     assert.equal(colors[2], mixHex('#FFFFFF', '#1E6FD9', 0.4));
     const fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 0 });
     const labels = legendEntries(scale, o, { formatNumber: (v) => fmt.format(v), signed: true }).map((e) => e.label);
-    assert.deepEqual(labels, ['< −2', '−2–+1', '+1–+3', '≥ +3']);
+    assert.deepEqual(labels, ['< −2', '−2–0', '0–+3', '≥ +3']);
+    // Échelle finale toute positive (cumul) : une première classe rouge
+    // reçoit les pertes vues pendant l'animation, avant la référence.
+    const gains = zoneScale([1, 1, 2], { classes: 5, signed: true });
+    assert.equal(gains.breaks[0], 0);
+    assert.equal(gains.classOf(-4), 0);
+    assert.equal(compareClassColors(gains, '#1E6FD9')[0], '#C0392B');
 });
 
 test('zones seules : option booléenne, aller-retour thème', () => {

@@ -134,13 +134,22 @@ test('comparaison à une date : écarts signés, zones inchangées sans couleur'
   const state = await zones(page);
   // Depuis le 4 janvier : Finistère +2 (5 et 6), Paris +1 (8), Rhône +1
   // (7) ; la Loire-Atlantique (trouvaille du 3) est inchangée : ni valeur
-  // ni classe, donc pas de remplissage.
+  // ni classe, donc pas de remplissage. L'échelle divergente ouvre par une
+  // classe « perte » (coupure à 0), inutilisée à la fin.
   expect(state.values).toEqual({ 'FR-75': 1, 'FR-29': 2, 'FR-69': 1 });
-  expect(state.classes['FR-29']).toBe(1);
-  expect(state.classes['FR-75']).toBe(0);
+  expect(state.classes['FR-29']).toBe(3);
+  expect(state.classes['FR-75']).toBe(2);
   expect(state.classes['FR-44']).toBeUndefined();
   expect(state.legend.title).toContain('depuis le');
-  expect(state.legend.entries.map((e) => e.label)).toEqual(['< +2', '≥ +2']);
+  expect(state.legend.entries.map((e) => e.label)).toEqual(['< 0', '0–+1', '+1–+2', '≥ +2']);
+  // Avant la date de référence : les écarts négatifs tombent dans la
+  // première classe, celle des pertes (rouge), pas dans une classe de gain.
+  await app(page, 'pkg.seekZonesToDate?.(new Date(2026, 0, 1));');
+  const before = await zones(page);
+  expect(before.values).toEqual({ 'FR-75': -1, 'FR-29': -1, 'FR-44': -1 });
+  expect(before.classes).toEqual({ 'FR-75': 0, 'FR-29': 0, 'FR-44': 0 });
+  await app(page, 'pkg.showZonesRest?.();');
+  await expect.poll(async () => (await zones(page)).values['FR-29']).toBe(2);
   // La date vidée ramène à l'état du jour.
   await page.locator('#zonesCompareDate').fill('');
   await page.locator('#zonesCompareDate').dispatchEvent('change');

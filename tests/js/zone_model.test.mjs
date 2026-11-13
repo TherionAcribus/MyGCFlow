@@ -254,6 +254,28 @@ test('échelle : valeurs égales, linéaire, log, seuils, années', () => {
     assert.equal(zoneScale(new Map([['a', 1], ['b', 3]]), { classes: 2 }).classes, 2);
 });
 
+test('échelle signée : coupure à 0, classe du côté vide', () => {
+    // Comparaison à une date : écarts signés. Aucune classe à cheval sur
+    // zéro — un gain ne partage jamais la couleur d'une perte.
+    const mixed = zoneScale([-3, -1, 2, 6], { classes: 4, signed: true });
+    assert.ok(mixed.breaks.includes(0));
+    assert.equal(mixed.classOf(-2), 0);
+    assert.equal(mixed.classOf(2), mixed.breaks.indexOf(0) + 1);
+    // Échelle finale toute positive (cumul) : les pertes vues pendant
+    // l'animation tombent dans la première classe, celle du rouge.
+    const gains = zoneScale([1, 1, 2], { classes: 5, signed: true });
+    assert.equal(gains.breaks[0], 0);
+    assert.equal(gains.classOf(-4), 0);
+    // Symétrique : toutes pertes → la dernière classe reçoit les gains.
+    const losses = zoneScale([-5, -2, -1], { classes: 4, signed: true });
+    assert.equal(losses.breaks[losses.breaks.length - 1], 0);
+    assert.equal(losses.classOf(3), losses.classes - 1);
+    // Le total reste dans le budget demandé.
+    assert.ok(mixed.classes <= 4 && gains.classes <= 5 && losses.classes <= 4);
+    // Sans `signed`, comportement inchangé (pas de coupure forcée).
+    assert.equal(zoneScale([1, 1, 2], { classes: 5 }).breaks.includes(0), false);
+});
+
 // 26 trouvailles par an sur 2019-2023, une tous les 14 jours, chacune dans
 // une nouvelle zone les premières semaines.
 function regularFinds() {

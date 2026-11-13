@@ -478,7 +478,7 @@ function computeScale() {
             const d = (values.get(id) ?? 0) - (compareMap.get(id) ?? 0);
             if (d !== 0) deltas.push(d);
         }
-        scale = zoneScale(deltas, { mode: o.scale, classes: o.classes });
+        scale = zoneScale(deltas, { mode: o.scale, classes: o.classes, signed: true });
     } else {
         // Part trouvée : échelle fixe 0–100 % (seuils ronds de
         // shareScaleThresholds), le réglage « Échelle des couleurs » est sans
@@ -773,9 +773,11 @@ function measureFn(ctx) {
 }
 
 // Dessine la légende dans `ctx`, coin haut-gauche (x, y), à l'échelle `k`.
-function drawLegend(ctx, legend, size, x, y, k) {
+// `dark` : habillage pour fond sombre, à l'écran seulement — vidéo et
+// export PNG restent en clair, la frame produite est identique quel que
+// soit le mode de l'interface (comme les mouvements, voir reducedMotion).
+function drawLegend(ctx, legend, size, x, y, k, dark = false) {
     const s = LEGEND_STYLE;
-    const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(k, k);
@@ -801,7 +803,8 @@ function drawLegend(ctx, legend, size, x, y, k) {
 function syncLegend() {
     const host = document.getElementById('mapWithFrames');
     const legend = enabled() ? legendModel() : null;
-    const key = legend ? JSON.stringify(legend) + '|' + opts().opacity + '|' + document.documentElement.getAttribute('data-bs-theme') : '';
+    const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const key = legend ? JSON.stringify(legend) + '|' + opts().opacity + '|' + dark : '';
     if (!legend) {
         if (legendCanvas) legendCanvas.hidden = true;
         legendKey = '';
@@ -834,7 +837,7 @@ function syncLegend() {
     legendCanvas.style.left = horizontal === 'left' ? m : '';
     legendCanvas.style.right = horizontal === 'right' ? m : '';
     ctx.clearRect(0, 0, legendCanvas.width, legendCanvas.height);
-    drawLegend(ctx, legend, size, 0, 0, dpr);
+    drawLegend(ctx, legend, size, 0, 0, dpr, dark);
     revision++;
 }
 

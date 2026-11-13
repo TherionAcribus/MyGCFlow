@@ -72,9 +72,10 @@ export function syncZoneLayerUI() {
     const position = el('zonesLegendPosition');
     if (position) position.disabled = !o.legend;
     // L'échelle n'a pas de sens pour une date (une couleur par période),
-    // ni pour la part trouvée (échelle fixe 0–100 %).
+    // ni pour la part trouvée (échelle fixe 0–100 %) — sauf en comparaison
+    // à une date : l'échelle des écarts suit bien ce réglage.
     const scale = el('zonesScale');
-    if (scale) scale.disabled = o.measure === 'first_day' || o.measure === 'found_share';
+    if (scale) scale.disabled = o.measure === 'first_day' || (o.measure === 'found_share' && !o.compareDate);
     // Périmètre des données de la mesure choisie, rappelé sous le contrôle :
     // la part trouvée lit tout le jeu Évolution, les autres mesures suivent
     // les données filtrées de la carte.
@@ -212,19 +213,25 @@ function onOptionChange() {
 
 // Préréglages du menu « Préréglages » : un lot de réglages cohérent posé
 // d'un coup (structurels → rafraîchissement complet). Le contrôle revient à
-// sa place : il lance une action, il n'étale pas un état.
+// sa place : il lance une action, il n'étale pas un état. perKm2 et
+// compareDate sont remis dans chaque lot : le résultat ne dépend pas des
+// réglages en place.
 const ZONE_PRESETS = {
-    visited: { measure: 'first_day' },
-    conquest: { measure: 'count', scale: 'log' },
-    coverage: { measure: 'dt_coverage', scale: 'linear' },
-    missing: { measure: 'dt_missing', scale: 'linear' },
+    visited: { measure: 'first_day', perKm2: false, compareDate: '' },
+    conquest: { measure: 'count', scale: 'log', perKm2: false, compareDate: '' },
+    coverage: { measure: 'dt_coverage', scale: 'linear', perKm2: false, compareDate: '' },
+    missing: { measure: 'dt_missing', scale: 'linear', perKm2: false, compareDate: '' },
 };
 
 function onPresetChange(event) {
-    const preset = ZONE_PRESETS[event.currentTarget.value];
+    const key = event.currentTarget.value;
+    const preset = ZONE_PRESETS[key];
     event.currentTarget.value = '';
     if (!preset) return;
-    pkg.options.zones = normalizeZoneLayerOptions({ ...pkg.options?.zones, ...preset });
+    // Sur Évolution, le préréglage s'annonce « Densité des caches » : la
+    // case « Par km² » fait donc partie du lot.
+    const patch = key === 'conquest' && page() === 'evolution' ? { ...preset, perKm2: true } : preset;
+    pkg.options.zones = normalizeZoneLayerOptions({ ...pkg.options?.zones, ...patch });
     syncZoneLayerUI();
     pkg.refreshZoneLayer?.();
     syncZoneStatus();

@@ -334,7 +334,13 @@ export function shareScaleThresholds(classes) {
     return fixed[k] || Array.from({ length: k - 1 }, (_, j) => Math.round((100 * (j + 1)) / k));
 }
 
-export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds = [] } = {}) {
+//   signed    échelle divergente (comparaison à une date) : coupure
+//             garantie à 0 — aucune classe à cheval, un gain ne prend
+//             jamais la couleur d'une perte. Le budget est réparti entre
+//             les deux côtés ; un côté sans valeur garde une classe
+//             bornée par 0 pour les valeurs de ce signe vues pendant
+//             l'animation. Sans effet pour `fixed` et `year`.
+export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds = [], signed = false } = {}) {
     const list = [...(values instanceof Map ? values.values() : values)]
         .filter((v) => typeof v === 'number' && Number.isFinite(v))
         .sort((a, b) => a - b);
@@ -342,8 +348,15 @@ export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds =
     const min = list.length ? list[0] : null;
     const max = list.length ? list[list.length - 1] : null;
     const kind = SCALE_MODES.includes(mode) ? mode : 'quantile';
+    const divergent = signed && kind !== 'fixed' && kind !== 'year';
     let breaks = [];
-    if (kind === 'fixed') {
+    if (divergent) {
+        const neg = list.filter((v) => v < 0);
+        const pos = list.filter((v) => v >= 0);
+        const negK = neg.length ? Math.min(k - 1, Math.max(1, Math.round((k * neg.length) / list.length))) : 1;
+        const posK = Math.max(1, k - negK);
+        breaks = [...sideBreaks(kind, neg, negK).filter((b) => b < 0), 0, ...sideBreaks(kind, pos, posK).filter((b) => b > 0)];
+    } else if (kind === 'fixed') {
         breaks = [...thresholds].filter(Number.isFinite).sort((a, b) => a - b);
     } else if (list.length && min < max) {
         if (kind === 'quantile') {
@@ -364,9 +377,11 @@ export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds =
     }
     // Bornes strictement croissantes, au-dessus du minimum : aucune classe
     // vide au début, et des valeurs toutes égales donnent une seule classe.
+    // (Échelle divergente : la coupure à 0 est gardée même au-dessous du
+    // minimum — la classe « vide » [min, 0) reçoit les pertes passées.)
     const clean = [];
     for (const b of breaks) {
-        if ((min === null || b > min || kind === 'fixed') && (!clean.length || b > clean[clean.length - 1])) clean.push(b);
+        if ((min === null || b > min || kind === 'fixed' || divergent) && (!clean.length || b > clean[clean.length - 1])) clean.push(b);
     }
     return {
         mode: kind,
@@ -395,6 +410,27 @@ export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds =
             return out;
         },
     };
+}
+
+// Bornes internes de `count` classes sur un côté du zéro (échelle
+// divergente, liste triée), selon le mode : quantiles, intervalles égaux,
+// ou égaux en asinh — le logarithme n'a pas de sens sous zéro, asinh est
+// symétrique et couvre les deux côtés.
+function sideBreaks(kind, list, count) {
+    if (list.length < 2 || count < 2 || list[0] === list[list.length - 1]) return [];
+    const lo = list[0];
+    const hi = list[list.length - 1];
+    const out = [];
+    if (kind === 'quantile') {
+        for (let j = 1; j < count; j++) out.push(list[Math.floor((j * list.length) / count)]);
+    } else if (kind === 'linear') {
+        for (let j = 1; j < count; j++) out.push(lo + ((hi - lo) * j) / count);
+    } else {
+        const a = Math.asinh(lo);
+        const b = Math.asinh(hi);
+        for (let j = 1; j < count; j++) out.push(Math.sinh(a + ((b - a) * j) / count));
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------------------

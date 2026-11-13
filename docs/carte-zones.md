@@ -395,10 +395,16 @@ rattachement.
   « +3 », « −2 »). La référence est un instantané `state.seek(compare)`
   (`compareMap`), recalculé avec l'échelle ; une zone vidée depuis la
   référence garde un écart négatif (union des deux états dans `showDay`).
-  Sans effet pour `first_day` (champ masqué, un écart de dates ne veut
-  rien dire) ni `dt_missing` (masqué aussi : une progression serait un
-  écart négatif, rouge — contre-sens) ; marche pour les comptes, la
-  couverture D/T, la densité et la part trouvée (écart en points).
+  L'échelle des écarts est **divergente** (`zoneScale` › `signed`) :
+  coupure garantie à 0, aucune classe à cheval — un gain ne prend jamais
+  la teinte d'une perte ; le budget de nuances est réparti entre les deux
+  côtés, et un côté absent garde une classe (les pertes vues avant la date
+  de référence, échelle finale toute positive, tombent dans la première,
+  rouge). Sans effet pour `first_day` (champ masqué, un écart de dates ne
+  veut rien dire) ni `dt_missing` (masqué aussi : une progression serait
+  un écart négatif, rouge — contre-sens) ; marche pour les comptes, la
+  couverture D/T, la densité et la part trouvée (écart en points ; le
+  réglage « Échelle des couleurs » s'applique alors, l'onglet le dégrise).
 - `dt_missing` (« Les combinaisons D/T manquantes », préréglage «
   Objectif : D/T à compléter ») : lecture « ce qui reste à faire » —
   81 − combinaisons couvertes, zones jamais visitées non colorées (pas de

@@ -1496,6 +1496,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
             pkg.options.animation.dateEnd = parsedDate;
             updateResetAnimButtonsHighlight();
             updateDeltaDaysAndTimes();
+            // Échelle de la couche de zones calculée sur le jour de fin.
+            pkg.refreshZoneLayer?.();
         });
     }
 
@@ -4217,6 +4219,7 @@ function resetAnimEndDateToDefault(){
     pkg.options.animation.dateEnd = end;
     updateResetAnimButtonsHighlight();
     updateDeltaDaysAndTimes();
+    pkg.refreshZoneLayer?.();
 }
 
 function updateResetAnimButtonsHighlight(){
@@ -4355,6 +4358,7 @@ function applyFilterEndToAnim(){
     pkg.options.animation.dateEnd = parsed;
     updateResetAnimButtonsHighlight();
     updateDeltaDaysAndTimes();
+    pkg.refreshZoneLayer?.();
 }
 
 // Boutons « Sélection » : appliquent l'étendue réelle des caches filtrées
@@ -4383,6 +4387,7 @@ function applySelectionEndToAnim(){
     pkg.options.animation.dateEnd = end;
     updateResetAnimButtonsHighlight();
     updateDeltaDaysAndTimes();
+    pkg.refreshZoneLayer?.();
 }
 
 // Champ + option d'une borne de l'animation : les mêmes trois lignes que les
@@ -4396,6 +4401,8 @@ function setAnimDateBound(field, selector, date) {
         el.value = formatDateForPickers(date);
     }
     pkg.options.animation[field] = date;
+    // La fin est la référence de l'échelle de la couche de zones.
+    if (field === 'dateEnd') pkg.refreshZoneLayer?.();
 }
 
 // Barre de chronologie (timeline_bar.js) : pose les bornes de l'animation
