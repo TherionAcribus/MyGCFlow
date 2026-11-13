@@ -62,6 +62,18 @@ video (with a music track if you want one).
 - **Evolution mode** — instead of your own finds, animate every cache of an
   area from CSV exports: each one appears on its placement date and disappears
   when it is archived.
+- **Your logs: DNFs and hidden caches** — a browser bookmarklet (or a file)
+  imports your Geocaching logs; your DNFs and your hidden caches can then join
+  the map, the trail, the statistics panels and the video.
+- **My hides page** — for cache owners: your caches appear when published, then
+  live through other players' finds, favorites and DNFs, maintenance and
+  archiving, with visitor names floating by (initials or hidden on request).
+- **Colored areas** — countries, regions or counties (finer levels for France,
+  Germany, the UK, Ireland and the US), or a grid anywhere, fill with color as
+  your finds come in, on the map and in the video.
+- **Statistics page** — dashboards of charts built on all your data: period
+  comparisons, challenge grids (D/T, 366 days, Jasmer), streaks and records,
+  goals, area maps, PNG/SVG export, presentation mode and dashboard videos.
 - **Bilingual UI** — French and English, switchable at runtime.
 - **Offline** — every third-party library is vendored locally; no CDN, no
   network access required beyond the map tiles.

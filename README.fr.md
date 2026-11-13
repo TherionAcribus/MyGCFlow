@@ -70,6 +70,21 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
 - **Mode Évolution** — au lieu de vos trouvailles, animez toutes les caches
   d'une zone à partir d'exports CSV : chacune apparaît à sa date de placement et
   disparaît à son archivage.
+- **Vos logs : DNF et caches posées** — un favori du navigateur (ou un fichier)
+  importe vos logs Geocaching ; vos DNF et vos caches posées peuvent alors
+  rejoindre la carte, le trajet, les panneaux de statistiques et la vidéo.
+- **Page Mes poses** — pour les poseurs : vos caches apparaissent à leur
+  publication, puis vivent au fil des trouvailles, favoris et DNF des autres
+  joueurs, de la maintenance et de l'archivage, avec les pseudos des visiteurs
+  qui passent (en initiales ou masqués si vous le souhaitez).
+- **Zones colorées** — pays, régions ou départements (découpage fin pour la
+  France, l'Allemagne, le Royaume-Uni, l'Irlande et les États-Unis), ou une
+  grille partout, se colorent au fil de vos trouvailles, sur la carte et dans
+  la vidéo.
+- **Page Statistiques** — des tableaux de bord de graphiques sur toutes vos
+  données : comparaison de périodes, grilles de défis (D/T, 366 jours,
+  Jasmer), séries et records, objectifs, cartes par zones, export PNG/SVG,
+  mode présentation et vidéo du tableau.
 - **Interface bilingue** — français et anglais, changement à chaud.
 - **Hors ligne** — toutes les bibliothèques tierces sont hébergées localement :
   aucun CDN, aucun accès réseau nécessaire hors tuiles de carte.

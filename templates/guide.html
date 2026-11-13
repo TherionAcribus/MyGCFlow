@@ -42,7 +42,7 @@
                     <i class="ti ti-rocket"></i>{{ _("Bienvenue") }}
                 </a>
 
-                <div class="guide-nav-section-title">{{ _("Les 4 étapes") }}</div>
+                <div class="guide-nav-section-title">{{ _("Pas à pas") }}</div>
                 <a href="#data" class="guide-nav-link">
                     <span class="nav-num">1</span>{{ _("Données") }}
                 </a>
@@ -65,9 +65,12 @@
                     <span class="nav-num">7</span>{{ _("Préférences") }}
                 </a>
 
-                <div class="guide-nav-section-title">{{ _("Autre source") }}</div>
+                <div class="guide-nav-section-title">{{ _("Autres sources") }}</div>
                 <a href="#labs" class="guide-nav-link">
                     <i class="ti ti-compass"></i>{{ _("Mes Lab Caches") }}
+                </a>
+                <a href="#logs" class="guide-nav-link">
+                    <i class="ti ti-checklist"></i>{{ _("Mes logs") }}
                 </a>
 
                 <div class="guide-nav-section-title">{{ _("Autre mode") }}</div>
@@ -75,7 +78,10 @@
                     <i class="ti ti-stack"></i>{{ _("Évolution d'une zone") }}
                 </a>
 
-                <div class="guide-nav-section-title">{{ _("Autre page") }}</div>
+                <div class="guide-nav-section-title">{{ _("Autres pages") }}</div>
+                <a href="#poses" class="guide-nav-link">
+                    <i class="ti ti-map-pin"></i>{{ _("Mes poses") }}
+                </a>
                 <a href="#statspage" class="guide-nav-link">
                     <i class="ti ti-chart-bar"></i>{{ _("Statistiques") }}
                 </a>
@@ -89,7 +95,7 @@
             <section id="intro" class="guide-section">
                 <div class="guide-hero">
                     <h1>{{ _("Bienvenue dans MyGCFlow !") }}</h1>
-                    <p>{{ _("MyGCFlow transforme vos trouvailles de géocaching en une carte animée que vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : chargez vos données, choisissez un style, lancez l'animation, puis ajustez les paramètres.") }}</p>
+                    <p>{{ _("MyGCFlow transforme vos trouvailles de géocaching en une carte animée que vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide pas à pas : chargez vos données, choisissez un style, lancez l'animation, puis habillez la carte de statistiques, d'images ou de zones colorées.") }}</p>
                 </div>
 
                 <div class="guide-quicksteps">
@@ -110,14 +116,19 @@
                     </div>
                     <div class="guide-quickstep">
                         <div class="qs-num">4</div>
-                        <strong>{{ _("Préférences") }}</strong>
-                        <span>{{ _("Réglez la langue et les valeurs par défaut") }}</span>
+                        <strong>{{ _("Habillage") }}</strong>
+                        <span>{{ _("Ajoutez statistiques, images et zones colorées") }}</span>
                     </div>
                 </div>
 
                 <div class="guide-callout info">
                     <i class="ti ti-info-circle"></i>
-                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation & vidéo") }}</span>, <span class="ui-chip">{{ _("Stats") }}</span>, <span class="ui-chip">{{ _("Images") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Préférences") }}</span> {{ _("correspondent aux sections de ce guide.") }}</div>
+                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation & vidéo") }}</span>, <span class="ui-chip">{{ _("Stats") }}</span>, <span class="ui-chip">{{ _("Images") }}</span>, <span class="ui-chip">{{ _("Zones") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Préférences") }}</span> {{ _("correspondent aux sections de ce guide.") }}</div>
+                </div>
+
+                <div class="guide-callout info">
+                    <i class="ti ti-layout-dashboard"></i>
+                    <div>{{ _("L'en-tête mène aux quatre pages de l'application :") }} <span class="ui-chip"><i class="ti ti-database"></i> {{ _("Mes Géocaches") }}</span> {{ _("— la carte de vos trouvailles, décrite pas à pas ci-dessous —,") }} <span class="ui-chip"><i class="ti ti-stack"></i> {{ _("Évolution") }}</span>, <span class="ui-chip"><i class="ti ti-map-pin"></i> {{ _("Mes poses") }}</span> {{ _("et") }} <span class="ui-chip"><i class="ti ti-chart-bar"></i> {{ _("Statistiques") }}</span>{{ _(", présentées en fin de guide.") }}</div>
                 </div>
 
                 <div class="guide-callout tip">
@@ -162,6 +173,8 @@
                         <h3>{{ _("Chargez le fichier dans MyGCFlow") }}</h3>
                         <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Mes Géocaches") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="ti ti-cloud-upload"></i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier — ou glissez-déposez-le n'importe où sur la page. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
                         <p>{{ _("La carte") }} <strong>{{ _("Mes Lab Caches") }}</strong>, {{ _("juste en dessous, accueille vos étapes d'Adventure Lab — une autre source de découvertes, décrite dans la section") }} <a href="#labs">{{ _("Mes Lab Caches") }}</a> {{ _("de ce guide.") }}</p>
+                        <p>{{ _("Une base est déjà chargée ? Un aperçu « Remplacer mes géocaches ? » montre d'abord ce que le nouveau fichier change ; rien n'est remplacé avant") }} <span class="ui-chip">{{ _("Remplacer ma base") }}</span>{{ _(". Vos Lab Caches et vos logs sont conservés.") }}</p>
+                        <p>{{ _("Plus bas, la carte") }} <strong>{{ _("Mes logs") }}</strong> {{ _("ajoute vos DNF et vos caches posées — voir la section") }} <a href="#logs">{{ _("Mes logs") }}</a>.</p>
                     </li>
                     <li>
                         <h3>{{ _("Filtrez vos caches") }}</h3>
@@ -174,6 +187,7 @@
                         </ul>
                         <p>{{ _("En tête du panneau, le sélecteur") }} <strong>{{ _("Découvertes affichées") }}</strong> {{ _("choisit la source des points : les géocaches, les étapes Lab, ou les deux mélangées chronologiquement.") }}</p>
                         <p>{{ _("Le badge") }} <span class="ui-chip">0 / 0</span> {{ _("dans le titre de la carte") }} <strong>{{ _("Filtres") }}</strong> {{ _("indique combien de caches sont retenues par rapport au total.") }}</p>
+                        <p>{{ _("Le menu") }} <strong>{{ _("Préréglages") }}</strong> {{ _("enregistre une combinaison de filtres sous un nom, pour la réappliquer d'un clic ;") }} <span class="ui-chip">{{ _("Réinitialiser tous les filtres") }}</span> {{ _("repart de toutes vos caches.") }} <span class="ui-chip">{{ _("Exporter la sélection") }}</span> {{ _("enregistre les caches retenues dans un fichier GPX ou CSV.") }}</p>
                         <p>{{ _("Sous les filtres, le réglage") }} <strong>{{ _("Caches sans localisation (locationless)") }}</strong> {{ _("décide si ces caches, toujours comptées, ont aussi un point sur la carte : leur position dans le fichier est fictive.") }}</p>
                     </li>
                     <li>
@@ -234,6 +248,8 @@
                             <li>{{ _("Basculez entre la cible") }} <strong>{{ _("Titre") }}</strong> {{ _("et") }} <strong>{{ _("Infos") }}</strong> {{ _("pour les styliser séparément.") }}</li>
                             <li>{{ _("Réglez le") }} <strong>{{ _("Texte") }}</strong>, {{ _("la") }} <strong>{{ _("Boîte") }}</strong>, {{ _("l'") }}<strong>{{ _("Ombre") }}</strong> {{ _("et la") }} <strong>{{ _("Position") }}</strong> {{ _("via les onglets dédiés — l'ombre se règle séparément pour la boîte et pour le texte.") }}</li>
                             <li>{{ _("Pour un contrôle total, cochez") }} <span class="ui-chip">CSS</span> {{ _("et éditez le style à la main.") }}</li>
+                            <li>{{ _("Toujours dans la cible Infos, une") }} <strong>{{ _("Ligne d'informations personnalisée") }}</strong> {{ _("compose votre propre texte avec des balises remplacées en direct ({date}, {trouvees}, {total}, {pct}, {dnf}…) ; vide, les cases reprennent la main.") }}</li>
+                            <li>{{ _("La cible Infos peut aussi afficher une légende des symboles des DNF et des caches posées, quand ils sont sur la carte — et dans la vidéo.") }}</li>
                             <li>{{ _("Tant que le sous-onglet Titres est ouvert, le titre et le bloc d'informations se déplacent aussi à la souris sur la carte — aimantés aux emplacements, Alt pour s'en passer.") }}</li>
                         </ul>
                         <div class="guide-callout info">
@@ -380,6 +396,7 @@
                             <li><strong>{{ _("Progression des trouvailles") }}</strong> — {{ _("la courbe de vos trouvailles cumulées, tracée au fil de l'animation.") }}</li>
                             <li><strong>{{ _("Chiffres clés") }}</strong> — {{ _("jours avec trouvaille, record sur une journée, plus longue série, types différents, pays et régions.") }}</li>
                         </ul>
+                        <p>{{ _("Avec des logs importés, le champ") }} <strong>{{ _("Données comptées") }}</strong> {{ _("fait compter au panneau vos DNF ou vos caches posées plutôt que vos trouvailles — même s'ils ne sont pas affichés sur la carte.") }} {{ _("Sur la page Mes poses, la galerie propose ses propres panneaux : caches actives, trouvailles et DNF reçus, favoris…") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Placez-le et réglez son apparence") }}</h3>
@@ -459,6 +476,7 @@
                     <li>
                         <h3>{{ _("Réglez leur apparence") }}</h3>
                         <p>{{ _("Choisissez le découpage (pays, régions, départements — Kreise en Allemagne, comtés au Royaume-Uni, en Irlande et aux États-Unis), ce qui fait foncer une zone (trouvailles, types de caches, combinaisons D/T couvertes ou manquantes, date de la première trouvaille), la couleur, l'opacité et la légende. Pour comparer des territoires de tailles très différentes, la case « Par km² » affiche la densité (pour 1 000 km², comme dans les cartes de la page Statistiques). « Comparer à une date » colore le gain (teinte) ou la perte (rouge) de chaque zone depuis cette date. Ces réglages font partie du thème : « Sauvegarder le thème », en bas de l'onglet, les conserve (comme « Sauvegarder » dans l'onglet Style).") }}</p>
+                        <p>{{ _("Pour aller vite, le menu") }} <strong>{{ _("Préréglages") }}</strong> {{ _("règle d'un coup la mesure et l'échelle : territoires visités, ma conquête, couverture D/T, D/T à compléter…") }} {{ _("« Afficher les valeurs » écrit la valeur de chaque zone assez grande pour la contenir, et un clic sur une zone ouvre sa fiche : son nom, le jour montré et sa valeur.") }}</p>
                         <p>{{ _("Le découpage « Grille de cases » marche partout, même sans découpage administratif fin : des hexagones de 5 à 100 km se colorent selon vos trouvailles. Il existe aussi dans les cartes de la page Statistiques.") }}</p>
                         <p>{{ _("Pour lire la carte colorée sans surcharge, « Zones seules » masque les trouvailles, les poses, le trajet et les flashs : seules les zones restent, cliquables comme avant — décoché, tout réapparaît. « Exporter la carte en image » télécharge un PNG de la carte telle qu'affichée, légende comprise ; en « Zones seules », l'image est épurée.") }}</p>
                         <div class="guide-callout tip">
@@ -568,6 +586,45 @@
                 </ol>
             </section>
 
+            <!-- ===================== AUTRE SOURCE : MES LOGS ===================== -->
+            <section id="logs" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-checklist"></i></span>
+                    <h2>{{ _("Autre source : vos logs") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Vos logs Geocaching apportent ce que le fichier My Finds ne contient pas : vos DNF, vos caches posées et les logs que les autres joueurs y laissent. Ils s'affichent à côté de vos trouvailles, se comptent dans les Stats et la page Statistiques, et font vivre la page Mes poses.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Importez vos logs") }}</h3>
+                        <p>{{ _("Tout se passe dans la carte") }} <strong>{{ _("Mes logs") }}</strong> {{ _("de l'onglet Données. Choisissez d'abord ce que le favori collecte : tout, vos DNF seulement ou vos caches posées seulement — un périmètre réduit raccourcit la collecte.") }}</p>
+                        <ul class="sub">
+                            <li><strong>{{ _("Le favori") }}</strong> — {{ _("glissez le bouton") }} <span class="ui-chip"><i class="ti ti-bookmark"></i> {{ _("MyGCFlow — Mes logs") }}</span> {{ _("dans la barre de favoris de votre navigateur (une seule fois), ouvrez geocaching.com connecté à votre compte, puis cliquez ce favori. La collecte relit vos journaux et vos caches comme une consultation à la main : elle peut durer plusieurs minutes.") }}</li>
+                            <li><strong>{{ _("L'aperçu") }}</strong> — {{ _("l'export arrive dans l'application ;") }} <span class="ui-chip"><i class="ti ti-eye"></i> {{ _("Voir l'aperçu") }}</span> {{ _("montre ce qu'il change avant que vous ne validiez. Les fois suivantes, le favori ne relit que ce qui a pu changer.") }}</li>
+                            <li><strong>{{ _("L'import de fichiers") }}</strong> — <span class="ui-chip"><i class="ti ti-folder-open"></i> {{ _("Importer un fichier…") }}</span> {{ _("(options avancées de la carte) accepte un export mygcflow-logs (.json) ou un GPX contenant des logs. Les logs de votre fichier My Finds s'ajoutent aussi à chaque import.") }}</li>
+                        </ul>
+                        <div class="guide-callout warn">
+                            <i class="ti ti-alert-triangle"></i>
+                            <div>{{ _("La collecte par un favori n'est pas recommandée par Groundspeak et peut entrer en conflit avec les conditions d'utilisation de geocaching.com : utilisez-la à vos propres risques. L'import de fichiers, lui, ne touche pas au site.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Affichez vos DNF") }}</h3>
+                        <p>{{ _("Dans les Filtres, la case") }} <span class="ui-chip">{{ _("Afficher mes DNF sur la carte") }}</span> {{ _("pose un point à votre premier DNF sur une cache ; le jour où vous la trouvez enfin, la trouvaille prend sa place. Les DNF ont leur propre couche, sous vos trouvailles, et ne comptent jamais comme des trouvailles.") }}</p>
+                        <p>{{ _("Ils peuvent rejoindre le trajet, et leur apparence se règle à part dans l'onglet Style : carte « Mes DNF » des Points, « Flash des DNF » dans Flash.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Affichez vos caches posées") }}</h3>
+                        <p>{{ _("La case") }} <span class="ui-chip">{{ _("Afficher mes caches posées sur la carte") }}</span> {{ _("fait apparaître chacune de vos caches à sa publication, puis joue vos étapes de poseur : maintenance, désactivation, archivage — une cache archivée passe en gris. Seules vos propres actions y figurent : les logs des autres joueurs sont sur la page") }} <a href="#poses">{{ _("Mes poses") }}</a>.</p>
+                        <p>{{ _("Comme pour les DNF, pose et entretien peuvent entrer dans le trajet, et forme, couleurs et flashs se règlent à part dans l'onglet Style.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="ti ti-info-circle"></i>
+                            <div>{{ _("Ces deux cases n'apparaissent qu'une fois des DNF ou des caches posées importés. Côté gestion, les options avancées de la carte « Mes logs » exportent vos logs, les suppriment, ou régénèrent le jeton du favori.") }}</div>
+                        </div>
+                    </li>
+                </ol>
+            </section>
+
             <!-- ===================== AUTRE MODE : ÉVOLUTION ===================== -->
             <section id="evolution" class="guide-section">
                 <div class="guide-section-head">
@@ -579,7 +636,7 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Ouvrez le mode Évolution") }}</h3>
-                        <p>{{ _("En haut de l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("le sélecteur") }} <span class="ui-chip"><i class="ti ti-database"></i> {{ _("Mes Géocaches") }}</span> <span class="ui-chip"><i class="ti ti-stack"></i> {{ _("Évolution d'une zone") }}</span> {{ _("passe d'un mode à l'autre. Chaque mode garde ses propres données.") }}</p>
+                        <p>{{ _("Dans l'en-tête, le lien") }} <span class="ui-chip"><i class="ti ti-stack"></i> {{ _("Évolution") }}</span> {{ _("ouvre cette page ;") }} <span class="ui-chip"><i class="ti ti-database"></i> {{ _("Mes Géocaches") }}</span> {{ _("ramène à vos trouvailles. Chaque page garde ses propres données, ses thèmes, ses panneaux Stats, ses images et ses zones.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Importez les exports CSV de la zone") }}</h3>
@@ -598,6 +655,48 @@
             </section>
 
 
+            <!-- ===================== AUTRE PAGE : MES POSES ===================== -->
+            <section id="poses" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-map-pin"></i></span>
+                    <h2>{{ _("Autre page : la vie de vos caches") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Pour les poseurs : la page Mes poses anime vos caches et ce qui leur arrive — leur publication, les trouvailles, favoris et DNF des autres joueurs, les signalements, la maintenance et l'archivage.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Ouvrez la page Mes poses") }}</h3>
+                        <p>{{ _("Le lien") }} <span class="ui-chip"><i class="ti ti-map-pin"></i> {{ _("Mes poses") }}</span> {{ _("de l'en-tête l'ouvre. Rien ne s'importe ici : vos caches et leurs logs viennent de la carte") }} <a href="#logs">{{ _("Mes logs") }}</a> {{ _("de la page Mes Géocaches, et") }} <span class="ui-chip"><i class="ti ti-refresh"></i> {{ _("Mettre à jour mes logs") }}</span> {{ _("y renvoie pour une nouvelle collecte.") }}</p>
+                        <p>{{ _("Les filtres de l'onglet Données trient vos caches par état actuel (active, désactivée, archivée) et par trouvailles reçues ; les caches archivées restent visibles en gris ou disparaissent.") }} <span class="ui-chip">{{ _("Exporter en CSV") }}</span> {{ _("télécharge la liste de toutes vos caches posées.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Donnez du relief à l'activité") }}</h3>
+                        <ul class="sub">
+                            <li>{{ _("Dans Style > Points, la taille d'une cache peut suivre sa popularité, et une lueur s'allume derrière elle à chaque trouvaille, puis s'éteint peu à peu.") }}</li>
+                            <li>{{ _("Dans Style > Flash, un flash par cache et par jour : le type de log le plus marquant l'emporte, et plus la cache reçoit de logs ce jour-là, plus le flash est grand.") }}</li>
+                            <li>{{ _("Dans Style > Titres, cible Infos, la ligne d'informations accepte ses propres balises : {actives}, {trouvailles}, {favoris}, {dnf}, {trouveurs}…") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Faites apparaître les pseudos des visiteurs") }}</h3>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Pseudos") }}</span> {{ _("de l'onglet Style, activez") }} <span class="ui-chip">{{ _("Afficher les pseudos des visiteurs") }}</span>{{ _(" : à chaque log reçu, le pseudo du géocacheur apparaît près de la cache, se déplace puis s'efface — sur la carte comme dans la vidéo.") }}</p>
+                        <ul class="sub">
+                            <li>{{ _("Huit styles s'appliquent d'un clic ; leurs vignettes s'animent au survol. Le texte, la densité, le mouvement et l'allure se règlent ensuite dans les sections repliées.") }}</li>
+                            <li>{{ _("Choisissez quels logs en reçoivent un — trouvailles, DNF, notes — ou seulement les plus marquants : première trouvaille, trouvaille ronde, favori, visiteur fidèle.") }}</li>
+                            <li>{{ _("L'aperçu rejoue des pseudos réels sur quelques caches, sans lancer l'animation : chaque réglage s'y voit aussitôt.") }}</li>
+                        </ul>
+                        <div class="guide-callout info">
+                            <i class="ti ti-eye-off"></i>
+                            <div>{{ _("Les pseudos sont publics sur Geocaching, mais une vidéo les diffuse ailleurs. La section Confidentialité les réduit à leurs initiales, et une liste écarte les pseudos à ne jamais afficher.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Suivez vos chiffres de poseur") }}</h3>
+                        <p>{{ _("L'onglet Stats a ses propres panneaux pour cette page — caches actives, trouvailles et DNF reçus, favoris… — et l'onglet Images sa propre liste. Sur la page Statistiques, « Dans » compte aussi les trouvailles, DNF et favoris reçus sur vos caches.") }}</p>
+                    </li>
+                </ol>
+            </section>
+
             <!-- ===================== AUTRE PAGE : STATISTIQUES ===================== -->
             <section id="statspage" class="guide-section">
                 <div class="guide-section-head">
@@ -615,13 +714,14 @@
                     <li>
                         <h3>{{ _("Choisissez la période") }}</h3>
                         <p>{{ _("Le menu") }} <strong>{{ _("Période") }}</strong> {{ _("s'applique à tous les graphiques : toutes vos trouvailles, les 12 derniers mois ou une année. Un graphique peut garder sa propre période — il porte alors une pastille, comme « Ma meilleure année », qui couvre tout votre historique.") }}</p>
+                        <p>{{ _("« Personnalisée… », en fin de menu, ouvre un choix de dates « du … au … ». La case") }} <strong>{{ _("Depuis le début") }}</strong>{{ _(", à côté du menu, compte aussi tout ce qui précède la fin de la période : avec 2015, le tableau montre vos totaux à la fin de 2015.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Ajoutez et réglez vos graphiques") }}</h3>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter un graphique") }}</span> {{ _("propose des questions toutes faites. Le menu") }} <span class="ui-chip"><i class="ti ti-dots"></i></span> {{ _("de chaque graphique permet de le modifier : une phrase à compléter dit ce qu'il montre — « Afficher le nombre de trouvailles par mois de l'année sur 2025 en barres » — avec un aperçu immédiat.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter un graphique") }}</span> {{ _("propose des questions toutes faites, qu'une recherche retrouve par leur nom. Le menu") }} <span class="ui-chip"><i class="ti ti-dots"></i></span> {{ _("de chaque graphique permet de le modifier : une phrase à compléter dit ce qu'il montre — « Afficher le nombre de trouvailles par mois de l'année sur 2025 en barres » — avec un aperçu immédiat.") }}</p>
                         <div class="guide-callout info">
                             <i class="ti ti-info-circle"></i>
-                            <div>{{ _("Le même menu duplique, déplace, supprime un graphique ou l'exporte en image. Tout est enregistré automatiquement.") }} {{ _("« Voir les valeurs » affiche ses chiffres dans un tableau, exportable en CSV.") }}</div>
+                            <div>{{ _("Le même menu duplique, déplace ou supprime un graphique ; son sous-menu Exporter en fait une image, une vidéo ou un panneau vidéo. Tout est enregistré automatiquement.") }} {{ _("« Voir les valeurs » affiche ses chiffres dans un tableau, exportable en CSV.") }} {{ _("« Comprendre ce chiffre » explique comment le résultat est obtenu : source, période exacte, filtres, données comptées et limites.") }}</div>
                         </div>
                     </li>
                     <li>
@@ -667,7 +767,7 @@
                     <li>
                         <h3>{{ _("Séries, records et objectifs") }}</h3>
                         <p>{{ _("Le groupe") }} <strong>{{ _("Séries et records") }}</strong> {{ _("date vos exploits : meilleure journée, plus longue série de jours d'affilée, série en cours, plus longue pause. Les jours concernés s'affichent sous le chiffre, et « Voir sur la carte » montre les caches de la journée ou de la série. Sur des barres ou une courbe, l'option « Mettre le record en avant » épingle la plus haute valeur.") }}</p>
-                        <p>{{ _("Dans les") }} <strong>{{ _("Options d'affichage") }}</strong> {{ _("de l'éditeur, un") }} <strong>{{ _("Objectif") }}</strong> {{ _("ajoute à un chiffre clé une barre de progression et la date où vous l'atteindrez à ce rythme. « Prolonger à ce rythme » poursuit en pointillés une courbe de cumul de la période en cours jusqu'à sa fin.") }}</p>
+                        <p>{{ _("Dans l'éditeur, la section") }} <strong>{{ _("Objectif") }}</strong> {{ _("ajoute à un chiffre clé une barre de progression et la date où vous l'atteindrez à ce rythme. « Prolonger à ce rythme » poursuit en pointillés une courbe de cumul de la période en cours jusqu'à sa fin.") }}</p>
                         <div class="guide-callout tip">
                             <i class="ti ti-target-arrow"></i>
                             <div>{{ _("Le groupe « Objectifs et projections » en propose de tout prêts : « Mon prochain cap » vise le prochain nombre rond, « Mon année à ce rythme » annonce où vous finirez au 31 décembre.") }}</div>
@@ -675,8 +775,8 @@
                     </li>
                     <li>
                         <h3>{{ _("Rangez, partagez, imprimez") }}</h3>
-                        <p>{{ _("Glissez une carte par sa poignée pour la déplacer, et tirez son coin inférieur droit pour l'élargir ou l'allonger. Le menu de chaque graphique l'exporte en image (PNG ou SVG) ; celui du tableau de bord le duplique, l'exporte dans un fichier à partager, en importe un, ou l'imprime — toujours sur fond clair.") }}</p>
-                        <p>{{ _("Le menu du tableau de bord fait aussi une image du tableau entier, tel qu'il est affiché, avec son nom, sa période et ses filtres :") }} <strong>{{ _("Enregistrer le tableau en image (PNG)") }}</strong>, {{ _("ou") }} <strong>{{ _("Copier l'image du tableau") }}</strong> {{ _("pour la coller directement dans un message ou sur un forum.") }}</p>
+                        <p>{{ _("Glissez une carte par sa poignée pour la déplacer, et tirez son coin inférieur droit pour l'élargir ou l'allonger. Le sous-menu Exporter de chaque graphique en fait une image (PNG ou SVG). Le menu à côté du nom du tableau de bord en crée un autre, le duplique ou en importe un.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-share"></i> {{ _("Exporter") }}</span> {{ _("de la barre imprime le tableau — toujours sur fond clair — ou l'enregistre dans un fichier à partager. Il en fait aussi une image entière, telle qu'elle est affichée, avec son nom, sa période et ses filtres :") }} <strong>{{ _("Enregistrer le tableau en image (PNG)") }}</strong>, {{ _("ou") }} <strong>{{ _("Copier l'image du tableau") }}</strong> {{ _("pour la coller directement dans un message ou sur un forum.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Présentez vos statistiques") }}</h3>
@@ -686,11 +786,12 @@
                     <li>
                         <h3>{{ _("Revenez à la carte") }}</h3>
                         <p>{{ _("Cliquez sur une barre, un point ou une part d'un graphique de vos trouvailles : la carte s'ouvre filtrée sur ces caches (le mois, le type, le pays…). Ses filtres précédents sont remplacés, une confirmation vous le rappelle.") }}</p>
+                        <p>{{ _("Quand la valeur cliquée existe aussi dans les filtres du tableau, le clic propose également") }} <strong>{{ _("Filtrer ce tableau") }}</strong>{{ _(" : un type ou un pays devient un filtre, une année ou un mois devient la période — le message qui s'affiche permet d'annuler.") }}</p>
                         <p>{{ _("Dans le menu d'un graphique, « Envoyer en panneau vidéo » l'ajoute aux panneaux Stats de la page correspondante : il se remplira au fil de l'animation de la carte.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Faites-en une vidéo") }}</h3>
-                        <p>{{ _("« Créer une vidéo animée », dans le menu d'un graphique, enregistre le graphique qui se dessine mois après mois — idéal pour voir les années faire la course.") }} <strong>{{ _("Créer la vidéo du tableau…") }}</strong>, {{ _("dans le menu du tableau de bord, enchaîne tous ses graphiques : une ouverture avec le nom du tableau, puis chaque graphique en fondu, les chiffres clés qui comptent jusqu'à leur valeur.") }}</p>
+                        <p>{{ _("« Créer une vidéo animée », dans le menu d'un graphique, enregistre le graphique qui se dessine mois après mois — idéal pour voir les années faire la course.") }} <strong>{{ _("Créer la vidéo du tableau…") }}</strong>, {{ _("dans le menu Exporter de la barre, enchaîne tous ses graphiques : une ouverture avec le nom du tableau, puis chaque graphique en fondu, les chiffres clés qui comptent jusqu'à leur valeur.") }}</p>
                         <p>{{ _("Ajoutez une musique : une de celles déjà choisies pour les vidéos de la carte, ou un fichier de votre ordinateur. Trop courte, elle est répétée ; elle s'éteint en fondu à la fin.") }}</p>
                         <div class="guide-callout info">
                             <i class="ti ti-info-circle"></i>
