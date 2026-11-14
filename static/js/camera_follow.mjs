@@ -171,6 +171,14 @@ export function normalizeWorldX(x, worldWidth) {
 // referenceX. Couper au plus grand espace vide est plus robuste qu'un simple
 // dépliage autour du premier point pour les lots répartis sur plusieurs zones.
 export function summarizeWorldCoordinates(coordinates, worldWidth, referenceX = null) {
+    const points = placeOnNearestWorld(coordinates, worldWidth, referenceX);
+    return points ? summarizePoints(points) : null;
+}
+
+// Coordonnées valides du lot, dépliées sur le plus petit arc qui les contient
+// puis décalées vers la copie du monde la plus proche de referenceX (cf.
+// summarizeWorldCoordinates). Ordre d'entrée conservé. null si aucune.
+function placeOnNearestWorld(coordinates, worldWidth, referenceX) {
     const valid = (Array.isArray(coordinates) ? coordinates : []).filter((point) => (
         point && Number.isFinite(point[0]) && Number.isFinite(point[1])
     ));
@@ -206,15 +214,17 @@ export function summarizeWorldCoordinates(coordinates, worldWidth, referenceX = 
     const shift = width > 0
         ? nearestWorldX(meanX, reference, width) - meanX
         : 0;
+    return valid.map((point, i) => [xs[i] + shift, point[1]]);
+}
+
+function summarizePoints(points) {
     let sumX = 0;
     let sumY = 0;
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    for (let i = 0; i < valid.length; i++) {
-        const x = xs[i] + shift;
-        const y = valid[i][1];
+    for (const [x, y] of points) {
         sumX += x;
         sumY += y;
         minX = Math.min(minX, x);
@@ -223,9 +233,83 @@ export function summarizeWorldCoordinates(coordinates, worldWidth, referenceX = 
         maxY = Math.max(maxY, y);
     }
     return {
-        center: [sumX / valid.length, sumY / valid.length],
+        center: [sumX / points.length, sumY / points.length],
         extent: [minX, minY, maxX, maxY],
     };
+}
+
+// Écart au sol au-delà duquel deux caches d'un même jour forment deux groupes
+// distincts (cf. summarizeCameraFocus) : un vol ou un long trajet sans
+// trouvaille, pas une balade ni une série de caches le long d'une route.
+export const DAY_GROUP_GAP_KM = 100;
+const EARTH_RADIUS_KM = 6371;
+const WEB_MERCATOR_RADIUS = 6378137;
+
+// Ce que la caméra vise pour un jour : le barycentre et l'étendue de son groupe
+// principal, plus `bounds`, l'étendue de toutes ses caches. Quand le jour
+// rassemble des caches séparées de plus de gapKm (retour de voyage : cinq
+// caches à Malte puis une en France le soir), le barycentre de l'ensemble
+// tombe dans le vide entre les groupes — en mer au large de la Sicile — et la
+// caméra y partait sans qu'aucun point n'y apparaisse. Elle suit désormais le
+// groupe le plus fourni ; à égalité, celui de la dernière cache du lot (la
+// suite du parcours). Un jour d'un seul groupe donne exactement le résumé de
+// summarizeWorldCoordinates.
+export function summarizeCameraFocus(coordinates, worldWidth, referenceX = null, gapKm = DAY_GROUP_GAP_KM) {
+    const points = placeOnNearestWorld(coordinates, worldWidth, referenceX);
+    if (!points) return null;
+    const all = summarizePoints(points);
+    const group = points.length > 1 ? mainGroup(points, worldWidth, gapKm) : null;
+    if (!group) return { ...all, bounds: all.extent };
+    return { ...summarizePoints(group), bounds: all.extent };
+}
+
+// Groupes par chaînage simple (deux caches à moins de gapKm sont dans le même
+// groupe, de proche en proche). null s'il n'y a qu'un groupe.
+function mainGroup(points, worldWidth, gapKm) {
+    const width = Number(worldWidth);
+    // Rayon de la sphère dans les unités de la carte : Web Mercator par défaut.
+    const radius = width > 0 ? width / (2 * Math.PI) : WEB_MERCATOR_RADIUS;
+    const gap = Math.max(0, Number(gapKm) || 0) / EARTH_RADIUS_KM * radius;
+    if (!(gap > 0)) return null;
+    const n = points.length;
+    // Facteur d'échelle de Mercator : une distance de carte à la latitude φ
+    // vaut cos φ fois cette distance au sol.
+    const scale = points.map(([, y]) => Math.cos(2 * Math.atan(Math.exp(y / radius)) - Math.PI / 2));
+    const minScale = Math.min(...scale);
+    const parent = Array.from({ length: n }, (_, i) => i);
+    const find = (i) => {
+        while (parent[i] !== i) {
+            parent[i] = parent[parent[i]];
+            i = parent[i];
+        }
+        return i;
+    };
+    const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => points[a][0] - points[b][0]);
+    for (let a = 0; a < n; a++) {
+        const i = order[a];
+        for (let b = a + 1; b < n; b++) {
+            const j = order[b];
+            const dx = points[j][0] - points[i][0];
+            // Tri par x : au-delà, plus aucune cache ne peut être assez proche.
+            if (dx * minScale > gap) break;
+            const ground = Math.hypot(dx, points[j][1] - points[i][1]) * (scale[i] + scale[j]) / 2;
+            if (ground <= gap) parent[find(i)] = find(j);
+        }
+    }
+    const sizes = new Map();
+    const lastIndex = new Map();
+    for (let i = 0; i < n; i++) {
+        const root = find(i);
+        sizes.set(root, (sizes.get(root) || 0) + 1);
+        lastIndex.set(root, i);
+    }
+    if (sizes.size < 2) return null;
+    let best = null;
+    for (const [root, size] of sizes) {
+        if (best === null || size > sizes.get(best)
+            || (size === sizes.get(best) && lastIndex.get(root) > lastIndex.get(best))) best = root;
+    }
+    return points.filter((_, i) => find(i) === best);
 }
 
 // Déplace une étendue entière vers la copie du monde voisine d'une référence,

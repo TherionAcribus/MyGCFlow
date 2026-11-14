@@ -157,6 +157,7 @@ import {
     simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
+    summarizeCameraFocus,
     summarizeWorldCoordinates,
     trailCameraZoomTarget,
     zoomForExtent,
@@ -1878,9 +1879,9 @@ function cameraMinZoomFloor() {
     return Math.max(MIN_CRUISE_ZOOM, Math.log2(width / 256));
 }
 
-// Barycentre et étendue des caches d'un jour, en coordonnées de carte : ce que
-// displayFeaturesForDates donne à viser à la caméra. Calculés sans tableau
-// intermédiaire, la simulation parcourant toutes les caches de la sélection.
+// Barycentre et étendue du groupe principal des caches d'un jour, et étendue
+// de toutes (`bounds`), en coordonnées de carte : ce que displayFeaturesForDates
+// donne à viser à la caméra (summarizeCameraFocus, camera_follow.mjs).
 function summarizeCameraDay(points) {
     const coordinates = [];
     for (let i = 0; i < points.length; i++) {
@@ -1890,7 +1891,7 @@ function summarizeCameraDay(points) {
         if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
         coordinates.push([x, y]);
     }
-    return summarizeWorldCoordinates(coordinates, cameraWorldWidth());
+    return summarizeCameraFocus(coordinates, cameraWorldWidth());
 }
 
 // Résumés par jour (cameraSummaries) et étendue de toutes les caches
@@ -1906,14 +1907,15 @@ function ensureCameraSummaries() {
         const summary = summarizeCameraDay(points || []);
         if (!summary) continue;
         summaries.set(dateKey, summary);
+        // Toutes les caches du jour, pas seulement le groupe visé.
         if (extent) {
             const referenceX = (extent[0] + extent[2]) / 2;
             ol.extent.extend(
                 extent,
-                alignWorldExtent(summary.extent, referenceX, cameraWorldWidth()),
+                alignWorldExtent(summary.bounds, referenceX, cameraWorldWidth()),
             );
         } else {
-            extent = [...summary.extent];
+            extent = [...summary.bounds];
         }
     }
     cameraSummaries = summaries;
@@ -5922,15 +5924,16 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // Mode « tête du trait » : idem, la cible est la position du stylo.
     if (pkg.options.animation?.cameraFollow && !cameraFollowSuspended && !cameraTrack
         && effectiveCameraFollowMode() !== 'trail') {
-        // La caméra vise le barycentre des caches du jour ; c'est le lissage qui
-        // fait le mouvement, pas ce saut de cible.
+        // La caméra vise le barycentre du groupe principal des caches du jour
+        // (même résumé que la simulation) ; c'est le lissage qui fait le
+        // mouvement, pas ce saut de cible.
         const coordinates = newFeatures.map((feature) => ol.proj.fromLonLat([
             feature.geometry.coordinates[0],
             feature.geometry.coordinates[1],
         ]));
         cameraDynamism = effectiveCameraDynamism();
         const view = map.getView();
-        const summary = summarizeWorldCoordinates(
+        const summary = summarizeCameraFocus(
             coordinates,
             cameraWorldWidth(),
             view.getCenter()?.[0],

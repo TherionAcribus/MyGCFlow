@@ -26,6 +26,7 @@ import {
     simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
+    summarizeCameraFocus,
     summarizeWorldCoordinates,
     TRACK_LATE_EPSILON_MS,
     TRAIL_LEAD_PX,
@@ -117,6 +118,54 @@ test('le résumé d’un jour reste compact de part et d’autre de l’antimér
     assert.deepEqual(west, { center: [-180, 11], extent: [-181, 10, -179, 12] });
     const global = summarizeWorldCoordinates([[0, 0], [179, 0], [-179, 0]], 360, 0);
     assert.equal(global.extent[2] - global.extent[0], 181);
+});
+
+// Web Mercator (EPSG:3857), comme ol.proj.fromLonLat.
+const MERCATOR_WIDTH = 2 * Math.PI * 6378137;
+const mercator = ([lon, lat]) => [
+    lon * Math.PI / 180 * 6378137,
+    Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)) * 6378137,
+];
+
+test('un jour en deux groupes éloignés vise le plus fourni, pas le vide entre eux', () => {
+    // Retour de Malte : cinq caches le matin, une en Moselle le soir. Le
+    // barycentre de l'ensemble tombait en mer au nord de la Sicile.
+    const malta = [[14.19, 36.05], [14.23, 36.08], [14.25, 36.07], [14.21, 36.06], [14.19, 36.05]];
+    const day = [...malta, [6.16, 49.25]].map(mercator);
+    const focus = summarizeCameraFocus(day, MERCATOR_WIDTH);
+    const maltaOnly = summarizeWorldCoordinates(malta.map(mercator), MERCATOR_WIDTH);
+    assert.deepEqual(focus.center, maltaOnly.center);
+    assert.deepEqual(focus.extent, maltaOnly.extent);
+    // L'étendue de toutes les caches reste disponible (bornes de la caméra).
+    assert.deepEqual(focus.bounds, summarizeWorldCoordinates(day, MERCATOR_WIDTH).extent);
+});
+
+test('à égalité, la caméra suit le groupe de la dernière cache du jour', () => {
+    const paris = mercator([2.35, 48.85]);
+    const lyon = mercator([4.83, 45.76]);
+    // Le dépliage modulo la largeur du monde laisse un écart d'arrondi.
+    const near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-6;
+    assert.ok(near(summarizeCameraFocus([paris, lyon], MERCATOR_WIDTH).center, lyon));
+    assert.ok(near(summarizeCameraFocus([lyon, paris], MERCATOR_WIDTH).center, paris));
+});
+
+test('un jour d’un seul groupe garde le barycentre de toutes ses caches', () => {
+    // Une série de caches le long d'une route : 40 km entre deux, 280 km en
+    // tout — un seul groupe, de proche en proche.
+    const road = Array.from({ length: 8 }, (_, i) => mercator([2 + i * 0.5, 47]));
+    const all = summarizeWorldCoordinates(road, MERCATOR_WIDTH);
+    assert.deepEqual(summarizeCameraFocus(road, MERCATOR_WIDTH), { ...all, bounds: all.extent });
+    assert.equal(summarizeCameraFocus([], MERCATOR_WIDTH), null);
+    const single = summarizeCameraFocus([road[0]], MERCATOR_WIDTH);
+    assert.deepEqual(single.center, road[0]);
+});
+
+test('les groupes se comptent de part et d’autre de l’antiméridien', () => {
+    // Fidji (179,9° / −179,9°) et une cache isolée en Nouvelle-Zélande.
+    const fiji = [[179.9, -17], [-179.9, -17], [-179.95, -17.05]].map(mercator);
+    const focus = summarizeCameraFocus([...fiji, mercator([174.8, -41.3])], MERCATOR_WIDTH, fiji[0][0]);
+    assert.ok(Math.abs(focus.center[0] - mercator([180, -17])[0]) < 20_000);
+    assert.ok(focus.extent[2] - focus.extent[0] < 50_000);
 });
 
 test('la simulation traverse l’antiméridien par le chemin court', () => {
