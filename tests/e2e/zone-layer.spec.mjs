@@ -752,6 +752,26 @@ test('« Afficher les valeurs » : valeurs sur les zones assez grandes, à la da
   await app(page, 'pkg.showZonesRest();');
   await expect.poll(async () => Object.keys((await zones(page)).labels).length).toBe(4);
 
+  // Une valeur qui change sans changer de classe (Bretagne 1 → 2 entre le
+  // 4 et le 5, classe basse sur l'échelle [1, 1, 3, 3]) repeint la couche
+  // des valeurs : sinon le chiffre restait figé jusqu'au prochain
+  // changement de classe, puis sautait (lecture saccadée).
+  expect(await app(page, 'return pkg.startPausedPreview();')).toBe(true);
+  await app(page, 'pkg.seekAnimationToDate(new Date(2026, 0, 4));');
+  await expect.poll(async () => (await zones(page)).labels['FR-BRE']).toBe('1');
+  const before = await app(page, `
+    const labels = pkg.getMap().getLayers().getArray().find((l) => l.get('name') === 'zone-labels');
+    return { revision: labels.getRevision(), classes: pkg.getZoneLayerDebugState().classes };`);
+  await app(page, 'pkg.accumulateZonesForDates([new Date(2026, 0, 5)], Date.now());');
+  const after = await app(page, `
+    const labels = pkg.getMap().getLayers().getArray().find((l) => l.get('name') === 'zone-labels');
+    return { revision: labels.getRevision(), state: pkg.getZoneLayerDebugState() };`);
+  expect(after.state.classes).toEqual(before.classes);
+  expect(after.state.labels['FR-BRE']).toBe('2');
+  expect(after.revision).toBeGreaterThan(before.revision);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => app(page, 'return pkg.previewPlaybackState();')).toBe('idle');
+
   // Lecture de l'aperçu avec les valeurs (fondus, style redemandé à chaque
   // image) : sans erreur, puis arrêt.
   await page.locator('#btnQuickPreview').click();

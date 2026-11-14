@@ -70,6 +70,7 @@ let animating = false;
 let refDay = null;           // jour de référence de l'échelle (fin)
 let shownDay = null;
 let compareMap = null;       // valeurs à la date de comparaison (null : état du jour)
+let endValues = null;        // valeurs au jour de l'échelle (place des étiquettes)
 let status = 'off';          // off | loading | ready | error | empty
 let revision = 0;            // signature vidéo (pipeline MediaRecorder)
 let rebuildTimer = 0;
@@ -468,6 +469,7 @@ function computeScale() {
     refDay = day;
     compareMap = compare === null ? null : model.state.seek(compare).values();
     const values = model.state.seek(day ?? Infinity).values();
+    endValues = values;
     if (compareMap) {
         // Comparaison à une date : l'échelle porte sur les écarts non nuls
         // (les zones inchangées ne sont ni colorées ni dans la légende) ;
@@ -542,7 +544,8 @@ function advanceTo(day, now) {
     state.seek(day);
     shownDay = day;
     let changed = false;
-    for (const id of state.drainChanged()) {
+    const ids = state.drainChanged();
+    for (const id of ids) {
         const cls = classOfValue(deltaOf(id, state.valueOf(id)));
         const prev = classes.has(id) ? classes.get(id) : null;
         if (cls === prev) continue;
@@ -552,12 +555,23 @@ function advanceTo(day, now) {
         if (!reducedMotion()) fades.set(id, { from, start: now, rise: prev === null || (cls !== null && cls > prev) });
         changed = true;
     }
+    // Une valeur qui change sans changer de classe change quand même son
+    // étiquette : sans ce repeint, les chiffres restaient figés jusqu'au
+    // prochain changement de classe, puis sautaient de plusieurs unités.
     if (changed) touch();
+    else if (ids.length && labelLayer?.getVisible()) touchLabels();
 }
 
 function touch() {
     revision++;
     layer?.changed();
+    labelLayer?.changed();
+}
+
+// Valeurs seules : la couche des contours (style par zone) n'est pas
+// reconstruite.
+function touchLabels() {
+    revision++;
     labelLayer?.changed();
 }
 
@@ -676,10 +690,10 @@ function textWidth(text) {
     return w;
 }
 
-// Texte de la zone `id` au jour montré ('' sans valeur).
-function labelText(id) {
+// Texte de la zone `id` pour la valeur `v` de l'état ('' sans valeur).
+function labelText(id, v) {
     const o = opts();
-    return zoneLabelText(deltaOf(id, model.state.valueOf(id)), {
+    return zoneLabelText(deltaOf(id, v), {
         measure: o.measure,
         density: densityOf(o),
         signed: compareMap !== null,
@@ -688,13 +702,22 @@ function labelText(id) {
 }
 
 // Étiquette d'une zone si elle s'écrit à cette résolution, sinon null.
+// La place est mesurée sur le plus large du texte du jour et de celui de
+// fin d'échelle (le plus long pour un cumul) : une étiquette qui grandit
+// (99 → 100 → 1 000) ne disparaît pas en cours d'animation, et `pad`
+// élargit sa boîte d'anti-chevauchement à cette largeur — sans quoi les
+// voisines s'effaçaient et réapparaissaient au fil des chiffres.
 function labelInfo(feature, id, cls, resolution) {
     if (cls === null || !model?.state || !(resolution > 0) || !opts().labels) return null;
-    const text = labelText(id);
+    const text = labelText(id, model.state.valueOf(id));
     if (!text) return null;
     const a = anchorOf(feature);
-    if (!a || !labelFits(textWidth(text), LABEL_FONT_SIZE, a.w / resolution, a.h / resolution)) return null;
-    return { text, anchor: a };
+    if (!a) return null;
+    const width = textWidth(text);
+    const end = endValues?.has(id) ? labelText(id, endValues.get(id)) : '';
+    const room = Math.max(width, end ? textWidth(end) : 0);
+    if (!labelFits(room, LABEL_FONT_SIZE, a.w / resolution, a.h / resolution)) return null;
+    return { text, anchor: a, pad: Math.ceil((room - width) / 2) };
 }
 
 function labelStyleFor(feature, resolution) {
@@ -704,7 +727,7 @@ function labelStyleFor(feature, resolution) {
     if (!info) return null;
     const colors = zoneLabelColors(colorOf(cls), opts().opacity / 100);
     const font = labelFont();
-    const key = `${info.text}|${colors.fill}|${font}`;
+    const key = `${info.text}|${colors.fill}|${font}|${info.pad}`;
     const cached = labelStyles.get(feature);
     if (cached?.key === key) return cached.style;
     const style = new ol.style.Style({
@@ -712,6 +735,7 @@ function labelStyleFor(feature, resolution) {
         text: new ol.style.Text({
             text: info.text,
             font,
+            padding: [0, info.pad, 0, info.pad],
             fill: new ol.style.Fill({ color: colors.fill }),
             stroke: new ol.style.Stroke({ color: colors.stroke, width: 3 }),
         }),
