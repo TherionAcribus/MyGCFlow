@@ -380,6 +380,7 @@ export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds =
             for (let y = y0 + step; y <= y1; y += step) breaks.push(dayNumber({ y, m: 1, d: 1 }));
         }
     }
+    if (kind !== 'fixed' && kind !== 'year') breaks = niceBreaks(breaks, min, max, list.every(Number.isInteger));
     // Bornes strictement croissantes, au-dessus du minimum : aucune classe
     // vide au début, et des valeurs toutes égales donnent une seule classe.
     // (Échelle divergente : la coupure à 0 est gardée même au-dessous du
@@ -415,6 +416,43 @@ export function zoneScale(values, { mode = 'quantile', classes = 6, thresholds =
             return out;
         },
     };
+}
+
+// Bornes arrondies pour la légende : 958 / 1 897 / 2 476 deviennent
+// 1 000 / 2 000 / 2 500. Chaque borne prend le pas le plus grossier de la
+// suite 1-2-2,5-5 × 10ⁿ qui ne la déplace pas de plus d'un quart de l'écart
+// avec ses voisines (bornes brutes, min et max) : les classes gardent à peu
+// près leur répartition. Valeurs entières : pas entiers seulement (pas de
+// borne 7,5 pour un décompte). La coupure à 0 de l'échelle divergente est
+// déjà ronde et le reste.
+const NICE_MANTISSAS = [5, 2.5, 2, 1];
+
+function niceBreaks(breaks, min, max, integer) {
+    const out = [];
+    for (let j = 0; j < breaks.length; j++) {
+        const b = breaks[j];
+        const lower = j === 0 ? min : breaks[j - 1];
+        const upper = j === breaks.length - 1 ? max : breaks[j + 1];
+        const tol = Math.min(b - lower, upper - b) / 4;
+        const prev = out.length ? out[out.length - 1] : -Infinity;
+        out.push(niceValue(b, tol, prev, integer));
+    }
+    return out;
+}
+
+function niceValue(b, tol, prev, integer) {
+    if (!(tol > 0) || !Number.isFinite(b)) return b;
+    const top = Math.floor(Math.log10(Math.max(Math.abs(b), tol))) + 1;
+    const bottom = Math.floor(Math.log10(tol)) - 1;
+    for (let e = top; e >= bottom; e--) {
+        for (const m of NICE_MANTISSAS) {
+            const step = m * 10 ** e;
+            if (integer && !Number.isInteger(step)) continue;
+            const r = Number((Math.round(b / step) * step).toPrecision(12));
+            if (Math.abs(r - b) <= tol && r > prev) return r;
+        }
+    }
+    return b;
 }
 
 // Bornes internes de `count` classes sur un côté du zéro (échelle

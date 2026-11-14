@@ -161,7 +161,11 @@ reprise.
 classes discrètes. Modes : `quantile` (défaut), `linear`, `log`, `fixed`,
 `year` (pour `first_day`). Retour : `breaks`, `classes` effectives,
 `classOf(v)`, `ranges()` pour la légende. Des valeurs égales donnent une
-seule classe, et aucune classe n'est vide au début. **À calculer sur l'état
+seule classe, et aucune classe n'est vide au début. Hors `fixed` et `year`,
+les bornes sont arrondies pour la légende (958 / 1 897 / 2 476 → 1 000 /
+2 000 / 2 500) : pas 1-2-2,5-5 × 10ⁿ le plus grossier qui ne déplace pas
+la borne de plus d'un quart de l'écart avec ses voisines, pas entiers pour
+des valeurs entières, coupure à 0 conservée. **À calculer sur l'état
 final**, pour qu'une teinte garde son sens pendant toute l'animation.
 
 **Moments clés** : `keyMoments(table, { rules, custom, level, rows, max,

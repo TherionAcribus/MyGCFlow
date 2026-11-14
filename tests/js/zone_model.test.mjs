@@ -234,8 +234,8 @@ test('échelle : valeurs égales, linéaire, log, seuils, années', () => {
     assert.equal(zoneScale([]).classes, 1);
     assert.equal(zoneScale([1, 1, 1, 1, 9], { classes: 5 }).classes, 2);
     assert.deepEqual(zoneScale([0, 100], { mode: 'linear', classes: 4 }).breaks, [25, 50, 75]);
-    const log = zoneScale([0, 999], { mode: 'log', classes: 3 });
-    assert.ok(Math.abs(log.breaks[0] - 9) < 1e-9 && Math.abs(log.breaks[1] - 99) < 1e-9);
+    // Log : 9 / 99 bruts, arrondis à 10 / 100.
+    assert.deepEqual(zoneScale([0, 999], { mode: 'log', classes: 3 }).breaks, [10, 100]);
     assert.deepEqual(zoneScale([1, 50], { mode: 'fixed', thresholds: [10, 5, 20] }).breaks, [5, 10, 20]);
     // Part trouvée : seuils fixes ronds 0–100 %, symétriques autour de 50,
     // partagés par la carte et les mini-cartes.
@@ -252,6 +252,22 @@ test('échelle : valeurs égales, linéaire, log, seuils, années', () => {
     assert.deepEqual(years.breaks, [day('2017-01-01'), day('2019-01-01')]);
     assert.equal(years.classOf(day('2016-12-31')), 0);
     assert.equal(zoneScale(new Map([['a', 1], ['b', 3]]), { classes: 2 }).classes, 2);
+});
+
+test('échelle : bornes arrondies pour la légende', () => {
+    // Quantiles bruts 958 / 1 897 / 2 476 → 1 000 / 2 000 / 2 500.
+    const counts = [120, 400, 958, 1300, 1897, 2100, 2476, 3300, 5200];
+    assert.deepEqual(zoneScale(counts, { classes: 4 }).breaks, [1000, 2000, 2500]);
+    // Petits décomptes : pas de borne fractionnaire (7,5) ; la borne ne
+    // quitte pas l'intervalle entre ses voisines.
+    assert.deepEqual(zoneScale([1, 2, 3, 4, 5, 6, 7, 8, 9], { classes: 3 }).breaks, [4, 7]);
+    // Densités (fractionnaires) : arrondies à leur propre ordre de grandeur.
+    const dens = zoneScale([0.00012, 0.00031, 0.00047, 0.0019, 0.0042, 0.028], { classes: 3 });
+    assert.deepEqual(dens.breaks, [0.0005, 0.005]);
+    // Divergente : la coupure à 0 reste, les côtés sont arrondis.
+    const signed = zoneScale([-37, -12, -3, 4, 18, 95, 410], { classes: 6, signed: true });
+    assert.ok(signed.breaks.includes(0));
+    assert.ok(signed.breaks.every((b) => b === 0 || Math.abs(b) % 1 === 0));
 });
 
 test('échelle signée : coupure à 0, classe du côté vide', () => {
