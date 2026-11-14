@@ -1637,6 +1637,77 @@ test('le plan annonce les pauses de dates quand le rythme est trop rapide', asyn
 });
 
 
+test('une durée « Par durée » sous le minimum annonce aussi les pauses de dates', async ({ page }) => {
+  // Durée imposée intenable (1 s, moins que la pause de fin) : le plan
+  // retombe sur une image par jour, sans budget — le moteur joue alors les
+  // pauses de la piste en plus, comme en jours/s. Elles n'entraient pas dans
+  // la durée annoncée : sur 16 ans de données calées sur une musique de 3:04,
+  // vidéo de 4:41 annoncée 3:24.
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#rhythmModeDuration').check({ force: true });
+  await page.locator('#inputTotalDuration').fill('0:01');
+  await page.locator('#cameraConfigTab').click();
+  await page.locator('#switchCameraFollow').check();
+  // Cible épinglée (préférence globale, cf. le test des pauses en jours/s).
+  await page.locator('#selectCameraTarget').selectOption('days');
+  await setCameraReturnHome(page, false);
+
+  const prevu = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+    // Caches alternant New York / Paris chaque jour : chaque jour impose un
+    // trajet transatlantique que 33 ms/jour ne peuvent pas contenir.
+    [...app.pointsByDate.keys()].forEach((day, index) => {
+      const coords = index % 2 === 0 ? [-74.006, 40.7128] : [2.3522, 48.8566];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
+    });
+    app.bumpPointsByDateRevision();
+    app.refreshTimingPlan({ save: false });
+    const animation = app.options.animation;
+    const hold = app.estimateCameraTrackHold(animation.timePerDay);
+    return {
+      dayCount: app.pointsByDate.size,
+      dayMs: animation.timePerDay,
+      budgetMs: animation.cameraTimeBudgetMs,
+      leadMs: animation.cameraLeadMs || 0,
+      cameraHoldMs: animation.cameraHoldMs || 0,
+      holdTotalMs: hold?.holdTotalMs || 0,
+      summary: document.getElementById('timingSummary').textContent,
+    };
+  });
+  // Plan au minimum (une image par jour), sans budget : les pauses estimées
+  // au rythme du plan y entrent et sont annoncées.
+  expect(prevu.budgetMs).toBeNull();
+  expect(prevu.dayMs).toBeCloseTo(1000 / 30, 0);
+  expect(prevu.holdTotalMs).toBeGreaterThan(0);
+  expect(prevu.cameraHoldMs).toBe(prevu.holdTotalMs);
+  expect(prevu.summary).toContain('pauses caméra');
+
+  const lecture = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const debut = performance.now();
+    app.startAnimation();
+    while (app.isAnimationInProgress() && performance.now() - debut < 40_000) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return { dureeMs: performance.now() - debut, terminee: !app.isAnimationInProgress() };
+  });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+
+  // La lecture réelle suit l'annonce : pré-roll + dates + pauses (la pause
+  // de fin, automatique, s'y ajoute).
+  expect(lecture.terminee).toBe(true);
+  const annonceMs = prevu.leadMs + prevu.dayCount * prevu.dayMs + prevu.cameraHoldMs;
+  expect(lecture.dureeMs, `durée ${Math.round(lecture.dureeMs)} ms vs annoncé ${Math.round(annonceMs)} ms`)
+    .toBeGreaterThan(annonceMs - 1_000);
+  await setCameraReturnHome(page, true);
+});
+
+
 test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit à l\'heure', async ({ page }) => {
   // Même scénario « Par durée » que le test précédent, mais chaque jour impose
   // un trajet transatlantique indélogeable : les pauses de dates planifiées

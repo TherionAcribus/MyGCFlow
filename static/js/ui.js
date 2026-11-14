@@ -6942,11 +6942,17 @@ export function refreshTimingPlan({ save = true } = {}) {
     // durée imposée ce temps est retranché des dates (le moteur refait le même
     // calcul dans prepareCameraPacing).
     let cameraHoldCount = 0;
+    // Rythme libre : le mode 'rate', mais aussi une durée imposée trop courte
+    // pour une image par jour (musique plus courte que le minimum) — le plan
+    // n'a alors pas de budget, et le moteur joue le rythme minimum, pauses
+    // ajoutées. Les estimer au rythme du plan, sinon la durée annoncée les
+    // omettait (vidéo de 4:41 annoncée 3:24 sur 16 ans de données).
+    const freeRhythm = rhythmMode() === 'rate' || !Number.isFinite(plan.cameraTimeBudgetMs);
     const hold = plan.cameraOverlap && pkg.options.animation?.cameraFollow === true
         && !isCameraTrailMode() && typeof pkg.estimateCameraTrackHold === 'function'
         ? pkg.estimateCameraTrackHold(
-            rhythmMode() === 'rate' ? plan.timePerDayMs : null,
-            { budgetMs: rhythmMode() === 'rate' || !Number.isFinite(plan.cameraTimeBudgetMs)
+            freeRhythm ? plan.timePerDayMs : null,
+            { budgetMs: freeRhythm
                 ? undefined
                 // Le retour final est réservé avant le partage dates/pauses,
                 // comme dans prepareCameraPacing.

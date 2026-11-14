@@ -701,6 +701,30 @@ test('cameraHoldMs en durée imposée : total inchangé, dates réduites des pau
     assert.equal(plan.totalFrameCount, Math.round(plan.totalDurationMs * 30 / 1000));
 });
 
+test('cameraHoldMs avec une musique plus courte que le minimum : les pauses allongent la vidéo', () => {
+    // 300 jours à 30 i/s = 10 s au minimum, musique de 8 s : le plan retombe
+    // sur le rythme minimum, sans budget — le moteur joue alors les pauses en
+    // plus (rythme libre). ui.js doit donc les estimer au rythme du plan
+    // (timePerDayMs) comme en 'rate', et la durée annoncée les inclure.
+    const plan = buildTimingPlan({
+        dayCount: 300,
+        rhythm: { mode: 'music', musicDurationMs: 8000 },
+        fps: 30,
+        tailFreezeMs: 0,
+        cameraTravelMs: 20000,
+        cameraJourneyCount: 5,
+        cameraOverlap: true,
+        cameraHoldMs: 4000,
+    });
+    assert.equal(plan.clampedToMinimum, true);
+    assert.ok(!Number.isFinite(plan.cameraTimeBudgetMs));
+    assert.equal(plan.timePerDayMs, 10000 / 300);
+    assert.equal(plan.totalDurationMs, 14000);
+    assert.equal(plan.totalFrameCount, 420);
+    const music = plan.warnings.find((w) => w.type === 'music-shorter-than-minimum');
+    assert.equal(music.appliedMs, 14000);
+});
+
 test('cameraHoldMs est ignoré hors mode piste', () => {
     const reactif = buildTimingPlan({
         dayCount: 100,
