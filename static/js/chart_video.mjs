@@ -166,6 +166,17 @@ export function headerLayout({ inner, gap, title, heads }) {
     return { titleMax: Math.max(0, inner - gap - headMax), headMax };
 }
 
+// Repère en deux parties : « mai 2019 » → { lead: 'mai', year: '2019' }.
+// L'année est posée à une place fixe et ne change qu'au passage d'une année
+// à l'autre ; seul le début (mois, trimestre, jour) défile — et c'est lui
+// qu'on raccourcit si la place manque, jamais l'année. Sans année en fin
+// (« Mois 4 », « Multi-cache », « 2019 » seul) : { lead: libellé, year: '' }.
+export function splitHead(label) {
+    const s = label === null || label === undefined ? '' : String(label);
+    const match = /^(.*\S)[\s  ]+(\d{4})$/u.exec(s);
+    return match ? { lead: match[1], year: match[2] } : { lead: s, year: '' };
+}
+
 // Taille réduite pour que `text` tienne dans `maxWidth` (px) :
 // `baseSize * maxWidth / largeur`, la largeur étant mesurée à `baseSize`.
 // Bornée en bas par `baseSize * minRatio` : au plancher, un léger dépassement

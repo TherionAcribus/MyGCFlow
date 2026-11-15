@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
     chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
-    VIDEO_HOLD, VIDEO_HOLD_MIN_MS, VIDEO_SIZES, videoScale,
+    VIDEO_HOLD, VIDEO_HOLD_MIN_MS, VIDEO_SIZES, splitHead, videoScale,
 } from '../../static/js/chart_video.mjs';
 
 const result = {
@@ -111,6 +111,21 @@ test('ellipsize : tronque avec « … » au lieu de compresser', () => {
     assert.equal(ellipsize('', 50, px10), '');
     assert.equal(ellipsize(1234, 30, px10), '12…');
     assert.equal(ellipsize('abc', 0, px10), '');
+});
+
+test('repère daté : l\'année se sépare du reste (elle reste en place, seul le mois défile)', () => {
+    assert.deepEqual(splitHead('mai 2019'), { lead: 'mai', year: '2019' });
+    assert.deepEqual(splitHead('septembre 2024'), { lead: 'septembre', year: '2024' });
+    assert.deepEqual(splitHead('T2 2019'), { lead: 'T2', year: '2019' });
+    assert.deepEqual(splitHead('4 janv. 2019'), { lead: '4 janv.', year: '2019' });
+    // Espaces insécables (Intl) aussi.
+    assert.deepEqual(splitHead('mai 2019'), { lead: 'mai', year: '2019' });
+    assert.deepEqual(splitHead('mai 2019'), { lead: 'mai', year: '2019' });
+    // Pas d'année en fin : le libellé entier.
+    assert.deepEqual(splitHead('2019'), { lead: '2019', year: '' });
+    assert.deepEqual(splitHead('Mois 4'), { lead: 'Mois 4', year: '' });
+    assert.deepEqual(splitHead('Multi-cache'), { lead: 'Multi-cache', year: '' });
+    assert.deepEqual(splitHead(null), { lead: '', year: '' });
 });
 
 test('échelle vidéo : 540 px de référence, 432 en portrait (textes 25 % plus grands)', () => {

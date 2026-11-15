@@ -5,7 +5,7 @@ import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
-    chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
+    chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, splitHead, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
     VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, videoScale,
 } from './chart_video.mjs';
@@ -951,18 +951,37 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const title = chartTitle(spec);
     const font = videoFont();
     const titleFont = '600 ' + titleSize + 'px ' + font;
-    const headFont = '700 ' + Math.round(titleSize * 1.15) + 'px ' + font;
+    const headBase = Math.round(titleSize * 1.15);
     // Place du titre et du repère, mesurée une fois (headerLayout).
     const widthIn = (cssFont, s) => {
         g.font = cssFont;
         return g.measureText(s).width;
     };
-    const { titleMax, headMax } = headerLayout({
-        inner: width - pad * 2,
-        gap: titleSize,
-        title: widthIn(titleFont, title),
-        heads: heads.map((h) => widthIn(headFont, h)),
+    // Repères datés (« mai 2019 ») : l'année à une place fixe, seul le mois
+    // défile (splitHead). La place réservée = le plus long début + espace +
+    // la plus large année ; l'année part toujours du même x.
+    const parts = heads.map(splitHead);
+    const dated = parts.length > 0 && parts.every((p) => p.year);
+    const headWidths = (cssFont) => (dated
+        ? [Math.max(...parts.map((p) => widthIn(cssFont, p.lead))) + widthIn(cssFont, ' ')
+            + Math.max(...parts.map((p) => widthIn(cssFont, p.year)))]
+        : heads.map((h) => widthIn(cssFont, h)));
+    const titleWidth = widthIn(titleFont, title);
+    const layoutAt = (cssFont) => headerLayout({
+        inner: width - pad * 2, gap: titleSize, title: titleWidth, heads: headWidths(cssFont),
     });
+    // Format étroit (portrait) : le repère le plus long ne tient pas — sa
+    // taille est réduite (une fois pour toute la vidéo, plancher 70 %) plutôt
+    // que de couper le mois (« décem… 2020 »).
+    let headFont = '700 ' + headBase + 'px ' + font;
+    const longest = Math.max(0, ...headWidths(headFont));
+    const room = layoutAt(headFont).headMax;
+    if (dated && longest > room) {
+        headFont = '700 ' + Math.floor(headBase * Math.max(0.7, room / longest)) + 'px ' + font;
+    }
+    const { titleMax, headMax } = layoutAt(headFont);
+    const space = widthIn(headFont, ' ');
+    const yearW = dated ? Math.max(...parts.map((p) => widthIn(headFont, p.year))) : 0;
     let drawn = false;
     const paint = (progress) => {
         if (reveal) {
@@ -988,8 +1007,19 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
         // Repère de l'axe atteint (« septembre 2024 ») : dans la place
         // réservée au plus long d'entre eux, sans déborder sur le titre.
         if (reveal) {
-            const head = heads[revealIndex(result, progress)] ?? '';
-            g.fillText(ellipsize(head, headMax, measure), width - pad, pad + titleSize * 0.9);
+            const index = revealIndex(result, progress);
+            const baseline = pad + titleSize * 0.9;
+            if (dated && parts[index]) {
+                // Année calée à gauche sur un x fixe (ses chiffres n'ont pas
+                // tous la même largeur : alignée à droite, elle bougerait).
+                const yearX = width - pad - yearW;
+                g.textAlign = 'left';
+                g.fillText(parts[index].year, yearX, baseline);
+                g.textAlign = 'right';
+                g.fillText(ellipsize(parts[index].lead, headMax - yearW - space, measure), yearX - space, baseline);
+            } else {
+                g.fillText(ellipsize(heads[index] ?? '', headMax, measure), width - pad, baseline);
+            }
         }
         // Tous les calques, dans l'ordre du DOM (du fond vers le dessus) :
         // ECharts dessine les cases d'une carte de chaleur (grille D/T,

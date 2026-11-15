@@ -708,7 +708,15 @@ effacer » le retire avec la période proposée.
   proportionnel à la définition). `headerLayout` (chart_video.mjs) réserve
   la place du plus long des repères, mesuré une fois (le titre ne bouge pas
   d'une image à l'autre), au plus 45 % de la largeur — davantage si le
-  titre, court, laisse la place ; le titre prend le reste.
+  titre, court, laisse la place ; le titre prend le reste. Repère daté
+  (« mai 2019 », « T2 2019 », « 4 janv. 2019 ») : `splitHead` sépare
+  l'année, posée à gauche sur un x fixe (ses chiffres n'ont pas tous la
+  même largeur — alignée à droite elle bougerait) ; le début, aligné à
+  droite contre elle, est seul à défiler et seul raccourci si besoin — l'année
+  ne bouge et ne disparaît jamais. Format étroit (portrait) : si le plus
+  long repère ne tient pas, sa taille est réduite une fois pour toute la
+  vidéo (plancher 70 %) plutôt que de couper le mois. Repère sans année
+  (« Mois 4 », une catégorie, « 2019 » seul) : un seul texte, comme avant.
 - Échelle (`videoScale`, chart_video.mjs) : écrans mis en page comme sur
   540 px de côté (le plus petit), puis agrandis à la définition — sauf le
   portrait, regardé en plein écran sur un téléphone, mis en page sur 432 px
