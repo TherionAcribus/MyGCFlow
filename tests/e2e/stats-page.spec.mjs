@@ -1934,6 +1934,64 @@ test('vidéo : les réglages de la carte sont repris (bornes, volume)', async ({
   }
 });
 
+test('vidéo : un enchaînement de la carte est libellé et utilisable', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    // Deux morceaux de la bibliothèque, enchaînés par le serveur comme le
+    // fait la carte (POST /api/audio/mix → enchainement-<empreinte>.flac).
+    const uploadA = await request.post('/upload_audio', {
+      multipart: { audio: wavFile('alpha.wav', 5, 0) },
+    });
+    const uploadB = await request.post('/upload_audio', {
+      multipart: { audio: wavFile('beta.wav', 5, 0) },
+    });
+    expect(uploadA.ok() && uploadB.ok()).toBeTruthy();
+    const fileA = (await uploadA.json()).file;
+    const fileB = (await uploadB.json()).file;
+    const mix = await request.post('/api/audio/mix', {
+      data: { tracks: [fileA, fileB], crossfade_seconds: 1 },
+    });
+    expect(mix.ok()).toBeTruthy();
+    const mixFile = (await mix.json()).file;
+    expect(mixFile).toMatch(/^enchainement-.*\.flac$/);
+    // Entrée récente SANS nom : le serveur y met alors le nom de fichier —
+    // le libellé doit retomber sur les morceaux, pas « enchainement-… ».
+    expect((await request.put('/api/settings', {
+      data: {
+        recording: {
+          audio_recent: [{
+            file: mixFile,
+            playlist: [{ file: fileA, name: 'Alpha' }, { file: fileB, name: 'Beta' }],
+          }],
+        },
+      },
+    })).ok()).toBeTruthy();
+
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    const option = page.locator(`#statsVideoMusic option[value="lib:${mixFile}"]`);
+    await expect(option).toHaveCount(1);
+    expect(await option.evaluate((o) => o.textContent)).toBe('Enchaînement : Alpha + Beta');
+    // La bulle liste les morceaux de l'enchaînement, un par ligne.
+    const title = await option.getAttribute('title');
+    expect(title).toContain('Alpha');
+    expect(title).toContain('Beta');
+
+    // Le mix se choisit comme une autre musique ; la sonde de son fichier
+    // donne la durée de l'enchaînement entier, et le hint nomme le sujet.
+    await page.locator('#statsVideoMusic').selectOption('lib:' + mixFile);
+    await expect(page.locator('#statsVideoMusic')).toHaveValue('lib:' + mixFile);
+    await expect(page.locator('#statsVideoMusicHint')).toHaveText(/^Enchaînement de 2 morceaux/, { timeout: 15_000 });
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+  }
+});
+
 test('vidéo : « Écouter » joue la musique choisie puis l\'arrête', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

@@ -16,6 +16,7 @@ import {
     SLIDE_SECONDS, slideSeconds, videoMoment,
 } from './dashboard_video.mjs';
 import { createVideoStream } from './video_stream.mjs';
+import { playlistDisplayName } from './music_playlist.mjs';
 import { fileSafe } from './stats_page_card_actions.js';
 import { chartContext } from './stats_page_cards.js';
 import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
@@ -366,15 +367,34 @@ async function fillMusicChoices(prefs = {}) {
             name: recording.audio_file_name || recording.audio_file,
             start: recording.audio_start_seconds,
             end: recording.audio_end_seconds,
+            playlist: recording.audio_playlist,
         });
     }
     if (library.length) {
         const group = document.createElement('optgroup');
         group.label = t('Musiques récentes');
         for (const entry of library) {
-            const option = new Option(entry.name || entry.file, 'lib:' + entry.file);
+            // Morceaux constituants d'un enchaînement assemblé sur la carte
+            // (settings_manager n'en garde qu'à partir de deux : un seul
+            // n'est pas un enchaînement).
+            const playlist = Array.isArray(entry.playlist)
+                ? entry.playlist.filter((track) => track && (track.name || track.file))
+                : [];
+            const isMix = playlist.length >= 2;
+            // Le serveur pose `name` = nom de fichier à défaut : un
+            // enchaînement sans nom afficherait « enchainement-xxx.flac » —
+            // ses morceaux (« A + B ») le nomment plus clairement.
+            const named = entry.name && entry.name !== entry.file;
+            const base = named || !isMix ? (entry.name || entry.file) : playlistDisplayName(playlist);
+            const option = new Option(isMix ? t('Enchaînement : ${name}', { name: base }) : base, 'lib:' + entry.file);
             option.dataset.start = String(Number(entry.start) || 0);
             option.dataset.end = String(Number(entry.end) || 0);
+            if (isMix) {
+                // La bulle liste les morceaux ; le compte sert au hint
+                // (« Enchaînement de n morceaux »), relu par onMusicChange.
+                option.title = playlist.map((track) => track.name || track.file).join('\n');
+                option.dataset.tracks = String(playlist.length);
+            }
             group.append(option);
         }
         select.append(group);
@@ -408,6 +428,9 @@ export function onMusicChange() {
             kind: 'library', file: select.value.slice(4),
             start: Number(option?.dataset.start) || 0,
             end: Number(option?.dataset.end) || 0,
+            // Nombre de morceaux d'un enchaînement (0 pour une musique
+            // seule) : le hint annonce « Enchaînement de n morceaux ».
+            tracks: Number(option?.dataset.tracks) || 0,
         };
         checkLibrary(video, video.music);
     }
@@ -655,7 +678,10 @@ function updateMusicInfo() {
     } else {
         effect = t('coupée avec fondu à ${vdur}', { vdur: mmss(vdur) });
     }
-    hint.textContent = t('Musique ${mdur} · vidéo ${vdur} : ${effect}', { mdur: mmss(mdur), vdur: mmss(vdur), effect });
+    // Le sujet distingue l'enchaînement de la musique seule — le reste de
+    // la ligne (fenêtre, effet) s'applique au mix comme à tout morceau.
+    const subject = music.tracks >= 2 ? t('Enchaînement de ${n} morceaux', { n: music.tracks }) : t('Musique');
+    hint.textContent = t('${subject} ${mdur} · vidéo ${vdur} : ${effect}', { subject, mdur: mmss(mdur), vdur: mmss(vdur), effect });
 }
 
 // Persiste les réglages du bloc musique (volume, fondus, calage) dans

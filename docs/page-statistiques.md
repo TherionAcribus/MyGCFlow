@@ -629,7 +629,13 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   `audio_file`, la musique courante de la carte, n'est pas touché) :
   référencée, sa copie n'est plus balayée ; le choix est mémorisé
   (`statsVideoPrefs` porte alors `lib:<copie>`) et le prochain export n'a
-  plus à renvoyer le fichier.
+  plus à renvoyer le fichier. Les enchaînements assemblés sur la carte
+  (`entry.playlist` ≥ 2 morceaux, aussi pour la courante via
+  `audio_playlist`) sont listés « Enchaînement : A + B » — repli sur les
+  noms des morceaux (`playlistDisplayName`) quand `name` manque, sinon le
+  nom technique `enchainement-<empreinte>.flac` s'afficherait ; la bulle
+  de l'option liste les morceaux — et le fichier mix, sondé comme un
+  autre, se choisit, s'écoute et se cale comme une musique seule.
 - « Écouter » (`toggleMusicListen`) joue la musique choisie dans un
   `Audio` dédié (un seul à la fois, à la borne `start` du passage et au
   volume réglé) ; le bouton bascule « Écouter » ⇄ « Arrêter »
