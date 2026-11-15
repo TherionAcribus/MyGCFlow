@@ -303,6 +303,16 @@ périodes sont jointes par « vs », une seule garde son nom ; au-delà de deux,
 mois » et les moments clés (plusieurs entrées), et « depuis le début »
 choisi au menu, déjà nommé par sa fin (« Jusqu'à aujourd'hui »).
 
+Pastille **épinglée** (2026-11-15) : la même forme servait à une période
+propre (le graphique ignore le menu « Période ») et à une comparaison qui
+suit le tableau (première période `dashboard`). Une période propre
+(`hasOwnPeriod`) porte la classe `is-own` et une punaise `ti-pin` en tête,
+`role="img"` + `aria-label` « Période propre à ce graphique » — le sens
+passe par l'icône, le texte de la pastille reste la seule période (relu
+par les tests). Bulle : « Période propre à ce graphique : il ne suit pas le
+menu « Période » — <période> ». La présentation garde le texte seul.
+`ti-pin` ajoutée au sous-ensemble d'icônes (`generate_icons_subset.py`).
+
 **Bilan d'une comparaison** (2026-11-15) : un graphique qui compare deux
 périodes (compte ou cumul, sans 2ᵉ dimension, une seule source) répond en
 clair sous son titre — « 2026 à ce jour : 343 · ▼ −10 (−3 %) par rapport

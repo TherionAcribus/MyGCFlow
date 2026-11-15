@@ -314,6 +314,12 @@ html {
     border-radius: 999px;
     white-space: nowrap;
 }
+/* Période propre (épinglée) : ne suit pas le menu « Période ». */
+.stats-card-period.is-own .ti {
+    margin-right: 3px;
+    font-size: 0.85rem;
+    vertical-align: -2px;
+}
 .stats-card-menu {
     flex: 0 0 auto;
 }

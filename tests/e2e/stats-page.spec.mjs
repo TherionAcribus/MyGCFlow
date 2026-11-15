@@ -564,6 +564,12 @@ test('« Suis-je en avance sur l\'an dernier ? » : deux cumuls superposés jour
   expect(ahead.series[0][365]).toBeNull();
   // Pastille : les périodes nommées par ce qu'elles couvrent, pas par leur règle.
   await expect(card(page, ahead.id).locator('.stats-card-period')).toHaveText('2026 vs 2025');
+  // Période propre : épinglée (ne suit pas le menu « Période »), dit à
+  // l'oreille par l'icône, expliqué en bulle.
+  const pin = card(page, ahead.id).locator('.stats-card-period.is-own .ti-pin');
+  await expect(pin).toBeVisible();
+  await expect(pin).toHaveAttribute('aria-label', 'Période propre à ce graphique');
+  await expect(card(page, ahead.id).locator('.stats-card-period')).toHaveAttribute('title', /ne suit pas le menu « Période »/);
   // Bilan en clair : le cumul d'aujourd'hui, comparé au même jour de 2025 (vide).
   const today = ahead.series[0].filter((v) => v !== null).at(-1);
   const verdict = card(page, ahead.id).locator('.stats-card-verdict');
@@ -744,6 +750,9 @@ test('éditeur : retirer une comparaison revient à une seule période', async (
     groupBy: 'cache_type', periods: [{ kind: 'dashboard' }, { kind: 'previous' }], view: { chart: 'bar' },
   });
   expect(target.periods.length).toBe(1);   // « tout » n'a pas de période précédente
+  // Comparaison qui suit la période du tableau : pastille, mais pas épinglée.
+  await expect(card(page, target.id).locator('.stats-card-period')).toBeVisible();
+  await expect(card(page, target.id).locator('.stats-card-period .ti-pin')).toHaveCount(0);
   await cardAction(page, target.id, 'edit');
   await expect(page.locator('#statsEdPeriod')).toHaveValue('');
   await expect(page.locator('#statsEdCompare0')).toBeVisible();

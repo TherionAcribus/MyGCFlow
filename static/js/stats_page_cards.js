@@ -160,9 +160,20 @@ function cardElement(item, index, count) {
         const badge = document.createElement('span');
         badge.className = 'stats-card-period';
         badge.textContent = periodsBadge(spec);
-        badge.title = hasOwnPeriod(spec)
-            ? t('Période propre à ce graphique') + ' : ' + badge.textContent
-            : badge.textContent;
+        if (hasOwnPeriod(spec)) {
+            // Épinglée : ce graphique ne suit pas le menu « Période » du
+            // tableau. L'icône porte le sens pour les lecteurs d'écran (le
+            // texte de la pastille reste la seule période).
+            badge.classList.add('is-own');
+            badge.title = t('Période propre à ce graphique : il ne suit pas le menu « Période »') + ' — ' + badge.textContent;
+            const pin = document.createElement('i');
+            pin.className = 'ti ti-pin';
+            pin.setAttribute('role', 'img');
+            pin.setAttribute('aria-label', t('Période propre à ce graphique'));
+            badge.prepend(pin);
+        } else {
+            badge.title = badge.textContent;
+        }
         header.append(badge);
     }
     header.append(cardMenu(spec, index, count));
