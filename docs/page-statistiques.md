@@ -538,7 +538,8 @@ effacer » le retire avec la période proposée.
   `fillText` compresserait les glyphes au lieu de tronquer. Le chiffre clé
   géant et le nom du tableau sont réduits (`fitFontSize`, plancher) plutôt
   que tronqués.
-- Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080), durées 6 à 30 s.
+- Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080, portrait
+  9:16 1080×1920 pour Stories/Reels/Shorts), durées 6 à 30 s.
 - Réglages de la fenêtre mémorisés dans le navigateur (localStorage
   `statsVideoPrefs` : format, durée du mode graphique et durée par
   graphique du mode tableau — axes indépendants —, musique de

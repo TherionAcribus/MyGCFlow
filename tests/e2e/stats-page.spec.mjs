@@ -1936,6 +1936,24 @@ test("l'aperçu joue la vidéo sans l'enregistrer", async ({ page, request }) =>
   expect(errors).toEqual([]);
 });
 
+test("le format portrait produit un canevas 9:16", async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('portrait');
+  await page.locator('#btnStatsVideoPreview').click();
+  // L'aperçu peint dans un canevas 1080 × 1920 (Stories, Reels, Shorts) —
+  // c'est la même machinerie que l'enregistrement.
+  const canvas = page.locator('#statsVideoStage canvas');
+  await expect(canvas).toBeVisible();
+  expect(await canvas.evaluate((c) => [c.width, c.height])).toEqual([1080, 1920]);
+  await page.locator('#btnStatsVideoStopPreview').click();
+  await expect(page.locator('#statsVideoSetup')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 // Image du tableau entier : la disposition affichée, redessinée dans un PNG
 // (en-tête, cartes, graphiques ECharts à la netteté ×2).
 const IMAGE_ITEMS = [

@@ -10,6 +10,8 @@ export const VIDEO_SIZES = Object.freeze({
     hd: Object.freeze({ width: 1280, height: 720 }),
     fullhd: Object.freeze({ width: 1920, height: 1080 }),
     square: Object.freeze({ width: 1080, height: 1080 }),
+    // Stories, Reels, Shorts.
+    portrait: Object.freeze({ width: 1080, height: 1920 }),
 });
 export const VIDEO_DURATIONS = Object.freeze([6, 10, 15, 20, 30]);
 export const VIDEO_FPS = 30;
