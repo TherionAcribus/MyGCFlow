@@ -781,6 +781,16 @@ def _audio_warnings(audio_path, audio_file):
     return []
 
 
+def _cancel_requested(status):
+    """Vrai si le statut optionnel signale une demande d'annulation.
+
+    Un statut est duck-typé : seul `set_progress` est exigé ; sans
+    `is_cancel_requested`, il n'est simplement pas annulable.
+    """
+    check = getattr(status, 'is_cancel_requested', None)
+    return callable(check) and check()
+
+
 def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end=98.0,
                 progress_label="Traitement vidéo", error_label="Traitement ffmpeg",
                 log_prefix="ffmpeg"):
@@ -839,7 +849,7 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
             last_output = time.monotonic()
             # Annulation coopérative : ffmpeg émet sa progression en continu
             # (-progress pipe:1), le contrôle est donc réactif.
-            if status is not None and status.is_cancel_requested():
+            if _cancel_requested(status):
                 cancelled = True
                 try:
                     proc.kill()
@@ -1158,7 +1168,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
 
     # Annulation demandée avant même le lancement d'ffmpeg : sortie
     # anticipée en succès (convention des tâches annulables, cf. labs).
-    if status is not None and status.is_cancel_requested():
+    if _cancel_requested(status):
         return {'success': True, 'cancelled': True,
                 'message': _('Traitement vidéo annulé')}
 
