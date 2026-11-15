@@ -36,6 +36,7 @@ function setVideoPhase(phase) {
     $('statsVideoRecording').hidden = phase !== 'recording';
     $('statsVideoDone').hidden = phase !== 'done';
     $('btnStatsVideoStart').hidden = phase !== 'setup';
+    $('btnStatsVideoEdit').hidden = phase !== 'done';
     $('btnStatsVideoReveal').hidden = phase !== 'done' || !state.video?.file;
     $('btnStatsVideoDownload').hidden = phase !== 'done';
     $('btnStatsVideoCancel').textContent = phase === 'done' ? t('Fermer') : t('Annuler');
@@ -674,6 +675,27 @@ async function convertVideo(video, blob, name) {
     }
     $('statsVideoStage').replaceChildren();
     setVideoPhase('done');
+}
+
+// Retour aux réglages depuis l'étape finale : la vidéo produite reste
+// dans le dossier des vidéos ; l'aperçu et le blob de repli sont relâchés.
+export function editVideo() {
+    const video = state.video;
+    if (!video || video.phase !== 'done') return;
+    const player = $('statsVideoPlayer');
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    if (video.objectUrl) { URL.revokeObjectURL(video.objectUrl); video.objectUrl = null; }
+    video.file = null;
+    video.folder = null;
+    // La tâche de la vidéo faite est terminée : sans cette remise à zéro,
+    // une annulation du prochain enregistrement l'interrogerait (404).
+    video.taskId = null;
+    video.hiddenDuringRecording = false;
+    video.pauseFailed = false;
+    $('statsVideoDoneNote').textContent = '';
+    setVideoPhase('setup');
 }
 
 export async function revealVideo() {

@@ -1752,6 +1752,57 @@ test('le focus suit les étapes de la vidéo', async ({ page, request }) => {
   expect(errors).toEqual([]);
 });
 
+test('modifier les réglages ramène à l\'étape de préparation', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  // Conversion simulée : la tâche finit tout de suite en « finished »
+  // (« * » ne franchit pas « / » : le motif couvre ?include_result=true).
+  await page.route('**/process_recorded_video', async (route) => {
+    await route.fulfill({
+      status: 202, contentType: 'application/json',
+      body: JSON.stringify({ success: true, task_id: 'stats-edit-task' }),
+    });
+  });
+  await page.route('**/tasks/stats-edit-task*', async (route) => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ state: 'finished', progress: 100, result: { file: 'edit-fake.mp4', folder: null } }),
+    });
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  // « Modifier les réglages » n'existe qu'à l'étape finale.
+  await expect(page.locator('#btnStatsVideoEdit')).toBeHidden();
+  await page.locator('#btnStatsVideoStart').click();
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
+
+  await expect(page.locator('#btnStatsVideoEdit')).toBeVisible();
+  await page.locator('#btnStatsVideoEdit').click();
+  await expect(page.locator('#statsVideoSetup')).toBeVisible();
+  await expect(page.locator('#btnStatsVideoStart')).toBeVisible();
+  // Le focus suit l'étape (même mécanisme qu'à l'ouverture).
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('btnStatsVideoStart');
+  const video = (await snapshot(page)).video;
+  expect(video.phase).toBe('setup');
+  expect(video.file).toBeNull();
+
+  // La fenêtre est redevenue fonctionnelle : durée changée, enregistrement
+  // reparti — puis annulé (confirmation, la prise serait perdue).
+  await page.locator('#statsVideoDuration').selectOption('15');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect(page.locator('#statsVideoStatus')).toContainText('Enregistrement', { timeout: 30_000 });
+  expect((await snapshot(page)).video?.phase).toBe('recording');
+  await page.locator('#btnStatsVideoCancel').click();
+  const confirm = page.locator('.gcm-confirm-modal');
+  await expect(confirm).toBeVisible();
+  await confirm.locator('[data-gcm-role="confirm"]').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('abandonner la vidéo en cours demande confirmation', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

@@ -515,7 +515,10 @@ effacer » le retire avec la période proposée.
   (`showConfirmation`, `confirmVideoClose` sur `hide.bs.modal`, annulable)
   ; confirmée, elle appelle `POST /tasks/<id>/cancel` pendant la
   conversion : ffmpeg est tué à la prochaine ligne de progression et le
-  MP4 partiel supprimé.
+  MP4 partiel supprimé. À l'étape finale, « Modifier les réglages »
+  ramène à l'étape de préparation sans fermer la fenêtre (`editVideo` :
+  aperçu et blob de repli relâchés, la vidéo produite reste dans le
+  dossier des vidéos).
 - Textes trop longs (titre, repère d'axe, légendes, record/objectif) :
   tronqués avec « … » par `ellipsize` (chart_video.mjs) — le 4ᵉ argument de
   `fillText` compresserait les glyphes au lieu de tronquer. Le chiffre clé
