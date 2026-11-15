@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 import unittest
 import urllib.error
@@ -1295,12 +1296,30 @@ class LabsAutomationTests(LabsApiTests):
         self.assertEqual(rv.status_code, 404)
 
     def test_cancel_wrong_task_type_400(self):
-        """Seule `lab_fetch_coords` est annulable — un commit d'import est
-        atomique : sa tâche refuse l'annulation même encore en cours."""
+        """Seuls `lab_fetch_coords` et `video_processing` sont annulables —
+        un commit d'import est atomique : sa tâche refuse l'annulation même
+        encore en cours."""
         # Tâche non-fetch encore active (le nettoyage l'attend de toute façon).
         st = task_manager.submit("lab_import", lambda s: time.sleep(1))
         rv = self.client.post(f'/tasks/{st.id}/cancel')
         self.assertEqual(rv.status_code, 400)
+
+    def test_cancel_video_process_task_200(self):
+        """Le post-traitement vidéo (`video_processing`, ffmpeg) est
+        annulable : la route pose le drapeau que la tâche contrôle."""
+        from capture import TASK_TYPE_VIDEO_PROCESS
+        release = threading.Event()
+        self.addCleanup(release.set)
+        st = task_manager.submit(
+            TASK_TYPE_VIDEO_PROCESS, lambda s: release.wait(30))
+        try:
+            rv = self.client.post(f'/tasks/{st.id}/cancel')
+            self.assertEqual(rv.status_code, 200, rv.get_json())
+            self.assertTrue(rv.get_json()["success"])
+            self.assertTrue(st.is_cancel_requested())
+        finally:
+            release.set()
+            self._wait_task(st.id)
 
     def test_cancel_finished_task_409(self):
         self._import_history()

@@ -833,9 +833,19 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
 
     span = max(0.0, progress_end - progress_start)
     tail_lines = []  # dernières lignes non-progress (pour message d'erreur)
+    cancelled = False
     try:
         for line in proc.stdout:
             last_output = time.monotonic()
+            # Annulation coopérative : ffmpeg émet sa progression en continu
+            # (-progress pipe:1), le contrôle est donc réactif.
+            if status is not None and status.is_cancel_requested():
+                cancelled = True
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                break
             line = line.strip()
             if not line:
                 continue
@@ -878,6 +888,10 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
             pass
         return {'success': False,
                 'message': _("%(label)s interrompu : le processus ne s'est pas terminé.", label=error_label)}
+
+    if cancelled:
+        return {'success': False, 'cancelled': True,
+                'message': _("%(label)s annulé à la demande.", label=error_label)}
 
     if stalled.is_set():
         minutes = max(1, int(FFMPEG_STALL_TIMEOUT_S // 60))
@@ -1142,6 +1156,12 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     if not input_path or not os.path.exists(input_path):
         return {'success': False, 'message': _('Fichier vidéo introuvable')}
 
+    # Annulation demandée avant même le lancement d'ffmpeg : sortie
+    # anticipée en succès (convention des tâches annulables, cf. labs).
+    if status is not None and status.is_cancel_requested():
+        return {'success': True, 'cancelled': True,
+                'message': _('Traitement vidéo annulé')}
+
     try:
         sd = max(1.0, float(slowdown))
     except Exception:
@@ -1214,6 +1234,19 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         progress_label=_("Traitement vidéo"), error_label=_("Traitement ffmpeg"),
         log_prefix="process",
     )
+    if result.get('cancelled'):
+        # ffmpeg a été tué : ni le MP4 partiel ni le .webm brut ne doivent
+        # rester (même nettoyage de l'entrée qu'en cas de succès).
+        try:
+            os.remove(output_path)
+        except Exception:
+            pass
+        try:
+            os.remove(input_path)
+        except Exception:
+            pass
+        return {'success': True, 'cancelled': True,
+                'message': _('Traitement vidéo annulé')}
     if not result.get('success'):
         return result
 

@@ -50,10 +50,22 @@ function setVideoStatus(text, percent = null) {
     }
 }
 
+// Annulation côté serveur : ffmpeg est tué et le MP4 partiel supprimé.
+// keepalive : l'appel survit à la fermeture de la page.
+function cancelVideoTask(video) {
+    const id = video?.taskId;
+    if (!id) return;
+    video.taskId = null;
+    fetch('/tasks/' + encodeURIComponent(id) + '/cancel', { method: 'POST', keepalive: true }).catch(() => {});
+}
+
 export function releaseVideo() {
     const video = state.video;
     if (!video) return;
     video.cancelled = true;
+    // En phase 'done' la tâche est déjà finie (taskId est encore posé) : on
+    // n'annule que la conversion en cours.
+    if (video.phase === 'recording') cancelVideoTask(video);
     const player = $('statsVideoPlayer');
     player.pause();
     player.removeAttribute('src');
@@ -476,9 +488,11 @@ export async function recordVideo() {
     await convertVideo(video, blob, fileSafe(chartTitle(spec)));
 }
 
-async function pollTask(id, onProgress) {
+async function pollTask(id, onProgress, isCancelled) {
     const started = Date.now();
     for (;;) {
+        // Tâche morte côté client (fenêtre fermée) : ne pas la sonder 10 min.
+        if (isCancelled?.()) return {};
         if (Date.now() - started > 10 * 60 * 1000) throw new Error('timeout');
         const response = await fetch('/tasks/' + encodeURIComponent(id) + '?include_result=true');
         if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -506,7 +520,10 @@ async function convertVideo(video, blob, name) {
         const response = await fetch('/process_recorded_video', { method: 'POST', body: form });
         const data = await response.json();
         if (!data?.task_id) throw new Error(data?.message || 'no task');
-        result = await pollTask(data.task_id, (p) => { if (!video.cancelled) setVideoStatus(t('Conversion en MP4…'), p); });
+        video.taskId = data.task_id;
+        // La fenêtre a pu être fermée pendant l'envoi du POST.
+        if (video.cancelled) { cancelVideoTask(video); return; }
+        result = await pollTask(data.task_id, (p) => { if (!video.cancelled) setVideoStatus(t('Conversion en MP4…'), p); }, () => video.cancelled);
     } catch (e) {
         console.warn('[stats] Conversion vidéo impossible :', e?.message || e);
     }

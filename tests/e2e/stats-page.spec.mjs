@@ -1539,6 +1539,45 @@ test('créer une vidéo animée d\'une comparaison', async ({ page, request }) =
   }
 });
 
+test('annuler pendant la conversion arrête la tâche serveur', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  // Conversion simulée : la tâche répond « running » tant qu'on ne l'annule
+  // pas. Deux motifs : « * » ne franchit pas « / », le /cancel en a un dédié.
+  let cancelRequested = false;
+  await page.route('**/process_recorded_video', async (route) => {
+    await route.fulfill({
+      status: 202, contentType: 'application/json',
+      body: JSON.stringify({ success: true, task_id: 'stats-fake-task' }),
+    });
+  });
+  await page.route('**/tasks/stats-fake-task*', async (route) => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ state: 'running', progress: 40 }),
+    });
+  });
+  await page.route('**/tasks/stats-fake-task/cancel', async (route) => {
+    cancelRequested = true;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect(page.locator('#statsVideoStatus')).toContainText('Conversion en MP4', { timeout: 30_000 });
+
+  const cancelSent = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/cancel'));
+  await page.locator('#btnStatsVideoCancel').click();
+  await cancelSent;
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(cancelRequested).toBe(true);
+  expect((await snapshot(page)).video).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 // Image du tableau entier : la disposition affichée, redessinée dans un PNG
 // (en-tête, cartes, graphiques ECharts à la netteté ×2).
 const IMAGE_ITEMS = [

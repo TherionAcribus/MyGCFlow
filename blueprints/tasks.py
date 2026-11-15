@@ -4,6 +4,7 @@ from flask_babel import gettext as _
 from task_manager import task_manager
 from bdd import TASK_TYPE_GEOJSON, geojson_cache
 from blueprints.labs import TASK_TYPE_LAB_FETCH
+from capture import TASK_TYPE_VIDEO_PROCESS
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -61,14 +62,15 @@ def get_task_status(task_id: str):
 def cancel_task(task_id: str):
     """Annulation coopérative d'une tâche en cours.
 
-    Seule `lab_fetch_coords` est annulable : elle vérifie le drapeau entre
+    Deux types sont annulables. `lab_fetch_coords` vérifie le drapeau entre
     deux lots, avant une bissection, une reprise ou la pause — les lots déjà
-    enregistrés sont conservés. Un commit d'import atomique, lui, ne peut
-    pas être interrompu proprement : refusé."""
+    enregistrés sont conservés. `video_processing` tue ffmpeg à la prochaine
+    ligne de progression et supprime la sortie partielle. Un commit d'import
+    atomique, lui, ne peut pas être interrompu proprement : refusé."""
     status = task_manager.get(task_id)
     if status is None:
         return jsonify({'error': 'Task not found'}), 404
-    if status.type != TASK_TYPE_LAB_FETCH:
+    if status.type not in (TASK_TYPE_LAB_FETCH, TASK_TYPE_VIDEO_PROCESS):
         return jsonify({'success': False,
                         'message': _("Cette tâche ne peut pas être annulée")}), 400
     if not status.request_cancel():

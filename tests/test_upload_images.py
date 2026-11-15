@@ -10,6 +10,7 @@ from flask import Flask, request
 from capture import (
     VIDEO_STREAM_MAX_AGE_S,
     _assemble_pictures,
+    _run_ffmpeg,
     _video_streams,
     captured_session_dir,
     clear_pictures_directory,
@@ -420,6 +421,72 @@ class VideoStreamTests(unittest.TestCase):
         ):
             response, *rest = _unpack(process_recorded_video(request))
             self.assertEqual(rest[0] if rest else 200, 400)
+
+
+class _FakeFfmpegStdout:
+    """Pipe de progression ffmpeg simulé : itère sur les lignes fournies."""
+
+    def __init__(self, lines):
+        self._lines = iter(lines)
+        self.closed = False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._lines)
+
+    def close(self):
+        self.closed = True
+
+
+class _FakeFfmpegProc:
+    """Processus ffmpeg simulé : kill() le marque et ferme le flux comme le
+    ferait la mort du processus, wait() répond immédiatement."""
+
+    def __init__(self, lines):
+        self.stdout = _FakeFfmpegStdout(lines)
+        self.killed = False
+        self.returncode = 0
+
+    def kill(self):
+        self.killed = True
+        self.stdout._lines = iter(())
+
+    def wait(self, timeout=None):
+        self.returncode = -9 if self.killed else 0
+        return self.returncode
+
+
+class RunFfmpegCancelTests(unittest.TestCase):
+    """Annulation coopérative dans _run_ffmpeg : le drapeau de la tâche est
+    contrôlé à chaque ligne de progression, ffmpeg est alors tué."""
+
+    def test_cancel_requested_kills_ffmpeg(self):
+        proc = _FakeFfmpegProc(['out_time_us=1000\n', 'progress=continue\n'])
+        status = mock.Mock()
+        status.is_cancel_requested.return_value = True
+        with mock.patch('capture.subprocess.Popen', return_value=proc):
+            result = _run_ffmpeg(
+                ['ffmpeg', '-progress', 'pipe:1', 'out.mp4'], status=status)
+
+        self.assertFalse(result['success'])
+        self.assertTrue(result['cancelled'])
+        self.assertTrue(proc.killed)
+        self.assertTrue(proc.stdout.closed)
+
+    def test_without_cancel_ffmpeg_runs_to_the_end(self):
+        """Garde-fou : sans demande d'annulation, le résultat reste le succès."""
+        proc = _FakeFfmpegProc(['out_time_us=1000\n', 'progress=end\n'])
+        status = mock.Mock()
+        status.is_cancel_requested.return_value = False
+        with mock.patch('capture.subprocess.Popen', return_value=proc):
+            result = _run_ffmpeg(
+                ['ffmpeg', '-progress', 'pipe:1', 'out.mp4'], status=status)
+
+        self.assertTrue(result['success'])
+        self.assertNotIn('cancelled', result)
+        self.assertFalse(proc.killed)
 
 
 def _unpack(result):
