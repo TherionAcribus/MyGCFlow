@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 14:25+0100\n"
+"POT-Creation-Date: 2026-11-15 14:37+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -881,8 +881,8 @@ msgstr "Confirm"
 
 #: blueprints/core.py:230 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:43
-#: static/js/stats_page_dashboard.js:544 static/js/stats_page_links.js:226
-#: static/js/stats_page_links.js:276 static/js/stats_page_video.js:57
+#: static/js/stats_page_dashboard.js:544 static/js/stats_page_links.js:206
+#: static/js/stats_page_links.js:254 static/js/stats_page_video.js:57
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
 #: templates/menu_images.html:118 templates/menu_stats.html:71
@@ -3546,7 +3546,7 @@ msgstr "${count} cells missing"
 msgid "Pour le tour ${round}, encore ${count} cases"
 msgstr "For round ${round}, ${count} cells to go"
 
-#: static/js/chart_labels.mjs:743 static/js/stats_page_links.js:43
+#: static/js/chart_labels.mjs:743 static/js/stats_page_links.js:37
 #, python-brace-format
 msgid "du ${from} au ${to}"
 msgstr "from ${from} to ${to}"
@@ -5740,7 +5740,7 @@ msgid "Flash"
 msgstr "Flash"
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: static/js/stats_page_links.js:292 static/js/stats_page_video.js:57
+#: static/js/stats_page_links.js:270 static/js/stats_page_video.js:57
 #: templates/menu_data.html:512 templates/menu_data.html:554
 #: templates/menu_data.html:566 templates/menu_data.html:600
 #: templates/menu_data.html:632 templates/menu_data.html:661
@@ -6029,13 +6029,13 @@ msgstr "grouped"
 msgid "un par visiteur"
 msgstr "one per visitor"
 
-#: static/js/profiles.js:49 static/js/stats_page_links.js:377
+#: static/js/profiles.js:49 static/js/stats_page_links.js:345
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41 templates/guide.html:131 templates/guide.html:640
 msgid "Évolution"
 msgstr "Evolution"
 
-#: static/js/profiles.js:49 static/js/stats_page_links.js:375
+#: static/js/profiles.js:49 static/js/stats_page_links.js:343
 #: templates/_app_header.html:14 templates/_app_header.html:16
 #: templates/guide.html:131 templates/guide.html:174 templates/guide.html:640
 #: templates/menu_data.html:27
@@ -6577,7 +6577,7 @@ msgstr "${names}: data unavailable"
 msgid "Réessayer"
 msgstr "Retry"
 
-#: static/js/stats_page_cards.js:255 static/js/stats_page_links.js:416
+#: static/js/stats_page_cards.js:255 static/js/stats_page_links.js:384
 msgid "Envoyer en panneau vidéo"
 msgstr "Send to video panel"
 
@@ -6691,8 +6691,8 @@ msgstr "Year-to-date comparison: every period stops on ${date}."
 msgid "Aucune donnée sur cette période."
 msgstr "No data in this period."
 
-#: static/js/stats_page_cards.js:463 static/js/stats_page_links.js:286
-#: static/js/stats_page_links.js:340 static/js/stats_page_links.js:360
+#: static/js/stats_page_cards.js:463 static/js/stats_page_links.js:264
+#: static/js/stats_page_links.js:312 static/js/stats_page_links.js:331
 msgid "Voir sur la carte"
 msgstr "Show on the map"
 
@@ -7162,29 +7162,29 @@ msgstr "No data yet"
 msgid "Graphique ajouté : ${title}."
 msgstr "Chart added: ${title}."
 
-#: static/js/stats_page_links.js:53
+#: static/js/stats_page_links.js:47
 msgid "filtres du graphique"
 msgstr "chart filters"
 
-#: static/js/stats_page_links.js:55
+#: static/js/stats_page_links.js:49
 msgid "toutes vos trouvailles"
 msgstr "all your finds"
 
-#: static/js/stats_page_links.js:87
+#: static/js/stats_page_links.js:80
 msgid "Impossible de préparer les filtres de la carte."
 msgstr "Could not prepare the map filters."
 
-#: static/js/stats_page_links.js:199
+#: static/js/stats_page_links.js:181
 #, python-brace-format
 msgid "Période : ${p}"
 msgstr "Period: ${p}"
 
-#: static/js/stats_page_links.js:225
+#: static/js/stats_page_links.js:205
 #, python-brace-format
 msgid "Périmètre appliqué : ${what}"
 msgstr "Scope applied: ${what}"
 
-#: static/js/stats_page_links.js:273
+#: static/js/stats_page_links.js:251
 #, python-brace-format
 msgid ""
 "Filtrer ce tableau sur « ${scope} », ou afficher ces trouvailles sur la "
@@ -7193,16 +7193,16 @@ msgstr ""
 "Filter this dashboard on “${scope}”, or show these finds on the map (its "
 "filters will be replaced)."
 
-#: static/js/stats_page_links.js:274
+#: static/js/stats_page_links.js:252
 #, python-brace-format
 msgid "Filtrer ce tableau sur « ${scope} »."
 msgstr "Filter this dashboard on “${scope}”."
 
-#: static/js/stats_page_links.js:279 templates/guide.html:790
+#: static/js/stats_page_links.js:257 templates/guide.html:790
 msgid "Filtrer ce tableau"
 msgstr "Filter this dashboard"
 
-#: static/js/stats_page_links.js:339
+#: static/js/stats_page_links.js:311
 #, python-brace-format
 msgid ""
 "La carte s'ouvrira en pause au ${date}, cadrée sur ${zone}. Ses filtres "
@@ -7211,15 +7211,15 @@ msgstr ""
 "The map will open paused on ${date}, framed on ${zone}. Its filters stay "
 "as they are."
 
-#: static/js/stats_page_links.js:343 static/js/stats_page_links.js:363
+#: static/js/stats_page_links.js:315 static/js/stats_page_links.js:334
 msgid "Ouvrir la carte"
 msgstr "Open the map"
 
-#: static/js/stats_page_links.js:353
+#: static/js/stats_page_links.js:324
 msgid "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
 msgstr "This value has no equivalent in the map filters."
 
-#: static/js/stats_page_links.js:358
+#: static/js/stats_page_links.js:329
 #, python-brace-format
 msgid ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
@@ -7228,24 +7228,24 @@ msgstr ""
 "The map will show these finds: ${what}. Its current filters will be "
 "replaced."
 
-#: static/js/stats_page_links.js:376 templates/_app_header.html:24
+#: static/js/stats_page_links.js:344 templates/_app_header.html:24
 #: templates/_app_header.html:26 templates/app.html:41 templates/guide.html:83
 #: templates/guide.html:131 templates/guide.html:619 templates/guide.html:670
 msgid "Mes poses"
 msgstr "My hides"
 
-#: static/js/stats_page_links.js:386
+#: static/js/stats_page_links.js:354
 #, python-brace-format
 msgid ""
 "La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet "
 "Stats."
 msgstr "The “${page}” page already has ${n} panels: remove one in its Stats tab."
 
-#: static/js/stats_page_links.js:399
+#: static/js/stats_page_links.js:367
 msgid "L'envoi du panneau a échoué."
 msgstr "Sending the panel failed."
 
-#: static/js/stats_page_links.js:402
+#: static/js/stats_page_links.js:370
 #, python-brace-format
 msgid ""
 "Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
@@ -7254,7 +7254,7 @@ msgstr ""
 "Panel added to the “${page}” page: it will appear on the map and in the "
 "video."
 
-#: static/js/stats_page_links.js:411
+#: static/js/stats_page_links.js:379
 #, python-brace-format
 msgid ""
 "Le graphique devient un panneau de la page « ${page} », qui se remplit au"
@@ -7263,7 +7263,7 @@ msgstr ""
 "The chart becomes a panel of the “${page}” page, filling up as the "
 "animation plays."
 
-#: static/js/stats_page_links.js:413
+#: static/js/stats_page_links.js:381
 msgid ""
 "Il suit la période et les filtres de la carte : la période, les filtres "
 "et le découpage de ce graphique ne sont pas repris."
@@ -7271,11 +7271,11 @@ msgstr ""
 "It follows the map's period and filters: this chart's period, filters and"
 " breakdown are not carried over."
 
-#: static/js/stats_page_links.js:415
+#: static/js/stats_page_links.js:383
 msgid "L'objectif et la projection restent sur cette page."
 msgstr "The goal and the projection stay on this page."
 
-#: static/js/stats_page_links.js:416
+#: static/js/stats_page_links.js:384
 msgid "Envoyer"
 msgstr "Send"
 
@@ -13624,10 +13624,14 @@ msgstr ""
 #: templates/guide.html:790
 msgid ""
 " : un type ou un pays devient un filtre, une année ou un mois devient la "
-"période — le message qui s'affiche permet d'annuler."
+"période — le message qui s'affiche permet d'annuler ; ensuite, la croix "
+"d'une pastille, sous la barre du tableau, retire son filtre. Les grilles "
+"de défis ne le proposent pas : elles ne garderaient que la case cliquée."
 msgstr ""
 ": a type or a country becomes a filter, a year or a month becomes the "
-"period — the message that appears lets you undo it."
+"period — the message that appears lets you undo; afterwards, the cross "
+"on a chip, below the dashboard bar, removes its filter. Challenge "
+"grids do not offer it: they would keep only the clicked cell."
 
 #: templates/guide.html:791
 msgid ""
@@ -25868,4 +25872,15 @@ msgstr "Create the video"
 #~ "Available for bars, a line or an"
 #~ " area on a time axis, except "
 #~ "differences."
+
+#~ msgid ""
+#~ " : un type ou un pays "
+#~ "devient un filtre, une année ou un"
+#~ " mois devient la période — le "
+#~ "message qui s'affiche permet d'annuler."
+#~ msgstr ""
+#~ ": a type or a country becomes "
+#~ "a filter, a year or a month "
+#~ "becomes the period — the message "
+#~ "that appears lets you undo it."
 

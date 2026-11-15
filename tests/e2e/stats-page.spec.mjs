@@ -1455,7 +1455,7 @@ test('un clic sur une année règle la période du tableau', async ({ page, requ
   expect(errors).toEqual([]);
 });
 
-test('un clic sur une case D/T filtre difficulté et terrain ensemble', async ({ page, request }) => {
+test('un clic sur une case D/T propose la carte, pas le filtre du tableau', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'dt', view: { chart: 'challenge' },
   }, 'L');
@@ -1476,14 +1476,15 @@ test('un clic sur une case D/T filtre difficulté et terrain ensemble', async ({
     };
   }, { keyIndex: filled });
   await page.mouse.click(pos.x, pos.y);
+  // Filtrer le tableau sur la case réduirait la grille à cette case : seul
+  // le lien vers la carte (difficulté et terrain ensemble) est proposé.
   const modal = page.locator('.gcm-confirm-modal');
   await expect(modal).toBeVisible();
-  await modal.locator('[data-gcm-role="filter"]').click();
-  const [d, te] = String(target.keys[filled]).split('|');
-  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters?.difficulty)
-    .toEqual([d]);
-  await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.filters?.terrain)
-    .toEqual([te]);
+  await expect(modal.locator('[data-gcm-role="filter"]')).toHaveCount(0);
+  await expect(modal).toContainText('Ses filtres actuels seront remplacés');
+  await modal.locator('[data-gcm-role="cancel"]').click();
+  await expect(modal).toHaveCount(0);
+  expect((await savedDoc(request))?.dashboards?.[0]?.filters || {}).toEqual({});
   expect(errors).toEqual([]);
 });
 

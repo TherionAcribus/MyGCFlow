@@ -441,6 +441,11 @@ proposé, « Commencer avec des graphiques prêts »).
   « Inconnu », dimension ou filtre sans équivalent carte (jour de la
   semaine, âge, région, cache, visiteur, années de publication non
   contiguës). `chartLinksToMap(spec)` décide du curseur.
+- « Filtrer ce tableau » (`dashboardScope`, stats_page_links.js) : proposé
+  à côté du lien quand la valeur a un équivalent en filtres / période du
+  tableau — sauf sur une grille de défi (2026-11-15) : filtrer sur la case
+  cliquée réduisait la grille à cette seule case. Le toast permet
+  d'annuler ; ensuite, la croix de la pastille du filtre.
 - Géocaches / Labs ne sont pas dans la sélection mais dans la préférence
   globale `main_discovery_sources` : `discoveryModeFor` donne le mode à poser
   (un type de cache ou une taille désigne les géocaches, « Adventure Lab »

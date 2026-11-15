@@ -109,8 +109,10 @@ export function onChartClick(host, params) {
         return;
     }
     // La valeur cliquée a un équivalent en filtres/période du tableau :
-    // proposer « Filtrer ce tableau » à côté de « Voir sur la carte ».
-    const scope = dashboardScope(entry, target);
+    // proposer « Filtrer ce tableau » à côté de « Voir sur la carte ». Pas
+    // sur une grille de défi : filtrer sur la case cliquée réduirait la
+    // grille elle-même à cette seule case.
+    const scope = entry.spec.view.chart === 'challenge' ? null : dashboardScope(entry, target);
     if (!scope) {
         confirmMapLink(card.dataset.chartId, target);
         return;
