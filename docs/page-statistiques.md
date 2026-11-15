@@ -522,6 +522,12 @@ effacer » le retire avec la période proposée.
   géant et le nom du tableau sont réduits (`fitFontSize`, plancher) plutôt
   que tronqués.
 - Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080), durées 6 à 30 s.
+- Réglages de la fenêtre mémorisés dans le navigateur (localStorage
+  `statsVideoPrefs` : format, durée du mode graphique et durée par
+  graphique du mode tableau — axes indépendants —, musique de
+  bibliothèque) : préférence d'interface locale non synchronisée serveur,
+  comme `PNG_SCALE_KEY` pour l'export PNG. Un fichier de l'ordinateur
+  n'est pas mémorisé (non restaurable à l'ouverture suivante).
 
 ### Vidéo du tableau entier, musique
 

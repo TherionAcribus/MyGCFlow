@@ -79,12 +79,41 @@ export function releaseVideo() {
     state.video = null;
 }
 
+// Réglages de la fenêtre (format, durées des deux modes, musique de
+// bibliothèque) : préférence d'interface locale au navigateur, non
+// synchronisée serveur — comme PNG_SCALE_KEY pour l'export PNG.
+const VIDEO_PREFS_KEY = 'statsVideoPrefs';
+
+function loadVideoPrefs() {
+    try {
+        return JSON.parse(localStorage.getItem(VIDEO_PREFS_KEY)) || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+// Mémorise les choix courants des selects ; la durée est par mode (les
+// deux axes sont indépendants) : seule celle du mode courant est écrite.
+export function persistVideoPrefs() {
+    const prefs = loadVideoPrefs();
+    prefs.size = $('statsVideoSize').value;
+    const mode = state.video?.mode;
+    if (mode === 'chart') prefs.duration = $('statsVideoDuration').value;
+    else if (mode === 'dashboard') prefs.slideDuration = $('statsVideoDuration').value;
+    // 'pick' / 'upload' : un fichier de l'ordinateur n'est pas restaurable
+    // — la valeur précédemment mémorisée est conservée.
+    const music = $('statsVideoMusic').value;
+    if (music === '' || music.startsWith('lib:')) prefs.music = music;
+    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+}
+
 // Fenêtre de la vidéo, pour un graphique (`mode: 'chart'`) ou tout le
 // tableau (`mode: 'dashboard'`, dashboard_video.mjs) : durée totale ou
 // durée par graphique, musique.
 function setupVideoModal(video) {
     releaseVideo();
     state.video = { phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null, ...video };
+    const prefs = loadVideoPrefs();
     const dashboardMode = video.mode === 'dashboard';
     $('statsVideoTitle').textContent = dashboardMode ? t('Vidéo du tableau de bord') : t('Vidéo animée');
     $('statsVideoIntroChart').hidden = dashboardMode;
@@ -94,13 +123,15 @@ function setupVideoModal(video) {
     select.replaceChildren();
     if (dashboardMode) {
         for (const seconds of SLIDE_SECONDS) select.add(new Option(t('${n} secondes', { n: seconds }), String(seconds)));
-        select.value = String(DEFAULT_SLIDE_SECONDS);
+        select.value = String(slideSeconds(prefs.slideDuration));
     } else {
         for (const seconds of VIDEO_DURATIONS) select.add(new Option(t('${n} secondes', { n: seconds }), String(seconds)));
-        select.value = '10';
+        const duration = Number(prefs.duration);
+        select.value = VIDEO_DURATIONS.includes(duration) ? String(duration) : '10';
     }
+    if (VIDEO_SIZES[prefs.size]) $('statsVideoSize').value = prefs.size;
     syncVideoTotal();
-    fillMusicChoices();
+    fillMusicChoices(prefs.music);
     setVideoPhase('setup');
     videoModal().show();
 }
@@ -141,8 +172,9 @@ export function syncVideoTotal() {
 }
 
 // Musiques : aucune, les récentes de la carte (bibliothèque audio/), ou un
-// fichier de l'ordinateur, envoyé avec la vidéo.
-async function fillMusicChoices() {
+// fichier de l'ordinateur, envoyé avec la vidéo. `restore` : la valeur
+// mémorisée ('' ou 'lib:<fichier>'), reposée si l'entrée est encore là.
+async function fillMusicChoices(restore = '') {
     const select = $('statsVideoMusic');
     select.replaceChildren(new Option(t('Sans musique'), ''));
     let recording = null;
@@ -172,6 +204,13 @@ async function fillMusicChoices() {
     }
     select.append(new Option(t('Un fichier de mon ordinateur…'), 'pick'));
     select.value = '';
+    // Une entrée mémorisée a pu disparaître de la bibliothèque : elle n'est
+    // reposée que si elle existe encore ('lib:<fichier>' peut porter des
+    // caractères spéciaux → comparaison des valeurs, pas de sélecteur).
+    if (restore && [...select.options].some((option) => option.value === restore)) {
+        select.value = restore;
+        onMusicChange();
+    }
 }
 
 export function onMusicChange() {
@@ -189,6 +228,7 @@ export function onMusicChange() {
     else if (select.value.startsWith('lib:')) {
         video.music = { kind: 'library', file: select.value.slice(4), start: Number(select.selectedOptions[0]?.dataset.start) || 0 };
     }
+    persistVideoPrefs();
 }
 
 export function onMusicFile() {

@@ -1901,6 +1901,51 @@ test('vidéo du tableau : un seul graphique reste au singulier', async ({ page, 
   expect(errors).toEqual([]);
 });
 
+test('les réglages de la fenêtre vidéo sont mémorisés', async ({ page, request }) => {
+  // localStorage statsVideoPrefs : format, une durée par mode (graphique /
+  // tableau, axes indépendants), musique de bibliothèque — pas testée ici,
+  // les entrées « lib: » exigent des fichiers dans audio/.
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('square');
+  await page.locator('#statsVideoDuration').selectOption('15');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+
+  // Rouverte : format et durée du mode graphique retrouvés.
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoSize')).toHaveValue('square');
+  await expect(page.locator('#statsVideoDuration')).toHaveValue('15');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+
+  // Le mode tableau a sa propre durée (par graphique).
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await expect(page.locator('#statsVideoSize')).toHaveValue('square');
+  await page.locator('#statsVideoDuration').selectOption('10');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoSize')).toHaveValue('square');
+  await expect(page.locator('#statsVideoDuration')).toHaveValue('10');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+
+  // Pas de fuite entre modes : le graphique garde ses propres réglages.
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoSize')).toHaveValue('square');
+  await expect(page.locator('#statsVideoDuration')).toHaveValue('15');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 // ---------------------------------------------------------------------------
 // Sauvegarde : conflit entre onglets, échec et relance
 // ---------------------------------------------------------------------------
