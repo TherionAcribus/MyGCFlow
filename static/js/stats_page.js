@@ -35,7 +35,7 @@ import {
 } from './stats_page_editor.js';
 import { downloadValuesCsv, onAfterPrint, onBeforePrint } from './stats_page_exports.js';
 import {
-    filterGallery, onGalleryPick, openGallery, releaseGalleryPreviews, startGalleryPreviews,
+    filterGallery, onGalleryNav, onGalleryPick, openGallery, releaseGalleryPreviews, startGalleryPreviews,
 } from './stats_page_gallery.js';
 import {
     closePresentation, openPresentation, presentEl, presentGo, scheduleAutoAdvance, showSlide,
@@ -140,6 +140,8 @@ window.getStatsPageSnapshot = () => {
             state: box.dataset.state || 'pending',
             text: box.textContent,
             drawn: Boolean(window.echarts?.getInstanceByDom(box)),
+            // Question déjà dans le tableau (repère « Déjà dans le tableau »).
+            added: state.gallery.added.has(box.dataset.preview),
         })),
         rows: state.tables.has('finds') ? tableOf('finds').n : null,
         undated: state.tables.has('finds') ? tableOf('finds').undated : null,
@@ -326,6 +328,7 @@ function bindEvents() {
     });
     $('statsGalleryList').addEventListener('click', onGalleryPick);
     $('statsGallerySearch').addEventListener('input', filterGallery);
+    $('statsGalleryNav').addEventListener('click', onGalleryNav);
     $('statsGalleryModal').addEventListener('shown.bs.modal', startGalleryPreviews);
     $('statsGalleryModal').addEventListener('hidden.bs.modal', releaseGalleryPreviews);
     $('statsDashboardMenu').addEventListener('click', onDashboardMenuClick);

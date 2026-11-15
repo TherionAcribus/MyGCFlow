@@ -579,7 +579,9 @@ body > .ts-dropdown {
 /* ----- Galerie « Ajouter un graphique » ----- */
 .stats-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    /* Fenêtre large (modal-xl) : quatre cartes par rangée, trois au moins
+       sur un écran moyen — une soixantaine de questions défilent moins. */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 10px;
 }
 .stats-gallery-card {
@@ -858,6 +860,61 @@ body > .ts-dropdown {
 #statsGalleryList {
     display: block;
 }
+/* Recherche et rubriques collées en haut du corps de la fenêtre (qui
+   défile : modal-dialog-scrollable) ; le fond masque les cartes dessous. */
+.stats-gallery-top {
+    position: sticky;
+    top: calc(-1 * var(--tblr-modal-padding, 1rem));
+    z-index: 2;
+    margin: 0 calc(-1 * var(--tblr-modal-padding, 1rem)) 12px;
+    padding: 8px var(--tblr-modal-padding, 1rem);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+.stats-gallery-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.stats-gallery-nav:empty { display: none; }
+.stats-gallery-chip {
+    padding: 2px 10px;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.stats-gallery-chip[hidden] { display: none; }
+.stats-gallery-chip:hover,
+.stats-gallery-chip:focus-visible {
+    color: var(--color-accent-on-weak);
+    background: var(--color-accent-weak);
+    border-color: var(--color-accent-text);
+}
+.stats-gallery-chip-count {
+    margin-left: 4px;
+    color: var(--color-text-muted);
+}
+/* Saut vers une rubrique : le titre s'arrête sous la barre collante. */
+.stats-gallery-section {
+    scroll-margin-top: var(--stats-gallery-top-height, 96px);
+}
+/* Question déjà dans le tableau : repérée, toujours cliquable (doublon
+   voulu). */
+.stats-gallery-added {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+.stats-gallery-added .ti { color: var(--chart-up, #2a78d6); }
 .stats-gallery-card {
     flex-direction: column;
     align-items: stretch;

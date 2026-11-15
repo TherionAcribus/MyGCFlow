@@ -140,7 +140,7 @@
         <!-- Galerie « Ajouter un graphique » : questions toutes faites
              (dashboard_model.mjs › QUESTIONS), remplie par stats_page_gallery.js. -->
         <div class="modal fade" id="statsGalleryModal" tabindex="-1" aria-labelledby="statsGalleryTitle" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2 class="modal-title h5" id="statsGalleryTitle">{{ _("Ajouter un graphique") }}</h2>
@@ -148,9 +148,13 @@
                     </div>
                     <div class="modal-body">
                         <p class="text-muted small mb-2">{{ _("Choisissez une question : le graphique se règle ensuite comme vous voulez.") }}</p>
-                        <input type="search" id="statsGallerySearch" class="form-control form-control-sm mb-3"
-                               placeholder="{{ _("Rechercher un graphique…") }}"
-                               aria-label="{{ _("Rechercher un graphique") }}">
+                        <!-- Recherche et rubriques restent en haut pendant le défilement. -->
+                        <div class="stats-gallery-top">
+                            <input type="search" id="statsGallerySearch" class="form-control form-control-sm"
+                                   placeholder="{{ _("Rechercher un graphique…") }}"
+                                   aria-label="{{ _("Rechercher un graphique") }}">
+                            <nav id="statsGalleryNav" class="stats-gallery-nav" aria-label="{{ _("Rubriques de la galerie") }}"></nav>
+                        </div>
                         <div id="statsGalleryList" class="stats-gallery"></div>
                     </div>
                 </div>

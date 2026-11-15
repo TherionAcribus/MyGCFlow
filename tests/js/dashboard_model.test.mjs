@@ -16,6 +16,7 @@ import {
     normalizeDocument,
     normalizeItem,
     numberContext,
+    questionsInDashboard,
     trailingColumns,
     QUESTION_GROUPS,
     chartPeriodChoices,
@@ -249,6 +250,26 @@ test('libellés de comparaison : en cours, coupée, rang depuis le début', () =
     // Coupée « à date » : la comparaison dit jusqu'à quel jour.
     const cut2025 = { period: { kind: 'previous' }, as: { kind: 'year', year: 2025 }, cut: true, to: dayNumber({ y: 2025, m: 11, d: 15 }) };
     assert.equal(labels.comparedTo(cut2025), 'par rapport au 15 nov. 2025');
+});
+
+test('galerie : une question est « déjà dans le tableau » quand un graphique montre la même chose', () => {
+    const ids = (() => { let n = 0; return () => (++n).toString(16).padStart(6, 'a'); })();
+    const dashboard = defaultDashboard({ newId: ids });
+    const itemOf = (id) => itemFromQuestion(id, { newId: ids });
+    // Le tableau par défaut : ses questions de départ, et elles seules.
+    assert.deepEqual([...questionsInDashboard(dashboard, itemOf)].sort(), [...DEFAULT_QUESTIONS].sort());
+    // Titre, couleurs, taille changés : toujours la question.
+    const total = dashboard.items.find((item) => item.spec.view.chart === 'number');
+    total.spec = { ...total.spec, title: 'Mon total', view: { ...total.spec.view, palette: 'accent' } };
+    total.size = 'XL';
+    assert.ok(questionsInDashboard(dashboard, itemOf).has('total'));
+    // Autre mesure : ce n'est plus elle.
+    total.spec = { ...total.spec, measure: { op: 'distinct', field: 'days' } };
+    const now = questionsInDashboard(dashboard, itemOf);
+    assert.ok(!now.has('total'));
+    assert.ok(now.has('days'));
+    // Tableau vide : rien.
+    assert.equal(questionsInDashboard({ items: [] }, itemOf).size, 0);
 });
 
 test('trou de fin de grille : placement dans l\'ordre, une carte trop large passe à la rangée suivante', () => {

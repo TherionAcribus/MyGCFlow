@@ -427,6 +427,21 @@ le travail redondant dans la page :
   texte : « matrice » pour les grilles D/T (nom des panneaux de la carte,
   2026-11-15). Casse, accents et ponctuation ignorés (« dt » trouve « D/T »),
   chaque mot requis.
+- **Parcourir la galerie** (2026-11-15) : une soixantaine de questions
+  défilaient sur deux colonnes. Fenêtre `modal-xl`, cartes de 220 px au
+  moins (quatre par rangée en grand écran, trois vers 1 024 px). Recherche
+  et rubriques dans une barre collante (`.stats-gallery-top`, `position:
+  sticky` dans le corps qui défile) ; une pastille par rubrique avec son
+  nombre de questions (`#statsGalleryNav`, `onGalleryNav`) fait défiler la
+  section sous la barre (`scroll-margin-top` = hauteur de la barre, mesurée
+  à `shown.bs.modal`) et met le focus sur sa première question. La
+  recherche masque les pastilles des rubriques vides et recompte les
+  autres. Les questions dont le tableau contient déjà le graphique portent
+  « Déjà dans le tableau » (`questionsInDashboard`, dashboard_model.mjs :
+  même source, mesure, regroupements, périodes, filtres, forme,
+  présentation de comparaison et présence d'un objectif — titre, couleurs
+  et taille ne comptent pas) ; elles restent cliquables (doublon voulu).
+  Relevé E2E `gallery[].added`.
 - **« Actualiser les données »** (`refreshData`, bouton à côté de
   « Filtres ») : relit trouvailles, DNF, caches posées, Mes poses, la liste
   des jeux et le jeu Évolution du tableau (les autres jeux au prochain

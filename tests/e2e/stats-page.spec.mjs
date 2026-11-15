@@ -451,6 +451,46 @@ test('galerie : la recherche filtre les questions et leurs sections', async ({ p
   expect(errors).toEqual([]);
 });
 
+test('galerie : rubriques en pastilles, saut direct, questions déjà dans le tableau repérées', async ({ page }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsAddChart').click();
+  await expect(page.locator('#statsGalleryModal')).toBeVisible();
+  const sections = page.locator('#statsGalleryList .stats-gallery-section');
+  const chips = page.locator('#statsGalleryNav .stats-gallery-chip');
+  // Une pastille par rubrique, avec son nombre de questions.
+  await expect(chips).toHaveCount(await sections.count());
+  await expect(chips.first()).toHaveText(/^Partir de zéro\s*1$/);
+
+  // Tableau par défaut : ses questions de départ sont repérées, les autres non.
+  await expect.poll(async () => (await snapshot(page)).gallery.filter((g) => g.added).map((g) => g.id).sort())
+    .toEqual(['ahead', 'by_year', 'countries_count', 'days', 'months', 'progress', 'total', 'types']);
+  const total = page.locator('#statsGalleryList [data-question="total"]');
+  await expect(total.locator('.stats-gallery-added')).toHaveText('Déjà dans le tableau');
+  await expect(page.locator('#statsGalleryList [data-question="best_day"] .stats-gallery-added')).toHaveCount(0);
+
+  // Saut vers « Séries et records » : la rubrique arrive sous la barre
+  // collante (recherche + pastilles toujours visibles), focus sur sa
+  // première question.
+  const records = page.locator('#statsGallerySection-records');
+  await chips.filter({ hasText: 'Séries et records' }).click();
+  await expect.poll(async () => {
+    const [top, section] = await Promise.all([
+      page.locator('.stats-gallery-top').boundingBox(), records.boundingBox()]);
+    return Math.abs(section.y - (top.y + top.height));
+  }).toBeLessThan(24);
+  await expect(page.locator('#statsGallerySearch')).toBeInViewport();
+  expect(await page.evaluate(() => document.activeElement?.closest('.stats-gallery-section')?.id))
+    .toBe('statsGallerySection-records');
+
+  // La recherche masque les pastilles des rubriques vides, recompte les autres.
+  await page.locator('#statsGallerySearch').fill('dnf');
+  const shown = page.locator('#statsGalleryNav .stats-gallery-chip:visible');
+  expect(await shown.count()).toBe(await page.locator('#statsGalleryList .stats-gallery-section:visible').count());
+  expect(await shown.count()).toBeLessThan(await chips.count());
+  await page.locator('#statsGalleryModal .btn-close').click();
+  expect(errors).toEqual([]);
+});
+
 test('supprimer, déplacer, dupliquer un graphique', async ({ page, request }) => {
   await openStats(page);
   let cards = (await snapshot(page)).cards;

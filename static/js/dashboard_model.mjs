@@ -318,6 +318,32 @@ export function itemFromQuestion(id, { newId = newChartId, title = '', dataset =
     return { size: question.size, height: 'M', spec };
 }
 
+// Ce qu'un graphique montre, sans ce qui l'habille (identifiant, titre,
+// couleurs, étiquettes, taille…) : une question de la galerie est « déjà
+// dans le tableau » quand un graphique a la même. Un graphique retouché
+// (autre mesure, autre forme…) n'est plus la question.
+function questionSignature(spec) {
+    return JSON.stringify([
+        spec.source, spec.extraSources || [], spec.measure, spec.groupBy, spec.splitBy,
+        spec.periods, spec.filters, spec.view.chart, spec.compare.layout,
+        // Un objectif fait une autre question (« Mon prochain cap ») ; sa
+        // valeur, elle, suit le total du moment.
+        Boolean(spec.goal),
+    ]);
+}
+
+// Questions dont le tableau contient déjà le graphique (repère de la
+// galerie). `itemOf(id)` : l'élément que la galerie ajouterait.
+export function questionsInDashboard(dashboard, itemOf) {
+    const present = new Set(dashboard.items.map((item) => questionSignature(item.spec)));
+    const out = new Set();
+    for (const question of QUESTIONS) {
+        const item = itemOf(question.id);
+        if (item && present.has(questionSignature(item.spec))) out.add(question.id);
+    }
+    return out;
+}
+
 // Nouveau tableau : personnel (questions de départ) ou Évolution d'un jeu.
 // `withCharts: false` : vide.
 export function defaultDashboard({

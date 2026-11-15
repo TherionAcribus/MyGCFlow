@@ -5,7 +5,7 @@ import { getBsModal, hideBsModal } from './ui_bootstrap.js';
 import { chartSources, createChartSpec } from './chart_spec.mjs';
 import { buildChartOption, numberModel, thumbnailOption } from './chart_echarts.mjs';
 import {
-    dashboardSources, itemFromQuestion, MAX_ITEMS, QUESTION_GROUPS, questionFamily, QUESTIONS,
+    dashboardSources, itemFromQuestion, MAX_ITEMS, QUESTION_GROUPS, questionFamily, QUESTIONS, questionsInDashboard,
 } from './dashboard_model.mjs';
 import { withUndo } from './stats_page_card_actions.js';
 import { cardSelector, chartContext, computeResult } from './stats_page_cards.js';
@@ -60,10 +60,14 @@ function renderGallery() {
         button.append(row);
         return button;
     };
-    // Une section par thème, « Graphique personnalisé » en tête.
-    const section = (title, cards) => {
+    // Une section par thème, « Graphique personnalisé » en tête ; chacune a
+    // sa pastille dans la barre des rubriques (saut direct).
+    const nav = $('statsGalleryNav');
+    nav.replaceChildren();
+    const section = (key, title, cards) => {
         const wrap = document.createElement('section');
         wrap.className = 'stats-gallery-section';
+        wrap.id = 'statsGallerySection-' + key;
         const heading = document.createElement('h3');
         heading.className = 'stats-gallery-heading';
         heading.textContent = title;
@@ -71,9 +75,18 @@ function renderGallery() {
         grid.className = 'stats-gallery';
         grid.append(...cards);
         wrap.append(heading, grid);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'stats-gallery-chip';
+        chip.dataset.section = wrap.id;
+        const count = document.createElement('span');
+        count.className = 'stats-gallery-chip-count';
+        count.textContent = String(cards.length);
+        chip.append(document.createTextNode(title), count);
+        nav.append(chip);
         return wrap;
     };
-    list.append(section(t('Partir de zéro'), [
+    list.append(section('custom', t('Partir de zéro'), [
         card('custom', 'ti-adjustments', t('Graphique personnalisé'), t('Partir de zéro et tout choisir.'), { preview: false }),
     ]));
     // Questions de la famille du tableau seulement.
@@ -95,14 +108,41 @@ function renderGallery() {
             if (item) state.gallery.items.set(question.id, item);
             return card(question.id, question.icon, title, description, { preview: Boolean(item), keywords });
         });
-        if (cards.length) list.append(section(state.labels.questionGroup(group), cards));
+        if (cards.length) list.append(section(group, state.labels.questionGroup(group), cards));
     }
+    // Questions déjà dans le tableau : repérées, toujours cliquables (un
+    // doublon peut être voulu, avec d'autres filtres).
+    state.gallery.added = questionsInDashboard(dashboard, (id) => state.gallery.items.get(id));
+    for (const id of state.gallery.added) {
+        const text = list.querySelector(`[data-question="${id}"] .stats-gallery-text`);
+        if (!text) continue;
+        const badge = document.createElement('span');
+        badge.className = 'stats-gallery-added';
+        badge.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i>';
+        badge.append(document.createTextNode(t('Déjà dans le tableau')));
+        text.append(badge);
+    }
+}
+
+// Pastille d'une rubrique : la section vient sous la barre collante, le
+// focus sur sa première question visible (clavier).
+export function onGalleryNav(event) {
+    const chip = event.target.closest('[data-section]');
+    if (!chip) return;
+    const target = document.getElementById(chip.dataset.section);
+    if (!target) return;
+    target.scrollIntoView({ block: 'start', behavior: state.reduceMotion ? 'auto' : 'smooth' });
+    target.querySelector('.stats-gallery-card:not([hidden])')?.focus({ preventScroll: true });
 }
 
 // Aperçus : observés une fois la modale visible (avant, ECharts mesurerait
 // des conteneurs de taille nulle).
 export function startGalleryPreviews() {
     const root = $('statsGalleryModal').querySelector('.modal-body');
+    // Hauteur de la barre collante (recherche + rubriques, qui passent à la
+    // ligne selon la largeur) : un saut s'arrête juste dessous.
+    const top = root.querySelector('.stats-gallery-top');
+    if (top) $('statsGalleryList').style.setProperty('--stats-gallery-top-height', top.offsetHeight + 8 + 'px');
     state.gallery.observer = new IntersectionObserver((entries) => {
         for (const entry of entries) {
             if (!entry.isIntersecting) continue;
@@ -219,6 +259,12 @@ export function filterGallery() {
             if (show) visible++;
         }
         section.hidden = !visible;
+        // Sa pastille suit : masquée avec elle, compte des questions trouvées.
+        const chip = $('statsGalleryNav').querySelector(`[data-section="${section.id}"]`);
+        if (chip) {
+            chip.hidden = !visible;
+            chip.querySelector('.stats-gallery-chip-count').textContent = String(visible);
+        }
     }
 }
 

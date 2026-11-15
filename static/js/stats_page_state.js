@@ -74,7 +74,7 @@ export const state = {
     busy: 0,                    // attentes en cours (whileBusy)
     // Galerie : éléments prêts à ajouter (id de question → élément) et
     // aperçus dessinés à l'approche.
-    gallery: { items: new Map(), dashboardId: null, charts: [], queue: [], observer: null, frame: 0, geoWaiting: new Set() },
+    gallery: { items: new Map(), added: new Set(), dashboardId: null, charts: [], queue: [], observer: null, frame: 0, geoWaiting: new Set() },
 };
 
 // Couleurs lues dans les variables CSS (stats_page.css, palette clair /
