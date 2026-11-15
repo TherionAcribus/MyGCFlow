@@ -595,6 +595,37 @@ test('infobulle : l\'aide de clic sur une carte du tableau, pas en présentation
   expect(errors).toEqual([]);
 });
 
+test('barre : boutons à la hauteur du menu Période, icône séparée du texte, Actualiser carré', async ({ page }) => {
+  const errors = await openStats(page);
+  const metrics = await page.evaluate(() => {
+    const select = document.getElementById('statsGlobalPeriod').getBoundingClientRect().height;
+    const buttons = ['btnStatsFilters', 'btnStatsRefresh', 'btnStatsPresent', 'btnStatsShare', 'btnStatsAddChart']
+      .map((id) => {
+        const button = document.getElementById(id);
+        const icon = button.querySelector('.ti').getBoundingClientRect();
+        // Début du texte : premier nœud texte non vide après l'icône.
+        const text = [...button.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
+        let gap = null;
+        if (text) {
+          const range = document.createRange();
+          range.selectNodeContents(text);
+          const first = [...range.getClientRects()].find((r) => r.width > 0);
+          gap = first.left - icon.right;
+        }
+        const r = button.getBoundingClientRect();
+        return { id, height: r.height, width: r.width, gap };
+      });
+    return { select, buttons };
+  });
+  for (const b of metrics.buttons) {
+    expect(Math.round(b.height), b.id).toBe(Math.round(metrics.select));
+    if (b.gap !== null) expect(b.gap, b.id).toBeGreaterThanOrEqual(3);
+  }
+  const refresh = metrics.buttons.find((b) => b.id === 'btnStatsRefresh');
+  expect(Math.round(refresh.width)).toBe(Math.round(refresh.height));
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : l\'aperçu reste en vue quand le formulaire défile', async ({ page }) => {
   const errors = await openStats(page);
   const best = (await snapshot(page)).cards[3];
@@ -1048,7 +1079,16 @@ test('Évolution : un tableau à part, lié à son jeu, sans sources personnelle
     await page.locator('#statsGalleryModal [data-question="custom"]').click();
     await expect(page.locator('#statsEdSource option')).toHaveCount(2);
     await expect(page.locator('#statsEdSource option[value="finds"]')).toHaveCount(0);
+    // Bootstrap ignore une fermeture pendant le fondu d'ouverture : attendre
+    // qu'il soit fini avant « Annuler » (sinon l'éditeur reste ouvert et
+    // couvre la barre — échec intermittent du 2026-11-15).
+    await page.waitForFunction(() => {
+      const el = document.getElementById('statsEditorModal');
+      const { Modal } = window.bootstrap || window.tabler || {};
+      return el.classList.contains('show') && !Modal?.getInstance(el)?._isTransitioning;
+    });
     await page.locator('#statsEditorModal [data-bs-dismiss="modal"]').last().click();
+    await expect(page.locator('#statsEditorModal')).toBeHidden();
 
     // Retour au tableau personnel par le menu.
     await page.locator('#btnStatsDashboards').click();

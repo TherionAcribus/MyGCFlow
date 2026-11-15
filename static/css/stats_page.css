@@ -115,6 +115,20 @@ html {
     color: var(--color-text);
 }
 
+/* Boutons « icône + texte » de la page : Tabler les met en flex, et l'espace
+   écrit entre l'icône et le texte n'y compte pas — ils étaient collés
+   (« Filtres », « + Comparer à une autre période », « Défilement
+   automatique »…). L'écart du conteneur flex compte le texte (un sélecteur
+   comme :only-child ne voit que les éléments) ; la marge des icônes qui en
+   avaient une (me-1, me-2) cède, sinon l'écart doublerait. */
+.btn {
+    column-gap: 0.4em;
+}
+.btn > .ti.me-1,
+.btn > .ti.me-2 {
+    margin-right: 0 !important;
+}
+
 /* ----- Barre du tableau de bord ----- */
 .stats-toolbar {
     display: flex;
@@ -217,6 +231,20 @@ html {
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+}
+/* Barre : boutons à la hauteur du menu « Période » (32 px), icônes
+   lisibles ; « Actualiser » carré (btn-icon lui retirait toute marge
+   intérieure : 14 × 24 px). */
+.stats-toolbar-controls .btn {
+    min-height: 32px;
+}
+.stats-toolbar-controls .btn > .ti {
+    font-size: 15px;
+}
+#btnStatsRefresh {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
 }
 .stats-toolbar-label {
     font-size: 0.85rem;

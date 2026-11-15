@@ -273,6 +273,15 @@ ses panneaux Stats gardent les couleurs d'origine.
 Le thème change (attribut `data-bs-theme` de `<html>`) → couleurs relues,
 graphiques redessinés.
 
+**Boutons** (2026-11-15) : Tabler met `.btn` en flex, où l'espace écrit
+entre `<i class="ti">` et le texte ne compte pas — icône et texte étaient
+collés partout sur la page. `stats_page.css` pose `column-gap: 0.4em` sur
+`.btn` (l'écart flex compte le texte, qu'un sélecteur comme `:only-child`
+ne voit pas) et annule `me-1` / `me-2` des icônes qui en avaient, pour ne
+pas doubler l'écart. Barre : boutons à 32 px (la hauteur du menu
+« Période »), icônes à 15 px, « Actualiser » carré (`btn-icon` lui retirait
+toute marge intérieure : 14 × 24 px).
+
 **Période affichée** (2026-11-15) : « Toute la période » reste le nom du
 choix dans les menus, mais là où la période est affichée — pastille d'une
 carte, légende sous un chiffre clé, présentation, écran d'ouverture de la
