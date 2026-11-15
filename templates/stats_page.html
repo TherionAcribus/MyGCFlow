@@ -64,17 +64,24 @@
                 <div id="statsDashboard" hidden>
                     <div class="stats-toolbar">
                         <div class="stats-toolbar-title">
-                            <h1 id="statsDashboardName" class="stats-dashboard-name"></h1>
-                            <span id="statsDashboardKind" class="stats-dashboard-kind" hidden></span>
-                            <!-- Tableaux de bord : changer, créer, supprimer. -->
-                            <div class="dropdown">
-                                <button type="button" id="btnStatsDashboards" class="btn btn-ghost-secondary btn-icon btn-sm"
+                            <!-- Le titre est le bouton du menu des tableaux de bord
+                                 (changer, créer, importer, exporter, supprimer) : un
+                                 chevron seul passait inaperçu. -->
+                            <!-- Bootstrap cherche le menu à côté du bouton : le titre
+                                 de page reste un <h1> pour les lecteurs d'écran, le
+                                 bouton montre le même nom. -->
+                            <div class="dropdown stats-dashboard-switch">
+                                <h1 id="statsDashboardHeading" class="visually-hidden"></h1>
+                                <button type="button" id="btnStatsDashboards" class="stats-dashboard-toggle"
                                         data-bs-toggle="dropdown" aria-expanded="false"
-                                        aria-label="{{ _("Tableaux de bord") }}" title="{{ _("Tableaux de bord") }}">
+                                        title="{{ _("Changer de tableau de bord, en créer, importer, exporter…") }}">
+                                    <span id="statsDashboardName" class="stats-dashboard-label"></span>
+                                    <span id="statsDashboardCount" class="stats-dashboard-count" hidden></span>
                                     <i class="ti ti-chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <ul id="statsDashboardMenu" class="dropdown-menu"></ul>
                             </div>
+                            <span id="statsDashboardKind" class="stats-dashboard-kind" hidden></span>
                             <button type="button" id="btnStatsRename" class="btn btn-ghost-secondary btn-icon btn-sm"
                                     aria-label="{{ _("Renommer le tableau de bord") }}" title="{{ _("Renommer le tableau de bord") }}">
                                 <i class="ti ti-pencil" aria-hidden="true"></i>

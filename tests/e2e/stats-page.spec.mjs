@@ -1510,15 +1510,25 @@ test('« Exporter » réunit les sorties ; le chevron gère les tableaux', async
   }
   await page.keyboard.press('Escape');
 
-  // Le menu du titre garde la gestion : changer, créer, importer, supprimer.
-  await page.locator('#btnStatsDashboards').click();
+  // Le titre lui-même ouvre le menu des tableaux : changer, créer, importer
+  // et exporter le fichier (côte à côte), supprimer.
+  const toggle = page.locator('#btnStatsDashboards');
+  await expect(toggle.locator('#statsDashboardName')).toHaveText('Mon tableau de bord');
+  await expect(page.locator('#statsDashboardCount')).toBeHidden();
+  await toggle.click();
   const manage = page.locator('#statsDashboardMenu');
   await expect(manage).toBeVisible();
-  for (const action of ['new-dashboard', 'duplicate-dashboard', 'import-dashboard', 'delete-dashboard']) {
+  for (const action of ['new-dashboard', 'duplicate-dashboard', 'import-dashboard', 'export-dashboard', 'delete-dashboard']) {
     await expect(manage.locator(`[data-action="${action}"]`)).toBeVisible();
   }
+  // Importer et exporter se suivent.
+  const actions = await manage.locator('[data-action]').evaluateAll((els) => els.map((el) => el.dataset.action));
+  expect(actions.indexOf('export-dashboard')).toBe(actions.indexOf('import-dashboard') + 1);
   expect(await manage.locator('[data-action="print-dashboard"]').count()).toBe(0);
-  await page.keyboard.press('Escape');
+
+  // Deux tableaux : le titre le dit.
+  await manage.locator('[data-action="duplicate-dashboard"]').click();
+  await expect(page.locator('#statsDashboardCount')).toHaveText('2 tableaux');
   expect(errors).toEqual([]);
 });
 

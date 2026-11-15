@@ -131,15 +131,59 @@ html {
     /* Repère de l'indicateur « Enregistré » posé hors flux. */
     position: relative;
 }
-.stats-dashboard-name {
-    margin: 0;
+.stats-dashboard-switch {
+    display: flex;
+    min-width: 0;
+    /* Le fond du bouton déborde à gauche : le nom reste aligné sur la page.
+       Marge ici, pas sur le bouton (son max-width: 100% le recouperait). */
+    margin-left: -8px;
+}
+/* Le titre, bouton du menu des tableaux de bord : fond au survol, chevron
+   franc, nombre de tableaux quand il y en a plusieurs. */
+.stats-dashboard-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 2px 8px;
+    font-family: inherit;
     font-size: 1.35rem;
     font-weight: 600;
+    line-height: 1.3;
     color: var(--color-heading);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.stats-dashboard-toggle:hover,
+.stats-dashboard-toggle:focus-visible,
+.stats-dashboard-toggle[aria-expanded="true"] {
+    background: var(--color-accent-weak);
+}
+.stats-dashboard-label {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.stats-dashboard-toggle > .ti {
+    flex: 0 0 auto;
+    font-size: 1.15rem;
+    color: var(--color-text-muted);
+}
+.stats-dashboard-count {
+    flex: 0 0 auto;
+    padding: 1px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.stats-dashboard-count[hidden] { display: none; }
 /* Famille d'un tableau Évolution : « Évolution · Jeu ». */
 .stats-dashboard-kind {
     padding: 2px 8px;
@@ -300,7 +344,8 @@ html {
     #appHeader,
     .stats-toolbar-controls,
     #btnStatsRename,
-    #btnStatsDashboards,
+    .stats-dashboard-toggle > .ti,
+    .stats-dashboard-count,
     #statsSaveStatus,
     .stats-card-menu,
     .stats-card-grip,

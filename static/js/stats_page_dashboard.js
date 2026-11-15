@@ -168,6 +168,11 @@ export function dashboardPeriodLabel(dashboard = activeDashboard()) {
 export function renderToolbar() {
     const dashboard = activeDashboard();
     $('statsDashboardName').textContent = dashboard.name || t('Mon tableau de bord');
+    $('statsDashboardHeading').textContent = $('statsDashboardName').textContent;
+    // Plusieurs tableaux : le titre dit qu'il y en a d'autres à ouvrir.
+    const count = state.doc.dashboards.length;
+    $('statsDashboardCount').hidden = count < 2;
+    $('statsDashboardCount').textContent = count < 2 ? '' : t('${n} tableaux', { n: count });
     const kind = $('statsDashboardKind');
     kind.hidden = dashboard.kind !== 'evolution';
     kind.textContent = dashboard.kind === 'evolution' ? t('Évolution · ${name}', { name: datasetName(dashboard.dataset) }) : '';
@@ -250,7 +255,13 @@ function renderDashboardMenu() {
     const full = state.doc.dashboards.length >= MAX_DASHBOARDS;
     menu.append(menuButton('new-dashboard', 'ti-plus', t('Nouveau tableau de bord…'), { disabled: full }));
     menu.append(menuButton('duplicate-dashboard', 'ti-copy', t('Dupliquer ce tableau de bord'), { disabled: full }));
+    // Fichiers : importer et exporter côte à côte (l'export reste aussi dans
+    // le menu « Exporter », avec les autres sorties).
+    const fileDivider = document.createElement('li');
+    fileDivider.innerHTML = '<hr class="dropdown-divider">';
+    menu.append(fileDivider);
     menu.append(menuButton('import-dashboard', 'ti-file-import', t('Importer un tableau de bord…'), { disabled: full }));
+    menu.append(menuButton('export-dashboard', 'ti-file-export', t('Exporter ce tableau de bord (fichier)')));
     const dangerDivider = document.createElement('li');
     dangerDivider.innerHTML = '<hr class="dropdown-divider">';
     menu.append(dangerDivider);

@@ -507,6 +507,18 @@ possible entre deux sources sur une période.
 pastille « Évolution · <jeu> », fenêtre de création (famille, jeu, nom
 proposé, « Commencer avec des graphiques prêts »).
 
+Depuis le 2026-11-15, le **titre est le bouton du menu** (`#btnStatsDashboards`,
+`.stats-dashboard-toggle`) : nom, « n tableaux » quand il y en a plusieurs
+(`#statsDashboardCount`), chevron, fond au survol — un petit chevron seul
+passait inaperçu. Bootstrap cherche le menu à côté de son bouton (ou dans
+son parent direct) : le bouton ne peut pas être dans le `<h1>`, qui reste
+pour les lecteurs d'écran (`#statsDashboardHeading`, `visually-hidden`,
+même texte). Marge négative sur le conteneur, pas sur le bouton : avec son
+`max-width: 100%`, elle recoupait le nom de 8 px. Menu : tableaux, créer /
+dupliquer, puis **Importer et Exporter (fichier) côte à côte** (l'export
+reste aussi dans « Exporter », avec les autres sorties), puis supprimer.
+À l'impression, chevron et compte sont masqués, le nom reste.
+
 ## Retour à la carte (lot 6)
 
 ### Clic sur une valeur → carte filtrée
