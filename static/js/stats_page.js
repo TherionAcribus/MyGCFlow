@@ -45,8 +45,9 @@ import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
-    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFile, persistVideoPrefs, previewVideo, recordVideo,
-    releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal,
+    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFadeInput, onMusicFile, onMusicVolumeInput,
+    persistVideoPrefs, previewVideo, recordVideo,
+    releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal, toggleMusicListen,
 } from './stats_page_video.js';
 
 // ---------------------------------------------------------------------------
@@ -243,6 +244,11 @@ window.getStatsPageSnapshot = () => {
             // pauseFailed = pause() refusée → vidéo possiblement saccadée.
             hiddenDuringRecording: Boolean(state.video.hiddenDuringRecording),
             pauseFailed: Boolean(state.video.pauseFailed),
+            // Écoute de la musique choisie (« Écouter ») : l'Audio en cours
+            // ou null — relevé pauses et position, pas l'élément.
+            listening: state.video.listen
+                ? { paused: state.video.listen.paused, currentTime: state.video.listen.currentTime }
+                : null,
         } : null,
     };
 };
@@ -268,6 +274,17 @@ function bindEvents() {
     $('statsVideoDuration').addEventListener('change', persistVideoPrefs);
     $('statsVideoMusic').addEventListener('change', onMusicChange);
     $('statsVideoMusicFile').addEventListener('change', onMusicFile);
+    // « Parcourir… » ouvre le sélecteur de fichier (hors du select : une
+    // option « fichier de l'ordinateur » s'ouvrirait aussi aux flèches).
+    // value vidé d'abord pour que re-choisir le même fichier déclenche change.
+    $('btnStatsMusicBrowse').addEventListener('click', () => {
+        $('statsVideoMusicFile').value = '';
+        $('statsVideoMusicFile').click();
+    });
+    $('btnStatsMusicListen').addEventListener('click', toggleMusicListen);
+    $('statsVideoMusicVolume').addEventListener('input', onMusicVolumeInput);
+    $('statsVideoMusicFadeIn').addEventListener('input', onMusicFadeInput);
+    $('statsVideoMusicFadeOut').addEventListener('input', onMusicFadeInput);
     $('btnStatsAddChart').addEventListener('click', openGallery);
     $('btnStatsAddChartEmpty').addEventListener('click', openGallery);
     $('btnStatsRename').addEventListener('click', openRename);

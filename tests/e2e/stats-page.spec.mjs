@@ -1865,7 +1865,8 @@ test('vidéo : les réglages de la carte sont repris (bornes, volume)', async ({
   try {
     // Une musique de la bibliothèque, posée directement dans audio/ puis
     // déclarée récente avec ses bornes [3 s, 9 s] ; volume de carte non
-    // standard. La conversion doit reprendre ces trois réglages.
+    // standard (0,4 — un cran du curseur, pas 5). La conversion doit
+    // reprendre ces trois réglages.
     const upload = await request.post('/upload_audio', {
       multipart: { audio: wavFile('fond-carte.wav', 2, 0) },
     });
@@ -1876,7 +1877,7 @@ test('vidéo : les réglages de la carte sont repris (bornes, volume)', async ({
       data: {
         recording: {
           audio_recent: [{ file: audioFile, name: 'Fond', start: 3, end: 9 }],
-          audio_volume: 0.42,
+          audio_volume: 0.4,
         },
       },
     })).ok()).toBeTruthy();
@@ -1906,20 +1907,100 @@ test('vidéo : les réglages de la carte sont repris (bornes, volume)', async ({
     await page.locator('#statsVideoMusic').selectOption('lib:' + audioFile);
     await expect(page.locator('#statsVideoMusic')).toHaveValue('lib:' + audioFile);
     expect((await snapshot(page)).video.music).toMatchObject({ kind: 'library', file: audioFile, start: 3, end: 9 });
+    // Le bloc des réglages s'affiche avec la musique : le curseur reprend
+    // le volume de la carte (0,4 → 40 %), puis volume et fondus sont
+    // réglés dans la fenêtre — c'est eux qui partent à la conversion.
+    await expect(page.locator('#statsVideoMusicOptions')).toBeVisible();
+    await expect(page.locator('#statsVideoMusicVolume')).toHaveValue('40');
+    await page.locator('#statsVideoMusicVolume').fill('55');
+    await page.locator('#statsVideoMusicFadeIn').fill('1.5');
+    await page.locator('#statsVideoMusicFadeOut').fill('4');
     await page.locator('#statsVideoSize').selectOption('hd');
     await page.locator('#statsVideoDuration').selectOption('6');
     await page.locator('#btnStatsVideoStart').click();
     await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
 
     expect(received).toMatchObject({
-      audio: audioFile, audio_start: '3', audio_end: '9', audio_volume: '0.42',
-      audio_loop: '1', audio_fade_out: '2',
+      audio: audioFile, audio_start: '3', audio_end: '9', audio_volume: '0.55',
+      audio_loop: '1', audio_fade_in: '1.5', audio_fade_out: '4',
     });
     await page.locator('#btnStatsVideoCancel').click();
     await expect(page.locator('#statsVideoModal')).toBeHidden();
     expect(errors).toEqual([]);
   } finally {
     await request.put('/api/settings', { data: { recording: { audio_recent: [], audio_volume: 1 } } });
+  }
+});
+
+test('vidéo : « Écouter » joue la musique choisie puis l\'arrête', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    // Une musique de la bibliothèque, jouable nativement (wav — pas de
+    // repli « playable »), début de passage à 3 s.
+    const upload = await request.post('/upload_audio', {
+      multipart: { audio: wavFile('ecoute.wav', 30, 0) },
+    });
+    expect(upload.ok()).toBeTruthy();
+    const audioFile = (await upload.json()).file;
+    expect((await request.put('/api/settings', {
+      data: { recording: { audio_recent: [{ file: audioFile, name: 'Écoute', start: 3, end: 0 }] } },
+    })).ok()).toBeTruthy();
+
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    const listen = page.locator('#btnStatsMusicListen');
+    // Grisé tant qu'aucune musique n'est choisie.
+    await expect(listen).toBeDisabled();
+    await page.locator('#statsVideoMusic').selectOption('lib:' + audioFile);
+    await expect(listen).toBeEnabled();
+
+    await listen.click();
+    await expect.poll(async () => (await snapshot(page)).video?.listening?.paused, { timeout: 15_000 }).toBe(false);
+    // Le passage choisi commence à sa borne (3 s), pas à 0.
+    const listening = (await snapshot(page)).video.listening;
+    expect(listening.currentTime).toBeGreaterThanOrEqual(2.5);
+    expect(listening.currentTime).toBeLessThan(8);
+    await expect(listen).toHaveAttribute('aria-pressed', 'true');
+
+    // Re-clic : arrêt (aria-pressed retombé, plus d'Audio en cours).
+    await listen.click();
+    await expect.poll(async () => (await snapshot(page)).video?.listening).toBeNull();
+    await expect(listen).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+  }
+});
+
+test('vidéo : « Parcourir… » ouvre le sélecteur de fichier', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    // Le choix d'un fichier vit hors du select : l'ancienne option
+    // « Un fichier de mon ordinateur… » s'ouvrait aussi aux flèches.
+    const values = await page.locator('#statsVideoMusic option').evaluateAll((options) => options.map((o) => o.value));
+    expect(values).not.toContain('pick');
+    // Le bouton déclenche le sélecteur natif ; le fichier choisi devient
+    // l'option 'upload' en fin de liste (upload + sonde en tâche de fond).
+    const [chooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.locator('#btnStatsMusicBrowse').click(),
+    ]);
+    await chooser.setFiles(wavFile('parcours.wav', 1, 0));
+    await expect(page.locator('#statsVideoMusic')).toHaveValue('upload');
+    await expect(page.locator('#statsVideoMusic option[value="upload"]')).toHaveCount(1);
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
   }
 });
 

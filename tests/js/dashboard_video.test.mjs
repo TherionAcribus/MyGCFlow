@@ -59,3 +59,14 @@ test('musique : bibliothèque ou fichier, bouclée et fondue', () => {
         { audio_loop: '1', audio_fade_out: '2', audio: 'ete.mp3' });
     assert.deepEqual(musicFields({ kind: 'upload' }), { audio_loop: '1', audio_fade_out: '2' });
 });
+
+test('musique : les fondus réglés dans la fenêtre sont envoyés', () => {
+    // Fondu de sortie choisi ; fondu d'entrée ajouté seulement s'il est
+    // non nul (0 = le serveur n'a rien à fondre).
+    assert.deepEqual(musicFields({ kind: 'library', file: 'ete.mp3' }, { fadeOut: 4 }),
+        { audio_loop: '1', audio_fade_out: '4', audio: 'ete.mp3' });
+    assert.deepEqual(musicFields({ kind: 'library', file: 'ete.mp3' }, { fadeOut: 4, fadeIn: 1.5 }),
+        { audio_loop: '1', audio_fade_out: '4', audio_fade_in: '1.5', audio: 'ete.mp3' });
+    assert.deepEqual(musicFields({ kind: 'upload' }, { fadeOut: 3, fadeIn: 0 }),
+        { audio_loop: '1', audio_fade_out: '3' });
+});

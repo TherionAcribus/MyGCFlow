@@ -621,9 +621,34 @@
                                 </div>
                                 <div class="col-12">
                                     <label for="statsVideoMusic" class="form-label">{{ _("Musique") }}</label>
-                                    <select id="statsVideoMusic" class="form-select"></select>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <select id="statsVideoMusic" class="form-select"></select>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" id="btnStatsMusicBrowse">{{ _("Parcourir…") }}</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" id="btnStatsMusicListen" aria-pressed="false" disabled>
+                                            <i class="ti ti-player-play me-1" id="btnStatsMusicListenIcon" aria-hidden="true"></i><span id="btnStatsMusicListenLabel">{{ _("Écouter") }}</span>
+                                        </button>
+                                    </div>
                                     <input type="file" id="statsVideoMusicFile" accept="audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.flac,.wma" hidden>
-                                    <div class="form-hint">{{ _("Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface doucement à la fin.") }}</div>
+                                    <div class="form-hint" id="statsVideoMusicHint">{{ _("Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface doucement à la fin.") }}</div>
+                                    <!-- Réglages de la musique choisie (volume, fondus) : masqués tant
+                                         qu'aucune musique n'est choisie (updateMusicInfo). -->
+                                    <div id="statsVideoMusicOptions" class="row g-2 align-items-end mt-1" hidden>
+                                        <div class="col-sm-5">
+                                            <label for="statsVideoMusicVolume" class="form-label small mb-0">{{ _("Volume") }}</label>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="range" id="statsVideoMusicVolume" class="form-range flex-grow-1" min="0" max="100" step="5">
+                                                <output id="statsVideoMusicVolumeOut" class="small text-secondary text-nowrap" for="statsVideoMusicVolume">100&nbsp;%</output>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <label for="statsVideoMusicFadeIn" class="form-label small mb-0">{{ _("Fondu d'entrée (s)") }}</label>
+                                            <input type="number" id="statsVideoMusicFadeIn" class="form-control form-control-sm" min="0" max="30" step="0.5">
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <label for="statsVideoMusicFadeOut" class="form-label small mb-0">{{ _("Fondu de sortie (s)") }}</label>
+                                            <input type="number" id="statsVideoMusicFadeOut" class="form-control form-control-sm" min="0.5" max="30" step="0.5">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <p class="text-secondary small mt-3 mb-0" id="statsVideoTotal" aria-live="polite"></p>

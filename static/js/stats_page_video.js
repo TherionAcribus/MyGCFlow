@@ -12,7 +12,7 @@ import {
 import fixWebmDuration from './fix-webm-duration.js';
 import { presentSlides } from './present_model.mjs';
 import {
-    countUp, dashboardVideoDuration, DEFAULT_SLIDE_SECONDS, musicFields, SLIDE_SECONDS, slideSeconds,
+    countUp, dashboardVideoDuration, DEFAULT_SLIDE_SECONDS, MUSIC_FADE_OUT_S, musicFields, SLIDE_SECONDS, slideSeconds,
     videoMoment,
 } from './dashboard_video.mjs';
 import { fileSafe } from './stats_page_card_actions.js';
@@ -99,6 +99,7 @@ function cancelVideoTask(video) {
 
 export function releaseVideo() {
     const video = state.video;
+    stopMusicListen();
     if (!video) return;
     video.cancelled = true;
     // En phase 'done' la tâche est déjà finie (taskId est encore posé) : on
@@ -134,8 +135,8 @@ export function persistVideoPrefs() {
     const mode = state.video?.mode;
     if (mode === 'chart') prefs.duration = $('statsVideoDuration').value;
     else if (mode === 'dashboard') prefs.slideDuration = $('statsVideoDuration').value;
-    // 'pick' / 'upload' : un fichier de l'ordinateur n'est pas restaurable
-    // — la valeur précédemment mémorisée est conservée.
+    // 'upload' : un fichier de l'ordinateur n'est pas restaurable — la
+    // valeur précédemment mémorisée est conservée.
     const music = $('statsVideoMusic').value;
     if (music === '' || music.startsWith('lib:')) prefs.music = music;
     try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
@@ -146,10 +147,20 @@ export function persistVideoPrefs() {
 // durée par graphique, musique.
 function setupVideoModal(video) {
     releaseVideo();
-    // `musicVolume` : volume effectif lu sur la carte par fillMusicChoices
-    // (défaut 1 tant que les réglages ne sont pas revenus).
-    state.video = { phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null, musicVolume: 1, ...video };
+    // `musicVolume` : pref locale sinon volume effectif de la carte, lu
+    // par fillMusicChoices (défaut 1 tant que les réglages ne sont pas
+    // revenus). `fadeIn`/`fadeOut` : fondus de la musique, persistés.
+    // `optionsSynced` : les contrôles du bloc musique sont re-remplis au
+    // premier affichage et à un changement de musique (updateMusicInfo),
+    // pas à chaque appel — sinon une saisie en cours serait écrasée.
+    state.video = {
+        phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null,
+        musicVolume: 1, fadeIn: 0, fadeOut: MUSIC_FADE_OUT_S, optionsSynced: false,
+        uploadedMusic: null, listen: null, ...video,
+    };
     const prefs = loadVideoPrefs();
+    if (typeof prefs.musicFadeIn === 'number') state.video.fadeIn = prefs.musicFadeIn;
+    if (typeof prefs.musicFadeOut === 'number') state.video.fadeOut = prefs.musicFadeOut;
     const dashboardMode = video.mode === 'dashboard';
     $('statsVideoTitle').textContent = dashboardMode ? t('Vidéo du tableau de bord') : t('Vidéo animée');
     $('statsVideoIntroChart').hidden = dashboardMode;
@@ -175,7 +186,8 @@ function setupVideoModal(video) {
         renderVideoSlides();
     }
     syncVideoTotal();
-    fillMusicChoices(prefs.music);
+    fillMusicChoices(prefs);
+    updateMusicInfo();
     setVideoPhase('setup');
     videoModal().show();
 }
@@ -266,6 +278,9 @@ function renderVideoSlides() {
 // « Créer » / « Aperçu » sont grisés.
 export function syncVideoTotal() {
     const video = state.video;
+    // La durée choisie (ou les cases « Écrans ») a changé : la ligne
+    // « musique vs vidéo » du hint est relue.
+    updateMusicInfo();
     const total = $('statsVideoTotal');
     if (video?.mode !== 'dashboard') {
         total.textContent = '';
@@ -293,9 +308,10 @@ export function syncVideoTotal() {
 let musicSeq = 0;
 
 // Musiques : aucune, les récentes de la carte (bibliothèque audio/), ou un
-// fichier de l'ordinateur, envoyé avec la vidéo. `restore` : la valeur
-// mémorisée ('' ou 'lib:<fichier>'), reposée si l'entrée est encore là.
-async function fillMusicChoices(restore = '') {
+// fichier de l'ordinateur (« Parcourir… », envoyé avec la vidéo). `prefs` :
+// les préférences locales — `prefs.music` ('' ou 'lib:<fichier>') est reposée
+// si l'entrée est encore là, `prefs.musicVolume` prime sur le volume carte.
+async function fillMusicChoices(prefs = {}) {
     const seq = ++musicSeq;
     const select = $('statsVideoMusic');
     select.replaceChildren(new Option(t('Sans musique'), ''));
@@ -306,10 +322,12 @@ async function fillMusicChoices(restore = '') {
         console.warn('[stats] Musiques récentes non lues :', e?.message || e);
     }
     if (seq !== musicSeq) return;
-    // Le volume effectif de la carte (curseur + harmonisation « niveau sonore
-    // standard ») vaut pour la vidéo : retenu pour la conversion.
+    // Le volume retenu pour la vidéo : la préférence locale si elle existe,
+    // sinon le volume effectif de la carte (curseur + harmonisation « niveau
+    // sonore standard »), sinon 1.
     if (state.video) {
-        state.video.musicVolume = typeof recording?.audio_volume === 'number' ? recording.audio_volume : 1;
+        state.video.musicVolume = typeof prefs.musicVolume === 'number' ? prefs.musicVolume
+            : typeof recording?.audio_volume === 'number' ? recording.audio_volume : 1;
     }
     const seen = new Set();
     const library = [];
@@ -340,8 +358,8 @@ async function fillMusicChoices(restore = '') {
         }
         select.append(group);
     }
-    select.append(new Option(t('Un fichier de mon ordinateur…'), 'pick'));
     select.value = '';
+    const restore = prefs.music || '';
     // Une entrée mémorisée a pu disparaître de la bibliothèque : elle n'est
     // reposée que si elle existe encore ('lib:<fichier>' peut porter des
     // caractères spéciaux → comparaison des valeurs, pas de sélecteur).
@@ -349,21 +367,21 @@ async function fillMusicChoices(restore = '') {
         select.value = restore;
         onMusicChange();
     }
+    updateMusicInfo();
 }
 
 export function onMusicChange() {
     const select = $('statsVideoMusic');
     const video = state.video;
     if (!video) return;
-    if (select.value === 'pick') {
-        $('statsVideoMusicFile').value = '';
-        $('statsVideoMusicFile').click();
-        // Revenir au choix précédent tant que rien n'est choisi.
-        select.value = video.music?.kind === 'upload' ? 'upload' : (video.music?.kind === 'library' ? 'lib:' + video.music.file : '');
-        return;
-    }
+    // L'écoute suit la musique choisie : un changement l'arrête.
+    stopMusicListen();
     if (!select.value) video.music = null;
-    else if (select.value.startsWith('lib:')) {
+    else if (select.value === 'upload') {
+        // Re-choisir le fichier déjà envoyé (option posée en fin de liste
+        // par « Parcourir… ») : l'objet musique survit dans uploadedMusic.
+        video.music = video.uploadedMusic || null;
+    } else if (select.value.startsWith('lib:')) {
         const option = select.selectedOptions[0];
         video.music = {
             kind: 'library', file: select.value.slice(4),
@@ -372,6 +390,8 @@ export function onMusicChange() {
         };
         checkLibrary(video, video.music);
     }
+    video.optionsSynced = false;
+    updateMusicInfo();
     persistVideoPrefs();
 }
 
@@ -401,24 +421,33 @@ async function checkLibrary(video, music) {
         if (stale()) return;
         $('statsVideoMusic').value = '';
         video.music = null;
+        updateMusicInfo();
         persistVideoPrefs();
         return;
     }
     if (stale() || !data?.success) return;
-    if (typeof data.duration === 'number') music.duration = data.duration;
+    if (typeof data.duration === 'number') {
+        music.duration = data.duration;
+        updateMusicInfo();
+    }
 }
 
 export function onMusicFile() {
     const file = $('statsVideoMusicFile').files?.[0];
     const video = state.video;
     if (!file || !video) return;
+    stopMusicListen();
     const music = { kind: 'upload', blob: file, name: file.name };
     video.music = music;
+    // Conservée à part : re-choisir l'option 'upload' du select après un
+    // autre choix retrouve le fichier (onMusicChange).
+    video.uploadedMusic = music;
     const select = $('statsVideoMusic');
     select.querySelector('option[value="upload"]')?.remove();
-    const option = new Option(file.name, 'upload');
-    select.insertBefore(option, select.querySelector('option[value="pick"]'));
+    select.append(new Option(file.name, 'upload'));
     select.value = 'upload';
+    video.optionsSynced = false;
+    updateMusicInfo();
     // Envoi et sonde anticipés : un fichier illisible est refusé dès le
     // choix plutôt qu'après l'enregistrement. `ready` est attendu par la
     // conversion, qui envoie alors le nom de la copie au lieu du blob.
@@ -461,11 +490,16 @@ async function checkUpload(video, music) {
         $('statsVideoMusic').querySelector('option[value="upload"]')?.remove();
         $('statsVideoMusic').value = '';
         video.music = null;
+        video.uploadedMusic = null;
+        updateMusicInfo();
         return;
     }
     if (stale() || !data?.readable) return;
     music.uploaded = uploaded;
-    if (typeof data.duration === 'number') music.duration = data.duration;
+    if (typeof data.duration === 'number') {
+        music.duration = data.duration;
+        updateMusicInfo();
+    }
     // La copie rejoint les musiques récentes : référencée, elle n'est plus
     // balayée et le fichier n'a pas à être renvoyé au prochain export.
     rememberUploadedMusic(music);
@@ -497,6 +531,248 @@ async function rememberUploadedMusic(music) {
     } catch (e) {
         console.warn('[stats] Musique non ajoutée aux récentes :', e?.message || e);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Indication sous le select (#statsVideoMusicHint) et bloc des réglages de
+// la musique (#statsVideoMusicOptions : volume, fondus).
+// ---------------------------------------------------------------------------
+
+// Durée « 3:05 » (m:ss), pour la ligne « musique vs vidéo » du hint —
+// format local : pas d'import de ui.js (la page Statistiques ne charge pas
+// le graphe de la carte).
+function mmss(seconds) {
+    const s = Math.max(0, Math.round(seconds));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+// Durée de la vidéo en secondes : la durée choisie (mode graphique), le
+// total annoncé des écrans cochés (mode tableau).
+function videoSeconds(video) {
+    if (video?.mode === 'dashboard') {
+        return dashboardVideoDuration(includedSlides(video).length, $('statsVideoDuration').value) / 1000;
+    }
+    return Number($('statsVideoDuration').value) || 10;
+}
+
+// Sans musique : le texte d'origine et le bloc masqué. Avec une musique de
+// durée connue (posée par la sonde, en async) : « Musique m:ss · vidéo
+// m:ss : effet » — bouclée si plus courte, coupée avec fondu si plus
+// longue. Durée inconnue (sonde en vol ou échouée) : le texte par défaut.
+function updateMusicInfo() {
+    const video = state.video;
+    const hint = $('statsVideoMusicHint');
+    const options = $('statsVideoMusicOptions');
+    if (!hint || !options) return;
+    const music = video?.music || null;
+    options.hidden = !music;
+    // Les contrôles reflètent video.* : re-remplis seulement à l'ouverture
+    // et à un changement de musique (optionsSynced), sinon une saisie en
+    // cours serait écrasée par les appels périodiques (syncVideoTotal).
+    if (music && !video.optionsSynced) {
+        video.optionsSynced = true;
+        const volume = Math.round((video.musicVolume ?? 1) * 100);
+        $('statsVideoMusicVolume').value = String(volume);
+        $('statsVideoMusicVolumeOut').textContent = volume + ' %';
+        $('statsVideoMusicFadeIn').value = String(video.fadeIn ?? 0);
+        $('statsVideoMusicFadeOut').value = String(video.fadeOut ?? MUSIC_FADE_OUT_S);
+    }
+    setListenButton(listenSession ? (listenSession.busy ? 'busy' : 'on') : 'off');
+    if (!music || typeof music.duration !== 'number') {
+        hint.textContent = t("Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface doucement à la fin.");
+        return;
+    }
+    // Fenêtre utile du passage : les bornes [start, end] de la carte sont
+    // reprises (end 0 = fin du fichier).
+    const mdur = Math.max(0, (music.end || music.duration) - (music.start || 0));
+    const vdur = videoSeconds(video);
+    let effect;
+    if (!mdur || Math.abs(mdur - vdur) <= vdur * 0.05) {
+        effect = t('jouée une fois');
+    } else if (mdur < vdur) {
+        const n = vdur / mdur;
+        effect = t('bouclée ~${n} fois', { n: n < 2 ? Math.round(n * 10) / 10 : Math.round(n) });
+    } else {
+        effect = t('coupée avec fondu à ${vdur}', { vdur: mmss(vdur) });
+    }
+    hint.textContent = t('Musique ${mdur} · vidéo ${vdur} : ${effect}', { mdur: mmss(mdur), vdur: mmss(vdur), effect });
+}
+
+// Curseur de volume : effectif tout de suite pour l'écoute en cours,
+// persisté dans statsVideoPrefs (même style que persistVideoPrefs).
+export function onMusicVolumeInput() {
+    const video = state.video;
+    if (!video) return;
+    const value = Number($('statsVideoMusicVolume').value);
+    video.musicVolume = value / 100;
+    $('statsVideoMusicVolumeOut').textContent = value + ' %';
+    if (listenSession) listenSession.audio.volume = Math.min(1, video.musicVolume);
+    const prefs = loadVideoPrefs();
+    prefs.musicVolume = video.musicVolume;
+    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+}
+
+// Fondus d'entrée et de sortie (secondes), bornés comme les min/max des
+// champs ; persistés dans statsVideoPrefs.
+export function onMusicFadeInput() {
+    const video = state.video;
+    if (!video) return;
+    const fadeIn = Number($('statsVideoMusicFadeIn').value);
+    const fadeOut = Number($('statsVideoMusicFadeOut').value);
+    video.fadeIn = Number.isFinite(fadeIn) ? Math.min(30, Math.max(0, fadeIn)) : 0;
+    video.fadeOut = Number.isFinite(fadeOut) ? Math.min(30, Math.max(0.5, fadeOut)) : MUSIC_FADE_OUT_S;
+    const prefs = loadVideoPrefs();
+    prefs.musicFadeIn = video.fadeIn;
+    prefs.musicFadeOut = video.fadeOut;
+    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+}
+
+// ---------------------------------------------------------------------------
+// « Écouter » : la musique choisie joue dans un Audio dédié (un seul à la
+// fois). Un format que le navigateur ne sait pas décoder (.wma, .aiff…) est
+// remplacé à l'erreur native par sa version lisible sur le serveur
+// (POST /api/audio/playable → FLAC dans audio/) — réimplémenté ici plutôt
+// que via music_track.js/ensurePlayableMusic : ce module importe index.js
+// (tout le graphe de la carte), interdit sur la page Statistiques.
+// ---------------------------------------------------------------------------
+
+let listenSession = null;
+let listenSeq = 0;
+
+// Version lisible d'un fichier d'audio/ : { file } ou { unreadable } ;
+// null sur un autre échec (serveur injoignable — ne prouve rien).
+async function playableName(file) {
+    try {
+        const response = await fetch('/api/audio/playable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file }),
+        });
+        const data = await response.json().catch(() => null);
+        if (data?.unreadable) return { unreadable: true };
+        return data?.success && data.file ? { file: data.file } : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+// Bouton « Écouter » ⇄ « Arrêter » : 'off' (grisé sans musique), 'busy'
+// (spinner — la résolution du fichier lisible peut prendre quelques
+// secondes, transcodage serveur), 'on' (lecture en cours).
+function setListenButton(mode) {
+    const button = $('btnStatsMusicListen');
+    if (!button) return;
+    const icon = $('btnStatsMusicListenIcon');
+    const label = $('btnStatsMusicListenLabel');
+    button.disabled = mode === 'busy' || !state.video?.music;
+    button.setAttribute('aria-pressed', mode === 'on' ? 'true' : 'false');
+    icon.className = (mode === 'busy'
+        ? 'spinner-border spinner-border-sm'
+        : 'ti ' + (mode === 'on' ? 'ti-player-stop' : 'ti-player-play')) + ' me-1';
+    label.textContent = mode === 'on' ? t('Arrêter') : t('Écouter');
+}
+
+// Fin de l'écoute : les écouteurs posés pour la session sont retirés (ils
+// s'empileraient d'une écoute à l'autre), l'objectURL d'un fichier de
+// l'ordinateur révoquée, le bouton rendu. Appelée aussi à un changement de
+// musique, à la fermeture de la fenêtre et au départ prise/aperçu.
+export function stopMusicListen() {
+    listenSeq += 1;   // une résolution en vol est abandonnée (stale)
+    const session = listenSession;
+    listenSession = null;
+    if (session) {
+        const { audio } = session;
+        audio.removeEventListener('loadedmetadata', session.onMeta);
+        audio.removeEventListener('ended', session.onEnded);
+        audio.removeEventListener('error', session.onError);
+        audio.pause();
+        audio.removeAttribute('src');
+        if (session.objectUrl) URL.revokeObjectURL(session.objectUrl);
+        if (session.video) session.video.listen = null;
+    }
+    setListenButton('off');
+}
+
+// Musique illisible confirmée par le serveur : message et choix défait,
+// même sort que la sonde de checkLibrary.
+function undoUnreadableMusic(video, music) {
+    if (state.video !== video || video.music !== music) return;
+    stopMusicListen();
+    showError(t('Cette musique est illisible (format inconnu ou fichier endommagé).'));
+    const select = $('statsVideoMusic');
+    if (music.kind === 'upload') select.querySelector('option[value="upload"]')?.remove();
+    select.value = '';
+    video.music = null;
+    video.uploadedMusic = null;
+    updateMusicInfo();
+    persistVideoPrefs();
+}
+
+export function toggleMusicListen() {
+    if (listenSession) { stopMusicListen(); return; }
+    const video = state.video;
+    const music = video?.music;
+    if (!music) return;
+    const seq = ++listenSeq;
+    const stale = () => state.video !== video || video.music !== music || seq !== listenSeq;
+    const audio = new Audio();
+    audio.volume = Math.min(1, video.musicVolume ?? 1);
+    const session = { audio, video, objectUrl: null, busy: false, retried: false };
+    session.onMeta = () => { if (music.start > 0) audio.currentTime = music.start; };
+    session.onEnded = () => stopMusicListen();
+    // Un format non décodé pose audio.error (événement 'error') : le repli
+    // s'applique. Un refus de lecture sans erreur média (autoplay bloqué)
+    // n'est pas un format inconnu — erreur simple, choix conservé.
+    const tryPlay = () => audio.play().catch(() => {
+        if (audio.error) session.onError();
+        else if (!stale()) { showError(t('La lecture de cette musique a échoué.')); stopMusicListen(); }
+    });
+    // À la première erreur native, repli sur la version lisible du fichier
+    // (« busy » le temps du transcodage éventuel) ; une seconde erreur —
+    // ou un « unreadable » explicite — déclare la musique illisible.
+    session.onError = async () => {
+        if (stale()) return;
+        if (session.retried) { undoUnreadableMusic(video, music); return; }
+        session.retried = true;
+        // Un fichier de l'ordinateur joue depuis son blob ; le repli passe
+        // par sa copie posée à la sélection — connue une fois l'envoi
+        // anticipé (checkUpload) terminé.
+        if (music.kind === 'upload') { try { await music.ready; } catch (_) { /* le blob partira */ } }
+        const file = music.kind === 'upload' ? music.uploaded : music.file;
+        if (stale()) return;
+        if (!file) {
+            showError(t('La lecture de cette musique a échoué.'));
+            stopMusicListen();
+            return;
+        }
+        session.busy = true;
+        setListenButton('busy');
+        const result = await playableName(file);
+        session.busy = false;
+        if (stale()) return;
+        if (result?.unreadable) { undoUnreadableMusic(video, music); return; }
+        if (!result?.file) {
+            showError(t('La lecture de cette musique a échoué.'));
+            stopMusicListen();
+            return;
+        }
+        audio.src = '/audio/' + encodeURIComponent(result.file);
+        setListenButton('on');
+        tryPlay();
+    };
+    audio.addEventListener('loadedmetadata', session.onMeta);
+    audio.addEventListener('ended', session.onEnded);
+    audio.addEventListener('error', session.onError);
+    listenSession = session;
+    video.listen = audio;
+    setListenButton('on');
+    if (music.kind === 'upload') {
+        session.objectUrl = URL.createObjectURL(music.blob);
+        audio.src = session.objectUrl;
+    } else {
+        audio.src = '/audio/' + encodeURIComponent(music.file);
+    }
+    tryPlay();
 }
 
 function videoMimeType() {
@@ -839,6 +1115,7 @@ function watchRecordingVisibility(video, recorder) {
 
 export async function recordVideo() {
     const video = state.video;
+    stopMusicListen();
     if (video?.mode === 'dashboard') return recordDashboardVideo(video);
     const entry = video && state.results.get(video.spec.id);
     if (!entry?.result) return;
@@ -957,6 +1234,7 @@ function previewDashboardVideo(video) {
 // « Aperçu » de l'étape de préparation : joue la vidéo dans la fenêtre.
 export function previewVideo() {
     const video = state.video;
+    stopMusicListen();
     if (video?.mode === 'dashboard') return previewDashboardVideo(video);
     const entry = video && state.results.get(video.spec.id);
     if (!entry?.result) return;
@@ -1012,10 +1290,11 @@ async function convertVideo(video, blob, name) {
         form.append('slowdown', '1');
         // Musique : un morceau de la bibliothèque (nom), ou le fichier choisi
         // — sa copie posée à la sélection (nom en champ) si l'envoi anticipé
-        // a abouti, le blob sinon. `ready` est attendu pour trancher. Le
-        // volume est celui de la carte (curseur + harmonisation), borné
-        // serveur (_safe_volume).
-        for (const [key, value] of Object.entries(musicFields(video.music) || {})) form.append(key, value);
+        // a abouti, le blob sinon. `ready` est attendu pour trancher. Volume
+        // et fondus : les réglages du bloc musique (bornés serveur).
+        for (const [key, value] of Object.entries(
+            musicFields(video.music, { fadeOut: video.fadeOut ?? MUSIC_FADE_OUT_S, fadeIn: video.fadeIn ?? 0 }) || {},
+        )) form.append(key, value);
         if (video.music) form.append('audio_volume', String(video.musicVolume ?? 1));
         if (video.music?.kind === 'upload') {
             const music = video.music;

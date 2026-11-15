@@ -548,7 +548,8 @@ effacer » le retire avec la période proposée.
 - Réglages de la fenêtre mémorisés dans le navigateur (localStorage
   `statsVideoPrefs` : format, durée du mode graphique et durée par
   graphique du mode tableau — axes indépendants —, musique de
-  bibliothèque) : préférence d'interface locale non synchronisée serveur,
+  bibliothèque, volume et fondus de la musique) : préférence
+  d'interface locale non synchronisée serveur,
   comme `PNG_SCALE_KEY` pour l'export PNG. Un fichier de l'ordinateur y
   entre par sa copie : une fois celle-ci dans les musiques récentes, la
   préférence porte `lib:<copie>` (restaurable à l'ouverture suivante).
@@ -592,10 +593,12 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   passage repris de `audio_file_name` / `audio_start_seconds` /
   `audio_end_seconds` —, envoyée par son nom dans `audio/`), ou un
   fichier de l'ordinateur ; bouclée si elle est plus courte (le motif
-  bouclé respecte les bornes [start, end]), fondue sur 2 s à la fin
-  (`musicFields`). Le volume effectif de la carte
-  (`recording.audio_volume`, curseur + harmonisation « niveau sonore
-  standard ») est repris et envoyé en champ `audio_volume`. Le choix
+  bouclé respecte les bornes [start, end]), fondue à la fin
+  (`musicFields(music, { fadeOut, fadeIn })` → `audio_fade_out`,
+  `audio_fade_in` seulement si non nul). Le fichier de l'ordinateur se
+  choisit par le bouton « Parcourir… », hors du select (une option de
+  select s'ouvrirait aussi au passage des flèches clavier) : son choix
+  pose l'option `upload` en fin de liste. Le choix
   est vérifié tout de suite plutôt qu'après l'enregistrement : un fichier
   de l'ordinateur est envoyé d'emblée (`/upload_audio`, en tâche de fond
   — la conversion attend `music.ready` puis envoie le nom de la copie en
@@ -613,9 +616,39 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   référencée, sa copie n'est plus balayée ; le choix est mémorisé
   (`statsVideoPrefs` porte alors `lib:<copie>`) et le prochain export n'a
   plus à renvoyer le fichier.
+- « Écouter » (`toggleMusicListen`) joue la musique choisie dans un
+  `Audio` dédié (un seul à la fois, à la borne `start` du passage et au
+  volume réglé) ; le bouton bascule « Écouter » ⇄ « Arrêter »
+  (`aria-pressed`, spinner pendant la résolution). Source : le blob pour
+  un fichier de l'ordinateur (`objectURL`), `/audio/<nom>` pour la
+  bibliothèque ; à l'erreur native, repli sur la version lisible du
+  serveur (`POST /api/audio/playable` → FLAC dans `audio/` — un .wma ne
+  joue pas sous Chromium ; la copie d'un fichier choisi est retrouvée via
+  `music.uploaded` une fois `music.ready` résolu). Un « unreadable »
+  défait le choix comme la sonde. L'écoute s'arrête à un changement de
+  musique, à la fermeture et au départ prise/aperçu ; l'objectURL est
+  révoquée et les écouteurs retirés. Réimplémenté localement :
+  `music_track.js`/`ensurePlayableMusic` importeraient `index.js` (tout
+  le graphe de la carte), interdit sur cette page.
+- Indication sous le select (`updateMusicInfo`, `#statsVideoMusicHint`) :
+  sans musique le texte générique ; avec une durée sondée, « Musique m:ss
+  · vidéo m:ss : effet » — « jouée une fois » (±5 %), « bouclée ~n fois »
+  ou « coupée avec fondu à m:ss » —, où la fenêtre utile est
+  `(end || duration) - start` et la durée de la vidéo celle du mode.
+- Bloc des réglages (`#statsVideoMusicOptions`, affiché avec la musique) :
+  curseur de volume (initialisé depuis `statsVideoPrefs.musicVolume`,
+  sinon le volume effectif de la carte `recording.audio_volume`, sinon
+  1 — envoyé en `audio_volume`, borné serveur), fondu d'entrée (0–30 s,
+  défaut 0) et de sortie (0,5–30 s, défaut 2). Les trois valeurs sont
+  persistées dans `statsVideoPrefs` (`musicVolume`, `musicFadeIn`,
+  `musicFadeOut`) et relues à l'ouverture ; les contrôles ne sont
+  re-remplis qu'au premier affichage et à un changement de musique
+  (`optionsSynced`), pas à chaque appel — une saisie en cours n'est pas
+  écrasée.
 - Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
   `excluded` (tableau, ids décochés), `music` (`kind`, `file`, et `start`
-  / `end` pour une bibliothèque — `null` sinon).
+  / `end` pour une bibliothèque — `null` sinon), `listening` (`paused`,
+  `currentTime` de l'écoute en cours, `null` sinon).
 
 ### Image du tableau entier
 

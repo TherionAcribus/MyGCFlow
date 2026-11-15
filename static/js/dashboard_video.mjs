@@ -75,11 +75,13 @@ export function countUp(value, progress) {
 // (/process_recorded_video) : un morceau de la bibliothèque (nom, avec ses
 // bornes [start, end] reprises de la carte — le motif bouclé les respecte),
 // ou un fichier envoyé (à joindre par l'appelant). Bouclée si elle est plus
-// courte que la vidéo, fondue à la fin.
+// courte que la vidéo ; `fadeOut` / `fadeIn` (secondes) sont les fondus
+// réglés dans la fenêtre — un fondu d'entrée nul n'est pas envoyé.
 export const MUSIC_FADE_OUT_S = 2;
-export function musicFields(music) {
+export function musicFields(music, { fadeOut = MUSIC_FADE_OUT_S, fadeIn = 0 } = {}) {
     if (!music) return null;
-    const fields = { audio_loop: '1', audio_fade_out: String(MUSIC_FADE_OUT_S) };
+    const fields = { audio_loop: '1', audio_fade_out: String(fadeOut) };
+    if (fadeIn > 0) fields.audio_fade_in = String(fadeIn);
     if (music.kind === 'library') {
         fields.audio = music.file;
         if (music.start > 0) fields.audio_start = String(music.start);

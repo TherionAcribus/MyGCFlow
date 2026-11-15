@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 11:09+0100\n"
+"POT-Creation-Date: 2026-11-15 12:05+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -129,7 +129,7 @@ msgstr "Unsupported data format"
 msgid "Image reçue avec succès"
 msgstr "Image received successfully"
 
-#: capture.py:244 capture.py:302 capture.py:321 capture.py:1157
+#: capture.py:244 capture.py:302 capture.py:321 capture.py:1197
 msgid "Fichier vidéo introuvable"
 msgstr "Video file not found"
 
@@ -143,7 +143,7 @@ msgstr "Unable to delete this video: it may be open in another program."
 msgid "Le répertoire a été vidé avec succès"
 msgstr "The directory was emptied successfully"
 
-#: capture.py:780
+#: capture.py:810
 msgid ""
 "La musique choisie est introuvable sur le serveur : la vidéo a été créée "
 "sans musique."
@@ -151,27 +151,27 @@ msgstr ""
 "The selected music could not be found on the server: the video was "
 "created without music."
 
-#: capture.py:859
+#: capture.py:899
 #, python-format
 msgid "%(label)s... %(pct)s%%"
 msgstr "%(label)s... %(pct)s%%"
 
-#: capture.py:861
+#: capture.py:901
 #, python-format
 msgid "%(label)s en cours..."
 msgstr "%(label)s in progress..."
 
-#: capture.py:890
+#: capture.py:930
 #, python-format
 msgid "%(label)s interrompu : le processus ne s'est pas terminé."
 msgstr "%(label)s interrupted: the process did not terminate."
 
-#: capture.py:894
+#: capture.py:934
 #, python-format
 msgid "%(label)s annulé à la demande."
 msgstr "%(label)s cancelled on request."
 
-#: capture.py:901
+#: capture.py:941
 #, python-format
 msgid ""
 "%(label)s interrompu : aucune progression pendant %(minutes)s min. Le "
@@ -180,21 +180,21 @@ msgstr ""
 "%(label)s interrupted: no progress for %(minutes)s min. The source file "
 "is probably corrupted."
 
-#: capture.py:906
+#: capture.py:946
 #, python-format
 msgid "ffmpeg a échoué (code %(code)s)"
 msgstr "ffmpeg failed (code %(code)s)"
 
-#: capture.py:908
+#: capture.py:948
 #, python-format
 msgid "%(label)s échoué : %(detail)s"
 msgstr "%(label)s failed: %(detail)s"
 
-#: capture.py:979
+#: capture.py:1019
 msgid "Aucune image trouvée dans le dossier"
 msgstr "No image found in the folder"
 
-#: capture.py:985
+#: capture.py:1025
 #, python-format
 msgid ""
 "Assemblage refusé : %(expected)d images attendues, %(found)d trouvées "
@@ -203,7 +203,7 @@ msgstr ""
 "Assembly refused: %(expected)d images expected, %(found)d found in the "
 "capture"
 
-#: capture.py:1004
+#: capture.py:1044
 msgid ""
 "Assemblage refusé : la séquence d'images n'est pas continue (frames "
 "manquantes ou dupliquées)"
@@ -211,84 +211,84 @@ msgstr ""
 "Assembly refused: the image sequence is not contiguous (missing or "
 "duplicated frames)"
 
-#: capture.py:1009
+#: capture.py:1049
 msgid "Préparation des images..."
 msgstr "Preparing images..."
 
-#: capture.py:1070
+#: capture.py:1110
 msgid "Encodage de la vidéo..."
 msgstr "Encoding the video..."
 
-#: capture.py:1074
+#: capture.py:1114
 msgid "Encodage vidéo"
 msgstr "Video encoding"
 
-#: capture.py:1074
+#: capture.py:1114
 msgid "Assemblage ffmpeg"
 msgstr "ffmpeg assembly"
 
-#: capture.py:1086 capture.py:1087
+#: capture.py:1126 capture.py:1127
 msgid "Vidéo créée avec succès"
 msgstr "Video created successfully"
 
-#: capture.py:1123
+#: capture.py:1163
 msgid "Échec de l'assemblage"
 msgstr "Assembly failed"
 
-#: capture.py:1163 capture.py:1249
+#: capture.py:1203 capture.py:1289
 msgid "Traitement vidéo annulé"
 msgstr "Video processing cancelled"
 
-#: capture.py:1230
+#: capture.py:1270
 msgid "Démarrage du traitement vidéo..."
 msgstr "Starting video processing..."
 
-#: capture.py:1234
+#: capture.py:1274
 msgid "Traitement vidéo"
 msgstr "Video processing"
 
-#: capture.py:1234
+#: capture.py:1274
 msgid "Traitement ffmpeg"
 msgstr "ffmpeg processing"
 
-#: capture.py:1259 static/js/mapgl.js:5718 templates/guide.html:368
+#: capture.py:1299 static/js/mapgl.js:5718 templates/guide.html:368
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Video ready"
 
-#: capture.py:1262
+#: capture.py:1302
 msgid "Vidéo traitée avec succès"
 msgstr "Video processed successfully"
 
-#: capture.py:1287
+#: capture.py:1327
 msgid "Échec du traitement vidéo"
 msgstr "Video processing failed"
 
-#: capture.py:1324 capture.py:1379
+#: capture.py:1364 capture.py:1419
 msgid "Aucun fichier vidéo fourni"
 msgstr "No video file provided"
 
-#: capture.py:1364
+#: capture.py:1404
 msgid "Traitement vidéo lancé en tâche de fond"
 msgstr "Video processing started in the background"
 
-#: capture.py:1391
+#: capture.py:1431
 msgid "Vidéo reçue et sauvegardée"
 msgstr "Video received and saved"
 
-#: capture.py:1407
+#: capture.py:1447
 msgid "Aucun fichier audio fourni"
 msgstr "No audio file provided"
 
-#: capture.py:1496 capture.py:1533
+#: capture.py:1536 capture.py:1573
 msgid "Flux vidéo inconnu"
 msgstr "Unknown video stream"
 
-#: capture.py:1501
+#: capture.py:1541
 msgid "Fragment vidéo hors séquence"
 msgstr "Out-of-sequence video fragment"
 
-#: capture.py:1504
+#: capture.py:1544
 msgid "Fragment vidéo absent"
 msgstr "Missing video fragment"
 
@@ -893,7 +893,7 @@ msgstr "Confirm"
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
 #: templates/stats_page.html:381 templates/stats_page.html:451
 #: templates/stats_page.html:538 templates/stats_page.html:558
-#: templates/stats_page.html:581 templates/stats_page.html:650
+#: templates/stats_page.html:581 templates/stats_page.html:675
 msgid "Annuler"
 msgstr "Cancel"
 
@@ -1371,7 +1371,7 @@ msgstr "MyGCFlow: scroll your history a little to detect your account…"
 msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 msgstr "✔ Sent to MyGCFlow — import running (${adv} Adventures, ${disc} stages)"
 
-#: blueprints/media.py:88
+#: blueprints/media.py:89
 msgid ""
 "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
 "un autre ou de relancer une capture (les deux utilisent le dossier "
@@ -1380,11 +1380,11 @@ msgstr ""
 "A video assembly is already running. Wait for it to finish before "
 "starting another or restarting a capture (both use the captured/ folder)."
 
-#: blueprints/media.py:178
+#: blueprints/media.py:179
 msgid "Assemblage vidéo lancé en tâche de fond"
 msgstr "Video assembly started in the background"
 
-#: blueprints/media.py:207
+#: blueprints/media.py:208
 msgid ""
 "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
 "vidé maintenant."
@@ -1392,62 +1392,63 @@ msgstr ""
 "A video assembly is running: the captured/ folder cannot be emptied right"
 " now."
 
-#: blueprints/media.py:266 blueprints/media.py:297
+#: blueprints/media.py:267 blueprints/media.py:298
 msgid "Musique inconnue"
 msgstr "Unknown music"
 
-#: blueprints/media.py:268
+#: blueprints/media.py:269
 msgid "La musique choisie ne peut pas être retirée."
 msgstr "The selected music cannot be removed."
 
-#: blueprints/media.py:270
+#: blueprints/media.py:271
 msgid "Un export vidéo est en cours : réessayez une fois la vidéo terminée."
 msgstr "A video export is in progress: try again once the video is finished."
 
-#: blueprints/media.py:285
+#: blueprints/media.py:286
 #, python-format
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr "A sequence has from 2 to %(max)d tracks."
 
-#: blueprints/media.py:295 static/js/ui.js:12215
+#: blueprints/media.py:296 static/js/ui.js:12215
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr "One of the tracks cannot be found on the server."
 
-#: blueprints/media.py:299
+#: blueprints/media.py:300
 msgid ""
 "Les morceaux n'ont pas pu être enchaînés : l'un d'eux est peut-être "
 "illisible."
 msgstr "The tracks could not be joined: one of them may be unreadable."
 
-#: blueprints/media.py:313
+#: blueprints/media.py:317 blueprints/media.py:329
 msgid "Musique introuvable sur le serveur"
 msgstr "Music not found on the server"
 
-#: blueprints/media.py:318
+#: blueprints/media.py:334 static/js/stats_page_video.js:503
+#: static/js/stats_page_video.js:578 static/js/stats_page_video.js:847
 msgid "Cette musique est illisible (format inconnu ou fichier endommagé)."
 msgstr "This music cannot be read (unknown format or damaged file)."
 
-#: blueprints/media.py:440
+#: blueprints/media.py:456
 msgid "Indiquez un dossier."
 msgstr "Enter a folder."
 
-#: blueprints/media.py:443
+#: blueprints/media.py:459
 msgid "Indiquez le chemin complet du dossier (par exemple D:\\Vidéos)."
 msgstr "Enter the full path of the folder (for example D:\\Videos)."
 
-#: blueprints/media.py:450
+#: blueprints/media.py:466
 msgid "MyGCFlow ne peut pas écrire dans ce dossier."
 msgstr "MyGCFlow cannot write to this folder."
 
-#: blueprints/media.py:478
+#: blueprints/media.py:494
 msgid "Choisir le dossier des vidéos"
 msgstr "Choose the videos folder"
 
-#: blueprints/media.py:483
+#: blueprints/media.py:499
 msgid "Une fenêtre de choix du dossier est déjà ouverte."
 msgstr "A folder selection window is already open."
 
-#: blueprints/media.py:487
+#: blueprints/media.py:503
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "The folder picker is not available: type the path."
 
@@ -4588,12 +4589,12 @@ msgstr "(missing)"
 msgid "Apparition planifiée"
 msgstr "Scheduled appearance"
 
-#: static/js/images_ui.js:1350 static/js/stats_page_video.js:274
+#: static/js/images_ui.js:1350 static/js/stats_page_video.js:294
 #: static/js/stats_ui.js:577
 msgid "Monter"
 msgstr "Move up"
 
-#: static/js/images_ui.js:1351 static/js/stats_page_video.js:274
+#: static/js/images_ui.js:1351 static/js/stats_page_video.js:294
 #: static/js/stats_ui.js:578
 msgid "Descendre"
 msgstr "Move down"
@@ -6127,7 +6128,7 @@ msgstr "Set as default"
 msgid "Thème par défaut"
 msgstr "Default theme"
 
-#: static/js/profiles.js:1125 static/js/stats_page.js:410
+#: static/js/profiles.js:1125 static/js/stats_page.js:439
 #: templates/menu_style.html:336
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
@@ -6320,7 +6321,7 @@ msgid "La vidéo n’a pas pu être supprimée."
 msgstr "The video could not be deleted."
 
 #: static/js/recent_videos.js:119 templates/modal_video_ready.html:26
-#: templates/stats_page.html:652
+#: templates/stats_page.html:677
 msgid "Afficher dans le dossier"
 msgstr "Show in folder"
 
@@ -6437,7 +6438,7 @@ msgid ""
 "${suggestion}"
 msgstr "Recording performance is unstable (${pct}% de slow frames). ${suggestion}"
 
-#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:826
+#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:1343
 msgid "Enregistrement…"
 msgstr "Saving…"
 
@@ -6457,11 +6458,11 @@ msgstr "No filter"
 msgid "Vos trouvailles sont trop homogènes pour être filtrées."
 msgstr "Your finds are too uniform to be filtered."
 
-#: static/js/stats_page.js:409
+#: static/js/stats_page.js:438
 msgid "Fermer sans enregistrer les modifications ?"
 msgstr "Close without saving changes?"
 
-#: static/js/stats_page.js:416
+#: static/js/stats_page.js:445
 msgid "Fermer sans enregistrer"
 msgstr "Close without saving"
 
@@ -6666,8 +6667,8 @@ msgstr "${n} periods"
 #: static/js/stats_page_dashboard.js:289 static/js/stats_page_dashboard.js:309
 #: static/js/stats_page_dashboard.js:448 static/js/stats_page_dashboard.js:468
 #: static/js/stats_page_data.js:188 static/js/stats_page_exports.js:289
-#: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:546
-#: static/js/stats_page_video.js:772
+#: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:1062
+#: static/js/stats_page_video.js:1288
 msgid "Mon tableau de bord"
 msgstr "My dashboard"
 
@@ -7314,154 +7315,197 @@ msgstr "Start over"
 msgid "La restauration de la sauvegarde a échoué."
 msgstr "Restoring the backup failed."
 
-#: static/js/stats_page_video.js:192
+#: static/js/stats_page_video.js:211
 msgid "Vidéo du tableau de bord"
 msgstr "Dashboard video"
 
-#: static/js/stats_page_video.js:192 templates/stats_page.html:595
+#: static/js/stats_page_video.js:211 templates/stats_page.html:595
 msgid "Vidéo animée"
 msgstr "Animated video"
 
-#: static/js/stats_page_video.js:195 templates/stats_page.html:413
+#: static/js/stats_page_video.js:214 templates/stats_page.html:413
 #: templates/stats_page.html:414
 msgid "Durée de chaque graphique"
 msgstr "Time per chart"
 
-#: static/js/stats_page_video.js:195 static/js/ui.js:11703
+#: static/js/stats_page_video.js:214 static/js/ui.js:11703
 #: templates/stats_page.html:613
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/stats_page_video.js:199 static/js/stats_page_video.js:202
+#: static/js/stats_page_video.js:218 static/js/stats_page_video.js:221
 #, python-brace-format
 msgid "${n} secondes"
 msgstr "${n} seconds"
 
-#: static/js/stats_page_video.js:227
+#: static/js/stats_page_video.js:247
 msgid "Ce graphique ne peut pas être animé."
 msgstr "This chart cannot be animated."
 
-#: static/js/stats_page_video.js:237
+#: static/js/stats_page_video.js:257
 msgid "Aucun graphique à mettre en vidéo."
 msgstr "No chart to put in a video."
 
-#: static/js/stats_page_video.js:332
+#: static/js/stats_page_video.js:357
 msgid "Cochez au moins un graphique."
 msgstr "Check at least one chart."
 
-#: static/js/stats_page_video.js:338
+#: static/js/stats_page_video.js:363
 #, python-brace-format
 msgid ""
 "${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps "
 "réel."
 msgstr "${n} charts, ${s} seconds in all: the video is recorded in real time."
 
-#: static/js/stats_page_video.js:339
+#: static/js/stats_page_video.js:364
 #, python-brace-format
 msgid ""
 "${n} graphique, ${s} secondes en tout : la vidéo s'enregistre en temps "
 "réel."
 msgstr "${n} chart, ${s} seconds in all: the video is recorded in real time."
 
-#: static/js/stats_page_video.js:350
+#: static/js/stats_page_video.js:384
 msgid "Sans musique"
 msgstr "No music"
 
-#: static/js/stats_page_video.js:368
+#: static/js/stats_page_video.js:424
 msgid "Musiques récentes"
 msgstr "Recent music"
 
-#: static/js/stats_page_video.js:376
-msgid "Un fichier de mon ordinateur…"
-msgstr "A file from my computer…"
+#: static/js/stats_page_video.js:502
+msgid "La musique choisie est introuvable sur le serveur."
+msgstr "The selected music could not be found on the server."
 
-#: static/js/stats_page_video.js:548
+#: static/js/stats_page_video.js:702 templates/stats_page.html:632
+msgid ""
+"Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface "
+"doucement à la fin."
+msgstr "It loops if it is shorter than the video, and fades out at the end."
+
+#: static/js/stats_page_video.js:713
+msgid "jouée une fois"
+msgstr "played once"
+
+#: static/js/stats_page_video.js:716
+#, python-brace-format
+msgid "bouclée ~${n} fois"
+msgstr "looped ~${n} times"
+
+#: static/js/stats_page_video.js:718
+#, python-brace-format
+msgid "coupée avec fondu à ${vdur}"
+msgstr "cut with a fade at ${vdur}"
+
+#: static/js/stats_page_video.js:720
+#, python-brace-format
+msgid "Musique ${mdur} · vidéo ${vdur} : ${effect}"
+msgstr "Music ${mdur} · video ${vdur}: ${effect}"
+
+#: static/js/stats_page_video.js:811 static/js/stats_page_video.js:1680
+#: static/js/ui.js:1000 templates/app.html:255 templates/app.html:256
+#: templates/guide.html:136 templates/guide.html:346
+#: templates/menu_animation.html:57
+msgid "Arrêter"
+msgstr "Stop"
+
+#: static/js/stats_page_video.js:811 static/js/ui.js:991
+#: templates/guide.html:324 templates/menu_animation.html:419
+#: templates/stats_page.html:628
+msgid "Écouter"
+msgstr "Listen"
+
+#: static/js/stats_page_video.js:877 static/js/stats_page_video.js:899
+#: static/js/stats_page_video.js:910
+msgid "La lecture de cette musique a échoué."
+msgstr "This music could not be played."
+
+#: static/js/stats_page_video.js:1064
 #, python-brace-format
 msgid "${n} graphiques"
 msgstr "${n} charts"
 
-#: static/js/stats_page_video.js:548
+#: static/js/stats_page_video.js:1064
 #, python-brace-format
 msgid "${n} graphique"
 msgstr "${n} chart"
 
-#: static/js/stats_page_video.js:703
+#: static/js/stats_page_video.js:1219
 msgid "ouverture"
 msgstr "opening"
 
-#: static/js/stats_page_video.js:704
+#: static/js/stats_page_video.js:1220
 msgid "fin"
 msgstr "end"
 
-#: static/js/stats_page_video.js:705
+#: static/js/stats_page_video.js:1221
 #, python-brace-format
 msgid "graphique ${n} / ${count}"
 msgstr "chart ${n} / ${count}"
 
-#: static/js/stats_page_video.js:713 static/js/stats_page_video.js:819
+#: static/js/stats_page_video.js:1229 static/js/stats_page_video.js:1336
 msgid "Ce navigateur ne sait pas enregistrer de vidéo."
 msgstr "This browser cannot record video."
 
-#: static/js/stats_page_video.js:749
+#: static/js/stats_page_video.js:1265
 #, python-brace-format
 msgid "Enregistrement… (${where}, reste ~${s} s)"
 msgstr "Recording… (${where}, ~${s} s left)"
 
-#: static/js/stats_page_video.js:854
+#: static/js/stats_page_video.js:1371
 #, python-brace-format
 msgid "Enregistrement… (reste ~${s} s)"
 msgstr "Recording… (~${s} s left)"
 
-#: static/js/stats_page_video.js:922
+#: static/js/stats_page_video.js:1439
 msgid "Aperçu terminé — rien n'a été enregistré."
 msgstr "Preview finished — nothing was recorded."
 
-#: static/js/stats_page_video.js:940 static/js/stats_page_video.js:944
+#: static/js/stats_page_video.js:1457 static/js/stats_page_video.js:1461
 #, python-brace-format
 msgid "Aperçu… (${where})"
 msgstr "Preview… (${where})"
 
-#: static/js/stats_page_video.js:961 static/js/stats_page_video.js:966
+#: static/js/stats_page_video.js:1479 static/js/stats_page_video.js:1484
 msgid "Aperçu…"
 msgstr "Preview…"
 
-#: static/js/stats_page_video.js:1002
+#: static/js/stats_page_video.js:1520
 msgid "Conversion en MP4…"
 msgstr "Converting to MP4…"
 
-#: static/js/stats_page_video.js:1035
+#: static/js/stats_page_video.js:1573
 msgid ""
 "L'onglet a été masqué pendant l'enregistrement : la vidéo peut être "
 "saccadée."
 msgstr "The tab was hidden during the recording: the video may be choppy."
 
-#: static/js/stats_page_video.js:1045
+#: static/js/stats_page_video.js:1592
 #, python-brace-format
 msgid "Vidéo enregistrée : ${file}, dans ${folder}."
 msgstr "Video saved: ${file}, in ${folder}."
 
-#: static/js/stats_page_video.js:1058
+#: static/js/stats_page_video.js:1605
 #, python-brace-format
 msgid ""
 "La conversion en MP4 a échoué (${detail}) : la vidéo est proposée au "
 "format WebM."
 msgstr "MP4 conversion failed (${detail}): the video is offered in WebM format."
 
-#: static/js/stats_page_video.js:1059
+#: static/js/stats_page_video.js:1606
 msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 msgstr "MP4 conversion failed: the video is offered in WebM format."
 
-#: static/js/stats_page_video.js:1062
+#: static/js/stats_page_video.js:1609
 msgid ""
 "La musique choisie n'y est pas incluse : elle est mixée pendant la "
 "conversion."
 msgstr "The chosen music is not included: it is mixed during conversion."
 
-#: static/js/stats_page_video.js:1106
+#: static/js/stats_page_video.js:1653
 msgid "Impossible d'ouvrir le dossier des vidéos."
 msgstr "Could not open the videos folder."
 
-#: static/js/stats_page_video.js:1125
+#: static/js/stats_page_video.js:1672
 msgid ""
 "La vidéo est en cours de création : fermer la fenêtre l'interrompt et "
 "elle sera perdue."
@@ -7469,15 +7513,9 @@ msgstr ""
 "The video is being created: closing the window interrupts it and it will "
 "be lost."
 
-#: static/js/stats_page_video.js:1126
+#: static/js/stats_page_video.js:1673
 msgid "Arrêter la vidéo ?"
 msgstr "Stop the video?"
-
-#: static/js/stats_page_video.js:1133 static/js/ui.js:1000
-#: templates/app.html:255 templates/app.html:256 templates/guide.html:136
-#: templates/guide.html:346 templates/menu_animation.html:57
-msgid "Arrêter"
-msgstr "Stop"
 
 #: static/js/stats_panels.js:1075 templates/menu_stats.html:529
 msgid "Matrice D/T des DNF"
@@ -8659,11 +8697,6 @@ msgstr "The tracks in the sequence are already balanced with each other."
 #: static/js/ui.js:950 static/js/ui.js:1019
 msgid "Arrêtez l'animation pour écouter la musique seule."
 msgstr "Stop the animation to listen to the music on its own."
-
-#: static/js/ui.js:991 templates/guide.html:324
-#: templates/menu_animation.html:419
-msgid "Écouter"
-msgstr "Listen"
 
 #: static/js/ui.js:992 templates/guide.html:324
 #: templates/menu_animation.html:423
@@ -11173,6 +11206,7 @@ msgstr "then pick a file with"
 
 #: templates/guide.html:315 templates/menu_animation.html:309
 #: templates/menu_data.html:50 templates/menu_data_evolution.html:53
+#: templates/stats_page.html:626
 msgid "Parcourir…"
 msgstr "Browse…"
 
@@ -18404,29 +18438,35 @@ msgstr "Portrait 9:16 (1080 × 1920)"
 msgid "Écrans"
 msgstr "Screens"
 
-#: templates/stats_page.html:626
-msgid ""
-"Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface "
-"doucement à la fin."
-msgstr "It loops if it is shorter than the video, and fades out at the end."
+#: templates/stats_page.html:637
+msgid "Volume"
+msgstr "Volume"
 
-#: templates/stats_page.html:645
+#: templates/stats_page.html:644
+msgid "Fondu d'entrée (s)"
+msgstr "Fade-in (s)"
+
+#: templates/stats_page.html:648
+msgid "Fondu de sortie (s)"
+msgstr "Fade-out (s)"
+
+#: templates/stats_page.html:670
 msgid "Modifier les réglages"
 msgstr "Edit the settings"
 
-#: templates/stats_page.html:648
+#: templates/stats_page.html:673
 msgid "Arrêter l'aperçu"
 msgstr "Stop the preview"
 
-#: templates/stats_page.html:655
+#: templates/stats_page.html:680
 msgid "Enregistrer une copie"
 msgstr "Save a copy"
 
-#: templates/stats_page.html:658
+#: templates/stats_page.html:683
 msgid "Aperçu"
 msgstr "Preview"
 
-#: templates/stats_page.html:661
+#: templates/stats_page.html:686
 msgid "Créer la vidéo"
 msgstr "Create the video"
 
