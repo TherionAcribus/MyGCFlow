@@ -1718,6 +1718,40 @@ test('échec de conversion : le motif et la perte de musique sont dits', async (
   expect(errors).toEqual([]);
 });
 
+test('le focus suit les étapes de la vidéo', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  // Conversion simulée : la tâche finit tout de suite en « finished »
+  // (« * » ne franchit pas « / » : le motif couvre ?include_result=true).
+  await page.route('**/process_recorded_video', async (route) => {
+    await route.fulfill({
+      status: 202, contentType: 'application/json',
+      body: JSON.stringify({ success: true, task_id: 'stats-focus-task' }),
+    });
+  });
+  await page.route('**/tasks/stats-focus-task*', async (route) => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ state: 'finished', progress: 100, result: { file: 'focus-fake.mp4', folder: null } }),
+    });
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  await page.locator('#btnStatsVideoStart').click();
+  // « Créer la vidéo » disparaît avec son étape : le focus est passé à
+  // « Annuler », seul bouton du pied encore visible (sinon <body>).
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('btnStatsVideoCancel');
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
+  // Phase « done » : le focus est sur « Télécharger », l'action principale.
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('btnStatsVideoDownload');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('abandonner la vidéo en cours demande confirmation', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

@@ -39,6 +39,10 @@ function setVideoPhase(phase) {
     $('btnStatsVideoReveal').hidden = phase !== 'done' || !state.video?.file;
     $('btnStatsVideoDownload').hidden = phase !== 'done';
     $('btnStatsVideoCancel').textContent = phase === 'done' ? t('Fermer') : t('Annuler');
+    // Le bouton qui avait le focus disparaît avec son étape : replacer le
+    // focus sur l'action de la nouvelle (sinon il retombe sur <body>).
+    const focusTarget = { setup: 'btnStatsVideoStart', recording: 'btnStatsVideoCancel', done: 'btnStatsVideoDownload' }[phase];
+    $(focusTarget)?.focus();
 }
 
 function setVideoStatus(text, percent = null) {
