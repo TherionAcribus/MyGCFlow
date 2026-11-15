@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
     chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
-    VIDEO_HOLD, VIDEO_HOLD_MIN_MS, VIDEO_SIZES, splitHead, videoScale,
+    VIDEO_HOLD, VIDEO_HOLD_MIN_MS, VIDEO_SIZES, headSlots, splitHead, videoScale,
 } from '../../static/js/chart_video.mjs';
 
 const result = {
@@ -126,6 +126,19 @@ test('repère daté : l\'année se sépare du reste (elle reste en place, seul l
     assert.deepEqual(splitHead('Mois 4'), { lead: 'Mois 4', year: '' });
     assert.deepEqual(splitHead('Multi-cache'), { lead: 'Multi-cache', year: '' });
     assert.deepEqual(splitHead(null), { lead: '', year: '' });
+});
+
+test('repères à gabarit commun : le texte fixe reste, seuls les nombres changent', () => {
+    assert.deepEqual(headSlots(['D1 / T1', 'D2,5 / T3', 'D4.5 / T5']), {
+        statics: ['D', ' / T', ''],
+        values: [['1', '1'], ['2,5', '3'], ['4.5', '5']],
+    });
+    assert.deepEqual(headSlots(['S1', 'S53']), { statics: ['S', ''], values: [['1'], ['53']] });
+    // Texte différent autour des nombres, ou pas de nombre : pas de cases.
+    assert.equal(headSlots(['4 janv.', '5 févr.']), null);
+    assert.equal(headSlots(['Multi-cache', 'Mystery']), null);
+    assert.equal(headSlots(['D1 / T1', 'D2']), null);
+    assert.equal(headSlots([]), null);
 });
 
 test('échelle vidéo : 540 px de référence, 432 en portrait (textes 25 % plus grands)', () => {

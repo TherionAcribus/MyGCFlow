@@ -218,6 +218,24 @@ test('anneau : une part par catégorie non vide, légende, pourcentages en infob
     assert.match(tip, /40\s?%/);
 });
 
+test('anneau en vidéo : place et légende du résultat complet dès la première part', () => {
+    const { spec, result } = option({ groupBy: 'cache_type', view: { chart: 'donut' } });
+    const full = buildChartOption(result, spec, ctx);
+    // Une seule part révélée : sans `layoutResult`, l'anneau serait centré,
+    // sans légende — il glissait à gauche à l'arrivée de la deuxième.
+    const first = result.series[0].values.findIndex((v) => v > 0);
+    const partial = { ...result, series: [{ ...result.series[0], values: result.series[0].values.map((v, k) => (k === first ? v : null)) }] };
+    assert.deepEqual(buildChartOption(partial, spec, ctx).series[0].center, ['50%', '50%']);
+    const video = buildChartOption(partial, spec, { ...ctx, layoutResult: result });
+    assert.deepEqual(video.series[0].center, full.series[0].center);
+    assert.deepEqual(video.series[0].data.map((d) => d.name), full.series[0].data.map((d) => d.name));
+    assert.notEqual(video.legend.show, false);
+    // Les parts à venir sont vides (ni secteur ni étiquette).
+    assert.deepEqual(video.series[0].data.map((d) => d.value === '-'), full.series[0].data.map((d) => d.keyIndex !== first));
+    const tip = video.tooltip.formatter({ color: '#008000', name: 'x', value: result.series[0].values[first], seriesIndex: 0 });
+    assert.match(tip, /100\s?%/);
+});
+
 test('courbe et aire : trait de 2 px, aire à 10 %, points masqués sur un long axe', () => {
     const line = option({ groupBy: 'month', view: { chart: 'line' } }).option;
     assert.equal(line.series[0].type, 'line');

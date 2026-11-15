@@ -177,6 +177,29 @@ export function splitHead(label) {
     return match ? { lead: match[1], year: match[2] } : { lead: s, year: '' };
 }
 
+// Repères à gabarit commun (« D1 / T1 » … « D4,5 / T5 ») : le texte fixe
+// reste en place, seuls les nombres changent — chacun dans une case large
+// comme le plus large de ses valeurs. → { statics, values } (statics :
+// les morceaux de texte autour des nombres, values : les nombres de chaque
+// repère), ou null quand les repères n'ont pas tous le même texte autour de
+// leurs nombres (« 4 janv. », « Multi-cache »).
+const HEAD_NUMBER_RE = /\d+(?:[.,]\d+)?/g;
+export function headSlots(labels) {
+    if (!labels?.length) return null;
+    let statics = null;
+    const values = [];
+    for (const label of labels) {
+        const s = label === null || label === undefined ? '' : String(label);
+        const numbers = s.match(HEAD_NUMBER_RE);
+        if (!numbers) return null;
+        const parts = s.split(HEAD_NUMBER_RE);
+        if (statics === null) statics = parts;
+        else if (parts.length !== statics.length || parts.some((part, i) => part !== statics[i])) return null;
+        values.push(numbers);
+    }
+    return { statics, values };
+}
+
 // Taille réduite pour que `text` tienne dans `maxWidth` (px) :
 // `baseSize * maxWidth / largeur`, la largeur étant mesurée à `baseSize`.
 // Bornée en bas par `baseSize * minRatio` : au plancher, un léger dépassement

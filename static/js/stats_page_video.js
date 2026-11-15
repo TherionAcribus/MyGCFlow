@@ -5,7 +5,7 @@ import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
-    chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, splitHead, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
+    chartAnimates, ellipsize, fitFontSize, headerLayout, headSlots, lockOption, splitHead, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
     VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, videoScale,
 } from './chart_video.mjs';
@@ -1067,7 +1067,14 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const kind = ['line', 'area'].includes(spec.view.chart) ? 'line' : 'bar';
     // Sans « aujourd'hui » : pas de projection prolongeant une courbe à
     // moitié révélée.
-    const ctx = { ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null, lockedMax: max };
+    // `layoutResult` : la mise en page (place de l'anneau, légende) suit le
+    // résultat complet dès la première image — sinon l'anneau, centré tant
+    // qu'une seule part est révélée, glissait à gauche à l'arrivée de la
+    // légende.
+    const ctx = {
+        ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null, lockedMax: max,
+        layoutResult: reveal ? result : null,
+    };
     const heads = reveal ? axisLabels(result, ctx, { long: true }) : [];
     const title = chartTitle(spec);
     const font = videoFont();
@@ -1083,10 +1090,25 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     // la plus large année ; l'année part toujours du même x.
     const parts = heads.map(splitHead);
     const dated = parts.length > 0 && parts.every((p) => p.year);
-    const headWidths = (cssFont) => (dated
-        ? [Math.max(...parts.map((p) => widthIn(cssFont, p.lead))) + widthIn(cssFont, ' ')
-            + Math.max(...parts.map((p) => widthIn(cssFont, p.year)))]
-        : heads.map((h) => widthIn(cssFont, h)));
+    // Repères à gabarit commun (« D1 / T1 » … « D4,5 / T5 ») : le texte fixe
+    // à sa place, chaque nombre dans sa case (headSlots).
+    const slots = dated ? null : headSlots(heads);
+    const slotWidths = (cssFont) => ({
+        statics: slots.statics.map((text) => widthIn(cssFont, text)),
+        numbers: slots.values[0].map((_, j) => Math.max(...slots.values.map((v) => widthIn(cssFont, v[j])))),
+    });
+    const sum = (list) => list.reduce((a, b) => a + b, 0);
+    const headWidths = (cssFont) => {
+        if (dated) {
+            return [Math.max(...parts.map((p) => widthIn(cssFont, p.lead))) + widthIn(cssFont, ' ')
+                + Math.max(...parts.map((p) => widthIn(cssFont, p.year)))];
+        }
+        if (slots) {
+            const w = slotWidths(cssFont);
+            return [sum(w.statics) + sum(w.numbers)];
+        }
+        return heads.map((h) => widthIn(cssFont, h));
+    };
     const titleWidth = widthIn(titleFont, title);
     const layoutAt = (cssFont) => headerLayout({
         inner: width - pad * 2, gap: titleSize, title: titleWidth, heads: headWidths(cssFont),
@@ -1097,12 +1119,13 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     let headFont = '700 ' + headBase + 'px ' + font;
     const longest = Math.max(0, ...headWidths(headFont));
     const room = layoutAt(headFont).headMax;
-    if (dated && longest > room) {
+    if ((dated || slots) && longest > room) {
         headFont = '700 ' + Math.floor(headBase * Math.max(0.7, room / longest)) + 'px ' + font;
     }
     const { titleMax, headMax } = layoutAt(headFont);
     const space = widthIn(headFont, ' ');
     const yearW = dated ? Math.max(...parts.map((p) => widthIn(headFont, p.year))) : 0;
+    const slotW = slots ? slotWidths(headFont) : null;
     let drawn = false;
     const paint = (progress) => {
         if (reveal) {
@@ -1138,6 +1161,19 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
                 g.fillText(parts[index].year, yearX, baseline);
                 g.textAlign = 'right';
                 g.fillText(ellipsize(parts[index].lead, headMax - yearW - space, measure), yearX - space, baseline);
+            } else if (slots && slots.values[index]) {
+                // Texte fixe et cases des nombres posés de gauche à droite à
+                // partir d'un x fixe ; chaque nombre calé à gauche de sa case.
+                let x = width - pad - sum(slotW.statics) - sum(slotW.numbers);
+                g.textAlign = 'left';
+                slots.statics.forEach((text, j) => {
+                    g.fillText(text, x, baseline);
+                    x += slotW.statics[j];
+                    if (j < slotW.numbers.length) {
+                        g.fillText(slots.values[index][j], x, baseline);
+                        x += slotW.numbers[j];
+                    }
+                });
             } else {
                 g.fillText(ellipsize(heads[index] ?? '', headMax, measure), width - pad, baseline);
             }

@@ -715,8 +715,18 @@ effacer » le retire avec la période proposée.
   droite contre elle, est seul à défiler et seul raccourci si besoin — l'année
   ne bouge et ne disparaît jamais. Format étroit (portrait) : si le plus
   long repère ne tient pas, sa taille est réduite une fois pour toute la
-  vidéo (plancher 70 %) plutôt que de couper le mois. Repère sans année
-  (« Mois 4 », une catégorie, « 2019 » seul) : un seul texte, comme avant.
+  vidéo (plancher 70 %) plutôt que de couper le mois. Repères à gabarit
+  commun (grille D/T : « D1 / T1 » … « D4,5 / T5 », semaines « S1 » …) :
+  `headSlots` sépare le texte fixe des nombres ; « D » et « / T » restent
+  en place, chaque nombre calé à gauche d'une case large comme sa plus
+  large valeur — le libellé aligné à droite faisait tout bouger, illisible
+  (même réduction de taille si besoin). Autres repères (une catégorie, un
+  mois en toutes lettres) : un seul texte, comme avant.
+- Anneau révélé part après part : sa place et sa légende sont celles du
+  résultat complet dès la première image (`ctx.layoutResult`, lu par
+  `donutOption` ; part à venir = '-', ni secteur ni étiquette) — il
+  naissait centré sans légende puis glissait à gauche à l'arrivée de la
+  deuxième part (2026-11-15).
 - Échelle (`videoScale`, chart_video.mjs) : écrans mis en page comme sur
   540 px de côté (le plus petit), puis agrandis à la définition — sauf le
   portrait, regardé en plein écran sur un téléphone, mis en page sur 432 px

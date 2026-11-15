@@ -834,16 +834,22 @@ function donutOption(result, spec, ctx) {
     const outer = Math.min(72, Math.round((100 / Math.max(1, n)) * 1.5));
     const inner = Math.round(outer * 0.66);
     const legendNames = new Set();
+    // Parts et légende : celles du résultat complet quand il est donné
+    // (`ctx.layoutResult`, vidéo — les parts y arrivent une à une) ; une
+    // part pas encore révélée est vide ('-' : ni secteur ni étiquette), mais
+    // sa place dans la légende et celle de l'anneau sont prises dès le début.
+    const layout = ctx.layoutResult || result;
     const series = result.series.map((s, i) => {
+        const shown = layout.series[i]?.values || s.values;
         const data = result.keys
             .map((key, k) => ({ key, k, value: s.values[k] }))
-            .filter((d) => d.value > 0)
+            .filter((d) => shown[d.k] > 0)
             .map((d) => {
                 const name = labels.axisLabel(result.dim, d.key, { attributeName: ctx.attributeName });
                 legendNames.add(name);
-                return { name, value: d.value, keyIndex: d.k, itemStyle: { color: colors[d.k] } };
+                return { name, value: d.value > 0 ? d.value : '-', keyIndex: d.k, itemStyle: { color: colors[d.k] } };
             });
-        const total = data.reduce((sum, d) => sum + d.value, 0);
+        const total = data.reduce((sum, d) => sum + (d.value > 0 ? d.value : 0), 0);
         const single = n === 1;
         return {
             type: 'pie',
