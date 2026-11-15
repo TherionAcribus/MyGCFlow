@@ -1679,6 +1679,57 @@ test('annuler pendant la conversion arrête la tâche serveur', async ({ page, r
   expect(errors).toEqual([]);
 });
 
+test('la barre couvre l\'enregistrement puis la conversion sans repartir à zéro', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  // Conversion simulée figée à 40 % : la tâche répond « running » tant
+  // qu'on ne l'annule pas (deux motifs : « * » ne franchit pas « / »).
+  await page.route('**/process_recorded_video', async (route) => {
+    await route.fulfill({
+      status: 202, contentType: 'application/json',
+      body: JSON.stringify({ success: true, task_id: 'stats-bar-task' }),
+    });
+  });
+  await page.route('**/tasks/stats-bar-task*', async (route) => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ state: 'running', progress: 40 }),
+    });
+  });
+  await page.route('**/tasks/stats-bar-task/cancel', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  await page.locator('#btnStatsVideoStart').click();
+
+  // Enregistrement : première étape de la barre (0 → 70 %), le statut
+  // porte un compte à rebours.
+  await expect.poll(async () => {
+    const status = await page.locator('#statsVideoStatus').textContent();
+    const width = await page.locator('#statsVideoProgress').evaluate((el) => el.style.width);
+    const percent = Number.parseFloat(width || '');
+    return status.includes('reste') && percent > 0 && percent <= 70;
+  }, { timeout: 30_000 }).toBe(true);
+
+  // Conversion : deuxième étape (70 → 100 %) — 40 % serveur = 82 % de
+  // barre, sans être repassée par zéro.
+  await expect(page.locator('#statsVideoStatus')).toContainText('Conversion en MP4', { timeout: 30_000 });
+  await expect.poll(async () => page.locator('#statsVideoProgress').evaluate((el) => el.style.width)).toBe('82%');
+
+  // Sortie : annulation confirmée (la tâche stubée tourne toujours).
+  await page.locator('#btnStatsVideoCancel').click();
+  const confirm = page.locator('.gcm-confirm-modal');
+  await expect(confirm).toBeVisible();
+  await confirm.locator('[data-gcm-role="confirm"]').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect((await snapshot(page)).video).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test('échec de conversion : le motif et la perte de musique sont dits', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

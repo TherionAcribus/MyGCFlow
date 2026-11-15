@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 10:23+0100\n"
+"POT-Creation-Date: 2026-11-15 10:31+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -869,7 +869,7 @@ msgstr ""
 #: blueprints/core.py:230 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:43
 #: static/js/stats_page_dashboard.js:578 static/js/stats_page_links.js:226
-#: static/js/stats_page_links.js:276 static/js/stats_page_video.js:61
+#: static/js/stats_page_links.js:276 static/js/stats_page_video.js:69
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
 #: templates/menu_images.html:118 templates/menu_stats.html:71
@@ -5589,7 +5589,7 @@ msgid "Flash"
 msgstr ""
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: static/js/stats_page_links.js:292 static/js/stats_page_video.js:61
+#: static/js/stats_page_links.js:292 static/js/stats_page_video.js:69
 #: templates/menu_data.html:512 templates/menu_data.html:554
 #: templates/menu_data.html:566 templates/menu_data.html:600
 #: templates/menu_data.html:632 templates/menu_data.html:661
@@ -6308,8 +6308,7 @@ msgid ""
 "${suggestion}"
 msgstr ""
 
-#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:668
-#: static/js/stats_page_video.js:690
+#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:690
 msgid "Enregistrement…"
 msgstr ""
 
@@ -6534,8 +6533,8 @@ msgstr ""
 #: static/js/stats_page_dashboard.js:289 static/js/stats_page_dashboard.js:309
 #: static/js/stats_page_dashboard.js:448 static/js/stats_page_dashboard.js:468
 #: static/js/stats_page_data.js:188 static/js/stats_page_exports.js:289
-#: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:404
-#: static/js/stats_page_video.js:614
+#: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:418
+#: static/js/stats_page_video.js:636
 msgid "Mon tableau de bord"
 msgstr ""
 
@@ -7164,151 +7163,156 @@ msgstr ""
 msgid "La restauration de la sauvegarde a échoué."
 msgstr ""
 
-#: static/js/stats_page_video.js:157
+#: static/js/stats_page_video.js:171
 msgid "Vidéo du tableau de bord"
 msgstr ""
 
-#: static/js/stats_page_video.js:157 templates/stats_page.html:595
+#: static/js/stats_page_video.js:171 templates/stats_page.html:595
 msgid "Vidéo animée"
 msgstr ""
 
-#: static/js/stats_page_video.js:160 templates/stats_page.html:413
+#: static/js/stats_page_video.js:174 templates/stats_page.html:413
 #: templates/stats_page.html:414
 msgid "Durée de chaque graphique"
 msgstr ""
 
-#: static/js/stats_page_video.js:160 static/js/ui.js:11703
+#: static/js/stats_page_video.js:174 static/js/ui.js:11703
 #: templates/stats_page.html:612
 msgid "Durée"
 msgstr ""
 
-#: static/js/stats_page_video.js:164 static/js/stats_page_video.js:167
+#: static/js/stats_page_video.js:178 static/js/stats_page_video.js:181
 #, python-brace-format
 msgid "${n} secondes"
 msgstr ""
 
-#: static/js/stats_page_video.js:181
+#: static/js/stats_page_video.js:195
 msgid "Ce graphique ne peut pas être animé."
 msgstr ""
 
-#: static/js/stats_page_video.js:191
+#: static/js/stats_page_video.js:205
 msgid "Aucun graphique à mettre en vidéo."
 msgstr ""
 
-#: static/js/stats_page_video.js:210
+#: static/js/stats_page_video.js:224
 #, python-brace-format
 msgid ""
 "${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps "
 "réel."
 msgstr ""
 
-#: static/js/stats_page_video.js:211
+#: static/js/stats_page_video.js:225
 #, python-brace-format
 msgid ""
 "${n} graphique, ${s} secondes en tout : la vidéo s'enregistre en temps "
 "réel."
 msgstr ""
 
-#: static/js/stats_page_video.js:222
+#: static/js/stats_page_video.js:236
 msgid "Sans musique"
 msgstr ""
 
-#: static/js/stats_page_video.js:240
+#: static/js/stats_page_video.js:254
 msgid "Musiques récentes"
 msgstr ""
 
-#: static/js/stats_page_video.js:248
+#: static/js/stats_page_video.js:262
 msgid "Un fichier de mon ordinateur…"
 msgstr ""
 
-#: static/js/stats_page_video.js:406
+#: static/js/stats_page_video.js:420
 #, python-brace-format
 msgid "${n} graphiques"
 msgstr ""
 
-#: static/js/stats_page_video.js:406
+#: static/js/stats_page_video.js:420
 #, python-brace-format
 msgid "${n} graphique"
 msgstr ""
 
-#: static/js/stats_page_video.js:554
+#: static/js/stats_page_video.js:568
 msgid "ouverture"
 msgstr ""
 
-#: static/js/stats_page_video.js:555
+#: static/js/stats_page_video.js:569
 #, python-brace-format
 msgid "graphique ${n} / ${count}"
 msgstr ""
 
-#: static/js/stats_page_video.js:563 static/js/stats_page_video.js:661
+#: static/js/stats_page_video.js:577 static/js/stats_page_video.js:683
 msgid "Ce navigateur ne sait pas enregistrer de vidéo."
 msgstr ""
 
-#: static/js/stats_page_video.js:593
+#: static/js/stats_page_video.js:613
 #, python-brace-format
-msgid "Enregistrement… (${where})"
+msgid "Enregistrement… (${where}, reste ~${s} s)"
 msgstr ""
 
-#: static/js/stats_page_video.js:756
+#: static/js/stats_page_video.js:718
+#, python-brace-format
+msgid "Enregistrement… (reste ~${s} s)"
+msgstr ""
+
+#: static/js/stats_page_video.js:786
 msgid "Aperçu terminé — rien n'a été enregistré."
 msgstr ""
 
-#: static/js/stats_page_video.js:774 static/js/stats_page_video.js:778
+#: static/js/stats_page_video.js:804 static/js/stats_page_video.js:808
 #, python-brace-format
 msgid "Aperçu… (${where})"
 msgstr ""
 
-#: static/js/stats_page_video.js:795 static/js/stats_page_video.js:800
+#: static/js/stats_page_video.js:825 static/js/stats_page_video.js:830
 msgid "Aperçu…"
 msgstr ""
 
-#: static/js/stats_page_video.js:832 static/js/stats_page_video.js:852
+#: static/js/stats_page_video.js:866
 msgid "Conversion en MP4…"
 msgstr ""
 
-#: static/js/stats_page_video.js:865
+#: static/js/stats_page_video.js:899
 msgid ""
 "L'onglet a été masqué pendant l'enregistrement : la vidéo peut être "
 "saccadée."
 msgstr ""
 
-#: static/js/stats_page_video.js:875
+#: static/js/stats_page_video.js:909
 #, python-brace-format
 msgid "Vidéo enregistrée : ${file}, dans ${folder}."
 msgstr ""
 
-#: static/js/stats_page_video.js:888
+#: static/js/stats_page_video.js:922
 #, python-brace-format
 msgid ""
 "La conversion en MP4 a échoué (${detail}) : la vidéo est proposée au "
 "format WebM."
 msgstr ""
 
-#: static/js/stats_page_video.js:889
+#: static/js/stats_page_video.js:923
 msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 msgstr ""
 
-#: static/js/stats_page_video.js:892
+#: static/js/stats_page_video.js:926
 msgid ""
 "La musique choisie n'y est pas incluse : elle est mixée pendant la "
 "conversion."
 msgstr ""
 
-#: static/js/stats_page_video.js:936
+#: static/js/stats_page_video.js:970
 msgid "Impossible d'ouvrir le dossier des vidéos."
 msgstr ""
 
-#: static/js/stats_page_video.js:955
+#: static/js/stats_page_video.js:989
 msgid ""
 "La vidéo est en cours de création : fermer la fenêtre l'interrompt et "
 "elle sera perdue."
 msgstr ""
 
-#: static/js/stats_page_video.js:956
+#: static/js/stats_page_video.js:990
 msgid "Arrêter la vidéo ?"
 msgstr ""
 
-#: static/js/stats_page_video.js:963 static/js/ui.js:1000
+#: static/js/stats_page_video.js:997 static/js/ui.js:1000
 #: templates/app.html:255 templates/app.html:256 templates/guide.html:136
 #: templates/guide.html:346 templates/menu_animation.html:57
 msgid "Arrêter"

@@ -509,6 +509,9 @@ effacer » le retire avec la période proposée.
   gelée (`watchRecordingVisibility`) — le temps masqué est exclu du
   fichier, la vidéo reste continue ; si `pause()` est refusée (vieux
   navigateur), la note de fin prévient qu'elle peut être saccadée.
+  La barre couvre les deux étapes sans repartir à zéro : l'enregistrement
+  0 → 70 % (statut avec compte à rebours « reste ~N s »), puis la
+  conversion 70 → 100 % (`RECORD_SHARE`, même découpage que la carte).
   Fermer la fenêtre pendant
   l'enregistrement ou la
   conversion (Échap, croix, « Annuler ») demande confirmation

@@ -27,6 +27,11 @@ import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 // les vidéos de la carte). Repli : le WebM brut, téléchargeable.
 // ---------------------------------------------------------------------------
 
+// La création a deux temps, lus sur une seule barre : la prise en temps
+// réel couvre 0 → 70 %, puis la conversion MP4 serveur 70 → 100 % — même
+// découpage que la barre de la carte (l'encodage y prend 0 → 70 %).
+const RECORD_SHARE = 70;
+
 const videoModal = () => getBsModal($('statsVideoModal'));
 
 // setup → preview → recording → done ; « Annuler » devient « Fermer » à
@@ -56,8 +61,11 @@ function setVideoPhase(phase) {
     $(focusTarget)?.focus();
 }
 
+// `text` null : le libellé ne change pas, seule la barre avance — ne pas
+// réécrire le nœud à chaque image (chaque mutation est annoncée à
+// l'aria-live).
 function setVideoStatus(text, percent = null) {
-    $('statsVideoStatus').textContent = text;
+    if (text !== null) $('statsVideoStatus').textContent = text;
     if (percent !== null) {
         const bar = $('statsVideoProgress');
         bar.style.width = Math.round(percent) + '%';
@@ -510,6 +518,7 @@ async function recordDashboardVideo(video) {
     recorder.start(1000);
     const start = performance.now();
     const vis = watchRecordingVisibility(video, recorder);
+    let lastText = '';
     await new Promise((resolve) => {
         const tick = () => {
             if (video.cancelled) return resolve();
@@ -519,7 +528,12 @@ async function recordDashboardVideo(video) {
             const elapsed = Math.min(performance.now() - start - vis.hiddenMs(), duration);
             const moment = paint(elapsed);
             const where = dashboardMomentWhere(moment, slides.length);
-            setVideoStatus(t('Enregistrement… (${where})', { where }), (elapsed / duration) * 100);
+            const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+            // Le texte (position + compte à rebours, à la seconde) n'est
+            // réécrit que quand il change ; la barre avance à chaque image.
+            const text = t('Enregistrement… (${where}, reste ~${s} s)', { where, s: remaining });
+            setVideoStatus(text === lastText ? null : text, (elapsed / duration) * RECORD_SHARE);
+            lastText = text;
             if (elapsed >= duration) return resolve();
             return nextFrame(tick);
         };
@@ -597,6 +611,7 @@ export async function recordVideo() {
     recorder.start(1000);
     const start = performance.now();
     const vis = watchRecordingVisibility(video, recorder);
+    let lastText = '';
     await new Promise((resolve) => {
         const tick = () => {
             if (video.cancelled) return resolve();
@@ -605,7 +620,12 @@ export async function recordVideo() {
             if (document.hidden) return nextFrame(tick);
             const elapsed = performance.now() - start - vis.hiddenMs();
             painter.paint(revealProgress(elapsed, duration));
-            setVideoStatus(t('Enregistrement…'), Math.min(100, (elapsed / duration) * 100));
+            const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+            // Même garde qu'en mode tableau : le compte à rebours n'est
+            // réécrit qu'au changement de seconde.
+            const text = t('Enregistrement… (reste ~${s} s)', { s: remaining });
+            setVideoStatus(text === lastText ? null : text, Math.min(RECORD_SHARE, (elapsed / duration) * RECORD_SHARE));
+            lastText = text;
             if (elapsed >= duration) return resolve();
             return nextFrame(tick);
         };
@@ -725,9 +745,11 @@ async function pollTask(id, onProgress, isCancelled) {
     }
 }
 
-// Conversion MP4 par le serveur ; à défaut, le WebM enregistré.
+// Conversion MP4 par le serveur ; à défaut, le WebM enregistré. La barre
+// continue là où la prise s'est arrêtée (RECORD_SHARE → 100 %) : même
+// processus, deuxième étape.
 async function convertVideo(video, blob, name) {
-    setVideoStatus(t('Conversion en MP4…'), 0);
+    setVideoStatus(t('Conversion en MP4…'), RECORD_SHARE);
     let result = null;
     let failure = null;
     try {
@@ -745,7 +767,7 @@ async function convertVideo(video, blob, name) {
         video.taskId = data.task_id;
         // La fenêtre a pu être fermée pendant l'envoi du POST.
         if (video.cancelled) { cancelVideoTask(video); return; }
-        result = await pollTask(data.task_id, (p) => { if (!video.cancelled) setVideoStatus(t('Conversion en MP4…'), p); }, () => video.cancelled);
+        result = await pollTask(data.task_id, (p) => { if (!video.cancelled) setVideoStatus(null, RECORD_SHARE + p * (100 - RECORD_SHARE) / 100); }, () => video.cancelled);
     } catch (e) {
         failure = e;
         console.warn('[stats] Conversion vidéo impossible :', e?.message || e);
