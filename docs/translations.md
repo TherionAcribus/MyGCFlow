@@ -20,7 +20,7 @@ pkg.t('Profil "${name}" supprimé', { name: profileName });
 - Extraction reads `babel.cfg`, which maps `static/js/*.js` and `static/js/*.mjs` (single level, so `static/js/vendor/` stays out). Babel needs the `t` keyword passed explicitly, otherwise **no** JS string is picked up:
 
 ```bash
-pybabel extract -F babel.cfg -k _ -k _l -k t -o messages.pot .
+pybabel extract -F babel.cfg -k _ -k _l -k t -k _tr -o messages.pot .
 pybabel update -i messages.pot -d translations
 pybabel compile -d translations
 ```

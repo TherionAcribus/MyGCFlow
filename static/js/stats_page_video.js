@@ -1,7 +1,7 @@
 // Page Statistiques : vidéo animée d'un graphique ou du tableau entier,
 // avec musique.
 
-import { showError, showToast, t } from './notifications.js';
+import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
@@ -568,5 +568,23 @@ export async function revealVideo() {
 
 export function closeVideo() {
     videoModal().hide();
+}
+
+// Fermer la fenêtre en pleine création demande confirmation : la prise
+// serait perdue. `hide.bs.modal` est annulable — tout chemin de sortie
+// (Échap, croix, « Annuler ») passe par là.
+export function confirmVideoClose(event) {
+    const video = state.video;
+    if (video?.phase !== 'recording' || video.closeApproved) return;
+    event.preventDefault();
+    showConfirmation(
+        t("La vidéo est en cours de création : fermer la fenêtre l'interrompt et elle sera perdue."),
+        t('Arrêter la vidéo ?'),
+        // `state.video === video` : la fenêtre a pu être remplacée entre-temps ;
+        // `closeApproved` empêche ce hide() confirmé d'être re-intercepté.
+        () => { if (state.video === video) { video.closeApproved = true; videoModal().hide(); } },
+        null,
+        { confirmText: t('Arrêter'), danger: true },
+    );
 }
 

@@ -1571,9 +1571,47 @@ test('annuler pendant la conversion arrête la tâche serveur', async ({ page, r
 
   const cancelSent = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/cancel'));
   await page.locator('#btnStatsVideoCancel').click();
+  // Abandonner en pleine création demande confirmation (« Arrêter »).
+  const confirm = page.locator('.gcm-confirm-modal');
+  await expect(confirm).toBeVisible();
+  await confirm.locator('[data-gcm-role="confirm"]').click();
   await cancelSent;
   await expect(page.locator('#statsVideoModal')).toBeHidden();
   expect(cancelRequested).toBe(true);
+  expect((await snapshot(page)).video).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test('abandonner la vidéo en cours demande confirmation', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  // 30 s : la phase « recording » dure, la conversion (tâche serveur)
+  // n'est jamais atteinte — le test reste rapide.
+  await page.locator('#statsVideoDuration').selectOption('30');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect(page.locator('#statsVideoStatus')).toContainText('Enregistrement', { timeout: 30_000 });
+
+  // Échap : la confirmation s'ouvre, « Annuler » laisse l'enregistrement
+  // tourner.
+  await page.locator('#statsVideoModal').press('Escape');
+  const confirm = page.locator('.gcm-confirm-modal');
+  await expect(confirm).toBeVisible();
+  await confirm.locator('[data-gcm-role="cancel"]').click();
+  // Le nœud survit au fondu de fermeture : attendre son retrait du DOM
+  // avant la sortie suivante, sinon deux confirmations cohabiteraient.
+  await expect(confirm).toHaveCount(0);
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await expect(page.locator('#statsVideoStatus')).toContainText('Enregistrement');
+
+  // « Annuler » de la fenêtre : même confirmation ; « Arrêter » abandonne.
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(confirm).toBeVisible();
+  await confirm.locator('[data-gcm-role="confirm"]').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
   expect((await snapshot(page)).video).toBeNull();
   expect(errors).toEqual([]);
 });

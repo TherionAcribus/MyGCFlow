@@ -45,7 +45,8 @@ import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
-    closeVideo, onMusicChange, onMusicFile, recordVideo, releaseVideo, revealVideo, syncVideoTotal,
+    closeVideo, confirmVideoClose, onMusicChange, onMusicFile, recordVideo, releaseVideo, revealVideo,
+    syncVideoTotal,
 } from './stats_page_video.js';
 
 // ---------------------------------------------------------------------------
@@ -245,6 +246,7 @@ function bindEvents() {
     $('btnStatsVideoCancel').addEventListener('click', closeVideo);
     $('btnStatsVideoClose').addEventListener('click', closeVideo);
     $('btnStatsVideoReveal').addEventListener('click', revealVideo);
+    $('statsVideoModal').addEventListener('hide.bs.modal', confirmVideoClose);
     $('statsVideoModal').addEventListener('hidden.bs.modal', releaseVideo);
     $('statsVideoDuration').addEventListener('change', syncVideoTotal);
     $('statsVideoMusic').addEventListener('change', onMusicChange);

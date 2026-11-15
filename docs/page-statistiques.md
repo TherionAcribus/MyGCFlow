@@ -502,9 +502,12 @@ effacer » le retire avec la période proposée.
   /process_recorded_video` (`slowdown` 1) puis `/tasks/<id>` → MP4 dans le
   dossier des vidéos, aperçu `/download_video/<f>?inline=1`, « Afficher
   dans le dossier » (`POST /reveal_video`). Échec serveur : le WebM brut,
-  téléchargeable. Fermer la fenêtre pendant la conversion appelle `POST
-  /tasks/<id>/cancel` : ffmpeg est tué à la prochaine ligne de progression
-  et le MP4 partiel supprimé.
+  téléchargeable. Fermer la fenêtre pendant l'enregistrement ou la
+  conversion (Échap, croix, « Annuler ») demande confirmation
+  (`showConfirmation`, `confirmVideoClose` sur `hide.bs.modal`, annulable)
+  ; confirmée, elle appelle `POST /tasks/<id>/cancel` pendant la
+  conversion : ffmpeg est tué à la prochaine ligne de progression et le
+  MP4 partiel supprimé.
 - Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080), durées 6 à 30 s.
 
 ### Vidéo du tableau entier, musique
