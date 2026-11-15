@@ -146,7 +146,9 @@ export function persistVideoPrefs() {
 // durée par graphique, musique.
 function setupVideoModal(video) {
     releaseVideo();
-    state.video = { phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null, ...video };
+    // `musicVolume` : volume effectif lu sur la carte par fillMusicChoices
+    // (défaut 1 tant que les réglages ne sont pas revenus).
+    state.video = { phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null, musicVolume: 1, ...video };
     const prefs = loadVideoPrefs();
     const dashboardMode = video.mode === 'dashboard';
     $('statsVideoTitle').textContent = dashboardMode ? t('Vidéo du tableau de bord') : t('Vidéo animée');
@@ -304,6 +306,11 @@ async function fillMusicChoices(restore = '') {
         console.warn('[stats] Musiques récentes non lues :', e?.message || e);
     }
     if (seq !== musicSeq) return;
+    // Le volume effectif de la carte (curseur + harmonisation « niveau sonore
+    // standard ») vaut pour la vidéo : retenu pour la conversion.
+    if (state.video) {
+        state.video.musicVolume = typeof recording?.audio_volume === 'number' ? recording.audio_volume : 1;
+    }
     const seen = new Set();
     const library = [];
     for (const entry of recording?.audio_recent || []) {
@@ -313,12 +320,13 @@ async function fillMusicChoices(restore = '') {
         }
     }
     // L'entrée « musique courante » porte les mêmes champs qu'une récente :
-    // nom lisible et point de départ, pas le nom de fichier brut.
+    // nom lisible et bornes du passage, pas le nom de fichier brut.
     if (recording?.audio_file && !seen.has(recording.audio_file)) {
         library.unshift({
             file: recording.audio_file,
             name: recording.audio_file_name || recording.audio_file,
             start: recording.audio_start_seconds,
+            end: recording.audio_end_seconds,
         });
     }
     if (library.length) {
@@ -327,6 +335,7 @@ async function fillMusicChoices(restore = '') {
         for (const entry of library) {
             const option = new Option(entry.name || entry.file, 'lib:' + entry.file);
             option.dataset.start = String(Number(entry.start) || 0);
+            option.dataset.end = String(Number(entry.end) || 0);
             group.append(option);
         }
         select.append(group);
@@ -355,7 +364,12 @@ export function onMusicChange() {
     }
     if (!select.value) video.music = null;
     else if (select.value.startsWith('lib:')) {
-        video.music = { kind: 'library', file: select.value.slice(4), start: Number(select.selectedOptions[0]?.dataset.start) || 0 };
+        const option = select.selectedOptions[0];
+        video.music = {
+            kind: 'library', file: select.value.slice(4),
+            start: Number(option?.dataset.start) || 0,
+            end: Number(option?.dataset.end) || 0,
+        };
         checkLibrary(video, video.music);
     }
     persistVideoPrefs();
@@ -452,6 +466,37 @@ async function checkUpload(video, music) {
     if (stale() || !data?.readable) return;
     music.uploaded = uploaded;
     if (typeof data.duration === 'number') music.duration = data.duration;
+    // La copie rejoint les musiques récentes : référencée, elle n'est plus
+    // balayée et le fichier n'a pas à être renvoyé au prochain export.
+    rememberUploadedMusic(music);
+    // Le choix est mémorisé comme une entrée de bibliothèque : la prochaine
+    // ouverture la retrouve dans « Musiques récentes » et la repose
+    // (persistVideoPrefs ne retient pas la valeur 'upload', restaurable
+    // seulement via sa copie).
+    const prefs = loadVideoPrefs();
+    prefs.music = 'lib:' + uploaded;
+    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+}
+
+// En tâche de fond : le fichier choisi entre dans les musiques récentes
+// (en tête, comme sur la carte). `audio_file` — la musique courante de la
+// carte — n'est PAS touché : un export Statistiques ne doit pas la changer.
+// Un échec n'est qu'annoncé : le fichier reste envoyable par son nom.
+async function rememberUploadedMusic(music) {
+    try {
+        const recording = (await fetchJson('/api/settings'))?.recording;
+        const entry = { file: music.uploaded, name: music.name, start: 0, end: 0 };
+        const kept = (Array.isArray(recording?.audio_recent) ? recording.audio_recent : [])
+            .filter((item) => item?.file !== entry.file);
+        const response = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recording: { audio_recent: [entry, ...kept] } }),
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+    } catch (e) {
+        console.warn('[stats] Musique non ajoutée aux récentes :', e?.message || e);
+    }
 }
 
 function videoMimeType() {
@@ -967,8 +1012,11 @@ async function convertVideo(video, blob, name) {
         form.append('slowdown', '1');
         // Musique : un morceau de la bibliothèque (nom), ou le fichier choisi
         // — sa copie posée à la sélection (nom en champ) si l'envoi anticipé
-        // a abouti, le blob sinon. `ready` est attendu pour trancher.
+        // a abouti, le blob sinon. `ready` est attendu pour trancher. Le
+        // volume est celui de la carte (curseur + harmonisation), borné
+        // serveur (_safe_volume).
         for (const [key, value] of Object.entries(musicFields(video.music) || {})) form.append(key, value);
+        if (video.music) form.append('audio_volume', String(video.musicVolume ?? 1));
         if (video.music?.kind === 'upload') {
             const music = video.music;
             try { await music.ready; } catch (_) { /* échec : le blob part */ }

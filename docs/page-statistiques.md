@@ -549,8 +549,9 @@ effacer » le retire avec la période proposée.
   `statsVideoPrefs` : format, durée du mode graphique et durée par
   graphique du mode tableau — axes indépendants —, musique de
   bibliothèque) : préférence d'interface locale non synchronisée serveur,
-  comme `PNG_SCALE_KEY` pour l'export PNG. Un fichier de l'ordinateur
-  n'est pas mémorisé (non restaurable à l'ouverture suivante).
+  comme `PNG_SCALE_KEY` pour l'export PNG. Un fichier de l'ordinateur y
+  entre par sa copie : une fois celle-ci dans les musiques récentes, la
+  préférence porte `lib:<copie>` (restaurable à l'ouverture suivante).
 
 ### Vidéo du tableau entier, musique
 
@@ -587,10 +588,14 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   (`countUp`) puis sa période, son record ou son objectif ; seules la carte
   et le radar restent entiers dès la première image (`reveal: false`).
 - Musique, pour les deux modes : aucune, une des musiques récentes de la
-  carte (`recording.audio_recent` / `audio_file` — libellé et point de
-  départ repris de `audio_file_name` / `audio_start_seconds` —, envoyée
-  par son nom dans `audio/`), ou un fichier de l'ordinateur ; bouclée si
-  elle est plus courte, fondue sur 2 s à la fin (`musicFields`). Le choix
+  carte (`recording.audio_recent` / `audio_file` — libellé et bornes du
+  passage repris de `audio_file_name` / `audio_start_seconds` /
+  `audio_end_seconds` —, envoyée par son nom dans `audio/`), ou un
+  fichier de l'ordinateur ; bouclée si elle est plus courte (le motif
+  bouclé respecte les bornes [start, end]), fondue sur 2 s à la fin
+  (`musicFields`). Le volume effectif de la carte
+  (`recording.audio_volume`, curseur + harmonisation « niveau sonore
+  standard ») est repris et envoyé en champ `audio_volume`. Le choix
   est vérifié tout de suite plutôt qu'après l'enregistrement : un fichier
   de l'ordinateur est envoyé d'emblée (`/upload_audio`, en tâche de fond
   — la conversion attend `music.ready` puis envoie le nom de la copie en
@@ -602,11 +607,15 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   réseau de la sonde ne retire rien — l'export tranchera. Les
   avertissements de la tâche de conversion (`result.warnings`, ex.
   musique introuvable → vidéo sans musique) terminent la note de
-  l'étape finale et sont chacun répétés en toast. Un fichier envoyé
-  n'est pas ajouté aux musiques récentes : sa copie dans `audio/` sera
-  balayée plus tard.
+  l'étape finale et sont chacun répétés en toast. Un fichier choisi
+  rejoint les musiques récentes (`rememberUploadedMusic`, en tête —
+  `audio_file`, la musique courante de la carte, n'est pas touché) :
+  référencée, sa copie n'est plus balayée ; le choix est mémorisé
+  (`statsVideoPrefs` porte alors `lib:<copie>`) et le prochain export n'a
+  plus à renvoyer le fichier.
 - Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
-  `excluded` (tableau, ids décochés), `music` (`kind`, `file`).
+  `excluded` (tableau, ids décochés), `music` (`kind`, `file`, et `start`
+  / `end` pour une bibliothèque — `null` sinon).
 
 ### Image du tableau entier
 

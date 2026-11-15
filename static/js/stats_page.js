@@ -231,7 +231,13 @@ window.getStatsPageSnapshot = () => {
             mode: state.video.mode, chartId: state.video.spec?.id ?? null, slides: state.video.slides?.length ?? null,
             // Graphiques décochés dans la liste « Écrans » (vidéo tableau).
             excluded: state.video.excluded ? [...state.video.excluded] : null,
-            music: state.video.music ? { kind: state.video.music.kind, file: state.video.music.file || state.video.music.name } : null,
+            music: state.video.music ? {
+                kind: state.video.music.kind,
+                file: state.video.music.file || state.video.music.name,
+                // Bornes du passage, pour une musique de la bibliothèque.
+                start: state.video.music.start ?? null,
+                end: state.video.music.end ?? null,
+            } : null,
             phase: state.video.phase, file: state.video.file, folder: state.video.folder || null,
             // Masquage d'onglet pendant la prise : la vidéo a été gelée ;
             // pauseFailed = pause() refusée → vidéo possiblement saccadée.

@@ -51,5 +51,11 @@ test('musique : bibliothèque ou fichier, bouclée et fondue', () => {
     assert.equal(musicFields(null), null);
     assert.deepEqual(musicFields({ kind: 'library', file: 'ete.mp3', start: 12 }),
         { audio_loop: '1', audio_fade_out: '2', audio: 'ete.mp3', audio_start: '12' });
+    // Bornes de la carte reprises : le motif bouclé joue [start, end].
+    assert.deepEqual(musicFields({ kind: 'library', file: 'ete.mp3', start: 12, end: 95 }),
+        { audio_loop: '1', audio_fade_out: '2', audio: 'ete.mp3', audio_start: '12', audio_end: '95' });
+    // Pas de borne de fin (0 = fin du fichier) : rien n'est envoyé.
+    assert.deepEqual(musicFields({ kind: 'library', file: 'ete.mp3', end: 0 }),
+        { audio_loop: '1', audio_fade_out: '2', audio: 'ete.mp3' });
     assert.deepEqual(musicFields({ kind: 'upload' }), { audio_loop: '1', audio_fade_out: '2' });
 });

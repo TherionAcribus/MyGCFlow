@@ -72,9 +72,10 @@ export function countUp(value, progress) {
 }
 
 // Musique choisie dans la fenêtre → champs du traitement serveur
-// (/process_recorded_video) : un morceau de la bibliothèque (nom), ou un
-// fichier envoyé (à joindre par l'appelant). Bouclée si elle est plus courte
-// que la vidéo, fondue à la fin.
+// (/process_recorded_video) : un morceau de la bibliothèque (nom, avec ses
+// bornes [start, end] reprises de la carte — le motif bouclé les respecte),
+// ou un fichier envoyé (à joindre par l'appelant). Bouclée si elle est plus
+// courte que la vidéo, fondue à la fin.
 export const MUSIC_FADE_OUT_S = 2;
 export function musicFields(music) {
     if (!music) return null;
@@ -82,6 +83,7 @@ export function musicFields(music) {
     if (music.kind === 'library') {
         fields.audio = music.file;
         if (music.start > 0) fields.audio_start = String(music.start);
+        if (music.end > 0) fields.audio_end = String(music.end);
     }
     return fields;
 }

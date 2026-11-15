@@ -1771,6 +1771,16 @@ test('échec de conversion : le motif et la perte de musique sont dits', async (
   await expect(download).toHaveClass(/btn-primary/);
   // Le console.warn est attendu ; `errors` ne collecte que les pageerror.
   expect(errors).toEqual([]);
+
+  // La musique choisie a rejoint les musiques récentes en tâche de fond
+  // (préférence globale partagée, cf. AGENTS.md) : attendre que l'écriture
+  // ait atterri avant de la vider — sinon elle pourrait ressortir après la
+  // remise à zéro.
+  await expect.poll(async () => {
+    const recent = (await (await request.get('/api/settings')).json()).recording?.audio_recent || [];
+    return recent.some((entry) => /^fond-.*\.wav$/.test(entry.file || ''));
+  }, { timeout: 15_000 }).toBe(true);
+  await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
 });
 
 test('vidéo : une musique illisible est refusée dès le choix', async ({ page, request }) => {
@@ -1814,6 +1824,102 @@ test('vidéo : une musique récente introuvable est défaite dès le choix', asy
     expect(errors).toEqual([]);
   } finally {
     await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+  }
+});
+
+test('vidéo : un fichier de l\'ordinateur rejoint les musiques récentes', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    // Envoyée puis sondée lisible, la copie entre en tête des musiques
+    // récentes (fond-b-<empreinte>.wav, cf. capture._save_uploaded_audio) :
+    // référencée, elle n'est plus balayée.
+    await page.locator('#statsVideoMusicFile').setInputFiles(wavFile('fond-b.wav', 1, 0));
+    await expect(page.locator('#statsVideoMusic')).toHaveValue('upload');
+    const recentEntry = async () => {
+      const recent = (await (await request.get('/api/settings')).json()).recording?.audio_recent || [];
+      return recent.find((entry) => /^fond-b-.*\.wav$/.test(entry.file || '')) || null;
+    };
+    await expect.poll(recentEntry, { timeout: 15_000 }).not.toBeNull();
+    const entry = await recentEntry();
+    expect(entry).toMatchObject({ name: 'fond-b.wav', start: 0, end: 0 });
+    // Le choix est mémorisé comme une entrée de bibliothèque : la prochaine
+    // ouverture la retrouve dans « Musiques récentes » et la repose.
+    const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('statsVideoPrefs') || '{}'));
+    expect(prefs.music).toBe('lib:' + entry.file);
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+  }
+});
+
+test('vidéo : les réglages de la carte sont repris (bornes, volume)', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    // Une musique de la bibliothèque, posée directement dans audio/ puis
+    // déclarée récente avec ses bornes [3 s, 9 s] ; volume de carte non
+    // standard. La conversion doit reprendre ces trois réglages.
+    const upload = await request.post('/upload_audio', {
+      multipart: { audio: wavFile('fond-carte.wav', 2, 0) },
+    });
+    expect(upload.ok()).toBeTruthy();
+    const audioFile = (await upload.json()).file;
+    expect(audioFile).toMatch(/^fond-carte-.*\.wav$/);
+    expect((await request.put('/api/settings', {
+      data: {
+        recording: {
+          audio_recent: [{ file: audioFile, name: 'Fond', start: 3, end: 9 }],
+          audio_volume: 0.42,
+        },
+      },
+    })).ok()).toBeTruthy();
+
+    // Conversion simulée : le formulaire reçu est relevé, la tâche finit
+    // tout de suite (« * » ne franchit pas « / » : ?include_result couvert).
+    let received = null;
+    await page.route('**/process_recorded_video', async (route) => {
+      received = {};
+      for (const match of (route.request().postData() || '').matchAll(/name="([^"]+)"\r\n\r\n([^\r\n]*)/g)) {
+        received[match[1]] = match[2];
+      }
+      await route.fulfill({
+        status: 202, contentType: 'application/json',
+        body: JSON.stringify({ success: true, task_id: 'stats-music-task' }),
+      });
+    });
+    await page.route('**/tasks/stats-music-task*', async (route) => {
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ state: 'finished', progress: 100, result: { file: 'music-fake.mp4', folder: null } }),
+      });
+    });
+
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    await page.locator('#statsVideoMusic').selectOption('lib:' + audioFile);
+    await expect(page.locator('#statsVideoMusic')).toHaveValue('lib:' + audioFile);
+    expect((await snapshot(page)).video.music).toMatchObject({ kind: 'library', file: audioFile, start: 3, end: 9 });
+    await page.locator('#statsVideoSize').selectOption('hd');
+    await page.locator('#statsVideoDuration').selectOption('6');
+    await page.locator('#btnStatsVideoStart').click();
+    await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
+
+    expect(received).toMatchObject({
+      audio: audioFile, audio_start: '3', audio_end: '9', audio_volume: '0.42',
+      audio_loop: '1', audio_fade_out: '2',
+    });
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [], audio_volume: 1 } } });
   }
 });
 
@@ -2089,6 +2195,15 @@ test('vidéo du tableau entier : ouverture, chaque graphique, musique choisie', 
     expect(errors).toEqual([]);
   } finally {
     if (video?.file && video.folder) fs.rmSync(path.join(video.folder, video.file), { force: true });
+    // Le fichier choisi a rejoint les musiques récentes en tâche de fond
+    // (préférence globale partagée, cf. AGENTS.md) : attendre que
+    // l'écriture ait atterri avant de vider — sinon elle pourrait
+    // ressortir après la remise à zéro.
+    await expect.poll(async () => {
+      const recent = (await (await request.get('/api/settings')).json()).recording?.audio_recent || [];
+      return recent.some((entry) => /^fond-.*\.wav$/.test(entry.file || ''));
+    }, { timeout: 15_000 }).toBe(true);
+    await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
   }
 });
 
