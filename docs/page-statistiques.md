@@ -508,6 +508,11 @@ effacer » le retire avec la période proposée.
   ; confirmée, elle appelle `POST /tasks/<id>/cancel` pendant la
   conversion : ffmpeg est tué à la prochaine ligne de progression et le
   MP4 partiel supprimé.
+- Textes trop longs (titre, repère d'axe, légendes, record/objectif) :
+  tronqués avec « … » par `ellipsize` (chart_video.mjs) — le 4ᵉ argument de
+  `fillText` compresserait les glyphes au lieu de tronquer. Le chiffre clé
+  géant et le nom du tableau sont réduits (`fitFontSize`, plancher) plutôt
+  que tronqués.
 - Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080), durées 6 à 30 s.
 
 ### Vidéo du tableau entier, musique

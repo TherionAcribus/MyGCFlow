@@ -90,6 +90,45 @@ export function niceCeil(value) {
     return 10 * power;
 }
 
+// ---------------------------------------------------------------------------
+// Textes du canevas vidéo : le 4ᵉ argument de fillText (maxWidth) compresse
+// les glyphes au lieu de tronquer — un titre long devient illisible. Il faut
+// donc rogner ou réduire soi-même.
+// ---------------------------------------------------------------------------
+
+// Texte rogné pour tenir dans `maxWidth` (px), terminé par « … » quand il est
+// coupé. `measure` = (s) => largeur en px (g.measureText(s).width, la police
+// étant déjà posée) : injecté pour rester testable sans canevas. Si même
+// « … » seul ne tient pas, il est rendu quand même (mieux qu'un dépassement).
+export function ellipsize(text, maxWidth, measure) {
+    const s = text === null || text === undefined ? '' : String(text);
+    if (!s || !(maxWidth > 0)) return '';
+    if (measure(s) <= maxWidth) return s;
+    // Dichotomie : la plus grande coupe qui tient avec « … » (inclut le cas
+    // où seul « … » rentre, ou pas : la coupe vide donne « … »).
+    let lo = 0;
+    let hi = s.length;
+    while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        if (measure(s.slice(0, mid) + '…') <= maxWidth) lo = mid;
+        else hi = mid - 1;
+    }
+    return s.slice(0, lo) + '…';
+}
+
+// Taille réduite pour que `text` tienne dans `maxWidth` (px) :
+// `baseSize * maxWidth / largeur`, la largeur étant mesurée à `baseSize`.
+// Bornée en bas par `baseSize * minRatio` : au plancher, un léger dépassement
+// est préféré à un texte minuscule — à l'appelant de tronquer ensuite si le
+// contenu s'y prête (pas un nombre).
+export function fitFontSize(text, baseSize, maxWidth, measure, minRatio = 0.5) {
+    const s = text === null || text === undefined ? '' : String(text);
+    if (!(baseSize > 0)) return 0;
+    const width = s ? measure(s) : 0;
+    if (!(width > maxWidth)) return baseSize;
+    return Math.max(baseSize * minRatio, baseSize * (maxWidth / width));
+}
+
 // Fige l'échelle des axes de valeurs (sinon elle bondit à chaque image) et
 // retire ce qui n'a pas sa place dans une vidéo (glissière de zoom,
 // animations ECharts : chaque image est dessinée d'un coup).

@@ -5,8 +5,8 @@ import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
-    chartAnimates, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax, VIDEO_DURATIONS,
-    VIDEO_FPS, VIDEO_SIZES,
+    chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
+    VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES,
 } from './chart_video.mjs';
 import fixWebmDuration from './fix-webm-duration.js';
 import { presentSlides } from './present_model.mjs';
@@ -248,11 +248,19 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
         g.textAlign = 'left';
         g.fillStyle = tokens.text;
         g.font = '600 ' + titleSize + 'px ' + font;
-        g.fillText(title, pad, pad + titleSize * 0.9, width - pad * 2 - titleSize * 6);
+        // measureText lit la police courante : poser g.font avant de mesurer.
+        // Pas de maxWidth à fillText : il compresserait les glyphes.
+        const measure = (s) => g.measureText(s).width;
+        g.fillText(ellipsize(title, width - pad * 2 - titleSize * 6, measure), pad, pad + titleSize * 0.9);
         g.textAlign = 'right';
         g.fillStyle = tokens.textMuted;
         g.font = '700 ' + Math.round(titleSize * 1.15) + 'px ' + font;
-        if (reveal) g.fillText(heads[revealIndex(result, progress)] ?? '', width - pad, pad + titleSize * 0.9);
+        // Repère de l'axe atteint (« septembre ») : borné à l'espace laissé
+        // au titre, pour ne pas déborder dessus.
+        if (reveal) {
+            const head = heads[revealIndex(result, progress)] ?? '';
+            g.fillText(ellipsize(head, titleSize * 6, measure), width - pad, pad + titleSize * 0.9);
+        }
         const source = box.querySelector('canvas');
         if (source) g.drawImage(source, pad, top, chartW, chartH);
     };
@@ -295,14 +303,21 @@ function introPainter(dashboard, count, { width, height }) {
         g.textBaseline = 'middle';
         // Le titre monte légèrement en apparaissant.
         const rise = (1 - Math.min(1, progress)) * 18 * scale;
+        const measure = (s) => g.measureText(s).width;
         g.fillStyle = tokens.text;
-        g.font = '700 ' + Math.round(48 * scale) + 'px ' + font;
-        g.fillText(name, width / 2, height * 0.44 + rise, width * 0.9);
+        // Le nom du tableau (un nom propre) est réduit plutôt que tronqué ;
+        // « … » en dernier recours si le plancher ne suffit pas.
+        const nameMax = width * 0.9;
+        const nameBase = Math.round(48 * scale);
+        g.font = '700 ' + nameBase + 'px ' + font;
+        const nameSize = fitFontSize(name, nameBase, nameMax, measure);
+        if (nameSize !== nameBase) g.font = '700 ' + Math.round(nameSize) + 'px ' + font;
+        g.fillText(ellipsize(name, nameMax, measure), width / 2, height * 0.44 + rise);
         g.fillStyle = tokens.textMuted;
         g.font = '500 ' + Math.round(24 * scale) + 'px ' + font;
-        g.fillText(period, width / 2, height * 0.44 + 52 * scale + rise, width * 0.9);
+        g.fillText(ellipsize(period, nameMax, measure), width / 2, height * 0.44 + 52 * scale + rise);
         g.font = '400 ' + Math.round(18 * scale) + 'px ' + font;
-        g.fillText(charts, width / 2, height * 0.44 + 88 * scale + rise, width * 0.9);
+        g.fillText(ellipsize(charts, nameMax, measure), width / 2, height * 0.44 + 88 * scale + rise);
     };
     return { canvas, paint, dispose: () => {} };
 }
@@ -329,19 +344,27 @@ function numberPainter(spec, result, { width, height }) {
         g.textAlign = 'left';
         g.fillStyle = tokens.text;
         g.font = '600 ' + titleSize + 'px ' + font;
-        g.fillText(title, pad, pad + titleSize * 0.9, width - pad * 2);
+        const measure = (s) => g.measureText(s).width;
+        g.fillText(ellipsize(title, width - pad * 2, measure), pad, pad + titleSize * 0.9);
         g.textAlign = 'center';
         g.textBaseline = 'middle';
         const value = block ? countUp(block.value, progress) : null;
-        g.font = '700 ' + Math.round(150 * scale) + 'px ' + font;
-        g.fillText(state.labels.formatValue(value, spec.measure, { normalize: result.normalize }), width / 2, height * 0.46, width - pad * 2);
+        const label = state.labels.formatValue(value, spec.measure, { normalize: result.normalize });
+        // Le chiffre est réduit (plancher bas) plutôt que tronqué : un nombre
+        // coupé par « … » n'a pas de sens — au plancher, il peut déborder un peu.
+        const valueMaxWidth = width - pad * 2;
+        const valueBase = Math.round(150 * scale);
+        g.font = '700 ' + valueBase + 'px ' + font;
+        const valueSize = fitFontSize(label, valueBase, valueMaxWidth, measure, 0.4);
+        if (valueSize !== valueBase) g.font = '700 ' + Math.round(valueSize) + 'px ' + font;
+        g.fillText(label, width / 2, height * 0.46);
         g.fillStyle = tokens.textMuted;
         g.font = '500 ' + Math.round(24 * scale) + 'px ' + font;
-        g.fillText(caption, width / 2, height * 0.46 + 100 * scale, width - pad * 2);
+        g.fillText(ellipsize(caption, valueMaxWidth, measure), width / 2, height * 0.46 + 100 * scale);
         // Jours du record, objectif : quand le compte est fini.
         g.globalAlpha = Math.min(1, Math.max(0, (progress - 0.8) / 0.2));
         g.font = '400 ' + Math.round(20 * scale) + 'px ' + font;
-        lines.forEach((line, i) => g.fillText(line, width / 2, height * 0.46 + (140 + i * 30) * scale, width - pad * 2));
+        lines.forEach((line, i) => g.fillText(ellipsize(line, valueMaxWidth, measure), width / 2, height * 0.46 + (140 + i * 30) * scale));
         g.globalAlpha = 1;
     };
     return { canvas, paint, dispose: () => {} };

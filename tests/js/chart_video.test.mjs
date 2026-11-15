@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
-    chartAnimates, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
+    chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
 } from '../../static/js/chart_video.mjs';
 
 const result = {
@@ -63,4 +63,39 @@ test('échelle figée sur la plus grande valeur, arrondie', () => {
     assert.equal(option.xAxis.max, undefined);
     assert.equal(option.dataZoom, undefined);
     assert.equal(option.animation, false);
+});
+
+// Textes du canevas : mesure simulée, 10 px par caractère.
+const px10 = (s) => s.length * 10;
+
+test('ellipsize : tronque avec « … » au lieu de compresser', () => {
+    // Rentre : inchangé.
+    assert.equal(ellipsize('court', 200, px10), 'court');
+    assert.equal(ellipsize('pile', 40, px10), 'pile');
+    // Trop long : la plus grande coupe qui tient avec « … » (5 + 1 = 6 car.).
+    assert.equal(ellipsize('Septembre', 60, px10), 'Septe…');
+    assert.equal(ellipsize('Septembre', 59, px10), 'Sept…');
+    // Même « … » seul ne tient pas : rendu quand même.
+    assert.equal(ellipsize('long', 5, px10), '…');
+    // Entrées non chaînes.
+    assert.equal(ellipsize(null, 50, px10), '');
+    assert.equal(ellipsize(undefined, 50, px10), '');
+    assert.equal(ellipsize('', 50, px10), '');
+    assert.equal(ellipsize(1234, 30, px10), '12…');
+    assert.equal(ellipsize('abc', 0, px10), '');
+});
+
+test('fitFontSize : taille réduite pour tenir, bornée par un plancher', () => {
+    // Rentre : taille de base inchangée.
+    assert.equal(fitFontSize('ok', 100, 200, px10), 100);
+    assert.equal(fitFontSize('pile', 100, 40, px10), 100);
+    // Déborde : proportionnelle (10 car. = 100 px, 100 × 60/100).
+    assert.equal(fitFontSize('0123456789', 100, 60, px10), 60);
+    // Plancher : la réduction ne descend pas sous baseSize × minRatio.
+    assert.equal(fitFontSize('0123456789', 100, 20, px10), 50);
+    assert.equal(fitFontSize('0123456789', 100, 20, px10, 0.3), 30);
+    // Vide / non chaîne : rien à mesurer, taille de base.
+    assert.equal(fitFontSize('', 100, 10, px10), 100);
+    assert.equal(fitFontSize(null, 100, 10, px10), 100);
+    assert.equal(fitFontSize(123, 100, 10, px10), 50); // 30 px → 100/3, sous le plancher → 50
 });
