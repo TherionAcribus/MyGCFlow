@@ -20,7 +20,7 @@ import {
     endDrag, onCardAction, onDragOver, onDragStart, onDrop, onGridPointerDown,
 } from './stats_page_card_actions.js';
 import {
-    cardSelector, challengeSnapshot, chartClickable, onHostsResized, renderAllCharts,
+    cardSelector, challengeSnapshot, chartClickable, onHostsResized, renderAllCharts, syncAddTile,
 } from './stats_page_cards.js';
 import {
     activeDashboard, applyFilters, chartTitle, importDashboardFile, onDashboardMenuClick,
@@ -317,6 +317,13 @@ function bindEvents() {
     });
     window.addEventListener('beforeprint', onBeforePrint);
     window.addEventListener('afterprint', onAfterPrint);
+    // Largeur des cartes selon la fenêtre (S = 4, 6 ou 12 colonnes) : le
+    // trou de fin de grille change avec elle.
+    let tileFrame = 0;
+    window.addEventListener('resize', () => {
+        cancelAnimationFrame(tileFrame);
+        tileFrame = requestAnimationFrame(syncAddTile);
+    });
     $('statsGalleryList').addEventListener('click', onGalleryPick);
     $('statsGallerySearch').addEventListener('input', filterGallery);
     $('statsGalleryModal').addEventListener('shown.bs.modal', startGalleryPreviews);

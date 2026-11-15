@@ -306,6 +306,7 @@ html {
     .stats-card-grip,
     .stats-card-resize,
     .stats-filter-chip button,
+    .stats-add-tile,
     #statsGridEmpty {
         display: none !important;
     }
@@ -536,6 +537,35 @@ html {
    d'elle. */
 body > .ts-dropdown {
     z-index: 1080;
+}
+
+/* Tuile « + Ajouter un graphique » dans le trou de fin de grille : discrète
+   (pointillés, texte atténué), à la hauteur de sa rangée. */
+.stats-add-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 120px;
+    padding: 16px;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.stats-add-tile[hidden] { display: none; }
+.stats-add-tile .ti { font-size: 1.1rem; }
+.stats-add-tile:hover {
+    color: var(--color-accent-text);
+    border-color: var(--color-accent);
+    background: var(--color-surface);
+}
+@media (prefers-reduced-motion: reduce) {
+    .stats-add-tile { transition: none; }
 }
 
 .stats-grid-empty {

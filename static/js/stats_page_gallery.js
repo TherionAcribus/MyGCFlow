@@ -1,7 +1,7 @@
 // Page Statistiques : galerie des questions toutes faites et leurs aperçus.
 
 import { t } from './notifications.js';
-import { getBsModal } from './ui_bootstrap.js';
+import { getBsModal, hideBsModal } from './ui_bootstrap.js';
 import { chartSources, createChartSpec } from './chart_spec.mjs';
 import { buildChartOption, numberModel, thumbnailOption } from './chart_echarts.mjs';
 import {
@@ -226,7 +226,7 @@ export function onGalleryPick(event) {
     const button = event.target.closest('[data-question]');
     if (!button) return;
     const id = button.dataset.question;
-    getBsModal('statsGalleryModal')?.hide();
+    hideBsModal('statsGalleryModal');
     const dashboard = activeDashboard();
     if (id === 'custom') {
         const source = dashboardSources(dashboard)[0];

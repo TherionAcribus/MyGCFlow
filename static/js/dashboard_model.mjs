@@ -36,6 +36,20 @@ export const DASHBOARD_NAME_MAX = 60;
 export const DASHBOARD_SIZES = Object.freeze(['S', 'M', 'L', 'XL']);
 // Colonnes occupées sur 12.
 export const SIZE_COLUMNS = Object.freeze({ S: 4, M: 6, L: 8, XL: 12 });
+export const GRID_COLUMNS = 12;
+
+// Colonnes libres au bout de la dernière rangée d'une grille remplie dans
+// l'ordre (pas de remplissage « dense », qui changerait l'ordre choisi) :
+// une carte qui ne tient pas dans la place restante passe à la rangée
+// suivante. `spans` : largeur de chaque carte, en colonnes.
+export function trailingColumns(spans, columns = GRID_COLUMNS) {
+    let used = 0;
+    for (const span of spans) {
+        if (used + span > columns) used = 0;
+        used = (used + span) % columns;
+    }
+    return used ? columns - used : 0;
+}
 // Hauteur d'une carte : normale ou grande (calendrier sur plusieurs années,
 // longue liste de propriétaires…). Hauteur du graphique en pixels.
 export const DASHBOARD_HEIGHTS = Object.freeze(['M', 'L']);

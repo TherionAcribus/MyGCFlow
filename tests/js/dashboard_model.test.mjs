@@ -16,6 +16,7 @@ import {
     normalizeDocument,
     normalizeItem,
     numberContext,
+    trailingColumns,
     QUESTION_GROUPS,
     chartPeriodChoices,
     comparePeriodChoices,
@@ -248,6 +249,21 @@ test('libellés de comparaison : en cours, coupée, rang depuis le début', () =
     // Coupée « à date » : la comparaison dit jusqu'à quel jour.
     const cut2025 = { period: { kind: 'previous' }, as: { kind: 'year', year: 2025 }, cut: true, to: dayNumber({ y: 2025, m: 11, d: 15 }) };
     assert.equal(labels.comparedTo(cut2025), 'par rapport au 15 nov. 2025');
+});
+
+test('trou de fin de grille : placement dans l\'ordre, une carte trop large passe à la rangée suivante', () => {
+    // Tableau par défaut en grand écran : S S S / M M / M M / M → 6 colonnes libres.
+    assert.equal(trailingColumns([4, 4, 4, 6, 6, 6, 6, 6]), 6);
+    // Rangées pleines : rien.
+    assert.equal(trailingColumns([4, 4, 4, 12]), 0);
+    assert.equal(trailingColumns([]), 0);
+    // S + L : rangée pleine ; puis M + S (10 colonnes) : il en reste 2.
+    assert.equal(trailingColumns([4, 8, 6, 4]), 2);
+    // Une carte qui ne tient pas laisse un trou au milieu, pas en fin : seul le bout compte.
+    assert.equal(trailingColumns([8, 6]), 6);
+    // Fenêtre moyenne (S = 6, M = 12) : S S / S + trou / M → plein.
+    assert.equal(trailingColumns([6, 6, 6, 12]), 0);
+    assert.equal(trailingColumns([6, 6, 6]), 6);
 });
 
 test('chiffre clé situé : écart avec la période précédente, ou année par année sur tout', () => {

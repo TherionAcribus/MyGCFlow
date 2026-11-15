@@ -824,6 +824,20 @@ tel qu'il est affiché — même disposition, même thème clair ou sombre.
   focus (CSS `:hover` / `:focus-within`) et au clic (`.show`, utile au
   tactile ; `stopPropagation`, sinon Bootstrap referme le menu au clic sur
   un `.dropdown-item`). Replié à la fermeture du menu parent.
+- **Trou de fin de grille** (2026-11-15) : une dernière rangée incomplète
+  laissait une demi-ligne vide. La tuile `.stats-add-tile` (« + Ajouter un
+  graphique », pointillés, ouvre la galerie) est remise en fin de grille à
+  chaque rendu et prend les colonnes libres : `trailingColumns`
+  (dashboard_model.mjs, placement dans l'ordre — pas de `dense`, qui
+  changerait l'ordre choisi) sur la largeur calculée de chaque carte
+  (`grid-column-start` : S = 4, 6 ou 12 colonnes selon la fenêtre).
+  `syncAddTile` (stats_page_cards.js) la recalcule au rendu, au
+  redimensionnement de la fenêtre et en direct pendant le redimensionnement
+  d'une carte. Masquée sous 3 colonnes libres, au plafond de cartes, à
+  l'impression ; l'image du tableau ignore les boutons. Hors de l'ordre de
+  tabulation (le bouton de la barre reste l'accès clavier). Les trous au
+  milieu de la grille restent : les combler réordonnerait les cartes ou
+  changerait leurs tailles.
 - **Redimensionner** : coin `.stats-card-resize` (pointeur) ; la largeur
   suit la souris par colonnes de la grille et se cale sur S / M / L / XL
   (`nearestSize`), 60 px vers le bas donnent la grande hauteur, vers le

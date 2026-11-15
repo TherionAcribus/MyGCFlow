@@ -555,6 +555,28 @@ test('infobulle : l\'aide de clic sur une carte du tableau, pas en présentation
   expect(errors).toEqual([]);
 });
 
+test('trou de fin de grille : une tuile « Ajouter un graphique » le comble, selon la largeur', async ({ page }) => {
+  const errors = await openStats(page);
+  // Tableau par défaut en 1280 px : S S S / M M / M M / M → 6 colonnes libres.
+  const tile = page.locator('#statsGrid .stats-add-tile');
+  await expect(tile).toBeVisible();
+  expect(await tile.evaluate((el) => getComputedStyle(el).gridColumnStart)).toBe('span 6');
+  // Même hauteur que la carte voisine (même rangée).
+  const last = page.locator('#statsGrid .stats-card').last();
+  const [a, b] = [await last.boundingBox(), await tile.boundingBox()];
+  expect(Math.round(b.y)).toBe(Math.round(a.y));
+  expect(Math.round(b.height)).toBe(Math.round(a.height));
+  // Fenêtre moyenne : les M prennent toute la largeur, plus de trou en fin.
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await expect(tile).toBeHidden();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(tile).toBeVisible();
+  // Le clic ouvre la galerie.
+  await tile.click();
+  await expect(page.locator('#statsGalleryModal')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('chiffre clé situé : mini-barres sur tout, écart sur une période, option décochable', async ({ page, request }) => {
   // Deux trouvailles servies en 2024 : l'historique couvre plusieurs années.
   await page.route('**/api/stats/finds', async (route) => {

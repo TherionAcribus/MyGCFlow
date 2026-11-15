@@ -2,7 +2,7 @@
 // plusieurs tableaux, actualisation, filtres, renommer.
 
 import { showActionToast, showConfirmation, showError, showToast, t } from './notifications.js';
-import { getBsModal } from './ui_bootstrap.js';
+import { getBsModal, hideBsModal } from './ui_bootstrap.js';
 import { findsTable } from './chart_sources.mjs';
 import { filterMask } from './chart_query.mjs';
 import { activeFilterCount, describeFilters } from './chart_filters.mjs';
@@ -99,7 +99,7 @@ export function submitRangePick(event) {
     }
     select.value = value;
     select.dataset.applied = value;
-    getBsModal('statsRangeModal').hide();
+    hideBsModal('statsRangeModal');
     select.dispatchEvent(new Event('change'));
 }
 
@@ -467,7 +467,7 @@ export async function submitNewDashboard(event) {
     state.doc.dashboards.push(dashboard);
     state.doc.active = dashboard.id;
     scheduleSave({ immediate: true });
-    getBsModal('statsNewDashboardModal')?.hide();
+    hideBsModal('statsNewDashboardModal');
     await ensureEvolution(dataset);
     renderDashboard();
 }
@@ -571,7 +571,7 @@ export function applyFilters() {
     if (take?.period && $('statsMapPeriod')?.checked) dashboard.period = take.period;
     state.mapTake = null;
     scheduleSave({ immediate: true });
-    getBsModal('statsFiltersModal')?.hide();
+    hideBsModal('statsFiltersModal');
     renderToolbar();
     renderAllCharts();
     // Filtres (et période) de la carte : ils remplacent les précédents,
@@ -701,7 +701,9 @@ export function submitRename(event) {
     if (!name) return;
     activeDashboard().name = Array.from(name).slice(0, 60).join('');
     scheduleSave({ immediate: true });
-    getBsModal('statsRenameModal')?.hide();
+    // hideBsModal : un Entrée pendant le fondu d'ouverture laissait la
+    // fenêtre ouverte (Bootstrap ignore hide() en transition).
+    hideBsModal('statsRenameModal');
     renderToolbar();
 }
 

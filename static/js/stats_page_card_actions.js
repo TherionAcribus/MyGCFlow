@@ -4,7 +4,7 @@
 import { showActionToast, showConfirmation, t } from './notifications.js';
 import { createChartSpec } from './chart_spec.mjs';
 import { DASHBOARD_SIZES, HEIGHT_PIXELS, MAX_ITEMS, SIZE_COLUMNS } from './dashboard_model.mjs';
-import { renderDashboard } from './stats_page_cards.js';
+import { renderDashboard, syncAddTile } from './stats_page_cards.js';
 import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
 import { retrySources } from './stats_page_data.js';
 import { openEditor } from './stats_page_editor.js';
@@ -235,6 +235,8 @@ function startResize(event, card) {
         card.style.setProperty('--stats-cols', SIZE_COLUMNS[size]);
         card.style.setProperty('--stats-chart-height', HEIGHT_PIXELS[height] + 'px');
         card.dataset.height = height;
+        // Le trou de fin de grille suit la largeur en cours.
+        syncAddTile();
     };
     const move = (e) => {
         size = nearestSize(start.cols + (e.clientX - start.x) / column);

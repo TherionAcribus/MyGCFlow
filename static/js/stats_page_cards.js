@@ -13,7 +13,8 @@ import { chartAnimates } from './chart_video.mjs';
 import { chartLinksToMap } from './chart_map_link.mjs';
 import { panelFromSpec } from './chart_panel_link.mjs';
 import {
-    effectiveQueryOptions, hasOwnPeriod, HEIGHT_PIXELS, MAX_ITEMS, numberContext, SIZE_COLUMNS,
+    effectiveQueryOptions, GRID_COLUMNS, hasOwnPeriod, HEIGHT_PIXELS, MAX_ITEMS, numberContext, SIZE_COLUMNS,
+    trailingColumns,
 } from './dashboard_model.mjs';
 import {
     activeDashboard, allPeriodSpan, attributeName, chartTitle, datasetName, filterValueLabel, periodsBadge, renderToolbar,
@@ -81,10 +82,48 @@ export function renderDashboard() {
     for (const [id] of previous) releaseCard(id);
     state.results.clear();
     state.resizeObserver.disconnect();
-    grid.replaceChildren(...placed);
+    grid.replaceChildren(...placed, addTile());
+    syncAddTile();
     $('statsGridEmpty').hidden = count > 0;
     $('btnStatsAddChart').disabled = count >= MAX_ITEMS;
     renderAllCharts();
+}
+
+// Tuile « + Ajouter un graphique » dans le trou de fin de grille : la
+// dernière rangée incomplète laissait une demi-ligne vide. Créée une fois,
+// remise en fin de grille à chaque rendu (renderDashboard).
+let tileEl = null;
+function addTile() {
+    if (!tileEl) {
+        tileEl = document.createElement('button');
+        tileEl.type = 'button';
+        tileEl.className = 'stats-add-tile';
+        tileEl.innerHTML = '<i class="ti ti-plus" aria-hidden="true"></i>';
+        tileEl.append(document.createTextNode(t('Ajouter un graphique')));
+        // Le bouton de la barre reste l'accès principal (clavier compris).
+        tileEl.tabIndex = -1;
+        tileEl.addEventListener('click', () => $('btnStatsAddChart').click());
+    }
+    return tileEl;
+}
+
+// Colonnes libres en fin de grille, au placement réel des cartes (leur
+// largeur dépend de la fenêtre : S = 4, 6 ou 12 colonnes…) ; la tuile ne
+// paraît que pour un vrai trou.
+const TILE_MIN_COLUMNS = 3;
+export function syncAddTile() {
+    const grid = $('statsGrid');
+    const tile = grid.querySelector('.stats-add-tile');
+    if (!tile) return;
+    const cards = [...grid.querySelectorAll('.stats-card')];
+    const free = cards.length && cards.length < MAX_ITEMS ? trailingColumns(cards.map(cardColumns)) : 0;
+    tile.hidden = free < TILE_MIN_COLUMNS;
+    tile.style.gridColumn = 'span ' + free;
+}
+
+function cardColumns(card) {
+    const span = /span\s+(\d+)/.exec(getComputedStyle(card).gridColumnStart)?.[1];
+    return Math.min(GRID_COLUMNS, Number(span) || GRID_COLUMNS);
 }
 
 // Sélecteur d'une carte (identifiant hexadécimal, sans caractère à échapper).
