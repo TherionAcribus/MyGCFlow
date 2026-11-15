@@ -1763,7 +1763,9 @@ test('échec de conversion : le motif et la perte de musique sont dits', async (
   await expect(note).toContainText('Encodage impossible');
   await expect(note).toContainText('musique choisie');
   const download = page.locator('#btnStatsVideoDownload');
-  await expect(download).toHaveAttribute('href', /^blob:/);
+  // Repli WebM : la prise est délestée — le brut remuxé est servi par
+  // /recorded_video/<f> (pas d'objectURL blob: à révoquer).
+  await expect(download).toHaveAttribute('href', /^\/recorded_video\/.+\.webm$/);
   await expect(download).toHaveAttribute('download', /\.webm$/);
   // Repli WebM : rien n'est écrit sur disque, « Afficher dans le dossier »
   // est masqué et la copie redevient l'action principale.
@@ -2403,6 +2405,156 @@ test('vidéo du tableau : l\'anneau et la grille s\'animent', async ({ page, req
   }
   await page.locator('#btnStatsVideoStopPreview').click();
   await expect(page.locator('#statsVideoSetup')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('vidéo du tableau : « calée sur la musique » suit la fenêtre du passage', async ({ page, request }) => {
+  // Deux graphiques : la fenêtre musicale est répartie entre eux.
+  const items = [
+    { size: 'S', spec: { id: 'cccc01', groupBy: 'none', view: { chart: 'number' } } },
+    { size: 'M', spec: { id: 'cccc02', groupBy: 'month_of_year', view: { chart: 'bar' } } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  try {
+    // Une musique de 20 s en bibliothèque : sa durée est sondée à la
+    // sélection — la case n'est proposée qu'alors.
+    const upload = await request.post('/upload_audio', {
+      multipart: { audio: wavFile('calee.wav', 20, 0) },
+    });
+    expect(upload.ok()).toBeTruthy();
+    const audioFile = (await upload.json()).file;
+    expect((await request.put('/api/settings', {
+      data: { recording: { audio_recent: [{ file: audioFile, name: 'Calée' }] } },
+    })).ok()).toBeTruthy();
+
+    await dashboardAction(page, 'video-dashboard');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    await page.locator('#statsVideoMusic').selectOption('lib:' + audioFile);
+    const fit = page.locator('#statsVideoFitMusic');
+    // Grisée tant que la sonde n'a pas répondu (durée inconnue).
+    await expect(fit).toBeEnabled({ timeout: 15_000 });
+    await fit.check();
+
+    // La durée choisie est figée (sa valeur survit au décochage) ; le
+    // total annonce la répartition : (20 − 6) / 2 par écran → 3 + 2 × 7
+    // + 3 = 20 s. Le hint ne promet plus de boucle ni de coupure.
+    await expect(page.locator('#statsVideoDuration')).toBeDisabled();
+    await expect(page.locator('#statsVideoTotal'))
+      .toHaveText("2 graphiques, calée sur la musique : 0:20 en tout : la vidéo s'enregistre en temps réel.");
+    await expect(page.locator('#statsVideoMusicHint')).toContainText('la vidéo suit la musique');
+    expect((await snapshot(page)).video.fitToMusic).toBe(true);
+    const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('statsVideoPrefs') || '{}'));
+    expect(prefs.fitToMusic).toBe(true);
+
+    // Décochée : la durée redevient éditable et le total reparle en
+    // secondes choisies.
+    await fit.uncheck();
+    await expect(page.locator('#statsVideoDuration')).toBeEnabled();
+    await expect(page.locator('#statsVideoTotal')).toContainText('secondes en tout');
+    expect((await snapshot(page)).video.fitToMusic).toBe(false);
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [], audio_volume: 1 } } });
+  }
+});
+
+test('vidéo : « Reprendre les réglages de la carte » applique volume et fondus', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    // Réglages de la carte posés : volume non standard, les deux fondus
+    // activés — et une musique en bibliothèque pour afficher le bloc.
+    const upload = await request.post('/upload_audio', {
+      multipart: { audio: wavFile('repris.wav', 5, 0) },
+    });
+    expect(upload.ok()).toBeTruthy();
+    const audioFile = (await upload.json()).file;
+    expect((await request.put('/api/settings', {
+      data: {
+        recording: {
+          audio_recent: [{ file: audioFile, name: 'Reprise' }],
+          audio_volume: 0.42,
+          audio_fade_in: true, audio_fade_in_seconds: 1.5,
+          audio_fade_out: true, audio_fade_out_seconds: 4,
+        },
+      },
+    })).ok()).toBeTruthy();
+
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    await page.locator('#statsVideoMusic').selectOption('lib:' + audioFile);
+    await expect(page.locator('#statsVideoMusicOptions')).toBeVisible();
+    // Des réglages différents saisis : le bouton les remplace par ceux
+    // de la carte.
+    await page.locator('#statsVideoMusicVolume').fill('70');
+    await page.locator('#statsVideoMusicFadeIn').fill('0');
+    await page.locator('#statsVideoMusicFadeOut').fill('2');
+
+    await page.locator('#btnStatsMusicFromMap').click();
+    await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Réglages de la carte repris' })).toBeVisible();
+    await expect(page.locator('#statsVideoMusicVolume')).toHaveValue('42');
+    await expect(page.locator('#statsVideoMusicVolumeOut')).toHaveText('42 %');
+    await expect(page.locator('#statsVideoMusicFadeIn')).toHaveValue('1.5');
+    await expect(page.locator('#statsVideoMusicFadeOut')).toHaveValue('4');
+    // Les réglages repris sont persistés comme ceux saisis à la main.
+    const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('statsVideoPrefs') || '{}'));
+    expect(prefs).toMatchObject({ musicVolume: 0.42, musicFadeIn: 1.5, musicFadeOut: 4 });
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', {
+      data: { recording: { audio_recent: [], audio_volume: 1, audio_fade_in: false, audio_fade_out: false } },
+    });
+  }
+});
+
+test('vidéo : la prise est délestée au serveur (flux, recorded_file)', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  // Conversion simulée : le formulaire reçu est relevé — en chemin flux,
+  // il désigne le brut posé (recorded_file) au lieu du champ video.
+  let received = null;
+  await page.route('**/process_recorded_video', async (route) => {
+    received = {};
+    for (const match of (route.request().postData() || '').matchAll(/name="([^"]+)"\r\n\r\n([^\r\n]*)/g)) {
+      received[match[1]] = match[2];
+    }
+    await route.fulfill({
+      status: 202, contentType: 'application/json',
+      body: JSON.stringify({ success: true, task_id: 'stats-stream-task' }),
+    });
+  });
+  await page.route('**/tasks/stats-stream-task*', async (route) => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ state: 'finished', progress: 100, result: { file: 'stream-fake.mp4', folder: null } }),
+    });
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  // Le flux s'ouvre dès le départ de la prise (video_stream_begin).
+  const streamBegin = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/video_stream_begin'));
+  await page.locator('#btnStatsVideoStart').click();
+  await streamBegin;
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
+
+  expect(received.video).toBeUndefined();
+  expect(received.recorded_file).toMatch(/^raw_.*\.webm$/);
+  // Le brut remuxé reste servi par le serveur (repli WebM, Range).
+  const raw = await request.get('/recorded_video/' + encodeURIComponent(received.recorded_file));
+  expect(raw.ok()).toBeTruthy();
+  expect((await raw.body()).length).toBeGreaterThan(100);
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
   expect(errors).toEqual([]);
 });
 

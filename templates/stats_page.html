@@ -636,7 +636,7 @@
                                         <div class="col-sm-5">
                                             <label for="statsVideoMusicVolume" class="form-label small mb-0">{{ _("Volume") }}</label>
                                             <div class="d-flex align-items-center gap-2">
-                                                <input type="range" id="statsVideoMusicVolume" class="form-range flex-grow-1" min="0" max="100" step="5">
+                                                <input type="range" id="statsVideoMusicVolume" class="form-range flex-grow-1" min="0" max="100" step="1">
                                                 <output id="statsVideoMusicVolumeOut" class="small text-secondary text-nowrap" for="statsVideoMusicVolume">100&nbsp;%</output>
                                             </div>
                                         </div>
@@ -647,6 +647,15 @@
                                         <div class="col-sm-4">
                                             <label for="statsVideoMusicFadeOut" class="form-label small mb-0">{{ _("Fondu de sortie (s)") }}</label>
                                             <input type="number" id="statsVideoMusicFadeOut" class="form-control form-control-sm" min="0.5" max="30" step="0.5">
+                                        </div>
+                                        <div class="col-12 d-flex align-items-center gap-3 flex-wrap">
+                                            <!-- Calage sur la fenêtre [start, end] du passage : proposé
+                                                 seulement avec une durée sondée (updateMusicInfo). -->
+                                            <div class="form-check mb-0">
+                                                <input type="checkbox" class="form-check-input" id="statsVideoFitMusic" disabled>
+                                                <label class="form-check-label" for="statsVideoFitMusic">{{ _("Caler la durée sur la musique") }}</label>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" id="btnStatsMusicFromMap">{{ _("Reprendre les réglages de la carte") }}</button>
                                         </div>
                                     </div>
                                 </div>

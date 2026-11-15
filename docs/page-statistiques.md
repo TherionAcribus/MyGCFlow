@@ -506,7 +506,20 @@ effacer » le retire avec la période proposée.
   la clé atteinte (« juin »). `captureStream(30)` + `MediaRecorder` (WebM
   VP9/VP8) en temps réel ; `fixWebmDuration` ; `POST
   /process_recorded_video` (`slowdown` 1) puis `/tasks/<id>` → MP4 dans le
-  dossier des vidéos, aperçu `/download_video/<f>?inline=1`. Le fichier
+  dossier des vidéos, aperçu `/download_video/<f>?inline=1`. Délestage
+  mémoire (`video_stream.mjs`, le module de la carte) : les fragments
+  partent au serveur au fil de l'eau (`openVideoStream`,
+  `POST /video_stream_begin|append`) plutôt que de s'accumuler — ~200 Mo
+  pour un tableau de 20 écrans à 8 Mbit/s —, puis `finishVideoStream`
+  demande le remux (`POST /video_stream_finish` → `raw_*.webm`, répare la
+  durée, `fixWebmDuration` n'est pas joué) et la conversion désigne le
+  brut par son nom (`recorded_file`, pas de champ `video`). `begin` en
+  échec → accumulation en mémoire comme avant ; `drain`/`finish` en échec
+  → pas de blob de repli (fragments perdus : erreur, retour aux réglages,
+  `abort`). Annulation : `releaseVideo` et la sortie de boucle avortent le
+  flux (`POST /video_stream_abort`). Repli WebM en chemin flux : le brut
+  est servi par `/recorded_video/<f>` (Range, `download` honoré), pas
+  d'objectURL. Le fichier
   étant déjà écrit, « Afficher dans le dossier » (`POST /reveal_video`)
   est l'action principale de l'étape finale ; « Enregistrer une copie »
   (`<a download>`) n'en fait qu'une copie dans Téléchargements. Échec
@@ -548,7 +561,8 @@ effacer » le retire avec la période proposée.
 - Réglages de la fenêtre mémorisés dans le navigateur (localStorage
   `statsVideoPrefs` : format, durée du mode graphique et durée par
   graphique du mode tableau — axes indépendants —, musique de
-  bibliothèque, volume et fondus de la musique) : préférence
+  bibliothèque, volume et fondus de la musique, calage sur la musique) :
+  préférence
   d'interface locale non synchronisée serveur,
   comme `PNG_SCALE_KEY` pour l'export PNG. Un fichier de l'ordinateur y
   entre par sa copie : une fois celle-ci dans les musiques récentes, la
@@ -632,8 +646,9 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   le graphe de la carte), interdit sur cette page.
 - Indication sous le select (`updateMusicInfo`, `#statsVideoMusicHint`) :
   sans musique le texte générique ; avec une durée sondée, « Musique m:ss
-  · vidéo m:ss : effet » — « jouée une fois » (±5 %), « bouclée ~n fois »
-  ou « coupée avec fondu à m:ss » —, où la fenêtre utile est
+  · vidéo m:ss : effet » — « jouée une fois » (±5 %), « bouclée ~n fois »,
+  « coupée avec fondu à m:ss » ou « la vidéo suit la musique » quand la
+  durée est calée —, où la fenêtre utile est
   `(end || duration) - start` et la durée de la vidéo celle du mode.
 - Bloc des réglages (`#statsVideoMusicOptions`, affiché avec la musique) :
   curseur de volume (initialisé depuis `statsVideoPrefs.musicVolume`,
@@ -644,9 +659,31 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   `musicFadeOut`) et relues à l'ouverture ; les contrôles ne sont
   re-remplis qu'au premier affichage et à un changement de musique
   (`optionsSynced`), pas à chaque appel — une saisie en cours n'est pas
-  écrasée.
+  écrasée. « Reprendre les réglages de la carte »
+  (`takeMapMusicSettings`, `GET /api/settings`) applique aux trois
+  contrôles `recording.audio_volume` et les fondus
+  (`audio_fade_in[_seconds]`, `audio_fade_out[_seconds]`) puis les
+  persiste (`saveMusicPrefs` — écriture partagée des réglages musique) ;
+  échec : toast « Réglages de la carte illisibles. »
+- « Caler la durée sur la musique » (`statsVideoFitMusic`,
+  `video.fitToMusic`, persisté `fitToMusic`) : la case n'est proposée
+  qu'avec une durée sondée (`music.duration`, `disabled` sinon).
+  Cochée, `#statsVideoDuration` est figée (sa valeur survit au
+  décochage) et la durée d'enregistrement suit la fenêtre
+  `[start, end]` du passage (`videoDurationMs`, `musicWindowSeconds`) :
+  `max(2 s, fenêtre)` en mode graphique ; en mode tableau la fenêtre
+  moins ouverture et fermeture (6 s) est répartie entre les écrans
+  cochés, plancher 1 s chacun — la somme peut alors dépasser un peu la
+  fenêtre, annoncée « calée sur la musique : m:ss en tout » par
+  `syncVideoTotal`. La durée arbitraire (ex. 7,33 s) est acceptée
+  telle quelle : `slideSeconds`/`videoMoment`/`dashboardVideoDuration`
+  prennent un drapeau `allowAny` (fini dans ]0, 600]), propagé par
+  `makeDashboardPainter` — sans lui la durée serait rabattue sur les
+  quatre choix du select. En pratique la musique n'est ni bouclée ni
+  coupée : le hint dit « la vidéo suit la musique ».
 - Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
-  `excluded` (tableau, ids décochés), `music` (`kind`, `file`, et `start`
+  `excluded` (tableau, ids décochés), `fitToMusic` (case « calée »),
+  `music` (`kind`, `file`, et `start`
   / `end` pour une bibliothèque — `null` sinon), `listening` (`paused`,
   `currentTime` de l'écoute en cours, `null` sinon).
 

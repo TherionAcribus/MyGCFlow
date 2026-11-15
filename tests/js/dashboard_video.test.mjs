@@ -17,6 +17,26 @@ test('durées : ouverture, un écran par graphique, fermeture', () => {
     assert.equal(dashboardVideoDuration(2, 4), 14000);
 });
 
+test('durées arbitraires (« calée sur la musique ») avec allowAny', () => {
+    // Sans allowAny, une durée hors des quatre choix retombe au défaut.
+    assert.equal(slideSeconds(7.33), DEFAULT_SLIDE_SECONDS);
+    assert.equal(slideSeconds(7.33, true), 7.33);
+    // Hors borne ]0, 600] ou non finie : le défaut aussi.
+    assert.equal(slideSeconds(0, true), DEFAULT_SLIDE_SECONDS);
+    assert.equal(slideSeconds(601, true), DEFAULT_SLIDE_SECONDS);
+    assert.equal(slideSeconds('x', true), DEFAULT_SLIDE_SECONDS);
+    // Le drapeau se propage : le total et les moments gardent le non-entier.
+    assert.equal(dashboardVideoDuration(2, 7.33, true), INTRO_MS + 2 * 7330 + OUTRO_MS);
+    assert.equal(dashboardVideoDuration(2, 7.33), INTRO_MS + 2 * DEFAULT_SLIDE_SECONDS * 1000 + OUTRO_MS);
+    const moment = videoMoment(INTRO_MS + 7330, 2, 7.33, true);
+    assert.equal(moment.kind, 'slide');
+    assert.equal(moment.index, 1);
+    // À 6,5 s le 1ᵉʳ écran court encore à 7,33 s ; rabattu à 6 s (sans
+    // allowAny), le même instant est déjà dans le 2ᵉ.
+    assert.equal(videoMoment(INTRO_MS + 6500, 2, 7.33, true).index, 0);
+    assert.equal(videoMoment(INTRO_MS + 6500, 2, 7.33).index, 1);
+});
+
 test('moment de la vidéo : ouverture, écrans, fermeture, fin', () => {
     const intro = videoMoment(0, 3, 4);
     assert.deepEqual([intro.kind, intro.fade], ['intro', 0]);

@@ -45,9 +45,9 @@ import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
-    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFadeInput, onMusicFile, onMusicVolumeInput,
-    persistVideoPrefs, previewVideo, recordVideo,
-    releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal, toggleMusicListen,
+    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFadeInput, onMusicFile, onMusicFitChange,
+    onMusicVolumeInput, persistVideoPrefs, previewVideo, recordVideo,
+    releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal, takeMapMusicSettings, toggleMusicListen,
 } from './stats_page_video.js';
 
 // ---------------------------------------------------------------------------
@@ -230,6 +230,8 @@ window.getStatsPageSnapshot = () => {
         editor: state.editor ? { mode: state.editor.mode, spec: state.editor.item.spec, size: state.editor.item.size } : null,
         video: state.video ? {
             mode: state.video.mode, chartId: state.video.spec?.id ?? null, slides: state.video.slides?.length ?? null,
+            // « Caler la durée sur la musique » : la case de la fenêtre.
+            fitToMusic: Boolean(state.video.fitToMusic),
             // Graphiques décochés dans la liste « Écrans » (vidéo tableau).
             excluded: state.video.excluded ? [...state.video.excluded] : null,
             music: state.video.music ? {
@@ -285,6 +287,8 @@ function bindEvents() {
     $('statsVideoMusicVolume').addEventListener('input', onMusicVolumeInput);
     $('statsVideoMusicFadeIn').addEventListener('input', onMusicFadeInput);
     $('statsVideoMusicFadeOut').addEventListener('input', onMusicFadeInput);
+    $('statsVideoFitMusic').addEventListener('change', onMusicFitChange);
+    $('btnStatsMusicFromMap').addEventListener('click', takeMapMusicSettings);
     $('btnStatsAddChart').addEventListener('click', openGallery);
     $('btnStatsAddChartEmpty').addEventListener('click', openGallery);
     $('btnStatsRename').addEventListener('click', openRename);

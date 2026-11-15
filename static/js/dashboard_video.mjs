@@ -16,23 +16,27 @@ export const FADE_MS = 500;
 // garde le graphique complet à l'écran.
 export const ANIMATED_SHARE = 0.7;
 
-export function slideSeconds(value) {
+// `allowAny` : une durée « calée sur la musique » est arbitraire (ex.
+// 7,33 s) — tout nombre fini dans ]0, 600] est accepté ; sinon seuls les
+// quatre choix du select sont valides, le reste retombe sur le défaut.
+export function slideSeconds(value, allowAny = false) {
     const n = Number(value);
+    if (allowAny) return Number.isFinite(n) && n > 0 && n <= 600 ? n : DEFAULT_SLIDE_SECONDS;
     return SLIDE_SECONDS.includes(n) ? n : DEFAULT_SLIDE_SECONDS;
 }
 
 // Durée totale (ms) d'une vidéo de `count` graphiques : ouverture, un
 // écran par graphique, fermeture sur la carte de titre.
-export function dashboardVideoDuration(count, seconds) {
-    return INTRO_MS + Math.max(0, count) * slideSeconds(seconds) * 1000 + OUTRO_MS;
+export function dashboardVideoDuration(count, seconds, allowAny = false) {
+    return INTRO_MS + Math.max(0, count) * slideSeconds(seconds, allowAny) * 1000 + OUTRO_MS;
 }
 
 // Où en est la vidéo au temps `t` (ms) :
 //   { kind: 'intro' | 'slide' | 'outro' | 'end', index, local (ms depuis le
 //     début de l'écran), progress (0 → 1 de l'animation), fade (0 → 1,
 //     opacité) }.
-export function videoMoment(t, count, seconds) {
-    const slideMs = slideSeconds(seconds) * 1000;
+export function videoMoment(t, count, seconds, allowAny = false) {
+    const slideMs = slideSeconds(seconds, allowAny) * 1000;
     const fadeOf = (local) => Math.min(1, Math.max(0, local / FADE_MS));
     if (t < INTRO_MS) return { kind: 'intro', index: -1, local: t, progress: Math.min(1, t / (INTRO_MS * ANIMATED_SHARE)), fade: fadeOf(t) };
     const rest = t - INTRO_MS;

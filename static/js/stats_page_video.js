@@ -12,9 +12,10 @@ import {
 import fixWebmDuration from './fix-webm-duration.js';
 import { presentSlides } from './present_model.mjs';
 import {
-    countUp, dashboardVideoDuration, DEFAULT_SLIDE_SECONDS, MUSIC_FADE_OUT_S, musicFields, SLIDE_SECONDS, slideSeconds,
-    videoMoment,
+    countUp, dashboardVideoDuration, DEFAULT_SLIDE_SECONDS, INTRO_MS, MUSIC_FADE_OUT_S, musicFields, OUTRO_MS,
+    SLIDE_SECONDS, slideSeconds, videoMoment,
 } from './dashboard_video.mjs';
+import { createVideoStream } from './video_stream.mjs';
 import { fileSafe } from './stats_page_card_actions.js';
 import { chartContext } from './stats_page_cards.js';
 import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
@@ -105,6 +106,12 @@ export function releaseVideo() {
     // En phase 'done' la tâche est déjà finie (taskId est encore posé) : on
     // n'annule que la conversion en cours.
     if (video.phase === 'recording') cancelVideoTask(video);
+    // Prise délestée en cours : les fragments déjà partis sont supprimés
+    // du serveur (la boucle de la prise s'en rendrait compte à sa prochaine
+    // image, mais l'abort idempotent ne coûte rien ici).
+    const streamer = video.streamer;
+    video.streamer = null;
+    streamer?.abort();
     const player = $('statsVideoPlayer');
     player.pause();
     player.removeAttribute('src');
@@ -155,12 +162,16 @@ function setupVideoModal(video) {
     // pas à chaque appel — sinon une saisie en cours serait écrasée.
     state.video = {
         phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null,
-        musicVolume: 1, fadeIn: 0, fadeOut: MUSIC_FADE_OUT_S, optionsSynced: false,
-        uploadedMusic: null, listen: null, ...video,
+        musicVolume: 1, fadeIn: 0, fadeOut: MUSIC_FADE_OUT_S, fitToMusic: false,
+        optionsSynced: false, uploadedMusic: null, listen: null,
+        streamer: null, recordedFile: null, ...video,
     };
     const prefs = loadVideoPrefs();
     if (typeof prefs.musicFadeIn === 'number') state.video.fadeIn = prefs.musicFadeIn;
     if (typeof prefs.musicFadeOut === 'number') state.video.fadeOut = prefs.musicFadeOut;
+    // « Caler la durée sur la musique » : choix persisté, sans effet tant
+    // que la durée du passage n'est pas sondée (case alors grisée).
+    if (typeof prefs.fitToMusic === 'boolean') state.video.fitToMusic = prefs.fitToMusic;
     const dashboardMode = video.mode === 'dashboard';
     $('statsVideoTitle').textContent = dashboardMode ? t('Vidéo du tableau de bord') : t('Vidéo animée');
     $('statsVideoIntroChart').hidden = dashboardMode;
@@ -294,6 +305,16 @@ export function syncVideoTotal() {
     $('btnStatsVideoPreview').disabled = empty;
     if (empty) {
         total.textContent = t('Cochez au moins un graphique.');
+        return;
+    }
+    if (fitToMusicActive(video)) {
+        // Durée calée : le total réellement enregistré est annoncé — la
+        // somme peut différer un peu de la fenêtre du passage quand le
+        // plancher d'1 s par écran borne.
+        const span = mmss(videoDurationMs(video) / 1000);
+        total.textContent = n > 1
+            ? t("${n} graphiques, calée sur la musique : ${total} en tout : la vidéo s'enregistre en temps réel.", { n, total: span })
+            : t("${n} graphique, calée sur la musique : ${total} en tout : la vidéo s'enregistre en temps réel.", { n, total: span });
         return;
     }
     const ms = dashboardVideoDuration(n, $('statsVideoDuration').value);
@@ -546,13 +567,41 @@ function mmss(seconds) {
     return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
 
-// Durée de la vidéo en secondes : la durée choisie (mode graphique), le
-// total annoncé des écrans cochés (mode tableau).
-function videoSeconds(video) {
+// Fenêtre utile du passage choisi (s) : les bornes [start, end] reprises
+// de la carte (end 0 = fin du fichier). 0 tant que la durée n'est pas
+// sondée — « calée » n'a alors aucun effet.
+function musicWindowSeconds(video) {
+    const music = video?.music;
+    if (!music || typeof music.duration !== 'number') return 0;
+    return Math.max(0, (music.end || music.duration) - (music.start || 0));
+}
+
+// « Caler la durée sur la musique » actif : la case est cochée ET la
+// fenêtre du passage est connue — les deux conditions de son effet.
+function fitToMusicActive(video) {
+    return Boolean(video?.fitToMusic) && musicWindowSeconds(video) > 0;
+}
+
+// Durée de la vidéo en ms : la durée choisie, ou la fenêtre du passage
+// quand la durée est calée (plancher 2 s en mode graphique ; en mode
+// tableau, la fenêtre est répartie entre les écrans cochés avec un
+// plancher d'1 s chacun — la somme peut alors dépasser un peu la fenêtre).
+function videoDurationMs(video) {
     if (video?.mode === 'dashboard') {
-        return dashboardVideoDuration(includedSlides(video).length, $('statsVideoDuration').value) / 1000;
+        const count = includedSlides(video).length;
+        if (fitToMusicActive(video) && count > 0) {
+            const perSlide = Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + OUTRO_MS) / 1000) / count);
+            return INTRO_MS + perSlide * count * 1000 + OUTRO_MS;
+        }
+        return dashboardVideoDuration(count, $('statsVideoDuration').value);
     }
-    return Number($('statsVideoDuration').value) || 10;
+    if (fitToMusicActive(video)) return Math.max(2, musicWindowSeconds(video)) * 1000;
+    return (Number($('statsVideoDuration').value) || 10) * 1000;
+}
+
+// Durée de la vidéo en secondes (le total annoncé, tous modes).
+function videoSeconds(video) {
+    return videoDurationMs(video) / 1000;
 }
 
 // Sans musique : le texte d'origine et le bloc masqué. Avec une musique de
@@ -576,8 +625,15 @@ function updateMusicInfo() {
         $('statsVideoMusicVolumeOut').textContent = volume + ' %';
         $('statsVideoMusicFadeIn').value = String(video.fadeIn ?? 0);
         $('statsVideoMusicFadeOut').value = String(video.fadeOut ?? MUSIC_FADE_OUT_S);
+        $('statsVideoFitMusic').checked = Boolean(video.fitToMusic);
     }
     setListenButton(listenSession ? (listenSession.busy ? 'busy' : 'on') : 'off');
+    // « Caler la durée sur la musique » n'a de sens qu'avec une durée
+    // sondée ; cochée et active, la durée choisie est figée — sa valeur
+    // survit au décochage.
+    const fitBox = $('statsVideoFitMusic');
+    if (fitBox) fitBox.disabled = !music || typeof music.duration !== 'number';
+    $('statsVideoDuration').disabled = fitToMusicActive(video);
     if (!music || typeof music.duration !== 'number') {
         hint.textContent = t("Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface doucement à la fin.");
         return;
@@ -587,7 +643,11 @@ function updateMusicInfo() {
     const mdur = Math.max(0, (music.end || music.duration) - (music.start || 0));
     const vdur = videoSeconds(video);
     let effect;
-    if (!mdur || Math.abs(mdur - vdur) <= vdur * 0.05) {
+    if (fitToMusicActive(video)) {
+        // Durée calée : la vidéo suit la fenêtre du passage — plus de
+        // boucle ni de coupure à annoncer.
+        effect = t('la vidéo suit la musique');
+    } else if (!mdur || Math.abs(mdur - vdur) <= vdur * 0.05) {
         effect = t('jouée une fois');
     } else if (mdur < vdur) {
         const n = vdur / mdur;
@@ -598,8 +658,20 @@ function updateMusicInfo() {
     hint.textContent = t('Musique ${mdur} · vidéo ${vdur} : ${effect}', { mdur: mmss(mdur), vdur: mmss(vdur), effect });
 }
 
+// Persiste les réglages du bloc musique (volume, fondus, calage) dans
+// statsVideoPrefs — partagée par les trois saisies et « Reprendre les
+// réglages de la carte » (même style que persistVideoPrefs).
+function saveMusicPrefs(video) {
+    const prefs = loadVideoPrefs();
+    prefs.musicVolume = video.musicVolume;
+    prefs.musicFadeIn = video.fadeIn;
+    prefs.musicFadeOut = video.fadeOut;
+    prefs.fitToMusic = Boolean(video.fitToMusic);
+    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+}
+
 // Curseur de volume : effectif tout de suite pour l'écoute en cours,
-// persisté dans statsVideoPrefs (même style que persistVideoPrefs).
+// persisté dans statsVideoPrefs.
 export function onMusicVolumeInput() {
     const video = state.video;
     if (!video) return;
@@ -607,9 +679,7 @@ export function onMusicVolumeInput() {
     video.musicVolume = value / 100;
     $('statsVideoMusicVolumeOut').textContent = value + ' %';
     if (listenSession) listenSession.audio.volume = Math.min(1, video.musicVolume);
-    const prefs = loadVideoPrefs();
-    prefs.musicVolume = video.musicVolume;
-    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+    saveMusicPrefs(video);
 }
 
 // Fondus d'entrée et de sortie (secondes), bornés comme les min/max des
@@ -621,10 +691,42 @@ export function onMusicFadeInput() {
     const fadeOut = Number($('statsVideoMusicFadeOut').value);
     video.fadeIn = Number.isFinite(fadeIn) ? Math.min(30, Math.max(0, fadeIn)) : 0;
     video.fadeOut = Number.isFinite(fadeOut) ? Math.min(30, Math.max(0.5, fadeOut)) : MUSIC_FADE_OUT_S;
-    const prefs = loadVideoPrefs();
-    prefs.musicFadeIn = video.fadeIn;
-    prefs.musicFadeOut = video.fadeOut;
-    try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
+    saveMusicPrefs(video);
+}
+
+// « Caler la durée sur la musique » : la durée de la vidéo suit la fenêtre
+// [start, end] du passage (updateMusicInfo grise la case tant que cette
+// durée n'est pas sondée). Le total annoncé et le select des durées sont
+// relus par syncVideoTotal → updateMusicInfo.
+export function onMusicFitChange() {
+    const video = state.video;
+    if (!video) return;
+    video.fitToMusic = $('statsVideoFitMusic').checked;
+    saveMusicPrefs(video);
+    syncVideoTotal();
+}
+
+// « Reprendre les réglages de la carte » : volume effectif et fondus de
+// l'enregistrement de la page carte, appliqués aux contrôles du bloc
+// musique (optionsSynced : updateMusicInfo les re-remplit).
+export async function takeMapMusicSettings() {
+    const video = state.video;
+    if (!video) return;
+    let recording = null;
+    try {
+        recording = (await fetchJson('/api/settings'))?.recording;
+    } catch (e) {
+        console.warn('[stats] Réglages de la carte illisibles :', e?.message || e);
+        showToast(t('Réglages de la carte illisibles.'), 'info');
+        return;
+    }
+    if (typeof recording?.audio_volume === 'number') video.musicVolume = recording.audio_volume;
+    video.fadeIn = recording?.audio_fade_in ? (recording.audio_fade_in_seconds ?? 2) : 0;
+    video.fadeOut = recording?.audio_fade_out ? (recording.audio_fade_out_seconds ?? MUSIC_FADE_OUT_S) : MUSIC_FADE_OUT_S;
+    video.optionsSynced = false;
+    updateMusicInfo();
+    saveMusicPrefs(video);
+    showToast(t('Réglages de la carte repris.'), 'info');
 }
 
 // ---------------------------------------------------------------------------
@@ -973,7 +1075,16 @@ function slidePainter(spec, result, size) {
 // graphique lue dans le formulaire, pour le calcul de la durée totale.
 function makeDashboardPainter(slides, size) {
     const dashboard = activeDashboard();
-    const seconds = slideSeconds($('statsVideoDuration').value);
+    // « Caler la durée sur la musique » : la fenêtre du passage est
+    // répartie entre les écrans cochés (plancher 1 s) — une durée
+    // arbitraire que slideSeconds doit accepter telle quelle (allowAny,
+    // propagé à videoMoment/dashboardVideoDuration via `allowAny`).
+    const video = state.video;
+    const allowAny = fitToMusicActive(video);
+    const rawSeconds = allowAny
+        ? Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + OUTRO_MS) / 1000) / Math.max(1, includedSlides(video).length))
+        : $('statsVideoDuration').value;
+    const seconds = slideSeconds(rawSeconds, allowAny);
     const tokens = state.tokens || readTokens();
     const canvas = document.createElement('canvas');
     canvas.width = size.width;
@@ -1000,7 +1111,7 @@ function makeDashboardPainter(slides, size) {
         return current.painter;
     };
     const paint = (elapsed) => {
-        const moment = videoMoment(elapsed, slides.length, seconds);
+        const moment = videoMoment(elapsed, slides.length, seconds, allowAny);
         const painter = painterFor(moment);
         painter.paint(moment.progress);
         g.fillStyle = tokens.surface;
@@ -1011,7 +1122,7 @@ function makeDashboardPainter(slides, size) {
         return moment;
     };
     const dispose = () => current.painter?.dispose();
-    return { canvas, paint, dispose, seconds };
+    return { canvas, paint, dispose, seconds, allowAny };
 }
 
 // « ouverture », « fin » ou « graphique n / count » : la position de la
@@ -1020,6 +1131,52 @@ function dashboardMomentWhere(moment, count) {
     if (moment.kind === 'intro') return t('ouverture');
     if (moment.kind === 'outro') return t('fin');
     return t('graphique ${n} / ${count}', { n: moment.index + 1, count });
+}
+
+// ---------------------------------------------------------------------------
+// Délestage mémoire de la prise (video_stream.mjs, même module que la
+// carte) : les fragments du MediaRecorder partent au serveur au fil de
+// l'eau plutôt que de s'accumuler jusqu'à la fin (~200 Mo pour un tableau
+// de 20 écrans à 8 Mbit/s). Un échec de begin() replie sur l'accumulation
+// en mémoire, comme avant.
+// ---------------------------------------------------------------------------
+
+// Ouvre le flux côté serveur ; posé sur `video.streamer` pour que
+// releaseVideo puisse l'avorter à la fermeture de la fenêtre.
+async function openVideoStream(video) {
+    const streamer = createVideoStream({ baseUrl: '' });
+    try {
+        await streamer.begin();
+        video.streamer = streamer;
+    } catch (e) {
+        console.warn('[stats] Flux vidéo indisponible, enregistrement en mémoire :', e?.message || e);
+    }
+    video.recordedFile = null;
+}
+
+// Fin de prise en chemin flux : attend la file d'envoi puis demande le
+// remux serveur, qui répare au passage la durée absente des flux
+// MediaRecorder (fixWebmDuration n'est pas joué). Renvoie le nom du brut
+// (raw_*.webm) ; en échec — fragments perdus ou remux impossible — il n'y
+// a pas de blob de repli (les fragments ne sont plus en mémoire) : erreur
+// affichée, flux avorté, retour aux réglages, et renvoie null.
+async function finishVideoStream(video) {
+    const streamer = video.streamer;
+    try {
+        await streamer.drain();
+        const data = await streamer.finish();
+        if (!data?.file) throw new Error('no file');
+        video.streamer = null;
+        video.recordedFile = data.file;
+        return data.file;
+    } catch (e) {
+        console.warn('[stats] Finalisation du flux vidéo impossible :', e?.message || e);
+        video.streamer = null;
+        await streamer.abort();
+        showError(t("L'envoi de la vidéo au serveur a échoué."));
+        setVideoPhase('setup');
+        return null;
+    }
 }
 
 async function recordDashboardVideo(video) {
@@ -1032,7 +1189,7 @@ async function recordDashboardVideo(video) {
     }
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
     const machine = makeDashboardPainter(slides, size);
-    const duration = dashboardVideoDuration(slides.length, machine.seconds);
+    const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny);
     setVideoPhase('recording');
     const canvas = machine.canvas;
     $('statsVideoStage').replaceChildren(canvas);
@@ -1040,8 +1197,13 @@ async function recordDashboardVideo(video) {
     paint(0);
     const stream = canvas.captureStream(VIDEO_FPS);
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+    await openVideoStream(video);
     const chunks = [];
-    recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
+    recorder.ondataavailable = (event) => {
+        if (!event.data?.size) return;
+        if (video.streamer) video.streamer.push(event.data);
+        else chunks.push(event.data);
+    };
     const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
     recorder.start(1000);
     const start = performance.now();
@@ -1075,12 +1237,24 @@ async function recordDashboardVideo(video) {
     await stopped;
     stream.getTracks().forEach((track) => track.stop());
     machine.dispose();
-    if (video.cancelled) return;
-    let blob = new Blob(chunks, { type: 'video/webm' });
-    try {
-        blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
-    } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
-    await convertVideo(video, blob, fileSafe(activeDashboard().name || t('Mon tableau de bord')));
+    if (video.cancelled) {
+        const streamer = video.streamer;
+        video.streamer = null;
+        await streamer?.abort();
+        return;
+    }
+    let blob = null;
+    let recordedFile = null;
+    if (video.streamer) {
+        recordedFile = await finishVideoStream(video);
+        if (!recordedFile) return;   // erreur déjà affichée
+    } else {
+        blob = new Blob(chunks, { type: 'video/webm' });
+        try {
+            blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
+        } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
+    }
+    await convertVideo(video, blob, fileSafe(activeDashboard().name || t('Mon tableau de bord')), { recordedFile });
 }
 
 // Avance du temps de la vidéo : requestAnimationFrame quand la page est
@@ -1125,7 +1299,7 @@ export async function recordVideo() {
         return;
     }
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
-    const duration = (Number($('statsVideoDuration').value) || 10) * 1000;
+    const duration = videoDurationMs(video);
     const { spec, result } = entry;
     setVideoPhase('recording');
     setVideoStatus(t('Enregistrement…'), 0);
@@ -1134,8 +1308,13 @@ export async function recordVideo() {
     painter.paint(0);
     const stream = painter.canvas.captureStream(VIDEO_FPS);
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+    await openVideoStream(video);
     const chunks = [];
-    recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
+    recorder.ondataavailable = (event) => {
+        if (!event.data?.size) return;
+        if (video.streamer) video.streamer.push(event.data);
+        else chunks.push(event.data);
+    };
     const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
     recorder.start(1000);
     const start = performance.now();
@@ -1168,13 +1347,25 @@ export async function recordVideo() {
     await stopped;
     stream.getTracks().forEach((track) => track.stop());
     painter.dispose();
-    if (video.cancelled) return;
+    if (video.cancelled) {
+        const streamer = video.streamer;
+        video.streamer = null;
+        await streamer?.abort();
+        return;
+    }
 
-    let blob = new Blob(chunks, { type: 'video/webm' });
-    try {
-        blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
-    } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
-    await convertVideo(video, blob, fileSafe(chartTitle(spec)));
+    let blob = null;
+    let recordedFile = null;
+    if (video.streamer) {
+        recordedFile = await finishVideoStream(video);
+        if (!recordedFile) return;   // erreur déjà affichée
+    } else {
+        blob = new Blob(chunks, { type: 'video/webm' });
+        try {
+            blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
+        } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
+    }
+    await convertVideo(video, blob, fileSafe(chartTitle(spec)), { recordedFile });
 }
 
 // ---------------------------------------------------------------------------
@@ -1220,7 +1411,7 @@ function previewDashboardVideo(video) {
     if (!slides.length) return;
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
     const machine = makeDashboardPainter(slides, size);
-    const duration = dashboardVideoDuration(slides.length, machine.seconds);
+    const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny);
     video.previewStop = false;
     setVideoPhase('preview');
     setVideoStatus(t('Aperçu… (${where})', { where: t('ouverture') }), 0);
@@ -1239,7 +1430,7 @@ export function previewVideo() {
     const entry = video && state.results.get(video.spec.id);
     if (!entry?.result) return;
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
-    const duration = (Number($('statsVideoDuration').value) || 10) * 1000;
+    const duration = videoDurationMs(video);
     const { spec, result } = entry;
     const painter = videoPainter(spec, result, size);
     video.previewStop = false;
@@ -1277,14 +1468,19 @@ async function pollTask(id, onProgress, isCancelled) {
 
 // Conversion MP4 par le serveur ; à défaut, le WebM enregistré. La barre
 // continue là où la prise s'est arrêtée (RECORD_SHARE → 100 %) : même
-// processus, deuxième étape.
-async function convertVideo(video, blob, name) {
+// processus, deuxième étape. `recordedFile` : brut déjà délesté côté
+// serveur (raw_*.webm) — désigné par son nom au lieu de re-téléverser le
+// blob ; conservé sur `video` pour le repli WebM (servi par
+// /recorded_video/<f>).
+async function convertVideo(video, blob, name, { recordedFile } = {}) {
+    video.recordedFile = recordedFile || null;
     setVideoStatus(t('Conversion en MP4…'), RECORD_SHARE);
     let result = null;
     let failure = null;
     try {
         const form = new FormData();
-        form.append('video', blob, 'statistiques.webm');
+        if (recordedFile) form.append('recorded_file', recordedFile);
+        else form.append('video', blob, 'statistiques.webm');
         form.append('fileName', name);
         form.append('fps', String(VIDEO_FPS));
         form.append('slowdown', '1');
@@ -1342,9 +1538,14 @@ async function convertVideo(video, blob, name) {
             ? t('Vidéo enregistrée : ${file}, dans ${folder}.', { file: result.file, folder: result.folder })
             : result.file) + hiddenNote + warningNote;
     } else {
-        video.objectUrl = URL.createObjectURL(blob);
-        player.src = video.objectUrl;
-        download.href = video.objectUrl;
+        // Repli WebM : en chemin délesté, le brut remuxé est servi par
+        // /recorded_video/<f> (Range acceptées, attribut download honoré
+        // — même origine) ; sinon le blob en mémoire via une objectURL.
+        const url = video.recordedFile
+            ? '/recorded_video/' + encodeURIComponent(video.recordedFile)
+            : (video.objectUrl = URL.createObjectURL(blob));
+        player.src = url;
+        download.href = url;
         download.download = name + '.webm';
         // Le rejet de `pollTask` peut porter plusieurs lignes ffmpeg : la
         // première suffit, bornée pour rester lisible dans la note.
