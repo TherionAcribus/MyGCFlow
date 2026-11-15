@@ -1003,6 +1003,19 @@ test('« Privilégier le cadrage de départ » ramène la caméra sur ce cadrage
 });
 
 
+// Dynamisme : préférence globale, sauvegarde debouncée. Laissé à 4 par un
+// test, il ajoutait un dézoom à chaque trajet des suivants — leurs trajets ne
+// tenaient plus dans la durée demandée, et d'autres ne passaient que grâce à
+// lui. Chaque test qui le change le remet à 2 en sortant.
+async function restoreCameraDynamism(page) {
+  await page.locator('#cameraConfigTab').click();
+  await page.locator('#selectCameraDynamism').selectOption('2');
+  await expect.poll(async () => (
+    (await (await page.request.get('/api/settings')).json()).animation?.camera_dynamism
+  )).toBe(2);
+}
+
+
 test('la caméra franchit l’antiméridien sans faire le tour du monde', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
   await page.locator('#cameraConfigTab').click();
@@ -1047,6 +1060,7 @@ test('la caméra franchit l’antiméridien sans faire le tour du monde', async 
   expect(longitudes.some((lon) => lon < -170), longitudes.join(' → ')).toBe(true);
   expect(longitudes.every((lon) => Math.abs(lon) > 150), longitudes.join(' → ')).toBe(true);
 
+  await restoreCameraDynamism(page);
   await page.locator('#switchCameraFollow').uncheck();
 });
 
@@ -1056,6 +1070,10 @@ test('une interaction suspend le suivi par jour jusqu\'au prochain lancement', a
   await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraTarget').selectOption('days');
+  // Niveau 4 : la caméra bouge à chaque jour, même vers une cache déjà dans
+  // le cadre — la relance doit se voir dans les 700 ms (le premier jour,
+  // Paris, tient dans la vue de départ).
+  await page.locator('#selectCameraDynamism').selectOption('4');
 
   const result = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -1117,6 +1135,7 @@ test('une interaction suspend le suivi par jour jusqu\'au prochain lancement', a
   expect(result.delta, 'la caméra reste au centre choisi par l\'utilisateur').toBeLessThan(1);
   expect(result.restartedDelta, 'un nouveau lancement réactive le suivi').toBeGreaterThan(1);
 
+  await restoreCameraDynamism(page);
   await page.locator('#switchCameraFollow').uncheck();
 });
 
@@ -1125,6 +1144,10 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
   await page.locator('a[href="#animation"]').click();
   await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
+  // Sans retour au cadrage de départ, la caméra reste sur la cible du
+  // dernier jour : sa position s'y lit exactement, sans dépendre de
+  // l'échantillonnage (l'écart attendu n'est que de ~30 km).
+  await setCameraReturnHome(page, false);
   await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('2');
   await page.locator('#inputExtraEndTime').fill('0');
@@ -1132,9 +1155,12 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
   const releve = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const view = app.getMap().getView();
-    // Dernier jour : 3 caches groupées à New York + 1 isolée à Saint-Louis.
-    // Barycentre ≈ -78°, centre de l'étendue = -82° : fitDay doit viser le
-    // second, sinon l'isolée reste hors du cadre calculé pour elle.
+    // Dernier jour : 3 caches groupées à New York + 1 isolée à ~93 km à
+    // l'ouest — assez près pour rester dans le même groupe (au-delà de
+    // DAY_GROUP_GAP_KM, la caméra viserait la grappe seule, cf.
+    // summarizeCameraFocus). Le centre de l'étendue est deux fois plus loin
+    // de New York que le barycentre : fitDay doit viser le premier, sinon
+    // l'isolée reste hors du cadre calculé pour elle.
     const jours = [...app.pointsByDate.keys()];
     const dernier = app.pointsByDate.get(jours[jours.length - 1]);
     for (const key of jours.slice(0, 3)) {
@@ -1144,17 +1170,21 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
       }
       app.pointsByDate.delete(key);
     }
+    // Jours précédents à Paris, sous la caméra : seul le dernier jour la
+    // fait voyager.
     for (const key of jours.slice(3, -1)) {
-      for (const f of app.pointsByDate.get(key)) f.geometry.coordinates = [-74.006, 40.7128];
+      for (const f of app.pointsByDate.get(key)) f.geometry.coordinates = [2.3522, 48.8566];
     }
     dernier[0].geometry.coordinates = [-74.006, 40.7128];
-    dernier[dernier.length - 1].geometry.coordinates = [-90.2, 38.63];
+    dernier[dernier.length - 1].geometry.coordinates = [-75.1, 40.7128];
     app.bumpPointsByDateRevision();
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(6);
 
-    const centreEtendueX = ol.proj.fromLonLat([-82.103, 39.671])[0];
-    const barycentreX = ol.proj.fromLonLat([-78.0545, 40.192])[0];
+    const grappeX = ol.proj.fromLonLat([-74.006, 40.7128])[0];
+    const isoleeX = ol.proj.fromLonLat([-75.1, 40.7128])[0];
+    const centreEtendueX = (grappeX + isoleeX) / 2;
+    const barycentreX = (3 * grappeX + isoleeX) / 4;
 
     app.options.animation.cameraFitDay = true;
     app.startAnimation();
@@ -1182,16 +1212,15 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
     return { positions, zooms, centreEtendueX, barycentreX };
   });
 
-  // La caméra atteint le centre de l'étendue du dernier jour, nettement à
-  // l'ouest de son barycentre (~445 km d'écart entre les deux). C'est sa
-  // position la plus à l'ouest : elle revient ensuite au cadrage de départ.
+  // La caméra atteint le centre de l'étendue du dernier jour, à l'ouest de
+  // son barycentre (~30 km d'écart en unités de carte), et y reste.
   const final = Math.min(...releve.positions);
   expect(Math.abs(final - releve.centreEtendueX),
     `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
-    .toBeLessThan(150_000);
-  expect(Math.abs(final - releve.barycentreX)).toBeGreaterThan(250_000);
+    .toBeLessThan(8_000);
+  expect(Math.abs(final - releve.barycentreX)).toBeGreaterThan(20_000);
 
-  await page.locator('#cameraConfigTab').click();
+  await setCameraReturnHome(page, true);
   await page.locator('#switchCameraFollow').uncheck();
 });
 
@@ -1200,6 +1229,10 @@ test('sans « cadrer le jour », le même jour vise son barycentre au zoom de d�
   await page.locator('a[href="#animation"]').click();
   await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
+  // Sans retour au cadrage de départ, la caméra reste sur la cible du
+  // dernier jour : sa position s'y lit exactement, sans dépendre de
+  // l'échantillonnage (l'écart attendu n'est que de ~30 km).
+  await setCameraReturnHome(page, false);
   await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('2');
   await page.locator('#inputExtraEndTime').fill('0');
@@ -1219,16 +1252,21 @@ test('sans « cadrer le jour », le même jour vise son barycentre au zoom de d�
       }
       app.pointsByDate.delete(key);
     }
+    // Jours précédents à Paris, sous la caméra : seul le dernier jour la
+    // fait voyager.
     for (const key of jours.slice(3, -1)) {
-      for (const f of app.pointsByDate.get(key)) f.geometry.coordinates = [-74.006, 40.7128];
+      for (const f of app.pointsByDate.get(key)) f.geometry.coordinates = [2.3522, 48.8566];
     }
     dernier[0].geometry.coordinates = [-74.006, 40.7128];
-    dernier[dernier.length - 1].geometry.coordinates = [-90.2, 38.63];
+    dernier[dernier.length - 1].geometry.coordinates = [-75.1, 40.7128];
     app.bumpPointsByDateRevision();
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(6);
 
-    const barycentreX = ol.proj.fromLonLat([-78.0545, 40.192])[0];
+    const grappeX = ol.proj.fromLonLat([-74.006, 40.7128])[0];
+    const isoleeX = ol.proj.fromLonLat([-75.1, 40.7128])[0];
+    const barycentreX = (3 * grappeX + isoleeX) / 4;
+    const centreEtendueX = (grappeX + isoleeX) / 2;
     const zoomDepart = view.getZoom();
 
     app.startAnimation();
@@ -1251,19 +1289,21 @@ test('sans « cadrer le jour », le même jour vise son barycentre au zoom de d�
       precedent = positions.at(-1);
     }
     app.stopAnimation();
-    return { positions, zooms, barycentreX, zoomDepart };
+    return { positions, zooms, barycentreX, centreEtendueX, zoomDepart };
   });
 
-  // Position la plus à l'ouest : celle du dernier jour, d'où la caméra
-  // revient ensuite au cadrage de départ.
+  // Position la plus à l'ouest : celle du dernier jour, où la caméra reste.
   const final = Math.min(...releve.positions);
   expect(Math.abs(final - releve.barycentreX),
     `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
-    .toBeLessThan(150_000);
-  const zoomSurPlace = releve.zooms[releve.positions.indexOf(final)];
+    .toBeLessThan(8_000);
+  expect(Math.abs(final - releve.centreEtendueX)).toBeGreaterThan(20_000);
+  // Zoom à la fin du plateau d'arrivée : au premier échantillon, la
+  // caméra peut finir de redescendre.
+  const zoomSurPlace = releve.zooms[releve.positions.lastIndexOf(final)];
   expect(Math.abs(zoomSurPlace - releve.zoomDepart)).toBeLessThanOrEqual(0.1);
 
-  await page.locator('#cameraConfigTab').click();
+  await setCameraReturnHome(page, true);
   await page.locator('#switchCameraFollow').uncheck();
 });
 
@@ -1643,6 +1683,8 @@ test('une durée « Par durée » sous le minimum annonce aussi les pauses de da
   // pauses de la piste en plus, comme en jours/s. Elles n'entraient pas dans
   // la durée annoncée : sur 16 ans de données calées sur une musique de 3:04,
   // vidéo de 4:41 annoncée 3:24.
+  // Caches déplacées plus bas : un rechargement tardif les remettrait en place.
+  await waitForStableTimeline(page);
   await page.locator('a[href="#animation"]').click();
   await page.locator('#animationConfigTab').click();
   await page.locator('#inputExtraEndTime').fill('0');
@@ -1671,6 +1713,7 @@ test('une durée « Par durée » sous le minimum annonce aussi les pauses de da
     const hold = app.estimateCameraTrackHold(animation.timePerDay);
     return {
       dayCount: app.pointsByDate.size,
+      fps: app.options.record.fps,
       dayMs: animation.timePerDay,
       budgetMs: animation.cameraTimeBudgetMs,
       leadMs: animation.cameraLeadMs || 0,
@@ -1682,7 +1725,9 @@ test('une durée « Par durée » sous le minimum annonce aussi les pauses de da
   // Plan au minimum (une image par jour), sans budget : les pauses estimées
   // au rythme du plan y entrent et sont annoncées.
   expect(prevu.budgetMs).toBeNull();
-  expect(prevu.dayMs).toBeCloseTo(1000 / 30, 0);
+  // Une image par jour, au fps réglé (préférence globale : un export
+  // précédent du run peut l'avoir laissé à 12).
+  expect(prevu.dayMs).toBeCloseTo(1000 / prevu.fps, 0);
   expect(prevu.holdTotalMs).toBeGreaterThan(0);
   expect(prevu.cameraHoldMs).toBe(prevu.holdTotalMs);
   expect(prevu.summary).toContain('pauses caméra');
@@ -1707,6 +1752,223 @@ test('une durée « Par durée » sous le minimum annonce aussi les pauses de da
   await setCameraReturnHome(page, true);
 });
 
+
+// Plage d'un an autour des 6 jours de trouvailles de la fixture (372 jours :
+// 12,4 s au minimum à 30 i/s) et durée imposée trop courte pour une image
+// par jour : les jours sans trouvaille sont regroupés (day_steps.mjs).
+async function setUpMergedEmptyDays(page, totalDuration) {
+  // Un rechargement tardif des données (import sur une base non vide)
+  // remettrait la plage par défaut — en plein enregistrement parfois.
+  await waitForStableTimeline(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#rhythmModeDuration').check({ force: true });
+  await page.locator('#inputTotalDuration').fill(totalDuration);
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    // Plage : les 366 jours qui précèdent la première trouvaille, puis les
+    // 6 jours de trouvailles.
+    const days = [...app.pointsByDate.keys()].map((key) => new Date(key)).sort((a, b) => a - b);
+    const start = new Date(days[0]);
+    start.setDate(start.getDate() - 366);
+    app.options.animation.dateStart = start;
+    app.options.animation.dateEnd = new Date(days[days.length - 1]);
+    app.options.record.fps = 30;
+    app.refreshTimingPlan({ save: false });
+  });
+}
+
+// Lecture jusqu'au bout : durée réelle et jours de trouvailles affichés.
+async function playPreviewToEnd(page) {
+  const lecture = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const debut = performance.now();
+    app.startAnimation();
+    while (app.isAnimationInProgress() && performance.now() - debut < 60_000) {
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    return {
+      dureeMs: performance.now() - debut,
+      terminee: !app.isAnimationInProgress(),
+      points: window.vectorSource?.getFeatures?.().length ?? 0,
+    };
+  });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+  return lecture;
+}
+
+async function readPlan(page) {
+  return page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const animation = app.options.animation;
+    return {
+      timePerDay: animation.timePerDay,
+      stepCount: animation.daySteps?.stepEnds?.length ?? null,
+      budgetMs: animation.cameraTimeBudgetMs,
+      totalMs: app.options.record.totalTimeInMilliSec,
+      endHoldMs: app.options.record.automaticEndHoldMs,
+      holdMs: animation.cameraHoldMs || 0,
+      summary: document.getElementById('timingSummary').textContent,
+      warnings: document.getElementById('timingWarnings').textContent,
+    };
+  });
+}
+
+test('une durée « Par durée » trop courte regroupe les jours sans trouvaille et reste tenue', async ({ page }) => {
+  await setUpMergedEmptyDays(page, '0:08');
+  const prevu = await readPlan(page);
+  // 8 s demandées : tenues, sans le message « trop courte ».
+  expect(prevu.totalMs).toBe(8000);
+  expect(prevu.warnings).not.toContain('trop courte');
+  // Moins de pas que de jours, mais au moins un par jour de trouvailles, et
+  // au moins une image par pas.
+  expect(prevu.stepCount).toBeGreaterThanOrEqual(6);
+  expect(prevu.stepCount).toBeLessThan(372);
+  expect(prevu.timePerDay).toBeGreaterThanOrEqual(1000 / 30 - 1e-6);
+  expect(prevu.summary).toContain('sans trouvaille regroupés');
+
+  const lecture = await playPreviewToEnd(page);
+  expect(lecture.terminee).toBe(true);
+  expect(lecture.points).toBe(6);
+  // Fin de l'animation à l'heure annoncée (l'aperçu ne joue pas la pause de
+  // fin automatique, comprise dans la durée de la vidéo).
+  const annonceMs = prevu.totalMs - prevu.endHoldMs;
+  expect(Math.abs(lecture.dureeMs - annonceMs),
+    `durée ${Math.round(lecture.dureeMs)} ms vs annoncé ${annonceMs} ms`).toBeLessThan(1_500);
+});
+
+test('une durée « Par durée » que seules les pauses caméra dépassent regroupe aussi les jours vides', async ({ page }) => {
+  // 372 jours à 30 i/s = 12,4 s : les dates seules tiennent dans 15 s. Les
+  // trois derniers jours de trouvailles alternent New York / Paris / New
+  // York : le premier trajet part en avance, les deux suivants attendent
+  // chacun le précédent — des pauses (~8 s) qui font déborder. Le plan
+  // restait alors au minimum (30 jours/s, vidéo plus longue que demandé) au
+  // lieu de regrouper des jours vides — cas d'une musique de 3:50 sur 16 ans
+  // de données.
+  await waitForStableTimeline(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraTarget').selectOption('days');
+  await setCameraReturnHome(page, false);
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+    const keys = [...app.pointsByDate.keys()].sort((a, b) => new Date(a) - new Date(b));
+    keys.forEach((day, index) => {
+      const coords = index < 3 || index === 4 ? [2.3522, 48.8566] : [-74.006, 40.7128];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
+    });
+    app.bumpPointsByDateRevision();
+  });
+  await setUpMergedEmptyDays(page, '0:18');
+  const prevu = await readPlan(page);
+  expect(prevu.holdMs).toBeGreaterThan(0);
+  expect(prevu.totalMs).toBe(18000);
+  expect(prevu.warnings).not.toContain('trop courte');
+  expect(prevu.stepCount).toBeLessThan(372);
+  expect(prevu.summary).toContain('sans trouvaille regroupé');
+
+  const lecture = await playPreviewToEnd(page);
+  expect(lecture.terminee).toBe(true);
+  const annonceMs = prevu.totalMs - prevu.endHoldMs;
+  expect(Math.abs(lecture.dureeMs - annonceMs),
+    `durée ${Math.round(lecture.dureeMs)} ms vs annoncé ${annonceMs} ms`).toBeLessThan(1_500);
+  await setCameraReturnHome(page, true);
+});
+
+// Capture image par image : elle avance pas par pas (displayRecordingStep),
+// son nombre d'images suit le plan. MediaRecorder : temps réel, la boucle de
+// lecture affiche un pas par franchissement. Dans les deux cas, la durée du
+// MP4 est celle annoncée.
+for (const [mode, label, toleranceSeconds] of [['images', 'images', 0.1], ['mediarecorder', 'MediaRecorder', 0.5]]) test(`un export ${label} « Par durée » avec jours regroupés dure ce qui est annoncé`, async ({ page }, testInfo) => {
+  await setUpMergedEmptyDays(page, '0:05');
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption(mode);
+  await page.locator('#selectRecordResolution').selectOption('window');
+  const prevu = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.record.fps = 12;
+    app.options.flash.mode = 'none';
+    app.options.record.mediaRecorder.slowdownFactor = 1;
+    app.options.record.mediaRecorder.mimeType = 'video/webm;codecs=vp8';
+    app.refreshTimingPlan({ save: false });
+    return {
+      totalMs: app.options.record.totalTimeInMilliSec,
+      stepCount: app.options.animation.daySteps?.stepEnds?.length ?? null,
+    };
+  });
+  expect(prevu.totalMs).toBe(5000);
+  expect(prevu.stepCount).toBeGreaterThanOrEqual(6);
+  expect(prevu.stepCount).toBeLessThan(372);
+
+  await page.locator('#btnQuickExport').click({ force: true });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
+  await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
+  const videoPath = latestCompletedMp4();
+  const expectationPath = path.join(RUNTIME, 'merged-days-expectation.json');
+  writeFileSync(expectationPath, JSON.stringify({
+    duration_seconds: prevu.totalMs / 1000,
+    // Images : une image d'écart au plus (12 i/s). MediaRecorder : temps réel.
+    duration_tolerance_seconds: toleranceSeconds,
+    min_size_bytes: 1_000,
+  }, null, 2));
+  const python = process.env.MYGCFLOW_E2E_PYTHON
+    || process.env.PYTHON
+    || (process.platform === 'win32' ? 'python' : 'python3');
+  const validation = spawnSync(
+    python,
+    [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectationPath, '--json'],
+    { encoding: 'utf8' },
+  );
+  expect(validation.status, `${validation.stdout}\n${validation.stderr}`).toBe(0);
+  // Toutes les trouvailles de la plage ont été affichées.
+  expect(await page.evaluate(() => window.vectorSource?.getFeatures?.().length ?? 0)).toBe(6);
+  await testInfo.attach(`merged-days-${mode}.mp4`, { path: videoPath, contentType: 'video/mp4' });
+});
+
+test('une durée « Par durée » intenable même regroupée annonce la durée réelle', async ({ page }) => {
+  // Caches déplacées plus bas : un rechargement tardif les remettrait en place.
+  await waitForStableTimeline(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraTarget').selectOption('days');
+  await setCameraReturnHome(page, false);
+  // Chaque jour de trouvailles alterne New York / Paris : cinq trajets
+  // transatlantiques que 8 s ne peuvent pas contenir, même en regroupant
+  // tous les jours vides.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+    [...app.pointsByDate.keys()].forEach((day, index) => {
+      const coords = index % 2 === 0 ? [-74.006, 40.7128] : [2.3522, 48.8566];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
+    });
+    app.bumpPointsByDateRevision();
+  });
+  await setUpMergedEmptyDays(page, '0:08');
+  const prevu = await readPlan(page);
+  // Tous les jours vides regroupés : un pas par jour de trouvailles (le
+  // premier pas emporte les jours vides du début).
+  expect(prevu.stepCount).toBe(6);
+  expect(prevu.holdMs).toBeGreaterThan(0);
+  expect(prevu.totalMs).toBeGreaterThan(8000);
+  expect(prevu.warnings).toContain('trop courte');
+
+  const lecture = await playPreviewToEnd(page);
+  expect(lecture.terminee).toBe(true);
+  const annonceMs = prevu.totalMs - prevu.endHoldMs;
+  expect(Math.abs(lecture.dureeMs - annonceMs),
+    `durée ${Math.round(lecture.dureeMs)} ms vs annoncé ${annonceMs} ms`).toBeLessThan(1_500);
+  await setCameraReturnHome(page, true);
+});
 
 test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit à l\'heure', async ({ page }) => {
   // Même scénario « Par durée » que le test précédent, mais chaque jour impose

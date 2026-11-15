@@ -347,7 +347,11 @@ export function buildTimingPlan({
         } else if (days > 0) {
             requestedTotalMs = p.value;
             const animRequested = Math.max(0, p.value - endHoldMs - extraEndMs);
-            if (animRequested < minAnimationMs) {
+            // Pré-roll, pauses de dates et retour sont pris sur le budget :
+            // s'ils ne laissent plus une image par jour, la durée demandée est
+            // intenable — l'annoncer quand même donnait une vidéo plus longue.
+            const reservedMs = cameraReturn + (overlap ? cameraLead + cameraHold : 0);
+            if (animRequested < minAnimationMs + reservedMs) {
                 // Trop court pour une frame par jour : le minimum est appliqué
                 // et signalé au lieu d'être corrigé silencieusement. Le
                 // pré-roll s'y ajoute : sans durée imposée tenable, il revient

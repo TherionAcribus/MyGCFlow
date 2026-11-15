@@ -57,7 +57,9 @@ export function getCookie(name) {
 // L'ancien calcul arrondissait chaque jour séparément et accumulait la dérive.
 export function updateInfosForPictures(){
     const plan = buildImageTimingPlan({
-        dayCount: pkg.options.date.deltaDays,
+        // Jours vides regroupés par le plan (durée imposée trop courte) : la
+        // timeline compte des pas (day_steps.mjs).
+        dayCount: pkg.options.animation?.daySteps?.stepEnds?.length || pkg.options.date.deltaDays,
         timePerDayMs: pkg.options.animation.timePerDay,
         fps: pkg.options.record.fps,
         extraEndSeconds: pkg.options.animation.extraEndSeconds,

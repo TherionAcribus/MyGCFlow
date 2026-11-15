@@ -406,6 +406,19 @@ Autres repères :
   L'en-tête des quatre pages vit dans `templates/_app_header.html` ;
   « Quitter » dans `app_quit.js` (bouton rendu seulement sous launcher.py :
   un spec appelle `quitApp()` par `import()` et intercepte `/api/quit`).
+- Pas de timeline (`day_steps.mjs`) : quand « Par durée » / « Sur la
+  musique » ne laisse pas une image par jour, `refreshTimingPlan` regroupe
+  les jours sans trouvaille et pose `options.animation.daySteps`
+  (`{ startDayNumber, dayCount, stepEnds }`). Le moteur compte alors en
+  pas, pas en jours : `timePerDay`, `cameraPacingState.dayIndex`,
+  `holdsByDay`, `recordingDayCount` et la simulation caméra
+  (`steppedCameraSimulation`) sont par pas ; un pas s'affiche en un lot
+  (`stepDatesFrom`). Tout nouveau code qui convertit un jour en instant
+  vidéo doit passer par `stepIndexOfDayNumber` / `stepsShownForDays`. Un
+  spec qui règle `dateStart`/`dateEnd` attend d'abord
+  `waitForStableTimeline` : un rechargement tardif remet la plage par
+  défaut, même en plein enregistrement (exemples « jours regroupés » de
+  `video-export.spec.mjs`).
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `@playwright\test\cli.js`, `run-tests.mjs` ou `run_server.py`. Sous Linux :

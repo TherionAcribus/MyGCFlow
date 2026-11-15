@@ -43,6 +43,7 @@ import { dnfPointOptions } from './dnf_model.mjs';
 import { normalizePosesEffects, withPosesEffectsPreset } from './poses_effects.mjs';
 import { dayNumberToDate } from './evolution_timeline.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
+import { buildDaySteps } from './day_steps.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
 import { LOOP_JOIN_MS, loopCrossfadeMs, loopPeriodMs } from './music_playback.mjs';
@@ -6897,20 +6898,29 @@ export function refreshTimingPlan({ save = true } = {}) {
         }
     }
 
+    // Pas de timeline (jours sans trouvaille regroupés) : reposés plus bas
+    // seulement si la durée imposée l'exige. Effacés d'abord : les estimations
+    // de caméra et le moteur les lisent dans options.animation.
+    animation.daySteps = null;
+
     // Suivi de caméra : les trajets sont simulés depuis la vue courante, pour
     // que leur durée entre dans le plan au lieu de s'y ajouter par surprise.
     // En mode « tête du trait » il n'y a pas de trajets à simuler (mouvement
-    // continu) — estimateCameraTravel renvoie alors null.
-    const cameraTravel = animation.cameraFollow === true ? pkg.estimateCameraTravel?.() : null;
-    // Retour au cadrage de départ en fin d'animation (0 si décoché ou si la
-    // caméra ne quitte pas ce cadrage). Après estimateCameraTravel : le retour
-    // du suivi par jour est tiré de la même simulation.
-    const cameraReturnMs = animation.cameraFollow === true ? (pkg.estimateCameraReturnMs?.() || 0) : 0;
+    // continu) — estimateCameraTravel renvoie alors null. Le retour au cadrage
+    // de départ (0 si décoché ou si la caméra ne quitte pas ce cadrage) est
+    // tiré de la même simulation. Réestimés quand les pas changent.
+    let cameraTravel = null;
+    let cameraReturnMs = 0;
+    const estimateCamera = () => {
+        cameraTravel = animation.cameraFollow === true ? pkg.estimateCameraTravel?.() : null;
+        cameraReturnMs = animation.cameraFollow === true ? (pkg.estimateCameraReturnMs?.() || 0) : 0;
+    };
+    estimateCamera();
 
-    // 2. Plan de timing partagé (aperçu, MediaRecorder, Images). `let` : une
-    // seconde passe peut le recalculer avec les pauses de dates (holds).
-    let plan = buildTimingPlan({
-        dayCount: dayCount ?? undefined,
+    // 2. Plan de timing partagé (aperçu, MediaRecorder, Images), pour `days`
+    // unités de timeline (jours, ou pas) et des pauses de dates données.
+    const makePlan = (days, cameraHoldMs = 0) => buildTimingPlan({
+        dayCount: days ?? undefined,
         startDate: animation.dateStart,
         endDate: animation.dateEnd,
         rhythm: rhythm || { mode: 'rate', daysPerSecond: animation.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback },
@@ -6928,6 +6938,8 @@ export function refreshTimingPlan({ save = true } = {}) {
         // tête de l'animation (0 quand il n'y en a pas). Sans effet hors mode
         // piste — le plan l'ignore alors (cf. video_timing.mjs).
         cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
+        // Pauses de dates planifiées (holds), cf. planWithHolds.
+        cameraHoldMs,
         cameraReturnMs,
         // Piste de caméra (défaut) : les trajets se superposent à l'affichage
         // des dates. cameraTrack:false revient au mode réactif, où les dates
@@ -6937,49 +6949,96 @@ export function refreshTimingPlan({ save = true } = {}) {
     });
 
     // Mode piste : les trajets qui ne peuvent pas arriver avant l'affichage de
-    // leur jour mettent les dates en pause (holds). Deuxième passe avec le
-    // total mesuré : en rythme libre la durée annoncée s'allonge d'autant, en
-    // durée imposée ce temps est retranché des dates (le moteur refait le même
-    // calcul dans prepareCameraPacing).
-    let cameraHoldCount = 0;
-    // Rythme libre : le mode 'rate', mais aussi une durée imposée trop courte
-    // pour une image par jour (musique plus courte que le minimum) — le plan
-    // n'a alors pas de budget, et le moteur joue le rythme minimum, pauses
-    // ajoutées. Les estimer au rythme du plan, sinon la durée annoncée les
-    // omettait (vidéo de 4:41 annoncée 3:24 sur 16 ans de données).
-    const freeRhythm = rhythmMode() === 'rate' || !Number.isFinite(plan.cameraTimeBudgetMs);
-    const hold = plan.cameraOverlap && pkg.options.animation?.cameraFollow === true
-        && !isCameraTrailMode() && typeof pkg.estimateCameraTrackHold === 'function'
-        ? pkg.estimateCameraTrackHold(
-            freeRhythm ? plan.timePerDayMs : null,
-            { budgetMs: freeRhythm
-                ? undefined
-                // Le retour final est réservé avant le partage dates/pauses,
-                // comme dans prepareCameraPacing.
-                : Math.max(1, plan.cameraTimeBudgetMs - plan.cameraReturnMs) },
-        )
-        : null;
-    if (hold && hold.holdTotalMs > 0) {
-        cameraHoldCount = hold.holdCount;
-        plan = buildTimingPlan({
-            dayCount: dayCount ?? undefined,
-            startDate: animation.dateStart,
-            endDate: animation.dateEnd,
-            rhythm: rhythm || { mode: 'rate', daysPerSecond: animation.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback },
-            fps: pkg.options.record?.fps,
-            flashMode: pkg.effectiveFlashMode ? pkg.effectiveFlashMode() : pkg.options.flash?.mode,
-            flashDurationMs: Number(pkg.options.flash?.duration) || 0,
-            tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
-            extraEndSeconds: extraP.ok ? extraP.value : (Number(animation.extraEndSeconds) || 0),
-            allowMultipleDaysPerFrame: isLifecyclePage(),
-            cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
-            cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
-            cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
-            cameraHoldMs: hold.holdTotalMs,
-            cameraReturnMs,
-            cameraOverlap: animation.cameraTrack !== false || isCameraTrailMode(),
-        });
-        plan.cameraHoldCount = cameraHoldCount;
+    // leur jour mettent les dates en pause (holds). En rythme libre la durée
+    // annoncée s'allonge d'autant, en durée imposée ce temps est retranché des
+    // dates (le moteur refait le même calcul dans prepareCameraPacing).
+    //
+    // Rythme libre : le mode 'rate', mais aussi une durée imposée intenable
+    // (plan au minimum, sans budget) — le moteur joue alors le rythme minimum,
+    // pauses ajoutées : elles s'estiment au rythme du plan. Les omettre donnait
+    // une vidéo de 4:41 annoncée 3:24 sur 16 ans de données.
+    const cameraHolds = animation.cameraFollow === true && !isCameraTrailMode()
+        && typeof pkg.estimateCameraTrackHold === 'function';
+    const estimateHolds = (p) => {
+        if (!p.cameraOverlap || !cameraHolds) return null;
+        const free = rhythmMode() === 'rate' || !Number.isFinite(p.cameraTimeBudgetMs);
+        return pkg.estimateCameraTrackHold(
+            free ? p.timePerDayMs : null,
+            // Le retour final est réservé avant le partage dates/pauses,
+            // comme dans prepareCameraPacing.
+            { budgetMs: free ? undefined : Math.max(1, p.cameraTimeBudgetMs - p.cameraReturnMs) },
+        );
+    };
+    // Deux passes au plus : des pauses qui ne tiennent pas dans la durée
+    // imposée la rendent intenable (video_timing.mjs) — le plan passe au
+    // minimum, où elles se recalculent au rythme minimum.
+    const planWithHolds = (days) => {
+        let p = makePlan(days);
+        for (let pass = 0; pass < 2; pass++) {
+            const hold = estimateHolds(p);
+            if (!hold || !(hold.holdTotalMs > 0)) break;
+            const budgeted = Number.isFinite(p.cameraTimeBudgetMs);
+            p = makePlan(days, hold.holdTotalMs);
+            p.cameraHoldCount = hold.holdCount;
+            if (Number.isFinite(p.cameraTimeBudgetMs) === budgeted) break;
+        }
+        return p;
+    };
+
+    // Durée imposée intenable : un jour de trouvailles garde toujours au moins
+    // une image, mais les jours sans trouvaille peuvent partager la leur
+    // (day_steps.mjs) — assez de pas regroupés pour que dates, approche,
+    // pauses et retour de la caméra tiennent dans la durée demandée. Chaque
+    // essai se mesure avec ses pauses (plus de regroupement = fenêtres de
+    // trajet plus courtes = plus de pauses) ; le dépassement restant est
+    // retiré en pas à l'essai suivant. Si même tous les jours vides
+    // regroupés ne suffisent pas, le plan le plus court est gardé.
+    const planWithDaySteps = (clamped) => {
+        const events = pkg.animationDayEventFlags?.();
+        if (!events || events.dayCount !== clamped.dayCount) return null;
+        const frameMs = 1000 / clamped.fps;
+        // Point de départ : le temps que laissent approche, pauses (estimées à
+        // une image par jour) et retour. Sans les pauses, une plage dont les
+        // dates seules tiennent — seules les pauses débordent — semblait ne
+        // rien avoir à regrouper : le plan restait au minimum (30 jours/s à
+        // 30 i/s), alors qu'un rythme plus rapide tenait la musique.
+        let maxSteps = Math.min(events.dayCount - 1, Math.floor((clamped.requestedTotalDurationMs
+            - clamped.endHoldMs - clamped.extraEndMs - clamped.cameraLeadMs - clamped.cameraHoldMs
+            - clamped.cameraReturnMs) / frameMs));
+        let best = null;
+        for (let attempt = 0; attempt < 12; attempt++) {
+            const steps = buildDaySteps(events.flags, Math.max(1, maxSteps));
+            if (!steps) break;
+            animation.daySteps = {
+                startDayNumber: events.startDayNumber,
+                dayCount: events.dayCount,
+                stepEnds: steps.stepEnds,
+            };
+            estimateCamera();
+            const p = planWithHolds(steps.stepCount);
+            best = { plan: p, steps };
+            if (!p.clampedToMinimum || steps.stepCount <= steps.eventDays) break;
+            const overflowSteps = Math.ceil((p.totalDurationMs - p.requestedTotalDurationMs) / frameMs);
+            maxSteps = steps.stepCount - Math.max(1, overflowSteps);
+        }
+        if (!best) {
+            animation.daySteps = null;
+            estimateCamera();
+            return null;
+        }
+        // Le plan compte des pas ; la synthèse et le champ jours/s parlent
+        // en jours (rythme moyen sur la plage).
+        const p = best.plan;
+        p.stepCount = best.steps.stepCount;
+        p.dayCount = events.dayCount;
+        const datesMs = p.timePerDayMs * p.stepCount;
+        p.daysPerSecond = datesMs > 0 ? p.dayCount * 1000 / datesMs : NaN;
+        return p;
+    };
+
+    let plan = planWithHolds(dayCount);
+    if (plan.valid && plan.clampedToMinimum && rhythmMode() !== 'rate' && !isLifecyclePage()) {
+        plan = planWithDaySteps(plan) || plan;
     }
     lastTimingPlan = plan;
     // « Garder la fin du morceau » : le départ suit la durée de la vidéo,
@@ -7153,6 +7212,13 @@ function renderTimingSummary(plan) {
             : t('${n} images', { n: plan.totalFrameCount }));
         if (plan.framesPerDayAverage > 0 && plan.framesPerDayAverage < 1) {
             parts.push(t('≈ ${n} jours par image', { n: Number((1 / plan.framesPerDayAverage).toFixed(1)) }));
+        }
+        // Durée imposée tenue en regroupant des jours sans trouvaille.
+        if (plan.stepCount < plan.dayCount) {
+            const merged = plan.dayCount - plan.stepCount;
+            parts.push(merged > 1
+                ? t('${n} jours sans trouvaille regroupés', { n: merged })
+                : t('${n} jour sans trouvaille regroupé', { n: merged }));
         }
         summary.textContent = parts.join(' · ');
     }

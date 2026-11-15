@@ -164,6 +164,7 @@ import {
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate, isoToDayNumber } from './evolution_timeline.mjs';
 import { countDaysUpTo } from './timeline_model.mjs';
+import { compactBySteps, stepIndexOfDay, stepsShownForDays } from './day_steps.mjs';
 import { dnfRevisitBetween, dnfSameDayResolved, dnfVisibleAt, dnfVisibleStatic, dnfVisitsByDay } from './dnf_model.mjs';
 import { ownerFlashBetween, ownerStateAt, ownerVisibleAt, ownerVisitsByDay } from './owner_model.mjs';
 import { OWNER_FLASH_KINDS, resolveOwnerFlash } from './event_flash.mjs';
@@ -1946,7 +1947,7 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
         }
 
         const view = map.getView();
-        return simulateCameraJourneys(days, {
+        return steppedCameraSimulation(simulateCameraJourneys(days, {
             center: view.getCenter(),
             zoom: view.getZoom(),
             resolution: view.getResolution(),
@@ -1961,7 +1962,7 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
             worldWidth: cameraWorldWidth(),
             returnHome: effectiveCameraReturnHome(),
             preferHome: effectiveCameraPreferHome(),
-        });
+        }));
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);
         return null;
@@ -2469,6 +2470,104 @@ function animationEndDate() {
     return pkg.options.animation.dateEnd instanceof Date
         ? pkg.options.animation.dateEnd
         : pkg.metadata.endDate;
+}
+
+// --- Pas de timeline (day_steps.mjs) ------------------------------------------
+//
+// Durée imposée trop courte pour une image par jour : le plan (ui.js,
+// refreshTimingPlan) regroupe les jours sans trouvaille en pas et les pose dans
+// options.animation.daySteps ({ startDayNumber, dayCount, stepEnds }). Le
+// moteur avance alors pas par pas : rythme, trajets et pauses de la caméra,
+// images de la capture sont comptés en pas, et chaque pas affiche ses jours en
+// un lot. Sans pas (cas courant), un pas vaut un jour.
+
+// Pas applicables à la plage animée, ou null. Des pas posés pour une autre
+// plage (dates changées depuis le dernier plan) sont ignorés.
+function activeDaySteps() {
+    if (isLifecyclePage()) return null;
+    const steps = pkg.options.animation?.daySteps;
+    if (!steps || !Array.isArray(steps.stepEnds) || steps.stepEnds.length === 0) return null;
+    const start = animationStartDate();
+    const end = animationEndDate();
+    if (!(start instanceof Date) || !(end instanceof Date)) return null;
+    if (steps.startDayNumber !== dateToDayNumber(start)) return null;
+    if (steps.dayCount !== inclusiveDayCount(start, end)) return null;
+    return steps;
+}
+
+// Indice dans la plage animée (0 = premier jour) d'une date.
+function rangeDayIndex(date) {
+    return dateToDayNumber(date) - dateToDayNumber(animationStartDate());
+}
+
+// Nombre d'unités de la timeline (pas, ou jours sans pas) de la plage.
+function animationStepCount(start = animationStartDate(), end = animationEndDate()) {
+    return activeDaySteps()?.stepEnds.length ?? inclusiveDayCount(start, end);
+}
+
+// Jours du pas qui commence à `date` (le pas qui la contient, depuis elle),
+// bornés à `endDate` : un seul sans pas.
+function stepDatesFrom(date, endDate = pkg.metadata.endDate) {
+    const steps = activeDaySteps();
+    const dates = [new Date(date)];
+    if (!steps) return dates;
+    const index = rangeDayIndex(date);
+    const last = steps.stepEnds[stepIndexOfDay(steps.stepEnds, index)];
+    for (let i = index + 1; i <= last; i++) {
+        const next = new Date(dates[dates.length - 1]);
+        next.setDate(next.getDate() + 1);
+        if (next > endDate) break;
+        dates.push(next);
+    }
+    return dates;
+}
+
+// Pas qui contient le jour dayNumber (numéro absolu) : indice de pas ou, sans
+// pas, de jour dans la plage.
+function stepIndexOfDayNumber(dayNumber) {
+    const index = dayNumber - dateToDayNumber(animationStartDate());
+    const steps = activeDaySteps();
+    return steps ? stepIndexOfDay(steps.stepEnds, index) : index;
+}
+
+// Simulation de la caméra (par jour) ramenée aux pas : un pas ne contient
+// jamais qu'un jour de trouvailles, donc au plus un trajet — la suite des
+// décisions est identique, seul l'instant de chaque trajet change.
+function steppedCameraSimulation(simulation) {
+    const steps = activeDaySteps();
+    if (!simulation || !steps) return simulation;
+    const journeysByDay = compactBySteps(simulation.journeysByDay, steps.stepEnds);
+    return {
+        ...simulation,
+        dayCount: steps.stepEnds.length,
+        journeysByDay,
+        travelMsByDay: compactBySteps(simulation.travelMsByDay, steps.stepEnds,
+            (values) => values.reduce((sum, ms) => sum + (Number(ms) || 0), 0)),
+        hasPointsByDay: compactBySteps(simulation.hasPointsByDay, steps.stepEnds,
+            (values) => values.some(Boolean)),
+        leadMs: journeysByDay[0] ? journeysByDay[0].totalDurationMs : 0,
+    };
+}
+
+// Plan (ui.js) : jours de la plage animée qui ont des trouvailles — points
+// affichés ou locationless masquées, qui montent le compteur. null sans plage.
+export function animationDayEventFlags() {
+    const start = animationStartDate();
+    const end = animationEndDate();
+    if (!(start instanceof Date) || !(end instanceof Date) || end < start || !pkg.pointsByDate) return null;
+    const count = inclusiveDayCount(start, end);
+    const flags = new Array(count).fill(false);
+    const startDay = dateToDayNumber(start);
+    const mark = (index) => {
+        if (!index) return;
+        for (const key of index.keys()) {
+            const i = dateToDayNumber(new Date(key)) - startDay;
+            if (i >= 0 && i < count) flags[i] = true;
+        }
+    };
+    mark(pkg.pointsByDate);
+    mark(pkg.hiddenPointsByDate);
+    return { startDayNumber: startDay, dayCount: count, flags };
 }
 
 // Panneaux de stats : l'accumulateur repart des caches antérieures à la date
@@ -3435,9 +3534,12 @@ export function startAnimation(restart=false) {
         // timePerDay descend sous la durée d'une frame — mais jamais plus : pas de
         // rafale, contrairement à un setInterval dont les callbacks en retard se
         // déchargeraient d'un coup. Les jours du lot sont affichés ensemble.
+        // Un franchissement affiche un pas : un jour, ou plusieurs jours sans
+        // trouvaille regroupés (activeDaySteps) — le plafond compte les pas.
         const daysThisFrame = [];
+        let stepsThisFrame = 0;
         let reachedEnd = false;
-        while (daysThisFrame.length < maxDaysThisFrame) {
+        while (stepsThisFrame < maxDaysThisFrame) {
             // Pause « piste » planifiée : le jour i n'est affiché qu'une fois
             // son trajet terminé — le seuil du passage qui l'affiche porte son
             // hold (holdsByDay est indexé comme journeysByDay, donc comme
@@ -3446,9 +3548,12 @@ export function startAnimation(restart=false) {
                 + (cameraTrack?.holdsByDay?.[cameraPacingState.dayIndex] || 0);
             if (animationAccMs < threshold) break;
             animationAccMs -= threshold;
-            // currentDate est muté juste après : le lot doit garder une copie.
-            daysThisFrame.push(new Date(currentDate));
+            // Copies : currentDate est muté juste après.
+            const stepDates = stepDatesFrom(currentDate);
+            daysThisFrame.push(...stepDates);
+            stepsThisFrame++;
             cameraPacingState.dayIndex++;
+            currentDate = new Date(stepDates[stepDates.length - 1]);
             currentDate.setDate(currentDate.getDate() + 1);
             if (currentDate > pkg.metadata.endDate) {
                 reachedEnd = true;
@@ -3714,7 +3819,9 @@ export function seekAnimationToDate(date) {
     pkg.syncImagesToDate?.(day, null);
 
     currentDate = next;
-    cameraPacingState.dayIndex = dateToDayNumber(next) - dateToDayNumber(range.start);
+    // Pas à afficher ensuite : celui qui contient le lendemain (le reste de
+    // ses jours si le saut tombe au milieu d'un regroupement).
+    cameraPacingState.dayIndex = stepIndexOfDayNumber(dateToDayNumber(next));
     animationAccMs = 0;
     animationLastTs = null;
     animationDatesComplete = currentDate > pkg.metadata.endDate;
@@ -3800,7 +3907,11 @@ export function getCameraFollowSnapshot() {
 // pré-roll et des pauses que seul le lancement calcule. Le plan n'est pas
 // lu pendant un enregistrement (capture rapide : timeline étirée).
 export function videoTimeAtDays(shownDays) {
-    const shown = Math.max(0, Math.floor(Number(shownDays) || 0));
+    // Pas de timeline : les jours vides regroupés ne comptent qu'avec leur pas.
+    const steps = activeDaySteps();
+    const shown = steps
+        ? stepsShownForDays(steps.stepEnds, shownDays)
+        : Math.max(0, Math.floor(Number(shownDays) || 0));
     const preview = !!animationInProgress && !isRecordingActive();
     const plan = preview && previewTimeline ? previewTimeline : null;
     if (plan) {
@@ -3999,7 +4110,8 @@ function startRecordingProcess(session){
     // Calculer le total global puis répartir ses fractions entre les jours. Arrondir
     // chaque jour séparément faisait dériver fortement les vidéos longues.
     try {
-        recordingDayCount = inclusiveDayCount(currentDate, pkg.metadata.endDate);
+        // Unités de la timeline : les pas quand des jours vides sont regroupés.
+        recordingDayCount = animationStepCount(currentDate, pkg.metadata.endDate);
         // Suivi de caméra : les trajets sont simulés depuis la vue de départ.
         // Durée imposée → le temps des dates est ce qu'ils laissent libre.
         // forRecording : isRecording n'est posé que plus bas, mais la lecture
@@ -4167,7 +4279,7 @@ function startRecordingProcess(session){
     // « piste » : les images de tête montrent le vol vers le jour 0, qui n'est
     // affiché qu'à leur écoulement (captureNextFrame, branche leadPending).
     if (!recordingLeadPending) {
-        displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
+        displayRecordingStep(pkg.options.point, pkg.options.flash, infos);
     }
 
     // Attendre que le rendu soit complet avant de commencer la capture.
@@ -4775,7 +4887,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
             currentDayFrameTarget = cameraPacing
                 ? cameraPacedFrameTarget(false)
                 : framesForDay(0, recordingDayCount, recordingBaseFrameCount);
-            displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+            displayRecordingStep(pointOptions, flashOptions, infos);
         } else if (isLifecyclePage()) {
             // Plusieurs jours peuvent partager une image : les jours qui n'en
             // reçoivent aucune sont affichés en un seul lot avec le suivant.
@@ -4818,7 +4930,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                             recordingDayCount,
                             recordingBaseFrameCount,
                         );
-                    displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+                    displayRecordingStep(pointOptions, flashOptions, infos);
                 }
             }
         }
@@ -4994,7 +5106,11 @@ function recordAnimationMediaRecorder(){
 
 function computeTotalAnimationMs(){
     try {
-        const animationDays = inclusiveDayCount(currentDate, pkg.metadata.endDate);
+        // Pas restants (jours sans regroupement) depuis currentDate.
+        const steps = activeDaySteps();
+        const animationDays = steps
+            ? steps.stepEnds.length - stepIndexOfDay(steps.stepEnds, rangeDayIndex(currentDate))
+            : inclusiveDayCount(currentDate, pkg.metadata.endDate);
         const perDay = Number(pkg.options.animation?.timePerDay) || 50;
         let base = animationDays * perDay;
         // Suivi de caméra : la durée imposée couvre déjà dates et trajets ;
@@ -5841,13 +5957,19 @@ async function captureElement() {
     });
 }
 
-function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos) {
-    displayFeaturesForDates([date], pointOptions, flashOptions, record, infos);
+// Capture image par image : affiche le pas qui commence à currentDate (un jour,
+// ou des jours vides regroupés avec le suivant) et laisse currentDate sur son
+// dernier jour — le passage au pas suivant repart du lendemain.
+function displayRecordingStep(pointOptions, flashOptions, infos) {
+    const dates = stepDatesFrom(currentDate);
+    currentDate = new Date(dates[dates.length - 1]);
+    displayFeaturesForDates(dates, pointOptions, flashOptions, true, infos);
 }
 
 // Traite un lot de jours consécutifs en une passe : un seul addFeatures et une
 // seule mise à jour des infos, quel que soit le nombre de jours rattrapés par la
-// frame rAF. Les enregistrements (frame par frame) passent toujours un jour unique.
+// frame rAF. Les enregistrements (frame par frame) passent un pas : un jour, ou
+// des jours sans trouvaille regroupés avec le suivant (activeDaySteps).
 function displayFeaturesForDates(dates, pointOptions, flashOptions, record, infos) {
     if (!dates || dates.length === 0) return;
     // Le curseur de la barre de chronologie suit les jours affichés (le
@@ -6553,9 +6675,10 @@ function scheduleTravelTrail(lastDay, now) {
     let arrivalAt;
     if (nextIdx < route.days.length) {
         targetLen = lengthAtDay(route, path, nextIdx);
-        // Estimation : les jours défilent au rythme configuré. Si le suivi de
-        // caméra fait attendre une date, le stylo arrive en avance et patiente.
-        arrivalAt = now + (route.days[nextIdx] - lastDay) * msPerDay;
+        // Estimation : les pas (jours, ou jours vides regroupés) défilent au
+        // rythme configuré. Si le suivi de caméra fait attendre une date, le
+        // stylo arrive en avance et patiente.
+        arrivalAt = now + (stepIndexOfDayNumber(route.days[nextIdx]) - stepIndexOfDayNumber(lastDay)) * msPerDay;
     } else {
         targetLen = behindLen;
         arrivalAt = now + Math.min(maxDurationMs, msPerDay);
