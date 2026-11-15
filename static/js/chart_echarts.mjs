@@ -340,7 +340,37 @@ function axisStyle(tokens) {
     };
 }
 
-function valueAxis(spec, result, ctx, { log = false, max = undefined, gridIndex = undefined, signed = false } = {}) {
+// Bas de l'axe d'une courbe de cumul « depuis le début » (undefined : zéro).
+// Sur une période qui ne commence pas aux premières trouvailles (2024 :
+// 2 950 → 3 326), la courbe dessinée depuis zéro ne serait qu'un trait
+// plat en haut du cadre : l'axe part d'une valeur ronde sous la plus petite
+// valeur dès que la courbe occuperait moins de la moitié de la hauteur.
+// Jamais pour des barres (leur longueur est la valeur), un empilement, une
+// échelle logarithmique ou des pourcentages. Commun à toutes les séries :
+// les petits graphiques côte à côte gardent la même échelle.
+export function cumulativeFloor(result, spec) {
+    if (spec.measure.op !== 'cumulative' || spec.measure.from !== 'all') return undefined;
+    if (!['line', 'area'].includes(spec.view.chart) || spec.view.log) return undefined;
+    if ((spec.view.stack && spec.splitBy) || result.normalize !== 'none') return undefined;
+    let min = Infinity;
+    let max = -Infinity;
+    for (const s of result.series) {
+        for (const v of s.values) {
+            if (v === null) continue;
+            min = Math.min(min, v);
+            max = Math.max(max, v);
+        }
+    }
+    // Un objectif déjà dépassé reste dans le cadre.
+    if (spec.goal?.value) min = Math.min(min, spec.goal.value);
+    if (!(min > 0) || !(max > min) || min <= max - min) return undefined;
+    const raw = (max - min) / 4;
+    const power = 10 ** Math.floor(Math.log10(raw));
+    const step = Math.max(1, [1, 2, 5, 10].map((m) => m * power).find((s) => s >= raw));
+    return Math.floor(min / step) * step;
+}
+
+function valueAxis(spec, result, ctx, { log = false, min = undefined, max = undefined, gridIndex = undefined, signed = false } = {}) {
     const { tokens, labels } = ctx;
     const compact = signed
         ? (v) => labels.formatDelta(v, spec.measure, result.normalize)
@@ -348,6 +378,7 @@ function valueAxis(spec, result, ctx, { log = false, max = undefined, gridIndex 
     return {
         type: log ? 'log' : 'value',
         gridIndex,
+        min,
         max,
         axisLine: { show: false },
         axisTick: { show: false },
@@ -579,6 +610,7 @@ function overlayOption(result, spec, ctx) {
     const keys = categoryAxis(result, ctx, { isBar, horizontal });
     const values = valueAxis(spec, result, ctx, {
         log: spec.view.log,
+        min: cumulativeFloor(result, spec),
         // L'objectif et la fin projetée restent dans le cadre.
         max: reach ? (extent) => niceAxisMax(Math.max(extent.max, reach)) : undefined,
     });
@@ -624,6 +656,7 @@ function sideOption(result, spec, ctx) {
     const perItem = !splits && isBar;
     const cells = sideCells(result.periods.length);
     const max = sharedMax(result, stacked);
+    const min = cumulativeFloor(result, spec);
     const legendHeight = splits ? 8 : 0;
 
     const grids = [];
@@ -649,7 +682,7 @@ function sideOption(result, spec, ctx) {
             textStyle: { fontSize: 12, fontWeight: 600, color: tokens.textMuted },
         });
         const keys = categoryAxis(result, ctx, { isBar, horizontal, gridIndex: i });
-        const values = valueAxis(spec, result, ctx, { log: spec.view.log, max: spec.view.log ? undefined : max, gridIndex: i });
+        const values = valueAxis(spec, result, ctx, { log: spec.view.log, min, max: spec.view.log ? undefined : max, gridIndex: i });
         xAxis.push(horizontal ? values : keys);
         yAxis.push(horizontal ? keys : values);
     }

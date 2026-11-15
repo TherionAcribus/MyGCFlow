@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -118,6 +118,38 @@ test('anneau : deux types de même couleur sur la carte y ont deux parts distinc
     const o = buildChartOption(result, spec, { ...ctx, typeColors: shared });
     assert.equal(o.series[0].data[0].itemStyle.color, '#008000');
     assert.equal(new Set(o.series[0].data.map((d) => d.itemStyle.color)).size, o.series[0].data.length);
+});
+
+test('cumul depuis le début sur une période tardive : l\'axe ne part plus de zéro', () => {
+    const progress = { groupBy: 'month', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'area' } };
+    // 2026 : 3 trouvailles avant, la courbe va de 4 à 5 — depuis zéro, un trait plat.
+    const late = option({ ...progress, periods: [{ kind: 'year', year: 2026 }] });
+    const floor = late.option.yAxis.min;
+    assert.ok(floor > 0 && floor <= 4, `bas de l'axe ${floor}`);
+    assert.equal(cumulativeFloor(late.result, late.spec), floor);
+    // Toute la période : la courbe part de 1, l'axe de zéro.
+    assert.equal(option(progress).option.yAxis.min, undefined);
+    // Barres : leur longueur est la valeur, toujours depuis zéro.
+    assert.equal(option({ ...progress, view: { chart: 'bar' }, periods: [{ kind: 'year', year: 2026 }] }).option.yAxis.min, undefined);
+    // Cumul de la seule période : il part de zéro.
+    assert.equal(option({ ...progress, measure: { op: 'cumulative' }, periods: [{ kind: 'year', year: 2026 }] }).option.yAxis.min, undefined);
+    // Côte à côte : même bas d'axe pour chaque petit graphique.
+    const side = option({ ...progress, periods: [{ kind: 'year', year: 2026 }, { kind: 'previous' }],
+        compare: { layout: 'side', toDate: false } }).option;
+    assert.equal(new Set(side.yAxis.map((axis) => axis.min)).size, 1);
+});
+
+test('bas d\'axe d\'un cumul : valeur ronde sous la plus petite valeur', () => {
+    const spec = { measure: { op: 'cumulative', from: 'all' }, view: { chart: 'line' } };
+    const result = (values) => ({ normalize: 'none', series: [{ values }] });
+    assert.equal(cumulativeFloor(result([2950, 3100, null, 3326]), spec), 2900);
+    assert.equal(cumulativeFloor(result([12040, 12050, 12061]), spec), 12040);
+    // La courbe occupe déjà plus de la moitié de la hauteur : zéro.
+    assert.equal(cumulativeFloor(result([64, 2000, 4000]), spec), undefined);
+    // Plate (rien de trouvé sur la période) : zéro, la ligne reste en haut.
+    assert.equal(cumulativeFloor(result([3000, 3000]), spec), undefined);
+    // Un objectif déjà dépassé reste dans le cadre.
+    assert.equal(cumulativeFloor(result([2950, 3326]), { ...spec, goal: { value: 1000 } }), undefined);
 });
 
 test('anneau : une part par catégorie non vide, légende, pourcentages en infobulle', () => {

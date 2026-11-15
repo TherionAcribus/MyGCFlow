@@ -132,6 +132,14 @@ vocabulaire en tête du module, détail dans le plan (§ 2).
   requis (comme la carte, `matchesAttributes`).
 - Cumul : depuis le début de la période, ou depuis toujours
   (`measure.from: 'all'`, lignes filtrées antérieures ajoutées au départ).
+  Une courbe ou aire de cumul « depuis toujours » sur une période tardive
+  (2024 : 2 950 → 3 326) n'est plus dessinée depuis zéro, où elle n'était
+  qu'un trait plat en haut du cadre : `cumulativeFloor` (chart_echarts.mjs)
+  fait partir l'axe d'une valeur ronde sous la plus petite valeur (pas d'un
+  quart de l'étendue) dès que la courbe occuperait moins de la moitié de la
+  hauteur. Jamais pour des barres, un empilement, une échelle log ou des
+  pourcentages ; un objectif déjà dépassé reste dans le cadre ; même bas
+  d'axe pour tous les petits graphiques côte à côte.
 
 ## Comparer des périodes (lot 2)
 
