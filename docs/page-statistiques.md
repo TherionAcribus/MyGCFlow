@@ -490,7 +490,8 @@ effacer » le retire avec la période proposée.
 
 - `chart_video.mjs` (pur) : `chartAnimates` (barres / courbes / aires sur
   un axe de temps ou les cases d'une année, sans écart), `revealProgress`
-  (linéaire puis `VIDEO_HOLD` = 15 % de pause sur le graphique complet),
+  (linéaire puis pause sur le graphique complet : `VIDEO_HOLD` = 15 %
+  de la durée, avec un plancher `VIDEO_HOLD_MIN_MS` = 2 s),
   `revealResult` (clés atteintes pleines, la clé en cours grandit — barre —
   ou glisse depuis la précédente — courbe), `valueMax` / `niceCeil` /
   `lockOption` (échelle figée, plus de glissière ni d'animation ECharts).

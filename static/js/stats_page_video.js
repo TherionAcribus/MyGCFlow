@@ -6,6 +6,7 @@ import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
     chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
+    VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES,
 } from './chart_video.mjs';
 import fixWebmDuration from './fix-webm-duration.js';
@@ -633,7 +634,7 @@ export async function recordVideo() {
             // de paint, pas de maj de statut (prise gelée).
             if (document.hidden) return nextFrame(tick);
             const elapsed = performance.now() - start - vis.hiddenMs();
-            painter.paint(revealProgress(elapsed, duration));
+            painter.paint(revealProgress(elapsed, duration, VIDEO_HOLD, VIDEO_HOLD_MIN_MS));
             const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
             // Même garde qu'en mode tableau : le compte à rebours n'est
             // réécrit qu'au changement de seconde.
@@ -732,7 +733,7 @@ export function previewVideo() {
     $('statsVideoStage').replaceChildren(painter.canvas);
     painter.paint(0);
     runVideoPreview(video, duration,
-        (elapsed) => { painter.paint(revealProgress(elapsed, duration)); },
+        (elapsed) => { painter.paint(revealProgress(elapsed, duration, VIDEO_HOLD, VIDEO_HOLD_MIN_MS)); },
         () => t('Aperçu…'),
         painter.dispose);
 }

@@ -13,8 +13,12 @@ export const VIDEO_SIZES = Object.freeze({
 });
 export const VIDEO_DURATIONS = Object.freeze([6, 10, 15, 20, 30]);
 export const VIDEO_FPS = 30;
-// Fin de vidéo : le graphique complet reste affiché (part de la durée).
+// Fin de vidéo : le graphique complet reste affiché (part de la durée),
+// avec un plancher — 15 % d'un clip de 6 s ne laissait que 0,9 s pour
+// lire le résultat (la vidéo de la carte retient 3 s, cf.
+// DEFAULT_END_HOLD_MS de video_timing.mjs).
 export const VIDEO_HOLD = 0.15;
+export const VIDEO_HOLD_MIN_MS = 2000;
 
 // Axes ordonnés : l'animation suit le temps (ou les cases d'une année).
 const ORDERED_DIMS = new Set([
@@ -32,9 +36,13 @@ export function chartAnimates(spec, result = null) {
 
 // Avancée de l'animation (0 → 1) au temps `elapsed` d'une vidéo de
 // `duration` (mêmes unités) : linéaire, puis le graphique complet reste.
-export function revealProgress(elapsed, duration, hold = VIDEO_HOLD) {
+// `hold` est la part de pause finale ; `minHold` (mêmes unités) en pose
+// le plancher — plafonné à la moitié de la vidéo pour garder une
+// animation.
+export function revealProgress(elapsed, duration, hold = VIDEO_HOLD, minHold = 0) {
     if (!(duration > 0)) return 1;
-    const run = duration * (1 - hold);
+    const holdMs = Math.min(Math.max(duration * hold, minHold), duration * 0.5);
+    const run = duration - holdMs;
     return Math.min(1, Math.max(0, elapsed / run));
 }
 

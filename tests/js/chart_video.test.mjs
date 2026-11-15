@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
     chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
+    VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
 } from '../../static/js/chart_video.mjs';
 
 const result = {
@@ -31,6 +32,17 @@ test('avancée : linéaire puis pause sur le graphique complet', () => {
     assert.equal(revealProgress(8.5, 10), 1);
     assert.equal(revealProgress(10, 10), 1);
     assert.equal(revealProgress(3, 0), 1);
+});
+
+test('avancée : plancher de 2 s sur la pause finale', () => {
+    // 15 % de 6 s = 0,9 s < plancher : l'animation court sur 4 s.
+    assert.equal(revealProgress(0, 6000, VIDEO_HOLD, VIDEO_HOLD_MIN_MS), 0);
+    assert.equal(revealProgress(2000, 6000, VIDEO_HOLD, VIDEO_HOLD_MIN_MS), 0.5);
+    assert.equal(revealProgress(4000, 6000, VIDEO_HOLD, VIDEO_HOLD_MIN_MS), 1);
+    // Au-delà du plancher, la part relative reprend la main (15 s → 2,25 s).
+    assert.equal(revealProgress(6375, 15000, VIDEO_HOLD, VIDEO_HOLD_MIN_MS), 0.5);
+    // Plafond à la moitié de la vidéo : l'animation reste visible.
+    assert.equal(revealProgress(1500, 3000, VIDEO_HOLD, VIDEO_HOLD_MIN_MS), 1);
 });
 
 test('résultat partiel : barres qui grandissent, courbes qui glissent', () => {
