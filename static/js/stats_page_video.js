@@ -128,10 +128,12 @@ export function syncVideoTotal() {
         total.textContent = '';
         return;
     }
-    const ms = dashboardVideoDuration(video.slides.length, $('statsVideoDuration').value);
-    total.textContent = t("${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps réel.", {
-        n: video.slides.length, s: Math.round(ms / 1000),
-    });
+    const n = video.slides.length;
+    const ms = dashboardVideoDuration(n, $('statsVideoDuration').value);
+    const s = Math.round(ms / 1000);
+    total.textContent = n > 1
+        ? t("${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps réel.", { n, s })
+        : t("${n} graphique, ${s} secondes en tout : la vidéo s'enregistre en temps réel.", { n, s });
 }
 
 // Musiques : aucune, les récentes de la carte (bibliothèque audio/), ou un
@@ -295,7 +297,7 @@ function introPainter(dashboard, count, { width, height }) {
     const font = videoFont();
     const name = dashboard.name || t('Mon tableau de bord');
     const period = state.labels.periodChoiceLabel(dashboard.period);
-    const charts = t('${n} graphiques', { n: count });
+    const charts = count > 1 ? t('${n} graphiques', { n: count }) : t('${n} graphique', { n: count });
     const paint = (progress) => {
         g.fillStyle = tokens.surface;
         g.fillRect(0, 0, width, height);

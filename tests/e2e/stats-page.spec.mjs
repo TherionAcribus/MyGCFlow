@@ -1845,6 +1845,28 @@ test('vidéo du tableau entier : ouverture, chaque graphique, musique choisie', 
   }
 });
 
+test('vidéo du tableau : un seul graphique reste au singulier', async ({ page, request }) => {
+  // Un tableau à 1 graphique : « 1 graphique », pas « 1 graphiques ».
+  const items = [
+    { size: 'M', spec: { id: 'dddd01', groupBy: 'month_of_year', view: { chart: 'bar' } } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  const total = page.locator('#statsVideoTotal');
+  // Pas d'enregistrement : 3 s d'ouverture + 1 × 6 s (défaut), puis × 4 s.
+  await expect(total).toHaveText("1 graphique, 9 secondes en tout : la vidéo s'enregistre en temps réel.");
+  await page.locator('#statsVideoDuration').selectOption('4');
+  await expect(total).toHaveText("1 graphique, 7 secondes en tout : la vidéo s'enregistre en temps réel.");
+
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 // ---------------------------------------------------------------------------
 // Sauvegarde : conflit entre onglets, échec et relance
 // ---------------------------------------------------------------------------
