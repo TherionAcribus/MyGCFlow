@@ -489,12 +489,17 @@ effacer » le retire avec la période proposée.
 ### Vidéo animée
 
 - `chart_video.mjs` (pur) : `chartAnimates` (barres / courbes / aires sur
-  un axe de temps ou les cases d'une année, sans écart), `revealProgress`
+  un axe de temps ou les cases d'une année, mais aussi les formes sans axe
+  de temps — `SWEEP_CHARTS` : anneau, grille, calendrier, défi — révélées
+  dans l'ordre de leurs clés ; jamais d'écart, ni carte, ni radar),
+  `revealProgress`
   (linéaire puis pause sur le graphique complet : `VIDEO_HOLD` = 15 %
   de la durée, avec un plancher `VIDEO_HOLD_MIN_MS` = 2 s),
-  `revealResult` (clés atteintes pleines, la clé en cours grandit — barre —
+  `revealResult` (clés atteintes pleines, la clé en cours grandit — barre,
+  part d'anneau qui balaie, case qui monte en intensité —
   ou glisse depuis la précédente — courbe), `valueMax` / `niceCeil` /
-  `lockOption` (échelle figée, plus de glissière ni d'animation ECharts).
+  `lockOption` (échelle figée, plus de glissière ni d'animation ECharts ;
+  les formes sans axe de valeurs n'ont pas de borne à figer).
 - stats_page_video.js › `videoPainter` : une instance ECharts hors écran, mise en
   page comme une fenêtre de 540 px de haut puis dessinée en pleine
   définition (`devicePixelRatio`), recopiée dans un canevas avec le titre et
@@ -576,9 +581,11 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   (le tableau change d'une vidéo à l'autre).
 - Écrans (`slidePainter`) : barres / courbes / aires sur un axe ordonné
   révélées au fil de l'axe (`videoPainter`, comme la vidéo d'un
-  graphique) ; chiffre clé qui compte de 0 à sa valeur (`countUp`) puis
-  sa période, son record ou son objectif ; autres formes (anneau, grille,
-  défi…) entières dès la première image (`reveal: false`).
+  graphique), anneau et grilles révélés dans l'ordre de leurs clés (parts
+  qui balaient, cases qui se remplissent — même `revealResult`, la clé en
+  cours croît comme une barre) ; chiffre clé qui compte de 0 à sa valeur
+  (`countUp`) puis sa période, son record ou son objectif ; seules la carte
+  et le radar restent entiers dès la première image (`reveal: false`).
 - Musique, pour les deux modes : aucune, une des musiques récentes de la
   carte (`recording.audio_recent` / `audio_file`, envoyée par son nom dans
   `audio/`), ou un fichier de l'ordinateur (joint à

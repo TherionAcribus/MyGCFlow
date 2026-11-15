@@ -21,7 +21,23 @@ test('quels graphiques s’animent', () => {
     assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'month_of_year', view: { chart: 'line' } })), true);
     assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'year' })), true);
     assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'cache_type' })), false);
-    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'day', view: { chart: 'calendar' } })), false);
+    // Formes sans axe de temps : révélées dans l'ordre de leurs clés —
+    // parts de l'anneau qui balaient, cases qui se remplissent.
+    for (const view of [
+        { chart: 'donut' }, { chart: 'radar' },
+    ]) assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'cache_type', view })), view.chart === 'donut');
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'dt', view: { chart: 'heatmap' } })), true);
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'day', view: { chart: 'calendar' } })), true);
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'dt', view: { chart: 'challenge' } })), true);
+    // … mais jamais sans au moins deux clés, ni en écart.
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'cache_type', view: { chart: 'donut' } }), { keys: ['Multi-cache'], delta: null, series: [] }), false);
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'dt', view: { chart: 'challenge' } }), { keys: [1, 2], delta: { values: [] }, series: [] }), false);
+    // Ni carte, ni chiffre clé.
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'zone_country', view: { chart: 'map' } })), false);
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'none', view: { chart: 'number' } })), false);
+    // Barres, courbes, aires : toujours soumises à un axe ordonné (jour de
+    // la semaine : cyclique mais pas ordonné pour l'animation).
+    assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'weekday', view: { chart: 'line' } })), false);
     assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'year' }), { keys: [2024], delta: null, series: [] }), false);
     assert.equal(chartAnimates(normalizeChartSpec({ groupBy: 'year' }), { keys: [1, 2], delta: { values: [] }, series: [] }), false);
 });

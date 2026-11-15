@@ -5,7 +5,7 @@ import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
-    chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
+    chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
     VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES,
 } from './chart_video.mjs';
@@ -364,8 +364,9 @@ function videoMimeType() {
     return ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((type) => recorder.isTypeSupported(type)) || null;
 }
 
-// Une image : titre, repère de l'axe atteint (« Mars »), graphique partiel.
-// `reveal: false` : le graphique entier, sans révélation (anneau, grille…).
+// Une image : titre, repère de la clé atteinte (« Mars », « Multi-cache »),
+// graphique partiel. `reveal: false` : le graphique entier, sans révélation
+// (carte, radar — voir chartAnimates).
 function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const tokens = state.tokens || readTokens();
     // Les polices d'ECharts (12 px) sont pensées pour l'écran : le graphique
@@ -386,8 +387,17 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     canvas.height = height;
     const g = canvas.getContext('2d');
     const stacked = spec.view.stack && result.series.length > 1;
-    const max = spec.view.log ? undefined : niceCeil(valueMax(result, { stacked }));
-    const kind = spec.view.chart === 'bar' ? 'bar' : 'line';
+    // Borne figée dès la première image : « ronde » pour l'axe des valeurs,
+    // brute pour l'échelle d'intensité des grilles (même calcul que le
+    // builder — couleurs identiques à la carte). L'anneau n'a ni axe ni
+    // échelle : la valeur est ignorée.
+    const max = spec.view.log ? undefined
+        : SWEEP_CHARTS.has(spec.view.chart) ? valueMax(result)
+        : niceCeil(valueMax(result, { stacked }));
+    // 'bar' = croissance de la clé en cours : elle balaie la part d'anneau
+    // ou monte l'intensité de la case ; 'line' = glisse depuis la clé
+    // précédente, pour les courbes et aires seulement.
+    const kind = ['line', 'area'].includes(spec.view.chart) ? 'line' : 'bar';
     // Sans « aujourd'hui » : pas de projection prolongeant une courbe à
     // moitié révélée.
     const ctx = { ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null };
@@ -531,8 +541,8 @@ function numberPainter(spec, result, { width, height }) {
     return { canvas, paint, dispose: () => {} };
 }
 
-// Écran d'un graphique : chiffre clé, graphique révélé au fil de l'axe, ou
-// graphique entier (anneau, grille, carte de chaleur…).
+// Écran d'un graphique : chiffre clé qui compte, graphique révélé au fil
+// de ses clés, ou graphique entier (carte, radar).
 function slidePainter(spec, result, size) {
     if (spec.view.chart === 'number') return numberPainter(spec, result, size);
     return videoPainter(spec, result, size, { reveal: chartAnimates(spec, result) });

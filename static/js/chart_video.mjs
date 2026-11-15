@@ -27,12 +27,18 @@ const ORDERED_DIMS = new Set([
     'year', 'quarter', 'month', 'week', 'day', 'month_of_year', 'week_of_year', 'day_of_year',
 ]);
 
-// Le graphique s'anime-t-il ? Barres, courbes, aires sur un axe de temps,
-// sans écart (barres signées) ni « Autres ».
+// Formes sans axe de temps : révélées dans l'ordre des clés — parts de
+// l'anneau qui balaient, cases de la grille qui se remplissent.
+export const SWEEP_CHARTS = new Set(['donut', 'heatmap', 'calendar', 'challenge']);
+
+// Le graphique s'anime-t-il ? Barres, courbes, aires sur un axe de temps ;
+// anneau, grilles et calendrier dans l'ordre de leurs clés — sans écart
+// (barres signées) ni « Autres ».
 export function chartAnimates(spec, result = null) {
+    if (result && (result.delta || result.keys.length < 2)) return false;
+    if (SWEEP_CHARTS.has(spec.view.chart)) return true;
     if (!['bar', 'line', 'area'].includes(spec.view.chart)) return false;
     if (!ORDERED_DIMS.has(spec.groupBy)) return false;
-    if (result && (result.delta || result.keys.length < 2)) return false;
     return true;
 }
 
@@ -154,6 +160,12 @@ export function lockOption(option, max) {
     };
     lock(option.xAxis);
     lock(option.yAxis);
+    // Même idée pour l'échelle d'intensité des grilles (carte de chaleur,
+    // calendrier) : sinon elle grandit au fil de la révélation et les
+    // cases déjà dessinées changent de couleur.
+    if (max !== undefined && option.visualMap) {
+        for (const vm of Array.isArray(option.visualMap) ? option.visualMap : [option.visualMap]) vm.max = max;
+    }
     delete option.dataZoom;
     option.animation = false;
     return option;

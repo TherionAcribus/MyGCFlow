@@ -320,7 +320,7 @@ function cardMenu(spec, index, count) {
         menuButton('video', 'ti-video', t('Créer une vidéo animée'), {
             disabled: unavailable || !animates,
             title: !animates && !unavailable
-                ? t('Possible pour des barres, une courbe ou une aire sur un axe de temps, hors écart.') : '',
+                ? t('Possible pour des barres, une courbe ou une aire sur un axe de temps, un anneau ou une grille, hors écart.') : '',
         }),
     );
     exportToggle.addEventListener('click', (event) => {

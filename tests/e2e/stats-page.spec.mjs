@@ -1503,9 +1503,9 @@ test('envoyer un graphique en panneau vidéo de la carte', async ({ page, reques
     const { errors, card: target } = await openWithChart(page, request, {
       groupBy: 'cache_type', view: { chart: 'donut' }, periods: [{ kind: 'year', year: 2026 }],
     });
-    // Un anneau ne s'anime pas : la vidéo est grisée.
+    // Un anneau s'anime aussi (parts qui balaient) : la vidéo est proposée.
     await card(page, target.id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
-    await expect(card(page, target.id).locator('[data-action="video"]')).toBeDisabled();
+    await expect(card(page, target.id).locator('[data-action="video"]')).toBeEnabled();
     await card(page, target.id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
 
     await cardAction(page, target.id, 'to-panel');
@@ -2119,6 +2119,50 @@ test('vidéo du tableau : choisir les écrans et leur ordre', async ({ page, req
 
   await page.locator('#btnStatsVideoCancel').click();
   await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('vidéo du tableau : l\'anneau et la grille s\'animent', async ({ page, request }) => {
+  // Les formes « statiques » se révèlent clé après clé, comme les barres au
+  // fil de l'axe : parts de l'anneau qui balaient, cases de la grille qui
+  // se remplissent. Avant, elles restaient figées tout l'écran.
+  const items = [
+    { size: 'M', spec: { id: 'dddd01', groupBy: 'cache_type', view: { chart: 'donut' } } },
+    { size: 'L', spec: { id: 'dddd02', groupBy: 'dt', view: { chart: 'challenge' } } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  // 10 s par écran : la révélation occupe les 7 premières secondes, assez
+  // pour deux relevés éloignés sans risquer la pause de fin.
+  await page.locator('#statsVideoDuration').selectOption('10');
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#btnStatsVideoPreview').click();
+  const stage = page.locator('#statsVideoStage canvas');
+  await expect(stage).toBeVisible();
+  // Empreinte réduite de l'image peinte (1 octet sur 4001) : deux empreintes
+  // différentes = l'écran progresse ; figée, l'image serait identique.
+  const imprint = () => stage.evaluate((c) => {
+    const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let hash = 0;
+    for (let i = 0; i < data.length; i += 4001) hash = (hash * 31 + data[i]) >>> 0;
+    return hash;
+  });
+  const status = page.locator('#statsVideoStatus');
+  for (const where of ['graphique 1 / 2', 'graphique 2 / 2']) {
+    await expect(status).toContainText(where, { timeout: 30_000 });
+    // Après le fondu d'entrée (0,5 s) : deux relevés à ~2 s d'écart, bien
+    // avant la fin de l'animation (7 s).
+    await page.waitForTimeout(800);
+    const before = await imprint();
+    await page.waitForTimeout(2000);
+    expect(await imprint()).not.toBe(before);
+  }
+  await page.locator('#btnStatsVideoStopPreview').click();
+  await expect(page.locator('#statsVideoSetup')).toBeVisible();
   expect(errors).toEqual([]);
 });
 

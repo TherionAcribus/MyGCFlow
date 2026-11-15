@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 10:58+0100\n"
+"POT-Creation-Date: 2026-11-15 11:09+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -6437,7 +6437,7 @@ msgid ""
 "${suggestion}"
 msgstr "Recording performance is unstable (${pct}% de slow frames). ${suggestion}"
 
-#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:812
+#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:826
 msgid "Enregistrement…"
 msgstr "Saving…"
 
@@ -6567,9 +6567,11 @@ msgstr "Create an animated video"
 
 #: static/js/stats_page_cards.js:359
 msgid ""
-"Possible pour des barres, une courbe ou une aire sur un axe de temps, "
-"hors écart."
-msgstr "Available for bars, a line or an area on a time axis, except differences."
+"Possible pour des barres, une courbe ou une aire sur un axe de temps, un "
+"anneau ou une grille, hors écart."
+msgstr ""
+"Possible for bars, a line or an area on a time axis, a donut or a grid, "
+"except deltas."
 
 #: static/js/stats_page_cards.js:379
 msgid "Modifier"
@@ -6664,8 +6666,8 @@ msgstr "${n} periods"
 #: static/js/stats_page_dashboard.js:289 static/js/stats_page_dashboard.js:309
 #: static/js/stats_page_dashboard.js:448 static/js/stats_page_dashboard.js:468
 #: static/js/stats_page_data.js:188 static/js/stats_page_exports.js:289
-#: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:532
-#: static/js/stats_page_video.js:758
+#: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:546
+#: static/js/stats_page_video.js:772
 msgid "Mon tableau de bord"
 msgstr "My dashboard"
 
@@ -7373,93 +7375,93 @@ msgstr "Recent music"
 msgid "Un fichier de mon ordinateur…"
 msgstr "A file from my computer…"
 
-#: static/js/stats_page_video.js:534
+#: static/js/stats_page_video.js:548
 #, python-brace-format
 msgid "${n} graphiques"
 msgstr "${n} charts"
 
-#: static/js/stats_page_video.js:534
+#: static/js/stats_page_video.js:548
 #, python-brace-format
 msgid "${n} graphique"
 msgstr "${n} chart"
 
-#: static/js/stats_page_video.js:689
+#: static/js/stats_page_video.js:703
 msgid "ouverture"
 msgstr "opening"
 
-#: static/js/stats_page_video.js:690
+#: static/js/stats_page_video.js:704
 msgid "fin"
 msgstr "end"
 
-#: static/js/stats_page_video.js:691
+#: static/js/stats_page_video.js:705
 #, python-brace-format
 msgid "graphique ${n} / ${count}"
 msgstr "chart ${n} / ${count}"
 
-#: static/js/stats_page_video.js:699 static/js/stats_page_video.js:805
+#: static/js/stats_page_video.js:713 static/js/stats_page_video.js:819
 msgid "Ce navigateur ne sait pas enregistrer de vidéo."
 msgstr "This browser cannot record video."
 
-#: static/js/stats_page_video.js:735
+#: static/js/stats_page_video.js:749
 #, python-brace-format
 msgid "Enregistrement… (${where}, reste ~${s} s)"
 msgstr "Recording… (${where}, ~${s} s left)"
 
-#: static/js/stats_page_video.js:840
+#: static/js/stats_page_video.js:854
 #, python-brace-format
 msgid "Enregistrement… (reste ~${s} s)"
 msgstr "Recording… (~${s} s left)"
 
-#: static/js/stats_page_video.js:908
+#: static/js/stats_page_video.js:922
 msgid "Aperçu terminé — rien n'a été enregistré."
 msgstr "Preview finished — nothing was recorded."
 
-#: static/js/stats_page_video.js:926 static/js/stats_page_video.js:930
+#: static/js/stats_page_video.js:940 static/js/stats_page_video.js:944
 #, python-brace-format
 msgid "Aperçu… (${where})"
 msgstr "Preview… (${where})"
 
-#: static/js/stats_page_video.js:947 static/js/stats_page_video.js:952
+#: static/js/stats_page_video.js:961 static/js/stats_page_video.js:966
 msgid "Aperçu…"
 msgstr "Preview…"
 
-#: static/js/stats_page_video.js:988
+#: static/js/stats_page_video.js:1002
 msgid "Conversion en MP4…"
 msgstr "Converting to MP4…"
 
-#: static/js/stats_page_video.js:1021
+#: static/js/stats_page_video.js:1035
 msgid ""
 "L'onglet a été masqué pendant l'enregistrement : la vidéo peut être "
 "saccadée."
 msgstr "The tab was hidden during the recording: the video may be choppy."
 
-#: static/js/stats_page_video.js:1031
+#: static/js/stats_page_video.js:1045
 #, python-brace-format
 msgid "Vidéo enregistrée : ${file}, dans ${folder}."
 msgstr "Video saved: ${file}, in ${folder}."
 
-#: static/js/stats_page_video.js:1044
+#: static/js/stats_page_video.js:1058
 #, python-brace-format
 msgid ""
 "La conversion en MP4 a échoué (${detail}) : la vidéo est proposée au "
 "format WebM."
 msgstr "MP4 conversion failed (${detail}): the video is offered in WebM format."
 
-#: static/js/stats_page_video.js:1045
+#: static/js/stats_page_video.js:1059
 msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 msgstr "MP4 conversion failed: the video is offered in WebM format."
 
-#: static/js/stats_page_video.js:1048
+#: static/js/stats_page_video.js:1062
 msgid ""
 "La musique choisie n'y est pas incluse : elle est mixée pendant la "
 "conversion."
 msgstr "The chosen music is not included: it is mixed during conversion."
 
-#: static/js/stats_page_video.js:1092
+#: static/js/stats_page_video.js:1106
 msgid "Impossible d'ouvrir le dossier des vidéos."
 msgstr "Could not open the videos folder."
 
-#: static/js/stats_page_video.js:1111
+#: static/js/stats_page_video.js:1125
 msgid ""
 "La vidéo est en cours de création : fermer la fenêtre l'interrompt et "
 "elle sera perdue."
@@ -7467,11 +7469,11 @@ msgstr ""
 "The video is being created: closing the window interrupts it and it will "
 "be lost."
 
-#: static/js/stats_page_video.js:1112
+#: static/js/stats_page_video.js:1126
 msgid "Arrêter la vidéo ?"
 msgstr "Stop the video?"
 
-#: static/js/stats_page_video.js:1119 static/js/ui.js:1000
+#: static/js/stats_page_video.js:1133 static/js/ui.js:1000
 #: templates/app.html:255 templates/app.html:256 templates/guide.html:136
 #: templates/guide.html:346 templates/menu_animation.html:57
 msgid "Arrêter"
@@ -25742,4 +25744,13 @@ msgstr "Create the video"
 
 #~ msgid "Télécharger"
 #~ msgstr "Download"
+
+#~ msgid ""
+#~ "Possible pour des barres, une courbe "
+#~ "ou une aire sur un axe de "
+#~ "temps, hors écart."
+#~ msgstr ""
+#~ "Available for bars, a line or an"
+#~ " area on a time axis, except "
+#~ "differences."
 
