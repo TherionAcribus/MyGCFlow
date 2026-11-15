@@ -332,7 +332,23 @@ test('libellés : zones, première trouvaille, densité, moments', () => {
     assert.equal(labels.periodChoiceLabel({ kind: 'moments', rule: 'milestones' }), 'Moments clés : paliers (100ᵉ, 1 000ᵉ…)');
     assert.equal(labels.periodLabel({ as: { kind: 'moment', moment: { kind: 'milestone', value: 1000, day: 0 } } }), '1 000ᵉ trouvaille'.replace(' ', ' '));
     assert.equal(labels.defaultTitle(spec({ groupBy: 'zone_subregion', measure: { op: 'first_day' } })),
-        'Première trouvaille sur une carte des départements, comtés…');
+        'Première trouvaille par départements, comtés…');
+});
+
+test("titre d'une carte : niveau des zones et cadrage nommés", () => {
+    const map = (groupBy, frame) => spec({ groupBy, view: { chart: 'map', map: { frame } } });
+    // Catalogue géo : la France a deux niveaux, la Belgique un seul.
+    const levels = { FR: { region: 'régions', subregion: 'départements' }, BE: { region: 'régions' } };
+    const geo = makeLabels({ locale: 'fr', zoneLevelName: (cc, level) => levels[cc]?.[level] || null });
+    assert.equal(geo.defaultTitle(map('zone_subregion', 'country:FR')), 'Trouvailles par départements · France');
+    assert.equal(geo.defaultTitle(map('zone_region', 'country:FR')), 'Trouvailles par régions · France');
+    // Pays sans niveau 2 : la carte montre ses régions.
+    assert.equal(geo.defaultTitle(map('zone_subregion', 'country:BE')), 'Trouvailles par régions · Belgique');
+    assert.equal(geo.defaultTitle(map('zone_region', 'europe')), 'Trouvailles par régions · Europe');
+    assert.equal(geo.defaultTitle(map('zone_country', 'world')), 'Trouvailles par pays · Monde');
+    assert.equal(geo.defaultTitle(map('zone_country', 'auto')), 'Trouvailles par pays');
+    // Catalogue pas encore chargé : niveau générique, pays nommé quand même.
+    assert.equal(labels.defaultTitle(map('zone_subregion', 'country:FR')), 'Trouvailles par départements, comtés… · France');
 });
 
 test('jeu Évolution : carte des caches actives, qui redescend', async () => {

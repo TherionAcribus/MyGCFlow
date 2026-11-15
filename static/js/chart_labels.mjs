@@ -7,6 +7,7 @@
 
 import { OTHERS_KEY, UNKNOWN_KEY } from './stats_model.mjs';
 import { cellLabel } from './zone_grid.mjs';
+import { mapFrameContinent, mapFrameCountry } from './chart_spec.mjs';
 
 const identity = (s, vars) => (vars
     ? String(s).replace(/\$\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m))
@@ -70,8 +71,10 @@ const UTC_DAY = 86400000;
 
 // `zoneName(id)` : nom d'une zone (pays, région…) dans la langue de la page,
 // lu dans les contours chargés (stats_page_geo.js) ; null tant qu'ils ne le
-// sont pas — l'id est alors affiché.
-export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}) {
+// sont pas — l'id est alors affiché. `zoneLevelName(cc, level)` : nom du
+// niveau d'un pays (« départements », « comtés »), lu dans le catalogue
+// géo (index.json) ; null tant qu'il n'est pas là.
+export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneLevelName = null } = {}) {
     const dateFmt = (options) => new Intl.DateTimeFormat(locale, { timeZone: 'UTC', ...options });
     const dayFmt = dateFmt({ day: 'numeric', month: 'short', year: 'numeric' });
     const dayMonthFmt = dateFmt({ day: 'numeric', month: 'short' });
@@ -785,7 +788,67 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
             name = name + ' — ' + sourceNoun(source);
         }
         if (spec.groupBy === 'none') return name;
+        if (spec.view?.chart === 'map') return mapTitle(spec, name);
         return t('${measure} ${group}', { measure: name, group: GROUP_PHRASES[spec.groupBy] || '' });
+    }
+
+    function continentName(id) {
+        switch (id) {
+            case 'europe': return t('Europe');
+            case 'northamerica': return t('Amérique du Nord');
+            case 'southamerica': return t('Amérique du Sud');
+            case 'africa': return t('Afrique');
+            case 'asia': return t('Asie');
+            case 'oceania': return t('Océanie');
+            default: return id;
+        }
+    }
+
+    // Pays d'un cadrage : nom des contours, sinon celui du navigateur
+    // (codes ISO à deux lettres), sinon le code.
+    let regionNames;
+    function countryName(cc) {
+        const name = zoneName && zoneName(cc);
+        if (name) return name;
+        if (/^[A-Z]{2}$/.test(cc)) {
+            try {
+                regionNames ??= new Intl.DisplayNames(locale, { type: 'region' });
+                return regionNames.of(cc) || cc;
+            } catch { /* navigateur sans DisplayNames */ }
+        }
+        return cc;
+    }
+
+    // Titre d'une carte par zones : le niveau des zones et le cadrage —
+    // « Trouvailles par départements · France », « … par régions ·
+    // Europe », « … par pays · Monde ». Sur un pays, le niveau prend son nom
+    // local (catalogue géo) ; un pays sans niveau 2 montre son niveau 1 sur
+    // une carte des sous-régions. Cadrage automatique : pas de lieu.
+    function mapTitle(spec, measure) {
+        const frame = spec.view.map?.frame || 'auto';
+        const cc = mapFrameCountry(frame);
+        const local = (level) => (cc && zoneLevelName ? zoneLevelName(cc, level) : null);
+        let group;
+        switch (spec.groupBy) {
+            case 'zone_country': group = t('par pays'); break;
+            case 'zone_region': {
+                const zones = local('region');
+                group = zones ? t('par ${zones}', { zones }) : t('par régions');
+                break;
+            }
+            case 'zone_subregion': {
+                const zones = local('subregion') || local('region');
+                group = zones ? t('par ${zones}', { zones }) : t('par départements, comtés…');
+                break;
+            }
+            default: group = GROUP_PHRASES[spec.groupBy] || '';
+        }
+        const title = t('${measure} ${group}', { measure, group });
+        const place = cc ? countryName(cc)
+            : mapFrameContinent(frame) ? continentName(frame)
+            : frame === 'world' ? t('Monde')
+            : null;
+        return place ? t('${title} · ${place}', { title, place }) : title;
     }
 
     return {
@@ -819,6 +882,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         dateInUnit,
         periodChoiceLabel,
         periodShownLabel,
+        continentName,
         formatValue,
         valueUnit,
         formatDelta,

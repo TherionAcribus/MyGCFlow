@@ -169,6 +169,13 @@ export function fallbackCountries() {
     return new Set(Object.entries(index.by_country).filter(([, c]) => !c.subregion).map(([cc]) => cc));
 }
 
+// Nom du niveau d'un pays dans la langue de la page (« départements »,
+// « comtés », « provinces ») ; null tant que le catalogue n'est pas là, ou
+// si le pays n'a pas ce niveau.
+export function levelName(cc, level) {
+    return index?.by_country?.[cc]?.[level]?.label?.[english() ? 'en' : 'fr'] || null;
+}
+
 // « départements : 41 », « régions : 13 », « zones : 52 » (plusieurs pays).
 export function levelNoun(level, countries, n) {
     const lang = english() ? 'en' : 'fr';

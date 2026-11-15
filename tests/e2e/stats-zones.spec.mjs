@@ -215,8 +215,16 @@ test('cadrage : un pays, un continent, le monde ; trouvailles hors du cadre', as
   const errors = await openStats(page);
   const map = (frame) => ({ groupBy: 'zone_region', measure: { op: 'count' }, periods: [{ kind: 'all' }],
     view: { chart: 'map', map: { frame } } });
-  await seed(page, request, [map('country:FR'), map('europe'), map('world')]);
+  await seed(page, request, [map('country:FR'), map('europe'), map('world'),
+    { ...map('country:FR'), groupBy: 'zone_subregion' }]);
   const [fr, europe, world] = [await mapCard(page, 0), await mapCard(page, 1), await mapCard(page, 2)];
+
+  // Titres : le niveau (nom local sur un pays, catalogue géo) et le cadrage.
+  const titles = page.locator('.stats-card .stats-card-title');
+  await expect(titles).toHaveText([
+    'Trouvailles par régions · France', 'Trouvailles par régions · Europe',
+    'Trouvailles par régions · Monde', 'Trouvailles par départements · France',
+  ]);
 
   // La France seule : ses régions, la Bavière et le Texas hors du cadre.
   expect(fr.zones.frame).toBe('country:FR');

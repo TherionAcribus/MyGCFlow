@@ -661,11 +661,23 @@ setGeoListener(() => {
         geoRedraw = 0;
         state.geoRev++;
         if (!state.doc) return;
+        refreshMapTitles();
         renderAllCharts();
         if (state.editor?.item?.spec?.view?.chart === 'map') renderPreview();
         window.dispatchEvent(new Event('mygcflow:stats-geo'));
     });
 });
+
+// Titre par défaut d'une carte par zones : le nom local du niveau
+// (« départements ») et celui du pays arrivent avec le catalogue géo — les
+// en-têtes, gardés d'un rendu à l'autre, sont relus.
+function refreshMapTitles() {
+    for (const item of activeDashboard().items) {
+        if (item.spec.view.chart !== 'map' || item.spec.title) continue;
+        const title = $('statsGrid').querySelector(cardSelector(item.spec.id) + ' .stats-card-title');
+        if (title) title.textContent = title.title = chartTitle(item.spec);
+    }
+}
 
 export function renderAllCharts() {
     if (!state.tokens) state.tokens = readTokens();

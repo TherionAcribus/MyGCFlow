@@ -817,6 +817,17 @@ période ou par moment clé. Le détail (dimensions `zone_*`, mesures
 à la demande, lien vers la carte en pause) est dans
 [carte-zones.md](carte-zones.md).
 
+Titre par défaut (2026-11-15) : le niveau des zones et le cadrage —
+« Trouvailles par départements · France », « … par régions · Europe »,
+« … par pays · Monde » ; en cadrage automatique, pas de lieu (« Trouvailles
+par régions »). Sur un pays, le niveau prend son nom dans le catalogue géo
+(`index.json` › `label`, `levelName` de zone_geo.js) — un pays sans niveau 2
+garde celui de ses régions ; tant que le catalogue n'est pas là, nom
+générique (« départements, comtés… »), et les en-têtes sont relus à son
+arrivée (`refreshMapTitles`, stats_page_cards.js). Le pays est nommé par ses
+contours, sinon par `Intl.DisplayNames`. Le menu « Regrouper » de l'éditeur
+garde ses libellés (« sur une carte des régions »).
+
 ## Grilles de défis
 
 Forme `challenge` (« grille de défi ») : des cases trouvées ou non, avec le

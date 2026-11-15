@@ -464,18 +464,6 @@ export function renderPreview() {
 // Cadrage d'une carte : automatique, monde, continents, puis tous les pays
 // (noms de countries.json, chargé à la demande ; le menu se remplit à son
 // arrivée, la valeur choisie restant affichée en attendant).
-function continentLabel(id) {
-    switch (id) {
-        case 'europe': return t('Europe');
-        case 'northamerica': return t('Amérique du Nord');
-        case 'southamerica': return t('Amérique du Sud');
-        case 'africa': return t('Afrique');
-        case 'asia': return t('Asie');
-        case 'oceania': return t('Océanie');
-        default: return id;
-    }
-}
-
 function fillMapFrameSelect(current) {
     const select = $('statsEdMapFrame');
     const auto = t('Automatique (zones avec des données)');
@@ -484,7 +472,7 @@ function fillMapFrameSelect(current) {
     const countriesLabel = t('Pays');
     const continents = document.createElement('optgroup');
     continents.label = continentsLabel;
-    continents.append(...MAP_CONTINENTS.map((id) => new Option(continentLabel(id), id)));
+    continents.append(...MAP_CONTINENTS.map((id) => new Option(state.labels.continentName(id), id)));
     const countries = document.createElement('optgroup');
     countries.label = countriesLabel;
     const entry = loadFile('countries.json');

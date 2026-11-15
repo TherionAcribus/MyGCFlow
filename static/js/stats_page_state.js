@@ -5,7 +5,7 @@ import { t } from './notifications.js';
 import { tableFromRecords } from './chart_sources.mjs';
 import { todayDay } from './chart_periods.mjs';
 import { makeLabels } from './chart_labels.mjs';
-import { zoneName } from './stats_page_geo.js';
+import { levelName, zoneName } from './stats_page_geo.js';
 
 
 // Locale ECharts (libellés de ses outils) selon la langue de l'interface. Le
@@ -38,7 +38,7 @@ export const state = {
     evolutionLoads: new Map(),  // id de jeu → promesse de chargement
     missingDatasets: new Set(), // jeux supprimés depuis
     doc: null,
-    labels: makeLabels({ t, locale: document.documentElement.lang || 'fr', zoneName }),
+    labels: makeLabels({ t, locale: document.documentElement.lang || 'fr', zoneName, zoneLevelName: levelName }),
     tokens: null,
     typeColors: {},
     today: todayDay(),
