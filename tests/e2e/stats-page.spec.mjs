@@ -595,6 +595,29 @@ test('infobulle : l\'aide de clic sur une carte du tableau, pas en présentation
   expect(errors).toEqual([]);
 });
 
+test('éditeur : l\'aperçu reste en vue quand le formulaire défile', async ({ page }) => {
+  const errors = await openStats(page);
+  const best = (await snapshot(page)).cards[3];
+  await cardAction(page, best.id, 'edit');
+  await expect(page.locator('#statsEditorModal')).toBeVisible();
+  for (const section of ['#statsEdFiltersSection', '#statsEdOptions']) {
+    await page.locator(`${section} summary`).click();
+  }
+  const body = page.locator('#statsEditorModal .modal-body');
+  // Le formulaire déplié dépasse la fenêtre : il défile jusqu'en bas.
+  const scrolled = await body.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+    return el.scrollTop;
+  });
+  expect(scrolled).toBeGreaterThan(100);
+  await expect(page.locator('#statsEdPreview')).toBeInViewport({ ratio: 0.9 });
+  const [box, frame] = await Promise.all([body.boundingBox(), page.locator('.stats-ed-preview-frame').boundingBox()]);
+  expect(frame.y).toBeGreaterThanOrEqual(box.y);
+  expect(frame.y).toBeLessThan(box.y + 40);
+  await page.locator('#statsEditorModal .btn-close').click();
+  expect(errors).toEqual([]);
+});
+
 test('trou de fin de grille : une tuile « Ajouter un graphique » le comble, selon la largeur', async ({ page }) => {
   const errors = await openStats(page);
   // Tableau par défaut en 1280 px : S S S / M M / M M / M → 6 colonnes libres.

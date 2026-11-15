@@ -210,7 +210,11 @@ grille de la phrase) ; bloc « Périodes / Alignement / à date » visible
 dès plusieurs périodes ; « Valeurs » dans les options. Menus : global =
 tout, 12 derniers mois, cette année, ce mois-ci, années passées ;
 graphique = + chaque année / chaque mois ; « comparé à » = + la période
-précédente.
+précédente. Aperçu collant (2026-11-15) : à partir de 992 px (formulaire et
+aperçu côte à côte), `.stats-ed-preview-frame` est en `position: sticky` en
+haut du corps de la fenêtre — filtres, options et objectif dépliés, le
+formulaire défile et l'aperçu reste en vue. En dessous, colonnes empilées,
+il reste sous le formulaire.
 
 ## « Depuis le début » (2026-11-11)
 

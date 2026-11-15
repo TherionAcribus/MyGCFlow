@@ -739,6 +739,15 @@ body > .ts-dropdown {
 .stats-ed-preview-frame .stats-chart {
     height: 340px;
 }
+/* Deux colonnes (formulaire | aperçu) : l'aperçu reste en vue pendant que
+   le formulaire défile (filtres, options, objectif dépliés) — chaque
+   réglage se voit sans remonter. Empilées, il reste sous le formulaire. */
+@media (min-width: 992px) {
+    .stats-ed-preview-frame {
+        position: sticky;
+        top: 0;
+    }
+}
 
 /* ----- Fenêtres plus étroites ----- */
 @media (max-width: 1199.98px) {
