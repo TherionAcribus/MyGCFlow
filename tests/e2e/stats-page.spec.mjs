@@ -534,6 +534,27 @@ test('« Suis-je en avance sur l\'an dernier ? » : deux cumuls superposés jour
   expect(errors).toEqual([]);
 });
 
+test('infobulle : l\'aide de clic sur une carte du tableau, pas en présentation', async ({ page }) => {
+  const errors = await openStats(page);
+  // « Ma meilleure année » : barres par année, cliquables (filtrer ou carte).
+  const best = (await snapshot(page)).cards[3];
+  expect(best).toMatchObject({ chart: 'bar', groupBy: 'year' });
+  const tooltipOf = (selector) => page.evaluate((sel) => {
+    const chart = window.echarts.getInstanceByDom(document.querySelector(sel));
+    const params = [{ dataIndex: 0, seriesIndex: 0, value: 1, color: '#000', axisValueLabel: 'x' }];
+    return chart.getOption().tooltip[0].formatter(params);
+  }, selector);
+  expect(await tooltipOf(`.stats-card[data-chart-id="${best.id}"] .stats-chart`))
+    .toContain('Cliquer : filtrer le tableau ou voir sur la carte');
+  // Présentation : le clic n'y agit pas, l'aide n'y est pas.
+  await cardAction(page, best.id, 'present');
+  await expect(page.locator('#statsPresent')).toBeVisible();
+  await expect(page.locator('#statsPresentVerdict')).toBeHidden();
+  expect(await tooltipOf('#statsPresentBody .stats-chart')).not.toContain('Cliquer');
+  await page.keyboard.press('Escape');
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : comparer à la période précédente, puis présenter en écart', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, { groupBy: 'month_of_year', view: { chart: 'bar' } });
   await cardAction(page, target.id, 'edit');

@@ -292,6 +292,27 @@ function tooltipBase(tokens) {
     };
 }
 
+// Aide au bas de l'infobulle d'un graphique cliquable (« Cliquer : voir sur
+// la carte ») : le clic ouvre un choix que rien d'autre n'annonce. Habille
+// le formateur existant ; une infobulle vide (case sans valeur) le reste.
+export function withClickHint(option, hint, tokens) {
+    const tip = option?.tooltip;
+    if (!hint || !tip || Array.isArray(tip) || typeof tip.formatter !== 'function') return option;
+    const format = tip.formatter;
+    const line = `<div style="margin-top:6px;padding-top:4px;border-top:1px solid ${tokens.grid};`
+        + `color:${tokens.textMuted};font-size:11px">${escapeHtml(hint)}</div>`;
+    return {
+        ...option,
+        tooltip: {
+            ...tip,
+            formatter: (...args) => {
+                const html = format(...args);
+                return html ? html + line : html;
+            },
+        },
+    };
+}
+
 function marker(color) {
     return `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:${color}"></span>`;
 }

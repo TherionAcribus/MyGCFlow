@@ -98,6 +98,19 @@ async function openMapWith(link) {
     window.location.assign('/');
 }
 
+// Aide au bas des infobulles d'un graphique cliquable : rien d'autre
+// n'annonce le choix que le clic ouvre. « Filtrer » seulement quand la
+// valeur a un équivalent dans les filtres ou la période du tableau (même
+// règle que dashboardScope, sans la valeur cliquée) ; jamais pour une
+// grille de défi (onChartClick).
+export function clickHint(spec, result) {
+    if (!chartClickable(spec, result)) return null;
+    if (spec.view.chart === 'map') return t('Cliquer : voir cette zone sur la carte');
+    const filters = spec.view.chart !== 'challenge' && (FILTERABLE.has(result.dim) || result.dim === 'dt'
+        || (TIME_DIMS.has(result.dim) && !result.elapsedUnit) || Boolean(spec.splitBy) || result.periods.length > 1);
+    return filters ? t('Cliquer : filtrer le tableau ou voir sur la carte') : t('Cliquer : voir sur la carte');
+}
+
 export function onChartClick(host, params) {
     const card = host.closest('.stats-card');
     const entry = card ? state.results.get(card.dataset.chartId) : null;

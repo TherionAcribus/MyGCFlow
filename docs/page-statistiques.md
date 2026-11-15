@@ -497,6 +497,16 @@ proposé, « Commencer avec des graphiques prêts »).
   tableau — sauf sur une grille de défi (2026-11-15) : filtrer sur la case
   cliquée réduisait la grille à cette seule case. Le toast permet
   d'annuler ; ensuite, la croix de la pastille du filtre.
+- Aide d'infobulle (2026-11-15) : rien n'annonçait le clic. `clickHint`
+  (stats_page_links.js) donne « Cliquer : filtrer le tableau ou voir sur la
+  carte » (même règle que `dashboardScope`, sans la valeur cliquée),
+  « Cliquer : voir sur la carte » (grille de défi, dimension sans filtre)
+  ou « … voir cette zone sur la carte » (carte par zones) ;
+  `withClickHint` (chart_echarts.mjs) l'ajoute au bas du formateur
+  d'infobulle, une infobulle vide restant vide. Seulement dans une carte du
+  tableau (`renderChartInto` : `host.closest('.stats-card')`) — en
+  présentation et dans l'aperçu de l'éditeur le clic n'agit pas, le curseur
+  y reste normal.
 - Géocaches / Labs ne sont pas dans la sélection mais dans la préférence
   globale `main_discovery_sources` : `discoveryModeFor` donne le mode à poser
   (un type de cache ou une taille désigne les géocaches, « Adventure Lab »

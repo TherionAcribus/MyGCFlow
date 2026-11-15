@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 16:07+0100\n"
+"POT-Creation-Date: 2026-11-15 16:10+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -881,8 +881,8 @@ msgstr "Confirm"
 
 #: blueprints/core.py:230 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:43
-#: static/js/stats_page_dashboard.js:580 static/js/stats_page_links.js:206
-#: static/js/stats_page_links.js:254 static/js/stats_page_video.js:57
+#: static/js/stats_page_dashboard.js:580 static/js/stats_page_links.js:219
+#: static/js/stats_page_links.js:267 static/js/stats_page_video.js:57
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
 #: templates/menu_images.html:118 templates/menu_stats.html:71
@@ -1890,59 +1890,59 @@ msgstr "Error while displaying the points on the map"
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/chart_echarts.mjs:306
+#: static/js/chart_echarts.mjs:327
 msgid "en cours"
 msgstr "ongoing"
 
-#: static/js/chart_echarts.mjs:592
+#: static/js/chart_echarts.mjs:613
 msgid "à ce rythme"
 msgstr "at this pace"
 
-#: static/js/chart_echarts.mjs:606
+#: static/js/chart_echarts.mjs:627
 #, python-brace-format
 msgid "Objectif : ${n}"
 msgstr "Goal: ${n}"
 
-#: static/js/chart_echarts.mjs:749
+#: static/js/chart_echarts.mjs:770
 #, python-brace-format
 msgid "Écart : ${a} par rapport à ${b}"
 msgstr "Difference: ${a} compared with ${b}"
 
-#: static/js/chart_echarts.mjs:784 static/js/stats_page_exports.js:28
+#: static/js/chart_echarts.mjs:805 static/js/stats_page_exports.js:28
 #: static/js/stats_page_exports.js:41
 msgid "Écart"
 msgstr "Difference"
 
-#: static/js/chart_echarts.mjs:980 static/js/chart_echarts.mjs:1145
+#: static/js/chart_echarts.mjs:1001 static/js/chart_echarts.mjs:1166
 msgid "Aucune donnée"
 msgstr "No data"
 
-#: static/js/chart_echarts.mjs:986 static/js/zone_layer.js:1302
+#: static/js/chart_echarts.mjs:1007 static/js/zone_layer.js:1302
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} of ${of} caches"
 
-#: static/js/chart_echarts.mjs:991
+#: static/js/chart_echarts.mjs:1012
 #, python-brace-format
 msgid "rang ${n} sur ${of}"
 msgstr "rank ${n} of ${of}"
 
-#: static/js/chart_echarts.mjs:997
+#: static/js/chart_echarts.mjs:1018
 #, python-brace-format
 msgid "nouvelle depuis ${period}"
 msgstr "new since ${period}"
 
-#: static/js/chart_echarts.mjs:999
+#: static/js/chart_echarts.mjs:1020
 #, python-brace-format
 msgid "${delta} depuis ${period}"
 msgstr "${delta} since ${period}"
 
-#: static/js/chart_echarts.mjs:1144 static/js/stats_page_cards.js:224
+#: static/js/chart_echarts.mjs:1165 static/js/stats_page_cards.js:224
 #: static/js/zone_layer_ui.js:153
 msgid "Contours des zones indisponibles."
 msgstr "Zone outlines unavailable."
 
-#: static/js/chart_echarts.mjs:1146
+#: static/js/chart_echarts.mjs:1167
 msgid "Chargement de la carte…"
 msgstr "Loading the map…"
 
@@ -5754,7 +5754,7 @@ msgid "Flash"
 msgstr "Flash"
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: static/js/stats_page_links.js:270 static/js/stats_page_video.js:57
+#: static/js/stats_page_links.js:283 static/js/stats_page_video.js:57
 #: templates/menu_data.html:512 templates/menu_data.html:554
 #: templates/menu_data.html:566 templates/menu_data.html:600
 #: templates/menu_data.html:632 templates/menu_data.html:661
@@ -6043,13 +6043,13 @@ msgstr "grouped"
 msgid "un par visiteur"
 msgstr "one per visitor"
 
-#: static/js/profiles.js:49 static/js/stats_page_links.js:345
+#: static/js/profiles.js:49 static/js/stats_page_links.js:358
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41 templates/guide.html:131 templates/guide.html:640
 msgid "Évolution"
 msgstr "Evolution"
 
-#: static/js/profiles.js:49 static/js/stats_page_links.js:343
+#: static/js/profiles.js:49 static/js/stats_page_links.js:356
 #: templates/_app_header.html:14 templates/_app_header.html:16
 #: templates/guide.html:131 templates/guide.html:174 templates/guide.html:640
 #: templates/menu_data.html:27
@@ -6608,7 +6608,7 @@ msgstr "${names}: data unavailable"
 msgid "Réessayer"
 msgstr "Retry"
 
-#: static/js/stats_page_cards.js:260 static/js/stats_page_links.js:384
+#: static/js/stats_page_cards.js:260 static/js/stats_page_links.js:397
 msgid "Envoyer en panneau vidéo"
 msgstr "Send to video panel"
 
@@ -6722,8 +6722,8 @@ msgstr "Year-to-date comparison: every period stops on ${date}."
 msgid "Aucune donnée sur cette période."
 msgstr "No data in this period."
 
-#: static/js/stats_page_cards.js:468 static/js/stats_page_links.js:264
-#: static/js/stats_page_links.js:312 static/js/stats_page_links.js:331
+#: static/js/stats_page_cards.js:468 static/js/stats_page_links.js:277
+#: static/js/stats_page_links.js:325 static/js/stats_page_links.js:344
 msgid "Voir sur la carte"
 msgstr "Show on the map"
 
@@ -7223,17 +7223,29 @@ msgstr "all your finds"
 msgid "Impossible de préparer les filtres de la carte."
 msgstr "Could not prepare the map filters."
 
-#: static/js/stats_page_links.js:181
+#: static/js/stats_page_links.js:108
+msgid "Cliquer : voir cette zone sur la carte"
+msgstr "Click: show this zone on the map"
+
+#: static/js/stats_page_links.js:111
+msgid "Cliquer : filtrer le tableau ou voir sur la carte"
+msgstr "Click: filter the dashboard or show on the map"
+
+#: static/js/stats_page_links.js:111
+msgid "Cliquer : voir sur la carte"
+msgstr "Click: show on the map"
+
+#: static/js/stats_page_links.js:194
 #, python-brace-format
 msgid "Période : ${p}"
 msgstr "Period: ${p}"
 
-#: static/js/stats_page_links.js:205
+#: static/js/stats_page_links.js:218
 #, python-brace-format
 msgid "Périmètre appliqué : ${what}"
 msgstr "Scope applied: ${what}"
 
-#: static/js/stats_page_links.js:251
+#: static/js/stats_page_links.js:264
 #, python-brace-format
 msgid ""
 "Filtrer ce tableau sur « ${scope} », ou afficher ces trouvailles sur la "
@@ -7242,16 +7254,16 @@ msgstr ""
 "Filter this dashboard on “${scope}”, or show these finds on the map (its "
 "filters will be replaced)."
 
-#: static/js/stats_page_links.js:252
+#: static/js/stats_page_links.js:265
 #, python-brace-format
 msgid "Filtrer ce tableau sur « ${scope} »."
 msgstr "Filter this dashboard on “${scope}”."
 
-#: static/js/stats_page_links.js:257 templates/guide.html:791
+#: static/js/stats_page_links.js:270 templates/guide.html:791
 msgid "Filtrer ce tableau"
 msgstr "Filter this dashboard"
 
-#: static/js/stats_page_links.js:311
+#: static/js/stats_page_links.js:324
 #, python-brace-format
 msgid ""
 "La carte s'ouvrira en pause au ${date}, cadrée sur ${zone}. Ses filtres "
@@ -7260,15 +7272,15 @@ msgstr ""
 "The map will open paused on ${date}, framed on ${zone}. Its filters stay "
 "as they are."
 
-#: static/js/stats_page_links.js:315 static/js/stats_page_links.js:334
+#: static/js/stats_page_links.js:328 static/js/stats_page_links.js:347
 msgid "Ouvrir la carte"
 msgstr "Open the map"
 
-#: static/js/stats_page_links.js:324
+#: static/js/stats_page_links.js:337
 msgid "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
 msgstr "This value has no equivalent in the map filters."
 
-#: static/js/stats_page_links.js:329
+#: static/js/stats_page_links.js:342
 #, python-brace-format
 msgid ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
@@ -7277,24 +7289,24 @@ msgstr ""
 "The map will show these finds: ${what}. Its current filters will be "
 "replaced."
 
-#: static/js/stats_page_links.js:344 templates/_app_header.html:24
+#: static/js/stats_page_links.js:357 templates/_app_header.html:24
 #: templates/_app_header.html:26 templates/app.html:41 templates/guide.html:83
 #: templates/guide.html:131 templates/guide.html:619 templates/guide.html:670
 msgid "Mes poses"
 msgstr "My hides"
 
-#: static/js/stats_page_links.js:354
+#: static/js/stats_page_links.js:367
 #, python-brace-format
 msgid ""
 "La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet "
 "Stats."
 msgstr "The “${page}” page already has ${n} panels: remove one in its Stats tab."
 
-#: static/js/stats_page_links.js:367
+#: static/js/stats_page_links.js:380
 msgid "L'envoi du panneau a échoué."
 msgstr "Sending the panel failed."
 
-#: static/js/stats_page_links.js:370
+#: static/js/stats_page_links.js:383
 #, python-brace-format
 msgid ""
 "Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
@@ -7303,7 +7315,7 @@ msgstr ""
 "Panel added to the “${page}” page: it will appear on the map and in the "
 "video."
 
-#: static/js/stats_page_links.js:379
+#: static/js/stats_page_links.js:392
 #, python-brace-format
 msgid ""
 "Le graphique devient un panneau de la page « ${page} », qui se remplit au"
@@ -7312,7 +7324,7 @@ msgstr ""
 "The chart becomes a panel of the “${page}” page, filling up as the "
 "animation plays."
 
-#: static/js/stats_page_links.js:381
+#: static/js/stats_page_links.js:394
 msgid ""
 "Il suit la période et les filtres de la carte : la période, les filtres "
 "et le découpage de ce graphique ne sont pas repris."
@@ -7320,11 +7332,11 @@ msgstr ""
 "It follows the map's period and filters: this chart's period, filters and"
 " breakdown are not carried over."
 
-#: static/js/stats_page_links.js:383
+#: static/js/stats_page_links.js:396
 msgid "L'objectif et la projection restent sur cette page."
 msgstr "The goal and the projection stay on this page."
 
-#: static/js/stats_page_links.js:384
+#: static/js/stats_page_links.js:397
 msgid "Envoyer"
 msgstr "Send"
 
@@ -13373,8 +13385,8 @@ msgid ""
 "titre : votre total à ce jour et l'écart avec la même date de l'autre "
 "période (« 2026 à ce jour : 343 · −10 par rapport au 15 nov. 2025 »)."
 msgstr ""
-"When a chart compares two periods, the answer is written under its title: "
-"your total to date and the difference from the same date in the other "
+"When a chart compares two periods, the answer is written under its title:"
+" your total to date and the difference from the same date in the other "
 "period (“2026 to date: 343 · −10 compared with Nov 15, 2025”)."
 
 #: templates/guide.html:738

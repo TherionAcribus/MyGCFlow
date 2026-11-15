@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 16:07+0100\n"
+"POT-Creation-Date: 2026-11-15 16:10+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -883,8 +883,8 @@ msgstr "Confirmer"
 
 #: blueprints/core.py:230 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:43
-#: static/js/stats_page_dashboard.js:580 static/js/stats_page_links.js:206
-#: static/js/stats_page_links.js:254 static/js/stats_page_video.js:57
+#: static/js/stats_page_dashboard.js:580 static/js/stats_page_links.js:219
+#: static/js/stats_page_links.js:267 static/js/stats_page_video.js:57
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
 #: templates/menu_images.html:118 templates/menu_stats.html:71
@@ -1905,59 +1905,59 @@ msgstr "Erreur lors de l'affichage des points sur la carte"
 msgid "Erreur d'affichage"
 msgstr "Erreur d'affichage"
 
-#: static/js/chart_echarts.mjs:306
+#: static/js/chart_echarts.mjs:327
 msgid "en cours"
 msgstr "en cours"
 
-#: static/js/chart_echarts.mjs:592
+#: static/js/chart_echarts.mjs:613
 msgid "à ce rythme"
 msgstr "à ce rythme"
 
-#: static/js/chart_echarts.mjs:606
+#: static/js/chart_echarts.mjs:627
 #, python-brace-format
 msgid "Objectif : ${n}"
 msgstr "Objectif : ${n}"
 
-#: static/js/chart_echarts.mjs:749
+#: static/js/chart_echarts.mjs:770
 #, python-brace-format
 msgid "Écart : ${a} par rapport à ${b}"
 msgstr "Écart : ${a} par rapport à ${b}"
 
-#: static/js/chart_echarts.mjs:784 static/js/stats_page_exports.js:28
+#: static/js/chart_echarts.mjs:805 static/js/stats_page_exports.js:28
 #: static/js/stats_page_exports.js:41
 msgid "Écart"
 msgstr "Écart"
 
-#: static/js/chart_echarts.mjs:980 static/js/chart_echarts.mjs:1145
+#: static/js/chart_echarts.mjs:1001 static/js/chart_echarts.mjs:1166
 msgid "Aucune donnée"
 msgstr "Aucune donnée"
 
-#: static/js/chart_echarts.mjs:986 static/js/zone_layer.js:1302
+#: static/js/chart_echarts.mjs:1007 static/js/zone_layer.js:1302
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr "${n} sur ${of} caches"
 
-#: static/js/chart_echarts.mjs:991
+#: static/js/chart_echarts.mjs:1012
 #, python-brace-format
 msgid "rang ${n} sur ${of}"
 msgstr "rang ${n} sur ${of}"
 
-#: static/js/chart_echarts.mjs:997
+#: static/js/chart_echarts.mjs:1018
 #, python-brace-format
 msgid "nouvelle depuis ${period}"
 msgstr "nouvelle depuis ${period}"
 
-#: static/js/chart_echarts.mjs:999
+#: static/js/chart_echarts.mjs:1020
 #, python-brace-format
 msgid "${delta} depuis ${period}"
 msgstr "${delta} depuis ${period}"
 
-#: static/js/chart_echarts.mjs:1144 static/js/stats_page_cards.js:224
+#: static/js/chart_echarts.mjs:1165 static/js/stats_page_cards.js:224
 #: static/js/zone_layer_ui.js:153
 msgid "Contours des zones indisponibles."
 msgstr "Contours des zones indisponibles."
 
-#: static/js/chart_echarts.mjs:1146
+#: static/js/chart_echarts.mjs:1167
 msgid "Chargement de la carte…"
 msgstr "Chargement de la carte…"
 
@@ -5793,7 +5793,7 @@ msgid "Flash"
 msgstr "Flash"
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: static/js/stats_page_links.js:270 static/js/stats_page_video.js:57
+#: static/js/stats_page_links.js:283 static/js/stats_page_video.js:57
 #: templates/menu_data.html:512 templates/menu_data.html:554
 #: templates/menu_data.html:566 templates/menu_data.html:600
 #: templates/menu_data.html:632 templates/menu_data.html:661
@@ -6088,13 +6088,13 @@ msgstr "regroupés"
 msgid "un par visiteur"
 msgstr "un par visiteur"
 
-#: static/js/profiles.js:49 static/js/stats_page_links.js:345
+#: static/js/profiles.js:49 static/js/stats_page_links.js:358
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41 templates/guide.html:131 templates/guide.html:640
 msgid "Évolution"
 msgstr "Évolution"
 
-#: static/js/profiles.js:49 static/js/stats_page_links.js:343
+#: static/js/profiles.js:49 static/js/stats_page_links.js:356
 #: templates/_app_header.html:14 templates/_app_header.html:16
 #: templates/guide.html:131 templates/guide.html:174 templates/guide.html:640
 #: templates/menu_data.html:27
@@ -6658,7 +6658,7 @@ msgstr "${names} : données indisponibles"
 msgid "Réessayer"
 msgstr "Réessayer"
 
-#: static/js/stats_page_cards.js:260 static/js/stats_page_links.js:384
+#: static/js/stats_page_cards.js:260 static/js/stats_page_links.js:397
 msgid "Envoyer en panneau vidéo"
 msgstr "Envoyer en panneau vidéo"
 
@@ -6772,8 +6772,8 @@ msgstr "Comparaison à date : chaque période est arrêtée au ${date}."
 msgid "Aucune donnée sur cette période."
 msgstr "Aucune donnée sur cette période."
 
-#: static/js/stats_page_cards.js:468 static/js/stats_page_links.js:264
-#: static/js/stats_page_links.js:312 static/js/stats_page_links.js:331
+#: static/js/stats_page_cards.js:468 static/js/stats_page_links.js:277
+#: static/js/stats_page_links.js:325 static/js/stats_page_links.js:344
 msgid "Voir sur la carte"
 msgstr "Voir sur la carte"
 
@@ -7279,17 +7279,29 @@ msgstr "toutes vos trouvailles"
 msgid "Impossible de préparer les filtres de la carte."
 msgstr "Impossible de préparer les filtres de la carte."
 
-#: static/js/stats_page_links.js:181
+#: static/js/stats_page_links.js:108
+msgid "Cliquer : voir cette zone sur la carte"
+msgstr "Cliquer : voir cette zone sur la carte"
+
+#: static/js/stats_page_links.js:111
+msgid "Cliquer : filtrer le tableau ou voir sur la carte"
+msgstr "Cliquer : filtrer le tableau ou voir sur la carte"
+
+#: static/js/stats_page_links.js:111
+msgid "Cliquer : voir sur la carte"
+msgstr "Cliquer : voir sur la carte"
+
+#: static/js/stats_page_links.js:194
 #, python-brace-format
 msgid "Période : ${p}"
 msgstr "Période : ${p}"
 
-#: static/js/stats_page_links.js:205
+#: static/js/stats_page_links.js:218
 #, python-brace-format
 msgid "Périmètre appliqué : ${what}"
 msgstr "Périmètre appliqué : ${what}"
 
-#: static/js/stats_page_links.js:251
+#: static/js/stats_page_links.js:264
 #, python-brace-format
 msgid ""
 "Filtrer ce tableau sur « ${scope} », ou afficher ces trouvailles sur la "
@@ -7298,16 +7310,16 @@ msgstr ""
 "Filtrer ce tableau sur « ${scope} », ou afficher ces trouvailles sur la "
 "carte (ses filtres seront remplacés)."
 
-#: static/js/stats_page_links.js:252
+#: static/js/stats_page_links.js:265
 #, python-brace-format
 msgid "Filtrer ce tableau sur « ${scope} »."
 msgstr "Filtrer ce tableau sur « ${scope} »."
 
-#: static/js/stats_page_links.js:257 templates/guide.html:791
+#: static/js/stats_page_links.js:270 templates/guide.html:791
 msgid "Filtrer ce tableau"
 msgstr "Filtrer ce tableau"
 
-#: static/js/stats_page_links.js:311
+#: static/js/stats_page_links.js:324
 #, python-brace-format
 msgid ""
 "La carte s'ouvrira en pause au ${date}, cadrée sur ${zone}. Ses filtres "
@@ -7316,15 +7328,15 @@ msgstr ""
 "La carte s'ouvrira en pause au ${date}, cadrée sur ${zone}. Ses filtres "
 "ne changent pas."
 
-#: static/js/stats_page_links.js:315 static/js/stats_page_links.js:334
+#: static/js/stats_page_links.js:328 static/js/stats_page_links.js:347
 msgid "Ouvrir la carte"
 msgstr "Ouvrir la carte"
 
-#: static/js/stats_page_links.js:324
+#: static/js/stats_page_links.js:337
 msgid "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
 msgstr "Cette valeur n'a pas d'équivalent dans les filtres de la carte."
 
-#: static/js/stats_page_links.js:329
+#: static/js/stats_page_links.js:342
 #, python-brace-format
 msgid ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
@@ -7333,13 +7345,13 @@ msgstr ""
 "La carte affichera ces trouvailles : ${what}. Ses filtres actuels seront "
 "remplacés."
 
-#: static/js/stats_page_links.js:344 templates/_app_header.html:24
+#: static/js/stats_page_links.js:357 templates/_app_header.html:24
 #: templates/_app_header.html:26 templates/app.html:41 templates/guide.html:83
 #: templates/guide.html:131 templates/guide.html:619 templates/guide.html:670
 msgid "Mes poses"
 msgstr "Mes poses"
 
-#: static/js/stats_page_links.js:354
+#: static/js/stats_page_links.js:367
 #, python-brace-format
 msgid ""
 "La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet "
@@ -7348,41 +7360,41 @@ msgstr ""
 "La page « ${page} » a déjà ${n} panneaux : retirez-en un dans son onglet "
 "Stats."
 
-#: static/js/stats_page_links.js:367
+#: static/js/stats_page_links.js:380
 msgid "L'envoi du panneau a échoué."
 msgstr "L'envoi du panneau a échoué."
 
-#: static/js/stats_page_links.js:370
-#, python-brace-format
-msgid ""
-"Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
-" la vidéo."
-msgstr ""
-"Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
-" la vidéo."
-
-#: static/js/stats_page_links.js:379
-#, python-brace-format
-msgid ""
-"Le graphique devient un panneau de la page « ${page} », qui se remplit au"
-" fil de l'animation."
-msgstr ""
-"Le graphique devient un panneau de la page « ${page} », qui se remplit au"
-" fil de l'animation."
-
-#: static/js/stats_page_links.js:381
-msgid ""
-"Il suit la période et les filtres de la carte : la période, les filtres "
-"et le découpage de ce graphique ne sont pas repris."
-msgstr ""
-"Il suit la période et les filtres de la carte : la période, les filtres "
-"et le découpage de ce graphique ne sont pas repris."
-
 #: static/js/stats_page_links.js:383
+#, python-brace-format
+msgid ""
+"Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
+" la vidéo."
+msgstr ""
+"Panneau ajouté à la page « ${page} » : il apparaîtra sur la carte et dans"
+" la vidéo."
+
+#: static/js/stats_page_links.js:392
+#, python-brace-format
+msgid ""
+"Le graphique devient un panneau de la page « ${page} », qui se remplit au"
+" fil de l'animation."
+msgstr ""
+"Le graphique devient un panneau de la page « ${page} », qui se remplit au"
+" fil de l'animation."
+
+#: static/js/stats_page_links.js:394
+msgid ""
+"Il suit la période et les filtres de la carte : la période, les filtres "
+"et le découpage de ce graphique ne sont pas repris."
+msgstr ""
+"Il suit la période et les filtres de la carte : la période, les filtres "
+"et le découpage de ce graphique ne sont pas repris."
+
+#: static/js/stats_page_links.js:396
 msgid "L'objectif et la projection restent sur cette page."
 msgstr "L'objectif et la projection restent sur cette page."
 
-#: static/js/stats_page_links.js:384
+#: static/js/stats_page_links.js:397
 msgid "Envoyer"
 msgstr "Envoyer"
 

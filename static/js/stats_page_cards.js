@@ -7,7 +7,7 @@ import { runChartQueries } from './chart_query.mjs';
 import { foundDaysOf, runZoneQuery } from './chart_zones.mjs';
 import { describeFilters } from './chart_filters.mjs';
 import {
-    buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel, verdictModel,
+    buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel, verdictModel, withClickHint,
 } from './chart_echarts.mjs';
 import { chartAnimates } from './chart_video.mjs';
 import { chartLinksToMap } from './chart_map_link.mjs';
@@ -20,7 +20,7 @@ import {
 } from './stats_page_dashboard.js';
 import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
-import { confirmMapLink, onChartClick } from './stats_page_links.js';
+import { clickHint, confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { addGeoListener } from './zone_geo.js';
 import {
@@ -569,8 +569,13 @@ export function renderChartInto(host, result, spec, { fill = 0 } = {}) {
     // réelle de l'hôte, une fois sa hauteur posée), redessinée quand la
     // taille change (onHostsResized).
     const drawnHeight = height || fill || host.clientHeight || 0;
-    const option = buildChartOption(result, spec, { ...chartContext(), width, height: drawnHeight });
-    if (!chartClickable(spec, result)) {
+    // Le clic n'agit que dans une carte du tableau (pas en présentation ni
+    // dans l'aperçu de l'éditeur) : curseur « main » et aide d'infobulle là
+    // seulement.
+    const clickable = Boolean(host.closest('.stats-card')) && chartClickable(spec, result);
+    const option = withClickHint(buildChartOption(result, spec, { ...chartContext(), width, height: drawnHeight }),
+        clickable ? clickHint(spec, result) : null, state.tokens);
+    if (!clickable) {
         for (const series of option.series || []) series.cursor = 'default';
     }
     if (spec.view.chart === 'map') host.dataset.mapSize = `${width}x${drawnHeight}`;

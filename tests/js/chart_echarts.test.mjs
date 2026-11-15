@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption, verdictModel,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption, verdictModel, withClickHint,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -176,6 +176,23 @@ test('bilan d\'une comparaison : réponse en clair, à date, flèche dans le bon
     assert.equal(verdictModel(number.result, number.spec, ctx), null);
     const single = option({ groupBy: 'month' });
     assert.equal(verdictModel(single.result, single.spec, ctx), null);
+});
+
+test('aide de clic : ligne ajoutée au bas de l\'infobulle, échappée, rien sur une infobulle vide', () => {
+    const { option: o } = option({ groupBy: 'year' });
+    const hinted = withClickHint(o, 'Cliquer : voir <la> carte', tokens);
+    const params = [{ dataIndex: 0, seriesIndex: 0, value: 3, color: '#2a78d6', axisValueLabel: '2025' }];
+    const base = o.tooltip.formatter(params);
+    const html = hinted.tooltip.formatter(params);
+    assert.ok(html.startsWith(base));
+    assert.match(html, /Cliquer : voir &lt;la&gt; carte<\/div>$/);
+    assert.match(html, new RegExp(tokens.textMuted));
+    // L'option d'origine n'est pas touchée ; sans aide, rien ne change.
+    assert.equal(o.tooltip.formatter(params), base);
+    assert.equal(withClickHint(o, null, tokens), o);
+    // Infobulle vide (case sans valeur) : reste vide.
+    const empty = withClickHint({ tooltip: { formatter: () => '' } }, 'Cliquer', tokens);
+    assert.equal(empty.tooltip.formatter(), '');
 });
 
 test('anneau : une part par catégorie non vide, légende, pourcentages en infobulle', () => {
