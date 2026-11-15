@@ -1310,6 +1310,27 @@ test('« Exporter » réunit les sorties ; le chevron gère les tableaux', async
   expect(errors).toEqual([]);
 });
 
+test('« Exporter » : les sorties du tableau sont grisées quand il est vide', async ({ page, request }) => {
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Vide', period: { kind: 'all' }, items: [] }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  await page.locator('#btnStatsShare').click();
+  const share = page.locator('#statsShareMenu');
+  await expect(share).toBeVisible();
+  // Les trois sorties : bouton disabled, raison en bulle sur le <li>
+  // (un bouton disabled ne montre pas sa propre bulle).
+  for (const action of ['image-dashboard', 'copy-image-dashboard', 'video-dashboard']) {
+    const button = share.locator(`[data-action="${action}"]`);
+    await expect(button).toBeDisabled();
+    await expect(button.locator('..')).toHaveAttribute('title', /.+/);
+  }
+  // Impression et fichier restent utilisables sur un tableau vide.
+  await expect(share.locator('[data-action="print-dashboard"]')).toBeEnabled();
+  await expect(share.locator('[data-action="export-dashboard"]')).toBeEnabled();
+  await page.keyboard.press('Escape');
+  expect(errors).toEqual([]);
+});
+
 test('impression : sans les commandes, et toujours sur fond clair', async ({ page, request }) => {
   await openStats(page);
   const select = page.locator('#appHeaderTheme');

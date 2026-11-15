@@ -223,9 +223,12 @@ function renderDashboardMenu() {
     share.replaceChildren();
     share.append(menuButton('print-dashboard', 'ti-printer', t('Imprimer')));
     const noCards = !activeDashboard().items.length;
-    share.append(menuButton('image-dashboard', 'ti-photo', t('Enregistrer le tableau en image (PNG)'), { disabled: noCards }));
-    share.append(menuButton('copy-image-dashboard', 'ti-copy', t("Copier l'image du tableau"), { disabled: noCards }));
-    share.append(menuButton('video-dashboard', 'ti-movie', t('Créer la vidéo du tableau…')));
+    // La raison du grisage va en bulle du <li> (un bouton disabled n'en
+    // montre pas) — même chaîne que l'état vide du tableau.
+    const emptyHint = noCards ? t('Ce tableau de bord est vide.') : '';
+    share.append(menuButton('image-dashboard', 'ti-photo', t('Enregistrer le tableau en image (PNG)'), { disabled: noCards, title: emptyHint }));
+    share.append(menuButton('copy-image-dashboard', 'ti-copy', t("Copier l'image du tableau"), { disabled: noCards, title: emptyHint }));
+    share.append(menuButton('video-dashboard', 'ti-movie', t('Créer la vidéo du tableau…'), { disabled: noCards, title: emptyHint }));
     const shareDivider = document.createElement('li');
     shareDivider.innerHTML = '<hr class="dropdown-divider">';
     share.append(shareDivider);

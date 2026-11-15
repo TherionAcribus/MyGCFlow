@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 09:36+0100\n"
+"POT-Creation-Date: 2026-11-15 09:42+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -868,7 +868,7 @@ msgstr ""
 
 #: blueprints/core.py:230 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:43
-#: static/js/stats_page_dashboard.js:573 static/js/stats_page_links.js:226
+#: static/js/stats_page_dashboard.js:578 static/js/stats_page_links.js:226
 #: static/js/stats_page_links.js:276 static/js/stats_page_video.js:49
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
@@ -4479,7 +4479,7 @@ msgstr ""
 #: static/js/profiles.js:976 static/js/recent_videos.js:60
 #: static/js/recent_videos.js:121 static/js/stats_page_card_actions.js:110
 #: static/js/stats_page_card_actions.js:118 static/js/stats_page_cards.js:391
-#: static/js/stats_page_dashboard.js:482 static/js/stats_page_dashboard.js:491
+#: static/js/stats_page_dashboard.js:487 static/js/stats_page_dashboard.js:496
 #: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6452
 #: templates/menu_filtre.html:87 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
@@ -6531,8 +6531,8 @@ msgid "${n} périodes"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:154 static/js/stats_page_dashboard.js:231
-#: static/js/stats_page_dashboard.js:284 static/js/stats_page_dashboard.js:304
-#: static/js/stats_page_dashboard.js:443 static/js/stats_page_dashboard.js:463
+#: static/js/stats_page_dashboard.js:289 static/js/stats_page_dashboard.js:309
+#: static/js/stats_page_dashboard.js:448 static/js/stats_page_dashboard.js:468
 #: static/js/stats_page_data.js:188 static/js/stats_page_exports.js:289
 #: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:330
 #: static/js/stats_page_video.js:512
@@ -6614,142 +6614,146 @@ msgstr ""
 msgid "Imprimer"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:255 templates/guide.html:780
+#: static/js/stats_page_dashboard.js:259 templates/stats_page.html:131
+msgid "Ce tableau de bord est vide."
+msgstr ""
+
+#: static/js/stats_page_dashboard.js:260 templates/guide.html:780
 msgid "Enregistrer le tableau en image (PNG)"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:256 templates/guide.html:780
+#: static/js/stats_page_dashboard.js:261 templates/guide.html:780
 msgid "Copier l'image du tableau"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:257 templates/guide.html:795
+#: static/js/stats_page_dashboard.js:262 templates/guide.html:795
 msgid "Créer la vidéo du tableau…"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:261
+#: static/js/stats_page_dashboard.js:266
 msgid "Exporter ce tableau de bord (fichier)"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:267
+#: static/js/stats_page_dashboard.js:272
 #, python-brace-format
 msgid "${name} (copie)"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:288
+#: static/js/stats_page_dashboard.js:293
 msgid "Ce fichier n'est pas un tableau de bord MyGCFlow."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:289
+#: static/js/stats_page_dashboard.js:294
 msgid "Ce tableau de bord vient d'une version plus récente de MyGCFlow."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:290
+#: static/js/stats_page_dashboard.js:295
 msgid ""
 "Ce tableau de bord porte sur une zone Évolution : importez d'abord un jeu"
 " sur la page Évolution."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:298 static/js/stats_page_dashboard.js:307
-#: static/js/stats_page_dashboard.js:317
+#: static/js/stats_page_dashboard.js:303 static/js/stats_page_dashboard.js:312
+#: static/js/stats_page_dashboard.js:322
 msgid "Importer un tableau de bord"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:316
+#: static/js/stats_page_dashboard.js:321
 #, python-brace-format
 msgid "Jeu Évolution d'origine introuvable : le tableau porte sur « ${name} »."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:319
+#: static/js/stats_page_dashboard.js:324
 #, python-brace-format
 msgid "Tableau de bord « ${name} » importé."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:329 static/js/stats_page_data.js:240
+#: static/js/stats_page_dashboard.js:334 static/js/stats_page_data.js:240
 #, python-brace-format
 msgid "Chargement du jeu Évolution « ${name} »…"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:385
+#: static/js/stats_page_dashboard.js:390
 msgid "Actualisation des données…"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:402
+#: static/js/stats_page_dashboard.js:407
 msgid "Données actualisées."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:406
+#: static/js/stats_page_dashboard.js:411
 msgid "Les données n'ont pas pu être relues : les précédentes restent affichées."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:406 templates/stats_page.html:103
+#: static/js/stats_page_dashboard.js:411 templates/stats_page.html:103
 msgid "Actualiser les données"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:481
+#: static/js/stats_page_dashboard.js:486
 #, python-brace-format
 msgid "Supprimer le tableau de bord « ${name} » et ses graphiques ?"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:516
+#: static/js/stats_page_dashboard.js:521
 #, python-brace-format
 msgid "Retirer le filtre ${field}"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:573
+#: static/js/stats_page_dashboard.js:578
 msgid "Filtres de la carte appliqués."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:596
+#: static/js/stats_page_dashboard.js:601
 #, python-brace-format
 msgid "la recherche « ${text} »"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:599
+#: static/js/stats_page_dashboard.js:604
 #, python-brace-format
 msgid "les dates de pose ${range} : la page filtre par année entière"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:601
+#: static/js/stats_page_dashboard.js:606
 msgid "les trouvailles sans pays, que la carte garde"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:602
+#: static/js/stats_page_dashboard.js:607
 msgid "les trouvailles sans région, que la carte garde"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:603
+#: static/js/stats_page_dashboard.js:608
 msgid ""
 "les Lab Caches, que la carte garde malgré les filtres propres aux "
 "géocaches"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:642
+#: static/js/stats_page_dashboard.js:647
 msgid ""
 "Avec ses filtres actuels, la carte n'affiche aucune trouvaille : rien "
 "n'est repris."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:650
+#: static/js/stats_page_dashboard.js:655
 msgid "La carte montre toutes vos trouvailles : aucun filtre à reprendre."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:654
+#: static/js/stats_page_dashboard.js:659
 msgid "Filtres de la carte repris (1 trouvaille) : vérifiez-les, puis appliquez."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:655
+#: static/js/stats_page_dashboard.js:660
 #, python-brace-format
 msgid ""
 "Filtres de la carte repris (${n} trouvailles) : vérifiez-les, puis "
 "appliquez."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:669
+#: static/js/stats_page_dashboard.js:674
 #, python-brace-format
 msgid "Période du tableau de bord : ${range} (dates de trouvaille de la carte)"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:676
+#: static/js/stats_page_dashboard.js:681
 msgid "Sans équivalent ici :"
 msgstr ""
 
@@ -17058,10 +17062,6 @@ msgstr ""
 msgid ""
 "Compter aussi tout ce qui précède : du début jusqu'à la fin de la période"
 " choisie."
-msgstr ""
-
-#: templates/stats_page.html:131
-msgid "Ce tableau de bord est vide."
 msgstr ""
 
 #: templates/stats_page.html:150

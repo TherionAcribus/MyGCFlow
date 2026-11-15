@@ -525,9 +525,15 @@ effacer » le retire avec la période proposée.
 
 ### Vidéo du tableau entier, musique
 
-« Créer la vidéo du tableau… » (menu du tableau de bord) : la même fenêtre
+« Créer la vidéo du tableau… » (menu « Exporter » de la barre d'outils) :
+la même fenêtre
 que la vidéo d'un graphique (`state.video.mode` : `chart` / `dashboard`),
 le même enregistrement en temps réel et la même conversion serveur.
+Comme les deux sorties image, l'entrée est grisée sur un tableau vide, la
+raison (« Ce tableau de bord est vide. ») en bulle de la ligne de menu —
+un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
+(`menuButton`). Le toast « Aucun graphique à mettre en vidéo. » d'
+`openDashboardVideo` reste un filet pour un état périmé.
 
 - Déroulé (`videoMoment`, dashboard_video.mjs) : ouverture de 3 s (nom du
   tableau, période, nombre de graphiques), puis un écran par graphique
