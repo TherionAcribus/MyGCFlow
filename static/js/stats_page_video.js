@@ -7,7 +7,7 @@ import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
     chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
     VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
-    VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES,
+    VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES, videoScale,
 } from './chart_video.mjs';
 import fixWebmDuration from './fix-webm-duration.js';
 import { presentSlides } from './present_model.mjs';
@@ -915,8 +915,9 @@ function videoMimeType() {
 function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const tokens = state.tokens || readTokens();
     // Les polices d'ECharts (12 px) sont pensées pour l'écran : le graphique
-    // est mis en page comme sur une fenêtre de 540 px de haut puis dessiné en
-    // pleine définition (devicePixelRatio) — textes lisibles dans la vidéo.
+    // est mis en page comme sur une fenêtre de 540 px de côté (432 en
+    // portrait : videoScale) puis dessiné en pleine définition
+    // (devicePixelRatio) — textes lisibles dans la vidéo.
     const { scale, pad, titleSize, top } = videoFrame({ width, height });
     const chartW = width - pad * 2;
     const chartH = height - top - pad;
@@ -1005,9 +1006,9 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
 }
 
 // Mise en page commune des écrans de la vidéo : marges et taille du titre,
-// proportionnelles à la définition.
+// proportionnelles à la définition (plus grandes en portrait : videoScale).
 function videoFrame({ width, height }) {
-    const scale = Math.min(width, height) / 540;
+    const scale = videoScale({ width, height });
     const pad = Math.round(28 * scale);
     const titleSize = Math.round(24 * scale);
     return { scale, pad, titleSize, top: pad * 2 + titleSize };
@@ -1044,7 +1045,9 @@ function introPainter(dashboard, count, { width, height }) {
         const nameBase = Math.round(48 * scale);
         g.font = '700 ' + nameBase + 'px ' + font;
         const nameSize = fitFontSize(name, nameBase, nameMax, measure);
-        if (nameSize !== nameBase) g.font = '700 ' + Math.round(nameSize) + 'px ' + font;
+        // Arrondi vers le bas : 97,97 → 98 px dépassait de 0,3 px et le nom,
+        // pourtant réduit pour tenir, finissait par « … ».
+        if (nameSize !== nameBase) g.font = '700 ' + Math.floor(nameSize) + 'px ' + font;
         g.fillText(ellipsize(name, nameMax, measure), width / 2, height * 0.44 + rise);
         g.fillStyle = tokens.textMuted;
         g.font = '500 ' + Math.round(24 * scale) + 'px ' + font;
@@ -1089,7 +1092,7 @@ function numberPainter(spec, result, { width, height }) {
         const valueBase = Math.round(150 * scale);
         g.font = '700 ' + valueBase + 'px ' + font;
         const valueSize = fitFontSize(label, valueBase, valueMaxWidth, measure, 0.4);
-        if (valueSize !== valueBase) g.font = '700 ' + Math.round(valueSize) + 'px ' + font;
+        if (valueSize !== valueBase) g.font = '700 ' + Math.floor(valueSize) + 'px ' + font;
         g.fillText(label, width / 2, height * 0.46);
         g.fillStyle = tokens.textMuted;
         g.font = '500 ' + Math.round(24 * scale) + 'px ' + font;

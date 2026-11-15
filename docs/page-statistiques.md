@@ -709,6 +709,14 @@ effacer » le retire avec la période proposée.
   la place du plus long des repères, mesuré une fois (le titre ne bouge pas
   d'une image à l'autre), au plus 45 % de la largeur — davantage si le
   titre, court, laisse la place ; le titre prend le reste.
+- Échelle (`videoScale`, chart_video.mjs) : écrans mis en page comme sur
+  540 px de côté (le plus petit), puis agrandis à la définition — sauf le
+  portrait, regardé en plein écran sur un téléphone, mis en page sur 432 px
+  de large : textes 25 % plus grands (même taille en pixels qu'en carré
+  auparavant, 1 080 px de large dans les deux cas). Tailles réduites par
+  `fitFontSize` arrondies vers le bas : arrondi au plus proche, 97,97 → 98 px
+  dépassait d'une fraction de pixel et le nom du tableau, réduit pour tenir,
+  finissait par « … » (2026-11-15).
 - Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080, portrait
   9:16 1080×1920 pour Stories/Reels/Shorts), durées 6 à 30 s.
 - Réglages de la fenêtre mémorisés dans le navigateur (localStorage

@@ -13,6 +13,19 @@ export const VIDEO_SIZES = Object.freeze({
     // Stories, Reels, Shorts.
     portrait: Object.freeze({ width: 1080, height: 1920 }),
 });
+// Échelle des écrans de la vidéo : textes et graphique mis en page comme sur
+// une fenêtre de 540 px de côté (le plus petit), puis agrandis à la
+// définition. Un portrait (Stories, Reels) se regarde en plein écran sur un
+// téléphone, plus petit qu'un paysage sur un écran : sa référence est plus
+// étroite (432 px) — textes 25 % plus grands, graphique un peu moins large en
+// unités ECharts.
+export const VIDEO_REFERENCE = 540;
+export const VIDEO_PORTRAIT_REFERENCE = 432;
+export function videoScale({ width, height }) {
+    return height > width
+        ? width / VIDEO_PORTRAIT_REFERENCE
+        : Math.min(width, height) / VIDEO_REFERENCE;
+}
 export const VIDEO_DURATIONS = Object.freeze([6, 10, 15, 20, 30]);
 export const VIDEO_FPS = 30;
 // Fin de vidéo : le graphique complet reste affiché (part de la durée),

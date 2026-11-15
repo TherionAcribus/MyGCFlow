@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
     chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
-    VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
+    VIDEO_HOLD, VIDEO_HOLD_MIN_MS, VIDEO_SIZES, videoScale,
 } from '../../static/js/chart_video.mjs';
 
 const result = {
@@ -111,6 +111,14 @@ test('ellipsize : tronque avec « … » au lieu de compresser', () => {
     assert.equal(ellipsize('', 50, px10), '');
     assert.equal(ellipsize(1234, 30, px10), '12…');
     assert.equal(ellipsize('abc', 0, px10), '');
+});
+
+test('échelle vidéo : 540 px de référence, 432 en portrait (textes 25 % plus grands)', () => {
+    assert.equal(videoScale(VIDEO_SIZES.hd), 720 / 540);
+    assert.equal(videoScale(VIDEO_SIZES.fullhd), 2);
+    assert.equal(videoScale(VIDEO_SIZES.square), 2);
+    assert.equal(videoScale(VIDEO_SIZES.portrait), 2.5);
+    assert.equal(videoScale(VIDEO_SIZES.portrait) / videoScale(VIDEO_SIZES.square), 1.25);
 });
 
 test('en-tête vidéo : le repère « mois année » tient en entier, le titre prend le reste', () => {
