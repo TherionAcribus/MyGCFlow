@@ -447,7 +447,9 @@
                         <div id="statsFiltersForm" class="stats-filters-form"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" id="btnStatsFiltersClear" class="btn btn-link me-auto">{{ _("Tout effacer") }}</button>
+                        <button type="button" id="btnStatsFiltersClear" class="btn btn-link">{{ _("Tout effacer") }}</button>
+                        <!-- Ce que retiendraient les filtres cochés (source principale). -->
+                        <span id="statsFiltersResult" class="stats-filters-result me-auto" role="status" aria-live="polite"></span>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
                         <button type="button" id="btnStatsFiltersApply" class="btn btn-primary">{{ _("Appliquer") }}</button>
                     </div>

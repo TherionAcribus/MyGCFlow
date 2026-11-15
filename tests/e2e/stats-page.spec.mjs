@@ -433,6 +433,15 @@ test('galerie : la recherche filtre les questions et leurs sections', async ({ p
   const sections = page.locator('#statsGalleryList .stats-gallery-section');
   expect(await page.locator('#statsGalleryList .stats-gallery-section:visible').count()).toBeLessThan(await sections.count());
 
+  // Mots-clés hors du texte affiché : « matrice » trouve la grille D/T ;
+  // ponctuation ignorée et chaque mot requis (« grille dt »).
+  await page.locator('#statsGallerySearch').fill('Matrice');
+  await expect(visibleCards.filter({ hasText: 'Ma grille D/T' })).toHaveCount(1);
+  await expect(visibleCards.filter({ hasText: 'Mon calendrier 366' })).toHaveCount(0);
+  await page.locator('#statsGallerySearch').fill('grille dt');
+  await expect(visibleCards.filter({ hasText: 'Ma grille D/T' })).toHaveCount(1);
+  await expect(visibleCards.filter({ hasText: 'Ma grille Jasmer' })).toHaveCount(0);
+
   // Aucune correspondance : tout masqué ; vider le champ rend tout.
   await page.locator('#statsGallerySearch').fill('zorglub');
   await expect(visibleCards).toHaveCount(0);
@@ -598,7 +607,14 @@ test('chiffre clé comparé : valeur, période précédente et écart', async ({
 
 // Menu Tom Select ouvert hors de la modale (rattaché à <body>) : on l'ouvre
 // par son API, on clique l'option par sa valeur, on le referme.
+// Liste courte : boutons à bascule (le <select> masqué suit) ; sinon menu
+// Tom Select.
 async function pickFilter(page, selectId, value) {
+  const toggle = page.locator(`[data-filter-row]:has(#${selectId}) [data-filter-value="${value}"]`);
+  if (await toggle.count()) {
+    await toggle.click();
+    return;
+  }
   await page.locator(`#${selectId}`).evaluate((el) => el.tomselect.open());
   await page.locator(`.ts-dropdown:visible .option[data-value="${value}"]`).click();
   await page.locator(`#${selectId}`).evaluate((el) => el.tomselect.close());
@@ -625,6 +641,48 @@ test('filtres du tableau de bord : appliqués partout, résumés en pastilles, r
   await page.locator('.stats-filter-chip [data-remove-filter="cache_type"]').click();
   await expect(page.locator('.stats-number-value').first()).toHaveText('6');
   await expect(page.locator('#statsFiltersSummary')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('fenêtre Filtres : boutons, comptes qui suivent la sélection, résultat en direct', async ({ page }) => {
+  const errors = await openStats(page);
+  await page.locator('#btnStatsFilters').click();
+  const form = page.locator('#statsFiltersForm');
+  const toggle = (field, value) => form.locator(`[data-filter-row="${field}"] [data-filter-value="${value}"]`);
+  const count = (field, value) => toggle(field, value).locator('.stats-filter-toggle-count');
+  const result = page.locator('#statsFiltersResult');
+
+  // Listes courtes en boutons, rangées par rubrique ; le <select> reste, masqué.
+  await expect(form.locator('.stats-filter-group-title').first()).toHaveText('Caches');
+  await expect(form.locator('[data-filter-row="cache_type"] .stats-filter-toggle')).toHaveCount(3);
+  await expect(page.locator('#statsFilter-cache_type')).toBeHidden();
+  await expect(result).toHaveText('6 trouvailles sur 6');
+  await expect(form.locator('[data-filter-row="cache_type"] .stats-filter-reset')).toBeHidden();
+
+  await toggle('cache_type', 'Traditional Cache').click();
+  await expect(toggle('cache_type', 'Traditional Cache')).toHaveAttribute('aria-pressed', 'true');
+  await expect(result).toHaveText('3 trouvailles sur 6');
+  // Comptes à facettes : contenants des seules traditionnelles ; les autres
+  // types gardent le leur (ils s'ajouteraient).
+  await expect(count('container', 'Small')).toHaveText('0');
+  await expect(toggle('container', 'Small')).toHaveClass(/is-zero/);
+  await expect(count('container', 'Other')).toHaveText('1');
+  await expect(count('cache_type', 'Multi-cache')).toHaveText('2');
+  await expect(page.locator('#statsFilter-container option[value="Micro"]')).toHaveText('Micro (1)');
+
+  // Plus rien : dit.
+  await toggle('container', 'Small').click();
+  await expect(result).toHaveText('Aucune trouvaille ne correspond.');
+  await expect(result).toHaveClass(/is-empty/);
+  // Un champ se vide seul…
+  await form.locator('[data-filter-row="container"] .stats-filter-reset').click();
+  await expect(toggle('container', 'Small')).toHaveAttribute('aria-pressed', 'false');
+  await expect(result).toHaveText('3 trouvailles sur 6');
+  // … ou tous ensemble.
+  await page.locator('#btnStatsFiltersClear').click();
+  await expect(toggle('cache_type', 'Traditional Cache')).toHaveAttribute('aria-pressed', 'false');
+  await expect(result).toHaveText('6 trouvailles sur 6');
+  await expect(count('container', 'Small')).toHaveText('1');
   expect(errors).toEqual([]);
 });
 

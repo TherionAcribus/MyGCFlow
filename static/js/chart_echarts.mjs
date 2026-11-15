@@ -1444,8 +1444,6 @@ function challengeOption(result, spec, ctx) {
     const metric = grid.metric;
     const values = result.series[0]?.values || [];
     const text = challengeText(result, ctx);
-    const { summary } = text;
-    const next = new Set(summary.loops > 0 ? summary.next : []);
     const layout = challengeLayout(result, ctx.width);
     const format = valueFormatter(spec, result, ctx);
     // `ctx.lockedMax` : échelle figée par la vidéo (résultat partiel) —
@@ -1482,8 +1480,6 @@ function challengeOption(result, spec, ctx) {
         const n = values[i] || 0;
         const level = max ? 0.25 + 0.75 * (n / max) : 0;
         const style = { color: n ? rampColor(tokens.heat, level) : tokens.empty };
-        // Cases du prochain tour (déjà trouvées) : liseré.
-        if (next.has(i)) Object.assign(style, { borderColor: tokens.text, borderWidth: 2 });
         const [x, y] = layout.transposed ? [cell.r, cell.c] : [cell.c, cell.r];
         const item = { value: [x, y, n], keyIndex: i, itemStyle: style };
         if (n && labelColorOn(style.color) !== '#ffffff') {

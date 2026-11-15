@@ -5,10 +5,13 @@ import { test } from 'node:test';
 import { findsTable } from '../../static/js/chart_sources.mjs';
 import {
     FILTER_FORM_FIELDS,
+    FILTER_FORM_GROUPS,
     activeFilterCount,
     cleanFilters,
     describeFilters,
     filterChoices,
+    filterFacets,
+    matchingCount,
 } from '../../static/js/chart_filters.mjs';
 import { FILTER_FIELDS } from '../../static/js/chart_spec.mjs';
 
@@ -38,6 +41,11 @@ const table = findsTable({
 
 test('les champs du formulaire sont des champs filtrables', () => {
     assert.deepEqual([...FILTER_FORM_FIELDS].sort(), [...FILTER_FIELDS].sort());
+});
+
+test('chaque champ du formulaire est dans une seule rubrique', () => {
+    const grouped = FILTER_FORM_GROUPS.flatMap((group) => group.fields);
+    assert.deepEqual([...grouped].sort(), [...FILTER_FORM_FIELDS].sort());
 });
 
 test('valeurs proposées : présentes seulement, avec leur nombre, dans un ordre utile', () => {
@@ -82,4 +90,40 @@ test('valeurs proposées sur plusieurs tables : comptes additionnés', () => {
     const merged = filterChoices([table, table], 'cache_type');
     assert.deepEqual(merged[0], { value: 'Traditional Cache', count: 6 });
     assert.deepEqual(filterChoices([table, null], 'country').map((c) => c.count), [3, 1]);
+});
+
+test('comptes à facettes : chaque champ compté sous les filtres des autres', () => {
+    // Sans filtre : les comptes de filterChoices.
+    const none = filterFacets(table, {});
+    assert.deepEqual(Object.fromEntries(none.get('cache_type')),
+        Object.fromEntries(filterChoices(table, 'cache_type').map((c) => [c.value, c.count])));
+
+    const facets = filterFacets(table, { country: ['France'], cache_type: ['Traditional Cache'] });
+    // Type de cache sous « France » seule (lignes A, B, D) : son propre
+    // filtre ne retire pas les autres types, qui s'ajouteraient.
+    assert.deepEqual(Object.fromEntries(facets.get('cache_type')), { 'Traditional Cache': 1, 'Multi-cache': 1, 'Adventure Lab': 1 });
+    // Pays sous « Traditional Cache » seul (lignes A, C, E ; E sans pays).
+    assert.deepEqual(Object.fromEntries(facets.get('country')), { France: 1, Belgique: 1 });
+    // Propriétaire sous les deux filtres : la seule ligne A.
+    assert.deepEqual(Object.fromEntries(facets.get('owner')), { Alice: 1 });
+});
+
+test('comptes à facettes des attributs : tous requis, les leurs compris', () => {
+    const facets = filterFacets(table, { attribute: ['6'] });
+    // Lignes avec l'attribut 6 : A [6], B [6, 8] → 8 n'y reste qu'une fois.
+    assert.deepEqual(Object.fromEntries(facets.get('attribute')), { 6: 2, 8: 1 });
+    assert.deepEqual(Object.fromEntries(facets.get('owner')), { Alice: 1, Bob: 1 });
+});
+
+test('comptes à facettes sur plusieurs tables : additionnés', () => {
+    const facets = filterFacets([table, null, table], { country: ['Belgique'] });
+    assert.deepEqual(Object.fromEntries(facets.get('cache_type')), { 'Traditional Cache': 2 });
+});
+
+test('lignes retenues par les filtres', () => {
+    assert.equal(matchingCount(table, {}), 5);
+    assert.equal(matchingCount(table, null), 5);
+    assert.equal(matchingCount(table, { country: ['France'] }), 3);
+    assert.equal(matchingCount(table, { country: ['France'], attribute: ['6', '8'] }), 1);
+    assert.equal(matchingCount(null, {}), 0);
 });

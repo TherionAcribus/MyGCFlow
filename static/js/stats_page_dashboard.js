@@ -508,12 +508,26 @@ export function onFiltersSummaryClick(event) {
 }
 
 function renderDashboardFilterForm(filters) {
+    const tables = dashboardTables();
+    const evolution = activeDashboard().kind === 'evolution';
+    const nf = new Intl.NumberFormat(state.labels.locale);
     renderFilterForm($('statsFiltersForm'), {
-        tables: dashboardTables(),
+        tables,
         filters,
         labels: state.labels,
         attributeName,
         idPrefix: 'statsFilter-',
+        // Résultat en direct, sur la source principale (trouvailles, ou
+        // caches publiées du jeu Évolution).
+        result: {
+            el: $('statsFiltersResult'),
+            table: tables[0],
+            text: (matched, total) => {
+                if (!matched) return evolution ? t('Aucune cache ne correspond.') : t('Aucune trouvaille ne correspond.');
+                const values = { n: nf.format(matched), total: nf.format(total) };
+                return evolution ? t('${n} caches publiées sur ${total}', values) : t('${n} trouvailles sur ${total}', values);
+            },
+        },
     });
 }
 

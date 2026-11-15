@@ -29,11 +29,13 @@ function renderGallery() {
     releaseGalleryPreviews();
     const list = $('statsGalleryList');
     list.replaceChildren();
-    const card = (id, icon, title, description, { preview = true } = {}) => {
+    const card = (id, icon, title, description, { preview = true, keywords = '' } = {}) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'stats-gallery-card';
         button.dataset.question = id;
+        // Mots cherchés en plus du texte affiché (filterGallery).
+        if (keywords) button.dataset.keywords = keywords;
         if (preview) {
             const box = document.createElement('span');
             box.className = 'stats-gallery-preview is-pending';
@@ -84,14 +86,14 @@ function renderGallery() {
     state.gallery.dashboardId = dashboard.id;
     for (const group of QUESTION_GROUPS) {
         const cards = QUESTIONS.filter((q) => q.group === group && questionFamily(q) === dashboard.kind).map((question) => {
-            const { title, description } = state.labels.question(question.id);
+            const { title, description, keywords } = state.labels.question(question.id);
             // L'élément de l'aperçu est celui qui sera ajouté : son résultat
             // est déjà en cache au moment du choix.
             // « Mon prochain cap » : au-dessus du total des trouvailles.
             const item = previous.get(question.id)
                 || itemFromQuestion(question.id, { title, dataset: dashboard.dataset, total: tableOf('finds').n });
             if (item) state.gallery.items.set(question.id, item);
-            return card(question.id, question.icon, title, description, { preview: Boolean(item) });
+            return card(question.id, question.icon, title, description, { preview: Boolean(item), keywords });
         });
         if (cards.length) list.append(section(state.labels.questionGroup(group), cards));
     }
@@ -201,15 +203,18 @@ export function openGallery() {
     getBsModal('statsGalleryModal')?.show();
 }
 
-// Recherche dans la galerie : sur le titre et la description des questions
-// (sans tenir compte de la casse ni des accents) ; une section vide se masque.
+// Recherche dans la galerie : sur le titre, la description et les mots-clés
+// des questions (sans tenir compte de la casse, des accents ni de la
+// ponctuation : « dt » trouve « D/T ») ; chaque mot doit y être. Une section
+// vide se masque.
 export function filterGallery() {
-    const fold = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-    const query = fold($('statsGallerySearch').value.trim());
+    const fold = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').replace(/[^\p{L}\p{N}\s]/gu, '').toLowerCase();
+    const words = fold($('statsGallerySearch').value).split(/\s+/).filter(Boolean);
     for (const section of $('statsGalleryList').querySelectorAll('.stats-gallery-section')) {
         let visible = 0;
         for (const card of section.querySelectorAll('.stats-gallery-card')) {
-            const show = !query || fold(card.textContent).includes(query);
+            const text = fold(card.textContent + ' ' + (card.dataset.keywords || ''));
+            const show = words.every((word) => text.includes(word));
             card.hidden = !show;
             if (show) visible++;
         }

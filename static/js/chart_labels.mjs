@@ -325,6 +325,10 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
     };
 
     // Questions toutes faites (dashboard_model.mjs › QUESTIONS).
+    // Mots cherchés par la galerie en plus du titre et de la description
+    // (3ᵉ élément d'une question) : les noms usuels qu'elle ne porte pas — la
+    // grille D/T est la « matrice » des panneaux de la carte.
+    const DT_GRID_WORDS = t('matrice');
     const QUESTIONS = {
         total: [t('Nombre de trouvailles'), t('Le total de la période.')],
         days: [t('Jours de cache'), t('Les jours où vous avez trouvé au moins une cache.')],
@@ -362,7 +366,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
         evo_published: [t('Publications par année'), t('Les nouvelles caches de la zone, année par année.')],
         evo_types: [t('Types des caches actives'), t('La part de chaque type parmi les caches en place.')],
         evo_counties: [t('Caches actives par département'), t('Où se trouvent les caches en place.')],
-        evo_dt: [t('Grille D/T de la zone'), t('Difficulté et terrain des caches en place.')],
+        evo_dt: [t('Grille D/T de la zone'), t('Difficulté et terrain des caches en place.'), DT_GRID_WORDS],
         best_day: [t('Ma meilleure journée'), t('Le plus de trouvailles en un jour, et quel jour.')],
         streak_longest: [t('Ma plus longue série'), t("Le plus de jours d'affilée avec au moins une trouvaille.")],
         streak_current: [t('Ma série en cours'), t("Les jours d'affilée jusqu'à aujourd'hui (ou hier : la journée n'est pas finie).")],
@@ -372,7 +376,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
         next_milestone: [t('Mon prochain cap'), t('Le prochain nombre rond, et quand vous y serez à ce rythme.')],
         year_pace: [t('Mon année à ce rythme'), t("Vos trouvailles de l'année, et où vous finirez au 31 décembre.")],
         year_curve: [t("Ma courbe de l'année, prolongée"), t("Le cumul de l'année, prolongé jusqu'au 31 décembre au rythme actuel.")],
-        challenge_dt: [t('Ma grille D/T'), t('Les 81 combinaisons de difficulté et de terrain : celles qui manquent.')],
+        challenge_dt: [t('Ma grille D/T'), t('Les 81 combinaisons de difficulté et de terrain : celles qui manquent.'), DT_GRID_WORDS],
         challenge_calendar: [t('Mon calendrier 366'), t("Un jour de l'année sans trouvaille ? Les 366 jours, toutes années confondues.")],
         challenge_jasmer: [t('Ma grille Jasmer'), t('Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent.')],
         challenge_months: [t('Mes mois de cache'), t('Chaque mois depuis votre première trouvaille : en avez-vous sauté un ?')],
@@ -385,7 +389,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
         evo_zones_density: [t('Densité des caches actives'), t('Les caches en place pour 1 000 km², zone par zone.')],
         evo_zones_coverage: [t('Ma couverture'), t('La part des caches actives que vous avez trouvées, zone par zone.')],
         evo_zones_coverage_years: [t('Ma couverture, année par année'), t('Votre part des caches actives à la fin de chaque année.')],
-        zones_dt: [t('Grille D/T par région'), t('Combien des 81 combinaisons de difficulté et de terrain dans chaque région.')],
+        zones_dt: [t('Grille D/T par région'), t('Combien des 81 combinaisons de difficulté et de terrain dans chaque région.'), DT_GRID_WORDS],
     };
 
     const QUESTION_GROUPS = {
@@ -861,7 +865,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
         measureName,
         chart: (chart) => CHARTS[chart] || chart,
         size: (size) => SIZES[size] || size,
-        question: (id) => ({ title: QUESTIONS[id]?.[0] || id, description: QUESTIONS[id]?.[1] || '' }),
+        question: (id) => ({ title: QUESTIONS[id]?.[0] || id, description: QUESTIONS[id]?.[1] || '', keywords: QUESTIONS[id]?.[2] || '' }),
         questionGroup: (group) => QUESTION_GROUPS[group] || group,
         layout: (layout) => LAYOUTS[layout] || layout,
         align: (align, unit) => (align === 'elapsed' ? ELAPSED_ALIGN[unit] || ELAPSED_ALIGN.day : ALIGNS[align]) || align,

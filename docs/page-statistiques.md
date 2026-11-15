@@ -64,7 +64,7 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 | `templates/_app_header.html` | En-tête commun aux quatre pages (lien actif selon `mode`) |
 | `static/js/stats_page.js` | Point d'entrée : suivi du thème et de la date du jour, relevé E2E (`getStatsPageSnapshot`), démarrage |
 | `static/js/stats_page_*.js` | Câblage DOM, un module par fonction : `state` (état partagé, constantes, `readTokens`), `data` (chargement des sources), `save` (sauvegarde), `dashboard` (barre, tableaux, filtres, renommer), `cards` (cartes et dessin), `card_actions` (menu d'une carte, glisser, redimensionner), `links` (carte filtrée, panneau vidéo), `video`, `exports` (valeurs, PNG, SVG, image du tableau, impression), `gallery`, `editor`, `present` |
-| `static/js/stats_filters_ui.js` | Formulaire de filtres (Tom Select) : tableau de bord et éditeur |
+| `static/js/stats_filters_ui.js` | Formulaire de filtres (boutons à bascule, Tom Select, comptes à facettes) : tableau de bord et éditeur |
 | `static/js/chart_filters.mjs` | Pur : valeurs proposées par champ (avec comptes), résumé, nettoyage |
 | `static/js/app_quit.js` | « Quitter » (sorti de ui.js, partagé avec les pages carte) |
 | `static/js/chart_spec.mjs` | Format versionné d'un graphique, normalisation, compatibilités |
@@ -358,6 +358,12 @@ le travail redondant dans la page :
   `shown.bs.modal`), au plus ~12 ms par image ; instances libérées à
   `hidden.bs.modal`. L'élément de l'aperçu est celui qui est ajouté : son
   résultat est déjà dans le cache.
+- **Recherche de la galerie** (`filterGallery`) : titre, description et
+  mots-clés de la question (3ᵉ élément de `QUESTIONS` dans chart_labels.mjs,
+  `data-keywords` de la carte, jamais affichés) — les noms usuels absents du
+  texte : « matrice » pour les grilles D/T (nom des panneaux de la carte,
+  2026-11-15). Casse, accents et ponctuation ignorés (« dt » trouve « D/T »),
+  chaque mot requis.
 - **« Actualiser les données »** (`refreshData`, bouton à côté de
   « Filtres ») : relit trouvailles, DNF, caches posées, Mes poses, la liste
   des jeux et le jeu Évolution du tableau (les autres jeux au prochain
@@ -775,13 +781,38 @@ tel qu'il est affiché — même disposition, même thème clair ou sombre.
 retirables sous la barre, badge du nombre de champs) et `spec.filters`
 (section « Filtres » de l'éditeur : `null` = ceux du tableau de bord ; un
 objet = propres, partant d'une copie de ceux du tableau ; icône d'entonnoir
-sur la carte). Formulaire : `renderFilterForm` (stats_filters_ui.js), un
-`<select multiple class="form-select">` + Tom Select par champ, garni par
-`filterChoices` (valeurs présentes et leur nombre ; un champ à une seule
-valeur est masqué), menus rattachés à `<body>` (`dropdownParent`, z-index
-au-dessus des modales). Dans l'éditeur, le formulaire n'est reconstruit
-qu'à l'ouverture ou au changement de mode : le reconstruire à chaque
-changement couperait la saisie dans Tom Select.
+sur la carte). Formulaire : `renderFilterForm` (stats_filters_ui.js),
+refondu le 2026-11-15 (avant : treize menus « Aucun filtre » identiques
+empilés, à faire défiler, comptes figés, aucun aperçu du résultat) :
+- rubriques Caches / Lieux / Personnes (`FILTER_FORM_GROUPS`,
+  chart_filters.mjs), libellé à gauche du contrôle dès que le formulaire a
+  la place (requête de conteneur à 520 px : en colonne dans l'éditeur
+  étroit) ;
+- un `<select multiple>` par champ, garni par `filterChoices` (valeurs
+  présentes et leur nombre ; un champ à une seule valeur est masqué), garde
+  la sélection — `readFilterForm` ne lit que lui ;
+- listes courtes (source, type, contenant, D, T, pays, année de
+  publication, au plus 16 valeurs — `TOGGLE_FIELDS`) : boutons à bascule
+  (`.stats-filter-toggle`, `aria-pressed`, `data-filter-value`) qui pilotent
+  le `<select>` masqué ; D/T en pastilles étroites, nombre sous la valeur ;
+- listes longues : Tom Select, menus rattachés à `<body>`
+  (`dropdownParent`, z-index au-dessus des modales), retournés au-dessus du
+  champ quand la place manque en bas et recalés au défilement de la
+  fenêtre (`placeDropdown`) ;
+- comptes « à facettes » (`filterFacets`) : chaque valeur dit ce qu'il
+  resterait en la cochant aussi, sous les filtres des AUTRES champs
+  (attributs : sous tous, leurs propres compris, puisqu'ils sont tous
+  requis) ; une valeur à 0 est grisée et, dans un menu, rangée en fin de
+  liste (`rank`) ;
+- résultat en direct dans le pied de la fenêtre du tableau
+  (`#statsFiltersResult`, `matchingCount` sur la source principale :
+  trouvailles ou caches publiées du jeu Évolution), en rouge à 0 ;
+- croix à côté du libellé d'un champ filtré (`.stats-filter-reset`) : le
+  vide seul.
+
+Dans l'éditeur, le formulaire n'est reconstruit qu'à l'ouverture ou au
+changement de mode : le reconstruire à chaque changement couperait la
+saisie dans Tom Select (les comptes, eux, se mettent à jour en place).
 
 **2ᵉ dimension** : « découpé par » dans la phrase (`allowedSplitBy`),
 « Empiler les séries » dans les options dès plusieurs séries
@@ -868,8 +899,9 @@ bilan au-dessus. Quatre grilles, selon le regroupement
 - Dessin (`challengeOption`) : cases carrées et centrées (taille plafonnée
   par grille), la carte s'allonge (`chartHeight`) et se redessine quand sa
   largeur change (`data-challenge-width`). Case vide au fond `--chart-empty`,
-  case trouvée dans le dégradé (à partir du 2ᵉ quart), cases restées au
-  minimum cerclées quand un tour est déjà complet. Années × mois plus hautes
+  case trouvée dans le dégradé (à partir du 2ᵉ quart). Les cases qui
+  manquent au tour suivant ne sont plus cerclées (2026-11-15 : liseré pris
+  pour une anomalie) — le bilan seul les nomme. Années × mois plus hautes
   que larges (Jasmer) : couchées, une colonne par année.
 - Clic : une case trouvée ouvre la carte filtrée (D/T, mois, mois de
   publication → `published_dates` du mois ; jour de l'année : seulement sur

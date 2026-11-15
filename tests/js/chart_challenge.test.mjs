@@ -164,13 +164,14 @@ test('Jasmer couchée : une colonne par année, une ligne par mois', () => {
     assert.equal(buildChartOption(dt.result, dt.spec, ctx).yAxis.data.length, 9);
 });
 
-test('tour complet : les cases restées au minimum sont cerclées', () => {
+test('tour complet : les cases restées au minimum ne sont pas cerclées, le bilan les nomme', () => {
     const spec = normalizeChartSpec({ groupBy: 'month', periods: [{ kind: 'year', year: 2023 }], view: { chart: 'challenge' } });
     const result = runChartQuery(spec, table, { today: TODAY });
     result.series[0].values = result.series[0].values.map((_, i) => (i === 3 ? 1 : 2));
     const option = buildChartOption(result, spec, ctx);
-    const ringed = option.series[0].data.filter((d) => d.itemStyle.borderWidth === 2);
-    assert.deepEqual(ringed.map((d) => d.keyIndex), [3]);
+    // Le liseré était pris pour une anomalie (2026-11-15).
+    assert.ok(option.series[0].data.every((d) => d.itemStyle.borderWidth === undefined));
+    assert.match(option.title.subtext, /^Pour le tour 2 : /);
 });
 
 test('liens : carte filtrée (mois de publication), panneau vidéo de la même grille', () => {

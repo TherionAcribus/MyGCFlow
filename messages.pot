@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 14:37+0100\n"
+"POT-Creation-Date: 2026-11-15 15:32+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -624,7 +624,7 @@ msgid "Code GC"
 msgstr ""
 
 #: poses_dataset.py:635 templates/menu_images.html:152
-#: templates/stats_page.html:529 templates/stats_page.html:554
+#: templates/stats_page.html:531 templates/stats_page.html:556
 msgid "Nom"
 msgstr ""
 
@@ -809,7 +809,7 @@ msgstr ""
 #: templates/menu_animation.html:83 templates/menu_animation.html:113
 #: templates/menu_filtre.html:122 templates/menu_filtre.html:131
 #: templates/menu_filtre.html:147 templates/menu_filtre.html:156
-#: templates/stats_page.html:282 templates/stats_page.html:507
+#: templates/stats_page.html:282 templates/stats_page.html:509
 #: test_translations.py:30
 msgid "Données"
 msgstr ""
@@ -868,7 +868,7 @@ msgstr ""
 
 #: blueprints/core.py:230 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:43
-#: static/js/stats_page_dashboard.js:544 static/js/stats_page_links.js:206
+#: static/js/stats_page_dashboard.js:558 static/js/stats_page_links.js:206
 #: static/js/stats_page_links.js:254 static/js/stats_page_video.js:57
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
@@ -878,9 +878,9 @@ msgstr ""
 #: templates/menu_style.html:377 templates/menu_style.html:405
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
-#: templates/stats_page.html:381 templates/stats_page.html:451
-#: templates/stats_page.html:538 templates/stats_page.html:558
-#: templates/stats_page.html:581 templates/stats_page.html:684
+#: templates/stats_page.html:381 templates/stats_page.html:453
+#: templates/stats_page.html:540 templates/stats_page.html:560
+#: templates/stats_page.html:583 templates/stats_page.html:686
 msgid "Annuler"
 msgstr ""
 
@@ -1492,7 +1492,7 @@ msgstr ""
 #: static/js/ui.js:12257 static/js/ui.js:12316 static/js/ui.js:12324
 #: static/js/ui.js:12332 static/js/ui.js:12502 templates/guide.html:314
 #: templates/menu_animation.html:23 templates/menu_animation.html:294
-#: templates/stats_page.html:623
+#: templates/stats_page.html:625
 msgid "Musique"
 msgstr ""
 
@@ -1635,7 +1635,7 @@ msgid ""
 "une musique ou une image"
 msgstr ""
 
-#: static/js/bdd.js:904 static/js/bdd.js:930 static/js/chart_labels.mjs:742
+#: static/js/bdd.js:904 static/js/bdd.js:930 static/js/chart_labels.mjs:746
 #: static/js/mapgl.js:1262
 #, python-brace-format
 msgid "le ${date}"
@@ -1855,59 +1855,59 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:267
+#: static/js/chart_echarts.mjs:206
 msgid "en cours"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:539
+#: static/js/chart_echarts.mjs:461
 msgid "à ce rythme"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:553
+#: static/js/chart_echarts.mjs:475
 #, python-brace-format
 msgid "Objectif : ${n}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:707
+#: static/js/chart_echarts.mjs:616
 #, python-brace-format
 msgid "Écart : ${a} par rapport à ${b}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:742 static/js/stats_page_exports.js:28
+#: static/js/chart_echarts.mjs:651 static/js/stats_page_exports.js:28
 #: static/js/stats_page_exports.js:41
 msgid "Écart"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:960 static/js/chart_echarts.mjs:1154
+#: static/js/chart_echarts.mjs:847 static/js/chart_echarts.mjs:1012
 msgid "Aucune donnée"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:967 static/js/zone_layer.js:1302
+#: static/js/chart_echarts.mjs:853 static/js/zone_layer.js:1302
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:972
+#: static/js/chart_echarts.mjs:858
 #, python-brace-format
 msgid "rang ${n} sur ${of}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:978
+#: static/js/chart_echarts.mjs:864
 #, python-brace-format
 msgid "nouvelle depuis ${period}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:980
+#: static/js/chart_echarts.mjs:866
 #, python-brace-format
 msgid "${delta} depuis ${period}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1153 static/js/stats_page_cards.js:219
+#: static/js/chart_echarts.mjs:1011 static/js/stats_page_cards.js:219
 #: static/js/zone_layer_ui.js:153
 msgid "Contours des zones indisponibles."
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1155
+#: static/js/chart_echarts.mjs:1013
 msgid "Chargement de la carte…"
 msgstr ""
 
@@ -2127,7 +2127,7 @@ msgstr ""
 msgid "par difficulté / terrain"
 msgstr ""
 
-#: static/js/chart_labels.mjs:151 static/js/chart_labels.mjs:833
+#: static/js/chart_labels.mjs:151 static/js/chart_labels.mjs:837
 msgid "par pays"
 msgstr ""
 
@@ -2299,7 +2299,7 @@ msgstr ""
 msgid "Caches différentes"
 msgstr ""
 
-#: static/js/chart_labels.mjs:208 static/js/chart_labels.mjs:330
+#: static/js/chart_labels.mjs:208 static/js/chart_labels.mjs:334
 msgid "Jours de cache"
 msgstr ""
 
@@ -2365,7 +2365,7 @@ msgstr ""
 msgid "Cumul sur la période"
 msgstr ""
 
-#: static/js/chart_labels.mjs:224 static/js/chart_labels.mjs:359
+#: static/js/chart_labels.mjs:224 static/js/chart_labels.mjs:363
 #: static/js/stats_panels.js:1193 static/js/stats_panels.js:1250
 #: static/js/stats_panels.js:1443 static/js/stats_panels.js:1453
 #: static/js/zone_layer.js:917 templates/menu_stats.html:177
@@ -2390,14 +2390,14 @@ msgstr ""
 msgid "Mes trouvailles"
 msgstr ""
 
-#: static/js/chart_labels.mjs:235 static/js/chart_labels.mjs:398
+#: static/js/chart_labels.mjs:235 static/js/chart_labels.mjs:402
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
 #: templates/menu_filtre.html:31 templates/menu_points.html:204
 #: templates/menu_stats.html:102 templates/menu_stats.html:527
 msgid "Mes DNF"
 msgstr ""
 
-#: static/js/chart_labels.mjs:236 static/js/chart_labels.mjs:397
+#: static/js/chart_labels.mjs:236 static/js/chart_labels.mjs:401
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
 #: templates/menu_data_poses.html:14 templates/menu_filtre.html:51
 #: templates/menu_points.html:165 templates/menu_stats.html:103
@@ -2448,7 +2448,7 @@ msgstr ""
 msgid "DNF reçus"
 msgstr ""
 
-#: static/js/chart_labels.mjs:249 static/js/chart_labels.mjs:352
+#: static/js/chart_labels.mjs:249 static/js/chart_labels.mjs:356
 #: static/js/stats_panels.js:1154 static/js/stats_panels.js:1408
 #: static/js/stats_panels.js:1412 static/js/stats_ui.js:324
 #: static/js/stats_ui.js:843 templates/menu_stats.html:250
@@ -2622,802 +2622,806 @@ msgstr ""
 msgid "Toute la largeur"
 msgstr ""
 
-#: static/js/chart_labels.mjs:329 templates/menu_stats.html:130
+#: static/js/chart_labels.mjs:331
+msgid "matrice"
+msgstr ""
+
+#: static/js/chart_labels.mjs:333 templates/menu_stats.html:130
 #: templates/menu_stats.html:160
 msgid "Nombre de trouvailles"
 msgstr ""
 
-#: static/js/chart_labels.mjs:329
+#: static/js/chart_labels.mjs:333
 msgid "Le total de la période."
 msgstr ""
 
-#: static/js/chart_labels.mjs:330
+#: static/js/chart_labels.mjs:334
 msgid "Les jours où vous avez trouvé au moins une cache."
 msgstr ""
 
-#: static/js/chart_labels.mjs:331
+#: static/js/chart_labels.mjs:335
 msgid "Pays visités"
 msgstr ""
 
-#: static/js/chart_labels.mjs:331
+#: static/js/chart_labels.mjs:335
 msgid "Le nombre de pays de vos trouvailles."
 msgstr ""
 
-#: static/js/chart_labels.mjs:332
+#: static/js/chart_labels.mjs:336
 msgid "Ma meilleure année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:332
+#: static/js/chart_labels.mjs:336
 msgid "Vos trouvailles année par année, sur tout votre historique."
 msgstr ""
 
-#: static/js/chart_labels.mjs:333
+#: static/js/chart_labels.mjs:337
 msgid "Ma progression"
 msgstr ""
 
-#: static/js/chart_labels.mjs:333
+#: static/js/chart_labels.mjs:337
 msgid "Le total de vos trouvailles, mois après mois."
 msgstr ""
 
-#: static/js/chart_labels.mjs:334
+#: static/js/chart_labels.mjs:338
 msgid "Mes mois les plus actifs"
 msgstr ""
 
-#: static/js/chart_labels.mjs:334
+#: static/js/chart_labels.mjs:338
 msgid "Janvier, février… : quels mois de l'année vous cachez le plus."
 msgstr ""
 
-#: static/js/chart_labels.mjs:335
+#: static/js/chart_labels.mjs:339
 msgid "Mes jours de la semaine"
 msgstr ""
 
-#: static/js/chart_labels.mjs:335
+#: static/js/chart_labels.mjs:339
 msgid "Du lundi au dimanche : quand vous trouvez vos caches."
 msgstr ""
 
-#: static/js/chart_labels.mjs:336
+#: static/js/chart_labels.mjs:340
 msgid "Mes types de caches"
 msgstr ""
 
-#: static/js/chart_labels.mjs:336
+#: static/js/chart_labels.mjs:340
 msgid "La part de chaque type, avec les couleurs de la carte."
 msgstr ""
 
-#: static/js/chart_labels.mjs:337
+#: static/js/chart_labels.mjs:341
 msgid "Mes pays"
 msgstr ""
 
-#: static/js/chart_labels.mjs:337
+#: static/js/chart_labels.mjs:341
 msgid "Les pays où vous avez le plus trouvé."
 msgstr ""
 
-#: static/js/chart_labels.mjs:338
+#: static/js/chart_labels.mjs:342
 msgid "Mes propriétaires favoris"
 msgstr ""
 
-#: static/js/chart_labels.mjs:338
+#: static/js/chart_labels.mjs:342
 msgid "Les poseurs dont vous avez trouvé le plus de caches."
 msgstr ""
 
-#: static/js/chart_labels.mjs:339
+#: static/js/chart_labels.mjs:343
 msgid "Difficulté des caches"
 msgstr ""
 
-#: static/js/chart_labels.mjs:339
+#: static/js/chart_labels.mjs:343
 msgid "Vos trouvailles par niveau de difficulté."
 msgstr ""
 
-#: static/js/chart_labels.mjs:340
+#: static/js/chart_labels.mjs:344
 msgid "Terrain des caches"
 msgstr ""
 
-#: static/js/chart_labels.mjs:340
+#: static/js/chart_labels.mjs:344
 msgid "Vos trouvailles par niveau de terrain."
 msgstr ""
 
-#: static/js/chart_labels.mjs:341
+#: static/js/chart_labels.mjs:345
 msgid "Tailles des caches"
 msgstr ""
 
-#: static/js/chart_labels.mjs:341
+#: static/js/chart_labels.mjs:345
 msgid "Nano, micro, petite… : les contenants trouvés."
 msgstr ""
 
-#: static/js/chart_labels.mjs:342
+#: static/js/chart_labels.mjs:346
 msgid "Âge des caches à la trouvaille"
 msgstr ""
 
-#: static/js/chart_labels.mjs:342
+#: static/js/chart_labels.mjs:346
 msgid "Trouvées le jour de leur publication, ou des années après."
 msgstr ""
 
-#: static/js/chart_labels.mjs:343
+#: static/js/chart_labels.mjs:347
 msgid "Mon record par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:343
+#: static/js/chart_labels.mjs:347
 msgid "Le plus grand nombre de trouvailles en une journée, chaque année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:344
+#: static/js/chart_labels.mjs:348
 msgid "Suis-je en avance sur l'an dernier ?"
 msgstr ""
 
-#: static/js/chart_labels.mjs:344
+#: static/js/chart_labels.mjs:348
 msgid "Le cumul de cette année et celui de l'an dernier, jour après jour."
 msgstr ""
 
-#: static/js/chart_labels.mjs:345
+#: static/js/chart_labels.mjs:349
 msgid "Cette année contre l'an dernier"
 msgstr ""
 
-#: static/js/chart_labels.mjs:345
+#: static/js/chart_labels.mjs:349
 msgid "Vos trouvailles mois par mois, cette année et l'an dernier."
 msgstr ""
 
-#: static/js/chart_labels.mjs:346
+#: static/js/chart_labels.mjs:350
 msgid "Écart avec l'an dernier"
 msgstr ""
 
-#: static/js/chart_labels.mjs:346
+#: static/js/chart_labels.mjs:350
 msgid "Combien de trouvailles en plus ou en moins que l'an dernier, chaque mois."
 msgstr ""
 
-#: static/js/chart_labels.mjs:347
+#: static/js/chart_labels.mjs:351
 msgid "12 derniers mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:347
+#: static/js/chart_labels.mjs:351
 msgid "Comparés aux 12 mois précédents."
 msgstr ""
 
-#: static/js/chart_labels.mjs:348
+#: static/js/chart_labels.mjs:352
 msgid "Toutes mes années"
 msgstr ""
 
-#: static/js/chart_labels.mjs:348
+#: static/js/chart_labels.mjs:352
 msgid "Le cumul de chaque année, superposé jour après jour."
 msgstr ""
 
-#: static/js/chart_labels.mjs:349
+#: static/js/chart_labels.mjs:353
 msgid "Mes années mois par mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:349
+#: static/js/chart_labels.mjs:353
 msgid "Une courbe par année, de janvier à décembre."
 msgstr ""
 
-#: static/js/chart_labels.mjs:350
+#: static/js/chart_labels.mjs:354
 msgid "Mes types cette année et l'an dernier"
 msgstr ""
 
-#: static/js/chart_labels.mjs:350
+#: static/js/chart_labels.mjs:354
 msgid "Les parts de chaque type, côte à côte."
 msgstr ""
 
-#: static/js/chart_labels.mjs:351 static/js/stats_panels.js:1164
+#: static/js/chart_labels.mjs:355 static/js/stats_panels.js:1164
 msgid "Trouvailles reçues par mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:351
+#: static/js/chart_labels.mjs:355
 msgid "Les visites sur vos caches posées, mois après mois."
 msgstr ""
 
-#: static/js/chart_labels.mjs:352
+#: static/js/chart_labels.mjs:356
 msgid "Les points favoris laissés sur vos caches."
 msgstr ""
 
-#: static/js/chart_labels.mjs:353
+#: static/js/chart_labels.mjs:357
 msgid "Mes caches les plus visitées"
 msgstr ""
 
-#: static/js/chart_labels.mjs:353
+#: static/js/chart_labels.mjs:357
 msgid "Vos caches posées qui reçoivent le plus de trouvailles."
 msgstr ""
 
-#: static/js/chart_labels.mjs:354
+#: static/js/chart_labels.mjs:358
 msgid "Mes visiteurs les plus fidèles"
 msgstr ""
 
-#: static/js/chart_labels.mjs:354 templates/menu_stats.html:514
+#: static/js/chart_labels.mjs:358 templates/menu_stats.html:514
 msgid "Les joueurs qui ont trouvé le plus de vos caches."
 msgstr ""
 
-#: static/js/chart_labels.mjs:355
+#: static/js/chart_labels.mjs:359
 msgid "Mes caches actives"
 msgstr ""
 
-#: static/js/chart_labels.mjs:355
+#: static/js/chart_labels.mjs:359
 msgid "Combien de vos caches étaient en place, mois après mois."
 msgstr ""
 
-#: static/js/chart_labels.mjs:356
+#: static/js/chart_labels.mjs:360
 msgid "Trouvées et reçues"
 msgstr ""
 
-#: static/js/chart_labels.mjs:356
+#: static/js/chart_labels.mjs:360
 msgid "Vos trouvailles et celles reçues sur vos caches, année par année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:357
+#: static/js/chart_labels.mjs:361
 msgid "Mes DNF par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:357
+#: static/js/chart_labels.mjs:361
 msgid "Vos recherches infructueuses, année par année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:358
+#: static/js/chart_labels.mjs:362
 msgid "Trouvailles et DNF"
 msgstr ""
 
-#: static/js/chart_labels.mjs:358
+#: static/js/chart_labels.mjs:362
 msgid "Vos réussites et vos échecs, année par année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:359
+#: static/js/chart_labels.mjs:363
 msgid "Les caches en place dans la zone, à la fin de la période."
 msgstr ""
 
-#: static/js/chart_labels.mjs:360
+#: static/js/chart_labels.mjs:364
 msgid "Caches actives au fil du temps"
 msgstr ""
 
-#: static/js/chart_labels.mjs:360
+#: static/js/chart_labels.mjs:364
 msgid "Le nombre de caches en place, mois après mois."
 msgstr ""
 
-#: static/js/chart_labels.mjs:361
+#: static/js/chart_labels.mjs:365
 msgid "Publications et archivages"
 msgstr ""
 
-#: static/js/chart_labels.mjs:361
+#: static/js/chart_labels.mjs:365
 msgid "Les caches qui apparaissent et celles qui disparaissent, chaque année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:362
+#: static/js/chart_labels.mjs:366
 msgid "Publications par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:362
+#: static/js/chart_labels.mjs:366
 msgid "Les nouvelles caches de la zone, année par année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:363
+#: static/js/chart_labels.mjs:367
 msgid "Types des caches actives"
 msgstr ""
 
-#: static/js/chart_labels.mjs:363
+#: static/js/chart_labels.mjs:367
 msgid "La part de chaque type parmi les caches en place."
 msgstr ""
 
-#: static/js/chart_labels.mjs:364
+#: static/js/chart_labels.mjs:368
 msgid "Caches actives par département"
 msgstr ""
 
-#: static/js/chart_labels.mjs:364
+#: static/js/chart_labels.mjs:368
 msgid "Où se trouvent les caches en place."
 msgstr ""
 
-#: static/js/chart_labels.mjs:365
+#: static/js/chart_labels.mjs:369
 msgid "Grille D/T de la zone"
 msgstr ""
 
-#: static/js/chart_labels.mjs:365
+#: static/js/chart_labels.mjs:369
 msgid "Difficulté et terrain des caches en place."
 msgstr ""
 
-#: static/js/chart_labels.mjs:366
+#: static/js/chart_labels.mjs:370
 msgid "Ma meilleure journée"
 msgstr ""
 
-#: static/js/chart_labels.mjs:366
+#: static/js/chart_labels.mjs:370
 msgid "Le plus de trouvailles en un jour, et quel jour."
 msgstr ""
 
-#: static/js/chart_labels.mjs:367
+#: static/js/chart_labels.mjs:371
 msgid "Ma plus longue série"
 msgstr ""
 
-#: static/js/chart_labels.mjs:367
+#: static/js/chart_labels.mjs:371
 msgid "Le plus de jours d'affilée avec au moins une trouvaille."
 msgstr ""
 
-#: static/js/chart_labels.mjs:368
+#: static/js/chart_labels.mjs:372
 msgid "Ma série en cours"
 msgstr ""
 
-#: static/js/chart_labels.mjs:368
+#: static/js/chart_labels.mjs:372
 msgid ""
 "Les jours d'affilée jusqu'à aujourd'hui (ou hier : la journée n'est pas "
 "finie)."
 msgstr ""
 
-#: static/js/chart_labels.mjs:369
+#: static/js/chart_labels.mjs:373
 msgid "Ma plus longue pause"
 msgstr ""
 
-#: static/js/chart_labels.mjs:369
+#: static/js/chart_labels.mjs:373
 msgid "Le plus de jours sans trouvaille entre deux caches."
 msgstr ""
 
-#: static/js/chart_labels.mjs:370
+#: static/js/chart_labels.mjs:374
 msgid "Mes séries année par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:370
+#: static/js/chart_labels.mjs:374
 msgid "La plus longue série de chaque année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:371
+#: static/js/chart_labels.mjs:375
 msgid "Mon meilleur mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:371
+#: static/js/chart_labels.mjs:375
 msgid "Vos trouvailles mois par mois, le record mis en avant."
 msgstr ""
 
-#: static/js/chart_labels.mjs:372
+#: static/js/chart_labels.mjs:376
 msgid "Mon prochain cap"
 msgstr ""
 
-#: static/js/chart_labels.mjs:372
+#: static/js/chart_labels.mjs:376
 msgid "Le prochain nombre rond, et quand vous y serez à ce rythme."
 msgstr ""
 
-#: static/js/chart_labels.mjs:373
+#: static/js/chart_labels.mjs:377
 msgid "Mon année à ce rythme"
 msgstr ""
 
-#: static/js/chart_labels.mjs:373
+#: static/js/chart_labels.mjs:377
 msgid "Vos trouvailles de l'année, et où vous finirez au 31 décembre."
 msgstr ""
 
-#: static/js/chart_labels.mjs:374
+#: static/js/chart_labels.mjs:378
 msgid "Ma courbe de l'année, prolongée"
 msgstr ""
 
-#: static/js/chart_labels.mjs:374
+#: static/js/chart_labels.mjs:378
 msgid "Le cumul de l'année, prolongé jusqu'au 31 décembre au rythme actuel."
 msgstr ""
 
-#: static/js/chart_labels.mjs:375
+#: static/js/chart_labels.mjs:379
 msgid "Ma grille D/T"
 msgstr ""
 
-#: static/js/chart_labels.mjs:375
+#: static/js/chart_labels.mjs:379
 msgid "Les 81 combinaisons de difficulté et de terrain : celles qui manquent."
 msgstr ""
 
-#: static/js/chart_labels.mjs:376
+#: static/js/chart_labels.mjs:380
 msgid "Mon calendrier 366"
 msgstr ""
 
-#: static/js/chart_labels.mjs:376
+#: static/js/chart_labels.mjs:380
 msgid ""
 "Un jour de l'année sans trouvaille ? Les 366 jours, toutes années "
 "confondues."
 msgstr ""
 
-#: static/js/chart_labels.mjs:377
+#: static/js/chart_labels.mjs:381
 msgid "Ma grille Jasmer"
 msgstr ""
 
-#: static/js/chart_labels.mjs:377
+#: static/js/chart_labels.mjs:381
 msgid "Une cache publiée chaque mois depuis mai 2000 : les mois qui manquent."
 msgstr ""
 
-#: static/js/chart_labels.mjs:378
+#: static/js/chart_labels.mjs:382
 msgid "Mes mois de cache"
 msgstr ""
 
-#: static/js/chart_labels.mjs:378
+#: static/js/chart_labels.mjs:382
 msgid "Chaque mois depuis votre première trouvaille : en avez-vous sauté un ?"
 msgstr ""
 
-#: static/js/chart_labels.mjs:379 templates/menu_zones.html:80
+#: static/js/chart_labels.mjs:383 templates/menu_zones.html:80
 msgid "Ma conquête"
 msgstr ""
 
-#: static/js/chart_labels.mjs:379
+#: static/js/chart_labels.mjs:383
 msgid ""
 "Quand vous avez trouvé votre première cache dans chaque département, "
 "comté…"
 msgstr ""
 
-#: static/js/chart_labels.mjs:380
+#: static/js/chart_labels.mjs:384
 msgid "Mes zones année par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:380
+#: static/js/chart_labels.mjs:384
 msgid "La carte de vos trouvailles à la fin de chaque année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:381
+#: static/js/chart_labels.mjs:385
 msgid "Mes zones à chaque palier"
 msgstr ""
 
-#: static/js/chart_labels.mjs:381
+#: static/js/chart_labels.mjs:385
 msgid "La carte à votre 100ᵉ, 500ᵉ, 1 000ᵉ trouvaille…"
 msgstr ""
 
-#: static/js/chart_labels.mjs:382
+#: static/js/chart_labels.mjs:386
 msgid "Ma carte du monde"
 msgstr ""
 
-#: static/js/chart_labels.mjs:382
+#: static/js/chart_labels.mjs:386
 msgid "Vos trouvailles pays par pays."
 msgstr ""
 
-#: static/js/chart_labels.mjs:383
+#: static/js/chart_labels.mjs:387
 msgid "Types de caches par région"
 msgstr ""
 
-#: static/js/chart_labels.mjs:383
+#: static/js/chart_labels.mjs:387
 msgid "Le nombre de types différents trouvés dans chaque région."
 msgstr ""
 
-#: static/js/chart_labels.mjs:384
+#: static/js/chart_labels.mjs:388
 msgid "Caches actives, année par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:384
+#: static/js/chart_labels.mjs:388
 msgid "La carte des caches en place à la fin de chaque année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:385
+#: static/js/chart_labels.mjs:389
 msgid "Densité des caches actives"
 msgstr ""
 
-#: static/js/chart_labels.mjs:385
+#: static/js/chart_labels.mjs:389
 msgid "Les caches en place pour 1 000 km², zone par zone."
 msgstr ""
 
-#: static/js/chart_labels.mjs:386
+#: static/js/chart_labels.mjs:390
 msgid "Ma couverture"
 msgstr ""
 
-#: static/js/chart_labels.mjs:386
+#: static/js/chart_labels.mjs:390
 msgid "La part des caches actives que vous avez trouvées, zone par zone."
 msgstr ""
 
-#: static/js/chart_labels.mjs:387
+#: static/js/chart_labels.mjs:391
 msgid "Ma couverture, année par année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:387
+#: static/js/chart_labels.mjs:391
 msgid "Votre part des caches actives à la fin de chaque année."
 msgstr ""
 
-#: static/js/chart_labels.mjs:388
+#: static/js/chart_labels.mjs:392
 msgid "Grille D/T par région"
 msgstr ""
 
-#: static/js/chart_labels.mjs:388
+#: static/js/chart_labels.mjs:392
 msgid ""
 "Combien des 81 combinaisons de difficulté et de terrain dans chaque "
 "région."
 msgstr ""
 
-#: static/js/chart_labels.mjs:392
+#: static/js/chart_labels.mjs:396
 msgid "Vue d'ensemble"
 msgstr ""
 
-#: static/js/chart_labels.mjs:393
+#: static/js/chart_labels.mjs:397
 msgid "Comparer les périodes"
 msgstr ""
 
-#: static/js/chart_labels.mjs:394
+#: static/js/chart_labels.mjs:398
 msgid "Quand je cache"
 msgstr ""
 
-#: static/js/chart_labels.mjs:395
+#: static/js/chart_labels.mjs:399
 msgid "Les caches trouvées"
 msgstr ""
 
-#: static/js/chart_labels.mjs:396
+#: static/js/chart_labels.mjs:400
 msgid "Lieux et poseurs"
 msgstr ""
 
-#: static/js/chart_labels.mjs:399
+#: static/js/chart_labels.mjs:403
 msgid "La zone au fil du temps"
 msgstr ""
 
-#: static/js/chart_labels.mjs:400
+#: static/js/chart_labels.mjs:404
 msgid "Les caches de la zone"
 msgstr ""
 
-#: static/js/chart_labels.mjs:401
+#: static/js/chart_labels.mjs:405
 msgid "Cartes de la zone"
 msgstr ""
 
-#: static/js/chart_labels.mjs:402 templates/guide.html:749
+#: static/js/chart_labels.mjs:406 templates/guide.html:749
 msgid "Mes défis"
 msgstr ""
 
-#: static/js/chart_labels.mjs:403 templates/guide.html:760
+#: static/js/chart_labels.mjs:407 templates/guide.html:760
 msgid "Mes cartes"
 msgstr ""
 
-#: static/js/chart_labels.mjs:404 templates/guide.html:770
+#: static/js/chart_labels.mjs:408 templates/guide.html:770
 msgid "Séries et records"
 msgstr ""
 
-#: static/js/chart_labels.mjs:405
+#: static/js/chart_labels.mjs:409
 msgid "Objectifs et projections"
 msgstr ""
 
-#: static/js/chart_labels.mjs:409 static/js/chart_labels.mjs:425
+#: static/js/chart_labels.mjs:413 static/js/chart_labels.mjs:429
 #: static/js/stats_panels.js:1203 static/js/stats_panels.js:1238
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr ""
 
-#: static/js/chart_labels.mjs:410 static/js/chart_labels.mjs:426
+#: static/js/chart_labels.mjs:414 static/js/chart_labels.mjs:430
 #: static/js/stats_panels.js:1204
 msgid "Inconnu"
 msgstr ""
 
-#: static/js/chart_labels.mjs:415
+#: static/js/chart_labels.mjs:419
 msgid "N"
 msgstr ""
 
-#: static/js/chart_labels.mjs:415
+#: static/js/chart_labels.mjs:419
 msgid "S"
 msgstr ""
 
-#: static/js/chart_labels.mjs:415
+#: static/js/chart_labels.mjs:419
 msgid "E"
 msgstr ""
 
-#: static/js/chart_labels.mjs:415
+#: static/js/chart_labels.mjs:419
 msgid "O"
 msgstr ""
 
-#: static/js/chart_labels.mjs:428 static/js/stats_panels.js:3032
+#: static/js/chart_labels.mjs:432 static/js/stats_panels.js:3032
 #: static/js/stats_panels.js:3086 templates/menu_informations.html:73
 #: templates/menu_informations.html:103
 msgid "Total"
 msgstr ""
 
-#: static/js/chart_labels.mjs:430 static/js/chart_labels.mjs:489
-#: static/js/chart_labels.mjs:566
+#: static/js/chart_labels.mjs:434 static/js/chart_labels.mjs:493
+#: static/js/chart_labels.mjs:570
 #, python-brace-format
 msgid "T${q} ${y}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:436
+#: static/js/chart_labels.mjs:440
 #, python-brace-format
 msgid "Semaine du ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:439
+#: static/js/chart_labels.mjs:443
 #, python-brace-format
 msgid "S${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:447
+#: static/js/chart_labels.mjs:451
 #, python-brace-format
 msgid "D${d} / T${t}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:463 static/js/chart_labels.mjs:596
+#: static/js/chart_labels.mjs:467 static/js/chart_labels.mjs:600
 msgid "Toute la période"
 msgstr ""
 
-#: static/js/chart_labels.mjs:470 static/js/chart_labels.mjs:612
-#: static/js/chart_labels.mjs:629
+#: static/js/chart_labels.mjs:474 static/js/chart_labels.mjs:616
+#: static/js/chart_labels.mjs:633
 #, python-brace-format
 msgid "${from} – ${to}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:477 static/js/chart_labels.mjs:479
+#: static/js/chart_labels.mjs:481 static/js/chart_labels.mjs:483
 #, python-brace-format
 msgid "Jusqu'à fin ${period}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:481 static/js/chart_labels.mjs:541
-#: static/js/chart_labels.mjs:591 static/js/images_ui.js:1768
+#: static/js/chart_labels.mjs:485 static/js/chart_labels.mjs:545
+#: static/js/chart_labels.mjs:595 static/js/images_ui.js:1768
 #, python-brace-format
 msgid "Jusqu'au ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:490
+#: static/js/chart_labels.mjs:494
 #, python-brace-format
 msgid "${n}ᵉ trouvaille"
 msgstr ""
 
-#: static/js/chart_labels.mjs:491
+#: static/js/chart_labels.mjs:495
 #, python-brace-format
 msgid "Nouvelle zone · ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:495 static/js/zone_layer.js:1313
+#: static/js/chart_labels.mjs:499 static/js/zone_layer.js:1313
 #, python-brace-format
 msgid "Au ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:502
+#: static/js/chart_labels.mjs:506
 msgid "La veille"
 msgstr ""
 
-#: static/js/chart_labels.mjs:503
+#: static/js/chart_labels.mjs:507
 msgid "Le mois précédent"
 msgstr ""
 
-#: static/js/chart_labels.mjs:504
+#: static/js/chart_labels.mjs:508
 msgid "L'année précédente"
 msgstr ""
 
-#: static/js/chart_labels.mjs:506
+#: static/js/chart_labels.mjs:510
 #, python-brace-format
 msgid "Les ${n} jours précédents"
 msgstr ""
 
-#: static/js/chart_labels.mjs:507
+#: static/js/chart_labels.mjs:511
 #, python-brace-format
 msgid "Les ${n} mois précédents"
 msgstr ""
 
-#: static/js/chart_labels.mjs:508
+#: static/js/chart_labels.mjs:512
 #, python-brace-format
 msgid "Les ${n} années précédentes"
 msgstr ""
 
-#: static/js/chart_labels.mjs:517
+#: static/js/chart_labels.mjs:521
 msgid "par rapport à la veille"
 msgstr ""
 
-#: static/js/chart_labels.mjs:518
+#: static/js/chart_labels.mjs:522
 msgid "par rapport au mois précédent"
 msgstr ""
 
-#: static/js/chart_labels.mjs:519
+#: static/js/chart_labels.mjs:523
 msgid "par rapport à l'année précédente"
 msgstr ""
 
-#: static/js/chart_labels.mjs:521
+#: static/js/chart_labels.mjs:525
 #, python-brace-format
 msgid "par rapport aux ${n} jours précédents"
 msgstr ""
 
-#: static/js/chart_labels.mjs:522
+#: static/js/chart_labels.mjs:526
 #, python-brace-format
 msgid "par rapport aux ${n} mois précédents"
 msgstr ""
 
-#: static/js/chart_labels.mjs:523
+#: static/js/chart_labels.mjs:527
 #, python-brace-format
 msgid "par rapport aux ${n} années précédentes"
 msgstr ""
 
-#: static/js/chart_labels.mjs:527 static/js/chart_labels.mjs:529
+#: static/js/chart_labels.mjs:531 static/js/chart_labels.mjs:533
 #, python-brace-format
 msgid "par rapport à fin ${period}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:531
+#: static/js/chart_labels.mjs:535
 #, python-brace-format
 msgid "par rapport au ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:533
+#: static/js/chart_labels.mjs:537
 #, python-brace-format
 msgid "par rapport à ${period}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:540 static/js/chart_labels.mjs:589
+#: static/js/chart_labels.mjs:544 static/js/chart_labels.mjs:593
 msgid "Jusqu'à aujourd'hui"
 msgstr ""
 
-#: static/js/chart_labels.mjs:544
+#: static/js/chart_labels.mjs:548
 #, python-brace-format
 msgid "${period} (en cours)"
 msgstr ""
 
-#: static/js/chart_labels.mjs:545
+#: static/js/chart_labels.mjs:549
 #, python-brace-format
 msgid "${period} (au ${date})"
 msgstr ""
 
-#: static/js/chart_labels.mjs:553
+#: static/js/chart_labels.mjs:557
 #, python-brace-format
 msgid "Jour ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:554
+#: static/js/chart_labels.mjs:558
 #, python-brace-format
 msgid "Semaine ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:555
+#: static/js/chart_labels.mjs:559
 #, python-brace-format
 msgid "Mois ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:556
+#: static/js/chart_labels.mjs:560
 #, python-brace-format
 msgid "Trimestre ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:557
+#: static/js/chart_labels.mjs:561
 #, python-brace-format
 msgid "Année ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:574
+#: static/js/chart_labels.mjs:578
 msgid "Aujourd'hui"
 msgstr ""
 
-#: static/js/chart_labels.mjs:575
+#: static/js/chart_labels.mjs:579
 msgid "Le dernier mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:576
+#: static/js/chart_labels.mjs:580
 msgid "La dernière année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:578
+#: static/js/chart_labels.mjs:582
 #, python-brace-format
 msgid "Les ${n} derniers jours"
 msgstr ""
 
-#: static/js/chart_labels.mjs:579
+#: static/js/chart_labels.mjs:583
 #, python-brace-format
 msgid "Les ${n} derniers mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:580
+#: static/js/chart_labels.mjs:584
 #, python-brace-format
 msgid "Les ${n} dernières années"
 msgstr ""
 
-#: static/js/chart_labels.mjs:586 static/js/chart_labels.mjs:603
+#: static/js/chart_labels.mjs:590 static/js/chart_labels.mjs:607
 #: static/js/stats_page_dashboard.js:56
 msgid "Période du tableau de bord"
 msgstr ""
 
-#: static/js/chart_labels.mjs:600
+#: static/js/chart_labels.mjs:604
 msgid "Chaque mois"
 msgstr ""
 
-#: static/js/chart_labels.mjs:600
+#: static/js/chart_labels.mjs:604
 msgid "Chaque année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:601
+#: static/js/chart_labels.mjs:605
 msgid "Ce mois-ci"
 msgstr ""
 
-#: static/js/chart_labels.mjs:601
+#: static/js/chart_labels.mjs:605
 msgid "Cette année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:602
+#: static/js/chart_labels.mjs:606
 msgid "La période précédente"
 msgstr ""
 
-#: static/js/chart_labels.mjs:605
+#: static/js/chart_labels.mjs:609
 msgid "Moments clés : fins de trimestre"
 msgstr ""
 
-#: static/js/chart_labels.mjs:606
+#: static/js/chart_labels.mjs:610
 msgid "Moments clés : paliers (100ᵉ, 1 000ᵉ…)"
 msgstr ""
 
-#: static/js/chart_labels.mjs:607
+#: static/js/chart_labels.mjs:611
 msgid "Moments clés : nouvelles zones"
 msgstr ""
 
-#: static/js/chart_labels.mjs:608
+#: static/js/chart_labels.mjs:612
 msgid "Moments clés : fins d'année"
 msgstr ""
 
-#: static/js/chart_labels.mjs:634
+#: static/js/chart_labels.mjs:638
 msgid "Source"
 msgstr ""
 
-#: static/js/chart_labels.mjs:639 static/js/labs.js:564 static/js/labs.js:606
+#: static/js/chart_labels.mjs:643 static/js/labs.js:564 static/js/labs.js:606
 #: static/js/labs.js:1294 static/js/labs.js:1464 static/js/labs.js:1499
 #: static/js/labs.js:1515 static/js/labs.js:1525
 #: templates/_filter_cache_attrs.html:37 templates/guide.html:579
@@ -3425,171 +3429,171 @@ msgstr ""
 msgid "Lab Caches"
 msgstr ""
 
-#: static/js/chart_labels.mjs:639 templates/guide.html:579
+#: static/js/chart_labels.mjs:643 templates/guide.html:579
 #: templates/menu_filtre.html:18
 msgid "Géocaches"
 msgstr ""
 
-#: static/js/chart_labels.mjs:655 static/js/chart_labels.mjs:665
+#: static/js/chart_labels.mjs:659 static/js/chart_labels.mjs:669
 #, python-brace-format
 msgid "${n} %"
 msgstr ""
 
-#: static/js/chart_labels.mjs:656
+#: static/js/chart_labels.mjs:660
 #, python-brace-format
 msgid "${n} / jour"
 msgstr ""
 
-#: static/js/chart_labels.mjs:661
+#: static/js/chart_labels.mjs:665
 #, python-brace-format
 msgid "${n} / 1 000 km²"
 msgstr ""
 
-#: static/js/chart_labels.mjs:668
+#: static/js/chart_labels.mjs:672
 #, python-brace-format
 msgid "${n} j"
 msgstr ""
 
-#: static/js/chart_labels.mjs:677 static/js/zone_layer.js:909
+#: static/js/chart_labels.mjs:681 static/js/zone_layer.js:909
 msgid "/ 1 000 km²"
 msgstr ""
 
-#: static/js/chart_labels.mjs:713 static/js/stats_panels.js:1271
+#: static/js/chart_labels.mjs:717 static/js/stats_panels.js:1271
 #, python-brace-format
 msgid "Combinaisons : ${filled}/${available} (${pct})"
 msgstr ""
 
-#: static/js/chart_labels.mjs:714 static/js/stats_panels.js:1273
+#: static/js/chart_labels.mjs:718 static/js/stats_panels.js:1273
 #, python-brace-format
 msgid "Jours : ${filled}/${available} (${pct})"
 msgstr ""
 
-#: static/js/chart_labels.mjs:715 static/js/stats_panels.js:1272
+#: static/js/chart_labels.mjs:719 static/js/stats_panels.js:1272
 #, python-brace-format
 msgid "Mois : ${filled}/${available} (${pct})"
 msgstr ""
 
-#: static/js/chart_labels.mjs:718 static/js/stats_panels.js:1279
+#: static/js/chart_labels.mjs:722 static/js/stats_panels.js:1279
 #, python-brace-format
 msgid "Tours de Jasmer : ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:719 static/js/stats_panels.js:1280
+#: static/js/chart_labels.mjs:723 static/js/stats_panels.js:1280
 #, python-brace-format
 msgid "Tours année × mois : ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:720 static/js/stats_panels.js:1281
+#: static/js/chart_labels.mjs:724 static/js/stats_panels.js:1281
 #, python-brace-format
 msgid "Tours de calendrier : ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:721 static/js/stats_panels.js:1282
+#: static/js/chart_labels.mjs:725 static/js/stats_panels.js:1282
 #, python-brace-format
 msgid "Tours de matrice : ${n}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:728
+#: static/js/chart_labels.mjs:732
 #, python-brace-format
 msgid "Il manque : ${list}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:729
+#: static/js/chart_labels.mjs:733
 #, python-brace-format
 msgid "Pour le tour ${round} : ${list}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:731
+#: static/js/chart_labels.mjs:735
 #, python-brace-format
 msgid "Il manque ${count} cases"
 msgstr ""
 
-#: static/js/chart_labels.mjs:732
+#: static/js/chart_labels.mjs:736
 #, python-brace-format
 msgid "Pour le tour ${round}, encore ${count} cases"
 msgstr ""
 
-#: static/js/chart_labels.mjs:743 static/js/stats_page_links.js:37
+#: static/js/chart_labels.mjs:747 static/js/stats_page_links.js:37
 #, python-brace-format
 msgid "du ${from} au ${to}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:756
+#: static/js/chart_labels.mjs:760
 #, python-brace-format
 msgid "${value} / ${goal} · ${pct}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:760
+#: static/js/chart_labels.mjs:764
 #, python-brace-format
 msgid "Objectif atteint le ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:761
+#: static/js/chart_labels.mjs:765
 msgid "Objectif atteint"
 msgstr ""
 
-#: static/js/chart_labels.mjs:763
+#: static/js/chart_labels.mjs:767
 #, python-brace-format
 msgid "À ce rythme : ${goal} le ${date}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:766
+#: static/js/chart_labels.mjs:770
 #, python-brace-format
 msgid "À ce rythme : ${n} en fin de période, ${short} de moins que l'objectif"
 msgstr ""
 
-#: static/js/chart_labels.mjs:771
+#: static/js/chart_labels.mjs:775
 #, python-brace-format
 msgid "À ce rythme : ${n} en fin de période"
 msgstr ""
 
-#: static/js/chart_labels.mjs:792 static/js/chart_labels.mjs:846
+#: static/js/chart_labels.mjs:796 static/js/chart_labels.mjs:850
 #, python-brace-format
 msgid "${measure} ${group}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:797
+#: static/js/chart_labels.mjs:801
 msgid "Europe"
 msgstr ""
 
-#: static/js/chart_labels.mjs:798
+#: static/js/chart_labels.mjs:802
 msgid "Amérique du Nord"
 msgstr ""
 
-#: static/js/chart_labels.mjs:799
+#: static/js/chart_labels.mjs:803
 msgid "Amérique du Sud"
 msgstr ""
 
-#: static/js/chart_labels.mjs:800
+#: static/js/chart_labels.mjs:804
 msgid "Afrique"
 msgstr ""
 
-#: static/js/chart_labels.mjs:801
+#: static/js/chart_labels.mjs:805
 msgid "Asie"
 msgstr ""
 
-#: static/js/chart_labels.mjs:802
+#: static/js/chart_labels.mjs:806
 msgid "Océanie"
 msgstr ""
 
-#: static/js/chart_labels.mjs:836 static/js/chart_labels.mjs:841
+#: static/js/chart_labels.mjs:840 static/js/chart_labels.mjs:845
 #, python-brace-format
 msgid "par ${zones}"
 msgstr ""
 
-#: static/js/chart_labels.mjs:836
+#: static/js/chart_labels.mjs:840
 msgid "par régions"
 msgstr ""
 
-#: static/js/chart_labels.mjs:841
+#: static/js/chart_labels.mjs:845
 msgid "par départements, comtés…"
 msgstr ""
 
-#: static/js/chart_labels.mjs:849
+#: static/js/chart_labels.mjs:853
 msgid "Monde"
 msgstr ""
 
-#: static/js/chart_labels.mjs:851
+#: static/js/chart_labels.mjs:855
 #, python-brace-format
 msgid "${title} · ${place}"
 msgstr ""
@@ -5653,10 +5657,10 @@ msgstr ""
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 #: templates/modal_video_ready.html:11 templates/modal_video_ready.html:37
 #: templates/stats_page.html:147 templates/stats_page.html:166
-#: templates/stats_page.html:432 templates/stats_page.html:465
-#: templates/stats_page.html:474 templates/stats_page.html:487
-#: templates/stats_page.html:503 templates/stats_page.html:551
-#: templates/stats_page.html:572 templates/stats_page.html:596
+#: templates/stats_page.html:432 templates/stats_page.html:467
+#: templates/stats_page.html:476 templates/stats_page.html:489
+#: templates/stats_page.html:505 templates/stats_page.html:553
+#: templates/stats_page.html:574 templates/stats_page.html:598
 msgid "Fermer"
 msgstr ""
 
@@ -6041,7 +6045,7 @@ msgid "Copier vers « ${mode} »"
 msgstr ""
 
 #: static/js/profiles.js:973 static/js/profiles.js:2797
-#: templates/stats_page.html:559
+#: templates/stats_page.html:561
 msgid "Renommer"
 msgstr ""
 
@@ -6141,7 +6145,7 @@ msgid "Enregistrer le thème"
 msgstr ""
 
 #: static/js/profiles.js:2788 templates/menu_style.html:269
-#: templates/stats_page.html:539
+#: templates/stats_page.html:541
 msgid "Créer"
 msgstr ""
 
@@ -6253,7 +6257,7 @@ msgid "La vidéo n’a pas pu être supprimée."
 msgstr ""
 
 #: static/js/recent_videos.js:119 templates/modal_video_ready.html:26
-#: templates/stats_page.html:686
+#: templates/stats_page.html:688
 msgid "Afficher dans le dossier"
 msgstr ""
 
@@ -6323,7 +6327,7 @@ msgstr ""
 
 #: static/js/recording_perf.js:201 templates/guide.html:257
 #: templates/menu_filtre.html:85 templates/menu_informations.html:379
-#: templates/stats_page.html:452 templates/stats_page.html:582
+#: templates/stats_page.html:454 templates/stats_page.html:584
 msgid "Appliquer"
 msgstr ""
 
@@ -6366,16 +6370,33 @@ msgstr ""
 msgid "Non enregistré"
 msgstr ""
 
-#: static/js/stats_filters_ui.js:65
+#: static/js/stats_filters_ui.js:31
+msgid "Caches"
+msgstr ""
+
+#: static/js/stats_filters_ui.js:32
+msgid "Lieux"
+msgstr ""
+
+#: static/js/stats_filters_ui.js:33
+msgid "Personnes"
+msgstr ""
+
+#: static/js/stats_filters_ui.js:79
+msgid "Vos trouvailles sont trop homogènes pour être filtrées."
+msgstr ""
+
+#: static/js/stats_filters_ui.js:159 static/js/stats_page_dashboard.js:491
+#, python-brace-format
+msgid "Retirer le filtre ${field}"
+msgstr ""
+
+#: static/js/stats_filters_ui.js:172
 msgid "Plusieurs attributs : une cache doit les porter tous."
 msgstr ""
 
-#: static/js/stats_filters_ui.js:70
+#: static/js/stats_filters_ui.js:180
 msgid "Aucun filtre"
-msgstr ""
-
-#: static/js/stats_filters_ui.js:80
-msgid "Vos trouvailles sont trop homogènes pour être filtrées."
 msgstr ""
 
 #: static/js/stats_page.js:443
@@ -6502,7 +6523,7 @@ msgstr ""
 msgid "Voir les valeurs"
 msgstr ""
 
-#: static/js/stats_page_cards.js:345 templates/stats_page.html:486
+#: static/js/stats_page_cards.js:345 templates/stats_page.html:488
 msgid "Comprendre ce chiffre"
 msgstr ""
 
@@ -6743,66 +6764,79 @@ msgstr ""
 msgid "Supprimer le tableau de bord « ${name} » et ses graphiques ?"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:491
-#, python-brace-format
-msgid "Retirer le filtre ${field}"
+#: static/js/stats_page_dashboard.js:526
+msgid "Aucune cache ne correspond."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:544
+#: static/js/stats_page_dashboard.js:526
+msgid "Aucune trouvaille ne correspond."
+msgstr ""
+
+#: static/js/stats_page_dashboard.js:528
+#, python-brace-format
+msgid "${n} caches publiées sur ${total}"
+msgstr ""
+
+#: static/js/stats_page_dashboard.js:528
+#, python-brace-format
+msgid "${n} trouvailles sur ${total}"
+msgstr ""
+
+#: static/js/stats_page_dashboard.js:558
 msgid "Filtres de la carte appliqués."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:566
+#: static/js/stats_page_dashboard.js:580
 #, python-brace-format
 msgid "la recherche « ${text} »"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:569
+#: static/js/stats_page_dashboard.js:583
 #, python-brace-format
 msgid "les dates de pose ${range} : la page filtre par année entière"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:571
+#: static/js/stats_page_dashboard.js:585
 msgid "les trouvailles sans pays, que la carte garde"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:572
+#: static/js/stats_page_dashboard.js:586
 msgid "les trouvailles sans région, que la carte garde"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:573
+#: static/js/stats_page_dashboard.js:587
 msgid ""
 "les Lab Caches, que la carte garde malgré les filtres propres aux "
 "géocaches"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:606
+#: static/js/stats_page_dashboard.js:620
 msgid ""
 "Avec ses filtres actuels, la carte n'affiche aucune trouvaille : rien "
 "n'est repris."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:614
+#: static/js/stats_page_dashboard.js:628
 msgid "La carte montre toutes vos trouvailles : aucun filtre à reprendre."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:618
+#: static/js/stats_page_dashboard.js:632
 msgid "Filtres de la carte repris (1 trouvaille) : vérifiez-les, puis appliquez."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:619
+#: static/js/stats_page_dashboard.js:633
 #, python-brace-format
 msgid ""
 "Filtres de la carte repris (${n} trouvailles) : vérifiez-les, puis "
 "appliquez."
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:633
+#: static/js/stats_page_dashboard.js:647
 #, python-brace-format
 msgid "Période du tableau de bord : ${range} (dates de trouvaille de la carte)"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:640
+#: static/js/stats_page_dashboard.js:654
 msgid "Sans équivalent ici :"
 msgstr ""
 
@@ -7004,27 +7038,27 @@ msgstr ""
 msgid "L'image du tableau n'a pas pu être copiée."
 msgstr ""
 
-#: static/js/stats_page_gallery.js:83
+#: static/js/stats_page_gallery.js:76
 msgid "Partir de zéro"
 msgstr ""
 
-#: static/js/stats_page_gallery.js:84
+#: static/js/stats_page_gallery.js:77
 msgid "Graphique personnalisé"
 msgstr ""
 
-#: static/js/stats_page_gallery.js:84
+#: static/js/stats_page_gallery.js:77
 msgid "Partir de zéro et tout choisir."
 msgstr ""
 
-#: static/js/stats_page_gallery.js:166
+#: static/js/stats_page_gallery.js:149
 msgid "Données indisponibles"
 msgstr ""
 
-#: static/js/stats_page_gallery.js:171
+#: static/js/stats_page_gallery.js:154
 msgid "Aucune donnée pour l’instant"
 msgstr ""
 
-#: static/js/stats_page_gallery.js:265
+#: static/js/stats_page_gallery.js:242
 #, python-brace-format
 msgid "Graphique ajouté : ${title}."
 msgstr ""
@@ -7193,7 +7227,7 @@ msgstr ""
 msgid "Vidéo du tableau de bord"
 msgstr ""
 
-#: static/js/stats_page_video.js:177 templates/stats_page.html:595
+#: static/js/stats_page_video.js:177 templates/stats_page.html:597
 msgid "Vidéo animée"
 msgstr ""
 
@@ -7203,7 +7237,7 @@ msgid "Durée de chaque graphique"
 msgstr ""
 
 #: static/js/stats_page_video.js:180 static/js/ui.js:11703
-#: templates/stats_page.html:613
+#: templates/stats_page.html:615
 msgid "Durée"
 msgstr ""
 
@@ -7269,7 +7303,7 @@ msgstr ""
 msgid "La musique choisie est introuvable sur le serveur."
 msgstr ""
 
-#: static/js/stats_page_video.js:661 templates/stats_page.html:632
+#: static/js/stats_page_video.js:661 templates/stats_page.html:634
 msgid ""
 "Elle tourne en boucle si elle est plus courte que la vidéo, et s'efface "
 "doucement à la fin."
@@ -7320,7 +7354,7 @@ msgstr ""
 
 #: static/js/stats_page_video.js:800 static/js/ui.js:991
 #: templates/guide.html:324 templates/menu_animation.html:419
-#: templates/stats_page.html:628
+#: templates/stats_page.html:630
 msgid "Écouter"
 msgstr ""
 
@@ -10053,7 +10087,7 @@ msgstr ""
 msgid "Autre mode"
 msgstr ""
 
-#: templates/guide.html:78 templates/stats_page.html:518
+#: templates/guide.html:78 templates/stats_page.html:520
 msgid "Évolution d'une zone"
 msgstr ""
 
@@ -10944,7 +10978,7 @@ msgstr ""
 
 #: templates/guide.html:315 templates/menu_animation.html:309
 #: templates/menu_data.html:50 templates/menu_data_evolution.html:53
-#: templates/stats_page.html:626
+#: templates/stats_page.html:628
 msgid "Parcourir…"
 msgstr ""
 
@@ -12428,7 +12462,7 @@ msgid ""
 msgstr ""
 
 #: templates/guide.html:671 templates/menu_data_poses.html:31
-#: templates/stats_page.html:473
+#: templates/stats_page.html:475
 msgid "Exporter en CSV"
 msgstr ""
 
@@ -16984,7 +17018,7 @@ msgstr ""
 msgid "D/T à compléter"
 msgstr ""
 
-#: templates/menu_zones.html:87 templates/stats_page.html:524
+#: templates/menu_zones.html:87 templates/stats_page.html:526
 msgid "Jeu Évolution"
 msgstr ""
 
@@ -17192,7 +17226,7 @@ msgstr ""
 msgid "Importer mes trouvailles"
 msgstr ""
 
-#: templates/stats_page.html:79 templates/stats_page.html:550
+#: templates/stats_page.html:79 templates/stats_page.html:552
 msgid "Renommer le tableau de bord"
 msgstr ""
 
@@ -17370,123 +17404,123 @@ msgstr ""
 msgid "Tout effacer"
 msgstr ""
 
-#: templates/stats_page.html:464
+#: templates/stats_page.html:466
 msgid "Valeurs du graphique"
 msgstr ""
 
-#: templates/stats_page.html:502
+#: templates/stats_page.html:504
 msgid "Nouveau tableau de bord"
 msgstr ""
 
-#: templates/stats_page.html:511
+#: templates/stats_page.html:513
 msgid "Mes données"
 msgstr ""
 
-#: templates/stats_page.html:512
+#: templates/stats_page.html:514
 msgid "Mes trouvailles, mes DNF, mes caches posées et ce qu'elles reçoivent."
 msgstr ""
 
-#: templates/stats_page.html:519
+#: templates/stats_page.html:521
 msgid ""
 "Toutes les caches d'un jeu importé sur la page Évolution, sans rapport "
 "avec vos propres données."
 msgstr ""
 
-#: templates/stats_page.html:527
+#: templates/stats_page.html:529
 msgid ""
 "Aucun jeu Évolution : importez d'abord des exports CSV sur la page "
 "Évolution."
 msgstr ""
 
-#: templates/stats_page.html:534
+#: templates/stats_page.html:536
 msgid "Commencer avec des graphiques prêts"
 msgstr ""
 
-#: templates/stats_page.html:571
+#: templates/stats_page.html:573
 msgid "Période personnalisée"
 msgstr ""
 
-#: templates/stats_page.html:575
+#: templates/stats_page.html:577
 msgid "Du"
 msgstr ""
 
-#: templates/stats_page.html:577
+#: templates/stats_page.html:579
 msgid "au"
 msgstr ""
 
-#: templates/stats_page.html:600
+#: templates/stats_page.html:602
 msgid ""
 "Les valeurs apparaissent au fil de l'axe, puis le graphique complet reste"
 " affiché quelques instants."
 msgstr ""
 
-#: templates/stats_page.html:601
+#: templates/stats_page.html:603
 msgid ""
 "Un écran d'ouverture, puis chaque graphique du tableau à tour de rôle : "
 "les courbes et les barres se dessinent, les chiffres clés comptent."
 msgstr ""
 
-#: templates/stats_page.html:604
+#: templates/stats_page.html:606
 msgid "Format"
 msgstr ""
 
-#: templates/stats_page.html:606
+#: templates/stats_page.html:608
 msgid "Paysage HD (1280 × 720)"
 msgstr ""
 
-#: templates/stats_page.html:607
+#: templates/stats_page.html:609
 msgid "Paysage Full HD (1920 × 1080)"
 msgstr ""
 
-#: templates/stats_page.html:608
+#: templates/stats_page.html:610
 msgid "Carré (1080 × 1080)"
 msgstr ""
 
-#: templates/stats_page.html:609
+#: templates/stats_page.html:611
 msgid "Portrait 9:16 (1080 × 1920)"
 msgstr ""
 
-#: templates/stats_page.html:619
+#: templates/stats_page.html:621
 msgid "Écrans"
 msgstr ""
 
-#: templates/stats_page.html:637
+#: templates/stats_page.html:639
 msgid "Volume"
 msgstr ""
 
-#: templates/stats_page.html:644
+#: templates/stats_page.html:646
 msgid "Fondu d'entrée (s)"
 msgstr ""
 
-#: templates/stats_page.html:648
+#: templates/stats_page.html:650
 msgid "Fondu de sortie (s)"
 msgstr ""
 
-#: templates/stats_page.html:656
+#: templates/stats_page.html:658
 msgid "Caler la durée sur la musique"
 msgstr ""
 
-#: templates/stats_page.html:658
+#: templates/stats_page.html:660
 msgid "Reprendre les réglages de la carte"
 msgstr ""
 
-#: templates/stats_page.html:679
+#: templates/stats_page.html:681
 msgid "Modifier les réglages"
 msgstr ""
 
-#: templates/stats_page.html:682
+#: templates/stats_page.html:684
 msgid "Arrêter l'aperçu"
 msgstr ""
 
-#: templates/stats_page.html:689
+#: templates/stats_page.html:691
 msgid "Enregistrer une copie"
 msgstr ""
 
-#: templates/stats_page.html:692
+#: templates/stats_page.html:694
 msgid "Aperçu"
 msgstr ""
 
-#: templates/stats_page.html:695
+#: templates/stats_page.html:697
 msgid "Créer la vidéo"
 msgstr ""
 
