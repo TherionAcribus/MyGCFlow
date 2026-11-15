@@ -529,8 +529,11 @@ def _get_ffmpeg_exe():
         return "ffmpeg"  # repli sur un ffmpeg système éventuel
 
 
-def _probe_duration_seconds(input_path):
-    """Durée du média en secondes, lue depuis l'en-tête via ffmpeg. None si inconnue."""
+def _ffmpeg_header_stderr(input_path):
+    """stderr de « ffmpeg -i <fichier> » : l'en-tête du média (durée, flux).
+
+    None si ffmpeg n'a pas pu être lancé ou s'est figé — la sonde ne doit
+    jamais faire échouer l'appelant."""
     try:
         proc = subprocess.run(
             [_get_ffmpeg_exe(), '-i', input_path],
@@ -538,13 +541,40 @@ def _probe_duration_seconds(input_path):
             universal_newlines=True, encoding='utf-8', errors='replace',
             timeout=FFMPEG_PROBE_TIMEOUT_S, creationflags=_SUBPROCESS_FLAGS,
         )
-        m = _FFMPEG_DURATION_RE.search(proc.stderr or '')
-        if m:
-            h, mn, s = m.groups()
-            return int(h) * 3600 + int(mn) * 60 + float(s)
+        return proc.stderr or ''
     except Exception as e:
-        print(f"[ffmpeg] probe durée échoué: {e}")
+        print(f"[ffmpeg] probe échoué: {e}")
+        return None
+
+
+def _probe_duration_seconds(input_path):
+    """Durée du média en secondes, lue depuis l'en-tête via ffmpeg. None si inconnue."""
+    stderr = _ffmpeg_header_stderr(input_path)
+    m = _FFMPEG_DURATION_RE.search(stderr or '')
+    if m:
+        h, mn, s = m.groups()
+        return int(h) * 3600 + int(mn) * 60 + float(s)
     return None
+
+
+def probe_audio(input_path):
+    """Sonde d'une musique par ffmpeg : {'duration': float|None, 'readable': bool}.
+
+    `readable` exige une durée ET un flux « Audio: » dans l'en-tête : un
+    conteneur vidéo muet a une durée mais rien à mixer sur la vidéo, et un
+    texte renommé .mp3 n'a ni l'un ni l'autre. Sert à refuser le fichier dès
+    son choix (media_bp /api/audio/check) plutôt qu'après l'enregistrement.
+    """
+    stderr = _ffmpeg_header_stderr(input_path)
+    m = _FFMPEG_DURATION_RE.search(stderr or '')
+    duration = None
+    if m:
+        h, mn, s = m.groups()
+        duration = int(h) * 3600 + int(mn) * 60 + float(s)
+    return {
+        'duration': duration,
+        'readable': bool(duration is not None and stderr and 'Audio:' in stderr),
+    }
 
 
 # Volume maximal accepté du client : le curseur va jusqu'à 1, mais

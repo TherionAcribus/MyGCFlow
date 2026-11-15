@@ -587,11 +587,24 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   (`countUp`) puis sa période, son record ou son objectif ; seules la carte
   et le radar restent entiers dès la première image (`reveal: false`).
 - Musique, pour les deux modes : aucune, une des musiques récentes de la
-  carte (`recording.audio_recent` / `audio_file`, envoyée par son nom dans
-  `audio/`), ou un fichier de l'ordinateur (joint à
-  `/process_recorded_video`) ; bouclée si elle est plus courte, fondue sur
-  2 s à la fin (`musicFields`). Un fichier envoyé n'est pas ajouté aux
-  musiques récentes : sa copie dans `audio/` sera balayée plus tard.
+  carte (`recording.audio_recent` / `audio_file` — libellé et point de
+  départ repris de `audio_file_name` / `audio_start_seconds` —, envoyée
+  par son nom dans `audio/`), ou un fichier de l'ordinateur ; bouclée si
+  elle est plus courte, fondue sur 2 s à la fin (`musicFields`). Le choix
+  est vérifié tout de suite plutôt qu'après l'enregistrement : un fichier
+  de l'ordinateur est envoyé d'emblée (`/upload_audio`, en tâche de fond
+  — la conversion attend `music.ready` puis envoie le nom de la copie en
+  champ `audio`, ou le blob si l'envoi a échoué), puis la copie — ou le
+  nom d'une récente — est sondée (`POST /api/audio/check`, sonde ffmpeg
+  `capture.probe_audio` : durée + présence d'un flux « Audio: »). Un
+  fichier illisible est refusé dès le choix (toast + retour à « Sans
+  musique »), une récente absente (404) est défaite de même ; un échec
+  réseau de la sonde ne retire rien — l'export tranchera. Les
+  avertissements de la tâche de conversion (`result.warnings`, ex.
+  musique introuvable → vidéo sans musique) terminent la note de
+  l'étape finale et sont chacun répétés en toast. Un fichier envoyé
+  n'est pas ajouté aux musiques récentes : sa copie dans `audio/` sera
+  balayée plus tard.
 - Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
   `excluded` (tableau, ids décochés), `music` (`kind`, `file`).
 

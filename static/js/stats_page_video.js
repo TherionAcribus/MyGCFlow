@@ -286,10 +286,15 @@ export function syncVideoTotal() {
         : t("${n} graphique, ${s} secondes en tout : la vidéo s'enregistre en temps réel.", { n, s });
 }
 
+// Deux ouvertures proches de la fenêtre peuvent se chevaucher : seul le
+// dernier remplissage écrit le select (sinon l'optgroup serait doublé).
+let musicSeq = 0;
+
 // Musiques : aucune, les récentes de la carte (bibliothèque audio/), ou un
 // fichier de l'ordinateur, envoyé avec la vidéo. `restore` : la valeur
 // mémorisée ('' ou 'lib:<fichier>'), reposée si l'entrée est encore là.
 async function fillMusicChoices(restore = '') {
+    const seq = ++musicSeq;
     const select = $('statsVideoMusic');
     select.replaceChildren(new Option(t('Sans musique'), ''));
     let recording = null;
@@ -298,6 +303,7 @@ async function fillMusicChoices(restore = '') {
     } catch (e) {
         console.warn('[stats] Musiques récentes non lues :', e?.message || e);
     }
+    if (seq !== musicSeq) return;
     const seen = new Set();
     const library = [];
     for (const entry of recording?.audio_recent || []) {
@@ -306,7 +312,15 @@ async function fillMusicChoices(restore = '') {
             library.push(entry);
         }
     }
-    if (recording?.audio_file && !seen.has(recording.audio_file)) library.unshift({ file: recording.audio_file, name: recording.audio_file });
+    // L'entrée « musique courante » porte les mêmes champs qu'une récente :
+    // nom lisible et point de départ, pas le nom de fichier brut.
+    if (recording?.audio_file && !seen.has(recording.audio_file)) {
+        library.unshift({
+            file: recording.audio_file,
+            name: recording.audio_file_name || recording.audio_file,
+            start: recording.audio_start_seconds,
+        });
+    }
     if (library.length) {
         const group = document.createElement('optgroup');
         group.label = t('Musiques récentes');
@@ -342,20 +356,102 @@ export function onMusicChange() {
     if (!select.value) video.music = null;
     else if (select.value.startsWith('lib:')) {
         video.music = { kind: 'library', file: select.value.slice(4), start: Number(select.selectedOptions[0]?.dataset.start) || 0 };
+        checkLibrary(video, video.music);
     }
     persistVideoPrefs();
+}
+
+// Une musique récente a pu disparaître du serveur (balayage) ou s'avérer
+// illisible : la sonde /api/audio/check le dit dès le choix, et le choix
+// est alors défait — l'échec n'arrive plus après l'enregistrement. Chaque
+// étape asynchrone vérifie que la musique sondée est encore celle choisie.
+async function checkLibrary(video, music) {
+    const stale = () => state.video !== video || video.music !== music;
+    let data = null;
+    try {
+        const response = await fetch('/api/audio/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: music.file }),
+        });
+        data = response.status === 404 ? { missing: true } : await response.json();
+    } catch (e) {
+        // Sonde injoignable : l'export tranchera, rien n'est retiré.
+        console.warn('[stats] Sonde de la musique impossible :', e?.message || e);
+        return;
+    }
+    if (data?.missing || data?.readable === false) {
+        showToast(data.missing
+            ? t('La musique choisie est introuvable sur le serveur.')
+            : t('Cette musique est illisible (format inconnu ou fichier endommagé).'), 'warning');
+        if (stale()) return;
+        $('statsVideoMusic').value = '';
+        video.music = null;
+        persistVideoPrefs();
+        return;
+    }
+    if (stale() || !data?.success) return;
+    if (typeof data.duration === 'number') music.duration = data.duration;
 }
 
 export function onMusicFile() {
     const file = $('statsVideoMusicFile').files?.[0];
     const video = state.video;
     if (!file || !video) return;
-    video.music = { kind: 'upload', blob: file, name: file.name };
+    const music = { kind: 'upload', blob: file, name: file.name };
+    video.music = music;
     const select = $('statsVideoMusic');
     select.querySelector('option[value="upload"]')?.remove();
     const option = new Option(file.name, 'upload');
     select.insertBefore(option, select.querySelector('option[value="pick"]'));
     select.value = 'upload';
+    // Envoi et sonde anticipés : un fichier illisible est refusé dès le
+    // choix plutôt qu'après l'enregistrement. `ready` est attendu par la
+    // conversion, qui envoie alors le nom de la copie au lieu du blob.
+    music.ready = checkUpload(video, music);
+}
+
+// Fichier de l'ordinateur : copié dans audio/ dès le choix (/upload_audio)
+// puis sondé (/api/audio/check). Lisible → `uploaded` porte le nom de la
+// copie, envoyé en champ de formulaire à la conversion. Un échec réseau ne
+// retire rien : le blob sera envoyé à la conversion comme avant.
+async function checkUpload(video, music) {
+    const stale = () => state.video !== video || video.music !== music;
+    let uploaded = null;
+    try {
+        const form = new FormData();
+        form.append('audio', music.blob, music.name);
+        const response = await fetch('/upload_audio', { method: 'POST', body: form });
+        uploaded = (await response.json())?.file || null;
+    } catch (e) {
+        console.warn('[stats] Envoi anticipé de la musique impossible :', e?.message || e);
+    }
+    if (!uploaded || stale()) return;
+    let data = null;
+    try {
+        const response = await fetch('/api/audio/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: uploaded }),
+        });
+        data = await response.json();
+    } catch (e) {
+        console.warn('[stats] Sonde de la musique impossible :', e?.message || e);
+        return;
+    }
+    if (data?.success && !data.readable) {
+        showError(t('Cette musique est illisible (format inconnu ou fichier endommagé).'));
+        if (stale()) return;
+        // Le choix est retiré de la liste, pas juste déselectionné : le
+        // reprendre afficherait son nom alors que video.music est null.
+        $('statsVideoMusic').querySelector('option[value="upload"]')?.remove();
+        $('statsVideoMusic').value = '';
+        video.music = null;
+        return;
+    }
+    if (stale() || !data?.readable) return;
+    music.uploaded = uploaded;
+    if (typeof data.duration === 'number') music.duration = data.duration;
 }
 
 function videoMimeType() {
@@ -869,9 +965,20 @@ async function convertVideo(video, blob, name) {
         form.append('fileName', name);
         form.append('fps', String(VIDEO_FPS));
         form.append('slowdown', '1');
-        // Musique : un morceau de la bibliothèque (nom), ou le fichier choisi.
+        // Musique : un morceau de la bibliothèque (nom), ou le fichier choisi
+        // — sa copie posée à la sélection (nom en champ) si l'envoi anticipé
+        // a abouti, le blob sinon. `ready` est attendu pour trancher.
         for (const [key, value] of Object.entries(musicFields(video.music) || {})) form.append(key, value);
-        if (video.music?.kind === 'upload') form.append('audio', video.music.blob, video.music.name);
+        if (video.music?.kind === 'upload') {
+            const music = video.music;
+            try { await music.ready; } catch (_) { /* échec : le blob part */ }
+            // Le choix a pu être défait pendant l'attente (fichier refusé) :
+            // la vidéo part alors sans musique.
+            if (video.music === music) {
+                if (music.uploaded) form.append('audio', music.uploaded);
+                else form.append('audio', music.blob, music.name);
+            }
+        }
         const response = await fetch('/process_recorded_video', { method: 'POST', body: form });
         const data = await response.json();
         if (!data?.task_id) throw new Error(data?.message || 'no task');
@@ -891,6 +998,12 @@ async function convertVideo(video, blob, name) {
     const hiddenNote = video.pauseFailed
         ? ' ' + t("L'onglet a été masqué pendant l'enregistrement : la vidéo peut être saccadée.")
         : '';
+    // Avertissements de la tâche (une musique demandée mais introuvable
+    // donne une vidéo sans musique, cf. capture._audio_warnings) : dans la
+    // note finale, et un toast chacun — une ligne de note passe inaperçue.
+    const warnings = Array.isArray(result?.warnings) ? result.warnings.filter(Boolean) : [];
+    for (const message of warnings) showToast(message, 'warning');
+    const warningNote = warnings.length ? ' ' + warnings.join(' ') : '';
     if (result?.file) {
         video.file = result.file;
         video.folder = result.folder || null;
@@ -900,7 +1013,7 @@ async function convertVideo(video, blob, name) {
         download.removeAttribute('download');
         $('statsVideoDoneNote').textContent = (result.folder
             ? t('Vidéo enregistrée : ${file}, dans ${folder}.', { file: result.file, folder: result.folder })
-            : result.file) + hiddenNote;
+            : result.file) + hiddenNote + warningNote;
     } else {
         video.objectUrl = URL.createObjectURL(blob);
         player.src = video.objectUrl;
@@ -914,7 +1027,7 @@ async function convertVideo(video, blob, name) {
             : t('La conversion en MP4 a échoué : la vidéo est proposée au format WebM.');
         // La musique est mixée pendant la conversion : le repli est muet.
         if (video.music) note += ' ' + t("La musique choisie n'y est pas incluse : elle est mixée pendant la conversion.");
-        note += hiddenNote;
+        note += hiddenNote + warningNote;
         $('statsVideoDoneNote').textContent = note;
     }
     $('statsVideoStage').replaceChildren();

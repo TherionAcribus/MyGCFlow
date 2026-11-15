@@ -1773,6 +1773,50 @@ test('échec de conversion : le motif et la perte de musique sont dits', async (
   expect(errors).toEqual([]);
 });
 
+test('vidéo : une musique illisible est refusée dès le choix', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  // Un texte renommé .mp3 : la copie est posée puis sondée au choix —
+  // ffmpeg n'y trouve aucune piste, le refus est immédiat (toast +
+  // retour à « Sans musique »), pas après l'enregistrement.
+  await page.locator('#statsVideoMusicFile').setInputFiles({
+    name: 'faux.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('pas de la musique'),
+  });
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'illisible' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#statsVideoMusic')).toHaveValue('');
+  expect((await snapshot(page)).video.music).toBeNull();
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('vidéo : une musique récente introuvable est défaite dès le choix', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  try {
+    // Une récente dont la copie n'est plus dans audio/ : la sonde répond
+    // 404 et le choix est défait dès la sélection.
+    expect((await request.put('/api/settings', {
+      data: { recording: { audio_recent: [{ file: 'absente.mp3', name: 'Absente' }] } },
+    })).ok()).toBeTruthy();
+    await cardAction(page, target.id, 'video');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    await page.locator('#statsVideoMusic').selectOption('lib:absente.mp3');
+    await expect(page.locator('.gcm-toast.show').filter({ hasText: 'introuvable' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('#statsVideoMusic')).toHaveValue('');
+    expect((await snapshot(page)).video.music).toBeNull();
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    await request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+  }
+});
+
 test('le focus suit les étapes de la vidéo', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

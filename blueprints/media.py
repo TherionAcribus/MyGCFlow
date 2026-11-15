@@ -18,6 +18,7 @@ from capture import (
     open_video,
     open_video_folder,
     coerce_color_fidelity,
+    probe_audio,
     process_recorded_video,
     recorded_video_path,
     resolve_video_file,
@@ -300,6 +301,21 @@ def route_audio_mix():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
     return jsonify({'success': True, **result})
+
+
+@media_bp.route('/api/audio/check', methods=['POST'])
+def route_check_audio():
+    # Vérification anticipée d'une musique du dossier audio/ : la sonde ffmpeg
+    # (capture.probe_audio) dit si l'export saura la lire, dès son choix —
+    # sinon un fichier illisible ou disparu ne produisait un échec qu'après
+    # l'enregistrement temps réel. `readable` reste une information : c'est
+    # le client qui décide du sort du choix.
+    payload = request.get_json(silent=True) or {}
+    name = audio_library.safe_audio_name(payload.get('file'))
+    path = os.path.join(paths.audio_dir(), name) if name else ''
+    if not name or not os.path.isfile(path):
+        return jsonify({'success': False, 'message': _('Musique introuvable sur le serveur')}), 404
+    return jsonify({'success': True, **probe_audio(path)})
 
 
 @media_bp.route('/api/audio/playable', methods=['POST'])
