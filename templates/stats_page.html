@@ -641,6 +641,24 @@
                                     <label class="form-label" id="statsVideoSlidesLabel">{{ _("Écrans") }}</label>
                                     <div id="statsVideoSlidesList" class="stats-video-slides" role="group" aria-labelledby="statsVideoSlidesLabel"></div>
                                 </div>
+                                <!-- Écran d'ouverture de la vidéo du tableau : image (bibliothèque
+                                     de l'onglet Images ou fichier envoyé) et retour sur cet écran
+                                     à la fin. Masqué hors mode tableau. -->
+                                <div class="col-12" id="statsVideoOpening" hidden>
+                                    <label for="statsVideoImage" class="form-label">{{ _("Image de l'écran d'ouverture") }}</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <select id="statsVideoImage" class="form-select">
+                                            <option value="">{{ _("Sans image") }}</option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" id="btnStatsVideoImageBrowse">{{ _("Parcourir…") }}</button>
+                                    </div>
+                                    <input type="file" id="statsVideoImageFile" accept="image/*,.heic,.heif" hidden>
+                                    <div class="form-hint">{{ _("Un logo ou une photo, au-dessus du nom du tableau. Les images de l'onglet Images de la carte sont proposées ; un nouveau fichier les rejoint.") }}</div>
+                                    <div class="form-check mt-2 mb-0">
+                                        <input type="checkbox" class="form-check-input" id="statsVideoOutro" checked>
+                                        <label class="form-check-label" for="statsVideoOutro">{{ _("Terminer sur l'écran d'ouverture") }}</label>
+                                    </div>
+                                </div>
                                 <div class="col-12">
                                     <label for="statsVideoMusic" class="form-label">{{ _("Musique") }}</label>
                                     <div class="d-flex gap-2 align-items-center">

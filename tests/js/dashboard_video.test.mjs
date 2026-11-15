@@ -58,6 +58,16 @@ test('moment de la vidéo : ouverture, écrans, fermeture, fin', () => {
     assert.equal(videoMoment(14000, 2, 4).kind, 'end');
 });
 
+test('sans écran de fin : la vidéo s’arrête sur le dernier graphique', () => {
+    assert.equal(dashboardVideoDuration(2, 4, false, false), INTRO_MS + 8000);
+    assert.equal(dashboardVideoDuration(2, 7.33, true, false), INTRO_MS + 2 * 7330);
+    // Juste après le dernier écran : 'end' (le dernier graphique reste),
+    // jamais la carte de titre.
+    const after = videoMoment(INTRO_MS + 8000 + 500, 2, 4, false, false);
+    assert.deepEqual([after.kind, after.index, after.fade], ['end', 1, 1]);
+    assert.equal(videoMoment(INTRO_MS + 7000, 2, 4, false, false).kind, 'slide');
+});
+
 test('chiffre clé : de 0 à sa valeur, entier si elle l’est', () => {
     assert.equal(countUp(812, 0), 0);
     assert.equal(countUp(812, 1), 812);

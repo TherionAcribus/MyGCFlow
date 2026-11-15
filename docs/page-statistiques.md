@@ -749,13 +749,31 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
 (`menuButton`). Le toast « Aucun graphique à mettre en vidéo. » d'
 `openDashboardVideo` reste un filet pour un état périmé.
 
-- Déroulé (`videoMoment`, dashboard_video.mjs) : ouverture de 3 s (nom du
-  tableau, période, nombre de graphiques), puis un écran par graphique
+- Déroulé (`videoMoment`, dashboard_video.mjs) : ouverture de 3 s (image
+  choisie, nom du tableau, période ; le nombre de graphiques n'y est plus
+  annoncé), puis un écran par graphique
   (4, 6, 8 ou 10 s, durée totale annoncée), chacun en fondu (0,5 s) ;
   l'animation occupe 70 % de l'écran, le graphique complet reste ensuite.
   Après le dernier graphique, la vidéo se referme sur la carte de titre
-  (bookend, `OUTRO_MS` = 3 s, même `introPainter` que l'ouverture).
+  (bookend, `OUTRO_MS` = 3 s, même `introPainter` que l'ouverture) si la
+  case « Terminer sur l'écran d'ouverture » (`#statsVideoOutro`,
+  `video.outro`, persistée `outro`, cochée par défaut) l'est ; sinon elle
+  s'arrête sur le dernier graphique (`videoMoment`/`dashboardVideoDuration`
+  prennent un drapeau `outro`, propagé par `makeDashboardPainter` ; le
+  calage sur la musique ne retire alors que l'ouverture).
   Diapositives : celles de la présentation (`presentSlides`).
+- Image d'ouverture (`#statsVideoImage`, mode tableau) : « Sans image » ou
+  une image de la bibliothèque de l'onglet Images (`GET /api/images`, nom
+  d'origine affiché) ; « Parcourir… » envoie le fichier dans cette
+  bibliothèque (`POST /api/images`, même normalisation et mêmes refus que
+  l'onglet Images). Servie par `/api/images/<fichier>` (même origine : le
+  canevas reste exportable), décodée dès le choix (`video.image.ready`,
+  attendu avant l'aperçu et la prise) ; illisible → choix défait et toast.
+  Persistée par son nom de fichier (`statsVideoPrefs.image`, empreinte du
+  contenu) ; retirée de la bibliothèque depuis → « Sans image ». Dessinée
+  au-dessus du nom, dans 60 % de la largeur × 30 % de la hauteur
+  (proportions gardées), le bloc image + nom + période centré
+  verticalement ; l'image monte avec le texte.
 - Choix des écrans (fenêtre, mode tableau seulement) : la liste « Écrans »
   (`#statsVideoSlidesList`, `renderVideoSlides`) montre les graphiques du
   tableau, chacun avec une case (exclure — `state.video.excluded`, Set
@@ -847,7 +865,7 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   décochage) et la durée d'enregistrement suit la fenêtre
   `[start, end]` du passage (`videoDurationMs`, `musicWindowSeconds`) :
   `max(2 s, fenêtre)` en mode graphique ; en mode tableau la fenêtre
-  moins ouverture et fermeture (6 s) est répartie entre les écrans
+  moins ouverture et fermeture (6 s, 3 s sans écran de fin) est répartie entre les écrans
   cochés, plancher 1 s chacun — la somme peut alors dépasser un peu la
   fenêtre, annoncée « calée sur la musique : m:ss en tout » par
   `syncVideoTotal`. La durée arbitraire (ex. 7,33 s) est acceptée

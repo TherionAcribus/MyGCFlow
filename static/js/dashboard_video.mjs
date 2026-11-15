@@ -8,7 +8,9 @@ export const SLIDE_SECONDS = Object.freeze([4, 6, 8, 10]);
 export const DEFAULT_SLIDE_SECONDS = 6;
 // Écran d'ouverture (nom du tableau, période).
 export const INTRO_MS = 3000;
-// Écran de fin : la vidéo se referme sur sa carte de titre (bookend).
+// Écran de fin : la vidéo se referme sur sa carte de titre (bookend) — au
+// choix de l'utilisateur (`outro`), sinon elle s'arrête sur le dernier
+// graphique.
 export const OUTRO_MS = 3000;
 // Fondu d'entrée de chaque écran.
 export const FADE_MS = 500;
@@ -26,16 +28,16 @@ export function slideSeconds(value, allowAny = false) {
 }
 
 // Durée totale (ms) d'une vidéo de `count` graphiques : ouverture, un
-// écran par graphique, fermeture sur la carte de titre.
-export function dashboardVideoDuration(count, seconds, allowAny = false) {
-    return INTRO_MS + Math.max(0, count) * slideSeconds(seconds, allowAny) * 1000 + OUTRO_MS;
+// écran par graphique, fermeture sur la carte de titre si `outro`.
+export function dashboardVideoDuration(count, seconds, allowAny = false, outro = true) {
+    return INTRO_MS + Math.max(0, count) * slideSeconds(seconds, allowAny) * 1000 + (outro ? OUTRO_MS : 0);
 }
 
 // Où en est la vidéo au temps `t` (ms) :
 //   { kind: 'intro' | 'slide' | 'outro' | 'end', index, local (ms depuis le
 //     début de l'écran), progress (0 → 1 de l'animation), fade (0 → 1,
-//     opacité) }.
-export function videoMoment(t, count, seconds, allowAny = false) {
+//     opacité) }. Sans `outro`, 'end' suit directement le dernier graphique.
+export function videoMoment(t, count, seconds, allowAny = false, outro = true) {
     const slideMs = slideSeconds(seconds, allowAny) * 1000;
     const fadeOf = (local) => Math.min(1, Math.max(0, local / FADE_MS));
     if (t < INTRO_MS) return { kind: 'intro', index: -1, local: t, progress: Math.min(1, t / (INTRO_MS * ANIMATED_SHARE)), fade: fadeOf(t) };
@@ -45,7 +47,7 @@ export function videoMoment(t, count, seconds, allowAny = false) {
         // Après le dernier graphique : écran de fin (même carte de titre
         // qu'à l'ouverture), puis 'end' au-delà de la durée totale.
         const outroLocal = rest - count * slideMs;
-        if (outroLocal < OUTRO_MS) {
+        if (outro && outroLocal < OUTRO_MS) {
             return {
                 kind: 'outro',
                 index: count,

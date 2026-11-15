@@ -46,7 +46,7 @@ import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
     closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFadeInput, onMusicFile, onMusicFitChange,
-    onMusicVolumeInput, persistVideoPrefs, previewVideo, recordVideo,
+    onImageChange, onImageFile, onMusicVolumeInput, onOutroChange, persistVideoPrefs, previewVideo, recordVideo,
     releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal, takeMapMusicSettings, toggleMusicListen,
 } from './stats_page_video.js';
 
@@ -243,6 +243,10 @@ window.getStatsPageSnapshot = () => {
             fitToMusic: Boolean(state.video.fitToMusic),
             // Graphiques décochés dans la liste « Écrans » (vidéo tableau).
             excluded: state.video.excluded ? [...state.video.excluded] : null,
+            // Écran d'ouverture : image choisie (nom de fichier) et retour
+            // sur cet écran à la fin.
+            image: state.video.image?.file ?? null,
+            outro: Boolean(state.video.outro),
             music: state.video.music ? {
                 kind: state.video.music.kind,
                 file: state.video.music.file || state.video.music.name,
@@ -298,6 +302,13 @@ function bindEvents() {
     $('statsVideoMusicFadeOut').addEventListener('input', onMusicFadeInput);
     $('statsVideoFitMusic').addEventListener('change', onMusicFitChange);
     $('btnStatsMusicFromMap').addEventListener('click', takeMapMusicSettings);
+    $('statsVideoImage').addEventListener('change', onImageChange);
+    $('statsVideoImageFile').addEventListener('change', onImageFile);
+    $('btnStatsVideoImageBrowse').addEventListener('click', () => {
+        $('statsVideoImageFile').value = '';
+        $('statsVideoImageFile').click();
+    });
+    $('statsVideoOutro').addEventListener('change', onOutroChange);
     $('btnStatsAddChart').addEventListener('click', openGallery);
     $('btnStatsAddChartEmpty').addEventListener('click', openGallery);
     $('btnStatsRename').addEventListener('click', openRename);

@@ -2694,6 +2694,78 @@ test('vidéo du tableau : choisir les écrans et leur ordre', async ({ page, req
   expect(errors).toEqual([]);
 });
 
+test('vidéo du tableau : image d\'ouverture et écran de fin au choix', async ({ page, request }) => {
+  test.setTimeout(90_000);
+  // L'image envoyée rejoint la bibliothèque de l'onglet Images (préférence
+  // partagée du runtime) : elle n'est retirée en sortie que si elle n'y
+  // était pas déjà.
+  const logo = path.join(HERE, 'fixtures', 'logo-opaque.png');
+  const listed = async () => ((await (await request.get('/api/images')).json()).files || []).map((f) => f.file);
+  const before = await listed();
+  const items = [
+    { size: 'M', spec: { id: 'dddd01', groupBy: 'month_of_year', view: { chart: 'bar' } } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  let file = null;
+  try {
+    await dashboardAction(page, 'video-dashboard');
+    await expect(page.locator('#statsVideoModal')).toBeVisible();
+    await expect(page.locator('#statsVideoOpening')).toBeVisible();
+    await page.locator('#statsVideoDuration').selectOption('4');
+    // Écran de fin par défaut : 3 + 4 + 3 s ; décoché, 3 s de moins.
+    await expect(page.locator('#statsVideoOutro')).toBeChecked();
+    await expect(page.locator('#statsVideoTotal')).toContainText('1 graphique, 10 secondes en tout');
+    await page.locator('#statsVideoOutro').uncheck();
+    await expect(page.locator('#statsVideoTotal')).toContainText('1 graphique, 7 secondes en tout');
+
+    await page.locator('#statsVideoImageFile').setInputFiles(logo);
+    await expect.poll(async () => (await snapshot(page)).video?.image).toMatch(/^[0-9a-f]{16}\.\w+$/);
+    file = (await snapshot(page)).video.image;
+    await expect(page.locator('#statsVideoImage')).toHaveValue(file);
+    expect((await snapshot(page)).video.outro).toBe(false);
+
+    // Aperçu : pendant l'ouverture, le haut de l'écran porte l'image (des
+    // pixels autres que le fond au-dessus du nom).
+    await page.locator('#statsVideoSize').selectOption('hd');
+    await page.locator('#btnStatsVideoPreview').click();
+    const stage = page.locator('#statsVideoStage canvas');
+    await expect(stage).toBeVisible();
+    await expect.poll(() => stage.evaluate((c) => {
+      const g = c.getContext('2d');
+      const [r, gr, b] = g.getImageData(4, 4, 1, 1).data;
+      const data = g.getImageData(0, 0, c.width, Math.round(c.height * 0.45)).data;
+      let other = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (Math.abs(data[i] - r) + Math.abs(data[i + 1] - gr) + Math.abs(data[i + 2] - b) > 30) other++;
+      }
+      return other;
+    }), { timeout: 5_000 }).toBeGreaterThan(20_000);
+    // Sans écran de fin, l'aperçu finit sur le graphique : jamais « fin ».
+    const wheres = [];
+    await page.exposeFunction('noteWhere', (text) => wheres.push(text));
+    await page.locator('#statsVideoStatus').evaluate((el) => {
+      new MutationObserver(() => window.noteWhere(el.textContent)).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+    await expect(page.locator('#btnStatsVideoPreview')).toBeVisible({ timeout: 15_000 });
+    expect(wheres.some((text) => text.includes('graphique 1 / 1'))).toBe(true);
+    expect(wheres.some((text) => text.includes('(fin)'))).toBe(false);
+
+    // Réouverture : image et choix de fin retrouvés (préférences locales).
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    await dashboardAction(page, 'video-dashboard');
+    await expect(page.locator('#statsVideoImage')).toHaveValue(file);
+    await expect(page.locator('#statsVideoOutro')).not.toBeChecked();
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+    expect(errors).toEqual([]);
+  } finally {
+    if (file && !before.includes(file)) await request.post('/api/images/delete', { data: { file } });
+  }
+});
+
 test('vidéo du tableau : l\'anneau et la grille s\'animent', async ({ page, request }) => {
   // Les formes « statiques » se révèlent clé après clé, comme les barres au
   // fil de l'axe : parts de l'anneau qui balaient, cases de la grille qui

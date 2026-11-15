@@ -147,6 +147,12 @@ export function persistVideoPrefs() {
     // valeur précédemment mémorisée est conservée.
     const music = $('statsVideoMusic').value;
     if (music === '' || music.startsWith('lib:')) prefs.music = music;
+    // Écran d'ouverture (mode tableau) : image de la bibliothèque et écran
+    // de fin — l'image n'est relue qu'une fois la liste remplie.
+    if (mode === 'dashboard') {
+        if (state.video.imagesListed) prefs.image = $('statsVideoImage').value;
+        prefs.outro = $('statsVideoOutro').checked;
+    }
     try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* quota */ }
 }
 
@@ -165,7 +171,11 @@ function setupVideoModal(video) {
         phase: 'setup', cancelled: false, file: null, objectUrl: null, music: null,
         musicVolume: 1, fadeIn: 0, fadeOut: MUSIC_FADE_OUT_S, fitToMusic: false,
         optionsSynced: false, uploadedMusic: null, listen: null,
-        streamer: null, recordedFile: null, ...video,
+        streamer: null, recordedFile: null,
+        // Écran d'ouverture (mode tableau) : `image` = { file, ready } —
+        // `ready` résout l'élément décodé, ou null ; `outro` = la vidéo se
+        // referme sur cet écran.
+        image: null, imagesListed: false, outro: true, ...video,
     };
     const prefs = loadVideoPrefs();
     if (typeof prefs.musicFadeIn === 'number') state.video.fadeIn = prefs.musicFadeIn;
@@ -193,9 +203,13 @@ function setupVideoModal(video) {
     // non persistés : le tableau change d'une vidéo à l'autre) : tous les
     // graphiques inclus, dans l'ordre du tableau.
     $('statsVideoSlides').hidden = !dashboardMode;
+    $('statsVideoOpening').hidden = !dashboardMode;
     if (dashboardMode) {
         state.video.excluded = new Set();
         renderVideoSlides();
+        if (typeof prefs.outro === 'boolean') state.video.outro = prefs.outro;
+        $('statsVideoOutro').checked = state.video.outro;
+        fillImageChoices(prefs);
     }
     syncVideoTotal();
     fillMusicChoices(prefs);
@@ -318,11 +332,119 @@ export function syncVideoTotal() {
             : t("${n} graphique, calée sur la musique : ${total} en tout : la vidéo s'enregistre en temps réel.", { n, total: span });
         return;
     }
-    const ms = dashboardVideoDuration(n, $('statsVideoDuration').value);
+    const ms = dashboardVideoDuration(n, $('statsVideoDuration').value, false, video.outro);
     const s = Math.round(ms / 1000);
     total.textContent = n > 1
         ? t("${n} graphiques, ${s} secondes en tout : la vidéo s'enregistre en temps réel.", { n, s })
         : t("${n} graphique, ${s} secondes en tout : la vidéo s'enregistre en temps réel.", { n, s });
+}
+
+// ---------------------------------------------------------------------------
+// Écran d'ouverture du mode tableau : une image (bibliothèque de l'onglet
+// Images de la carte, servie par /api/images — même origine, le canevas
+// reste exportable — ou un fichier de l'ordinateur, envoyé dans cette
+// bibliothèque) et le choix de refermer la vidéo sur cet écran. Les deux
+// sont mémorisés dans les préférences locales (l'image par son nom de
+// fichier, qui ne change jamais : empreinte du contenu).
+// ---------------------------------------------------------------------------
+
+let imageSeq = 0;
+
+async function fillImageChoices(prefs = {}) {
+    const seq = ++imageSeq;
+    const select = $('statsVideoImage');
+    select.replaceChildren(new Option(t('Sans image'), ''));
+    let files = [];
+    try {
+        files = (await fetchJson('/api/images'))?.files || [];
+    } catch (e) {
+        console.warn("[stats] Bibliothèque d'images non lue :", e?.message || e);
+    }
+    if (seq !== imageSeq || !state.video) return;
+    for (const entry of files) select.add(new Option(entry.name || entry.file, entry.file));
+    // Une image retirée de la bibliothèque depuis : « Sans image ».
+    const restore = prefs.image || '';
+    select.value = files.some((entry) => entry.file === restore) ? restore : '';
+    state.video.imagesListed = true;
+    selectImage(select.value);
+}
+
+// Charge l'image choisie : `video.image.ready` résout l'élément décodé
+// (attendu avant l'aperçu et la prise), ou null si elle est illisible —
+// le choix est alors défait.
+function selectImage(file) {
+    const video = state.video;
+    if (!video) return;
+    if (!file) {
+        video.image = null;
+        return;
+    }
+    const image = { file, ready: null };
+    image.ready = (async () => {
+        const el = new Image();
+        el.src = '/api/images/' + encodeURIComponent(file);
+        try {
+            await el.decode();
+            return el;
+        } catch (e) {
+            console.warn("[stats] Image d'ouverture illisible :", e?.message || e);
+            if (state.video === video && video.image === image) {
+                video.image = null;
+                $('statsVideoImage').value = '';
+                persistVideoPrefs();
+                showToast(t("Cette image n'a pas pu être lue."), 'warning');
+            }
+            return null;
+        }
+    })();
+    video.image = image;
+}
+
+export function onImageChange() {
+    selectImage($('statsVideoImage').value);
+    persistVideoPrefs();
+}
+
+// « Parcourir… » : le fichier rejoint la bibliothèque d'images (même envoi
+// que l'onglet Images : normalisé, refusé s'il n'est pas une image).
+export async function onImageFile() {
+    const file = $('statsVideoImageFile').files?.[0];
+    const video = state.video;
+    if (!file || !video) return;
+    const button = $('btnStatsVideoImageBrowse');
+    button.disabled = true;
+    let data = null;
+    try {
+        const form = new FormData();
+        form.append('image', file, file.name);
+        const response = await fetch('/api/images', { method: 'POST', body: form });
+        data = await response.json().catch(() => null);
+        if (!response.ok || !data?.success) throw new Error(data?.message || 'HTTP ' + response.status);
+    } catch (e) {
+        showError(data?.message || t("L'image n'a pas pu être envoyée."));
+        return;
+    } finally {
+        button.disabled = false;
+    }
+    if (state.video !== video) return;
+    const select = $('statsVideoImage');
+    if (![...select.options].some((option) => option.value === data.file)) {
+        select.add(new Option(file.name, data.file), 1);
+    }
+    select.value = data.file;
+    onImageChange();
+}
+
+export function onOutroChange() {
+    if (!state.video) return;
+    state.video.outro = $('statsVideoOutro').checked;
+    syncVideoTotal();
+    persistVideoPrefs();
+}
+
+// Image de l'écran d'ouverture, décodée (null : pas d'image, ou illisible).
+async function openingImage(video) {
+    return (await video.image?.ready) || null;
 }
 
 // Deux ouvertures proches de la fenêtre peuvent se chevaucher : seul le
@@ -612,11 +734,12 @@ function fitToMusicActive(video) {
 function videoDurationMs(video) {
     if (video?.mode === 'dashboard') {
         const count = includedSlides(video).length;
+        const outroMs = video.outro ? OUTRO_MS : 0;
         if (fitToMusicActive(video) && count > 0) {
-            const perSlide = Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + OUTRO_MS) / 1000) / count);
-            return INTRO_MS + perSlide * count * 1000 + OUTRO_MS;
+            const perSlide = Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + outroMs) / 1000) / count);
+            return INTRO_MS + perSlide * count * 1000 + outroMs;
         }
-        return dashboardVideoDuration(count, $('statsVideoDuration').value);
+        return dashboardVideoDuration(count, $('statsVideoDuration').value, false, video.outro);
     }
     if (fitToMusicActive(video)) return Math.max(2, musicWindowSeconds(video)) * 1000;
     return (Number($('statsVideoDuration').value) || 10) * 1000;
@@ -1048,8 +1171,11 @@ function videoFont() {
     return getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
 }
 
-// Écran d'ouverture : nom du tableau, période, nombre de graphiques.
-function introPainter(dashboard, count, { width, height }) {
+// Écran d'ouverture (et de fin, s'il est demandé) : l'image choisie, le nom
+// du tableau, sa période. Avec une image, l'ensemble est centré
+// verticalement ; l'image tient dans 60 % de la largeur et 30 % de la
+// hauteur (proportions gardées).
+function introPainter(dashboard, image, { width, height }) {
     const tokens = state.tokens || readTokens();
     const { scale } = videoFrame({ width, height });
     const canvas = document.createElement('canvas');
@@ -1059,7 +1185,17 @@ function introPainter(dashboard, count, { width, height }) {
     const font = videoFont();
     const name = dashboard.name || t('Mon tableau de bord');
     const period = dashboardPeriodLabel(dashboard);
-    const charts = count > 1 ? t('${n} graphiques', { n: count }) : t('${n} graphique', { n: count });
+    const iw = image?.naturalWidth || 0;
+    const ih = image?.naturalHeight || 0;
+    const fit = iw && ih ? Math.min((width * 0.6) / iw, (height * 0.3) / ih) : 0;
+    const imageW = iw * fit;
+    const imageH = ih * fit;
+    const imageGap = imageH ? 36 * scale : 0;
+    // Centre du nom. Le bloc [image, nom, période] : le nom occupe ~48 px de
+    // haut (24 au-dessus de son centre), la période est centrée 52 px plus
+    // bas (12 en dessous).
+    const blockH = imageH + imageGap + (24 + 52 + 12) * scale;
+    const nameY = imageH ? (height - blockH) / 2 + imageH + imageGap + 24 * scale : height * 0.44;
     const paint = (progress) => {
         g.fillStyle = tokens.surface;
         g.fillRect(0, 0, width, height);
@@ -1068,6 +1204,7 @@ function introPainter(dashboard, count, { width, height }) {
         // Le titre monte légèrement en apparaissant.
         const rise = (1 - Math.min(1, progress)) * 18 * scale;
         const measure = (s) => g.measureText(s).width;
+        if (imageH) g.drawImage(image, (width - imageW) / 2, nameY - 24 * scale - imageGap - imageH + rise, imageW, imageH);
         g.fillStyle = tokens.text;
         // Le nom du tableau (un nom propre) est réduit plutôt que tronqué ;
         // « … » en dernier recours si le plancher ne suffit pas.
@@ -1078,12 +1215,10 @@ function introPainter(dashboard, count, { width, height }) {
         // Arrondi vers le bas : 97,97 → 98 px dépassait de 0,3 px et le nom,
         // pourtant réduit pour tenir, finissait par « … ».
         if (nameSize !== nameBase) g.font = '700 ' + Math.floor(nameSize) + 'px ' + font;
-        g.fillText(ellipsize(name, nameMax, measure), width / 2, height * 0.44 + rise);
+        g.fillText(ellipsize(name, nameMax, measure), width / 2, nameY + rise);
         g.fillStyle = tokens.textMuted;
         g.font = '500 ' + Math.round(24 * scale) + 'px ' + font;
-        g.fillText(ellipsize(period, nameMax, measure), width / 2, height * 0.44 + 52 * scale + rise);
-        g.font = '400 ' + Math.round(18 * scale) + 'px ' + font;
-        g.fillText(ellipsize(charts, nameMax, measure), width / 2, height * 0.44 + 88 * scale + rise);
+        g.fillText(ellipsize(period, nameMax, measure), width / 2, nameY + 52 * scale + rise);
     };
     return { canvas, paint, dispose: () => {} };
 }
@@ -1149,7 +1284,8 @@ function slidePainter(spec, result, size) {
 // le moment affiché (videoMoment) ; `dispose` relâche l'écran courant
 // (les précédents l'ont été au changement). `seconds` = durée par
 // graphique lue dans le formulaire, pour le calcul de la durée totale.
-function makeDashboardPainter(slides, size) {
+// `image` : l'image décodée de l'écran d'ouverture, ou null.
+function makeDashboardPainter(slides, size, image = null) {
     const dashboard = activeDashboard();
     // « Caler la durée sur la musique » : la fenêtre du passage est
     // répartie entre les écrans cochés (plancher 1 s) — une durée
@@ -1157,8 +1293,9 @@ function makeDashboardPainter(slides, size) {
     // propagé à videoMoment/dashboardVideoDuration via `allowAny`).
     const video = state.video;
     const allowAny = fitToMusicActive(video);
+    const outro = video.outro;
     const rawSeconds = allowAny
-        ? Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + OUTRO_MS) / 1000) / Math.max(1, includedSlides(video).length))
+        ? Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + (outro ? OUTRO_MS : 0)) / 1000) / Math.max(1, includedSlides(video).length))
         : $('statsVideoDuration').value;
     const seconds = slideSeconds(rawSeconds, allowAny);
     const tokens = state.tokens || readTokens();
@@ -1180,14 +1317,14 @@ function makeDashboardPainter(slides, size) {
             current = {
                 key,
                 painter: moment.kind === 'intro' || moment.kind === 'outro'
-                    ? introPainter(dashboard, slides.length, size)
+                    ? introPainter(dashboard, image, size)
                     : slidePainter(entry.spec, entry.result, size),
             };
         }
         return current.painter;
     };
     const paint = (elapsed) => {
-        const moment = videoMoment(elapsed, slides.length, seconds, allowAny);
+        const moment = videoMoment(elapsed, slides.length, seconds, allowAny, outro);
         const painter = painterFor(moment);
         painter.paint(moment.progress);
         g.fillStyle = tokens.surface;
@@ -1198,7 +1335,7 @@ function makeDashboardPainter(slides, size) {
         return moment;
     };
     const dispose = () => current.painter?.dispose();
-    return { canvas, paint, dispose, seconds, allowAny };
+    return { canvas, paint, dispose, seconds, allowAny, outro };
 }
 
 // « ouverture », « fin » ou « graphique n / count » : la position de la
@@ -1264,8 +1401,9 @@ async function recordDashboardVideo(video) {
         return;
     }
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
-    const machine = makeDashboardPainter(slides, size);
-    const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny);
+    const machine = makeDashboardPainter(slides, size, await openingImage(video));
+    if (video.cancelled) return;
+    const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny, machine.outro);
     setVideoPhase('recording');
     const canvas = machine.canvas;
     $('statsVideoStage').replaceChildren(canvas);
@@ -1482,12 +1620,13 @@ function runVideoPreview(video, duration, paint, statusFor, dispose) {
 }
 
 // Aperçu du mode tableau : mêmes écrans et fondus que l'enregistrement.
-function previewDashboardVideo(video) {
+async function previewDashboardVideo(video) {
     const slides = includedSlides(video).map((id) => state.results.get(id)).filter((entry) => entry?.result);
     if (!slides.length) return;
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
-    const machine = makeDashboardPainter(slides, size);
-    const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny);
+    const machine = makeDashboardPainter(slides, size, await openingImage(video));
+    if (video.cancelled) return;
+    const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny, machine.outro);
     video.previewStop = false;
     setVideoPhase('preview');
     setVideoStatus(t('Aperçu… (${where})', { where: t('ouverture') }), 0);
