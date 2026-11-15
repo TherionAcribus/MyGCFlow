@@ -52,11 +52,25 @@ function setVideoPhase(phase) {
     $('btnStatsVideoDownload').hidden = phase !== 'done';
     $('btnStatsVideoCancel').hidden = phase === 'preview';
     $('btnStatsVideoCancel').textContent = phase === 'done' ? t('Fermer') : t('Annuler');
+    if (phase === 'done') {
+        // Le MP4 est déjà écrit dans le dossier des vidéos : « Afficher
+        // dans le dossier » est le geste utile, la copie dans
+        // Téléchargements est secondaire. En repli WebM (conversion
+        // échouée, « Afficher dans le dossier » masqué) rien n'est sur
+        // disque : la copie redevient l'action principale — le seul
+        // moyen de récupérer la vidéo.
+        const hasFile = Boolean(state.video?.file);
+        $('btnStatsVideoReveal').classList.toggle('btn-primary', hasFile);
+        $('btnStatsVideoReveal').classList.toggle('btn-secondary', !hasFile);
+        $('btnStatsVideoDownload').classList.toggle('btn-primary', !hasFile);
+        $('btnStatsVideoDownload').classList.toggle('btn-secondary', hasFile);
+    }
     // Le bouton qui avait le focus disparaît avec son étape : replacer le
     // focus sur l'action de la nouvelle (sinon il retombe sur <body>).
     const focusTarget = {
         setup: 'btnStatsVideoStart', preview: 'btnStatsVideoStopPreview',
-        recording: 'btnStatsVideoCancel', done: 'btnStatsVideoDownload',
+        recording: 'btnStatsVideoCancel',
+        done: state.video?.file ? 'btnStatsVideoReveal' : 'btnStatsVideoDownload',
     }[phase];
     $(focusTarget)?.focus();
 }

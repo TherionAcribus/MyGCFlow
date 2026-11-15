@@ -500,9 +500,13 @@ effacer » le retire avec la période proposée.
   la clé atteinte (« juin »). `captureStream(30)` + `MediaRecorder` (WebM
   VP9/VP8) en temps réel ; `fixWebmDuration` ; `POST
   /process_recorded_video` (`slowdown` 1) puis `/tasks/<id>` → MP4 dans le
-  dossier des vidéos, aperçu `/download_video/<f>?inline=1`, « Afficher
-  dans le dossier » (`POST /reveal_video`). Échec serveur : le WebM brut,
-  téléchargeable ; la note de la fenêtre affiche le motif (première ligne
+  dossier des vidéos, aperçu `/download_video/<f>?inline=1`. Le fichier
+  étant déjà écrit, « Afficher dans le dossier » (`POST /reveal_video`)
+  est l'action principale de l'étape finale ; « Enregistrer une copie »
+  (`<a download>`) n'en fait qu'une copie dans Téléchargements. Échec
+  serveur : le WebM brut, téléchargeable — rien n'est sur disque, la
+  copie redevient alors l'action principale (seule issue) ; la note de
+  la fenêtre affiche le motif (première ligne
   de l'erreur, bornée) et rappelle que la musique choisie, mixée pendant
   la conversion, n'y est pas incluse. Onglet masqué pendant la prise :
   `visibilitychange` met le `MediaRecorder` en pause et l'horloge est

@@ -1765,6 +1765,10 @@ test('échec de conversion : le motif et la perte de musique sont dits', async (
   const download = page.locator('#btnStatsVideoDownload');
   await expect(download).toHaveAttribute('href', /^blob:/);
   await expect(download).toHaveAttribute('download', /\.webm$/);
+  // Repli WebM : rien n'est écrit sur disque, « Afficher dans le dossier »
+  // est masqué et la copie redevient l'action principale.
+  await expect(page.locator('#btnStatsVideoReveal')).toBeHidden();
+  await expect(download).toHaveClass(/btn-primary/);
   // Le console.warn est attendu ; `errors` ne collecte que les pageerror.
   expect(errors).toEqual([]);
 });
@@ -1796,8 +1800,11 @@ test('le focus suit les étapes de la vidéo', async ({ page, request }) => {
   // « Annuler », seul bouton du pied encore visible (sinon <body>).
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('btnStatsVideoCancel');
   await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
-  // Phase « done » : le focus est sur « Télécharger », l'action principale.
-  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('btnStatsVideoDownload');
+  // Phase « done » : le MP4 est déjà dans le dossier des vidéos —
+  // « Afficher dans le dossier » est l'action principale et prend le focus.
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('btnStatsVideoReveal');
+  await expect(page.locator('#btnStatsVideoReveal')).toHaveClass(/btn-primary/);
+  await expect(page.locator('#btnStatsVideoDownload')).toHaveClass(/btn-secondary/);
   await page.locator('#btnStatsVideoCancel').click();
   await expect(page.locator('#statsVideoModal')).toBeHidden();
   expect(errors).toEqual([]);
