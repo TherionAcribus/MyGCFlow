@@ -85,12 +85,112 @@ function visibleOn(color, tokens) {
     return ratio !== null && ratio < 1.4 ? tokens.textMuted : color;
 }
 
+// Couleur dans l'espace OKLab (écarts perçus comparables d'une teinte à
+// l'autre, contrairement au RGB).
+function oklab(hex) {
+    const [r, g, b] = hexToRgb(hex).map((c) => {
+        const v = c / 255;
+        return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+    });
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [
+        0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+        1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+        0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+    ];
+}
+
+function colorDistance(a, b) {
+    const p = oklab(a);
+    const q = oklab(b);
+    return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+}
+
+function hexToHsl(hex) {
+    const [r, g, b] = hexToRgb(hex).map((c) => c / 255);
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return [0, 0, l];
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+}
+
+function hslToHex(h, s, l) {
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => {
+        const k = (n + h / 30) % 12;
+        return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    };
+    return '#' + [f(0), f(8), f(4)].map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+// Nuances essayées pour un type qui partage sa couleur : [décalage de
+// teinte en degrés, écart de luminosité], de la plus proche à la plus
+// éloignée de la couleur de la carte.
+const SHADE_STEPS = [[0, -0.16], [0, 0.14], [24, 0], [-24, 0], [0, -0.26], [0, 0.24],
+    [24, -0.14], [-24, -0.14], [24, 0.14], [-24, 0.14]];
+// Écart OKLab minimal entre deux types (le bleu et le bleu clair de la
+// carte sont à ~0,2 ; en deçà de ~0,08, deux parts voisines se confondent).
+const MIN_TYPE_DISTANCE = 0.1;
+const distinctCache = new WeakMap();
+
+// Couleurs des types pour les graphiques. La carte donne la même couleur à
+// plusieurs types (Unknown, Wherigo et Letterbox en bleu, les événements en
+// rouge…) : sur la carte les icônes les distinguent, dans un anneau ou une
+// pile plus rien. Le premier type de chaque couleur (ordre du fichier) la
+// garde ; les suivants prennent la première nuance voisine assez loin de
+// toutes les couleurs déjà prises, et pas moins lisible sur le fond que la
+// couleur d'origine. Calculé une fois par jeu de couleurs et par fond : un
+// type garde sa nuance d'un graphique à l'autre.
+export function distinctTypeColors(typeColors, surface = '#ffffff') {
+    if (!typeColors) return {};
+    let bySurface = distinctCache.get(typeColors);
+    if (!bySurface) distinctCache.set(typeColors, (bySurface = new Map()));
+    if (bySurface.has(surface)) return bySurface.get(surface);
+    const valid = Object.entries(typeColors).filter(([, c]) => luminance(c) !== null);
+    const taken = [...new Set(valid.map(([, c]) => c.toUpperCase()))];
+    const seen = new Set();
+    const out = {};
+    for (const [type, color] of valid) {
+        const base = color.toUpperCase();
+        if (!seen.has(base)) {
+            seen.add(base);
+            out[type] = color;
+            continue;
+        }
+        const [h, s, l] = hexToHsl(base);
+        const minContrast = Math.min(2, contrastRatio(base, surface) ?? 2);
+        let best = null;
+        let bestDistance = -1;
+        for (const [dh, dl] of SHADE_STEPS) {
+            const shade = hslToHex((h + dh + 360) % 360, s, Math.min(0.85, Math.max(0.25, l + dl)));
+            if ((contrastRatio(shade, surface) ?? 21) < minContrast) continue;
+            const distance = Math.min(...taken.map((c) => colorDistance(c, shade)));
+            if (distance > bestDistance) [best, bestDistance] = [shade, distance];
+            if (distance >= MIN_TYPE_DISTANCE) break;
+        }
+        best = best || base;
+        taken.push(best);
+        out[type] = best;
+    }
+    bySurface.set(surface, out);
+    return out;
+}
+
 // Couleur d'une catégorie : « Autres » et « Inconnu » en gris, types de
-// caches aux couleurs de la carte, sinon la teinte de rang `index`.
+// caches aux couleurs de la carte (nuancées quand elles se répètent), sinon
+// la teinte de rang `index`.
 function categoryColor(dim, key, index, tokens, typeColors) {
     if (key === OTHERS_KEY) return tokens.others;
     if (key === UNKNOWN_KEY) return tokens.unknown;
-    if (dim === 'cache_type' && typeColors?.[key]) return visibleOn(typeColors[key], tokens);
+    if (dim === 'cache_type' && typeColors?.[key]) {
+        return visibleOn(distinctTypeColors(typeColors, tokens.surface)[key] || typeColors[key], tokens);
+    }
     return tokens.series[index % tokens.series.length];
 }
 

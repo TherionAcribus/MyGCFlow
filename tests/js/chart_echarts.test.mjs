@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, escapeHtml, numberModel, rampColor, thumbnailOption,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -87,6 +87,37 @@ test('types de caches : couleurs de la carte, blanc illisible remplacé, inconnu
     assert.equal(colors['Multi-cache'], '#FFA500');
     assert.equal(colors['Locationless (Reverse) Cache'], tokens.textMuted);
     assert.equal(colors.unknown, tokens.unknown);
+});
+
+test('types de même couleur sur la carte : une nuance chacun, stable et lisible sur le fond', () => {
+    const shared = { 'Unknown Cache': '#0000FF', 'Wherigo Cache': '#0000FF', 'Letterbox Hybrid': '#0000FF',
+        'Earthcache': '#87CEEB', 'Virtual Cache': '#87CEEB', 'Traditional Cache': '#008000' };
+    for (const surface of ['#ffffff', '#1b2635']) {
+        const colors = distinctTypeColors(shared, surface);
+        // Le premier type de chaque couleur la garde, un type seul aussi.
+        assert.equal(colors['Unknown Cache'], '#0000FF');
+        assert.equal(colors.Earthcache, '#87CEEB');
+        assert.equal(colors['Traditional Cache'], '#008000');
+        // Six types, six couleurs.
+        assert.equal(new Set(Object.values(colors)).size, 6);
+        // Une nuance n'est pas moins lisible sur le fond que la couleur d'origine (ou que 2:1).
+        for (const type of ['Wherigo Cache', 'Letterbox Hybrid']) {
+            assert.ok(contrastRatio(colors[type], surface) >= Math.min(2, contrastRatio('#0000FF', surface)), `${type} sur ${surface}`);
+        }
+        // Même objet, même fond : même résultat (un type garde sa nuance d'un graphique à l'autre).
+        assert.equal(distinctTypeColors(shared, surface), colors);
+    }
+    // Sur fond sombre, pas de bleu marine qui se fondrait dans le fond.
+    assert.notEqual(distinctTypeColors(shared, '#1b2635')['Wherigo Cache'], distinctTypeColors(shared, '#ffffff')['Wherigo Cache']);
+});
+
+test('anneau : deux types de même couleur sur la carte y ont deux parts distinctes', () => {
+    const shared = { ...typeColors, 'Multi-cache': '#008000' };
+    const spec = normalizeChartSpec({ groupBy: 'cache_type', view: { chart: 'donut' } }, () => 'abcdef');
+    const result = runChartQuery(spec, table, { today: TODAY });
+    const o = buildChartOption(result, spec, { ...ctx, typeColors: shared });
+    assert.equal(o.series[0].data[0].itemStyle.color, '#008000');
+    assert.equal(new Set(o.series[0].data.map((d) => d.itemStyle.color)).size, o.series[0].data.length);
 });
 
 test('anneau : une part par catégorie non vide, légende, pourcentages en infobulle', () => {

@@ -227,9 +227,18 @@ jaune, rose) sont sous 3:1 de contraste : infobulles et « Afficher les
 valeurs » compensent. Les **types de caches** gardent les couleurs de la
 carte (`static/json/defaultGcColors.json`, valeurs par défaut — pas celles
 d'un thème personnalisé) ; une couleur illisible sur le fond (le blanc des
-Locationless) passe au gris des notes. Plusieurs types partagent le bleu par
-défaut (Mystery, Wherigo, Letterbox) : la légende et l'infobulle les
-distinguent.
+Locationless) passe au gris des notes. Plusieurs types partagent une couleur
+sur la carte (Mystery, Wherigo, Letterbox en bleu ; Earthcache, Virtual,
+Webcam en bleu clair ; les sept événements en rouge), où les icônes les
+distinguent — pas dans un anneau ni une pile. `distinctTypeColors`
+(chart_echarts.mjs) laisse sa couleur au premier type de chaque couleur
+(ordre du fichier) et donne aux suivants la première nuance voisine (luminosité,
+puis teinte ±24°) à au moins 0,1 en OKLab de toutes les couleurs déjà prises,
+et pas moins lisible sur le fond que la couleur d'origine (plafond 2:1).
+Résultat mémorisé par jeu de couleurs et par fond : un type garde sa nuance
+d'un graphique à l'autre, mais pas forcément du clair au sombre (le bleu
+marine de Wherigo en clair devient un bleu lumineux en sombre). La carte et
+ses panneaux Stats gardent les couleurs d'origine.
 
 Le thème change (attribut `data-bs-theme` de `<html>`) → couleurs relues,
 graphiques redessinés.
