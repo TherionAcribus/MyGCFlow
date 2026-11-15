@@ -189,6 +189,16 @@ test('libellés : clés d\'axe, périodes et valeurs en français', () => {
     assert.equal(labels.periodLabel({ period: { kind: 'rolling', unit: 'month', count: 12 } }), 'Les 12 derniers mois');
     assert.equal(labels.periodLabel({ period: { kind: 'year', year: 2024, label: 'Mon année' }, year: 2024 }), 'Mon année');
     assert.equal(labels.periodChoiceLabel(null), 'Période du tableau de bord');
+    // Libellé affiché : « Toute la période » nommée par ses années ; une
+    // période déjà précise, un libellé personnalisé ou l'absence d'étendue
+    // gardent le libellé du menu.
+    const span = (a, b) => ({ from: dayNumber({ y: a, m: 5, d: 3 }), to: dayNumber({ y: b, m: 11, d: 8 }) });
+    assert.equal(labels.periodShownLabel({ kind: 'all' }, span(2012, 2026)), '2012 – 2026');
+    assert.equal(labels.periodShownLabel({ kind: 'all' }, span(2026, 2026)), '2026');
+    assert.equal(labels.periodShownLabel({ kind: 'all' }, null), 'Toute la période');
+    assert.equal(labels.periodShownLabel({ kind: 'all', label: 'Depuis toujours' }, span(2012, 2026)), 'Depuis toujours');
+    assert.equal(labels.periodShownLabel({ kind: 'year', year: 2024 }, span(2012, 2026)), '2024');
+    assert.equal(labels.periodShownLabel({ kind: 'range', from: '2025-03-01', to: '2025-06-30' }, span(2012, 2026)), '1 mars 2025 – 30 juin 2025');
     assert.equal(labels.formatValue(2.345, { op: 'mean', field: 'difficulty' }), '2,3');
     assert.equal(labels.formatValue(410.4, { op: 'mean', field: 'age' }), '410 j');
     assert.equal(labels.formatValue(null, { op: 'count' }), '—');

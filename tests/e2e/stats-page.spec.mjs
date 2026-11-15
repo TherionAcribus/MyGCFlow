@@ -229,6 +229,9 @@ test('période globale « Depuis le début » : tout jusqu\'à la fin de la pér
   await expect(row).toBeHidden();
   await expect(upTo).not.toBeChecked();
   await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.period).toEqual({ kind: 'all' });
+  // Sous le chiffre, la période est nommée par ses années, pas « Toute la
+  // période ».
+  await expect(caption).toHaveText(/^\d{4}( – \d{4})?$/);
 
   // Cette année, depuis le début : tout jusqu'à aujourd'hui.
   await page.locator('#statsGlobalPeriod').selectOption({ label: 'Cette année' });

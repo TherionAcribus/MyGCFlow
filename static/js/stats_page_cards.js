@@ -16,7 +16,7 @@ import {
     effectiveQueryOptions, hasOwnPeriod, HEIGHT_PIXELS, MAX_ITEMS, SIZE_COLUMNS,
 } from './dashboard_model.mjs';
 import {
-    activeDashboard, attributeName, chartTitle, datasetName, filterValueLabel, periodsBadge, renderToolbar,
+    activeDashboard, allPeriodSpan, attributeName, chartTitle, datasetName, filterValueLabel, periodsBadge, renderToolbar,
 } from './stats_page_dashboard.js';
 import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
@@ -447,7 +447,7 @@ export function renderNumber(container, result, spec, dashboard) {
         const caption = document.createElement('div');
         caption.className = 'stats-number-caption';
         const { periods } = effectiveQueryOptions(spec, dashboard);
-        caption.textContent = entry.label || state.labels.periodChoiceLabel(periods[0]);
+        caption.textContent = entry.label || state.labels.periodShownLabel(periods[0], allPeriodSpan(result, dashboard));
         block.append(value, caption);
         // Record daté : ses jours, et la carte de ces jours-là.
         if (entry.record) {

@@ -5,7 +5,7 @@ import { periodsAreMultiple } from './chart_spec.mjs';
 import { keyAction, presentDelay, presentSlides, startIndex, stepIndex } from './present_model.mjs';
 import { hasOwnPeriod } from './dashboard_model.mjs';
 import { cardNote, renderChartInto, renderNumber } from './stats_page_cards.js';
-import { activeDashboard, chartTitle, periodsBadge } from './stats_page_dashboard.js';
+import { activeDashboard, chartTitle, dashboardPeriodLabel, periodsBadge } from './stats_page_dashboard.js';
 import { $, state } from './stats_page_state.js';
 
 // ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ export function closePresentation() {
 // sinon celle du tableau.
 export function slidePeriod(spec, dashboard) {
     if (hasOwnPeriod(spec) || periodsAreMultiple(spec.periods)) return periodsBadge(spec);
-    return state.labels.periodChoiceLabel(dashboard.period);
+    return dashboardPeriodLabel(dashboard);
 }
 
 export function showSlide(index, { animate = true } = {}) {

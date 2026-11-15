@@ -234,6 +234,18 @@ distinguent.
 Le thème change (attribut `data-bs-theme` de `<html>`) → couleurs relues,
 graphiques redessinés.
 
+**Période affichée** (2026-11-15) : « Toute la période » reste le nom du
+choix dans les menus, mais là où la période est affichée — pastille d'une
+carte, légende sous un chiffre clé, présentation, écran d'ouverture de la
+vidéo, en-tête de l'image du tableau — elle est nommée par les années
+qu'elle couvre : « 2012 – 2026 », « 2026 » sur une seule année
+(`periodShownLabel` de chart_labels.mjs). Les jours viennent de l'entrée
+déployée du résultat, sinon de l'étendue des données du tableau
+(`allPeriodSpan`, `dashboardPeriodLabel` de stats_page_dashboard.js). Les
+périodes déjà précises (année, mois, plage de dates) gardent leur libellé ;
+« Comprendre ce chiffre » garde « Toute la période », suivi des dates
+exactes.
+
 ## Sources (lot 4)
 
 **Deux familles étanches** (choix de l'utilisateur : Mes poses se mêle à

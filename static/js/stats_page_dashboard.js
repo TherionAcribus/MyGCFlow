@@ -123,7 +123,24 @@ export function syncUpToSwitch(row, input, period, on) {
 export function periodsBadge(spec) {
     if (!Array.isArray(spec.periods)) return '';
     if (spec.periods.length > 2) return t('${n} périodes', { n: spec.periods.length });
-    return spec.periods.map((p) => state.labels.periodChoiceLabel(p)).join(' · ');
+    const span = allPeriodSpan(state.results.get(spec.id)?.result);
+    return spec.periods.map((p) => state.labels.periodShownLabel(p, span)).join(' · ');
+}
+
+// Jours couverts par « Toute la période » : ceux de l'entrée déployée du
+// résultat (les sources propres du graphique), sinon l'étendue des données
+// du tableau — résultat pas encore calculé.
+export function allPeriodSpan(result, dashboard = activeDashboard()) {
+    const entry = result?.periods?.find((e) => e.as?.kind === 'all');
+    if (entry) return { from: entry.from, to: entry.fullTo ?? entry.to };
+    const extent = dashboardExtent(dashboard);
+    return extent ? { from: extent.first, to: extent.last } : null;
+}
+
+// Période du tableau telle qu'affichée (vidéo, présentation, image) :
+// « 2012 – 2026 » plutôt que « Toute la période ».
+export function dashboardPeriodLabel(dashboard = activeDashboard()) {
+    return state.labels.periodShownLabel(dashboard.period, allPeriodSpan(null, dashboard));
 }
 
 export function renderToolbar() {

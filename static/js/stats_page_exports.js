@@ -11,7 +11,7 @@ import { effectiveQueryOptions } from './dashboard_model.mjs';
 import { download, fileSafe } from './stats_page_card_actions.js';
 import { cardNote, chartContext, renderAllCharts, renderDeferred, whenZoneMapsReady } from './stats_page_cards.js';
 import {
-    activeDashboard, chartTitle, dataNote, datasetName, filterValueLabel,
+    activeDashboard, allPeriodSpan, chartTitle, dashboardPeriodLabel, dataNote, datasetName, filterValueLabel,
 } from './stats_page_dashboard.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 
@@ -27,7 +27,7 @@ function valuesModel(result, spec, dashboard) {
         return {
             head: [t('Période'), t('Valeur'), t('Écart')],
             rows: numberModel(result, spec, ctx).map((entry) => {
-                const label = entry.label || state.labels.periodChoiceLabel(periods[0]);
+                const label = entry.label || state.labels.periodShownLabel(periods[0], allPeriodSpan(result, dashboard));
                 return {
                     cells: [label, entry.text, entry.delta ? entry.delta.text + ' ' + entry.delta.versus : ''],
                     raw: [label, entry.value ?? '', ''],
@@ -232,7 +232,7 @@ function chartImageCanvas(chartId, width, height, ratio) {
 function dashboardImageHeader(dashboard) {
     const first = [];
     if (dashboard.kind === 'evolution') first.push(t('Évolution · ${name}', { name: datasetName(dashboard.dataset) }));
-    first.push(state.labels.periodChoiceLabel(dashboard.period));
+    first.push(dashboardPeriodLabel(dashboard));
     const data = dataNote(dashboard);
     if (data) first.push(data);
     const filters = describeFilters(dashboard.filters, filterValueLabel)

@@ -19,7 +19,7 @@ import { createVideoStream } from './video_stream.mjs';
 import { playlistDisplayName } from './music_playlist.mjs';
 import { fileSafe } from './stats_page_card_actions.js';
 import { chartContext } from './stats_page_cards.js';
-import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
+import { activeDashboard, chartTitle, dashboardPeriodLabel } from './stats_page_dashboard.js';
 import { fetchJson } from './stats_page_data.js';
 import { slidePeriod } from './stats_page_present.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
@@ -1014,7 +1014,7 @@ function introPainter(dashboard, count, { width, height }) {
     const g = canvas.getContext('2d');
     const font = videoFont();
     const name = dashboard.name || t('Mon tableau de bord');
-    const period = state.labels.periodChoiceLabel(dashboard.period);
+    const period = dashboardPeriodLabel(dashboard);
     const charts = count > 1 ? t('${n} graphiques', { n: count }) : t('${n} graphique', { n: count });
     const paint = (progress) => {
         g.fillStyle = tokens.surface;

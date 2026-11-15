@@ -612,6 +612,20 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         }
     }
 
+    // Libellé affiché d'une période (pastille, chiffre clé, vidéo, image) :
+    // « Toute la période » ne dit rien de la durée — elle est nommée par
+    // les années qu'elle couvre (« 2012 – 2026 », « 2026 »). `span` :
+    // { from, to } en numéros de jour (entrée déployée ou étendue des
+    // données) ; sans, ou pour une autre période (déjà précise), le
+    // libellé du menu. Un libellé personnalisé prime.
+    function periodShownLabel(period, span) {
+        if (period?.kind !== 'all' || period.label || !span
+            || !Number.isFinite(span.from) || !Number.isFinite(span.to)) return periodChoiceLabel(period);
+        const first = fromDay(span.from).getUTCFullYear();
+        const last = fromDay(span.to).getUTCFullYear();
+        return first === last ? String(first) : t('${from} – ${to}', { from: String(first), to: String(last) });
+    }
+
     // Champ d'un filtre et valeur proposée.
     function filterField(field) {
         if (field === 'source_kind') return t('Source');
@@ -804,6 +818,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null } = {}
         elapsedLabel,
         dateInUnit,
         periodChoiceLabel,
+        periodShownLabel,
         formatValue,
         valueUnit,
         formatDelta,
