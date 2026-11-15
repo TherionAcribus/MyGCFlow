@@ -45,8 +45,8 @@ import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
-    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFile, persistVideoPrefs, recordVideo, releaseVideo,
-    revealVideo, syncVideoTotal,
+    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFile, persistVideoPrefs, previewVideo, recordVideo,
+    releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal,
 } from './stats_page_video.js';
 
 // ---------------------------------------------------------------------------
@@ -247,6 +247,8 @@ function bindEvents() {
     $('btnStatsRetry').addEventListener('click', loadPage);
     $('btnStatsRefresh').addEventListener('click', refreshData);
     $('btnStatsVideoStart').addEventListener('click', () => { recordVideo(); });
+    $('btnStatsVideoPreview').addEventListener('click', () => { previewVideo(); });
+    $('btnStatsVideoStopPreview').addEventListener('click', stopVideoPreview);
     $('btnStatsVideoEdit').addEventListener('click', editVideo);
     $('btnStatsVideoCancel').addEventListener('click', closeVideo);
     $('btnStatsVideoClose').addEventListener('click', closeVideo);

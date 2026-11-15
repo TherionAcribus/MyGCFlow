@@ -519,6 +519,12 @@ effacer » le retire avec la période proposée.
   ramène à l'étape de préparation sans fermer la fenêtre (`editVideo` :
   aperçu et blob de repli relâchés, la vidéo produite reste dans le
   dossier des vidéos).
+- « Aperçu » (`previewVideo`, phase `preview`) : la même animation jouée
+  dans la fenêtre, sans `MediaRecorder` ni conversion — rendu identique,
+  visuel seul (la musique, mixée serveur, n'est pas jouée). « Arrêter
+  l'aperçu » (`previewStop`) ou la fin naturelle (toast « rien n'a été
+  enregistré ») ramènent aux réglages ; la fermeture de la fenêtre reste
+  libre (`confirmVideoClose` n'intercepte que la phase `recording`).
 - Textes trop longs (titre, repère d'axe, légendes, record/objectif) :
   tronqués avec « … » par `ellipsize` (chart_video.mjs) — le 4ᵉ argument de
   `fillText` compresserait les glyphes au lieu de tronquer. Le chiffre clé

@@ -29,20 +29,30 @@ import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 
 const videoModal = () => getBsModal($('statsVideoModal'));
 
-// setup → recording → done ; « Annuler » devient « Fermer » à la fin.
+// setup → preview → recording → done ; « Annuler » devient « Fermer » à
+// la fin. L'aperçu affiche le même bloc que la prise (canevas, barre,
+// statut) — rien n'est enregistré : « Annuler » est remplacé par
+// « Arrêter l'aperçu », la fermeture reste libre (confirmVideoClose
+// n'intercepte que 'recording').
 function setVideoPhase(phase) {
     if (state.video) state.video.phase = phase;
     $('statsVideoSetup').hidden = phase !== 'setup';
-    $('statsVideoRecording').hidden = phase !== 'recording';
+    $('statsVideoRecording').hidden = phase !== 'recording' && phase !== 'preview';
     $('statsVideoDone').hidden = phase !== 'done';
     $('btnStatsVideoStart').hidden = phase !== 'setup';
+    $('btnStatsVideoPreview').hidden = phase !== 'setup';
+    $('btnStatsVideoStopPreview').hidden = phase !== 'preview';
     $('btnStatsVideoEdit').hidden = phase !== 'done';
     $('btnStatsVideoReveal').hidden = phase !== 'done' || !state.video?.file;
     $('btnStatsVideoDownload').hidden = phase !== 'done';
+    $('btnStatsVideoCancel').hidden = phase === 'preview';
     $('btnStatsVideoCancel').textContent = phase === 'done' ? t('Fermer') : t('Annuler');
     // Le bouton qui avait le focus disparaît avec son étape : replacer le
     // focus sur l'action de la nouvelle (sinon il retombe sur <body>).
-    const focusTarget = { setup: 'btnStatsVideoStart', recording: 'btnStatsVideoCancel', done: 'btnStatsVideoDownload' }[phase];
+    const focusTarget = {
+        setup: 'btnStatsVideoStart', preview: 'btnStatsVideoStopPreview',
+        recording: 'btnStatsVideoCancel', done: 'btnStatsVideoDownload',
+    }[phase];
     $(focusTarget)?.focus();
 }
 
@@ -424,25 +434,20 @@ function slidePainter(spec, result, size) {
     return videoPainter(spec, result, size, { reveal: chartAnimates(spec, result) });
 }
 
-async function recordDashboardVideo(video) {
+// Machinerie commune de la vidéo « tableau entier » (enregistrement et
+// aperçu) : un canevas sur lequel l'écran courant — ouverture, puis chaque
+// graphique — est peint avec son fondu d'entrée. `paint(elapsed)` renvoie
+// le moment affiché (videoMoment) ; `dispose` relâche l'écran courant
+// (les précédents l'ont été au changement). `seconds` = durée par
+// graphique lue dans le formulaire, pour le calcul de la durée totale.
+function makeDashboardPainter(slides, size) {
     const dashboard = activeDashboard();
-    const slides = video.slides.map((id) => state.results.get(id)).filter((entry) => entry?.result);
-    if (!slides.length) return;
-    const mimeType = videoMimeType();
-    if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
-        showError(t("Ce navigateur ne sait pas enregistrer de vidéo."));
-        return;
-    }
-    const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
     const seconds = slideSeconds($('statsVideoDuration').value);
-    const duration = dashboardVideoDuration(slides.length, seconds);
     const tokens = state.tokens || readTokens();
-    setVideoPhase('recording');
     const canvas = document.createElement('canvas');
     canvas.width = size.width;
     canvas.height = size.height;
     const g = canvas.getContext('2d');
-    $('statsVideoStage').replaceChildren(canvas);
     let current = { key: null, painter: null };
     const painterFor = (moment) => {
         const key = moment.kind === 'intro' ? 'intro' : 'slide:' + moment.index;
@@ -469,6 +474,33 @@ async function recordDashboardVideo(video) {
         g.globalAlpha = 1;
         return moment;
     };
+    const dispose = () => current.painter?.dispose();
+    return { canvas, paint, dispose, seconds };
+}
+
+// « ouverture » ou « graphique n / count » : la position de la vidéo
+// tableau, affichée dans le statut (enregistrement comme aperçu).
+function dashboardMomentWhere(moment, count) {
+    return moment.kind === 'intro'
+        ? t('ouverture')
+        : t('graphique ${n} / ${count}', { n: moment.index + 1, count });
+}
+
+async function recordDashboardVideo(video) {
+    const slides = video.slides.map((id) => state.results.get(id)).filter((entry) => entry?.result);
+    if (!slides.length) return;
+    const mimeType = videoMimeType();
+    if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
+        showError(t("Ce navigateur ne sait pas enregistrer de vidéo."));
+        return;
+    }
+    const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
+    const machine = makeDashboardPainter(slides, size);
+    const duration = dashboardVideoDuration(slides.length, machine.seconds);
+    setVideoPhase('recording');
+    const canvas = machine.canvas;
+    $('statsVideoStage').replaceChildren(canvas);
+    const paint = machine.paint;
     paint(0);
     const stream = canvas.captureStream(VIDEO_FPS);
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
@@ -486,9 +518,7 @@ async function recordDashboardVideo(video) {
             if (document.hidden) return nextFrame(tick);
             const elapsed = Math.min(performance.now() - start - vis.hiddenMs(), duration);
             const moment = paint(elapsed);
-            const where = moment.kind === 'intro'
-                ? t('ouverture')
-                : t('graphique ${n} / ${count}', { n: moment.index + 1, count: slides.length });
+            const where = dashboardMomentWhere(moment, slides.length);
             setVideoStatus(t('Enregistrement… (${where})', { where }), (elapsed / duration) * 100);
             if (elapsed >= duration) return resolve();
             return nextFrame(tick);
@@ -502,13 +532,13 @@ async function recordDashboardVideo(video) {
     recorder.stop();
     await stopped;
     stream.getTracks().forEach((track) => track.stop());
-    current.painter?.dispose();
+    machine.dispose();
     if (video.cancelled) return;
     let blob = new Blob(chunks, { type: 'video/webm' });
     try {
         blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
     } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
-    await convertVideo(video, blob, fileSafe(dashboard.name || t('Mon tableau de bord')));
+    await convertVideo(video, blob, fileSafe(activeDashboard().name || t('Mon tableau de bord')));
 }
 
 // Avance du temps de la vidéo : requestAnimationFrame quand la page est
@@ -596,6 +626,87 @@ export async function recordVideo() {
         blob = (await fixWebmDuration(blob, recorded, { logger: false })) || blob;
     } catch (_) { /* durée non réécrite : ffmpeg la recalcule */ }
     await convertVideo(video, blob, fileSafe(chartTitle(spec)));
+}
+
+// ---------------------------------------------------------------------------
+// Aperçu : la même animation jouée dans la fenêtre, sans MediaRecorder ni
+// conversion — l'utilisateur voit la vidéo avant de lancer la prise. Rien
+// n'est persisté, la musique n'est pas jouée (elle est mixée serveur).
+// ---------------------------------------------------------------------------
+
+// Boucle commune des aperçus : `paint(elapsed)` dessine une image et
+// renvoie ce qui sert au statut (`statusFor`), jusqu'à la fin naturelle
+// (toast + retour aux réglages), « Arrêter l'aperçu » (previewStop : retour
+// aux réglages sans toast) ou la fermeture de la fenêtre (cancelled :
+// releaseVideo a déjà tout relâché — dispose seul reste à faire).
+// Onglet masqué : pas de recorder à geler — on saute le paint et l'horloge
+// continue ; au retour l'aperçu a « avancé » (acceptable pour un aperçu).
+function runVideoPreview(video, duration, paint, statusFor, dispose) {
+    const start = performance.now();
+    const tick = () => {
+        if (video.cancelled || video.previewStop) {
+            const stopped = Boolean(video.previewStop) && !video.cancelled;
+            video.previewStop = false;
+            dispose();
+            if (stopped) setVideoPhase('setup');
+            return;
+        }
+        if (document.hidden) return nextFrame(tick);
+        const elapsed = performance.now() - start;
+        setVideoStatus(statusFor(paint(elapsed)), Math.min(100, (elapsed / duration) * 100));
+        if (elapsed >= duration) {
+            dispose();
+            setVideoPhase('setup');
+            showToast(t("Aperçu terminé — rien n'a été enregistré."), 'info');
+            return;
+        }
+        nextFrame(tick);
+    };
+    nextFrame(tick);
+}
+
+// Aperçu du mode tableau : mêmes écrans et fondus que l'enregistrement.
+function previewDashboardVideo(video) {
+    const slides = video.slides.map((id) => state.results.get(id)).filter((entry) => entry?.result);
+    if (!slides.length) return;
+    const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
+    const machine = makeDashboardPainter(slides, size);
+    const duration = dashboardVideoDuration(slides.length, machine.seconds);
+    video.previewStop = false;
+    setVideoPhase('preview');
+    setVideoStatus(t('Aperçu… (${where})', { where: t('ouverture') }), 0);
+    $('statsVideoStage').replaceChildren(machine.canvas);
+    machine.paint(0);
+    runVideoPreview(video, duration, machine.paint,
+        (moment) => t('Aperçu… (${where})', { where: dashboardMomentWhere(moment, slides.length) }),
+        machine.dispose);
+}
+
+// « Aperçu » de l'étape de préparation : joue la vidéo dans la fenêtre.
+export function previewVideo() {
+    const video = state.video;
+    if (video?.mode === 'dashboard') return previewDashboardVideo(video);
+    const entry = video && state.results.get(video.spec.id);
+    if (!entry?.result) return;
+    const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
+    const duration = (Number($('statsVideoDuration').value) || 10) * 1000;
+    const { spec, result } = entry;
+    const painter = videoPainter(spec, result, size);
+    video.previewStop = false;
+    setVideoPhase('preview');
+    setVideoStatus(t('Aperçu…'), 0);
+    $('statsVideoStage').replaceChildren(painter.canvas);
+    painter.paint(0);
+    runVideoPreview(video, duration,
+        (elapsed) => { painter.paint(revealProgress(elapsed, duration)); },
+        () => t('Aperçu…'),
+        painter.dispose);
+}
+
+// « Arrêter l'aperçu » : la boucle le voit à la prochaine image et ramène
+// aux réglages (sans toast — l'arrêt est demandé).
+export function stopVideoPreview() {
+    if (state.video) state.video.previewStop = true;
 }
 
 async function pollTask(id, onProgress, isCancelled) {

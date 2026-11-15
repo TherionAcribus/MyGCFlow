@@ -1837,6 +1837,47 @@ test('abandonner la vidéo en cours demande confirmation', async ({ page, reques
   expect(errors).toEqual([]);
 });
 
+test("l'aperçu joue la vidéo sans l'enregistrer", async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  await page.locator('#btnStatsVideoPreview').click();
+  // Phase « preview » : le bloc de la prise est affiché, l'animation joue
+  // en direct — « Arrêter l'aperçu » remplace « Annuler ».
+  await expect(page.locator('#statsVideoStage canvas')).toBeVisible();
+  await expect(page.locator('#statsVideoStatus')).toContainText('Aperçu');
+  await expect(page.locator('#btnStatsVideoStopPreview')).toBeVisible();
+  await expect(page.locator('#btnStatsVideoCancel')).toBeHidden();
+  expect((await snapshot(page)).video?.phase).toBe('preview');
+
+  // « Arrêter l'aperçu » : retour aux réglages, rien d'enregistré.
+  await page.locator('#btnStatsVideoStopPreview').click();
+  await expect(page.locator('#statsVideoSetup')).toBeVisible();
+  expect((await snapshot(page)).video?.phase).toBe('setup');
+
+  // Fin naturelle (~6 s) : retour automatique aux réglages, et le toast
+  // dit que rien n'a été enregistré.
+  await page.locator('#btnStatsVideoPreview').click();
+  await expect(page.locator('#statsVideoStage canvas')).toBeVisible();
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 15_000 }).toBe('setup');
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: "rien n'a été enregistré" })).toBeVisible();
+
+  // La croix ferme librement pendant l'aperçu : pas de confirmation (elle
+  // n'intercepte que la phase « recording »), la vidéo est relâchée —
+  // releaseVideo ne s'exécute qu'à hidden.bs.modal, à la fin du fondu.
+  await page.locator('#btnStatsVideoPreview').click();
+  await expect(page.locator('#statsVideoStage canvas')).toBeVisible();
+  await page.locator('#btnStatsVideoClose').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  await expect(page.locator('.gcm-confirm-modal')).toHaveCount(0);
+  await expect.poll(async () => (await snapshot(page)).video).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 // Image du tableau entier : la disposition affichée, redessinée dans un PNG
 // (en-tête, cartes, graphiques ECharts à la netteté ×2).
 const IMAGE_ITEMS = [
