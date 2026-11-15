@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 09:29+0100\n"
+"POT-Creation-Date: 2026-11-15 09:36+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -6016,7 +6016,7 @@ msgstr ""
 msgid "Thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1125 static/js/stats_page.js:396
+#: static/js/profiles.js:1125 static/js/stats_page.js:402
 #: templates/menu_style.html:336
 msgid "Modifications non enregistrées"
 msgstr ""
@@ -6308,8 +6308,8 @@ msgid ""
 "${suggestion}"
 msgstr ""
 
-#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:524
-#: static/js/stats_page_video.js:540
+#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:566
+#: static/js/stats_page_video.js:588
 msgid "Enregistrement…"
 msgstr ""
 
@@ -6329,11 +6329,11 @@ msgstr ""
 msgid "Vos trouvailles sont trop homogènes pour être filtrées."
 msgstr ""
 
-#: static/js/stats_page.js:395
+#: static/js/stats_page.js:401
 msgid "Fermer sans enregistrer les modifications ?"
 msgstr ""
 
-#: static/js/stats_page.js:402
+#: static/js/stats_page.js:408
 msgid "Fermer sans enregistrer"
 msgstr ""
 
@@ -6535,7 +6535,7 @@ msgstr ""
 #: static/js/stats_page_dashboard.js:443 static/js/stats_page_dashboard.js:463
 #: static/js/stats_page_data.js:188 static/js/stats_page_exports.js:289
 #: static/js/stats_page_exports.js:312 static/js/stats_page_video.js:330
-#: static/js/stats_page_video.js:501
+#: static/js/stats_page_video.js:512
 msgid "Mon tableau de bord"
 msgstr ""
 
@@ -7215,65 +7215,71 @@ msgstr ""
 msgid "${n} graphiques"
 msgstr ""
 
-#: static/js/stats_page_video.js:430 static/js/stats_page_video.js:517
+#: static/js/stats_page_video.js:430 static/js/stats_page_video.js:559
 msgid "Ce navigateur ne sait pas enregistrer de vidéo."
 msgstr ""
 
-#: static/js/stats_page_video.js:483
+#: static/js/stats_page_video.js:489
 msgid "ouverture"
 msgstr ""
 
-#: static/js/stats_page_video.js:484
+#: static/js/stats_page_video.js:490
 #, python-brace-format
 msgid "graphique ${n} / ${count}"
 msgstr ""
 
-#: static/js/stats_page_video.js:485
+#: static/js/stats_page_video.js:491
 #, python-brace-format
 msgid "Enregistrement… (${where})"
 msgstr ""
 
-#: static/js/stats_page_video.js:580 static/js/stats_page_video.js:600
+#: static/js/stats_page_video.js:633 static/js/stats_page_video.js:653
 msgid "Conversion en MP4…"
 msgstr ""
 
-#: static/js/stats_page_video.js:616
+#: static/js/stats_page_video.js:666
+msgid ""
+"L'onglet a été masqué pendant l'enregistrement : la vidéo peut être "
+"saccadée."
+msgstr ""
+
+#: static/js/stats_page_video.js:676
 #, python-brace-format
 msgid "Vidéo enregistrée : ${file}, dans ${folder}."
 msgstr ""
 
-#: static/js/stats_page_video.js:629
+#: static/js/stats_page_video.js:689
 #, python-brace-format
 msgid ""
 "La conversion en MP4 a échoué (${detail}) : la vidéo est proposée au "
 "format WebM."
 msgstr ""
 
-#: static/js/stats_page_video.js:630
+#: static/js/stats_page_video.js:690
 msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 msgstr ""
 
-#: static/js/stats_page_video.js:633
+#: static/js/stats_page_video.js:693
 msgid ""
 "La musique choisie n'y est pas incluse : elle est mixée pendant la "
 "conversion."
 msgstr ""
 
-#: static/js/stats_page_video.js:651
+#: static/js/stats_page_video.js:712
 msgid "Impossible d'ouvrir le dossier des vidéos."
 msgstr ""
 
-#: static/js/stats_page_video.js:670
+#: static/js/stats_page_video.js:731
 msgid ""
 "La vidéo est en cours de création : fermer la fenêtre l'interrompt et "
 "elle sera perdue."
 msgstr ""
 
-#: static/js/stats_page_video.js:671
+#: static/js/stats_page_video.js:732
 msgid "Arrêter la vidéo ?"
 msgstr ""
 
-#: static/js/stats_page_video.js:678 static/js/ui.js:1000
+#: static/js/stats_page_video.js:739 static/js/ui.js:1000
 #: templates/app.html:255 templates/app.html:256 templates/guide.html:136
 #: templates/guide.html:346 templates/menu_animation.html:57
 msgid "Arrêter"

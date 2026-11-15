@@ -430,10 +430,14 @@ async function recordDashboardVideo(video) {
     const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
     recorder.start(1000);
     const start = performance.now();
+    const vis = watchRecordingVisibility(video, recorder);
     await new Promise((resolve) => {
         const tick = () => {
             if (video.cancelled) return resolve();
-            const elapsed = Math.min(performance.now() - start, duration);
+            // Onglet masqué : le minuteur ~1 Hz ne fait que patienter — pas
+            // de paint, pas de maj de statut (prise gelée).
+            if (document.hidden) return nextFrame(tick);
+            const elapsed = Math.min(performance.now() - start - vis.hiddenMs(), duration);
             const moment = paint(elapsed);
             const where = moment.kind === 'intro'
                 ? t('ouverture')
@@ -444,7 +448,10 @@ async function recordDashboardVideo(video) {
         };
         nextFrame(tick);
     });
-    const recorded = performance.now() - start;
+    const recorded = performance.now() - start - vis.hiddenMs();
+    // Solde un éventuel masquage en cours avant d'arrêter : stop() sur un
+    // recorder en pause produit quand même ses chunks.
+    vis.detach();
     recorder.stop();
     await stopped;
     stream.getTracks().forEach((track) => track.stop());
@@ -460,6 +467,32 @@ async function recordDashboardVideo(video) {
 // Avance du temps de la vidéo : requestAnimationFrame quand la page est
 // visible, minuteur sinon (un onglet masqué n'a plus d'images).
 const nextFrame = (fn) => (document.hidden ? setTimeout(fn, 1000 / VIDEO_FPS) : requestAnimationFrame(fn));
+
+// Onglet masqué : rAF ne tourne plus et les minuteurs sont bridés à ~1 i/s —
+// la prise temps réel sortirait saccadée. On gèle le MediaRecorder et
+// l'horloge tant que l'onglet est masqué, reprise au retour.
+function watchRecordingVisibility(video, recorder) {
+    let hiddenSince = 0;
+    let hiddenMs = 0;
+    const onChange = () => {
+        if (document.hidden && !hiddenSince) {
+            hiddenSince = performance.now();
+            video.hiddenDuringRecording = true;
+            try { recorder.pause(); } catch (_) { video.pauseFailed = true; }
+        } else if (!document.hidden && hiddenSince) {
+            hiddenMs += performance.now() - hiddenSince;
+            hiddenSince = 0;
+            try { recorder.resume(); } catch (_) {}
+        }
+    };
+    document.addEventListener('visibilitychange', onChange);
+    return {
+        hiddenMs: () => hiddenMs + (hiddenSince ? performance.now() - hiddenSince : 0),
+        // À appeler à la fin de la prise : solde un masquage en cours et
+        // retire l'écouteur.
+        detach: () => { onChange(); document.removeEventListener('visibilitychange', onChange); },
+    };
+}
 
 export async function recordVideo() {
     const video = state.video;
@@ -486,10 +519,14 @@ export async function recordVideo() {
     const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
     recorder.start(1000);
     const start = performance.now();
+    const vis = watchRecordingVisibility(video, recorder);
     await new Promise((resolve) => {
         const tick = () => {
             if (video.cancelled) return resolve();
-            const elapsed = performance.now() - start;
+            // Onglet masqué : le minuteur ~1 Hz ne fait que patienter — pas
+            // de paint, pas de maj de statut (prise gelée).
+            if (document.hidden) return nextFrame(tick);
+            const elapsed = performance.now() - start - vis.hiddenMs();
             painter.paint(revealProgress(elapsed, duration));
             setVideoStatus(t('Enregistrement…'), Math.min(100, (elapsed / duration) * 100));
             if (elapsed >= duration) return resolve();
@@ -497,7 +534,10 @@ export async function recordVideo() {
         };
         nextFrame(tick);
     });
-    const recorded = performance.now() - start;
+    const recorded = performance.now() - start - vis.hiddenMs();
+    // Solde un éventuel masquage en cours avant d'arrêter : stop() sur un
+    // recorder en pause produit quand même ses chunks.
+    vis.detach();
     recorder.stop();
     await stopped;
     stream.getTracks().forEach((track) => track.stop());
@@ -555,6 +595,11 @@ async function convertVideo(video, blob, name) {
     if (video.cancelled) return;
     const player = $('statsVideoPlayer');
     const download = $('btnStatsVideoDownload');
+    // Onglet masqué pendant la prise sans pause() possible (vieux
+    // navigateur) : la vidéo peut être saccadée — dit dans les deux cas.
+    const hiddenNote = video.pauseFailed
+        ? ' ' + t("L'onglet a été masqué pendant l'enregistrement : la vidéo peut être saccadée.")
+        : '';
     if (result?.file) {
         video.file = result.file;
         video.folder = result.folder || null;
@@ -562,9 +607,9 @@ async function convertVideo(video, blob, name) {
         player.src = url + '?inline=1';
         download.href = url;
         download.removeAttribute('download');
-        $('statsVideoDoneNote').textContent = result.folder
+        $('statsVideoDoneNote').textContent = (result.folder
             ? t('Vidéo enregistrée : ${file}, dans ${folder}.', { file: result.file, folder: result.folder })
-            : result.file;
+            : result.file) + hiddenNote;
     } else {
         video.objectUrl = URL.createObjectURL(blob);
         player.src = video.objectUrl;
@@ -578,6 +623,7 @@ async function convertVideo(video, blob, name) {
             : t('La conversion en MP4 a échoué : la vidéo est proposée au format WebM.');
         // La musique est mixée pendant la conversion : le repli est muet.
         if (video.music) note += ' ' + t("La musique choisie n'y est pas incluse : elle est mixée pendant la conversion.");
+        note += hiddenNote;
         $('statsVideoDoneNote').textContent = note;
     }
     $('statsVideoStage').replaceChildren();

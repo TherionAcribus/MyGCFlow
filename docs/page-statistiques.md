@@ -504,7 +504,12 @@ effacer » le retire avec la période proposée.
   dans le dossier » (`POST /reveal_video`). Échec serveur : le WebM brut,
   téléchargeable ; la note de la fenêtre affiche le motif (première ligne
   de l'erreur, bornée) et rappelle que la musique choisie, mixée pendant
-  la conversion, n'y est pas incluse. Fermer la fenêtre pendant
+  la conversion, n'y est pas incluse. Onglet masqué pendant la prise :
+  `visibilitychange` met le `MediaRecorder` en pause et l'horloge est
+  gelée (`watchRecordingVisibility`) — le temps masqué est exclu du
+  fichier, la vidéo reste continue ; si `pause()` est refusée (vieux
+  navigateur), la note de fin prévient qu'elle peut être saccadée.
+  Fermer la fenêtre pendant
   l'enregistrement ou la
   conversion (Échap, croix, « Annuler ») demande confirmation
   (`showConfirmation`, `confirmVideoClose` sur `hide.bs.modal`, annulable)

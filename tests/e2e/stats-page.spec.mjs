@@ -1539,6 +1539,82 @@ test('créer une vidéo animée d\'une comparaison', async ({ page, request }) =
   }
 });
 
+// Durée d'un MP4 sans le décoder (le Chromium de Playwright n'a pas H.264,
+// un élément <video> n'y lit donc pas la sortie du serveur) : la boîte
+// `mvhd` porte l'échelle de temps et la durée de la timeline du film.
+function mp4DurationSeconds(buf) {
+  const boxes = function* (start, end) {
+    let p = start;
+    while (p + 8 <= end) {
+      const size = buf.readUInt32BE(p);
+      const type = buf.toString('ascii', p + 4, p + 8);
+      if (size < 8) return;
+      yield { type, head: p + 8, end: p + size };
+      p += size;
+    }
+  };
+  for (const box of boxes(0, buf.length)) {
+    if (box.type !== 'moov') continue;
+    for (const sub of boxes(box.head, box.end)) {
+      if (sub.type !== 'mvhd') continue;
+      // version 1 : dates et durée sur 64 bits (version 0 : 32 bits).
+      const v1 = buf.readUInt8(sub.head) === 1;
+      const off = v1 ? sub.head + 20 : sub.head + 12;
+      const duration = v1 ? Number(buf.readBigUInt64BE(off + 4)) : buf.readUInt32BE(off + 4);
+      return duration / buf.readUInt32BE(off);
+    }
+  }
+  return null;
+}
+
+test("l'onglet masqué gèle la prise : la vidéo reste fluide", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect(page.locator('#statsVideoStatus')).toContainText('Enregistrement', { timeout: 30_000 });
+
+  // ~2 s d'enregistrement visible, puis l'onglet est « masqué » 2 s (shadowing
+  // de document.hidden + visibilitychange — ce que lit l'app). Sans le gel,
+  // les images de cette fenêtre manqueraient : minuteurs bridés à ~1 i/s.
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => {
+    // `delete` retire le shadow et rend le vrai getter.
+    delete document.hidden;
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 90_000 }).toBe('done');
+  const video = (await snapshot(page)).video;
+  try {
+    expect(video.hiddenDuringRecording).toBe(true);
+    expect(video.pauseFailed).toBeFalsy();
+    expect(video.file).toMatch(/\.mp4$/);
+    // Le temps masqué est exclu de la prise (pause du MediaRecorder) : la
+    // durée du MP4 doit être ~6 s, pas ~8 s (2 s visibles + 2 s masquées
+    // + 4 s visibles).
+    const body = await (await request.get(`/download_video/${encodeURIComponent(video.file)}`)).body();
+    const duration = mp4DurationSeconds(body);
+    expect(duration).toBeGreaterThan(6 - 0.7);
+    expect(duration).toBeLessThan(6 + 0.7);
+    expect(errors).toEqual([]);
+  } finally {
+    if (video?.file && video.folder) fs.rmSync(path.join(video.folder, video.file), { force: true });
+    // Un échec en plein masquage ne doit pas laisser le shadow en place.
+    await page.evaluate(() => { delete document.hidden; });
+  }
+});
+
 test('annuler pendant la conversion arrête la tâche serveur', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

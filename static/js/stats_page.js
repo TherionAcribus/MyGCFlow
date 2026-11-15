@@ -231,6 +231,10 @@ window.getStatsPageSnapshot = () => {
             mode: state.video.mode, chartId: state.video.spec?.id ?? null, slides: state.video.slides?.length ?? null,
             music: state.video.music ? { kind: state.video.music.kind, file: state.video.music.file || state.video.music.name } : null,
             phase: state.video.phase, file: state.video.file, folder: state.video.folder || null,
+            // Masquage d'onglet pendant la prise : la vidéo a été gelée ;
+            // pauseFailed = pause() refusée → vidéo possiblement saccadée.
+            hiddenDuringRecording: Boolean(state.video.hiddenDuringRecording),
+            pauseFailed: Boolean(state.video.pauseFailed),
         } : null,
     };
 };
