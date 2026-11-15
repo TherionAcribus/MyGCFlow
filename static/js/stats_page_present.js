@@ -4,7 +4,7 @@ import { showToast, t } from './notifications.js';
 import { periodsAreMultiple } from './chart_spec.mjs';
 import { keyAction, presentDelay, presentSlides, startIndex, stepIndex } from './present_model.mjs';
 import { hasOwnPeriod } from './dashboard_model.mjs';
-import { cardNote, renderChartInto, renderNumber } from './stats_page_cards.js';
+import { cardNote, fillVerdict, renderChartInto, renderNumber } from './stats_page_cards.js';
 import { activeDashboard, chartTitle, dashboardPeriodLabel, periodsBadge } from './stats_page_dashboard.js';
 import { $, state } from './stats_page_state.js';
 
@@ -95,6 +95,7 @@ export function showSlide(index, { animate = true } = {}) {
     present.chart = null;
     const body = $('statsPresentBody');
     body.replaceChildren();
+    fillVerdict($('statsPresentVerdict'), entry?.result ?? null, entry?.spec);
     if (!entry?.result) return;
     const { spec, result } = entry;
     $('statsPresentTitle').textContent = chartTitle(spec);

@@ -522,7 +522,15 @@ test('« Suis-je en avance sur l\'an dernier ? » : deux cumuls superposés jour
   expect(ahead.series[1][0]).toBe(0);
   // Après aujourd'hui : pas de valeur pour l'année en cours.
   expect(ahead.series[0][365]).toBeNull();
-  await expect(card(page, ahead.id).locator('.stats-card-period')).toHaveText('Cette année · La période précédente');
+  // Pastille : les périodes nommées par ce qu'elles couvrent, pas par leur règle.
+  await expect(card(page, ahead.id).locator('.stats-card-period')).toHaveText('2026 vs 2025');
+  // Bilan en clair : le cumul d'aujourd'hui, comparé au même jour de 2025 (vide).
+  const today = ahead.series[0].filter((v) => v !== null).at(-1);
+  const verdict = card(page, ahead.id).locator('.stats-card-verdict');
+  await expect(verdict).toBeVisible();
+  await expect(verdict.locator('strong')).toHaveText(`2026 à ce jour : ${today}`);
+  await expect(verdict).toContainText(`+${today} par rapport au `);
+  await expect(verdict.locator('.ti-trending-up')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -845,7 +853,7 @@ test('Mes poses : trouvailles et favoris reçus, comparés à mes trouvailles', 
     await expect(page.locator('#statsEdToDateRow')).toBeHidden();
     await page.locator('#statsEdExtraSource0').selectOption('poses.received');
     await expect(page.locator('#statsEdPreviewNumber .stats-number-block')).toHaveCount(2);
-    await expect(page.locator('#statsEdPreviewNumber .stats-number-delta')).toHaveText(/−6 \(-50\s?%\) par rapport aux trouvailles reçues/);
+    await expect(page.locator('#statsEdPreviewNumber .stats-number-delta')).toHaveText(/−6 \(−50\s?%\) par rapport aux trouvailles reçues/);
     await page.locator('#btnStatsEdSave').click();
     const saved = (await snapshot(page)).cards[0];
     expect(saved.extraSources).toEqual(['poses.received']);

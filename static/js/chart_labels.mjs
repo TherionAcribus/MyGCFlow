@@ -692,7 +692,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
 
     function formatRatio(ratio) {
         if (ratio === null || ratio === undefined || Number.isNaN(ratio)) return '';
-        return signedPctFmt.format(ratio);
+        // Même signe moins que formatDelta (« −10 (−3 %) », pas « (-3 %) »).
+        return signedPctFmt.format(ratio).replace('-', '−');
     }
 
     function measureName(measure, source = 'finds') {
@@ -745,6 +746,27 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
         if (!record || record.from === null || record.from === undefined) return '';
         if (record.from === record.to) return t('le ${date}', { date: dayFmt.format(fromDay(record.from)) });
         return t('du ${from} au ${to}', { from: dayFmt.format(fromDay(record.from)), to: dayFmt.format(fromDay(record.to)) });
+    }
+
+    // Bilan de deux périodes comparées (chart_query.mjs › comparisonVerdict) :
+    // { lead, text, ratio, versus } — « 2026 à ce jour : 343 », « −9 »,
+    // « −2,6 % », « par rapport au 15 nov. 2025 » (à date) ou « par rapport
+    // à 2025 » (périodes entières).
+    function verdictLines(verdict, entries, measure) {
+        const [a, b] = verdict.values;
+        const [first, second] = entries;
+        const period = verdict.current === 0
+            ? t('${period} à ce jour', { period: periodLabel(first) })
+            : periodLabel(first);
+        const diff = a - b;
+        return {
+            lead: t('${label} : ${value}', { label: period, value: formatValue(a, measure) }),
+            text: formatDelta(diff, measure),
+            ratio: b ? formatRatio(diff / b) : '',
+            versus: verdict.toDate && verdict.current === 0
+                ? t('par rapport au ${date}', { date: dayFmt.format(fromDay(verdict.ends[1])) })
+                : comparedTo(second),
+        };
     }
 
     // Objectif et projection d'un chiffre clé (chart_goal.mjs › numberOutlook) :
@@ -895,6 +917,7 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
         challengeLines,
         challengeCellLabel,
         recordText,
+        verdictLines,
         outlookLines,
     };
 }

@@ -325,6 +325,25 @@ html {
     font-size: 0.78rem;
     color: var(--color-text-muted);
 }
+/* Bilan de deux périodes comparées : la réponse en clair, sous le titre.
+   La flèche porte le sens (et sa couleur), le texte reste en couleur de
+   texte. */
+.stats-card-verdict {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 10px;
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+.stats-card-verdict[hidden] { display: none; }
+.stats-card-verdict strong { font-weight: 600; }
+.stats-verdict-delta { color: var(--color-text-muted); }
+.stats-verdict-delta .ti { font-size: 1rem; vertical-align: -2px; }
+.stats-verdict-delta.is-up .ti { color: var(--chart-up); }
+.stats-verdict-delta.is-down .ti { color: var(--chart-down); }
+.stats-verdict-delta.is-flat .ti { color: var(--color-text-muted); }
 
 /* Chiffre clé : une seule valeur forte par carte, dans la police de l'app. */
 .stats-number {
@@ -1067,6 +1086,10 @@ html:has(body.is-presenting) {
 /* Pas de lien vers la carte pendant une présentation. */
 .stats-present .stats-number-map {
     display: none;
+}
+.stats-present-verdict {
+    flex-basis: 100%;
+    font-size: clamp(0.95rem, 1.5vw, 1.2rem);
 }
 .stats-present-note {
     margin: 0;

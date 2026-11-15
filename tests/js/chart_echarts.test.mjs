@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption, verdictModel,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -152,6 +152,32 @@ test('bas d\'axe d\'un cumul : valeur ronde sous la plus petite valeur', () => {
     assert.equal(cumulativeFloor(result([2950, 3326]), { ...spec, goal: { value: 1000 } }), undefined);
 });
 
+test('bilan d\'une comparaison : réponse en clair, à date, flèche dans le bon sens', () => {
+    const periods = [{ kind: 'current', unit: 'year' }, { kind: 'previous' }];
+    const { spec, result } = option({ groupBy: 'month_of_year', measure: { op: 'cumulative' }, periods,
+        compare: { toDate: false }, view: { chart: 'line' } });
+    const model = verdictModel(result, spec, ctx);
+    // 2026 au 8 novembre : 2 ; 2025 au 8 novembre : 3.
+    assert.equal(model.sign, -1);
+    assert.equal(model.lead, '2026 à ce jour : 2');
+    assert.equal(model.text, '−1');
+    assert.match(model.ratio, /33\s?%/);
+    assert.match(model.versus, /^par rapport au 8 nov\.? 2025$/);
+    // Périodes révolues : sur toute leur durée, « par rapport à 2024 » (2026,
+    // en cours, se compare à date même nommée par son année).
+    const whole = option({ groupBy: 'month', periods: [{ kind: 'year', year: 2025 }, { kind: 'year', year: 2024 }],
+        view: { chart: 'bar' } });
+    const past = verdictModel(whole.result, whole.spec, ctx);
+    assert.equal(past.lead, '2025 : 3');
+    assert.equal(past.versus, 'par rapport à 2024');
+    assert.equal(past.ratio, '');
+    // Le chiffre clé a déjà son écart ; une seule période n'a pas de bilan.
+    const number = option({ groupBy: 'none', periods, view: { chart: 'number' } });
+    assert.equal(verdictModel(number.result, number.spec, ctx), null);
+    const single = option({ groupBy: 'month' });
+    assert.equal(verdictModel(single.result, single.spec, ctx), null);
+});
+
 test('anneau : une part par catégorie non vide, légende, pourcentages en infobulle', () => {
     const { option: o } = option({ groupBy: 'cache_type', view: { chart: 'donut' } });
     assert.equal(o.series[0].type, 'pie');
@@ -274,7 +300,7 @@ test('écart : barres bleues au-dessus de zéro, rouges en dessous, infobulle co
     const html = o.tooltip.formatter([{ dataIndex: 0 }]);
     assert.match(html, /2026/);
     assert.match(html, /−1/);
-    assert.match(html, /-50\s?%/);
+    assert.match(html, /−50\s?%/);
 });
 
 test('axe « depuis le début » : Mois 1…, vraie date de chaque série dans l\'infobulle', () => {
@@ -312,7 +338,7 @@ test('chiffre clé comparé : l\'écart avec la deuxième période sur la premi�
     assert.deepEqual(blocks.map((b) => b.value), [2, 3]);
     assert.equal(blocks[0].delta.text, '−1');
     assert.equal(blocks[0].delta.sign, -1);
-    assert.match(blocks[0].delta.ratio, /-33\s?%/);
+    assert.match(blocks[0].delta.ratio, /−33\s?%/);
     assert.equal(blocks[0].delta.versus, 'par rapport à 2025');
     assert.equal(blocks[1].delta, null);
 });

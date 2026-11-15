@@ -413,6 +413,35 @@ test('à date : la période passée est coupée au même jour, la note le signal
     assert.equal(full.toDate, null);
 });
 
+test('bilan de deux périodes : compté au jour près, à date même sans coupe du graphique', () => {
+    const tbl = findsTable({
+        count: 6, date: ['2024-05-01', '2025-03-01', '2025-06-10', '2025-06-20', '2026-02-01', '2026-06-01'],
+        dicts: {},
+    });
+    const today = day('2026-06-15');
+    const run = (raw) => runChartQuery(normalizeChartSpec({
+        periods: [{ kind: 'current', unit: 'year' }, { kind: 'previous' }], compare: { toDate: false }, ...raw,
+    }), tbl, { today });
+    // Courbe de cumul par mois, l'an dernier montré entier : le bilan s'arrête au 15 juin 2025
+    // (la case de juin 2025 en compte deux, dont une après le 15).
+    const ahead = run({ groupBy: 'month_of_year', measure: { op: 'cumulative' }, view: { chart: 'line' } });
+    assert.deepEqual(ahead.verdict, {
+        values: [2, 2], ends: [today, day('2025-06-15')], toDate: true, current: 0,
+    });
+    // Cumul depuis toujours : ce qui précède compte aussi.
+    const all = run({ groupBy: 'day_of_year', measure: { op: 'cumulative', from: 'all' }, view: { chart: 'line' } });
+    assert.deepEqual(all.verdict.values, [6, 3]);
+    // Périodes entières (aucune en cours) : toute leur durée.
+    const past = runChartQuery(normalizeChartSpec({
+        groupBy: 'month', periods: [{ kind: 'year', year: 2025 }, { kind: 'year', year: 2024 }],
+    }), tbl, { today });
+    assert.deepEqual(past.verdict, { values: [3, 1], ends: [day('2025-12-31'), day('2024-12-31')], toDate: false, current: null });
+    // Pas de bilan : une période, une 2ᵉ dimension, une mesure qui ne s'additionne pas.
+    assert.equal(run({ periods: [{ kind: 'current', unit: 'year' }] }).verdict, null);
+    assert.equal(run({ groupBy: 'month', splitBy: 'cache_type' }).verdict, null);
+    assert.equal(run({ groupBy: 'month', measure: { op: 'distinct', field: 'day' } }).verdict, null);
+});
+
 test('« depuis le début » : admis pour une période à fin propre, retiré ailleurs', () => {
     const periodsOf = (periods) => normalizeChartSpec({ periods }).periods;
     assert.deepEqual(periodsOf([{ kind: 'year', year: 2024, upTo: true }]), [{ kind: 'year', year: 2024, upTo: true }]);

@@ -239,6 +239,7 @@ test('libellés de comparaison : en cours, coupée, rang depuis le début', () =
     assert.equal(labels.formatDelta(-3, { op: 'count' }), '−3');
     assert.equal(labels.formatDelta(5, { op: 'count' }), '+5');
     assert.match(labels.formatRatio(0.18), /\+18\s?%/);
+    assert.match(labels.formatRatio(-0.03), /^−3\s?%$/);
     assert.equal(labels.formatRatio(null), '');
 });
 

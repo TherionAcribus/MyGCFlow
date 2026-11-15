@@ -1312,6 +1312,20 @@ export function numberModel(result, spec, ctx) {
     return blocks;
 }
 
+// Bilan d'une comparaison de deux périodes, affiché sous le titre de la
+// carte : la question « Suis-je en avance ? » reçoit sa réponse en clair
+// (« 2026 à ce jour : 343 · −9 (−2,6 %) par rapport au 15 nov. 2025 »).
+// null : pas de bilan — le chiffre clé a déjà son écart, et calendrier,
+// grilles et cartes ne dessinent que la première période.
+const VERDICT_CHARTS = new Set(['bar', 'line', 'area', 'donut', 'radar']);
+
+export function verdictModel(result, spec, ctx) {
+    const { verdict } = result;
+    if (!verdict || !VERDICT_CHARTS.has(spec.view.chart)) return null;
+    const [a, b] = verdict.values;
+    return { sign: Math.sign(a - b), ...ctx.labels.verdictLines(verdict, result.periods, spec.measure) };
+}
+
 // ---------------------------------------------------------------------------
 // Dégradé (palette « heat », grille, calendrier)
 // ---------------------------------------------------------------------------

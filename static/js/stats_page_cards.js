@@ -7,7 +7,7 @@ import { runChartQueries } from './chart_query.mjs';
 import { foundDaysOf, runZoneQuery } from './chart_zones.mjs';
 import { describeFilters } from './chart_filters.mjs';
 import {
-    buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel,
+    buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel, verdictModel,
 } from './chart_echarts.mjs';
 import { chartAnimates } from './chart_video.mjs';
 import { chartLinksToMap } from './chart_map_link.mjs';
@@ -148,6 +148,11 @@ function cardElement(item, index, count) {
         card.append(scope);
     }
 
+    // Bilan d'une comparaison de deux périodes, rempli avec le résultat.
+    const verdict = document.createElement('p');
+    verdict.className = 'stats-card-verdict';
+    verdict.hidden = true;
+    card.append(verdict);
     const body = document.createElement('div');
     body.className = 'stats-card-body';
     body.append(cardBodyContent(spec));
@@ -517,6 +522,22 @@ function deltaLine(delta) {
     return line;
 }
 
+// Bilan d'une comparaison de deux périodes (verdictModel) : « 2026 à ce
+// jour : 343 · ▼ −9 (−2,6 %) par rapport au 15 nov. 2025 » — vide sans bilan.
+export function fillVerdict(el, result, spec) {
+    const model = result ? verdictModel(result, spec, chartContext()) : null;
+    el.hidden = !model;
+    if (!model) {
+        el.replaceChildren();
+        return;
+    }
+    const lead = document.createElement('strong');
+    lead.textContent = model.lead;
+    const delta = deltaLine(model);
+    delta.classList.replace('stats-number-delta', 'stats-verdict-delta');
+    el.replaceChildren(lead, delta);
+}
+
 // Les marques d'un graphique ouvrent-elles la carte ? (curseur « main »)
 export const TIME_DIMS = new Set(['year', 'quarter', 'month', 'week', 'day']);
 export function chartClickable(spec, result) {
@@ -588,11 +609,13 @@ function renderCard(item, card, dashboard, { force = false } = {}) {
     const { spec } = item;
     const body = card.querySelector('.stats-card-body');
     const note = card.querySelector('.stats-card-note');
+    const verdict = card.querySelector('.stats-card-verdict');
     const failed = chartSources(spec).filter((s) => state.sourceErrors.has(s));
     if (failed.length) {
         state.results.set(spec.id, { result: null, spec, error: failed });
         state.rendered.delete(spec.id);
         note.hidden = true;
+        fillVerdict(verdict, null, spec);
         body.replaceChildren(unavailableBlock(failed));
         return;
     }
@@ -608,6 +631,7 @@ function renderCard(item, card, dashboard, { force = false } = {}) {
     }
     note.textContent = cardNote(result, spec);
     note.hidden = !note.textContent;
+    fillVerdict(verdict, result, spec);
     const seen = state.rendered.get(spec.id);
     const fresh = seen?.result === result && seen.tokensRev === state.tokensRev
         && (spec.view.chart !== 'map' || seen.geoRev === state.geoRev);

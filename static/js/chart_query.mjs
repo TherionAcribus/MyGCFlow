@@ -14,8 +14,10 @@
 // Résultat :
 //   { dim, kind, align, elapsedUnit, keys,
 //     series: [{ id, periodIndex, split, values, partial, dates }],
-//     periods, truncated, toDate, delta, normalize,
+//     periods, truncated, toDate, delta, verdict, normalize,
 //     meta: { rows, undated, noAttribute } }
+// `verdict` : bilan de deux périodes comparées (comparisonVerdict), null
+// sinon.
 // `values[i]` correspond à `keys[i]` ; null = pas de valeur (moyenne sans
 // donnée, jour futur, hors de la période ou de sa coupe « à date »).
 // `partial` : case encore incomplète (période en cours ou coupée), -1 sinon.
@@ -373,6 +375,40 @@ function applyToDate(entries, spec, today) {
         }
     }
     return { day: today };
+}
+
+// Bilan d'une comparaison de deux périodes (compte ou cumul) : la valeur de
+// chacune, comptée au jour près sur les lignes filtrées — « à date » quand
+// l'une est en cours (l'autre arrêtée au même point, même si le graphique la
+// montre entière), sinon sur toute leur durée. Indépendant de l'axe : la case
+// du mois en cours ne se compare pas au même mois complet, et une dimension
+// multi-valuée (attributs) compterait deux fois une même ligne.
+//   { values: [a, b], ends: [jour, jour], toDate, current: index | null }
+function comparisonVerdict(spec, table, mask, entries, today) {
+    if (entries.length !== 2 || spec.splitBy) return null;
+    const op = spec.measure.op;
+    if (op !== 'count' && op !== 'cumulative') return null;
+    const current = entries.find((e) => e.ongoing) || null;
+    const spans = entries.map((entry) => {
+        let to = entry.fullTo;
+        if (current) to = entry === current ? today : Math.min(to, toDateCut(entry, current, today));
+        // Cumul depuis toujours : tout ce qui précède la fin compte.
+        const from = op === 'cumulative' && spec.measure.from === 'all' ? -Infinity : entry.from;
+        return { from, to };
+    });
+    const values = [0, 0];
+    for (let r = 0; r < table.n; r++) {
+        if (!mask[r]) continue;
+        const day = table.day[r];
+        if (day >= spans[0].from && day <= spans[0].to) values[0]++;
+        if (day >= spans[1].from && day <= spans[1].to) values[1]++;
+    }
+    return {
+        values,
+        ends: spans.map((s) => s.to),
+        toDate: Boolean(current),
+        current: current ? entries.indexOf(current) : null,
+    };
 }
 
 // Phase commune : périodes résolues (coupe « à date » comprise), masque de
@@ -733,6 +769,7 @@ export function runChartQuery(spec, table, options = {}) {
         truncated,
         toDate,
         delta,
+        verdict: stock ? null : comparisonVerdict(spec, table, mask, entries, today),
         normalize: spec.compare.normalize,
         grid,
         meta: { rows, undated: table.undated, noAttribute, unknown: unknownRows },
@@ -961,6 +998,9 @@ export function runChartQueries(spec, tableOf, options = {}) {
         sources,
         truncated: base.truncated || cut,
         delta,
+        // Bilan de deux périodes : celui d'une source seule n'est pas celui
+        // du graphique.
+        verdict: null,
         meta: {
             rows: results.reduce((sum, r) => sum + r.meta.rows, 0),
             undated: results.reduce((sum, r) => sum + r.meta.undated, 0),

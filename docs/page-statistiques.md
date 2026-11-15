@@ -263,6 +263,34 @@ périodes déjà précises (année, mois, plage de dates) gardent leur libellé 
 « Comprendre ce chiffre » garde « Toute la période », suivi des dates
 exactes.
 
+La pastille d'une carte résout aussi les périodes relatives comme le moteur
+(`resolvedPeriodNames` : `effectiveQueryOptions` puis `expandPeriods`, la
+pastille étant posée avant le calcul) : « 2026 vs 2025 » plutôt que « Cette
+année · La période précédente », « novembre 2026 vs octobre 2026 ». Deux
+périodes sont jointes par « vs », une seule garde son nom ; au-delà de deux,
+« n périodes ». Gardent leur nom de règle : « chaque année » / « chaque
+mois » et les moments clés (plusieurs entrées), et « depuis le début »
+choisi au menu, déjà nommé par sa fin (« Jusqu'à aujourd'hui »).
+
+**Bilan d'une comparaison** (2026-11-15) : un graphique qui compare deux
+périodes (compte ou cumul, sans 2ᵉ dimension, une seule source) répond en
+clair sous son titre — « 2026 à ce jour : 343 · ▼ −10 (−3 %) par rapport
+au 15 nov. 2025 ». `comparisonVerdict` (chart_query.mjs, `result.verdict`)
+compte les lignes filtrées au jour près, indépendamment de l'axe : « à
+date » dès qu'une période est en cours (l'autre arrêtée par `toDateCut`,
+même quand le graphique la montre entière — « Suis-je en avance ? » a
+`toDate: false`), sinon sur toute leur durée ; un cumul « depuis toujours »
+compte aussi ce qui précède. Une case mensuelle en cours ne se compare donc
+pas au même mois complet, et une dimension multi-valuée (attributs) ne
+compte pas deux fois une ligne. Texte : `verdictLines` (chart_labels.mjs),
+modèle : `verdictModel` (chart_echarts.mjs, barres / courbes / aires /
+anneaux / radar — pas le chiffre clé, qui a son propre écart, ni calendrier,
+grilles et cartes, qui ne dessinent que la première période), rendu :
+`fillVerdict` (stats_page_cards.js) sur la carte et dans l'en-tête de la
+présentation. Pas encore dans l'image du tableau ni la vidéo. Les écarts en
+pourcentage (`formatRatio`) prennent le même signe moins que les écarts en
+valeur (« −10 (−3 %) », plus « (-3 %) »).
+
 ## Sources (lot 4)
 
 **Deux familles étanches** (choix de l'utilisateur : Mes poses se mêle à

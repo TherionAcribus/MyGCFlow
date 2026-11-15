@@ -9,9 +9,10 @@ import { activeFilterCount, describeFilters } from './chart_filters.mjs';
 import { readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { filtersFromMapSelection } from './chart_map_link.mjs';
 import { normalizePeriod, periodAcceptsUpTo, withUpTo } from './chart_spec.mjs';
+import { expandPeriods } from './chart_periods.mjs';
 import {
-    dashboardSources, defaultDashboard, duplicateDashboard, exportDashboard, importDashboard, MAX_DASHBOARDS,
-    periodChoices, periodOfValue, periodValue,
+    dashboardSources, defaultDashboard, duplicateDashboard, effectiveQueryOptions, exportDashboard, importDashboard,
+    MAX_DASHBOARDS, periodChoices, periodOfValue, periodValue,
 } from './dashboard_model.mjs';
 import { download, fileSafe } from './stats_page_card_actions.js';
 import { menuButton, renderAllCharts, renderDashboard } from './stats_page_cards.js';
@@ -119,12 +120,33 @@ export function syncUpToSwitch(row, input, period, on) {
 }
 
 // Pastille d'un graphique qui a ses propres périodes ou en compare
-// plusieurs : « 2024 », « Cette année · La période précédente »…
-export function periodsBadge(spec) {
+// plusieurs, nommées par ce qu'elles couvrent : « 2026 vs 2025 » plutôt que
+// « Cette année · La période précédente », « 2013 – 2026 » plutôt que
+// « Toute la période ».
+export function periodsBadge(spec, dashboard = activeDashboard()) {
     if (!Array.isArray(spec.periods)) return '';
     if (spec.periods.length > 2) return t('${n} périodes', { n: spec.periods.length });
-    const span = allPeriodSpan(state.results.get(spec.id)?.result);
-    return spec.periods.map((p) => state.labels.periodShownLabel(p, span)).join(' · ');
+    const span = allPeriodSpan(state.results.get(spec.id)?.result, dashboard);
+    const names = resolvedPeriodNames(spec, dashboard, span)
+        || spec.periods.map((p) => state.labels.periodShownLabel(p, span));
+    return names.length === 2 ? t('${a} vs ${b}', { a: names[0], b: names[1] }) : names.join(' · ');
+}
+
+// Noms des périodes résolues comme le fait le moteur (expandPeriods) — la
+// pastille est posée avant le calcul du graphique. null : une règle qui
+// donne plusieurs entrées (chaque année, moments clés) garde son nom.
+function resolvedPeriodNames(spec, dashboard, span) {
+    const { periods } = effectiveQueryOptions(spec, dashboard);
+    if (periods.some((p) => p.kind === 'each' || p.kind === 'moments')) return null;
+    const extent = span ? { first: span.from, last: span.to } : null;
+    const { periods: entries } = expandPeriods(periods, { extent, today: state.today });
+    if (entries.length !== periods.length) return null;
+    // « Depuis le début » choisi au menu se nomme par sa fin, déjà précise
+    // (« Jusqu'à aujourd'hui », « Jusqu'à fin 2024 ») ; celle qu'en hérite
+    // « la période précédente », par sa fin résolue.
+    return entries.map((entry) => (entry.period.upTo || entry.as.kind === 'all'
+        ? state.labels.periodShownLabel(entry.period, span)
+        : state.labels.periodLabel(entry)));
 }
 
 // Jours couverts par « Toute la période » : ceux de l'entrée déployée du
