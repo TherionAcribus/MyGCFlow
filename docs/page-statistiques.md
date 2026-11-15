@@ -502,7 +502,10 @@ effacer » le retire avec la période proposée.
   /process_recorded_video` (`slowdown` 1) puis `/tasks/<id>` → MP4 dans le
   dossier des vidéos, aperçu `/download_video/<f>?inline=1`, « Afficher
   dans le dossier » (`POST /reveal_video`). Échec serveur : le WebM brut,
-  téléchargeable. Fermer la fenêtre pendant l'enregistrement ou la
+  téléchargeable ; la note de la fenêtre affiche le motif (première ligne
+  de l'erreur, bornée) et rappelle que la musique choisie, mixée pendant
+  la conversion, n'y est pas incluse. Fermer la fenêtre pendant
+  l'enregistrement ou la
   conversion (Échap, croix, « Annuler ») demande confirmation
   (`showConfirmation`, `confirmVideoClose` sur `hide.bs.modal`, annulable)
   ; confirmée, elle appelle `POST /tasks/<id>/cancel` pendant la

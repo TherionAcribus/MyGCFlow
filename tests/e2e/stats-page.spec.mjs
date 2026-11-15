@@ -1582,6 +1582,45 @@ test('annuler pendant la conversion arrête la tâche serveur', async ({ page, r
   expect(errors).toEqual([]);
 });
 
+test('échec de conversion : le motif et la perte de musique sont dits', async ({ page, request }) => {
+  const { errors, card: target } = await openWithChart(page, request, {
+    groupBy: 'month_of_year', view: { chart: 'bar' },
+  });
+  // Conversion simulée en échec : la tâche finit en « failed » avec le
+  // motif remonté par le serveur (pas de /cancel : la fenêtre reste ouverte).
+  await page.route('**/process_recorded_video', async (route) => {
+    await route.fulfill({
+      status: 202, contentType: 'application/json',
+      body: JSON.stringify({ success: true, task_id: 'stats-fail-task' }),
+    });
+  });
+  await page.route('**/tasks/stats-fail-task*', async (route) => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ state: 'failed', error: 'Encodage impossible' }),
+    });
+  });
+  await cardAction(page, target.id, 'video');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await page.locator('#statsVideoSize').selectOption('hd');
+  await page.locator('#statsVideoDuration').selectOption('6');
+  // Une musique choisie : mixée pendant la conversion, absente du repli —
+  // la note doit le dire en plus du motif.
+  await page.locator('#statsVideoMusicFile').setInputFiles(wavFile('fond.wav', 2, 0));
+  await expect(page.locator('#statsVideoMusic')).toHaveValue('upload');
+  await page.locator('#btnStatsVideoStart').click();
+  await expect.poll(async () => (await snapshot(page)).video?.phase, { timeout: 60_000 }).toBe('done');
+
+  const note = page.locator('#statsVideoDoneNote');
+  await expect(note).toContainText('Encodage impossible');
+  await expect(note).toContainText('musique choisie');
+  const download = page.locator('#btnStatsVideoDownload');
+  await expect(download).toHaveAttribute('href', /^blob:/);
+  await expect(download).toHaveAttribute('download', /\.webm$/);
+  // Le console.warn est attendu ; `errors` ne collecte que les pageerror.
+  expect(errors).toEqual([]);
+});
+
 test('abandonner la vidéo en cours demande confirmation', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, {
     groupBy: 'month_of_year', view: { chart: 'bar' },

@@ -531,6 +531,7 @@ async function pollTask(id, onProgress, isCancelled) {
 async function convertVideo(video, blob, name) {
     setVideoStatus(t('Conversion en MP4…'), 0);
     let result = null;
+    let failure = null;
     try {
         const form = new FormData();
         form.append('video', blob, 'statistiques.webm');
@@ -548,6 +549,7 @@ async function convertVideo(video, blob, name) {
         if (video.cancelled) { cancelVideoTask(video); return; }
         result = await pollTask(data.task_id, (p) => { if (!video.cancelled) setVideoStatus(t('Conversion en MP4…'), p); }, () => video.cancelled);
     } catch (e) {
+        failure = e;
         console.warn('[stats] Conversion vidéo impossible :', e?.message || e);
     }
     if (video.cancelled) return;
@@ -568,7 +570,15 @@ async function convertVideo(video, blob, name) {
         player.src = video.objectUrl;
         download.href = video.objectUrl;
         download.download = name + '.webm';
-        $('statsVideoDoneNote').textContent = t('La conversion en MP4 a échoué : la vidéo est proposée au format WebM.');
+        // Le rejet de `pollTask` peut porter plusieurs lignes ffmpeg : la
+        // première suffit, bornée pour rester lisible dans la note.
+        const detail = (failure?.message || '').split('\n')[0].trim().slice(0, 200);
+        let note = detail
+            ? t('La conversion en MP4 a échoué (${detail}) : la vidéo est proposée au format WebM.', { detail })
+            : t('La conversion en MP4 a échoué : la vidéo est proposée au format WebM.');
+        // La musique est mixée pendant la conversion : le repli est muet.
+        if (video.music) note += ' ' + t("La musique choisie n'y est pas incluse : elle est mixée pendant la conversion.");
+        $('statsVideoDoneNote').textContent = note;
     }
     $('statsVideoStage').replaceChildren();
     setVideoPhase('done');
