@@ -15,6 +15,7 @@ import {
     normalizeDashboard,
     normalizeDocument,
     normalizeItem,
+    numberContext,
     QUESTION_GROUPS,
     chartPeriodChoices,
     comparePeriodChoices,
@@ -241,6 +242,37 @@ test('libellés de comparaison : en cours, coupée, rang depuis le début', () =
     assert.match(labels.formatRatio(0.18), /\+18\s?%/);
     assert.match(labels.formatRatio(-0.03), /^−3\s?%$/);
     assert.equal(labels.formatRatio(null), '');
+    // Arrondi à 0 % : pas de pourcentage du tout.
+    assert.equal(labels.formatRatio(0.004), '');
+    assert.equal(labels.formatRatio(0), '');
+    // Coupée « à date » : la comparaison dit jusqu'à quel jour.
+    const cut2025 = { period: { kind: 'previous' }, as: { kind: 'year', year: 2025 }, cut: true, to: dayNumber({ y: 2025, m: 11, d: 15 }) };
+    assert.equal(labels.comparedTo(cut2025), 'par rapport au 15 nov. 2025');
+});
+
+test('chiffre clé situé : écart avec la période précédente, ou année par année sur tout', () => {
+    const spec =(raw) => normalizeChartSpec({ groupBy: 'none', view: { chart: 'number' }, ...raw });
+    // Option : sur un chiffre clé seulement, activée par défaut.
+    assert.equal(spec({}).view.context, true);
+    assert.equal(spec({ view: { chart: 'number', context: false } }).view.context, false);
+    assert.equal(normalizeChartSpec({ groupBy: 'year' }).view.context, undefined);
+    // Toute la période : la même mesure par année.
+    const trend = numberContext(spec({}), [{ kind: 'all' }]);
+    assert.equal(trend.kind, 'trend');
+    assert.equal(trend.spec.groupBy, 'year');
+    assert.deepEqual(trend.periods, [{ kind: 'all' }]);
+    // Une période précise : elle et la précédente, à date.
+    const year = numberContext(spec({ measure: { op: 'distinct', field: 'country' } }), [{ kind: 'year', year: 2024 }]);
+    assert.equal(year.kind, 'delta');
+    assert.deepEqual(year.periods, [{ kind: 'year', year: 2024 }, { kind: 'previous' }]);
+    assert.equal(year.spec.compare.toDate, true);
+    // Rien à situer.
+    assert.equal(numberContext(spec({ view: { chart: 'number', context: false } }), [{ kind: 'all' }]), null);
+    assert.equal(numberContext(spec({ goal: { value: 5000 } }), [{ kind: 'all' }]), null);
+    assert.equal(numberContext(spec({ measure: { op: 'streak' } }), [{ kind: 'all' }]), null);
+    assert.equal(numberContext(spec({}), [{ kind: 'year', year: 2025 }, { kind: 'previous' }]), null);
+    assert.equal(numberContext(spec({}), [{ kind: 'each', unit: 'year' }]), null);
+    assert.equal(numberContext(normalizeChartSpec({ groupBy: 'year' }), [{ kind: 'all' }]), null);
 });
 
 // ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import { findsTable } from '../../static/js/chart_sources.mjs';
 import { runChartQuery } from '../../static/js/chart_query.mjs';
 import { makeLabels } from '../../static/js/chart_labels.mjs';
 import {
-    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption, verdictModel, withClickHint,
+    CALENDAR_MAX_YEARS, buildChartOption, calendarCell, clickTarget, calendarYears, chartHeight, contrastRatio, cumulativeFloor, distinctTypeColors, escapeHtml, numberModel, rampColor, thumbnailOption, trendModel, verdictModel, withClickHint,
 } from '../../static/js/chart_echarts.mjs';
 import { dayNumber } from '../../static/js/stats_model.mjs';
 
@@ -193,6 +193,18 @@ test('aide de clic : ligne ajoutée au bas de l\'infobulle, échappée, rien sur
     // Infobulle vide (case sans valeur) : reste vide.
     const empty = withClickHint({ tooltip: { formatter: () => '' } }, 'Cliquer', tokens);
     assert.equal(empty.tooltip.formatter(), '');
+});
+
+test('mini-barres d\'un chiffre clé : une par année, en part de la plus forte, année en cours repérée', () => {
+    const { spec, result } = option({ groupBy: 'year', periods: [{ kind: 'all' }] });
+    // 2025 : 3 trouvailles, 2026 (en cours) : 2.
+    const model = trendModel(result, spec, { ...ctx, today: TODAY });
+    assert.deepEqual(model.bars.map((b) => [b.label, b.value, b.partial]), [['2025', 3, false], ['2026', 2, true]]);
+    assert.equal(model.bars[0].level, 1);
+    assert.match(model.text, /^Par année : 2025 : 3 · 2026 : 2$/);
+    // Une seule année : rien à situer.
+    const one = option({ groupBy: 'year', periods: [{ kind: 'year', year: 2025 }] });
+    assert.equal(trendModel(one.result, one.spec, ctx), null);
 });
 
 test('anneau : une part par catégorie non vide, légende, pourcentages en infobulle', () => {

@@ -184,7 +184,25 @@ au-dessus de zéro, `--chart-down` (rouge) en dessous, signe toujours
 bord en tirets. Séries nommées « 2026 (en cours) », « 2025 (au 8 nov.) ».
 Chiffre clé : une valeur par période, la première avec l'écart
 (« +60 (+25 %) par rapport aux 12 mois précédents », flèche colorée,
-texte neutre).
+texte neutre). Une période coupée « à date » se dit par son jour (« par
+rapport au 15 nov. 2025 », `comparedTo`) ; un écart qui s'arrondit à 0 %
+n'affiche pas de pourcentage (`formatRatio`).
+
+**Chiffre clé situé** (2026-11-15, `view.context`, présent seulement sur un
+chiffre clé, activé par défaut, case « Situer le chiffre » des options) : un
+nombre seul ne dit pas s'il est grand. `numberContext` (dashboard_model.mjs)
+décide d'une requête de plus, sur la même source et les mêmes filtres —
+`delta` sur une période précise (elle et `previous`, `toDate` forcé :
+« ▼ −10 (−3 %) par rapport au 15 nov. 2025 », rendu par `numberModel` comme
+une comparaison), `trend` sur « Toute la période » (même mesure par année :
+mini-barres de `trendModel`, chart_echarts.mjs, l'année en cours atténuée,
+détail en `aria-label` et en bulle par barre). Rien pour un objectif ou une
+projection (leur barre situe déjà), une comparaison, plusieurs sources,
+« chaque année », les moments clés ou une mesure autre que compte / valeurs
+distinctes. Le résultat porte `context: { kind, spec, result }`, calculé et
+mis en cache avec lui (`computeResult`) ; relevé E2E `cards[].context`.
+Affiché sur la carte et en présentation ; pas encore dans la vidéo ni l'image
+du tableau.
 
 **Éditeur** : « sur [période] comparé à [la période précédente] [×] /
 + Comparer à une autre période » (lignes en `display: contents` dans la

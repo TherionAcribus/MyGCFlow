@@ -370,6 +370,23 @@ html {
     font-size: 0.82rem;
     color: var(--color-text-muted);
 }
+/* Contexte d'un chiffre clé sur toute la période : une mini-barre par
+   année (l'accent des séries), l'année en cours atténuée. */
+.stats-number-trend {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    width: min(100%, 220px);
+    height: 28px;
+    margin: 8px auto 0;
+}
+.stats-number-trend-bar {
+    flex: 1 1 0;
+    min-width: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--chart-series-1, #2a78d6);
+}
+.stats-number-trend-bar.is-partial { opacity: 0.45; }
 /* Record daté (meilleure journée, série, pause) : ses jours, et le lien
    vers la carte de ces jours-là. */
 .stats-number-record {
@@ -1075,6 +1092,11 @@ html:has(body.is-presenting) {
 .stats-present-number .stats-goal-line,
 .stats-present-number .stats-number-delta {
     font-size: clamp(1rem, 1.8vw, 1.4rem);
+}
+.stats-present-number .stats-number-trend {
+    width: min(100%, 520px);
+    height: 64px;
+    gap: 4px;
 }
 .stats-present-number .stats-number-outlook {
     width: min(100%, 520px);

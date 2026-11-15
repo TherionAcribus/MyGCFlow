@@ -14,7 +14,7 @@ import { destroyFilterForm, readFilterForm, renderFilterForm } from './stats_fil
 import { EDITOR_CHARTS, GROUP_CHOICES, MEASURE_CHOICES, measureKey, measureOfKey } from './chart_labels.mjs';
 import {
     chartPeriodChoices, comparePeriodChoices, DASHBOARD_HEIGHTS, DASHBOARD_SIZES, dashboardSources,
-    HEIGHT_PIXELS, MAX_ITEMS, periodOfValue, QUESTIONS,
+    effectiveQueryOptions, HEIGHT_PIXELS, MAX_ITEMS, numberContext, periodOfValue, QUESTIONS,
 } from './dashboard_model.mjs';
 import { withUndo } from './stats_page_card_actions.js';
 import {
@@ -304,6 +304,11 @@ export function syncEditorForm() {
     $('statsEdLabels').checked = spec.view.labels;
     $('statsEdSmooth').checked = spec.view.smooth;
     $('statsEdRecord').checked = spec.view.record;
+    // Situer un chiffre clé : seulement là où numberContext a quelque chose à
+    // montrer (période seule, compte ou valeurs distinctes, sans objectif).
+    $('statsEdContext').checked = spec.view.context !== false;
+    $('statsEdContextRow').hidden = !numberContext({ ...spec, view: { ...spec.view, context: true } },
+        effectiveQueryOptions(spec, activeDashboard()).periods);
     // Objectif, projection : chiffre clé qui compte, courbe de cumul. La
     // section entière disparaît quand le graphique n'en a pas ; les lignes
     // gardent leur propre masquage (relevé par les tests).
@@ -390,6 +395,7 @@ export function readEditorForm() {
             labels: $('statsEdLabels').checked,
             smooth: $('statsEdSmooth').checked,
             record: $('statsEdRecord').checked,
+            context: $('statsEdContext').checked,
             projection: $('statsEdProjection').checked,
             log: $('statsEdLog').checked,
             stack: $('statsEdStack').checked,

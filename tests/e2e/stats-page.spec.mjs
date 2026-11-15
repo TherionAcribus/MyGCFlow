@@ -555,6 +555,43 @@ test('infobulle : l\'aide de clic sur une carte du tableau, pas en présentation
   expect(errors).toEqual([]);
 });
 
+test('chiffre clé situé : mini-barres sur tout, écart sur une période, option décochable', async ({ page, request }) => {
+  // Deux trouvailles servies en 2024 : l'historique couvre plusieurs années.
+  await page.route('**/api/stats/finds', async (route) => {
+    const headers = { ...route.request().headers() };
+    delete headers['if-none-match'];
+    const response = await route.fetch({ headers });
+    const json = await response.json();
+    json.date = json.date.map((d, i) => (i < 2 && d ? `2024${d.slice(4)}` : d));
+    await route.fulfill({ response, json });
+  });
+  const { errors, card: number } = await openWithChart(page, request, { groupBy: 'none', view: { chart: 'number' } }, 'S');
+  // Toute la période : une mini-barre par année, la même mesure.
+  expect(number.context.kind).toBe('trend');
+  expect(number.context.series[0][0]).toBe(2);
+  expect(number.context.series[0].reduce((a, b) => a + (b || 0), 0)).toBe(6);
+  const box = card(page, number.id);
+  await expect(box.locator('.stats-number-trend-bar')).toHaveCount(number.context.keys.length);
+  await expect(box.locator('.stats-number-trend')).toHaveAttribute('aria-label', /^Par année : 2024 : 2/);
+  await expect(box.locator('.stats-number-delta')).toHaveCount(0);
+
+  // Une période précise : l'écart avec la précédente, compté à date.
+  await page.locator('#statsGlobalPeriod').selectOption({ label: 'Cette année' });
+  await expect(box.locator('.stats-number-trend')).toHaveCount(0);
+  await expect(box.locator('.stats-number-delta')).toContainText('par rapport au ');
+  expect((await snapshot(page)).cards[0].context.kind).toBe('delta');
+
+  // Décochée dans l'éditeur : le chiffre seul.
+  await cardAction(page, number.id, 'edit');
+  await page.locator('#statsEdOptions summary').click();
+  await expect(page.locator('#statsEdContextRow')).toBeVisible();
+  await page.locator('#statsEdContext').uncheck();
+  await page.locator('#btnStatsEdSave').click();
+  await expect(box.locator('.stats-number-delta')).toHaveCount(0);
+  expect((await snapshot(page)).cards[0].context).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test('éditeur : comparer à la période précédente, puis présenter en écart', async ({ page, request }) => {
   const { errors, card: target } = await openWithChart(page, request, { groupBy: 'month_of_year', view: { chart: 'bar' } });
   await cardAction(page, target.id, 'edit');

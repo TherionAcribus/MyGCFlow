@@ -146,6 +146,30 @@ export function effectiveQueryOptions(spec, dashboard) {
     };
 }
 
+// Contexte d'un chiffre clé (view.context) — un nombre seul ne dit pas s'il
+// est grand. Une requête de plus, sur la même source et les mêmes filtres :
+//   delta  la période et la précédente, à date (« +33 (+10 %) par rapport
+//          au 15 nov. 2025 ») ;
+//   trend  toute la période : la valeur année par année (mini-barres).
+// null : rien à situer — une comparaison a déjà son écart, un objectif sa
+// barre ; plusieurs sources ; une mesure qui ne se compare pas d'une
+// période à l'autre (records, moyennes…). `periods` : effectives.
+export function numberContext(spec, periods) {
+    if (spec.view.chart !== 'number' || !spec.view.context) return null;
+    if (!['count', 'distinct'].includes(spec.measure.op) || spec.extraSources?.length) return null;
+    if (spec.goal || spec.view.projection || periods?.length !== 1) return null;
+    const [period] = periods;
+    if (period.kind === 'all') {
+        return { kind: 'trend', spec: { ...spec, groupBy: 'year', view: { ...spec.view, chart: 'bar' } }, periods };
+    }
+    if (period.kind === 'each' || period.kind === 'moments') return null;
+    return {
+        kind: 'delta',
+        spec: { ...spec, compare: { ...spec.compare, toDate: true } },
+        periods: [period, { kind: 'previous' }],
+    };
+}
+
 // Le graphique a-t-il une période propre (badge sur la carte) ? Comparer la
 // période du tableau de bord à la précédente n'en est pas une : elle suit.
 export const hasOwnPeriod = (spec) => Array.isArray(spec.periods) && spec.periods[0].kind !== 'dashboard';

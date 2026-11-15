@@ -534,6 +534,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
             }
             return t('par rapport au ${date}', { date: dayFmt.format(fromDay(entry.to)) });
         }
+        // Coupée « à date » : comparée jusqu'à ce jour-là seulement.
+        if (!entry.period?.label && entry.cut) return t('par rapport au ${date}', { date: dayFmt.format(fromDay(entry.to)) });
         return t('par rapport à ${period}', { period: periodLabel(entry) });
     }
 
@@ -692,6 +694,8 @@ export function makeLabels({ t = identity, locale = 'fr', zoneName = null, zoneL
 
     function formatRatio(ratio) {
         if (ratio === null || ratio === undefined || Number.isNaN(ratio)) return '';
+        // Arrondi à 0 % : rien (« +1 (0 %) » se lit comme « aucun écart »).
+        if (Math.round(Math.abs(ratio) * 100) === 0) return '';
         // Même signe moins que formatDelta (« −10 (−3 %) », pas « (-3 %) »).
         return signedPctFmt.format(ratio).replace('-', '−');
     }

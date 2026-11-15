@@ -174,6 +174,13 @@ window.getStatsPageSnapshot = () => {
                 align: entry?.result?.align ?? null,
                 toDate: Boolean(entry?.result?.toDate),
                 delta: entry?.result?.delta?.values ?? null,
+                // Contexte d'un chiffre clé (numberContext) : sorte, clés et
+                // valeurs de sa requête (écart : la période et la précédente).
+                context: entry?.result?.context ? {
+                    kind: entry.result.context.kind,
+                    keys: entry.result.context.result.keys,
+                    series: entry.result.context.result.series.map((s) => s.values),
+                } : null,
                 partial: entry?.result?.series.map((s) => s.partial) ?? null,
                 layout: item.spec.compare.layout,
                 splitBy: item.spec.splitBy,

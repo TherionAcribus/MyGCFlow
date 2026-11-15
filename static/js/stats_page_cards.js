@@ -7,13 +7,13 @@ import { runChartQueries } from './chart_query.mjs';
 import { foundDaysOf, runZoneQuery } from './chart_zones.mjs';
 import { describeFilters } from './chart_filters.mjs';
 import {
-    buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel, verdictModel, withClickHint,
+    buildChartOption, calendarCell, calendarYears, challengeText, chartHeight, numberModel, trendModel, verdictModel, withClickHint,
 } from './chart_echarts.mjs';
 import { chartAnimates } from './chart_video.mjs';
 import { chartLinksToMap } from './chart_map_link.mjs';
 import { panelFromSpec } from './chart_panel_link.mjs';
 import {
-    effectiveQueryOptions, hasOwnPeriod, HEIGHT_PIXELS, MAX_ITEMS, SIZE_COLUMNS,
+    effectiveQueryOptions, hasOwnPeriod, HEIGHT_PIXELS, MAX_ITEMS, numberContext, SIZE_COLUMNS,
 } from './dashboard_model.mjs';
 import {
     activeDashboard, allPeriodSpan, attributeName, chartTitle, datasetName, filterValueLabel, periodsBadge, renderToolbar,
@@ -379,7 +379,7 @@ export function computeResult(spec, dashboard) {
         state.resultCache.set(key, cached);
         return cached;
     }
-    const result = map
+    let result = map
         ? runZoneQuery(spec, tableOf(spec.source), {
             ...effectiveQueryOptions(spec, dashboard),
             today: state.today,
@@ -395,6 +395,23 @@ export function computeResult(spec, dashboard) {
             today: state.today,
             labelOf: (dim, key) => state.labels.axisLabel(dim, key, { attributeName }),
         });
+    // Chiffre clé : de quoi le situer (écart avec la période précédente ou
+    // valeur année par année), calculé et mémorisé avec lui.
+    const context = map ? null : numberContext(spec, effectiveQueryOptions(spec, dashboard).periods);
+    if (context) {
+        result = {
+            ...result,
+            context: {
+                kind: context.kind,
+                spec: context.spec,
+                result: runChartQueries(context.spec, tableOf, {
+                    periods: context.periods,
+                    filters: effectiveQueryOptions(spec, dashboard).filters,
+                    today: state.today,
+                }),
+            },
+        };
+    }
     if (state.resultCache.size >= RESULT_CACHE_MAX) {
         state.resultCache.delete(state.resultCache.keys().next().value);
     }
@@ -473,8 +490,37 @@ export function renderNumber(container, result, spec, dashboard) {
         }
         if (entry.outlook) block.append(outlookBlock(entry.outlook));
         if (entry.delta) block.append(deltaLine(entry.delta));
+        if (entries.length === 1 && result.context) {
+            const situated = contextBlock(result.context);
+            if (situated) block.append(situated);
+        }
         container.append(block);
     }
+}
+
+// Contexte d'un chiffre clé (numberContext) : l'écart avec la période
+// précédente, ou les mini-barres année par année. null : rien à montrer.
+function contextBlock(context) {
+    if (context.kind === 'delta') {
+        const delta = numberModel(context.result, context.spec, chartContext())[0]?.delta;
+        return delta ? deltaLine(delta) : null;
+    }
+    const model = trendModel(context.result, context.spec, chartContext());
+    if (!model) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'stats-number-trend';
+    wrap.setAttribute('role', 'img');
+    wrap.setAttribute('aria-label', model.text);
+    for (const bar of model.bars) {
+        const el = document.createElement('span');
+        el.className = 'stats-number-trend-bar';
+        el.classList.toggle('is-partial', bar.partial);
+        // Une valeur non nulle reste visible (2 % au moins).
+        el.style.height = (bar.value > 0 ? Math.max(2, bar.level * 100) : 0).toFixed(1) + '%';
+        el.title = t('${label} : ${value}', { label: bar.label, value: bar.text });
+        wrap.append(el);
+    }
+    return wrap;
 }
 
 // Objectif (barre de progression) et projection d'un chiffre clé.

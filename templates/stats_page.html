@@ -346,6 +346,12 @@
                                             <input type="checkbox" id="statsEdLog" class="form-check-input">
                                             <label for="statsEdLog" class="form-check-label">{{ _("Échelle logarithmique") }}</label>
                                         </div>
+                                        <!-- Chiffre clé : écart avec la période précédente, ou
+                                             mini-barres année par année (numberContext). -->
+                                        <div class="form-check mb-2" id="statsEdContextRow">
+                                            <input type="checkbox" id="statsEdContext" class="form-check-input">
+                                            <label for="statsEdContext" class="form-check-label">{{ _("Situer le chiffre (écart avec la période précédente, ou année par année)") }}</label>
+                                        </div>
                                         <div class="form-check mb-2" id="statsEdRecordRow">
                                             <input type="checkbox" id="statsEdRecord" class="form-check-input">
                                             <label for="statsEdRecord" class="form-check-label">{{ _("Mettre le record en avant") }}</label>

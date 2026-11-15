@@ -690,6 +690,10 @@ function normalizeView(raw, spec) {
         // Réglages de carte, seulement sur une carte (les autres graphiques
         // gardent leur forme).
         ...(chart === 'map' ? { map: normalizeMapView(src.map) } : {}),
+        // Situer un chiffre clé (écart avec la période précédente, ou valeur
+        // année par année) : dashboard_model.mjs › numberContext. Activé par
+        // défaut, seulement sur un chiffre clé.
+        ...(chart === 'number' ? { context: bool(src.context, true) } : {}),
     };
 }
 

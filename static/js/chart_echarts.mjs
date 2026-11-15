@@ -1333,6 +1333,35 @@ export function numberModel(result, spec, ctx) {
     return blocks;
 }
 
+// Mini-barres d'un chiffre clé sur toute la période (contexte « trend » de
+// dashboard_model.mjs › numberContext) : une barre par année, hauteur en
+// part de la plus forte, l'année en cours repérée (incomplète). `text` :
+// le détail lisible (infobulle, lecteur d'écran). null : moins de deux
+// années, rien à situer.
+export function trendModel(result, spec, ctx) {
+    const series = result.series[0];
+    if (!series || result.keys.length < 2) return null;
+    const values = series.values.map((v) => v ?? 0);
+    const max = Math.max(...values);
+    if (!(max > 0)) return null;
+    // « Toute la période » finit à la dernière donnée, pas aujourd'hui : le
+    // moteur ne marque pas l'année en cours, la date du jour le fait.
+    const currentYear = Number.isFinite(ctx.today) ? ymdOfDay(ctx.today).y : null;
+    const bars = result.keys.map((key, i) => ({
+        label: String(key),
+        value: values[i],
+        text: ctx.labels.formatValue(values[i], spec.measure),
+        level: values[i] / max,
+        partial: i === series.partial || Number(key) === currentYear,
+    }));
+    return {
+        bars,
+        text: ctx.labels.t('Par année : ${list}', {
+            list: bars.map((b) => ctx.labels.t('${label} : ${value}', { label: b.label, value: b.text })).join(' · '),
+        }),
+    };
+}
+
 // Bilan d'une comparaison de deux périodes, affiché sous le titre de la
 // carte : la question « Suis-je en avance ? » reçoit sa réponse en clair
 // (« 2026 à ce jour : 343 · −9 (−2,6 %) par rapport au 15 nov. 2025 »).
