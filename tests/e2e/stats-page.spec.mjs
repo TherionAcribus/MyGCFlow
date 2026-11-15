@@ -278,8 +278,10 @@ test('galerie : une question ajoute son graphique, qui survit au rechargement', 
   await page.locator('#btnStatsAddChart').click();
   const gallery = page.locator('#statsGalleryModal');
   await expect(gallery).toBeVisible();
-  // Questions de la famille « Mes données » seulement (pas celles d'Évolution).
-  await expect(gallery.locator('[data-question]')).toHaveCount(50);
+  // Questions de la famille « Mes données » seulement (pas celles d'Évolution),
+  // plus « Graphique personnalisé » et « Image ».
+  await expect(gallery.locator('[data-question]')).toHaveCount(51);
+  await expect(gallery.locator('#statsGallerySection-custom [data-question]')).toHaveCount(2);
   await expect(gallery.locator('.stats-gallery-heading')).toHaveCount(12);
   await expect(gallery.locator('[data-question^="evo_"]')).toHaveCount(0);
   await gallery.locator('[data-question="weekdays"]').click();
@@ -459,7 +461,8 @@ test('galerie : rubriques en pastilles, saut direct, questions déjà dans le ta
   const chips = page.locator('#statsGalleryNav .stats-gallery-chip');
   // Une pastille par rubrique, avec son nombre de questions.
   await expect(chips).toHaveCount(await sections.count());
-  await expect(chips.first()).toHaveText(/^Partir de zéro\s*1$/);
+  // (« Partir de zéro » : graphique personnalisé et image.)
+  await expect(chips.first()).toHaveText(/^Partir de zéro\s*2$/);
 
   // Tableau par défaut : ses questions de départ sont repérées, les autres non.
   await expect.poll(async () => (await snapshot(page)).gallery.filter((g) => g.added).map((g) => g.id).sort())
@@ -2764,6 +2767,140 @@ test('vidéo du tableau : image d\'ouverture et écran de fin au choix', async (
   } finally {
     if (file && !before.includes(file)) await request.post('/api/images/delete', { data: { file } });
   }
+});
+
+test('tuile image : ajout, modification, présentation, image et vidéo du tableau', async ({ page, request }, testInfo) => {
+  test.setTimeout(120_000);
+  // L'image envoyée rejoint la bibliothèque de l'onglet Images : retirée en
+  // sortie si elle n'y était pas (après le vidage des tableaux, qui la
+  // protègent tant qu'une tuile l'utilise).
+  const logo = path.join(HERE, 'fixtures', 'logo-opaque.png');
+  const library = async () => (await (await request.get('/api/images')).json()).files || [];
+  const before = (await library()).map((f) => f.file);
+  const items = [{ size: 'M', spec: { id: 'dddd01', groupBy: 'month_of_year', view: { chart: 'bar' }, title: 'Par mois' } }];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  let file = null;
+  try {
+    // Galerie → « Image » : la fenêtre attend une image avant d'ajouter.
+    await page.locator('#btnStatsAddChart').click();
+    await page.locator('#statsGalleryList [data-question="image"]').click();
+    await expect(page.locator('#statsImageModal')).toBeVisible();
+    await expect(page.locator('#statsImageTitle')).toHaveText('Ajouter une image');
+    await expect(page.locator('#btnStatsImageSave')).toBeDisabled();
+    await page.locator('#statsImageUpload').setInputFiles(logo);
+    await expect(page.locator('#statsImageFile')).toHaveValue(/^[0-9a-f]{16}\.\w+$/);
+    file = await page.locator('#statsImageFile').inputValue();
+    await expect(page.locator('#statsImagePreview img')).toBeVisible();
+    await page.locator('#statsImageCaption').fill('Mon club');
+    await page.locator('label[for="statsImageFitCover"]').click();
+    await expect(page.locator('#statsImagePreview')).toHaveAttribute('data-fit', 'cover');
+    await page.locator('#btnStatsImageSave').click();
+    await expect(page.locator('#statsImageModal')).toBeHidden();
+
+    // La tuile : dernière du tableau, légende en titre, image chargée.
+    await expect.poll(async () => (await snapshot(page)).cards.length).toBe(2);
+    const tile = (await snapshot(page)).cards[1];
+    expect(tile).toMatchObject({ chart: 'image', title: 'Mon club', unavailable: null });
+    await expect.poll(async () => (await snapshot(page)).cards[1].image).toEqual({ file, fit: 'cover', state: 'ready' });
+    await expect(card(page, tile.id).locator('.stats-card-title')).toHaveText('Mon club');
+    await expect(card(page, tile.id).locator('img')).toHaveCSS('object-fit', 'cover');
+    // Enregistrée, et protégée dans la bibliothèque tant qu'elle sert.
+    await expect.poll(async () => (await savedDoc(request))?.dashboards?.[0]?.items?.[1]?.spec?.view)
+      .toEqual({ chart: 'image', image: { file, fit: 'cover' } });
+    expect((await library()).find((f) => f.file === file)?.referenced).toBe(true);
+    expect((await request.post('/api/images/delete', { data: { file } })).status()).toBe(409);
+
+    // Menu réduit : ni valeurs, ni explication, ni exports.
+    await card(page, tile.id).locator('.stats-card-menu [data-bs-toggle="dropdown"]').click();
+    const actions = await card(page, tile.id).locator('.stats-card-menu [data-action]')
+      .evaluateAll((els) => els.map((el) => el.dataset.action));
+    expect(actions).toEqual(['edit', 'duplicate', 'present', 'before', 'after', 'delete']);
+    await page.keyboard.press('Escape');
+
+    // Modifier : la fenêtre reprend la tuile ; « Image entière ».
+    await cardAction(page, tile.id, 'edit');
+    await expect(page.locator('#statsImageTitle')).toHaveText("Modifier l'image");
+    await expect(page.locator('#statsImageFile')).toHaveValue(file);
+    await expect(page.locator('#statsImageCaption')).toHaveValue('Mon club');
+    await page.locator('label[for="statsImageFitContain"]').click();
+    await page.locator('#btnStatsImageSave').click();
+    await expect.poll(async () => (await snapshot(page)).cards[1].image?.fit).toBe('contain');
+    expect((await snapshot(page)).cards[1].id).toBe(tile.id);
+
+    // Présentation depuis la tuile : l'image entière, sa légende en titre.
+    await cardAction(page, tile.id, 'present');
+    await expect(page.locator('#statsPresent')).toBeVisible();
+    await expect(page.locator('#statsPresentTitle')).toHaveText('Mon club');
+    await expect(page.locator('#statsPresentBody .stats-present-image img')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#statsPresent')).toBeHidden();
+
+    // Image du tableau : la tuile y est dessinée.
+    const downloading = page.waitForEvent('download');
+    await dashboardAction(page, 'image-dashboard');
+    await (await downloading).saveAs(testInfo.outputPath('tableau-image.png'));
+    expect((await snapshot(page)).image).toMatchObject({ cards: 2, charts: 1, images: 1 });
+
+    // Vidéo du tableau : la tuile est un écran comme les autres ; pendant
+    // son écran, l'image occupe le cadre (pixels autres que le fond).
+    await dashboardAction(page, 'video-dashboard');
+    await expect(page.locator('#statsVideoSlidesList .form-check-label')).toHaveText(['Par mois', 'Mon club']);
+    await page.locator('#statsVideoDuration').selectOption('4');
+    await page.locator('#statsVideoSize').selectOption('hd');
+    await page.locator('#btnStatsVideoPreview').click();
+    await expect(page.locator('#statsVideoStatus')).toContainText('graphique 2 / 2', { timeout: 15_000 });
+    const stage = page.locator('#statsVideoStage canvas');
+    await expect.poll(() => stage.evaluate((c) => {
+      const g = c.getContext('2d');
+      const [r, gr, b] = g.getImageData(4, 4, 1, 1).data;
+      const data = g.getImageData(0, Math.round(c.height * 0.3), c.width, Math.round(c.height * 0.4)).data;
+      let other = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (Math.abs(data[i] - r) + Math.abs(data[i + 1] - gr) + Math.abs(data[i + 2] - b) > 30) other++;
+      }
+      return other;
+    }), { timeout: 4_000 }).toBeGreaterThan(50_000);
+    await page.locator('#btnStatsVideoStopPreview').click();
+    await page.locator('#btnStatsVideoCancel').click();
+    await expect(page.locator('#statsVideoModal')).toBeHidden();
+
+    // Dupliquer puis supprimer (une image sans légende : « cette image »).
+    await cardAction(page, tile.id, 'duplicate');
+    await expect.poll(async () => (await snapshot(page)).cards.length).toBe(3);
+    const copy = (await snapshot(page)).cards[2];
+    expect(copy).toMatchObject({ chart: 'image', title: 'Mon club' });
+    expect(copy.id).not.toBe(tile.id);
+    await cardAction(page, copy.id, 'delete');
+    await expect(page.locator('.gcm-confirm-modal')).toContainText("Supprimer l'image « Mon club » ?");
+    await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
+    await expect(card(page, copy.id)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  } finally {
+    await request.delete('/api/dashboards');
+    if (file && !before.includes(file)) await request.post('/api/images/delete', { data: { file } });
+  }
+});
+
+test('tuile image : une image retirée de la bibliothèque est signalée', async ({ page, request }) => {
+  // Fichier au bon format mais absent : la tuile le dit (pas d'image cassée),
+  // et la présentation comme la vidéo la gardent.
+  const items = [
+    { size: 'S', spec: { id: 'dddd01', view: { chart: 'image', image: { file: 'ffffffffffffffff.png' } }, title: 'Partie' } },
+    { size: 'M', spec: { id: 'dddd02', groupBy: 'month_of_year', view: { chart: 'bar' } } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+  await expect.poll(async () => (await snapshot(page)).cards[0].image?.state).toBe('missing');
+  await expect(card(page, 'dddd01').locator('.stats-card-unavailable')).toContainText('Image introuvable');
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoSlidesList .form-check-label')).toHaveCount(2);
+  await expect(page.locator('#statsVideoSlidesList .form-check-label').first()).toHaveText('Partie');
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
 });
 
 test('vidéo du tableau : l\'anneau et la grille s\'animent', async ({ page, request }) => {

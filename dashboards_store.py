@@ -119,6 +119,25 @@ def load_document():
     return read_status()["document"]
 
 
+def image_files(doc):
+    """Noms des images posées en tuiles dans les tableaux de bord
+    (`spec.view.chart == 'image'`, static/js/image_tile.mjs) — bruts, à
+    valider par l'appelant. Un document absent ou mal formé n'en a aucune."""
+    files = set()
+    if not isinstance(doc, dict) or not isinstance(doc.get("dashboards"), list):
+        return files
+    for dashboard in doc["dashboards"]:
+        items = dashboard.get("items") if isinstance(dashboard, dict) else None
+        for item in items if isinstance(items, list) else []:
+            spec = item.get("spec") if isinstance(item, dict) else None
+            view = spec.get("view") if isinstance(spec, dict) else None
+            image = view.get("image") if isinstance(view, dict) and view.get("chart") == "image" else None
+            name = image.get("file") if isinstance(image, dict) else None
+            if isinstance(name, str):
+                files.add(name)
+    return files
+
+
 def validate_document(doc):
     """Forme générale : {v, dashboards: [{id, items: [...]}, ...], active}."""
     if not isinstance(doc, dict):

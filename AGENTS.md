@@ -129,6 +129,11 @@ Autres repères :
   exemple dans `images.spec.mjs` (`afterEach`). Les fichiers envoyés
   (`POST /api/images`) restent dans `images/` du runtime E2E jusqu'au retrait
   manuel dans la bibliothèque ; seuls les envois interrompus sont balayés.
+  Une image posée en tuile d'un tableau de la page Statistiques
+  (`view.chart: 'image'`) est « utilisée » tant que `dashboards.json` la
+  cite : `POST /api/images/delete` répond 409 — vider les tableaux
+  (`DELETE /api/dashboards`) AVANT de retirer l'image (exemple : « tuile
+  image » de `stats-page.spec.mjs`).
 - Les logs Geocaching (carte « Mes logs », docs/logs-geocaching.md) vivent
   dans la base du runtime, hors de `/clear_database` : un spec qui en importe
   doit appeler `POST /api/logs/clear` en sortant, sinon le compte reste

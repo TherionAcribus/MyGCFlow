@@ -11,6 +11,7 @@ import {
 } from './chart_echarts.mjs';
 import { chartAnimates } from './chart_video.mjs';
 import { chartLinksToMap } from './chart_map_link.mjs';
+import { isImageSpec } from './image_tile.mjs';
 import { panelFromSpec } from './chart_panel_link.mjs';
 import {
     effectiveQueryOptions, GRID_COLUMNS, hasOwnPeriod, HEIGHT_PIXELS, MAX_ITEMS, numberContext, SIZE_COLUMNS,
@@ -21,6 +22,7 @@ import {
 } from './stats_page_dashboard.js';
 import { tableOf } from './stats_page_data.js';
 import { renderPreview } from './stats_page_editor.js';
+import { imageBlock } from './stats_page_image.js';
 import { clickHint, confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { addGeoListener } from './zone_geo.js';
@@ -152,9 +154,11 @@ function cardElement(item, index, count) {
     header.append(grip);
     const title = document.createElement('h2');
     title.className = 'stats-card-title';
-    title.textContent = chartTitle(spec);
+    // Une image sans légende n'a pas de titre affiché (« Image » resterait
+    // au-dessus d'elle sans rien dire).
+    title.textContent = isImageSpec(spec) ? spec.title : chartTitle(spec);
     // Le titre est tronqué à l'affichage : la bulle le donne en entier.
-    title.title = chartTitle(spec);
+    title.title = title.textContent;
     header.append(title);
     if (hasOwnPeriod(spec) || periodsAreMultiple(spec.periods)) {
         const badge = document.createElement('span');
@@ -176,7 +180,7 @@ function cardElement(item, index, count) {
         }
         header.append(badge);
     }
-    header.append(cardMenu(spec, index, count));
+    header.append(isImageSpec(spec) ? imageMenu(count) : cardMenu(spec, index, count));
     card.append(header);
     if (spec.filters !== null) {
         // Filtres propres, VISIBLES (plus seulement en infobulle) : ils
@@ -224,6 +228,7 @@ function cardElement(item, index, count) {
 // Réutilisé par renderAllCharts pour restaurer le conteneur après un état
 // « indisponible » affiché à sa place.
 function cardBodyContent(spec) {
+    if (isImageSpec(spec)) return imageBlock(spec);
     if (spec.view.chart === 'number') {
         const number = document.createElement('div');
         number.className = 'stats-number';
@@ -316,7 +321,7 @@ function panelMenuButton(spec) {
     return li;
 }
 
-function cardMenu(spec, index, count) {
+function menuWrap(menu) {
     const wrap = document.createElement('div');
     wrap.className = 'dropdown stats-card-menu';
     const toggle = document.createElement('button');
@@ -330,13 +335,39 @@ function cardMenu(spec, index, count) {
     icon.className = 'ti ti-dots';
     icon.setAttribute('aria-hidden', 'true');
     toggle.append(icon);
-    const menu = document.createElement('ul');
     menu.className = 'dropdown-menu dropdown-menu-end';
-    const divider = () => {
-        const li = document.createElement('li');
-        li.innerHTML = '<hr class="dropdown-divider">';
-        return li;
-    };
+    wrap.append(toggle, menu);
+    return wrap;
+}
+
+function menuDivider() {
+    const li = document.createElement('li');
+    li.innerHTML = '<hr class="dropdown-divider">';
+    return li;
+}
+
+// Menu d'une tuile image : rien à lire ni à exporter, seulement l'édition,
+// la présentation et l'organisation (les entrées de position sont tenues à
+// jour par syncCardMenuState).
+function imageMenu(count) {
+    const menu = document.createElement('ul');
+    menu.append(
+        menuButton('edit', 'ti-pencil', t('Modifier')),
+        menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
+        menuDivider(),
+        menuButton('present', 'ti-presentation', t("Présenter à partir d'ici")),
+        menuDivider(),
+        menuButton('before', 'ti-arrow-left', t('Déplacer avant')),
+        menuButton('after', 'ti-arrow-right', t('Déplacer après')),
+        menuDivider(),
+        menuButton('delete', 'ti-trash', t('Supprimer'), { danger: true }),
+    );
+    return menuWrap(menu);
+}
+
+function cardMenu(spec, index, count) {
+    const menu = document.createElement('ul');
+    const wrap = menuWrap(menu);
     // Source en échec : pas d'image ni de vidéo à produire.
     const unavailable = chartSources(spec).some((s) => state.sourceErrors.has(s));
     // Un chiffre clé n'est pas un graphique : rien à exporter en image, et
@@ -394,19 +425,18 @@ function cardMenu(spec, index, count) {
     menu.append(
         menuButton('edit', 'ti-pencil', t('Modifier')),
         menuButton('duplicate', 'ti-copy', t('Dupliquer'), { disabled: count >= MAX_ITEMS }),
-        divider(),
+        menuDivider(),
         menuButton('present', 'ti-presentation', t("Présenter à partir d'ici"), { disabled: unavailable }),
         menuButton('values', 'ti-table', t('Voir les valeurs'), { disabled: unavailable }),
         menuButton('explain', 'ti-info-circle', t('Comprendre ce chiffre'), { disabled: unavailable }),
-        divider(),
+        menuDivider(),
         exportItem,
-        divider(),
+        menuDivider(),
         menuButton('before', 'ti-arrow-left', t('Déplacer avant'), { disabled: index === 0 }),
         menuButton('after', 'ti-arrow-right', t('Déplacer après'), { disabled: index === count - 1 }),
-        divider(),
+        menuDivider(),
         menuButton('delete', 'ti-trash', t('Supprimer'), { danger: true }),
     );
-    wrap.append(toggle, menu);
     return wrap;
 }
 
@@ -637,6 +667,7 @@ export function fillVerdict(el, result, spec) {
 // Les marques d'un graphique ouvrent-elles la carte ? (curseur « main »)
 export const TIME_DIMS = new Set(['year', 'quarter', 'month', 'week', 'day']);
 export function chartClickable(spec, result) {
+    if (isImageSpec(spec)) return false;
     // Carte par zones : une zone ouvre la carte à la date de sa vignette.
     if (spec.view.chart === 'map') return Boolean(result?.keys?.length);
     if (!chartLinksToMap(spec) || result.delta) return false;
@@ -694,6 +725,13 @@ export function renderChartInto(host, result, spec, { fill = 0 } = {}) {
     return chart;
 }
 
+// Résultat d'une tuile image : vide, de la forme d'un résultat de requête
+// (relevés, présentation, vidéo le lisent sans cas particulier).
+const IMAGE_RESULT = Object.freeze({
+    image: true, keys: Object.freeze([]), series: Object.freeze([]), periods: Object.freeze([]),
+    delta: null, meta: Object.freeze({ rows: 0 }),
+});
+
 // Au-delà de ce nombre de cartes, celles hors écran ne sont dessinées qu'à
 // l'approche (le résultat est calculé quand même : exports et relevés exacts).
 const DEFER_CHARTS_BEYOND = 12;
@@ -711,6 +749,14 @@ function renderCard(item, card, dashboard, { force = false } = {}) {
     const body = card.querySelector('.stats-card-body');
     const note = card.querySelector('.stats-card-note');
     const verdict = card.querySelector('.stats-card-verdict');
+    if (isImageSpec(spec)) {
+        // Rien à calculer : l'image se charge seule (imageBlock). Le
+        // résultat fixe la fait entrer dans la présentation et la vidéo.
+        state.results.set(spec.id, { result: IMAGE_RESULT, spec });
+        note.hidden = true;
+        verdict.hidden = true;
+        return;
+    }
     const failed = chartSources(spec).filter((s) => state.sourceErrors.has(s));
     if (failed.length) {
         state.results.set(spec.id, { result: null, spec, error: failed });

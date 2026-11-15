@@ -16,11 +16,13 @@ import {
     SLIDE_SECONDS, slideSeconds, videoMoment,
 } from './dashboard_video.mjs';
 import { createVideoStream } from './video_stream.mjs';
+import { fitRect, imageZoom, isImageSpec } from './image_tile.mjs';
 import { playlistDisplayName } from './music_playlist.mjs';
 import { fileSafe } from './stats_page_card_actions.js';
 import { chartContext } from './stats_page_cards.js';
 import { activeDashboard, chartTitle, dashboardPeriodLabel } from './stats_page_dashboard.js';
 import { fetchJson } from './stats_page_data.js';
+import { libraryImages, loadImage, uploadLibraryImage } from './stats_page_image.js';
 import { slidePeriod } from './stats_page_present.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 
@@ -356,7 +358,7 @@ async function fillImageChoices(prefs = {}) {
     select.replaceChildren(new Option(t('Sans image'), ''));
     let files = [];
     try {
-        files = (await fetchJson('/api/images'))?.files || [];
+        files = await libraryImages();
     } catch (e) {
         console.warn("[stats] Bibliothèque d'images non lue :", e?.message || e);
     }
@@ -380,23 +382,15 @@ function selectImage(file) {
         return;
     }
     const image = { file, ready: null };
-    image.ready = (async () => {
-        const el = new Image();
-        el.src = '/api/images/' + encodeURIComponent(file);
-        try {
-            await el.decode();
-            return el;
-        } catch (e) {
-            console.warn("[stats] Image d'ouverture illisible :", e?.message || e);
-            if (state.video === video && video.image === image) {
-                video.image = null;
-                $('statsVideoImage').value = '';
-                persistVideoPrefs();
-                showToast(t("Cette image n'a pas pu être lue."), 'warning');
-            }
-            return null;
+    image.ready = loadImage(file).then((el) => {
+        if (!el && state.video === video && video.image === image) {
+            video.image = null;
+            $('statsVideoImage').value = '';
+            persistVideoPrefs();
+            showToast(t("Cette image n'a pas pu être lue."), 'warning');
         }
-    })();
+        return el;
+    });
     video.image = image;
 }
 
@@ -413,15 +407,11 @@ export async function onImageFile() {
     if (!file || !video) return;
     const button = $('btnStatsVideoImageBrowse');
     button.disabled = true;
-    let data = null;
+    let data;
     try {
-        const form = new FormData();
-        form.append('image', file, file.name);
-        const response = await fetch('/api/images', { method: 'POST', body: form });
-        data = await response.json().catch(() => null);
-        if (!response.ok || !data?.success) throw new Error(data?.message || 'HTTP ' + response.status);
+        data = await uploadLibraryImage(file);
     } catch (e) {
-        showError(data?.message || t("L'image n'a pas pu être envoyée."));
+        showError(e.message);
         return;
     } finally {
         button.disabled = false;
@@ -445,6 +435,14 @@ export function onOutroChange() {
 // Image de l'écran d'ouverture, décodée (null : pas d'image, ou illisible).
 async function openingImage(video) {
     return (await video.image?.ready) || null;
+}
+
+// Images des tuiles parmi les écrans, décodées avant la prise (le dessin est
+// synchrone) : identifiant → élément, ou null si l'image est introuvable.
+async function tileImages(slides) {
+    const tiles = slides.filter((entry) => isImageSpec(entry.spec));
+    const images = await Promise.all(tiles.map((entry) => loadImage(entry.spec.view.image.file)));
+    return new Map(tiles.map((entry, i) => [entry.spec.id, images[i]]));
 }
 
 // Deux ouvertures proches de la fenêtre peuvent se chevaucher : seul le
@@ -1271,9 +1269,56 @@ function numberPainter(spec, result, { width, height }) {
     return { canvas, paint, dispose: () => {} };
 }
 
+// Tuile image : sa légende en titre (comme un graphique), l'image entière
+// dessous, qui s'avance doucement (imageZoom) ; « Image introuvable » si
+// elle n'a pas pu être chargée.
+function imagePainter(spec, image, { width, height }) {
+    const tokens = state.tokens || readTokens();
+    const { pad, titleSize, top } = videoFrame({ width, height });
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const g = canvas.getContext('2d');
+    const font = videoFont();
+    const caption = spec.title;
+    const areaTop = caption ? top : pad;
+    const areaW = width - pad * 2;
+    const areaH = height - areaTop - pad;
+    const paint = (progress) => {
+        g.fillStyle = tokens.surface;
+        g.fillRect(0, 0, width, height);
+        const measure = (s) => g.measureText(s).width;
+        if (caption) {
+            g.textBaseline = 'alphabetic';
+            g.textAlign = 'left';
+            g.fillStyle = tokens.text;
+            g.font = '600 ' + titleSize + 'px ' + font;
+            g.fillText(ellipsize(caption, areaW, measure), pad, pad + titleSize * 0.9);
+        }
+        if (!image) {
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            g.fillStyle = tokens.textMuted;
+            g.font = '500 ' + titleSize + 'px ' + font;
+            g.fillText(ellipsize(t('Image introuvable'), areaW, measure), width / 2, areaTop + areaH / 2);
+            return;
+        }
+        const rect = fitRect(image.naturalWidth, image.naturalHeight, areaW, areaH, 'contain', imageZoom(progress));
+        g.save();
+        g.beginPath();
+        g.rect(pad, areaTop, areaW, areaH);
+        g.clip();
+        g.drawImage(image, pad + rect.x, areaTop + rect.y, rect.width, rect.height);
+        g.restore();
+    };
+    return { canvas, paint, dispose: () => {} };
+}
+
 // Écran d'un graphique : chiffre clé qui compte, graphique révélé au fil
-// de ses clés, ou graphique entier (carte, radar).
-function slidePainter(spec, result, size) {
+// de ses clés, ou graphique entier (carte, radar) ; ou une tuile image
+// (`image` : son élément décodé).
+function slidePainter(spec, result, size, image = null) {
+    if (isImageSpec(spec)) return imagePainter(spec, image, size);
     if (spec.view.chart === 'number') return numberPainter(spec, result, size);
     return videoPainter(spec, result, size, { reveal: chartAnimates(spec, result) });
 }
@@ -1284,8 +1329,9 @@ function slidePainter(spec, result, size) {
 // le moment affiché (videoMoment) ; `dispose` relâche l'écran courant
 // (les précédents l'ont été au changement). `seconds` = durée par
 // graphique lue dans le formulaire, pour le calcul de la durée totale.
-// `image` : l'image décodée de l'écran d'ouverture, ou null.
-function makeDashboardPainter(slides, size, image = null) {
+// `image` : l'image décodée de l'écran d'ouverture, ou null ; `tiles` :
+// celles des tuiles image (tileImages).
+function makeDashboardPainter(slides, size, image = null, tiles = new Map()) {
     const dashboard = activeDashboard();
     // « Caler la durée sur la musique » : la fenêtre du passage est
     // répartie entre les écrans cochés (plancher 1 s) — une durée
@@ -1318,7 +1364,7 @@ function makeDashboardPainter(slides, size, image = null) {
                 key,
                 painter: moment.kind === 'intro' || moment.kind === 'outro'
                     ? introPainter(dashboard, image, size)
-                    : slidePainter(entry.spec, entry.result, size),
+                    : slidePainter(entry.spec, entry.result, size, tiles.get(entry.spec.id) || null),
             };
         }
         return current.painter;
@@ -1401,8 +1447,9 @@ async function recordDashboardVideo(video) {
         return;
     }
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
-    const machine = makeDashboardPainter(slides, size, await openingImage(video));
+    const [opening, tiles] = await Promise.all([openingImage(video), tileImages(slides)]);
     if (video.cancelled) return;
+    const machine = makeDashboardPainter(slides, size, opening, tiles);
     const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny, machine.outro);
     setVideoPhase('recording');
     const canvas = machine.canvas;
@@ -1624,8 +1671,9 @@ async function previewDashboardVideo(video) {
     const slides = includedSlides(video).map((id) => state.results.get(id)).filter((entry) => entry?.result);
     if (!slides.length) return;
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
-    const machine = makeDashboardPainter(slides, size, await openingImage(video));
+    const [opening, tiles] = await Promise.all([openingImage(video), tileImages(slides)]);
     if (video.cancelled) return;
+    const machine = makeDashboardPainter(slides, size, opening, tiles);
     const duration = dashboardVideoDuration(slides.length, machine.seconds, machine.allowAny, machine.outro);
     video.previewStop = false;
     setVideoPhase('preview');

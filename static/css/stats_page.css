@@ -334,6 +334,48 @@ html {
     height: var(--stats-chart-height, 300px);
 }
 
+/* ----- Tuile image (stats_page_image.js) ----- */
+.stats-image {
+    width: 100%;
+    height: var(--stats-chart-height, 300px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+}
+.stats-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.stats-image[data-fit="cover"] img {
+    object-fit: cover;
+}
+/* Une image sans légende : l'en-tête ne garde que la poignée et le menu,
+   l'image remonte au plus près. */
+.stats-card[data-chart="image"] .stats-card-title:empty {
+    visibility: hidden;
+}
+.stats-card[data-chart="image"] .stats-card-body {
+    margin-top: 4px;
+}
+.stats-image-preview {
+    height: 260px;
+    border: 1px dashed var(--color-border);
+}
+.stats-image-empty {
+    margin: 0;
+    padding: 16px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+.stats-present-image {
+    height: 100%;
+    border-radius: 0;
+}
+
 /* ----- Déplacer, redimensionner ----- */
 .stats-card-grip {
     flex: 0 0 auto;

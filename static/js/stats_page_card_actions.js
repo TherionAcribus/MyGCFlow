@@ -3,12 +3,14 @@
 
 import { showActionToast, showConfirmation, t } from './notifications.js';
 import { createChartSpec } from './chart_spec.mjs';
+import { isImageSpec } from './image_tile.mjs';
 import { DASHBOARD_SIZES, HEIGHT_PIXELS, MAX_ITEMS, SIZE_COLUMNS } from './dashboard_model.mjs';
 import { renderDashboard, syncAddTile } from './stats_page_cards.js';
 import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
 import { retrySources } from './stats_page_data.js';
 import { openEditor } from './stats_page_editor.js';
 import { exportPng, exportSvg, openExplain, openValues } from './stats_page_exports.js';
+import { openImageEditor } from './stats_page_image.js';
 import { sendToPanel } from './stats_page_links.js';
 import { openPresentation } from './stats_page_present.js';
 import { scheduleSave } from './stats_page_save.js';
@@ -56,14 +58,16 @@ export function onCardAction(event) {
     const index = itemIndex(card.dataset.chartId);
     if (index < 0) return;
     const item = dashboard.items[index];
+    const image = isImageSpec(item.spec);
     switch (button.dataset.action) {
         case 'edit':
-            openEditor({ mode: 'edit', index, item });
+            if (image) openImageEditor({ mode: 'edit', item });
+            else openEditor({ mode: 'edit', index, item });
             break;
         case 'duplicate': {
             if (dashboard.items.length >= MAX_ITEMS) return;
             const copy = { size: item.size, height: item.height, spec: createChartSpec(structuredClone(item.spec)) };
-            withUndo(t('Graphique dupliqué.'), () => dashboard.items.splice(index + 1, 0, copy));
+            withUndo(image ? t('Image dupliquée.') : t('Graphique dupliqué.'), () => dashboard.items.splice(index + 1, 0, copy));
             break;
         }
         case 'values':
@@ -96,20 +100,28 @@ export function onCardAction(event) {
             });
             break;
         }
-        case 'delete':
+        case 'delete': {
+            // Une image sans légende n'a pas de nom à citer.
+            const named = !image || Boolean(item.spec.title);
+            const question = !image ? t('Supprimer le graphique « ${title} » ?', { title: chartTitle(item.spec) })
+                : named ? t("Supprimer l'image « ${title} » ?", { title: item.spec.title })
+                    : t('Supprimer cette image ?');
+            const done = !image ? t('Graphique « ${title} » supprimé.', { title: chartTitle(item.spec) })
+                : named ? t('Image « ${title} » supprimée.', { title: item.spec.title })
+                    : t('Image supprimée.');
             showConfirmation(
-                t('Supprimer le graphique « ${title} » ?', { title: chartTitle(item.spec) }),
+                question,
                 t('Supprimer'),
                 () => {
                     const i = itemIndex(item.spec.id);
                     if (i < 0) return;
-                    withUndo(t('Graphique « ${title} » supprimé.', { title: chartTitle(item.spec) }),
-                        () => activeDashboard().items.splice(i, 1));
+                    withUndo(done, () => activeDashboard().items.splice(i, 1));
                 },
                 null,
                 { danger: true, confirmText: t('Supprimer') },
             );
             break;
+        }
         default:
             break;
     }

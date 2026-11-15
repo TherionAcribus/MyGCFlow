@@ -244,8 +244,11 @@ export async function dashboardImageBlob() {
     if (!state.ready || !activeDashboard().items.length) throw new Error('no dashboard');
     // Cartes encore différées : dessinées d'abord, la disposition est finale.
     renderDeferred();
-    // Et les contours de zones arrivés, pour ne pas figer « Chargement… ».
+    // Et les contours de zones arrivés, pour ne pas figer « Chargement… »,
+    // et les images des tuiles décodées (une image en échec reste « image
+    // introuvable »).
     await whenZoneMapsReady(activeDashboard().items.map((item) => item.spec));
+    await Promise.all([...$('statsGrid').querySelectorAll('.stats-image img')].map((img) => img.decode().catch(() => {})));
     const dashboard = activeDashboard();
     const tokens = state.tokens || readTokens();
     const root = getComputedStyle(document.documentElement);
@@ -268,7 +271,7 @@ export async function dashboardImageBlob() {
     if (!blob) throw new Error('toBlob');
     state.lastImage = {
         width: out.canvas.width, height: out.canvas.height, ratio: out.ratio,
-        cards: out.cards, charts: out.charts, bytes: blob.size,
+        cards: out.cards, charts: out.charts, images: out.images, bytes: blob.size,
     };
     return blob;
 }

@@ -353,6 +353,16 @@ class StatisticsPageTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.get_json()["error"], "no-backup")
 
+    def test_image_files_lists_image_tiles_only(self):
+        image = lambda name: {"size": "S", "spec": {"view": {"chart": "image", "image": {"file": name}}}}
+        doc = {"v": 1, "dashboards": [
+            {"id": "d1", "items": [image("aaaa.png"), {"spec": {"view": {"chart": "bar", "image": {"file": "x.png"}}}}]},
+            {"id": "d2", "items": [image("bbbb.png"), image("aaaa.png"), "pas un élément", {"spec": None}]},
+        ]}
+        self.assertEqual(dashboards_store.image_files(doc), {"aaaa.png", "bbbb.png"})
+        for bad in (None, {}, {"dashboards": "x"}, {"dashboards": [{"items": None}]}):
+            self.assertEqual(dashboards_store.image_files(bad), set())
+
 
 def _feature(**props):
     return {"type": "Feature", "geometry": {"type": "Point", "coordinates": [2.3, 48.8]},

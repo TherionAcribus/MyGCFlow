@@ -899,7 +899,8 @@ tel qu'il est affiché — même disposition, même thème clair ou sombre.
   surface ≤ 100 Mpx, `imageRatio`, dashboard_image.mjs).
 - Copie : `ClipboardItem` reçoit la promesse de l'image (le geste de
   l'utilisateur reste valable pendant le dessin).
-- Relevé `image` : `width`, `height`, `ratio`, `cards`, `charts`, `bytes`.
+- Tuiles image : l'`<img>` redessinée au cadrage affiché (`fitRect`).
+- Relevé `image` : `width`, `height`, `ratio`, `cards`, `charts`, `images`, `bytes`.
 
 ## Organisation (lot 5)
 
@@ -1162,6 +1163,56 @@ chart_goal.mjs.
   `year_pace`, `year_curve` ; « Suis-je en avance sur l'an dernier ? »
   prolonge l'année en cours.
 
+## Tuiles image (2026-11-15)
+
+Un logo ou une photo posé entre les graphiques : galerie « Ajouter un
+graphique » → « Partir de zéro » → **Image** (`data-question="image"`).
+
+- Format (`image_tile.mjs`, chart_spec.mjs) : un élément ordinaire
+  `{ size, height, spec }` dont la vue est `{ chart: 'image', image: { file,
+  fit } }` ; `title` est la légende (facultative). `normalizeChartSpec`
+  bifurque sur `normalizeImageSpec` : les autres champs gardent leurs
+  défauts (`groupBy: 'none'`, `periods`/`filters` nuls…), si bien que le
+  code commun (cartes, déplacements, redimensionnement, signatures,
+  annulation) les lit sans cas particulier. `file` : un nom de la
+  bibliothèque (`/^[0-9a-f]{16}\.(png|jpg)$/`, sinon '' → « image
+  introuvable ») ; `fit` : `contain` (« Image entière », défaut) ou
+  `cover` (« Remplir la tuile », recadrée au centre).
+- Pas de source : `chartSources` rend `[]` (jamais « données
+  indisponibles », admise dans un tableau Évolution — `fitItem`) ; pas de
+  requête : `renderCard` pose un résultat fixe (`IMAGE_RESULT`, vide) qui
+  la fait entrer dans la présentation et la vidéo (`presentSlides`).
+- Carte : `imageBlock` (stats_page_image.js), `<img>` servi par
+  `/api/images/<fichier>` (même origine : les canevas restent
+  exportables), `object-fit` selon le cadrage ; `data-state` loading →
+  ready / missing (« Image introuvable … « Modifier » permet d'en choisir
+  une autre. »). Sans légende, le titre de l'en-tête reste vide ;
+  `chartTitle` rend « Image » pour les listes (écrans de la vidéo,
+  confirmations). Menu réduit (`imageMenu`) : Modifier, Dupliquer,
+  Présenter à partir d'ici, Déplacer avant / après, Supprimer.
+- Fenêtre (`#statsImageModal`, `openImageEditor`) : image de la
+  bibliothèque (`libraryImages`, `GET /api/images`) ou « Parcourir… »
+  (`uploadLibraryImage`, `POST /api/images` — mêmes refus que l'onglet
+  Images), légende, cadrage, aperçu au cadrage choisi ; « Ajouter » /
+  « Enregistrer » attend une image. Nouvelle tuile en taille S. Mêmes
+  helpers pour l'image d'ouverture de la vidéo.
+- Présentation : la légende en titre, sans période, l'image toujours
+  entière (`contain`). Vidéo du tableau : un écran comme un graphique
+  (`imagePainter`) — légende en titre, image entière qui s'avance de 95 %
+  à 100 % (`imageZoom`, jamais au-delà : un logo garde ses bords) ;
+  images décodées avant la prise (`tileImages`, le dessin est
+  synchrone), « Image introuvable » à défaut. Image du tableau (PNG) :
+  l'`<img>` est redessinée au cadrage affiché (`fitRect`, stats_image.js),
+  après `decode()` de toutes les images ; relevé `image.images`.
+- Bibliothèque : une image posée en tuile compte comme utilisée
+  (`dashboards_store.image_files`, lu par `_referenced_image_files` de
+  blueprints/images.py) — pastille « utilisée » dans l'onglet Images,
+  retrait refusé (409).
+- Export / import d'un tableau : le fichier ne porte que le nom de
+  l'image ; sur une autre installation, la tuile s'affiche « Image
+  introuvable » (embarquer l'image : chantier à part).
+- Relevé `cards[].image` : `{ file, fit, state }`.
+
 ## Mode présentation
 
 Bouton « Présenter » de la barre, ou « Présenter à partir d'ici » dans le
@@ -1230,7 +1281,8 @@ regroupement change, un chiffre clé devenu graphique passe de S à M.
 ## Tests
 
 - Unitaires : `chart_spec`, `chart_query` (sources, périodes, moteur),
-  `chart_echarts`, `dashboard_model` (et libellés) — `npm run test:unit`.
+  `chart_echarts`, `dashboard_model` (et libellés), `image_tile` (tuiles
+  image) — `npm run test:unit`.
 - Python : `tests/test_statistics_page.py` — route, en-tête, « Quitter »,
   colonnes des trouvailles, aller-retour et refus des tableaux de bord.
 - Unitaires du lot 3 : `chart_filters.test.mjs` ; grille, calendrier, radar,

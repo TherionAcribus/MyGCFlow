@@ -8,6 +8,7 @@ sans quoi le canvas de la vidéo serait contaminé et l'export impossible.
 from flask import Blueprint, abort, jsonify, request, send_from_directory
 from flask_babel import gettext as _babel_gettext
 
+import dashboards_store
 import image_library
 import paths
 from settings_manager import get_settings_manager
@@ -29,7 +30,12 @@ def _(msgid, **kwargs):
 
 def _referenced_image_files():
     settings = get_settings_manager().get_app_settings()
-    return image_library.referenced_image_files(getattr(settings, 'images', None))
+    referenced = image_library.referenced_image_files(getattr(settings, 'images', None))
+    # Tuiles image des tableaux de bord (page Statistiques).
+    for name in dashboards_store.image_files(dashboards_store.load_document()):
+        if image_library.safe_image_name(name):
+            referenced.add(name)
+    return referenced
 
 
 def _invalid_message(reason):
@@ -87,7 +93,7 @@ def route_delete_image():
         return jsonify({'success': False, 'message': _("Image inconnue")}), 400
     if name in _referenced_image_files():
         return jsonify({'success': False,
-                        'message': _("Cette image est utilisée sur la carte ou dans une configuration.")}), 409
+                        'message': _("Cette image est utilisée sur la carte, dans une configuration ou dans un tableau de statistiques.")}), 409
     try:
         found = image_library.delete_image_file(name)
     except OSError as e:

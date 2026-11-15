@@ -564,6 +564,55 @@
             </div>
         </div>
 
+        <!-- Tuile image (image_tile.mjs, stats_page_image.js) : une image de la
+             bibliothèque de l'onglet Images, une légende, un cadrage. -->
+        <div class="modal fade" id="statsImageModal" tabindex="-1" aria-labelledby="statsImageTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <form class="modal-content" id="statsImageForm">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="statsImageTitle">{{ _("Ajouter une image") }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _("Fermer") }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="statsImageFile" class="form-label">{{ _("Image") }}</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select id="statsImageFile" class="form-select">
+                                        <option value="">{{ _("Choisir une image…") }}</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" id="btnStatsImageBrowse">{{ _("Parcourir…") }}</button>
+                                </div>
+                                <input type="file" id="statsImageUpload" accept="image/*,.heic,.heif" hidden>
+                                <div class="form-hint">{{ _("Les images de l'onglet Images de la carte ; un nouveau fichier les rejoint.") }}</div>
+                                <label for="statsImageCaption" class="form-label mt-3">{{ _("Légende") }}</label>
+                                <input type="text" id="statsImageCaption" class="form-control" maxlength="80"
+                                       placeholder="{{ _("Facultative : affichée en titre de la tuile") }}">
+                                <label class="form-label mt-3" id="statsImageFitLabel">{{ _("Cadrage") }}</label>
+                                <div class="btn-group w-100" role="group" aria-labelledby="statsImageFitLabel">
+                                    <input type="radio" class="btn-check" name="statsImageFit" id="statsImageFitContain" value="contain" checked>
+                                    <label class="btn btn-outline-secondary" for="statsImageFitContain">{{ _("Image entière") }}</label>
+                                    <input type="radio" class="btn-check" name="statsImageFit" id="statsImageFitCover" value="cover">
+                                    <label class="btn btn-outline-secondary" for="statsImageFitCover">{{ _("Remplir la tuile") }}</label>
+                                </div>
+                                <div class="form-hint">{{ _("« Remplir la tuile » recadre l'image au centre. En présentation et en vidéo, l'image est toujours montrée entière.") }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="form-label d-block" aria-hidden="true">{{ _("Aperçu") }}</span>
+                                <div class="stats-image stats-image-preview" id="statsImagePreview" data-fit="contain">
+                                    <p class="stats-image-empty" id="statsImagePreviewEmpty">{{ _("Aucune image choisie.") }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="submit" class="btn btn-primary" id="btnStatsImageSave" disabled>{{ _("Ajouter") }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Renommer le tableau de bord. -->
         <div class="modal fade" id="statsRenameModal" tabindex="-1" aria-labelledby="statsRenameTitle" aria-hidden="true">
             <div class="modal-dialog modal-sm modal-dialog-centered">

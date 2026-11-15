@@ -41,6 +41,7 @@ import {
     closePresentation, openPresentation, presentEl, presentGo, scheduleAutoAdvance, showSlide,
     togglePresentAuto,
 } from './stats_page_present.js';
+import { onImageUpload, saveImageEditor, syncImagePreview } from './stats_page_image.js';
 import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { getBsModal } from './ui_bootstrap.js';
@@ -165,6 +166,12 @@ window.getStatsPageSnapshot = () => {
                 // Hauteur choisie (M / L) ; `height` = hauteur affichée en px.
                 heightKey: item.height || 'M',
                 chart: item.spec.view.chart,
+                // Tuile image : fichier, cadrage, état de chargement
+                // (loading / ready / missing).
+                image: item.spec.view.image ? {
+                    ...item.spec.view.image,
+                    state: $('statsGrid').querySelector(cardSelector(item.spec.id) + ' .stats-image')?.dataset.state ?? null,
+                } : null,
                 groupBy: item.spec.groupBy,
                 measure: measureKey(item.spec.measure),
                 title: chartTitle(item.spec),
@@ -313,6 +320,16 @@ function bindEvents() {
     $('btnStatsAddChartEmpty').addEventListener('click', openGallery);
     $('btnStatsRename').addEventListener('click', openRename);
     $('statsRenameForm').addEventListener('submit', submitRename);
+    // Fenêtre d'une tuile image.
+    $('statsImageForm').addEventListener('submit', saveImageEditor);
+    $('statsImageFile').addEventListener('change', syncImagePreview);
+    $('statsImageCaption').addEventListener('input', syncImagePreview);
+    for (const radio of document.querySelectorAll('input[name="statsImageFit"]')) radio.addEventListener('change', syncImagePreview);
+    $('statsImageUpload').addEventListener('change', onImageUpload);
+    $('btnStatsImageBrowse').addEventListener('click', () => {
+        $('statsImageUpload').value = '';
+        $('statsImageUpload').click();
+    });
     $('statsGlobalPeriod').addEventListener('change', onGlobalPeriodChange);
     $('statsGlobalUpTo').addEventListener('change', onGlobalPeriodChange);
     $('statsRangeForm').addEventListener('submit', submitRangePick);

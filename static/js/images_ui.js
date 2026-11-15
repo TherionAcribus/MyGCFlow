@@ -519,7 +519,8 @@ function renderLibraryGrid() {
         }
     }
     const entries = [...listing.files].sort(LIBRARY_SORTS[librarySort] || LIBRARY_SORTS.recent);
-    // Une image utilisée (sur la carte ou dans une configuration) ne peut pas
+    // Une image utilisée (sur la carte, dans une configuration ou dans un
+    // tableau de la page Statistiques) ne peut pas
     // être retirée : le serveur refuserait. Une image qu'un « Annuler »
     // encore affiché remettrait sur la carte non plus.
     const removable = (entry) => !entry.referenced && !awaitingUndo.has(entry.file);

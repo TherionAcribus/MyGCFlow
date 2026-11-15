@@ -4,7 +4,9 @@ import { showToast, t } from './notifications.js';
 import { periodsAreMultiple } from './chart_spec.mjs';
 import { keyAction, presentDelay, presentSlides, startIndex, stepIndex } from './present_model.mjs';
 import { hasOwnPeriod } from './dashboard_model.mjs';
+import { isImageSpec } from './image_tile.mjs';
 import { cardNote, fillVerdict, renderChartInto, renderNumber } from './stats_page_cards.js';
+import { imageBlock } from './stats_page_image.js';
 import { activeDashboard, chartTitle, dashboardPeriodLabel, periodsBadge } from './stats_page_dashboard.js';
 import { $, state } from './stats_page_state.js';
 
@@ -98,14 +100,20 @@ export function showSlide(index, { animate = true } = {}) {
     fillVerdict($('statsPresentVerdict'), entry?.result ?? null, entry?.spec);
     if (!entry?.result) return;
     const { spec, result } = entry;
-    $('statsPresentTitle').textContent = chartTitle(spec);
-    $('statsPresentPeriod').textContent = slidePeriod(spec, dashboard);
-    const note = cardNote(result, spec);
+    const image = isImageSpec(spec);
+    // Une image : sa légende seule, sans période (elle n'en a pas).
+    $('statsPresentTitle').textContent = image ? spec.title : chartTitle(spec);
+    $('statsPresentPeriod').textContent = image ? '' : slidePeriod(spec, dashboard);
+    $('statsPresentPeriod').hidden = image;
+    const note = image ? '' : cardNote(result, spec);
     $('statsPresentNote').textContent = note;
     $('statsPresentNote').hidden = !note;
     $('statsPresentCount').textContent = t('${n} / ${count}', { n: index + 1, count: present.slides.length });
     body.classList.toggle('is-entering', animate && !state.reduceMotion);
-    if (spec.view.chart === 'number') {
+    if (image) {
+        // Toujours entière : « remplir » couperait trop d'un écran entier.
+        body.append(imageBlock(spec, { fit: 'contain', className: 'stats-present-image' }));
+    } else if (spec.view.chart === 'number') {
         const number = document.createElement('div');
         number.className = 'stats-number stats-present-number';
         body.append(number);

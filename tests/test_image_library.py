@@ -335,6 +335,12 @@ class RouteTests(ImageLibraryTestCase):
         patcher = mock.patch.object(images_bp_module, 'get_settings_manager', return_value=manager)
         patcher.start()
         self.addCleanup(patcher.stop)
+        # Tableaux de bord de la page Statistiques (dashboards.json).
+        self.dashboards_doc = None
+        patcher = mock.patch.object(images_bp_module.dashboards_store, 'load_document',
+                                    side_effect=lambda: self.dashboards_doc)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         app = Flask(__name__)
         app.register_blueprint(images_bp_module.images_bp)
         self.client = app.test_client()
@@ -379,6 +385,15 @@ class RouteTests(ImageLibraryTestCase):
         self.images_settings['evolution_items'] = [{'file': name}]
         self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 409)
         self.images_settings['evolution_items'] = []
+        # Posée en tuile dans un tableau de bord : retrait refusé, et la
+        # bibliothèque la montre utilisée.
+        self.dashboards_doc = {'v': 1, 'dashboards': [{'id': 'aaaaaa', 'items': [
+            {'size': 'S', 'spec': {'id': 'bbbbbb', 'view': {'chart': 'bar'}}},
+            {'size': 'S', 'spec': {'id': 'cccccc', 'view': {'chart': 'image', 'image': {'file': name}}}},
+        ]}]}
+        self.assertTrue(self.client.get('/api/images').get_json()['files'][0]['referenced'])
+        self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 409)
+        self.dashboards_doc = None
         self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 200)
         self.assertEqual(self.client.post('/api/images/delete', json={'file': name}).status_code, 404)
         self.assertEqual(self.client.post('/api/images/delete', json={'file': '../x'}).status_code, 400)

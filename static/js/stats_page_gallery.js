@@ -12,6 +12,7 @@ import { cardSelector, chartContext, computeResult } from './stats_page_cards.js
 import { activeDashboard, chartTitle } from './stats_page_dashboard.js';
 import { tableOf } from './stats_page_data.js';
 import { openEditor } from './stats_page_editor.js';
+import { openImageEditor } from './stats_page_image.js';
 import { $, echartsLocale, state } from './stats_page_state.js';
 import { zoneMapFor } from './stats_page_geo.js';
 
@@ -88,6 +89,8 @@ function renderGallery() {
     };
     list.append(section('custom', t('Partir de zéro'), [
         card('custom', 'ti-adjustments', t('Graphique personnalisé'), t('Partir de zéro et tout choisir.'), { preview: false }),
+        card('image', 'ti-photo', t('Image'), t('Un logo ou une photo entre deux graphiques, repris en présentation et en vidéo.'),
+            { preview: false, keywords: t('logo photo illustration') }),
     ]));
     // Questions de la famille du tableau seulement.
     const dashboard = activeDashboard();
@@ -277,6 +280,10 @@ export function onGalleryPick(event) {
     if (id === 'custom') {
         const source = dashboardSources(dashboard)[0];
         openEditor({ mode: 'new', item: { size: 'M', height: 'M', spec: createChartSpec({ source, groupBy: 'month' }) } });
+        return;
+    }
+    if (id === 'image') {
+        openImageEditor({ mode: 'new' });
         return;
     }
     const item = state.gallery.items.get(id);

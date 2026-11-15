@@ -16,6 +16,7 @@
 // (lot 3 pour l'interface ; `{}` = aucun).
 
 import {
+    chartSources,
     createChartSpec,
     evolutionDatasetOf,
     evolutionSource,
@@ -27,6 +28,7 @@ import {
     sourceFamily,
 } from './chart_spec.mjs';
 import { ymdOfDay } from './stats_model.mjs';
+import { isImageSpec } from './image_tile.mjs';
 import { nextMilestone } from './chart_goal.mjs';
 
 export const DASHBOARDS_VERSION = 1;
@@ -93,6 +95,8 @@ export function rebindEvolution(spec, datasetId) {
 // Un élément dans la famille du tableau : tel quel, rattaché au jeu, ou
 // null (écarté).
 function fitItem(item, kind, dataset) {
+    // Une image n'a pas de source : elle va dans tout tableau.
+    if (isImageSpec(item.spec)) return item;
     const family = sourceFamily(item.spec.source);
     if (kind === 'personal') return family === 'personal' ? item : null;
     if (family !== 'evolution') return null;
@@ -374,7 +378,7 @@ export function dashboardSources(dashboard) {
 // La description respecte-t-elle la famille du tableau ?
 export function specFitsDashboard(spec, dashboard) {
     const allowed = new Set(dashboardSources(dashboard));
-    return [spec.source, ...(spec.extraSources || [])].every((s) => allowed.has(s));
+    return chartSources(spec).every((s) => allowed.has(s));
 }
 
 export { isEvolutionSource };

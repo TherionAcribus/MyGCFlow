@@ -7,10 +7,12 @@
 // pixel de leurs lignes, coupures et « … » compris), icônes Tabler (glyphe
 // de leur ::before). Les graphiques ECharts sont redessinés hors écran sans
 // animation, à la netteté de l'image (`chartCanvas`, fourni par la page).
+// Les images des tuiles sont reprises au cadrage affiché (object-fit).
 // Les commandes (poignée, menu, boutons) ne sont pas reprises.
 import {
     applyTextTransform, colorVisible, ellipsize, iconGlyph, imageRatio, splitLines, wrapText,
 } from './dashboard_image.mjs';
+import { fitRect } from './image_tile.mjs';
 
 const PAD = 24;
 const TITLE_SIZE = 24;
@@ -151,6 +153,22 @@ function paintElement(g, el, ctx) {
         g.restore();
         return;
     }
+    if (el.tagName === 'IMG') {
+        // Image d'une tuile (chargée avant l'export : dashboardImageBlob).
+        if (el.complete && el.naturalWidth > 0) {
+            const x = rect.left - ctx.origin.x;
+            const y = rect.top - ctx.origin.y;
+            const fit = fitRect(el.naturalWidth, el.naturalHeight, rect.width, rect.height,
+                style.objectFit === 'cover' ? 'cover' : 'contain');
+            g.beginPath();
+            g.rect(x, y, rect.width, rect.height);
+            g.clip();
+            g.drawImage(el, x + fit.x, y + fit.y, fit.width, fit.height);
+            ctx.images += 1;
+        }
+        g.restore();
+        return;
+    }
     if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
         g.beginPath();
         g.rect(rect.left - ctx.origin.x, rect.top - ctx.origin.y, rect.width, rect.height);
@@ -196,7 +214,7 @@ export async function paintDashboardImage({ grid, title, lines = [], footer = ''
 
     const ctx = {
         origin: { x: gridRect.left - PAD, y: gridRect.top - headerHeight },
-        ratio, chartCanvas, charts: 0,
+        ratio, chartCanvas, charts: 0, images: 0,
     };
     let cards = 0;
     for (const card of grid.querySelectorAll('.stats-card')) {
@@ -217,5 +235,5 @@ export async function paintDashboardImage({ grid, title, lines = [], footer = ''
         g.textAlign = 'right';
         g.fillText(footer, width - PAD, height - 13);
     }
-    return { canvas, ratio, width, height, cards, charts: ctx.charts };
+    return { canvas, ratio, width, height, cards, charts: ctx.charts, images: ctx.images };
 }

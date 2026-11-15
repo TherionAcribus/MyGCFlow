@@ -77,7 +77,8 @@ toujours du serveur local, jamais d'une URL externe.
 Une image n'est jamais balayée : elle reste dans la bibliothèque jusqu'au
 retrait manuel via `POST /api/images/delete` — refusé (409) si elle est
 encore référencée (l'une des deux listes ou les configurations, lues par
-`referenced_image_files`). Côté onglet, le retrait est **confirmé**
+`referenced_image_files`, ou une tuile image d'un tableau de la page
+Statistiques, lue par `dashboards_store.image_files`). Côté onglet, le retrait est **confirmé**
 (`showConfirmation`, définitif) et le × est masqué pour les fichiers qu'un
 toast « Annuler » encore affiché (suppression d'une ligne, import)
 remettrait sur la carte (`undoProtected`, tant que le toast est dans la

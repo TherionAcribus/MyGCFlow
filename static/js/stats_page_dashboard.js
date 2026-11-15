@@ -10,6 +10,7 @@ import { readFilterForm, renderFilterForm } from './stats_filters_ui.js';
 import { filtersFromMapSelection } from './chart_map_link.mjs';
 import { normalizePeriod, periodAcceptsUpTo, withUpTo } from './chart_spec.mjs';
 import { expandPeriods } from './chart_periods.mjs';
+import { isImageSpec } from './image_tile.mjs';
 import {
     dashboardSources, defaultDashboard, duplicateDashboard, effectiveQueryOptions, exportDashboard, importDashboard,
     MAX_DASHBOARDS, periodChoices, periodOfValue, periodValue,
@@ -42,8 +43,10 @@ export function datasetName(id) {
     return state.datasets.find((d) => d.id === id)?.name || t('Jeu ${id}', { id });
 }
 
+// Titre d'un graphique ; une image sans légende s'appelle « Image »
+// (listes, confirmations, écrans de la vidéo).
 export function chartTitle(spec) {
-    return spec.title || state.labels.defaultTitle(spec);
+    return spec.title || (isImageSpec(spec) ? t('Image') : state.labels.defaultTitle(spec));
 }
 
 // Menu de périodes. `choices` : la liste proposée ; `inherit` ajoute

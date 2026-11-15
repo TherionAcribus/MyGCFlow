@@ -25,8 +25,14 @@
 // regroupement, alignement compatibles). Seule exception : une version plus
 // récente que celle du module (`v` > CHART_SPEC_VERSION) donne null — on ne
 // devine pas un format futur, l'appelant garde l'original intact.
+//
+// Tuile image (`view.chart: 'image'`, image_tile.mjs) : même format, mais
+// seuls `id`, `title` (la légende) et `view.image` comptent — les autres
+// champs gardent leurs valeurs par défaut, pour que le code commun
+// (cartes, déplacements, signatures) les lise sans cas particulier.
 
 import { parseYmd } from './stats_model.mjs';
+import { isImageSpec, normalizeImageView } from './image_tile.mjs';
 import { GRID_DEFAULT_SIZE, normalizeGridSize } from './zone_grid.mjs';
 
 export const CHART_SPEC_VERSION = 1;
@@ -541,8 +547,8 @@ export function normalizeExtraSources(raw, source) {
     return out;
 }
 
-// Toutes les sources d'un graphique.
-export const chartSources = (spec) => [spec.source, ...(spec.extraSources || [])];
+// Toutes les sources d'un graphique (aucune pour une tuile image).
+export const chartSources = (spec) => (isImageSpec(spec) ? [] : [spec.source, ...(spec.extraSources || [])]);
 
 // Le graphique a-t-il plusieurs séries (périodes ou sources) ?
 export function hasSeveralSeries(spec) {
@@ -727,6 +733,7 @@ function migrate(raw) {
 export function normalizeChartSpec(raw, newId = newChartId) {
     const src = isObject(raw) ? migrate(raw) : {};
     if (src === null) return null;
+    if (isImageSpec(src)) return normalizeImageSpec(src, newId);
 
     const source = isChartSource(src.source) ? src.source : CHART_SPEC_DEFAULTS.source;
     const extraSources = normalizeExtraSources(src.extraSources, source);
@@ -769,6 +776,26 @@ export function normalizeChartSpec(raw, newId = newChartId) {
     spec.view = view;
     spec.goal = normalizeGoal(src.goal, spec);
     return spec;
+}
+
+// Tuile image : légende, image et cadrage ; le reste aux défauts.
+function normalizeImageSpec(src, newId) {
+    const d = CHART_SPEC_DEFAULTS;
+    return {
+        v: CHART_SPEC_VERSION,
+        id: typeof src.id === 'string' && ID_RE.test(src.id) ? src.id : newId(),
+        title: flatText(src.title, CHART_TITLE_MAX),
+        source: d.source,
+        extraSources: [],
+        measure: { ...d.measure },
+        groupBy: 'none',
+        splitBy: null,
+        filters: null,
+        periods: null,
+        compare: { ...d.compare },
+        view: normalizeImageView(src.view),
+        goal: null,
+    };
 }
 
 // Nouvelle description à partir d'un modèle partiel (question toute faite,
