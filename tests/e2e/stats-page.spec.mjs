@@ -2007,7 +2007,7 @@ test("copier l'image du tableau la met dans le presse-papiers", async ({ page, r
 test('vidéo du tableau entier : ouverture, chaque graphique, musique choisie', async ({ page, request }) => {
   test.setTimeout(150_000);
   // Trois graphiques : un chiffre clé (compte), des barres (révélées), un
-  // anneau (entier) — 3 s d'ouverture + 3 × 4 s.
+  // anneau (entier) — 3 s d'ouverture + 3 × 4 s + 3 s de fermeture.
   const items = [
     { size: 'S', spec: { id: 'dddd01', groupBy: 'none', view: { chart: 'number' } } },
     { size: 'M', spec: { id: 'dddd02', groupBy: 'month_of_year', view: { chart: 'bar' } } },
@@ -2022,7 +2022,8 @@ test('vidéo du tableau entier : ouverture, chaque graphique, musique choisie', 
   await expect(page.locator('#statsVideoTitle')).toHaveText('Vidéo du tableau de bord');
   await expect(page.locator('#statsVideoDurationLabel')).toHaveText('Durée de chaque graphique');
   await page.locator('#statsVideoDuration').selectOption('4');
-  await expect(page.locator('#statsVideoTotal')).toContainText('3 graphiques, 15 secondes en tout');
+  // 3 s d'ouverture + 3 × 4 s + 3 s de fermeture (bookend).
+  await expect(page.locator('#statsVideoTotal')).toContainText('3 graphiques, 18 secondes en tout');
   // Musique : un fichier de l'ordinateur (2 s, bouclé par le serveur).
   await page.locator('#statsVideoMusicFile').setInputFiles(wavFile('fond.wav', 2, 0));
   await expect(page.locator('#statsVideoMusic')).toHaveValue('upload');
@@ -2059,10 +2060,62 @@ test('vidéo du tableau : un seul graphique reste au singulier', async ({ page, 
   await dashboardAction(page, 'video-dashboard');
   await expect(page.locator('#statsVideoModal')).toBeVisible();
   const total = page.locator('#statsVideoTotal');
-  // Pas d'enregistrement : 3 s d'ouverture + 1 × 6 s (défaut), puis × 4 s.
-  await expect(total).toHaveText("1 graphique, 9 secondes en tout : la vidéo s'enregistre en temps réel.");
+  // Pas d'enregistrement : 3 s d'ouverture + 1 × 6 s (défaut) + 3 s de
+  // fermeture, puis 4 s par graphique.
+  await expect(total).toHaveText("1 graphique, 12 secondes en tout : la vidéo s'enregistre en temps réel.");
   await page.locator('#statsVideoDuration').selectOption('4');
-  await expect(total).toHaveText("1 graphique, 7 secondes en tout : la vidéo s'enregistre en temps réel.");
+  await expect(total).toHaveText("1 graphique, 10 secondes en tout : la vidéo s'enregistre en temps réel.");
+
+  await page.locator('#btnStatsVideoCancel').click();
+  await expect(page.locator('#statsVideoModal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('vidéo du tableau : choisir les écrans et leur ordre', async ({ page, request }) => {
+  // Trois graphiques aux titres distincts : la liste « Écrans » les montre
+  // dans l'ordre du tableau, chacun excluable et déplaçable.
+  const items = [
+    { size: 'S', spec: { id: 'dddd01', groupBy: 'none', view: { chart: 'number' }, title: 'Le total' } },
+    { size: 'M', spec: { id: 'dddd02', groupBy: 'month_of_year', view: { chart: 'bar' }, title: 'Par mois' } },
+    { size: 'M', spec: { id: 'dddd03', groupBy: 'cache_type', view: { chart: 'donut' }, title: 'Par type' } },
+  ];
+  const doc = { v: 1, active: 'aaaaaa', dashboards: [{ id: 'aaaaaa', name: 'Mon bilan', period: { kind: 'all' }, items }] };
+  expect((await request.put('/api/dashboards', { data: doc })).ok()).toBeTruthy();
+  const errors = await openStats(page);
+
+  await dashboardAction(page, 'video-dashboard');
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  const rows = page.locator('#statsVideoSlidesList .stats-video-slide');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.locator('.form-check-label')).toHaveText(['Le total', 'Par mois', 'Par type']);
+  const labels = () => rows.locator('.form-check-label').allTextContents();
+
+  // Décocher le 2ᵉ : le total annoncé le retire (3 + 2 × 6 + 3 = 18 s).
+  await rows.nth(1).locator('input[type="checkbox"]').uncheck();
+  await expect(page.locator('#statsVideoTotal')).toContainText('2 graphiques, 18 secondes en tout');
+  expect((await snapshot(page)).video.excluded).toEqual(['dddd02']);
+
+  // « Descendre » sur la 1ʳᵉ ligne : l'ordre du DOM (et du relevé) change,
+  // la case décochée suit son graphique.
+  await rows.nth(0).locator('button[data-move="down"]').click();
+  expect(await labels()).toEqual(['Par mois', 'Le total', 'Par type']);
+  await expect(rows.nth(0).locator('button[data-move="up"]')).toBeDisabled();
+  await expect(rows.nth(0).locator('input[type="checkbox"]')).not.toBeChecked();
+  await expect(rows.nth(1).locator('input[type="checkbox"]')).toBeChecked();
+
+  // Tout décoché : pas de total, « Créer » et « Aperçu » grisés.
+  await rows.nth(1).locator('input[type="checkbox"]').uncheck();
+  await rows.nth(2).locator('input[type="checkbox"]').uncheck();
+  await expect(page.locator('#statsVideoTotal')).toHaveText('Cochez au moins un graphique.');
+  await expect(page.locator('#btnStatsVideoStart')).toBeDisabled();
+  await expect(page.locator('#btnStatsVideoPreview')).toBeDisabled();
+
+  // Une case recochée : les boutons et le total reviennent (3 + 6 + 3).
+  await rows.nth(0).locator('input[type="checkbox"]').check();
+  await expect(page.locator('#statsVideoTotal')).toContainText('1 graphique, 12 secondes en tout');
+  await expect(page.locator('#btnStatsVideoStart')).toBeEnabled();
+  await expect(page.locator('#btnStatsVideoPreview')).toBeEnabled();
+  expect((await snapshot(page)).video.excluded).toEqual(['dddd01', 'dddd03']);
 
   await page.locator('#btnStatsVideoCancel').click();
   await expect(page.locator('#statsVideoModal')).toBeHidden();

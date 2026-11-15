@@ -613,6 +613,12 @@
                                     <label for="statsVideoDuration" class="form-label" id="statsVideoDurationLabel">{{ _("Durée") }}</label>
                                     <select id="statsVideoDuration" class="form-select"></select>
                                 </div>
+                                <!-- Écrans de la vidéo du tableau : cases (exclure)
+                                     et flèches (réordonner). Masqué hors mode tableau. -->
+                                <div class="col-12" id="statsVideoSlides" hidden>
+                                    <label class="form-label" id="statsVideoSlidesLabel">{{ _("Écrans") }}</label>
+                                    <div id="statsVideoSlidesList" class="stats-video-slides" role="group" aria-labelledby="statsVideoSlidesLabel"></div>
+                                </div>
                                 <div class="col-12">
                                     <label for="statsVideoMusic" class="form-label">{{ _("Musique") }}</label>
                                     <select id="statsVideoMusic" class="form-select"></select>

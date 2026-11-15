@@ -4,17 +4,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-    DEFAULT_SLIDE_SECONDS, FADE_MS, INTRO_MS, countUp, dashboardVideoDuration, musicFields, slideSeconds, videoMoment,
+    DEFAULT_SLIDE_SECONDS, FADE_MS, INTRO_MS, OUTRO_MS, countUp, dashboardVideoDuration, musicFields, slideSeconds,
+    videoMoment,
 } from '../../static/js/dashboard_video.mjs';
 
-test('durées : ouverture puis un écran par graphique', () => {
+test('durées : ouverture, un écran par graphique, fermeture', () => {
     assert.equal(slideSeconds('8'), 8);
     assert.equal(slideSeconds(7), DEFAULT_SLIDE_SECONDS);
-    assert.equal(dashboardVideoDuration(8, 6), INTRO_MS + 48000);
-    assert.equal(dashboardVideoDuration(0, 6), INTRO_MS);
+    assert.equal(dashboardVideoDuration(8, 6), INTRO_MS + 48000 + OUTRO_MS);
+    assert.equal(dashboardVideoDuration(0, 6), INTRO_MS + OUTRO_MS);
+    // 2 graphiques de 4 s : 3 s + 2 × 4 s + 3 s.
+    assert.equal(dashboardVideoDuration(2, 4), 14000);
 });
 
-test('moment de la vidéo : ouverture, écrans, fin', () => {
+test('moment de la vidéo : ouverture, écrans, fermeture, fin', () => {
     const intro = videoMoment(0, 3, 4);
     assert.deepEqual([intro.kind, intro.fade], ['intro', 0]);
     const first = videoMoment(INTRO_MS + 100, 3, 4);
@@ -26,7 +29,13 @@ test('moment de la vidéo : ouverture, écrans, fin', () => {
     assert.ok(videoMoment(INTRO_MS + 1400, 3, 4).progress < 0.6);
     const third = videoMoment(INTRO_MS + 8000 + 600, 3, 4);
     assert.deepEqual([third.index, third.fade], [2, 1]);
-    assert.equal(videoMoment(INTRO_MS + 12000, 3, 4).kind, 'end');
+    // Après le dernier graphique : la vidéo se referme sur la carte de
+    // titre (bookend, 3 s) ; 'end' au-delà de la durée totale.
+    const outro = videoMoment(11500, 2, 4);      // 3000 + 2 × 4000 + 500
+    assert.deepEqual([outro.kind, outro.index, outro.local], ['outro', 2, 500]);
+    assert.equal(videoMoment(INTRO_MS + 12000, 3, 4).kind, 'outro');
+    assert.equal(videoMoment(INTRO_MS + 12000 + OUTRO_MS, 3, 4).kind, 'end');
+    assert.equal(videoMoment(14000, 2, 4).kind, 'end');
 });
 
 test('chiffre clé : de 0 à sa valeur, entier si elle l’est', () => {

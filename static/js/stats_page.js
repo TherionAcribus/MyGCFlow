@@ -229,6 +229,8 @@ window.getStatsPageSnapshot = () => {
         editor: state.editor ? { mode: state.editor.mode, spec: state.editor.item.spec, size: state.editor.item.size } : null,
         video: state.video ? {
             mode: state.video.mode, chartId: state.video.spec?.id ?? null, slides: state.video.slides?.length ?? null,
+            // Graphiques décochés dans la liste « Écrans » (vidéo tableau).
+            excluded: state.video.excluded ? [...state.video.excluded] : null,
             music: state.video.music ? { kind: state.video.music.kind, file: state.video.music.file || state.video.music.name } : null,
             phase: state.video.phase, file: state.video.file, folder: state.video.folder || null,
             // Masquage d'onglet pendant la prise : la vidéo a été gelée ;

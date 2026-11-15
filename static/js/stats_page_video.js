@@ -164,6 +164,14 @@ function setupVideoModal(video) {
         select.value = VIDEO_DURATIONS.includes(duration) ? String(duration) : '10';
     }
     if (VIDEO_SIZES[prefs.size]) $('statsVideoSize').value = prefs.size;
+    // Écrans de la vidéo « tableau entier » (choix propres à cet export,
+    // non persistés : le tableau change d'une vidéo à l'autre) : tous les
+    // graphiques inclus, dans l'ordre du tableau.
+    $('statsVideoSlides').hidden = !dashboardMode;
+    if (dashboardMode) {
+        state.video.excluded = new Set();
+        renderVideoSlides();
+    }
     syncVideoTotal();
     fillMusicChoices(prefs.music);
     setVideoPhase('setup');
@@ -189,15 +197,88 @@ export function openDashboardVideo() {
     setupVideoModal({ mode: 'dashboard', slides, dashboardId: dashboard.id });
 }
 
-// Durée totale annoncée (tableau entier : ouverture + un écran par graphique).
+// Graphiques retenus pour la vidéo « tableau entier » : l'ordre de
+// `video.slides`, moins ceux décochés dans la liste (`video.excluded`,
+// Set d'ids).
+function includedSlides(video) {
+    return (video?.slides || []).filter((id) => !video.excluded?.has(id));
+}
+
+// Liste « Écrans » de la fenêtre : une ligne par graphique — case pour
+// l'exclure, flèches pour le réordonner. La liste est reconstruite après
+// chaque déplacement ; les cases relisent `video.excluded`.
+function renderVideoSlides() {
+    const video = state.video;
+    const list = $('statsVideoSlidesList');
+    list.replaceChildren();
+    if (video?.mode !== 'dashboard') return;
+    const move = (index, step) => {
+        const target = index + step;
+        if (target < 0 || target >= video.slides.length) return;
+        [video.slides[index], video.slides[target]] = [video.slides[target], video.slides[index]];
+        renderVideoSlides();
+        // La ligne déplacée garde le focus (sa nouvelle place, même flèche).
+        list.children[target]?.querySelector(`[data-move="${step < 0 ? 'up' : 'down'}"]`)?.focus();
+    };
+    const moveButton = (index, step) => {
+        const text = step < 0 ? t('Monter') : t('Descendre');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-sm btn-link';
+        button.dataset.move = step < 0 ? 'up' : 'down';
+        button.title = text;
+        button.setAttribute('aria-label', text);
+        button.disabled = step < 0 ? index === 0 : index === video.slides.length - 1;
+        const icon = document.createElement('i');
+        icon.className = `ti ${step < 0 ? 'ti-arrow-up' : 'ti-arrow-down'}`;
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
+        button.addEventListener('click', () => move(index, step));
+        return button;
+    };
+    video.slides.forEach((id, index) => {
+        const entry = state.results.get(id);
+        const row = document.createElement('div');
+        row.className = 'stats-video-slide';
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.className = 'form-check-input';
+        check.id = `statsVideoSlide-${index}`;
+        check.checked = !video.excluded.has(id);
+        check.addEventListener('change', () => {
+            if (check.checked) video.excluded.delete(id);
+            else video.excluded.add(id);
+            syncVideoTotal();
+        });
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = check.id;
+        label.textContent = entry?.spec ? chartTitle(entry.spec) : id;
+        row.append(check, label, moveButton(index, -1), moveButton(index, 1));
+        list.append(row);
+    });
+}
+
+// Durée totale annoncée (tableau entier : ouverture + un écran par
+// graphique coché + fermeture). Sans graphique coché, pas de total et
+// « Créer » / « Aperçu » sont grisés.
 export function syncVideoTotal() {
     const video = state.video;
     const total = $('statsVideoTotal');
     if (video?.mode !== 'dashboard') {
         total.textContent = '';
+        $('btnStatsVideoStart').disabled = false;
+        $('btnStatsVideoPreview').disabled = false;
         return;
     }
-    const n = video.slides.length;
+    const n = includedSlides(video).length;
+    const empty = !n;
+    $('btnStatsVideoStart').disabled = empty;
+    $('btnStatsVideoPreview').disabled = empty;
+    if (empty) {
+        total.textContent = t('Cochez au moins un graphique.');
+        return;
+    }
     const ms = dashboardVideoDuration(n, $('statsVideoDuration').value);
     const s = Math.round(ms / 1000);
     total.textContent = n > 1
@@ -473,13 +554,18 @@ function makeDashboardPainter(slides, size) {
     const g = canvas.getContext('2d');
     let current = { key: null, painter: null };
     const painterFor = (moment) => {
-        const key = moment.kind === 'intro' ? 'intro' : 'slide:' + moment.index;
+        // 'outro' : la vidéo se referme sur sa carte de titre (bookend) —
+        // le même peintre que l'ouverture, une clé à part pour que l'écran
+        // soit repeint avec son propre fondu.
+        const key = moment.kind === 'intro' ? 'intro'
+            : moment.kind === 'outro' ? 'outro'
+            : 'slide:' + moment.index;
         if (current.key !== key) {
             current.painter?.dispose();
             const entry = slides[moment.index];
             current = {
                 key,
-                painter: moment.kind === 'intro'
+                painter: moment.kind === 'intro' || moment.kind === 'outro'
                     ? introPainter(dashboard, slides.length, size)
                     : slidePainter(entry.spec, entry.result, size),
             };
@@ -501,16 +587,16 @@ function makeDashboardPainter(slides, size) {
     return { canvas, paint, dispose, seconds };
 }
 
-// « ouverture » ou « graphique n / count » : la position de la vidéo
-// tableau, affichée dans le statut (enregistrement comme aperçu).
+// « ouverture », « fin » ou « graphique n / count » : la position de la
+// vidéo tableau, affichée dans le statut (enregistrement comme aperçu).
 function dashboardMomentWhere(moment, count) {
-    return moment.kind === 'intro'
-        ? t('ouverture')
-        : t('graphique ${n} / ${count}', { n: moment.index + 1, count });
+    if (moment.kind === 'intro') return t('ouverture');
+    if (moment.kind === 'outro') return t('fin');
+    return t('graphique ${n} / ${count}', { n: moment.index + 1, count });
 }
 
 async function recordDashboardVideo(video) {
-    const slides = video.slides.map((id) => state.results.get(id)).filter((entry) => entry?.result);
+    const slides = includedSlides(video).map((id) => state.results.get(id)).filter((entry) => entry?.result);
     if (!slides.length) return;
     const mimeType = videoMimeType();
     if (!mimeType || !HTMLCanvasElement.prototype.captureStream) {
@@ -702,7 +788,7 @@ function runVideoPreview(video, duration, paint, statusFor, dispose) {
 
 // Aperçu du mode tableau : mêmes écrans et fondus que l'enregistrement.
 function previewDashboardVideo(video) {
-    const slides = video.slides.map((id) => state.results.get(id)).filter((entry) => entry?.result);
+    const slides = includedSlides(video).map((id) => state.results.get(id)).filter((entry) => entry?.result);
     if (!slides.length) return;
     const size = VIDEO_SIZES[$('statsVideoSize').value] || VIDEO_SIZES.hd;
     const machine = makeDashboardPainter(slides, size);

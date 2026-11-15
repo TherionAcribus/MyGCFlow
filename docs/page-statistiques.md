@@ -563,7 +563,17 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   tableau, période, nombre de graphiques), puis un écran par graphique
   (4, 6, 8 ou 10 s, durée totale annoncée), chacun en fondu (0,5 s) ;
   l'animation occupe 70 % de l'écran, le graphique complet reste ensuite.
+  Après le dernier graphique, la vidéo se referme sur la carte de titre
+  (bookend, `OUTRO_MS` = 3 s, même `introPainter` que l'ouverture).
   Diapositives : celles de la présentation (`presentSlides`).
+- Choix des écrans (fenêtre, mode tableau seulement) : la liste « Écrans »
+  (`#statsVideoSlidesList`, `renderVideoSlides`) montre les graphiques du
+  tableau, chacun avec une case (exclure — `state.video.excluded`, Set
+  d'ids) et des flèches Monter / Descendre (`video.slides` porte
+  l'ordre). Le total annoncé ne compte que les graphiques cochés
+  (`includedSlides`) ; aucun coché → « Cochez au moins un graphique. » et
+  « Créer » / « Aperçu » grisés. Choix propres à l'export, non persistés
+  (le tableau change d'une vidéo à l'autre).
 - Écrans (`slidePainter`) : barres / courbes / aires sur un axe ordonné
   révélées au fil de l'axe (`videoPainter`, comme la vidéo d'un
   graphique) ; chiffre clé qui compte de 0 à sa valeur (`countUp`) puis
@@ -576,7 +586,7 @@ un bouton disabled ne montre pas sa propre bulle, elle vit sur le `<li>`
   2 s à la fin (`musicFields`). Un fichier envoyé n'est pas ajouté aux
   musiques récentes : sa copie dans `audio/` sera balayée plus tard.
 - Relevé `video` : `mode`, `chartId` (graphique), `slides` (tableau),
-  `music` (`kind`, `file`).
+  `excluded` (tableau, ids décochés), `music` (`kind`, `file`).
 
 ### Image du tableau entier
 
