@@ -468,6 +468,14 @@ invisible. Un symbole porteur d'étiquette se rend transparent par sa
 couleur (`rgba(0,0,0,0)`) : valeurs des mini-cartes par zones
 (`zoneValueSeries`, docs/carte-zones.md).
 
+Une carte de chaleur (grille D/T, calendrier, grille de défi) est dessinée
+sur **plusieurs canevas** : les cases sur un calque à part, ce qui suit
+(titre de la grille de défi) sur un troisième. Copier le seul premier
+canevas (`box.querySelector('canvas')`) donne une grille vide, sans
+erreur — cas du peintre vidéo de stats_page_video.js, corrigé le
+2026-11-15 en composant tous les calques. Pour une image, passer par
+`getRenderedCanvas` / `getDataURL`, qui les assemblent.
+
 ## Piège `hidden` + classes d'affichage Bootstrap
 
 Un élément qui porte `hidden` ET une classe `d-block`/`d-flex`/`d-grid`…

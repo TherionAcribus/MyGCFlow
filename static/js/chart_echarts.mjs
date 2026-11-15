@@ -1448,7 +1448,10 @@ function challengeOption(result, spec, ctx) {
     const next = new Set(summary.loops > 0 ? summary.next : []);
     const layout = challengeLayout(result, ctx.width);
     const format = valueFormatter(spec, result, ctx);
-    const max = Math.max(0, ...values.map((v) => v || 0));
+    // `ctx.lockedMax` : échelle figée par la vidéo (résultat partiel) —
+    // sinon les cases déjà révélées pâlissent à mesure que le maximum
+    // grandit. Les autres grilles passent par visualMap (lockOption).
+    const max = ctx.lockedMax ?? Math.max(0, ...values.map((v) => v || 0));
 
     // Mois en toutes lettres abrégées si la case le permet, sinon l'initiale.
     const monthFmt = new Intl.DateTimeFormat(labels.locale, { month: layout.cell >= 30 ? 'short' : 'narrow', timeZone: 'UTC' });

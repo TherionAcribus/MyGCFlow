@@ -462,3 +462,14 @@ test('vignette de la galerie : la forme seule, sans texte ni interaction', () =>
     assert.deepEqual(donut.series[0].center, ['50%', '50%']);
     assert.equal(thumbnailOption(null), null);
 });
+
+test('grille de défi : la vidéo fige l\'échelle des couleurs (lockedMax)', () => {
+    const { spec, result } = option({ groupBy: 'dt', periods: [{ kind: 'all' }], view: { chart: 'challenge' } });
+    const colorOf = (o, key) => o.series[0].data.find((d) => result.keys[d.keyIndex] === key).itemStyle.color;
+    // Sans échelle figée, une case à 1 sur un maximum de 1 prend la teinte
+    // la plus foncée ; avec un maximum figé à 4, elle reste claire.
+    const free = buildChartOption(result, spec, ctx);
+    const locked = buildChartOption(result, spec, { ...ctx, lockedMax: 4 });
+    assert.equal(colorOf(free, '1|1'), rampColor(tokens.heat, 1));
+    assert.equal(colorOf(locked, '1|1'), rampColor(tokens.heat, 0.25 + 0.75 / 4));
+});

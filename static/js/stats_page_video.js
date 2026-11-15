@@ -945,7 +945,7 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const kind = ['line', 'area'].includes(spec.view.chart) ? 'line' : 'bar';
     // Sans « aujourd'hui » : pas de projection prolongeant une courbe à
     // moitié révélée.
-    const ctx = { ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null };
+    const ctx = { ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null, lockedMax: max };
     const heads = reveal ? axisLabels(result, ctx, { long: true }) : [];
     const title = chartTitle(spec);
     const font = videoFont();
@@ -977,8 +977,12 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
             const head = heads[revealIndex(result, progress)] ?? '';
             g.fillText(ellipsize(head, titleSize * 6, measure), width - pad, pad + titleSize * 0.9);
         }
-        const source = box.querySelector('canvas');
-        if (source) g.drawImage(source, pad, top, chartW, chartH);
+        // Tous les calques, dans l'ordre du DOM (du fond vers le dessus) :
+        // ECharts dessine les cases d'une carte de chaleur (grille D/T,
+        // calendrier) sur un calque à part, et ce qui suit (bilan de la
+        // grille de défi) sur un troisième — copier le premier canevas
+        // seul donnait une grille vide.
+        for (const source of box.querySelectorAll('canvas')) g.drawImage(source, pad, top, chartW, chartH);
     };
     const dispose = () => {
         chart.dispose();
