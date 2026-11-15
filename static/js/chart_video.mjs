@@ -132,6 +132,27 @@ export function ellipsize(text, maxWidth, measure) {
     return s.slice(0, lo) + '…';
 }
 
+// En-tête d'une image : titre à gauche, repère de l'axe atteint à droite
+// (« septembre 2024 »). Le repère avait une largeur fixe (6 fois la taille
+// du titre) : en gras et plus gros, un libellé mois + année n'y tenait
+// jamais, l'année sautait quel que soit le format. Sa place est réservée
+// sur le plus long des repères (mesuré une fois : le titre ne bouge pas
+// d'une image à l'autre), au plus 45 % de la largeur — davantage si le
+// titre, court, laisse la place ; le titre prend le reste.
+//   inner   largeur entre les marges (px)
+//   gap     écart entre titre et repère (px)
+//   title   largeur du titre entier (px, à sa police)
+//   heads   largeur de chaque repère (px, à la sienne)
+// → { titleMax, headMax } en px.
+export const HEAD_SHARE = 0.45;
+export function headerLayout({ inner, gap, title, heads }) {
+    const longest = heads.length ? Math.max(...heads) : 0;
+    if (!longest) return { titleMax: inner, headMax: 0 };
+    const room = Math.max(inner * HEAD_SHARE, inner - gap - title);
+    const headMax = Math.min(longest, room);
+    return { titleMax: Math.max(0, inner - gap - headMax), headMax };
+}
+
 // Taille réduite pour que `text` tienne dans `maxWidth` (px) :
 // `baseSize * maxWidth / largeur`, la largeur étant mesurée à `baseSize`.
 // Bornée en bas par `baseSize * minRatio` : au plancher, un léger dépassement

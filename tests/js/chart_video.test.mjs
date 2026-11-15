@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { normalizeChartSpec } from '../../static/js/chart_spec.mjs';
 import {
-    chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
+    chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, valueMax,
     VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
 } from '../../static/js/chart_video.mjs';
 
@@ -111,6 +111,27 @@ test('ellipsize : tronque avec « … » au lieu de compresser', () => {
     assert.equal(ellipsize('', 50, px10), '');
     assert.equal(ellipsize(1234, 30, px10), '12…');
     assert.equal(ellipsize('abc', 0, px10), '');
+});
+
+test('en-tête vidéo : le repère « mois année » tient en entier, le titre prend le reste', () => {
+    // HD (1280 px, marges 37) : repère « septembre 2024 » à ~290 px — l'ancienne
+    // largeur fixe (6 × 32 = 192 px) coupait l'année.
+    const inner = 1280 - 2 * 37;
+    const layout = headerLayout({ inner, gap: 32, title: 260, heads: [190, 290, 230] });
+    assert.equal(layout.headMax, 290);
+    assert.equal(layout.titleMax, inner - 32 - 290);
+    // Même place à chaque image : elle dépend du plus long, pas du repère courant.
+    assert.deepEqual(headerLayout({ inner, gap: 32, title: 260, heads: [290, 190] }), layout);
+    // Repère démesuré (catégorie très longue) : au plus 45 % quand le titre est long…
+    const long = headerLayout({ inner: 1000, gap: 20, title: 900, heads: [800] });
+    assert.equal(long.headMax, 450);
+    assert.equal(long.titleMax, 530);
+    // … davantage si le titre, court, laisse la place.
+    const short = headerLayout({ inner: 1000, gap: 20, title: 200, heads: [800] });
+    assert.equal(short.headMax, 780);
+    assert.equal(short.titleMax, 200);
+    // Pas de repère (graphique entier, sans révélation) : tout pour le titre.
+    assert.deepEqual(headerLayout({ inner: 1000, gap: 20, title: 1200, heads: [] }), { titleMax: 1000, headMax: 0 });
 });
 
 test('fitFontSize : taille réduite pour tenir, bornée par un plancher', () => {

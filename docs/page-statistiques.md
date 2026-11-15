@@ -701,7 +701,14 @@ effacer » le retire avec la période proposée.
   tronqués avec « … » par `ellipsize` (chart_video.mjs) — le 4ᵉ argument de
   `fillText` compresserait les glyphes au lieu de tronquer. Le chiffre clé
   géant et le nom du tableau sont réduits (`fitFontSize`, plancher) plutôt
-  que tronqués.
+  que tronqués. En-tête d'une image (2026-11-15) : le repère de l'axe
+  atteint (« septembre 2024 », en haut à droite) avait une largeur fixe de
+  6 × la taille du titre — en gras et plus gros, un libellé mois + année n'y
+  tenait jamais et l'année sautait, quel que soit le format (tout est
+  proportionnel à la définition). `headerLayout` (chart_video.mjs) réserve
+  la place du plus long des repères, mesuré une fois (le titre ne bouge pas
+  d'une image à l'autre), au plus 45 % de la largeur — davantage si le
+  titre, court, laisse la place ; le titre prend le reste.
 - Formats `VIDEO_SIZES` (1280×720, 1920×1080, 1080×1080, portrait
   9:16 1080×1920 pour Stories/Reels/Shorts), durées 6 à 30 s.
 - Réglages de la fenêtre mémorisés dans le navigateur (localStorage

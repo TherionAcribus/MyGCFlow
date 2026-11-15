@@ -5,7 +5,7 @@ import { showConfirmation, showError, showToast, t } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 import { axisLabels, buildChartOption, numberModel } from './chart_echarts.mjs';
 import {
-    chartAnimates, ellipsize, fitFontSize, lockOption, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
+    chartAnimates, ellipsize, fitFontSize, headerLayout, lockOption, niceCeil, revealIndex, revealProgress, revealResult, SWEEP_CHARTS, valueMax,
     VIDEO_HOLD, VIDEO_HOLD_MIN_MS,
     VIDEO_DURATIONS, VIDEO_FPS, VIDEO_SIZES,
 } from './chart_video.mjs';
@@ -949,6 +949,19 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     const heads = reveal ? axisLabels(result, ctx, { long: true }) : [];
     const title = chartTitle(spec);
     const font = videoFont();
+    const titleFont = '600 ' + titleSize + 'px ' + font;
+    const headFont = '700 ' + Math.round(titleSize * 1.15) + 'px ' + font;
+    // Place du titre et du repère, mesurée une fois (headerLayout).
+    const widthIn = (cssFont, s) => {
+        g.font = cssFont;
+        return g.measureText(s).width;
+    };
+    const { titleMax, headMax } = headerLayout({
+        inner: width - pad * 2,
+        gap: titleSize,
+        title: widthIn(titleFont, title),
+        heads: heads.map((h) => widthIn(headFont, h)),
+    });
     let drawn = false;
     const paint = (progress) => {
         if (reveal) {
@@ -963,19 +976,19 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
         g.textBaseline = 'alphabetic';
         g.textAlign = 'left';
         g.fillStyle = tokens.text;
-        g.font = '600 ' + titleSize + 'px ' + font;
+        g.font = titleFont;
         // measureText lit la police courante : poser g.font avant de mesurer.
         // Pas de maxWidth à fillText : il compresserait les glyphes.
         const measure = (s) => g.measureText(s).width;
-        g.fillText(ellipsize(title, width - pad * 2 - titleSize * 6, measure), pad, pad + titleSize * 0.9);
+        g.fillText(ellipsize(title, titleMax, measure), pad, pad + titleSize * 0.9);
         g.textAlign = 'right';
         g.fillStyle = tokens.textMuted;
-        g.font = '700 ' + Math.round(titleSize * 1.15) + 'px ' + font;
-        // Repère de l'axe atteint (« septembre ») : borné à l'espace laissé
-        // au titre, pour ne pas déborder dessus.
+        g.font = headFont;
+        // Repère de l'axe atteint (« septembre 2024 ») : dans la place
+        // réservée au plus long d'entre eux, sans déborder sur le titre.
         if (reveal) {
             const head = heads[revealIndex(result, progress)] ?? '';
-            g.fillText(ellipsize(head, titleSize * 6, measure), width - pad, pad + titleSize * 0.9);
+            g.fillText(ellipsize(head, headMax, measure), width - pad, pad + titleSize * 0.9);
         }
         // Tous les calques, dans l'ordre du DOM (du fond vers le dessus) :
         // ECharts dessine les cases d'une carte de chaleur (grille D/T,
