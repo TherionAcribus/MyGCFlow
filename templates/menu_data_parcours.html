@@ -103,6 +103,32 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Traces GPS du parcours ouvert (lot 5, parcours_tracks.py / .mjs) -->
+            <div id="parcoursTracksCard" hidden>
+                <h5 class="gc-section-title mt-3">
+                    <i class="ti ti-route text-muted me-1"></i>{{ _("Traces GPS") }}
+                </h5>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="parcoursTrackSummary" class="fw-medium mb-1" aria-live="polite"></div>
+                        <div class="form-hint text-muted mb-2">
+                            {{ _("Une étape à moins de 100 m d'une trace prend son heure de passage (celle où vous vous êtes attardé), et le trajet entre deux étapes calées suit la trace. Une trace partielle suffit.") }}
+                        </div>
+                        <input type="file" id="parcoursTrackInput" class="visually-hidden" multiple
+                               accept=".gpx,application/gpx+xml" aria-label="{{ _('Traces à ajouter') }}">
+                        <button type="button" id="btnParcoursAddTracks" class="btn btn-sm btn-outline-primary">
+                            <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Ajouter des traces (.gpx)") }}
+                        </button>
+                        <span id="parcoursTrackStatus" class="small text-muted ms-2" aria-live="polite"></span>
+                        <div id="parcoursTracks" class="mt-2"></div>
+                        <div class="mt-2">
+                            <label class="form-label small mb-1" for="parcoursUtcOffset">{{ _("Heure locale des traces (enregistrées en UTC)") }}</label>
+                            <select id="parcoursUtcOffset" class="form-select form-select-sm"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Étapes du parcours ouvert -->

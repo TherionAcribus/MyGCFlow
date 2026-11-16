@@ -68,8 +68,35 @@ parcours_reconstruct.mjs.
 `parcours_photos.py` (stockage, vignettes, appareils), tables
 `parcours_photo` et `parcours_camera` (migration v12), rattachement et
 ancres dans `parcours_photos.mjs`, carte « Photos » de l'onglet Données,
-carte postale dans la lecture et la vidéo. Prochaine étape : lots 5
-(traces GPS) et 6 (itinéraires).
+carte postale dans la lecture et la vidéo.
+
+**Lot 5 livré le 2026-11-16** : traces GPS. `parcours_tracks.py` (lecture
+GPX, simplification, stockage), table `parcours_track` et colonne
+`parcours.utc_offset_minutes` (migration v13), `parcours_tracks.mjs`
+(heure locale, rattachement, ancres, vrai chemin, `reconstructWithEvidence`),
+trajets sur la trace dans la lecture et la vidéo, carte « Traces GPS » de
+l'onglet Données. Prochaine étape : lot 6 (itinéraires).
+
+Écarts et constats du lot 5 :
+- **Fuseau sans `timezonefinder`** (question 2 du § 13) : réglage du
+  parcours, sinon décalage EXIF des photos, sinon heures murales situées sur
+  la trace (Labs, photos géolocalisées), sinon fuseau de l'ordinateur. Pas
+  de dépendance ajoutée. Un voyage qui change de fuseau en cours de route
+  garde un seul décalage : à revoir si le besoin se présente.
+- **Simplification en distance synchronisée** : un Douglas-Peucker spatial
+  effaçait les pauses (points alignés), donc faussait les heures. Constaté
+  sur la fixture e2e (461 points ramenés à 9) ; corrigé et testé.
+- **Distance au tronçon, pas aux points**, pour la même raison : une ligne
+  droite simplifiée ne garde que ses bouts.
+- **Passage retenu = le plus long** à moins de 100 m (aller-retour sur un
+  même sentier). L'arrivée est le premier instant à moins de max(30 m,
+  2 × distance minimale), donc parfois une minute avant la pause.
+- **Pas de recalage automatique des appareils sans GPS** par la trace :
+  sans position, une photo d'appareil ne se situe pas sur la trace. Le
+  recalage reste manuel, ou se cale sur une étape à heure sûre, désormais
+  aussi celle d'une trace. FIT et chronologie Google : non faits
+  (question 6).
+- **Rythme proportionnel** : durée des trajets tirée de l'horaire.
 
 Écarts et constats du lot 4 :
 - **Heure de confiance** : photo géolocalisée (un téléphone, horloge

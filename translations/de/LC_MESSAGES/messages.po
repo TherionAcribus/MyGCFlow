@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-16 16:52+0100\n"
+"POT-Creation-Date: 2026-11-16 17:15+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -341,7 +341,7 @@ msgstr "Fund"
 
 #: event_flash.py:64 poses_dataset.py:638 static/js/chart_labels.mjs:245
 #: static/js/gc_logs.js:59 static/js/gc_logs.js:81 static/js/mapgl.js:1260
-#: static/js/parcours_data.js:861 static/js/stats_panels.js:1406
+#: static/js/parcours_data.js:882 static/js/stats_panels.js:1406
 #: static/js/stats_panels.js:1839 templates/menu_informations.html:68
 #: templates/menu_informations.html:116 templates/menu_names.html:64
 #: templates/menu_names.html:327
@@ -640,13 +640,13 @@ msgid "Code GC"
 msgstr "GC-Code"
 
 #: poses_dataset.py:635 templates/menu_data_parcours.html:26
-#: templates/menu_data_parcours.html:142 templates/menu_images.html:152
+#: templates/menu_data_parcours.html:168 templates/menu_images.html:152
 #: templates/stats_page.html:658 templates/stats_page.html:732
 msgid "Nom"
 msgstr "Name"
 
 #: poses_dataset.py:635 static/js/ui.js:11714
-#: templates/menu_data_parcours.html:135
+#: templates/menu_data_parcours.html:161
 msgid "Type"
 msgstr "Typ"
 
@@ -896,7 +896,7 @@ msgstr "Bestätigen"
 #: static/js/stats_page_links.js:267 static/js/stats_page_video.js:75
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
-#: templates/menu_data_parcours.html:159 templates/menu_images.html:118
+#: templates/menu_data_parcours.html:185 templates/menu_images.html:118
 #: templates/menu_stats.html:71 templates/menu_style.html:268
 #: templates/menu_style.html:293 templates/menu_style.html:318
 #: templates/menu_style.html:346 templates/menu_style.html:377
@@ -1230,11 +1230,11 @@ msgstr "Bild zu groß: maximal %(max)d MB."
 msgid "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
 msgstr "Format nicht unterstützt: PNG, JPEG, WebP, GIF, SVG oder HEIC."
 
-#: blueprints/images.py:48 blueprints/parcours.py:164
+#: blueprints/images.py:48 blueprints/parcours.py:168
 msgid "Image trop grande (dimensions démesurées)."
 msgstr "Bild zu groß (übermäßige Abmessungen)."
 
-#: blueprints/images.py:49 blueprints/parcours.py:166
+#: blueprints/images.py:49 blueprints/parcours.py:170
 msgid "Ce fichier n'est pas une image lisible."
 msgstr "Diese Datei ist kein lesbares Bild."
 
@@ -1482,81 +1482,113 @@ msgstr "Ein Fenster zur Ordnerauswahl ist bereits geöffnet."
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "Die Ordnerauswahl ist nicht verfügbar: Geben Sie den Pfad ein."
 
-#: blueprints/parcours.py:25
+#: blueprints/parcours.py:26
 msgid "Parcours introuvable"
 msgstr "Tour nicht gefunden"
 
-#: blueprints/parcours.py:26
+#: blueprints/parcours.py:27
 msgid "Le nom du parcours est obligatoire"
 msgstr "Der Name der Tour ist erforderlich"
 
-#: blueprints/parcours.py:27
+#: blueprints/parcours.py:28
 #, python-format
 msgid "Le nom du parcours est trop long (%(max)s caractères au plus)"
 msgstr "Der Name der Tour ist zu lang (höchstens %(max)s Zeichen)"
 
-#: blueprints/parcours.py:29
+#: blueprints/parcours.py:30
 msgid "Date invalide"
 msgstr "Ungültiges Datum"
 
-#: blueprints/parcours.py:30 static/js/parcours_data.js:783
+#: blueprints/parcours.py:31 static/js/parcours_data.js:803
 msgid "La date de fin précède la date de début"
 msgstr "Das Enddatum liegt vor dem Startdatum"
 
-#: blueprints/parcours.py:31
+#: blueprints/parcours.py:32
 #, python-format
 msgid "Un parcours couvre %(max)s jours au plus"
 msgstr "Eine Tour umfasst höchstens %(max)s Tage"
 
-#: blueprints/parcours.py:32
+#: blueprints/parcours.py:33
 msgid "Heure invalide (HH:MM attendu)"
 msgstr "Ungültige Uhrzeit (HH:MM erwartet)"
 
-#: blueprints/parcours.py:33
+#: blueprints/parcours.py:34
 msgid "Cette journée est hors du parcours"
 msgstr "Dieser Tag liegt außerhalb der Tour"
 
-#: blueprints/parcours.py:34
+#: blueprints/parcours.py:35
 msgid "Ajustement invalide"
 msgstr "Ungültige Anpassung"
 
-#: blueprints/parcours.py:35
+#: blueprints/parcours.py:36
 msgid "Lieu invalide"
 msgstr "Ungültiger Ort"
 
-#: blueprints/parcours.py:36
+#: blueprints/parcours.py:37
 msgid "Lieu introuvable"
 msgstr "Ort nicht gefunden"
 
-#: blueprints/parcours.py:37
+#: blueprints/parcours.py:38
 msgid "Photo introuvable"
 msgstr "Foto nicht gefunden"
 
-#: blueprints/parcours.py:38
+#: blueprints/parcours.py:39
 msgid "Rattachement invalide"
 msgstr "Ungültige Zuordnung"
 
-#: blueprints/parcours.py:39
+#: blueprints/parcours.py:40
 #, python-format
 msgid "Un parcours garde %(max)s photos au plus"
 msgstr "Eine Tour enthält höchstens %(max)s Fotos"
 
-#: blueprints/parcours.py:40
+#: blueprints/parcours.py:41
 msgid "Décalage d'horloge invalide"
 msgstr "Ungültige Uhrzeitkorrektur"
 
-#: blueprints/parcours.py:159
+#: blueprints/parcours.py:42
+msgid "Décalage UTC invalide (de −12 h à +14 h)"
+msgstr "Ungültige UTC-Abweichung (von −12 h bis +14 h)"
+
+#: blueprints/parcours.py:43
+#, python-format
+msgid "Un parcours garde %(max)s traces au plus"
+msgstr "Eine Tour enthält höchstens %(max)s Tracks"
+
+#: blueprints/parcours.py:44
+msgid "Trace introuvable"
+msgstr "Track nicht gefunden"
+
+#: blueprints/parcours.py:163
 #, python-format
 msgid "Photo trop lourde : %(max)d Mo au maximum."
 msgstr "Foto zu groß: höchstens %(max)d MB."
 
-#: blueprints/parcours.py:162
+#: blueprints/parcours.py:166
 msgid "Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC."
 msgstr "Nicht unterstütztes Format: JPEG, PNG, WebP, GIF oder HEIC."
 
-#: blueprints/parcours.py:175
+#: blueprints/parcours.py:179
 msgid "Aucune photo fournie"
 msgstr "Kein Foto übermittelt"
+
+#: blueprints/parcours.py:249
+#, python-format
+msgid "Trace trop lourde : %(max)d Mo au maximum."
+msgstr "Track zu groß: höchstens %(max)d MB."
+
+#: blueprints/parcours.py:252
+msgid "Cette trace n'a aucun point horodaté : impossible d'en tirer des heures."
+msgstr ""
+"Dieser Track hat keine Punkte mit Zeitstempel: Daraus lassen sich keine "
+"Uhrzeiten ableiten."
+
+#: blueprints/parcours.py:254
+msgid "Ce fichier n'est pas une trace GPX lisible."
+msgstr "Diese Datei ist kein lesbarer GPX-Track."
+
+#: blueprints/parcours.py:263
+msgid "Aucune trace fournie"
+msgstr "Kein Track übermittelt"
 
 #: blueprints/profiles.py:498
 msgid ""
@@ -2736,9 +2768,10 @@ msgstr "Pro Tag des Zeitraums"
 msgid "Par km² (densité)"
 msgstr "Pro km² (Dichte)"
 
-#: static/js/chart_labels.mjs:313 static/js/parcours_data.js:1751
-#: templates/menu_flash.html:68 templates/menu_flash_disappear.html:49
-#: templates/menu_flash_dnf.html:56 templates/menu_flash_dnf.html:125
+#: static/js/chart_labels.mjs:313 static/js/parcours_data.js:1780
+#: static/js/parcours_data.js:1890 templates/menu_flash.html:68
+#: templates/menu_flash_disappear.html:49 templates/menu_flash_dnf.html:56
+#: templates/menu_flash_dnf.html:125
 msgid "Automatique"
 msgstr "Automatisch"
 
@@ -4754,7 +4787,7 @@ msgstr "Dieses Bild wird endgültig aus der Bibliothek gelöscht."
 
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
-#: static/js/parcours_data.js:742 static/js/profiles.js:977
+#: static/js/parcours_data.js:762 static/js/profiles.js:977
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
@@ -4800,12 +4833,12 @@ msgstr "(fehlt)"
 msgid "Apparition planifiée"
 msgstr "Geplantes Erscheinen"
 
-#: static/js/images_ui.js:1353 static/js/parcours_data.js:1056
+#: static/js/images_ui.js:1353 static/js/parcours_data.js:1077
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:577
 msgid "Monter"
 msgstr "Nach oben"
 
-#: static/js/images_ui.js:1354 static/js/parcours_data.js:1059
+#: static/js/images_ui.js:1354 static/js/parcours_data.js:1080
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:578
 msgid "Descendre"
 msgstr "Nach unten"
@@ -6052,182 +6085,186 @@ msgstr "Caches ohne Datum"
 msgid "Actif quand les caches posées sont affichées"
 msgstr "Aktiv, wenn eigene Caches angezeigt werden"
 
-#: static/js/parcours_data.js:298
+#: static/js/parcours_data.js:314
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr "Die Tour wird nach dem Ende der Animation geöffnet."
 
-#: static/js/parcours_data.js:298 static/js/parcours_data.js:668
-#: static/js/parcours_data.js:1214 templates/_app_header.html:29
+#: static/js/parcours_data.js:314 static/js/parcours_data.js:688
+#: static/js/parcours_data.js:1235 templates/_app_header.html:29
 #: templates/_app_header.html:31 templates/app.html:41
 msgid "Parcours"
 msgstr "Touren"
 
-#: static/js/parcours_data.js:402 static/js/parcours_data.js:886
+#: static/js/parcours_data.js:420 static/js/parcours_data.js:907
 #, python-brace-format
 msgid "${km} km"
 msgstr "${km} km"
 
-#: static/js/parcours_data.js:418
+#: static/js/parcours_data.js:436
 msgid "matin"
 msgstr "Vormittag"
 
-#: static/js/parcours_data.js:418
+#: static/js/parcours_data.js:436
 msgid "midi"
 msgstr "Mittag"
 
-#: static/js/parcours_data.js:418
+#: static/js/parcours_data.js:436
 msgid "après-midi"
 msgstr "Nachmittag"
 
-#: static/js/parcours_data.js:418
+#: static/js/parcours_data.js:436
 msgid "soir"
 msgstr "Abend"
 
-#: static/js/parcours_data.js:668 static/js/poses_data.js:131
+#: static/js/parcours_data.js:688 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Die Einstellung wird am Ende der Animation angewendet."
 
-#: static/js/parcours_data.js:687
+#: static/js/parcours_data.js:707
 msgid "Impossible de charger les parcours"
 msgstr "Die Touren konnten nicht geladen werden"
 
-#: static/js/parcours_data.js:698
+#: static/js/parcours_data.js:718
 msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr "Noch keine Tour: Legen Sie unten eine an."
 
-#: static/js/parcours_data.js:726 static/js/parcours_data.js:727
-#: static/js/parcours_data.js:739
+#: static/js/parcours_data.js:746 static/js/parcours_data.js:747
+#: static/js/parcours_data.js:759
 msgid "Supprimer le parcours"
 msgstr "Tour löschen"
 
-#: static/js/parcours_data.js:738
+#: static/js/parcours_data.js:758
 #, python-brace-format
 msgid "Supprimer le parcours « ${name} » ? Les trouvailles ne sont pas touchées."
 msgstr "Die Tour „${name}“ löschen? Ihre Funde bleiben unverändert."
 
-#: static/js/parcours_data.js:784
+#: static/js/parcours_data.js:804
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr "Eine Tour umfasst höchstens ${max} Tage"
 
-#: static/js/parcours_data.js:785
+#: static/js/parcours_data.js:805
 msgid "Une journée"
 msgstr "Ein Tag"
 
-#: static/js/parcours_data.js:785 static/js/parcours_data.js:953
+#: static/js/parcours_data.js:805 static/js/parcours_data.js:974
 #: static/js/stats_panels.js:1534 static/js/ui.js:8718
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} Tage"
 
-#: static/js/parcours_data.js:835 templates/menu_data_evolution.html:18
+#: static/js/parcours_data.js:855 templates/menu_data_evolution.html:18
 msgid "Base"
 msgstr "Datenbank"
 
-#: static/js/parcours_data.js:836
+#: static/js/parcours_data.js:856
 msgid "Lieu"
 msgstr "Ort"
 
-#: static/js/parcours_data.js:844
+#: static/js/parcours_data.js:864
 msgid "heure sûre"
 msgstr "sichere Uhrzeit"
 
-#: static/js/parcours_data.js:845
+#: static/js/parcours_data.js:865
 msgid "ordre des logs"
 msgstr "Log-Reihenfolge"
 
-#: static/js/parcours_data.js:846
+#: static/js/parcours_data.js:866
 msgid "souvent loguée après coup"
 msgstr "oft nachträglich geloggt"
 
-#: static/js/parcours_data.js:847
+#: static/js/parcours_data.js:867
 msgid "log tardif"
 msgstr "spätes Log"
 
-#: static/js/parcours_data.js:848
+#: static/js/parcours_data.js:868
 msgid "géographie"
 msgstr "Geografie"
 
-#: static/js/parcours_data.js:849
+#: static/js/parcours_data.js:869
 msgid "au plus court"
 msgstr "kürzester Umweg"
 
-#: static/js/parcours_data.js:850
+#: static/js/parcours_data.js:870
 msgid "heure épinglée"
 msgstr "festgelegte Uhrzeit"
 
-#: static/js/parcours_data.js:851 static/js/parcours_data.js:981
+#: static/js/parcours_data.js:871 static/js/parcours_data.js:1002
 msgid "ordre manuel"
 msgstr "manuelle Reihenfolge"
 
-#: static/js/parcours_data.js:852
+#: static/js/parcours_data.js:872
 msgid "base"
 msgstr "Basis"
 
-#: static/js/parcours_data.js:853
+#: static/js/parcours_data.js:873
 msgid "heure d’une photo"
 msgstr "Uhrzeit eines Fotos"
 
-#: static/js/parcours_data.js:862
+#: static/js/parcours_data.js:874
+msgid "heure de la trace"
+msgstr "Uhrzeit aus dem Track"
+
+#: static/js/parcours_data.js:883
 msgid "lieu"
 msgstr "Ort"
 
-#: static/js/parcours_data.js:866
+#: static/js/parcours_data.js:887
 #, python-brace-format
 msgid "déplacée du ${day}"
 msgstr "verschoben vom ${day}"
 
-#: static/js/parcours_data.js:868
+#: static/js/parcours_data.js:889
 msgid "1 photo"
 msgstr "1 Foto"
 
-#: static/js/parcours_data.js:868
+#: static/js/parcours_data.js:889
 #, python-brace-format
 msgid "${n} photos"
 msgstr "${n} Fotos"
 
-#: static/js/parcours_data.js:893
+#: static/js/parcours_data.js:914
 msgid "ordre de saisie des logs retenu"
 msgstr "Reihenfolge der Logs übernommen"
 
-#: static/js/parcours_data.js:896
+#: static/js/parcours_data.js:917
 #, python-brace-format
 msgid "logs saisis dans le désordre (trajet ×${ratio}) : ordre géographique"
 msgstr "Logs ungeordnet geschrieben (Strecke ×${ratio}): geografische Reihenfolge"
 
-#: static/js/parcours_data.js:898
+#: static/js/parcours_data.js:919
 #, python-brace-format
 msgid "${n} heures sûres"
 msgstr "${n} sichere Uhrzeiten"
 
-#: static/js/parcours_data.js:899
+#: static/js/parcours_data.js:920
 msgid "horaire comprimé"
 msgstr "Zeitplan gestaucht"
 
-#: static/js/parcours_data.js:939 templates/menu_data_parcours.html:15
-#: templates/menu_data_parcours.html:115 templates/menu_data_poses.html:18
+#: static/js/parcours_data.js:960 templates/menu_data_parcours.html:15
+#: templates/menu_data_parcours.html:141 templates/menu_data_poses.html:18
 msgid "Chargement…"
 msgstr "Laden…"
 
-#: static/js/parcours_data.js:946
+#: static/js/parcours_data.js:967
 msgid "Impossible de charger les étapes"
 msgstr "Die Stationen konnten nicht geladen werden"
 
-#: static/js/parcours_data.js:947
+#: static/js/parcours_data.js:968
 msgid "Ouvrez ou créez un parcours pour voir ses étapes."
 msgstr "Öffnen oder erstellen Sie eine Tour, um ihre Stationen zu sehen."
 
-#: static/js/parcours_data.js:953
+#: static/js/parcours_data.js:974
 #, python-brace-format
 msgid "${n} étapes"
 msgstr "${n} Stationen"
 
-#: static/js/parcours_data.js:954
+#: static/js/parcours_data.js:975
 #, python-brace-format
 msgid "${n} sans position"
 msgstr "${n} ohne Position"
 
-#: static/js/parcours_data.js:962
+#: static/js/parcours_data.js:983
 msgid ""
 "Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, "
 "l’heure de vos Labs et la géographie. « ≈ » : heure estimée."
@@ -6235,7 +6272,7 @@ msgstr ""
 "Reihenfolge und Uhrzeiten rekonstruiert aus der Reihenfolge Ihrer Logs, "
 "den Uhrzeiten Ihrer Labs und der Geografie. „≈“: geschätzte Uhrzeit."
 
-#: static/js/parcours_data.js:963
+#: static/js/parcours_data.js:984
 msgid ""
 "Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie "
 ": réimportez votre fichier My Finds pour en profiter. « ≈ » : heure "
@@ -6245,73 +6282,73 @@ msgstr ""
 "Geografie: Importieren Sie Ihre My-Finds-Datei erneut, um sie zu nutzen. "
 "„≈“: geschätzte Uhrzeit."
 
-#: static/js/parcours_data.js:983
+#: static/js/parcours_data.js:1004
 msgid "Revenir à l’ordre automatique"
 msgstr "Zurück zur automatischen Reihenfolge"
 
-#: static/js/parcours_data.js:983
+#: static/js/parcours_data.js:1004
 msgid "Ordre automatique"
 msgstr "Automatische Reihenfolge"
 
-#: static/js/parcours_data.js:996
+#: static/js/parcours_data.js:1017
 msgid "Aucune étape ce jour-là"
 msgstr "An diesem Tag keine Stationen"
 
-#: static/js/parcours_data.js:1108
+#: static/js/parcours_data.js:1129
 msgid "exclue du parcours"
 msgstr "aus der Tour ausgeschlossen"
 
-#: static/js/parcours_data.js:1111
+#: static/js/parcours_data.js:1132
 msgid "Réintégrer"
 msgstr "Wieder aufnehmen"
 
-#: static/js/parcours_data.js:1132 templates/menu_informations.html:72
+#: static/js/parcours_data.js:1153 templates/menu_informations.html:72
 msgid "Heure"
 msgstr "Uhrzeit"
 
-#: static/js/parcours_data.js:1139
+#: static/js/parcours_data.js:1160
 msgid "Épingler cette heure"
 msgstr "Diese Uhrzeit festlegen"
 
-#: static/js/parcours_data.js:1140
+#: static/js/parcours_data.js:1161
 msgid "Épingler"
 msgstr "Festlegen"
 
-#: static/js/parcours_data.js:1148
+#: static/js/parcours_data.js:1169
 msgid "Retirer l’heure épinglée"
 msgstr "Festgelegte Uhrzeit entfernen"
 
-#: static/js/parcours_data.js:1149 templates/guide.html:315
+#: static/js/parcours_data.js:1170 templates/guide.html:315
 #: templates/menu_animation.html:336 templates/menu_images.html:96
 msgid "Retirer"
 msgstr "Entfernen"
 
-#: static/js/parcours_data.js:1164 templates/menu_data_parcours.html:147
+#: static/js/parcours_data.js:1185 templates/menu_data_parcours.html:173
 msgid "Journée"
 msgstr "Tag"
 
-#: static/js/parcours_data.js:1189
+#: static/js/parcours_data.js:1210
 msgid "Exclure du parcours"
 msgstr "Aus der Tour ausschließen"
 
-#: static/js/parcours_data.js:1197 static/js/parcours_data.js:1198
+#: static/js/parcours_data.js:1218 static/js/parcours_data.js:1219
 #: templates/menu_data_evolution.html:34 templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr "Datenbank löschen"
 
-#: static/js/parcours_data.js:1197 static/js/parcours_data.js:1198
+#: static/js/parcours_data.js:1218 static/js/parcours_data.js:1219
 msgid "Supprimer le lieu"
 msgstr "Ort löschen"
 
-#: static/js/parcours_data.js:1214
+#: static/js/parcours_data.js:1235
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr "Beenden Sie die Wiedergabe, bevor Sie die Tour anpassen."
 
-#: static/js/parcours_data.js:1366
+#: static/js/parcours_data.js:1395
 msgid "Toutes les journées"
 msgstr "Alle Tage"
 
-#: static/js/parcours_data.js:1416
+#: static/js/parcours_data.js:1445
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
@@ -6319,110 +6356,184 @@ msgstr ""
 "Alle Anpassungen dieser Tour rückgängig machen (Reihenfolge, Uhrzeiten, "
 "Tage, Ausschlüsse)? Gesetzte Orte bleiben erhalten."
 
-#: static/js/parcours_data.js:1417 templates/menu_data_parcours.html:126
+#: static/js/parcours_data.js:1446 templates/menu_data_parcours.html:152
 msgid "Annuler les ajustements"
 msgstr "Anpassungen rückgängig machen"
 
-#: static/js/parcours_data.js:1420
+#: static/js/parcours_data.js:1449
 msgid "Tout annuler"
 msgstr "Alles rückgängig machen"
 
-#: static/js/parcours_data.js:1555
+#: static/js/parcours_data.js:1584
 #, python-brace-format
 msgid "Envoi des photos : ${done} / ${total}"
 msgstr "Fotos werden gesendet: ${done} / ${total}"
 
-#: static/js/parcours_data.js:1571
+#: static/js/parcours_data.js:1600
 msgid "Photos refusées"
 msgstr "Abgelehnte Fotos"
 
-#: static/js/parcours_data.js:1630
+#: static/js/parcours_data.js:1659
 msgid "non rattachée"
 msgstr "nicht zugeordnet"
 
-#: static/js/parcours_data.js:1633
+#: static/js/parcours_data.js:1662
 #, python-brace-format
 msgid "${name} (à la main)"
 msgstr "${name} (von Hand)"
 
-#: static/js/parcours_data.js:1634
+#: static/js/parcours_data.js:1663
 #, python-brace-format
 msgid "${name} (position)"
 msgstr "${name} (Position)"
 
-#: static/js/parcours_data.js:1635
+#: static/js/parcours_data.js:1664
 #, python-brace-format
 msgid "${name} (heure)"
 msgstr "${name} (Uhrzeit)"
 
-#: static/js/parcours_data.js:1649
+#: static/js/parcours_data.js:1678
 #, python-brace-format
 msgid "${n} photos, ${linked} rattachées à une étape"
 msgstr "${n} Fotos, ${linked} einer Station zugeordnet"
 
-#: static/js/parcours_data.js:1650
+#: static/js/parcours_data.js:1679
 msgid "Aucune photo pour ce parcours."
 msgstr "Keine Fotos für diese Tour."
 
-#: static/js/parcours_data.js:1665
+#: static/js/parcours_data.js:1694
 #, python-brace-format
 msgid "${camera} : horloge recalée (${offset})"
 msgstr "${camera}: Uhr korrigiert (${offset})"
 
-#: static/js/parcours_data.js:1666
+#: static/js/parcours_data.js:1695
 #, python-brace-format
 msgid "${camera} : horloge non recalée, heures ignorées"
 msgstr "${camera}: Uhr nicht korrigiert, Uhrzeiten ignoriert"
 
-#: static/js/parcours_data.js:1674
+#: static/js/parcours_data.js:1703
 msgid "Décalage en minutes"
 msgstr "Korrektur in Minuten"
 
-#: static/js/parcours_data.js:1677
+#: static/js/parcours_data.js:1706
 msgid "min"
 msgstr "Min."
 
-#: static/js/parcours_data.js:1679
+#: static/js/parcours_data.js:1708
 msgid "Recaler l’horloge"
 msgstr "Uhr korrigieren"
 
-#: static/js/parcours_data.js:1686
+#: static/js/parcours_data.js:1715
 msgid "Oublier ce recalage"
 msgstr "Diese Korrektur verwerfen"
 
-#: static/js/parcours_data.js:1736
+#: static/js/parcours_data.js:1765
 msgid "sans heure"
 msgstr "ohne Uhrzeit"
 
-#: static/js/parcours_data.js:1737
+#: static/js/parcours_data.js:1766
 msgid "géolocalisée"
 msgstr "mit Standort"
 
-#: static/js/parcours_data.js:1737
+#: static/js/parcours_data.js:1766
 msgid "sans position"
 msgstr "ohne Standort"
 
-#: static/js/parcours_data.js:1744
+#: static/js/parcours_data.js:1773
 msgid "Étape"
 msgstr "Station"
 
-#: static/js/parcours_data.js:1751
+#: static/js/parcours_data.js:1780
 #, python-brace-format
 msgid "Automatique : ${label}"
 msgstr "Automatisch: ${label}"
 
-#: static/js/parcours_data.js:1774
+#: static/js/parcours_data.js:1803
 msgid "Caler l’horloge de l’appareil sur cette étape"
 msgstr "Kamerauhr an dieser Station ausrichten"
 
-#: static/js/parcours_data.js:1775
+#: static/js/parcours_data.js:1804
 #, python-brace-format
 msgid "Caler l’horloge sur l’étape (${offset})"
 msgstr "Uhr an der Station ausrichten (${offset})"
 
-#: static/js/parcours_data.js:1779 static/js/parcours_data.js:1780
+#: static/js/parcours_data.js:1808 static/js/parcours_data.js:1809
 msgid "Supprimer la photo"
 msgstr "Foto löschen"
+
+#: static/js/parcours_data.js:1842
+msgid "réglé à la main"
+msgstr "von Hand eingestellt"
+
+#: static/js/parcours_data.js:1843
+msgid "déduit des photos"
+msgstr "aus den Fotos abgeleitet"
+
+#: static/js/parcours_data.js:1844
+msgid "déduit des Labs et photos situés sur la trace"
+msgstr "aus Labs und Fotos auf dem Track abgeleitet"
+
+#: static/js/parcours_data.js:1845
+msgid "fuseau de cet ordinateur"
+msgstr "Zeitzone dieses Computers"
+
+#: static/js/parcours_data.js:1869
+msgid "1 trace"
+msgstr "1 Track"
+
+#: static/js/parcours_data.js:1869
+#, python-brace-format
+msgid "${n} traces"
+msgstr "${n} Tracks"
+
+#: static/js/parcours_data.js:1871
+msgid "1 étape calée sur une trace"
+msgstr "1 Station per Track zeitlich festgelegt"
+
+#: static/js/parcours_data.js:1872
+#, python-brace-format
+msgid "${n} étapes calées sur une trace"
+msgstr "${n} Stationen per Track zeitlich festgelegt"
+
+#: static/js/parcours_data.js:1873
+msgid "Aucune trace pour ce parcours."
+msgstr "Keine Tracks für diese Tour."
+
+#: static/js/parcours_data.js:1891
+#, python-brace-format
+msgid "Automatique : ${offset} (${source})"
+msgstr "Automatisch: ${offset} (${source})"
+
+#: static/js/parcours_data.js:1904
+msgid "Trace"
+msgstr "Track"
+
+#: static/js/parcours_data.js:1910 static/js/zone_layer.js:1265
+#, python-brace-format
+msgid "${n} points"
+msgstr "${n} Punkte"
+
+#: static/js/parcours_data.js:1911
+msgid "1 étape calée"
+msgstr "1 Station festgelegt"
+
+#: static/js/parcours_data.js:1911
+#, python-brace-format
+msgid "${n} étapes calées"
+msgstr "${n} Stationen festgelegt"
+
+#: static/js/parcours_data.js:1914
+msgid "Supprimer la trace"
+msgstr "Track löschen"
+
+#: static/js/parcours_data.js:1928
+#, python-brace-format
+msgid "Envoi des traces : ${done} / ${total}"
+msgstr "Tracks werden gesendet: ${done} / ${total}"
+
+#: static/js/parcours_data.js:1943
+msgid "Traces refusées"
+msgstr "Abgelehnte Tracks"
 
 #: static/js/poses_data.js:155
 msgid "Chargement de vos caches posées..."
@@ -7886,7 +7997,7 @@ msgid "Modifier l'image"
 msgstr "Bild bearbeiten"
 
 #: static/js/stats_page_image.js:102 templates/guide.html:389
-#: templates/guide.html:437 templates/menu_data_parcours.html:157
+#: templates/guide.html:437 templates/menu_data_parcours.html:183
 #: templates/menu_images.html:103 templates/menu_stats.html:57
 #: templates/stats_page.html:717
 msgid "Ajouter"
@@ -10536,11 +10647,6 @@ msgstr "seit dem ${date}"
 #: static/js/zone_layer.js:1259
 msgid "Aucune évolution depuis cette date"
 msgstr "Keine Entwicklung seit diesem Datum"
-
-#: static/js/zone_layer.js:1265
-#, python-brace-format
-msgid "${n} points"
-msgstr "${n} Punkte"
 
 #: static/js/zone_layer.js:1267 static/js/zone_layer.js:1292
 #, python-brace-format
@@ -15912,31 +16018,58 @@ msgstr "Hinzuzufügende Fotos"
 msgid "Ajouter des photos"
 msgstr "Fotos hinzufügen"
 
-#: templates/menu_data_parcours.html:111 templates/menu_informations.html:74
+#: templates/menu_data_parcours.html:110
+msgid "Traces GPS"
+msgstr "GPS-Tracks"
+
+#: templates/menu_data_parcours.html:116
+msgid ""
+"Une étape à moins de 100 m d'une trace prend son heure de passage (celle "
+"où vous vous êtes attardé), et le trajet entre deux étapes calées suit la"
+" trace. Une trace partielle suffit."
+msgstr ""
+"Eine Station im Umkreis von 100 m eines Tracks übernimmt dessen "
+"Durchgangszeit (die, bei der Sie verweilt haben), und der Weg zwischen "
+"zwei festgelegten Stationen folgt dem Track. Ein unvollständiger Track "
+"genügt."
+
+#: templates/menu_data_parcours.html:119
+msgid "Traces à ajouter"
+msgstr "Hinzuzufügende Tracks"
+
+#: templates/menu_data_parcours.html:121
+msgid "Ajouter des traces (.gpx)"
+msgstr "Tracks hinzufügen (.gpx)"
+
+#: templates/menu_data_parcours.html:126
+msgid "Heure locale des traces (enregistrées en UTC)"
+msgstr "Ortszeit der Tracks (in UTC aufgezeichnet)"
+
+#: templates/menu_data_parcours.html:137 templates/menu_informations.html:74
 msgid "Étapes"
 msgstr "Stationen"
 
-#: templates/menu_data_parcours.html:123
+#: templates/menu_data_parcours.html:149
 msgid "Poser un lieu ou une base sur la carte"
 msgstr "Einen Ort oder eine Basis auf der Karte setzen"
 
-#: templates/menu_data_parcours.html:130
+#: templates/menu_data_parcours.html:156
 msgid "Cliquez sur la carte à l'endroit du lieu (Échap pour annuler)."
 msgstr "Klicken Sie auf der Karte an die Stelle des Ortes (Esc zum Abbrechen)."
 
-#: templates/menu_data_parcours.html:137
+#: templates/menu_data_parcours.html:163
 msgid "Lieu (une étape de plus)"
 msgstr "Ort (eine zusätzliche Station)"
 
-#: templates/menu_data_parcours.html:138
+#: templates/menu_data_parcours.html:164
 msgid "Base (départ et retour de la journée)"
 msgstr "Basis (Start und Ende des Tages)"
 
-#: templates/menu_data_parcours.html:144
+#: templates/menu_data_parcours.html:170
 msgid "Belvédère, hôtel, restaurant…"
 msgstr "Aussichtspunkt, Hotel, Restaurant…"
 
-#: templates/menu_data_parcours.html:151
+#: templates/menu_data_parcours.html:177
 msgid "Heure (facultative)"
 msgstr "Uhrzeit (optional)"
 

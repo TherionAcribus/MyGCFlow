@@ -69,6 +69,7 @@ def to_dict(parcours: Parcours) -> dict:
         'date_end': parcours.date_end.isoformat(),
         'include_labs': bool(parcours.include_labs),
         'include_dnf': bool(parcours.include_dnf),
+        'utc_offset_minutes': parcours.utc_offset_minutes,
         'created_at': parcours.created_at.isoformat() if parcours.created_at else None,
         'updated_at': parcours.updated_at.isoformat() if parcours.updated_at else None,
     }
@@ -121,18 +122,35 @@ def update(session, parcours_id: int, data: dict) -> Parcours:
     row.date_end = end
     row.include_labs = _bool(data.get('include_labs'), row.include_labs)
     row.include_dnf = _bool(data.get('include_dnf'), row.include_dnf)
+    if 'utc_offset_minutes' in data:
+        row.utc_offset_minutes = _utc_offset(data['utc_offset_minutes'])
     row.updated_at = datetime.now()
     session.commit()
     return row
 
 
+# Décalages UTC réels : de −12 h à +14 h.
+UTC_OFFSET_RANGE = (-12 * 60, 14 * 60)
+
+
+def _utc_offset(value) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) \
+            or not (UTC_OFFSET_RANGE[0] <= value <= UTC_OFFSET_RANGE[1]):
+        raise ParcoursError('utc-offset-invalid')
+    return value
+
+
 def delete(session, parcours_id: int) -> None:
-    # Import local : parcours_photos importe ce module.
+    # Imports locaux : parcours_photos et parcours_tracks importent ce module.
     import parcours_photos
+    import parcours_tracks
     row = get(session, parcours_id)
     session.query(ParcoursOverride).filter_by(parcours_id=row.id).delete()
     session.query(ParcoursPlace).filter_by(parcours_id=row.id).delete()
     parcours_photos.delete_all(session, row.id)
+    parcours_tracks.delete_all(session, row.id)
     session.delete(row)
     session.commit()
 
@@ -188,8 +206,9 @@ def place_to_dict(row: ParcoursPlace) -> dict:
 
 
 def adjustments(session, parcours_id: int) -> dict:
-    """{overrides, places, photos, cameras} d'un parcours."""
+    """{overrides, places, photos, cameras, tracks} d'un parcours."""
     import parcours_photos
+    import parcours_tracks
     overrides = session.query(ParcoursOverride).filter_by(parcours_id=parcours_id) \
         .order_by(ParcoursOverride.stop_key).all()
     places = session.query(ParcoursPlace).filter_by(parcours_id=parcours_id) \
@@ -198,6 +217,7 @@ def adjustments(session, parcours_id: int) -> dict:
         'overrides': [override_to_dict(row) for row in overrides],
         'places': [place_to_dict(row) for row in places],
         **parcours_photos.list_photos(session, parcours_id),
+        'tracks': parcours_tracks.list_tracks(session, parcours_id),
     }
 
 

@@ -85,8 +85,13 @@ function dayNumber(iso) {
 //   days   : journées ayant des étapes { date, dayNumber, first, last, startQ }
 //            — `dayNumber` : rang de la date dans la plage (1 = premier jour).
 //   photos sur chaque étape : `photos` (ids, dans l'ordre d'affichage), et
-//   `photoQ` (quanta de chaque photo) quand `photosByStop` en donne.
-export function buildParcoursTimeline(reconstructed, { pace = PACE_REGULAR, photosByStop = null, options = null } = {}) {
+//   `photoQ` (quanta de chaque photo) quand `photosByStop` en donne ;
+//   vrai chemin d'un trajet : `path` ([[lon, lat], ...], extrémités
+//   comprises) et `cum` (km cumulés) quand `legPaths` (« from>to ») en donne
+//   — sa longueur remplace la distance à vol d'oiseau.
+export function buildParcoursTimeline(reconstructed, {
+    pace = PACE_REGULAR, photosByStop = null, legPaths = null, options = null,
+} = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
     const stops = [];
@@ -114,19 +119,28 @@ export function buildParcoursTimeline(reconstructed, { pace = PACE_REGULAR, phot
                 const prev = stops[stops.length - 1];
                 const night = k === 0;
                 const leg = night ? null : legByKey.get(`${prev.key}>${stop.key}`);
-                const legKm = leg ? leg.km : distanceKm(prev, stop);
+                const path = night ? null : legPaths?.get?.(`${prev.key}>${stop.key}`) || null;
+                const cum = path ? cumulativeKm(path) : null;
+                const legKm = cum ? cum[cum.length - 1] : (leg ? leg.km : distanceKm(prev, stop));
                 let duration;
                 if (night) duration = o.nightQ;
-                else if (proportional) duration = quanta((leg?.minutes ?? 0) * o.propQPerMinute, o.propMinLegQ);
-                else duration = quanta(clamp(o.legQPerSqrtKm * Math.sqrt(legKm), o.legMinQ, o.legMaxQ));
+                else if (proportional) {
+                    // Le trajet dure ce que dit l'horaire (ancres comprises),
+                    // à défaut l'estimation du trajet.
+                    const depart = (prev.arrivalMin ?? 0) + (prev.visitMin ?? 0);
+                    const scheduled = Number.isFinite(stop.arrivalMin) ? stop.arrivalMin - depart : NaN;
+                    const minutes = scheduled > 0 ? scheduled : (leg?.minutes ?? 0);
+                    duration = quanta(minutes * o.propQPerMinute, o.propMinLegQ);
+                } else duration = quanta(clamp(o.legQPerSqrtKm * Math.sqrt(legKm), o.legMinQ, o.legMaxQ));
                 legs.push({
                     from: stops.length - 1,
                     to: stops.length,
                     startQ: q,
                     endQ: q + duration,
                     km: legKm,
-                    mode: night ? 'night' : (leg?.mode || 'walk'),
+                    mode: night ? 'night' : (path ? 'track' : (leg?.mode || 'walk')),
                     night,
+                    ...(path ? { path, cum } : {}),
                 });
                 if (night) days[dayIndex].startQ = q;
                 q += duration;
@@ -158,6 +172,47 @@ function distanceKm(a, b) {
 
 function smoothstep(t) {
     return t * t * (3 - 2 * t);
+}
+
+function cumulativeKm(path) {
+    const cum = [0];
+    for (let i = 1; i < path.length; i++) {
+        cum.push(cum[i - 1] + distanceKm({ lon: path[i - 1][0], lat: path[i - 1][1] }, { lon: path[i][0], lat: path[i][1] }));
+    }
+    return cum;
+}
+
+// Avancement `progress` (0..1, en distance) le long d'un trajet : { index, f }
+// — la position est entre path[index] et path[index + 1], à la fraction f.
+// Sans chemin, le trajet est le segment [départ, arrivée] (index 0).
+export function legCut(leg, progress) {
+    if (!leg?.path || leg.path.length < 2) return { index: 0, f: progress };
+    const total = leg.cum[leg.cum.length - 1];
+    if (!(total > 0)) return { index: 0, f: 0 };
+    const target = progress * total;
+    let lo = 0;
+    let hi = leg.cum.length - 1;
+    while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        if (leg.cum[mid] <= target) lo = mid;
+        else hi = mid;
+    }
+    const span = leg.cum[hi] - leg.cum[lo];
+    return { index: lo, f: span > 0 ? (target - leg.cum[lo]) / span : 0 };
+}
+
+// Points du trajet parcourus jusqu'à `progress` ([lon, lat], départ compris,
+// position courante en dernier).
+export function legPoints(timeline, legIndex, progress) {
+    const leg = timeline.legs[legIndex];
+    const a = timeline.stops[leg.from];
+    const b = timeline.stops[leg.to];
+    const path = leg.path || [[a.lon, a.lat], [b.lon, b.lat]];
+    if (progress >= 1) return path;
+    const { index, f } = legCut(leg, progress);
+    const p = path[index];
+    const r = path[Math.min(index + 1, path.length - 1)];
+    return [...path.slice(0, index + 1), [p[0] + (r[0] - p[0]) * f, p[1] + (r[1] - p[1]) * f]];
 }
 
 // Dernière étape atteinte à la position `qf` (quanta fractionnaires) : -1
@@ -201,15 +256,10 @@ export function headAt(timeline, qf) {
     const legIndex = legIndexAt(timeline, qf);
     if (legIndex >= 0) {
         const leg = timeline.legs[legIndex];
-        const a = stops[leg.from];
-        const b = stops[leg.to];
         const progress = smoothstep(clamp((qf - leg.startQ) / Math.max(1e-9, leg.endQ - leg.startQ), 0, 1));
-        return {
-            lon: a.lon + (b.lon - a.lon) * progress,
-            lat: a.lat + (b.lat - a.lat) * progress,
-            leg: legIndex,
-            progress,
-        };
+        const points = legPoints(timeline, legIndex, progress);
+        const [lon, lat] = points[points.length - 1];
+        return { lon, lat, leg: legIndex, progress };
     }
     const reached = Math.max(0, reachedIndex(timeline, qf));
     return { lon: stops[reached].lon, lat: stops[reached].lat, leg: -1, progress: 0 };

@@ -14,6 +14,7 @@ import image_library
 import parcours_dataset
 import parcours_photos
 import parcours_store as store
+import parcours_tracks
 from extensions import db
 from .core import render_app_page
 
@@ -38,6 +39,9 @@ def _store_error(exc: store.ParcoursError):
         'photo-invalid': (_('Rattachement invalide'), 400),
         'photos-full': (_('Un parcours garde %(max)s photos au plus', max=parcours_photos.MAX_PHOTOS), 400),
         'camera-invalid': (_("Décalage d'horloge invalide"), 400),
+        'utc-offset-invalid': (_('Décalage UTC invalide (de −12 h à +14 h)'), 400),
+        'tracks-full': (_('Un parcours garde %(max)s traces au plus', max=parcours_tracks.MAX_TRACKS), 400),
+        'track-not-found': (_('Trace introuvable'), 404),
     }
     message, code = messages.get(exc.code, (str(exc), 400))
     return jsonify({'success': False, 'error': exc.code, 'message': message}), code
@@ -236,3 +240,41 @@ def set_camera(parcours_id):
         db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, **payload})
+
+
+# --- Traces GPS (lot 5) --------------------------------------------------------------
+
+def _track_refused(reason):
+    if reason == 'too_large':
+        message = _("Trace trop lourde : %(max)d Mo au maximum.",
+                    max=parcours_tracks.MAX_TRACK_BYTES // (1024 * 1024))
+    elif reason == 'no_time':
+        message = _("Cette trace n'a aucun point horodaté : impossible d'en tirer des heures.")
+    else:
+        message = _("Ce fichier n'est pas une trace GPX lisible.")
+    status = 413 if reason == 'too_large' else 400
+    return jsonify({'success': False, 'error': 'track-refused', 'reason': reason, 'message': message}), status
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/tracks', methods=['POST'])
+def upload_track(parcours_id):
+    upload = request.files.get('track') if request.files else None
+    if upload is None:
+        return jsonify({'success': False, 'error': 'track-refused', 'message': _("Aucune trace fournie")}), 400
+    data = upload.stream.read(parcours_tracks.MAX_TRACK_BYTES + 1)
+    try:
+        track = parcours_tracks.save_track(db.session, parcours_id, data, upload.filename or '')
+    except parcours_tracks.InvalidTrack as exc:
+        return _track_refused(exc.reason)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True, 'track': track}), 201
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/tracks/<int:track_id>', methods=['DELETE'])
+def delete_track(parcours_id, track_id):
+    try:
+        parcours_tracks.delete_track(db.session, parcours_id, track_id)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True})

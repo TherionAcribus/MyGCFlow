@@ -7,10 +7,11 @@ le quatrième mode de l'application, à côté de « Mes Géocaches » (`/`),
 lien `#linkParcoursMode` de l'en-tête.
 
 Plan, choix produit et découpage : `MyGCFlow_Plan_Parcours.md`. État au
-2026-11-16 : **lots 0 à 4** — parcours enregistrés, ordre de passage et
+2026-11-16 : **lots 0 à 5** — parcours enregistrés, ordre de passage et
 heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance),
 ajustements manuels (ordre, heure épinglée, journée, exclusion, lieux et
-bases), photos (rattachement, heure comme ancre, carte postale).
+bases), photos (rattachement, heure comme ancre, carte postale), traces GPS
+(heures de passage, vrai chemin, fuseau).
 
 ## Parcours enregistrés
 
@@ -45,13 +46,19 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours/<id>/photos/<ph>/file` / `thumb` | Photo normalisée / vignette 320 px (cache long, nom = empreinte) |
 | `PATCH` / `DELETE /api/parcours/<id>/photos/<ph>` | Rattachement manuel `{stopKey}` (null : automatique) ; suppression (fichiers compris) |
 | `PUT /api/parcours/<id>/cameras` | Décalage d'horloge d'un appareil `{camera, offsetMinutes}` (null : l'oublie ; ±2 jours au plus) |
+| `POST /api/parcours/<id>/tracks` | Envoi d'une trace GPX (multipart, champ `track`, 30 Mo au plus), simplifiée à l'import |
+| `DELETE /api/parcours/<id>/tracks/<tid>` | Suppression d'une trace |
+| `PATCH /api/parcours/<id>` `{utc_offset_minutes}` | Heure locale des traces (minutes, −12 h à +14 h ; null : automatique) |
 
 Erreurs : `{success: false, error, message}` avec les codes `not-found`,
 `name-empty`, `name-too-long`, `date-invalid`, `range-reversed`,
 `range-too-long`, `time-invalid` (« HH:MM » attendu), `day-out-of-range`,
 `override-invalid`, `place-invalid`, `place-not-found`, `photo-not-found`,
 `photo-invalid`, `photos-full` (300 photos par parcours), `camera-invalid`,
-`photo-refused` (fichier refusé : `reason` comme l'onglet Images).
+`photo-refused` (fichier refusé : `reason` comme l'onglet Images),
+`track-refused` (`reason` : `too_large`, `not_gpx`, `no_time`),
+`tracks-full` (50 traces par parcours), `track-not-found`,
+`utc-offset-invalid`.
 
 ## Entrées (`parcours_dataset.py`)
 
@@ -267,6 +274,56 @@ l'étape − heure de la photo.
 - les photos sont préchargées à l'ouverture : une photo encore en
   chargement n'est simplement pas dessinée.
 
+## Traces GPS (lot 5 : `parcours_tracks.py`, `parcours_tracks.mjs`)
+
+**À l'import** (table `parcours_track`, migration v13 ; colonne
+`parcours.utc_offset_minutes`) :
+- seuls les points de trace (`trk/trkseg/trkpt`) **horodatés** sont gardés,
+  segment par segment (GPX 1.0 et 1.1) ;
+- chaque segment est simplifié par un Douglas-Peucker en **distance
+  synchronisée** (10 m) : un point est comparé à la position qu'aurait le
+  marcheur à son heure sur le tronçon gardé. Un Douglas-Peucker purement
+  spatial effaçait une pause sur place (points alignés), et l'heure
+  interpolée était fausse de toute sa durée ;
+- au-delà de 50 000 points après simplification, éclaircissement uniforme.
+
+**Heure locale** (`resolveUtcOffset`), les traces étant en UTC :
+
+| Ordre | Source |
+|---|---|
+| 1 | réglage du parcours (« Heure locale des traces », carte Traces GPS) |
+| 2 | médiane des `OffsetTimeOriginal` des photos |
+| 3 | médiane des écarts entre heures murales situées sur la trace (étapes Lab, photos géolocalisées, à moins de 50 m) et heure UTC du passage, au quart d'heure |
+| 4 | fuseau de l'ordinateur à la date du parcours |
+
+**Rattachement** (`matchStopsToTracks`) :
+- la distance est mesurée au **tronçon** de trace (projection, heure
+  interpolée), pas aux points : une ligne droite simplifiée n'en garde que
+  les bouts ;
+- un **passage** est une suite de tronçons à moins de 100 m de l'étape,
+  le jour de l'étape. Le passage retenu est celui qui dure le plus (on
+  cherche la cache ; un aller-retour repasse vite) ;
+- l'**arrivée** est le premier instant du passage à moins de max(30 m,
+  2 × distance minimale) ;
+- les bases ne sont pas rattachées.
+
+Cette heure devient une **ancre** : raison `track`, après l'heure épinglée
+et celle des Labs, avant celle des photos.
+
+**Vrai chemin** (`trackLegPaths`) : entre deux étapes consécutives
+rattachées au même segment d'une trace, dans l'ordre du temps, le trajet est
+la portion de trace. Sa longueur remplace la distance à vol d'oiseau, et
+le trait comme le géocacheur la suivent (`legCut`, `legPoints` de
+parcours_timeline.mjs). Ces trajets ont le mode `track`.
+
+**Rythme proportionnel** : la durée d'un trajet vient désormais de
+l'horaire (arrivée − départ, ancres comprises), et non plus de
+l'estimation seule.
+
+Au repos, les traces sont tracées sous le plan (fin trait gris). La
+`reconstructWithEvidence` de parcours_tracks.mjs enchaîne traces puis
+photos et remplace `reconstructWithPhotos` dans la page.
+
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
 Journée par journée, la dernière étape de la veille orientant la suivante.
@@ -357,16 +414,21 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
 - Python : `tests/test_parcours_api.py` (CRUD, validation, entrées, DNF,
   Labs, ajustements, migration), `tests/test_parcours_photos.py` (EXIF
   synthétique, envoi, doublon, vignette, rattachement, appareils,
-  suppression) ; préférences de la page dans
-  `tests/test_global_preferences.py` (`test_parcours_preferences_have_their_own_keys`).
+  suppression), `tests/test_parcours_tracks.py` (lecture GPX, simplification
+  qui garde une pause, envoi, refus, décalage UTC) ; préférences de la page
+  dans `tests/test_global_preferences.py`
+  (`test_parcours_preferences_have_their_own_keys`).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
   `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_photos.test.mjs`,
-  `tests/js/parcours_model.test.mjs`, `tests/js/app_mode.test.mjs`.
+  `tests/js/parcours_tracks.test.mjs`, `tests/js/parcours_model.test.mjs`,
+  `tests/js/app_mode.test.mjs`.
 - E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2),
-  `tests/e2e/parcours-adjust.spec.mjs` (lot 3) et
+  `tests/e2e/parcours-adjust.spec.mjs` (lot 3),
   `tests/e2e/parcours-photos.spec.mjs` (lot 4, photos de
   `tests/e2e/fixtures/parcours-photos/`, générées par `photo_bytes` de
-  test_parcours_photos.py), aides communes dans
+  test_parcours_photos.py) et `tests/e2e/parcours-tracks.spec.mjs` (lot 5,
+  trace `tests/e2e/fixtures/parcours-trace.gpx` — `*.gpx` est ignoré :
+  `git add -f`), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le

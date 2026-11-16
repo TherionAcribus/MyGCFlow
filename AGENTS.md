@@ -364,7 +364,7 @@ Autres repères :
   relevé `getParcoursSnapshot()`, signal `mygcflowParcoursLoaded`. Après
   un ajustement (PATCH puis reconstruction), attendre que
   `adjustmentRevision` augmente avant de lire l'ordre. Les fixtures `.gpx` sont ignorées par
-  `.gitignore` (`*.gpx`) : `git add -f`. Les clés de stockage par page
+  `.gitignore` (`*.gpx`) : `git add -f` (`my-finds-parcours.gpx`, `parcours-trace.gpx`). Les clés de stockage par page
   passent par `statsPanelsKey(mode)` / `imagesItemsKey(mode)` /
   `perPage(...)`. Un module de page exporte des noms uniques
   (`posesXxx`, `parcoursXxx`) : `export *` d'index.js écarte EN SILENCE un

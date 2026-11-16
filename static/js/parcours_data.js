@@ -42,6 +42,7 @@ import {
     buildParcoursTimeline,
     formatClock,
     headAt,
+    legPoints,
     normalizePlayback,
     stateAt,
     stopsInRange,
@@ -64,6 +65,7 @@ import {
     REASON_PHOTO,
     REASON_PINNED,
     REASON_TIME,
+    REASON_TRACK,
     isCountedStop,
     minutesToTime,
 } from './parcours_reconstruct.mjs';
@@ -73,8 +75,14 @@ import {
     cameraOffsets,
     hasPosition,
     photoClock,
-    reconstructWithPhotos,
 } from './parcours_photos.mjs';
+import {
+    OFFSET_EVIDENCE,
+    OFFSET_MANUAL,
+    OFFSET_PHOTOS,
+    localClock,
+    reconstructWithEvidence,
+} from './parcours_tracks.mjs';
 import { composeTransform } from './travel_trail.mjs';
 
 const LAST_ID_KEY = 'parcours.lastId';
@@ -98,6 +106,10 @@ let inputs = null;            // entrées du parcours ouvert, ajustements compri
 let ordered = null;           // reconstruction du parcours ouvert (photos comprises)
 let photoMatches = new Map(); // rattachement de chaque photo (parcours_photos.mjs)
 let photoByStop = new Map();  // clé d'étape → photos, dans l'ordre d'affichage
+let trackMatches = new Map(); // clé d'étape → passage d'une trace (parcours_tracks.mjs)
+let legPaths = new Map();     // « from>to » → vrai chemin [[lon, lat], ...]
+let utcOffset = { minutes: 0, source: 'computer' };
+let legProjected = [];        // chemin de chaque trajet, en coordonnées carte
 let counts = null;
 let logsAvailable = false;
 let status = 'idle';          // idle | loading | ready | error
@@ -205,6 +217,7 @@ export async function initParcoursPage() {
     bindPlayback();
     bindAdjustments();
     bindPhotos();
+    bindTracks();
     pkg.syncOverlayVisibility?.();
     await refreshParcoursList({ select: readLastId() });
 }
@@ -284,9 +297,10 @@ export async function openParcours(id) {
 // (Re)construit la chronologie écran du parcours ouvert et la donne au moteur :
 // métadonnées (dates fictives des quanta), features WebGL, plan au repos.
 function applyTimeline({ fit = false } = {}) {
-    timeline = ordered ? buildParcoursTimeline(ordered, { pace: playback.pace, photosByStop: photoByStop }) : null;
+    timeline = ordered ? buildParcoursTimeline(ordered, { pace: playback.pace, photosByStop: photoByStop, legPaths }) : null;
     const stops = timeline?.stops || [];
     projected = stops.map((stop) => ol.proj.fromLonLat([stop.lon, stop.lat]));
+    legProjected = (timeline?.legs || []).map((leg) => (leg.path ? leg.path.map((p) => ol.proj.fromLonLat(p)) : null));
     // Une feature WebGL par étape comptée : lieux et bases sont dessinés par
     // le plan et les couches de lecture (`olFeatures` est creux).
     olFeatures = stops.map((stop, i) => (!isCountedStop(stop) ? null : new ol.Feature({
@@ -308,6 +322,7 @@ function applyTimeline({ fit = false } = {}) {
     renderLayer({ fit });
     preloadPhotos();
     renderPhotos();
+    renderTracks();
 }
 
 function buildMeta() {
@@ -535,13 +550,14 @@ function drawPlayTrail(event) {
     const day = new ol.style.Style({ stroke: new ol.style.Stroke({ color, width, lineCap: 'round', lineJoin: 'round' }) });
     const night = new ol.style.Style({ stroke: new ol.style.Stroke({ color, width: Math.max(1, width * 0.6), lineDash: [width * 2, width * 2] }) });
     const { done, current } = trailAt(timeline, currentQ);
+    // Trajet sur une trace GPS : le vrai chemin, sinon la ligne droite.
     const draw = (k, progress) => {
         const leg = timeline.legs[k];
-        const a = projected[leg.from];
-        const b = projected[leg.to];
-        const end = progress >= 1 ? b : [a[0] + (b[0] - a[0]) * progress, a[1] + (b[1] - a[1]) * progress];
+        const coords = progress >= 1
+            ? (legProjected[k] || [projected[leg.from], projected[leg.to]])
+            : legPoints(timeline, k, progress).map((p) => ol.proj.fromLonLat(p));
         context.setStyle(leg.night ? night : day);
-        context.drawGeometry(new ol.geom.LineString([a, end]));
+        context.drawGeometry(new ol.geom.LineString(coords));
     };
     for (let k = 0; k < done; k++) draw(k, 1);
     if (current) draw(current.leg, current.progress);
@@ -772,6 +788,7 @@ function reasonLabel(reason) {
         case REASON_MANUAL: return t('ordre manuel');
         case REASON_BASE: return t('base');
         case REASON_PHOTO: return t('heure d’une photo');
+        case REASON_TRACK: return t('heure de la trace');
         default: return '';
     }
 }
@@ -1124,13 +1141,17 @@ function adjustmentsLocked() {
     return true;
 }
 
-// Reconstruction complète : ordre et heures, rattachement des photos, heures
-// des photos comme ancres (deux passes, parcours_photos.mjs).
+// Reconstruction complète : ordre et heures, traces GPS (heures de passage,
+// vrai chemin) et photos (rattachement, heures) comme ancres
+// (parcours_tracks.mjs).
 function rebuild() {
-    const result = reconstructWithPhotos(inputs);
+    const result = reconstructWithEvidence(inputs);
     ordered = result.ordered;
     photoMatches = result.matches;
     photoByStop = result.byStop;
+    trackMatches = result.trackMatches;
+    legPaths = result.legPaths;
+    utcOffset = result.utcOffset;
 }
 
 // Les ajustements renvoyés par le serveur remplacent ceux en mémoire, puis le
@@ -1141,6 +1162,7 @@ function receiveAdjustments(payload) {
     if (Array.isArray(payload?.places)) inputs.places = payload.places;
     if (Array.isArray(payload?.photos)) inputs.photos = payload.photos;
     if (Array.isArray(payload?.cameras)) inputs.cameras = payload.cameras;
+    if (Array.isArray(payload?.tracks)) inputs.tracks = payload.tracks;
     rebuild();
     renderStops();
     applyTimeline();
@@ -1188,7 +1210,9 @@ async function resetAllAdjustments() {
 
 async function reloadAdjustments() {
     const fresh = await fetchJson(`/api/parcours/${selectedId}/inputs`);
-    receiveAdjustments({ overrides: fresh.overrides, places: fresh.places, photos: fresh.photos, cameras: fresh.cameras });
+    receiveAdjustments({
+        overrides: fresh.overrides, places: fresh.places, photos: fresh.photos, cameras: fresh.cameras, tracks: fresh.tracks,
+    });
 }
 
 async function createPlace(data) {
@@ -1677,6 +1701,160 @@ function bindPhotos() {
     });
 }
 
+// --- Traces GPS (lot 5) ---------------------------------------------------------
+
+// Décalages proposés pour l'heure locale des traces : de −12 h à +14 h, au
+// quart d'heure (fuseaux à 30 et 45 minutes compris).
+const UTC_OFFSET_CHOICES = Array.from({ length: (26 * 60) / 15 + 1 }, (_, i) => -12 * 60 + i * 15);
+
+function formatUtcOffset(minutes) {
+    const sign = minutes < 0 ? '−' : '+';
+    const abs = Math.abs(minutes);
+    return `UTC${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
+function offsetSourceLabel(source) {
+    switch (source) {
+        case OFFSET_MANUAL: return t('réglé à la main');
+        case OFFSET_PHOTOS: return t('déduit des photos');
+        case OFFSET_EVIDENCE: return t('déduit des Labs et photos situés sur la trace');
+        default: return t('fuseau de cet ordinateur');
+    }
+}
+
+function trackRange(track) {
+    const start = Date.parse(track.start || '') / 1000;
+    const end = Date.parse(track.end || '') / 1000;
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return '';
+    const a = localClock(start, utcOffset.minutes);
+    const b = localClock(end, utcOffset.minutes);
+    const day = formatDay(a.date, { weekday: 'short', day: 'numeric', month: 'short' });
+    return a.date === b.date
+        ? `${day} ${minutesToTime(a.minutes)} → ${minutesToTime(b.minutes)}`
+        : `${day} ${minutesToTime(a.minutes)} → ${formatDay(b.date, { day: 'numeric', month: 'short' })} ${minutesToTime(b.minutes)}`;
+}
+
+function renderTracks() {
+    const card = el('parcoursTracksCard');
+    if (!card) return;
+    card.hidden = !inputs;
+    if (!inputs) return;
+    const tracks = inputs.tracks || [];
+    const summary = el('parcoursTrackSummary');
+    if (summary) {
+        const count = tracks.length === 1 ? t('1 trace') : t('${n} traces', { n: tracks.length });
+        const matched = trackMatches.size === 1
+            ? t('1 étape calée sur une trace')
+            : t('${n} étapes calées sur une trace', { n: trackMatches.size });
+        summary.textContent = tracks.length ? `${count}, ${matched}` : t('Aucune trace pour ce parcours.');
+    }
+    const offset = el('parcoursUtcOffset');
+    if (offset) {
+        if (!offset.options.length) {
+            const auto = document.createElement('option');
+            auto.value = '';
+            offset.append(auto);
+            for (const minutes of UTC_OFFSET_CHOICES) {
+                const opt = document.createElement('option');
+                opt.value = String(minutes);
+                opt.textContent = formatUtcOffset(minutes);
+                offset.append(opt);
+            }
+        }
+        const manual = inputs.parcours?.utc_offset_minutes;
+        offset.options[0].textContent = Number.isFinite(manual)
+            ? t('Automatique')
+            : t('Automatique : ${offset} (${source})', { offset: formatUtcOffset(utcOffset.minutes), source: offsetSourceLabel(utcOffset.source) });
+        offset.value = Number.isFinite(manual) ? String(manual) : '';
+    }
+    const list = el('parcoursTracks');
+    if (list) {
+        list.replaceChildren(...tracks.map((track) => {
+            const item = document.createElement('div');
+            item.className = 'd-flex align-items-center gap-2 py-1 parcours-track';
+            item.dataset.trackId = String(track.id);
+            const text = document.createElement('div');
+            text.className = 'flex-grow-1 min-w-0';
+            const name = document.createElement('div');
+            name.className = 'text-truncate';
+            name.textContent = track.name || t('Trace');
+            const detail = document.createElement('div');
+            detail.className = 'small text-muted';
+            const matched = [...trackMatches.values()].filter((m) => m.trackId === track.id).length;
+            detail.textContent = [
+                trackRange(track),
+                t('${n} points', { n: track.pointCount }),
+                matched === 1 ? t('1 étape calée') : t('${n} étapes calées', { n: matched }),
+            ].filter(Boolean).join(' · ');
+            text.append(name, detail);
+            const remove = button('btn btn-sm btn-ghost-danger parcours-track-delete', 'ti-trash', t('Supprimer la trace'));
+            remove.addEventListener('click', () => deleteTrack(track.id));
+            item.append(text, remove);
+            return item;
+        }));
+    }
+}
+
+async function uploadTracks(files) {
+    if (!selectedId || adjustmentsLocked() || files.length === 0) return;
+    const status = el('parcoursTrackStatus');
+    const refused = [];
+    let done = 0;
+    for (const file of files) {
+        if (status) status.textContent = t('Envoi des traces : ${done} / ${total}', { done, total: files.length });
+        const body = new FormData();
+        body.append('track', file, file.name);
+        try {
+            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${selectedId}/tracks`, { method: 'POST', body });
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                refused.push(`${file.name} : ${payload.message || response.status}`);
+            }
+        } catch (error) {
+            refused.push(`${file.name} : ${error.message}`);
+        }
+        done++;
+    }
+    if (status) status.textContent = '';
+    if (refused.length) showToast(refused.join('\n'), 'warning', t('Traces refusées'));
+    await reloadAdjustments();
+}
+
+async function deleteTrack(id) {
+    if (!selectedId || adjustmentsLocked()) return;
+    try {
+        await fetchJson(`/api/parcours/${selectedId}/tracks/${id}`, { method: 'DELETE' });
+        await reloadAdjustments();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function setUtcOffset(value) {
+    if (!selectedId || adjustmentsLocked()) return;
+    try {
+        const body = await fetchJson(`/api/parcours/${selectedId}`, {
+            method: 'PATCH', body: JSON.stringify({ utc_offset_minutes: value }),
+        });
+        inputs.parcours = body.parcours;
+        receiveAdjustments({});
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+function bindTracks() {
+    const input = el('parcoursTrackInput');
+    el('btnParcoursAddTracks')?.addEventListener('click', () => input?.click());
+    input?.addEventListener('change', () => {
+        const files = [...(input.files || [])];
+        input.value = '';
+        uploadTracks(files);
+    });
+    const offset = el('parcoursUtcOffset');
+    offset?.addEventListener('change', () => setUtcOffset(offset.value === '' ? null : Number(offset.value)));
+}
+
 // --- Carte ----------------------------------------------------------------------
 
 function pointStyle(feature) {
@@ -1720,6 +1898,11 @@ const lineStyle = new ol.style.Style({
     stroke: new ol.style.Stroke({ color: LINE_COLOR, width: 3, lineDash: [6, 6] }),
 });
 
+// Traces GPS importées, sous le plan.
+const trackStyle = new ol.style.Style({
+    stroke: new ol.style.Stroke({ color: 'rgba(52, 58, 64, 0.45)', width: 2 }),
+});
+
 function ensureLayer() {
     const map = pkg.getMap?.();
     if (!map) return null;
@@ -1727,7 +1910,11 @@ function ensureLayer() {
         parcoursLayer = new ol.layer.Vector({
             source: new ol.source.Vector(),
             zIndex: LAYER_Z_INDEX,
-            style: (feature) => (feature.get('role') === 'line' ? lineStyle : pointStyle(feature)),
+            style: (feature) => {
+                const role = feature.get('role');
+                if (role === 'track') return trackStyle;
+                return role === 'line' ? lineStyle : pointStyle(feature);
+            },
         });
         parcoursLayer.set('name', 'parcours');
     }
@@ -1742,6 +1929,15 @@ function renderLayer({ fit = false } = {}) {
     source.clear();
     if (!ordered) return;
     const features = [];
+    for (const track of inputs?.tracks || []) {
+        for (const segment of track.segments || []) {
+            if (segment.length < 2) continue;
+            features.push(new ol.Feature({
+                role: 'track',
+                geometry: new ol.geom.LineString(segment.map((p) => ol.proj.fromLonLat([p[0], p[1]]))),
+            }));
+        }
+    }
     for (const day of ordered.days) {
         // Une ligne par jour : la nuit n'est pas un trajet.
         if (day.stops.length > 1) {
@@ -1812,6 +2008,10 @@ export function getParcoursSnapshot() {
         cameras: (inputs?.cameras || []).map((c) => ({ ...c })),
         photoStops: Object.fromEntries([...photoByStop].map(([key, ids]) => [key, [...ids]])),
         photosLoaded: [...photoImages.values()].filter((img) => img.complete && img.naturalWidth > 0).length,
+        tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
+        trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),
+        utcOffset: { ...utcOffset },
+        trackLegs: (timeline?.legs || []).filter((leg) => leg.path).length,
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,
             lines: source.getFeatures().filter((f) => f.get('role') === 'line').length,

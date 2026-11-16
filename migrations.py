@@ -278,6 +278,24 @@ def _v12_photos_parcours(db):
         )
 
 
+
+def _v13_traces_parcours(db):
+    # Parcours, lot 5 : traces GPS et décalage UTC du parcours. Idempotent.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS parcours_track ("
+            "id INTEGER PRIMARY KEY, "
+            "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+            "name VARCHAR(255), segments TEXT NOT NULL, "
+            "point_count INTEGER NOT NULL DEFAULT 0, "
+            "source_point_count INTEGER NOT NULL DEFAULT 0, "
+            "start_utc DATETIME, end_utc DATETIME, created_at DATETIME)"
+        )
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours)")}
+        if "utc_offset_minutes" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours ADD COLUMN utc_offset_minutes INTEGER")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -291,6 +309,7 @@ MIGRATIONS = [
     (10, _v10_table_parcours),
     (11, _v11_ajustements_parcours),
     (12, _v12_photos_parcours),
+    (13, _v13_traces_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

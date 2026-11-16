@@ -258,6 +258,9 @@ class Parcours(db.Model):
     # Sources retenues en plus des trouvailles.
     include_labs = db.Column(db.Boolean, nullable=False, default=True)
     include_dnf = db.Column(db.Boolean, nullable=False, default=True)
+    # Décalage UTC des traces GPS (lot 5), en minutes ; null : déduit
+    # (photos, Labs sur la trace, fuseau de l'ordinateur).
+    utc_offset_minutes = db.Column(db.Integer)
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
 
@@ -335,3 +338,20 @@ class ParcoursCamera(db.Model):
     __table_args__ = (
         db.UniqueConstraint('parcours_id', 'camera', name='uq_parcours_camera'),
     )
+
+
+class ParcoursTrack(db.Model):
+    """Trace GPS d'un parcours (lot 5), simplifiée à l'import
+    (parcours_tracks.py). `segments` : JSON [[[lon, lat, t], ...], ...], t en
+    secondes UTC depuis l'époque Unix."""
+    __tablename__ = 'parcours_track'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)
+    name = db.Column(db.String(255))
+    segments = db.Column(db.Text, nullable=False)
+    point_count = db.Column(db.Integer, nullable=False, default=0)
+    source_point_count = db.Column(db.Integer, nullable=False, default=0)
+    start_utc = db.Column(db.DateTime)
+    end_utc = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime)
