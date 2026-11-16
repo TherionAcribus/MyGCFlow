@@ -67,6 +67,17 @@ _LABELS = {
         "no_port": "MyGCFlow cannot start: no free port between {first} and {last}.",
         "crash": "MyGCFlow could not start:\n{error}\n\nDetails in the log file:\n{log}",
     },
+    "de": {
+        "open": "MyGCFlow öffnen",
+        "videos": "Video-Ordner",
+        "logs": "Protokolle",
+        "quit": "Beenden",
+        "busy_title": "MyGCFlow",
+        "busy": "Ein Import oder eine Videoverarbeitung läuft gerade.\n"
+                "Sie wird abgebrochen, wenn Sie jetzt beenden.\n\nTrotzdem beenden?",
+        "no_port": "MyGCFlow kann nicht starten: kein freier Port zwischen {first} und {last}.",
+        "crash": "MyGCFlow konnte nicht gestartet werden:\n{error}\n\nDetails im Protokoll:\n{log}",
+    },
 }
 
 

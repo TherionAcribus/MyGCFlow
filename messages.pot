@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-15 21:21+0100\n"
+"POT-Creation-Date: 2026-11-16 09:55+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1533,7 +1533,7 @@ msgstr ""
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr ""
 
-#: static/js/bdd.js:545 static/js/bdd.js:2565
+#: static/js/bdd.js:545 static/js/bdd.js:2568
 msgid "Import en cours"
 msgstr ""
 
@@ -1541,7 +1541,7 @@ msgstr ""
 msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
-#: static/js/bdd.js:560 static/js/bdd.js:2072 static/js/bdd.js:2143
+#: static/js/bdd.js:560 static/js/bdd.js:2075 static/js/bdd.js:2146
 #: static/js/evolution_data.js:341 static/js/gc_logs.js:387
 #: static/js/labs.js:1601 static/js/notifications.js:297
 #: static/js/notifications.js:342 static/js/poses_data.js:155
@@ -1600,13 +1600,13 @@ msgstr ""
 msgid "… et ${n} autres"
 msgstr ""
 
-#: static/js/bdd.js:744 static/js/bdd.js:1876 static/js/bdd.js:2082
+#: static/js/bdd.js:744 static/js/bdd.js:1879 static/js/bdd.js:2085
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr ""
 
-#: static/js/bdd.js:762 static/js/bdd.js:765 static/js/bdd.js:1902
-#: static/js/bdd.js:1906 static/js/bdd.js:2054
+#: static/js/bdd.js:762 static/js/bdd.js:765 static/js/bdd.js:1905
+#: static/js/bdd.js:1909 static/js/bdd.js:2057
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
@@ -1614,13 +1614,13 @@ msgstr ""
 msgid "Import refusé"
 msgstr ""
 
-#: static/js/bdd.js:783 static/js/bdd.js:2053 static/js/bdd.js:2093
+#: static/js/bdd.js:783 static/js/bdd.js:2056 static/js/bdd.js:2096
 msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
-#: static/js/bdd.js:783 static/js/bdd.js:2053 static/js/bdd.js:2093
-#: static/js/bdd.js:2260 static/js/bdd.js:2268 static/js/bdd.js:2553
-#: static/js/bdd.js:2643 static/js/dnf_data.js:191
+#: static/js/bdd.js:783 static/js/bdd.js:2056 static/js/bdd.js:2096
+#: static/js/bdd.js:2263 static/js/bdd.js:2271 static/js/bdd.js:2556
+#: static/js/bdd.js:2646 static/js/dnf_data.js:191
 #: static/js/evolution_data.js:260 static/js/evolution_data.js:364
 #: static/js/evolution_data.js:1028 static/js/evolution_data.js:1032
 #: static/js/evolution_data.js:1382 static/js/evolution_data.js:1420
@@ -1638,223 +1638,223 @@ msgid ""
 "une musique ou une image"
 msgstr ""
 
-#: static/js/bdd.js:904 static/js/bdd.js:930 static/js/chart_labels.mjs:751
+#: static/js/bdd.js:907 static/js/bdd.js:933 static/js/chart_labels.mjs:751
 #: static/js/mapgl.js:1262
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/bdd.js:917
+#: static/js/bdd.js:920
 #, python-brace-format
 msgid "du ${start} au ${end}"
 msgstr ""
 
-#: static/js/bdd.js:925
+#: static/js/bdd.js:928
 #, python-brace-format
 msgid "aujourd'hui à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:928
+#: static/js/bdd.js:931
 #, python-brace-format
 msgid "hier à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:950 static/js/stats_panels.js:1841
+#: static/js/bdd.js:953 static/js/stats_panels.js:1841
 #: static/js/stats_panels.js:1980
 msgid "caches"
 msgstr ""
 
-#: static/js/bdd.js:950
+#: static/js/bdd.js:953
 msgid "cache"
 msgstr ""
 
-#: static/js/bdd.js:953
+#: static/js/bdd.js:956
 #, python-brace-format
 msgid "importé ${when}"
 msgstr ""
 
-#: static/js/bdd.js:999 static/js/bdd.js:1208 templates/menu_data.html:28
+#: static/js/bdd.js:1002 static/js/bdd.js:1211 templates/menu_data.html:28
 msgid "Aucune géocache chargée"
 msgstr ""
 
-#: static/js/bdd.js:1888
+#: static/js/bdd.js:1891
 msgid "Réponse invalide du serveur"
 msgstr ""
 
-#: static/js/bdd.js:1892
+#: static/js/bdd.js:1895
 msgid "Impossible de lancer l'import GPX"
 msgstr ""
 
-#: static/js/bdd.js:1911 static/js/evolution_data.js:981
+#: static/js/bdd.js:1914 static/js/evolution_data.js:981
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1912 static/js/evolution_data.js:982
+#: static/js/bdd.js:1915 static/js/evolution_data.js:982
 msgid "Envoi du fichier annulé"
 msgstr ""
 
-#: static/js/bdd.js:1926
+#: static/js/bdd.js:1929
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr ""
 
-#: static/js/bdd.js:1926
+#: static/js/bdd.js:1929
 msgid "Aucun fichier"
 msgstr ""
 
-#: static/js/bdd.js:1966
+#: static/js/bdd.js:1969
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:1972
+#: static/js/bdd.js:1975
 msgid "géocache importée"
 msgstr ""
 
-#: static/js/bdd.js:1972
+#: static/js/bdd.js:1975
 msgid "géocaches importées"
 msgstr ""
 
-#: static/js/bdd.js:1976
+#: static/js/bdd.js:1979
 msgid "géocache sans date de trouvaille"
 msgstr ""
 
-#: static/js/bdd.js:1976
+#: static/js/bdd.js:1979
 msgid "géocaches sans date de trouvaille"
 msgstr ""
 
-#: static/js/bdd.js:1980
+#: static/js/bdd.js:1983
 msgid "géocache sans position"
 msgstr ""
 
-#: static/js/bdd.js:1980
+#: static/js/bdd.js:1983
 msgid "géocaches sans position"
 msgstr ""
 
-#: static/js/bdd.js:1984
+#: static/js/bdd.js:1987
 msgid "log ajouté"
 msgstr ""
 
-#: static/js/bdd.js:1984
+#: static/js/bdd.js:1987
 msgid "logs ajoutés"
 msgstr ""
 
-#: static/js/bdd.js:1987
+#: static/js/bdd.js:1990
 msgid "log rejeté"
 msgstr ""
 
-#: static/js/bdd.js:1987
+#: static/js/bdd.js:1990
 msgid "logs rejetés"
 msgstr ""
 
-#: static/js/bdd.js:2032 static/js/bdd.js:2663
+#: static/js/bdd.js:2035 static/js/bdd.js:2666
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:2072 static/js/bdd.js:2073 static/js/bdd.js:2080
+#: static/js/bdd.js:2075 static/js/bdd.js:2076 static/js/bdd.js:2083
 msgid "Préparation de l'envoi..."
 msgstr ""
 
-#: static/js/bdd.js:2141 static/js/bdd.js:2143
+#: static/js/bdd.js:2144 static/js/bdd.js:2146
 msgid "Chargement de l'application..."
 msgstr ""
 
-#: static/js/bdd.js:2160
+#: static/js/bdd.js:2163
 msgid "Impossible de lancer le chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2260 static/js/bdd.js:2268
+#: static/js/bdd.js:2263 static/js/bdd.js:2271
 msgid "Erreur lors du chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:2393
+#: static/js/bdd.js:2396
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr ""
 
-#: static/js/bdd.js:2403
+#: static/js/bdd.js:2406
 msgid "masquée"
 msgstr ""
 
-#: static/js/bdd.js:2403
+#: static/js/bdd.js:2406
 msgid "masquées"
 msgstr ""
 
-#: static/js/bdd.js:2405
+#: static/js/bdd.js:2408
 msgid "Découvertes masquées par le réglage « Découvertes affichées »"
 msgstr ""
 
-#: static/js/bdd.js:2463
+#: static/js/bdd.js:2466
 msgid ""
 "Aucune découverte affichée : le réglage « Découvertes affichées » masque "
 "toutes les sources."
 msgstr ""
 
-#: static/js/bdd.js:2464
+#: static/js/bdd.js:2467
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr ""
 
-#: static/js/bdd.js:2466
+#: static/js/bdd.js:2469
 msgid "Aucune cache visible"
 msgstr ""
 
-#: static/js/bdd.js:2553
+#: static/js/bdd.js:2556
 msgid "Erreur lors de l'export de la sélection"
 msgstr ""
 
-#: static/js/bdd.js:2565
+#: static/js/bdd.js:2568
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr ""
 
-#: static/js/bdd.js:2578
+#: static/js/bdd.js:2581
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 msgstr ""
 
-#: static/js/bdd.js:2579 static/js/gc_logs.js:851 static/js/labs.js:2165
+#: static/js/bdd.js:2582 static/js/gc_logs.js:851 static/js/labs.js:2165
 msgid "Confirmation de suppression"
 msgstr ""
 
-#: static/js/bdd.js:2582 templates/guide.html:195 templates/menu_data.html:85
+#: static/js/bdd.js:2585 templates/guide.html:195 templates/menu_data.html:85
 msgid "Supprimer mes géocaches"
 msgstr ""
 
-#: static/js/bdd.js:2589
+#: static/js/bdd.js:2592
 msgid "Confirmation non disponible, action annulée."
 msgstr ""
 
-#: static/js/bdd.js:2589 static/js/bdd.js:2604
+#: static/js/bdd.js:2592 static/js/bdd.js:2607
 msgid "Suppression"
 msgstr ""
 
-#: static/js/bdd.js:2604
+#: static/js/bdd.js:2607
 msgid "Suppression des trouvailles..."
 msgstr ""
 
-#: static/js/bdd.js:2631
+#: static/js/bdd.js:2634
 msgid "Trouvailles supprimées avec succès"
 msgstr ""
 
-#: static/js/bdd.js:2632 static/js/gc_logs.js:864 static/js/labs.js:2184
+#: static/js/bdd.js:2635 static/js/gc_logs.js:864 static/js/labs.js:2184
 msgid "Suppression réussie"
 msgstr ""
 
-#: static/js/bdd.js:2643
+#: static/js/bdd.js:2646
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr ""
 
-#: static/js/bdd.js:2663 static/js/mapgl.js:1010 static/js/notifications.js:379
+#: static/js/bdd.js:2666 static/js/mapgl.js:1010 static/js/notifications.js:379
 msgid "Affichage des points"
 msgstr ""
 
-#: static/js/bdd.js:2669
+#: static/js/bdd.js:2672
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr ""
 
-#: static/js/bdd.js:2681 static/js/bdd.js:2772 static/js/bdd.js:2780
+#: static/js/bdd.js:2684 static/js/bdd.js:2775 static/js/bdd.js:2783
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr ""
 
-#: static/js/bdd.js:2681 static/js/bdd.js:2772 static/js/bdd.js:2780
+#: static/js/bdd.js:2684 static/js/bdd.js:2775 static/js/bdd.js:2783
 msgid "Erreur d'affichage"
 msgstr ""
 
@@ -1881,40 +1881,40 @@ msgstr ""
 msgid "Écart"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1001 static/js/chart_echarts.mjs:1166
+#: static/js/chart_echarts.mjs:1007 static/js/chart_echarts.mjs:1172
 msgid "Aucune donnée"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1007 static/js/zone_layer.js:1302
+#: static/js/chart_echarts.mjs:1013 static/js/zone_layer.js:1302
 #, python-brace-format
 msgid "${n} sur ${of} caches"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1012
+#: static/js/chart_echarts.mjs:1018
 #, python-brace-format
 msgid "rang ${n} sur ${of}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1018
+#: static/js/chart_echarts.mjs:1024
 #, python-brace-format
 msgid "nouvelle depuis ${period}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1020
+#: static/js/chart_echarts.mjs:1026
 #, python-brace-format
 msgid "${delta} depuis ${period}"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1165 static/js/stats_page_cards.js:279
+#: static/js/chart_echarts.mjs:1171 static/js/stats_page_cards.js:279
 #: static/js/zone_layer_ui.js:153
 msgid "Contours des zones indisponibles."
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1167
+#: static/js/chart_echarts.mjs:1173
 msgid "Chargement de la carte…"
 msgstr ""
 
-#: static/js/chart_echarts.mjs:1360
+#: static/js/chart_echarts.mjs:1366
 #, python-brace-format
 msgid "Par année : ${list}"
 msgstr ""
@@ -3170,19 +3170,23 @@ msgstr ""
 msgid "Inconnu"
 msgstr ""
 
-#: static/js/chart_labels.mjs:419
+#: static/js/chart_labels.mjs:419 static/js/stats_page_geo.js:496
+#: static/js/zone_layer.js:1247
 msgid "N"
 msgstr ""
 
-#: static/js/chart_labels.mjs:419
+#: static/js/chart_labels.mjs:419 static/js/stats_page_geo.js:496
+#: static/js/zone_layer.js:1247
 msgid "S"
 msgstr ""
 
-#: static/js/chart_labels.mjs:419
+#: static/js/chart_labels.mjs:419 static/js/stats_page_geo.js:496
+#: static/js/zone_layer.js:1247
 msgid "E"
 msgstr ""
 
-#: static/js/chart_labels.mjs:419
+#: static/js/chart_labels.mjs:419 static/js/stats_page_geo.js:496
+#: static/js/zone_layer.js:1247
 msgid "O"
 msgstr ""
 
@@ -3533,6 +3537,7 @@ msgid "${period} à ce jour"
 msgstr ""
 
 #: static/js/chart_labels.mjs:767 static/js/stats_page_cards.js:600
+#: static/js/zone_geo.js:190
 #, python-brace-format
 msgid "${label} : ${value}"
 msgstr ""
@@ -5705,61 +5710,61 @@ msgstr ""
 msgid "Confirmation"
 msgstr ""
 
-#: static/js/options.js:63 static/js/options.js:82
+#: static/js/options.js:66 static/js/options.js:85
 msgid "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
 msgstr ""
 
-#: static/js/options.js:64 static/js/options.js:83
+#: static/js/options.js:67 static/js/options.js:86
 msgid "Erreur de vérification"
 msgstr ""
 
-#: static/js/options.js:100
+#: static/js/options.js:103
 msgid "Votre application est à jour"
 msgstr ""
 
-#: static/js/options.js:100 static/js/options.js:207
+#: static/js/options.js:103 static/js/options.js:211
 msgid "Version actuelle"
 msgstr ""
 
-#: static/js/options.js:115
+#: static/js/options.js:118
 #, python-brace-format
 msgid "Nouvelle version ${version} du ${date} trouvée"
 msgstr ""
 
-#: static/js/options.js:116
+#: static/js/options.js:119
 #, python-brace-format
 msgid "Nouvelle version ${version} trouvée"
 msgstr ""
 
-#: static/js/options.js:118 static/js/options.js:301
+#: static/js/options.js:121 static/js/options.js:305
 msgid "Mise à jour disponible"
 msgstr ""
 
-#: static/js/options.js:206
+#: static/js/options.js:210
 msgid "🚀 Mise à jour disponible !"
 msgstr ""
 
-#: static/js/options.js:208
+#: static/js/options.js:212
 msgid "Dernière version"
 msgstr ""
 
-#: static/js/options.js:209
+#: static/js/options.js:213
 msgid "Nouveautés et améliorations"
 msgstr ""
 
-#: static/js/options.js:210
+#: static/js/options.js:214
 msgid "Télécharger la mise à jour"
 msgstr ""
 
-#: static/js/options.js:211
+#: static/js/options.js:215
 msgid "Ignorer cette version"
 msgstr ""
 
-#: static/js/options.js:212
+#: static/js/options.js:216
 msgid "Plus tard"
 msgstr ""
 
-#: static/js/options.js:300
+#: static/js/options.js:304
 msgid "Vous ne serez plus averti pour cette version."
 msgstr ""
 
@@ -6387,7 +6392,7 @@ msgid ""
 "${suggestion}"
 msgstr ""
 
-#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:1892
+#: static/js/saved_indicator.mjs:115 static/js/stats_page_video.js:1936
 msgid "Enregistrement…"
 msgstr ""
 
@@ -6666,8 +6671,8 @@ msgstr ""
 #: static/js/stats_page_dashboard.js:309 static/js/stats_page_dashboard.js:329
 #: static/js/stats_page_dashboard.js:455 static/js/stats_page_dashboard.js:475
 #: static/js/stats_page_data.js:188 static/js/stats_page_exports.js:294
-#: static/js/stats_page_exports.js:317 static/js/stats_page_video.js:1445
-#: static/js/stats_page_video.js:1837
+#: static/js/stats_page_exports.js:317 static/js/stats_page_video.js:1489
+#: static/js/stats_page_video.js:1881
 msgid "Mon tableau de bord"
 msgstr ""
 
@@ -7144,6 +7149,11 @@ msgstr ""
 msgid "Graphique ajouté : ${title}."
 msgstr ""
 
+#: static/js/stats_page_geo.js:497
+#, python-brace-format
+msgid "cases : ${n}"
+msgstr ""
+
 #: static/js/stats_page_image.js:71
 msgid ""
 "Image introuvable : elle a peut-être été retirée de la bibliothèque. « "
@@ -7479,7 +7489,7 @@ msgstr ""
 msgid "Réglages de la carte repris."
 msgstr ""
 
-#: static/js/stats_page_video.js:1125 static/js/stats_page_video.js:2265
+#: static/js/stats_page_video.js:1125 static/js/stats_page_video.js:2309
 #: static/js/ui.js:1000 templates/app.html:255 templates/app.html:256
 #: templates/guide.html:136 templates/guide.html:346
 #: templates/menu_animation.html:57
@@ -7497,97 +7507,97 @@ msgstr ""
 msgid "La lecture de cette musique a échoué."
 msgstr ""
 
-#: static/js/stats_page_video.js:1580
+#: static/js/stats_page_video.js:1624
 msgid "Image introuvable"
 msgstr ""
 
-#: static/js/stats_page_video.js:1687
+#: static/js/stats_page_video.js:1731
 msgid "ouverture"
 msgstr ""
 
-#: static/js/stats_page_video.js:1688
+#: static/js/stats_page_video.js:1732
 msgid "fin"
 msgstr ""
 
-#: static/js/stats_page_video.js:1689
+#: static/js/stats_page_video.js:1733
 #, python-brace-format
 msgid "graphique ${n} / ${count}"
 msgstr ""
 
-#: static/js/stats_page_video.js:1747
+#: static/js/stats_page_video.js:1791
 msgid "L'envoi de la vidéo au serveur a échoué."
 msgstr ""
 
-#: static/js/stats_page_video.js:1758 static/js/stats_page_video.js:1885
+#: static/js/stats_page_video.js:1802 static/js/stats_page_video.js:1929
 msgid "Ce navigateur ne sait pas enregistrer de vidéo."
 msgstr ""
 
-#: static/js/stats_page_video.js:1801
+#: static/js/stats_page_video.js:1845
 #, python-brace-format
 msgid "Enregistrement… (${where}, reste ~${s} s)"
 msgstr ""
 
-#: static/js/stats_page_video.js:1925
+#: static/js/stats_page_video.js:1969
 #, python-brace-format
 msgid "Enregistrement… (reste ~${s} s)"
 msgstr ""
 
-#: static/js/stats_page_video.js:2006
+#: static/js/stats_page_video.js:2050
 msgid "Aperçu terminé — rien n'a été enregistré."
 msgstr ""
 
-#: static/js/stats_page_video.js:2026 static/js/stats_page_video.js:2030
+#: static/js/stats_page_video.js:2070 static/js/stats_page_video.js:2074
 #, python-brace-format
 msgid "Aperçu… (${where})"
 msgstr ""
 
-#: static/js/stats_page_video.js:2048 static/js/stats_page_video.js:2053
+#: static/js/stats_page_video.js:2092 static/js/stats_page_video.js:2097
 msgid "Aperçu…"
 msgstr ""
 
-#: static/js/stats_page_video.js:2096
+#: static/js/stats_page_video.js:2140
 msgid "Conversion en MP4…"
 msgstr ""
 
-#: static/js/stats_page_video.js:2150
+#: static/js/stats_page_video.js:2194
 msgid ""
 "L'onglet a été masqué pendant l'enregistrement : la vidéo peut être "
 "saccadée."
 msgstr ""
 
-#: static/js/stats_page_video.js:2169
+#: static/js/stats_page_video.js:2213
 #, python-brace-format
 msgid "Vidéo enregistrée : ${file}, dans ${folder}."
 msgstr ""
 
-#: static/js/stats_page_video.js:2190
+#: static/js/stats_page_video.js:2234
 #, python-brace-format
 msgid ""
 "La conversion en MP4 a échoué (${detail}) : la vidéo est proposée au "
 "format WebM."
 msgstr ""
 
-#: static/js/stats_page_video.js:2191
+#: static/js/stats_page_video.js:2235
 msgid "La conversion en MP4 a échoué : la vidéo est proposée au format WebM."
 msgstr ""
 
-#: static/js/stats_page_video.js:2194
+#: static/js/stats_page_video.js:2238
 msgid ""
 "La musique choisie n'y est pas incluse : elle est mixée pendant la "
 "conversion."
 msgstr ""
 
-#: static/js/stats_page_video.js:2238
+#: static/js/stats_page_video.js:2282
 msgid "Impossible d'ouvrir le dossier des vidéos."
 msgstr ""
 
-#: static/js/stats_page_video.js:2257
+#: static/js/stats_page_video.js:2301
 msgid ""
 "La vidéo est en cours de création : fermer la fenêtre l'interrompt et "
 "elle sera perdue."
 msgstr ""
 
-#: static/js/stats_page_video.js:2258
+#: static/js/stats_page_video.js:2302
 msgid "Arrêter la vidéo ?"
 msgstr ""
 
@@ -9372,6 +9382,19 @@ msgstr ""
 msgid "Aucun flux vidéo ouvert"
 msgstr ""
 
+#: static/js/zone_geo.js:186
+#, python-brace-format
+msgid "pays : ${n}"
+msgstr ""
+
+#: static/js/zone_geo.js:188
+msgid "régions"
+msgstr ""
+
+#: static/js/zone_geo.js:188
+msgid "zones"
+msgstr ""
+
 #: static/js/zone_layer.js:912
 msgid "Combinaisons D/T manquantes"
 msgstr ""
@@ -9684,28 +9707,28 @@ msgstr ""
 
 #: templates/_app_header.html:45 templates/guide.html:236
 #: templates/guide.html:513 templates/menu_images.html:215
-#: templates/menu_names.html:282 templates/menu_options.html:30
+#: templates/menu_names.html:282 templates/menu_options.html:31
 #: templates/menu_stats.html:356 templates/menu_trail.html:94
 #: templates/menu_zones.html:128 templates/stats_page.html:336
 msgid "Apparence"
 msgstr ""
 
-#: templates/_app_header.html:46 templates/menu_options.html:32
+#: templates/_app_header.html:46 templates/menu_options.html:33
 msgid "Système"
 msgstr ""
 
-#: templates/_app_header.html:47 templates/menu_options.html:33
+#: templates/_app_header.html:47 templates/menu_options.html:34
 #: templates/menu_stats.html:368 templates/menu_style.html:164
 msgid "Clair"
 msgstr ""
 
-#: templates/_app_header.html:48 templates/menu_options.html:34
+#: templates/_app_header.html:48 templates/menu_options.html:35
 #: templates/menu_stats.html:367 templates/menu_style.html:167
 msgid "Sombre"
 msgstr ""
 
 #: templates/_app_header.html:56 templates/guide.html:516
-#: templates/menu_options.html:146
+#: templates/menu_options.html:147
 msgid "Quitter MyGCFlow"
 msgstr ""
 
@@ -10182,7 +10205,7 @@ msgid "Plein écran"
 msgstr ""
 
 #: templates/guide.html:6 templates/guide.html:24
-#: templates/menu_options.html:138
+#: templates/menu_options.html:139
 msgid "Mode d'emploi"
 msgstr ""
 
@@ -10303,7 +10326,7 @@ msgid ""
 "carte. Merci à lui pour l'idée !"
 msgstr ""
 
-#: templates/guide.html:146 templates/menu_options.html:160
+#: templates/guide.html:146 templates/menu_options.html:161
 msgid "Une question, un problème, une suggestion ?"
 msgstr ""
 
@@ -12030,11 +12053,11 @@ msgid "Choix de la langue"
 msgstr ""
 
 #: templates/guide.html:511
-msgid "basculez entre français et anglais."
+msgid "basculez entre français, anglais et allemand."
 msgstr ""
 
-#: templates/guide.html:512 templates/menu_options.html:21
-#: templates/menu_options.html:22
+#: templates/guide.html:512 templates/menu_options.html:22
+#: templates/menu_options.html:23
 msgid "Format des dates"
 msgstr ""
 
@@ -12046,7 +12069,7 @@ msgstr ""
 msgid "interface claire, sombre ou alignée sur le système."
 msgstr ""
 
-#: templates/guide.html:514 templates/menu_options.html:45
+#: templates/guide.html:514 templates/menu_options.html:46
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr ""
 
@@ -12054,7 +12077,7 @@ msgstr ""
 msgid "soyez prévenu d'une nouvelle version ; le bouton"
 msgstr ""
 
-#: templates/guide.html:514 templates/menu_options.html:132
+#: templates/guide.html:514 templates/menu_options.html:133
 msgid "Vérifier les mises à jour"
 msgstr ""
 
@@ -12062,7 +12085,7 @@ msgstr ""
 msgid "lance la même vérification à la demande."
 msgstr ""
 
-#: templates/guide.html:515 templates/menu_options.html:50
+#: templates/guide.html:515 templates/menu_options.html:51
 msgid "Thème visuel par défaut au démarrage"
 msgstr ""
 
@@ -12080,11 +12103,11 @@ msgid ""
 " haut quel que soit l'onglet."
 msgstr ""
 
-#: templates/guide.html:517 templates/menu_options.html:174
+#: templates/guide.html:517 templates/menu_options.html:175
 msgid "Licence MIT"
 msgstr ""
 
-#: templates/guide.html:517 templates/menu_options.html:177
+#: templates/guide.html:517 templates/menu_options.html:178
 msgid "Composants tiers"
 msgstr ""
 
@@ -12106,7 +12129,7 @@ msgid ""
 "en deux champs) et le zoom enregistrés."
 msgstr ""
 
-#: templates/guide.html:524 templates/menu_options.html:121
+#: templates/guide.html:524 templates/menu_options.html:122
 msgid "Enregistrer le cadrage"
 msgstr ""
 
@@ -12114,7 +12137,7 @@ msgstr ""
 msgid "mémorise la vue actuelle comme centre et zoom personnalisés."
 msgstr ""
 
-#: templates/guide.html:525 templates/menu_options.html:83
+#: templates/guide.html:525 templates/menu_options.html:84
 msgid "Cadrer sur les Geocaches"
 msgstr ""
 
@@ -15338,102 +15361,106 @@ msgid "Langue"
 msgstr ""
 
 #: templates/menu_options.html:15
-msgid "Anglais"
+msgid "Allemand"
 msgstr ""
 
 #: templates/menu_options.html:16
+msgid "Anglais"
+msgstr ""
+
+#: templates/menu_options.html:17
 msgid "Français"
 msgstr ""
 
-#: templates/menu_options.html:23
+#: templates/menu_options.html:24
 msgid "Automatique (selon la langue)"
 msgstr ""
 
-#: templates/menu_options.html:24
+#: templates/menu_options.html:25
 msgid "Jour/Mois/Année (31/12/2026)"
 msgstr ""
 
-#: templates/menu_options.html:25
+#: templates/menu_options.html:26
 msgid "Mois/Jour/Année (12/31/2026)"
 msgstr ""
 
-#: templates/menu_options.html:31
+#: templates/menu_options.html:32
 msgid "Apparence de l'interface"
 msgstr ""
 
-#: templates/menu_options.html:51
+#: templates/menu_options.html:52
 msgid "Thème visuel par défaut"
 msgstr ""
 
-#: templates/menu_options.html:59
+#: templates/menu_options.html:60
 msgid "Toujours démarrer sur ce thème"
 msgstr ""
 
-#: templates/menu_options.html:62
+#: templates/menu_options.html:63
 msgid ""
 "Décoché, MyGCFlow rouvre le dernier thème utilisé et le choix ci-dessus "
 "sert de repli. Coché sans thème choisi, le thème actif est pris."
 msgstr ""
 
-#: templates/menu_options.html:70 templates/menu_options.html:71
+#: templates/menu_options.html:71 templates/menu_options.html:72
 msgid "Cadrage par défaut de la carte"
 msgstr ""
 
-#: templates/menu_options.html:72
+#: templates/menu_options.html:73
 msgid "Sur les Geocaches chargées"
 msgstr ""
 
-#: templates/menu_options.html:73
+#: templates/menu_options.html:74
 msgid "Centre et zoom personnalisés"
 msgstr ""
 
-#: templates/menu_options.html:80
+#: templates/menu_options.html:81
 msgid ""
 "La vue se cadre automatiquement sur les Geocaches au chargement des "
 "données."
 msgstr ""
 
-#: templates/menu_options.html:88
+#: templates/menu_options.html:89
 msgid "La carte s'affiche avec ce centre et ce zoom."
 msgstr ""
 
-#: templates/menu_options.html:93
+#: templates/menu_options.html:94
 msgid "Mode de saisie du centre de carte"
 msgstr ""
 
-#: templates/menu_options.html:95
+#: templates/menu_options.html:96
 msgid "Lat, Lon"
 msgstr ""
 
-#: templates/menu_options.html:97
+#: templates/menu_options.html:98
 msgid "Séparés"
 msgstr ""
 
-#: templates/menu_options.html:101
+#: templates/menu_options.html:102
 msgid "Centre de carte par défaut - Lat, Lon"
 msgstr ""
 
-#: templates/menu_options.html:105
+#: templates/menu_options.html:106
 msgid "Centre de carte par défaut - Latitude"
 msgstr ""
 
-#: templates/menu_options.html:109
+#: templates/menu_options.html:110
 msgid "Centre de carte par défaut - Longitude"
 msgstr ""
 
-#: templates/menu_options.html:115
+#: templates/menu_options.html:116
 msgid "Zoom de carte par défaut"
 msgstr ""
 
-#: templates/menu_options.html:117
+#: templates/menu_options.html:118
 msgid "Valeur autorisée : de 0 à 22."
 msgstr ""
 
-#: templates/menu_options.html:135
+#: templates/menu_options.html:136
 msgid "Accueil"
 msgstr ""
 
-#: templates/menu_options.html:162
+#: templates/menu_options.html:163
 msgid "Profil Geocaching"
 msgstr ""
 

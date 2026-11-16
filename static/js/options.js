@@ -22,6 +22,8 @@ export function checkVersionInit(){
 export function openHomePage(){
     const currentLang = getCurrentLanguage();
     const homeUrls = {
+        // Pas de page allemande sur le site : l'anglais est le meilleur repli.
+        'de': 'http://blfa1842.odns.fr/app/GCMap/en.html',
         'en': 'http://blfa1842.odns.fr/app/GCMap/en.html',
         'fr': 'http://blfa1842.odns.fr/app/GCMap/index.html'
     };
@@ -110,6 +112,7 @@ function normalizeLanguage(lang) {
     const lower = `${lang}`.toLowerCase();
     if (lower.startsWith('fr')) return 'fr';
     if (lower.startsWith('en')) return 'en';
+    if (lower.startsWith('de')) return 'de';
     return null;
 }
 

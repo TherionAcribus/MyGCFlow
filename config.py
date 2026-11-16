@@ -13,7 +13,7 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     BABEL_DEFAULT_LOCALE = 'fr'
-    BABEL_SUPPORTED_LOCALES = ['en', 'fr']
+    BABEL_SUPPORTED_LOCALES = ['de', 'en', 'fr']
     BABEL_TRANSLATION_DIRECTORIES = 'translations'
     APP_VERSION = __version__
     # Contact de l'auteur (questions, problèmes, suggestions), affiché au pied

@@ -686,7 +686,10 @@ if (isMainPage()) setupGpxDragAndDrop();
 // langue de l'interface.
 
 function bddInfoLocale() {
-    return pkg.options?.options?.language === 'en' ? 'en-US' : 'fr-FR';
+    const lang = pkg.options?.options?.language;
+    if (lang === 'en') return 'en-US';
+    if (lang === 'de') return 'de-DE';
+    return 'fr-FR';
 }
 
 function parseBddInfoDate(value) {

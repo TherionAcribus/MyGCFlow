@@ -15,6 +15,7 @@ import {
     addGeoListener, featureBBox, geoFailed, geoIndex, levelNoun, loadFile, loadIndex, requiredFiles, zoneName, zoneProps,
 } from './zone_geo.js';
 
+import { t } from './notifications.js';
 import { cellLabel, cellRing } from './zone_grid.mjs';
 import { mapFrameContinent, mapFrameCountry } from './chart_spec.mjs';
 
@@ -486,15 +487,14 @@ function composeGrid(echarts, result, { fixedBox = null, frameCountry = null } =
     }
     const name = register(echarts, 'grid|' + (fixedBox || frameCountry || 'auto') + '|' + backdrop.length + '|' + result.keys.join(','),
         [...backdrop, ...features]);
-    const english = lang.toLowerCase().startsWith('en');
     return {
         name,
         bounds: [[bounds[0], bounds[3]], [bounds[2], bounds[1]]],
         aspectScale: aspectOf(bounds),
         backdrop: neighbours.map((f) => f.properties.name),
         anchors,
-        nameOf: (id) => cellLabel(id, { locale: lang, west: english ? 'W' : 'O' }),
-        levelNoun: (n) => (english ? 'cells: ' : 'cases : ') + n,
+        nameOf: (id) => cellLabel(id, { locale: lang, north: t('N'), south: t('S'), east: t('E'), west: t('O') }),
+        levelNoun: (n) => t('cases : ${n}', { n }),
     };
 }
 

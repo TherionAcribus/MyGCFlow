@@ -1045,7 +1045,7 @@ export function zonePopupAt(pixel) {
     const lang = document.documentElement.lang || 'fr';
     const density = densityOf(o);
     const fmt = new Intl.NumberFormat(lang, density ? { maximumSignificantDigits: 2 } : { maximumFractionDigits: 1 });
-    const title = (o.level === 'grid' ? cellLabel(id, { locale: lang }) : zoneName(id)) || String(id);
+    const title = (o.level === 'grid' ? cellLabel(id, { locale: lang, north: t('N'), south: t('S'), east: t('E'), west: t('O') }) : zoneName(id)) || String(id);
     const raw = model.state.valueOf(id);
     // Comparaison à une date : la ligne montre l'écart signé, le détail
     // « avant → aujourd'hui » (ou jour montré).

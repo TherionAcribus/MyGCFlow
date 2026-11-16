@@ -2629,7 +2629,7 @@ export function init_ui() {
     // ------- OPTIONS  -------
     // Charger la langue depuis localStorage si elle existe, sinon utiliser celle par défaut
     const savedLanguage = localStorage.getItem('selectedLanguage');
-    if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
+    if (['fr', 'en', 'de'].includes(savedLanguage)) {
         pkg.options.options.language = savedLanguage;
     }
 

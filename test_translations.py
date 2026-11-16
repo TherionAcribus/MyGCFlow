@@ -8,7 +8,7 @@ from flask_babel import Babel, gettext as _
 # Configuration minimale pour tester les traductions
 app = Flask(__name__)
 app.config['BABEL_DEFAULT_LOCALE'] = 'fr'
-app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'fr']
+app.config['BABEL_SUPPORTED_LOCALES'] = ['de', 'en', 'fr']
 
 def get_locale():
     locale = request.args.get('lang')

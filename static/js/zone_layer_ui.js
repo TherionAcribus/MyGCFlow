@@ -9,7 +9,7 @@ import { t } from './notifications.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import { normalizeZoneLayerOptions } from './zone_layer_model.mjs';
-import { geoIndex } from './zone_geo.js';
+import { geoIndex, geoLang } from './zone_geo.js';
 
 let bound = false;
 const el = (id) => document.getElementById(id);
@@ -118,7 +118,7 @@ function syncLevelLabel(countries) {
     const opt = document.querySelector('#zonesLevel option[value="subregion"]');
     if (!opt) return;
     opt.dataset.defaultLabel ??= opt.textContent;
-    const lang = document.documentElement.lang?.toLowerCase().startsWith('en') ? 'en' : 'fr';
+    const lang = geoLang();
     const labels = new Set();
     let missing = false;
     for (const cc of countries || []) {

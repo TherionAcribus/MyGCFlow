@@ -85,7 +85,7 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
   données : comparaison de périodes, grilles de défis (D/T, 366 jours,
   Jasmer), séries et records, objectifs, cartes par zones, export PNG/SVG,
   mode présentation et vidéo du tableau.
-- **Interface bilingue** — français et anglais, changement à chaud.
+- **Interface trilingue** — français, anglais et allemand, changement à chaud.
 - **Hors ligne** — toutes les bibliothèques tierces sont hébergées localement :
   aucun CDN, aucun accès réseau nécessaire hors tuiles de carte.
 
@@ -239,7 +239,7 @@ npm run test:e2e
 
 ### Traductions
 
-Le français est la langue source (`msgid`), l'anglais vit dans le `msgstr`.
+Le français est la langue source (`msgid`), l'anglais et l'allemand vivent dans le `msgstr`.
 
 ```bash
 pybabel extract -F babel.cfg -k _ -k _l -k t -k _tr -o messages.pot .

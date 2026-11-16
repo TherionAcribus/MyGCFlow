@@ -7,6 +7,8 @@
 // (`entry.data`), et les écouteurs (addGeoListener) sont prévenus à chaque
 // arrivée ou échec.
 
+import { t } from './notifications.js';
+
 const GEO_BASE = '/static/geo/';
 
 let indexPromise = null;
@@ -18,7 +20,9 @@ const props = new Map();      // id → propriétés (nom, surface, parent) — 
 const bboxes = new Map();     // feature → [x0, y0, x1, y1]
 const bboxById = new Map();   // id → [x0, y0, x1, y1]
 
-const english = () => String(document.documentElement.lang || 'fr').toLowerCase().startsWith('en');
+// Les contours n'ont de noms qu'en français et en anglais : toute autre
+// langue de l'interface (allemand) prend l'anglais.
+export const geoLang = () => (String(document.documentElement.lang || 'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en');
 
 export function addGeoListener(fn) {
     listeners.add(fn);
@@ -152,7 +156,7 @@ export function zoneProps(id) {
 export function zoneName(id) {
     const p = props.get(id);
     if (!p) return null;
-    return (english() ? p.name_en : p.name_fr) || p.name || null;
+    return p[`name_${geoLang()}`] || p.name || null;
 }
 
 // Surfaces (km²) des zones chargées, pour la densité.
@@ -173,17 +177,17 @@ export function fallbackCountries() {
 // « comtés », « provinces ») ; null tant que le catalogue n'est pas là, ou
 // si le pays n'a pas ce niveau.
 export function levelName(cc, level) {
-    return index?.by_country?.[cc]?.[level]?.label?.[english() ? 'en' : 'fr'] || null;
+    return index?.by_country?.[cc]?.[level]?.label?.[geoLang()] || null;
 }
 
 // « départements : 41 », « régions : 13 », « zones : 52 » (plusieurs pays).
 export function levelNoun(level, countries, n) {
-    const lang = english() ? 'en' : 'fr';
-    if (level === 'country') return (english() ? 'countries: ' : 'pays : ') + n;
+    const lang = geoLang();
+    if (level === 'country') return t('pays : ${n}', { n });
     const labels = new Set(countries.map((cc) => index?.by_country?.[cc]?.[level]?.label?.[lang]).filter(Boolean));
-    const fallback = level === 'region' ? (english() ? 'regions' : 'régions') : 'zones';
+    const fallback = level === 'region' ? t('régions') : t('zones');
     const label = labels.size === 1 ? [...labels][0] : fallback;
-    return `${label} : ${n}`;
+    return t('${label} : ${value}', { label, value: n });
 }
 
 // ---------------------------------------------------------------------------

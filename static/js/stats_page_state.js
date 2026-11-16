@@ -9,10 +9,13 @@ import { levelName, zoneName } from './stats_page_geo.js';
 
 
 // Locale ECharts (libellés de ses outils) selon la langue de l'interface. Le
-// français vient de static/vendor/echarts/langFR.js, chargé par le gabarit ;
-// l'anglais est inclus dans echarts.min.js.
+// français et l'allemand viennent de static/vendor/echarts/lang{FR,DE}.js,
+// chargés par le gabarit ; l'anglais est inclus dans echarts.min.js.
 export function echartsLocale(lang = document.documentElement.lang) {
-    return String(lang || '').toLowerCase().startsWith('fr') ? 'FR' : 'EN';
+    const short = String(lang || '').toLowerCase().slice(0, 2);
+    if (short === 'fr') return 'FR';
+    if (short === 'de') return 'DE';
+    return 'EN';
 }
 
 export const SAVE_DELAY_MS = 500;

@@ -25,6 +25,25 @@ pybabel update -i messages.pot -d translations
 pybabel compile -d translations
 ```
 
+## Adding a language
+
+- Add the locale to `BABEL_SUPPORTED_LOCALES` in `config.py` and to the
+  `#selectLanguage` options in `templates/menu_options.html` (the label goes
+  through `_()` like any other string).
+- Initialize its catalog from the template, translate the `msgstr`, compile:
+
+```bash
+pybabel init -i messages.pot -d translations -l <lang>
+pybabel compile -d translations
+```
+
+- Also check the language-conditional spots outside gettext: `normalizeLanguage`
+  and `homeUrls` (static/js/options.js), `bddInfoLocale` (static/js/bdd.js),
+  `_LABELS` (launcher.py), `echartsLocale` (static/js/stats_page_state.js) with
+  a `static/vendor/echarts/lang<XX>.js` file if a locale file exists.
+- `language` in settings.json is free-form — an unknown value simply falls back
+  to French server-side.
+
 ## Checking
 
 - To detect missing strings after adding text, run:

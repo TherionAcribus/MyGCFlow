@@ -505,10 +505,13 @@ Un tel module s'initialise lui-même en fin de fichier (cf. `stats_ui.js`).
 
 ## Traductions
 
-Source en français (`msgid`), anglais en `msgstr` — et dans le catalogue FR,
-`msgstr` doit reprendre le `msgid` (exceptions : msgids anglais historiques
-comme `Cancel`→`Annuler`). Commandes dans README.md
-(pybabel extract/update/compile + `check_missing_translations.py`).
+Source en français (`msgid`), anglais et allemand en `msgstr` — et dans le
+catalogue FR, `msgstr` doit reprendre le `msgid` (exceptions : msgids anglais
+historiques comme `Cancel`→`Annuler`). Commandes dans README.md
+(pybabel extract/update/compile + `check_missing_translations.py`). Le
+`-k _tr` de l'extract est obligatoire : sans lui, les chaînes passées par
+`_tr()` (settings_manager.py, task_manager.py) disparaissent en silence du
+pot — une quinzaine de msgids. Ajouter une langue : `docs/translations.md`.
 Côté JS, seul helper : `t()` via `pkg.t(...)` ; l'appeler **hors** d'un
 template literal, sinon pybabel ne l'extrait pas — et sans chaînage
 optionnel : `pkg.t?.('…')` n'est pas extrait non plus (chaîne absente du

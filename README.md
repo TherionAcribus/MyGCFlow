@@ -74,7 +74,7 @@ video (with a music track if you want one).
 - **Statistics page** — dashboards of charts built on all your data: period
   comparisons, challenge grids (D/T, 366 days, Jasmer), streaks and records,
   goals, area maps, PNG/SVG export, presentation mode and dashboard videos.
-- **Bilingual UI** — French and English, switchable at runtime.
+- **Trilingual UI** — French, English and German, switchable at runtime.
 - **Offline** — every third-party library is vendored locally; no CDN, no
   network access required beyond the map tiles.
 
@@ -221,7 +221,7 @@ npm run test:e2e
 
 ### Translations
 
-French is the source language (`msgid`); English lives in the `msgstr`.
+French is the source language (`msgid`); English and German live in the `msgstr`.
 
 ```bash
 pybabel extract -F babel.cfg -k _ -k _l -k t -k _tr -o messages.pot .

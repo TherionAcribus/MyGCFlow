@@ -101,7 +101,7 @@ test('ECharts est servi en local et dessine avec la locale de l\'interface', asy
   const snap = await snapshot(page);
   expect(snap.echartsVersion).toBe('6.1.0');
   const lang = await page.evaluate(() => document.documentElement.lang);
-  expect(snap.locale).toBe(lang.startsWith('fr') ? 'FR' : 'EN');
+  expect(snap.locale).toBe(lang.startsWith('fr') ? 'FR' : lang.startsWith('de') ? 'DE' : 'EN');
   expect(errors).toEqual([]);
 });
 
