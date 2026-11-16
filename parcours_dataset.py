@@ -187,30 +187,35 @@ def _stop_sort_key(stop: dict):
     return (stop['logId'] is None, stop['logId'] or 0, stop['localTime'] or '', stop['key'])
 
 
-def build_inputs(session, parcours_id: int) -> dict:
-    """{parcours, days: [{date, stops}], counts, logsAvailable} — un jour par
-    date de la plage, même sans étape (les jours vides comptent dans un
-    voyage)."""
-    parcours = parcours_store.get(session, parcours_id)
-    start, end = parcours.date_start, parcours.date_end
+def build_days(session, start: date, end: date, include_labs=True, include_dnf=True,
+               keep_empty=True) -> dict:
+    """{days: [{date, stops}], counts, logsAvailable} sur [start, end] — un
+    jour par date, même sans étape quand `keep_empty` (les jours vides
+    comptent dans un voyage). Sans parcours enregistré : sert aussi au banc
+    de calibration (tools/parcours_bench_export.py)."""
     counts = {'finds': 0, 'labs': 0, 'dnf': 0, 'missing_position': 0}
     find_logs, dnfs, logs_available = _my_logs(session, start, end)
     by_day = _find_stops(session, start, end, find_logs, counts)
-    if parcours.include_labs:
+    if include_labs:
         _lab_stops(session, start, end, by_day, counts)
-    if parcours.include_dnf:
+    if include_dnf:
         _dnf_stops(session, dnfs, by_day, counts)
     days = []
     day = start
     while day <= end:
-        days.append({'date': day.isoformat(), 'stops': sorted(by_day.get(day, []), key=_stop_sort_key)})
+        stops = by_day.get(day, [])
+        if stops or keep_empty:
+            days.append({'date': day.isoformat(), 'stops': sorted(stops, key=_stop_sort_key)})
         day += timedelta(days=1)
-    return {
-        'parcours': parcours_store.to_dict(parcours),
-        'days': days,
-        'counts': counts,
-        'logsAvailable': logs_available,
-    }
+    return {'days': days, 'counts': counts, 'logsAvailable': logs_available}
+
+
+def build_inputs(session, parcours_id: int) -> dict:
+    """{parcours, days: [{date, stops}], counts, logsAvailable} du parcours."""
+    parcours = parcours_store.get(session, parcours_id)
+    payload = build_days(session, parcours.date_start, parcours.date_end,
+                         include_labs=parcours.include_labs, include_dnf=parcours.include_dnf)
+    return {'parcours': parcours_store.to_dict(parcours), **payload}
 
 
 def finds_extent(session) -> dict:

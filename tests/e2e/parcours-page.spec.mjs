@@ -1,11 +1,12 @@
-// Page Parcours (/parcours, MyGCFlow_Plan_Parcours.md), lot 0 : parcours
-// enregistrés et affichage statique des étapes dans l'ordre provisoire de
-// saisie des logs.
+// Page Parcours (/parcours, MyGCFlow_Plan_Parcours.md) : parcours enregistrés
+// et étapes dans l'ordre et aux heures reconstruits (lot 1).
 //
 // Fixture my-finds-parcours.gpx (compte 4242) : deux journées autour d'Annecy.
-// 12/07/2025 : GCPAR03 (log 9001), GCPAR01 (9002), GCPAR02 (9003) ;
-// 13/07/2025 : GCPAR05 (9010), GCPAR04 (9011) — l'ordre des codes n'est pas
-// celui des logs.
+// 12/07/2025 : GCPAR03 (log 9001), GCPAR01 (9002), GCPAR02 (9003), alignées
+// dans cet ordre — l'ordre des logs est retenu ;
+// 13/07/2025 : GCPAR05 (9010), puis l'earthcache GCPAR04 (9011), type souvent
+// logué après coup — une seule étape à log, ordre géographique depuis la
+// veille : GCPAR04, la plus proche de GCPAR02, d'abord.
 //
 // Les logs du My Finds vivent hors de /clear_database : vidés en entrée et en
 // sortie (AGENTS.md), comme les parcours créés.
@@ -92,7 +93,7 @@ test('page sans parcours : mode actif, onglets du lot 0, aucune erreur', async (
   expect(errors).toEqual([]);
 });
 
-test('créer un parcours : étapes par jour dans l’ordre des logs, sur la carte', async ({ page, request }) => {
+test('créer un parcours : étapes reconstruites par jour, heures, sur la carte', async ({ page, request }) => {
   await importFixture(page, request);
   const errors = collectErrors(page);
   await openParcoursPage(page);
@@ -110,21 +111,27 @@ test('créer un parcours : étapes par jour dans l’ordre des logs, sur la cart
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
   const state = await snapshot(page);
   expect(state.logsAvailable).toBe(true);
-  expect(state.days).toEqual([
-    { date: '2025-07-12', keys: ['GCPAR03', 'GCPAR01', 'GCPAR02'] },
-    { date: '2025-07-13', keys: ['GCPAR05', 'GCPAR04'] },
+  expect(state.days.map((d) => [d.date, d.keys, d.reasons, d.logOrder])).toEqual([
+    ['2025-07-12', ['GCPAR03', 'GCPAR01', 'GCPAR02'], ['log-order', 'log-order', 'log-order'], 'trusted'],
+    ['2025-07-13', ['GCPAR04', 'GCPAR05'], ['late-type', 'geo'], 'none'],
   ]);
+  // Sans ancre, la journée commence à 9 h ; heures croissantes.
+  expect(state.days[0].times[0]).toBe('09:00');
+  expect(state.days[0].times).toEqual([...state.days[0].times].sort());
   expect(state.layer).toEqual({ stops: 5, lines: 2, onMap: true });
   await expect(page.locator('.parcours-list-item.active')).toContainText('Week-end à Annecy');
   await expect(page.locator('#parcoursSummary')).toContainText('5 étapes');
   await expect(page.locator('.parcours-stop').first()).toContainText('Départ du sentier');
+  await expect(page.locator('.parcours-stop-time').first()).toHaveText('≈ 09:00');
+  await expect(page.locator('.parcours-day-diagnostic').first()).toContainText('ordre de saisie des logs retenu');
+  await expect(page.locator('.parcours-stop[data-stop-key="GCPAR04"]')).toContainText('souvent loguée après coup');
   await expect(page.locator('.parcours-stop-index').last()).toHaveText('5');
 
   // Rechargement : le dernier parcours ouvert revient.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
-  expect((await snapshot(page)).days[1].keys).toEqual(['GCPAR05', 'GCPAR04']);
+  expect((await snapshot(page)).days[1].keys).toEqual(['GCPAR04', 'GCPAR05']);
   expect(errors).toEqual([]);
 });
 

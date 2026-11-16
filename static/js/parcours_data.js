@@ -1,11 +1,10 @@
 // Page Parcours (/parcours) : une journée ou des vacances rejouées cache par
 // cache (MyGCFlow_Plan_Parcours.md).
 //
-// Lot 0 : parcours enregistrés (liste, création, suppression) et affichage
-// statique des étapes du parcours ouvert — liste par jour dans l'onglet
-// Données, points numérotés reliés par jour sur la carte, dans l'ordre
-// PROVISOIRE de saisie des logs (parcours_model.mjs). Ni animation, ni
-// reconstruction : elles arrivent aux lots 1 et 2.
+// Parcours enregistrés (liste, création, suppression) et étapes du parcours
+// ouvert — liste par jour dans l'onglet Données, points numérotés reliés par
+// jour sur la carte — dans l'ordre et aux heures RECONSTRUITS
+// (parcours_reconstruct.mjs, lot 1). L'animation arrive au lot 2.
 //
 // Les étapes vivent dans leur propre couche vectorielle (`parcoursLayer`),
 // hors des sources de la page principale : rien n'entre dans pointsByDate.
@@ -17,7 +16,20 @@ import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showConfirmation, showToast, t } from './notifications.js';
 import { isParcoursPage } from './app_mode.mjs';
-import { orderParcours, parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
+import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
+import {
+    CONFIDENCE_ANCHORED,
+    LOG_ORDER_REJECTED,
+    LOG_ORDER_TRUSTED,
+    REASON_GEO,
+    REASON_INSERTED,
+    REASON_INTRUDER,
+    REASON_LATE_TYPE,
+    REASON_LOG_ORDER,
+    REASON_TIME,
+    minutesToTime,
+    reconstructParcours,
+} from './parcours_reconstruct.mjs';
 
 const LAST_ID_KEY = 'parcours.lastId';
 // Couleurs par nature d'étape : accent de l'app (trouvailles), ambre (Labs),
@@ -30,7 +42,7 @@ let listing = [];             // parcours enregistrés (GET /api/parcours)
 let findsExtent = { first: null, last: null };
 let maxDays = 92;
 let selectedId = null;
-let ordered = null;           // orderParcours(inputs) du parcours ouvert
+let ordered = null;           // reconstructParcours(inputs) du parcours ouvert
 let counts = null;
 let logsAvailable = false;
 let status = 'idle';          // idle | loading | ready | error
@@ -151,7 +163,7 @@ export async function openParcours(id) {
         return;
     }
     if (seq !== loadSeq) return;
-    ordered = orderParcours(inputs);
+    ordered = reconstructParcours(inputs);
     counts = inputs.counts || null;
     logsAvailable = inputs.logsAvailable === true;
     status = 'ready';
@@ -312,12 +324,49 @@ function stopLabel(stop) {
     return stop.name || stop.code || stop.key;
 }
 
+// Pourquoi l'étape est à cette place (parcours_reconstruct.mjs, REASON_*).
+function reasonLabel(reason) {
+    switch (reason) {
+        case REASON_TIME: return t('heure sûre');
+        case REASON_LOG_ORDER: return t('ordre des logs');
+        case REASON_LATE_TYPE: return t('souvent loguée après coup');
+        case REASON_INTRUDER: return t('log tardif');
+        case REASON_GEO: return t('géographie');
+        case REASON_INSERTED: return t('au plus court');
+        default: return '';
+    }
+}
+
 function stopDetail(stop) {
     const parts = [];
     if (stop.code) parts.push(stop.code);
     if (stop.kind === 'dnf') parts.push(t('DNF'));
     else if (stop.type) parts.push(stop.type);
-    if (stop.localTime) parts.push(stop.localTime.slice(0, 5));
+    const reason = reasonLabel(stop.reason);
+    if (reason) parts.push(reason);
+    return parts.join(' · ');
+}
+
+// Heure d'arrivée : exacte pour une ancre, « ≈ » sinon.
+function stopTime(stop) {
+    const time = minutesToTime(stop.arrivalMin);
+    if (!time) return '';
+    return stop.confidence === CONFIDENCE_ANCHORED ? time : `≈ ${time}`;
+}
+
+// Ligne de bilan d'une journée : distance, verdict sur l'ordre des logs,
+// heures sûres, journée comprimée.
+function dayDiagnostic(day) {
+    const km = day.legs.reduce((total, leg) => total + leg.km, 0);
+    const parts = [t('${km} km', { km: km.toLocaleString(pageLocale(), { maximumFractionDigits: 1 }) })];
+    const d = day.diagnostics;
+    if (d.logOrder === LOG_ORDER_TRUSTED) parts.push(t('ordre de saisie des logs retenu'));
+    else if (d.logOrder === LOG_ORDER_REJECTED) {
+        parts.push(t('logs saisis dans le désordre (trajet ×${ratio}) : ordre géographique',
+            { ratio: d.logRatio.toLocaleString(pageLocale(), { maximumFractionDigits: 1 }) }));
+    }
+    if (d.anchors > 0) parts.push(t('${n} heures sûres', { n: d.anchors }));
+    if (d.compressed) parts.push(t('horaire comprimé'));
     return parts.join(' · ');
 }
 
@@ -347,8 +396,8 @@ function renderStops(errorMessage = '') {
     const note = el('parcoursOrderNote');
     if (note) {
         note.textContent = logsAvailable
-            ? t('Ordre provisoire : celui de la saisie de vos logs. La reconstruction du parcours viendra ensuite.')
-            : t('Ordre provisoire : sans logs importés, les caches d’une journée restent dans un ordre arbitraire. Importez « Mes logs » sur la page Mes Géocaches.');
+            ? t('Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, l’heure de vos Labs et la géographie. « ≈ » : heure estimée.')
+            : t('Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie : réimportez votre fichier My Finds pour en profiter. « ≈ » : heure estimée.');
     }
     box.replaceChildren(...ordered.days.map((day) => {
         const section = document.createElement('section');
@@ -358,6 +407,12 @@ function renderStops(errorMessage = '') {
         title.className = 'parcours-day-title mb-1';
         title.textContent = formatDay(day.date);
         section.append(title);
+        if (day.stops.length > 0) {
+            const diagnostic = document.createElement('div');
+            diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
+            diagnostic.textContent = dayDiagnostic(day);
+            section.append(diagnostic);
+        }
         if (day.stops.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'small text-muted';
@@ -372,6 +427,12 @@ function renderStops(errorMessage = '') {
             item.className = 'parcours-stop d-flex align-items-start gap-2 py-1';
             item.dataset.stopKey = stop.key;
             item.dataset.kind = stop.kind;
+            item.dataset.confidence = stop.confidence;
+            item.dataset.reason = stop.reason;
+            const time = document.createElement('span');
+            time.className = 'parcours-stop-time small mt-1';
+            time.classList.toggle('text-muted', stop.confidence !== CONFIDENCE_ANCHORED);
+            time.textContent = stopTime(stop);
             const badge = document.createElement('span');
             badge.className = 'parcours-stop-index';
             badge.style.backgroundColor = KIND_COLORS[stop.kind] || KIND_COLORS.find;
@@ -388,7 +449,7 @@ function renderStops(errorMessage = '') {
             detail.className = 'small text-muted';
             detail.textContent = stopDetail(stop);
             text.append(name, detail);
-            item.append(badge, icon, text);
+            item.append(time, badge, icon, text);
             list.append(item);
         }
         section.append(list);
@@ -476,7 +537,13 @@ export function getParcoursSnapshot() {
         ids: listing.map((item) => item.id),
         selectedId,
         logsAvailable,
-        days: (ordered?.days || []).map((day) => ({ date: day.date, keys: day.stops.map((stop) => stop.key) })),
+        days: (ordered?.days || []).map((day) => ({
+            date: day.date,
+            keys: day.stops.map((stop) => stop.key),
+            times: day.stops.map((stop) => minutesToTime(stop.arrivalMin)),
+            reasons: day.stops.map((stop) => stop.reason),
+            logOrder: day.diagnostics.logOrder,
+        })),
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,
             lines: source.getFeatures().filter((f) => f.get('role') === 'line').length,

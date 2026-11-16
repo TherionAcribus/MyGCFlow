@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-16 13:58+0100\n"
+"POT-Creation-Date: 2026-11-16 14:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -328,7 +328,7 @@ msgstr ""
 
 #: event_flash.py:64 poses_dataset.py:638 static/js/chart_labels.mjs:245
 #: static/js/gc_logs.js:59 static/js/gc_logs.js:81 static/js/mapgl.js:1260
-#: static/js/parcours_data.js:318 static/js/stats_panels.js:1406
+#: static/js/parcours_data.js:343 static/js/stats_panels.js:1406
 #: static/js/stats_panels.js:1839 templates/menu_informations.html:66
 #: templates/menu_informations.html:105 templates/menu_names.html:64
 #: templates/menu_names.html:327
@@ -1451,7 +1451,7 @@ msgstr ""
 msgid "Date invalide"
 msgstr ""
 
-#: blueprints/parcours.py:27 static/js/parcours_data.js:264
+#: blueprints/parcours.py:27 static/js/parcours_data.js:276
 msgid "La date de fin précède la date de début"
 msgstr ""
 
@@ -4587,7 +4587,7 @@ msgstr ""
 
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
-#: static/js/parcours_data.js:225 static/js/profiles.js:976
+#: static/js/parcours_data.js:237 static/js/profiles.js:976
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
@@ -5826,76 +5826,123 @@ msgstr ""
 msgid "Actif quand les caches posées sont affichées"
 msgstr ""
 
-#: static/js/parcours_data.js:170
+#: static/js/parcours_data.js:182
 msgid "Impossible de charger les parcours"
 msgstr ""
 
-#: static/js/parcours_data.js:181
+#: static/js/parcours_data.js:193
 msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr ""
 
-#: static/js/parcours_data.js:209 static/js/parcours_data.js:210
-#: static/js/parcours_data.js:222
+#: static/js/parcours_data.js:221 static/js/parcours_data.js:222
+#: static/js/parcours_data.js:234
 msgid "Supprimer le parcours"
 msgstr ""
 
-#: static/js/parcours_data.js:221
+#: static/js/parcours_data.js:233
 #, python-brace-format
 msgid "Supprimer le parcours « ${name} » ? Les trouvailles ne sont pas touchées."
 msgstr ""
 
-#: static/js/parcours_data.js:265
+#: static/js/parcours_data.js:277
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr ""
 
-#: static/js/parcours_data.js:266
+#: static/js/parcours_data.js:278
 msgid "Une journée"
 msgstr ""
 
-#: static/js/parcours_data.js:266 static/js/parcours_data.js:343
+#: static/js/parcours_data.js:278 static/js/parcours_data.js:392
 #: static/js/stats_panels.js:1534 static/js/ui.js:8715
 #, python-brace-format
 msgid "${n} jours"
 msgstr ""
 
-#: static/js/parcours_data.js:329 templates/menu_data_parcours.html:15
+#: static/js/parcours_data.js:330
+msgid "heure sûre"
+msgstr ""
+
+#: static/js/parcours_data.js:331
+msgid "ordre des logs"
+msgstr ""
+
+#: static/js/parcours_data.js:332
+msgid "souvent loguée après coup"
+msgstr ""
+
+#: static/js/parcours_data.js:333
+msgid "log tardif"
+msgstr ""
+
+#: static/js/parcours_data.js:334
+msgid "géographie"
+msgstr ""
+
+#: static/js/parcours_data.js:335
+msgid "au plus court"
+msgstr ""
+
+#: static/js/parcours_data.js:361
+#, python-brace-format
+msgid "${km} km"
+msgstr ""
+
+#: static/js/parcours_data.js:363
+msgid "ordre de saisie des logs retenu"
+msgstr ""
+
+#: static/js/parcours_data.js:366
+#, python-brace-format
+msgid "logs saisis dans le désordre (trajet ×${ratio}) : ordre géographique"
+msgstr ""
+
+#: static/js/parcours_data.js:368
+#, python-brace-format
+msgid "${n} heures sûres"
+msgstr ""
+
+#: static/js/parcours_data.js:369
+msgid "horaire comprimé"
+msgstr ""
+
+#: static/js/parcours_data.js:378 templates/menu_data_parcours.html:15
 #: templates/menu_data_parcours.html:64 templates/menu_data_poses.html:18
 msgid "Chargement…"
 msgstr ""
 
-#: static/js/parcours_data.js:336
+#: static/js/parcours_data.js:385
 msgid "Impossible de charger les étapes"
 msgstr ""
 
-#: static/js/parcours_data.js:337
+#: static/js/parcours_data.js:386
 msgid "Ouvrez ou créez un parcours pour voir ses étapes."
 msgstr ""
 
-#: static/js/parcours_data.js:343
+#: static/js/parcours_data.js:392
 #, python-brace-format
 msgid "${n} étapes"
 msgstr ""
 
-#: static/js/parcours_data.js:344
+#: static/js/parcours_data.js:393
 #, python-brace-format
 msgid "${n} sans position"
 msgstr ""
 
-#: static/js/parcours_data.js:350
+#: static/js/parcours_data.js:399
 msgid ""
-"Ordre provisoire : celui de la saisie de vos logs. La reconstruction du "
-"parcours viendra ensuite."
+"Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, "
+"l’heure de vos Labs et la géographie. « ≈ » : heure estimée."
 msgstr ""
 
-#: static/js/parcours_data.js:351
+#: static/js/parcours_data.js:400
 msgid ""
-"Ordre provisoire : sans logs importés, les caches d’une journée restent "
-"dans un ordre arbitraire. Importez « Mes logs » sur la page Mes "
-"Géocaches."
+"Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie "
+": réimportez votre fichier My Finds pour en profiter. « ≈ » : heure "
+"estimée."
 msgstr ""
 
-#: static/js/parcours_data.js:364
+#: static/js/parcours_data.js:419
 msgid "Aucune étape ce jour-là"
 msgstr ""
 

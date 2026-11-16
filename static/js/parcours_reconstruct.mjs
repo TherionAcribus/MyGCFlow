@@ -1,0 +1,517 @@
+// Reconstruction d'un parcours : ordre de passage et heures, journée par
+// journée (MyGCFlow_Plan_Parcours.md, § 4).
+//
+// Les données ne disent ni l'heure ni l'ordre réels : l'heure des GPX est
+// factice, et les logs sont souvent saisis en bloc, parfois dans le désordre
+// (virtuelles et earthcaches loguées une fois les réponses envoyées). On
+// combine donc tous les indices, du plus sûr au plus faible :
+//
+// 1. ANCRES : étapes à heure sûre (heure de validation des Labs, heure
+//    épinglée par l'utilisateur). Elles forment l'ossature, dans l'ordre
+//    chronologique, et calent l'horaire.
+// 2. ORDRE DES LOGS : `logId` croît avec l'ordre de SAISIE. Les types
+//    « logables plus tard » sont mis de côté, puis les INTRUS (une étape
+//    qu'il est nettement plus court de visiter ailleurs : log tardif, quel
+//    que soit son type). L'ordre restant n'est retenu que s'il dessine un
+//    chemin à peine plus long que le meilleur chemin géographique — sinon la
+//    saisie ne suivait pas le passage.
+// 3. GÉOGRAPHIE : plus court chemin (plus proche voisin + 2-opt de
+//    travel_trail.mjs) quand rien d'autre ne tient, et insertion au moindre
+//    détour de toutes les étapes mises de côté.
+//
+// Puis l'HORAIRE : début de journée, durée de visite par type, durée de
+// trajet par distance (à pied ou en voiture) ; entre deux ancres, les durées
+// estimées sont étirées ou comprimées pour tomber juste.
+//
+// Chaque étape garde sa CONFIANCE (`anchored`, `logged`, `geo`) et la raison
+// de sa place (`reason`), affichées dans l'onglet Données et, plus tard,
+// dans l'animation (« ≈ 10:40 »).
+//
+// Aucune dépendance au DOM ni à OpenLayers : testé sous Node
+// (tests/js/parcours_reconstruct.test.mjs). Seuils calibrés par
+// tools/parcours_bench.mjs (mesures dans docs/parcours.md).
+
+import { groundDistanceKm, orderStops, timeOfDaySeconds } from './travel_trail.mjs';
+
+export const CONFIDENCE_ANCHORED = 'anchored';
+export const CONFIDENCE_LOGGED = 'logged';
+export const CONFIDENCE_GEO = 'geo';
+
+// Raisons de la place d'une étape (codes, traduits par l'appelant).
+export const REASON_TIME = 'time';            // heure sûre (Lab, épinglée)
+export const REASON_LOG_ORDER = 'log-order';  // ordre de saisie des logs, retenu
+export const REASON_LATE_TYPE = 'late-type';  // type souvent logué après coup
+export const REASON_INTRUDER = 'intruder';    // log manifestement tardif
+export const REASON_GEO = 'geo';              // ordre géographique (logs écartés ou absents)
+export const REASON_INSERTED = 'inserted';    // sans indice : insérée au moindre détour
+
+// Verdict sur l'ordre des logs d'une journée.
+export const LOG_ORDER_TRUSTED = 'trusted';
+export const LOG_ORDER_REJECTED = 'rejected';
+export const LOG_ORDER_NONE = 'none';         // moins de deux étapes à log
+
+export const RECONSTRUCT_DEFAULTS = Object.freeze({
+    // Fenêtre de journée (minutes depuis minuit) quand aucune ancre ne la fixe.
+    dayStartMin: 9 * 60,
+    dayEndMin: 22 * 60,
+    earliestMin: 5 * 60,
+    // Types dont le log suit souvent la visite de plusieurs heures ou jours.
+    lateTypes: Object.freeze(['Virtual Cache', 'Earthcache', 'Webcam Cache', 'Locationless (Reverse) Cache']),
+    // Ordre des logs retenu si son chemin ≤ trustRatio × le meilleur chemin
+    // géographique, ou s'il ne le dépasse que de trustSlackKm (petits nuages).
+    trustRatio: 1.3,
+    trustSlackKm: 0.3,
+    // Intrus : déplacer l'étape économise plus que max(minKm, part du chemin) ;
+    // au plus maxShare des étapes à log.
+    intruderMinKm: 0.5,
+    intruderFraction: 0.15,
+    intruderMaxShare: 0.2,
+    // Trajets : à pied jusqu'à walkMaxKm, en voiture au-delà.
+    walkMaxKm: 1.5,
+    walkKmh: 4.5,
+    walkDetour: 1.25,
+    carKmh: 50,
+    carFastKmh: 80,
+    carFastFromKm: 30,
+    carDetour: 1.3,
+    parkMin: 5,
+    // Durée de visite par type (minutes).
+    visitMin: Object.freeze({
+        'Traditional Cache': 10,
+        'Multi-cache': 40,
+        'Unknown Cache': 15,
+        'Letterbox Hybrid': 20,
+        'Wherigo Cache': 45,
+        'Virtual Cache': 10,
+        Earthcache: 20,
+        'Webcam Cache': 5,
+        'Event Cache': 90,
+        'Mega-Event Cache': 180,
+        'Giga-Event Cache': 240,
+        'Cache In Trash Out Event': 120,
+        'Community Celebration Event': 90,
+        'Geocaching HQ Block Party': 120,
+        'GPS Adventures Exhibit': 60,
+        'Locationless (Reverse) Cache': 5,
+        // Les étapes d'une aventure se valident en rafales (banc : écart
+        // médian de 12 s entre deux étapes au même endroit).
+        'Lab Cache': 1,
+    }),
+    defaultVisitMin: 15,
+    dnfVisitMin: 15,
+});
+
+// Au-delà, ni recherche d'intrus (cubique) ni 2-opt : journées « power
+// trail », ordre géographique simple.
+export const FULL_ANALYSIS_MAX_STOPS = 300;
+
+const EPS = 1e-9;
+
+function options(raw) {
+    return { ...RECONSTRUCT_DEFAULTS, ...(raw && typeof raw === 'object' ? raw : {}) };
+}
+
+function point(stop) {
+    return [stop.lon, stop.lat];
+}
+
+function isValidStop(stop) {
+    return stop && typeof stop.key === 'string' && stop.key !== ''
+        && Number.isFinite(stop.lon) && Number.isFinite(stop.lat)
+        && stop.lon >= -180 && stop.lon <= 180 && stop.lat >= -90 && stop.lat <= 90;
+}
+
+// Heure locale « HH:MM[:SS] » → minutes depuis minuit, null sinon.
+export function timeToMinutes(value) {
+    const seconds = timeOfDaySeconds(value);
+    return seconds === null ? null : seconds / 60;
+}
+
+// Minutes depuis minuit → « HH:MM » (arrondi à la minute, borné à la journée).
+export function minutesToTime(minutes) {
+    if (!Number.isFinite(minutes)) return '';
+    const total = Math.min(24 * 60 - 1, Math.max(0, Math.round(minutes)));
+    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+export function visitMinutes(stop, opts = RECONSTRUCT_DEFAULTS) {
+    if (stop.kind === 'dnf') return opts.dnfVisitMin;
+    const value = opts.visitMin[stop.type];
+    return Number.isFinite(value) ? value : opts.defaultVisitMin;
+}
+
+// Trajet estimé pour une distance à vol d'oiseau : { km, mode, minutes }.
+export function legForKm(km, opts = RECONSTRUCT_DEFAULTS) {
+    if (km <= opts.walkMaxKm) {
+        return { km, mode: 'walk', minutes: (km * opts.walkDetour / opts.walkKmh) * 60 };
+    }
+    const speed = km >= opts.carFastFromKm ? opts.carFastKmh : opts.carKmh;
+    return { km, mode: 'car', minutes: opts.parkMin + (km * opts.carDetour / speed) * 60 };
+}
+
+// Trajet estimé entre deux points [lon, lat].
+export function legEstimate(a, b, opts = RECONSTRUCT_DEFAULTS) {
+    return legForKm(groundDistanceKm(a, b), opts);
+}
+
+// --- Chemins ------------------------------------------------------------------
+
+function makeDistance(stops) {
+    const n = stops.length;
+    if (n <= FULL_ANALYSIS_MAX_STOPS) {
+        const matrix = new Float64Array(n * n);
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const d = groundDistanceKm(point(stops[i]), point(stops[j]));
+                matrix[i * n + j] = d;
+                matrix[j * n + i] = d;
+            }
+        }
+        return (a, b) => matrix[a * n + b];
+    }
+    return (a, b) => groundDistanceKm(point(stops[a]), point(stops[b]));
+}
+
+export function pathLength(order, dist) {
+    let total = 0;
+    for (let k = 1; k < order.length; k++) total += dist(order[k - 1], order[k]);
+    return total;
+}
+
+// Meilleur chemin ouvert (heuristique) sur un sous-ensemble d'étapes :
+// plus proche voisin depuis une extrémité du nuage, puis 2-opt (orderStops).
+function geoOrder(indices, stops) {
+    if (indices.length <= 2) return [...indices];
+    const local = orderStops(indices.map((i) => point(stops[i])), null);
+    return local.map((k) => indices[k]);
+}
+
+// Surcoût d'une insertion de `u` avant path[k] (k = path.length : à la fin).
+function insertionCost(path, u, k, dist) {
+    if (path.length === 0) return 0;
+    if (k === 0) return dist(u, path[0]);
+    if (k === path.length) return dist(path[k - 1], u);
+    return dist(path[k - 1], u) + dist(u, path[k]) - dist(path[k - 1], path[k]);
+}
+
+function bestInsertion(path, u, dist, minK = 0) {
+    let bestK = minK;
+    let bestCost = Infinity;
+    for (let k = minK; k <= path.length; k++) {
+        const cost = insertionCost(path, u, k, dist);
+        if (cost < bestCost - EPS) {
+            bestK = k;
+            bestCost = cost;
+        }
+    }
+    return [bestK, bestCost];
+}
+
+// Insertion la moins coûteuse d'abord (une chaîne d'étapes libres s'enfile
+// de proche en proche), sans jamais réordonner le chemin existant. Coût = le
+// détour en MINUTES de trajet (à pied ou en voiture, legForKm).
+//
+// Une variante qui pénalisait aussi le dépassement du temps disponible entre
+// deux ancres a été mesurée sur un historique réel (tools/parcours_bench.mjs,
+// heures Lab masquées) : toujours moins bonne que le détour seul, même avec
+// les bornes de la journée en ancres virtuelles — retirée (docs/parcours.md).
+function insertCheapestFirst(path, free, dist, opts) {
+    const leg = (a, b) => legForKm(dist(a, b), opts).minutes;
+    const remaining = [...free];
+    while (remaining.length > 0) {
+        const m = path.length;
+        let pick = 0;
+        let pickK = 0;
+        let pickCost = Infinity;
+        for (let r = 0; r < remaining.length; r++) {
+            const u = remaining[r];
+            for (let k = 0; k <= m; k++) {
+                const prev = k > 0 ? path[k - 1] : -1;
+                const next = k < m ? path[k] : -1;
+                let cost = 0;
+                if (prev >= 0) cost += leg(prev, u);
+                if (next >= 0) cost += leg(u, next);
+                if (prev >= 0 && next >= 0) cost -= leg(prev, next);
+                if (cost < pickCost - EPS) {
+                    pick = r;
+                    pickK = k;
+                    pickCost = cost;
+                }
+            }
+        }
+        path.splice(pickK, 0, remaining[pick]);
+        remaining.splice(pick, 1);
+    }
+    return path;
+}
+
+// Retire de `chain` les intrus : à chaque tour, l'étape qu'il est le plus
+// avantageux de visiter ailleurs dans la chaîne, tant que l'économie dépasse
+// le seuil. Retourne les étapes retirées (chaîne modifiée en place).
+function extractIntruders(chain, dist, opts) {
+    const removed = [];
+    const maxMoves = Math.floor(chain.length * opts.intruderMaxShare);
+    while (removed.length < maxMoves && chain.length >= 3) {
+        const threshold = Math.max(opts.intruderMinKm, opts.intruderFraction * pathLength(chain, dist));
+        let bestPos = -1;
+        let bestSaving = threshold;
+        for (let p = 0; p < chain.length; p++) {
+            const u = chain[p];
+            const prev = p > 0 ? chain[p - 1] : -1;
+            const next = p < chain.length - 1 ? chain[p + 1] : -1;
+            let gain;
+            if (prev < 0) gain = dist(u, next);
+            else if (next < 0) gain = dist(prev, u);
+            else gain = dist(prev, u) + dist(u, next) - dist(prev, next);
+            const rest = chain.filter((_, q) => q !== p);
+            const [, cost] = bestInsertion(rest, u, dist);
+            const saving = gain - cost;
+            if (saving > bestSaving + EPS) {
+                bestSaving = saving;
+                bestPos = p;
+            }
+        }
+        if (bestPos < 0) break;
+        removed.push(chain[bestPos]);
+        chain.splice(bestPos, 1);
+    }
+    return removed;
+}
+
+// --- Une journée --------------------------------------------------------------
+
+// Ordre de passage d'une journée. `stops` : étapes valides de la journée ;
+// `anchorMin[i]` : heure sûre (minutes) ou null ; `prevEnd` : [lon, lat] de
+// la dernière étape de la veille (oriente l'ordre géographique), ou null.
+// Retourne { order, reasons, confidence, diagnostics }.
+function orderDay(stops, anchorMin, prevEnd, opts) {
+    const n = stops.length;
+    const dist = makeDistance(stops);
+    const reasons = new Array(n).fill(REASON_INSERTED);
+    const confidence = new Array(n).fill(CONFIDENCE_GEO);
+    const late = new Set(opts.lateTypes);
+    const diagnostics = {
+        logOrder: LOG_ORDER_NONE, logRatio: null, lateTypes: 0, intruders: 0, anchors: 0,
+    };
+
+    const anchors = [];
+    const logged = [];
+    const free = [];
+    for (let i = 0; i < n; i++) {
+        if (Number.isFinite(anchorMin[i])) {
+            anchors.push(i);
+            reasons[i] = REASON_TIME;
+            confidence[i] = CONFIDENCE_ANCHORED;
+        } else if (Number.isFinite(stops[i].logId)) {
+            if (late.has(stops[i].type)) {
+                free.push(i);
+                reasons[i] = REASON_LATE_TYPE;
+                diagnostics.lateTypes++;
+            } else {
+                logged.push(i);
+            }
+        } else {
+            free.push(i);
+        }
+    }
+    anchors.sort((a, b) => anchorMin[a] - anchorMin[b] || a - b);
+    diagnostics.anchors = anchors.length;
+    logged.sort((a, b) => stops[a].logId - stops[b].logId || a - b);
+
+    // Ordre des logs : intrus, puis verdict géométrique.
+    let chain = [...logged];
+    let trusted = false;
+    if (chain.length >= 2) {
+        if (n <= FULL_ANALYSIS_MAX_STOPS) {
+            for (const u of extractIntruders(chain, dist, opts)) {
+                free.push(u);
+                reasons[u] = REASON_INTRUDER;
+                diagnostics.intruders++;
+            }
+        }
+        const logLen = pathLength(chain, dist);
+        const geoLen = pathLength(geoOrder(chain, stops), dist);
+        diagnostics.logRatio = geoLen > EPS ? logLen / geoLen : 1;
+        trusted = logLen <= opts.trustRatio * geoLen + EPS || logLen - geoLen <= opts.trustSlackKm;
+        diagnostics.logOrder = trusted ? LOG_ORDER_TRUSTED : LOG_ORDER_REJECTED;
+    } else if (chain.length === 1) {
+        free.push(chain[0]);
+        chain = [];
+    }
+
+    if (!trusted && diagnostics.intruders > 0) {
+        // Ordre des logs écarté : « log tardif » n'a plus de sens.
+        for (let i = 0; i < n; i++) if (reasons[i] === REASON_INTRUDER) reasons[i] = REASON_GEO;
+        diagnostics.intruders = 0;
+    }
+
+    let path;
+    if (trusted) {
+        for (const u of chain) {
+            reasons[u] = REASON_LOG_ORDER;
+            confidence[u] = CONFIDENCE_LOGGED;
+        }
+        // Ancres dans l'ordre chronologique, chacune après la précédente,
+        // au moindre détour : l'ordre des logs et celui des heures tiennent
+        // tous les deux.
+        path = [...chain];
+        let minK = 0;
+        for (const a of anchors) {
+            const [k] = bestInsertion(path, a, dist, minK);
+            path.splice(k, 0, a);
+            minK = k + 1;
+        }
+    } else if (anchors.length >= 2) {
+        for (const u of chain) reasons[u] = REASON_GEO;
+        free.push(...chain);
+        path = [...anchors];
+    } else {
+        // Ni logs fiables ni deux ancres : ordre géographique de toute la
+        // journée (une ancre seule ne contraint pas l'ordre), orienté depuis
+        // la veille.
+        for (const u of chain) reasons[u] = REASON_GEO;
+        path = geoOrder(stops.map((_, i) => i), stops);
+        if (prevEnd && path.length > 1) {
+            const dFirst = groundDistanceKm(prevEnd, point(stops[path[0]]));
+            const dLast = groundDistanceKm(prevEnd, point(stops[path[path.length - 1]]));
+            if (dLast < dFirst - EPS) path.reverse();
+        }
+        for (const i of path) if (reasons[i] === REASON_INSERTED) reasons[i] = REASON_GEO;
+        return { order: path, reasons, confidence, diagnostics };
+    }
+
+    const inPath = new Set(path);
+    insertCheapestFirst(path, free.filter((i) => !inPath.has(i)), dist, opts);
+    return { order: path, reasons, confidence, diagnostics };
+}
+
+// Heures d'arrivée (minutes depuis minuit) le long de `order`. `scale[k]`
+// s'applique au pas k (visite de k + trajet vers k + 1) : 1 = durées
+// estimées, < 1 = journée comprimée, > 1 = étirée entre deux ancres. Les
+// durées de visite rendues sont les durées mises à l'échelle.
+function scheduleDay(stops, order, anchorMin, opts) {
+    const m = order.length;
+    const visit = order.map((i) => visitMinutes(stops[i], opts));
+    const legs = [];
+    const travel = [0];
+    for (let k = 1; k < m; k++) {
+        const leg = legEstimate(point(stops[order[k - 1]]), point(stops[order[k]]), opts);
+        legs.push({ from: stops[order[k - 1]].key, to: stops[order[k]].key, ...leg });
+        travel.push(leg.minutes);
+    }
+    // Durée estimée de l'arrivée en k à l'arrivée en k + 1 ; la dernière
+    // étape n'a que sa visite.
+    const step = (k) => visit[k] + (k + 1 < m ? travel[k + 1] : 0);
+    const sumSteps = (from, to) => {
+        let total = 0;
+        for (let k = from; k < to; k++) total += step(k);
+        return total;
+    };
+    const scale = new Array(m).fill(1);
+    const setScale = (from, to, value) => {
+        for (let k = from; k < to; k++) scale[k] = value;
+    };
+    const anchorPos = [];
+    for (let k = 0; k < m; k++) if (Number.isFinite(anchorMin[order[k]])) anchorPos.push(k);
+    let compressed = false;
+
+    // Fin de journée dépassée après `from` (arrivée `at`) : on comprime, sauf
+    // si le segment commence lui-même au-delà.
+    const fitTail = (from, at) => {
+        const est = sumSteps(from, m);
+        if (est > 0 && at + est > opts.dayEndMin && at < opts.dayEndMin) {
+            setScale(from, m, (opts.dayEndMin - at) / est);
+            compressed = true;
+        }
+    };
+
+    const arrival = new Array(m).fill(0);
+    let pivot = 0;
+    if (anchorPos.length === 0) {
+        arrival[0] = opts.dayStartMin;
+        fitTail(0, opts.dayStartMin);
+    } else {
+        pivot = anchorPos[0];
+        const t0 = anchorMin[order[pivot]];
+        arrival[pivot] = t0;
+        // Avant la première ancre : à rebours, borné au petit matin.
+        const before = sumSteps(0, pivot);
+        if (before > 0 && t0 - before < opts.earliestMin) {
+            setScale(0, pivot, Math.max(0, t0 - opts.earliestMin) / before);
+            compressed = true;
+        }
+        // Entre deux ancres : durées mises à l'échelle pour tomber juste.
+        for (let a = 0; a + 1 < anchorPos.length; a++) {
+            const p = anchorPos[a];
+            const q = anchorPos[a + 1];
+            const span = sumSteps(p, q);
+            setScale(p, q, span > 0 ? Math.max(0, anchorMin[order[q]] - anchorMin[order[p]]) / span : 0);
+        }
+        const last = anchorPos[anchorPos.length - 1];
+        fitTail(last, anchorMin[order[last]]);
+    }
+    for (let k = pivot - 1; k >= 0; k--) arrival[k] = arrival[k + 1] - step(k) * scale[k];
+    for (let k = pivot + 1; k < m; k++) arrival[k] = arrival[k - 1] + step(k - 1) * scale[k - 1];
+    // Les ancres tombent juste par construction ; on les pose exactement
+    // (pas d'erreur d'arrondi cumulée).
+    for (const k of anchorPos) arrival[k] = anchorMin[order[k]];
+    return { arrival, visit: visit.map((v, k) => v * scale[k]), legs, compressed };
+}
+
+// Reconstruit une journée : `day` = { date, stops } des entrées
+// (parcours_dataset.py) ; `overrides` : Map clé → { pinnedTime? } (lot 3) ;
+// `prevEnd` : [lon, lat] de la dernière étape de la veille, ou null.
+export function reconstructDay(day, { overrides = null, prevEnd = null, options: raw = null } = {}) {
+    const opts = options(raw);
+    const rawStops = Array.isArray(day?.stops) ? day.stops : [];
+    const stops = rawStops.filter(isValidStop);
+    const result = {
+        date: day?.date,
+        stops: [],
+        legs: [],
+        dropped: rawStops.length - stops.length,
+        diagnostics: { logOrder: LOG_ORDER_NONE, logRatio: null, lateTypes: 0, intruders: 0, anchors: 0, compressed: false },
+    };
+    if (stops.length === 0) return result;
+
+    const anchorMin = stops.map((stop) => {
+        const pinned = overrides?.get?.(stop.key)?.pinnedTime;
+        const value = timeToMinutes(pinned) ?? timeToMinutes(stop.localTime);
+        return Number.isFinite(value) ? value : null;
+    });
+    const { order, reasons, confidence, diagnostics } = orderDay(stops, anchorMin, prevEnd, opts);
+    const { arrival, visit, legs, compressed } = scheduleDay(stops, order, anchorMin, opts);
+    result.stops = order.map((i, k) => ({
+        ...stops[i],
+        order: k + 1,
+        arrivalMin: arrival[k],
+        visitMin: visit[k],
+        confidence: confidence[i],
+        reason: reasons[i],
+    }));
+    result.legs = legs;
+    result.diagnostics = { ...diagnostics, compressed };
+    return result;
+}
+
+// Reconstruit tout le parcours, jours dans l'ordre des dates : la dernière
+// étape d'une journée oriente la suivante. Numérotation globale `index`.
+export function reconstructParcours(inputs, { overrides = null, options: raw = null } = {}) {
+    const rawDays = Array.isArray(inputs?.days) ? [...inputs.days] : [];
+    rawDays.sort((a, b) => (String(a?.date) < String(b?.date) ? -1 : String(a?.date) > String(b?.date) ? 1 : 0));
+    const days = [];
+    let prevEnd = null;
+    let index = 0;
+    let dropped = 0;
+    for (const rawDay of rawDays) {
+        const day = reconstructDay(rawDay, { overrides, prevEnd, options: raw });
+        for (const stop of day.stops) stop.index = ++index;
+        dropped += day.dropped;
+        if (day.stops.length > 0) {
+            const last = day.stops[day.stops.length - 1];
+            prevEnd = [last.lon, last.lat];
+        }
+        days.push(day);
+    }
+    return { days, stopCount: index, dropped };
+}

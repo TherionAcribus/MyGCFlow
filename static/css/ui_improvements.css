@@ -4128,3 +4128,10 @@ body[data-mode="parcours"] #timelineBar {
     line-height: 1.6rem;
     text-align: center;
 }
+
+.parcours-stop-time {
+    flex: 0 0 3.6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
