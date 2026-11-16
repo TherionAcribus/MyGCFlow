@@ -1,0 +1,501 @@
+// Page Statistiques : thèmes de couleurs — application au tableau affiché
+// (variables --chart-* posées sur <html>, jetons relus, couleurs des types)
+// et panneau « Couleurs » (choix pour la page et pour le tableau, thèmes
+// personnels, éditeur avec aperçu en direct). Modèle pur :
+// stats_theme_model.mjs ; plan : MyGCFlow_Plan_Themes_Statistiques.md.
+
+import { showConfirmation, t } from './notifications.js';
+import { newChartId } from './chart_spec.mjs';
+import {
+    BUILTIN_THEMES, DEFAULT_THEME_ID, MAX_THEMES, THEME_CSS_VARS, THEME_HEAT,
+    duplicateTheme, effectiveThemeId, findTheme, heatRamp, normalizeHex, resolveTheme, themeCssVars,
+    themeTypeColors, themeWarnings, uniqueThemeName,
+} from './stats_theme_model.mjs';
+import { renderAllCharts } from './stats_page_cards.js';
+import { renderPreview } from './stats_page_editor.js';
+import { showSlide } from './stats_page_present.js';
+import { scheduleSave } from './stats_page_save.js';
+import { $, readTokens, state } from './stats_page_state.js';
+import { getBsOffcanvas } from './ui_bootstrap.js';
+
+// ---------------------------------------------------------------------------
+// Application
+// ---------------------------------------------------------------------------
+
+export const colorMode = () => (document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light');
+
+const activeOf = (doc) => doc.dashboards.find((d) => d.id === doc.active) || doc.dashboards[0];
+
+// Thème montré : celui en cours de modification (aperçu), sinon celui du
+// tableau affiché.
+export function shownTheme() {
+    if (state.themeEdit) return state.themeEdit.theme;
+    if (!state.doc) return findTheme([], DEFAULT_THEME_ID);
+    return findTheme(state.doc.themes, effectiveThemeId(state.doc, activeOf(state.doc)));
+}
+
+// Pose les couleurs du thème montré et relit les jetons. Renvoie true quand
+// quelque chose a changé (les graphiques sont alors à redessiner :
+// tokensRev avance). Mode clair / sombre compris : un thème fourni a ses
+// deux variantes, un dégradé généré dépend du fond.
+export function applyChartTheme() {
+    const theme = shownTheme();
+    const mode = colorMode();
+    const vars = themeCssVars(theme, mode);
+    const types = themeTypeColors(theme, state.typeColors);
+    const key = JSON.stringify([mode, vars, theme?.types || null, Object.keys(state.typeColors).length]);
+    if (key === state.themeKey && state.tokens) return false;
+    const style = document.documentElement.style;
+    for (const name of THEME_CSS_VARS) {
+        if (vars) style.setProperty(name, vars[name]);
+        else style.removeProperty(name);
+    }
+    // Même objet tant que les couleurs des types ne changent pas :
+    // distinctTypeColors mémorise ses nuances par objet.
+    if (JSON.stringify(types) !== JSON.stringify(state.chartTypeColors)) state.chartTypeColors = types;
+    state.themeKey = key;
+    state.tokens = readTokens();
+    state.tokensRev += 1;
+    return true;
+}
+
+// Thème appliqué puis tout ce qui est dessiné redessiné.
+export function refreshChartTheme() {
+    if (!applyChartTheme()) return;
+    if (state.ready) renderAllCharts();
+    if (state.editor) renderPreview();
+    if (state.present) showSlide(state.present.index, { animate: false });
+}
+
+// Redessin pendant un glissement dans le sélecteur de couleur : une fois
+// par image au plus.
+let refreshFrame = 0;
+function refreshSoon() {
+    cancelAnimationFrame(refreshFrame);
+    refreshFrame = requestAnimationFrame(refreshChartTheme);
+}
+
+// ---------------------------------------------------------------------------
+// Noms
+// ---------------------------------------------------------------------------
+
+const BUILTIN_NAMES = {
+    default: () => t('Défaut'),
+    pastel: () => t('Pastel'),
+    vivid: () => t('Vives'),
+    earth: () => t('Terre'),
+    ocean: () => t('Océan'),
+    colorblind: () => t('Daltonisme'),
+};
+
+export function themeName(theme) {
+    if (!theme) return '';
+    if (theme.builtin) return BUILTIN_NAMES[theme.id]?.() || theme.id;
+    return theme.name || t('Mon thème');
+}
+
+// ---------------------------------------------------------------------------
+// Panneau : choix et liste
+// ---------------------------------------------------------------------------
+
+function themeOptions(select, value, { inherit = null } = {}) {
+    select.replaceChildren();
+    if (inherit) select.append(new Option(inherit, ''));
+    const fixed = document.createElement('optgroup');
+    fixed.label = t('Thèmes fournis');
+    for (const theme of BUILTIN_THEMES) fixed.append(new Option(themeName(theme), theme.id));
+    select.append(fixed);
+    if (state.doc.themes.length) {
+        const mine = document.createElement('optgroup');
+        mine.label = t('Mes thèmes');
+        for (const theme of state.doc.themes) mine.append(new Option(themeName(theme), theme.id));
+        select.append(mine);
+    }
+    select.value = value;
+}
+
+// Bande de couleurs d'un thème (variante du mode affiché) : les séries,
+// puis le dégradé.
+function swatchStrip(theme) {
+    const colors = resolveTheme(theme, colorMode());
+    const strip = document.createElement('span');
+    strip.className = 'stats-theme-strip';
+    strip.setAttribute('aria-hidden', 'true');
+    for (const color of colors.series) {
+        const cell = document.createElement('span');
+        cell.style.background = color;
+        strip.append(cell);
+    }
+    const ramp = document.createElement('span');
+    ramp.className = 'stats-theme-strip-ramp';
+    ramp.style.background = `linear-gradient(90deg, ${colors.heat.join(', ')})`;
+    strip.append(ramp);
+    return strip;
+}
+
+function iconButton(action, icon, label, { danger = false, disabled = false } = {}) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-ghost-secondary btn-icon btn-sm' + (danger ? ' text-danger' : '');
+    button.dataset.themeAction = action;
+    button.disabled = disabled;
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.innerHTML = `<i class="ti ${icon}" aria-hidden="true"></i>`;
+    return button;
+}
+
+function renderThemeList() {
+    const list = $('statsThemeList');
+    list.replaceChildren();
+    const dashboard = activeOf(state.doc);
+    const shownId = effectiveThemeId(state.doc, dashboard);
+    const full = state.doc.themes.length >= MAX_THEMES;
+    for (const theme of [...BUILTIN_THEMES, ...state.doc.themes]) {
+        const li = document.createElement('li');
+        li.className = 'stats-theme-item' + (theme.id === shownId ? ' is-shown' : '');
+        li.dataset.themeId = theme.id;
+        const name = document.createElement('span');
+        name.className = 'stats-theme-name';
+        name.textContent = themeName(theme);
+        const badges = document.createElement('span');
+        badges.className = 'stats-theme-badges';
+        const badge = (text) => {
+            const b = document.createElement('span');
+            b.className = 'badge bg-secondary-lt';
+            b.textContent = text;
+            badges.append(b);
+        };
+        if (theme.id === (state.doc.theme || DEFAULT_THEME_ID)) badge(t('Page'));
+        if (theme.id === dashboard.theme) badge(t('Ce tableau'));
+        const head = document.createElement('span');
+        head.className = 'stats-theme-head';
+        head.append(name, badges);
+        const actions = document.createElement('span');
+        actions.className = 'stats-theme-actions';
+        if (!theme.builtin) actions.append(iconButton('edit', 'ti-pencil', t('Modifier « ${name} »', { name: themeName(theme) })));
+        actions.append(iconButton('duplicate', 'ti-copy', t('Dupliquer « ${name} »', { name: themeName(theme) }), { disabled: full }));
+        if (!theme.builtin) actions.append(iconButton('delete', 'ti-trash', t('Supprimer « ${name} »', { name: themeName(theme) }), { danger: true }));
+        li.append(head, swatchStrip(theme), actions);
+        list.append(li);
+    }
+    $('btnStatsThemeNew').disabled = full;
+    $('btnStatsThemeNew').title = full ? t('${n} thèmes au plus.', { n: MAX_THEMES }) : '';
+}
+
+export function renderColorsPanel() {
+    if (!state.doc || !state.colorsOpen) return;
+    const dashboard = activeOf(state.doc);
+    themeOptions($('statsThemePage'), state.doc.theme || DEFAULT_THEME_ID);
+    const pageTheme = findTheme(state.doc.themes, state.doc.theme || DEFAULT_THEME_ID);
+    themeOptions($('statsThemeDashboard'), dashboard.theme || '', {
+        inherit: t('Comme la page (${name})', { name: themeName(pageTheme) }),
+    });
+    $('statsThemeDashboardLabel').textContent = t('Ce tableau de bord : ${name}', { name: dashboard.name || t('Mon tableau de bord') });
+    if (state.themeEdit) renderEditor();
+    else renderThemeList();
+}
+
+export function openColorsPanel() {
+    const panel = getBsOffcanvas('statsColorsPanel');
+    if (!panel) return;
+    panel.show();
+}
+
+function onPageThemeChange() {
+    const id = $('statsThemePage').value;
+    state.doc.theme = id === DEFAULT_THEME_ID ? null : id;
+    scheduleSave({ immediate: true });
+    refreshChartTheme();
+    renderColorsPanel();
+}
+
+function onDashboardThemeChange() {
+    activeOf(state.doc).theme = $('statsThemeDashboard').value || null;
+    scheduleSave({ immediate: true });
+    refreshChartTheme();
+    renderColorsPanel();
+}
+
+// Nouveau thème : copie du thème affiché, qui le remplace là où il était
+// choisi (tableau, sinon page) — on part de ce qu'on voit.
+function newTheme() {
+    if (state.doc.themes.length >= MAX_THEMES) return;
+    const dashboard = activeOf(state.doc);
+    const theme = createCopy(shownTheme(), t('Mon thème'));
+    if (dashboard.theme) dashboard.theme = theme.id;
+    else state.doc.theme = theme.id;
+    scheduleSave({ immediate: true });
+    openEditor(theme);
+}
+
+function createCopy(source, name) {
+    const theme = duplicateTheme(source, {
+        mode: colorMode(),
+        newId: newChartId,
+        name: uniqueThemeName(state.doc.themes, name),
+    });
+    state.doc.themes.push(theme);
+    return theme;
+}
+
+function deleteTheme(theme) {
+    showConfirmation(
+        t('Supprimer le thème « ${name} » ? Les tableaux qui l\'utilisent reprendront les couleurs de la page.', { name: themeName(theme) }),
+        t('Supprimer le thème'),
+        () => {
+            state.doc.themes = state.doc.themes.filter((other) => other.id !== theme.id);
+            if (state.doc.theme === theme.id) state.doc.theme = null;
+            for (const dashboard of state.doc.dashboards) {
+                if (dashboard.theme === theme.id) dashboard.theme = null;
+            }
+            scheduleSave({ immediate: true });
+            refreshChartTheme();
+            renderColorsPanel();
+        },
+        null,
+        { danger: true, confirmText: t('Supprimer') },
+    );
+}
+
+function onThemeListClick(event) {
+    const button = event.target.closest('[data-theme-action]');
+    if (!button) return;
+    const theme = findTheme(state.doc.themes, button.closest('[data-theme-id]').dataset.themeId);
+    if (!theme) return;
+    const action = button.dataset.themeAction;
+    if (action === 'edit') openEditor(theme);
+    if (action === 'delete') deleteTheme(theme);
+    if (action === 'duplicate' && state.doc.themes.length < MAX_THEMES) {
+        const copy = createCopy(theme, t('${name} (copie)', { name: themeName(theme) }));
+        scheduleSave({ immediate: true });
+        openEditor(copy);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Éditeur
+// ---------------------------------------------------------------------------
+
+// state.themeEdit = { theme, snapshot } : `theme` est l'objet du document,
+// modifié en place ; `snapshot` sert à « Annuler les modifications ».
+function openEditor(theme) {
+    state.themeEdit = { theme, snapshot: structuredClone(theme) };
+    $('statsColorsChoice').hidden = true;
+    $('statsThemeEditor').hidden = false;
+    renderEditor();
+    refreshChartTheme();
+    $('statsThemeName').focus();
+}
+
+export function closeEditor() {
+    if (!state.themeEdit) return;
+    state.themeEdit = null;
+    $('statsThemeEditor').hidden = true;
+    $('statsColorsChoice').hidden = false;
+    refreshChartTheme();
+    renderColorsPanel();
+}
+
+function colorField(slot, index, color, label) {
+    const wrap = document.createElement('label');
+    wrap.className = 'stats-theme-swatch';
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'form-control form-control-color';
+    input.value = color;
+    input.dataset.slot = slot;
+    input.dataset.index = String(index);
+    input.setAttribute('aria-label', label);
+    const text = document.createElement('span');
+    text.textContent = label;
+    wrap.append(input, text);
+    return wrap;
+}
+
+function renderEditor() {
+    const { theme } = state.themeEdit;
+    const name = $('statsThemeName');
+    if (document.activeElement !== name) name.value = theme.name;
+    const dashboard = activeOf(state.doc);
+    $('statsThemeApply').hidden = effectiveThemeId(state.doc, dashboard) === theme.id;
+
+    $('statsThemeSeries').replaceChildren(...theme.series.map((color, i) =>
+        colorField('series', i, color, t('Teinte ${n}', { n: i + 1 }))));
+
+    const auto = !theme.heat.colors;
+    $('statsThemeHeatAuto').checked = auto;
+    $('statsThemeHeatCustom').checked = !auto;
+    $('statsThemeHeat').replaceChildren(...(auto
+        ? [colorField('heat-color', 0, theme.heat.color, t('Couleur du dégradé'))]
+        : theme.heat.colors.map((color, i) => colorField('heat', i, color, t('Pas ${n}', { n: i + 1 })))));
+    $('statsThemeRamp').style.background = `linear-gradient(90deg, ${resolveTheme(theme, colorMode()).heat.join(', ')})`;
+
+    $('statsThemeDelta').replaceChildren(
+        colorField('up', 0, theme.up, t('Hausse')),
+        colorField('down', 0, theme.down, t('Baisse')));
+
+    const custom = Boolean(theme.types);
+    $('statsThemeTypesCustom').checked = custom;
+    $('statsThemeTypes').hidden = !custom;
+    $('statsThemeTypes').replaceChildren(...(custom
+        ? Object.keys(state.typeColors).map((type) => colorField('type', type,
+            theme.types[type] || normalizeHex(state.typeColors[type]) || '#808080',
+            state.labels.filterValue('cache_type', type)))
+        : []));
+
+    renderWarnings(theme);
+    $('btnStatsThemeRevert').disabled = JSON.stringify(theme) === JSON.stringify(state.themeEdit.snapshot);
+}
+
+function renderWarnings(theme) {
+    const box = $('statsThemeWarnings');
+    const modeName = (mode) => (mode === 'dark' ? t('sur fond sombre') : t('sur fond clair'));
+    const slotName = (w) => (w.slot === 'up' ? t('Hausse') : w.slot === 'down' ? t('Baisse') : t('Teinte ${n}', { n: w.index + 1 }));
+    const lines = themeWarnings(theme).map((w) => (w.kind === 'faint'
+        ? t('${slot} : peu visible ${mode}.', { slot: slotName(w), mode: modeName(w.mode) })
+        : t('Teintes ${a} et ${b} : presque identiques.', { a: w.index + 1, b: w.other + 1 })));
+    box.hidden = !lines.length;
+    box.replaceChildren(...lines.map((text) => {
+        const p = document.createElement('p');
+        p.className = 'mb-1';
+        p.innerHTML = '<i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>';
+        p.append(document.createTextNode(text));
+        return p;
+    }));
+}
+
+// Une modification : le thème du document change en place, l'aperçu suit,
+// l'écriture part débouncée (glissement dans un sélecteur de couleur).
+function changed({ rerender = false } = {}) {
+    scheduleSave();
+    refreshSoon();
+    if (rerender) renderEditor();
+    else {
+        renderWarnings(state.themeEdit.theme);
+        $('statsThemeRamp').style.background = `linear-gradient(90deg, ${resolveTheme(state.themeEdit.theme, colorMode()).heat.join(', ')})`;
+        $('btnStatsThemeRevert').disabled = JSON.stringify(state.themeEdit.theme) === JSON.stringify(state.themeEdit.snapshot);
+    }
+}
+
+function onEditorInput(event) {
+    if (!state.themeEdit) return;
+    const { theme } = state.themeEdit;
+    const input = event.target;
+    if (input.id === 'statsThemeName') {
+        theme.name = Array.from(input.value.replace(/[\r\n\t]+/g, ' ')).slice(0, 40).join('');
+        changed();
+        return;
+    }
+    if (input.type !== 'color') return;
+    const color = normalizeHex(input.value);
+    if (!color) return;
+    const index = Number(input.dataset.index);
+    switch (input.dataset.slot) {
+        case 'series': theme.series[index] = color; break;
+        case 'heat': theme.heat.colors[index] = color; break;
+        case 'heat-color': theme.heat.color = color; break;
+        case 'up': theme.up = color; break;
+        case 'down': theme.down = color; break;
+        // Type : son nom en guise de rang (clé du thème).
+        case 'type': theme.types[input.dataset.index] = color; break;
+        default: return;
+    }
+    changed();
+}
+
+function onEditorChange(event) {
+    if (!state.themeEdit) return;
+    const { theme } = state.themeEdit;
+    const input = event.target;
+    if (input.name === 'statsThemeHeatMode') {
+        // Passage d'un mode à l'autre : on part du dégradé affiché.
+        theme.heat = input.value === 'custom'
+            ? { colors: resolveTheme(theme, colorMode()).heat.slice(0, THEME_HEAT) }
+            : { color: theme.heat.colors?.[2] || heatRamp('#3987e5')[2] };
+        changed({ rerender: true });
+    } else if (input.id === 'statsThemeTypesCustom') {
+        theme.types = input.checked
+            ? Object.fromEntries(Object.entries(state.typeColors).map(([type, c]) => [type, normalizeHex(c) || '#808080']))
+            : null;
+        changed({ rerender: true });
+    } else if (input.id === 'statsThemeName' && !theme.name.trim()) {
+        theme.name = uniqueThemeName(state.doc.themes.filter((other) => other !== theme), t('Mon thème'));
+        input.value = theme.name;
+        changed();
+    }
+}
+
+function revertTheme() {
+    if (!state.themeEdit) return;
+    const { theme, snapshot } = state.themeEdit;
+    Object.assign(theme, structuredClone(snapshot));
+    scheduleSave({ immediate: true });
+    renderEditor();
+    refreshChartTheme();
+}
+
+function onApplyClick(event) {
+    const target = event.target.closest('[data-apply]')?.dataset.apply;
+    if (!target || !state.themeEdit) return;
+    const { id } = state.themeEdit.theme;
+    if (target === 'page') {
+        state.doc.theme = id;
+        // « Toute la page » : le tableau affiché la suit.
+        activeOf(state.doc).theme = null;
+    } else {
+        activeOf(state.doc).theme = id;
+    }
+    scheduleSave({ immediate: true });
+    renderEditor();
+}
+
+// ---------------------------------------------------------------------------
+// Câblage
+// ---------------------------------------------------------------------------
+
+export function bindColorsPanel() {
+    $('btnStatsColors').addEventListener('click', openColorsPanel);
+    const panel = $('statsColorsPanel');
+    panel.addEventListener('show.bs.offcanvas', () => {
+        state.colorsOpen = true;
+        document.body.classList.add('stats-colors-open');
+        renderColorsPanel();
+    });
+    panel.addEventListener('hidden.bs.offcanvas', () => {
+        state.colorsOpen = false;
+        document.body.classList.remove('stats-colors-open');
+        closeEditor();
+    });
+    $('statsThemePage').addEventListener('change', onPageThemeChange);
+    $('statsThemeDashboard').addEventListener('change', onDashboardThemeChange);
+    $('btnStatsThemeNew').addEventListener('click', newTheme);
+    $('statsThemeList').addEventListener('click', onThemeListClick);
+    $('btnStatsThemeBack').addEventListener('click', closeEditor);
+    $('btnStatsThemeRevert').addEventListener('click', revertTheme);
+    $('statsThemeApply').addEventListener('click', onApplyClick);
+    const editor = $('statsThemeEditor');
+    editor.addEventListener('input', onEditorInput);
+    editor.addEventListener('change', onEditorChange);
+    editor.addEventListener('submit', (event) => event.preventDefault());
+}
+
+// Relevé E2E : thèmes du document, thème montré, couleurs lues.
+export function themeSnapshot() {
+    if (!state.doc) return null;
+    const dashboard = activeOf(state.doc);
+    return {
+        page: state.doc.theme,
+        dashboard: dashboard.theme,
+        shown: shownTheme()?.id ?? null,
+        editing: state.themeEdit?.theme.id ?? null,
+        mode: colorMode(),
+        themes: state.doc.themes.map((theme) => ({ id: theme.id, name: theme.name })),
+        series: state.tokens ? [...state.tokens.series] : null,
+        heat: state.tokens ? [...state.tokens.heat] : null,
+        up: state.tokens?.up ?? null,
+        down: state.tokens?.down ?? null,
+        typeColors: state.chartTypeColors && state.chartTypeColors !== state.typeColors ? { ...state.chartTypeColors } : null,
+        open: Boolean(state.colorsOpen),
+    };
+}

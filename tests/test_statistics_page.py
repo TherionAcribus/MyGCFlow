@@ -157,6 +157,8 @@ class StatisticsPageTests(unittest.TestCase):
             "bad-items": {"v": 1, "dashboards": [{"id": "d", "items": [{}] * (dashboards_store.MAX_ITEMS + 1)}]},
             "bad-item": {"v": 1, "dashboards": [{"id": "d", "items": ["x"]}]},
             "bad-active": {"v": 1, "dashboards": [], "active": 3},
+            "bad-themes": {"v": 1, "dashboards": [], "themes": [{}] * (dashboards_store.MAX_THEMES + 1)},
+            "bad-theme": {"v": 1, "dashboards": [], "theme": 3},
         }
         for code, doc in cases.items():
             response = self.client.put("/api/dashboards", json=doc)
@@ -321,6 +323,24 @@ class StatisticsPageTests(unittest.TestCase):
         self.assertEqual(body["document"]["active"], "d2")
         self.assertEqual([d["name"] for d in body["document"]["dashboards"]], ["Un", "Deux bis"])
         self.assertEqual(body["document"]["dashboards"][1], changed)
+
+    def test_put_one_dashboard_carries_the_colors(self):
+        doc = self._two_dashboards() | {"themes": [{"id": "abcdef01"}], "theme": "abcdef01"}
+        rev = self.client.put("/api/dashboards", json=doc).get_json()["rev"]
+        # Sans couleurs dans le corps : celles du document restent.
+        rev = self.client.put("/api/dashboards/d1", json={"dashboard": {"id": "d1", "items": []}},
+                              headers={"X-Dashboard-Rev": rev}).get_json()["rev"]
+        self.assertEqual(self._status()["document"]["theme"], "abcdef01")
+        themes = [{"id": "abcdef01"}, {"id": "abcdef02"}]
+        response = self.client.put("/api/dashboards/d1", headers={"X-Dashboard-Rev": rev},
+                                   json={"dashboard": {"id": "d1", "items": []}, "themes": themes, "theme": None})
+        self.assertEqual(response.status_code, 200)
+        saved = self._status()["document"]
+        self.assertEqual(saved["themes"], themes)
+        self.assertIsNone(saved["theme"])
+        bad = self.client.put("/api/dashboards/d1", json={"dashboard": {"id": "d1", "items": []}, "themes": "x"})
+        self.assertEqual(bad.status_code, 400)
+        self.assertEqual(bad.get_json()["error"], "bad-themes")
 
     def test_put_one_dashboard_checks_the_rev(self):
         rev = self.client.put("/api/dashboards", json=self._two_dashboards()).get_json()["rev"]

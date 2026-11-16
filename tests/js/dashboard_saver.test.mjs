@@ -109,6 +109,12 @@ test('fermeture : trop gros, seul le tableau affiché part', () => {
     const body = JSON.parse(out.body);
     assert.equal(body.active, 'd3');
     assert.deepEqual(body.dashboard, doc.dashboards[2]);
+    // Couleurs du document : envoyées avec le tableau.
+    assert.deepEqual(body.themes, []);
+    assert.equal(body.theme, null);
+    const themed = closingSaveRequest({ ...doc, themes: [{ id: 'abcdef01' }], theme: 'pastel' });
+    assert.deepEqual(JSON.parse(themed.body).themes, [{ id: 'abcdef01' }]);
+    assert.equal(JSON.parse(themed.body).theme, 'pastel');
 });
 
 test('fermeture : la limite compte des octets, pas des caractères', () => {

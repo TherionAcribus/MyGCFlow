@@ -14,6 +14,7 @@ import {
     activeDashboard, allPeriodSpan, chartTitle, dashboardPeriodLabel, dataNote, datasetName, filterValueLabel,
 } from './stats_page_dashboard.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { applyChartTheme } from './stats_page_themes.js';
 
 // ---------------------------------------------------------------------------
 // « Voir les valeurs » : les données du graphique en tableau, export CSV
@@ -344,9 +345,8 @@ export function onBeforePrint() {
     if (root.getAttribute('data-bs-theme') === 'dark') {
         state.printTheme = 'dark';
         root.setAttribute('data-bs-theme', 'light');
-        state.tokens = readTokens();
-        state.tokensRev += 1;
-        if (state.ready) renderAllCharts();
+        // Variante claire du thème de couleurs (stats_page_themes.js).
+        if (applyChartTheme() && state.ready) renderAllCharts();
     }
 }
 

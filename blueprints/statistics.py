@@ -213,15 +213,18 @@ def _conflict(conflict):
 @statistics_bp.route('/api/dashboards/<dashboard_id>', methods=['PUT'])
 def put_one_dashboard(dashboard_id):
     """Sauvegarde de secours à la fermeture de la page : un seul tableau
-    ({dashboard, active}), quand le document entier dépasse la limite d'un
-    envoi `keepalive` (64 Ko). Même contrôle de révision que le PUT complet."""
+    ({dashboard, active, themes, theme}), quand le document entier dépasse
+    la limite d'un envoi `keepalive` (64 Ko). Même contrôle de révision que
+    le PUT complet. `themes` / `theme` (couleurs du document) : facultatifs,
+    remplacés seulement s'ils sont envoyés."""
     body = request.get_json(silent=True)
     if not isinstance(body, dict) or not isinstance(body.get('dashboard'), dict)             or body['dashboard'].get('id') != dashboard_id:
         return jsonify({'success': False, 'error': 'bad-dashboard'}), 400
     try:
+        colors = {key: body[key] for key in ('themes', 'theme') if key in body}
         rev = dashboards_store.save_dashboard(
             body['dashboard'], active=body.get('active'),
-            expected_rev=request.headers.get('X-Dashboard-Rev'))
+            expected_rev=request.headers.get('X-Dashboard-Rev'), **colors)
     except dashboards_store.RevisionConflict as conflict:
         return _conflict(conflict)
     except dashboards_store.InvalidDocument as error:

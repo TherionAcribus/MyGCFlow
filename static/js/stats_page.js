@@ -38,12 +38,13 @@ import {
     filterGallery, onGalleryNav, onGalleryPick, openGallery, releaseGalleryPreviews, startGalleryPreviews,
 } from './stats_page_gallery.js';
 import {
-    closePresentation, openPresentation, presentEl, presentGo, scheduleAutoAdvance, showSlide,
+    closePresentation, openPresentation, presentEl, presentGo, scheduleAutoAdvance,
     togglePresentAuto,
 } from './stats_page_present.js';
 import { onImageUpload, saveImageEditor, syncImagePreview } from './stats_page_image.js';
 import { flushSave, saveQueue } from './stats_page_save.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { bindColorsPanel, refreshChartTheme, renderColorsPanel, themeSnapshot } from './stats_page_themes.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
     closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFadeInput, onMusicFile, onMusicFitChange,
@@ -55,13 +56,12 @@ import {
 // Thème
 // ---------------------------------------------------------------------------
 
+// Clair / sombre : les couleurs du thème de la page changent de variante
+// (stats_page_themes.js), les graphiques sont redessinés.
 function watchTheme() {
     const observer = new MutationObserver(() => {
-        state.tokens = readTokens();
-        state.tokensRev += 1;
-        if (state.ready) renderAllCharts();
-        if (state.editor) renderPreview();
-        if (state.present) showSlide(state.present.index, { animate: false });
+        refreshChartTheme();
+        renderColorsPanel();
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 }
@@ -243,6 +243,8 @@ window.getStatsPageSnapshot = () => {
             };
         }) : [],
         save: { dirty: state.docDirty, failed: state.saveFailed, pending: saveQueue.pending },
+        // Couleurs : thèmes de la page et du tableau, thème montré, jetons.
+        colors: themeSnapshot(),
         editor: state.editor ? { mode: state.editor.mode, spec: state.editor.item.spec, size: state.editor.item.size } : null,
         video: state.video ? {
             mode: state.video.mode, chartId: state.video.spec?.id ?? null, slides: state.video.slides?.length ?? null,
@@ -454,6 +456,7 @@ function bindEvents() {
 
 bindQuitButtons();
 bindEvents();
+bindColorsPanel();
 watchTheme();
 watchToday();
 watchReducedMotion();

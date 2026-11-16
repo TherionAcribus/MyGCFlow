@@ -25,6 +25,7 @@ import { renderPreview } from './stats_page_editor.js';
 import { imageBlock } from './stats_page_image.js';
 import { clickHint, confirmMapLink, onChartClick } from './stats_page_links.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { applyChartTheme } from './stats_page_themes.js';
 import { addGeoListener } from './zone_geo.js';
 import {
     fallbackCountries, frameCountriesOf, geoFilesFailed, retryZoneGeo, setGeoListener, zoneAreas, zoneMapFor,
@@ -57,6 +58,8 @@ function syncCardMenuState(card, index, count) {
 }
 
 export function renderDashboard() {
+    // Couleurs du tableau affiché (le sien ou celles de la page).
+    applyChartTheme();
     renderToolbar();
     const dashboard = activeDashboard();
     const grid = $('statsGrid');
@@ -500,7 +503,7 @@ export function computeResult(spec, dashboard) {
 }
 
 export function chartContext() {
-    return { labels: state.labels, tokens: state.tokens, typeColors: state.typeColors, attributeName,
+    return { labels: state.labels, tokens: state.tokens, typeColors: state.chartTypeColors || state.typeColors, attributeName,
         reduceMotion: state.reduceMotion, today: state.today, zoneMapOf: zoneMapFor };
 }
 

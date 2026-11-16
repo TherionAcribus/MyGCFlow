@@ -18,6 +18,8 @@ DASHBOARDS_VERSION = 1
 MAX_BYTES = 1024 * 1024
 MAX_DASHBOARDS = 20
 MAX_ITEMS = 24
+# Thèmes de couleurs personnels (static/js/stats_theme_model.mjs › MAX_THEMES).
+MAX_THEMES = 30
 FILE_NAME = "dashboards.json"
 
 
@@ -138,8 +140,19 @@ def image_files(doc):
     return files
 
 
+def _validate_themes(themes, theme):
+    """Couleurs : `themes` (thèmes personnels) et `theme` (thème de la
+    page), tous deux facultatifs."""
+    if themes is not None and (not isinstance(themes, list) or len(themes) > MAX_THEMES
+                               or any(not isinstance(t, dict) for t in themes)):
+        raise InvalidDocument("bad-themes")
+    if theme is not None and not isinstance(theme, str):
+        raise InvalidDocument("bad-theme")
+
+
 def validate_document(doc):
-    """Forme générale : {v, dashboards: [{id, items: [...]}, ...], active}."""
+    """Forme générale : {v, dashboards: [{id, items: [...]}, ...], active,
+    themes, theme}."""
     if not isinstance(doc, dict):
         raise InvalidDocument("not-an-object")
     version = doc.get("v")
@@ -159,6 +172,7 @@ def validate_document(doc):
     active = doc.get("active")
     if active is not None and not isinstance(active, str):
         raise InvalidDocument("bad-active")
+    _validate_themes(doc.get("themes"), doc.get("theme"))
 
 
 def save_document(doc, expected_rev=None):
@@ -184,18 +198,25 @@ def save_document(doc, expected_rev=None):
     return hashlib.sha1(data.encode("utf-8")).hexdigest()
 
 
-def save_dashboard(dashboard, active=None, expected_rev=None):
+_UNSET = object()
+
+
+def save_dashboard(dashboard, active=None, expected_rev=None, themes=_UNSET, theme=_UNSET):
     """Remplace UN tableau de bord du document enregistré ; renvoie la révision.
 
     Sert à la sauvegarde de secours à la fermeture de la page : le
     navigateur limite un envoi `keepalive` à 64 Ko, que le document entier
     peut dépasser (jusqu'à 20 tableaux de 24 graphiques) — le tableau
     affiché, lui, tient. `active` (facultatif) : tableau à rouvrir.
+    `themes` / `theme` (facultatifs) : couleurs du document, petites,
+    envoyées avec le tableau — sans quoi un thème modifié juste avant la
+    fermeture serait perdu.
     """
     if not isinstance(dashboard, dict) or not isinstance(dashboard.get("id"), str):
         raise InvalidDocument("bad-dashboard")
     if active is not None and not isinstance(active, str):
         raise InvalidDocument("bad-active")
+    _validate_themes(None if themes is _UNSET else themes, None if theme is _UNSET else theme)
     with _lock:
         _check_rev(expected_rev)
         doc = _load_file(dashboards_path())
@@ -208,6 +229,10 @@ def save_dashboard(dashboard, active=None, expected_rev=None):
         dashboards[index] = dashboard
         if active is not None and any(d.get("id") == active for d in dashboards):
             doc["active"] = active
+        if themes is not _UNSET:
+            doc["themes"] = themes
+        if theme is not _UNSET:
+            doc["theme"] = theme
         return save_document(doc)
 
 

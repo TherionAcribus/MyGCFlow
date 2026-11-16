@@ -24,6 +24,7 @@ import {
 import { copyDashboardImage, saveDashboardImage } from './stats_page_exports.js';
 import { scheduleSave } from './stats_page_save.js';
 import { $, state } from './stats_page_state.js';
+import { renderColorsPanel } from './stats_page_themes.js';
 import { openDashboardVideo } from './stats_page_video.js';
 
 // ---------------------------------------------------------------------------
@@ -184,6 +185,7 @@ export function renderToolbar() {
     syncUpToSwitch($('statsGlobalUpToRow'), $('statsGlobalUpTo'), dashboard.period, dashboard.period?.upTo);
     $('statsDataNote').textContent = dataNote(dashboard);
     renderFiltersSummary(dashboard);
+    renderColorsPanel();
 }
 
 // Ce que contient le tableau : « 6 trouvailles · 2 DNF · 12 trouvailles
@@ -304,6 +306,7 @@ function exportActiveDashboard() {
     const dashboard = activeDashboard();
     const file = exportDashboard(dashboard, {
         datasetName: dashboard.kind === 'evolution' ? datasetName(dashboard.dataset) : null,
+        themes: state.doc.themes,
     });
     download(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }),
         fileSafe(dashboard.name || t('Mon tableau de bord')) + '.json');
@@ -324,14 +327,18 @@ export async function importDashboardFile(file) {
         return;
     }
     if (state.doc.dashboards.length >= MAX_DASHBOARDS) return;
-    const { dashboard, warning, error } = importDashboard(raw, {
+    const { dashboard, themes, warning, error } = importDashboard(raw, {
         datasets: state.datasets,
         defaultName: t('Mon tableau de bord'),
+        themes: state.doc.themes,
+        themeName: t('Thème importé'),
     });
     if (error) {
         showError(IMPORT_ERRORS[error](), t('Importer un tableau de bord'));
         return;
     }
+    // Thème personnel reçu avec le tableau : rejoint « Mes thèmes ».
+    state.doc.themes = themes;
     state.doc.dashboards.push(dashboard);
     state.doc.active = dashboard.id;
     scheduleSave({ immediate: true });

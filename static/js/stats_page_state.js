@@ -43,7 +43,13 @@ export const state = {
     doc: null,
     labels: makeLabels({ t, locale: document.documentElement.lang || 'fr', zoneName, zoneLevelName: levelName }),
     tokens: null,
-    typeColors: {},
+    typeColors: {},             // couleurs des types de la carte (defaultGcColors.json)
+    // Couleurs des types du thème montré (stats_page_themes.js) : celles de
+    // la carte, complétées par le thème.
+    chartTypeColors: null,
+    themeKey: null,             // couleurs posées (variables CSS) : rien à refaire si inchangées
+    themeEdit: null,            // thème en cours de modification : { theme, snapshot }
+    colorsOpen: false,          // panneau « Couleurs » ouvert
     today: todayDay(),
     charts: new Map(),          // id de graphique → instance ECharts
     results: new Map(),         // id → { result, spec } (relevé E2E)
@@ -81,7 +87,8 @@ export const state = {
 };
 
 // Couleurs lues dans les variables CSS (stats_page.css, palette clair /
-// sombre) : le thème change → nouvelles valeurs, graphiques redessinés.
+// sombre ; un thème de couleurs les pose sur <html>, stats_page_themes.js) :
+// le thème change → nouvelles valeurs, graphiques redessinés.
 export function readTokens() {
     const style = getComputedStyle(document.documentElement);
     const v = (name, fallback) => style.getPropertyValue(name).trim() || fallback;

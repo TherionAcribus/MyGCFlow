@@ -428,7 +428,8 @@ html {
     .stats-card-resize,
     .stats-filter-chip button,
     .stats-add-tile,
-    #statsGridEmpty {
+    #statsGridEmpty,
+    #statsColorsPanel {
         display: none !important;
     }
     body {
@@ -1373,3 +1374,154 @@ html:has(body.is-presenting) {
     }
 }
 
+
+/* ----- Panneau « Couleurs » (stats_page_themes.js) -----
+   Sans voile : le tableau affiché reste visible et se recolore en direct. */
+.stats-colors-panel {
+    --bs-offcanvas-width: 380px;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+/* Écran large : la page se resserre à gauche du panneau — tout le tableau
+   reste visible pendant qu'on choisit (les graphiques suivent leur
+   conteneur, onHostsResized). */
+@media (min-width: 1100px) {
+    body.stats-colors-open #statsPage {
+        margin-right: 380px;
+    }
+}
+.stats-colors-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.stats-theme-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+.stats-theme-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "head actions" "strip actions";
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--tblr-border-color, #dce1e7);
+    border-radius: 6px;
+}
+.stats-theme-item.is-shown {
+    border-color: var(--tblr-primary, #0072c6);
+    box-shadow: inset 3px 0 0 var(--tblr-primary, #0072c6);
+}
+.stats-theme-head {
+    grid-area: head;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+.stats-theme-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.stats-theme-badges {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+.stats-theme-actions {
+    grid-area: actions;
+    display: inline-flex;
+}
+/* Bande : les 8 teintes des séries, puis le dégradé. */
+.stats-theme-strip {
+    grid-area: strip;
+    display: flex;
+    height: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.stats-theme-strip > span {
+    flex: 1 1 0;
+}
+.stats-theme-strip > .stats-theme-strip-ramp {
+    flex: 3 1 0;
+    margin-left: 4px;
+}
+.stats-theme-editor .stats-theme-group {
+    margin: 1rem 0 0;
+}
+.stats-theme-editor legend {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.stats-theme-swatches {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+}
+.stats-theme-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+.stats-theme-swatch .form-control-color {
+    width: 100%;
+    height: 2rem;
+    padding: 0.15rem;
+}
+.stats-theme-ramp {
+    height: 12px;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+}
+.stats-theme-types {
+    display: grid;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+}
+.stats-theme-types .stats-theme-swatch {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    text-align: left;
+}
+.stats-theme-types .form-control-color {
+    width: 3rem;
+    height: 1.6rem;
+    flex: none;
+}
+.stats-theme-apply,
+.stats-theme-warnings {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+.stats-theme-apply {
+    background: var(--tblr-primary-lt, #e5f1fa);
+}
+.stats-theme-apply .btn {
+    margin: 0.25rem 0.25rem 0 0;
+}
+.stats-theme-warnings {
+    background: var(--tblr-warning-lt, #fdf3e1);
+    color: var(--color-text);
+}
+.stats-theme-editor-actions {
+    margin-top: 1rem;
+}

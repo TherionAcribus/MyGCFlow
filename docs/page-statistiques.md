@@ -63,7 +63,7 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 | `templates/stats_page.html` | Gabarit : barre, grille, galerie, éditeur, renommage |
 | `templates/_app_header.html` | En-tête commun aux quatre pages (lien actif selon `mode`) |
 | `static/js/stats_page.js` | Point d'entrée : suivi du thème et de la date du jour, relevé E2E (`getStatsPageSnapshot`), démarrage |
-| `static/js/stats_page_*.js` | Câblage DOM, un module par fonction : `state` (état partagé, constantes, `readTokens`), `data` (chargement des sources), `save` (sauvegarde), `dashboard` (barre, tableaux, filtres, renommer), `cards` (cartes et dessin), `card_actions` (menu d'une carte, glisser, redimensionner), `links` (carte filtrée, panneau vidéo), `video`, `exports` (valeurs, PNG, SVG, image du tableau, impression), `gallery`, `editor`, `present` |
+| `static/js/stats_page_*.js` | Câblage DOM, un module par fonction : `state` (état partagé, constantes, `readTokens`), `data` (chargement des sources), `save` (sauvegarde), `dashboard` (barre, tableaux, filtres, renommer), `cards` (cartes et dessin), `card_actions` (menu d'une carte, glisser, redimensionner), `links` (carte filtrée, panneau vidéo), `video`, `exports` (valeurs, PNG, SVG, image du tableau, impression), `gallery`, `editor`, `present`, `themes` (thèmes de couleurs : application et panneau « Couleurs ») |
 | `static/js/stats_filters_ui.js` | Formulaire de filtres (boutons à bascule, Tom Select, comptes à facettes) : tableau de bord et éditeur |
 | `static/js/chart_filters.mjs` | Pur : valeurs proposées par champ (avec comptes), résumé, nettoyage |
 | `static/js/app_quit.js` | « Quitter » (sorti de ui.js, partagé avec les pages carte) |
@@ -75,6 +75,7 @@ Le serveur ne fait que servir les colonnes et le fichier des tableaux de bord.
 | `static/js/chart_echarts.mjs` | Adaptateur ECharts |
 | `static/js/chart_zones.mjs`, `zone_model.mjs`, `stats_page_geo.js` | Cartes par zones (forme `map`) : calcul, contours, encarts — doc dédiée [carte-zones.md](carte-zones.md) |
 | `static/js/dashboard_model.mjs` | Document des tableaux de bord, héritage, questions |
+| `static/js/stats_theme_model.mjs` | Pur : thèmes de couleurs (fournis, personnels), résolution clair / sombre, dégradé généré, avertissements, partage |
 | `static/css/stats_page.css` | Mise en page et palette des graphiques |
 | `static/vendor/echarts/` | ECharts 6.1.0 + `langFR.js` (+ LICENSE, NOTICE) |
 
@@ -256,7 +257,8 @@ pour les daltoniens, écart en vision normale. En clair, trois teintes (aqua,
 jaune, rose) sont sous 3:1 de contraste : infobulles et « Afficher les
 valeurs » compensent. Les **types de caches** gardent les couleurs de la
 carte (`static/json/defaultGcColors.json`, valeurs par défaut — pas celles
-d'un thème personnalisé) ; une couleur illisible sur le fond (le blanc des
+d'un thème de la carte), sauf thème de couleurs qui en choisit (voir plus
+bas) ; une couleur illisible sur le fond (le blanc des
 Locationless) passe au gris des notes. Plusieurs types partagent une couleur
 sur la carte (Mystery, Wherigo, Letterbox en bleu ; Earthcache, Virtual,
 Webcam en bleu clair ; les sept événements en rouge), où les icônes les
@@ -272,6 +274,64 @@ ses panneaux Stats gardent les couleurs d'origine.
 
 Le thème change (attribut `data-bs-theme` de `<html>`) → couleurs relues,
 graphiques redessinés.
+
+### Thèmes de couleurs (2026-11-16)
+
+Plan : [MyGCFlow_Plan_Themes_Statistiques.md](../MyGCFlow_Plan_Themes_Statistiques.md).
+Bouton **Couleurs** de la barre → panneau latéral sans voile
+(`#statsColorsPanel`) : sur un écran large la page se resserre à sa gauche
+(`body.stats-colors-open`), le tableau reste entier et se recolore en
+direct.
+
+- **Contenu d'un thème** (`stats_theme_model.mjs`) : 8 teintes des séries,
+  dégradé de 5 pas (`--chart-heat-*`), hausse / baisse, et facultativement
+  une couleur par type de cache. Quadrillage, « Autres », « Inconnu », cases
+  vides et textes restent ceux de `stats_page.css`.
+- **Portée** : `doc.theme` (toute la page, null = Défaut) et
+  `dashboard.theme` (null = comme la page). `effectiveThemeId` : celui du
+  tableau, sinon de la page, sinon Défaut ; une référence disparue est remise
+  à null à la lecture (`normalizeDocument`).
+- **Thèmes fournis** (lecture seule) : Défaut (= `stats_page.css`, aucune
+  variable posée — un test le vérifie), Pastel, Vives, Terre, Océan,
+  Daltonisme (Okabe-Ito). Chacun a une variante claire et une sombre,
+  vérifiées par test : chaque teinte ≥ 1,5:1 sur son fond, deux teintes à
+  ≥ 0,06 en OKLab.
+- **Thèmes personnels** (`doc.themes`, 30 au plus, identifiants hexadécimaux) :
+  un seul jeu de couleurs pour les deux modes. Dégradé `{ color }` (généré
+  par `heatRamp` pour le fond de chaque mode : deux pas vers le fond, la
+  couleur, deux pas qui s'en éloignent) ou `{ colors: [5] }` (pris tels
+  quels). « Dupliquer » un thème fourni prend la variante du mode affiché ;
+  son dégradé devient un dégradé généré depuis sa couleur centrale.
+- **Application** (`stats_page_themes.js` › `applyChartTheme`) : variables
+  `--chart-*` posées sur `<html>` (style en ligne, donc aussi lues par les
+  chiffres clés, la présentation, la vidéo et les exports), puis
+  `readTokens` ; `tokensRev` n'avance que si quelque chose change (clé : mode,
+  variables, types). Appelée par `renderDashboard` (changement de tableau),
+  au changement clair / sombre et avant l'impression (variante claire).
+- **Types** : `themeTypeColors` complète les couleurs de la carte par celles
+  du thème ; même objet tant qu'elles ne changent pas (`distinctTypeColors`
+  mémorise par objet). Deux types de même couleur restent nuancés, couleurs
+  personnelles comprises. Les thèmes de la carte n'ont pas de couleurs par
+  type (seulement « couleur GC » ou fixe) : rien à en reprendre.
+- **Éditeur** : modifie l'objet du document en place, enregistrement
+  débouncé ; le tableau affiché montre le thème modifié (`state.themeEdit`),
+  même s'il ne l'utilise pas — l'encadré « Aperçu seulement » propose alors
+  de l'appliquer à la page ou au tableau. « Annuler les modifications »
+  rend l'état de l'ouverture. Avertissements (`themeWarnings`) : teinte sous
+  1,5:1 sur le fond clair (#ffffff) ou sombre (#1b2635), teintes à moins de
+  0,06 en OKLab. « Nouveau thème » copie le thème affiché et le met à sa
+  place (tableau s'il avait le sien, sinon page).
+- **Partage** : un tableau exporté emporte son thème — un thème fourni par son
+  identifiant, un thème personnel en entier (sans identifiant) ; à l'import,
+  un thème personnel de mêmes couleurs est réutilisé, sinon ajouté sous un
+  nom libre (`adoptTheme`). Un tableau qui suit la page n'emporte rien.
+  « Dupliquer ce tableau de bord » garde son thème.
+- **Secours à la fermeture** : l'envoi d'un seul tableau (`PUT
+  /api/dashboards/<id>`) emporte aussi `themes` et `theme`, que
+  `save_dashboard` remplace s'ils sont présents.
+- Relevé E2E : `getStatsPageSnapshot().colors` (`page`, `dashboard`,
+  `shown`, `editing`, `mode`, `themes`, jetons `series` / `heat` / `up` /
+  `down`, `typeColors` du thème ou null). Spec : `stats-themes.spec.mjs`.
 
 **Boutons** (2026-11-15) : Tabler met `.btn` en flex, où l'espace écrit
 entre `<i class="ti">` et le texte ne compte pas — icône et texte étaient

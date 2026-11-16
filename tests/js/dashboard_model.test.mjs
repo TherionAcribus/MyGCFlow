@@ -426,3 +426,51 @@ test('dupliquer : identifiants neufs, nom donné', () => {
     assert.equal(copy.items.length, original.items.length);
     assert.ok(copy.items.every((item, i) => item.spec.id !== original.items[i].spec.id));
 });
+
+test('couleurs : thèmes du document gardés, références disparues remises à null', () => {
+    const base = defaultDocument({ newId: seqId, name: 'A' });
+    const other = defaultDashboard({ newId: seqId, name: 'B' });
+    const raw = {
+        ...base,
+        dashboards: [{ ...base.dashboards[0], theme: 'abcdef01' }, { ...other, theme: 'bbbbbb02' }],
+        themes: [{ id: 'abcdef01', name: 'Mien', series: ['#112233'] }, 'nope'],
+        theme: 'pastel',
+    };
+    const doc = normalizeDocument(raw, { newId: seqId });
+    assert.equal(doc.themes.length, 1);
+    assert.equal(doc.themes[0].series[0], '#112233');
+    assert.equal(doc.theme, 'pastel');
+    assert.equal(doc.dashboards[0].theme, 'abcdef01');
+    assert.equal(doc.dashboards[1].theme, null);
+    assert.equal(normalizeDocument({ ...raw, theme: 'Vives' }).theme, null);
+    // Document d'avant les thèmes : aucun thème, Défaut partout.
+    const old = normalizeDocument({ v: base.v, active: base.active, dashboards: [{ ...base.dashboards[0], theme: undefined }] });
+    assert.deepEqual(old.themes, []);
+    assert.equal(old.theme, null);
+    assert.equal(old.dashboards[0].theme, null);
+});
+
+test('couleurs partagées : thème fourni par son nom, thème personnel en entier, réutilisé à l\'import', () => {
+    const theme = { id: 'abcdef01', name: 'Mien', series: ['#112233', '#ff0000', '#00aa00', '#0000ff', '#aa00aa', '#00aaaa', '#888800', '#444444'], heat: { color: '#3366cc' }, up: '#0000ff', down: '#ff0000', types: null };
+    const dashboard = { ...defaultDashboard({ newId: seqId, name: 'A' }), theme: 'abcdef01' };
+    const file = JSON.parse(JSON.stringify(exportDashboard(dashboard, { themes: [theme] })));
+    assert.equal(file.dashboard.theme.id, undefined);
+    assert.equal(file.dashboard.theme.name, 'Mien');
+    // Destinataire sans ce thème : ajouté, le tableau le prend.
+    const fresh = importDashboard(file, { newId: seqId, themes: [] });
+    assert.equal(fresh.themes.length, 1);
+    assert.equal(fresh.dashboard.theme, fresh.themes[0].id);
+    // Destinataire qui l'a déjà : réutilisé.
+    const again = importDashboard(file, { newId: seqId, themes: [theme] });
+    assert.equal(again.themes.length, 1);
+    assert.equal(again.dashboard.theme, 'abcdef01');
+    // Thème fourni : par son nom ; suivre la page : rien n'est écrit.
+    const vivid = JSON.parse(JSON.stringify(exportDashboard({ ...dashboard, theme: 'vivid' })));
+    assert.equal(vivid.dashboard.theme, 'vivid');
+    assert.equal(importDashboard(vivid, { newId: seqId }).dashboard.theme, 'vivid');
+    const page = JSON.parse(JSON.stringify(exportDashboard({ ...dashboard, theme: null })));
+    assert.equal(page.dashboard.theme, undefined);
+    assert.equal(importDashboard(page, { newId: seqId }).dashboard.theme, null);
+    // Dupliquer garde les couleurs du tableau.
+    assert.equal(duplicateDashboard(dashboard, { newId: seqId }).theme, 'abcdef01');
+});

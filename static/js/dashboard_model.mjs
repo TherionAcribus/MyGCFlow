@@ -14,6 +14,9 @@
 // `period` : une période (chart_spec.mjs › normalizePeriod), celle que les
 // graphiques sans période propre héritent. `filters` : idem pour les filtres
 // (lot 3 pour l'interface ; `{}` = aucun).
+// Couleurs (stats_theme_model.mjs) : `themes` (thèmes personnels) et `theme`
+// (thème de la page) au niveau du document, `theme` d'un tableau (null =
+// celui de la page). Une référence à un thème disparu est remise à null.
 
 import {
     chartSources,
@@ -30,6 +33,7 @@ import {
 import { ymdOfDay } from './stats_model.mjs';
 import { isImageSpec } from './image_tile.mjs';
 import { nextMilestone } from './chart_goal.mjs';
+import { adoptTheme, exportTheme, findTheme, isBuiltinTheme, isThemeRef, normalizeThemes } from './stats_theme_model.mjs';
 
 export const DASHBOARDS_VERSION = 1;
 export const MAX_DASHBOARDS = 20;
@@ -127,6 +131,7 @@ export function normalizeDashboard(raw, { newId = newChartId, defaultName = '' }
         dataset: kind === 'evolution' ? dataset : null,
         period: normalizePeriod(raw.period) || { ...DEFAULT_PERIOD },
         filters: normalizeFilters(raw.filters) || {},
+        theme: isThemeRef(raw.theme) ? raw.theme : null,
         items,
     };
 }
@@ -147,7 +152,10 @@ export function normalizeDocument(raw, options = {}) {
     }
     if (!dashboards.length) return null;
     const active = dashboards.some((d) => d.id === raw.active) ? raw.active : dashboards[0].id;
-    return { v: DASHBOARDS_VERSION, active, dashboards };
+    const themes = normalizeThemes(raw.themes, { newId: options.newId || newChartId });
+    const known = (id) => (id && findTheme(themes, id) ? id : null);
+    for (const dashboard of dashboards) dashboard.theme = known(dashboard.theme);
+    return { v: DASHBOARDS_VERSION, active, dashboards, themes, theme: known(raw.theme) };
 }
 
 // Périodes et filtres effectifs d'un graphique : les siens, sinon ceux du
@@ -362,6 +370,7 @@ export function defaultDashboard({
         dataset: evolution ? dataset : null,
         period: { ...DEFAULT_PERIOD },
         filters: {},
+        theme: null,
         items: questions.map((id) => itemFromQuestion(id, { newId, title: titleOf(id), dataset })).filter(Boolean),
     };
 }
@@ -385,7 +394,7 @@ export { isEvolutionSource };
 
 export function defaultDocument(options = {}) {
     const dashboard = defaultDashboard(options);
-    return { v: DASHBOARDS_VERSION, active: dashboard.id, dashboards: [dashboard] };
+    return { v: DASHBOARDS_VERSION, active: dashboard.id, dashboards: [dashboard], themes: [], theme: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -447,8 +456,10 @@ export const DASHBOARD_FILE_VERSION = 1;
 
 // Contenu du fichier d'export : le tableau sans ses identifiants, et pour un
 // tableau Évolution le NOM de son jeu (l'identifiant ne veut rien dire sur
-// une autre installation).
-export function exportDashboard(dashboard, { datasetName = null } = {}) {
+// une autre installation). Ses couleurs propres voyagent : un thème fourni
+// par son nom, un thème personnel en entier (`themes` : ceux du document).
+// Un tableau qui suit le thème de la page prendra celui du destinataire.
+export function exportDashboard(dashboard, { datasetName = null, themes = [] } = {}) {
     const body = {
         name: dashboard.name,
         kind: dashboard.kind,
@@ -456,16 +467,20 @@ export function exportDashboard(dashboard, { datasetName = null } = {}) {
         filters: dashboard.filters,
         items: dashboard.items.map((item) => ({ size: item.size, height: item.height, spec: { ...item.spec, id: undefined } })),
     };
+    const theme = dashboard.theme ? findTheme(themes, dashboard.theme) : null;
+    if (theme) body.theme = theme.builtin ? theme.id : exportTheme(theme);
     if (dashboard.kind === 'evolution') body.datasetName = datasetName || '';
     return { format: DASHBOARD_FILE_FORMAT, v: DASHBOARD_FILE_VERSION, dashboard: JSON.parse(JSON.stringify(body)) };
 }
 
-// Fichier lu → { dashboard, warning } ou { error }. Identifiants neufs ;
-// un tableau Évolution est rattaché au jeu de même nom, sinon au premier
-// jeu (warning: 'dataset-guessed'), et refusé sans aucun jeu
+// Fichier lu → { dashboard, themes, warning } ou { error }. Identifiants
+// neufs ; un tableau Évolution est rattaché au jeu de même nom, sinon au
+// premier jeu (warning: 'dataset-guessed'), et refusé sans aucun jeu
 // (error: 'no-dataset'). La barrière s'applique comme à la lecture du
-// document (normalizeDashboard).
-export function importDashboard(raw, { newId = newChartId, datasets = [], defaultName = '' } = {}) {
+// document (normalizeDashboard). Un thème personnel reçu rejoint `themes`
+// (ceux du document ; un thème identique est réutilisé) : la liste
+// renvoyée remplace celle du document.
+export function importDashboard(raw, { newId = newChartId, datasets = [], defaultName = '', themes = [], themeName = '' } = {}) {
     if (!isObject(raw) || raw.format !== DASHBOARD_FILE_FORMAT || !isObject(raw.dashboard)) {
         return { error: 'not-a-dashboard' };
     }
@@ -482,8 +497,15 @@ export function importDashboard(raw, { newId = newChartId, datasets = [], defaul
     const items = (Array.isArray(source.items) ? source.items : [])
         .filter(isObject)
         .map((item) => ({ ...item, spec: isObject(item.spec) ? { ...item.spec, id: undefined } : item.spec }));
-    const dashboard = normalizeDashboard({ ...source, id: undefined, dataset, items }, { newId, defaultName });
-    return { dashboard, warning };
+    let themeId = null;
+    let nextThemes = themes;
+    if (typeof source.theme === 'string' && isBuiltinTheme(source.theme)) {
+        themeId = source.theme;
+    } else if (isObject(source.theme)) {
+        ({ themes: nextThemes, id: themeId } = adoptTheme(themes, source.theme, { newId, defaultName: themeName }));
+    }
+    const dashboard = normalizeDashboard({ ...source, id: undefined, dataset, items, theme: themeId }, { newId, defaultName });
+    return { dashboard, themes: nextThemes, warning };
 }
 
 // Copie d'un tableau : identifiants neufs (tableau et graphiques).

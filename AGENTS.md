@@ -358,7 +358,12 @@ Autres repères :
   première utilisation. Les tableaux de bord (`dashboards.json`, préférence
   globale hors `settings.json`) sont partagés par le run : un spec qui en
   pose appelle `DELETE /api/dashboards` en entrée et en sortie (fichier
-  absent = tableau de bord par défaut à la visite suivante). Pour un rendu
+  absent = tableau de bord par défaut à la visite suivante). Les thèmes de
+  couleurs de la page (`themes`, `theme` du document) vivent dans ce même
+  fichier : le même `DELETE` les remet à zéro. Ils posent les variables
+  `--chart-*` en style en ligne sur `<html>` : lire une couleur par
+  `getStatsPageSnapshot().colors` plutôt que dans la feuille de style
+  (exemple : `stats-themes.spec.mjs`). Pour un rendu
   sur beaucoup de données sans toucher la base, intercepter
   `GET /api/stats/finds` par `page.route` (format : stats_finds.py).
   `/api/stats/dnf` et `/api/stats/owned` comptent toutes les données (aucune

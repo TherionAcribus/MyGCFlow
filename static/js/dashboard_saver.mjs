@@ -60,7 +60,8 @@ export function createSaveQueue(send) {
 // dépasser cette limite (jusqu'à 20 tableaux de 24 graphiques, ~480 octets
 // par graphique) ; il part alors réduit au tableau affiché — c'est lui que
 // touchent les modifications débouncées encore en attente (période globale).
-// Renvoie { url, body } ou null (même le tableau seul est trop gros).
+// Les couleurs du document (`themes`, `theme`, quelques Kio) l'accompagnent :
+// un thème modifié juste avant la fermeture ne se perd pas. Renvoie { url, body } ou null (même le tableau seul est trop gros).
 export const KEEPALIVE_MAX_BYTES = 60 * 1024;
 
 const byteLength = (text) => new TextEncoder().encode(text).length;
@@ -71,7 +72,7 @@ export function closingSaveRequest(doc, { maxBytes = KEEPALIVE_MAX_BYTES } = {})
     if (byteLength(whole) <= maxBytes) return { url: '/api/dashboards', body: whole };
     const dashboard = (doc.dashboards || []).find((d) => d.id === doc.active) || doc.dashboards?.[0];
     if (!dashboard) return null;
-    const one = JSON.stringify({ dashboard, active: dashboard.id });
+    const one = JSON.stringify({ dashboard, active: dashboard.id, themes: doc.themes || [], theme: doc.theme ?? null });
     if (byteLength(one) > maxBytes) return null;
     return { url: '/api/dashboards/' + encodeURIComponent(dashboard.id), body: one };
 }

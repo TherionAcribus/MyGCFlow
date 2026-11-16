@@ -110,6 +110,10 @@
                                     aria-label="{{ _("Actualiser les données") }}" title="{{ _("Actualiser les données") }}">
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
+                            <button type="button" id="btnStatsColors" class="btn btn-outline-secondary btn-sm"
+                                    aria-controls="statsColorsPanel" title="{{ _("Choisir les couleurs des graphiques") }}">
+                                <i class="ti ti-palette" aria-hidden="true"></i> {{ _("Couleurs") }}
+                            </button>
                             <button type="button" id="btnStatsPresent" class="btn btn-outline-secondary btn-sm">
                                 <i class="ti ti-presentation" aria-hidden="true"></i> {{ _("Présenter") }}
                             </button>
@@ -143,6 +147,95 @@
                 </div>
             </div>
         </main>
+
+        <!-- Couleurs des graphiques (stats_page_themes.js) : panneau sans voile,
+             le tableau affiché se recolore en direct. Plan :
+             MyGCFlow_Plan_Themes_Statistiques.md. -->
+        <aside class="offcanvas offcanvas-end stats-colors-panel" id="statsColorsPanel" tabindex="-1"
+               data-bs-backdrop="false" data-bs-scroll="true" aria-labelledby="statsColorsTitle">
+            <div class="offcanvas-header">
+                <h2 class="offcanvas-title h4" id="statsColorsTitle">{{ _("Couleurs des graphiques") }}</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ _("Fermer") }}"></button>
+            </div>
+            <div class="offcanvas-body">
+                <!-- Choix des thèmes et liste. -->
+                <div id="statsColorsChoice">
+                    <label for="statsThemePage" class="form-label">{{ _("Toute la page") }}</label>
+                    <select id="statsThemePage" class="form-select form-select-sm mb-3"></select>
+                    <label for="statsThemeDashboard" class="form-label" id="statsThemeDashboardLabel">{{ _("Ce tableau de bord") }}</label>
+                    <select id="statsThemeDashboard" class="form-select form-select-sm"></select>
+                    <p class="form-hint mb-3">{{ _("Un tableau de bord peut garder ses propres couleurs ; sinon il suit la page.") }}</p>
+
+                    <div class="stats-colors-heading">
+                        <h3 class="h5 mb-0">{{ _("Thèmes") }}</h3>
+                        <button type="button" id="btnStatsThemeNew" class="btn btn-outline-primary btn-sm">
+                            <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Nouveau thème") }}
+                        </button>
+                    </div>
+                    <ul id="statsThemeList" class="stats-theme-list"></ul>
+                </div>
+
+                <!-- Modification d'un thème personnel : aperçu sur le tableau affiché. -->
+                <form id="statsThemeEditor" class="stats-theme-editor" hidden>
+                    <button type="button" id="btnStatsThemeBack" class="btn btn-ghost-secondary btn-sm mb-2">
+                        <i class="ti ti-arrow-left" aria-hidden="true"></i> {{ _("Tous les thèmes") }}
+                    </button>
+                    <label for="statsThemeName" class="form-label">{{ _("Nom du thème") }}</label>
+                    <input type="text" id="statsThemeName" class="form-control form-control-sm mb-2" maxlength="40" required>
+                    <!-- Thème modifié mais pas appliqué ici : l'appliquer. -->
+                    <div id="statsThemeApply" class="stats-theme-apply" hidden>
+                        <p class="mb-1">{{ _("Aperçu seulement : ce tableau de bord utilise un autre thème.") }}</p>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-apply="page">{{ _("Appliquer à toute la page") }}</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-apply="dashboard">{{ _("À ce tableau seulement") }}</button>
+                    </div>
+
+                    <fieldset class="stats-theme-group">
+                        <legend>{{ _("Séries") }}</legend>
+                        <p class="form-hint">{{ _("Dans cet ordre : la première pour une série seule, les suivantes pour les comparaisons et les catégories.") }}</p>
+                        <div id="statsThemeSeries" class="stats-theme-swatches"></div>
+                    </fieldset>
+
+                    <fieldset class="stats-theme-group">
+                        <legend>{{ _("Dégradé") }}</legend>
+                        <p class="form-hint">{{ _("Cartes de chaleur, calendrier, grilles, cartes par zones et couleurs « Dégradé selon la valeur ».") }}</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="statsThemeHeatMode" id="statsThemeHeatAuto" value="auto">
+                            <label class="form-check-label" for="statsThemeHeatAuto">{{ _("À partir d'une couleur (adapté au fond clair ou sombre)") }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="statsThemeHeatMode" id="statsThemeHeatCustom" value="custom">
+                            <label class="form-check-label" for="statsThemeHeatCustom">{{ _("Cinq couleurs, de la plus faible à la plus forte") }}</label>
+                        </div>
+                        <div id="statsThemeHeat" class="stats-theme-swatches"></div>
+                        <div id="statsThemeRamp" class="stats-theme-ramp" aria-hidden="true"></div>
+                    </fieldset>
+
+                    <fieldset class="stats-theme-group">
+                        <legend>{{ _("Écarts") }}</legend>
+                        <div id="statsThemeDelta" class="stats-theme-swatches"></div>
+                    </fieldset>
+
+                    <fieldset class="stats-theme-group">
+                        <legend>{{ _("Types de caches") }}</legend>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="statsThemeTypesCustom">
+                            <label class="form-check-label" for="statsThemeTypesCustom">{{ _("Choisir une couleur par type") }}</label>
+                        </div>
+                        <p class="form-hint" id="statsThemeTypesHint">{{ _("Sinon, les couleurs de la carte. Deux types de même couleur restent distingués par une nuance voisine.") }}</p>
+                        <div id="statsThemeTypes" class="stats-theme-types" hidden></div>
+                    </fieldset>
+
+                    <div id="statsThemeWarnings" class="stats-theme-warnings" role="status" hidden></div>
+
+                    <div class="stats-theme-editor-actions">
+                        <button type="button" id="btnStatsThemeRevert" class="btn btn-outline-secondary btn-sm" disabled>
+                            <i class="ti ti-arrow-back-up" aria-hidden="true"></i> {{ _("Annuler les modifications") }}
+                        </button>
+                    </div>
+                    <p class="form-hint mt-2">{{ _("Les modifications sont enregistrées automatiquement.") }}</p>
+                </form>
+            </div>
+        </aside>
 
         <!-- Galerie « Ajouter un graphique » : questions toutes faites
              (dashboard_model.mjs › QUESTIONS), remplie par stats_page_gallery.js. -->

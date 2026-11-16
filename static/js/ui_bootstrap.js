@@ -143,6 +143,17 @@ export function getBsModal(el) {
 }
 
 /**
+ * Panneau latéral (offcanvas) Bootstrap ; null sans Bootstrap ou sans nœud.
+ * @param {Element|string} el - élément .offcanvas ou id
+ */
+export function getBsOffcanvas(el) {
+    const b = bs();
+    const node = typeof el === 'string' ? document.getElementById(el) : el;
+    if (!b || !node) return null;
+    return b.Offcanvas.getOrCreateInstance(node);
+}
+
+/**
  * Ouvre une modal Bootstrap.
  * @param {Element|string} el - élément .modal, id, ou sélecteur
  */

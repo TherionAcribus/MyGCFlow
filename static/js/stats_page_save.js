@@ -6,6 +6,7 @@ import { markSaved, markSaveError, markSaving } from './saved_indicator.mjs';
 import { closingSaveRequest, createSaveQueue } from './dashboard_saver.mjs';
 import { normalizeDocument } from './dashboard_model.mjs';
 import { renderDashboard } from './stats_page_cards.js';
+import { closeEditor } from './stats_page_themes.js';
 import { $, SAVE_DELAY_MS, SAVE_RETRY_DELAY_MS, state } from './stats_page_state.js';
 
 // ---------------------------------------------------------------------------
@@ -103,6 +104,9 @@ async function handleSaveConflict() {
             state.saveFailed = false;
             // Plus rien à reprendre côté disque : garder notre version.
             if (other) {
+                // Thème en cours de modification : il appartenait à
+                // l'ancien document, l'éditeur se referme.
+                closeEditor();
                 state.doc = other;
                 state.docRev = rev;
                 state.docDirty = false;
