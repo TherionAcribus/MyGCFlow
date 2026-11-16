@@ -138,7 +138,8 @@ export function buildParcoursTimeline(reconstructed, {
                     startQ: q,
                     endQ: q + duration,
                     km: legKm,
-                    mode: night ? 'night' : (path ? 'track' : (leg?.mode || 'walk')),
+                    // Chemin d'un itinéraire (lot 6) : son mode ; d'une trace : « track ».
+                    mode: night ? 'night' : (leg?.routed ? leg.mode : path ? 'track' : (leg?.mode || 'walk')),
                     night,
                     ...(path ? { path, cum } : {}),
                 });

@@ -13,8 +13,10 @@ from flask_babel import gettext as _
 import image_library
 import parcours_dataset
 import parcours_photos
+import parcours_routing
 import parcours_store as store
 import parcours_tracks
+from settings_manager import get_settings_manager
 from extensions import db
 from .core import render_app_page
 
@@ -278,3 +280,32 @@ def delete_track(parcours_id, track_id):
     except store.ParcoursError as exc:
         return _store_error(exc)
     return jsonify({'success': True})
+
+
+# --- Itinéraires (lot 6) -------------------------------------------------------------
+
+_ROUTING_MESSAGES = {
+    'unavailable': lambda: _("Service d'itinéraires injoignable : trajets en ligne droite."),
+    'quota': lambda: _("Le service d'itinéraires limite les requêtes : réessayez plus tard."),
+    'key': lambda: _("Clé openrouteservice absente ou refusée."),
+}
+
+
+@parcours_bp.route('/api/parcours/routes', methods=['POST'])
+def compute_routes():
+    """Itinéraires d'une suite de trajets de même profil : {profile,
+    waypoints: [[lon, lat], ...], force?} → {legs, provider, requested,
+    error, message}. Toujours 200 quand la requête est valide : un
+    fournisseur en échec laisse ses trajets à None (ligne droite)."""
+    data = request.get_json(silent=True) or {}
+    config = get_settings_manager().get_app_settings().parcours_routing
+    if not config.get('enabled'):
+        return jsonify({'success': False, 'error': 'routing-disabled',
+                        'message': _("Les itinéraires ne sont pas activés.")}), 409
+    try:
+        result = parcours_routing.route_legs(db.session, config, data.get('profile'), data.get('waypoints'),
+                                             force=data.get('force') is True)
+    except parcours_routing.RoutingError as exc:
+        return jsonify({'success': False, 'error': 'routing-invalid', 'message': _("Requête d'itinéraire invalide")}), 400
+    message = _ROUTING_MESSAGES[result['error']]() if result['error'] in _ROUTING_MESSAGES else None
+    return jsonify({'success': True, **result, 'message': message})

@@ -84,6 +84,7 @@ import {
     reconstructWithEvidence,
 } from './parcours_tracks.mjs';
 import { composeTransform } from './travel_trail.mjs';
+import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 
 const LAST_ID_KEY = 'parcours.lastId';
 // Couleurs par nature d'étape : accent de l'app (trouvailles), ambre (Labs),
@@ -110,6 +111,13 @@ let trackMatches = new Map(); // clé d'étape → passage d'une trace (parcours
 let legPaths = new Map();     // « from>to » → vrai chemin [[lon, lat], ...]
 let utcOffset = { minutes: 0, source: 'computer' };
 let legProjected = [];        // chemin de chaque trajet, en coordonnées carte
+// Itinéraires (lot 6).
+const routeCache = new Map(); // cacheKey(profil, « from>to ») → réponse du serveur
+let routeRunsNow = [];        // requêtes utiles au parcours ouvert (parcours_routing.mjs)
+let routeEffectsNow = { hints: new Map(), paths: new Map(), missing: 0 };
+let routeState = { state: 'idle', message: '' };
+let routeSeq = 0;
+let routeRevision = 0;
 let counts = null;
 let logsAvailable = false;
 let status = 'idle';          // idle | loading | ready | error
@@ -218,6 +226,7 @@ export async function initParcoursPage() {
     bindAdjustments();
     bindPhotos();
     bindTracks();
+    bindRouting();
     pkg.syncOverlayVisibility?.();
     await refreshParcoursList({ select: readLastId() });
 }
@@ -323,6 +332,8 @@ function applyTimeline({ fit = false } = {}) {
     preloadPhotos();
     renderPhotos();
     renderTracks();
+    renderRouting();
+    ensureRoutes();
 }
 
 function buildMeta() {
@@ -446,6 +457,8 @@ function applyPending() {
     }
     if (pendingTimeline) {
         pendingTimeline = false;
+        rebuild();
+        renderStops();
         applyTimeline();
     }
 }
@@ -599,10 +612,15 @@ function bindPlayback() {
     const hours = el('parcoursHours');
     if (pace) pace.value = playback.pace;
     if (hours) hours.value = playback.hours;
+    // saveSettingsPatch remplace la clé entière dans window.userSettings par le
+    // patch envoyé : la valeur complète y est remise une fois l'écriture faite.
     const save = (patch) => {
         playback = normalizePlayback({ ...playback, ...patch });
-        if (window.userSettings) window.userSettings.parcours_playback = { ...playback };
-        try { saveSettingsPatch({ parcours_playback: patch }); } catch (_) { /* hors ligne : réglage de session */ }
+        const full = { ...playback };
+        saveSettingsPatch({ parcours_playback: patch }).then(() => {
+            if (window.userSettings) window.userSettings.parcours_playback = full;
+        });
+        if (window.userSettings) window.userSettings.parcours_playback = full;
     };
     pace?.addEventListener('change', () => {
         save({ pace: pace.value });
@@ -1084,6 +1102,33 @@ function renderEditPanel(stop, day) {
         panel.append(row);
     }
 
+    const next = day.stops[day.stops.indexOf(stop) + 1];
+    if (next && stop.kind !== KIND_BASE) {
+        const row = document.createElement('div');
+        row.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+        const label = document.createElement('label');
+        label.className = 'small';
+        label.textContent = t('Trajet vers l’étape suivante');
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm w-auto parcours-edit-leg';
+        label.htmlFor = select.id = `parcoursEditLeg-${stop.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        const leg = day.legs.find((l) => l.from === stop.key);
+        const auto = legModeFor(leg?.km ?? 0);
+        const labels = { walk: t('à pied'), bike: t('à vélo'), car: t('en voiture'), straight: t('en ligne droite') };
+        const options = [['', t('Automatique (${mode})', { mode: labels[auto] })],
+            ['walk', labels.walk], ['bike', labels.bike], ['car', labels.car], ['straight', labels.straight]];
+        for (const [value, text] of options) {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = text;
+            select.append(opt);
+        }
+        select.value = overrideOf(stop.key)?.legMode || '';
+        select.addEventListener('change', () => saveOverrides([{ key: stop.key, legMode: select.value || null }]));
+        row.append(label, select);
+        panel.append(row);
+    }
+
     if (isCountedStop(stop) && ordered.days.length > 1) {
         const row = document.createElement('div');
         row.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
@@ -1145,12 +1190,25 @@ function adjustmentsLocked() {
 // vrai chemin) et photos (rattachement, heures) comme ancres
 // (parcours_tracks.mjs).
 function rebuild() {
-    const result = reconstructWithEvidence(inputs);
+    let result = reconstructWithEvidence(inputs);
+    routeRunsNow = [];
+    routeEffectsNow = { hints: new Map(), paths: new Map(), missing: 0 };
+    if (routingConfig().enabled) {
+        // Itinéraires déjà connus : leurs durées entrent dans l'horaire, leurs
+        // chemins dans le tracé. Les trajets sur une trace n'en ont pas besoin.
+        const overrides = new Map((inputs?.overrides || []).map((o) => [o.key, o]));
+        routeRunsNow = routeRuns(result.ordered, overrides, { skip: new Set(result.legPaths.keys()) });
+        routeEffectsNow = routeEffects(routeRunsNow, routeCache);
+        if (routeEffectsNow.hints.size > 0) {
+            result = reconstructWithEvidence(inputs, null, { legHints: routeEffectsNow.hints });
+        }
+    }
     ordered = result.ordered;
     photoMatches = result.matches;
     photoByStop = result.byStop;
     trackMatches = result.trackMatches;
-    legPaths = result.legPaths;
+    // Trace GPS d'abord, itinéraire ensuite.
+    legPaths = new Map([...routeEffectsNow.paths, ...result.legPaths]);
     utcOffset = result.utcOffset;
 }
 
@@ -1855,6 +1913,148 @@ function bindTracks() {
     offset?.addEventListener('change', () => setUtcOffset(offset.value === '' ? null : Number(offset.value)));
 }
 
+// --- Itinéraires (lot 6) --------------------------------------------------------
+
+function routingConfig() {
+    const raw = window.userSettings?.parcours_routing || {};
+    return {
+        enabled: raw.enabled === true,
+        provider: raw.provider === 'ors' ? 'ors' : 'fossgis',
+        orsKeySet: raw.ors_key_set === true,
+    };
+}
+
+// Écrit le patch puis remet la valeur complète dans window.userSettings
+// (saveSettingsPatch y remplace la clé par le seul patch). Attendre cette
+// promesse avant de demander un itinéraire : le serveur lit `enabled`.
+async function saveRouting(patch) {
+    const current = window.userSettings?.parcours_routing || {};
+    const next = { ...current, ...patch };
+    if ('ors_key' in patch) {
+        next.ors_key_set = !!patch.ors_key;
+        delete next.ors_key;
+    }
+    if (window.userSettings) window.userSettings.parcours_routing = next;
+    const ok = await saveSettingsPatch({ parcours_routing: patch });
+    if (window.userSettings) window.userSettings.parcours_routing = next;
+    return ok;
+}
+
+// Calcule (côté serveur, cache compris) les itinéraires des trajets qui en
+// manquent, puis rejoue le parcours. Une erreur suspend les nouvelles
+// tentatives jusqu'à une action de l'utilisateur (« Recalculer », réglage) :
+// sinon chaque reconstruction relancerait un fournisseur en panne.
+async function ensureRoutes({ force = false } = {}) {
+    if (!routingConfig().enabled || !selectedId || !ordered) {
+        renderRouting();
+        return;
+    }
+    if (routeState.state === 'error' && !force) return;
+    const runs = force ? routeRunsNow : pendingRuns(routeRunsNow, routeCache);
+    if (runs.length === 0) {
+        renderRouting();
+        return;
+    }
+    const seq = ++routeSeq;
+    routeState = { state: 'loading', message: '' };
+    renderRouting();
+    let message = '';
+    let failed = false;
+    for (const run of runs) {
+        let body;
+        try {
+            body = await fetchJson('/api/parcours/routes', {
+                method: 'POST',
+                body: JSON.stringify({ profile: run.profile, waypoints: run.waypoints, force }),
+            });
+        } catch (error) {
+            message = error.message;
+            failed = true;
+            break;
+        }
+        if (seq !== routeSeq) return;
+        body.legs.forEach((leg, i) => {
+            if (leg) routeCache.set(cacheKey(run.profile, run.keys[i]), leg);
+        });
+        if (body.error) {
+            message = body.message || '';
+            failed = true;
+            break;
+        }
+    }
+    if (seq !== routeSeq) return;
+    routeState = failed ? { state: 'error', message } : { state: 'ready', message: '' };
+    routeRevision++;
+    if (clock.running) {
+        pendingTimeline = true;
+        renderRouting();
+        return;
+    }
+    rebuild();
+    renderStops();
+    applyTimeline();
+}
+
+function renderRouting() {
+    const card = el('parcoursRoutingCard');
+    if (!card) return;
+    card.hidden = !inputs;
+    const config = routingConfig();
+    const enabled = el('parcoursRoutingEnabled');
+    if (enabled) enabled.checked = config.enabled;
+    const provider = el('parcoursRoutingProvider');
+    if (provider) provider.value = config.provider;
+    const keyRow = el('parcoursOrsKeyRow');
+    if (keyRow) keyRow.hidden = config.provider !== 'ors';
+    const key = el('parcoursOrsKey');
+    if (key) key.placeholder = config.orsKeySet ? t('Clé enregistrée (la remplacer)') : t('Clé openrouteservice');
+    const details = el('parcoursRoutingDetails');
+    if (details) details.hidden = !config.enabled;
+    const status = el('parcoursRoutingStatus');
+    if (!status) return;
+    status.classList.toggle('text-danger', routeState.state === 'error');
+    if (!config.enabled) status.textContent = '';
+    else if (routeState.state === 'loading') status.textContent = t('Calcul des itinéraires…');
+    else if (routeState.state === 'error') status.textContent = routeState.message || t('Itinéraires indisponibles : trajets en ligne droite.');
+    else {
+        const routed = routeEffectsNow.paths.size;
+        const legs = routeRunsNow.reduce((total, run) => total + run.keys.length, 0);
+        status.textContent = legs === 0
+            ? t('Aucun trajet à calculer (trajets sur une trace ou en ligne droite).')
+            : t('${routed} trajets sur ${legs} suivent les routes et chemins.', { routed, legs });
+    }
+}
+
+function bindRouting() {
+    const enabled = el('parcoursRoutingEnabled');
+    enabled?.addEventListener('change', async () => {
+        await saveRouting({ enabled: enabled.checked });
+        routeState = { state: 'idle', message: '' };
+        receiveAdjustments({});
+    });
+    const provider = el('parcoursRoutingProvider');
+    provider?.addEventListener('change', async () => {
+        await saveRouting({ provider: provider.value });
+        // Autre fournisseur, autres itinéraires : le cache de la page repart.
+        routeCache.clear();
+        routeState = { state: 'idle', message: '' };
+        receiveAdjustments({});
+    });
+    el('btnParcoursOrsKeySave')?.addEventListener('click', async () => {
+        const input = el('parcoursOrsKey');
+        const value = (input?.value || '').trim();
+        await saveRouting({ ors_key: value });
+        if (input) input.value = '';
+        routeState = { state: 'idle', message: '' };
+        receiveAdjustments({});
+    });
+    el('btnParcoursRoutesRecompute')?.addEventListener('click', () => {
+        if (adjustmentsLocked()) return;
+        routeState = { state: 'idle', message: '' };
+        ensureRoutes({ force: true });
+    });
+}
+
 // --- Carte ----------------------------------------------------------------------
 
 function pointStyle(feature) {
@@ -2011,7 +2211,16 @@ export function getParcoursSnapshot() {
         tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
         trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),
         utcOffset: { ...utcOffset },
-        trackLegs: (timeline?.legs || []).filter((leg) => leg.path).length,
+        trackLegs: (timeline?.legs || []).filter((leg) => leg.mode === 'track').length,
+        routing: {
+            ...routingConfig(),
+            state: routeState.state,
+            message: routeState.message,
+            revision: routeRevision,
+            requests: routeRunsNow.length,
+            routed: routeEffectsNow.paths.size,
+            modes: (timeline?.legs || []).filter((leg) => !leg.night).map((leg) => leg.mode),
+        },
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,
             lines: source.getFeatures().filter((f) => f.get('role') === 'line').length,

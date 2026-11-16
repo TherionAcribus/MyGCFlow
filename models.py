@@ -279,6 +279,8 @@ class ParcoursOverride(db.Model):
     pinned_time = db.Column(db.String(5))      # « HH:MM », heure locale
     day = db.Column(db.Date)                   # journée corrigée
     excluded = db.Column(db.Boolean, nullable=False, default=False)
+    # Mode du trajet vers l'étape suivante (lot 6) : walk, bike, car, straight.
+    leg_mode = db.Column(db.String(8))
 
     __table_args__ = (
         db.UniqueConstraint('parcours_id', 'stop_key', name='uq_parcours_override_key'),
@@ -355,3 +357,23 @@ class ParcoursTrack(db.Model):
     start_utc = db.Column(db.DateTime)
     end_utc = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime)
+
+
+class RouteLegCache(db.Model):
+    """Itinéraire d'un trajet calculé par un fournisseur (lot 6,
+    parcours_routing.py), partagé par tous les parcours. `geometry` null :
+    pas de route possible (ligne droite), à ne plus redemander."""
+    __tablename__ = 'route_leg_cache'
+
+    id = db.Column(db.Integer, primary_key=True)
+    provider = db.Column(db.String(16), nullable=False)
+    profile = db.Column(db.String(8), nullable=False)
+    leg_key = db.Column(db.String(40), nullable=False)    # sha1 des extrémités arrondies
+    geometry = db.Column(db.Text)                           # JSON [[lon, lat], ...]
+    distance_m = db.Column(db.Float)
+    duration_s = db.Column(db.Float)
+    fetched_at = db.Column(db.DateTime)
+
+    __table_args__ = (
+        db.UniqueConstraint('provider', 'profile', 'leg_key', name='uq_route_leg_cache'),
+    )

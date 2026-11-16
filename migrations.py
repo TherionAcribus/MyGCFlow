@@ -296,6 +296,23 @@ def _v13_traces_parcours(db):
             conn.exec_driver_sql("ALTER TABLE parcours ADD COLUMN utc_offset_minutes INTEGER")
 
 
+
+def _v14_itineraires_parcours(db):
+    # Parcours, lot 6 : cache des itinéraires et mode de trajet par étape.
+    # Idempotent.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS route_leg_cache ("
+            "id INTEGER PRIMARY KEY, provider VARCHAR(16) NOT NULL, "
+            "profile VARCHAR(8) NOT NULL, leg_key VARCHAR(40) NOT NULL, "
+            "geometry TEXT, distance_m FLOAT, duration_s FLOAT, fetched_at DATETIME, "
+            "CONSTRAINT uq_route_leg_cache UNIQUE (provider, profile, leg_key))"
+        )
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_override)")}
+        if "leg_mode" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours_override ADD COLUMN leg_mode VARCHAR(8)")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -310,6 +327,7 @@ MIGRATIONS = [
     (11, _v11_ajustements_parcours),
     (12, _v12_photos_parcours),
     (13, _v13_traces_parcours),
+    (14, _v14_itineraires_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

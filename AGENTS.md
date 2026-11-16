@@ -279,6 +279,12 @@ Autres repères :
   relues (symptôme : réglages présents côté serveur, absents de
   `getImagesSnapshot()`). Envoyer les fichiers par `page.request` sans
   ouvrir de page avant, ou recharger (`page.reload()`).
+- Deux `page.mouse.click` rapprochés au même pixel de la carte font un
+  double-clic pour le navigateur : OpenLayers zoome d'un niveau et les clics
+  suivants, calculés sur l'ancienne vue, tombent à côté — d'autant plus
+  souvent que la machine est rapide. Un spec qui teste des clics (fiches,
+  popups) coupe `ol.interaction.DoubleClickZoom` — exemple : « fiche de
+  zone » de `zone-layer.spec.mjs` (corrigé le 2026-11-16).
 - Après un clic sur un bouton de `#layoutPresets` (préréglages, plein écran,
   `#btnTimelineBar`), sa bulle d'aide réapparaît tant qu'il garde le focus et
   intercepte les clics sur ses voisins : `document.activeElement.blur()`

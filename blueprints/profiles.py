@@ -30,6 +30,7 @@ from settings_manager import (
     coerce_map_zoom,
     coerce_parcours_animation,
     coerce_parcours_playback,
+    coerce_parcours_routing,
     coerce_poses_animation,
     coerce_poses_archived_display,
     coerce_profile,
@@ -136,6 +137,9 @@ def api_get_settings():
         'parcours_animation': asdict(s.parcours_animation),
         'parcours_infos_template': s.parcours_infos_template,
         'parcours_playback': dict(s.parcours_playback),
+        # La clé openrouteservice ne quitte jamais le serveur.
+        'parcours_routing': {**{k: v for k, v in s.parcours_routing.items() if k != 'ors_key'},
+                             'ors_key_set': bool(s.parcours_routing.get('ors_key'))},
     })
     response.set_cookie(
         'mygcflow_lang',
@@ -275,6 +279,9 @@ def api_put_settings():
         if 'parcours_playback' in data:
             parcours_playback = coerce_parcours_playback(
                 data.get('parcours_playback'), current.parcours_playback)
+        parcours_routing = current.parcours_routing
+        if 'parcours_routing' in data:
+            parcours_routing = coerce_parcours_routing(data.get('parcours_routing'), current.parcours_routing)
         parcours_last_profile_uid = current.parcours_last_profile_uid
         if 'parcours_last_profile_uid' in data:
             parcours_last_profile_uid = data.get('parcours_last_profile_uid')
@@ -407,6 +414,7 @@ def api_put_settings():
             parcours_animation=parcours_animation,
             parcours_infos_template=parcours_infos_template,
             parcours_playback=parcours_playback,
+            parcours_routing=parcours_routing,
             parcours_last_profile_uid=parcours_last_profile_uid,
         )
 

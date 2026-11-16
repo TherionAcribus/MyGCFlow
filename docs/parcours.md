@@ -7,11 +7,12 @@ le quatrième mode de l'application, à côté de « Mes Géocaches » (`/`),
 lien `#linkParcoursMode` de l'en-tête.
 
 Plan, choix produit et découpage : `MyGCFlow_Plan_Parcours.md`. État au
-2026-11-16 : **lots 0 à 5** — parcours enregistrés, ordre de passage et
+2026-11-16 : **lots 0 à 6** — parcours enregistrés, ordre de passage et
 heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance),
 ajustements manuels (ordre, heure épinglée, journée, exclusion, lieux et
 bases), photos (rattachement, heure comme ancre, carte postale), traces GPS
-(heures de passage, vrai chemin, fuseau).
+(heures de passage, vrai chemin, fuseau), itinéraires réels (FOSSGIS ou
+openrouteservice, cache local).
 
 ## Parcours enregistrés
 
@@ -49,6 +50,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `POST /api/parcours/<id>/tracks` | Envoi d'une trace GPX (multipart, champ `track`, 30 Mo au plus), simplifiée à l'import |
 | `DELETE /api/parcours/<id>/tracks/<tid>` | Suppression d'une trace |
 | `PATCH /api/parcours/<id>` `{utc_offset_minutes}` | Heure locale des traces (minutes, −12 h à +14 h ; null : automatique) |
+| `POST /api/parcours/routes` | Itinéraires d'une suite de trajets `{profile: foot / bike / car, waypoints, force?}` → `{legs, provider, requested, error, message}` ; 409 si les itinéraires ne sont pas activés |
 
 Erreurs : `{success: false, error, message}` avec les codes `not-found`,
 `name-empty`, `name-too-long`, `date-invalid`, `range-reversed`,
@@ -187,7 +189,8 @@ repli de `perPage` sur la page principale faisait réécrire ses clés
 Limites actuelles :
 - pas de caméra qui suit (lot 7), pas de carton ni d'assombrissement de
   nuit ;
-- trajets en lignes droites (itinéraires : lot 6) ;
+- trajets en lignes droites sans itinéraires (option du lot 6, désactivée
+  par défaut) ;
 - un DNF apparaît comme une cache de son type.
 
 ## Ajustements manuels (lot 3)
@@ -324,6 +327,62 @@ Au repos, les traces sont tracées sous le plan (fin trait gris). La
 `reconstructWithEvidence` de parcours_tracks.mjs enchaîne traces puis
 photos et remplace `reconstructWithPhotos` dans la page.
 
+## Itinéraires (lot 6 : `parcours_routing.py`, `parcours_routing.mjs`)
+
+Option globale `parcours_routing`, **désactivée par défaut** (carte
+« Itinéraires » de l'onglet Données).
+
+| Fournisseur | Accès | Conditions |
+|---|---|---|
+| **FOSSGIS** (défaut) | OSRM, `routing.openstreetmap.de/routed-<foot\|bike\|car>/route/v1/driving/...`, sans clé | 1 requête/s au plus, sans garantie de disponibilité ; adresse réglable (`fossgis_url`) |
+| **openrouteservice** (option « plus fiable ») | `api.openrouteservice.org/v2/directions/<profil>/geojson`, clé gratuite de l'utilisateur | 2 000 itinéraires par jour, 40 par minute, 50 points par itinéraire |
+
+**Côté serveur** :
+- appels faits par Flask, jamais par la page, avec un User-Agent
+  « MyGCFlow/<version> » et un débit limité par fournisseur ;
+- une requête par **suite** de trajets consécutifs de même profil dans une
+  journée (50 points au plus), découpée ensuite trajet par trajet : les
+  étapes d'OSRM, les `way_points` d'openrouteservice ;
+- chaque trajet est gardé dans **`route_leg_cache`** (fournisseur, profil,
+  extrémités arrondies au 1e-5°), partagé par tous les parcours. Un trajet
+  sans route possible y est gardé sans géométrie : il n'est plus redemandé.
+  « Recalculer » ignore le cache (`force`) ;
+- en cas d'échec (réseau, quota, clé), les trajets restent non calculés,
+  avec un message, et l'API répond quand même 200 ;
+- la clé openrouteservice est stockée dans settings.json mais **jamais
+  renvoyée** par `GET /api/settings` (`ors_key_set` seulement).
+
+**Mode d'un trajet** (`legModeFor`) :
+- celui imposé depuis l'étape de départ (« Trajet vers l'étape suivante » :
+  à pied, vélo, voiture, ligne droite ; `legMode` des ajustements,
+  migration v14) ;
+- sinon à pied jusqu'à 1,5 km, en voiture jusqu'à 300 km, en ligne droite
+  au-delà (avion, ferry).
+
+Ni la nuit ni un trajet déjà sur une trace GPS ne sont routés. Sans
+itinéraire, un mode imposé change quand même l'estimation (vélo : 15 km/h,
+détour ×1,2).
+
+**Côté page** (`rebuild` puis `ensureRoutes` de parcours_data.js) :
+1. le parcours s'affiche d'abord avec ce qui est connu ;
+2. les suites dont un trajet manque sont demandées, puis tout est
+   reconstruit ;
+3. les durées des itinéraires (`legHints`, stationnement de 5 min ajouté en
+   voiture) remplacent les estimations dans l'horaire, et leurs chemins
+   s'ajoutent aux tracés (la trace GPS reste prioritaire). Un trajet routé
+   garde son mode (`walk`, `bike`, `car`).
+
+Après un échec, les nouvelles tentatives sont suspendues jusqu'à une action
+(réglage, « Recalculer ») : sinon chaque reconstruction relancerait le
+fournisseur en panne.
+
+Attribution affichée dans la carte : « Itinéraires © contributeurs
+OpenStreetMap, calculés par FOSSGIS ou openrouteservice ».
+
+Vérifié une fois contre le vrai FOSSGIS (2026-11-16) : deux trajets à pied
+à Annecy, 670 m / 9 min et 1,26 km / 17 min, 89 et 68 points.
+openrouteservice n'est testé que par des réponses simulées (format v2).
+
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
 Journée par journée, la dernière étape de la veille orientant la suivante.
@@ -415,20 +474,26 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   Labs, ajustements, migration), `tests/test_parcours_photos.py` (EXIF
   synthétique, envoi, doublon, vignette, rattachement, appareils,
   suppression), `tests/test_parcours_tracks.py` (lecture GPX, simplification
-  qui garde une pause, envoi, refus, décalage UTC) ; préférences de la page
-  dans `tests/test_global_preferences.py`
-  (`test_parcours_preferences_have_their_own_keys`).
+  qui garde une pause, envoi, refus, décalage UTC),
+  `tests/test_parcours_routing.py` (réponses OSRM et openrouteservice
+  simulées, découpage par trajet, cache, échecs, API) ; préférences de la
+  page dans `tests/test_global_preferences.py`
+  (`test_parcours_preferences_have_their_own_keys`, clé openrouteservice
+  jamais renvoyée).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
   `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_photos.test.mjs`,
-  `tests/js/parcours_tracks.test.mjs`, `tests/js/parcours_model.test.mjs`,
-  `tests/js/app_mode.test.mjs`.
+  `tests/js/parcours_tracks.test.mjs`, `tests/js/parcours_routing.test.mjs`,
+  `tests/js/parcours_model.test.mjs`, `tests/js/app_mode.test.mjs`.
 - E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2),
   `tests/e2e/parcours-adjust.spec.mjs` (lot 3),
   `tests/e2e/parcours-photos.spec.mjs` (lot 4, photos de
   `tests/e2e/fixtures/parcours-photos/`, générées par `photo_bytes` de
-  test_parcours_photos.py) et `tests/e2e/parcours-tracks.spec.mjs` (lot 5,
+  test_parcours_photos.py), `tests/e2e/parcours-tracks.spec.mjs` (lot 5,
   trace `tests/e2e/fixtures/parcours-trace.gpx` — `*.gpx` est ignoré :
-  `git add -f`), aides communes dans
+  `git add -f`) et `tests/e2e/parcours-routing.spec.mjs` (lot 6 : faux
+  serveur OSRM local sur un port libre, `parcours_routing.fossgis_url` pointé
+  dessus — aucun appel réseau ; le cache `route_leg_cache` est partagé par le
+  runtime, les comptes de requêtes sont relatifs), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le

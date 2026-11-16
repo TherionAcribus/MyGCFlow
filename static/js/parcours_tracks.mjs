@@ -238,22 +238,23 @@ export function trackLegPaths(reconstructed, matches, tracks) {
 }
 
 // Reconstruction complète, traces et photos comprises : { ordered, matches
-// (photos), byStop, trackMatches, legPaths, utcOffset }.
-export function reconstructWithEvidence(inputs, options = null) {
+// (photos), byStop, trackMatches, legPaths, utcOffset }. `legHints` : durées
+// des itinéraires calculés (lot 6), passées à chaque reconstruction.
+export function reconstructWithEvidence(inputs, options = null, { legHints = null } = {}) {
     const photos = Array.isArray(inputs?.photos) ? inputs.photos : [];
     const tracks = Array.isArray(inputs?.tracks) ? inputs.tracks : [];
-    let ordered = reconstructParcours(inputs, { options });
+    let ordered = reconstructParcours(inputs, { options, legHints });
     const utcOffset = resolveUtcOffset({ parcours: inputs?.parcours, photos, tracks, reconstructed: ordered });
     const trackMatches = matchStopsToTracks(ordered, tracks, utcOffset.minutes);
     const fromTracks = trackAnchors(trackMatches);
-    if (fromTracks.size > 0) ordered = reconstructParcours(inputs, { options, trackAnchors: fromTracks });
+    if (fromTracks.size > 0) ordered = reconstructParcours(inputs, { options, trackAnchors: fromTracks, legHints });
     let matches = new Map();
     if (photos.length > 0) {
         const offsets = cameraOffsets(inputs?.cameras);
         matches = matchPhotos(ordered, photos, offsets);
         const fromPhotos = photoAnchors(ordered, photos, matches, offsets);
         if (fromPhotos.size > 0) {
-            ordered = reconstructParcours(inputs, { options, trackAnchors: fromTracks, photoAnchors: fromPhotos });
+            ordered = reconstructParcours(inputs, { options, trackAnchors: fromTracks, photoAnchors: fromPhotos, legHints });
             matches = matchPhotos(ordered, photos, offsets);
         }
     }

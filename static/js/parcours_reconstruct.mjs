@@ -92,6 +92,9 @@ export const RECONSTRUCT_DEFAULTS = Object.freeze({
     carFastFromKm: 30,
     carDetour: 1.3,
     parkMin: 5,
+    // Vélo (mode imposé par l'utilisateur, lot 6).
+    bikeKmh: 15,
+    bikeDetour: 1.2,
     // Durée de visite par type (minutes).
     visitMin: Object.freeze({
         'Traditional Cache': 10,
@@ -161,8 +164,13 @@ export function visitMinutes(stop, opts = RECONSTRUCT_DEFAULTS) {
 }
 
 // Trajet estimé pour une distance à vol d'oiseau : { km, mode, minutes }.
-export function legForKm(km, opts = RECONSTRUCT_DEFAULTS) {
-    if (km <= opts.walkMaxKm) {
+// `mode` (lot 6) : mode imposé ('walk', 'bike', 'car') ; sinon à pied
+// jusqu'à walkMaxKm, en voiture au-delà.
+export function legForKm(km, opts = RECONSTRUCT_DEFAULTS, mode = null) {
+    if (mode === 'bike') {
+        return { km, mode: 'bike', minutes: (km * opts.bikeDetour / opts.bikeKmh) * 60 };
+    }
+    if (mode === 'walk' || (mode !== 'car' && km <= opts.walkMaxKm)) {
         return { km, mode: 'walk', minutes: (km * opts.walkDetour / opts.walkKmh) * 60 };
     }
     const speed = km >= opts.carFastFromKm ? opts.carFastKmh : opts.carKmh;
@@ -409,14 +417,23 @@ function orderDay(stops, anchorMin, prevEnd, opts) {
 // s'applique au pas k (visite de k + trajet vers k + 1) : 1 = durées
 // estimées, < 1 = journée comprimée, > 1 = étirée entre deux ancres. Les
 // durées de visite rendues sont les durées mises à l'échelle.
-function scheduleDay(stops, order, anchorMin, opts) {
+// Trajets : itinéraire calculé (`legHints`, « from>to » → { minutes, km,
+// mode }, lot 6) s'il y en a un, sinon estimation, au mode imposé par
+// l'étape de départ (`overrides`, legMode) le cas échéant.
+function scheduleDay(stops, order, anchorMin, opts, { overrides = null, legHints = null } = {}) {
     const m = order.length;
     const visit = order.map((i) => visitMinutes(stops[i], opts));
     const legs = [];
     const travel = [0];
     for (let k = 1; k < m; k++) {
-        const leg = legEstimate(point(stops[order[k - 1]]), point(stops[order[k]]), opts);
-        legs.push({ from: stops[order[k - 1]].key, to: stops[order[k]].key, ...leg });
+        const from = stops[order[k - 1]];
+        const to = stops[order[k]];
+        const hint = legHints?.get?.(`${from.key}>${to.key}`);
+        const forced = overrides?.get?.(from.key)?.legMode;
+        const leg = hint && Number.isFinite(hint.minutes)
+            ? { km: hint.km, mode: hint.mode, minutes: hint.minutes, routed: true }
+            : legForKm(groundDistanceKm(point(from), point(to)), opts, forced === 'straight' ? null : forced);
+        legs.push({ from: from.key, to: to.key, ...leg });
         travel.push(leg.minutes);
     }
     // Durée estimée de l'arrivée en k à l'arrivée en k + 1 ; la dernière
@@ -504,8 +521,11 @@ function applyManualRanks(stops, order, ranks, reasons, confidence, anchorMin, o
 //                  des Labs ;
 //   photoAnchors : Map clé → minutes, heure des photos rattachées (lot 4,
 //                  parcours_photos.mjs) — en dernier.
+//   legHints : Map « from>to » → { minutes, km, mode }, itinéraires calculés
+//              (lot 6, parcours_routing.mjs).
 export function reconstructDay(day, {
-    overrides = null, prevEnd = null, base = null, trackAnchors = null, photoAnchors = null, options: raw = null,
+    overrides = null, prevEnd = null, base = null, trackAnchors = null, photoAnchors = null, legHints = null,
+    options: raw = null,
 } = {}) {
     const opts = options(raw);
     const rawStops = Array.isArray(day?.stops) ? day.stops : [];
@@ -568,7 +588,7 @@ export function reconstructDay(day, {
         reasons.push(REASON_BASE, REASON_BASE);
         confidence.push(CONFIDENCE_MANUAL, CONFIDENCE_MANUAL);
     }
-    const { arrival, visit, legs, compressed } = scheduleDay(all, order, anchorMin, opts);
+    const { arrival, visit, legs, compressed } = scheduleDay(all, order, anchorMin, opts, { overrides, legHints });
     result.stops = order.map((i, k) => ({
         ...all[i],
         order: k + 1,
@@ -623,7 +643,9 @@ export function applyAdjustments(inputs) {
 // étape d'une journée oriente la suivante. Les ajustements du lot 3
 // (`inputs.overrides`, `inputs.places`) sont appliqués. Numérotation globale
 // `index` des étapes comptées (pas des lieux ni des bases).
-export function reconstructParcours(inputs, { options: raw = null, trackAnchors = null, photoAnchors = null } = {}) {
+export function reconstructParcours(inputs, {
+    options: raw = null, trackAnchors = null, photoAnchors = null, legHints = null,
+} = {}) {
     const { days: adjusted, overrides, bases } = applyAdjustments(inputs);
     adjusted.sort((a, b) => (String(a?.date) < String(b?.date) ? -1 : String(a?.date) > String(b?.date) ? 1 : 0));
     const days = [];
@@ -633,7 +655,7 @@ export function reconstructParcours(inputs, { options: raw = null, trackAnchors 
     for (const rawDay of adjusted) {
         // Une base ne sert que les journées qui ont des étapes.
         const base = rawDay.stops.length > 0 ? (bases.byDate.get(rawDay.date) || bases.all) : null;
-        const day = reconstructDay(rawDay, { overrides, prevEnd, base, trackAnchors, photoAnchors, options: raw });
+        const day = reconstructDay(rawDay, { overrides, prevEnd, base, trackAnchors, photoAnchors, legHints, options: raw });
         for (const stop of day.stops) stop.index = isCountedStop(stop) ? ++index : null;
         dropped += day.dropped;
         if (day.stops.length > 0) {

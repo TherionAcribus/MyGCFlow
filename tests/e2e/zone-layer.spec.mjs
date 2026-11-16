@@ -296,8 +296,15 @@ test('fiche de zone : clic sur la carte, au repos et en pause', async ({ page, r
   await expect.poll(async () => (await zones(page)).status, { timeout: 20_000 }).toBe('ready');
   const popup = page.locator('#gcPopup .gc-popup-content');
   // Vue sur la France entière : les deux clics de zones restent dans le cadre.
+  // Deux clics rapprochés au même endroit (Finistère au repos, puis en pause)
+  // font un double-clic pour le navigateur : OpenLayers zoomerait et les
+  // clics suivants tomberaient à côté. Ce test porte sur les fiches, pas sur
+  // le zoom : on coupe cette interaction.
   await app(page, `pkg.getMap().getView().setCenter(ol.proj.fromLonLat([1.8, 46.6]));
-    pkg.getMap().getView().setZoom(6);`);
+    pkg.getMap().getView().setZoom(6);
+    pkg.getMap().getInteractions().forEach((i) => {
+      if (i instanceof ol.interaction.DoubleClickZoom) i.setActive(false);
+    });`);
   const clickAt = async (lon, lat) => {
     const p = await app(page, `
       const px = pkg.getMap().getPixelFromCoordinate(ol.proj.fromLonLat(arg));

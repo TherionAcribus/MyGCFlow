@@ -75,7 +75,30 @@ GPX, simplification, stockage), table `parcours_track` et colonne
 `parcours.utc_offset_minutes` (migration v13), `parcours_tracks.mjs`
 (heure locale, rattachement, ancres, vrai chemin, `reconstructWithEvidence`),
 trajets sur la trace dans la lecture et la vidéo, carte « Traces GPS » de
-l'onglet Données. Prochaine étape : lot 6 (itinéraires).
+l'onglet Données.
+
+**Lot 6 livré le 2026-11-16** : itinéraires réels. FOSSGIS par défaut,
+openrouteservice en option « plus fiable » (choix de l'utilisateur,
+question 4 du § 13). `parcours_routing.py` (fournisseurs, débit, cache
+`route_leg_cache`, migration v14), `parcours_routing.mjs` (mode par trajet,
+suites de requêtes, durées et chemins), mode imposé par étape (`legMode`),
+carte « Itinéraires ». Prochaine étape : lot 7 (finitions).
+
+Écarts et constats du lot 6 :
+- **Cache partagé par tous les parcours**, par coordonnées : deux parcours
+  qui passent au même endroit ne redemandent rien.
+- **L'ordre n'est pas recalculé avec les durées réelles** : il reste
+  géométrique, seules les heures changent. Pas de boucle, et aucun trajet
+  nouveau à demander après coup.
+- **Échec = suspension** des tentatives jusqu'à une action de
+  l'utilisateur.
+- **`saveSettingsPatch` remplace la clé entière** dans
+  `window.userSettings` : la page remet la valeur complète après
+  l'écriture (itinéraires et réglages de lecture). Sans cela, une
+  préférence en sous-clés y était réduite au dernier patch envoyé.
+- **Crédits dans la vidéo** : non faits, seule la carte de l'onglet Données
+  porte l'attribution. À ajouter au lot 7 avec les cartons.
+- **Une tête par mode de déplacement** (piéton, vélo, voiture) : lot 7.
 
 Écarts et constats du lot 5 :
 - **Fuseau sans `timezonefinder`** (question 2 du § 13) : réglage du

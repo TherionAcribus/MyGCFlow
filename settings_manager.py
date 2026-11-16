@@ -356,6 +356,16 @@ PARCOURS_INFOS_TEMPLATE = '{date} · {heure} · {etapes} / {total} · {km}'
 PARCOURS_PACES = ("regular", "proportional")
 PARCOURS_HOURS_DISPLAYS = ("approx", "exact", "slots", "none")
 PARCOURS_PLAYBACK_DEFAULTS = {"pace": "regular", "hours": "approx"}
+# Itinéraires réels (lot 6, parcours_routing.py) : désactivés par défaut,
+# FOSSGIS sans clé par défaut, openrouteservice en option (clé gratuite).
+PARCOURS_ROUTING_PROVIDERS = ("fossgis", "ors")
+PARCOURS_ROUTING_DEFAULTS = {
+    "enabled": False,
+    "provider": "fossgis",
+    "fossgis_url": "https://routing.openstreetmap.de",
+    "ors_url": "https://api.openrouteservice.org",
+    "ors_key": "",
+}
 
 
 @dataclass
@@ -528,6 +538,8 @@ class AppSettings:
     parcours_animation: "AnimationPrefs" = field(default_factory=lambda: parcours_animation_defaults())
     parcours_infos_template: str = PARCOURS_INFOS_TEMPLATE
     parcours_playback: dict = field(default_factory=lambda: dict(PARCOURS_PLAYBACK_DEFAULTS))
+    # Itinéraires réels : jamais renvoyée telle quelle à la page (ors_key).
+    parcours_routing: dict = field(default_factory=lambda: dict(PARCOURS_ROUTING_DEFAULTS))
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -638,6 +650,33 @@ def coerce_parcours_playback(value, current: dict | None = None) -> dict:
             out["pace"] = value["pace"]
         if value.get("hours") in PARCOURS_HOURS_DISPLAYS:
             out["hours"] = value["hours"]
+    return out
+
+
+def coerce_parcours_routing(value, current: dict | None = None) -> dict:
+    """Itinéraires d'un parcours : patch partiel, valeur invalide → valeur
+    courante. Adresses : http(s) seulement ; clé : texte court."""
+    base = dict(PARCOURS_ROUTING_DEFAULTS)
+    if isinstance(current, dict):
+        base.update({k: v for k, v in current.items() if k in base})
+    out = dict(base)
+    if not isinstance(out.get("enabled"), bool):
+        out["enabled"] = False
+    if out.get("provider") not in PARCOURS_ROUTING_PROVIDERS:
+        out["provider"] = PARCOURS_ROUTING_DEFAULTS["provider"]
+    if not isinstance(value, dict):
+        return out
+    if isinstance(value.get("enabled"), bool):
+        out["enabled"] = value["enabled"]
+    if value.get("provider") in PARCOURS_ROUTING_PROVIDERS:
+        out["provider"] = value["provider"]
+    for key in ("fossgis_url", "ors_url"):
+        if key in value:
+            url = value[key].strip() if isinstance(value[key], str) else ""
+            out[key] = url if url.startswith(("http://", "https://")) and len(url) <= 300 \
+                else PARCOURS_ROUTING_DEFAULTS[key]
+    if isinstance(value.get("ors_key"), str) and len(value["ors_key"]) <= 200:
+        out["ors_key"] = value["ors_key"].strip()
     return out
 
 
@@ -1336,6 +1375,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.parcours_infos_template = coerce_infos_template(
             d.get("parcours_infos_template"), s.parcours_infos_template)
         s.parcours_playback = coerce_parcours_playback(d.get("parcours_playback"))
+        s.parcours_routing = coerce_parcours_routing(d.get("parcours_routing"))
         s.locationless_display = coerce_locationless_display(
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(

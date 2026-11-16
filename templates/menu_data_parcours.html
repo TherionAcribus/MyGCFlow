@@ -129,6 +129,52 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Itinéraires réels (lot 6, parcours_routing.py / .mjs) :
+                 préférence globale `parcours_routing`, désactivée par défaut. -->
+            <div id="parcoursRoutingCard" hidden>
+                <h5 class="gc-section-title mt-3">
+                    <i class="ti ti-map-route text-muted me-1"></i>{{ _("Itinéraires") }}
+                </h5>
+                <div class="card">
+                    <div class="card-body">
+                        <label class="form-check form-switch mb-1">
+                            <input type="checkbox" id="parcoursRoutingEnabled" class="form-check-input" role="switch">
+                            <span class="form-check-label">{{ _("Suivre les routes et chemins") }}</span>
+                        </label>
+                        <div class="form-hint text-muted mb-2">
+                            {{ _("Les trajets sont calculés par un service en ligne (connexion nécessaire), puis gardés sur cet ordinateur : la vidéo se refait hors ligne. À pied jusqu'à 1,5 km, en voiture au-delà, en ligne droite au-delà de 300 km ; le mode se change depuis chaque étape.") }}
+                        </div>
+                        <div id="parcoursRoutingDetails" hidden>
+                            <label class="form-label small mb-1" for="parcoursRoutingProvider">{{ _("Service") }}</label>
+                            <select id="parcoursRoutingProvider" class="form-select form-select-sm mb-2">
+                                <option value="fossgis">{{ _("FOSSGIS (gratuit, sans clé)") }}</option>
+                                <option value="ors">{{ _("openrouteservice (clé gratuite, plus fiable)") }}</option>
+                            </select>
+                            <div id="parcoursOrsKeyRow" class="mb-2" hidden>
+                                <div class="d-flex gap-2">
+                                    <input type="password" id="parcoursOrsKey" class="form-control form-control-sm" autocomplete="off"
+                                           aria-label="{{ _('Clé openrouteservice') }}">
+                                    <button type="button" id="btnParcoursOrsKeySave" class="btn btn-sm btn-outline-primary">{{ _("Enregistrer") }}</button>
+                                </div>
+                                <div class="form-hint text-muted">
+                                    <a href="https://openrouteservice.org/dev/#/signup" target="_blank" rel="noopener">{{ _("Créer une clé gratuite sur openrouteservice.org") }}</a>
+                                    — {{ _("2 000 itinéraires par jour. La clé reste sur cet ordinateur.") }}
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <button type="button" id="btnParcoursRoutesRecompute" class="btn btn-sm btn-outline-secondary">
+                                    <i class="ti ti-arrow-back-up me-1" aria-hidden="true"></i>{{ _("Recalculer les itinéraires") }}
+                                </button>
+                                <span id="parcoursRoutingStatus" class="small text-muted" aria-live="polite"></span>
+                            </div>
+                            <div class="form-hint text-muted mt-2 small">
+                                {{ _("Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS (routing.openstreetmap.de) ou openrouteservice (HeiGIT).") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Étapes du parcours ouvert -->

@@ -72,6 +72,9 @@ export async function resetParcoursSettings(request) {
     data: {
       parcours_animation: { rhythm_mode: 'rate', days_per_second: 10 },
       parcours_playback: { pace: 'regular', hours: 'approx' },
+      parcours_routing: {
+        enabled: false, provider: 'fossgis', fossgis_url: 'https://routing.openstreetmap.de', ors_key: '',
+      },
     },
   });
   expect(response.ok()).toBeTruthy();

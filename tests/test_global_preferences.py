@@ -621,6 +621,17 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(after['animation'], main_before)
         self.assertIsNone(after['last_profile_uid'])
 
+        # Itinéraires : la clé openrouteservice est gardée mais jamais renvoyée.
+        self.assertEqual(after['parcours_routing']['provider'], 'fossgis')
+        self.assertFalse(after['parcours_routing']['enabled'])
+        self.client.put('/api/settings', json={'parcours_routing': {'enabled': True, 'provider': 'ors',
+                                                                    'ors_key': 'secret-123'}})
+        routing = self.client.get('/api/settings').get_json()['parcours_routing']
+        self.assertEqual((routing['enabled'], routing['provider'], routing['ors_key_set']), (True, 'ors', True))
+        self.assertNotIn('ors_key', routing)
+        self.assertNotIn('secret-123', self.client.get('/api/settings').get_data(as_text=True))
+        self.assertEqual(self.manager.get_app_settings().parcours_routing['ors_key'], 'secret-123')
+
     def test_theme_survives_a_round_trip(self):
         self.assertEqual(self.client.put('/api/settings', json={'theme': 'dark'}).status_code, 200)
 
