@@ -141,6 +141,12 @@
                             </a>
                             <p class="empty-state-hint">{{ _("La carte « Mes logs » de la page Mes Géocaches collecte vos caches posées et tous leurs logs.") }}</p>
                         </div>
+                        {% elif mode == 'parcours' %}
+                        <div class="empty-state-card">
+                            {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
+                            <p class="empty-state-text">{{ _("Créez un parcours dans l'onglet Données : une journée ou des vacances de vos trouvailles") }}</p>
+                            <p class="empty-state-hint">{{ _("Un parcours sans trouvaille ne se joue pas : choisissez des dates où vous avez trouvé des caches.") }}</p>
+                        </div>
                         {% else %}
                         <div class="empty-state-card">
                             {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
@@ -229,10 +235,10 @@
                 <ul class="nav nav-tabs" id="mainTabs" role="tablist">
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#data" role="tab" aria-selected="true">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
-                    {# Parcours, lot 0 : pas encore d'animation (MyGCFlow_Plan_Parcours.md) —
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Animation & vidéo") }}</span><span class="tab-label-short">{{ _("Animation") }}</span></a></li>
+                    {# Parcours : Stats et Images pas encore branchés (MyGCFlow_Plan_Parcours.md) —
                        les volets restent dans la page (ui.js les attend), sans onglet. #}
                     {% if mode != 'parcours' %}
-                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Animation & vidéo") }}</span><span class="tab-label-short">{{ _("Animation") }}</span></a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#stats" role="tab" aria-selected="false">{{ _("Stats") }}</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#images" role="tab" aria-selected="false">{{ _("Images") }}</a></li>
                     {% endif %}

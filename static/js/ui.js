@@ -35,7 +35,7 @@ import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mj
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { bindQuitButtons } from './app_quit.js';
-import { appMode, isLifecyclePage, isMainPage, isParcoursPage, perPage } from './app_mode.mjs';
+import { appMode, isLifecyclePage, isMainPage, perPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
@@ -3817,11 +3817,16 @@ function loadRecordSettings() {
 
 const saveAnimationSettingsDebounced = makeDebouncedSettingsSaver(500);
 
-// Les pages Évolution et Mes poses ont leur propre rythme
-// (`evolution_animation`, `poses_animation`) : des années de données ne se
-// jouent pas au tempo des trouvailles.
+// Les pages Évolution, Mes poses et Parcours ont leur propre rythme
+// (`evolution_animation`, `poses_animation`, `parcours_animation`) : des
+// années de données ne se jouent pas au tempo des trouvailles, ni un parcours
+// en quanta de temps écran. Une page absente de la table écrirait la clé de
+// la page principale (repli de perPage).
 function animationSettingsKey() {
-    return perPage({ main: 'animation', evolution: 'evolution_animation', poses: 'poses_animation' });
+    return perPage({
+        main: 'animation', evolution: 'evolution_animation',
+        poses: 'poses_animation', parcours: 'parcours_animation',
+    });
 }
 
 // Traduit pkg.options.animation/flash vers la forme snake_case de l'API.
@@ -3855,11 +3860,6 @@ function animationSettingsPayload() {
 // frappe. Pas d'indicateur « Enregistré » par champ : ces réglages n'en ont
 // jamais eu (la confirmation visuelle porte sur l'onglet Enregistrement).
 export function saveAnimationSettings() {
-    // Page Parcours : pas encore de rythme propre (lot 2 du plan). Sans
-    // cette garde, la clé `animation` de la page principale était réécrite
-    // au chargement — suivi de caméra remis à false, la page n'étant pas
-    // isMainPage().
-    if (isParcoursPage()) return;
     try {
         saveAnimationSettingsDebounced({ [animationSettingsKey()]: animationSettingsPayload() });
     } catch(e) {
@@ -6741,6 +6741,9 @@ const RHYTHM_PRESETS = perPage({
     main: Object.freeze({ slow: 10, normal: 20, fast: 50 }),
     evolution: Object.freeze({ slow: 50, normal: 150, fast: 400 }),
     poses: Object.freeze({ slow: 20, normal: 40, fast: 100 }),
+    // Parcours : quanta de temps écran par seconde (parcours_timeline.mjs,
+    // 10 = vitesse naturelle), présentés comme ×0,5 / ×1 / ×2.
+    parcours: Object.freeze({ slow: 5, normal: 10, fast: 20 }),
 });
 
 function rhythmMode() {

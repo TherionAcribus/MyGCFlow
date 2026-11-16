@@ -347,20 +347,26 @@ Autres repères :
   qu'après `generate_icons_subset.py` — sinon case vide, sans erreur (les
   icônes de l'onglet Pseudos manquaient ainsi jusqu'au 2026-11-06).
 - Quatre pages carte, quatre prédicats (`app_mode.mjs`) : `isLifecyclePage()`
-  pour le moteur partagé Évolution / Mes poses (liste explicite : la page
-  Parcours n'en fait PAS partie), `isEvolutionPage()` pour ce qui tient
-  aux bases CSV, `isMainPage()` pour GPX, DNF, sources, `isParcoursPage()`
-  pour `/parcours` (docs/parcours.md). Une branche `!isLifecyclePage()`
-  s'exécute aussi sur `/parcours`, et `perPage(...)` y retombe sur la
-  valeur de `main` : une ÉCRITURE de réglage par page y écraserait celle de
-  la page principale (cas de `saveAnimationSettings`, neutralisée sur
-  `/parcours` le 2026-11-16). Specs Parcours : supprimer les parcours créés
-  (`DELETE /api/parcours/<id>`) et vider les logs en entrée et en sortie ;
-  relevé `getParcoursSnapshot()`, signal `mygcflowParcoursLoaded`. Les
-  fixtures `.gpx` sont ignorées par `.gitignore` (`*.gpx`) : `git add -f`.
-  Les clés de stockage par page passent par `statsPanelsKey(mode)` /
-  `imagesItemsKey(mode)` / `perPage(...)`. Un module de page exporte des noms uniques (`posesXxx`) :
-  `export *` d'index.js écarte EN SILENCE un nom exporté par deux modules.
+  pour le moteur partagé Évolution / Mes poses / Parcours (tout sauf la
+  page principale), `isEvolutionPage()` pour ce qui tient aux bases CSV,
+  `isMainPage()` pour GPX, DNF, sources, `isParcoursPage()` pour
+  `/parcours` (docs/parcours.md : un « jour » du moteur y est un quantum de
+  100 ms de temps écran, les dates du moteur sont fictives — la vraie date
+  passe par `infosValues`). `perPage(...)` retombe sur la valeur de `main`
+  pour une page absente de la table : une ÉCRITURE de réglage par page y
+  écraserait celle de la page principale. Ajouter la page à chaque table
+  (`animationSettingsKey`, `RHYTHM_PRESETS`, `SETTINGS_KEYS.lastUid` de
+  profiles.js…) — oubli constaté le 2026-11-16 pour `animation` (suivi de
+  caméra remis à false) et `last_profile_uid`. Specs Parcours : supprimer
+  les parcours créés (`DELETE /api/parcours/<id>`), vider les logs, et
+  remettre `parcours_animation` (`days_per_second: 10`) et
+  `parcours_playback` en sortie ; relevé `getParcoursSnapshot()`, signal
+  `mygcflowParcoursLoaded`. Les fixtures `.gpx` sont ignorées par
+  `.gitignore` (`*.gpx`) : `git add -f`. Les clés de stockage par page
+  passent par `statsPanelsKey(mode)` / `imagesItemsKey(mode)` /
+  `perPage(...)`. Un module de page exporte des noms uniques
+  (`posesXxx`, `parcoursXxx`) : `export *` d'index.js écarte EN SILENCE un
+  nom exporté par deux modules.
 - Page Statistiques (`/stats`, docs/page-statistiques.md) : sans carte ni
   `index.js` — signal `window.mygcflowStatsReady` (pas `mygcflowReady`),
   relevé `getStatsPageSnapshot()` (`cards[].keys/series`), pas de modale de
@@ -613,6 +619,17 @@ jour et par `pointsByDateRevision`, et seule la différence de jours est
 ajoutée/retirée — tant que la source n'a pas été touchée par autre chose
 depuis le dernier saut (même objet, même `getRevision()`) ; sinon,
 reconstruction complète depuis le cache (le max de 28 ms).
+
+## Banc de la reconstruction des parcours
+
+`python tools/parcours_bench_export.py --out jours.json [--myfinds MyFinds.gpx]`
+puis `node tools/parcours_bench.mjs jours.json` (docs/parcours.md). L'export
+travaille sur une COPIE de `instance/geocaching.db` : la migration et la
+fusion des logs du My Finds ne touchent jamais la base de dev. Le JSON
+contient des positions et des noms de caches : à garder hors du dépôt
+(dossier temporaire). La base de dev n'a que 44 logs de trouvaille (ceux de
+l'exporteur) : sans `--myfinds`, l'ordre des logs n'est jugé sur presque
+aucune journée.
 
 ## Benchmark aperçu → commit Labs (lot 5.4)
 

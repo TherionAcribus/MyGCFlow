@@ -39,7 +39,71 @@ Choix validés avec l'utilisateur (2026-11-16) :
 `parcours_store.py`, `parcours_dataset.py`, `blueprints/parcours.py`,
 `parcours_model.mjs` (ordre provisoire), `parcours_data.js` (liste,
 création, suppression, étapes par jour, couche carte numérotée). Doc :
-`docs/parcours.md`. Prochaine étape : lot 1.
+`docs/parcours.md`.
+
+**Lot 1 livré le 2026-11-16** : `parcours_reconstruct.mjs` (ancres, ordre
+des logs avec types tardifs et intrus, verdict géométrique, insertion au
+moindre détour, horaire, confiance et raison par étape), branché dans
+l'onglet Données (heure « ≈ », raison, bilan par jour), banc
+`tools/parcours_bench_export.py` + `tools/parcours_bench.mjs`, mesures dans
+`docs/parcours.md`.
+
+**Lot 2 livré le 2026-11-16** : `parcours_timeline.mjs` (temps écran en
+quanta, rythmes régulier et proportionnel, nuit entre deux journées,
+position du géocacheur, heure et distance affichées), moteur de lecture
+dans `parcours_data.js`, tête et trait dessinés pendant la lecture et dans
+la vidéo, ligne d'infos à balises, réglages de lecture (rythme des étapes,
+heures affichées), préférences propres à la page. Export vérifié dans les
+deux pipelines. Prochaine étape : lot 3.
+
+Écarts et constats du lot 2 :
+- **La piste « horloge à quanta » est validée** : le Parcours passe par le
+  contrat `lifecycle_engine.mjs` (`isLifecyclePage()` vrai sur
+  `/parcours`), un « jour » du moteur = 100 ms de temps écran à la vitesse
+  naturelle. Aucune modification des pipelines d'enregistrement. Deux
+  crochets optionnels ajoutés au contrat : `infosValues` (date réelle,
+  heure, km, qui priment sur la date fictive du moteur) et `frameActive`
+  (rendu continu entre deux quanta).
+- **Le mode principal n'a pas servi** : le trait et la caméra de mapgl.js
+  restent ceux de « Mes Géocaches ». La page dessine sa propre tête et son
+  propre trait (deux couches en `postrender`, filmées par la capture),
+  plus simples que le stylo de travel_trail.mjs. Le style reprend la
+  couleur et l'épaisseur du trait du thème.
+- **Deux préférences de la page principale étaient écrasées** via le repli
+  de `perPage` : `animation` (suivi de caméra remis à false) et
+  `last_profile_uid`. Clés propres : `parcours_animation`,
+  `parcours_last_profile_uid`, plus `parcours_infos_template` et
+  `parcours_playback`.
+- **Affichage des heures** dans les réglages de lecture de l'onglet
+  Données (pas dans l'onglet Animation) : il ne touche que la balise
+  `{heure}`. La liste des étapes garde toujours le détail « ≈ ».
+- **Reportés** :
+  - la barre de chronologie (masquée : ses libellés seraient des dates
+    fictives) ;
+  - les onglets Stats et Images ;
+  - le carton et l'assombrissement de nuit, et la tête par mode de
+    déplacement (lot 7) ;
+  - l'apparence propre des DNF (affichés comme une cache de leur type).
+
+Écarts et constats du lot 1 :
+- **Les identifiants de logs ne donnent pas l'heure** (ils datent l'envoi,
+  et les envois sont groupés). L'ordre de saisie reste un indice d'ordre,
+  jugé géométriquement comme prévu (§ 4). Seuil `trustRatio` gardé à 1,3,
+  faute de vérité terrain pour le valider.
+- **Insertion « au moindre détour en minutes de trajet »** (modèle à pied /
+  en voiture de l'horaire), pas en km. Une insertion qui pénalisait en plus
+  le dépassement du temps entre deux ancres a été mesurée moins bonne et
+  retirée.
+- **Plafond de la validation par les Labs** : 36 % des étapes masquées sont
+  à moins de 30 m d'une ancre voisine, la géographie ne peut pas les
+  départager. 46,7 % replacées entre leurs vraies ancres.
+- **Visite d'une étape Lab : 1 min** (étapes validées en rafales).
+- **Journées « power trail »** : au-delà de 300 étapes
+  (`FULL_ANALYSIS_MAX_STOPS`), pas de recherche d'intrus ni de matrice de
+  distances précalculée. Le banc passe à 6 ms au plus pour 818 étapes.
+- **Les ajustements manuels** (`overrides`) sont déjà acceptés par
+  `reconstructDay` (heure épinglée = ancre). Le rang forcé et le reste
+  viendront au lot 3.
 
 Écarts avec le plan ci-dessous, constatés en codant :
 - **Migration v10 réduite à la table `parcours`.** `parcours_override`,

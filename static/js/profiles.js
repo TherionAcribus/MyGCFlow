@@ -34,7 +34,8 @@ const SETTINGS_KEYS = PAGE_MODE === 'evolution'
     : Object.freeze({
         defaultUid: 'default_profile_uid',
         defaultName: 'default_profile_name',
-        lastUid: PAGE_MODE === 'poses' ? 'poses_last_profile_uid' : 'last_profile_uid',
+        lastUid: { poses: 'poses_last_profile_uid', parcours: 'parcours_last_profile_uid' }[PAGE_MODE]
+            || 'last_profile_uid',
     });
 
 // Nom affiché d'un mode : celui du sélecteur de mode de l'en-tête.
@@ -1481,10 +1482,10 @@ class ProfileManager {
 
             const settings = await this.loadAppSettings();
             // Dernier thème actif et thème par défaut DU MODE de la page.
-            // Mes poses sans thème retenu (première visite) : celui de la page
-            // Mes Géocaches, dont elle partage la liste.
+            // Mes poses ou Parcours sans thème retenu (première visite) :
+            // celui de la page Mes Géocaches, dont elles partagent la liste.
             const lastUid = settings[SETTINGS_KEYS.lastUid]
-                || (PAGE_MODE === 'poses' ? settings.last_profile_uid : null)
+                || (PAGE_MODE === 'poses' || PAGE_MODE === 'parcours' ? settings.last_profile_uid : null)
                 || null;
             const defaultUid = settings[SETTINGS_KEYS.defaultUid] || null;
             dbgProfiles('🎯 [STARTUP_PROFILE] Paramètres chargés au démarrage:', {

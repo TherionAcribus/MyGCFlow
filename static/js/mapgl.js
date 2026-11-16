@@ -1286,6 +1286,9 @@ function updatePointAppearClock() {
     // s'évaluer même quand la persistance est active, sinon le compteur reste
     // figé à sa valeur de départ pendant toute l'animation.
     let pending = updateAnimatedCacheCount(now) || pointsGlowing;
+    // Moteur qui dessine entre deux jours (page Parcours : la tête et le trait
+    // avancent en continu) : chaque frame diffère de la précédente.
+    if (isLifecyclePage() && lifecycleEngine()?.frameActive?.(now)) pending = true;
     if (pointsAppearing) {
         if (now >= pointsAppearUntil) {
             pointsAppearing = false;
@@ -2326,6 +2329,9 @@ function renderLifecycleInfosLine(now) {
         total: pkg.metadata?.numberOfCaches ?? 0,
     };
     for (const key of lifecycleCounterKeys()) values[key] = lifecycleCounter(key).valueAt(now);
+    // Valeurs texte du moteur (page Parcours : date réelle du jour, heure,
+    // distance) : elles priment sur la date du moteur, qui y est un quantum.
+    Object.assign(values, engine.infosValues?.(now) || {});
     const text = renderInfosTemplate(engine.infosTemplate?.() ?? '', values, engine.infosTags);
     if (span.textContent !== text) span.textContent = text;
 }

@@ -28,6 +28,8 @@ from settings_manager import (
     coerce_map_center,
     coerce_map_framing,
     coerce_map_zoom,
+    coerce_parcours_animation,
+    coerce_parcours_playback,
     coerce_poses_animation,
     coerce_poses_archived_display,
     coerce_profile,
@@ -79,6 +81,9 @@ def api_get_settings():
     poses_last_profile_name = None
     if s.poses_last_profile_uid:
         poses_last_profile_name = settings_manager.get_profile_name_by_uid(s.poses_last_profile_uid)
+    parcours_last_profile_name = None
+    if s.parcours_last_profile_uid:
+        parcours_last_profile_name = settings_manager.get_profile_name_by_uid(s.parcours_last_profile_uid)
 
     response = jsonify({
         'version': s.version,
@@ -98,6 +103,8 @@ def api_get_settings():
         'evolution_last_profile_name': evolution_last_profile_name,
         'poses_last_profile_uid': s.poses_last_profile_uid,
         'poses_last_profile_name': poses_last_profile_name,
+        'parcours_last_profile_uid': s.parcours_last_profile_uid,
+        'parcours_last_profile_name': parcours_last_profile_name,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
         'map_framing': s.map_framing,
@@ -126,6 +133,9 @@ def api_get_settings():
         'poses_infos_template': s.poses_infos_template,
         'poses_archived_display': s.poses_archived_display,
         'poses_names_privacy': dict(s.poses_names_privacy),
+        'parcours_animation': asdict(s.parcours_animation),
+        'parcours_infos_template': s.parcours_infos_template,
+        'parcours_playback': dict(s.parcours_playback),
     })
     response.set_cookie(
         'mygcflow_lang',
@@ -250,6 +260,24 @@ def api_put_settings():
         poses_last_profile_uid = current.poses_last_profile_uid
         if 'poses_last_profile_uid' in data:
             poses_last_profile_uid = data.get('poses_last_profile_uid')
+
+        # Page Parcours : même règle que Mes poses (patchs partiels).
+        parcours_animation = current.parcours_animation
+        if 'parcours_animation' in data and isinstance(data.get('parcours_animation'), dict):
+            merged_parcours = asdict(current.parcours_animation)
+            merged_parcours.update(data['parcours_animation'])
+            parcours_animation = coerce_parcours_animation(merged_parcours)
+        parcours_infos_template = current.parcours_infos_template
+        if 'parcours_infos_template' in data:
+            parcours_infos_template = coerce_infos_template(
+                data.get('parcours_infos_template'), current.parcours_infos_template)
+        parcours_playback = current.parcours_playback
+        if 'parcours_playback' in data:
+            parcours_playback = coerce_parcours_playback(
+                data.get('parcours_playback'), current.parcours_playback)
+        parcours_last_profile_uid = current.parcours_last_profile_uid
+        if 'parcours_last_profile_uid' in data:
+            parcours_last_profile_uid = data.get('parcours_last_profile_uid')
 
         # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
         # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
@@ -376,6 +404,10 @@ def api_put_settings():
             poses_archived_display=poses_archived_display,
             poses_names_privacy=poses_names_privacy,
             poses_last_profile_uid=poses_last_profile_uid,
+            parcours_animation=parcours_animation,
+            parcours_infos_template=parcours_infos_template,
+            parcours_playback=parcours_playback,
+            parcours_last_profile_uid=parcours_last_profile_uid,
         )
 
     # Fusion et écriture d'un seul tenant : le corps de la requête ne décrit que

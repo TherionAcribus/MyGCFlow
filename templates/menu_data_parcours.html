@@ -52,6 +52,33 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Lecture : préférence globale `parcours_playback` -->
+            <h5 class="gc-section-title mt-3">
+                <i class="ti ti-player-play text-muted me-1"></i>{{ _("Lecture") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="form-label" for="parcoursPace">{{ _("Rythme des étapes") }}</label>
+                        <select id="parcoursPace" class="form-select form-select-sm" aria-describedby="parcoursPaceHint">
+                            <option value="regular">{{ _("Régulier") }}</option>
+                            <option value="proportional">{{ _("Proportionnel au temps réel") }}</option>
+                        </select>
+                        <div id="parcoursPaceHint" class="form-hint text-muted">{{ _("Régulier : chaque étape a la même durée à l'écran. Proportionnel : les longues visites et les longs trajets se voient.") }}</div>
+                    </div>
+                    <div>
+                        <label class="form-label" for="parcoursHours">{{ _("Heures affichées") }}</label>
+                        <select id="parcoursHours" class="form-select form-select-sm" aria-describedby="parcoursHoursHint">
+                            <option value="approx">{{ _("Approximatives (« ≈ 10:40 » quand elles sont estimées)") }}</option>
+                            <option value="exact">{{ _("Exactes, sans « ≈ »") }}</option>
+                            <option value="slots">{{ _("Moments de la journée (matin, midi…)") }}</option>
+                            <option value="none">{{ _("Aucune") }}</option>
+                        </select>
+                        <div id="parcoursHoursHint" class="form-hint text-muted">{{ _("Balise {heure} de la ligne d'informations (onglet Style › Titres)") }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Étapes du parcours ouvert -->

@@ -73,6 +73,8 @@ PROFILE_REF_SETTINGS = (
     # Mes poses liste les thèmes du mode principal, avec son propre dernier
     # thème (le thème par défaut est celui du mode principal).
     ("poses_last_profile_uid", PROFILE_MODE_MAIN),
+    # Même règle pour la page Parcours.
+    ("parcours_last_profile_uid", PROFILE_MODE_MAIN),
 )
 # Compatibilité avec les tests et extensions qui importent encore ce nom.
 EXAMPLES_ADDED_AFTER_V1 = set().union(*EXAMPLE_PROFILE_BATCHES.values())
@@ -348,6 +350,14 @@ class RecordingSettings:
     audio_playlist_crossfade_seconds: float = 3.0
 
 
+# Page Parcours : mêmes valeurs que parcours_timeline.mjs (PLAYBACK_DEFAULTS,
+# NATURAL_QUANTA_PER_SECOND).
+PARCOURS_INFOS_TEMPLATE = '{date} · {heure} · {etapes} / {total} · {km}'
+PARCOURS_PACES = ("regular", "proportional")
+PARCOURS_HOURS_DISPLAYS = ("approx", "exact", "slots", "none")
+PARCOURS_PLAYBACK_DEFAULTS = {"pace": "regular", "hours": "approx"}
+
+
 @dataclass
 class AppSettings:
     version: int = COORDINATE_ORDER_VERSION
@@ -387,6 +397,8 @@ class AppSettings:
     # thème choisi pour la vidéo de ses poses ne change pas celui des
     # trouvailles).
     poses_last_profile_uid: Optional[str] = None
+    # Page /parcours : même règle que Mes poses.
+    parcours_last_profile_uid: Optional[str] = None
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
@@ -508,6 +520,14 @@ class AppSettings:
     # Global (pas dans le thème) : changer de thème ne doit jamais remettre
     # au jour un pseudo écarté. poses_names.py.
     poses_names_privacy: dict = field(default_factory=privacy_defaults)
+    # Page Parcours (/parcours) : rythme propre (un quantum de temps écran par
+    # « jour » du moteur, parcours_timeline.mjs), ligne d'infos à balises
+    # ({date}, {heure}, {jour}, {jours}, {etapes}, {caches}, {labs}, {km},
+    # {total}) et lecture : rythme des étapes (« regular » / « proportional »)
+    # et affichage des heures (« approx », « exact », « slots », « none »).
+    parcours_animation: "AnimationPrefs" = field(default_factory=lambda: parcours_animation_defaults())
+    parcours_infos_template: str = PARCOURS_INFOS_TEMPLATE
+    parcours_playback: dict = field(default_factory=lambda: dict(PARCOURS_PLAYBACK_DEFAULTS))
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -591,6 +611,34 @@ def evolution_animation_defaults() -> AnimationPrefs:
         camera_follow=False,
         flash_duration_ms=500,
     )
+
+
+def parcours_animation_defaults() -> AnimationPrefs:
+    """Rythme par défaut de la page Parcours : la vitesse naturelle, 10
+    quanta de temps écran par seconde (parcours_timeline.mjs). Pas de suivi
+    de caméra du mode principal (la page aura le sien)."""
+    return AnimationPrefs(
+        rhythm_mode="rate",
+        days_per_second=10.0,
+        total_duration_seconds=60.0,
+        camera_follow=False,
+        flash_duration_ms=600,
+    )
+
+
+def coerce_parcours_playback(value, current: dict | None = None) -> dict:
+    """Lecture d'un parcours : patch partiel, valeur inconnue → valeur courante."""
+    base = dict(current) if isinstance(current, dict) else dict(PARCOURS_PLAYBACK_DEFAULTS)
+    out = {
+        "pace": base.get("pace") if base.get("pace") in PARCOURS_PACES else PARCOURS_PLAYBACK_DEFAULTS["pace"],
+        "hours": base.get("hours") if base.get("hours") in PARCOURS_HOURS_DISPLAYS else PARCOURS_PLAYBACK_DEFAULTS["hours"],
+    }
+    if isinstance(value, dict):
+        if value.get("pace") in PARCOURS_PACES:
+            out["pace"] = value["pace"]
+        if value.get("hours") in PARCOURS_HOURS_DISPLAYS:
+            out["hours"] = value["hours"]
+    return out
 
 
 def poses_animation_defaults() -> AnimationPrefs:
@@ -1193,6 +1241,13 @@ def coerce_poses_animation(d: dict) -> AnimationPrefs:
     return a
 
 
+def coerce_parcours_animation(d: dict) -> AnimationPrefs:
+    """Rythme de la page Parcours : jamais le suivi de caméra du mode principal."""
+    a = coerce_animation_settings(d, parcours_animation_defaults())
+    a.camera_follow = False
+    return a
+
+
 POSES_ARCHIVED_DISPLAYS = ("grey", "hide")
 
 
@@ -1277,6 +1332,10 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("poses_archived_display"), s.poses_archived_display)
         s.poses_names_privacy = coerce_names_privacy(
             d.get("poses_names_privacy"), s.poses_names_privacy)
+        s.parcours_animation = coerce_parcours_animation(d.get("parcours_animation"))
+        s.parcours_infos_template = coerce_infos_template(
+            d.get("parcours_infos_template"), s.parcours_infos_template)
+        s.parcours_playback = coerce_parcours_playback(d.get("parcours_playback"))
         s.locationless_display = coerce_locationless_display(
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(
@@ -1333,6 +1392,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.evolution_default_profile_uid = _coerce_optional_str(d.get("evolution_default_profile_uid"))
         s.evolution_last_profile_uid = _coerce_optional_str(d.get("evolution_last_profile_uid"))
         s.poses_last_profile_uid = _coerce_optional_str(d.get("poses_last_profile_uid"))
+        s.parcours_last_profile_uid = _coerce_optional_str(d.get("parcours_last_profile_uid"))
 
         s.startup_default_profile = bool(d.get("startup_default_profile", s.startup_default_profile))
 

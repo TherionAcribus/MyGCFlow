@@ -4086,12 +4086,14 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 
 /* ===== Page Parcours (/parcours, parcours_data.js) ======================== */
 
-/* Lot 0 : pas encore d'animation — ni lecture, ni export, ni chronologie
-   (MyGCFlow_Plan_Parcours.md). Les boutons restent dans la page : ui.js les
-   attend. */
-body[data-mode="parcours"] #quickActions,
+/* Pas encore de barre de chronologie (MyGCFlow_Plan_Parcours.md), ni de
+   plage de dates ni de « jours par seconde » : un parcours se joue en quanta
+   de temps écran, sa plage est celle du parcours ouvert. Les éléments restent
+   dans la page : ui.js les attend. */
 body[data-mode="parcours"] #btnTimelineBar,
-body[data-mode="parcours"] #timelineBar {
+body[data-mode="parcours"] #timelineBar,
+body[data-mode="parcours"] #animDateRangeBlock,
+body[data-mode="parcours"] .rhythm-rate-field {
     display: none !important;
 }
 
@@ -4107,6 +4109,7 @@ body[data-mode="parcours"] #timelineBar {
 }
 
 .parcours-list-item .parcours-open {
+    display: block;
     color: inherit;
     text-decoration: none;
 }

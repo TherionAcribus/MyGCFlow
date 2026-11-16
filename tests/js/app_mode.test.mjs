@@ -32,13 +32,13 @@ test('le mode vient de data-mode, une valeur inconnue vaut le mode principal', (
 });
 
 test('prédicats de page : Évolution et Mes poses partagent le moteur cycle de vie', () => {
-    // Le Parcours n'est ni la page principale ni une page « cycle de vie » :
-    // isLifecyclePage est une liste explicite, pas « tout sauf main ».
+    // Le Parcours passe aussi par le moteur « cycle de vie » (quanta de temps
+    // écran en guise de jours, parcours_timeline.mjs).
     const cases = [
         ['main', { main: true, evolution: false, poses: false, parcours: false, lifecycle: false }],
         ['evolution', { main: false, evolution: true, poses: false, parcours: false, lifecycle: true }],
         ['poses', { main: false, evolution: false, poses: true, parcours: false, lifecycle: true }],
-        ['parcours', { main: false, evolution: false, poses: false, parcours: true, lifecycle: false }],
+        ['parcours', { main: false, evolution: false, poses: false, parcours: true, lifecycle: true }],
     ];
     for (const [mode, expected] of cases) {
         const doc = page(mode);

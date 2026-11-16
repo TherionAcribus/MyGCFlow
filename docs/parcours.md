@@ -7,9 +7,8 @@ le quatrième mode de l'application, à côté de « Mes Géocaches » (`/`),
 lien `#linkParcoursMode` de l'en-tête.
 
 Plan, choix produit et découpage : `MyGCFlow_Plan_Parcours.md`. État au
-2026-11-16 : **lots 0 et 1** — parcours enregistrés, ordre de passage et
-heures reconstruits, affichés dans l'onglet Données et sur la carte. Pas
-encore d'animation (lot 2).
+2026-11-16 : **lots 0 à 2** — parcours enregistrés, ordre de passage et
+heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance).
 
 ## Parcours enregistrés
 
@@ -65,29 +64,109 @@ un voyage), chacun avec ses étapes :
 | Fichier | Rôle |
 |---|---|
 | `static/js/parcours_reconstruct.mjs` | Pur : ordre de passage, heures, confiance (ci-dessous). Tests : `tests/js/parcours_reconstruct.test.mjs` |
+| `static/js/parcours_timeline.mjs` | Pur : temps écran (quanta), position du géocacheur, heure et distance affichées. Tests : `tests/js/parcours_timeline.test.mjs` |
 | `static/js/parcours_model.mjs` | Pur : utilitaires (étapes du parcours, emprise, jours d'une plage). Tests : `tests/js/parcours_model.test.mjs` |
-| `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, couche carte |
+| `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
 Dans l'onglet Données, chaque étape porte son heure d'arrivée (exacte pour
 une ancre, « ≈ » sinon) et la raison de sa place ; chaque journée, sa
 distance et le verdict sur l'ordre des logs.
 
-**Carte** : couche vectorielle propre (`parcoursLayer`, zIndex 1000), points
+**Plan au repos** : couche vectorielle propre (`parcoursLayer`, zIndex 1060,
+au-dessus des points WebGL pour garder les numéros lisibles), points
 numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne pointillée
-par jour (la nuit n'est pas un trajet). Rien n'entre dans `pointsByDate`.
-Le dernier parcours ouvert est retenu (`localStorage['parcours.lastId']`).
+par jour (la nuit n'est pas un trajet). Masqué pendant la lecture. Rien
+n'entre dans `pointsByDate`. Le dernier parcours ouvert est retenu
+(`localStorage['parcours.lastId']`) et cadré (zoom 16 au plus).
 
-**Onglets** : Données, Style, Préférences. Animation, Stats et Images sont
-masqués au lot 0 : leurs volets restent dans la page (ui.js les attend),
-sans onglet. Lecture rapide, export et barre de chronologie sont masqués par
-CSS (`body[data-mode="parcours"]`).
+**Onglets** : Données, Style, Animation & vidéo, Préférences. Stats et
+Images ne sont pas encore branchés : leurs volets restent dans la page
+(ui.js les attend), sans onglet. La barre de chronologie, la plage de dates
+et le champ « jours par seconde » de l'onglet Animation sont masqués par CSS
+(`body[data-mode="parcours"]`).
 
-**Réglages** : `stats.parcours_panels` et `images.parcours_items` existent
-déjà (listes par page, vides). La page **n'enregistre pas** les réglages
-d'animation (`saveAnimationSettings` sort tout de suite) : le repli de
-`perPage` sur la clé `animation` faisait réécrire le rythme de la page
-principale au chargement, suivi de caméra remis à `false`.
+## Lecture et vidéo (`parcours_timeline.mjs`, `parcours_data.js`)
+
+La page passe par le moteur « cycle de vie » d'Évolution et de Mes poses
+(`isLifecyclePage()` est vrai sur `/parcours`, `lifecycle_engine.mjs`).
+Un « jour » du moteur y est un **quantum de temps écran** : 100 ms à la
+vitesse naturelle, 10 quanta par seconde.
+- Chaque étape est une feature WebGL dont `placedDay` est le quantum de son
+  arrivée : le shader la fait apparaître, `mapgl.js` joue le flash.
+- Les dates du moteur partent d'une origine fictive (1er janvier 2000), qui
+  n'est jamais affichée.
+- Durée totale, calage sur la musique, pause, enregistrement image par image
+  et MediaRecorder : tout passe par le moteur existant, qui ne fait que
+  changer la durée d'un quantum.
+
+**Temps écran** (`buildParcoursTimeline`, réglage « Rythme des étapes ») :
+
+| | Durée d'une étape | Durée d'un trajet |
+|---|---|---|
+| **Régulier** (défaut) | 12 quanta (1,2 s) | 6·√km quanta, borné entre 4 et 30 |
+| **Proportionnel** | visite reconstruite, 1 quantum pour 2 min (3 au moins) | trajet reconstruit, même échelle (1 au moins) |
+
+S'y ajoutent :
+- 5 quanta avant la première étape et 10 après la dernière ;
+- une **nuit** de 20 quanta entre deux journées : trajet pointillé, la date
+  et l'heure passent au lendemain.
+
+Les jours sans étape sont sautés, mais `{jour}` garde le rang de la date
+dans la plage.
+
+**À chaque image**, `frameVars` donne la position fractionnaire du moteur
+(dernier quantum joué + part écoulée). Elle reste calée sur les apparitions
+même quand le moteur rattrape plusieurs quanta dans une image. De cette
+position se déduisent :
+- **la tête** (le géocacheur) : interpolation adoucie le long du trajet en
+  cours (`headAt`), dessinée par la couche `parcours-head` (zIndex 1050) ;
+- **le trait** : trajets terminés, plus la part faite du trajet en cours
+  (`trailAt`), dessiné par la couche `parcours-trail` (zIndex 1000) ;
+- **la ligne d'infos** : `infosValues` (`stateAt`).
+
+Les deux couches dessinent dans leur `postrender` : la capture vidéo, qui
+compose tous les canevas de la carte, les filme. Leur couleur et leur
+épaisseur sont celles du thème (`trail.color`, `trail.width`).
+
+**Ligne d'infos** (modèle `parcours_infos_template`, onglet Style ›
+Titres) :
+- `{date}` : la vraie date du jour, pas le quantum du moteur ;
+- `{heure}` : interpolée entre les heures reconstruites. Pendant un
+  trajet, de l'heure de départ à l'heure d'arrivée ; la nuit, l'heure
+  d'arrivée du lendemain. Elle suit le réglage « Heures affichées » :
+  approximatives (« ≈ » si une extrémité est estimée), exactes, moments de
+  la journée (matin < 12 h, midi < 14 h, après-midi < 18 h, soir) ou
+  aucune ;
+- `{jour}`, `{jours}`, `{km}` ;
+- compteurs animés `{etapes}`, `{caches}`, `{labs}`, et `{total}`.
+
+Deux crochets optionnels ont été ajoutés au contrat du moteur :
+- `infosValues(now)` : valeurs texte qui priment sur les compteurs et sur la
+  date du moteur ;
+- `frameActive(now)` : entretient le rendu entre deux quanta.
+
+Ouvrir un autre parcours ou changer le rythme pendant une lecture : appliqué
+à la fin (`applyPending`).
+
+**Préférences globales** (settings.json), toutes propres à la page — le
+repli de `perPage` sur la page principale faisait réécrire ses clés
+(`animation`, avec le suivi de caméra remis à `false`, et
+`last_profile_uid`) :
+
+| Clé | Contenu |
+|---|---|
+| `parcours_animation` | Rythme (défaut : « Vitesse » 10 quanta/s ; préréglages lent ×0,5 / normal / rapide ×2), durée totale, musique ; jamais de suivi de caméra du mode principal |
+| `parcours_infos_template` | Modèle de la ligne d'infos (défaut `{date} · {heure} · {etapes} / {total} · {km}`) |
+| `parcours_playback` | `{pace: regular / proportional, hours: approx / exact / slots / none}` |
+| `parcours_last_profile_uid` | Dernier thème de la page (thèmes du mode principal ; première visite : celui de la page principale) |
+| `stats.parcours_panels`, `images.parcours_items` | Listes par page, vides tant que les onglets ne sont pas branchés |
+
+Limites actuelles :
+- pas de caméra qui suit (lot 7), pas de carton ni d'assombrissement de
+  nuit ;
+- trajets en lignes droites (itinéraires : lot 6) ;
+- un DNF apparaît comme une cache de son type.
 
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
@@ -177,12 +256,19 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
 ## Tests
 
 - Python : `tests/test_parcours_api.py` (CRUD, validation, entrées, DNF,
-  Labs, migration).
+  Labs, migration) ; préférences de la page dans
+  `tests/test_global_preferences.py` (`test_parcours_preferences_have_their_own_keys`).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
-  `tests/js/parcours_model.test.mjs`, `tests/js/app_mode.test.mjs`.
+  `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_model.test.mjs`,
+  `tests/js/app_mode.test.mjs`.
 - E2E : `tests/e2e/parcours-page.spec.mjs`, fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le
-  second). Le spec vide logs et parcours en entrée et en
-  sortie. Relevé : `window.getParcoursSnapshot()` ; signal
-  `window.mygcflowParcoursLoaded` / événement `mygcflow:parcours-loaded`.
+  second).
+  - Le spec vide logs et parcours en entrée et en sortie, et remet
+    `parcours_animation` (10 quanta/s) et `parcours_playback`.
+  - Lecture complète, et export vidéo dans les deux pipelines (durée
+    contrôlée par `video_validator.py`, MP4 supprimé ensuite).
+  - Relevé : `window.getParcoursSnapshot()` (`timeline`, `running`,
+    `currentQ`, `head`, `infos`, `playLayers`) ; signal
+    `window.mygcflowParcoursLoaded` / événement `mygcflow:parcours-loaded`.

@@ -56,7 +56,9 @@
                 <div class="d-flex flex-wrap gap-1 mt-1" role="group" aria-label="{{ _('Insérer une balise') }}">
                     {# Balises de chaque page : EVOLUTION_INFO_TAGS / POSES_INFO_TAGS de infos_template.mjs #}
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="date">{{ _("Date") }}</button>
+                    {% if mode != 'parcours' %}
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="actives">{{ _("Actives") }}</button>
+                    {% endif %}
                     {% if mode == 'poses' %}
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="posees">{{ _("Posées") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="archivees">{{ _("Archivées") }}</button>
@@ -66,6 +68,13 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="dnf">{{ _("DNF") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="logs">{{ _("Logs") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="trouveurs">{{ _("Trouveurs") }}</button>
+                    {% elif mode == 'parcours' %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="heure">{{ _("Heure") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="jour">{{ _("Jour") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="etapes">{{ _("Étapes") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="caches">{{ _("Caches") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="labs">{{ _("Labs") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="km">{{ _("Distance") }}</button>
                     {% else %}
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="placees">{{ _("Placées") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="archivees">{{ _("Archivées") }}</button>
@@ -74,6 +83,8 @@
                 </div>
                 {% if mode == 'poses' %}
                 <div class="form-text">{{ _("Balises remplacées en direct : {date}, {actives} (non archivées), {posees}, {archivees} et {desactivees} (à la date), {trouvailles}, {favoris}, {dnf}, {logs} (reçus depuis le début), {trouveurs} (joueurs distincts), {total}. Un champ vide masque la ligne.") }}</div>
+                {% elif mode == 'parcours' %}
+                <div class="form-text">{{ _("Balises remplacées en direct : {date} (jour du parcours), {heure} (selon l'affichage des heures de l'onglet Données), {jour} et {jours} (rang du jour, nombre de jours), {etapes} (étapes atteintes), {caches}, {labs}, {km} (distance parcourue), {total} (étapes du parcours). Un champ vide masque la ligne.") }}</div>
                 {% else %}
                 <div class="form-text">{{ _("Balises remplacées en direct : {date}, {actives}, {placees}, {archivees}, {total}. Le reste du texte est affiché tel quel ; un champ vide masque la ligne.") }}</div>
                 {% endif %}

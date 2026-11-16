@@ -1,5 +1,6 @@
-// Page Parcours (/parcours, MyGCFlow_Plan_Parcours.md) : parcours enregistrés
-// et étapes dans l'ordre et aux heures reconstruits (lot 1).
+// Page Parcours (/parcours, MyGCFlow_Plan_Parcours.md) : parcours enregistrés,
+// étapes dans l'ordre et aux heures reconstruits (lot 1), lecture et vidéo
+// (lot 2).
 //
 // Fixture my-finds-parcours.gpx (compte 4242) : deux journées autour d'Annecy.
 // 12/07/2025 : GCPAR03 (log 9001), GCPAR01 (9002), GCPAR02 (9003), alignées
@@ -11,13 +12,25 @@
 // Les logs du My Finds vivent hors de /clear_database : vidés en entrée et en
 // sortie (AGENTS.md), comme les parcours créés.
 import { expect, test } from '@playwright/test';
+import { readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
 import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, '..', '..');
+const RUNTIME = process.env.MYGCFLOW_E2E_RUNTIME;
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds-parcours.gpx');
+
+function mp4Names() {
+  try {
+    return readdirSync(path.join(RUNTIME, 'video')).filter((name) => name.endsWith('.mp4'));
+  } catch (_) {
+    return [];
+  }
+}
 
 async function clearLogs(request) {
   const response = await request.post('/api/logs/clear');
@@ -64,15 +77,31 @@ test.beforeEach(async ({ request }) => {
   await clearLogs(request);
 });
 
+// Préférences globales de la page : rythme (une vitesse ×2 accélère les
+// tests de lecture) et réglages de lecture, remis en sortie.
+async function resetParcoursSettings(request) {
+  const response = await request.put('/api/settings', {
+    data: {
+      parcours_animation: { rhythm_mode: 'rate', days_per_second: 10 },
+      parcours_playback: { pace: 'regular', hours: 'approx' },
+    },
+  });
+  expect(response.ok()).toBeTruthy();
+}
+
 test.afterEach(async ({ request }) => {
   await deleteAllParcours(request);
   await clearLogs(request);
+  await resetParcoursSettings(request);
+  await expect.poll(async () => (await (await request.get('/api/settings')).json()).parcours_animation.days_per_second)
+    .toBe(10);
 });
 
-test('page sans parcours : mode actif, onglets du lot 0, aucune erreur', async ({ page }) => {
+test('page sans parcours : mode actif, état vide, aucune erreur', async ({ page }) => {
   const errors = collectErrors(page);
-  // La page ne doit pas réécrire le rythme de la page principale (`animation`) :
-  // elle y remettait le suivi de caméra à false au chargement.
+  // La page ne doit réécrire ni le rythme ni le dernier thème de la page
+  // principale (`animation`, `last_profile_uid`) : le repli de perPage le
+  // faisait — suivi de caméra remis à false au chargement.
   const settingsWrites = [];
   page.on('request', (req) => {
     if (req.method() === 'PUT' && req.url().endsWith('/api/settings')) settingsWrites.push(req.postDataJSON());
@@ -81,15 +110,108 @@ test('page sans parcours : mode actif, onglets du lot 0, aucune erreur', async (
   await expect(page.locator('#linkParcoursMode')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('#parcoursListEmpty')).toBeVisible();
   await expect(page.locator('#parcoursSummary')).toContainText('Ouvrez ou créez un parcours');
-  // Pas encore d'animation : ni onglet Animation, ni lecture rapide.
-  await expect(page.locator('#mainTabs a[href="#animation"]')).toHaveCount(0);
-  await expect(page.locator('#mainTabs a[href="#style"]')).toBeVisible();
-  await expect(page.locator('#btnQuickPreview')).toBeHidden();
-  await expect(page.locator('#emptyState')).toBeHidden();
+  await expect(page.locator('#mainTabs a[href="#animation"]')).toBeVisible();
+  await expect(page.locator('#mainTabs a[href="#stats"]')).toHaveCount(0);
+  // Rien à jouer : lecture désactivée, état vide propre à la page.
+  await expect(page.locator('#btnQuickPreview')).toBeDisabled();
+  await expect(page.locator('#emptyState')).toBeVisible();
+  await expect(page.locator('#emptyState')).toContainText('Créez un parcours');
   expect((await snapshot(page)).status).toBe('idle');
   // Au-delà du délai d'écriture différée (500 ms) des réglages d'animation.
   await page.waitForTimeout(1200);
-  expect(settingsWrites.filter((patch) => 'animation' in patch)).toEqual([]);
+  expect(settingsWrites.filter((patch) => 'animation' in patch || 'last_profile_uid' in patch)).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test('lecture : étapes qui apparaissent, géocacheur, heure et distance, puis repos', async ({ page, request }) => {
+  await importFixture(page, request);
+  expect((await request.put('/api/settings', { data: { parcours_animation: { rhythm_mode: 'rate', days_per_second: 20 } } })).ok())
+    .toBeTruthy();
+  expect((await request.post('/api/parcours',
+    { data: { name: 'Week-end', date_start: '2025-07-12', date_end: '2025-07-13' } })).status()).toBe(201);
+  const errors = collectErrors(page);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  const before = await snapshot(page);
+  expect(before.timeline.stopQ).toHaveLength(5);
+  expect(before.timeline.nightLegs).toBe(1);
+  expect(before.layer.visible).toBe(true);
+  // Rythme de la page lu dans sa propre clé : 20 quanta par seconde.
+  await expect(page.locator('#btnQuickPreview')).toBeEnabled();
+
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(true);
+  // En cours : plan masqué, tête et trait dessinés, ligne d'infos du parcours.
+  await expect.poll(async () => (await snapshot(page)).currentQ, { timeout: 10_000 })
+    .toBeGreaterThan(before.timeline.stopQ[1]);
+  const during = await snapshot(page);
+  expect(during.layer.visible).toBe(false);
+  expect(during.playLayers).toBe(true);
+  expect(during.head).not.toBeNull();
+  expect(during.infos.date).toMatch(/2025/);
+  expect(during.infos.heure).toMatch(/^≈ \d\d:\d\d$/);
+  await expect(page.locator('#spanInfosTemplate')).toContainText('/ 5');
+  await expect(page.locator('#spanInfosTemplate')).toContainText('km');
+
+  // Fin : repos, plan revenu, compteurs au total.
+  await expect.poll(async () => (await snapshot(page)).running, { timeout: 30_000 }).toBe(false);
+  const after = await snapshot(page);
+  expect(after.layer.visible).toBe(true);
+  expect(after.playLayers).toBe(false);
+  expect(after.infos.date).toMatch(/13/);
+  await expect(page.locator('#spanInfosTemplate')).toContainText('5 / 5');
+  expect(errors).toEqual([]);
+});
+
+for (const mode of ['images', 'mediarecorder']) test(`export vidéo (${mode}) : la durée suit la chronologie du parcours`, async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await importFixture(page, request);
+  expect((await request.put('/api/settings', { data: { parcours_animation: { rhythm_mode: 'rate', days_per_second: 20, extra_end_seconds: 0 } } })).ok())
+    .toBeTruthy();
+  expect((await request.post('/api/parcours',
+    { data: { name: 'Week-end', date_start: '2025-07-12', date_end: '2025-07-13' } })).status()).toBe(201);
+  const errors = collectErrors(page);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  const { quanta } = (await snapshot(page)).timeline;
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#recordingConfigTab').click();
+  await page.locator('#selectRecordMode').selectOption(mode);
+  await page.locator('#selectRecordResolution').selectOption('window');
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.record.fps = 12;
+    // Mêmes réglages que prepareSlowRecording (video-export.spec.mjs).
+    app.options.record.mediaRecorder.tailFreezeMs = 250;
+    app.options.record.mediaRecorder.slowdownFactor = 1;
+    app.options.record.mediaRecorder.mimeType = 'video/webm;codecs=vp8';
+  });
+  const existing = new Set(mp4Names());
+  await page.locator('#btnQuickExport').click({ force: true });
+  // Pendant la capture : le géocacheur et le trait sont dessinés.
+  await expect.poll(async () => (await snapshot(page)).playLayers, { timeout: 30_000 }).toBe(true);
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
+  let created = [];
+  await expect.poll(() => (created = mp4Names().filter((name) => !existing.has(name))).length, { timeout: 30_000 })
+    .toBeGreaterThan(0);
+  const videoPath = path.join(RUNTIME, 'video', created[0]);
+  try {
+    const python = process.env.MYGCFLOW_E2E_PYTHON || process.env.PYTHON
+      || (process.platform === 'win32' ? 'python' : 'python3');
+    const expectation = path.join(RUNTIME, 'parcours-video-expectation.json');
+    writeFileSync(expectation, JSON.stringify({ video_codec: 'h264', min_size_bytes: 1_000 }));
+    const probe = spawnSync(python, [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectation, '--json'],
+      { encoding: 'utf8' });
+    expect(probe.status, `${probe.stdout}\n${probe.stderr}`).toBe(0);
+    const { duration_seconds: duration } = JSON.parse(probe.stdout);
+    // Un quantum par 1/20 s, plus la pause automatique de fin (flash).
+    expect(duration).toBeGreaterThan(quanta / 20 - 0.5);
+    expect(duration).toBeLessThan(quanta / 20 + 4);
+  } finally {
+    rmSync(videoPath, { force: true });
+  }
+  expect((await snapshot(page)).running).toBe(false);
   expect(errors).toEqual([]);
 });
 
@@ -118,7 +240,7 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   // Sans ancre, la journée commence à 9 h ; heures croissantes.
   expect(state.days[0].times[0]).toBe('09:00');
   expect(state.days[0].times).toEqual([...state.days[0].times].sort());
-  expect(state.layer).toEqual({ stops: 5, lines: 2, onMap: true });
+  expect(state.layer).toEqual({ stops: 5, lines: 2, onMap: true, visible: true });
   await expect(page.locator('.parcours-list-item.active')).toContainText('Week-end à Annecy');
   await expect(page.locator('#parcoursSummary')).toContainText('5 étapes');
   await expect(page.locator('.parcours-stop').first()).toContainText('Départ du sentier');

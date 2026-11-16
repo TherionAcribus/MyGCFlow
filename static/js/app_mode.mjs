@@ -11,11 +11,13 @@
 // Le serveur l'indique par l'attribut data-mode du <body> ; les jeux de
 // données ne cohabitent jamais dans une même page.
 //
-// Évolution et Mes poses partagent le même moteur d'animation (« cycle de
-// vie ») : points ajoutés une fois, visibilité décidée par le shader selon le
-// jour, plusieurs jours par image, ni caméra, ni trajet, ni DNF. Les branches
-// qui tiennent à ce moteur testent isLifecyclePage() ; celles qui tiennent aux
-// bases CSV restent sur isEvolutionPage().
+// Évolution, Mes poses et Parcours partagent le même moteur d'animation
+// (« cycle de vie ») : points ajoutés une fois, visibilité décidée par le
+// shader selon le jour, plusieurs jours par image, ni caméra ni trajet du
+// mode principal, ni DNF. Sur la page Parcours, un « jour » du moteur est un
+// quantum de temps écran (parcours_timeline.mjs). Les branches qui tiennent
+// à ce moteur testent isLifecyclePage() ; celles qui tiennent aux bases CSV
+// restent sur isEvolutionPage().
 //
 // Module feuille : aucune dépendance, évaluable avant tout autre module
 // (cf. AGENTS.md, ordre d'évaluation des modules).
@@ -48,10 +50,8 @@ export function isParcoursPage(doc = globalThis.document) {
     return appMode(doc) === MODE_PARCOURS;
 }
 
-// Pages animées par le moteur « cycle de vie » (Évolution, Mes poses). Liste
-// explicite : le Parcours n'en fait pas partie (son horloge avance d'étape
-// en étape, pas de jour en jour).
-const LIFECYCLE_MODES = Object.freeze([MODE_EVOLUTION, MODE_POSES]);
+// Pages animées par le moteur « cycle de vie » : tout sauf la page principale.
+const LIFECYCLE_MODES = Object.freeze([MODE_EVOLUTION, MODE_POSES, MODE_PARCOURS]);
 export function isLifecyclePage(doc = globalThis.document) {
     return LIFECYCLE_MODES.includes(appMode(doc));
 }

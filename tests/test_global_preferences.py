@@ -597,6 +597,30 @@ class SettingsApiTests(unittest.TestCase):
         self.assertFalse(payload['recording_configured'])
         self.assertEqual(payload['recording']['fps'], 30)
 
+    def test_parcours_preferences_have_their_own_keys(self):
+        # Page Parcours : rythme, ligne d'infos, lecture et dernier thème
+        # propres — jamais ceux de la page principale.
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['parcours_animation']['rhythm_mode'], 'rate')
+        self.assertEqual(payload['parcours_animation']['days_per_second'], 10.0)
+        self.assertEqual(payload['parcours_playback'], {'pace': 'regular', 'hours': 'approx'})
+        self.assertIn('{heure}', payload['parcours_infos_template'])
+
+        main_before = payload['animation']
+        self.assertEqual(self.client.put('/api/settings', json={
+            'parcours_animation': {'days_per_second': 20, 'camera_follow': True},
+            'parcours_playback': {'hours': 'slots', 'pace': 'teleport'},
+            'parcours_infos_template': '{date} · {km}',
+        }).status_code, 200)
+        after = self.client.get('/api/settings').get_json()
+        self.assertEqual(after['parcours_animation']['days_per_second'], 20.0)
+        self.assertEqual(after['parcours_animation']['rhythm_mode'], 'rate')  # patch partiel
+        self.assertFalse(after['parcours_animation']['camera_follow'])        # jamais la caméra du mode principal
+        self.assertEqual(after['parcours_playback'], {'pace': 'regular', 'hours': 'slots'})
+        self.assertEqual(after['parcours_infos_template'], '{date} · {km}')
+        self.assertEqual(after['animation'], main_before)
+        self.assertIsNone(after['last_profile_uid'])
+
     def test_theme_survives_a_round_trip(self):
         self.assertEqual(self.client.put('/api/settings', json={'theme': 'dark'}).status_code, 200)
 

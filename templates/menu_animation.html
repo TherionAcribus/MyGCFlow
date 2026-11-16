@@ -70,6 +70,9 @@
 
                     <div class="tab-content pt-3">
                     <div class="tab-pane fade show active" id="animationConfigPane" role="tabpanel" aria-labelledby="animationConfigTab" tabindex="0">
+                    <!-- Plage de dates : masquée sur la page Parcours, dont la plage est
+                         celle du parcours ouvert (ui_improvements.css). -->
+                    <div id="animDateRangeBlock">
                     <div class="anim-section-divider mt-0 mb-2">
                         <span class="anim-section-label">{{ _("Plage de dates de l'animation") }}</span>
                     </div>
@@ -128,6 +131,7 @@
                             </div>
                         </div>
                     </div>
+                    </div>
 
                     {% if mode == 'main' %}
                     <!-- Étendre la plage « Données » aux événements des couches
@@ -155,7 +159,7 @@
                             <div class="form-selectgroup" role="radiogroup" aria-labelledby="labelRhythmMode">
                                 <label class="form-selectgroup-item">
                                     <input type="radio" name="rhythmMode" id="rhythmModeRate" value="rate" class="form-selectgroup-input" checked>
-                                    <span class="form-selectgroup-label">{{ _("Par rythme") }}</span>
+                                    <span class="form-selectgroup-label">{% if mode == 'parcours' %}{{ _("Vitesse") }}{% else %}{{ _("Par rythme") }}{% endif %}</span>
                                 </label>
                                 <label class="form-selectgroup-item">
                                     <input type="radio" name="rhythmMode" id="rhythmModeDuration" value="duration" class="form-selectgroup-input">
@@ -169,7 +173,7 @@
                         </div>
                     </div>
                     <div class="row g-2 align-items-start">
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-4 rhythm-rate-field">
                             <div class="mb-3 rhythm-field">
                                 <label for="inputDaysPerSecond" class="form-label">{{ _("Rythme (jours par seconde)") }}<span class="rhythm-computed-hint">{{ _("calculé") }}</span></label>
                                 <input id="inputDaysPerSecond" type="number" class="form-control" min="0.01" max="1000" step="0.01" placeholder="20" aria-describedby="feedbackDaysPerSecond">
@@ -188,10 +192,17 @@
                                 <label for="selectRhythmPreset" class="form-label">{{ _("Préréglage") }}</label>
                                 <select id="selectRhythmPreset" class="form-select">
                                     {# Valeurs : RHYTHM_PRESETS de static/js/ui.js (propres à chaque page) #}
+                                    {% if mode == 'parcours' %}
+                                    {# Quanta de temps écran par seconde (5 / 10 / 20) : vitesse naturelle ×0,5 / ×1 / ×2 #}
+                                    <option value="slow">{{ _("Lent") }} (×0,5)</option>
+                                    <option value="normal" selected>{{ _("Normal") }}</option>
+                                    <option value="fast">{{ _("Rapide") }} (×2)</option>
+                                    {% else %}
                                     {% set presets = {'evolution': (50, 150, 400), 'poses': (20, 40, 100)}.get(mode, (10, 20, 50)) %}
                                     <option value="slow">{{ _("Lent") }} ({{ presets[0] }} {{ _("jours/s") }})</option>
                                     <option value="normal" selected>{{ _("Normal") }} ({{ presets[1] }} {{ _("jours/s") }})</option>
                                     <option value="fast">{{ _("Rapide") }} ({{ presets[2] }} {{ _("jours/s") }})</option>
+                                    {% endif %}
                                     <option value="custom">{{ _("Personnalisé") }}</option>
                                 </select>
                                 <small class="form-hint text-muted">{{ _("Préréglage global, indépendant du thème.") }}</small>

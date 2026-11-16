@@ -37,7 +37,7 @@ def render_app_page(mode: str):
     return render_page(
         'app.html',
         mode=mode,
-        lifecycle=mode in ('evolution', 'poses'),
+        lifecycle=mode in ('evolution', 'poses', 'parcours'),
         # Flashs par événement (onglet Style › Flash de /poses).
         event_flash_kinds=event_flash.event_flash_kinds_for_template() if mode == 'poses' else [],
         event_flash_modes=event_flash.EVENT_FLASH_MODES,

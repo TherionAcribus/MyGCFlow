@@ -40,6 +40,11 @@
 //   styleChanged()             la couche de points vient d'être recréée par
 //                              un changement de style (optionnel ; Mes poses :
 //                              attributs des effets de points)
+//   infosValues(now)           valeurs texte de la ligne d'infos, qui priment
+//                              sur les compteurs et la date du moteur
+//                              (optionnel ; Parcours : date réelle, heure, km)
+//   frameActive(now)           vrai tant que le moteur dessine entre deux jours
+//                              (optionnel ; Parcours : tête et trait continus)
 //   namesPreview(features, round) étiquettes d'aperçu des pseudos des
 //                              visiteurs (optionnel ; Mes poses) ; step() peut
 //                              aussi renvoyer `names` (poses_names_model.mjs)
