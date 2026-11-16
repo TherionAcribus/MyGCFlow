@@ -10,7 +10,11 @@ permissions:
 
 jobs:
   video-tests:
-    runs-on: ubuntu-latest
+    # Épinglé : ubuntu-latest est passé à 26.04 (2026-11), que Playwright 1.52
+    # ne sait pas équiper (« Playwright does not support chromium on
+    # ubuntu26.04-x64 »). Rebasculer sur latest — ou monter Playwright — le jour
+    # où une version supportée couvre 26.04.
+    runs-on: ubuntu-24.04
     # Budget à suivre avec la taille de la suite navigateur. Trop court, le job
     # est tué en pleine étape e2e et finit « cancelled » — pas « failure » :
     # l'interface n'est plus testée sans que rien ne le signale. C'est arrivé
