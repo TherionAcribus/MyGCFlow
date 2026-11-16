@@ -6,6 +6,12 @@ import {
     CONFIDENCE_ANCHORED,
     CONFIDENCE_GEO,
     CONFIDENCE_LOGGED,
+    CONFIDENCE_MANUAL,
+    KIND_BASE,
+    KIND_PLACE,
+    REASON_BASE,
+    REASON_MANUAL,
+    REASON_PINNED,
     LOG_ORDER_NONE,
     LOG_ORDER_REJECTED,
     LOG_ORDER_TRUSTED,
@@ -201,6 +207,93 @@ test('parcours : jours dans l’ordre, numérotation globale, la veille oriente 
     assert.deepEqual(result.days.map(keys), [['A', 'B'], ['X', 'Y', 'Z'], []]);
     assert.deepEqual(result.days[1].stops.map((s) => s.index), [3, 4, 5]);
     assert.equal(result.stopCount, 5);
+});
+
+// --- Ajustements manuels (lot 3) ------------------------------------------------
+
+test('ordre manuel : les étapes classées gardent l’ordre choisi, les autres s’y insèrent', () => {
+    const inputs = {
+        days: [{ date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 3, { logId: 2 }), stop('C', 6, { logId: 3 }), stop('D', 9, { logId: 4 })] }],
+        overrides: [{ key: 'C', rank: 0 }, { key: 'A', rank: 1 }],
+    };
+    const [day] = reconstructParcours(inputs).days;
+    assert.equal(day.manual, true);
+    const order = day.stops.map((s) => s.key);
+    assert.ok(order.indexOf('C') < order.indexOf('A'), order.join(''));
+    assert.equal(day.stops.find((s) => s.key === 'C').reason, REASON_MANUAL);
+    assert.equal(day.stops.find((s) => s.key === 'C').confidence, CONFIDENCE_MANUAL);
+    // Sans rang, l'ordre automatique reste en place.
+    assert.equal(reconstructParcours({ days: inputs.days }).days[0].manual, false);
+});
+
+test('heure épinglée : ancre exacte, raison « épinglée »', () => {
+    const [day] = reconstructParcours({
+        days: [{ date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 3, { logId: 2 })] }],
+        overrides: [{ key: 'B', pinnedTime: '15:00' }],
+    }).days;
+    const b = day.stops.find((s) => s.key === 'B');
+    assert.equal(b.arrivalMin, 15 * 60);
+    assert.equal(b.reason, REASON_PINNED);
+    assert.equal(b.confidence, CONFIDENCE_ANCHORED);
+});
+
+test('journée corrigée et exclusion', () => {
+    const result = reconstructParcours({
+        days: [
+            { date: '2025-07-12', stops: [stop('A', 0), stop('V', 2, { type: 'Virtual Cache' })] },
+            { date: '2025-07-13', stops: [stop('B', 40), stop('X', 41)] },
+        ],
+        overrides: [{ key: 'V', day: '2025-07-13' }, { key: 'X', excluded: true }, { key: 'Z', day: '2025-07-12' }],
+    });
+    const [d1, d2] = result.days;
+    assert.deepEqual(d1.stops.map((s) => s.key), ['A']);
+    assert.deepEqual(d2.stops.map((s) => s.key).sort(), ['B', 'V']);
+    assert.equal(d2.stops.find((s) => s.key === 'V').movedFrom, '2025-07-12');
+    assert.deepEqual(d2.excluded.map((s) => s.key), ['X']);
+    assert.equal(result.stopCount, 3);
+});
+
+test('lieu posé : une étape de plus, à son heure, non comptée', () => {
+    const result = reconstructParcours({
+        days: [{ date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 6, { logId: 2 })] }],
+        places: [
+            { id: 7, kind: KIND_PLACE, name: 'Belvédère', lat: 45, lon: stop('P', 3).lon, date: '2025-07-12', time: null },
+            { id: 8, kind: KIND_PLACE, name: 'Hors plage', lat: 45, lon: 5, date: '2025-08-01', time: null },
+        ],
+    });
+    const [day] = result.days;
+    assert.deepEqual(day.stops.map((s) => s.key), ['A', 'place:7', 'B']);
+    const place = day.stops[1];
+    assert.equal(place.kind, KIND_PLACE);
+    assert.equal(place.index, null);
+    assert.equal(place.visitMin, 30);
+    assert.equal(result.stopCount, 2);
+    assert.deepEqual(day.stops.map((s) => s.index), [1, null, 2]);
+});
+
+test('base : départ et retour de chaque journée, la base datée prime', () => {
+    const result = reconstructParcours({
+        days: [
+            { date: '2025-07-12', stops: [stop('A', 10), stop('B', 20)] },
+            { date: '2025-07-13', stops: [stop('C', 30)] },
+            { date: '2025-07-14', stops: [] },
+        ],
+        places: [
+            { id: 1, kind: KIND_BASE, name: 'Camping', lat: 45, lon: stop('H', 0).lon, date: null },
+            { id: 2, kind: KIND_BASE, name: 'Hôtel', lat: 45, lon: stop('H2', 40).lon, date: '2025-07-13' },
+        ],
+    });
+    const [d1, d2, d3] = result.days;
+    assert.deepEqual(d1.stops.map((s) => s.key),
+        ['place:1:2025-07-12:start', 'A', 'B', 'place:1:2025-07-12:end']);
+    assert.deepEqual(d2.stops.map((s) => s.key), ['place:2:2025-07-13:start', 'C', 'place:2:2025-07-13:end']);
+    assert.deepEqual(d3.stops, []);
+    // Départ de la base à 9 h ; la base ne compte pas, sa visite dure 0.
+    assert.equal(d1.stops[0].arrivalMin, 540);
+    assert.equal(d1.stops[0].visitMin, 0);
+    assert.equal(d1.stops[0].reason, REASON_BASE);
+    assert.equal(d1.stops[1].arrivalMin > 540, true);
+    assert.equal(result.stopCount, 3);
 });
 
 test('déterministe : même entrée, même résultat', () => {

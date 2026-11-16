@@ -221,12 +221,97 @@ class InputsTests(_Base):
         self.assertEqual(self.get("/api/parcours/999/inputs").status_code, 404)
 
 
+class AdjustmentTests(_Base):
+    def patch(self, url, json):
+        return self.client.patch(url, json=json, headers={"Origin": HOST}, base_url=HOST)
+
+    def test_overrides_are_patched_cleared_and_served_with_the_inputs(self):
+        pid = self.create()["id"]
+        response = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC1", "rank": 2, "pinnedTime": "10:15"},
+            {"key": "GC2", "excluded": True, "day": "2025-07-13"},
+        ]})
+        self.assertEqual(response.status_code, 200, response.get_json())
+        self.assertEqual(response.get_json()["overrides"], [
+            {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "day": None, "excluded": False},
+            {"key": "GC2", "rank": None, "pinnedTime": None, "day": "2025-07-13", "excluded": True},
+        ])
+        # Patch partiel ; une étape sans plus d'ajustement perd sa ligne.
+        payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC1", "rank": None},
+            {"key": "GC2", "excluded": False, "day": None},
+        ]}).get_json()
+        self.assertEqual(payload["overrides"], [
+            {"key": "GC1", "rank": None, "pinnedTime": "10:15", "day": None, "excluded": False}])
+        inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
+        self.assertEqual([o["key"] for o in inputs["overrides"]], ["GC1"])
+        self.assertEqual(inputs["places"], [])
+        cleared = self.client.delete(f"/api/parcours/{pid}/overrides", headers={"Origin": HOST}, base_url=HOST)
+        self.assertEqual(cleared.get_json()["overrides"], [])
+
+    def test_invalid_overrides_change_nothing(self):
+        pid = self.create()["id"]
+        self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [{"key": "GC1", "rank": 1}]})
+        cases = [
+            ([{"key": "GC1", "rank": 5}, {"key": "GC2", "pinnedTime": "25:00"}], "time-invalid"),
+            ([{"key": "GC1", "day": "2025-07-20"}], "day-out-of-range"),
+            ([{"key": "", "rank": 1}], "override-invalid"),
+            ([{"key": "GC1", "rank": -1}], "override-invalid"),
+            ([{"key": "GC1", "rank": True}], "override-invalid"),
+            ([{"key": "GC1", "excluded": "oui"}], "override-invalid"),
+            ("pas une liste", "override-invalid"),
+        ]
+        for overrides, code in cases:
+            response = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": overrides})
+            self.assertEqual(response.status_code, 400, overrides)
+            self.assertEqual(response.get_json()["error"], code, overrides)
+        # Tout ou rien : le rang 5 du premier cas n'a pas été écrit.
+        inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
+        self.assertEqual(inputs["overrides"][0]["rank"], 1)
+
+    def test_places_and_bases(self):
+        pid = self.create()["id"]
+        base = self.post(f"/api/parcours/{pid}/places",
+                         {"kind": "base", "name": "Hôtel", "lat": 45.9, "lon": 6.12})
+        self.assertEqual(base.status_code, 201, base.get_json())
+        self.assertEqual(base.get_json()["place"]["date"], None)   # toutes les journées
+        place = self.post(f"/api/parcours/{pid}/places", {
+            "kind": "place", "name": "Belvédère", "lat": 45.85, "lon": 6.2,
+            "date": "2025-07-13", "time": "16:30"}).get_json()["place"]
+        self.assertEqual((place["kind"], place["time"]), ("place", "16:30"))
+        for body, code in [
+            ({"kind": "place", "name": "Sans date", "lat": 45, "lon": 6}, "place-invalid"),
+            ({"kind": "hotel", "lat": 45, "lon": 6}, "place-invalid"),
+            ({"kind": "base", "lat": 95, "lon": 6}, "place-invalid"),
+            ({"kind": "base", "lat": 45, "lon": 6, "date": "2025-08-01"}, "day-out-of-range"),
+        ]:
+            response = self.post(f"/api/parcours/{pid}/places", body)
+            self.assertEqual(response.get_json()["error"], code, body)
+        updated = self.patch(f"/api/parcours/{pid}/places/{place['id']}", {"time": None, "name": "Vue"}).get_json()
+        self.assertEqual((updated["place"]["time"], updated["place"]["name"]), (None, "Vue"))
+        self.assertEqual(len(self.get(f"/api/parcours/{pid}/inputs").get_json()["places"]), 2)
+        self.assertEqual(self.delete(f"/api/parcours/{pid}/places/{place['id']}").status_code, 200)
+        self.assertEqual(self.delete(f"/api/parcours/{pid}/places/{place['id']}").status_code, 404)
+        # Le lieu d'un autre parcours n'est pas atteignable par celui-ci.
+        other = self.create(name="Autre")["id"]
+        self.assertEqual(self.delete(f"/api/parcours/{other}/places/{base.get_json()['place']['id']}").status_code, 404)
+
+    def test_deleting_a_parcours_deletes_its_adjustments(self):
+        pid = self.create()["id"]
+        self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [{"key": "GC1", "rank": 1}]})
+        self.post(f"/api/parcours/{pid}/places", {"kind": "base", "lat": 45, "lon": 6})
+        self.delete(f"/api/parcours/{pid}")
+        from models import ParcoursOverride, ParcoursPlace
+        self.assertEqual(ParcoursOverride.query.count(), 0)
+        self.assertEqual(ParcoursPlace.query.count(), 0)
+
+
 class MigrationTests(_Base):
-    def test_table_exists_at_latest_version(self):
-        self.assertGreaterEqual(migrations.LATEST_VERSION, 10)
+    def test_tables_exist_at_latest_version(self):
+        self.assertGreaterEqual(migrations.LATEST_VERSION, 11)
         with db.engine.connect() as conn:
             tables = {row[0] for row in conn.exec_driver_sql("SELECT name FROM sqlite_master WHERE type='table'")}
-        self.assertIn("parcours", tables)
+        self.assertTrue({"parcours", "parcours_override", "parcours_place"} <= tables)
 
 
 if __name__ == "__main__":

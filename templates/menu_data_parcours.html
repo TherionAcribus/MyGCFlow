@@ -89,7 +89,54 @@
             <div class="card">
                 <div class="card-body">
                     <div id="parcoursSummary" class="fw-medium mb-1" aria-live="polite">{{ _("Chargement…") }}</div>
-                    <div id="parcoursOrderNote" class="form-hint text-muted mb-3"></div>
+                    <div id="parcoursOrderNote" class="form-hint text-muted mb-2"></div>
+
+                    <!-- Ajustements (lot 3) : un clic sur une étape ouvre son
+                         panneau (heure, journée, exclusion) ; les flèches et le
+                         glisser-déposer fixent l'ordre de la journée. -->
+                    <div id="parcoursStopsTools" class="d-flex gap-2 flex-wrap mb-2" hidden>
+                        <button type="button" id="btnParcoursAddPlace" class="btn btn-sm btn-outline-primary">
+                            <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Poser un lieu ou une base sur la carte") }}
+                        </button>
+                        <button type="button" id="btnParcoursResetAdjustments" class="btn btn-sm btn-outline-secondary" hidden>
+                            <i class="ti ti-arrow-back-up me-1" aria-hidden="true"></i>{{ _("Annuler les ajustements") }}
+                        </button>
+                    </div>
+                    <div id="parcoursPlaceHint" class="alert alert-info py-2 px-3 small" role="status" hidden>
+                        {{ _("Cliquez sur la carte à l'endroit du lieu (Échap pour annuler).") }}
+                    </div>
+                    <form id="parcoursPlaceForm" class="card card-body py-2 px-3 mb-3" hidden novalidate>
+                        <div class="row g-2">
+                            <div class="col-5">
+                                <label class="form-label small mb-1" for="parcoursPlaceKind">{{ _("Type") }}</label>
+                                <select id="parcoursPlaceKind" class="form-select form-select-sm">
+                                    <option value="place">{{ _("Lieu (une étape de plus)") }}</option>
+                                    <option value="base">{{ _("Base (départ et retour de la journée)") }}</option>
+                                </select>
+                            </div>
+                            <div class="col-7">
+                                <label class="form-label small mb-1" for="parcoursPlaceName">{{ _("Nom") }}</label>
+                                <input type="text" id="parcoursPlaceName" class="form-control form-control-sm" maxlength="80"
+                                       placeholder="{{ _('Belvédère, hôtel, restaurant…') }}">
+                            </div>
+                            <div class="col-7">
+                                <label class="form-label small mb-1" for="parcoursPlaceDay">{{ _("Journée") }}</label>
+                                <select id="parcoursPlaceDay" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-5" id="parcoursPlaceTimeRow">
+                                <label class="form-label small mb-1" for="parcoursPlaceTime">{{ _("Heure (facultative)") }}</label>
+                                <input type="time" id="parcoursPlaceTime" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="submit" id="btnParcoursPlaceSave" class="btn btn-sm btn-primary">
+                                <i class="ti ti-check me-1" aria-hidden="true"></i>{{ _("Ajouter") }}
+                            </button>
+                            <button type="button" id="btnParcoursPlaceCancel" class="btn btn-sm btn-link">{{ _("Annuler") }}</button>
+                            <span id="parcoursPlaceCoords" class="small text-muted ms-auto"></span>
+                        </div>
+                    </form>
+
                     <div id="parcoursStops" class="parcours-stops"></div>
                 </div>
             </div>

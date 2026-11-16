@@ -357,11 +357,13 @@ Autres repères :
   écraserait celle de la page principale. Ajouter la page à chaque table
   (`animationSettingsKey`, `RHYTHM_PRESETS`, `SETTINGS_KEYS.lastUid` de
   profiles.js…) — oubli constaté le 2026-11-16 pour `animation` (suivi de
-  caméra remis à false) et `last_profile_uid`. Specs Parcours : supprimer
-  les parcours créés (`DELETE /api/parcours/<id>`), vider les logs, et
-  remettre `parcours_animation` (`days_per_second: 10`) et
-  `parcours_playback` en sortie ; relevé `getParcoursSnapshot()`, signal
-  `mygcflowParcoursLoaded`. Les fixtures `.gpx` sont ignorées par
+  caméra remis à false) et `last_profile_uid`. Specs Parcours : passer par
+  `tests/e2e/parcours-helpers.mjs` (`cleanUp` supprime les parcours — et
+  avec eux ajustements et lieux —, vide les logs, remet
+  `parcours_animation` (`days_per_second: 10`) et `parcours_playback`) ;
+  relevé `getParcoursSnapshot()`, signal `mygcflowParcoursLoaded`. Après
+  un ajustement (PATCH puis reconstruction), attendre que
+  `adjustmentRevision` augmente avant de lire l'ordre. Les fixtures `.gpx` sont ignorées par
   `.gitignore` (`*.gpx`) : `git add -f`. Les clés de stockage par page
   passent par `statsPanelsKey(mode)` / `imagesItemsKey(mode)` /
   `perPage(...)`. Un module de page exporte des noms uniques

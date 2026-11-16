@@ -54,7 +54,31 @@ position du géocacheur, heure et distance affichées), moteur de lecture
 dans `parcours_data.js`, tête et trait dessinés pendant la lecture et dans
 la vidéo, ligne d'infos à balises, réglages de lecture (rythme des étapes,
 heures affichées), préférences propres à la page. Export vérifié dans les
-deux pipelines. Prochaine étape : lot 3.
+deux pipelines.
+
+**Lot 3 livré le 2026-11-16** : ajustements manuels dans l'onglet Données
+(flèches et glisser-déposer pour l'ordre d'une journée, heure épinglée,
+journée corrigée, exclusion et réintégration, « Ordre automatique »,
+« Annuler les ajustements »), lieux et bases posés d'un clic sur la carte.
+Tables `parcours_override` et `parcours_place` (migration v11), API
+`/overrides` et `/places`, `applyAdjustments` + `reconstructDay` dans
+parcours_reconstruct.mjs. Prochaine étape : lots 4 à 6 (photos, traces,
+itinéraires), dans l'ordre souhaité.
+
+Écarts et constats du lot 3 :
+- **Ordre manuel = un rang pour chaque étape de la journée**, écrit à
+  chaque déplacement : plus robuste qu'un rang isolé si la reconstruction
+  change ensuite. Les étapes sans rang (nouvelles après un réimport) s'y
+  insèrent au moindre détour. Il prime sur l'heure des ancres.
+- **Pas d'onglet « Étapes » séparé** : le panneau d'ajustement s'ouvre sous
+  l'étape, dans l'onglet Données, à côté de la liste qu'il modifie.
+- **Mode du tronçon suivant** (à pied, vélo, voiture) : reporté au lot 6,
+  où il sert enfin (itinéraires).
+- **Clé d'une base propre à la journée** (`place:<id>:<date>:start`) : une
+  même base sert plusieurs jours, et deux panneaux s'ouvraient à la fois.
+- **Lieux et bases sans point WebGL** : dessinés par la couche de la tête
+  pendant la lecture, par le plan au repos ; jamais comptés parmi les
+  étapes.
 
 Écarts et constats du lot 2 :
 - **La piste « horloge à quanta » est validée** : le Parcours passe par le

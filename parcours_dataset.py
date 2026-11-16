@@ -211,11 +211,13 @@ def build_days(session, start: date, end: date, include_labs=True, include_dnf=T
 
 
 def build_inputs(session, parcours_id: int) -> dict:
-    """{parcours, days: [{date, stops}], counts, logsAvailable} du parcours."""
+    """{parcours, days: [{date, stops}], counts, logsAvailable, overrides,
+    places} du parcours — ajustements manuels compris (lot 3)."""
     parcours = parcours_store.get(session, parcours_id)
     payload = build_days(session, parcours.date_start, parcours.date_end,
                          include_labs=parcours.include_labs, include_dnf=parcours.include_dnf)
-    return {'parcours': parcours_store.to_dict(parcours), **payload}
+    return {'parcours': parcours_store.to_dict(parcours), **payload,
+            **parcours_store.adjustments(session, parcours.id)}
 
 
 def finds_extent(session) -> dict:

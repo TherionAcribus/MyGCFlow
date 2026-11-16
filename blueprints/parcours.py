@@ -3,7 +3,8 @@
 
 Page /parcours (même interface que les autres modes, onglet Données propre)
 et API des parcours enregistrés : liste, création, modification,
-suppression, et entrées de la reconstruction (`parcours_dataset`).
+suppression, entrées de la reconstruction (`parcours_dataset`) et
+ajustements manuels (rang, heure, journée, exclusion, lieux et bases).
 """
 
 from flask import Blueprint, jsonify, request
@@ -26,6 +27,11 @@ def _store_error(exc: store.ParcoursError):
         'date-invalid': (_('Date invalide'), 400),
         'range-reversed': (_('La date de fin précède la date de début'), 400),
         'range-too-long': (_('Un parcours couvre %(max)s jours au plus', max=store.MAX_DAYS), 400),
+        'time-invalid': (_('Heure invalide (HH:MM attendu)'), 400),
+        'day-out-of-range': (_('Cette journée est hors du parcours'), 400),
+        'override-invalid': (_('Ajustement invalide'), 400),
+        'place-invalid': (_('Lieu invalide'), 400),
+        'place-not-found': (_('Lieu introuvable'), 404),
     }
     message, code = messages.get(exc.code, (str(exc), 400))
     return jsonify({'success': False, 'error': exc.code, 'message': message}), code
@@ -89,3 +95,52 @@ def parcours_inputs(parcours_id):
     except store.ParcoursError as exc:
         return _store_error(exc)
     return jsonify(payload)
+
+
+# --- Ajustements manuels (lot 3) ------------------------------------------------
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/overrides', methods=['PATCH'])
+def patch_overrides(parcours_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = store.patch_overrides(db.session, parcours_id, data.get('overrides'))
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True, **payload})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/overrides', methods=['DELETE'])
+def clear_overrides(parcours_id):
+    try:
+        payload = store.clear_overrides(db.session, parcours_id)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True, **payload})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/places', methods=['POST'])
+def create_place(parcours_id):
+    try:
+        place = store.create_place(db.session, parcours_id, request.get_json(silent=True))
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, 'place': place}), 201
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/places/<int:place_id>', methods=['PATCH'])
+def update_place(parcours_id, place_id):
+    try:
+        place = store.update_place(db.session, parcours_id, place_id, request.get_json(silent=True))
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True, 'place': place})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/places/<int:place_id>', methods=['DELETE'])
+def delete_place(parcours_id, place_id):
+    try:
+        store.delete_place(db.session, parcours_id, place_id)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True})

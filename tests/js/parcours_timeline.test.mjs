@@ -107,6 +107,18 @@ test('état affiché : étapes atteintes, heure interpolée, distance, nuit', ()
     assert.equal(atC.estimated, false);
 });
 
+test('base : bref arrêt à l’écran, jamais comptée parmi les étapes', () => {
+    const tl = buildParcoursTimeline(reconstructParcours({
+        days: [{ date: '2025-07-12', stops: [stop('A', 4, { logId: 1 })] }],
+        places: [{ id: 1, kind: 'base', name: 'Hôtel', lat: 45, lon: 5, date: null }],
+    }));
+    assert.deepEqual(tl.stops.map((s) => s.kind), ['base', 'find', 'base']);
+    assert.equal(tl.stops[0].departQ - tl.stops[0].q, D.baseQ);
+    const end = stateAt(tl, tl.quanta);
+    assert.equal(end.stopsReached, 1);
+    assert.equal(end.finds, 1);
+});
+
 test('trait : trajets terminés et trajet en cours', () => {
     const tl = buildParcoursTimeline(sample());
     const leg = tl.legs[0];

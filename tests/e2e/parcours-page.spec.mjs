@@ -1,28 +1,24 @@
 // Page Parcours (/parcours, MyGCFlow_Plan_Parcours.md) : parcours enregistrés,
 // étapes dans l'ordre et aux heures reconstruits (lot 1), lecture et vidéo
-// (lot 2).
-//
-// Fixture my-finds-parcours.gpx (compte 4242) : deux journées autour d'Annecy.
-// 12/07/2025 : GCPAR03 (log 9001), GCPAR01 (9002), GCPAR02 (9003), alignées
-// dans cet ordre — l'ordre des logs est retenu ;
-// 13/07/2025 : GCPAR05 (9010), puis l'earthcache GCPAR04 (9011), type souvent
-// logué après coup — une seule étape à log, ordre géographique depuis la
-// veille : GCPAR04, la plus proche de GCPAR02, d'abord.
-//
-// Les logs du My Finds vivent hors de /clear_database : vidés en entrée et en
-// sortie (AGENTS.md), comme les parcours créés.
+// (lot 2). Fixture et règles de nettoyage : parcours-helpers.mjs.
 import { expect, test } from '@playwright/test';
 import { readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dismissFirstUseModal } from './first-use.mjs';
-import { importGpx } from './gpx-import.mjs';
+import {
+  cleanUp,
+  clearLogs,
+  collectErrors,
+  deleteAllParcours,
+  importFixture,
+  openParcoursPage,
+  snapshot,
+} from './parcours-helpers.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const RUNTIME = process.env.MYGCFLOW_E2E_RUNTIME;
-const FIXTURE = path.join(HERE, 'fixtures', 'my-finds-parcours.gpx');
 
 function mp4Names() {
   try {
@@ -32,69 +28,13 @@ function mp4Names() {
   }
 }
 
-async function clearLogs(request) {
-  const response = await request.post('/api/logs/clear');
-  expect(response.ok()).toBeTruthy();
-}
-
-async function deleteAllParcours(request) {
-  const { parcours } = await (await request.get('/api/parcours')).json();
-  for (const item of parcours) {
-    expect((await request.delete(`/api/parcours/${item.id}`)).ok()).toBeTruthy();
-  }
-}
-
-async function importFixture(page, request) {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.mygcflowReady === true);
-  await dismissFirstUseModal(page);
-  await importGpx(page, FIXTURE);
-  // Fin réelle de l'import : trouvailles ET logs du My Finds en base.
-  await expect.poll(async () => (await (await request.get('/api/parcours')).json()).finds,
-    { timeout: 30_000 }).toEqual({ first: '2025-07-12', last: '2025-07-13' });
-  await expect.poll(async () => (await (await request.get('/api/logs/status')).json()).account?.user_id ?? null,
-    { timeout: 30_000 }).toBe(4242);
-}
-
-async function openParcoursPage(page) {
-  await page.goto('/parcours', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.mygcflowReady === true);
-  await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });
-}
-
-function snapshot(page) {
-  return page.evaluate(() => window.getParcoursSnapshot());
-}
-
-function collectErrors(page) {
-  const errors = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  return errors;
-}
-
 test.beforeEach(async ({ request }) => {
   await deleteAllParcours(request);
   await clearLogs(request);
 });
 
-// Préférences globales de la page : rythme (une vitesse ×2 accélère les
-// tests de lecture) et réglages de lecture, remis en sortie.
-async function resetParcoursSettings(request) {
-  const response = await request.put('/api/settings', {
-    data: {
-      parcours_animation: { rhythm_mode: 'rate', days_per_second: 10 },
-      parcours_playback: { pace: 'regular', hours: 'approx' },
-    },
-  });
-  expect(response.ok()).toBeTruthy();
-}
-
 test.afterEach(async ({ request }) => {
-  await deleteAllParcours(request);
-  await clearLogs(request);
-  await resetParcoursSettings(request);
-  await expect.poll(async () => (await (await request.get('/api/settings')).json()).parcours_animation.days_per_second)
-    .toBe(10);
+  await cleanUp(request);
 });
 
 test('page sans parcours : mode actif, état vide, aucune erreur', async ({ page }) => {

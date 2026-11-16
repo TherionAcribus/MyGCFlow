@@ -232,6 +232,29 @@ def _v10_table_parcours(db):
         )
 
 
+
+def _v11_ajustements_parcours(db):
+    # Parcours, lot 3 : ajustements manuels des étapes et lieux posés.
+    # Idempotent, comme v2.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS parcours_override ("
+            "id INTEGER PRIMARY KEY, "
+            "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+            "stop_key VARCHAR(96) NOT NULL, rank INTEGER, pinned_time VARCHAR(5), "
+            "day DATE, excluded BOOLEAN NOT NULL DEFAULT 0, "
+            "CONSTRAINT uq_parcours_override_key UNIQUE (parcours_id, stop_key))"
+        )
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS parcours_place ("
+            "id INTEGER PRIMARY KEY, "
+            "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+            "kind VARCHAR(8) NOT NULL, name VARCHAR(80), "
+            "latitude FLOAT NOT NULL, longitude FLOAT NOT NULL, "
+            "date DATE, time VARCHAR(5), created_at DATETIME)"
+        )
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -243,6 +266,7 @@ MIGRATIONS = [
     (8, _v8_tables_logs),
     (9, _v9_logs_horizon_dnf),
     (10, _v10_table_parcours),
+    (11, _v11_ajustements_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

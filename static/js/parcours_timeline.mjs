@@ -44,6 +44,7 @@ export const TIMELINE_DEFAULTS = Object.freeze({
     stopQ: 12,            // régulier : durée d'une étape à l'écran
     legMinQ: 4,           // régulier : trajet le plus court
     legMaxQ: 30,          // régulier : trajet le plus long
+    baseQ: 4,             // départ ou retour à la base : un bref arrêt
     legQPerSqrtKm: 6,     // régulier : trajet = 6·√km quanta, borné
     nightQ: 20,           // transition entre deux journées
     propQPerMinute: 0.5,  // proportionnel : 1 quantum pour 2 minutes réelles
@@ -127,9 +128,10 @@ export function buildParcoursTimeline(reconstructed, { pace = PACE_REGULAR, opti
                 q += duration;
                 km += legKm;
             }
-            const dwell = proportional
-                ? quanta((stop.visitMin ?? 0) * o.propQPerMinute, o.propMinStopQ)
-                : o.stopQ;
+            let dwell;
+            if (stop.kind === 'base') dwell = o.baseQ;
+            else if (proportional) dwell = quanta((stop.visitMin ?? 0) * o.propQPerMinute, o.propMinStopQ);
+            else dwell = o.stopQ;
             stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km });
             q += dwell;
         }
@@ -247,16 +249,21 @@ export function stateAt(timeline, qf) {
         estimated = at.confidence !== 'anchored';
         km = reached < 0 ? 0 : at.km;
     }
+    // Lieux et bases posés par l'utilisateur : pas des étapes du parcours.
+    let counted = 0;
     let finds = 0;
     let labs = 0;
     for (let i = 0; i <= reached; i++) {
-        if (stops[i].kind === 'lab') labs++;
-        else if (stops[i].kind === 'find') finds++;
+        const kind = stops[i].kind;
+        if (kind === 'place' || kind === 'base') continue;
+        counted++;
+        if (kind === 'lab') labs++;
+        else if (kind === 'find') finds++;
     }
     const day = timeline.days[dayIndex];
     return {
         reached,
-        stopsReached: reached + 1,
+        stopsReached: counted,
         finds,
         labs,
         dayIndex,

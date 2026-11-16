@@ -4138,3 +4138,33 @@ body[data-mode="parcours"] .rhythm-rate-field {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+
+/* Le texte d'une étape est un bouton (il ouvre son panneau d'ajustement) :
+   sans les règles .btn de Tabler (flex centré, sans retour à la ligne), qui
+   mettaient nom et détail côte à côte. */
+.parcours-stop-text,
+.parcours-stop-text:hover {
+    display: block;
+    white-space: normal;
+    font-weight: inherit;
+    color: inherit;
+    text-decoration: none;
+}
+
+.parcours-stop[draggable="true"] {
+    cursor: grab;
+}
+
+.parcours-stop.is-dragging {
+    opacity: 0.4;
+}
+
+.parcours-stop.is-excluded {
+    opacity: 0.75;
+}
+
+/* Pose d'un lieu : en attente d'un clic sur la carte. */
+.parcours-picking,
+.parcours-picking canvas {
+    cursor: crosshair !important;
+}

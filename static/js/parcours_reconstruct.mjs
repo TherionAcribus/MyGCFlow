@@ -36,6 +36,18 @@ import { groundDistanceKm, orderStops, timeOfDaySeconds } from './travel_trail.m
 export const CONFIDENCE_ANCHORED = 'anchored';
 export const CONFIDENCE_LOGGED = 'logged';
 export const CONFIDENCE_GEO = 'geo';
+// Ordre fixé par l'utilisateur, heure estimée (lot 3).
+export const CONFIDENCE_MANUAL = 'manual';
+
+// Étapes posées par l'utilisateur (lot 3) : un lieu est une étape de plus,
+// une base le départ et le retour de la journée. Ni l'un ni l'autre n'est
+// compté parmi les étapes du parcours (numérotation, {etapes}).
+export const KIND_PLACE = 'place';
+export const KIND_BASE = 'base';
+const UNCOUNTED_KINDS = new Set([KIND_PLACE, KIND_BASE]);
+export function isCountedStop(stop) {
+    return !UNCOUNTED_KINDS.has(stop?.kind);
+}
 
 // Raisons de la place d'une étape (codes, traduits par l'appelant).
 export const REASON_TIME = 'time';            // heure sûre (Lab, épinglée)
@@ -44,6 +56,9 @@ export const REASON_LATE_TYPE = 'late-type';  // type souvent logué après coup
 export const REASON_INTRUDER = 'intruder';    // log manifestement tardif
 export const REASON_GEO = 'geo';              // ordre géographique (logs écartés ou absents)
 export const REASON_INSERTED = 'inserted';    // sans indice : insérée au moindre détour
+export const REASON_PINNED = 'pinned';        // heure épinglée par l'utilisateur
+export const REASON_MANUAL = 'manual';        // ordre fixé par l'utilisateur
+export const REASON_BASE = 'base';            // départ ou retour à la base
 
 // Verdict sur l'ordre des logs d'une journée.
 export const LOG_ORDER_TRUSTED = 'trusted';
@@ -99,6 +114,7 @@ export const RECONSTRUCT_DEFAULTS = Object.freeze({
     }),
     defaultVisitMin: 15,
     dnfVisitMin: 15,
+    placeVisitMin: 30,
 });
 
 // Au-delà, ni recherche d'intrus (cubique) ni 2-opt : journées « power
@@ -136,6 +152,8 @@ export function minutesToTime(minutes) {
 
 export function visitMinutes(stop, opts = RECONSTRUCT_DEFAULTS) {
     if (stop.kind === 'dnf') return opts.dnfVisitMin;
+    if (stop.kind === KIND_BASE) return 0;
+    if (stop.kind === KIND_PLACE) return opts.placeVisitMin;
     const value = opts.visitMin[stop.type];
     return Number.isFinite(value) ? value : opts.defaultVisitMin;
 }
@@ -458,10 +476,28 @@ function scheduleDay(stops, order, anchorMin, opts) {
     return { arrival, visit: visit.map((v, k) => v * scale[k]), legs, compressed };
 }
 
+// Rang manuel (lot 3) : les étapes classées par l'utilisateur gardent son
+// ordre ; les autres s'y insèrent au moindre détour. L'ordre manuel prime
+// sur tout, y compris sur l'heure des ancres (l'horaire s'en accommode).
+function applyManualRanks(stops, order, ranks, reasons, confidence, anchorMin, opts) {
+    const ranked = order.filter((i) => Number.isFinite(ranks[i]))
+        .sort((a, b) => ranks[a] - ranks[b] || a - b);
+    if (ranked.length === 0) return order;
+    for (const i of ranked) {
+        if (Number.isFinite(anchorMin[i])) continue;
+        reasons[i] = REASON_MANUAL;
+        confidence[i] = CONFIDENCE_MANUAL;
+    }
+    const rankedSet = new Set(ranked);
+    return insertCheapestFirst([...ranked], order.filter((i) => !rankedSet.has(i)), makeDistance(stops), opts);
+}
+
 // Reconstruit une journée : `day` = { date, stops } des entrées
-// (parcours_dataset.py) ; `overrides` : Map clé → { pinnedTime? } (lot 3) ;
-// `prevEnd` : [lon, lat] de la dernière étape de la veille, ou null.
-export function reconstructDay(day, { overrides = null, prevEnd = null, options: raw = null } = {}) {
+// (parcours_dataset.py). Options :
+//   overrides : Map clé → { rank?, pinnedTime? } (ajustements, lot 3) ;
+//   prevEnd   : [lon, lat] de la dernière étape de la veille, ou null ;
+//   base      : { key, name, lon, lat } — départ et retour de la journée.
+export function reconstructDay(day, { overrides = null, prevEnd = null, base = null, options: raw = null } = {}) {
     const opts = options(raw);
     const rawStops = Array.isArray(day?.stops) ? day.stops : [];
     const stops = rawStops.filter(isValidStop);
@@ -469,20 +505,53 @@ export function reconstructDay(day, { overrides = null, prevEnd = null, options:
         date: day?.date,
         stops: [],
         legs: [],
+        excluded: Array.isArray(day?.excluded) ? day.excluded : [],
+        manual: false,
         dropped: rawStops.length - stops.length,
         diagnostics: { logOrder: LOG_ORDER_NONE, logRatio: null, lateTypes: 0, intruders: 0, anchors: 0, compressed: false },
     };
     if (stops.length === 0) return result;
 
-    const anchorMin = stops.map((stop) => {
-        const pinned = overrides?.get?.(stop.key)?.pinnedTime;
-        const value = timeToMinutes(pinned) ?? timeToMinutes(stop.localTime);
+    const pinned = stops.map((stop) => timeToMinutes(overrides?.get?.(stop.key)?.pinnedTime));
+    const anchorMin = stops.map((stop, i) => {
+        const value = pinned[i] ?? timeToMinutes(stop.localTime);
         return Number.isFinite(value) ? value : null;
     });
-    const { order, reasons, confidence, diagnostics } = orderDay(stops, anchorMin, prevEnd, opts);
-    const { arrival, visit, legs, compressed } = scheduleDay(stops, order, anchorMin, opts);
+    const ranks = stops.map((stop) => {
+        const rank = overrides?.get?.(stop.key)?.rank;
+        return Number.isFinite(rank) ? rank : null;
+    });
+    const hasBase = !!base && Number.isFinite(base.lon) && Number.isFinite(base.lat);
+    const start = hasBase ? [base.lon, base.lat] : prevEnd;
+    const ordered = orderDay(stops, anchorMin, start, opts);
+    const { reasons, confidence, diagnostics } = ordered;
+    for (let i = 0; i < stops.length; i++) {
+        // Heure épinglée, ou lieu posé à son heure : un choix de l'utilisateur.
+        if (Number.isFinite(pinned[i]) || (stops[i].kind === KIND_PLACE && Number.isFinite(anchorMin[i]))) {
+            reasons[i] = REASON_PINNED;
+        }
+    }
+    let order = applyManualRanks(stops, ordered.order, ranks, reasons, confidence, anchorMin, opts);
+    result.manual = order !== ordered.order;
+
+    // Base : départ et retour de la journée, aux deux bouts du chemin. Clé
+    // propre à la journée : une même base sert plusieurs jours.
+    let all = stops;
+    if (hasBase) {
+        const baseStop = (suffix) => ({
+            key: `${base.key}:${day.date}:${suffix}`, kind: KIND_BASE, type: 'Base', name: base.name || '', code: null,
+            lon: base.lon, lat: base.lat, logId: null, localTime: null, placeId: base.id ?? null,
+        });
+        all = [...stops, baseStop('start'), baseStop('end')];
+        const n = stops.length;
+        order = [n, ...order, n + 1];
+        anchorMin.push(null, null);
+        reasons.push(REASON_BASE, REASON_BASE);
+        confidence.push(CONFIDENCE_MANUAL, CONFIDENCE_MANUAL);
+    }
+    const { arrival, visit, legs, compressed } = scheduleDay(all, order, anchorMin, opts);
     result.stops = order.map((i, k) => ({
-        ...stops[i],
+        ...all[i],
         order: k + 1,
         arrivalMin: arrival[k],
         visitMin: visit[k],
@@ -494,18 +563,59 @@ export function reconstructDay(day, { overrides = null, prevEnd = null, options:
     return result;
 }
 
+// Ajustements du lot 3 appliqués aux entrées, avant la reconstruction :
+// étapes déplacées vers une autre journée (`day`), exclues (`excluded`),
+// lieux posés ajoutés à leur journée. Retourne { days, overrides, bases }.
+export function applyAdjustments(inputs) {
+    const overrides = new Map();
+    for (const o of Array.isArray(inputs?.overrides) ? inputs.overrides : []) {
+        if (o && typeof o.key === 'string') overrides.set(o.key, o);
+    }
+    const rawDays = Array.isArray(inputs?.days) ? inputs.days : [];
+    const days = rawDays.map((day) => ({ date: day?.date, stops: [], excluded: [] }));
+    const byDate = new Map(days.map((day) => [day.date, day]));
+    rawDays.forEach((rawDay, d) => {
+        for (const stop of Array.isArray(rawDay?.stops) ? rawDay.stops : []) {
+            const o = overrides.get(stop.key);
+            const target = (o?.day && byDate.get(o.day)) || days[d];
+            const moved = target !== days[d] ? { ...stop, movedFrom: rawDay.date } : stop;
+            (o?.excluded ? target.excluded : target.stops).push(moved);
+        }
+    });
+    const bases = { all: null, byDate: new Map() };
+    for (const place of Array.isArray(inputs?.places) ? inputs.places : []) {
+        if (!place || !Number.isFinite(place.lat) || !Number.isFinite(place.lon)) continue;
+        const key = `place:${place.id}`;
+        if (place.kind === KIND_BASE) {
+            const base = { key, id: place.id, name: place.name, lon: place.lon, lat: place.lat };
+            if (place.date) bases.byDate.set(place.date, base);
+            else bases.all = base;
+        } else if (place.kind === KIND_PLACE && byDate.has(place.date)) {
+            byDate.get(place.date).stops.push({
+                key, kind: KIND_PLACE, type: 'Place', name: place.name || '', code: null,
+                lon: place.lon, lat: place.lat, logId: null, localTime: place.time || null, placeId: place.id,
+            });
+        }
+    }
+    return { days, overrides, bases };
+}
+
 // Reconstruit tout le parcours, jours dans l'ordre des dates : la dernière
-// étape d'une journée oriente la suivante. Numérotation globale `index`.
-export function reconstructParcours(inputs, { overrides = null, options: raw = null } = {}) {
-    const rawDays = Array.isArray(inputs?.days) ? [...inputs.days] : [];
-    rawDays.sort((a, b) => (String(a?.date) < String(b?.date) ? -1 : String(a?.date) > String(b?.date) ? 1 : 0));
+// étape d'une journée oriente la suivante. Les ajustements du lot 3
+// (`inputs.overrides`, `inputs.places`) sont appliqués. Numérotation globale
+// `index` des étapes comptées (pas des lieux ni des bases).
+export function reconstructParcours(inputs, { options: raw = null } = {}) {
+    const { days: adjusted, overrides, bases } = applyAdjustments(inputs);
+    adjusted.sort((a, b) => (String(a?.date) < String(b?.date) ? -1 : String(a?.date) > String(b?.date) ? 1 : 0));
     const days = [];
     let prevEnd = null;
     let index = 0;
     let dropped = 0;
-    for (const rawDay of rawDays) {
-        const day = reconstructDay(rawDay, { overrides, prevEnd, options: raw });
-        for (const stop of day.stops) stop.index = ++index;
+    for (const rawDay of adjusted) {
+        // Une base ne sert que les journées qui ont des étapes.
+        const base = rawDay.stops.length > 0 ? (bases.byDate.get(rawDay.date) || bases.all) : null;
+        const day = reconstructDay(rawDay, { overrides, prevEnd, base, options: raw });
+        for (const stop of day.stops) stop.index = isCountedStop(stop) ? ++index : null;
         dropped += day.dropped;
         if (day.stops.length > 0) {
             const last = day.stops[day.stops.length - 1];

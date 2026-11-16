@@ -7,8 +7,10 @@ le quatrième mode de l'application, à côté de « Mes Géocaches » (`/`),
 lien `#linkParcoursMode` de l'en-tête.
 
 Plan, choix produit et découpage : `MyGCFlow_Plan_Parcours.md`. État au
-2026-11-16 : **lots 0 à 2** — parcours enregistrés, ordre de passage et
-heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance).
+2026-11-16 : **lots 0 à 3** — parcours enregistrés, ordre de passage et
+heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance),
+ajustements manuels (ordre, heure épinglée, journée, exclusion, lieux et
+bases).
 
 ## Parcours enregistrés
 
@@ -16,10 +18,12 @@ Un parcours est une **sélection** : nom (80 caractères au plus), plage de
 dates (92 jours au plus, `parcours_store.MAX_DAYS`), sources retenues en
 plus des trouvailles (étapes Lab, DNF). Table `parcours` (migration v10).
 
-Principe : on stocke la sélection et, plus tard, les ajustements de
-l'utilisateur, **jamais l'ordre ni les heures reconstruits**. Ils sont
-recalculés à chaque ouverture : un réimport du GPX ne perd rien, une
-amélioration de la reconstruction profite aux anciens parcours.
+Principe : on stocke la sélection et les ajustements de l'utilisateur
+(tables `parcours_override` et `parcours_place`, migration v11), **jamais
+l'ordre ni les heures reconstruits**. Ils sont recalculés à chaque
+ouverture : un réimport du GPX ne perd rien, une amélioration de la
+reconstruction profite aux anciens parcours. Supprimer un parcours supprime
+ses ajustements et ses lieux.
 
 Les parcours vivent hors de `/clear_database` : vider la base des
 trouvailles laisse les parcours, qui se retrouvent simplement vides.
@@ -32,11 +36,16 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours` | `{parcours, finds: {first, last}, maxDays}` — `finds` borne le formulaire de création |
 | `POST /api/parcours` | Création `{name, date_start, date_end?, include_labs?, include_dnf?}` ; `date_end` absente = une journée |
 | `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression |
-| `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous) |
+| `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
+| `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
+| `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |
+| `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?}` ou base `{kind: base, name, lat, lon, date?}` (base sans date : toutes les journées) |
+| `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
 
 Erreurs : `{success: false, error, message}` avec les codes `not-found`,
 `name-empty`, `name-too-long`, `date-invalid`, `range-reversed`,
-`range-too-long`.
+`range-too-long`, `time-invalid` (« HH:MM » attendu), `day-out-of-range`,
+`override-invalid`, `place-invalid`, `place-not-found`.
 
 ## Entrées (`parcours_dataset.py`)
 
@@ -168,6 +177,36 @@ Limites actuelles :
 - trajets en lignes droites (itinéraires : lot 6) ;
 - un DNF apparaît comme une cache de son type.
 
+## Ajustements manuels (lot 3)
+
+Dans l'onglet Données :
+- **les flèches** d'une étape et **le glisser-déposer** dans sa journée
+  fixent l'ordre de la journée : un rang pour chacune de ses étapes ;
+- **un clic sur une étape** ouvre son panneau : heure épinglée (« Épingler »
+  / « Retirer »), journée (logs datés du mauvais jour), « Exclure du
+  parcours » ;
+- **« Poser un lieu ou une base sur la carte »** attend un clic sur la carte
+  (Échap annule), puis un petit formulaire : type, nom, journée, heure
+  facultative.
+
+Ce que la reconstruction en fait (`applyAdjustments`, puis
+`reconstructDay`) :
+
+| Ajustement | Effet |
+|---|---|
+| `rank` | Les étapes classées gardent l'ordre choisi, les autres s'y insèrent au moindre détour ; il prime sur tout, y compris sur l'heure des ancres. Raison `manual`, confiance `manual` (ordre sûr, heure estimée). La journée porte `manual` : badge « ordre manuel » et « Ordre automatique », qui efface les rangs de la journée |
+| `pinnedTime` | Ancre exacte, raison `pinned` |
+| `day` | L'étape passe à une autre journée de la plage (`movedFrom` garde la date d'origine, « déplacée du… ») ; son rang est effacé |
+| `excluded` | L'étape sort du parcours, de la chronologie et des comptes ; listée barrée en fin de journée, « Réintégrer » |
+| lieu (`place`) | Une étape de plus dans sa journée, à son heure si elle en a une (raison `pinned`), sinon au moindre détour ; visite de 30 min ; jamais comptée (`index` null, `{etapes}`, résumé) |
+| base (`base`) | Départ et retour de chaque journée qui a des étapes (clés `place:<id>:<date>:start` / `:end`, visite 0) ; une base datée prime sur une base « toutes les journées » ; elle oriente l'ordre géographique de la journée |
+
+Pendant la lecture, lieux et bases n'ont pas de point WebGL. Ils sont
+dessinés par la couche de la tête : les bases toujours, les lieux une fois
+atteints. Au repos, le plan les montre (carré sombre, étoile violette). Une
+base dure 4 quanta à l'écran. Les ajustements sont refusés pendant une
+lecture (« Arrêtez la lecture… »).
+
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
 Journée par journée, la dernière étape de la veille orientant la suivante.
@@ -261,14 +300,20 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
   `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_model.test.mjs`,
   `tests/js/app_mode.test.mjs`.
-- E2E : `tests/e2e/parcours-page.spec.mjs`, fixture
+- E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2) et
+  `tests/e2e/parcours-adjust.spec.mjs` (lot 3), aides communes dans
+  `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le
   second).
-  - Le spec vide logs et parcours en entrée et en sortie, et remet
-    `parcours_animation` (10 quanta/s) et `parcours_playback`.
+  - Nettoyage (`cleanUp`) : logs, parcours (et donc leurs ajustements et
+    lieux), `parcours_animation` (10 quanta/s) et `parcours_playback`.
   - Lecture complète, et export vidéo dans les deux pipelines (durée
     contrôlée par `video_validator.py`, MP4 supprimé ensuite).
+  - Ajustements : flèches, glisser-déposer (`dragTo`), persistance,
+    heure, journée, exclusion, annulation, base posée d'un clic sur la carte.
   - Relevé : `window.getParcoursSnapshot()` (`timeline`, `running`,
-    `currentQ`, `head`, `infos`, `playLayers`) ; signal
-    `window.mygcflowParcoursLoaded` / événement `mygcflow:parcours-loaded`.
+    `currentQ`, `head`, `infos`, `playLayers`, `overrides`, `places`,
+    `days[].manual` / `excluded`, `adjustmentRevision` — à attendre après
+    un ajustement) ; signal `window.mygcflowParcoursLoaded` / événement
+    `mygcflow:parcours-loaded`.

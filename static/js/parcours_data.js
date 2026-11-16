@@ -50,14 +50,20 @@ import {
 import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
 import {
     CONFIDENCE_ANCHORED,
+    KIND_BASE,
+    KIND_PLACE,
     LOG_ORDER_REJECTED,
     LOG_ORDER_TRUSTED,
+    REASON_BASE,
     REASON_GEO,
     REASON_INSERTED,
     REASON_INTRUDER,
     REASON_LATE_TYPE,
     REASON_LOG_ORDER,
+    REASON_MANUAL,
+    REASON_PINNED,
     REASON_TIME,
+    isCountedStop,
     minutesToTime,
     reconstructParcours,
 } from './parcours_reconstruct.mjs';
@@ -65,7 +71,9 @@ import {
 const LAST_ID_KEY = 'parcours.lastId';
 // Couleurs par nature d'étape : accent de l'app (trouvailles), ambre (Labs),
 // gris (DNF, comme leur couche sur la page principale).
-const KIND_COLORS = Object.freeze({ find: '#0072c6', lab: '#f59f00', dnf: '#868e96' });
+const KIND_COLORS = Object.freeze({
+    find: '#0072c6', lab: '#f59f00', dnf: '#868e96', place: '#ae3ec9', base: '#343a40',
+});
 const LINE_COLOR = 'rgba(0, 114, 198, 0.55)';
 // Plan au repos au-dessus des points WebGL (zIndex 1001) : ses numéros
 // restent lisibles. Masqué pendant la lecture.
@@ -77,6 +85,7 @@ let listing = [];             // parcours enregistrés (GET /api/parcours)
 let findsExtent = { first: null, last: null };
 let maxDays = 92;
 let selectedId = null;
+let inputs = null;            // entrées du parcours ouvert, ajustements compris
 let ordered = null;           // reconstructParcours(inputs) du parcours ouvert
 let counts = null;
 let logsAvailable = false;
@@ -103,6 +112,14 @@ let pendingOpenId = null;     // parcours ouvert pendant une lecture
 let pendingTimeline = false;  // rythme changé pendant une lecture
 let playTrailLayer = null;
 let playHeadLayer = null;
+
+// Ajustements (lot 3).
+let editKey = null;           // étape dont le panneau d'ajustement est ouvert
+let dragged = null;           // { date, key } pendant un glisser-déposer
+let picking = false;          // en attente d'un clic sur la carte (lieu)
+let pickListener = null;
+let placeDraft = null;        // { lon, lat } du lieu en cours de saisie
+let adjustmentRevision = 0;
 
 function normalizeInfosTemplate(value) {
     return typeof value === 'string' ? value : DEFAULT_PARCOURS_TEMPLATE;
@@ -175,6 +192,7 @@ export async function initParcoursPage() {
     if (inp) inp.value = infosTemplate;
     bindForm();
     bindPlayback();
+    bindAdjustments();
     pkg.syncOverlayVisibility?.();
     await refreshParcoursList({ select: readLastId() });
 }
@@ -200,7 +218,9 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         await openParcours(target.id);
     } else {
         selectedId = null;
+        inputs = null;
         ordered = null;
+        editKey = null;
         renderStops();
         applyTimeline();
         status = 'idle';
@@ -220,14 +240,17 @@ export async function openParcours(id) {
     writeLastId(id);
     renderList(id);
     status = 'loading';
+    editKey = null;
+    cancelPlacePicking();
+    closePlaceForm();
     renderStops();
-    let inputs;
     try {
         inputs = await fetchJson(`/api/parcours/${id}/inputs`);
     } catch (error) {
         if (seq !== loadSeq) return;
         console.warn('[PARCOURS] Étapes indisponibles :', error);
         status = 'error';
+        inputs = null;
         ordered = null;
         renderStops(error.message);
         applyTimeline();
@@ -252,7 +275,9 @@ function applyTimeline({ fit = false } = {}) {
     timeline = ordered ? buildParcoursTimeline(ordered, { pace: playback.pace }) : null;
     const stops = timeline?.stops || [];
     projected = stops.map((stop) => ol.proj.fromLonLat([stop.lon, stop.lat]));
-    olFeatures = stops.map((stop, i) => new ol.Feature({
+    // Une feature WebGL par étape comptée : lieux et bases sont dessinés par
+    // le plan et les couches de lecture (`olFeatures` est creux).
+    olFeatures = stops.map((stop, i) => (!isCountedStop(stop) ? null : new ol.Feature({
         geometry: new ol.geom.Point(projected[i]),
         cache_type: stop.kind === 'lab' ? 'Lab Cache' : (stop.type || ''),
         gc_code: stop.code || '',
@@ -261,11 +286,12 @@ function applyTimeline({ fit = false } = {}) {
         archivedDay: EVO_NEVER_DAY,
         stagger: 0,
         stopIndex: i,
-    }));
-    pkg.setExternalDatasetState(buildMeta(), { selected: stops.length, total: stops.length });
+    })));
+    const counted = stops.filter(isCountedStop).length;
+    pkg.setExternalDatasetState(buildMeta(), { selected: counted, total: counted });
     pkg.setPickerDates?.(pkg.metadata);
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
-    pkg.setLifecycleFeatures(olFeatures);
+    pkg.setLifecycleFeatures(olFeatures.filter(Boolean));
     pkg.updateDataAvailabilityUI?.({ dataResolved: true });
     renderLayer({ fit });
 }
@@ -277,16 +303,17 @@ function buildMeta() {
     const lastDay = timeline.quanta - 1;
     const kinds = { find: 0, lab: 0 };
     for (const stop of timeline.stops) if (stop.kind in kinds) kinds[stop.kind]++;
+    const counted = timeline.stops.filter(isCountedStop).length;
     const lastDayNumber = timeline.days[timeline.days.length - 1]?.dayNumber || 1;
     return {
         startDate: pkg.formatDateIso(QUANTUM_ORIGIN),
         endDate: pkg.formatDateIso(dateOfDayIndex(quantumBase, lastDay)),
         deltaDays: timeline.quanta,
-        numberOfCaches: timeline.stops.length,
+        numberOfCaches: counted,
         // Réserve de largeur de la ligne d'infos (frames.js) : plus grandes
         // valeurs à venir.
         tagMaxes: {
-            etapes: timeline.stops.length,
+            etapes: counted,
             caches: kinds.find,
             labs: kinds.lab,
             jour: lastDayNumber,
@@ -347,7 +374,7 @@ function parcoursStep(dates, at) {
     if (!timeline || !dates || dates.length === 0) return null;
     const first = dayIndexOf(quantumBase, dates[0]);
     const last = dayIndexOf(quantumBase, dates[dates.length - 1]);
-    const placed = stopsInRange(timeline, first, last).map((i) => olFeatures[i]);
+    const placed = stopsInRange(timeline, first, last).map((i) => olFeatures[i]).filter(Boolean);
     stepEvolution(clock, last, at, last >= endDay);
     return { placed, archived: [], values: countersAt(last) };
 }
@@ -506,12 +533,18 @@ function drawPlayTrail(event) {
     if (current) draw(current.leg, current.progress);
 }
 
-// Le géocacheur.
+// Le géocacheur, et sous lui les bases (toujours) et les lieux déjà atteints.
 function drawPlayHead(event) {
     if (!clock.running || !timeline) return;
     const head = headAt(timeline, currentQ);
     if (!head) return;
     const context = ol.render.getVectorContext(event);
+    timeline.stops.forEach((stop, i) => {
+        if (stop.kind === KIND_BASE || (stop.kind === KIND_PLACE && stop.q <= currentQ)) {
+            context.setStyle(placeStyle(stop.kind));
+            context.drawGeometry(new ol.geom.Point(projected[i]));
+        }
+    });
     const { color } = trailOptions();
     context.setStyle(new ol.style.Style({
         image: new ol.style.Circle({
@@ -699,10 +732,14 @@ function bindForm() {
 
 // --- Étapes ---------------------------------------------------------------------
 
-const KIND_ICONS = Object.freeze({ find: 'ti-map-pin', lab: 'ti-flask', dnf: 'ti-mood-sad' });
+const KIND_ICONS = Object.freeze({
+    find: 'ti-map-pin', lab: 'ti-flask', dnf: 'ti-mood-sad', [KIND_PLACE]: 'ti-flag', [KIND_BASE]: 'ti-home',
+});
 
 function stopLabel(stop) {
     if (stop.kind === 'lab') return stop.adventure ? `${stop.adventure} — ${stop.name || ''}` : (stop.name || stop.key);
+    if (stop.kind === KIND_BASE) return stop.name || t('Base');
+    if (stop.kind === KIND_PLACE) return stop.name || t('Lieu');
     return stop.name || stop.code || stop.key;
 }
 
@@ -715,6 +752,9 @@ function reasonLabel(reason) {
         case REASON_INTRUDER: return t('log tardif');
         case REASON_GEO: return t('géographie');
         case REASON_INSERTED: return t('au plus court');
+        case REASON_PINNED: return t('heure épinglée');
+        case REASON_MANUAL: return t('ordre manuel');
+        case REASON_BASE: return t('base');
         default: return '';
     }
 }
@@ -723,9 +763,11 @@ function stopDetail(stop) {
     const parts = [];
     if (stop.code) parts.push(stop.code);
     if (stop.kind === 'dnf') parts.push(t('DNF'));
-    else if (stop.type) parts.push(stop.type);
+    else if (stop.kind === KIND_PLACE) parts.push(t('lieu'));
+    else if (stop.kind !== KIND_BASE && stop.type) parts.push(stop.type);
     const reason = reasonLabel(stop.reason);
     if (reason) parts.push(reason);
+    if (stop.movedFrom) parts.push(t('déplacée du ${day}', { day: formatDay(stop.movedFrom, { day: 'numeric', month: 'short' }) }));
     return parts.join(' · ');
 }
 
@@ -742,7 +784,10 @@ function dayDiagnostic(day) {
     const km = day.legs.reduce((total, leg) => total + leg.km, 0);
     const parts = [t('${km} km', { km: km.toLocaleString(pageLocale(), { maximumFractionDigits: 1 }) })];
     const d = day.diagnostics;
-    if (d.logOrder === LOG_ORDER_TRUSTED) parts.push(t('ordre de saisie des logs retenu'));
+    // Ordre manuel : le verdict sur l'ordre des logs ne décrit plus la journée.
+    if (day.manual) {
+        // rien
+    } else if (d.logOrder === LOG_ORDER_TRUSTED) parts.push(t('ordre de saisie des logs retenu'));
     else if (d.logOrder === LOG_ORDER_REJECTED) {
         parts.push(t('logs saisis dans le désordre (trajet ×${ratio}) : ordre géographique',
             { ratio: d.logRatio.toLocaleString(pageLocale(), { maximumFractionDigits: 1 }) }));
@@ -752,10 +797,41 @@ function dayDiagnostic(day) {
     return parts.join(' · ');
 }
 
+function hasAdjustments() {
+    return (inputs?.overrides?.length || 0) > 0;
+}
+
+function overrideOf(key) {
+    return (inputs?.overrides || []).find((o) => o.key === key) || null;
+}
+
+function placeOf(stop) {
+    return Number.isFinite(stop.placeId) ? (inputs?.places || []).find((p) => p.id === stop.placeId) || null : null;
+}
+
+function button(className, iconClass, label, { title = label, text = '' } = {}) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.setAttribute('aria-label', label);
+    btn.title = title;
+    const icon = document.createElement('i');
+    icon.className = `ti ${iconClass}`;
+    icon.setAttribute('aria-hidden', 'true');
+    btn.append(icon);
+    if (text) {
+        icon.classList.add('me-1');
+        btn.append(text);
+    }
+    return btn;
+}
+
 function renderStops(errorMessage = '') {
     const box = el('parcoursStops');
     const summary = el('parcoursSummary');
+    const tools = el('parcoursStopsTools');
     if (!box) return;
+    if (tools) tools.hidden = !ordered;
     if (status === 'loading') {
         if (summary) summary.textContent = t('Chargement…');
         box.replaceChildren();
@@ -775,77 +851,479 @@ function renderStops(errorMessage = '') {
         if (counts?.missing_position) parts.push(t('${n} sans position', { n: counts.missing_position }));
         summary.textContent = parts.join(' · ');
     }
+    const reset = el('btnParcoursResetAdjustments');
+    if (reset) reset.hidden = !hasAdjustments();
     const note = el('parcoursOrderNote');
     if (note) {
         note.textContent = logsAvailable
             ? t('Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, l’heure de vos Labs et la géographie. « ≈ » : heure estimée.')
             : t('Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie : réimportez votre fichier My Finds pour en profiter. « ≈ » : heure estimée.');
     }
-    box.replaceChildren(...ordered.days.map((day) => {
-        const section = document.createElement('section');
-        section.className = 'parcours-day mb-3';
-        section.dataset.date = day.date;
-        const title = document.createElement('h6');
-        title.className = 'parcours-day-title mb-1';
-        title.textContent = formatDay(day.date);
-        section.append(title);
-        if (day.stops.length > 0) {
-            const diagnostic = document.createElement('div');
-            diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
-            diagnostic.textContent = dayDiagnostic(day);
-            section.append(diagnostic);
-        }
-        if (day.stops.length === 0) {
-            const empty = document.createElement('div');
-            empty.className = 'small text-muted';
-            empty.textContent = t('Aucune étape ce jour-là');
-            section.append(empty);
-            return section;
-        }
+    box.replaceChildren(...ordered.days.map(renderDay));
+}
+
+function renderDay(day) {
+    const section = document.createElement('section');
+    section.className = 'parcours-day mb-3';
+    section.dataset.date = day.date;
+    const header = document.createElement('div');
+    header.className = 'd-flex align-items-center gap-2 flex-wrap';
+    const title = document.createElement('h6');
+    title.className = 'parcours-day-title mb-1';
+    title.textContent = formatDay(day.date);
+    header.append(title);
+    if (day.manual) {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-azure-lt parcours-day-manual';
+        badge.textContent = t('ordre manuel');
+        const auto = button('btn btn-link btn-sm p-0 parcours-day-auto', 'ti-arrow-back-up',
+            t('Revenir à l’ordre automatique'), { text: t('Ordre automatique') });
+        auto.addEventListener('click', () => resetDayOrder(day));
+        header.append(badge, auto);
+    }
+    section.append(header);
+    if (day.stops.length > 0) {
+        const diagnostic = document.createElement('div');
+        diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
+        diagnostic.textContent = dayDiagnostic(day);
+        section.append(diagnostic);
+    } else {
+        const empty = document.createElement('div');
+        empty.className = 'small text-muted';
+        empty.textContent = t('Aucune étape ce jour-là');
+        section.append(empty);
+    }
+    if (day.stops.length > 0 || day.excluded.length > 0) {
         const list = document.createElement('ol');
         list.className = 'list-unstyled mb-0 parcours-stop-list';
-        for (const stop of day.stops) {
-            const item = document.createElement('li');
-            item.className = 'parcours-stop d-flex align-items-start gap-2 py-1';
-            item.dataset.stopKey = stop.key;
-            item.dataset.kind = stop.kind;
-            item.dataset.confidence = stop.confidence;
-            item.dataset.reason = stop.reason;
-            const time = document.createElement('span');
-            time.className = 'parcours-stop-time small mt-1';
-            time.classList.toggle('text-muted', stop.confidence !== CONFIDENCE_ANCHORED);
-            time.textContent = stopTime(stop);
-            const badge = document.createElement('span');
-            badge.className = 'parcours-stop-index';
-            badge.style.backgroundColor = KIND_COLORS[stop.kind] || KIND_COLORS.find;
-            badge.textContent = String(stop.index);
-            const icon = document.createElement('i');
-            icon.className = `ti ${KIND_ICONS[stop.kind] || KIND_ICONS.find} text-muted mt-1`;
-            icon.setAttribute('aria-hidden', 'true');
-            const text = document.createElement('div');
-            text.className = 'flex-grow-1 min-w-0';
-            const name = document.createElement('div');
-            name.className = 'text-truncate';
-            name.textContent = stopLabel(stop);
-            const detail = document.createElement('div');
-            detail.className = 'small text-muted';
-            detail.textContent = stopDetail(stop);
-            text.append(name, detail);
-            item.append(time, badge, icon, text);
-            list.append(item);
-        }
+        const movable = day.stops.filter((stop) => stop.kind !== KIND_BASE);
+        for (const stop of day.stops) list.append(...renderStopRow(stop, day, movable));
+        for (const stop of day.excluded) list.append(...renderExcludedRow(stop));
         section.append(list);
-        return section;
-    }));
+    }
+    return section;
+}
+
+function renderStopRow(stop, day, movable) {
+    const item = document.createElement('li');
+    item.className = 'parcours-stop d-flex align-items-start gap-2 py-1';
+    item.dataset.stopKey = stop.key;
+    item.dataset.kind = stop.kind;
+    item.dataset.confidence = stop.confidence;
+    item.dataset.reason = stop.reason;
+    const time = document.createElement('span');
+    time.className = 'parcours-stop-time small mt-1';
+    time.classList.toggle('text-muted', stop.confidence !== CONFIDENCE_ANCHORED);
+    time.textContent = stopTime(stop);
+    const badge = document.createElement('span');
+    badge.className = 'parcours-stop-index';
+    badge.style.backgroundColor = KIND_COLORS[stop.kind] || KIND_COLORS.find;
+    if (Number.isFinite(stop.index)) {
+        badge.textContent = String(stop.index);
+    } else {
+        const icon = document.createElement('i');
+        icon.className = `ti ${KIND_ICONS[stop.kind]}`;
+        icon.setAttribute('aria-hidden', 'true');
+        badge.append(icon);
+    }
+    const icon = document.createElement('i');
+    icon.className = `ti ${KIND_ICONS[stop.kind] || KIND_ICONS.find} text-muted mt-1`;
+    icon.setAttribute('aria-hidden', 'true');
+    // Le texte ouvre le panneau d'ajustement de l'étape.
+    const text = document.createElement('button');
+    text.type = 'button';
+    text.className = 'btn btn-link p-0 text-start flex-grow-1 min-w-0 parcours-stop-text';
+    text.setAttribute('aria-expanded', String(editKey === stop.key));
+    const name = document.createElement('div');
+    name.className = 'text-truncate';
+    name.textContent = stopLabel(stop);
+    const detail = document.createElement('div');
+    detail.className = 'small text-muted';
+    detail.textContent = stopDetail(stop);
+    text.append(name, detail);
+    text.addEventListener('click', () => {
+        editKey = editKey === stop.key ? null : stop.key;
+        renderStops();
+    });
+    item.append(time, badge, icon, text);
+
+    const position = movable.indexOf(stop);
+    if (position >= 0) {
+        const up = button('btn btn-sm btn-ghost-secondary parcours-stop-up', 'ti-arrow-up', t('Monter'));
+        up.disabled = position === 0;
+        up.addEventListener('click', () => moveStop(day, stop.key, -1));
+        const down = button('btn btn-sm btn-ghost-secondary parcours-stop-down', 'ti-arrow-down', t('Descendre'));
+        down.disabled = position === movable.length - 1;
+        down.addEventListener('click', () => moveStop(day, stop.key, 1));
+        item.append(up, down);
+        // Glisser-déposer dans la journée (les boutons font la même chose au
+        // clavier).
+        item.draggable = true;
+        item.addEventListener('dragstart', (event) => {
+            event.dataTransfer.setData('text/plain', stop.key);
+            event.dataTransfer.effectAllowed = 'move';
+            dragged = { date: day.date, key: stop.key };
+            item.classList.add('is-dragging');
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('is-dragging');
+            dragged = null;
+        });
+        item.addEventListener('dragover', (event) => {
+            if (dragged?.date !== day.date || dragged.key === stop.key) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+        });
+        item.addEventListener('drop', (event) => {
+            if (dragged?.date !== day.date) return;
+            event.preventDefault();
+            const keys = movable.map((s) => s.key).filter((key) => key !== dragged.key);
+            const rect = item.getBoundingClientRect();
+            const after = event.clientY > rect.top + rect.height / 2;
+            keys.splice(keys.indexOf(stop.key) + (after ? 1 : 0), 0, dragged.key);
+            dragged = null;
+            reorderDay(keys);
+        });
+    }
+    return editKey === stop.key ? [item, renderEditPanel(stop, day)] : [item];
+}
+
+function renderExcludedRow(stop) {
+    const item = document.createElement('li');
+    item.className = 'parcours-stop is-excluded d-flex align-items-center gap-2 py-1';
+    item.dataset.stopKey = stop.key;
+    const label = document.createElement('div');
+    label.className = 'flex-grow-1 min-w-0 text-muted';
+    const name = document.createElement('div');
+    name.className = 'text-truncate text-decoration-line-through';
+    name.textContent = stopLabel(stop);
+    const detail = document.createElement('div');
+    detail.className = 'small';
+    detail.textContent = t('exclue du parcours');
+    label.append(name, detail);
+    const restore = button('btn btn-sm btn-outline-secondary parcours-stop-restore', 'ti-arrow-back-up',
+        t('Réintégrer'), { text: t('Réintégrer') });
+    restore.addEventListener('click', () => saveOverrides([{ key: stop.key, excluded: false }]));
+    item.append(label, restore);
+    return [item];
+}
+
+// Panneau d'ajustement d'une étape : heure épinglée, journée, exclusion ;
+// pour un lieu ou une base, son heure et sa suppression.
+function renderEditPanel(stop, day) {
+    const panel = document.createElement('li');
+    panel.className = 'parcours-stop-edit card card-body py-2 px-3 mb-2';
+    panel.dataset.editKey = stop.key;
+    const place = placeOf(stop);
+
+    if (stop.kind !== KIND_BASE) {
+        const row = document.createElement('div');
+        row.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+        const label = document.createElement('label');
+        label.className = 'small';
+        label.textContent = t('Heure');
+        const input = document.createElement('input');
+        input.type = 'time';
+        input.className = 'form-control form-control-sm w-auto parcours-edit-time';
+        const pinned = stop.kind === KIND_PLACE ? place?.time : overrideOf(stop.key)?.pinnedTime;
+        input.value = pinned || minutesToTime(stop.arrivalMin);
+        label.htmlFor = input.id = `parcoursEditTime-${stop.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        const pin = button('btn btn-sm btn-outline-primary parcours-edit-pin', 'ti-pin', t('Épingler cette heure'),
+            { text: t('Épingler') });
+        pin.addEventListener('click', () => {
+            if (!input.value) return;
+            if (stop.kind === KIND_PLACE) updatePlace(stop.placeId, { time: input.value });
+            else saveOverrides([{ key: stop.key, pinnedTime: input.value }]);
+        });
+        row.append(label, input, pin);
+        if (pinned) {
+            const unpin = button('btn btn-sm btn-link parcours-edit-unpin', 'ti-x', t('Retirer l’heure épinglée'),
+                { text: t('Retirer') });
+            unpin.addEventListener('click', () => {
+                if (stop.kind === KIND_PLACE) updatePlace(stop.placeId, { time: null });
+                else saveOverrides([{ key: stop.key, pinnedTime: null }]);
+            });
+            row.append(unpin);
+        }
+        panel.append(row);
+    }
+
+    if (isCountedStop(stop) && ordered.days.length > 1) {
+        const row = document.createElement('div');
+        row.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+        const label = document.createElement('label');
+        label.className = 'small';
+        label.textContent = t('Journée');
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm w-auto parcours-edit-day';
+        label.htmlFor = select.id = `parcoursEditDay-${stop.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        for (const option of ordered.days) {
+            const opt = document.createElement('option');
+            opt.value = option.date;
+            opt.textContent = formatDay(option.date, { weekday: 'short', day: 'numeric', month: 'short' });
+            opt.selected = option.date === day.date;
+            select.append(opt);
+        }
+        select.addEventListener('change', () => {
+            // Retour à la journée d'origine : l'ajustement disparaît.
+            const original = stop.movedFrom || day.date;
+            saveOverrides([{ key: stop.key, day: select.value === original ? null : select.value, rank: null }]);
+        });
+        row.append(label, select);
+        panel.append(row);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'd-flex gap-2 flex-wrap';
+    if (isCountedStop(stop)) {
+        const exclude = button('btn btn-sm btn-outline-danger parcours-edit-exclude', 'ti-eye-off',
+            t('Exclure du parcours'), { text: t('Exclure du parcours') });
+        exclude.addEventListener('click', () => {
+            editKey = null;
+            saveOverrides([{ key: stop.key, excluded: true, rank: null }]);
+        });
+        actions.append(exclude);
+    } else if (place) {
+        const remove = button('btn btn-sm btn-outline-danger parcours-edit-delete-place', 'ti-trash',
+            place.kind === KIND_BASE ? t('Supprimer la base') : t('Supprimer le lieu'),
+            { text: place.kind === KIND_BASE ? t('Supprimer la base') : t('Supprimer le lieu') });
+        remove.addEventListener('click', () => {
+            editKey = null;
+            deletePlace(place.id);
+        });
+        actions.append(remove);
+    }
+    panel.append(actions);
+    return panel;
+}
+
+// --- Ajustements : écriture puis reconstruction ---------------------------------
+
+function adjustmentsLocked() {
+    if (!clock.running) return false;
+    showToast(t('Arrêtez la lecture avant d’ajuster le parcours.'), 'info', t('Parcours'));
+    return true;
+}
+
+// Les ajustements renvoyés par le serveur remplacent ceux en mémoire, puis le
+// parcours est reconstruit (pur, donc immédiat) et rejoué tel quel.
+function receiveAdjustments(payload) {
+    if (!inputs) return;
+    if (Array.isArray(payload?.overrides)) inputs.overrides = payload.overrides;
+    if (Array.isArray(payload?.places)) inputs.places = payload.places;
+    ordered = reconstructParcours(inputs);
+    renderStops();
+    applyTimeline();
+    adjustmentRevision++;
+}
+
+async function saveOverrides(patches) {
+    if (!selectedId || adjustmentsLocked()) return;
+    try {
+        receiveAdjustments(await fetchJson(`/api/parcours/${selectedId}/overrides`, {
+            method: 'PATCH',
+            body: JSON.stringify({ overrides: patches }),
+        }));
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// Nouvel ordre d'une journée : un rang pour chacune de ses étapes.
+function reorderDay(keys) {
+    saveOverrides(keys.map((key, rank) => ({ key, rank })));
+}
+
+function moveStop(day, key, delta) {
+    const keys = day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => stop.key);
+    const from = keys.indexOf(key);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= keys.length) return;
+    keys.splice(to, 0, keys.splice(from, 1)[0]);
+    reorderDay(keys);
+}
+
+function resetDayOrder(day) {
+    saveOverrides(day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => ({ key: stop.key, rank: null })));
+}
+
+async function resetAllAdjustments() {
+    if (!selectedId || adjustmentsLocked()) return;
+    try {
+        receiveAdjustments(await fetchJson(`/api/parcours/${selectedId}/overrides`, { method: 'DELETE' }));
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function reloadPlaces() {
+    const fresh = await fetchJson(`/api/parcours/${selectedId}/inputs`);
+    receiveAdjustments({ overrides: fresh.overrides, places: fresh.places });
+}
+
+async function createPlace(data) {
+    if (!selectedId || adjustmentsLocked()) return false;
+    try {
+        await fetchJson(`/api/parcours/${selectedId}/places`, { method: 'POST', body: JSON.stringify(data) });
+        await reloadPlaces();
+        return true;
+    } catch (error) {
+        showToast(error.message, 'error');
+        return false;
+    }
+}
+
+async function updatePlace(id, data) {
+    if (!selectedId || adjustmentsLocked()) return;
+    try {
+        await fetchJson(`/api/parcours/${selectedId}/places/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+        await reloadPlaces();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function deletePlace(id) {
+    if (!selectedId || adjustmentsLocked()) return;
+    try {
+        await fetchJson(`/api/parcours/${selectedId}/places/${id}`, { method: 'DELETE' });
+        await reloadPlaces();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// --- Poser un lieu d'un clic sur la carte ------------------------------------------
+
+function startPlacePicking() {
+    if (!ordered || adjustmentsLocked()) return;
+    const map = pkg.getMap?.();
+    if (!map) return;
+    cancelPlacePicking();
+    picking = true;
+    map.getTargetElement()?.classList.add('parcours-picking');
+    const hint = el('parcoursPlaceHint');
+    if (hint) hint.hidden = false;
+    pickListener = map.once('singleclick', (event) => {
+        pickListener = null;
+        stopPicking();
+        const [lon, lat] = ol.proj.toLonLat(event.coordinate);
+        openPlaceForm({ lon, lat });
+    });
+}
+
+function stopPicking() {
+    picking = false;
+    pkg.getMap?.()?.getTargetElement()?.classList.remove('parcours-picking');
+    const hint = el('parcoursPlaceHint');
+    if (hint) hint.hidden = true;
+}
+
+function cancelPlacePicking() {
+    if (pickListener) {
+        ol.Observable.unByKey(pickListener);
+        pickListener = null;
+    }
+    stopPicking();
+}
+
+function openPlaceForm({ lon, lat }) {
+    const form = el('parcoursPlaceForm');
+    if (!form) return;
+    placeDraft = { lon, lat };
+    const days = el('parcoursPlaceDay');
+    if (days) {
+        days.replaceChildren();
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = t('Toutes les journées');
+        all.dataset.baseOnly = '1';
+        days.append(all);
+        for (const day of ordered?.days || []) {
+            const opt = document.createElement('option');
+            opt.value = day.date;
+            opt.textContent = formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' });
+            days.append(opt);
+        }
+        // Proposition : la première journée qui a des étapes.
+        const first = (ordered?.days || []).find((day) => day.stops.length > 0);
+        days.value = first?.date || '';
+    }
+    const coords = el('parcoursPlaceCoords');
+    if (coords) coords.textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    el('parcoursPlaceName').value = '';
+    el('parcoursPlaceTime').value = '';
+    el('parcoursPlaceKind').value = KIND_PLACE;
+    syncPlaceForm();
+    form.hidden = false;
+    el('parcoursPlaceName')?.focus();
+}
+
+// Une base peut valoir pour toutes les journées et n'a pas d'heure ; un lieu
+// a toujours sa journée.
+function syncPlaceForm() {
+    const base = el('parcoursPlaceKind')?.value === KIND_BASE;
+    const days = el('parcoursPlaceDay');
+    const all = days?.querySelector('option[data-base-only]');
+    if (all) {
+        all.hidden = !base;
+        all.disabled = !base;
+        if (!base && days.value === '') days.value = days.options[1]?.value || '';
+    }
+    const timeRow = el('parcoursPlaceTimeRow');
+    if (timeRow) timeRow.hidden = base;
+}
+
+function closePlaceForm() {
+    placeDraft = null;
+    const form = el('parcoursPlaceForm');
+    if (form) form.hidden = true;
+}
+
+function bindAdjustments() {
+    el('btnParcoursResetAdjustments')?.addEventListener('click', () => {
+        showConfirmation(
+            t('Annuler tous les ajustements de ce parcours (ordre, heures, journées, exclusions) ? Les lieux posés sont gardés.'),
+            t('Annuler les ajustements'),
+            () => resetAllAdjustments(),
+            null,
+            { danger: true, confirmText: t('Tout annuler') },
+        );
+    });
+    el('btnParcoursAddPlace')?.addEventListener('click', () => {
+        if (picking) cancelPlacePicking();
+        else startPlacePicking();
+    });
+    el('parcoursPlaceKind')?.addEventListener('change', syncPlaceForm);
+    el('btnParcoursPlaceCancel')?.addEventListener('click', closePlaceForm);
+    el('parcoursPlaceForm')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!placeDraft) return;
+        const kind = el('parcoursPlaceKind').value;
+        const ok = await createPlace({
+            kind,
+            name: el('parcoursPlaceName').value,
+            lat: placeDraft.lat,
+            lon: placeDraft.lon,
+            date: el('parcoursPlaceDay').value || null,
+            time: kind === KIND_PLACE ? (el('parcoursPlaceTime').value || null) : null,
+        });
+        if (ok) closePlaceForm();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && picking) cancelPlacePicking();
+    });
 }
 
 // --- Carte ----------------------------------------------------------------------
 
 function pointStyle(feature) {
+    const kind = feature.get('kind');
+    if (kind === KIND_BASE || kind === KIND_PLACE) return placeStyle(kind);
     return new ol.style.Style({
         image: new ol.style.Circle({
             radius: 11,
-            fill: new ol.style.Fill({ color: KIND_COLORS[feature.get('kind')] || KIND_COLORS.find }),
+            fill: new ol.style.Fill({ color: KIND_COLORS[kind] || KIND_COLORS.find }),
             stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
         }),
         text: new ol.style.Text({
@@ -854,6 +1332,26 @@ function pointStyle(feature) {
             fill: new ol.style.Fill({ color: '#ffffff' }),
         }),
     });
+}
+
+// Base : carré sombre ; lieu : étoile violette. Communs au plan et à la
+// lecture.
+const placeStyles = new Map();
+function placeStyle(kind) {
+    if (!placeStyles.has(kind)) {
+        const base = kind === KIND_BASE;
+        placeStyles.set(kind, new ol.style.Style({
+            image: new ol.style.RegularShape({
+                points: base ? 4 : 5,
+                radius: base ? 10 : 11,
+                radius2: base ? undefined : 5,
+                angle: base ? Math.PI / 4 : 0,
+                fill: new ol.style.Fill({ color: KIND_COLORS[kind] }),
+                stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
+            }),
+        }));
+    }
+    return placeStyles.get(kind);
 }
 
 const lineStyle = new ol.style.Style({
@@ -893,8 +1391,12 @@ function renderLayer({ fit = false } = {}) {
         }
     }
     // Points ensuite, du dernier au premier : le n° 1 est dessiné au-dessus
-    // quand deux étapes se recouvrent.
+    // quand deux étapes se recouvrent. Une base n'est dessinée qu'une fois.
+    const seen = new Set();
     for (const stop of [...parcoursStops(ordered)].reverse()) {
+        const id = stop.kind === KIND_BASE ? `base:${stop.placeId}` : stop.key;
+        if (seen.has(id)) continue;
+        seen.add(id);
         features.push(new ol.Feature({
             role: 'stop',
             key: stop.key,
@@ -932,7 +1434,14 @@ export function getParcoursSnapshot() {
             times: day.stops.map((stop) => minutesToTime(stop.arrivalMin)),
             reasons: day.stops.map((stop) => stop.reason),
             logOrder: day.diagnostics.logOrder,
+            manual: day.manual,
+            excluded: day.excluded.map((stop) => stop.key),
         })),
+        overrides: (inputs?.overrides || []).map((o) => ({ ...o })),
+        places: (inputs?.places || []).map((p) => ({ ...p })),
+        adjustmentRevision,
+        editKey,
+        picking,
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,
             lines: source.getFeatures().filter((f) => f.get('role') === 'line').length,

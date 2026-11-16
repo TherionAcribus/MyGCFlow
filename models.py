@@ -260,3 +260,41 @@ class Parcours(db.Model):
     include_dnf = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
+
+
+class ParcoursOverride(db.Model):
+    """Ajustement manuel d'une étape d'un parcours (lot 3) : rang forcé dans
+    sa journée, heure épinglée, journée corrigée, exclusion. Une ligne sans
+    aucun ajustement est supprimée."""
+    __tablename__ = 'parcours_override'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)
+    # Clé d'étape (parcours_dataset.py) : code GC, `lab:<uuid>`, `dnf:<log_id>`.
+    stop_key = db.Column(db.String(96), nullable=False)
+    rank = db.Column(db.Integer)
+    pinned_time = db.Column(db.String(5))      # « HH:MM », heure locale
+    day = db.Column(db.Date)                   # journée corrigée
+    excluded = db.Column(db.Boolean, nullable=False, default=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('parcours_id', 'stop_key', name='uq_parcours_override_key'),
+    )
+
+
+class ParcoursPlace(db.Model):
+    """Lieu posé par l'utilisateur sur un parcours (lot 3) : `place` (point de
+    vue, restaurant… : une étape de plus) ou `base` (hôtel, domicile : départ
+    et retour de la journée)."""
+    __tablename__ = 'parcours_place'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)
+    kind = db.Column(db.String(8), nullable=False)
+    name = db.Column(db.String(80))
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    # Journée concernée ; une base sans date vaut pour toutes les journées.
+    date = db.Column(db.Date)
+    time = db.Column(db.String(5))             # « HH:MM » : heure sûre du lieu
+    created_at = db.Column(db.DateTime)
