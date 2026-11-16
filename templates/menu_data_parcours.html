@@ -1,0 +1,71 @@
+<!-- Onglet Données de la page Parcours (/parcours) : parcours enregistrés
+     (liste, création, suppression) et étapes du parcours ouvert, jour par
+     jour. Piloté par static/js/parcours_data.js (MyGCFlow_Plan_Parcours.md). -->
+<div id="data" class="col-12 tab-pane fade show active">
+    {% include '_mode_switch.html' %}
+
+    <div class="row g-3">
+        <!-- Parcours enregistrés + création -->
+        <div class="col-12 col-lg-5">
+            <h5 class="gc-section-title">
+                <i class="ti ti-route text-muted me-1"></i>{{ _("Mes parcours") }}
+            </h5>
+            <div class="card mb-3">
+                <div id="parcoursList" class="list-group list-group-flush parcours-list" aria-live="polite">
+                    <div class="text-muted small p-3">{{ _("Chargement…") }}</div>
+                </div>
+            </div>
+
+            <h5 class="gc-section-title">
+                <i class="ti ti-plus text-muted me-1"></i>{{ _("Nouveau parcours") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <form id="parcoursCreateForm" novalidate>
+                        <div class="mb-2">
+                            <label class="form-label" for="parcoursName">{{ _("Nom") }}</label>
+                            <input type="text" id="parcoursName" class="form-control form-control-sm" maxlength="80" required
+                                   placeholder="{{ _('Vacances en Croatie, GeoTour du Jura…') }}">
+                        </div>
+                        <div class="row g-2 mb-1">
+                            <div class="col-6">
+                                <label class="form-label" for="parcoursStart">{{ _("Du") }}</label>
+                                <input type="date" id="parcoursStart" class="form-control form-control-sm" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="parcoursEnd">{{ _("Au") }}</label>
+                                <input type="date" id="parcoursEnd" class="form-control form-control-sm" required>
+                            </div>
+                        </div>
+                        <div id="parcoursRangeHint" class="form-hint text-muted mb-2" aria-live="polite"></div>
+                        <label class="form-check mb-1">
+                            <input type="checkbox" id="parcoursIncludeLabs" class="form-check-input" checked>
+                            <span class="form-check-label">{{ _("Inclure mes étapes Adventure Lab") }}</span>
+                        </label>
+                        <label class="form-check mb-2">
+                            <input type="checkbox" id="parcoursIncludeDnf" class="form-check-input" checked>
+                            <span class="form-check-label">{{ _("Inclure mes DNF (je me suis tout de même déplacé)") }}</span>
+                        </label>
+                        <button type="submit" id="btnParcoursCreate" class="btn btn-sm btn-primary">
+                            <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Créer le parcours") }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étapes du parcours ouvert -->
+        <div class="col-12 col-lg-7">
+            <h5 class="gc-section-title">
+                <i class="ti ti-map-pin text-muted me-1"></i>{{ _("Étapes") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <div id="parcoursSummary" class="fw-medium mb-1" aria-live="polite">{{ _("Chargement…") }}</div>
+                    <div id="parcoursOrderNote" class="form-hint text-muted mb-3"></div>
+                    <div id="parcoursStops" class="parcours-stops"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

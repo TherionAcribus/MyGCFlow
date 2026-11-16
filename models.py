@@ -242,3 +242,21 @@ class CacheRef(db.Model):
         db.UniqueConstraint('collection_id', 'gc_code', name='uq_cache_ref_gc_code'),
         db.Index('ix_cache_ref_owner', 'collection_id', 'owner_id'),
     )
+
+
+class Parcours(db.Model):
+    """Un parcours : une journée ou des vacances rejouées cache par cache
+    (MyGCFlow_Plan_Parcours.md). On stocke la sélection et, plus tard, les
+    ajustements de l'utilisateur — jamais l'ordre ni les heures reconstruits,
+    recalculés à chaque ouverture."""
+    __tablename__ = 'parcours'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    date_start = db.Column(db.Date, nullable=False)
+    date_end = db.Column(db.Date, nullable=False)
+    # Sources retenues en plus des trouvailles.
+    include_labs = db.Column(db.Boolean, nullable=False, default=True)
+    include_dnf = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)

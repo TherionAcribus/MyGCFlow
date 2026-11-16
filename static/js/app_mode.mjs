@@ -1,11 +1,13 @@
 // Mode de la page courante.
 //
-// L'application sert trois pages construites sur la même interface :
+// L'application sert quatre pages construites sur la même interface :
 // - le mode principal (« / », trouvailles importées depuis un GPX) ;
 // - le mode Évolution (« /evolution », apparition et disparition des caches
 //   d'une zone importées depuis des CSV) ;
 // - « Mes poses » (« /poses », vie des caches posées par le joueur, tirée de
-//   ses logs importés).
+//   ses logs importés) ;
+// - « Parcours » (« /parcours », une journée ou des vacances rejouées cache
+//   par cache, ordre et heures reconstruits — MyGCFlow_Plan_Parcours.md).
 // Le serveur l'indique par l'attribut data-mode du <body> ; les jeux de
 // données ne cohabitent jamais dans une même page.
 //
@@ -21,7 +23,8 @@
 export const MODE_MAIN = 'main';
 export const MODE_EVOLUTION = 'evolution';
 export const MODE_POSES = 'poses';
-export const APP_MODES = Object.freeze([MODE_MAIN, MODE_EVOLUTION, MODE_POSES]);
+export const MODE_PARCOURS = 'parcours';
+export const APP_MODES = Object.freeze([MODE_MAIN, MODE_EVOLUTION, MODE_POSES, MODE_PARCOURS]);
 
 // Valeur inconnue ou absente : mode principal (comportement historique).
 export function appMode(doc = globalThis.document) {
@@ -41,9 +44,16 @@ export function isPosesPage(doc = globalThis.document) {
     return appMode(doc) === MODE_POSES;
 }
 
-// Pages animées par le moteur « cycle de vie » (Évolution, Mes poses).
+export function isParcoursPage(doc = globalThis.document) {
+    return appMode(doc) === MODE_PARCOURS;
+}
+
+// Pages animées par le moteur « cycle de vie » (Évolution, Mes poses). Liste
+// explicite : le Parcours n'en fait pas partie (son horloge avance d'étape
+// en étape, pas de jour en jour).
+const LIFECYCLE_MODES = Object.freeze([MODE_EVOLUTION, MODE_POSES]);
 export function isLifecyclePage(doc = globalThis.document) {
-    return appMode(doc) !== MODE_MAIN;
+    return LIFECYCLE_MODES.includes(appMode(doc));
 }
 
 // Mode désigné par un argument d'appel : un nom de mode, ou l'ancien booléen

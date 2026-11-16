@@ -84,6 +84,8 @@ class ImagesSettings:
     evolution_items: list = field(default_factory=list)
     # Liste propre à la page Mes poses (/poses), même règle.
     poses_items: list = field(default_factory=list)
+    # Liste propre à la page Parcours (/parcours), même règle.
+    parcours_items: list = field(default_factory=list)
     # Configurations nommées {name, items}, applicables sur toutes les pages.
     configs: list = field(default_factory=list)
 
@@ -274,13 +276,13 @@ def _coerce_config_list(source) -> list:
 def coerce_images_settings(raw, current: ImagesSettings | None = None) -> ImagesSettings:
     """Bloc `images` normalisé. Patch de premier niveau, comme `stats` : une
     clé absente (`enabled`, `items`, `evolution_items`, `poses_items`,
-    `configs`) garde la
-    valeur courante."""
+    `parcours_items`, `configs`) garde la valeur courante."""
     base = current if isinstance(current, ImagesSettings) else ImagesSettings()
     if not isinstance(raw, dict):
         return ImagesSettings(enabled=base.enabled, items=list(base.items),
                               evolution_items=list(base.evolution_items),
                               poses_items=list(base.poses_items),
+                              parcours_items=list(base.parcours_items),
                               configs=list(base.configs))
     return ImagesSettings(
         enabled=_bool(raw.get("enabled"), base.enabled),
@@ -289,5 +291,7 @@ def coerce_images_settings(raw, current: ImagesSettings | None = None) -> Images
             raw["evolution_items"] if "evolution_items" in raw else base.evolution_items),
         poses_items=_coerce_item_list(
             raw["poses_items"] if "poses_items" in raw else base.poses_items),
+        parcours_items=_coerce_item_list(
+            raw["parcours_items"] if "parcours_items" in raw else base.parcours_items),
         configs=_coerce_config_list(raw["configs"] if "configs" in raw else base.configs),
     )

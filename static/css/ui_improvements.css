@@ -4083,3 +4083,48 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     height: 1.75rem;
     padding: 0.15rem;
 }
+
+/* ===== Page Parcours (/parcours, parcours_data.js) ======================== */
+
+/* Lot 0 : pas encore d'animation — ni lecture, ni export, ni chronologie
+   (MyGCFlow_Plan_Parcours.md). Les boutons restent dans la page : ui.js les
+   attend. */
+body[data-mode="parcours"] #quickActions,
+body[data-mode="parcours"] #btnTimelineBar,
+body[data-mode="parcours"] #timelineBar {
+    display: none !important;
+}
+
+.parcours-list {
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.parcours-list-item.active {
+    background: var(--tblr-primary-lt, rgba(0, 114, 198, 0.08));
+    color: inherit;
+    border-color: var(--tblr-border-color, rgba(0, 0, 0, 0.1));
+}
+
+.parcours-list-item .parcours-open {
+    color: inherit;
+    text-decoration: none;
+}
+
+.parcours-day-title {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.parcours-stop-index {
+    flex: 0 0 auto;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding: 0 0.3rem;
+    border-radius: 0.8rem;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.6rem;
+    text-align: center;
+}

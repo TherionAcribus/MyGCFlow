@@ -27,8 +27,9 @@ def render_app_page(mode: str):
     """Page principale de l'application, dans le mode demandé.
 
     `mode` vaut 'main' (trouvailles importées depuis un GPX), 'evolution'
-    (caches d'une zone importées depuis des CSV, cf. blueprints/evolution.py)
-    ou 'poses' (vie des caches posées par le joueur, tirée de ses logs). Les
+    (caches d'une zone importées depuis des CSV, cf. blueprints/evolution.py),
+    'poses' (vie des caches posées par le joueur, tirée de ses logs) ou
+    'parcours' (une sortie rejouée cache par cache, blueprints/parcours.py). Les
     pages partagent la même interface ; `lifecycle` signale celles animées par
     le moteur « cycle de vie » (Évolution, Mes poses : ni caméra, ni trajet,
     ligne d'infos à balises).

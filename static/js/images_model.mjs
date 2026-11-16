@@ -55,15 +55,17 @@ export const IMAGES_MAX_CONFIGS = 12;
 
 export const IMAGES_DEFAULTS = Object.freeze({
     enabled: true, items: Object.freeze([]), evolution_items: Object.freeze([]),
-    poses_items: Object.freeze([]), configs: Object.freeze([]),
+    poses_items: Object.freeze([]), parcours_items: Object.freeze([]), configs: Object.freeze([]),
 });
 
 // Liste d'images propre à chaque page : `items` pour « Mes Geocaches »,
-// `evolution_items` pour /evolution, `poses_items` pour /poses (miroir de
-// statsPanelsKey). Une clé absente normalise à [] — jamais une copie d'une
-// autre liste, sinon retirer une image d'un côté la retirerait aussi de la
-// vue normalisée de l'autre. `mode` = nom de mode ou ancien booléen.
-const IMAGES_ITEMS_KEYS = Object.freeze({ main: 'items', evolution: 'evolution_items', poses: 'poses_items' });
+// `evolution_items` pour /evolution, `poses_items` pour /poses,
+// `parcours_items` pour /parcours (miroir de statsPanelsKey). Une clé absente
+// normalise à [] — jamais une copie d'une autre liste, sinon retirer une
+// image d'un côté la retirerait aussi de la vue normalisée de l'autre. `mode` = nom de mode ou ancien booléen.
+const IMAGES_ITEMS_KEYS = Object.freeze({
+    main: 'items', evolution: 'evolution_items', poses: 'poses_items', parcours: 'parcours_items',
+});
 export function imagesItemsKey(mode) {
     return IMAGES_ITEMS_KEYS[modeOf(mode)];
 }
@@ -256,6 +258,7 @@ export function normalizeImagesSettings(raw, current = IMAGES_DEFAULTS, newId = 
             items: Array.isArray(base.items) ? [...base.items] : [],
             evolution_items: Array.isArray(base.evolution_items) ? [...base.evolution_items] : [],
             poses_items: Array.isArray(base.poses_items) ? [...base.poses_items] : [],
+            parcours_items: Array.isArray(base.parcours_items) ? [...base.parcours_items] : [],
             configs: Array.isArray(base.configs) ? [...base.configs] : [],
         };
     }
@@ -266,6 +269,8 @@ export function normalizeImagesSettings(raw, current = IMAGES_DEFAULTS, newId = 
             Object.hasOwn(raw, 'evolution_items') ? raw.evolution_items : base.evolution_items, newId),
         poses_items: normalizeItemList(
             Object.hasOwn(raw, 'poses_items') ? raw.poses_items : base.poses_items, newId),
+        parcours_items: normalizeItemList(
+            Object.hasOwn(raw, 'parcours_items') ? raw.parcours_items : base.parcours_items, newId),
         configs: normalizeConfigList(Object.hasOwn(raw, 'configs') ? raw.configs : base.configs, newId),
     };
 }

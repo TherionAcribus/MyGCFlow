@@ -86,7 +86,7 @@ function isRecordingBlocked() {
 // `{images: …}` remplace le premier entier), deux commits avant le drain
 // perdraient sinon les clés du premier. En cas d'échec d'écriture, les clés
 // restent et repartent au prochain commit.
-const IMAGES_BLOCK_KEYS = ['enabled', 'items', 'evolution_items', 'poses_items', 'configs'];
+const IMAGES_BLOCK_KEYS = ['enabled', 'items', 'evolution_items', 'poses_items', 'parcours_items', 'configs'];
 const pendingImageKeys = {};
 
 // null quand l'écriture est refusée (enregistrement en cours) — rien n'est
@@ -466,6 +466,7 @@ function libraryUsage(file, usedHere, usedOther) {
     if (page === 'main') return { where: 'other', icon: 'ti-database', label: pkg.t('Utilisée dans « Mes Géocaches »') };
     if (page === 'evolution') return { where: 'other', icon: 'ti-stack', label: pkg.t('Utilisée dans « Évolution »') };
     if (page === 'poses') return { where: 'other', icon: 'ti-map-pin', label: pkg.t('Utilisée dans « Mes poses »') };
+    if (page === 'parcours') return { where: 'other', icon: 'ti-route', label: pkg.t('Utilisée dans « Parcours »') };
     return null;
 }
 

@@ -38,7 +38,7 @@
         <link rel="stylesheet" href="../static/vendor/ol/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
-        <title>{% if mode == 'evolution' %}MyGCFlow – {{ _("Évolution") }}{% elif mode == 'poses' %}MyGCFlow – {{ _("Mes poses") }}{% else %}MyGCFlow{% endif %}</title>
+        <title>{% if mode == 'evolution' %}MyGCFlow – {{ _("Évolution") }}{% elif mode == 'poses' %}MyGCFlow – {{ _("Mes poses") }}{% elif mode == 'parcours' %}MyGCFlow – {{ _("Parcours") }}{% else %}MyGCFlow{% endif %}</title>
         {% include '_branding_head.html' %}
     </head>
 
@@ -229,9 +229,13 @@
                 <ul class="nav nav-tabs" id="mainTabs" role="tablist">
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#data" role="tab" aria-selected="true">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
+                    {# Parcours, lot 0 : pas encore d'animation (MyGCFlow_Plan_Parcours.md) —
+                       les volets restent dans la page (ui.js les attend), sans onglet. #}
+                    {% if mode != 'parcours' %}
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Animation & vidéo") }}</span><span class="tab-label-short">{{ _("Animation") }}</span></a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#stats" role="tab" aria-selected="false">{{ _("Stats") }}</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#images" role="tab" aria-selected="false">{{ _("Images") }}</a></li>
+                    {% endif %}
                     {% if mode in ('main', 'evolution') %}
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#zones" role="tab" aria-selected="false">{{ _("Zones") }}</a></li>
                     {% endif %}
@@ -310,6 +314,8 @@
                         {% include 'menu_data_evolution.html' %}
                         {% elif mode == 'poses' %}
                         {% include 'menu_data_poses.html' %}
+                        {% elif mode == 'parcours' %}
+                        {% include 'menu_data_parcours.html' %}
                         {% else %}
                         {% include 'menu_data.html' %}
                         {% endif %}

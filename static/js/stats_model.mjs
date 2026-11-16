@@ -214,15 +214,18 @@ export const STATS_CONFIG_NAME_MAX = 40;
 // le `mode` du JSON exporté par exportPanels) ; 'finds' par défaut — les
 // configurations antérieures viennent de la page principale.
 export const STATS_CONFIG_MODES = Object.freeze(['finds', 'evolution', 'poses']);
-// Mode de configuration d'une page (app_mode → STATS_CONFIG_MODES).
+// Mode de configuration d'une page (app_mode → STATS_CONFIG_MODES). Un
+// parcours est une sélection de trouvailles : ses configurations sont celles
+// du mode principal.
 export function statsConfigModeFor(mode) {
     const m = modeOf(mode);
-    return m === 'main' ? 'finds' : m;
+    return m === 'main' || m === 'parcours' ? 'finds' : m;
 }
 
 export const STATS_DEFAULTS = Object.freeze({
     enabled: true, panels: Object.freeze([]),
-    evolution_panels: Object.freeze([]), poses_panels: Object.freeze([]), configs: Object.freeze([]),
+    evolution_panels: Object.freeze([]), poses_panels: Object.freeze([]),
+    parcours_panels: Object.freeze([]), configs: Object.freeze([]),
 });
 
 // Champs de style qu'un préréglage fixe (boutons « Apparence » du formulaire,
@@ -476,9 +479,11 @@ export const statsCoercers = Object.freeze({
 
 // Liste de panneaux propre à chaque page : `stats.panels` pour le mode
 // principal (trouvailles), `stats.evolution_panels` pour /evolution,
-// `stats.poses_panels` pour /poses. `mode` = nom de mode (app_mode.mjs) ou
-// l'ancien booléen « page Évolution ? ».
-const STATS_PANELS_KEYS = Object.freeze({ main: 'panels', evolution: 'evolution_panels', poses: 'poses_panels' });
+// `stats.poses_panels` pour /poses, `stats.parcours_panels` pour /parcours.
+// `mode` = nom de mode (app_mode.mjs) ou l'ancien booléen « page Évolution ? ».
+const STATS_PANELS_KEYS = Object.freeze({
+    main: 'panels', evolution: 'evolution_panels', poses: 'poses_panels', parcours: 'parcours_panels',
+});
 export function statsPanelsKey(mode) {
     return STATS_PANELS_KEYS[modeOf(mode)];
 }
@@ -595,6 +600,7 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
             panels: Array.isArray(base.panels) ? [...base.panels] : [],
             evolution_panels: Array.isArray(base.evolution_panels) ? [...base.evolution_panels] : [],
             poses_panels: Array.isArray(base.poses_panels) ? [...base.poses_panels] : [],
+            parcours_panels: Array.isArray(base.parcours_panels) ? [...base.parcours_panels] : [],
             configs: Array.isArray(base.configs) ? [...base.configs] : [],
         };
     }
@@ -604,6 +610,8 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
         Object.hasOwn(raw, 'evolution_panels') ? raw.evolution_panels : base.evolution_panels, newId);
     const posesPanels = normalizePanelList(
         Object.hasOwn(raw, 'poses_panels') ? raw.poses_panels : base.poses_panels, newId);
+    const parcoursPanels = normalizePanelList(
+        Object.hasOwn(raw, 'parcours_panels') ? raw.parcours_panels : base.parcours_panels, newId);
     // Premier nom gagnant : un doublon serait impossible à distinguer.
     const configSource = Object.hasOwn(raw, 'configs') ? raw.configs : base.configs;
     const configs = [];
@@ -615,7 +623,10 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
         configs.push(config);
         if (configs.length >= STATS_MAX_CONFIGS) break;
     }
-    return { enabled, panels, evolution_panels: evolutionPanels, poses_panels: posesPanels, configs };
+    return {
+        enabled, panels, evolution_panels: evolutionPanels, poses_panels: posesPanels,
+        parcours_panels: parcoursPanels, configs,
+    };
 }
 
 // Nouveau panneau prêt à l'emploi (bouton « Ajouter », modèles) : défauts de

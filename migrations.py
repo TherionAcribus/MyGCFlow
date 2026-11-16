@@ -216,6 +216,22 @@ def _v9_logs_horizon_dnf(db):
             "AND source_format = 'mygcflow-logs')")
 
 
+
+def _v10_table_parcours(db):
+    # Parcours (MyGCFlow_Plan_Parcours.md, lot 0) : la sélection seule. Les
+    # tables des ajustements, photos, traces et itinéraires viendront avec
+    # leurs lots. Idempotent, comme v2.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS parcours ("
+            "id INTEGER PRIMARY KEY, name VARCHAR(80) NOT NULL, "
+            "date_start DATE NOT NULL, date_end DATE NOT NULL, "
+            "include_labs BOOLEAN NOT NULL DEFAULT 1, "
+            "include_dnf BOOLEAN NOT NULL DEFAULT 1, "
+            "created_at DATETIME, updated_at DATETIME)"
+        )
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -226,6 +242,7 @@ MIGRATIONS = [
     (7, _v7_region_factice),
     (8, _v8_tables_logs),
     (9, _v9_logs_horizon_dnf),
+    (10, _v10_table_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

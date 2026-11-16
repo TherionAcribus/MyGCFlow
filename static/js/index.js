@@ -33,6 +33,8 @@ export * from './evolution_data.js';
 // Après evolution_data.js ; noms d'export uniques (posesXxx) : `export *`
 // écarte en silence un nom exporté par deux modules.
 export * from './poses_data.js';
+// Page Parcours ; noms d'export uniques (parcoursXxx), initialisée par init.js.
+export * from './parcours_data.js';
 // Onglet Style › Pseudos (Mes poses) ; s'initialise au jalon mygcflow:ready.
 export * from './poses_names_ui.js';
 export * from './infos_editor.js';

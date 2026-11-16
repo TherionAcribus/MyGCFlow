@@ -1,6 +1,6 @@
 {# En-tête d'application partagé par toutes les pages (app.html pour les
-   trois pages carte, stats_page.html pour la page Statistiques).
-   Variables : `mode` (main / evolution / poses / stats) pour le lien actif,
+   quatre pages carte, stats_page.html pour la page Statistiques).
+   Variables : `mode` (main / evolution / poses / parcours / stats) pour le lien actif,
    `can_quit` pour le bouton « Quitter ». Styles : section « En-tête
    d'application » de ui_improvements.css. #}
 <header id="appHeader">
@@ -24,6 +24,11 @@
                aria-label="{{ _('Mes poses') }}"
                {% if mode == 'poses' %}aria-current="page"{% endif %}>
                 <i class="ti ti-map-pin" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes poses") }}</span>
+            </a>
+            <a href="/parcours" id="linkParcoursMode" class="app-mode-link {{ 'active' if mode == 'parcours' }}"
+               aria-label="{{ _('Parcours') }}"
+               {% if mode == 'parcours' %}aria-current="page"{% endif %}>
+                <i class="ti ti-route" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Parcours") }}</span>
             </a>
             <!-- Page sans carte : tableaux de bord de graphiques
                  (MyGCFlow_Plan_Statistiques.md). -->

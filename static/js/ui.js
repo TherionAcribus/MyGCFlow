@@ -35,7 +35,7 @@ import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mj
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { bindQuitButtons } from './app_quit.js';
-import { appMode, isLifecyclePage, isMainPage, perPage } from './app_mode.mjs';
+import { appMode, isLifecyclePage, isMainPage, isParcoursPage, perPage } from './app_mode.mjs';
 import { lifecycleEngine } from './lifecycle_engine.mjs';
 import { normalizeEventFlashes, normalizeOwnerFlashes } from './event_flash.mjs';
 import { ownerPointOptions } from './owner_model.mjs';
@@ -3855,6 +3855,11 @@ function animationSettingsPayload() {
 // frappe. Pas d'indicateur « Enregistré » par champ : ces réglages n'en ont
 // jamais eu (la confirmation visuelle porte sur l'onglet Enregistrement).
 export function saveAnimationSettings() {
+    // Page Parcours : pas encore de rythme propre (lot 2 du plan). Sans
+    // cette garde, la clé `animation` de la page principale était réécrite
+    // au chargement — suivi de caméra remis à false, la page n'étant pas
+    // isMainPage().
+    if (isParcoursPage()) return;
     try {
         saveAnimationSettingsDebounced({ [animationSettingsKey()]: animationSettingsPayload() });
     } catch(e) {

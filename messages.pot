@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-16 12:37+0100\n"
+"POT-Creation-Date: 2026-11-16 13:58+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -328,9 +328,10 @@ msgstr ""
 
 #: event_flash.py:64 poses_dataset.py:638 static/js/chart_labels.mjs:245
 #: static/js/gc_logs.js:59 static/js/gc_logs.js:81 static/js/mapgl.js:1260
-#: static/js/stats_panels.js:1406 static/js/stats_panels.js:1839
-#: templates/menu_informations.html:66 templates/menu_informations.html:105
-#: templates/menu_names.html:64 templates/menu_names.html:327
+#: static/js/parcours_data.js:318 static/js/stats_panels.js:1406
+#: static/js/stats_panels.js:1839 templates/menu_informations.html:66
+#: templates/menu_informations.html:105 templates/menu_names.html:64
+#: templates/menu_names.html:327
 msgid "DNF"
 msgstr ""
 
@@ -623,16 +624,17 @@ msgstr ""
 msgid "Code GC"
 msgstr ""
 
-#: poses_dataset.py:635 templates/menu_images.html:152
-#: templates/stats_page.html:658 templates/stats_page.html:732
+#: poses_dataset.py:635 templates/menu_data_parcours.html:26
+#: templates/menu_images.html:152 templates/stats_page.html:658
+#: templates/stats_page.html:732
 msgid "Nom"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/ui.js:11702
+#: poses_dataset.py:635 static/js/ui.js:11711
 msgid "Type"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/ui.js:11701
+#: poses_dataset.py:635 static/js/ui.js:11710
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
 #: templates/stats_page.html:350
 msgid "Taille"
@@ -785,11 +787,11 @@ msgstr ""
 msgid "Une tâche '%(type)s' est déjà en cours"
 msgstr ""
 
-#: blueprints/core.py:195 blueprints/core.py:233 test_translations.py:27
+#: blueprints/core.py:196 blueprints/core.py:234 test_translations.py:27
 msgid "Base de données"
 msgstr ""
 
-#: blueprints/core.py:197 static/js/evolution_data.js:443
+#: blueprints/core.py:198 static/js/evolution_data.js:443
 #: static/js/poses_data.js:286 static/js/stats_page_exports.js:242
 #: templates/guide.html:181 templates/guide.html:189 templates/guide.html:739
 #: templates/menu_data.html:481 templates/menu_data_evolution.html:108
@@ -799,7 +801,7 @@ msgstr ""
 msgid "Filtres"
 msgstr ""
 
-#: blueprints/core.py:199 test_translations.py:29
+#: blueprints/core.py:200 test_translations.py:29
 msgid "Paramètres"
 msgstr ""
 
@@ -821,52 +823,52 @@ msgstr ""
 msgid "Style"
 msgstr ""
 
-#: templates/app.html:232 test_translations.py:32
+#: templates/app.html:235 test_translations.py:32
 msgid "Animation"
 msgstr ""
 
-#: blueprints/core.py:196
+#: blueprints/core.py:197
 msgid "Choisir fichier"
 msgstr ""
 
-#: blueprints/core.py:198 templates/guide.html:211 templates/menu_style.html:77
+#: blueprints/core.py:199 templates/guide.html:211 templates/menu_style.html:77
 #: templates/menu_style.html:95
 msgid "Cartes"
 msgstr ""
 
-#: blueprints/core.py:200
+#: blueprints/core.py:201
 msgid "Cancel"
 msgstr ""
 
-#: blueprints/core.py:201 templates/menu_points.html:6
+#: blueprints/core.py:202 templates/menu_points.html:6
 msgid "Graphisme des points"
 msgstr ""
 
-#: blueprints/core.py:202 templates/menu_points.html:49
+#: blueprints/core.py:203 templates/menu_points.html:49
 msgid "Centre du point"
 msgstr ""
 
-#: blueprints/core.py:222
+#: blueprints/core.py:223
 msgid ""
 "La langue a été changée. La page va se recharger pour appliquer les "
 "modifications."
 msgstr ""
 
-#: blueprints/core.py:224
+#: blueprints/core.py:225
 msgid "Changement de langue"
 msgstr ""
 
-#: blueprints/core.py:226
+#: blueprints/core.py:227
 msgid ""
 "La langue a été changée. L'application va redémarrer pour appliquer les "
 "modifications."
 msgstr ""
 
-#: blueprints/core.py:228 static/js/notifications.js:447
+#: blueprints/core.py:229 static/js/notifications.js:447
 msgid "Confirmer"
 msgstr ""
 
-#: blueprints/core.py:230 static/js/notifications.js:448
+#: blueprints/core.py:231 static/js/notifications.js:448
 #: static/js/stats_page_card_actions.js:45
 #: static/js/stats_page_dashboard.js:721 static/js/stats_page_links.js:219
 #: static/js/stats_page_links.js:267 static/js/stats_page_video.js:75
@@ -1389,7 +1391,7 @@ msgstr ""
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr ""
 
-#: blueprints/media.py:296 static/js/ui.js:12215
+#: blueprints/media.py:296 static/js/ui.js:12224
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr ""
 
@@ -1432,6 +1434,32 @@ msgstr ""
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr ""
 
+#: blueprints/parcours.py:22
+msgid "Parcours introuvable"
+msgstr ""
+
+#: blueprints/parcours.py:23
+msgid "Le nom du parcours est obligatoire"
+msgstr ""
+
+#: blueprints/parcours.py:24
+#, python-format
+msgid "Le nom du parcours est trop long (%(max)s caractères au plus)"
+msgstr ""
+
+#: blueprints/parcours.py:26
+msgid "Date invalide"
+msgstr ""
+
+#: blueprints/parcours.py:27 static/js/parcours_data.js:264
+msgid "La date de fin précède la date de début"
+msgstr ""
+
+#: blueprints/parcours.py:28
+#, python-format
+msgid "Un parcours couvre %(max)s jours au plus"
+msgstr ""
+
 #: blueprints/profiles.py:466
 msgid ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
@@ -1456,7 +1484,7 @@ msgstr ""
 
 #: static/js/app_quit.js:17 static/js/app_quit.js:20 static/js/app_quit.js:46
 #: static/js/app_quit.js:53 static/js/app_quit.js:61
-#: templates/_app_header.html:57
+#: templates/_app_header.html:62
 msgid "Quitter"
 msgstr ""
 
@@ -1490,10 +1518,10 @@ msgstr ""
 
 #: static/js/background_audio.js:121 static/js/mapgl.js:5719
 #: static/js/stats_page_video.js:991 static/js/ui.js:950 static/js/ui.js:1019
-#: static/js/ui.js:2375 static/js/ui.js:11773 static/js/ui.js:11853
-#: static/js/ui.js:12059 static/js/ui.js:12174 static/js/ui.js:12231
-#: static/js/ui.js:12257 static/js/ui.js:12316 static/js/ui.js:12324
-#: static/js/ui.js:12332 static/js/ui.js:12502 templates/guide.html:314
+#: static/js/ui.js:2375 static/js/ui.js:11782 static/js/ui.js:11862
+#: static/js/ui.js:12068 static/js/ui.js:12183 static/js/ui.js:12240
+#: static/js/ui.js:12266 static/js/ui.js:12325 static/js/ui.js:12333
+#: static/js/ui.js:12341 static/js/ui.js:12511 templates/guide.html:314
 #: templates/menu_animation.html:23 templates/menu_animation.html:294
 #: templates/stats_page.html:829
 msgid "Musique"
@@ -3233,7 +3261,7 @@ msgid "Jusqu'à fin ${period}"
 msgstr ""
 
 #: static/js/chart_labels.mjs:485 static/js/chart_labels.mjs:547
-#: static/js/chart_labels.mjs:597 static/js/images_ui.js:1770
+#: static/js/chart_labels.mjs:597 static/js/images_ui.js:1771
 #, python-brace-format
 msgid "Jusqu'au ${date}"
 msgstr ""
@@ -4412,12 +4440,12 @@ msgstr ""
 
 #: static/js/images_ui.js:97 static/js/images_ui.js:340
 #: static/js/images_ui.js:425 static/js/images_ui.js:454
-#: static/js/images_ui.js:802 static/js/images_ui.js:806
-#: static/js/images_ui.js:929 static/js/images_ui.js:937
-#: static/js/images_ui.js:998 static/js/images_ui.js:1002
-#: static/js/images_ui.js:1034 static/js/images_ui.js:1036
-#: static/js/images_ui.js:1193 static/js/images_ui.js:1970
-#: static/js/images_ui.js:1975 templates/app.html:234 templates/guide.html:59
+#: static/js/images_ui.js:803 static/js/images_ui.js:807
+#: static/js/images_ui.js:930 static/js/images_ui.js:938
+#: static/js/images_ui.js:999 static/js/images_ui.js:1003
+#: static/js/images_ui.js:1035 static/js/images_ui.js:1037
+#: static/js/images_ui.js:1194 static/js/images_ui.js:1971
+#: static/js/images_ui.js:1976 templates/app.html:237 templates/guide.html:59
 #: templates/guide.html:126 templates/guide.html:430 templates/guide.html:432
 #: templates/menu_images.html:32
 msgid "Images"
@@ -4432,7 +4460,7 @@ msgstr ""
 msgid "L'image n'a pas pu être envoyée."
 msgstr ""
 
-#: static/js/images_ui.js:425 static/js/images_ui.js:937
+#: static/js/images_ui.js:425 static/js/images_ui.js:938
 #: templates/menu_images.html:125
 msgid "Quatre images au maximum."
 msgstr ""
@@ -4467,262 +4495,267 @@ msgstr ""
 msgid "Utilisée dans « Mes poses »"
 msgstr ""
 
-#: static/js/images_ui.js:668
-#, python-brace-format
-msgid "Ajouter ${name} (${w} × ${h})"
+#: static/js/images_ui.js:580
+msgid "Utilisée dans « Parcours »"
 msgstr ""
 
 #: static/js/images_ui.js:669
 #, python-brace-format
+msgid "Ajouter ${name} (${w} × ${h})"
+msgstr ""
+
+#: static/js/images_ui.js:670
+#, python-brace-format
 msgid "Ajouter cette image (${w} × ${h})"
 msgstr ""
 
-#: static/js/images_ui.js:702
+#: static/js/images_ui.js:703
 #, python-brace-format
 msgid "Sélectionner ${name}"
 msgstr ""
 
-#: static/js/images_ui.js:711 static/js/images_ui.js:712
-#: static/js/images_ui.js:1105
+#: static/js/images_ui.js:712 static/js/images_ui.js:713
+#: static/js/images_ui.js:1106
 msgid "Retirer de la bibliothèque"
 msgstr ""
 
-#: static/js/images_ui.js:725
+#: static/js/images_ui.js:726
 #, python-brace-format
 msgid "${n} image(s) · ${size}"
 msgstr ""
 
-#: static/js/images_ui.js:754
+#: static/js/images_ui.js:755
 #, python-brace-format
 msgid "${n} sélectionnée(s) · ${size}"
 msgstr ""
 
-#: static/js/images_ui.js:801
+#: static/js/images_ui.js:802
 #, python-brace-format
 msgid "${n} image(s) retirée(s) de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:805
+#: static/js/images_ui.js:806
 #, python-brace-format
 msgid "${n} image(s) n'ont pas pu être retirées."
 msgstr ""
 
-#: static/js/images_ui.js:929
+#: static/js/images_ui.js:930
 msgid "Import impossible : fichier d'images invalide"
 msgstr ""
 
-#: static/js/images_ui.js:997
+#: static/js/images_ui.js:998
 #, python-brace-format
 msgid "${n} image(s) non importée(s) : quatre au maximum."
 msgstr ""
 
-#: static/js/images_ui.js:1001
+#: static/js/images_ui.js:1002
 #, python-brace-format
 msgid "${n} configuration(s) non importée(s) : douze au maximum."
 msgstr ""
 
-#: static/js/images_ui.js:1006
+#: static/js/images_ui.js:1007
 #, python-brace-format
 msgid "${count} image(s) et ${n} configuration(s) importée(s)"
 msgstr ""
 
-#: static/js/images_ui.js:1007
+#: static/js/images_ui.js:1008
 #, python-brace-format
 msgid "${n} configuration(s) importée(s)"
 msgstr ""
 
-#: static/js/images_ui.js:1008
+#: static/js/images_ui.js:1009
 #, python-brace-format
 msgid "${count} image(s) importée(s)"
 msgstr ""
 
-#: static/js/images_ui.js:1034
+#: static/js/images_ui.js:1035
 msgid "Image retirée de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:1036
+#: static/js/images_ui.js:1037
 msgid "L'image n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/images_ui.js:1103
+#: static/js/images_ui.js:1104
 #, python-brace-format
 msgid "« ${name} » sera supprimée définitivement de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:1104
+#: static/js/images_ui.js:1105
 msgid "Cette image sera supprimée définitivement de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:1106 static/js/images_ui.js:1152
-#: static/js/images_ui.js:1355 static/js/images_ui.js:2452
-#: static/js/profiles.js:976 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_page_card_actions.js:123
+#: static/js/images_ui.js:1107 static/js/images_ui.js:1153
+#: static/js/images_ui.js:1356 static/js/images_ui.js:2453
+#: static/js/parcours_data.js:225 static/js/profiles.js:976
+#: static/js/recent_videos.js:60 static/js/recent_videos.js:121
+#: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
 #: static/js/stats_page_cards.js:497 static/js/stats_page_dashboard.js:614
 #: static/js/stats_page_dashboard.js:623 static/js/stats_page_themes.js:342
-#: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6452
+#: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6461
 #: templates/menu_filtre.html:87 templates/menu_style.html:294
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/images_ui.js:1192
+#: static/js/images_ui.js:1193
 msgid "Douze configurations au maximum : supprimez-en une, ou réutilisez un nom."
 msgstr ""
 
-#: static/js/images_ui.js:1200 static/js/stats_ui.js:1878
+#: static/js/images_ui.js:1201 static/js/stats_ui.js:1878
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr ""
 
-#: static/js/images_ui.js:1219 static/js/stats_ui.js:1892
+#: static/js/images_ui.js:1220 static/js/stats_ui.js:1892
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr ""
 
-#: static/js/images_ui.js:1240 static/js/images_ui.js:1432
+#: static/js/images_ui.js:1241 static/js/images_ui.js:1433
 #: static/js/stats_ui.js:1911
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr ""
 
-#: static/js/images_ui.js:1314
+#: static/js/images_ui.js:1315
 msgid "Afficher cette image"
 msgstr ""
 
-#: static/js/images_ui.js:1338
+#: static/js/images_ui.js:1339
 msgid "(manquante)"
 msgstr ""
 
-#: static/js/images_ui.js:1344
+#: static/js/images_ui.js:1345
 msgid "Apparition planifiée"
 msgstr ""
 
-#: static/js/images_ui.js:1352 static/js/stats_page_video.js:342
+#: static/js/images_ui.js:1353 static/js/stats_page_video.js:342
 #: static/js/stats_ui.js:577
 msgid "Monter"
 msgstr ""
 
-#: static/js/images_ui.js:1353 static/js/stats_page_video.js:342
+#: static/js/images_ui.js:1354 static/js/stats_page_video.js:342
 #: static/js/stats_ui.js:578
 msgid "Descendre"
 msgstr ""
 
-#: static/js/images_ui.js:1354 static/js/profiles.js:967
+#: static/js/images_ui.js:1355 static/js/profiles.js:967
 #: static/js/profiles.js:2817 static/js/stats_page_cards.js:403
 #: static/js/stats_page_cards.js:486 static/js/stats_ui.js:579
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/images_ui.js:1758
+#: static/js/images_ui.js:1759
 msgid "Toujours visible"
-msgstr ""
-
-#: static/js/images_ui.js:1761
-#, python-brace-format
-msgid "Trouvailles n°${from} à n°${to}"
 msgstr ""
 
 #: static/js/images_ui.js:1762
 #, python-brace-format
-msgid "Dès la trouvaille n°${n}"
+msgid "Trouvailles n°${from} à n°${to}"
 msgstr ""
 
 #: static/js/images_ui.js:1763
 #, python-brace-format
+msgid "Dès la trouvaille n°${n}"
+msgstr ""
+
+#: static/js/images_ui.js:1764
+#, python-brace-format
 msgid "Jusqu'à la trouvaille n°${n}"
 msgstr ""
 
-#: static/js/images_ui.js:1767
+#: static/js/images_ui.js:1768
 #, python-brace-format
 msgid "Du ${from} au ${to}"
 msgstr ""
 
-#: static/js/images_ui.js:1769
+#: static/js/images_ui.js:1770
 #, python-brace-format
 msgid "À partir du ${date}"
 msgstr ""
 
-#: static/js/images_ui.js:1783
+#: static/js/images_ui.js:1784
 msgid "Position libre"
 msgstr ""
 
-#: static/js/images_ui.js:1797
+#: static/js/images_ui.js:1798
 msgid "fond"
 msgstr ""
 
-#: static/js/images_ui.js:1798
+#: static/js/images_ui.js:1799
 msgid "bordure"
 msgstr ""
 
-#: static/js/images_ui.js:1799
+#: static/js/images_ui.js:1800
 msgid "ombre"
-msgstr ""
-
-#: static/js/images_ui.js:1897
-#, python-brace-format
-msgid "Le ${date}"
 msgstr ""
 
 #: static/js/images_ui.js:1898
 #, python-brace-format
+msgid "Le ${date}"
+msgstr ""
+
+#: static/js/images_ui.js:1899
+#, python-brace-format
 msgid "Jamais atteinte : ${total} trouvaille(s) au total"
 msgstr ""
 
-#: static/js/images_ui.js:1931
+#: static/js/images_ui.js:1932
 #, python-brace-format
 msgid ""
 "La trouvaille n°${n} n'est jamais atteinte (${total} au total) : l'image "
 "ne sera pas visible."
 msgstr ""
 
-#: static/js/images_ui.js:1934
+#: static/js/images_ui.js:1935
 msgid ""
 "La disparition tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr ""
 
-#: static/js/images_ui.js:1936
+#: static/js/images_ui.js:1937
 msgid ""
 "« Disparaît le » tombe le jour de l'apparition : l'image ne sera jamais "
 "visible."
 msgstr ""
 
-#: static/js/images_ui.js:1939
+#: static/js/images_ui.js:1940
 #, python-brace-format
 msgid ""
 "L'image n'apparaît qu'après la fin de l'animation (${date}) : elle ne "
 "sera pas visible dans la vidéo."
 msgstr ""
 
-#: static/js/images_ui.js:1942
+#: static/js/images_ui.js:1943
 #, python-brace-format
 msgid ""
 "L'image disparaît avant le début de l'animation (${date}) : elle ne sera "
 "pas visible dans la vidéo."
 msgstr ""
 
-#: static/js/images_ui.js:1970
+#: static/js/images_ui.js:1971
 msgid "Attendez la fin de l'enregistrement."
 msgstr ""
 
-#: static/js/images_ui.js:1974
+#: static/js/images_ui.js:1975
 msgid ""
 "Lancez l'aperçu et mettez-le en pause sur le jour voulu (barre de "
 "chronologie), puis recliquez."
 msgstr ""
 
-#: static/js/images_ui.js:2016 static/js/stats_ui.js:1971
+#: static/js/images_ui.js:2017 static/js/stats_ui.js:1971
 #, python-brace-format
 msgid "Préréglage « ${name} » appliqué"
 msgstr ""
 
-#: static/js/images_ui.js:2450
+#: static/js/images_ui.js:2451
 #, python-brace-format
 msgid "${n} image(s) seront supprimées définitivement de la bibliothèque."
 msgstr ""
 
-#: static/js/images_ui.js:2451
+#: static/js/images_ui.js:2452
 msgid "Nettoyer la bibliothèque"
 msgstr ""
 
@@ -5479,7 +5512,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:6015 static/js/ui.js:9184
+#: static/js/mapgl.js:6015 static/js/ui.js:9193
 msgid "Assemblage en cours"
 msgstr ""
 
@@ -5793,6 +5826,79 @@ msgstr ""
 msgid "Actif quand les caches posées sont affichées"
 msgstr ""
 
+#: static/js/parcours_data.js:170
+msgid "Impossible de charger les parcours"
+msgstr ""
+
+#: static/js/parcours_data.js:181
+msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
+msgstr ""
+
+#: static/js/parcours_data.js:209 static/js/parcours_data.js:210
+#: static/js/parcours_data.js:222
+msgid "Supprimer le parcours"
+msgstr ""
+
+#: static/js/parcours_data.js:221
+#, python-brace-format
+msgid "Supprimer le parcours « ${name} » ? Les trouvailles ne sont pas touchées."
+msgstr ""
+
+#: static/js/parcours_data.js:265
+#, python-brace-format
+msgid "Un parcours couvre ${max} jours au plus"
+msgstr ""
+
+#: static/js/parcours_data.js:266
+msgid "Une journée"
+msgstr ""
+
+#: static/js/parcours_data.js:266 static/js/parcours_data.js:343
+#: static/js/stats_panels.js:1534 static/js/ui.js:8715
+#, python-brace-format
+msgid "${n} jours"
+msgstr ""
+
+#: static/js/parcours_data.js:329 templates/menu_data_parcours.html:15
+#: templates/menu_data_parcours.html:64 templates/menu_data_poses.html:18
+msgid "Chargement…"
+msgstr ""
+
+#: static/js/parcours_data.js:336
+msgid "Impossible de charger les étapes"
+msgstr ""
+
+#: static/js/parcours_data.js:337
+msgid "Ouvrez ou créez un parcours pour voir ses étapes."
+msgstr ""
+
+#: static/js/parcours_data.js:343
+#, python-brace-format
+msgid "${n} étapes"
+msgstr ""
+
+#: static/js/parcours_data.js:344
+#, python-brace-format
+msgid "${n} sans position"
+msgstr ""
+
+#: static/js/parcours_data.js:350
+msgid ""
+"Ordre provisoire : celui de la saisie de vos logs. La reconstruction du "
+"parcours viendra ensuite."
+msgstr ""
+
+#: static/js/parcours_data.js:351
+msgid ""
+"Ordre provisoire : sans logs importés, les caches d’une journée restent "
+"dans un ordre arbitraire. Importez « Mes logs » sur la page Mes "
+"Géocaches."
+msgstr ""
+
+#: static/js/parcours_data.js:364
+msgid "Aucune étape ce jour-là"
+msgstr ""
+
 #: static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr ""
@@ -6080,7 +6186,7 @@ msgid "Renommer"
 msgstr ""
 
 #: static/js/profiles.js:974 static/js/stats_page_cards.js:455
-#: templates/app.html:246 templates/app.html:247 templates/guide.html:136
+#: templates/app.html:250 templates/app.html:251 templates/guide.html:136
 #: templates/guide.html:345 templates/guide.html:351 templates/guide.html:585
 #: templates/guide.html:782 templates/menu_animation.html:47
 #: templates/menu_data.html:271 templates/menu_data.html:427
@@ -6781,13 +6887,13 @@ msgstr ""
 msgid "Comme l'écran"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:351 templates/_app_header.html:47
+#: static/js/stats_page_dashboard.js:351 templates/_app_header.html:52
 #: templates/menu_options.html:34 templates/menu_stats.html:368
 #: templates/menu_style.html:164 templates/stats_page.html:800
 msgid "Clair"
 msgstr ""
 
-#: static/js/stats_page_dashboard.js:352 templates/_app_header.html:48
+#: static/js/stats_page_dashboard.js:352 templates/_app_header.html:53
 #: templates/menu_options.html:35 templates/menu_stats.html:367
 #: templates/menu_style.html:167 templates/stats_page.html:801
 msgid "Sombre"
@@ -7471,7 +7577,7 @@ msgstr ""
 msgid "Losanges"
 msgstr ""
 
-#: static/js/stats_page_themes.js:138 static/js/ui.js:5727
+#: static/js/stats_page_themes.js:138 static/js/ui.js:5736
 #: templates/_filter_cache_attrs.html:44 templates/_filter_cache_attrs.html:62
 #: templates/_filter_cache_attrs.html:86 templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
@@ -7694,7 +7800,7 @@ msgstr ""
 msgid "Durée de chaque graphique"
 msgstr ""
 
-#: static/js/stats_page_video.js:255 static/js/ui.js:11703
+#: static/js/stats_page_video.js:255 static/js/ui.js:11712
 #: templates/stats_page.html:791
 msgid "Durée"
 msgstr ""
@@ -7812,7 +7918,7 @@ msgid "Réglages de la carte repris."
 msgstr ""
 
 #: static/js/stats_page_video.js:1135 static/js/stats_page_video.js:2333
-#: static/js/ui.js:1000 templates/app.html:255 templates/app.html:256
+#: static/js/ui.js:1000 templates/app.html:259 templates/app.html:260
 #: templates/guide.html:136 templates/guide.html:346
 #: templates/menu_animation.html:57
 msgid "Arrêter"
@@ -8499,11 +8605,6 @@ msgstr ""
 msgid "${n} mois"
 msgstr ""
 
-#: static/js/stats_panels.js:1534 static/js/ui.js:8706
-#, python-brace-format
-msgid "${n} jours"
-msgstr ""
-
 #: static/js/stats_panels.js:1602
 msgid "jamais trouvée"
 msgstr ""
@@ -9097,11 +9198,11 @@ msgstr ""
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:2375 static/js/ui.js:11853
+#: static/js/ui.js:2375 static/js/ui.js:11862
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:2379 static/js/ui.js:12324
+#: static/js/ui.js:2379 static/js/ui.js:12333
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
@@ -9157,262 +9258,262 @@ msgstr ""
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:5599
+#: static/js/ui.js:5608
 #, python-brace-format
 msgid ""
 "Les ${shown} propriétaires les plus trouvés sur ${total} : tapez un nom "
 "pour chercher parmi tous."
 msgstr ""
 
-#: static/js/ui.js:5622
+#: static/js/ui.js:5631
 #, python-brace-format
 msgid "${shown} premiers résultats sur ${total} : précisez la recherche."
 msgstr ""
 
-#: static/js/ui.js:5880 templates/_filter_county.html:10
+#: static/js/ui.js:5889 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr ""
 
-#: static/js/ui.js:5905
+#: static/js/ui.js:5914
 msgid "Non renseigné"
 msgstr ""
 
-#: static/js/ui.js:5956 templates/_filter_country_state.html:8
+#: static/js/ui.js:5965 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:5985 static/js/ui.js:6036
+#: static/js/ui.js:5994 static/js/ui.js:6045
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:6218 templates/menu_filtre.html:179
+#: static/js/ui.js:6227 templates/menu_filtre.html:179
 msgid "Filtrer par attribut"
 msgstr ""
 
-#: static/js/ui.js:6223 templates/menu_filtre.html:186
+#: static/js/ui.js:6232 templates/menu_filtre.html:186
 msgid "Filtrer par propriétaire"
 msgstr ""
 
-#: static/js/ui.js:6350
+#: static/js/ui.js:6359
 msgid "— Choisir —"
 msgstr ""
 
-#: static/js/ui.js:6350 templates/menu_filtre.html:83
+#: static/js/ui.js:6359 templates/menu_filtre.html:83
 msgid "Aucun préréglage enregistré"
 msgstr ""
 
-#: static/js/ui.js:6386
+#: static/js/ui.js:6395
 #, python-brace-format
 msgid "Nombre maximal de préréglages atteint (${max})."
 msgstr ""
 
-#: static/js/ui.js:6386 static/js/ui.js:6392 templates/guide.html:190
+#: static/js/ui.js:6395 static/js/ui.js:6401 templates/guide.html:190
 #: templates/guide.html:480 templates/menu_filtre.html:81
 #: templates/menu_filtre.html:82 templates/menu_images.html:224
 #: templates/menu_stats.html:365 templates/menu_zones.html:77
 msgid "Préréglages"
 msgstr ""
 
-#: static/js/ui.js:6389
+#: static/js/ui.js:6398
 msgid "Nom du préréglage :"
 msgstr ""
 
-#: static/js/ui.js:6392
+#: static/js/ui.js:6401
 #, python-brace-format
 msgid "Un préréglage « ${name} » existe déjà."
 msgstr ""
 
-#: static/js/ui.js:6443
+#: static/js/ui.js:6452
 #, python-brace-format
 msgid "Supprimer le préréglage « ${name} » ?"
 msgstr ""
 
-#: static/js/ui.js:6444
+#: static/js/ui.js:6453
 msgid "Supprimer le préréglage"
 msgstr ""
 
-#: static/js/ui.js:7963
+#: static/js/ui.js:7972
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr ""
 
-#: static/js/ui.js:8603
+#: static/js/ui.js:8612
 msgid "Valeur requise."
 msgstr ""
 
-#: static/js/ui.js:8605
+#: static/js/ui.js:8614
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr ""
 
-#: static/js/ui.js:8606
+#: static/js/ui.js:8615
 msgid "Nombre attendu."
 msgstr ""
 
-#: static/js/ui.js:8607
+#: static/js/ui.js:8616
 msgid "La valeur doit être strictement positive."
 msgstr ""
 
-#: static/js/ui.js:8609
+#: static/js/ui.js:8618
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
-#: static/js/ui.js:8610
+#: static/js/ui.js:8619
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr ""
 
-#: static/js/ui.js:8611
+#: static/js/ui.js:8620
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr ""
 
-#: static/js/ui.js:8612
+#: static/js/ui.js:8621
 msgid "Entre 100 et 10000 ms."
 msgstr ""
 
-#: static/js/ui.js:8613
+#: static/js/ui.js:8622
 msgid "Hors limites."
 msgstr ""
 
-#: static/js/ui.js:8614
+#: static/js/ui.js:8623
 msgid "Valeur invalide."
 msgstr ""
 
-#: static/js/ui.js:8707
+#: static/js/ui.js:8716
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr ""
 
-#: static/js/ui.js:8709
+#: static/js/ui.js:8718
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:8710
+#: static/js/ui.js:8719
 #, python-brace-format
 msgid "animation ${d}"
 msgstr ""
 
-#: static/js/ui.js:8711
+#: static/js/ui.js:8720
 #, python-brace-format
 msgid "fin ${d}"
 msgstr ""
 
-#: static/js/ui.js:8714
+#: static/js/ui.js:8723
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8722
+#: static/js/ui.js:8731
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8728
+#: static/js/ui.js:8737
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8736
+#: static/js/ui.js:8745
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:8738
+#: static/js/ui.js:8747
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr ""
 
-#: static/js/ui.js:8740
+#: static/js/ui.js:8749
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:8741
+#: static/js/ui.js:8750
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr ""
 
-#: static/js/ui.js:8743
+#: static/js/ui.js:8752
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr ""
 
-#: static/js/ui.js:8744
+#: static/js/ui.js:8753
 #, python-brace-format
 msgid "${n} images"
 msgstr ""
 
-#: static/js/ui.js:8746
+#: static/js/ui.js:8755
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr ""
 
-#: static/js/ui.js:8753
+#: static/js/ui.js:8762
 #, python-brace-format
 msgid "${n} jours sans trouvaille regroupés"
 msgstr ""
 
-#: static/js/ui.js:8754
+#: static/js/ui.js:8763
 #, python-brace-format
 msgid "${n} jour sans trouvaille regroupé"
 msgstr ""
 
-#: static/js/ui.js:8779
+#: static/js/ui.js:8788
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr ""
 
-#: static/js/ui.js:8787 templates/menu_animation.html:23
+#: static/js/ui.js:8796 templates/menu_animation.html:23
 msgid "musique incluse"
 msgstr ""
 
-#: static/js/ui.js:8788
+#: static/js/ui.js:8797
 msgid "sans musique"
 msgstr ""
 
-#: static/js/ui.js:8794
+#: static/js/ui.js:8803
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr ""
 
-#: static/js/ui.js:8833
+#: static/js/ui.js:8842
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr ""
 
-#: static/js/ui.js:8836
+#: static/js/ui.js:8845
 msgid "Vide : nom du thème actif."
 msgstr ""
 
-#: static/js/ui.js:8868
+#: static/js/ui.js:8877
 msgid "La plage de dates est invalide ou vide."
 msgstr ""
 
-#: static/js/ui.js:8869
+#: static/js/ui.js:8878
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:8876
+#: static/js/ui.js:8885
 msgid "En attente de la lecture de la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:8887
+#: static/js/ui.js:8896
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 msgstr ""
 
-#: static/js/ui.js:8910
+#: static/js/ui.js:8919
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:8914
+#: static/js/ui.js:8923
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -9420,7 +9521,7 @@ msgid ""
 "posés, baissez le dynamisme ou allongez la vidéo."
 msgstr ""
 
-#: static/js/ui.js:8919
+#: static/js/ui.js:8928
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -9428,7 +9529,7 @@ msgid ""
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:8935
+#: static/js/ui.js:8944
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -9436,145 +9537,145 @@ msgid ""
 "rythme pour l'éviter."
 msgstr ""
 
-#: static/js/ui.js:8982
+#: static/js/ui.js:8991
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 msgstr ""
 
-#: static/js/ui.js:8986
+#: static/js/ui.js:8995
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 msgstr ""
 
-#: static/js/ui.js:9180
+#: static/js/ui.js:9189
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:9180
+#: static/js/ui.js:9189
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:9204
+#: static/js/ui.js:9213
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:9204 static/js/ui.js:9206 static/js/ui.js:9211
+#: static/js/ui.js:9213 static/js/ui.js:9215 static/js/ui.js:9220
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:9206
+#: static/js/ui.js:9215
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:9211
+#: static/js/ui.js:9220
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:11596
+#: static/js/ui.js:11605
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:11646 templates/menu_animation.html:329
+#: static/js/ui.js:11655 templates/menu_animation.html:329
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:11675
+#: static/js/ui.js:11684
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:11702
+#: static/js/ui.js:11711
 msgid "Type inconnu"
 msgstr ""
 
-#: static/js/ui.js:11704
+#: static/js/ui.js:11713
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:11746
+#: static/js/ui.js:11755
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:11773 static/js/ui.js:12174 static/js/ui.js:12316
+#: static/js/ui.js:11782 static/js/ui.js:12183 static/js/ui.js:12325
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr ""
 
-#: static/js/ui.js:11898
+#: static/js/ui.js:11907
 msgid "Chargement de la musique..."
 msgstr ""
 
-#: static/js/ui.js:11980
+#: static/js/ui.js:11989
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr ""
 
-#: static/js/ui.js:11995
+#: static/js/ui.js:12004
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr ""
 
-#: static/js/ui.js:12016
+#: static/js/ui.js:12025
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
 msgstr ""
 
-#: static/js/ui.js:12030
+#: static/js/ui.js:12039
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr ""
 
-#: static/js/ui.js:12059
+#: static/js/ui.js:12068
 msgid "La musique n'a pas pu être retirée."
 msgstr ""
 
-#: static/js/ui.js:12139
+#: static/js/ui.js:12148
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:12140
+#: static/js/ui.js:12149
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr ""
 
-#: static/js/ui.js:12141
+#: static/js/ui.js:12150
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr ""
 
-#: static/js/ui.js:12179
+#: static/js/ui.js:12188
 msgid "Préparation de l'enchaînement…"
 msgstr ""
 
-#: static/js/ui.js:12198 static/js/ui.js:12231
+#: static/js/ui.js:12207 static/js/ui.js:12240
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr ""
 
-#: static/js/ui.js:12250
+#: static/js/ui.js:12259
 msgid "Envoi du morceau…"
 msgstr ""
 
-#: static/js/ui.js:12257
+#: static/js/ui.js:12266
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr ""
 
-#: static/js/ui.js:12331
+#: static/js/ui.js:12340
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr ""
 
-#: static/js/ui.js:12501
+#: static/js/ui.js:12510
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
 msgstr ""
 
-#: static/js/ui.js:12610
+#: static/js/ui.js:12619
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr ""
@@ -10006,17 +10107,22 @@ msgstr ""
 msgid "Mode"
 msgstr ""
 
-#: templates/_app_header.html:31 templates/_app_header.html:33
+#: templates/_app_header.html:29 templates/_app_header.html:31
+#: templates/app.html:41
+msgid "Parcours"
+msgstr ""
+
+#: templates/_app_header.html:36 templates/_app_header.html:38
 #: templates/guide.html:86 templates/guide.html:131 templates/guide.html:712
 #: templates/stats_page.html:27
 msgid "Statistiques"
 msgstr ""
 
-#: templates/_app_header.html:38 templates/_app_header.html:39
+#: templates/_app_header.html:43 templates/_app_header.html:44
 msgid "Guide"
 msgstr ""
 
-#: templates/_app_header.html:45 templates/guide.html:236
+#: templates/_app_header.html:50 templates/guide.html:236
 #: templates/guide.html:513 templates/menu_images.html:215
 #: templates/menu_names.html:282 templates/menu_options.html:31
 #: templates/menu_stats.html:356 templates/menu_trail.html:94
@@ -10024,11 +10130,11 @@ msgstr ""
 msgid "Apparence"
 msgstr ""
 
-#: templates/_app_header.html:46 templates/menu_options.html:33
+#: templates/_app_header.html:51 templates/menu_options.html:33
 msgid "Système"
 msgstr ""
 
-#: templates/_app_header.html:56 templates/guide.html:516
+#: templates/_app_header.html:61 templates/guide.html:516
 #: templates/menu_options.html:147
 msgid "Quitter MyGCFlow"
 msgstr ""
@@ -10291,6 +10397,12 @@ msgid ""
 msgstr ""
 
 #: templates/_mode_switch.html:10
+msgid ""
+"Une journée ou des vacances rejouées cache par cache, dans l'ordre de "
+"votre passage."
+msgstr ""
+
+#: templates/_mode_switch.html:12
 msgid "Vos trouvailles, importées depuis votre fichier .gpx."
 msgstr ""
 
@@ -10350,8 +10462,8 @@ msgstr ""
 msgid "Arrêter l'animation"
 msgstr ""
 
-#: templates/app.html:107 templates/app.html:108 templates/app.html:287
-#: templates/app.html:288 templates/guide.html:356 templates/guide.html:363
+#: templates/app.html:107 templates/app.html:108 templates/app.html:291
+#: templates/app.html:292 templates/guide.html:356 templates/guide.html:363
 msgid "Barre de chronologie"
 msgstr ""
 
@@ -10441,67 +10553,67 @@ msgstr ""
 msgid "Redimensionner la carte"
 msgstr ""
 
-#: templates/app.html:232 templates/guide.html:53 templates/guide.html:114
+#: templates/app.html:235 templates/guide.html:53 templates/guide.html:114
 #: templates/guide.html:126 templates/guide.html:275 templates/guide.html:277
 msgid "Animation & vidéo"
 msgstr ""
 
-#: templates/app.html:233 templates/guide.html:56 templates/guide.html:126
+#: templates/app.html:236 templates/guide.html:56 templates/guide.html:126
 #: templates/guide.html:382 templates/guide.html:384
 msgid "Stats"
 msgstr ""
 
-#: templates/app.html:236 templates/guide.html:62 templates/guide.html:126
+#: templates/app.html:240 templates/guide.html:62 templates/guide.html:126
 #: templates/guide.html:468 templates/guide.html:474
 msgid "Zones"
 msgstr ""
 
-#: templates/app.html:238 templates/guide.html:65 templates/guide.html:126
+#: templates/app.html:242 templates/guide.html:65 templates/guide.html:126
 #: templates/guide.html:503 templates/guide.html:505
 msgid "Préférences"
 msgstr ""
 
-#: templates/app.html:238 templates/menu_informations.html:10
+#: templates/app.html:242 templates/menu_informations.html:10
 msgid "Réglages"
 msgstr ""
 
-#: templates/app.html:242 templates/app.html:243 templates/guide.html:136
+#: templates/app.html:246 templates/app.html:247 templates/guide.html:136
 #: templates/guide.html:344 templates/guide.html:351
 #: templates/menu_animation.html:44 templates/menu_data.html:454
 msgid "Prévisualiser"
 msgstr ""
 
-#: templates/app.html:250 templates/app.html:251 templates/app.html:252
+#: templates/app.html:254 templates/app.html:255 templates/app.html:256
 #: templates/guide.html:136 templates/guide.html:346
 #: templates/menu_animation.html:53 templates/menu_animation.html:54
 msgid "Pause"
 msgstr ""
 
-#: templates/app.html:251 templates/menu_animation.html:53
+#: templates/app.html:255 templates/menu_animation.html:53
 msgid "Continuer"
 msgstr ""
 
-#: templates/app.html:263
+#: templates/app.html:267
 msgid "Disposition carte / réglages"
 msgstr ""
 
-#: templates/app.html:265 templates/app.html:266
+#: templates/app.html:269 templates/app.html:270
 msgid "Grande carte"
 msgstr ""
 
-#: templates/app.html:270 templates/app.html:271
+#: templates/app.html:274 templates/app.html:275
 msgid "Disposition équilibrée"
 msgstr ""
 
-#: templates/app.html:275 templates/app.html:276
+#: templates/app.html:279 templates/app.html:280
 msgid "Grands réglages"
 msgstr ""
 
-#: templates/app.html:280 templates/app.html:281
+#: templates/app.html:284 templates/app.html:285
 msgid "Panneau latéral"
 msgstr ""
 
-#: templates/app.html:297 templates/app.html:298 templates/guide.html:347
+#: templates/app.html:301 templates/app.html:302 templates/guide.html:347
 msgid "Plein écran"
 msgstr ""
 
@@ -14195,8 +14307,40 @@ msgid ""
 "disparition."
 msgstr ""
 
-#: templates/menu_data_poses.html:18
-msgid "Chargement…"
+#: templates/menu_data_parcours.html:11
+msgid "Mes parcours"
+msgstr ""
+
+#: templates/menu_data_parcours.html:20
+msgid "Nouveau parcours"
+msgstr ""
+
+#: templates/menu_data_parcours.html:28
+msgid "Vacances en Croatie, GeoTour du Jura…"
+msgstr ""
+
+#: templates/menu_data_parcours.html:32 templates/stats_page.html:753
+msgid "Du"
+msgstr ""
+
+#: templates/menu_data_parcours.html:36
+msgid "Au"
+msgstr ""
+
+#: templates/menu_data_parcours.html:43
+msgid "Inclure mes étapes Adventure Lab"
+msgstr ""
+
+#: templates/menu_data_parcours.html:47
+msgid "Inclure mes DNF (je me suis tout de même déplacé)"
+msgstr ""
+
+#: templates/menu_data_parcours.html:50
+msgid "Créer le parcours"
+msgstr ""
+
+#: templates/menu_data_parcours.html:60
+msgid "Étapes"
 msgstr ""
 
 #: templates/menu_data_poses.html:21
@@ -18052,10 +18196,6 @@ msgstr ""
 
 #: templates/stats_page.html:749
 msgid "Période personnalisée"
-msgstr ""
-
-#: templates/stats_page.html:753
-msgid "Du"
 msgstr ""
 
 #: templates/stats_page.html:755

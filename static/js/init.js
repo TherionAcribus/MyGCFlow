@@ -3,7 +3,7 @@
 // flask --app app.py --debug run
 
 import * as pkg from './index.js';
-import { isEvolutionPage, isLifecyclePage, isMainPage, isPosesPage } from './app_mode.mjs';
+import { isEvolutionPage, isLifecyclePage, isMainPage, isParcoursPage, isPosesPage } from './app_mode.mjs';
 
 // Import de la couche d'abstraction Bootstrap/Tabler (remplace progressivement M.*)
 import {
@@ -69,10 +69,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const userSettingsPromise = fetchUserSettings();
 
     // Pages « cycle de vie » (/evolution, /poses) : leurs données ne viennent
-    // pas de la base des trouvailles (bases CSV, logs des caches posées).
+    // pas de la base des trouvailles (bases CSV, logs des caches posées). La
+    // page Parcours lit les trouvailles, mais par sa propre API (parcours
+    // enregistrés) : pas d'invitation à charger un GPX non plus.
     const lifecyclePage = isLifecyclePage();
 
-    if (lifecyclePage) {
+    if (lifecyclePage || isParcoursPage()) {
         // Le parcours « première utilisation » (invitation à charger un GPX)
         // est sans objet ici. Le jalon est quand même publié pour les tests
         // et intégrations.
@@ -172,6 +174,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Caches posées tirées des logs importés (asynchrone ; fin signalée
         // par l'événement mygcflow:poses-loaded).
         pkg.initPosesPage?.();
+    } else if (isParcoursPage()) {
+        // Parcours enregistrés et étapes du dernier ouvert (asynchrone ; fin
+        // signalée par l'événement mygcflow:parcours-loaded).
+        pkg.initParcoursPage?.();
     } else {
         pkg.readBdd();  // creation du geojson et des metadatas
     }

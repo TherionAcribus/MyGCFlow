@@ -6,6 +6,7 @@ from .gpx import gpx_bp
 from .images import images_bp
 from .labs import labs_bp
 from .media import media_bp
+from .parcours import parcours_bp
 from .poses import poses_bp
 from .profiles import profiles_bp
 from .statistics import statistics_bp
@@ -16,6 +17,7 @@ def register_blueprints(app):
     app.register_blueprint(core_bp)
     app.register_blueprint(evolution_bp)
     app.register_blueprint(poses_bp)
+    app.register_blueprint(parcours_bp)
     app.register_blueprint(statistics_bp)
     app.register_blueprint(gpx_bp)
     app.register_blueprint(labs_bp)

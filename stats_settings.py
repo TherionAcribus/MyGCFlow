@@ -146,6 +146,8 @@ class StatsSettings:
     evolution_panels: list = field(default_factory=list)
     # Liste propre à la page Mes poses (/poses), même schéma.
     poses_panels: list = field(default_factory=list)
+    # Liste propre à la page Parcours (/parcours), même schéma.
+    parcours_panels: list = field(default_factory=list)
     # Configurations nommées : {name, mode, panels}, instantanés de la liste.
     configs: list = field(default_factory=list)
 
@@ -494,7 +496,7 @@ def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSet
         return StatsSettings(
             enabled=base.enabled, panels=list(base.panels),
             evolution_panels=list(base.evolution_panels), poses_panels=list(base.poses_panels),
-            configs=list(base.configs))
+            parcours_panels=list(base.parcours_panels), configs=list(base.configs))
 
     enabled = _bool(raw.get("enabled"), base.enabled)
     panels = _coerce_panel_list(raw["panels"] if "panels" in raw else base.panels)
@@ -502,6 +504,8 @@ def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSet
         raw["evolution_panels"] if "evolution_panels" in raw else base.evolution_panels)
     poses_panels = _coerce_panel_list(
         raw["poses_panels"] if "poses_panels" in raw else base.poses_panels)
+    parcours_panels = _coerce_panel_list(
+        raw["parcours_panels"] if "parcours_panels" in raw else base.parcours_panels)
     configs = []
     names = set()
     config_source = raw["configs"] if "configs" in raw else base.configs
@@ -514,4 +518,5 @@ def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSet
         if len(configs) >= STATS_MAX_CONFIGS:
             break
     return StatsSettings(enabled=enabled, panels=panels,
-                         evolution_panels=evolution_panels, poses_panels=poses_panels, configs=configs)
+                         evolution_panels=evolution_panels, poses_panels=poses_panels,
+                         parcours_panels=parcours_panels, configs=configs)

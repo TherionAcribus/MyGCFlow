@@ -194,13 +194,17 @@ class StorageTests(ImageLibraryTestCase):
             'evolution_items': [{'file': 'cccccccccccccccc.png'}],
             # Même règle pour la page Mes poses.
             'poses_items': [{'file': 'dddddddddddddddd.png'}],
+            # Et pour la page Parcours.
+            'parcours_items': [{'file': 'eeeeeeeeeeeeeeee.png'}],
             'configs': [{'name': 'Club', 'items': [{'file': 'bbbbbbbbbbbbbbbb.jpg'}]}],
         }
-        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg', 'cccccccccccccccc.png', 'dddddddddddddddd.png'}
+        expected = {'aaaaaaaaaaaaaaaa.png', 'bbbbbbbbbbbbbbbb.jpg', 'cccccccccccccccc.png', 'dddddddddddddddd.png',
+                    'eeeeeeeeeeeeeeee.png'}
         self.assertEqual(image_library.referenced_image_files(settings), expected)
         as_object = SimpleNamespace(items=settings['items'],
                                     evolution_items=settings['evolution_items'],
                                     poses_items=settings['poses_items'],
+                                    parcours_items=settings['parcours_items'],
                                     configs=settings['configs'])
         self.assertEqual(image_library.referenced_image_files(as_object), expected)
         self.assertEqual(image_library.referenced_image_files(None), set())
