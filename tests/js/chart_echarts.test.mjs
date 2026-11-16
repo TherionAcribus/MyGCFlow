@@ -609,3 +609,28 @@ test('grille de défi : la vidéo fige l\'échelle des couleurs (lockedMax)', ()
     assert.equal(colorOf(free, '1|1'), rampColor(tokens.heat, 1));
     assert.equal(colorOf(locked, '1|1'), rampColor(tokens.heat, 0.25 + 0.75 / 4));
 });
+
+test('allure du thème (tokens.look) : barres, courbes, anneaux', async () => {
+    const { lookTokens } = await import('../../static/js/stats_theme_model.mjs');
+    const themed = (raw, look) => {
+        const spec = normalizeChartSpec(raw, () => 'abcdef');
+        const result = runChartQuery(spec, table, { today: TODAY });
+        return buildChartOption(result, spec, { ...ctx, tokens: { ...tokens, look: lookTokens(look) } });
+    };
+    const bar = themed({ groupBy: 'year' }, { bars: 'pill', barWidth: 'wide' }).series[0];
+    assert.equal(bar.barMaxWidth, 40);
+    assert.deepEqual(bar.itemStyle.borderRadius, [100, 100, 0, 0]);
+    const square = themed({ groupBy: 'owner', view: { orientation: 'horizontal' } }, { bars: 'square' }).series[0];
+    assert.deepEqual(square.itemStyle.borderRadius, [0, 0, 0, 0]);
+    const line = themed({ groupBy: 'year', view: { chart: 'area' } }, { lines: 'bold', points: 'diamond', area: 'strong' }).series[0];
+    assert.equal(line.lineStyle.width, 3.5);
+    assert.equal(line.symbol, 'diamond');
+    assert.equal(line.areaStyle.opacity, 0.38);
+    const bare = themed({ groupBy: 'year', view: { chart: 'line' } }, { points: 'none' }).series[0];
+    assert.equal(bare.showSymbol, false);
+    const donut = themed({ groupBy: 'cache_type', view: { chart: 'donut' } }, { donut: 'thin', bars: 'square' }).series[0];
+    assert.deepEqual(donut.radius, ['59%', '72%']);
+    assert.equal(donut.itemStyle.borderRadius, 0);
+    // Sans allure : celle de l'app (tests ci-dessus).
+    assert.deepEqual(option({ groupBy: 'cache_type', view: { chart: 'donut' } }).option.series[0].radius, ['48%', '72%']);
+});

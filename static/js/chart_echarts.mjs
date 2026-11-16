@@ -40,6 +40,21 @@ const SLIDER_FROM_KEYS = 400;
 // Au-delà, plus de points sur la courbe (le trait suffit).
 const MAX_SYMBOL_KEYS = 40;
 
+// Allure du thème de couleurs (stats_theme_model.mjs › lookTokens, posée
+// dans `tokens.look`) ; sans thème, celle de l'app.
+const DEFAULT_LOOK = Object.freeze({
+    barRadius: 4, barMaxWidth: 24, lineWidth: 2, symbol: 'circle', symbolSize: 8,
+    areaOpacity: 0.1, donutInner: 0.66, sliceRadius: 4,
+});
+const lookOf = (tokens) => tokens?.look || DEFAULT_LOOK;
+
+// Arrondi du bout d'une barre (base carrée), selon son sens.
+function barEnd(radius, { horizontal = false, negative = false } = {}) {
+    const r = radius;
+    if (horizontal) return negative ? [r, 0, 0, r] : [0, r, r, 0];
+    return negative ? [0, 0, r, r] : [r, r, 0, 0];
+}
+
 export function escapeHtml(value) {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -478,6 +493,7 @@ function recordMark(s, ctx, spec, result, horizontal, color) {
 // Série ECharts d'une série de résultat (barre ou courbe).
 function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stacked, single, perItem, axisIndex }) {
     const { tokens, labels } = ctx;
+    const look = lookOf(tokens);
     const log = spec.view.log;
     const colors = perItem ? barColors(result, spec, ctx, s.values) : null;
     const data = s.values.map((value, k) => {
@@ -497,10 +513,10 @@ function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stack
         return {
             ...base,
             type: 'bar',
-            barMaxWidth: 24,
+            barMaxWidth: look.barMaxWidth,
             stack: stacked ? `total${axisIndex?.xAxisIndex ?? ''}` : undefined,
             itemStyle: {
-                borderRadius: stacked ? 0 : (horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]),
+                borderRadius: stacked ? 0 : barEnd(look.barRadius, { horizontal }),
                 borderColor: stacked ? tokens.surface : undefined,
                 borderWidth: stacked ? 1 : 0,
             },
@@ -514,7 +530,11 @@ function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stack
             emphasis: { focus: single ? 'none' : 'series' },
         };
     }
-    const showSymbol = result.keys.length <= MAX_SYMBOL_KEYS;
+    // Points : jusqu'à MAX_SYMBOL_KEYS clés, sauf allure « sans points »
+    // (le point du survol reste) — gardés pour une seule clé, sans quoi la
+    // courbe n'aurait rien à tracer. Les valeurs affichées s'y accrochent.
+    const fewKeys = result.keys.length <= MAX_SYMBOL_KEYS;
+    const showSymbol = fewKeys && (look.symbol !== 'none' || result.keys.length <= 1);
     return {
         ...base,
         type: 'line',
@@ -522,12 +542,12 @@ function seriesOption(s, identity, result, spec, ctx, { chart, horizontal, stack
         stack: stacked ? `total${axisIndex?.xAxisIndex ?? ''}` : undefined,
         connectNulls: false,
         showSymbol,
-        symbol: 'circle',
-        symbolSize: 8,
+        symbol: look.symbol === 'none' ? 'circle' : look.symbol,
+        symbolSize: look.symbol === 'none' ? 8 : look.symbolSize,
         itemStyle: { borderColor: tokens.surface, borderWidth: 2 },
-        lineStyle: { width: 2, cap: 'round', join: 'round' },
-        areaStyle: chart === 'area' ? { opacity: 0.1 } : undefined,
-        label: spec.view.labels && showSymbol ? {
+        lineStyle: { width: look.lineWidth, cap: 'round', join: 'round' },
+        areaStyle: chart === 'area' ? { opacity: look.areaOpacity } : undefined,
+        label: spec.view.labels && fewKeys ? {
             show: true,
             position: 'top',
             color: tokens.textMuted,
@@ -614,7 +634,7 @@ function overlayOption(result, spec, ctx) {
             tooltipIdentities.push({ name, color });
             series.push({
                 type: 'line', name, data: values, color, silent: true, showSymbol: false, symbol: 'none',
-                lineStyle: { width: 2, type: 'dashed', color }, connectNulls: true, z: 1,
+                lineStyle: { width: lookOf(tokens).lineWidth, type: 'dashed', color }, connectNulls: true, z: 1,
                 emphasis: { disabled: true },
             });
         });
@@ -756,13 +776,12 @@ function deltaOption(result, spec, ctx) {
     const nameB = seriesName(result, result.series[1], spec, labels);
     const heads = axisLabels(result, ctx, { long: true });
     const format = valueFormatter(spec, result, ctx);
+    const look = lookOf(tokens);
     const data = result.delta.values.map((v) => ({
         value: v,
         itemStyle: {
             color: v !== null && v < 0 ? tokens.down : tokens.up,
-            borderRadius: v !== null && v < 0
-                ? (horizontal ? [4, 0, 0, 4] : [0, 0, 4, 4])
-                : (horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]),
+            borderRadius: barEnd(look.barRadius, { horizontal, negative: v !== null && v < 0 }),
         },
     }));
     const keys = categoryAxis(result, ctx, { isBar: true, horizontal });
@@ -803,7 +822,7 @@ function deltaOption(result, spec, ctx) {
         series: [{
             type: 'bar',
             name: labels.t('Écart'),
-            barMaxWidth: 24,
+            barMaxWidth: look.barMaxWidth,
             data,
             label: spec.view.labels && result.keys.length <= MAX_LABELLED_BARS ? {
                 show: true,
@@ -831,8 +850,9 @@ function donutOption(result, spec, ctx) {
     const pct = new Intl.NumberFormat(labels.locale, { style: 'percent', maximumFractionDigits: 1 });
     const n = result.series.length;
     const format = valueFormatter(spec, result, ctx);
+    const look = lookOf(tokens);
     const outer = Math.min(72, Math.round((100 / Math.max(1, n)) * 1.5));
-    const inner = Math.round(outer * 0.66);
+    const inner = Math.round(outer * look.donutInner);
     const legendNames = new Set();
     // Parts et légende : celles du résultat complet quand il est donné
     // (`ctx.layoutResult`, vidéo — les parts y arrivent une à une) ; une
@@ -854,12 +874,12 @@ function donutOption(result, spec, ctx) {
         return {
             type: 'pie',
             name: seriesName(result, s, spec, labels),
-            radius: [`${single ? 48 : inner}%`, `${single ? 72 : outer}%`],
+            radius: [`${single ? Math.round(72 * look.donutInner) : inner}%`, `${single ? 72 : outer}%`],
             center: single
                 ? (data.length > 1 ? ['38%', '50%'] : ['50%', '50%'])
                 : [`${((i + 0.5) / n) * 100}%`, '52%'],
             avoidLabelOverlap: true,
-            itemStyle: { borderColor: tokens.surface, borderWidth: 2, borderRadius: 4 },
+            itemStyle: { borderColor: tokens.surface, borderWidth: 2, borderRadius: look.sliceRadius },
             label: spec.view.labels ? {
                 show: true,
                 color: tokens.textMuted,
@@ -1775,8 +1795,8 @@ function radarOption(result, spec, ctx) {
                 name: identities[i].name,
                 value: s.values.map((v) => v ?? 0),
                 itemStyle: { color: identities[i].color },
-                lineStyle: { width: 2, color: identities[i].color },
-                areaStyle: { opacity: 0.1, color: identities[i].color },
+                lineStyle: { width: lookOf(tokens).lineWidth, color: identities[i].color },
+                areaStyle: { opacity: lookOf(tokens).areaOpacity, color: identities[i].color },
             })),
         }],
     };

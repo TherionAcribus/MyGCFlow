@@ -24,7 +24,9 @@ import {
 import { copyDashboardImage, saveDashboardImage } from './stats_page_exports.js';
 import { scheduleSave } from './stats_page_save.js';
 import { $, state } from './stats_page_state.js';
-import { renderColorsPanel } from './stats_page_themes.js';
+import {
+    EXPORT_BACKGROUNDS, exportBackground, renderColorsPanel, setExportBackground,
+} from './stats_page_themes.js';
 import { openDashboardVideo } from './stats_page_video.js';
 
 // ---------------------------------------------------------------------------
@@ -288,6 +290,44 @@ function renderDashboardMenu() {
     shareDivider.innerHTML = '<hr class="dropdown-divider">';
     share.append(shareDivider);
     share.append(menuButton('export-dashboard', 'ti-file-export', t('Exporter ce tableau de bord (fichier)')));
+    renderExportBackgroundChoice(share);
+}
+
+// Fond des images et des vidéos (stats_page_themes.js › exportBackground) :
+// trois choix exclusifs, le courant coché. L'impression reste sur fond clair.
+const EXPORT_BACKGROUND_LABELS = {
+    screen: () => t("Comme l'écran"),
+    light: () => t('Clair'),
+    dark: () => t('Sombre'),
+};
+
+function renderExportBackgroundChoice(menu) {
+    const divider = document.createElement('li');
+    divider.innerHTML = '<hr class="dropdown-divider">';
+    const header = document.createElement('li');
+    const title = document.createElement('h6');
+    title.className = 'dropdown-header';
+    title.textContent = t('Fond des images et des vidéos');
+    header.append(title);
+    menu.append(divider, header);
+    const current = exportBackground();
+    for (const value of EXPORT_BACKGROUNDS) {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'dropdown-item';
+        button.dataset.action = 'export-background';
+        button.dataset.value = value;
+        button.setAttribute('role', 'menuitemradio');
+        button.setAttribute('aria-checked', String(value === current));
+        const icon = document.createElement('i');
+        icon.className = 'ti ti-check me-2';
+        icon.setAttribute('aria-hidden', 'true');
+        if (value !== current) icon.style.visibility = 'hidden';
+        button.append(icon, document.createTextNode(EXPORT_BACKGROUND_LABELS[value]()));
+        li.append(button);
+        menu.append(li);
+    }
 }
 
 function duplicateActiveDashboard() {
@@ -436,7 +476,13 @@ export function onDashboardMenuClick(event) {
         switchDashboard(pick.dataset.dashboardId);
         return;
     }
-    const action = event.target.closest('[data-action]')?.dataset.action;
+    const button = event.target.closest('[data-action]');
+    const action = button?.dataset.action;
+    if (action === 'export-background') {
+        setExportBackground(button.dataset.value);
+        renderDashboardMenu();
+        return;
+    }
     if (action === 'new-dashboard') openNewDashboard();
     if (action === 'duplicate-dashboard') duplicateActiveDashboard();
     if (action === 'export-dashboard') exportActiveDashboard();

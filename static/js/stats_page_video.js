@@ -25,6 +25,7 @@ import { fetchJson } from './stats_page_data.js';
 import { libraryImages, loadImage, uploadLibraryImage } from './stats_page_image.js';
 import { slidePeriod } from './stats_page_present.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
+import { colorsForMode, exportBackground, exportMode, setExportBackground } from './stats_page_themes.js';
 
 // ---------------------------------------------------------------------------
 // Vidéo animée : le graphique dessiné image par image hors écran, enregistré
@@ -137,6 +138,11 @@ function loadVideoPrefs() {
     }
 }
 
+// « Fond » de la fenêtre : le même réglage que celui des images.
+export function onVideoBackgroundChange() {
+    setExportBackground($('statsVideoBackground').value);
+}
+
 // Mémorise les choix courants des selects ; la durée est par mode (les
 // deux axes sont indépendants) : seule celle du mode courant est écrite.
 export function persistVideoPrefs() {
@@ -201,6 +207,8 @@ function setupVideoModal(video) {
         select.value = VIDEO_DURATIONS.includes(duration) ? String(duration) : '10';
     }
     if (VIDEO_SIZES[prefs.size]) $('statsVideoSize').value = prefs.size;
+    // Fond : réglage partagé avec les images (menu « Exporter »).
+    $('statsVideoBackground').value = exportBackground();
     // Écrans de la vidéo « tableau entier » (choix propres à cet export,
     // non persistés : le tableau change d'une vidéo à l'autre) : tous les
     // graphiques inclus, dans l'ordre du tableau.
@@ -1030,11 +1038,20 @@ function videoMimeType() {
     return ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((type) => recorder.isTypeSupported(type)) || null;
 }
 
+// Couleurs des images : celles du fond choisi pour les exports (« Fond » de
+// la fenêtre : comme l'écran, clair ou sombre), figées au lancement de
+// l'aperçu ou de l'enregistrement (stats_page_themes.js › colorsForMode).
+const frameTokens = () => state.video?.colors?.tokens || state.tokens || readTokens();
+const frameContext = () => {
+    const colors = state.video?.colors;
+    return colors ? { ...chartContext(), tokens: colors.tokens, typeColors: colors.typeColors } : chartContext();
+};
+
 // Une image : titre, repère de la clé atteinte (« Mars », « Multi-cache »),
 // graphique partiel. `reveal: false` : le graphique entier, sans révélation
 // (carte, radar — voir chartAnimates).
 function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
-    const tokens = state.tokens || readTokens();
+    const tokens = frameTokens();
     // Les polices d'ECharts (12 px) sont pensées pour l'écran : le graphique
     // est mis en page comme sur une fenêtre de 540 px de côté (432 en
     // portrait : videoScale) puis dessiné en pleine définition
@@ -1072,7 +1089,7 @@ function videoPainter(spec, result, { width, height }, { reveal = true } = {}) {
     // qu'une seule part est révélée, glissait à gauche à l'arrivée de la
     // légende.
     const ctx = {
-        ...chartContext(), tokens, width: chartW / scale, height: chartH / scale, today: null, lockedMax: max,
+        ...frameContext(), tokens, width: chartW / scale, height: chartH / scale, today: null, lockedMax: max,
         layoutResult: reveal ? result : null,
     };
     const heads = reveal ? axisLabels(result, ctx, { long: true }) : [];
@@ -1210,7 +1227,7 @@ function videoFont() {
 // verticalement ; l'image tient dans 60 % de la largeur et 30 % de la
 // hauteur (proportions gardées).
 function introPainter(dashboard, image, { width, height }) {
-    const tokens = state.tokens || readTokens();
+    const tokens = frameTokens();
     const { scale } = videoFrame({ width, height });
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -1260,7 +1277,7 @@ function introPainter(dashboard, image, { width, height }) {
 // Chiffre clé : il compte de 0 à sa valeur, puis sa période, son record ou
 // son objectif.
 function numberPainter(spec, result, { width, height }) {
-    const tokens = state.tokens || readTokens();
+    const tokens = frameTokens();
     const { scale, pad, titleSize } = videoFrame({ width, height });
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -1268,7 +1285,7 @@ function numberPainter(spec, result, { width, height }) {
     const g = canvas.getContext('2d');
     const font = videoFont();
     const title = chartTitle(spec);
-    const [block] = numberModel(result, spec, chartContext());
+    const [block] = numberModel(result, spec, frameContext());
     const dashboard = activeDashboard();
     const caption = block?.label || slidePeriod(spec, dashboard);
     const lines = [block?.record, block?.outlook?.progress, ...(block?.outlook?.lines || [])].filter(Boolean).slice(0, 3);
@@ -1309,7 +1326,7 @@ function numberPainter(spec, result, { width, height }) {
 // dessous, qui s'avance doucement (imageZoom) ; « Image introuvable » si
 // elle n'a pas pu être chargée.
 function imagePainter(spec, image, { width, height }) {
-    const tokens = state.tokens || readTokens();
+    const tokens = frameTokens();
     const { pad, titleSize, top } = videoFrame({ width, height });
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -1380,7 +1397,7 @@ function makeDashboardPainter(slides, size, image = null, tiles = new Map()) {
         ? Math.max(1, (musicWindowSeconds(video) - (INTRO_MS + (outro ? OUTRO_MS : 0)) / 1000) / Math.max(1, includedSlides(video).length))
         : $('statsVideoDuration').value;
     const seconds = slideSeconds(rawSeconds, allowAny);
-    const tokens = state.tokens || readTokens();
+    const tokens = frameTokens();
     const canvas = document.createElement('canvas');
     canvas.width = size.width;
     canvas.height = size.height;
@@ -1587,6 +1604,7 @@ function watchRecordingVisibility(video, recorder) {
 export async function recordVideo() {
     const video = state.video;
     stopMusicListen();
+    if (video) video.colors = colorsForMode(exportMode());
     if (video?.mode === 'dashboard') return recordDashboardVideo(video);
     const entry = video && state.results.get(video.spec.id);
     if (!entry?.result) return;
@@ -1725,6 +1743,7 @@ async function previewDashboardVideo(video) {
 export function previewVideo() {
     const video = state.video;
     stopMusicListen();
+    if (video) video.colors = colorsForMode(exportMode());
     if (video?.mode === 'dashboard') return previewDashboardVideo(video);
     const entry = video && state.results.get(video.spec.id);
     if (!entry?.result) return;

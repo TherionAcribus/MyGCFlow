@@ -14,7 +14,7 @@ import {
     activeDashboard, allPeriodSpan, chartTitle, dashboardPeriodLabel, dataNote, datasetName, filterValueLabel,
 } from './stats_page_dashboard.js';
 import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
-import { applyChartTheme } from './stats_page_themes.js';
+import { applyChartTheme, inExportMode } from './stats_page_themes.js';
 
 // ---------------------------------------------------------------------------
 // « Voir les valeurs » : les données du graphique en tableau, export CSV
@@ -211,8 +211,9 @@ export async function chartSvg(spec) {
     const host = chart.getDom();
     const width = Math.max(200, host.clientWidth);
     const height = Math.max(150, host.clientHeight);
-    return withOffscreenChart(entry.result, spec, { renderer: 'svg', width, height, background: state.tokens.surface },
-        (svgChart) => svgChart.renderToSVGString());
+    // Fond choisi pour les exports (clair, sombre ou comme l'écran).
+    return inExportMode(() => withOffscreenChart(entry.result, spec, { renderer: 'svg', width, height, background: state.tokens.surface },
+        (svgChart) => svgChart.renderToSVGString()));
 }
 
 // ---------------------------------------------------------------------------
@@ -251,28 +252,34 @@ export async function dashboardImageBlob() {
     await whenZoneMapsReady(activeDashboard().items.map((item) => item.spec));
     await Promise.all([...$('statsGrid').querySelectorAll('.stats-image img')].map((img) => img.decode().catch(() => {})));
     const dashboard = activeDashboard();
-    const tokens = state.tokens || readTokens();
-    const root = getComputedStyle(document.documentElement);
-    const page = getComputedStyle(document.body).backgroundColor;
     const date = new Intl.DateTimeFormat(state.labels.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-    const out = await paintDashboardImage({
-        grid: $('statsGrid'),
-        title: dashboard.name || t('Mon tableau de bord'),
-        lines: dashboardImageHeader(dashboard),
-        footer: 'MyGCFlow · ' + date,
-        colors: {
-            background: page && page !== 'rgba(0, 0, 0, 0)' ? page : tokens.surface,
-            heading: root.getPropertyValue('--color-heading').trim() || tokens.text,
-            muted: tokens.textMuted,
-            font: tokens.font,
-        },
-        chartCanvas: chartImageCanvas,
+    // Fond choisi pour les exports : le tableau est relu (styles calculés,
+    // graphiques redessinés hors écran) dans ce mode, le temps du dessin.
+    let background = null;
+    const out = await inExportMode(() => {
+        const tokens = state.tokens || readTokens();
+        const root = getComputedStyle(document.documentElement);
+        const page = getComputedStyle(document.body).backgroundColor;
+        background = page && page !== 'rgba(0, 0, 0, 0)' ? page : tokens.surface;
+        return paintDashboardImage({
+            grid: $('statsGrid'),
+            title: dashboard.name || t('Mon tableau de bord'),
+            lines: dashboardImageHeader(dashboard),
+            footer: 'MyGCFlow · ' + date,
+            colors: {
+                background,
+                heading: root.getPropertyValue('--color-heading').trim() || tokens.text,
+                muted: tokens.textMuted,
+                font: tokens.font,
+            },
+            chartCanvas: chartImageCanvas,
+        });
     });
     const blob = await new Promise((resolve) => out.canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw new Error('toBlob');
     state.lastImage = {
         width: out.canvas.width, height: out.canvas.height, ratio: out.ratio,
-        cards: out.cards, charts: out.charts, images: out.images, bytes: blob.size,
+        cards: out.cards, charts: out.charts, images: out.images, bytes: blob.size, background,
     };
     return blob;
 }
@@ -320,7 +327,14 @@ export async function exportPng(spec) {
         await whenZoneMapsReady([spec]);
         const chart = state.charts.get(spec.id);
         if (!chart) return;
-        const url = chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: state.tokens.surface });
+        // Fond choisi pour les exports : comme l'écran, l'image du graphique
+        // affiché ; sinon redessiné hors écran dans l'autre mode.
+        const host = chart.getDom();
+        const url = await inExportMode(() => (state.exportMode
+            ? withOffscreenChart(state.results.get(spec.id).result, spec,
+                { renderer: 'canvas', width: host.clientWidth, height: host.clientHeight, ratio: 2, background: state.tokens.surface },
+                (offscreen) => offscreen.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: state.tokens.surface }))
+            : chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: state.tokens.surface })));
         const link = document.createElement('a');
         link.href = url;
         link.download = fileSafe(chartTitle(spec)) + '.png';

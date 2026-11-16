@@ -47,7 +47,7 @@ import { $, echartsLocale, readTokens, state } from './stats_page_state.js';
 import { bindColorsPanel, refreshChartTheme, renderColorsPanel, themeSnapshot } from './stats_page_themes.js';
 import { getBsModal } from './ui_bootstrap.js';
 import {
-    closeVideo, confirmVideoClose, editVideo, onMusicChange, onMusicFadeInput, onMusicFile, onMusicFitChange,
+    closeVideo, confirmVideoClose, editVideo, onMusicChange, onVideoBackgroundChange, onMusicFadeInput, onMusicFile, onMusicFitChange,
     onImageChange, onImageFile, onMusicVolumeInput, onOutroChange, persistVideoPrefs, previewVideo, recordVideo,
     releaseVideo, revealVideo, stopVideoPreview, syncVideoTotal, takeMapMusicSettings, toggleMusicListen,
 } from './stats_page_video.js';
@@ -60,6 +60,9 @@ import {
 // (stats_page_themes.js), les graphiques sont redessinés.
 function watchTheme() {
     const observer = new MutationObserver(() => {
+        // Bascule le temps d'un export (stats_page_themes.js › inExportMode) :
+        // l'écran ne change pas, rien à redessiner.
+        if (state.exportMode) return;
         refreshChartTheme();
         renderColorsPanel();
     });
@@ -256,6 +259,9 @@ window.getStatsPageSnapshot = () => {
             // sur cet écran à la fin.
             image: state.video.image?.file ?? null,
             outro: Boolean(state.video.outro),
+            // Fond des images (« Fond » : comme l'écran, clair, sombre),
+            // figé au lancement de l'aperçu ou de l'enregistrement.
+            surface: state.video.colors?.tokens?.surface ?? null,
             music: state.video.music ? {
                 kind: state.video.music.kind,
                 file: state.video.music.file || state.video.music.name,
@@ -294,6 +300,7 @@ function bindEvents() {
     $('statsVideoModal').addEventListener('hide.bs.modal', confirmVideoClose);
     $('statsVideoModal').addEventListener('hidden.bs.modal', releaseVideo);
     $('statsVideoSize').addEventListener('change', persistVideoPrefs);
+    $('statsVideoBackground').addEventListener('change', onVideoBackgroundChange);
     $('statsVideoDuration').addEventListener('change', syncVideoTotal);
     $('statsVideoDuration').addEventListener('change', persistVideoPrefs);
     $('statsVideoMusic').addEventListener('change', onMusicChange);

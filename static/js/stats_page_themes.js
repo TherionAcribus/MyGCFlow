@@ -7,9 +7,9 @@
 import { showConfirmation, t } from './notifications.js';
 import { newChartId } from './chart_spec.mjs';
 import {
-    BUILTIN_THEMES, DEFAULT_THEME_ID, MAX_THEMES, THEME_CSS_VARS, THEME_HEAT,
-    duplicateTheme, effectiveThemeId, findTheme, heatRamp, normalizeHex, resolveTheme, themeCssVars,
-    themeTypeColors, themeWarnings, uniqueThemeName,
+    BUILTIN_THEMES, DEFAULT_THEME_ID, LOOK_CHOICES, MAX_THEMES, THEME_CSS_VARS, THEME_HEAT,
+    duplicateTheme, effectiveThemeId, findTheme, heatRamp, lookTokens, normalizeHex, resolveTheme, themeCssVars,
+    themeLook, themeTypeColors, themeWarnings, uniqueThemeName,
 } from './stats_theme_model.mjs';
 import { renderAllCharts } from './stats_page_cards.js';
 import { renderPreview } from './stats_page_editor.js';
@@ -41,22 +41,30 @@ export function shownTheme() {
 export function applyChartTheme() {
     const theme = shownTheme();
     const mode = colorMode();
-    const vars = themeCssVars(theme, mode);
-    const types = themeTypeColors(theme, state.typeColors);
-    const key = JSON.stringify([mode, vars, theme?.types || null, Object.keys(state.typeColors).length]);
+    const vars = themeCssVars(theme, mode, { appAccent: appAccent() });
+    const types = themeTypeColors(theme, state.typeColors, mode);
+    const look = themeLook(theme);
+    const key = JSON.stringify([mode, vars, look, theme?.types || null, Object.keys(state.typeColors).length]);
     if (key === state.themeKey && state.tokens) return false;
     const style = document.documentElement.style;
     for (const name of THEME_CSS_VARS) {
-        if (vars) style.setProperty(name, vars[name]);
+        if (vars?.[name]) style.setProperty(name, vars[name]);
         else style.removeProperty(name);
     }
     // Même objet tant que les couleurs des types ne changent pas :
     // distinctTypeColors mémorise ses nuances par objet.
     if (JSON.stringify(types) !== JSON.stringify(state.chartTypeColors)) state.chartTypeColors = types;
     state.themeKey = key;
-    state.tokens = readTokens();
+    // Allure : réglages du dessin (chart_echarts.mjs › lookOf).
+    state.tokens = { ...readTokens(), look: lookTokens(look) };
     state.tokensRev += 1;
     return true;
+}
+
+// Couleur de repères de l'app (bandeau d'un thème qui n'en choisit pas),
+// lue sans les variables d'un thème : --color-accent n'en dépend pas.
+function appAccent() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || null;
 }
 
 // Thème appliqué puis tout ce qui est dessiné redessiné.
@@ -93,6 +101,20 @@ export function themeName(theme) {
     if (theme.builtin) return BUILTIN_NAMES[theme.id]?.() || theme.id;
     return theme.name || t('Mon thème');
 }
+
+// Allure : intitulé de chaque réglage et de chacun de ses choix
+// (stats_theme_model.mjs › LOOK_CHOICES).
+const LOOK_LABELS = {
+    bars: () => [t('Barres'), { rounded: t('Arrondies'), square: t('Carrées'), pill: t('En pilule') }],
+    barWidth: () => [t('Largeur des barres'), { normal: t('Normales'), thin: t('Fines'), wide: t('Larges') }],
+    lines: () => [t('Courbes'), { normal: t('Normales'), thin: t('Fines'), bold: t('Épaisses') }],
+    points: () => [t('Points des courbes'), { circle: t('Ronds'), square: t('Carrés'), diamond: t('Losanges'), none: t('Aucun') }],
+    area: () => [t('Aires'), { light: t('Légères'), medium: t('Moyennes'), strong: t('Marquées') }],
+    donut: () => [t('Anneaux'), { normal: t('Normaux'), thin: t('Fins'), thick: t('Épais') }],
+    cards: () => [t('Cartes du tableau'), { plain: t('Simples'), tinted: t('Teintées'), band: t('Bandeau de couleur'), outline: t('Contour coloré') }],
+    corners: () => [t('Coins des cartes'), { soft: t('Arrondis'), square: t('Carrés'), round: t('Très arrondis') }],
+    types: () => [t('Couleurs des types'), { map: t('Couleurs de la carte'), soft: t('Adoucies'), muted: t('Atténuées') }],
+};
 
 // ---------------------------------------------------------------------------
 // Panneau : choix et liste
@@ -145,6 +167,19 @@ function iconButton(action, icon, label, { danger = false, disabled = false } = 
     return button;
 }
 
+// Où va un thème cliqué dans la liste : là où le choix actuel est posé —
+// le tableau s'il a ses propres couleurs, sinon toute la page.
+const pickTarget = (dashboard) => (dashboard.theme ? 'dashboard' : 'page');
+
+function pickTheme(theme) {
+    const dashboard = activeOf(state.doc);
+    if (pickTarget(dashboard) === 'dashboard') dashboard.theme = theme.id;
+    else state.doc.theme = theme.id === DEFAULT_THEME_ID ? null : theme.id;
+    scheduleSave({ immediate: true });
+    refreshChartTheme();
+    renderColorsPanel();
+}
+
 function renderThemeList() {
     const list = $('statsThemeList');
     list.replaceChildren();
@@ -171,14 +206,27 @@ function renderThemeList() {
         const head = document.createElement('span');
         head.className = 'stats-theme-head';
         head.append(name, badges);
+        // Nom et bande de couleurs : un bouton qui applique le thème.
+        const pick = document.createElement('button');
+        pick.type = 'button';
+        pick.className = 'stats-theme-pick';
+        pick.dataset.themeAction = 'pick';
+        pick.setAttribute('aria-pressed', String(theme.id === shownId));
+        pick.title = pickTarget(dashboard) === 'dashboard'
+            ? t('Appliquer « ${name} » à ce tableau de bord', { name: themeName(theme) })
+            : t('Appliquer « ${name} » à toute la page', { name: themeName(theme) });
+        pick.append(head, swatchStrip(theme));
         const actions = document.createElement('span');
         actions.className = 'stats-theme-actions';
         if (!theme.builtin) actions.append(iconButton('edit', 'ti-pencil', t('Modifier « ${name} »', { name: themeName(theme) })));
         actions.append(iconButton('duplicate', 'ti-copy', t('Dupliquer « ${name} »', { name: themeName(theme) }), { disabled: full }));
         if (!theme.builtin) actions.append(iconButton('delete', 'ti-trash', t('Supprimer « ${name} »', { name: themeName(theme) }), { danger: true }));
-        li.append(head, swatchStrip(theme), actions);
+        li.append(pick, actions);
         list.append(li);
     }
+    $('statsThemeListHint').textContent = pickTarget(dashboard) === 'dashboard'
+        ? t("Cliquez un thème pour l'appliquer à ce tableau de bord.")
+        : t("Cliquez un thème pour l'appliquer à toute la page.");
     $('btnStatsThemeNew').disabled = full;
     $('btnStatsThemeNew').title = full ? t('${n} thèmes au plus.', { n: MAX_THEMES }) : '';
 }
@@ -264,6 +312,7 @@ function onThemeListClick(event) {
     const theme = findTheme(state.doc.themes, button.closest('[data-theme-id]').dataset.themeId);
     if (!theme) return;
     const action = button.dataset.themeAction;
+    if (action === 'pick') pickTheme(theme);
     if (action === 'edit') openEditor(theme);
     if (action === 'delete') deleteTheme(theme);
     if (action === 'duplicate' && state.doc.themes.length < MAX_THEMES) {
@@ -335,6 +384,8 @@ function renderEditor() {
         colorField('up', 0, theme.up, t('Hausse')),
         colorField('down', 0, theme.down, t('Baisse')));
 
+    renderLook(theme);
+
     const custom = Boolean(theme.types);
     $('statsThemeTypesCustom').checked = custom;
     $('statsThemeTypes').hidden = !custom;
@@ -346,6 +397,28 @@ function renderEditor() {
 
     renderWarnings(theme);
     $('btnStatsThemeRevert').disabled = JSON.stringify(theme) === JSON.stringify(state.themeEdit.snapshot);
+}
+
+function renderLook(theme) {
+    const look = themeLook(theme);
+    $('statsThemeLook').replaceChildren(...Object.entries(LOOK_CHOICES).map(([key, choices]) => {
+        const [label, names] = LOOK_LABELS[key]();
+        const row = document.createElement('label');
+        row.className = 'stats-theme-look-row';
+        const text = document.createElement('span');
+        text.textContent = label;
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm';
+        select.dataset.look = key;
+        for (const choice of choices) select.append(new Option(names[choice], choice));
+        select.value = look[key];
+        row.append(text, select);
+        return row;
+    }));
+    const accent = Boolean(theme.accent);
+    $('statsThemeAccentCustom').checked = accent;
+    $('statsThemeAccent').hidden = !accent;
+    $('statsThemeAccent').replaceChildren(...(accent ? [colorField('accent', 0, theme.accent, t('Repères'))] : []));
 }
 
 function renderWarnings(theme) {
@@ -396,6 +469,7 @@ function onEditorInput(event) {
         case 'heat': theme.heat.colors[index] = color; break;
         case 'heat-color': theme.heat.color = color; break;
         case 'up': theme.up = color; break;
+        case 'accent': theme.accent = color; break;
         case 'down': theme.down = color; break;
         // Type : son nom en guise de rang (clé du thème).
         case 'type': theme.types[input.dataset.index] = color; break;
@@ -414,9 +488,18 @@ function onEditorChange(event) {
             ? { colors: resolveTheme(theme, colorMode()).heat.slice(0, THEME_HEAT) }
             : { color: theme.heat.colors?.[2] || heatRamp('#3987e5')[2] };
         changed({ rerender: true });
+    } else if (input.dataset.look) {
+        theme.look = { ...themeLook(theme), [input.dataset.look]: input.value };
+        changed();
+    } else if (input.id === 'statsThemeAccentCustom') {
+        // Point de départ : la première teinte des séries.
+        theme.accent = input.checked ? theme.series[0] : null;
+        changed({ rerender: true });
     } else if (input.id === 'statsThemeTypesCustom') {
+        // Point de départ : les couleurs affichées (ton de l'allure compris).
+        const shown = themeTypeColors({ ...theme, types: null }, state.typeColors, colorMode());
         theme.types = input.checked
-            ? Object.fromEntries(Object.entries(state.typeColors).map(([type, c]) => [type, normalizeHex(c) || '#808080']))
+            ? Object.fromEntries(Object.entries(shown).map(([type, c]) => [type, normalizeHex(c) || '#808080']))
             : null;
         changed({ rerender: true });
     } else if (input.id === 'statsThemeName' && !theme.name.trim()) {
@@ -480,6 +563,99 @@ export function bindColorsPanel() {
     editor.addEventListener('submit', (event) => event.preventDefault());
 }
 
+// ---------------------------------------------------------------------------
+// Fond des exports (image du tableau, PNG / SVG d'un graphique, vidéo)
+// ---------------------------------------------------------------------------
+
+// « Comme l'écran », clair ou sombre, quel que soit le mode affiché.
+// Préférence locale au navigateur, comme les réglages de la vidéo.
+export const EXPORT_BACKGROUNDS = Object.freeze(['screen', 'light', 'dark']);
+const EXPORT_BACKGROUND_KEY = 'statsExportBackground';
+
+export function exportBackground() {
+    try {
+        const value = localStorage.getItem(EXPORT_BACKGROUND_KEY);
+        return EXPORT_BACKGROUNDS.includes(value) ? value : 'screen';
+    } catch (_) {
+        return 'screen';
+    }
+}
+
+export function setExportBackground(value) {
+    if (!EXPORT_BACKGROUNDS.includes(value)) return;
+    try { localStorage.setItem(EXPORT_BACKGROUND_KEY, value); } catch (_) { /* quota, navigation privée */ }
+}
+
+// Mode d'un export ; null = celui de l'écran, rien à basculer.
+export function exportMode() {
+    const value = exportBackground();
+    return value === 'screen' || value === colorMode() ? null : value;
+}
+
+// Pose un mode sur <html> (attribut, variables du thème) et ses jetons ;
+// renvoie de quoi revenir. `state.exportMode` fait ignorer la bascule au
+// suivi du mode (stats_page.js › watchTheme) : rien n'est redessiné.
+function enterMode(mode) {
+    const root = document.documentElement;
+    const saved = {
+        attr: root.getAttribute('data-bs-theme'),
+        vars: THEME_CSS_VARS.map((name) => [name, root.style.getPropertyValue(name)]),
+        tokens: state.tokens,
+        types: state.chartTypeColors,
+    };
+    state.exportMode = mode;
+    root.setAttribute('data-bs-theme', mode);
+    const theme = shownTheme();
+    const vars = themeCssVars(theme, mode, { appAccent: appAccent() });
+    for (const name of THEME_CSS_VARS) {
+        if (vars?.[name]) root.style.setProperty(name, vars[name]);
+        else root.style.removeProperty(name);
+    }
+    state.tokens = { ...readTokens(), look: lookTokens(themeLook(theme)) };
+    state.chartTypeColors = themeTypeColors(theme, state.typeColors, mode);
+    return saved;
+}
+
+function leaveMode(saved) {
+    const root = document.documentElement;
+    if (saved.attr === null) root.removeAttribute('data-bs-theme');
+    else root.setAttribute('data-bs-theme', saved.attr);
+    for (const [name, value] of saved.vars) {
+        if (value) root.style.setProperty(name, value);
+        else root.style.removeProperty(name);
+    }
+    state.tokens = saved.tokens;
+    state.chartTypeColors = saved.types;
+    state.exportMode = null;
+}
+
+// Jetons et couleurs des types d'un mode (vidéo : figés au lancement). Lus
+// par une bascule aller-retour dans la même tâche : le navigateur ne
+// repeint rien entre les deux.
+export function colorsForMode(mode) {
+    if (!mode) return { tokens: state.tokens || readTokens(), typeColors: state.chartTypeColors || state.typeColors };
+    const saved = enterMode(mode);
+    const colors = { tokens: state.tokens, typeColors: state.chartTypeColors };
+    leaveMode(saved);
+    return colors;
+}
+
+// Travail fait dans le mode de l'export (image du tableau : styles du DOM
+// relus). `work` ne doit attendre que des promesses déjà résolues — pas
+// de tâche entre la bascule et le retour, donc pas de clignotement : les
+// polices sont attendues avant.
+export async function inExportMode(work) {
+    const mode = exportMode();
+    if (!mode) return work();
+    await document.fonts?.ready;
+    const saved = enterMode(mode);
+    try {
+        return await work();
+    } finally {
+        leaveMode(saved);
+    }
+}
+
 // Relevé E2E : thèmes du document, thème montré, couleurs lues.
 export function themeSnapshot() {
     if (!state.doc) return null;
@@ -497,5 +673,7 @@ export function themeSnapshot() {
         down: state.tokens?.down ?? null,
         typeColors: state.chartTypeColors && state.chartTypeColors !== state.typeColors ? { ...state.chartTypeColors } : null,
         open: Boolean(state.colorsOpen),
+        // Fond des exports : 'screen' | 'light' | 'dark'.
+        exportBackground: exportBackground(),
     };
 }

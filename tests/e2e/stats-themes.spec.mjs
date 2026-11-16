@@ -253,3 +253,180 @@ test('un tableau exporté emporte son thème personnel', async ({ page, request 
   expect(after.themes).toEqual([{ id: after.dashboard, name: 'Partagé' }]);
   expect(errors).toEqual([]);
 });
+
+test('clic sur un thème de la liste : appliqué à la page, ou au tableau s\'il a le sien', async ({ page, request }) => {
+  const errors = await openStats(page);
+  await openPanel(page);
+  await expect(page.locator('#statsThemeListHint')).toContainText('toute la page');
+  await page.locator('#statsThemeList [data-theme-id="pastel"] [data-theme-action="pick"]').click();
+  await expect.poll(async () => (await colors(page)).series[0]).toBe(PASTEL_LIGHT);
+  await expect(page.locator('#statsThemePage')).toHaveValue('pastel');
+  await expect(page.locator('#statsThemeList [data-theme-id="pastel"] [data-theme-action="pick"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await savedDoc(request)).theme).toBe('pastel');
+  // Le tableau a ses propres couleurs : le clic les remplace, la page garde les siennes.
+  await page.locator('#statsThemeDashboard').selectOption('vivid');
+  await expect(page.locator('#statsThemeListHint')).toContainText('ce tableau de bord');
+  await page.locator('#statsThemeList [data-theme-id="ocean"] [data-theme-action="pick"]').click();
+  await expect.poll(async () => (await colors(page)).series[0]).toBe('#005f99');
+  await expect(page.locator('#statsThemeDashboard')).toHaveValue('ocean');
+  await expect.poll(async () => (await savedDoc(request)).dashboards[0].theme).toBe('ocean');
+  expect((await savedDoc(request)).theme).toBe('pastel');
+  // Défaut cliqué pour la page : rien n'est posé (null).
+  await page.locator('#statsThemeDashboard').selectOption('');
+  await page.locator('#statsThemeList [data-theme-id="default"] [data-theme-action="pick"]').click();
+  await expect.poll(async () => (await savedDoc(request)).theme).toBeNull();
+  await expect.poll(async () => (await colors(page)).series[0]).toBe(DEFAULT_LIGHT);
+  expect(errors).toEqual([]);
+});
+
+test('allure : barres, cartes et pastilles des périodes changent avec le thème', async ({ page }) => {
+  const errors = await openStats(page);
+  const look = () => page.evaluate(() => {
+    const card = document.querySelector('#statsGrid .stats-card');
+    const style = getComputedStyle(card);
+    const badge = document.querySelector('#statsGrid .stats-card-period');
+    const bars = [...document.querySelectorAll('#statsGrid .stats-chart')]
+      .map((host) => window.echarts.getInstanceByDom(host)?.getOption().series?.find((s) => s.type === 'bar'))
+      .find(Boolean);
+    return {
+      bandWidth: style.borderTopWidth,
+      radius: style.borderTopLeftRadius,
+      badge: badge ? getComputedStyle(badge).backgroundColor : null,
+      barWidth: bars?.barMaxWidth ?? null,
+      barRadius: bars?.itemStyle?.borderRadius ?? null,
+    };
+  });
+  const before = await look();
+  expect(before).toMatchObject({ bandWidth: '1px', radius: '12px', barWidth: 24 });
+  await openPanel(page);
+  await page.locator('#statsThemeList [data-theme-id="vivid"] [data-theme-action="pick"]').click();
+  await expect.poll(async () => (await look()).bandWidth).toBe('4px');
+  const vivid = await look();
+  expect(vivid.radius).toBe('4px');
+  expect(vivid.barWidth).toBe(40);
+  expect(vivid.barRadius).toEqual([0, 0, 0, 0]);
+  expect(vivid.badge).not.toBe(before.badge);
+  // Pastel : barres en pilule, cartes teintées (fond des graphiques compris).
+  await page.locator('#statsThemeList [data-theme-id="pastel"] [data-theme-action="pick"]').click();
+  await expect.poll(async () => (await look()).radius).toBe('20px');
+  expect((await look()).barRadius).toEqual([100, 100, 0, 0]);
+  const surface = (await snapshot(page)).colors;
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--stats-card-bg').trim())).not.toBe('');
+  expect(surface.series[0]).toBe(PASTEL_LIGHT);
+  // Retour au Défaut : tout revient.
+  await page.locator('#statsThemeList [data-theme-id="default"] [data-theme-action="pick"]').click();
+  await expect.poll(look).toEqual(before);
+
+  // Thème personnel : l'allure se règle dans l'éditeur.
+  await page.locator('#btnStatsThemeNew').click();
+  await page.locator('#statsThemeLook select[data-look="cards"]').selectOption('band');
+  await page.locator('#statsThemeLook select[data-look="bars"]').selectOption('pill');
+  await expect.poll(async () => (await look()).bandWidth).toBe('4px');
+  expect((await look()).barRadius).toEqual([100, 100, 0, 0]);
+  await page.locator('#statsThemeAccentCustom').check();
+  await page.locator('#statsThemeAccent input').fill('#c2185b');
+  await expect.poll(async () => page.evaluate(() => getComputedStyle(document.querySelector('#statsGrid .stats-card')).borderTopColor))
+    .toBe('rgb(194, 24, 91)');
+  expect(errors).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// Fond des exports : comme l'écran, clair ou sombre (préférence locale)
+// ---------------------------------------------------------------------------
+
+const DARK_SURFACE = '#1b2635';
+
+async function pickExportBackground(page, value) {
+  await page.locator('#btnStatsShare').click();
+  await page.locator(`#statsShareMenu [data-action="export-background"][data-value="${value}"]`).click();
+  await expect.poll(async () => (await colors(page)).exportBackground).toBe(value);
+}
+
+test('fond des exports : l\'image du tableau sort en sombre sans toucher l\'écran', async ({ page }) => {
+  const errors = await openStats(page);
+  expect((await colors(page)).exportBackground).toBe('screen');
+  await pickExportBackground(page, 'dark');
+  // Le choix coché dans le menu.
+  await page.locator('#btnStatsShare').click();
+  await expect(page.locator('#statsShareMenu [data-value="dark"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#statsShareMenu [data-value="screen"]')).toHaveAttribute('aria-checked', 'false');
+  // Mutations de <html> pendant l'export : la bascule et le retour seulement.
+  await page.evaluate(() => {
+    window.__modeSwitches = [];
+    new MutationObserver((records) => records.forEach(() => window.__modeSwitches.push(document.documentElement.getAttribute('data-bs-theme'))))
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+  });
+  const download = page.waitForEvent('download');
+  await page.locator('#statsShareMenu [data-action="image-dashboard"]').click();
+  await download;
+  const image = (await snapshot(page)).image;
+  // Fond de page sombre de l'app.
+  expect(image.background).not.toBe('rgb(255, 255, 255)');
+  expect(image.background).not.toBe('rgb(245, 247, 251)');
+  await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
+  // L'écran reste clair, ses graphiques n'ont pas été redessinés en sombre.
+  const after = await colors(page);
+  expect(after.mode).toBe('light');
+  expect(after.series[0]).toBe(DEFAULT_LIGHT);
+  expect(await page.evaluate(() => window.__modeSwitches)).toEqual(['dark', 'light']);
+
+  // « Clair » depuis un écran sombre : fond blanc des cartes.
+  await page.evaluate(() => document.documentElement.setAttribute('data-bs-theme', 'dark'));
+  await pickExportBackground(page, 'light');
+  const second = page.waitForEvent('download');
+  await page.locator('#btnStatsShare').click();
+  await page.locator('#statsShareMenu [data-action="image-dashboard"]').click();
+  await second;
+  expect((await snapshot(page)).image.background).not.toBe(image.background);
+  await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+  // Préférence gardée au rechargement (navigateur).
+  await page.reload();
+  await page.waitForFunction(() => window.mygcflowStatsReady === true);
+  expect((await colors(page)).exportBackground).toBe('light');
+  expect(errors).toEqual([]);
+});
+
+test('fond des exports : PNG d\'un graphique et vidéo dans le mode choisi', async ({ page }) => {
+  const errors = await openStats(page);
+  await pickExportBackground(page, 'dark');
+  // PNG d'une carte : coin de l'image au fond sombre des cartes.
+  const target = (await snapshot(page)).cards.find((c) => c.chart === 'bar');
+  const download = page.waitForEvent('download');
+  const menu = page.locator(`.stats-card[data-chart-id="${target.id}"] .stats-card-menu`);
+  await menu.locator('[data-bs-toggle="dropdown"]').click();
+  await menu.locator('.dropdown-submenu > .dropdown-item').click();
+  await menu.locator('[data-action="export"]').click();
+  const file = await (await download).path();
+  const fs = await import('node:fs');
+  const dataUrl = 'data:image/png;base64,' + fs.readFileSync(file).toString('base64');
+  const corner = await page.evaluate(async (url) => {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const g = canvas.getContext('2d');
+    g.drawImage(img, 0, 0);
+    return [...g.getImageData(2, 2, 1, 1).data.slice(0, 3)];
+  }, dataUrl);
+  expect(corner).toEqual([0x1b, 0x26, 0x35]);
+  await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
+
+  // Vidéo du tableau : le menu « Fond » de la fenêtre reprend le réglage.
+  await page.locator('#btnStatsShare').click();
+  await page.locator('#statsShareMenu [data-action="video-dashboard"]').click();
+  await expect(page.locator('#statsVideoModal')).toBeVisible();
+  await expect(page.locator('#statsVideoBackground')).toHaveValue('dark');
+  await page.locator('#btnStatsVideoPreview').click();
+  await expect.poll(async () => (await snapshot(page)).video.surface).toBe(DARK_SURFACE);
+  await page.locator('#btnStatsVideoStopPreview').click();
+  // Changé dans la fenêtre : vaut aussi pour les images.
+  await page.locator('#statsVideoBackground').selectOption('screen');
+  expect((await colors(page)).exportBackground).toBe('screen');
+  await page.locator('#btnStatsVideoPreview').click();
+  await expect.poll(async () => (await snapshot(page)).video.surface).toBe('#ffffff');
+  await page.locator('#btnStatsVideoStopPreview').click();
+  await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
+  expect(errors).toEqual([]);
+});

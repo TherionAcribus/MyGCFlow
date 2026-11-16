@@ -55,3 +55,14 @@ couleurs ».
    avec aperçu en direct et « Annuler les modifications ».
 5. **Finitions** : documentation (`docs/page-statistiques.md`),
    traductions, E2E (`stats-themes.spec.mjs`).
+6. **Allure** (2026-11-16, retour : « les thèmes ne changent pas assez de
+   look ») : forme et largeur des barres, épaisseur des courbes, points,
+   aires, anneaux, style et coins des cartes, couleur des pastilles, ton
+   des types de caches ; une allure propre à chaque thème fourni, réglable
+   dans l'éditeur. Choisir un thème d'un clic dans la liste.
+7. **Fond des exports** (2026-11-16) : comme l'écran / clair / sombre pour
+   l'image du tableau, le PNG / SVG d'un graphique et la vidéo, sans
+   toucher l'écran. Étape suivante possible (non faite) : une couleur de
+   fond libre dans l'allure d'un thème, avec texte, quadrillage et dégradé
+   calculés depuis ce fond (cartes et exports ; le fond de page autour des
+   cartes resterait celui de l'app).

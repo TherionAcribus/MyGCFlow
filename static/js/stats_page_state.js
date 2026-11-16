@@ -50,6 +50,7 @@ export const state = {
     themeKey: null,             // couleurs posées (variables CSS) : rien à refaire si inchangées
     themeEdit: null,            // thème en cours de modification : { theme, snapshot }
     colorsOpen: false,          // panneau « Couleurs » ouvert
+    exportMode: null,           // mode posé le temps d'un export (« Fond » : clair / sombre)
     today: todayDay(),
     charts: new Map(),          // id de graphique → instance ECharts
     results: new Map(),         // id → { result, spec } (relevé E2E)
@@ -98,7 +99,9 @@ export function readTokens() {
         font: getComputedStyle(document.body).fontFamily || 'sans-serif',
         textMuted: v('--color-text-muted', '#5b6878'),
         grid: v('--chart-grid', '#e1e6ec'),
-        surface: v('--color-surface', '#ffffff'),
+        // Fond des graphiques : celui des cartes (teinté par un thème de
+        // couleurs) — séparations des anneaux, vidéo, exports.
+        surface: v('--stats-card-bg', v('--color-surface', '#ffffff')),
         others: v('--chart-others', '#a9b1bb'),
         unknown: v('--chart-unknown', '#cfd5dc'),
         up: v('--chart-up', '#2a78d6'),

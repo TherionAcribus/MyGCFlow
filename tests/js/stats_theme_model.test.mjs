@@ -5,6 +5,11 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
     BUILTIN_THEMES,
+    DEFAULT_LOOK,
+    lookTokens,
+    normalizeLook,
+    readableOn,
+    themeLook,
     DEFAULT_THEME_ID,
     MAX_THEMES,
     SURFACES,
@@ -148,7 +153,8 @@ test('thème effectif : celui du tableau, sinon de la page, sinon Défaut', () =
 test('variables CSS : aucune pour Défaut, toutes sinon, même jeu dans les deux modes', () => {
     assert.equal(themeCssVars(builtinTheme('default'), 'dark'), null);
     const vars = themeCssVars(custom(), 'light');
-    assert.deepEqual(Object.keys(vars).sort(), [...THEME_CSS_VARS].sort());
+    // Allure de Défaut, pas de couleur de repères : seulement les couleurs.
+    assert.deepEqual(Object.keys(vars).sort(), THEME_CSS_VARS.filter((name) => name.startsWith('--chart-')).sort());
     assert.equal(vars['--chart-series-1'], '#112233');
     assert.equal(themeCssVars(custom(), 'dark')['--chart-series-1'], '#112233');
     // Dégradé généré : propre à chaque fond.
@@ -213,4 +219,77 @@ test('partage : export sans identifiant, import réutilise un thème identique',
     assert.equal(adoptTheme([theme], 'x', { newId: seqId }).id, null);
     const full = Array.from({ length: MAX_THEMES }, (_, i) => custom({ id: `cccc${String(i).padStart(4, '0')}`, up: '#00000' + (i % 10) }));
     assert.equal(adoptTheme(full, { ...file, down: '#00ff00' }, { newId: seqId }).id, null);
+});
+
+test('allure : choix bornés, Défaut pour ce qui manque, réglages de dessin', () => {
+    assert.deepEqual(normalizeLook({ bars: 'pill', lines: 'nope' }), { ...DEFAULT_LOOK, bars: 'pill' });
+    assert.deepEqual(themeLook(null), DEFAULT_LOOK);
+    // Défaut : les valeurs historiques de chart_echarts.mjs.
+    assert.deepEqual(lookTokens(DEFAULT_LOOK), {
+        barRadius: 4, barMaxWidth: 24, lineWidth: 2, symbol: 'circle', symbolSize: 8,
+        areaOpacity: 0.1, donutInner: 0.66, sliceRadius: 4,
+    });
+    const ocean = lookTokens(themeLook(builtinTheme('ocean')));
+    assert.equal(ocean.symbol, 'none');
+    assert.ok(ocean.barMaxWidth < 24 && ocean.lineWidth < 2 && ocean.donutInner > 0.66);
+    // Ancien thème personnel (sans allure) : Défaut.
+    assert.deepEqual(custom().look, DEFAULT_LOOK);
+    assert.equal(custom().accent, null);
+});
+
+test('thèmes fournis : chacun a sa propre allure', () => {
+    const looks = BUILTIN_THEMES.map((theme) => JSON.stringify(themeLook(theme)));
+    assert.equal(new Set(looks).size, BUILTIN_THEMES.length);
+    for (const theme of BUILTIN_THEMES.slice(1)) {
+        assert.ok(theme.light.accent && theme.dark.accent, theme.id);
+    }
+});
+
+test('cartes et pastilles : variables selon l\'allure, texte lisible sur la pastille', () => {
+    for (const mode of ['light', 'dark']) {
+        const vivid = themeCssVars(builtinTheme('vivid'), mode);
+        assert.equal(vivid['--stats-card-band'], builtinTheme('vivid')[mode].accent);
+        assert.equal(vivid['--stats-card-radius'], '4px');
+        assert.ok(contrastRatio(vivid['--stats-badge-text'], vivid['--stats-badge-bg']) >= 4.5, mode);
+        const pastel = themeCssVars(builtinTheme('pastel'), mode);
+        assert.notEqual(pastel['--stats-card-bg'], SURFACES[mode]);
+        assert.ok(contrastRatio(pastel['--stats-card-bg'], SURFACES[mode]) < 1.3, 'teinte discrète');
+        assert.ok(themeCssVars(builtinTheme('ocean'), mode)['--stats-card-border-color']);
+    }
+    // Sans couleur de repères : bandeau à la couleur de l'app, pastilles inchangées.
+    const band = themeCssVars(custom({ look: { cards: 'band' } }), 'light', { appAccent: '#0072c6' });
+    assert.equal(band['--stats-card-band'], '#0072c6');
+    assert.equal(band['--stats-badge-bg'], undefined);
+    assert.ok(contrastRatio(readableOn('#f0e442', '#ffffff'), '#ffffff') >= 4.5);
+});
+
+test('dupliquer un thème fourni garde son allure et sa couleur de repères', () => {
+    const copy = duplicateTheme(builtinTheme('vivid'), { mode: 'light', newId: () => 'abcdef03', name: 'V' });
+    assert.deepEqual(copy.look, themeLook(builtinTheme('vivid')));
+    assert.equal(copy.accent, builtinTheme('vivid').light.accent);
+    // L'allure compte dans l'identité d'un thème importé.
+    const reused = adoptTheme([copy], { ...exportTheme(copy), look: { ...copy.look, bars: 'pill' } }, { newId: () => 'abcdef04' });
+    assert.equal(reused.id, 'abcdef04');
+});
+
+test('types : au ton du thème (adoucies, atténuées), Okabe-Ito pour Daltonisme', () => {
+    const defaults = { 'Traditional Cache': '#008000', 'Event Cache': '#FF0000' };
+    // Défaut et Vives : les couleurs de la carte, même objet.
+    assert.equal(themeTypeColors(builtinTheme('vivid'), defaults), defaults);
+    const soft = themeTypeColors(builtinTheme('pastel'), defaults, 'light');
+    assert.ok(contrastRatio(soft['Traditional Cache'], '#ffffff') < contrastRatio('#008000', '#ffffff'));
+    // Atténuées : moins saturées, même famille (le vert reste vert).
+    const muted = themeTypeColors(builtinTheme('earth'), defaults);
+    assert.notEqual(muted['Event Cache'], '#FF0000');
+    assert.ok(colorDistance(muted['Traditional Cache'], '#008000') < colorDistance(muted['Traditional Cache'], '#ff0000'));
+    const cvd = themeTypeColors(builtinTheme('colorblind'), defaults);
+    assert.equal(cvd['Traditional Cache'], '#009e73');
+    assert.equal(cvd['Event Cache'], '#d55e00');
+    // Thème personnel : ses couleurs par type par-dessus le ton.
+    const mine = themeTypeColors(custom({ look: { types: 'soft' }, types: { 'Event Cache': '#123456' } }), defaults);
+    assert.equal(mine['Event Cache'], '#123456');
+    assert.notEqual(mine['Traditional Cache'], '#008000');
+    // Dupliquer Daltonisme garde ses types.
+    const copy = duplicateTheme(builtinTheme('colorblind'), { newId: () => 'abcdef05', name: 'C' });
+    assert.equal(copy.types['Traditional Cache'], '#009e73');
 });

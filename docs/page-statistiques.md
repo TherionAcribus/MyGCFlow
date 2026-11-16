@@ -280,13 +280,51 @@ graphiques redessinés.
 Plan : [MyGCFlow_Plan_Themes_Statistiques.md](../MyGCFlow_Plan_Themes_Statistiques.md).
 Bouton **Couleurs** de la barre → panneau latéral sans voile
 (`#statsColorsPanel`) : sur un écran large la page se resserre à sa gauche
-(`body.stats-colors-open`), le tableau reste entier et se recolore en
-direct.
+(`body.stats-colors-open` ; `#statsPage` ayant `width: 100%`, la règle
+réduit aussi sa largeur — une marge seule l'élargissait sous le panneau),
+le tableau reste entier et se recolore en direct.
+
+Choix d'un thème : les deux menus (page, tableau) ou un clic sur un thème
+de la liste (nom + bande de couleurs, bouton `[data-theme-action="pick"]`,
+`aria-pressed` sur le thème affiché). Le clic l'applique là où le choix
+actuel est posé : au tableau s'il a ses propres couleurs, sinon à toute la
+page — la phrase sous « Thèmes » le dit (`#statsThemeListHint`).
 
 - **Contenu d'un thème** (`stats_theme_model.mjs`) : 8 teintes des séries,
-  dégradé de 5 pas (`--chart-heat-*`), hausse / baisse, et facultativement
-  une couleur par type de cache. Quadrillage, « Autres », « Inconnu », cases
-  vides et textes restent ceux de `stats_page.css`.
+  dégradé de 5 pas (`--chart-heat-*`), hausse / baisse, facultativement
+  une couleur par type de cache, une couleur de repères (`accent`, null =
+  celle de l'app) et une **allure** (`look`, ajoutée le 2026-11-16 : les
+  thèmes ne changeaient sinon que de teintes, « pas assez de look »).
+  Quadrillage, « Autres », « Inconnu », cases vides et textes restent ceux
+  de `stats_page.css`.
+- **Allure** (`LOOK_CHOICES`, le premier choix = l'app) : barres arrondies /
+  carrées / en pilule et leur largeur (24 / 12 / 40 px au plus), courbes
+  (2 / 1,5 / 3,5 px), points (ronds, carrés, losanges, aucun — gardés pour
+  une courbe d'une seule clé), opacité des aires (0,1 / 0,22 / 0,38),
+  anneaux (rayon intérieur 0,66 / 0,82 / 0,42 du rayon extérieur), cartes
+  (simples, teintées, bandeau de 4 px, contour coloré), coins (12 / 4 /
+  20 px), et ton des types de caches (couleurs de la carte, adoucies,
+  atténuées : mêmes repères, Traditional reste vert). `lookTokens` →
+  `tokens.look`, lu par `chart_echarts.mjs` (`lookOf`, Défaut sans
+  thème) ; cartes et pastilles par variables CSS (`--stats-card-*`,
+  `--stats-badge-*`, `lookCssVars`), posées seulement quand l'allure ou la
+  couleur de repères les demande. Le fond teinté d'une carte devient
+  `tokens.surface` (`readTokens` lit `--stats-card-bg`) : séparations des
+  anneaux, vidéo et exports suivent. L'image du tableau lit les styles
+  calculés : bandeau et contour y passent (bords pleins, sans ombre).
+- **Pastilles des périodes** : fond = couleur de repères mêlée au fond de
+  la carte (14 % en clair, 28 % en sombre), texte = la même couleur
+  assombrie ou éclaircie jusqu'à 4,5:1 (`readableOn`).
+- **Allures des thèmes fournis** : Pastel (pilules larges, courbes épaisses,
+  aires marquées, anneaux épais, cartes teintées très arrondies, types
+  adoucis), Vives (barres carrées larges, losanges, bandeau, coins nets),
+  Terre (barres et points carrés, cartes teintées, types atténués), Océan
+  (pilules fines, traits fins sans points, anneaux fins, contour coloré,
+  types atténués), Daltonisme (barres carrées, traits épais, losanges, types
+  en Okabe-Ito : Traditional vert-bleu, Multi orange, Mystery bleu,
+  événements vermillon — le vert et le rouge de la carte sont ceux que
+  confondent les daltoniens). Un test vérifie que chacun a une allure
+  propre.
 - **Portée** : `doc.theme` (toute la page, null = Défaut) et
   `dashboard.theme` (null = comme la page). `effectiveThemeId` : celui du
   tableau, sinon de la page, sinon Défaut ; une référence disparue est remise
@@ -329,6 +367,32 @@ direct.
 - **Secours à la fermeture** : l'envoi d'un seul tableau (`PUT
   /api/dashboards/<id>`) emporte aussi `themes` et `theme`, que
   `save_dashboard` remplace s'ils sont présents.
+- **Fond des exports** (2026-11-16) : « Comme l'écran » (défaut), « Clair »
+  ou « Sombre », quel que soit le mode affiché — pour sortir une vidéo
+  sombre en travaillant en clair. Préférence locale au navigateur
+  (`localStorage.statsExportBackground`, comme les réglages de la vidéo),
+  choisie dans le menu « Exporter » (« Fond des images et des vidéos »,
+  `menuitemradio`) ou dans la fenêtre vidéo (`#statsVideoBackground`) :
+  un seul réglage pour l'image du tableau, le PNG et le SVG d'un graphique
+  et la vidéo. L'impression reste toujours sur fond clair.
+  Mécanique (`stats_page_themes.js`) : `enterMode` pose l'attribut
+  `data-bs-theme` et les variables du thème du mode voulu, relit les jetons
+  et les couleurs des types ; `leaveMode` rétablit tout ; `state.exportMode`
+  fait ignorer la bascule au suivi du mode (rien n'est redessiné à l'écran).
+  Image du tableau et PNG / SVG : `inExportMode` — polices attendues
+  AVANT la bascule, puis un dessin qui n'attend que des promesses déjà
+  résolues : aucune tâche entre l'aller et le retour, donc aucun
+  clignotement (le spec vérifie qu'il n'y a qu'un aller-retour). Vidéo :
+  dessinée sur plusieurs secondes, elle ne peut pas basculer l'écran —
+  `colorsForMode` lit une fois les jetons du mode (aller-retour dans la
+  même tâche), figés dans `state.video.colors` au lancement de l'aperçu ou
+  de l'enregistrement (`frameTokens` / `frameContext` des peintres). Le PNG
+  « comme l'écran » reste l'image du graphique affiché ; dans l'autre mode
+  il est redessiné hors écran. Relevés : `colors.exportBackground`,
+  `image.background` (fond de la dernière image), `video.surface`.
+- Libellés : « Allure » et « Cartes » sont déjà traduits ailleurs (« Pace »,
+  « Maps ») — l'éditeur dit « Allure des graphiques » et « Cartes du
+  tableau ».
 - Relevé E2E : `getStatsPageSnapshot().colors` (`page`, `dashboard`,
   `shown`, `editing`, `mode`, `themes`, jetons `series` / `heat` / `up` /
   `down`, `typeColors` du thème ou null). Spec : `stats-themes.spec.mjs`.

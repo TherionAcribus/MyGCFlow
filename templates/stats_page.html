@@ -172,6 +172,7 @@
                             <i class="ti ti-plus" aria-hidden="true"></i> {{ _("Nouveau thème") }}
                         </button>
                     </div>
+                    <p id="statsThemeListHint" class="form-hint mb-2"></p>
                     <ul id="statsThemeList" class="stats-theme-list"></ul>
                 </div>
 
@@ -213,6 +214,19 @@
                     <fieldset class="stats-theme-group">
                         <legend>{{ _("Écarts") }}</legend>
                         <div id="statsThemeDelta" class="stats-theme-swatches"></div>
+                    </fieldset>
+
+                    <fieldset class="stats-theme-group">
+                        <legend>{{ _("Allure des graphiques") }}</legend>
+                        <p class="form-hint">{{ _("Forme des barres, épaisseur des courbes et des anneaux, présentation des cartes.") }}</p>
+                        <!-- Un menu par réglage (stats_theme_model.mjs › LOOK_CHOICES), rempli par stats_page_themes.js. -->
+                        <div id="statsThemeLook" class="stats-theme-look"></div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="statsThemeAccentCustom">
+                            <label class="form-check-label" for="statsThemeAccentCustom">{{ _("Couleur propre aux repères") }}</label>
+                        </div>
+                        <p class="form-hint">{{ _("Pastilles des périodes, bandeau, contour et teinte des cartes ; sinon la couleur de l'application.") }}</p>
+                        <div id="statsThemeAccent" class="stats-theme-swatches" hidden></div>
                     </fieldset>
 
                     <fieldset class="stats-theme-group">
@@ -776,6 +790,16 @@
                                 <div class="col-sm-6">
                                     <label for="statsVideoDuration" class="form-label" id="statsVideoDurationLabel">{{ _("Durée") }}</label>
                                     <select id="statsVideoDuration" class="form-select"></select>
+                                </div>
+                                <!-- Fond : clair ou sombre quel que soit l'écran ; le même
+                                     réglage que les images (menu « Exporter »). -->
+                                <div class="col-sm-6">
+                                    <label for="statsVideoBackground" class="form-label">{{ _("Fond") }}</label>
+                                    <select id="statsVideoBackground" class="form-select">
+                                        <option value="screen">{{ _("Comme l'écran") }}</option>
+                                        <option value="light">{{ _("Clair") }}</option>
+                                        <option value="dark">{{ _("Sombre") }}</option>
+                                    </select>
                                 </div>
                                 <!-- Écrans de la vidéo du tableau : cases (exclure)
                                      et flèches (réordonner). Masqué hors mode tableau. -->

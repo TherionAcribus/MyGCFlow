@@ -279,9 +279,14 @@ html {
     flex-direction: column;
     min-width: 0;
     padding: 14px 16px 12px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    /* Allure du thème de couleurs (stats_theme_model.mjs › lookCssVars) :
+       fond teinté, contour coloré ou bandeau en tête, coins. Variables
+       absentes = la carte de l'app. */
+    background: var(--stats-card-bg, var(--color-surface));
+    border: var(--stats-card-border-width, 1px) solid var(--stats-card-border-color, var(--color-border));
+    border-top: var(--stats-card-band-width, var(--stats-card-border-width, 1px)) solid
+        var(--stats-card-band, var(--stats-card-border-color, var(--color-border)));
+    border-radius: var(--stats-card-radius, 12px);
 }
 .stats-card-header {
     display: flex;
@@ -309,9 +314,9 @@ html {
     padding: 2px 8px;
     font-size: 0.72rem;
     font-weight: 500;
-    color: var(--color-accent-on-weak);
-    background: var(--color-accent-weak);
-    border-radius: 999px;
+    color: var(--stats-badge-text, var(--color-accent-on-weak));
+    background: var(--stats-badge-bg, var(--color-accent-weak));
+    border-radius: var(--stats-badge-radius, 999px);
     white-space: nowrap;
 }
 /* Période propre (épinglée) : ne suit pas le menu « Période ». */
@@ -1386,8 +1391,12 @@ html:has(body.is-presenting) {
    reste visible pendant qu'on choisit (les graphiques suivent leur
    conteneur, onHostsResized). */
 @media (min-width: 1100px) {
+    /* `width: 100%` de #statsPage : la largeur se réduit d'autant, sinon
+       la marge s'ajoutait et la page passait toujours sous le panneau. */
     body.stats-colors-open #statsPage {
-        margin-right: 380px;
+        width: calc(100% - 392px);
+        margin-right: 392px;
+        margin-left: max(0px, calc((100% - 392px - 1600px) / 2));
     }
 }
 .stats-colors-heading {
@@ -1405,21 +1414,38 @@ html:has(body.is-presenting) {
     gap: 0.5rem;
 }
 .stats-theme-item {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "head actions" "strip actions";
+    display: flex;
     align-items: center;
-    gap: 0.25rem 0.5rem;
-    padding: 0.5rem 0.6rem;
+    gap: 0.25rem;
     border: 1px solid var(--tblr-border-color, #dce1e7);
     border-radius: 6px;
+}
+.stats-theme-item:hover {
+    border-color: var(--color-text-muted);
 }
 .stats-theme-item.is-shown {
     border-color: var(--tblr-primary, #0072c6);
     box-shadow: inset 3px 0 0 var(--tblr-primary, #0072c6);
 }
+/* Nom + bande : tout le bloc est le bouton qui applique le thème. */
+.stats-theme-pick {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.5rem 0 0.5rem 0.6rem;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px 0 0 6px;
+}
+.stats-theme-pick:focus-visible {
+    outline: 2px solid var(--tblr-primary, #0072c6);
+    outline-offset: -2px;
+}
 .stats-theme-head {
-    grid-area: head;
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -1436,12 +1462,11 @@ html:has(body.is-presenting) {
     gap: 0.25rem;
 }
 .stats-theme-actions {
-    grid-area: actions;
     display: inline-flex;
+    padding-right: 0.3rem;
 }
 /* Bande : les 8 teintes des séries, puis le dégradé. */
 .stats-theme-strip {
-    grid-area: strip;
     display: flex;
     height: 14px;
     border-radius: 3px;
@@ -1481,6 +1506,18 @@ html:has(body.is-presenting) {
     width: 100%;
     height: 2rem;
     padding: 0.15rem;
+}
+.stats-theme-look {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem 0.6rem;
+    margin-top: 0.35rem;
+}
+.stats-theme-look-row {
+    display: grid;
+    gap: 0.15rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
 }
 .stats-theme-ramp {
     height: 12px;
