@@ -150,9 +150,13 @@ a = Analysis(
     noarchive=False,
 )
 
-# Babel embarque les données de ~1 000 locales (30 Mo) ; MyGCFlow n'est traduit
-# qu'en français et en anglais.
-KEPT_LOCALES = ("root", "fr", "en")
+# Babel embarque les données de ~1 000 locales (30 Mo) ; on ne garde que les
+# langues traduites, lues dans translations/ : une locale absente fait échouer
+# toute page dans cette langue (UnknownLocaleError, constaté pour « de » à la
+# préparation de la 0.0.9).
+KEPT_LOCALES = ("root",) + tuple(
+    path.name for path in (ROOT / "translations").iterdir() if path.is_dir()
+)
 
 
 def _keep(entry):

@@ -41,6 +41,11 @@ pybabel compile -d translations
   and `homeUrls` (static/js/options.js), `bddInfoLocale` (static/js/bdd.js),
   `_LABELS` (launcher.py), `echartsLocale` (static/js/stats_page_state.js) with
   a `static/vendor/echarts/lang<XX>.js` file if a locale file exists.
+- The packaged app keeps Babel's locale data only for the folders found in
+  `translations/` (`KEPT_LOCALES` in installer/mygcflow.spec). A missing locale
+  makes every page in that language fail (`UnknownLocaleError`) in the built
+  executable only, never from source: start the build once in the new language
+  before a release.
 - `language` in settings.json is free-form — an unknown value simply falls back
   to French server-side.
 
