@@ -255,6 +255,29 @@ def _v11_ajustements_parcours(db):
         )
 
 
+
+def _v12_photos_parcours(db):
+    # Parcours, lot 4 : photos et décalage d'horloge par appareil.
+    # Idempotent, comme v2.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS parcours_photo ("
+            "id INTEGER PRIMARY KEY, "
+            "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+            "file VARCHAR(40) NOT NULL, original_name VARCHAR(255), "
+            "taken_at VARCHAR(19), offset_minutes INTEGER, "
+            "latitude FLOAT, longitude FLOAT, camera VARCHAR(120), "
+            "width INTEGER, height INTEGER, stop_key VARCHAR(96), created_at DATETIME)"
+        )
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS parcours_camera ("
+            "id INTEGER PRIMARY KEY, "
+            "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+            "camera VARCHAR(120) NOT NULL, offset_minutes INTEGER NOT NULL DEFAULT 0, "
+            "CONSTRAINT uq_parcours_camera UNIQUE (parcours_id, camera))"
+        )
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -267,6 +290,7 @@ MIGRATIONS = [
     (9, _v9_logs_horizon_dnf),
     (10, _v10_table_parcours),
     (11, _v11_ajustements_parcours),
+    (12, _v12_photos_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

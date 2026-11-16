@@ -298,3 +298,40 @@ class ParcoursPlace(db.Model):
     date = db.Column(db.Date)
     time = db.Column(db.String(5))             # « HH:MM » : heure sûre du lieu
     created_at = db.Column(db.DateTime)
+
+
+class ParcoursPhoto(db.Model):
+    """Photo d'un parcours (lot 4), normalisée dans parcours_photos/<id>/.
+    L'EXIF est lu à l'envoi (la normalisation le retire) : heure murale de
+    l'appareil, décalage horaire s'il est connu, position, appareil."""
+    __tablename__ = 'parcours_photo'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)
+    file = db.Column(db.String(40), nullable=False)        # <empreinte>.jpg|png
+    original_name = db.Column(db.String(255))
+    taken_at = db.Column(db.String(19))                    # « AAAA-MM-JJTHH:MM:SS », heure de l'appareil
+    offset_minutes = db.Column(db.Integer)                 # OffsetTimeOriginal, si présent
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    camera = db.Column(db.String(120))                     # « marque modèle »
+    width = db.Column(db.Integer)
+    height = db.Column(db.Integer)
+    # Étape rattachée à la main (null : rattachement automatique, calculé).
+    stop_key = db.Column(db.String(96))
+    created_at = db.Column(db.DateTime)
+
+
+class ParcoursCamera(db.Model):
+    """Décalage de l'horloge d'un appareil photo pour un parcours (lot 4) :
+    minutes à ajouter à l'heure de ses photos."""
+    __tablename__ = 'parcours_camera'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)
+    camera = db.Column(db.String(120), nullable=False)
+    offset_minutes = db.Column(db.Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        db.UniqueConstraint('parcours_id', 'camera', name='uq_parcours_camera'),
+    )

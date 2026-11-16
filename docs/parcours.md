@@ -7,10 +7,10 @@ le quatrième mode de l'application, à côté de « Mes Géocaches » (`/`),
 lien `#linkParcoursMode` de l'en-tête.
 
 Plan, choix produit et découpage : `MyGCFlow_Plan_Parcours.md`. État au
-2026-11-16 : **lots 0 à 3** — parcours enregistrés, ordre de passage et
+2026-11-16 : **lots 0 à 4** — parcours enregistrés, ordre de passage et
 heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance),
 ajustements manuels (ordre, heure épinglée, journée, exclusion, lieux et
-bases).
+bases), photos (rattachement, heure comme ancre, carte postale).
 
 ## Parcours enregistrés
 
@@ -41,11 +41,17 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |
 | `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?}` ou base `{kind: base, name, lat, lon, date?}` (base sans date : toutes les journées) |
 | `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
+| `POST /api/parcours/<id>/photos` | Envoi d'une photo (multipart, champ `photo`, 15 Mo au plus) ; la même photo deux fois n'est gardée qu'une fois |
+| `GET /api/parcours/<id>/photos/<ph>/file` / `thumb` | Photo normalisée / vignette 320 px (cache long, nom = empreinte) |
+| `PATCH` / `DELETE /api/parcours/<id>/photos/<ph>` | Rattachement manuel `{stopKey}` (null : automatique) ; suppression (fichiers compris) |
+| `PUT /api/parcours/<id>/cameras` | Décalage d'horloge d'un appareil `{camera, offsetMinutes}` (null : l'oublie ; ±2 jours au plus) |
 
 Erreurs : `{success: false, error, message}` avec les codes `not-found`,
 `name-empty`, `name-too-long`, `date-invalid`, `range-reversed`,
 `range-too-long`, `time-invalid` (« HH:MM » attendu), `day-out-of-range`,
-`override-invalid`, `place-invalid`, `place-not-found`.
+`override-invalid`, `place-invalid`, `place-not-found`, `photo-not-found`,
+`photo-invalid`, `photos-full` (300 photos par parcours), `camera-invalid`,
+`photo-refused` (fichier refusé : `reason` comme l'onglet Images).
 
 ## Entrées (`parcours_dataset.py`)
 
@@ -207,6 +213,60 @@ atteints. Au repos, le plan les montre (carré sombre, étoile violette). Une
 base dure 4 quanta à l'écran. Les ajustements sont refusés pendant une
 lecture (« Arrêtez la lecture… »).
 
+## Photos (lot 4 : `parcours_photos.py`, `parcours_photos.mjs`)
+
+**À l'envoi**, dans cet ordre :
+1. l'EXIF est lu : heure murale de l'appareil (`DateTimeOriginal`),
+   `OffsetTimeOriginal`, GPS, marque et modèle ;
+2. l'image est normalisée comme dans l'onglet Images (redressée, 2048 px,
+   HEIC décodé — **l'EXIF disparaît du fichier gardé**, position comprise) ;
+3. une vignette de 320 px est tirée ;
+4. le tout est rangé dans `parcours_photos/<parcours>/` du dossier de
+   données. Supprimer le parcours supprime le dossier.
+
+Table `parcours_photo`, décalages d'horloge dans `parcours_camera`
+(migration v12).
+
+**Rattachement** (calculé côté client, jamais stocké, sauf le choix manuel) :
+
+| Photo | Étape |
+|---|---|
+| choisie à la main (`stopKey`) | celle-là |
+| géolocalisée | la plus proche à moins de 150 m, le jour de la photo (bases exclues) |
+| heure de confiance, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus |
+| sinon | aucune (vignette estompée) |
+
+**Heure de confiance** : celle d'un téléphone (photo géolocalisée : son
+horloge suit le réseau), ou d'un appareil recalé. Un recalage à 0 compte
+aussi : c'est l'utilisateur qui dit l'horloge juste. Une photo rattachée à
+la main ou par position, à heure de confiance et le jour même, devient une
+**ancre** de son étape : raison `photo`, heure exacte. Une heure épinglée
+ou une heure Lab primeraient. Le rattachement par l'heure découle de
+l'horaire : il ne peut pas le caler.
+
+`reconstructWithPhotos` fait donc deux passes :
+1. reconstruction sans photo ;
+2. rattachement, puis ancres ;
+3. reconstruction finale, puis rattachement final.
+
+**Recalage d'un appareil** (carte Photos) : saisie du décalage en minutes,
+ou « Caler l'horloge sur l'étape », proposé pour une photo sans position
+rattachée à une étape à heure sûre (épinglée, Lab) : décalage = heure de
+l'étape − heure de la photo.
+
+**Lecture et vidéo** :
+- chaque photo ajoute 15 quanta (1,5 s) au temps d'écran de son étape (4
+  photos au plus en temps cumulé, partagé au-delà) ;
+- pendant ce temps, une **carte postale** (bordure blanche, ombre, légère
+  inclinaison, 220 px CSS de grand côté) apparaît au-dessus à droite de
+  l'étape, gardée dans l'écran. Les photos d'une étape passent l'une après
+  l'autre, avec un fondu de 2 quanta ;
+- elle est dessinée dans le `postrender` de la couche de la tête, donc
+  filmée. L'image est servie par le serveur local (même origine) : le
+  canevas reste exportable, ce que vérifie un export du spec e2e ;
+- les photos sont préchargées à l'ouverture : une photo encore en
+  chargement n'est simplement pas dessinée.
+
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
 Journée par journée, la dernière étape de la veille orientant la suivante.
@@ -295,13 +355,18 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
 ## Tests
 
 - Python : `tests/test_parcours_api.py` (CRUD, validation, entrées, DNF,
-  Labs, migration) ; préférences de la page dans
+  Labs, ajustements, migration), `tests/test_parcours_photos.py` (EXIF
+  synthétique, envoi, doublon, vignette, rattachement, appareils,
+  suppression) ; préférences de la page dans
   `tests/test_global_preferences.py` (`test_parcours_preferences_have_their_own_keys`).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
-  `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_model.test.mjs`,
-  `tests/js/app_mode.test.mjs`.
-- E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2) et
-  `tests/e2e/parcours-adjust.spec.mjs` (lot 3), aides communes dans
+  `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_photos.test.mjs`,
+  `tests/js/parcours_model.test.mjs`, `tests/js/app_mode.test.mjs`.
+- E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2),
+  `tests/e2e/parcours-adjust.spec.mjs` (lot 3) et
+  `tests/e2e/parcours-photos.spec.mjs` (lot 4, photos de
+  `tests/e2e/fixtures/parcours-photos/`, générées par `photo_bytes` de
+  test_parcours_photos.py), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le

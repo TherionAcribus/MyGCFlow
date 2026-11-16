@@ -62,8 +62,31 @@ journée corrigée, exclusion et réintégration, « Ordre automatique »,
 « Annuler les ajustements »), lieux et bases posés d'un clic sur la carte.
 Tables `parcours_override` et `parcours_place` (migration v11), API
 `/overrides` et `/places`, `applyAdjustments` + `reconstructDay` dans
-parcours_reconstruct.mjs. Prochaine étape : lots 4 à 6 (photos, traces,
-itinéraires), dans l'ordre souhaité.
+parcours_reconstruct.mjs.
+
+**Lot 4 livré le 2026-11-16** : photos. Lecture EXIF avant normalisation,
+`parcours_photos.py` (stockage, vignettes, appareils), tables
+`parcours_photo` et `parcours_camera` (migration v12), rattachement et
+ancres dans `parcours_photos.mjs`, carte « Photos » de l'onglet Données,
+carte postale dans la lecture et la vidéo. Prochaine étape : lots 5
+(traces GPS) et 6 (itinéraires).
+
+Écarts et constats du lot 4 :
+- **Heure de confiance** : photo géolocalisée (un téléphone, horloge
+  réseau) ou appareil recalé, même à 0. Une photo d'appareil sans GPS
+  jamais recalé ne cale rien : son heure n'est qu'affichée.
+- **Le rattachement par l'heure ne fait pas d'ancre** : il découle de
+  l'horaire, le laisser le caler tournerait en rond. D'où deux passes de
+  reconstruction (`reconstructWithPhotos`).
+- **Le recalage automatique depuis une trace** est reporté au lot 5. Pour
+  l'instant : à la main, ou « Caler l'horloge sur l'étape » quand la photo
+  est rattachée à une étape à heure sûre (épinglée, Lab).
+- **Fuseaux** : les heures murales (EXIF, Labs) sont prises telles
+  quelles ; `OffsetTimeOriginal` est stocké mais pas encore utilisé. Il
+  servira au lot 5, où les traces sont en UTC.
+- **Carte postale dessinée dans le canevas de la couche de la tête**, pas
+  dans un panneau Images : position liée à l'étape, fondu, inclinaison. Un
+  export images du spec e2e vérifie que le canevas reste exportable.
 
 Écarts et constats du lot 3 :
 - **Ordre manuel = un rang pour chaque étape de la journée**, écrit à

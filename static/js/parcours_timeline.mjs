@@ -45,6 +45,8 @@ export const TIMELINE_DEFAULTS = Object.freeze({
     legMinQ: 4,           // régulier : trajet le plus court
     legMaxQ: 30,          // régulier : trajet le plus long
     baseQ: 4,             // départ ou retour à la base : un bref arrêt
+    photoQ: 15,           // chaque photo d'une étape (lot 4) : 1,5 s de plus
+    maxPhotosPerStop: 4,  // au-delà, les photos se partagent ce temps
     legQPerSqrtKm: 6,     // régulier : trajet = 6·√km quanta, borné
     nightQ: 20,           // transition entre deux journées
     propQPerMinute: 0.5,  // proportionnel : 1 quantum pour 2 minutes réelles
@@ -82,7 +84,9 @@ function dayNumber(iso) {
 //            `stops`) ;
 //   days   : journées ayant des étapes { date, dayNumber, first, last, startQ }
 //            — `dayNumber` : rang de la date dans la plage (1 = premier jour).
-export function buildParcoursTimeline(reconstructed, { pace = PACE_REGULAR, options = null } = {}) {
+//   photos sur chaque étape : `photos` (ids, dans l'ordre d'affichage), et
+//   `photoQ` (quanta de chaque photo) quand `photosByStop` en donne.
+export function buildParcoursTimeline(reconstructed, { pace = PACE_REGULAR, photosByStop = null, options = null } = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
     const stops = [];
@@ -132,7 +136,11 @@ export function buildParcoursTimeline(reconstructed, { pace = PACE_REGULAR, opti
             if (stop.kind === 'base') dwell = o.baseQ;
             else if (proportional) dwell = quanta((stop.visitMin ?? 0) * o.propQPerMinute, o.propMinStopQ);
             else dwell = o.stopQ;
-            stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km });
+            // Photos : chacune a son temps d'écran, ajouté à celui de l'étape.
+            const photos = photosByStop?.get?.(stop.key) || [];
+            const photoQ = photos.length ? o.photoQ * Math.min(photos.length, o.maxPhotosPerStop) / photos.length : 0;
+            dwell += photoQ * photos.length;
+            stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km, photos, photoQ });
             q += dwell;
         }
     }

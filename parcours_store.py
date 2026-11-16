@@ -127,9 +127,12 @@ def update(session, parcours_id: int, data: dict) -> Parcours:
 
 
 def delete(session, parcours_id: int) -> None:
+    # Import local : parcours_photos importe ce module.
+    import parcours_photos
     row = get(session, parcours_id)
     session.query(ParcoursOverride).filter_by(parcours_id=row.id).delete()
     session.query(ParcoursPlace).filter_by(parcours_id=row.id).delete()
+    parcours_photos.delete_all(session, row.id)
     session.delete(row)
     session.commit()
 
@@ -185,7 +188,8 @@ def place_to_dict(row: ParcoursPlace) -> dict:
 
 
 def adjustments(session, parcours_id: int) -> dict:
-    """{overrides, places} d'un parcours."""
+    """{overrides, places, photos, cameras} d'un parcours."""
+    import parcours_photos
     overrides = session.query(ParcoursOverride).filter_by(parcours_id=parcours_id) \
         .order_by(ParcoursOverride.stop_key).all()
     places = session.query(ParcoursPlace).filter_by(parcours_id=parcours_id) \
@@ -193,6 +197,7 @@ def adjustments(session, parcours_id: int) -> dict:
     return {
         'overrides': [override_to_dict(row) for row in overrides],
         'places': [place_to_dict(row) for row in places],
+        **parcours_photos.list_photos(session, parcours_id),
     }
 
 

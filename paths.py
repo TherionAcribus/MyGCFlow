@@ -200,6 +200,12 @@ def images_dir() -> Path:
     return data_dir() / "images"
 
 
+def parcours_photos_dir() -> Path:
+    """Photos des parcours (page Parcours, lot 4), un sous-dossier par
+    parcours, normalisées à l'envoi (parcours_photos.py)."""
+    return data_dir() / "parcours_photos"
+
+
 def default_video_dir() -> Path:
     """Dossier des vidéos tant que l'utilisateur n'en a pas choisi un autre.
 

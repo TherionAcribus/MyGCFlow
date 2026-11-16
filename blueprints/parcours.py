@@ -7,10 +7,12 @@ suppression, entrées de la reconstruction (`parcours_dataset`) et
 ajustements manuels (rang, heure, journée, exclusion, lieux et bases).
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, abort, jsonify, request, send_file
 from flask_babel import gettext as _
 
+import image_library
 import parcours_dataset
+import parcours_photos
 import parcours_store as store
 from extensions import db
 from .core import render_app_page
@@ -32,6 +34,10 @@ def _store_error(exc: store.ParcoursError):
         'override-invalid': (_('Ajustement invalide'), 400),
         'place-invalid': (_('Lieu invalide'), 400),
         'place-not-found': (_('Lieu introuvable'), 404),
+        'photo-not-found': (_('Photo introuvable'), 404),
+        'photo-invalid': (_('Rattachement invalide'), 400),
+        'photos-full': (_('Un parcours garde %(max)s photos au plus', max=parcours_photos.MAX_PHOTOS), 400),
+        'camera-invalid': (_("Décalage d'horloge invalide"), 400),
     }
     message, code = messages.get(exc.code, (str(exc), 400))
     return jsonify({'success': False, 'error': exc.code, 'message': message}), code
@@ -144,3 +150,89 @@ def delete_place(parcours_id, place_id):
     except store.ParcoursError as exc:
         return _store_error(exc)
     return jsonify({'success': True})
+
+
+# --- Photos (lot 4) ----------------------------------------------------------------
+
+def _photo_refused(reason):
+    if reason == 'too_large':
+        message = _("Photo trop lourde : %(max)d Mo au maximum.",
+                    max=image_library.IMAGE_MAX_UPLOAD_BYTES // (1024 * 1024))
+    elif reason == 'format':
+        message = _("Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC.")
+    elif reason == 'too_many_pixels':
+        message = _("Image trop grande (dimensions démesurées).")
+    else:
+        message = _("Ce fichier n'est pas une image lisible.")
+    status = 413 if reason == 'too_large' else 415 if reason == 'format' else 400
+    return jsonify({'success': False, 'error': 'photo-refused', 'reason': reason, 'message': message}), status
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos', methods=['POST'])
+def upload_photo(parcours_id):
+    upload = request.files.get('photo') if request.files else None
+    if upload is None:
+        return jsonify({'success': False, 'error': 'photo-refused', 'message': _("Aucune photo fournie")}), 400
+    # Lecture bornée : un fichier démesuré n'est jamais chargé en entier.
+    data = upload.stream.read(image_library.IMAGE_MAX_UPLOAD_BYTES + 1)
+    try:
+        photo = parcours_photos.save_photo(db.session, parcours_id, data, upload.filename or '')
+    except image_library.InvalidImage as exc:
+        return _photo_refused(exc.reason)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True, 'photo': photo}), 201
+
+
+def _send_photo(parcours_id, photo_id, thumb):
+    try:
+        path = parcours_photos.photo_path(db.session, parcours_id, photo_id, thumb=thumb)
+    except store.ParcoursError:
+        abort(404)
+    if not path.is_file():
+        abort(404)
+    # Contenu immuable (le nom est l'empreinte du fichier normalisé).
+    response = send_file(path, max_age=7 * 24 * 3600)
+    response.headers['Cache-Control'] = 'public, max-age=604800, immutable'
+    return response
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos/<int:photo_id>/file', methods=['GET'])
+def photo_file(parcours_id, photo_id):
+    return _send_photo(parcours_id, photo_id, thumb=False)
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos/<int:photo_id>/thumb', methods=['GET'])
+def photo_thumb(parcours_id, photo_id):
+    return _send_photo(parcours_id, photo_id, thumb=True)
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos/<int:photo_id>', methods=['PATCH'])
+def update_photo(parcours_id, photo_id):
+    try:
+        photo = parcours_photos.update_photo(db.session, parcours_id, photo_id, request.get_json(silent=True))
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, 'photo': photo})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos/<int:photo_id>', methods=['DELETE'])
+def delete_photo(parcours_id, photo_id):
+    try:
+        parcours_photos.delete_photo(db.session, parcours_id, photo_id)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/cameras', methods=['PUT'])
+def set_camera(parcours_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = parcours_photos.set_camera_offset(db.session, parcours_id, data.get('camera'),
+                                                    data.get('offsetMinutes'))
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, **payload})

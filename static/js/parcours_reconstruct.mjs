@@ -59,6 +59,7 @@ export const REASON_INSERTED = 'inserted';    // sans indice : insérée au moin
 export const REASON_PINNED = 'pinned';        // heure épinglée par l'utilisateur
 export const REASON_MANUAL = 'manual';        // ordre fixé par l'utilisateur
 export const REASON_BASE = 'base';            // départ ou retour à la base
+export const REASON_PHOTO = 'photo';          // heure d'une photo rattachée (lot 4)
 
 // Verdict sur l'ordre des logs d'une journée.
 export const LOG_ORDER_TRUSTED = 'trusted';
@@ -496,8 +497,13 @@ function applyManualRanks(stops, order, ranks, reasons, confidence, anchorMin, o
 // (parcours_dataset.py). Options :
 //   overrides : Map clé → { rank?, pinnedTime? } (ajustements, lot 3) ;
 //   prevEnd   : [lon, lat] de la dernière étape de la veille, ou null ;
-//   base      : { key, name, lon, lat } — départ et retour de la journée.
-export function reconstructDay(day, { overrides = null, prevEnd = null, base = null, options: raw = null } = {}) {
+//   base      : { key, name, lon, lat } — départ et retour de la journée ;
+//   photoAnchors : Map clé → minutes, heure des photos rattachées (lot 4,
+//                  parcours_photos.mjs) — après l'heure épinglée et celle
+//                  des Labs.
+export function reconstructDay(day, {
+    overrides = null, prevEnd = null, base = null, photoAnchors = null, options: raw = null,
+} = {}) {
     const opts = options(raw);
     const rawStops = Array.isArray(day?.stops) ? day.stops : [];
     const stops = rawStops.filter(isValidStop);
@@ -513,8 +519,12 @@ export function reconstructDay(day, { overrides = null, prevEnd = null, base = n
     if (stops.length === 0) return result;
 
     const pinned = stops.map((stop) => timeToMinutes(overrides?.get?.(stop.key)?.pinnedTime));
+    const fromPhoto = stops.map((stop) => {
+        const value = photoAnchors?.get?.(stop.key);
+        return Number.isFinite(value) ? value : null;
+    });
     const anchorMin = stops.map((stop, i) => {
-        const value = pinned[i] ?? timeToMinutes(stop.localTime);
+        const value = pinned[i] ?? timeToMinutes(stop.localTime) ?? fromPhoto[i];
         return Number.isFinite(value) ? value : null;
     });
     const ranks = stops.map((stop) => {
@@ -527,8 +537,10 @@ export function reconstructDay(day, { overrides = null, prevEnd = null, base = n
     const { reasons, confidence, diagnostics } = ordered;
     for (let i = 0; i < stops.length; i++) {
         // Heure épinglée, ou lieu posé à son heure : un choix de l'utilisateur.
-        if (Number.isFinite(pinned[i]) || (stops[i].kind === KIND_PLACE && Number.isFinite(anchorMin[i]))) {
+        if (Number.isFinite(pinned[i]) || (stops[i].kind === KIND_PLACE && timeToMinutes(stops[i].localTime) !== null)) {
             reasons[i] = REASON_PINNED;
+        } else if (timeToMinutes(stops[i].localTime) === null && Number.isFinite(fromPhoto[i])) {
+            reasons[i] = REASON_PHOTO;
         }
     }
     let order = applyManualRanks(stops, ordered.order, ranks, reasons, confidence, anchorMin, opts);
@@ -604,7 +616,7 @@ export function applyAdjustments(inputs) {
 // étape d'une journée oriente la suivante. Les ajustements du lot 3
 // (`inputs.overrides`, `inputs.places`) sont appliqués. Numérotation globale
 // `index` des étapes comptées (pas des lieux ni des bases).
-export function reconstructParcours(inputs, { options: raw = null } = {}) {
+export function reconstructParcours(inputs, { options: raw = null, photoAnchors = null } = {}) {
     const { days: adjusted, overrides, bases } = applyAdjustments(inputs);
     adjusted.sort((a, b) => (String(a?.date) < String(b?.date) ? -1 : String(a?.date) > String(b?.date) ? 1 : 0));
     const days = [];
@@ -614,7 +626,7 @@ export function reconstructParcours(inputs, { options: raw = null } = {}) {
     for (const rawDay of adjusted) {
         // Une base ne sert que les journées qui ont des étapes.
         const base = rawDay.stops.length > 0 ? (bases.byDate.get(rawDay.date) || bases.all) : null;
-        const day = reconstructDay(rawDay, { overrides, prevEnd, base, options: raw });
+        const day = reconstructDay(rawDay, { overrides, prevEnd, base, photoAnchors, options: raw });
         for (const stop of day.stops) stop.index = isCountedStop(stop) ? ++index : null;
         dropped += day.dropped;
         if (day.stops.length > 0) {
