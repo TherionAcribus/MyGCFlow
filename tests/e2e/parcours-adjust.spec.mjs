@@ -118,6 +118,52 @@ test('épingler une heure, changer de journée, exclure puis réintégrer', asyn
   expect(errors).toEqual([]);
 });
 
+test('ajustement en vol : la réponse d’un autre parcours n’écrase pas celui ouvert', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  // Deuxième parcours, une journée : il partage GCPAR01 avec le premier.
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Journée', date_start: '2025-07-12', date_end: '2025-07-12' } });
+  expect(created.status()).toBe(201);
+  const b = (await created.json()).parcours;
+  await openReady(page);
+  const a = (await snapshot(page)).selectedId;
+  const before = (await snapshot(page)).days[0];
+  const gcpaTime = before.times[before.keys.indexOf('GCPAR01')];
+
+  // L'écriture de l'heure épinglée est suspendue le temps de changer de parcours.
+  const urls = [];
+  let held = true;
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route('**/api/parcours/*/overrides', async (route) => {
+    urls.push(route.request().url());
+    if (held) await gate;
+    await route.continue();
+  });
+  await row(page, 'GCPAR01').locator('.parcours-stop-text').click();
+  const panel = page.locator('.parcours-stop-edit[data-edit-key="GCPAR01"]');
+  await panel.locator('.parcours-edit-time').fill('14:05');
+  await panel.locator('.parcours-edit-pin').click();
+  await expect.poll(() => urls.length, { timeout: 15_000 }).toBe(1);
+  expect(urls[0]).toContain(`/parcours/${a}/overrides`);
+
+  await page.locator(`.parcours-list-item[data-parcours-id="${b.id}"] .parcours-open`).click();
+  await expect.poll(async () => (await snapshot(page)).selectedId).toBe(b.id);
+
+  held = false;
+  release();
+  // L'écriture a abouti côté serveur, sur le premier parcours.
+  await expect.poll(async () => (await request.get(`/api/parcours/${a}/inputs`)).json()
+    .then((body) => body.overrides.length), { timeout: 30_000 }).toBe(1);
+  // Le parcours ouvert n'a rien reçu : ni ajustement, ni heure de l'autre.
+  const state = await snapshot(page);
+  expect(state.overrides).toEqual([]);
+  const day = state.days[0];
+  expect(day.times[day.keys.indexOf('GCPAR01')]).toBe(gcpaTime);
+  expect(day.reasons[day.keys.indexOf('GCPAR01')]).not.toBe('pinned');
+  expect(errors).toEqual([]);
+});
+
 test('poser une base d’un clic sur la carte : départ et retour de chaque journée', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);

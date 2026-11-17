@@ -322,6 +322,12 @@ export async function openParcours(id) {
     cancelPlacePicking();
     closePlaceForm();
     renderStops();
+    // Itinéraires : toute suite en vol appartient au parcours quitté — le
+    // numéro de séquence la tue, son état et son cache ne le suivent pas
+    // (deux parcours peuvent partager les clés « place:n » de trajets).
+    routeSeq++;
+    routeState = { state: 'idle', message: '' };
+    routeCache.clear();
     try {
         inputs = await fetchJson(`/api/parcours/${id}/inputs`);
     } catch (error) {
@@ -1751,8 +1757,10 @@ function rebuild() {
 
 // Les ajustements renvoyés par le serveur remplacent ceux en mémoire, puis le
 // parcours est reconstruit (pur, donc immédiat) et rejoué tel quel.
-function receiveAdjustments(payload) {
-    if (!inputs) return;
+// `forId` : parcours à qui vient la réponse — arrivée après l'ouverture d'un
+// autre parcours, elle est ignorée plutôt qu'appliquée à ses entrées.
+function receiveAdjustments(payload, forId = selectedId) {
+    if (!inputs || forId !== selectedId) return;
     if (Array.isArray(payload?.overrides)) inputs.overrides = payload.overrides;
     if (Array.isArray(payload?.places)) inputs.places = payload.places;
     if (Array.isArray(payload?.photos)) inputs.photos = payload.photos;
@@ -1766,11 +1774,12 @@ function receiveAdjustments(payload) {
 
 async function saveOverrides(patches) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        receiveAdjustments(await fetchJson(`/api/parcours/${selectedId}/overrides`, {
+        receiveAdjustments(await fetchJson(`/api/parcours/${pid}/overrides`, {
             method: 'PATCH',
             body: JSON.stringify({ overrides: patches }),
-        }));
+        }), pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -1796,25 +1805,29 @@ function resetDayOrder(day) {
 
 async function resetAllAdjustments() {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        receiveAdjustments(await fetchJson(`/api/parcours/${selectedId}/overrides`, { method: 'DELETE' }));
+        receiveAdjustments(await fetchJson(`/api/parcours/${pid}/overrides`, { method: 'DELETE' }), pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
 }
 
-async function reloadAdjustments() {
-    const fresh = await fetchJson(`/api/parcours/${selectedId}/inputs`);
+async function reloadAdjustments(forId = selectedId) {
+    // Le parcours a changé pendant la requête : rien à appliquer.
+    if (forId !== selectedId) return;
+    const fresh = await fetchJson(`/api/parcours/${forId}/inputs`);
     receiveAdjustments({
         overrides: fresh.overrides, places: fresh.places, photos: fresh.photos, cameras: fresh.cameras, tracks: fresh.tracks,
-    });
+    }, forId);
 }
 
 async function createPlace(data) {
     if (!selectedId || adjustmentsLocked()) return false;
+    const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${selectedId}/places`, { method: 'POST', body: JSON.stringify(data) });
-        await reloadAdjustments();
+        await fetchJson(`/api/parcours/${pid}/places`, { method: 'POST', body: JSON.stringify(data) });
+        await reloadAdjustments(pid);
         return true;
     } catch (error) {
         showToast(error.message, 'error');
@@ -1824,9 +1837,10 @@ async function createPlace(data) {
 
 async function updatePlace(id, data) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${selectedId}/places/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
-        await reloadAdjustments();
+        await fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+        await reloadAdjustments(pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -1834,9 +1848,10 @@ async function updatePlace(id, data) {
 
 async function deletePlace(id) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${selectedId}/places/${id}`, { method: 'DELETE' });
-        await reloadAdjustments();
+        await fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'DELETE' });
+        await reloadAdjustments(pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -2232,16 +2247,17 @@ async function uploadPhotos(files) {
     if (status) status.textContent = '';
     if (refused.length) showToast(refused.join('\n'), 'warning', t('Photos refusées'));
     // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
-    if (selectedId === targetId) await reloadAdjustments();
+    await reloadAdjustments(targetId);
 }
 
 async function linkPhoto(id, stopKey) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${selectedId}/photos/${id}`, {
+        await fetchJson(`/api/parcours/${pid}/photos/${id}`, {
             method: 'PATCH', body: JSON.stringify({ stopKey }),
         });
-        await reloadAdjustments();
+        await reloadAdjustments(pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -2253,19 +2269,20 @@ async function linkPhoto(id, stopKey) {
 // mémoire, la carte redessinée.
 async function patchPhoto(id, patch) {
     if (!selectedId) return;
+    const pid = selectedId;
     const rebuilds = 'hidden' in patch;
     if (rebuilds && adjustmentsLocked()) {
         renderPhotoDetail();
         return;
     }
     try {
-        const { photo } = await fetchJson(`/api/parcours/${selectedId}/photos/${id}`, {
+        const { photo } = await fetchJson(`/api/parcours/${pid}/photos/${id}`, {
             method: 'PATCH', body: JSON.stringify(patch),
         });
-        if (!inputs || !photo) return;
+        if (!inputs || !photo || pid !== selectedId) return;
         const photos = (inputs.photos || []).map((p) => (p.id === photo.id ? photo : p));
         if (rebuilds) {
-            receiveAdjustments({ photos });
+            receiveAdjustments({ photos }, pid);
         } else {
             inputs.photos = photos;
             renderPhotos();
@@ -2279,12 +2296,13 @@ async function patchPhoto(id, patch) {
 
 async function deletePhoto(id) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${selectedId}/photos/${id}`, { method: 'DELETE' });
+        await fetchJson(`/api/parcours/${pid}/photos/${id}`, { method: 'DELETE' });
         photoImages.delete(id);
         photoThumbs.delete(id);
         if (photoDetailId === id) photoDetailId = null;
-        await reloadAdjustments();
+        await reloadAdjustments(pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -2292,10 +2310,11 @@ async function deletePhoto(id) {
 
 async function setCameraOffset(camera, offsetMinutes) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        receiveAdjustments(await fetchJson(`/api/parcours/${selectedId}/cameras`, {
+        receiveAdjustments(await fetchJson(`/api/parcours/${pid}/cameras`, {
             method: 'PUT', body: JSON.stringify({ camera, offsetMinutes }),
-        }));
+        }), pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -2880,14 +2899,15 @@ async function uploadTracks(files) {
     }
     if (status) status.textContent = '';
     if (refused.length) showToast(refused.join('\n'), 'warning', t('Traces refusées'));
-    if (selectedId === targetId) await reloadAdjustments();
+    await reloadAdjustments(targetId);
 }
 
 async function deleteTrack(id) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${selectedId}/tracks/${id}`, { method: 'DELETE' });
-        await reloadAdjustments();
+        await fetchJson(`/api/parcours/${pid}/tracks/${id}`, { method: 'DELETE' });
+        await reloadAdjustments(pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -2895,12 +2915,14 @@ async function deleteTrack(id) {
 
 async function setUtcOffset(value) {
     if (!selectedId || adjustmentsLocked()) return;
+    const pid = selectedId;
     try {
-        const body = await fetchJson(`/api/parcours/${selectedId}`, {
+        const body = await fetchJson(`/api/parcours/${pid}`, {
             method: 'PATCH', body: JSON.stringify({ utc_offset_minutes: value }),
         });
+        if (pid !== selectedId) return;
         inputs.parcours = body.parcours;
-        receiveAdjustments({});
+        receiveAdjustments({}, pid);
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -3034,25 +3056,28 @@ function renderRouting() {
 function bindRouting() {
     const enabled = el('parcoursRoutingEnabled');
     enabled?.addEventListener('change', async () => {
+        const pid = selectedId;
         await saveRouting({ enabled: enabled.checked });
         routeState = { state: 'idle', message: '' };
-        receiveAdjustments({});
+        receiveAdjustments({}, pid);
     });
     const provider = el('parcoursRoutingProvider');
     provider?.addEventListener('change', async () => {
+        const pid = selectedId;
         await saveRouting({ provider: provider.value });
         // Autre fournisseur, autres itinéraires : le cache de la page repart.
         routeCache.clear();
         routeState = { state: 'idle', message: '' };
-        receiveAdjustments({});
+        receiveAdjustments({}, pid);
     });
     el('btnParcoursOrsKeySave')?.addEventListener('click', async () => {
         const input = el('parcoursOrsKey');
         const value = (input?.value || '').trim();
+        const pid = selectedId;
         await saveRouting({ ors_key: value });
         if (input) input.value = '';
         routeState = { state: 'idle', message: '' };
-        receiveAdjustments({});
+        receiveAdjustments({}, pid);
     });
     el('btnParcoursRoutesRecompute')?.addEventListener('click', () => {
         if (adjustmentsLocked()) return;
