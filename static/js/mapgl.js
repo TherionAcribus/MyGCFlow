@@ -1783,6 +1783,9 @@ function resetCameraFollow() {
     // vue glisserait de nouveau vers la cible juste après son déplacement.
     if (!cameraInteractionKey) {
         cameraInteractionKey = map.on('pointerdown', () => {
+            // En capture, un geste parasite ne doit pas figer le suivi pour
+            // tout le reste de la vidéo.
+            if (isRecordingActive()) return;
             // L'annulation retire la piste/le trajet courant ; la suspension
             // empêche aussi les jours suivants d'en recréer un. Le prochain
             // lancement (resetCameraFollow) réactive normalement le suivi.

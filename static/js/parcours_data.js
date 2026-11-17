@@ -768,10 +768,14 @@ function endCamera() {
 }
 
 // Carte déplacée ou zoomée à la main pendant la lecture : la caméra la laisse.
+// Pendant une capture en revanche, un geste parasite ne doit pas figer la
+// caméra pour tout le reste de la vidéo — la pose est reposée à l'image
+// suivante, la suspension serait silencieuse et définitive.
 function bindCameraSuspension(map) {
     if (cameraBound) return;
     cameraBound = true;
     const suspend = () => {
+        if (pkg.isRecordingActive?.()) return;
         if (clock.running && playback.camera === CAMERA_FOLLOW) cameraSuspended = true;
     };
     map.on('pointerdrag', suspend);
