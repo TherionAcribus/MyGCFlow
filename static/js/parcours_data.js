@@ -1391,6 +1391,7 @@ function dayDiagnostic(day) {
     }
     if (d.anchors > 0) parts.push(t('${n} heures sûres', { n: d.anchors }));
     if (d.compressed) parts.push(t('horaire comprimé'));
+    if (d.clockBacktrack) parts.push(t('ordre contraire aux heures sûres : l’heure recule'));
     return parts.join(' · ');
 }
 
@@ -3280,6 +3281,7 @@ export function getParcoursSnapshot() {
             times: day.stops.map((stop) => minutesToTime(stop.arrivalMin)),
             reasons: day.stops.map((stop) => stop.reason),
             logOrder: day.diagnostics.logOrder,
+            clockBacktrack: day.diagnostics.clockBacktrack,
             manual: day.manual,
             excluded: day.excluded.map((stop) => stop.key),
         })),

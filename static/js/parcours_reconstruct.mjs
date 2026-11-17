@@ -537,7 +537,7 @@ export function reconstructDay(day, {
         excluded: Array.isArray(day?.excluded) ? day.excluded : [],
         manual: false,
         dropped: rawStops.length - stops.length,
-        diagnostics: { logOrder: LOG_ORDER_NONE, logRatio: null, lateTypes: 0, intruders: 0, anchors: 0, compressed: false },
+        diagnostics: { logOrder: LOG_ORDER_NONE, logRatio: null, lateTypes: 0, intruders: 0, anchors: 0, compressed: false, clockBacktrack: false },
     };
     if (stops.length === 0) return result;
 
@@ -589,6 +589,12 @@ export function reconstructDay(day, {
         confidence.push(CONFIDENCE_MANUAL, CONFIDENCE_MANUAL);
     }
     const { arrival, visit, legs, compressed } = scheduleDay(all, order, anchorMin, opts, { overrides, legHints });
+    // Ordre contraire aux heures sûres (manuel, ou ancres en contradiction) :
+    // l'horloge affichée recule au passage d'une ancre à l'autre.
+    let clockBacktrack = false;
+    for (let k = 1; k < arrival.length; k++) {
+        if (arrival[k] < arrival[k - 1] - 1e-6) { clockBacktrack = true; break; }
+    }
     result.stops = order.map((i, k) => ({
         ...all[i],
         order: k + 1,
@@ -598,7 +604,7 @@ export function reconstructDay(day, {
         reason: reasons[i],
     }));
     result.legs = legs;
-    result.diagnostics = { ...diagnostics, compressed };
+    result.diagnostics = { ...diagnostics, compressed, clockBacktrack };
     return result;
 }
 

@@ -226,6 +226,26 @@ test('ordre manuel : les étapes classées gardent l’ordre choisi, les autres 
     assert.equal(reconstructParcours({ days: inputs.days }).days[0].manual, false);
 });
 
+test('ordre contraire aux heures sûres : recul de l’horloge signalé', () => {
+    const inputs = {
+        days: [{ date: '2025-07-12', stops: [
+            stop('A', 0, { localTime: '09:00' }),
+            stop('B', 3, { localTime: '10:00' }),
+            stop('C', 6, { localTime: '12:00' }),
+        ] }],
+        overrides: [{ key: 'C', rank: 0 }, { key: 'A', rank: 1 }, { key: 'B', rank: 2 }],
+    };
+    const [day] = reconstructParcours(inputs).days;
+    assert.deepEqual(day.stops.map((s) => s.key), ['C', 'A', 'B']);
+    // L'horloge affichée recule : 12 h puis 9 h.
+    assert.equal(day.stops[0].arrivalMin, 12 * 60);
+    assert.equal(day.stops[1].arrivalMin, 9 * 60);
+    assert.equal(day.diagnostics.clockBacktrack, true);
+    // Ordre compatible avec les heures sûres : pas de recul.
+    const auto = reconstructParcours({ days: inputs.days }).days[0];
+    assert.equal(auto.diagnostics.clockBacktrack, false);
+});
+
 test('heure épinglée : ancre exacte, raison « épinglée »', () => {
     const [day] = reconstructParcours({
         days: [{ date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 3, { logId: 2 })] }],
