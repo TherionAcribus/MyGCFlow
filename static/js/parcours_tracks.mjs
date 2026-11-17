@@ -98,13 +98,76 @@ function* pieces(tracks) {
     }
 }
 
+// Index spatial des tronçons : grille de cellules de CELL_M mètres dans une
+// projection équirectangulaire locale (latitude moyenne du jeu de traces).
+// Chaque tronçon est rangé dans les cellules de sa boîte élargie de
+// INDEX_MARGIN_M ; une recherche n'a alors à mesurer que les tronçons de la
+// cellule du point, triés dans l'ordre d'origine (`pi`) — résultat identique
+// au balayage complet, sans l'O(étapes × tronçons). Mise en cache par
+// tableau de traces : reconstruite une fois par parcours, réutilisée par
+// toutes les recherches et toutes les reconstructions.
+const INDEX_MARGIN_M = Math.max(TRACK_MATCH_RADIUS_M, OFFSET_EVIDENCE_RADIUS_M) + 64;
+const CELL_M = 128;
+const trackIndexCache = new WeakMap();
+
+function trackIndex(tracks) {
+    if (!Array.isArray(tracks)) return { grid: new Map(), cosLat: 1 };
+    let index = trackIndexCache.get(tracks);
+    if (index) return index;
+    let latSum = 0;
+    let latCount = 0;
+    for (const piece of pieces(tracks)) {
+        latSum += piece.a[1] + piece.b[1];
+        latCount += 2;
+    }
+    const cosLat = Math.cos((latCount ? latSum / latCount : 45) * DEG);
+    const px = (point) => point[0] * DEG * EARTH_M * cosLat;
+    const py = (point) => point[1] * DEG * EARTH_M;
+    const grid = new Map();
+    let pi = 0;
+    for (const piece of pieces(tracks)) {
+        const x1 = px(piece.a);
+        const y1 = py(piece.a);
+        const x2 = px(piece.b);
+        const y2 = py(piece.b);
+        const item = { piece, pi: pi++ };
+        const cx1 = Math.floor((Math.min(x1, x2) - INDEX_MARGIN_M) / CELL_M);
+        const cx2 = Math.floor((Math.max(x1, x2) + INDEX_MARGIN_M) / CELL_M);
+        const cy1 = Math.floor((Math.min(y1, y2) - INDEX_MARGIN_M) / CELL_M);
+        const cy2 = Math.floor((Math.max(y1, y2) + INDEX_MARGIN_M) / CELL_M);
+        for (let cx = cx1; cx <= cx2; cx++) {
+            for (let cy = cy1; cy <= cy2; cy++) {
+                const key = `${cx}:${cy}`;
+                let cell = grid.get(key);
+                if (!cell) grid.set(key, (cell = []));
+                cell.push(item);
+            }
+        }
+    }
+    index = { grid, cosLat };
+    trackIndexCache.set(tracks, index);
+    return index;
+}
+
+// Candidats d'une recherche autour de `point` : les tronçons dont la boîte
+// élargie couvre la cellule du point — tout tronçon à moins de la marge s'y
+// trouve — dans l'ordre d'itération d'origine.
+function nearPieces(point, tracks) {
+    const index = trackIndex(tracks);
+    const x = point[0] * DEG * EARTH_M * index.cosLat;
+    const y = point[1] * DEG * EARTH_M;
+    const cell = index.grid.get(`${Math.floor(x / CELL_M)}:${Math.floor(y / CELL_M)}`);
+    if (!cell) return [];
+    return cell.sort((a, b) => a.pi - b.pi).map((item) => item.piece);
+}
+
 // Passages d'une trace près d'un point : suites de tronçons consécutifs à
 // moins de `radiusM`. Chaque passage : { trackId, segment, start, end, minD,
 // pieces: [{ k, d, u, t }] }.
 export function passesNear(point, tracks, radiusM) {
     const passes = [];
     let current = null;
-    for (const piece of pieces(tracks)) {
+    for (const piece of nearPieces(point, tracks)) {
         const { d, u } = nearestOnSegment(point, piece.a, piece.b);
         const continues = current && current.trackId === piece.trackId && current.segment === piece.segment
             && current.lastK === piece.k - 1;
