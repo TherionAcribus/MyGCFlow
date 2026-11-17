@@ -1971,7 +1971,6 @@ function bindAdjustments() {
 const photoImages = new Map();   // id → HTMLImageElement
 const photoThumbs = new Map();   // id → HTMLImageElement (vignettes laissées sur la carte)
 let photoDetailId = null;        // photo dont le panneau est ouvert
-let photoUploads = 0;            // envois en cours
 
 function photoUrl(photo, thumb = false) {
     return `${CONFIG.BASE_URL}/api/parcours/${selectedId}/photos/${photo.id}/${thumb ? 'thumb' : 'file'}`;
@@ -2209,16 +2208,18 @@ function bindPhotoDisplay() {
 
 async function uploadPhotos(files) {
     if (!selectedId || adjustmentsLocked() || files.length === 0) return;
+    // Tout part dans le parcours ouvert au début de l'envoi : en ouvrir un
+    // autre en cours de route ne déroute pas la suite.
+    const targetId = selectedId;
     const status = el('parcoursPhotoStatus');
     let done = 0;
     const refused = [];
-    photoUploads += files.length;
     for (const file of files) {
         if (status) status.textContent = t('Envoi des photos : ${done} / ${total}', { done, total: files.length });
         const body = new FormData();
         body.append('photo', file, file.name);
         try {
-            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${selectedId}/photos`, { method: 'POST', body });
+            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${targetId}/photos`, { method: 'POST', body });
             if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
                 refused.push(`${file.name} : ${payload.message || response.status}`);
@@ -2228,10 +2229,10 @@ async function uploadPhotos(files) {
         }
         done++;
     }
-    photoUploads -= files.length;
     if (status) status.textContent = '';
     if (refused.length) showToast(refused.join('\n'), 'warning', t('Photos refusées'));
-    await reloadAdjustments();
+    // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
+    if (selectedId === targetId) await reloadAdjustments();
 }
 
 async function linkPhoto(id, stopKey) {
@@ -2856,6 +2857,9 @@ function renderTracks() {
 
 async function uploadTracks(files) {
     if (!selectedId || adjustmentsLocked() || files.length === 0) return;
+    // Même garde que les photos : la destination est le parcours ouvert au
+    // début de l'envoi.
+    const targetId = selectedId;
     const status = el('parcoursTrackStatus');
     const refused = [];
     let done = 0;
@@ -2864,7 +2868,7 @@ async function uploadTracks(files) {
         const body = new FormData();
         body.append('track', file, file.name);
         try {
-            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${selectedId}/tracks`, { method: 'POST', body });
+            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${targetId}/tracks`, { method: 'POST', body });
             if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
                 refused.push(`${file.name} : ${payload.message || response.status}`);
@@ -2876,7 +2880,7 @@ async function uploadTracks(files) {
     }
     if (status) status.textContent = '';
     if (refused.length) showToast(refused.join('\n'), 'warning', t('Traces refusées'));
-    await reloadAdjustments();
+    if (selectedId === targetId) await reloadAdjustments();
 }
 
 async function deleteTrack(id) {

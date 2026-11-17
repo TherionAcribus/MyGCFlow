@@ -201,6 +201,51 @@ test('affichage par photo : masquée (reste une ancre), légende, cadrage enregi
   expect(errors).toEqual([]);
 });
 
+test('envoi de photos : un autre parcours ouvert entre-temps ne détourne pas la suite', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const a = await createWeekend(request);
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Journée', date_start: '2025-07-12', date_end: '2025-07-12' } });
+  expect(created.status()).toBe(201);
+  const b = (await created.json()).parcours;
+  await openReady(page);
+  // Le week-end (plage la plus large) est en tête de liste et ouvert.
+  await expect.poll(async () => (await snapshot(page)).selectedId).toBe(a.id);
+
+  // Le premier envoi est suspendu dans le navigateur, le temps d'ouvrir
+  // l'autre parcours.
+  const urls = [];
+  let held = true;
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route('**/api/parcours/*/photos', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    urls.push(route.request().url());
+    if (held) await gate;
+    await route.continue();
+  });
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles([files[0], files[1]]);
+  await expect.poll(() => urls.length, { timeout: 15_000 }).toBe(1);
+  expect(urls[0]).toContain(`/parcours/${a.id}/photos`);
+
+  // La liste est dans l'onglet Données : retour dessus pour en changer.
+  await page.locator('a[href="#data"]').click();
+  await page.locator(`.parcours-list-item[data-parcours-id="${b.id}"] .parcours-open`).click();
+  await expect.poll(async () => (await snapshot(page)).selectedId).toBe(b.id);
+
+  held = false;
+  release();
+  await expect.poll(() => urls.length, { timeout: 30_000 }).toBe(2);
+  // La suite a continué vers le premier parcours : les deux photos y sont.
+  expect(urls.every((url) => url.includes(`/parcours/${a.id}/photos`))).toBe(true);
+  await expect.poll(async () => (await request.get(`/api/parcours/${a.id}/inputs`)).json()
+    .then((body) => body.photos.length), { timeout: 30_000 }).toBe(2);
+  const { photos: photosB } = await (await request.get(`/api/parcours/${b.id}/inputs`)).json();
+  expect(photosB.length).toBe(0);
+  expect(errors).toEqual([]);
+});
+
 // Dépose des fichiers sur la page, comme depuis l'explorateur.
 async function dropFiles(page, paths) {
   const list = paths.map((p) => ({ name: path.basename(p), bytes: [...readFileSync(p)] }));
