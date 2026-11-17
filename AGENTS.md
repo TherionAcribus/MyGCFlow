@@ -369,7 +369,17 @@ Autres repères :
   `parcours_animation` (`days_per_second: 10`) et `parcours_playback`) ;
   relevé `getParcoursSnapshot()`, signal `mygcflowParcoursLoaded`. Après
   un ajustement (PATCH puis reconstruction), attendre que
-  `adjustmentRevision` augmente avant de lire l'ordre. Les fixtures `.gpx` sont ignorées par
+  `adjustmentRevision` augmente avant de lire l'ordre. `parcours_playback`
+  accepte un patch partiel : une nouvelle sous-clé doit entrer dans la
+  remise de `resetParcoursSettings`, sinon elle fuit d'un spec à l'autre
+  (la caméra fixe d'un spec figerait la vue des suivants). La caméra de la
+  lecture (`parcours_camera.mjs`) déplace la vue : un spec qui relève la
+  vue après un glisser attend la fin de l'inertie d'OpenLayers (deux
+  relevés identiques) — exemple dans `parcours-finitions.spec.mjs`.
+  `openParcoursPage` sert une tuile vide à la place des tuiles OSM : avec
+  la caméra, la suite complète recevait des 429 du serveur de tuiles, qui
+  faisaient échouer un spec suivant relevant les erreurs de console
+  (poses-effects, 2026-11-16). Les fixtures `.gpx` sont ignorées par
   `.gitignore` (`*.gpx`) : `git add -f` (`my-finds-parcours.gpx`, `parcours-trace.gpx`). Les clés de stockage par page
   passent par `statsPanelsKey(mode)` / `imagesItemsKey(mode)` /
   `perPage(...)`. Un module de page exporte des noms uniques

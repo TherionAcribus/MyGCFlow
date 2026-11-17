@@ -82,7 +82,37 @@ openrouteservice en option « plus fiable » (choix de l'utilisateur,
 question 4 du § 13). `parcours_routing.py` (fournisseurs, débit, cache
 `route_leg_cache`, migration v14), `parcours_routing.mjs` (mode par trajet,
 suites de requêtes, durées et chemins), mode imposé par étape (`legMode`),
-carte « Itinéraires ». Prochaine étape : lot 7 (finitions).
+carte « Itinéraires ».
+
+**Lot 7 livré le 2026-11-16** : finitions. Caméra qui suit le géocacheur
+(`parcours_camera.mjs`, crochet `camera` du moteur), nuit assombrie et
+cartons de jour, tête en pictogramme du mode de déplacement, trajets estimés
+en pointillés (option), crédits des itinéraires à l'écran et dans la vidéo,
+parcours suggérés (`parcours_suggest.py`, `GET /api/parcours/suggestions`).
+Tout le plan est livré ; restent les questions du § 13.
+
+Écarts et constats du lot 7 :
+- **Caméra calculée, pas simulée** : la pose est une fonction de la position
+  du moteur (moyenne pondérée des cadrages visés sur ±8 quanta). Pas d'état,
+  donc rien à recaler après un saut ni en capture image par image. Un
+  échantillonnage par quantum entier faisait sauter le zoom à l'arrivée d'un
+  long trajet : un quart de quantum le rend continu.
+- **À l'arrêt, seuls les trajets voisins courts** (≤ 2 km) entrent dans le
+  cadrage : sinon la caméra dézoomait dès l'arrivée, avant le long trajet.
+- **Carte déplacée = caméra suspendue** jusqu'à la lecture suivante, et la
+  vue n'est pas rendue à la fin.
+- **Compteurs** : rien d'ajouté, les balises existantes (`{etapes}`,
+  `{km}`, `{jour}`…) couvrent le besoin.
+- **Mode de la tête sur une trace ou en ligne droite** : déduit de la
+  vitesse de l'horaire (seuils 7 / 22 / 250 km/h), avion au-delà de 150 km
+  en ligne droite.
+- **Crédits dans la vidéo** : peints par la couche de la tête pendant un
+  enregistrement seulement ; à l'écran, l'attribution d'OpenLayers.
+  L'attribution des tuiles, elle, n'est pas dans les vidéos (constat
+  général, hors Parcours).
+- **Suggestions** : centre habituel = case de 0,5° la plus fréquentée
+  (journées, pas trouvailles) ; nom tiré des champs pays / région du GPX,
+  donc dans la langue de geocaching.com.
 
 Écarts et constats du lot 6 :
 - **Cache partagé par tous les parcours**, par coordonnées : deux parcours
@@ -97,8 +127,9 @@ carte « Itinéraires ». Prochaine étape : lot 7 (finitions).
   l'écriture (itinéraires et réglages de lecture). Sans cela, une
   préférence en sous-clés y était réduite au dernier patch envoyé.
 - **Crédits dans la vidéo** : non faits, seule la carte de l'onglet Données
-  porte l'attribution. À ajouter au lot 7 avec les cartons.
-- **Une tête par mode de déplacement** (piéton, vélo, voiture) : lot 7.
+  porte l'attribution. Faits au lot 7.
+- **Une tête par mode de déplacement** (piéton, vélo, voiture) : faite au
+  lot 7.
 
 Écarts et constats du lot 5 :
 - **Fuseau sans `timezonefinder`** (question 2 du § 13) : réglage du
@@ -179,7 +210,7 @@ carte « Itinéraires ». Prochaine étape : lot 7 (finitions).
     fictives) ;
   - les onglets Stats et Images ;
   - le carton et l'assombrissement de nuit, et la tête par mode de
-    déplacement (lot 7) ;
+    déplacement (faits au lot 7) ;
   - l'apparence propre des DNF (affichés comme une cache de leur type).
 
 Écarts et constats du lot 1 :

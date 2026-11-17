@@ -39,15 +39,21 @@ import {
     stepEvolution,
 } from './evolution_timeline.mjs';
 import {
+    CAMERA_FOLLOW,
+    HEAD_PICTOGRAM,
     buildParcoursTimeline,
+    dayCardAt,
     formatClock,
     headAt,
+    headModeAt,
     legPoints,
+    nightLevelAt,
     normalizePlayback,
     stateAt,
     stopsInRange,
     trailAt,
 } from './parcours_timeline.mjs';
+import { cameraPoseAt } from './parcours_camera.mjs';
 import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
 import {
     CONFIDENCE_ANCHORED,
@@ -100,6 +106,8 @@ const LAYER_Z_INDEX = 1060;
 const FIT_MAX_ZOOM = 16;
 
 let listing = [];             // parcours enregistrés (GET /api/parcours)
+let suggestions = [];         // séjours et grosses journées proposés (lot 7)
+let suggestionsSeq = 0;
 let findsExtent = { first: null, last: null };
 let maxDays = 92;
 let selectedId = null;
@@ -143,6 +151,12 @@ let pendingOpenId = null;     // parcours ouvert pendant une lecture
 let pendingTimeline = false;  // rythme changé pendant une lecture
 let playTrailLayer = null;
 let playHeadLayer = null;
+// Caméra de la lecture (lot 7, parcours_camera.mjs) : vue d'avant la lecture,
+// rendue à la fin ; suspendue dès que l'utilisateur déplace la carte.
+let savedView = null;
+let cameraSuspended = false;
+let cameraBound = false;
+let prefetchBucket = null;
 
 // Ajustements (lot 3).
 let editKey = null;           // étape dont le panneau d'ajustement est ouvert
@@ -246,6 +260,7 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         return;
     }
     fillFormDefaults();
+    loadSuggestions();
     const target = listing.find((item) => item.id === select) || listing[0] || null;
     renderList(target?.id ?? null);
     if (target) {
@@ -407,6 +422,7 @@ function parcoursBegin(startDate, endDate, at) {
     currentQ = startDay;
     setPlanVisible(false);
     ensurePlayLayers();
+    beginCamera();
     return countersAt(startDay - 1);
 }
 
@@ -437,6 +453,7 @@ function parcoursEnd() {
     setPlanVisible(true);
     playTrailLayer?.setVisible(false);
     playHeadLayer?.setVisible(false);
+    endCamera();
     applyPending();
 }
 
@@ -517,6 +534,7 @@ const PARCOURS_ENGINE = Object.freeze({
     step: parcoursStep,
     frameVars: parcoursFrameVars,
     frameActive: () => clock.running,
+    camera: parcoursCamera,
     infosValues: parcoursInfosValues,
     end: parcoursEnd,
     restState: parcoursRestState,
@@ -525,6 +543,68 @@ const PARCOURS_ENGINE = Object.freeze({
     maxEventsInWindow: maxStopsInWindow,
     renderPopup: renderParcoursPopup,
 });
+
+// --- Caméra de la lecture --------------------------------------------------------
+
+function cameraFollowing() {
+    return clock.running && playback.camera === CAMERA_FOLLOW && !cameraSuspended && !!timeline;
+}
+
+function beginCamera() {
+    const view = pkg.getMap?.()?.getView();
+    savedView = view ? { center: view.getCenter(), resolution: view.getResolution() } : null;
+    cameraSuspended = false;
+    prefetchBucket = null;
+}
+
+// Fin de lecture : la vue d'avant, sauf si l'utilisateur a repris la main.
+function endCamera() {
+    const view = pkg.getMap?.()?.getView();
+    if (view && savedView && playback.camera === CAMERA_FOLLOW && !cameraSuspended) {
+        view.setCenter(savedView.center);
+        view.setResolution(savedView.resolution);
+    }
+    savedView = null;
+}
+
+// Carte déplacée ou zoomée à la main pendant la lecture : la caméra la laisse.
+function bindCameraSuspension(map) {
+    if (cameraBound) return;
+    cameraBound = true;
+    const suspend = () => {
+        if (clock.running && playback.camera === CAMERA_FOLLOW) cameraSuspended = true;
+    };
+    map.on('pointerdrag', suspend);
+    map.getViewport().addEventListener('wheel', suspend, { passive: true });
+}
+
+// Appelée par mapgl.js avant chaque rendu (updatePointAppearClock). La pose
+// posée en pré-rendu s'applique à l'image suivante : en capture image par
+// image, `leadMs` (une image) la fait tomber sur la bonne.
+function parcoursCamera(leadMs = 0, msPerDay = 1) {
+    if (!cameraFollowing()) return false;
+    const map = pkg.getMap?.();
+    const size = map?.getSize();
+    const q = currentQ + Math.max(0, Number(leadMs) || 0) / Math.max(1e-3, Number(msPerDay) || 1);
+    const pose = cameraPoseAt(timeline, q, size);
+    if (!pose) return false;
+    const view = map.getView();
+    const center = view.getCenter();
+    const moved = !center || center[0] !== pose.center[0] || center[1] !== pose.center[1]
+        || view.getResolution() !== pose.resolution;
+    if (moved) {
+        view.setCenter(pose.center);
+        view.setResolution(pose.resolution);
+    }
+    // Tuiles de la suite chargées d'avance (une demande par seconde d'écran).
+    const bucket = Math.floor(q / 10);
+    if (bucket !== prefetchBucket) {
+        prefetchBucket = bucket;
+        const ahead = cameraPoseAt(timeline, q + 15, size);
+        if (ahead) pkg.prefetchBasemapTiles?.(ahead.center, ahead.zoom);
+    }
+    return moved;
+}
 
 // --- Tête et trait pendant la lecture ------------------------------------------
 
@@ -552,6 +632,8 @@ function ensurePlayLayers() {
     if (!layers.includes(playHeadLayer)) map.addLayer(playHeadLayer);
     playTrailLayer.setVisible(true);
     playHeadLayer.setVisible(true);
+    bindCameraSuspension(map);
+    syncRouteAttribution();
 }
 
 // Trait parcouru : trajets terminés, puis la part faite du trajet en cours.
@@ -562,25 +644,43 @@ function drawPlayTrail(event) {
     const { color, width } = trailOptions();
     const day = new ol.style.Style({ stroke: new ol.style.Stroke({ color, width, lineCap: 'round', lineJoin: 'round' }) });
     const night = new ol.style.Style({ stroke: new ol.style.Stroke({ color, width: Math.max(1, width * 0.6), lineDash: [width * 2, width * 2] }) });
+    // Option : un trajet estimé (ligne droite, sans trace ni itinéraire) en
+    // pointillés, pour le distinguer d'un chemin réel.
+    const estimated = new ol.style.Style({
+        stroke: new ol.style.Stroke({ color, width, lineCap: 'round', lineJoin: 'round', lineDash: [width * 2.5, width * 2] }),
+    });
     const { done, current } = trailAt(timeline, currentQ);
-    // Trajet sur une trace GPS : le vrai chemin, sinon la ligne droite.
+    // Trajet sur une trace GPS ou un itinéraire : le vrai chemin, sinon la
+    // ligne droite.
     const draw = (k, progress) => {
         const leg = timeline.legs[k];
         const coords = progress >= 1
             ? (legProjected[k] || [projected[leg.from], projected[leg.to]])
             : legPoints(timeline, k, progress).map((p) => ol.proj.fromLonLat(p));
-        context.setStyle(leg.night ? night : day);
+        if (leg.night) context.setStyle(night);
+        else context.setStyle(playback.estimated_dashed && !leg.path ? estimated : day);
         context.drawGeometry(new ol.geom.LineString(coords));
     };
     for (let k = 0; k < done; k++) draw(k, 1);
     if (current) draw(current.leg, current.progress);
 }
 
-// Le géocacheur, et sous lui les bases (toujours) et les lieux déjà atteints.
+// La nuit (assombrissement), les bases (toujours) et les lieux déjà
+// atteints, le géocacheur, puis la carte postale, le carton du jour et les
+// crédits des itinéraires (vidéo).
 function drawPlayHead(event) {
     if (!clock.running || !timeline) return;
     const head = headAt(timeline, currentQ);
     if (!head) return;
+    const ctx = event.context;
+    const ratio = event.frameState.pixelRatio || 1;
+    const level = playback.day_cards ? nightLevelAt(timeline, currentQ) : 0;
+    if (level > 0) {
+        ctx.save();
+        ctx.fillStyle = `rgba(10, 16, 38, ${(NIGHT_ALPHA * level).toFixed(3)})`;
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.restore();
+    }
     const context = ol.render.getVectorContext(event);
     timeline.stops.forEach((stop, i) => {
         if (stop.kind === KIND_BASE || (stop.kind === KIND_PLACE && stop.q <= currentQ)) {
@@ -589,16 +689,170 @@ function drawPlayHead(event) {
         }
     });
     const { color } = trailOptions();
-    context.setStyle(new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: 7,
-            fill: new ol.style.Fill({ color }),
-            stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
-        }),
-    }));
-    context.drawGeometry(new ol.geom.Point(ol.proj.fromLonLat([head.lon, head.lat])));
+    const position = ol.proj.fromLonLat([head.lon, head.lat]);
+    const glyph = playback.head === HEAD_PICTOGRAM ? headGlyph(headModeAt(timeline, currentQ)) : null;
+    if (glyph) {
+        const m = composeTransform(event.inversePixelTransform, event.frameState.coordinateToPixelTransform);
+        const x = m[0] * position[0] + m[2] * position[1] + m[4];
+        const y = m[1] * position[0] + m[3] * position[1] + m[5];
+        drawHeadPictogram(ctx, x, y, ratio, color, glyph);
+    } else {
+        context.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 7,
+                fill: new ol.style.Fill({ color }),
+                stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
+            }),
+        }));
+        context.drawGeometry(new ol.geom.Point(position));
+    }
     // Après le géocacheur : la carte postale passe au-dessus.
     drawPhotoCards(event);
+    drawDayCard(ctx, ratio);
+    drawRouteCredits(ctx, ratio);
+}
+
+const NIGHT_ALPHA = 0.5;
+
+// Pictogrammes de la tête : glyphes de Tabler Icons lus dans la feuille de
+// style (le sous-ensemble ne garde que les icônes citées dans le code).
+const HEAD_ICON_CLASSES = Object.freeze({
+    walk: 'ti-walk',
+    bike: 'ti-bike',
+    car: 'ti-car',
+    plane: 'ti-plane',
+    night: 'ti-moon',
+});
+let headGlyphs = null;
+
+function headGlyph(mode) {
+    if (!document.fonts?.check?.('16px "tabler-icons"')) return null;
+    if (!headGlyphs) {
+        headGlyphs = {};
+        for (const [key, className] of Object.entries(HEAD_ICON_CLASSES)) {
+            const probe = document.createElement('i');
+            probe.className = `ti ${className}`;
+            probe.style.position = 'absolute';
+            probe.style.visibility = 'hidden';
+            document.body.appendChild(probe);
+            const content = getComputedStyle(probe, '::before').content || '';
+            probe.remove();
+            const match = /^["'](.+)["']$/.exec(content);
+            if (match) headGlyphs[key] = match[1];
+        }
+    }
+    return headGlyphs[mode] || null;
+}
+
+function drawHeadPictogram(ctx, x, y, ratio, color, glyph) {
+    const radius = 14 * ratio;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    ctx.shadowBlur = 6 * ratio;
+    ctx.shadowOffsetY = 1.5 * ratio;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 2.5 * ratio;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+    ctx.font = `${Math.round(17 * ratio)}px "tabler-icons"`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(glyph, x, y + 0.5 * ratio);
+    ctx.restore();
+}
+
+let pageFont = null;
+function pageFontFamily() {
+    if (!pageFont) pageFont = getComputedStyle(document.body).fontFamily || 'sans-serif';
+    return pageFont;
+}
+
+// Carton « Jour 2 · dimanche 13 juillet 2025 » d'un parcours de plusieurs
+// journées, au tiers haut de la carte.
+function dayCardText(dayIndex) {
+    const day = timeline?.days?.[dayIndex];
+    if (!day) return null;
+    return { title: t('Jour ${n}', { n: day.dayNumber }), subtitle: formatDay(day.date) };
+}
+
+function drawDayCard(ctx, ratio) {
+    const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
+    const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
+    if (!text) return;
+    const font = pageFontFamily();
+    const titleSize = 30 * ratio;
+    const subtitleSize = 17 * ratio;
+    const gap = 8 * ratio;
+    const padX = 28 * ratio;
+    const padY = 18 * ratio;
+    ctx.save();
+    ctx.globalAlpha = card.alpha;
+    ctx.font = `700 ${titleSize}px ${font}`;
+    const titleW = ctx.measureText(text.title).width;
+    ctx.font = `400 ${subtitleSize}px ${font}`;
+    const subtitleW = ctx.measureText(text.subtitle).width;
+    const boxW = Math.max(titleW, subtitleW) + padX * 2;
+    const boxH = titleSize + gap + subtitleSize + padY * 2;
+    const cx = ctx.canvas.width / 2;
+    const top = ctx.canvas.height * 0.36 - boxH / 2;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') ctx.roundRect(cx - boxW / 2, top, boxW, boxH, 14 * ratio);
+    else ctx.rect(cx - boxW / 2, top, boxW, boxH);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = `700 ${titleSize}px ${font}`;
+    ctx.fillText(text.title, cx, top + padY);
+    ctx.font = `400 ${subtitleSize}px ${font}`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillText(text.subtitle, cx, top + padY + titleSize + gap);
+    ctx.restore();
+}
+
+// Crédits des itinéraires (CGU des fournisseurs) : à l'écran, dans
+// l'attribution de la carte ; dans la vidéo, peints en bas à droite (la vidéo
+// ne compose que les canevas de la carte).
+function routeCreditText() {
+    if (!routingConfig().enabled || routeEffectsNow.paths.size === 0) return '';
+    return routingConfig().provider === 'ors'
+        ? t('Itinéraires © contributeurs OpenStreetMap, openrouteservice')
+        : t('Itinéraires © contributeurs OpenStreetMap, FOSSGIS');
+}
+
+function syncRouteAttribution() {
+    const text = routeCreditText() || null;
+    for (const layer of [parcoursLayer, playTrailLayer]) {
+        const source = layer?.getSource();
+        if (source && (source.get('routeCredit') ?? null) !== text) {
+            source.set('routeCredit', text);
+            source.setAttributions(text);
+        }
+    }
+}
+
+function drawRouteCredits(ctx, ratio) {
+    if (!pkg.isRecordingActive?.()) return;
+    const text = routeCreditText();
+    if (!text) return;
+    ctx.save();
+    ctx.font = `${Math.round(11 * ratio)}px ${pageFontFamily()}`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3 * ratio;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    const x = ctx.canvas.width - 8 * ratio;
+    const y = ctx.canvas.height - 6 * ratio;
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillText(text, x, y);
+    ctx.restore();
 }
 
 function setPlanVisible(visible) {
@@ -634,6 +888,33 @@ function bindPlayback() {
     hours?.addEventListener('change', () => {
         save({ hours: hours.value });
         pkg.showLifecycleRestState?.();
+    });
+    // Lot 7 : lus à chaque image, ils s'appliquent aussi en pleine lecture.
+    const camera = el('parcoursCamera');
+    const head = el('parcoursHead');
+    const dayCards = el('parcoursDayCards');
+    const dashed = el('parcoursEstimatedDashed');
+    if (camera) camera.value = playback.camera;
+    if (head) head.value = playback.head;
+    if (dayCards) dayCards.checked = playback.day_cards;
+    if (dashed) dashed.checked = playback.estimated_dashed;
+    const redraw = () => pkg.getMap?.()?.render();
+    camera?.addEventListener('change', () => {
+        save({ camera: camera.value });
+        cameraSuspended = false;
+        redraw();
+    });
+    head?.addEventListener('change', () => {
+        save({ head: head.value });
+        redraw();
+    });
+    dayCards?.addEventListener('change', () => {
+        save({ day_cards: dayCards.checked });
+        redraw();
+    });
+    dashed?.addEventListener('change', () => {
+        save({ estimated_dashed: dashed.checked });
+        redraw();
     });
 }
 
@@ -778,6 +1059,67 @@ function bindForm() {
             if (submit) submit.disabled = false;
         }
     });
+}
+
+// --- Parcours suggérés (lot 7) -----------------------------------------------------
+
+// Séjours loin de chez soi et grosses journées (parcours_suggest.py), hors
+// plages déjà enregistrées. Un clic remplit le formulaire de création.
+async function loadSuggestions() {
+    const seq = ++suggestionsSeq;
+    let next = [];
+    try {
+        const body = await fetchJson('/api/parcours/suggestions');
+        next = Array.isArray(body.suggestions) ? body.suggestions : [];
+    } catch (error) {
+        console.warn('[PARCOURS] Suggestions indisponibles :', error);
+    }
+    if (seq !== suggestionsSeq) return;
+    suggestions = next;
+    renderSuggestions();
+}
+
+function suggestionName(item) {
+    const range = formatRange(item.start, item.end);
+    const name = item.place ? `${item.place}, ${range}` : range;
+    return name.slice(0, 80);
+}
+
+function renderSuggestions() {
+    const box = el('parcoursSuggestions');
+    const list = el('parcoursSuggestionList');
+    if (!box || !list) return;
+    box.hidden = suggestions.length === 0;
+    list.replaceChildren(...suggestions.map((item) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'btn btn-sm btn-outline-secondary parcours-suggestion';
+        chip.dataset.start = item.start;
+        chip.dataset.end = item.end;
+        const icon = document.createElement('i');
+        icon.className = `ti ${item.kind === 'trip' ? 'ti-plane' : 'ti-walk'} me-1`;
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.textContent = suggestionName(item);
+        const detail = document.createElement('span');
+        detail.className = 'text-muted ms-1';
+        const finds = t('${n} trouvailles', { n: item.finds });
+        detail.textContent = `· ${finds}`;
+        chip.append(icon, label, detail);
+        chip.addEventListener('click', () => applySuggestion(item));
+        return chip;
+    }));
+}
+
+function applySuggestion(item) {
+    const name = el('parcoursName');
+    const start = el('parcoursStart');
+    const end = el('parcoursEnd');
+    if (name) name.value = suggestionName(item);
+    if (start) start.value = item.start;
+    if (end) end.value = item.end;
+    updateRangeHint();
+    el('btnParcoursCreate')?.focus();
 }
 
 // --- Étapes ---------------------------------------------------------------------
@@ -1996,6 +2338,7 @@ async function ensureRoutes({ force = false } = {}) {
 }
 
 function renderRouting() {
+    syncRouteAttribution();
     const card = el('parcoursRoutingCard');
     if (!card) return;
     card.hidden = !inputs;
@@ -2184,6 +2527,7 @@ export function getParcoursSnapshot() {
     return {
         status,
         ids: listing.map((item) => item.id),
+        suggestions: suggestions.map((item) => ({ ...item, name: suggestionName(item) })),
         selectedId,
         logsAvailable,
         days: (ordered?.days || []).map((day) => ({
@@ -2240,6 +2584,27 @@ export function getParcoursSnapshot() {
         head: timeline ? headAt(timeline, currentQ) : null,
         infos: parcoursInfosValues(),
         playLayers: !!(playTrailLayer?.getVisible() && playHeadLayer?.getVisible()),
+        // Lot 7 : caméra, nuit, carton, pictogramme, crédits.
+        camera: (() => {
+            const view = pkg.getMap?.()?.getView();
+            return {
+                following: cameraFollowing(),
+                suspended: cameraSuspended,
+                center: view?.getCenter() ? ol.proj.toLonLat(view.getCenter()) : null,
+                zoom: view?.getZoom() ?? null,
+            };
+        })(),
+        scene: timeline ? {
+            night: playback.day_cards ? nightLevelAt(timeline, currentQ) : 0,
+            card: playback.day_cards ? dayCardAt(timeline, currentQ) : null,
+            cardText: (() => {
+                const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
+                return card ? dayCardText(card.day) : null;
+            })(),
+            headMode: headModeAt(timeline, currentQ),
+            headGlyph: playback.head === HEAD_PICTOGRAM && !!headGlyph(headModeAt(timeline, currentQ)),
+        } : null,
+        routeCredit: routeCreditText(),
     };
 }
 

@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=b35e9cc240") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=23cede6433") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -35,6 +35,7 @@
 .ti-arrows-minimize:before { content: "\ea29"; }
 .ti-arrows-move:before { content: "\f22f"; }
 .ti-bell-off:before { content: "\ece9"; }
+.ti-bike:before { content: "\ea36"; }
 .ti-bolt:before { content: "\ea38"; }
 .ti-bookmark:before { content: "\ea3a"; }
 .ti-bookmarks:before { content: "\ed08"; }
@@ -52,6 +53,7 @@
 .ti-calendar-stats:before { content: "\ee20"; }
 .ti-calendar-time:before { content: "\ee21"; }
 .ti-calendar-week:before { content: "\fd30"; }
+.ti-car:before { content: "\ebbb"; }
 .ti-category:before { content: "\f1f6"; }
 .ti-chart-arrows-vertical:before { content: "\ee29"; }
 .ti-chart-bar:before { content: "\ea59"; }
@@ -158,6 +160,7 @@
 .ti-photo:before { content: "\eb0a"; }
 .ti-photo-off:before { content: "\ecf6"; }
 .ti-pin:before { content: "\ec9c"; }
+.ti-plane:before { content: "\eb6f"; }
 .ti-plane-arrival:before { content: "\eb99"; }
 .ti-player-pause:before { content: "\ed45"; }
 .ti-player-play:before { content: "\ed46"; }
@@ -207,6 +210,7 @@
 .ti-users:before { content: "\ebf2"; }
 .ti-vector:before { content: "\eca9"; }
 .ti-video:before { content: "\ed22"; }
+.ti-walk:before { content: "\ec87"; }
 .ti-world:before { content: "\eb54"; }
 .ti-world-cog:before { content: "\f9dd"; }
 .ti-x:before { content: "\eb55"; }

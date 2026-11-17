@@ -11,8 +11,12 @@ import {
     PACE_PROPORTIONAL,
     TIMELINE_DEFAULTS as D,
     buildParcoursTimeline,
+    dayCardAt,
     formatClock,
     headAt,
+    headModeAt,
+    legTravelMode,
+    nightLevelAt,
     normalizePlayback,
     stateAt,
     stopsInRange,
@@ -36,9 +40,11 @@ function sample() {
 }
 
 test('réglages de lecture normalisés', () => {
-    assert.deepEqual(normalizePlayback(null), { pace: 'regular', hours: 'approx' });
-    assert.deepEqual(normalizePlayback({ pace: 'proportional', hours: 'slots' }), { pace: 'proportional', hours: 'slots' });
-    assert.deepEqual(normalizePlayback({ pace: 'vite', hours: 3 }), { pace: 'regular', hours: 'approx' });
+    const defaults = { pace: 'regular', hours: 'approx', camera: 'follow', day_cards: true, head: 'mode', estimated_dashed: false };
+    assert.deepEqual(normalizePlayback(null), defaults);
+    assert.deepEqual(normalizePlayback({ pace: 'proportional', hours: 'slots', camera: 'fixed', day_cards: false, head: 'dot', estimated_dashed: true }),
+        { pace: 'proportional', hours: 'slots', camera: 'fixed', day_cards: false, head: 'dot', estimated_dashed: true });
+    assert.deepEqual(normalizePlayback({ pace: 'vite', hours: 3, camera: 'drone', day_cards: 'non', head: 'vélo' }), defaults);
 });
 
 test('rythme régulier : quanta d’arrivée, trajets bornés, nuit entre deux journées', () => {
@@ -148,4 +154,51 @@ test('format de l’heure selon le réglage', () => {
     assert.equal(formatClock(15 * 60, true, HOURS_SLOTS, labels), 'après-midi');
     assert.equal(formatClock(19 * 60, true, HOURS_SLOTS, labels), 'soir');
     assert.equal(formatClock(NaN, true, HOURS_EXACT), '');
+});
+
+test('nuit : assombrissement en cloche, nul le jour', () => {
+    const tl = buildParcoursTimeline(sample());
+    const night = tl.legs[1];
+    assert.equal(nightLevelAt(tl, tl.stops[0].q), 0);
+    assert.equal(nightLevelAt(tl, night.startQ), 0);
+    assert.equal(nightLevelAt(tl, (night.startQ + night.endQ) / 2), 1);
+    const quarter = nightLevelAt(tl, night.startQ + (night.endQ - night.startQ) * 0.15);
+    assert.ok(quarter > 0 && quarter < 1);
+    assert.equal(nightLevelAt(tl, tl.stops[2].q + 1), 0);
+});
+
+test('cartons de jour : le premier au début, les suivants pendant la nuit', () => {
+    const tl = buildParcoursTimeline(sample());
+    const night = tl.legs[1];
+    assert.deepEqual(dayCardAt(tl, 0), { day: 0, alpha: 1 });
+    assert.equal(dayCardAt(tl, tl.stops[0].q + 6 + 1), null);
+    assert.equal(dayCardAt(tl, night.startQ + 1), null);
+    const card = dayCardAt(tl, night.endQ);
+    assert.equal(card.day, 1);
+    assert.equal(card.alpha, 1);
+    assert.ok(dayCardAt(tl, night.startQ + (night.endQ - night.startQ) * 0.3).alpha < 1);
+    // Une seule journée : aucun carton.
+    const single = buildParcoursTimeline(reconstructParcours({ days: [{ date: '2025-07-12', stops: [stop('A', 0)] }] }));
+    assert.equal(dayCardAt(single, 0), null);
+});
+
+test('tête : mode du trajet, déduit de la vitesse sur une trace ou en ligne droite', () => {
+    const tl = buildParcoursTimeline(sample());
+    const walk = tl.legs[0];
+    assert.equal(legTravelMode(tl, 1), 'night');
+    assert.equal(headModeAt(tl, (walk.startQ + walk.endQ) / 2), 'walk');
+    // À l'arrêt : le trajet qui y a mené ; à la première étape, le suivant.
+    assert.equal(headModeAt(tl, tl.stops[0].q + 1), 'walk');
+    assert.equal(headModeAt(tl, tl.stops[1].q + 1), 'walk');
+    assert.equal(headModeAt(tl, (tl.legs[1].startQ + tl.legs[1].endQ) / 2), 'night');
+    const fake = (mode, km, minutes) => ({
+        stops: [{ arrivalMin: 600, visitMin: 0 }, { arrivalMin: 600 + minutes }],
+        legs: [{ from: 0, to: 1, km, mode, night: false }],
+    });
+    assert.equal(legTravelMode(fake('bike', 2, 60), 0), 'bike');
+    assert.equal(legTravelMode(fake('track', 2, 30), 0), 'walk');
+    assert.equal(legTravelMode(fake('track', 8, 30), 0), 'bike');
+    assert.equal(legTravelMode(fake('track', 40, 30), 0), 'car');
+    assert.equal(legTravelMode(fake('straight', 600, 90), 0), 'plane');
+    assert.equal(legTravelMode(fake('straight', 3, NaN), 0), 'car');
 });

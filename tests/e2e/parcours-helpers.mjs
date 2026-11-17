@@ -50,7 +50,17 @@ export async function createWeekend(request, name = 'Week-end') {
   return (await response.json()).parcours;
 }
 
+// Tuile vide (PNG 1×1 transparent) servie à la place des tuiles OSM : la
+// caméra de la lecture (lot 7) zoome et précharge à chaque lecture, et la
+// suite complète finissait par recevoir des 429 du serveur de tuiles
+// (usage automatisé contraire à ses règles), qui faisaient échouer les specs
+// suivants relevant les erreurs de console.
+const BLANK_TILE = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+
 export async function openParcoursPage(page) {
+  await page.route('**://tile.openstreetmap.org/**',
+    (route) => route.fulfill({ contentType: 'image/png', body: BLANK_TILE }));
   await page.goto('/parcours', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });
@@ -71,7 +81,9 @@ export async function resetParcoursSettings(request) {
   const response = await request.put('/api/settings', {
     data: {
       parcours_animation: { rhythm_mode: 'rate', days_per_second: 10 },
-      parcours_playback: { pace: 'regular', hours: 'approx' },
+      parcours_playback: {
+        pace: 'regular', hours: 'approx', camera: 'follow', day_cards: true, head: 'mode', estimated_dashed: false,
+      },
       parcours_routing: {
         enabled: false, provider: 'fossgis', fossgis_url: 'https://routing.openstreetmap.de', ors_key: '',
       },

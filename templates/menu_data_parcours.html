@@ -21,6 +21,12 @@
             </h5>
             <div class="card">
                 <div class="card-body">
+                    <!-- Parcours suggérés (lot 7, parcours_suggest.py) -->
+                    <div id="parcoursSuggestions" class="mb-3" hidden>
+                        <div class="form-label mb-1">{{ _("Suggestions") }}</div>
+                        <div class="form-hint text-muted mb-2">{{ _("Vos séjours loin de chez vous et vos plus grosses journées. Un clic remplit le formulaire.") }}</div>
+                        <div id="parcoursSuggestionList" class="d-flex flex-wrap gap-1"></div>
+                    </div>
                     <form id="parcoursCreateForm" novalidate>
                         <div class="mb-2">
                             <label class="form-label" for="parcoursName">{{ _("Nom") }}</label>
@@ -77,6 +83,29 @@
                         </select>
                         <div id="parcoursHoursHint" class="form-hint text-muted">{{ _("Balise {heure} de la ligne d'informations (onglet Style › Titres)") }}</div>
                     </div>
+                    <div class="mt-2">
+                        <label class="form-label" for="parcoursCamera">{{ _("Caméra") }}</label>
+                        <select id="parcoursCamera" class="form-select form-select-sm" aria-describedby="parcoursCameraHint">
+                            <option value="follow">{{ _("Suit le géocacheur") }}</option>
+                            <option value="fixed">{{ _("Fixe") }}</option>
+                        </select>
+                        <div id="parcoursCameraHint" class="form-hint text-muted">{{ _("Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. Déplacer la carte pendant la lecture la laisse en place.") }}</div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label" for="parcoursHead">{{ _("Géocacheur") }}</label>
+                        <select id="parcoursHead" class="form-select form-select-sm">
+                            <option value="mode">{{ _("Pictogramme du déplacement (à pied, vélo, voiture…)") }}</option>
+                            <option value="dot">{{ _("Simple point") }}</option>
+                        </select>
+                    </div>
+                    <label class="form-check mt-2 mb-1">
+                        <input type="checkbox" id="parcoursDayCards" class="form-check-input">
+                        <span class="form-check-label">{{ _("Nuit et carton « Jour 2 » entre deux journées") }}</span>
+                    </label>
+                    <label class="form-check mb-0">
+                        <input type="checkbox" id="parcoursEstimatedDashed" class="form-check-input">
+                        <span class="form-check-label">{{ _("Trajets estimés (ligne droite) en pointillés") }}</span>
+                    </label>
                 </div>
             </div>
 

@@ -355,7 +355,16 @@ class RecordingSettings:
 PARCOURS_INFOS_TEMPLATE = '{date} · {heure} · {etapes} / {total} · {km}'
 PARCOURS_PACES = ("regular", "proportional")
 PARCOURS_HOURS_DISPLAYS = ("approx", "exact", "slots", "none")
-PARCOURS_PLAYBACK_DEFAULTS = {"pace": "regular", "hours": "approx"}
+PARCOURS_CAMERA_MODES = ("follow", "fixed")
+PARCOURS_HEAD_STYLES = ("mode", "dot")
+PARCOURS_PLAYBACK_DEFAULTS = {
+    "pace": "regular",
+    "hours": "approx",
+    "camera": "follow",
+    "day_cards": True,
+    "head": "mode",
+    "estimated_dashed": False,
+}
 # Itinéraires réels (lot 6, parcours_routing.py) : désactivés par défaut,
 # FOSSGIS sans clé par défaut, openrouteservice en option (clé gratuite).
 PARCOURS_ROUTING_PROVIDERS = ("fossgis", "ors")
@@ -641,15 +650,23 @@ def parcours_animation_defaults() -> AnimationPrefs:
 def coerce_parcours_playback(value, current: dict | None = None) -> dict:
     """Lecture d'un parcours : patch partiel, valeur inconnue → valeur courante."""
     base = dict(current) if isinstance(current, dict) else dict(PARCOURS_PLAYBACK_DEFAULTS)
-    out = {
-        "pace": base.get("pace") if base.get("pace") in PARCOURS_PACES else PARCOURS_PLAYBACK_DEFAULTS["pace"],
-        "hours": base.get("hours") if base.get("hours") in PARCOURS_HOURS_DISPLAYS else PARCOURS_PLAYBACK_DEFAULTS["hours"],
+    choices = {
+        "pace": PARCOURS_PACES,
+        "hours": PARCOURS_HOURS_DISPLAYS,
+        "camera": PARCOURS_CAMERA_MODES,
+        "head": PARCOURS_HEAD_STYLES,
     }
+    flags = ("day_cards", "estimated_dashed")
+
+    def valid(key, item):
+        return item in choices[key] if key in choices else isinstance(item, bool)
+
+    out = {key: base.get(key) if valid(key, base.get(key)) else default
+           for key, default in PARCOURS_PLAYBACK_DEFAULTS.items()}
     if isinstance(value, dict):
-        if value.get("pace") in PARCOURS_PACES:
-            out["pace"] = value["pace"]
-        if value.get("hours") in PARCOURS_HOURS_DISPLAYS:
-            out["hours"] = value["hours"]
+        for key in (*choices, *flags):
+            if key in value and valid(key, value[key]):
+                out[key] = value[key]
     return out
 
 

@@ -4139,6 +4139,15 @@ body[data-mode="parcours"] .rhythm-rate-field {
     white-space: nowrap;
 }
 
+/* Parcours suggérés : un bouton par séjour, texte à gauche, retour à la
+   ligne permis (noms de régions longs). */
+.parcours-suggestion {
+    white-space: normal;
+    text-align: start;
+    justify-content: flex-start;
+    max-width: 100%;
+}
+
 /* Le texte d'une étape est un bouton (il ouvre son panneau d'ajustement) :
    sans les règles .btn de Tabler (flex centré, sans retour à la ligne), qui
    mettaient nom et détail côte à côte. */

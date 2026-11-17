@@ -1269,8 +1269,12 @@ function updatePointAppearClock() {
     // entretenir une boucle de rendu pendant toute la pause.
     if (livePausedAt !== null) return false;
     if (isLifecyclePage()) {
-        const vars = lifecycleEngine()?.frameVars?.(now, animationMsPerDay());
+        const engine = lifecycleEngine();
+        const vars = engine?.frameVars?.(now, animationMsPerDay());
         if (vars) Object.assign(pointStyleVariables, vars);
+        // Caméra propre au moteur (page Parcours, la tête suivie) : même avance
+        // d'une image en capture image par image que la piste du mode principal.
+        engine?.camera?.(isRecording ? 1000 / (Number(pkg.options.record.framesPerSec) || 30) : 0, animationMsPerDay());
     }
 
     const glowDays = Math.max(0, Number(pkg.options.point?.recentGlowDays) || 0);

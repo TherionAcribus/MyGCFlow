@@ -45,6 +45,9 @@
 //                              (optionnel ; Parcours : date réelle, heure, km)
 //   frameActive(now)           vrai tant que le moteur dessine entre deux jours
 //                              (optionnel ; Parcours : tête et trait continus)
+//   camera(leadMs, msPerDay)   pose la vue avant chaque rendu, après frameVars
+//                              ; leadMs = une image en capture image par image
+//                              (optionnel ; Parcours : caméra qui suit la tête)
 //   namesPreview(features, round) étiquettes d'aperçu des pseudos des
 //                              visiteurs (optionnel ; Mes poses) ; step() peut
 //                              aussi renvoyer `names` (poses_names_model.mjs)

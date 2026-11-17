@@ -82,6 +82,9 @@ test('itinéraires : chemins et durées réels, cache local, recalcul', async ({
   // Durées de l'itinéraire : départ 09:00, visite de 10 min, trajet de 30 min.
   expect(state.days[0].times.slice(0, 2)).toEqual(['09:00', '09:40']);
   await expect(page.locator('#parcoursRoutingStatus')).toContainText('3 trajets sur 3');
+  // Crédits du fournisseur : dans l'attribution de la carte (et la vidéo).
+  expect(state.routeCredit).toContain('FOSSGIS');
+  await expect(page.locator('.ol-attribution')).toContainText('FOSSGIS');
 
   // Rechargement : servi par le cache du serveur, aucune nouvelle requête.
   const before = requests.length;

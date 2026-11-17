@@ -35,7 +35,24 @@ export const HOURS_SLOTS = 'slots';
 export const HOURS_NONE = 'none';
 export const HOURS_DISPLAYS = Object.freeze([HOURS_APPROX, HOURS_EXACT, HOURS_SLOTS, HOURS_NONE]);
 
-export const PLAYBACK_DEFAULTS = Object.freeze({ pace: PACE_REGULAR, hours: HOURS_APPROX });
+export const CAMERA_FOLLOW = 'follow';
+export const CAMERA_FIXED = 'fixed';
+export const CAMERA_MODES = Object.freeze([CAMERA_FOLLOW, CAMERA_FIXED]);
+
+export const HEAD_PICTOGRAM = 'mode';
+export const HEAD_DOT = 'dot';
+export const HEAD_STYLES = Object.freeze([HEAD_PICTOGRAM, HEAD_DOT]);
+
+// Lot 7 : caméra qui suit le géocacheur, cartons et nuit entre deux journées,
+// pictogramme du mode de déplacement, trajets estimés en pointillés.
+export const PLAYBACK_DEFAULTS = Object.freeze({
+    pace: PACE_REGULAR,
+    hours: HOURS_APPROX,
+    camera: CAMERA_FOLLOW,
+    day_cards: true,
+    head: HEAD_PICTOGRAM,
+    estimated_dashed: false,
+});
 
 // Durées en quanta (× 100 ms à la vitesse naturelle).
 export const TIMELINE_DEFAULTS = Object.freeze({
@@ -56,9 +73,14 @@ export const TIMELINE_DEFAULTS = Object.freeze({
 
 export function normalizePlayback(raw) {
     const o = raw && typeof raw === 'object' ? raw : {};
+    const flag = (key) => (typeof o[key] === 'boolean' ? o[key] : PLAYBACK_DEFAULTS[key]);
     return {
         pace: PACES.includes(o.pace) ? o.pace : PLAYBACK_DEFAULTS.pace,
         hours: HOURS_DISPLAYS.includes(o.hours) ? o.hours : PLAYBACK_DEFAULTS.hours,
+        camera: CAMERA_MODES.includes(o.camera) ? o.camera : PLAYBACK_DEFAULTS.camera,
+        day_cards: flag('day_cards'),
+        head: HEAD_STYLES.includes(o.head) ? o.head : PLAYBACK_DEFAULTS.head,
+        estimated_dashed: flag('estimated_dashed'),
     };
 }
 
@@ -371,4 +393,84 @@ export function stopsInRange(timeline, first, last) {
         if (q >= first && q <= last) out.push(i);
     }
     return out;
+}
+
+// --- Nuit, cartons de jour, tête (lot 7) ---------------------------------------
+
+export const SCENE_DEFAULTS = Object.freeze({
+    nightRampShare: 0.3,  // part de la nuit pour assombrir (puis éclaircir)
+    cardFromShare: 0.25,  // le carton paraît au quart de la nuit…
+    cardHoldQ: 6,         // …et reste ce temps après l'arrivée à la 1re étape
+    cardFadeQ: 3,
+});
+
+// Assombrissement de la nuit à `qf` : 0 (jour) à 1 (cœur de la nuit).
+export function nightLevelAt(timeline, qf, options = {}) {
+    const o = { ...SCENE_DEFAULTS, ...options };
+    const legIndex = legIndexAt(timeline, qf);
+    if (legIndex < 0 || !timeline.legs[legIndex].night) return 0;
+    const leg = timeline.legs[legIndex];
+    const t = clamp((qf - leg.startQ) / Math.max(1e-9, leg.endQ - leg.startQ), 0, 1);
+    return smoothstep(clamp(Math.min(t, 1 - t) / Math.max(1e-9, o.nightRampShare), 0, 1));
+}
+
+// Carton de journée à `qf` : { day (index dans `days`), alpha } ou null.
+// Seulement pour un parcours de plusieurs journées : le premier dès le
+// début, les suivants pendant la nuit qui y mène.
+export function dayCardAt(timeline, qf, options = {}) {
+    const days = timeline?.days || [];
+    if (days.length < 2) return null;
+    const o = { ...SCENE_DEFAULTS, ...options };
+    const nightInto = new Map();
+    for (const leg of timeline.legs) if (leg.night) nightInto.set(leg.to, leg);
+    for (let d = 0; d < days.length; d++) {
+        const first = timeline.stops[days[d].first];
+        const night = nightInto.get(days[d].first);
+        const from = night ? night.startQ + (night.endQ - night.startQ) * o.cardFromShare : 0;
+        const to = first.q + o.cardHoldQ;
+        if (qf < from || qf > to) continue;
+        const fadeIn = night ? clamp((qf - from) / o.cardFadeQ, 0, 1) : 1;
+        const fadeOut = clamp((to - qf) / o.cardFadeQ, 0, 1);
+        return { day: d, alpha: Math.min(fadeIn, fadeOut) };
+    }
+    return null;
+}
+
+export const HEAD_MODES = Object.freeze(['walk', 'bike', 'car', 'plane', 'night']);
+
+// Mode de déplacement d'un trajet, pour le pictogramme de la tête : celui de
+// l'itinéraire ou imposé ; sur une trace ou en ligne droite, déduit de la
+// vitesse de l'horaire (au-delà de 150 km en ligne droite : l'avion).
+export function legTravelMode(timeline, legIndex) {
+    const leg = timeline?.legs?.[legIndex];
+    if (!leg) return 'walk';
+    if (leg.night) return 'night';
+    if (leg.mode === 'walk' || leg.mode === 'bike' || leg.mode === 'car') return leg.mode;
+    if (leg.mode === 'straight' && leg.km > 150) return 'plane';
+    const a = timeline.stops[leg.from];
+    const b = timeline.stops[leg.to];
+    const minutes = (b.arrivalMin ?? NaN) - ((a.arrivalMin ?? NaN) + (a.visitMin ?? 0));
+    if (Number.isFinite(minutes) && minutes > 0) {
+        const speed = leg.km / (minutes / 60);
+        if (speed < 7) return 'walk';
+        if (speed < 22) return 'bike';
+        return speed > 250 ? 'plane' : 'car';
+    }
+    return leg.km <= 1.5 ? 'walk' : 'car';
+}
+
+// Pictogramme de la tête à `qf` : le trajet en cours ; à l'arrêt, le trajet
+// qui y a mené (sinon le suivant).
+export function headModeAt(timeline, qf) {
+    const legs = timeline?.legs || [];
+    if (legs.length === 0) return 'walk';
+    const legIndex = legIndexAt(timeline, qf);
+    if (legIndex >= 0) return legTravelMode(timeline, legIndex);
+    const reached = Math.max(0, reachedIndex(timeline, qf));
+    for (let k = legs.length - 1; k >= 0; k--) {
+        if (legs[k].to <= reached && !legs[k].night) return legTravelMode(timeline, k);
+        if (legs[k].to <= reached && legs[k].night) break;
+    }
+    const next = legs.findIndex((leg) => leg.from >= reached && !leg.night);
+    return next >= 0 ? legTravelMode(timeline, next) : 'walk';
 }

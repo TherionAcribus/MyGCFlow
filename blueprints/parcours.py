@@ -15,6 +15,7 @@ import parcours_dataset
 import parcours_photos
 import parcours_routing
 import parcours_store as store
+import parcours_suggest
 import parcours_tracks
 from settings_manager import get_settings_manager
 from extensions import db
@@ -61,6 +62,14 @@ def list_parcours():
         'finds': parcours_dataset.finds_extent(db.session),
         'maxDays': store.MAX_DAYS,
     })
+
+
+@parcours_bp.route('/api/parcours/suggestions', methods=['GET'])
+def parcours_suggestions():
+    """Séjours et grosses journées tirés des trouvailles (lot 7), hors plages
+    déjà enregistrées."""
+    return jsonify({'suggestions': parcours_suggest.suggestions(
+        db.session, store.list_parcours(db.session), max_days=store.MAX_DAYS)})
 
 
 @parcours_bp.route('/api/parcours', methods=['POST'])

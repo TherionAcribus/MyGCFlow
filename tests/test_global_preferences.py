@@ -603,20 +603,27 @@ class SettingsApiTests(unittest.TestCase):
         payload = self.client.get('/api/settings').get_json()
         self.assertEqual(payload['parcours_animation']['rhythm_mode'], 'rate')
         self.assertEqual(payload['parcours_animation']['days_per_second'], 10.0)
-        self.assertEqual(payload['parcours_playback'], {'pace': 'regular', 'hours': 'approx'})
+        self.assertEqual(payload['parcours_playback'], {
+            'pace': 'regular', 'hours': 'approx', 'camera': 'follow', 'day_cards': True,
+            'head': 'mode', 'estimated_dashed': False,
+        })
         self.assertIn('{heure}', payload['parcours_infos_template'])
 
         main_before = payload['animation']
         self.assertEqual(self.client.put('/api/settings', json={
             'parcours_animation': {'days_per_second': 20, 'camera_follow': True},
-            'parcours_playback': {'hours': 'slots', 'pace': 'teleport'},
+            'parcours_playback': {'hours': 'slots', 'pace': 'teleport', 'camera': 'drone',
+                                  'day_cards': False, 'estimated_dashed': 'oui'},
             'parcours_infos_template': '{date} · {km}',
         }).status_code, 200)
         after = self.client.get('/api/settings').get_json()
         self.assertEqual(after['parcours_animation']['days_per_second'], 20.0)
         self.assertEqual(after['parcours_animation']['rhythm_mode'], 'rate')  # patch partiel
         self.assertFalse(after['parcours_animation']['camera_follow'])        # jamais la caméra du mode principal
-        self.assertEqual(after['parcours_playback'], {'pace': 'regular', 'hours': 'slots'})
+        self.assertEqual(after['parcours_playback'], {
+            'pace': 'regular', 'hours': 'slots', 'camera': 'follow', 'day_cards': False,
+            'head': 'mode', 'estimated_dashed': False,
+        })
         self.assertEqual(after['parcours_infos_template'], '{date} · {km}')
         self.assertEqual(after['animation'], main_before)
         self.assertIsNone(after['last_profile_uid'])

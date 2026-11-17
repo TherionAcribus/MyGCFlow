@@ -36,6 +36,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 |---|---|
 | `GET /parcours` | La page (`render_app_page('parcours')`) |
 | `GET /api/parcours` | `{parcours, finds: {first, last}, maxDays}` — `finds` borne le formulaire de création |
+| `GET /api/parcours/suggestions` | Parcours suggérés `{suggestions: [{kind: trip / day, start, end, days, findDays, finds, place}]}` (lot 7, ci-dessous), hors plages déjà enregistrées |
 | `POST /api/parcours` | Création `{name, date_start, date_end?, include_labs?, include_dnf?}` ; `date_end` absente = une journée |
 | `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression |
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
@@ -88,7 +89,8 @@ un voyage), chacun avec ses étapes :
 | Fichier | Rôle |
 |---|---|
 | `static/js/parcours_reconstruct.mjs` | Pur : ordre de passage, heures, confiance (ci-dessous). Tests : `tests/js/parcours_reconstruct.test.mjs` |
-| `static/js/parcours_timeline.mjs` | Pur : temps écran (quanta), position du géocacheur, heure et distance affichées. Tests : `tests/js/parcours_timeline.test.mjs` |
+| `static/js/parcours_timeline.mjs` | Pur : temps écran (quanta), position du géocacheur, heure et distance affichées, nuit, cartons de jour, mode de la tête. Tests : `tests/js/parcours_timeline.test.mjs` |
+| `static/js/parcours_camera.mjs` | Pur : pose de la caméra de la lecture (lot 7). Tests : `tests/js/parcours_camera.test.mjs` |
 | `static/js/parcours_model.mjs` | Pur : utilitaires (étapes du parcours, emprise, jours d'une plage). Tests : `tests/js/parcours_model.test.mjs` |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
@@ -165,10 +167,12 @@ Titres) :
 - `{jour}`, `{jours}`, `{km}` ;
 - compteurs animés `{etapes}`, `{caches}`, `{labs}`, et `{total}`.
 
-Deux crochets optionnels ont été ajoutés au contrat du moteur :
+Trois crochets optionnels ont été ajoutés au contrat du moteur :
 - `infosValues(now)` : valeurs texte qui priment sur les compteurs et sur la
   date du moteur ;
-- `frameActive(now)` : entretient le rendu entre deux quanta.
+- `frameActive(now)` : entretient le rendu entre deux quanta ;
+- `camera(leadMs, msPerDay)` : pose la vue avant chaque rendu (lot 7,
+  ci-dessous).
 
 Ouvrir un autre parcours ou changer le rythme pendant une lecture : appliqué
 à la fin (`applyPending`).
@@ -182,16 +186,89 @@ repli de `perPage` sur la page principale faisait réécrire ses clés
 |---|---|
 | `parcours_animation` | Rythme (défaut : « Vitesse » 10 quanta/s ; préréglages lent ×0,5 / normal / rapide ×2), durée totale, musique ; jamais de suivi de caméra du mode principal |
 | `parcours_infos_template` | Modèle de la ligne d'infos (défaut `{date} · {heure} · {etapes} / {total} · {km}`) |
-| `parcours_playback` | `{pace: regular / proportional, hours: approx / exact / slots / none}` |
+| `parcours_playback` | `{pace: regular / proportional, hours: approx / exact / slots / none, camera: follow / fixed, day_cards, head: mode / dot, estimated_dashed}` (défauts : `regular`, `approx`, `follow`, `true`, `mode`, `false`) |
 | `parcours_last_profile_uid` | Dernier thème de la page (thèmes du mode principal ; première visite : celui de la page principale) |
 | `stats.parcours_panels`, `images.parcours_items` | Listes par page, vides tant que les onglets ne sont pas branchés |
 
 Limites actuelles :
-- pas de caméra qui suit (lot 7), pas de carton ni d'assombrissement de
-  nuit ;
 - trajets en lignes droites sans itinéraires (option du lot 6, désactivée
   par défaut) ;
 - un DNF apparaît comme une cache de son type.
+
+### Finitions (lot 7)
+
+Réglages de la carte « Lecture » de l'onglet Données, lus à chaque image :
+ils s'appliquent aussi en pleine lecture.
+
+**Caméra** (`parcours_camera.mjs`, réglage « Caméra », défaut « Suit le
+géocacheur ») :
+- cadrage visé à chaque position du moteur (`cameraFocusAt`) :
+  - pendant un trajet, son chemin entier : dézoom d'un long trajet ;
+  - à une étape, l'étape et le milieu des trajets voisins de moins de 2 km
+    (900 m de côté au moins, zoom 16 au plus) ;
+  - la nuit, la fin de la journée et le début de la suivante ;
+  - après la dernière étape, la vue d'ensemble ;
+- lissage : moyenne pondérée (triangle) des cadrages visés sur ±8 quanta,
+  échantillonnés tous les quarts de quantum. Centre en Web Mercator,
+  résolution en logarithme ;
+- le géocacheur est ensuite gardé à 40 px du bord au moins.
+
+La pose ne dépend que de la position du moteur : aperçu, saut et vidéo image
+par image cadrent pareil. `mapgl.js` appelle le crochet `camera` après
+`frameVars`, dans le pré-rendu. La vue posée s'applique donc à l'image
+suivante : en capture image par image, `leadMs` (une image) la fait tomber
+sur la bonne, comme la piste de caméra du mode principal.
+
+Les tuiles de la suite sont demandées d'avance (`prefetchBasemapTiles`, pose
+1,5 s plus loin, une fois par seconde d'écran). Glisser ou zoomer la carte
+pendant la lecture suspend la caméra jusqu'à la lecture suivante. À la fin,
+la vue d'avant la lecture revient, sauf si l'utilisateur a repris la main.
+
+**Nuit et cartons** (réglage « Nuit et carton », défaut : oui), seulement
+pour un parcours de plusieurs journées :
+- la nuit assombrit la carte en cloche (`nightLevelAt` : 30 % de la nuit
+  pour monter, 30 % pour redescendre ; voile bleu nuit à 50 % au cœur) ;
+- le carton « Jour 2 » et la date longue (`dayCardAt`) :
+  - le premier dès le début ;
+  - les suivants du quart de la nuit jusqu'à 6 quanta après la première
+    étape du jour, avec un fondu de 3 quanta.
+
+**Tête** (réglage « Géocacheur », défaut : pictogramme) : un rond de la
+couleur du trait et un glyphe Tabler (`ti-walk`, `ti-bike`, `ti-car`,
+`ti-plane`, `ti-moon`), lu dans la feuille de style et dessiné au canevas.
+Le mode vient de `headModeAt` / `legTravelMode` :
+- l'itinéraire ou le mode imposé ;
+- sur une trace ou en ligne droite, déduit de la vitesse de l'horaire :
+  moins de 7 km/h à pied, moins de 22 km/h à vélo, au-delà en voiture,
+  au-delà de 250 km/h en avion ;
+- en ligne droite au-delà de 150 km : l'avion ;
+- à l'arrêt, le mode du trajet d'arrivée.
+
+Sans police chargée, la tête redevient un point.
+
+**Trajets estimés en pointillés** (option, désactivée par défaut) : un
+trajet sans trace ni itinéraire se dessine en tirets dans le trait de la
+lecture.
+
+**Crédits des itinéraires** :
+- à l'écran, dans l'attribution de la carte (sources du plan et du trait) ;
+- dans la vidéo, peints en bas à droite par la couche de la tête, car la
+  capture ne compose que les canevas.
+
+Ils n'apparaissent que si un trajet suit un itinéraire.
+
+**Parcours suggérés** (`parcours_suggest.py`, carte « Nouveau parcours ») :
+- centre habituel : la case de 0,5° qui compte le plus de journées de
+  trouvailles. Une journée est placée à la médiane de ses trouvailles ;
+- **séjours** : jours consécutifs à plus de 100 km de ce centre. Un ou deux
+  jours sans trouvaille ne coupent pas le séjour ; il faut 3 trouvailles au
+  moins ; un séjour est coupé à 92 jours ;
+- **grosses journées** : 20 trouvailles ou plus hors séjour ;
+- nom : la région si elle fait 60 % d'un séjour dans un seul pays (80 %),
+  sinon le pays, sinon les deux pays principaux. La page y ajoute les dates.
+
+Les six plus récents sont proposés, hors plages déjà enregistrées. Un clic
+remplit le formulaire.
 
 ## Ajustements manuels (lot 3)
 
@@ -476,14 +553,17 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   suppression), `tests/test_parcours_tracks.py` (lecture GPX, simplification
   qui garde une pause, envoi, refus, décalage UTC),
   `tests/test_parcours_routing.py` (réponses OSRM et openrouteservice
-  simulées, découpage par trajet, cache, échecs, API) ; préférences de la
+  simulées, découpage par trajet, cache, échecs, API),
+  `tests/test_parcours_suggest.py` (centre habituel, séjours, grosses
+  journées, noms, API) ; préférences de la
   page dans `tests/test_global_preferences.py`
   (`test_parcours_preferences_have_their_own_keys`, clé openrouteservice
   jamais renvoyée).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
   `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_photos.test.mjs`,
   `tests/js/parcours_tracks.test.mjs`, `tests/js/parcours_routing.test.mjs`,
-  `tests/js/parcours_model.test.mjs`, `tests/js/app_mode.test.mjs`.
+  `tests/js/parcours_camera.test.mjs`, `tests/js/parcours_model.test.mjs`,
+  `tests/js/app_mode.test.mjs`.
 - E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2),
   `tests/e2e/parcours-adjust.spec.mjs` (lot 3),
   `tests/e2e/parcours-photos.spec.mjs` (lot 4, photos de
@@ -493,7 +573,10 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   `git add -f`) et `tests/e2e/parcours-routing.spec.mjs` (lot 6 : faux
   serveur OSRM local sur un port libre, `parcours_routing.fossgis_url` pointé
   dessus — aucun appel réseau ; le cache `route_leg_cache` est partagé par le
-  runtime, les comptes de requêtes sont relatifs), aides communes dans
+  runtime, les comptes de requêtes sont relatifs) et
+  `tests/e2e/parcours-finitions.spec.mjs` (lot 7 : caméra, nuit, carton,
+  pictogramme, carte déplacée, réglages, suggestions simulées par
+  `page.route`), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le
@@ -505,7 +588,8 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   - Ajustements : flèches, glisser-déposer (`dragTo`), persistance,
     heure, journée, exclusion, annulation, base posée d'un clic sur la carte.
   - Relevé : `window.getParcoursSnapshot()` (`timeline`, `running`,
-    `currentQ`, `head`, `infos`, `playLayers`, `overrides`, `places`,
+    `currentQ`, `head`, `infos`, `playLayers`, `camera`, `scene`,
+    `routeCredit`, `suggestions`, `overrides`, `places`,
     `days[].manual` / `excluded`, `adjustmentRevision` — à attendre après
     un ajustement) ; signal `window.mygcflowParcoursLoaded` / événement
     `mygcflow:parcours-loaded`.
