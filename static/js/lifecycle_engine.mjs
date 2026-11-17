@@ -45,6 +45,14 @@
 //                              (optionnel ; Parcours : date réelle, heure, km)
 //   frameActive(now)           vrai tant que le moteur dessine entre deux jours
 //                              (optionnel ; Parcours : tête et trait continus)
+//   timelineBar                crochet de la barre de chronologie (optionnel ;
+//                              Parcours : quanta sur des dates fictives) —
+//                              { rangeEditable, wheelStep, revision(),
+//                              series(axisStart, span), ticks(axisStart, span)
+//                              → { bands, lines, labels }, marks(axisStart,
+//                              span), edgeText / positionText / tipLines
+//                              (axisStart, offset), dayOffset(start, offset,
+//                              direction) } ; voir timeline_bar.js
 //   camera(leadMs, msPerDay)   pose la vue avant chaque rendu, après frameVars
 //                              ; leadMs = une image en capture image par image
 //                              (optionnel ; Parcours : caméra qui suit la tête)

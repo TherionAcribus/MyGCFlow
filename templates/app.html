@@ -196,7 +196,7 @@
                             <i class="ti ti-minus" aria-hidden="true"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-timeline-style="histogram" aria-pressed="true"
-                                {% set timeline_histogram_label = {'evolution': _('Histogramme des poses et archivages'), 'poses': _('Histogramme des logs reçus')}.get(mode, _('Histogramme des trouvailles')) %}
+                                {% set timeline_histogram_label = {'evolution': _('Histogramme des poses et archivages'), 'poses': _('Histogramme des logs reçus'), 'parcours': _('Histogramme des étapes')}.get(mode, _('Histogramme des trouvailles')) %}
                                 aria-label="{{ timeline_histogram_label }}"
                                 data-bs-toggle="tooltip" data-bs-title="{{ timeline_histogram_label }}">
                             <i class="ti ti-chart-bar" aria-hidden="true"></i>

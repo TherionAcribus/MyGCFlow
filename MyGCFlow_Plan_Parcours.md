@@ -97,6 +97,14 @@ photo (migration v15), préférence `parcours_photo_display` et trois
 placements (`parcours_photo_layout.mjs`, `parcours_photo_draw.mjs`), lieux
 proposés (`suggestPhotoPlaces`).
 
+**Barre de chronologie (2026-11-17)** : la barre des autres pages, jusque-là
+masquée sur `/parcours`, y est branchée par un crochet `timelineBar` du
+moteur (`barSeries` / `barTicks` de parcours_timeline.mjs) : arrivées aux
+étapes, nuits et journées (ou heures d'une journée unique), DNF et photos,
+vraies dates et heures dans les bouts, l'étiquette et la bulle, Pg.Préc /
+Pg.Suiv de journée en journée. Pas de bornes tirables : la plage reste le
+parcours entier. Détails dans docs/parcours.md › Barre de chronologie.
+
 Écarts et constats des lots 8 à 10 :
 - **Côté « auto »** : vers le centre de l'écran, mais haut-droite tant que
   l'étape est près du centre — avec la caméra qui suit, l'étape y est

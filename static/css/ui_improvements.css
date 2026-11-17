@@ -1291,6 +1291,10 @@ main.fullscreen-mode ~ .tooltip {
 .timeline-bar-tip-line[data-mark="image-out"]::before {
     border: 1.5px solid #ffc046;
 }
+.timeline-bar-tip-line[data-mark="photo"]::before {
+    background: #ffc046;
+    border-radius: 1px;
+}
 .timeline-bar-edge {
     flex: 0 0 auto;
     color: var(--tblr-secondary, #6c757d);
@@ -1319,6 +1323,16 @@ main.fullscreen-mode ~ .tooltip {
 }
 .timeline-bar.is-narrow .timeline-bar-date {
     min-width: 0;
+}
+/* Parcours : l'étiquette (date, heure, étapes, instant de la vidéo) change
+   de longueur d'une étape à l'autre — largeur fixe, coupée au besoin, pour
+   que la piste ne bouge pas sous le pointeur. */
+body[data-mode="parcours"] .timeline-bar:not(.is-narrow) .timeline-bar-date {
+    flex-basis: 22em;
+    min-width: 22em;
+    max-width: 22em;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 /* Plein écran : la barre devient une surimpression optionnelle au bas de la
    carte (bouton #btnTimelineBarFs du menu flottant ; timeline_bar.js pose
@@ -4086,12 +4100,10 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 
 /* ===== Page Parcours (/parcours, parcours_data.js) ======================== */
 
-/* Pas encore de barre de chronologie (MyGCFlow_Plan_Parcours.md), ni de
-   plage de dates ni de « jours par seconde » : un parcours se joue en quanta
+/* Ni plage de dates ni « jours par seconde » : un parcours se joue en quanta
    de temps écran, sa plage est celle du parcours ouvert. Les éléments restent
-   dans la page : ui.js les attend. */
-body[data-mode="parcours"] #btnTimelineBar,
-body[data-mode="parcours"] #timelineBar,
+   dans la page : ui.js les attend. La barre de chronologie, elle, est
+   adaptée (crochet timelineBar de parcours_data.js). */
 body[data-mode="parcours"] #animDateRangeBlock,
 body[data-mode="parcours"] .rhythm-rate-field {
     display: none !important;

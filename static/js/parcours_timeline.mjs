@@ -474,3 +474,76 @@ export function headModeAt(timeline, qf) {
     const next = legs.findIndex((leg) => leg.from >= reached && !leg.night);
     return next >= 0 ? legTravelMode(timeline, next) : 'walk';
 }
+
+// --- Barre de chronologie --------------------------------------------------------
+//
+// La barre (timeline_bar.js) compte en « jours » du moteur, donc ici en quanta :
+// sa piste couvre `span` quanta à partir de `firstQ`. Le quantum k y est l'état
+// affiché après lui (position du moteur ≈ k) — une étape est comptée au premier
+// quantum entier qui atteint son arrivée, comme dans stateAt.
+
+function isBarCounted(stop) {
+    return stop.kind !== 'place' && stop.kind !== 'base';
+}
+
+// Par quantum : arrivées des étapes comptées (`events`, Labs à part dans
+// `secondary`) et étapes atteintes à la fin du quantum (`level`) ; `base` :
+// étapes arrivées avant `firstQ`.
+export function barSeries(timeline, firstQ, span) {
+    const n = Math.max(0, Math.floor(Number(span) || 0));
+    const events = new Float64Array(n);
+    const secondary = new Float64Array(n);
+    const level = new Float64Array(n);
+    let base = 0;
+    for (const stop of timeline?.stops || []) {
+        if (!isBarCounted(stop)) continue;
+        const offset = Math.ceil(stop.q - 1e-6) - firstQ;
+        if (offset < 0) base++;
+        else if (offset < n) (stop.kind === 'lab' ? secondary : events)[offset]++;
+    }
+    let total = base;
+    for (let k = 0; k < n; k++) {
+        total += events[k] + secondary[k];
+        level[k] = total;
+    }
+    return { events, secondary, level, base };
+}
+
+// Repères de la piste :
+//   bands : nuits entre deux journées { from, to } (quanta de la piste) ;
+//   days  : début de chaque journée { offset, day } (index dans `days`), la
+//           première comprise — seulement pour plusieurs journées ;
+//   hours : heures pleines d'une journée unique { offset, hour }, au premier
+//           quantum où l'heure affichée l'atteint.
+export function barTicks(timeline, firstQ, span) {
+    const out = { bands: [], days: [], hours: [] };
+    const n = Math.max(0, Math.floor(Number(span) || 0));
+    const days = timeline?.days || [];
+    if (!n || days.length === 0) return out;
+    const inAxis = (offset) => offset >= 0 && offset < n;
+    if (days.length > 1) {
+        for (const leg of timeline.legs || []) {
+            if (!leg.night) continue;
+            const from = Math.max(0, Math.floor(leg.startQ) - firstQ);
+            const to = Math.min(n, Math.ceil(leg.endQ) - firstQ);
+            if (to > from) out.bands.push({ from, to });
+        }
+        // Une journée commence à la piste à la fin de sa nuit (arrivée à sa
+        // première étape) : l'étiquette suit la bande au lieu de la couvrir.
+        days.forEach((day, d) => {
+            const first = timeline.stops[day.first];
+            const offset = (d === 0 || !first ? 0 : Math.ceil(first.q - 1e-6)) - firstQ;
+            if (inAxis(offset)) out.days.push({ offset, day: d });
+        });
+        return out;
+    }
+    let last = NaN;
+    for (let k = 0; k < n; k++) {
+        const state = stateAt(timeline, firstQ + k);
+        const hour = Number.isFinite(state?.minutes) ? Math.floor(state.minutes / 60) : NaN;
+        if (!Number.isFinite(hour)) continue;
+        if (Number.isFinite(last) && hour > last) out.hours.push({ offset: k, hour });
+        last = Number.isFinite(last) ? Math.max(last, hour) : hour;
+    }
+    return out;
+}

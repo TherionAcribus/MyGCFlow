@@ -10,6 +10,8 @@ import {
     HOURS_SLOTS,
     PACE_PROPORTIONAL,
     TIMELINE_DEFAULTS as D,
+    barSeries,
+    barTicks,
     buildParcoursTimeline,
     dayCardAt,
     formatClock,
@@ -201,4 +203,56 @@ test('tête : mode du trajet, déduit de la vitesse sur une trace ou en ligne dr
     assert.equal(legTravelMode(fake('track', 40, 30), 0), 'car');
     assert.equal(legTravelMode(fake('straight', 600, 90), 0), 'plane');
     assert.equal(legTravelMode(fake('straight', 3, NaN), 0), 'car');
+});
+
+test('barre de chronologie : arrivées par quantum, Labs à part, cumul', () => {
+    const tl = buildParcoursTimeline(sample());
+    const [a, b, c] = tl.stops;
+    const s = barSeries(tl, 0, tl.quanta);
+    assert.equal(s.events.length, tl.quanta);
+    assert.equal(s.base, 0);
+    assert.equal(s.events[a.q], 1);
+    assert.equal(s.events[b.q], 1);
+    assert.equal(s.secondary[c.q], 1); // C est un Lab
+    assert.equal(s.events.reduce((x, y) => x + y, 0), 2);
+    assert.equal(s.level[a.q - 1], 0);
+    assert.equal(s.level[a.q], 1);
+    assert.equal(s.level[tl.quanta - 1], 3);
+    // Cumul cohérent avec l'état affiché au même quantum.
+    for (const q of [a.q, b.q - 1, b.q, c.q, tl.quanta - 1]) {
+        assert.equal(s.level[q], stateAt(tl, q).stopsReached, `quantum ${q}`);
+    }
+    // Piste décalée : les arrivées antérieures passent dans `base`.
+    const late = barSeries(tl, b.q, tl.quanta - b.q);
+    assert.equal(late.base, 1);
+    assert.equal(late.events[0], 1);
+    assert.equal(late.level[0], 2);
+});
+
+test('barre de chronologie : nuits et débuts de journée, heures d’une journée unique', () => {
+    const tl = buildParcoursTimeline(sample());
+    const night = tl.legs.find((leg) => leg.night);
+    const ticks = barTicks(tl, 0, tl.quanta);
+    assert.deepEqual(ticks.bands, [{ from: night.startQ, to: night.endQ }]);
+    assert.deepEqual(ticks.days, [{ offset: 0, day: 0 }, { offset: tl.stops[2].q, day: 1 }]);
+    assert.deepEqual(ticks.hours, []);
+
+    // Une journée de 9:00 à 11:20 (heures sûres) : 10:00 et 11:00 marquées,
+    // au premier quantum où l'heure affichée les atteint.
+    const single = buildParcoursTimeline(reconstructParcours({
+        days: [{ date: '2025-07-12', stops: [
+            stop('A', 0, { localTime: '09:00' }),
+            stop('B', 4, { localTime: '10:30' }),
+            stop('C', 8, { localTime: '11:20' }),
+        ] }],
+    }));
+    const one = barTicks(single, 0, single.quanta);
+    assert.deepEqual(one.bands, []);
+    assert.deepEqual(one.days, []);
+    assert.deepEqual(one.hours.map((h) => h.hour), [10, 11]);
+    for (const { offset, hour } of one.hours) {
+        assert.ok(stateAt(single, offset).minutes >= hour * 60);
+        assert.ok(stateAt(single, offset - 1).minutes < hour * 60);
+    }
+    assert.deepEqual(barTicks(null, 0, 10), { bands: [], days: [], hours: [] });
 });

@@ -27,6 +27,12 @@
 //
 // Le saut lui-même vit dans mapgl.js (seekAnimationToDate), la pause et la
 // reprise dans ui.js (mêmes chemins que les boutons).
+//
+// Page Parcours : un « jour » du moteur y est un quantum de temps écran, sur
+// des dates fictives. Le moteur de la page fournit alors un crochet
+// `timelineBar` (pageAdapter) : série, repères (nuits, journées ou heures) et
+// textes en vraies dates et heures ; la plage est le parcours entier, sans
+// bornes à tirer ni menu contextuel.
 import * as pkg from './index.js';
 import { counterAt, dateToDayNumber } from './evolution_timeline.mjs';
 import { isEvolutionPage, isMainPage, isPosesPage } from './app_mode.mjs';
@@ -94,6 +100,8 @@ let seriesMemo = null;
 let milestonesMemo = null;
 let cacheMarksMemo = null;
 let sideMarksMemo = null;
+let pageMarksMemo = null;
+let ticksMemo = null;
 // Calques hors écran : tout ce qui est fixe pendant la lecture (repères
 // d'année, série en deux teintes) n'y est redessiné qu'à changement de leur
 // clé — par frame, draw() ne fait plus que deux drawImage et les mobiles
@@ -155,6 +163,18 @@ function formatCount(n) {
 
 // --- Données ---------------------------------------------------------------------
 
+// Crochet `timelineBar` du moteur de la page (lifecycle_engine.mjs), ou null :
+// la barre reprend alors ses propres séries et textes.
+function pageAdapter() {
+    return isMainPage() ? null : (lifecycleEngine()?.timelineBar || null);
+}
+
+// Bornes tirables et menu contextuel : pas sur une page dont la plage est
+// imposée (Parcours : le parcours entier).
+function rangeEditable() {
+    return pageAdapter()?.rangeEditable !== false;
+}
+
 // Axe de la piste pour l'état courant : la plage, plus les marges que
 // l'étendue de la sélection permet (bornes de « Plage complète »).
 function axisFor(state) {
@@ -170,16 +190,23 @@ function axisFor(state) {
 // du jour (cumul des trouvailles, ou caches actives), et `base`, le cumul de
 // la veille du premier jour (trouvailles marquantes).
 function seriesFor(axis) {
+    const adapter = pageAdapter();
     const evolution = isEvolutionPage();
     const poses = isPosesPage();
     const index = evolution ? pkg.evolutionStatsIndex?.() : null;
     const engine = poses ? lifecycleEngine() : null;
-    const revision = evolution ? `evo:${index?.revision ?? 'none'}`
+    const revision = adapter ? `page:${adapter.revision()}`
+        : evolution ? `evo:${index?.revision ?? 'none'}`
         : poses ? `poses:${engine?.statsIndex?.()?.revision ?? 'none'}`
         : `gc:${pkg.pointsByDateRevision ?? 0}`;
     const span = axis.span;
     const key = `${revision}|${axis.start.getTime()}|${span}`;
     if (seriesMemo?.key === key) return seriesMemo.series;
+    if (adapter) {
+        const series = adapter.series(axis.start, span);
+        seriesMemo = { key, series };
+        return series;
+    }
     // Mes poses : trouvailles reçues par jour, autres logs en second,
     // courbe du cumul des trouvailles reçues (moteur de la page).
     if (poses) {
@@ -237,7 +264,13 @@ function seriesFor(axis) {
 // apparitions/disparitions des images planifiées. { offset, kind, label }.
 function marksFor(axis, series) {
     const marks = [];
-    if (!isEvolutionPage()) {
+    const adapter = pageAdapter();
+    if (adapter) {
+        if (pageMarksMemo?.key !== seriesMemo.key) {
+            pageMarksMemo = { key: seriesMemo.key, marks: adapter.marks?.(axis.start, axis.span) || [] };
+        }
+        marks.push(...pageMarksMemo.marks);
+    } else if (!isEvolutionPage()) {
         if (milestonesMemo?.key !== seriesMemo.key) {
             milestonesMemo = { key: seriesMemo.key, marks: milestoneMarks(series.level, series.base) };
         }
@@ -340,6 +373,27 @@ function sideEventMarks(axis) {
     return marks;
 }
 
+// Repères de l'axe : débuts d'année (traits et étiquettes), ou ceux de la page
+// (Parcours : nuits en bandes, journées ou heures). Mémoïsés sur la série :
+// { bands: [{ from, to }], lines: [offset], labels: [{ offset, text }] }.
+function ticksFor(axis) {
+    if (ticksMemo?.key === seriesMemo.key) return ticksMemo.ticks;
+    const adapter = pageAdapter();
+    let ticks;
+    if (adapter) {
+        ticks = adapter.ticks(axis.start, axis.span);
+    } else {
+        const lines = yearStartOffsets(axis.start, axis.span);
+        ticks = {
+            bands: [],
+            lines,
+            labels: lines.map((offset) => ({ offset, text: String(dateOfOffset(axis.start, offset).getFullYear()) })),
+        };
+    }
+    ticksMemo = { key: seriesMemo.key, ticks };
+    return ticks;
+}
+
 // Plage affichée sur l'axe ({ from, to }, jours inclus) : celle qu'une
 // poignée tirée propose, sinon celle de l'animation.
 function displayedRange(axis) {
@@ -415,8 +469,14 @@ function ensureLayers(axis, series, w, h, ratio, colors) {
     const restCtx = layerRest.getContext('2d');
     restCtx.scale(ratio, ratio);
     restCtx.fillStyle = colors.tick;
-    for (const yearOffset of yearStartOffsets(axis.start, axis.span)) {
-        const x = Math.round(yearOffset / axis.span * w) + 0.5;
+    const ticks = ticksFor(axis);
+    restCtx.globalAlpha = 0.6;
+    for (const band of ticks.bands) {
+        restCtx.fillRect(band.from / axis.span * w, 0, (band.to - band.from) / axis.span * w, h);
+    }
+    restCtx.globalAlpha = 1;
+    for (const tickOffset of ticks.lines) {
+        const x = Math.round(tickOffset / axis.span * w) + 0.5;
         restCtx.fillRect(x - 0.5, 0, 1, h);
     }
     drawSeries(restCtx, series, axis.span, w, h, colors.rest);
@@ -501,22 +561,24 @@ function draw() {
     if (x0 > 0) ctx.fillRect(0, 0, x0, h);
     if (x1 < w) ctx.fillRect(x1, 0, w - x1, h);
 
-    // Années par-dessus les barres, sous le curseur : seuls les repères
-    // qui laissent la place au texte (glouton, cf. yearLabelOffsets), et
-    // jamais au-delà du bord droit de la piste.
+    // Années (ou journées, heures) par-dessus les barres, sous le curseur :
+    // seuls les repères qui laissent la place au texte (glouton, cf.
+    // yearLabelOffsets), et jamais au-delà du bord droit de la piste.
     ctx.font = '10px sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = colors.label;
-    for (const yearOffset of yearLabelOffsets(yearStartOffsets(axis.start, axis.span), axis.span, w)) {
-        const x = Math.round(yearOffset / axis.span * w) + 0.5;
-        const label = String(dateOfOffset(axis.start, yearOffset).getFullYear());
+    const labels = ticksFor(axis).labels;
+    const kept = new Set(yearLabelOffsets(labels.map((label) => label.offset), axis.span, w));
+    for (const { offset: labelOffset, text: label } of labels) {
+        if (!kept.has(labelOffset)) continue;
+        const x = Math.round(labelOffset / axis.span * w) + 0.5;
         if (x + 3 + ctx.measureText(label).width > w - 2) continue;
         ctx.fillText(label, x + 3, h - 1);
     }
 
     const marks = marksFor(axis, series);
     drawMarks(ctx, marks, axis, w, colors);
-    if (!state.recording) drawHandles(ctx, x0, x1, h, colors);
+    if (!state.recording && rangeEditable()) drawHandles(ctx, x0, x1, h, colors);
 
     ctx.fillStyle = colors.cursor;
     ctx.fillRect(Math.round(cursorX) - 1, 0, 2, h);
@@ -546,7 +608,8 @@ function draw() {
 // trouvaille d'une cache, rond foncé pour un jour de DNF, étoile pour une
 // étape de poseur (pleine : la pose ; creuse : maintenance, désactivation,
 // réactivation, archivage), triangle ambré pour une image (plein :
-// apparition ; creux : disparition).
+// apparition ; creux : disparition), carré ambré pour les photos d'une
+// étape (Parcours).
 function drawMarks(ctx, marks, axis, w, colors) {
     // L'étoile suit la couleur de contour posée du thème, comme la pastille
     // de la légende — relue à chaque dessin : le réglage change sans
@@ -573,6 +636,10 @@ function drawMarks(ctx, marks, axis, w, colors) {
                 ctx.strokeStyle = ownerColor;
                 ctx.stroke();
             }
+        } else if (mark.kind === 'photo') {
+            roundRect(ctx, x - 3, 1.5, 6, 5, 1);
+            ctx.fillStyle = colors.image;
+            ctx.fill();
         } else if (mark.kind === 'milestone' || mark.kind === 'cacheRound') {
             ctx.moveTo(x, 1);
             ctx.lineTo(x + 3.5, 4.5);
@@ -780,7 +847,10 @@ function videoTimeText(axis, axisOffset) {
 
 // Étiquette et ARIA : date, total à la fin du jour et instant de la vidéo.
 function labelText(axis, series, axisOffset) {
-    const parts = [formatDate(dateOfOffset(axis.start, axisOffset)), levelText(series.level[axisOffset] ?? 0)];
+    const adapter = pageAdapter();
+    const parts = adapter
+        ? [adapter.positionText(axis.start, axisOffset)]
+        : [formatDate(dateOfOffset(axis.start, axisOffset)), levelText(series.level[axisOffset] ?? 0)];
     const time = videoTimeText(axis, axisOffset);
     if (time) parts.push(time);
     return parts.join(' · ');
@@ -810,8 +880,11 @@ function syncLabels(state, axis, series, offset, usable) {
     }
     // Les dates des bouts suivent l'axe (marges comprises) : elles nomment
     // les extrémités de la piste.
-    const startText = formatDate(axis.start);
-    const endText = formatDate(dateOfOffset(axis.start, axis.span - 1));
+    const adapter = pageAdapter();
+    const startText = adapter ? adapter.edgeText(axis.start, 0) : formatDate(axis.start);
+    const endText = adapter
+        ? adapter.edgeText(axis.start, axis.span - 1)
+        : formatDate(dateOfOffset(axis.start, axis.span - 1));
     if (startLabel && startLabel.textContent !== startText) startLabel.textContent = startText;
     if (endLabel && endLabel.textContent !== endText) endLabel.textContent = endText;
     // Le survol affiche la date visée, mais les attributs ARIA restent sur
@@ -829,10 +902,27 @@ function syncLabels(state, axis, series, offset, usable) {
 // --- Bulle -----------------------------------------------------------------------
 
 // Lignes de la bulle pour le jour `a` de l'axe : date (ou borne tirée),
-// nombre du jour ou de la tranche de l'histogramme, total, instant de la
+// nombre du jour ou de la tranche de l'histogramme, total — ou les lignes de
+// la page (Parcours : jour et heure, étape ou trajet, total) —, instant de la
 // vidéo, puis les repères posés à ce jour.
 function tipLines(axis, series, a, w, { handle = null, marks = [] } = {}) {
     const lines = [];
+    const adapter = pageAdapter();
+    if (adapter) lines.push(...adapter.tipLines(axis.start, a));
+    else pushDayLines(lines, axis, series, a, w, handle);
+    const time = videoTimeText(axis, a);
+    if (time) lines.push({ text: pkg.t('Vidéo : ${time}', { time }) });
+
+    const x = dayEndX(a, axis, w);
+    for (const mark of marks) {
+        if (Math.abs(dayEndX(mark.offset, axis, w) - x) <= MARK_HIT_PX) {
+            lines.push({ text: mark.label, mark: mark.kind });
+        }
+    }
+    return lines;
+}
+
+function pushDayLines(lines, axis, series, a, w, handle) {
     const date = formatDate(dateOfOffset(axis.start, a));
     const inRange = a >= axis.rangeOffset && a < axis.rangeOffset + axis.rangeSpan;
     if (handle === 'start') lines.push({ text: pkg.t('Début : ${date}', { date }), strong: true });
@@ -862,16 +952,6 @@ function tipLines(axis, series, a, w, { handle = null, marks = [] } = {}) {
             }),
     });
     lines.push({ text: pkg.t('Total : ${text}', { text: levelText(series.level[a] ?? 0) }) });
-    const time = videoTimeText(axis, a);
-    if (time) lines.push({ text: pkg.t('Vidéo : ${time}', { time }) });
-
-    const x = dayEndX(a, axis, w);
-    for (const mark of marks) {
-        if (Math.abs(dayEndX(mark.offset, axis, w) - x) <= MARK_HIT_PX) {
-            lines.push({ text: mark.label, mark: mark.kind });
-        }
-    }
-    return lines;
 }
 
 function hideTip() {
@@ -1016,7 +1096,7 @@ function currentOffset() {
 // deux bornes à HANDLE_HIT_PX près.
 function handleAt(event) {
     const axis = lastAxis;
-    if (!axis || !lastState || lastState.recording) return null;
+    if (!axis || !lastState || lastState.recording || !rangeEditable()) return null;
     const rect = track.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -1225,9 +1305,16 @@ function onKeyDown(event) {
     if (event.ctrlKey && !jump) return;
     draw();
     if (!lastState) return;
+    // Pg.Préc/Pg.Suiv : d'une journée à l'autre sur la page Parcours, plutôt
+    // que d'un mois.
+    const adapter = pageAdapter();
+    const pageKey = !jump && !!adapter?.dayOffset && (event.key === 'PageUp' || event.key === 'PageDown');
     const target = jump
         ? eventDayFrom(currentOffset(), event.key === 'ArrowLeft' ? -1 : 1)
-        : offsetForKey(event.key, { shift: event.shiftKey }, currentOffset(), lastState.start, lastSpan);
+        : pageKey
+            ? adapter.dayOffset(lastState.start, currentOffset(), event.key === 'PageUp' ? 1 : -1)
+            : offsetForKey(event.key, { shift: event.shiftKey }, currentOffset(), lastState.start, lastSpan);
+    if (pageKey) event.preventDefault();
     // Ctrl+flèche sans jour plus loin : la touche reste à la barre (pas de
     // saut de mot ailleurs), rien ne bouge.
     if (jump) event.preventDefault();
@@ -1283,7 +1370,10 @@ function onWheel(event) {
     // dernier dessin.
     const state = pkg.getTimelineState?.();
     const span = state ? spanDays(state.start, state.end) : lastSpan;
-    const target = clampOffset(currentOffset() + steps * (event.shiftKey ? 7 : 1), span);
+    // Un cran = `wheelStep` jours du moteur (Parcours : des quanta de 100 ms,
+    // un seul par cran rendait la molette interminable).
+    const unit = pageAdapter()?.wheelStep || 1;
+    const target = clampOffset(currentOffset() + steps * (event.shiftKey ? 7 : 1) * unit, span);
     // Au repos, beginGesture ouvre l'aperçu en pause : la molette promène
     // le curseur jour par jour.
     if (!beginGesture()) return;
@@ -1359,6 +1449,7 @@ function onContextMenu(event) {
     // menu s'affichait par-dessus un glissement qui pilotait encore la carte.
     if (gesture && gesture.pointerId !== null) endPointerGesture(gesture.pointerId);
     if (rangeDrag) endRangeDrag(false);
+    if (!rangeEditable()) return;
     // Comme onPointerDown : plage et données ont pu changer depuis le dernier
     // dessin — le libellé des items affiche la date du jour visé.
     draw();
@@ -1533,6 +1624,8 @@ export function getTimelineBarSnapshot() {
         rangeOffset: axis?.rangeOffset ?? 0,
         rangeDrag: rangeDrag ? { which: rangeDrag.which, from: rangeDrag.from, to: rangeDrag.to } : null,
         marks: axis ? marksFor(axis, series).map(({ offset, kind, label }) => ({ offset, kind, label })) : [],
+        ticks: axis ? ticksFor(axis) : null,
+        rangeEditable: rangeEditable(),
         tip: tip && !tip.hidden ? [...tip.children].map((row) => row.textContent) : null,
     };
 }

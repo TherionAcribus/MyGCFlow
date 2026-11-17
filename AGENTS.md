@@ -382,6 +382,12 @@ Autres repères :
   lecture (`parcours_camera.mjs`) déplace la vue : un spec qui relève la
   vue après un glisser attend la fin de l'inertie d'OpenLayers (deux
   relevés identiques) — exemple dans `parcours-finitions.spec.mjs`.
+  Barre de chronologie sur `/parcours` : axe en quanta (dates fictives),
+  textes et repères par le crochet `timelineBar` du moteur —
+  `getTimelineBarSnapshot()` donne `ticks` (`bands` = nuits, `labels`
+  « Jour n ») et `rangeEditable: false` ; une position de la piste est un
+  quantum (`stopQ` du relevé Parcours), exemple dans
+  `parcours-timeline-bar.spec.mjs`.
   `openParcoursPage` sert une tuile vide à la place des tuiles OSM : avec
   la caméra, la suite complète recevait des 429 du serveur de tuiles, qui
   faisaient échouer un spec suivant relevant les erreurs de console

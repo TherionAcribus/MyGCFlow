@@ -111,9 +111,10 @@ n'entre dans `pointsByDate`. Le dernier parcours ouvert est retenu
 
 **Onglets** : Données, Style, Animation & vidéo, Préférences. Stats et
 Images ne sont pas encore branchés : leurs volets restent dans la page
-(ui.js les attend), sans onglet. La barre de chronologie, la plage de dates
-et le champ « jours par seconde » de l'onglet Animation sont masqués par CSS
-(`body[data-mode="parcours"]`).
+(ui.js les attend), sans onglet. La plage de dates et le champ « jours par
+seconde » de l'onglet Animation sont masqués par CSS
+(`body[data-mode="parcours"]`) ; la barre de chronologie est adaptée
+(ci-dessous).
 
 ## Lecture et vidéo (`parcours_timeline.mjs`, `parcours_data.js`)
 
@@ -197,6 +198,33 @@ Limites actuelles :
 - trajets en lignes droites sans itinéraires (option du lot 6, désactivée
   par défaut) ;
 - un DNF apparaît comme une cache de son type.
+
+### Barre de chronologie
+
+La barre commune (`timeline_bar.js`, bouton `#btnTimelineBar`) compte en
+jours du moteur, donc ici en quanta sur des dates fictives. Le moteur de la
+page lui passe un crochet `timelineBar` (`PARCOURS_TIMELINE_BAR` de
+parcours_data.js, contrat dans lifecycle_engine.mjs) qui remplace ce qui
+supposait de vraies dates :
+
+| | Page principale | Parcours |
+|---|---|---|
+| Piste | plage + marges grisées | le parcours entier, sans marges |
+| Histogramme / courbe | trouvailles par jour, cumul | arrivées aux étapes par quantum (Labs empilés), étapes atteintes (`barSeries`) |
+| Repères de fond | débuts d'année | nuits en bandes, « Jour n » ; journée unique : heures pleines, sauf heures masquées ou en tranches (`barTicks`) |
+| Repères du haut | trouvailles rondes, DNF, poseur, images | DNF, photos d'une étape (carré ambré, au début de la première) |
+| Bouts, étiquette, bulle | dates | vraie date et heure ; bulle : jour, étape / trajet (mode, km) / nuit, total en étapes et km |
+| Bornes tirables, clic droit | oui | non (`rangeEditable: false`) |
+| Pg.Préc / Pg.Suiv | un mois | journée suivante / précédente (arrivée à sa première étape) |
+| Molette | un jour par cran | 5 quanta (½ s) par cran |
+
+Ctrl+← / → saute d'une arrivée à l'autre ; le saut lui-même est celui de
+toutes les pages (`seekAnimationToDate`, aperçu ouvert en pause). L'étiquette
+au curseur (date, heure, étapes, instant de la vidéo) a une largeur fixe sur
+cette page : sa longueur varie d'une étape à l'autre et la piste se
+décalait sous le pointeur. La série et les repères sont mémoïsés sur
+`timelineRevision` (incrémenté à chaque chronologie) et le réglage des
+heures.
 
 ### Finitions (lot 7)
 
@@ -666,7 +694,8 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   (`test_parcours_preferences_have_their_own_keys`, clé openrouteservice
   jamais renvoyée, `parcours_photo_display` borné).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
-  `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_photos.test.mjs`,
+  `tests/js/parcours_timeline.test.mjs` (dont `barSeries` / `barTicks` de la
+  barre de chronologie), `tests/js/parcours_photos.test.mjs`,
   `tests/js/parcours_tracks.test.mjs`, `tests/js/parcours_routing.test.mjs`,
   `tests/js/parcours_camera.test.mjs`, `tests/js/parcours_model.test.mjs`,
   `tests/js/parcours_photo_layout.test.mjs` (cadrage, réglages, légende,
@@ -686,7 +715,9 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   pictogramme, carte déplacée, réglages, suggestions simulées par
   `page.route`), `tests/e2e/parcours-photo-display.spec.mjs` (lots 9-10 :
   réglages, trois placements relevés par `photoCards`, lieu proposé ;
-  fixtures `belvedere*.jpg`), aides communes dans
+  fixtures `belvedere*.jpg`), `tests/e2e/parcours-timeline-bar.spec.mjs`
+  (barre de chronologie : repères, sauts, clavier, bulle ; relevé
+  `getTimelineBarSnapshot()`, `ticks` et `rangeEditable`), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le
