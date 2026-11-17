@@ -382,6 +382,8 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "strip_edge": "bottom",
     "strip_reset": False,
     "stack": False,
+    "pin": False,
+    "pin_size": 72,
     "size": 220,
     "frame": "postcard",
     "tilt": True,
@@ -392,6 +394,7 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "caption": "{legende}",
 }
 PARCOURS_PHOTO_SIZE_RANGE = (120, 600)
+PARCOURS_PHOTO_PIN_SIZE_RANGE = (40, 160)
 PARCOURS_PHOTO_DURATION_RANGE = (0.5, 6.0)
 PARCOURS_PHOTO_MAX_PER_STOP_RANGE = (1, 12)
 PARCOURS_PHOTO_CAPTION_MAX = 120
@@ -713,9 +716,10 @@ def coerce_parcours_photo_display(value, current: dict | None = None) -> dict:
         "frame": PARCOURS_PHOTO_FRAMES,
         "effect": PARCOURS_PHOTO_EFFECTS,
     }
-    flags = ("leader", "strip_reset", "stack", "tilt", "ken_burns")
+    flags = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns")
     numbers = {
         "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
+        "pin_size": (PARCOURS_PHOTO_PIN_SIZE_RANGE, int),
         "duration": (PARCOURS_PHOTO_DURATION_RANGE, lambda v: round(float(v), 1)),
         "max_per_stop": (PARCOURS_PHOTO_MAX_PER_STOP_RANGE, int),
     }

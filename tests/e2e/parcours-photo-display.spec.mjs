@@ -191,6 +191,41 @@ test('pile : les photos d’une étape se posent les unes sur les autres', async
   expect(errors).toEqual([]);
 });
 
+test('vignettes sur la carte : la photo d’une étape passée y reste en petit', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  // Caméra fixe : tout le parcours à l'écran, les deux étapes comprises.
+  expect((await request.put('/api/settings', { data: { parcours_playback: { camera: 'fixed' } } })).ok()).toBeTruthy();
+  const { phone, camera } = await withTwoPhotos(page, request);
+  await expect(page.locator('#parcoursPhotoPinRow')).toBeVisible();
+  await expect(page.locator('#parcoursPhotoPinSizeRow')).toBeHidden();
+  await page.locator('#parcoursPhotoPin').check();
+  await expect(page.locator('#parcoursPhotoPinSizeRow')).toBeVisible();
+  await expect.poll(async () => (await savedDisplay(request)).pin).toBe(true);
+
+  // Sur la photo du jour 2, celle du jour 1 est une vignette près de GCPAR01.
+  await showPhoto(page, camera);
+  const pinOf = async () => (await snapshot(page)).photoCards.find((c) => c.photoId === phone) || null;
+  await expect.poll(async () => (await pinOf())?.pinned ?? false).toBe(true);
+  let state = await snapshot(page);
+  let pin = state.photoCards.find((c) => c.photoId === phone);
+  expect(state.photoCards.find((c) => c.photoId === camera).pinned).toBe(false);
+  expect(Math.max(pin.width, pin.height)).toBeCloseTo(72 * state.photoView.ratio, 0);
+  expect(pin.caption).toBe('');
+  expect(pin.leader).toBe(true);
+
+  // Taille des vignettes.
+  await page.locator('#parcoursPhotoPinSize').fill('120');
+  await expect.poll(async () => (await savedDisplay(request)).pin_size).toBe(120);
+  await expect.poll(async () => Math.round(Math.max((await pinOf()).width, (await pinOf()).height)))
+    .toBe(Math.round(120 * state.photoView.ratio));
+
+  // Bande : réglage masqué, plus de vignette sur la carte.
+  await page.locator('#parcoursPhotoLayout').selectOption('strip');
+  await expect(page.locator('#parcoursPhotoPinRow')).toBeHidden();
+  await expect.poll(async () => (await snapshot(page)).photoCards.some((c) => c.pinned)).toBe(false);
+  expect(errors).toEqual([]);
+});
+
 test('photos hors étapes : un lieu proposé, créé d’un clic, et les photos s’y rattachent', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);

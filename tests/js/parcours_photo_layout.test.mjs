@@ -14,6 +14,7 @@ import {
     photoFrameAt,
     photoSlots,
     photoTimelineOptions,
+    pinDirection,
 } from '../../static/js/parcours_photo_layout.mjs';
 import { drawPhotoCard, drawPhotoLeader } from '../../static/js/parcours_photo_draw.mjs';
 
@@ -81,8 +82,8 @@ test('légende : balises, séparateurs orphelins retirés', () => {
 function timeline() {
     return {
         stops: [
-            { q: 10, departQ: 52, day: 0, photos: [1, 2], photoQ: 15 },
-            { q: 80, departQ: 107, day: 1, photos: [3], photoQ: 15 },
+            { q: 10, departQ: 52, day: 0, photos: [1, 2], photoQ: 15, lat: 45, lon: 6 },
+            { q: 80, departQ: 107, day: 1, photos: [3], photoQ: 15, lat: 46, lon: 7 },
         ],
     };
 }
@@ -268,4 +269,67 @@ test('pile : les photos d’une étape s’empilent, la pile s’efface d’un b
     const strip = normalizePhotoDisplay({ layout: 'strip' });
     assert.deepEqual(photoFrameAt(timeline(), 35, { ...strip, stack: true }, VIEW).cards,
         photoFrameAt(timeline(), 35, strip, VIEW).cards);
+});
+
+test('vignettes : côté le moins encombré par le trajet, stable', () => {
+    // A au nord-ouest de B, C au nord-est : les deux coins du haut sont pris.
+    const stops = [
+        { lat: 45.0013, lon: 5.9982 },
+        { lat: 45, lon: 6 },
+        { lat: 45.0013, lon: 6.0018 },
+    ];
+    const legs = [{ from: 0, to: 1 }, { from: 1, to: 2 }];
+    const tl = { stops, legs };
+    assert.deepEqual(pinDirection(tl, 1), [1, 1]);
+    assert.equal(pinDirection(tl, 1), pinDirection(tl, 1)); // mémorisé
+    // Un chemin réel compte, pas la ligne droite : B → C part d'abord vers
+    // le sud, puis remonte à l'est. Le bas-droite est pris.
+    const winding = {
+        stops,
+        legs: [{ from: 0, to: 1 }, { from: 1, to: 2, path: [[6, 45], [6, 44.9985], [6.0018, 44.9985], [6.0018, 45.0013]] }],
+    };
+    const dir = pinDirection(winding, 1);
+    assert.notDeepEqual(dir, [1, 1]);
+    assert.notDeepEqual(dir, [-1, -1]);
+    // Rien autour : haut-droite. Nuit entre deux journées ignorée.
+    assert.deepEqual(pinDirection({ stops, legs: [{ from: 0, to: 1, night: true }] }, 2), [1, -1]);
+    // Étape sans position : haut-droite.
+    assert.deepEqual(pinDirection({ stops: [{}], legs: [] }, 0), [1, -1]);
+});
+
+test('vignettes : la photo descend près de son étape et y reste', () => {
+    const display = normalizePhotoDisplay({ pin: true, tilt: false });
+    assert.equal(PHOTO_DISPLAY_DEFAULTS.pin, false);
+    assert.equal(normalizePhotoDisplay({ pin_size: 5 }).pin_size, 40);
+    // Photo 1 finie à 27 : à mi-descente à 29.
+    let cards = photoFrameAt(timeline(), 29, display, VIEW).cards;
+    const landing = cards.find((c) => c.photoId === 1);
+    assert.equal(landing.pinned, false);
+    assert.ok(landing.scale < 1 && landing.scale > 72 / landing.cardW);
+    // Posée : petite, en haut à droite de l'étape (500, 300), sous la photo 2.
+    cards = photoFrameAt(timeline(), 35, display, VIEW).cards;
+    assert.deepEqual(cards.map((c) => c.photoId), [1, 2]);
+    const [pin] = cards;
+    assert.equal(pin.pinned, true);
+    assert.ok(Math.abs(pin.cardW * pin.scale - 72) < 1e-9);
+    assert.equal(pin.alpha, 1);
+    assert.equal(pin.captionAlpha, 0);
+    assert.ok(pin.x > 500 && pin.y < 300);
+    assert.ok(pin.x - (pin.cardW * pin.scale) / 2 > 500);
+    assert.ok(pin.leader && pin.leader.from[0] === 500);
+    // Toujours là à l'étape suivante, sous la photo montrée.
+    cards = photoFrameAt(timeline(), 90, display, VIEW).cards;
+    assert.deepEqual(cards.map((c) => [c.photoId, !!c.pinned]), [[1, true], [2, true], [3, false]]);
+    // Hors de l'écran : pas dessinée.
+    const away = { ...VIEW, stopPixel: (i) => (i === 0 ? [-500, 300] : [900, 100]) };
+    assert.deepEqual(photoFrameAt(timeline(), 90, display, away).cards.map((c) => c.photoId), [3]);
+    // Avec la pile : la pile entière descend à la fin de la dernière photo.
+    cards = photoFrameAt(timeline(), 35, { ...display, stack: true }, VIEW).cards;
+    assert.ok(cards.every((c) => !c.pinned));
+    cards = photoFrameAt(timeline(), 47, { ...display, stack: true }, VIEW).cards;
+    assert.deepEqual(cards.map((c) => [c.photoId, c.pinned]), [[1, true], [2, true]]);
+    // La bande ignore le réglage.
+    const strip = normalizePhotoDisplay({ layout: 'strip' });
+    assert.deepEqual(photoFrameAt(timeline(), 90, { ...strip, pin: true }, VIEW).cards,
+        photoFrameAt(timeline(), 90, strip, VIEW).cards);
 });

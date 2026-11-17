@@ -651,9 +651,11 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual((photo['layout'], photo['size'], photo['duration'], photo['frame'], photo['tilt'],
                           photo['caption'], photo['max_per_stop']),
                          ('strip', 600, 2.3, 'postcard', True, '{etape} · {heure}', 4))
-        self.client.put('/api/settings', json={'parcours_photo_display': {'effect': 'zoom', 'stack': True}})
+        self.client.put('/api/settings', json={'parcours_photo_display': {
+            'effect': 'zoom', 'stack': True, 'pin': True, 'pin_size': 7}})
         photo = self.client.get('/api/settings').get_json()['parcours_photo_display']
-        self.assertEqual((photo['layout'], photo['effect'], photo['stack']), ('strip', 'zoom', True))
+        self.assertEqual((photo['layout'], photo['effect'], photo['stack'], photo['pin'], photo['pin_size']),
+                         ('strip', 'zoom', True, True, 40))
 
     def test_theme_survives_a_round_trip(self):
         self.assertEqual(self.client.put('/api/settings', json={'theme': 'dark'}).status_code, 200)

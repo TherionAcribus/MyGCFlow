@@ -406,6 +406,7 @@ envoyée entière à chaque changement :
 | `anchor` | emplacement fixe : `top-right` et les 7 autres ancres des images, à 16 px du bord |
 | `leader` | trait de l'étape vers la carte (près de l'étape, emplacement fixe) : `false` |
 | `stack` | pile (près de l'étape, emplacement fixe) : les photos d'une étape se posent les unes sur les autres, décalées et inclinées selon leur rang, et la pile s'efface d'un bloc après la dernière : `false` |
+| `pin`, `pin_size` | vignettes sur la carte (près de l'étape, emplacement fixe) : au lieu de s'effacer, chaque photo (la pile entière avec `stack`) descend en 4 quanta vers une petite pile attachée à son étape, et y reste jusqu'à la fin ; grand côté 40-160 px CSS : `false`, 72 |
 | `strip_edge`, `strip_reset` | bande : `bottom` / `top` ; vidée à l'arrivée sur la première étape d'une nouvelle journée : `false` |
 | `size` | grand côté de l'image, 120-600 px CSS : 220 |
 | `frame` | `postcard` (marge blanche, ombre), `polaroid` (marge basse épaisse), `rounded` (coins arrondis, ombre), `plain` |
@@ -428,6 +429,15 @@ envoyée entière à chaque changement :
   une bande en haut), puis rejoint sa case en rétrécissant pendant le
   dernier tiers de son temps (4 quanta au plus) ; la bande défile vers la
   gauche quand elle déborde, les vignettes sorties s'effacent.
+- **Vignettes sur la carte** : côté choisi par `pinDirection` parmi 8
+  directions, la moins encombrée par le trajet (tout le parcours, chemins
+  réels compris, passé et à venir) et les autres étapes dans un rayon de
+  500 m, chaque point pesant d'autant plus qu'il est proche et dans l'axe.
+  Calculé en distances au sol, une fois par étape : le côté ne change ni
+  avec le zoom ni quand la caméra suit. Une vignette suit son étape, avec
+  un trait vers elle ; gardée dans l'écran tant que l'étape y est, pas
+  dessinée sinon. Peintes depuis les miniatures (320 px), sous les photos
+  montrées.
 - **Légende** (`photoCaptionText`) : une balise vide ne laisse pas de
   séparateur orphelin. `{heure}` : celle de la photo si elle est de
   confiance, sinon celle de l'étape (« ≈ » selon « Heures affichées »).

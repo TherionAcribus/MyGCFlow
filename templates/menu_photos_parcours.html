@@ -157,6 +157,17 @@
                             <span class="form-check-label">{{ _("Empiler les photos d'une étape") }}</span>
                             <span class="form-hint text-muted">{{ _("Chacune se pose sur les précédentes ; la pile s'efface après la dernière.") }}</span>
                         </label>
+                        <label class="form-check mb-1" id="parcoursPhotoPinRow">
+                            <input type="checkbox" id="parcoursPhotoPin" class="form-check-input">
+                            <span class="form-check-label">{{ _("Laisser une vignette sur la carte") }}</span>
+                            <span class="form-hint text-muted">{{ _("Les photos d'une étape s'y posent en petit, du côté le moins encombré par le trajet, et y restent.") }}</span>
+                        </label>
+                        <div class="mb-2 ms-4" id="parcoursPhotoPinSizeRow">
+                            <label class="form-label small mb-1" for="parcoursPhotoPinSize">
+                                {{ _("Taille des vignettes") }} <span id="parcoursPhotoPinSizeValue" class="text-muted"></span>
+                            </label>
+                            <input type="range" id="parcoursPhotoPinSize" class="form-range" min="40" max="160" step="4">
+                        </div>
                         <label class="form-check mb-1" id="parcoursPhotoStripResetRow">
                             <input type="checkbox" id="parcoursPhotoStripReset" class="form-check-input">
                             <span class="form-check-label">{{ _("Vider la bande à chaque journée") }}</span>

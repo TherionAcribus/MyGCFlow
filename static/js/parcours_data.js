@@ -1802,6 +1802,7 @@ function bindAdjustments() {
 // Image chargée de chaque photo, pour la carte postale de la lecture et de la
 // vidéo : même origine que la page, le canevas reste exportable.
 const photoImages = new Map();   // id → HTMLImageElement
+const photoThumbs = new Map();   // id → HTMLImageElement (vignettes laissées sur la carte)
 let photoDetailId = null;        // photo dont le panneau est ouvert
 let photoUploads = 0;            // envois en cours
 
@@ -1822,20 +1823,26 @@ function stopByKey(key) {
 }
 
 // Charge (une fois) les photos rattachées : la carte postale n'est dessinée
-// qu'une fois l'image décodée.
+// qu'une fois l'image décodée. Les miniatures servent aux vignettes laissées
+// sur la carte : des dizaines à chaque image, réduites depuis 320 px plutôt
+// que depuis la photo entière.
 function preloadPhotos() {
     const wanted = new Set();
     for (const ids of photoByStop.values()) for (const id of ids) wanted.add(id);
     for (const id of wanted) {
-        if (photoImages.has(id)) continue;
         const photo = photoById(id);
         if (!photo) continue;
-        const img = new Image();
-        img.decoding = 'async';
-        img.src = photoUrl(photo);
-        photoImages.set(id, img);
+        for (const [cache, thumb] of [[photoImages, false], [photoThumbs, true]]) {
+            if (cache.has(id)) continue;
+            const img = new Image();
+            img.decoding = 'async';
+            img.src = photoUrl(photo, thumb);
+            cache.set(id, img);
+        }
     }
 }
+
+const imageReady = (img) => !!img?.complete && img.naturalWidth > 0;
 
 // Photos de la lecture (lot 9) : mises en page à `currentQ` selon les
 // réglages (parcours_photo_layout.mjs), peintes dans le canevas de la couche
@@ -1892,8 +1899,9 @@ function drawPhotoCards(event) {
     const ctx = event.context;
     const font = pageFontFamily();
     for (const card of cards) {
-        const img = photoImages.get(card.photoId);
-        if (!img?.complete || !img.naturalWidth) continue;
+        const thumb = card.pinned ? photoThumbs.get(card.photoId) : null;
+        const img = imageReady(thumb) ? thumb : photoImages.get(card.photoId);
+        if (!imageReady(img)) continue;
         drawPhotoLeader(ctx, card, view.ratio);
         drawPhotoCard(ctx, card, img, photoById(card.photoId), { font, ratio: view.ratio });
         lastPhotoCards.push(card);
@@ -1926,6 +1934,7 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
     leader: 'parcoursPhotoLeader',
     strip_reset: 'parcoursPhotoStripReset',
     stack: 'parcoursPhotoStack',
+    pin: 'parcoursPhotoPin',
     tilt: 'parcoursPhotoTilt',
     ken_burns: 'parcoursPhotoKenBurns',
 });
@@ -1943,6 +1952,10 @@ function renderPhotoDisplay() {
     if (size) size.value = String(photoDisplay.size);
     const sizeValue = el('parcoursPhotoSizeValue');
     if (sizeValue) sizeValue.textContent = `${photoDisplay.size} px`;
+    const pinSize = el('parcoursPhotoPinSize');
+    if (pinSize) pinSize.value = String(photoDisplay.pin_size);
+    const pinSizeValue = el('parcoursPhotoPinSizeValue');
+    if (pinSizeValue) pinSizeValue.textContent = `${photoDisplay.pin_size} px`;
     const duration = el('parcoursPhotoDuration');
     if (duration && document.activeElement !== duration) duration.value = String(photoDisplay.duration);
     const max = el('parcoursPhotoMaxPerStop');
@@ -1961,6 +1974,8 @@ function renderPhotoDisplay() {
     show('parcoursPhotoStripResetRow', layout === 'strip');
     show('parcoursPhotoLeaderRow', layout === 'stop' || layout === 'fixed');
     show('parcoursPhotoStackRow', layout === 'stop' || layout === 'fixed');
+    show('parcoursPhotoPinRow', layout === 'stop' || layout === 'fixed');
+    show('parcoursPhotoPinSizeRow', (layout === 'stop' || layout === 'fixed') && photoDisplay.pin);
     const fields = el('parcoursPhotoDisplayFields');
     if (fields) fields.disabled = layout === PHOTO_LAYOUT_NONE;
     const preview = el('btnParcoursPhotoPreview');
@@ -2008,6 +2023,14 @@ function bindPhotoDisplay() {
         pkg.getMap?.()?.render();
     });
     size?.addEventListener('change', () => save({ size: Number(size.value) }));
+    const pinSize = el('parcoursPhotoPinSize');
+    pinSize?.addEventListener('input', () => {
+        photoDisplay = normalizePhotoDisplay({ ...photoDisplay, pin_size: Number(pinSize.value) });
+        const value = el('parcoursPhotoPinSizeValue');
+        if (value) value.textContent = `${photoDisplay.pin_size} px`;
+        pkg.getMap?.()?.render();
+    });
+    pinSize?.addEventListener('change', () => save({ pin_size: Number(pinSize.value) }));
     el('parcoursPhotoDuration')?.addEventListener('change', (event) => save({ duration: Number(event.target.value) }));
     el('parcoursPhotoMaxPerStop')?.addEventListener('change', (event) => save({ max_per_stop: Number(event.target.value) }));
     el('parcoursPhotoCaptionTemplate')?.addEventListener('change', (event) => save({ caption: event.target.value }));
@@ -2091,6 +2114,7 @@ async function deletePhoto(id) {
     try {
         await fetchJson(`/api/parcours/${selectedId}/photos/${id}`, { method: 'DELETE' });
         photoImages.delete(id);
+        photoThumbs.delete(id);
         if (photoDetailId === id) photoDetailId = null;
         await reloadAdjustments();
     } catch (error) {
@@ -3040,6 +3064,7 @@ export function getParcoursSnapshot() {
             rotation: card.rotation,
             caption: card.captionAlpha > 0 ? card.caption : '',
             leader: !!card.leader,
+            pinned: !!card.pinned,
         })),
         tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
         trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),

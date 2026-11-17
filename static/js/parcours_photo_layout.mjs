@@ -98,6 +98,7 @@ export const PHOTO_STRIP_EDGES = Object.freeze(['bottom', 'top']);
 export const PHOTO_FRAMES = Object.freeze(['postcard', 'polaroid', 'rounded', 'plain']);
 export const PHOTO_EFFECTS = Object.freeze(['fade', 'slide', 'zoom']);
 export const PHOTO_SIZE_RANGE = Object.freeze([120, 600]);
+export const PHOTO_PIN_SIZE_RANGE = Object.freeze([40, 160]);
 export const PHOTO_DURATION_RANGE = Object.freeze([0.5, 6]);
 export const PHOTO_MAX_PER_STOP_RANGE = Object.freeze([1, 12]);
 export const PHOTO_CAPTION_TEMPLATE_MAX = 120;
@@ -111,6 +112,8 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     strip_edge: 'bottom',
     strip_reset: false,
     stack: false,
+    pin: false,
+    pin_size: 72,
     size: 220,
     frame: 'postcard',
     tilt: true,
@@ -135,6 +138,8 @@ export function normalizePhotoDisplay(raw) {
         strip_edge: choice('strip_edge', PHOTO_STRIP_EDGES),
         strip_reset: flag('strip_reset'),
         stack: flag('stack'),
+        pin: flag('pin'),
+        pin_size: Math.round(numberIn(o.pin_size, PHOTO_PIN_SIZE_RANGE, d.pin_size)),
         size: Math.round(numberIn(o.size, PHOTO_SIZE_RANGE, d.size)),
         frame: choice('frame', PHOTO_FRAMES),
         tilt: flag('tilt'),
@@ -348,28 +353,114 @@ export function photoFrameAt(timeline, qf, display, view) {
         ];
     };
     const setLeader = (card, stop) => {
-        if (!display.leader || !insideScreen(stop, width, height)) return;
-        const to = nearestOnRect(card.x, card.y, card.cardW / 2, card.cardH / 2, stop);
+        if (!insideScreen(stop, width, height)) return;
+        const to = nearestOnRect(card.x, card.y, card.cardW * card.scale / 2, card.cardH * card.scale / 2, stop);
         if (Math.hypot(to[0] - stop[0], to[1] - stop[1]) > 4 * ratio) card.leader = { from: stop, to };
     };
 
-    if (display.stack) {
-        stackCards(out, slots, qf, display, { view, size, cardOf, applyEffect, rectOf, kenBurns, placeBox, setLeader });
-        return out;
+    // Vignettes laissées sur la carte, puis celles qui y descendent, puis
+    // les photos montrées : les plus récentes par-dessus.
+    const pinned = [];
+    const landing = [];
+    const shown = [];
+    const pinPx = display.pin_size * ratio;
+    for (const pile of photoPiles(timeline)) {
+        const first = pile[0];
+        const last = pile[pile.length - 1];
+        if (qf < first.fromQ) break;
+        if (!display.pin && qf > last.toQ + PHOTO_FADE_Q) continue;
+        const stop = view.stopPixel?.(first.stop) || null;
+        const cards = pile.map(cardOf);
+        // Pose de chaque photo pendant son affichage : seule à côté de
+        // l'étape (ou à l'ancre), ou dans la pile.
+        let pileCenter = null;
+        if (display.stack) {
+            const spread = 2 * STACK_SPREAD * size;
+            pileCenter = placeBox(Math.max(...cards.map((c) => c.cardW)) + spread,
+                Math.max(...cards.map((c) => c.cardH)) + spread, stop);
+        }
+        const poseOf = (k) => {
+            if (!pileCenter) {
+                const [x, y] = placeBox(cards[k].cardW, cards[k].cardH, stop);
+                return { x, y, rotation: tilt(pile[k]), scale: 1 };
+            }
+            const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
+            return {
+                x: pileCenter[0] + ox * size,
+                y: pileCenter[1] + oy * size,
+                rotation: display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0,
+                scale: 1,
+            };
+        };
+        // Vignette : grand côté pinPx, sur le côté de l'étape le plus libre
+        // (pinDirection), en petite pile.
+        const pinOf = (k) => {
+            const [dx, dy] = pinDirection(timeline, first.stop);
+            const half = pinPx * (0.5 + PIN_SPREAD);
+            const p = stop || [width / 2, height / 2];
+            const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
+            const scale = pinPx / Math.max(cards[k].cardW, cards[k].cardH);
+            let x = p[0] + dx * (half + PIN_GAP * ratio) + ox * pinPx;
+            let y = p[1] + dy * (half + PIN_GAP * ratio) + oy * pinPx;
+            // Étape au bord de l'écran : la vignette reste visible (le trait
+            // la relie toujours à son étape).
+            if (insideScreen(stop, width, height)) {
+                const hw = (cards[k].cardW * scale) / 2 + margin / 2;
+                const hh = (cards[k].cardH * scale) / 2 + margin / 2;
+                x = clamp(x, hw, width - hw);
+                y = clamp(y, hh, height - hh);
+            }
+            return {
+                x,
+                y,
+                rotation: display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0,
+                scale,
+            };
+        };
+        // Fin d'affichage (avant la sortie) : la pile part d'un bloc.
+        const endOf = (slot) => (display.stack ? last.toQ : slot.toQ);
+        let top = null;
+        let topPin = null;
+        pile.forEach((slot, k) => {
+            if (qf < slot.fromQ) return;
+            const card = cards[k];
+            const end = endOf(slot);
+            if (display.pin && qf >= end) {
+                const land = clamp((qf - end) / PIN_LAND_Q, 0, 1);
+                const from = poseOf(k);
+                const to = pinOf(k);
+                const t = eased('slide', land);
+                card.x = from.x + (to.x - from.x) * t;
+                card.y = from.y + (to.y - from.y) * t;
+                card.rotation = from.rotation + (to.rotation - from.rotation) * t;
+                card.scale = 1 + (to.scale - 1) * t;
+                card.captionAlpha = 1 - land;
+                card.pinned = land >= 1;
+                if (!card.pinned) {
+                    landing.push(card);
+                } else if (!stop || onScreen(card, width, height)) {
+                    pinned.push(card);
+                    topPin = card;
+                }
+                return;
+            }
+            Object.assign(card, poseOf(k));
+            const next = pile[k + 1];
+            if (pileCenter && next && qf > next.fromQ) {
+                card.captionAlpha = clamp(1 - (qf - next.fromQ) / PHOTO_FADE_Q, 0, 1);
+            }
+            const exit = (end + PHOTO_FADE_Q - qf) / PHOTO_FADE_Q;
+            applyEffect(card, Math.min((qf - slot.fromQ) / PHOTO_FADE_Q, exit), rectOf(card));
+            card.kenBurns = kenBurns(slot, end + PHOTO_FADE_Q);
+            if (card.alpha <= 0) return;
+            if (display.leader && !pileCenter) setLeader(card, stop);
+            shown.push(card);
+            top = card;
+        });
+        if (top && display.leader && pileCenter) setLeader(top, stop);
+        if (topPin) setLeader(topPin, stop);
     }
-
-    for (const slot of slots) {
-        if (qf < slot.fromQ || qf > slot.toQ + PHOTO_FADE_Q) continue;
-        const card = cardOf(slot);
-        const stop = view.stopPixel?.(slot.stop) || null;
-        [card.x, card.y] = placeBox(card.cardW, card.cardH, stop);
-        const enter = (qf - slot.fromQ) / PHOTO_FADE_Q;
-        const exit = (slot.toQ + PHOTO_FADE_Q - qf) / PHOTO_FADE_Q;
-        applyEffect(card, Math.min(enter, exit), rectOf(card));
-        card.kenBurns = kenBurns(slot, slot.toQ + PHOTO_FADE_Q);
-        setLeader(card, stop);
-        if (card.alpha > 0) out.cards.push(card);
-    }
+    out.cards.push(...pinned, ...landing, ...shown);
     return out;
 }
 
@@ -381,47 +472,111 @@ export function photoFrameAt(timeline, qf, display, view) {
 // grande, décalages compris — la pile ne déborde ni de l'écran ni sur
 // l'étape. La légende d'une photo recouverte s'efface à l'arrivée de la
 // suivante ; le trait part de la photo du dessus.
+//
+// Vignettes sur la carte (`pin`) : au lieu de s'effacer, chaque photo (ou
+// la pile entière) descend en PIN_LAND_Q quanta vers une petite pile posée
+// à côté de son étape, et y reste jusqu'à la fin, attachée à l'étape (elle
+// suit la carte), avec un trait vers l'étape.
 const STACK_OFFSETS = [[0, 0], [0.07, -0.05], [-0.06, 0.05], [0.05, 0.07], [-0.07, -0.06], [0.03, -0.08]];
 const STACK_TILT_DEG = [-3, 4, -5.5, 2.5, 6, -4];
 const STACK_SPREAD = 0.08;
+const PIN_SPREAD = 0.08;
+const PIN_GAP = 8;        // px CSS entre l'étape et sa vignette
+export const PIN_LAND_Q = 4;
 
-function stackCards(out, slots, qf, display, ctx) {
-    const { view, size, cardOf, applyEffect, rectOf, kenBurns, placeBox, setLeader } = ctx;
+function onScreen(card, width, height) {
+    const r = Math.max(card.cardW, card.cardH) * card.scale;
+    return card.x + r > 0 && card.y + r > 0 && card.x - r < width && card.y - r < height;
+}
+
+// Photos regroupées par étape (créneaux contigus d'une même étape).
+const pilesCache = new WeakMap();
+function photoPiles(timeline) {
+    const cached = pilesCache.get(timeline);
+    if (cached) return cached;
     const piles = [];
-    for (const slot of slots) {
+    for (const slot of photoSlots(timeline)) {
         const last = piles[piles.length - 1];
         if (last && last[0].stop === slot.stop) last.push(slot);
         else piles.push([slot]);
     }
-    for (const pile of piles) {
-        const endQ = pile[pile.length - 1].toQ + PHOTO_FADE_Q;
-        if (qf < pile[0].fromQ || qf > endQ) continue;
-        const cards = pile.map(cardOf);
-        const spread = 2 * STACK_SPREAD * size;
-        const boxW = Math.max(...cards.map((c) => c.cardW)) + spread;
-        const boxH = Math.max(...cards.map((c) => c.cardH)) + spread;
-        const stop = view.stopPixel?.(pile[0].stop) || null;
-        const [cx, cy] = placeBox(boxW, boxH, stop);
-        const exit = (endQ - qf) / PHOTO_FADE_Q;
-        let top = null;
-        pile.forEach((slot, k) => {
-            if (qf < slot.fromQ) return;
-            const card = cards[k];
-            const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
-            card.x = cx + ox * size;
-            card.y = cy + oy * size;
-            card.rotation = display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0;
-            const next = pile[k + 1];
-            if (next && qf > next.fromQ) card.captionAlpha = clamp(1 - (qf - next.fromQ) / PHOTO_FADE_Q, 0, 1);
-            applyEffect(card, Math.min((qf - slot.fromQ) / PHOTO_FADE_Q, exit), rectOf(card));
-            card.kenBurns = kenBurns(slot, endQ);
-            if (card.alpha > 0) {
-                out.cards.push(card);
-                top = card;
-            }
-        });
-        if (top) setLeader(top, stop);
+    pilesCache.set(timeline, piles);
+    return piles;
+}
+
+// --- Côté libre autour d'une étape -----------------------------------------------
+
+// Directions candidates (x vers la droite, y vers le bas de l'écran), dans
+// l'ordre de préférence à coût égal.
+const PIN_DIRECTIONS = Object.freeze([
+    [1, -1], [-1, -1], [1, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [0, 1],
+]);
+export const PIN_CLEARANCE_KM = 0.5;
+
+// Côté de l'étape `index` où poser sa vignette, en évitant le trajet : la
+// direction (parmi 8) la moins encombrée par les trajets (tout le parcours,
+// passé et à venir) et les autres étapes dans un rayon de
+// PIN_CLEARANCE_KM — chaque point gêne d'autant plus qu'il est proche et
+// dans l'axe. Calculée en distances au sol, pas en pixels : le côté ne
+// change ni avec le zoom ni pendant que la caméra suit. → [dx, dy], chacun
+// dans {-1, 0, 1} (une diagonale pose la vignette par son coin).
+const directionCache = new WeakMap();
+export function pinDirection(timeline, index) {
+    let cache = directionCache.get(timeline);
+    if (!cache) {
+        cache = new Map();
+        directionCache.set(timeline, cache);
     }
+    if (cache.has(index)) return cache.get(index);
+    const stop = timeline.stops[index];
+    if (!Number.isFinite(stop?.lat) || !Number.isFinite(stop?.lon)) return PIN_DIRECTIONS[0];
+    const R = PIN_CLEARANCE_KM;
+    const kx = 111.32 * Math.cos(stop.lat * Math.PI / 180);
+    const ky = 110.57;
+    // Point [lon, lat] → km à l'écran (y vers le bas).
+    const local = (p) => [(p[0] - stop.lon) * kx, -(p[1] - stop.lat) * ky];
+    const obstacles = [];
+    const add = (p, weight = 1) => {
+        const d = Math.hypot(p[0], p[1]);
+        if (d < 0.005 || d > R) return;
+        obstacles.push({ ux: p[0] / d, uy: p[1] / d, w: weight * (1 - d / R) ** 2 });
+    };
+    for (const leg of timeline.legs || []) {
+        if (leg.night) continue;
+        const a = timeline.stops[leg.from];
+        const b = timeline.stops[leg.to];
+        const path = (leg.path && leg.path.length >= 2 ? leg.path : [[a.lon, a.lat], [b.lon, b.lat]]).map(local);
+        for (let i = 1; i < path.length; i++) {
+            const p = path[i - 1];
+            const q = path[i];
+            const length = Math.hypot(q[0] - p[0], q[1] - p[1]);
+            // Segment hors du cercle : ignoré.
+            if (Math.min(Math.hypot(p[0], p[1]), Math.hypot(q[0], q[1])) > R + length) continue;
+            const steps = Math.max(1, Math.ceil(length / (R / 12)));
+            for (let s = i === 1 ? 0 : 1; s <= steps; s++) {
+                add([p[0] + (q[0] - p[0]) * (s / steps), p[1] + (q[1] - p[1]) * (s / steps)]);
+            }
+        }
+    }
+    timeline.stops.forEach((other, i) => {
+        if (i !== index) add(local([other.lon, other.lat]), 2);
+    });
+    let best = PIN_DIRECTIONS[0];
+    let bestCost = Infinity;
+    for (const dir of PIN_DIRECTIONS) {
+        const n = Math.hypot(dir[0], dir[1]);
+        let cost = 0;
+        for (const o of obstacles) {
+            const cos = (dir[0] * o.ux + dir[1] * o.uy) / n;
+            if (cos > 0) cost += o.w * cos * cos;
+        }
+        if (cost < bestCost - 1e-9) {
+            best = dir;
+            bestCost = cost;
+        }
+    }
+    cache.set(index, best);
+    return best;
 }
 
 // Bande de vignettes : chaque photo entre en grand au-dessus de la bande

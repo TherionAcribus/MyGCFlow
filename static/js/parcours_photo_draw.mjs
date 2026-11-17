@@ -92,9 +92,11 @@ export function drawPhotoCard(ctx, card, img, photo, { font = 'sans-serif', rati
     // Fond du cadre (blanc) ou de l'image seule, avec son ombre.
     const paper = frame.kind === 'postcard' || frame.kind === 'polaroid';
     if (frame.shadow) {
+        // L'ombre ne suit pas ctx.scale : réduite avec la carte (vignettes).
+        const shrink = Math.min(1, scale * 1.5);
         ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-        ctx.shadowBlur = 10 * ratio;
-        ctx.shadowOffsetY = 3 * ratio;
+        ctx.shadowBlur = 10 * ratio * shrink;
+        ctx.shadowOffsetY = 3 * ratio * shrink;
     }
     if (paper || frame.shadow) {
         ctx.fillStyle = paper ? '#ffffff' : '#000000';
