@@ -158,6 +158,24 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.call('DELETE', url).status_code, 404)
         self.assertEqual(self.call('GET', f'{url}/file').status_code, 404)
 
+    def test_display_settings(self):
+        photo = self.upload(photo_bytes()).get_json()['photo']
+        self.assertEqual((photo['hidden'], photo['caption'], photo['aspect'], photo['focusX'], photo['focusY'],
+                          photo['zoom']), (False, '', 'original', 50, 50, 100))
+        url = f'/api/parcours/{self.pid}/photos/{photo["id"]}'
+        changed = self.call('PATCH', url, json={'hidden': True, 'caption': '  Vue sur\nle lac ', 'aspect': '4:3',
+                                                'focusX': 20, 'focusY': 80, 'zoom': 150}).get_json()['photo']
+        self.assertEqual((changed['hidden'], changed['caption'], changed['aspect'], changed['focusX'],
+                          changed['focusY'], changed['zoom']), (True, 'Vue sur le lac', '4:3', 20, 80, 150))
+        for bad in ({'hidden': 1}, {'caption': 'x' * 201}, {'caption': 3}, {'aspect': '2:1'}, {'focusX': 101},
+                    {'zoom': 99}, {'zoom': 1.5}, {'focusY': True}):
+            self.assertEqual(self.call('PATCH', url, json=bad).get_json().get('error'), 'photo-invalid', bad)
+        # Une valeur refusée ne laisse rien à moitié appliqué.
+        self.call('PATCH', url, json={'caption': 'Autre', 'zoom': 500})
+        self.assertEqual(db.session.get(ParcoursPhoto, photo['id']).caption, 'Vue sur le lac')
+        reset = self.call('PATCH', url, json={'caption': '', 'aspect': 'original'}).get_json()['photo']
+        self.assertEqual((reset['caption'], reset['aspect'], reset['stopKey']), ('', 'original', None))
+
     def test_camera_offsets(self):
         url = f'/api/parcours/{self.pid}/cameras'
         payload = self.call('PUT', url, json={'camera': 'Canon EOS 80D', 'offsetMinutes': -62}).get_json()

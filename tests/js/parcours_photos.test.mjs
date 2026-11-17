@@ -13,6 +13,7 @@ import {
     photoTimeTrusted,
     photosByStop,
     reconstructWithPhotos,
+    suggestPhotoPlaces,
 } from '../../static/js/parcours_photos.mjs';
 import { REASON_PHOTO, reconstructParcours } from '../../static/js/parcours_reconstruct.mjs';
 import { buildParcoursTimeline } from '../../static/js/parcours_timeline.mjs';
@@ -79,6 +80,10 @@ test('ancres : position ou manuel, heure de confiance, la plus tôt par étape',
     const anchors = photoAnchors(ordered, photos, matches);
     assert.deepEqual([...anchors], [['B', 14 * 60 + 10]]);
     assert.deepEqual([...photosByStop(photos, matches)], [['B', [2, 1]], ['C', [3]]]);
+    // Masquée (lot 8) : toujours une ancre, mais pas montrée.
+    const hidden = photos.map((p) => (p.id === 2 ? { ...p, hidden: true } : p));
+    assert.deepEqual([...photoAnchors(ordered, hidden, matches)], [['B', 14 * 60 + 10]]);
+    assert.deepEqual([...photosByStop(hidden, matches)], [['B', [1]], ['C', [3]]]);
 });
 
 test('reconstruction avec photos : l’heure d’une photo cale son étape', () => {
@@ -113,4 +118,29 @@ test('chronologie : chaque photo ajoute son temps d’écran à l’étape', () 
     assert.equal(a.departQ - a.q, 12 + 15 * 4);
     assert.equal(a.photoQ, 10);
     assert.equal(tl.stops[1].photos.length, 0);
+});
+
+test('lieux proposés : photos géolocalisées hors étapes, groupées par journée et proximité', () => {
+    const ordered = reconstructParcours({ days: DAYS });
+    const photos = [
+        photo(1, { lat: 45, lon: at(5), takenAt: '2025-07-12T12:10:00' }),     // entre A et B, à 500 m
+        photo(2, { lat: 45, lon: at(5.5), takenAt: '2025-07-12T12:05:00' }),   // à 50 m de la 1 : même lieu
+        photo(3, { lat: 45, lon: at(15), takenAt: '2025-07-12T15:00:00' }),
+        photo(4, { lat: 45, lon: at(10.2), takenAt: '2025-07-12T13:00:00' }),  // sur B : rattachée
+        photo(5, { lat: 45, lon: at(5), takenAt: '2025-07-14T09:00:00' }),     // hors des dates
+        photo(6, { lat: 45, lon: at(5), takenAt: '2025-07-12T12:00:00', hidden: true }),
+        photo(7, { lat: 45, lon: at(5), takenAt: null }),                      // sans heure
+        photo(8, { lat: 45, lon: at(5), takenAt: '2025-07-12T12:00:00', stopKey: 'C' }),
+    ];
+    const matches = matchPhotos(ordered, photos);
+    const places = suggestPhotoPlaces(photos, matches, new Map(), { dates: new Set(['2025-07-12', '2025-07-13']) });
+    assert.deepEqual(places.map((p) => [p.date, p.photoIds, p.minutes]),
+        [['2025-07-12', [2, 1], 12 * 60 + 5], ['2025-07-12', [3], 15 * 60]]);
+    assert.ok(Math.abs(places[0].lon - at(5.25)) < 1e-9);
+    // Une photo à plus de la moitié du rayon de la première ouvre un autre groupe.
+    const far = [photo(1, { lat: 45, lon: at(5), takenAt: '2025-07-12T12:00:00' }),
+        photo(2, { lat: 45, lon: at(5.8), takenAt: '2025-07-12T12:01:00' })];
+    assert.equal(suggestPhotoPlaces(far, matchPhotos(ordered, far)).length, 2);
+    // Sans position, rien à proposer (rattachement à la main).
+    assert.deepEqual(suggestPhotoPlaces([photo(3, { takenAt: '2025-07-12T15:00:00', camera: 'Nikon' })], new Map()), []);
 });

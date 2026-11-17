@@ -81,7 +81,23 @@ import {
     cameraOffsets,
     hasPosition,
     photoClock,
+    photoTimeTrusted,
+    suggestPhotoPlaces,
 } from './parcours_photos.mjs';
+import {
+    PHOTO_LAYOUT_NONE,
+    PHOTO_ZOOM_RANGE,
+    isFullFrame,
+    normalizePhotoDisplay,
+    photoAspect,
+    photoCaptionText,
+    photoCrop,
+    photoCropRect,
+    photoFrameAt,
+    photoSlots,
+    photoTimelineOptions,
+} from './parcours_photo_layout.mjs';
+import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
 import {
     OFFSET_EVIDENCE,
     OFFSET_MANUAL,
@@ -140,6 +156,8 @@ const quantumBase = { originDay: dateToDayNumber(QUANTUM_ORIGIN) };
 const PLAY_TRAIL_Z_INDEX = 1000;
 const PLAY_HEAD_Z_INDEX = 1050;
 let playback = normalizePlayback(window.userSettings?.parcours_playback);
+// Affichage des photos (lot 9) : préférence globale `parcours_photo_display`.
+let photoDisplay = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
 let infosTemplate = normalizeInfosTemplate(window.userSettings?.parcours_infos_template);
 let timeline = null;          // buildParcoursTimeline(ordered) du parcours ouvert
 let projected = [];           // coordonnées carte des étapes de `timeline`
@@ -232,6 +250,7 @@ export async function initParcoursPage() {
     if (!isParcoursPage()) return;
     // Les préférences arrivent après l'évaluation du module : relues ici.
     playback = normalizePlayback(window.userSettings?.parcours_playback);
+    photoDisplay = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
     infosTemplate = normalizeInfosTemplate(window.userSettings?.parcours_infos_template);
     const inp = el('inputInfosTemplate');
     if (inp) inp.value = infosTemplate;
@@ -321,7 +340,13 @@ export async function openParcours(id) {
 // (Re)construit la chronologie écran du parcours ouvert et la donne au moteur :
 // métadonnées (dates fictives des quanta), features WebGL, plan au repos.
 function applyTimeline({ fit = false } = {}) {
-    timeline = ordered ? buildParcoursTimeline(ordered, { pace: playback.pace, photosByStop: photoByStop, legPaths }) : null;
+    // Sans photos dans la vidéo, les étapes ne s'allongent pas pour elles.
+    timeline = ordered ? buildParcoursTimeline(ordered, {
+        pace: playback.pace,
+        photosByStop: photoDisplay.layout === PHOTO_LAYOUT_NONE ? null : photoByStop,
+        legPaths,
+        options: photoTimelineOptions(photoDisplay),
+    }) : null;
     const stops = timeline?.stops || [];
     projected = stops.map((stop) => ol.proj.fromLonLat([stop.lon, stop.lat]));
     legProjected = (timeline?.legs || []).map((leg) => (leg.path ? leg.path.map((p) => ol.proj.fromLonLat(p)) : null));
@@ -1809,50 +1834,181 @@ function preloadPhotos() {
     }
 }
 
-// Carte postale de la photo affichée à `currentQ`, près de son étape. Une
-// étape montre ses photos l'une après l'autre ; chacune apparaît et
-// s'efface en PHOTO_FADE_Q quanta.
-const PHOTO_FADE_Q = 2;
-const PHOTO_CARD_SIDE = 220;      // grand côté, en px CSS
-function drawPhotoCards(event) {
-    if (!timeline) return;
+// Photos de la lecture (lot 9) : mises en page à `currentQ` selon les
+// réglages (parcours_photo_layout.mjs), peintes dans le canevas de la couche
+// de la tête (parcours_photo_draw.mjs), donc filmées. Une photo encore en
+// chargement n'est pas dessinée.
+let lastPhotoCards = [];          // cartes peintes à la dernière image (relevé e2e)
+let lastPhotoView = null;         // taille du canevas de cette image
+
+function photoLayoutView(event) {
     const frameState = event.frameState;
-    const ratio = frameState.pixelRatio || 1;
     const m = composeTransform(event.inversePixelTransform, frameState.coordinateToPixelTransform);
+    const canvas = event.context.canvas;
+    return {
+        width: canvas.width,
+        height: canvas.height,
+        ratio: frameState.pixelRatio || 1,
+        stopPixel: (i) => {
+            const [px, py] = projected[i] || [];
+            return Number.isFinite(px) ? [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]] : null;
+        },
+        aspectOf: (id) => photoAspect(photoById(id)),
+        captionOf: photoCaptionFor,
+    };
+}
+
+// Légende d'une photo selon le gabarit des réglages. L'heure est celle de
+// la photo quand elle est de confiance (téléphone, appareil recalé), sinon
+// celle de l'étape — dans le format choisi pour {heure}.
+function photoCaptionFor(slot) {
+    if (!photoDisplay.caption || !timeline) return '';
+    const photo = photoById(slot.photoId);
+    const stop = timeline.stops[slot.stop];
+    const day = timeline.days[stop?.day];
+    const offsets = cameraOffsets(inputs?.cameras);
+    const clockValue = photo && photoTimeTrusted(photo, offsets) ? photoClock(photo, offsets) : null;
+    const heure = clockValue
+        ? formatClock(clockValue.minutes, false, playback.hours, slotLabels())
+        : formatClock(stop?.arrivalMin, stop?.confidence !== CONFIDENCE_ANCHORED, playback.hours, slotLabels());
+    return photoCaptionText(photoDisplay.caption, {
+        legende: photo?.caption || '',
+        etape: stop ? stopLabel(stop) : '',
+        heure,
+        jour: day ? String(day.dayNumber) : '',
+        date: day ? formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' }) : '',
+    });
+}
+
+function drawPhotoCards(event) {
+    lastPhotoCards = [];
+    if (!timeline) return;
+    const view = photoLayoutView(event);
+    lastPhotoView = { width: view.width, height: view.height, ratio: view.ratio };
+    const { cards } = photoFrameAt(timeline, currentQ, photoDisplay, view);
     const ctx = event.context;
-    timeline.stops.forEach((stop, i) => {
-        if (!stop.photos?.length || currentQ < stop.q || currentQ > stop.departQ + PHOTO_FADE_Q) return;
-        const start = stop.q + 2;
-        const k = Math.min(stop.photos.length - 1, Math.max(0, Math.floor((currentQ - start) / stop.photoQ)));
-        const from = start + k * stop.photoQ;
-        const to = from + stop.photoQ;
-        const alpha = Math.max(0, Math.min(1, (currentQ - from) / PHOTO_FADE_Q, (to + PHOTO_FADE_Q - currentQ) / PHOTO_FADE_Q));
-        const img = photoImages.get(stop.photos[k]);
-        if (alpha <= 0 || !img?.complete || !img.naturalWidth) return;
-        const [px, py] = projected[i];
-        const x = m[0] * px + m[2] * py + m[4];
-        const y = m[1] * px + m[3] * py + m[5];
-        const scale = (PHOTO_CARD_SIDE * ratio) / Math.max(img.naturalWidth, img.naturalHeight);
-        const w = img.naturalWidth * scale;
-        const h = img.naturalHeight * scale;
-        const border = 7 * ratio;
-        const cardW = w + border * 2;
-        const cardH = h + border * 2;
-        // Au-dessus à droite de l'étape, gardée dans l'écran.
-        const cx = Math.min(ctx.canvas.width - cardW / 2 - 8 * ratio, Math.max(cardW / 2 + 8 * ratio, x + 18 * ratio + cardW / 2));
-        const cy = Math.min(ctx.canvas.height - cardH / 2 - 8 * ratio, Math.max(cardH / 2 + 8 * ratio, y - 18 * ratio - cardH / 2));
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.translate(cx, cy);
-        ctx.rotate((k % 2 === 0 ? -2.5 : 2) * Math.PI / 180);
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-        ctx.shadowBlur = 10 * ratio;
-        ctx.shadowOffsetY = 3 * ratio;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-cardW / 2, -cardH / 2, cardW, cardH);
-        ctx.shadowColor = 'transparent';
-        ctx.drawImage(img, -w / 2, -h / 2, w, h);
-        ctx.restore();
+    const font = pageFontFamily();
+    for (const card of cards) {
+        const img = photoImages.get(card.photoId);
+        if (!img?.complete || !img.naturalWidth) continue;
+        drawPhotoLeader(ctx, card, view.ratio);
+        drawPhotoCard(ctx, card, img, photoById(card.photoId), { font, ratio: view.ratio });
+        lastPhotoCards.push(card);
+    }
+}
+
+// Aperçu en pause calé sur une photo : la lecture s'ouvre en pause (si elle
+// ne tourne pas) et saute au milieu du premier temps de la photo.
+function previewPhoto(photoId) {
+    if (!timeline) return false;
+    const slot = photoSlots(timeline).find((s) => s.photoId === photoId);
+    if (!slot) return false;
+    if (pkg.previewPlaybackState?.() === 'idle' && !pkg.startPausedPreview?.()) return false;
+    if (pkg.previewPlaybackState?.() !== 'paused') return false;
+    const q = Math.floor(slot.fromQ + Math.min(5, (slot.toQ - slot.fromQ) / 2));
+    return pkg.seekAnimationToDate?.(dateOfDayIndex(quantumBase, q)) !== false;
+}
+
+// --- Réglages d'affichage des photos (lot 9) ---------------------------------------
+
+const PHOTO_DISPLAY_FIELDS = Object.freeze({
+    layout: 'parcoursPhotoLayout',
+    side: 'parcoursPhotoSide',
+    anchor: 'parcoursPhotoAnchor',
+    strip_edge: 'parcoursPhotoStripEdge',
+    frame: 'parcoursPhotoFrame',
+    effect: 'parcoursPhotoEffect',
+});
+const PHOTO_DISPLAY_FLAGS = Object.freeze({
+    leader: 'parcoursPhotoLeader',
+    strip_reset: 'parcoursPhotoStripReset',
+    tilt: 'parcoursPhotoTilt',
+    ken_burns: 'parcoursPhotoKenBurns',
+});
+
+function renderPhotoDisplay() {
+    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FIELDS)) {
+        const field = el(id);
+        if (field) field.value = photoDisplay[key];
+    }
+    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FLAGS)) {
+        const field = el(id);
+        if (field) field.checked = photoDisplay[key];
+    }
+    const size = el('parcoursPhotoSize');
+    if (size) size.value = String(photoDisplay.size);
+    const sizeValue = el('parcoursPhotoSizeValue');
+    if (sizeValue) sizeValue.textContent = `${photoDisplay.size} px`;
+    const duration = el('parcoursPhotoDuration');
+    if (duration && document.activeElement !== duration) duration.value = String(photoDisplay.duration);
+    const max = el('parcoursPhotoMaxPerStop');
+    if (max && document.activeElement !== max) max.value = String(photoDisplay.max_per_stop);
+    const caption = el('parcoursPhotoCaptionTemplate');
+    if (caption && document.activeElement !== caption) caption.value = photoDisplay.caption;
+    // Réglages propres à chaque placement.
+    const layout = photoDisplay.layout;
+    const show = (id, visible) => {
+        const row = el(id);
+        if (row) row.hidden = !visible;
+    };
+    show('parcoursPhotoSideRow', layout === 'stop');
+    show('parcoursPhotoAnchorRow', layout === 'fixed');
+    show('parcoursPhotoStripEdgeRow', layout === 'strip');
+    show('parcoursPhotoStripResetRow', layout === 'strip');
+    show('parcoursPhotoLeaderRow', layout === 'stop' || layout === 'fixed');
+    const fields = el('parcoursPhotoDisplayFields');
+    if (fields) fields.disabled = layout === PHOTO_LAYOUT_NONE;
+    const preview = el('btnParcoursPhotoPreview');
+    if (preview) preview.disabled = layout === PHOTO_LAYOUT_NONE || !timeline || photoSlots(timeline).length === 0;
+}
+
+function bindPhotoDisplay() {
+    renderPhotoDisplay();
+    // Valeur complète envoyée (comme parcours_playback, cf. bindPlayback) ;
+    // la durée, le plafond et « aucune photo » changent la chronologie.
+    const save = (patch) => {
+        const before = photoDisplay;
+        photoDisplay = normalizePhotoDisplay({ ...photoDisplay, ...patch });
+        const full = { ...photoDisplay };
+        saveSettingsPatch({ parcours_photo_display: full }).then(() => {
+            if (window.userSettings) window.userSettings.parcours_photo_display = full;
+        });
+        if (window.userSettings) window.userSettings.parcours_photo_display = full;
+        renderPhotoDisplay();
+        const timing = before.duration !== photoDisplay.duration
+            || before.max_per_stop !== photoDisplay.max_per_stop
+            || (before.layout === PHOTO_LAYOUT_NONE) !== (photoDisplay.layout === PHOTO_LAYOUT_NONE);
+        if (timing) {
+            if (clock.running) {
+                pendingTimeline = true;
+                showToast(t("Le réglage s'appliquera à la fin de l'animation."), 'info', t('Parcours'));
+            } else {
+                applyTimeline();
+            }
+        }
+        pkg.getMap?.()?.render();
+    };
+    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FIELDS)) {
+        el(id)?.addEventListener('change', (event) => save({ [key]: event.target.value }));
+    }
+    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FLAGS)) {
+        el(id)?.addEventListener('change', (event) => save({ [key]: event.target.checked }));
+    }
+    const size = el('parcoursPhotoSize');
+    size?.addEventListener('input', () => {
+        // Glisser : aperçu immédiat, enregistré au relâchement.
+        photoDisplay = normalizePhotoDisplay({ ...photoDisplay, size: Number(size.value) });
+        const sizeValue = el('parcoursPhotoSizeValue');
+        if (sizeValue) sizeValue.textContent = `${photoDisplay.size} px`;
+        pkg.getMap?.()?.render();
+    });
+    size?.addEventListener('change', () => save({ size: Number(size.value) }));
+    el('parcoursPhotoDuration')?.addEventListener('change', (event) => save({ duration: Number(event.target.value) }));
+    el('parcoursPhotoMaxPerStop')?.addEventListener('change', (event) => save({ max_per_stop: Number(event.target.value) }));
+    el('parcoursPhotoCaptionTemplate')?.addEventListener('change', (event) => save({ caption: event.target.value }));
+    el('btnParcoursPhotoPreview')?.addEventListener('click', () => {
+        const first = timeline ? photoSlots(timeline)[0] : null;
+        if (first) previewPhoto(first.photoId);
     });
 }
 
@@ -1892,6 +2048,36 @@ async function linkPhoto(id, stopKey) {
         await reloadAdjustments();
     } catch (error) {
         showToast(error.message, 'error');
+    }
+}
+
+// Réglages d'affichage d'une photo (lot 8). Masquer ou montrer change le
+// temps d'écran : reconstruction complète, refusée pendant une lecture.
+// Légende et cadrage ne touchent que le dessin : la photo est remplacée en
+// mémoire, la carte redessinée.
+async function patchPhoto(id, patch) {
+    if (!selectedId) return;
+    const rebuilds = 'hidden' in patch;
+    if (rebuilds && adjustmentsLocked()) {
+        renderPhotoDetail();
+        return;
+    }
+    try {
+        const { photo } = await fetchJson(`/api/parcours/${selectedId}/photos/${id}`, {
+            method: 'PATCH', body: JSON.stringify(patch),
+        });
+        if (!inputs || !photo) return;
+        const photos = (inputs.photos || []).map((p) => (p.id === photo.id ? photo : p));
+        if (rebuilds) {
+            receiveAdjustments({ photos });
+        } else {
+            inputs.photos = photos;
+            renderPhotos();
+            pkg.getMap?.()?.render();
+        }
+    } catch (error) {
+        showToast(error.message, 'error');
+        renderPhotoDetail();
     }
 }
 
@@ -1948,6 +2134,8 @@ function renderPhotos() {
     const card = el('parcoursPhotosCard');
     if (!card) return;
     card.hidden = !inputs;
+    const empty = el('parcoursPhotosEmpty');
+    if (empty) empty.hidden = !!inputs;
     if (!inputs) return;
     const photos = inputs.photos || [];
     const offsets = cameraOffsets(inputs.cameras);
@@ -2009,13 +2197,21 @@ function renderPhotos() {
             cell.className = 'parcours-photo-thumb';
             cell.classList.toggle('is-linked', !!match?.key);
             cell.classList.toggle('is-active', photoDetailId === photo.id);
+            cell.classList.toggle('is-hidden', !!photo.hidden);
             cell.dataset.photoId = String(photo.id);
-            cell.title = `${photo.name} — ${matchLabel(match)}`;
+            const hiddenNote = t('masquée dans la vidéo');
+            cell.title = photo.hidden ? `${photo.name} — ${matchLabel(match)} — ${hiddenNote}` : `${photo.name} — ${matchLabel(match)}`;
             const img = document.createElement('img');
             img.src = photoUrl(photo, true);
             img.alt = photo.name || '';
             img.loading = 'lazy';
             cell.append(img);
+            if (photo.hidden) {
+                const badge = document.createElement('i');
+                badge.className = 'ti ti-eye-off parcours-photo-hidden-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                cell.append(badge);
+            }
             cell.addEventListener('click', () => {
                 photoDetailId = photoDetailId === photo.id ? null : photo.id;
                 renderPhotos();
@@ -2023,7 +2219,71 @@ function renderPhotos() {
             return cell;
         }));
     }
+    renderPhotoPlaces();
     renderPhotoDetail();
+    renderPhotoDisplay();
+}
+
+// Photos géolocalisées hors de toute étape (lot 10) : un lieu proposé par
+// endroit, créé d'un clic (nom facultatif) ; ses photos s'y rattachent.
+function renderPhotoPlaces() {
+    const box = el('parcoursPhotoPlaces');
+    const list = el('parcoursPhotoPlaceList');
+    if (!box || !list) return;
+    const dates = new Set((ordered?.days || []).map((day) => day.date));
+    const places = suggestPhotoPlaces(inputs?.photos || [], photoMatches, cameraOffsets(inputs?.cameras), { dates });
+    box.hidden = places.length === 0;
+    const title = el('parcoursPhotoPlacesTitle');
+    if (title) {
+        const n = places.reduce((sum, place) => sum + place.photoIds.length, 0);
+        title.textContent = n === 1 ? t('1 photo hors des étapes') : t('${n} photos hors des étapes', { n });
+    }
+    list.replaceChildren(...places.map((place) => {
+        const row = document.createElement('div');
+        row.className = 'parcours-photo-place d-flex align-items-center gap-2 flex-wrap';
+        row.dataset.photoIds = place.photoIds.join(',');
+        const thumbs = document.createElement('div');
+        thumbs.className = 'parcours-photo-place-thumbs';
+        for (const id of place.photoIds.slice(0, 3)) {
+            const photo = photoById(id);
+            if (!photo) continue;
+            const img = document.createElement('img');
+            img.src = photoUrl(photo, true);
+            img.alt = photo.name || '';
+            img.loading = 'lazy';
+            thumbs.append(img);
+        }
+        const text = document.createElement('div');
+        text.className = 'small flex-grow-1';
+        const count = place.photoIds.length === 1 ? t('1 photo') : t('${n} photos', { n: place.photoIds.length });
+        text.textContent = [
+            count,
+            formatDay(place.date, { weekday: 'short', day: 'numeric', month: 'short' }),
+            minutesToTime(place.minutes),
+        ].filter(Boolean).join(' · ');
+        const name = document.createElement('input');
+        name.type = 'text';
+        name.maxLength = 80;
+        name.className = 'form-control form-control-sm parcours-photo-place-name';
+        name.placeholder = t('Nom du lieu (facultatif)');
+        name.setAttribute('aria-label', t('Nom du lieu'));
+        const create = button('btn btn-sm btn-outline-primary parcours-photo-place-create', 'ti-map-pin-plus',
+            t('Créer ce lieu'), { text: t('Créer ce lieu') });
+        create.addEventListener('click', async () => {
+            create.disabled = true;
+            const ok = await createPlace({
+                kind: KIND_PLACE,
+                name: name.value,
+                lat: place.lat,
+                lon: place.lon,
+                date: place.date,
+                time: minutesToTime(place.minutes) || null,
+            });
+            if (!ok) create.disabled = false;
+        });
+        row.append(thumbs, text, name, create);
+        return row;
+    }));
 }
 
 function renderPhotoDetail() {
@@ -2031,22 +2291,19 @@ function renderPhotoDetail() {
     if (!box) return;
     const photo = photoById(photoDetailId);
     box.hidden = !photo;
-    if (!photo) {
-        box.replaceChildren();
-        return;
-    }
+    if (!photo) return;
     const match = photoMatches.get(photo.id);
     const clock = photoClock(photo, cameraOffsets(inputs.cameras));
-    const info = document.createElement('div');
-    info.className = 'small text-muted mb-2';
-    info.textContent = [
-        photo.name,
-        clock ? `${formatDay(clock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(clock.minutes)}` : t('sans heure'),
-        hasPosition(photo) ? t('géolocalisée') : t('sans position'),
-        photo.camera || '',
-    ].filter(Boolean).join(' · ');
-    const linkRow = document.createElement('div');
-    linkRow.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+    const info = el('parcoursPhotoInfo');
+    if (info) {
+        info.textContent = [
+            photo.name,
+            clock ? `${formatDay(clock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(clock.minutes)}` : t('sans heure'),
+            hasPosition(photo) ? t('géolocalisée') : t('sans position'),
+            photo.camera || '',
+        ].filter(Boolean).join(' · ');
+    }
+
     const label = document.createElement('label');
     label.className = 'small';
     label.textContent = t('Étape');
@@ -2072,9 +2329,20 @@ function renderPhotoDetail() {
     }
     select.value = photo.stopKey || '';
     select.addEventListener('change', () => linkPhoto(photo.id, select.value || null));
-    linkRow.append(label, select);
-    const actions = document.createElement('div');
-    actions.className = 'd-flex gap-2 flex-wrap';
+    el('parcoursPhotoLinkRow')?.replaceChildren(label, select);
+
+    const shown = el('parcoursPhotoShown');
+    if (shown) shown.checked = !photo.hidden;
+    const caption = el('parcoursPhotoCaption');
+    if (caption && document.activeElement !== caption) caption.value = photo.caption || '';
+    const crop = photoCrop(photo);
+    const aspect = el('parcoursPhotoAspect');
+    if (aspect) aspect.value = crop.aspect;
+    const zoom = el('parcoursPhotoZoom');
+    if (zoom) zoom.value = String(crop.zoom);
+    renderCropPicker(photo);
+
+    const actions = [];
     const stop = match?.key ? stopByKey(match.key) : null;
     const offset = !hasPosition(photo) && photo.camera ? calibrationOffset(photo, stop) : null;
     if (offset !== null) {
@@ -2082,16 +2350,134 @@ function renderPhotoDetail() {
             t('Caler l’horloge de l’appareil sur cette étape'),
             { text: t('Caler l’horloge sur l’étape (${offset})', { offset: formatOffset(offset) }) });
         calibrate.addEventListener('click', () => setCameraOffset(photo.camera, offset));
-        actions.append(calibrate);
+        actions.push(calibrate);
+    }
+    if (timeline && photoSlots(timeline).some((slot) => slot.photoId === photo.id)) {
+        const show = button('btn btn-sm btn-outline-secondary parcours-photo-preview', 'ti-eye',
+            t('Ouvrir l’aperçu en pause sur cette photo'), { text: t('Voir sur la carte') });
+        show.addEventListener('click', () => previewPhoto(photo.id));
+        actions.push(show);
     }
     const remove = button('btn btn-sm btn-outline-danger parcours-photo-delete', 'ti-trash', t('Supprimer la photo'),
         { text: t('Supprimer la photo') });
     remove.addEventListener('click', () => deletePhoto(photo.id));
-    actions.append(remove);
-    box.replaceChildren(info, linkRow, actions);
+    actions.push(remove);
+    el('parcoursPhotoActions')?.replaceChildren(...actions);
+}
+
+// Sélecteur du cadrage : la photo entière, la fenêtre gardée par-dessus
+// (le reste assombri). `draft` : cadrage en cours de geste, pas encore
+// enregistré.
+function renderCropPicker(photo, draft = null) {
+    const picker = el('parcoursPhotoCropPicker');
+    const img = el('parcoursPhotoCropImage');
+    const frame = el('parcoursPhotoCropWindow');
+    if (!picker || !img || !frame) return;
+    const url = photoUrl(photo, true);
+    if (img.dataset.src !== url) {
+        img.dataset.src = url;
+        const known = photo.width > 0 && photo.height > 0;
+        picker.style.aspectRatio = known ? `${photo.width} / ${photo.height}` : '';
+        // Portrait : plafonné en hauteur, comme le paysage l'est en largeur.
+        picker.style.maxWidth = known && photo.height > photo.width ? `${Math.round((240 * photo.width) / photo.height)}px` : '';
+        img.src = url;
+    }
+    const crop = { ...photoCrop(photo), ...(draft || {}) };
+    const natural = { width: photo.width || 1, height: photo.height || 1 };
+    const rect = photoCropRect(natural, crop);
+    frame.style.left = `${(rect.x / natural.width) * 100}%`;
+    frame.style.top = `${(rect.y / natural.height) * 100}%`;
+    frame.style.width = `${(rect.width / natural.width) * 100}%`;
+    frame.style.height = `${(rect.height / natural.height) * 100}%`;
+    const full = isFullFrame(crop);
+    picker.classList.toggle('is-full', full);
+    const hint = el('parcoursPhotoCropHint');
+    if (hint) {
+        hint.textContent = full
+            ? t('Photo entière : choisissez un cadrage ou un zoom pour n’en garder qu’une partie.')
+            : t('Glissez sur la photo pour choisir la partie gardée.');
+    }
+    const zoomValue = el('parcoursPhotoZoomValue');
+    if (zoomValue) zoomValue.textContent = `${Math.round(crop.zoom)} %`;
+}
+
+function bindPhotoDetail() {
+    const current = () => photoById(photoDetailId);
+    el('parcoursPhotoShown')?.addEventListener('change', (event) => {
+        const photo = current();
+        if (photo) patchPhoto(photo.id, { hidden: !event.target.checked });
+    });
+    el('parcoursPhotoCaption')?.addEventListener('change', (event) => {
+        const photo = current();
+        const value = event.target.value.trim();
+        if (photo && value !== (photo.caption || '')) patchPhoto(photo.id, { caption: value });
+    });
+    el('parcoursPhotoAspect')?.addEventListener('change', (event) => {
+        const photo = current();
+        if (photo) patchPhoto(photo.id, { aspect: event.target.value });
+    });
+    const zoom = el('parcoursPhotoZoom');
+    zoom?.addEventListener('input', () => {
+        const photo = current();
+        if (photo) renderCropPicker(photo, { zoom: Number(zoom.value) });
+    });
+    zoom?.addEventListener('change', () => {
+        const photo = current();
+        const value = Math.round(Number(zoom.value));
+        if (photo && value >= PHOTO_ZOOM_RANGE[0] && value <= PHOTO_ZOOM_RANGE[1]) patchPhoto(photo.id, { zoom: value });
+    });
+
+    // Point focal : glisser (enregistré au relâchement), ou les flèches
+    // (1 %, Maj = 10 %), comme le sélecteur de l'onglet Images.
+    const picker = el('parcoursPhotoCropPicker');
+    if (!picker) return;
+    const focusAt = (event) => {
+        const rect = picker.getBoundingClientRect();
+        if (!rect.width || !rect.height) return null;
+        const clamp01 = (v) => Math.max(0, Math.min(1, v));
+        return {
+            focusX: Math.round(clamp01((event.clientX - rect.left) / rect.width) * 100),
+            focusY: Math.round(clamp01((event.clientY - rect.top) / rect.height) * 100),
+        };
+    };
+    picker.addEventListener('pointerdown', (event) => {
+        const photo = current();
+        if (event.button !== 0 || !photo) return;
+        picker.setPointerCapture?.(event.pointerId);
+        let draft = focusAt(event);
+        renderCropPicker(photo, draft);
+        const move = (e) => {
+            if (e.pointerId !== event.pointerId) return;
+            draft = focusAt(e) || draft;
+            renderCropPicker(photo, draft);
+        };
+        const up = (e) => {
+            if (e.pointerId !== event.pointerId) return;
+            picker.removeEventListener('pointermove', move);
+            picker.removeEventListener('pointerup', up);
+            picker.removeEventListener('pointercancel', up);
+            if (draft) patchPhoto(photo.id, draft);
+        };
+        picker.addEventListener('pointermove', move);
+        picker.addEventListener('pointerup', up);
+        picker.addEventListener('pointercancel', up);
+        event.preventDefault();
+    });
+    picker.addEventListener('keydown', (event) => {
+        const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+        const photo = current();
+        if (!dir || !photo) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 10 : 1;
+        const crop = photoCrop(photo);
+        const clamp = (v) => Math.max(0, Math.min(100, v));
+        patchPhoto(photo.id, { focusX: clamp(crop.focusX + dir[0] * step), focusY: clamp(crop.focusY + dir[1] * step) });
+    });
 }
 
 function bindPhotos() {
+    bindPhotoDetail();
+    bindPhotoDisplay();
     const input = el('parcoursPhotoInput');
     el('btnParcoursAddPhotos')?.addEventListener('click', () => input?.click());
     input?.addEventListener('change', () => {
@@ -2548,10 +2934,31 @@ export function getParcoursSnapshot() {
             id: photo.id,
             stopKey: photo.stopKey,
             match: photoMatches.get(photo.id) || null,
+            hidden: !!photo.hidden,
+            caption: photo.caption || '',
+            crop: photoCrop(photo),
         })),
         cameras: (inputs?.cameras || []).map((c) => ({ ...c })),
         photoStops: Object.fromEntries([...photoByStop].map(([key, ids]) => [key, [...ids]])),
         photosLoaded: [...photoImages.values()].filter((img) => img.complete && img.naturalWidth > 0).length,
+        // Lot 9 : réglages d'affichage, créneaux et cartes peintes à la
+        // dernière image (centre, taille et cadre en px du canevas).
+        photoDisplay: { ...photoDisplay },
+        photoSlots: timeline ? photoSlots(timeline).map((slot) => ({ ...slot })) : [],
+        photoView: lastPhotoView ? { ...lastPhotoView } : null,
+        photoCards: lastPhotoCards.map((card) => ({
+            photoId: card.photoId,
+            x: card.x + card.dx,
+            y: card.y + card.dy,
+            width: (card.w + 2 * card.frame.side) * card.scale * card.effectScale,
+            height: (card.h + card.frame.top + card.frame.bottom) * card.scale * card.effectScale,
+            frame: card.frame.kind,
+            scale: card.scale,
+            alpha: card.alpha,
+            rotation: card.rotation,
+            caption: card.captionAlpha > 0 ? card.caption : '',
+            leader: !!card.leader,
+        })),
         tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
         trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),
         utcOffset: { ...utcOffset },

@@ -1,5 +1,5 @@
 // Page Parcours, lot 4 : photos (MyGCFlow_Plan_Parcours.md § 8,
-// docs/parcours.md). Fixtures tests/e2e/fixtures/parcours-photos/ :
+// docs/parcours.md) ; lot 8 : onglet Photos, réglages par photo (§ 14). Fixtures tests/e2e/fixtures/parcours-photos/ :
 // - telephone.jpg : iPhone, géolocalisée à ~15 m de GCPAR01, 12/07/2025 11:20 ;
 // - appareil.jpg  : Canon EOS 80D, sans GPS, 13/07/2025 08:00 (horloge fausse) ;
 // - sans-exif.png : rien.
@@ -48,12 +48,19 @@ async function openReady(page) {
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
 }
 
+async function openPhotosTab(page) {
+  await page.locator('a[href="#photos"]').click();
+  await expect(page.locator('#photos')).toHaveClass(/active/);
+}
+
 
 test('photos : rattachement par position, heure comme ancre, rattachement manuel, recalage', async ({ page, request }) => {
   const errors = collectErrors(page);
   const parcours = await createWeekend(request);
   await openReady(page);
+  await openPhotosTab(page);
   await expect(page.locator('#parcoursPhotosCard')).toBeVisible();
+  await expect(page.locator('#parcoursPhotosEmpty')).toBeHidden();
 
   await page.locator('#parcoursPhotoInput').setInputFiles(files);
   await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(3);
@@ -85,6 +92,7 @@ test('photos : rattachement par position, heure comme ancre, rattachement manuel
   await request.patch(`/api/parcours/${parcours.id}/overrides`,
     { data: { overrides: [{ key: 'GCPAR04', pinnedTime: '10:30' }] } });
   await openReady(page);
+  await openPhotosTab(page);
   await page.locator(`.parcours-photo-thumb[data-photo-id="${id('appareil.jpg')}"]`).click();
   await expect(page.locator('.parcours-photo-calibrate')).toContainText('+2 h 30');
   await page.locator('.parcours-photo-calibrate').click();
@@ -137,5 +145,58 @@ test('lecture et vidéo : étapes à photos plus longues, carte postale filmée 
   await expect.poll(() => (created = mp4Names().filter((name) => !existing.has(name))).length, { timeout: 30_000 })
     .toBeGreaterThan(0);
   for (const name of created) rmSync(path.join(RUNTIME, 'video', name), { force: true });
+  expect(errors).toEqual([]);
+});
+
+test('affichage par photo : masquée (reste une ancre), légende, cadrage enregistrés', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  await openReady(page);
+  const before = (await snapshot(page)).timeline.quanta;
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(files[0]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+  const [{ id }] = (await snapshot(page)).photos;
+  expect((await snapshot(page)).timeline.quanta).toBe(before + 15);
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`).click();
+  await expect(page.locator('#parcoursPhotoDetail')).toBeVisible();
+  await expect(page.locator('#parcoursPhotoShown')).toBeChecked();
+  await expect(page.locator('#parcoursPhotoCropPicker')).toHaveClass(/is-full/);
+
+  // Masquée : plus de temps d'écran, mais toujours rattachée et ancre.
+  await page.locator('#parcoursPhotoShown').uncheck();
+  await expect.poll(async () => (await snapshot(page)).photoStops).toEqual({});
+  let state = await snapshot(page);
+  expect(state.timeline.quanta).toBe(before);
+  expect(state.photos[0]).toMatchObject({ hidden: true, match: { key: 'GCPAR01', source: 'gps' } });
+  expect(state.days[0].reasons[state.days[0].keys.indexOf('GCPAR01')]).toBe('photo');
+  await expect(page.locator('.parcours-photo-thumb.is-hidden')).toHaveCount(1);
+
+  // Légende, cadrage carré, zoom, point focal au clavier.
+  await page.locator('#parcoursPhotoCaption').fill('Vue sur le lac');
+  await page.locator('#parcoursPhotoCaption').press('Tab');
+  await expect.poll(async () => (await snapshot(page)).photos[0].caption).toBe('Vue sur le lac');
+  await page.locator('#parcoursPhotoAspect').selectOption('1:1');
+  await expect.poll(async () => (await snapshot(page)).photos[0].crop.aspect).toBe('1:1');
+  await expect(page.locator('#parcoursPhotoCropPicker')).not.toHaveClass(/is-full/);
+  await page.locator('#parcoursPhotoZoom').fill('150');
+  await expect.poll(async () => (await snapshot(page)).photos[0].crop.zoom).toBe(150);
+  await page.locator('#parcoursPhotoCropPicker').focus();
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect.poll(async () => (await snapshot(page)).photos[0].crop.focusX).toBe(60);
+
+  // Enregistré côté serveur : relu après rechargement.
+  const { photos } = await (await request.get(`/api/parcours/${parcours.id}/inputs`)).json();
+  expect(photos[0]).toMatchObject({ hidden: true, caption: 'Vue sur le lac', aspect: '1:1', zoom: 150, focusX: 60, focusY: 50 });
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`).click();
+  await expect(page.locator('#parcoursPhotoShown')).not.toBeChecked();
+  await expect(page.locator('#parcoursPhotoCaption')).toHaveValue('Vue sur le lac');
+  await expect(page.locator('#parcoursPhotoAspect')).toHaveValue('1:1');
+
+  // De nouveau montrée : le temps d'écran revient.
+  await page.locator('#parcoursPhotoShown').check();
+  await expect.poll(async () => (await snapshot(page)).timeline.quanta).toBe(before + 15);
   expect(errors).toEqual([]);
 });

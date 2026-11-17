@@ -372,7 +372,13 @@ Autres repères :
   `adjustmentRevision` augmente avant de lire l'ordre. `parcours_playback`
   accepte un patch partiel : une nouvelle sous-clé doit entrer dans la
   remise de `resetParcoursSettings`, sinon elle fuit d'un spec à l'autre
-  (la caméra fixe d'un spec figerait la vue des suivants). La caméra de la
+  (la caméra fixe d'un spec figerait la vue des suivants). Même famille :
+  `parcours_photo_display` (affichage des photos), remis à
+  `PHOTO_DISPLAY_DEFAULTS` par le même helper. Les photos ont leur onglet
+  (`a[href="#photos"]`, à ouvrir avant tout `fill`/`toBeVisible`) ; pour
+  relever une photo peinte sans rejouer le parcours, « Voir sur la carte »
+  (`.parcours-photo-preview`) ouvre l'aperçu en pause sur son créneau, puis
+  `getParcoursSnapshot().photoCards` (exemple : parcours-photo-display.spec.mjs). La caméra de la
   lecture (`parcours_camera.mjs`) déplace la vue : un spec qui relève la
   vue après un glisser attend la fin de l'inertie d'OpenLayers (deux
   relevés identiques) — exemple dans `parcours-finitions.spec.mjs`.

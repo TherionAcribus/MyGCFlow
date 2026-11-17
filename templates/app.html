@@ -242,6 +242,9 @@
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#stats" role="tab" aria-selected="false">{{ _("Stats") }}</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#images" role="tab" aria-selected="false">{{ _("Images") }}</a></li>
                     {% endif %}
+                    {% if mode == 'parcours' %}
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#photos" role="tab" aria-selected="false">{{ _("Photos") }}</a></li>
+                    {% endif %}
                     {% if mode in ('main', 'evolution') %}
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#zones" role="tab" aria-selected="false">{{ _("Zones") }}</a></li>
                     {% endif %}
@@ -337,6 +340,11 @@
 
                         <!-- Onglet Images (avatar, logo… ; une liste pour les deux modes) -->
                         {% include 'menu_images.html' %}
+
+                        <!-- Onglet Photos (page Parcours) -->
+                        {% if mode == 'parcours' %}
+                        {% include 'menu_photos_parcours.html' %}
+                        {% endif %}
 
                         <!-- Onglet Zones (couche de zones colorées : Mes Géocaches, Évolution) -->
                         {% if mode in ('main', 'evolution') %}

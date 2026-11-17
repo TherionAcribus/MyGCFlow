@@ -1,0 +1,215 @@
+<!-- Onglet Photos de la page Parcours (/parcours) : photos du parcours ouvert
+     (envoi, appareils, rattachement, affichage de chacune). Piloté par
+     static/js/parcours_data.js (MyGCFlow_Plan_Parcours.md § 8 et § 14). -->
+<div id="photos" class="col-12 tab-pane fade">
+    <div id="parcoursPhotosEmpty" class="text-muted small">
+        {{ _("Ouvrez un parcours dans l'onglet Données pour lui ajouter des photos.") }}
+    </div>
+
+    <div class="row g-3">
+        <!-- Photos du parcours ouvert (lot 4, parcours_photos.py / .mjs) -->
+        <div class="col-12 col-lg-7">
+            <div id="parcoursPhotosCard" hidden>
+                <h5 class="gc-section-title">
+                    <i class="ti ti-photo text-muted me-1"></i>{{ _("Photos du parcours") }}
+                </h5>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="parcoursPhotoSummary" class="fw-medium mb-1" aria-live="polite"></div>
+                        <div class="form-hint text-muted mb-2">
+                            {{ _("Une photo géolocalisée se rattache seule à l'étape la plus proche (150 m) et son heure cale celle de l'étape. Celle d'un appareil sans GPS demande de recaler son horloge, ou de choisir son étape.") }}
+                        </div>
+                        <input type="file" id="parcoursPhotoInput" class="visually-hidden" multiple
+                               accept="image/*,.heic,.heif" aria-label="{{ _('Photos à ajouter') }}">
+                        <button type="button" id="btnParcoursAddPhotos" class="btn btn-sm btn-outline-primary">
+                            <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Ajouter des photos") }}
+                        </button>
+                        <span id="parcoursPhotoStatus" class="small text-muted ms-2" aria-live="polite"></span>
+                        <div id="parcoursCameras" class="mt-2"></div>
+                        <div id="parcoursPhotos" class="parcours-photo-grid mt-2"></div>
+
+                        <!-- Photos hors des étapes : lieux proposés (lot 10) -->
+                        <div id="parcoursPhotoPlaces" class="mt-3" hidden>
+                            <div id="parcoursPhotoPlacesTitle" class="fw-medium small mb-1"></div>
+                            <div class="form-hint text-muted mb-2">
+                                {{ _("Prises loin de toute étape, elles ne sont pas montrées dans la vidéo. Faites de chaque endroit un lieu du parcours : ses photos s'y rattacheront.") }}
+                            </div>
+                            <div id="parcoursPhotoPlaceList" class="d-grid gap-2"></div>
+                        </div>
+
+                        <!-- Détail de la photo choisie : étape, affichage, cadrage (lot 8) -->
+                        <div id="parcoursPhotoDetail" class="card card-body py-2 px-3 mt-2" hidden>
+                            <div id="parcoursPhotoInfo" class="small text-muted mb-2"></div>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-5">
+                                    <div id="parcoursPhotoCropPicker" class="parcours-photo-crop" tabindex="0" role="group"
+                                         aria-label="{{ _('Partie gardée de la photo : glisser, ou flèches du clavier') }}">
+                                        <img id="parcoursPhotoCropImage" alt="">
+                                        <div id="parcoursPhotoCropWindow" class="parcours-photo-crop-window"></div>
+                                    </div>
+                                    <div id="parcoursPhotoCropHint" class="form-hint text-muted mt-1"></div>
+                                </div>
+                                <div class="col-12 col-sm-7">
+                                    <div id="parcoursPhotoLinkRow" class="d-flex align-items-center gap-2 flex-wrap mb-2"></div>
+                                    <label class="form-check form-switch mb-2">
+                                        <input type="checkbox" id="parcoursPhotoShown" class="form-check-input" role="switch">
+                                        <span class="form-check-label">{{ _("Montrer dans la lecture et la vidéo") }}</span>
+                                    </label>
+                                    <div class="mb-2">
+                                        <label class="form-label small mb-1" for="parcoursPhotoCaption">{{ _("Légende") }}</label>
+                                        <input type="text" id="parcoursPhotoCaption" class="form-control form-control-sm" maxlength="200"
+                                               placeholder="{{ _('Sommet du Semnoz, pique-nique…') }}">
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1" for="parcoursPhotoAspect">{{ _("Cadrage") }}</label>
+                                            <select id="parcoursPhotoAspect" class="form-select form-select-sm">
+                                                <option value="original">{{ _("Photo entière") }}</option>
+                                                <option value="1:1">{{ _("Carré") }}</option>
+                                                <option value="4:3">{{ _("Paysage 4:3") }}</option>
+                                                <option value="3:4">{{ _("Portrait 3:4") }}</option>
+                                                <option value="16:9">{{ _("Large 16:9") }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1" for="parcoursPhotoZoom">
+                                                {{ _("Zoom") }} <span id="parcoursPhotoZoomValue" class="text-muted"></span>
+                                            </label>
+                                            <input type="range" id="parcoursPhotoZoom" class="form-range" min="100" max="300" step="5">
+                                        </div>
+                                    </div>
+                                    <div id="parcoursPhotoActions" class="d-flex gap-2 flex-wrap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Affichage dans la lecture et la vidéo (lot 9) : préférence globale
+             `parcours_photo_display`, parcours_photo_layout.mjs. -->
+        <div class="col-12 col-lg-5">
+            <h5 class="gc-section-title">
+                <i class="ti ti-layout-collage text-muted me-1"></i>{{ _("Affichage dans la vidéo") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="form-label" for="parcoursPhotoLayout">{{ _("Placement") }}</label>
+                        <select id="parcoursPhotoLayout" class="form-select form-select-sm" aria-describedby="parcoursPhotoLayoutHint">
+                            <option value="stop">{{ _("Près de l'étape") }}</option>
+                            <option value="fixed">{{ _("Emplacement fixe de l'écran") }}</option>
+                            <option value="strip">{{ _("Bande de vignettes") }}</option>
+                            <option value="none">{{ _("Aucune photo dans la vidéo") }}</option>
+                        </select>
+                        <div id="parcoursPhotoLayoutHint" class="form-hint text-muted">{{ _("Les photos d'une étape passent l'une après l'autre, à l'arrivée sur l'étape. Bande : chacune entre en grand puis rejoint le ruban.") }}</div>
+                    </div>
+
+                    <fieldset id="parcoursPhotoDisplayFields">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6" id="parcoursPhotoSideRow">
+                                <label class="form-label small mb-1" for="parcoursPhotoSide">{{ _("Côté") }}</label>
+                                <select id="parcoursPhotoSide" class="form-select form-select-sm">
+                                    <option value="auto">{{ _("Automatique (vers le centre)") }}</option>
+                                    <option value="top-right">{{ _("En haut à droite") }}</option>
+                                    <option value="top-left">{{ _("En haut à gauche") }}</option>
+                                    <option value="bottom-right">{{ _("En bas à droite") }}</option>
+                                    <option value="bottom-left">{{ _("En bas à gauche") }}</option>
+                                </select>
+                            </div>
+                            <div class="col-6" id="parcoursPhotoAnchorRow">
+                                <label class="form-label small mb-1" for="parcoursPhotoAnchor">{{ _("Emplacement") }}</label>
+                                <select id="parcoursPhotoAnchor" class="form-select form-select-sm">
+                                    <option value="top-left">{{ _("En haut à gauche") }}</option>
+                                    <option value="top-center">{{ _("En haut au centre") }}</option>
+                                    <option value="top-right">{{ _("En haut à droite") }}</option>
+                                    <option value="middle-left">{{ _("Au milieu à gauche") }}</option>
+                                    <option value="middle-right">{{ _("Au milieu à droite") }}</option>
+                                    <option value="bottom-left">{{ _("En bas à gauche") }}</option>
+                                    <option value="bottom-center">{{ _("En bas au centre") }}</option>
+                                    <option value="bottom-right">{{ _("En bas à droite") }}</option>
+                                </select>
+                            </div>
+                            <div class="col-6" id="parcoursPhotoStripEdgeRow">
+                                <label class="form-label small mb-1" for="parcoursPhotoStripEdge">{{ _("Bande") }}</label>
+                                <select id="parcoursPhotoStripEdge" class="form-select form-select-sm">
+                                    <option value="bottom">{{ _("En bas") }}</option>
+                                    <option value="top">{{ _("En haut") }}</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1" for="parcoursPhotoSize">
+                                    {{ _("Taille") }} <span id="parcoursPhotoSizeValue" class="text-muted"></span>
+                                </label>
+                                <input type="range" id="parcoursPhotoSize" class="form-range" min="120" max="600" step="10">
+                            </div>
+                        </div>
+                        <label class="form-check mb-1" id="parcoursPhotoLeaderRow">
+                            <input type="checkbox" id="parcoursPhotoLeader" class="form-check-input">
+                            <span class="form-check-label">{{ _("Trait vers l'étape") }}</span>
+                        </label>
+                        <label class="form-check mb-1" id="parcoursPhotoStripResetRow">
+                            <input type="checkbox" id="parcoursPhotoStripReset" class="form-check-input">
+                            <span class="form-check-label">{{ _("Vider la bande à chaque journée") }}</span>
+                        </label>
+
+                        <div class="row g-2 mt-1 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1" for="parcoursPhotoFrame">{{ _("Cadre") }}</label>
+                                <select id="parcoursPhotoFrame" class="form-select form-select-sm">
+                                    <option value="postcard">{{ _("Carte postale") }}</option>
+                                    <option value="polaroid">{{ _("Polaroid") }}</option>
+                                    <option value="rounded">{{ _("Coins arrondis") }}</option>
+                                    <option value="plain">{{ _("Sans cadre") }}</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1" for="parcoursPhotoEffect">{{ _("Apparition") }}</label>
+                                <select id="parcoursPhotoEffect" class="form-select form-select-sm">
+                                    <option value="fade">{{ _("Fondu") }}</option>
+                                    <option value="slide">{{ _("Glissement depuis le bord") }}</option>
+                                    <option value="zoom">{{ _("Zoom") }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <label class="form-check mb-1">
+                            <input type="checkbox" id="parcoursPhotoTilt" class="form-check-input">
+                            <span class="form-check-label">{{ _("Légère inclinaison") }}</span>
+                        </label>
+                        <label class="form-check mb-2">
+                            <input type="checkbox" id="parcoursPhotoKenBurns" class="form-check-input">
+                            <span class="form-check-label">{{ _("Zoom lent pendant l'affichage") }}</span>
+                        </label>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1" for="parcoursPhotoDuration">{{ _("Durée par photo (s)") }}</label>
+                                <input type="number" id="parcoursPhotoDuration" class="form-control form-control-sm" min="0.5" max="6" step="0.5">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1" for="parcoursPhotoMaxPerStop">{{ _("Plafond par étape") }}</label>
+                                <input type="number" id="parcoursPhotoMaxPerStop" class="form-control form-control-sm" min="1" max="12" step="1"
+                                       aria-describedby="parcoursPhotoMaxHint">
+                            </div>
+                        </div>
+                        <div id="parcoursPhotoMaxHint" class="form-hint text-muted mb-2">{{ _("Au-delà de ce nombre de photos, une étape ne s'allonge plus : ses photos se partagent ce temps.") }}</div>
+
+                        <div class="mb-2">
+                            <label class="form-label small mb-1" for="parcoursPhotoCaptionTemplate">{{ _("Légende") }}</label>
+                            <input type="text" id="parcoursPhotoCaptionTemplate" class="form-control form-control-sm" maxlength="120"
+                                   aria-describedby="parcoursPhotoCaptionTemplateHint">
+                            <div id="parcoursPhotoCaptionTemplateHint" class="form-hint text-muted">
+                                {{ _("Balises : {legende} (celle de la photo), {etape}, {heure}, {jour}, {date}. Vide : pas de légende.") }}
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <button type="button" id="btnParcoursPhotoPreview" class="btn btn-sm btn-outline-secondary" disabled>
+                        <i class="ti ti-eye me-1" aria-hidden="true"></i>{{ _("Voir la première photo sur la carte") }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

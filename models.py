@@ -325,6 +325,14 @@ class ParcoursPhoto(db.Model):
     # Étape rattachée à la main (null : rattachement automatique, calculé).
     stop_key = db.Column(db.String(96))
     created_at = db.Column(db.DateTime)
+    # Affichage dans la lecture (lot 8) : masquée (reste un indice), légende,
+    # cadrage (proportions, point focal en %, zoom en %). Null : défaut.
+    hidden = db.Column(db.Boolean, nullable=False, default=False)
+    caption = db.Column(db.String(200))
+    aspect = db.Column(db.String(8))
+    focus_x = db.Column(db.Integer)
+    focus_y = db.Column(db.Integer)
+    zoom = db.Column(db.Integer)
 
 
 class ParcoursCamera(db.Model):

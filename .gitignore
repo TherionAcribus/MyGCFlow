@@ -37,6 +37,9 @@ audio/
 # Même chose pour images/ (paths.images_dir()) : avatars, logos et captures
 # envoyés depuis l'onglet Images en développement.
 images/
+# Et pour parcours_photos/ (paths.parcours_photos_dir()) : photos envoyées
+# depuis la page Parcours en développement.
+parcours_photos/
 
 # Runtimes de test laissés par un lancement manuel du harnais Playwright.
 .e2e_runtime*/

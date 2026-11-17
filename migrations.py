@@ -313,6 +313,24 @@ def _v14_itineraires_parcours(db):
             conn.exec_driver_sql("ALTER TABLE parcours_override ADD COLUMN leg_mode VARCHAR(8)")
 
 
+def _v15_affichage_photos_parcours(db):
+    # Parcours, lot 8 : réglages d'affichage par photo (masquée, légende,
+    # cadrage). Idempotent.
+    columns_sql = {
+        "hidden": "BOOLEAN NOT NULL DEFAULT 0",
+        "caption": "VARCHAR(200)",
+        "aspect": "VARCHAR(8)",
+        "focus_x": "INTEGER",
+        "focus_y": "INTEGER",
+        "zoom": "INTEGER",
+    }
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_photo)")}
+        for name, sql in columns_sql.items():
+            if name not in columns:
+                conn.exec_driver_sql(f"ALTER TABLE parcours_photo ADD COLUMN {name} {sql}")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -328,6 +346,7 @@ MIGRATIONS = [
     (12, _v12_photos_parcours),
     (13, _v13_traces_parcours),
     (14, _v14_itineraires_parcours),
+    (15, _v15_affichage_photos_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

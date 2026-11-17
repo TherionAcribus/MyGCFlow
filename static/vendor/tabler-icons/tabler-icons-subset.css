@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=23cede6433") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=e01cfcdfdb") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -125,6 +125,7 @@
 .ti-keyboard:before { content: "\ebd6"; }
 .ti-layout-board-split:before { content: "\ef94"; }
 .ti-layout-bottombar:before { content: "\ead3"; }
+.ti-layout-collage:before { content: "\f389"; }
 .ti-layout-dashboard:before { content: "\f02c"; }
 .ti-layout-grid:before { content: "\edba"; }
 .ti-layout-sidebar-right:before { content: "\ead9"; }

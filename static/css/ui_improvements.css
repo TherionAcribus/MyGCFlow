@@ -4211,6 +4211,87 @@ body[data-mode="parcours"] .rhythm-rate-field {
     display: block;
 }
 
+.parcours-photo-thumb.is-hidden img {
+    filter: grayscale(1);
+    opacity: 0.6;
+}
+
+.parcours-photo-hidden-badge {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    padding: 1px 3px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+/* Cadrage d'une photo (lot 8) : la photo entière, la fenêtre gardée
+   par-dessus, le reste assombri par l'ombre de la fenêtre. */
+.parcours-photo-crop {
+    position: relative;
+    width: 100%;
+    max-width: 240px;
+    min-height: 60px;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--tblr-bg-surface-secondary, #f1f3f5);
+}
+
+.parcours-photo-crop:focus-visible {
+    outline: 2px solid var(--color-accent-text, #0072c6);
+    outline-offset: 2px;
+}
+
+.parcours-photo-crop img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+}
+
+.parcours-photo-crop-window {
+    position: absolute;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 0 999px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+}
+
+.parcours-photo-crop.is-full .parcours-photo-crop-window {
+    box-shadow: none;
+    border-color: transparent;
+}
+
+/* Lieux proposés pour les photos hors étapes (lot 10). */
+.parcours-photo-place {
+    padding: 6px 8px;
+    border: 1px solid var(--tblr-border-color, rgba(127, 127, 127, 0.3));
+    border-radius: 6px;
+}
+
+.parcours-photo-place-thumbs {
+    display: flex;
+    gap: 3px;
+}
+
+.parcours-photo-place-thumbs img {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.parcours-photo-place-name {
+    width: 12rem;
+    max-width: 100%;
+}
+
 .parcours-camera-offset {
     width: 6rem;
 }

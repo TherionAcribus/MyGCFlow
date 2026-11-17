@@ -76,6 +76,14 @@ export function collectErrors(page) {
   return errors;
 }
 
+// Affichage des photos (lot 9), comme PHOTO_DISPLAY_DEFAULTS de
+// parcours_photo_layout.mjs.
+export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
+  layout: 'stop', side: 'auto', anchor: 'top-right', leader: false, strip_edge: 'bottom', strip_reset: false,
+  size: 220, frame: 'postcard', tilt: true, effect: 'fade', ken_burns: false, duration: 1.5, max_per_stop: 4,
+  caption: '{legende}',
+});
+
 // Préférences globales de la page, remises en sortie de spec.
 export async function resetParcoursSettings(request) {
   const response = await request.put('/api/settings', {
@@ -87,6 +95,7 @@ export async function resetParcoursSettings(request) {
       parcours_routing: {
         enabled: false, provider: 'fossgis', fossgis_url: 'https://routing.openstreetmap.de', ors_key: '',
       },
+      parcours_photo_display: PHOTO_DISPLAY_DEFAULTS,
     },
   });
   expect(response.ok()).toBeTruthy();

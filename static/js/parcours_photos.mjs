@@ -143,10 +143,12 @@ export function photoAnchors(reconstructed, photos, matches, offsets = new Map()
     return anchors;
 }
 
-// Photos par étape (ordre de prise de vue) : Map clé → [id].
+// Photos à montrer par étape (ordre de prise de vue) : Map clé → [id]. Une
+// photo masquée (`hidden`, lot 8) reste un indice (rattachement, ancre)
+// mais n'est pas montrée : elle n'y figure pas.
 export function photosByStop(photos, matches, offsets = new Map()) {
     const byKey = new Map();
-    const sorted = [...(Array.isArray(photos) ? photos : [])].sort((a, b) => {
+    const sorted = (Array.isArray(photos) ? photos : []).filter((photo) => photo && !photo.hidden).sort((a, b) => {
         const ca = photoClock(a, offsets);
         const cb = photoClock(b, offsets);
         const ka = ca ? `${ca.date}${String(Math.round(ca.minutes * 60)).padStart(6, '0')}` : '~';
@@ -160,6 +162,37 @@ export function photosByStop(photos, matches, offsets = new Map()) {
         byKey.get(key).push(photo.id);
     }
     return byKey;
+}
+
+// Lieux proposés (lot 10) pour les photos géolocalisées qui ne tombent sur
+// aucune étape : regroupées par journée et par proximité. Une photo rejoint
+// un groupe à moins de radiusM / 2 de sa première photo : toutes sont alors
+// à moins de radiusM du centre, où le lieu sera posé — elles s'y
+// rattacheront seules. Seules les journées du parcours (`dates`) comptent ;
+// les photos masquées, sans heure ou rattachées à la main sont laissées.
+// → [{ date, lat, lon, minutes (heure de la première photo : géolocalisée,
+// elle est de confiance), photoIds }], dans l'ordre chronologique.
+export function suggestPhotoPlaces(photos, matches, offsets = new Map(),
+    { radiusM = PHOTO_MATCH_RADIUS_M, dates = null } = {}) {
+    const groups = [];
+    const sorted = (Array.isArray(photos) ? photos : [])
+        .map((photo) => ({ photo, clock: photoClock(photo, offsets) }))
+        .filter(({ photo, clock }) => photo && !photo.hidden && !photo.stopKey && hasPosition(photo) && clock
+            && !matches.get(photo.id)?.key && (!dates || dates.has(clock.date)))
+        .sort((a, b) => (a.clock.date === b.clock.date ? a.clock.minutes - b.clock.minutes : a.clock.date < b.clock.date ? -1 : 1));
+    for (const { photo, clock } of sorted) {
+        const near = groups.find((g) => g.date === clock.date
+            && groundDistanceKm([g.seed.lon, g.seed.lat], [photo.lon, photo.lat]) * 1000 <= radiusM / 2);
+        if (near) near.members.push(photo);
+        else groups.push({ date: clock.date, seed: photo, members: [photo], minutes: clock.minutes });
+    }
+    return groups.map((g) => ({
+        date: g.date,
+        lat: g.members.reduce((sum, p) => sum + p.lat, 0) / g.members.length,
+        lon: g.members.reduce((sum, p) => sum + p.lon, 0) / g.members.length,
+        minutes: g.minutes,
+        photoIds: g.members.map((p) => p.id),
+    }));
 }
 
 // Reconstruction complète, photos comprises : { ordered, matches, anchors,

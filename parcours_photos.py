@@ -42,6 +42,12 @@ CAMERA_MAX_LENGTH = 120
 # Décalage d'horloge borné à ±2 jours : au-delà, ce n'est plus une horloge
 # mal réglée mais une photo d'une autre sortie.
 OFFSET_RANGE_MINUTES = 2 * 24 * 60
+# Affichage par photo (lot 8) : légende, proportions du cadrage, point focal
+# (% de l'image) et zoom (%). Mêmes bornes que parcours_photo_layout.mjs.
+CAPTION_MAX_LENGTH = 200
+ASPECTS = ('original', '1:1', '4:3', '3:4', '16:9')
+FOCUS_RANGE = (0, 100)
+ZOOM_RANGE = (100, 300)
 
 _EXIF_IFD = 0x8769
 _GPS_IFD = 0x8825
@@ -156,6 +162,12 @@ def photo_to_dict(row: ParcoursPhoto) -> dict:
         'width': row.width,
         'height': row.height,
         'stopKey': row.stop_key,
+        'hidden': bool(row.hidden),
+        'caption': row.caption or '',
+        'aspect': row.aspect or 'original',
+        'focusX': 50 if row.focus_x is None else row.focus_x,
+        'focusY': 50 if row.focus_y is None else row.focus_y,
+        'zoom': 100 if row.zoom is None else row.zoom,
     }
 
 
@@ -213,18 +225,51 @@ def photo_path(session, parcours_id: int, photo_id: int, thumb: bool = False) ->
     return parcours_dir(parcours_id) / (thumb_name(row.file) if thumb else row.file)
 
 
+def _int_in(value, bounds) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not bounds[0] <= value <= bounds[1]:
+        raise ParcoursError('photo-invalid')
+    return value
+
+
 def update_photo(session, parcours_id: int, photo_id: int, data: dict) -> dict:
     """Rattachement manuel : `stopKey` (null : retour au rattachement
-    automatique)."""
+    automatique) ; affichage : `hidden`, `caption`, `aspect`, `focusX`,
+    `focusY`, `zoom`. Tout est validé avant d'écrire : une valeur refusée
+    ne laisse rien à moitié appliqué."""
     parcours = parcours_store.get(session, parcours_id)
     row = _get_photo(session, parcours.id, photo_id)
     data = data if isinstance(data, dict) else {}
+    changes = {}
     if 'stopKey' in data:
         key = data['stopKey']
         if key is not None and (not isinstance(key, str) or not key
                                 or len(key) > parcours_store.STOP_KEY_MAX_LENGTH):
             raise ParcoursError('photo-invalid')
-        row.stop_key = key
+        changes['stop_key'] = key
+    if 'hidden' in data:
+        if not isinstance(data['hidden'], bool):
+            raise ParcoursError('photo-invalid')
+        changes['hidden'] = data['hidden']
+    if 'caption' in data:
+        caption = data['caption']
+        if caption is None:
+            caption = ''
+        if not isinstance(caption, str):
+            raise ParcoursError('photo-invalid')
+        caption = ' '.join(caption.split())
+        if len(caption) > CAPTION_MAX_LENGTH:
+            raise ParcoursError('photo-invalid')
+        changes['caption'] = caption or None
+    if 'aspect' in data:
+        if data['aspect'] not in ASPECTS:
+            raise ParcoursError('photo-invalid')
+        changes['aspect'] = None if data['aspect'] == 'original' else data['aspect']
+    for key, column, bounds in (('focusX', 'focus_x', FOCUS_RANGE), ('focusY', 'focus_y', FOCUS_RANGE),
+                                ('zoom', 'zoom', ZOOM_RANGE)):
+        if key in data:
+            changes[column] = _int_in(data[key], bounds)
+    for column, value in changes.items():
+        setattr(row, column, value)
     parcours.updated_at = datetime.now()
     session.commit()
     return photo_to_dict(row)

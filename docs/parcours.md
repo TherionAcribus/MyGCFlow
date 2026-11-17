@@ -12,7 +12,10 @@ heures reconstruits, lecture et vidéo (géocacheur, trait, heure, distance),
 ajustements manuels (ordre, heure épinglée, journée, exclusion, lieux et
 bases), photos (rattachement, heure comme ancre, carte postale), traces GPS
 (heures de passage, vrai chemin, fuseau), itinéraires réels (FOSSGIS ou
-openrouteservice, cache local).
+openrouteservice, cache local). Le 2026-11-17 : **lots 8 à 10** — onglet
+Photos, réglages par photo (masquée, légende, cadrage), affichage modulable
+(près de l'étape, emplacement fixe, bande de vignettes), lieux proposés pour
+les photos hors étapes.
 
 ## Parcours enregistrés
 
@@ -46,7 +49,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
 | `POST /api/parcours/<id>/photos` | Envoi d'une photo (multipart, champ `photo`, 15 Mo au plus) ; la même photo deux fois n'est gardée qu'une fois |
 | `GET /api/parcours/<id>/photos/<ph>/file` / `thumb` | Photo normalisée / vignette 320 px (cache long, nom = empreinte) |
-| `PATCH` / `DELETE /api/parcours/<id>/photos/<ph>` | Rattachement manuel `{stopKey}` (null : automatique) ; suppression (fichiers compris) |
+| `PATCH` / `DELETE /api/parcours/<id>/photos/<ph>` | Rattachement manuel `{stopKey}` (null : automatique), affichage `{hidden, caption, aspect, focusX, focusY, zoom}` (lot 8 ; tout ou rien) ; suppression (fichiers compris) |
 | `PUT /api/parcours/<id>/cameras` | Décalage d'horloge d'un appareil `{camera, offsetMinutes}` (null : l'oublie ; ±2 jours au plus) |
 | `POST /api/parcours/<id>/tracks` | Envoi d'une trace GPX (multipart, champ `track`, 30 Mo au plus), simplifiée à l'import |
 | `DELETE /api/parcours/<id>/tracks/<tid>` | Suppression d'une trace |
@@ -354,6 +357,91 @@ l'étape − heure de la photo.
 - les photos sont préchargées à l'ouverture : une photo encore en
   chargement n'est simplement pas dessinée.
 
+La mise en page et le cadre décrits ci-dessus sont ceux par défaut ; ils se
+règlent depuis le lot 9 (ci-dessous).
+
+## Onglet Photos (lots 8 à 10)
+
+Les photos ont leur onglet (`#photos`, `templates/menu_photos_parcours.html`),
+à la place de l'onglet Images, masqué sur `/parcours` : bibliothèque,
+appareils, détail d'une photo, lieux proposés, réglages d'affichage. Un
+contrôle d'un onglet fermé n'est pas visible : les specs ouvrent
+`a[href="#photos"]` avant d'y toucher.
+
+### Réglages par photo (lot 8, migration v15)
+
+Colonnes de `parcours_photo` : `hidden`, `caption` (200 caractères, espaces
+resserrés), `aspect` (`original`, `1:1`, `4:3`, `3:4`, `16:9`), `focus_x` /
+`focus_y` (0-100 %), `zoom` (100-300 %). Null = défaut (photo entière,
+centre, 100 %).
+
+- **Masquée** : toujours un indice (rattachement, ancre d'heure), mais
+  absente de `photosByStop` — ni dessinée ni comptée dans le temps d'écran.
+  La changer reconstruit le parcours (refusé pendant une lecture).
+- **Légende** : la balise `{legende}` du gabarit d'affichage.
+- **Cadrage** (`photoCropRect`, `parcours_photo_layout.mjs`) : la plus
+  grande fenêtre aux proportions voulues, réduite de 1/zoom, centrée sur le
+  point focal et gardée dans l'image. Sélecteur sur la vignette (glisser, ou
+  flèches : 1 %, Maj = 10 %), enregistré au relâchement. Légende et cadrage
+  ne touchent que le dessin : la photo est remplacée en mémoire, sans
+  reconstruction.
+
+### Affichage dans la vidéo (lot 9)
+
+Préférence globale `parcours_photo_display` (`coerce_parcours_photo_display`
+de settings_manager.py, `normalizePhotoDisplay` côté client, mêmes bornes),
+envoyée entière à chaque changement :
+
+| Clé | Valeurs (défaut en premier) |
+|---|---|
+| `layout` | `stop` (près de l'étape), `fixed` (emplacement fixe), `strip` (bande), `none` (aucune photo) |
+| `side` | près de l'étape : `auto` (vers le centre de l'écran ; haut-droite près du centre, pour que la caméra qui suit ne la fasse pas basculer), `top-right`, `top-left`, `bottom-right`, `bottom-left` |
+| `anchor` | emplacement fixe : `top-right` et les 7 autres ancres des images, à 16 px du bord |
+| `leader` | trait de l'étape vers la carte (près de l'étape, emplacement fixe) : `false` |
+| `strip_edge`, `strip_reset` | bande : `bottom` / `top` ; vidée à l'arrivée sur la première étape d'une nouvelle journée : `false` |
+| `size` | grand côté de l'image, 120-600 px CSS : 220 |
+| `frame` | `postcard` (marge blanche, ombre), `polaroid` (marge basse épaisse), `rounded` (coins arrondis, ombre), `plain` |
+| `tilt` | ± 2,5° en alternance : `true` |
+| `effect` | `fade`, `slide`, `zoom` (courbes d'`images_render.mjs`) |
+| `ken_burns` | zoom lent (+ 8 %) pendant l'affichage : `false` |
+| `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
+| `caption` | gabarit `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` (120 caractères ; vide : pas de légende) |
+
+- **Chronologie** : `photoSlots` (créneaux : arrivée + 2 quanta, puis une
+  photo après l'autre, fondu de 2 quanta). `duration`, `max_per_stop` et
+  `none` changent le temps d'écran (`photoTimelineOptions`), donc la
+  chronologie — appliqués à la fin d'une lecture en cours, comme le rythme.
+- **Mise en page** : `photoFrameAt(timeline, q, réglages, vue)` rend les
+  cartes du quantum (centre, taille, cadre, rotation, opacité, effet, zoom
+  lent, légende, trait) en px du canevas ; `parcours_photo_draw.mjs` les
+  peint dans le `postrender` de la couche de la tête : filmées, et à la
+  bonne échelle en capture haute résolution (`ratio`).
+- **Bande** : la photo entre en grand au-dessus de la bande (en dessous pour
+  une bande en haut), puis rejoint sa case en rétrécissant pendant le
+  dernier tiers de son temps (4 quanta au plus) ; la bande défile vers la
+  gauche quand elle déborde, les vignettes sorties s'effacent.
+- **Légende** (`photoCaptionText`) : une balise vide ne laisse pas de
+  séparateur orphelin. `{heure}` : celle de la photo si elle est de
+  confiance, sinon celle de l'étape (« ≈ » selon « Heures affichées »).
+  Écrite dans la marge (carte postale, polaroid) ou sur un bandeau dégradé
+  (coins arrondis, sans cadre), tronquée (…).
+- **« Voir sur la carte »** (détail d'une photo, et « Voir la première photo
+  sur la carte ») : ouvre l'aperçu en pause (`startPausedPreview`) et saute
+  au créneau de la photo (`seekAnimationToDate`) — pour régler l'affichage
+  sans rejouer le parcours.
+
+### Lieux proposés (lot 10)
+
+Une photo géolocalisée à plus de 150 m de toute étape n'est rattachée à
+rien, donc pas montrée. `suggestPhotoPlaces` (parcours_photos.mjs) regroupe
+ces photos par journée du parcours : une photo rejoint un groupe à moins de
+75 m de sa première photo, toutes sont donc à moins de 150 m du centre, où
+le lieu est posé. Chaque groupe propose « Créer ce lieu » (nom facultatif,
+heure de la première photo) : `POST /places`, puis les photos s'y rattachent
+par position. Rien n'est stocké pour une proposition ignorée ; les photos
+masquées, sans heure, hors des dates du parcours ou rattachées à la main ne
+sont pas proposées.
+
 ## Traces GPS (lot 5 : `parcours_tracks.py`, `parcours_tracks.mjs`)
 
 **À l'import** (table `parcours_track`, migration v13 ; colonne
@@ -558,11 +646,13 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   journées, noms, API) ; préférences de la
   page dans `tests/test_global_preferences.py`
   (`test_parcours_preferences_have_their_own_keys`, clé openrouteservice
-  jamais renvoyée).
+  jamais renvoyée, `parcours_photo_display` borné).
 - JS : `tests/js/parcours_reconstruct.test.mjs`,
   `tests/js/parcours_timeline.test.mjs`, `tests/js/parcours_photos.test.mjs`,
   `tests/js/parcours_tracks.test.mjs`, `tests/js/parcours_routing.test.mjs`,
   `tests/js/parcours_camera.test.mjs`, `tests/js/parcours_model.test.mjs`,
+  `tests/js/parcours_photo_layout.test.mjs` (cadrage, réglages, légende,
+  créneaux, trois placements, effets, dessin sur un contexte factice),
   `tests/js/app_mode.test.mjs`.
 - E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2),
   `tests/e2e/parcours-adjust.spec.mjs` (lot 3),
@@ -576,20 +666,27 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   runtime, les comptes de requêtes sont relatifs) et
   `tests/e2e/parcours-finitions.spec.mjs` (lot 7 : caméra, nuit, carton,
   pictogramme, carte déplacée, réglages, suggestions simulées par
-  `page.route`), aides communes dans
+  `page.route`), `tests/e2e/parcours-photo-display.spec.mjs` (lots 9-10 :
+  réglages, trois placements relevés par `photoCards`, lieu proposé ;
+  fixtures `belvedere*.jpg`), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le
   second).
-  - Nettoyage (`cleanUp`) : logs, parcours (et donc leurs ajustements et
-    lieux), `parcours_animation` (10 quanta/s) et `parcours_playback`.
+  - Nettoyage (`cleanUp`) : logs, parcours (et donc leurs ajustements,
+    lieux et photos), `parcours_animation` (10 quanta/s),
+    `parcours_playback` et `parcours_photo_display`
+    (`PHOTO_DISPLAY_DEFAULTS` de parcours-helpers.mjs).
   - Lecture complète, et export vidéo dans les deux pipelines (durée
     contrôlée par `video_validator.py`, MP4 supprimé ensuite).
   - Ajustements : flèches, glisser-déposer (`dragTo`), persistance,
     heure, journée, exclusion, annulation, base posée d'un clic sur la carte.
   - Relevé : `window.getParcoursSnapshot()` (`timeline`, `running`,
     `currentQ`, `head`, `infos`, `playLayers`, `camera`, `scene`,
-    `routeCredit`, `suggestions`, `overrides`, `places`,
+    `routeCredit`, `suggestions`, `overrides`, `places`, `photos`
+    (`hidden`, `caption`, `crop`), `photoDisplay`, `photoSlots`,
+    `photoCards` (cartes peintes à la dernière image, px du canevas
+    `photoView`),
     `days[].manual` / `excluded`, `adjustmentRevision` — à attendre après
     un ajustement) ; signal `window.mygcflowParcoursLoaded` / événement
     `mygcflow:parcours-loaded`.

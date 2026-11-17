@@ -91,6 +91,27 @@ en pointillés (option), crédits des itinéraires à l'écran et dans la vidéo
 parcours suggérés (`parcours_suggest.py`, `GET /api/parcours/suggestions`).
 Tout le plan est livré ; restent les questions du § 13.
 
+**Suite (2026-11-17)** : photos dans la lecture, modulables (§ 14, lots 8
+à 10). **Lots 8 à 10 livrés le 2026-11-17** : onglet Photos, réglages par
+photo (migration v15), préférence `parcours_photo_display` et trois
+placements (`parcours_photo_layout.mjs`, `parcours_photo_draw.mjs`), lieux
+proposés (`suggestPhotoPlaces`).
+
+Écarts et constats des lots 8 à 10 :
+- **Côté « auto »** : vers le centre de l'écran, mais haut-droite tant que
+  l'étape est près du centre — avec la caméra qui suit, l'étape y est
+  presque toujours, et un choix par position exacte faisait basculer la
+  carte d'un côté à l'autre pendant son affichage.
+- **Vignettes de la bande = cartes réduites** (même cadre, légende effacée)
+  : le passage de la grande photo à sa case est un simple rétrécissement.
+- **Trait vers l'étape** : vaut aussi pour l'emplacement fixe.
+- **Lieux proposés** : une photo rejoint un groupe à moins de 75 m (moitié
+  du rayon) de sa première photo, pour que toutes se rattachent seules au
+  lieu posé au centre. Créés depuis l'onglet Photos (nom facultatif), sans
+  passer par le formulaire de l'onglet Données.
+- **« Voir sur la carte »** : aperçu en pause calé sur la photo, pour régler
+  l'affichage sans rejouer le parcours ; il sert aussi aux specs.
+
 Écarts et constats du lot 7 :
 - **Caméra calculée, pas simulée** : la pose est une fonction de la position
   du moteur (moyenne pondérée des cadrages visés sur ±8 quanta). Pas d'état,
@@ -730,3 +751,115 @@ Les lots 4, 5 et 6 sont indépendants : leur ordre peut changer.
    une app distribuée) ?
 5. **DNF comme étapes** : activés par défaut ?
 6. **FIT et chronologie Google** : à prévoir après le lot 5 ?
+
+## 14. Améliorations : photos dans la lecture (lots 8 à 10)
+
+Ajouté le 2026-11-17. Aujourd'hui (lot 4), une seule mise en page codée en
+dur : carte postale de 220 px au-dessus à droite de l'étape, 1,5 s par
+photo, fondu. Les photos géolocalisées hors de toute étape ne sont jamais
+montrées. But : un affichage **modulable**.
+
+Choix de l'utilisateur (2026-11-17) :
+- trois **placements** : près de l'étape, emplacement fixe de l'écran,
+  bande de vignettes (pas de plein écran) ;
+- photo géolocalisée **hors étape** : l'app **propose d'en faire un lieu**
+  (elle n'est pas montrée tant qu'elle n'est rattachée à rien) ;
+- **aucune trace** laissée sur la carte après le passage d'une photo ;
+- **réglages par photo** : masquer de la vidéo, légende, cadrage.
+
+### 14.1 Réglages d'affichage (préférence globale `parcours_photo_display`)
+
+Préférence globale comme `parcours_playback` (le style des photos se garde
+d'un parcours à l'autre), clé séparée : elle a beaucoup de sous-clés, et un
+patch partiel de `parcours_playback` fuit déjà d'un spec à l'autre
+(AGENTS.md). À ajouter à `resetParcoursSettings` des specs.
+
+| Clé | Valeurs | Défaut |
+|---|---|---|
+| `layout` | `stop` (près de l'étape), `fixed` (emplacement fixe), `strip` (bande), `none` (pas de photos dans la vidéo) | `stop` |
+| `side` | près de l'étape : `auto`, `top-right`, `top-left`, `bottom-right`, `bottom-left` | `auto` (côté le plus dégagé de l'écran) |
+| `anchor` | emplacement fixe : les 8 ancres des images (`IMAGE_ANCHORS`) | `top-right` |
+| `leader` | trait fin de la photo vers son étape (près de l'étape, emplacement fixe) | `false` |
+| `strip_edge` | bande : `bottom`, `top` | `bottom` |
+| `strip_reset` | bande : vidée à chaque journée | `false` |
+| `size` | grand côté en px CSS, [120, 600] (bande : hauteur de la photo agrandie) | 220 |
+| `frame` | `postcard` (bordure blanche, ombre), `polaroid` (marge basse épaisse, la légende s'y écrit), `rounded` (coins arrondis, ombre), `plain` (sans cadre) | `postcard` |
+| `tilt` | inclinaison alternée (± 2,5°) | `true` |
+| `effect` | `fade`, `slide`, `zoom` (`IMAGE_EFFECTS`, courbes d'`images_render.mjs`) | `fade` |
+| `ken_burns` | zoom lent pendant l'affichage | `false` |
+| `duration` | secondes par photo, [0,5 ; 6] | 1,5 |
+| `max_per_stop` | photos au plus en temps cumulé par étape, au-delà partagé | 4 |
+| `caption` | gabarit de légende : `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` ; vide = pas de légende | `{legende}` |
+
+Les trois placements :
+- **près de l'étape** : la carte postale actuelle, sur le côté choisi
+  (`auto` : celui où l'étape laisse le plus de place), gardée dans l'écran ;
+- **emplacement fixe** : un coin ou un bord, à 16 px du cadre (au-dessus de
+  l'habillage ? à vérifier avec les zones de titre et de légende) ;
+- **bande** : un ruban de vignettes le long d'un bord. La photo courante
+  entre en grand juste au-dessus du ruban, puis rejoint sa case en
+  vignette à la fin de son temps ; le ruban défile vers la gauche quand il
+  est plein. Il reste affiché jusqu'à la fin (ou jusqu'à la journée
+  suivante avec `strip_reset`).
+
+### 14.2 Réglages par photo (migration v15)
+
+Colonnes de `parcours_photo` : `hidden` (booléen), `caption` (≤ 200
+caractères), `aspect` (`original`, `1:1`, `4:3`, `3:4`, `16:9`),
+`focus_x` / `focus_y` (0-100, point focal), `zoom` (100-300 %). `PATCH
+/api/parcours/<id>/photos/<ph>` les accepte en plus de `stopKey`.
+
+- **Masquée** : reste un indice (rattachement, ancre d'heure), mais n'est
+  ni dessinée ni comptée dans le temps d'écran de l'étape.
+- **Cadrage** : rectangle source pur (`photoCropRect(natural, réglages)`),
+  fenêtre de 1/zoom de l'image aux proportions demandées, centrée sur le
+  point focal et bornée à l'image. Sélecteur de point focal sur l'aperçu,
+  comme l'onglet Images.
+
+### 14.3 Photos hors étapes : lieux proposés
+
+Une photo géolocalisée sans étape à moins de 150 m n'est rattachée à rien.
+`suggestPhotoPlaces` (pur) regroupe ces photos par journée et par proximité
+(150 m) : position moyenne, date, heure la plus tôt si elle est de
+confiance, photos concernées. La carte Photos affiche « N photos hors des
+étapes » avec, pour chaque groupe, « Créer un lieu ici » : le formulaire de
+lieu s'ouvre prérempli (coordonnées, journée, heure). Une fois le lieu
+créé, les photos s'y rattachent seules (150 m). Rien n'est stocké pour une
+proposition ignorée.
+
+### 14.4 Onglet « Photos » de la page
+
+L'onglet Données est déjà long. Les photos prennent un onglet principal à
+elles, à la place de l'onglet Images masqué sur `/parcours` : bibliothèque
+(déplacée depuis Données), appareils, détail d'une photo (étape, légende,
+masquer, cadrage), lieux proposés, réglages d'affichage.
+
+### 14.5 Code
+
+- `parcours_photo_layout.mjs` (pur, testé sous Node) :
+  `normalizePhotoDisplay`, `photoCropRect`, `photoFrameAt(timeline, qf,
+  réglages, { width, height, stopPixel })` → liste de dessins (photo,
+  rectangle, rotation, alpha, transformée d'effet, légende, trait vers
+  l'étape, vignettes de la bande).
+- `parcours_photo_draw.mjs` : dessin des cadres sur un contexte 2D (sans
+  DOM), appelé par le `postrender` de la couche de la tête comme
+  aujourd'hui : la vidéo n'a rien à changer.
+- `parcours_photos.mjs` : `photosByStop` écarte les photos masquées ;
+  `suggestPhotoPlaces`.
+- `parcours_timeline.mjs` : `photoQ` et `maxPhotosPerStop` viennent des
+  réglages (`duration`, `max_per_stop`).
+- Relevé e2e : `getParcoursSnapshot().photoFrame` (dessins du quantum
+  courant).
+
+### 14.6 Lots
+
+- **Lot 8** : réglages par photo (migration v15, API, pytest), onglet
+  Photos, détail d'une photo (masquer, légende, cadrage), `photosByStop`
+  sans les masquées. Unitaires + `parcours-photos.spec.mjs` adapté.
+- **Lot 9** : `parcours_photo_layout.mjs` + `parcours_photo_draw.mjs`,
+  préférence `parcours_photo_display` (serveur + client), les trois
+  placements, cadres, effets, légendes, durée. Unitaires (mise en page,
+  recadrage) + spec `parcours-photo-display.spec.mjs` (un relevé par
+  placement, export image du canevas).
+- **Lot 10** : lieux proposés (`suggestPhotoPlaces`, carte, formulaire
+  prérempli). Unitaires + spec.

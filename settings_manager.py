@@ -365,6 +365,35 @@ PARCOURS_PLAYBACK_DEFAULTS = {
     "head": "mode",
     "estimated_dashed": False,
 }
+# Affichage des photos dans la lecture (lot 9, parcours_photo_layout.mjs :
+# mêmes clés, mêmes bornes).
+PARCOURS_PHOTO_LAYOUTS = ("stop", "fixed", "strip", "none")
+PARCOURS_PHOTO_SIDES = ("auto", "top-right", "top-left", "bottom-right", "bottom-left")
+PARCOURS_PHOTO_ANCHORS = ("top-left", "top-center", "top-right", "middle-left", "middle-right",
+                          "bottom-left", "bottom-center", "bottom-right")
+PARCOURS_PHOTO_STRIP_EDGES = ("bottom", "top")
+PARCOURS_PHOTO_FRAMES = ("postcard", "polaroid", "rounded", "plain")
+PARCOURS_PHOTO_EFFECTS = ("fade", "slide", "zoom")
+PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
+    "layout": "stop",
+    "side": "auto",
+    "anchor": "top-right",
+    "leader": False,
+    "strip_edge": "bottom",
+    "strip_reset": False,
+    "size": 220,
+    "frame": "postcard",
+    "tilt": True,
+    "effect": "fade",
+    "ken_burns": False,
+    "duration": 1.5,
+    "max_per_stop": 4,
+    "caption": "{legende}",
+}
+PARCOURS_PHOTO_SIZE_RANGE = (120, 600)
+PARCOURS_PHOTO_DURATION_RANGE = (0.5, 6.0)
+PARCOURS_PHOTO_MAX_PER_STOP_RANGE = (1, 12)
+PARCOURS_PHOTO_CAPTION_MAX = 120
 # Itinéraires réels (lot 6, parcours_routing.py) : désactivés par défaut,
 # FOSSGIS sans clé par défaut, openrouteservice en option (clé gratuite).
 PARCOURS_ROUTING_PROVIDERS = ("fossgis", "ors")
@@ -549,6 +578,7 @@ class AppSettings:
     parcours_playback: dict = field(default_factory=lambda: dict(PARCOURS_PLAYBACK_DEFAULTS))
     # Itinéraires réels : jamais renvoyée telle quelle à la page (ors_key).
     parcours_routing: dict = field(default_factory=lambda: dict(PARCOURS_ROUTING_DEFAULTS))
+    parcours_photo_display: dict = field(default_factory=lambda: dict(PARCOURS_PHOTO_DISPLAY_DEFAULTS))
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -667,6 +697,57 @@ def coerce_parcours_playback(value, current: dict | None = None) -> dict:
         for key in (*choices, *flags):
             if key in value and valid(key, value[key]):
                 out[key] = value[key]
+    return out
+
+
+def coerce_parcours_photo_display(value, current: dict | None = None) -> dict:
+    """Affichage des photos d'un parcours : patch partiel, valeur invalide →
+    valeur courante (sinon défaut). Nombres bornés, durée arrondie au
+    dixième."""
+    choices = {
+        "layout": PARCOURS_PHOTO_LAYOUTS,
+        "side": PARCOURS_PHOTO_SIDES,
+        "anchor": PARCOURS_PHOTO_ANCHORS,
+        "strip_edge": PARCOURS_PHOTO_STRIP_EDGES,
+        "frame": PARCOURS_PHOTO_FRAMES,
+        "effect": PARCOURS_PHOTO_EFFECTS,
+    }
+    flags = ("leader", "strip_reset", "tilt", "ken_burns")
+    numbers = {
+        "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
+        "duration": (PARCOURS_PHOTO_DURATION_RANGE, lambda v: round(float(v), 1)),
+        "max_per_stop": (PARCOURS_PHOTO_MAX_PER_STOP_RANGE, int),
+    }
+
+    def clean(key, item):
+        """Valeur validée, ou None si elle ne convient pas."""
+        if key in choices:
+            return item if item in choices[key] else None
+        if key in flags:
+            return item if isinstance(item, bool) else None
+        if key in numbers:
+            (low, high), cast = numbers[key]
+            if isinstance(item, bool) or not isinstance(item, (int, float)) or item != item:
+                return None
+            return cast(min(high, max(low, item)))
+        if key == "caption":
+            if not isinstance(item, str):
+                return None
+            text = " ".join(item.split())
+            return text if len(text) <= PARCOURS_PHOTO_CAPTION_MAX else None
+        return None
+
+    base = current if isinstance(current, dict) else {}
+    out = {}
+    for key, default in PARCOURS_PHOTO_DISPLAY_DEFAULTS.items():
+        kept = clean(key, base.get(key)) if key in base else None
+        out[key] = default if kept is None else kept
+    if isinstance(value, dict):
+        for key in PARCOURS_PHOTO_DISPLAY_DEFAULTS:
+            if key in value:
+                item = clean(key, value[key])
+                if item is not None:
+                    out[key] = item
     return out
 
 
@@ -1393,6 +1474,7 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("parcours_infos_template"), s.parcours_infos_template)
         s.parcours_playback = coerce_parcours_playback(d.get("parcours_playback"))
         s.parcours_routing = coerce_parcours_routing(d.get("parcours_routing"))
+        s.parcours_photo_display = coerce_parcours_photo_display(d.get("parcours_photo_display"))
         s.locationless_display = coerce_locationless_display(
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(

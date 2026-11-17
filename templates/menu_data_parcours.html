@@ -109,30 +109,6 @@
                 </div>
             </div>
 
-            <!-- Photos du parcours ouvert (lot 4, parcours_photos.py / .mjs) -->
-            <div id="parcoursPhotosCard" hidden>
-                <h5 class="gc-section-title mt-3">
-                    <i class="ti ti-photo text-muted me-1"></i>{{ _("Photos") }}
-                </h5>
-                <div class="card">
-                    <div class="card-body">
-                        <div id="parcoursPhotoSummary" class="fw-medium mb-1" aria-live="polite"></div>
-                        <div class="form-hint text-muted mb-2">
-                            {{ _("Une photo géolocalisée se rattache seule à l'étape la plus proche (150 m) et son heure cale celle de l'étape. Celle d'un appareil sans GPS demande de recaler son horloge, ou de choisir son étape.") }}
-                        </div>
-                        <input type="file" id="parcoursPhotoInput" class="visually-hidden" multiple
-                               accept="image/*,.heic,.heif" aria-label="{{ _('Photos à ajouter') }}">
-                        <button type="button" id="btnParcoursAddPhotos" class="btn btn-sm btn-outline-primary">
-                            <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Ajouter des photos") }}
-                        </button>
-                        <span id="parcoursPhotoStatus" class="small text-muted ms-2" aria-live="polite"></span>
-                        <div id="parcoursCameras" class="mt-2"></div>
-                        <div id="parcoursPhotos" class="parcours-photo-grid mt-2"></div>
-                        <div id="parcoursPhotoDetail" class="card card-body py-2 px-3 mt-2" hidden></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Traces GPS du parcours ouvert (lot 5, parcours_tracks.py / .mjs) -->
             <div id="parcoursTracksCard" hidden>
                 <h5 class="gc-section-title mt-3">
