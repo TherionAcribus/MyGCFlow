@@ -842,6 +842,47 @@ function ensurePlayLayers() {
 
 // Trait parcouru : trajets terminés, puis la part faite du trajet en cours.
 // La nuit (d'une journée à la suivante) en pointillés.
+//
+// Les trajets terminés sont regroupés par style en trois MultiLineString
+// persistants, allongés à mesure que la lecture avance : une géométrie par
+// style à l'image au lieu d'une LineString par trajet (des centaines de
+// trajets routés recréés à chaque image sinon).
+let trailGroups = null;
+const currentLegGeom = new ol.geom.LineString([]);
+
+function doneTrailGroups(done) {
+    if (!trailGroups || trailGroups.timeline !== timeline || trailGroups.dashed !== playback.estimated_dashed) {
+        trailGroups = {
+            timeline,
+            dashed: playback.estimated_dashed,
+            done: 0,
+            night: { coords: [], geom: new ol.geom.MultiLineString([]) },
+            estimated: { coords: [], geom: new ol.geom.MultiLineString([]) },
+            day: { coords: [], geom: new ol.geom.MultiLineString([]) },
+        };
+    }
+    // Retour en arrière dans la lecture : tout se refait depuis le début.
+    if (done < trailGroups.done) {
+        trailGroups.done = 0;
+        for (const g of [trailGroups.night, trailGroups.estimated, trailGroups.day]) {
+            g.coords.length = 0;
+            g.geom.setCoordinates(g.coords);
+        }
+    }
+    for (let k = trailGroups.done; k < done; k++) {
+        const leg = timeline.legs[k];
+        // Trajet sur une trace GPS ou un itinéraire : le vrai chemin, sinon
+        // la ligne droite.
+        const coords = legProjected[k] || [projected[leg.from], projected[leg.to]];
+        const g = leg.night ? trailGroups.night
+            : (trailGroups.dashed && !leg.path ? trailGroups.estimated : trailGroups.day);
+        g.coords.push(coords);
+        g.geom.setCoordinates(g.coords);
+    }
+    trailGroups.done = done;
+    return trailGroups;
+}
+
 function drawPlayTrail(event) {
     if (!clock.running || !timeline) return;
     const context = ol.render.getVectorContext(event);
@@ -854,19 +895,21 @@ function drawPlayTrail(event) {
         stroke: new ol.style.Stroke({ color, width, lineCap: 'round', lineJoin: 'round', lineDash: [width * 2.5, width * 2] }),
     });
     const { done, current } = trailAt(timeline, currentQ);
-    // Trajet sur une trace GPS ou un itinéraire : le vrai chemin, sinon la
-    // ligne droite.
-    const draw = (k, progress) => {
-        const leg = timeline.legs[k];
-        const coords = progress >= 1
-            ? (legProjected[k] || [projected[leg.from], projected[leg.to]])
-            : legPoints(timeline, k, progress).map((p) => ol.proj.fromLonLat(p));
-        if (leg.night) context.setStyle(night);
-        else context.setStyle(playback.estimated_dashed && !leg.path ? estimated : day);
-        context.drawGeometry(new ol.geom.LineString(coords));
-    };
-    for (let k = 0; k < done; k++) draw(k, 1);
-    if (current) draw(current.leg, current.progress);
+    const groups = doneTrailGroups(done);
+    for (const [style, g] of [[night, groups.night], [estimated, groups.estimated], [day, groups.day]]) {
+        if (g.coords.length) {
+            context.setStyle(style);
+            context.drawGeometry(g.geom);
+        }
+    }
+    if (current) {
+        const leg = timeline.legs[current.leg];
+        const coords = current.progress >= 1
+            ? (legProjected[current.leg] || [projected[leg.from], projected[leg.to]])
+            : legPoints(timeline, current.leg, current.progress).map((p) => ol.proj.fromLonLat(p));
+        context.setStyle(leg.night ? night : (playback.estimated_dashed && !leg.path ? estimated : day));
+        context.drawGeometry(currentLegGeom.setCoordinates(coords));
+    }
 }
 
 // La nuit (assombrissement), les bases (toujours) et les lieux déjà
