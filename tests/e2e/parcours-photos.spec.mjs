@@ -6,7 +6,7 @@
 // Le runtime e2e range les photos dans son propre dossier de données ; elles
 // partent avec leur parcours (cleanUp, parcours-helpers.mjs).
 import { expect, test } from '@playwright/test';
-import { readdirSync, rmSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -198,5 +198,34 @@ test('affichage par photo : masquée (reste une ancre), légende, cadrage enregi
   // De nouveau montrée : le temps d'écran revient.
   await page.locator('#parcoursPhotoShown').check();
   await expect.poll(async () => (await snapshot(page)).timeline.quanta).toBe(before + 15);
+  expect(errors).toEqual([]);
+});
+
+// Dépose des fichiers sur la page, comme depuis l'explorateur.
+async function dropFiles(page, paths) {
+  const list = paths.map((p) => ({ name: path.basename(p), bytes: [...readFileSync(p)] }));
+  const dataTransfer = await page.evaluateHandle((items) => {
+    const dt = new DataTransfer();
+    for (const { name, bytes } of items) dt.items.add(new File([new Uint8Array(bytes)], name));
+    return dt;
+  }, list);
+  await page.dispatchEvent('body', 'dragenter', { dataTransfer });
+  await expect(page.locator('#parcoursDropOverlay')).toHaveClass(/is-visible/);
+  await page.dispatchEvent('body', 'drop', { dataTransfer });
+}
+
+test('glisser-déposer : photos et traces rejoignent le parcours ouvert, le reste est signalé', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  // Depuis un autre onglet : le dépôt de photos ouvre l'onglet Photos.
+  await page.locator('a[href="#style"]').click();
+  const notes = path.join(HERE, 'fixtures', 'evolution-share.csv');
+  await dropFiles(page, [files[0], files[1], path.join(HERE, 'fixtures', 'parcours-trace.gpx'), notes]);
+  await expect(page.locator('#parcoursDropOverlay')).not.toHaveClass(/is-visible/);
+  await expect(page.locator('#photos')).toHaveClass(/active/);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(2);
+  await expect.poll(async () => (await snapshot(page)).tracks.length, { timeout: 30_000 }).toBe(1);
+  await expect(page.locator('.gcm-toast.show')).toContainText('evolution-share.csv');
   expect(errors).toEqual([]);
 });

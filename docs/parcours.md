@@ -368,6 +368,13 @@ appareils, détail d'une photo, lieux proposés, réglages d'affichage. Un
 contrôle d'un onglet fermé n'est pas visible : les specs ouvrent
 `a[href="#photos"]` avant d'y toucher.
 
+**Glisser-déposer** (`bindFileDrop`, parcours_data.js) : des fichiers déposés
+n'importe où sur la page vont au parcours ouvert — les images aux photos
+(l'onglet Photos s'ouvre), les `.gpx` aux traces, une musique à Animation >
+Musique ; les autres sont signalés, et rien n'est envoyé sans parcours
+ouvert. Sans ce gestionnaire, le navigateur ouvrait le fichier à la place
+de l'application.
+
 ### Réglages par photo (lot 8, migration v15)
 
 Colonnes de `parcours_photo` : `hidden`, `caption` (200 caractères, espaces

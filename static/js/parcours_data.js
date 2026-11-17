@@ -24,6 +24,8 @@ import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showConfirmation, showToast, t } from './notifications.js';
 import { isParcoursPage } from './app_mode.mjs';
+import { isImageFile } from './images_model.mjs';
+import { isAudioFile } from './music_track.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { registerLifecycleEngine } from './lifecycle_engine.mjs';
 import { DEFAULT_PARCOURS_TEMPLATE, PARCOURS_INFO_TAGS } from './infos_template.mjs';
@@ -260,6 +262,7 @@ export async function initParcoursPage() {
     bindPhotos();
     bindTracks();
     bindRouting();
+    bindFileDrop();
     pkg.syncOverlayVisibility?.();
     await refreshParcoursList({ select: readLastId() });
 }
@@ -2485,6 +2488,83 @@ function bindPhotos() {
         input.value = '';
         uploadPhotos(files);
     });
+}
+
+// --- Glisser-déposer ---------------------------------------------------------------
+
+const isGpxFile = (file) => /\.gpx$/i.test(file?.name || '');
+
+// Fichiers déposés n'importe où sur la page : les photos rejoignent le
+// parcours ouvert (onglet Photos, pour les voir arriver), les .gpx ses traces
+// (onglet Données), une musique Animation > Musique. Sans ce gestionnaire, le
+// navigateur ouvrirait le fichier à la place de l'application.
+function routeDroppedFiles(files) {
+    const music = files.find(isAudioFile);
+    if (music) pkg.dropMusicFile?.(music);
+    const photos = files.filter(isImageFile);
+    const tracks = files.filter(isGpxFile);
+    const ignored = files.filter((f) => f !== music && !isImageFile(f) && !isGpxFile(f));
+    if (ignored.length) {
+        showToast(ignored.map((f) => f.name).join('\n'), 'warning', t('Fichiers non pris en charge'));
+    }
+    if (!photos.length && !tracks.length) return;
+    if (!selectedId) {
+        showToast(t('Ouvrez un parcours avant d’y déposer des photos ou des traces.'), 'info', t('Parcours'));
+        return;
+    }
+    if (photos.length) {
+        pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#photos"]'));
+        uploadPhotos(photos);
+    } else {
+        pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
+    }
+    if (tracks.length) uploadTracks(tracks);
+}
+
+function bindFileDrop() {
+    const overlay = document.createElement('div');
+    overlay.id = 'parcoursDropOverlay';
+    overlay.className = 'gpx-drop-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    const inner = document.createElement('div');
+    inner.className = 'gpx-drop-overlay__inner';
+    const icon = document.createElement('i');
+    icon.className = 'ti ti-file-upload';
+    const text = document.createElement('div');
+    text.className = 'gpx-drop-overlay__text';
+    text.textContent = t('Déposez vos photos ou traces (.gpx) pour les ajouter au parcours, ou une musique');
+    inner.append(icon, text);
+    overlay.append(inner);
+    document.body.append(overlay);
+
+    // Compteur de profondeur : dragenter/dragleave se déclenchent aussi d'un
+    // élément enfant à l'autre.
+    const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+    let depth = 0;
+    const hide = () => { depth = 0; overlay.classList.remove('is-visible'); };
+    window.addEventListener('dragenter', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        depth++;
+        overlay.classList.add('is-visible');
+    });
+    window.addEventListener('dragover', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        try { e.dataTransfer.dropEffect = 'copy'; } catch (_) {}
+    });
+    window.addEventListener('dragleave', (e) => {
+        if (!hasFiles(e)) return;
+        depth = Math.max(0, depth - 1);
+        if (depth === 0) hide();
+    });
+    window.addEventListener('drop', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        hide();
+        routeDroppedFiles([...(e.dataTransfer.files || [])]);
+    });
+    window.addEventListener('dragend', hide);
 }
 
 // --- Traces GPS (lot 5) ---------------------------------------------------------
