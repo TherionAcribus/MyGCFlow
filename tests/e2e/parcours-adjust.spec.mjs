@@ -164,6 +164,34 @@ test('ajustement en vol : la réponse d’un autre parcours n’écrase pas celu
   expect(errors).toEqual([]);
 });
 
+test('clics rapides sur « descendre » : les deux déplacements composent', async ({ page }) => {
+  const errors = collectErrors(page);
+  // Chaque écriture d'ajustement attend 300 ms : le second clic est donc
+  // calculé avant le retour du premier envoi.
+  const urls = [];
+  await page.route('**/api/parcours/*/overrides', async (route) => {
+    urls.push(route.request().url());
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await route.continue();
+  });
+  await openReady(page);
+  const rev = (await snapshot(page)).adjustmentRevision;
+  expect((await snapshot(page)).days[0].keys).toEqual(['GCPAR03', 'GCPAR01', 'GCPAR02']);
+
+  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+  // La ligne est déjà re-rendue à sa nouvelle place : le second clic repart
+  // de cet état pendant que le premier envoi est encore en vol.
+  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+
+  const state = await adjusted(page, rev);
+  expect(urls.length).toBe(2);
+  expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR02', 'GCPAR03']);
+  // Persisté : rechargement, même ordre.
+  await openReady(page);
+  expect((await snapshot(page)).days[0].keys).toEqual(['GCPAR01', 'GCPAR02', 'GCPAR03']);
+  expect(errors).toEqual([]);
+});
+
 test('poser une base d’un clic sur la carte : départ et retour de chaque journée', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);

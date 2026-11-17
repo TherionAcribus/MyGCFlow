@@ -1761,7 +1761,9 @@ function rebuild() {
 // autre parcours, elle est ignorée plutôt qu'appliquée à ses entrées.
 function receiveAdjustments(payload, forId = selectedId) {
     if (!inputs || forId !== selectedId) return;
-    if (Array.isArray(payload?.overrides)) inputs.overrides = payload.overrides;
+    // Des écritures d'ajustements locales sont en avance sur le serveur :
+    // ne pas les écraser par une vue datée — le dernier envoi refera foi.
+    if (Array.isArray(payload?.overrides) && overridesQueued === 0) inputs.overrides = payload.overrides;
     if (Array.isArray(payload?.places)) inputs.places = payload.places;
     if (Array.isArray(payload?.photos)) inputs.photos = payload.photos;
     if (Array.isArray(payload?.cameras)) inputs.cameras = payload.cameras;
@@ -1772,17 +1774,59 @@ function receiveAdjustments(payload, forId = selectedId) {
     adjustmentRevision++;
 }
 
-async function saveOverrides(patches) {
-    if (!selectedId || adjustmentsLocked()) return;
-    const pid = selectedId;
-    try {
-        receiveAdjustments(await fetchJson(`/api/parcours/${pid}/overrides`, {
-            method: 'PATCH',
-            body: JSON.stringify({ overrides: patches }),
-        }), pid);
-    } catch (error) {
-        showToast(error.message, 'error');
+// Écritures d'ajustements mises en file : elles partent dans l'ordre des
+// gestes. La fusion locale fait qu'un second clic (descendre deux fois de
+// suite, par exemple) compose sur l'état à jour au lieu de repartir de
+// l'état d'avant le premier — sans elle, les deux envois porteraient le
+// même déplacement et l'un serait perdu.
+let overridesChain = Promise.resolve();
+let overridesQueued = 0;
+
+// Fusion identique au serveur (parcours_store.patch_overrides) : champ
+// présent → remplacé (null l'efface), absent → gardé ; ligne vidée → retirée.
+function mergeOverrides(patches) {
+    const rows = new Map((inputs.overrides || []).map((o) => [o.key, { ...o }]));
+    for (const patch of patches) {
+        const row = rows.get(patch.key) || {
+            key: patch.key, rank: null, pinnedTime: null, day: null, excluded: false, legMode: null,
+        };
+        for (const field of ['rank', 'pinnedTime', 'day', 'excluded', 'legMode']) {
+            if (field in patch) row[field] = patch[field];
+        }
+        if (row.rank === null && row.pinnedTime === null && row.day === null && !row.excluded && row.legMode === null) {
+            rows.delete(patch.key);
+        } else {
+            rows.set(patch.key, row);
+        }
     }
+    inputs.overrides = [...rows.values()];
+}
+
+function saveOverrides(patches) {
+    if (!selectedId || adjustmentsLocked() || !inputs) return;
+    const pid = selectedId;
+    mergeOverrides(patches);
+    rebuild();
+    renderStops();
+    applyTimeline();
+    overridesQueued++;
+    overridesChain = overridesChain.then(async () => {
+        overridesQueued--;
+        try {
+            const payload = await fetchJson(`/api/parcours/${pid}/overrides`, {
+                method: 'PATCH',
+                body: JSON.stringify({ overrides: patches }),
+            });
+            // Une écriture plus récente attend encore : l'état local la
+            // précède déjà, et le serveur renvoie toujours l'ensemble — la
+            // réponse du dernier envoi refera foi.
+            if (overridesQueued === 0) receiveAdjustments(payload, pid);
+        } catch (error) {
+            showToast(error.message, 'error');
+            // Resynchronisation une fois la file écoulée.
+            overridesChain = overridesChain.then(() => reloadAdjustments(pid));
+        }
+    });
 }
 
 // Nouvel ordre d'une journée : un rang pour chacune de ses étapes.
@@ -1803,14 +1847,26 @@ function resetDayOrder(day) {
     saveOverrides(day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => ({ key: stop.key, rank: null })));
 }
 
-async function resetAllAdjustments() {
-    if (!selectedId || adjustmentsLocked()) return;
+function resetAllAdjustments() {
+    if (!selectedId || adjustmentsLocked() || !inputs) return;
     const pid = selectedId;
-    try {
-        receiveAdjustments(await fetchJson(`/api/parcours/${pid}/overrides`, { method: 'DELETE' }), pid);
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
+    // Même file que les PATCH : un déplacement encore en vol doit être
+    // écrit AVANT la remise à zéro, sinon il ressusciterait ses ajustements.
+    inputs.overrides = [];
+    rebuild();
+    renderStops();
+    applyTimeline();
+    overridesQueued++;
+    overridesChain = overridesChain.then(async () => {
+        overridesQueued--;
+        try {
+            const payload = await fetchJson(`/api/parcours/${pid}/overrides`, { method: 'DELETE' });
+            if (overridesQueued === 0) receiveAdjustments(payload, pid);
+        } catch (error) {
+            showToast(error.message, 'error');
+            overridesChain = overridesChain.then(() => reloadAdjustments(pid));
+        }
+    });
 }
 
 async function reloadAdjustments(forId = selectedId) {
