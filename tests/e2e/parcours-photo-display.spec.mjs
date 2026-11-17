@@ -160,6 +160,37 @@ test('placements : près de l’étape avec trait, emplacement fixe, bande de vi
   expect(errors).toEqual([]);
 });
 
+test('pile : les photos d’une étape se posent les unes sur les autres', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const { parcours, phone, camera } = await withTwoPhotos(page, request);
+  // Les deux photos sur GCPAR01 : celle de l'appareil passe en second.
+  await request.patch(`/api/parcours/${parcours.id}/photos/${camera}`, { data: { stopKey: 'GCPAR01' } });
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(2);
+
+  // Sans pile : sur la seconde photo, la première est déjà partie.
+  let state = await showPhoto(page, camera);
+  expect(state.photoCards.map((c) => c.photoId)).toEqual([camera]);
+
+  await expect(page.locator('#parcoursPhotoStackRow')).toBeVisible();
+  await page.locator('#parcoursPhotoStack').check();
+  await expect.poll(async () => (await savedDisplay(request)).stack).toBe(true);
+  await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => c.photoId)).toEqual([phone, camera]);
+  state = await snapshot(page);
+  const [under, top] = state.photoCards;
+  expect(under.alpha).toBe(1);
+  expect(under.rotation).not.toBe(top.rotation);
+  // Décalées, mais l'une sur l'autre.
+  expect(Math.abs(under.x - top.x)).toBeLessThan(top.width / 2);
+  expect(Math.abs(under.y - top.y)).toBeLessThan(top.height / 2);
+
+  // Pas de pile pour la bande.
+  await page.locator('#parcoursPhotoLayout').selectOption('strip');
+  await expect(page.locator('#parcoursPhotoStackRow')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('photos hors étapes : un lieu proposé, créé d’un clic, et les photos s’y rattachent', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);

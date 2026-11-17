@@ -381,6 +381,7 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "leader": False,
     "strip_edge": "bottom",
     "strip_reset": False,
+    "stack": False,
     "size": 220,
     "frame": "postcard",
     "tilt": True,
@@ -712,7 +713,7 @@ def coerce_parcours_photo_display(value, current: dict | None = None) -> dict:
         "frame": PARCOURS_PHOTO_FRAMES,
         "effect": PARCOURS_PHOTO_EFFECTS,
     }
-    flags = ("leader", "strip_reset", "tilt", "ken_burns")
+    flags = ("leader", "strip_reset", "stack", "tilt", "ken_burns")
     numbers = {
         "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
         "duration": (PARCOURS_PHOTO_DURATION_RANGE, lambda v: round(float(v), 1)),

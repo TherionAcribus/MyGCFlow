@@ -1925,6 +1925,7 @@ const PHOTO_DISPLAY_FIELDS = Object.freeze({
 const PHOTO_DISPLAY_FLAGS = Object.freeze({
     leader: 'parcoursPhotoLeader',
     strip_reset: 'parcoursPhotoStripReset',
+    stack: 'parcoursPhotoStack',
     tilt: 'parcoursPhotoTilt',
     ken_burns: 'parcoursPhotoKenBurns',
 });
@@ -1959,6 +1960,7 @@ function renderPhotoDisplay() {
     show('parcoursPhotoStripEdgeRow', layout === 'strip');
     show('parcoursPhotoStripResetRow', layout === 'strip');
     show('parcoursPhotoLeaderRow', layout === 'stop' || layout === 'fixed');
+    show('parcoursPhotoStackRow', layout === 'stop' || layout === 'fixed');
     const fields = el('parcoursPhotoDisplayFields');
     if (fields) fields.disabled = layout === PHOTO_LAYOUT_NONE;
     const preview = el('btnParcoursPhotoPreview');

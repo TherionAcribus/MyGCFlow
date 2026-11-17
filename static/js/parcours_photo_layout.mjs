@@ -110,6 +110,7 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     leader: false,
     strip_edge: 'bottom',
     strip_reset: false,
+    stack: false,
     size: 220,
     frame: 'postcard',
     tilt: true,
@@ -133,6 +134,7 @@ export function normalizePhotoDisplay(raw) {
         leader: flag('leader'),
         strip_edge: choice('strip_edge', PHOTO_STRIP_EDGES),
         strip_reset: flag('strip_reset'),
+        stack: flag('stack'),
         size: Math.round(numberIn(o.size, PHOTO_SIZE_RANGE, d.size)),
         frame: choice('frame', PHOTO_FRAMES),
         tilt: flag('tilt'),
@@ -333,30 +335,93 @@ export function photoFrameAt(timeline, qf, display, view) {
         return out;
     }
 
+    // Centre d'une boîte boxW × boxH : à l'ancre (emplacement fixe) ou à
+    // côté de l'étape, gardée dans l'écran.
+    const placeBox = (boxW, boxH, stop) => {
+        if (display.layout === PHOTO_LAYOUT_FIXED) return anchorCenter(display.anchor, width, height, boxW, boxH, margin);
+        const p = stop || [width / 2, height / 2];
+        const { sx, sy } = stopSide(display.side, p, width, height);
+        const gap = STOP_GAP * ratio;
+        return [
+            clamp(p[0] + sx * (gap + boxW / 2), boxW / 2 + margin / 2, width - boxW / 2 - margin / 2),
+            clamp(p[1] + sy * (gap + boxH / 2), boxH / 2 + margin / 2, height - boxH / 2 - margin / 2),
+        ];
+    };
+    const setLeader = (card, stop) => {
+        if (!display.leader || !insideScreen(stop, width, height)) return;
+        const to = nearestOnRect(card.x, card.y, card.cardW / 2, card.cardH / 2, stop);
+        if (Math.hypot(to[0] - stop[0], to[1] - stop[1]) > 4 * ratio) card.leader = { from: stop, to };
+    };
+
+    if (display.stack) {
+        stackCards(out, slots, qf, display, { view, size, cardOf, applyEffect, rectOf, kenBurns, placeBox, setLeader });
+        return out;
+    }
+
     for (const slot of slots) {
         if (qf < slot.fromQ || qf > slot.toQ + PHOTO_FADE_Q) continue;
         const card = cardOf(slot);
         const stop = view.stopPixel?.(slot.stop) || null;
-        if (display.layout === PHOTO_LAYOUT_FIXED) {
-            [card.x, card.y] = anchorCenter(display.anchor, width, height, card.cardW, card.cardH, margin);
-        } else {
-            const p = stop || [width / 2, height / 2];
-            const { sx, sy } = stopSide(display.side, p, width, height);
-            const gap = STOP_GAP * ratio;
-            card.x = clamp(p[0] + sx * (gap + card.cardW / 2), card.cardW / 2 + margin / 2, width - card.cardW / 2 - margin / 2);
-            card.y = clamp(p[1] + sy * (gap + card.cardH / 2), card.cardH / 2 + margin / 2, height - card.cardH / 2 - margin / 2);
-        }
+        [card.x, card.y] = placeBox(card.cardW, card.cardH, stop);
         const enter = (qf - slot.fromQ) / PHOTO_FADE_Q;
         const exit = (slot.toQ + PHOTO_FADE_Q - qf) / PHOTO_FADE_Q;
         applyEffect(card, Math.min(enter, exit), rectOf(card));
         card.kenBurns = kenBurns(slot, slot.toQ + PHOTO_FADE_Q);
-        if (display.leader && insideScreen(stop, width, height)) {
-            const to = nearestOnRect(card.x, card.y, card.cardW / 2, card.cardH / 2, stop);
-            if (Math.hypot(to[0] - stop[0], to[1] - stop[1]) > 4 * ratio) card.leader = { from: stop, to };
-        }
+        setLeader(card, stop);
         if (card.alpha > 0) out.cards.push(card);
     }
     return out;
+}
+
+// Pile (près de l'étape, emplacement fixe) : les photos d'une étape se
+// posent les unes sur les autres et restent jusqu'à la fin de la dernière,
+// puis la pile s'efface d'un bloc. Chaque rang a son décalage et son
+// inclinaison (fixes : la pile ne tremble pas d'une image à l'autre) autour
+// du centre de la pile, placé comme une carte de la taille de la plus
+// grande, décalages compris — la pile ne déborde ni de l'écran ni sur
+// l'étape. La légende d'une photo recouverte s'efface à l'arrivée de la
+// suivante ; le trait part de la photo du dessus.
+const STACK_OFFSETS = [[0, 0], [0.07, -0.05], [-0.06, 0.05], [0.05, 0.07], [-0.07, -0.06], [0.03, -0.08]];
+const STACK_TILT_DEG = [-3, 4, -5.5, 2.5, 6, -4];
+const STACK_SPREAD = 0.08;
+
+function stackCards(out, slots, qf, display, ctx) {
+    const { view, size, cardOf, applyEffect, rectOf, kenBurns, placeBox, setLeader } = ctx;
+    const piles = [];
+    for (const slot of slots) {
+        const last = piles[piles.length - 1];
+        if (last && last[0].stop === slot.stop) last.push(slot);
+        else piles.push([slot]);
+    }
+    for (const pile of piles) {
+        const endQ = pile[pile.length - 1].toQ + PHOTO_FADE_Q;
+        if (qf < pile[0].fromQ || qf > endQ) continue;
+        const cards = pile.map(cardOf);
+        const spread = 2 * STACK_SPREAD * size;
+        const boxW = Math.max(...cards.map((c) => c.cardW)) + spread;
+        const boxH = Math.max(...cards.map((c) => c.cardH)) + spread;
+        const stop = view.stopPixel?.(pile[0].stop) || null;
+        const [cx, cy] = placeBox(boxW, boxH, stop);
+        const exit = (endQ - qf) / PHOTO_FADE_Q;
+        let top = null;
+        pile.forEach((slot, k) => {
+            if (qf < slot.fromQ) return;
+            const card = cards[k];
+            const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
+            card.x = cx + ox * size;
+            card.y = cy + oy * size;
+            card.rotation = display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0;
+            const next = pile[k + 1];
+            if (next && qf > next.fromQ) card.captionAlpha = clamp(1 - (qf - next.fromQ) / PHOTO_FADE_Q, 0, 1);
+            applyEffect(card, Math.min((qf - slot.fromQ) / PHOTO_FADE_Q, exit), rectOf(card));
+            card.kenBurns = kenBurns(slot, endQ);
+            if (card.alpha > 0) {
+                out.cards.push(card);
+                top = card;
+            }
+        });
+        if (top) setLeader(top, stop);
+    }
 }
 
 // Bande de vignettes : chaque photo entre en grand au-dessus de la bande

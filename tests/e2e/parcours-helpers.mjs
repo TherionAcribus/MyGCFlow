@@ -79,7 +79,7 @@ export function collectErrors(page) {
 // Affichage des photos (lot 9), comme PHOTO_DISPLAY_DEFAULTS de
 // parcours_photo_layout.mjs.
 export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
-  layout: 'stop', side: 'auto', anchor: 'top-right', leader: false, strip_edge: 'bottom', strip_reset: false,
+  layout: 'stop', side: 'auto', anchor: 'top-right', leader: false, strip_edge: 'bottom', strip_reset: false, stack: false,
   size: 220, frame: 'postcard', tilt: true, effect: 'fade', ken_burns: false, duration: 1.5, max_per_stop: 4,
   caption: '{legende}',
 });

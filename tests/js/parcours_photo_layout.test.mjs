@@ -231,3 +231,41 @@ test('dessin : cadres, légende, trait, sans erreur sur un contexte factice', ()
     assert.equal(calls.length, 0);
     assert.ok(card.alpha === 1 && PHOTO_FADE_Q > 0);
 });
+
+test('pile : les photos d’une étape s’empilent, la pile s’efface d’un bloc', () => {
+    const display = normalizePhotoDisplay({ stack: true, leader: true });
+    assert.equal(PHOTO_DISPLAY_DEFAULTS.stack, false);
+    let cards = photoFrameAt(timeline(), 20, display, VIEW).cards;
+    assert.deepEqual(cards.map((c) => c.photoId), [1]);
+    // Photo 2 posée sur la 1, qui reste entière, sans sa légende.
+    cards = photoFrameAt(timeline(), 35, display, VIEW).cards;
+    assert.deepEqual(cards.map((c) => c.photoId), [1, 2]);
+    const [under, top] = cards;
+    assert.equal(under.alpha, 1);
+    assert.equal(under.captionAlpha, 0);
+    assert.notEqual(under.rotation, top.rotation);
+    assert.ok(under.x !== top.x || under.y !== top.y);
+    assert.equal(under.leader, null);
+    assert.ok(top.leader);
+    // Pile gardée dans l'écran, à l'écart de l'étape (500, 300).
+    for (const c of cards) {
+        assert.ok(c.x - c.cardW / 2 >= 0 && c.x + c.cardW / 2 <= 1000 && c.y - c.cardH / 2 >= 0);
+        assert.ok(!(Math.abs(c.x - 500) < c.cardW / 2 && Math.abs(c.y - 300) < c.cardH / 2));
+    }
+    // Pendant la photo 1, la pile est déjà à sa place : rien ne bouge à
+    // l'arrivée de la 2.
+    assert.equal(photoFrameAt(timeline(), 20, display, VIEW).cards[0].x, under.x);
+    // Sortie d'un bloc, après la dernière photo.
+    cards = photoFrameAt(timeline(), 43, display, VIEW).cards;
+    assert.deepEqual(cards.map((c) => c.alpha), [0.5, 0.5]);
+    assert.deepEqual(photoFrameAt(timeline(), 44.5, display, VIEW).cards, []);
+    // Sans inclinaison : décalées, pas tournées.
+    cards = photoFrameAt(timeline(), 35, { ...display, tilt: false }, VIEW).cards;
+    assert.deepEqual(cards.map((c) => c.rotation), [0, 0]);
+    // Emplacement fixe : même pile ; la bande ignore le réglage.
+    cards = photoFrameAt(timeline(), 35, { ...display, layout: 'fixed' }, VIEW).cards;
+    assert.deepEqual(cards.map((c) => c.photoId), [1, 2]);
+    const strip = normalizePhotoDisplay({ layout: 'strip' });
+    assert.deepEqual(photoFrameAt(timeline(), 35, { ...strip, stack: true }, VIEW).cards,
+        photoFrameAt(timeline(), 35, strip, VIEW).cards);
+});

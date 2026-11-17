@@ -642,8 +642,8 @@ class SettingsApiTests(unittest.TestCase):
         # Affichage des photos (lot 9) : patch partiel, valeurs bornées,
         # valeur invalide ignorée.
         photo = after['parcours_photo_display']
-        self.assertEqual((photo['layout'], photo['size'], photo['duration'], photo['caption']),
-                         ('stop', 220, 1.5, '{legende}'))
+        self.assertEqual((photo['layout'], photo['size'], photo['duration'], photo['caption'], photo['stack']),
+                         ('stop', 220, 1.5, '{legende}', False))
         self.client.put('/api/settings', json={'parcours_photo_display': {
             'layout': 'strip', 'size': 5000, 'duration': 2.26, 'frame': 'cadre-doré', 'tilt': 'non',
             'caption': '  {etape}\n· {heure} ', 'max_per_stop': True}})
@@ -651,9 +651,9 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual((photo['layout'], photo['size'], photo['duration'], photo['frame'], photo['tilt'],
                           photo['caption'], photo['max_per_stop']),
                          ('strip', 600, 2.3, 'postcard', True, '{etape} · {heure}', 4))
-        self.client.put('/api/settings', json={'parcours_photo_display': {'effect': 'zoom'}})
+        self.client.put('/api/settings', json={'parcours_photo_display': {'effect': 'zoom', 'stack': True}})
         photo = self.client.get('/api/settings').get_json()['parcours_photo_display']
-        self.assertEqual((photo['layout'], photo['effect']), ('strip', 'zoom'))
+        self.assertEqual((photo['layout'], photo['effect'], photo['stack']), ('strip', 'zoom', True))
 
     def test_theme_survives_a_round_trip(self):
         self.assertEqual(self.client.put('/api/settings', json={'theme': 'dark'}).status_code, 200)

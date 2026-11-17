@@ -405,6 +405,7 @@ envoyée entière à chaque changement :
 | `side` | près de l'étape : `auto` (vers le centre de l'écran ; haut-droite près du centre, pour que la caméra qui suit ne la fasse pas basculer), `top-right`, `top-left`, `bottom-right`, `bottom-left` |
 | `anchor` | emplacement fixe : `top-right` et les 7 autres ancres des images, à 16 px du bord |
 | `leader` | trait de l'étape vers la carte (près de l'étape, emplacement fixe) : `false` |
+| `stack` | pile (près de l'étape, emplacement fixe) : les photos d'une étape se posent les unes sur les autres, décalées et inclinées selon leur rang, et la pile s'efface d'un bloc après la dernière : `false` |
 | `strip_edge`, `strip_reset` | bande : `bottom` / `top` ; vidée à l'arrivée sur la première étape d'une nouvelle journée : `false` |
 | `size` | grand côté de l'image, 120-600 px CSS : 220 |
 | `frame` | `postcard` (marge blanche, ombre), `polaroid` (marge basse épaisse), `rounded` (coins arrondis, ombre), `plain` |
