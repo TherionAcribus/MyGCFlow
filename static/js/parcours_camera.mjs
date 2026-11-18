@@ -1,18 +1,23 @@
 // Caméra de la lecture d'un parcours (MyGCFlow_Plan_Parcours.md, lot 7) :
-// serrée sur le géocacheur, elle dézoome d'elle-même pour un long trajet, la
-// nuit (de la fin d'une journée au début de la suivante) et à la fin (vue
-// d'ensemble).
+// elle suit le géocacheur le long de son chemin, dézoome d'elle-même pour un
+// long trajet, la nuit (de la fin d'une journée au début de la suivante) et à
+// la fin (vue d'ensemble).
 //
 // La pose ne dépend que de la position du moteur (quanta fractionnaires) :
 // l'aperçu et la vidéo image par image cadrent pareil, un saut retombe sur la
-// même pose qu'un déroulé continu. Lissage : moyenne pondérée des cadrages
-// visés sur une fenêtre de ±`smoothQ` quanta (centre en Web Mercator,
-// résolution en logarithme), puis le géocacheur est gardé dans l'écran.
+// même pose qu'un déroulé continu. Elle est lue dans deux pistes précalculées
+// une fois par chronologie et par taille de vue (docs/parcours.md) :
+// - centre : la position du géocacheur, lissée (gaussienne), avec un peu
+//   d'avance dans le sens de la marche — il ne part pas avant lui ;
+// - zoom : de quoi montrer ce qu'il vient de parcourir et ce qu'il va
+//   parcourir, maximum tenu sur une fenêtre (pas de respiration d'une cache à
+//   l'autre), vitesse bornée puis lissage.
+// Le géocacheur est enfin gardé dans l'écran (filet de sécurité).
 //
 // Aucune dépendance au DOM ni à OpenLayers : testé sous Node
 // (tests/js/parcours_camera.test.mjs). Coordonnées en EPSG:3857.
 
-import { headAt, legIndexAt, reachedIndex } from './parcours_timeline.mjs';
+import { headAt } from './parcours_timeline.mjs';
 
 const R = 6378137;
 const DEG = Math.PI / 180;
@@ -20,15 +25,24 @@ const DEG = Math.PI / 180;
 const RESOLUTION_Z0 = (2 * Math.PI * R) / 256;
 
 export const CAMERA_DEFAULTS = Object.freeze({
-    smoothQ: 8,          // demi-fenêtre de lissage, en quanta
-    paddingPx: 70,       // marge autour du cadrage visé
+    centerSigmaQ: 4,     // lissage du centre (écart type, en quanta)
+    leadQ: 3,            // avance dans le sens de la marche (quanta de déplacement)…
+    leadShare: 0.3,      // …au plus cette part du demi-écran
+    lookBackQ: 4,        // le cadre garde ce qui vient d'être parcouru…
+    lookAheadQ: 8,       // …et montre ce qui va l'être
+    safeShare: 0.7,      // ce cadre tient dans cette part du demi-écran
+    overviewShare: 0.85, // la vue d'ensemble finale, dans celle-ci
+    holdBackQ: 15,       // un dézoom est tenu ce temps avant de rezoomer…
+    holdAheadQ: 2,       // …et anticipé de si peu
+    maxZoomPerQ: 0.25,   // vitesse de zoom maximale (niveaux par quantum : 2,5 par seconde)
+    zoomSigmaQ: 4,       // lissage du zoom
     minSpanM: 900,       // plus petit cadrage (mètres au sol)
     maxZoom: 16,
     headMarginPx: 40,    // le géocacheur reste à cette distance du bord
-    stopNeighborKm: 2,   // à l'arrêt, les trajets voisins plus courts restent cadrés
 });
 
-const SAMPLE_Q = 0.25;
+const SAMPLE_Q = 0.5;
+const MAX_TRACKS = 4;
 
 export function toMercator(lon, lat) {
     const clamped = Math.max(-85.05112878, Math.min(85.05112878, lat));
@@ -43,98 +57,178 @@ export function zoomForResolution(resolution) {
     return Math.log2(RESOLUTION_Z0 / resolution);
 }
 
-function emptyBox() {
-    return [Infinity, Infinity, -Infinity, -Infinity];
+function clampIndex(i, n) {
+    return i < 0 ? 0 : i >= n ? n - 1 : i;
 }
 
-function extend(box, [x, y]) {
-    if (x < box[0]) box[0] = x;
-    if (y < box[1]) box[1] = y;
-    if (x > box[2]) box[2] = x;
-    if (y > box[3]) box[3] = y;
+// Lissage gaussien (bords prolongés) d'un signal échantillonné.
+function gaussian(values, sigma) {
+    const n = values.length;
+    if (!(sigma > 0)) return Float64Array.from(values);
+    const radius = Math.ceil(3 * sigma);
+    const weights = [];
+    let total = 0;
+    for (let k = -radius; k <= radius; k++) {
+        const w = Math.exp(-(k * k) / (2 * sigma * sigma));
+        weights.push(w);
+        total += w;
+    }
+    const out = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        let sum = 0;
+        for (let k = -radius; k <= radius; k++) sum += weights[k + radius] * values[clampIndex(i + k, n)];
+        out[i] = sum / total;
+    }
+    return out;
+}
+
+// Maximum glissant sur [i - back, i + ahead] échantillons.
+function dilate(values, back, ahead) {
+    const n = values.length;
+    const out = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        let max = -Infinity;
+        for (let k = Math.max(0, i - back); k <= Math.min(n - 1, i + ahead); k++) {
+            if (values[k] > max) max = values[k];
+        }
+        out[i] = max;
+    }
+    return out;
+}
+
+// Vitesse bornée, en ne faisant que monter le signal (dézoomer) : la passe
+// avant ralentit les zooms, la passe arrière avance les dézooms.
+function limitRate(values, step) {
+    const out = Float64Array.from(values);
+    for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i], out[i - 1] - step);
+    for (let i = out.length - 2; i >= 0; i--) out[i] = Math.max(out[i], out[i + 1] - step);
+    return out;
+}
+
+// Vue d'ensemble : toutes les étapes, en EPSG:3857.
+function overviewOf(timeline) {
+    const box = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const stop of timeline.stops) {
+        const [x, y] = toMercator(stop.lon, stop.lat);
+        box[0] = Math.min(box[0], x);
+        box[1] = Math.min(box[1], y);
+        box[2] = Math.max(box[2], x);
+        box[3] = Math.max(box[3], y);
+    }
     return box;
 }
 
-function validBox(box) {
-    return box && Number.isFinite(box[0]) && box[2] >= box[0];
-}
-
-// Cadrages précalculés d'une chronologie (gardés par chronologie) : un par
-// trajet (son chemin entier), un par étape (l'étape et le milieu des courts
-// trajets de la même journée qui l'encadrent), la vue d'ensemble.
-const plans = new WeakMap();
-
-function cameraPlan(timeline) {
-    let plan = plans.get(timeline);
-    if (plan) return plan;
-    const o = CAMERA_DEFAULTS;
-    const stops = timeline.stops;
-    const points = stops.map((stop) => toMercator(stop.lon, stop.lat));
-    const legBoxes = timeline.legs.map((leg) => {
-        const box = emptyBox();
-        if (leg.path) for (const [lon, lat] of leg.path) extend(box, toMercator(lon, lat));
-        extend(box, points[leg.from]);
-        extend(box, points[leg.to]);
-        return box;
-    });
-    const midpoint = (k) => {
-        const leg = timeline.legs[k];
-        if (leg.path && leg.path.length > 2) {
-            const [lon, lat] = leg.path[Math.floor(leg.path.length / 2)];
-            return toMercator(lon, lat);
-        }
-        const a = points[leg.from];
-        const b = points[leg.to];
-        return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-    };
-    const legInto = new Map();
-    const legFrom = new Map();
-    timeline.legs.forEach((leg, k) => {
-        legInto.set(leg.to, k);
-        legFrom.set(leg.from, k);
-    });
-    const stopBoxes = points.map((point, i) => {
-        const box = extend(emptyBox(), point);
-        for (const k of [legInto.get(i), legFrom.get(i)]) {
-            // Un long trajet se cadre pendant le trajet : l'étape reste serrée.
-            if (k === undefined || timeline.legs[k].night || timeline.legs[k].km > o.stopNeighborKm) continue;
-            extend(box, midpoint(k));
-        }
-        return box;
-    });
-    const overview = points.reduce((box, point) => extend(box, point), emptyBox());
-    plan = { points, legBoxes, stopBoxes, overview };
-    plans.set(timeline, plan);
-    return plan;
-}
-
-// Cadrage visé à la position `qf` (sans lissage) : le trajet en cours, la
-// nuit (deux journées), l'étape, la vue d'ensemble après la dernière étape.
-export function cameraFocusAt(timeline, qf) {
-    const stops = timeline?.stops || [];
-    if (stops.length === 0) return null;
-    const plan = cameraPlan(timeline);
-    const legIndex = legIndexAt(timeline, qf);
-    if (legIndex >= 0) return plan.legBoxes[legIndex];
-    const last = stops[stops.length - 1];
-    if (qf > last.departQ) return plan.overview;
-    return plan.stopBoxes[Math.max(0, reachedIndex(timeline, qf))];
-}
-
-// Centre et résolution qui montrent `box` dans une vue de `size` px.
-function poseForBox(box, size, o) {
+// Pistes de la caméra pour une vue de `size` px : centre (x, y) et
+// logarithme de la résolution, tous les SAMPLE_Q quanta.
+function buildTrack(timeline, size, o) {
     const [w, h] = size;
-    const cx = (box[0] + box[2]) / 2;
-    const cy = (box[1] + box[3]) / 2;
-    // Échelle de Mercator : un mètre au sol vaut 1/cos(lat) unités.
-    const lat = (2 * Math.atan(Math.exp(cy / R)) - Math.PI / 2);
-    const minSpan = o.minSpanM / Math.max(0.05, Math.cos(lat));
-    const spanX = Math.max(box[2] - box[0], minSpan);
-    const spanY = Math.max(box[3] - box[1], minSpan);
-    const usableW = Math.max(40, w - 2 * o.paddingPx);
-    const usableH = Math.max(40, h - 2 * o.paddingPx);
-    const resolution = Math.max(resolutionForZoom(o.maxZoom), spanX / usableW, spanY / usableH);
-    return { center: [cx, cy], resolution };
+    const stops = timeline.stops;
+    const lastDepart = stops[stops.length - 1].departQ;
+    const n = Math.max(2, Math.ceil(Math.max(timeline.quanta || 0, lastDepart) / SAMPLE_Q) + 2);
+    const perSample = (q) => q / SAMPLE_Q;
+
+    // Ce que la caméra vise à chaque échantillon : le géocacheur, puis la vue
+    // d'ensemble (son centre, et une demi-étendue ramenée à safeShare).
+    const overview = overviewOf(timeline);
+    const ocx = (overview[0] + overview[2]) / 2;
+    const ocy = (overview[1] + overview[3]) / 2;
+    const ohx = ((overview[2] - overview[0]) / 2) * (o.safeShare / o.overviewShare);
+    const ohy = ((overview[3] - overview[1]) / 2) * (o.safeShare / o.overviewShare);
+    const tx = new Float64Array(n);
+    const ty = new Float64Array(n);
+    const ex = new Float64Array(n);
+    const ey = new Float64Array(n);
+    const minLog = new Float64Array(n);
+    const floor = resolutionForZoom(o.maxZoom);
+    for (let i = 0; i < n; i++) {
+        const q = i * SAMPLE_Q;
+        let lat;
+        if (q > lastDepart) {
+            tx[i] = ocx;
+            ty[i] = ocy;
+            ex[i] = ohx;
+            ey[i] = ohy;
+            lat = 2 * Math.atan(Math.exp(ocy / R)) - Math.PI / 2;
+        } else {
+            const head = headAt(timeline, q);
+            [tx[i], ty[i]] = toMercator(head.lon, head.lat);
+            lat = head.lat * DEG;
+        }
+        // Échelle de Mercator : un mètre au sol vaut 1/cos(lat) unités.
+        const minSpan = o.minSpanM / Math.max(0.05, Math.cos(lat));
+        minLog[i] = Math.log(Math.max(floor, minSpan / (o.safeShare * Math.min(w, h))));
+    }
+
+    const cx0 = gaussian(tx, o.centerSigmaQ / SAMPLE_Q);
+    const cy0 = gaussian(ty, o.centerSigmaQ / SAMPLE_Q);
+
+    // Zoom : ce qui est parcouru sur [-lookBackQ, +lookAheadQ] tient, vu du
+    // centre, dans safeShare du demi-écran.
+    const back = Math.round(perSample(o.lookBackQ));
+    const ahead = Math.round(perSample(o.lookAheadQ));
+    const halfW = (w / 2) * o.safeShare;
+    const halfH = (h / 2) * o.safeShare;
+    const need = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        let dx = 0;
+        let dy = 0;
+        for (let j = Math.max(0, i - back); j <= Math.min(n - 1, i + ahead); j++) {
+            dx = Math.max(dx, Math.abs(tx[j] - cx0[i]) + ex[j]);
+            dy = Math.max(dy, Math.abs(ty[j] - cy0[i]) + ey[j]);
+        }
+        need[i] = Math.max(minLog[i], Math.log(Math.max(dx / halfW, dy / halfH, 1e-9)));
+    }
+    // Dézoom tenu : une balade garde un seul cadre, pas un par cache.
+    const held = dilate(need, Math.round(perSample(o.holdBackQ)), Math.round(perSample(o.holdAheadQ)));
+    const limited = limitRate(held, o.maxZoomPerQ * SAMPLE_Q * Math.LN2);
+    const logRes = gaussian(limited, o.zoomSigmaQ / SAMPLE_Q);
+
+    // Avance dans le sens de la marche, bornée à leadShare du demi-écran.
+    const leadX = new Float64Array(n);
+    const leadY = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        const a = clampIndex(i - 1, n);
+        const b = clampIndex(i + 1, n);
+        const span = Math.max(1, b - a) * SAMPLE_Q;
+        let lx = ((cx0[b] - cx0[a]) / span) * o.leadQ;
+        let ly = ((cy0[b] - cy0[a]) / span) * o.leadQ;
+        const cap = o.leadShare * (Math.min(w, h) / 2) * Math.exp(logRes[i]);
+        const length = Math.hypot(lx, ly);
+        if (length > cap) {
+            lx *= cap / length;
+            ly *= cap / length;
+        }
+        leadX[i] = lx;
+        leadY[i] = ly;
+    }
+    const lx = gaussian(leadX, o.centerSigmaQ / SAMPLE_Q);
+    const ly = gaussian(leadY, o.centerSigmaQ / SAMPLE_Q);
+    const cx = new Float64Array(n);
+    const cy = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        cx[i] = cx0[i] + lx[i];
+        cy[i] = cy0[i] + ly[i];
+    }
+    return { n, cx, cy, logRes };
+}
+
+// Pistes gardées par chronologie, et par taille de vue et options.
+const tracks = new WeakMap();
+
+function trackFor(timeline, size, options) {
+    let bySize = tracks.get(timeline);
+    if (!bySize) {
+        bySize = new Map();
+        tracks.set(timeline, bySize);
+    }
+    const key = `${size[0]}x${size[1]}${Object.keys(options).length ? JSON.stringify(options) : ''}`;
+    let track = bySize.get(key);
+    if (!track) {
+        track = buildTrack(timeline, size, { ...CAMERA_DEFAULTS, ...options });
+        if (bySize.size >= MAX_TRACKS) bySize.delete(bySize.keys().next().value);
+        bySize.set(key, track);
+    }
+    return track;
 }
 
 // Pose de la caméra à `qf` pour une vue de `size` ([largeur, hauteur] en px
@@ -142,28 +236,16 @@ function poseForBox(box, size, o) {
 export function cameraPoseAt(timeline, qf, size, options = {}) {
     if (!(timeline?.stops?.length) || !Array.isArray(size) || !(size[0] > 0) || !(size[1] > 0)) return null;
     const o = { ...CAMERA_DEFAULTS, ...options };
-    let sumW = 0;
-    let x = 0;
-    let y = 0;
-    let logRes = 0;
-    // Échantillons tous les quarts de quantum : un cadrage qui change d'un
-    // coup (arrivée d'un long trajet) ne pèse qu'un échantillon à la fois.
-    const steps = Math.max(0, Math.round(o.smoothQ / SAMPLE_Q));
-    for (let i = -steps; i <= steps; i++) {
-        const box = cameraFocusAt(timeline, Math.max(0, qf + i * SAMPLE_Q));
-        if (!validBox(box)) continue;
-        const pose = poseForBox(box, size, o);
-        const weight = steps + 1 - Math.abs(i);
-        sumW += weight;
-        x += pose.center[0] * weight;
-        y += pose.center[1] * weight;
-        logRes += Math.log(pose.resolution) * weight;
-    }
-    if (sumW === 0) return null;
-    const center = [x / sumW, y / sumW];
-    const resolution = Math.exp(logRes / sumW);
-    // Le géocacheur reste dans l'écran : le lissage anticipe et retarde, un
-    // trajet rapide le sortirait sinon du cadre.
+    const track = trackFor(timeline, size, options);
+    const f = Math.min(track.n - 1, Math.max(0, (Number(qf) || 0) / SAMPLE_Q));
+    const i = Math.min(track.n - 2, Math.floor(f));
+    const t = f - i;
+    const center = [
+        track.cx[i] + (track.cx[i + 1] - track.cx[i]) * t,
+        track.cy[i] + (track.cy[i + 1] - track.cy[i]) * t,
+    ];
+    const resolution = Math.exp(track.logRes[i] + (track.logRes[i + 1] - track.logRes[i]) * t);
+    // Filet de sécurité : le géocacheur reste dans l'écran.
     const head = headAt(timeline, qf);
     if (head) {
         const [hx, hy] = toMercator(head.lon, head.lat);
@@ -178,5 +260,5 @@ export function cameraPoseAt(timeline, qf, size, options = {}) {
 // Vue d'ensemble : toutes les étapes (cadrage de fin).
 export function overviewBox(timeline) {
     if (!(timeline?.stops?.length)) return null;
-    return [...cameraPlan(timeline).overview];
+    return overviewOf(timeline);
 }

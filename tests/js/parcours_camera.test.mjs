@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     CAMERA_DEFAULTS,
-    cameraFocusAt,
     cameraPoseAt,
     overviewBox,
     resolutionForZoom,
@@ -14,10 +13,13 @@ import { reconstructParcours } from '../../static/js/parcours_reconstruct.mjs';
 import { buildParcoursTimeline, headAt } from '../../static/js/parcours_timeline.mjs';
 
 const KM_LON = 1 / (111.195 * Math.cos(45 * Math.PI / 180));
-const stop = (key, xKm, extra = {}) => ({
-    key, kind: 'find', type: 'Traditional Cache', lon: 5 + xKm * KM_LON, lat: 45, logId: null, localTime: null, ...extra,
+const KM_LAT = 1 / 111.195;
+const stop = (key, xKm, extra = {}, yKm = 0) => ({
+    key, kind: 'find', type: 'Traditional Cache', lon: 5 + xKm * KM_LON, lat: 45 + yKm * KM_LAT, logId: null, localTime: null, ...extra,
 });
 const SIZE = [800, 600];
+// Une image d'une vidéo à 25 i/s : 0,4 quantum (1 quantum = 100 ms).
+const FRAME_Q = 0.4;
 
 // Samedi : A, B (300 m), puis C à 20 km ; dimanche : D à 120 km.
 function sample() {
@@ -29,22 +31,25 @@ function sample() {
     }));
 }
 
+// Une balade en zigzag : des caches à 300-700 m les unes des autres.
+function walk() {
+    const points = [[0, 0], [0.3, 0.2], [0.1, 0.6], [0.6, 0.8], [0.9, 0.3], [1.4, 0.5], [1.2, 1.0]];
+    return buildParcoursTimeline(reconstructParcours({
+        days: [{ date: '2025-07-12', stops: points.map(([x, y], i) => stop(`w${i}`, x, { logId: i + 1 }, y)) }],
+    }));
+}
+
 const span = (pose) => pose.resolution * SIZE[0];
 
-test('cadrage visé : étape, trajet, nuit, vue d’ensemble', () => {
-    const tl = sample();
-    const [a, , c, d] = tl.stops;
-    assert.ok(cameraFocusAt(tl, a.q)[2] - cameraFocusAt(tl, a.q)[0] < 1000);
-    const long = tl.legs[1];
-    const box = cameraFocusAt(tl, (long.startQ + long.endQ) / 2);
-    assert.ok(box[2] - box[0] > 20000 * 0.99 / Math.cos(45 * Math.PI / 180) * 0.7);
-    const night = tl.legs[2];
-    assert.equal(night.night, true);
-    const nightBox = cameraFocusAt(tl, night.startQ + 1);
-    assert.ok(nightBox[0] <= toMercator(c.lon, c.lat)[0] && nightBox[2] >= toMercator(d.lon, d.lat)[0]);
-    assert.deepEqual(cameraFocusAt(tl, tl.quanta), overviewBox(tl));
-    assert.equal(cameraFocusAt({ stops: [], legs: [] }, 0), null);
-});
+// Position du géocacheur à l'écran, en part du demi-écran (0 = centre, 1 = bord).
+function headShare(tl, q, pose) {
+    const head = headAt(tl, q);
+    const [hx, hy] = toMercator(head.lon, head.lat);
+    return Math.max(
+        Math.abs(hx - pose.center[0]) / pose.resolution / (SIZE[0] / 2),
+        Math.abs(hy - pose.center[1]) / pose.resolution / (SIZE[1] / 2),
+    );
+}
 
 test('pose : serrée à pied, dézoom sur le long trajet et la nuit, vue d’ensemble à la fin', () => {
     const tl = sample();
@@ -63,31 +68,65 @@ test('pose : serrée à pied, dézoom sur le long trajet et la nuit, vue d’ens
     // Jamais plus près que le zoom maximal.
     assert.ok(atA.resolution >= resolutionForZoom(CAMERA_DEFAULTS.maxZoom) - 1e-9);
     assert.ok(atA.zoom <= CAMERA_DEFAULTS.maxZoom + 1e-9);
+    // À la fin, toutes les étapes sont à l'écran.
+    const box = overviewBox(tl);
+    for (const [x, y] of [[box[0], box[1]], [box[2], box[3]]]) {
+        assert.ok(Math.abs(x - end.center[0]) / end.resolution <= SIZE[0] / 2);
+        assert.ok(Math.abs(y - end.center[1]) / end.resolution <= SIZE[1] / 2);
+    }
 });
 
-test('pose : continue d’un quantum à l’autre, et le géocacheur reste dans l’écran', () => {
-    const tl = sample();
-    let previous = null;
-    for (let q = 0; q <= tl.quanta; q += 0.25) {
-        const pose = cameraPoseAt(tl, q, SIZE);
-        const head = headAt(tl, q);
-        const [hx, hy] = toMercator(head.lon, head.lat);
-        const dx = Math.abs(hx - pose.center[0]) / pose.resolution;
-        const dy = Math.abs(hy - pose.center[1]) / pose.resolution;
-        assert.ok(dx <= SIZE[0] / 2 - CAMERA_DEFAULTS.headMarginPx + 1e-6, `q=${q} dx=${dx}`);
-        assert.ok(dy <= SIZE[1] / 2 - CAMERA_DEFAULTS.headMarginPx + 1e-6, `q=${q} dy=${dy}`);
-        if (previous) {
-            // Variation de zoom bornée entre deux images (pas de saut).
-            assert.ok(Math.abs(Math.log2(pose.resolution / previous.resolution)) < 0.35, `q=${q}`);
+test('pose : le géocacheur reste près du centre, zoom et déplacement doux', () => {
+    for (const tl of [sample(), walk()]) {
+        let previous = null;
+        for (let q = 0; q <= tl.quanta; q += FRAME_Q) {
+            const pose = cameraPoseAt(tl, q, SIZE);
+            assert.ok(headShare(tl, q, pose) <= 0.7, `q=${q} : ${headShare(tl, q, pose)}`);
+            if (previous) {
+                // Au plus ~2 niveaux de zoom par seconde (la piste les borne).
+                const levels = Math.abs(Math.log2(pose.resolution / previous.resolution));
+                assert.ok(levels <= (CAMERA_DEFAULTS.maxZoomPerQ * FRAME_Q) * 1.05, `q=${q} : ${levels} niveau(x)`);
+                // Pas de saut : au plus 20 px d'une image à l'autre.
+                const px = Math.hypot(pose.center[0] - previous.center[0], pose.center[1] - previous.center[1]) / pose.resolution;
+                assert.ok(px <= 20, `q=${q} : ${px} px`);
+            }
+            previous = pose;
         }
-        previous = pose;
     }
+});
+
+test('pose : la caméra ne part pas avant le géocacheur', () => {
+    const tl = walk();
+    for (const leg of tl.legs) {
+        // Une seconde avant le départ, la caméra ne s'est pas encore mise en route.
+        const q = leg.startQ - 10;
+        if (q < tl.stops[leg.from].q) continue;
+        const pose = cameraPoseAt(tl, q, SIZE);
+        assert.ok(headShare(tl, q, pose) < 0.05, `trajet ${leg.from}>${leg.to} : ${headShare(tl, q, pose)}`);
+    }
+});
+
+test('pose : pas de respiration du zoom pendant une balade', () => {
+    const tl = walk();
+    const first = tl.stops[0].departQ;
+    // Jusqu'à l'avant-dernière étape : ensuite vient le dézoom de la vue d'ensemble.
+    const last = tl.stops[tl.stops.length - 2].q;
+    const zooms = [];
+    for (let q = first; q <= last; q += FRAME_Q) zooms.push(cameraPoseAt(tl, q, SIZE).zoom);
+    // Un seul cadre pour toute la balade : à peine un quart de niveau d'écart.
+    assert.ok(Math.max(...zooms) - Math.min(...zooms) < 0.25, `${Math.min(...zooms)} → ${Math.max(...zooms)}`);
 });
 
 test('pose : même résultat quel que soit le chemin (déterministe)', () => {
     const tl = sample();
     const q = tl.legs[1].startQ + 3.4;
-    assert.deepEqual(cameraPoseAt(tl, q, SIZE), cameraPoseAt(tl, q, SIZE));
+    const direct = cameraPoseAt(tl, q, SIZE);
+    // Une autre taille de vue construit une autre piste, sans toucher celle-ci.
+    cameraPoseAt(tl, q, [1920, 1080]);
+    for (let r = 0; r < q; r += 0.7) cameraPoseAt(tl, r, SIZE);
+    assert.deepEqual(cameraPoseAt(tl, q, SIZE), direct);
+    assert.deepEqual(cameraPoseAt(sample(), q, SIZE), direct);
     assert.equal(cameraPoseAt(tl, q, [0, 0]), null);
     assert.equal(cameraPoseAt(null, q, SIZE), null);
+    assert.equal(overviewBox({ stops: [], legs: [] }), null);
 });

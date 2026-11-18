@@ -236,16 +236,29 @@ ils s'appliquent aussi en pleine lecture.
 
 **Caméra** (`parcours_camera.mjs`, réglage « Caméra », défaut « Suit le
 géocacheur ») :
-- cadrage visé à chaque position du moteur (`cameraFocusAt`) :
-  - pendant un trajet, son chemin entier : dézoom d'un long trajet ;
-  - à une étape, l'étape et le milieu des trajets voisins de moins de 2 km
-    (900 m de côté au moins, zoom 16 au plus) ;
-  - la nuit, la fin de la journée et le début de la suivante ;
-  - après la dernière étape, la vue d'ensemble ;
-- lissage : moyenne pondérée (triangle) des cadrages visés sur ±8 quanta,
-  échantillonnés tous les quarts de quantum. Centre en Web Mercator,
-  résolution en logarithme ;
-- le géocacheur est ensuite gardé à 40 px du bord au moins.
+- deux pistes précalculées une fois par chronologie et par taille de vue
+  (un échantillon par demi-quantum, interpolées entre deux) ;
+- centre : la position du géocacheur (`headAt`), lissée par une gaussienne
+  (σ = 4 quanta), plus une avance dans le sens de la marche (le déplacement
+  de 3 quanta, au plus 30 % du demi-écran). La caméra suit le chemin et
+  ne part pas avant le géocacheur ;
+- zoom : ce que le géocacheur parcourt de 0,4 s avant à 0,8 s après doit
+  tenir dans 70 % du demi-écran (900 m de côté au moins, zoom 16 au plus).
+  Le dézoom est tenu 1,5 s avant de rezoomer (une balade garde un seul
+  cadre, pas un par cache), la vitesse est bornée à 2,5 niveaux/s (le
+  dézoom d'un long trajet ou de la nuit commence donc un peu avant le
+  départ), puis le tout est lissé (σ = 4 quanta, résolution en logarithme) ;
+- après la dernière étape, la vue d'ensemble (85 % du demi-écran) est une
+  cible comme une autre ;
+- le géocacheur est enfin gardé à 40 px du bord au moins (filet de
+  sécurité, normalement inutile).
+
+Avant le 2026-11-18, la caméra lissait des cadres par segment (le trajet
+entier, l'étape) : elle partait vers le trajet suivant pendant l'arrêt
+(jusqu'à 230 px par image), restait fixe pendant que le géocacheur
+traversait l'écran, et le zoom pompait d'une cache à l'autre (jusqu'à
+7,8 niveaux/s). Les réglages sont dans `CAMERA_DEFAULTS` ; les tests
+(`tests/js/parcours_camera.test.mjs`) vérifient ces critères de confort.
 
 La pose ne dépend que de la position du moteur : aperçu, saut et vidéo image
 par image cadrent pareil. `mapgl.js` appelle le crochet `camera` après

@@ -241,6 +241,20 @@ export function legPoints(timeline, legIndex, progress) {
     return [...path.slice(0, index + 1), [p[0] + (r[0] - p[0]) * f, p[1] + (r[1] - p[1]) * f]];
 }
 
+// Position à `progress` le long du trajet `legIndex` ([lon, lat]) : le
+// dernier point de legPoints, sans recopier le chemin.
+function pointOnLeg(timeline, legIndex, progress) {
+    const leg = timeline.legs[legIndex];
+    const a = timeline.stops[leg.from];
+    const b = timeline.stops[leg.to];
+    const path = leg.path || [[a.lon, a.lat], [b.lon, b.lat]];
+    if (progress >= 1) return path[path.length - 1];
+    const { index, f } = legCut(leg, progress);
+    const p = path[index];
+    const r = path[Math.min(index + 1, path.length - 1)];
+    return [p[0] + (r[0] - p[0]) * f, p[1] + (r[1] - p[1]) * f];
+}
+
 // Dernière étape atteinte à la position `qf` (quanta fractionnaires) : -1
 // avant la première.
 export function reachedIndex(timeline, qf) {
@@ -283,8 +297,7 @@ export function headAt(timeline, qf) {
     if (legIndex >= 0) {
         const leg = timeline.legs[legIndex];
         const progress = smoothstep(clamp((qf - leg.startQ) / Math.max(1e-9, leg.endQ - leg.startQ), 0, 1));
-        const points = legPoints(timeline, legIndex, progress);
-        const [lon, lat] = points[points.length - 1];
+        const [lon, lat] = pointOnLeg(timeline, legIndex, progress);
         return { lon, lat, leg: legIndex, progress };
     }
     const reached = Math.max(0, reachedIndex(timeline, qf));
