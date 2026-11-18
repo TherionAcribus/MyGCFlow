@@ -180,7 +180,7 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   // Sans ancre, la journée commence à 9 h ; heures croissantes.
   expect(state.days[0].times[0]).toBe('09:00');
   expect(state.days[0].times).toEqual([...state.days[0].times].sort());
-  expect(state.layer).toEqual({ stops: 5, lines: 2, onMap: true, visible: true });
+  expect(state.layer).toEqual({ stops: 5, lines: 2, draft: 0, onMap: true, visible: true });
   await expect(page.locator('.parcours-list-item.active')).toContainText('Week-end à Annecy');
   await expect(page.locator('#parcoursSummary')).toContainText('5 étapes');
   await expect(page.locator('.parcours-stop').first()).toContainText('Départ du sentier');

@@ -347,6 +347,46 @@ test('poser une base d’un clic sur la carte : départ et retour de chaque jour
   expect(errors).toEqual([]);
 });
 
+test('poser un lieu : le point provisoire reste affiché jusqu’à la validation', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+  const stops = state.layer.stops;
+  expect(state.placeDraft).toBeNull();
+  expect(state.layer.draft).toBe(0);
+
+  // Clic sur la carte : le point provisoire paraît tant que le formulaire
+  // est ouvert — le clic n'est pas resté sans effet.
+  await page.locator('#btnParcoursAddPlace').click();
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const form = page.locator('#parcoursPlaceForm');
+  await expect(form).toBeVisible();
+  state = await snapshot(page);
+  expect(state.placeDraft).not.toBeNull();
+  expect(state.layer.draft).toBe(1);
+
+  // Annulation : le point provisoire disparaît, rien n'est posé.
+  await page.locator('#btnParcoursPlaceCancel').click();
+  state = await snapshot(page);
+  expect(state.placeDraft).toBeNull();
+  expect(state.layer.draft).toBe(0);
+  expect(state.places).toEqual([]);
+
+  // Validation : le provisoire laisse la place au vrai point.
+  await page.locator('#btnParcoursAddPlace').click();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(form).toBeVisible();
+  await form.locator('#parcoursPlaceName').fill('Point de vue');
+  await form.locator('#btnParcoursPlaceSave').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  await expect(form).toBeHidden();
+  expect(state.layer.draft).toBe(0);
+  expect(state.places.map((p) => p.name)).toEqual(['Point de vue']);
+  expect(state.layer.stops).toBe(stops + 1);
+  expect(errors).toEqual([]);
+});
+
 test('bases à rôles : partir d’un hôtel, dormir au camping', async ({ page, request }) => {
   const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
   const depart = await request.post(`/api/parcours/${id}/places`, {

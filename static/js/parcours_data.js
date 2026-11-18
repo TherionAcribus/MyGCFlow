@@ -2624,12 +2624,15 @@ function syncPlaceForm() {
     if (timeRow) timeRow.hidden = base;
     const roleRow = el('parcoursPlaceRoleRow');
     if (roleRow) roleRow.hidden = !base;
+    // Le point provisoire prend la forme du type choisi.
+    renderLayer();
 }
 
 function closePlaceForm() {
     placeDraft = null;
     const form = el('parcoursPlaceForm');
     if (form) form.hidden = true;
+    renderLayer();
 }
 
 function bindAdjustments() {
@@ -3897,6 +3900,16 @@ const haloStyle = new ol.style.Style({
     }),
 });
 
+// Anneau en pointillés du point provisoire : posé au clic, en attente de la
+// validation du formulaire.
+const draftHaloStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 17,
+        fill: new ol.style.Fill({ color: 'rgba(32, 107, 196, 0.10)' }),
+        stroke: new ol.style.Stroke({ color: 'rgba(32, 107, 196, 0.9)', width: 2, lineDash: [5, 4] }),
+    }),
+});
+
 function pointStyle(feature) {
     const kind = feature.get('kind');
     const normal = (kind === KIND_BASE || kind === KIND_PLACE) ? placeStyle(kind) : numberedStyle(feature);
@@ -3958,7 +3971,9 @@ function ensureLayer() {
             style: (feature) => {
                 const role = feature.get('role');
                 if (role === 'track') return trackStyle;
-                return role === 'line' ? lineStyle : pointStyle(feature);
+                if (role === 'line') return lineStyle;
+                if (role === 'draft') return [draftHaloStyle, placeStyle(feature.get('kind'))];
+                return pointStyle(feature);
             },
         });
         parcoursLayer.set('name', 'parcours');
@@ -4079,6 +4094,15 @@ function renderLayer({ fit = false } = {}) {
             geometry: new ol.geom.Point(ol.proj.fromLonLat([stop.lon, stop.lat])),
         }));
     }
+    // Point provisoire du formulaire de pose : du clic sur la carte à la
+    // validation (ou l'annulation), pour que le clic ne semble pas perdu.
+    if (placeDraft) {
+        features.push(new ol.Feature({
+            role: 'draft',
+            kind: el('parcoursPlaceKind')?.value || KIND_PLACE,
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([placeDraft.lon, placeDraft.lat])),
+        }));
+    }
     source.addFeatures(features);
     if (fit) {
         const extent = parcoursExtent(parcoursStops(ordered));
@@ -4122,6 +4146,7 @@ export function getParcoursSnapshot() {
         redoDepth: redoStack.length,
         editKey,
         picking,
+        placeDraft: placeDraft ? { ...placeDraft } : null,
         photos: (inputs?.photos || []).map((photo) => ({
             id: photo.id,
             stopKey: photo.stopKey,
@@ -4171,6 +4196,7 @@ export function getParcoursSnapshot() {
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,
             lines: source.getFeatures().filter((f) => f.get('role') === 'line').length,
+            draft: source.getFeatures().filter((f) => f.get('role') === 'draft').length,
             onMap: !!pkg.getMap?.()?.getLayers().getArray().includes(parcoursLayer),
             visible: parcoursLayer.getVisible(),
         } : null,
