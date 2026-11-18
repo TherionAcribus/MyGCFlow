@@ -72,8 +72,12 @@ def list_parcours():
 def parcours_suggestions():
     """Séjours et grosses journées tirés des trouvailles (lot 7), hors plages
     déjà enregistrées."""
-    return jsonify({'suggestions': parcours_suggest.suggestions(
-        db.session, store.list_parcours(db.session), max_days=store.MAX_DAYS)})
+    limit = request.args.get('limit', default=parcours_suggest.LIMIT, type=int)
+    if limit <= 0:
+        limit = None
+    return jsonify(parcours_suggest.suggestions(
+        db.session, store.list_parcours(db.session),
+        max_days=store.MAX_DAYS, limit=limit))
 
 
 @parcours_bp.route('/api/parcours', methods=['POST'])

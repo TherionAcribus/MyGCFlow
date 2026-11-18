@@ -65,6 +65,14 @@ class SuggestTests(unittest.TestCase):
         self.assertEqual([(s['kind'], s['start']) for s in result], [('day', '2025-08-15'), ('trip', '2025-06-01')])
         self.assertEqual(result[0]['place'], 'Auvergne-Rhône-Alpes')
 
+    def test_limit_and_unbounded(self):
+        croatia = dict(country='Croatia', state='Split')
+        months = [day(f'2025-{m:02d}-10', SPLIT, 5, **croatia) for m in range(1, 9)]
+        days = home_weeks() + months
+        self.assertEqual(len(suggest.suggest(days)), 6)
+        self.assertEqual(len(suggest.suggest(days, limit=3)), 3)
+        self.assertEqual(len(suggest.suggest(days, limit=None)), 8)
+
     def test_existing_ranges_are_not_suggested_again(self):
         days = home_weeks() + [day('2025-07-12', SPLIT, 5, country='Croatia', state='Split')]
         self.assertEqual(len(suggest.suggest(days)), 1)
@@ -110,8 +118,25 @@ class SuggestApiTests(_Base):
             'kind': 'trip', 'start': '2025-07-12', 'end': '2025-07-13', 'days': 2, 'findDays': 2,
             'finds': 4, 'place': 'Splitsko-dalmatinska',
         }])
+        self.assertEqual(payload['total'], 1)
         self.create(name='Croatie', date_start='2025-07-12', date_end='2025-07-13')
         self.assertEqual(self.get('/api/parcours/suggestions').get_json()['suggestions'], [])
+
+    def test_api_limit_and_total(self):
+        # La maison domine la case du centre habituel ; sept séjours croates.
+        for k in range(30):
+            self.add(f'GCH{k}', f'2025-03-{(k % 28) + 1:02d}', ANNECY)
+        for t in range(7):
+            for k in range(3):
+                self.add(f'GCT{t}{k}', f'2025-{t + 1:02d}-1{k + 2}', SPLIT,
+                         country='Croatia', state='Split')
+        db.session.commit()
+        payload = self.get('/api/parcours/suggestions').get_json()
+        self.assertEqual(len(payload['suggestions']), 6)
+        self.assertEqual(payload['total'], 7)
+        payload = self.get('/api/parcours/suggestions?limit=0').get_json()
+        self.assertEqual(len(payload['suggestions']), 7)
+        self.assertEqual(payload['total'], 7)
 
 
 if __name__ == '__main__':

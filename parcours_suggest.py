@@ -104,7 +104,7 @@ def place_name(days: list[dict]) -> str:
 
 
 def suggest(days: list[dict], existing: set | None = None, *, max_days: int = 92,
-            limit: int = LIMIT) -> list[dict]:
+            limit: int | None = LIMIT) -> list[dict]:
     """Séjours et grosses journées, les plus récents d'abord. `existing` :
     plages (début, fin) déjà enregistrées, écartées."""
     existing = existing or set()
@@ -148,7 +148,10 @@ def _suggestion(kind: str, days: list[dict], finds: int) -> dict:
     }
 
 
-def suggestions(session, existing_rows, *, max_days: int = 92) -> list[dict]:
+def suggestions(session, existing_rows, *, max_days: int = 92,
+                limit: int | None = LIMIT) -> dict:
+    """Suggestions tronquées à `limit` (None : toutes), avec leur total."""
     existing = {(row['date_start'], row['date_end']) for row in existing_rows}
-    return suggest(find_days(session), existing, max_days=max_days)
+    full = suggest(find_days(session), existing, max_days=max_days, limit=None)
+    return {'suggestions': full[:limit], 'total': len(full)}
 

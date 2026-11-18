@@ -133,6 +133,8 @@ const FIT_MAX_ZOOM = 16;
 let listing = [];             // parcours enregistrés (GET /api/parcours)
 let suggestions = [];         // séjours et grosses journées proposés (lot 7)
 let suggestionsSeq = 0;
+let suggestionsTotal = 0;     // total côté serveur (la réponse est plafonnée)
+let suggestionsExpanded = false;
 let findsExtent = { first: null, last: null };
 let homeCenter = null;        // centre habituel des trouvailles (GET /api/parcours)
 let maxDays = 92;
@@ -1383,15 +1385,35 @@ function bindForm() {
 async function loadSuggestions() {
     const seq = ++suggestionsSeq;
     let next = [];
+    let total = 0;
     try {
         const body = await fetchJson('/api/parcours/suggestions');
         next = Array.isArray(body.suggestions) ? body.suggestions : [];
+        total = typeof body.total === 'number' ? body.total : next.length;
     } catch (error) {
         console.warn('[PARCOURS] Suggestions indisponibles :', error);
     }
     if (seq !== suggestionsSeq) return;
     suggestions = next;
+    suggestionsTotal = total;
+    suggestionsExpanded = false;
     renderSuggestions();
+}
+
+// « … et N autres » : le serveur a plafonné la réponse, on la redemande
+// entière (limit=0) pour tout afficher.
+async function expandSuggestions() {
+    const seq = ++suggestionsSeq;
+    try {
+        const body = await fetchJson('/api/parcours/suggestions?limit=0');
+        if (seq !== suggestionsSeq) return;
+        suggestions = Array.isArray(body.suggestions) ? body.suggestions : [];
+        suggestionsTotal = suggestions.length;
+        suggestionsExpanded = true;
+        renderSuggestions();
+    } catch (error) {
+        console.warn('[PARCOURS] Suggestions complètes indisponibles :', error);
+    }
 }
 
 function suggestionName(item) {
@@ -1405,7 +1427,7 @@ function renderSuggestions() {
     const list = el('parcoursSuggestionList');
     if (!box || !list) return;
     box.hidden = suggestions.length === 0;
-    list.replaceChildren(...suggestions.map((item) => {
+    const children = suggestions.map((item) => {
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'btn btn-sm btn-outline-secondary parcours-suggestion';
@@ -1423,7 +1445,18 @@ function renderSuggestions() {
         chip.append(icon, label, detail);
         chip.addEventListener('click', () => applySuggestion(item));
         return chip;
-    }));
+    });
+    const remaining = suggestionsTotal - suggestions.length;
+    if (!suggestionsExpanded && remaining > 0) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.id = 'btnParcoursSuggestionsMore';
+        more.className = 'btn btn-sm btn-link parcours-suggestion-more';
+        more.textContent = t('… et ${n} autres', { n: remaining });
+        more.addEventListener('click', () => expandSuggestions());
+        children.push(more);
+    }
+    list.replaceChildren(...children);
 }
 
 function applySuggestion(item) {
@@ -3771,6 +3804,7 @@ export function getParcoursSnapshot() {
         status,
         ids: listing.map((item) => item.id),
         suggestions: suggestions.map((item) => ({ ...item, name: suggestionName(item) })),
+        suggestionsTotal,
         selectedId,
         logsAvailable,
         days: (ordered?.days || []).map((day) => ({

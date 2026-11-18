@@ -273,6 +273,31 @@ test('une saisie invalide est refusée avec un message', async ({ page, request 
   expect((await snapshot(page)).ids).toEqual([]);
 });
 
+test('suggestions : six visibles, « et N autres » déplie le reste', async ({ page }) => {
+  const errors = collectErrors(page);
+  const trips = Array.from({ length: 8 }, (_, i) => ({
+    kind: 'trip', start: `2025-0${i + 1}-10`, end: `2025-0${i + 1}-14`,
+    days: 5, findDays: 4, finds: 20, place: `Lieu ${i + 1}`,
+  }));
+  // La réponse plafonnée à 6, puis entière sur limit=0.
+  await page.route('**/api/parcours/suggestions**', (route) => {
+    const all = route.request().url().includes('limit=0');
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ suggestions: all ? trips : trips.slice(0, 6), total: 8 }),
+    });
+  });
+  await openParcoursPage(page);
+  const chips = page.locator('.parcours-suggestion');
+  await expect(chips).toHaveCount(6);
+  const more = page.locator('#btnParcoursSuggestionsMore');
+  await expect(more).toContainText('et 2 autres');
+  await more.click();
+  await expect(chips).toHaveCount(8);
+  await expect(more).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('supprimer un parcours après confirmation', async ({ page, request }) => {
   await importFixture(page, request);
   const created = await request.post('/api/parcours',
