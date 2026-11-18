@@ -209,6 +209,14 @@
                          panneau (heure, journée, exclusion) ; les flèches et le
                          glisser-déposer fixent l'ordre de la journée. -->
                     <div id="parcoursStopsTools" class="d-flex gap-2 flex-wrap mb-2" hidden>
+                        <button type="button" id="btnParcoursUndo" class="btn btn-sm btn-outline-secondary" disabled
+                                title="{{ _('Annuler le dernier ajustement (Ctrl+Z)') }}">
+                            <i class="ti ti-arrow-back-up" aria-hidden="true"></i><span class="visually-hidden">{{ _("Annuler") }}</span>
+                        </button>
+                        <button type="button" id="btnParcoursRedo" class="btn btn-sm btn-outline-secondary" disabled
+                                title="{{ _('Rétablir l’ajustement annulé (Ctrl+Y)') }}">
+                            <i class="ti ti-arrow-forward-up" aria-hidden="true"></i><span class="visually-hidden">{{ _("Rétablir") }}</span>
+                        </button>
                         <button type="button" id="btnParcoursAddPlace" class="btn btn-sm btn-outline-primary">
                             <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Poser un lieu ou une base sur la carte") }}
                         </button>

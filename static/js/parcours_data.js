@@ -310,6 +310,8 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         ordered = null;
         editKey = null;
         collapsedDays.clear();
+        undoStack = [];
+        redoStack = [];
         renderStops();
         applyTimeline();
         status = 'idle';
@@ -331,6 +333,8 @@ export async function openParcours(id) {
     status = 'loading';
     editKey = null;
     collapsedDays.clear();
+    undoStack = [];
+    redoStack = [];
     cancelPlacePicking();
     closePlaceForm();
     renderStops();
@@ -1638,6 +1642,7 @@ function renderStops(errorMessage = '') {
         node?.focus();
     }
     updateCollapseAll();
+    updateUndoButtons();
 }
 
 // « Tout plier / Tout déplier » : libellé et état selon les journées repliées.
@@ -2169,8 +2174,46 @@ function mergeOverrides(patches) {
     inputs.overrides = [...rows.values()];
 }
 
-function saveOverrides(patches) {
-    if (!selectedId || adjustmentsLocked() || !inputs) return;
+// Historique des ajustements : une entrée = la liste des ajustements telle
+// qu'elle était AVANT le geste (JSON — copie et comparaison en une fois).
+// L'annulation rejoue l'état précédent comme des patches ; les lieux posés
+// ne font pas partie de l'historique (leur identifiant changerait).
+const UNDO_LIMIT = 50;
+let undoStack = [];
+let redoStack = [];
+
+function snapshotOverrides() {
+    return JSON.stringify((inputs?.overrides || []).map((o) => ({ ...o })));
+}
+
+// Patches transformant les ajustements actuels en `target` : chaque ligne
+// voulue est posée entière, chaque ligne disparue est vidée (ce qui la
+// retire, même sémantique de fusion que le serveur).
+function patchesTo(target) {
+    const fields = { rank: null, pinnedTime: null, day: null, excluded: false, legMode: null };
+    const current = new Map((inputs.overrides || []).map((o) => [o.key, o]));
+    const wanted = new Map(target.map((o) => [o.key, o]));
+    const patches = [];
+    for (const [key, row] of wanted) {
+        const next = { key };
+        for (const field of Object.keys(fields)) {
+            next[field] = field === 'excluded' ? !!row[field] : (row[field] ?? null);
+        }
+        const cur = current.get(key);
+        if (!cur || Object.keys(fields).some((f) => next[f] !== (f === 'excluded' ? !!cur[f] : (cur[f] ?? null)))) {
+            patches.push(next);
+        }
+    }
+    for (const key of current.keys()) {
+        if (!wanted.has(key)) patches.push({ key, ...fields });
+    }
+    return patches;
+}
+
+// Écrit les patches : fusion locale, reconstruction, envoi en file — sans
+// enregistrer dans l'historique (utilisé par l'annulation elle-même).
+function writeOverrides(patches) {
+    if (!patches.length) return;
     const pid = selectedId;
     mergeOverrides(patches);
     rebuild();
@@ -2194,6 +2237,44 @@ function saveOverrides(patches) {
             overridesChain = overridesChain.then(() => reloadAdjustments(pid));
         }
     });
+}
+
+function saveOverrides(patches) {
+    if (!selectedId || adjustmentsLocked() || !inputs) return;
+    const before = snapshotOverrides();
+    writeOverrides(patches);
+    // Le geste n'entre dans l'historique que s'il a changé quelque chose.
+    if (snapshotOverrides() !== before) {
+        undoStack.push(before);
+        if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+        redoStack = [];
+        updateUndoButtons();
+    }
+}
+
+function undoAdjustment() {
+    if (!undoStack.length || !selectedId || adjustmentsLocked() || !inputs) return;
+    const current = snapshotOverrides();
+    const target = undoStack.pop();
+    redoStack.push(current);
+    writeOverrides(patchesTo(JSON.parse(target)));
+    updateUndoButtons();
+}
+
+function redoAdjustment() {
+    if (!redoStack.length || !selectedId || adjustmentsLocked() || !inputs) return;
+    const current = snapshotOverrides();
+    const target = redoStack.pop();
+    undoStack.push(current);
+    writeOverrides(patchesTo(JSON.parse(target)));
+    updateUndoButtons();
+}
+
+function updateUndoButtons() {
+    const undo = el('btnParcoursUndo');
+    const redo = el('btnParcoursRedo');
+    if (undo) undo.disabled = undoStack.length === 0;
+    if (redo) redo.disabled = redoStack.length === 0;
 }
 
 // Nouvel ordre d'une journée : un rang pour chacune de ses étapes.
@@ -2229,25 +2310,11 @@ function resetDayOrder(day) {
 }
 
 function resetAllAdjustments() {
-    if (!selectedId || adjustmentsLocked() || !inputs) return;
-    const pid = selectedId;
     // Même file que les PATCH : un déplacement encore en vol doit être
     // écrit AVANT la remise à zéro, sinon il ressusciterait ses ajustements.
-    inputs.overrides = [];
-    rebuild();
-    renderStops();
-    applyTimeline();
-    overridesQueued++;
-    overridesChain = overridesChain.then(async () => {
-        overridesQueued--;
-        try {
-            const payload = await fetchJson(`/api/parcours/${pid}/overrides`, { method: 'DELETE' });
-            if (overridesQueued === 0) receiveAdjustments(payload, pid);
-        } catch (error) {
-            showToast(error.message, 'error');
-            overridesChain = overridesChain.then(() => reloadAdjustments(pid));
-        }
-    });
+    // Le vidage par lignes nulles retire chaque ajustement — et entre dans
+    // l'historique comme les autres gestes.
+    saveOverrides(patchesTo([]));
 }
 
 async function reloadAdjustments(forId = selectedId) {
@@ -2421,6 +2488,23 @@ function bindAdjustments() {
     el('btnParcoursAddPlace')?.addEventListener('click', () => {
         if (picking) cancelPlacePicking();
         else startPlacePicking();
+    });
+    el('btnParcoursUndo')?.addEventListener('click', undoAdjustment);
+    el('btnParcoursRedo')?.addEventListener('click', redoAdjustment);
+    // Ctrl+Z / Ctrl+Y (ou Ctrl+Maj+Z) sur la page, hors champs de saisie.
+    document.addEventListener('keydown', (event) => {
+        if (!selectedId || !(event.ctrlKey || event.metaKey)) return;
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+                || document.activeElement?.isContentEditable) return;
+        const key = event.key.toLowerCase();
+        if (key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            undoAdjustment();
+        } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+            event.preventDefault();
+            redoAdjustment();
+        }
     });
     el('btnParcoursCollapseDays')?.addEventListener('click', () => {
         const days = ordered?.days || [];
@@ -3876,6 +3960,8 @@ export function getParcoursSnapshot() {
         places: (inputs?.places || []).map((p) => ({ ...p })),
         adjustmentRevision,
         overridesQueued,
+        undoDepth: undoStack.length,
+        redoDepth: redoStack.length,
         editKey,
         picking,
         photos: (inputs?.photos || []).map((photo) => ({

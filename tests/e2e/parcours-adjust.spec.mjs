@@ -125,6 +125,49 @@ test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({
   expect(errors).toEqual([]);
 });
 
+test('annuler / rétablir : boutons, Ctrl+Z, et remise à zéro annulable', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+  const undo = page.locator('#btnParcoursUndo');
+  const redo = page.locator('#btnParcoursRedo');
+  await expect(undo).toBeDisabled();
+
+  // Un déplacement : le bouton Annuler s'active, l'annulation le défait.
+  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
+  await expect(undo).toBeEnabled();
+
+  await undo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR03', 'GCPAR01', 'GCPAR02']);
+  expect(state.overrides).toEqual([]);
+  await expect(redo).toBeEnabled();
+
+  await redo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
+
+  // Les raccourcis font la même chose que les boutons.
+  await page.keyboard.press('Control+z');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR03', 'GCPAR01', 'GCPAR02']);
+  await page.keyboard.press('Control+Shift+z');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
+
+  // « Annuler les ajustements » est lui-même annulable.
+  await page.locator('#btnParcoursResetAdjustments').click();
+  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.overrides).toEqual([]);
+  await undo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
+  expect(errors).toEqual([]);
+});
+
 test('épingler une heure, changer de journée, exclure puis réintégrer', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);
