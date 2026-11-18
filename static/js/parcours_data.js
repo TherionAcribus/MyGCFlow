@@ -3417,14 +3417,17 @@ async function ensureRoutes({ force = false } = {}) {
         renderRouting();
         return;
     }
-    if (routeState.state === 'error' && !force) return;
+    // Erreur ou annulation : suspendues jusqu'à une action de l'utilisateur.
+    if ((routeState.state === 'error' || routeState.state === 'cancelled') && !force) return;
     const runs = force ? routeRunsNow : pendingRuns(routeRunsNow, routeCache);
     if (runs.length === 0) {
         renderRouting();
         return;
     }
     const seq = ++routeSeq;
-    routeState = { state: 'loading', message: '' };
+    const total = runs.reduce((n, run) => n + run.keys.length, 0);
+    let done = 0;
+    routeState = { state: 'loading', message: '', done, total };
     renderRouting();
     let message = '';
     let failed = false;
@@ -3444,6 +3447,9 @@ async function ensureRoutes({ force = false } = {}) {
         body.legs.forEach((leg, i) => {
             if (leg) routeCache.set(cacheKey(run.profile, run.keys[i]), leg);
         });
+        done += run.keys.length;
+        routeState = { state: 'loading', message: '', done, total };
+        renderRouting();
         if (body.error) {
             message = body.message || '';
             failed = true;
@@ -3482,8 +3488,20 @@ function renderRouting() {
     const status = el('parcoursRoutingStatus');
     if (!status) return;
     status.classList.toggle('text-danger', routeState.state === 'error');
+    const loading = config.enabled && routeState.state === 'loading';
+    const cancel = el('btnParcoursRoutesCancel');
+    if (cancel) cancel.hidden = !loading;
+    const progress = el('parcoursRoutesProgress');
+    if (progress) {
+        progress.hidden = !loading;
+        progress.max = routeState.total || 1;
+        progress.value = routeState.done || 0;
+    }
     if (!config.enabled) status.textContent = '';
-    else if (routeState.state === 'loading') status.textContent = t('Calcul des itinéraires…');
+    else if (routeState.state === 'loading') {
+        status.textContent = t('Calcul des itinéraires : ${done} / ${total} trajets…',
+            { done: routeState.done || 0, total: routeState.total || '?' });
+    }
     else if (routeState.state === 'error') status.textContent = routeState.message || t('Itinéraires indisponibles : trajets en ligne droite.');
     else {
         const routed = routeEffectsNow.paths.size;
@@ -3524,6 +3542,18 @@ function bindRouting() {
         if (adjustmentsLocked()) return;
         routeState = { state: 'idle', message: '' };
         ensureRoutes({ force: true });
+    });
+    el('btnParcoursRoutesCancel')?.addEventListener('click', () => {
+        // La boucle meurt après sa requête en cours ; les itinéraires déjà
+        // reçus restent en cache et s'affichent tout de suite. Comme une
+        // erreur, l'annulation suspend les relances automatiques — une
+        // reconstruction ne repartirait pas sans « Recalculer ».
+        routeSeq++;
+        routeState = { state: 'cancelled', message: '' };
+        rebuild();
+        renderStops();
+        applyTimeline();
+        renderRouting();
     });
 }
 
@@ -3797,6 +3827,8 @@ export function getParcoursSnapshot() {
             ...routingConfig(),
             state: routeState.state,
             message: routeState.message,
+            done: routeState.done || 0,
+            total: routeState.total || 0,
             revision: routeRevision,
             requests: routeRunsNow.length,
             routed: routeEffectsNow.paths.size,

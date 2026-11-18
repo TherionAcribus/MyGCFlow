@@ -4187,6 +4187,13 @@ body[data-mode="parcours"] .rhythm-rate-field {
     outline: 1px dashed rgba(32, 107, 196, 0.5);
 }
 
+/* Progression du calcul des itinéraires. */
+.parcours-routes-progress {
+    flex-basis: 100%;
+    height: 4px;
+    accent-color: var(--tblr-primary, #206bc4);
+}
+
 .parcours-stop.is-excluded {
     opacity: 0.75;
 }

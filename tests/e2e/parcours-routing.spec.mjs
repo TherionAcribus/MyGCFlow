@@ -22,6 +22,7 @@ import {
 
 let server;
 let baseUrl;
+let delayMs = 0;
 const requests = [];
 
 test.beforeAll(async () => {
@@ -34,8 +35,11 @@ test.beforeAll(async () => {
       const mid = [(a[0] + b[0]) / 2, Math.max(a[1], b[1]) + 0.003];
       return { distance: 2500, duration: 1800, steps: [{ geometry: { coordinates: [a, mid] } }, { geometry: { coordinates: [mid, b] } }] };
     });
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ code: 'Ok', routes: [{ legs }] }));
+    const respond = () => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ code: 'Ok', routes: [{ legs }] }));
+    };
+    if (delayMs > 0) setTimeout(respond, delayMs); else respond();
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -46,6 +50,7 @@ test.afterAll(async () => {
 });
 
 test.beforeEach(async ({ page, request }) => {
+  delayMs = 0;
   await deleteAllParcours(request);
   await clearLogs(request);
   await importFixture(page, request);
@@ -111,6 +116,33 @@ test('itinéraires : chemins et durées réels, cache local, recalcul', async ({
   await page.locator('#parcoursRoutingEnabled').uncheck();
   await expect.poll(async () => (await snapshot(page)).routing.routed).toBe(0);
   expect((await snapshot(page)).days[0].times[1]).not.toBe('09:40');
+  expect(errors).toEqual([]);
+});
+
+test('calcul en cours : progression affichée, annulation suspend le calcul', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await enableRouting(request);
+  await openRouted(page);
+  // Recalcul forcé avec un fournisseur lent : la progression se voit quelle
+  // que soit la chaleur du cache côté serveur.
+  delayMs = 800;
+  await page.locator('#btnParcoursRoutesRecompute').click();
+  await expect.poll(async () => (await snapshot(page)).routing.state).toBe('loading');
+  await expect(page.locator('#parcoursRoutesProgress')).toBeVisible();
+  await expect(page.locator('#btnParcoursRoutesCancel')).toBeVisible();
+  // Après la première suite : deux trajets sur trois.
+  await expect.poll(async () => (await snapshot(page)).routing.done, { timeout: 30_000 }).toBe(2);
+  await expect(page.locator('#parcoursRoutingStatus')).toContainText('2 / 3');
+
+  // Annuler pendant la seconde suite : calcul suspendu, itinéraires gardés,
+  // rien ne repart sans action de l'utilisateur.
+  await page.locator('#btnParcoursRoutesCancel').click();
+  await expect.poll(async () => (await snapshot(page)).routing.state).toBe('cancelled');
+  expect((await snapshot(page)).routing.routed).toBe(3);
+  await expect(page.locator('#btnParcoursRoutesCancel')).toBeHidden();
+  await expect(page.locator('#parcoursRoutesProgress')).toBeHidden();
+  await page.waitForTimeout(1200);
+  expect((await snapshot(page)).routing.state).toBe('cancelled');
   expect(errors).toEqual([]);
 });
 
