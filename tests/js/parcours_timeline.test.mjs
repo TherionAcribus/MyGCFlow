@@ -9,11 +9,13 @@ import {
     HOURS_NONE,
     HOURS_SLOTS,
     PACE_PROPORTIONAL,
+    SCENE_DEFAULTS as S,
     TIMELINE_DEFAULTS as D,
     barSeries,
     barTicks,
     buildParcoursTimeline,
     dayCardAt,
+    endCardAt,
     formatClock,
     headAt,
     headModeAt,
@@ -182,6 +184,23 @@ test('cartons de jour : le premier au début, les suivants pendant la nuit', () 
     // Une seule journée : aucun carton.
     const single = buildParcoursTimeline(reconstructParcours({ days: [{ date: '2025-07-12', stops: [stop('A', 0)] }] }));
     assert.equal(dayCardAt(single, 0), null);
+});
+
+test('carton final : temps d’écran ajouté après l’outro, fondu en queue', () => {
+    const plain = buildParcoursTimeline(sample());
+    const tl = buildParcoursTimeline(sample(), { endCard: true });
+    // `endCard` allonge la chronologie du temps du carton.
+    assert.equal(tl.quanta, plain.quanta + D.endCardQ);
+    assert.equal(endCardAt(tl, 0), null);
+    assert.equal(endCardAt(tl, tl.quanta - D.endCardQ - 1), null);
+    const start = tl.quanta - D.endCardQ;
+    assert.ok(endCardAt(tl, start + 1).alpha < 1);          // fondu d'entrée
+    assert.equal(endCardAt(tl, start + S.cardFadeQ + 1).alpha, 1);
+    assert.ok(endCardAt(tl, tl.quanta - 2).alpha < 1);      // fondu de sortie
+    assert.equal(endCardAt(tl, tl.quanta + 1), null);
+    // Sans `endCard`, le carton retombe sur l'outro mais la durée ne bouge pas.
+    assert.equal(buildParcoursTimeline(sample()).quanta, plain.quanta);
+    assert.equal(endCardAt({ stops: [] }, 0), null);
 });
 
 test('tête : mode du trajet, déduit de la vitesse sur une trace ou en ligne droite', () => {

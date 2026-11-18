@@ -69,6 +69,7 @@ export const TIMELINE_DEFAULTS = Object.freeze({
     propQPerMinute: 0.5,  // proportionnel : 1 quantum pour 2 minutes réelles
     propMinStopQ: 3,      // proportionnel : une étape reste visible un instant
     propMinLegQ: 1,
+    endCardQ: 24,         // carton final de synthèse : temps d'écran ajouté
 });
 
 export function normalizePlayback(raw) {
@@ -111,8 +112,10 @@ function dayNumber(iso) {
 //   vrai chemin d'un trajet : `path` ([[lon, lat], ...], extrémités
 //   comprises) et `cum` (km cumulés) quand `legPaths` (« from>to ») en donne
 //   — sa longueur remplace la distance à vol d'oiseau.
+//   endCard : ajoute `endCardQ` quanta de clôture après l'outro, le temps
+//             d'afficher le carton final de synthèse (cartons activés).
 export function buildParcoursTimeline(reconstructed, {
-    pace = PACE_REGULAR, photosByStop = null, legPaths = null, options = null,
+    pace = PACE_REGULAR, photosByStop = null, legPaths = null, endCard = false, options = null,
 } = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
@@ -181,7 +184,7 @@ export function buildParcoursTimeline(reconstructed, {
             q += dwell;
         }
     }
-    const quantaCount = stops.length ? q + o.outroQ : 0;
+    const quantaCount = stops.length ? q + o.outroQ + (endCard ? o.endCardQ : 0) : 0;
     return { quanta: quantaCount, stops, legs, days, totalKm: km };
 }
 
@@ -434,6 +437,19 @@ export function dayCardAt(timeline, qf, options = {}) {
         return { day: d, alpha: Math.min(fadeIn, fadeOut) };
     }
     return null;
+}
+
+// Carton final de synthèse à `qf` : { alpha } ou null. Il occupe les
+// `endCardQ` derniers quanta, temps ajouté quand la chronologie est
+// construite avec `endCard` (cartons activés).
+export function endCardAt(timeline, qf, options = {}) {
+    if (!timeline?.stops?.length) return null;
+    const o = { ...TIMELINE_DEFAULTS, ...SCENE_DEFAULTS, ...options };
+    const from = timeline.quanta - o.endCardQ;
+    if (qf < from || qf > timeline.quanta) return null;
+    const fadeIn = clamp((qf - from) / o.cardFadeQ, 0, 1);
+    const fadeOut = clamp((timeline.quanta - qf) / o.cardFadeQ, 0, 1);
+    return { alpha: Math.min(fadeIn, fadeOut) };
 }
 
 export const HEAD_MODES = Object.freeze(['walk', 'bike', 'car', 'plane', 'night']);

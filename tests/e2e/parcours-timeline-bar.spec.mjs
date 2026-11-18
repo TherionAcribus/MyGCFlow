@@ -143,3 +143,23 @@ test('bulle : étape, trajet et nuit au survol, sans toucher la carte', async ({
   expect(await playbackState(page)).toBe('idle');
   expect(errors).toEqual([]);
 });
+
+test('carton final : synthèse du parcours en queue de lecture', async ({ page }) => {
+  const errors = collectErrors(page);
+  const rest = await openWithBar(page);
+  const { quanta } = rest.timeline;
+
+  // Clic dans la fenêtre du carton : aperçu en pause, carte de synthèse.
+  await page.mouse.click(await axisX(page, quanta - 15), await trackMidY(page));
+  await expect.poll(() => playbackState(page)).toBe('paused');
+  const state = await snapshot(page);
+  expect(state.scene.endCard.alpha).toBeGreaterThan(0);
+  expect(state.scene.endCardText.title).toBe('Week-end');
+  expect(state.scene.endCardText.subtitle).toContain('5 étapes');
+  expect(state.scene.endCardText.subtitle).toContain('km');
+  expect(state.scene.endCardText.subtitle).toContain('2 journées');
+
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(() => playbackState(page)).toBe('idle');
+  expect(errors).toEqual([]);
+});

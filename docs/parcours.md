@@ -258,14 +258,18 @@ Les tuiles de la suite sont demandées d'avance (`prefetchBasemapTiles`, pose
 pendant la lecture suspend la caméra jusqu'à la lecture suivante. À la fin,
 la vue d'avant la lecture revient, sauf si l'utilisateur a repris la main.
 
-**Nuit et cartons** (réglage « Nuit et carton », défaut : oui), seulement
-pour un parcours de plusieurs journées :
+**Nuit et cartons** (réglage « Nuit et carton », défaut : oui) :
 - la nuit assombrit la carte en cloche (`nightLevelAt` : 30 % de la nuit
   pour monter, 30 % pour redescendre ; voile bleu nuit à 50 % au cœur) ;
-- le carton « Jour 2 » et la date longue (`dayCardAt`) :
+- le carton « Jour 2 » et la date longue (`dayCardAt`), pour un parcours
+  de plusieurs journées :
   - le premier dès le début ;
   - les suivants du quart de la nuit jusqu'à 6 quanta après la première
-    étape du jour, avec un fondu de 3 quanta.
+    étape du jour, avec un fondu de 3 quanta ;
+- le carton final de synthèse (`endCardAt`), pour tout parcours : nom du
+  parcours, étapes, distance et journées ; `endCardQ` (24) quanta de
+  clôture ajoutés après l'outro quand les cartons sont actifs, fondu de
+  3 quanta aux deux bouts.
 
 **Tête** (réglage « Géocacheur », défaut : pictogramme) : un rond de la
 couleur du trait et un glyphe Tabler (`ti-walk`, `ti-bike`, `ti-car`,

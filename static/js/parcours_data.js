@@ -49,6 +49,7 @@ import {
     barTicks,
     buildParcoursTimeline,
     dayCardAt,
+    endCardAt,
     formatClock,
     headAt,
     headModeAt,
@@ -378,6 +379,8 @@ function applyTimeline({ fit = false } = {}) {
         pace: playback.pace,
         photosByStop: photoDisplay.layout === PHOTO_LAYOUT_NONE ? null : photoByStop,
         legPaths,
+        // Carton final de synthèse : temps d'écran ajouté avec les cartons.
+        endCard: playback.day_cards,
         options: photoTimelineOptions(photoDisplay),
     }) : null;
     const stops = timeline?.stops || [];
@@ -974,6 +977,7 @@ function drawPlayHead(event) {
     // Après le géocacheur : la carte postale passe au-dessus.
     drawPhotoCards(event);
     drawDayCard(ctx, ratio);
+    drawEndCard(ctx, ratio);
     drawRouteCredits(ctx, ratio);
 }
 
@@ -1045,10 +1049,18 @@ function dayCardText(dayIndex) {
     return { title: t('Jour ${n}', { n: day.dayNumber }), subtitle: formatDay(day.date) };
 }
 
-function drawDayCard(ctx, ratio) {
-    const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
-    const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
-    if (!text) return;
+// Carton final de synthèse : nom du parcours, puis « 5 étapes · 7,9 km »
+// et les journées quand il y en a plusieurs.
+function endCardText() {
+    const item = listing.find((p) => p.id === selectedId);
+    const counted = timeline?.stops?.filter(isCountedStop).length || 0;
+    const parts = [stopsCountText(counted), formatKm(timeline?.totalKm || 0)];
+    if ((timeline?.days?.length || 0) > 1) parts.push(t('${n} journées', { n: timeline.days.length }));
+    return { title: item?.name || t('Fin du parcours'), subtitle: parts.join(' · ') };
+}
+
+// Dessin commun d'un carton {title, subtitle} centré au tiers haut.
+function drawCard(ctx, ratio, text, alpha) {
     const font = pageFontFamily();
     const titleSize = 30 * ratio;
     const subtitleSize = 17 * ratio;
@@ -1056,7 +1068,7 @@ function drawDayCard(ctx, ratio) {
     const padX = 28 * ratio;
     const padY = 18 * ratio;
     ctx.save();
-    ctx.globalAlpha = card.alpha;
+    ctx.globalAlpha = alpha;
     ctx.font = `700 ${titleSize}px ${font}`;
     const titleW = ctx.measureText(text.title).width;
     ctx.font = `400 ${subtitleSize}px ${font}`;
@@ -1079,6 +1091,17 @@ function drawDayCard(ctx, ratio) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
     ctx.fillText(text.subtitle, cx, top + padY + titleSize + gap);
     ctx.restore();
+}
+
+function drawDayCard(ctx, ratio) {
+    const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
+    const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
+    if (text) drawCard(ctx, ratio, text, card.alpha);
+}
+
+function drawEndCard(ctx, ratio) {
+    const card = playback.day_cards ? endCardAt(timeline, currentQ) : null;
+    if (card && card.alpha > 0) drawCard(ctx, ratio, endCardText(), card.alpha);
 }
 
 // Crédits des itinéraires (CGU des fournisseurs) : à l'écran, dans
@@ -1177,6 +1200,10 @@ function bindPlayback() {
     dayCards?.addEventListener('change', () => {
         save({ day_cards: dayCards.checked });
         redraw();
+        // Le carton final allonge la chronologie : reconstruite en fin de
+        // lecture, tout de suite au repos.
+        if (clock.running) pendingTimeline = true;
+        else applyTimeline();
     });
     dashed?.addEventListener('change', () => {
         save({ estimated_dashed: dashed.checked });
@@ -4183,6 +4210,11 @@ export function getParcoursSnapshot() {
             cardText: (() => {
                 const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
                 return card ? dayCardText(card.day) : null;
+            })(),
+            endCard: playback.day_cards ? endCardAt(timeline, currentQ) : null,
+            endCardText: (() => {
+                const card = playback.day_cards ? endCardAt(timeline, currentQ) : null;
+                return card ? endCardText() : null;
             })(),
             headMode: headModeAt(timeline, currentQ),
             headGlyph: playback.head === HEAD_PICTOGRAM && !!headGlyph(headModeAt(timeline, currentQ)),
