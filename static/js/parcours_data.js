@@ -1642,6 +1642,34 @@ function renderDay(day) {
         for (const stop of day.excluded) list.append(...renderExcludedRow(stop));
         section.append(list);
     }
+    // Déposer sur la journée elle-même (jour vide ou creux de la liste) :
+    // l'étape la rejoint à la fin ; sur sa propre journée, elle finit en
+    // dernier. Une ligne sous la souris traite le dépôt et le stoppe.
+    section.addEventListener('dragenter', () => {
+        if (dragged) section.classList.add('is-drop-target');
+    });
+    section.addEventListener('dragleave', (event) => {
+        if (!section.contains(event.relatedTarget)) section.classList.remove('is-drop-target');
+    });
+    section.addEventListener('dragover', (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    });
+    section.addEventListener('drop', (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        section.classList.remove('is-drop-target');
+        const { key, date } = dragged;
+        dragged = null;
+        if (date === day.date) {
+            const keys = day.stops.filter((s) => s.kind !== KIND_BASE).map((s) => s.key);
+            keys.push(...keys.splice(keys.indexOf(key), 1));
+            reorderDay(keys);
+        } else {
+            moveStopToDay(day, key, Number.MAX_SAFE_INTEGER);
+        }
+    });
     return section;
 }
 
@@ -1720,19 +1748,26 @@ function renderStopRow(stop, day, movable) {
             dragged = null;
         });
         item.addEventListener('dragover', (event) => {
-            if (dragged?.date !== day.date || dragged.key === stop.key) return;
+            if (!dragged || dragged.key === stop.key) return;
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
         });
         item.addEventListener('drop', (event) => {
-            if (dragged?.date !== day.date) return;
+            if (!dragged) return;
             event.preventDefault();
-            const keys = movable.map((s) => s.key).filter((key) => key !== dragged.key);
+            event.stopPropagation();
             const rect = item.getBoundingClientRect();
             const after = event.clientY > rect.top + rect.height / 2;
-            keys.splice(keys.indexOf(stop.key) + (after ? 1 : 0), 0, dragged.key);
+            const { key, date } = dragged;
             dragged = null;
-            reorderDay(keys);
+            if (date === day.date) {
+                const keys = movable.map((s) => s.key).filter((k) => k !== key);
+                keys.splice(keys.indexOf(stop.key) + (after ? 1 : 0), 0, key);
+                reorderDay(keys);
+            } else {
+                // Autre journée : insérée au rang où elle est lâchée.
+                moveStopToDay(day, key, movable.indexOf(stop) + (after ? 1 : 0));
+            }
         });
     }
     return editKey === stop.key ? [item, renderEditPanel(stop, day)] : [item];
@@ -2092,6 +2127,20 @@ function moveStop(day, key, delta) {
     if (from < 0 || to < 0 || to >= keys.length) return;
     keys.splice(to, 0, keys.splice(from, 1)[0]);
     reorderDay(keys);
+}
+
+// Déplacer une étape vers une autre journée, au rang où elle est lâchée :
+// sa clé rejoint les rangs de la journée cible ; revenue à sa journée
+// d'origine, l'ajustement « journée » disparaît (comme le panneau).
+function moveStopToDay(day, key, index) {
+    const sourceDay = ordered?.days.find((d) => d.stops.some((s) => s.key === key));
+    const source = sourceDay?.stops.find((s) => s.key === key);
+    const original = source?.movedFrom || sourceDay?.date;
+    const keys = day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => stop.key);
+    keys.splice(Math.min(index, keys.length), 0, key);
+    saveOverrides(keys.map((k, rank) => (k === key
+        ? { key: k, day: day.date === original ? null : day.date, rank }
+        : { key: k, rank })));
 }
 
 function resetDayOrder(day) {

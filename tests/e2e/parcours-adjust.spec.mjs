@@ -72,6 +72,27 @@ test('ordre manuel : flèches, glisser-déposer, persistance, retour à l’ordr
   expect(errors).toEqual([]);
 });
 
+test('glisser-déposer une étape vers la journée suivante', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+  expect(state.days).toHaveLength(2);
+
+  // GCPAR03 lâchée au-dessus de GCPAR04 : elle ouvre le dimanche.
+  await row(page, 'GCPAR03').dragTo(row(page, 'GCPAR04'), { targetPosition: { x: 20, y: 2 } });
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR02']);
+  expect(state.days[1].keys).toEqual(['GCPAR03', 'GCPAR04', 'GCPAR05']);
+  expect(state.days[1].manual).toBe(true);
+  expect(state.overrides.find((o) => o.key === 'GCPAR03')?.day).toBe('2025-07-13');
+
+  // Enregistré : rechargement, même répartition.
+  await openReady(page);
+  expect((await snapshot(page)).days.map((d) => d.keys))
+    .toEqual([['GCPAR01', 'GCPAR02'], ['GCPAR03', 'GCPAR04', 'GCPAR05']]);
+  expect(errors).toEqual([]);
+});
+
 test('épingler une heure, changer de journée, exclure puis réintégrer', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);

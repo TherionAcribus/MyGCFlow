@@ -4180,6 +4180,13 @@ body[data-mode="parcours"] .rhythm-rate-field {
     opacity: 0.4;
 }
 
+/* Journée pouvant recevoir l'étape glissée. */
+.parcours-day.is-drop-target {
+    background: rgba(32, 107, 196, 0.06);
+    border-radius: 6px;
+    outline: 1px dashed rgba(32, 107, 196, 0.5);
+}
+
 .parcours-stop.is-excluded {
     opacity: 0.75;
 }
