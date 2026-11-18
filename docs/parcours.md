@@ -48,7 +48,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
 | `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?, legMode?, visitMin?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
 | `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |
-| `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?}` ou base `{kind: base, name, lat, lon, date?, role?}` (base sans date : toutes les journées ; `role` : `both`/`start`/`end`) |
+| `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?, category?, icon?}` ou base `{kind: base, name, lat, lon, date?, role?, category?, icon?}` (base sans date : toutes les journées ; `role` : `both`/`start`/`end` ; `category` : `other`/`parking`/`meal`/`viewpoint`/`lodging`/`supply`/`custom`, `icon` : classe `ti-…` seulement pour `custom`) |
 | `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
 | `POST /api/parcours/<id>/photos` | Envoi d'une photo (multipart, champ `photo`, 15 Mo au plus) ; la même photo deux fois n'est gardée qu'une fois |
 | `GET /api/parcours/<id>/photos/<ph>/file` / `thumb` | Photo normalisée / vignette 320 px (cache long, nom = empreinte) |
@@ -317,9 +317,12 @@ Dans l'onglet Données :
   / « Retirer »), durée de visite (vide : durée estimée du type de l'étape),
   journée (logs datés du mauvais jour), « Exclure du parcours » ;
 - **« Poser un lieu ou une base sur la carte »** attend un clic sur la carte
-  (Échap annule), puis un petit formulaire : type, nom, journée, heure
-  facultative, et pour une base son rôle (départ et retour, ou une seule
-  extrémité — partir d'un hôtel, dormir ailleurs).
+  (Échap annule ; un point provisoire cerclé de pointillés marque l'endroit
+  tant que le formulaire est ouvert), puis un petit formulaire : type, nom,
+  journée, heure facultative, catégorie (parking, repas, point de vue,
+  hébergement, ravitaillement, personnalisée à icône libre), et pour une
+  base son rôle (départ et retour, ou une seule extrémité — partir d'un
+  hôtel, dormir ailleurs).
 
 Ce que la reconstruction en fait (`applyAdjustments`, puis
 `reconstructDay`) :
@@ -336,9 +339,12 @@ Ce que la reconstruction en fait (`applyAdjustments`, puis
 
 Pendant la lecture, lieux et bases n'ont pas de point WebGL. Ils sont
 dessinés par la couche de la tête : les bases toujours, les lieux une fois
-atteints. Au repos, le plan les montre (carré sombre, étoile violette). Une
-base dure 4 quanta à l'écran. Les ajustements sont refusés pendant une
-lecture (« Arrêtez la lecture… »).
+atteints. Au repos, le plan les montre (carré sombre, étoile violette) avec,
+pour une catégorie, une pastille d'icône Tabler en bas à droite ; la liste
+la reprend dans le badge et le détail de l'étape. La catégorie est purement
+affichage : le comportement reste celui du type. Une base dure 4 quanta à
+l'écran. Les ajustements sont refusés pendant une lecture (« Arrêtez la
+lecture… »).
 
 ## Photos (lot 4 : `parcours_photos.py`, `parcours_photos.mjs`)
 

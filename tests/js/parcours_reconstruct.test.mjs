@@ -292,7 +292,8 @@ test('lieu posé : une étape de plus, à son heure, non comptée', () => {
     const result = reconstructParcours({
         days: [{ date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 6, { logId: 2 })] }],
         places: [
-            { id: 7, kind: KIND_PLACE, name: 'Belvédère', lat: 45, lon: stop('P', 3).lon, date: '2025-07-12', time: null },
+            { id: 7, kind: KIND_PLACE, name: 'Belvédère', lat: 45, lon: stop('P', 3).lon, date: '2025-07-12', time: null,
+                category: 'viewpoint', icon: null },
             { id: 8, kind: KIND_PLACE, name: 'Hors plage', lat: 45, lon: 5, date: '2025-08-01', time: null },
         ],
     });
@@ -302,6 +303,10 @@ test('lieu posé : une étape de plus, à son heure, non comptée', () => {
     assert.equal(place.kind, KIND_PLACE);
     assert.equal(place.index, null);
     assert.equal(place.visitMin, 30);
+    // Catégorie d'affichage propagée à l'étape (icône dans la liste et sur
+    // la carte) ; sans catégorie, « other ».
+    assert.equal(place.category, 'viewpoint');
+    assert.equal(place.icon, null);
     assert.equal(result.stopCount, 2);
     assert.deepEqual(day.stops.map((s) => s.index), [1, null, 2]);
 });
@@ -314,7 +319,8 @@ test('base : départ et retour de chaque journée, la base datée prime', () => 
             { date: '2025-07-14', stops: [] },
         ],
         places: [
-            { id: 1, kind: KIND_BASE, name: 'Camping', lat: 45, lon: stop('H', 0).lon, date: null },
+            { id: 1, kind: KIND_BASE, name: 'Camping', lat: 45, lon: stop('H', 0).lon, date: null,
+                category: 'custom', icon: 'ti-tent' },
             { id: 2, kind: KIND_BASE, name: 'Hôtel', lat: 45, lon: stop('H2', 40).lon, date: '2025-07-13' },
         ],
     });
@@ -327,6 +333,10 @@ test('base : départ et retour de chaque journée, la base datée prime', () => 
     assert.equal(d1.stops[0].arrivalMin, 540);
     assert.equal(d1.stops[0].visitMin, 0);
     assert.equal(d1.stops[0].reason, REASON_BASE);
+    // La catégorie d'affichage suit la base sur les deux extrémités.
+    assert.equal(d1.stops[0].category, 'custom');
+    assert.equal(d1.stops[0].icon, 'ti-tent');
+    assert.equal(d2.stops[0].category, 'other');
     assert.equal(d1.stops[1].arrivalMin > 540, true);
     assert.equal(result.stopCount, 3);
 });

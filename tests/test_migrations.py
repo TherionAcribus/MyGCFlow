@@ -268,8 +268,8 @@ class SchemaMigrationTests(unittest.TestCase):
                 "INSERT INTO parcours (name, date_start, date_end, include_labs, include_dnf) "
                 "VALUES ('Sortie', '2025-07-12', '2025-07-12', 1, 1)")
             conn.execute(
-                "INSERT INTO parcours_place (parcours_id, kind, name, latitude, longitude, role) "
-                "VALUES (?, 'base', 'Hôtel', 45.9, 6.12, 'both')", (cur.lastrowid,))
+                "INSERT INTO parcours_place (parcours_id, kind, name, latitude, longitude, role, category) "
+                "VALUES (?, 'base', 'Hôtel', 45.9, 6.12, 'both', 'other')", (cur.lastrowid,))
             conn.execute("ALTER TABLE parcours_place DROP COLUMN role")
             conn.execute("PRAGMA user_version = 16")
         self.assertNotIn('role', self._columns('parcours_place'))
@@ -281,6 +281,33 @@ class SchemaMigrationTests(unittest.TestCase):
             row = conn.execute(
                 "SELECT name, role FROM parcours_place WHERE kind = 'base'").fetchone()
         self.assertEqual(row, ('Hôtel', 'both'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
+    def test_parcours_place_gains_category_and_icon(self):
+        # Base v17 : la catégorie d'affichage n'existe pas ; la migration la
+        # crée (« other », icône libre nulle) sans perdre les lieux posés.
+        self._create_app()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO parcours (name, date_start, date_end, include_labs, include_dnf) "
+                "VALUES ('Sortie', '2025-07-12', '2025-07-12', 1, 1)")
+            conn.execute(
+                "INSERT INTO parcours_place (parcours_id, kind, name, latitude, longitude, role, category) "
+                "VALUES (?, 'place', 'Belvédère', 45.9, 6.12, 'both', 'viewpoint')", (cur.lastrowid,))
+            conn.execute("ALTER TABLE parcours_place DROP COLUMN category")
+            conn.execute("ALTER TABLE parcours_place DROP COLUMN icon")
+            conn.execute("PRAGMA user_version = 17")
+        self.assertNotIn('category', self._columns('parcours_place'))
+
+        self._create_app()
+
+        columns = self._columns('parcours_place')
+        self.assertIn('category', columns)
+        self.assertIn('icon', columns)
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT name, category, icon FROM parcours_place WHERE kind = 'place'").fetchone()
+        self.assertEqual(row, ('Belvédère', 'other', None))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
 

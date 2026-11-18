@@ -277,6 +277,11 @@ STOP_KEY_MAX_LENGTH = 96
 PLACE_KINDS = ('base', 'place')
 # Rôle d'une base : départ et retour, départ seul ou retour seul.
 BASE_ROLES = ('both', 'start', 'end')
+# Catégorie d'affichage d'un lieu ou d'une base : icône dans la liste et sur
+# la carte — le comportement reste porté par `kind`.
+PLACE_CATEGORIES = ('other', 'parking', 'meal', 'viewpoint', 'lodging', 'supply', 'custom')
+# Icône Tabler libre pour la catégorie « custom » (« ti-flag »…).
+_ICON_RE = re.compile(r'ti-[a-z0-9][a-z0-9-]{0,46}')
 # Mode du trajet vers l'étape suivante (lot 6) ; `straight` : ligne droite,
 # sans itinéraire (avion, ferry…).
 LEG_MODES = ('walk', 'bike', 'car', 'straight')
@@ -325,6 +330,8 @@ def place_to_dict(row: ParcoursPlace) -> dict:
         'date': row.date.isoformat() if row.date else None,
         'time': row.time,
         'role': row.role or 'both',
+        'category': row.category or 'other',
+        'icon': row.icon,
     }
 
 
@@ -451,6 +458,17 @@ def _place_fields(data: dict, parcours: Parcours, current: ParcoursPlace | None 
         if role not in BASE_ROLES:
             raise ParcoursError('place-invalid')
         fields['role'] = role
+    if 'category' in data or current is None:
+        category = data.get('category', 'other')
+        if category not in PLACE_CATEGORIES:
+            raise ParcoursError('place-invalid')
+        fields['category'] = category
+    if 'icon' in data or current is None:
+        icon = data.get('icon')
+        icon = icon.strip() if isinstance(icon, str) else None
+        if icon and not _ICON_RE.fullmatch(icon):
+            raise ParcoursError('place-invalid')
+        fields['icon'] = icon or None
     date_value = fields.get('date', current.date if current else None)
     # Un lieu est une étape d'une journée : sa date est requise. Une base
     # sans date vaut pour toutes les journées.
@@ -460,6 +478,11 @@ def _place_fields(data: dict, parcours: Parcours, current: ParcoursPlace | None 
     # rôle explicitement posé dessus) garde « both ».
     if kind == 'place' and ('role' in fields or 'kind' in fields):
         fields['role'] = 'both'
+    # L'icône libre ne vaut que pour la catégorie « custom » : quitter cette
+    # catégorie (ou l'icône envoyée sans elle) efface l'icône.
+    category_value = fields.get('category', current.category if current else 'other')
+    if category_value != 'custom' and ('category' in fields or 'icon' in fields):
+        fields['icon'] = None
     return fields
 
 

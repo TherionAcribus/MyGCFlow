@@ -265,6 +265,22 @@
                                     <option value="end">{{ _("Arrivée seulement") }}</option>
                                 </select>
                             </div>
+                            <div class="col-7">
+                                <label class="form-label small mb-1" for="parcoursPlaceCategory">{{ _("Catégorie") }}</label>
+                                <select id="parcoursPlaceCategory" class="form-select form-select-sm">
+                                    <option value="other">{{ _("Autre") }}</option>
+                                    <option value="parking">{{ _("Parking") }}</option>
+                                    <option value="meal">{{ _("Repas / pique-nique") }}</option>
+                                    <option value="viewpoint">{{ _("Point de vue") }}</option>
+                                    <option value="lodging">{{ _("Hébergement") }}</option>
+                                    <option value="supply">{{ _("Ravitaillement / eau") }}</option>
+                                    <option value="custom">{{ _("Personnalisée…") }}</option>
+                                </select>
+                            </div>
+                            <div class="col-12" id="parcoursPlaceIconRow" hidden>
+                                <div class="form-label small mb-1">{{ _("Icône") }}</div>
+                                <div id="parcoursPlaceIcons" class="parcours-icon-picker" role="group"></div>
+                            </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 mt-2">
                             <button type="submit" id="btnParcoursPlaceSave" class="btn btn-sm btn-primary">

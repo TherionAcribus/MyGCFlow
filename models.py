@@ -307,6 +307,11 @@ class ParcoursPlace(db.Model):
     # Rôle d'une base : « both » (départ et retour), « start » (départ seul)
     # ou « end » (retour seul) — partir d'un hôtel, dormir au camping.
     role = db.Column(db.String(8), nullable=False, default='both')
+    # Catégorie d'affichage (parking, repas, hébergement…) : icône dans la
+    # liste et sur la carte ; le comportement reste celui du `kind`.
+    category = db.Column(db.String(16), nullable=False, default='other')
+    # Icône Tabler libre (« ti-… ») pour la catégorie « custom », sinon NULL.
+    icon = db.Column(db.String(48))
     created_at = db.Column(db.DateTime)
 
 

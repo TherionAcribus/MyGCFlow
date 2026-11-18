@@ -588,6 +588,7 @@ export function reconstructDay(day, {
     const baseStop = (base, suffix) => ({
         key: `${base.key}:${day.date}:${suffix}`, kind: KIND_BASE, type: 'Base', name: base.name || '', code: null,
         lon: base.lon, lat: base.lat, logId: null, localTime: null, placeId: base.id ?? null,
+        category: base.category || 'other', icon: base.icon || null,
     });
     const pushBase = () => {
         anchorMin.push(null);
@@ -651,7 +652,8 @@ export function applyAdjustments(inputs) {
         if (!place || !Number.isFinite(place.lat) || !Number.isFinite(place.lon)) continue;
         const key = `place:${place.id}`;
         if (place.kind === KIND_BASE) {
-            const base = { key, id: place.id, name: place.name, lon: place.lon, lat: place.lat };
+            const base = { key, id: place.id, name: place.name, lon: place.lon, lat: place.lat,
+                category: place.category || 'other', icon: place.icon || null };
             const role = (place.role === 'start' || place.role === 'end') ? place.role : 'both';
             if (place.date) {
                 const scope = bases.byDate.get(place.date) || {};
@@ -664,6 +666,7 @@ export function applyAdjustments(inputs) {
             byDate.get(place.date).stops.push({
                 key, kind: KIND_PLACE, type: 'Place', name: place.name || '', code: null,
                 lon: place.lon, lat: place.lat, logId: null, localTime: place.time || null, placeId: place.id,
+                category: place.category || 'other', icon: place.icon || null,
             });
         }
     }

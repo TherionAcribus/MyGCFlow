@@ -198,6 +198,7 @@ let dragged = null;           // { date, key } pendant un glisser-déposer
 let picking = false;          // en attente d'un clic sur la carte (lieu)
 let pickListener = null;
 let placeDraft = null;        // { lon, lat } du lieu en cours de saisie
+let placeIconDraft = null;    // icône choisie pour la catégorie « custom »
 let clickMutedUntil = 0;      // clic de pose/déplacement : ne pas l'ouvrir en étape
 let hoveredFeature = null;    // point du plan mis en évidence par la liste
 let mapHoverRows = [];        // lignes de la liste mises en évidence par la carte
@@ -992,25 +993,29 @@ const HEAD_ICON_CLASSES = Object.freeze({
     plane: 'ti-plane',
     night: 'ti-moon',
 });
-let headGlyphs = null;
+// Glyphe d'une classe Tabler lu dans la feuille de style, pour le canevas et
+// les marqueurs de la carte ; null sans la police chargée.
+const tablerGlyphs = new Map();
+
+function tablerGlyph(className) {
+    if (!document.fonts?.check?.('16px "tabler-icons"')) return null;
+    if (!tablerGlyphs.has(className)) {
+        const probe = document.createElement('i');
+        probe.className = `ti ${className}`;
+        probe.style.position = 'absolute';
+        probe.style.visibility = 'hidden';
+        document.body.appendChild(probe);
+        const content = getComputedStyle(probe, '::before').content || '';
+        probe.remove();
+        const match = /^["'](.+)["']$/.exec(content);
+        tablerGlyphs.set(className, match ? match[1] : null);
+    }
+    return tablerGlyphs.get(className);
+}
 
 function headGlyph(mode) {
-    if (!document.fonts?.check?.('16px "tabler-icons"')) return null;
-    if (!headGlyphs) {
-        headGlyphs = {};
-        for (const [key, className] of Object.entries(HEAD_ICON_CLASSES)) {
-            const probe = document.createElement('i');
-            probe.className = `ti ${className}`;
-            probe.style.position = 'absolute';
-            probe.style.visibility = 'hidden';
-            document.body.appendChild(probe);
-            const content = getComputedStyle(probe, '::before').content || '';
-            probe.remove();
-            const match = /^["'](.+)["']$/.exec(content);
-            if (match) headGlyphs[key] = match[1];
-        }
-    }
-    return headGlyphs[mode] || null;
+    const className = HEAD_ICON_CLASSES[mode];
+    return className ? tablerGlyph(className) : null;
 }
 
 function drawHeadPictogram(ctx, x, y, ratio, color, glyph) {
@@ -1587,6 +1592,57 @@ const KIND_ICONS = Object.freeze({
     find: 'ti-map-pin', lab: 'ti-flask', dnf: 'ti-mood-sad', [KIND_PLACE]: 'ti-flag', [KIND_BASE]: 'ti-home',
 });
 
+// Catégories d'affichage des lieux et bases (parcours_store.PLACE_CATEGORIES) :
+// icône et libellé — le comportement reste celui du `kind`.
+const PLACE_CATEGORIES = Object.freeze(['other', 'parking', 'meal', 'viewpoint', 'lodging', 'supply', 'custom']);
+const CATEGORY_ICONS = Object.freeze({
+    parking: 'ti-parking', meal: 'ti-tools-kitchen-2', viewpoint: 'ti-binoculars',
+    lodging: 'ti-bed', supply: 'ti-bottle',
+});
+// Icônes proposées pour la catégorie « custom » (toutes présentes dans la
+// fonte embarquée).
+const CUSTOM_ICONS = Object.freeze([
+    'ti-flag', 'ti-tent', 'ti-car', 'ti-bus', 'ti-sailboat', 'ti-anchor', 'ti-horse',
+    'ti-bike', 'ti-swimming', 'ti-fish', 'ti-tree', 'ti-mountain', 'ti-building-castle',
+    'ti-building-arch', 'ti-building-pavilion', 'ti-tower', 'ti-coffee', 'ti-beer',
+    'ti-ice-cream', 'ti-campfire',
+]);
+
+function categoryLabel(category) {
+    switch (category) {
+        case 'parking': return t('parking');
+        case 'meal': return t('repas');
+        case 'viewpoint': return t('point de vue');
+        case 'lodging': return t('hébergement');
+        case 'supply': return t('ravitaillement');
+        case 'custom': return '';
+        default: return '';
+    }
+}
+
+// Libellé d'option (majuscule) pour les sélecteurs de catégorie.
+function categoryOptionLabel(category) {
+    switch (category) {
+        case 'parking': return t('Parking');
+        case 'meal': return t('Repas / pique-nique');
+        case 'viewpoint': return t('Point de vue');
+        case 'lodging': return t('Hébergement');
+        case 'supply': return t('Ravitaillement / eau');
+        case 'custom': return t('Personnalisée…');
+        default: return t('Autre');
+    }
+}
+
+// Classe d'icône d'une étape de lieu ou de base : la catégorie prime sur le
+// type (« custom » utilise l'icône choisie, valide ou non).
+function stopCategoryIcon(stop) {
+    if (!stop || (stop.kind !== KIND_PLACE && stop.kind !== KIND_BASE)) {
+        return KIND_ICONS[stop?.kind] || KIND_ICONS.find;
+    }
+    if (stop.category === 'custom' && /^ti-[a-z0-9-]+$/.test(stop.icon || '')) return stop.icon;
+    return CATEGORY_ICONS[stop.category] || KIND_ICONS[stop.kind];
+}
+
 function stopLabel(stop) {
     if (stop.kind === 'lab') return stop.adventure ? `${stop.adventure} — ${stop.name || ''}` : (stop.name || stop.key);
     if (stop.kind === KIND_BASE) return stop.name || t('Base');
@@ -1616,8 +1672,9 @@ function stopDetail(stop) {
     const parts = [];
     if (stop.code) parts.push(stop.code);
     if (stop.kind === 'dnf') parts.push(t('DNF'));
-    else if (stop.kind === KIND_PLACE) parts.push(t('lieu'));
-    else if (stop.kind !== KIND_BASE && stop.type) parts.push(stop.type);
+    else if (stop.kind === KIND_PLACE) parts.push(categoryLabel(stop.category) || t('lieu'));
+    else if (stop.kind === KIND_BASE) { const c = categoryLabel(stop.category); if (c) parts.push(c); }
+    else if (stop.type) parts.push(stop.type);
     const reason = reasonLabel(stop.reason);
     if (reason) parts.push(reason);
     if (stop.movedFrom) parts.push(t('déplacée du ${day}', { day: formatDay(stop.movedFrom, { day: 'numeric', month: 'short' }) }));
@@ -1691,6 +1748,7 @@ const FOCUSABLE_CLASSES = [
     'parcours-edit-day', 'parcours-edit-exclude', 'parcours-edit-delete-place',
     'parcours-edit-place-name', 'parcours-edit-place-rename', 'parcours-edit-place-kind',
     'parcours-edit-place-day', 'parcours-edit-place-role', 'parcours-edit-place-move', 'parcours-edit-locate',
+    'parcours-edit-place-category',
 ];
 
 function focusMarkerOf(el) {
@@ -1888,12 +1946,12 @@ function renderStopRow(stop, day, movable) {
         badge.textContent = String(stop.index);
     } else {
         const icon = document.createElement('i');
-        icon.className = `ti ${KIND_ICONS[stop.kind]}`;
+        icon.className = `ti ${stopCategoryIcon(stop)}`;
         icon.setAttribute('aria-hidden', 'true');
         badge.append(icon);
     }
     const icon = document.createElement('i');
-    icon.className = `ti ${KIND_ICONS[stop.kind] || KIND_ICONS.find} text-muted mt-1`;
+    icon.className = `ti ${stopCategoryIcon(stop)} text-muted mt-1`;
     icon.setAttribute('aria-hidden', 'true');
     // Le texte ouvre le panneau d'ajustement de l'étape.
     const text = document.createElement('button');
@@ -2201,7 +2259,32 @@ function renderEditPanel(stop, day) {
             roleSelect.addEventListener('change', () => updatePlace(place.id, { role: roleSelect.value }));
             metaRow.append(roleLabel, roleSelect);
         }
+        // Catégorie d'affichage : icône dans la liste et sur la carte ; le
+        // comportement reste celui du type.
+        const catLabel = document.createElement('label');
+        catLabel.className = 'small';
+        catLabel.textContent = t('Catégorie');
+        const catSelect = document.createElement('select');
+        catSelect.className = 'form-select form-select-sm w-auto parcours-edit-place-category';
+        catLabel.htmlFor = catSelect.id = `parcoursEditPlaceCategory-${place.id}`;
+        for (const value of PLACE_CATEGORIES) {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = categoryOptionLabel(value);
+            catSelect.append(opt);
+        }
+        catSelect.value = PLACE_CATEGORIES.includes(place.category) ? place.category : 'other';
+        catSelect.addEventListener('change', () => updatePlace(place.id, { category: catSelect.value }));
+        metaRow.append(catLabel, catSelect);
         panel.append(metaRow);
+        // Icône libre pour la catégorie « custom ».
+        if (place.category === 'custom') {
+            const picker = document.createElement('div');
+            picker.className = 'parcours-icon-picker mb-2';
+            const selected = /^ti-[a-z0-9-]+$/.test(place.icon || '') ? place.icon : CUSTOM_ICONS[0];
+            buildIconPicker(picker, selected, (cls) => updatePlace(place.id, { icon: cls }));
+            panel.append(picker);
+        }
     }
 
     const actions = document.createElement('div');
@@ -2604,9 +2687,38 @@ function openPlaceForm({ lon, lat }) {
     el('parcoursPlaceTime').value = '';
     el('parcoursPlaceKind').value = KIND_PLACE;
     el('parcoursPlaceRole').value = 'both';
+    el('parcoursPlaceCategory').value = 'other';
+    placeIconDraft = CUSTOM_ICONS[0];
+    buildIconPicker(el('parcoursPlaceIcons'), placeIconDraft, (cls) => {
+        placeIconDraft = cls;
+        markIconPicker(el('parcoursPlaceIcons'), cls);
+        renderLayer();
+    });
     syncPlaceForm();
     form.hidden = false;
     el('parcoursPlaceName')?.focus();
+}
+
+// Grille d'icônes Tabler de la catégorie « custom » : boutons `aria-pressed`,
+// `onPick(cls)` au choix.
+function buildIconPicker(container, selected, onPick) {
+    if (!container) return;
+    container.replaceChildren();
+    for (const cls of CUSTOM_ICONS) {
+        const btn = button('parcours-icon-choice', cls, t('Icône ${icon}', { icon: cls.slice(3) }));
+        btn.classList.toggle('is-selected', cls === selected);
+        btn.setAttribute('aria-pressed', String(cls === selected));
+        btn.addEventListener('click', () => onPick(cls));
+        container.append(btn);
+    }
+}
+
+function markIconPicker(container, selected) {
+    for (const btn of container?.querySelectorAll('.parcours-icon-choice') || []) {
+        const on = !!btn.querySelector('i')?.classList.contains(selected);
+        btn.classList.toggle('is-selected', on);
+        btn.setAttribute('aria-pressed', String(on));
+    }
 }
 
 // Une base peut valoir pour toutes les journées et n'a pas d'heure ; un lieu
@@ -2624,7 +2736,9 @@ function syncPlaceForm() {
     if (timeRow) timeRow.hidden = base;
     const roleRow = el('parcoursPlaceRoleRow');
     if (roleRow) roleRow.hidden = !base;
-    // Le point provisoire prend la forme du type choisi.
+    const iconRow = el('parcoursPlaceIconRow');
+    if (iconRow) iconRow.hidden = el('parcoursPlaceCategory')?.value !== 'custom';
+    // Le point provisoire prend la forme du type et de la catégorie choisis.
     renderLayer();
 }
 
@@ -2673,11 +2787,13 @@ function bindAdjustments() {
         renderStops();
     });
     el('parcoursPlaceKind')?.addEventListener('change', syncPlaceForm);
+    el('parcoursPlaceCategory')?.addEventListener('change', syncPlaceForm);
     el('btnParcoursPlaceCancel')?.addEventListener('click', closePlaceForm);
     el('parcoursPlaceForm')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!placeDraft) return;
         const kind = el('parcoursPlaceKind').value;
+        const category = el('parcoursPlaceCategory').value;
         const ok = await createPlace({
             kind,
             name: el('parcoursPlaceName').value,
@@ -2686,6 +2802,8 @@ function bindAdjustments() {
             date: el('parcoursPlaceDay').value || null,
             time: kind === KIND_PLACE ? (el('parcoursPlaceTime').value || null) : null,
             role: kind === KIND_BASE ? (el('parcoursPlaceRole').value || 'both') : 'both',
+            category,
+            icon: category === 'custom' ? placeIconDraft : null,
         });
         if (ok) closePlaceForm();
     });
@@ -3910,10 +4028,26 @@ const draftHaloStyle = new ol.style.Style({
     }),
 });
 
+// Classe d'icône de catégorie portée par une feature du plan (lieu, base ou
+// brouillon de pose) : « custom » lit l'icône libre.
+function featureIconClass(feature) {
+    const category = feature.get('category');
+    if (category === 'custom') return /^ti-[a-z0-9-]+$/.test(feature.get('icon') || '') ? feature.get('icon') : null;
+    return CATEGORY_ICONS[category] || null;
+}
+
 function pointStyle(feature) {
     const kind = feature.get('kind');
-    const normal = (kind === KIND_BASE || kind === KIND_PLACE) ? placeStyle(kind) : numberedStyle(feature);
-    return feature.get('hovered') ? [haloStyle, normal] : normal;
+    let normal;
+    if (kind === KIND_BASE || kind === KIND_PLACE) {
+        normal = placeStyle(kind);
+        const badge = categoryBadgeStyle(kind, featureIconClass(feature));
+        if (badge) normal = [normal, badge];
+    } else {
+        normal = numberedStyle(feature);
+    }
+    const styles = Array.isArray(normal) ? normal : [normal];
+    return feature.get('hovered') ? [haloStyle, ...styles] : normal;
 }
 
 function numberedStyle(feature) {
@@ -3952,6 +4086,33 @@ function placeStyle(kind) {
     return placeStyles.get(kind);
 }
 
+// Pastille de catégorie en bas à droite du marqueur : glyphe Tabler sur
+// rond blanc cerclé de la couleur du type. null sans la police chargée.
+const placeBadges = new Map();
+function categoryBadgeStyle(kind, iconClass) {
+    if (!iconClass) return null;
+    const key = `${kind}:${iconClass}`;
+    if (!placeBadges.has(key)) {
+        const glyph = tablerGlyph(iconClass);
+        placeBadges.set(key, glyph ? new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 8,
+                displacement: [13, 13],
+                fill: new ol.style.Fill({ color: '#ffffff' }),
+                stroke: new ol.style.Stroke({ color: KIND_COLORS[kind], width: 1.5 }),
+            }),
+            text: new ol.style.Text({
+                text: glyph,
+                font: '11px "tabler-icons"',
+                fill: new ol.style.Fill({ color: KIND_COLORS[kind] }),
+                offsetX: 13,
+                offsetY: 13,
+            }),
+        }) : null);
+    }
+    return placeBadges.get(key);
+}
+
 const lineStyle = new ol.style.Style({
     stroke: new ol.style.Stroke({ color: LINE_COLOR, width: 3, lineDash: [6, 6] }),
 });
@@ -3972,7 +4133,13 @@ function ensureLayer() {
                 const role = feature.get('role');
                 if (role === 'track') return trackStyle;
                 if (role === 'line') return lineStyle;
-                if (role === 'draft') return [draftHaloStyle, placeStyle(feature.get('kind'))];
+                if (role === 'draft') {
+                    const kind = feature.get('kind');
+                    const styles = [draftHaloStyle, placeStyle(kind)];
+                    const badge = categoryBadgeStyle(kind, featureIconClass(feature));
+                    if (badge) styles.push(badge);
+                    return styles;
+                }
                 return pointStyle(feature);
             },
         });
@@ -4091,15 +4258,20 @@ function renderLayer({ fit = false } = {}) {
             placeId: stop.placeId ?? null,
             kind: stop.kind,
             index: stop.index,
+            category: stop.category || 'other',
+            icon: stop.icon || null,
             geometry: new ol.geom.Point(ol.proj.fromLonLat([stop.lon, stop.lat])),
         }));
     }
     // Point provisoire du formulaire de pose : du clic sur la carte à la
     // validation (ou l'annulation), pour que le clic ne semble pas perdu.
     if (placeDraft) {
+        const draftCategory = el('parcoursPlaceCategory')?.value || 'other';
         features.push(new ol.Feature({
             role: 'draft',
             kind: el('parcoursPlaceKind')?.value || KIND_PLACE,
+            category: draftCategory,
+            icon: draftCategory === 'custom' ? placeIconDraft : null,
             geometry: new ol.geom.Point(ol.proj.fromLonLat([placeDraft.lon, placeDraft.lat])),
         }));
     }

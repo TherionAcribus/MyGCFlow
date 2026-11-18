@@ -387,6 +387,45 @@ test('poser un lieu : le point provisoire reste affiché jusqu’à la validatio
   expect(errors).toEqual([]);
 });
 
+test('catégories de lieux : icône choisie, icône libre pour « personnalisée »', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+
+  // Pose d'un lieu « parking » par le formulaire : la ligne prend l'icône
+  // et le détail de la catégorie.
+  await page.locator('#btnParcoursAddPlace').click();
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const form = page.locator('#parcoursPlaceForm');
+  await expect(form).toBeVisible();
+  await form.locator('#parcoursPlaceCategory').selectOption('parking');
+  await expect(form.locator('#parcoursPlaceIconRow')).toBeHidden();
+  await form.locator('#parcoursPlaceName').fill('Parking du col');
+  await form.locator('#btnParcoursPlaceSave').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  const parking = state.places.find((p) => p.name === 'Parking du col');
+  expect(parking.category).toBe('parking');
+  const parkingKey = `place:${parking.id}`;
+  await expect(row(page, parkingKey)).toContainText('parking');
+  await expect(row(page, parkingKey).locator('i.ti-parking').first()).toBeVisible();
+
+  // « Personnalisée » : la grille d'icônes apparaît dans le panneau, le
+  // choix s'enregistre et s'affiche.
+  await row(page, parkingKey).locator('.parcours-stop-text').click();
+  const panel = page.locator(`.parcours-stop-edit[data-edit-key="${parkingKey}"]`);
+  await panel.locator('.parcours-edit-place-category').selectOption('custom');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === parking.id).category).toBe('custom');
+  const picker = panel.locator('.parcours-icon-picker');
+  await expect(picker).toBeVisible();
+  await picker.locator('.parcours-icon-choice:has(i.ti-tent)').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === parking.id).icon).toBe('ti-tent');
+  await expect(row(page, parkingKey).locator('i.ti-tent').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('bases à rôles : partir d’un hôtel, dormir au camping', async ({ page, request }) => {
   const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
   const depart = await request.post(`/api/parcours/${id}/places`, {

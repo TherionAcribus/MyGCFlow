@@ -307,7 +307,25 @@ class AdjustmentTests(_Base):
         converted = self.patch(f"/api/parcours/{pid}/places/{base_id}",
                                {"kind": "place", "date": "2025-07-12"}).get_json()
         self.assertEqual(converted["place"]["role"], "both")
-        self.assertEqual(len(self.get(f"/api/parcours/{pid}/inputs").get_json()["places"]), 2)
+        # Catégorie d'affichage : jeu fermé, icône libre seulement pour
+        # « custom », effacée en quittant cette catégorie.
+        parking = self.post(f"/api/parcours/{pid}/places", {
+            "kind": "place", "name": "Parking", "lat": 45.9, "lon": 6.1,
+            "date": "2025-07-12", "category": "parking", "icon": "ti-flag"}).get_json()["place"]
+        self.assertEqual((parking["category"], parking["icon"]), ("parking", None))
+        custom = self.post(f"/api/parcours/{pid}/places", {
+            "kind": "place", "name": "Arbre remarquable", "lat": 45.9, "lon": 6.11,
+            "date": "2025-07-12", "category": "custom", "icon": "ti-tree"}).get_json()["place"]
+        self.assertEqual((custom["category"], custom["icon"]), ("custom", "ti-tree"))
+        for body in [
+            {"kind": "place", "lat": 45, "lon": 6, "date": "2025-07-12", "category": "château"},
+            {"kind": "place", "lat": 45, "lon": 6, "date": "2025-07-12", "category": "custom", "icon": "arbre"},
+        ]:
+            response = self.post(f"/api/parcours/{pid}/places", body)
+            self.assertEqual(response.get_json()["error"], "place-invalid", body)
+        demoted = self.patch(f"/api/parcours/{pid}/places/{custom['id']}", {"category": "viewpoint"}).get_json()
+        self.assertEqual((demoted["place"]["category"], demoted["place"]["icon"]), ("viewpoint", None))
+        self.assertEqual(len(self.get(f"/api/parcours/{pid}/inputs").get_json()["places"]), 4)
         self.assertEqual(self.delete(f"/api/parcours/{pid}/places/{place['id']}").status_code, 200)
         self.assertEqual(self.delete(f"/api/parcours/{pid}/places/{place['id']}").status_code, 404)
         # Le lieu d'un autre parcours n'est pas atteignable par celui-ci.

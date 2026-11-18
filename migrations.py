@@ -348,6 +348,19 @@ def _v17_role_base_parcours(db):
                 "ALTER TABLE parcours_place ADD COLUMN role VARCHAR(8) NOT NULL DEFAULT 'both'")
 
 
+def _v18_categories_lieux_parcours(db):
+    # Parcours : catégorie d'affichage d'un lieu ou d'une base (icône), et
+    # icône Tabler libre pour la catégorie « custom ». Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_place)")}
+        if "category" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE parcours_place ADD COLUMN category VARCHAR(16) NOT NULL DEFAULT 'other'")
+        if "icon" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE parcours_place ADD COLUMN icon VARCHAR(48)")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -366,6 +379,7 @@ MIGRATIONS = [
     (15, _v15_affichage_photos_parcours),
     (16, _v16_duree_visite_parcours),
     (17, _v17_role_base_parcours),
+    (18, _v18_categories_lieux_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]
