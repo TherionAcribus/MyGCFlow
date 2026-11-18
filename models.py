@@ -304,6 +304,9 @@ class ParcoursPlace(db.Model):
     # Journée concernée ; une base sans date vaut pour toutes les journées.
     date = db.Column(db.Date)
     time = db.Column(db.String(5))             # « HH:MM » : heure sûre du lieu
+    # Rôle d'une base : « both » (départ et retour), « start » (départ seul)
+    # ou « end » (retour seul) — partir d'un hôtel, dormir au camping.
+    role = db.Column(db.String(8), nullable=False, default='both')
     created_at = db.Column(db.DateTime)
 
 

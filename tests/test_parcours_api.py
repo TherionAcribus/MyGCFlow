@@ -295,6 +295,18 @@ class AdjustmentTests(_Base):
             self.assertEqual(response.get_json()["error"], code, body)
         updated = self.patch(f"/api/parcours/{pid}/places/{place['id']}", {"time": None, "name": "Vue"}).get_json()
         self.assertEqual((updated["place"]["time"], updated["place"]["name"]), (None, "Vue"))
+        # Rôle d'une base : départ seul, retour seul ; « both » par défaut,
+        # valeur inconnue refusée, un lieu garde toujours « both ».
+        self.assertEqual(base.get_json()["place"]["role"], "both")
+        self.assertEqual(place["role"], "both")
+        base_id = base.get_json()["place"]["id"]
+        updated = self.patch(f"/api/parcours/{pid}/places/{base_id}", {"role": "start"}).get_json()
+        self.assertEqual(updated["place"]["role"], "start")
+        response = self.patch(f"/api/parcours/{pid}/places/{base_id}", {"role": "milieu"})
+        self.assertEqual(response.get_json()["error"], "place-invalid")
+        converted = self.patch(f"/api/parcours/{pid}/places/{base_id}",
+                               {"kind": "place", "date": "2025-07-12"}).get_json()
+        self.assertEqual(converted["place"]["role"], "both")
         self.assertEqual(len(self.get(f"/api/parcours/{pid}/inputs").get_json()["places"]), 2)
         self.assertEqual(self.delete(f"/api/parcours/{pid}/places/{place['id']}").status_code, 200)
         self.assertEqual(self.delete(f"/api/parcours/{pid}/places/{place['id']}").status_code, 404)

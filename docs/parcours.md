@@ -45,7 +45,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
 | `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?, legMode?, visitMin?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
 | `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |
-| `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?}` ou base `{kind: base, name, lat, lon, date?}` (base sans date : toutes les journées) |
+| `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?}` ou base `{kind: base, name, lat, lon, date?, role?}` (base sans date : toutes les journées ; `role` : `both`/`start`/`end`) |
 | `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
 | `POST /api/parcours/<id>/photos` | Envoi d'une photo (multipart, champ `photo`, 15 Mo au plus) ; la même photo deux fois n'est gardée qu'une fois |
 | `GET /api/parcours/<id>/photos/<ph>/file` / `thumb` | Photo normalisée / vignette 320 px (cache long, nom = empreinte) |
@@ -311,7 +311,8 @@ Dans l'onglet Données :
   journée (logs datés du mauvais jour), « Exclure du parcours » ;
 - **« Poser un lieu ou une base sur la carte »** attend un clic sur la carte
   (Échap annule), puis un petit formulaire : type, nom, journée, heure
-  facultative.
+  facultative, et pour une base son rôle (départ et retour, ou une seule
+  extrémité — partir d'un hôtel, dormir ailleurs).
 
 Ce que la reconstruction en fait (`applyAdjustments`, puis
 `reconstructDay`) :
@@ -324,7 +325,7 @@ Ce que la reconstruction en fait (`applyAdjustments`, puis
 | `day` | L'étape passe à une autre journée de la plage (`movedFrom` garde la date d'origine, « déplacée du… ») ; son rang est effacé |
 | `excluded` | L'étape sort du parcours, de la chronologie et des comptes ; listée barrée en fin de journée, « Réintégrer » |
 | lieu (`place`) | Une étape de plus dans sa journée, à son heure si elle en a une (raison `pinned`), sinon au moindre détour ; visite de 30 min ; jamais comptée (`index` null, `{etapes}`, résumé) |
-| base (`base`) | Départ et retour de chaque journée qui a des étapes (clés `place:<id>:<date>:start` / `:end`, visite 0) ; une base datée prime sur une base « toutes les journées » ; elle oriente l'ordre géographique de la journée |
+| base (`base`) | Départ et retour de chaque journée qui a des étapes (clés `place:<id>:<date>:start` / `:end`, visite 0) ; une base datée prime sur une base « toutes les journées » ; elle oriente l'ordre géographique de la journée. Son `role` restreint l'extrémité servie : `start` (départ seul), `end` (retour seul) ou `both` — pour chaque extrémité, la base datée prime (rôle précis puis `both`), sinon celle de toutes les journées |
 
 Pendant la lecture, lieux et bases n'ont pas de point WebGL. Ils sont
 dessinés par la couche de la tête : les bases toujours, les lieux une fois

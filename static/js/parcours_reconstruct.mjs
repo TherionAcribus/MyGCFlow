@@ -519,7 +519,9 @@ function applyManualRanks(stops, order, ranks, reasons, confidence, anchorMin, o
 // (parcours_dataset.py). Options :
 //   overrides : Map clé → { rank?, pinnedTime? } (ajustements, lot 3) ;
 //   prevEnd   : [lon, lat] de la dernière étape de la veille, ou null ;
-//   base      : { key, name, lon, lat } — départ et retour de la journée ;
+//   baseStart/baseEnd : { key, name, lon, lat } — départ et retour de la
+//                  journée (rôles « start »/« end » des bases ; une base
+//                  « both » sert les deux, une seule extrémité possible) ;
 //   trackAnchors : Map clé → minutes, heure de passage des traces GPS (lot 5,
 //                  parcours_tracks.mjs) — après l'heure épinglée et celle
 //                  des Labs ;
@@ -528,7 +530,8 @@ function applyManualRanks(stops, order, ranks, reasons, confidence, anchorMin, o
 //   legHints : Map « from>to » → { minutes, km, mode }, itinéraires calculés
 //              (lot 6, parcours_routing.mjs).
 export function reconstructDay(day, {
-    overrides = null, prevEnd = null, base = null, trackAnchors = null, photoAnchors = null, legHints = null,
+    overrides = null, prevEnd = null, baseStart = null, baseEnd = null,
+    trackAnchors = null, photoAnchors = null, legHints = null,
     options: raw = null,
 } = {}) {
     const opts = options(raw);
@@ -560,8 +563,9 @@ export function reconstructDay(day, {
         const rank = overrides?.get?.(stop.key)?.rank;
         return Number.isFinite(rank) ? rank : null;
     });
-    const hasBase = !!base && Number.isFinite(base.lon) && Number.isFinite(base.lat);
-    const start = hasBase ? [base.lon, base.lat] : prevEnd;
+    const hasStart = !!baseStart && Number.isFinite(baseStart.lon) && Number.isFinite(baseStart.lat);
+    const hasEnd = !!baseEnd && Number.isFinite(baseEnd.lon) && Number.isFinite(baseEnd.lat);
+    const start = hasStart ? [baseStart.lon, baseStart.lat] : prevEnd;
     const ordered = orderDay(stops, anchorMin, start, opts);
     const { reasons, confidence, diagnostics } = ordered;
     for (let i = 0; i < stops.length; i++) {
@@ -577,20 +581,28 @@ export function reconstructDay(day, {
     let order = applyManualRanks(stops, ordered.order, ranks, reasons, confidence, anchorMin, opts);
     result.manual = order !== ordered.order;
 
-    // Base : départ et retour de la journée, aux deux bouts du chemin. Clé
-    // propre à la journée : une même base sert plusieurs jours.
+    // Bases : départ et retour de la journée, aux deux bouts du chemin — deux
+    // bases distinctes possibles (rôles « start »/« end »). Clé propre à la
+    // journée : une même base sert plusieurs jours.
     let all = stops;
-    if (hasBase) {
-        const baseStop = (suffix) => ({
-            key: `${base.key}:${day.date}:${suffix}`, kind: KIND_BASE, type: 'Base', name: base.name || '', code: null,
-            lon: base.lon, lat: base.lat, logId: null, localTime: null, placeId: base.id ?? null,
-        });
-        all = [...stops, baseStop('start'), baseStop('end')];
-        const n = stops.length;
-        order = [n, ...order, n + 1];
-        anchorMin.push(null, null);
-        reasons.push(REASON_BASE, REASON_BASE);
-        confidence.push(CONFIDENCE_MANUAL, CONFIDENCE_MANUAL);
+    const baseStop = (base, suffix) => ({
+        key: `${base.key}:${day.date}:${suffix}`, kind: KIND_BASE, type: 'Base', name: base.name || '', code: null,
+        lon: base.lon, lat: base.lat, logId: null, localTime: null, placeId: base.id ?? null,
+    });
+    const pushBase = () => {
+        anchorMin.push(null);
+        reasons.push(REASON_BASE);
+        confidence.push(CONFIDENCE_MANUAL);
+    };
+    if (hasStart) {
+        all = [...all, baseStop(baseStart, 'start')];
+        pushBase();
+        order = [all.length - 1, ...order];
+    }
+    if (hasEnd) {
+        all = [...all, baseStop(baseEnd, 'end')];
+        pushBase();
+        order = [...order, all.length - 1];
     }
     const { arrival, visit, legs, compressed } = scheduleDay(all, order, anchorMin, opts, { overrides, legHints });
     // Ordre contraire aux heures sûres (manuel, ou ancres en contradiction) :
@@ -631,14 +643,23 @@ export function applyAdjustments(inputs) {
             (o?.excluded ? target.excluded : target.stops).push(moved);
         }
     });
-    const bases = { all: null, byDate: new Map() };
+    // Bases par rôle : `both` sert départ et retour, `start`/`end` une seule
+    // extrémité — partir d'un hôtel, dormir ailleurs. Une portée (datée ou
+    // toutes journées) garde au plus une base par rôle : la dernière posée.
+    const bases = { all: {}, byDate: new Map() };
     for (const place of Array.isArray(inputs?.places) ? inputs.places : []) {
         if (!place || !Number.isFinite(place.lat) || !Number.isFinite(place.lon)) continue;
         const key = `place:${place.id}`;
         if (place.kind === KIND_BASE) {
             const base = { key, id: place.id, name: place.name, lon: place.lon, lat: place.lat };
-            if (place.date) bases.byDate.set(place.date, base);
-            else bases.all = base;
+            const role = (place.role === 'start' || place.role === 'end') ? place.role : 'both';
+            if (place.date) {
+                const scope = bases.byDate.get(place.date) || {};
+                scope[role] = base;
+                bases.byDate.set(place.date, scope);
+            } else {
+                bases.all[role] = base;
+            }
         } else if (place.kind === KIND_PLACE && byDate.has(place.date)) {
             byDate.get(place.date).stops.push({
                 key, kind: KIND_PLACE, type: 'Place', name: place.name || '', code: null,
@@ -663,9 +684,16 @@ export function reconstructParcours(inputs, {
     let index = 0;
     let dropped = 0;
     for (const rawDay of adjusted) {
-        // Une base ne sert que les journées qui ont des étapes.
-        const base = rawDay.stops.length > 0 ? (bases.byDate.get(rawDay.date) || bases.all) : null;
-        const day = reconstructDay(rawDay, { overrides, prevEnd, base, trackAnchors, photoAnchors, legHints, options: raw });
+        // Une base ne sert que les journées qui ont des étapes. Pour chaque
+        // extrémité : la base datée prime (rôle précis puis « both »), sinon
+        // celle de toutes les journées.
+        const scope = bases.byDate.get(rawDay.date);
+        const hasStops = rawDay.stops.length > 0;
+        const baseStart = hasStops
+            && (scope?.start || scope?.both || bases.all.start || bases.all.both || null);
+        const baseEnd = hasStops
+            && (scope?.end || scope?.both || bases.all.end || bases.all.both || null);
+        const day = reconstructDay(rawDay, { overrides, prevEnd, baseStart, baseEnd, trackAnchors, photoAnchors, legHints, options: raw });
         for (const stop of day.stops) stop.index = isCountedStop(stop) ? ++index : null;
         dropped += day.dropped;
         if (day.stops.length > 0) {

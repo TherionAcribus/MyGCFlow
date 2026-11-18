@@ -339,6 +339,15 @@ def _v16_duree_visite_parcours(db):
             conn.exec_driver_sql("ALTER TABLE parcours_override ADD COLUMN visit_min INTEGER")
 
 
+def _v17_role_base_parcours(db):
+    # Parcours : rôle d'une base (départ, retour, ou les deux). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_place)")}
+        if "role" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE parcours_place ADD COLUMN role VARCHAR(8) NOT NULL DEFAULT 'both'")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -356,6 +365,7 @@ MIGRATIONS = [
     (14, _v14_itineraires_parcours),
     (15, _v15_affichage_photos_parcours),
     (16, _v16_duree_visite_parcours),
+    (17, _v17_role_base_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

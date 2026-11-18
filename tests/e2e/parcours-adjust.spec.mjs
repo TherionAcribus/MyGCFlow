@@ -347,6 +347,49 @@ test('poser une base d’un clic sur la carte : départ et retour de chaque jour
   expect(errors).toEqual([]);
 });
 
+test('bases à rôles : partir d’un hôtel, dormir au camping', async ({ page, request }) => {
+  const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
+  const depart = await request.post(`/api/parcours/${id}/places`, {
+    data: { kind: 'base', name: 'Hôtel', lat: 45.91, lon: 6.13, role: 'start' },
+  });
+  const retour = await request.post(`/api/parcours/${id}/places`, {
+    data: { kind: 'base', name: 'Camping', lat: 45.89, lon: 6.11, role: 'end' },
+  });
+  expect(depart.status()).toBe(201);
+  expect(retour.status()).toBe(201);
+  const startId = (await depart.json()).place.id;
+  const endId = (await retour.json()).place.id;
+  const errors = collectErrors(page);
+  await openReady(page);
+  const state = await snapshot(page);
+  // Chaque journée part de l'hôtel et finit au camping.
+  for (const day of state.days) {
+    expect(day.keys[0]).toBe(`place:${startId}:${day.date}:start`);
+    expect(day.keys.at(-1)).toBe(`place:${endId}:${day.date}:end`);
+  }
+
+  // Le formulaire de pose propose le rôle pour une base seulement.
+  await page.locator('#btnParcoursAddPlace').click();
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const form = page.locator('#parcoursPlaceForm');
+  await expect(form.locator('#parcoursPlaceRoleRow')).toBeHidden();
+  await form.locator('#parcoursPlaceKind').selectOption('base');
+  await expect(form.locator('#parcoursPlaceRoleRow')).toBeVisible();
+  await page.locator('#btnParcoursPlaceCancel').click();
+
+  // Le panneau d'une base change son rôle : l'hôtel ne sert plus que le
+  // retour — mais le camping, posé après, garde l'arrivée ; plus de départ.
+  await page.locator(`.parcours-stop[data-stop-key="place:${startId}:2025-07-12:start"]`)
+    .locator('.parcours-stop-text').click();
+  await page.locator('.parcours-edit-place-role').selectOption('end');
+  const next = await adjusted(page, state.adjustmentRevision);
+  expect(next.days[0].keys[0]).not.toContain(':start');
+  expect(next.days[0].keys.at(-1)).toBe(`place:${endId}:2025-07-12:end`);
+  expect(next.places.find((p) => p.id === startId)?.role).toBe('end');
+  expect(errors).toEqual([]);
+});
+
 test('éditer un lieu : nom, journée, type et déplacement sur la carte', async ({ page, request }) => {
   const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
   const created = await request.post(`/api/parcours/${id}/places`, {

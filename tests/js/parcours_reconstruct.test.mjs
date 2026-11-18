@@ -331,6 +331,33 @@ test('base : départ et retour de chaque journée, la base datée prime', () => 
     assert.equal(result.stopCount, 3);
 });
 
+test('bases à rôles : partir d’un hôtel, dormir au camping', () => {
+    const result = reconstructParcours({
+        days: [{ date: '2025-07-12', stops: [stop('A', 10), stop('B', 20)] }],
+        places: [
+            { id: 1, kind: KIND_BASE, name: 'Hôtel', lat: 45, lon: 5, date: null, role: 'start' },
+            { id: 2, kind: KIND_BASE, name: 'Camping', lat: 46, lon: 6, date: null, role: 'end' },
+        ],
+    });
+    const [day] = result.days;
+    assert.deepEqual(day.stops.map((s) => s.key),
+        ['place:1:2025-07-12:start', 'A', 'B', 'place:2:2025-07-12:end']);
+    assert.equal(day.stops[0].visitMin, 0);
+    assert.equal(day.stops[0].reason, REASON_BASE);
+    assert.equal(day.stops[3].reason, REASON_BASE);
+
+    // Une base datée « retour » prime sur le retour de la base globale.
+    const dated = reconstructParcours({
+        days: [{ date: '2025-07-12', stops: [stop('A', 10)] }],
+        places: [
+            { id: 1, kind: KIND_BASE, name: 'Maison', lat: 45, lon: 5, date: null },
+            { id: 2, kind: KIND_BASE, name: 'Refuge', lat: 46, lon: 6, date: '2025-07-12', role: 'end' },
+        ],
+    });
+    assert.deepEqual(dated.days[0].stops.map((s) => s.key),
+        ['place:1:2025-07-12:start', 'A', 'place:2:2025-07-12:end']);
+});
+
 test('déterministe : même entrée, même résultat', () => {
     const input = {
         days: [{

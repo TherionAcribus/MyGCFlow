@@ -1589,7 +1589,7 @@ const FOCUSABLE_CLASSES = [
     'parcours-edit-time', 'parcours-edit-pin', 'parcours-edit-unpin', 'parcours-edit-leg', 'parcours-edit-visit',
     'parcours-edit-day', 'parcours-edit-exclude', 'parcours-edit-delete-place',
     'parcours-edit-place-name', 'parcours-edit-place-rename', 'parcours-edit-place-kind',
-    'parcours-edit-place-day', 'parcours-edit-place-move', 'parcours-edit-locate',
+    'parcours-edit-place-day', 'parcours-edit-place-role', 'parcours-edit-place-move', 'parcours-edit-locate',
 ];
 
 function focusMarkerOf(el) {
@@ -2080,6 +2080,26 @@ function renderEditPanel(stop, day) {
         daySelect.value = place.date || '';
         daySelect.addEventListener('change', () => updatePlace(place.id, { date: daySelect.value || null }));
         metaRow.append(kindLabel, kindSelect, dayLabel, daySelect);
+        // Rôle d'une base : départ et retour, ou une seule extrémité — partir
+        // d'un hôtel, dormir ailleurs.
+        if (place.kind === KIND_BASE) {
+            const roleLabel = document.createElement('label');
+            roleLabel.className = 'small';
+            roleLabel.textContent = t('Rôle');
+            const roleSelect = document.createElement('select');
+            roleSelect.className = 'form-select form-select-sm w-auto parcours-edit-place-role';
+            roleLabel.htmlFor = roleSelect.id = `parcoursEditPlaceRole-${place.id}`;
+            for (const [value, text] of [['both', t('Départ et retour')],
+                    ['start', t('Départ seulement')], ['end', t('Arrivée seulement')]]) {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = text;
+                roleSelect.append(opt);
+            }
+            roleSelect.value = ['start', 'end'].includes(place.role) ? place.role : 'both';
+            roleSelect.addEventListener('change', () => updatePlace(place.id, { role: roleSelect.value }));
+            metaRow.append(roleLabel, roleSelect);
+        }
         panel.append(metaRow);
     }
 
@@ -2482,6 +2502,7 @@ function openPlaceForm({ lon, lat }) {
     el('parcoursPlaceName').value = '';
     el('parcoursPlaceTime').value = '';
     el('parcoursPlaceKind').value = KIND_PLACE;
+    el('parcoursPlaceRole').value = 'both';
     syncPlaceForm();
     form.hidden = false;
     el('parcoursPlaceName')?.focus();
@@ -2500,6 +2521,8 @@ function syncPlaceForm() {
     }
     const timeRow = el('parcoursPlaceTimeRow');
     if (timeRow) timeRow.hidden = base;
+    const roleRow = el('parcoursPlaceRoleRow');
+    if (roleRow) roleRow.hidden = !base;
 }
 
 function closePlaceForm() {
@@ -2558,6 +2581,7 @@ function bindAdjustments() {
             lon: placeDraft.lon,
             date: el('parcoursPlaceDay').value || null,
             time: kind === KIND_PLACE ? (el('parcoursPlaceTime').value || null) : null,
+            role: kind === KIND_BASE ? (el('parcoursPlaceRole').value || 'both') : 'both',
         });
         if (ok) closePlaceForm();
     });

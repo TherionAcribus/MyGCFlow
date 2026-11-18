@@ -161,6 +161,8 @@ def delete(session, parcours_id: int) -> None:
 
 STOP_KEY_MAX_LENGTH = 96
 PLACE_KINDS = ('base', 'place')
+# Rôle d'une base : départ et retour, départ seul ou retour seul.
+BASE_ROLES = ('both', 'start', 'end')
 # Mode du trajet vers l'étape suivante (lot 6) ; `straight` : ligne droite,
 # sans itinéraire (avion, ferry…).
 LEG_MODES = ('walk', 'bike', 'car', 'straight')
@@ -208,6 +210,7 @@ def place_to_dict(row: ParcoursPlace) -> dict:
         'lon': row.longitude,
         'date': row.date.isoformat() if row.date else None,
         'time': row.time,
+        'role': row.role or 'both',
     }
 
 
@@ -318,11 +321,20 @@ def _place_fields(data: dict, parcours: Parcours, current: ParcoursPlace | None 
         fields['date'] = _day_in_range(data.get('date'), parcours)
     if 'time' in data or current is None:
         fields['time'] = _time_or_none(data.get('time'))
+    if 'role' in data or current is None:
+        role = data.get('role', 'both')
+        if role not in BASE_ROLES:
+            raise ParcoursError('place-invalid')
+        fields['role'] = role
     date_value = fields.get('date', current.date if current else None)
     # Un lieu est une étape d'une journée : sa date est requise. Une base
     # sans date vaut pour toutes les journées.
     if kind == 'place' and date_value is None:
         raise ParcoursError('place-invalid')
+    # Le rôle ne vaut que pour les bases : un lieu (nouveau, converti, ou
+    # rôle explicitement posé dessus) garde « both ».
+    if kind == 'place' and ('role' in fields or 'kind' in fields):
+        fields['role'] = 'both'
     return fields
 
 

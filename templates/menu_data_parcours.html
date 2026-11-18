@@ -252,6 +252,14 @@
                                 <label class="form-label small mb-1" for="parcoursPlaceTime">{{ _("Heure (facultative)") }}</label>
                                 <input type="time" id="parcoursPlaceTime" class="form-control form-control-sm">
                             </div>
+                            <div class="col-5" id="parcoursPlaceRoleRow" hidden>
+                                <label class="form-label small mb-1" for="parcoursPlaceRole">{{ _("Rôle de la base") }}</label>
+                                <select id="parcoursPlaceRole" class="form-select form-select-sm">
+                                    <option value="both">{{ _("Départ et retour") }}</option>
+                                    <option value="start">{{ _("Départ seulement") }}</option>
+                                    <option value="end">{{ _("Arrivée seulement") }}</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 mt-2">
                             <button type="submit" id="btnParcoursPlaceSave" class="btn btn-sm btn-primary">

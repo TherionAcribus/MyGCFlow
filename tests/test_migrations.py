@@ -259,6 +259,30 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertEqual(row, (2, '10:15', None))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_parcours_place_gains_role_column(self):
+        # Base v16 : le rôle des bases n'existe pas ; la migration le crée
+        # (départ et retour) sans perdre les lieux posés.
+        self._create_app()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO parcours (name, date_start, date_end, include_labs, include_dnf) "
+                "VALUES ('Sortie', '2025-07-12', '2025-07-12', 1, 1)")
+            conn.execute(
+                "INSERT INTO parcours_place (parcours_id, kind, name, latitude, longitude, role) "
+                "VALUES (?, 'base', 'Hôtel', 45.9, 6.12, 'both')", (cur.lastrowid,))
+            conn.execute("ALTER TABLE parcours_place DROP COLUMN role")
+            conn.execute("PRAGMA user_version = 16")
+        self.assertNotIn('role', self._columns('parcours_place'))
+
+        self._create_app()
+
+        self.assertIn('role', self._columns('parcours_place'))
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT name, role FROM parcours_place WHERE kind = 'base'").fetchone()
+        self.assertEqual(row, ('Hôtel', 'both'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
 
 if __name__ == '__main__':
     unittest.main()
