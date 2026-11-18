@@ -234,6 +234,32 @@ test('modifier un parcours : nom et dates, sans perdre les ajustements', async (
   expect(errors).toEqual([]);
 });
 
+test('lien liste ↔ carte : halo au survol, panneau au clic sur la carte', async ({ page, request }) => {
+  await importFixture(page, request);
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Journée', date_start: '2025-07-12', date_end: '2025-07-12' } });
+  expect(created.status()).toBe(201);
+  const errors = collectErrors(page);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).layer?.stops).toBe(3);
+
+  // Survol d'une ligne : le point du plan s'entoure d'un halo.
+  await page.locator('.parcours-stop[data-stop-key="GCPAR02"]').hover();
+  expect((await snapshot(page)).hovered).toBe('GCPAR02');
+
+  // Survol du point sur la carte : la ligne se surligne à son tour.
+  const pixel = (await snapshot(page)).stopPixels.GCPAR02;
+  const box = await page.locator('.ol-viewport').boundingBox();
+  await page.mouse.move(box.x + pixel[0], box.y + pixel[1]);
+  await expect.poll(async () => (await snapshot(page)).mapHover).toContain('GCPAR02');
+
+  // Clic sur le point : le panneau d'ajustement de l'étape s'ouvre.
+  await page.mouse.click(box.x + pixel[0], box.y + pixel[1]);
+  await expect(page.locator('.parcours-stop-edit[data-edit-key="GCPAR02"]')).toBeVisible();
+  await expect(page.locator('.parcours-edit-locate')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('une saisie invalide est refusée avec un message', async ({ page, request }) => {
   await importFixture(page, request);
   await openParcoursPage(page);

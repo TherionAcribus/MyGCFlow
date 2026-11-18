@@ -4184,6 +4184,12 @@ body[data-mode="parcours"] .rhythm-rate-field {
     opacity: 0.75;
 }
 
+/* Survol du point correspondant sur la carte. */
+.parcours-stop.is-map-hover {
+    background: rgba(32, 107, 196, 0.08);
+    border-radius: 4px;
+}
+
 /* Pose d'un lieu : en attente d'un clic sur la carte. */
 .parcours-picking,
 .parcours-picking canvas {

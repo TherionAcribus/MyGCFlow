@@ -191,6 +191,10 @@ let dragged = null;           // { date, key } pendant un glisser-déposer
 let picking = false;          // en attente d'un clic sur la carte (lieu)
 let pickListener = null;
 let placeDraft = null;        // { lon, lat } du lieu en cours de saisie
+let clickMutedUntil = 0;      // clic de pose/déplacement : ne pas l'ouvrir en étape
+let hoveredFeature = null;    // point du plan mis en évidence par la liste
+let mapHoverRows = [];        // lignes de la liste mises en évidence par la carte
+let hoverBound = false;
 let adjustmentRevision = 0;
 
 function normalizeInfosTemplate(value) {
@@ -1541,7 +1545,7 @@ const FOCUSABLE_CLASSES = [
     'parcours-edit-time', 'parcours-edit-pin', 'parcours-edit-unpin', 'parcours-edit-leg',
     'parcours-edit-day', 'parcours-edit-exclude', 'parcours-edit-delete-place',
     'parcours-edit-place-name', 'parcours-edit-place-rename', 'parcours-edit-place-kind',
-    'parcours-edit-place-day', 'parcours-edit-place-move',
+    'parcours-edit-place-day', 'parcours-edit-place-move', 'parcours-edit-locate',
 ];
 
 function focusMarkerOf(el) {
@@ -1587,6 +1591,7 @@ function renderStops(errorMessage = '') {
     }
     const focus = box.contains(document.activeElement) ? focusMarkerOf(document.activeElement) : null;
     box.replaceChildren(...ordered.days.map(renderDay));
+    mapHoverRows = mapHoverRows.filter((row) => row.isConnected);
     if (focus) {
         const node = box.querySelector(
             `[data-stop-key="${focus.key}"] .${focus.cls}, [data-edit-key="${focus.key}"] .${focus.cls}`)
@@ -1644,6 +1649,15 @@ function renderStopRow(stop, day, movable) {
     item.dataset.kind = stop.kind;
     item.dataset.confidence = stop.confidence;
     item.dataset.reason = stop.reason;
+    if (stop.placeId != null) item.dataset.placeId = stop.placeId;
+    // Survol ou focus clavier : le point correspondant du plan s'entoure
+    // d'un halo (lien liste ↔ carte).
+    item.addEventListener('mouseenter', () => setHoveredStop(stop));
+    item.addEventListener('mouseleave', () => setHoveredStop(null));
+    item.addEventListener('focusin', () => setHoveredStop(stop));
+    item.addEventListener('focusout', (event) => {
+        if (!item.contains(event.relatedTarget)) setHoveredStop(null);
+    });
     const time = document.createElement('span');
     time.className = 'parcours-stop-time small mt-1';
     time.classList.toggle('text-muted', stop.confidence !== CONFIDENCE_ANCHORED);
@@ -1725,6 +1739,7 @@ function renderExcludedRow(stop) {
     const item = document.createElement('li');
     item.className = 'parcours-stop is-excluded d-flex align-items-center gap-2 py-1';
     item.dataset.stopKey = stop.key;
+    if (stop.placeId != null) item.dataset.placeId = stop.placeId;
     const label = document.createElement('div');
     label.className = 'flex-grow-1 min-w-0 text-muted';
     const name = document.createElement('div');
@@ -1747,6 +1762,13 @@ function renderEditPanel(stop, day) {
     const panel = document.createElement('li');
     panel.className = 'parcours-stop-edit card card-body py-2 px-3 mb-2';
     panel.dataset.editKey = stop.key;
+    // Le halo suit le focus ou la souris jusque dans le panneau.
+    panel.addEventListener('mouseenter', () => setHoveredStop(stop));
+    panel.addEventListener('mouseleave', () => setHoveredStop(null));
+    panel.addEventListener('focusin', () => setHoveredStop(stop));
+    panel.addEventListener('focusout', (event) => {
+        if (!panel.contains(event.relatedTarget)) setHoveredStop(null);
+    });
     const place = placeOf(stop);
 
     if (stop.kind !== KIND_BASE) {
@@ -1907,6 +1929,18 @@ function renderEditPanel(stop, day) {
 
     const actions = document.createElement('div');
     actions.className = 'd-flex gap-2 flex-wrap';
+    const locate = button('btn btn-sm btn-outline-secondary parcours-edit-locate', 'ti-focus-2',
+        t('Voir sur la carte'), { text: t('Voir sur la carte') });
+    locate.addEventListener('click', () => {
+        const map = pkg.getMap?.();
+        if (!map) return;
+        map.getView().animate({
+            center: ol.proj.fromLonLat([stop.lon, stop.lat]),
+            zoom: Math.max(map.getView().getZoom() || 0, 15),
+            duration: 300,
+        });
+    });
+    actions.append(locate);
     if (place) {
         const move = button('btn btn-sm btn-outline-secondary parcours-edit-place-move', 'ti-map-pin',
             t('Déplacer sur la carte'), { text: t('Déplacer sur la carte') });
@@ -2140,6 +2174,7 @@ function startPlacePicking() {
     if (hint) hint.hidden = false;
     pickListener = map.once('singleclick', (event) => {
         pickListener = null;
+        clickMutedUntil = performance.now() + 400;
         stopPicking();
         const [lon, lat] = ol.proj.toLonLat(event.coordinate);
         openPlaceForm({ lon, lat });
@@ -2178,6 +2213,7 @@ function startPlaceMove(place) {
     if (hint) hint.hidden = false;
     pickListener = map.once('singleclick', (event) => {
         pickListener = null;
+        clickMutedUntil = performance.now() + 400;
         stopPicking();
         const id = placeMoveId;
         placeMoveId = null;
@@ -3383,9 +3419,23 @@ function bindRouting() {
 
 // --- Carte ----------------------------------------------------------------------
 
+// Halo dessiné sous l'étape dont la ligne est survolée (et réciproquement).
+const haloStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 17,
+        fill: new ol.style.Fill({ color: 'rgba(32, 107, 196, 0.18)' }),
+        stroke: new ol.style.Stroke({ color: 'rgba(32, 107, 196, 0.9)', width: 2 }),
+    }),
+});
+
 function pointStyle(feature) {
     const kind = feature.get('kind');
-    if (kind === KIND_BASE || kind === KIND_PLACE) return placeStyle(kind);
+    const normal = (kind === KIND_BASE || kind === KIND_PLACE) ? placeStyle(kind) : numberedStyle(feature);
+    return feature.get('hovered') ? [haloStyle, normal] : normal;
+}
+
+function numberedStyle(feature) {
+    const kind = feature.get('kind');
     return new ol.style.Style({
         image: new ol.style.Circle({
             radius: 11,
@@ -3445,7 +3495,75 @@ function ensureLayer() {
         parcoursLayer.set('name', 'parcours');
     }
     if (!map.getLayers().getArray().includes(parcoursLayer)) map.addLayer(parcoursLayer);
+    bindMapLink(map);
     return parcoursLayer;
+}
+
+// Lien liste ↔ carte : survoler un point du plan surligne sa ligne dans la
+// liste ; cliquer un point ouvre son panneau d'ajustement. Le survol d'une
+// ligne met le point en évidence (halo) via `setHoveredStop`.
+function bindMapLink(map) {
+    if (hoverBound) return;
+    hoverBound = true;
+    map.on('pointermove', (event) => {
+        if (event.dragging) return;
+        const feature = map.forEachFeatureAtPixel(event.pixel,
+            (f) => (f.get('role') === 'stop' ? f : null),
+            { layerFilter: (layer) => layer === parcoursLayer, hitTolerance: 5 });
+        highlightRowsFor(feature || null);
+        const target = map.getTargetElement();
+        if (target && !picking) target.style.cursor = feature ? 'pointer' : '';
+    });
+    map.on('singleclick', (event) => {
+        // Un clic de pose ou de déplacement de lieu travaille pour le
+        // formulaire, pas pour l'étape qui serait sous la souris.
+        if (picking || performance.now() < clickMutedUntil) return;
+        const feature = map.forEachFeatureAtPixel(event.pixel,
+            (f) => (f.get('role') === 'stop' ? f : null),
+            { layerFilter: (layer) => layer === parcoursLayer, hitTolerance: 5 });
+        if (!feature) return;
+        editKey = feature.get('key') === editKey ? null : feature.get('key');
+        renderStops();
+        el('parcoursStops')?.querySelector(`[data-stop-key="${feature.get('key')}"]`)
+            ?.scrollIntoView({ block: 'nearest' });
+    });
+}
+
+// Feature du plan correspondant à une étape : la clé pour un point donné,
+// le lieu pour une base dessinée une seule fois quelles que soient ses
+// occurrences dans les journées.
+function stopFeatureFor(stop) {
+    const source = parcoursLayer?.getSource();
+    if (!source || !stop) return null;
+    return source.getFeatures().find((f) => f.get('role') === 'stop'
+        && (f.get('key') === stop.key || (stop.placeId != null && f.get('placeId') === stop.placeId))) || null;
+}
+
+function setHoveredStop(stop) {
+    const feature = stopFeatureFor(stop);
+    if (feature === hoveredFeature) return;
+    hoveredFeature?.set('hovered', false);
+    hoveredFeature = feature;
+    hoveredFeature?.set('hovered', true);
+}
+
+// Lignes de la liste correspondant à un point du plan (toutes celles d'une
+// base : elle n'est dessinée qu'une fois).
+function highlightRowsFor(feature) {
+    const rows = [];
+    const box = el('parcoursStops');
+    if (feature && box) {
+        const key = feature.get('key');
+        const placeId = feature.get('placeId');
+        for (const row of box.querySelectorAll('.parcours-stop')) {
+            if (row.dataset.stopKey === key || (placeId != null && row.dataset.placeId === String(placeId))) {
+                rows.push(row);
+            }
+        }
+    }
+    for (const row of mapHoverRows) if (!rows.includes(row)) row.classList.remove('is-map-hover');
+    for (const row of rows) row.classList.add('is-map-hover');
+    mapHoverRows = rows;
 }
 
 function renderLayer({ fit = false } = {}) {
@@ -3453,6 +3571,7 @@ function renderLayer({ fit = false } = {}) {
     if (!layer) return;
     const source = layer.getSource();
     source.clear();
+    hoveredFeature = null;
     if (!ordered) return;
     const features = [];
     for (const track of inputs?.tracks || []) {
@@ -3484,6 +3603,7 @@ function renderLayer({ fit = false } = {}) {
         features.push(new ol.Feature({
             role: 'stop',
             key: stop.key,
+            placeId: stop.placeId ?? null,
             kind: stop.kind,
             index: stop.index,
             geometry: new ol.geom.Point(ol.proj.fromLonLat([stop.lon, stop.lat])),
@@ -3577,6 +3697,13 @@ export function getParcoursSnapshot() {
             onMap: !!pkg.getMap?.()?.getLayers().getArray().includes(parcoursLayer),
             visible: parcoursLayer.getVisible(),
         } : null,
+        // Lien liste ↔ carte : point entouré d'un halo, lignes surlignées.
+        hovered: hoveredFeature?.get('key') || null,
+        mapHover: mapHoverRows.filter((row) => row.isConnected).map((row) => row.dataset.stopKey),
+        stopPixels: Object.fromEntries((source?.getFeatures() || [])
+            .filter((f) => f.get('role') === 'stop')
+            .map((f) => [f.get('key'), pkg.getMap?.()?.getPixelFromCoordinate(f.getGeometry().getCoordinates())])
+            .filter(([, px]) => !!px)),
         playback: { ...playback },
         // Lecture : chronologie écran, position du moteur, géocacheur.
         timeline: timeline ? {
