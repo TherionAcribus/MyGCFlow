@@ -82,6 +82,7 @@ import {
     REASON_TRACK,
     isCountedStop,
     minutesToTime,
+    visitMinutes,
 } from './parcours_reconstruct.mjs';
 import {
     MATCH_GPS,
@@ -1585,7 +1586,7 @@ function button(className, iconClass, label, { title = label, text = '' } = {}) 
 // après « Monter », le bouton de l'étape déplacée le récupère.
 const FOCUSABLE_CLASSES = [
     'parcours-stop-up', 'parcours-stop-down', 'parcours-stop-text', 'parcours-stop-restore',
-    'parcours-edit-time', 'parcours-edit-pin', 'parcours-edit-unpin', 'parcours-edit-leg',
+    'parcours-edit-time', 'parcours-edit-pin', 'parcours-edit-unpin', 'parcours-edit-leg', 'parcours-edit-visit',
     'parcours-edit-day', 'parcours-edit-exclude', 'parcours-edit-delete-place',
     'parcours-edit-place-name', 'parcours-edit-place-rename', 'parcours-edit-place-kind',
     'parcours-edit-place-day', 'parcours-edit-place-move', 'parcours-edit-locate',
@@ -1925,6 +1926,37 @@ function renderEditPanel(stop, day) {
             row.append(unpin);
         }
         panel.append(row);
+
+        // Durée de visite : vide = durée estimée du type de l'étape ; les
+        // heures des étapes suivantes suivent la durée imposée.
+        const visitRow = document.createElement('div');
+        visitRow.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+        const visitLabel = document.createElement('label');
+        visitLabel.className = 'small';
+        visitLabel.textContent = t('Durée de visite');
+        const visitInput = document.createElement('input');
+        visitInput.type = 'number';
+        visitInput.min = '0';
+        visitInput.max = '720';
+        visitInput.step = '5';
+        visitInput.placeholder = t('${n} min', { n: visitMinutes(stop) });
+        visitInput.className = 'form-control form-control-sm parcours-edit-visit';
+        visitInput.style.width = '5.5rem';
+        const visitOverride = overrideOf(stop.key)?.visitMin;
+        visitInput.value = Number.isFinite(visitOverride) ? visitOverride : '';
+        visitLabel.htmlFor = visitInput.id = `parcoursEditVisit-${stop.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        const visitHint = document.createElement('span');
+        visitHint.className = 'small text-muted';
+        visitHint.textContent = t('min');
+        visitInput.addEventListener('change', () => {
+            const value = visitInput.value === '' ? null : Math.max(0, Math.min(720, Math.round(Number(visitInput.value) || 0)));
+            // La suppression de l'input pendant le re-rendu relance change
+            // sur blur : ignorer la valeur déjà appliquée.
+            if (value === (overrideOf(stop.key)?.visitMin ?? null)) return;
+            saveOverrides([{ key: stop.key, visitMin: value }]);
+        });
+        visitRow.append(visitLabel, visitInput, visitHint);
+        panel.append(visitRow);
     }
 
     const next = day.stops[day.stops.indexOf(stop) + 1];
@@ -2160,12 +2192,13 @@ function mergeOverrides(patches) {
     const rows = new Map((inputs.overrides || []).map((o) => [o.key, { ...o }]));
     for (const patch of patches) {
         const row = rows.get(patch.key) || {
-            key: patch.key, rank: null, pinnedTime: null, day: null, excluded: false, legMode: null,
+            key: patch.key, rank: null, pinnedTime: null, day: null, excluded: false, legMode: null, visitMin: null,
         };
-        for (const field of ['rank', 'pinnedTime', 'day', 'excluded', 'legMode']) {
+        for (const field of ['rank', 'pinnedTime', 'day', 'excluded', 'legMode', 'visitMin']) {
             if (field in patch) row[field] = patch[field];
         }
-        if (row.rank === null && row.pinnedTime === null && row.day === null && !row.excluded && row.legMode === null) {
+        if (row.rank === null && row.pinnedTime === null && row.day === null && !row.excluded
+                && row.legMode === null && row.visitMin === null) {
             rows.delete(patch.key);
         } else {
             rows.set(patch.key, row);
@@ -2190,7 +2223,7 @@ function snapshotOverrides() {
 // voulue est posée entière, chaque ligne disparue est vidée (ce qui la
 // retire, même sémantique de fusion que le serveur).
 function patchesTo(target) {
-    const fields = { rank: null, pinnedTime: null, day: null, excluded: false, legMode: null };
+    const fields = { rank: null, pinnedTime: null, day: null, excluded: false, legMode: null, visitMin: null };
     const current = new Map((inputs.overrides || []).map((o) => [o.key, o]));
     const wanted = new Map(target.map((o) => [o.key, o]));
     const patches = [];

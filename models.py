@@ -281,6 +281,8 @@ class ParcoursOverride(db.Model):
     excluded = db.Column(db.Boolean, nullable=False, default=False)
     # Mode du trajet vers l'étape suivante (lot 6) : walk, bike, car, straight.
     leg_mode = db.Column(db.String(8))
+    # Durée de visite imposée (minutes) ; null : durée estimée selon le type.
+    visit_min = db.Column(db.Integer)
 
     __table_args__ = (
         db.UniqueConstraint('parcours_id', 'stop_key', name='uq_parcours_override_key'),

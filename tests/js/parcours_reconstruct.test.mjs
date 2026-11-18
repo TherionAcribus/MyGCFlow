@@ -183,6 +183,21 @@ test('horaire sans ancre : départ à 9 h, durées par type, heures croissantes'
     assert.equal(day.diagnostics.compressed, false);
 });
 
+test('durée de visite imposée : elle décale les étapes suivantes', () => {
+    const stops = [stop('A', 0, { logId: 1 }), stop('B', 3, { logId: 2 }), stop('C', 6, { logId: 3 })];
+    const day = reconstructDay(
+        { date: '2025-07-12', stops },
+        { overrides: new Map([['A', { visitMin: 120 }]]) },
+    );
+    const [a, b] = day.stops;
+    assert.equal(a.visitMin, 120);
+    const walk03 = legEstimate([a.lon, a.lat], [b.lon, b.lat]).minutes;
+    assert.ok(Math.abs(b.arrivalMin - (540 + 120 + walk03)) < 1e-6);
+    // Bien plus tard qu'avec les 10 min estimées d'une Traditional.
+    const auto = reconstructDay({ date: '2025-07-12', stops });
+    assert.ok(b.arrivalMin > auto.stops[1].arrivalMin + 100);
+});
+
 test('journée trop longue : comprimée pour finir à 22 h', () => {
     const stops = Array.from({ length: 30 }, (_, i) => stop(`M${String(i).padStart(2, '0')}`, i * 3,
         { logId: i + 1, type: 'Multi-cache' }));

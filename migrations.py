@@ -331,6 +331,14 @@ def _v15_affichage_photos_parcours(db):
                 conn.exec_driver_sql(f"ALTER TABLE parcours_photo ADD COLUMN {name} {sql}")
 
 
+def _v16_duree_visite_parcours(db):
+    # Parcours : durée de visite imposée par étape (minutes). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_override)")}
+        if "visit_min" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours_override ADD COLUMN visit_min INTEGER")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -347,6 +355,7 @@ MIGRATIONS = [
     (13, _v13_traces_parcours),
     (14, _v14_itineraires_parcours),
     (15, _v15_affichage_photos_parcours),
+    (16, _v16_duree_visite_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

@@ -43,7 +43,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `POST /api/parcours` | Création `{name, date_start, date_end?, include_labs?, include_dnf?}` ; `date_end` absente = une journée |
 | `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression |
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
-| `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
+| `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?, legMode?, visitMin?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
 | `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |
 | `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?}` ou base `{kind: base, name, lat, lon, date?}` (base sans date : toutes les journées) |
 | `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
@@ -307,8 +307,8 @@ Dans l'onglet Données :
 - **les flèches** d'une étape et **le glisser-déposer** dans sa journée
   fixent l'ordre de la journée : un rang pour chacune de ses étapes ;
 - **un clic sur une étape** ouvre son panneau : heure épinglée (« Épingler »
-  / « Retirer »), journée (logs datés du mauvais jour), « Exclure du
-  parcours » ;
+  / « Retirer »), durée de visite (vide : durée estimée du type de l'étape),
+  journée (logs datés du mauvais jour), « Exclure du parcours » ;
 - **« Poser un lieu ou une base sur la carte »** attend un clic sur la carte
   (Échap annule), puis un petit formulaire : type, nom, journée, heure
   facultative.
@@ -320,6 +320,7 @@ Ce que la reconstruction en fait (`applyAdjustments`, puis
 |---|---|
 | `rank` | Les étapes classées gardent l'ordre choisi, les autres s'y insèrent au moindre détour ; il prime sur tout, y compris sur l'heure des ancres. Raison `manual`, confiance `manual` (ordre sûr, heure estimée). La journée porte `manual` : badge « ordre manuel » et « Ordre automatique », qui efface les rangs de la journée |
 | `pinnedTime` | Ancre exacte, raison `pinned` |
+| `visitMin` | Durée de visite imposée en minutes (0 à 720, null : estimée selon le type) ; les arrivées des étapes suivantes s'en décalent, et la chronologie proportionnelle allonge l'arrêt à l'écran |
 | `day` | L'étape passe à une autre journée de la plage (`movedFrom` garde la date d'origine, « déplacée du… ») ; son rang est effacé |
 | `excluded` | L'étape sort du parcours, de la chronologie et des comptes ; listée barrée en fin de journée, « Réintégrer » |
 | lieu (`place`) | Une étape de plus dans sa journée, à son heure si elle en a une (raison `pinned`), sinon au moindre détour ; visite de 30 min ; jamais comptée (`index` null, `{etapes}`, résumé) |

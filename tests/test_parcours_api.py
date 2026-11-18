@@ -228,13 +228,15 @@ class AdjustmentTests(_Base):
     def test_overrides_are_patched_cleared_and_served_with_the_inputs(self):
         pid = self.create()["id"]
         response = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
-            {"key": "GC1", "rank": 2, "pinnedTime": "10:15"},
+            {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "visitMin": 45},
             {"key": "GC2", "excluded": True, "day": "2025-07-13", "legMode": "car"},
         ]})
         self.assertEqual(response.status_code, 200, response.get_json())
         self.assertEqual(response.get_json()["overrides"], [
-            {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "day": None, "excluded": False, "legMode": None},
-            {"key": "GC2", "rank": None, "pinnedTime": None, "day": "2025-07-13", "excluded": True, "legMode": "car"},
+            {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "day": None, "excluded": False,
+             "legMode": None, "visitMin": 45},
+            {"key": "GC2", "rank": None, "pinnedTime": None, "day": "2025-07-13", "excluded": True,
+             "legMode": "car", "visitMin": None},
         ])
         # Patch partiel ; une étape sans plus d'ajustement perd sa ligne.
         payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
@@ -242,7 +244,8 @@ class AdjustmentTests(_Base):
             {"key": "GC2", "excluded": False, "day": None, "legMode": None},
         ]}).get_json()
         self.assertEqual(payload["overrides"], [
-            {"key": "GC1", "rank": None, "pinnedTime": "10:15", "day": None, "excluded": False, "legMode": None}])
+            {"key": "GC1", "rank": None, "pinnedTime": "10:15", "day": None, "excluded": False,
+             "legMode": None, "visitMin": 45}])
         inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
         self.assertEqual([o["key"] for o in inputs["overrides"]], ["GC1"])
         self.assertEqual(inputs["places"], [])
@@ -260,6 +263,8 @@ class AdjustmentTests(_Base):
             ([{"key": "GC1", "rank": True}], "override-invalid"),
             ([{"key": "GC1", "excluded": "oui"}], "override-invalid"),
             ([{"key": "GC1", "legMode": "avion"}], "override-invalid"),
+            ([{"key": "GC1", "visitMin": -5}], "override-invalid"),
+            ([{"key": "GC1", "visitMin": 721}], "override-invalid"),
             ("pas une liste", "override-invalid"),
         ]
         for overrides, code in cases:

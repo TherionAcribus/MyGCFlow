@@ -164,6 +164,7 @@ PLACE_KINDS = ('base', 'place')
 # Mode du trajet vers l'étape suivante (lot 6) ; `straight` : ligne droite,
 # sans itinéraire (avion, ferry…).
 LEG_MODES = ('walk', 'bike', 'car', 'straight')
+MAX_VISIT_MIN = 12 * 60                    # douze heures de visite à une étape
 MAX_OVERRIDES = 2000
 MAX_PLACES = 200
 _TIME_RE = re.compile(r'(?:[01]\d|2[0-3]):[0-5]\d')
@@ -194,6 +195,7 @@ def override_to_dict(row: ParcoursOverride) -> dict:
         'day': row.day.isoformat() if row.day else None,
         'excluded': bool(row.excluded),
         'legMode': row.leg_mode,
+        'visitMin': row.visit_min,
     }
 
 
@@ -264,9 +266,15 @@ def patch_overrides(session, parcours_id: int, patches) -> dict:
                 if patch['legMode'] is not None and patch['legMode'] not in LEG_MODES:
                     raise ParcoursError('override-invalid')
                 row.leg_mode = patch['legMode']
+            if 'visitMin' in patch:
+                visit = patch['visitMin']
+                if visit is not None and (isinstance(visit, bool) or not isinstance(visit, int)
+                                          or visit < 0 or visit > MAX_VISIT_MIN):
+                    raise ParcoursError('override-invalid')
+                row.visit_min = visit
         for key, row in list(existing.items()):
             if row.rank is None and row.pinned_time is None and row.day is None and not row.excluded \
-                    and row.leg_mode is None:
+                    and row.leg_mode is None and row.visit_min is None:
                 if row.id is not None:
                     session.delete(row)
                 else:

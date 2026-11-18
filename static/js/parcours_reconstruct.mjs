@@ -422,7 +422,11 @@ function orderDay(stops, anchorMin, prevEnd, opts) {
 // l'étape de départ (`overrides`, legMode) le cas échéant.
 function scheduleDay(stops, order, anchorMin, opts, { overrides = null, legHints = null } = {}) {
     const m = order.length;
-    const visit = order.map((i) => visitMinutes(stops[i], opts));
+    // Durée de visite imposée (lot « durée réglable ») ou estimée du type.
+    const visit = order.map((i) => {
+        const forced = overrides?.get?.(stops[i].key)?.visitMin;
+        return Number.isFinite(forced) && forced >= 0 ? Math.min(forced, 12 * 60) : visitMinutes(stops[i], opts);
+    });
     const legs = [];
     const travel = [0];
     for (let k = 1; k < m; k++) {

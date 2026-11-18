@@ -233,6 +233,32 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertTrue(str(covered).startswith('2026-10-24'), covered)
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_parcours_override_gains_visit_min_column(self):
+        # Base v15 : la durée de visite imposée n'existe pas ; la migration
+        # crée la colonne sans perdre les ajustements posés.
+        self._create_app()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO parcours (name, date_start, date_end, include_labs, include_dnf) "
+                "VALUES ('Sortie', '2025-07-12', '2025-07-12', 1, 1)")
+            conn.execute(
+                "INSERT INTO parcours_override "
+                "(parcours_id, stop_key, rank, pinned_time, excluded) "
+                "VALUES (?, 'GC1AAA', 2, '10:15', 0)", (cur.lastrowid,))
+            conn.execute("ALTER TABLE parcours_override DROP COLUMN visit_min")
+            conn.execute("PRAGMA user_version = 15")
+        self.assertNotIn('visit_min', self._columns('parcours_override'))
+
+        self._create_app()
+
+        self.assertIn('visit_min', self._columns('parcours_override'))
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT rank, pinned_time, visit_min FROM parcours_override "
+                "WHERE stop_key = 'GC1AAA'").fetchone()
+        self.assertEqual(row, (2, '10:15', None))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
 
 if __name__ == '__main__':
     unittest.main()

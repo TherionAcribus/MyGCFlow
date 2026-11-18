@@ -395,6 +395,34 @@ test('éditer un lieu : nom, journée, type et déplacement sur la carte', async
   expect(errors).toEqual([]);
 });
 
+test('durée de visite réglable : les heures suivantes se décalent', async ({ page }) => {
+  const errors = collectErrors(page);
+  const toMin = (text) => {
+    const m = text.match(/(\d{1,2}):(\d{2})/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+  };
+  await openReady(page);
+  const timeOf = (key) => row(page, key).locator('.parcours-stop-time').textContent().then(toMin);
+  const before = await timeOf('GCPAR02');
+
+  // Panneau de GCPAR01 : durée imposée à 120 min au lieu des ~10 estimées.
+  await row(page, 'GCPAR01').locator('.parcours-stop-text').click();
+  const visit = page.locator('#parcoursEditVisit-GCPAR01');
+  await expect(visit).toBeVisible();
+  const before0 = (await snapshot(page)).adjustmentRevision;
+  await visit.fill('120');
+  await visit.dispatchEvent('change');
+  const state = await adjusted(page, before0);
+  expect(state.overrides.find((o) => o.key === 'GCPAR01')?.visitMin).toBe(120);
+  // GCPAR02 arrive 110 min plus tard (120 imposées − 10 par défaut).
+  expect(await timeOf('GCPAR02') - before).toBe(110);
+
+  // Enregistré : rechargement, la durée est conservée.
+  await openReady(page);
+  expect((await snapshot(page)).overrides.find((o) => o.key === 'GCPAR01')?.visitMin).toBe(120);
+  expect(errors).toEqual([]);
+});
+
 test('un lieu posé à son heure devient une étape de sa journée', async ({ page, request }) => {
   const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
   const created = await request.post(`/api/parcours/${id}/places`, {
