@@ -164,6 +164,23 @@ test('ajustement en vol : la réponse d’un autre parcours n’écrase pas celu
   expect(errors).toEqual([]);
 });
 
+test('le focus clavier survit au déplacement d’une étape', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  const down = row(page, 'GCPAR03').locator('.parcours-stop-down');
+  await down.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).days[0].keys)
+    .toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
+  // Le bouton « Descendre » de GCPAR03, re-rendu à sa nouvelle place, garde
+  // le focus : un second appui descend encore.
+  await expect(row(page, 'GCPAR03').locator('.parcours-stop-down')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).days[0].keys)
+    .toEqual(['GCPAR01', 'GCPAR02', 'GCPAR03']);
+  expect(errors).toEqual([]);
+});
+
 test('clics rapides sur « descendre » : les deux déplacements composent', async ({ page }) => {
   const errors = collectErrors(page);
   // Chaque écriture d'ajustement attend 300 ms : le second clic est donc

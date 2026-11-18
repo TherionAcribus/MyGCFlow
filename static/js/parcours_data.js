@@ -1533,6 +1533,25 @@ function button(className, iconClass, label, { title = label, text = '' } = {}) 
     return btn;
 }
 
+// Repère ce qui avait le focus avant la reconstruction de la liste : la
+// ligne (étape ou panneau d'ajustement) et le contrôle qui le portait —
+// après « Monter », le bouton de l'étape déplacée le récupère.
+const FOCUSABLE_CLASSES = [
+    'parcours-stop-up', 'parcours-stop-down', 'parcours-stop-text', 'parcours-stop-restore',
+    'parcours-edit-time', 'parcours-edit-pin', 'parcours-edit-unpin', 'parcours-edit-leg',
+    'parcours-edit-day', 'parcours-edit-exclude', 'parcours-edit-delete-place',
+    'parcours-edit-place-name', 'parcours-edit-place-rename', 'parcours-edit-place-kind',
+    'parcours-edit-place-day', 'parcours-edit-place-move',
+];
+
+function focusMarkerOf(el) {
+    const row = el?.closest?.('[data-stop-key], [data-edit-key]');
+    if (!row) return null;
+    const key = row.dataset.stopKey || row.dataset.editKey;
+    const cls = FOCUSABLE_CLASSES.find((c) => el.classList.contains(c));
+    return cls ? { key, cls } : null;
+}
+
 function renderStops(errorMessage = '') {
     const box = el('parcoursStops');
     const summary = el('parcoursSummary');
@@ -1566,7 +1585,14 @@ function renderStops(errorMessage = '') {
             ? t('Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, l’heure de vos Labs et la géographie. « ≈ » : heure estimée.')
             : t('Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie : réimportez votre fichier My Finds pour en profiter. « ≈ » : heure estimée.');
     }
+    const focus = box.contains(document.activeElement) ? focusMarkerOf(document.activeElement) : null;
     box.replaceChildren(...ordered.days.map(renderDay));
+    if (focus) {
+        const node = box.querySelector(
+            `[data-stop-key="${focus.key}"] .${focus.cls}, [data-edit-key="${focus.key}"] .${focus.cls}`)
+            || box.querySelector(`[data-stop-key="${focus.key}"] .parcours-stop-text`);
+        node?.focus();
+    }
 }
 
 function renderDay(day) {
