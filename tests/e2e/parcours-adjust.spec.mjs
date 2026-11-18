@@ -93,6 +93,38 @@ test('glisser-déposer une étape vers la journée suivante', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
+test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  const sat = page.locator('.parcours-day[data-date="2025-07-12"]');
+  const sun = page.locator('.parcours-day[data-date="2025-07-13"]');
+
+  // Chevron : la journée se replie, son nombre d'étapes reste lisible.
+  await sat.locator('.parcours-day-toggle').click();
+  await expect(sat.locator('.parcours-day-body')).toBeHidden();
+  await expect(sat.locator('.parcours-day-count')).toContainText('3 étapes');
+  await expect(sat.locator('.parcours-day-toggle')).toHaveAttribute('aria-expanded', 'false');
+  await sat.locator('.parcours-day-toggle').click();
+  await expect(sat.locator('.parcours-day-body')).toBeVisible();
+
+  // Tout plier / tout déplier.
+  await page.locator('#btnParcoursCollapseDays').click();
+  await expect(sat.locator('.parcours-day-body')).toBeHidden();
+  await expect(sun.locator('.parcours-day-body')).toBeHidden();
+  await expect(page.locator('#btnParcoursCollapseDays')).toContainText('Tout déplier');
+  await page.locator('#btnParcoursCollapseDays').click();
+  await expect(sun.locator('.parcours-day-body')).toBeVisible();
+
+  // Déposer sur une journée repliée la déplie : le résultat reste visible.
+  await sun.locator('.parcours-day-toggle').click();
+  const before = (await snapshot(page)).adjustmentRevision;
+  await row(page, 'GCPAR03').dragTo(sun);
+  const state = await adjusted(page, before);
+  expect(state.days[1].keys).toEqual(['GCPAR04', 'GCPAR05', 'GCPAR03']);
+  await expect(sun.locator('.parcours-day-body')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('épingler une heure, changer de journée, exclure puis réintégrer', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);

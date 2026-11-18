@@ -191,6 +191,7 @@ let prefetchBucket = null;
 
 // Ajustements (lot 3).
 let editKey = null;           // étape dont le panneau d'ajustement est ouvert
+let collapsedDays = new Set(); // journées repliées dans la liste (dates ISO)
 let dragged = null;           // { date, key } pendant un glisser-déposer
 let picking = false;          // en attente d'un clic sur la carte (lieu)
 let pickListener = null;
@@ -308,6 +309,7 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         inputs = null;
         ordered = null;
         editKey = null;
+        collapsedDays.clear();
         renderStops();
         applyTimeline();
         status = 'idle';
@@ -328,6 +330,7 @@ export async function openParcours(id) {
     renderList(id);
     status = 'loading';
     editKey = null;
+    collapsedDays.clear();
     cancelPlacePicking();
     closePlaceForm();
     renderStops();
@@ -1634,18 +1637,61 @@ function renderStops(errorMessage = '') {
             || box.querySelector(`[data-stop-key="${focus.key}"] .parcours-stop-text`);
         node?.focus();
     }
+    updateCollapseAll();
+}
+
+// « Tout plier / Tout déplier » : libellé et état selon les journées repliées.
+function updateCollapseAll() {
+    const btn = el('btnParcoursCollapseDays');
+    if (!btn) return;
+    const days = ordered?.days || [];
+    const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.has(d.date));
+    btn.querySelector('span').textContent = allCollapsed ? t('Tout déplier') : t('Tout plier');
+}
+
+// Déplie la journée qui contient l'étape — sinon son panneau d'ajustement
+// s'ouvrirait sur une ligne masquée.
+function expandDayOf(key) {
+    const day = ordered?.days.find((d) => d.stops.some((s) => s.key === key));
+    if (day) collapsedDays.delete(day.date);
 }
 
 function renderDay(day) {
     const section = document.createElement('section');
+    const collapsed = collapsedDays.has(day.date);
     section.className = 'parcours-day mb-3';
+    if (collapsed) section.classList.add('is-collapsed');
     section.dataset.date = day.date;
     const header = document.createElement('div');
     header.className = 'd-flex align-items-center gap-2 flex-wrap';
+    const body = document.createElement('div');
+    body.id = `parcoursDay-${day.date}`;
+    body.className = 'parcours-day-body';
+    body.hidden = collapsed;
+    const toggle = button('btn btn-link btn-sm p-0 parcours-day-toggle', 'ti-chevron-down',
+        collapsed ? t('Déplier la journée') : t('Replier la journée'));
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-controls', body.id);
+    toggle.addEventListener('click', () => {
+        // Bascule en place, sans reconstruire la liste : le focus et les
+        // poignées de glisser-déposer restent tels quels.
+        const open = collapsedDays.delete(day.date);
+        if (!open) collapsedDays.add(day.date);
+        section.classList.toggle('is-collapsed', !open);
+        body.hidden = !open;
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? t('Replier la journée') : t('Déplier la journée'));
+        toggle.title = toggle.getAttribute('aria-label');
+        updateCollapseAll();
+    });
     const title = document.createElement('h6');
     title.className = 'parcours-day-title mb-1';
     title.textContent = formatDay(day.date);
-    header.append(title);
+    // Le nombre d'étapes reste lisible quand la journée est repliée.
+    const count = document.createElement('span');
+    count.className = 'small text-muted parcours-day-count';
+    count.textContent = t('${n} étapes', { n: day.stops.length });
+    header.append(toggle, title, count);
     if (day.manual) {
         const badge = document.createElement('span');
         badge.className = 'badge bg-azure-lt parcours-day-manual';
@@ -1655,17 +1701,17 @@ function renderDay(day) {
         auto.addEventListener('click', () => resetDayOrder(day));
         header.append(badge, auto);
     }
-    section.append(header);
+    section.append(header, body);
     if (day.stops.length > 0) {
         const diagnostic = document.createElement('div');
         diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
         diagnostic.textContent = dayDiagnostic(day);
-        section.append(diagnostic);
+        body.append(diagnostic);
     } else {
         const empty = document.createElement('div');
         empty.className = 'small text-muted';
         empty.textContent = t('Aucune étape ce jour-là');
-        section.append(empty);
+        body.append(empty);
     }
     if (day.stops.length > 0 || day.excluded.length > 0) {
         const list = document.createElement('ol');
@@ -1673,7 +1719,7 @@ function renderDay(day) {
         const movable = day.stops.filter((stop) => stop.kind !== KIND_BASE);
         for (const stop of day.stops) list.append(...renderStopRow(stop, day, movable));
         for (const stop of day.excluded) list.append(...renderExcludedRow(stop));
-        section.append(list);
+        body.append(list);
     }
     // Déposer sur la journée elle-même (jour vide ou creux de la liste) :
     // l'étape la rejoint à la fin ; sur sa propre journée, elle finit en
@@ -1695,6 +1741,8 @@ function renderDay(day) {
         section.classList.remove('is-drop-target');
         const { key, date } = dragged;
         dragged = null;
+        // La journée de dépôt se déplie pour montrer le résultat.
+        collapsedDays.delete(day.date);
         if (date === day.date) {
             const keys = day.stops.filter((s) => s.kind !== KIND_BASE).map((s) => s.key);
             keys.push(...keys.splice(keys.indexOf(key), 1));
@@ -2373,6 +2421,12 @@ function bindAdjustments() {
     el('btnParcoursAddPlace')?.addEventListener('click', () => {
         if (picking) cancelPlacePicking();
         else startPlacePicking();
+    });
+    el('btnParcoursCollapseDays')?.addEventListener('click', () => {
+        const days = ordered?.days || [];
+        const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.has(d.date));
+        collapsedDays = allCollapsed ? new Set() : new Set(days.map((d) => d.date));
+        renderStops();
     });
     el('parcoursPlaceKind')?.addEventListener('change', syncPlaceForm);
     el('btnParcoursPlaceCancel')?.addEventListener('click', closePlaceForm);
@@ -3696,6 +3750,7 @@ function bindMapLink(map) {
             { layerFilter: (layer) => layer === parcoursLayer, hitTolerance: 5 });
         if (!feature) return;
         editKey = feature.get('key') === editKey ? null : feature.get('key');
+        if (editKey) expandDayOf(editKey);
         renderStops();
         el('parcoursStops')?.querySelector(`[data-stop-key="${feature.get('key')}"]`)
             ?.scrollIntoView({ block: 'nearest' });
@@ -3820,6 +3875,7 @@ export function getParcoursSnapshot() {
         overrides: (inputs?.overrides || []).map((o) => ({ ...o })),
         places: (inputs?.places || []).map((p) => ({ ...p })),
         adjustmentRevision,
+        overridesQueued,
         editKey,
         picking,
         photos: (inputs?.photos || []).map((photo) => ({
