@@ -156,6 +156,120 @@ def delete(session, parcours_id: int) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Duplication et export/import : la sélection, les ajustements et les lieux
+# (le travail manuel) — jamais les photos ni les traces, fichiers trop lourds.
+# ---------------------------------------------------------------------------
+
+EXPORT_FORMAT = 'mygcflow-parcours'
+EXPORT_VERSION = 1
+
+
+def duplicate(session, parcours_id: int) -> Parcours:
+    """Copie un parcours et ses ajustements/lieux ; les photos et traces
+    ne sont pas copiées."""
+    src = get(session, parcours_id)
+    now = datetime.now()
+    row = Parcours(
+        name=f'{src.name} (copie)'[:NAME_MAX_LENGTH],
+        date_start=src.date_start,
+        date_end=src.date_end,
+        include_labs=src.include_labs,
+        include_dnf=src.include_dnf,
+        utc_offset_minutes=src.utc_offset_minutes,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(row)
+    session.flush()                      # id de la copie pour ses enfants
+    for o in session.query(ParcoursOverride).filter_by(parcours_id=src.id):
+        session.add(ParcoursOverride(
+            parcours_id=row.id, stop_key=o.stop_key, rank=o.rank,
+            pinned_time=o.pinned_time, day=o.day, excluded=o.excluded,
+            leg_mode=o.leg_mode, visit_min=o.visit_min))
+    for p in session.query(ParcoursPlace).filter_by(parcours_id=src.id):
+        session.add(ParcoursPlace(
+            parcours_id=row.id, kind=p.kind, name=p.name,
+            latitude=p.latitude, longitude=p.longitude,
+            date=p.date, time=p.time, role=p.role or 'both', created_at=now))
+    session.commit()
+    return row
+
+
+def export_payload(session, parcours_id: int) -> dict:
+    """Le parcours en un fichier JSON réimportable (sans photos ni traces)."""
+    parcours = get(session, parcours_id)
+    return {
+        'format': EXPORT_FORMAT,
+        'version': EXPORT_VERSION,
+        'parcours': {
+            'name': parcours.name,
+            'date_start': parcours.date_start.isoformat(),
+            'date_end': parcours.date_end.isoformat(),
+            'include_labs': bool(parcours.include_labs),
+            'include_dnf': bool(parcours.include_dnf),
+            'utc_offset_minutes': parcours.utc_offset_minutes,
+        },
+        'overrides': [override_to_dict(row) for row in
+                      session.query(ParcoursOverride).filter_by(parcours_id=parcours.id)],
+        'places': [place_to_dict(row) for row in
+                   session.query(ParcoursPlace).filter_by(parcours_id=parcours.id)
+                   .order_by(ParcoursPlace.id)],
+    }
+
+
+def import_parcours(session, data: dict) -> Parcours:
+    """Recrée un parcours depuis un export : mêmes validations qu'à la
+    création et aux ajustements ; tout ou rien (une entrée invalide n'importe
+    rien)."""
+    data = data if isinstance(data, dict) else {}
+    p = data.get('parcours')
+    if data.get('format') != EXPORT_FORMAT or data.get('version') != EXPORT_VERSION \
+            or not isinstance(p, dict):
+        raise ParcoursError('import-invalid')
+    # Nom, dates, plage, options : la validation de `create`.
+    start = _date(p.get('date_start'))
+    end = _date(p.get('date_end', p.get('date_start')))
+    _check_range(start, end)
+    now = datetime.now()
+    row = Parcours(
+        name=_name(p.get('name')),
+        date_start=start,
+        date_end=end,
+        include_labs=_bool(p.get('include_labs'), True),
+        include_dnf=_bool(p.get('include_dnf'), True),
+        utc_offset_minutes=_utc_offset(p.get('utc_offset_minutes')),
+        created_at=now,
+        updated_at=now,
+    )
+    overrides = data.get('overrides')
+    places = data.get('places')
+    if not isinstance(overrides, list) or len(overrides) > MAX_OVERRIDES \
+            or not isinstance(places, list) or len(places) > MAX_PLACES:
+        raise ParcoursError('import-invalid')
+    session.add(row)
+    try:
+        session.flush()
+        for patch in overrides:
+            columns = _override_columns(patch, row)
+            o = ParcoursOverride(parcours_id=row.id, **columns)
+            if o.excluded is None:
+                o.excluded = False
+            # Une ligne vide n'a pas de sens, comme dans patch_overrides.
+            if not o.excluded and all(getattr(o, f) is None for f in
+                                      ('rank', 'pinned_time', 'day', 'leg_mode', 'visit_min')):
+                continue
+            session.add(o)
+        for place in places:
+            session.add(ParcoursPlace(parcours_id=row.id, created_at=now,
+                                      **_place_fields(place, row)))
+        session.commit()
+    except ParcoursError:
+        session.rollback()
+        raise
+    return row
+
+
+# ---------------------------------------------------------------------------
 # Ajustements manuels (lot 3) : on stocke les corrections, jamais le résultat
 # ---------------------------------------------------------------------------
 
@@ -230,6 +344,41 @@ def adjustments(session, parcours_id: int) -> dict:
     }
 
 
+# Colonnes d'un ajustement validé à partir d'un patch {key, rank?…} ; un
+# champ présent est contrôlé, un absent n'apparaît pas dans le résultat.
+def _override_columns(patch, parcours: Parcours) -> dict:
+    if not isinstance(patch, dict):
+        raise ParcoursError('override-invalid')
+    key = patch.get('key')
+    if not isinstance(key, str) or not key or len(key) > STOP_KEY_MAX_LENGTH:
+        raise ParcoursError('override-invalid')
+    columns = {'stop_key': key}
+    if 'rank' in patch:
+        rank = patch['rank']
+        if rank is not None and (isinstance(rank, bool) or not isinstance(rank, int) or rank < 0):
+            raise ParcoursError('override-invalid')
+        columns['rank'] = rank
+    if 'pinnedTime' in patch:
+        columns['pinned_time'] = _time_or_none(patch['pinnedTime'])
+    if 'day' in patch:
+        columns['day'] = _day_in_range(patch['day'], parcours)
+    if 'excluded' in patch:
+        if not isinstance(patch['excluded'], bool):
+            raise ParcoursError('override-invalid')
+        columns['excluded'] = patch['excluded']
+    if 'legMode' in patch:
+        if patch['legMode'] is not None and patch['legMode'] not in LEG_MODES:
+            raise ParcoursError('override-invalid')
+        columns['leg_mode'] = patch['legMode']
+    if 'visitMin' in patch:
+        visit = patch['visitMin']
+        if visit is not None and (isinstance(visit, bool) or not isinstance(visit, int)
+                                  or visit < 0 or visit > MAX_VISIT_MIN):
+            raise ParcoursError('override-invalid')
+        columns['visit_min'] = visit
+    return columns
+
+
 def patch_overrides(session, parcours_id: int, patches) -> dict:
     """Applique une liste de patchs {key, rank?, pinnedTime?, day?, excluded?} :
     un champ présent remplace la valeur (null l'efface), un champ absent la
@@ -242,39 +391,15 @@ def patch_overrides(session, parcours_id: int, patches) -> dict:
                 session.query(ParcoursOverride).filter_by(parcours_id=parcours.id)}
     try:
         for patch in patches:
-            if not isinstance(patch, dict):
-                raise ParcoursError('override-invalid')
-            key = patch.get('key')
-            if not isinstance(key, str) or not key or len(key) > STOP_KEY_MAX_LENGTH:
-                raise ParcoursError('override-invalid')
+            columns = _override_columns(patch, parcours)
+            key = columns.pop('stop_key')
             row = existing.get(key)
             if row is None:
                 row = ParcoursOverride(parcours_id=parcours.id, stop_key=key, excluded=False)
                 session.add(row)
                 existing[key] = row
-            if 'rank' in patch:
-                rank = patch['rank']
-                if rank is not None and (isinstance(rank, bool) or not isinstance(rank, int) or rank < 0):
-                    raise ParcoursError('override-invalid')
-                row.rank = rank
-            if 'pinnedTime' in patch:
-                row.pinned_time = _time_or_none(patch['pinnedTime'])
-            if 'day' in patch:
-                row.day = _day_in_range(patch['day'], parcours)
-            if 'excluded' in patch:
-                if not isinstance(patch['excluded'], bool):
-                    raise ParcoursError('override-invalid')
-                row.excluded = patch['excluded']
-            if 'legMode' in patch:
-                if patch['legMode'] is not None and patch['legMode'] not in LEG_MODES:
-                    raise ParcoursError('override-invalid')
-                row.leg_mode = patch['legMode']
-            if 'visitMin' in patch:
-                visit = patch['visitMin']
-                if visit is not None and (isinstance(visit, bool) or not isinstance(visit, int)
-                                          or visit < 0 or visit > MAX_VISIT_MIN):
-                    raise ParcoursError('override-invalid')
-                row.visit_min = visit
+            for name, value in columns.items():
+                setattr(row, name, value)
         for key, row in list(existing.items()):
             if row.rank is None and row.pinned_time is None and row.day is None and not row.excluded \
                     and row.leg_mode is None and row.visit_min is None:

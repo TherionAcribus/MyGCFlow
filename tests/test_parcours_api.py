@@ -314,6 +314,46 @@ class AdjustmentTests(_Base):
         other = self.create(name="Autre")["id"]
         self.assertEqual(self.delete(f"/api/parcours/{other}/places/{base.get_json()['place']['id']}").status_code, 404)
 
+    def test_duplicate_export_import(self):
+        pid = self.create()["id"]
+        self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC1", "rank": 1, "visitMin": 30}]})
+        self.post(f"/api/parcours/{pid}/places",
+                  {"kind": "base", "name": "Hôtel", "lat": 45.9, "lon": 6.12, "role": "end"})
+
+        # Duplication : sélection, ajustements et lieux copiés.
+        copy = self.post(f"/api/parcours/{pid}/duplicate", {})
+        self.assertEqual(copy.status_code, 201, copy.get_json())
+        copy = copy.get_json()["parcours"]
+        self.assertTrue(copy["name"].endswith("(copie)"), copy["name"])
+        inputs = self.get(f"/api/parcours/{copy['id']}/inputs").get_json()
+        self.assertEqual(inputs["overrides"][0]["visitMin"], 30)
+        self.assertEqual(inputs["places"][0]["role"], "end")
+
+        # Export : le document porte tout le nécessaire.
+        exported = self.get(f"/api/parcours/{pid}/export").get_json()
+        self.assertEqual(exported["format"], "mygcflow-parcours")
+        self.assertEqual(exported["version"], 1)
+        self.assertEqual(len(exported["overrides"]), 1)
+        self.assertEqual(len(exported["places"]), 1)
+
+        # Import : le parcours recréé retrouve ajustements et lieux.
+        exported["parcours"]["name"] = "Réimporté"
+        imported = self.post("/api/parcours/import", exported)
+        self.assertEqual(imported.status_code, 201, imported.get_json())
+        nid = imported.get_json()["parcours"]["id"]
+        inputs = self.get(f"/api/parcours/{nid}/inputs").get_json()
+        self.assertEqual(inputs["overrides"][0]["key"], "GC1")
+        self.assertEqual(inputs["places"][0]["name"], "Hôtel")
+
+        # Document invalide ou ajustement hors plage : rien n'est importé.
+        for body in [{"format": "autre"}, {"parcours": {"name": "X"}},
+                     {**exported, "overrides": [{"key": "GC1", "day": "2026-01-01"}]}]:
+            response = self.post("/api/parcours/import", body)
+            self.assertEqual(response.status_code, 400, body)
+        names = [p["name"] for p in self.get("/api/parcours").get_json()["parcours"]]
+        self.assertEqual(names.count("Réimporté"), 1)
+
     def test_deleting_a_parcours_deletes_its_adjustments(self):
         pid = self.create()["id"]
         self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [{"key": "GC1", "rank": 1}]})

@@ -58,6 +58,11 @@
                         <button type="button" id="btnParcoursEditCancel" class="btn btn-sm btn-link" hidden>
                             {{ _("Annuler la modification") }}
                         </button>
+                        <input type="file" id="parcoursImportInput" class="visually-hidden" accept=".json,application/json"
+                               aria-label="{{ _('Export de parcours à importer') }}">
+                        <button type="button" id="btnParcoursImport" class="btn btn-sm btn-link">
+                            <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Importer un export") }}
+                        </button>
                     </form>
                 </div>
             </div>

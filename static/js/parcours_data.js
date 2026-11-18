@@ -1235,6 +1235,22 @@ function renderList(activeId) {
         edit.innerHTML = '<i class="ti ti-pencil" aria-hidden="true"></i>';
         edit.addEventListener('click', () => startEditParcours(item));
 
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'btn btn-sm btn-ghost-secondary parcours-duplicate';
+        copy.setAttribute('aria-label', t('Dupliquer le parcours'));
+        copy.title = t('Dupliquer le parcours');
+        copy.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i>';
+        copy.addEventListener('click', () => duplicateParcours(item.id));
+
+        const save = document.createElement('button');
+        save.type = 'button';
+        save.className = 'btn btn-sm btn-ghost-secondary parcours-export';
+        save.setAttribute('aria-label', t('Exporter le parcours'));
+        save.title = t('Exporter le parcours (sélection, ajustements, lieux)');
+        save.innerHTML = '<i class="ti ti-download" aria-hidden="true"></i>';
+        save.addEventListener('click', () => exportParcours(item));
+
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'btn btn-sm btn-ghost-danger parcours-delete';
@@ -1243,9 +1259,61 @@ function renderList(activeId) {
         remove.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
         remove.addEventListener('click', () => confirmDelete(item));
 
-        row.append(open, edit, remove);
+        row.append(open, edit, copy, save, remove);
         return row;
     }));
+}
+
+// Copie côté serveur : sélection, ajustements, lieux et bases — jamais les
+// photos ni les traces (fichiers lourds, ré-envoyables).
+export async function duplicateParcours(id) {
+    try {
+        await fetchJson(`/api/parcours/${id}/duplicate`, { method: 'POST' });
+    } catch (error) {
+        showToast(error.message, 'error');
+        return;
+    }
+    await refreshParcoursList({ select: selectedId });
+    showToast(t('Parcours dupliqué — les photos et traces ne sont pas copiées'), 'info');
+}
+
+// Export JSON réimportable : sélection, ajustements, lieux et bases.
+export async function exportParcours(item) {
+    let payload;
+    try {
+        payload = await fetchJson(`/api/parcours/${item.id}/export`);
+    } catch (error) {
+        showToast(error.message, 'error');
+        return;
+    }
+    const slug = item.name.toLowerCase().normalize('NFD')
+        .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'parcours';
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)],
+        { type: 'application/json' }));
+    link.download = `parcours-${slug}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+// Import d'un export JSON : le serveur valide le format, la plage, les
+// ajustements et les lieux — tout ou rien.
+async function importParcoursFile(file) {
+    let payload;
+    try {
+        payload = JSON.parse(await file.text());
+    } catch {
+        showToast(t('Ce fichier n\'est pas un JSON lisible'), 'error');
+        return;
+    }
+    try {
+        await fetchJson('/api/parcours/import', { method: 'POST', body: JSON.stringify(payload) });
+    } catch (error) {
+        showToast(error.message, 'error');
+        return;
+    }
+    await refreshParcoursList({ select: selectedId });
+    showToast(t('Parcours importé'), 'success');
 }
 
 function confirmDelete(item) {
@@ -1348,6 +1416,12 @@ function bindForm() {
     });
     end?.addEventListener('change', updateRangeHint);
     el('btnParcoursEditCancel')?.addEventListener('click', cancelEditParcours);
+    el('btnParcoursImport')?.addEventListener('click', () => el('parcoursImportInput')?.click());
+    el('parcoursImportInput')?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';           // ré-import du même fichier possible
+        if (file) importParcoursFile(file);
+    });
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const submit = el('btnParcoursCreate');

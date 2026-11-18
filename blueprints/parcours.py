@@ -45,6 +45,7 @@ def _store_error(exc: store.ParcoursError):
         'utc-offset-invalid': (_('Décalage UTC invalide (de −12 h à +14 h)'), 400),
         'tracks-full': (_('Un parcours garde %(max)s traces au plus', max=parcours_tracks.MAX_TRACKS), 400),
         'track-not-found': (_('Trace introuvable'), 404),
+        'import-invalid': (_('Ce fichier n\'est pas un export de parcours valide'), 400),
     }
     message, code = messages.get(exc.code, (str(exc), 400))
     return jsonify({'success': False, 'error': exc.code, 'message': message}), code
@@ -115,6 +116,35 @@ def delete_parcours(parcours_id):
     except store.ParcoursError as exc:
         return _store_error(exc)
     return jsonify({'success': True})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/duplicate', methods=['POST'])
+def duplicate_parcours(parcours_id):
+    """Copie sélection, ajustements et lieux ; pas les photos ni les traces."""
+    try:
+        row = store.duplicate(db.session, parcours_id)
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, 'parcours': store.to_dict(row)}), 201
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/export')
+def export_parcours(parcours_id):
+    try:
+        return jsonify(store.export_payload(db.session, parcours_id))
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+
+
+@parcours_bp.route('/api/parcours/import', methods=['POST'])
+def import_parcours():
+    try:
+        row = store.import_parcours(db.session, request.get_json(silent=True))
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, 'parcours': store.to_dict(row)}), 201
 
 
 @parcours_bp.route('/api/parcours/<int:parcours_id>/inputs', methods=['GET'])

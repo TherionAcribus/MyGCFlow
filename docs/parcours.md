@@ -42,6 +42,9 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours/suggestions` | Parcours suggérés `{suggestions: [{kind: trip / day, start, end, days, findDays, finds, place}]}` (lot 7, ci-dessous), hors plages déjà enregistrées |
 | `POST /api/parcours` | Création `{name, date_start, date_end?, include_labs?, include_dnf?}` ; `date_end` absente = une journée |
 | `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression |
+| `POST /api/parcours/<id>/duplicate` | Copie sélection, ajustements et lieux (`<nom> (copie)` ; pas les photos ni les traces) |
+| `GET /api/parcours/<id>/export` | Document JSON réimportable `{format: mygcflow-parcours, version: 1, parcours, overrides, places}` |
+| `POST /api/parcours/import` | Recrée un parcours depuis un export — mêmes validations qu'à la création, tout ou rien |
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
 | `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?, legMode?, visitMin?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
 | `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |

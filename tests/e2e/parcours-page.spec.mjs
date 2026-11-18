@@ -313,3 +313,42 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   expect(state.ids).toEqual([]);
   expect(state.layer.stops).toBe(0);
 });
+
+test('dupliquer, exporter et importer un parcours', async ({ page, request }) => {
+  await importFixture(page, request);
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Week-end', date_start: '2025-07-12', date_end: '2025-07-13' } });
+  const pid = (await created.json()).parcours.id;
+  // Un ajustement à faire suivre dans la copie et l'export.
+  await request.patch(`/api/parcours/${pid}/overrides`,
+    { data: { overrides: [{ key: 'GCPAR01', rank: 1 }] } });
+  const errors = collectErrors(page);
+  await openParcoursPage(page);
+  const items = page.locator('.parcours-list-item');
+  await expect(items).toHaveCount(1);
+
+  // Dupliquer : la copie apparaît et garde les ajustements.
+  await items.first().locator('.parcours-duplicate').click();
+  await expect(items).toHaveCount(2);
+  const copy = items.filter({ hasText: '(copie)' });
+  await expect(copy).toHaveCount(1);
+  await copy.locator('.parcours-open').click();
+  await expect.poll(async () => (await snapshot(page)).overrides?.length).toBe(1);
+
+  // Exporter : un fichier JSON téléchargé.
+  const download = page.waitForEvent('download');
+  await copy.locator('.parcours-export').click();
+  expect((await download).suggestedFilename()).toMatch(/^parcours-.*\.json$/);
+
+  // Importer : le document recrée un parcours complet.
+  const exported = await (await request.get(`/api/parcours/${pid}/export`)).json();
+  exported.parcours.name = 'Réimporté';
+  await page.setInputFiles('#parcoursImportInput', {
+    name: 'parcours-week-end.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(exported)),
+  });
+  await expect(items).toHaveCount(3);
+  await expect(items.filter({ hasText: 'Réimporté' })).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
