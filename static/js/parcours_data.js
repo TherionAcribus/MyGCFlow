@@ -908,7 +908,8 @@ function drawPlayTrail(event) {
             ? (legProjected[current.leg] || [projected[leg.from], projected[leg.to]])
             : legPoints(timeline, current.leg, current.progress).map((p) => ol.proj.fromLonLat(p));
         context.setStyle(leg.night ? night : (playback.estimated_dashed && !leg.path ? estimated : day));
-        context.drawGeometry(currentLegGeom.setCoordinates(coords));
+        currentLegGeom.setCoordinates(coords);
+        context.drawGeometry(currentLegGeom);
     }
 }
 
@@ -1209,6 +1210,14 @@ function renderList(activeId) {
             if (item.id !== selectedId) openParcours(item.id);
         });
 
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'btn btn-sm btn-ghost-secondary parcours-edit';
+        edit.setAttribute('aria-label', t('Modifier le parcours'));
+        edit.title = t('Modifier le parcours');
+        edit.innerHTML = '<i class="ti ti-pencil" aria-hidden="true"></i>';
+        edit.addEventListener('click', () => startEditParcours(item));
+
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'btn btn-sm btn-ghost-danger parcours-delete';
@@ -1217,7 +1226,7 @@ function renderList(activeId) {
         remove.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
         remove.addEventListener('click', () => confirmDelete(item));
 
-        row.append(open, remove);
+        row.append(open, edit, remove);
         return row;
     }));
 }
@@ -1246,7 +1255,44 @@ export async function deleteParcours(id) {
     await refreshParcoursList({ select: selectedId });
 }
 
-// --- Création -------------------------------------------------------------------
+// --- Création et modification ------------------------------------------------------
+
+// Le formulaire sert aux deux : le crayon d'un parcours le remplit et son
+// envoi devient un PATCH — modifier ne perd ni ajustements, ni photos, ni
+// traces (contrairement à supprimer puis recréer).
+let editingParcoursId = null;
+
+function startEditParcours(item) {
+    editingParcoursId = item.id;
+    el('parcoursName').value = item.name;
+    el('parcoursStart').value = item.date_start;
+    el('parcoursEnd').value = item.date_end;
+    el('parcoursIncludeLabs').checked = item.include_labs !== false;
+    el('parcoursIncludeDnf').checked = item.include_dnf !== false;
+    updateRangeHint();
+    syncParcoursForm();
+    el('parcoursName')?.focus();
+}
+
+function cancelEditParcours() {
+    if (editingParcoursId === null) return;
+    editingParcoursId = null;
+    syncParcoursForm();
+}
+
+// Libellés du formulaire selon le mode : création ou modification.
+function syncParcoursForm() {
+    const editing = editingParcoursId !== null;
+    const title = el('parcoursFormTitle');
+    if (title) title.textContent = editing ? t('Modifier le parcours') : t('Nouveau parcours');
+    const submit = el('btnParcoursCreate');
+    if (submit) {
+        submit.innerHTML = `<i class="ti ${editing ? 'ti-check' : 'ti-plus'} me-1" aria-hidden="true"></i>`
+            + (editing ? t('Enregistrer') : t('Créer le parcours'));
+    }
+    const cancel = el('btnParcoursEditCancel');
+    if (cancel) cancel.hidden = !editing;
+}
 
 function fillFormDefaults() {
     const start = el('parcoursStart');
@@ -1284,23 +1330,37 @@ function bindForm() {
         updateRangeHint();
     });
     end?.addEventListener('change', updateRangeHint);
+    el('btnParcoursEditCancel')?.addEventListener('click', cancelEditParcours);
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const submit = el('btnParcoursCreate');
         if (submit) submit.disabled = true;
+        const payload = {
+            name: el('parcoursName')?.value || '',
+            date_start: start?.value || '',
+            date_end: end?.value || '',
+            include_labs: el('parcoursIncludeLabs')?.checked !== false,
+            include_dnf: el('parcoursIncludeDnf')?.checked !== false,
+        };
         try {
-            const body = await fetchJson('/api/parcours', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: el('parcoursName')?.value || '',
-                    date_start: start?.value || '',
-                    date_end: end?.value || '',
-                    include_labs: el('parcoursIncludeLabs')?.checked !== false,
-                    include_dnf: el('parcoursIncludeDnf')?.checked !== false,
-                }),
-            });
-            el('parcoursName').value = '';
-            await refreshParcoursList({ select: body.parcours.id });
+            if (editingParcoursId !== null) {
+                const id = editingParcoursId;
+                const body = await fetchJson(`/api/parcours/${id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload),
+                });
+                cancelEditParcours();
+                // Rechargement complet : dates, Labs et DNF changent les
+                // entrées du parcours.
+                await refreshParcoursList({ select: body.parcours.id });
+            } else {
+                const body = await fetchJson('/api/parcours', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+                el('parcoursName').value = '';
+                await refreshParcoursList({ select: body.parcours.id });
+            }
         } catch (error) {
             showToast(error.message, 'error');
         } finally {
@@ -1360,6 +1420,8 @@ function renderSuggestions() {
 }
 
 function applySuggestion(item) {
+    // Une suggestion remplit le formulaire de création, pas une modification.
+    cancelEditParcours();
     const name = el('parcoursName');
     const start = el('parcoursStart');
     const end = el('parcoursEnd');
@@ -1745,8 +1807,86 @@ function renderEditPanel(stop, day) {
         panel.append(row);
     }
 
+    if (place) {
+        // Nom : enregistré à l'Entrée ou au bouton.
+        const nameRow = document.createElement('div');
+        nameRow.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+        const nameLabel = document.createElement('label');
+        nameLabel.className = 'small';
+        nameLabel.textContent = t('Nom');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.maxLength = 80;
+        nameInput.className = 'form-control form-control-sm w-auto parcours-edit-place-name';
+        nameInput.value = place.name || '';
+        nameLabel.htmlFor = nameInput.id = `parcoursEditPlaceName-${place.id}`;
+        const saveName = () => {
+            const name = nameInput.value.trim();
+            if (name !== (place.name || '')) updatePlace(place.id, { name });
+        };
+        nameInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') saveName(); });
+        const rename = button('btn btn-sm btn-outline-primary parcours-edit-place-rename', 'ti-check',
+            t('Renommer'), { text: t('Renommer') });
+        rename.addEventListener('click', saveName);
+        nameRow.append(nameLabel, nameInput, rename);
+        panel.append(nameRow);
+
+        // Type et journée : un lieu est rattaché à une journée, une base peut
+        // valoir pour toutes.
+        const metaRow = document.createElement('div');
+        metaRow.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
+        const kindLabel = document.createElement('label');
+        kindLabel.className = 'small';
+        kindLabel.textContent = t('Type');
+        const kindSelect = document.createElement('select');
+        kindSelect.className = 'form-select form-select-sm w-auto parcours-edit-place-kind';
+        kindLabel.htmlFor = kindSelect.id = `parcoursEditPlaceKind-${place.id}`;
+        for (const [value, text] of [[KIND_PLACE, t('Lieu')], [KIND_BASE, t('Base')]]) {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = text;
+            kindSelect.append(opt);
+        }
+        kindSelect.value = place.kind;
+        kindSelect.addEventListener('change', () => {
+            const patch = { kind: kindSelect.value };
+            // Une base de toutes les journées n'a pas de date : un lieu en
+            // exige une — celle du jour où elle s'affichait.
+            if (patch.kind === KIND_PLACE && !place.date) patch.date = day.date;
+            updatePlace(place.id, patch);
+        });
+        const dayLabel = document.createElement('label');
+        dayLabel.className = 'small';
+        dayLabel.textContent = t('Journée');
+        const daySelect = document.createElement('select');
+        daySelect.className = 'form-select form-select-sm w-auto parcours-edit-place-day';
+        dayLabel.htmlFor = daySelect.id = `parcoursEditPlaceDay-${place.id}`;
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = t('Toutes les journées');
+        all.disabled = place.kind !== KIND_BASE;
+        all.hidden = place.kind !== KIND_BASE;
+        daySelect.append(all);
+        for (const option of ordered.days) {
+            const opt = document.createElement('option');
+            opt.value = option.date;
+            opt.textContent = formatDay(option.date, { weekday: 'short', day: 'numeric', month: 'short' });
+            daySelect.append(opt);
+        }
+        daySelect.value = place.date || '';
+        daySelect.addEventListener('change', () => updatePlace(place.id, { date: daySelect.value || null }));
+        metaRow.append(kindLabel, kindSelect, dayLabel, daySelect);
+        panel.append(metaRow);
+    }
+
     const actions = document.createElement('div');
     actions.className = 'd-flex gap-2 flex-wrap';
+    if (place) {
+        const move = button('btn btn-sm btn-outline-secondary parcours-edit-place-move', 'ti-map-pin',
+            t('Déplacer sur la carte'), { text: t('Déplacer sur la carte') });
+        move.addEventListener('click', () => startPlaceMove(place));
+        actions.append(move);
+    }
     if (isCountedStop(stop)) {
         const exclude = button('btn btn-sm btn-outline-danger parcours-edit-exclude', 'ti-eye-off',
             t('Exclure du parcours'), { text: t('Exclure du parcours') });
@@ -1988,11 +2128,36 @@ function stopPicking() {
 }
 
 function cancelPlacePicking() {
+    placeMoveId = null;
     if (pickListener) {
         ol.Observable.unByKey(pickListener);
         pickListener = null;
     }
     stopPicking();
+}
+
+// Déplacer un lieu ou une base posée : même mécanique que la pose d'un
+// lieu — un clic sur la carte envoie les nouvelles coordonnées.
+let placeMoveId = null;
+
+function startPlaceMove(place) {
+    if (!ordered || adjustmentsLocked()) return;
+    const map = pkg.getMap?.();
+    if (!map) return;
+    cancelPlacePicking();
+    picking = true;
+    placeMoveId = place.id;
+    map.getTargetElement()?.classList.add('parcours-picking');
+    const hint = el('parcoursPlaceHint');
+    if (hint) hint.hidden = false;
+    pickListener = map.once('singleclick', (event) => {
+        pickListener = null;
+        stopPicking();
+        const id = placeMoveId;
+        placeMoveId = null;
+        const [lon, lat] = ol.proj.toLonLat(event.coordinate);
+        updatePlace(id, { lat, lon });
+    });
 }
 
 function openPlaceForm({ lon, lat }) {

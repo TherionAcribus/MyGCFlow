@@ -234,6 +234,54 @@ test('poser une base d’un clic sur la carte : départ et retour de chaque jour
   expect(errors).toEqual([]);
 });
 
+test('éditer un lieu : nom, journée, type et déplacement sur la carte', async ({ page, request }) => {
+  const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
+  const created = await request.post(`/api/parcours/${id}/places`, {
+    data: { kind: 'place', name: 'Belvédère', lat: 45.903, lon: 6.125, date: '2025-07-12', time: '09:45' },
+  });
+  expect(created.status()).toBe(201);
+  const placeId = (await created.json()).place.id;
+  const placeKey = `place:${placeId}`;
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+
+  // Renommer depuis le panneau de l'étape.
+  await row(page, placeKey).locator('.parcours-stop-text').click();
+  const panel = page.locator(`.parcours-stop-edit[data-edit-key="${placeKey}"]`);
+  await panel.locator('.parcours-edit-place-name').fill('Mont Veyrier');
+  await panel.locator('.parcours-edit-place-rename').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === placeId).name).toBe('Mont Veyrier');
+  await expect(row(page, placeKey)).toContainText('Mont Veyrier');
+
+  // Changer de journée : le lieu rejoint le 13.
+  await panel.locator('.parcours-edit-place-day').selectOption('2025-07-13');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === placeId).date).toBe('2025-07-13');
+  expect(state.days[1].keys).toContain(placeKey);
+  expect(state.days[0].keys).not.toContain(placeKey);
+
+  // Type : le lieu devient une base de sa journée (départ et retour).
+  await panel.locator('.parcours-edit-place-kind').selectOption('base');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === placeId).kind).toBe('base');
+  expect(state.days[1].keys[0]).toBe(`place:${placeId}:2025-07-13:start`);
+  expect(state.days[1].keys.at(-1)).toBe(`place:${placeId}:2025-07-13:end`);
+
+  // Déplacer sur la carte : un clic envoie les nouvelles coordonnées.
+  await page.locator(`.parcours-stop[data-stop-key="place:${placeId}:2025-07-13:start"]`)
+    .locator('.parcours-stop-text').click();
+  await page.locator('.parcours-stop-edit[data-edit-key] .parcours-edit-place-move').click();
+  await expect.poll(async () => (await snapshot(page)).picking).toBe(true);
+  const mapBox = await page.locator('#map').boundingBox();
+  await page.mouse.click(mapBox.x + mapBox.width / 4, mapBox.y + mapBox.height / 4);
+  state = await adjusted(page, state.adjustmentRevision);
+  const moved = state.places.find((p) => p.id === placeId);
+  expect(Math.abs(moved.lat - 45.903) + Math.abs(moved.lon - 6.125)).toBeGreaterThan(0.01);
+  expect(errors).toEqual([]);
+});
+
 test('un lieu posé à son heure devient une étape de sa journée', async ({ page, request }) => {
   const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
   const created = await request.post(`/api/parcours/${id}/places`, {

@@ -197,6 +197,43 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   expect(errors).toEqual([]);
 });
 
+test('modifier un parcours : nom et dates, sans perdre les ajustements', async ({ page, request }) => {
+  await importFixture(page, request);
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Week-end', date_start: '2025-07-12', date_end: '2025-07-13' } });
+  expect(created.status()).toBe(201);
+  const { id } = (await created.json()).parcours;
+  // Un ajustement à préserver : heure épinglée.
+  await request.patch(`/api/parcours/${id}/overrides`, { data: { overrides: [{ key: 'GCPAR01', pinnedTime: '14:05' }] } });
+  const errors = collectErrors(page);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  expect((await snapshot(page)).days).toHaveLength(2);
+
+  // Le crayon remplit le formulaire ; son envoi devient un enregistrement.
+  await page.locator(`.parcours-list-item[data-parcours-id="${id}"] .parcours-edit`).click();
+  await expect(page.locator('#parcoursFormTitle')).toHaveText('Modifier le parcours');
+  await expect(page.locator('#parcoursName')).toHaveValue('Week-end');
+  await expect(page.locator('#btnParcoursEditCancel')).toBeVisible();
+  await page.locator('#parcoursName').fill('Ascension');
+  await page.locator('#parcoursEnd').fill('2025-07-12');
+  await page.locator('#parcoursIncludeDnf').uncheck();
+  await page.locator('#btnParcoursCreate').click();
+
+  await expect(page.locator(`.parcours-list-item[data-parcours-id="${id}"]`)).toContainText('Ascension');
+  await expect(page.locator('#parcoursFormTitle')).toHaveText('Nouveau parcours');
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  const state = await snapshot(page);
+  expect(state.days).toHaveLength(1);
+  // L'ajustement a survécu à la modification.
+  expect(state.overrides.map((o) => o.key)).toContain('GCPAR01');
+  const item = (await (await request.get(`/api/parcours/${id}`)).json()).parcours;
+  expect(item.name).toBe('Ascension');
+  expect(item.date_end).toBe('2025-07-12');
+  expect(item.include_dnf).toBe(false);
+  expect(errors).toEqual([]);
+});
+
 test('une saisie invalide est refusée avec un message', async ({ page, request }) => {
   await importFixture(page, request);
   await openParcoursPage(page);
