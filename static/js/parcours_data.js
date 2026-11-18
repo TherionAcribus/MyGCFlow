@@ -2555,6 +2555,24 @@ function bindPhotoDisplay() {
     });
 }
 
+// Refus d'envoi regroupés par cause : « a.jpg, b.jpg et 12 autres : même
+// message » plutôt qu'une ligne par fichier quand des centaines sont
+// refusés pour la même raison (plafond atteint, par exemple).
+function refuseSummary(refused) {
+    const byMessage = new Map();
+    for (const { name, message } of refused) {
+        if (!byMessage.has(message)) byMessage.set(message, []);
+        byMessage.get(message).push(name);
+    }
+    const lines = [];
+    for (const [message, names] of byMessage) {
+        const shown = names.slice(0, 3).join(', ');
+        const more = names.length > 3 ? t(' et ${n} autres', { n: names.length - 3 }) : '';
+        lines.push(`${shown}${more} : ${message}`);
+    }
+    return lines.join('\n');
+}
+
 async function uploadPhotos(files) {
     if (!selectedId || adjustmentsLocked() || files.length === 0) return;
     // Tout part dans le parcours ouvert au début de l'envoi : en ouvrir un
@@ -2571,15 +2589,24 @@ async function uploadPhotos(files) {
             const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${targetId}/photos`, { method: 'POST', body });
             if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
-                refused.push(`${file.name} : ${payload.message || response.status}`);
+                refused.push({ name: file.name, message: payload.message || `HTTP ${response.status}` });
+                if (payload.error === 'photos-full') {
+                    // Le plafond ne bougera pas d'ici la fin de l'envoi :
+                    // les suivants seraient refusés de la même façon.
+                    for (const rest of files.slice(done + 1)) {
+                        refused.push({ name: rest.name, message: payload.message });
+                    }
+                    done = files.length;
+                    break;
+                }
             }
         } catch (error) {
-            refused.push(`${file.name} : ${error.message}`);
+            refused.push({ name: file.name, message: error.message });
         }
         done++;
     }
     if (status) status.textContent = '';
-    if (refused.length) showToast(refused.join('\n'), 'warning', t('Photos refusées'));
+    if (refused.length) showToast(refuseSummary(refused), 'warning', t('Photos refusées'));
     // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
     await reloadAdjustments(targetId);
 }
@@ -3052,7 +3079,9 @@ function routeDroppedFiles(files) {
     const tracks = files.filter(isGpxFile);
     const ignored = files.filter((f) => f !== music && !isImageFile(f) && !isGpxFile(f));
     if (ignored.length) {
-        showToast(ignored.map((f) => f.name).join('\n'), 'warning', t('Fichiers non pris en charge'));
+        const shown = ignored.slice(0, 3).map((f) => f.name).join(', ');
+        const more = ignored.length > 3 ? t(' et ${n} autres', { n: ignored.length - 3 }) : '';
+        showToast(shown + more, 'warning', t('Fichiers non pris en charge'));
     }
     if (!photos.length && !tracks.length) return;
     if (!selectedId) {
@@ -3246,15 +3275,22 @@ async function uploadTracks(files) {
             const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${targetId}/tracks`, { method: 'POST', body });
             if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
-                refused.push(`${file.name} : ${payload.message || response.status}`);
+                refused.push({ name: file.name, message: payload.message || `HTTP ${response.status}` });
+                if (payload.error === 'tracks-full') {
+                    for (const rest of files.slice(done + 1)) {
+                        refused.push({ name: rest.name, message: payload.message });
+                    }
+                    done = files.length;
+                    break;
+                }
             }
         } catch (error) {
-            refused.push(`${file.name} : ${error.message}`);
+            refused.push({ name: file.name, message: error.message });
         }
         done++;
     }
     if (status) status.textContent = '';
-    if (refused.length) showToast(refused.join('\n'), 'warning', t('Traces refusées'));
+    if (refused.length) showToast(refuseSummary(refused), 'warning', t('Traces refusées'));
     await reloadAdjustments(targetId);
 }
 

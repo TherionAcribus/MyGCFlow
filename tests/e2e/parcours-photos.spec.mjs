@@ -274,3 +274,19 @@ test('glisser-déposer : photos et traces rejoignent le parcours ouvert, le rest
   await expect(page.locator('.gcm-toast.show')).toContainText('evolution-share.csv');
   expect(errors).toEqual([]);
 });
+
+test('photos refusées : un toast regroupe les fichiers par cause', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  // Cinq fichiers refusés pour la même raison : trois noms + « et 2 autres ».
+  const bad = Buffer.from('pas une image');
+  const fake = Array.from({ length: 5 }, (_, i) => ({ name: `faux-${i}.jpg`, mimeType: 'image/jpeg', buffer: bad }));
+  await page.locator('#parcoursPhotoInput').setInputFiles(fake);
+  const toast = page.locator('.gcm-toast.show').last();
+  await expect(toast).toContainText('faux-0.jpg');
+  await expect(toast).toContainText('et 2 autres');
+  await expect(toast).toContainText('pas une image lisible');
+  expect(errors).toEqual([]);
+});
