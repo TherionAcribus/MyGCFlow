@@ -136,6 +136,9 @@
                         <div class="mt-2">
                             <label class="form-label small mb-1" for="parcoursUtcOffset">{{ _("Heure locale des traces (enregistrées en UTC)") }}</label>
                             <select id="parcoursUtcOffset" class="form-select form-select-sm"></select>
+                            <div id="parcoursUtcOffsetWarn" class="alert alert-warning small py-1 px-2 mt-2 mb-0" role="alert" hidden>
+                                <i class="ti ti-world-latitude me-1" aria-hidden="true"></i><span id="parcoursUtcOffsetWarnText"></span>
+                            </div>
                         </div>
                     </div>
                 </div>

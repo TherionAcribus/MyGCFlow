@@ -107,6 +107,7 @@ import {
 } from './parcours_photo_layout.mjs';
 import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
 import {
+    OFFSET_COMPUTER,
     OFFSET_EVIDENCE,
     OFFSET_MANUAL,
     OFFSET_PHOTOS,
@@ -133,6 +134,7 @@ let listing = [];             // parcours enregistrés (GET /api/parcours)
 let suggestions = [];         // séjours et grosses journées proposés (lot 7)
 let suggestionsSeq = 0;
 let findsExtent = { first: null, last: null };
+let homeCenter = null;        // centre habituel des trouvailles (GET /api/parcours)
 let maxDays = 92;
 let selectedId = null;
 let inputs = null;            // entrées du parcours ouvert, ajustements compris
@@ -284,6 +286,7 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         listing = Array.isArray(body.parcours) ? body.parcours : [];
         findsExtent = body.finds || findsExtent;
         maxDays = Number(body.maxDays) || maxDays;
+        homeCenter = Number.isFinite(body.home?.lon) ? body.home : null;
     } catch (error) {
         console.warn('[PARCOURS] Liste indisponible :', error);
         listing = [];
@@ -3144,6 +3147,20 @@ function trackRange(track) {
         : `${day} ${minutesToTime(a.minutes)} → ${formatDay(b.date, { day: 'numeric', month: 'short' })} ${minutesToTime(b.minutes)}`;
 }
 
+// « Fuseau de cet ordinateur » : suspect quand le parcours se passe loin du
+// centre habituel des trouvailles — l'ordinateur peut avoir gardé le fuseau
+// de la maison. Longitude : ≈ un fuseau par 10° d'écart.
+const UTC_SUSPECT_LON_DEG = 10;
+
+function computerOffsetSuspect() {
+    if (utcOffset.source !== OFFSET_COMPUTER || !(inputs?.tracks || []).length) return false;
+    if (!homeCenter || !ordered) return false;
+    return parcoursStops(ordered).some((stop) => {
+        const d = Math.abs(stop.lon - homeCenter.lon);
+        return Math.min(d, 360 - d) > UTC_SUSPECT_LON_DEG;
+    });
+}
+
 function renderTracks() {
     const card = el('parcoursTracksCard');
     if (!card) return;
@@ -3176,6 +3193,14 @@ function renderTracks() {
             ? t('Automatique')
             : t('Automatique : ${offset} (${source})', { offset: formatUtcOffset(utcOffset.minutes), source: offsetSourceLabel(utcOffset.source) });
         offset.value = Number.isFinite(manual) ? String(manual) : '';
+    }
+    const warn = el('parcoursUtcOffsetWarn');
+    if (warn) {
+        warn.hidden = !computerOffsetSuspect();
+        const warnText = el('parcoursUtcOffsetWarnText');
+        if (!warn.hidden && warnText) {
+            warnText.textContent = t('Heures des traces calées sur le fuseau de cet ordinateur (${offset}) — vérifiez-le pour un parcours loin de chez vous.', { offset: formatUtcOffset(utcOffset.minutes) });
+        }
     }
     const list = el('parcoursTracks');
     if (list) {
@@ -3681,6 +3706,7 @@ export function getParcoursSnapshot() {
         tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
         trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),
         utcOffset: { ...utcOffset },
+        utcOffsetSuspect: computerOffsetSuspect(),
         trackLegs: (timeline?.legs || []).filter((leg) => leg.mode === 'track').length,
         routing: {
             ...routingConfig(),

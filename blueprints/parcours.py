@@ -57,10 +57,14 @@ def parcours_page():
 
 @parcours_bp.route('/api/parcours', methods=['GET'])
 def list_parcours():
+    # Centre habituel des trouvailles : repère du client pour signaler un
+    # fuseau « ordinateur » probablement faux sur un parcours lointain.
+    home = parcours_suggest.home_center(parcours_suggest.find_days(db.session))
     return jsonify({
         'parcours': store.list_parcours(db.session),
         'finds': parcours_dataset.finds_extent(db.session),
         'maxDays': store.MAX_DAYS,
+        'home': {'lat': home[0], 'lon': home[1]} if home else None,
     })
 
 

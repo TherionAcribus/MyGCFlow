@@ -77,6 +77,30 @@ test('trace : heures de passage comme ancres, vrai chemin, fuseau réglable', as
   expect(errors).toEqual([]);
 });
 
+test('fuseau « ordinateur » : un parcours loin de chez soi avertit', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  // Un lieu en Australie (Annecy ≈ 6°E : le centre habituel est loin) rend
+  // le fuseau de l'ordinateur suspect.
+  const place = await request.post(`/api/parcours/${parcours.id}/places`,
+    { data: { name: 'Étape lointaine', kind: 'place', date: '2025-07-13', lat: -33.87, lon: 151.2 } });
+  expect(place.status()).toBe(201);
+  await openReady(page);
+  // Sans trace, le décalage ne sert à rien : pas d'avertissement.
+  await expect(page.locator('#parcoursUtcOffsetWarn')).toBeHidden();
+
+  await page.locator('#parcoursTrackInput').setInputFiles(TRACE);
+  await expect.poll(async () => (await snapshot(page)).tracks.length, { timeout: 30_000 }).toBe(1);
+  await expect.poll(async () => (await snapshot(page)).utcOffset.source).toBe('computer');
+  await expect(page.locator('#parcoursUtcOffsetWarn')).toBeVisible();
+  expect((await snapshot(page)).utcOffsetSuspect).toBe(true);
+
+  // Un décalage réglé à la main fait taire l'avertissement.
+  await page.locator('#parcoursUtcOffset').selectOption('120');
+  await expect(page.locator('#parcoursUtcOffsetWarn')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('lecture : le géocacheur suit la trace jusqu’au bout', async ({ page, request }) => {
   const errors = collectErrors(page);
   const parcours = await createWeekend(request);
