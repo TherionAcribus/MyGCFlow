@@ -123,9 +123,10 @@ import {
 import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 import {
-    PARCOURS_DAY_PALETTE,
+    PARCOURS_PALETTE_SIZE,
     dayColor,
     hexToRgba,
+    nextPaletteColor,
     normalizeParcoursStyle,
     numberFontPx,
     paintTextColor,
@@ -1974,7 +1975,7 @@ function renderDay(day) {
         const dot = document.createElement('span');
         dot.className = 'parcours-day-dot';
         dot.setAttribute('aria-hidden', 'true');
-        dot.style.backgroundColor = dayColor(dayIndexes().byDate.get(day.date) ?? 0);
+        dot.style.backgroundColor = dayColor(dayIndexes().byDate.get(day.date) ?? 0, stopStyle().day_palette);
         title.prepend(dot);
     }
     // Le nombre d'étapes reste lisible quand la journée est repliée.
@@ -4183,6 +4184,7 @@ function readStyleUI() {
         numbers: value('parcoursStyleNumbers'),
         color_by: value('parcoursStyleColorBy'),
         trail_by_day: el('parcoursStyleTrailByDay') ? el('parcoursStyleTrailByDay').checked : undefined,
+        day_palette: paletteInputs().map((input) => input.value),
         size: value('parcoursStyleSize'),
         colors: Object.fromEntries(Object.entries(styleColorIds()).map(([kind, id]) => [kind, value(id)])),
         plan_line: value('parcoursStylePlanLine'),
@@ -4227,8 +4229,10 @@ export function syncParcoursStyleUI() {
     for (const box of document.querySelectorAll('#parcoursStopsCard [data-kind-color]')) {
         box.hidden = style.color_by !== 'kind';
     }
+    // Palette des journées : montrée dès qu'elle sert (étapes ou trait).
     const palette = el('parcoursStyleDayPalette');
-    if (palette) palette.hidden = style.color_by !== 'day';
+    if (palette) palette.hidden = style.color_by !== 'day' && !style.trail_by_day;
+    syncPaletteInputs(style.day_palette);
     const byDay = el('parcoursStyleTrailByDay');
     if (byDay) byDay.checked = style.trail_by_day;
     const trailColor = el('parcoursStyleTrailColor');
@@ -4240,6 +4244,37 @@ export function syncParcoursStyleUI() {
     set('parcoursStyleTrailOpacity', style.trail_opacity);
     const opacityValue = el('parcoursStyleTrailOpacityValue');
     if (opacityValue) opacityValue.textContent = `${style.trail_opacity}%`;
+}
+
+// Cases de la palette des journées : une par couleur, refaites quand leur
+// nombre change (thème chargé, ajout, retrait), sinon seulement mises à jour.
+function paletteInputs() {
+    return [...(el('parcoursStyleDayPalette')?.querySelectorAll('.parcours-day-swatches input') || [])];
+}
+
+function syncPaletteInputs(colors) {
+    const box = el('parcoursStyleDayPalette')?.querySelector('.parcours-day-swatches');
+    if (!box) return;
+    let inputs = paletteInputs();
+    if (inputs.length !== colors.length) {
+        box.replaceChildren();
+        inputs = colors.map((_, i) => {
+            const input = document.createElement('input');
+            input.type = 'color';
+            input.className = 'form-control form-control-color';
+            const label = t('Couleur de la journée ${n}', { n: i + 1 });
+            input.title = label;
+            input.setAttribute('aria-label', label);
+            input.addEventListener('change', () => commitParcoursStyle(readStyleUI()));
+            box.append(input);
+            return input;
+        });
+    }
+    colors.forEach((value, i) => { inputs[i].value = value; });
+    const add = el('btnParcoursPaletteAdd');
+    if (add) add.disabled = colors.length >= PARCOURS_PALETTE_SIZE[1];
+    const remove = el('btnParcoursPaletteRemove');
+    if (remove) remove.disabled = colors.length <= PARCOURS_PALETTE_SIZE[0];
 }
 
 function bindParcoursStyle() {
@@ -4255,15 +4290,18 @@ function bindParcoursStyle() {
     }
     // Opacité : suivie pendant le glisser.
     el('parcoursStyleTrailOpacity')?.addEventListener('input', commit);
-    const swatches = el('parcoursStyleDayPalette')?.querySelector('.parcours-day-swatches');
-    if (swatches && !swatches.childElementCount) {
-        for (const color of PARCOURS_DAY_PALETTE) {
-            const swatch = document.createElement('span');
-            swatch.className = 'parcours-day-swatch';
-            swatch.style.backgroundColor = color;
-            swatches.append(swatch);
-        }
-    }
+    // Palette : une case de plus (couleur proposée), la dernière en moins,
+    // retour aux couleurs par défaut.
+    const setPalette = (colors) => commitParcoursStyle(normalizeParcoursStyle({ day_palette: colors }, stopStyle()));
+    el('btnParcoursPaletteAdd')?.addEventListener('click', () => {
+        const colors = stopStyle().day_palette;
+        if (colors.length < PARCOURS_PALETTE_SIZE[1]) setPalette([...colors, nextPaletteColor(colors)]);
+    });
+    el('btnParcoursPaletteRemove')?.addEventListener('click', () => {
+        const colors = stopStyle().day_palette;
+        if (colors.length > PARCOURS_PALETTE_SIZE[0]) setPalette(colors.slice(0, -1));
+    });
+    el('btnParcoursPaletteReset')?.addEventListener('click', () => setPalette(parcoursStyleDefaults().day_palette));
     el('btnParcoursStyleColorsReset')?.addEventListener('click', () => {
         commitParcoursStyle(normalizeParcoursStyle({ colors: parcoursStyleDefaults().colors }, stopStyle()));
     });
@@ -4987,7 +5025,7 @@ export function getParcoursSnapshot() {
         planLineColors: Object.fromEntries((source?.getFeatures() || [])
             .filter((f) => f.get('role') === 'line')
             .map((f) => [f.get('date'), lineStyle(dayIndexes().byDate.get(f.get('date')) ?? 0)?.getStroke().getColor() ?? null])),
-        dayColors: Object.fromEntries((ordered?.days || []).map((day, i) => [day.date, dayColor(i)])),
+        dayColors: Object.fromEntries((ordered?.days || []).map((day, i) => [day.date, dayColor(i, stopStyle().day_palette)])),
         trail: trailOptions(),
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,

@@ -39,6 +39,16 @@
       "lab": "#f59f00",
       "place": "#ae3ec9"
     },
+    "day_palette": [
+      "#1971c2",
+      "#e8590c",
+      "#2f9e44",
+      "#c2255c",
+      "#0c8599",
+      "#6741d9",
+      "#5c940d",
+      "#9c5221"
+    ],
     "numbers": "trip",
     "plan_line": "dashed",
     "render": "stops",
@@ -54,6 +64,10 @@
     "dnf",
     "place",
     "base"
+  ],
+  "palette_size": [
+    2,
+    12
   ],
   "ranges": {
     "size": [

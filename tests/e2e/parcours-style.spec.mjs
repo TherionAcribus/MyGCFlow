@@ -235,7 +235,7 @@ test('couleur des étapes par journée ou par type ; trait aux couleurs des jour
   // Palette montrée, couleurs par nature des étapes masquées (lieux et
   // bases restent réglables).
   await expect(page.locator('#parcoursStyleDayPalette')).toBeVisible();
-  await expect(page.locator('#parcoursStyleDayPalette .parcours-day-swatch')).toHaveCount(8);
+  await expect(page.locator('#parcoursStyleDayPalette .parcours-day-swatches input')).toHaveCount(8);
   await expect(page.locator('#parcoursStyleColorFind')).toBeHidden();
   await expect(page.locator('#parcoursStyleColorPlace')).toBeVisible();
   // La liste suit : pastille de l'étape, point de couleur de la journée.
@@ -269,5 +269,55 @@ test('couleur des étapes par journée ou par type ; trait aux couleurs des jour
   await expect.poll(async () => (await snapshot(page)).playStops.headColor).toBe(c1);
   await page.locator('#btnQuickStop').click();
   await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('palette des journées modifiable : une couleur, ajout, retrait, retour aux défauts', async ({ page }) => {
+  const errors = collectErrors(page);
+  let snap = await openReady(page);
+  const [, day2] = countedKeys(snap);
+  const defaults = snap.style.day_palette;
+  expect(defaults).toHaveLength(8);
+  await openStyleSubtab(page, '#tabPoints');
+  const palette = page.locator('#parcoursStyleDayPalette');
+  const cells = palette.locator('.parcours-day-swatches input');
+
+  // Montrée par le trait aux couleurs des journées aussi.
+  await expect(palette).toBeHidden();
+  await openStyleSubtab(page, '#tabParcoursTrail');
+  await page.locator('#parcoursStyleTrailByDay').check();
+  await openStyleSubtab(page, '#tabPoints');
+  await expect(palette).toBeVisible();
+  await page.locator('#parcoursStyleColorBy').selectOption('day');
+
+  // Couleur de la deuxième journée : étapes, ligne du plan et liste suivent.
+  await cells.nth(1).fill('#ff0000');
+  await expect.poll(async () => (await snapshot(page)).stopStyles[day2[0]]?.color).toBe('#ff0000');
+  snap = await snapshot(page);
+  expect(snap.style.day_palette[1]).toBe('#ff0000');
+  expect(Object.values(snap.planLineColors)[1]).toBe('rgba(255, 0, 0, 0.55)');
+  await expect(page.locator(`.parcours-stop[data-stop-key="${day2[0]}"] .parcours-stop-index`))
+    .toHaveCSS('background-color', 'rgb(255, 0, 0)');
+
+  // Ajout : la couleur par défaut qui manque (celle remplacée par le rouge) ;
+  // retrait : la dernière.
+  await page.locator('#btnParcoursPaletteAdd').click();
+  await expect(cells).toHaveCount(9);
+  snap = await snapshot(page);
+  expect(snap.style.day_palette).toHaveLength(9);
+  expect(snap.style.day_palette[8]).toBe(defaults[1]);
+  await page.locator('#btnParcoursPaletteRemove').click();
+  await page.locator('#btnParcoursPaletteRemove').click();
+  await expect(cells).toHaveCount(7);
+
+  // Deux couleurs au moins : le retrait s'arrête.
+  for (let n = 7; n > 2; n--) await page.locator('#btnParcoursPaletteRemove').click();
+  await expect(cells).toHaveCount(2);
+  await expect(page.locator('#btnParcoursPaletteRemove')).toBeDisabled();
+
+  await page.locator('#btnParcoursPaletteReset').click();
+  await expect(cells).toHaveCount(8);
+  await expect.poll(async () => (await snapshot(page)).style.day_palette).toEqual(defaults);
+  await expect(cells.nth(1)).toHaveValue(defaults[1]);
   expect(errors).toEqual([]);
 });

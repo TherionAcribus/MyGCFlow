@@ -289,11 +289,26 @@
                     </select>
                 </div>
             </div>
-            <!-- Couleur par journée : palette fixe (PARCOURS_DAY_PALETTE),
-                 montrée ici, remplie par parcours_data.js. -->
-            <div id="parcoursStyleDayPalette" class="parcours-day-palette mt-3" hidden>
-                <span class="form-label mb-0">{{ _("Couleurs des journées") }}</span>
-                <span class="parcours-day-swatches" aria-hidden="true"></span>
+            <!-- Palette des journées (points.parcours_style.day_palette, 2 à 12
+                 couleurs) : couleur par journée et trait aux couleurs des
+                 journées. Cases remplies par parcours_data.js. -->
+            <div id="parcoursStyleDayPalette" class="mt-3" hidden>
+                <div class="parcours-day-palette">
+                    <span class="form-label mb-0">{{ _("Couleurs des journées") }}</span>
+                    <span class="parcours-day-swatches"></span>
+                    <button type="button" id="btnParcoursPaletteAdd" class="btn btn-sm btn-ghost-secondary btn-icon"
+                            title="{{ _('Ajouter une couleur') }}" aria-label="{{ _('Ajouter une couleur') }}">
+                        <i class="ti ti-plus" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" id="btnParcoursPaletteRemove" class="btn btn-sm btn-ghost-secondary btn-icon"
+                            title="{{ _('Retirer la dernière couleur') }}" aria-label="{{ _('Retirer la dernière couleur') }}">
+                        <i class="ti ti-minus" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" id="btnParcoursPaletteReset" class="btn btn-sm btn-ghost-secondary">
+                        <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Palette par défaut") }}
+                    </button>
+                </div>
+                <small class="form-hint text-muted">{{ _("Une couleur par journée, dans l'ordre des dates ; après la dernière, la palette reprend au début.") }}</small>
             </div>
             <div class="parcours-style-colors mt-3">
                 <div data-kind-color>

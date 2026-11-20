@@ -20,12 +20,14 @@ export const PARCOURS_STYLE_RANGES = Object.freeze({
     trail_opacity: Object.freeze([10, 100]),
 });
 
-// Couleurs des journées (DAY_PALETTE de parcours_style.py) : reprises au
-// début au-delà de huit journées.
+// Couleurs des journées par défaut (DAY_PALETTE de parcours_style.py) ; la
+// palette du thème (`day_palette`) en compte de 2 à 12 (PALETTE_SIZE),
+// reprises au début au-delà de la dernière.
 export const PARCOURS_DAY_PALETTE = Object.freeze([
     '#1971c2', '#e8590c', '#2f9e44', '#c2255c',
     '#0c8599', '#6741d9', '#5c940d', '#9c5221',
 ]);
+export const PARCOURS_PALETTE_SIZE = Object.freeze([2, 12]);
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -39,6 +41,7 @@ export function parcoursStyleDefaults() {
         plan_line: 'dashed',
         trail_color: '#00b8d4',
         trail_by_day: false,
+        day_palette: [...PARCOURS_DAY_PALETTE],
         trail_width: 3,
         trail_opacity: 100,
     };
@@ -53,6 +56,14 @@ function integer(value, fallback, [low, high]) {
     const number = Number(value);
     if (!Number.isFinite(number)) return fallback;
     return Math.round(Math.min(high, Math.max(low, number)));
+}
+
+// Comme _palette : couleurs valides en minuscules, 12 au plus ; moins de 2 :
+// `fallback`.
+function palette(value, fallback) {
+    if (!Array.isArray(value)) return [...fallback];
+    const colors = value.map((c) => color(c, null)).filter(Boolean).slice(0, PARCOURS_PALETTE_SIZE[1]);
+    return colors.length >= PARCOURS_PALETTE_SIZE[0] ? colors : [...fallback];
 }
 
 function isObject(value) {
@@ -77,6 +88,7 @@ export function normalizeParcoursStyle(raw, current = null) {
             : (typeof base.trail_by_day === 'boolean' ? base.trail_by_day : defaults.trail_by_day),
         plan_line: choice('plan_line'),
         trail_color: color(src.trail_color, color(base.trail_color, defaults.trail_color)),
+        day_palette: palette(src.day_palette, palette(base.day_palette, defaults.day_palette)),
     };
     for (const [key, range] of Object.entries(PARCOURS_STYLE_RANGES)) {
         out[key] = integer(src[key], integer(base[key], defaults[key], range), range);
@@ -109,10 +121,52 @@ export function stopNumberLabels(ordered, mode) {
 
 // Couleur de la journée d'index `dayIndex` (rang dans la plage du parcours,
 // jours vides compris : le même jour garde sa couleur quand un autre se vide).
-export function dayColor(dayIndex) {
-    const n = PARCOURS_DAY_PALETTE.length;
+export function dayColor(dayIndex, colors = PARCOURS_DAY_PALETTE) {
+    const list = Array.isArray(colors) && colors.length ? colors : PARCOURS_DAY_PALETTE;
+    const n = list.length;
     const i = Number.isInteger(dayIndex) ? ((dayIndex % n) + n) % n : 0;
-    return PARCOURS_DAY_PALETTE[i];
+    return list[i];
+}
+
+// Couleur proposée pour une case ajoutée à la palette : la première couleur
+// par défaut absente, sinon la teinte la plus éloignée de celles de la
+// palette (par pas de 10°), foncée pour un numéro blanc.
+export function nextPaletteColor(colors) {
+    const used = new Set((colors || []).map((c) => String(c).toLowerCase()));
+    const free = PARCOURS_DAY_PALETTE.find((c) => !used.has(c));
+    if (free) return free;
+    const hues = [...used].map(hexHue).filter((h) => h !== null);
+    let best = 0;
+    let bestGap = -1;
+    for (let hue = 0; hue < 360; hue += 10) {
+        const gap = Math.min(360, ...hues.map((h) => Math.min(Math.abs(hue - h), 360 - Math.abs(hue - h))));
+        if (gap > bestGap) {
+            best = hue;
+            bestGap = gap;
+        }
+    }
+    return hslToHex(best, 0.65, 0.38);
+}
+
+function hexHue(hex) {
+    const value = color(hex, null);
+    if (!value) return null;
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b);
+    const d = max - Math.min(r, g, b);
+    if (d === 0) return null;
+    let h;
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    return (h * 60 + 360) % 360;
+}
+
+function hslToHex(h, s, l) {
+    const k = (n) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return `#${[0, 8, 4].map((n) => Math.round(f(n) * 255).toString(16).padStart(2, '0')).join('')}`;
 }
 
 // Peinture d'une étape : `fill` (couleur d'identité) et `hollow` (pastille
@@ -128,7 +182,7 @@ export function stopPaint(stop, style, { dayIndex = 0, typeColors = null } = {})
     if (kind === 'place' || kind === 'base') return { fill: own, hollow: false };
     const mode = style?.color_by;
     let fill = own;
-    if (mode === 'day') fill = dayColor(dayIndex);
+    if (mode === 'day') fill = dayColor(dayIndex, style.day_palette);
     else if (mode === 'type') {
         const type = kind === 'lab' ? 'Adventure Lab' : stop?.type;
         fill = color(typeColors?.[type], null) || own;
@@ -145,7 +199,7 @@ export function paintTextColor(paint) {
 
 // Couleur du trait (et de la ligne du plan, du géocacheur) d'une journée.
 export function trailColorFor(style, dayIndex) {
-    if (style?.trail_by_day) return dayColor(dayIndex);
+    if (style?.trail_by_day) return dayColor(dayIndex, style.day_palette);
     return color(style?.trail_color, parcoursStyleDefaults().trail_color);
 }
 

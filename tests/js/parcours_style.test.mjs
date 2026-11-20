@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
     PARCOURS_DAY_PALETTE,
+    PARCOURS_PALETTE_SIZE,
     PARCOURS_STYLE_CHOICES,
     PARCOURS_STYLE_KINDS,
     PARCOURS_STYLE_RANGES,
@@ -14,6 +15,7 @@ import {
     contrastTextColor,
     dayColor,
     hexToRgba,
+    nextPaletteColor,
     normalizeParcoursStyle,
     numberFontPx,
     paintTextColor,
@@ -34,6 +36,7 @@ test('mêmes défauts, choix et bornes que le serveur', () => {
     assert.deepEqual(plain(PARCOURS_STYLE_CHOICES), table.choices);
     assert.deepEqual(plain(PARCOURS_STYLE_RANGES), table.ranges);
     assert.deepEqual([...PARCOURS_DAY_PALETTE], table.day_palette);
+    assert.deepEqual([...PARCOURS_PALETTE_SIZE], table.palette_size);
 });
 
 test('normalisation : bornes, choix, couleurs, comme coerce_parcours_style', () => {
@@ -164,4 +167,39 @@ test('trait : couleur choisie, ou celle de la journée', () => {
     assert.equal(trailColorFor(normalizeParcoursStyle({ trail_by_day: true }), 3), PARCOURS_DAY_PALETTE[3]);
     assert.equal(normalizeParcoursStyle({ trail_by_day: 'oui' }).trail_by_day, false);
     assert.equal(normalizeParcoursStyle({}, { trail_by_day: true }).trail_by_day, true);
+});
+
+test('palette des journées modifiable : normalisée comme le serveur, suivie par les couleurs', () => {
+    assert.deepEqual(normalizeParcoursStyle({ day_palette: ['#ABCDEF', 'red', '#000000'] }).day_palette,
+        ['#abcdef', '#000000']);
+    assert.deepEqual(normalizeParcoursStyle({ day_palette: ['#abcdef'] }).day_palette, [...PARCOURS_DAY_PALETTE]);
+    assert.equal(normalizeParcoursStyle({ day_palette: Array(20).fill('#111111') }).day_palette.length, 12);
+    assert.deepEqual(normalizeParcoursStyle({}, { day_palette: ['#111111', '#222222'] }).day_palette,
+        ['#111111', '#222222']);
+    const style = normalizeParcoursStyle({ color_by: 'day', trail_by_day: true, day_palette: ['#111111', '#222222', '#333333'] });
+    assert.equal(stopPaint({ kind: 'find' }, style, { dayIndex: 4 }).fill, '#222222');
+    assert.equal(trailColorFor(style, 2), '#333333');
+    assert.equal(dayColor(3, style.day_palette), '#111111');
+});
+
+test('case ajoutée à la palette : couleur par défaut absente, sinon une teinte nouvelle', () => {
+    assert.equal(nextPaletteColor(PARCOURS_DAY_PALETTE.slice(0, 3)), PARCOURS_DAY_PALETTE[3]);
+    assert.equal(nextPaletteColor(['#e8590c', '#123456']), PARCOURS_DAY_PALETTE[0]);
+    const extra = nextPaletteColor([...PARCOURS_DAY_PALETTE]);
+    assert.match(extra, /^#[0-9a-f]{6}$/);
+    assert.ok(!PARCOURS_DAY_PALETTE.includes(extra));
+    // Assez foncée pour un numéro blanc.
+    assert.equal(contrastTextColor(extra), '#ffffff');
+    assert.notEqual(nextPaletteColor([...PARCOURS_DAY_PALETTE, extra]), extra);
+    // Loin des teintes déjà prises : rien à moins de 15° de la palette.
+    const hue = (hex) => {
+        const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+        const max = Math.max(r, g, b); const d = max - Math.min(r, g, b);
+        const h = max === r ? ((g - b) / d) % 6 : (max === g ? (b - r) / d + 2 : (r - g) / d + 4);
+        return (h * 60 + 360) % 360;
+    };
+    for (const c of PARCOURS_DAY_PALETTE) {
+        const gap = Math.abs(hue(c) - hue(extra));
+        assert.ok(Math.min(gap, 360 - gap) >= 15, `${c} / ${extra}`);
+    }
 });

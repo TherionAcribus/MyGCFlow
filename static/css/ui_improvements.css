@@ -4251,18 +4251,19 @@ body[data-mode="parcours"] .rhythm-rate-field {
 /* Onglet Style › Points : palette des journées (couleur par journée). */
 .parcours-day-palette {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem 0.75rem;
 }
 .parcours-day-swatches {
     display: inline-flex;
+    flex-wrap: wrap;
     gap: 4px;
 }
-.parcours-day-swatch {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
+.parcours-day-swatches .form-control-color {
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 2px;
 }
 /* Pastille de couleur d'une journée (en-tête de journée de la liste). */
 .parcours-day-dot {

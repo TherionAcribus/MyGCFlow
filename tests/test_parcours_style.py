@@ -56,6 +56,13 @@ class ParcoursStyleTests(unittest.TestCase):
         self.assertIs(ps.coerce_parcours_style({"trail_by_day": True})["trail_by_day"], True)
         self.assertIs(ps.coerce_parcours_style({"trail_by_day": "yes"})["trail_by_day"], False)
         self.assertIs(ps.coerce_parcours_style({}, {"trail_by_day": True})["trail_by_day"], True)
+        # Palette des journées : 2 à 12 couleurs valides, en minuscules.
+        self.assertEqual(ps.coerce_parcours_style({"day_palette": ["#ABCDEF", "red", "#000000"]})["day_palette"],
+                         ["#abcdef", "#000000"])
+        self.assertEqual(ps.coerce_parcours_style({"day_palette": ["#abcdef"]})["day_palette"], list(ps.DAY_PALETTE))
+        self.assertEqual(len(ps.coerce_parcours_style({"day_palette": ["#111111"] * 20})["day_palette"]), 12)
+        self.assertEqual(ps.coerce_parcours_style({}, {"day_palette": ["#111111", "#222222"]})["day_palette"],
+                         ["#111111", "#222222"])
 
     def test_absent_fields_keep_the_current_value(self):
         current = ps.coerce_parcours_style({"numbers": "day", "colors": {"find": "#112233"}})
