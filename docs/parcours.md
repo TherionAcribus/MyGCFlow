@@ -99,6 +99,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_camera.mjs` | Pur : pose de la caméra de la lecture (lot 7). Tests : `tests/js/parcours_camera.test.mjs` |
 | `static/js/parcours_model.mjs` | Pur : utilitaires (étapes du parcours, emprise, jours d'une plage). Tests : `tests/js/parcours_model.test.mjs` |
 | `static/js/parcours_style.mjs` | Pur : apparence des étapes et du trait (normalisation, numéros, contraste). Copie de `parcours_style.py`. Tests : `tests/js/parcours_style.test.mjs`, `tests/test_parcours_style.py` |
+| `static/js/parcours_stack.mjs` | Pur : étapes empilées (piles, libellé, éventail). Tests : `tests/js/parcours_stack.test.mjs` |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
@@ -432,6 +433,31 @@ lecture, même en pause) :
   / « Poser une base ici », qui ouvre le formulaire de pose à cet endroit,
   type choisi d'avance (onglet Données affiché). Sans parcours ouvert, le
   menu du navigateur.
+
+**Étapes empilées** (depuis le 2026-11-20, `parcours_stack.mjs`) : au zoom
+courant, les étapes comptées d'une même journée dont les centres sont à
+moins de 1,5 rayon de pastille (`STACK_DISTANCE`) forment une **pile** —
+deux journées ne s'empilent jamais, lieux et bases jamais.
+- Regroupement glouton dans l'ordre du parcours : une étape rejoint la pile
+  la plus proche dont la PREMIÈRE étape est à portée (pas de chaîne qui
+  s'étire), sinon en ouvre une. Il est stable par préfixe : la lecture,
+  qui regroupe les étapes déjà atteintes au zoom de l'image, retrouve à la
+  fin les piles du repos.
+- La pile prend la place de sa première étape : pastille un peu plus
+  grande (rayon + 2) posée sur une seconde décalée, libellé « 4–7 » si les
+  numéros se suivent, « ×4 » sinon ou sans numéros. En lecture, le libellé
+  grandit (« 1–2 » puis « 1–3 ») et la pile regrossit à chaque arrivée.
+- Au repos, les autres étapes sont cachées (`stacked` : ni dessin ni clic).
+  Survol de la pile : toutes ses lignes surlignées ; survol d'une de ses
+  lignes : la pile mise en évidence. Recalcul à chaque changement de zoom
+  (`moveend`, `updateStacks`) et à chaque plan refait.
+- **Clic sur une pile** : elle s'écarte en **éventail** (cercle jusqu'à
+  neuf étapes, spirale au-delà, `fanOffsets`), chaque étape reliée au
+  centre par un fil ; un clic sur l'une ouvre sa bulle. Un clic ailleurs,
+  Échap, un zoom ou une lecture le referment. Le crochet `popupAt` répond
+  alors sans `coordinate` : mapgl.js ne montre pas de bulle.
+- En rendu « points du thème », la pile ne regroupe que les numéros : les
+  points WebGL restent chacun à leur place.
 
 Gestes communs à la bulle et au panneau : `pinStopTime`, `excludeStop`,
 `openStopDetails`. Les bulles de mapgl.js (`openPopupAt`) se posent sous le

@@ -412,6 +412,13 @@ Autres repères :
   nulle : `setPositioning` de l'overlay n'y fait rien, sa place vient de
   sa transformation CSS (`fitPopupAround`, mapgl.js) ; et le conteneur
   n'a de taille mesurable qu'une fois l'overlay positionné.
+  Étapes empilées : `parcours-stack.spec.mjs` — zoom 10 sur la fixture
+  pour former une pile par journée ; relevés `stacks`, `stacked`, `fan`,
+  `fanPixels`, et `playStops.piles` (libellés de la dernière image). La
+  journée 2 de la fixture commence par GCPAR04 (n° 4). Une lecture qui
+  doit garder le zoom passe en caméra fixe
+  (`PUT /api/settings {parcours_playback: {camera: 'fixed'}}`, remis par
+  `cleanUp`).
   `openParcoursPage` sert une tuile vide à la place des tuiles OSM : avec
   la caméra, la suite complète recevait des 429 du serveur de tuiles, qui
   faisaient échouer un spec suivant relevant les erreurs de console

@@ -20,6 +20,8 @@
 // pastilles du parcours — les points WebGL du thème restent alors dans la
 // source (flashs, compteurs) mais leur couche est masquée (moteur ›
 // hidesPoints) — ou points du thème, numéro en petite pastille à côté.
+// Les étapes qui se recouvrent forment des piles (parcours_stack.mjs), au
+// repos comme en lecture ; au repos, une pile s'écarte en éventail au clic.
 //
 // Noms exportés uniques (parcoursXxx) : `export *` d'index.js écarte en
 // silence un nom exporté par deux modules.
@@ -122,6 +124,7 @@ import {
 } from './parcours_tracks.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
+import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
 import {
     PARCOURS_PALETTE_SIZE,
     dayColor,
@@ -504,8 +507,9 @@ function parcoursBegin(startDate, endDate, at) {
     endDay = endDate instanceof Date ? dayIndexOf(quantumBase, endDate) : (timeline?.quanta || 1) - 1;
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
-    playStopsDrawn = { drawn: 0, popping: 0, headColor: null };
+    playStopsDrawn = { drawn: 0, popping: 0, headColor: null, piles: [] };
     pkg.hideMapPopup?.();
+    closeFan();
     setPlanVisible(false);
     ensurePlayLayers();
     beginCamera();
@@ -1008,7 +1012,7 @@ function drawPlayHead(event) {
     const ctx = event.context;
     const ratio = event.frameState.pixelRatio || 1;
     const context = ol.render.getVectorContext(event);
-    drawPlayStops(context);
+    drawPlayStops(context, event.frameState.viewState.resolution);
     const level = playback.day_cards ? nightLevelAt(timeline, currentQ) : 0;
     if (level > 0) {
         ctx.save();
@@ -1054,32 +1058,56 @@ function drawPlayHead(event) {
 const NIGHT_ALPHA = 0.5;
 
 // Étapes comptées déjà atteintes, dans le rendu du plan : pastilles, ou
-// numéros à côté des points du thème (WebGL, qui apparaissent seuls). Dans
-// l'ordre de la lecture — la dernière arrivée au-dessus —, sous la nuit. Une
-// étape qui arrive grossit de rien à sa taille (stopPopScale).
-let playStopsDrawn = { drawn: 0, popping: 0, headColor: null };
+// numéros à côté des points du thème (WebGL, qui apparaissent seuls), sous
+// la nuit. Celles qui se recouvrent au zoom de l'image forment des piles,
+// comme au repos (« 4–5 », puis « 4–6 »…), à la place de leur première
+// étape. Dans l'ordre de la lecture ; une étape qui arrive fait grossir sa
+// pastille — ou sa pile — de rien à sa taille (stopPopScale).
+let playStopsDrawn = { drawn: 0, popping: 0, headColor: null, piles: [] };
 
-function drawPlayStops(context) {
+function drawPlayStops(context, resolution) {
     const labels = currentStopLabels();
     const themed = stopStyle().render === RENDER_THEME;
     const point = new ol.geom.Point([0, 0]);
+    const reached = [];
+    timeline.stops.forEach((stop, i) => {
+        if (isCountedStop(stop) && stop.q <= currentQ) reached.push(i);
+    });
+    const stacks = stackStops(reached.map((i) => stackItem(projected[i], timeline.stops[i].key, resolution)),
+        stopStyle().size * STACK_DISTANCE);
     let drawn = 0;
     let popping = 0;
-    timeline.stops.forEach((stop, i) => {
-        if (!isCountedStop(stop) || stop.q > currentQ) return;
-        const label = labels.get(stop.key) || '';
-        const paint = paintOfStop(stop);
-        const style = themed ? themeNumberStyle(paint, label) : numberedStyleFor(paint, label);
-        if (!style) return;
-        const scale = stopPopScale(currentQ - stop.q);
-        if (scale <= 0.01) return;
-        context.setStyle(scale === 1 ? style : scaledStyle(style, scale));
+    const piles = [];
+    for (const { rep, members } of stacks) {
+        const head = timeline.stops[reached[rep]];
+        const newest = timeline.stops[reached[members[members.length - 1]]];
+        const pile = members.length > 1;
+        const label = pile
+            ? stackLabel(members.map((m) => labels.get(timeline.stops[reached[m]].key) || ''))
+            : labels.get(head.key) || '';
+        if (pile) piles.push(label);
+        const paint = paintOfStop(head);
+        const styles = themed ? [themeNumberStyle(paint, label)]
+            : [...(pile ? [pileShadowStyle(paint)] : []), numberedStyleFor(paint, label, { pile })];
+        const scale = stopPopScale(currentQ - newest.q);
+        if (scale <= 0.01) continue;
         if (scale !== 1) popping++;
-        point.setCoordinates(projected[i]);
-        context.drawGeometry(point);
-        drawn++;
-    });
-    playStopsDrawn = { ...playStopsDrawn, drawn, popping };
+        point.setCoordinates(projected[reached[rep]]);
+        for (const style of styles) {
+            if (!style) continue;
+            context.setStyle(scale === 1 ? style : scaledStyle(style, scale));
+            context.drawGeometry(point);
+        }
+        drawn += members.length;
+    }
+    playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles };
+}
+
+// Position écran (px, y vers le bas) d'une étape pour le calcul des piles ;
+// `group` : sa journée.
+function stackItem(coordinate, key, resolution) {
+    const res = resolution || 1;
+    return { x: coordinate[0] / res, y: -coordinate[1] / res, group: dayIndexes().byKey.get(key) ?? 0 };
 }
 
 // Copie d'un style à l'échelle `scale`, décalages compris (numéro posé à
@@ -4405,15 +4433,19 @@ function stopIconClass(category, icon) {
 
 function pointStyle(feature) {
     const kind = feature.get('kind');
+    // Étape cachée dans une pile, ou pile ouverte en éventail : rien (ni
+    // dessin ni clic) — la pile ou l'éventail la représente.
+    if (feature.get('stacked') || (fan && fan.repKey === feature.get('key'))) return null;
+    const pile = (feature.get('stackKeys')?.length || 0) > 1;
     let normal;
     if (kind === KIND_BASE || kind === KIND_PLACE) {
         normal = placeStyle(kind);
         const badge = categoryBadgeStyle(kind, featureIconClass(feature));
         if (badge) normal = [normal, badge];
     } else if (stopStyle().render === RENDER_THEME) {
-        normal = themeNumberStyle(featurePaint(feature), feature.get('label') || '', { hit: true });
+        normal = themeNumberStyle(featurePaint(feature), featureLabel(feature), { hit: true });
     } else {
-        normal = numberedStyle(feature);
+        normal = pile ? [pileShadowStyle(featurePaint(feature)), numberedStyle(feature)] : numberedStyle(feature);
     }
     const styles = Array.isArray(normal) ? normal : [normal];
     return feature.get('hovered') ? [haloStyle(), ...styles] : normal;
@@ -4424,7 +4456,14 @@ function pointStyle(feature) {
 // sont écrits plus petit pour tenir dans la pastille. Pastille creuse (DNF
 // hors couleur par nature) : fond blanc, contour et numéro de la couleur.
 function numberedStyle(feature) {
-    return numberedStyleFor(featurePaint(feature), feature.get('label') || '');
+    return numberedStyleFor(featurePaint(feature), featureLabel(feature),
+        { pile: (feature.get('stackKeys')?.length || 0) > 1 });
+}
+
+// Numéro affiché par une feature d'étape : celui de sa pile si elle en est
+// la tête.
+function featureLabel(feature) {
+    return feature.get('stackLabel') || feature.get('label') || '';
 }
 
 function paintedCircle(paint, radius, width, extra = {}) {
@@ -4436,14 +4475,56 @@ function paintedCircle(paint, radius, width, extra = {}) {
     });
 }
 
-function numberedStyleFor(paint, label) {
-    return cachedStyle(`stop:${paint.fill}:${paint.hollow ? 1 : 0}:${label}`, ({ size }) => new ol.style.Style({
-        image: paintedCircle(paint, size, 2),
+// Pile : pastille un peu plus grande, posée sur une seconde (pileShadowStyle).
+function numberedStyleFor(paint, label, { pile = false } = {}) {
+    return cachedStyle(`stop:${paint.fill}:${paint.hollow ? 1 : 0}:${label}:${pile ? 1 : 0}`, ({ size }) => new ol.style.Style({
+        image: paintedCircle(paint, pile ? size + 2 : size, 2),
         text: label ? new ol.style.Text({
             text: label,
-            font: `600 ${numberFontPx(size, label)}px system-ui, sans-serif`,
+            font: `600 ${numberFontPx(pile ? size + 2 : size, label)}px system-ui, sans-serif`,
             fill: new ol.style.Fill({ color: paintTextColor(paint) }),
         }) : undefined,
+    }));
+}
+
+// Seconde pastille d'une pile, décalée en haut à droite derrière la
+// première : on voit qu'il y en a plusieurs.
+function pileShadowStyle(paint) {
+    return cachedStyle(`pile:${paint.fill}:${paint.hollow ? 1 : 0}`, ({ size }) => new ol.style.Style({
+        image: paintedCircle(paint, size + 2, 2, { displacement: [4, 4] }),
+    }));
+}
+
+// Éventail d'une pile ouverte : les étapes à leur place autour du centre,
+// reliées à lui par un fil, au-dessus du reste du plan (zIndex).
+const FAN_Z = 20;
+
+function fanStopStyle(feature) {
+    const base = numberedStyleFor(featurePaint(feature), feature.get('label') || '');
+    const style = cachedStyle(`fan:${featurePaint(feature).fill}:${featurePaint(feature).hollow ? 1 : 0}:${feature.get('label') || ''}`,
+        () => {
+            const copy = base.clone();
+            copy.setZIndex(FAN_Z + 2);
+            return copy;
+        });
+    return feature.get('hovered') ? [haloStyle(), style] : style;
+}
+
+function fanLineStyle() {
+    return cachedStyle('fan:line', () => new ol.style.Style({
+        stroke: new ol.style.Stroke({ color: 'rgba(33, 37, 41, 0.55)', width: 1.5 }),
+        zIndex: FAN_Z,
+    }));
+}
+
+function fanCenterStyle() {
+    return cachedStyle('fan:center', () => new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 4,
+            fill: new ol.style.Fill({ color: 'rgba(33, 37, 41, 0.75)' }),
+            stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.5 }),
+        }),
+        zIndex: FAN_Z + 1,
     }));
 }
 
@@ -4574,6 +4655,9 @@ function ensureLayer() {
                 const role = feature.get('role');
                 if (role === 'track') return trackStyle;
                 if (role === 'line') return lineStyle(dayIndexes().byDate.get(feature.get('date')) ?? 0);
+                if (role === 'fan') return fanStopStyle(feature);
+                if (role === 'fanline') return fanLineStyle();
+                if (role === 'fancenter') return fanCenterStyle();
                 if (role === 'draft') {
                     const kind = feature.get('kind');
                     const styles = [haloStyle(true), placeStyle(kind)];
@@ -4618,13 +4702,104 @@ function bindMapLink(map) {
     hoverBound = true;
     map.on('pointermove', (event) => {
         if (event.dragging || dragging) return;
-        const feature = planFeatureAt(map, event.pixel, ['stop', 'draft']);
-        highlightRowsFor(feature?.get('role') === 'stop' ? feature : null);
+        const feature = planFeatureAt(map, event.pixel, ['stop', 'draft', 'fan']);
+        highlightRowsFor(feature?.get('role') === 'draft' ? null : feature);
         const target = map.getTargetElement();
         if (target && !picking) target.style.cursor = feature ? (isDraggable(feature) ? 'grab' : 'pointer') : '';
     });
     bindPlanDrag(map);
     map.getViewport().addEventListener('contextmenu', (event) => onMapContextMenu(map, event));
+    // Piles recalculées à chaque changement de zoom (éventail refermé).
+    map.on('moveend', () => {
+        if (map.getView().getResolution() === stackResolution) return;
+        closeFan();
+        updateStacks();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeFan();
+    });
+}
+
+// --- Étapes empilées --------------------------------------------------------------
+//
+// Au repos, les étapes comptées d'une même journée qui se recouvrent au zoom
+// courant forment une pile (parcours_stack.mjs) : la première étape en
+// porte le libellé (`stackKeys`, `stackLabel`), les autres sont cachées
+// (`stacked`). Un clic l'écarte en éventail (`fan`) : features `fan`
+// (une par étape, cliquables : bulle), `fanline`, `fancenter`, retirées à la
+// fermeture (clic ailleurs, Échap, zoom, plan refait).
+let stackResolution = null;
+let fan = null;               // { repKey, keys } de la pile ouverte
+
+function stackableFeatures(source) {
+    return source.getFeatures()
+        .filter((f) => f.get('role') === 'stop' && f.get('kind') !== KIND_PLACE && f.get('kind') !== KIND_BASE)
+        .sort((a, b) => (a.get('index') ?? 0) - (b.get('index') ?? 0));
+}
+
+function updateStacks() {
+    const map = pkg.getMap?.();
+    const source = parcoursLayer?.getSource();
+    if (!map || !source) return;
+    const resolution = map.getView().getResolution();
+    stackResolution = resolution;
+    const stops = stackableFeatures(source);
+    for (const f of stops) f.setProperties({ stacked: false, stackKeys: null, stackLabel: null }, true);
+    if (resolution) {
+        const stacks = stackStops(stops.map((f) => stackItem(f.getGeometry().getCoordinates(), f.get('key'), resolution)),
+            stopStyle().size * STACK_DISTANCE);
+        for (const { rep, members } of stacks) {
+            if (members.length < 2) continue;
+            stops[rep].setProperties({
+                stackKeys: members.map((m) => stops[m].get('key')),
+                stackLabel: stackLabel(members.map((m) => stops[m].get('label') || '')),
+            }, true);
+            for (const m of members.slice(1)) stops[m].set('stacked', true, true);
+        }
+    }
+    parcoursLayer.changed();
+}
+
+function openFan(feature) {
+    const map = pkg.getMap?.();
+    const source = parcoursLayer?.getSource();
+    const keys = feature.get('stackKeys') || [];
+    if (!map || !source || keys.length < 2) return;
+    closeFan();
+    pkg.hideMapPopup?.();
+    const center = feature.getGeometry().getCoordinates();
+    const resolution = map.getView().getResolution();
+    const offsets = fanOffsets(keys.length, stopStyle().size);
+    const byKey = new Map(stackableFeatures(source).map((f) => [f.get('key'), f]));
+    const features = [new ol.Feature({ role: 'fancenter', geometry: new ol.geom.Point(center) })];
+    keys.forEach((key, i) => {
+        const stop = byKey.get(key);
+        if (!stop) return;
+        const position = [center[0] + offsets[i][0] * resolution, center[1] - offsets[i][1] * resolution];
+        features.push(new ol.Feature({ role: 'fanline', geometry: new ol.geom.LineString([center, position]) }));
+        features.push(new ol.Feature({
+            role: 'fan',
+            key,
+            kind: stop.get('kind'),
+            type: stop.get('type'),
+            label: stop.get('label'),
+            geometry: new ol.geom.Point(position),
+        }));
+    });
+    fan = { repKey: feature.get('key'), keys };
+    source.addFeatures(features);
+    parcoursLayer.changed();
+}
+
+function closeFan() {
+    if (!fan) return;
+    fan = null;
+    const source = parcoursLayer?.getSource();
+    for (const f of source?.getFeatures() || []) {
+        if (['fan', 'fanline', 'fancenter'].includes(f.get('role'))) source.removeFeature(f);
+    }
+    if (hoveredFeature && !source?.hasFeature(hoveredFeature)) hoveredFeature = null;
+    parcoursLayer?.changed();
 }
 
 // Glisser un repère : la pose est enregistrée au lâcher (un lieu ou une
@@ -4672,7 +4847,14 @@ function parcoursPopupAt(pixel) {
     if (picking || clock.running || performance.now() < clickMutedUntil) return null;
     const map = pkg.getMap?.();
     if (!map || !parcoursLayer?.getVisible()) return null;
-    const feature = planFeatureAt(map, pixel);
+    const feature = planFeatureAt(map, pixel, ['stop', 'fan']);
+    // Clic hors de l'éventail ouvert : il se referme.
+    if (fan && feature?.get('role') !== 'fan') closeFan();
+    // Une pile s'écarte en éventail, sans bulle.
+    if (feature?.get('role') === 'stop' && (feature.get('stackKeys')?.length || 0) > 1) {
+        openFan(feature);
+        return { handled: true };
+    }
     const stop = feature ? stopByKey(feature.get('key')) : null;
     if (!stop) return null;
     el('parcoursStops')?.querySelector(`[data-stop-key="${CSS.escape(stop.key)}"]`)
@@ -4772,7 +4954,7 @@ function onMapContextMenu(map, event) {
     const pixel = map.getEventPixel(event);
     const own = parcoursPopupAt(pixel);
     if (own) {
-        pkg.showMapPopup?.(own.coordinate, own.render);
+        if (own.coordinate) pkg.showMapPopup?.(own.coordinate, own.render);
         return;
     }
     const coordinate = map.getCoordinateFromPixel(pixel);
@@ -4800,11 +4982,17 @@ function onMapContextMenu(map, event) {
 // Feature du plan correspondant à une étape : la clé pour un point donné,
 // le lieu pour une base dessinée une seule fois quelles que soient ses
 // occurrences dans les journées.
+// Étape d'une pile : la pile (ou, éventail ouvert, sa place dans l'éventail).
 function stopFeatureFor(stop) {
     const source = parcoursLayer?.getSource();
     if (!source || !stop) return null;
-    return source.getFeatures().find((f) => f.get('role') === 'stop'
+    const features = source.getFeatures();
+    const fanned = features.find((f) => f.get('role') === 'fan' && f.get('key') === stop.key);
+    if (fanned) return fanned;
+    const feature = features.find((f) => f.get('role') === 'stop'
         && (f.get('key') === stop.key || (stop.placeId != null && f.get('placeId') === stop.placeId))) || null;
+    if (!feature?.get('stacked')) return feature;
+    return features.find((f) => f.get('role') === 'stop' && f.get('stackKeys')?.includes(stop.key)) || feature;
 }
 
 function setHoveredStop(stop) {
@@ -4821,10 +5009,11 @@ function highlightRowsFor(feature) {
     const rows = [];
     const box = el('parcoursStops');
     if (feature && box) {
-        const key = feature.get('key');
+        // Une pile : les lignes de toutes ses étapes.
+        const keys = feature.get('stackKeys') || [feature.get('key')];
         const placeId = feature.get('placeId');
         for (const row of box.querySelectorAll('.parcours-stop')) {
-            if (row.dataset.stopKey === key || (placeId != null && row.dataset.placeId === String(placeId))) {
+            if (keys.includes(row.dataset.stopKey) || (placeId != null && row.dataset.placeId === String(placeId))) {
                 rows.push(row);
             }
         }
@@ -4842,6 +5031,7 @@ function renderLayer({ fit = false } = {}) {
     const source = layer.getSource();
     source.clear();
     hoveredFeature = null;
+    fan = null;
     if (!ordered) return;
     const features = [];
     for (const track of inputs?.tracks || []) {
@@ -4901,6 +5091,7 @@ function renderLayer({ fit = false } = {}) {
         const extent = parcoursExtent(parcoursStops(ordered));
         if (extent) fitParcours(extent);
     }
+    updateStacks();
 }
 
 function fitParcours(lonLatExtent) {
@@ -5014,6 +5205,17 @@ export function getParcoursSnapshot() {
                 }];
             })),
         themePoints: !!pkg.mainPointsLayerVisible?.(),
+        // Piles du plan (tête, étapes, libellé), éventail ouvert et position
+        // écran de ses étapes.
+        stacks: (source?.getFeatures() || [])
+            .filter((f) => f.get('role') === 'stop' && (f.get('stackKeys')?.length || 0) > 1)
+            .map((f) => ({ key: f.get('key'), keys: [...f.get('stackKeys')], label: f.get('stackLabel') }))
+            .sort((a, b) => a.keys.length - b.keys.length || a.key.localeCompare(b.key)),
+        stacked: (source?.getFeatures() || []).filter((f) => f.get('stacked')).map((f) => f.get('key')),
+        fan: fan ? { key: fan.repKey, keys: [...fan.keys] } : null,
+        fanPixels: Object.fromEntries((source?.getFeatures() || [])
+            .filter((f) => f.get('role') === 'fan')
+            .map((f) => [f.get('key'), pkg.getMap?.()?.getPixelFromCoordinate(f.getGeometry().getCoordinates())])),
         playStops: { ...playStopsDrawn },
         planLine: (() => {
             const style = lineStyle();

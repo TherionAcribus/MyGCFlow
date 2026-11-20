@@ -854,9 +854,12 @@ export function initPopupOverlay(){
         const pixel = evt.pixel;
         // Page dont le moteur a ses propres objets cliquables (Parcours :
         // étapes du plan, avec leurs actions) : ils passent avant les points.
+        // Sans `coordinate` : clic traité par la page (Parcours : une pile
+        // d'étapes qui s'écarte en éventail), sans bulle.
         const own = isLifecyclePage() ? lifecycleEngine()?.popupAt?.(pixel) : null;
         if (own) {
-            showMapPopup(own.coordinate, own.render);
+            if (own.coordinate) showMapPopup(own.coordinate, own.render);
+            else hidePopup();
             return;
         }
         const feature = map.forEachFeatureAtPixel(pixel, function(ft, layer){
