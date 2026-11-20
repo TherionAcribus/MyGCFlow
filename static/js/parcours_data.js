@@ -14,8 +14,12 @@
 // moteur. Les dates du moteur partent d'une origine fictive (QUANTUM_ORIGIN) :
 // la vraie date et l'heure passent par `infosValues`.
 //
-// Au repos, le plan (points numérotés reliés par jour, `parcoursLayer`) se
-// superpose aux étapes ; il est masqué pendant la lecture.
+// Au repos, le plan (`parcoursLayer` : étapes reliées par jour) ; il est
+// masqué pendant la lecture, où les mêmes étapes sont dessinées image par
+// image. Un seul rendu dans les deux cas (`points.parcours_style.render`) :
+// pastilles du parcours — les points WebGL du thème restent alors dans la
+// source (flashs, compteurs) mais leur couche est masquée (moteur ›
+// hidesPoints) — ou points du thème, numéro en petite pastille à côté.
 //
 // Noms exportés uniques (parcoursXxx) : `export *` d'index.js écarte en
 // silence un nom exporté par deux modules.
@@ -125,6 +129,8 @@ import {
     numberFontPx,
     parcoursStyleDefaults,
     stopNumberLabels,
+    stopPopScale,
+    themeNumberBadge,
 } from './parcours_style.mjs';
 
 const LAST_ID_KEY = 'parcours.lastId';
@@ -134,6 +140,9 @@ const PLAN_LINE_ALPHA = 0.55;
 // Plan au repos au-dessus des points WebGL (zIndex 1001) : ses numéros
 // restent lisibles. Masqué pendant la lecture.
 const LAYER_Z_INDEX = 1060;
+// Rendu des étapes (`points.parcours_style.render`), au repos comme en lecture.
+const RENDER_STOPS = 'stops';
+const RENDER_THEME = 'theme';
 // Cadrage d'un parcours : une sortie tient souvent dans quelques kilomètres.
 const FIT_MAX_ZOOM = 16;
 
@@ -490,6 +499,7 @@ function parcoursBegin(startDate, endDate, at) {
     endDay = endDate instanceof Date ? dayIndexOf(quantumBase, endDate) : (timeline?.quanta || 1) - 1;
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
+    playStopsDrawn = { drawn: 0, popping: 0 };
     setPlanVisible(false);
     ensurePlayLayers();
     beginCamera();
@@ -770,6 +780,7 @@ const PARCOURS_ENGINE = Object.freeze({
     maxEventsInWindow: maxStopsInWindow,
     renderPopup: renderParcoursPopup,
     styleChanged: parcoursStyleChanged,
+    hidesPoints: () => stopStyle().render === RENDER_STOPS,
 });
 
 // --- Caméra de la lecture --------------------------------------------------------
@@ -953,6 +964,8 @@ function drawPlayHead(event) {
     if (!head) return;
     const ctx = event.context;
     const ratio = event.frameState.pixelRatio || 1;
+    const context = ol.render.getVectorContext(event);
+    drawPlayStops(context);
     const level = playback.day_cards ? nightLevelAt(timeline, currentQ) : 0;
     if (level > 0) {
         ctx.save();
@@ -960,11 +973,13 @@ function drawPlayHead(event) {
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.restore();
     }
-    const context = ol.render.getVectorContext(event);
     timeline.stops.forEach((stop, i) => {
         if (stop.kind === KIND_BASE || (stop.kind === KIND_PLACE && stop.q <= currentQ)) {
-            context.setStyle(placeStyle(stop.kind));
-            context.drawGeometry(new ol.geom.Point(projected[i]));
+            const badge = categoryBadgeStyle(stop.kind, stopIconClass(stop.category, stop.icon));
+            for (const style of badge ? [placeStyle(stop.kind), badge] : [placeStyle(stop.kind)]) {
+                context.setStyle(style);
+                context.drawGeometry(new ol.geom.Point(projected[i]));
+            }
         }
     });
     const { solid: color } = trailOptions();
@@ -993,6 +1008,53 @@ function drawPlayHead(event) {
 }
 
 const NIGHT_ALPHA = 0.5;
+
+// Étapes comptées déjà atteintes, dans le rendu du plan : pastilles, ou
+// numéros à côté des points du thème (WebGL, qui apparaissent seuls). Dans
+// l'ordre de la lecture — la dernière arrivée au-dessus —, sous la nuit. Une
+// étape qui arrive grossit de rien à sa taille (stopPopScale).
+let playStopsDrawn = { drawn: 0, popping: 0 };
+
+function drawPlayStops(context) {
+    const labels = currentStopLabels();
+    const themed = stopStyle().render === RENDER_THEME;
+    const point = new ol.geom.Point([0, 0]);
+    let drawn = 0;
+    let popping = 0;
+    timeline.stops.forEach((stop, i) => {
+        if (!isCountedStop(stop) || stop.q > currentQ) return;
+        const label = labels.get(stop.key) || '';
+        const style = themed ? themeNumberStyle(stop.kind, label) : numberedStyleFor(stop.kind, label);
+        if (!style) return;
+        const scale = stopPopScale(currentQ - stop.q);
+        if (scale <= 0.01) return;
+        context.setStyle(scale === 1 ? style : scaledStyle(style, scale));
+        if (scale !== 1) popping++;
+        point.setCoordinates(projected[i]);
+        context.drawGeometry(point);
+        drawn++;
+    });
+    playStopsDrawn = { drawn, popping };
+}
+
+// Copie d'un style à l'échelle `scale`, décalages compris (numéro posé à
+// côté d'un point du thème).
+function scaledStyle(style, scale) {
+    const copy = style.clone();
+    const image = copy.getImage();
+    if (image) {
+        image.setScale(scale);
+        const shift = image.getDisplacement();
+        if (shift[0] || shift[1]) image.setDisplacement([shift[0] * scale, shift[1] * scale]);
+    }
+    const text = copy.getText();
+    if (text) {
+        text.setScale(scale);
+        text.setOffsetX(text.getOffsetX() * scale);
+        text.setOffsetY(text.getOffsetY() * scale);
+    }
+    return copy;
+}
 
 // Pictogrammes de la tête : glyphes de Tabler Icons lus dans la feuille de
 // style (le sous-ensemble ne garde que les icônes citées dans le code).
@@ -4038,6 +4100,7 @@ function styleColorIds() {
 function readStyleUI() {
     const value = (id) => el(id)?.value;
     return normalizeParcoursStyle({
+        render: value('parcoursStyleRender'),
         numbers: value('parcoursStyleNumbers'),
         size: value('parcoursStyleSize'),
         colors: Object.fromEntries(Object.entries(styleColorIds()).map(([kind, id]) => [kind, value(id)])),
@@ -4059,6 +4122,7 @@ function commitParcoursStyle(style) {
 // chaque image. Aussi appelé par mapgl.js quand la couche de points est
 // recréée (chargement d'un thème : moteur › styleChanged).
 function parcoursStyleChanged() {
+    pkg.syncSoloLayers?.();
     renderLayer();
     renderStops();
 }
@@ -4074,6 +4138,7 @@ export function syncParcoursStyleUI() {
         if (input) input.value = String(value);
     };
     numbers.value = style.numbers;
+    set('parcoursStyleRender', style.render);
     set('parcoursStyleSize', style.size);
     for (const [kind, id] of Object.entries(styleColorIds())) set(id, style.colors[kind]);
     set('parcoursStylePlanLine', style.plan_line);
@@ -4086,7 +4151,7 @@ export function syncParcoursStyleUI() {
 
 function bindParcoursStyle() {
     const commit = () => commitParcoursStyle(readStyleUI());
-    for (const id of ['parcoursStyleNumbers', 'parcoursStyleSize', 'parcoursStylePlanLine',
+    for (const id of ['parcoursStyleRender', 'parcoursStyleNumbers', 'parcoursStyleSize', 'parcoursStylePlanLine',
         'parcoursStyleTrailColor', 'parcoursStyleTrailWidth', ...Object.values(styleColorIds())]) {
         el(id)?.addEventListener('change', commit);
     }
@@ -4158,8 +4223,11 @@ function haloStyle(draft = false) {
 // Classe d'icône de catégorie portée par une feature du plan (lieu, base ou
 // brouillon de pose) : « custom » lit l'icône libre.
 function featureIconClass(feature) {
-    const category = feature.get('category');
-    if (category === 'custom') return /^ti-[a-z0-9-]+$/.test(feature.get('icon') || '') ? feature.get('icon') : null;
+    return stopIconClass(feature.get('category'), feature.get('icon'));
+}
+
+function stopIconClass(category, icon) {
+    if (category === 'custom') return /^ti-[a-z0-9-]+$/.test(icon || '') ? icon : null;
     return CATEGORY_ICONS[category] || null;
 }
 
@@ -4170,6 +4238,8 @@ function pointStyle(feature) {
         normal = placeStyle(kind);
         const badge = categoryBadgeStyle(kind, featureIconClass(feature));
         if (badge) normal = [normal, badge];
+    } else if (stopStyle().render === RENDER_THEME) {
+        normal = themeNumberStyle(kind, feature.get('label') || '', { hit: true });
     } else {
         normal = numberedStyle(feature);
     }
@@ -4181,8 +4251,10 @@ function pointStyle(feature) {
 // Le texte passe en sombre sur une couleur claire ; trois chiffres et plus
 // sont écrits plus petit pour tenir dans la pastille.
 function numberedStyle(feature) {
-    const kind = feature.get('kind');
-    const label = feature.get('label') || '';
+    return numberedStyleFor(feature.get('kind'), feature.get('label') || '');
+}
+
+function numberedStyleFor(kind, label) {
     return cachedStyle(`stop:${kind}:${label}`, ({ size }) => {
         const fill = kindColor(kind);
         return new ol.style.Style({
@@ -4197,6 +4269,54 @@ function numberedStyle(feature) {
                 fill: new ol.style.Fill({ color: contrastTextColor(fill) }),
             }) : undefined,
         });
+    });
+}
+
+// Rendu « points du thème » : le point est celui du thème (couche WebGL) ;
+// le plan n'y ajoute que le numéro, dans une petite pastille en haut à
+// droite (rien sans numéro). Au repos (`hit`), un disque invisible de la
+// taille d'une pastille garde l'étape survolable et cliquable.
+const HIT_FILL = 'rgba(255, 255, 255, 0.01)';
+
+// Rayon approché du point du thème (centre + contour), pour poser le numéro
+// à côté.
+function themePointRadius() {
+    const point = pkg.options?.point || {};
+    const center = Math.max(1, parseInt(point.center?.size, 10) || 3);
+    const border = point.border?.mode === 'none' ? 0 : Math.max(0, parseInt(point.border?.size, 10) || 0) / 5;
+    return center + border;
+}
+
+function themeNumberStyle(kind, label, { hit = false } = {}) {
+    const themeRadius = themePointRadius();
+    return cachedStyle(`theme:${kind}:${label}:${hit ? 1 : 0}:${themeRadius}`, ({ size }) => {
+        const styles = [];
+        if (hit) {
+            styles.push(new ol.style.Style({
+                image: new ol.style.Circle({ radius: Math.max(size, themeRadius), fill: new ol.style.Fill({ color: HIT_FILL }) }),
+            }));
+        }
+        if (label) {
+            const { radius, offset } = themeNumberBadge(size, themeRadius);
+            const fill = kindColor(kind);
+            styles.push(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius,
+                    displacement: offset,
+                    fill: new ol.style.Fill({ color: fill }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.5 }),
+                }),
+                text: new ol.style.Text({
+                    text: label,
+                    font: `600 ${numberFontPx(radius, label)}px system-ui, sans-serif`,
+                    fill: new ol.style.Fill({ color: contrastTextColor(fill) }),
+                    // Texte : y vers le bas, à l'inverse de `displacement`.
+                    offsetX: offset[0],
+                    offsetY: -offset[1],
+                }),
+            }));
+        }
+        return hit ? styles : (styles[0] || null);
     });
 }
 
@@ -4517,22 +4637,31 @@ export function getParcoursSnapshot() {
             modes: (timeline?.legs || []).filter((leg) => !leg.night).map((leg) => leg.mode),
         },
         // Apparence des étapes et du trait (thème, points.parcours_style) et
-        // ce que le plan en fait : numéro et couleur de chaque pastille,
-        // style de la ligne (null : aucune).
+        // ce que le plan en fait : numéro et couleur de chaque pastille (rendu
+        // thème : de la pastille du numéro, `offset` = son décalage), style
+        // de la ligne (null : aucune). `themePoints` : couche WebGL des points
+        // du thème affichée ; `playStops` : étapes peintes à la dernière image
+        // de la lecture (dont en train d'apparaître).
         style: stopStyle(),
         stopStyles: Object.fromEntries((source?.getFeatures() || [])
             .filter((f) => f.get('role') === 'stop')
             .map((f) => {
                 const kind = f.get('kind');
-                const main = kind === KIND_BASE || kind === KIND_PLACE ? placeStyle(kind) : numberedStyle(f);
+                let main;
+                if (kind === KIND_BASE || kind === KIND_PLACE) main = placeStyle(kind);
+                else if (stopStyle().render === RENDER_THEME) main = themeNumberStyle(kind, f.get('label') || '');
+                else main = numberedStyle(f);
                 const image = main?.getImage();
                 return [f.get('key'), {
                     label: main?.getText()?.getText() || '',
                     color: image?.getFill()?.getColor() || null,
                     textColor: main?.getText()?.getFill()?.getColor() || null,
                     radius: image?.getRadius?.() ?? null,
+                    offset: image?.getDisplacement?.() || null,
                 }];
             })),
+        themePoints: !!pkg.mainPointsLayerVisible?.(),
+        playStops: { ...playStopsDrawn },
         planLine: (() => {
             const style = lineStyle();
             const stroke = style?.getStroke();

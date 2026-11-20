@@ -1088,7 +1088,7 @@ function displayWebGLPoints(features, pointOptions, appear = null) {
             ...(evolution ? { filter: EVO_FILTER } : {}),
             variables: pointStyleVariables,
             zIndex: 1001,
-            visible: !soloActive(),
+            visible: !mainPointsHidden(),
         });
         map.addLayer(vectorLayer);
         if (isPosesPage()) {
@@ -6403,9 +6403,23 @@ function soloActive() {
     return !!pkg.zonesOnly?.();
 }
 
+// Points de la couche principale masqués : mode solo, ou page dont le moteur
+// dessine lui-même ses points (Parcours en rendu « pastilles », au repos comme
+// en lecture). Ils restent dans la source : flashs, compteurs et étendue en
+// dépendent.
+function mainPointsHidden() {
+    return soloActive() || !!lifecycleEngine()?.hidesPoints?.();
+}
+
+// Visibilité effective de la couche principale (relevés de tests).
+export function mainPointsLayerVisible() {
+    return !!vectorLayer && isLayerOnMap(map, vectorLayer) && vectorLayer.getVisible();
+}
+
 export function syncSoloLayers() {
     const solo = soloActive();
-    for (const layer of [vectorLayer, posesActivityLayer, ownerLayer, ownerRingLayer, dnfLayer, dnfRingLayer]) {
+    if (vectorLayer) vectorLayer.setVisible(!mainPointsHidden());
+    for (const layer of [posesActivityLayer, ownerLayer, ownerRingLayer, dnfLayer, dnfRingLayer]) {
         if (layer) layer.setVisible(!solo);
     }
     if (trailLayer) trailLayer.setVisible(!solo && !!(trailState || trailPreview));

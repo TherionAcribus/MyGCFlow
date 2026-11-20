@@ -258,6 +258,13 @@
         </div>
         <div class="card-body">
             <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="parcoursStyleRender">{{ _("Rendu des étapes") }}</label>
+                    <select id="parcoursStyleRender" class="form-select" aria-describedby="helpParcoursStops">
+                        <option value="stops">{{ _("Pastilles du parcours") }}</option>
+                        <option value="theme">{{ _("Points du thème") }}</option>
+                    </select>
+                </div>
                 <div class="col-6 col-md-4">
                     <label class="form-label" for="parcoursStyleNumbers">{{ _("Numéros des étapes") }}</label>
                     <select id="parcoursStyleNumbers" class="form-select" aria-describedby="helpParcoursStops">
@@ -299,7 +306,7 @@
                     <i class="ti ti-refresh me-1"></i>{{ _("Couleurs par défaut") }}
                 </button>
             </div>
-            <small id="helpParcoursStops" class="form-hint text-muted">{{ _("Pastilles du plan affiché au repos. Pendant la lecture, les caches prennent le graphisme ci-dessus ; les lieux et les bases gardent leur couleur. Le texte des numéros passe en sombre sur une couleur claire.") }}</small>
+            <small id="helpParcoursStops" class="form-hint text-muted">{{ _("Le même rendu au repos, pendant la lecture et dans la vidéo. Pastilles : une couleur par nature d'étape, numéro au centre. Points du thème : le graphisme réglé ci-dessus, numéro dans une petite pastille à côté. Les lieux et les bases gardent leur couleur dans les deux cas ; le texte des numéros passe en sombre sur une couleur claire.") }}</small>
         </div>
     </div>
     {% endif %}

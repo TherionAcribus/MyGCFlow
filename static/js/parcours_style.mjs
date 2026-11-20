@@ -9,6 +9,7 @@
 
 export const PARCOURS_STYLE_KINDS = Object.freeze(['find', 'lab', 'dnf', 'place', 'base']);
 export const PARCOURS_STYLE_CHOICES = Object.freeze({
+    render: Object.freeze(['stops', 'theme']),
     numbers: Object.freeze(['trip', 'day', 'none']),
     plan_line: Object.freeze(['dashed', 'solid', 'none']),
 });
@@ -22,6 +23,7 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 export function parcoursStyleDefaults() {
     return {
+        render: 'stops',
         size: 11,
         numbers: 'trip',
         colors: { find: '#0072c6', lab: '#f59f00', dnf: '#868e96', place: '#ae3ec9', base: '#343a40' },
@@ -58,6 +60,7 @@ export function normalizeParcoursStyle(raw, current = null) {
     const choice = (key) => (PARCOURS_STYLE_CHOICES[key].includes(src[key]) ? src[key]
         : (PARCOURS_STYLE_CHOICES[key].includes(base[key]) ? base[key] : defaults[key]));
     const out = {
+        render: choice('render'),
         numbers: choice('numbers'),
         plan_line: choice('plan_line'),
         trail_color: color(src.trail_color, color(base.trail_color, defaults.trail_color)),
@@ -89,6 +92,32 @@ export function stopNumberLabels(ordered, mode) {
         }
     }
     return labels;
+}
+
+// Apparition d'une étape pendant la lecture : la pastille grossit de rien à
+// sa taille en STOP_POP_QUANTA quanta (300 ms d'écran), avec un léger
+// dépassement (≈ ×1,1) avant de se poser. `elapsedQ` : quanta écoulés depuis
+// l'arrivée (négatif : pas encore là).
+export const STOP_POP_QUANTA = 3;
+
+export function stopPopScale(elapsedQ) {
+    const value = Number(elapsedQ);
+    if (!Number.isFinite(value) || value <= 0) return 0;
+    if (value >= STOP_POP_QUANTA) return 1;
+    const t = value / STOP_POP_QUANTA - 1;
+    const c1 = 1.70158;
+    return 1 + (c1 + 1) * t ** 3 + c1 * t ** 2;
+}
+
+// Rendu « points du thème » : numéro dans une petite pastille posée en haut
+// à droite du point, sans le recouvrir. `themeRadius` : rayon du point du
+// thème (centre + contour, px). Décalage en px, y vers le haut (convention
+// `displacement` d'OpenLayers).
+export function themeNumberBadge(size, themeRadius) {
+    const radius = Math.max(6, Math.round(Number(size) * 0.7) || 6);
+    const reach = Math.max(0, Number(themeRadius) || 0) + radius * 0.45;
+    const offset = Math.round(reach * Math.SQRT1_2);
+    return { radius, offset: [offset, offset] };
 }
 
 // Taille de police d'un numéro dans une pastille de rayon `radius` : la

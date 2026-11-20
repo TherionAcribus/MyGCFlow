@@ -47,7 +47,9 @@ function countedKeys(snap) {
 test('défauts : pastilles numérotées sur tout le parcours, ligne du plan à la couleur du trait', async ({ page }) => {
   const errors = collectErrors(page);
   const snap = await openReady(page);
-  expect(snap.style).toMatchObject({ size: 11, numbers: 'trip', plan_line: 'dashed', trail_color: '#00b8d4' });
+  // Rendu « pastilles » : les points du thème ne sont pas dessinés dessous.
+  expect(snap.themePoints).toBe(false);
+  expect(snap.style).toMatchObject({ render: 'stops', size: 11, numbers: 'trip', plan_line: 'dashed', trail_color: '#00b8d4' });
   const [day1, day2] = countedKeys(snap);
   expect(day1.length).toBeGreaterThan(1);
   expect(day2.length).toBeGreaterThan(0);
@@ -150,5 +152,55 @@ test('un thème chargé remet ses réglages dans les contrôles et le plan', asy
   const snap = await snapshot(page);
   const [, day2] = countedKeys(snap);
   expect(snap.stopStyles[day2[0]]).toMatchObject({ label: '1', radius: 9 });
+  expect(errors).toEqual([]);
+});
+
+// Rendu unique : le plan au repos et la lecture dessinent les étapes de la
+// même façon — pastilles du parcours, ou points du thème avec le numéro à côté.
+test('rendu des étapes : pastilles ou points du thème, identique au repos et en lecture', async ({ page }) => {
+  const errors = collectErrors(page);
+  let snap = await openReady(page);
+  const [day1] = countedKeys(snap);
+  const counted = snap.days.flatMap((day) => day.keys).filter((key) => snap.stopStyles[key]?.label).length;
+
+  // Pastilles : la lecture les peint elle-même, points du thème masqués.
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).playStops.drawn).toBeGreaterThan(0);
+  expect((await snapshot(page)).themePoints).toBe(false);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+
+  await openStyleSubtab(page, '#tabPoints');
+  await page.locator('#parcoursStyleRender').selectOption('theme');
+  await expect.poll(async () => (await snapshot(page)).themePoints).toBe(true);
+  snap = await snapshot(page);
+  // Numéro dans une petite pastille, décalée en haut à droite du point.
+  const badge = snap.stopStyles[day1[0]];
+  expect(badge).toMatchObject({ label: '1', color: '#0072c6', radius: 8 });
+  expect(badge.offset[0]).toBeGreaterThan(0);
+  expect(badge.offset[1]).toBeGreaterThan(0);
+  expect(snap.layer.stops).toBeGreaterThanOrEqual(counted);
+
+  // L'étape reste survolable par son point (disque invisible).
+  const [x, y] = snap.stopPixels[day1[0]];
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.move(box.x + x, box.y + y);
+  await expect.poll(async () => (await snapshot(page)).mapHover).toContain(day1[0]);
+
+  // Sans numéro : plus rien du plan sur les étapes, le point du thème seul.
+  await page.locator('#parcoursStyleNumbers').selectOption('none');
+  await expect.poll(async () => (await snapshot(page)).stopStyles[day1[0]]?.label).toBe('');
+  await page.locator('#parcoursStyleNumbers').selectOption('trip');
+
+  // Lecture en rendu thème : les numéros suivent les points qui apparaissent.
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).playStops.drawn).toBeGreaterThan(0);
+  expect((await snapshot(page)).themePoints).toBe(true);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+
+  await page.locator('#parcoursStyleRender').selectOption('stops');
+  await expect.poll(async () => (await snapshot(page)).themePoints).toBe(false);
+  expect((await snapshot(page)).stopStyles[day1[0]]).toMatchObject({ label: '1', radius: 11, offset: [0, 0] });
   expect(errors).toEqual([]);
 });

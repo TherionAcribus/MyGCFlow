@@ -2,15 +2,17 @@
 
 Bloc du thème `points.parcours_style` :
 
-- étapes du plan (au repos) : rayon des pastilles, numérotation (sur tout le
-  parcours, par journée, aucune) et couleur par nature d'étape — les lieux et
-  les bases gardent la leur aussi pendant la lecture ;
+- rendu des étapes, le même au repos et pendant la lecture : pastilles du
+  parcours (couleur par nature d'étape, points du thème masqués) ou points
+  du thème (numéro en petite pastille à côté) ;
+- étapes : rayon des pastilles, numérotation (sur tout le parcours, par
+  journée, aucune) et couleur par nature d'étape — les lieux et les bases
+  gardent la leur dans les deux rendus ;
 - ligne du plan entre les étapes d'une journée : pointillés, pleine, aucune ;
 - trait de la lecture (et de la vidéo) : couleur, épaisseur, opacité. Le
   géocacheur en prend la couleur.
 
-Les points du thème (onglet Points) restent ceux des étapes pendant la
-lecture. Le trait du mode principal (`trail`) ne sert plus sur cette page :
+Le trait du mode principal (`trail`) ne sert plus sur cette page :
 le thème étant partagé, le régler ici ne change pas la page principale.
 
 Copie JS : static/js/parcours_style.mjs ; tests/test_parcours_style.py écrit
@@ -23,6 +25,7 @@ from __future__ import annotations
 import re
 
 KINDS = ("find", "lab", "dnf", "place", "base")
+RENDERS = ("stops", "theme")
 NUMBERS = ("trip", "day", "none")
 PLAN_LINES = ("dashed", "solid", "none")
 
@@ -45,9 +48,10 @@ def colors_defaults() -> dict:
 
 
 def parcours_style_defaults() -> dict:
-    """Bloc du thème par défaut : le rendu d'avant le réglage, sauf la ligne
-    du plan, qui prend la couleur du trait."""
+    """Bloc du thème par défaut : pastilles du parcours au repos comme en
+    lecture, numérotées sur tout le parcours."""
     return {
+        "render": "stops",
         "size": 11,
         "numbers": "trip",
         "colors": colors_defaults(),
@@ -86,6 +90,7 @@ def coerce_parcours_style(raw, current: dict | None = None) -> dict:
     base = {**defaults, **{k: v for k, v in cur.items() if k in defaults}}
     src = raw if isinstance(raw, dict) else {}
     out = {
+        "render": _choice(src.get("render"), RENDERS, base["render"]),
         "numbers": _choice(src.get("numbers"), NUMBERS, base["numbers"]),
         "plan_line": _choice(src.get("plan_line"), PLAN_LINES, base["plan_line"]),
         "trail_color": _color(src.get("trail_color"), base["trail_color"]),
@@ -105,6 +110,6 @@ def parcours_style_table() -> dict:
     return {
         "defaults": parcours_style_defaults(),
         "kinds": list(KINDS),
-        "choices": {"numbers": list(NUMBERS), "plan_line": list(PLAN_LINES)},
+        "choices": {"render": list(RENDERS), "numbers": list(NUMBERS), "plan_line": list(PLAN_LINES)},
         "ranges": {key: list(r) for key, r in RANGES.items()},
     }

@@ -9,6 +9,10 @@
       "dashed",
       "solid",
       "none"
+    ],
+    "render": [
+      "stops",
+      "theme"
     ]
   },
   "defaults": {
@@ -21,6 +25,7 @@
     },
     "numbers": "trip",
     "plan_line": "dashed",
+    "render": "stops",
     "size": 11,
     "trail_color": "#00b8d4",
     "trail_opacity": 100,

@@ -118,6 +118,7 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
 
 | Clé | Valeurs (défaut en premier) | Où |
 |---|---|---|
+| `render` | `stops` (pastilles du parcours), `theme` (points du thème) | Style › Points, carte « Étapes du parcours » |
 | `numbers` | `trip` (rang sur tout le parcours), `day` (rang dans la journée), `none` | Style › Points, carte « Étapes du parcours » |
 | `size` | rayon des pastilles, 7-18 px : 11 | idem |
 | `colors` | `find` #0072c6, `lab` #f59f00, `dnf` #868e96, `place` #ae3ec9, `base` #343a40 | idem |
@@ -130,8 +131,25 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
   rétrécit à partir de trois chiffres (`numberFontPx`).
 - La ligne du plan prend la couleur et l'épaisseur du trait, à 55 % de son
   opacité ; le géocacheur prend la couleur du trait, opaque.
-- Pendant la lecture, les caches gardent les points du thème (onglet
-  Points) ; les lieux et les bases gardent leur couleur.
+- **Un seul rendu** (depuis le 2026-11-20), au repos, pendant la lecture
+  et dans la vidéo :
+  - `stops` : les étapes comptées sont des pastilles numérotées, dessinées
+    par la page — le plan au repos, `drawPlayStops` image par image en
+    lecture. La couche WebGL des points du thème est masquée (moteur ›
+    `hidesPoints`, lu par `mainPointsHidden` de mapgl.js) mais garde ses
+    features : flashs, compteurs et étendue en dépendent.
+  - `theme` : les points du thème (onglet Points) sont affichés ; le plan
+    et la lecture n'y ajoutent que le numéro, dans une petite pastille en
+    haut à droite (`themeNumberBadge`, posée d'après le rayon approché du
+    point : centre + contour). Au repos, un disque invisible garde l'étape
+    survolable et cliquable.
+  - En lecture, une étape qui arrive grossit de rien à sa taille en 3
+    quanta (`stopPopScale`, léger dépassement) ; la dernière arrivée est
+    dessinée au-dessus (au repos, c'est le n° 1). Lieux et bases gardent
+    leur couleur et leur pastille de catégorie dans les deux rendus.
+  - Avant, le plan posait ses pastilles PAR-DESSUS les points du thème,
+    affichés aussi au repos, et la lecture ne montrait que les points du
+    thème, sans numéros : la vidéo ne ressemblait pas au plan préparé.
 - Le sous-onglet Trajet du mode principal reste masqué sur les pages cycle
   de vie : le thème étant partagé, régler `trail` d'ici changerait la page
   principale. Avant ce bloc, la lecture lisait `trail.color` / `trail.width`
@@ -154,7 +172,9 @@ La page passe par le moteur « cycle de vie » d'Évolution et de Mes poses
 Un « jour » du moteur y est un **quantum de temps écran** : 100 ms à la
 vitesse naturelle, 10 quanta par seconde.
 - Chaque étape est une feature WebGL dont `placedDay` est le quantum de son
-  arrivée : le shader la fait apparaître, `mapgl.js` joue le flash.
+  arrivée : le shader la fait apparaître, `mapgl.js` joue le flash. En
+  rendu « pastilles », cette couche est masquée et les pastilles sont
+  peintes par la page (voir « Apparence des étapes et du trait »).
 - Les dates du moteur partent d'une origine fictive (1er janvier 2000), qui
   n'est jamais affichée.
 - Durée totale, calage sur la musique, pause, enregistrement image par image
