@@ -50,6 +50,12 @@ class ParcoursStyleTests(unittest.TestCase):
         self.assertNotIn("unknown", out["colors"])
         self.assertEqual(ps.coerce_parcours_style({"size": True})["size"], 11)
         self.assertEqual(ps.coerce_parcours_style({"size": float("nan")})["size"], 11)
+        # Couleur par journée / type, trait aux couleurs des journées.
+        self.assertEqual(ps.coerce_parcours_style({"color_by": "day"})["color_by"], "day")
+        self.assertEqual(ps.coerce_parcours_style({"color_by": "rainbow"})["color_by"], "kind")
+        self.assertIs(ps.coerce_parcours_style({"trail_by_day": True})["trail_by_day"], True)
+        self.assertIs(ps.coerce_parcours_style({"trail_by_day": "yes"})["trail_by_day"], False)
+        self.assertIs(ps.coerce_parcours_style({}, {"trail_by_day": True})["trail_by_day"], True)
 
     def test_absent_fields_keep_the_current_value(self):
         current = ps.coerce_parcours_style({"numbers": "day", "colors": {"find": "#112233"}})

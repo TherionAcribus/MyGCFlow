@@ -6,11 +6,12 @@ Bloc du thème `points.parcours_style` :
   parcours (couleur par nature d'étape, points du thème masqués) ou points
   du thème (numéro en petite pastille à côté) ;
 - étapes : rayon des pastilles, numérotation (sur tout le parcours, par
-  journée, aucune) et couleur par nature d'étape — les lieux et les bases
-  gardent la leur dans les deux rendus ;
+  journée, aucune) et couleur — par nature d'étape, par journée (palette
+  DAY_PALETTE) ou par type de cache (couleurs Geocaching) ; les lieux et les
+  bases gardent la leur dans tous les cas ;
 - ligne du plan entre les étapes d'une journée : pointillés, pleine, aucune ;
-- trait de la lecture (et de la vidéo) : couleur, épaisseur, opacité. Le
-  géocacheur en prend la couleur.
+- trait de la lecture (et de la vidéo) : couleur — ou celle de chaque
+  journée —, épaisseur, opacité. Le géocacheur en prend la couleur.
 
 Le trait du mode principal (`trail`) ne sert plus sur cette page :
 le thème étant partagé, le régler ici ne change pas la page principale.
@@ -26,6 +27,16 @@ import re
 
 KINDS = ("find", "lab", "dnf", "place", "base")
 RENDERS = ("stops", "theme")
+COLOR_BY = ("kind", "day", "type")
+
+# Couleurs des journées (couleur par journée, trait aux couleurs des
+# journées) : distinctes entre elles et des lieux / bases, assez foncées pour
+# un numéro blanc et pour un numéro coloré sur fond blanc (DNF). Reprises au
+# début au-delà de huit journées.
+DAY_PALETTE = (
+    "#1971c2", "#e8590c", "#2f9e44", "#c2255c",
+    "#0c8599", "#6741d9", "#5c940d", "#9c5221",
+)
 NUMBERS = ("trip", "day", "none")
 PLAN_LINES = ("dashed", "solid", "none")
 
@@ -54,9 +65,11 @@ def parcours_style_defaults() -> dict:
         "render": "stops",
         "size": 11,
         "numbers": "trip",
+        "color_by": "kind",
         "colors": colors_defaults(),
         "plan_line": "dashed",
         "trail_color": "#00b8d4",
+        "trail_by_day": False,
         "trail_width": 3,
         "trail_opacity": 100,
     }
@@ -68,6 +81,10 @@ def _choice(value, allowed, default):
 
 def _color(value, default):
     return value.lower() if isinstance(value, str) and _HEX_RE.match(value) else default
+
+
+def _bool(value, default):
+    return value if isinstance(value, bool) else default
 
 
 def _int(value, default, low, high):
@@ -92,6 +109,8 @@ def coerce_parcours_style(raw, current: dict | None = None) -> dict:
     out = {
         "render": _choice(src.get("render"), RENDERS, base["render"]),
         "numbers": _choice(src.get("numbers"), NUMBERS, base["numbers"]),
+        "color_by": _choice(src.get("color_by"), COLOR_BY, base["color_by"]),
+        "trail_by_day": _bool(src.get("trail_by_day"), _bool(base["trail_by_day"], defaults["trail_by_day"])),
         "plan_line": _choice(src.get("plan_line"), PLAN_LINES, base["plan_line"]),
         "trail_color": _color(src.get("trail_color"), base["trail_color"]),
     }
@@ -110,6 +129,7 @@ def parcours_style_table() -> dict:
     return {
         "defaults": parcours_style_defaults(),
         "kinds": list(KINDS),
-        "choices": {"render": list(RENDERS), "numbers": list(NUMBERS), "plan_line": list(PLAN_LINES)},
+        "day_palette": list(DAY_PALETTE),
+        "choices": {"render": list(RENDERS), "color_by": list(COLOR_BY), "numbers": list(NUMBERS), "plan_line": list(PLAN_LINES)},
         "ranges": {key: list(r) for key, r in RANGES.items()},
     }

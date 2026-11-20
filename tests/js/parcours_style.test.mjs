@@ -6,18 +6,23 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
+    PARCOURS_DAY_PALETTE,
     PARCOURS_STYLE_CHOICES,
     PARCOURS_STYLE_KINDS,
     PARCOURS_STYLE_RANGES,
     STOP_POP_QUANTA,
     contrastTextColor,
+    dayColor,
     hexToRgba,
     normalizeParcoursStyle,
     numberFontPx,
+    paintTextColor,
     parcoursStyleDefaults,
     stopNumberLabels,
+    stopPaint,
     stopPopScale,
     themeNumberBadge,
+    trailColorFor,
 } from '../../static/js/parcours_style.mjs';
 
 const table = JSON.parse(readFileSync(new URL('../fixtures/parcours/parcours_style.json', import.meta.url), 'utf8'));
@@ -28,6 +33,7 @@ test('mêmes défauts, choix et bornes que le serveur', () => {
     assert.deepEqual([...PARCOURS_STYLE_KINDS], table.kinds);
     assert.deepEqual(plain(PARCOURS_STYLE_CHOICES), table.choices);
     assert.deepEqual(plain(PARCOURS_STYLE_RANGES), table.ranges);
+    assert.deepEqual([...PARCOURS_DAY_PALETTE], table.day_palette);
 });
 
 test('normalisation : bornes, choix, couleurs, comme coerce_parcours_style', () => {
@@ -119,4 +125,43 @@ test('numéro à côté d’un point du thème : en haut à droite, hors du poin
     assert.ok(Math.hypot(...offset) >= 8);
     assert.equal(themeNumberBadge(7, 0).radius, 6);
     assert.deepEqual(themeNumberBadge(18, 20).offset, [18, 18]);
+});
+
+test('couleur par journée : palette reprise au-delà de huit jours, numéro lisible', () => {
+    assert.equal(dayColor(0), PARCOURS_DAY_PALETTE[0]);
+    assert.equal(dayColor(9), PARCOURS_DAY_PALETTE[1]);
+    assert.equal(dayColor(undefined), PARCOURS_DAY_PALETTE[0]);
+    // Numéro blanc sur chaque couleur pleine, la couleur elle-même en creux.
+    for (const fill of PARCOURS_DAY_PALETTE) {
+        assert.equal(contrastTextColor(fill), '#ffffff', fill);
+        assert.equal(paintTextColor({ fill, hollow: true }), fill);
+    }
+    assert.equal(paintTextColor({ fill: '#ffeb3b', hollow: true }), '#212529');
+});
+
+test('peinture d’une étape : par nature, par journée, par type ; lieux et bases inchangés', () => {
+    const byKind = parcoursStyleDefaults();
+    const byDay = normalizeParcoursStyle({ color_by: 'day' });
+    const byType = normalizeParcoursStyle({ color_by: 'type' });
+    const types = { 'Traditional Cache': '#008000', 'Adventure Lab': '#00C5A1' };
+    const find = { kind: 'find', type: 'Traditional Cache' };
+    assert.deepEqual(stopPaint(find, byKind, { dayIndex: 2 }), { fill: '#0072c6', hollow: false });
+    assert.deepEqual(stopPaint(find, byDay, { dayIndex: 2 }), { fill: PARCOURS_DAY_PALETTE[2], hollow: false });
+    assert.deepEqual(stopPaint(find, byType, { typeColors: types }), { fill: '#008000', hollow: false });
+    assert.equal(stopPaint({ kind: 'lab' }, byType, { typeColors: types }).fill, '#00c5a1');
+    // Type sans couleur connue : celle de la nature.
+    assert.equal(stopPaint({ kind: 'find', type: 'Inconnu' }, byType, { typeColors: types }).fill, '#0072c6');
+    // DNF : sa couleur par nature ; en creux sinon.
+    assert.deepEqual(stopPaint({ kind: 'dnf' }, byKind), { fill: '#868e96', hollow: false });
+    assert.deepEqual(stopPaint({ kind: 'dnf' }, byDay, { dayIndex: 1 }), { fill: PARCOURS_DAY_PALETTE[1], hollow: true });
+    for (const kind of ['place', 'base']) {
+        assert.deepEqual(stopPaint({ kind }, byDay, { dayIndex: 3 }), { fill: byKind.colors[kind], hollow: false });
+    }
+});
+
+test('trait : couleur choisie, ou celle de la journée', () => {
+    assert.equal(trailColorFor(parcoursStyleDefaults(), 3), '#00b8d4');
+    assert.equal(trailColorFor(normalizeParcoursStyle({ trail_by_day: true }), 3), PARCOURS_DAY_PALETTE[3]);
+    assert.equal(normalizeParcoursStyle({ trail_by_day: 'oui' }).trail_by_day, false);
+    assert.equal(normalizeParcoursStyle({}, { trail_by_day: true }).trail_by_day, true);
 });

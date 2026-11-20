@@ -121,16 +121,38 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
 | `render` | `stops` (pastilles du parcours), `theme` (points du thème) | Style › Points, carte « Étapes du parcours » |
 | `numbers` | `trip` (rang sur tout le parcours), `day` (rang dans la journée), `none` | Style › Points, carte « Étapes du parcours » |
 | `size` | rayon des pastilles, 7-18 px : 11 | idem |
+| `color_by` | `kind` (par nature : `colors`), `day` (par journée : `DAY_PALETTE`), `type` (par type de cache : couleurs Geocaching, `defaultGcColors`) | idem |
 | `colors` | `find` #0072c6, `lab` #f59f00, `dnf` #868e96, `place` #ae3ec9, `base` #343a40 | idem |
 | `plan_line` | `dashed`, `solid`, `none` | Style › Trajet (sous-onglet propre à la page) |
 | `trail_color`, `trail_width`, `trail_opacity` | #00b8d4, 1-12 px : 3, 10-100 % : 100 | idem |
+| `trail_by_day` | `false` ; vrai : trait, ligne du plan et géocacheur aux couleurs des journées | idem |
+
+**Couleur par journée ou par type** (depuis le 2026-11-20, `stopPaint` de
+`parcours_style.mjs`) :
+- palette fixe de huit couleurs (`DAY_PALETTE` / `PARCOURS_DAY_PALETTE`,
+  comparées par le test JS), reprise au début au-delà de huit journées.
+  L'index d'une journée est son rang dans la plage du parcours, jours vides
+  compris (`dayIndexes` de parcours_data.js) : une journée garde sa couleur
+  quand une autre se vide ;
+- par type de cache : couleur Geocaching du type (`Adventure Lab` pour une
+  étape Lab), à défaut celle de la nature ;
+- hors du mode par nature, un DNF n'a plus de couleur propre : il passe en
+  **pastille creuse** (fond blanc, contour et numéro de la couleur) ;
+- lieux et bases gardent toujours leur couleur ;
+- la liste suit : pastille de l'étape, et point de couleur devant la date
+  de chaque journée (couleur par journée ou trait aux couleurs des journées) ;
+- trait aux couleurs des journées : un trajet prend la couleur de la
+  journée de son arrivée — la nuit, celle du lendemain ; le géocacheur,
+  celle du trajet en cours ou de la dernière étape atteinte. Les trajets
+  terminés sont regroupés par nature et par journée (`doneTrailGroups`).
 
 - La liste de l'onglet Données reprend la couleur et le numéro du plan
   (sans numéros sur la carte, elle garde le rang sur tout le parcours).
 - Le numéro passe en sombre sur une couleur claire (`contrastTextColor`) et
   rétrécit à partir de trois chiffres (`numberFontPx`).
-- La ligne du plan prend la couleur et l'épaisseur du trait, à 55 % de son
-  opacité ; le géocacheur prend la couleur du trait, opaque.
+- La ligne du plan prend la couleur (celle de sa journée avec
+  `trail_by_day`) et l'épaisseur du trait, à 55 % de son opacité ; le
+  géocacheur prend la couleur du trait, opaque.
 - **Un seul rendu** (depuis le 2026-11-20), au repos, pendant la lecture
   et dans la vidéo :
   - `stops` : les étapes comptées sont des pastilles numérotées, dessinées

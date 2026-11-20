@@ -1,5 +1,10 @@
 {
   "choices": {
+    "color_by": [
+      "kind",
+      "day",
+      "type"
+    ],
     "numbers": [
       "trip",
       "day",
@@ -15,7 +20,18 @@
       "theme"
     ]
   },
+  "day_palette": [
+    "#1971c2",
+    "#e8590c",
+    "#2f9e44",
+    "#c2255c",
+    "#0c8599",
+    "#6741d9",
+    "#5c940d",
+    "#9c5221"
+  ],
   "defaults": {
+    "color_by": "kind",
     "colors": {
       "base": "#343a40",
       "dnf": "#868e96",
@@ -27,6 +43,7 @@
     "plan_line": "dashed",
     "render": "stops",
     "size": 11,
+    "trail_by_day": false,
     "trail_color": "#00b8d4",
     "trail_opacity": 100,
     "trail_width": 3

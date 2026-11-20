@@ -10,6 +10,7 @@
 export const PARCOURS_STYLE_KINDS = Object.freeze(['find', 'lab', 'dnf', 'place', 'base']);
 export const PARCOURS_STYLE_CHOICES = Object.freeze({
     render: Object.freeze(['stops', 'theme']),
+    color_by: Object.freeze(['kind', 'day', 'type']),
     numbers: Object.freeze(['trip', 'day', 'none']),
     plan_line: Object.freeze(['dashed', 'solid', 'none']),
 });
@@ -19,6 +20,13 @@ export const PARCOURS_STYLE_RANGES = Object.freeze({
     trail_opacity: Object.freeze([10, 100]),
 });
 
+// Couleurs des journées (DAY_PALETTE de parcours_style.py) : reprises au
+// début au-delà de huit journées.
+export const PARCOURS_DAY_PALETTE = Object.freeze([
+    '#1971c2', '#e8590c', '#2f9e44', '#c2255c',
+    '#0c8599', '#6741d9', '#5c940d', '#9c5221',
+]);
+
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 export function parcoursStyleDefaults() {
@@ -26,9 +34,11 @@ export function parcoursStyleDefaults() {
         render: 'stops',
         size: 11,
         numbers: 'trip',
+        color_by: 'kind',
         colors: { find: '#0072c6', lab: '#f59f00', dnf: '#868e96', place: '#ae3ec9', base: '#343a40' },
         plan_line: 'dashed',
         trail_color: '#00b8d4',
+        trail_by_day: false,
         trail_width: 3,
         trail_opacity: 100,
     };
@@ -62,6 +72,9 @@ export function normalizeParcoursStyle(raw, current = null) {
     const out = {
         render: choice('render'),
         numbers: choice('numbers'),
+        color_by: choice('color_by'),
+        trail_by_day: typeof src.trail_by_day === 'boolean' ? src.trail_by_day
+            : (typeof base.trail_by_day === 'boolean' ? base.trail_by_day : defaults.trail_by_day),
         plan_line: choice('plan_line'),
         trail_color: color(src.trail_color, color(base.trail_color, defaults.trail_color)),
     };
@@ -92,6 +105,48 @@ export function stopNumberLabels(ordered, mode) {
         }
     }
     return labels;
+}
+
+// Couleur de la journée d'index `dayIndex` (rang dans la plage du parcours,
+// jours vides compris : le même jour garde sa couleur quand un autre se vide).
+export function dayColor(dayIndex) {
+    const n = PARCOURS_DAY_PALETTE.length;
+    const i = Number.isInteger(dayIndex) ? ((dayIndex % n) + n) % n : 0;
+    return PARCOURS_DAY_PALETTE[i];
+}
+
+// Peinture d'une étape : `fill` (couleur d'identité) et `hollow` (pastille
+// creuse : fond blanc, contour et numéro de la couleur). Lieux et bases :
+// leur couleur, toujours. Étapes comptées : selon `color_by` — par nature,
+// par journée, par type de cache (`typeColors` : type → couleur, l'Adventure
+// Lab sous « Adventure Lab » ; à défaut la couleur de la nature). Hors du
+// mode par nature, un DNF n'a plus sa couleur propre : il passe en creux.
+export function stopPaint(stop, style, { dayIndex = 0, typeColors = null } = {}) {
+    const colors = style?.colors || parcoursStyleDefaults().colors;
+    const kind = stop?.kind;
+    const own = colors[kind] || colors.find;
+    if (kind === 'place' || kind === 'base') return { fill: own, hollow: false };
+    const mode = style?.color_by;
+    let fill = own;
+    if (mode === 'day') fill = dayColor(dayIndex);
+    else if (mode === 'type') {
+        const type = kind === 'lab' ? 'Adventure Lab' : stop?.type;
+        fill = color(typeColors?.[type], null) || own;
+    }
+    return { fill, hollow: mode !== 'kind' && mode != null && kind === 'dnf' };
+}
+
+// Couleur du numéro : contraste sur la pastille pleine ; sur une pastille
+// creuse, la couleur elle-même si elle est assez foncée pour le fond blanc.
+export function paintTextColor(paint) {
+    if (!paint?.hollow) return contrastTextColor(paint?.fill);
+    return contrastTextColor(paint.fill) === '#ffffff' ? color(paint.fill, '#212529') : '#212529';
+}
+
+// Couleur du trait (et de la ligne du plan, du géocacheur) d'une journée.
+export function trailColorFor(style, dayIndex) {
+    if (style?.trail_by_day) return dayColor(dayIndex);
+    return color(style?.trail_color, parcoursStyleDefaults().trail_color);
 }
 
 // Apparition d'une étape pendant la lecture : la pastille grossit de rien à

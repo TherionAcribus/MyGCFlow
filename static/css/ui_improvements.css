@@ -4248,6 +4248,32 @@ body[data-mode="parcours"] .rhythm-rate-field {
     justify-content: flex-start;
 }
 
+/* Onglet Style › Points : palette des journées (couleur par journée). */
+.parcours-day-palette {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.parcours-day-swatches {
+    display: inline-flex;
+    gap: 4px;
+}
+.parcours-day-swatch {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+}
+/* Pastille de couleur d'une journée (en-tête de journée de la liste). */
+.parcours-day-dot {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    margin-right: 0.35rem;
+    vertical-align: baseline;
+}
+
 /* Onglet Style › Points : une couleur par nature d'étape, sur une rangée. */
 .parcours-style-colors {
     display: flex;

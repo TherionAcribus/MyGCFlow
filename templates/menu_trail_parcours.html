@@ -18,6 +18,10 @@
                 <div class="col-6 col-md-4">
                     <label class="form-label" for="parcoursStyleTrailColor">{{ _("Couleur du trait") }}</label>
                     <input type="color" class="form-control form-control-color" id="parcoursStyleTrailColor" value="#00b8d4">
+                    <label class="form-check mt-2 mb-0">
+                        <input id="parcoursStyleTrailByDay" class="form-check-input" type="checkbox">
+                        <span class="form-check-label">{{ _("Aux couleurs des journées") }}</span>
+                    </label>
                 </div>
                 <div class="col-6 col-md-4">
                     <label class="form-label" for="parcoursStyleTrailWidth">{{ _("Épaisseur") }}</label>
@@ -34,7 +38,7 @@
                     </div>
                 </div>
             </div>
-            <small class="form-hint text-muted">{{ _("Trait dessiné derrière le géocacheur pendant la lecture et dans la vidéo. Le géocacheur en prend la couleur. Les trajets estimés en pointillés se règlent dans l'onglet Données, carte « Lecture ».") }}</small>
+            <small class="form-hint text-muted">{{ _("Trait dessiné derrière le géocacheur pendant la lecture et dans la vidéo. Le géocacheur en prend la couleur. Aux couleurs des journées : chaque journée, nuit d'arrivée comprise, a la couleur de la palette de l'onglet Points. Les trajets estimés en pointillés se règlent dans l'onglet Données, carte « Lecture ».") }}</small>
         </div>
     </div>
 

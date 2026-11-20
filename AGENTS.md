@@ -391,11 +391,15 @@ Autres repères :
   Apparence des étapes et du trait (`points.parcours_style`, thème) : un
   spec la règle par l'onglet Style ou en mémoire — rien à remettre ; relevés
   `style`, `stopStyles` (numéro, couleur, rayon de chaque pastille ;
-  `offset` du numéro en rendu « points du thème »), `planLine`, `trail`,
+  `offset` du numéro en rendu « points du thème » ; `color` = couleur
+  d'identité, `hollow` pour un DNF en creux), `planLine`,
+  `planLineColors` (date → couleur), `dayColors`, `trail`,
   `themePoints` (couche WebGL des points du thème affichée — masquée en
   rendu « pastilles ») et `playStops` (étapes peintes à la dernière image
-  de lecture, remis à zéro au départ) de `getParcoursSnapshot()`, exemple
-  dans `parcours-style.spec.mjs`. `stopStyle()` (parcours_data.js) mémoïse par
+  de lecture, remis à zéro au départ ; `headColor` du géocacheur) de
+  `getParcoursSnapshot()`, exemple dans `parcours-style.spec.mjs`. La
+  fixture Parcours n'a pas de DNF : ce spec en simule un en réécrivant
+  `GET /api/parcours/<id>/inputs` (`page.route`). `stopStyle()` (parcours_data.js) mémoïse par
   IDENTITÉ de `app.options.point.parcoursStyle` : le remplacer par un nouvel
   objet, jamais le muter en place (sinon plan et trait gardent l'ancien
   style).

@@ -123,14 +123,18 @@ import {
 import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 import {
-    contrastTextColor,
+    PARCOURS_DAY_PALETTE,
+    dayColor,
     hexToRgba,
     normalizeParcoursStyle,
     numberFontPx,
+    paintTextColor,
     parcoursStyleDefaults,
     stopNumberLabels,
+    stopPaint,
     stopPopScale,
     themeNumberBadge,
+    trailColorFor,
 } from './parcours_style.mjs';
 
 const LAST_ID_KEY = 'parcours.lastId';
@@ -499,7 +503,7 @@ function parcoursBegin(startDate, endDate, at) {
     endDay = endDate instanceof Date ? dayIndexOf(quantumBase, endDate) : (timeline?.quanta || 1) - 1;
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
-    playStopsDrawn = { drawn: 0, popping: 0 };
+    playStopsDrawn = { drawn: 0, popping: 0, headColor: null };
     pkg.hideMapPopup?.();
     setPlanVisible(false);
     ensurePlayLayers();
@@ -854,14 +858,57 @@ function parcoursCamera(leadMs = 0, msPerDay = 1) {
 // --- Tête et trait pendant la lecture ------------------------------------------
 
 // Trait de la lecture (thème, `points.parcours_style`) : `color` avec son
-// opacité pour le trait, `solid` sans, pour le géocacheur.
-function trailOptions() {
+// opacité pour le trait, `solid` sans, pour le géocacheur. Aux couleurs des
+// journées, celle de la journée `dayIndex`.
+function trailOptions(dayIndex = 0) {
     const style = stopStyle();
+    const solid = trailColorFor(style, dayIndex);
     return {
-        color: hexToRgba(style.trail_color, style.trail_opacity / 100),
-        solid: style.trail_color,
+        color: hexToRgba(solid, style.trail_opacity / 100),
+        solid,
         width: style.trail_width,
     };
+}
+
+// Journée d'un trajet : celle de son arrivée — la nuit prend la couleur du
+// lendemain.
+function legDayIndex(leg) {
+    return dayIndexes().byKey.get(timeline?.stops[leg.to]?.key) ?? 0;
+}
+
+// Journée du géocacheur : celle du trajet en cours, sinon de la dernière
+// étape atteinte.
+function headDayIndex(current) {
+    if (current) return legDayIndex(timeline.legs[current.leg]);
+    let last = null;
+    for (const stop of timeline.stops) {
+        if (stop.q > currentQ) break;
+        last = stop;
+    }
+    return dayIndexes().byKey.get(last?.key) ?? 0;
+}
+
+// Styles du trait d'une journée : trajet, nuit (pointillés fins), trajet
+// estimé (option, pointillés).
+const TRAIL_KINDS = ['night', 'estimated', 'day'];
+
+function trailStyle(kind, dayIndex) {
+    const { color, width } = trailOptions(dayIndex);
+    return cachedStyle(`trail:${kind}:${color}`, () => {
+        if (kind === 'night') {
+            return new ol.style.Style({ stroke: new ol.style.Stroke({ color, width: Math.max(1, width * 0.6), lineDash: [width * 2, width * 2] }) });
+        }
+        return new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color, width, lineCap: 'round', lineJoin: 'round',
+                lineDash: kind === 'estimated' ? [width * 2.5, width * 2] : undefined,
+            }),
+        });
+    });
+}
+
+function legKind(leg, dashed) {
+    return leg.night ? 'night' : (dashed && !leg.path ? 'estimated' : 'day');
 }
 
 function ensurePlayLayers() {
@@ -887,39 +934,38 @@ function ensurePlayLayers() {
 // Trait parcouru : trajets terminés, puis la part faite du trajet en cours.
 // La nuit (d'une journée à la suivante) en pointillés.
 //
-// Les trajets terminés sont regroupés par style en trois MultiLineString
-// persistants, allongés à mesure que la lecture avance : une géométrie par
-// style à l'image au lieu d'une LineString par trajet (des centaines de
-// trajets routés recréés à chaque image sinon).
+// Les trajets terminés sont regroupés par style — nature du trajet et, aux
+// couleurs des journées, journée — en MultiLineString persistants, allongés
+// à mesure que la lecture avance : une géométrie par style à l'image au lieu
+// d'une LineString par trajet (des centaines de trajets routés recréés à
+// chaque image sinon).
 let trailGroups = null;
 const currentLegGeom = new ol.geom.LineString([]);
 
 function doneTrailGroups(done) {
-    if (!trailGroups || trailGroups.timeline !== timeline || trailGroups.dashed !== playback.estimated_dashed) {
-        trailGroups = {
-            timeline,
-            dashed: playback.estimated_dashed,
-            done: 0,
-            night: { coords: [], geom: new ol.geom.MultiLineString([]) },
-            estimated: { coords: [], geom: new ol.geom.MultiLineString([]) },
-            day: { coords: [], geom: new ol.geom.MultiLineString([]) },
-        };
+    const byDay = stopStyle().trail_by_day;
+    if (!trailGroups || trailGroups.timeline !== timeline || trailGroups.dashed !== playback.estimated_dashed
+            || trailGroups.byDay !== byDay) {
+        trailGroups = { timeline, dashed: playback.estimated_dashed, byDay, done: 0, groups: new Map() };
     }
     // Retour en arrière dans la lecture : tout se refait depuis le début.
     if (done < trailGroups.done) {
         trailGroups.done = 0;
-        for (const g of [trailGroups.night, trailGroups.estimated, trailGroups.day]) {
-            g.coords.length = 0;
-            g.geom.setCoordinates(g.coords);
-        }
+        trailGroups.groups.clear();
     }
     for (let k = trailGroups.done; k < done; k++) {
         const leg = timeline.legs[k];
         // Trajet sur une trace GPS ou un itinéraire : le vrai chemin, sinon
         // la ligne droite.
         const coords = legProjected[k] || [projected[leg.from], projected[leg.to]];
-        const g = leg.night ? trailGroups.night
-            : (trailGroups.dashed && !leg.path ? trailGroups.estimated : trailGroups.day);
+        const kind = legKind(leg, trailGroups.dashed);
+        const dayIndex = byDay ? legDayIndex(leg) : 0;
+        const key = `${kind}:${dayIndex}`;
+        let g = trailGroups.groups.get(key);
+        if (!g) {
+            g = { kind, dayIndex, coords: [], geom: new ol.geom.MultiLineString([]) };
+            trailGroups.groups.set(key, g);
+        }
         g.coords.push(coords);
         g.geom.setCoordinates(g.coords);
     }
@@ -930,19 +976,13 @@ function doneTrailGroups(done) {
 function drawPlayTrail(event) {
     if (!clock.running || !timeline) return;
     const context = ol.render.getVectorContext(event);
-    const { color, width } = trailOptions();
-    const day = new ol.style.Style({ stroke: new ol.style.Stroke({ color, width, lineCap: 'round', lineJoin: 'round' }) });
-    const night = new ol.style.Style({ stroke: new ol.style.Stroke({ color, width: Math.max(1, width * 0.6), lineDash: [width * 2, width * 2] }) });
-    // Option : un trajet estimé (ligne droite, sans trace ni itinéraire) en
-    // pointillés, pour le distinguer d'un chemin réel.
-    const estimated = new ol.style.Style({
-        stroke: new ol.style.Stroke({ color, width, lineCap: 'round', lineJoin: 'round', lineDash: [width * 2.5, width * 2] }),
-    });
     const { done, current } = trailAt(timeline, currentQ);
-    const groups = doneTrailGroups(done);
-    for (const [style, g] of [[night, groups.night], [estimated, groups.estimated], [day, groups.day]]) {
-        if (g.coords.length) {
-            context.setStyle(style);
+    const { groups } = doneTrailGroups(done);
+    // Nuits sous les trajets estimés, eux-mêmes sous les trajets réels.
+    for (const kind of TRAIL_KINDS) {
+        for (const g of groups.values()) {
+            if (g.kind !== kind || !g.coords.length) continue;
+            context.setStyle(trailStyle(kind, g.dayIndex));
             context.drawGeometry(g.geom);
         }
     }
@@ -951,7 +991,7 @@ function drawPlayTrail(event) {
         const coords = current.progress >= 1
             ? (legProjected[current.leg] || [projected[leg.from], projected[leg.to]])
             : legPoints(timeline, current.leg, current.progress).map((p) => ol.proj.fromLonLat(p));
-        context.setStyle(leg.night ? night : (playback.estimated_dashed && !leg.path ? estimated : day));
+        context.setStyle(trailStyle(legKind(leg, playback.estimated_dashed), legDayIndex(leg)));
         currentLegGeom.setCoordinates(coords);
         context.drawGeometry(currentLegGeom);
     }
@@ -984,7 +1024,8 @@ function drawPlayHead(event) {
             }
         }
     });
-    const { solid: color } = trailOptions();
+    const { solid: color } = trailOptions(headDayIndex(trailAt(timeline, currentQ).current));
+    playStopsDrawn.headColor = color;
     const position = ol.proj.fromLonLat([head.lon, head.lat]);
     const glyph = playback.head === HEAD_PICTOGRAM ? headGlyph(headModeAt(timeline, currentQ)) : null;
     if (glyph) {
@@ -1015,7 +1056,7 @@ const NIGHT_ALPHA = 0.5;
 // numéros à côté des points du thème (WebGL, qui apparaissent seuls). Dans
 // l'ordre de la lecture — la dernière arrivée au-dessus —, sous la nuit. Une
 // étape qui arrive grossit de rien à sa taille (stopPopScale).
-let playStopsDrawn = { drawn: 0, popping: 0 };
+let playStopsDrawn = { drawn: 0, popping: 0, headColor: null };
 
 function drawPlayStops(context) {
     const labels = currentStopLabels();
@@ -1026,7 +1067,8 @@ function drawPlayStops(context) {
     timeline.stops.forEach((stop, i) => {
         if (!isCountedStop(stop) || stop.q > currentQ) return;
         const label = labels.get(stop.key) || '';
-        const style = themed ? themeNumberStyle(stop.kind, label) : numberedStyleFor(stop.kind, label);
+        const paint = paintOfStop(stop);
+        const style = themed ? themeNumberStyle(paint, label) : numberedStyleFor(paint, label);
         if (!style) return;
         const scale = stopPopScale(currentQ - stop.q);
         if (scale <= 0.01) return;
@@ -1036,7 +1078,7 @@ function drawPlayStops(context) {
         context.drawGeometry(point);
         drawn++;
     });
-    playStopsDrawn = { drawn, popping };
+    playStopsDrawn = { ...playStopsDrawn, drawn, popping };
 }
 
 // Copie d'un style à l'échelle `scale`, décalages compris (numéro posé à
@@ -1926,6 +1968,15 @@ function renderDay(day) {
     const title = document.createElement('h6');
     title.className = 'parcours-day-title mb-1';
     title.textContent = formatDay(day.date);
+    // Couleur de la journée, quand les étapes ou le trait la prennent.
+    const { color_by: colorBy, trail_by_day: trailByDay } = stopStyle();
+    if (colorBy === 'day' || trailByDay) {
+        const dot = document.createElement('span');
+        dot.className = 'parcours-day-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        dot.style.backgroundColor = dayColor(dayIndexes().byDate.get(day.date) ?? 0);
+        title.prepend(dot);
+    }
     // Le nombre d'étapes reste lisible quand la journée est repliée.
     const count = document.createElement('span');
     count.className = 'small text-muted parcours-day-count';
@@ -2015,9 +2066,11 @@ function renderStopRow(stop, day, movable) {
     time.textContent = stopTime(stop);
     const badge = document.createElement('span');
     badge.className = 'parcours-stop-index';
-    const background = kindColor(stop.kind);
-    badge.style.backgroundColor = background;
-    badge.style.color = contrastTextColor(background);
+    // Même peinture que le plan ; creuse : fond blanc cerclé de la couleur.
+    const paint = paintOfStop(stop);
+    badge.style.backgroundColor = paint.hollow ? '#ffffff' : paint.fill;
+    badge.style.color = paintTextColor(paint);
+    if (paint.hollow) badge.style.boxShadow = `inset 0 0 0 2px ${paint.fill}`;
     if (Number.isFinite(stop.index)) {
         // Même numéro que le plan ; sans numéros sur la carte, la liste
         // garde le rang sur tout le parcours.
@@ -4128,6 +4181,8 @@ function readStyleUI() {
     return normalizeParcoursStyle({
         render: value('parcoursStyleRender'),
         numbers: value('parcoursStyleNumbers'),
+        color_by: value('parcoursStyleColorBy'),
+        trail_by_day: el('parcoursStyleTrailByDay') ? el('parcoursStyleTrailByDay').checked : undefined,
         size: value('parcoursStyleSize'),
         colors: Object.fromEntries(Object.entries(styleColorIds()).map(([kind, id]) => [kind, value(id)])),
         plan_line: value('parcoursStylePlanLine'),
@@ -4166,6 +4221,18 @@ export function syncParcoursStyleUI() {
     numbers.value = style.numbers;
     set('parcoursStyleRender', style.render);
     set('parcoursStyleSize', style.size);
+    set('parcoursStyleColorBy', style.color_by);
+    // Couleurs par nature des étapes comptées : utiles en mode « par nature »
+    // seulement (lieux et bases gardent toujours la leur).
+    for (const box of document.querySelectorAll('#parcoursStopsCard [data-kind-color]')) {
+        box.hidden = style.color_by !== 'kind';
+    }
+    const palette = el('parcoursStyleDayPalette');
+    if (palette) palette.hidden = style.color_by !== 'day';
+    const byDay = el('parcoursStyleTrailByDay');
+    if (byDay) byDay.checked = style.trail_by_day;
+    const trailColor = el('parcoursStyleTrailColor');
+    if (trailColor) trailColor.disabled = style.trail_by_day;
     for (const [kind, id] of Object.entries(styleColorIds())) set(id, style.colors[kind]);
     set('parcoursStylePlanLine', style.plan_line);
     set('parcoursStyleTrailColor', style.trail_color);
@@ -4177,7 +4244,8 @@ export function syncParcoursStyleUI() {
 
 function bindParcoursStyle() {
     const commit = () => commitParcoursStyle(readStyleUI());
-    for (const id of ['parcoursStyleRender', 'parcoursStyleNumbers', 'parcoursStyleSize', 'parcoursStylePlanLine',
+    for (const id of ['parcoursStyleRender', 'parcoursStyleNumbers', 'parcoursStyleColorBy', 'parcoursStyleTrailByDay',
+        'parcoursStyleSize', 'parcoursStylePlanLine',
         'parcoursStyleTrailColor', 'parcoursStyleTrailWidth', ...Object.values(styleColorIds())]) {
         el(id)?.addEventListener('change', commit);
     }
@@ -4187,6 +4255,15 @@ function bindParcoursStyle() {
     }
     // Opacité : suivie pendant le glisser.
     el('parcoursStyleTrailOpacity')?.addEventListener('input', commit);
+    const swatches = el('parcoursStyleDayPalette')?.querySelector('.parcours-day-swatches');
+    if (swatches && !swatches.childElementCount) {
+        for (const color of PARCOURS_DAY_PALETTE) {
+            const swatch = document.createElement('span');
+            swatch.className = 'parcours-day-swatch';
+            swatch.style.backgroundColor = color;
+            swatches.append(swatch);
+        }
+    }
     el('btnParcoursStyleColorsReset')?.addEventListener('click', () => {
         commitParcoursStyle(normalizeParcoursStyle({ colors: parcoursStyleDefaults().colors }, stopStyle()));
     });
@@ -4219,6 +4296,37 @@ function cachedStyle(key, build) {
 function kindColor(kind) {
     const colors = stopStyle().colors;
     return colors[kind] || colors.find;
+}
+
+// Rang de la journée de chaque étape (clé) et de chaque date, dans la plage
+// du parcours (jours vides compris) : index de la couleur par journée.
+let dayMemo = { ordered: null, byKey: new Map(), byDate: new Map() };
+
+function dayIndexes() {
+    if (dayMemo.ordered !== ordered) {
+        const byKey = new Map();
+        const byDate = new Map();
+        (ordered?.days || []).forEach((day, i) => {
+            byDate.set(day.date, i);
+            for (const stop of day.stops) byKey.set(stop.key, i);
+            for (const stop of day.excluded || []) byKey.set(stop.key, i);
+        });
+        dayMemo = { ordered, byKey, byDate };
+    }
+    return dayMemo;
+}
+
+// Peinture d'une étape (`{ key, kind, type }`) selon « Couleur des étapes » :
+// par nature, par journée, par type de cache (couleurs Geocaching).
+function paintOfStop(stop) {
+    return stopPaint(stop, stopStyle(), {
+        dayIndex: dayIndexes().byKey.get(stop.key) ?? 0,
+        typeColors: pkg.defaultGcColors || null,
+    });
+}
+
+function featurePaint(feature) {
+    return paintOfStop({ key: feature.get('key'), kind: feature.get('kind'), type: feature.get('type') });
 }
 
 // Numéro affiché de chaque étape (clé → texte), selon le réglage « Numéros
@@ -4265,7 +4373,7 @@ function pointStyle(feature) {
         const badge = categoryBadgeStyle(kind, featureIconClass(feature));
         if (badge) normal = [normal, badge];
     } else if (stopStyle().render === RENDER_THEME) {
-        normal = themeNumberStyle(kind, feature.get('label') || '', { hit: true });
+        normal = themeNumberStyle(featurePaint(feature), feature.get('label') || '', { hit: true });
     } else {
         normal = numberedStyle(feature);
     }
@@ -4275,27 +4383,30 @@ function pointStyle(feature) {
 
 // Pastille d'une étape comptée, avec son numéro (aucun : pastille seule).
 // Le texte passe en sombre sur une couleur claire ; trois chiffres et plus
-// sont écrits plus petit pour tenir dans la pastille.
+// sont écrits plus petit pour tenir dans la pastille. Pastille creuse (DNF
+// hors couleur par nature) : fond blanc, contour et numéro de la couleur.
 function numberedStyle(feature) {
-    return numberedStyleFor(feature.get('kind'), feature.get('label') || '');
+    return numberedStyleFor(featurePaint(feature), feature.get('label') || '');
 }
 
-function numberedStyleFor(kind, label) {
-    return cachedStyle(`stop:${kind}:${label}`, ({ size }) => {
-        const fill = kindColor(kind);
-        return new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: size,
-                fill: new ol.style.Fill({ color: fill }),
-                stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
-            }),
-            text: label ? new ol.style.Text({
-                text: label,
-                font: `600 ${numberFontPx(size, label)}px system-ui, sans-serif`,
-                fill: new ol.style.Fill({ color: contrastTextColor(fill) }),
-            }) : undefined,
-        });
+function paintedCircle(paint, radius, width, extra = {}) {
+    return new ol.style.Circle({
+        radius,
+        fill: new ol.style.Fill({ color: paint.hollow ? '#ffffff' : paint.fill }),
+        stroke: new ol.style.Stroke({ color: paint.hollow ? paint.fill : '#ffffff', width: paint.hollow ? width + 0.5 : width }),
+        ...extra,
     });
+}
+
+function numberedStyleFor(paint, label) {
+    return cachedStyle(`stop:${paint.fill}:${paint.hollow ? 1 : 0}:${label}`, ({ size }) => new ol.style.Style({
+        image: paintedCircle(paint, size, 2),
+        text: label ? new ol.style.Text({
+            text: label,
+            font: `600 ${numberFontPx(size, label)}px system-ui, sans-serif`,
+            fill: new ol.style.Fill({ color: paintTextColor(paint) }),
+        }) : undefined,
+    }));
 }
 
 // Rendu « points du thème » : le point est celui du thème (couche WebGL) ;
@@ -4313,9 +4424,10 @@ function themePointRadius() {
     return center + border;
 }
 
-function themeNumberStyle(kind, label, { hit = false } = {}) {
+function themeNumberStyle(paint, label, { hit = false } = {}) {
     const themeRadius = themePointRadius();
-    return cachedStyle(`theme:${kind}:${label}:${hit ? 1 : 0}:${themeRadius}`, ({ size }) => {
+    const key = `theme:${paint.fill}:${paint.hollow ? 1 : 0}:${label}:${hit ? 1 : 0}:${themeRadius}`;
+    return cachedStyle(key, ({ size }) => {
         const styles = [];
         if (hit) {
             styles.push(new ol.style.Style({
@@ -4324,18 +4436,12 @@ function themeNumberStyle(kind, label, { hit = false } = {}) {
         }
         if (label) {
             const { radius, offset } = themeNumberBadge(size, themeRadius);
-            const fill = kindColor(kind);
             styles.push(new ol.style.Style({
-                image: new ol.style.Circle({
-                    radius,
-                    displacement: offset,
-                    fill: new ol.style.Fill({ color: fill }),
-                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.5 }),
-                }),
+                image: paintedCircle(paint, radius, 1.5, { displacement: offset }),
                 text: new ol.style.Text({
                     text: label,
                     font: `600 ${numberFontPx(radius, label)}px system-ui, sans-serif`,
-                    fill: new ol.style.Fill({ color: contrastTextColor(fill) }),
+                    fill: new ol.style.Fill({ color: paintTextColor(paint) }),
                     // Texte : y vers le bas, à l'inverse de `displacement`.
                     offsetX: offset[0],
                     offsetY: -offset[1],
@@ -4392,16 +4498,18 @@ function categoryBadgeStyle(kind, iconClass) {
     });
 }
 
-// Ligne d'une journée au repos : couleur et épaisseur du trait, plus
-// transparente ; pointillés, pleine, ou aucune (null).
-function lineStyle() {
-    return cachedStyle('line', (style) => {
+// Ligne d'une journée au repos : couleur (aux couleurs des journées, celle
+// de la journée) et épaisseur du trait, plus transparente ; pointillés,
+// pleine, ou aucune (null).
+function lineStyle(dayIndex = 0) {
+    const color = trailColorFor(stopStyle(), dayIndex);
+    return cachedStyle(`line:${color}`, (style) => {
         if (style.plan_line === 'none') return null;
         const width = style.trail_width;
         const dashed = style.plan_line === 'dashed';
         return new ol.style.Style({
             stroke: new ol.style.Stroke({
-                color: hexToRgba(style.trail_color, PLAN_LINE_ALPHA * style.trail_opacity / 100),
+                color: hexToRgba(color, PLAN_LINE_ALPHA * style.trail_opacity / 100),
                 width,
                 // Bouts ronds : ils allongeraient les tirets.
                 lineCap: dashed ? 'butt' : 'round',
@@ -4427,7 +4535,7 @@ function ensureLayer() {
             style: (feature) => {
                 const role = feature.get('role');
                 if (role === 'track') return trackStyle;
-                if (role === 'line') return lineStyle();
+                if (role === 'line') return lineStyle(dayIndexes().byDate.get(feature.get('date')) ?? 0);
                 if (role === 'draft') {
                     const kind = feature.get('kind');
                     const styles = [haloStyle(true), placeStyle(kind)];
@@ -4730,6 +4838,7 @@ function renderLayer({ fit = false } = {}) {
             key: stop.key,
             placeId: stop.placeId ?? null,
             kind: stop.kind,
+            type: stop.type || '',
             index: stop.index,
             label: labels.get(stop.key) || '',
             category: stop.category || 'other',
@@ -4850,14 +4959,17 @@ export function getParcoursSnapshot() {
             .filter((f) => f.get('role') === 'stop')
             .map((f) => {
                 const kind = f.get('kind');
+                const place = kind === KIND_BASE || kind === KIND_PLACE;
+                const paint = place ? { fill: kindColor(kind), hollow: false } : featurePaint(f);
                 let main;
-                if (kind === KIND_BASE || kind === KIND_PLACE) main = placeStyle(kind);
-                else if (stopStyle().render === RENDER_THEME) main = themeNumberStyle(kind, f.get('label') || '');
+                if (place) main = placeStyle(kind);
+                else if (stopStyle().render === RENDER_THEME) main = themeNumberStyle(paint, f.get('label') || '');
                 else main = numberedStyle(f);
                 const image = main?.getImage();
                 return [f.get('key'), {
                     label: main?.getText()?.getText() || '',
-                    color: image?.getFill()?.getColor() || null,
+                    color: paint.fill,
+                    hollow: paint.hollow,
                     textColor: main?.getText()?.getFill()?.getColor() || null,
                     radius: image?.getRadius?.() ?? null,
                     offset: image?.getDisplacement?.() || null,
@@ -4870,6 +4982,12 @@ export function getParcoursSnapshot() {
             const stroke = style?.getStroke();
             return stroke ? { color: stroke.getColor(), width: stroke.getWidth(), dash: stroke.getLineDash() || null } : null;
         })(),
+        // Couleur de la ligne de chaque journée (date → couleur), et de chaque
+        // journée de la palette (date → couleur).
+        planLineColors: Object.fromEntries((source?.getFeatures() || [])
+            .filter((f) => f.get('role') === 'line')
+            .map((f) => [f.get('date'), lineStyle(dayIndexes().byDate.get(f.get('date')) ?? 0)?.getStroke().getColor() ?? null])),
+        dayColors: Object.fromEntries((ordered?.days || []).map((day, i) => [day.date, dayColor(i)])),
         trail: trailOptions(),
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,

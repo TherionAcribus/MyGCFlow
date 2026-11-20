@@ -204,3 +204,70 @@ test('rendu des étapes : pastilles ou points du thème, identique au repos et e
   expect((await snapshot(page)).stopStyles[day1[0]]).toMatchObject({ label: '1', radius: 11, offset: [0, 0] });
   expect(errors).toEqual([]);
 });
+
+// Couleur par journée ou par type de cache, trait aux couleurs des journées.
+const hexToRgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+
+test('couleur des étapes par journée ou par type ; trait aux couleurs des journées', async ({ page }) => {
+  const errors = collectErrors(page);
+  // GCPAR02 servi comme un DNF (la fixture n'en a pas) : pastille creuse.
+  await page.route('**/api/parcours/*/inputs', async (route) => {
+    const body = await (await route.fetch()).json();
+    for (const stop of body.days.flatMap((day) => day.stops)) {
+      if (stop.key === 'GCPAR02') Object.assign(stop, { kind: 'dnf', key: 'dnf:9003' });
+    }
+    await route.fulfill({ json: body });
+  });
+  let snap = await openReady(page);
+  expect(snap.stopStyles['dnf:9003']).toMatchObject({ color: '#868e96', hollow: false });
+  const [day1, day2] = countedKeys(snap);
+  const [date1, date2] = snap.days.map((day) => day.date);
+  await openStyleSubtab(page, '#tabPoints');
+  await expect(page.locator('#parcoursStyleDayPalette')).toBeHidden();
+
+  await page.locator('#parcoursStyleColorBy').selectOption('day');
+  await expect.poll(async () => (await snapshot(page)).style.color_by).toBe('day');
+  snap = await snapshot(page);
+  const [c1, c2] = [snap.dayColors[date1], snap.dayColors[date2]];
+  expect(c1).not.toBe(c2);
+  expect(snap.stopStyles[day1[0]]).toMatchObject({ color: c1, hollow: false, textColor: '#ffffff' });
+  expect(snap.stopStyles[day2[0]]).toMatchObject({ color: c2, hollow: false });
+  // Palette montrée, couleurs par nature des étapes masquées (lieux et
+  // bases restent réglables).
+  await expect(page.locator('#parcoursStyleDayPalette')).toBeVisible();
+  await expect(page.locator('#parcoursStyleDayPalette .parcours-day-swatch')).toHaveCount(8);
+  await expect(page.locator('#parcoursStyleColorFind')).toBeHidden();
+  await expect(page.locator('#parcoursStyleColorPlace')).toBeVisible();
+  // La liste suit : pastille de l'étape, point de couleur de la journée.
+  await expect(page.locator(`.parcours-stop[data-stop-key="${day2[0]}"] .parcours-stop-index`))
+    .toHaveCSS('background-color', hexToRgb(c2));
+  await expect(page.locator(`.parcours-day[data-date="${date2}"] .parcours-day-dot`))
+    .toHaveCSS('background-color', hexToRgb(c2));
+  // Le DNF passe en creux : fond blanc, numéro de la couleur du jour.
+  expect(snap.stopStyles['dnf:9003']).toMatchObject({ color: c1, hollow: true, textColor: c1 });
+  const dnfBadge = page.locator('.parcours-stop[data-stop-key="dnf:9003"] .parcours-stop-index');
+  await expect(dnfBadge).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(dnfBadge).toHaveCSS('color', hexToRgb(c1));
+
+  // Par type de cache : couleurs Geocaching (traditionnelle en vert).
+  await page.locator('#parcoursStyleColorBy').selectOption('type');
+  await expect.poll(async () => (await snapshot(page)).stopStyles.GCPAR01?.color).toBe('#008000');
+  await expect(page.locator('.parcours-day-dot')).toHaveCount(0);
+
+  // Trait aux couleurs des journées : ligne du plan de chaque journée, trait
+  // et géocacheur de la lecture ; la couleur fixe n'est plus réglable.
+  await openStyleSubtab(page, '#tabParcoursTrail');
+  await page.locator('#parcoursStyleTrailByDay').check();
+  await expect.poll(async () => (await snapshot(page)).style.trail_by_day).toBe(true);
+  await expect(page.locator('#parcoursStyleTrailColor')).toBeDisabled();
+  snap = await snapshot(page);
+  const rgba = (hex, a) => `rgba(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')}, ${a})`;
+  expect(snap.planLineColors[date1]).toBe(rgba(c1, 0.55));
+  expect(snap.planLineColors[date2]).toBe(rgba(c2, 0.55));
+  await expect(page.locator(`.parcours-day[data-date="${date1}"] .parcours-day-dot`)).toHaveCount(1);
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).playStops.headColor).toBe(c1);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+  expect(errors).toEqual([]);
+});
