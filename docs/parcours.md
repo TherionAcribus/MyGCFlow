@@ -99,7 +99,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_camera.mjs` | Pur : pose de la caméra de la lecture (lot 7). Tests : `tests/js/parcours_camera.test.mjs` |
 | `static/js/parcours_model.mjs` | Pur : utilitaires (étapes du parcours, emprise, jours d'une plage). Tests : `tests/js/parcours_model.test.mjs` |
 | `static/js/parcours_style.mjs` | Pur : apparence des étapes et du trait (normalisation, numéros, contraste). Copie de `parcours_style.py`. Tests : `tests/js/parcours_style.test.mjs`, `tests/test_parcours_style.py` |
-| `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, moteur de lecture, tête et trait |
+| `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
 Dans l'onglet Données, chaque étape porte son heure d'arrivée (exacte pour
@@ -386,6 +386,31 @@ Dans l'onglet Données :
   base son rôle (départ et retour, ou une seule extrémité — partir d'un
   hôtel, dormir ailleurs).
 
+**Agir depuis la carte** (au repos, depuis le 2026-11-20 ; rien pendant une
+lecture, même en pause) :
+- **clic sur une étape** : bulle d'actions (la bulle `#gcPopup` de
+  mapgl.js, remplie par le crochet moteur `popupAt` avant les points du
+  thème) — numéro et nom, heure et raison de sa place, champ d'heure et
+  « Épingler » (« Retirer » si épinglée), « Exclure » (étape comptée) ou
+  « Supprimer » (lieu, base : avec confirmation), « Détails » (le panneau
+  de l'onglet Données). La ligne de la liste est amenée en vue ; chaque
+  geste ferme la bulle, comme un plan refait (`renderLayer`) ;
+- **glisser un lieu ou une base** (curseur « attraper ») : la position est
+  enregistrée au lâcher (`ol.interaction.Translate`, `movePlaceTo`) ; un
+  refus remet le repère en place. Le point provisoire du formulaire de pose
+  se glisse aussi (coordonnées du formulaire mises à jour). Les étapes de
+  cache ne se déplacent pas : leur position est celle de la cache ;
+- **clic droit** : sur une étape, sa bulle ; ailleurs, « Poser un lieu ici »
+  / « Poser une base ici », qui ouvre le formulaire de pose à cet endroit,
+  type choisi d'avance (onglet Données affiché). Sans parcours ouvert, le
+  menu du navigateur.
+
+Gestes communs à la bulle et au panneau : `pinStopTime`, `excludeStop`,
+`openStopDetails`. Les bulles de mapgl.js (`openPopupAt`) se posent sous le
+point quand la place manque au-dessus, et se décalent vers l'intérieur près
+d'un bord latéral ; ouvertes, elles passent au-dessus des cartouches
+(titre, infos).
+
 Ce que la reconstruction en fait (`applyAdjustments`, puis
 `reconstructDay`) :
 
@@ -400,8 +425,8 @@ Ce que la reconstruction en fait (`applyAdjustments`, puis
 | base (`base`) | Départ et retour de chaque journée qui a des étapes (clés `place:<id>:<date>:start` / `:end`, visite 0) ; une base datée prime sur une base « toutes les journées » ; elle oriente l'ordre géographique de la journée. Son `role` restreint l'extrémité servie : `start` (départ seul), `end` (retour seul) ou `both` — pour chaque extrémité, la base datée prime (rôle précis puis `both`), sinon celle de toutes les journées |
 
 Pendant la lecture, lieux et bases n'ont pas de point WebGL. Ils sont
-dessinés par la couche de la tête : les bases toujours, les lieux une fois
-atteints. Au repos, le plan les montre (carré sombre, étoile violette) avec,
+dessinés par la couche de la tête, avec leur pastille de catégorie : les
+bases toujours, les lieux une fois atteints. Au repos, le plan les montre (carré sombre, étoile violette) avec,
 pour une catégorie, une pastille d'icône Tabler en bas à droite ; la liste
 la reprend dans le badge et le détail de l'étape. La catégorie est purement
 affichage : le comportement reste celui du type. Une base dure 4 quanta à

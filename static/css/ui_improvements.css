@@ -4221,6 +4221,33 @@ body[data-mode="parcours"] .rhythm-rate-field {
     cursor: crosshair !important;
 }
 
+/* Bulle d'une étape et menu du clic droit (bulle .gc-popup de la carte, qui
+   laisse passer la souris : ses contrôles la reprennent). */
+.parcours-bubble {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.parcours-bubble button,
+.parcours-bubble input {
+    pointer-events: auto;
+}
+.parcours-bubble-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+.parcours-bubble-time {
+    width: auto;
+}
+.parcours-bubble-menu {
+    align-items: stretch;
+}
+.parcours-bubble-menu .btn {
+    justify-content: flex-start;
+}
+
 /* Onglet Style › Points : une couleur par nature d'étape, sur une rangée. */
 .parcours-style-colors {
     display: flex;

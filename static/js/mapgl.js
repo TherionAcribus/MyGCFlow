@@ -787,7 +787,7 @@ function inspectTrailStopAt(pixel, coordinate) {
     const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
     contentEl.innerHTML = html;
     popupEl.classList.add('is-visible');
-    popupOverlay.setPosition(coordinate);
+    openPopupAt(coordinate);
     return true;
 }
 
@@ -806,7 +806,7 @@ function inspectZoneAt(pixel, coordinate) {
     const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
     contentEl.innerHTML = html;
     popupEl.classList.add('is-visible');
-    popupOverlay.setPosition(coordinate);
+    openPopupAt(coordinate);
     return true;
 }
 
@@ -852,6 +852,13 @@ export function initPopupOverlay(){
         }
 
         const pixel = evt.pixel;
+        // Page dont le moteur a ses propres objets cliquables (Parcours :
+        // étapes du plan, avec leurs actions) : ils passent avant les points.
+        const own = isLifecyclePage() ? lifecycleEngine()?.popupAt?.(pixel) : null;
+        if (own) {
+            showMapPopup(own.coordinate, own.render);
+            return;
+        }
         const feature = map.forEachFeatureAtPixel(pixel, function(ft, layer){
             // On cible uniquement nos couches de points (trouvailles, puis
             // caches posées et DNF dessous : parcours du haut vers le bas).
@@ -874,7 +881,7 @@ export function initPopupOverlay(){
             const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
             lifecycleEngine()?.renderPopup?.(feature, contentEl);
             popupEl.classList.add('is-visible');
-            popupOverlay.setPosition(evt.coordinate);
+            openPopupAt(evt.coordinate);
             return;
         }
 
@@ -927,7 +934,7 @@ export function initPopupOverlay(){
                 + '<div>' + sanitize(triesLabel) + '</div>'
                 + '<div>' + sanitize(resolvedLabel) + '</div>';
             popupEl.classList.add('is-visible');
-            popupOverlay.setPosition(evt.coordinate);
+            openPopupAt(evt.coordinate);
             return;
         }
 
@@ -937,7 +944,7 @@ export function initPopupOverlay(){
             const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
             contentEl.innerHTML = ownerPopupHtml(feature, props, { gcEsc, linkHref, nameLabel, type, cont, dif, ter, fmtPopupDate, t });
             popupEl.classList.add('is-visible');
-            popupOverlay.setPosition(evt.coordinate);
+            openPopupAt(evt.coordinate);
             return;
         }
 
@@ -986,7 +993,7 @@ export function initPopupOverlay(){
             const img = contentEl.querySelector('img.gc-popup-image');
             img?.addEventListener('error', () => img.remove(), { once: true });
             popupEl.classList.add('is-visible');
-            popupOverlay.setPosition(evt.coordinate);
+            openPopupAt(evt.coordinate);
             return;
         }
 
@@ -999,7 +1006,7 @@ export function initPopupOverlay(){
         const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
         contentEl.innerHTML = html;
         popupEl.classList.add('is-visible');
-        popupOverlay.setPosition(evt.coordinate);
+        openPopupAt(evt.coordinate);
     });
 
     // Masquer à l'échappement
@@ -1019,6 +1026,57 @@ export function initPopupOverlay(){
 function hidePopup(){
     if (popupEl) popupEl.classList.remove('is-visible');
     if (popupOverlay) popupOverlay.setPosition(undefined);
+}
+
+// Bulle de la carte remplie par un autre module (page Parcours : bulle
+// d'actions d'une étape, menu du clic droit). `fill(contentEl)` écrit le
+// contenu ; les contrôles interactifs y portent leur propre
+// `pointer-events` (la bulle laisse passer la souris par défaut).
+export function showMapPopup(coordinate, fill) {
+    if (!popupEl || !popupOverlay || !coordinate) return false;
+    const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+    contentEl.replaceChildren();
+    fill?.(contentEl);
+    popupEl.classList.add('is-visible');
+    openPopupAt(coordinate);
+    return true;
+}
+
+// Toute bulle s'ouvre par ici (contenu déjà écrit, classe is-visible posée).
+// Placée d'abord : sans position, OpenLayers masque son conteneur et la
+// bulle ne se mesure pas.
+function openPopupAt(coordinate) {
+    popupOverlay.setPosition(coordinate);
+    fitPopupAround(coordinate);
+}
+
+// Bulle au-dessus du point, centrée — sous lui si la place manque en haut,
+// décalée vers l'intérieur près d'un bord latéral : sinon le bord de la carte
+// la coupe (point proche du titre, en haut à gauche). La position par défaut
+// est remise à chaque ouverture.
+function fitPopupAround(coordinate) {
+    const pixel = map.getPixelFromCoordinate(coordinate);
+    const size = map.getSize();
+    let vertical = 'bottom';
+    let horizontal = 'center';
+    if (pixel && size) {
+        const width = popupEl.offsetWidth;
+        const height = popupEl.offsetHeight;
+        if (pixel[1] - height - 10 < 0 && pixel[1] + height + 10 <= size[1]) vertical = 'top';
+        if (pixel[0] - width / 2 < 0) horizontal = 'left';
+        else if (pixel[0] + width / 2 > size[0]) horizontal = 'right';
+    }
+    // La bulle est en position absolue dans un conteneur OpenLayers de
+    // taille nulle : le `positioning` de l'overlay n'y change rien, c'est sa
+    // transformation (feuille de style : translate(-50%, -100%)) qui la place.
+    const tx = horizontal === 'left' ? '0' : (horizontal === 'right' ? '-100%' : '-50%');
+    popupEl.style.transform = `translate(${tx}, ${vertical === 'top' ? '0' : '-100%'})`;
+    const dx = horizontal === 'left' ? -12 : (horizontal === 'right' ? 12 : 0);
+    popupOverlay.setOffset([dx, vertical === 'top' ? 10 : -10]);
+}
+
+export function hideMapPopup() {
+    hidePopup();
 }
 
 function sanitize(v){

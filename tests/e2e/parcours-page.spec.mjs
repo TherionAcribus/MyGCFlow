@@ -234,7 +234,7 @@ test('modifier un parcours : nom et dates, sans perdre les ajustements', async (
   expect(errors).toEqual([]);
 });
 
-test('lien liste ↔ carte : halo au survol, panneau au clic sur la carte', async ({ page, request }) => {
+test('lien liste ↔ carte : halo au survol, bulle puis panneau au clic sur la carte', async ({ page, request }) => {
   await importFixture(page, request);
   const created = await request.post('/api/parcours',
     { data: { name: 'Journée', date_start: '2025-07-12', date_end: '2025-07-12' } });
@@ -253,8 +253,10 @@ test('lien liste ↔ carte : halo au survol, panneau au clic sur la carte', asyn
   await page.mouse.move(box.x + pixel[0], box.y + pixel[1]);
   await expect.poll(async () => (await snapshot(page)).mapHover).toContain('GCPAR02');
 
-  // Clic sur le point : le panneau d'ajustement de l'étape s'ouvre.
+  // Clic sur le point : sa bulle (parcours-map-actions.spec.mjs), dont
+  // « Détails » ouvre le panneau d'ajustement de l'étape.
   await page.mouse.click(box.x + pixel[0], box.y + pixel[1]);
+  await page.locator('#gcPopup.is-visible .parcours-bubble[data-stop-key="GCPAR02"] .parcours-bubble-details').click();
   await expect(page.locator('.parcours-stop-edit[data-edit-key="GCPAR02"]')).toBeVisible();
   await expect(page.locator('.parcours-edit-locate')).toBeVisible();
   expect(errors).toEqual([]);

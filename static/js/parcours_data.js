@@ -500,6 +500,7 @@ function parcoursBegin(startDate, endDate, at) {
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
     playStopsDrawn = { drawn: 0, popping: 0 };
+    pkg.hideMapPopup?.();
     setPlanVisible(false);
     ensurePlayLayers();
     beginCamera();
@@ -781,6 +782,7 @@ const PARCOURS_ENGINE = Object.freeze({
     renderPopup: renderParcoursPopup,
     styleChanged: parcoursStyleChanged,
     hidesPoints: () => stopStyle().render === RENDER_STOPS,
+    popupAt: parcoursPopupAt,
 });
 
 // --- Caméra de la lecture --------------------------------------------------------
@@ -2140,24 +2142,17 @@ function renderEditPanel(stop, day) {
         const input = document.createElement('input');
         input.type = 'time';
         input.className = 'form-control form-control-sm w-auto parcours-edit-time';
-        const pinned = stop.kind === KIND_PLACE ? place?.time : overrideOf(stop.key)?.pinnedTime;
+        const pinned = pinnedTimeOf(stop);
         input.value = pinned || minutesToTime(stop.arrivalMin);
         label.htmlFor = input.id = `parcoursEditTime-${stop.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
         const pin = button('btn btn-sm btn-outline-primary parcours-edit-pin', 'ti-pin', t('Épingler cette heure'),
             { text: t('Épingler') });
-        pin.addEventListener('click', () => {
-            if (!input.value) return;
-            if (stop.kind === KIND_PLACE) updatePlace(stop.placeId, { time: input.value });
-            else saveOverrides([{ key: stop.key, pinnedTime: input.value }]);
-        });
+        pin.addEventListener('click', () => pinStopTime(stop, input.value));
         row.append(label, input, pin);
         if (pinned) {
             const unpin = button('btn btn-sm btn-link parcours-edit-unpin', 'ti-x', t('Retirer l’heure épinglée'),
                 { text: t('Retirer') });
-            unpin.addEventListener('click', () => {
-                if (stop.kind === KIND_PLACE) updatePlace(stop.placeId, { time: null });
-                else saveOverrides([{ key: stop.key, pinnedTime: null }]);
-            });
+            unpin.addEventListener('click', () => pinStopTime(stop, null));
             row.append(unpin);
         }
         panel.append(row);
@@ -2386,10 +2381,7 @@ function renderEditPanel(stop, day) {
     if (isCountedStop(stop)) {
         const exclude = button('btn btn-sm btn-outline-danger parcours-edit-exclude', 'ti-eye-off',
             t('Exclure du parcours'), { text: t('Exclure du parcours') });
-        exclude.addEventListener('click', () => {
-            editKey = null;
-            saveOverrides([{ key: stop.key, excluded: true, rank: null }]);
-        });
+        exclude.addEventListener('click', () => excludeStop(stop));
         actions.append(exclude);
     } else if (place) {
         const remove = button('btn btn-sm btn-outline-danger parcours-edit-delete-place', 'ti-trash',
@@ -2403,6 +2395,34 @@ function renderEditPanel(stop, day) {
     }
     panel.append(actions);
     return panel;
+}
+
+// Gestes communs au panneau d'ajustement et à la bulle de la carte. Heure
+// épinglée : celle du lieu pour un lieu posé, un ajustement pour une étape
+// comptée ; `null` la retire.
+function pinnedTimeOf(stop) {
+    return stop.kind === KIND_PLACE ? placeOf(stop)?.time || null : overrideOf(stop.key)?.pinnedTime || null;
+}
+
+function pinStopTime(stop, time) {
+    if (time === '') return;
+    if (stop.kind === KIND_PLACE) updatePlace(stop.placeId, { time });
+    else saveOverrides([{ key: stop.key, pinnedTime: time }]);
+}
+
+function excludeStop(stop) {
+    if (editKey === stop.key) editKey = null;
+    saveOverrides([{ key: stop.key, excluded: true, rank: null }]);
+}
+
+// Panneau d'ajustement d'une étape ouvert dans la liste (onglet Données).
+function openStopDetails(key) {
+    editKey = key;
+    expandDayOf(key);
+    renderStops();
+    pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
+    el('parcoursStops')?.querySelector(`[data-edit-key="${CSS.escape(key)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
 }
 
 // --- Ajustements : écriture puis reconstruction ---------------------------------
@@ -2653,13 +2673,15 @@ async function createPlace(data) {
 }
 
 async function updatePlace(id, data) {
-    if (!selectedId || adjustmentsLocked()) return;
+    if (!selectedId || adjustmentsLocked()) return false;
     const pid = selectedId;
     try {
         await fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
         await reloadAdjustments(pid);
+        return true;
     } catch (error) {
         showToast(error.message, 'error');
+        return false;
     }
 }
 
@@ -2735,7 +2757,7 @@ function startPlaceMove(place) {
     });
 }
 
-function openPlaceForm({ lon, lat }) {
+function openPlaceForm({ lon, lat }, { kind = KIND_PLACE } = {}) {
     const form = el('parcoursPlaceForm');
     if (!form) return;
     placeDraft = { lon, lat };
@@ -2757,11 +2779,10 @@ function openPlaceForm({ lon, lat }) {
         const first = (ordered?.days || []).find((day) => day.stops.length > 0);
         days.value = first?.date || '';
     }
-    const coords = el('parcoursPlaceCoords');
-    if (coords) coords.textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    showDraftCoords();
     el('parcoursPlaceName').value = '';
     el('parcoursPlaceTime').value = '';
-    el('parcoursPlaceKind').value = KIND_PLACE;
+    el('parcoursPlaceKind').value = kind === KIND_BASE ? KIND_BASE : KIND_PLACE;
     el('parcoursPlaceRole').value = 'both';
     el('parcoursPlaceCategory').value = 'other';
     placeIconDraft = CUSTOM_ICONS[0];
@@ -2773,6 +2794,11 @@ function openPlaceForm({ lon, lat }) {
     syncPlaceForm();
     form.hidden = false;
     el('parcoursPlaceName')?.focus();
+}
+
+function showDraftCoords() {
+    const coords = el('parcoursPlaceCoords');
+    if (coords && placeDraft) coords.textContent = `${placeDraft.lat.toFixed(5)}, ${placeDraft.lon.toFixed(5)}`;
 }
 
 // Grille d'icônes Tabler de la catégorie « custom » : boutons `aria-pressed`,
@@ -4420,33 +4446,208 @@ function ensureLayer() {
 }
 
 // Lien liste ↔ carte : survoler un point du plan surligne sa ligne dans la
-// liste ; cliquer un point ouvre son panneau d'ajustement. Le survol d'une
-// ligne met le point en évidence (halo) via `setHoveredStop`.
+// liste ; le survol d'une ligne met le point en évidence (halo) via
+// `setHoveredStop`. Agir depuis la carte, au repos :
+// - clic sur une étape : bulle d'actions (moteur › popupAt, bulle de
+//   mapgl.js), sa ligne amenée dans la liste ;
+// - glisser un lieu, une base ou le point provisoire de la pose ;
+// - clic droit : la bulle de l'étape, ou « Poser un lieu / une base ici ».
+let dragging = false;         // un repère est en train d'être glissé
+
+function planFeatureAt(map, pixel, roles = ['stop']) {
+    return map.forEachFeatureAtPixel(pixel,
+        (f) => (roles.includes(f.get('role')) ? f : null),
+        { layerFilter: (layer) => layer === parcoursLayer, hitTolerance: 5 });
+}
+
+function isDraggable(feature) {
+    const role = feature.get('role');
+    if (role === 'draft') return true;
+    return role === 'stop' && (feature.get('kind') === KIND_PLACE || feature.get('kind') === KIND_BASE)
+        && feature.get('placeId') != null;
+}
+
 function bindMapLink(map) {
     if (hoverBound) return;
     hoverBound = true;
     map.on('pointermove', (event) => {
-        if (event.dragging) return;
-        const feature = map.forEachFeatureAtPixel(event.pixel,
-            (f) => (f.get('role') === 'stop' ? f : null),
-            { layerFilter: (layer) => layer === parcoursLayer, hitTolerance: 5 });
-        highlightRowsFor(feature || null);
+        if (event.dragging || dragging) return;
+        const feature = planFeatureAt(map, event.pixel, ['stop', 'draft']);
+        highlightRowsFor(feature?.get('role') === 'stop' ? feature : null);
         const target = map.getTargetElement();
-        if (target && !picking) target.style.cursor = feature ? 'pointer' : '';
+        if (target && !picking) target.style.cursor = feature ? (isDraggable(feature) ? 'grab' : 'pointer') : '';
     });
-    map.on('singleclick', (event) => {
-        // Un clic de pose ou de déplacement de lieu travaille pour le
-        // formulaire, pas pour l'étape qui serait sous la souris.
-        if (picking || performance.now() < clickMutedUntil) return;
-        const feature = map.forEachFeatureAtPixel(event.pixel,
-            (f) => (f.get('role') === 'stop' ? f : null),
-            { layerFilter: (layer) => layer === parcoursLayer, hitTolerance: 5 });
-        if (!feature) return;
-        editKey = feature.get('key') === editKey ? null : feature.get('key');
-        if (editKey) expandDayOf(editKey);
-        renderStops();
-        el('parcoursStops')?.querySelector(`[data-stop-key="${feature.get('key')}"]`)
-            ?.scrollIntoView({ block: 'nearest' });
+    bindPlanDrag(map);
+    map.getViewport().addEventListener('contextmenu', (event) => onMapContextMenu(map, event));
+}
+
+// Glisser un repère : la pose est enregistrée au lâcher (un lieu ou une
+// base), ou reportée dans le formulaire (point provisoire). Un appui sans
+// mouvement reste un clic (bulle).
+function bindPlanDrag(map) {
+    const translate = new ol.interaction.Translate({
+        layers: [parcoursLayer],
+        filter: (feature) => isDraggable(feature) && !clock.running && !picking,
+        hitTolerance: 5,
+    });
+    translate.on('translatestart', () => {
+        dragging = true;
+        pkg.hideMapPopup?.();
+        const target = map.getTargetElement();
+        if (target) target.style.cursor = 'grabbing';
+    });
+    translate.on('translateend', (event) => {
+        dragging = false;
+        const target = map.getTargetElement();
+        if (target) target.style.cursor = 'grab';
+        const feature = event.features.item(0);
+        const [sx, sy] = event.startCoordinate || [];
+        const [ex, ey] = event.coordinate || [];
+        if (!feature || (sx === ex && sy === ey)) return;
+        const [lon, lat] = ol.proj.toLonLat(feature.getGeometry().getCoordinates());
+        if (feature.get('role') === 'draft') {
+            placeDraft = { lon, lat };
+            showDraftCoords();
+            return;
+        }
+        movePlaceTo(feature.get('placeId'), lon, lat);
+    });
+    map.addInteraction(translate);
+}
+
+// Refus (lecture en cours, erreur du serveur) : le repère revient à sa place.
+async function movePlaceTo(id, lon, lat) {
+    if (!(await updatePlace(id, { lat, lon }))) renderLayer();
+}
+
+// Bulle d'une étape du plan (moteur › popupAt, appelé par le clic de
+// mapgl.js) : rien pendant une pose, une lecture ou juste après un glisser.
+function parcoursPopupAt(pixel) {
+    if (picking || clock.running || performance.now() < clickMutedUntil) return null;
+    const map = pkg.getMap?.();
+    if (!map || !parcoursLayer?.getVisible()) return null;
+    const feature = planFeatureAt(map, pixel);
+    const stop = feature ? stopByKey(feature.get('key')) : null;
+    if (!stop) return null;
+    el('parcoursStops')?.querySelector(`[data-stop-key="${CSS.escape(stop.key)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    return { coordinate: feature.getGeometry().getCoordinates(), render: (box) => fillStopBubble(box, stop) };
+}
+
+// Bulle : nom, heure et raison de la place, puis les gestes courants —
+// épingler l'heure, exclure l'étape (supprimer un lieu), ouvrir le panneau
+// complet. Chaque geste ferme la bulle.
+function fillStopBubble(box, stop) {
+    const wrap = document.createElement('div');
+    wrap.className = 'parcours-bubble';
+    wrap.dataset.stopKey = stop.key;
+    const title = document.createElement('div');
+    title.className = 'gc-popup-title';
+    const number = currentStopLabels().get(stop.key);
+    title.textContent = number ? `${number} · ${stopLabel(stop)}` : stopLabel(stop);
+    const detail = document.createElement('div');
+    detail.className = 'gc-popup-note';
+    detail.textContent = [stopTime(stop), stopDetail(stop)].filter(Boolean).join(' · ');
+    wrap.append(title, detail);
+    const done = (action) => () => {
+        pkg.hideMapPopup?.();
+        action();
+    };
+    const place = placeOf(stop);
+
+    if (stop.kind !== KIND_BASE) {
+        const row = document.createElement('div');
+        row.className = 'parcours-bubble-row';
+        const input = document.createElement('input');
+        input.type = 'time';
+        input.className = 'form-control form-control-sm parcours-bubble-time';
+        input.setAttribute('aria-label', t('Heure'));
+        const pinned = pinnedTimeOf(stop);
+        input.value = pinned || minutesToTime(stop.arrivalMin);
+        const pin = button('btn btn-sm btn-light parcours-bubble-pin', 'ti-pin', t('Épingler cette heure'),
+            { text: t('Épingler') });
+        pin.addEventListener('click', done(() => pinStopTime(stop, input.value)));
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') pin.click();
+        });
+        row.append(input, pin);
+        if (pinned) {
+            const unpin = button('btn btn-sm btn-outline-light parcours-bubble-unpin', 'ti-pinned-off',
+                t('Retirer l’heure épinglée'));
+            unpin.addEventListener('click', done(() => pinStopTime(stop, null)));
+            row.append(unpin);
+        }
+        wrap.append(row);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'parcours-bubble-row';
+    if (isCountedStop(stop)) {
+        const exclude = button('btn btn-sm btn-outline-light parcours-bubble-exclude', 'ti-eye-off',
+            t('Exclure du parcours'), { text: t('Exclure') });
+        exclude.addEventListener('click', done(() => excludeStop(stop)));
+        actions.append(exclude);
+    } else if (place) {
+        const label = place.kind === KIND_BASE ? t('Supprimer la base') : t('Supprimer le lieu');
+        const remove = button('btn btn-sm btn-outline-light parcours-bubble-delete', 'ti-trash', label,
+            { text: t('Supprimer') });
+        remove.addEventListener('click', done(() => {
+            showConfirmation(
+                place.kind === KIND_BASE ? t('Supprimer cette base du parcours ?') : t('Supprimer ce lieu du parcours ?'),
+                label,
+                () => deletePlace(place.id),
+                null,
+                { danger: true, confirmText: t('Supprimer') },
+            );
+        }));
+        actions.append(remove);
+    }
+    const more = button('btn btn-sm btn-outline-light parcours-bubble-details', 'ti-adjustments',
+        t('Tous les réglages de l’étape'), { text: t('Détails') });
+    more.addEventListener('click', done(() => openStopDetails(stop.key)));
+    actions.append(more);
+    wrap.append(actions);
+    if (place) {
+        const hint = document.createElement('div');
+        hint.className = 'gc-popup-note';
+        hint.textContent = t('Glissez le repère sur la carte pour le déplacer.');
+        wrap.append(hint);
+    }
+    box.append(wrap);
+}
+
+// Clic droit au repos : la bulle de l'étape visée, sinon un menu pour poser
+// un lieu ou une base à cet endroit (formulaire de l'onglet Données, type
+// choisi d'avance). Sans parcours ouvert, le menu du navigateur.
+function onMapContextMenu(map, event) {
+    if (!ordered || !selectedId) return;
+    event.preventDefault();
+    if (picking || clock.running) return;
+    const pixel = map.getEventPixel(event);
+    const own = parcoursPopupAt(pixel);
+    if (own) {
+        pkg.showMapPopup?.(own.coordinate, own.render);
+        return;
+    }
+    const coordinate = map.getCoordinateFromPixel(pixel);
+    if (!coordinate) return;
+    const [lon, lat] = ol.proj.toLonLat(coordinate);
+    pkg.showMapPopup?.(coordinate, (box) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'parcours-bubble parcours-bubble-menu';
+        for (const [kind, icon, text] of [[KIND_PLACE, 'ti-map-pin-plus', t('Poser un lieu ici')],
+            [KIND_BASE, 'ti-home-plus', t('Poser une base ici')]]) {
+            const item = button(`btn btn-sm btn-light parcours-bubble-add-${kind}`, icon, text, { text });
+            item.addEventListener('click', () => {
+                pkg.hideMapPopup?.();
+                cancelPlacePicking();
+                pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
+                openPlaceForm({ lon, lat }, { kind });
+                el('parcoursPlaceForm')?.scrollIntoView({ block: 'nearest' });
+            });
+            wrap.append(item);
+        }
+        box.append(wrap);
     });
 }
 
@@ -4490,6 +4691,8 @@ function highlightRowsFor(feature) {
 function renderLayer({ fit = false } = {}) {
     const layer = ensureLayer();
     if (!layer) return;
+    // Plan refait : une bulle ouverte décrirait l'état d'avant.
+    pkg.hideMapPopup?.();
     const source = layer.getSource();
     source.clear();
     hoveredFeature = null;

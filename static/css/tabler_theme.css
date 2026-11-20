@@ -363,6 +363,15 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
 .gc-popup.is-visible {
     display: block;
 }
+/* Bulle ouverte : au-dessus des cartouches posés sur la carte (titre,
+   infos : z-index 100), qui sinon masquaient la bulle d'un point proche du
+   bord et prenaient ses clics ; sous la barre de contrôle (2010). Le
+   contexte d'empilement est celui du conteneur d'OpenLayers (z-index 0),
+   relevé seulement le temps de la bulle (il porte aussi zoom et
+   attribution). */
+.ol-overlaycontainer-stopevent:has(> .ol-overlay-container > .gc-popup.is-visible) {
+    z-index: 200 !important;
+}
 .gc-popup-content {
     display: flex;
     flex-direction: column;

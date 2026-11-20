@@ -399,6 +399,15 @@ Autres repères :
   IDENTITÉ de `app.options.point.parcoursStyle` : le remplacer par un nouvel
   objet, jamais le muter en place (sinon plan et trait gardent l'ancien
   style).
+  Actions depuis la carte (bulle d'une étape, glisser un lieu, clic
+  droit) : `parcours-map-actions.spec.mjs` — couper
+  `DoubleClickZoom` (deux clics d'étape au même pixel), viser une étape par
+  `stopPixels` + `.ol-viewport`, lire la bulle dans
+  `#gcPopup.is-visible .parcours-bubble[data-stop-key=…]`. La bulle de la
+  carte est en position absolue dans un conteneur OpenLayers de taille
+  nulle : `setPositioning` de l'overlay n'y fait rien, sa place vient de
+  sa transformation CSS (`fitPopupAround`, mapgl.js) ; et le conteneur
+  n'a de taille mesurable qu'une fois l'overlay positionné.
   `openParcoursPage` sert une tuile vide à la place des tuiles OSM : avec
   la caméra, la suite complète recevait des 429 du serveur de tuiles, qui
   faisaient échouer un spec suivant relevant les erreurs de console
