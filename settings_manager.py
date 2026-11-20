@@ -21,6 +21,7 @@ from event_flash import (
 )
 from poses_effects import coerce_poses_effects, poses_effects_defaults
 from poses_names import coerce_names_privacy, coerce_poses_names, poses_names_defaults, privacy_defaults
+from parcours_style import coerce_parcours_style, parcours_style_defaults
 from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
@@ -966,6 +967,10 @@ class PointStyle:
     # styles prêts à l'emploi et validation dans poses_names.py ; désactivé
     # par défaut.
     poses_names: dict = field(default_factory=poses_names_defaults)
+    # Page Parcours : pastilles du plan (taille, numéros, couleurs par
+    # nature), ligne du plan et trait de la lecture. Défauts et validation
+    # dans parcours_style.py ; sans effet sur les autres pages.
+    parcours_style: dict = field(default_factory=parcours_style_defaults)
 
 
 @dataclass
@@ -1629,6 +1634,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             dnf_icon=_coerce_choice(pt.get("dnf_icon"), DNF_ICON_MODES, pp.dnf_icon),
             poses_effects=coerce_poses_effects(pt.get("poses_effects"), pp.poses_effects),
             poses_names=coerce_poses_names(pt.get("poses_names"), pp.poses_names),
+            parcours_style=coerce_parcours_style(pt.get("parcours_style"), pp.parcours_style),
         )
 
         # Options flash
@@ -3358,6 +3364,7 @@ class SettingsManager:
                 'dnf_icon': prof.points.dnf_icon,
                 'poses_effects': copy.deepcopy(prof.points.poses_effects),
                 'poses_names': copy.deepcopy(prof.points.poses_names),
+                'parcours_style': copy.deepcopy(prof.points.parcours_style),
             },
             'flash': {
                 'mode': prof.flash.mode,

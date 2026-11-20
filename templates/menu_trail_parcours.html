@@ -1,0 +1,55 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
+<!-- Page Parcours : trait de la lecture et ligne du plan (points.parcours_style
+     du thème, parcours_style.mjs, docs/parcours.md). Le trait du mode
+     principal (menu_trail.html) n'est pas proposé ici : le thème étant
+     partagé, le régler depuis cette page changerait la page principale.
+     Piloté par parcours_data.js (bindParcoursStyle). -->
+<div id="parcoursTrail">
+    <h5 class="gc-section-title">
+        <i class="ti ti-route text-muted me-1"></i>{{ _("Trajet du géocacheur") }}{{ profile_scope_badge() }}
+    </h5>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">{{ _("Trait de la lecture") }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursStyleTrailColor">{{ _("Couleur du trait") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleTrailColor" value="#00b8d4">
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursStyleTrailWidth">{{ _("Épaisseur") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input id="parcoursStyleTrailWidth" type="number" class="form-control" min="1" max="12" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="parcoursStyleTrailOpacity">{{ _("Opacité") }}</label>
+                    <div class="vector-slider-container">
+                        <input id="parcoursStyleTrailOpacity" type="range" min="10" max="100" step="5" value="100" class="form-range vector-slider">
+                        <span id="parcoursStyleTrailOpacityValue" class="vector-slider-value">100%</span>
+                    </div>
+                </div>
+            </div>
+            <small class="form-hint text-muted">{{ _("Trait dessiné derrière le géocacheur pendant la lecture et dans la vidéo. Le géocacheur en prend la couleur. Les trajets estimés en pointillés se règlent dans l'onglet Données, carte « Lecture ».") }}</small>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">{{ _("Ligne du plan") }}</h6>
+        </div>
+        <div class="card-body">
+            <label class="form-label" for="parcoursStylePlanLine">{{ _("Entre les étapes d'une journée") }}</label>
+            <select id="parcoursStylePlanLine" class="form-select" aria-describedby="helpParcoursPlanLine">
+                <option value="dashed">{{ _("Pointillés") }}</option>
+                <option value="solid">{{ _("Pleine") }}</option>
+                <option value="none">{{ _("Aucune") }}</option>
+            </select>
+            <small id="helpParcoursPlanLine" class="form-hint text-muted">{{ _("Plan affiché au repos : la ligne prend la couleur et l'épaisseur du trait, en plus transparent.") }}</small>
+        </div>
+    </div>
+</div>

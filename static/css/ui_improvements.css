@@ -4221,6 +4221,17 @@ body[data-mode="parcours"] .rhythm-rate-field {
     cursor: crosshair !important;
 }
 
+/* Onglet Style › Points : une couleur par nature d'étape, sur une rangée. */
+.parcours-style-colors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+}
+
+.parcours-style-colors .form-label {
+    margin-bottom: 0.25rem;
+}
+
 /* Grille d'icônes de la catégorie « personnalisée ». */
 .parcours-icon-picker {
     display: flex;

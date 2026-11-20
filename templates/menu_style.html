@@ -85,6 +85,10 @@
                         {% if not lifecycle %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
                         {% endif %}
+                        {# Parcours : son propre trait (trait de la lecture, ligne du plan). #}
+                        {% if mode == 'parcours' %}
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabParcoursTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
+                        {% endif %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTitles" role="tab" aria-selected="false">{{ _("Titres") }}</a></li>
                     </ul>
 
@@ -221,6 +225,13 @@
                     <!-- Sous-onglet Trajet (traits de déplacement) -->
                     <div id="tabTrail" class="tab-pane fade">
                         {% include 'menu_trail.html' %}
+                    </div>
+                    {% endif %}
+
+                    {% if mode == 'parcours' %}
+                    <!-- Sous-onglet Trajet de la page Parcours -->
+                    <div id="tabParcoursTrail" class="tab-pane fade">
+                        {% include 'menu_trail_parcours.html' %}
                     </div>
                     {% endif %}
 

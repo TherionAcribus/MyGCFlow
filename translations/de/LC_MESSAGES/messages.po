@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-17 19:54+0100\n"
+"POT-Creation-Date: 2026-11-19 08:32+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -257,7 +257,7 @@ msgstr "Videoverarbeitung"
 msgid "Traitement ffmpeg"
 msgstr "ffmpeg-Verarbeitung"
 
-#: capture.py:1299 static/js/mapgl.js:5734 templates/guide.html:368
+#: capture.py:1299 static/js/mapgl.js:5739 templates/guide.html:368
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Video bereit"
@@ -341,10 +341,10 @@ msgstr "Fund"
 
 #: event_flash.py:64 poses_dataset.py:638 static/js/chart_labels.mjs:245
 #: static/js/gc_logs.js:59 static/js/gc_logs.js:81 static/js/mapgl.js:1260
-#: static/js/parcours_data.js:1488 static/js/stats_panels.js:1406
+#: static/js/parcours_data.js:1869 static/js/stats_panels.js:1406
 #: static/js/stats_panels.js:1839 templates/menu_informations.html:68
 #: templates/menu_informations.html:116 templates/menu_names.html:64
-#: templates/menu_names.html:327
+#: templates/menu_names.html:327 templates/menu_points.html:287
 msgid "DNF"
 msgstr "DNF"
 
@@ -639,18 +639,19 @@ msgstr "die Logs haben sich seit der Vorschau geändert: Starten Sie diese erneu
 msgid "Code GC"
 msgstr "GC-Code"
 
-#: poses_dataset.py:635 templates/menu_data_parcours.html:32
-#: templates/menu_data_parcours.html:222 templates/menu_images.html:152
-#: templates/stats_page.html:658 templates/stats_page.html:732
+#: poses_dataset.py:635 static/js/parcours_data.js:2413
+#: templates/menu_data_parcours.html:32 templates/menu_data_parcours.html:248
+#: templates/menu_images.html:152 templates/stats_page.html:658
+#: templates/stats_page.html:732
 msgid "Nom"
 msgstr "Name"
 
-#: poses_dataset.py:635 static/js/ui.js:11714
-#: templates/menu_data_parcours.html:215
+#: poses_dataset.py:635 static/js/parcours_data.js:2439 static/js/ui.js:11717
+#: templates/menu_data_parcours.html:241
 msgid "Type"
 msgstr "Typ"
 
-#: poses_dataset.py:635 static/js/ui.js:11713
+#: poses_dataset.py:635 static/js/ui.js:11716
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
 #: templates/menu_photos_parcours.html:146 templates/stats_page.html:350
 msgid "Taille"
@@ -701,7 +702,8 @@ msgstr "Status"
 #: poses_dataset.py:638 static/js/chart_labels.mjs:244
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
 #: static/js/zone_layer.js:917 templates/menu_informations.html:66
-#: templates/menu_names.html:60 templates/menu_stats.html:228
+#: templates/menu_names.html:60 templates/menu_points.html:279
+#: templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Funde"
 
@@ -734,22 +736,22 @@ msgstr "Beta-Fund"
 msgid "Premier log"
 msgstr "Erstes Log"
 
-#: poses_dataset.py:666 static/js/evolution_data.js:825 static/js/mapgl.js:4000
+#: poses_dataset.py:666 static/js/evolution_data.js:825 static/js/mapgl.js:4005
 #: static/js/poses_data.js:917 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Aktiv"
 
-#: poses_dataset.py:667 static/js/mapgl.js:4000 static/js/poses_data.js:918
+#: poses_dataset.py:667 static/js/mapgl.js:4005 static/js/poses_data.js:918
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr "Deaktiviert"
 
-#: poses_dataset.py:668 static/js/mapgl.js:4000 static/js/poses_data.js:919
+#: poses_dataset.py:668 static/js/mapgl.js:4005 static/js/poses_data.js:919
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr "Archiviert"
 
-#: settings_manager.py:3099
+#: settings_manager.py:3105
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -758,45 +760,45 @@ msgstr ""
 "Der Name „%(name)s“ enthält kein verwendbares Zeichen (mindestens ein "
 "Buchstabe oder eine Ziffer ist erforderlich)"
 
-#: blueprints/profiles.py:607 settings_manager.py:3139 settings_manager.py:3216
-#: settings_manager.py:3268
+#: blueprints/profiles.py:607 settings_manager.py:3145 settings_manager.py:3222
+#: settings_manager.py:3274
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Design „%(name)s“ nicht gefunden"
 
-#: settings_manager.py:3160
+#: settings_manager.py:3166
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "Kein Design mit der UUID gefunden: %(uid)s"
 
-#: settings_manager.py:3196 settings_manager.py:3221
+#: settings_manager.py:3202 settings_manager.py:3227
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "Ein Design mit dem Namen „%(name)s“ existiert bereits"
 
-#: settings_manager.py:3233
+#: settings_manager.py:3239
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Quelldesign „%(name)s“ nicht gefunden"
 
-#: settings_manager.py:3249
+#: settings_manager.py:3255
 msgid "Mode de thème inconnu"
 msgstr "Unbekannter Design-Modus"
 
-#: settings_manager.py:3252
+#: settings_manager.py:3258
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Das Design „%(name)s“ gehört bereits zu diesem Modus"
 
-#: settings_manager.py:3443
+#: settings_manager.py:3450
 msgid "Payload invalide"
 msgstr "Ungültige Nutzdaten"
 
-#: settings_manager.py:3446
+#: settings_manager.py:3453
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Ungültige Designdatei (Kennung fehlt)"
 
-#: settings_manager.py:3450
+#: settings_manager.py:3457
 msgid "Section 'profile' manquante"
 msgstr "Abschnitt „profile“ fehlt"
 
@@ -850,7 +852,7 @@ msgid "Choisir fichier"
 msgstr "Datei wählen"
 
 #: blueprints/core.py:199 templates/guide.html:211 templates/menu_style.html:77
-#: templates/menu_style.html:95
+#: templates/menu_style.html:99
 msgid "Cartes"
 msgstr "Karten"
 
@@ -896,11 +898,12 @@ msgstr "Bestätigen"
 #: static/js/stats_page_links.js:267 static/js/stats_page_video.js:75
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
-#: templates/menu_data_parcours.html:239 templates/menu_images.html:118
-#: templates/menu_stats.html:71 templates/menu_style.html:268
-#: templates/menu_style.html:293 templates/menu_style.html:318
-#: templates/menu_style.html:346 templates/menu_style.html:377
-#: templates/menu_style.html:405 templates/modal_evolution.html:18
+#: templates/menu_data_parcours.html:189 templates/menu_data_parcours.html:219
+#: templates/menu_data_parcours.html:289 templates/menu_images.html:118
+#: templates/menu_stats.html:71 templates/menu_style.html:279
+#: templates/menu_style.html:304 templates/menu_style.html:329
+#: templates/menu_style.html:357 templates/menu_style.html:388
+#: templates/menu_style.html:416 templates/modal_evolution.html:18
 #: templates/modal_evolution.html:60 templates/modal_evolution.html:84
 #: templates/modal_loading.html:14 templates/stats_page.html:505
 #: templates/stats_page.html:580 templates/stats_page.html:667
@@ -1230,11 +1233,11 @@ msgstr "Bild zu groß: maximal %(max)d MB."
 msgid "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
 msgstr "Format nicht unterstützt: PNG, JPEG, WebP, GIF, SVG oder HEIC."
 
-#: blueprints/images.py:48 blueprints/parcours.py:179
+#: blueprints/images.py:48 blueprints/parcours.py:217
 msgid "Image trop grande (dimensions démesurées)."
 msgstr "Bild zu groß (übermäßige Abmessungen)."
 
-#: blueprints/images.py:49 blueprints/parcours.py:181
+#: blueprints/images.py:49 blueprints/parcours.py:219
 msgid "Ce fichier n'est pas une image lisible."
 msgstr "Diese Datei ist kein lesbares Bild."
 
@@ -1437,7 +1440,7 @@ msgstr ""
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr "Ein Medley umfasst 2 bis %(max)d Titel."
 
-#: blueprints/media.py:296 static/js/ui.js:12227
+#: blueprints/media.py:296 static/js/ui.js:12230
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr "Einer der Titel wurde auf dem Server nicht gefunden."
 
@@ -1499,7 +1502,7 @@ msgstr "Der Name der Tour ist zu lang (höchstens %(max)s Zeichen)"
 msgid "Date invalide"
 msgstr "Ungültiges Datum"
 
-#: blueprints/parcours.py:34 static/js/parcours_data.js:1345
+#: blueprints/parcours.py:34 static/js/parcours_data.js:1609
 msgid "La date de fin précède la date de début"
 msgstr "Das Enddatum liegt vor dem Startdatum"
 
@@ -1558,55 +1561,59 @@ msgstr "Eine Tour enthält höchstens %(max)s Tracks"
 msgid "Trace introuvable"
 msgstr "Track nicht gefunden"
 
-#: blueprints/parcours.py:174
+#: blueprints/parcours.py:48
+msgid "Ce fichier n'est pas un export de parcours valide"
+msgstr "Diese Datei ist kein gültiger Tour-Export"
+
+#: blueprints/parcours.py:212
 #, python-format
 msgid "Photo trop lourde : %(max)d Mo au maximum."
 msgstr "Foto zu groß: höchstens %(max)d MB."
 
-#: blueprints/parcours.py:177
+#: blueprints/parcours.py:215
 msgid "Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC."
 msgstr "Nicht unterstütztes Format: JPEG, PNG, WebP, GIF oder HEIC."
 
-#: blueprints/parcours.py:190
+#: blueprints/parcours.py:228
 msgid "Aucune photo fournie"
 msgstr "Kein Foto übermittelt"
 
-#: blueprints/parcours.py:260
+#: blueprints/parcours.py:298
 #, python-format
 msgid "Trace trop lourde : %(max)d Mo au maximum."
 msgstr "Track zu groß: höchstens %(max)d MB."
 
-#: blueprints/parcours.py:263
+#: blueprints/parcours.py:301
 msgid "Cette trace n'a aucun point horodaté : impossible d'en tirer des heures."
 msgstr ""
 "Dieser Track hat keine Punkte mit Zeitstempel: Daraus lassen sich keine "
 "Uhrzeiten ableiten."
 
-#: blueprints/parcours.py:265
+#: blueprints/parcours.py:303
 msgid "Ce fichier n'est pas une trace GPX lisible."
 msgstr "Diese Datei ist kein lesbarer GPX-Track."
 
-#: blueprints/parcours.py:274
+#: blueprints/parcours.py:312
 msgid "Aucune trace fournie"
 msgstr "Kein Track übermittelt"
 
-#: blueprints/parcours.py:297
+#: blueprints/parcours.py:335
 msgid "Service d'itinéraires injoignable : trajets en ligne droite."
 msgstr "Routing-Dienst nicht erreichbar: Wege als Luftlinie."
 
-#: blueprints/parcours.py:298
+#: blueprints/parcours.py:336
 msgid "Le service d'itinéraires limite les requêtes : réessayez plus tard."
 msgstr "Der Routing-Dienst begrenzt die Anfragen: Versuchen Sie es später erneut."
 
-#: blueprints/parcours.py:299
+#: blueprints/parcours.py:337
 msgid "Clé openrouteservice absente ou refusée."
 msgstr "openrouteservice-Schlüssel fehlt oder wurde abgelehnt."
 
-#: blueprints/parcours.py:313
+#: blueprints/parcours.py:351
 msgid "Les itinéraires ne sont pas activés."
 msgstr "Routing ist nicht aktiviert."
 
-#: blueprints/parcours.py:318
+#: blueprints/parcours.py:356
 msgid "Requête d'itinéraire invalide"
 msgstr "Ungültige Routing-Anfrage"
 
@@ -1672,12 +1679,12 @@ msgstr ""
 "Diese Musik kann nicht abgespielt werden (nicht unterstütztes Format oder"
 " beschädigte Datei)."
 
-#: static/js/background_audio.js:121 static/js/mapgl.js:5735
+#: static/js/background_audio.js:121 static/js/mapgl.js:5740
 #: static/js/stats_page_video.js:991 static/js/ui.js:950 static/js/ui.js:1019
-#: static/js/ui.js:2375 static/js/ui.js:11785 static/js/ui.js:11865
-#: static/js/ui.js:12071 static/js/ui.js:12186 static/js/ui.js:12243
-#: static/js/ui.js:12269 static/js/ui.js:12328 static/js/ui.js:12336
-#: static/js/ui.js:12344 static/js/ui.js:12514 templates/guide.html:314
+#: static/js/ui.js:2375 static/js/ui.js:11788 static/js/ui.js:11868
+#: static/js/ui.js:12074 static/js/ui.js:12189 static/js/ui.js:12246
+#: static/js/ui.js:12272 static/js/ui.js:12331 static/js/ui.js:12339
+#: static/js/ui.js:12347 static/js/ui.js:12517 templates/guide.html:314
 #: templates/menu_animation.html:23 templates/menu_animation.html:305
 #: templates/stats_page.html:829
 msgid "Musique"
@@ -1703,7 +1710,7 @@ msgstr ""
 "${count} Kartenkachel(n) konnten während der Aufnahme nicht geladen "
 "werden: Das Video kann leere Bereiche enthalten."
 
-#: static/js/bdd.js:250 static/js/mapgl.js:7055
+#: static/js/bdd.js:250 static/js/mapgl.js:7060
 msgid "Terminé"
 msgstr "Fertig"
 
@@ -1786,6 +1793,7 @@ msgid "… et 1 autre"
 msgstr "… und 1 weitere"
 
 #: static/js/bdd.js:694 static/js/gc_logs.js:89 static/js/labs.js:730
+#: static/js/parcours_data.js:1754
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr "… und ${n} weitere"
@@ -2788,8 +2796,8 @@ msgstr "Pro Tag des Zeitraums"
 msgid "Par km² (densité)"
 msgstr "Pro km² (Dichte)"
 
-#: static/js/chart_labels.mjs:313 static/js/parcours_data.js:2707
-#: static/js/parcours_data.js:3036 templates/menu_flash.html:68
+#: static/js/chart_labels.mjs:313 static/js/parcours_data.js:3731
+#: static/js/parcours_data.js:4079 templates/menu_flash.html:68
 #: templates/menu_flash_disappear.html:49 templates/menu_flash_dnf.html:56
 #: templates/menu_flash_dnf.html:125
 msgid "Automatique"
@@ -3544,8 +3552,8 @@ msgstr "${period} (läuft)"
 msgid "${period} (au ${date})"
 msgstr "${period} (Stand ${date})"
 
-#: static/js/chart_labels.mjs:559 static/js/parcours_data.js:668
-#: static/js/parcours_data.js:749 static/js/parcours_data.js:1092
+#: static/js/chart_labels.mjs:559 static/js/parcours_data.js:712
+#: static/js/parcours_data.js:793 static/js/parcours_data.js:1206
 #, python-brace-format
 msgid "Jour ${n}"
 msgstr "Tag ${n}"
@@ -3888,8 +3896,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Stoppen Sie die Animation, bevor Sie die Datenbank wechseln."
 
 #: static/js/evolution_data.js:322 static/js/evolution_data.js:1412
-#: static/js/mapgl.js:5072 static/js/mapgl.js:5124 static/js/mapgl.js:5131
-#: static/js/mapgl.js:6283 static/js/notifications.js:425
+#: static/js/mapgl.js:5077 static/js/mapgl.js:5129 static/js/mapgl.js:5136
+#: static/js/mapgl.js:6288 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Achtung"
 
@@ -4537,7 +4545,7 @@ msgstr "Duplikat ignoriert"
 msgid "doublons ignorés"
 msgstr "Duplikate ignoriert"
 
-#: static/js/gc_logs.js:784 static/js/labs.js:1106 static/js/profiles.js:335
+#: static/js/gc_logs.js:784 static/js/labs.js:1106 static/js/profiles.js:336
 msgid "Import échoué"
 msgstr "Import fehlgeschlagen"
 
@@ -4808,14 +4816,14 @@ msgstr "Dieses Bild wird endgültig aus der Bibliothek gelöscht."
 
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
-#: static/js/parcours_data.js:1304 static/js/profiles.js:977
+#: static/js/parcours_data.js:1527 static/js/profiles.js:978
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
 #: static/js/stats_page_cards.js:497 static/js/stats_page_dashboard.js:614
 #: static/js/stats_page_dashboard.js:623 static/js/stats_page_themes.js:342
 #: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6459
-#: templates/menu_filtre.html:87 templates/menu_style.html:294
+#: templates/menu_filtre.html:87 templates/menu_style.html:305
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Löschen"
@@ -4854,18 +4862,18 @@ msgstr "(fehlt)"
 msgid "Apparition planifiée"
 msgstr "Geplantes Erscheinen"
 
-#: static/js/images_ui.js:1353 static/js/parcours_data.js:1683
+#: static/js/images_ui.js:1353 static/js/parcours_data.js:2198
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:577
 msgid "Monter"
 msgstr "Nach oben"
 
-#: static/js/images_ui.js:1354 static/js/parcours_data.js:1686
+#: static/js/images_ui.js:1354 static/js/parcours_data.js:2201
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:578
 msgid "Descendre"
 msgstr "Nach unten"
 
-#: static/js/images_ui.js:1355 static/js/profiles.js:968
-#: static/js/profiles.js:2818 static/js/stats_page_cards.js:403
+#: static/js/images_ui.js:1355 static/js/profiles.js:969
+#: static/js/profiles.js:2822 static/js/stats_page_cards.js:403
 #: static/js/stats_page_cards.js:486 static/js/stats_ui.js:579
 msgid "Dupliquer"
 msgstr "Duplizieren"
@@ -5266,7 +5274,7 @@ msgstr "(manuelle Korrektur)"
 msgid "Garder"
 msgstr "Behalten"
 
-#: static/js/labs.js:938 templates/menu_style.html:406
+#: static/js/labs.js:938 templates/menu_style.html:417
 msgid "Remplacer"
 msgstr "Ersetzen"
 
@@ -5474,9 +5482,10 @@ msgstr "Vorschlag verwenden"
 msgid "Date de découverte"
 msgstr "Datum der Entdeckung"
 
-#: static/js/labs.js:1866 static/js/stats_page_image.js:102
-#: templates/menu_data_parcours.html:166 templates/menu_images.html:117
-#: templates/menu_stats.html:70 templates/stats_page.html:506
+#: static/js/labs.js:1866 static/js/parcours_data.js:1583
+#: static/js/stats_page_image.js:102 templates/menu_data_parcours.html:177
+#: templates/menu_images.html:117 templates/menu_stats.html:70
+#: templates/stats_page.html:506
 msgid "Enregistrer"
 msgstr "Speichern"
 
@@ -5595,145 +5604,145 @@ msgstr "${found}/${total} Stationen gefunden"
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Ungefähre Position (Mitte der Adventure)"
 
-#: static/js/mapgl.js:3995 static/js/poses_data.js:956
+#: static/js/mapgl.js:4000 static/js/poses_data.js:956
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Veröffentlicht am ${date}"
 
-#: static/js/mapgl.js:3996 static/js/poses_data.js:957
+#: static/js/mapgl.js:4001 static/js/poses_data.js:957
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Gelegt am ${date}"
 
-#: static/js/mapgl.js:3997 static/js/poses_data.js:958
+#: static/js/mapgl.js:4002 static/js/poses_data.js:958
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Gefunden vor ihrer Veröffentlichung am ${date}"
 
-#: static/js/mapgl.js:3998 static/js/poses_data.js:959
+#: static/js/mapgl.js:4003 static/js/poses_data.js:959
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "Erster Log am ${date}"
 
-#: static/js/mapgl.js:4011
+#: static/js/mapgl.js:4016
 #, python-brace-format
 msgid "Dernière maintenance le ${date}"
 msgstr "Letzte Wartung am ${date}"
 
-#: static/js/mapgl.js:4012
+#: static/js/mapgl.js:4017
 msgid "Aucune maintenance enregistrée"
 msgstr "Keine Wartung aufgezeichnet"
 
-#: static/js/mapgl.js:4018
+#: static/js/mapgl.js:4023
 msgid "Ma cache"
 msgstr "Mein Cache"
 
-#: static/js/mapgl.js:4648
+#: static/js/mapgl.js:4653
 msgid "Aucune vidéo n'a été créée."
 msgstr "Es wurde kein Video erstellt."
 
-#: static/js/mapgl.js:4648
+#: static/js/mapgl.js:4653
 msgid "Arrêt de l'enregistrement"
 msgstr "Aufnahme wird beendet"
 
-#: static/js/mapgl.js:5063
+#: static/js/mapgl.js:5068
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Schnelle Aufnahme nicht unterstützt, Wechsel in den Einzelbildmodus."
 
-#: static/js/mapgl.js:5063 static/js/mapgl.js:6644
+#: static/js/mapgl.js:5068 static/js/mapgl.js:6649
 msgid "Compatibilité"
 msgstr "Kompatibilität"
 
-#: static/js/mapgl.js:5072
+#: static/js/mapgl.js:5077
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Daten werden geladen. Bitte versuchen Sie es erneut."
 
-#: static/js/mapgl.js:5092
+#: static/js/mapgl.js:5097
 msgid "Préparation de l'enregistrement..."
 msgstr "Aufnahme wird vorbereitet..."
 
-#: static/js/mapgl.js:5092
+#: static/js/mapgl.js:5097
 msgid "Nettoyage initial"
 msgstr "Erste Bereinigung"
 
-#: static/js/mapgl.js:5116
+#: static/js/mapgl.js:5121
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr ""
 "Eine Videozusammenstellung läuft. Versuchen Sie es nach Abschluss der "
 "Verarbeitung erneut."
 
-#: static/js/mapgl.js:5117
+#: static/js/mapgl.js:5122
 msgid "Enregistrement annulé"
 msgstr "Aufnahme abgebrochen"
 
-#: static/js/mapgl.js:5122
+#: static/js/mapgl.js:5127
 msgid "Répertoire d’images nettoyé."
 msgstr "Bilderverzeichnis bereinigt."
 
-#: static/js/mapgl.js:5122
+#: static/js/mapgl.js:5127
 msgid "Préparation"
 msgstr "Vorbereitung"
 
-#: static/js/mapgl.js:5124
+#: static/js/mapgl.js:5129
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Erste Bereinigung nicht möglich. Die Aufnahme wird fortgesetzt."
 
-#: static/js/mapgl.js:5131
+#: static/js/mapgl.js:5136
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Fehler bei der ersten Bereinigung. Fortfahren."
 
-#: static/js/mapgl.js:5319
+#: static/js/mapgl.js:5324
 msgid "0% | préparation..."
 msgstr "0% | Vorbereitung..."
 
-#: static/js/mapgl.js:5328 static/js/mapgl.js:6295
+#: static/js/mapgl.js:5333 static/js/mapgl.js:6300
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ Die Musik wird nach der Aufnahme automatisch eingefügt."
 
-#: static/js/mapgl.js:5335
+#: static/js/mapgl.js:5340
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Aufnahme läuft – Fenster nicht bewegen"
 
-#: static/js/mapgl.js:5336
+#: static/js/mapgl.js:5341
 msgid "Préparation de la capture..."
 msgstr "Aufnahme wird vorbereitet..."
 
-#: static/js/mapgl.js:5368
+#: static/js/mapgl.js:5373
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Aufnahme pausiert: Kehren Sie zu diesem Tab zurück, um sie fortzusetzen."
 
-#: static/js/mapgl.js:5368 static/js/mapgl.js:6877
+#: static/js/mapgl.js:5373 static/js/mapgl.js:6882
 msgid "Onglet masqué"
 msgstr "Tab ausgeblendet"
 
-#: static/js/mapgl.js:5479
+#: static/js/mapgl.js:5484
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "Das erste Rendern der Karte ist fehlgeschlagen (Timeout)"
 
-#: static/js/mapgl.js:5606
+#: static/js/mapgl.js:5611
 msgid "Nettoyage en cours..."
 msgstr "Bereinigung läuft..."
 
-#: static/js/mapgl.js:5706
+#: static/js/mapgl.js:5711
 msgid "erreur inconnue"
 msgstr "unbekannter Fehler"
 
-#: static/js/mapgl.js:5708
+#: static/js/mapgl.js:5713
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "Die Aufnahme wurde aufgrund eines Fehlers unterbrochen: ${message}"
 
-#: static/js/mapgl.js:5710
+#: static/js/mapgl.js:5715
 msgid "Capture interrompue"
 msgstr "Aufnahme unterbrochen"
 
-#: static/js/mapgl.js:5734 static/js/mapgl.js:6449 static/js/mapgl.js:6751
-#: static/js/mapgl.js:6769 static/js/mapgl.js:7178 static/js/mapgl.js:7284
-#: static/js/mapgl.js:7288
+#: static/js/mapgl.js:5739 static/js/mapgl.js:6454 static/js/mapgl.js:6756
+#: static/js/mapgl.js:6774 static/js/mapgl.js:7183 static/js/mapgl.js:7289
+#: static/js/mapgl.js:7293
 msgid "Enregistrement"
 msgstr "Aufnahme"
 
-#: static/js/mapgl.js:5747
+#: static/js/mapgl.js:5752
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
@@ -5741,7 +5750,7 @@ msgstr ""
 "Die Musik konnte nicht an den Server gesendet werden: Das Video wurde "
 "ohne Musik erstellt."
 
-#: static/js/mapgl.js:5751
+#: static/js/mapgl.js:5756
 msgid ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
@@ -5749,23 +5758,23 @@ msgstr ""
 "Die Musik konnte nicht zum Video hinzugefügt werden: Es wurde ohne Musik "
 "erstellt."
 
-#: static/js/mapgl.js:5789
+#: static/js/mapgl.js:5794
 msgid "task_id manquant"
 msgstr "task_id fehlt"
 
-#: static/js/mapgl.js:5790
+#: static/js/mapgl.js:5795
 msgid "Délai d'assemblage dépassé"
 msgstr "Zeitlimit für die Zusammenstellung überschritten"
 
-#: static/js/mapgl.js:5803
+#: static/js/mapgl.js:5808
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Aufgabe auf dem Server nicht gefunden (gelöscht oder Server neu gestartet)"
 
-#: static/js/mapgl.js:5817
+#: static/js/mapgl.js:5822
 msgid "Tâche échouée"
 msgstr "Aufgabe fehlgeschlagen"
 
-#: static/js/mapgl.js:5824
+#: static/js/mapgl.js:5829
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
@@ -5774,68 +5783,68 @@ msgstr ""
 "Aufgabenverfolgung nach ${count} aufeinanderfolgenden Fehlern "
 "abgebrochen: ${detail}"
 
-#: static/js/mapgl.js:5936
+#: static/js/mapgl.js:5941
 msgid "Envoi des dernières images..."
 msgstr "Letzte Bilder werden gesendet..."
 
-#: static/js/mapgl.js:6031 static/js/ui.js:9196
+#: static/js/mapgl.js:6036 static/js/ui.js:9199
 msgid "Assemblage en cours"
 msgstr "Zusammenstellung läuft"
 
-#: static/js/mapgl.js:6031
+#: static/js/mapgl.js:6036
 msgid "Création de la vidéo à partir des images..."
 msgstr "Video wird aus den Bildern erstellt..."
 
-#: static/js/mapgl.js:6115
+#: static/js/mapgl.js:6120
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Die Videozusammenstellung konnte nicht gestartet werden"
 
-#: static/js/mapgl.js:6122
+#: static/js/mapgl.js:6127
 msgid "Création de la vidéo..."
 msgstr "Video wird erstellt..."
 
-#: static/js/mapgl.js:6129
+#: static/js/mapgl.js:6134
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Video erstellt. Bilder werden bereinigt..."
 
-#: static/js/mapgl.js:6130
+#: static/js/mapgl.js:6135
 msgid "Nettoyage en cours"
 msgstr "Bereinigung läuft"
 
-#: static/js/mapgl.js:6130
+#: static/js/mapgl.js:6135
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Video erfolgreich erstellt. Bilder werden bereinigt..."
 
-#: static/js/mapgl.js:6147
+#: static/js/mapgl.js:6152
 msgid "Nettoyage terminé"
 msgstr "Bereinigung abgeschlossen"
 
-#: static/js/mapgl.js:6161
+#: static/js/mapgl.js:6166
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Fehler bei der automatischen Verarbeitung: ${message}"
 
-#: static/js/mapgl.js:6163
+#: static/js/mapgl.js:6168
 msgid "Erreur chaîne"
 msgstr "Fehler in der Verarbeitungskette"
 
-#: static/js/mapgl.js:6283
+#: static/js/mapgl.js:6288
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Daten werden geladen. Versuchen Sie es erneut."
 
-#: static/js/mapgl.js:6396
+#: static/js/mapgl.js:6401
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Aufnahme läuft – Fenster nicht bewegen"
 
-#: static/js/mapgl.js:6397
+#: static/js/mapgl.js:6402
 msgid "Démarrage de la capture..."
 msgstr "Aufnahme wird gestartet..."
 
-#: static/js/mapgl.js:6449
+#: static/js/mapgl.js:6454
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Fehler bei der Schnellaufnahme, Wechsel in den Bild-für-Bild-Modus."
 
-#: static/js/mapgl.js:6643
+#: static/js/mapgl.js:6648
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
@@ -5844,15 +5853,15 @@ msgstr ""
 "Format ${wanted} wird von diesem Browser nicht unterstützt: Aufnahme in "
 "${used}."
 
-#: static/js/mapgl.js:6705
+#: static/js/mapgl.js:6710
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Auflösung an die Fähigkeiten des Browsers angepasst."
 
-#: static/js/mapgl.js:6751
+#: static/js/mapgl.js:6756
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "Das Kopieren des Videos ist fehlgeschlagen. Die Aufnahme wird beendet."
 
-#: static/js/mapgl.js:6769
+#: static/js/mapgl.js:6774
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -5860,7 +5869,7 @@ msgstr ""
 "Fehler des Video-Encoders. Die Aufnahme wird beendet und die bereits "
 "aufgenommene Sequenz wird wiederhergestellt."
 
-#: static/js/mapgl.js:6877
+#: static/js/mapgl.js:6882
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
@@ -5868,93 +5877,94 @@ msgstr ""
 "Aufnahme pausiert: Kehren Sie zu diesem Tab zurück, um die Aufnahme "
 "fortzusetzen."
 
-#: static/js/mapgl.js:7079
+#: static/js/mapgl.js:7084
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Kopieren in den Videoordner fehlgeschlagen"
 
-#: static/js/mapgl.js:7103
+#: static/js/mapgl.js:7108
 msgid "Finalisation"
 msgstr "Fertigstellung"
 
-#: static/js/mapgl.js:7103
+#: static/js/mapgl.js:7108
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Videodauer wird geschrieben..."
 
-#: static/js/mapgl.js:7119
+#: static/js/mapgl.js:7124
 msgid "Ajout audio"
 msgstr "Audio hinzufügen"
 
-#: static/js/mapgl.js:7119
+#: static/js/mapgl.js:7124
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Audiospur wird mit dem Video zusammengeführt..."
 
-#: static/js/mapgl.js:7163 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:7168 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalisierung"
 
-#: static/js/mapgl.js:7163
+#: static/js/mapgl.js:7168
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr ""
 "Beschleunigung x${applicable} für Wiedergabe mit normaler "
 "Geschwindigkeit..."
 
-#: static/js/mapgl.js:7178
+#: static/js/mapgl.js:7183
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "Das Video konnte nicht zusammengestellt werden."
 
-#: static/js/mapgl.js:7187
+#: static/js/mapgl.js:7192
 msgid "Traitement serveur"
 msgstr "Serververarbeitung"
 
-#: static/js/mapgl.js:7187
+#: static/js/mapgl.js:7192
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Video wird an den Server gesendet..."
 
-#: static/js/mapgl.js:7232 static/js/mapgl.js:7239
+#: static/js/mapgl.js:7237 static/js/mapgl.js:7244
 msgid "Traitement serveur..."
 msgstr "Serververarbeitung..."
 
-#: static/js/mapgl.js:7237
+#: static/js/mapgl.js:7242
 msgid "Traitement serveur non démarré"
 msgstr "Serververarbeitung nicht gestartet"
 
-#: static/js/mapgl.js:7284
+#: static/js/mapgl.js:7289
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr ""
 "Die Aufnahme wurde unterbrochen: Das Kopieren der Daten ist "
 "fehlgeschlagen."
 
-#: static/js/mapgl.js:7288
+#: static/js/mapgl.js:7293
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Serververarbeitung nicht verfügbar, lokaler Fallback..."
 
-#: static/js/mapgl.js:7344
+#: static/js/mapgl.js:7349
 msgid "Élément non trouvé"
 msgstr "Element nicht gefunden"
 
-#: static/js/mapgl.js:7365
+#: static/js/mapgl.js:7370
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "Timeout rendercomplete (5 s): Karten-Rendering blockiert"
 
-#: static/js/mapgl.js:7386
+#: static/js/mapgl.js:7391
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "Kein Canvas in der Karte gefunden"
 
-#: static/js/mapgl.js:7454
+#: static/js/mapgl.js:7459
 msgid "Échec conversion canvas en blob"
 msgstr "Konvertierung des Canvas in Blob fehlgeschlagen"
 
-#: static/js/mapgl.js:8279 static/js/mapgl.js:8371
+#: static/js/mapgl.js:8284 static/js/mapgl.js:8376
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "Keine Bewegung für diese Auswahl zu zeichnen."
 
-#: static/js/mapgl.js:8279 static/js/mapgl.js:8281 static/js/mapgl.js:8371
+#: static/js/mapgl.js:8284 static/js/mapgl.js:8286 static/js/mapgl.js:8376
 #: templates/guide.html:233 templates/menu_style.html:86
+#: templates/menu_style.html:90
 msgid "Trajet"
 msgstr "Route"
 
-#: static/js/mapgl.js:8281
+#: static/js/mapgl.js:8286
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
@@ -5962,7 +5972,7 @@ msgstr ""
 "Sehr volle Tage: automatische Gruppierung auf den gewählten Radius "
 "angewendet."
 
-#: static/js/mapgl.js:8940 static/js/mapgl.js:9240
+#: static/js/mapgl.js:8945 static/js/mapgl.js:9245
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -5970,16 +5980,16 @@ msgstr ""
 "Kein Cache auf dem Bildschirm sichtbar: Bewegen Sie die Karte über Ihre "
 "Punkte."
 
-#: static/js/mapgl.js:8940 templates/guide.html:683
+#: static/js/mapgl.js:8945 templates/guide.html:683
 #: templates/menu_style.html:82
 msgid "Pseudos"
 msgstr "Benutzernamen"
 
-#: static/js/mapgl.js:9236
+#: static/js/mapgl.js:9241
 msgid "Choisissez d’abord une forme de flash."
 msgstr "Wählen Sie zuerst eine Flash-Form."
 
-#: static/js/mapgl.js:9236 static/js/mapgl.js:9240 templates/guide.html:229
+#: static/js/mapgl.js:9241 static/js/mapgl.js:9245 templates/guide.html:229
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
@@ -5991,10 +6001,10 @@ msgstr "Flash"
 #: templates/menu_data.html:632 templates/menu_data.html:661
 #: templates/menu_data.html:678 templates/menu_data.html:690
 #: templates/menu_data.html:707 templates/menu_stats.html:565
-#: templates/menu_style.html:52 templates/menu_style.html:255
-#: templates/menu_style.html:287 templates/menu_style.html:312
-#: templates/menu_style.html:340 templates/menu_style.html:363
-#: templates/menu_style.html:399 templates/modal_evolution.html:9
+#: templates/menu_style.html:52 templates/menu_style.html:266
+#: templates/menu_style.html:298 templates/menu_style.html:323
+#: templates/menu_style.html:351 templates/menu_style.html:374
+#: templates/menu_style.html:410 templates/modal_evolution.html:9
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 #: templates/modal_video_ready.html:11 templates/modal_video_ready.html:37
@@ -6106,258 +6116,355 @@ msgstr "Caches ohne Datum"
 msgid "Actif quand les caches posées sont affichées"
 msgstr "Aktiv, wenn eigene Caches angezeigt werden"
 
-#: static/js/parcours_data.js:375
+#: static/js/parcours_data.js:404
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr "Die Tour wird nach dem Ende der Animation geöffnet."
 
-#: static/js/parcours_data.js:375 static/js/parcours_data.js:1201
-#: static/js/parcours_data.js:1868 static/js/parcours_data.js:2356
-#: static/js/parcours_data.js:2911 templates/_app_header.html:29
+#: static/js/parcours_data.js:404 static/js/parcours_data.js:1337
+#: static/js/parcours_data.js:2580 static/js/parcours_data.js:3339
+#: static/js/parcours_data.js:3937 templates/_app_header.html:29
 #: templates/_app_header.html:31 templates/app.html:41
 msgid "Parcours"
 msgstr "Touren"
 
-#: static/js/parcours_data.js:492 static/js/parcours_data.js:1513
+#: static/js/parcours_data.js:536 static/js/parcours_data.js:1895
 #, python-brace-format
 msgid "${km} km"
 msgstr "${km} km"
 
-#: static/js/parcours_data.js:508
+#: static/js/parcours_data.js:552
 msgid "matin"
 msgstr "Vormittag"
 
-#: static/js/parcours_data.js:508
+#: static/js/parcours_data.js:552
 msgid "midi"
 msgstr "Mittag"
 
-#: static/js/parcours_data.js:508
+#: static/js/parcours_data.js:552
 msgid "après-midi"
 msgstr "Nachmittag"
 
-#: static/js/parcours_data.js:508
+#: static/js/parcours_data.js:552
 msgid "soir"
 msgstr "Abend"
 
-#: static/js/parcours_data.js:676 static/js/parcours_data.js:1580
+#: static/js/parcours_data.js:720 static/js/parcours_data.js:1986
+#: static/js/parcours_data.js:2067
 #, python-brace-format
 msgid "${n} étapes"
 msgstr "${n} Stationen"
 
-#: static/js/parcours_data.js:676
+#: static/js/parcours_data.js:720
 #, python-brace-format
 msgid "${n} étape"
 msgstr "${n} Station"
 
-#: static/js/parcours_data.js:681 static/js/parcours_data.js:1798
+#: static/js/parcours_data.js:725 static/js/parcours_data.js:2365
 msgid "à vélo"
 msgstr "mit dem Fahrrad"
 
-#: static/js/parcours_data.js:682 static/js/parcours_data.js:1798
+#: static/js/parcours_data.js:726 static/js/parcours_data.js:2365
 msgid "en voiture"
 msgstr "mit dem Auto"
 
-#: static/js/parcours_data.js:683
+#: static/js/parcours_data.js:727
 msgid "en avion"
 msgstr "mit dem Flugzeug"
 
-#: static/js/parcours_data.js:684 static/js/parcours_data.js:1798
+#: static/js/parcours_data.js:728 static/js/parcours_data.js:2365
 msgid "à pied"
 msgstr "zu Fuß"
 
-#: static/js/parcours_data.js:696
+#: static/js/parcours_data.js:740
 msgid "Nuit"
 msgstr "Nacht"
 
-#: static/js/parcours_data.js:699
+#: static/js/parcours_data.js:743
 #, python-brace-format
 msgid "Trajet ${mode} vers ${name}"
 msgstr "Unterwegs ${mode} nach ${name}"
 
-#: static/js/parcours_data.js:701
+#: static/js/parcours_data.js:745
 msgid "Avant la première étape"
 msgstr "Vor der ersten Station"
 
-#: static/js/parcours_data.js:703
+#: static/js/parcours_data.js:747 static/js/parcours_data.js:1218
 msgid "Fin du parcours"
 msgstr "Ende der Tour"
 
-#: static/js/parcours_data.js:705
+#: static/js/parcours_data.js:749
 #, python-brace-format
 msgid "Étape ${n} : ${name}"
 msgstr "Station ${n}: ${name}"
 
-#: static/js/parcours_data.js:734 static/js/timeline_bar.js:1148
+#: static/js/parcours_data.js:778 static/js/timeline_bar.js:1148
 #, python-brace-format
 msgid "Total : ${text}"
 msgstr "Gesamt: ${text}"
 
-#: static/js/parcours_data.js:770 static/js/timeline_bar.js:464
+#: static/js/parcours_data.js:814 static/js/timeline_bar.js:464
 #, python-brace-format
 msgid "DNF : ${code}"
 msgstr "DNF: ${code}"
 
-#: static/js/parcours_data.js:779 static/js/parcours_data.js:1495
-#: static/js/parcours_data.js:2649
+#: static/js/parcours_data.js:823 static/js/parcours_data.js:1877
+#: static/js/parcours_data.js:3673
 msgid "1 photo"
 msgstr "1 Foto"
 
-#: static/js/parcours_data.js:779 static/js/parcours_data.js:1495
-#: static/js/parcours_data.js:2649
+#: static/js/parcours_data.js:823 static/js/parcours_data.js:1877
+#: static/js/parcours_data.js:3673
 #, python-brace-format
 msgid "${n} photos"
 msgstr "${n} Fotos"
 
-#: static/js/parcours_data.js:1140
+#: static/js/parcours_data.js:1217
+#, python-brace-format
+msgid "${n} journées"
+msgstr "${n} Tage"
+
+#: static/js/parcours_data.js:1276
 msgid "Itinéraires © contributeurs OpenStreetMap, openrouteservice"
 msgstr "Routen © OpenStreetMap-Mitwirkende, openrouteservice"
 
-#: static/js/parcours_data.js:1141
+#: static/js/parcours_data.js:1277
 msgid "Itinéraires © contributeurs OpenStreetMap, FOSSGIS"
 msgstr "Routen © OpenStreetMap-Mitwirkende, FOSSGIS"
 
-#: static/js/parcours_data.js:1201 static/js/parcours_data.js:2356
+#: static/js/parcours_data.js:1337 static/js/parcours_data.js:3339
 #: static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Die Einstellung wird am Ende der Animation angewendet."
 
-#: static/js/parcours_data.js:1249
+#: static/js/parcours_data.js:1391
 msgid "Impossible de charger les parcours"
 msgstr "Die Touren konnten nicht geladen werden"
 
-#: static/js/parcours_data.js:1260
+#: static/js/parcours_data.js:1402
 msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr "Noch keine Tour: Legen Sie unten eine an."
 
-#: static/js/parcours_data.js:1288 static/js/parcours_data.js:1289
-#: static/js/parcours_data.js:1301
+#: static/js/parcours_data.js:1430 static/js/parcours_data.js:1431
+#: static/js/parcours_data.js:1579
+msgid "Modifier le parcours"
+msgstr "Tour bearbeiten"
+
+#: static/js/parcours_data.js:1438 static/js/parcours_data.js:1439
+msgid "Dupliquer le parcours"
+msgstr "Tour duplizieren"
+
+#: static/js/parcours_data.js:1446
+msgid "Exporter le parcours"
+msgstr "Tour exportieren"
+
+#: static/js/parcours_data.js:1447
+msgid "Exporter le parcours (sélection, ajustements, lieux)"
+msgstr "Tour exportieren (Auswahl, Anpassungen, Orte)"
+
+#: static/js/parcours_data.js:1454 static/js/parcours_data.js:1455
+#: static/js/parcours_data.js:1524
 msgid "Supprimer le parcours"
 msgstr "Tour löschen"
 
-#: static/js/parcours_data.js:1300
+#: static/js/parcours_data.js:1476
+msgid "Parcours dupliqué — les photos et traces ne sont pas copiées"
+msgstr "Tour dupliziert – Fotos und Tracks werden nicht kopiert"
+
+#: static/js/parcours_data.js:1508
+msgid "Ce fichier n'est pas un JSON lisible"
+msgstr "Diese Datei ist kein lesbares JSON"
+
+#: static/js/parcours_data.js:1518
+msgid "Parcours importé"
+msgstr "Tour importiert"
+
+#: static/js/parcours_data.js:1523
 #, python-brace-format
 msgid "Supprimer le parcours « ${name} » ? Les trouvailles ne sont pas touchées."
 msgstr "Die Tour „${name}“ löschen? Ihre Funde bleiben unverändert."
 
-#: static/js/parcours_data.js:1346
+#: static/js/parcours_data.js:1579 templates/menu_data_parcours.html:20
+msgid "Nouveau parcours"
+msgstr "Neue Tour"
+
+#: static/js/parcours_data.js:1583 templates/menu_data_parcours.html:56
+msgid "Créer le parcours"
+msgstr "Tour erstellen"
+
+#: static/js/parcours_data.js:1610
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr "Eine Tour umfasst höchstens ${max} Tage"
 
-#: static/js/parcours_data.js:1347
+#: static/js/parcours_data.js:1611
 msgid "Une journée"
 msgstr "Ein Tag"
 
-#: static/js/parcours_data.js:1347 static/js/parcours_data.js:1580
-#: static/js/stats_panels.js:1534 static/js/ui.js:8718
+#: static/js/parcours_data.js:1611 static/js/parcours_data.js:1986
+#: static/js/stats_panels.js:1534 static/js/ui.js:8721
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} Tage"
 
-#: static/js/parcours_data.js:1433 static/js/stats_page_dashboard.js:252
+#: static/js/parcours_data.js:1742 static/js/stats_page_dashboard.js:252
 #: static/js/zone_layer.js:1273 static/js/zone_layer.js:1308
 #: static/js/zone_report_ui.js:86
 #, python-brace-format
 msgid "${n} trouvailles"
 msgstr "${n} Funde"
 
-#: static/js/parcours_data.js:1461 templates/menu_data_evolution.html:18
+#: static/js/parcours_data.js:1804
+msgid "parking"
+msgstr "Parkplatz"
+
+#: static/js/parcours_data.js:1805
+msgid "repas"
+msgstr "Mahlzeit"
+
+#: static/js/parcours_data.js:1806
+msgid "point de vue"
+msgstr "Aussichtspunkt"
+
+#: static/js/parcours_data.js:1807
+msgid "hébergement"
+msgstr "Unterkunft"
+
+#: static/js/parcours_data.js:1808
+msgid "ravitaillement"
+msgstr "Versorgung"
+
+#: static/js/parcours_data.js:1818 templates/menu_data_parcours.html:272
+msgid "Parking"
+msgstr "Parkplatz"
+
+#: static/js/parcours_data.js:1819 templates/menu_data_parcours.html:273
+msgid "Repas / pique-nique"
+msgstr "Mahlzeit / Picknick"
+
+#: static/js/parcours_data.js:1820 templates/menu_data_parcours.html:274
+msgid "Point de vue"
+msgstr "Aussichtspunkt"
+
+#: static/js/parcours_data.js:1821 templates/menu_data_parcours.html:275
+msgid "Hébergement"
+msgstr "Unterkunft"
+
+#: static/js/parcours_data.js:1822 templates/menu_data_parcours.html:276
+msgid "Ravitaillement / eau"
+msgstr "Versorgung / Wasser"
+
+#: static/js/parcours_data.js:1823 static/js/stats_page_dashboard.js:89
+#: templates/menu_data_parcours.html:277
+msgid "Personnalisée…"
+msgstr "Benutzerdefiniert…"
+
+#: static/js/parcours_data.js:1824 templates/menu_data_parcours.html:271
+msgid "Autre"
+msgstr "Sonstiges"
+
+#: static/js/parcours_data.js:1842 static/js/parcours_data.js:2443
+#: templates/menu_data_evolution.html:18
 msgid "Base"
 msgstr "Datenbank"
 
-#: static/js/parcours_data.js:1462
+#: static/js/parcours_data.js:1843 static/js/parcours_data.js:2443
 msgid "Lieu"
 msgstr "Ort"
 
-#: static/js/parcours_data.js:1470
+#: static/js/parcours_data.js:1851
 msgid "heure sûre"
 msgstr "sichere Uhrzeit"
 
-#: static/js/parcours_data.js:1471
+#: static/js/parcours_data.js:1852
 msgid "ordre des logs"
 msgstr "Log-Reihenfolge"
 
-#: static/js/parcours_data.js:1472
+#: static/js/parcours_data.js:1853
 msgid "souvent loguée après coup"
 msgstr "oft nachträglich geloggt"
 
-#: static/js/parcours_data.js:1473
+#: static/js/parcours_data.js:1854
 msgid "log tardif"
 msgstr "spätes Log"
 
-#: static/js/parcours_data.js:1474
+#: static/js/parcours_data.js:1855
 msgid "géographie"
 msgstr "Geografie"
 
-#: static/js/parcours_data.js:1475
+#: static/js/parcours_data.js:1856
 msgid "au plus court"
 msgstr "kürzester Umweg"
 
-#: static/js/parcours_data.js:1476
+#: static/js/parcours_data.js:1857
 msgid "heure épinglée"
 msgstr "festgelegte Uhrzeit"
 
-#: static/js/parcours_data.js:1477 static/js/parcours_data.js:1608
+#: static/js/parcours_data.js:1858 static/js/parcours_data.js:2072
 msgid "ordre manuel"
 msgstr "manuelle Reihenfolge"
 
-#: static/js/parcours_data.js:1478
+#: static/js/parcours_data.js:1859
 msgid "base"
 msgstr "Basis"
 
-#: static/js/parcours_data.js:1479
+#: static/js/parcours_data.js:1860
 msgid "heure d’une photo"
 msgstr "Uhrzeit eines Fotos"
 
-#: static/js/parcours_data.js:1480
+#: static/js/parcours_data.js:1861
 msgid "heure de la trace"
 msgstr "Uhrzeit aus dem Track"
 
-#: static/js/parcours_data.js:1489
+#: static/js/parcours_data.js:1870
 msgid "lieu"
 msgstr "Ort"
 
-#: static/js/parcours_data.js:1493
+#: static/js/parcours_data.js:1875
 #, python-brace-format
 msgid "déplacée du ${day}"
 msgstr "verschoben vom ${day}"
 
-#: static/js/parcours_data.js:1520
+#: static/js/parcours_data.js:1902
 msgid "ordre de saisie des logs retenu"
 msgstr "Reihenfolge der Logs übernommen"
 
-#: static/js/parcours_data.js:1523
+#: static/js/parcours_data.js:1905
 #, python-brace-format
 msgid "logs saisis dans le désordre (trajet ×${ratio}) : ordre géographique"
 msgstr "Logs ungeordnet geschrieben (Strecke ×${ratio}): geografische Reihenfolge"
 
-#: static/js/parcours_data.js:1525
+#: static/js/parcours_data.js:1907
 #, python-brace-format
 msgid "${n} heures sûres"
 msgstr "${n} sichere Uhrzeiten"
 
-#: static/js/parcours_data.js:1526
+#: static/js/parcours_data.js:1908
 msgid "horaire comprimé"
 msgstr "Zeitplan gestaucht"
 
-#: static/js/parcours_data.js:1566 templates/menu_data_parcours.html:15
-#: templates/menu_data_parcours.html:195 templates/menu_data_poses.html:18
+#: static/js/parcours_data.js:1909
+msgid "ordre contraire aux heures sûres : l’heure recule"
+msgstr "Reihenfolge widerspricht sicheren Uhrzeiten: die Zeit läuft rückwärts"
+
+#: static/js/parcours_data.js:1972 templates/menu_data_parcours.html:15
+#: templates/menu_data_parcours.html:210 templates/menu_data_poses.html:18
 msgid "Chargement…"
 msgstr "Laden…"
 
-#: static/js/parcours_data.js:1573
+#: static/js/parcours_data.js:1979
 msgid "Impossible de charger les étapes"
 msgstr "Die Stationen konnten nicht geladen werden"
 
-#: static/js/parcours_data.js:1574
+#: static/js/parcours_data.js:1980
 msgid "Ouvrez ou créez un parcours pour voir ses étapes."
 msgstr "Öffnen oder erstellen Sie eine Tour, um ihre Stationen zu sehen."
 
-#: static/js/parcours_data.js:1581
+#: static/js/parcours_data.js:1987
 #, python-brace-format
 msgid "${n} sans position"
 msgstr "${n} ohne Position"
 
-#: static/js/parcours_data.js:1589
+#: static/js/parcours_data.js:1995
 msgid ""
 "Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, "
 "l’heure de vos Labs et la géographie. « ≈ » : heure estimée."
@@ -6365,7 +6472,7 @@ msgstr ""
 "Reihenfolge und Uhrzeiten rekonstruiert aus der Reihenfolge Ihrer Logs, "
 "den Uhrzeiten Ihrer Labs und der Geografie. „≈“: geschätzte Uhrzeit."
 
-#: static/js/parcours_data.js:1590
+#: static/js/parcours_data.js:1996
 msgid ""
 "Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie "
 ": réimportez votre fichier My Finds pour en profiter. « ≈ » : heure "
@@ -6375,86 +6482,157 @@ msgstr ""
 "Geografie: Importieren Sie Ihre My-Finds-Datei erneut, um sie zu nutzen. "
 "„≈“: geschätzte Uhrzeit."
 
-#: static/js/parcours_data.js:1610
+#: static/js/parcours_data.js:2018
+msgid "Tout déplier"
+msgstr "Alle aufklappen"
+
+#: static/js/parcours_data.js:2018 templates/menu_data_parcours.html:229
+msgid "Tout plier"
+msgstr "Alle zuklappen"
+
+#: static/js/parcours_data.js:2043 static/js/parcours_data.js:2056
+msgid "Déplier la journée"
+msgstr "Tag aufklappen"
+
+#: static/js/parcours_data.js:2043 static/js/parcours_data.js:2056
+msgid "Replier la journée"
+msgstr "Tag zuklappen"
+
+#: static/js/parcours_data.js:2074
 msgid "Revenir à l’ordre automatique"
 msgstr "Zurück zur automatischen Reihenfolge"
 
-#: static/js/parcours_data.js:1610
+#: static/js/parcours_data.js:2074
 msgid "Ordre automatique"
 msgstr "Automatische Reihenfolge"
 
-#: static/js/parcours_data.js:1623
+#: static/js/parcours_data.js:2087
 msgid "Aucune étape ce jour-là"
 msgstr "An diesem Tag keine Stationen"
 
-#: static/js/parcours_data.js:1735
+#: static/js/parcours_data.js:2259
 msgid "exclue du parcours"
 msgstr "aus der Tour ausgeschlossen"
 
-#: static/js/parcours_data.js:1738
+#: static/js/parcours_data.js:2262
 msgid "Réintégrer"
 msgstr "Wieder aufnehmen"
 
-#: static/js/parcours_data.js:1759 templates/menu_informations.html:72
+#: static/js/parcours_data.js:2291 templates/menu_informations.html:72
 msgid "Heure"
 msgstr "Uhrzeit"
 
-#: static/js/parcours_data.js:1766
+#: static/js/parcours_data.js:2298
 msgid "Épingler cette heure"
 msgstr "Diese Uhrzeit festlegen"
 
-#: static/js/parcours_data.js:1767
+#: static/js/parcours_data.js:2299
 msgid "Épingler"
 msgstr "Festlegen"
 
-#: static/js/parcours_data.js:1775
+#: static/js/parcours_data.js:2307
 msgid "Retirer l’heure épinglée"
 msgstr "Festgelegte Uhrzeit entfernen"
 
-#: static/js/parcours_data.js:1776 templates/guide.html:315
+#: static/js/parcours_data.js:2308 templates/guide.html:315
 #: templates/menu_animation.html:336 templates/menu_images.html:96
 msgid "Retirer"
 msgstr "Entfernen"
 
-#: static/js/parcours_data.js:1792
+#: static/js/parcours_data.js:2325
+msgid "Durée de visite"
+msgstr "Besuchsdauer"
+
+#: static/js/parcours_data.js:2331
+#, python-brace-format
+msgid "${n} min"
+msgstr "${n} Min."
+
+#: static/js/parcours_data.js:2339 static/js/parcours_data.js:3586
+msgid "min"
+msgstr "Min."
+
+#: static/js/parcours_data.js:2359
 msgid "Trajet vers l’étape suivante"
 msgstr "Weg zur nächsten Station"
 
-#: static/js/parcours_data.js:1798
+#: static/js/parcours_data.js:2365
 msgid "en ligne droite"
 msgstr "Luftlinie"
 
-#: static/js/parcours_data.js:1799
+#: static/js/parcours_data.js:2366
 #, python-brace-format
 msgid "Automatique (${mode})"
 msgstr "Automatisch (${mode})"
 
-#: static/js/parcours_data.js:1818 templates/menu_data_parcours.html:227
+#: static/js/parcours_data.js:2385 static/js/parcours_data.js:2461
+#: templates/menu_data_parcours.html:253
 msgid "Journée"
 msgstr "Tag"
 
-#: static/js/parcours_data.js:1843
+#: static/js/parcours_data.js:2426 static/js/profiles.js:975
+#: static/js/profiles.js:2802 templates/stats_page.html:737
+msgid "Renommer"
+msgstr "Umbenennen"
+
+#: static/js/parcours_data.js:2467 static/js/parcours_data.js:2960
+msgid "Toutes les journées"
+msgstr "Alle Tage"
+
+#: static/js/parcours_data.js:2487
+msgid "Rôle"
+msgstr "Rolle"
+
+#: static/js/parcours_data.js:2491 templates/menu_data_parcours.html:263
+msgid "Départ et retour"
+msgstr "Start und Rückkehr"
+
+#: static/js/parcours_data.js:2492 templates/menu_data_parcours.html:264
+msgid "Départ seulement"
+msgstr "Nur Start"
+
+#: static/js/parcours_data.js:2492 templates/menu_data_parcours.html:265
+msgid "Arrivée seulement"
+msgstr "Nur Ankunft"
+
+#: static/js/parcours_data.js:2508 static/js/stats_panels.js:3048
+#: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:269
+msgid "Catégorie"
+msgstr "Kategorie"
+
+#: static/js/parcours_data.js:2536 static/js/parcours_data.js:3772
+#: static/js/stats_page_cards.js:636 static/js/stats_page_links.js:277
+#: static/js/stats_page_links.js:325 static/js/stats_page_links.js:344
+msgid "Voir sur la carte"
+msgstr "Auf der Karte anzeigen"
+
+#: static/js/parcours_data.js:2549
+msgid "Déplacer sur la carte"
+msgstr "Auf der Karte verschieben"
+
+#: static/js/parcours_data.js:2555
 msgid "Exclure du parcours"
 msgstr "Aus der Tour ausschließen"
 
-#: static/js/parcours_data.js:1851 static/js/parcours_data.js:1852
+#: static/js/parcours_data.js:2563 static/js/parcours_data.js:2564
 #: templates/menu_data_evolution.html:34 templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr "Datenbank löschen"
 
-#: static/js/parcours_data.js:1851 static/js/parcours_data.js:1852
+#: static/js/parcours_data.js:2563 static/js/parcours_data.js:2564
 msgid "Supprimer le lieu"
 msgstr "Ort löschen"
 
-#: static/js/parcours_data.js:1868
+#: static/js/parcours_data.js:2580
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr "Beenden Sie die Wiedergabe, bevor Sie die Tour anpassen."
 
-#: static/js/parcours_data.js:2044
-msgid "Toutes les journées"
-msgstr "Alle Tage"
+#: static/js/parcours_data.js:3000
+#, python-brace-format
+msgid "Icône ${icon}"
+msgstr "Symbol ${icon}"
 
-#: static/js/parcours_data.js:2094
+#: static/js/parcours_data.js:3050
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
@@ -6462,147 +6640,142 @@ msgstr ""
 "Alle Anpassungen dieser Tour rückgängig machen (Reihenfolge, Uhrzeiten, "
 "Tage, Ausschlüsse)? Gesetzte Orte bleiben erhalten."
 
-#: static/js/parcours_data.js:2095 templates/menu_data_parcours.html:206
+#: static/js/parcours_data.js:3051 templates/menu_data_parcours.html:232
 msgid "Annuler les ajustements"
 msgstr "Anpassungen rückgängig machen"
 
-#: static/js/parcours_data.js:2098
+#: static/js/parcours_data.js:3054
 msgid "Tout annuler"
 msgstr "Alles rückgängig machen"
 
-#: static/js/parcours_data.js:2403
+#: static/js/parcours_data.js:3394 static/js/parcours_data.js:3932
+#, python-brace-format
+msgid " et ${n} autres"
+msgstr " und ${n} weitere"
+
+#: static/js/parcours_data.js:3411
 #, python-brace-format
 msgid "Envoi des photos : ${done} / ${total}"
 msgstr "Fotos werden gesendet: ${done} / ${total}"
 
-#: static/js/parcours_data.js:2419
+#: static/js/parcours_data.js:3437
 msgid "Photos refusées"
 msgstr "Abgelehnte Fotos"
 
-#: static/js/parcours_data.js:2513
+#: static/js/parcours_data.js:3537
 msgid "non rattachée"
 msgstr "nicht zugeordnet"
 
-#: static/js/parcours_data.js:2516
+#: static/js/parcours_data.js:3540
 #, python-brace-format
 msgid "${name} (à la main)"
 msgstr "${name} (von Hand)"
 
-#: static/js/parcours_data.js:2517
+#: static/js/parcours_data.js:3541
 #, python-brace-format
 msgid "${name} (position)"
 msgstr "${name} (Position)"
 
-#: static/js/parcours_data.js:2518
+#: static/js/parcours_data.js:3542
 #, python-brace-format
 msgid "${name} (heure)"
 msgstr "${name} (Uhrzeit)"
 
-#: static/js/parcours_data.js:2534
+#: static/js/parcours_data.js:3558
 #, python-brace-format
 msgid "${n} photos, ${linked} rattachées à une étape"
 msgstr "${n} Fotos, ${linked} einer Station zugeordnet"
 
-#: static/js/parcours_data.js:2535
+#: static/js/parcours_data.js:3559
 msgid "Aucune photo pour ce parcours."
 msgstr "Keine Fotos für diese Tour."
 
-#: static/js/parcours_data.js:2550
+#: static/js/parcours_data.js:3574
 #, python-brace-format
 msgid "${camera} : horloge recalée (${offset})"
 msgstr "${camera}: Uhr korrigiert (${offset})"
 
-#: static/js/parcours_data.js:2551
+#: static/js/parcours_data.js:3575
 #, python-brace-format
 msgid "${camera} : horloge non recalée, heures ignorées"
 msgstr "${camera}: Uhr nicht korrigiert, Uhrzeiten ignoriert"
 
-#: static/js/parcours_data.js:2559
+#: static/js/parcours_data.js:3583
 msgid "Décalage en minutes"
 msgstr "Korrektur in Minuten"
 
-#: static/js/parcours_data.js:2562
-msgid "min"
-msgstr "Min."
-
-#: static/js/parcours_data.js:2564
+#: static/js/parcours_data.js:3588
 msgid "Recaler l’horloge"
 msgstr "Uhr korrigieren"
 
-#: static/js/parcours_data.js:2571
+#: static/js/parcours_data.js:3595
 msgid "Oublier ce recalage"
 msgstr "Diese Korrektur verwerfen"
 
-#: static/js/parcours_data.js:2591
+#: static/js/parcours_data.js:3615
 msgid "masquée dans la vidéo"
 msgstr "im Video ausgeblendet"
 
-#: static/js/parcours_data.js:2630
+#: static/js/parcours_data.js:3654
 msgid "1 photo hors des étapes"
 msgstr "1 Foto abseits der Etappen"
 
-#: static/js/parcours_data.js:2630
+#: static/js/parcours_data.js:3654
 #, python-brace-format
 msgid "${n} photos hors des étapes"
 msgstr "${n} Fotos abseits der Etappen"
 
-#: static/js/parcours_data.js:2659
+#: static/js/parcours_data.js:3683
 msgid "Nom du lieu (facultatif)"
 msgstr "Name des Orts (optional)"
 
-#: static/js/parcours_data.js:2660
+#: static/js/parcours_data.js:3684
 msgid "Nom du lieu"
 msgstr "Name des Orts"
 
-#: static/js/parcours_data.js:2662
+#: static/js/parcours_data.js:3686
 msgid "Créer ce lieu"
 msgstr "Diesen Ort anlegen"
 
-#: static/js/parcours_data.js:2692
+#: static/js/parcours_data.js:3716
 msgid "sans heure"
 msgstr "ohne Uhrzeit"
 
-#: static/js/parcours_data.js:2693
+#: static/js/parcours_data.js:3717
 msgid "géolocalisée"
 msgstr "mit Standort"
 
-#: static/js/parcours_data.js:2693
+#: static/js/parcours_data.js:3717
 msgid "sans position"
 msgstr "ohne Standort"
 
-#: static/js/parcours_data.js:2700
+#: static/js/parcours_data.js:3724
 msgid "Étape"
 msgstr "Station"
 
-#: static/js/parcours_data.js:2707
+#: static/js/parcours_data.js:3731
 #, python-brace-format
 msgid "Automatique : ${label}"
 msgstr "Automatisch: ${label}"
 
-#: static/js/parcours_data.js:2741
+#: static/js/parcours_data.js:3765
 msgid "Caler l’horloge de l’appareil sur cette étape"
 msgstr "Kamerauhr an dieser Station ausrichten"
 
-#: static/js/parcours_data.js:2742
+#: static/js/parcours_data.js:3766
 #, python-brace-format
 msgid "Caler l’horloge sur l’étape (${offset})"
 msgstr "Uhr an der Station ausrichten (${offset})"
 
-#: static/js/parcours_data.js:2748
+#: static/js/parcours_data.js:3772
 msgid "Ouvrir l’aperçu en pause sur cette photo"
 msgstr "Vorschau pausiert bei diesem Foto öffnen"
 
-#: static/js/parcours_data.js:2748 static/js/stats_page_cards.js:636
-#: static/js/stats_page_links.js:277 static/js/stats_page_links.js:325
-#: static/js/stats_page_links.js:344
-msgid "Voir sur la carte"
-msgstr "Auf der Karte anzeigen"
-
-#: static/js/parcours_data.js:2752 static/js/parcours_data.js:2753
+#: static/js/parcours_data.js:3776 static/js/parcours_data.js:3777
 msgid "Supprimer la photo"
 msgstr "Foto löschen"
 
-#: static/js/parcours_data.js:2792
+#: static/js/parcours_data.js:3816
 msgid ""
 "Photo entière : choisissez un cadrage ou un zoom pour n’en garder qu’une "
 "partie."
@@ -6610,19 +6783,19 @@ msgstr ""
 "Ganzes Foto: Wählen Sie einen Ausschnitt oder einen Zoom, um nur einen "
 "Teil zu behalten."
 
-#: static/js/parcours_data.js:2793
+#: static/js/parcours_data.js:3817
 msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr "Ziehen Sie auf dem Foto, um den behaltenen Teil zu wählen."
 
-#: static/js/parcours_data.js:2907
+#: static/js/parcours_data.js:3933
 msgid "Fichiers non pris en charge"
 msgstr "Nicht unterstützte Dateien"
 
-#: static/js/parcours_data.js:2911
+#: static/js/parcours_data.js:3937
 msgid "Ouvrez un parcours avant d’y déposer des photos ou des traces."
 msgstr "Öffnen Sie eine Tour, bevor Sie Fotos oder Tracks darauf ablegen."
 
-#: static/js/parcours_data.js:2934
+#: static/js/parcours_data.js:3960
 msgid ""
 "Déposez vos photos ou traces (.gpx) pour les ajouter au parcours, ou une "
 "musique"
@@ -6630,101 +6803,111 @@ msgstr ""
 "Legen Sie Ihre Fotos oder Tracks (.gpx) ab, um sie der Tour hinzuzufügen,"
 " oder eine Musik"
 
-#: static/js/parcours_data.js:2988
+#: static/js/parcours_data.js:4014
 msgid "réglé à la main"
 msgstr "von Hand eingestellt"
 
-#: static/js/parcours_data.js:2989
+#: static/js/parcours_data.js:4015
 msgid "déduit des photos"
 msgstr "aus den Fotos abgeleitet"
 
-#: static/js/parcours_data.js:2990
+#: static/js/parcours_data.js:4016
 msgid "déduit des Labs et photos situés sur la trace"
 msgstr "aus Labs und Fotos auf dem Track abgeleitet"
 
-#: static/js/parcours_data.js:2991
+#: static/js/parcours_data.js:4017
 msgid "fuseau de cet ordinateur"
 msgstr "Zeitzone dieses Computers"
 
-#: static/js/parcours_data.js:3015
+#: static/js/parcours_data.js:4058
 msgid "1 trace"
 msgstr "1 Track"
 
-#: static/js/parcours_data.js:3015
+#: static/js/parcours_data.js:4058
 #, python-brace-format
 msgid "${n} traces"
 msgstr "${n} Tracks"
 
-#: static/js/parcours_data.js:3017
+#: static/js/parcours_data.js:4060
 msgid "1 étape calée sur une trace"
 msgstr "1 Station per Track zeitlich festgelegt"
 
-#: static/js/parcours_data.js:3018
+#: static/js/parcours_data.js:4061
 #, python-brace-format
 msgid "${n} étapes calées sur une trace"
 msgstr "${n} Stationen per Track zeitlich festgelegt"
 
-#: static/js/parcours_data.js:3019
+#: static/js/parcours_data.js:4062
 msgid "Aucune trace pour ce parcours."
 msgstr "Keine Tracks für diese Tour."
 
-#: static/js/parcours_data.js:3037
+#: static/js/parcours_data.js:4080
 #, python-brace-format
 msgid "Automatique : ${offset} (${source})"
 msgstr "Automatisch: ${offset} (${source})"
 
-#: static/js/parcours_data.js:3050
+#: static/js/parcours_data.js:4088
+#, python-brace-format
+msgid ""
+"Heures des traces calées sur le fuseau de cet ordinateur (${offset}) — "
+"vérifiez-le pour un parcours loin de chez vous."
+msgstr ""
+"Track-Zeiten auf die Zeitzone dieses Computers gesetzt (${offset}) – bei "
+"einer Tour fern von zu Hause bitte prüfen."
+
+#: static/js/parcours_data.js:4101
 msgid "Trace"
 msgstr "Track"
 
-#: static/js/parcours_data.js:3056 static/js/zone_layer.js:1265
+#: static/js/parcours_data.js:4107 static/js/zone_layer.js:1265
 #, python-brace-format
 msgid "${n} points"
 msgstr "${n} Punkte"
 
-#: static/js/parcours_data.js:3057
+#: static/js/parcours_data.js:4108
 msgid "1 étape calée"
 msgstr "1 Station festgelegt"
 
-#: static/js/parcours_data.js:3057
+#: static/js/parcours_data.js:4108
 #, python-brace-format
 msgid "${n} étapes calées"
 msgstr "${n} Stationen festgelegt"
 
-#: static/js/parcours_data.js:3060
+#: static/js/parcours_data.js:4111
 msgid "Supprimer la trace"
 msgstr "Track löschen"
 
-#: static/js/parcours_data.js:3074
+#: static/js/parcours_data.js:4130
 #, python-brace-format
 msgid "Envoi des traces : ${done} / ${total}"
 msgstr "Tracks werden gesendet: ${done} / ${total}"
 
-#: static/js/parcours_data.js:3089
+#: static/js/parcours_data.js:4152
 msgid "Traces refusées"
 msgstr "Abgelehnte Tracks"
 
-#: static/js/parcours_data.js:3231
+#: static/js/parcours_data.js:4304
 msgid "Clé enregistrée (la remplacer)"
 msgstr "Schlüssel gespeichert (ersetzen)"
 
-#: static/js/parcours_data.js:3231 templates/menu_data_parcours.html:165
+#: static/js/parcours_data.js:4304 templates/menu_data_parcours.html:176
 msgid "Clé openrouteservice"
 msgstr "openrouteservice-Schlüssel"
 
-#: static/js/parcours_data.js:3238
-msgid "Calcul des itinéraires…"
-msgstr "Routen werden berechnet…"
+#: static/js/parcours_data.js:4321
+#, python-brace-format
+msgid "Calcul des itinéraires : ${done} / ${total} trajets…"
+msgstr "Routen werden berechnet: ${done} / ${total} Abschnitte…"
 
-#: static/js/parcours_data.js:3239
+#: static/js/parcours_data.js:4324
 msgid "Itinéraires indisponibles : trajets en ligne droite."
 msgstr "Routen nicht verfügbar: Wege als Luftlinie."
 
-#: static/js/parcours_data.js:3244
+#: static/js/parcours_data.js:4329
 msgid "Aucun trajet à calculer (trajets sur une trace ou en ligne droite)."
 msgstr "Keine Routen zu berechnen (Wege auf einem Track oder als Luftlinie)."
 
-#: static/js/parcours_data.js:3245
+#: static/js/parcours_data.js:4330
 #, python-brace-format
 msgid "${routed} trajets sur ${legs} suivent les routes et chemins."
 msgstr "${routed} von ${legs} Wegen folgen Straßen und Pfaden."
@@ -6904,134 +7087,129 @@ msgstr "gruppiert"
 msgid "un par visiteur"
 msgstr "einer pro Besucher"
 
-#: static/js/profiles.js:50 static/js/stats_page_links.js:358
+#: static/js/profiles.js:51 static/js/stats_page_links.js:358
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41 templates/guide.html:131 templates/guide.html:640
 msgid "Évolution"
 msgstr "Entwicklung"
 
-#: static/js/profiles.js:50 static/js/stats_page_links.js:356
+#: static/js/profiles.js:51 static/js/stats_page_links.js:356
 #: templates/_app_header.html:14 templates/_app_header.html:16
 #: templates/guide.html:131 templates/guide.html:174 templates/guide.html:640
 #: templates/menu_data.html:27
 msgid "Mes Géocaches"
 msgstr "Meine Geocaches"
 
-#: static/js/profiles.js:124
+#: static/js/profiles.js:125
 msgid "espace"
 msgstr "Leerzeichen"
 
-#: static/js/profiles.js:345
+#: static/js/profiles.js:346
 #, python-brace-format
 msgid "Thème \"${name}\" importé dans le mode « ${mode} »"
 msgstr "Design „${name}“ in den Modus „${mode}“ importiert"
 
-#: static/js/profiles.js:349
+#: static/js/profiles.js:350
 #, python-brace-format
 msgid "Thème \"${name}\" importé"
 msgstr "Design „${name}“ importiert"
 
-#: static/js/profiles.js:354
+#: static/js/profiles.js:355
 msgid "Erreur import du thème"
 msgstr "Fehler beim Importieren des Designs"
 
-#: static/js/profiles.js:380
+#: static/js/profiles.js:381
 msgid "Erreur API"
 msgstr "API-Fehler"
 
-#: static/js/profiles.js:386
+#: static/js/profiles.js:387
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Fehler: ${message}"
 
-#: static/js/profiles.js:519 static/js/profiles.js:1631
+#: static/js/profiles.js:520 static/js/profiles.js:1632
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr "Design „${name}“ geladen"
 
-#: static/js/profiles.js:556
+#: static/js/profiles.js:557
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr "Design „${name}“ gespeichert"
 
-#: static/js/profiles.js:611
+#: static/js/profiles.js:612
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr ""
 "Design „${name}“ erstellt, aber das Speichern der Einstellungen ist "
 "fehlgeschlagen"
 
-#: static/js/profiles.js:621
+#: static/js/profiles.js:622
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr "Design „${name}“ erstellt"
 
-#: static/js/profiles.js:637
+#: static/js/profiles.js:638
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr "Design dupliziert: „${name}“"
 
-#: static/js/profiles.js:661
+#: static/js/profiles.js:662
 #, python-brace-format
 msgid "Thème copié dans le mode « ${mode} » : \"${name}\""
 msgstr "Design in den Modus „${mode}“ kopiert: „${name}“"
 
-#: static/js/profiles.js:677
+#: static/js/profiles.js:678
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr "Design „${name}“ gelöscht"
 
-#: static/js/profiles.js:747
+#: static/js/profiles.js:748
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr "Design „${name}“ zurückgesetzt"
 
-#: static/js/profiles.js:782 static/js/stats_page_exports.js:320
+#: static/js/profiles.js:783 static/js/stats_page_exports.js:320
 #: static/js/stats_page_exports.js:346
 msgid "Export échoué"
 msgstr "Export fehlgeschlagen"
 
-#: static/js/profiles.js:793
+#: static/js/profiles.js:794
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr "Design „${name}“ exportiert"
 
-#: static/js/profiles.js:796
+#: static/js/profiles.js:797
 msgid "Erreur export du thème"
 msgstr "Fehler beim Exportieren des Designs"
 
-#: static/js/profiles.js:816
+#: static/js/profiles.js:817
 msgid "Thème introuvable ou UID manquant"
 msgstr "Design nicht gefunden oder UID fehlt"
 
-#: static/js/profiles.js:831
+#: static/js/profiles.js:832
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr "Speichern des Standard-Designs fehlgeschlagen"
 
-#: static/js/profiles.js:836
+#: static/js/profiles.js:837
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr "Design „${name}“ als Standard-Design festgelegt"
 
-#: static/js/profiles.js:849
+#: static/js/profiles.js:850
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr "Fehler beim Festlegen des Standard-Designs"
 
-#: static/js/profiles.js:864 static/js/profiles.js:1163
+#: static/js/profiles.js:865 static/js/profiles.js:1164
 msgid "Aucun thème"
 msgstr "Kein Design"
 
-#: static/js/profiles.js:971
+#: static/js/profiles.js:972
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
 msgstr "Nach „${mode}“ kopieren"
 
-#: static/js/profiles.js:974 static/js/profiles.js:2798
-#: templates/stats_page.html:737
-msgid "Renommer"
-msgstr "Umbenennen"
-
-#: static/js/profiles.js:975 static/js/stats_page_cards.js:455
+#: static/js/profiles.js:976 static/js/stats_page_cards.js:455
 #: templates/app.html:259 templates/app.html:260 templates/guide.html:136
 #: templates/guide.html:345 templates/guide.html:351 templates/guide.html:585
 #: templates/guide.html:782 templates/menu_animation.html:47
@@ -7040,28 +7218,28 @@ msgstr "Umbenennen"
 msgid "Exporter"
 msgstr "Exportieren"
 
-#: static/js/profiles.js:976 templates/menu_style.html:319
+#: static/js/profiles.js:977 templates/menu_style.html:330
 msgid "Réinitialiser"
 msgstr "Zurücksetzen"
 
-#: static/js/profiles.js:981
+#: static/js/profiles.js:982
 msgid "Définir comme par défaut"
 msgstr "Als Standard festlegen"
 
-#: static/js/profiles.js:1067
+#: static/js/profiles.js:1068
 msgid "Thème par défaut"
 msgstr "Standard-Design"
 
-#: static/js/profiles.js:1126 static/js/stats_page.js:515
-#: templates/menu_style.html:336
+#: static/js/profiles.js:1127 static/js/stats_page.js:515
+#: templates/menu_style.html:347
 msgid "Modifications non enregistrées"
 msgstr "Nicht gespeicherte Änderungen"
 
-#: static/js/profiles.js:1174
+#: static/js/profiles.js:1175
 msgid "Choisir un thème"
 msgstr "Ein Design wählen"
 
-#: static/js/profiles.js:1426
+#: static/js/profiles.js:1427
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
@@ -7070,41 +7248,41 @@ msgstr ""
 "Das Design „${name}“ enthält nicht gespeicherte Änderungen. Was möchten "
 "Sie tun?"
 
-#: static/js/profiles.js:1427
+#: static/js/profiles.js:1428
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "Sie haben nicht gespeicherte Änderungen. Was möchten Sie tun?"
 
-#: static/js/profiles.js:1635
+#: static/js/profiles.js:1636
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr "Fehler beim Laden des Standard-Designs"
 
-#: static/js/profiles.js:1668
+#: static/js/profiles.js:1669
 msgid "Aucun thème par défaut"
 msgstr "Kein Standard-Design"
 
-#: static/js/profiles.js:1775
+#: static/js/profiles.js:1776
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr "Design „${selectedProfile}“ angewendet und als Standard-Design festgelegt"
 
-#: static/js/profiles.js:1776
+#: static/js/profiles.js:1777
 msgid "Aucun thème par défaut défini"
 msgstr "Kein Standard-Design festgelegt"
 
-#: static/js/profiles.js:2001
+#: static/js/profiles.js:2002
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr "Das Design konnte nicht geladen werden: Es ist kein Design aktiv."
 
-#: static/js/profiles.js:2499
+#: static/js/profiles.js:2503
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr "Design „${name}“ erstellen"
 
-#: static/js/profiles.js:2614 static/js/profiles.js:3035
+#: static/js/profiles.js:2618 static/js/profiles.js:3039
 msgid "Veuillez saisir un nom de thème"
 msgstr "Bitte geben Sie einen Designnamen ein"
 
-#: static/js/profiles.js:2677
+#: static/js/profiles.js:2681
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
@@ -7113,76 +7291,76 @@ msgstr ""
 "Das Design „${name}“ existiert bereits. Die angezeigten Einstellungen "
 "ersetzen die gespeicherten."
 
-#: static/js/profiles.js:2723
+#: static/js/profiles.js:2727
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Einstellungen in „${name}“ gespeichert"
 
-#: static/js/profiles.js:2783
+#: static/js/profiles.js:2787
 msgid "Enregistrer dans un nouveau thème"
 msgstr "In einem neuen Design speichern"
 
-#: static/js/profiles.js:2783 templates/menu_style.html:254
+#: static/js/profiles.js:2787 templates/menu_style.html:265
 #: templates/stats_page.html:172
 msgid "Nouveau thème"
 msgstr "Neues Design"
 
-#: static/js/profiles.js:2789 templates/menu_style.html:378
+#: static/js/profiles.js:2793 templates/menu_style.html:389
 msgid "Enregistrer le thème"
 msgstr "Design speichern"
 
-#: static/js/profiles.js:2789 templates/menu_style.html:269
+#: static/js/profiles.js:2793 templates/menu_style.html:280
 #: templates/stats_page.html:668
 msgid "Créer"
 msgstr "Erstellen"
 
-#: static/js/profiles.js:2796
+#: static/js/profiles.js:2800
 msgid "Renommer le thème"
 msgstr "Design umbenennen"
 
-#: static/js/profiles.js:2816
+#: static/js/profiles.js:2820
 msgid "Dupliquer le thème"
 msgstr "Design duplizieren"
 
-#: static/js/profiles.js:2837
+#: static/js/profiles.js:2841
 #, python-brace-format
 msgid "Copier le thème vers « ${mode} »"
 msgstr "Design nach „${mode}“ kopieren"
 
-#: static/js/profiles.js:2839
+#: static/js/profiles.js:2843
 msgid "Copier"
 msgstr "Kopieren"
 
-#: static/js/profiles.js:2893
+#: static/js/profiles.js:2897
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "Der Name muss mindestens einen Buchstaben oder eine Ziffer enthalten"
 
-#: static/js/profiles.js:2918 static/js/profiles.js:2938
+#: static/js/profiles.js:2922 static/js/profiles.js:2942
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "„${conflict}“ existiert bereits: Die Kopie wird „${suggested}“ genannt"
 
-#: static/js/profiles.js:2924
+#: static/js/profiles.js:2928
 #, python-brace-format
 msgid "Ce nom est déjà pris par un thème du mode « ${mode} »"
 msgstr "Dieser Name wird bereits von einem Design des Modus „${mode}“ verwendet"
 
-#: static/js/profiles.js:2954
+#: static/js/profiles.js:2958
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr "„${name}“ ist das aktive Design: Seine Einstellungen werden aktualisiert"
 
-#: static/js/profiles.js:2960
+#: static/js/profiles.js:2964
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "„${name}“ existiert bereits: Seine Einstellungen werden ersetzt"
 
-#: static/js/profiles.js:2967
+#: static/js/profiles.js:2971
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr "Ein Design namens „${name}“ existiert bereits"
 
-#: static/js/profiles.js:2968
+#: static/js/profiles.js:2972
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -7191,22 +7369,22 @@ msgstr ""
 "Dieser Name wird bereits von „${conflict}“ verwendet: Beide werden auf "
 "die Datei „${key}“ reduziert"
 
-#: static/js/profiles.js:2977
+#: static/js/profiles.js:2981
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr "Ignorierte Zeichen (${dropped}): Das Design wird als „${key}“ gespeichert"
 
-#: static/js/profiles.js:3096
+#: static/js/profiles.js:3100
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr "Design in „${name}“ umbenannt"
 
-#: static/js/profiles.js:3110
+#: static/js/profiles.js:3114
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr "Sind Sie sicher, dass Sie das Design „${name}“ löschen möchten?"
 
-#: static/js/profiles.js:3129
+#: static/js/profiles.js:3133
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -7377,7 +7555,7 @@ msgstr "Nicht gespeichert"
 msgid "Caches"
 msgstr "Caches"
 
-#: static/js/stats_filters_ui.js:32
+#: static/js/stats_filters_ui.js:32 templates/menu_points.html:291
 msgid "Lieux"
 msgstr "Orte"
 
@@ -7625,10 +7803,6 @@ msgstr "Keine Daten für diesen Zeitraum."
 msgid "Jeu ${id}"
 msgstr "Datensatz ${id}"
 
-#: static/js/stats_page_dashboard.js:89
-msgid "Personnalisée…"
-msgstr "Benutzerdefiniert…"
-
 #: static/js/stats_page_dashboard.js:161
 #, python-brace-format
 msgid "${n} périodes"
@@ -7748,13 +7922,13 @@ msgstr "Wie der Bildschirm"
 
 #: static/js/stats_page_dashboard.js:351 templates/_app_header.html:52
 #: templates/menu_options.html:34 templates/menu_stats.html:368
-#: templates/menu_style.html:164 templates/stats_page.html:800
+#: templates/menu_style.html:168 templates/stats_page.html:800
 msgid "Clair"
 msgstr "Hell"
 
 #: static/js/stats_page_dashboard.js:352 templates/_app_header.html:53
 #: templates/menu_options.html:35 templates/menu_stats.html:367
-#: templates/menu_style.html:167 templates/stats_page.html:801
+#: templates/menu_style.html:171 templates/stats_page.html:801
 msgid "Sombre"
 msgstr "Dunkel"
 
@@ -8180,7 +8354,7 @@ msgid "Modifier l'image"
 msgstr "Bild bearbeiten"
 
 #: static/js/stats_page_image.js:102 templates/guide.html:389
-#: templates/guide.html:437 templates/menu_data_parcours.html:237
+#: templates/guide.html:437 templates/menu_data_parcours.html:287
 #: templates/menu_images.html:103 templates/menu_stats.html:57
 #: templates/stats_page.html:717
 msgid "Ajouter"
@@ -8481,8 +8655,8 @@ msgstr "Rauten"
 #: templates/_filter_country_state.html:12
 #: templates/_filter_country_state.html:22 templates/_filter_county.html:14
 #: templates/menu_data_poses.html:89 templates/menu_data_poses.html:102
-#: templates/menu_names.html:354 templates/menu_trail.html:129
-#: templates/stats_page.html:487
+#: templates/menu_names.html:354 templates/menu_points.html:266
+#: templates/menu_trail.html:129 templates/stats_page.html:487
 msgid "Aucun"
 msgstr "Keine"
 
@@ -8700,7 +8874,7 @@ msgstr "Animiertes Video"
 msgid "Durée de chaque graphique"
 msgstr "Dauer jedes Diagramms"
 
-#: static/js/stats_page_video.js:255 static/js/ui.js:11715
+#: static/js/stats_page_video.js:255 static/js/ui.js:11718
 #: templates/stats_page.html:791
 msgid "Durée"
 msgstr "Dauer"
@@ -9613,10 +9787,6 @@ msgid "Nombre"
 msgstr "Anzahl"
 
 #: static/js/stats_panels.js:3048 static/js/stats_panels.js:3091
-msgid "Catégorie"
-msgstr "Kategorie"
-
-#: static/js/stats_panels.js:3048 static/js/stats_panels.js:3091
 #: templates/menu_informations.html:115
 msgid "Pourcentage"
 msgstr "Prozentsatz"
@@ -10143,11 +10313,11 @@ msgstr ""
 msgid "Format non supporté"
 msgstr "Format nicht unterstützt"
 
-#: static/js/ui.js:2375 static/js/ui.js:11865
+#: static/js/ui.js:2375 static/js/ui.js:11868
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Dauer der Animation an die Musik angepasst"
 
-#: static/js/ui.js:2379 static/js/ui.js:12336
+#: static/js/ui.js:2379 static/js/ui.js:12339
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Fehler beim Lesen der Audiodatei"
 
@@ -10293,173 +10463,173 @@ msgstr "Voreinstellung „${name}“ löschen?"
 msgid "Supprimer le préréglage"
 msgstr "Voreinstellung löschen"
 
-#: static/js/ui.js:7970
+#: static/js/ui.js:7973
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause während der Aufnahme nicht verfügbar – verwenden Sie Stopp"
 
-#: static/js/ui.js:8615
+#: static/js/ui.js:8618
 msgid "Valeur requise."
 msgstr "Wert erforderlich."
 
-#: static/js/ui.js:8617
+#: static/js/ui.js:8620
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Erwartetes Format: mm:ss (z. B. 4:55)."
 
-#: static/js/ui.js:8618
+#: static/js/ui.js:8621
 msgid "Nombre attendu."
 msgstr "Zahl erwartet."
 
-#: static/js/ui.js:8619
+#: static/js/ui.js:8622
 msgid "La valeur doit être strictement positive."
 msgstr "Der Wert muss strikt positiv sein."
 
-#: static/js/ui.js:8621
+#: static/js/ui.js:8624
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Zwischen ${min} und ${max} Tagen/s."
 
-#: static/js/ui.js:8622
+#: static/js/ui.js:8625
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Zwischen ${min} und ${max} s."
 
-#: static/js/ui.js:8623
+#: static/js/ui.js:8626
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximal ${max} s."
 
-#: static/js/ui.js:8624
+#: static/js/ui.js:8627
 msgid "Entre 100 et 10000 ms."
 msgstr "Zwischen 100 und 10000 ms."
 
-#: static/js/ui.js:8625
+#: static/js/ui.js:8628
 msgid "Hors limites."
 msgstr "Außerhalb der Grenzen."
 
-#: static/js/ui.js:8626
+#: static/js/ui.js:8629
 msgid "Valeur invalide."
 msgstr "Ungültiger Wert."
 
-#: static/js/ui.js:8719
+#: static/js/ui.js:8722
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} Tage/s"
 
-#: static/js/ui.js:8721
+#: static/js/ui.js:8724
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "minimale Animation ${d}"
 
-#: static/js/ui.js:8722
+#: static/js/ui.js:8725
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "Animation ${d}"
 
-#: static/js/ui.js:8723
+#: static/js/ui.js:8726
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "Ende ${d}"
 
-#: static/js/ui.js:8726
+#: static/js/ui.js:8729
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr "davon Kamerafahrten ${d}"
 
-#: static/js/ui.js:8734
+#: static/js/ui.js:8737
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr "davon Kamera-Annäherung ${d}"
 
-#: static/js/ui.js:8740
+#: static/js/ui.js:8743
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr "davon Kamerapausen ${d}"
 
-#: static/js/ui.js:8748
+#: static/js/ui.js:8751
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr "davon Kamera-Rückkehr ${d}"
 
-#: static/js/ui.js:8750
+#: static/js/ui.js:8753
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} zusätzlich"
 
-#: static/js/ui.js:8752
+#: static/js/ui.js:8755
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "minimales Video ${d}"
 
-#: static/js/ui.js:8753
+#: static/js/ui.js:8756
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "Video ${d}"
 
-#: static/js/ui.js:8755
+#: static/js/ui.js:8758
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "mindestens ${n} Bilder"
 
-#: static/js/ui.js:8756
+#: static/js/ui.js:8759
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} Bilder"
 
-#: static/js/ui.js:8758
+#: static/js/ui.js:8761
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr "≈ ${n} Tage pro Bild"
 
-#: static/js/ui.js:8765
+#: static/js/ui.js:8768
 #, python-brace-format
 msgid "${n} jours sans trouvaille regroupés"
 msgstr "${n} Tage ohne Fund gruppiert"
 
-#: static/js/ui.js:8766
+#: static/js/ui.js:8769
 #, python-brace-format
 msgid "${n} jour sans trouvaille regroupé"
 msgstr "${n} Tag ohne Fund gruppiert"
 
-#: static/js/ui.js:8791
+#: static/js/ui.js:8794
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr "Video ~${d}"
 
-#: static/js/ui.js:8799 templates/menu_animation.html:23
+#: static/js/ui.js:8802 templates/menu_animation.html:23
 msgid "musique incluse"
 msgstr "Musik eingeschlossen"
 
-#: static/js/ui.js:8800
+#: static/js/ui.js:8803
 msgid "sans musique"
 msgstr "ohne Musik"
 
-#: static/js/ui.js:8806
+#: static/js/ui.js:8809
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr "Ziel: ${d}"
 
-#: static/js/ui.js:8845
+#: static/js/ui.js:8848
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr "Beispiel: ${name}"
 
-#: static/js/ui.js:8848
+#: static/js/ui.js:8851
 msgid "Vide : nom du thème actif."
 msgstr "Leer: Name des aktiven Designs."
 
-#: static/js/ui.js:8880
+#: static/js/ui.js:8883
 msgid "La plage de dates est invalide ou vide."
 msgstr "Der Datumsbereich ist ungültig oder leer."
 
-#: static/js/ui.js:8881
+#: static/js/ui.js:8884
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Wählen Sie eine Audiodatei für den Modus „Zur Musik“."
 
-#: static/js/ui.js:8888
+#: static/js/ui.js:8891
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "Warten auf das Auslesen der Musikdauer."
 
-#: static/js/ui.js:8899
+#: static/js/ui.js:8902
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -10468,7 +10638,7 @@ msgstr ""
 "Angeforderte Dauer (${req}) zu kurz, um jeden Tag anzuzeigen (Minimum "
 "${min}): ${app} angewendet."
 
-#: static/js/ui.js:8922
+#: static/js/ui.js:8925
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -10478,7 +10648,7 @@ msgstr ""
 "angezeigte Dauer und Bildzahl sind Mindestwerte; das Ergebnis wird länger"
 " und kann die Musikdauer überschreiten."
 
-#: static/js/ui.js:8926
+#: static/js/ui.js:8929
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -10489,7 +10659,7 @@ msgstr ""
 "Dauer: Sie werden beschleunigt, um ${applied} einzuhalten. Für ruhigere "
 "Bewegungen verringern Sie die Dynamik oder verlängern Sie das Video."
 
-#: static/js/ui.js:8931
+#: static/js/ui.js:8934
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -10500,7 +10670,7 @@ msgstr ""
 "Ausschnitt fügen ${n} Fahrten etwa ${d} zum Video hinzu. Für eine exakte "
 "Dauer wählen Sie „Nach Dauer“ oder „Zur Musik“."
 
-#: static/js/ui.js:8947
+#: static/js/ui.js:8950
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -10511,7 +10681,7 @@ msgstr ""
 " bei seiner Anzeige im Ausschnitt liegt. Verringern Sie die Dynamik oder "
 "das Tempo, um dies zu vermeiden."
 
-#: static/js/ui.js:8994
+#: static/js/ui.js:8997
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -10520,7 +10690,7 @@ msgstr ""
 "Hohe Last: bis zu ~${n} gleichzeitige Blitze. Ansätze: Blitzdauer "
 "verkürzen, Animation verlangsamen oder den Bildmodus verwenden."
 
-#: static/js/ui.js:8998
+#: static/js/ui.js:9001
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -10529,74 +10699,74 @@ msgstr ""
 "${n} Bilder zu erzeugen (~${d} im Bildmodus). Erwägen Sie eine niedrigere"
 " Bildrate oder eine kürzere Animation."
 
-#: static/js/ui.js:9192
+#: static/js/ui.js:9195
 msgid "Images de capture supprimées"
 msgstr "Aufnahmebilder gelöscht"
 
-#: static/js/ui.js:9192
+#: static/js/ui.js:9195
 msgid "Nettoyage"
 msgstr "Bereinigung"
 
-#: static/js/ui.js:9216
+#: static/js/ui.js:9219
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Videoordner: ${folder}"
 
-#: static/js/ui.js:9216 static/js/ui.js:9218 static/js/ui.js:9223
+#: static/js/ui.js:9219 static/js/ui.js:9221 static/js/ui.js:9226
 msgid "Ouverture"
 msgstr "Öffnen"
 
-#: static/js/ui.js:9218
+#: static/js/ui.js:9221
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Der Videoordner konnte nicht geöffnet werden"
 
-#: static/js/ui.js:9223
+#: static/js/ui.js:9226
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Fehler beim Öffnen des Videoordners"
 
-#: static/js/ui.js:11608
+#: static/js/ui.js:11611
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Wählen Sie zuerst eine Audiodatei"
 
-#: static/js/ui.js:11658 templates/menu_animation.html:340
+#: static/js/ui.js:11661 templates/menu_animation.html:340
 msgid "Aucune musique sélectionnée"
 msgstr "Keine Musik ausgewählt"
 
-#: static/js/ui.js:11687
+#: static/js/ui.js:11690
 msgid "Non disponible"
 msgstr "Nicht verfügbar"
 
-#: static/js/ui.js:11714
+#: static/js/ui.js:11717
 msgid "Type inconnu"
 msgstr "Unbekannter Typ"
 
-#: static/js/ui.js:11716
+#: static/js/ui.js:11719
 msgid "Modifié"
 msgstr "Geändert"
 
-#: static/js/ui.js:11758
+#: static/js/ui.js:11761
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Fehler beim Laden der Audiodatei"
 
-#: static/js/ui.js:11785 static/js/ui.js:12186 static/js/ui.js:12328
+#: static/js/ui.js:11788 static/js/ui.js:12189 static/js/ui.js:12331
 msgid "Attendez la fin de l'enregistrement pour changer de musique."
 msgstr "Warten Sie das Ende der Aufnahme ab, um die Musik zu wechseln."
 
-#: static/js/ui.js:11910
+#: static/js/ui.js:11913
 msgid "Chargement de la musique..."
 msgstr "Musik wird geladen..."
 
-#: static/js/ui.js:11992
+#: static/js/ui.js:11995
 #, python-brace-format
 msgid "à partir de ${s}"
 msgstr "ab ${s}"
 
-#: static/js/ui.js:12007
+#: static/js/ui.js:12010
 #, python-brace-format
 msgid "Retirer « ${name} » des musiques récentes"
 msgstr "„${name}“ aus den letzten Musiken entfernen"
 
-#: static/js/ui.js:12028
+#: static/js/ui.js:12031
 msgid ""
 "Les musiques choisies sont copiées pour l'export ; les copies qui ne "
 "servent plus sont supprimées."
@@ -10604,52 +10774,52 @@ msgstr ""
 "Die gewählten Musiken werden für den Export kopiert; nicht mehr benötigte"
 " Kopien werden gelöscht."
 
-#: static/js/ui.js:12042
+#: static/js/ui.js:12045
 #, python-brace-format
 msgid "Copies des musiques : ${size}"
 msgstr "Kopien der Musiken: ${size}"
 
-#: static/js/ui.js:12071
+#: static/js/ui.js:12074
 msgid "La musique n'a pas pu être retirée."
 msgstr "Die Musik konnte nicht entfernt werden."
 
-#: static/js/ui.js:12151
+#: static/js/ui.js:12154
 #, python-brace-format
 msgid "Monter « ${name} »"
 msgstr "„${name}“ nach oben verschieben"
 
-#: static/js/ui.js:12152
+#: static/js/ui.js:12155
 #, python-brace-format
 msgid "Descendre « ${name} »"
 msgstr "„${name}“ nach unten verschieben"
 
-#: static/js/ui.js:12153
+#: static/js/ui.js:12156
 #, python-brace-format
 msgid "Retirer « ${name} » de l'enchaînement"
 msgstr "„${name}“ aus der Sequenz entfernen"
 
-#: static/js/ui.js:12191
+#: static/js/ui.js:12194
 msgid "Préparation de l'enchaînement…"
 msgstr "Sequenz wird vorbereitet…"
 
-#: static/js/ui.js:12210 static/js/ui.js:12243
+#: static/js/ui.js:12213 static/js/ui.js:12246
 msgid "Les morceaux n'ont pas pu être enchaînés."
 msgstr "Die Titel konnten nicht aneinandergereiht werden."
 
-#: static/js/ui.js:12262
+#: static/js/ui.js:12265
 msgid "Envoi du morceau…"
 msgstr "Titel wird gesendet…"
 
-#: static/js/ui.js:12269
+#: static/js/ui.js:12272
 msgid "Le morceau n'a pas pu être envoyé au serveur."
 msgstr "Der Titel konnte nicht an den Server gesendet werden."
 
-#: static/js/ui.js:12343
+#: static/js/ui.js:12346
 #, python-brace-format
 msgid "« ${name} » n'est plus disponible : elle a été retirée de la liste."
 msgstr "„${name}“ ist nicht mehr verfügbar: Sie wurde aus der Liste entfernt."
 
-#: static/js/ui.js:12513
+#: static/js/ui.js:12516
 msgid ""
 "Cette musique est illisible (format inconnu ou fichier endommagé) : elle "
 "ne sera pas ajoutée à la vidéo."
@@ -10657,7 +10827,7 @@ msgstr ""
 "Diese Musik ist nicht lesbar (unbekanntes Format oder beschädigte Datei):"
 " Sie wird dem Video nicht hinzugefügt."
 
-#: static/js/ui.js:12622
+#: static/js/ui.js:12625
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr "${s} s Stille am Ende der Musik erkannt."
@@ -11489,7 +11659,7 @@ msgid "Sélectionner des exports CSV"
 msgstr "CSV-Exporte auswählen"
 
 #: templates/app.html:132 templates/menu_data_evolution.html:58
-#: templates/menu_data_parcours.html:130 templates/menu_photos_parcours.html:29
+#: templates/menu_data_parcours.html:138 templates/menu_photos_parcours.html:29
 msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr ""
 "oder ziehen Sie Ihre Dateien per Drag & Drop an eine beliebige Stelle der"
@@ -12091,7 +12261,7 @@ msgstr "OpenStreetMap, klassische farbige Karte"
 msgid "noir et blanc, version claire ou sombre"
 msgstr "Schwarz-Weiß, helle oder dunkle Version"
 
-#: templates/guide.html:215 templates/menu_style.html:115
+#: templates/guide.html:215 templates/menu_style.html:119
 msgid "Vectorielle"
 msgstr "Vektorkarte"
 
@@ -12103,8 +12273,8 @@ msgstr ""
 "Vektorkarte, deren Farben (Kontur, Füllung, Hintergrund) und Linienstärke"
 " Sie einstellen"
 
-#: templates/guide.html:216 templates/menu_style.html:120
-#: templates/menu_style.html:122
+#: templates/guide.html:216 templates/menu_style.html:124
+#: templates/menu_style.html:126
 msgid "Aquarelle"
 msgstr "Aquarell"
 
@@ -12143,7 +12313,8 @@ msgstr ""
 "Rand ein. Die Farben können dem Cache-Typ folgen (GC-Farben), transparent"
 " oder einheitlich sein."
 
-#: templates/guide.html:224 templates/menu_points.html:13
+#: templates/guide.html:224 templates/menu_data_parcours.html:281
+#: templates/menu_points.html:13
 msgid "Icône"
 msgstr "Symbol"
 
@@ -12236,7 +12407,7 @@ msgstr ""
 msgid "Ajoutez un titre et des informations"
 msgstr "Fügen Sie einen Titel und Informationen hinzu"
 
-#: templates/guide.html:246 templates/menu_style.html:88
+#: templates/guide.html:246 templates/menu_style.html:92
 msgid "Titres"
 msgstr "Titel"
 
@@ -12586,7 +12757,7 @@ msgid "Ces réglages se trouvent dans le sous-onglet"
 msgstr "Diese Einstellungen befinden sich im Untertab"
 
 #: templates/guide.html:298 templates/menu_animation.html:19
-#: templates/menu_data_parcours.html:87
+#: templates/menu_data_parcours.html:95
 msgid "Caméra"
 msgstr "Kamera"
 
@@ -15341,7 +15512,7 @@ msgstr "Schnell"
 msgid "jours/s"
 msgstr "Tage/s"
 
-#: templates/menu_animation.html:206 templates/menu_points.html:267
+#: templates/menu_animation.html:206 templates/menu_points.html:326
 msgid "Personnalisé"
 msgstr "Benutzerdefiniert"
 
@@ -16101,10 +16272,6 @@ msgstr ""
 msgid "Mes parcours"
 msgstr "Meine Touren"
 
-#: templates/menu_data_parcours.html:20
-msgid "Nouveau parcours"
-msgstr "Neue Tour"
-
 #: templates/menu_data_parcours.html:26
 msgid "Suggestions"
 msgstr "Vorschläge"
@@ -16137,27 +16304,35 @@ msgstr "Meine Adventure-Lab-Stationen einbeziehen"
 msgid "Inclure mes DNF (je me suis tout de même déplacé)"
 msgstr "Meine DNFs einbeziehen (ich war trotzdem dort)"
 
-#: templates/menu_data_parcours.html:56
-msgid "Créer le parcours"
-msgstr "Tour erstellen"
+#: templates/menu_data_parcours.html:59
+msgid "Annuler la modification"
+msgstr "Bearbeitung abbrechen"
+
+#: templates/menu_data_parcours.html:62
+msgid "Export de parcours à importer"
+msgstr "Zu importierender Tour-Export"
 
 #: templates/menu_data_parcours.html:64
+msgid "Importer un export"
+msgstr "Einen Export importieren"
+
+#: templates/menu_data_parcours.html:72
 msgid "Lecture"
 msgstr "Wiedergabe"
 
-#: templates/menu_data_parcours.html:69
+#: templates/menu_data_parcours.html:77
 msgid "Rythme des étapes"
 msgstr "Takt der Stationen"
 
-#: templates/menu_data_parcours.html:71
+#: templates/menu_data_parcours.html:79
 msgid "Régulier"
 msgstr "Gleichmäßig"
 
-#: templates/menu_data_parcours.html:72
+#: templates/menu_data_parcours.html:80
 msgid "Proportionnel au temps réel"
 msgstr "Proportional zur echten Zeit"
 
-#: templates/menu_data_parcours.html:74
+#: templates/menu_data_parcours.html:82
 msgid ""
 "Régulier : chaque étape a la même durée à l'écran. Proportionnel : les "
 "longues visites et les longs trajets se voient."
@@ -16165,42 +16340,43 @@ msgstr ""
 "Gleichmäßig: Jede Station bleibt gleich lang im Bild. Proportional: Lange"
 " Besuche und lange Wege werden sichtbar."
 
-#: templates/menu_data_parcours.html:77
+#: templates/menu_data_parcours.html:85
 msgid "Heures affichées"
 msgstr "Angezeigte Uhrzeiten"
 
-#: templates/menu_data_parcours.html:79
+#: templates/menu_data_parcours.html:87
 msgid "Approximatives (« ≈ 10:40 » quand elles sont estimées)"
 msgstr "Ungefähr („≈ 10:40“, wenn geschätzt)"
 
-#: templates/menu_data_parcours.html:80
+#: templates/menu_data_parcours.html:88
 msgid "Exactes, sans « ≈ »"
 msgstr "Genau, ohne „≈“"
 
-#: templates/menu_data_parcours.html:81
+#: templates/menu_data_parcours.html:89
 msgid "Moments de la journée (matin, midi…)"
 msgstr "Tageszeiten (Vormittag, Mittag…)"
 
-#: templates/menu_data_parcours.html:82 templates/menu_informations.html:220
+#: templates/menu_data_parcours.html:90 templates/menu_informations.html:220
 #: templates/menu_points.html:28 templates/menu_trail.html:135
+#: templates/menu_trail_parcours.html:50
 msgid "Aucune"
 msgstr "Kein"
 
-#: templates/menu_data_parcours.html:84
+#: templates/menu_data_parcours.html:92
 #, python-brace-format
 msgid "Balise {heure} de la ligne d'informations (onglet Style › Titres)"
 msgstr "Platzhalter {heure} der Infozeile (Reiter Stil › Titel)"
 
-#: templates/menu_data_parcours.html:89
+#: templates/menu_data_parcours.html:97
 msgid "Suit le géocacheur"
 msgstr "Folgt dem Geocacher"
 
-#: templates/menu_data_parcours.html:90 templates/menu_informations.html:345
+#: templates/menu_data_parcours.html:98 templates/menu_informations.html:345
 #: templates/menu_names.html:91
 msgid "Fixe"
 msgstr "Fixiert"
 
-#: templates/menu_data_parcours.html:92
+#: templates/menu_data_parcours.html:100
 msgid ""
 "Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. "
 "Déplacer la carte pendant la lecture la laisse en place."
@@ -16208,31 +16384,31 @@ msgstr ""
 "Nah zu Fuß, zoomt bei langen Wegen, nachts und am Ende heraus. Wird die "
 "Karte während der Wiedergabe verschoben, bleibt sie dort."
 
-#: templates/menu_data_parcours.html:95
+#: templates/menu_data_parcours.html:103
 msgid "Géocacheur"
 msgstr "Geocacher"
 
-#: templates/menu_data_parcours.html:97
+#: templates/menu_data_parcours.html:105
 msgid "Pictogramme du déplacement (à pied, vélo, voiture…)"
 msgstr "Symbol der Fortbewegung (zu Fuß, Fahrrad, Auto…)"
 
-#: templates/menu_data_parcours.html:98
+#: templates/menu_data_parcours.html:106
 msgid "Simple point"
 msgstr "Einfacher Punkt"
 
-#: templates/menu_data_parcours.html:103
-msgid "Nuit et carton « Jour 2 » entre deux journées"
-msgstr "Nacht und Tafel „Tag 2“ zwischen zwei Tagen"
+#: templates/menu_data_parcours.html:111
+msgid "Nuit et carton « Jour 2 » entre deux journées, carton final de synthèse"
+msgstr "Nacht und Karte „Tag 2“ zwischen den Tagen, abschließende Übersichtskarte"
 
-#: templates/menu_data_parcours.html:107
+#: templates/menu_data_parcours.html:115
 msgid "Trajets estimés (ligne droite) en pointillés"
 msgstr "Geschätzte Wege (Luftlinie) gestrichelt"
 
-#: templates/menu_data_parcours.html:115
+#: templates/menu_data_parcours.html:123
 msgid "Traces GPS"
 msgstr "GPS-Tracks"
 
-#: templates/menu_data_parcours.html:121
+#: templates/menu_data_parcours.html:129
 msgid ""
 "Une étape à moins de 100 m d'une trace prend son heure de passage (celle "
 "où vous vous êtes attardé), et le trajet entre deux étapes calées suit la"
@@ -16243,27 +16419,27 @@ msgstr ""
 "zwei festgelegten Stationen folgt dem Track. Ein unvollständiger Track "
 "genügt."
 
-#: templates/menu_data_parcours.html:124
+#: templates/menu_data_parcours.html:132
 msgid "Traces à ajouter"
 msgstr "Hinzuzufügende Tracks"
 
-#: templates/menu_data_parcours.html:126
+#: templates/menu_data_parcours.html:134
 msgid "Ajouter des traces (.gpx)"
 msgstr "Tracks hinzufügen (.gpx)"
 
-#: templates/menu_data_parcours.html:134
+#: templates/menu_data_parcours.html:142
 msgid "Heure locale des traces (enregistrées en UTC)"
 msgstr "Ortszeit der Tracks (in UTC aufgezeichnet)"
 
-#: templates/menu_data_parcours.html:145
+#: templates/menu_data_parcours.html:156
 msgid "Itinéraires"
 msgstr "Routen"
 
-#: templates/menu_data_parcours.html:151
+#: templates/menu_data_parcours.html:162
 msgid "Suivre les routes et chemins"
 msgstr "Straßen und Pfaden folgen"
 
-#: templates/menu_data_parcours.html:154
+#: templates/menu_data_parcours.html:165
 msgid ""
 "Les trajets sont calculés par un service en ligne (connexion nécessaire),"
 " puis gardés sur cet ordinateur : la vidéo se refait hors ligne. À pied "
@@ -16275,31 +16451,31 @@ msgstr ""
 "erstellen. Zu Fuß bis 1,5 km, darüber mit dem Auto, ab 300 km als "
 "Luftlinie; der Modus lässt sich an jeder Station ändern."
 
-#: templates/menu_data_parcours.html:157
+#: templates/menu_data_parcours.html:168
 msgid "Service"
 msgstr "Dienst"
 
-#: templates/menu_data_parcours.html:159
+#: templates/menu_data_parcours.html:170
 msgid "FOSSGIS (gratuit, sans clé)"
 msgstr "FOSSGIS (kostenlos, ohne Schlüssel)"
 
-#: templates/menu_data_parcours.html:160
+#: templates/menu_data_parcours.html:171
 msgid "openrouteservice (clé gratuite, plus fiable)"
 msgstr "openrouteservice (kostenloser Schlüssel, zuverlässiger)"
 
-#: templates/menu_data_parcours.html:169
+#: templates/menu_data_parcours.html:180
 msgid "Créer une clé gratuite sur openrouteservice.org"
 msgstr "Einen kostenlosen Schlüssel auf openrouteservice.org erstellen"
 
-#: templates/menu_data_parcours.html:170
+#: templates/menu_data_parcours.html:181
 msgid "2 000 itinéraires par jour. La clé reste sur cet ordinateur."
 msgstr "2.000 Routen pro Tag. Der Schlüssel bleibt auf diesem Computer."
 
-#: templates/menu_data_parcours.html:175
+#: templates/menu_data_parcours.html:186
 msgid "Recalculer les itinéraires"
 msgstr "Routen neu berechnen"
 
-#: templates/menu_data_parcours.html:180
+#: templates/menu_data_parcours.html:195
 msgid ""
 "Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS "
 "(routing.openstreetmap.de) ou openrouteservice (HeiGIT)."
@@ -16307,33 +16483,49 @@ msgstr ""
 "Routen © OpenStreetMap-Mitwirkende, berechnet von FOSSGIS "
 "(routing.openstreetmap.de) oder openrouteservice (HeiGIT)."
 
-#: templates/menu_data_parcours.html:191 templates/menu_informations.html:74
+#: templates/menu_data_parcours.html:206 templates/menu_informations.html:74
 msgid "Étapes"
 msgstr "Stationen"
 
-#: templates/menu_data_parcours.html:203
+#: templates/menu_data_parcours.html:218
+msgid "Annuler le dernier ajustement (Ctrl+Z)"
+msgstr "Letzte Anpassung rückgängig machen (Strg+Z)"
+
+#: templates/menu_data_parcours.html:222
+msgid "Rétablir l’ajustement annulé (Ctrl+Y)"
+msgstr "Rückgängig gemachte Anpassung wiederherstellen (Strg+Y)"
+
+#: templates/menu_data_parcours.html:223
+msgid "Rétablir"
+msgstr "Wiederherstellen"
+
+#: templates/menu_data_parcours.html:226
 msgid "Poser un lieu ou une base sur la carte"
 msgstr "Einen Ort oder eine Basis auf der Karte setzen"
 
-#: templates/menu_data_parcours.html:210
+#: templates/menu_data_parcours.html:236
 msgid "Cliquez sur la carte à l'endroit du lieu (Échap pour annuler)."
 msgstr "Klicken Sie auf der Karte an die Stelle des Ortes (Esc zum Abbrechen)."
 
-#: templates/menu_data_parcours.html:217
+#: templates/menu_data_parcours.html:243
 msgid "Lieu (une étape de plus)"
 msgstr "Ort (eine zusätzliche Station)"
 
-#: templates/menu_data_parcours.html:218
+#: templates/menu_data_parcours.html:244
 msgid "Base (départ et retour de la journée)"
 msgstr "Basis (Start und Ende des Tages)"
 
-#: templates/menu_data_parcours.html:224
+#: templates/menu_data_parcours.html:250
 msgid "Belvédère, hôtel, restaurant…"
 msgstr "Aussichtspunkt, Hotel, Restaurant…"
 
-#: templates/menu_data_parcours.html:231
+#: templates/menu_data_parcours.html:257
 msgid "Heure (facultative)"
 msgstr "Uhrzeit (optional)"
+
+#: templates/menu_data_parcours.html:261
+msgid "Rôle de la base"
+msgstr "Rolle der Basis"
 
 #: templates/menu_data_poses.html:21
 msgid ""
@@ -17210,7 +17402,7 @@ msgstr ""
 
 #: templates/menu_informations.html:139 templates/menu_informations.html:227
 #: templates/menu_informations.html:263 templates/menu_informations.html:291
-#: templates/menu_names.html:308 templates/menu_points.html:310
+#: templates/menu_names.html:308 templates/menu_points.html:369
 #: templates/menu_zones.html:135
 msgid "Couleur"
 msgstr "Farbe"
@@ -17224,6 +17416,7 @@ msgid "Police"
 msgstr "Schriftart"
 
 #: templates/menu_informations.html:163 templates/menu_trail.html:108
+#: templates/menu_trail_parcours.html:23
 msgid "Épaisseur"
 msgstr "Stärke"
 
@@ -17263,7 +17456,7 @@ msgstr "Rahmen (px)"
 msgid "Style de bordure"
 msgstr "Rahmenstil"
 
-#: templates/menu_informations.html:221
+#: templates/menu_informations.html:221 templates/menu_trail_parcours.html:49
 msgid "Pleine"
 msgstr "Durchgezogen"
 
@@ -17272,6 +17465,7 @@ msgid "Tirets"
 msgstr "Gestrichelt"
 
 #: templates/menu_informations.html:223 templates/menu_trail.html:79
+#: templates/menu_trail_parcours.html:48
 msgid "Pointillés"
 msgstr "Gepunktet"
 
@@ -17338,7 +17532,8 @@ msgid "Gauche (px)"
 msgstr "Links (px)"
 
 #: templates/menu_informations.html:373 templates/menu_names.html:331
-#: templates/menu_trail.html:114 templates/menu_zones.html:139
+#: templates/menu_trail.html:114 templates/menu_trail_parcours.html:30
+#: templates/menu_zones.html:139
 msgid "Opacité"
 msgstr "Deckkraft"
 
@@ -17477,8 +17672,9 @@ msgstr "Textgröße"
 
 #: templates/menu_names.html:82 templates/menu_points.html:62
 #: templates/menu_points.html:127 templates/menu_points.html:185
-#: templates/menu_points.html:235 templates/menu_points.html:398
-#: templates/menu_trail.html:111
+#: templates/menu_points.html:235 templates/menu_points.html:273
+#: templates/menu_points.html:457 templates/menu_trail.html:111
+#: templates/menu_trail_parcours.html:26
 msgid "px"
 msgstr "px"
 
@@ -18273,7 +18469,7 @@ msgstr ""
 msgid "Taille du centre"
 msgstr "Größe der Mitte"
 
-#: templates/menu_points.html:61 templates/menu_points.html:397
+#: templates/menu_points.html:61 templates/menu_points.html:456
 msgid "Taille en pixels"
 msgstr "Größe in Pixeln"
 
@@ -18352,26 +18548,68 @@ msgid "En mode icônes, l'icône est entourée d'un anneau à la couleur du cont
 msgstr "Im Symbolmodus ist das Symbol von einem Ring in Konturfarbe umgeben."
 
 #: templates/menu_points.html:256
+msgid "Étapes du parcours"
+msgstr "Stationen der Tour"
+
+#: templates/menu_points.html:262
+msgid "Numéros des étapes"
+msgstr "Nummern der Stationen"
+
+#: templates/menu_points.html:264
+msgid "Sur tout le parcours"
+msgstr "Über die ganze Tour"
+
+#: templates/menu_points.html:265
+msgid "Par journée"
+msgstr "Pro Tag"
+
+#: templates/menu_points.html:270
+msgid "Taille des pastilles"
+msgstr "Größe der Marker"
+
+#: templates/menu_points.html:283
+msgid "Étapes Lab"
+msgstr "Lab-Stationen"
+
+#: templates/menu_points.html:295
+msgid "Bases"
+msgstr "Basen"
+
+#: templates/menu_points.html:299
+msgid "Couleurs par défaut"
+msgstr "Standardfarben"
+
+#: templates/menu_points.html:302
+msgid ""
+"Pastilles du plan affiché au repos. Pendant la lecture, les caches "
+"prennent le graphisme ci-dessus ; les lieux et les bases gardent leur "
+"couleur. Le texte des numéros passe en sombre sur une couleur claire."
+msgstr ""
+"Marker der Übersicht im Ruhezustand. Während der Wiedergabe nutzen die "
+"Caches den Stil oben; Orte und Basen behalten ihre Farbe. Auf hellen "
+"Farben werden die Nummern dunkel."
+
+#: templates/menu_points.html:315
 msgid "Animation des caches posées"
 msgstr "Animation der eigenen Caches"
 
-#: templates/menu_points.html:262
+#: templates/menu_points.html:321
 msgid "Niveau d'animation"
 msgstr "Animationsstufe"
 
-#: templates/menu_points.html:264
+#: templates/menu_points.html:323
 msgid "Sobre"
 msgstr "Schlicht"
 
-#: templates/menu_points.html:265
+#: templates/menu_points.html:324
 msgid "Équilibré"
 msgstr "Ausgewogen"
 
-#: templates/menu_points.html:266
+#: templates/menu_points.html:325
 msgid "Riche"
 msgstr "Reichhaltig"
 
-#: templates/menu_points.html:271
+#: templates/menu_points.html:330
 msgid ""
 "Sobre : aucun effet. Équilibré : taille, fraîcheur et flash de palier. "
 "Riche : tous les effets. Cochez ou décochez un effet pour composer le "
@@ -18381,35 +18619,35 @@ msgstr ""
 "Blitz. Reichhaltig: alle Effekte. Aktivieren oder deaktivieren Sie einen "
 "Effekt, um Ihren eigenen zusammenzustellen."
 
-#: templates/menu_points.html:280
+#: templates/menu_points.html:339
 msgid "Taille selon la popularité"
 msgstr "Größe nach Beliebtheit"
 
-#: templates/menu_points.html:282
+#: templates/menu_points.html:341
 msgid "La cache grossit à mesure qu'elle reçoit des trouvailles."
 msgstr "Der Cache wächst, je mehr Funde er erhält."
 
-#: templates/menu_points.html:285
+#: templates/menu_points.html:344
 msgid "Échelle"
 msgstr "Skala"
 
-#: templates/menu_points.html:287
+#: templates/menu_points.html:346
 msgid "Par rapport à la plus trouvée"
 msgstr "Relativ zum meistgefundenen"
 
-#: templates/menu_points.html:288
+#: templates/menu_points.html:347
 msgid "Paliers fixes (1, 3, 10, 25, 50, 100…)"
 msgstr "Feste Stufen (1, 3, 10, 25, 50, 100…)"
 
-#: templates/menu_points.html:292
+#: templates/menu_points.html:351
 msgid "Taille maximale"
 msgstr "Maximale Größe"
 
-#: templates/menu_points.html:305
+#: templates/menu_points.html:364
 msgid "Lueur d'activité"
 msgstr "Aktivitätsglühen"
 
-#: templates/menu_points.html:307
+#: templates/menu_points.html:366
 msgid ""
 "Une lueur s'allume derrière la cache à chaque trouvaille, puis s'éteint "
 "peu à peu."
@@ -18417,23 +18655,23 @@ msgstr ""
 "Hinter dem Cache leuchtet bei jedem Fund ein Schimmer auf, der dann "
 "allmählich verblasst."
 
-#: templates/menu_points.html:314
+#: templates/menu_points.html:373
 msgid "S'éteint de moitié en"
 msgstr "Verblasst zur Hälfte in"
 
-#: templates/menu_points.html:317 templates/menu_points.html:339
+#: templates/menu_points.html:376 templates/menu_points.html:398
 msgid "jours"
 msgstr "Tagen"
 
-#: templates/menu_points.html:321 templates/menu_points.html:343
+#: templates/menu_points.html:380 templates/menu_points.html:402
 msgid "Intensité"
 msgstr "Intensität"
 
-#: templates/menu_points.html:331
+#: templates/menu_points.html:390
 msgid "Fraîcheur"
 msgstr "Frische"
 
-#: templates/menu_points.html:333
+#: templates/menu_points.html:392
 msgid ""
 "Une cache sans trouvaille depuis longtemps pâlit, puis reprend sa couleur"
 " à la trouvaille suivante."
@@ -18441,15 +18679,15 @@ msgstr ""
 "Ein Cache, der lange nicht gefunden wurde, verblasst und nimmt beim "
 "nächsten Fund wieder seine Farbe an."
 
-#: templates/menu_points.html:336
+#: templates/menu_points.html:395
 msgid "Pâlit après"
 msgstr "Verblasst nach"
 
-#: templates/menu_points.html:353
+#: templates/menu_points.html:412
 msgid "Flash de palier"
 msgstr "Meilenstein-Blitz"
 
-#: templates/menu_points.html:355
+#: templates/menu_points.html:414
 msgid ""
 "Un flash marque les trouvailles rondes d'une cache (10ᵉ, 50ᵉ, 100ᵉ…). "
 "Forme et couleur : onglet Flash, « Palier de trouvailles »."
@@ -18457,27 +18695,27 @@ msgstr ""
 "Ein Blitz markiert die runden Funde eines Caches (10., 50., 100.…). Form "
 "und Farbe: Tab „Blitz“, „Fund-Meilenstein“."
 
-#: templates/menu_points.html:358
+#: templates/menu_points.html:417
 msgid "Pulsation des désactivées"
 msgstr "Pulsieren der deaktivierten"
 
-#: templates/menu_points.html:360
+#: templates/menu_points.html:419
 msgid "Une cache désactivée pulse lentement pendant l'animation."
 msgstr "Ein deaktivierter Cache pulsiert während der Animation langsam."
 
-#: templates/menu_points.html:361
+#: templates/menu_points.html:420
 msgid "Style des caches archivées"
 msgstr "Stil der archivierten Caches"
 
-#: templates/menu_points.html:363
+#: templates/menu_points.html:422
 msgid "Grisées"
 msgstr "Ausgegraut"
 
-#: templates/menu_points.html:364
+#: templates/menu_points.html:423
 msgid "Fantôme (contour seul)"
 msgstr "Geist (nur Kontur)"
 
-#: templates/menu_points.html:366
+#: templates/menu_points.html:425
 msgid ""
 "En mode icônes, le fantôme est une icône très effacée. Pour les faire "
 "disparaître : onglet Données."
@@ -18485,19 +18723,19 @@ msgstr ""
 "Im Symbolmodus ist der Geist ein sehr blasses Symbol. Um sie "
 "auszublenden: Tab „Daten“."
 
-#: templates/menu_points.html:378
+#: templates/menu_points.html:437
 msgid "Configuration des icônes"
 msgstr "Symbolkonfiguration"
 
-#: templates/menu_points.html:383 templates/menu_points.html:384
+#: templates/menu_points.html:442 templates/menu_points.html:443
 msgid "Jeu d'icônes"
 msgstr "Symbolsatz"
 
-#: templates/menu_points.html:390 templates/menu_points.html:393
+#: templates/menu_points.html:449 templates/menu_points.html:452
 msgid "Taille des icônes"
 msgstr "Symbolgröße"
 
-#: templates/menu_points.html:404
+#: templates/menu_points.html:463
 msgid "Aperçu des icônes"
 msgstr "Symbolvorschau"
 
@@ -19567,7 +19805,7 @@ msgstr "Aktives Design speichern"
 msgid "Autres options d'enregistrement"
 msgstr "Weitere Speicheroptionen"
 
-#: templates/menu_style.html:29 templates/menu_style.html:362
+#: templates/menu_style.html:29 templates/menu_style.html:373
 msgid "Enregistrer sous…"
 msgstr "Speichern unter…"
 
@@ -19593,75 +19831,75 @@ msgstr "Ein Design mit den aktuellen Einstellungen erstellen"
 msgid "Importer un thème JSON"
 msgstr "Ein JSON-Design importieren"
 
-#: templates/menu_style.html:99
+#: templates/menu_style.html:103
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
-#: templates/menu_style.html:106
+#: templates/menu_style.html:110
 msgid "Stamen Toner"
 msgstr "Stamen Toner"
 
-#: templates/menu_style.html:113 templates/menu_style.html:134
+#: templates/menu_style.html:117 templates/menu_style.html:138
 msgid "Carte vectorielle"
 msgstr "Vektorkarte"
 
-#: templates/menu_style.html:138
+#: templates/menu_style.html:142
 msgid "Définit la couleur des contours de la carte"
 msgstr "Legt die Farbe der Kartenkonturen fest"
 
-#: templates/menu_style.html:138
+#: templates/menu_style.html:142
 msgid "Couleur contour"
 msgstr "Konturfarbe"
 
-#: templates/menu_style.html:139
+#: templates/menu_style.html:143
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Klicken Sie, um die Konturfarbe zu wählen"
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:146
 msgid "Définit la couleur de remplissage de la carte"
 msgstr "Legt die Füllfarbe der Karte fest"
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:146
 msgid "Couleur remplissage"
 msgstr "Füllfarbe"
 
-#: templates/menu_style.html:143
+#: templates/menu_style.html:147
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr "Klicken Sie, um die Füllfarbe zu wählen"
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:150
 msgid "Définit la couleur de fond de la carte"
 msgstr "Legt die Hintergrundfarbe der Karte fest"
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:150
 msgid "Couleur fond"
 msgstr "Hintergrundfarbe"
 
-#: templates/menu_style.html:147
+#: templates/menu_style.html:151
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Klicken Sie, um die Hintergrundfarbe zu wählen"
 
-#: templates/menu_style.html:150
+#: templates/menu_style.html:154
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr "Legt die Stärke der Kartenkonturen fest (0 = keine Kontur)"
 
-#: templates/menu_style.html:150
+#: templates/menu_style.html:154
 msgid "Largeur contour (0 = aucun)"
 msgstr "Konturbreite (0 = keine)"
 
-#: templates/menu_style.html:152
+#: templates/menu_style.html:156
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr "Ziehen Sie, um die Stärke anzupassen"
 
-#: templates/menu_style.html:160 templates/menu_style.html:162
+#: templates/menu_style.html:164 templates/menu_style.html:166
 msgid "Style Toner"
 msgstr "Toner-Stil"
 
-#: templates/menu_style.html:185
+#: templates/menu_style.html:189
 msgid "Aperçu du flash"
 msgstr "Blitzvorschau"
 
-#: templates/menu_style.html:187
+#: templates/menu_style.html:191
 msgid ""
 "Rejoue le flash en boucle sur quelques caches visibles, sans lancer "
 "l'animation : pratique pour vérifier la forme, la taille et les couleurs."
@@ -19671,61 +19909,61 @@ msgstr ""
 " die Animation zu starten: praktisch, um Form, Größe und Farben zu "
 "überprüfen. Im Modus „GC-Farben“ blinken mehrere Cache-Typen zusammen."
 
-#: templates/menu_style.html:230
+#: templates/menu_style.html:241
 msgid "Titre et informations"
 msgstr "Titel und Informationen"
 
-#: templates/menu_style.html:259 templates/menu_style.html:260
+#: templates/menu_style.html:270 templates/menu_style.html:271
 #: templates/stats_page.html:184
 msgid "Nom du thème"
 msgstr "Name des Designs"
 
-#: templates/menu_style.html:283
+#: templates/menu_style.html:294
 msgid "Confirmer la suppression"
 msgstr "Löschen bestätigen"
 
-#: templates/menu_style.html:284 templates/menu_style.html:309
+#: templates/menu_style.html:295 templates/menu_style.html:320
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr "Diese Aktion ist endgültig"
 
-#: templates/menu_style.html:290
+#: templates/menu_style.html:301
 msgid "Êtes-vous sûr de vouloir supprimer ce thème ?"
 msgstr "Möchten Sie dieses Design wirklich löschen?"
 
-#: templates/menu_style.html:308
+#: templates/menu_style.html:319
 msgid "Confirmer la réinitialisation"
 msgstr "Zurücksetzen bestätigen"
 
-#: templates/menu_style.html:315
+#: templates/menu_style.html:326
 msgid "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
 msgstr "Möchten Sie dieses Design wirklich auf die Standardwerte zurücksetzen?"
 
-#: templates/menu_style.html:337
+#: templates/menu_style.html:348
 msgid "Le thème actif a été modifié"
 msgstr "Das aktive Design wurde geändert"
 
-#: templates/menu_style.html:343
+#: templates/menu_style.html:354
 msgid "Vous avez des modifications non enregistrées."
 msgstr "Sie haben nicht gespeicherte Änderungen."
 
-#: templates/menu_style.html:347
+#: templates/menu_style.html:358
 msgid "Abandonner"
 msgstr "Verwerfen"
 
-#: templates/menu_style.html:348
+#: templates/menu_style.html:359
 msgid "Enregistrer et charger"
 msgstr "Speichern und laden"
 
-#: templates/menu_style.html:367
+#: templates/menu_style.html:378
 msgid "Thème de destination"
 msgstr "Zieldesign"
 
-#: templates/menu_style.html:368
+#: templates/menu_style.html:379
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr "Ein Design wählen oder einen neuen Namen eingeben"
 
-#: templates/menu_style.html:369
+#: templates/menu_style.html:380
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
@@ -19734,15 +19972,15 @@ msgstr ""
 " zu speichern, oder geben Sie einen neuen Namen ein, um ein Design zu "
 "erstellen."
 
-#: templates/menu_style.html:395
+#: templates/menu_style.html:406
 msgid "Remplacer le thème ?"
 msgstr "Design ersetzen?"
 
-#: templates/menu_style.html:396
+#: templates/menu_style.html:407
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr "Die gespeicherten Einstellungen des Designs gehen verloren"
 
-#: templates/menu_trail.html:9
+#: templates/menu_trail.html:9 templates/menu_trail_parcours.html:9
 msgid "Trajet du géocacheur"
 msgstr "Route des Geocachers"
 
@@ -19900,7 +20138,7 @@ msgstr "Reise"
 msgid "Parcours complet"
 msgstr "Gesamte Strecke"
 
-#: templates/menu_trail.html:105
+#: templates/menu_trail.html:105 templates/menu_trail_parcours.html:19
 msgid "Couleur du trait"
 msgstr "Farbe der Linie"
 
@@ -19963,6 +20201,36 @@ msgid ""
 msgstr ""
 "Die Spur verblasst im Laufe der Tage; „Gesamte Strecke“ behält die "
 "vollständige Route, nach 30 Tagen abgeschwächt."
+
+#: templates/menu_trail_parcours.html:14
+msgid "Trait de la lecture"
+msgstr "Linie der Wiedergabe"
+
+#: templates/menu_trail_parcours.html:37
+msgid ""
+"Trait dessiné derrière le géocacheur pendant la lecture et dans la vidéo."
+" Le géocacheur en prend la couleur. Les trajets estimés en pointillés se "
+"règlent dans l'onglet Données, carte « Lecture »."
+msgstr ""
+"Linie hinter dem Geocacher während der Wiedergabe und im Video. Der "
+"Geocacher übernimmt ihre Farbe. Gestrichelte geschätzte Abschnitte werden"
+" im Tab Daten, Karte „Wiedergabe“, eingestellt."
+
+#: templates/menu_trail_parcours.html:43
+msgid "Ligne du plan"
+msgstr "Linie der Übersicht"
+
+#: templates/menu_trail_parcours.html:46
+msgid "Entre les étapes d'une journée"
+msgstr "Zwischen den Stationen eines Tages"
+
+#: templates/menu_trail_parcours.html:52
+msgid ""
+"Plan affiché au repos : la ligne prend la couleur et l'épaisseur du "
+"trait, en plus transparent."
+msgstr ""
+"Übersicht im Ruhezustand: die Linie übernimmt Farbe und Stärke der "
+"Wiedergabelinie, nur transparenter."
 
 #: templates/menu_zones.html:10
 msgid "Zones sur la carte"
@@ -20809,4 +21077,10 @@ msgstr "Video erstellen"
 #~ "cartes par zones et palette « "
 #~ "Dégradé »."
 #~ msgstr ""
+
+#~ msgid "Calcul des itinéraires…"
+#~ msgstr "Routen werden berechnet…"
+
+#~ msgid "Nuit et carton « Jour 2 » entre deux journées"
+#~ msgstr "Nacht und Tafel „Tag 2“ zwischen zwei Tagen"
 

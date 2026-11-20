@@ -15,6 +15,7 @@ import { ownerPointOptions } from './owner_model.mjs';
 import { dnfPointOptions } from './dnf_model.mjs';
 import { normalizePosesEffects } from './poses_effects.mjs';
 import { normalizePosesNames } from './poses_names.mjs';
+import { normalizeParcoursStyle } from './parcours_style.mjs';
 
 // Chaque mode de thème a sa propre liste (champ `mode` du thème, voir
 // PROFILE_MODES dans settings_manager.py) : un thème réglé pour quelques
@@ -1674,6 +1675,8 @@ class ProfileManager {
                 poses_effects: normalizePosesEffects(point.posesEffects),
                 // Pseudos des visiteurs de Mes poses (poses_names.mjs).
                 poses_names: normalizePosesNames(point.posesNames),
+                // Page Parcours : étapes du plan et trait (parcours_style.mjs).
+                parcours_style: normalizeParcoursStyle(point.parcoursStyle),
             };
 
             dbgProfiles('Paramètres points récupérés:', pointSettings);
@@ -2678,6 +2681,8 @@ function applyPointState(pointOptions) {
         point.posesEffects = normalizePosesEffects(pointOptions.poses_effects);
         // Thèmes antérieurs aux pseudos des visiteurs : désactivés.
         point.posesNames = normalizePosesNames(pointOptions.poses_names);
+        // Thèmes antérieurs au réglage des étapes Parcours : rendu d'avant.
+        point.parcoursStyle = normalizeParcoursStyle(pointOptions.parcours_style);
 
         dbgProfiles('Paramètres des points appliqués:', point);
     } catch (error) {

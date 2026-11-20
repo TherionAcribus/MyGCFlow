@@ -6161,6 +6161,8 @@ export function syncPointOptionsUI() {
     // Pseudos des visiteurs (Mes poses, poses_names_ui.js) : module évalué
     // après ui.js, appelé par le paquet.
     pkg.syncPosesNamesUI?.();
+    // Étapes et trait de la page Parcours (parcours_data.js), même motif.
+    pkg.syncParcoursStyleUI?.();
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;

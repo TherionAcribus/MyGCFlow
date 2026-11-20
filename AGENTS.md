@@ -388,6 +388,14 @@ Autres repères :
   « Jour n ») et `rangeEditable: false` ; une position de la piste est un
   quantum (`stopQ` du relevé Parcours), exemple dans
   `parcours-timeline-bar.spec.mjs`.
+  Apparence des étapes et du trait (`points.parcours_style`, thème) : un
+  spec la règle par l'onglet Style ou en mémoire — rien à remettre ; relevés
+  `style`, `stopStyles` (numéro, couleur, rayon de chaque pastille),
+  `planLine`, `trail` de `getParcoursSnapshot()`, exemple dans
+  `parcours-style.spec.mjs`. `stopStyle()` (parcours_data.js) mémoïse par
+  IDENTITÉ de `app.options.point.parcoursStyle` : le remplacer par un nouvel
+  objet, jamais le muter en place (sinon plan et trait gardent l'ancien
+  style).
   `openParcoursPage` sert une tuile vide à la place des tuiles OSM : avec
   la caméra, la suite complète recevait des 429 du serveur de tuiles, qui
   faisaient échouer un spec suivant relevant les erreurs de console

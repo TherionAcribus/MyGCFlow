@@ -118,14 +118,19 @@ import {
 } from './parcours_tracks.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
+import {
+    contrastTextColor,
+    hexToRgba,
+    normalizeParcoursStyle,
+    numberFontPx,
+    parcoursStyleDefaults,
+    stopNumberLabels,
+} from './parcours_style.mjs';
 
 const LAST_ID_KEY = 'parcours.lastId';
-// Couleurs par nature d'étape : accent de l'app (trouvailles), ambre (Labs),
-// gris (DNF, comme leur couche sur la page principale).
-const KIND_COLORS = Object.freeze({
-    find: '#0072c6', lab: '#f59f00', dnf: '#868e96', place: '#ae3ec9', base: '#343a40',
-});
-const LINE_COLOR = 'rgba(0, 114, 198, 0.55)';
+// Opacité de la ligne du plan, relative à celle du trait : elle reste sous
+// les pastilles sans les concurrencer.
+const PLAN_LINE_ALPHA = 0.55;
 // Plan au repos au-dessus des points WebGL (zIndex 1001) : ses numéros
 // restent lisibles. Masqué pendant la lecture.
 const LAYER_Z_INDEX = 1060;
@@ -281,6 +286,7 @@ export async function initParcoursPage() {
     bindPhotos();
     bindTracks();
     bindRouting();
+    bindParcoursStyle();
     bindFileDrop();
     pkg.syncOverlayVisibility?.();
     await refreshParcoursList({ select: readLastId() });
@@ -763,6 +769,7 @@ const PARCOURS_ENGINE = Object.freeze({
     applySelection: () => {},
     maxEventsInWindow: maxStopsInWindow,
     renderPopup: renderParcoursPopup,
+    styleChanged: parcoursStyleChanged,
 });
 
 // --- Caméra de la lecture --------------------------------------------------------
@@ -833,11 +840,14 @@ function parcoursCamera(leadMs = 0, msPerDay = 1) {
 
 // --- Tête et trait pendant la lecture ------------------------------------------
 
+// Trait de la lecture (thème, `points.parcours_style`) : `color` avec son
+// opacité pour le trait, `solid` sans, pour le géocacheur.
 function trailOptions() {
-    const trail = pkg.options?.trail || {};
+    const style = stopStyle();
     return {
-        color: typeof trail.color === 'string' ? trail.color : '#00B8D4',
-        width: Number(trail.width) > 0 ? Number(trail.width) : 3,
+        color: hexToRgba(style.trail_color, style.trail_opacity / 100),
+        solid: style.trail_color,
+        width: style.trail_width,
     };
 }
 
@@ -957,7 +967,7 @@ function drawPlayHead(event) {
             context.drawGeometry(new ol.geom.Point(projected[i]));
         }
     });
-    const { color } = trailOptions();
+    const { solid: color } = trailOptions();
     const position = ol.proj.fromLonLat([head.lon, head.lat]);
     const glyph = playback.head === HEAD_PICTOGRAM ? headGlyph(headModeAt(timeline, currentQ)) : null;
     if (glyph) {
@@ -1941,9 +1951,13 @@ function renderStopRow(stop, day, movable) {
     time.textContent = stopTime(stop);
     const badge = document.createElement('span');
     badge.className = 'parcours-stop-index';
-    badge.style.backgroundColor = KIND_COLORS[stop.kind] || KIND_COLORS.find;
+    const background = kindColor(stop.kind);
+    badge.style.backgroundColor = background;
+    badge.style.color = contrastTextColor(background);
     if (Number.isFinite(stop.index)) {
-        badge.textContent = String(stop.index);
+        // Même numéro que le plan ; sans numéros sur la carte, la liste
+        // garde le rang sur tout le parcours.
+        badge.textContent = currentStopLabels().get(stop.key) || String(stop.index);
     } else {
         const icon = document.createElement('i');
         icon.className = `ti ${stopCategoryIcon(stop)}`;
@@ -4007,26 +4021,139 @@ function bindRouting() {
     });
 }
 
+// --- Onglet Style : étapes et trait (points.parcours_style) -------------------------
+//
+// Carte « Étapes du parcours » (menu_points.html) et sous-onglet Trajet de la
+// page (menu_trail_parcours.html). Réglages du thème : le suivi « modifié » du
+// thème les voit passer (profiles.js écoute l'onglet Style), sans
+// enregistrement ici.
+
+function styleColorIds() {
+    return {
+        find: 'parcoursStyleColorFind', lab: 'parcoursStyleColorLab', dnf: 'parcoursStyleColorDnf',
+        place: 'parcoursStyleColorPlace', base: 'parcoursStyleColorBase',
+    };
+}
+
+function readStyleUI() {
+    const value = (id) => el(id)?.value;
+    return normalizeParcoursStyle({
+        numbers: value('parcoursStyleNumbers'),
+        size: value('parcoursStyleSize'),
+        colors: Object.fromEntries(Object.entries(styleColorIds()).map(([kind, id]) => [kind, value(id)])),
+        plan_line: value('parcoursStylePlanLine'),
+        trail_color: value('parcoursStyleTrailColor'),
+        trail_width: value('parcoursStyleTrailWidth'),
+        trail_opacity: value('parcoursStyleTrailOpacity'),
+    }, stopStyle());
+}
+
+function commitParcoursStyle(style) {
+    if (!pkg.options?.point) return;
+    pkg.options.point.parcoursStyle = style;
+    syncParcoursStyleUI();
+    parcoursStyleChanged();
+}
+
+// Le plan et la liste suivent tout de suite ; la lecture relit le style à
+// chaque image. Aussi appelé par mapgl.js quand la couche de points est
+// recréée (chargement d'un thème : moteur › styleChanged).
+function parcoursStyleChanged() {
+    renderLayer();
+    renderStops();
+}
+
+// Reflète le thème dans les contrôles. N'écrit que le DOM (même contrat que
+// syncPointOptionsUI, qui l'appelle au chargement d'un thème).
+export function syncParcoursStyleUI() {
+    const numbers = el('parcoursStyleNumbers');
+    if (!numbers) return;
+    const style = stopStyle();
+    const set = (id, value) => {
+        const input = el(id);
+        if (input) input.value = String(value);
+    };
+    numbers.value = style.numbers;
+    set('parcoursStyleSize', style.size);
+    for (const [kind, id] of Object.entries(styleColorIds())) set(id, style.colors[kind]);
+    set('parcoursStylePlanLine', style.plan_line);
+    set('parcoursStyleTrailColor', style.trail_color);
+    set('parcoursStyleTrailWidth', style.trail_width);
+    set('parcoursStyleTrailOpacity', style.trail_opacity);
+    const opacityValue = el('parcoursStyleTrailOpacityValue');
+    if (opacityValue) opacityValue.textContent = `${style.trail_opacity}%`;
+}
+
+function bindParcoursStyle() {
+    const commit = () => commitParcoursStyle(readStyleUI());
+    for (const id of ['parcoursStyleNumbers', 'parcoursStyleSize', 'parcoursStylePlanLine',
+        'parcoursStyleTrailColor', 'parcoursStyleTrailWidth', ...Object.values(styleColorIds())]) {
+        el(id)?.addEventListener('change', commit);
+    }
+    // Valeur bornée réaffichée à la sortie du champ (25 → 18).
+    for (const id of ['parcoursStyleSize', 'parcoursStyleTrailWidth']) {
+        el(id)?.addEventListener('blur', syncParcoursStyleUI);
+    }
+    // Opacité : suivie pendant le glisser.
+    el('parcoursStyleTrailOpacity')?.addEventListener('input', commit);
+    el('btnParcoursStyleColorsReset')?.addEventListener('click', () => {
+        commitParcoursStyle(normalizeParcoursStyle({ colors: parcoursStyleDefaults().colors }, stopStyle()));
+    });
+    syncParcoursStyleUI();
+}
+
 // --- Carte ----------------------------------------------------------------------
 
-// Halo dessiné sous l'étape dont la ligne est survolée (et réciproquement).
-const haloStyle = new ol.style.Style({
-    image: new ol.style.Circle({
-        radius: 17,
-        fill: new ol.style.Fill({ color: 'rgba(32, 107, 196, 0.18)' }),
-        stroke: new ol.style.Stroke({ color: 'rgba(32, 107, 196, 0.9)', width: 2 }),
-    }),
-});
+// Apparence des étapes et du trait : bloc du thème `points.parcours_style`
+// (parcours_style.mjs). Normalisé une fois par objet de réglages — l'onglet
+// Style et le chargement d'un thème le REMPLACENT, ils ne le modifient pas
+// en place — avec les styles OpenLayers qui en découlent (`cache`), refaits
+// au changement.
+let styleMemo = { raw: undefined, value: null, cache: new Map() };
 
-// Anneau en pointillés du point provisoire : posé au clic, en attente de la
-// validation du formulaire.
-const draftHaloStyle = new ol.style.Style({
-    image: new ol.style.Circle({
-        radius: 17,
-        fill: new ol.style.Fill({ color: 'rgba(32, 107, 196, 0.10)' }),
-        stroke: new ol.style.Stroke({ color: 'rgba(32, 107, 196, 0.9)', width: 2, lineDash: [5, 4] }),
-    }),
-});
+function stopStyle() {
+    const raw = pkg.options?.point?.parcoursStyle;
+    if (styleMemo.raw !== raw || !styleMemo.value) {
+        styleMemo = { raw, value: normalizeParcoursStyle(raw), cache: new Map() };
+    }
+    return styleMemo.value;
+}
+
+function cachedStyle(key, build) {
+    stopStyle();
+    if (!styleMemo.cache.has(key)) styleMemo.cache.set(key, build(styleMemo.value));
+    return styleMemo.cache.get(key);
+}
+
+function kindColor(kind) {
+    const colors = stopStyle().colors;
+    return colors[kind] || colors.find;
+}
+
+// Numéro affiché de chaque étape (clé → texte), selon le réglage « Numéros
+// des étapes » : recalculé quand la reconstruction ou le réglage change.
+let labelMemo = { ordered: null, numbers: null, labels: new Map() };
+
+function currentStopLabels() {
+    const { numbers } = stopStyle();
+    if (labelMemo.ordered !== ordered || labelMemo.numbers !== numbers) {
+        labelMemo = { ordered, numbers, labels: stopNumberLabels(ordered, numbers) };
+    }
+    return labelMemo.labels;
+}
+
+// Halo dessiné sous l'étape dont la ligne est survolée (et réciproquement).
+// Anneau en pointillés : point provisoire, posé au clic, en attente de la
+// validation du formulaire. Rayon : 6 px de plus que la pastille.
+function haloStyle(draft = false) {
+    return cachedStyle(draft ? 'halo:draft' : 'halo', ({ size }) => new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: size + 6,
+            fill: new ol.style.Fill({ color: `rgba(32, 107, 196, ${draft ? 0.10 : 0.18})` }),
+            stroke: new ol.style.Stroke({ color: 'rgba(32, 107, 196, 0.9)', width: 2, lineDash: draft ? [5, 4] : undefined }),
+        }),
+    }));
+}
 
 // Classe d'icône de catégorie portée par une feature du plan (lieu, base ou
 // brouillon de pose) : « custom » lit l'icône libre.
@@ -4047,75 +4174,97 @@ function pointStyle(feature) {
         normal = numberedStyle(feature);
     }
     const styles = Array.isArray(normal) ? normal : [normal];
-    return feature.get('hovered') ? [haloStyle, ...styles] : normal;
+    return feature.get('hovered') ? [haloStyle(), ...styles] : normal;
 }
 
+// Pastille d'une étape comptée, avec son numéro (aucun : pastille seule).
+// Le texte passe en sombre sur une couleur claire ; trois chiffres et plus
+// sont écrits plus petit pour tenir dans la pastille.
 function numberedStyle(feature) {
     const kind = feature.get('kind');
-    return new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: 11,
-            fill: new ol.style.Fill({ color: KIND_COLORS[kind] || KIND_COLORS.find }),
-            stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
-        }),
-        text: new ol.style.Text({
-            text: String(feature.get('index')),
-            font: '600 11px system-ui, sans-serif',
-            fill: new ol.style.Fill({ color: '#ffffff' }),
-        }),
+    const label = feature.get('label') || '';
+    return cachedStyle(`stop:${kind}:${label}`, ({ size }) => {
+        const fill = kindColor(kind);
+        return new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: size,
+                fill: new ol.style.Fill({ color: fill }),
+                stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
+            }),
+            text: label ? new ol.style.Text({
+                text: label,
+                font: `600 ${numberFontPx(size, label)}px system-ui, sans-serif`,
+                fill: new ol.style.Fill({ color: contrastTextColor(fill) }),
+            }) : undefined,
+        });
     });
 }
 
-// Base : carré sombre ; lieu : étoile violette. Communs au plan et à la
-// lecture.
-const placeStyles = new Map();
+// Base : carré ; lieu : étoile (couleurs du thème, anthracite et violet par
+// défaut). Communs au plan et à la lecture, à l'échelle des pastilles.
 function placeStyle(kind) {
-    if (!placeStyles.has(kind)) {
+    return cachedStyle(`place:${kind}`, ({ size }) => {
         const base = kind === KIND_BASE;
-        placeStyles.set(kind, new ol.style.Style({
+        return new ol.style.Style({
             image: new ol.style.RegularShape({
                 points: base ? 4 : 5,
-                radius: base ? 10 : 11,
-                radius2: base ? undefined : 5,
+                radius: base ? Math.round(size * 10 / 11) : size,
+                radius2: base ? undefined : size * 5 / 11,
                 angle: base ? Math.PI / 4 : 0,
-                fill: new ol.style.Fill({ color: KIND_COLORS[kind] }),
+                fill: new ol.style.Fill({ color: kindColor(kind) }),
                 stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
             }),
-        }));
-    }
-    return placeStyles.get(kind);
+        });
+    });
 }
 
 // Pastille de catégorie en bas à droite du marqueur : glyphe Tabler sur
 // rond blanc cerclé de la couleur du type. null sans la police chargée.
-const placeBadges = new Map();
 function categoryBadgeStyle(kind, iconClass) {
     if (!iconClass) return null;
-    const key = `${kind}:${iconClass}`;
-    if (!placeBadges.has(key)) {
+    return cachedStyle(`badge:${kind}:${iconClass}`, ({ size }) => {
         const glyph = tablerGlyph(iconClass);
-        placeBadges.set(key, glyph ? new ol.style.Style({
+        if (!glyph) return null;
+        const k = size / 11;
+        const offset = Math.round(13 * k);
+        const color = kindColor(kind);
+        return new ol.style.Style({
             image: new ol.style.Circle({
-                radius: 8,
-                displacement: [13, 13],
+                radius: Math.max(6, Math.round(8 * k)),
+                displacement: [offset, offset],
                 fill: new ol.style.Fill({ color: '#ffffff' }),
-                stroke: new ol.style.Stroke({ color: KIND_COLORS[kind], width: 1.5 }),
+                stroke: new ol.style.Stroke({ color, width: 1.5 }),
             }),
             text: new ol.style.Text({
                 text: glyph,
-                font: '11px "tabler-icons"',
-                fill: new ol.style.Fill({ color: KIND_COLORS[kind] }),
-                offsetX: 13,
-                offsetY: 13,
+                font: `${Math.max(9, Math.round(11 * k))}px "tabler-icons"`,
+                fill: new ol.style.Fill({ color }),
+                offsetX: offset,
+                offsetY: offset,
             }),
-        }) : null);
-    }
-    return placeBadges.get(key);
+        });
+    });
 }
 
-const lineStyle = new ol.style.Style({
-    stroke: new ol.style.Stroke({ color: LINE_COLOR, width: 3, lineDash: [6, 6] }),
-});
+// Ligne d'une journée au repos : couleur et épaisseur du trait, plus
+// transparente ; pointillés, pleine, ou aucune (null).
+function lineStyle() {
+    return cachedStyle('line', (style) => {
+        if (style.plan_line === 'none') return null;
+        const width = style.trail_width;
+        const dashed = style.plan_line === 'dashed';
+        return new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: hexToRgba(style.trail_color, PLAN_LINE_ALPHA * style.trail_opacity / 100),
+                width,
+                // Bouts ronds : ils allongeraient les tirets.
+                lineCap: dashed ? 'butt' : 'round',
+                lineJoin: 'round',
+                lineDash: dashed ? [2 * width, 2 * width] : undefined,
+            }),
+        });
+    });
+}
 
 // Traces GPS importées, sous le plan.
 const trackStyle = new ol.style.Style({
@@ -4132,10 +4281,10 @@ function ensureLayer() {
             style: (feature) => {
                 const role = feature.get('role');
                 if (role === 'track') return trackStyle;
-                if (role === 'line') return lineStyle;
+                if (role === 'line') return lineStyle();
                 if (role === 'draft') {
                     const kind = feature.get('kind');
-                    const styles = [draftHaloStyle, placeStyle(kind)];
+                    const styles = [haloStyle(true), placeStyle(kind)];
                     const badge = categoryBadgeStyle(kind, featureIconClass(feature));
                     if (badge) styles.push(badge);
                     return styles;
@@ -4247,6 +4396,7 @@ function renderLayer({ fit = false } = {}) {
     }
     // Points ensuite, du dernier au premier : le n° 1 est dessiné au-dessus
     // quand deux étapes se recouvrent. Une base n'est dessinée qu'une fois.
+    const labels = currentStopLabels();
     const seen = new Set();
     for (const stop of [...parcoursStops(ordered)].reverse()) {
         const id = stop.kind === KIND_BASE ? `base:${stop.placeId}` : stop.key;
@@ -4258,6 +4408,7 @@ function renderLayer({ fit = false } = {}) {
             placeId: stop.placeId ?? null,
             kind: stop.kind,
             index: stop.index,
+            label: labels.get(stop.key) || '',
             category: stop.category || 'other',
             icon: stop.icon || null,
             geometry: new ol.geom.Point(ol.proj.fromLonLat([stop.lon, stop.lat])),
@@ -4365,6 +4516,29 @@ export function getParcoursSnapshot() {
             routed: routeEffectsNow.paths.size,
             modes: (timeline?.legs || []).filter((leg) => !leg.night).map((leg) => leg.mode),
         },
+        // Apparence des étapes et du trait (thème, points.parcours_style) et
+        // ce que le plan en fait : numéro et couleur de chaque pastille,
+        // style de la ligne (null : aucune).
+        style: stopStyle(),
+        stopStyles: Object.fromEntries((source?.getFeatures() || [])
+            .filter((f) => f.get('role') === 'stop')
+            .map((f) => {
+                const kind = f.get('kind');
+                const main = kind === KIND_BASE || kind === KIND_PLACE ? placeStyle(kind) : numberedStyle(f);
+                const image = main?.getImage();
+                return [f.get('key'), {
+                    label: main?.getText()?.getText() || '',
+                    color: image?.getFill()?.getColor() || null,
+                    textColor: main?.getText()?.getFill()?.getColor() || null,
+                    radius: image?.getRadius?.() ?? null,
+                }];
+            })),
+        planLine: (() => {
+            const style = lineStyle();
+            const stroke = style?.getStroke();
+            return stroke ? { color: stroke.getColor(), width: stroke.getWidth(), dash: stroke.getLineDash() || null } : null;
+        })(),
+        trail: trailOptions(),
         layer: source ? {
             stops: source.getFeatures().filter((f) => f.get('role') === 'stop').length,
             lines: source.getFeatures().filter((f) => f.get('role') === 'line').length,

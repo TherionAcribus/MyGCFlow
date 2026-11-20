@@ -98,6 +98,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_timeline.mjs` | Pur : temps écran (quanta), position du géocacheur, heure et distance affichées, nuit, cartons de jour, mode de la tête. Tests : `tests/js/parcours_timeline.test.mjs` |
 | `static/js/parcours_camera.mjs` | Pur : pose de la caméra de la lecture (lot 7). Tests : `tests/js/parcours_camera.test.mjs` |
 | `static/js/parcours_model.mjs` | Pur : utilitaires (étapes du parcours, emprise, jours d'une plage). Tests : `tests/js/parcours_model.test.mjs` |
+| `static/js/parcours_style.mjs` | Pur : apparence des étapes et du trait (normalisation, numéros, contraste). Copie de `parcours_style.py`. Tests : `tests/js/parcours_style.test.mjs`, `tests/test_parcours_style.py` |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
@@ -107,10 +108,37 @@ distance et le verdict sur l'ordre des logs.
 
 **Plan au repos** : couche vectorielle propre (`parcoursLayer`, zIndex 1060,
 au-dessus des points WebGL pour garder les numéros lisibles), points
-numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne pointillée
-par jour (la nuit n'est pas un trajet). Masqué pendant la lecture. Rien
-n'entre dans `pointsByDate`. Le dernier parcours ouvert est retenu
+numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
+(la nuit n'est pas un trajet). Masqué pendant la lecture. Rien n'entre dans
+`pointsByDate`. Le dernier parcours ouvert est retenu
 (`localStorage['parcours.lastId']`) et cadré (zoom 16 au plus).
+
+**Apparence des étapes et du trait** (bloc du thème `points.parcours_style`,
+`parcours_style.py` / `parcours_style.mjs`, depuis le 2026-11-19) :
+
+| Clé | Valeurs (défaut en premier) | Où |
+|---|---|---|
+| `numbers` | `trip` (rang sur tout le parcours), `day` (rang dans la journée), `none` | Style › Points, carte « Étapes du parcours » |
+| `size` | rayon des pastilles, 7-18 px : 11 | idem |
+| `colors` | `find` #0072c6, `lab` #f59f00, `dnf` #868e96, `place` #ae3ec9, `base` #343a40 | idem |
+| `plan_line` | `dashed`, `solid`, `none` | Style › Trajet (sous-onglet propre à la page) |
+| `trail_color`, `trail_width`, `trail_opacity` | #00b8d4, 1-12 px : 3, 10-100 % : 100 | idem |
+
+- La liste de l'onglet Données reprend la couleur et le numéro du plan
+  (sans numéros sur la carte, elle garde le rang sur tout le parcours).
+- Le numéro passe en sombre sur une couleur claire (`contrastTextColor`) et
+  rétrécit à partir de trois chiffres (`numberFontPx`).
+- La ligne du plan prend la couleur et l'épaisseur du trait, à 55 % de son
+  opacité ; le géocacheur prend la couleur du trait, opaque.
+- Pendant la lecture, les caches gardent les points du thème (onglet
+  Points) ; les lieux et les bases gardent leur couleur.
+- Le sous-onglet Trajet du mode principal reste masqué sur les pages cycle
+  de vie : le thème étant partagé, régler `trail` d'ici changerait la page
+  principale. Avant ce bloc, la lecture lisait `trail.color` / `trail.width`
+  sans aucun moyen de les régler depuis `/parcours`.
+- Un thème chargé passe par `syncPointOptionsUI` (→ `syncParcoursStyleUI`)
+  puis `refreshPoints` (→ moteur › `styleChanged`, qui redessine le plan et
+  la liste).
 
 **Onglets** : Données, Style, Animation & vidéo, Préférences. Stats et
 Images ne sont pas encore branchés : leurs volets restent dans la page
@@ -159,8 +187,9 @@ position se déduisent :
 - **la ligne d'infos** : `infosValues` (`stateAt`).
 
 Les deux couches dessinent dans leur `postrender` : la capture vidéo, qui
-compose tous les canevas de la carte, les filme. Leur couleur et leur
-épaisseur sont celles du thème (`trail.color`, `trail.width`).
+compose tous les canevas de la carte, les filme. Leur couleur, leur
+épaisseur et leur opacité sont celles du thème (`points.parcours_style`,
+ci-dessus).
 
 **Ligne d'infos** (modèle `parcours_infos_template`, onglet Style ›
 Titres) :
@@ -745,7 +774,9 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   réglages, trois placements relevés par `photoCards`, lieu proposé ;
   fixtures `belvedere*.jpg`), `tests/e2e/parcours-timeline-bar.spec.mjs`
   (barre de chronologie : repères, sauts, clavier, bulle ; relevé
-  `getTimelineBarSnapshot()`, `ticks` et `rangeEditable`), aides communes dans
+  `getTimelineBarSnapshot()`, `ticks` et `rangeEditable`),
+  `tests/e2e/parcours-style.spec.mjs` (apparence des étapes et du trait :
+  relevés `style`, `stopStyles`, `planLine`, `trail`), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le

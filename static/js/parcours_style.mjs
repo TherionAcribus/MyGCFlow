@@ -1,0 +1,123 @@
+// Apparence des étapes et du trait de la page Parcours : bloc du thème
+// `points.parcours_style` (docs/parcours.md).
+//
+// Copie de parcours_style.py (source de vérité des défauts, choix et bornes) ;
+// tests/js/parcours_style.test.mjs compare les deux via
+// tests/fixtures/parcours/parcours_style.json.
+//
+// Module pur (aucun DOM, ni OpenLayers) : testé par node --test.
+
+export const PARCOURS_STYLE_KINDS = Object.freeze(['find', 'lab', 'dnf', 'place', 'base']);
+export const PARCOURS_STYLE_CHOICES = Object.freeze({
+    numbers: Object.freeze(['trip', 'day', 'none']),
+    plan_line: Object.freeze(['dashed', 'solid', 'none']),
+});
+export const PARCOURS_STYLE_RANGES = Object.freeze({
+    size: Object.freeze([7, 18]),
+    trail_width: Object.freeze([1, 12]),
+    trail_opacity: Object.freeze([10, 100]),
+});
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+export function parcoursStyleDefaults() {
+    return {
+        size: 11,
+        numbers: 'trip',
+        colors: { find: '#0072c6', lab: '#f59f00', dnf: '#868e96', place: '#ae3ec9', base: '#343a40' },
+        plan_line: 'dashed',
+        trail_color: '#00b8d4',
+        trail_width: 3,
+        trail_opacity: 100,
+    };
+}
+
+function color(value, fallback) {
+    return typeof value === 'string' && HEX_RE.test(value) ? value.toLowerCase() : fallback;
+}
+
+function integer(value, fallback, [low, high]) {
+    if (typeof value === 'boolean' || value === null || value === '') return fallback;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.round(Math.min(high, Math.max(low, number)));
+}
+
+function isObject(value) {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+// Bloc normalisé : valeurs bornées, champs absents = valeur courante (défaut
+// sinon) — comme coerce_parcours_style.
+export function normalizeParcoursStyle(raw, current = null) {
+    const defaults = parcoursStyleDefaults();
+    const cur = isObject(current) ? current : {};
+    const base = { ...defaults };
+    for (const key of Object.keys(defaults)) if (key in cur) base[key] = cur[key];
+    const src = isObject(raw) ? raw : {};
+    const choice = (key) => (PARCOURS_STYLE_CHOICES[key].includes(src[key]) ? src[key]
+        : (PARCOURS_STYLE_CHOICES[key].includes(base[key]) ? base[key] : defaults[key]));
+    const out = {
+        numbers: choice('numbers'),
+        plan_line: choice('plan_line'),
+        trail_color: color(src.trail_color, color(base.trail_color, defaults.trail_color)),
+    };
+    for (const [key, range] of Object.entries(PARCOURS_STYLE_RANGES)) {
+        out[key] = integer(src[key], integer(base[key], defaults[key], range), range);
+    }
+    const colorsSrc = isObject(src.colors) ? src.colors : {};
+    const colorsCur = isObject(base.colors) ? base.colors : {};
+    out.colors = {};
+    for (const kind of PARCOURS_STYLE_KINDS) {
+        out.colors[kind] = color(colorsSrc[kind], color(colorsCur[kind], defaults.colors[kind]));
+    }
+    return Object.fromEntries(Object.keys(defaults).map((key) => [key, out[key]]));
+}
+
+// Numéro affiché de chaque étape comptée (clé → texte) : rang sur tout le
+// parcours (`stop.index`), rang dans la journée, ou rien. Lieux et bases n'en
+// ont jamais (`index` null).
+export function stopNumberLabels(ordered, mode) {
+    const labels = new Map();
+    if (mode === 'none') return labels;
+    for (const day of ordered?.days || []) {
+        let rank = 0;
+        for (const stop of day.stops || []) {
+            if (!Number.isFinite(stop.index)) continue;
+            rank++;
+            labels.set(stop.key, String(mode === 'day' ? rank : stop.index));
+        }
+    }
+    return labels;
+}
+
+// Taille de police d'un numéro dans une pastille de rayon `radius` : la
+// pleine taille jusqu'à deux chiffres, réduite au-delà pour tenir dedans.
+export function numberFontPx(radius, label) {
+    const length = String(label ?? '').length;
+    const factor = length <= 2 ? 1 : (length === 3 ? 0.8 : 0.66);
+    return Math.max(6, Math.round(radius * factor));
+}
+
+// Couleur lisible sur un fond `hex` : blanc, sauf sur un fond clair
+// (luminance relative WCAG au-dessus de 0,3 — l'ambre des Labs, 0,44, y
+// passe ; le gris des DNF, 0,27, garde le blanc). Le meilleur contraste
+// basculerait vers 0,21 : le seuil penche vers le blanc des pastilles.
+export function contrastTextColor(hex) {
+    const value = color(hex, null);
+    if (!value) return '#ffffff';
+    const channel = (i) => {
+        const c = parseInt(value.slice(1 + 2 * i, 3 + 2 * i), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const luminance = 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
+    return luminance > 0.3 ? '#212529' : '#ffffff';
+}
+
+// « #rrggbb » + opacité (0-1) → « rgba(r, g, b, a) ».
+export function hexToRgba(hex, alpha = 1) {
+    const value = color(hex, '#000000');
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16));
+    const a = Math.min(1, Math.max(0, Number(alpha)));
+    return `rgba(${r}, ${g}, ${b}, ${Number.isFinite(a) ? +a.toFixed(3) : 1})`;
+}

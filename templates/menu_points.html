@@ -245,6 +245,65 @@
     </div>
     {% endif %}
 
+    {% if mode == 'parcours' %}
+    <!-- Parcours : pastilles numérotées du plan (points.parcours_style du
+         thème, parcours_style.mjs, docs/parcours.md). Les couleurs des
+         lieux et des bases servent aussi pendant la lecture. Piloté par
+         parcours_data.js (bindParcoursStyle). -->
+    <div id="parcoursStopsCard" class="card mt-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">
+                <i class="ti ti-map-pins text-muted me-1"></i>{{ _("Étapes du parcours") }}
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursStyleNumbers">{{ _("Numéros des étapes") }}</label>
+                    <select id="parcoursStyleNumbers" class="form-select" aria-describedby="helpParcoursStops">
+                        <option value="trip">{{ _("Sur tout le parcours") }}</option>
+                        <option value="day">{{ _("Par journée") }}</option>
+                        <option value="none">{{ _("Aucun") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursStyleSize">{{ _("Taille des pastilles") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" id="parcoursStyleSize" min="7" max="18" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="parcours-style-colors mt-3">
+                <div>
+                    <label class="form-label" for="parcoursStyleColorFind">{{ _("Trouvailles") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorFind" value="#0072c6">
+                </div>
+                <div>
+                    <label class="form-label" for="parcoursStyleColorLab">{{ _("Étapes Lab") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorLab" value="#f59f00">
+                </div>
+                <div>
+                    <label class="form-label" for="parcoursStyleColorDnf">{{ _("DNF") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorDnf" value="#868e96">
+                </div>
+                <div>
+                    <label class="form-label" for="parcoursStyleColorPlace">{{ _("Lieux") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorPlace" value="#ae3ec9">
+                </div>
+                <div>
+                    <label class="form-label" for="parcoursStyleColorBase">{{ _("Bases") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorBase" value="#343a40">
+                </div>
+                <button type="button" id="btnParcoursStyleColorsReset" class="btn btn-sm btn-ghost-secondary align-self-end">
+                    <i class="ti ti-refresh me-1"></i>{{ _("Couleurs par défaut") }}
+                </button>
+            </div>
+            <small id="helpParcoursStops" class="form-hint text-muted">{{ _("Pastilles du plan affiché au repos. Pendant la lecture, les caches prennent le graphisme ci-dessus ; les lieux et les bases gardent leur couleur. Le texte des numéros passe en sombre sur une couleur claire.") }}</small>
+        </div>
+    </div>
+    {% endif %}
+
     {% if mode == 'poses' %}
     <!-- Mes poses : animation des points (points.poses_effects du thème,
          poses_effects.mjs, docs/mode-poses.md). Chaque effet est optionnel ;

@@ -1,0 +1,50 @@
+{
+  "choices": {
+    "numbers": [
+      "trip",
+      "day",
+      "none"
+    ],
+    "plan_line": [
+      "dashed",
+      "solid",
+      "none"
+    ]
+  },
+  "defaults": {
+    "colors": {
+      "base": "#343a40",
+      "dnf": "#868e96",
+      "find": "#0072c6",
+      "lab": "#f59f00",
+      "place": "#ae3ec9"
+    },
+    "numbers": "trip",
+    "plan_line": "dashed",
+    "size": 11,
+    "trail_color": "#00b8d4",
+    "trail_opacity": 100,
+    "trail_width": 3
+  },
+  "kinds": [
+    "find",
+    "lab",
+    "dnf",
+    "place",
+    "base"
+  ],
+  "ranges": {
+    "size": [
+      7,
+      18
+    ],
+    "trail_opacity": [
+      10,
+      100
+    ],
+    "trail_width": [
+      1,
+      12
+    ]
+  }
+}
