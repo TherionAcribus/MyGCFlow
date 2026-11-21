@@ -158,6 +158,19 @@ def parcours_inputs(parcours_id):
     return jsonify(payload)
 
 
+@parcours_bp.route('/api/parcours/<int:parcours_id>/adjustments', methods=['GET'])
+def parcours_adjustments(parcours_id):
+    # Relecture légère après un geste : pas de journées ni de parkings
+    # reconstruits, et les points GPS des traces ne partent qu'à la demande
+    # (envoi ou retrait d'une trace).
+    try:
+        payload = store.adjustments(db.session, parcours_id,
+                                    with_tracks=request.args.get('tracks') in ('1', 'true'))
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return jsonify({'success': True, **payload})
+
+
 # --- Compléter depuis geocaching.com (§ 15.3 du plan) ----------------------------
 #
 # La page pose une demande de collecte limitée aux caches du parcours ; le

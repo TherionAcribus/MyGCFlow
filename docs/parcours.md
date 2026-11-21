@@ -46,8 +46,9 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours/<id>/export` | Document JSON réimportable `{format: mygcflow-parcours, version: 1, parcours, overrides, places}` |
 | `POST /api/parcours/import` | Recrée un parcours depuis un export — mêmes validations qu'à la création, tout ou rien |
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
-| `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?, legMode?, visitMin?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides, places}` |
-| `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent) |
+| `GET /api/parcours/<id>/adjustments` | Relecture légère après un geste : `{overrides, places, photos, cameras}` (journées et parkings ne sont pas reconstruits) ; `?tracks=1` ajoute les traces avec leurs points |
+| `PATCH /api/parcours/<id>/overrides` | `{overrides: [{key, rank?, pinnedTime?, day?, excluded?, legMode?, visitMin?}]}` : un champ présent remplace (null efface), un absent est gardé ; tout ou rien ; une étape sans plus d'ajustement perd sa ligne. Renvoie `{overrides}` |
+| `DELETE /api/parcours/<id>/overrides` | Annule tous les ajustements (les lieux restent). Renvoie `{overrides}` |
 | `POST /api/parcours/<id>/places` | Lieu `{kind: place, name, lat, lon, date, time?, category?, icon?}` ou base `{kind: base, name, lat, lon, date?, role?, category?, icon?}` (base sans date : toutes les journées ; `role` : `both`/`start`/`end` ; `category` : `other`/`parking`/`meal`/`viewpoint`/`lodging`/`supply`/`custom`, `icon` : classe `ti-…` seulement pour `custom`) |
 | `PATCH` / `DELETE /api/parcours/<id>/places/<pid>` | Modification (patch), suppression |
 | `POST /api/parcours/<id>/photos` | Envoi d'une photo (multipart, champ `photo`, 15 Mo au plus) ; la même photo deux fois n'est gardée qu'une fois |

@@ -3264,13 +3264,14 @@ function resetAllAdjustments() {
     saveOverrides(patchesTo([]));
 }
 
-async function reloadAdjustments(forId = selectedId) {
+// Relecture légère après un geste : /adjustments renvoie les ajustements,
+// lieux, photos et caméras — pas les journées reconstruites ni, sauf
+// `tracks` (envoi ou retrait d'une trace), les points GPS des traces.
+async function reloadAdjustments(forId = selectedId, { tracks = false } = {}) {
     // Le parcours a changé pendant la requête : rien à appliquer.
     if (forId !== selectedId) return;
-    const fresh = await fetchJson(`/api/parcours/${forId}/inputs`);
-    receiveAdjustments({
-        overrides: fresh.overrides, places: fresh.places, photos: fresh.photos, cameras: fresh.cameras, tracks: fresh.tracks,
-    }, forId);
+    const fresh = await fetchJson(`/api/parcours/${forId}/adjustments${tracks ? '?tracks=1' : ''}`);
+    receiveAdjustments(fresh, forId);
 }
 
 async function createPlace(data, { record = true } = {}) {
@@ -3956,7 +3957,7 @@ async function runUpload(kind, files) {
         showToast(spec.stopped(sent, files.length), 'info', t('Parcours'));
     }
     // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
-    await reloadAdjustments(targetId);
+    await reloadAdjustments(targetId, { tracks: kind === 'track' });
 }
 
 async function uploadPhotos(files) {
@@ -4638,7 +4639,7 @@ async function deleteTrack(id) {
     const pid = selectedId;
     try {
         await fetchJson(`/api/parcours/${pid}/tracks/${id}`, { method: 'DELETE' });
-        await reloadAdjustments(pid);
+        await reloadAdjustments(pid, { tracks: true });
     } catch (error) {
         showToast(error.message, 'error');
     }

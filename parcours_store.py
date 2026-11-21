@@ -393,20 +393,28 @@ def place_to_dict(row: ParcoursPlace) -> dict:
     }
 
 
-def adjustments(session, parcours_id: int) -> dict:
-    """{overrides, places, photos, cameras, tracks} d'un parcours."""
+def _overrides(session, parcours_id: int) -> list[dict]:
+    return [override_to_dict(row) for row in
+            session.query(ParcoursOverride).filter_by(parcours_id=parcours_id)
+            .order_by(ParcoursOverride.stop_key).all()]
+
+
+def adjustments(session, parcours_id: int, with_tracks: bool = True) -> dict:
+    """{overrides, places, photos, cameras[, tracks]} d'un parcours. Sans les
+    traces (leurs points GPS pèsent lourd) pour les relectures de gestes qui
+    n'y touchent pas."""
     import parcours_photos
     import parcours_tracks
-    overrides = session.query(ParcoursOverride).filter_by(parcours_id=parcours_id) \
-        .order_by(ParcoursOverride.stop_key).all()
     places = session.query(ParcoursPlace).filter_by(parcours_id=parcours_id) \
         .order_by(ParcoursPlace.id).all()
-    return {
-        'overrides': [override_to_dict(row) for row in overrides],
+    payload = {
+        'overrides': _overrides(session, parcours_id),
         'places': [place_to_dict(row) for row in places],
         **parcours_photos.list_photos(session, parcours_id),
-        'tracks': parcours_tracks.list_tracks(session, parcours_id),
     }
+    if with_tracks:
+        payload['tracks'] = parcours_tracks.list_tracks(session, parcours_id)
+    return payload
 
 
 # Colonnes d'un ajustement validé à partir d'un patch {key, rank?…} ; un
@@ -492,7 +500,9 @@ def patch_overrides(session, parcours_id: int, patches) -> dict:
     except ParcoursError:
         session.rollback()
         raise
-    return adjustments(session, parcours.id)
+    # Seuls les ajustements changent : la réponse n'a pas à porter lieux,
+    # photos et points GPS des traces à chaque geste.
+    return {'overrides': _overrides(session, parcours.id)}
 
 
 def clear_overrides(session, parcours_id: int) -> dict:
@@ -500,7 +510,7 @@ def clear_overrides(session, parcours_id: int) -> dict:
     session.query(ParcoursOverride).filter_by(parcours_id=parcours.id).delete()
     parcours.updated_at = datetime.now()
     session.commit()
-    return adjustments(session, parcours.id)
+    return {'overrides': _overrides(session, parcours.id)}
 
 
 def _place_fields(data: dict, parcours: Parcours, current: ParcoursPlace | None = None) -> dict:

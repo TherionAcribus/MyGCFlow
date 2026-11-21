@@ -394,6 +394,26 @@ class AdjustmentTests(_Base):
         cleared = self.client.delete(f"/api/parcours/{pid}/overrides", headers={"Origin": HOST}, base_url=HOST)
         self.assertEqual(cleared.get_json()["overrides"], [])
 
+    def test_adjustments_reread_stays_light_and_patch_answers_overrides_only(self):
+        pid = self.create()["id"]
+        self.post(f"/api/parcours/{pid}/places",
+                  {"kind": "place", "name": "Vue", "lat": 45.9, "lon": 6.1, "date": "2025-07-12"})
+        light = self.get(f"/api/parcours/{pid}/adjustments").get_json()
+        # Relecture de geste : ni journées reconstruites, ni points de traces.
+        self.assertTrue(light["success"])
+        for field in ("overrides", "places", "photos", "cameras"):
+            self.assertIn(field, light)
+        for field in ("tracks", "days", "parcours", "parkings", "counts"):
+            self.assertNotIn(field, light)
+        self.assertEqual([p["name"] for p in light["places"]], ["Vue"])
+        with_tracks = self.get(f"/api/parcours/{pid}/adjustments?tracks=1").get_json()
+        self.assertIn("tracks", with_tracks)
+        # La réponse d'une écriture ne porte que les ajustements.
+        patched = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [{"key": "GC1", "rank": 1}]}).get_json()
+        self.assertEqual(sorted(patched.keys()), ["overrides", "success"])
+        cleared = self.delete(f"/api/parcours/{pid}/overrides").get_json()
+        self.assertEqual(sorted(cleared.keys()), ["overrides", "success"])
+
     def test_invalid_overrides_change_nothing(self):
         pid = self.create()["id"]
         self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [{"key": "GC1", "rank": 1}]})

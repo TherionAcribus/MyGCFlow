@@ -119,6 +119,15 @@ class ApiTests(unittest.TestCase):
         [served] = inputs['tracks']
         self.assertEqual(served['segments'][0][0], [6.1, 45.9, int(START.timestamp())])
 
+    def test_adjustments_reread_serves_track_points_on_demand(self):
+        self.upload(gpx([straight_walk()]))
+        light = self.call('GET', f'/api/parcours/{self.pid}/adjustments').get_json()
+        self.assertNotIn('tracks', light)
+        full = self.call('GET', f'/api/parcours/{self.pid}/adjustments?tracks=1').get_json()
+        [track] = full['tracks']
+        self.assertTrue(track['segments'])
+        self.assertEqual(track['pointCount'], sum(len(s) for s in track['segments']))
+
     def test_refused_and_deleted(self):
         response = self.upload(gpx([[(6.1, 45.9, None)]]))
         self.assertEqual(response.status_code, 400)
