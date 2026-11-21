@@ -184,12 +184,15 @@ def delete(session, parcours_id: int) -> None:
     import parcours_photos
     import parcours_tracks
     row = get(session, parcours_id)
-    session.query(ParcoursOverride).filter_by(parcours_id=row.id).delete()
-    session.query(ParcoursPlace).filter_by(parcours_id=row.id).delete()
-    parcours_photos.delete_all(session, row.id)
-    parcours_tracks.delete_all(session, row.id)
+    pid = row.id
+    session.query(ParcoursOverride).filter_by(parcours_id=pid).delete()
+    session.query(ParcoursPlace).filter_by(parcours_id=pid).delete()
+    parcours_photos.delete_all(session, pid)
+    parcours_tracks.delete_all(session, pid)
     session.delete(row)
     session.commit()
+    # Fichiers après le commit : un échec laisserait des lignes sans fichiers.
+    parcours_photos.delete_files(pid)
 
 
 # ---------------------------------------------------------------------------

@@ -29,6 +29,7 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showConfirmation, showToast, t } from './notifications.js';
+import { FETCH_TIMEOUTS, fetchWithTimeout } from './fetch_with_timeout.mjs';
 import { isParcoursPage } from './app_mode.mjs';
 import { isImageFile } from './images_model.mjs';
 import { isAudioFile } from './music_track.mjs';
@@ -275,11 +276,16 @@ function formatRange(start, end) {
     return start === end ? formatDay(start, short) : `${formatDay(start, short)} → ${formatDay(end, short)}`;
 }
 
+// Requêtes de la page bornées en durée (un fetch suspendu ne se résout
+// jamais seul). `timeoutMs` dans les options le règle par appel : les
+// itinéraires en ont besoin d'un long (le serveur chaîne des appels
+// fournisseur temporisés).
 async function fetchJson(url, options = {}) {
-    const response = await fetch(`${CONFIG.BASE_URL}${url}`, {
-        ...options,
-        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    });
+    const { timeoutMs, ...fetchOptions } = options;
+    const response = await fetchWithTimeout(`${CONFIG.BASE_URL}${url}`, {
+        ...fetchOptions,
+        headers: { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) },
+    }, { timeoutMs: timeoutMs || FETCH_TIMEOUTS.control, t });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
         const error = new Error(body.message || `HTTP ${response.status}`);
@@ -2916,6 +2922,10 @@ function receiveAdjustments(payload, forId = selectedId) {
 // même déplacement et l'un serait perdu.
 let overridesChain = Promise.resolve();
 let overridesQueued = 0;
+// Chaque écriture emporte l'entrée d'historique de son geste (même ordre) :
+// un envoi refusé la fait sortir, sinon Ctrl+Z rejouerait un geste jamais
+// enregistré (et l'entrée dépilée revient, comme pour les lieux).
+let pendingHistory = [];
 
 // Fusion identique au serveur (parcours_store.patch_overrides) : champ
 // présent → remplacé (null l'efface), absent → gardé ; ligne vidée → retirée.
@@ -2981,16 +2991,21 @@ function patchesTo(target) {
 
 // Écrit les patches : fusion locale, reconstruction, envoi en file — sans
 // enregistrer dans l'historique (utilisé par l'annulation elle-même).
-function writeOverrides(patches) {
+// `historySlot` : { history? } rempli par l'appelant quand il empile une
+// entrée ; en cas de refus, l'entrée sort de sa pile (et `restore` remet
+// l'entrée dépilée par un annuler/rétablir).
+function writeOverrides(patches, historySlot = null) {
     if (!patches.length) return;
     const pid = selectedId;
     mergeOverrides(patches);
     rebuild();
     renderStops();
     applyTimeline();
+    pendingHistory.push(historySlot);
     overridesQueued++;
     overridesChain = overridesChain.then(async () => {
         overridesQueued--;
+        const slot = pendingHistory.shift();
         try {
             const payload = await fetchJson(`/api/parcours/${pid}/overrides`, {
                 method: 'PATCH',
@@ -3002,6 +3017,13 @@ function writeOverrides(patches) {
             if (overridesQueued === 0) receiveAdjustments(payload, pid);
         } catch (error) {
             showToast(error.message, 'error');
+            const history = slot?.history;
+            if (history) {
+                const index = history.stack.lastIndexOf(history.value);
+                if (index >= 0) history.stack.splice(index, 1);
+                if (history.restore) history.restore.stack.push(history.restore.entry);
+                updateUndoButtons();
+            }
             // Resynchronisation une fois la file écoulée.
             overridesChain = overridesChain.then(() => reloadAdjustments(pid));
         }
@@ -3011,9 +3033,14 @@ function writeOverrides(patches) {
 function saveOverrides(patches) {
     if (!selectedId || adjustmentsLocked() || !inputs) return;
     const before = snapshotOverrides();
-    writeOverrides(patches);
-    // Le geste n'entre dans l'historique que s'il a changé quelque chose.
-    if (snapshotOverrides() !== before) pushHistory(before);
+    const historySlot = {};
+    writeOverrides(patches, historySlot);
+    // Le geste n'entre dans l'historique que s'il a changé quelque chose ;
+    // l'entrée suit l'écriture : un refus du serveur la fait sortir.
+    if (snapshotOverrides() !== before) {
+        pushHistory(before);
+        historySlot.history = { stack: undoStack, value: before };
+    }
 }
 
 function pushHistory(entry) {
@@ -3034,8 +3061,10 @@ function stepHistory(from, to) {
     while (from.length) {
         const entry = from.pop();
         if (typeof entry === 'string') {
-            to.push(snapshotOverrides());
-            writeOverrides(patchesTo(JSON.parse(entry)));
+            const back = snapshotOverrides();
+            to.push(back);
+            writeOverrides(patchesTo(JSON.parse(entry)), { history: {
+                stack: to, value: back, restore: { stack: from, entry } } });
             break;
         }
         const place = placeById(entry.place);
@@ -3672,7 +3701,10 @@ async function uploadPhotos(files) {
         const body = new FormData();
         body.append('photo', file, file.name);
         try {
-            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${targetId}/photos`, { method: 'POST', body });
+            const response = await fetchWithTimeout(
+                `${CONFIG.BASE_URL}/api/parcours/${targetId}/photos`,
+                { method: 'POST', body },
+                { timeoutMs: FETCH_TIMEOUTS.upload, t });
             if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
                 refused.push({ name: file.name, message: payload.message || `HTTP ${response.status}` });
@@ -4358,7 +4390,10 @@ async function uploadTracks(files) {
         const body = new FormData();
         body.append('track', file, file.name);
         try {
-            const response = await fetch(`${CONFIG.BASE_URL}/api/parcours/${targetId}/tracks`, { method: 'POST', body });
+            const response = await fetchWithTimeout(
+                `${CONFIG.BASE_URL}/api/parcours/${targetId}/tracks`,
+                { method: 'POST', body },
+                { timeoutMs: FETCH_TIMEOUTS.upload, t });
             if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
                 refused.push({ name: file.name, message: payload.message || `HTTP ${response.status}` });
@@ -4474,6 +4509,9 @@ async function ensureRoutes({ force = false } = {}) {
             body = await fetchJson('/api/parcours/routes', {
                 method: 'POST',
                 body: JSON.stringify({ profile: run.profile, waypoints: run.waypoints, force }),
+                // Le serveur chaîne des appels fournisseur temporisés
+                // (throttle + découverte des trajets sans route).
+                timeoutMs: 300_000,
             });
         } catch (error) {
             message = error.message;

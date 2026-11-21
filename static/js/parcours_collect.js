@@ -16,6 +16,7 @@
 
 import { CONFIG } from './init.js';
 import { showError, showToast, t } from './notifications.js';
+import { FETCH_TIMEOUTS, fetchWithTimeout } from './fetch_with_timeout.mjs';
 
 // Relevé de la collecte et de l'export reçu : même cadence que la carte
 // « Mes logs », seulement onglet Données affiché.
@@ -39,10 +40,10 @@ function el(id) {
 }
 
 async function fetchJson(url, options = {}) {
-    const response = await fetch(`${CONFIG.BASE_URL}${url}`, {
+    const response = await fetchWithTimeout(`${CONFIG.BASE_URL}${url}`, {
         ...options,
         headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    });
+    }, { timeoutMs: FETCH_TIMEOUTS.control, t });
     const body = await response.json().catch(() => ({}));
     if (!response.ok || body.success === false) throw new Error(body.message || `HTTP ${response.status}`);
     return body;
@@ -237,7 +238,9 @@ async function onCancel() {
 
 async function waitTask(taskId) {
     for (;;) {
-        const response = await fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`);
+        const response = await fetchWithTimeout(
+            `${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`,
+            {}, { timeoutMs: FETCH_TIMEOUTS.status, t });
         const body = await response.json().catch(() => ({}));
         if (body?.state === 'finished') return body.result || {};
         if (body?.state === 'failed') throw new Error(body.error || t('Import échoué'));

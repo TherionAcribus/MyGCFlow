@@ -315,7 +315,13 @@ def set_camera_offset(session, parcours_id: int, camera, offset) -> dict:
 
 
 def delete_all(session, parcours_id: int) -> None:
-    """Photos, appareils et dossier d'un parcours (sans commit)."""
+    """Lignes photos et appareils d'un parcours (sans commit) ; le dossier
+    part après le commit, par `delete_files`."""
     session.query(ParcoursPhoto).filter_by(parcours_id=parcours_id).delete()
     session.query(ParcoursCamera).filter_by(parcours_id=parcours_id).delete()
+
+
+def delete_files(parcours_id: int) -> None:
+    """Dossier des photos d'un parcours supprimé : après le commit, pour ne
+    pas laisser de lignes sans fichiers si celui-ci échoue."""
     shutil.rmtree(parcours_dir(parcours_id), ignore_errors=True)
