@@ -4119,9 +4119,13 @@ export function recordAnimation(){
 // par image, sinon les premières images de la vidéo sortiraient sans elles.
 // Plafond de 3 s (cf. imagesReady) : une image injoignable ne bloque pas
 // l'enregistrement. Le mode MediaRecorder n'attend pas (temps réel, cf.
-// startMediaRecorderPipeline).
+// startMediaRecorderPipeline). Photos du parcours : même attente, sinon
+// elles manqueraient dans les frames capturées.
 function whenImagesReady() {
-    return Promise.resolve(pkg.imagesReady?.(3000)).catch(() => false);
+    return Promise.allSettled([
+        Promise.resolve(pkg.imagesReady?.(3000)).catch(() => false),
+        Promise.resolve(pkg.parcoursPhotosReady?.(3000)).catch(() => false),
+    ]);
 }
 
 function startRecordingWhenImagesReady(session) {
@@ -5149,22 +5153,30 @@ function recordAnimationMediaRecorder(){
     // forRecording : cf. ci-dessus, isMediaRecording n'est pas encore posé.
     prepareCameraPacing({ timelineScale: appliedSlowdown, forRecording: true });
 
-    // Démarrer animation timeline existante (musique bloquée)
-    try { startAnimation(true); } catch(_) { startAnimation(); }
-
-    // Démarrer capture MediaRecorder
-    startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown, session).catch(e => {
-        // Arrêté entre-temps : ne pas relancer une capture en mode images.
+    // Photos du parcours : décodées avant le départ de l'animation (plafond
+    // 3 s, cf. parcoursPhotosReady). L'attente se tient ici, capture pas
+    // encore lancée : après le départ, une photo encore en vol arriverait
+    // trop tard pour figurer dans la vidéo.
+    Promise.resolve(pkg.parcoursPhotosReady?.(3000)).catch(() => false).then(() => {
+        // Arrêté pendant l'attente : ne pas démarrer après coup.
         if (session !== recordingSession) return;
-        console.error('MediaRecorder pipeline error:', e);
-        pkg.showToast && pkg.showToast(pkg.t('Erreur de la capture rapide, bascule en mode image par image.'), 'error', pkg.t('Enregistrement'));
-        // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
-        // AVANT de relancer recordAnimation(), pour éviter deux boucles d'avancement de date en parallèle
-        try { stopMediaRecorderPipeline(false); } catch(_) {}
-        if (animationRafId) { cancelAnimationFrame(animationRafId); animationRafId = null; }
-        // Forcer le mode images pour éviter une boucle infinie MediaRecorder → fallback → MediaRecorder
-        try { pkg.options.record.mode = 'images'; } catch(_) {}
-        recordAnimation();
+        // Démarrer animation timeline existante (musique bloquée)
+        try { startAnimation(true); } catch(_) { startAnimation(); }
+
+        // Démarrer capture MediaRecorder
+        startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown, session).catch(e => {
+            // Arrêté entre-temps : ne pas relancer une capture en mode images.
+            if (session !== recordingSession) return;
+            console.error('MediaRecorder pipeline error:', e);
+            pkg.showToast && pkg.showToast(pkg.t('Erreur de la capture rapide, bascule en mode image par image.'), 'error', pkg.t('Enregistrement'));
+            // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
+            // AVANT de relancer recordAnimation(), pour éviter deux boucles d'avancement de date en parallèle
+            try { stopMediaRecorderPipeline(false); } catch(_) {}
+            if (animationRafId) { cancelAnimationFrame(animationRafId); animationRafId = null; }
+            // Forcer le mode images pour éviter une boucle infinie MediaRecorder → fallback → MediaRecorder
+            try { pkg.options.record.mode = 'images'; } catch(_) {}
+            recordAnimation();
+        });
     });
 
     // Restaurer timePerDay après démarrage (sera effectif pour la suite)
@@ -5291,10 +5303,12 @@ function overlayContentSignature() {
 }
 
 async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1, session = recordingSession){
-    // Pas d'attente des images ici (cf. whenImagesReady) : l'animation est
-    // déjà lancée, la capture en temps réel perdrait son début. Les images
-    // sont décodées dès le chargement des préférences et à chaque envoi ;
-    // une image encore en cours apparaît dès qu'elle est prête.
+    // Pas d'attente des images de l'onglet Images ici (cf. whenImagesReady) :
+    // l'animation est déjà lancée, la capture en temps réel perdrait son
+    // début. Ces images sont décodées dès le chargement des préférences et à
+    // chaque envoi ; une image encore en cours apparaît dès qu'elle est
+    // prête. Les photos du parcours, elles, sont attendues avant le départ
+    // de l'animation (recordAnimationMediaRecorder).
     const fps = normalizeRecordingFps(pkg.options.record?.fps);
     const wantedMime = pkg.options?.record?.mediaRecorder?.mimeType || DEFAULT_RECORDER_MIME;
     const mime = browserRecorderMimeType(wantedMime);

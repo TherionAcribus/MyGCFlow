@@ -3401,6 +3401,26 @@ function preloadPhotos() {
 
 const imageReady = (img) => !!img?.complete && img.naturalWidth > 0;
 
+// Résolue quand toutes les photos chargées sont décodées (ou en échec), au
+// plus tard après `timeoutMs` — comme `imagesReady` de l'onglet Images :
+// attendue avant la première frame d'un enregistrement pour qu'une photo
+// encore en vol ne manque pas dans la vidéo. Hors de la page, ou sans photo,
+// résout immédiatement.
+export function parcoursPhotosReady(timeoutMs = 3000) {
+    preloadPhotos();
+    const pending = [];
+    for (const cache of [photoImages, photoThumbs]) {
+        for (const img of cache.values()) {
+            if (!imageReady(img)) pending.push(img.decode().catch(() => {}));
+        }
+    }
+    if (!pending.length) return Promise.resolve(true);
+    return Promise.race([
+        Promise.all(pending).then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
+    ]);
+}
+
 // Photos de la lecture (lot 9) : mises en page à `currentQ` selon les
 // réglages (parcours_photo_layout.mjs), peintes dans le canevas de la couche
 // de la tête (parcours_photo_draw.mjs), donc filmées. Une photo encore en
@@ -5748,4 +5768,5 @@ if (isParcoursPage()) {
     registerLifecycleEngine(PARCOURS_ENGINE);
     window.getParcoursSnapshot = getParcoursSnapshot;
     window.getParcoursCollectSnapshot = parcoursCollectSnapshot;
+    window.parcoursPhotosReady = parcoursPhotosReady;
 }

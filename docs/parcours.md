@@ -602,8 +602,12 @@ l'étape − heure de la photo.
 - elle est dessinée dans le `postrender` de la couche de la tête, donc
   filmée. L'image est servie par le serveur local (même origine) : le
   canevas reste exportable, ce que vérifie un export du spec e2e ;
-- les photos sont préchargées à l'ouverture : une photo encore en
-  chargement n'est simplement pas dessinée.
+- les photos sont préchargées à l'ouverture : en lecture, une photo encore
+  en chargement n'est simplement pas dessinée. Avant un enregistrement,
+  elles sont attendues (`parcoursPhotosReady`, plafond 3 s, branché sur le
+  `whenImagesReady` de l'image par image et, en capture rapide, avant le
+  départ de l'animation) : une photo encore en vol ne manque pas dans la
+  vidéo.
 
 La mise en page et le cadre décrits ci-dessus sont ceux par défaut ; ils se
 règlent depuis le lot 9 (ci-dessous).

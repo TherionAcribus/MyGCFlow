@@ -290,3 +290,30 @@ test('photos refusées : un toast regroupe les fichiers par cause', async ({ pag
   await expect(toast).toContainText('pas une image lisible');
   expect(errors).toEqual([]);
 });
+
+test('enregistrement : une photo encore en chargement est attendue', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles([files[0]]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+
+  // Rechargée, la page doit refaire ses images : leur réponse est retardée,
+  // comme sur une connexion lente.
+  await page.route('**/api/parcours/*/photos/*/file', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    await route.continue();
+  });
+  await page.reload();
+  await expect.poll(async () => (await snapshot(page)).status, { timeout: 30_000 }).toBe('ready');
+
+  // parcoursPhotosReady (attendue avant le départ d'un enregistrement) ne
+  // résout pas tant que la photo n'est pas décodée.
+  const started = Date.now();
+  const ready = await page.evaluate(() => window.parcoursPhotosReady());
+  expect(ready).toBe(true);
+  expect(Date.now() - started).toBeGreaterThanOrEqual(500);
+  expect((await snapshot(page)).photosLoaded).toBe(1);
+  expect(errors).toEqual([]);
+});
