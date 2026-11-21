@@ -550,6 +550,57 @@ class LogsAutomationTests(LogsApiTests):
         self.assertTrue(parsed.ok, parsed.errors)
 
     @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_reads_only_the_caches_of_a_parcours_request(self):
+        """Demande de la page Parcours : ni journal ni « Vos caches », ses
+        seules caches, vos logs seuls, aucune couverture ; chaque envoi
+        porte l'id de la demande."""
+        request_id = "a" * 32
+        scenario = {
+            "username": "Testeur",
+            "prefOrder": "DMY",
+            "state": {"since": "2026-01-01", "scope": "dnf",
+                      "request": {"id": request_id, "label": "Vacances",
+                                  "codes": ["GC1AAA", "GC2BBB"]}},
+            "dnfPages": [{"codes": ["GC9ZZZ"]}],
+            "ownedPages": [{"codes": ["GC9OWN"]}],
+            "caches": {
+                "GC1AAA": self._gc("GC1AAA", "t1", corrected=[49.25, 6.25]),
+                "GC2BBB": self._gc("GC2BBB", "t2"),
+            },
+            "books": {
+                "t1": [[self._entry(11, 2, "12/07/2025", "Testeur", 42, fav=True)]],
+                "t2": [[self._entry(12, 2, "12/07/2025", "Testeur", 42, fav=False)]],
+            },
+        }
+        out = self._run_bookmarklet(**scenario)
+        received = out["received"]
+        self.assertIsNotNone(received, out["said"])
+        self.assertFalse([u for u in out["requests"] if "/my/" in u], out["requests"])
+        self.assertTrue(all(f["headers"].get("X-MyGCFlow-Request") == request_id
+                            for f in out["fragments"]))
+        body = received["body"]
+        self.assertEqual(body["coverage"], [])
+        caches = {c["gc_code"]: c for c in body["caches"]}
+        self.assertEqual(sorted(caches), ["GC1AAA", "GC2BBB"])
+        self.assertEqual((caches["GC1AAA"]["latitude"], caches["GC1AAA"]["corrected"]),
+                         (49.2, {"latitude": 49.25, "longitude": 6.25}))
+        self.assertNotIn("corrected", caches["GC2BBB"])
+        self.assertEqual({l["gc_code"]: l["favorite"] for l in body["logs"]},
+                         {"GC1AAA": True, "GC2BBB": False})
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_declined_request_collects_nothing(self):
+        scenario = {
+            "username": "Testeur",
+            "state": {"request": {"id": "b" * 32, "label": "Vacances", "codes": ["GC1AAA"]}},
+            "confirms": [False],
+        }
+        out = self._run_bookmarklet(**scenario)
+        self.assertIsNone(out["received"])
+        self.assertEqual(out["requests"], [])
+        self.assertTrue(any("Parcours" in s for s in out["said"]), out["said"])
+
+    @unittest.skipUnless(NODE, "node introuvable")
     def test_bookmarklet_ambiguous_dates_wait_for_a_console_call(self):
         # 05/06/2024 : DMY et MDY restent possibles → le favori s'arrête
         # sans envoyer et explique mygcflowLogsFinish ; l'appel finit l'envoi.
@@ -929,6 +980,56 @@ class LogsAutomationTests(LogsApiTests):
         st = self._wait_task(rv2.get_json()["task_id"])
         self.assertEqual(st.state, "finished", st.error)
         self.assertEqual(st.result["added"], 7)
+
+    def test_collect_request_is_served_then_cleared_when_sealed(self):
+        """Demande de la page Parcours : transmise au favori par
+        /receive/state (sans consommer « collecte complète »), suivie dans
+        le statut, rattachée à l'aperçu au scellement puis retirée."""
+        import blueprints.gc_logs as gc_logs_mod
+        self._set_token()
+        self.client.post('/api/logs/bookmarklet/full-next')
+        asked = gc_logs_mod.save_collect_request("Vacances", ["GC2", "GC1", "GC1"], parcours_id=5)
+        state = self._state().get_json()
+        self.assertEqual(state["request"], {"id": asked["id"], "label": "Vacances",
+                                            "codes": ["GC1", "GC2"]})
+        self.assertTrue(self.client.get("/api/logs/status").get_json()["full_collect_planned"])
+
+        doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        doc["coverage"] = []
+        headers = {"X-MyGCFlow-Token": "tok-receive", "X-MyGCFlow-Run-Id": "run-parcours-1",
+                   "X-MyGCFlow-Request": asked["id"]}
+        rv = self.client.post('/api/logs/receive/fragment', data=json.dumps(doc),
+                              content_type='application/json', headers=headers)
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        progress = self.client.get("/api/logs/status").get_json()["collection_in_progress"]
+        self.assertEqual(progress["request_id"], asked["id"])
+
+        rv = self.client.post('/api/logs/receive/fragment', data=json.dumps(doc),
+                              content_type='application/json',
+                              headers={**headers, "X-MyGCFlow-Final": "1"})
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        pending = self.client.get("/api/logs/status").get_json()["pending_import"]
+        self.assertEqual((pending["request_id"], pending["parcours_id"], pending["label"]),
+                         (asked["id"], 5, "Vacances"))
+        self.assertEqual(pending["summary"]["caches_corrected"], 1)   # GC9ZZZZ
+        self.assertIsNone(gc_logs_mod.current_collect_request())
+        self.assertIsNone(self._state().get_json()["request"])
+
+    def test_collect_request_expires_and_is_only_cleared_by_its_id(self):
+        import blueprints.gc_logs as gc_logs_mod
+        asked = gc_logs_mod.save_collect_request("A", ["GC1"])
+        self.assertFalse(gc_logs_mod.clear_collect_request("f" * 32))
+        self.assertIsNotNone(gc_logs_mod.current_collect_request())
+        self.assertTrue(gc_logs_mod.clear_collect_request(asked["id"]))
+        self.assertIsNone(gc_logs_mod.current_collect_request())
+
+        gc_logs_mod.save_collect_request("B", ["GC1"])
+        path = gc_logs_mod._request_path()
+        stale = json.loads(path.read_text("utf-8"))
+        stale["created_at"] = "2020-01-01T00:00:00+00:00"
+        path.write_text(json.dumps(stale), "utf-8")
+        self.assertIsNone(gc_logs_mod.current_collect_request())
+        self.assertFalse(path.exists())
 
     def test_fragment_rejects_a_second_account_mid_run(self):
         self._set_token()

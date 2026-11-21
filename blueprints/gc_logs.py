@@ -75,6 +75,84 @@ def _pending_root() -> Path:
 
 
 # ---------------------------------------------------------------------------
+# Demande de collecte limitée à une liste de caches (page Parcours,
+# MyGCFlow_Plan_Parcours.md § 15.3) : posée par l'application, lue par le
+# favori dans /receive/state, effacée au scellement de la collecte qui la
+# porte. Un état d'exécution, pas une préférence : un fichier à côté des
+# aperçus (hors de leur dossier, que le ménage balaie), rien dans
+# settings.json.
+# ---------------------------------------------------------------------------
+
+COLLECT_REQUEST_TTL_SECONDS = 24 * 3600
+# ~1,6 s par cache (fiche + carnet, 800 ms entre deux requêtes) : 1 000
+# caches font déjà ~27 min de collecte.
+MAX_COLLECT_CODES = 1000
+_REQUEST_ID_RE = re.compile(r"^[0-9a-f]{32}$")
+_REQUEST_LOCK = threading.Lock()
+
+
+def _request_path() -> Path:
+    root = PENDING_ROOT.parent if PENDING_ROOT else paths.data_dir()
+    return root / "logs_collect_request.json"
+
+
+def save_collect_request(label: str, codes, parcours_id=None) -> dict:
+    """Pose la demande (remplace la précédente) et la renvoie."""
+    request_doc = {
+        "id": uuid.uuid4().hex,
+        "label": label,
+        "parcours_id": parcours_id,
+        "codes": sorted(set(codes)),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    path = _request_path()
+    with _REQUEST_LOCK:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(request_doc, ensure_ascii=False), "utf-8")
+    return request_doc
+
+
+def current_collect_request() -> dict | None:
+    """La demande en cours, ou None (absente, illisible ou expirée)."""
+    path = _request_path()
+    try:
+        request_doc = json.loads(path.read_text("utf-8"))
+        created = datetime.fromisoformat(request_doc["created_at"])
+    except FileNotFoundError:
+        return None
+    except Exception:
+        clear_collect_request()
+        return None
+    if datetime.now(timezone.utc) - created > timedelta(seconds=COLLECT_REQUEST_TTL_SECONDS):
+        clear_collect_request()
+        return None
+    return request_doc
+
+
+def clear_collect_request(request_id: str | None = None) -> bool:
+    """Retire la demande — seulement si c'est `request_id` quand il est
+    donné (un scellement tardif n'efface pas une demande plus récente)."""
+    path = _request_path()
+    with _REQUEST_LOCK:
+        if request_id is not None:
+            try:
+                if json.loads(path.read_text("utf-8")).get("id") != request_id:
+                    return False
+            except Exception:
+                return False
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            return False
+    return True
+
+
+def _request_header() -> str | None:
+    value = request.headers.get('X-MyGCFlow-Request', '')
+    return value if _REQUEST_ID_RE.match(value) else None
+
+
+# ---------------------------------------------------------------------------
 # Fichier reçu
 # ---------------------------------------------------------------------------
 
@@ -125,7 +203,8 @@ def _read_upload(upload) -> tuple[bytes | None, str | None]:
 
 
 def _store_pending(raw: bytes, name: str, revision: int,
-                   received: bool = False, summary: dict | None = None) -> str:
+                   received: bool = False, summary: dict | None = None,
+                   collect_request: dict | None = None) -> str:
     token = uuid.uuid4().hex
     # Historique personnel : dossiers privés (le mode est ignoré sous Windows).
     _pending_root().mkdir(mode=0o700, exist_ok=True)
@@ -141,6 +220,12 @@ def _store_pending(raw: bytes, name: str, revision: int,
         # que l'interface propose l'aperçu déjà calculé.
         manifest["received"] = True
         manifest["summary"] = summary
+    if collect_request:
+        # Collecte faite pour une demande (page Parcours) : la page
+        # reconnaît « son » export et le propose à la validation.
+        manifest["request_id"] = collect_request["id"]
+        manifest["parcours_id"] = collect_request.get("parcours_id")
+        manifest["label"] = collect_request.get("label")
     (folder / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False), "utf-8")
     return token
@@ -233,7 +318,10 @@ def _received_pending() -> dict | None:
     _, token, manifest = newest
     return {"import_token": token, "name": manifest.get("name"),
             "received_at": manifest["created_at"],
-            "summary": manifest.get("summary")}
+            "summary": manifest.get("summary"),
+            "request_id": manifest.get("request_id"),
+            "parcours_id": manifest.get("parcours_id"),
+            "label": manifest.get("label")}
 
 
 def _collection_in_progress() -> dict | None:
@@ -270,7 +358,8 @@ def _collection_in_progress() -> dict | None:
             "caches": manifest.get("caches") or 0,
             "username": manifest.get("username"),
             "started_at": manifest.get("created_at"),
-            "updated_at": manifest.get("updated_at")}
+            "updated_at": manifest.get("updated_at"),
+            "request_id": manifest.get("request_id")}
 
 
 # ---------------------------------------------------------------------------
@@ -504,7 +593,7 @@ def _receive_cors_headers(resp):
         resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = \
             "Content-Type, X-MyGCFlow-Token, " \
-            "X-MyGCFlow-Run-Id, X-MyGCFlow-Final"
+            "X-MyGCFlow-Run-Id, X-MyGCFlow-Final, X-MyGCFlow-Request"
         resp.headers["Access-Control-Allow-Private-Network"] = "true"
         resp.headers["Access-Control-Max-Age"] = "600"
         resp.headers["Vary"] = "Origin"
@@ -566,7 +655,7 @@ def logs_receive():
         'import_token': token})), 202
 
 
-def _merge_fragment(folder: Path, incoming: dict):
+def _merge_fragment(folder: Path, incoming: dict, request_id: str | None = None):
     """Fusionne un fragment dans le document conservé pour cette collecte.
 
     Dédupliqué par `log_id` / `gc_code` — le dernier arrivé l'emporte ;
@@ -577,8 +666,9 @@ def _merge_fragment(folder: Path, incoming: dict):
     merged = None
     try:
         merged = json.loads((folder / "doc.json").read_text("utf-8"))
-        created = json.loads(
-            (folder / "manifest.json").read_text("utf-8"))["created_at"]
+        previous_manifest = json.loads((folder / "manifest.json").read_text("utf-8"))
+        created = previous_manifest["created_at"]
+        request_id = request_id or previous_manifest.get("request_id")
     except Exception:
         pass
     if merged is None:
@@ -640,6 +730,9 @@ def _merge_fragment(folder: Path, incoming: dict):
         "logs": len(merged["logs"]), "caches": len(merged["caches"]),
         "username": (merged.get("account") or {}).get("username"),
         "updated_at": datetime.now(timezone.utc).isoformat(),
+        # Demande de collecte servie (page Parcours) : la page suit sa
+        # collecte dans le statut.
+        "request_id": request_id,
     }, ensure_ascii=False), "utf-8")
     return merged, None
 
@@ -692,8 +785,9 @@ def logs_receive_fragment():
 
     _purge_expired_pending()
     folder = _pending_root() / f"frag-{run_id}"
+    request_id = _request_header()
     with _FRAGMENT_LOCK:
-        merged, error = _merge_fragment(folder, doc)
+        merged, error = _merge_fragment(folder, doc, request_id)
     if error:
         return reject(error, 409)
     if not final:
@@ -716,9 +810,18 @@ def logs_receive_fragment():
     finally:
         db.session.rollback()
 
+    # Collecte faite pour une demande : l'aperçu la garde (la page Parcours
+    # reconnaît son export), puis la demande servie est retirée. Une demande
+    # annulée ou remplacée entre-temps n'est plus là : l'id suffit.
+    collect_request = None
+    if request_id:
+        current = current_collect_request()
+        collect_request = current if current and current["id"] == request_id else {"id": request_id}
     pending_token = _store_pending(
         payload, _("export du favori"), summary["collection_revision"],
-        received=True, summary=_slim(summary))
+        received=True, summary=_slim(summary), collect_request=collect_request)
+    if request_id:
+        clear_collect_request(request_id)
     shutil.rmtree(folder, ignore_errors=True)
     return _receive_cors_headers(jsonify({
         'success': True,
@@ -741,7 +844,11 @@ def logs_receive_state():
       « dnf » ou « owned ») — le favori ne lit que la famille demandée.
       NON consommé à la lecture, contrairement à `logs_collect_full_once` ;
     - `logs_collect_full_once` (« forcer la prochaine collecte complète »)
-      est consommé à la lecture : la requête suivante revoit `since`."""
+      est consommé à la lecture : la requête suivante revoit `since` ;
+    - `request` : demande de collecte posée par la page Parcours (`id`,
+      `label`, `codes`) — le favori ne lit alors QUE ces caches, sans
+      couverture, et ignore `scope` et `since`. Non consommée à la lecture :
+      elle disparaît au scellement de la collecte qui la porte."""
     if request.method == 'OPTIONS':
         return _receive_cors_headers(current_app.make_response(('', 204)))
 
@@ -754,7 +861,10 @@ def logs_receive_state():
 
     manager = get_settings_manager()
     settings = manager.get_app_settings()
-    if settings.logs_collect_full_once:
+    collect_request = current_collect_request()
+    # Une collecte de parcours ne relit pas les DNF : elle laisse la
+    # « collecte complète » demandée au passage ordinaire suivant.
+    if settings.logs_collect_full_once and collect_request is None:
         from dataclasses import replace
         manager.update_app_settings(
             lambda s: replace(s, logs_collect_full_once=False))
@@ -765,6 +875,9 @@ def logs_receive_state():
         'success': True,
         'since': since.isoformat() if since else None,
         'scope': settings.logs_collect_scope,
+        'request': ({'id': collect_request['id'], 'label': collect_request.get('label'),
+                     'codes': collect_request['codes']}
+                    if collect_request else None),
         'pending': ({'name': pending['name'],
                      'received_at': pending['received_at']}
                     if pending else None),
@@ -837,6 +950,9 @@ def _bookmarklet_strings():
         '__T_BADTOKEN__': _("jeton refusé — régénérez le favori dans l'application"),
         '__T_RESUMEASK__': _("Une collecte interrompue existe (${a}/${b} caches déjà lues) — reprendre là où elle s'était arrêtée ?"),
         '__T_RESUME__': _("MyGCFlow : reprise — ${a}/${b} caches déjà lues, on continue…"),
+        '__T_REQUESTASK__': _("Parcours « ${a} » : relire ses ${b} caches sur geocaching.com (au moins ${c} min) ?"),
+        '__T_REQUESTSTOP__': _("Collecte annulée — retirez la demande dans la page Parcours pour une collecte ordinaire."),
+        '__T_REQUEST__': _("MyGCFlow : parcours « ${a} » — ${b} caches à relire…"),
     }
 
 

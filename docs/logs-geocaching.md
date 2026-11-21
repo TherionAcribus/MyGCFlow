@@ -150,7 +150,7 @@ de My Finds (DNF jamais résolus, caches posées, archivées…).
 | `name`, `container`, `country`, `state` | textes ; `None`/`Unknown` traités comme `bdd.clean_geo_text` |
 | `type` | libellé Groundspeak anglais, celui de `<groundspeak:type>` (`"Unknown Cache"`, `"Wherigo Cache"`…) : mêmes couleurs, icônes et filtres que les géocaches |
 | `latitude`, `longitude` | coordonnées **publiées** ; règles de `lab_formats.validate_coordinates` (finies, dans les bornes, `(0,0)` conservé mais signalé) |
-| `corrected` | facultatif : `{latitude, longitude}` corrigées par le joueur (mystery résolue) ; même validation ; usage à décider (la position réelle d'un DNF de mystery) |
+| `corrected` | facultatif : `{latitude, longitude}` corrigées par le joueur (mystery résolue) ; même validation ; position d'affichage d'un DNF et d'une étape de Parcours (§ Résolution des coordonnées). Le favori les lit dans `window.userDefinedCoords` de la fiche (forme relevée le 2026-11-21 ; `mapLatLng` porte déjà les corrigées sans le dire) |
 | `difficulty`, `terrain` | 1 à 5 par pas de 0,5 |
 | `owner.id`, `owner.name` | propriétaire actuel |
 | `placed_date` | date civile de pose déclarée (≠ publication, qui est le log `Publish Listing`) ; déclarative, un log peut la précéder (trouvaille de bêta-test, date modifiée après coup — constaté sur données réelles) : ne jamais rejeter ni réordonner un log sur cette base |
@@ -308,9 +308,14 @@ bornes de l'animation.
 
 ### Résolution des coordonnées
 
-Pour placer un log, dans l'ordre : correction manuelle de `cache_ref` →
-coordonnées de `cache_ref` → coordonnées de la ligne `geocache` (My Finds) au
-même `gc_code`. À défaut, le log reste **en attente** : compté dans le
+Pour placer un log, dans l'ordre (`log_store.cache_position`, depuis le
+2026-11-21) : correction manuelle de `cache_ref` → coordonnées corrigées
+par le joueur (`corrected_*`) → coordonnées de la ligne `geocache` (My
+Finds, qui porte déjà les corrigées du site au jour de l'export) au même
+`gc_code` → coordonnées publiées de `cache_ref`. Le My Finds passe avant
+les publiées : un DNF de mystery trouvée plus tard reste au vrai lieu.
+Utilisé par les points DNF (`dnf_geojson.py`) et les étapes du Parcours.
+À défaut, le log reste **en attente** : compté dans le
 statut, jamais affiché à une position inventée — même règle que les étapes
 Labs. Pays et région manquants : ceux de `geocache`, sinon l'emprunt au plus
 proche de `lab_geojson.borrowed_geo`.
@@ -456,6 +461,26 @@ mutations) répond au favori avant qu'il ne parte :
   oublie en plus l'horizon (`log_store.reset_dnf_horizon`) : les collectes
   restent complètes jusqu'au prochain export qui déclare à nouveau les DNF
   lus en entier.
+
+**Demande de collecte (page Parcours)** — `request` de `/receive/state`
+(`{id, label, codes}` ou `null`) : posée par « Compléter depuis
+geocaching.com » (`POST /api/parcours/<id>/collect`, docs/parcours.md),
+gardée dans `logs_collect_request.json` des données (24 h, une à la fois,
+hors du dossier des aperçus que le ménage balaie). Le favori la propose
+(confirmation), puis ne lit **que** ces codes — ni « Vos journaux » ni
+« Vos caches », `scope` et `since` ignorés —, carnet filtré sur les logs
+du joueur, **sans couverture** : l'import ajoute et met à jour, ne retire
+rien, et l'horizon DNF ne bouge pas. `logs_collect_full_once` n'est pas
+consommé tant qu'une demande est servie (la collecte de parcours ne relit
+pas les DNF). Chaque fragment porte `X-MyGCFlow-Request` (CORS l'autorise) :
+le manifest `frag-<run>` garde `request_id` (exposé par
+`collection_in_progress`), et au scellement l'aperçu reçoit `request_id`,
+`parcours_id`, `label` (exposés par `pending_import`) puis la demande est
+retirée — seulement si c'est encore elle. Le plan de reprise du favori
+porte l'id de la demande : un plan d'une autre demande, ou d'une collecte
+ordinaire, n'est pas repris. Le bilan d'aperçu compte aussi
+`caches_corrected` (fiches aux coordonnées corrigées) et `favorites_mine`
+(PF donnés par le joueur).
 
 Le favori ne déclare la liste « Vos journaux » complète que s'il y a
 reconnu au moins une ligne (`collectJournal`) : une page sans ligne

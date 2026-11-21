@@ -30,7 +30,7 @@ from sqlalchemy import func
 import log_store
 import parcours_store
 from lab_geojson import found_local_time
-from log_formats import CATEGORY_DNF, CATEGORY_FIND, log_category
+from log_formats import CATEGORY_DNF, CATEGORY_FIND, SOURCE_LOGS, log_category
 from models import CacheRef, Geocache, LabDiscovery, LogEvent
 
 KIND_FIND = 'find'
@@ -77,6 +77,25 @@ def _my_logs(session, start: date, end: date):
     return finds, dnfs, True
 
 
+def _cache_refs(session, codes) -> dict:
+    """{code → fiche `cache_ref`} — vide sans collection de logs."""
+    collection = log_store.get_collection(session)
+    refs = {}
+    if collection is None:
+        return refs
+    for chunk in _chunks(sorted(codes)):
+        for ref in session.query(CacheRef).filter(
+                CacheRef.collection_id == collection.id, CacheRef.gc_code.in_(chunk)):
+            refs[ref.gc_code] = ref
+    return refs
+
+
+def _pos_source(origin):
+    """Origine de position signalée dans la liste des étapes : seulement
+    quand elle diffère de la position publiée attendue."""
+    return origin if origin in (log_store.POSITION_CORRECTED, log_store.POSITION_MANUAL) else None
+
+
 def _find_stops(session, start: date, end: date, find_logs: dict, counts: dict) -> dict:
     """{jour → [étape]} des trouvailles de la plage."""
     by_day = defaultdict(list)
@@ -84,12 +103,15 @@ def _find_stops(session, start: date, end: date, find_logs: dict, counts: dict) 
         Geocache.found.is_(True),
         Geocache.date_find >= datetime.combine(start, time.min),
         Geocache.date_find < datetime.combine(end + timedelta(days=1), time.min),
-    )
+    ).all()
+    refs = _cache_refs(session, {row.gc_code for row in rows})
     for row in rows:
         day = _as_date(row.date_find)
-        if row.latitude is None or row.longitude is None:
+        position = log_store.cache_position(refs.get(row.gc_code), row)
+        if position is None:
             counts['missing_position'] += 1
             continue
+        lat, lon, origin = position
         by_day[day].append({
             'key': row.gc_code,
             'kind': KIND_FIND,
@@ -98,8 +120,9 @@ def _find_stops(session, start: date, end: date, find_logs: dict, counts: dict) 
             'type': row.cache_type,
             'difficulty': row.difficulty,
             'terrain': row.terrain,
-            'lon': float(row.longitude),
-            'lat': float(row.latitude),
+            'lon': float(lon),
+            'lat': float(lat),
+            'posSource': _pos_source(origin),
             'logId': find_logs.get((row.gc_code, day)),
             'localTime': None,
         })
@@ -144,13 +167,9 @@ def _dnf_stops(session, dnfs: list, by_day: dict, counts: dict) -> None:
     kept = [(log_id, code, day) for log_id, code, day in dnfs if (code, day) not in found_days]
     if not kept:
         return
-    collection = log_store.get_collection(session)
-    codes = sorted({code for _, code, _ in kept})
-    refs, finds = {}, {}
-    for chunk in _chunks(codes):
-        for ref in session.query(CacheRef).filter(
-                CacheRef.collection_id == collection.id, CacheRef.gc_code.in_(chunk)):
-            refs[ref.gc_code] = ref
+    codes = {code for _, code, _ in kept}
+    refs, finds = _cache_refs(session, codes), {}
+    for chunk in _chunks(sorted(codes)):
         for row in session.query(Geocache).filter(Geocache.gc_code.in_(chunk)):
             finds[row.gc_code] = row
     for log_id, code, day in kept:
@@ -162,10 +181,11 @@ def _dnf_stops(session, dnfs: list, by_day: dict, counts: dict) -> None:
                 value = getattr(row, row_attr or ref_attr, None)
             return value
 
-        lat, lon = pick('latitude'), pick('longitude')
-        if lat is None or lon is None:
+        position = log_store.cache_position(ref, row)
+        if position is None:
             counts['missing_position'] += 1
             continue
+        lat, lon, origin = position
         by_day[day].append({
             'key': f"dnf:{log_id}",
             'kind': KIND_DNF,
@@ -176,6 +196,7 @@ def _dnf_stops(session, dnfs: list, by_day: dict, counts: dict) -> None:
             'terrain': _number(pick('terrain')),
             'lon': float(lon),
             'lat': float(lat),
+            'posSource': _pos_source(origin),
             'logId': log_id,
             'localTime': None,
         })
@@ -218,6 +239,29 @@ def build_inputs(session, parcours_id: int) -> dict:
                          include_labs=parcours.include_labs, include_dnf=parcours.include_dnf)
     return {'parcours': parcours_store.to_dict(parcours), **payload,
             **parcours_store.adjustments(session, parcours.id)}
+
+
+def collect_codes(session, parcours_id: int) -> dict:
+    """Caches du parcours que le favori « Mes logs » peut relire (§ 15.3 du
+    plan) : {codes, unread}. Trouvailles et DNF de la plage, étapes exclues
+    comprises (elles peuvent revenir) et caches sans position aussi (la
+    fiche lue la donnera) ; ni Labs ni lieux, sans fiche sur le site.
+    `unread` : celles qui n'ont pas encore de fiche lue par le favori
+    (`cache_ref` d'un export `mygcflow-logs`)."""
+    parcours = parcours_store.get(session, parcours_id)
+    start, end = parcours.date_start, parcours.date_end
+    codes = {code for (code,) in session.query(Geocache.gc_code).filter(
+        Geocache.found.is_(True),
+        Geocache.date_find >= datetime.combine(start, time.min),
+        Geocache.date_find < datetime.combine(end + timedelta(days=1), time.min),
+    )}
+    if parcours.include_dnf:
+        codes.update(code for _, code, _ in _my_logs(session, start, end)[1])
+    codes = sorted(code for code in codes if code)
+    refs = _cache_refs(session, codes)
+    unread = [code for code in codes
+              if code not in refs or refs[code].source_format != SOURCE_LOGS]
+    return {'codes': codes, 'unread': unread}
 
 
 def finds_extent(session) -> dict:

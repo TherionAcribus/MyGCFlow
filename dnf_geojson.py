@@ -99,10 +99,11 @@ def build_dnf_features(session) -> dict:
         dates = sorted(d for d in dnf_dates[code] if resolved is None or d <= resolved)
 
         pick = _pick(refs.get(code), finds.get(code))
-        lat, lon = pick("latitude"), pick("longitude")
-        if lat is None or lon is None:
+        position = log_store.cache_position(refs.get(code), finds.get(code))
+        if position is None:
             pending += 1
             continue
+        lat, lon, _origin = position
         placed = pick("placed_date", "published_date")
         features.append({
             "type": "Feature",

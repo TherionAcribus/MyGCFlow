@@ -9,12 +9,13 @@
 //   dnfPages,            // pages de « Vos journaux » (DNF) : [{codes, guids, next}]
 //   ownedPages,          // pages de « Vos caches » (absent = repli logs poseur)
 //   caches,              // {code|guid : {name, token, placed, lat, lng,
-//                        //             owner, favs, archived, failStatus}}
+//                        //             owner, favs, archived, failStatus,
+//                        //             corrected: [lat, lng]}}
 //   books,               // {jeton : [[entrée,…],…]} — carnet par page idx
 //   finish,              // ordre passé à window.mygcflowLogsFinish après la
 //                        // collecte (dates ambiguës)
 //   state,               // réponse de /api/logs/receive/state
-//                        // ({since, pending, status}) ;
+//                        // ({since, pending, status, request}) ;
 //   confirmPending       // réponse à « collecter quand même ? » (défaut oui)
 //   confirms,            // file de réponses aux confirm() successifs
 //   savedStorage,        // contenu initial de localStorage ({clé: valeur})
@@ -199,6 +200,10 @@ function cachePageHtml(code, info) {
   const title = `<title>${info.title || `${code} - ${info.name || 'cache'}`}</title>`;
   return `${title}<html><body>` +
     `<script>var userToken = '${info.token}'; var mapLatLng = {"lat":${info.lat},"lng":${info.lng},"type":${info.typeId || 2}};</script>` +
+    // Coordonnées corrigées ([lat, lng]) : forme de la fiche relevée le
+    // 2026-11-21 — mapLatLng porterait alors les corrigées.
+    (info.corrected ? `<script>window.userDefinedCoords = {"status":"success","data":{"isUserDefined":true,` +
+      `"newLatLng":[${info.corrected[0]},${info.corrected[1]}],"oldLatLng":[${info.lat},${info.lng}]}};</script>` : '') +
     `<span id="ctl00_ContentBody_CacheName">${info.name || code}</span>` +
     `<div id="ctl00_ContentBody_mcd1"><a href="/profile">${info.owner || 'Poseur'}</a></div>` +
     `<div id="ctl00_ContentBody_mcd2">Hidden : ${info.placed || '01/02/2010'}</div>` +
@@ -263,6 +268,7 @@ async function fakeFetch(url, options) {
       since: state.since === undefined ? null : state.since,
       scope: state.scope || 'all',
       pending: state.pending || null,
+      request: state.request || null,
     });
   }
   if (target.includes('/api/logs/receive/fragment')) {

@@ -71,7 +71,19 @@ class DnfFeaturesTests(unittest.TestCase):
         self.assertEqual(props["source_kind"], "dnf")
         self.assertEqual((props["date_find"], props["resolved_date"]), ("2021-05-02", None))
         self.assertEqual(props["cache_type"], "Multi-cache")
-        self.assertEqual(features["GC9ZZZZ"]["geometry"]["coordinates"], [7.0, 48.0])
+        # Fiche corrigée par le joueur : ses coordonnées, pas les publiées.
+        self.assertEqual(features["GC9ZZZZ"]["geometry"]["coordinates"], [7.01, 48.01])
+
+    def test_my_finds_before_the_published_coordinates(self):
+        # Mystery en DNF puis trouvée : la fiche ne donne que les publiées,
+        # le My Finds la position réelle (corrigée sur le site).
+        doc = _doc()
+        doc["coverage"] = []
+        doc["caches"] = [{"gc_code": "GC1ABCD", "type": "Unknown Cache", "latitude": 49.1, "longitude": 6.1}]
+        doc["logs"] = [_log(1, "GC1ABCD", 3, "2016-01-01")]
+        self._commit(doc)
+        self._find("GC1ABCD", "2016-02-01", lat=49.2, lon=6.2)
+        self.assertEqual(self._features()[0]["GC1ABCD"]["geometry"]["coordinates"], [6.2, 49.2])
 
     def test_my_finds_places_and_resolves(self):
         self._commit(_doc())

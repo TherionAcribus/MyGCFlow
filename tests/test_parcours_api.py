@@ -5,11 +5,13 @@ import os
 import tempfile
 import unittest
 from datetime import date, datetime
+from pathlib import Path
+from unittest import mock
 
 import migrations
 from app import create_app
 from extensions import db
-from models import Geocache, LabCollection, LabDiscovery, LogCollection, LogEvent
+from models import CacheRef, Geocache, LabCollection, LabDiscovery, LogCollection, LogEvent
 
 ME = 1234567
 OTHER = 7654321
@@ -209,6 +211,36 @@ class InputsTests(_Base):
         self.patch(f"/api/parcours/{parcours['id']}", {"include_labs": False})
         self.assertEqual(self.inputs(parcours["id"])["days"][0]["stops"], [])
 
+    def test_stop_positions_follow_cache_position(self):
+        # Fiches lues par le favori : publiées + corrigées (mystery résolue),
+        # publiées seules, position saisie à la main.
+        self.find("GC1", "2025-07-12", lat=45.01, lon=5.01, cache_type="Unknown Cache")
+        self.find("GC3", "2025-07-20", lat=45.03, lon=5.03)   # DNF trouvée plus tard
+        self.logs((10, "GC2", "2025-07-12", 3, ME),
+                  (11, "GC3", "2025-07-12", 3, ME),
+                  (12, "GC4", "2025-07-12", 3, ME))
+        collection = db.session.query(LogCollection).one()
+        common = dict(collection_id=collection.id, cache_type="Unknown Cache")
+        db.session.add_all([
+            CacheRef(gc_code="GC1", latitude=45.0, longitude=5.0,
+                     corrected_latitude=45.01, corrected_longitude=5.01, **common),
+            CacheRef(gc_code="GC2", latitude=45.0, longitude=5.0,
+                     corrected_latitude=45.02, corrected_longitude=5.02, **common),
+            CacheRef(gc_code="GC3", latitude=45.0, longitude=5.0, **common),
+            CacheRef(gc_code="GC4", latitude=45.04, longitude=5.04,
+                     coordinate_source="user_correction", **common),
+        ])
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        stops = {s["key"]: s for s in self.inputs(parcours["id"])["days"][0]["stops"]}
+        self.assertEqual({key: (s["lat"], s["posSource"]) for key, s in stops.items()}, {
+            "GC1": (45.01, "corrected"),
+            "dnf:10": (45.02, "corrected"),
+            # Le My Finds passe avant les publiées de la fiche.
+            "dnf:11": (45.03, None),
+            "dnf:12": (45.04, "manual"),
+        })
+
     def test_finds_extent_for_the_creation_form(self):
         self.assertEqual(self.get("/api/parcours").get_json()["finds"], {"first": None, "last": None})
         self.find("GC1", "2024-03-02")
@@ -219,6 +251,70 @@ class InputsTests(_Base):
 
     def test_unknown_parcours(self):
         self.assertEqual(self.get("/api/parcours/999/inputs").status_code, 404)
+
+
+class CollectRequestTests(_Base):
+    """Compléter depuis geocaching.com : demande de collecte limitée aux
+    caches du parcours (§ 15.3 du plan)."""
+
+    def setUp(self):
+        super().setUp()
+        import blueprints.gc_logs as gc_logs_mod
+        patcher = mock.patch.object(gc_logs_mod, "PENDING_ROOT", Path(self.tmpdir.name) / "pending")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.gc_logs = gc_logs_mod
+
+    def collect(self, parcours_id):
+        response = self.get(f"/api/parcours/{parcours_id}/collect")
+        self.assertEqual(response.status_code, 200)
+        return response.get_json()
+
+    def test_request_lifecycle(self):
+        self.find("GC1", "2025-07-12")
+        self.find("GC2", "2025-07-12")
+        self.find("GC9", "2025-08-01")                     # hors plage
+        self.logs((10, "GC3", "2025-07-12", 3, ME))        # DNF
+        collection = db.session.query(LogCollection).one()
+        db.session.add(CacheRef(collection_id=collection.id, gc_code="GC1",
+                                latitude=45.0, longitude=5.0, source_format="mygcflow-logs"))
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        state = self.collect(parcours["id"])
+        self.assertEqual((state["total"], state["unread"], state["request"]), (3, 2, None))
+
+        response = self.post(f"/api/parcours/{parcours['id']}/collect", {"mode": "unread"})
+        self.assertEqual(response.status_code, 200, response.get_json())
+        self.assertEqual(response.get_json()["request"]["count"], 2)
+        asked = self.gc_logs.current_collect_request()
+        self.assertEqual((asked["codes"], asked["label"], asked["parcours_id"]),
+                         (["GC2", "GC3"], "Vacances", parcours["id"]))
+
+        # Un autre parcours voit la demande en attente, sans pouvoir la retirer.
+        other = self.create(name="Autre")
+        self.assertEqual(self.collect(other["id"])["otherRequest"], "Vacances")
+        self.delete(f"/api/parcours/{other['id']}/collect")
+        self.assertIsNotNone(self.gc_logs.current_collect_request())
+
+        response = self.post(f"/api/parcours/{parcours['id']}/collect", {"mode": "all"})
+        self.assertEqual(response.get_json()["request"]["count"], 3)
+        response = self.delete(f"/api/parcours/{parcours['id']}/collect")
+        self.assertIsNone(response.get_json()["request"])
+        self.assertIsNone(self.gc_logs.current_collect_request())
+
+    def test_refusals(self):
+        self.find("GC1", "2025-07-12")
+        self.find("GC2", "2025-07-12")
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        url = f"/api/parcours/{parcours['id']}/collect"
+        self.assertEqual(self.post(url, {"mode": "rien"}).status_code, 400)
+        with mock.patch.object(self.gc_logs, "MAX_COLLECT_CODES", 1):
+            self.assertEqual(self.post(url, {"mode": "all"}).status_code, 400)
+        empty = self.create(name="Vide", date_start="2024-01-01", date_end="2024-01-02")
+        self.assertEqual(self.post(f"/api/parcours/{empty['id']}/collect", {}).status_code, 400)
+        self.assertEqual(self.get("/api/parcours/999/collect").status_code, 404)
+        self.assertIsNone(self.gc_logs.current_collect_request())
 
 
 class AdjustmentTests(_Base):

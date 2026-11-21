@@ -353,6 +353,9 @@ function newState() {
     // Périmètre choisi dans l'application : « all » (journal + caches),
     // « dnf » (journal seul) ou « owned » (caches seules).
     scope: 'all',
+    // Demande de la page Parcours ({ id, label, codes }) : seules ces
+    // caches sont lues — null = collecte ordinaire.
+    request: null,
     dateSamples: [],
     // Reprise de collecte : identifiant du passage (fragments serveur),
     // codes traités (y compris par un passage précédent, restaurés),
@@ -825,7 +828,14 @@ async function mygcflowCollectGcLogs(state, note) {
     // le dernier export — alors sur TOUS vos types de logs (une trouvaille
     // récente sur une vieille cache en DNF doit la faire relire aussi).
     // Périmètre « caches posées seulement » : bloc sauté entièrement.
-    if (state.scope !== 'owned') {
+    // Demande de la page Parcours : ni journal ni « Vos caches », ses
+    // seules caches, vos logs seuls (aucune couverture n'en découle).
+    if (state.request) {
+      var asked = state.request.codes.filter(function (c) { return /^GC[0-9A-Z]+$/.test(String(c)); });
+      console.log('[mygcflow-logs] Parcours « ' + (state.request.label || '?') + ' » : ' + asked.length + ' cache(s).');
+      addRefs({ codes: asked, guids: [] }, true);
+    }
+    if (!state.request && state.scope !== 'owned') {
       var journalUrl = state.since
         ? '/my/logs.aspx?s=1'
         : '/my/logs.aspx?s=1&lt=' + DNF_TYPE_ID;
@@ -840,7 +850,7 @@ async function mygcflowCollectGcLogs(state, note) {
     }
 
     // « Vos caches » : périmètre « DNF seulement » → bloc sauté.
-    if (state.scope !== 'dnf') {
+    if (!state.request && state.scope !== 'dnf') {
       var owned = new Set();
       var listed = 0;
       try {

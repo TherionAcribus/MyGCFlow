@@ -82,6 +82,42 @@ def get_collection(session) -> LogCollection | None:
     return session.query(LogCollection).filter_by(uid=COLLECTION_UID).one_or_none()
 
 
+# Origine d'une position de cache (cache_position).
+POSITION_MANUAL = "manual"
+POSITION_CORRECTED = "corrected"
+POSITION_MYFINDS = "myfinds"
+POSITION_PUBLISHED = "published"
+
+
+def cache_position(ref, row):
+    """(latitude, longitude, origine) d'une cache, ou None sans position.
+
+    `ref` : fiche `cache_ref` (ou None), `row` : ligne `geocache` du My
+    Finds (ou None). Dans l'ordre : position saisie dans « Caches sans
+    position », coordonnées corrigées par le joueur sur geocaching.com, My
+    Finds (qui porte déjà les corrigées du site au jour de l'export), puis
+    coordonnées publiées de la fiche. Le My Finds passe avant les publiées :
+    pour une mystery résolue, la fiche ne les donne qu'à défaut de mieux."""
+    def pair(obj, lat, lon):
+        if obj is None:
+            return None
+        values = getattr(obj, lat), getattr(obj, lon)
+        return None if None in values else values
+
+    if ref is not None and ref.coordinate_source == USER_CORRECTION:
+        manual = pair(ref, "latitude", "longitude")
+        if manual:
+            return (*manual, POSITION_MANUAL)
+    for obj, lat, lon, origin in (
+            (ref, "corrected_latitude", "corrected_longitude", POSITION_CORRECTED),
+            (row, "latitude", "longitude", POSITION_MYFINDS),
+            (ref, "latitude", "longitude", POSITION_PUBLISHED)):
+        found = pair(obj, lat, lon)
+        if found:
+            return (*found, origin)
+    return None
+
+
 def _is_newer(incoming_at, stored_at) -> bool:
     """La version entrante l'emporte-t-elle ? Sans date d'export d'un côté
     ou de l'autre, l'ordre d'import fait foi (la plus récente importée)."""
@@ -328,6 +364,12 @@ def _summary(plan: _Plan, parsed: LogsParseResult) -> dict:
         "categories": {who: dict(c) for who, c in categories.items()},
         "coverage": len(parsed.meta.get("coverage") or []),
         "pending_coordinates": plan.pending_codes,
+        # Bilan d'une collecte de parcours (page Parcours) : fiches aux
+        # coordonnées corrigées et PF donnés par le joueur dans le fichier.
+        "caches_corrected": sum(1 for c in parsed.caches if c.corrected_latitude is not None),
+        "favorites_mine": sum(1 for d in parsed.logs if d.favorite is True
+                              and plan.account_user_id is not None
+                              and d.author_id == plan.account_user_id),
     }
 
 

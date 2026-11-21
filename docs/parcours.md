@@ -78,8 +78,16 @@ un voyage), chacun avec ses étapes :
 |---|---|---|---|
 | `find` | `geocache` (My Finds) | code GC | `logId` : plus petit identifiant de log de trouvaille du même jour (`log_event`, compte du joueur) |
 | `lab` | `lab_discovery` résolue et datée | `lab:<uuid d'étape>` (sinon `local_uid`) | `localTime` : heure locale réelle (`lab_geojson.found_local_time`) |
-| `dnf` | `log_event` (DNF du joueur) | `dnf:<log_id>` | `logId` ; position de la fiche `cache_ref`, sinon du My Finds |
+| `dnf` | `log_event` (DNF du joueur) | `dnf:<log_id>` | `logId` |
 
+- **Position** d'une trouvaille ou d'un DNF : `log_store.cache_position`
+  (fiche `cache_ref` et ligne `geocache`), dans l'ordre : position saisie
+  dans « Caches sans position », coordonnées corrigées lues par le favori,
+  My Finds (qui porte déjà les corrigées du site au jour de l'export),
+  coordonnées publiées de la fiche. `posSource` vaut `corrected` ou
+  `manual` dans les deux premiers cas (`null` sinon) ; la liste des étapes
+  l'affiche (« coordonnées corrigées », « position saisie ») et le porte
+  en `data-pos-source`.
 - `logId` croît avec l'ordre de **saisie** des logs, pas forcément avec
   l'ordre de passage. `logsAvailable` est faux sans logs importés ou sans
   compte identifié.
@@ -776,6 +784,40 @@ Vérifié une fois contre le vrai FOSSGIS (2026-11-16) : deux trajets à pied
 à Annecy, 670 m / 9 min et 1,26 km / 17 min, 89 et 68 points.
 openrouteservice n'est testé que par des réponses simulées (format v2).
 
+## Compléter depuis geocaching.com (lot 12 : `parcours_collect.js`)
+
+Carte de l'onglet Données (MyGCFlow_Plan_Parcours.md § 15). Le favori
+« MyGCFlow — Mes logs » (docs/logs-geocaching.md) relit les caches **du
+parcours ouvert seulement** : fiche (coordonnées corrigées, total de PF,
+état) et carnet filtré sur les logs du joueur (PF donné). Le My Finds
+porte déjà les coordonnées corrigées des trouvailles : l'apport tient aux
+PF, aux DNF (fiche et position) et à l'indication « coordonnées
+corrigées » de la liste.
+
+- **Demande** : `POST /api/parcours/<id>/collect` (`mode` : `unread` =
+  caches sans fiche lue par le favori, `all` = toutes). Codes =
+  trouvailles et DNF de la plage (`collect_codes`, parcours_dataset.py),
+  étapes exclues et caches sans position comprises ; ni Labs ni lieux. Au
+  plus `MAX_COLLECT_CODES` (1 000) : au-delà, refus. `GET` donne
+  `total`, `unread`, la demande du parcours (`request`) ou celle d'un autre
+  (`otherRequest`, remplacée par la suivante) ; `DELETE` l'annule. Une
+  seule demande à la fois, fichier `logs_collect_request.json` des
+  données (24 h), servi au favori par `/api/logs/receive/state`.
+- **Collecte** : le favori confirme (« Parcours « … » : relire ses N
+  caches ? »), ne lit que ces codes et n'envoie aucune couverture ; chaque
+  fragment porte `X-MyGCFlow-Request`. Au scellement, l'aperçu garde
+  `request_id` / `parcours_id` et la demande disparaît.
+- **Validation** : la carte relève `/api/logs/status` toutes les 4 s tant
+  qu'une demande ou un export est attendu (onglet Données affiché) :
+  `collection_in_progress.request_id` → « Collecte en cours », puis
+  `pending_import` du parcours → bilan (`caches_in_file`,
+  `caches_corrected`, `favorites_mine`) et « Valider l'import »
+  (`/api/logs/import/commit`, tâche suivie, puis rechargement du
+  parcours). Pas la fenêtre d'aperçu de « Mes logs » : sans couverture,
+  rien ne peut être retiré.
+- Relevé e2e : `getParcoursCollectSnapshot()` (`collect`, `pending`,
+  `progress`, `polling`).
+
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
 Journée par journée, la dernière étape de la veille orientant la suivante.
@@ -883,6 +925,12 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   `tests/js/parcours_photo_layout.test.mjs` (cadrage, réglages, légende,
   créneaux, trois placements, effets, dessin sur un contexte factice),
   `tests/js/app_mode.test.mjs`.
+- Compléter depuis geocaching.com : `CollectRequestTests` et
+  `test_stop_positions_follow_cache_position` de test_parcours_api.py,
+  demande et favori dans tests/test_logs_api.py, mode « demande » du cœur
+  dans `tests/js/logs_collect_core.test.mjs`, e2e
+  `tests/e2e/parcours-gc-collect.spec.mjs` (export du favori simulé par un
+  envoi direct à `/api/logs/receive/fragment`).
 - E2E : `tests/e2e/parcours-page.spec.mjs` (lots 0 à 2),
   `tests/e2e/parcours-adjust.spec.mjs` (lot 3),
   `tests/e2e/parcours-photos.spec.mjs` (lot 4, photos de

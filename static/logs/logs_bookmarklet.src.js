@@ -13,7 +13,8 @@
 // reste à valider avant l'import. Ce qu'elle lit : tout (journaux et
 // caches posées), ou une seule famille selon le périmètre choisi dans la
 // carte « Mes logs » — relu avant chaque passage via
-// /api/logs/receive/state.
+// /api/logs/receive/state. Quand la page Parcours a posé une demande,
+// seulement les caches de ce parcours (vos logs, sans couverture).
 //
 // Contrainte d'écriture, vérifiée par les tests : commentaires en lignes
 // entières uniquement, chaque instruction terminée par un point-virgule,
@@ -42,7 +43,10 @@
     pendingstop: __T_PENDINGSTOP__,
     badtoken: __T_BADTOKEN__,
     resumeask: __T_RESUMEASK__,
-    resume: __T_RESUME__
+    resume: __T_RESUME__,
+    requestask: __T_REQUESTASK__,
+    requeststop: __T_REQUESTSTOP__,
+    request: __T_REQUEST__
   };
 
   // @include logs_collect_core.js
@@ -97,14 +101,37 @@
     }
     var since = (info && info.since) || null;
     var state = newState();
-    state.since = since;
-    // Périmètre choisi dans l'application (« all » par défaut — un état
-    // plus ancien ne le porte pas). « owned » rend `since` sans objet :
-    // il ne borne que les DNF, qui ne sont pas lus — ne pas l'annoncer.
-    state.scope = (info && info.scope) || 'all';
-    if (since && state.scope !== 'owned') note('since', since, 0, 0);
-    if (state.scope === 'dnf') say(MESSAGES.scopednf);
-    if (state.scope === 'owned') say(MESSAGES.scopeowned);
+    // Demande de la page Parcours : seulement ses caches, sans couverture —
+    // périmètre et `since` de la carte « Mes logs » ne s'appliquent pas.
+    var asked = info && info.request;
+    state.request = asked && asked.id && Array.isArray(asked.codes) && asked.codes.length ? asked : null;
+    if (state.request) {
+      var minutes = Math.ceil(state.request.codes.length * 2 * LOGS_DELAY_MS / 60000);
+      if (!confirm(fill(MESSAGES.requestask, state.request.label || '?', state.request.codes.length, minutes))) {
+        say(MESSAGES.requeststop);
+        return;
+      }
+      state.since = null;
+      state.scope = 'all';
+      note('request', state.request.label || '?', state.request.codes.length, 0);
+    } else {
+      state.since = since;
+      // Périmètre choisi dans l'application (« all » par défaut — un état
+      // plus ancien ne le porte pas). « owned » rend `since` sans objet :
+      // il ne borne que les DNF, qui ne sont pas lus — ne pas l'annoncer.
+      state.scope = (info && info.scope) || 'all';
+      if (since && state.scope !== 'owned') note('since', since, 0, 0);
+      if (state.scope === 'dnf') say(MESSAGES.scopednf);
+      if (state.scope === 'owned') say(MESSAGES.scopeowned);
+    }
+    // En-têtes des envois : la demande servie accompagne chaque fragment,
+    // l'application suit ainsi la collecte et reconnaît son export.
+    var sendHeaders = function (extra) {
+      var headers = { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': TOKEN };
+      if (state.runId) headers['X-MyGCFlow-Run-Id'] = state.runId;
+      if (state.request) headers['X-MyGCFlow-Request'] = state.request.id;
+      return Object.assign(headers, extra || {});
+    };
 
     // --- Reprise de collecte -----------------------------------------
     // Le PLAN (file de caches à lire + avancement, ~25 Ko) tient dans
@@ -129,6 +156,7 @@
           created: state.planCreated || Date.now(),
           since: state.since,
           scope: state.scope,
+          req: state.request ? state.request.id : null,
           order: state.order || state.prefOrder || null,
           me: { name: state.me.name, id: state.me.id },
           dnfComplete: !!state.dnf.listingComplete,
@@ -169,11 +197,7 @@
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-MyGCFlow-Token': TOKEN,
-          'X-MyGCFlow-Run-Id': state.runId
-        },
+        headers: sendHeaders(),
         body: JSON.stringify(doc)
       });
       if (r.ok || r.status === 202) {
@@ -202,7 +226,8 @@
     var resumable = saved && saved.v === 1 && saved.runId &&
       Array.isArray(saved.queue) && saved.queue.length > 0 &&
       typeof saved.done === 'number' && saved.done >= 0 && saved.done <= saved.queue.length &&
-      (!saved.created || Date.now() - saved.created <= PLAN_MAX_AGE_MS);
+      (!saved.created || Date.now() - saved.created <= PLAN_MAX_AGE_MS) &&
+      (saved.req || null) === (state.request ? state.request.id : null);
     if (resumable && confirm(fill(MESSAGES.resumeask, saved.done, saved.queue.length, 0))) {
       state.resume = saved;
       state.runId = saved.runId;
@@ -224,11 +249,7 @@
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-MyGCFlow-Token': TOKEN,
-          'X-MyGCFlow-Run-Id': state.runId
-        },
+        headers: sendHeaders(),
         body: JSON.stringify({
           format: LOGS_FORMAT,
           schema_version: LOGS_SCHEMA_VERSION,
@@ -246,13 +267,8 @@
     var send = async function (order) {
       var built = mygcflowGcLogsFinish(state, order);
       say(MESSAGES.sending);
-      var headers = { 'Content-Type': 'application/json', 'X-MyGCFlow-Token': TOKEN };
-      var url = ORIGIN + '/api/logs/receive';
-      if (state.runId) {
-        url += '/fragment';
-        headers['X-MyGCFlow-Run-Id'] = state.runId;
-        headers['X-MyGCFlow-Final'] = '1';
-      }
+      var url = ORIGIN + '/api/logs/receive' + (state.runId ? '/fragment' : '');
+      var headers = sendHeaders(state.runId ? { 'X-MyGCFlow-Final': '1' } : null);
       var response = await fetch(url, {
         method: 'POST',
         mode: 'cors',

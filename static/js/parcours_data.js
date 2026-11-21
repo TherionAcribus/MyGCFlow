@@ -69,6 +69,7 @@ import {
     trailAt,
 } from './parcours_timeline.mjs';
 import { cameraPoseAt } from './parcours_camera.mjs';
+import { initParcoursCollect, parcoursCollectSnapshot, refreshParcoursCollect } from './parcours_collect.js';
 import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
 import {
     CONFIDENCE_ANCHORED,
@@ -307,6 +308,8 @@ export async function initParcoursPage() {
     bindRouting();
     bindParcoursStyle();
     bindFileDrop();
+    // Compléter depuis geocaching.com : rechargement des étapes après import.
+    initParcoursCollect({ reload: () => (selectedId != null ? openParcours(selectedId) : Promise.resolve()) });
     pkg.syncOverlayVisibility?.();
     await refreshParcoursList({ select: readLastId() });
 }
@@ -344,6 +347,7 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         applyTimeline();
         status = 'idle';
         signalLoaded();
+        refreshParcoursCollect(null);
     }
 }
 
@@ -393,6 +397,7 @@ export async function openParcours(id) {
     renderStops();
     applyTimeline({ fit: true });
     signalLoaded();
+    refreshParcoursCollect(id);
 }
 
 // --- Chronologie et moteur ------------------------------------------------------
@@ -1987,6 +1992,10 @@ function stopDetail(stop) {
     else if (stop.kind === KIND_PLACE) parts.push(categoryLabel(stop.category) || t('lieu'));
     else if (stop.kind === KIND_BASE) { const c = categoryLabel(stop.category); if (c) parts.push(c); }
     else if (stop.type) parts.push(stop.type);
+    // Position autre que celle publiée : corrigée sur geocaching.com ou
+    // saisie dans « Caches sans position » (log_store.cache_position).
+    if (stop.posSource === 'corrected') parts.push(t('coordonnées corrigées'));
+    else if (stop.posSource === 'manual') parts.push(t('position saisie'));
     const reason = reasonLabel(stop.reason);
     if (reason) parts.push(reason);
     if (stop.movedFrom) parts.push(t('déplacée du ${day}', { day: formatDay(stop.movedFrom, { day: 'numeric', month: 'short' }) }));
@@ -2247,6 +2256,7 @@ function renderStopRow(stop, day, movable) {
     item.dataset.kind = stop.kind;
     item.dataset.confidence = stop.confidence;
     item.dataset.reason = stop.reason;
+    if (stop.posSource) item.dataset.posSource = stop.posSource;
     if (stop.placeId != null) item.dataset.placeId = stop.placeId;
     // Survol ou focus clavier : le point correspondant du plan s'entoure
     // d'un halo (lien liste ↔ carte).
@@ -5505,4 +5515,5 @@ export function getParcoursSnapshot() {
 if (isParcoursPage()) {
     registerLifecycleEngine(PARCOURS_ENGINE);
     window.getParcoursSnapshot = getParcoursSnapshot;
+    window.getParcoursCollectSnapshot = parcoursCollectSnapshot;
 }

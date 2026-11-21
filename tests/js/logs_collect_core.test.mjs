@@ -59,6 +59,51 @@ test('isUserDefined faux ou JSON illisible : rien de corrigé', () => {
   assert.equal(core.userDefinedCoords('window.userDefinedCoords = {"status":;'), null);
 });
 
+// Collecte d'une demande de la page Parcours, réseau simulé : seules les
+// caches demandées sont lues (ni journal ni « Vos caches »), le carnet est
+// filtré sur vos logs, et l'export ne déclare aucune couverture.
+test('demande de parcours : seulement ses caches, sans couverture', async () => {
+  const fetched = [];
+  const page = (code) => `<script>var userToken = 'tk${code}';
+mapLatLng = {"lat":45.1,"lng":3.5,"type":2,"name":"x"};</script>`;
+  const ctx = vm.createContext({
+    console: { log() {}, warn() {}, error() {}, table() {} },
+    setTimeout, URLSearchParams,
+    window: { serverParameters: { 'user:info': { username: 'Moi' } } },
+    document: { querySelectorAll: () => [] },
+    DOMParser: class { parseFromString() { return { ...emptyDoc, title: '' }; } },
+    fetch: async (url) => {
+      fetched.push(url);
+      const base = 'https://www.geocaching.com';
+      if (url.startsWith('/seek/geocache.logbook')) {
+        const code = new URLSearchParams(url.split('?')[1]).get('tkn').slice(2);
+        return {
+          ok: true, status: 200, url: base + url,
+          json: async () => ({
+            status: 'success', pageInfo: { totalPages: 1 },
+            data: [{ LogID: code === 'GC1' ? 101 : 102, LogTypeID: 2, LogType: 'Found it',
+              Visited: '2025-07-12', AccountID: 7, UserName: 'Moi', FavoritePointUsed: code === 'GC1' }],
+          }),
+        };
+      }
+      return { ok: true, status: 200, url: base + url, text: async () => page(url.split('/').pop()) };
+    },
+  });
+  vm.runInContext(source, ctx);
+  vm.runInContext('LOGS_DELAY_MS = 0;', ctx);
+  const state = ctx.newState();
+  state.request = { id: 'a'.repeat(32), label: 'Vacances', codes: ['GC1', 'GC2', 'pas-un-code'] };
+  await ctx.mygcflowCollectGcLogs(state, () => {});
+
+  assert.deepEqual(fetched.filter((u) => !u.startsWith('/seek/geocache.logbook')),
+    ['/account/settings/preferences', '/geocache/GC1', '/geocache/GC2']);
+  assert.ok(fetched.filter((u) => u.startsWith('/seek/geocache.logbook')).every((u) => u.includes('sp=true')));
+  // Copie JSON : les objets créés dans le contexte vm ont d'autres prototypes.
+  const payload = JSON.parse(JSON.stringify(ctx.buildPayload(state, 'YMD').payload));
+  assert.deepEqual(payload.coverage, []);
+  assert.deepEqual(payload.logs.map((l) => [l.gc_code, l.favorite]), [['GC1', true], ['GC2', false]]);
+});
+
 test('ancienne fiche : mapLatLng fusionné côté serveur', () => {
   const html = `<script>mapLatLng = {"lat":45.12345,"lng":3.54321,"isUserDefined":true,"oldLatLngDisplay":"N 45° 06.000' E 003° 30.000'"};</script>`;
   const info = core.parseCachePage(emptyDoc, html, 'https://www.geocaching.com/geocache/GC1TEST');

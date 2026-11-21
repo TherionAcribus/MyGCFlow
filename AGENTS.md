@@ -169,7 +169,12 @@ Autres repères :
   (non remontés dans un statut, donc sans symptôme e2e). Même famille :
   `logs_collect_scope` (périmètre du favori « Mes logs » : « all » /
   « dnf » / « owned ») est une préférence globale — la remettre à « all »
-  en sortie de spec (`POST /api/logs/bookmarklet/scope`).
+  en sortie de spec (`POST /api/logs/bookmarklet/scope`). Même famille :
+  la demande de collecte de la page Parcours (`logs_collect_request.json`
+  des données, servie au favori par `/receive/state` et qui y prime sur le
+  périmètre) — un spec qui en pose une la retire en sortie
+  (`DELETE /api/parcours/<id>/collect`) AVANT de supprimer le parcours,
+  sinon elle reste 24 h ; exemple : `parcours-gc-collect.spec.mjs`.
 - `reportSave` (saved_indicator.mjs) résout `true`/`false`, ne rejette
   jamais : un `try/catch` autour est du code mort — l'échec se teste sur le
   retour (`revertSetting` de dnf_data.js/owner_data.js remet alors la case

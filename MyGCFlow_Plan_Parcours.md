@@ -107,7 +107,9 @@ parcours entier. Détails dans docs/parcours.md › Barre de chronologie.
 
 **Suite (2026-11-21)** : compléter un parcours depuis geocaching.com
 (coordonnées corrigées, PF donnés, parkings), collecte limitée aux caches
-du parcours en cours (§ 15, lots 11 à 15). **Rien n'est codé.**
+du parcours en cours (§ 15, lots 11 à 15). **Lots 11 et 12 livrés le
+2026-11-21** ; restent 13 (PF et compteurs), 14 (parkings), 15
+(déplacer une étape).
 
 Écarts et constats des lots 8 à 10 :
 - **Côté « auto »** : vers le centre de l'écran, mais haut-droite tant que
@@ -878,7 +880,7 @@ masquer, cadrage), lieux proposés, réglages d'affichage.
 
 ## 15. Compléter un parcours depuis geocaching.com (lots 11 à 15)
 
-Ajouté le 2026-11-21. **Rien n'est codé.**
+Ajouté le 2026-11-21. **Lots 11 et 12 livrés le même jour** (§ 15.9).
 
 Aujourd'hui, les étapes viennent du My Finds (position, type, D/T, date),
 des Labs et des DNF de la carte « Mes logs ». Les manques qui pèsent sur
@@ -1034,11 +1036,11 @@ geocaching.com ») :
 | Étape | Ordre de priorité de la position |
 |---|---|
 | `find` | My Finds (`geocache`), qui porte déjà les corrigées ; `cache_ref` ne sert qu'à savoir qu'elles le sont (`posSource`) |
-| `dnf` | corrigées → correction manuelle ou fiche (`cache_ref.latitude`) → My Finds |
+| `dnf` | saisie à la main → corrigées → My Finds → publiées de la fiche |
 
-- Chaque étape porte `posSource` (`corrected`, `published`, `manual`) et,
-  quand elle est déplacée, `published: {lon, lat}`. La liste des étapes
-  affiche une pastille « coordonnées corrigées ».
+- Chaque étape porte `posSource` (`corrected`, `manual` ou `null`). Le
+  détail de l'étape dans la liste l'indique (« coordonnées corrigées »,
+  « position saisie »).
 - Les clés d'étape ne changent pas : rangs forcés, heures épinglées et
   exclusions survivent. Le cache d'itinéraires étant indexé par
   coordonnées, les trajets touchés sont redemandés d'eux-mêmes. Les photos
@@ -1110,21 +1112,42 @@ Rétablir des ajustements.
 
 ### 15.9 Lots
 
-- **Lot 11 : positions déjà connues.** Détection des coordonnées
-  corrigées : faite le 2026-11-21 (voir § 15.1). Reste : `corrected_latitude` lu par `_dnf_stops` et `_find_stops`, `posSource`
-  et `published` servis, pastille dans la liste. Même correction dans
-  `dnf_geojson.py` (position d'un DNF de mystery sur la carte
-  principale). pytest + unitaires.
-- **Lot 12 : collecte du parcours.** Demande (route, fichier, plafond),
-  `request` dans `/receive/state`, mode « demande » du favori (file,
-  bandeau, reprise, en-tête final), `request_id` dans le manifest. Aperçu
-  partagé (`_logs_preview_modal.html`, `logs_preview.js`), carte « Compléter
-  depuis geocaching.com », compteurs du bilan, rechargement des entrées.
-  pytest (demande, état, scellement, absence de couverture, horizon DNF
-  inchangé, lecteurs de `cache_ref`) + test de la chaîne monoligne du
-  favori + `parcours-gc-collect.spec.mjs` (export simulé envoyé à
-  `/receive/fragment` avec l'en-tête, aperçu, validation, étape déplacée).
-  Logs vidés en entrée et en sortie (`POST /api/logs/clear`).
+- **Lot 11 : positions déjà connues. Livré le 2026-11-21.** Détection
+  des coordonnées corrigées (§ 15.1) ; règle commune
+  `log_store.cache_position` (saisie à la main → corrigées → My Finds →
+  publiées), utilisée par `_find_stops`, `_dnf_stops` et `dnf_geojson.py` ;
+  `posSource` servi et affiché dans le détail de l'étape. Écart : pas de
+  champ `published` (aucun usage) ni de pastille, une mention dans le
+  détail suffit. Le My Finds passe désormais **avant** les publiées de la
+  fiche : sans cela, le parseur corrigé aurait ramené un DNF de mystery
+  trouvée plus tard à sa position publiée. Limite connue : une correction
+  retirée sur le site reste en base (un champ absent ne vide jamais la
+  valeur stockée).
+- **Lot 12 : collecte du parcours. Livré le 2026-11-21.** Demande
+  (`/api/parcours/<id>/collect` GET/POST/DELETE, fichier
+  `logs_collect_request.json`, plafond 1 000), `request` dans
+  `/receive/state`, mode « demande » du favori (confirmation, file, reprise
+  liée à la demande, en-tête `X-MyGCFlow-Request` sur chaque fragment),
+  `request_id` / `parcours_id` dans les manifests, compteurs
+  `caches_corrected` / `favorites_mine` du bilan, carte « Compléter depuis
+  geocaching.com » (`parcours_collect.js`). Doc : docs/parcours.md et
+  docs/logs-geocaching.md. Écarts :
+  - **pas de fenêtre d'aperçu partagée** : la carte montre un bilan court
+    et « Valider l'import ». Sans couverture, l'export ne peut rien
+    retirer : la fenêtre détaillée de « Mes logs » (retraits, rejets)
+    n'apporte rien ici, et son extraction aurait touché gc_logs.js pour
+    rien ;
+  - **caches sans position comprises** dans la demande : la fiche lue les
+    place (le premier jet passait par `build_days`, qui les écarte) ;
+  - **« collecte complète » préservée** : `logs_collect_full_once` n'est
+    pas consommé tant qu'une demande est servie (la collecte de parcours ne
+    relit pas les DNF) ;
+  - **une demande refusée** dans la confirmation du favori arrête tout :
+    pour une collecte ordinaire, l'annuler dans la page Parcours.
+  Tests : pytest (demande, expiration, état, scellement, refus), favori
+  réel sous Node (harnais `bookmarklet_harness.cjs`, qui sait maintenant
+  servir une fiche corrigée), cœur en mode demande
+  (`logs_collect_core.test.mjs`), `parcours-gc-collect.spec.mjs`.
 - **Lot 13 : PF et compteurs.** `found_count` (contrat, log_formats,
   migration, favori), marque et effet PF, balise `{pf}`, bulle. Unitaires
   + spec (relevé `stopStyles` étendu).

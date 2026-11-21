@@ -19,6 +19,7 @@ import parcours_suggest
 import parcours_tracks
 from settings_manager import get_settings_manager
 from extensions import db
+from . import gc_logs
 from .core import render_app_page
 
 parcours_bp = Blueprint('parcours', __name__)
@@ -154,6 +155,68 @@ def parcours_inputs(parcours_id):
     except store.ParcoursError as exc:
         return _store_error(exc)
     return jsonify(payload)
+
+
+# --- Compléter depuis geocaching.com (§ 15.3 du plan) ----------------------------
+#
+# La page pose une demande de collecte limitée aux caches du parcours ; le
+# favori « Mes logs » la lit dans /api/logs/receive/state (blueprints/gc_logs.py).
+
+def _collect_state(parcours_id: int) -> dict:
+    codes = parcours_dataset.collect_codes(db.session, parcours_id)
+    current = gc_logs.current_collect_request()
+    mine = current is not None and current.get('parcours_id') == parcours_id
+    return {
+        'success': True,
+        'total': len(codes['codes']),
+        'unread': len(codes['unread']),
+        'max': gc_logs.MAX_COLLECT_CODES,
+        'request': ({'id': current['id'], 'count': len(current['codes']),
+                     'created_at': current['created_at']} if mine else None),
+        # Demande d'un autre parcours en attente : la nouvelle la remplacera.
+        'otherRequest': current.get('label') if current is not None and not mine else None,
+        'bookmarklet': bool(get_settings_manager().get_app_settings().logs_receive_token),
+    }
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/collect', methods=['GET'])
+def parcours_collect_state(parcours_id):
+    try:
+        return jsonify(_collect_state(parcours_id))
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/collect', methods=['POST'])
+def parcours_collect_request(parcours_id):
+    mode = (request.get_json(silent=True) or {}).get('mode', 'unread')
+    if mode not in ('unread', 'all'):
+        return jsonify({'success': False, 'message': _('Choix de caches invalide')}), 400
+    try:
+        parcours = store.get(db.session, parcours_id)
+        codes = parcours_dataset.collect_codes(db.session, parcours_id)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    chosen = codes['unread'] if mode == 'unread' else codes['codes']
+    if not chosen:
+        return jsonify({'success': False, 'message': _('Aucune cache à relire')}), 400
+    if len(chosen) > gc_logs.MAX_COLLECT_CODES:
+        return jsonify({'success': False, 'message': _(
+            '%(count)s caches à relire : le favori en lit %(max)s au plus par collecte',
+            count=len(chosen), max=gc_logs.MAX_COLLECT_CODES)}), 400
+    gc_logs.save_collect_request(parcours.name, chosen, parcours_id=parcours_id)
+    return jsonify(_collect_state(parcours_id))
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/collect', methods=['DELETE'])
+def parcours_collect_cancel(parcours_id):
+    current = gc_logs.current_collect_request()
+    if current is not None and current.get('parcours_id') == parcours_id:
+        gc_logs.clear_collect_request(current['id'])
+    try:
+        return jsonify(_collect_state(parcours_id))
+    except store.ParcoursError as exc:
+        return _store_error(exc)
 
 
 # --- Ajustements manuels (lot 3) ------------------------------------------------
