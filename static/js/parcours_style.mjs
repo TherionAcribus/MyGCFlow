@@ -13,6 +13,7 @@ export const PARCOURS_STYLE_CHOICES = Object.freeze({
     color_by: Object.freeze(['kind', 'day', 'type']),
     numbers: Object.freeze(['trip', 'day', 'none']),
     plan_line: Object.freeze(['dashed', 'solid', 'none']),
+    play_past: Object.freeze(['normal', 'dim', 'dim_days']),
 });
 export const PARCOURS_STYLE_RANGES = Object.freeze({
     size: Object.freeze([7, 18]),
@@ -44,6 +45,9 @@ export function parcoursStyleDefaults() {
         day_palette: [...PARCOURS_DAY_PALETTE],
         trail_width: 3,
         trail_opacity: 100,
+        play_current: true,
+        play_past: 'normal',
+        play_preview: false,
     };
 }
 
@@ -80,6 +84,8 @@ export function normalizeParcoursStyle(raw, current = null) {
     const src = isObject(raw) ? raw : {};
     const choice = (key) => (PARCOURS_STYLE_CHOICES[key].includes(src[key]) ? src[key]
         : (PARCOURS_STYLE_CHOICES[key].includes(base[key]) ? base[key] : defaults[key]));
+    const bool = (key) => (typeof src[key] === 'boolean' ? src[key]
+        : (typeof base[key] === 'boolean' ? base[key] : defaults[key]));
     const out = {
         render: choice('render'),
         numbers: choice('numbers'),
@@ -89,6 +95,9 @@ export function normalizeParcoursStyle(raw, current = null) {
         plan_line: choice('plan_line'),
         trail_color: color(src.trail_color, color(base.trail_color, defaults.trail_color)),
         day_palette: palette(src.day_palette, palette(base.day_palette, defaults.day_palette)),
+        play_current: bool('play_current'),
+        play_past: choice('play_past'),
+        play_preview: bool('play_preview'),
     };
     for (const [key, range] of Object.entries(PARCOURS_STYLE_RANGES)) {
         out[key] = integer(src[key], integer(base[key], defaults[key], range), range);
@@ -201,6 +210,32 @@ export function paintTextColor(paint) {
 export function trailColorFor(style, dayIndex) {
     if (style?.trail_by_day) return dayColor(dayIndex, style.day_palette);
     return color(style?.trail_color, parcoursStyleDefaults().trail_color);
+}
+
+// Pendant la lecture, ce qu'est une étape comptée à la position `q` du
+// moteur (quanta) : `current` (le géocacheur y est, de son arrivée à son
+// départ), `past` (quittée — selon `play_past`, toutes ou seulement celles
+// des journées d'avant `day`), `upcoming` (à venir) ou `normal`.
+export function playPhase(stop, q, { day = null, past = 'normal' } = {}) {
+    const arrival = Number(stop?.q);
+    const depart = Number.isFinite(Number(stop?.departQ)) ? Number(stop.departQ) : arrival;
+    if (!Number.isFinite(arrival) || q < arrival) return 'upcoming';
+    if (q < depart) return 'current';
+    if (past === 'dim') return 'past';
+    if (past === 'dim_days' && day != null && stop.day < day) return 'past';
+    return 'normal';
+}
+
+// Anneau de l'étape en cours : rayon qui pulse d'une seconde d'écran
+// (10 quanta), de `radius` + 6 à `radius` + 12 px — assez large pour
+// déborder du géocacheur, posé sur l'étape pendant la visite. Fonction de la
+// position du moteur seule : identique en aperçu et en capture image par
+// image.
+export const CURRENT_RING_PERIOD = 10;
+
+export function currentRingRadius(radius, elapsedQ) {
+    const phase = (2 * Math.PI * Math.max(0, Number(elapsedQ) || 0)) / CURRENT_RING_PERIOD;
+    return Math.max(1, Number(radius) || 1) + 9 - 3 * Math.cos(phase);
 }
 
 // Apparition d'une étape pendant la lecture : la pastille grossit de rien à

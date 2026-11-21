@@ -56,6 +56,11 @@ class ParcoursStyleTests(unittest.TestCase):
         self.assertIs(ps.coerce_parcours_style({"trail_by_day": True})["trail_by_day"], True)
         self.assertIs(ps.coerce_parcours_style({"trail_by_day": "yes"})["trail_by_day"], False)
         self.assertIs(ps.coerce_parcours_style({}, {"trail_by_day": True})["trail_by_day"], True)
+        # Lecture : étape en cours, étapes passées, aperçu de la suite.
+        out = ps.coerce_parcours_style({"play_current": False, "play_past": "dim_days", "play_preview": True})
+        self.assertEqual((out["play_current"], out["play_past"], out["play_preview"]), (False, "dim_days", True))
+        out = ps.coerce_parcours_style({"play_current": 0, "play_past": "fade", "play_preview": "yes"})
+        self.assertEqual((out["play_current"], out["play_past"], out["play_preview"]), (True, "normal", False))
         # Palette des journées : 2 à 12 couleurs valides, en minuscules.
         self.assertEqual(ps.coerce_parcours_style({"day_palette": ["#ABCDEF", "red", "#000000"]})["day_palette"],
                          ["#abcdef", "#000000"])

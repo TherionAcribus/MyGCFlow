@@ -127,6 +127,7 @@ import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './pa
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
 import {
     PARCOURS_PALETTE_SIZE,
+    currentRingRadius,
     dayColor,
     hexToRgba,
     nextPaletteColor,
@@ -134,6 +135,7 @@ import {
     numberFontPx,
     paintTextColor,
     parcoursStyleDefaults,
+    playPhase,
     stopNumberLabels,
     stopPaint,
     stopPopScale,
@@ -507,7 +509,7 @@ function parcoursBegin(startDate, endDate, at) {
     endDay = endDate instanceof Date ? dayIndexOf(quantumBase, endDate) : (timeline?.quanta || 1) - 1;
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
-    playStopsDrawn = { drawn: 0, popping: 0, headColor: null, piles: [] };
+    playStopsDrawn = emptyPlayStops();
     pkg.hideMapPopup?.();
     closeFan();
     setPlanVisible(false);
@@ -1020,15 +1022,7 @@ function drawPlayHead(event) {
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.restore();
     }
-    timeline.stops.forEach((stop, i) => {
-        if (stop.kind === KIND_BASE || (stop.kind === KIND_PLACE && stop.q <= currentQ)) {
-            const badge = categoryBadgeStyle(stop.kind, stopIconClass(stop.category, stop.icon));
-            for (const style of badge ? [placeStyle(stop.kind), badge] : [placeStyle(stop.kind)]) {
-                context.setStyle(style);
-                context.drawGeometry(new ol.geom.Point(projected[i]));
-            }
-        }
-    });
+    drawPlayPlaces(context);
     const { solid: color } = trailOptions(headDayIndex(trailAt(timeline, currentQ).current));
     playStopsDrawn.headColor = color;
     const position = ol.proj.fromLonLat([head.lon, head.lat]);
@@ -1063,12 +1057,39 @@ const NIGHT_ALPHA = 0.5;
 // comme au repos (« 4–5 », puis « 4–6 »…), à la place de leur première
 // étape. Dans l'ordre de la lecture ; une étape qui arrive fait grossir sa
 // pastille — ou sa pile — de rien à sa taille (stopPopScale).
-let playStopsDrawn = { drawn: 0, popping: 0, headColor: null, piles: [] };
+//
+// Lecture plus lisible (`play_*` du thème) : l'étape en cours entourée d'un
+// anneau qui pulse, les étapes passées atténuées, un aperçu pâle des étapes
+// à venir de la journée — ces deux derniers en rendu « pastilles » : en
+// points du thème, les points WebGL apparaissent seuls.
+let playStopsDrawn = emptyPlayStops();
+
+function emptyPlayStops() {
+    return { drawn: 0, popping: 0, headColor: null, piles: [], current: null, ring: null, dimmed: 0, preview: 0, places: 0 };
+}
+
+// Journée de la chronologie où est le géocacheur : celle du trajet en cours
+// (la nuit : le lendemain), sinon de la dernière étape atteinte.
+function playDay() {
+    const { current } = trailAt(timeline, currentQ);
+    if (current) return timeline.stops[timeline.legs[current.leg].to]?.day ?? 0;
+    let day = 0;
+    for (const stop of timeline.stops) {
+        if (stop.q > currentQ) break;
+        day = stop.day;
+    }
+    return day;
+}
 
 function drawPlayStops(context, resolution) {
+    const style = stopStyle();
     const labels = currentStopLabels();
-    const themed = stopStyle().render === RENDER_THEME;
+    const themed = style.render === RENDER_THEME;
+    const past = themed ? 'normal' : style.play_past;
+    const day = playDay();
     const point = new ol.geom.Point([0, 0]);
+    playStopsDrawn = { ...playStopsDrawn, current: null, ring: null, dimmed: 0, preview: 0 };
+    if (!themed && style.play_preview) drawPlayPreview(context, day, labels);
     const reached = [];
     timeline.stops.forEach((stop, i) => {
         if (isCountedStop(stop) && stop.q <= currentQ) reached.push(i);
@@ -1077,11 +1098,15 @@ function drawPlayStops(context, resolution) {
         stopStyle().size * STACK_DISTANCE);
     let drawn = 0;
     let popping = 0;
+    let dimmed = 0;
     const piles = [];
     for (const { rep, members } of stacks) {
         const head = timeline.stops[reached[rep]];
         const newest = timeline.stops[reached[members[members.length - 1]]];
         const pile = members.length > 1;
+        const phases = members.map((m) => playPhase(timeline.stops[reached[m]], currentQ, { day, past }));
+        const currentIndex = phases.indexOf('current');
+        const dim = phases.every((phase) => phase === 'past');
         const label = pile
             ? stackLabel(members.map((m) => labels.get(timeline.stops[reached[m]].key) || ''))
             : labels.get(head.key) || '';
@@ -1093,14 +1118,156 @@ function drawPlayStops(context, resolution) {
         if (scale <= 0.01) continue;
         if (scale !== 1) popping++;
         point.setCoordinates(projected[reached[rep]]);
-        for (const style of styles) {
-            if (!style) continue;
-            context.setStyle(scale === 1 ? style : scaledStyle(style, scale));
+        if (currentIndex >= 0) {
+            const current = timeline.stops[reached[members[currentIndex]]];
+            playStopsDrawn.current = current.key;
+            if (style.play_current) {
+                playStopsDrawn.ring = current.key;
+                const radius = themed ? themePointRadius() + 2 : (pile ? style.size + 2 : style.size);
+                drawCurrentRing(context, point, paint.fill, radius * scale, currentQ - current.q);
+            }
+        }
+        if (dim) dimmed++;
+        for (const s of styles) {
+            if (!s) continue;
+            const shown = dim ? dimmedStyle(s, DIM_PAST) : s;
+            context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
             context.drawGeometry(point);
         }
         drawn += members.length;
     }
-    playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles };
+    playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles, dimmed };
+}
+
+// Anneau de l'étape en cours (currentRingRadius : pulse d'une seconde
+// d'écran), de la couleur de l'étape, sur un voile blanc léger.
+function drawCurrentRing(context, point, color, radius, elapsedQ) {
+    context.setStyle(new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: currentRingRadius(radius, elapsedQ),
+            fill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.35)' }),
+            stroke: new ol.style.Stroke({ color, width: 3 }),
+        }),
+    }));
+    context.drawGeometry(point);
+}
+
+// Étapes passées : plus transparentes et un peu plus petites ; aperçu de la
+// suite : à peine visibles. Variantes d'un style, gardées tant qu'il vit.
+const DIM_PAST = { opacity: 0.4, scale: 0.85 };
+const DIM_PREVIEW = { opacity: 0.3, scale: 0.8 };
+const dimmedStyles = new WeakMap();
+
+function dimmedStyle(style, { opacity, scale }) {
+    let variants = dimmedStyles.get(style);
+    if (!variants) dimmedStyles.set(style, (variants = new Map()));
+    const key = `${opacity}:${scale}`;
+    if (!variants.has(key)) {
+        const copy = style.clone();
+        const image = copy.getImage();
+        if (image) {
+            image.setOpacity(opacity);
+            image.setScale(scale);
+            const shift = image.getDisplacement();
+            if (shift[0] || shift[1]) image.setDisplacement([shift[0] * scale, shift[1] * scale]);
+        }
+        const text = copy.getText();
+        if (text) {
+            text.setScale(scale);
+            text.setOffsetX(text.getOffsetX() * scale);
+            text.setOffsetY(text.getOffsetY() * scale);
+            const fill = text.getFill()?.getColor();
+            if (typeof fill === 'string' && fill.startsWith('#')) text.setFill(new ol.style.Fill({ color: hexToRgba(fill, opacity) }));
+        }
+        variants.set(key, copy);
+    }
+    return variants.get(key);
+}
+
+// Aperçu de la suite : étapes comptées de la journée pas encore atteintes,
+// pâles, reliées depuis le géocacheur par un fil pointillé dans l'ordre du
+// parcours (la nuit : celles du lendemain).
+function drawPlayPreview(context, day, labels) {
+    const upcoming = [];
+    timeline.stops.forEach((stop, i) => {
+        if (isCountedStop(stop) && stop.day === day && stop.q > currentQ) upcoming.push(i);
+    });
+    if (!upcoming.length) return;
+    const head = headAt(timeline, currentQ);
+    const coords = upcoming.map((i) => projected[i]);
+    if (head) coords.unshift(ol.proj.fromLonLat([head.lon, head.lat]));
+    const width = stopStyle().trail_width;
+    context.setStyle(cachedStyle(`preview:line:${trailOptions(day).solid}`, () => new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: hexToRgba(trailOptions(day).solid, 0.5),
+            width: Math.max(1, width * 0.5),
+            lineDash: [3, 5],
+        }),
+    })));
+    if (coords.length > 1) context.drawGeometry(new ol.geom.LineString(coords));
+    const point = new ol.geom.Point([0, 0]);
+    for (const i of upcoming) {
+        const stop = timeline.stops[i];
+        context.setStyle(dimmedStyle(numberedStyleFor(paintOfStop(stop), labels.get(stop.key) || ''), DIM_PREVIEW));
+        point.setCoordinates(projected[i]);
+        context.drawGeometry(point);
+    }
+    playStopsDrawn.preview = upcoming.length;
+}
+
+// Lieux et bases pendant la lecture, avec leur pastille de catégorie, par
+// dessus la nuit : un lieu apparaît à son arrivée, une base à sa première
+// journée (une seule fois, quelles que soient ses occurrences), les deux en
+// grossissant. Un lieu où se trouve le géocacheur est entouré, un lieu
+// quitté suit le réglage des étapes passées.
+let baseFirstMemo = { timeline: null, firstQ: new Map() };
+
+function baseFirstQ() {
+    if (baseFirstMemo.timeline !== timeline) {
+        const firstQ = new Map();
+        for (const stop of timeline?.stops || []) {
+            if (stop.kind === KIND_BASE && !(firstQ.get(stop.placeId) <= stop.q)) firstQ.set(stop.placeId, stop.q);
+        }
+        baseFirstMemo = { timeline, firstQ };
+    }
+    return baseFirstMemo.firstQ;
+}
+
+function drawPlayPlaces(context) {
+    const style = stopStyle();
+    const past = style.render === RENDER_THEME ? 'normal' : style.play_past;
+    const day = playDay();
+    const firstQ = baseFirstQ();
+    const bases = new Set();
+    const point = new ol.geom.Point([0, 0]);
+    let places = 0;
+    timeline.stops.forEach((stop, i) => {
+        if (stop.kind !== KIND_BASE && stop.kind !== KIND_PLACE) return;
+        const base = stop.kind === KIND_BASE;
+        if (base && bases.has(stop.placeId)) return;
+        const from = base ? (firstQ.get(stop.placeId) ?? stop.q) : stop.q;
+        if (from > currentQ) return;
+        if (base) bases.add(stop.placeId);
+        const scale = stopPopScale(currentQ - from);
+        if (scale <= 0.01) return;
+        point.setCoordinates(projected[i]);
+        const phase = base ? 'normal' : playPhase(stop, currentQ, { day, past });
+        if (phase === 'current') {
+            playStopsDrawn.current = stop.key;
+            if (style.play_current) {
+                playStopsDrawn.ring = stop.key;
+                drawCurrentRing(context, point, kindColor(stop.kind), style.size * scale, currentQ - stop.q);
+            }
+        }
+        const badge = categoryBadgeStyle(stop.kind, stopIconClass(stop.category, stop.icon));
+        for (const s of badge ? [placeStyle(stop.kind), badge] : [placeStyle(stop.kind)]) {
+            const shown = phase === 'past' ? dimmedStyle(s, DIM_PAST) : s;
+            context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
+            context.drawGeometry(point);
+        }
+        places++;
+    });
+    playStopsDrawn.places = places;
 }
 
 // Position écran (px, y vers le bas) d'une étape pour le calcul des piles ;
@@ -4213,6 +4380,9 @@ function readStyleUI() {
         color_by: value('parcoursStyleColorBy'),
         trail_by_day: el('parcoursStyleTrailByDay') ? el('parcoursStyleTrailByDay').checked : undefined,
         day_palette: paletteInputs().map((input) => input.value),
+        play_current: el('parcoursStylePlayCurrent') ? el('parcoursStylePlayCurrent').checked : undefined,
+        play_past: value('parcoursStylePlayPast'),
+        play_preview: el('parcoursStylePlayPreview') ? el('parcoursStylePlayPreview').checked : undefined,
         size: value('parcoursStyleSize'),
         colors: Object.fromEntries(Object.entries(styleColorIds()).map(([kind, id]) => [kind, value(id)])),
         plan_line: value('parcoursStylePlanLine'),
@@ -4265,6 +4435,17 @@ export function syncParcoursStyleUI() {
     if (byDay) byDay.checked = style.trail_by_day;
     const trailColor = el('parcoursStyleTrailColor');
     if (trailColor) trailColor.disabled = style.trail_by_day;
+    // Pendant la lecture : atténuation et aperçu en rendu « pastilles » seulement.
+    const themed = style.render === RENDER_THEME;
+    const playCurrent = el('parcoursStylePlayCurrent');
+    if (playCurrent) playCurrent.checked = style.play_current;
+    set('parcoursStylePlayPast', style.play_past);
+    const playPreview = el('parcoursStylePlayPreview');
+    if (playPreview) playPreview.checked = style.play_preview;
+    for (const id of ['parcoursStylePlayPast', 'parcoursStylePlayPreview']) {
+        const input = el(id);
+        if (input) input.disabled = themed;
+    }
     for (const [kind, id] of Object.entries(styleColorIds())) set(id, style.colors[kind]);
     set('parcoursStylePlanLine', style.plan_line);
     set('parcoursStyleTrailColor', style.trail_color);
@@ -4308,6 +4489,7 @@ function syncPaletteInputs(colors) {
 function bindParcoursStyle() {
     const commit = () => commitParcoursStyle(readStyleUI());
     for (const id of ['parcoursStyleRender', 'parcoursStyleNumbers', 'parcoursStyleColorBy', 'parcoursStyleTrailByDay',
+        'parcoursStylePlayCurrent', 'parcoursStylePlayPast', 'parcoursStylePlayPreview',
         'parcoursStyleSize', 'parcoursStylePlanLine',
         'parcoursStyleTrailColor', 'parcoursStyleTrailWidth', ...Object.values(styleColorIds())]) {
         el(id)?.addEventListener('change', commit);

@@ -321,3 +321,55 @@ test('palette des journées modifiable : une couleur, ajout, retrait, retour aux
   await expect(cells.nth(1)).toHaveValue(defaults[1]);
   expect(errors).toEqual([]);
 });
+
+// Lecture plus lisible : étape en cours entourée, étapes passées atténuées
+// (toutes ou les journées précédentes), aperçu de la suite ; une base
+// n'apparaît qu'à sa journée. Caméra fixe, relevé image par image
+// (playStops) attendu dans un même prédicat.
+async function playUntil(page, predicate) {
+  await expect.poll(async () => predicate((await snapshot(page)).playStops), { timeout: 30_000 }).toBe(true);
+}
+
+async function stopPlayback(page) {
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+}
+
+test('lecture plus lisible : étape en cours, étapes passées, aperçu, base à sa journée', async ({ page, request }) => {
+  expect((await request.put('/api/settings', { data: { parcours_playback: { camera: 'fixed' } } })).ok()).toBeTruthy();
+  const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
+  expect((await request.post(`/api/parcours/${id}/places`, {
+    data: { kind: 'base', name: 'Gîte', lat: 45.858, lon: 6.16, date: '2025-07-13' },
+  })).status()).toBe(201);
+  const errors = collectErrors(page);
+  let snap = await openReady(page);
+  expect(snap.style).toMatchObject({ play_current: true, play_past: 'normal', play_preview: false });
+  await openStyleSubtab(page, '#tabPoints');
+  await page.locator('#parcoursStylePlayPast').selectOption('dim');
+  await page.locator('#parcoursStylePlayPreview').check();
+  await expect.poll(async () => (await snapshot(page)).style.play_preview).toBe(true);
+
+  // Deuxième étape du jour 1 : entourée, la première atténuée, la troisième
+  // en aperçu ; la base du jour 2 n'est pas encore là.
+  await page.locator('#btnQuickPreview').click();
+  await playUntil(page, (p) => p.current === 'GCPAR01' && p.ring === 'GCPAR01' && p.dimmed === 1
+    && p.preview === 1 && p.places === 0);
+  await stopPlayback(page);
+
+  // Journées précédentes seulement, sans anneau.
+  await page.locator('#parcoursStylePlayPast').selectOption('dim_days');
+  await page.locator('#parcoursStylePlayCurrent').uncheck();
+  await expect.poll(async () => (await snapshot(page)).style).toMatchObject({ play_past: 'dim_days', play_current: false });
+  await page.locator('#btnQuickPreview').click();
+  await playUntil(page, (p) => p.current === 'GCPAR01' && p.ring === null && p.dimmed === 0);
+  // Jour 2 : les trois étapes du jour 1 atténuées, la base apparue.
+  await playUntil(page, (p) => p.current === 'GCPAR05' && p.dimmed === 3 && p.places === 1);
+  await stopPlayback(page);
+
+  // Rendu « points du thème » : atténuation et aperçu indisponibles.
+  await page.locator('#parcoursStyleRender').selectOption('theme');
+  await expect(page.locator('#parcoursStylePlayPast')).toBeDisabled();
+  await expect(page.locator('#parcoursStylePlayPreview')).toBeDisabled();
+  await expect(page.locator('#parcoursStylePlayCurrent')).toBeEnabled();
+  expect(errors).toEqual([]);
+});

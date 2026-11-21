@@ -127,7 +127,31 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
 | `plan_line` | `dashed`, `solid`, `none` | Style › Trajet (sous-onglet propre à la page) |
 | `trail_color`, `trail_width`, `trail_opacity` | #00b8d4, 1-12 px : 3, 10-100 % : 100 | idem |
 | `trail_by_day` | `false` ; vrai : trait, ligne du plan et géocacheur aux couleurs des journées | idem |
+| `play_current` | `true` : l'étape en cours entourée d'un anneau qui pulse | Style › Points, rubrique « Pendant la lecture » |
+| `play_past` | `normal`, `dim` (étapes quittées atténuées), `dim_days` (celles des journées précédentes) | idem — rendu « pastilles » |
+| `play_preview` | `false` ; vrai : aperçu pâle des étapes à venir de la journée, reliées par un fil | idem — rendu « pastilles » |
 | `day_palette` | 2 à 12 couleurs, `DAY_PALETTE` (8) par défaut | Style › Points, sous « Couleur des étapes » (montrée en couleur par journée ou avec `trail_by_day`) |
+
+**Lecture plus lisible** (depuis le 2026-11-20, `playPhase` et
+`currentRingRadius` de `parcours_style.mjs`) :
+- une étape est « en cours » de son arrivée (`q`) à son départ
+  (`departQ`) : anneau de sa couleur, sur un voile blanc léger, dont le
+  rayon pulse d'une seconde d'écran (de +6 à +12 px : il déborde du
+  géocacheur, posé sur l'étape pendant la visite). Fonction de la position
+  du moteur seule, donc identique en capture image par image. Une pile
+  qui contient l'étape en cours est entourée ; un lieu aussi, pas une base ;
+- étapes passées (`dim` : quittées ; `dim_days` : des journées d'avant
+  celle du géocacheur — la nuit compte pour le lendemain) : opacité 0,4,
+  échelle 0,85 ; une pile n'est atténuée que si toutes ses étapes le sont ;
+- aperçu de la suite : étapes comptées de la journée du géocacheur pas
+  encore atteintes, opacité 0,3, reliées depuis lui par un fil pointillé
+  fin de la couleur du trait ; pas de piles dans l'aperçu ;
+- atténuation et aperçu demandent le rendu « pastilles » (contrôles grisés
+  en points du thème : les points WebGL y apparaissent seuls) ;
+- sans réglage : en lecture, un lieu apparaît en grossissant comme les
+  étapes ; une base n'apparaît qu'à sa première occurrence (sa journée),
+  une seule fois, en grossissant — avant, toutes les bases étaient là dès
+  le début de la vidéo.
 
 **Couleur par journée ou par type** (depuis le 2026-11-20, `stopPaint` de
 `parcours_style.mjs`) :

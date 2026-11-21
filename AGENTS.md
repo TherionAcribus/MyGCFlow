@@ -396,10 +396,15 @@ Autres repères :
   `planLineColors` (date → couleur), `dayColors`, `trail`,
   `themePoints` (couche WebGL des points du thème affichée — masquée en
   rendu « pastilles ») et `playStops` (étapes peintes à la dernière image
-  de lecture, remis à zéro au départ ; `headColor` du géocacheur) de
+  de lecture, remis à zéro au départ ; `headColor` du géocacheur ;
+  `current` / `ring` : étape en cours et étape entourée, `dimmed`,
+  `preview`, `places` : lieux et bases peints) de
   `getParcoursSnapshot()`, exemple dans `parcours-style.spec.mjs`. La
   fixture Parcours n'a pas de DNF : ce spec en simule un en réécrivant
-  `GET /api/parcours/<id>/inputs` (`page.route`). `stopStyle()` (parcours_data.js) mémoïse par
+  `GET /api/parcours/<id>/inputs` (`page.route`). Pour une lecture,
+  attendre une image entière dans UN prédicat (`playUntil` de ce spec :
+  `p.current === 'GCPAR01' && p.dimmed === 1…`) : deux relevés successifs
+  peuvent venir de deux images. `stopStyle()` (parcours_data.js) mémoïse par
   IDENTITÉ de `app.options.point.parcoursStyle` : le remplacer par un nouvel
   objet, jamais le muter en place (sinon plan et trait gardent l'ancien
   style).

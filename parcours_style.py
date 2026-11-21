@@ -12,7 +12,11 @@ Bloc du thème `points.parcours_style` :
   les cas ;
 - ligne du plan entre les étapes d'une journée : pointillés, pleine, aucune ;
 - trait de la lecture (et de la vidéo) : couleur — ou celle de chaque
-  journée —, épaisseur, opacité. Le géocacheur en prend la couleur.
+  journée —, épaisseur, opacité. Le géocacheur en prend la couleur ;
+- pendant la lecture (rendu « pastilles » pour les deux derniers) : étape
+  en cours entourée d'un anneau qui pulse, étapes passées atténuées
+  (toutes, ou celles des journées précédentes), aperçu pâle des étapes à
+  venir de la journée.
 
 Le trait du mode principal (`trail`) ne sert plus sur cette page :
 le thème étant partagé, le régler ici ne change pas la page principale.
@@ -42,6 +46,7 @@ DAY_PALETTE = (
 )
 NUMBERS = ("trip", "day", "none")
 PLAN_LINES = ("dashed", "solid", "none")
+PLAY_PAST = ("normal", "dim", "dim_days")
 
 RANGES = {
     "size": (7, 18),
@@ -76,6 +81,9 @@ def parcours_style_defaults() -> dict:
         "day_palette": list(DAY_PALETTE),
         "trail_width": 3,
         "trail_opacity": 100,
+        "play_current": True,
+        "play_past": "normal",
+        "play_preview": False,
     }
 
 
@@ -127,6 +135,9 @@ def coerce_parcours_style(raw, current: dict | None = None) -> dict:
         "plan_line": _choice(src.get("plan_line"), PLAN_LINES, base["plan_line"]),
         "trail_color": _color(src.get("trail_color"), base["trail_color"]),
         "day_palette": _palette(src.get("day_palette"), _palette(base["day_palette"], defaults["day_palette"])),
+        "play_current": _bool(src.get("play_current"), _bool(base["play_current"], defaults["play_current"])),
+        "play_past": _choice(src.get("play_past"), PLAY_PAST, base["play_past"]),
+        "play_preview": _bool(src.get("play_preview"), _bool(base["play_preview"], defaults["play_preview"])),
     }
     for key, (low, high) in RANGES.items():
         out[key] = _int(src.get(key), base[key], low, high)
@@ -145,6 +156,7 @@ def parcours_style_table() -> dict:
         "kinds": list(KINDS),
         "day_palette": list(DAY_PALETTE),
         "palette_size": list(PALETTE_SIZE),
-        "choices": {"render": list(RENDERS), "color_by": list(COLOR_BY), "numbers": list(NUMBERS), "plan_line": list(PLAN_LINES)},
+        "choices": {"render": list(RENDERS), "color_by": list(COLOR_BY), "numbers": list(NUMBERS), "plan_line": list(PLAN_LINES),
+                    "play_past": list(PLAY_PAST)},
         "ranges": {key: list(r) for key, r in RANGES.items()},
     }

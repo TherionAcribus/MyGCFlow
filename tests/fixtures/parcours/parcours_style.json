@@ -15,6 +15,11 @@
       "solid",
       "none"
     ],
+    "play_past": [
+      "normal",
+      "dim",
+      "dim_days"
+    ],
     "render": [
       "stops",
       "theme"
@@ -51,6 +56,9 @@
     ],
     "numbers": "trip",
     "plan_line": "dashed",
+    "play_current": true,
+    "play_past": "normal",
+    "play_preview": false,
     "render": "stops",
     "size": 11,
     "trail_by_day": false,

@@ -12,7 +12,9 @@ import {
     PARCOURS_STYLE_KINDS,
     PARCOURS_STYLE_RANGES,
     STOP_POP_QUANTA,
+    CURRENT_RING_PERIOD,
     contrastTextColor,
+    currentRingRadius,
     dayColor,
     hexToRgba,
     nextPaletteColor,
@@ -20,6 +22,7 @@ import {
     numberFontPx,
     paintTextColor,
     parcoursStyleDefaults,
+    playPhase,
     stopNumberLabels,
     stopPaint,
     stopPopScale,
@@ -202,4 +205,28 @@ test('case ajoutée à la palette : couleur par défaut absente, sinon une teint
         const gap = Math.abs(hue(c) - hue(extra));
         assert.ok(Math.min(gap, 360 - gap) >= 15, `${c} / ${extra}`);
     }
+});
+
+test('lecture : réglages, phase d’une étape, anneau de l’étape en cours', () => {
+    const d = parcoursStyleDefaults();
+    assert.deepEqual([d.play_current, d.play_past, d.play_preview], [true, 'normal', false]);
+    const out = normalizeParcoursStyle({ play_current: 0, play_past: 'fade', play_preview: 'yes' });
+    assert.deepEqual([out.play_current, out.play_past, out.play_preview], [true, 'normal', false]);
+    assert.equal(normalizeParcoursStyle({}, { play_past: 'dim' }).play_past, 'dim');
+
+    const stop = { q: 10, departQ: 22, day: 0 };
+    assert.equal(playPhase(stop, 5), 'upcoming');
+    assert.equal(playPhase(stop, 10), 'current');
+    assert.equal(playPhase(stop, 21.9), 'current');
+    assert.equal(playPhase(stop, 22), 'normal');
+    assert.equal(playPhase(stop, 30, { past: 'dim' }), 'past');
+    // Journées précédentes seulement.
+    assert.equal(playPhase(stop, 30, { past: 'dim_days', day: 0 }), 'normal');
+    assert.equal(playPhase(stop, 30, { past: 'dim_days', day: 1 }), 'past');
+    // Sans durée (départ = arrivée) : jamais « en cours ».
+    assert.equal(playPhase({ q: 10 }, 10), 'normal');
+
+    assert.equal(currentRingRadius(11, 0), 17);
+    assert.equal(currentRingRadius(11, CURRENT_RING_PERIOD / 2), 23);
+    assert.equal(currentRingRadius(11, CURRENT_RING_PERIOD), 17);
 });
