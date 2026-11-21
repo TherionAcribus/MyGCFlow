@@ -119,7 +119,10 @@ test('lecture et vidéo : étapes à photos plus longues, carte postale filmée 
   const state = await snapshot(page);
   // Une photo : 15 quanta de plus à l'écran.
   expect(state.timeline.quanta).toBe(before + 15);
-  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(1);
+  // La miniature est chargée d'office ; la pleine taille n'arrive que quand
+  // la tête de lecture approche du créneau de la photo (préchargement
+  // fenêtré, vérifié plus bas : elle est là après la lecture).
+  await expect.poll(async () => (await snapshot(page)).photosThumbs).toBe(1);
 
   expect((await request.put('/api/settings', { data: { parcours_animation: { rhythm_mode: 'rate', days_per_second: 20 } } })).ok())
     .toBeTruthy();

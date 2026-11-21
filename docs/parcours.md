@@ -602,9 +602,14 @@ l'étape − heure de la photo.
 - elle est dessinée dans le `postrender` de la couche de la tête, donc
   filmée. L'image est servie par le serveur local (même origine) : le
   canevas reste exportable, ce que vérifie un export du spec e2e ;
-- les photos sont préchargées à l'ouverture : en lecture, une photo encore
-  en chargement n'est simplement pas dessinée. Avant un enregistrement,
-  elles sont attendues (`parcoursPhotosReady`, plafond 3 s, branché sur le
+- les photos sont préchargées fenêtré autour de la position de lecture :
+  les miniatures (vignettes épinglées sur la carte) toutes d'office, les
+  pleines tailles seulement pour les créneaux proches de la tête (~4 jours
+  d'avance, un peu derrière pour l'effacement et les retours) — ouvrir un
+  long parcours très illustré ne télécharge plus des centaines d'images
+  2048 px. En lecture, une photo encore en chargement n'est simplement pas
+  dessinée. Avant un enregistrement, elles sont toutes chargées et
+  attendues (`parcoursPhotosReady`, plafond 3 s, branché sur le
   `whenImagesReady` de l'image par image et, en capture rapide, avant le
   départ de l'animation) : une photo encore en vol ne manque pas dans la
   vidéo.

@@ -103,6 +103,7 @@ import {
     suggestPhotoPlaces,
 } from './parcours_photos.mjs';
 import {
+    PHOTO_FADE_Q,
     PHOTO_LAYOUT_NONE,
     PHOTO_ZOOM_RANGE,
     isFullFrame,
@@ -3477,23 +3478,58 @@ function stopByKey(key) {
     return null;
 }
 
+function loadPhotoImage(id, thumb) {
+    const cache = thumb ? photoThumbs : photoImages;
+    if (cache.has(id)) return;
+    const img = new Image();
+    img.decoding = 'async';
+    // En pause ou au repos, la prochaine image peinte attendrait un geste :
+    // invalider la couche pour que la carte apparaisse dès l'image reçue.
+    img.onload = () => playHeadLayer?.changed();
+    img.src = photoUrl({ id }, thumb);
+    cache.set(id, img);
+}
+
+// Pleine taille préchargée dans une fenêtre autour de la position de
+// lecture : assez d'avance pour finir le téléchargement avant que la
+// carte n'apparaisse, et une marge derrière pour l'effacement et un petit
+// retour en arrière. Les créneaux lointains ne sont pas chargés — sur un
+// long parcours très illustré, l'ouverture ne télécharge plus des
+// centaines de photos 2048 px.
+const PHOTO_AHEAD_Q = 40;     // ~4 jours devant la tête
+const PHOTO_BEHIND_Q = 8;     // effacement + petit retour en arrière
+
+// Pleines tailles des créneaux proches de `currentQ`. Relancée à chaque
+// image de la lecture : le `break` sur les créneaux triés la rend quasi
+// gratuite, seuls les entrants dans la fenêtre déclenchent un chargement.
+function ensurePhotosNear() {
+    if (!timeline) return;
+    for (const slot of photoSlots(timeline)) {
+        if (slot.toQ + PHOTO_FADE_Q < currentQ - PHOTO_BEHIND_Q) continue;
+        if (slot.fromQ > currentQ + PHOTO_AHEAD_Q) break;
+        loadPhotoImage(slot.photoId, false);
+    }
+}
+
 // Charge (une fois) les photos rattachées : la carte postale n'est dessinée
 // qu'une fois l'image décodée. Les miniatures servent aux vignettes laissées
 // sur la carte : des dizaines à chaque image, réduites depuis 320 px plutôt
-// que depuis la photo entière.
-function preloadPhotos() {
-    const wanted = new Set();
-    for (const ids of photoByStop.values()) for (const id of ids) wanted.add(id);
-    for (const id of wanted) {
-        const photo = photoById(id);
-        if (!photo) continue;
-        for (const [cache, thumb] of [[photoImages, false], [photoThumbs, true]]) {
-            if (cache.has(id)) continue;
-            const img = new Image();
-            img.decoding = 'async';
-            img.src = photoUrl(photo, thumb);
-            cache.set(id, img);
+// que depuis la photo entière — elles sont toutes chargées, épinglables à
+// n'importe quel moment de la lecture. Les pleines tailles ne le sont que
+// près de la tête, sauf `all` (enregistrement : toute la chronologie est
+// filmée, tout doit être prêt).
+function preloadPhotos(all = false) {
+    const byId = new Map();
+    for (const photo of inputs?.photos || []) byId.set(photo.id, photo);
+    for (const ids of photoByStop.values()) {
+        for (const id of ids) if (byId.has(id)) loadPhotoImage(id, true);
+    }
+    if (all) {
+        for (const ids of photoByStop.values()) {
+            for (const id of ids) if (byId.has(id)) loadPhotoImage(id, false);
         }
+    } else {
+        ensurePhotosNear();
     }
 }
 
@@ -3505,7 +3541,7 @@ const imageReady = (img) => !!img?.complete && img.naturalWidth > 0;
 // encore en vol ne manque pas dans la vidéo. Hors de la page, ou sans photo,
 // résout immédiatement.
 export function parcoursPhotosReady(timeoutMs = 3000) {
-    preloadPhotos();
+    preloadPhotos(true);
     const pending = [];
     for (const cache of [photoImages, photoThumbs]) {
         for (const img of cache.values()) {
@@ -3568,6 +3604,7 @@ function photoCaptionFor(slot) {
 function drawPhotoCards(event) {
     lastPhotoCards = [];
     if (!timeline) return;
+    ensurePhotosNear();
     const view = photoLayoutView(event);
     lastPhotoView = { width: view.width, height: view.height, ratio: view.ratio };
     const { cards } = photoFrameAt(timeline, currentQ, photoDisplay, view);
@@ -3592,7 +3629,9 @@ function previewPhoto(photoId) {
     if (pkg.previewPlaybackState?.() === 'idle' && !pkg.startPausedPreview?.()) return false;
     if (pkg.previewPlaybackState?.() !== 'paused') return false;
     const q = Math.floor(slot.fromQ + Math.min(5, (slot.toQ - slot.fromQ) / 2));
-    return pkg.seekAnimationToDate?.(dateOfDayIndex(quantumBase, q)) !== false;
+    const ok = pkg.seekAnimationToDate?.(dateOfDayIndex(quantumBase, q)) !== false;
+    if (ok) ensurePhotosNear();
+    return ok;
 }
 
 // --- Réglages d'affichage des photos (lot 9) ---------------------------------------
@@ -5738,6 +5777,7 @@ export function getParcoursSnapshot() {
         cameras: (inputs?.cameras || []).map((c) => ({ ...c })),
         photoStops: Object.fromEntries([...photoByStop].map(([key, ids]) => [key, [...ids]])),
         photosLoaded: [...photoImages.values()].filter((img) => img.complete && img.naturalWidth > 0).length,
+        photosThumbs: [...photoThumbs.values()].filter((img) => img.complete && img.naturalWidth > 0).length,
         // Lot 9 : réglages d'affichage, créneaux et cartes peintes à la
         // dernière image (centre, taille et cadre en px du canevas).
         photoDisplay: { ...photoDisplay },

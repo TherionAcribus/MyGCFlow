@@ -57,7 +57,7 @@ async function withTwoPhotos(page, request) {
     { data: { stopKey: 'GCPAR04', caption: 'Au bord du lac' } });
   await openReady(page);
   await page.locator('a[href="#photos"]').click();
-  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(2);
+  await expect.poll(async () => (await snapshot(page)).photosThumbs).toBe(2);
   return { parcours, phone: ids['telephone.jpg'], camera: ids['appareil.jpg'] };
 }
 
@@ -167,7 +167,7 @@ test('pile : les photos d’une étape se posent les unes sur les autres', async
   await request.patch(`/api/parcours/${parcours.id}/photos/${camera}`, { data: { stopKey: 'GCPAR01' } });
   await openReady(page);
   await page.locator('a[href="#photos"]').click();
-  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(2);
+  await expect.poll(async () => (await snapshot(page)).photosThumbs).toBe(2);
 
   // Sans pile : sur la seconde photo, la première est déjà partie.
   let state = await showPhoto(page, camera);
