@@ -2992,10 +2992,11 @@ function mergeOverrides(patches) {
 
 // Historique des ajustements : une entrée = la liste des ajustements telle
 // qu'elle était AVANT le geste (JSON — copie et comparaison en une fois),
-// ou la position d'un lieu avant son déplacement (`{ place, lat, lon }`).
-// L'annulation rejoue l'état précédent comme des patches, ou repose le
-// lieu. Créer ou supprimer un lieu n'y entre pas (son identifiant
-// changerait) ; un lieu supprimé sort de l'historique.
+// la position d'un lieu avant son déplacement (`{ place, lat, lon }`), sa
+// création (`{ placeCreate }`, annulée en le supprimant) ou sa suppression
+// (`{ placeDelete }`, annulée en le recréant — nouvel id : les références
+// sont recollées par remapPlaceId). L'annulation rejoue l'état précédent
+// comme des patches, ou applique l'opération inverse du geste lieu.
 const UNDO_LIMIT = 50;
 let undoStack = [];
 let redoStack = [];
@@ -3100,6 +3101,48 @@ function placeById(id) {
     return (inputs?.places || []).find((p) => p.id === id) || null;
 }
 
+// Le lieu recréé par une annulation de suppression a un nouvel id : ce qui
+// citait l'ancien est recollé dessus — entrées d'historique (déplacements,
+// créations en attente) et références serveur (ajustements, photos) restées
+// orphelines sous la clé « place:oldId ».
+function remapPlaceId(oldId, newId) {
+    // SQLite peut réattribuer le même id à la recréation : les références
+    // « place:oldId » redeviennent valides d'elles-mêmes, rien à recoller.
+    if (oldId === newId) return;
+    const stale = `"place:${oldId}"`;
+    const fresh = `"place:${newId}"`;
+    for (const stack of [undoStack, redoStack]) {
+        stack.forEach((entry, index) => {
+            if (typeof entry === 'string') {
+                if (entry.includes(stale)) stack[index] = entry.replaceAll(stale, fresh);
+            } else {
+                if (entry.place === oldId) entry.place = newId;
+                if (entry.placeCreate === oldId) entry.placeCreate = newId;
+                if (entry.placeDelete?.id === oldId) entry.placeDelete.id = newId;
+            }
+        });
+    }
+    const oldKey = `place:${oldId}`;
+    const newKey = `place:${newId}`;
+    const patches = (inputs?.overrides || []).filter((o) => o.key === oldKey).map((o) => ({
+        key: newKey,
+        rank: o.rank ?? null,
+        pinnedTime: o.pinnedTime ?? null,
+        day: o.day ?? null,
+        excluded: !!o.excluded,
+        legMode: o.legMode ?? null,
+        visitMin: o.visitMin ?? null,
+        position: o.position ?? null,
+    }));
+    if (patches.length) {
+        patches.push({ key: oldKey, rank: null, pinnedTime: null, day: null, excluded: false, legMode: null, visitMin: null, position: null });
+        writeOverrides(patches);
+    }
+    for (const photo of inputs?.photos || []) {
+        if (photo.stopKey === oldKey) linkPhoto(photo.id, newKey);
+    }
+}
+
 // Dépile `from` vers `to` : l'état actuel passe dans `to`, l'entrée dépilée
 // est rejouée. Une entrée d'un lieu disparu est sautée.
 function stepHistory(from, to) {
@@ -3111,6 +3154,41 @@ function stepHistory(from, to) {
             to.push(back);
             writeOverrides(patchesTo(JSON.parse(entry)), { history: {
                 stack: to, value: back, restore: { stack: from, entry } } });
+            break;
+        }
+        if (entry.placeCreate) {
+            // Annuler une création : supprimer le lieu, qui repartira au
+            // rétablissement avec les données capturées ici.
+            const place = placeById(entry.placeCreate);
+            if (!place) continue;
+            const back = { placeDelete: { ...place } };
+            to.push(back);
+            deletePlace(place.id, { record: false }).then((ok) => {
+                if (ok) return;
+                const index = to.lastIndexOf(back);
+                if (index >= 0) to.splice(index, 1);
+                from.push(entry);
+                updateUndoButtons();
+                renderLayer();
+            });
+            break;
+        }
+        if (entry.placeDelete) {
+            // Annuler une suppression : recréer le lieu. Le serveur donne
+            // un nouvel id — ce qui citait l'ancien est recollé dessus.
+            const data = { ...entry.placeDelete };
+            const oldId = data.id;
+            delete data.id;
+            createPlace(data, { record: false }).then((place) => {
+                if (!place?.id) {
+                    from.push(entry);
+                    updateUndoButtons();
+                    return;
+                }
+                to.push({ placeCreate: place.id });
+                remapPlaceId(oldId, place.id);
+                updateUndoButtons();
+            });
             break;
         }
         const place = placeById(entry.place);
@@ -3195,13 +3273,14 @@ async function reloadAdjustments(forId = selectedId) {
     }, forId);
 }
 
-async function createPlace(data) {
+async function createPlace(data, { record = true } = {}) {
     if (!selectedId || adjustmentsLocked()) return false;
     const pid = selectedId;
     try {
-        await fetchJson(`/api/parcours/${pid}/places`, { method: 'POST', body: JSON.stringify(data) });
+        const { place } = await fetchJson(`/api/parcours/${pid}/places`, { method: 'POST', body: JSON.stringify(data) });
         await reloadAdjustments(pid);
-        return true;
+        if (record && place?.id != null) pushHistory({ placeCreate: place.id });
+        return place || false;
     } catch (error) {
         showToast(error.message, 'error');
         return false;
@@ -3221,18 +3300,27 @@ async function updatePlace(id, data) {
     }
 }
 
-async function deletePlace(id) {
-    if (!selectedId || adjustmentsLocked()) return;
+async function deletePlace(id, { record = true } = {}) {
+    if (!selectedId || adjustmentsLocked()) return false;
     const pid = selectedId;
+    // Données capturées avant la requête : une suppression annulée recrée
+    // le lieu tel qu'il était.
+    const place = placeById(id);
     try {
         await fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'DELETE' });
-        const kept = (entry) => typeof entry === 'string' || entry.place !== id;
+        // Les déplacements et créations citant le lieu deviennent morts ;
+        // les entrées « suppression », elles, restent rejouables.
+        const kept = (entry) => typeof entry === 'string'
+            || (entry.place !== id && entry.placeCreate !== id);
         undoStack = undoStack.filter(kept);
         redoStack = redoStack.filter(kept);
-        updateUndoButtons();
+        if (record && place) pushHistory({ placeDelete: { ...place } });
+        else updateUndoButtons();
         await reloadAdjustments(pid);
+        return true;
     } catch (error) {
         showToast(error.message, 'error');
+        return false;
     }
 }
 

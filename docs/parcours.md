@@ -479,7 +479,11 @@ lecture, même en pause) :
   enregistrée au lâcher (`ol.interaction.Translate`, `movePlaceTo`) ; un
   refus remet le repère en place. Le déplacement entre dans l'historique
   des ajustements (boutons Annuler / Rétablir, Ctrl+Z / Ctrl+Y) ; supprimer
-  le lieu retire ses déplacements de l'historique. Le point provisoire du formulaire de pose
+  le lieu retire ses déplacements de l'historique. La création comme la
+  suppression d'un lieu ou d'une base sont elles-mêmes annulables :
+  l'annulation d'une suppression recrée le lieu tel qu'il était (nouvel
+  identifiant — ses ajustements et ses photos sont recollés sur la
+  nouvelle clé). Le point provisoire du formulaire de pose
   se glisse aussi (coordonnées du formulaire mises à jour) ;
 - **glisser une étape comptée** (lot 15, depuis le 2026-11-21 ; seule ou
   sortie de sa pile par l'éventail) : sa position devient un ajustement

@@ -561,3 +561,90 @@ test('un lieu posé à son heure devient une étape de sa journée', async ({ pa
   await expect(row(page, placeKey)).toContainText('Belvédère');
   await expect(page.locator('#parcoursSummary')).toContainText('5 étapes');
 });
+
+test('annuler / rétablir : création et suppression de lieu', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+  const undo = page.locator('#btnParcoursUndo');
+  const redo = page.locator('#btnParcoursRedo');
+  await expect(undo).toBeDisabled();
+
+  // Création par le formulaire : avec une heure, le lieu devient une étape.
+  await page.locator('#btnParcoursAddPlace').click();
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const form = page.locator('#parcoursPlaceForm');
+  await expect(form).toBeVisible();
+  await form.locator('#parcoursPlaceName').fill('Vue sur la vallée');
+  await form.locator('#parcoursPlaceTime').fill('10:30');
+  await form.locator('#btnParcoursPlaceSave').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  const placeKey = `place:${state.places[0].id}`;
+  expect(state.undoDepth).toBe(1);
+  expect(state.days[0].keys).toContain(placeKey);
+
+  // Annuler la création supprime le lieu ; Rétablir le recrée sous un
+  // nouvel id — mêmes données, même place dans la journée.
+  await undo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places).toEqual([]);
+  expect(state.undoDepth).toBe(0);
+  expect(state.redoDepth).toBe(1);
+
+  await redo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places).toHaveLength(1);
+  expect(state.places[0].name).toBe('Vue sur la vallée');
+  expect(state.places[0].time).toBe('10:30');
+  const newKey = `place:${state.places[0].id}`;
+  expect(state.days[0].keys).toContain(newKey);
+
+  // Le lieu est déplacé d'un rang : l'ajustement cite sa clé.
+  const down = row(page, newKey).locator('.parcours-stop-down');
+  await (await down.isDisabled() ? row(page, newKey).locator('.parcours-stop-up') : down).click();
+  state = await adjusted(page, state.adjustmentRevision);
+  const rankIndex = state.days[0].keys.indexOf(newKey);
+  expect(state.overrides.some((o) => o.key === newKey)).toBe(true);
+
+  // Un second lieu occupe la base : la recréation aura un id différent,
+  // ce qui force le recollage des références sur la nouvelle clé.
+  const other = await request.post(`/api/parcours/${state.selectedId}/places`, {
+    data: { kind: 'place', name: 'Aire de pique-nique', lat: 45.9, lon: 6.12, date: '2025-07-13', time: '12:00' },
+  });
+  expect(other.status()).toBe(201);
+
+  // Suppression par le panneau puis Annuler : le lieu revient sous un
+  // nouvel id, son ajustement recollé sur la nouvelle clé (même rang).
+  await row(page, newKey).locator('.parcours-stop-text').click();
+  await page.locator('.parcours-edit-delete-place').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.map((p) => p.name)).toEqual(['Aire de pique-nique']);
+
+  await undo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  const back = state.places.find((p) => p.name === 'Vue sur la vallée');
+  const backKey = `place:${back.id}`;
+  expect(back.id).not.toBe(state.places.find((p) => p.name === 'Aire de pique-nique').id);
+  expect(state.overrides.some((o) => o.key === backKey)).toBe(true);
+  expect(state.days[0].keys.indexOf(backKey)).toBe(rankIndex);
+
+  await redo.click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.map((p) => p.name)).toEqual(['Aire de pique-nique']);
+  expect(state.days[0].keys).not.toContain(backKey);
+
+  // Une écriture refusée n'ajoute pas d'entrée d'historique.
+  const depth = state.undoDepth;
+  await page.route('**/api/parcours/*/places', (route) => route.abort());
+  await page.locator('#btnParcoursAddPlace').click();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(form).toBeVisible();
+  await form.locator('#parcoursPlaceName').fill('Refusé');
+  await form.locator('#btnParcoursPlaceSave').click();
+  await expect(page.locator('.gcm-toast.show')).toBeVisible();
+  await expect(form).toBeVisible();
+  expect((await snapshot(page)).undoDepth).toBe(depth);
+  await page.locator('#btnParcoursPlaceCancel').click();
+  expect(errors).toEqual([]);
+});
