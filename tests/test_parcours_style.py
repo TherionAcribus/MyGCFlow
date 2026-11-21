@@ -61,6 +61,9 @@ class ParcoursStyleTests(unittest.TestCase):
         self.assertEqual((out["play_current"], out["play_past"], out["play_preview"]), (False, "dim_days", True))
         out = ps.coerce_parcours_style({"play_current": 0, "play_past": "fade", "play_preview": "yes"})
         self.assertEqual((out["play_current"], out["play_past"], out["play_preview"]), (True, "normal", False))
+        # PF donné : cœur sur la pastille, effet à l'arrivée.
+        out = ps.coerce_parcours_style({"favorite_mark": False, "favorite_burst": "no"})
+        self.assertEqual((out["favorite_mark"], out["favorite_burst"]), (False, True))
         # Palette des journées : 2 à 12 couleurs valides, en minuscules.
         self.assertEqual(ps.coerce_parcours_style({"day_palette": ["#ABCDEF", "red", "#000000"]})["day_palette"],
                          ["#abcdef", "#000000"])

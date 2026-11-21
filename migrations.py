@@ -361,6 +361,15 @@ def _v18_categories_lieux_parcours(db):
                 "ALTER TABLE parcours_place ADD COLUMN icon VARCHAR(48)")
 
 
+def _v19_trouvailles_fiche_cache(db):
+    # Logs : nombre de trouvailles d'une cache lu sur sa fiche
+    # (contrat mygcflow-logs, `found_count`). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(cache_ref)")}
+        if "found_count" not in columns:
+            conn.exec_driver_sql("ALTER TABLE cache_ref ADD COLUMN found_count INTEGER")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -380,6 +389,7 @@ MIGRATIONS = [
     (16, _v16_duree_visite_parcours),
     (17, _v17_role_base_parcours),
     (18, _v18_categories_lieux_parcours),
+    (19, _v19_trouvailles_fiche_cache),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

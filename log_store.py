@@ -52,7 +52,7 @@ _LOG_REQUIRED = frozenset({"gc_code", "type_id", "log_date"})
 _CACHE_FIELDS = ("name", "cache_type", "container", "difficulty", "terrain", "country",
                  "state", "latitude", "longitude", "corrected_latitude",
                  "corrected_longitude", "owner_id", "owner_name", "placed_date",
-                 "status", "favorite_points")
+                 "status", "favorite_points", "found_count")
 _COORD_FIELDS = frozenset({"latitude", "longitude"})
 
 

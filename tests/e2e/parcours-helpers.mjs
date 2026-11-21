@@ -96,6 +96,7 @@ export async function resetParcoursSettings(request) {
         enabled: false, provider: 'fossgis', fossgis_url: 'https://routing.openstreetmap.de', ors_key: '',
       },
       parcours_photo_display: PHOTO_DISPLAY_DEFAULTS,
+      parcours_infos_template: '{date} · {heure} · {etapes} / {total} · {km}',
     },
   });
   expect(response.ok()).toBeTruthy();

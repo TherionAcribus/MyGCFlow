@@ -548,6 +548,8 @@ def logs_export():
             "placed_date": _iso(r.placed_date), "status": r.status,
             "favorite_points": r.favorite_points,
         }
+        if r.found_count is not None:
+            item["found_count"] = r.found_count
         if r.corrected_latitude is not None and r.corrected_longitude is not None:
             item["corrected"] = {"latitude": r.corrected_latitude,
                                  "longitude": r.corrected_longitude}

@@ -233,6 +233,9 @@ class CacheRef(db.Model):
     status = db.Column(db.String(16))                    # active/disabled/archived/unknown
     status_at = db.Column(db.DateTime)                   # export qui atteste l'état
     favorite_points = db.Column(db.Integer)
+    # Logs de trouvaille de la fiche (Found it, Attended, Webcam), à la
+    # date de l'export — comme favorite_points.
+    found_count = db.Column(db.Integer)
     source_format = db.Column(db.String(32))
     source_exported_at = db.Column(db.DateTime)
     imported_at = db.Column(db.DateTime)

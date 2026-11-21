@@ -74,6 +74,7 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="etapes">{{ _("Étapes") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="caches">{{ _("Caches") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="labs">{{ _("Labs") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="pf">{{ _("PF donnés") }}</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="km">{{ _("Distance") }}</button>
                     {% else %}
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-info-tag="placees">{{ _("Placées") }}</button>
@@ -84,7 +85,7 @@
                 {% if mode == 'poses' %}
                 <div class="form-text">{{ _("Balises remplacées en direct : {date}, {actives} (non archivées), {posees}, {archivees} et {desactivees} (à la date), {trouvailles}, {favoris}, {dnf}, {logs} (reçus depuis le début), {trouveurs} (joueurs distincts), {total}. Un champ vide masque la ligne.") }}</div>
                 {% elif mode == 'parcours' %}
-                <div class="form-text">{{ _("Balises remplacées en direct : {date} (jour du parcours), {heure} (selon l'affichage des heures de l'onglet Données), {jour} et {jours} (rang du jour, nombre de jours), {etapes} (étapes atteintes), {caches}, {labs}, {km} (distance parcourue), {total} (étapes du parcours). Un champ vide masque la ligne.") }}</div>
+                <div class="form-text">{{ _("Balises remplacées en direct : {date} (jour du parcours), {heure} (selon l'affichage des heures de l'onglet Données), {jour} et {jours} (rang du jour, nombre de jours), {etapes} (étapes atteintes), {caches}, {labs}, {pf} (points favoris donnés), {km} (distance parcourue), {total} (étapes du parcours). Un champ vide masque la ligne.") }}</div>
                 {% else %}
                 <div class="form-text">{{ _("Balises remplacées en direct : {date}, {actives}, {placees}, {archivees}, {total}. Le reste du texte est affiché tel quel ; un champ vide masque la ligne.") }}</div>
                 {% endif %}

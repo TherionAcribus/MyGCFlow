@@ -302,6 +302,7 @@ class CacheDraft:
     placed_date: date | None = None
     status: str | None = None
     favorite_points: int | None = None
+    found_count: int | None = None
     warnings: list = field(default_factory=list)
 
 
@@ -491,6 +492,8 @@ def _parse_cache_record(rec) -> tuple[CacheDraft | None, str | None]:
         w.append(_("état de cache inconnu — ignoré"))
     fp = _safe_int(rec.get("favorite_points"))
     draft.favorite_points = fp if fp is not None and fp >= 0 else None
+    found = _safe_int(rec.get("found_count"))
+    draft.found_count = found if found is not None and found >= 0 else None
     return draft, None
 
 

@@ -241,6 +241,32 @@ class InputsTests(_Base):
             "dnf:12": (45.04, "manual"),
         })
 
+    def test_favorite_and_cache_facts(self):
+        # PF donné : log de trouvaille du jour ; total de PF et trouvailles
+        # de la fiche, datés de l'export qui les porte.
+        self.find("GC1", "2025-07-12")
+        self.find("GC2", "2025-07-12")
+        self.logs((10, "GC1", "2025-07-12", 2, ME), (11, "GC2", "2025-07-12", 2, ME),
+                  (12, "GC3", "2025-07-12", 3, ME))
+        db.session.query(LogEvent).filter_by(log_id=10).one().favorite = True
+        collection = db.session.query(LogCollection).one()
+        db.session.add_all([
+            CacheRef(collection_id=collection.id, gc_code="GC1", favorite_points=87, found_count=1505,
+                     source_exported_at=datetime(2026, 11, 21, 8, 30)),
+            CacheRef(collection_id=collection.id, gc_code="GC3", latitude=45.0, longitude=5.0,
+                     found_count=4, updated_at=datetime(2026, 11, 20)),
+        ])
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        stops = {s["key"]: s for s in self.inputs(parcours["id"])["days"][0]["stops"]}
+        facts = {key: (s["favorite"], s["favoritePoints"], s["foundCount"], s["factsAt"])
+                 for key, s in stops.items()}
+        self.assertEqual(facts, {
+            "GC1": (True, 87, 1505, "2026-11-21"),
+            "GC2": (False, None, None, None),
+            "dnf:12": (False, None, 4, "2026-11-20"),
+        })
+
     def test_finds_extent_for_the_creation_form(self):
         self.assertEqual(self.get("/api/parcours").get_json()["finds"], {"first": None, "last": None})
         self.find("GC1", "2024-03-02")

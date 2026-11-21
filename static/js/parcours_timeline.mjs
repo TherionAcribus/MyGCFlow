@@ -350,12 +350,16 @@ export function stateAt(timeline, qf) {
     let counted = 0;
     let finds = 0;
     let labs = 0;
+    let favorites = 0;
     for (let i = 0; i <= reached; i++) {
         const kind = stops[i].kind;
         if (kind === 'place' || kind === 'base') continue;
         counted++;
         if (kind === 'lab') labs++;
-        else if (kind === 'find') finds++;
+        else if (kind === 'find') {
+            finds++;
+            if (stops[i].favorite) favorites++;
+        }
     }
     const day = timeline.days[dayIndex];
     return {
@@ -363,6 +367,7 @@ export function stateAt(timeline, qf) {
         stopsReached: counted,
         finds,
         labs,
+        favorites,
         dayIndex,
         date: day?.date ?? null,
         dayNumber: day?.dayNumber ?? dayIndex + 1,

@@ -54,6 +54,8 @@
       "#5c940d",
       "#9c5221"
     ],
+    "favorite_burst": true,
+    "favorite_mark": true,
     "numbers": "trip",
     "plan_line": "dashed",
     "play_current": true,

@@ -13,9 +13,12 @@ import {
     PARCOURS_STYLE_RANGES,
     STOP_POP_QUANTA,
     CURRENT_RING_PERIOD,
+    FAVORITE_BURST_QUANTA,
     contrastTextColor,
     currentRingRadius,
     dayColor,
+    favoriteBadge,
+    favoriteBurst,
     hexToRgba,
     nextPaletteColor,
     normalizeParcoursStyle,
@@ -205,6 +208,32 @@ test('case ajoutée à la palette : couleur par défaut absente, sinon une teint
         const gap = Math.abs(hue(c) - hue(extra));
         assert.ok(Math.min(gap, 360 - gap) >= 15, `${c} / ${extra}`);
     }
+});
+
+test('PF donné : réglages, cœur sur la pastille, effet à l’arrivée', () => {
+    const d = parcoursStyleDefaults();
+    assert.deepEqual([d.favorite_mark, d.favorite_burst], [true, true]);
+    const out = normalizeParcoursStyle({ favorite_mark: false, favorite_burst: 'no' }, { favorite_burst: false });
+    assert.deepEqual([out.favorite_mark, out.favorite_burst], [false, false]);
+
+    // Cœur en haut à gauche, hors du centre de la pastille.
+    const badge = favoriteBadge(11);
+    assert.ok(badge.offset[0] < 0 && badge.offset[1] > 0);
+    assert.ok(Math.hypot(...badge.offset) > 11 - badge.radius);
+
+    assert.deepEqual(favoriteBurst(0, 11), []);
+    assert.deepEqual(favoriteBurst(FAVORITE_BURST_QUANTA, 11), []);
+    assert.deepEqual(favoriteBurst(Number.NaN, 11), []);
+    const early = favoriteBurst(2, 11);
+    const late = favoriteBurst(FAVORITE_BURST_QUANTA - 1, 11);
+    assert.equal(early.length, 5);
+    // Vers le haut (y vers le bas : négatif), en s'éloignant et en s'effaçant.
+    assert.ok(early.every((h) => h.dy < 0));
+    assert.ok(Math.hypot(late[2].dx, late[2].dy) > Math.hypot(early[2].dx, early[2].dy));
+    assert.equal(early[2].alpha, 1);
+    assert.ok(late[2].alpha < 0.3);
+    // Éventail symétrique.
+    assert.equal(early[0].dx, -early[4].dx);
 });
 
 test('lecture : réglages, phase d’une étape, anneau de l’étape en cours', () => {

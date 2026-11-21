@@ -379,7 +379,9 @@ Autres repères :
   remise de `resetParcoursSettings`, sinon elle fuit d'un spec à l'autre
   (la caméra fixe d'un spec figerait la vue des suivants). Même famille :
   `parcours_photo_display` (affichage des photos), remis à
-  `PHOTO_DISPLAY_DEFAULTS` par le même helper. Les photos ont leur onglet
+  `PHOTO_DISPLAY_DEFAULTS` par le même helper, et
+  `parcours_infos_template` (un spec qui écrit `#inputInfosTemplate` sur
+  /parcours). Les photos ont leur onglet
   (`a[href="#photos"]`, à ouvrir avant tout `fill`/`toBeVisible`) ; pour
   relever une photo peinte sans rejouer le parcours, « Voir sur la carte »
   (`.parcours-photo-preview`) ouvre l'aperçu en pause sur son créneau, puis

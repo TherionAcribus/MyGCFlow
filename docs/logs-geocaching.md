@@ -156,6 +156,7 @@ de My Finds (DNF jamais résolus, caches posées, archivées…).
 | `placed_date` | date civile de pose déclarée (≠ publication, qui est le log `Publish Listing`) ; déclarative, un log peut la précéder (trouvaille de bêta-test, date modifiée après coup — constaté sur données réelles) : ne jamais rejeter ni réordonner un log sur cette base |
 | `status` | `active` / `disabled` / `archived` / `unknown` — état **à la date d'export** |
 | `favorite_points` | total à la date d'export |
+| `found_count` | facultatif : logs de trouvaille de la fiche (Found it, Attended, Webcam Photo Taken) à la date d'export ; entier ≥ 0, sinon ignoré. Lu par le favori dans `#ctl00_ContentBody_lblFindCounts` |
 
 ### Couverture
 
@@ -304,6 +305,7 @@ bornes de l'animation.
 | `owner_id`, `owner_name`, `placed_date` | |
 | `status`, `status_at` | état et date d'export qui l'atteste |
 | `favorite_points` | |
+| `found_count` | migration v19 |
 | `source_format`, `source_exported_at`, `imported_at`, `updated_at` | |
 
 ### Résolution des coordonnées

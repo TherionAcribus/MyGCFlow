@@ -46,10 +46,11 @@ export const POSES_INFO_TAGS = [
 //            {heure}   : heure affichée (approximative, exacte, tranche ou rien) ;
 //            {jour}, {jours} : rang du jour dans la plage, nombre de jours ;
 //            {etapes}  : étapes atteintes ; {caches}, {labs} : par nature ;
-//            {km}      : distance parcourue ; {total} : étapes du parcours.
+//            {km}      : distance parcourue ; {total} : étapes du parcours ;
+//            {pf}      : points favoris donnés sur les trouvailles atteintes.
 // Même valeur que la préférence `parcours_infos_template` (settings_manager.py).
 export const DEFAULT_PARCOURS_TEMPLATE = '{date} · {heure} · {etapes} / {total} · {km}';
-export const PARCOURS_INFO_TAGS = ['date', 'heure', 'jour', 'jours', 'etapes', 'caches', 'labs', 'km', 'total'];
+export const PARCOURS_INFO_TAGS = ['date', 'heure', 'jour', 'jours', 'etapes', 'caches', 'labs', 'pf', 'km', 'total'];
 
 // {tag} : insensible à la casse, espaces tolérés autour du nom ({ ACTIVES }).
 // Le motif est construit par mode (voir renderInfosTemplate).

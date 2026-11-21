@@ -880,7 +880,7 @@ masquer, cadrage), lieux proposés, réglages d'affichage.
 
 ## 15. Compléter un parcours depuis geocaching.com (lots 11 à 15)
 
-Ajouté le 2026-11-21. **Lots 11 et 12 livrés le même jour** (§ 15.9).
+Ajouté le 2026-11-21. **Lots 11, 12 et 13 livrés le même jour** (§ 15.9).
 
 Aujourd'hui, les étapes viennent du My Finds (position, type, D/T, date),
 des Labs et des DNF de la carte « Mes logs ». Les manques qui pèsent sur
@@ -1148,9 +1148,22 @@ Rétablir des ajustements.
   réel sous Node (harnais `bookmarklet_harness.cjs`, qui sait maintenant
   servir une fiche corrigée), cœur en mode demande
   (`logs_collect_core.test.mjs`), `parcours-gc-collect.spec.mjs`.
-- **Lot 13 : PF et compteurs.** `found_count` (contrat, log_formats,
-  migration, favori), marque et effet PF, balise `{pf}`, bulle. Unitaires
-  + spec (relevé `stopStyles` étendu).
+- **Lot 13 : PF et compteurs. Livré le 2026-11-21.** `found_count`
+  (contrat facultatif, log_formats, `cache_ref.found_count` en migration
+  v19, export) lu par le favori dans les compteurs de la fiche (Found it +
+  Attended + Webcam, dans le HTML : sélecteur relevé de mémoire, à
+  confirmer sur une vraie fiche — le favori prévient dans la console s'il
+  ne les trouve pas) ; au passage, un total de PF à séparateur de milliers
+  (« 1,234 ») était perdu, corrigé. Étapes : `favorite`,
+  `favoritePoints`, `foundCount`, `factsAt`. Réglages du thème
+  `favorite_mark` (cœur au repos, en lecture, dans la vidéo) et
+  `favorite_burst` (envol de cœurs à l'arrivée), balise `{pf}` (bouton
+  « PF donnés »), bulle « 87 PF · 1 505 trouvailles au 21 nov. 2026 »,
+  « PF donné » dans la liste. Écart : pas de nouvelle balise pour les
+  chiffres de la fiche (aucun usage vidéo ne s'est dessiné). Tests :
+  pytest (stockage, entrées), cœur sous Node (harnais : compteurs et PF à
+  séparateurs), `favoriteBadge` / `favoriteBurst`, `{pf}` dans
+  `stateAt`, e2e dans parcours-style et parcours-gc-collect.
 - **Lot 14 : parkings.** `waypoints` (contrat, favori, table), proposition
   de lieux. pytest + spec.
 - **Lot 15 : déplacer une étape** (facultatif) : seul recours pour une

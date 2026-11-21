@@ -10,7 +10,8 @@
 //   ownedPages,          // pages de « Vos caches » (absent = repli logs poseur)
 //   caches,              // {code|guid : {name, token, placed, lat, lng,
 //                        //             owner, favs, archived, failStatus,
-//                        //             corrected: [lat, lng]}}
+//                        //             corrected: [lat, lng],
+//                        //             counts: {type de log : nombre}}}
 //   books,               // {jeton : [[entrée,…],…]} — carnet par page idx
 //   finish,              // ordre passé à window.mygcflowLogsFinish après la
 //                        // collecte (dates ambiguës)
@@ -213,6 +214,12 @@ function cachePageHtml(code, info) {
     `<div class="CacheSize"><img src="/icons/${info.container || 'micro'}.svg"/></div>` +
     `<span id="uxLatLon"></span>` +
     (info.favs !== undefined && info.favs !== null ? `<span class="favorite-value">${info.favs}</span>` : '') +
+    // Compteurs de logs ({type de log : texte du nombre}) : icône suivie
+    // du nombre, séparés par des espaces insécables.
+    (info.counts ? '<span id="ctl00_ContentBody_lblFindCounts"><p class="LogTotals">' +
+      Object.entries(info.counts).map(([type, n]) =>
+        `<img src="/images/logtypes/${type}.png" alt="" title="" />&nbsp;${n}&nbsp;`).join('') +
+      '</p></span>' : '') +
     (info.archived ? '<div id="ctl00_ContentBody_archivedMessage"></div>' : '') +
     '</body></html>';
 }

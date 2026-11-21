@@ -84,6 +84,8 @@ def parcours_style_defaults() -> dict:
         "play_current": True,
         "play_past": "normal",
         "play_preview": False,
+        "favorite_mark": True,
+        "favorite_burst": True,
     }
 
 
@@ -138,6 +140,8 @@ def coerce_parcours_style(raw, current: dict | None = None) -> dict:
         "play_current": _bool(src.get("play_current"), _bool(base["play_current"], defaults["play_current"])),
         "play_past": _choice(src.get("play_past"), PLAY_PAST, base["play_past"]),
         "play_preview": _bool(src.get("play_preview"), _bool(base["play_preview"], defaults["play_preview"])),
+        "favorite_mark": _bool(src.get("favorite_mark"), _bool(base["favorite_mark"], defaults["favorite_mark"])),
+        "favorite_burst": _bool(src.get("favorite_burst"), _bool(base["favorite_burst"], defaults["favorite_burst"])),
     }
     for key, (low, high) in RANGES.items():
         out[key] = _int(src.get(key), base[key], low, high)

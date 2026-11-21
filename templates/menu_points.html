@@ -360,6 +360,20 @@
                 </label>
                 <small id="helpParcoursPlay" class="form-hint text-muted">{{ _("L'anneau suit le géocacheur d'étape en étape. Les étapes passées atténuées et l'aperçu de la suite (pâle, relié par un fil) demandent le rendu « Pastilles du parcours » : en points du thème, les points apparaissent seuls.") }}</small>
             </div>
+            <!-- Points favoris donnés (points.parcours_style.favorite_*) : lus
+                 sur geocaching.com par « Compléter depuis geocaching.com ». -->
+            <div class="mt-3 pt-3 border-top">
+                <h6 class="mb-2">{{ _("Points favoris donnés") }}</h6>
+                <label class="form-check mb-2">
+                    <input id="parcoursStyleFavoriteMark" class="form-check-input" type="checkbox" aria-describedby="helpParcoursFavorite">
+                    <span class="form-check-label">{{ _("Marquer d'un cœur les étapes où j'ai donné un PF") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursStyleFavoriteBurst" class="form-check-input" type="checkbox" aria-describedby="helpParcoursFavorite">
+                    <span class="form-check-label">{{ _("Envol de cœurs à l'arrivée sur l'étape") }}</span>
+                </label>
+                <small id="helpParcoursFavorite" class="form-hint text-muted">{{ _("Au repos, pendant la lecture et dans la vidéo. Les PF donnés viennent de geocaching.com : onglet Données, « Compléter depuis geocaching.com ». La balise {pf} de la ligne d'infos les compte.") }}</small>
+            </div>
         </div>
     </div>
     {% endif %}

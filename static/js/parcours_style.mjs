@@ -48,6 +48,8 @@ export function parcoursStyleDefaults() {
         play_current: true,
         play_past: 'normal',
         play_preview: false,
+        favorite_mark: true,
+        favorite_burst: true,
     };
 }
 
@@ -98,6 +100,8 @@ export function normalizeParcoursStyle(raw, current = null) {
         play_current: bool('play_current'),
         play_past: choice('play_past'),
         play_preview: bool('play_preview'),
+        favorite_mark: bool('favorite_mark'),
+        favorite_burst: bool('favorite_burst'),
     };
     for (const [key, range] of Object.entries(PARCOURS_STYLE_RANGES)) {
         out[key] = integer(src[key], integer(base[key], defaults[key], range), range);
@@ -251,6 +255,50 @@ export function stopPopScale(elapsedQ) {
     const t = value / STOP_POP_QUANTA - 1;
     const c1 = 1.70158;
     return 1 + (c1 + 1) * t ** 3 + c1 * t ** 2;
+}
+
+// Point favori donné (log de trouvaille de l'étape, `stop.favorite`) :
+// cœur sur un rond blanc posé en haut à gauche de la pastille de rayon
+// `radius` — le numéro du rendu « points du thème » occupe le haut à droite.
+// Décalage en px, y vers le haut (convention `displacement` d'OpenLayers).
+export const FAVORITE_COLOR = '#e03131';
+
+export function favoriteBadge(radius) {
+    const r = Math.max(1, Number(radius) || 1);
+    const badge = Math.max(5, Math.round(r * 0.55));
+    const offset = Math.round((r + badge * 0.2) * Math.SQRT1_2);
+    return { radius: badge, offset: [-offset, offset] };
+}
+
+// Effet à l'arrivée sur une étape où un PF a été donné : cinq cœurs qui
+// s'envolent en éventail vers le haut et s'effacent, en
+// FAVORITE_BURST_QUANTA quanta (1,2 s d'écran). Fonction de la position du
+// moteur seule, comme l'anneau de l'étape en cours. `elapsedQ` : quanta
+// écoulés depuis l'arrivée ; `radius` : rayon de la pastille. Chaque cœur :
+// décalage `dx`, `dy` (px, y vers le bas), `alpha`, `scale`. Hors de
+// l'effet : [].
+export const FAVORITE_BURST_QUANTA = 12;
+const BURST_ANGLES = [-60, -30, 0, 30, 60];
+
+export function favoriteBurst(elapsedQ, radius) {
+    const value = Number(elapsedQ);
+    if (!Number.isFinite(value) || value <= 0 || value >= FAVORITE_BURST_QUANTA) return [];
+    const t = value / FAVORITE_BURST_QUANTA;
+    const travel = 1 - (1 - t) ** 3;
+    const r = Math.max(1, Number(radius) || 1);
+    const distance = r + 4 + 26 * travel;
+    const alpha = t < 0.5 ? 1 : Math.max(0, 1 - (t - 0.5) / 0.5);
+    return BURST_ANGLES.map((deg, i) => {
+        const angle = (deg * Math.PI) / 180;
+        // Les cœurs du bord partent un peu moins loin : un éventail arrondi.
+        const reach = distance * (i === 2 ? 1 : (i === 1 || i === 3 ? 0.9 : 0.75));
+        return {
+            dx: +(Math.sin(angle) * reach).toFixed(2),
+            dy: +(-Math.cos(angle) * reach).toFixed(2),
+            alpha: +alpha.toFixed(3),
+            scale: +(0.6 + 0.5 * travel).toFixed(3),
+        };
+    });
 }
 
 // Rendu « points du thème » : numéro dans une petite pastille posée en haut

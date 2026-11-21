@@ -242,6 +242,25 @@ class LogStoreTests(unittest.TestCase):
         ref = db.session.query(CacheRef).filter_by(gc_code="GC1ABCD").one()
         self.assertEqual((ref.latitude, ref.longitude, ref.favorite_points), (49.2, 6.2, 5))
 
+    def test_found_count_is_stored_and_never_emptied(self):
+        doc = _doc()
+        doc["caches"][0]["found_count"] = 120
+        doc["caches"][1]["found_count"] = -3
+        self._commit(doc)
+        refs = {r.gc_code: r for r in db.session.query(CacheRef)}
+        first, second = (c["gc_code"] for c in doc["caches"][:2])
+        self.assertEqual((refs[first].found_count, refs[second].found_count), (120, None))
+        doc = _doc()
+        doc["exported_at"] = "2026-10-26T00:00:00Z"
+        doc["caches"][0]["found_count"] = 125
+        self._commit(doc)
+        self.assertEqual(db.session.query(CacheRef).filter_by(gc_code=first).one().found_count, 125)
+        # Absent du fichier suivant : la valeur stockée reste.
+        doc = _doc()
+        doc["exported_at"] = "2026-10-27T00:00:00Z"
+        self._commit(doc)
+        self.assertEqual(db.session.query(CacheRef).filter_by(gc_code=first).one().found_count, 125)
+
     def test_clear(self):
         self._commit()
         result = log_store.clear_logs(db.session)

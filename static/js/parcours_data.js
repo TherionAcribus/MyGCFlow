@@ -127,9 +127,12 @@ import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
 import {
+    FAVORITE_COLOR,
     PARCOURS_PALETTE_SIZE,
     currentRingRadius,
     dayColor,
+    favoriteBadge,
+    favoriteBurst,
     hexToRgba,
     nextPaletteColor,
     normalizeParcoursStyle,
@@ -451,7 +454,11 @@ function buildMeta() {
     }
     const lastDay = timeline.quanta - 1;
     const kinds = { find: 0, lab: 0 };
-    for (const stop of timeline.stops) if (stop.kind in kinds) kinds[stop.kind]++;
+    let favorites = 0;
+    for (const stop of timeline.stops) {
+        if (stop.kind in kinds) kinds[stop.kind]++;
+        if (stop.kind === 'find' && stop.favorite) favorites++;
+    }
     const counted = timeline.stops.filter(isCountedStop).length;
     const lastDayNumber = timeline.days[timeline.days.length - 1]?.dayNumber || 1;
     return {
@@ -465,6 +472,7 @@ function buildMeta() {
             etapes: counted,
             caches: kinds.find,
             labs: kinds.lab,
+            pf: favorites,
             jour: lastDayNumber,
             jours: lastDayNumber,
             heure: '≈ 00:00',
@@ -487,6 +495,7 @@ function countersAt(q) {
         etapes: state ? state.stopsReached : 0,
         caches: state ? state.finds : 0,
         labs: state ? state.labs : 0,
+        pf: state ? state.favorites : 0,
     };
 }
 
@@ -778,7 +787,7 @@ const PARCOURS_TIMELINE_BAR = Object.freeze({
 const PARCOURS_ENGINE = Object.freeze({
     timelineBar: PARCOURS_TIMELINE_BAR,
     id: 'parcours',
-    counterKeys: Object.freeze(['etapes', 'caches', 'labs']),
+    counterKeys: Object.freeze(['etapes', 'caches', 'labs', 'pf']),
     infosTags: PARCOURS_INFO_TAGS,
     hasData: () => !!(timeline && timeline.stops.length > 0),
     infosTemplate: () => infosTemplate,
@@ -1055,6 +1064,9 @@ function drawPlayHead(event) {
 }
 
 const NIGHT_ALPHA = 0.5;
+// Cœur des PF donnés (marque et effet à l'arrivée) : glyphe texte, sans
+// attendre la police d'icônes.
+const HEART = '\u2665';
 
 // Étapes comptées déjà atteintes, dans le rendu du plan : pastilles, ou
 // numéros à côté des points du thème (WebGL, qui apparaissent seuls), sous
@@ -1070,7 +1082,10 @@ const NIGHT_ALPHA = 0.5;
 let playStopsDrawn = emptyPlayStops();
 
 function emptyPlayStops() {
-    return { drawn: 0, popping: 0, headColor: null, piles: [], current: null, ring: null, dimmed: 0, preview: 0, places: 0 };
+    return {
+        drawn: 0, popping: 0, headColor: null, piles: [], current: null, ring: null, dimmed: 0, preview: 0, places: 0,
+        favorites: 0, bursts: 0,
+    };
 }
 
 // Journée de la chronologie où est le géocacheur : celle du trajet en cours
@@ -1104,6 +1119,7 @@ function drawPlayStops(context, resolution) {
     let drawn = 0;
     let popping = 0;
     let dimmed = 0;
+    let favorites = 0;
     const piles = [];
     for (const { rep, members } of stacks) {
         const head = timeline.stops[reached[rep]];
@@ -1133,6 +1149,10 @@ function drawPlayStops(context, resolution) {
             }
         }
         if (dim) dimmed++;
+        if (style.favorite_mark && members.some((m) => timeline.stops[reached[m]].favorite)) {
+            styles.push(favoriteMarkStyle(pile));
+            favorites++;
+        }
         for (const s of styles) {
             if (!s) continue;
             const shown = dim ? dimmedStyle(s, DIM_PAST) : s;
@@ -1141,7 +1161,40 @@ function drawPlayStops(context, resolution) {
         }
         drawn += members.length;
     }
-    playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles, dimmed };
+    const bursts = style.favorite_burst ? drawFavoriteBursts(context, reached) : 0;
+    playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles, dimmed, favorites, bursts };
+}
+
+// Effet à l'arrivée sur une étape où un PF a été donné (favoriteBurst :
+// cœurs qui s'envolent), par-dessus les pastilles. Renvoie le nombre
+// d'effets en cours.
+function drawFavoriteBursts(context, reached) {
+    const radius = favoriteBaseRadius(false);
+    const point = new ol.geom.Point([0, 0]);
+    let bursts = 0;
+    for (const i of reached) {
+        const stop = timeline.stops[i];
+        if (!stop.favorite) continue;
+        const hearts = favoriteBurst(currentQ - stop.q, radius);
+        if (!hearts.length) continue;
+        bursts++;
+        point.setCoordinates(projected[i]);
+        for (const heart of hearts) {
+            context.setStyle(new ol.style.Style({
+                text: new ol.style.Text({
+                    text: HEART,
+                    font: '16px system-ui, sans-serif',
+                    scale: heart.scale,
+                    offsetX: heart.dx,
+                    offsetY: heart.dy,
+                    fill: new ol.style.Fill({ color: hexToRgba(FAVORITE_COLOR, heart.alpha) }),
+                    stroke: new ol.style.Stroke({ color: `rgba(255, 255, 255, ${heart.alpha})`, width: 2 }),
+                }),
+            }));
+            context.drawGeometry(point);
+        }
+    }
+    return bursts;
 }
 
 // Anneau de l'étape en cours (currentRingRadius : pulse d'une seconde
@@ -1996,12 +2049,32 @@ function stopDetail(stop) {
     // saisie dans « Caches sans position » (log_store.cache_position).
     if (stop.posSource === 'corrected') parts.push(t('coordonnées corrigées'));
     else if (stop.posSource === 'manual') parts.push(t('position saisie'));
+    if (stop.favorite) parts.push(t('PF donné'));
     const reason = reasonLabel(stop.reason);
     if (reason) parts.push(reason);
     if (stop.movedFrom) parts.push(t('déplacée du ${day}', { day: formatDay(stop.movedFrom, { day: 'numeric', month: 'short' }) }));
     const photos = photoByStop.get(stop.key)?.length || 0;
     if (photos) parts.push(photos === 1 ? t('1 photo') : t('${n} photos', { n: photos }));
     return parts.join(' · ');
+}
+
+// Total de PF et nombre de trouvailles lus sur la fiche par le favori
+// « Mes logs » : valeurs du jour de la collecte (`factsAt`), jamais de
+// celui du passage — la date le dit.
+function stopFacts(stop) {
+    const parts = [];
+    const number = (value) => value.toLocaleString(pageLocale());
+    if (Number.isFinite(stop.favoritePoints)) {
+        parts.push(stop.favoritePoints === 1 ? t('1 PF') : t('${n} PF', { n: number(stop.favoritePoints) }));
+    }
+    if (Number.isFinite(stop.foundCount)) {
+        parts.push(stop.foundCount === 1 ? t('1 trouvaille') : t('${n} trouvailles', { n: number(stop.foundCount) }));
+    }
+    if (!parts.length) return '';
+    const facts = parts.join(' · ');
+    if (!stop.factsAt) return facts;
+    const date = formatDay(stop.factsAt, { day: 'numeric', month: 'short', year: 'numeric' });
+    return t('${facts} au ${date}', { facts, date });
 }
 
 // Heure d'arrivée : exacte pour une ancre, « ≈ » sinon.
@@ -4424,6 +4497,8 @@ function readStyleUI() {
         play_current: el('parcoursStylePlayCurrent') ? el('parcoursStylePlayCurrent').checked : undefined,
         play_past: value('parcoursStylePlayPast'),
         play_preview: el('parcoursStylePlayPreview') ? el('parcoursStylePlayPreview').checked : undefined,
+        favorite_mark: el('parcoursStyleFavoriteMark') ? el('parcoursStyleFavoriteMark').checked : undefined,
+        favorite_burst: el('parcoursStyleFavoriteBurst') ? el('parcoursStyleFavoriteBurst').checked : undefined,
         size: value('parcoursStyleSize'),
         colors: Object.fromEntries(Object.entries(styleColorIds()).map(([kind, id]) => [kind, value(id)])),
         plan_line: value('parcoursStylePlanLine'),
@@ -4487,6 +4562,10 @@ export function syncParcoursStyleUI() {
         const input = el(id);
         if (input) input.disabled = themed;
     }
+    const favoriteMark = el('parcoursStyleFavoriteMark');
+    if (favoriteMark) favoriteMark.checked = style.favorite_mark;
+    const favoriteBurst = el('parcoursStyleFavoriteBurst');
+    if (favoriteBurst) favoriteBurst.checked = style.favorite_burst;
     for (const [kind, id] of Object.entries(styleColorIds())) set(id, style.colors[kind]);
     set('parcoursStylePlanLine', style.plan_line);
     set('parcoursStyleTrailColor', style.trail_color);
@@ -4531,6 +4610,7 @@ function bindParcoursStyle() {
     const commit = () => commitParcoursStyle(readStyleUI());
     for (const id of ['parcoursStyleRender', 'parcoursStyleNumbers', 'parcoursStyleColorBy', 'parcoursStyleTrailByDay',
         'parcoursStylePlayCurrent', 'parcoursStylePlayPast', 'parcoursStylePlayPreview',
+        'parcoursStyleFavoriteMark', 'parcoursStyleFavoriteBurst',
         'parcoursStyleSize', 'parcoursStylePlanLine',
         'parcoursStyleTrailColor', 'parcoursStyleTrailWidth', ...Object.values(styleColorIds())]) {
         el(id)?.addEventListener('change', commit);
@@ -4670,8 +4750,49 @@ function pointStyle(feature) {
     } else {
         normal = pile ? [pileShadowStyle(featurePaint(feature)), numberedStyle(feature)] : numberedStyle(feature);
     }
+    if (featureShowsFavorite(feature)) normal = [...(Array.isArray(normal) ? normal : [normal]), favoriteMarkStyle(pile)];
     const styles = Array.isArray(normal) ? normal : [normal];
     return feature.get('hovered') ? [haloStyle(), ...styles] : normal;
+}
+
+// Cœur d'un PF donné sur une étape du plan (une pile : si l'une de ses
+// étapes en a un), selon « Marquer les PF donnés » du thème.
+function featureShowsFavorite(feature) {
+    const kind = feature.get('kind');
+    if (kind === KIND_BASE || kind === KIND_PLACE || !stopStyle().favorite_mark) return false;
+    return (feature.get('stackKeys')?.length || 0) > 1 ? !!feature.get('stackFavorite') : !!feature.get('favorite');
+}
+
+// Rayon du marqueur auquel le cœur s'accroche : la pastille (une pile : un
+// peu plus grande), ou le point du thème.
+function favoriteBaseRadius(pile) {
+    const style = stopStyle();
+    if (style.render === RENDER_THEME) return themePointRadius();
+    return pile ? style.size + 2 : style.size;
+}
+
+// Cœur sur un rond blanc, en haut à gauche de l'étape (favoriteBadge).
+function favoriteMarkStyle(pile = false) {
+    const base = favoriteBaseRadius(pile);
+    return cachedStyle(`fav:${base}`, () => {
+        const { radius, offset } = favoriteBadge(base);
+        return new ol.style.Style({
+            image: new ol.style.Circle({
+                radius,
+                displacement: offset,
+                fill: new ol.style.Fill({ color: '#ffffff' }),
+                stroke: new ol.style.Stroke({ color: FAVORITE_COLOR, width: 1.5 }),
+            }),
+            text: new ol.style.Text({
+                text: HEART,
+                font: `${Math.max(8, Math.round(radius * 1.4))}px system-ui, sans-serif`,
+                fill: new ol.style.Fill({ color: FAVORITE_COLOR }),
+                // Texte : y vers le bas, à l'inverse de `displacement`.
+                offsetX: offset[0],
+                offsetY: -offset[1] + 0.5,
+            }),
+        });
+    });
 }
 
 // Pastille d'une étape comptée, avec son numéro (aucun : pastille seule).
@@ -4730,7 +4851,15 @@ function fanStopStyle(feature) {
             copy.setZIndex(FAN_Z + 2);
             return copy;
         });
-    return feature.get('hovered') ? [haloStyle(), style] : style;
+    const styles = [style];
+    if (stopStyle().favorite_mark && feature.get('favorite')) {
+        styles.push(cachedStyle('fan:fav', () => {
+            const copy = favoriteMarkStyle(false).clone();
+            copy.setZIndex(FAN_Z + 3);
+            return copy;
+        }));
+    }
+    return feature.get('hovered') ? [haloStyle(), ...styles] : styles;
 }
 
 function fanLineStyle() {
@@ -4967,7 +5096,7 @@ function updateStacks() {
     const resolution = map.getView().getResolution();
     stackResolution = resolution;
     const stops = stackableFeatures(source);
-    for (const f of stops) f.setProperties({ stacked: false, stackKeys: null, stackLabel: null }, true);
+    for (const f of stops) f.setProperties({ stacked: false, stackKeys: null, stackLabel: null, stackFavorite: false }, true);
     if (resolution) {
         const stacks = stackStops(stops.map((f) => stackItem(f.getGeometry().getCoordinates(), f.get('key'), resolution)),
             stopStyle().size * STACK_DISTANCE);
@@ -4976,6 +5105,7 @@ function updateStacks() {
             stops[rep].setProperties({
                 stackKeys: members.map((m) => stops[m].get('key')),
                 stackLabel: stackLabel(members.map((m) => stops[m].get('label') || '')),
+                stackFavorite: members.some((m) => stops[m].get('favorite')),
             }, true);
             for (const m of members.slice(1)) stops[m].set('stacked', true, true);
         }
@@ -5006,6 +5136,7 @@ function openFan(feature) {
             kind: stop.get('kind'),
             type: stop.get('type'),
             label: stop.get('label'),
+            favorite: stop.get('favorite'),
             geometry: new ol.geom.Point(position),
         }));
     });
@@ -5104,6 +5235,13 @@ function fillStopBubble(box, stop) {
     detail.className = 'gc-popup-note';
     detail.textContent = [stopTime(stop), stopDetail(stop)].filter(Boolean).join(' · ');
     wrap.append(title, detail);
+    const facts = stopFacts(stop);
+    if (facts) {
+        const line = document.createElement('div');
+        line.className = 'gc-popup-note parcours-bubble-facts';
+        line.textContent = facts;
+        wrap.append(line);
+    }
     const done = (action) => () => {
         pkg.hideMapPopup?.();
         action();
@@ -5296,6 +5434,7 @@ function renderLayer({ fit = false } = {}) {
             type: stop.type || '',
             index: stop.index,
             label: labels.get(stop.key) || '',
+            favorite: !!stop.favorite,
             category: stop.category || 'other',
             icon: stop.icon || null,
             geometry: new ol.geom.Point(ol.proj.fromLonLat([stop.lon, stop.lat])),
@@ -5429,6 +5568,7 @@ export function getParcoursSnapshot() {
                     textColor: main?.getText()?.getFill()?.getColor() || null,
                     radius: image?.getRadius?.() ?? null,
                     offset: image?.getDisplacement?.() || null,
+                    favorite: featureShowsFavorite(f),
                 }];
             })),
         themePoints: !!pkg.mainPointsLayerVisible?.(),

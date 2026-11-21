@@ -68,7 +68,7 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
     coverage: [],
     caches: [
       { gc_code: 'GCPAR01', type: 'Unknown Cache', latitude: 45.8800, longitude: 6.1000,
-        corrected: { latitude: 45.9020, longitude: 6.1230 }, favorite_points: 12 },
+        corrected: { latitude: 45.9020, longitude: 6.1230 }, favorite_points: 12, found_count: 340 },
       { gc_code: 'GCPAR02', type: 'Traditional Cache', latitude: 45.9050, longitude: 6.1300 },
     ],
     logs: [
@@ -100,6 +100,10 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
   const stop = page.locator('.parcours-stop[data-stop-key="GCPAR01"]');
   await expect(stop).toHaveAttribute('data-pos-source', 'corrected');
   await expect(stop.locator('.parcours-stop-text')).toContainText('coordonnées corrigées');
+  // PF donné (log de trouvaille) et chiffres de la fiche servis à l'étape.
+  await expect(stop.locator('.parcours-stop-text')).toContainText('PF donné');
+  const served = (await snapshot(page)).stopStyles;
+  expect([served.GCPAR01.favorite, served.GCPAR02.favorite]).toEqual([true, false]);
   await expect(page.locator('.parcours-stop[data-stop-key="GCPAR02"]')).not.toHaveAttribute('data-pos-source', /./);
   // Deux fiches lues : trois caches jamais relues.
   await expect(page.locator('#parcoursCollectSummary')).toContainText('dont 3');

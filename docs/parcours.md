@@ -88,6 +88,14 @@ un voyage), chacun avec ses étapes :
   `manual` dans les deux premiers cas (`null` sinon) ; la liste des étapes
   l'affiche (« coordonnées corrigées », « position saisie ») et le porte
   en `data-pos-source`.
+- **PF et chiffres de la fiche** (lot 13) : `favorite` (vrai quand un log
+  de trouvaille du joueur ce jour-là porte un point favori,
+  `log_event.favorite`), `favoritePoints` et `foundCount` (total de PF et
+  nombre de trouvailles de la fiche `cache_ref`), `factsAt` (jour de
+  l'export qui les porte : `source_exported_at`, sinon `updated_at`).
+  Valeurs **du jour de la collecte**, jamais de celui du passage : la bulle
+  de l'étape les date (« 87 PF · 1 505 trouvailles au 21 nov. 2026 »), la
+  liste dit « PF donné ».
 - `logId` croît avec l'ordre de **saisie** des logs, pas forcément avec
   l'ordre de passage. `logsAvailable` est faux sans logs importés ou sans
   compte identifié.
@@ -138,6 +146,8 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
 | `play_current` | `true` : l'étape en cours entourée d'un anneau qui pulse | Style › Points, rubrique « Pendant la lecture » |
 | `play_past` | `normal`, `dim` (étapes quittées atténuées), `dim_days` (celles des journées précédentes) | idem — rendu « pastilles » |
 | `play_preview` | `false` ; vrai : aperçu pâle des étapes à venir de la journée, reliées par un fil | idem — rendu « pastilles » |
+| `favorite_mark` | `true` : cœur sur un rond blanc en haut à gauche des étapes où un PF a été donné (une pile : si l'une de ses étapes en a un), au repos, en lecture et dans la vidéo | Style › Points, rubrique « Points favoris donnés » |
+| `favorite_burst` | `true` : envol de cinq cœurs à l'arrivée sur l'étape (`favoriteBurst`, 12 quanta, la durée d'une visite au rythme régulier) | idem |
 | `day_palette` | 2 à 12 couleurs, `DAY_PALETTE` (8) par défaut | Style › Points, sous « Couleur des étapes » (montrée en couleur par journée ou avec `trail_by_day`) |
 
 **Lecture plus lisible** (depuis le 2026-11-20, `playPhase` et
@@ -282,7 +292,8 @@ Titres) :
   la journée (matin < 12 h, midi < 14 h, après-midi < 18 h, soir) ou
   aucune ;
 - `{jour}`, `{jours}`, `{km}` ;
-- compteurs animés `{etapes}`, `{caches}`, `{labs}`, et `{total}`.
+- compteurs animés `{etapes}`, `{caches}`, `{labs}`, `{pf}` (PF donnés sur
+  les trouvailles atteintes), et `{total}`.
 
 Trois crochets optionnels ont été ajoutés au contrat du moteur :
 - `infosValues(now)` : valeurs texte qui priment sur les compteurs et sur la
@@ -817,6 +828,11 @@ corrigées » de la liste.
   rien ne peut être retiré.
 - Relevé e2e : `getParcoursCollectSnapshot()` (`collect`, `pending`,
   `progress`, `polling`).
+- **Ce qui en sort** (lot 13) : PF donnés (cœur, envol, `{pf}`), total de
+  PF et nombre de trouvailles dans la bulle (§ Entrées). Le favori lit le
+  nombre de trouvailles dans les compteurs de la fiche
+  (`#ctl00_ContentBody_lblFindCounts` : Found it + Attended + Webcam) ;
+  sans compteurs lisibles, il le signale une fois dans la console.
 
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
@@ -926,7 +942,8 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   créneaux, trois placements, effets, dessin sur un contexte factice),
   `tests/js/app_mode.test.mjs`.
 - Compléter depuis geocaching.com : `CollectRequestTests` et
-  `test_stop_positions_follow_cache_position` de test_parcours_api.py,
+  `test_stop_positions_follow_cache_position` et
+  `test_favorite_and_cache_facts` de test_parcours_api.py,
   demande et favori dans tests/test_logs_api.py, mode « demande » du cœur
   dans `tests/js/logs_collect_core.test.mjs`, e2e
   `tests/e2e/parcours-gc-collect.spec.mjs` (export du favori simulé par un
@@ -949,15 +966,18 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   (barre de chronologie : repères, sauts, clavier, bulle ; relevé
   `getTimelineBarSnapshot()`, `ticks` et `rangeEditable`),
   `tests/e2e/parcours-style.spec.mjs` (apparence des étapes et du trait :
-  relevés `style`, `stopStyles`, `planLine`, `trail`), aides communes dans
+  relevés `style`, `stopStyles` (`favorite` : cœur affiché), `planLine`,
+  `trail`, `playStops` (`favorites`, `bursts`) ; PF servis par
+  `page.route` sur `/inputs`), aides communes dans
   `tests/e2e/parcours-helpers.mjs`. Fixture
   `tests/e2e/fixtures/my-finds-parcours.gpx` (deux journées, compte 4242 :
   ordre des logs retenu le premier jour, earthcache loguée après coup le
   second).
   - Nettoyage (`cleanUp`) : logs, parcours (et donc leurs ajustements,
     lieux et photos), `parcours_animation` (10 quanta/s),
-    `parcours_playback` et `parcours_photo_display`
-    (`PHOTO_DISPLAY_DEFAULTS` de parcours-helpers.mjs).
+    `parcours_playback`, `parcours_photo_display`
+    (`PHOTO_DISPLAY_DEFAULTS` de parcours-helpers.mjs) et
+    `parcours_infos_template` (modèle par défaut).
   - Lecture complète, et export vidéo dans les deux pipelines (durée
     contrôlée par `video_validator.py`, MP4 supprimé ensuite).
   - Ajustements : flèches, glisser-déposer (`dragTo`), persistance,

@@ -53,28 +53,32 @@ def _number(value):
 
 
 def _my_logs(session, start: date, end: date):
-    """{(code, jour) → plus petit log_id de trouvaille} et liste des DNF
-    (log_id, code, jour) du joueur sur la plage. Vides sans logs importés
-    ou sans compte identifié."""
-    finds, dnfs = {}, []
+    """{(code, jour) → plus petit log_id de trouvaille}, liste des DNF
+    (log_id, code, jour) et ensemble des (code, jour) dont un log de
+    trouvaille porte un point favori, pour le joueur sur la plage. Vides
+    sans logs importés ou sans compte identifié."""
+    finds, dnfs, favorites = {}, [], set()
     collection = log_store.get_collection(session)
     if collection is None or collection.account_user_id is None:
-        return finds, dnfs, False
-    rows = session.query(LogEvent.log_id, LogEvent.gc_code, LogEvent.log_date, LogEvent.type_id).filter(
+        return finds, dnfs, favorites, False
+    rows = session.query(LogEvent.log_id, LogEvent.gc_code, LogEvent.log_date, LogEvent.type_id,
+                         LogEvent.favorite).filter(
         LogEvent.collection_id == collection.id,
         LogEvent.author_id == collection.account_user_id,
         LogEvent.log_date >= start,
         LogEvent.log_date <= end,
     )
-    for log_id, code, day, type_id in rows:
+    for log_id, code, day, type_id, favorite in rows:
         category = log_category(type_id)
         if category == CATEGORY_FIND:
             key = (code, day)
             if key not in finds or log_id < finds[key]:
                 finds[key] = log_id
+            if favorite:
+                favorites.add(key)
         elif category == CATEGORY_DNF:
             dnfs.append((log_id, code, day))
-    return finds, dnfs, True
+    return finds, dnfs, favorites, True
 
 
 def _cache_refs(session, codes) -> dict:
@@ -96,7 +100,19 @@ def _pos_source(origin):
     return origin if origin in (log_store.POSITION_CORRECTED, log_store.POSITION_MANUAL) else None
 
 
-def _find_stops(session, start: date, end: date, find_logs: dict, counts: dict) -> dict:
+def _cache_facts(ref) -> dict:
+    """Total de PF et nombre de trouvailles lus sur la fiche par le favori
+    « Mes logs », avec le jour de l'export qui les porte : valeurs à la date
+    de la collecte, jamais à celle du passage (§ 15.2 du plan)."""
+    if ref is None or (ref.favorite_points is None and ref.found_count is None):
+        return {'favoritePoints': None, 'foundCount': None, 'factsAt': None}
+    at = ref.source_exported_at or ref.updated_at
+    return {'favoritePoints': ref.favorite_points, 'foundCount': ref.found_count,
+            'factsAt': at.date().isoformat() if at else None}
+
+
+def _find_stops(session, start: date, end: date, find_logs: dict, favorites: set,
+                counts: dict) -> dict:
     """{jour → [étape]} des trouvailles de la plage."""
     by_day = defaultdict(list)
     rows = session.query(Geocache).filter(
@@ -123,6 +139,8 @@ def _find_stops(session, start: date, end: date, find_logs: dict, counts: dict) 
             'lon': float(lon),
             'lat': float(lat),
             'posSource': _pos_source(origin),
+            'favorite': (row.gc_code, day) in favorites,
+            **_cache_facts(refs.get(row.gc_code)),
             'logId': find_logs.get((row.gc_code, day)),
             'localTime': None,
         })
@@ -197,6 +215,8 @@ def _dnf_stops(session, dnfs: list, by_day: dict, counts: dict) -> None:
             'lon': float(lon),
             'lat': float(lat),
             'posSource': _pos_source(origin),
+            'favorite': False,
+            **_cache_facts(ref),
             'logId': log_id,
             'localTime': None,
         })
@@ -215,8 +235,8 @@ def build_days(session, start: date, end: date, include_labs=True, include_dnf=T
     comptent dans un voyage). Sans parcours enregistré : sert aussi au banc
     de calibration (tools/parcours_bench_export.py)."""
     counts = {'finds': 0, 'labs': 0, 'dnf': 0, 'missing_position': 0}
-    find_logs, dnfs, logs_available = _my_logs(session, start, end)
-    by_day = _find_stops(session, start, end, find_logs, counts)
+    find_logs, dnfs, favorites, logs_available = _my_logs(session, start, end)
+    by_day = _find_stops(session, start, end, find_logs, favorites, counts)
     if include_labs:
         _lab_stops(session, start, end, by_day, counts)
     if include_dnf:

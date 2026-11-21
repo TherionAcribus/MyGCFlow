@@ -117,6 +117,19 @@ test('état affiché : étapes atteintes, heure interpolée, distance, nuit', ()
     assert.equal(atC.estimated, false);
 });
 
+test('état affiché : PF donnés sur les trouvailles atteintes ({pf})', () => {
+    const tl = buildParcoursTimeline(reconstructParcours({
+        days: [{
+            date: '2025-07-12',
+            stops: [stop('A', 0, { logId: 1 }), stop('B', 4, { logId: 2, favorite: true })],
+        }],
+    }));
+    const [a, b] = tl.stops;
+    assert.equal(b.favorite, true);
+    assert.equal(stateAt(tl, a.q).favorites, 0);
+    assert.equal(stateAt(tl, b.q).favorites, 1);
+});
+
 test('base : bref arrêt à l’écran, jamais comptée parmi les étapes', () => {
     const tl = buildParcoursTimeline(reconstructParcours({
         days: [{ date: '2025-07-12', stops: [stop('A', 4, { logId: 1 })] }],

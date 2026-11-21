@@ -82,6 +82,14 @@ function toInt(value) {
   return Number.isInteger(n) ? n : null;
 }
 
+// Nombre affiché par la fiche, séparateurs de milliers compris (« 1,234 »,
+// « 1 234 », « 1.234 ») : null si le texte n'est pas un nombre entier.
+function countValue(text) {
+  var value = String(text === null || text === undefined ? '' : text).trim();
+  if (!/^\d[\d\s.,']*$/.test(value)) return null;
+  return toInt(value.replace(/\D/g, ''));
+}
+
 function logTypeIdFromImage(image) {
   var m = /(\d+)\.(?:png|gif|svg)\b/i.exec(String(image || ''));
   if (!m) return null;
@@ -294,7 +302,8 @@ function buildPayload(state, order) {
       owner: owned ? { id: state.me.id, name: state.me.name } : { id: null, name: info.owner_name },
       placed_date: parseDateText(info.placed_text, order),
       status: info.status,
-      favorite_points: info.favorite_points
+      favorite_points: info.favorite_points,
+      found_count: info.found_count
     };
     if (info.corrected) cache.corrected = info.corrected;
     caches.push(cache);
@@ -432,6 +441,7 @@ function parseCachePage(doc, html, url) {
     placed_text: null,
     status: 'active',
     favorite_points: null,
+    found_count: null,
     token: null
   };
 
@@ -490,8 +500,36 @@ function parseCachePage(doc, html, url) {
   }
 
   var fav = doc.querySelector('.favorite-value');
-  info.favorite_points = fav ? toInt(fav.textContent.trim()) : null;
+  info.favorite_points = fav ? countValue(fav.textContent) : null;
+  info.found_count = foundCount(html);
   return info;
+}
+
+// Types de logs comptés comme trouvailles : Found it, Attended, Webcam
+// Photo Taken.
+var FOUND_COUNT_TYPES = { 2: true, 10: true, 11: true };
+var warnedFoundCount = false;
+
+// Compteurs de la fiche (#ctl00_ContentBody_lblFindCounts, ou .LogTotals) :
+// chaque icône de type de log (/images/logtypes/2.png) suivie de son
+// nombre. Lus dans le HTML, jusqu'à la première fin de liste ou de
+// paragraphe. Somme des types de trouvaille, null sans compteurs lisibles.
+function foundCount(html) {
+  var block = /id="ctl00_ContentBody_lblFindCounts"[\s\S]*?<\/(?:span|ul|p)>/.exec(html) ||
+    /class="LogTotals"[\s\S]*?<\/(?:span|ul|p)>/.exec(html);
+  var total = null;
+  var re = /logtypes\/(\d+)\.(?:png|gif|svg)[^>]*>([^<]*)/gi;
+  var m;
+  while (block && (m = re.exec(block[0]))) {
+    var id = LOG_TYPE_ALIASES[Number(m[1])] || Number(m[1]);
+    var n = countValue(m[2].replace(/&nbsp;|&#160;/g, ' '));
+    if (FOUND_COUNT_TYPES[id] && n !== null) total = (total || 0) + n;
+  }
+  if (total === null && !warnedFoundCount) {
+    warnedFoundCount = true;
+    console.warn('[mygcflow-logs] Compteurs de logs introuvables sur la fiche : nombre de trouvailles non relevé.');
+  }
+  return total;
 }
 
 // ---------------------------------------------------------------------

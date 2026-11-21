@@ -327,7 +327,9 @@ test('palette des journées modifiable : une couleur, ajout, retrait, retour aux
 // n'apparaît qu'à sa journée. Caméra fixe, relevé image par image
 // (playStops) attendu dans un même prédicat.
 async function playUntil(page, predicate) {
-  await expect.poll(async () => predicate((await snapshot(page)).playStops), { timeout: 30_000 }).toBe(true);
+  // Relevé serré : l'envol de cœurs ne dure que la visite d'une étape (1,2 s).
+  await expect.poll(async () => predicate((await snapshot(page)).playStops), { timeout: 30_000, intervals: [100] })
+    .toBe(true);
 }
 
 async function stopPlayback(page) {
@@ -371,5 +373,70 @@ test('lecture plus lisible : étape en cours, étapes passées, aperçu, base à
   await expect(page.locator('#parcoursStylePlayPast')).toBeDisabled();
   await expect(page.locator('#parcoursStylePlayPreview')).toBeDisabled();
   await expect(page.locator('#parcoursStylePlayCurrent')).toBeEnabled();
+  expect(errors).toEqual([]);
+});
+
+// PF donnés (lus par « Compléter depuis geocaching.com ») : servis ici par
+// les entrées du parcours. Cœur au repos et en lecture, envol de cœurs à
+// l'arrivée, balise {pf}, chiffres de la fiche dans la bulle. Le modèle de
+// la ligne d'infos est remis par cleanUp.
+test('PF donnés : cœur sur l’étape, envol à l’arrivée, {pf}, chiffres de la fiche', async ({ page, request }) => {
+  expect((await request.put('/api/settings', { data: { parcours_playback: { camera: 'fixed' } } })).ok()).toBeTruthy();
+  await page.route('**/api/parcours/*/inputs', async (route) => {
+    const body = await (await route.fetch()).json();
+    for (const stop of body.days.flatMap((day) => day.stops)) {
+      if (stop.key === 'GCPAR01') {
+        Object.assign(stop, { favorite: true, favoritePoints: 1234, foundCount: 87, factsAt: '2026-11-21' });
+      }
+    }
+    await route.fulfill({ json: body });
+  });
+  const errors = collectErrors(page);
+  let snap = await openReady(page);
+  expect(snap.style).toMatchObject({ favorite_mark: true, favorite_burst: true });
+  expect(snap.stopStyles.GCPAR01.favorite).toBe(true);
+  expect(snap.stopStyles.GCPAR02.favorite).toBe(false);
+  await expect(page.locator('.parcours-stop[data-stop-key="GCPAR01"] .parcours-stop-text')).toContainText('PF donné');
+
+  // Bulle : chiffres de la fiche, datés de la collecte.
+  const box = await page.locator('.ol-viewport').boundingBox();
+  const [x, y] = snap.stopPixels.GCPAR01;
+  await page.mouse.click(box.x + x, box.y + y);
+  const facts = page.locator('#gcPopup.is-visible .parcours-bubble[data-stop-key="GCPAR01"] .parcours-bubble-facts');
+  await expect(facts).toContainText(/1\D?234 PF · 87 trouvailles au 21 nov\.? 2026/);
+  await page.keyboard.press('Escape');
+
+  // Marque coupée : plus de cœur au repos.
+  await openStyleSubtab(page, '#tabPoints');
+  await page.locator('#parcoursStyleFavoriteMark').uncheck();
+  await expect.poll(async () => (await snapshot(page)).stopStyles.GCPAR01.favorite).toBe(false);
+  await page.locator('#parcoursStyleFavoriteMark').check();
+  await expect.poll(async () => (await snapshot(page)).stopStyles.GCPAR01.favorite).toBe(true);
+
+  // Ligne d'infos : {pf} compte les PF des trouvailles atteintes.
+  await page.locator('a[href="#tabTitles"]').click();
+  await page.locator('#gcCssTargetInfos').click();
+  await page.locator('#inputInfosTemplate').fill('PF:{pf}');
+  const line = page.locator('#spanInfosTemplate');
+
+  // Lecture : GCPAR03 (avant GCPAR01) sans cœur ; à l'arrivée sur
+  // GCPAR01, le cœur et l'envol, et {pf} passe à 1.
+  await page.locator('#btnQuickPreview').click();
+  await playUntil(page, (p) => p.current === 'GCPAR03' && p.favorites === 0 && p.bursts === 0);
+  await expect(line).toContainText('PF:0');
+  await playUntil(page, (p) => p.current === 'GCPAR01' && p.favorites === 1 && p.bursts === 1);
+  await playUntil(page, (p) => p.current === 'GCPAR02' && p.favorites === 1 && p.bursts === 0);
+  await expect(line).toContainText('PF:1');
+  await stopPlayback(page);
+
+  // Envol coupé : le cœur reste, plus d'effet.
+  await page.locator('a[href="#tabPoints"]').click();
+  await page.locator('#parcoursStyleFavoriteBurst').uncheck();
+  await expect.poll(async () => (await snapshot(page)).style.favorite_burst).toBe(false);
+  await page.locator('#btnQuickPreview').click();
+  await playUntil(page, (p) => p.current === 'GCPAR01' && p.favorites === 1 && p.bursts === 0);
+  await stopPlayback(page);
+  snap = await snapshot(page);
+  expect(snap.style.favorite_mark).toBe(true);
   expect(errors).toEqual([]);
 });
