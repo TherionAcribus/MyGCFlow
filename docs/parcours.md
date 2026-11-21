@@ -131,6 +131,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_style.mjs` | Pur : apparence des étapes et du trait (normalisation, numéros, contraste). Copie de `parcours_style.py`. Tests : `tests/js/parcours_style.test.mjs`, `tests/test_parcours_style.py` |
 | `static/js/parcours_stack.mjs` | Pur : étapes empilées (piles, libellé, éventail). Tests : `tests/js/parcours_stack.test.mjs` |
 | `static/js/parcours_labels.mjs` | Libellés et formatage de la page (dates, distances, icônes, diagnostics) — pur, `parcours_data.js` lui passe l'état courant. `parcours_gpx.mjs` : export GPX (ci-dessus) |
+| `static/js/parcours_tbar.mjs` | Barre de chronologie : série, repères (nuits, jours, DNF, photos), textes et sauts de journée pour `timeline_bar.js`. Fabrique `createParcoursTimelineBar` — l'état du parcours ouvert arrive par `getState()` |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
 

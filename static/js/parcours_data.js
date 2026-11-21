@@ -75,25 +75,20 @@ import {
 import {
     CAMERA_FOLLOW,
     HEAD_PICTOGRAM,
-    HOURS_NONE,
-    HOURS_SLOTS,
-    barSeries,
-    barTicks,
     buildParcoursTimeline,
     dayCardAt,
     endCardAt,
     formatClock,
     headAt,
     headModeAt,
-    legIndexAt,
     legPoints,
-    legTravelMode,
     nightLevelAt,
     normalizePlayback,
     stateAt,
     stopsInRange,
     trailAt,
 } from './parcours_timeline.mjs';
+import { createParcoursTimelineBar, slotLabels } from './parcours_tbar.mjs';
 import { cameraPoseAt } from './parcours_camera.mjs';
 import { initParcoursCollect, parcoursCollectSnapshot, refreshParcoursCollect } from './parcours_collect.js';
 import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
@@ -509,10 +504,6 @@ function countersAt(q) {
     };
 }
 
-function slotLabels() {
-    return { morning: t('matin'), noon: t('midi'), afternoon: t('après-midi'), evening: t('soir') };
-}
-
 // Valeurs texte de la ligne d'infos (priment sur la date fictive du moteur).
 function parcoursInfosValues() {
     const state = timeline ? stateAt(timeline, currentQ) : null;
@@ -640,146 +631,13 @@ function renderParcoursPopup(feature, container) {
 
 // --- Barre de chronologie ---------------------------------------------------------
 //
-// timeline_bar.js compte en jours du moteur, donc ici en quanta, sur des dates
-// fictives : ce crochet lui donne la série, les repères et les textes en vraies
-// dates et heures. `axisStart` est la date fictive du premier quantum de la
-// piste, `offset` un quantum de la piste. La plage est le parcours entier.
+// timeline_bar.js compte en jours du moteur, donc ici en quanta : la
+// fabrique de parcours_tbar.mjs lit l'état courant (timeline, lecture) à
+// chaque appel.
 
-function barFirstQ(axisStart) {
-    return dayIndexOf(quantumBase, axisStart);
-}
-
-function barStateAt(axisStart, offset) {
-    return timeline ? stateAt(timeline, barFirstQ(axisStart) + offset) : null;
-}
-
-// « Jour 2 · dim. 13 juil. » (la date seule pour une journée unique).
-function barDayText(state) {
-    if (!state?.date) return '';
-    const date = formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
-    if ((timeline?.days?.length || 0) < 2) return date;
-    return t('Jour ${n}', { n: state.dayNumber }) + ' · ' + date;
-}
-
-function barClockText(state) {
-    return state ? formatClock(state.minutes, state.estimated, playback.hours, slotLabels()) : '';
-}
-
-
-// Où en est le géocacheur au quantum `q` : avant le départ, à une étape, en
-// route, la nuit, ou à la fin.
-function barSituation(q, state) {
-    const legIndex = legIndexAt(timeline, q);
-    if (legIndex >= 0) {
-        const leg = timeline.legs[legIndex];
-        if (leg.night) return t('Nuit');
-        const mode = travelModeLabel(legTravelMode(timeline, legIndex));
-        const name = stopLabel(timeline.stops[leg.to]);
-        return t('Trajet ${mode} vers ${name}', { mode, name }) + ' · ' + formatKm(leg.km);
-    }
-    if (state.reached < 0) return t('Avant la première étape');
-    const stop = timeline.stops[state.reached];
-    if (state.reached === timeline.stops.length - 1 && q >= stop.departQ) return t('Fin du parcours');
-    if (!isCountedStop(stop)) return stopLabel(stop);
-    return t('Étape ${n} : ${name}', { n: state.stopsReached, name: stopLabel(stop) });
-}
-
-function barEdgeText(axisStart, offset) {
-    const state = barStateAt(axisStart, offset);
-    if (!state?.date) return '';
-    const date = formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
-    return [date, barClockText(state)].filter(Boolean).join(' · ');
-}
-
-// Étiquette au curseur (et valeur du slider) : courte, sa largeur est fixe
-// (ui_improvements.css) — le numéro du jour et la distance sont dans la bulle.
-function barPositionText(axisStart, offset) {
-    const state = barStateAt(axisStart, offset);
-    if (!state?.date) return '';
-    const date = formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
-    return [date, barClockText(state), stopsCountText(state.stopsReached)].filter(Boolean).join(' · ');
-}
-
-function barTipLines(axisStart, offset) {
-    const q = barFirstQ(axisStart) + offset;
-    const state = timeline ? stateAt(timeline, q) : null;
-    if (!state) return [];
-    const total = stopsCountText(state.stopsReached) + ' · ' + formatKm(state.km);
-    return [
-        { text: [barDayText(state), barClockText(state)].filter(Boolean).join(' · '), strong: true },
-        { text: barSituation(q, state) },
-        { text: t('Total : ${text}', { text: total }) },
-    ];
-}
-
-// Nuits en bandes ; journées (plusieurs) ou heures pleines (une seule, quand
-// des heures sont affichées) en traits et étiquettes.
-function barTickMarks(axisStart, span) {
-    const out = { bands: [], lines: [], labels: [] };
-    if (!timeline) return out;
-    const ticks = barTicks(timeline, barFirstQ(axisStart), span);
-    out.bands = ticks.bands;
-    for (const { offset, day } of ticks.days) {
-        if (offset > 0) out.lines.push(offset);
-        out.labels.push({ offset, text: t('Jour ${n}', { n: timeline.days[day].dayNumber }) });
-    }
-    if (playback.hours === HOURS_NONE || playback.hours === HOURS_SLOTS) return out;
-    for (const { offset, hour } of ticks.hours) {
-        out.lines.push(offset);
-        out.labels.push({ offset, text: `${String(hour).padStart(2, '0')}:00` });
-    }
-    return out;
-}
-
-// Repères : DNF et photos de chaque étape (au début de la première).
-function barMarks(axisStart, span) {
-    if (!timeline) return [];
-    const firstQ = barFirstQ(axisStart);
-    const marks = [];
-    const push = (q, kind, label) => {
-        const offset = Math.ceil(q - 1e-6) - firstQ;
-        if (offset >= 0 && offset < span) marks.push({ offset, kind, label });
-    };
-    for (const stop of timeline.stops) {
-        if (stop.kind === 'dnf') push(stop.q, 'dnf', t('DNF : ${code}', { code: stop.code || stopLabel(stop) }));
-    }
-    const photosByStop = new Map();
-    for (const slot of photoSlots(timeline)) {
-        const entry = photosByStop.get(slot.stop);
-        if (entry) entry.count++;
-        else photosByStop.set(slot.stop, { fromQ: slot.fromQ, count: 1 });
-    }
-    for (const [index, { fromQ, count }] of photosByStop) {
-        const photos = count === 1 ? t('1 photo') : t('${n} photos', { n: count });
-        push(fromQ, 'photo', photos + ' · ' + stopLabel(timeline.stops[index]));
-    }
-    return marks;
-}
-
-// Pg.Préc/Pg.Suiv : arrivée à la première étape de la journée suivante
-// (direction 1) ou de la journée en cours / précédente (-1).
-function barDayOffset(rangeStart, offset, direction) {
-    if (!timeline) return null;
-    const firstQ = barFirstQ(rangeStart);
-    const starts = timeline.days
-        .map((day) => Math.ceil((timeline.stops[day.first]?.q ?? 0) - 1e-6) - firstQ)
-        .filter((start) => start >= 0);
-    if (direction > 0) return starts.find((start) => start > offset) ?? null;
-    return starts.filter((start) => start < offset).pop() ?? null;
-}
-
-const PARCOURS_TIMELINE_BAR = Object.freeze({
-    rangeEditable: false,
-    // Un cran de molette : 5 quanta (½ s à la vitesse naturelle).
-    wheelStep: 5,
-    revision: () => `${timelineRevision}|${playback.hours}`,
-    series: (axisStart, span) => barSeries(timeline, barFirstQ(axisStart), span),
-    ticks: barTickMarks,
-    marks: barMarks,
-    edgeText: barEdgeText,
-    positionText: barPositionText,
-    tipLines: barTipLines,
-    dayOffset: barDayOffset,
+const PARCOURS_TIMELINE_BAR = createParcoursTimelineBar({
+    quantumBase,
+    getState: () => ({ timeline, playback, timelineRevision }),
 });
 
 const PARCOURS_ENGINE = Object.freeze({
