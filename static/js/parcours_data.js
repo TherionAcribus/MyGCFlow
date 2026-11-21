@@ -2048,7 +2048,8 @@ function stopDetail(stop) {
     else if (stop.type) parts.push(stop.type);
     // Position autre que celle publiée : corrigée sur geocaching.com ou
     // saisie dans « Caches sans position » (log_store.cache_position).
-    if (stop.posSource === 'corrected') parts.push(t('coordonnées corrigées'));
+    if (stop.positionMoved) parts.push(t('position déplacée sur la carte'));
+    else if (stop.posSource === 'corrected') parts.push(t('coordonnées corrigées'));
     else if (stop.posSource === 'manual') parts.push(t('position saisie'));
     if (stop.favorite) parts.push(t('PF donné'));
     const reason = reasonLabel(stop.reason);
@@ -2898,12 +2899,13 @@ function mergeOverrides(patches) {
     for (const patch of patches) {
         const row = rows.get(patch.key) || {
             key: patch.key, rank: null, pinnedTime: null, day: null, excluded: false, legMode: null, visitMin: null,
+            position: null,
         };
-        for (const field of ['rank', 'pinnedTime', 'day', 'excluded', 'legMode', 'visitMin']) {
+        for (const field of ['rank', 'pinnedTime', 'day', 'excluded', 'legMode', 'visitMin', 'position']) {
             if (field in patch) row[field] = patch[field];
         }
         if (row.rank === null && row.pinnedTime === null && row.day === null && !row.excluded
-                && row.legMode === null && row.visitMin === null) {
+                && row.legMode === null && row.visitMin === null && (row.position ?? null) === null) {
             rows.delete(patch.key);
         } else {
             rows.set(patch.key, row);
@@ -2930,7 +2932,9 @@ function snapshotOverrides() {
 // voulue est posée entière, chaque ligne disparue est vidée (ce qui la
 // retire, même sémantique de fusion que le serveur).
 function patchesTo(target) {
-    const fields = { rank: null, pinnedTime: null, day: null, excluded: false, legMode: null, visitMin: null };
+    const fields = { rank: null, pinnedTime: null, day: null, excluded: false, legMode: null, visitMin: null, position: null };
+    // `position` est un objet : comparée par valeur.
+    const same = (f, a, b) => (f === 'position' ? JSON.stringify(a ?? null) === JSON.stringify(b ?? null) : a === b);
     const current = new Map((inputs.overrides || []).map((o) => [o.key, o]));
     const wanted = new Map(target.map((o) => [o.key, o]));
     const patches = [];
@@ -2940,7 +2944,7 @@ function patchesTo(target) {
             next[field] = field === 'excluded' ? !!row[field] : (row[field] ?? null);
         }
         const cur = current.get(key);
-        if (!cur || Object.keys(fields).some((f) => next[f] !== (f === 'excluded' ? !!cur[f] : (cur[f] ?? null)))) {
+        if (!cur || Object.keys(fields).some((f) => !same(f, next[f], f === 'excluded' ? !!cur[f] : (cur[f] ?? null)))) {
             patches.push(next);
         }
     }
@@ -5118,8 +5122,12 @@ function planFeatureAt(map, pixel, roles = ['stop']) {
 function isDraggable(feature) {
     const role = feature.get('role');
     if (role === 'draft') return true;
-    return role === 'stop' && (feature.get('kind') === KIND_PLACE || feature.get('kind') === KIND_BASE)
-        && feature.get('placeId') != null;
+    // Étape comptée (lot 15) : seule, ou sortie de sa pile par l'éventail.
+    if (role === 'fan') return true;
+    if (role !== 'stop') return false;
+    const kind = feature.get('kind');
+    if (kind === KIND_PLACE || kind === KIND_BASE) return feature.get('placeId') != null;
+    return (feature.get('stackKeys')?.length || 0) < 2;
 }
 
 function bindMapLink(map) {
@@ -5258,9 +5266,26 @@ function bindPlanDrag(map) {
             showDraftCoords();
             return;
         }
+        if (feature.get('placeId') == null) {
+            moveStopTo(feature.get('key'), lon, lat);
+            return;
+        }
         movePlaceTo(feature.get('placeId'), lon, lat);
     });
     map.addInteraction(translate);
+}
+
+// Étape glissée (lot 15) : sa position devient un ajustement, qui prime sur
+// toute autre et passe par l'historique comme les autres. Ajustements
+// verrouillés : le plan est redessiné, l'étape revient à sa place.
+function moveStopTo(key, lon, lat) {
+    closeFan();
+    if (!selectedId || adjustmentsLocked() || !inputs || !key) {
+        renderLayer();
+        return;
+    }
+    const round = (value) => Math.round(value * 1e6) / 1e6;
+    saveOverrides([{ key, position: { lat: round(lat), lon: round(lon) } }]);
 }
 
 // Refus (lecture en cours, erreur du serveur) : le repère revient à sa place.
@@ -5353,6 +5378,12 @@ function fillStopBubble(box, stop) {
             t('Exclure du parcours'), { text: t('Exclure') });
         exclude.addEventListener('click', done(() => excludeStop(stop)));
         actions.append(exclude);
+        if (stop.positionMoved) {
+            const reset = button('btn btn-sm btn-outline-light parcours-bubble-position', 'ti-map-pin-off',
+                t('Revenir à la position de la cache'), { text: t('Position d’origine') });
+            reset.addEventListener('click', done(() => saveOverrides([{ key: stop.key, position: null }])));
+            actions.append(reset);
+        }
     } else if (place) {
         const label = place.kind === KIND_BASE ? t('Supprimer la base') : t('Supprimer le lieu');
         const remove = button('btn btn-sm btn-outline-light parcours-bubble-delete', 'ti-trash', label,
@@ -5373,10 +5404,11 @@ function fillStopBubble(box, stop) {
     more.addEventListener('click', done(() => openStopDetails(stop.key)));
     actions.append(more);
     wrap.append(actions);
-    if (place) {
+    if (place || isCountedStop(stop)) {
         const hint = document.createElement('div');
         hint.className = 'gc-popup-note';
-        hint.textContent = t('Glissez le repère sur la carte pour le déplacer.');
+        hint.textContent = place ? t('Glissez le repère sur la carte pour le déplacer.')
+            : t('Glissez l’étape sur la carte pour corriger sa position.');
         wrap.append(hint);
     }
     box.append(wrap);

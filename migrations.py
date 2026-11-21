@@ -385,6 +385,15 @@ def _v20_waypoints_fiche_cache(db):
             "CREATE INDEX IF NOT EXISTS ix_cache_waypoint_code ON cache_waypoint (collection_id, gc_code)")
 
 
+def _v21_position_etape_parcours(db):
+    # Parcours : position d'une étape posée à la main (lot 15). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_override)")}
+        for name in ("latitude", "longitude"):
+            if name not in columns:
+                conn.exec_driver_sql(f"ALTER TABLE parcours_override ADD COLUMN {name} FLOAT")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -406,6 +415,7 @@ MIGRATIONS = [
     (18, _v18_categories_lieux_parcours),
     (19, _v19_trouvailles_fiche_cache),
     (20, _v20_waypoints_fiche_cache),
+    (21, _v21_position_etape_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

@@ -419,7 +419,10 @@ Autres repères :
   droit) : `parcours-map-actions.spec.mjs` — couper
   `DoubleClickZoom` (deux clics d'étape au même pixel), viser une étape par
   `stopPixels` + `.ol-viewport`, lire la bulle dans
-  `#gcPopup.is-visible .parcours-bubble[data-stop-key=…]`. La bulle de la
+  `#gcPopup.is-visible .parcours-bubble[data-stop-key=…]`. Le cadrage
+  serre les étapes jusqu'aux bords : en suite complète (autre thème chargé
+  sur /parcours), le cartouche du titre couvrait l'étape n° 3 et prenait
+  son survol et ses clics — `openReady` dézoome d'un cran (2026-11-21). La bulle de la
   carte est en position absolue dans un conteneur OpenLayers de taille
   nulle : `setPositioning` de l'overlay n'y fait rien, sa place vient de
   sa transformation CSS (`fitPopupAround`, mapgl.js) ; et le conteneur

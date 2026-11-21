@@ -6,7 +6,7 @@
     font-family: "tabler-icons";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/tabler-icons-subset.woff2?v=21d206d6da") format("woff2");
+    src: url("./fonts/tabler-icons-subset.woff2?v=460f532667") format("woff2");
 }
 .ti {
     font-family: "tabler-icons" !important;
@@ -158,6 +158,7 @@
 .ti-map-2:before { content: "\eae7"; }
 .ti-map-pin:before { content: "\eae8"; }
 .ti-map-pin-check:before { content: "\f94c"; }
+.ti-map-pin-off:before { content: "\ecf3"; }
 .ti-map-pin-plus:before { content: "\f956"; }
 .ti-map-pins:before { content: "\ed5e"; }
 .ti-map-route:before { content: "\fc79"; }

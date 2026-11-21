@@ -185,7 +185,8 @@ def duplicate(session, parcours_id: int) -> Parcours:
         session.add(ParcoursOverride(
             parcours_id=row.id, stop_key=o.stop_key, rank=o.rank,
             pinned_time=o.pinned_time, day=o.day, excluded=o.excluded,
-            leg_mode=o.leg_mode, visit_min=o.visit_min))
+            leg_mode=o.leg_mode, visit_min=o.visit_min,
+            latitude=o.latitude, longitude=o.longitude))
     for p in session.query(ParcoursPlace).filter_by(parcours_id=src.id):
         session.add(ParcoursPlace(
             parcours_id=row.id, kind=p.kind, name=p.name,
@@ -256,7 +257,7 @@ def import_parcours(session, data: dict) -> Parcours:
                 o.excluded = False
             # Une ligne vide n'a pas de sens, comme dans patch_overrides.
             if not o.excluded and all(getattr(o, f) is None for f in
-                                      ('rank', 'pinned_time', 'day', 'leg_mode', 'visit_min')):
+                                      ('rank', 'pinned_time', 'day', 'leg_mode', 'visit_min', 'latitude')):
                 continue
             session.add(o)
         for place in places:
@@ -317,6 +318,8 @@ def override_to_dict(row: ParcoursOverride) -> dict:
         'excluded': bool(row.excluded),
         'legMode': row.leg_mode,
         'visitMin': row.visit_min,
+        'position': ({'lat': row.latitude, 'lon': row.longitude}
+                     if row.latitude is not None and row.longitude is not None else None),
     }
 
 
@@ -383,6 +386,16 @@ def _override_columns(patch, parcours: Parcours) -> dict:
                                   or visit < 0 or visit > MAX_VISIT_MIN):
             raise ParcoursError('override-invalid')
         columns['visit_min'] = visit
+    if 'position' in patch:
+        position = patch['position']
+        if position is None:
+            columns['latitude'] = columns['longitude'] = None
+        else:
+            values = [position.get(k) if isinstance(position, dict) else None for k in ('lat', 'lon')]
+            if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in values) \
+                    or not (-90 <= values[0] <= 90 and -180 <= values[1] <= 180):
+                raise ParcoursError('override-invalid')
+            columns['latitude'], columns['longitude'] = (round(float(v), 6) for v in values)
     return columns
 
 
@@ -409,7 +422,7 @@ def patch_overrides(session, parcours_id: int, patches) -> dict:
                 setattr(row, name, value)
         for key, row in list(existing.items()):
             if row.rank is None and row.pinned_time is None and row.day is None and not row.excluded \
-                    and row.leg_mode is None and row.visit_min is None:
+                    and row.leg_mode is None and row.visit_min is None and row.latitude is None:
                 if row.id is not None:
                     session.delete(row)
                 else:

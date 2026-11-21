@@ -627,7 +627,7 @@ export function reconstructDay(day, {
 
 // Ajustements du lot 3 appliqués aux entrées, avant la reconstruction :
 // étapes déplacées vers une autre journée (`day`), exclues (`excluded`),
-// lieux posés ajoutés à leur journée. Retourne { days, overrides, bases }.
+// placées à la main (`position`, lot 15), lieux posés ajoutés à leur journée. Retourne { days, overrides, bases }.
 export function applyAdjustments(inputs) {
     const overrides = new Map();
     for (const o of Array.isArray(inputs?.overrides) ? inputs.overrides : []) {
@@ -640,7 +640,13 @@ export function applyAdjustments(inputs) {
         for (const stop of Array.isArray(rawDay?.stops) ? rawDay.stops : []) {
             const o = overrides.get(stop.key);
             const target = (o?.day && byDate.get(o.day)) || days[d];
-            const moved = target !== days[d] ? { ...stop, movedFrom: rawDay.date } : stop;
+            let moved = target !== days[d] ? { ...stop, movedFrom: rawDay.date } : stop;
+            // Position posée en glissant l'étape (lot 15) : prime sur toute
+            // autre ; `positionMoved` permet de la retirer.
+            const at = o?.position;
+            if (at && Number.isFinite(at.lat) && Number.isFinite(at.lon)) {
+                moved = { ...moved, lat: at.lat, lon: at.lon, posSource: 'manual', positionMoved: true };
+            }
             (o?.excluded ? target.excluded : target.stops).push(moved);
         }
     });

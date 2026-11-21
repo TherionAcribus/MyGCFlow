@@ -288,6 +288,22 @@ test('journée corrigée et exclusion', () => {
     assert.equal(result.stopCount, 3);
 });
 
+test('position posée à la main : prime, et change l’ordre géographique', () => {
+    // B publiée au bout de la ligne ; sa vraie place est entre A et C.
+    const days = [{ date: '2025-07-12', stops: [stop('A', 0), stop('B', 50), stop('C', 6)] }];
+    const before = keys(reconstructParcours({ days }).days[0]);
+    assert.notEqual(before[1], 'B', before.join(''));
+    const [day] = reconstructParcours({
+        days,
+        overrides: [{ key: 'B', position: { lat: 45, lon: at(3) } }, { key: 'C', position: { lat: 'x', lon: 5 } }],
+    }).days;
+    assert.equal(keys(day)[1], 'B', keys(day).join(''));
+    const b = day.stops.find((s) => s.key === 'B');
+    assert.deepEqual([b.lon, b.lat, b.posSource, b.positionMoved], [at(3), 45, 'manual', true]);
+    // Position invalide : ignorée.
+    assert.equal(day.stops.find((s) => s.key === 'C').positionMoved, undefined);
+});
+
 test('lieu posé : une étape de plus, à son heure, non comptée', () => {
     const result = reconstructParcours({
         days: [{ date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 6, { logId: 2 })] }],

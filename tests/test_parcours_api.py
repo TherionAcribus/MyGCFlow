@@ -368,22 +368,26 @@ class AdjustmentTests(_Base):
         response = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
             {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "visitMin": 45},
             {"key": "GC2", "excluded": True, "day": "2025-07-13", "legMode": "car"},
+            {"key": "GC3", "position": {"lat": 45.1234567, "lon": 5.5}},
         ]})
         self.assertEqual(response.status_code, 200, response.get_json())
         self.assertEqual(response.get_json()["overrides"], [
             {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "day": None, "excluded": False,
-             "legMode": None, "visitMin": 45},
+             "legMode": None, "visitMin": 45, "position": None},
             {"key": "GC2", "rank": None, "pinnedTime": None, "day": "2025-07-13", "excluded": True,
-             "legMode": "car", "visitMin": None},
+             "legMode": "car", "visitMin": None, "position": None},
+            {"key": "GC3", "rank": None, "pinnedTime": None, "day": None, "excluded": False,
+             "legMode": None, "visitMin": None, "position": {"lat": 45.123457, "lon": 5.5}},
         ])
         # Patch partiel ; une étape sans plus d'ajustement perd sa ligne.
         payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
             {"key": "GC1", "rank": None},
             {"key": "GC2", "excluded": False, "day": None, "legMode": None},
+            {"key": "GC3", "position": None},
         ]}).get_json()
         self.assertEqual(payload["overrides"], [
             {"key": "GC1", "rank": None, "pinnedTime": "10:15", "day": None, "excluded": False,
-             "legMode": None, "visitMin": 45}])
+             "legMode": None, "visitMin": 45, "position": None}])
         inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
         self.assertEqual([o["key"] for o in inputs["overrides"]], ["GC1"])
         self.assertEqual(inputs["places"], [])
@@ -403,6 +407,10 @@ class AdjustmentTests(_Base):
             ([{"key": "GC1", "legMode": "avion"}], "override-invalid"),
             ([{"key": "GC1", "visitMin": -5}], "override-invalid"),
             ([{"key": "GC1", "visitMin": 721}], "override-invalid"),
+            ([{"key": "GC1", "position": {"lat": 91, "lon": 5}}], "override-invalid"),
+            ([{"key": "GC1", "position": {"lat": 45}}], "override-invalid"),
+            ([{"key": "GC1", "position": [45, 5]}], "override-invalid"),
+            ([{"key": "GC1", "position": {"lat": True, "lon": 5}}], "override-invalid"),
             ("pas une liste", "override-invalid"),
         ]
         for overrides, code in cases:
@@ -473,7 +481,8 @@ class AdjustmentTests(_Base):
     def test_duplicate_export_import(self):
         pid = self.create()["id"]
         self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
-            {"key": "GC1", "rank": 1, "visitMin": 30}]})
+            {"key": "GC1", "rank": 1, "visitMin": 30},
+            {"key": "GC2", "position": {"lat": 45.2, "lon": 5.2}}]})
         self.post(f"/api/parcours/{pid}/places",
                   {"kind": "base", "name": "Hôtel", "lat": 45.9, "lon": 6.12, "role": "end"})
 
@@ -484,13 +493,14 @@ class AdjustmentTests(_Base):
         self.assertTrue(copy["name"].endswith("(copie)"), copy["name"])
         inputs = self.get(f"/api/parcours/{copy['id']}/inputs").get_json()
         self.assertEqual(inputs["overrides"][0]["visitMin"], 30)
+        self.assertEqual(inputs["overrides"][1]["position"], {"lat": 45.2, "lon": 5.2})
         self.assertEqual(inputs["places"][0]["role"], "end")
 
         # Export : le document porte tout le nécessaire.
         exported = self.get(f"/api/parcours/{pid}/export").get_json()
         self.assertEqual(exported["format"], "mygcflow-parcours")
         self.assertEqual(exported["version"], 1)
-        self.assertEqual(len(exported["overrides"]), 1)
+        self.assertEqual(len(exported["overrides"]), 2)
         self.assertEqual(len(exported["places"]), 1)
 
         # Import : le parcours recréé retrouve ajustements et lieux.
@@ -500,6 +510,7 @@ class AdjustmentTests(_Base):
         nid = imported.get_json()["parcours"]["id"]
         inputs = self.get(f"/api/parcours/{nid}/inputs").get_json()
         self.assertEqual(inputs["overrides"][0]["key"], "GC1")
+        self.assertEqual(inputs["overrides"][1]["position"], {"lat": 45.2, "lon": 5.2})
         self.assertEqual(inputs["places"][0]["name"], "Hôtel")
 
         # Document invalide ou ajustement hors plage : rien n'est importé.

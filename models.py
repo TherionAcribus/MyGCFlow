@@ -305,6 +305,10 @@ class ParcoursOverride(db.Model):
     leg_mode = db.Column(db.String(8))
     # Durée de visite imposée (minutes) ; null : durée estimée selon le type.
     visit_min = db.Column(db.Integer)
+    # Position posée à la main en glissant l'étape sur la carte (lot 15) :
+    # prime sur toute autre (mystery résolue jamais corrigée sur le site).
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
 
     __table_args__ = (
         db.UniqueConstraint('parcours_id', 'stop_key', name='uq_parcours_override_key'),

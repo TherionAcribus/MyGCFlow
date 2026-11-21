@@ -880,7 +880,8 @@ masquer, cadrage), lieux proposés, réglages d'affichage.
 
 ## 15. Compléter un parcours depuis geocaching.com (lots 11 à 15)
 
-Ajouté le 2026-11-21. **Lots 11 à 14 livrés le même jour** (§ 15.9).
+Ajouté le 2026-11-21. **Lots 11 à 15 livrés le même jour** (§ 15.9) :
+le § 15 est entièrement livré.
 
 Aujourd'hui, les étapes viennent du My Finds (position, type, D/T, date),
 des Labs et des DNF de la carte « Mes logs ». Les manques qui pèsent sur
@@ -1179,8 +1180,15 @@ Rétablir des ajustements.
   photos. Tests : pytest (contrat, remplacement, fichier ancien,
   effacement, entrées), harnais et cœur sous Node, module pur, e2e dans
   parcours-gc-collect.
-- **Lot 15 : déplacer une étape** (facultatif) : seul recours pour une
-  mystery résolue mais jamais corrigée sur le site (question 1).
+- **Lot 15 : déplacer une étape. Livré le 2026-11-21.** Glisser une
+  étape comptée (seule, ou depuis l'éventail d'une pile) pose
+  `position: {lat, lon}` dans ses ajustements (`parcours_override`,
+  migration v21) ; copiée par la duplication, exportée et réimportée.
+  Elle prime sur tout (`posSource: 'manual'`, `positionMoved`) ; Annuler /
+  Rétablir sans code de plus (l'historique rejoue les ajustements) ;
+  « Position d'origine » dans la bulle. Tests : pytest (patch, effacement,
+  refus, copie, export), reconstruction (`parcours_reconstruct.test.mjs`),
+  e2e dans parcours-map-actions.
 
 Les lots 13 et 14 dépendent du 12 ; le 11 et le 15 sont indépendants.
 Doc : docs/parcours.md (section « Compléter depuis geocaching.com ») et

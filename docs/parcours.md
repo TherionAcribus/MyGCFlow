@@ -476,8 +476,17 @@ lecture, même en pause) :
   refus remet le repère en place. Le déplacement entre dans l'historique
   des ajustements (boutons Annuler / Rétablir, Ctrl+Z / Ctrl+Y) ; supprimer
   le lieu retire ses déplacements de l'historique. Le point provisoire du formulaire de pose
-  se glisse aussi (coordonnées du formulaire mises à jour). Les étapes de
-  cache ne se déplacent pas : leur position est celle de la cache ;
+  se glisse aussi (coordonnées du formulaire mises à jour) ;
+- **glisser une étape comptée** (lot 15, depuis le 2026-11-21 ; seule ou
+  sortie de sa pile par l'éventail) : sa position devient un ajustement
+  (`parcours_override.latitude/longitude`, migration v21, champ
+  `position: {lat, lon}` des overrides, arrondi à 6 décimales). Elle prime
+  sur toute autre (`applyAdjustments` : `posSource: 'manual'`,
+  `positionMoved`) — le recours pour une mystery résolue jamais corrigée
+  sur geocaching.com. Ordre, itinéraires, caméra et rattachement des
+  photos suivent la nouvelle position. Annuler / Rétablir comme les autres
+  ajustements ; la liste dit « position déplacée sur la carte », la bulle
+  propose « Position d'origine » (`position: null`) ;
 - **clic droit** : sur une étape, sa bulle ; ailleurs, « Poser un lieu ici »
   / « Poser une base ici », qui ouvre le formulaire de pose à cet endroit,
   type choisi d'avance (onglet Données affiché). Sans parcours ouvert, le

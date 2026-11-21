@@ -33,9 +33,19 @@ async function openReady(page) {
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
   await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
-    app.getMap().getInteractions().forEach((i) => {
+    const map = app.getMap();
+    map.getInteractions().forEach((i) => {
       if (i instanceof ol.interaction.DoubleClickZoom) i.setActive(false);
     });
+    // Le cadrage serre les étapes jusqu'aux bords : un cartouche (titre
+    // affiché par un spec précédent) couvrait l'étape n° 3 et prenait ses
+    // clics. Un cran de zoom arrière les ramène vers le centre.
+    const view = map.getView();
+    await new Promise((resolve) => {
+      map.once('moveend', resolve);
+      view.setZoom(view.getZoom() - 1);
+    });
+    map.renderSync();
   });
 }
 
@@ -164,6 +174,46 @@ test('glisser un lieu le déplace ; sa bulle propose de le supprimer', async ({ 
   // Un lieu supprimé sort de l'historique : rien à annuler.
   await expect(undo).toBeDisabled();
   expect(state.undoDepth).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+// Lot 15 : une mystery jamais corrigée sur le site se replace à la main.
+test('glisser une étape corrige sa position ; annulable, et la bulle la remet', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+  const start = await stopPoint(page, 'GCPAR02');
+  await page.mouse.move(start.x, start.y);
+  await expect.poll(() => page.evaluate(() => document.getElementById('map').style.cursor)).toBe('grab');
+
+  await drag(page, start, 80, -50);
+  state = await adjusted(page, state.adjustmentRevision);
+  const position = state.overrides.find((o) => o.key === 'GCPAR02')?.position;
+  expect(position).toBeTruthy();
+  const row = page.locator('.parcours-stop[data-stop-key="GCPAR02"]');
+  await expect(row).toHaveAttribute('data-pos-source', 'manual');
+  await expect(row.locator('.parcours-stop-text')).toContainText('position déplacée sur la carte');
+  // L'étape est dessinée là où elle a été lâchée.
+  const moved = (await snapshot(page)).stopPixels.GCPAR02;
+  const box = await page.locator('.ol-viewport').boundingBox();
+  expect(Math.abs(box.x + moved[0] - (start.x + 80))).toBeLessThan(3);
+  expect(Math.abs(box.y + moved[1] - (start.y - 50))).toBeLessThan(3);
+
+  // Annuler / Rétablir, comme les autres ajustements.
+  await page.locator('#btnParcoursUndo').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.overrides.find((o) => o.key === 'GCPAR02')).toBeUndefined();
+  await expect(row).not.toHaveAttribute('data-pos-source', /./);
+  await page.locator('#btnParcoursRedo').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.overrides.find((o) => o.key === 'GCPAR02')?.position).toEqual(position);
+
+  // Bulle : « Position d'origine » retire l'ajustement.
+  const bubble = await clickStop(page, 'GCPAR02');
+  await expect(bubble).toContainText('Glissez l’étape');
+  await bubble.locator('.parcours-bubble-position').click();
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.overrides.find((o) => o.key === 'GCPAR02')).toBeUndefined();
   expect(errors).toEqual([]);
 });
 
