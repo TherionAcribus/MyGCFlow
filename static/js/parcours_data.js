@@ -48,9 +48,7 @@ import {
     formatKm,
     formatOffset,
     formatRange,
-    formatUtcOffset,
     matchLabel,
-    offsetSourceLabel,
     refuseSummary,
     stopCategoryIcon,
     stopDetail,
@@ -59,7 +57,6 @@ import {
     stopTime,
     stopsCountText,
     suggestionName,
-    trackRange,
     travelModeLabel,
 } from './parcours_labels.mjs';
 import {
@@ -89,6 +86,7 @@ import {
     trailAt,
 } from './parcours_timeline.mjs';
 import { createParcoursTimelineBar, slotLabels } from './parcours_tbar.mjs';
+import { createTracksPanel } from './parcours_tracks_panel.mjs';
 import { cameraPoseAt } from './parcours_camera.mjs';
 import { initParcoursCollect, parcoursCollectSnapshot, refreshParcoursCollect } from './parcours_collect.js';
 import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
@@ -135,7 +133,7 @@ import {
     photoTimelineOptions,
 } from './parcours_photo_layout.mjs';
 import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
-import { OFFSET_COMPUTER, reconstructWithEvidence } from './parcours_tracks.mjs';
+import { reconstructWithEvidence } from './parcours_tracks.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
@@ -312,7 +310,7 @@ export async function initParcoursPage() {
     bindPlayback();
     bindAdjustments();
     bindPhotos();
-    bindTracks();
+    tracksPanel.bind();
     bindRouting();
     bindParcoursStyle();
     bindFileDrop();
@@ -453,7 +451,7 @@ function applyTimeline({ fit = false } = {}) {
     renderLayer({ fit });
     preloadPhotos();
     renderPhotos();
-    renderTracks();
+    tracksPanel.render();
     renderRouting();
     ensureRoutes();
     pkg.refreshTimelineBar?.();
@@ -4139,7 +4137,7 @@ function routeDroppedFiles(files) {
     } else {
         pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
     }
-    if (tracks.length) uploadTracks(tracks);
+    if (tracks.length) tracksPanel.upload(tracks);
 }
 
 function bindFileDrop() {
@@ -4190,139 +4188,16 @@ function bindFileDrop() {
 
 // --- Traces GPS (lot 5) ---------------------------------------------------------
 
-// Décalages proposés pour l'heure locale des traces : de −12 h à +14 h, au
-// quart d'heure (fuseaux à 30 et 45 minutes compris).
-const UTC_OFFSET_CHOICES = Array.from({ length: (26 * 60) / 15 + 1 }, (_, i) => -12 * 60 + i * 15);
-
-
-// « Fuseau de cet ordinateur » : suspect quand le parcours se passe loin du
-// centre habituel des trouvailles — l'ordinateur peut avoir gardé le fuseau
-// de la maison. Longitude : ≈ un fuseau par 10° d'écart.
-const UTC_SUSPECT_LON_DEG = 10;
-
-function computerOffsetSuspect() {
-    if (utcOffset.source !== OFFSET_COMPUTER || !(inputs?.tracks || []).length) return false;
-    if (!homeCenter || !ordered) return false;
-    return parcoursStops(ordered).some((stop) => {
-        const d = Math.abs(stop.lon - homeCenter.lon);
-        return Math.min(d, 360 - d) > UTC_SUSPECT_LON_DEG;
-    });
-}
-
-function renderTracks() {
-    const card = el('parcoursTracksCard');
-    if (!card) return;
-    card.hidden = !inputs;
-    if (!inputs) return;
-    const tracks = inputs.tracks || [];
-    const summary = el('parcoursTrackSummary');
-    if (summary) {
-        const count = tracks.length === 1 ? t('1 trace') : t('${n} traces', { n: tracks.length });
-        const matched = trackMatches.size === 1
-            ? t('1 étape calée sur une trace')
-            : t('${n} étapes calées sur une trace', { n: trackMatches.size });
-        summary.textContent = tracks.length ? `${count}, ${matched}` : t('Aucune trace pour ce parcours.');
-    }
-    const offset = el('parcoursUtcOffset');
-    if (offset) {
-        if (!offset.options.length) {
-            const auto = document.createElement('option');
-            auto.value = '';
-            offset.append(auto);
-            for (const minutes of UTC_OFFSET_CHOICES) {
-                const opt = document.createElement('option');
-                opt.value = String(minutes);
-                opt.textContent = formatUtcOffset(minutes);
-                offset.append(opt);
-            }
-        }
-        const manual = inputs.parcours?.utc_offset_minutes;
-        offset.options[0].textContent = Number.isFinite(manual)
-            ? t('Automatique')
-            : t('Automatique : ${offset} (${source})', { offset: formatUtcOffset(utcOffset.minutes), source: offsetSourceLabel(utcOffset.source) });
-        offset.value = Number.isFinite(manual) ? String(manual) : '';
-    }
-    const warn = el('parcoursUtcOffsetWarn');
-    if (warn) {
-        warn.hidden = !computerOffsetSuspect();
-        const warnText = el('parcoursUtcOffsetWarnText');
-        if (!warn.hidden && warnText) {
-            warnText.textContent = t('Heures des traces calées sur le fuseau de cet ordinateur (${offset}) — vérifiez-le pour un parcours loin de chez vous.', { offset: formatUtcOffset(utcOffset.minutes) });
-        }
-    }
-    const list = el('parcoursTracks');
-    if (list) {
-        list.replaceChildren(...tracks.map((track) => {
-            const item = document.createElement('div');
-            item.className = 'd-flex align-items-center gap-2 py-1 parcours-track';
-            item.dataset.trackId = String(track.id);
-            const text = document.createElement('div');
-            text.className = 'flex-grow-1 min-w-0';
-            const name = document.createElement('div');
-            name.className = 'text-truncate';
-            name.textContent = track.name || t('Trace');
-            const detail = document.createElement('div');
-            detail.className = 'small text-muted';
-            const matched = [...trackMatches.values()].filter((m) => m.trackId === track.id).length;
-            detail.textContent = [
-                trackRange(track, utcOffset.minutes),
-                t('${n} points', { n: track.pointCount }),
-                matched === 1 ? t('1 étape calée') : t('${n} étapes calées', { n: matched }),
-            ].filter(Boolean).join(' · ');
-            text.append(name, detail);
-            const remove = button('btn btn-sm btn-ghost-danger parcours-track-delete', 'ti-trash', t('Supprimer la trace'));
-            remove.addEventListener('click', () => deleteTrack(track.id));
-            item.append(text, remove);
-            return item;
-        }));
-    }
-}
-
-async function uploadTracks(files) {
-    if (!selectedId || adjustmentsLocked() || files.length === 0) return;
-    // Même garde que les photos : la destination est le parcours ouvert au
-    // début de l'envoi (partagée dans runUpload).
-    await runUpload('track', files);
-}
-
-async function deleteTrack(id) {
-    if (!selectedId || adjustmentsLocked()) return;
-    const pid = selectedId;
-    try {
-        await fetchJson(`/api/parcours/${pid}/tracks/${id}`, { method: 'DELETE' });
-        await reloadAdjustments(pid, { tracks: true });
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
-}
-
-async function setUtcOffset(value) {
-    if (!selectedId || adjustmentsLocked()) return;
-    const pid = selectedId;
-    try {
-        const body = await fetchJson(`/api/parcours/${pid}`, {
-            method: 'PATCH', body: JSON.stringify({ utc_offset_minutes: value }),
-        });
-        if (pid !== selectedId) return;
-        inputs.parcours = body.parcours;
-        receiveAdjustments({}, pid);
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
-}
-
-function bindTracks() {
-    el('btnParcoursTracksStop')?.addEventListener('click', () => cancelUploads('track'));
-    const input = el('parcoursTrackInput');
-    el('btnParcoursAddTracks')?.addEventListener('click', () => input?.click());
-    input?.addEventListener('change', () => {
-        const files = [...(input.files || [])];
-        input.value = '';
-        uploadTracks(files);
-    });
-    const offset = el('parcoursUtcOffset');
-    offset?.addEventListener('change', () => setUtcOffset(offset.value === '' ? null : Number(offset.value)));
-}
+const tracksPanel = createTracksPanel({
+    getState: () => ({ inputs, ordered, utcOffset, homeCenter, trackMatches, selectedId }),
+    button,
+    fetchJson,
+    adjustmentsLocked,
+    runUpload,
+    reloadAdjustments,
+    receiveAdjustments,
+    cancelUploads,
+});
 
 // --- Itinéraires (lot 6) --------------------------------------------------------
 
@@ -5587,7 +5462,7 @@ export function getParcoursSnapshot() {
         tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
         trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),
         utcOffset: { ...utcOffset },
-        utcOffsetSuspect: computerOffsetSuspect(),
+        utcOffsetSuspect: tracksPanel.offsetSuspect(),
         trackLegs: (timeline?.legs || []).filter((leg) => leg.mode === 'track').length,
         routing: {
             ...routingConfig(),
