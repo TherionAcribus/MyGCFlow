@@ -47,9 +47,10 @@ def _store_error(exc: store.ParcoursError):
         'tracks-full': (_('Un parcours garde %(max)s traces au plus', max=parcours_tracks.MAX_TRACKS), 400),
         'track-not-found': (_('Trace introuvable'), 404),
         'import-invalid': (_('Ce fichier n\'est pas un export de parcours valide'), 400),
+        'out-of-range': (_('La nouvelle plage laisse des lieux ou des étapes déplacées dehors'), 409),
     }
     message, code = messages.get(exc.code, (str(exc), 400))
-    return jsonify({'success': False, 'error': exc.code, 'message': message}), code
+    return jsonify({'success': False, 'error': exc.code, 'message': message, **exc.detail}), code
 
 
 @parcours_bp.route('/parcours')

@@ -478,6 +478,43 @@ class AdjustmentTests(_Base):
         other = self.create(name="Autre")["id"]
         self.assertEqual(self.delete(f"/api/parcours/{other}/places/{base.get_json()['place']['id']}").status_code, 404)
 
+    def test_shrinking_the_range_reports_orphans_and_cleans_with_confirm(self):
+        """Un rétrécissement qui laisserait des lieux ou des ajustements
+        « journée » dehors est refusé sans `drop_orphans` ; avec, les lieux
+        datés sont supprimés et la journée des ajustements effacée."""
+        pid = self.create()["id"]
+        self.post(f"/api/parcours/{pid}/places", {
+            "kind": "place", "name": "Belvédère", "lat": 45.85, "lon": 6.2, "date": "2025-07-13"})
+        self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC1", "day": "2025-07-13"},
+            {"key": "GC2", "day": "2025-07-13", "rank": 2}]})
+
+        # Sans confirmation : refus détaillé, rien n'a bougé.
+        refused = self.patch(f"/api/parcours/{pid}", {"date_end": "2025-07-12"})
+        self.assertEqual(refused.status_code, 409)
+        body = refused.get_json()
+        self.assertEqual((body["error"], body["places"], body["days"]), ("out-of-range", 1, 2))
+        parcours = self.get(f"/api/parcours/{pid}").get_json()["parcours"]
+        self.assertEqual(parcours["date_end"], "2025-07-13")
+        inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
+        self.assertEqual(len(inputs["places"]), 1)
+        self.assertEqual(len(inputs["overrides"]), 2)
+
+        # Confirmé : lieu supprimé, journée effacée — GC2 garde son rang,
+        # GC1 (qui n'avait que sa journée) perd sa ligne.
+        ok = self.patch(f"/api/parcours/{pid}", {"date_end": "2025-07-12", "drop_orphans": True})
+        self.assertEqual(ok.status_code, 200, ok.get_json())
+        inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
+        self.assertEqual(inputs["places"], [])
+        self.assertEqual(len(inputs["overrides"]), 1)
+        kept = inputs["overrides"][0]
+        self.assertEqual((kept["key"], kept["day"], kept["rank"]), ("GC2", None, 2))
+
+        # Un rétrécissement sans orphelin n'a pas besoin de la confirmation.
+        pid = self.create(name="Sans lieu")["id"]
+        ok = self.patch(f"/api/parcours/{pid}", {"date_end": "2025-07-12"})
+        self.assertEqual(ok.status_code, 200, ok.get_json())
+
     def test_duplicate_export_import(self):
         pid = self.create()["id"]
         self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [

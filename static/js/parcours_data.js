@@ -284,6 +284,8 @@ async function fetchJson(url, options = {}) {
     if (!response.ok) {
         const error = new Error(body.message || `HTTP ${response.status}`);
         error.code = body.error;
+        // Compteurs et détails joints à certaines erreurs ('out-of-range').
+        error.detail = body;
         throw error;
     }
     return body;
@@ -1837,17 +1839,21 @@ function bindForm() {
             include_labs: el('parcoursIncludeLabs')?.checked !== false,
             include_dnf: el('parcoursIncludeDnf')?.checked !== false,
         };
+        const updateParcours = async (id, extra = {}) => {
+            const body = await fetchJson(`/api/parcours/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ ...payload, ...extra }),
+            });
+            cancelEditParcours();
+            // Rechargement complet : dates, Labs et DNF changent les
+            // entrées du parcours.
+            await refreshParcoursList({ select: body.parcours.id });
+        };
+        let editedId = null;
         try {
             if (editingParcoursId !== null) {
-                const id = editingParcoursId;
-                const body = await fetchJson(`/api/parcours/${id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(payload),
-                });
-                cancelEditParcours();
-                // Rechargement complet : dates, Labs et DNF changent les
-                // entrées du parcours.
-                await refreshParcoursList({ select: body.parcours.id });
+                editedId = editingParcoursId;
+                await updateParcours(editedId);
             } else {
                 const body = await fetchJson('/api/parcours', {
                     method: 'POST',
@@ -1857,7 +1863,25 @@ function bindForm() {
                 await refreshParcoursList({ select: body.parcours.id });
             }
         } catch (error) {
-            showToast(error.message, 'error');
+            // 'out-of-range' : le rétrécissement laisserait des lieux ou des
+            // ajustements dehors — confirmation puis renvoi avec drop_orphans.
+            if (error.code === 'out-of-range' && editedId !== null) {
+                const detail = error.detail || {};
+                const parts = [];
+                if (detail.places) parts.push(t('${n} lieux ou bases seront supprimés', { n: detail.places }));
+                if (detail.days) parts.push(t('${n} étapes retrouveront leur journée d’origine', { n: detail.days }));
+                const id = editedId;
+                showConfirmation(
+                    t('La nouvelle plage laisse des éléments dehors : ${items}.', { items: parts.join(' ; ') }),
+                    t('Raccourcir le parcours'),
+                    () => updateParcours(id, { drop_orphans: true })
+                        .catch((err) => showToast(err.message, 'error')),
+                    null,
+                    { danger: true, confirmText: t('Raccourcir quand même') },
+                );
+            } else {
+                showToast(error.message, 'error');
+            }
         } finally {
             if (submit) submit.disabled = false;
         }

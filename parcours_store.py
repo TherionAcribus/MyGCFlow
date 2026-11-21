@@ -27,9 +27,11 @@ MAX_DAYS = 92
 
 
 class ParcoursError(Exception):
-    def __init__(self, code: str):
+    def __init__(self, code: str, detail: dict | None = None):
         super().__init__(code)
         self.code = code
+        # Compteurs ou détails renvoyés au client (ex. 'out-of-range').
+        self.detail = detail or {}
 
 
 def _name(value) -> str:
@@ -109,6 +111,31 @@ def create(session, data: dict) -> Parcours:
     return row
 
 
+def _out_of_range(session, parcours: Parcours, start: date, end: date) -> tuple:
+    """(lieux et bases datés, ajustements « journée ») hors de la plage."""
+    places = session.query(ParcoursPlace).filter(
+        ParcoursPlace.parcours_id == parcours.id, ParcoursPlace.date.isnot(None),
+        (ParcoursPlace.date < start) | (ParcoursPlace.date > end)).all()
+    days = session.query(ParcoursOverride).filter(
+        ParcoursOverride.parcours_id == parcours.id, ParcoursOverride.day.isnot(None),
+        (ParcoursOverride.day < start) | (ParcoursOverride.day > end)).all()
+    return places, days
+
+
+def _drop_out_of_range(session, parcours: Parcours, start: date, end: date) -> None:
+    """Nettoie ce que la nouvelle plage laisse dehors : un lieu daté est
+    supprimé (il n'a de sens que dans sa journée) ; l'ajustement « journée »
+    est effacé — l'étape retrouve sa journée d'origine, le reste de
+    l'ajustement est gardé."""
+    places, days = _out_of_range(session, parcours, start, end)
+    for place in places:
+        session.delete(place)
+    for override in days:
+        override.day = None
+        if _override_is_empty(override):
+            session.delete(override)
+
+
 def update(session, parcours_id: int, data: dict) -> Parcours:
     """Patch : une clé absente garde sa valeur."""
     row = get(session, parcours_id)
@@ -117,6 +144,16 @@ def update(session, parcours_id: int, data: dict) -> Parcours:
     start = _date(data['date_start']) if 'date_start' in data else row.date_start
     end = _date(data['date_end']) if 'date_end' in data else row.date_end
     _check_range(start, end)
+    if (start, end) != (row.date_start, row.date_end):
+        # Un rétrécissement qui laisserait des lieux ou des ajustements hors
+        # de la plage est refusé sans `drop_orphans` (le client confirme) :
+        # dehors, ils seraient invisibles tout en comptant dans les plafonds.
+        if _bool(data.get('drop_orphans'), False):
+            _drop_out_of_range(session, row, start, end)
+        else:
+            places, days = _out_of_range(session, row, start, end)
+            if places or days:
+                raise ParcoursError('out-of-range', {'places': len(places), 'days': len(days)})
     row.name = name
     row.date_start = start
     row.date_end = end
@@ -399,6 +436,12 @@ def _override_columns(patch, parcours: Parcours) -> dict:
     return columns
 
 
+def _override_is_empty(row: ParcoursOverride) -> bool:
+    """Une ligne sans plus aucun ajustement n'a pas de sens : à retirer."""
+    return (row.rank is None and row.pinned_time is None and row.day is None and not row.excluded
+            and row.leg_mode is None and row.visit_min is None and row.latitude is None)
+
+
 def patch_overrides(session, parcours_id: int, patches) -> dict:
     """Applique une liste de patchs {key, rank?, pinnedTime?, day?, excluded?} :
     un champ présent remplace la valeur (null l'efface), un champ absent la
@@ -421,8 +464,7 @@ def patch_overrides(session, parcours_id: int, patches) -> dict:
             for name, value in columns.items():
                 setattr(row, name, value)
         for key, row in list(existing.items()):
-            if row.rank is None and row.pinned_time is None and row.day is None and not row.excluded \
-                    and row.leg_mode is None and row.visit_min is None and row.latitude is None:
+            if _override_is_empty(row):
                 if row.id is not None:
                     session.delete(row)
                 else:

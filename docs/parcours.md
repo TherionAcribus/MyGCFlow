@@ -41,7 +41,7 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 | `GET /api/parcours` | `{parcours, finds: {first, last}, maxDays}` — `finds` borne le formulaire de création |
 | `GET /api/parcours/suggestions` | Parcours suggérés `{suggestions: [{kind: trip / day, start, end, days, findDays, finds, place}]}` (lot 7, ci-dessous), hors plages déjà enregistrées |
 | `POST /api/parcours` | Création `{name, date_start, date_end?, include_labs?, include_dnf?}` ; `date_end` absente = une journée |
-| `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression |
+| `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression. Un rétrécissement de la plage qui laisserait des lieux datés ou des ajustements « journée » dehors est refusé (409 `out-of-range`, compteurs `places`/`days`) : confirmation puis renvoi avec `drop_orphans` — les lieux datés sont supprimés, la journée des ajustements effacée |
 | `POST /api/parcours/<id>/duplicate` | Copie sélection, ajustements et lieux (`<nom> (copie)` ; pas les photos ni les traces) |
 | `GET /api/parcours/<id>/export` | Document JSON réimportable `{format: mygcflow-parcours, version: 1, parcours, overrides, places}` |
 | `POST /api/parcours/import` | Recrée un parcours depuis un export — mêmes validations qu'à la création, tout ou rien |
@@ -67,7 +67,7 @@ Erreurs : `{success: false, error, message}` avec les codes `not-found`,
 `photo-refused` (fichier refusé : `reason` comme l'onglet Images),
 `track-refused` (`reason` : `too_large`, `not_gpx`, `no_time`),
 `tracks-full` (50 traces par parcours), `track-not-found`,
-`utc-offset-invalid`.
+`utc-offset-invalid`, `out-of-range` (409).
 
 ## Entrées (`parcours_dataset.py`)
 
