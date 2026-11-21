@@ -17,6 +17,17 @@
                 </div>
                 <label class="form-check-label point-mode-label" for="switchIconeVectoriel" id="labelPointModeVectoriel">{{ _("Vectoriel") }}</label>
             </div>
+            {% if mode == 'parcours' %}
+            <!-- Rendu « pastilles » : la couche des points du thème est
+                 masquée, ces réglages n'ont rien à montrer (parcours_data.js,
+                 syncParcoursStyleUI). -->
+            <div id="parcoursThemePointsHint" class="alert alert-info py-2 px-3 mt-2 mb-0 small" role="status" hidden>
+                <div class="flex-fill">
+                    {{ _("Les étapes sont dessinées en « Pastilles du parcours » : le graphisme des points (icônes ou vectoriel) ne s'applique qu'au rendu « Points du thème ».") }}
+                    <button type="button" id="btnParcoursUseThemePoints" class="btn btn-link btn-sm p-0 align-baseline">{{ _("Utiliser les points du thème") }}</button>
+                </div>
+            </div>
+            {% endif %}
             <div class="form-check form-switch mt-2">
                 <input class="form-check-input" type="checkbox" id="switchPointAppear" role="switch" aria-describedby="helpPointAppear">
                 <label class="form-check-label" for="switchPointAppear">{{ _("Apparition animée des points") }}</label>

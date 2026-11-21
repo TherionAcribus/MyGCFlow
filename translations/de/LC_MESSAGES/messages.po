@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-21 13:51+0100\n"
+"POT-Creation-Date: 2026-11-21 15:07+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -344,7 +344,7 @@ msgstr "Fund"
 #: static/js/parcours_data.js:2279 static/js/stats_panels.js:1406
 #: static/js/stats_panels.js:1839 templates/menu_informations.html:68
 #: templates/menu_informations.html:117 templates/menu_names.html:64
-#: templates/menu_names.html:327 templates/menu_points.html:323
+#: templates/menu_names.html:327 templates/menu_points.html:334
 msgid "DNF"
 msgstr "DNF"
 
@@ -710,7 +710,7 @@ msgstr "Status"
 #: poses_dataset.py:638 static/js/chart_labels.mjs:244
 #: static/js/stats_panels.js:1409 static/js/stats_ui.js:223
 #: static/js/zone_layer.js:917 templates/menu_informations.html:66
-#: templates/menu_names.html:60 templates/menu_points.html:315
+#: templates/menu_names.html:60 templates/menu_points.html:326
 #: templates/menu_stats.html:228
 msgid "Trouvailles"
 msgstr "Funde"
@@ -872,7 +872,7 @@ msgstr "Abbrechen"
 msgid "Graphisme des points"
 msgstr "Darstellung der Punkte"
 
-#: blueprints/core.py:203 templates/menu_points.html:49
+#: blueprints/core.py:203 templates/menu_points.html:60
 msgid "Centre du point"
 msgstr "Mitte des Punkts"
 
@@ -2649,7 +2649,7 @@ msgstr "Meine Funde"
 
 #: static/js/chart_labels.mjs:235 static/js/chart_labels.mjs:402
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
-#: templates/menu_filtre.html:31 templates/menu_points.html:204
+#: templates/menu_filtre.html:31 templates/menu_points.html:215
 #: templates/menu_stats.html:102 templates/menu_stats.html:527
 msgid "Mes DNF"
 msgstr "Meine DNF"
@@ -2657,7 +2657,7 @@ msgstr "Meine DNF"
 #: static/js/chart_labels.mjs:236 static/js/chart_labels.mjs:401
 #: static/js/stats_ui.js:325 static/js/stats_ui.js:844
 #: templates/menu_data_poses.html:14 templates/menu_filtre.html:51
-#: templates/menu_points.html:165 templates/menu_stats.html:103
+#: templates/menu_points.html:176 templates/menu_stats.html:103
 #: templates/menu_stats.html:536
 msgid "Mes caches posées"
 msgstr "Meine eigenen Caches"
@@ -4866,8 +4866,8 @@ msgstr "Dieses Bild wird endgültig aus der Bibliothek gelöscht."
 
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
-#: static/js/parcours_data.js:1937 static/js/parcours_data.js:5928
-#: static/js/parcours_data.js:5935 static/js/profiles.js:978
+#: static/js/parcours_data.js:1937 static/js/parcours_data.js:5937
+#: static/js/parcours_data.js:5944 static/js/profiles.js:978
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
@@ -6661,20 +6661,20 @@ msgstr "aus der Tour ausgeschlossen"
 msgid "Réintégrer"
 msgstr "Wieder aufnehmen"
 
-#: static/js/parcours_data.js:2822 static/js/parcours_data.js:5893
+#: static/js/parcours_data.js:2822 static/js/parcours_data.js:5902
 #: templates/menu_informations.html:72
 msgid "Heure"
 msgstr "Uhrzeit"
 
-#: static/js/parcours_data.js:2829 static/js/parcours_data.js:5896
+#: static/js/parcours_data.js:2829 static/js/parcours_data.js:5905
 msgid "Épingler cette heure"
 msgstr "Diese Uhrzeit festlegen"
 
-#: static/js/parcours_data.js:2830 static/js/parcours_data.js:5897
+#: static/js/parcours_data.js:2830 static/js/parcours_data.js:5906
 msgid "Épingler"
 msgstr "Festlegen"
 
-#: static/js/parcours_data.js:2834 static/js/parcours_data.js:5905
+#: static/js/parcours_data.js:2834 static/js/parcours_data.js:5914
 msgid "Retirer l’heure épinglée"
 msgstr "Festgelegte Uhrzeit entfernen"
 
@@ -6754,18 +6754,18 @@ msgstr "Auf der Karte anzeigen"
 msgid "Déplacer sur la carte"
 msgstr "Auf der Karte verschieben"
 
-#: static/js/parcours_data.js:3079 static/js/parcours_data.js:5916
+#: static/js/parcours_data.js:3079 static/js/parcours_data.js:5925
 msgid "Exclure du parcours"
 msgstr "Aus der Tour ausschließen"
 
 #: static/js/parcours_data.js:3084 static/js/parcours_data.js:3085
-#: static/js/parcours_data.js:5926 templates/menu_data_evolution.html:34
+#: static/js/parcours_data.js:5935 templates/menu_data_evolution.html:34
 #: templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr "Datenbank löschen"
 
 #: static/js/parcours_data.js:3084 static/js/parcours_data.js:3085
-#: static/js/parcours_data.js:5926
+#: static/js/parcours_data.js:5935
 msgid "Supprimer le lieu"
 msgstr "Ort löschen"
 
@@ -7054,52 +7054,52 @@ msgstr "Keine Routen zu berechnen (Wege auf einem Track oder als Luftlinie)."
 msgid "${routed} trajets sur ${legs} suivent les routes et chemins."
 msgstr "${routed} von ${legs} Wegen folgen Straßen und Pfaden."
 
-#: static/js/parcours_data.js:5119
+#: static/js/parcours_data.js:5125
 #, python-brace-format
 msgid "Couleur de la journée ${n}"
 msgstr "Farbe von Tag ${n}"
 
-#: static/js/parcours_data.js:5916
+#: static/js/parcours_data.js:5925
 msgid "Exclure"
 msgstr "Ausschließen"
 
-#: static/js/parcours_data.js:5921
+#: static/js/parcours_data.js:5930
 msgid "Revenir à la position de la cache"
 msgstr "Zurück zur Position des Caches"
 
-#: static/js/parcours_data.js:5921
+#: static/js/parcours_data.js:5930
 msgid "Position d’origine"
 msgstr "Ursprüngliche Position"
 
-#: static/js/parcours_data.js:5931
+#: static/js/parcours_data.js:5940
 msgid "Supprimer cette base du parcours ?"
 msgstr "Diese Basis aus der Tour löschen?"
 
-#: static/js/parcours_data.js:5931
+#: static/js/parcours_data.js:5940
 msgid "Supprimer ce lieu du parcours ?"
 msgstr "Diesen Ort aus der Tour löschen?"
 
-#: static/js/parcours_data.js:5941
+#: static/js/parcours_data.js:5950
 msgid "Tous les réglages de l’étape"
 msgstr "Alle Einstellungen der Station"
 
-#: static/js/parcours_data.js:5941
+#: static/js/parcours_data.js:5950
 msgid "Détails"
 msgstr "Details"
 
-#: static/js/parcours_data.js:5948
+#: static/js/parcours_data.js:5957
 msgid "Glissez le repère sur la carte pour le déplacer."
 msgstr "Ziehen Sie die Markierung auf der Karte, um sie zu verschieben."
 
-#: static/js/parcours_data.js:5949
+#: static/js/parcours_data.js:5958
 msgid "Glissez l’étape sur la carte pour corriger sa position."
 msgstr "Ziehen Sie die Station auf der Karte, um ihre Position zu korrigieren."
 
-#: static/js/parcours_data.js:5977
+#: static/js/parcours_data.js:5986
 msgid "Poser un lieu ici"
 msgstr "Hier einen Ort setzen"
 
-#: static/js/parcours_data.js:5978
+#: static/js/parcours_data.js:5987
 msgid "Poser une base ici"
 msgstr "Hier eine Basis setzen"
 
@@ -7746,7 +7746,7 @@ msgstr "Nicht gespeichert"
 msgid "Caches"
 msgstr "Caches"
 
-#: static/js/stats_filters_ui.js:32 templates/menu_points.html:327
+#: static/js/stats_filters_ui.js:32 templates/menu_points.html:338
 msgid "Lieux"
 msgstr "Orte"
 
@@ -8846,7 +8846,7 @@ msgstr "Rauten"
 #: templates/_filter_country_state.html:12
 #: templates/_filter_country_state.html:22 templates/_filter_county.html:14
 #: templates/menu_data_poses.html:89 templates/menu_data_poses.html:102
-#: templates/menu_names.html:354 templates/menu_points.html:273
+#: templates/menu_names.html:354 templates/menu_points.html:284
 #: templates/menu_trail.html:129 templates/stats_page.html:487
 msgid "Aucun"
 msgstr "Keine"
@@ -8927,7 +8927,7 @@ msgstr "Farben der Karte"
 msgid "Adoucies"
 msgstr "Abgemildert"
 
-#: static/js/stats_page_themes.js:143 templates/menu_points.html:352
+#: static/js/stats_page_themes.js:143 templates/menu_points.html:363
 msgid "Atténuées"
 msgstr "Gedämpft"
 
@@ -11508,8 +11508,8 @@ msgstr "Kein Flash"
 
 #: templates/_event_flash_rows.html:11 templates/menu_flash.html:12
 #: templates/menu_flash_disappear.html:16 templates/menu_flash_dnf.html:18
-#: templates/menu_flash_dnf.html:92 templates/menu_points.html:102
-#: templates/menu_points.html:177 templates/menu_points.html:212
+#: templates/menu_flash_dnf.html:92 templates/menu_points.html:113
+#: templates/menu_points.html:188 templates/menu_points.html:223
 msgid "Cercle"
 msgstr "Kreis"
 
@@ -11527,8 +11527,8 @@ msgstr "Zielscheibe"
 
 #: templates/_event_flash_rows.html:15 templates/menu_flash.html:17
 #: templates/menu_flash_disappear.html:17 templates/menu_flash_dnf.html:22
-#: templates/menu_flash_dnf.html:90 templates/menu_points.html:173
-#: templates/menu_points.html:216
+#: templates/menu_flash_dnf.html:90 templates/menu_points.html:184
+#: templates/menu_points.html:227
 msgid "Étoile"
 msgstr "Stern"
 
@@ -11541,21 +11541,21 @@ msgstr "Funkeln"
 #: templates/_event_flash_rows.html:17 templates/menu_flash.html:19
 #: templates/menu_flash_disappear.html:19 templates/menu_flash_dnf.html:24
 #: templates/menu_flash_dnf.html:95 templates/menu_photos_parcours.html:71
-#: templates/menu_points.html:174 templates/menu_points.html:213
+#: templates/menu_points.html:185 templates/menu_points.html:224
 msgid "Carré"
 msgstr "Quadrat"
 
 #: templates/_event_flash_rows.html:18 templates/menu_flash.html:20
 #: templates/menu_flash_disappear.html:20 templates/menu_flash_dnf.html:25
-#: templates/menu_flash_dnf.html:96 templates/menu_points.html:103
-#: templates/menu_points.html:176 templates/menu_points.html:215
+#: templates/menu_flash_dnf.html:96 templates/menu_points.html:114
+#: templates/menu_points.html:187 templates/menu_points.html:226
 msgid "Triangle"
 msgstr "Dreieck"
 
 #: templates/_event_flash_rows.html:19 templates/menu_flash.html:21
 #: templates/menu_flash_disappear.html:21 templates/menu_flash_dnf.html:26
-#: templates/menu_flash_dnf.html:97 templates/menu_points.html:175
-#: templates/menu_points.html:214
+#: templates/menu_flash_dnf.html:97 templates/menu_points.html:186
+#: templates/menu_points.html:225
 msgid "Losange"
 msgstr "Raute"
 
@@ -11582,7 +11582,7 @@ msgstr "GC-Farben"
 #: templates/_event_flash_rows.html:41 templates/menu_flash.html:50
 #: templates/menu_flash.html:76 templates/menu_flash_disappear.html:57
 #: templates/menu_flash_dnf.html:64 templates/menu_flash_dnf.html:133
-#: templates/menu_points.html:75 templates/menu_points.html:140
+#: templates/menu_points.html:86 templates/menu_points.html:151
 msgid "Transparent"
 msgstr "Transparent"
 
@@ -11590,8 +11590,8 @@ msgstr "Transparent"
 #: templates/menu_flash.html:80 templates/menu_flash_disappear.html:38
 #: templates/menu_flash_disappear.html:61 templates/menu_flash_dnf.html:46
 #: templates/menu_flash_dnf.html:68 templates/menu_flash_dnf.html:115
-#: templates/menu_flash_dnf.html:137 templates/menu_points.html:79
-#: templates/menu_points.html:144
+#: templates/menu_flash_dnf.html:137 templates/menu_points.html:90
+#: templates/menu_points.html:155
 msgid "Couleur unique"
 msgstr "Einzelfarbe"
 
@@ -11599,8 +11599,8 @@ msgstr "Einzelfarbe"
 #: templates/menu_flash.html:83 templates/menu_flash_disappear.html:41
 #: templates/menu_flash_disappear.html:64 templates/menu_flash_dnf.html:49
 #: templates/menu_flash_dnf.html:71 templates/menu_flash_dnf.html:118
-#: templates/menu_flash_dnf.html:140 templates/menu_points.html:84
-#: templates/menu_points.html:149
+#: templates/menu_flash_dnf.html:140 templates/menu_points.html:95
+#: templates/menu_points.html:160
 msgid "Choisir la couleur"
 msgstr "Farbe wählen"
 
@@ -15703,7 +15703,7 @@ msgstr "Schnell"
 msgid "jours/s"
 msgstr "Tage/s"
 
-#: templates/menu_animation.html:206 templates/menu_points.html:400
+#: templates/menu_animation.html:206 templates/menu_points.html:411
 msgid "Personnalisé"
 msgstr "Benutzerdefiniert"
 
@@ -16551,7 +16551,7 @@ msgid "Moments de la journée (matin, midi…)"
 msgstr "Tageszeiten (Vormittag, Mittag…)"
 
 #: templates/menu_data_parcours.html:90 templates/menu_informations.html:221
-#: templates/menu_points.html:28 templates/menu_trail.html:135
+#: templates/menu_points.html:39 templates/menu_trail.html:135
 #: templates/menu_trail_parcours.html:54
 msgid "Aucune"
 msgstr "Kein"
@@ -16949,8 +16949,8 @@ msgstr ""
 #: templates/menu_flash_disappear.html:34
 #: templates/menu_flash_disappear.html:53 templates/menu_flash_dnf.html:42
 #: templates/menu_flash_dnf.html:60 templates/menu_flash_dnf.html:111
-#: templates/menu_flash_dnf.html:129 templates/menu_points.html:71
-#: templates/menu_points.html:136
+#: templates/menu_flash_dnf.html:129 templates/menu_points.html:82
+#: templates/menu_points.html:147
 msgid "Couleurs GC (par type)"
 msgstr "GC-Farben (nach Typ)"
 
@@ -16960,8 +16960,8 @@ msgstr "Farbe des Flashs wählen"
 
 #: templates/menu_flash.html:65 templates/menu_flash_disappear.html:46
 #: templates/menu_flash_dnf.html:53 templates/menu_flash_dnf.html:122
-#: templates/menu_names.html:342 templates/menu_points.html:189
-#: templates/menu_points.html:239
+#: templates/menu_names.html:342 templates/menu_points.html:200
+#: templates/menu_points.html:250
 msgid "Couleur du contour"
 msgstr "Umrissfarbe"
 
@@ -17010,8 +17010,8 @@ msgstr ""
 msgid "Forme du flash des DNF"
 msgstr "Form des DNF-Flashs"
 
-#: templates/menu_flash_dnf.html:16 templates/menu_points.html:178
-#: templates/menu_points.html:217
+#: templates/menu_flash_dnf.html:16 templates/menu_points.html:189
+#: templates/menu_points.html:228
 msgid "Comme les trouvailles"
 msgstr "Wie die Funde"
 
@@ -17385,7 +17385,7 @@ msgstr "Innenabstand"
 msgid "Bordure"
 msgstr "Rahmen"
 
-#: templates/menu_images.html:314 templates/menu_points.html:133
+#: templates/menu_images.html:314 templates/menu_points.html:144
 msgid "Couleur de la bordure"
 msgstr "Farbe des Rahmens"
 
@@ -17645,7 +17645,7 @@ msgstr ""
 
 #: templates/menu_informations.html:140 templates/menu_informations.html:228
 #: templates/menu_informations.html:264 templates/menu_informations.html:292
-#: templates/menu_names.html:308 templates/menu_points.html:443
+#: templates/menu_names.html:308 templates/menu_points.html:454
 #: templates/menu_zones.html:135
 msgid "Couleur"
 msgstr "Farbe"
@@ -17913,10 +17913,10 @@ msgstr ""
 msgid "Taille du texte"
 msgstr "Textgröße"
 
-#: templates/menu_names.html:82 templates/menu_points.html:62
-#: templates/menu_points.html:127 templates/menu_points.html:185
-#: templates/menu_points.html:235 templates/menu_points.html:280
-#: templates/menu_points.html:531 templates/menu_trail.html:111
+#: templates/menu_names.html:82 templates/menu_points.html:73
+#: templates/menu_points.html:138 templates/menu_points.html:196
+#: templates/menu_points.html:246 templates/menu_points.html:291
+#: templates/menu_points.html:542 templates/menu_trail.html:111
 #: templates/menu_trail_parcours.html:30
 msgid "px"
 msgstr "px"
@@ -18665,33 +18665,44 @@ msgstr ""
 msgid "Voir la première photo sur la carte"
 msgstr "Erstes Foto auf der Karte zeigen"
 
-#: templates/menu_points.html:22
+#: templates/menu_points.html:26
+msgid ""
+"Les étapes sont dessinées en « Pastilles du parcours » : le graphisme des"
+" points (icônes ou vectoriel) ne s'applique qu'au rendu « Points du thème"
+" »."
+msgstr "Die Stationen werden als „Tour-Marker“ gezeichnet: Die Punktgestaltung (Symbole oder Vektor) gilt nur für die Darstellung „Punkte des Themes“."
+
+#: templates/menu_points.html:27
+msgid "Utiliser les points du thème"
+msgstr "Punkte des Themes verwenden"
+
+#: templates/menu_points.html:33
 msgid "Apparition animée des points"
 msgstr "Animiertes Erscheinen der Punkte"
 
-#: templates/menu_points.html:24
+#: templates/menu_points.html:35
 msgid "Chaque nouveau point surgit avec un léger rebond pendant l'animation."
 msgstr ""
 "Jeder neue Punkt erscheint während der Animation mit einem leichten "
 "Hüpfeffekt."
 
-#: templates/menu_points.html:26
+#: templates/menu_points.html:37
 msgid "Persistance des points récents"
 msgstr "Persistenz der jüngsten Punkte"
 
-#: templates/menu_points.html:29
+#: templates/menu_points.html:40
 msgid "7 derniers jours"
 msgstr "Letzte 7 Tage"
 
-#: templates/menu_points.html:30
+#: templates/menu_points.html:41
 msgid "30 derniers jours"
 msgstr "Letzte 30 Tage"
 
-#: templates/menu_points.html:31
+#: templates/menu_points.html:42
 msgid "90 derniers jours"
 msgstr "Letzte 90 Tage"
 
-#: templates/menu_points.html:34
+#: templates/menu_points.html:45
 msgid ""
 "Les Geocaches apparues récemment restent plus claires, puis rejoignent le"
 " style normal : on suit ainsi le déplacement de l'activité."
@@ -18700,7 +18711,7 @@ msgstr ""
 "normalen Stil über: So lässt sich die Verschiebung der Aktivität "
 "verfolgen."
 
-#: templates/menu_points.html:36
+#: templates/menu_points.html:47
 msgid ""
 "Les caches trouvées récemment restent plus claires, puis rejoignent le "
 "style normal : on suit ainsi le déplacement de l'activité."
@@ -18708,59 +18719,59 @@ msgstr ""
 "Kürzlich gefundene Caches bleiben heller und gehen dann in den normalen "
 "Stil über: So lässt sich die Verschiebung der Aktivität verfolgen."
 
-#: templates/menu_points.html:54 templates/menu_points.html:57
+#: templates/menu_points.html:65 templates/menu_points.html:68
 msgid "Taille du centre"
 msgstr "Größe der Mitte"
 
-#: templates/menu_points.html:61 templates/menu_points.html:530
+#: templates/menu_points.html:72 templates/menu_points.html:541
 msgid "Taille en pixels"
 msgstr "Größe in Pixeln"
 
-#: templates/menu_points.html:68
+#: templates/menu_points.html:79
 msgid "Couleur du centre"
 msgstr "Farbe der Mitte"
 
-#: templates/menu_points.html:85
+#: templates/menu_points.html:96
 msgid "Choisir la couleur du centre"
 msgstr "Farbe der Mitte wählen"
 
-#: templates/menu_points.html:96
+#: templates/menu_points.html:107
 msgid "Forme du point"
 msgstr "Form des Punktes"
 
-#: templates/menu_points.html:100 templates/menu_points.html:101
+#: templates/menu_points.html:111 templates/menu_points.html:112
 msgid "Forme des points"
 msgstr "Form der Punkte"
 
-#: templates/menu_points.html:114
+#: templates/menu_points.html:125
 msgid "Bordure du point"
 msgstr "Rand des Punktes"
 
-#: templates/menu_points.html:119
+#: templates/menu_points.html:130
 msgid "Épaisseur de la bordure (0 = aucune)"
 msgstr "Randstärke (0 = keine)"
 
-#: templates/menu_points.html:122
+#: templates/menu_points.html:133
 msgid "Épaisseur de la bordure"
 msgstr "Randstärke"
 
-#: templates/menu_points.html:126
+#: templates/menu_points.html:137
 msgid "Épaisseur en pixels"
 msgstr "Stärke in Pixeln"
 
-#: templates/menu_points.html:150
+#: templates/menu_points.html:161
 msgid "Choisir la couleur de la bordure"
 msgstr "Randfarbe wählen"
 
-#: templates/menu_points.html:171 templates/menu_points.html:210
+#: templates/menu_points.html:182 templates/menu_points.html:221
 msgid "Forme (mode vectoriel)"
 msgstr "Form (Vektormodus)"
 
-#: templates/menu_points.html:182 templates/menu_points.html:232
+#: templates/menu_points.html:193 templates/menu_points.html:243
 msgid "Épaisseur du contour (0 = aucun)"
 msgstr "Konturstärke (0 = keine)"
 
-#: templates/menu_points.html:193
+#: templates/menu_points.html:204
 msgid ""
 "Le centre garde les couleurs des trouvailles. En mode icônes, l'icône du "
 "type est entourée d'un anneau à la couleur du contour. Désactivées et "
@@ -18770,87 +18781,87 @@ msgstr ""
 "Typs von einem Ring in Konturfarbe umgeben. Deaktivierte und archivierte "
 "sind ausgegraut."
 
-#: templates/menu_points.html:221
+#: templates/menu_points.html:232
 msgid "Couleur du point"
 msgstr "Farbe des Punktes"
 
-#: templates/menu_points.html:225
+#: templates/menu_points.html:236
 msgid "Icône (mode icônes)"
 msgstr "Symbol (Symbolmodus)"
 
-#: templates/menu_points.html:227
+#: templates/menu_points.html:238
 msgid "Échec (DNF)"
 msgstr "Nicht gefunden (DNF)"
 
-#: templates/menu_points.html:228
+#: templates/menu_points.html:239
 msgid "Icône du type de cache"
 msgstr "Symbol des Cache-Typs"
 
-#: templates/menu_points.html:243
+#: templates/menu_points.html:254
 msgid "En mode icônes, l'icône est entourée d'un anneau à la couleur du contour."
 msgstr "Im Symbolmodus ist das Symbol von einem Ring in Konturfarbe umgeben."
 
-#: templates/menu_points.html:256
+#: templates/menu_points.html:267
 msgid "Étapes du parcours"
 msgstr "Stationen der Tour"
 
-#: templates/menu_points.html:262
+#: templates/menu_points.html:273
 msgid "Rendu des étapes"
 msgstr "Darstellung der Stationen"
 
-#: templates/menu_points.html:264
+#: templates/menu_points.html:275
 msgid "Pastilles du parcours"
 msgstr "Tour-Marker"
 
-#: templates/menu_points.html:265
+#: templates/menu_points.html:276
 msgid "Points du thème"
 msgstr "Punkte des Themes"
 
-#: templates/menu_points.html:269
+#: templates/menu_points.html:280
 msgid "Numéros des étapes"
 msgstr "Nummern der Stationen"
 
-#: templates/menu_points.html:271
+#: templates/menu_points.html:282
 msgid "Sur tout le parcours"
 msgstr "Über die ganze Tour"
 
-#: templates/menu_points.html:272 templates/menu_points.html:287
+#: templates/menu_points.html:283 templates/menu_points.html:298
 msgid "Par journée"
 msgstr "Pro Tag"
 
-#: templates/menu_points.html:277
+#: templates/menu_points.html:288
 msgid "Taille des pastilles"
 msgstr "Größe der Marker"
 
-#: templates/menu_points.html:284
+#: templates/menu_points.html:295
 msgid "Couleur des étapes"
 msgstr "Farbe der Stationen"
 
-#: templates/menu_points.html:286
+#: templates/menu_points.html:297
 msgid "Par nature d'étape"
 msgstr "Nach Art der Station"
 
-#: templates/menu_points.html:288
+#: templates/menu_points.html:299
 msgid "Par type de cache"
 msgstr "Nach Cache-Typ"
 
-#: templates/menu_points.html:297
+#: templates/menu_points.html:308
 msgid "Couleurs des journées"
 msgstr "Farben der Tage"
 
-#: templates/menu_points.html:300
+#: templates/menu_points.html:311
 msgid "Ajouter une couleur"
 msgstr "Farbe hinzufügen"
 
-#: templates/menu_points.html:304
+#: templates/menu_points.html:315
 msgid "Retirer la dernière couleur"
 msgstr "Letzte Farbe entfernen"
 
-#: templates/menu_points.html:308
+#: templates/menu_points.html:319
 msgid "Palette par défaut"
 msgstr "Standardpalette"
 
-#: templates/menu_points.html:311
+#: templates/menu_points.html:322
 msgid ""
 "Une couleur par journée, dans l'ordre des dates ; après la dernière, la "
 "palette reprend au début."
@@ -18858,19 +18869,19 @@ msgstr ""
 "Eine Farbe pro Tag, in der Reihenfolge der Daten; nach der letzten "
 "beginnt die Palette von vorn."
 
-#: templates/menu_points.html:319
+#: templates/menu_points.html:330
 msgid "Étapes Lab"
 msgstr "Lab-Stationen"
 
-#: templates/menu_points.html:331
+#: templates/menu_points.html:342
 msgid "Bases"
 msgstr "Basen"
 
-#: templates/menu_points.html:335
+#: templates/menu_points.html:346
 msgid "Couleurs par défaut"
 msgstr "Standardfarben"
 
-#: templates/menu_points.html:338
+#: templates/menu_points.html:349
 msgid ""
 "Le même rendu au repos, pendant la lecture et dans la vidéo. Pastilles : "
 "numéro au centre. Points du thème : le graphisme réglé ci-dessus, numéro "
@@ -18886,31 +18897,31 @@ msgstr ""
 "Basen behalten immer ihre Farbe; auf hellen Farben werden die Nummern "
 "dunkel."
 
-#: templates/menu_points.html:342
+#: templates/menu_points.html:353
 msgid "Pendant la lecture"
 msgstr "Während der Wiedergabe"
 
-#: templates/menu_points.html:345
+#: templates/menu_points.html:356
 msgid "Entourer l'étape en cours"
 msgstr "Aktuelle Station einkreisen"
 
-#: templates/menu_points.html:349
+#: templates/menu_points.html:360
 msgid "Étapes passées"
 msgstr "Vergangene Stationen"
 
-#: templates/menu_points.html:351
+#: templates/menu_points.html:362
 msgid "Inchangées"
 msgstr "Unverändert"
 
-#: templates/menu_points.html:353
+#: templates/menu_points.html:364
 msgid "Atténuées les journées précédentes"
 msgstr "An vorherigen Tagen abgeschwächt"
 
-#: templates/menu_points.html:359
+#: templates/menu_points.html:370
 msgid "Aperçu des étapes à venir de la journée"
 msgstr "Vorschau der kommenden Stationen des Tages"
 
-#: templates/menu_points.html:361
+#: templates/menu_points.html:372
 msgid ""
 "L'anneau suit le géocacheur d'étape en étape. Les étapes passées "
 "atténuées et l'aperçu de la suite (pâle, relié par un fil) demandent le "
@@ -18922,21 +18933,21 @@ msgstr ""
 "erfordern die Darstellung „Tour-Marker“: bei Punkten des Themes "
 "erscheinen die Punkte von selbst."
 
-#: templates/menu_points.html:366
+#: templates/menu_points.html:377
 msgid "Points favoris donnés"
 msgstr "Vergebene Favoritenpunkte"
 
-#: templates/menu_points.html:369
+#: templates/menu_points.html:380
 msgid "Marquer d'un cœur les étapes où j'ai donné un PF"
 msgstr ""
 "Stationen, an denen ich einen Favoritenpunkt vergeben habe, mit einem "
 "Herz markieren"
 
-#: templates/menu_points.html:373
+#: templates/menu_points.html:384
 msgid "Envol de cœurs à l'arrivée sur l'étape"
 msgstr "Herzen fliegen bei der Ankunft an der Station auf"
 
-#: templates/menu_points.html:375
+#: templates/menu_points.html:386
 #, python-brace-format
 msgid ""
 "Au repos, pendant la lecture et dans la vidéo. Les PF donnés viennent de "
@@ -18947,27 +18958,27 @@ msgstr ""
 "kommen von geocaching.com: Reiter Daten, „Von geocaching.com ergänzen“. "
 "Der Platzhalter {pf} der Infozeile zählt sie."
 
-#: templates/menu_points.html:389
+#: templates/menu_points.html:400
 msgid "Animation des caches posées"
 msgstr "Animation der eigenen Caches"
 
-#: templates/menu_points.html:395
+#: templates/menu_points.html:406
 msgid "Niveau d'animation"
 msgstr "Animationsstufe"
 
-#: templates/menu_points.html:397
+#: templates/menu_points.html:408
 msgid "Sobre"
 msgstr "Schlicht"
 
-#: templates/menu_points.html:398
+#: templates/menu_points.html:409
 msgid "Équilibré"
 msgstr "Ausgewogen"
 
-#: templates/menu_points.html:399
+#: templates/menu_points.html:410
 msgid "Riche"
 msgstr "Reichhaltig"
 
-#: templates/menu_points.html:404
+#: templates/menu_points.html:415
 msgid ""
 "Sobre : aucun effet. Équilibré : taille, fraîcheur et flash de palier. "
 "Riche : tous les effets. Cochez ou décochez un effet pour composer le "
@@ -18977,35 +18988,35 @@ msgstr ""
 "Blitz. Reichhaltig: alle Effekte. Aktivieren oder deaktivieren Sie einen "
 "Effekt, um Ihren eigenen zusammenzustellen."
 
-#: templates/menu_points.html:413
+#: templates/menu_points.html:424
 msgid "Taille selon la popularité"
 msgstr "Größe nach Beliebtheit"
 
-#: templates/menu_points.html:415
+#: templates/menu_points.html:426
 msgid "La cache grossit à mesure qu'elle reçoit des trouvailles."
 msgstr "Der Cache wächst, je mehr Funde er erhält."
 
-#: templates/menu_points.html:418
+#: templates/menu_points.html:429
 msgid "Échelle"
 msgstr "Skala"
 
-#: templates/menu_points.html:420
+#: templates/menu_points.html:431
 msgid "Par rapport à la plus trouvée"
 msgstr "Relativ zum meistgefundenen"
 
-#: templates/menu_points.html:421
+#: templates/menu_points.html:432
 msgid "Paliers fixes (1, 3, 10, 25, 50, 100…)"
 msgstr "Feste Stufen (1, 3, 10, 25, 50, 100…)"
 
-#: templates/menu_points.html:425
+#: templates/menu_points.html:436
 msgid "Taille maximale"
 msgstr "Maximale Größe"
 
-#: templates/menu_points.html:438
+#: templates/menu_points.html:449
 msgid "Lueur d'activité"
 msgstr "Aktivitätsglühen"
 
-#: templates/menu_points.html:440
+#: templates/menu_points.html:451
 msgid ""
 "Une lueur s'allume derrière la cache à chaque trouvaille, puis s'éteint "
 "peu à peu."
@@ -19013,23 +19024,23 @@ msgstr ""
 "Hinter dem Cache leuchtet bei jedem Fund ein Schimmer auf, der dann "
 "allmählich verblasst."
 
-#: templates/menu_points.html:447
+#: templates/menu_points.html:458
 msgid "S'éteint de moitié en"
 msgstr "Verblasst zur Hälfte in"
 
-#: templates/menu_points.html:450 templates/menu_points.html:472
+#: templates/menu_points.html:461 templates/menu_points.html:483
 msgid "jours"
 msgstr "Tagen"
 
-#: templates/menu_points.html:454 templates/menu_points.html:476
+#: templates/menu_points.html:465 templates/menu_points.html:487
 msgid "Intensité"
 msgstr "Intensität"
 
-#: templates/menu_points.html:464
+#: templates/menu_points.html:475
 msgid "Fraîcheur"
 msgstr "Frische"
 
-#: templates/menu_points.html:466
+#: templates/menu_points.html:477
 msgid ""
 "Une cache sans trouvaille depuis longtemps pâlit, puis reprend sa couleur"
 " à la trouvaille suivante."
@@ -19037,15 +19048,15 @@ msgstr ""
 "Ein Cache, der lange nicht gefunden wurde, verblasst und nimmt beim "
 "nächsten Fund wieder seine Farbe an."
 
-#: templates/menu_points.html:469
+#: templates/menu_points.html:480
 msgid "Pâlit après"
 msgstr "Verblasst nach"
 
-#: templates/menu_points.html:486
+#: templates/menu_points.html:497
 msgid "Flash de palier"
 msgstr "Meilenstein-Blitz"
 
-#: templates/menu_points.html:488
+#: templates/menu_points.html:499
 msgid ""
 "Un flash marque les trouvailles rondes d'une cache (10ᵉ, 50ᵉ, 100ᵉ…). "
 "Forme et couleur : onglet Flash, « Palier de trouvailles »."
@@ -19053,27 +19064,27 @@ msgstr ""
 "Ein Blitz markiert die runden Funde eines Caches (10., 50., 100.…). Form "
 "und Farbe: Tab „Blitz“, „Fund-Meilenstein“."
 
-#: templates/menu_points.html:491
+#: templates/menu_points.html:502
 msgid "Pulsation des désactivées"
 msgstr "Pulsieren der deaktivierten"
 
-#: templates/menu_points.html:493
+#: templates/menu_points.html:504
 msgid "Une cache désactivée pulse lentement pendant l'animation."
 msgstr "Ein deaktivierter Cache pulsiert während der Animation langsam."
 
-#: templates/menu_points.html:494
+#: templates/menu_points.html:505
 msgid "Style des caches archivées"
 msgstr "Stil der archivierten Caches"
 
-#: templates/menu_points.html:496
+#: templates/menu_points.html:507
 msgid "Grisées"
 msgstr "Ausgegraut"
 
-#: templates/menu_points.html:497
+#: templates/menu_points.html:508
 msgid "Fantôme (contour seul)"
 msgstr "Geist (nur Kontur)"
 
-#: templates/menu_points.html:499
+#: templates/menu_points.html:510
 msgid ""
 "En mode icônes, le fantôme est une icône très effacée. Pour les faire "
 "disparaître : onglet Données."
@@ -19081,19 +19092,19 @@ msgstr ""
 "Im Symbolmodus ist der Geist ein sehr blasses Symbol. Um sie "
 "auszublenden: Tab „Daten“."
 
-#: templates/menu_points.html:511
+#: templates/menu_points.html:522
 msgid "Configuration des icônes"
 msgstr "Symbolkonfiguration"
 
-#: templates/menu_points.html:516 templates/menu_points.html:517
+#: templates/menu_points.html:527 templates/menu_points.html:528
 msgid "Jeu d'icônes"
 msgstr "Symbolsatz"
 
-#: templates/menu_points.html:523 templates/menu_points.html:526
+#: templates/menu_points.html:534 templates/menu_points.html:537
 msgid "Taille des icônes"
 msgstr "Symbolgröße"
 
-#: templates/menu_points.html:537
+#: templates/menu_points.html:548
 msgid "Aperçu des icônes"
 msgstr "Symbolvorschau"
 

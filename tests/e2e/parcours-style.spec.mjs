@@ -170,9 +170,14 @@ test('rendu des étapes : pastilles ou points du thème, identique au repos et e
   await page.locator('#btnQuickStop').click();
   await expect.poll(async () => (await snapshot(page)).running).toBe(false);
 
+  // En pastilles, le graphisme des points (icône / vectoriel) ne se voit pas :
+  // l'avertissement sous le commutateur bascule vers les points du thème.
   await openStyleSubtab(page, '#tabPoints');
-  await page.locator('#parcoursStyleRender').selectOption('theme');
+  await expect(page.locator('#parcoursThemePointsHint')).toBeVisible();
+  await page.locator('#btnParcoursUseThemePoints').click();
   await expect.poll(async () => (await snapshot(page)).themePoints).toBe(true);
+  await expect(page.locator('#parcoursStyleRender')).toHaveValue('theme');
+  await expect(page.locator('#parcoursThemePointsHint')).toBeHidden();
   snap = await snapshot(page);
   // Numéro dans une petite pastille, décalée en haut à droite du point.
   const badge = snap.stopStyles[day1[0]];
@@ -201,6 +206,7 @@ test('rendu des étapes : pastilles ou points du thème, identique au repos et e
 
   await page.locator('#parcoursStyleRender').selectOption('stops');
   await expect.poll(async () => (await snapshot(page)).themePoints).toBe(false);
+  await expect(page.locator('#parcoursThemePointsHint')).toBeVisible();
   expect((await snapshot(page)).stopStyles[day1[0]]).toMatchObject({ label: '1', radius: 11, offset: [0, 0] });
   expect(errors).toEqual([]);
 });

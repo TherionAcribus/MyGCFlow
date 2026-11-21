@@ -4639,6 +4639,10 @@ export function syncParcoursStyleUI() {
         const input = el(id);
         if (input) input.disabled = themed;
     }
+    // Pastilles : points du thème masqués, leur graphisme (icône, vectoriel)
+    // ne se voit pas — on le dit à côté du commutateur.
+    const themeHint = el('parcoursThemePointsHint');
+    if (themeHint) themeHint.hidden = themed;
     const favoriteMark = el('parcoursStyleFavoriteMark');
     if (favoriteMark) favoriteMark.checked = style.favorite_mark;
     const favoriteBurst = el('parcoursStyleFavoriteBurst');
@@ -4712,6 +4716,9 @@ function bindParcoursStyle() {
     el('btnParcoursPaletteReset')?.addEventListener('click', () => setPalette(parcoursStyleDefaults().day_palette));
     el('btnParcoursStyleColorsReset')?.addEventListener('click', () => {
         commitParcoursStyle(normalizeParcoursStyle({ colors: parcoursStyleDefaults().colors }, stopStyle()));
+    });
+    el('btnParcoursUseThemePoints')?.addEventListener('click', () => {
+        commitParcoursStyle(normalizeParcoursStyle({ render: RENDER_THEME }, stopStyle()));
     });
     syncParcoursStyleUI();
 }

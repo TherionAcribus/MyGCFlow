@@ -212,7 +212,11 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
     par la page — le plan au repos, `drawPlayStops` image par image en
     lecture. La couche WebGL des points du thème est masquée (moteur ›
     `hidesPoints`, lu par `mainPointsHidden` de mapgl.js) mais garde ses
-    features : flashs, compteurs et étendue en dépendent.
+    features : flashs, compteurs et étendue en dépendent. Le graphisme des
+    points (Icône / Vectoriel) n'y a donc aucun effet visible : un
+    avertissement sous le commutateur le dit et propose de passer en
+    `theme` (`#parcoursThemePointsHint`, 2026-11-21 — sans lui, « Icône »
+    semblait ne rien afficher).
   - `theme` : les points du thème (onglet Points) sont affichés ; le plan
     et la lecture n'y ajoutent que le numéro, dans une petite pastille en
     haut à droite (`themeNumberBadge`, posée d'après le rayon approché du
