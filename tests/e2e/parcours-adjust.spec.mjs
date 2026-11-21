@@ -3,6 +3,7 @@
 // (MyGCFlow_Plan_Parcours.md, docs/parcours.md). Fixture et nettoyage :
 // parcours-helpers.mjs — journée 1 : GCPAR03, GCPAR01, GCPAR02 ; journée 2 :
 // GCPAR04, GCPAR05.
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import {
   cleanUp,
@@ -647,4 +648,18 @@ test('annuler / rétablir : création et suppression de lieu', async ({ page, re
   expect((await snapshot(page)).undoDepth).toBe(depth);
   await page.locator('#btnParcoursPlaceCancel').click();
   expect(errors).toEqual([]);
+});
+
+test('export GPX : une route par journée, étapes dans l’ordre', async ({ page }) => {
+  await openReady(page);
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnParcoursExportGpx').click(),
+  ]);
+  const gpx = readFileSync(await download.path(), 'utf8');
+  expect(download.suggestedFilename()).toMatch(/\.gpx$/);
+  // Deux journées → deux <rte>, le code de la première étape y figure.
+  expect(gpx.match(/<rte>/g)).toHaveLength(2);
+  expect(gpx.indexOf('GCPAR03')).toBeGreaterThan(-1);
+  expect(gpx.indexOf('GCPAR03')).toBeLessThan(gpx.indexOf('GCPAR05'));
 });

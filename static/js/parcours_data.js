@@ -37,6 +37,7 @@ import { saveSettingsPatch } from './settings_api.mjs';
 import { registerLifecycleEngine } from './lifecycle_engine.mjs';
 import { DEFAULT_PARCOURS_TEMPLATE, PARCOURS_INFO_TAGS } from './infos_template.mjs';
 import { EVO_NEVER_DAY } from './evolution_style.mjs';
+import { buildParcoursGpx } from './parcours_gpx.mjs';
 import {
     beginEvolution,
     createEvolutionClock,
@@ -1714,6 +1715,19 @@ export async function duplicateParcours(id) {
     showToast(t('Parcours dupliqué — les photos et traces ne sont pas copiées'), 'info');
 }
 
+function parcoursSlug(name) {
+    return (name || '').toLowerCase().normalize('NFD')
+        .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'parcours';
+}
+
+function downloadText(filename, mime, text) {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([text], { type: mime }));
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
 // Export JSON réimportable : sélection, ajustements, lieux et bases.
 export async function exportParcours(item) {
     let payload;
@@ -1723,14 +1737,17 @@ export async function exportParcours(item) {
         showToast(error.message, 'error');
         return;
     }
-    const slug = item.name.toLowerCase().normalize('NFD')
-        .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'parcours';
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)],
-        { type: 'application/json' }));
-    link.download = `parcours-${slug}.json`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadText(`parcours-${parcoursSlug(item.name)}.json`,
+        'application/json', JSON.stringify(payload, null, 2));
+}
+
+// Export GPX pour le GPS : l'itinéraire reconstruit (étapes dans l'ordre,
+// heures d'arrivée prévues), une route par journée.
+function exportGpx() {
+    if (!ordered || !inputs?.parcours) return;
+    downloadText(`parcours-${parcoursSlug(inputs.parcours.name)}.gpx`,
+        'application/gpx+xml',
+        buildParcoursGpx({ name: inputs.parcours.name, days: ordered.days, utcOffsetMinutes: utcOffset.minutes }));
 }
 
 // Import d'un export JSON : le serveur valide le format, la plage, les
@@ -3517,6 +3534,7 @@ function bindAdjustments() {
         collapsedDays = allCollapsed ? new Set() : new Set(days.map((d) => d.date));
         renderStops();
     });
+    el('btnParcoursExportGpx')?.addEventListener('click', exportGpx);
     el('parcoursPlaceKind')?.addEventListener('change', syncPlaceForm);
     el('parcoursPlaceCategory')?.addEventListener('change', syncPlaceForm);
     el('btnParcoursPlaceCancel')?.addEventListener('click', closePlaceForm);

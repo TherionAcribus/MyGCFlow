@@ -33,6 +33,15 @@ ses ajustements et ses lieux.
 Les parcours vivent hors de `/clear_database` : vider la base des
 trouvailles laisse les parcours, qui se retrouvent simplement vides.
 
+Deux exports, deux usages. Sur la liste, « Exporter » produit le document
+JSON réimportable (sélection, ajustements, lieux — pas de photos ni de
+traces). Sur un parcours ouvert, le bouton GPX de la barre des étapes
+(`#btnParcoursExportGpx`, `parcours_gpx.mjs` côté client — l'itinéraire
+reconstruit suffit, rien ne repasse par le serveur) télécharge un fichier
+lisible par un GPS : une `<rte>` par journée, les étapes dans l'ordre,
+`<time>` = heure d'arrivée prévue convertie en UTC via le décalage du
+parcours ; les étapes exclues ou sans position n'y figurent pas.
+
 ## API (`blueprints/parcours.py`)
 
 | Route | Rôle |
