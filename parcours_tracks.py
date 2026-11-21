@@ -210,20 +210,25 @@ def save_track(session, parcours_id: int, data: bytes, file_name: str = '') -> d
     simplified = [_round(s) for s in simplified if s]
     times = [p[2] for s in simplified for p in s]
     to_dt = lambda t: datetime.fromtimestamp(t, tz=timezone.utc).replace(tzinfo=None)  # noqa: E731
-    row = ParcoursTrack(
-        parcours_id=parcours.id,
-        name=(name or file_name or '')[:NAME_MAX_LENGTH],
-        segments=json.dumps(simplified, separators=(',', ':')),
-        point_count=kept,
-        source_point_count=total,
-        start_utc=to_dt(min(times)),
-        end_utc=to_dt(max(times)),
-        created_at=datetime.now(),
-    )
-    session.add(row)
-    parcours.updated_at = datetime.now()
-    session.commit()
-    return track_to_dict(row, with_points=False)
+    # Envois parallèles : le plafond est revérifié sous le verrou, deux
+    # traces arrivées ensemble ne peuvent pas le dépasser.
+    with parcours_store.save_lock(parcours.id):
+        if session.query(ParcoursTrack).filter_by(parcours_id=parcours.id).count() >= MAX_TRACKS:
+            raise ParcoursError('tracks-full')
+        row = ParcoursTrack(
+            parcours_id=parcours.id,
+            name=(name or file_name or '')[:NAME_MAX_LENGTH],
+            segments=json.dumps(simplified, separators=(',', ':')),
+            point_count=kept,
+            source_point_count=total,
+            start_utc=to_dt(min(times)),
+            end_utc=to_dt(max(times)),
+            created_at=datetime.now(),
+        )
+        session.add(row)
+        parcours.updated_at = datetime.now()
+        session.commit()
+        return track_to_dict(row, with_points=False)
 
 
 def delete_track(session, parcours_id: int, track_id: int) -> None:

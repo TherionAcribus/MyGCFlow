@@ -3773,45 +3773,107 @@ function refuseSummary(refused) {
     return lines.join('\n');
 }
 
-async function uploadPhotos(files) {
-    if (!selectedId || adjustmentsLocked() || files.length === 0) return;
+// Envois photos/traces : quelques fichiers à la fois plutôt qu'un par un
+// (bien plus court sur un gros lot), et « Arrêter » interrompt — les
+// envois partis se terminent, les suivants ne partent pas. Chaque lot
+// emporte son jeton : un second envoi démarré en cours de route a le sien.
+const UPLOAD_CONCURRENCY = 3;
+const uploadJobs = { photo: [], track: [] };
+
+const UPLOAD_KINDS = {
+    photo: {
+        field: 'photo',
+        path: 'photos',
+        status: 'parcoursPhotoStatus',
+        stop: 'btnParcoursPhotosStop',
+        fullError: 'photos-full',
+        progress: (done, total) => t('Envoi des photos : ${done} / ${total}', { done, total }),
+        refusedTitle: () => t('Photos refusées'),
+        stopped: (sent, total) => t('Envoi interrompu : ${sent} photos sur ${total} envoyées', { sent, total }),
+    },
+    track: {
+        field: 'track',
+        path: 'tracks',
+        status: 'parcoursTrackStatus',
+        stop: 'btnParcoursTracksStop',
+        fullError: 'tracks-full',
+        progress: (done, total) => t('Envoi des traces : ${done} / ${total}', { done, total }),
+        refusedTitle: () => t('Traces refusées'),
+        stopped: (sent, total) => t('Envoi interrompu : ${sent} traces sur ${total} envoyées', { sent, total }),
+    },
+};
+
+function refreshUploadStop(kind) {
+    const btn = el(UPLOAD_KINDS[kind].stop);
+    if (btn) btn.hidden = uploadJobs[kind].length === 0;
+}
+
+function cancelUploads(kind) {
+    for (const job of uploadJobs[kind]) job.cancel = true;
+}
+
+async function runUpload(kind, files) {
+    const spec = UPLOAD_KINDS[kind];
     // Tout part dans le parcours ouvert au début de l'envoi : en ouvrir un
     // autre en cours de route ne déroute pas la suite.
     const targetId = selectedId;
-    const status = el('parcoursPhotoStatus');
-    let done = 0;
+    const status = el(spec.status);
+    const job = { cancel: false };
+    uploadJobs[kind].push(job);
+    refreshUploadStop(kind);
     const refused = [];
-    for (const file of files) {
-        if (status) status.textContent = t('Envoi des photos : ${done} / ${total}', { done, total: files.length });
-        const body = new FormData();
-        body.append('photo', file, file.name);
-        try {
-            const response = await fetchWithTimeout(
-                `${CONFIG.BASE_URL}/api/parcours/${targetId}/photos`,
-                { method: 'POST', body },
-                { timeoutMs: FETCH_TIMEOUTS.upload, t });
-            if (!response.ok) {
-                const payload = await response.json().catch(() => ({}));
-                refused.push({ name: file.name, message: payload.message || `HTTP ${response.status}` });
-                if (payload.error === 'photos-full') {
+    let done = 0;
+    let index = 0;
+    let fullMessage = null;
+    const showProgress = () => {
+        if (status) status.textContent = spec.progress(done, files.length);
+    };
+    showProgress();
+    const worker = async () => {
+        while (index < files.length && !job.cancel && !fullMessage) {
+            const file = files[index++];
+            const body = new FormData();
+            body.append(spec.field, file, file.name);
+            try {
+                const response = await fetchWithTimeout(
+                    `${CONFIG.BASE_URL}/api/parcours/${targetId}/${spec.path}`,
+                    { method: 'POST', body },
+                    { timeoutMs: FETCH_TIMEOUTS.upload, t });
+                if (!response.ok) {
+                    const payload = await response.json().catch(() => ({}));
+                    const message = payload.message || `HTTP ${response.status}`;
+                    refused.push({ name: file.name, message });
                     // Le plafond ne bougera pas d'ici la fin de l'envoi :
                     // les suivants seraient refusés de la même façon.
-                    for (const rest of files.slice(done + 1)) {
-                        refused.push({ name: rest.name, message: payload.message });
-                    }
-                    done = files.length;
-                    break;
+                    if (payload.error === spec.fullError) fullMessage = message;
                 }
+            } catch (error) {
+                refused.push({ name: file.name, message: error.message });
             }
-        } catch (error) {
-            refused.push({ name: file.name, message: error.message });
+            done++;
+            showProgress();
         }
-        done++;
+    };
+    await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, files.length) }, worker));
+    uploadJobs[kind].splice(uploadJobs[kind].indexOf(job), 1);
+    refreshUploadStop(kind);
+    // Jamais partis (plafond atteint) : refusés de la même cause.
+    if (fullMessage) {
+        for (const rest of files.slice(index)) refused.push({ name: rest.name, message: fullMessage });
     }
     if (status) status.textContent = '';
-    if (refused.length) showToast(refuseSummary(refused), 'warning', t('Photos refusées'));
+    if (refused.length) showToast(refuseSummary(refused), 'warning', spec.refusedTitle());
+    else if (job.cancel) {
+        const sent = files.length - files.slice(index).length;
+        showToast(spec.stopped(sent, files.length), 'info', t('Parcours'));
+    }
     // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
     await reloadAdjustments(targetId);
+}
+
+async function uploadPhotos(files) {
+    if (!selectedId || adjustmentsLocked() || files.length === 0) return;
+    await runUpload('photo', files);
 }
 
 async function linkPhoto(id, stopKey) {
@@ -4271,6 +4333,7 @@ function bindPhotos() {
     document.querySelector('#mainTabs a[href="#photos"]')?.addEventListener('shown.bs.tab', () => {
         if (photosDirty) renderPhotos();
     });
+    el('btnParcoursPhotosStop')?.addEventListener('click', () => cancelUploads('photo'));
     const input = el('parcoursPhotoInput');
     el('btnParcoursAddPhotos')?.addEventListener('click', () => input?.click());
     input?.addEventListener('change', () => {
@@ -4478,39 +4541,8 @@ function renderTracks() {
 async function uploadTracks(files) {
     if (!selectedId || adjustmentsLocked() || files.length === 0) return;
     // Même garde que les photos : la destination est le parcours ouvert au
-    // début de l'envoi.
-    const targetId = selectedId;
-    const status = el('parcoursTrackStatus');
-    const refused = [];
-    let done = 0;
-    for (const file of files) {
-        if (status) status.textContent = t('Envoi des traces : ${done} / ${total}', { done, total: files.length });
-        const body = new FormData();
-        body.append('track', file, file.name);
-        try {
-            const response = await fetchWithTimeout(
-                `${CONFIG.BASE_URL}/api/parcours/${targetId}/tracks`,
-                { method: 'POST', body },
-                { timeoutMs: FETCH_TIMEOUTS.upload, t });
-            if (!response.ok) {
-                const payload = await response.json().catch(() => ({}));
-                refused.push({ name: file.name, message: payload.message || `HTTP ${response.status}` });
-                if (payload.error === 'tracks-full') {
-                    for (const rest of files.slice(done + 1)) {
-                        refused.push({ name: rest.name, message: payload.message });
-                    }
-                    done = files.length;
-                    break;
-                }
-            }
-        } catch (error) {
-            refused.push({ name: file.name, message: error.message });
-        }
-        done++;
-    }
-    if (status) status.textContent = '';
-    if (refused.length) showToast(refuseSummary(refused), 'warning', t('Traces refusées'));
-    await reloadAdjustments(targetId);
+    // début de l'envoi (partagée dans runUpload).
+    await runUpload('track', files);
 }
 
 async function deleteTrack(id) {
@@ -4540,6 +4572,7 @@ async function setUtcOffset(value) {
 }
 
 function bindTracks() {
+    el('btnParcoursTracksStop')?.addEventListener('click', () => cancelUploads('track'));
     const input = el('parcoursTrackInput');
     el('btnParcoursAddTracks')?.addEventListener('click', () => input?.click());
     input?.addEventListener('change', () => {

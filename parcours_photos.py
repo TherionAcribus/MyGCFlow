@@ -192,25 +192,29 @@ def save_photo(session, parcours_id: int, data: bytes, name: str = '') -> dict:
     meta = read_metadata(data)
     normalized, ext, (width, height) = image_library.normalize_image(data)
     file = f'{hashlib.sha256(normalized).hexdigest()[:16]}.{ext}'
-    existing = session.query(ParcoursPhoto).filter_by(parcours_id=parcours.id, file=file).one_or_none()
-    if existing is not None:
-        return photo_to_dict(existing)
-    if session.query(ParcoursPhoto).filter_by(parcours_id=parcours.id).count() >= MAX_PHOTOS:
-        raise ParcoursError('photos-full')
-    folder = parcours_dir(parcours.id)
-    folder.mkdir(parents=True, exist_ok=True)
-    _write(folder / file, normalized)
-    _write(folder / thumb_name(file), _thumbnail(normalized))
-    row = ParcoursPhoto(
-        parcours_id=parcours.id, file=file, original_name=(name or '')[:255],
-        taken_at=meta['taken_at'], offset_minutes=meta['offset_minutes'],
-        latitude=meta['lat'], longitude=meta['lon'], camera=meta['camera'],
-        width=width, height=height, created_at=datetime.now(),
-    )
-    session.add(row)
-    parcours.updated_at = datetime.now()
-    session.commit()
-    return photo_to_dict(row)
+    # Envois parallèles : le contrôle déjà-là et l'insertion se suivent sous
+    # le verrou — un même contenu envoyé deux fois rend la même photo, et
+    # les fichiers .part de même nom ne se marchent pas dessus.
+    with parcours_store.save_lock(parcours.id):
+        existing = session.query(ParcoursPhoto).filter_by(parcours_id=parcours.id, file=file).one_or_none()
+        if existing is not None:
+            return photo_to_dict(existing)
+        if session.query(ParcoursPhoto).filter_by(parcours_id=parcours.id).count() >= MAX_PHOTOS:
+            raise ParcoursError('photos-full')
+        folder = parcours_dir(parcours.id)
+        folder.mkdir(parents=True, exist_ok=True)
+        _write(folder / file, normalized)
+        _write(folder / thumb_name(file), _thumbnail(normalized))
+        row = ParcoursPhoto(
+            parcours_id=parcours.id, file=file, original_name=(name or '')[:255],
+            taken_at=meta['taken_at'], offset_minutes=meta['offset_minutes'],
+            latitude=meta['lat'], longitude=meta['lon'], camera=meta['camera'],
+            width=width, height=height, created_at=datetime.now(),
+        )
+        session.add(row)
+        parcours.updated_at = datetime.now()
+        session.commit()
+        return photo_to_dict(row)
 
 
 def _get_photo(session, parcours_id: int, photo_id: int) -> ParcoursPhoto:

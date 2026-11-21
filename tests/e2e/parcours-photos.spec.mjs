@@ -204,6 +204,41 @@ test('affichage par photo : masquée (reste une ancre), légende, cadrage enregi
   expect(errors).toEqual([]);
 });
 
+test('envoi de photos : fichiers en parallèle et « Arrêter » interrompt la suite', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+
+  // Réponses retardées : le temps de voir la concurrence et d'arrêter.
+  // Le même fichier 8 fois : dédoublonné côté serveur (empreinte), compté
+  // côté requêtes — c'est le nombre de POST partis qui est observé.
+  let inFlight = 0;
+  let maxInFlight = 0;
+  let postCount = 0;
+  await page.route('**/api/parcours/*/photos', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    inFlight++;
+    maxInFlight = Math.max(maxInFlight, inFlight);
+    postCount++;
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    inFlight--;
+    await route.continue();
+  });
+
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(Array.from({ length: 8 }, () => files[0]));
+  // Trois envois à la fois plutôt qu'un par un.
+  await expect.poll(async () => maxInFlight).toBe(3);
+  await page.locator('#btnParcoursPhotosStop').click();
+  // Le lot se termine (les trois partis finissent, le relevé se rafraîchit),
+  // puis on vérifie que les cinq autres ne sont jamais partis.
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+  expect(postCount).toBe(3);
+  await expect(page.locator('#btnParcoursPhotosStop')).toBeHidden();
+  await expect(page.locator('.gcm-toast.show').last()).toContainText('interrompu');
+  expect(errors).toEqual([]);
+});
+
 test('envoi de photos : un autre parcours ouvert entre-temps ne détourne pas la suite', async ({ page, request }) => {
   const errors = collectErrors(page);
   const a = await createWeekend(request);
@@ -215,8 +250,8 @@ test('envoi de photos : un autre parcours ouvert entre-temps ne détourne pas la
   // Le week-end (plage la plus large) est en tête de liste et ouvert.
   await expect.poll(async () => (await snapshot(page)).selectedId).toBe(a.id);
 
-  // Le premier envoi est suspendu dans le navigateur, le temps d'ouvrir
-  // l'autre parcours.
+  // Les envois partent en parallèle : chaque requête est suspendue dans le
+  // navigateur, le temps d'ouvrir l'autre parcours.
   const urls = [];
   let held = true;
   let release;
@@ -229,7 +264,7 @@ test('envoi de photos : un autre parcours ouvert entre-temps ne détourne pas la
   });
   await openPhotosTab(page);
   await page.locator('#parcoursPhotoInput').setInputFiles([files[0], files[1]]);
-  await expect.poll(() => urls.length, { timeout: 15_000 }).toBe(1);
+  await expect.poll(() => urls.length, { timeout: 15_000 }).toBe(2);
   expect(urls[0]).toContain(`/parcours/${a.id}/photos`);
 
   // La liste est dans l'onglet Données : retour dessus pour en changer.

@@ -562,6 +562,12 @@ lecture… »).
 4. le tout est rangé dans `parcours_photos/<parcours>/` du dossier de
    données. Supprimer le parcours supprime le dossier.
 
+Les envois (photos comme traces) partent par **trois à la fois** ; le
+bouton « Arrêter » à côté du compteur interrompt : les fichiers partis se
+terminent, les suivants ne partent pas. Côté serveur, les écritures d'un
+même parcours sont sérialisées par `parcours_store.save_lock` : un contenu
+envoyé deux fois rend la même photo, et les plafonds restent exacts.
+
 Table `parcours_photo`, décalages d'horloge dans `parcours_camera`
 (migration v12).
 

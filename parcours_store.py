@@ -16,6 +16,7 @@ code en message (comme evolution_store).
 from __future__ import annotations
 
 import re
+import threading
 from datetime import date, datetime
 
 from models import Parcours, ParcoursOverride, ParcoursPlace
@@ -32,6 +33,20 @@ class ParcoursError(Exception):
         self.code = code
         # Compteurs ou détails renvoyés au client (ex. 'out-of-range').
         self.detail = detail or {}
+
+
+# Les envois partent en parallèle côté page : sans sérialisation, deux envois
+# d'un même fichier passeraient ensemble le contrôle « déjà là ? » puis
+# s'inséreraient en doublon et écriraient le même .part. Le traitement lourd
+# (normalisation, lecture GPX) reste hors du verrou.
+_SAVE_LOCKS: dict[int, threading.Lock] = {}
+_SAVE_LOCKS_GUARD = threading.Lock()
+
+
+def save_lock(parcours_id: int) -> threading.Lock:
+    """Verrou sérialisant les écritures (photos, traces) d'un parcours."""
+    with _SAVE_LOCKS_GUARD:
+        return _SAVE_LOCKS.setdefault(parcours_id, threading.Lock())
 
 
 def _name(value) -> str:
