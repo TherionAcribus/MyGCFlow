@@ -2757,9 +2757,11 @@ function mergeOverrides(patches) {
 }
 
 // Historique des ajustements : une entrée = la liste des ajustements telle
-// qu'elle était AVANT le geste (JSON — copie et comparaison en une fois).
-// L'annulation rejoue l'état précédent comme des patches ; les lieux posés
-// ne font pas partie de l'historique (leur identifiant changerait).
+// qu'elle était AVANT le geste (JSON — copie et comparaison en une fois),
+// ou la position d'un lieu avant son déplacement (`{ place, lat, lon }`).
+// L'annulation rejoue l'état précédent comme des patches, ou repose le
+// lieu. Créer ou supprimer un lieu n'y entre pas (son identifiant
+// changerait) ; un lieu supprimé sort de l'historique.
 const UNDO_LIMIT = 50;
 let undoStack = [];
 let redoStack = [];
@@ -2826,30 +2828,55 @@ function saveOverrides(patches) {
     const before = snapshotOverrides();
     writeOverrides(patches);
     // Le geste n'entre dans l'historique que s'il a changé quelque chose.
-    if (snapshotOverrides() !== before) {
-        undoStack.push(before);
-        if (undoStack.length > UNDO_LIMIT) undoStack.shift();
-        redoStack = [];
-        updateUndoButtons();
+    if (snapshotOverrides() !== before) pushHistory(before);
+}
+
+function pushHistory(entry) {
+    undoStack.push(entry);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    redoStack = [];
+    updateUndoButtons();
+}
+
+function placeById(id) {
+    return (inputs?.places || []).find((p) => p.id === id) || null;
+}
+
+// Dépile `from` vers `to` : l'état actuel passe dans `to`, l'entrée dépilée
+// est rejouée. Une entrée d'un lieu disparu est sautée.
+function stepHistory(from, to) {
+    if (!selectedId || adjustmentsLocked() || !inputs) return;
+    while (from.length) {
+        const entry = from.pop();
+        if (typeof entry === 'string') {
+            to.push(snapshotOverrides());
+            writeOverrides(patchesTo(JSON.parse(entry)));
+            break;
+        }
+        const place = placeById(entry.place);
+        if (!place) continue;
+        const back = { place: place.id, lat: place.lat, lon: place.lon };
+        to.push(back);
+        updatePlace(place.id, { lat: entry.lat, lon: entry.lon }).then((ok) => {
+            if (ok) return;
+            // Refusé : l'entrée retourne d'où elle venait.
+            const index = to.lastIndexOf(back);
+            if (index >= 0) to.splice(index, 1);
+            from.push(entry);
+            updateUndoButtons();
+            renderLayer();
+        });
+        break;
     }
+    updateUndoButtons();
 }
 
 function undoAdjustment() {
-    if (!undoStack.length || !selectedId || adjustmentsLocked() || !inputs) return;
-    const current = snapshotOverrides();
-    const target = undoStack.pop();
-    redoStack.push(current);
-    writeOverrides(patchesTo(JSON.parse(target)));
-    updateUndoButtons();
+    stepHistory(undoStack, redoStack);
 }
 
 function redoAdjustment() {
-    if (!redoStack.length || !selectedId || adjustmentsLocked() || !inputs) return;
-    const current = snapshotOverrides();
-    const target = redoStack.pop();
-    undoStack.push(current);
-    writeOverrides(patchesTo(JSON.parse(target)));
-    updateUndoButtons();
+    stepHistory(redoStack, undoStack);
 }
 
 function updateUndoButtons() {
@@ -2939,6 +2966,10 @@ async function deletePlace(id) {
     const pid = selectedId;
     try {
         await fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'DELETE' });
+        const kept = (entry) => typeof entry === 'string' || entry.place !== id;
+        undoStack = undoStack.filter(kept);
+        redoStack = redoStack.filter(kept);
+        updateUndoButtons();
         await reloadAdjustments(pid);
     } catch (error) {
         showToast(error.message, 'error');
@@ -5019,8 +5050,12 @@ function bindPlanDrag(map) {
 }
 
 // Refus (lecture en cours, erreur du serveur) : le repère revient à sa place.
+// Accepté : le déplacement entre dans l'historique (Ctrl+Z le défait).
 async function movePlaceTo(id, lon, lat) {
+    const place = placeById(id);
+    const before = place && { place: id, lat: place.lat, lon: place.lon };
     if (!(await updatePlace(id, { lat, lon }))) renderLayer();
+    else if (before) pushHistory(before);
 }
 
 // Bulle d'une étape du plan (moteur › popupAt, appelé par le clic de

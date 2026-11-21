@@ -142,6 +142,18 @@ test('glisser un lieu le déplace ; sa bulle propose de le supprimer', async ({ 
     return app.getMap().getView().getCenter().join(',');
   })).toBe(view);
 
+  // Le déplacement s'annule et se rétablit comme un ajustement.
+  const undo = page.locator('#btnParcoursUndo');
+  await expect(undo).toBeEnabled();
+  await page.keyboard.press('Control+z');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === placeId)).toMatchObject({ lat: 45.903, lon: 6.125 });
+  await expect(undo).toBeDisabled();
+  await page.keyboard.press('Control+y');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === placeId)).toMatchObject({ lat: moved.lat, lon: moved.lon });
+  await expect(undo).toBeEnabled();
+
   const bubble = await clickStop(page, placeKey);
   await expect(bubble).toContainText('Glissez le repère');
   await expect(bubble.locator('.parcours-bubble-exclude')).toHaveCount(0);
@@ -149,6 +161,9 @@ test('glisser un lieu le déplace ; sa bulle propose de le supprimer', async ({ 
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.places.find((p) => p.id === placeId)).toBeUndefined();
+  // Un lieu supprimé sort de l'historique : rien à annuler.
+  await expect(undo).toBeDisabled();
+  expect(state.undoDepth).toBe(0);
   expect(errors).toEqual([]);
 });
 

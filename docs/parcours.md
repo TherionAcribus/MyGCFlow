@@ -450,7 +450,9 @@ lecture, même en pause) :
   geste ferme la bulle, comme un plan refait (`renderLayer`) ;
 - **glisser un lieu ou une base** (curseur « attraper ») : la position est
   enregistrée au lâcher (`ol.interaction.Translate`, `movePlaceTo`) ; un
-  refus remet le repère en place. Le point provisoire du formulaire de pose
+  refus remet le repère en place. Le déplacement entre dans l'historique
+  des ajustements (boutons Annuler / Rétablir, Ctrl+Z / Ctrl+Y) ; supprimer
+  le lieu retire ses déplacements de l'historique. Le point provisoire du formulaire de pose
   se glisse aussi (coordonnées du formulaire mises à jour). Les étapes de
   cache ne se déplacent pas : leur position est celle de la cache ;
 - **clic droit** : sur une étape, sa bulle ; ailleurs, « Poser un lieu ici »
