@@ -384,6 +384,34 @@ function starValue(doc, selectors) {
   return null;
 }
 
+function latLngPair(pair) {
+  if (!Array.isArray(pair) || pair.length < 2) return null;
+  var lat = Number(pair[0]);
+  var lon = Number(pair[1]);
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { latitude: round6(lat), longitude: round6(lon) };
+}
+
+// Coordonnées corrigées par le joueur, telles que la fiche les annonce
+// (relevé du 2026-11-21) : window.userDefinedCoords porte les vôtres (newLatLng)
+// et les publiées (oldLatLng, oldLatLngDisplay), tandis que mapLatLng
+// contient déjà les vôtres sans le dire. Sans ce bloc, les corrigées
+// étaient prises pour les publiées. → { posted, corrected } ou null.
+function userDefinedCoords(html) {
+  var block = /window\.userDefinedCoords\s*=\s*(\{[\s\S]*?\})\s*;/.exec(html || '');
+  if (!block) return null;
+  var data = null;
+  try {
+    data = (JSON.parse(block[1]) || {}).data;
+  } catch (e) {
+    return null;
+  }
+  if (!data || data.isUserDefined !== true) return null;
+  var corrected = latLngPair(data.newLatLng);
+  var posted = latLngPair(data.oldLatLng) || parseDdm(data.oldLatLngDisplay);
+  return corrected && posted ? { posted: posted, corrected: corrected } : null;
+}
+
 function parseCachePage(doc, html, url) {
   var title = (doc.title || '').trim();
   var codeMatch = /\/geocache\/(GC[0-9A-Z]+)/i.exec(url || '') || /^(GC[0-9A-Z]+)\b/i.exec(title);
@@ -414,9 +442,14 @@ function parseCachePage(doc, html, url) {
   var ll = /"lat"\s*:\s*(-?\d+(?:\.\d+)?)\s*,\s*"lng"\s*:\s*(-?\d+(?:\.\d+)?)/.exec(mapText);
   var shown = ll ? { latitude: round6(Number(ll[1])), longitude: round6(Number(ll[2])) }
     : parseDdm(textOf(doc, '#uxLatLon'));
+  var user = userDefinedCoords(html);
   var userDefined = /"isUserDefined"\s*:\s*true/.test(mapText);
   var original = /"oldLatLngDisplay"\s*:\s*"([^"]+)"/.exec(mapText);
-  if (userDefined && original && parseDdm(original[1])) {
+  if (user) {
+    info.latitude = user.posted.latitude;
+    info.longitude = user.posted.longitude;
+    info.corrected = user.corrected;
+  } else if (userDefined && original && parseDdm(original[1])) {
     var posted = parseDdm(original[1]);
     info.latitude = posted.latitude;
     info.longitude = posted.longitude;

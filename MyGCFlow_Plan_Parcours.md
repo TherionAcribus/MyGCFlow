@@ -105,6 +105,10 @@ vraies dates et heures dans les bouts, l'étiquette et la bulle, Pg.Préc /
 Pg.Suiv de journée en journée. Pas de bornes tirables : la plage reste le
 parcours entier. Détails dans docs/parcours.md › Barre de chronologie.
 
+**Suite (2026-11-21)** : compléter un parcours depuis geocaching.com
+(coordonnées corrigées, PF donnés, parkings), collecte limitée aux caches
+du parcours en cours (§ 15, lots 11 à 15). **Rien n'est codé.**
+
 Écarts et constats des lots 8 à 10 :
 - **Côté « auto »** : vers le centre de l'écran, mais haut-droite tant que
   l'étape est près du centre — avec la caméra qui suit, l'étape y est
@@ -871,3 +875,265 @@ masquer, cadrage), lieux proposés, réglages d'affichage.
   placement, export image du canevas).
 - **Lot 10** : lieux proposés (`suggestPhotoPlaces`, carte, formulaire
   prérempli). Unitaires + spec.
+
+## 15. Compléter un parcours depuis geocaching.com (lots 11 à 15)
+
+Ajouté le 2026-11-21. **Rien n'est codé.**
+
+Aujourd'hui, les étapes viennent du My Finds (position, type, D/T, date),
+des Labs et des DNF de la carte « Mes logs ». Les manques qui pèsent sur
+le Parcours :
+- le **PF donné** n'est dans aucun GPX ;
+- le **parking** n'est connu que si l'utilisateur pose un lieu à la main ;
+- un **DNF de mystery** est placé à ses coordonnées publiées, jusqu'à 3 km
+  du vrai lieu, tant que la fiche lue par le favori n'a pas ses corrigées.
+  Or la reconstruction est géométrique (ordre des logs jugé sur la longueur
+  du chemin, intrus, insertion au moindre détour), comme les itinéraires et
+  la caméra : une seule étape mal placée peut fausser l'ordre de toute la
+  journée.
+
+Les **trouvailles**, elles, sont déjà bien placées quand les coordonnées
+ont été corrigées sur le site : le My Finds porte les corrigées
+(constaté par l'utilisateur le 2026-11-21, question 1 du § 15.8). Une
+mystery jamais corrigée sur le site reste à sa position publiée dans le
+GPX comme sur la fiche : la collecte n'y peut rien, seul le déplacement à
+la main (lot 15) la corrige.
+
+Choix de l'utilisateur (2026-11-21) : passer par le favori « Mes logs »
+existant, et **ne collecter que les caches du parcours en cours**. Jamais
+toute la base : à deux requêtes par cache et 800 ms entre deux requêtes
+(`LOGS_DELAY_MS`), soit ~1,6 s par cache, relire 19 591 trouvailles
+prendrait ~9 h. Un week-end de 100 caches prend ~3 min, une journée power
+trail de 300 caches ~8 min.
+
+### 15.1 Ce qui existe déjà
+
+- `parseCachePage` (logs_collect_core.js) lit sur la fiche les coordonnées
+  corrigées (`mapLatLng.isUserDefined`, les publiées dans
+  `oldLatLngDisplay`), le total de PF et l'état ; `normalizeLogbookEntry`
+  lit le PF donné par log (`FavoritePointUsed`).
+- Le contrat `mygcflow-logs` v1 porte `caches[].corrected`,
+  `favorite_points`, `status` et `logs[].favorite` ; `cache_ref` les stocke
+  (`corrected_latitude/longitude`, `favorite_points`, `status`) et
+  `log_event.favorite` aussi.
+- Mais :
+  - le favori ne lit que les caches de « Vos journaux » (DNF) et de « Vos
+    caches » ;
+  - `parcours_dataset._dnf_stops` et `dnf_geojson.py` prennent
+    `cache_ref.latitude`, jamais `corrected_latitude` ;
+  - `_find_stops` ne lit que `geocache`.
+- Base réelle (2026-11-21) : 515 fiches `cache_ref`, dont 59 mystery, et
+  **0** coordonnée corrigée. **Cause trouvée** sur une fiche réelle
+  (GCABGFQ) : la page ne fusionne plus les corrigées dans `mapLatLng` côté
+  serveur. `mapLatLng` porte déjà les corrigées, sans `isUserDefined` ni
+  `oldLatLngDisplay`, et l'information vit dans `window.userDefinedCoords`
+  (`newLatLng`, `oldLatLng` en décimal, `oldLatLngDisplay`). Le favori
+  rangeait donc les corrigées comme publiées. **Corrigé le 2026-11-21**
+  (`userDefinedCoords` dans logs_collect_core.js, l'ancienne forme reste
+  lue ; tests `tests/js/logs_collect_core.test.mjs`). Les fiches déjà
+  importées gardent l'erreur jusqu'à leur prochaine relecture : une
+  collecte complète (« Forcer une collecte complète ») les remet d'aplomb,
+  la fusion mettant à jour `latitude` et `corrected` champ par champ.
+
+### 15.2 Données retenues
+
+| Donnée | Source | Usage dans le Parcours | Lot |
+|---|---|---|---|
+| Coordonnées corrigées | fiche (`window.userDefinedCoords`) | position des étapes DNF (reconstruction, itinéraires, caméra, rattachement des photos) ; pastille « corrigées » des trouvailles | 11, 12 |
+| PF donné | carnet, mes logs (`FavoritePointUsed`) | marque et effet à l'arrivée, balise `{pf}` | 13 |
+| Total de PF | fiche (`.favorite-value`) | bulle de l'étape, carte d'arrivée | 13 |
+| Nombre de trouvailles | fiche (compteurs de logs, sélecteur à relever) | idem | 13 |
+| Waypoint parking | fiche (tableau des waypoints) | lieu `parking` proposé, trajet voiture puis marche | 14 |
+
+Écartés :
+- l'**heure des logs** : le carnet ne donne que la date (`Visited`). À
+  reconfirmer sur la ligne « Champs d'un log du carnet » de la console ;
+- le **texte des logs** : le contrat ne le lit jamais (et il est déjà dans
+  le My Finds) ;
+- les **photos des logs** : téléchargement lourd, EXIF probablement retiré
+  par le site. À revoir à la demande.
+
+Le total de PF et le nombre de trouvailles valent **à la date de la
+collecte**, pas à celle du passage : à dire dans la bulle (« 87 PF
+aujourd'hui »), jamais à présenter comme l'état d'alors.
+
+Le rang « ma Nᵉ trouvaille » ne demande aucune collecte : il se calcule
+sur le My Finds.
+
+### 15.3 Demande de collecte liée au parcours
+
+Le favori reste unique (un seul lien, un seul jeton). Ce qui change, c'est
+ce que lui répond `GET /api/logs/receive/state`.
+
+**Côté page Parcours** (onglet Données, nouvelle carte « Compléter depuis
+geocaching.com ») :
+- elle affiche le nombre de caches concernées et l'estimation de durée
+  (2 × 800 ms par cache) ;
+- le choix par défaut est « caches jamais lues » (pas de fiche `cache_ref`
+  issue du favori) ; « Tout relire » sert après une correction de
+  coordonnées faite sur le site ;
+- bouton « Préparer la collecte » → `POST
+  /api/parcours/<id>/collect-request`.
+
+**Côté serveur** :
+- la demande est enregistrée dans un fichier `logs_collect_request.json`
+  du répertoire de données : `{id, parcours_id, label, codes,
+  created_at}`. C'est un état d'exécution, pas une préférence : rien dans
+  `settings.json`. Une seule demande à la fois (la suivante remplace la
+  précédente), durée de vie de 24 h ;
+- les codes retenus sont ceux des étapes `find` et `dnf` de la plage du
+  parcours, exclues comprises (elles peuvent être réintégrées). Les Labs
+  et les lieux n'ont pas de fiche sur le site ;
+- plafond `MAX_COLLECT_CODES` = 1 000 (~27 min). Au-delà, refus avec un
+  message, pas de troncature silencieuse ;
+- `/receive/state` renvoie `request: {id, label, codes}` en plus de ses
+  champs actuels.
+
+**Côté favori** (logs_bookmarklet.src.js, logs_collect_core.js) :
+- avec une `request`, le favori l'annonce dans son bandeau (« Parcours
+  « Croatie 2025 » : 143 caches, ≈ 4 min ») et ne lit **que** ces codes,
+  en ignorant `scope` et `since` : ni « Vos journaux », ni « Vos caches » ;
+- file : `/geocache/<code>`, carnet filtré sur mes logs (`ownOnly`, une
+  page de carnet) ;
+- **aucune couverture déclarée** : l'import ajoute et met à jour sans
+  jamais rien retirer, et l'horizon DNF (`dnf_covered_at`) ne bouge pas ;
+- reprise : le plan dans `localStorage` porte l'id de la demande. Un plan
+  d'une autre demande, ou d'une collecte ordinaire, n'est pas repris ;
+- l'envoi final (`/receive/fragment`, `X-MyGCFlow-Final: 1`) porte
+  `X-MyGCFlow-Request: <id>`. Le serveur range l'id dans le manifest de
+  l'aperçu (`request_id`, `parcours_id`) et efface la demande. L'id passe
+  par un en-tête et pas par le document : le contrat ne doit rien dire de
+  l'outil qui l'a produit.
+
+**Retour dans la page Parcours** :
+- la carte suit `/api/logs/status` (relevé de 4 s, comme « Mes logs »,
+  seulement quand l'onglet Données est actif) : `collection_in_progress`
+  pendant la collecte, puis `pending_import` ;
+- l'aperçu s'ouvre **sur la page Parcours**, dans la même fenêtre que celle
+  de « Mes logs ». À extraire : le balisage de `#gcLogsPreviewModal` passe
+  dans un gabarit partagé (`_logs_preview_modal.html`) et le code
+  d'aperçu et de validation de gc_logs.js dans `logs_preview.js`, sans
+  dépendance à la carte de l'onglet Données. Dépendances de gc_logs.js à
+  vérifier au début du lot ;
+- le bilan de l'aperçu gagne des compteurs propres à cet usage (`_plan`
+  de log_store) : fiches ajoutées ou mises à jour, **coordonnées corrigées
+  nouvelles ou changées**, PF donnés ;
+- après validation, la page recharge les entrées du parcours ; la
+  reconstruction, pure, est relancée.
+
+**Ce que la demande ne fait pas** :
+- elle ne déclenche rien sur geocaching.com : l'utilisateur ouvre le site
+  et clique le favori, comme aujourd'hui ;
+- si le favori n'est pas installé, la carte propose le lien à glisser
+  (`GET /api/logs/bookmarklet`), sans renvoyer vers la page principale.
+
+### 15.4 Positions dans le Parcours
+
+`parcours_dataset` lit `cache_ref` pour **toutes** les étapes à code GC :
+
+| Étape | Ordre de priorité de la position |
+|---|---|
+| `find` | My Finds (`geocache`), qui porte déjà les corrigées ; `cache_ref` ne sert qu'à savoir qu'elles le sont (`posSource`) |
+| `dnf` | corrigées → correction manuelle ou fiche (`cache_ref.latitude`) → My Finds |
+
+- Chaque étape porte `posSource` (`corrected`, `published`, `manual`) et,
+  quand elle est déplacée, `published: {lon, lat}`. La liste des étapes
+  affiche une pastille « coordonnées corrigées ».
+- Les clés d'étape ne changent pas : rangs forcés, heures épinglées et
+  exclusions survivent. Le cache d'itinéraires étant indexé par
+  coordonnées, les trajets touchés sont redemandés d'eux-mêmes. Les photos
+  rattachées automatiquement (150 m) peuvent changer d'étape ; les
+  rattachements manuels restent.
+- Des fiches `cache_ref` de **trouvailles** apparaissent dans la base.
+  Lecteurs actuels : `dnf_geojson.py` (codes DNF seulement),
+  `poses_dataset._owned_refs` (propriétaire = moi, ou pseudo du compte),
+  `log_store`, l'export. Aucun ne doit changer de comportement : un test
+  par lecteur le vérifie.
+- Hors périmètre : les coordonnées corrigées sur la **carte principale**
+  (trouvailles, zones, Stats). C'est une décision à part (question 2,
+  § 15.8).
+
+### 15.5 Exploitation visuelle (lot 13)
+
+- **PF donné** : marque discrète sur la pastille de l'étape (cœur), effet
+  propre à l'arrivée pendant la lecture et dans la vidéo (réglage du style
+  du parcours, désactivable), balise `{pf}` (cumul des PF donnés depuis
+  le début du parcours). Source : `log_event.favorite` du log de
+  trouvaille de l'étape.
+- **Total de PF et nombre de trouvailles** dans la bulle de l'étape, avec
+  la date de collecte. Nouvelles balises seulement si un usage dans la
+  vidéo se dessine.
+- **Contrat** : `caches[].found_count` (entier, total des logs de
+  trouvaille à la date d'export), champ facultatif. Les champs inconnus
+  étant ignorés, on reste en v1. Colonne `cache_ref.found_count`
+  (migration).
+
+### 15.6 Parkings (lot 14)
+
+- **Contrat** : `caches[].waypoints`, liste facultative de `{kind, name,
+  latitude, longitude}`. Seul `kind: "parking"` est retenu au premier jet.
+  Les étapes de multi ne disent pas l'ordre de passage, et les waypoints
+  cachés n'ont pas de coordonnées.
+- **Stockage** : table `cache_waypoint` (`collection_id`, `gc_code`,
+  `kind`, `name`, coordonnées), remplacée en bloc pour une cache à chaque
+  import de sa fiche.
+- **Parcours** : proposition de lieux comme pour les photos (§ 14.3) :
+  « 3 parkings connus pour cette journée », « Créer le lieu » avec la
+  catégorie `parking` déjà prérempli. Rien n'est créé sans action de
+  l'utilisateur, et rien n'est stocké pour une proposition ignorée.
+- Le trajet voiture jusqu'au parking puis à pied vient de ce qui existe :
+  le lieu est une étape, son mode de tronçon se règle (`legMode`).
+
+### 15.7 Déplacer une étape à la main (lot 15, facultatif)
+
+Beaucoup de mystery et de multis résolues n'ont jamais eu leurs
+coordonnées corrigées sur le site. Glisser une étape sur la carte (comme
+un lieu, `parcours-map-actions`) pose une position dans
+`parcours_override` (`lon`, `lat` : migration). Elle prime sur tout le
+reste (`posSource: 'manual'`) et passe par l'historique Annuler /
+Rétablir des ajustements.
+
+### 15.8 Questions ouvertes
+
+1. ~~**Le My Finds contient-il déjà les coordonnées corrigées ?**~~
+   **Oui** (constaté par l'utilisateur le 2026-11-21) : corrigées sur le
+   site, corrigées dans le GPX ; pas corrigées sur le site, pas corrigées
+   dans le GPX. Le lot 12 n'apporte donc rien aux positions des
+   trouvailles : son intérêt tient aux PF, aux compteurs, aux parkings et
+   aux DNF.
+2. **Carte principale** : utiliser aussi les coordonnées corrigées pour les
+   trouvailles (points, zones, Stats) ? Elles n'existeraient que pour les
+   caches d'un parcours complété, d'où un rendu inégal.
+3. **Durée de vie de la demande** : 24 h suffit-il ? Une collecte
+   interrompue se reprend par le plan du favori, mais la demande doit
+   encore exister au scellement.
+
+### 15.9 Lots
+
+- **Lot 11 : positions déjà connues.** Détection des coordonnées
+  corrigées : faite le 2026-11-21 (voir § 15.1). Reste : `corrected_latitude` lu par `_dnf_stops` et `_find_stops`, `posSource`
+  et `published` servis, pastille dans la liste. Même correction dans
+  `dnf_geojson.py` (position d'un DNF de mystery sur la carte
+  principale). pytest + unitaires.
+- **Lot 12 : collecte du parcours.** Demande (route, fichier, plafond),
+  `request` dans `/receive/state`, mode « demande » du favori (file,
+  bandeau, reprise, en-tête final), `request_id` dans le manifest. Aperçu
+  partagé (`_logs_preview_modal.html`, `logs_preview.js`), carte « Compléter
+  depuis geocaching.com », compteurs du bilan, rechargement des entrées.
+  pytest (demande, état, scellement, absence de couverture, horizon DNF
+  inchangé, lecteurs de `cache_ref`) + test de la chaîne monoligne du
+  favori + `parcours-gc-collect.spec.mjs` (export simulé envoyé à
+  `/receive/fragment` avec l'en-tête, aperçu, validation, étape déplacée).
+  Logs vidés en entrée et en sortie (`POST /api/logs/clear`).
+- **Lot 13 : PF et compteurs.** `found_count` (contrat, log_formats,
+  migration, favori), marque et effet PF, balise `{pf}`, bulle. Unitaires
+  + spec (relevé `stopStyles` étendu).
+- **Lot 14 : parkings.** `waypoints` (contrat, favori, table), proposition
+  de lieux. pytest + spec.
+- **Lot 15 : déplacer une étape** (facultatif) : seul recours pour une
+  mystery résolue mais jamais corrigée sur le site (question 1).
+
+Les lots 13 et 14 dépendent du 12 ; le 11 et le 15 sont indépendants.
+Doc : docs/parcours.md (section « Compléter depuis geocaching.com ») et
+docs/logs-geocaching.md (demande de collecte, champs `found_count` et
+`waypoints` du contrat).
