@@ -68,7 +68,8 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
     coverage: [],
     caches: [
       { gc_code: 'GCPAR01', type: 'Unknown Cache', latitude: 45.8800, longitude: 6.1000,
-        corrected: { latitude: 45.9020, longitude: 6.1230 }, favorite_points: 12, found_count: 340 },
+        corrected: { latitude: 45.9020, longitude: 6.1230 }, favorite_points: 12, found_count: 340,
+        waypoints: [{ kind: 'parking', name: 'Parking du lac', latitude: 45.9010, longitude: 6.1210 }] },
       { gc_code: 'GCPAR02', type: 'Traditional Cache', latitude: 45.9050, longitude: 6.1300 },
     ],
     logs: [
@@ -105,6 +106,21 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
   const served = (await snapshot(page)).stopStyles;
   expect([served.GCPAR01.favorite, served.GCPAR02.favorite]).toEqual([true, false]);
   await expect(page.locator('.parcours-stop[data-stop-key="GCPAR02"]')).not.toHaveAttribute('data-pos-source', /./);
+  // Parking de la fiche : proposé dans sa journée, posé d'un clic comme
+  // lieu « parking », puis plus proposé.
+  const parkings = page.locator('.parcours-day-parkings');
+  await expect(parkings).toHaveCount(1);
+  await parkings.locator('summary').click();
+  await expect(parkings).toContainText('Parking du lac');
+  const revision = (await snapshot(page)).adjustmentRevision;
+  await parkings.locator('.parcours-parking-create').click();
+  await expect.poll(async () => (await snapshot(page)).adjustmentRevision).toBeGreaterThan(revision);
+  const posed = await snapshot(page);
+  expect(posed.places).toEqual([expect.objectContaining({
+    kind: 'place', name: 'Parking du lac', category: 'parking', date: '2025-07-12' })]);
+  expect(posed.parkings).toEqual({});
+  await expect(page.locator('.parcours-day-parkings')).toHaveCount(0);
+
   // Deux fiches lues : trois caches jamais relues.
   await expect(page.locator('#parcoursCollectSummary')).toContainText('dont 3');
   const after = await page.evaluate(() => window.getParcoursCollectSnapshot());

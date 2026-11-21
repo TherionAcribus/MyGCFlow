@@ -96,6 +96,10 @@ un voyage), chacun avec ses étapes :
   Valeurs **du jour de la collecte**, jamais de celui du passage : la bulle
   de l'étape les date (« 87 PF · 1 505 trouvailles au 21 nov. 2026 »), la
   liste dit « PF donné ».
+- **Parkings** (lot 14) : `parkings` à côté de `days`, `[{code, name, lat,
+  lon}]` — waypoints « parking » des caches du parcours (`cache_waypoint`,
+  lus sur leur fiche par le favori). Proposés par la page, jamais posés
+  d'office (§ Compléter depuis geocaching.com).
 - `logId` croît avec l'ordre de **saisie** des logs, pas forcément avec
   l'ordre de passage. `logsAvailable` est faux sans logs importés ou sans
   compte identifié.
@@ -833,6 +837,16 @@ corrigées » de la liste.
   nombre de trouvailles dans les compteurs de la fiche
   (`#ctl00_ContentBody_lblFindCounts` : Found it + Attended + Webcam) ;
   sans compteurs lisibles, il le signale une fois dans la console.
+- **Parkings** (lot 14) : sous le bilan de chaque journée, un bloc replié
+  « N parkings connus pour cette journée » (`suggestParkings`,
+  parcours_parkings.mjs) : parkings des étapes gardées de la journée, ceux
+  à moins de 40 m fusionnés (caches qui partagent un parking), ceux à
+  moins de 60 m d'un lieu ou d'une base de la journée (ou sans date)
+  écartés. « Créer ce lieu » pose un lieu de catégorie `parking`, sans
+  heure : la reconstruction le place, et son tronçon se règle comme les
+  autres (`legMode` : voiture jusqu'au parking, puis à pied). Rien n'est
+  retenu d'une proposition ignorée. Relevé `parkings` (date → liste) de
+  `getParcoursSnapshot()`.
 
 ## Reconstruction (`parcours_reconstruct.mjs`)
 
@@ -942,8 +956,9 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   créneaux, trois placements, effets, dessin sur un contexte factice),
   `tests/js/app_mode.test.mjs`.
 - Compléter depuis geocaching.com : `CollectRequestTests` et
-  `test_stop_positions_follow_cache_position` et
-  `test_favorite_and_cache_facts` de test_parcours_api.py,
+  `test_stop_positions_follow_cache_position`,
+  `test_favorite_and_cache_facts` et `test_parkings_of_the_parcours_caches`
+  de test_parcours_api.py, `tests/js/parcours_parkings.test.mjs`,
   demande et favori dans tests/test_logs_api.py, mode « demande » du cœur
   dans `tests/js/logs_collect_core.test.mjs`, e2e
   `tests/e2e/parcours-gc-collect.spec.mjs` (export du favori simulé par un

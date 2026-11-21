@@ -303,7 +303,8 @@ function buildPayload(state, order) {
       placed_date: parseDateText(info.placed_text, order),
       status: info.status,
       favorite_points: info.favorite_points,
-      found_count: info.found_count
+      found_count: info.found_count,
+      waypoints: info.waypoints
     };
     if (info.corrected) cache.corrected = info.corrected;
     caches.push(cache);
@@ -442,6 +443,7 @@ function parseCachePage(doc, html, url) {
     status: 'active',
     favorite_points: null,
     found_count: null,
+    waypoints: [],
     token: null
   };
 
@@ -502,7 +504,56 @@ function parseCachePage(doc, html, url) {
   var fav = doc.querySelector('.favorite-value');
   info.favorite_points = fav ? countValue(fav.textContent) : null;
   info.found_count = foundCount(html);
+  info.waypoints = parkingWaypoints(html);
   return info;
+}
+
+// Type de waypoint « Parking Area » : identifiant Geocaching et nom de
+// l'icône (/images/wpttypes/sm/pkg.jpg).
+var PARKING_TYPE_ID = 217;
+var PARKING_ICON = /wpttypes\/(?:sm\/)?(?:pkg|217)\./i;
+
+function htmlText(value) {
+  return String(value || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/g, ' ')
+    .replace(/&#39;|&#039;|&apos;/g, "'").replace(/&quot;/g, '\x22').replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Parkings de la fiche. D'abord le tableau des waypoints
+// (#ctl00_ContentBody_Waypoints) : une ligne à l'icône de parking, nom dans
+// son lien (sans le type entre parenthèses), coordonnées en texte — un
+// waypoint caché n'en a pas (« ??? ») et reste de côté. Sans tableau, la
+// liste de la petite carte (cmapAdditionalWaypoints), si elle est lisible.
+// [] sans parking.
+function parkingWaypoints(html) {
+  var out = [];
+  var table = /id="ctl00_ContentBody_Waypoints"[\s\S]*?<\/table>/.exec(html);
+  if (table) {
+    table[0].split(/<tr\b/i).forEach(function (row) {
+      if (!PARKING_ICON.test(row)) return;
+      var at = parseDdm(htmlText(row));
+      if (!at) return;
+      var link = /<a\b[^>]*>([\s\S]*?)<\/a>/i.exec(row);
+      var name = link ? htmlText(link[1]).replace(/\s*\([^)]*\)$/, '') : '';
+      out.push({ kind: 'parking', name: name || null, latitude: at.latitude, longitude: at.longitude });
+    });
+    return out;
+  }
+  var cmap = /cmapAdditionalWaypoints\s*=\s*(\[[\s\S]*?\])\s*;/.exec(html);
+  var list = null;
+  try {
+    list = cmap ? JSON.parse(cmap[1]) : null;
+  } catch (e) {
+    list = null;
+  }
+  (Array.isArray(list) ? list : []).forEach(function (w) {
+    if (!w || (Number(w.type) !== PARKING_TYPE_ID && !PARKING_ICON.test(String(w.icon || '')))) return;
+    var lat = Number(w.lat);
+    var lng = Number(w.lng);
+    if (!isFinite(lat) || !isFinite(lng) || (lat === 0 && lng === 0)) return;
+    out.push({ kind: 'parking', name: w.name ? htmlText(w.name) : null, latitude: round6(lat), longitude: round6(lng) });
+  });
+  return out;
 }
 
 // Types de logs comptés comme trouvailles : Found it, Attended, Webcam

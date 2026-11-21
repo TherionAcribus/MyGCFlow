@@ -12,7 +12,7 @@ import log_formats as lf
 import log_store
 from app import create_app
 from extensions import db
-from models import CacheRef, Geocache, LogCollection, LogEvent
+from models import CacheRef, CacheWaypoint, Geocache, LogCollection, LogEvent
 
 from tests.test_log_formats import CONTRACT, MY_FINDS
 
@@ -260,6 +260,46 @@ class LogStoreTests(unittest.TestCase):
         doc["exported_at"] = "2026-10-27T00:00:00Z"
         self._commit(doc)
         self.assertEqual(db.session.query(CacheRef).filter_by(gc_code=first).one().found_count, 125)
+
+    def test_waypoints_replace_those_of_the_cache(self):
+        code = _doc()["caches"][0]["gc_code"]
+
+        def stored():
+            return [(w.kind, w.name, w.latitude, w.longitude)
+                    for w in db.session.query(CacheWaypoint).filter_by(gc_code=code).order_by(CacheWaypoint.id)]
+
+        doc = _doc()
+        doc["caches"][0]["waypoints"] = [
+            {"kind": "parking", "name": "Parking", "latitude": 49.21, "longitude": 6.21},
+            {"kind": "stage", "name": "Étape 1", "latitude": 49.22, "longitude": 6.22},
+            {"kind": "parking", "name": "Sans coordonnées"},
+        ]
+        summary = self._commit(doc)
+        self.assertEqual(summary["parkings"], 1)
+        self.assertEqual(stored(), [("parking", "Parking", 49.21, 6.21)])
+        # Champ absent : rien ne change.
+        doc = _doc()
+        doc["exported_at"] = "2026-10-26T00:00:00Z"
+        self._commit(doc)
+        self.assertEqual(len(stored()), 1)
+        # Liste de la fiche : remplace en bloc ; vide : les retire.
+        doc["exported_at"] = "2026-10-27T00:00:00Z"
+        doc["caches"][0]["waypoints"] = [{"kind": "parking", "name": "P2", "latitude": 49.3, "longitude": 6.3}]
+        self._commit(doc)
+        self.assertEqual(stored(), [("parking", "P2", 49.3, 6.3)])
+        # Fichier plus ancien que la fiche enregistrée : ignoré.
+        doc["exported_at"] = "2026-10-01T00:00:00Z"
+        doc["caches"][0]["waypoints"] = []
+        self._commit(doc)
+        self.assertEqual(len(stored()), 1)
+        doc["exported_at"] = "2026-10-28T00:00:00Z"
+        self._commit(doc)
+        self.assertEqual(stored(), [])
+        doc["caches"][0]["waypoints"] = [{"kind": "parking", "latitude": 49.3, "longitude": 6.3}]
+        doc["exported_at"] = "2026-10-29T00:00:00Z"
+        self._commit(doc)
+        log_store.clear_logs(db.session)
+        self.assertEqual(db.session.query(CacheWaypoint).count(), 0)
 
     def test_clear(self):
         self._commit()

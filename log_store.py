@@ -31,7 +31,7 @@ from log_formats import (
     SOURCE_GPX_MYFINDS, USER_CORRECTION, LogsParseResult,
     log_category,
 )
-from models import CacheRef, Geocache, LogCollection, LogEvent
+from models import CacheRef, CacheWaypoint, Geocache, LogCollection, LogEvent
 
 COLLECTION_UID = "default"
 # Type Geocaching « Didn't find it » : le scope « author » qui déclare les
@@ -138,6 +138,9 @@ class _Plan:
     log_removals: list = field(default_factory=list)      # ids de lignes
     cache_inserts: list = field(default_factory=list)
     cache_updates: list = field(default_factory=list)
+    # {code → waypoints} des fiches qui les remplacent (liste vide : les
+    # retirer).
+    waypoint_replacements: dict = field(default_factory=dict)
     counts: Counter = field(default_factory=Counter)
     removed_sample: list = field(default_factory=list)
     pending_codes: int = 0
@@ -254,10 +257,29 @@ def _plan_removals(plan, session, collection_id, parsed):
     plan.counts["removed"] = len(removed)
 
 
-def _plan_caches(plan, parsed, existing, incoming_at, source, now):
+def _existing_waypoints(session, collection_id, codes) -> dict:
+    """{code → waypoints enregistrés}, sous la forme du contrat analysé."""
+    found = {}
+    if collection_id is None:
+        return found
+    for chunk in _chunks(codes, _IN_CHUNK):
+        for w in session.query(CacheWaypoint).filter(
+                CacheWaypoint.collection_id == collection_id,
+                CacheWaypoint.gc_code.in_(chunk)).order_by(CacheWaypoint.id):
+            found.setdefault(w.gc_code, []).append(
+                {"kind": w.kind, "name": w.name, "latitude": w.latitude, "longitude": w.longitude})
+    return found
+
+
+def _plan_caches(plan, parsed, existing, waypoints, incoming_at, source, now):
     for draft in parsed.caches:
         row = existing.get(draft.gc_code)
         values = {name: getattr(draft, name) for name in _CACHE_FIELDS}
+        # Waypoints : ceux de la fiche remplacent les précédents ; un
+        # changement compte comme une mise à jour de la fiche.
+        new_waypoints = draft.waypoints is not None and draft.waypoints != waypoints.get(draft.gc_code, [])
+        if new_waypoints:
+            plan.waypoint_replacements[draft.gc_code] = draft.waypoints
         if row is None:
             plan.counts["caches_added"] += 1
             plan.cache_inserts.append({
@@ -275,10 +297,11 @@ def _plan_caches(plan, parsed, existing, incoming_at, source, now):
                 continue
             if value != getattr(row, name):
                 changes[name] = value
-        if not changes:
+        if not changes and not new_waypoints:
             plan.counts["caches_unchanged"] += 1
             continue
         if not _is_newer(incoming_at, row.source_exported_at):
+            plan.waypoint_replacements.pop(draft.gc_code, None)
             plan.counts["caches_stale"] += 1
             continue
         if "latitude" in changes or "longitude" in changes:
@@ -322,6 +345,8 @@ def _plan(session, parsed: LogsParseResult) -> _Plan:
     _plan_removals(plan, session, collection_id, parsed)
     codes = [d.gc_code for d in parsed.caches]
     _plan_caches(plan, parsed, _existing_caches(session, collection_id, codes),
+                 _existing_waypoints(session, collection_id,
+                                     [d.gc_code for d in parsed.caches if d.waypoints is not None]),
                  incoming_at, source, now)
 
     file_codes = {d.gc_code for d in parsed.logs}
@@ -370,6 +395,7 @@ def _summary(plan: _Plan, parsed: LogsParseResult) -> dict:
         "favorites_mine": sum(1 for d in parsed.logs if d.favorite is True
                               and plan.account_user_id is not None
                               and d.author_id == plan.account_user_id),
+        "parkings": sum(1 for c in parsed.caches for w in (c.waypoints or []) if w["kind"] == "parking"),
     }
 
 
@@ -403,6 +429,14 @@ def _execute(session, plan: _Plan) -> LogCollection:
         session.bulk_update_mappings(CacheRef, rows)
     for rows in _chunks(plan.cache_inserts, _WRITE_CHUNK):
         session.bulk_insert_mappings(CacheRef, [{**r, "collection_id": collection.id} for r in rows])
+    for chunk in _chunks(sorted(plan.waypoint_replacements), _IN_CHUNK):
+        session.query(CacheWaypoint).filter(
+            CacheWaypoint.collection_id == collection.id,
+            CacheWaypoint.gc_code.in_(chunk)).delete(synchronize_session=False)
+    waypoints = [{**w, "collection_id": collection.id, "gc_code": code}
+                 for code, items in plan.waypoint_replacements.items() for w in items]
+    for rows in _chunks(waypoints, _WRITE_CHUNK):
+        session.bulk_insert_mappings(CacheWaypoint, rows)
     collection.revision = (collection.revision or 0) + 1
     collection.last_import_at = _utcnow()
     return collection
@@ -641,6 +675,7 @@ def clear_logs(session) -> dict:
     with LOG_MUTATION_LOCK:
         try:
             removed = session.query(LogEvent).delete(synchronize_session=False)
+            session.query(CacheWaypoint).delete(synchronize_session=False)
             caches = session.query(CacheRef).delete(synchronize_session=False)
             session.query(LogCollection).delete(synchronize_session=False)
             session.commit()

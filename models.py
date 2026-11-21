@@ -247,6 +247,25 @@ class CacheRef(db.Model):
     )
 
 
+class CacheWaypoint(db.Model):
+    """Waypoint d'une cache lu sur sa fiche par le favori « Mes logs »
+    (contrat `caches[].waypoints`) : les parkings seulement. Ceux d'une
+    cache sont remplacés en bloc à chaque import de sa fiche."""
+    __tablename__ = 'cache_waypoint'
+
+    id = db.Column(db.Integer, primary_key=True)
+    collection_id = db.Column(db.Integer, db.ForeignKey('log_collection.id'), nullable=False)
+    gc_code = db.Column(db.String(16), nullable=False)
+    kind = db.Column(db.String(16), nullable=False)
+    name = db.Column(db.String(255))
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+
+    __table_args__ = (
+        db.Index('ix_cache_waypoint_code', 'collection_id', 'gc_code'),
+    )
+
+
 class Parcours(db.Model):
     """Un parcours : une journée ou des vacances rejouées cache par cache
     (MyGCFlow_Plan_Parcours.md). On stocke la sélection et, plus tard, les

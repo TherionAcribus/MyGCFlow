@@ -303,6 +303,10 @@ class CacheDraft:
     status: str | None = None
     favorite_points: int | None = None
     found_count: int | None = None
+    # Waypoints retenus de la fiche (WAYPOINT_KINDS) : None = champ absent
+    # (rien à changer), liste (même vide) = ceux de la fiche, qui remplacent
+    # les précédents.
+    waypoints: list | None = None
     warnings: list = field(default_factory=list)
 
 
@@ -494,7 +498,34 @@ def _parse_cache_record(rec) -> tuple[CacheDraft | None, str | None]:
     draft.favorite_points = fp if fp is not None and fp >= 0 else None
     found = _safe_int(rec.get("found_count"))
     draft.found_count = found if found is not None and found >= 0 else None
+    draft.waypoints = _parse_waypoints(rec.get("waypoints"), w)
     return draft, None
+
+
+# Waypoints retenus (contrat `caches[].waypoints`) : les parkings seulement.
+# Les étapes de multi ne disent pas l'ordre de passage et les waypoints
+# cachés n'ont pas de coordonnées ; un autre `kind` est ignoré sans
+# avertissement (le favori peut en envoyer d'autres plus tard).
+WAYPOINT_KINDS = frozenset({"parking"})
+MAX_WAYPOINTS = 50
+
+
+def _parse_waypoints(raw, warnings) -> list | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        warnings.append(_("waypoints non liste — ignorés"))
+        return None
+    kept = []
+    for item in raw[:MAX_WAYPOINTS]:
+        if not isinstance(item, dict) or item.get("kind") not in WAYPOINT_KINDS:
+            continue
+        lat, lon = _coords(item.get("latitude"), item.get("longitude"), warnings, _("coordonnées de waypoint"))
+        if lat is None:
+            continue
+        kept.append({"kind": item["kind"], "name": _clean_str(item.get("name"), 255),
+                     "latitude": lat, "longitude": lon})
+    return kept
 
 
 def _parse_coverage(item) -> tuple[CoverageScope | None, str | None]:

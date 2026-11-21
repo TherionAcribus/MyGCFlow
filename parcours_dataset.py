@@ -31,7 +31,7 @@ import log_store
 import parcours_store
 from lab_geojson import found_local_time
 from log_formats import CATEGORY_DNF, CATEGORY_FIND, SOURCE_LOGS, log_category
-from models import CacheRef, Geocache, LabDiscovery, LogEvent
+from models import CacheRef, CacheWaypoint, Geocache, LabDiscovery, LogEvent
 
 KIND_FIND = 'find'
 KIND_LAB = 'lab'
@@ -251,13 +251,32 @@ def build_days(session, start: date, end: date, include_labs=True, include_dnf=T
     return {'days': days, 'counts': counts, 'logsAvailable': logs_available}
 
 
+def _parkings(session, days: list) -> list:
+    """Parkings connus des caches du parcours (waypoints lus sur leur fiche
+    par le favori « Mes logs ») : [{code, name, lat, lon}], proposés comme
+    lieux par la page (§ 15.6 du plan)."""
+    collection = log_store.get_collection(session)
+    codes = sorted({stop['code'] for day in days for stop in day['stops'] if stop.get('code')})
+    if collection is None or not codes:
+        return []
+    parkings = []
+    for chunk in _chunks(codes):
+        for w in session.query(CacheWaypoint).filter(
+                CacheWaypoint.collection_id == collection.id,
+                CacheWaypoint.kind == 'parking',
+                CacheWaypoint.gc_code.in_(chunk)).order_by(CacheWaypoint.gc_code, CacheWaypoint.id):
+            parkings.append({'code': w.gc_code, 'name': w.name, 'lat': w.latitude, 'lon': w.longitude})
+    return parkings
+
+
 def build_inputs(session, parcours_id: int) -> dict:
-    """{parcours, days: [{date, stops}], counts, logsAvailable, overrides,
-    places} du parcours — ajustements manuels compris (lot 3)."""
+    """{parcours, days: [{date, stops}], counts, logsAvailable, parkings,
+    overrides, places} du parcours — ajustements manuels compris (lot 3)."""
     parcours = parcours_store.get(session, parcours_id)
     payload = build_days(session, parcours.date_start, parcours.date_end,
                          include_labs=parcours.include_labs, include_dnf=parcours.include_dnf)
     return {'parcours': parcours_store.to_dict(parcours), **payload,
+            'parkings': _parkings(session, payload['days']),
             **parcours_store.adjustments(session, parcours.id)}
 
 

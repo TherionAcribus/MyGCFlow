@@ -567,7 +567,11 @@ class LogsAutomationTests(LogsApiTests):
                 # Compteurs : Found it, DNF, Attended, Webcam ; PF au-delà
                 # de 999, séparateur de milliers compris.
                 "GC1AAA": self._gc("GC1AAA", "t1", corrected=[49.25, 6.25], favs="1,234",
-                                   counts={"2": "1,500", "3": "12", "10": "3", "11": "2"}),
+                                   counts={"2": "1,500", "3": "12", "10": "3", "11": "2"},
+                                   # Parking, étape physique, parking caché.
+                                   waypoints=[["pkg", "Parking (Parking Area)", "N 49° 15.000 E 006° 12.000"],
+                                              ["stage", "Étape 1", "N 49° 15.500 E 006° 12.500"],
+                                              ["pkg", "Parking 2", "??? ???"]]),
                 "GC2BBB": self._gc("GC2BBB", "t2"),
             },
             "books": {
@@ -591,6 +595,9 @@ class LogsAutomationTests(LogsApiTests):
         self.assertEqual((caches["GC1AAA"]["favorite_points"], caches["GC1AAA"]["found_count"]),
                          (1234, 1505))
         self.assertIsNone(caches["GC2BBB"]["found_count"])
+        self.assertEqual(caches["GC1AAA"]["waypoints"], [
+            {"kind": "parking", "name": "Parking", "latitude": 49.25, "longitude": 6.2}])
+        self.assertEqual(caches["GC2BBB"]["waypoints"], [])
         self.assertEqual({l["gc_code"]: l["favorite"] for l in body["logs"]},
                          {"GC1AAA": True, "GC2BBB": False})
 

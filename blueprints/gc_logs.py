@@ -35,7 +35,7 @@ from lab_formats import parse_coordinates_text, validate_coordinates
 from bdd import GPX_MAX_SIZE_BYTES
 from extensions import db
 from localization import get_locale
-from models import CacheRef, LogEvent
+from models import CacheRef, CacheWaypoint, LogEvent
 from settings_manager import get_settings_manager
 from task_manager import TaskAlreadyRunning, task_manager
 
@@ -537,6 +537,10 @@ def logs_export():
         CacheRef.gc_code).all()
     freshest = max((d for d in (*(r.source_exported_at for r in logs),
                                 *(r.source_exported_at for r in caches)) if d), default=None)
+    waypoints = {}
+    for w in db.session.query(CacheWaypoint).filter_by(collection_id=collection.id).order_by(CacheWaypoint.id):
+        waypoints.setdefault(w.gc_code, []).append(
+            {"kind": w.kind, "name": w.name, "latitude": w.latitude, "longitude": w.longitude})
 
     def cache_payload(r):
         item = {
@@ -550,6 +554,8 @@ def logs_export():
         }
         if r.found_count is not None:
             item["found_count"] = r.found_count
+        if r.gc_code in waypoints:
+            item["waypoints"] = waypoints[r.gc_code]
         if r.corrected_latitude is not None and r.corrected_longitude is not None:
             item["corrected"] = {"latitude": r.corrected_latitude,
                                  "longitude": r.corrected_longitude}

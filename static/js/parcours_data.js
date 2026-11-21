@@ -126,6 +126,7 @@ import {
 import { composeTransform } from './travel_trail.mjs';
 import { cacheKey, legModeFor, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
+import { suggestParkings } from './parcours_parkings.mjs';
 import {
     FAVORITE_COLOR,
     PARCOURS_PALETTE_SIZE,
@@ -2275,6 +2276,8 @@ function renderDay(day) {
         diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
         diagnostic.textContent = dayDiagnostic(day);
         body.append(diagnostic);
+        const parkings = dayParkings().get(day.date);
+        if (parkings) body.append(renderDayParkings(day, parkings));
     } else {
         const empty = document.createElement('div');
         empty.className = 'small text-muted';
@@ -2320,6 +2323,76 @@ function renderDay(day) {
         }
     });
     return section;
+}
+
+// Parkings connus des caches de chaque journée (lot 14, parcours_parkings.mjs),
+// recalculés quand la reconstruction ou les lieux changent.
+let parkingMemo = { ordered: null, places: null, parkings: null, byDate: new Map() };
+
+function dayParkings() {
+    const places = inputs?.places || null;
+    const parkings = inputs?.parkings || null;
+    if (parkingMemo.ordered !== ordered || parkingMemo.places !== places || parkingMemo.parkings !== parkings) {
+        parkingMemo = { ordered, places, parkings, byDate: suggestParkings(ordered?.days, parkings, places) };
+    }
+    return parkingMemo.byDate;
+}
+
+// Bloc replié sous le bilan de la journée : un parking par ligne, avec les
+// caches qui le citent ; « Créer le lieu » pose un lieu de catégorie
+// parking à cette journée, sans heure (la reconstruction le place).
+const openParkingDays = new Set();
+
+function renderDayParkings(day, parkings) {
+    const box = document.createElement('details');
+    box.className = 'parcours-day-parkings small mb-1';
+    box.open = openParkingDays.has(day.date);
+    box.addEventListener('toggle', () => {
+        if (box.open) openParkingDays.add(day.date);
+        else openParkingDays.delete(day.date);
+    });
+    const summary = document.createElement('summary');
+    summary.className = 'text-muted';
+    const icon = document.createElement('i');
+    icon.className = 'ti ti-parking me-1';
+    icon.setAttribute('aria-hidden', 'true');
+    summary.append(icon, parkings.length === 1 ? t('1 parking connu pour cette journée')
+        : t('${n} parkings connus pour cette journée', { n: parkings.length }));
+    const list = document.createElement('ul');
+    list.className = 'list-unstyled mb-0 mt-1';
+    for (const parking of parkings) {
+        const item = document.createElement('li');
+        item.className = 'parcours-parking d-flex align-items-center gap-2 py-1';
+        const text = document.createElement('span');
+        text.className = 'flex-grow-1';
+        const caches = parking.codes.map((code) => {
+            const stop = day.stops.find((s) => s.code === code);
+            return stop ? stopLabel(stop) : code;
+        }).join(', ');
+        const name = parking.name || t('Parking');
+        const forCaches = t('pour ${caches}', { caches });
+        text.textContent = `${name} · ${forCaches}`;
+        const create = button('btn btn-sm btn-outline-primary py-0 parcours-parking-create', 'ti-map-pin-plus',
+            t('Créer ce lieu'), { text: t('Créer ce lieu') });
+        create.disabled = adjustmentsLocked();
+        create.addEventListener('click', async () => {
+            create.disabled = true;
+            const ok = await createPlace({
+                kind: KIND_PLACE,
+                name: name.slice(0, 80),
+                lat: parking.lat,
+                lon: parking.lon,
+                date: day.date,
+                time: null,
+                category: 'parking',
+            });
+            if (!ok) create.disabled = false;
+        });
+        item.append(text, create);
+        list.append(item);
+    }
+    box.append(summary, list);
+    return box;
 }
 
 function renderStopRow(stop, day, movable) {
@@ -5490,6 +5563,8 @@ export function getParcoursSnapshot() {
         })),
         overrides: (inputs?.overrides || []).map((o) => ({ ...o })),
         places: (inputs?.places || []).map((p) => ({ ...p })),
+        // Parkings proposés par journée (date → [{ name, lat, lon, codes }]).
+        parkings: Object.fromEntries([...dayParkings()].map(([date, list]) => [date, list.map((p) => ({ ...p }))])),
         adjustmentRevision,
         overridesQueued,
         undoDepth: undoStack.length,

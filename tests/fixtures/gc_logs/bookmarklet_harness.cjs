@@ -11,7 +11,8 @@
 //   caches,              // {code|guid : {name, token, placed, lat, lng,
 //                        //             owner, favs, archived, failStatus,
 //                        //             corrected: [lat, lng],
-//                        //             counts: {type de log : nombre}}}
+//                        //             counts: {type de log : nombre},
+//                        //             waypoints: [[icône, nom, coords]]}}
 //   books,               // {jeton : [[entrée,…],…]} — carnet par page idx
 //   finish,              // ordre passé à window.mygcflowLogsFinish après la
 //                        // collecte (dates ambiguës)
@@ -220,6 +221,13 @@ function cachePageHtml(code, info) {
       Object.entries(info.counts).map(([type, n]) =>
         `<img src="/images/logtypes/${type}.png" alt="" title="" />&nbsp;${n}&nbsp;`).join('') +
       '</p></span>' : '') +
+    // Waypoints ([[icône, nom, coordonnées en texte]]) : tableau de la fiche.
+    (info.waypoints ? '<table id="ctl00_ContentBody_Waypoints"><tbody>' +
+      info.waypoints.map(([icon, name, coords]) =>
+        `<tr><td><img src="/images/wpttypes/sm/${icon}.jpg" /></td><td>PK</td>` +
+        `<td><a href="/wpt">${name}</a></td><td>${coords}&nbsp;</td></tr>` +
+        '<tr><td>Note:</td><td colspan="3">texte</td></tr>').join('') +
+      '</tbody></table>' : '') +
     (info.archived ? '<div id="ctl00_ContentBody_archivedMessage"></div>' : '') +
     '</body></html>';
 }

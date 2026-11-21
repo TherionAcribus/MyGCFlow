@@ -370,6 +370,21 @@ def _v19_trouvailles_fiche_cache(db):
             conn.exec_driver_sql("ALTER TABLE cache_ref ADD COLUMN found_count INTEGER")
 
 
+def _v20_waypoints_fiche_cache(db):
+    # Logs : waypoints (parkings) lus sur la fiche d'une cache (contrat
+    # mygcflow-logs, `waypoints`). Idempotent.
+    with db.engine.begin() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS cache_waypoint ("
+            "id INTEGER PRIMARY KEY, "
+            "collection_id INTEGER NOT NULL REFERENCES log_collection(id), "
+            "gc_code VARCHAR(16) NOT NULL, kind VARCHAR(16) NOT NULL, name VARCHAR(255), "
+            "latitude FLOAT NOT NULL, longitude FLOAT NOT NULL)"
+        )
+        conn.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_cache_waypoint_code ON cache_waypoint (collection_id, gc_code)")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -390,6 +405,7 @@ MIGRATIONS = [
     (17, _v17_role_base_parcours),
     (18, _v18_categories_lieux_parcours),
     (19, _v19_trouvailles_fiche_cache),
+    (20, _v20_waypoints_fiche_cache),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

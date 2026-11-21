@@ -54,6 +54,25 @@ test('cache sans correction : position de mapLatLng, pas de corrigées', () => {
   assert.equal(info.corrected, null);
 });
 
+test('parkings : tableau des waypoints, puis liste de la petite carte', () => {
+  const table = `<table id="ctl00_ContentBody_Waypoints"><tbody>
+<tr class="BorderBottom"><td><img src="/images/wpttypes/sm/pkg.jpg" alt="Parking Area" /></td><td>PK</td>
+<td><a href="/seek/wpt.aspx?WID=x">Parking du Col &amp; de l&#39;Arc (Parking Area)</a></td>
+<td>N 45° 06.000 E 003° 30.000&nbsp;</td></tr>
+<tr><td>Note:</td><td colspan="3">Gratuit</td></tr>
+<tr><td><img src="/images/wpttypes/sm/stage.jpg" /></td><td>S1</td><td><a>Étape</a></td><td>N 45° 07.000 E 003° 31.000</td></tr>
+<tr><td><img src="/images/wpttypes/sm/pkg.jpg" /></td><td>P2</td><td><a>Caché</a></td><td>??? ???</td></tr>
+</tbody></table>`;
+  assert.deepEqual(JSON.parse(JSON.stringify(core.parkingWaypoints(table))), [
+    { kind: 'parking', name: "Parking du Col & de l'Arc", latitude: 45.1, longitude: 3.5 },
+  ]);
+  const cmap = 'var cmapAdditionalWaypoints = [{"lat":45.2,"lng":3.6,"type":217,"name":"P"},{"lat":45.3,"lng":3.7,"type":219,"name":"S"}];';
+  assert.deepEqual(JSON.parse(JSON.stringify(core.parkingWaypoints(cmap))), [
+    { kind: 'parking', name: 'P', latitude: 45.2, longitude: 3.6 },
+  ]);
+  assert.deepEqual(JSON.parse(JSON.stringify(core.parkingWaypoints('<p>rien</p>'))), []);
+});
+
 test('isUserDefined faux ou JSON illisible : rien de corrigé', () => {
   assert.equal(core.userDefinedCoords('window.userDefinedCoords = {"status":"success","data":{"isUserDefined":false}};'), null);
   assert.equal(core.userDefinedCoords('window.userDefinedCoords = {"status":;'), null);

@@ -880,7 +880,7 @@ masquer, cadrage), lieux proposés, réglages d'affichage.
 
 ## 15. Compléter un parcours depuis geocaching.com (lots 11 à 15)
 
-Ajouté le 2026-11-21. **Lots 11, 12 et 13 livrés le même jour** (§ 15.9).
+Ajouté le 2026-11-21. **Lots 11 à 14 livrés le même jour** (§ 15.9).
 
 Aujourd'hui, les étapes viennent du My Finds (position, type, D/T, date),
 des Labs et des DNF de la carte « Mes logs ». Les manques qui pèsent sur
@@ -1164,8 +1164,21 @@ Rétablir des ajustements.
   pytest (stockage, entrées), cœur sous Node (harnais : compteurs et PF à
   séparateurs), `favoriteBadge` / `favoriteBurst`, `{pf}` dans
   `stateAt`, e2e dans parcours-style et parcours-gc-collect.
-- **Lot 14 : parkings.** `waypoints` (contrat, favori, table), proposition
-  de lieux. pytest + spec.
+- **Lot 14 : parkings. Livré le 2026-11-21.** Contrat `waypoints`
+  (parkings seulement, 50 au plus), table `cache_waypoint` (migration v20)
+  remplacée en bloc par cache — un changement de waypoints compte comme
+  une mise à jour de la fiche, donc protégé d'un fichier plus ancien ;
+  vidée avec les logs, réexportée. Favori : tableau des waypoints de la
+  fiche (icône `pkg`), à défaut `cmapAdditionalWaypoints` (type 217) —
+  comme les compteurs du lot 13, relevé de mémoire, à confirmer sur une
+  vraie fiche. Page : bloc replié « N parkings connus pour cette
+  journée » sous le bilan de chaque journée (parcours_parkings.mjs :
+  fusion à 40 m, écartés à 60 m d'un lieu posé), « Créer ce lieu » en
+  catégorie `parking`, sans heure. Écart : la proposition vit dans la
+  liste des étapes, pas dans un panneau à part comme les lieux des
+  photos. Tests : pytest (contrat, remplacement, fichier ancien,
+  effacement, entrées), harnais et cœur sous Node, module pur, e2e dans
+  parcours-gc-collect.
 - **Lot 15 : déplacer une étape** (facultatif) : seul recours pour une
   mystery résolue mais jamais corrigée sur le site (question 1).
 

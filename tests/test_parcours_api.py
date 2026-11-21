@@ -11,7 +11,7 @@ from unittest import mock
 import migrations
 from app import create_app
 from extensions import db
-from models import CacheRef, Geocache, LabCollection, LabDiscovery, LogCollection, LogEvent
+from models import CacheRef, CacheWaypoint, Geocache, LabCollection, LabDiscovery, LogCollection, LogEvent
 
 ME = 1234567
 OTHER = 7654321
@@ -266,6 +266,22 @@ class InputsTests(_Base):
             "GC2": (False, None, None, None),
             "dnf:12": (False, None, 4, "2026-11-20"),
         })
+
+    def test_parkings_of_the_parcours_caches(self):
+        self.find("GC1", "2025-07-12")
+        self.find("GC9", "2025-08-01")      # hors du parcours
+        self.logs((10, "GC1", "2025-07-12", 2, ME))
+        collection = db.session.query(LogCollection).one()
+        db.session.add_all([
+            CacheWaypoint(collection_id=collection.id, gc_code="GC1", kind="parking", name="P1",
+                          latitude=45.1, longitude=5.1),
+            CacheWaypoint(collection_id=collection.id, gc_code="GC9", kind="parking", name="P9",
+                          latitude=45.9, longitude=5.9),
+        ])
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        self.assertEqual(self.inputs(parcours["id"])["parkings"],
+                         [{"code": "GC1", "name": "P1", "lat": 45.1, "lon": 5.1}])
 
     def test_finds_extent_for_the_creation_form(self):
         self.assertEqual(self.get("/api/parcours").get_json()["finds"], {"first": None, "last": None})

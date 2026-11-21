@@ -156,6 +156,7 @@ de My Finds (DNF jamais résolus, caches posées, archivées…).
 | `placed_date` | date civile de pose déclarée (≠ publication, qui est le log `Publish Listing`) ; déclarative, un log peut la précéder (trouvaille de bêta-test, date modifiée après coup — constaté sur données réelles) : ne jamais rejeter ni réordonner un log sur cette base |
 | `status` | `active` / `disabled` / `archived` / `unknown` — état **à la date d'export** |
 | `favorite_points` | total à la date d'export |
+| `waypoints` | facultatif : `[{kind, name, latitude, longitude}]`. Seul `kind: "parking"` est retenu (les autres sont ignorés sans avertissement), sans coordonnées valides la ligne est écartée, 50 au plus. Absent : rien ne change ; une liste (même vide) **remplace** les waypoints enregistrés de la cache, et un changement compte comme une mise à jour de la fiche (protégé d'un fichier plus ancien comme les autres champs). Le favori les lit dans le tableau `#ctl00_ContentBody_Waypoints` de la fiche (icône `wpttypes/…/pkg`), à défaut dans `cmapAdditionalWaypoints` (type 217) ; un waypoint caché (« ??? ») n'a pas de coordonnées |
 | `found_count` | facultatif : logs de trouvaille de la fiche (Found it, Attended, Webcam Photo Taken) à la date d'export ; entier ≥ 0, sinon ignoré. Lu par le favori dans `#ctl00_ContentBody_lblFindCounts` |
 
 ### Couverture
@@ -306,6 +307,11 @@ bornes de l'animation.
 | `status`, `status_at` | état et date d'export qui l'atteste |
 | `favorite_points` | |
 | `found_count` | migration v19 |
+
+Table `cache_waypoint` (migration v20) : `collection_id`, `gc_code`, `kind`,
+`name`, `latitude`, `longitude` — waypoints retenus d'une cache, remplacés
+en bloc ; vidée avec les logs (`/api/logs/clear`) et réexportée par
+`/api/logs/export`.
 | `source_format`, `source_exported_at`, `imported_at`, `updated_at` | |
 
 ### Résolution des coordonnées
