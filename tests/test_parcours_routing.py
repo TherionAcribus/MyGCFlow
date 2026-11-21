@@ -155,6 +155,62 @@ class CacheTests(_Db):
             pr.route_legs(db.session, self.CONFIG, 'car', [A, B])
             self.assertEqual(get.call_count, 1)
 
+    def test_noroute_is_isolated_to_the_failing_leg(self):
+        """« Pas de route » sur une suite de plusieurs trajets : la requête
+        est re-découpée et seul le trajet coupable est gardé sans géométrie
+        (les voisins gardent leur itinéraire)."""
+        d = [6.16, 45.92]
+
+        def fake_get(url, **kwargs):
+            pts = points_of_osrm_url(url)
+            # Le détroit B → C n'a pas de route ; le reste est routable.
+            if any(a == B and b == C for a, b in zip(pts, pts[1:])):
+                return FakeResponse(200, {'code': 'NoRoute'})
+            return FakeResponse(200, osrm_ok(pts))
+
+        with mock.patch('requests.get', side_effect=fake_get) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'car', [A, B, C, d])
+            self.assertEqual([leg['path'] is not None for leg in result['legs']],
+                             [True, False, True])
+            self.assertEqual(result['requested'], get.call_count)
+            # Requête entière, moitié fautive, puis les deux trajets isolés.
+            self.assertEqual(get.call_count, 5)
+            pr.route_legs(db.session, self.CONFIG, 'car', [A, B, C, d])
+            self.assertEqual(get.call_count, 5)
+        self.assertEqual(RouteLegCache.query.filter(
+            RouteLegCache.profile == 'car', RouteLegCache.geometry.is_(None)).count(), 1)
+
+    def test_nosegment_is_isolated_to_legs_touching_the_point(self):
+        """Un point hors du réseau (NoSegment) condamne les deux trajets
+        qui le touchent, pas les autres."""
+        d = [6.16, 45.92]
+
+        def fake_get(url, **kwargs):
+            pts = points_of_osrm_url(url)
+            if B in pts:
+                return FakeResponse(200, {'code': 'NoSegment'})
+            return FakeResponse(200, osrm_ok(pts))
+
+        with mock.patch('requests.get', side_effect=fake_get) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'car', [A, B, C, d])
+            self.assertEqual([leg['path'] is not None for leg in result['legs']],
+                             [False, False, True])
+
+    def test_ors_noroute_is_isolated(self):
+        """Même isolation chez openrouteservice (erreur 2009/2010)."""
+        config = {'provider': 'ors', 'ors_url': 'https://ors.example', 'ors_key': 'k'}
+        d = [6.16, 45.92]
+
+        def fake_post(url, json=None, **kwargs):
+            if B in json['coordinates']:
+                return FakeResponse(404, {'error': {'code': 2010}})
+            return FakeResponse(200, ors_ok(json['coordinates']))
+
+        with mock.patch('requests.post', side_effect=fake_post):
+            result = pr.route_legs(db.session, config, 'car', [A, B, C, d])
+            self.assertEqual([leg['path'] is not None for leg in result['legs']],
+                             [False, False, True])
+
     def test_provider_failure_leaves_legs_uncomputed(self):
         with mock.patch('requests.get', side_effect=requests.Timeout('lent')):
             result = pr.route_legs(db.session, self.CONFIG, 'foot', [A, B])

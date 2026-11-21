@@ -777,6 +777,9 @@ Option globale `parcours_routing`, **désactivée par défaut** (carte
 - chaque trajet est gardé dans **`route_leg_cache`** (fournisseur, profil,
   extrémités arrondies au 1e-5°), partagé par tous les parcours. Un trajet
   sans route possible y est gardé sans géométrie : il n'est plus redemandé.
+  « Pas de route » portant sur toute une requête de plusieurs trajets, elle
+  est re-découpée par dichotomie jusqu'à isoler le ou les coupables
+  (`_route_chunk`) — les trajets routables voisins gardent leur itinéraire.
   « Recalculer » ignore le cache (`force`) ;
 - en cas d'échec (réseau, quota, clé), les trajets restent non calculés,
   avec un message, et l'API répond quand même 200 ;

@@ -14,7 +14,10 @@ Chaque trajet calculé est gardé dans `route_leg_cache` (par fournisseur,
 profil et coordonnées arrondies au 1e-5°) : la vidéo reste reproductible et
 se refait hors ligne. Un trajet sans route possible (île, mer) est gardé
 aussi, sans géométrie : il n'est plus redemandé, le client trace la ligne
-droite. « Recalculer » (`force`) ignore le cache.
+droite. Une réponse « pas de route » portant sur plusieurs trajets ne dit
+pas lequel échoue : la requête est alors re-découpée jusqu'à isoler le ou
+les coupables — les trajets routables voisins gardent leur itinéraire.
+« Recalculer » (`force`) ignore le cache.
 
 Une requête couvre une suite de trajets de même profil (MAX_WAYPOINTS points
 au plus) : une journée coûte une poignée d'appels, découpés ensuite trajet
@@ -188,6 +191,25 @@ def _leg_dict(row: RouteLegCache, cached: bool) -> dict | None:
             'cached': cached}
 
 
+def _route_chunk(call, provider: str, points: list) -> tuple[list, int]:
+    """(résultats par trajet, nombre d'appels) pour une suite de points.
+
+    Quand le fournisseur répond « pas de route » pour toute la suite (OSRM
+    NoRoute/NoSegment, openrouteservice 2009/2010), l'échec peut venir d'un
+    seul trajet ou d'un seul point : on découpe par dichotomie jusqu'aux
+    trajets isolés pour ne condamner que les vrais coupables. Un trajet
+    None au sein d'une réponse « Ok » est déjà un verdict propre."""
+    _throttle(provider)
+    results = call(points)
+    calls = 1
+    if len(points) > 2 and all(result is None for result in results):
+        mid = len(points) // 2
+        left, left_calls = _route_chunk(call, provider, points[:mid + 1])
+        right, right_calls = _route_chunk(call, provider, points[mid:])
+        return left + right, calls + left_calls + right_calls
+    return results, calls
+
+
 def route_legs(session, config: dict, profile: str, waypoints: list, force: bool = False) -> dict:
     """Itinéraire de chaque trajet entre `waypoints` consécutifs, pour le
     profil `profile`. Retourne {legs, provider, requested, error} : legs[i]
@@ -203,6 +225,13 @@ def route_legs(session, config: dict, profile: str, waypoints: list, force: bool
     except (TypeError, ValueError, IndexError):
         raise RoutingError('invalid')
     keys = [leg_key(points[i], points[i + 1]) for i in range(len(points) - 1)]
+
+    def call(pts):
+        if provider == PROVIDER_ORS:
+            return route_ors(config.get('ors_url') or ORS_DEFAULT_URL,
+                             config.get('ors_key') or '', profile, pts)
+        return route_osrm(config.get('fossgis_url') or FOSSGIS_DEFAULT_URL, profile, pts)
+
     rows = {} if force else _cached(session, provider, profile, keys)
     legs = [_leg_dict(rows[k], True) if k in rows else None for k in keys]
     missing = [i for i, leg in enumerate(legs) if leg is None]
@@ -218,16 +247,12 @@ def route_legs(session, config: dict, profile: str, waypoints: list, force: bool
             runs.append([i])
     for run in runs:
         chunk = points[run[0]:run[-1] + 2]
-        _throttle(provider)
         try:
-            if provider == PROVIDER_ORS:
-                results = route_ors(config.get('ors_url') or ORS_DEFAULT_URL, config.get('ors_key') or '', profile, chunk)
-            else:
-                results = route_osrm(config.get('fossgis_url') or FOSSGIS_DEFAULT_URL, profile, chunk)
+            results, calls = _route_chunk(call, provider, chunk)
         except RoutingError as exc:
             error = exc.code
             break
-        requested += 1
+        requested += calls
         now = datetime.now()
         for offset, result in enumerate(results):
             i = run[0] + offset
