@@ -4611,21 +4611,28 @@ function renderRouting() {
     const loading = config.enabled && routeState.state === 'loading';
     const cancel = el('btnParcoursRoutesCancel');
     if (cancel) cancel.hidden = !loading;
+    // « Réessayer » : proposé après un échec ou une annulation — reprend le
+    // calcul sans ignorer le cache, là où « Recalculer » redemande tout.
+    const retry = el('btnParcoursRoutesRetry');
+    if (retry) retry.hidden = !(config.enabled && (routeState.state === 'error' || routeState.state === 'cancelled'));
     const progress = el('parcoursRoutesProgress');
     if (progress) {
         progress.hidden = !loading;
         progress.max = routeState.total || 1;
         progress.value = routeState.done || 0;
     }
+    const routed = routeEffectsNow.paths.size;
+    const legs = routeRunsNow.reduce((total, run) => total + run.keys.length, 0);
     if (!config.enabled) status.textContent = '';
     else if (routeState.state === 'loading') {
         status.textContent = t('Calcul des itinéraires : ${done} / ${total} trajets…',
             { done: routeState.done || 0, total: routeState.total || '?' });
     }
     else if (routeState.state === 'error') status.textContent = routeState.message || t('Itinéraires indisponibles : trajets en ligne droite.');
+    else if (routeState.state === 'cancelled') {
+        status.textContent = t('Calcul interrompu : ${routed} trajets sur ${legs} gardent leurs itinéraires.', { routed, legs });
+    }
     else {
-        const routed = routeEffectsNow.paths.size;
-        const legs = routeRunsNow.reduce((total, run) => total + run.keys.length, 0);
         status.textContent = legs === 0
             ? t('Aucun trajet à calculer (trajets sur une trace ou en ligne droite).')
             : t('${routed} trajets sur ${legs} suivent les routes et chemins.', { routed, legs });
@@ -4662,6 +4669,11 @@ function bindRouting() {
         if (adjustmentsLocked()) return;
         routeState = { state: 'idle', message: '' };
         ensureRoutes({ force: true });
+    });
+    el('btnParcoursRoutesRetry')?.addEventListener('click', () => {
+        if (adjustmentsLocked()) return;
+        routeState = { state: 'idle', message: '' };
+        ensureRoutes();
     });
     el('btnParcoursRoutesCancel')?.addEventListener('click', () => {
         // La boucle meurt après sa requête en cours ; les itinéraires déjà

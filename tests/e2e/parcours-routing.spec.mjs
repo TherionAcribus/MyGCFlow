@@ -146,6 +146,50 @@ test('calcul en cours : progression affichée, annulation suspend le calcul', as
   expect(errors).toEqual([]);
 });
 
+test('interruption : « Réessayer » reprend le calcul sans ignorer le cache', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const routeCalls = [];
+  page.on('request', (req) => {
+    if (req.url().endsWith('/api/parcours/routes')) routeCalls.push(req.postDataJSON());
+  });
+  await enableRouting(request);
+  // Un lieu à des coordonnées propres à ce test : ses trajets ne sont pas
+  // dans le cache partagé, le fournisseur temporisé laisse le temps de les
+  // interrompre (les suites des trajets déjà en cache passent, elles,
+  // instantanément).
+  const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
+  const created = await request.post(`/api/parcours/${id}/places`, {
+    data: { kind: 'place', name: 'Sommet', lat: 46.41, lon: 6.87, date: '2025-07-12', time: '14:00' },
+  });
+  expect(created.status()).toBe(201);
+  // Référence prise avant l'ouverture : l'unique trajet non caché part dès
+  // le début du calcul — compter après « loading » le manquerait. Délai
+  // long pour laisser le temps d'interrompre pendant l'appel fournisseur.
+  const providerBefore = requests.length;
+  delayMs = 2500;
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).routing.state).toBe('loading');
+  await expect.poll(async () => requests.length).toBeGreaterThan(providerBefore);
+  await page.locator('#btnParcoursRoutesCancel').click();
+  await expect.poll(async () => (await snapshot(page)).routing.state).toBe('cancelled');
+  await expect(page.locator('#btnParcoursRoutesRetry')).toBeVisible();
+  const partial = await snapshot(page);
+  expect(partial.routing.routed).toBeLessThan(partial.routing.modes.length);
+
+  const before = routeCalls.length;
+  await page.locator('#btnParcoursRoutesRetry').click();
+  await expect(page.locator('#btnParcoursRoutesRetry')).toBeHidden();
+  await expect.poll(async () => (await snapshot(page)).routing.state, { timeout: 30_000 }).toBe('ready');
+  const state = await snapshot(page);
+  expect(state.routing.routed).toBe(state.routing.modes.length);
+  // Reprise à l'identique : les suites renvoyées sans `force`, le cache de
+  // la page gardé (contrairement à « Recalculer »).
+  const sent = routeCalls.slice(before);
+  expect(sent.length).toBeGreaterThan(0);
+  expect(sent.every((body) => body?.force === false)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
 test('fournisseur en échec : lignes droites et message, sans boucle de tentatives', async ({ page, request }) => {
   const errors = collectErrors(page);
   const calls = [];

@@ -784,7 +784,8 @@ Option globale `parcours_routing`, **désactivée par défaut** (carte
   « Pas de route » portant sur toute une requête de plusieurs trajets, elle
   est re-découpée par dichotomie jusqu'à isoler le ou les coupables
   (`_route_chunk`) — les trajets routables voisins gardent leur itinéraire.
-  « Recalculer » ignore le cache (`force`) ;
+  « Recalculer » ignore le cache (`force`) ; « Réessayer », proposé après
+  un échec ou une annulation, reprend le calcul sans l'ignorer ;
 - en cas d'échec (réseau, quota, clé), les trajets restent non calculés,
   avec un message, et l'API répond quand même 200 ;
 - la clé openrouteservice est stockée dans settings.json mais **jamais
@@ -810,9 +811,9 @@ détour ×1,2).
    s'ajoutent aux tracés (la trace GPS reste prioritaire). Un trajet routé
    garde son mode (`walk`, `bike`, `car`).
 
-Après un échec, les nouvelles tentatives sont suspendues jusqu'à une action
-(réglage, « Recalculer ») : sinon chaque reconstruction relancerait le
-fournisseur en panne.
+Après un échec (ou une annulation), les nouvelles tentatives sont
+suspendues jusqu'à une action (réglage, « Réessayer », « Recalculer ») :
+sinon chaque reconstruction relancerait le fournisseur en panne.
 
 Attribution affichée dans la carte : « Itinéraires © contributeurs
 OpenStreetMap, calculés par FOSSGIS ou openrouteservice ».
