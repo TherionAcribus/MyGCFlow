@@ -355,6 +355,8 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         collapsedDays.clear();
         undoStack = [];
         redoStack = [];
+        photoImages.clear();
+        photoThumbs.clear();
         renderStops();
         applyTimeline();
         status = 'idle';
@@ -388,6 +390,10 @@ export async function openParcours(id) {
     routeSeq++;
     routeState = { state: 'idle', message: '' };
     routeCache.clear();
+    // Photos du parcours quitté : images pleine taille et vignettes sont
+    // libérées, sinon elles s'accumulent d'un parcours à l'autre.
+    photoImages.clear();
+    photoThumbs.clear();
     try {
         inputs = await fetchJson(`/api/parcours/${id}/inputs`);
     } catch (error) {
@@ -1090,6 +1096,10 @@ const HEART = '\u2665';
 // points du thème, les points WebGL apparaissent seuls.
 let playStopsDrawn = emptyPlayStops();
 
+// Piles d'étapes atteintes de l'image précédente : `projected` est refait à
+// chaque applyTimeline (invalidation), `fp` empreint les indices atteints.
+let playStacksMemo = { projected: null, fp: -1, resolution: 0, distance: 0, stacks: [] };
+
 function emptyPlayStops() {
     return {
         drawn: 0, popping: 0, headColor: null, piles: [], current: null, ring: null, dimmed: 0, preview: 0, places: 0,
@@ -1120,11 +1130,25 @@ function drawPlayStops(context, resolution) {
     playStopsDrawn = { ...playStopsDrawn, current: null, ring: null, dimmed: 0, preview: 0 };
     if (!themed && style.play_preview) drawPlayPreview(context, day, labels);
     const reached = [];
+    let fp = 0;
     timeline.stops.forEach((stop, i) => {
-        if (isCountedStop(stop) && stop.q <= currentQ) reached.push(i);
+        if (isCountedStop(stop) && stop.q <= currentQ) {
+            reached.push(i);
+            fp = ((fp * 31) + i) | 0;
+        }
     });
-    const stacks = stackStops(reached.map((i) => stackItem(projected[i], timeline.stops[i].key, resolution)),
-        stopStyle().size * STACK_DISTANCE);
+    // Regroupement mémorisé : il ne dépend que des étapes atteintes
+    // (empreinte), de la résolution et de la distance de pile — une image
+    // sans nouvelle étape ni zoom le réutilise tel quel.
+    const distance = style.size * STACK_DISTANCE;
+    if (playStacksMemo.projected !== projected || playStacksMemo.fp !== fp
+        || playStacksMemo.resolution !== resolution || playStacksMemo.distance !== distance) {
+        playStacksMemo = {
+            projected, fp, resolution, distance,
+            stacks: stackStops(reached.map((i) => stackItem(projected[i], timeline.stops[i].key, resolution)), distance),
+        };
+    }
+    const stacks = playStacksMemo.stacks;
     let drawn = 0;
     let popping = 0;
     let dimmed = 0;
@@ -2900,6 +2924,22 @@ function rebuild() {
 // parcours est reconstruit (pur, donc immédiat) et rejoué tel quel.
 // `forId` : parcours à qui vient la réponse — arrivée après l'ouverture d'un
 // autre parcours, elle est ignorée plutôt qu'appliquée à ses entrées.
+// Vrai si le relevé renvoyé par le serveur est identique à l'état local :
+// la réponse d'une écriture déjà fusionnée n'a alors pas à tout redessiner.
+// Les ajustements sont triés par clé (le serveur les trie, la fusion locale
+// ajoute les nouvelles lignes en fin).
+function adjustmentsMatchLocal(payload) {
+    if (Array.isArray(payload?.overrides)) {
+        const byKey = (rows) => (rows || []).slice().sort((a, b) => String(a.key).localeCompare(String(b.key)));
+        if (JSON.stringify(byKey(inputs.overrides)) !== JSON.stringify(byKey(payload.overrides))) return false;
+    }
+    for (const field of ['places', 'photos', 'cameras', 'tracks']) {
+        if (Array.isArray(payload?.[field])
+            && JSON.stringify(inputs[field] ?? null) !== JSON.stringify(payload[field])) return false;
+    }
+    return true;
+}
+
 function receiveAdjustments(payload, forId = selectedId) {
     if (!inputs || forId !== selectedId) return;
     // Des écritures d'ajustements locales sont en avance sur le serveur :
@@ -3013,8 +3053,13 @@ function writeOverrides(patches, historySlot = null) {
             });
             // Une écriture plus récente attend encore : l'état local la
             // précède déjà, et le serveur renvoie toujours l'ensemble — la
-            // réponse du dernier envoi refera foi.
-            if (overridesQueued === 0) receiveAdjustments(payload, pid);
+            // réponse du dernier envoi refera foi. Réponse identique à
+            // l'état local (geste déjà fusionné) : rien à redessiner, la
+            // révision signale seulement la réponse traitée.
+            if (overridesQueued === 0) {
+                if (adjustmentsMatchLocal(payload)) adjustmentRevision++;
+                else receiveAdjustments(payload, pid);
+            }
         } catch (error) {
             showToast(error.message, 'error');
             const history = slot?.history;
