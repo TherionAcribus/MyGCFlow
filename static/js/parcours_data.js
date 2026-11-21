@@ -3461,6 +3461,7 @@ function bindAdjustments() {
 const photoImages = new Map();   // id → HTMLImageElement
 const photoThumbs = new Map();   // id → HTMLImageElement (vignettes laissées sur la carte)
 let photoDetailId = null;        // photo dont le panneau est ouvert
+let photosDirty = false;         // panneau à refaire à l'ouverture de l'onglet Photos
 
 function photoUrl(photo, thumb = false) {
     return `${CONFIG.BASE_URL}/api/parcours/${selectedId}/photos/${photo.id}/${thumb ? 'thumb' : 'file'}`;
@@ -3916,6 +3917,15 @@ function renderPhotos() {
     const empty = el('parcoursPhotosEmpty');
     if (empty) empty.hidden = !!inputs;
     if (!inputs) return;
+    // Onglet Photos non affiché : la grille (une vignette par photo,
+    // jusqu'à des centaines) n'est pas reconstruite à chaque ajustement
+    // fait ailleurs — juste marquée, refaite à l'ouverture de l'onglet.
+    const pane = card.closest('.tab-pane');
+    if (pane && !pane.classList.contains('active')) {
+        photosDirty = true;
+        return;
+    }
+    photosDirty = false;
     const photos = inputs.photos || [];
     const offsets = cameraOffsets(inputs.cameras);
     const summary = el('parcoursPhotoSummary');
@@ -4257,6 +4267,10 @@ function bindPhotoDetail() {
 function bindPhotos() {
     bindPhotoDetail();
     bindPhotoDisplay();
+    // Rendu différé quand l'onglet n'est pas affiché : refait à l'ouverture.
+    document.querySelector('#mainTabs a[href="#photos"]')?.addEventListener('shown.bs.tab', () => {
+        if (photosDirty) renderPhotos();
+    });
     const input = el('parcoursPhotoInput');
     el('btnParcoursAddPhotos')?.addEventListener('click', () => input?.click());
     input?.addEventListener('change', () => {
