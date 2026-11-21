@@ -1318,12 +1318,10 @@ function drawPlayPlaces(context) {
                 drawCurrentRing(context, point, kindColor(stop.kind), style.size * scale, currentQ - stop.q);
             }
         }
-        const badge = categoryBadgeStyle(stop.kind, stopIconClass(stop.category, stop.icon));
-        for (const s of badge ? [placeStyle(stop.kind), badge] : [placeStyle(stop.kind)]) {
-            const shown = phase === 'past' ? dimmedStyle(s, DIM_PAST) : s;
-            context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
-            context.drawGeometry(point);
-        }
+        const s = placeStyle(stop.kind, stopIconClass(stop.category, stop.icon));
+        const shown = phase === 'past' ? dimmedStyle(s, DIM_PAST) : s;
+        context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
+        context.drawGeometry(point);
         places++;
     });
     playStopsDrawn.places = places;
@@ -1369,6 +1367,9 @@ const HEAD_ICON_CLASSES = Object.freeze({
 const tablerGlyphs = new Map();
 
 function tablerGlyph(className) {
+    // Appelé à chaque rendu des lieux : un glyphe déjà lu évite la sonde.
+    const known = tablerGlyphs.get(className);
+    if (known) return known;
     if (!document.fonts?.check?.('16px "tabler-icons"')) return null;
     if (!tablerGlyphs.has(className)) {
         const probe = document.createElement('i');
@@ -4826,9 +4827,7 @@ function pointStyle(feature) {
     const pile = (feature.get('stackKeys')?.length || 0) > 1;
     let normal;
     if (kind === KIND_BASE || kind === KIND_PLACE) {
-        normal = placeStyle(kind);
-        const badge = categoryBadgeStyle(kind, featureIconClass(feature));
-        if (badge) normal = [normal, badge];
+        normal = placeStyle(kind, featureIconClass(feature));
     } else if (stopStyle().render === RENDER_THEME) {
         normal = themeNumberStyle(featurePaint(feature), featureLabel(feature), { hit: true });
     } else {
@@ -5007,48 +5006,29 @@ function themeNumberStyle(paint, label, { hit = false } = {}) {
     });
 }
 
-// Base : carré ; lieu : étoile (couleurs du thème, anthracite et violet par
-// défaut). Communs au plan et à la lecture, à l'échelle des pastilles.
-function placeStyle(kind) {
-    return cachedStyle(`place:${kind}`, ({ size }) => {
-        const base = kind === KIND_BASE;
+// Lieu : rond ; base : carré — à la couleur du type (thème, violet et
+// anthracite par défaut), avec au centre, en blanc, le pictogramme de la
+// catégorie (à défaut, celui du type : drapeau, maison). Un seul symbole,
+// lisible d'un coup d'œil. Sans la police chargée : la forme seule (la clé
+// change quand elle arrive). Communs au plan et à la lecture, à l'échelle
+// des pastilles.
+function placeStyle(kind, iconClass = null) {
+    const glyph = tablerGlyph(iconClass || KIND_ICONS[kind]);
+    return cachedStyle(`place:${kind}:${glyph || ''}`, ({ size }) => {
+        const fill = new ol.style.Fill({ color: kindColor(kind) });
+        const stroke = new ol.style.Stroke({ color: '#ffffff', width: 2 });
+        // Carré posé sur sa base : rayon = demi-diagonale, côté ≈ diamètre
+        // du rond.
+        const image = kind === KIND_BASE
+            ? new ol.style.RegularShape({ points: 4, radius: Math.round((size + 2) * 1.35), angle: Math.PI / 4, fill, stroke })
+            : new ol.style.Circle({ radius: size + 2, fill, stroke });
         return new ol.style.Style({
-            image: new ol.style.RegularShape({
-                points: base ? 4 : 5,
-                radius: base ? Math.round(size * 10 / 11) : size,
-                radius2: base ? undefined : size * 5 / 11,
-                angle: base ? Math.PI / 4 : 0,
-                fill: new ol.style.Fill({ color: kindColor(kind) }),
-                stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
-            }),
-        });
-    });
-}
-
-// Pastille de catégorie en bas à droite du marqueur : glyphe Tabler sur
-// rond blanc cerclé de la couleur du type. null sans la police chargée.
-function categoryBadgeStyle(kind, iconClass) {
-    if (!iconClass) return null;
-    return cachedStyle(`badge:${kind}:${iconClass}`, ({ size }) => {
-        const glyph = tablerGlyph(iconClass);
-        if (!glyph) return null;
-        const k = size / 11;
-        const offset = Math.round(13 * k);
-        const color = kindColor(kind);
-        return new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: Math.max(6, Math.round(8 * k)),
-                displacement: [offset, offset],
-                fill: new ol.style.Fill({ color: '#ffffff' }),
-                stroke: new ol.style.Stroke({ color, width: 1.5 }),
-            }),
-            text: new ol.style.Text({
+            image,
+            text: glyph ? new ol.style.Text({
                 text: glyph,
-                font: `${Math.max(9, Math.round(11 * k))}px "tabler-icons"`,
-                fill: new ol.style.Fill({ color }),
-                offsetX: offset,
-                offsetY: offset,
-            }),
+                font: `${Math.max(11, Math.round(size * 1.45))}px "tabler-icons"`,
+                fill: new ol.style.Fill({ color: '#ffffff' }),
+            }) : undefined,
         });
     });
 }
@@ -5096,10 +5076,7 @@ function ensureLayer() {
                 if (role === 'fancenter') return fanCenterStyle();
                 if (role === 'draft') {
                     const kind = feature.get('kind');
-                    const styles = [haloStyle(true), placeStyle(kind)];
-                    const badge = categoryBadgeStyle(kind, featureIconClass(feature));
-                    if (badge) styles.push(badge);
-                    return styles;
+                    return [haloStyle(true), placeStyle(kind, featureIconClass(feature))];
                 }
                 return pointStyle(feature);
             },
@@ -5671,12 +5648,13 @@ export function getParcoursSnapshot() {
                 const place = kind === KIND_BASE || kind === KIND_PLACE;
                 const paint = place ? { fill: kindColor(kind), hollow: false } : featurePaint(f);
                 let main;
-                if (place) main = placeStyle(kind);
+                if (place) main = placeStyle(kind, featureIconClass(f));
                 else if (stopStyle().render === RENDER_THEME) main = themeNumberStyle(paint, f.get('label') || '');
                 else main = numberedStyle(f);
                 const image = main?.getImage();
                 return [f.get('key'), {
-                    label: main?.getText()?.getText() || '',
+                    // Lieu, base : le texte est le pictogramme, pas un numéro.
+                    label: place ? '' : main?.getText()?.getText() || '',
                     color: paint.fill,
                     hollow: paint.hollow,
                     textColor: main?.getText()?.getFill()?.getColor() || null,

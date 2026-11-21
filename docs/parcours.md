@@ -541,10 +541,12 @@ Ce que la reconstruction en fait (`applyAdjustments`, puis
 | base (`base`) | Départ et retour de chaque journée qui a des étapes (clés `place:<id>:<date>:start` / `:end`, visite 0) ; une base datée prime sur une base « toutes les journées » ; elle oriente l'ordre géographique de la journée. Son `role` restreint l'extrémité servie : `start` (départ seul), `end` (retour seul) ou `both` — pour chaque extrémité, la base datée prime (rôle précis puis `both`), sinon celle de toutes les journées |
 
 Pendant la lecture, lieux et bases n'ont pas de point WebGL. Ils sont
-dessinés par la couche de la tête, avec leur pastille de catégorie : les
-bases toujours, les lieux une fois atteints. Au repos, le plan les montre (carré sombre, étoile violette) avec,
-pour une catégorie, une pastille d'icône Tabler en bas à droite ; la liste
-la reprend dans le badge et le détail de l'étape. La catégorie est purement
+dessinés par la couche de la tête, avec le même marqueur : les bases
+toujours, les lieux une fois atteints. Au repos, le plan les montre en un
+seul symbole (`placeStyle`) : carré sombre pour une base, rond violet pour un
+lieu (couleurs du thème), avec au centre, en blanc, l'icône Tabler de la
+catégorie — à défaut celle du type (maison, drapeau). La liste la reprend
+dans le badge et le détail de l'étape. La catégorie est purement
 affichage : le comportement reste celui du type. Une base dure 4 quanta à
 l'écran. Les ajustements sont refusés pendant une lecture (« Arrêtez la
 lecture… »).
