@@ -77,6 +77,7 @@ import {
     trailAt,
 } from './parcours_timeline.mjs';
 import { createParcoursTimelineBar, slotLabels } from './parcours_tbar.mjs';
+import { createPlaceForm } from './parcours_place_form.mjs';
 import { createStopsPanel } from './parcours_stops_panel.mjs';
 import { createTracksPanel } from './parcours_tracks_panel.mjs';
 import { createPhotosPanel } from './parcours_photos_panel.mjs';
@@ -219,11 +220,6 @@ let cameraBound = false;
 let prefetchBucket = null;
 
 // Ajustements (lot 3).
-let picking = false;          // en attente d'un clic sur la carte (lieu)
-let pickListener = null;
-let placeDraft = null;        // { lon, lat } du lieu en cours de saisie
-let placeIconDraft = null;    // icône choisie pour la catégorie « custom »
-let clickMutedUntil = 0;      // clic de pose/déplacement : ne pas l'ouvrir en étape
 let hoveredFeature = null;    // point du plan mis en évidence par la liste
 let mapHoverRows = [];        // lignes de la liste mises en évidence par la carte
 let hoverBound = false;
@@ -363,8 +359,7 @@ export async function openParcours(id) {
     stopsPanel.reset();
     undoStack = [];
     redoStack = [];
-    cancelPlacePicking();
-    closePlaceForm();
+    placeForm.dismiss();
     renderStops();
     // Itinéraires : toute suite en vol appartient au parcours quitté — le
     // numéro de séquence la tue, son état et son cache ne le suivent pas
@@ -2353,160 +2348,6 @@ async function deletePlace(id, { record = true } = {}) {
     }
 }
 
-// --- Poser un lieu d'un clic sur la carte ------------------------------------------
-
-function startPlacePicking() {
-    if (!ordered || adjustmentsLocked()) return;
-    const map = pkg.getMap?.();
-    if (!map) return;
-    cancelPlacePicking();
-    picking = true;
-    map.getTargetElement()?.classList.add('parcours-picking');
-    const hint = el('parcoursPlaceHint');
-    if (hint) hint.hidden = false;
-    pickListener = map.once('singleclick', (event) => {
-        pickListener = null;
-        clickMutedUntil = performance.now() + 400;
-        stopPicking();
-        const [lon, lat] = ol.proj.toLonLat(event.coordinate);
-        openPlaceForm({ lon, lat });
-    });
-}
-
-function stopPicking() {
-    picking = false;
-    pkg.getMap?.()?.getTargetElement()?.classList.remove('parcours-picking');
-    const hint = el('parcoursPlaceHint');
-    if (hint) hint.hidden = true;
-}
-
-function cancelPlacePicking() {
-    placeMoveId = null;
-    if (pickListener) {
-        ol.Observable.unByKey(pickListener);
-        pickListener = null;
-    }
-    stopPicking();
-}
-
-// Déplacer un lieu ou une base posée : même mécanique que la pose d'un
-// lieu — un clic sur la carte envoie les nouvelles coordonnées.
-let placeMoveId = null;
-
-function startPlaceMove(place) {
-    if (!ordered || adjustmentsLocked()) return;
-    const map = pkg.getMap?.();
-    if (!map) return;
-    cancelPlacePicking();
-    picking = true;
-    placeMoveId = place.id;
-    map.getTargetElement()?.classList.add('parcours-picking');
-    const hint = el('parcoursPlaceHint');
-    if (hint) hint.hidden = false;
-    pickListener = map.once('singleclick', (event) => {
-        pickListener = null;
-        clickMutedUntil = performance.now() + 400;
-        stopPicking();
-        const id = placeMoveId;
-        placeMoveId = null;
-        const [lon, lat] = ol.proj.toLonLat(event.coordinate);
-        updatePlace(id, { lat, lon });
-    });
-}
-
-function openPlaceForm({ lon, lat }, { kind = KIND_PLACE } = {}) {
-    const form = el('parcoursPlaceForm');
-    if (!form) return;
-    placeDraft = { lon, lat };
-    const days = el('parcoursPlaceDay');
-    if (days) {
-        days.replaceChildren();
-        const all = document.createElement('option');
-        all.value = '';
-        all.textContent = t('Toutes les journées');
-        all.dataset.baseOnly = '1';
-        days.append(all);
-        for (const day of ordered?.days || []) {
-            const opt = document.createElement('option');
-            opt.value = day.date;
-            opt.textContent = formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' });
-            days.append(opt);
-        }
-        // Proposition : la première journée qui a des étapes.
-        const first = (ordered?.days || []).find((day) => day.stops.length > 0);
-        days.value = first?.date || '';
-    }
-    showDraftCoords();
-    el('parcoursPlaceName').value = '';
-    el('parcoursPlaceTime').value = '';
-    el('parcoursPlaceKind').value = kind === KIND_BASE ? KIND_BASE : KIND_PLACE;
-    el('parcoursPlaceRole').value = 'both';
-    el('parcoursPlaceCategory').value = 'other';
-    placeIconDraft = CUSTOM_ICONS[0];
-    buildIconPicker(el('parcoursPlaceIcons'), placeIconDraft, (cls) => {
-        placeIconDraft = cls;
-        markIconPicker(el('parcoursPlaceIcons'), cls);
-        renderLayer();
-    });
-    syncPlaceForm();
-    form.hidden = false;
-    el('parcoursPlaceName')?.focus();
-}
-
-function showDraftCoords() {
-    const coords = el('parcoursPlaceCoords');
-    if (coords && placeDraft) coords.textContent = `${placeDraft.lat.toFixed(5)}, ${placeDraft.lon.toFixed(5)}`;
-}
-
-// Grille d'icônes Tabler de la catégorie « custom » : boutons `aria-pressed`,
-// `onPick(cls)` au choix.
-function buildIconPicker(container, selected, onPick) {
-    if (!container) return;
-    container.replaceChildren();
-    for (const cls of CUSTOM_ICONS) {
-        const btn = button('parcours-icon-choice', cls, t('Icône ${icon}', { icon: cls.slice(3) }));
-        btn.classList.toggle('is-selected', cls === selected);
-        btn.setAttribute('aria-pressed', String(cls === selected));
-        btn.addEventListener('click', () => onPick(cls));
-        container.append(btn);
-    }
-}
-
-function markIconPicker(container, selected) {
-    for (const btn of container?.querySelectorAll('.parcours-icon-choice') || []) {
-        const on = !!btn.querySelector('i')?.classList.contains(selected);
-        btn.classList.toggle('is-selected', on);
-        btn.setAttribute('aria-pressed', String(on));
-    }
-}
-
-// Une base peut valoir pour toutes les journées et n'a pas d'heure ; un lieu
-// a toujours sa journée.
-function syncPlaceForm() {
-    const base = el('parcoursPlaceKind')?.value === KIND_BASE;
-    const days = el('parcoursPlaceDay');
-    const all = days?.querySelector('option[data-base-only]');
-    if (all) {
-        all.hidden = !base;
-        all.disabled = !base;
-        if (!base && days.value === '') days.value = days.options[1]?.value || '';
-    }
-    const timeRow = el('parcoursPlaceTimeRow');
-    if (timeRow) timeRow.hidden = base;
-    const roleRow = el('parcoursPlaceRoleRow');
-    if (roleRow) roleRow.hidden = !base;
-    const iconRow = el('parcoursPlaceIconRow');
-    if (iconRow) iconRow.hidden = el('parcoursPlaceCategory')?.value !== 'custom';
-    // Le point provisoire prend la forme du type et de la catégorie choisis.
-    renderLayer();
-}
-
-function closePlaceForm() {
-    placeDraft = null;
-    const form = el('parcoursPlaceForm');
-    if (form) form.hidden = true;
-    renderLayer();
-}
 
 function bindAdjustments() {
     el('btnParcoursResetAdjustments')?.addEventListener('click', () => {
@@ -2517,10 +2358,6 @@ function bindAdjustments() {
             null,
             { danger: true, confirmText: t('Tout annuler') },
         );
-    });
-    el('btnParcoursAddPlace')?.addEventListener('click', () => {
-        if (picking) cancelPlacePicking();
-        else startPlacePicking();
     });
     el('btnParcoursUndo')?.addEventListener('click', undoAdjustment);
     el('btnParcoursRedo')?.addEventListener('click', redoAdjustment);
@@ -2541,30 +2378,7 @@ function bindAdjustments() {
     });
     el('btnParcoursCollapseDays')?.addEventListener('click', () => stopsPanel.toggleCollapseAll());
     el('btnParcoursExportGpx')?.addEventListener('click', exportGpx);
-    el('parcoursPlaceKind')?.addEventListener('change', syncPlaceForm);
-    el('parcoursPlaceCategory')?.addEventListener('change', syncPlaceForm);
-    el('btnParcoursPlaceCancel')?.addEventListener('click', closePlaceForm);
-    el('parcoursPlaceForm')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (!placeDraft) return;
-        const kind = el('parcoursPlaceKind').value;
-        const category = el('parcoursPlaceCategory').value;
-        const ok = await createPlace({
-            kind,
-            name: el('parcoursPlaceName').value,
-            lat: placeDraft.lat,
-            lon: placeDraft.lon,
-            date: el('parcoursPlaceDay').value || null,
-            time: kind === KIND_PLACE ? (el('parcoursPlaceTime').value || null) : null,
-            role: kind === KIND_BASE ? (el('parcoursPlaceRole').value || 'both') : 'both',
-            category,
-            icon: category === 'custom' ? placeIconDraft : null,
-        });
-        if (ok) closePlaceForm();
-    });
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && picking) cancelPlacePicking();
-    });
+    placeForm.bind();
 }
 
 // --- Photos (lot 4) -------------------------------------------------------------
@@ -2787,7 +2601,18 @@ const tracksPanel = createTracksPanel({
     cancelUploads: uploads.cancel,
 });
 
-// --- Liste des étapes -------------------------------------------------------------
+// --- Pose d'un lieu et liste des étapes ------------------------------------------
+
+const placeForm = createPlaceForm({
+    getState: () => ({ ordered }),
+    adjustmentsLocked,
+    createPlace,
+    updatePlace,
+    button,
+    renderLayer,
+    getMap: () => pkg.getMap?.(),
+    customIcons: CUSTOM_ICONS,
+});
 
 const stopsPanel = createStopsPanel({
     getState: () => ({ status, ordered, inputs, counts, logsAvailable, photoByStop }),
@@ -2809,8 +2634,8 @@ const stopsPanel = createStopsPanel({
     pinnedTimeOf,
     pinStopTime,
     excludeStop,
-    startPlaceMove,
-    buildIconPicker,
+    startPlaceMove: (place) => placeForm.startMove(place),
+    buildIconPicker: (container, selected, onPick) => placeForm.buildIconPicker(container, selected, onPick),
     stopStyle,
     dayIndexes,
     paintOfStop,
@@ -3588,7 +3413,7 @@ function bindMapLink(map) {
         const feature = planFeatureAt(map, event.pixel, ['stop', 'draft', 'fan']);
         highlightRowsFor(feature?.get('role') === 'draft' ? null : feature);
         const target = map.getTargetElement();
-        if (target && !picking) target.style.cursor = feature ? (isDraggable(feature) ? 'grab' : 'pointer') : '';
+        if (target && !placeForm.isPicking()) target.style.cursor = feature ? (isDraggable(feature) ? 'grab' : 'pointer') : '';
     });
     bindPlanDrag(map);
     map.getViewport().addEventListener('contextmenu', (event) => onMapContextMenu(map, event));
@@ -3693,7 +3518,7 @@ function closeFan() {
 function bindPlanDrag(map) {
     const translate = new ol.interaction.Translate({
         layers: [parcoursLayer],
-        filter: (feature) => isDraggable(feature) && !clock.running && !picking,
+        filter: (feature) => isDraggable(feature) && !clock.running && !placeForm.isPicking(),
         hitTolerance: 5,
     });
     translate.on('translatestart', () => {
@@ -3712,8 +3537,7 @@ function bindPlanDrag(map) {
         if (!feature || (sx === ex && sy === ey)) return;
         const [lon, lat] = ol.proj.toLonLat(feature.getGeometry().getCoordinates());
         if (feature.get('role') === 'draft') {
-            placeDraft = { lon, lat };
-            showDraftCoords();
+            placeForm.setDraft({ lon, lat });
             return;
         }
         if (feature.get('placeId') == null) {
@@ -3750,7 +3574,7 @@ async function movePlaceTo(id, lon, lat) {
 // Bulle d'une étape du plan (moteur › popupAt, appelé par le clic de
 // mapgl.js) : rien pendant une pose, une lecture ou juste après un glisser.
 function parcoursPopupAt(pixel) {
-    if (picking || clock.running || performance.now() < clickMutedUntil) return null;
+    if (placeForm.isPicking() || clock.running || placeForm.isClickMuted()) return null;
     const map = pkg.getMap?.();
     if (!map || !parcoursLayer?.getVisible()) return null;
     const feature = planFeatureAt(map, pixel, ['stop', 'fan']);
@@ -3870,7 +3694,7 @@ function fillStopBubble(box, stop) {
 function onMapContextMenu(map, event) {
     if (!ordered || !selectedId) return;
     event.preventDefault();
-    if (picking || clock.running) return;
+    if (placeForm.isPicking() || clock.running) return;
     const pixel = map.getEventPixel(event);
     const own = parcoursPopupAt(pixel);
     if (own) {
@@ -3888,9 +3712,9 @@ function onMapContextMenu(map, event) {
             const item = button(`btn btn-sm btn-light parcours-bubble-add-${kind}`, icon, text, { text });
             item.addEventListener('click', () => {
                 pkg.hideMapPopup?.();
-                cancelPlacePicking();
+                placeForm.cancel();
                 pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
-                openPlaceForm({ lon, lat }, { kind });
+                placeForm.openForm({ lon, lat }, { kind });
                 el('parcoursPlaceForm')?.scrollIntoView({ block: 'nearest' });
             });
             wrap.append(item);
@@ -3997,14 +3821,15 @@ function renderLayer({ fit = false } = {}) {
     }
     // Point provisoire du formulaire de pose : du clic sur la carte à la
     // validation (ou l'annulation), pour que le clic ne semble pas perdu.
-    if (placeDraft) {
+    const draft = placeForm.draft();
+    if (draft) {
         const draftCategory = el('parcoursPlaceCategory')?.value || 'other';
         features.push(new ol.Feature({
             role: 'draft',
             kind: el('parcoursPlaceKind')?.value || KIND_PLACE,
             category: draftCategory,
-            icon: draftCategory === 'custom' ? placeIconDraft : null,
-            geometry: new ol.geom.Point(ol.proj.fromLonLat([placeDraft.lon, placeDraft.lat])),
+            icon: draftCategory === 'custom' ? placeForm.draftIcon() : null,
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([draft.lon, draft.lat])),
         }));
     }
     source.addFeatures(features);
@@ -4052,8 +3877,8 @@ export function getParcoursSnapshot() {
         undoDepth: undoStack.length,
         redoDepth: redoStack.length,
         editKey: stopsPanel.getEditKey(),
-        picking,
-        placeDraft: placeDraft ? { ...placeDraft } : null,
+        picking: placeForm.isPicking(),
+        placeDraft: placeForm.draft() ? { ...placeForm.draft() } : null,
         photos: (inputs?.photos || []).map((photo) => ({
             id: photo.id,
             stopKey: photo.stopKey,
