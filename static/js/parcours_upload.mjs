@@ -107,7 +107,15 @@ export function createParcoursUploads(deps) {
             showToast(spec.stopped(sent, files.length), 'info', t('Parcours'));
         }
         // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
-        await deps.reloadAdjustments(targetId, { tracks: kind === 'track' });
+        // Relecture absorbée : les fichiers sont arrivés, un échec ici
+        // n'est qu'un affichage non rafraîchi — signalé, pas propagé
+        // (l'appelant n'attend pas la promesse : rejet = unhandled).
+        try {
+            await deps.reloadAdjustments(targetId, { tracks: kind === 'track' });
+        } catch (error) {
+            showToast(t('Envoi terminé, mais l’affichage n’a pas pu être rechargé : ${message}', { message: error.message }),
+                'warning', t('Parcours'));
+        }
     }
 
     return { run, cancel };

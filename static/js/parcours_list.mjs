@@ -196,6 +196,10 @@ export function createParcoursList(deps) {
             return;
         }
         if (id === S().selectedId) deps.clearSelection();
+        // Le parcours supprimé était en cours de modification : le
+        // formulaire repasse en création, sinon « Enregistrer » ciblait un
+        // id disparu.
+        if (id === editingParcoursId) cancelEditParcours();
         await deps.refreshParcoursList({ select: S().selectedId });
     }
 

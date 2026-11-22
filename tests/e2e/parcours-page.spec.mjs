@@ -308,9 +308,14 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   await openParcoursPage(page);
   await expect.poll(async () => (await snapshot(page)).layer?.stops).toBe(3);
 
+  // Suppression pendant la modification : le formulaire repasse en création.
+  await page.locator('.parcours-edit').click();
+  await expect(page.locator('#parcoursFormTitle')).toHaveText('Modifier le parcours');
   await page.locator('.parcours-delete').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   await expect(page.locator('#parcoursListEmpty')).toBeVisible();
+  await expect(page.locator('#parcoursFormTitle')).toHaveText('Nouveau parcours');
+  await expect(page.locator('#btnParcoursEditCancel')).toBeHidden();
   const state = await snapshot(page);
   expect(state.ids).toEqual([]);
   expect(state.layer.stops).toBe(0);
