@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-22 12:57+0100\n"
+"POT-Creation-Date: 2026-11-22 13:02+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -632,14 +632,14 @@ msgstr ""
 msgid "Code GC"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:634
+#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:740
 #: templates/menu_data_parcours.html:32 templates/menu_data_parcours.html:264
 #: templates/menu_images.html:152 templates/stats_page.html:658
 #: templates/stats_page.html:732
 msgid "Nom"
 msgstr ""
 
-#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:668
+#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:774
 #: static/js/ui.js:11717 templates/menu_data_parcours.html:257
 msgid "Type"
 msgstr ""
@@ -4791,12 +4791,12 @@ msgstr ""
 msgid "Apparition planifiée"
 msgstr ""
 
-#: static/js/images_ui.js:1353 static/js/parcours_stops_panel.mjs:425
+#: static/js/images_ui.js:1353 static/js/parcours_stops_panel.mjs:555
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:577
 msgid "Monter"
 msgstr ""
 
-#: static/js/images_ui.js:1354 static/js/parcours_stops_panel.mjs:428
+#: static/js/images_ui.js:1354 static/js/parcours_stops_panel.mjs:558
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:578
 msgid "Descendre"
 msgstr ""
@@ -6075,8 +6075,8 @@ msgid "${km} km"
 msgstr ""
 
 #: static/js/parcours_labels.mjs:75 static/js/parcours_list.mjs:176
-#: static/js/parcours_stops_panel.mjs:121
-#: static/js/parcours_stops_panel.mjs:212
+#: static/js/parcours_stops_panel.mjs:138
+#: static/js/parcours_stops_panel.mjs:229
 #, python-brace-format
 msgid "${n} étapes"
 msgstr ""
@@ -6086,11 +6086,11 @@ msgstr ""
 msgid "${n} étape"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:80 static/js/parcours_stops_panel.mjs:586
+#: static/js/parcours_labels.mjs:80 static/js/parcours_stops_panel.mjs:692
 msgid "à vélo"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:81 static/js/parcours_stops_panel.mjs:586
+#: static/js/parcours_labels.mjs:81 static/js/parcours_stops_panel.mjs:692
 msgid "en voiture"
 msgstr ""
 
@@ -6098,7 +6098,7 @@ msgstr ""
 msgid "en avion"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:83 static/js/parcours_stops_panel.mjs:586
+#: static/js/parcours_labels.mjs:83 static/js/parcours_stops_panel.mjs:692
 msgid "à pied"
 msgstr ""
 
@@ -6122,7 +6122,7 @@ msgstr ""
 msgid "ravitaillement"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:109 static/js/parcours_stops_panel.mjs:332
+#: static/js/parcours_labels.mjs:109 static/js/parcours_stops_panel.mjs:462
 #: templates/menu_data_parcours.html:288
 msgid "Parking"
 msgstr ""
@@ -6152,12 +6152,12 @@ msgstr ""
 msgid "Autre"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:133 static/js/parcours_stops_panel.mjs:672
+#: static/js/parcours_labels.mjs:133 static/js/parcours_stops_panel.mjs:778
 #: templates/menu_data_evolution.html:18
 msgid "Base"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:134 static/js/parcours_stops_panel.mjs:672
+#: static/js/parcours_labels.mjs:134 static/js/parcours_stops_panel.mjs:778
 msgid "Lieu"
 msgstr ""
 
@@ -6189,7 +6189,7 @@ msgstr ""
 msgid "heure épinglée"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:149 static/js/parcours_stops_panel.mjs:217
+#: static/js/parcours_labels.mjs:149 static/js/parcours_stops_panel.mjs:234
 msgid "ordre manuel"
 msgstr ""
 
@@ -6336,7 +6336,7 @@ msgstr ""
 msgid "Réessayer"
 msgstr ""
 
-#: static/js/parcours_list.mjs:66 static/js/parcours_stops_panel.mjs:107
+#: static/js/parcours_list.mjs:66 static/js/parcours_stops_panel.mjs:124
 #: templates/menu_data_parcours.html:15 templates/menu_data_parcours.html:221
 #: templates/menu_data_poses.html:18
 msgid "Chargement…"
@@ -6351,7 +6351,7 @@ msgid "Une journée"
 msgstr ""
 
 #: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:390
-#: static/js/parcours_stops_panel.mjs:121 static/js/stats_panels.js:1534
+#: static/js/parcours_stops_panel.mjs:138 static/js/stats_panels.js:1534
 #: static/js/ui.js:8721
 #, python-brace-format
 msgid "${n} jours"
@@ -6492,7 +6492,7 @@ msgid "Décalage en minutes"
 msgstr ""
 
 #: static/js/parcours_photos_panel.mjs:228
-#: static/js/parcours_stops_panel.mjs:560
+#: static/js/parcours_stops_panel.mjs:666
 msgid "min"
 msgstr ""
 
@@ -6526,7 +6526,7 @@ msgid "Nom du lieu"
 msgstr ""
 
 #: static/js/parcours_photos_panel.mjs:330
-#: static/js/parcours_stops_panel.mjs:336
+#: static/js/parcours_stops_panel.mjs:466
 msgid "Créer ce lieu"
 msgstr ""
 
@@ -6565,7 +6565,7 @@ msgid "Ouvrir l’aperçu en pause sur cette photo"
 msgstr ""
 
 #: static/js/parcours_photos_panel.mjs:417
-#: static/js/parcours_stops_panel.mjs:765 static/js/stats_page_cards.js:636
+#: static/js/parcours_stops_panel.mjs:871 static/js/stats_page_cards.js:636
 #: static/js/stats_page_links.js:277 static/js/stats_page_links.js:325
 #: static/js/stats_page_links.js:344
 msgid "Voir sur la carte"
@@ -6591,7 +6591,7 @@ msgstr ""
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr ""
 
-#: static/js/parcours_place_form.mjs:114 static/js/parcours_stops_panel.mjs:696
+#: static/js/parcours_place_form.mjs:114 static/js/parcours_stops_panel.mjs:802
 msgid "Toutes les journées"
 msgstr ""
 
@@ -6600,24 +6600,24 @@ msgstr ""
 msgid "Icône ${icon}"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:370 static/js/parcours_stops_panel.mjs:519
+#: static/js/parcours_plan.mjs:370 static/js/parcours_stops_panel.mjs:625
 #: templates/menu_informations.html:72
 msgid "Heure"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:373 static/js/parcours_stops_panel.mjs:526
+#: static/js/parcours_plan.mjs:373 static/js/parcours_stops_panel.mjs:632
 msgid "Épingler cette heure"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:374 static/js/parcours_stops_panel.mjs:527
+#: static/js/parcours_plan.mjs:374 static/js/parcours_stops_panel.mjs:633
 msgid "Épingler"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:382 static/js/parcours_stops_panel.mjs:531
+#: static/js/parcours_plan.mjs:382 static/js/parcours_stops_panel.mjs:637
 msgid "Retirer l’heure épinglée"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:393 static/js/parcours_stops_panel.mjs:784
+#: static/js/parcours_plan.mjs:393 static/js/parcours_stops_panel.mjs:890
 msgid "Exclure du parcours"
 msgstr ""
 
@@ -6633,14 +6633,14 @@ msgstr ""
 msgid "Position d’origine"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:789
-#: static/js/parcours_stops_panel.mjs:790 templates/menu_data_evolution.html:34
+#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:895
+#: static/js/parcours_stops_panel.mjs:896 templates/menu_data_evolution.html:34
 #: templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:789
-#: static/js/parcours_stops_panel.mjs:790
+#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:895
+#: static/js/parcours_stops_panel.mjs:896
 msgid "Supprimer le lieu"
 msgstr ""
 
@@ -6718,143 +6718,147 @@ msgstr ""
 msgid "${routed} trajets sur ${legs} suivent les routes et chemins."
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:114
+#: static/js/parcours_stops_panel.mjs:131
 msgid "Impossible de charger les étapes"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:115
+#: static/js/parcours_stops_panel.mjs:132
 msgid "Ouvrez ou créez un parcours pour voir ses étapes."
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:122
+#: static/js/parcours_stops_panel.mjs:139
 #, python-brace-format
 msgid "${n} sans position"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:130
+#: static/js/parcours_stops_panel.mjs:147
 msgid ""
 "Ordre et heures reconstruits d’après l’ordre de saisie de vos logs, "
 "l’heure de vos Labs et la géographie. « ≈ » : heure estimée."
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:131
+#: static/js/parcours_stops_panel.mjs:148
 msgid ""
 "Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie "
 ": réimportez votre fichier My Finds pour en profiter. « ≈ » : heure "
 "estimée."
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:153
+#: static/js/parcours_stops_panel.mjs:170
 msgid "Tout déplier"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:153 templates/menu_data_parcours.html:241
+#: static/js/parcours_stops_panel.mjs:170 templates/menu_data_parcours.html:241
 msgid "Tout plier"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:178
-#: static/js/parcours_stops_panel.mjs:191
+#: static/js/parcours_stops_panel.mjs:195
+#: static/js/parcours_stops_panel.mjs:208
 msgid "Déplier la journée"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:178
-#: static/js/parcours_stops_panel.mjs:191
+#: static/js/parcours_stops_panel.mjs:195
+#: static/js/parcours_stops_panel.mjs:208
 msgid "Replier la journée"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:219
+#: static/js/parcours_stops_panel.mjs:236
 msgid "Revenir à l’ordre automatique"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:219
+#: static/js/parcours_stops_panel.mjs:236
 msgid "Ordre automatique"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:234
+#: static/js/parcours_stops_panel.mjs:251
 msgid "Aucune étape ce jour-là"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:319
+#: static/js/parcours_stops_panel.mjs:449
 msgid "1 parking connu pour cette journée"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:320
+#: static/js/parcours_stops_panel.mjs:450
 #, python-brace-format
 msgid "${n} parkings connus pour cette journée"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:333
+#: static/js/parcours_stops_panel.mjs:463
 #, python-brace-format
 msgid "pour ${caches}"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:486
+#: static/js/parcours_stops_panel.mjs:571
+msgid "Glisser pour réordonner"
+msgstr ""
+
+#: static/js/parcours_stops_panel.mjs:592
 msgid "exclue du parcours"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:489
+#: static/js/parcours_stops_panel.mjs:595
 msgid "Réintégrer"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:532 templates/guide.html:315
+#: static/js/parcours_stops_panel.mjs:638 templates/guide.html:315
 #: templates/menu_animation.html:415 templates/menu_images.html:96
 msgid "Retirer"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:546
+#: static/js/parcours_stops_panel.mjs:652
 msgid "Durée de visite"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:552
+#: static/js/parcours_stops_panel.mjs:658
 #, python-brace-format
 msgid "${n} min"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:580
+#: static/js/parcours_stops_panel.mjs:686
 msgid "Trajet vers l’étape suivante"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:586
+#: static/js/parcours_stops_panel.mjs:692
 msgid "en ligne droite"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:587
+#: static/js/parcours_stops_panel.mjs:693
 #, python-brace-format
 msgid "Automatique (${mode})"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:606
-#: static/js/parcours_stops_panel.mjs:690 templates/menu_data_parcours.html:269
+#: static/js/parcours_stops_panel.mjs:712
+#: static/js/parcours_stops_panel.mjs:796 templates/menu_data_parcours.html:269
 msgid "Journée"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:655 static/js/profiles.js:975
+#: static/js/parcours_stops_panel.mjs:761 static/js/profiles.js:975
 #: static/js/profiles.js:2802 templates/stats_page.html:737
 msgid "Renommer"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:716
+#: static/js/parcours_stops_panel.mjs:822
 msgid "Rôle"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:720 templates/menu_data_parcours.html:279
+#: static/js/parcours_stops_panel.mjs:826 templates/menu_data_parcours.html:279
 msgid "Départ et retour"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:721 templates/menu_data_parcours.html:280
+#: static/js/parcours_stops_panel.mjs:827 templates/menu_data_parcours.html:280
 msgid "Départ seulement"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:721 templates/menu_data_parcours.html:281
+#: static/js/parcours_stops_panel.mjs:827 templates/menu_data_parcours.html:281
 msgid "Arrivée seulement"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:737 static/js/stats_panels.js:3048
+#: static/js/parcours_stops_panel.mjs:843 static/js/stats_panels.js:3048
 #: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:285
 msgid "Catégorie"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:778
+#: static/js/parcours_stops_panel.mjs:884
 msgid "Déplacer sur la carte"
 msgstr ""
 

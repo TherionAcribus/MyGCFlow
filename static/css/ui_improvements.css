@@ -4172,12 +4172,31 @@ body[data-mode="parcours"] .rhythm-rate-field {
     text-decoration: none;
 }
 
-.parcours-stop[draggable="true"] {
+/* Poignée de glisser-déposer : `touch-action: none` pour que le geste ne
+   soit pas avalé par le défilement de la liste (Pointer Events). */
+.parcours-stop-grip {
+    flex: 0 0 auto;
     cursor: grab;
+    color: var(--tblr-secondary, #6c7a91);
+    touch-action: none;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+}
+.parcours-stop-grip:active {
+    cursor: grabbing;
 }
 
 .parcours-stop.is-dragging {
     opacity: 0.4;
+}
+
+/* Repère d'insertion au-dessus / en dessous de la ligne visée. */
+.parcours-stop.is-drop-above {
+    box-shadow: 0 -2px 0 var(--tblr-primary, #206bc4);
+}
+.parcours-stop.is-drop-below {
+    box-shadow: 0 2px 0 var(--tblr-primary, #206bc4);
 }
 
 /* Chevron de repli d'une journée : couché quand elle est repliée. */

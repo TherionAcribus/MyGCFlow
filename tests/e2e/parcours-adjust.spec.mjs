@@ -33,6 +33,8 @@ async function openReady(page) {
 }
 
 const row = (page, key) => page.locator(`.parcours-stop[data-stop-key="${key}"]`);
+// Le glisser-déposer part de la poignée de la ligne (Pointer Events).
+const grip = (page, key) => row(page, key).locator('.parcours-stop-grip');
 
 // Attend la reconstruction qui suit un ajustement enregistré.
 async function adjusted(page, revision) {
@@ -56,7 +58,7 @@ test('ordre manuel : flèches, glisser-déposer, persistance, retour à l’ordr
   await expect(row(page, 'GCPAR01').locator('.parcours-stop-index')).toHaveText('1');
 
   // Glisser GCPAR02 au-dessus de GCPAR01.
-  await row(page, 'GCPAR02').dragTo(row(page, 'GCPAR01'), { targetPosition: { x: 20, y: 2 } });
+  await grip(page, 'GCPAR02').dragTo(row(page, 'GCPAR01'), { targetPosition: { x: 20, y: 2 } });
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR02', 'GCPAR01', 'GCPAR03']);
 
@@ -80,7 +82,7 @@ test('glisser-déposer une étape vers la journée suivante', async ({ page }) =
   expect(state.days).toHaveLength(2);
 
   // GCPAR03 lâchée au-dessus de GCPAR04 : elle ouvre le dimanche.
-  await row(page, 'GCPAR03').dragTo(row(page, 'GCPAR04'), { targetPosition: { x: 20, y: 2 } });
+  await grip(page, 'GCPAR03').dragTo(row(page, 'GCPAR04'), { targetPosition: { x: 20, y: 2 } });
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR02']);
   expect(state.days[1].keys).toEqual(['GCPAR03', 'GCPAR04', 'GCPAR05']);
@@ -91,6 +93,35 @@ test('glisser-déposer une étape vers la journée suivante', async ({ page }) =
   await openReady(page);
   expect((await snapshot(page)).days.map((d) => d.keys))
     .toEqual([['GCPAR01', 'GCPAR02'], ['GCPAR03', 'GCPAR04', 'GCPAR05']]);
+  expect(errors).toEqual([]);
+});
+
+test('réordonnancement au tactile : Pointer Events de type touch', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  let state = await snapshot(page);
+  expect(state.days[0].keys).toEqual(['GCPAR03', 'GCPAR01', 'GCPAR02']);
+
+  // Le drag & drop HTML5 n'existe pas au tactile : la poignée capture les
+  // Pointer Events (souris, doigt, stylet) dans un seul chemin de code.
+  // elementFromPoint n'a de réponse qu'à l'écran : la ligne visée doit être
+  // dans le viewport.
+  await row(page, 'GCPAR01').scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    const grip = document.querySelector('.parcours-stop[data-stop-key="GCPAR02"] .parcours-stop-grip');
+    const target = document.querySelector('.parcours-stop[data-stop-key="GCPAR01"]');
+    const g = grip.getBoundingClientRect();
+    const r = target.getBoundingClientRect();
+    const fire = (type, x, y) => grip.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, isPrimary: true,
+      pointerId: 7, pointerType: 'touch', clientX: x, clientY: y,
+    }));
+    fire('pointerdown', g.x + g.width / 2, g.y + g.height / 2);
+    fire('pointermove', r.x + 20, r.y + 2);
+    fire('pointerup', r.x + 20, r.y + 2);
+  });
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.days[0].keys).toEqual(['GCPAR03', 'GCPAR02', 'GCPAR01']);
   expect(errors).toEqual([]);
 });
 
@@ -119,7 +150,7 @@ test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({
   // Déposer sur une journée repliée la déplie : le résultat reste visible.
   await sun.locator('.parcours-day-toggle').click();
   const before = (await snapshot(page)).adjustmentRevision;
-  await row(page, 'GCPAR03').dragTo(sun);
+  await grip(page, 'GCPAR03').dragTo(sun);
   const state = await adjusted(page, before);
   expect(state.days[1].keys).toEqual(['GCPAR04', 'GCPAR05', 'GCPAR03']);
   await expect(sun.locator('.parcours-day-body')).toBeVisible();

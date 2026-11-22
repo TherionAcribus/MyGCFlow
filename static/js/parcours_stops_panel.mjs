@@ -58,7 +58,16 @@ export function createStopsPanel(deps) {
 
     let editKey = null;            // étape dont le panneau d'ajustement est ouvert
     let collapsedDays = new Set(); // journées repliées dans la liste (dates ISO)
-    let dragged = null;            // { date, key } pendant un glisser-déposer
+
+    // Glisser-déposer par Pointer Events depuis la poignée de la ligne :
+    // un seul chemin pour souris, tactile et stylet (le drag & drop HTML5 ne
+    // fonctionne pas au tactile). La poignée porte `touch-action: none` pour
+    // que le geste ne soit pas avalé par le défilement de la liste ; le reste
+    // de la ligne reste scrollable et le clavier garde les flèches.
+    let drag = null;          // { key, date, pointerId, startX, startY, moved }
+    let dropMark = null;      // { kind: 'row', row, after } | { kind: 'day', section }
+    let scrollParent = null;  // ancêtre défilant, pour l'auto-défilement
+    let dndBound = false;
 
     function hasAdjustments() {
         return (s().inputs?.overrides?.length || 0) > 0;
@@ -78,6 +87,7 @@ export function createStopsPanel(deps) {
         const summary = el('parcoursSummary');
         const tools = el('parcoursStopsTools');
         if (!box) return;
+        bindDrag(box);
         if (tools) tools.hidden = !ordered;
         if (status === 'loading') {
             if (summary) summary.textContent = t('Chargement…');
@@ -211,37 +221,143 @@ export function createStopsPanel(deps) {
             for (const stop of day.excluded) list.append(...renderExcludedRow(stop));
             body.append(list);
         }
-        // Déposer sur la journée elle-même (jour vide ou creux de la liste) :
-        // l'étape la rejoint à la fin ; sur sa propre journée, elle finit en
-        // dernier. Une ligne sous la souris traite le dépôt et le stoppe.
-        section.addEventListener('dragenter', () => {
-            if (dragged) section.classList.add('is-drop-target');
-        });
-        section.addEventListener('dragleave', (event) => {
-            if (!section.contains(event.relatedTarget)) section.classList.remove('is-drop-target');
-        });
-        section.addEventListener('dragover', (event) => {
-            if (!dragged) return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-        });
-        section.addEventListener('drop', (event) => {
-            if (!dragged) return;
-            event.preventDefault();
-            section.classList.remove('is-drop-target');
-            const { key, date } = dragged;
-            dragged = null;
-            // La journée de dépôt se déplie pour montrer le résultat.
+        return section;
+    }
+
+    // Écouteurs du glisser-déposer, délégués à la liste : elle est
+    // reconstruite à chaque geste, mais l'élément conteneur survit.
+    function bindDrag(box) {
+        if (dndBound) return;
+        dndBound = true;
+        box.addEventListener('pointerdown', onDragStart);
+        box.addEventListener('pointermove', onDragMove);
+        box.addEventListener('pointerup', onDragEnd);
+        box.addEventListener('pointercancel', cancelDrag);
+    }
+
+    function onDragStart(event) {
+        const grip = event.target.closest?.('.parcours-stop-grip');
+        const row = grip?.closest('.parcours-stop');
+        const section = row?.closest('.parcours-day');
+        if (!row || !section) return;
+        event.preventDefault(); // souris : pas de sélection de texte
+        drag = {
+            key: row.dataset.stopKey,
+            date: section.dataset.date,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            moved: false,
+        };
+        try {
+            grip.setPointerCapture(event.pointerId);
+        } catch { /* pointeur déjà inactif : le drag suit quand même */ }
+        // Ancêtre défilant de la liste, pour l'auto-défilement en bordure.
+        scrollParent = null;
+        let node = el('parcoursStops')?.parentElement;
+        while (node) {
+            if (node.scrollHeight > node.clientHeight
+                && /(auto|scroll)/.test(getComputedStyle(node).overflowY)) {
+                scrollParent = node;
+                break;
+            }
+            node = node.parentElement;
+        }
+    }
+
+    function onDragMove(event) {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        if (!drag.moved
+            && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6) {
+            return;
+        }
+        if (!drag.moved) {
+            drag.moved = true;
+            const box = el('parcoursStops');
+            box?.querySelector(`.parcours-stop[data-stop-key="${CSS.escape(drag.key)}"]`)
+                ?.classList.add('is-dragging');
+        }
+        event.preventDefault();
+        clearDropMark();
+        const box = el('parcoursStops');
+        const under = document.elementFromPoint(event.clientX, event.clientY);
+        const row = under?.closest?.('.parcours-stop');
+        // Une ligne déplaçable (poignée présente) reçoit l'insertion ;
+        // lignes exclues/base et vide → la journée entière (dépôt en fin).
+        if (row && box?.contains(row) && row.querySelector('.parcours-stop-grip')
+            && row.dataset.stopKey !== drag.key) {
+            const rect = row.getBoundingClientRect();
+            const after = event.clientY > rect.top + rect.height / 2;
+            dropMark = { kind: 'row', row, after };
+            row.classList.add(after ? 'is-drop-below' : 'is-drop-above');
+        } else {
+            const section = under?.closest?.('.parcours-day');
+            if (section && box?.contains(section)) {
+                dropMark = { kind: 'day', section };
+                section.classList.add('is-drop-target');
+            }
+        }
+        // Auto-défilement en approchant les bords de la liste.
+        if (scrollParent) {
+            const rect = scrollParent.getBoundingClientRect();
+            if (event.clientY < rect.top + 40) scrollParent.scrollTop -= 12;
+            else if (event.clientY > rect.bottom - 40) scrollParent.scrollTop += 12;
+        }
+    }
+
+    function onDragEnd(event) {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        const { key, date, moved } = drag;
+        const mark = dropMark;
+        cancelDrag();
+        if (!moved || !mark) return;
+        const days = s().ordered?.days || [];
+        if (mark.kind === 'day') {
+            // Déposé sur la journée (jour vide ou creux de la liste) : l'étape
+            // la rejoint à la fin ; sur sa propre journée, elle finit en
+            // dernier. La journée de dépôt se déplie pour montrer le résultat.
+            const day = days.find((d) => d.date === mark.section.dataset.date);
+            if (!day) return;
             collapsedDays.delete(day.date);
-            if (date === day.date) {
+            if (day.date === date) {
                 const keys = day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => stop.key);
                 keys.push(...keys.splice(keys.indexOf(key), 1));
                 deps.reorderDay(keys);
             } else {
                 deps.moveStopToDay(day, key, Number.MAX_SAFE_INTEGER);
             }
-        });
-        return section;
+            return;
+        }
+        const section = mark.row.closest('.parcours-day');
+        const day = days.find((d) => d.date === section?.dataset.date);
+        const target = mark.row.dataset.stopKey;
+        if (!day || !target) return;
+        if (day.date === date) {
+            const keys = day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => stop.key)
+                .filter((k) => k !== key);
+            keys.splice(keys.indexOf(target) + (mark.after ? 1 : 0), 0, key);
+            deps.reorderDay(keys);
+        } else {
+            // Autre journée : insérée au rang où elle est lâchée.
+            const rank = day.stops.filter((stop) => stop.kind !== KIND_BASE)
+                .findIndex((stop) => stop.key === target);
+            if (rank >= 0) deps.moveStopToDay(day, key, rank + (mark.after ? 1 : 0));
+        }
+    }
+
+    function cancelDrag() {
+        clearDropMark();
+        el('parcoursStops')?.querySelector('.parcours-stop.is-dragging')
+            ?.classList.remove('is-dragging');
+        drag = null;
+        scrollParent = null;
+    }
+
+    function clearDropMark() {
+        if (!dropMark) return;
+        if (dropMark.kind === 'row') dropMark.row.classList.remove('is-drop-above', 'is-drop-below');
+        else dropMark.section.classList.remove('is-drop-target');
+        dropMark = null;
     }
 
     // Parkings connus des caches de chaque journée (lot 14, parcours_parkings.mjs),
@@ -383,41 +499,17 @@ export function createStopsPanel(deps) {
             down.disabled = position === movable.length - 1;
             down.addEventListener('click', () => deps.moveStop(day, stop.key, 1));
             item.append(up, down);
-            // Glisser-déposer dans la journée (les boutons font la même chose au
-            // clavier).
-            item.draggable = true;
-            item.addEventListener('dragstart', (event) => {
-                event.dataTransfer.setData('text/plain', stop.key);
-                event.dataTransfer.effectAllowed = 'move';
-                dragged = { date: day.date, key: stop.key };
-                item.classList.add('is-dragging');
-            });
-            item.addEventListener('dragend', () => {
-                item.classList.remove('is-dragging');
-                dragged = null;
-            });
-            item.addEventListener('dragover', (event) => {
-                if (!dragged || dragged.key === stop.key) return;
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-            });
-            item.addEventListener('drop', (event) => {
-                if (!dragged) return;
-                event.preventDefault();
-                event.stopPropagation();
-                const rect = item.getBoundingClientRect();
-                const after = event.clientY > rect.top + rect.height / 2;
-                const { key, date } = dragged;
-                dragged = null;
-                if (date === day.date) {
-                    const keys = movable.map((s) => s.key).filter((k) => k !== key);
-                    keys.splice(keys.indexOf(stop.key) + (after ? 1 : 0), 0, key);
-                    deps.reorderDay(keys);
-                } else {
-                    // Autre journée : insérée au rang où elle est lâchée.
-                    deps.moveStopToDay(day, key, movable.indexOf(stop) + (after ? 1 : 0));
-                }
-            });
+            // Poignée de glisser-déposer (Pointer Events, cf. bindDrag) :
+            // décorative — le clavier réordonne par les flèches et la liste
+            // déroulante « Journée » du panneau d'ajustement.
+            const grip = document.createElement('span');
+            grip.className = 'parcours-stop-grip';
+            grip.setAttribute('aria-hidden', 'true');
+            grip.title = t('Glisser pour réordonner');
+            const gripIcon = document.createElement('i');
+            gripIcon.className = 'ti ti-grip-vertical';
+            grip.append(gripIcon);
+            item.append(grip);
         }
         return editKey === stop.key ? [item, renderEditPanel(stop, day)] : [item];
     }
@@ -743,7 +835,7 @@ export function createStopsPanel(deps) {
     function reset() {
         editKey = null;
         collapsedDays.clear();
-        dragged = null;
+        cancelDrag();
     }
 
     // « Tout plier / Tout déplier » : bascule puis reconstruction de la liste.
