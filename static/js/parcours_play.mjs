@@ -1,0 +1,922 @@
+// Dessin de la lecture du parcours : trait parcouru et trajet en cours,
+// géocacheur (pastille ou pictogramme), étapes atteintes (pastilles ou
+// numéros, piles mémorisées, anneau de l'étape en cours, atténuation du
+// passé, aperçu pâle de la suite), lieux et bases, nuit, cartons de jour et
+// de fin, crédits des itinéraires, cartes postales des photos. Deux couches
+// dédiées (`parcours-trail`, `parcours-head`) repeignent à chaque image en
+// postrender, à la position fractionnaire `currentQ` du moteur.
+//
+// Chargement des photos de la lecture : vignettes (épinglables à tout
+// moment), pleine taille seulement près de la tête (PHOTO_AHEAD/BEHIND_Q) ;
+// `photosReady` attend le décodage avant la première image d'un
+// enregistrement. `previewPhoto` cale une lecture en pause sur une photo.
+//
+// État lu par injection : moteur (`clock`, `currentQ`), chronologie,
+// réglages de lecture et d'affichage photo, étapes projetées, photos et
+// rattachements (`getState`). Peintures d'étapes partagées avec le plan via
+// `paints` (parcours_paints.mjs). Caméra, couches du plan et attribution des
+// itinéraires restent dans parcours_data.js (deps).
+import { KIND_BASE, KIND_PLACE, CONFIDENCE_ANCHORED, isCountedStop } from './parcours_reconstruct.mjs';
+import {
+    HEAD_PICTOGRAM,
+    dayCardAt,
+    endCardAt,
+    formatClock,
+    headAt,
+    headModeAt,
+    legPoints,
+    nightLevelAt,
+    trailAt,
+} from './parcours_timeline.mjs';
+import {
+    FAVORITE_COLOR,
+    currentRingRadius,
+    favoriteBurst,
+    hexToRgba,
+    playPhase,
+    stopPopScale,
+    trailColorFor,
+} from './parcours_style.mjs';
+import { STACK_DISTANCE, stackLabel, stackStops } from './parcours_stack.mjs';
+import { cameraOffsets, photoClock, photoTimeTrusted } from './parcours_photos.mjs';
+import { PHOTO_FADE_Q, photoAspect, photoCaptionText, photoFrameAt, photoSlots } from './parcours_photo_layout.mjs';
+import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
+import { composeTransform } from './travel_trail.mjs';
+import { dateOfDayIndex } from './evolution_timeline.mjs';
+import { formatDay, formatKm, stopLabel, stopsCountText } from './parcours_labels.mjs';
+import { slotLabels } from './parcours_tbar.mjs';
+import { t } from './notifications.js';
+import { CONFIG } from './init.js';
+
+const PLAY_TRAIL_Z_INDEX = 1000;
+const PLAY_HEAD_Z_INDEX = 1050;
+
+const NIGHT_ALPHA = 0.5;
+// Cœur des PF donnés (marque et effet à l'arrivée) : glyphe texte, sans
+// attendre la police d'icônes.
+const HEART = '♥';
+
+// Étapes passées : plus transparentes et un peu plus petites ; aperçu de la
+// suite : à peine visibles. Variantes d'un style, gardées tant qu'il vit.
+const DIM_PAST = { opacity: 0.4, scale: 0.85 };
+const DIM_PREVIEW = { opacity: 0.3, scale: 0.8 };
+
+// Styles du trait d'une journée : trajet, nuit (pointillés fins), trajet
+// estimé (option, pointillés).
+const TRAIL_KINDS = ['night', 'estimated', 'day'];
+
+// Pictogrammes de la tête : glyphes de Tabler Icons lus dans la feuille de
+// style (le sous-ensemble ne garde que les icônes citées dans le code).
+const HEAD_ICON_CLASSES = Object.freeze({
+    walk: 'ti-walk',
+    bike: 'ti-bike',
+    car: 'ti-car',
+    plane: 'ti-plane',
+    night: 'ti-moon',
+});
+
+// deps : { getState, paints, quantumBase, tablerGlyph, bindCamera,
+//   syncAttribution, routeCredit, getMap, isRecording, previewState,
+//   startPreview, seekTo }
+export function createParcoursPlayDraw(deps) {
+    const S = () => deps.getState();
+    const paints = deps.paints;
+
+    let playTrailLayer = null;
+    let playHeadLayer = null;
+
+    // Trait de la lecture (thème, `points.parcours_style`) : `color` avec son
+    // opacité pour le trait, `solid` sans, pour le géocacheur. Aux couleurs
+    // des journées, celle de la journée `dayIndex`.
+    function trailOptions(dayIndex = 0) {
+        const style = paints.stopStyle();
+        const solid = trailColorFor(style, dayIndex);
+        return {
+            color: hexToRgba(solid, style.trail_opacity / 100),
+            solid,
+            width: style.trail_width,
+        };
+    }
+
+    // Journée d'un trajet : celle de son arrivée — la nuit prend la couleur
+    // du lendemain.
+    function legDayIndex(leg) {
+        return paints.dayIndexes().byKey.get(S().timeline?.stops[leg.to]?.key) ?? 0;
+    }
+
+    // Journée du géocacheur : celle du trajet en cours, sinon de la dernière
+    // étape atteinte.
+    function headDayIndex(current) {
+        const { timeline, currentQ } = S();
+        if (current) return legDayIndex(timeline.legs[current.leg]);
+        let last = null;
+        for (const stop of timeline.stops) {
+            if (stop.q > currentQ) break;
+            last = stop;
+        }
+        return paints.dayIndexes().byKey.get(last?.key) ?? 0;
+    }
+
+    function trailStyle(kind, dayIndex) {
+        const { color, width } = trailOptions(dayIndex);
+        return paints.cachedStyle(`trail:${kind}:${color}`, () => {
+            if (kind === 'night') {
+                return new ol.style.Style({ stroke: new ol.style.Stroke({ color, width: Math.max(1, width * 0.6), lineDash: [width * 2, width * 2] }) });
+            }
+            return new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color, width, lineCap: 'round', lineJoin: 'round',
+                    lineDash: kind === 'estimated' ? [width * 2.5, width * 2] : undefined,
+                }),
+            });
+        });
+    }
+
+    function legKind(leg, dashed) {
+        return leg.night ? 'night' : (dashed && !leg.path ? 'estimated' : 'day');
+    }
+
+    function ensureLayers() {
+        const map = deps.getMap();
+        if (!map) return;
+        if (!playTrailLayer) {
+            playTrailLayer = new ol.layer.Vector({ source: new ol.source.Vector(), zIndex: PLAY_TRAIL_Z_INDEX });
+            playTrailLayer.set('name', 'parcours-trail');
+            playTrailLayer.on('postrender', drawPlayTrail);
+            playHeadLayer = new ol.layer.Vector({ source: new ol.source.Vector(), zIndex: PLAY_HEAD_Z_INDEX });
+            playHeadLayer.set('name', 'parcours-head');
+            playHeadLayer.on('postrender', drawPlayHead);
+        }
+        const layers = map.getLayers().getArray();
+        if (!layers.includes(playTrailLayer)) map.addLayer(playTrailLayer);
+        if (!layers.includes(playHeadLayer)) map.addLayer(playHeadLayer);
+        playTrailLayer.setVisible(true);
+        playHeadLayer.setVisible(true);
+        deps.bindCamera(map);
+        deps.syncAttribution();
+    }
+
+    function hideLayers() {
+        playTrailLayer?.setVisible(false);
+        playHeadLayer?.setVisible(false);
+    }
+
+    function layersVisible() {
+        return !!(playTrailLayer?.getVisible() && playHeadLayer?.getVisible());
+    }
+
+    // Trait parcouru : trajets terminés, puis la part faite du trajet en
+    // cours. La nuit (d'une journée à la suivante) en pointillés.
+    //
+    // Les trajets terminés sont regroupés par style — nature du trajet et,
+    // aux couleurs des journées, journée — en MultiLineString persistants,
+    // allongés à mesure que la lecture avance : une géométrie par style à
+    // l'image au lieu d'une LineString par trajet (des centaines de trajets
+    // routés recréés à chaque image sinon).
+    let trailGroups = null;
+    const currentLegGeom = new ol.geom.LineString([]);
+
+    function doneTrailGroups(done) {
+        const { timeline, playback } = S();
+        const byDay = paints.stopStyle().trail_by_day;
+        if (!trailGroups || trailGroups.timeline !== timeline || trailGroups.dashed !== playback.estimated_dashed
+                || trailGroups.byDay !== byDay) {
+            trailGroups = { timeline, dashed: playback.estimated_dashed, byDay, done: 0, groups: new Map() };
+        }
+        // Retour en arrière dans la lecture : tout se refait depuis le début.
+        if (done < trailGroups.done) {
+            trailGroups.done = 0;
+            trailGroups.groups.clear();
+        }
+        for (let k = trailGroups.done; k < done; k++) {
+            const leg = timeline.legs[k];
+            // Trajet sur une trace GPS ou un itinéraire : le vrai chemin,
+            // sinon la ligne droite.
+            const coords = S().legProjected[k] || [S().projected[leg.from], S().projected[leg.to]];
+            const kind = legKind(leg, trailGroups.dashed);
+            const dayIndex = byDay ? legDayIndex(leg) : 0;
+            const key = `${kind}:${dayIndex}`;
+            let g = trailGroups.groups.get(key);
+            if (!g) {
+                g = { kind, dayIndex, coords: [], geom: new ol.geom.MultiLineString([]) };
+                trailGroups.groups.set(key, g);
+            }
+            g.coords.push(coords);
+            g.geom.setCoordinates(g.coords);
+        }
+        trailGroups.done = done;
+        return trailGroups;
+    }
+
+    function drawPlayTrail(event) {
+        const { clock, timeline, currentQ, playback, projected, legProjected } = S();
+        if (!clock.running || !timeline) return;
+        const context = ol.render.getVectorContext(event);
+        const { done, current } = trailAt(timeline, currentQ);
+        const { groups } = doneTrailGroups(done);
+        // Nuits sous les trajets estimés, eux-mêmes sous les trajets réels.
+        for (const kind of TRAIL_KINDS) {
+            for (const g of groups.values()) {
+                if (g.kind !== kind || !g.coords.length) continue;
+                context.setStyle(trailStyle(kind, g.dayIndex));
+                context.drawGeometry(g.geom);
+            }
+        }
+        if (current) {
+            const leg = timeline.legs[current.leg];
+            const coords = current.progress >= 1
+                ? (legProjected[current.leg] || [projected[leg.from], projected[leg.to]])
+                : legPoints(timeline, current.leg, current.progress).map((p) => ol.proj.fromLonLat(p));
+            context.setStyle(trailStyle(legKind(leg, playback.estimated_dashed), legDayIndex(leg)));
+            currentLegGeom.setCoordinates(coords);
+            context.drawGeometry(currentLegGeom);
+        }
+    }
+
+    // La nuit (assombrissement), les bases (toujours) et les lieux déjà
+    // atteints, le géocacheur, puis la carte postale, le carton du jour et
+    // les crédits des itinéraires (vidéo).
+    function drawPlayHead(event) {
+        const { clock, timeline, currentQ, playback } = S();
+        if (!clock.running || !timeline) return;
+        const head = headAt(timeline, currentQ);
+        if (!head) return;
+        const ctx = event.context;
+        const ratio = event.frameState.pixelRatio || 1;
+        const context = ol.render.getVectorContext(event);
+        drawPlayStops(context, event.frameState.viewState.resolution);
+        const level = playback.day_cards ? nightLevelAt(timeline, currentQ) : 0;
+        if (level > 0) {
+            ctx.save();
+            ctx.fillStyle = `rgba(10, 16, 38, ${(NIGHT_ALPHA * level).toFixed(3)})`;
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.restore();
+        }
+        drawPlayPlaces(context);
+        const { solid: color } = trailOptions(headDayIndex(trailAt(timeline, currentQ).current));
+        playStopsDrawn.headColor = color;
+        const position = ol.proj.fromLonLat([head.lon, head.lat]);
+        const glyph = playback.head === HEAD_PICTOGRAM ? headGlyph(headModeAt(timeline, currentQ)) : null;
+        if (glyph) {
+            const m = composeTransform(event.inversePixelTransform, event.frameState.coordinateToPixelTransform);
+            const x = m[0] * position[0] + m[2] * position[1] + m[4];
+            const y = m[1] * position[0] + m[3] * position[1] + m[5];
+            drawHeadPictogram(ctx, x, y, ratio, color, glyph);
+        } else {
+            context.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 7,
+                    fill: new ol.style.Fill({ color }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
+                }),
+            }));
+            context.drawGeometry(new ol.geom.Point(position));
+        }
+        // Après le géocacheur : la carte postale passe au-dessus.
+        drawPhotoCards(event);
+        drawDayCard(ctx, ratio);
+        drawEndCard(ctx, ratio);
+        drawRouteCredits(ctx, ratio);
+    }
+
+    // Étapes comptées déjà atteintes, dans le rendu du plan : pastilles, ou
+    // numéros à côté des points du thème (WebGL, qui apparaissent seuls),
+    // sous la nuit. Celles qui se recouvrent au zoom de l'image forment des
+    // piles, comme au repos (« 4–5 », puis « 4–6 »…), à la place de leur
+    // première étape. Dans l'ordre de la lecture ; une étape qui arrive fait
+    // grossir sa pastille — ou sa pile — de rien à sa taille (stopPopScale).
+    //
+    // Lecture plus lisible (`play_*` du thème) : l'étape en cours entourée
+    // d'un anneau qui pulse, les étapes passées atténuées, un aperçu pâle des
+    // étapes à venir de la journée — ces deux derniers en rendu
+    // « pastilles » : en points du thème, les points WebGL apparaissent
+    // seuls.
+    let playStopsDrawn = emptyPlayStops();
+
+    // Piles d'étapes atteintes de l'image précédente : `projected` est refait
+    // à chaque applyTimeline (invalidation), `fp` empreint les indices
+    // atteints.
+    let playStacksMemo = { projected: null, fp: -1, resolution: 0, distance: 0, stacks: [] };
+
+    function emptyPlayStops() {
+        return {
+            drawn: 0, popping: 0, headColor: null, piles: [], current: null, ring: null, dimmed: 0, preview: 0, places: 0,
+            favorites: 0, bursts: 0,
+        };
+    }
+
+    function reset() {
+        playStopsDrawn = emptyPlayStops();
+    }
+
+    // Journée de la chronologie où est le géocacheur : celle du trajet en
+    // cours (la nuit : le lendemain), sinon de la dernière étape atteinte.
+    function playDay() {
+        const { timeline, currentQ } = S();
+        const { current } = trailAt(timeline, currentQ);
+        if (current) return timeline.stops[timeline.legs[current.leg].to]?.day ?? 0;
+        let day = 0;
+        for (const stop of timeline.stops) {
+            if (stop.q > currentQ) break;
+            day = stop.day;
+        }
+        return day;
+    }
+
+    function drawPlayStops(context, resolution) {
+        const { timeline, currentQ, projected } = S();
+        const style = paints.stopStyle();
+        const labels = paints.currentStopLabels();
+        const themed = style.render === deps.renderTheme;
+        const past = themed ? 'normal' : style.play_past;
+        const day = playDay();
+        const point = new ol.geom.Point([0, 0]);
+        playStopsDrawn = { ...playStopsDrawn, current: null, ring: null, dimmed: 0, preview: 0 };
+        if (!themed && style.play_preview) drawPlayPreview(context, day, labels);
+        const reached = [];
+        let fp = 0;
+        timeline.stops.forEach((stop, i) => {
+            if (isCountedStop(stop) && stop.q <= currentQ) {
+                reached.push(i);
+                fp = ((fp * 31) + i) | 0;
+            }
+        });
+        // Regroupement mémorisé : il ne dépend que des étapes atteintes
+        // (empreinte), de la résolution et de la distance de pile — une image
+        // sans nouvelle étape ni zoom le réutilise tel quel.
+        const distance = style.size * STACK_DISTANCE;
+        if (playStacksMemo.projected !== projected || playStacksMemo.fp !== fp
+            || playStacksMemo.resolution !== resolution || playStacksMemo.distance !== distance) {
+            playStacksMemo = {
+                projected, fp, resolution, distance,
+                stacks: stackStops(reached.map((i) => deps.stackItem(projected[i], timeline.stops[i].key, resolution)), distance),
+            };
+        }
+        const stacks = playStacksMemo.stacks;
+        let drawn = 0;
+        let popping = 0;
+        let dimmed = 0;
+        let favorites = 0;
+        const piles = [];
+        for (const { rep, members } of stacks) {
+            const head = timeline.stops[reached[rep]];
+            const newest = timeline.stops[reached[members[members.length - 1]]];
+            const pile = members.length > 1;
+            const phases = members.map((m) => playPhase(timeline.stops[reached[m]], currentQ, { day, past }));
+            const currentIndex = phases.indexOf('current');
+            const dim = phases.every((phase) => phase === 'past');
+            const label = pile
+                ? stackLabel(members.map((m) => labels.get(timeline.stops[reached[m]].key) || ''))
+                : labels.get(head.key) || '';
+            if (pile) piles.push(label);
+            const paint = paints.paintOfStop(head);
+            const styles = themed ? [paints.themeNumberStyle(paint, label)]
+                : [...(pile ? [paints.pileShadowStyle(paint)] : []), paints.numberedStyleFor(paint, label, { pile })];
+            const scale = stopPopScale(currentQ - newest.q);
+            if (scale <= 0.01) continue;
+            if (scale !== 1) popping++;
+            point.setCoordinates(projected[reached[rep]]);
+            if (currentIndex >= 0) {
+                const current = timeline.stops[reached[members[currentIndex]]];
+                playStopsDrawn.current = current.key;
+                if (style.play_current) {
+                    playStopsDrawn.ring = current.key;
+                    const radius = themed ? paints.themePointRadius() + 2 : (pile ? style.size + 2 : style.size);
+                    drawCurrentRing(context, point, paint.fill, radius * scale, currentQ - current.q);
+                }
+            }
+            if (dim) dimmed++;
+            if (style.favorite_mark && members.some((m) => timeline.stops[reached[m]].favorite)) {
+                styles.push(paints.favoriteMarkStyle(pile));
+                favorites++;
+            }
+            for (const s of styles) {
+                if (!s) continue;
+                const shown = dim ? dimmedStyle(s, DIM_PAST) : s;
+                context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
+                context.drawGeometry(point);
+            }
+            drawn += members.length;
+        }
+        const bursts = style.favorite_burst ? drawFavoriteBursts(context, reached) : 0;
+        playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles, dimmed, favorites, bursts };
+    }
+
+    // Effet à l'arrivée sur une étape où un PF a été donné (favoriteBurst :
+    // cœurs qui s'envolent), par-dessus les pastilles. Renvoie le nombre
+    // d'effets en cours.
+    function drawFavoriteBursts(context, reached) {
+        const { timeline, currentQ, projected } = S();
+        const radius = paints.favoriteBaseRadius(false);
+        const point = new ol.geom.Point([0, 0]);
+        let bursts = 0;
+        for (const i of reached) {
+            const stop = timeline.stops[i];
+            if (!stop.favorite) continue;
+            const hearts = favoriteBurst(currentQ - stop.q, radius);
+            if (!hearts.length) continue;
+            bursts++;
+            point.setCoordinates(projected[i]);
+            for (const heart of hearts) {
+                context.setStyle(new ol.style.Style({
+                    text: new ol.style.Text({
+                        text: HEART,
+                        font: '16px system-ui, sans-serif',
+                        scale: heart.scale,
+                        offsetX: heart.dx,
+                        offsetY: heart.dy,
+                        fill: new ol.style.Fill({ color: hexToRgba(FAVORITE_COLOR, heart.alpha) }),
+                        stroke: new ol.style.Stroke({ color: `rgba(255, 255, 255, ${heart.alpha})`, width: 2 }),
+                    }),
+                }));
+                context.drawGeometry(point);
+            }
+        }
+        return bursts;
+    }
+
+    // Anneau de l'étape en cours (currentRingRadius : pulse d'une seconde
+    // d'écran), de la couleur de l'étape, sur un voile blanc léger.
+    function drawCurrentRing(context, point, color, radius, elapsedQ) {
+        context.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: currentRingRadius(radius, elapsedQ),
+                fill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.35)' }),
+                stroke: new ol.style.Stroke({ color, width: 3 }),
+            }),
+        }));
+        context.drawGeometry(point);
+    }
+
+    const dimmedStyles = new WeakMap();
+
+    function dimmedStyle(style, { opacity, scale }) {
+        let variants = dimmedStyles.get(style);
+        if (!variants) dimmedStyles.set(style, (variants = new Map()));
+        const key = `${opacity}:${scale}`;
+        if (!variants.has(key)) {
+            const copy = style.clone();
+            const image = copy.getImage();
+            if (image) {
+                image.setOpacity(opacity);
+                image.setScale(scale);
+                const shift = image.getDisplacement();
+                if (shift[0] || shift[1]) image.setDisplacement([shift[0] * scale, shift[1] * scale]);
+            }
+            const text = copy.getText();
+            if (text) {
+                text.setScale(scale);
+                text.setOffsetX(text.getOffsetX() * scale);
+                text.setOffsetY(text.getOffsetY() * scale);
+                const fill = text.getFill()?.getColor();
+                if (typeof fill === 'string' && fill.startsWith('#')) text.setFill(new ol.style.Fill({ color: hexToRgba(fill, opacity) }));
+            }
+            variants.set(key, copy);
+        }
+        return variants.get(key);
+    }
+
+    // Aperçu de la suite : étapes comptées de la journée pas encore
+    // atteintes, pâles, reliées depuis le géocacheur par un fil pointillé
+    // dans l'ordre du parcours (la nuit : celles du lendemain).
+    function drawPlayPreview(context, day, labels) {
+        const { timeline, currentQ, projected } = S();
+        const upcoming = [];
+        timeline.stops.forEach((stop, i) => {
+            if (isCountedStop(stop) && stop.day === day && stop.q > currentQ) upcoming.push(i);
+        });
+        if (!upcoming.length) return;
+        const head = headAt(timeline, currentQ);
+        const coords = upcoming.map((i) => projected[i]);
+        if (head) coords.unshift(ol.proj.fromLonLat([head.lon, head.lat]));
+        const width = paints.stopStyle().trail_width;
+        context.setStyle(paints.cachedStyle(`preview:line:${trailOptions(day).solid}`, () => new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: hexToRgba(trailOptions(day).solid, 0.5),
+                width: Math.max(1, width * 0.5),
+                lineDash: [3, 5],
+            }),
+        })));
+        if (coords.length > 1) context.drawGeometry(new ol.geom.LineString(coords));
+        const point = new ol.geom.Point([0, 0]);
+        for (const i of upcoming) {
+            const stop = timeline.stops[i];
+            context.setStyle(dimmedStyle(paints.numberedStyleFor(paints.paintOfStop(stop), labels.get(stop.key) || ''), DIM_PREVIEW));
+            point.setCoordinates(projected[i]);
+            context.drawGeometry(point);
+        }
+        playStopsDrawn.preview = upcoming.length;
+    }
+
+    // Lieux et bases pendant la lecture, avec leur pastille de catégorie, par
+    // dessus la nuit : un lieu apparaît à son arrivée, une base à sa première
+    // journée (une seule fois, quelles que soient ses occurrences), les deux
+    // en grossissant. Un lieu où se trouve le géocacheur est entouré, un lieu
+    // quitté suit le réglage des étapes passées.
+    let baseFirstMemo = { timeline: null, firstQ: new Map() };
+
+    function baseFirstQ() {
+        const { timeline } = S();
+        if (baseFirstMemo.timeline !== timeline) {
+            const firstQ = new Map();
+            for (const stop of timeline?.stops || []) {
+                if (stop.kind === KIND_BASE && !(firstQ.get(stop.placeId) <= stop.q)) firstQ.set(stop.placeId, stop.q);
+            }
+            baseFirstMemo = { timeline, firstQ };
+        }
+        return baseFirstMemo.firstQ;
+    }
+
+    function drawPlayPlaces(context) {
+        const { timeline, currentQ, projected } = S();
+        const style = paints.stopStyle();
+        const past = style.render === deps.renderTheme ? 'normal' : style.play_past;
+        const day = playDay();
+        const firstQ = baseFirstQ();
+        const bases = new Set();
+        const point = new ol.geom.Point([0, 0]);
+        let places = 0;
+        timeline.stops.forEach((stop, i) => {
+            if (stop.kind !== KIND_BASE && stop.kind !== KIND_PLACE) return;
+            const base = stop.kind === KIND_BASE;
+            if (base && bases.has(stop.placeId)) return;
+            const from = base ? (firstQ.get(stop.placeId) ?? stop.q) : stop.q;
+            if (from > currentQ) return;
+            if (base) bases.add(stop.placeId);
+            const scale = stopPopScale(currentQ - from);
+            if (scale <= 0.01) return;
+            point.setCoordinates(projected[i]);
+            const phase = base ? 'normal' : playPhase(stop, currentQ, { day, past });
+            if (phase === 'current') {
+                playStopsDrawn.current = stop.key;
+                if (style.play_current) {
+                    playStopsDrawn.ring = stop.key;
+                    drawCurrentRing(context, point, paints.kindColor(stop.kind), style.size * scale, currentQ - stop.q);
+                }
+            }
+            const s = paints.placeStyle(stop.kind, paints.stopIconClass(stop.category, stop.icon));
+            const shown = phase === 'past' ? dimmedStyle(s, DIM_PAST) : s;
+            context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
+            context.drawGeometry(point);
+            places++;
+        });
+        playStopsDrawn.places = places;
+    }
+
+    // Copie d'un style à l'échelle `scale`, décalages compris (numéro posé à
+    // côté d'un point du thème).
+    function scaledStyle(style, scale) {
+        const copy = style.clone();
+        const image = copy.getImage();
+        if (image) {
+            image.setScale(scale);
+            const shift = image.getDisplacement();
+            if (shift[0] || shift[1]) image.setDisplacement([shift[0] * scale, shift[1] * scale]);
+        }
+        const text = copy.getText();
+        if (text) {
+            text.setScale(scale);
+            text.setOffsetX(text.getOffsetX() * scale);
+            text.setOffsetY(text.getOffsetY() * scale);
+        }
+        return copy;
+    }
+
+    function headGlyph(mode) {
+        const className = HEAD_ICON_CLASSES[mode];
+        return className ? deps.tablerGlyph(className) : null;
+    }
+
+    function drawHeadPictogram(ctx, x, y, ratio, color, glyph) {
+        const radius = 14 * ratio;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 6 * ratio;
+        ctx.shadowOffsetY = 1.5 * ratio;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        ctx.lineWidth = 2.5 * ratio;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.font = `${Math.round(17 * ratio)}px "tabler-icons"`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(glyph, x, y + 0.5 * ratio);
+        ctx.restore();
+    }
+
+    let pageFont = null;
+    function pageFontFamily() {
+        if (!pageFont) pageFont = getComputedStyle(document.body).fontFamily || 'sans-serif';
+        return pageFont;
+    }
+
+    // Carton « Jour 2 · dimanche 13 juillet 2025 » d'un parcours de plusieurs
+    // journées, au tiers haut de la carte.
+    function dayCardText(dayIndex) {
+        const day = S().timeline?.days?.[dayIndex];
+        if (!day) return null;
+        return { title: t('Jour ${n}', { n: day.dayNumber }), subtitle: formatDay(day.date) };
+    }
+
+    // Carton final de synthèse : nom du parcours, puis « 5 étapes · 7,9 km »
+    // et les journées quand il y en a plusieurs.
+    function endCardText() {
+        const { listing, selectedId, timeline } = S();
+        const item = listing.find((p) => p.id === selectedId);
+        const counted = timeline?.stops?.filter(isCountedStop).length || 0;
+        const parts = [stopsCountText(counted), formatKm(timeline?.totalKm || 0)];
+        if ((timeline?.days?.length || 0) > 1) parts.push(t('${n} journées', { n: timeline.days.length }));
+        return { title: item?.name || t('Fin du parcours'), subtitle: parts.join(' · ') };
+    }
+
+    // Dessin commun d'un carton {title, subtitle} centré au tiers haut.
+    function drawCard(ctx, ratio, text, alpha) {
+        const font = pageFontFamily();
+        const titleSize = 30 * ratio;
+        const subtitleSize = 17 * ratio;
+        const gap = 8 * ratio;
+        const padX = 28 * ratio;
+        const padY = 18 * ratio;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `700 ${titleSize}px ${font}`;
+        const titleW = ctx.measureText(text.title).width;
+        ctx.font = `400 ${subtitleSize}px ${font}`;
+        const subtitleW = ctx.measureText(text.subtitle).width;
+        const boxW = Math.max(titleW, subtitleW) + padX * 2;
+        const boxH = titleSize + gap + subtitleSize + padY * 2;
+        const cx = ctx.canvas.width / 2;
+        const top = ctx.canvas.height * 0.36 - boxH / 2;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(cx - boxW / 2, top, boxW, boxH, 14 * ratio);
+        else ctx.rect(cx - boxW / 2, top, boxW, boxH);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.font = `700 ${titleSize}px ${font}`;
+        ctx.fillText(text.title, cx, top + padY);
+        ctx.font = `400 ${subtitleSize}px ${font}`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillText(text.subtitle, cx, top + padY + titleSize + gap);
+        ctx.restore();
+    }
+
+    function drawDayCard(ctx, ratio) {
+        const { playback, timeline, currentQ } = S();
+        const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
+        const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
+        if (text) drawCard(ctx, ratio, text, card.alpha);
+    }
+
+    function drawEndCard(ctx, ratio) {
+        const { playback, timeline, currentQ } = S();
+        const card = playback.day_cards ? endCardAt(timeline, currentQ) : null;
+        if (card && card.alpha > 0) drawCard(ctx, ratio, endCardText(), card.alpha);
+    }
+
+    // Crédits des itinéraires (CGU des fournisseurs), peints en bas à droite
+    // de la vidéo (la vidéo ne compose que les canevas de la carte) ; à
+    // l'écran ils sont dans l'attribution — voir syncAttribution.
+    function drawRouteCredits(ctx, ratio) {
+        if (!deps.isRecording()) return;
+        const text = deps.routeCredit();
+        if (!text) return;
+        ctx.save();
+        ctx.font = `${Math.round(11 * ratio)}px ${pageFontFamily()}`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.lineWidth = 3 * ratio;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        const x = ctx.canvas.width - 8 * ratio;
+        const y = ctx.canvas.height - 6 * ratio;
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+    }
+
+    // --- Photos de la lecture --------------------------------------------------
+
+    // Image chargée de chaque photo, pour la carte postale de la lecture et
+    // de la vidéo : même origine que la page, le canevas reste exportable.
+    const photoImages = new Map();   // id → HTMLImageElement
+    const photoThumbs = new Map();   // id → HTMLImageElement (vignettes laissées sur la carte)
+
+    function photoUrl(photo, thumb = false) {
+        return `${CONFIG.BASE_URL}/api/parcours/${S().selectedId}/photos/${photo.id}/${thumb ? 'thumb' : 'file'}`;
+    }
+
+    function photoById(id) {
+        return (S().inputs?.photos || []).find((photo) => photo.id === id) || null;
+    }
+
+    function loadPhotoImage(id, thumb) {
+        const cache = thumb ? photoThumbs : photoImages;
+        if (cache.has(id)) return;
+        const img = new Image();
+        img.decoding = 'async';
+        // En pause ou au repos, la prochaine image peinte attendrait un
+        // geste : invalider la couche pour que la carte apparaisse dès
+        // l'image reçue.
+        img.onload = () => playHeadLayer?.changed();
+        img.src = photoUrl({ id }, thumb);
+        cache.set(id, img);
+    }
+
+    // Pleine taille préchargée dans une fenêtre autour de la position de
+    // lecture : assez d'avance pour finir le téléchargement avant que la
+    // carte n'apparaisse, et une marge derrière pour l'effacement et un
+    // petit retour en arrière. Les créneaux lointains ne sont pas chargés —
+    // sur un long parcours très illustré, l'ouverture ne télécharge plus des
+    // centaines de photos 2048 px.
+    const PHOTO_AHEAD_Q = 40;     // ~4 jours devant la tête
+    const PHOTO_BEHIND_Q = 8;     // effacement + petit retour en arrière
+
+    // Pleines tailles des créneaux proches de `currentQ`. Relancée à chaque
+    // image de la lecture : le `break` sur les créneaux triés la rend quasi
+    // gratuite, seuls les entrants dans la fenêtre déclenchent un
+    // chargement.
+    function ensurePhotosNear() {
+        const { timeline, currentQ } = S();
+        if (!timeline) return;
+        for (const slot of photoSlots(timeline)) {
+            if (slot.toQ + PHOTO_FADE_Q < currentQ - PHOTO_BEHIND_Q) continue;
+            if (slot.fromQ > currentQ + PHOTO_AHEAD_Q) break;
+            loadPhotoImage(slot.photoId, false);
+        }
+    }
+
+    // Charge (une fois) les photos rattachées : la carte postale n'est
+    // dessinée qu'une fois l'image décodée. Les miniatures servent aux
+    // vignettes laissées sur la carte : des dizaines à chaque image, réduites
+    // depuis 320 px plutôt que depuis la photo entière — elles sont toutes
+    // chargées, épinglables à n'importe quel moment de la lecture. Les
+    // pleines tailles ne le sont que près de la tête, sauf `all`
+    // (enregistrement : toute la chronologie est filmée, tout doit être
+    // prêt).
+    function preloadPhotos(all = false) {
+        const { timeline, inputs, photoByStop } = S();
+        const byId = new Map();
+        for (const photo of inputs?.photos || []) byId.set(photo.id, photo);
+        for (const ids of photoByStop.values()) {
+            for (const id of ids) if (byId.has(id)) loadPhotoImage(id, true);
+        }
+        if (all) {
+            for (const ids of photoByStop.values()) {
+                for (const id of ids) if (byId.has(id)) loadPhotoImage(id, false);
+            }
+        } else {
+            ensurePhotosNear();
+        }
+    }
+
+    const imageReady = (img) => !!img?.complete && img.naturalWidth > 0;
+
+    // Résolue quand toutes les photos chargées sont décodées (ou en échec),
+    // au plus tard après `timeoutMs` — comme `imagesReady` de l'onglet
+    // Images : attendue avant la première frame d'un enregistrement pour
+    // qu'une photo encore en vol ne manque pas dans la vidéo. Hors de la
+    // page, ou sans photo, résout immédiatement.
+    function photosReady(timeoutMs = 3000) {
+        preloadPhotos(true);
+        const pending = [];
+        for (const cache of [photoImages, photoThumbs]) {
+            for (const img of cache.values()) {
+                if (!imageReady(img)) pending.push(img.decode().catch(() => {}));
+            }
+        }
+        if (!pending.length) return Promise.resolve(true);
+        return Promise.race([
+            Promise.all(pending).then(() => true),
+            new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
+        ]);
+    }
+
+    // Photos de la lecture (lot 9) : mises en page à `currentQ` selon les
+    // réglages (parcours_photo_layout.mjs), peintes dans le canevas de la
+    // couche de la tête (parcours_photo_draw.mjs), donc filmées. Une photo
+    // encore en chargement n'est pas dessinée.
+    let lastPhotoCards = [];          // cartes peintes à la dernière image (relevé e2e)
+    let lastPhotoView = null;         // taille du canevas de cette image
+
+    function photoLayoutView(event) {
+        const { projected } = S();
+        const frameState = event.frameState;
+        const m = composeTransform(event.inversePixelTransform, frameState.coordinateToPixelTransform);
+        const canvas = event.context.canvas;
+        return {
+            width: canvas.width,
+            height: canvas.height,
+            ratio: frameState.pixelRatio || 1,
+            stopPixel: (i) => {
+                const [px, py] = projected[i] || [];
+                return Number.isFinite(px) ? [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]] : null;
+            },
+            aspectOf: (id) => photoAspect(photoById(id)),
+            captionOf: photoCaptionFor,
+        };
+    }
+
+    // Légende d'une photo selon le gabarit des réglages. L'heure est celle de
+    // la photo quand elle est de confiance (téléphone, appareil recalé),
+    // sinon celle de l'étape — dans le format choisi pour {heure}.
+    function photoCaptionFor(slot) {
+        const { photoDisplay, timeline, inputs, playback } = S();
+        if (!photoDisplay.caption || !timeline) return '';
+        const photo = photoById(slot.photoId);
+        const stop = timeline.stops[slot.stop];
+        const day = timeline.days[stop?.day];
+        const offsets = cameraOffsets(inputs?.cameras);
+        const clockValue = photo && photoTimeTrusted(photo, offsets) ? photoClock(photo, offsets) : null;
+        const heure = clockValue
+            ? formatClock(clockValue.minutes, false, playback.hours, slotLabels())
+            : formatClock(stop?.arrivalMin, stop?.confidence !== CONFIDENCE_ANCHORED, playback.hours, slotLabels());
+        return photoCaptionText(photoDisplay.caption, {
+            legende: photo?.caption || '',
+            etape: stop ? stopLabel(stop) : '',
+            heure,
+            jour: day ? String(day.dayNumber) : '',
+            date: day ? formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' }) : '',
+        });
+    }
+
+    function drawPhotoCards(event) {
+        const { timeline, currentQ, photoDisplay } = S();
+        lastPhotoCards = [];
+        if (!timeline) return;
+        ensurePhotosNear();
+        const view = photoLayoutView(event);
+        lastPhotoView = { width: view.width, height: view.height, ratio: view.ratio };
+        const { cards } = photoFrameAt(timeline, currentQ, photoDisplay, view);
+        const ctx = event.context;
+        const font = pageFontFamily();
+        for (const card of cards) {
+            const thumb = card.pinned ? photoThumbs.get(card.photoId) : null;
+            const img = imageReady(thumb) ? thumb : photoImages.get(card.photoId);
+            if (!imageReady(img)) continue;
+            drawPhotoLeader(ctx, card, view.ratio);
+            drawPhotoCard(ctx, card, img, photoById(card.photoId), { font, ratio: view.ratio });
+            lastPhotoCards.push(card);
+        }
+    }
+
+    // Aperçu en pause calé sur une photo : la lecture s'ouvre en pause (si
+    // elle ne tourne pas) et saute au milieu du premier temps de la photo.
+    function previewPhoto(photoId) {
+        const { timeline } = S();
+        if (!timeline) return false;
+        const slot = photoSlots(timeline).find((s) => s.photoId === photoId);
+        if (!slot) return false;
+        if (deps.previewState() === 'idle' && !deps.startPreview()) return false;
+        if (deps.previewState() !== 'paused') return false;
+        const q = Math.floor(slot.fromQ + Math.min(5, (slot.toQ - slot.fromQ) / 2));
+        const ok = deps.seekTo(dateOfDayIndex(deps.quantumBase, q)) !== false;
+        if (ok) ensurePhotosNear();
+        return ok;
+    }
+
+    function clearImages() {
+        photoImages.clear();
+        photoThumbs.clear();
+    }
+
+    function evictImage(id) {
+        photoImages.delete(id);
+        photoThumbs.delete(id);
+    }
+
+    function imageStats() {
+        return {
+            loaded: [...photoImages.values()].filter(imageReady).length,
+            thumbs: [...photoThumbs.values()].filter(imageReady).length,
+        };
+    }
+
+    return {
+        ensureLayers,
+        hideLayers,
+        layersVisible,
+        trailLayer: () => playTrailLayer,
+        reset,
+        stopsDrawn: () => playStopsDrawn,
+        headGlyph,
+        preloadPhotos,
+        photosReady,
+        clearImages,
+        evictImage,
+        imageStats,
+        lastPhotoView: () => lastPhotoView,
+        lastPhotoCards: () => lastPhotoCards,
+        previewPhoto,
+        trailOptions,
+        dayCardText,
+        endCardText,
+    };
+}

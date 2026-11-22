@@ -140,7 +140,8 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_tracks_panel.mjs` | Panneau « Traces GPS » : liste, réglage du décalage UTC, envoi et suppression. Fabrique `createTracksPanel` — état par `getState()`, opérations du parcours injectées |
 | `static/js/parcours_photos_panel.mjs` | Panneau « Photos » : grille, lieux proposés, détail (rattachement, légende, cadrage), réglages d'affichage. Fabrique `createPhotosPanel` — `photoDetailId`/`photosDirty` y sont internes |
 | `static/js/parcours_upload.mjs` | Envois mutualisés photos/traces (`createParcoursUploads` : concurrence bornée, « Arrêter », cible figée au départ) et glisser-déposer de fichiers sur la page (`bindParcoursFileDrop`) |
-| `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture, tête et trait |
+| `static/js/parcours_play.mjs` | Dessin de la lecture : couches `parcours-trail`/`parcours-head` (postrender), trait parcouru et trajet en cours, géocacheur, étapes atteintes, nuit, cartons, crédits des itinéraires, cartes postales des photos (chargement vignette/pleine taille, `photosReady`, `previewPhoto`). Fabrique `createParcoursPlayDraw` — couches et caches d'images y sont internes, état par `getState()`, peintures partagées via `paints` |
+| `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
 Dans l'onglet Données, chaque étape porte son heure d'arrivée (exacte pour
