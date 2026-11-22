@@ -216,6 +216,7 @@ export function createPlaceForm(deps) {
         openForm,
         closeForm,
         buildIconPicker,
+        cancel,
         // Pose annulée et formulaire fermé (parcours quitté).
         dismiss: () => { cancel(); closeForm(); },
         setDraft: ({ lon, lat }) => { placeDraft = { lon, lat }; showDraftCoords(); },

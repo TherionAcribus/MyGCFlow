@@ -338,7 +338,9 @@ export function createParcoursPlayDraw(deps) {
         timeline.stops.forEach((stop, i) => {
             if (isCountedStop(stop) && stop.q <= currentQ) {
                 reached.push(i);
-                fp = ((fp * 31) + i) | 0;
+                // Décalage d'un : sinon la première étape atteinte (i = 0)
+                // laisserait l'empreinte à 0, comme « aucune étape ».
+                fp = ((fp * 31) + (i + 1)) | 0;
             }
         });
         // Regroupement mémorisé : il ne dépend que des étapes atteintes

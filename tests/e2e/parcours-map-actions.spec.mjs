@@ -171,9 +171,19 @@ test('glisser un lieu le déplace ; sa bulle propose de le supprimer', async ({ 
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.places.find((p) => p.id === placeId)).toBeUndefined();
-  // Un lieu supprimé sort de l'historique : rien à annuler.
-  await expect(undo).toBeDisabled();
+  // La suppression reste annulable ; les déplacements du lieu, eux, sont
+  // retirés de l'historique — il ne reste que la suppression.
+  await expect(undo).toBeEnabled();
+  expect(state.undoDepth).toBe(1);
+  await page.keyboard.press('Control+z');
+  state = await adjusted(page, state.adjustmentRevision);
+  const recreated = state.places.find((p) => p.name === 'Belvédère');
+  // SQLite peut réattribuer le même id à la recréation : on ne teste pas
+  // l'id, seulement que le lieu revient avec ses données.
+  expect(recreated).toBeTruthy();
+  expect(recreated).toMatchObject({ lat: moved.lat, lon: moved.lon });
   expect(state.undoDepth).toBe(0);
+  await expect(undo).toBeDisabled();
   expect(errors).toEqual([]);
 });
 
