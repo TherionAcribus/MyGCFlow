@@ -16,6 +16,7 @@ import {
     barTicks,
     buildParcoursTimeline,
     dayCardAt,
+    dayStats,
     endCardAt,
     formatClock,
     headAt,
@@ -59,13 +60,48 @@ test('rythme régulier : quanta d’arrivée, trajets bornés, nuit entre deux j
     assert.equal(a.q, D.introQ);
     const walk = Math.round(Math.min(D.legMaxQ, Math.max(D.legMinQ, D.legQPerSqrtKm * Math.sqrt(0.4))));
     assert.equal(b.q, a.q + D.stopQ + walk);
-    assert.equal(c.q, b.q + D.stopQ + D.nightQ);
+    // Le 13 est vide : le saut de 2 jours allonge la nuit (×1,5).
+    assert.equal(c.q, b.q + D.stopQ + Math.round(1.5 * D.nightQ));
     assert.equal(tl.quanta, c.q + D.stopQ + D.outroQ);
     assert.deepEqual(tl.legs.map((l) => [l.from, l.to, l.night]), [[0, 1, false], [1, 2, true]]);
     // Le jour vide n'a pas d'entrée, mais le rang de la date est gardé.
     assert.deepEqual(tl.days.map((d) => [d.date, d.dayNumber]), [['2025-07-12', 1], ['2025-07-14', 3]]);
     assert.ok(Math.abs(tl.totalKm - (0.4 + 0.4)) < 0.01);
     assert.equal(buildParcoursTimeline({ days: [] }).quanta, 0);
+});
+
+test('ellipse : la nuit dure selon le trou calendaire', () => {
+    const tl = buildParcoursTimeline(reconstructParcours({
+        days: [
+            { date: '2025-07-12', stops: [stop('A', 0), stop('B', 1)] },
+            { date: '2025-07-13', stops: [stop('C', 2), stop('D', 3)] },
+            { date: '2025-07-14', stops: [] },
+            { date: '2025-07-15', stops: [stop('E', 4)] },
+            { date: '2025-07-16', stops: [] },
+            { date: '2025-07-17', stops: [] },
+            { date: '2025-07-18', stops: [stop('F', 5)] },
+        ],
+    }));
+    const [lendemain, unJourSaute, troisJoursSautes] = tl.legs.filter((leg) => leg.night);
+    // Lendemain : durée de base ; un jour sauté : ×1,5 ; plafond ×2 au-delà.
+    assert.equal(lendemain.endQ - lendemain.startQ, D.nightQ);
+    assert.equal(unJourSaute.endQ - unJourSaute.startQ, Math.round(1.5 * D.nightQ));
+    assert.equal(troisJoursSautes.endQ - troisJoursSautes.startQ, 2 * D.nightQ);
+});
+
+test('dayStats : bilan de la journée et trou calendaire', () => {
+    const tl = buildParcoursTimeline(sample());
+    const d1 = dayStats(tl, 0);
+    assert.equal(d1.counted, 2);
+    assert.ok(Math.abs(d1.km - 0.4) < 0.01);
+    assert.equal(d1.gapDays, 1);
+    const d2 = dayStats(tl, 1);
+    assert.equal(d2.counted, 1);
+    assert.equal(d2.gapDays, 2);
+    // Le trajet de nuit qui amène la journée n'entre pas dans ses km.
+    assert.equal(d2.km, 0);
+    assert.equal(dayStats(tl, 5), null);
+    assert.equal(dayStats(null, 0), null);
 });
 
 test('rythme proportionnel : durées réelles converties', () => {
@@ -337,7 +373,9 @@ test('rythme rapide : les planchers rallongent la chronologie', () => {
     // Sans durée imposée, les planchers s'ajoutent : chaque contenu à lire
     // garde ses secondes (deux fois plus de quanta à 50 ms).
     const night = tl.legs.find((leg) => leg.night);
-    assert.equal(night.endQ - night.startQ, 2 * D.nightQ);
+    // Le trou d'un jour allonge déjà la nuit à 1,5 × nightQ, le plancher
+    // de secondes la double ensuite pour tenir l'écran (2 × 1,5 = 3 ×).
+    assert.equal(night.endQ - night.startQ, 3 * D.nightQ);
     assert.equal(tl.stops[0].photoQ * 3, 2 * D.photoQ * 3);
     assert.equal(tl.endCardQ, 2 * D.endCardQ);
     // Visites et trajets inchangés ; la chronologie s'allonge d'autant.

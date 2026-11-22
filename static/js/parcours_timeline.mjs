@@ -154,7 +154,14 @@ export function buildParcoursTimeline(reconstructed, {
                 const cum = path ? cumulativeKm(path) : null;
                 const legKm = cum ? cum[cum.length - 1] : (leg ? leg.km : distanceKm(prev, stop));
                 let duration;
-                if (night) duration = o.nightQ;
+                if (night) {
+                    // Trou calendaire avant la journée : la nuit dure plus —
+                    // ellipse ressentie (lendemain ×1, un jour sauté ×1,5,
+                    // plafond ×2).
+                    const jump = Math.max(1,
+                        (days[dayIndex].dayNumber || 0) - (days[dayIndex - 1].dayNumber || 0));
+                    duration = quanta(o.nightQ * Math.min(2, 1 + 0.5 * (jump - 1)));
+                }
                 else if (proportional) {
                     // Le trajet dure ce que dit l'horaire (ancres comprises),
                     // à défaut l'estimation du trajet.
@@ -576,6 +583,24 @@ function nightIntoMap(timeline) {
         nightIntoMemo.set(timeline, map);
     }
     return map;
+}
+
+// Bilan d'une journée pour son carton : étapes comptées et km parcourus
+// dans la journée (le trajet de nuit qui l'amène n'y compte pas), et saut
+// calendaire avant elle (`gapDays` = 1 au lendemain, > 1 après des jours
+// vides — la nuit de transition est d'autant plus longue).
+export function dayStats(timeline, dayIndex) {
+    const day = timeline?.days?.[dayIndex];
+    if (!day) return null;
+    let counted = 0;
+    for (let i = day.first; i <= day.last; i++) {
+        const kind = timeline.stops[i]?.kind;
+        if (kind !== 'place' && kind !== 'base') counted++;
+    }
+    const km = Math.max(0, (timeline.stops[day.last]?.km ?? 0) - (timeline.stops[day.first]?.km ?? 0));
+    const prev = timeline.days[dayIndex - 1];
+    const gapDays = prev ? Math.max(1, (day.dayNumber || 0) - (prev.dayNumber || 0)) : 1;
+    return { counted, km, gapDays };
 }
 
 // Carton de journée à `qf` : { day (index dans `days`), alpha } ou null.

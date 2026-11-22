@@ -20,6 +20,7 @@ import { KIND_BASE, KIND_PLACE, CONFIDENCE_ANCHORED, isCountedStop } from './par
 import {
     HEAD_PICTOGRAM,
     dayCardAt,
+    dayStats,
     endCardAt,
     formatClock,
     headAt,
@@ -695,9 +696,24 @@ export function createParcoursPlayDraw(deps) {
     // Carton « Jour 2 · dimanche 13 juillet 2025 » d'un parcours de plusieurs
     // journées, au tiers haut de la carte.
     function dayCardText(dayIndex) {
-        const day = S().timeline?.days?.[dayIndex];
+        const { timeline } = S();
+        const day = timeline?.days?.[dayIndex];
         if (!day) return null;
-        return { title: t('Jour ${n}', { n: day.dayNumber }), subtitle: formatDay(day.date) };
+        const stats = dayStats(timeline, dayIndex);
+        // Ellipse : « n jours plus tard » devant la date quand des journées
+        // calendaires ont été sautées ; bilan en troisième ligne.
+        const date = formatDay(day.date);
+        const subtitle = stats && stats.gapDays > 1
+            ? t('${n} jours plus tard · ${date}', { n: stats.gapDays, date })
+            : date;
+        const parts = [];
+        if (stats?.counted) parts.push(stopsCountText(stats.counted));
+        if (stats?.km >= 0.05) parts.push(formatKm(stats.km));
+        return {
+            title: t('Jour ${n}', { n: day.dayNumber }),
+            subtitle,
+            detail: parts.join(' · ') || null,
+        };
     }
 
     // Carton final de synthèse : nom du parcours, puis « 5 étapes · 7,9 km »
@@ -716,6 +732,7 @@ export function createParcoursPlayDraw(deps) {
         const font = pageFontFamily();
         const titleSize = 30 * ratio;
         const subtitleSize = 17 * ratio;
+        const detailSize = 13 * ratio;
         const gap = 8 * ratio;
         const padX = 28 * ratio;
         const padY = 18 * ratio;
@@ -725,8 +742,14 @@ export function createParcoursPlayDraw(deps) {
         const titleW = ctx.measureText(text.title).width;
         ctx.font = `400 ${subtitleSize}px ${font}`;
         const subtitleW = ctx.measureText(text.subtitle).width;
-        const boxW = Math.max(titleW, subtitleW) + padX * 2;
-        const boxH = titleSize + gap + subtitleSize + padY * 2;
+        let detailW = 0;
+        if (text.detail) {
+            ctx.font = `400 ${detailSize}px ${font}`;
+            detailW = ctx.measureText(text.detail).width;
+        }
+        const boxW = Math.max(titleW, subtitleW, detailW) + padX * 2;
+        const boxH = titleSize + gap + subtitleSize
+            + (text.detail ? gap + detailSize : 0) + padY * 2;
         const cx = ctx.canvas.width / 2;
         const top = ctx.canvas.height * 0.36 - boxH / 2;
         ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
@@ -742,6 +765,11 @@ export function createParcoursPlayDraw(deps) {
         ctx.font = `400 ${subtitleSize}px ${font}`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         ctx.fillText(text.subtitle, cx, top + padY + titleSize + gap);
+        if (text.detail) {
+            ctx.font = `400 ${detailSize}px ${font}`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.fillText(text.detail, cx, top + padY + titleSize + gap + subtitleSize + gap);
+        }
         ctx.restore();
     }
 

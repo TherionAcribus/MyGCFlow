@@ -18,6 +18,7 @@ import {
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -368,6 +369,42 @@ test('« Lire depuis ici » : la lecture démarre à l’étape ou à la journé
   const day2 = await snapshot(page);
   expect(day2.currentQ).toBeGreaterThan(stopQ[1]);
   expect(day2.currentQ).toBeLessThan(targetQ + 60);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
+
+test('ellipse : nuit allongée et bilan du carton après des journées sautées', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  // Trou calendaire : trouvailles les 1er et 6 janvier 2026 seulement.
+  // Base vidée puis page rechargée : l'import est direct, sans la modale
+  // « Remplacer ma base ».
+  await request.post('/clear_database');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await importGpx(page, path.join(HERE, 'fixtures', 'my-finds-gap.gpx'));
+  // Fin réelle de l'import avant de créer le parcours (le POST lirait
+  // sinon la base pas encore remplie — parcours vide).
+  await expect.poll(async () => (await (await request.get('/api/parcours')).json()).finds,
+    { timeout: 30_000 }).toEqual({ first: '2026-01-01', last: '2026-01-06' });
+  await deleteAllParcours(request);
+  const response = await request.post('/api/parcours',
+    { data: { name: 'Trou', date_start: '2026-01-01', date_end: '2026-01-06' } });
+  expect(response.status()).toBe(201);
+  const rest = await openReady(page);
+  // Saut de 5 jours : la nuit est plafonnée à ×2 — l'écart entre les deux
+  // arrivées (visite + nuit) dépasse la durée normale (lendemain).
+  const [a, b] = rest.timeline.stopQ;
+  expect(b - a).toBeGreaterThanOrEqual(40);
+  await page.locator('#btnQuickPreview').click();
+  // Carton du premier jour : bilan d'une étape, pas d'ellipse.
+  await expect.poll(async () => (await snapshot(page)).scene.cardText?.title ?? null, FAST).toBe('Jour 1');
+  expect((await snapshot(page)).scene.cardText.detail).toBe('1 étape');
+  // Carton du jour 6 : l'ellipse est annoncée devant la date, le bilan suit.
+  await expect.poll(async () => (await snapshot(page)).scene.cardText?.title ?? null, FAST).toBe('Jour 6');
+  const card = (await snapshot(page)).scene.cardText;
+  expect(card.subtitle).toContain('5 jours plus tard');
+  expect(card.subtitle).toContain('janvier 2026');
+  expect(card.detail).toBe('1 étape');
   await page.locator('#btnQuickStop').click();
   expect(errors).toEqual([]);
 });

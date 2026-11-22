@@ -308,10 +308,11 @@ vitesse naturelle, 10 quanta par seconde.
 S'y ajoutent :
 - 5 quanta avant la première étape et 10 après la dernière ;
 - une **nuit** de 20 quanta entre deux journées : trajet pointillé, la date
-  et l'heure passent au lendemain.
+  et l'heure passent au lendemain. Un trou calendaire l'allonge — ellipse
+  ressentie : ×1,5 pour un jour sauté, plafond ×2.
 
 Les jours sans étape sont sautés, mais `{jour}` garde le rang de la date
-dans la plage.
+dans la plage — c'est lui qui fait ressortir le trou ci-dessus.
 
 **Sous le quantum naturel** (durée imposée, musique, rythme au-delà de
 10 quanta/s), la compression ne rend pas illisible ce qui doit être lu :
@@ -494,6 +495,12 @@ vidéo se joue toujours depuis le début.
   - le premier dès le début ;
   - les suivants du quart de la nuit jusqu'à 6 quanta après la première
     étape du jour, avec un fondu de 3 quanta ;
+  - après des journées sautées, « n jours plus tard » précède la date
+    (`dayStats().gapDays`) — l'ellipse se lit aussi dans la durée de la
+    nuit, allongée d'autant ;
+  - une troisième ligne donne le bilan de la journée (`dayStats`) :
+    étapes comptées et km parcourus dans la journée (le trajet de nuit
+    qui l'amène n'y compte pas) ;
 - le carton final de synthèse (`endCardAt`), pour tout parcours : nom du
   parcours, étapes, distance et journées ; `endCardQ` (24) quanta de
   clôture ajoutés après l'outro quand les cartons sont actifs, fondu de

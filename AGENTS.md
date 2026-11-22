@@ -418,6 +418,14 @@ Autres repères :
   `.parcours-popup-play` (bulle d'étape). Depuis le repos :
   `startPausedPreview` → `seekAnimationToDate` → `setPreviewPaused(false)` ;
   refus en enregistrement. Exemples dans `parcours-finitions.spec.mjs`.
+  Ellipse entre journées : la nuit s'allonge selon le trou calendaire
+  (×1,5 par jour sauté, plafond ×2 — `dayNumber` des `timeline.days`),
+  et le carton du jour gagne la ligne `detail` (`scene.cardText.detail`)
+  — bilan `dayStats` (étapes comptées, km de la journée hors trajet de
+  nuit) ; « n jours plus tard » précède la date quand `gapDays > 1`.
+  Spec « ellipse » de `parcours-finitions.spec.mjs` : base vidée
+  (`POST /clear_database`) + rechargement, sinon la modale « Remplacer
+  ma base » rend l'import d'une autre fixture non déterministe.
   Perf de la lecture : banc Node `tests/js/parcours_perf_bench.mjs`
   (requêtes pures ~2 µs/image à 500 étapes, hors suite `*.test.mjs`) et
   spec `parcours-perf.spec.mjs` (GPX de 500 trouvailles généré à la
