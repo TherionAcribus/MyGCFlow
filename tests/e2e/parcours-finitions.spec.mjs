@@ -117,8 +117,13 @@ test('carte déplacée pendant la lecture : la caméra la laisse, même à la fi
 test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés', async ({ page, request }) => {
   const errors = collectErrors(page);
   const rest = await openReady(page);
+  // Réglages de lecture dans l'onglet Animation : caméra et géocacheur dans
+  // son sous-onglet « Caméra », le reste sous « Dates & rythme ».
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#parcoursCamera').selectOption('fixed');
   await page.locator('#parcoursHead').selectOption('dot');
+  await page.locator('#animationConfigTab').click();
   await page.locator('#parcoursDayCards').uncheck();
   await page.locator('#parcoursEstimatedDashed').check();
   await expect.poll(async () => (await (await request.get('/api/settings')).json()).parcours_playback).toEqual({

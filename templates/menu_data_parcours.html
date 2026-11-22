@@ -67,56 +67,6 @@
                 </div>
             </div>
 
-            <!-- Lecture : préférence globale `parcours_playback` -->
-            <h5 class="gc-section-title mt-3">
-                <i class="ti ti-player-play text-muted me-1"></i>{{ _("Lecture") }}
-            </h5>
-            <div class="card">
-                <div class="card-body">
-                    <div class="mb-2">
-                        <label class="form-label" for="parcoursPace">{{ _("Rythme des étapes") }}</label>
-                        <select id="parcoursPace" class="form-select form-select-sm" aria-describedby="parcoursPaceHint">
-                            <option value="regular">{{ _("Régulier") }}</option>
-                            <option value="proportional">{{ _("Proportionnel au temps réel") }}</option>
-                        </select>
-                        <div id="parcoursPaceHint" class="form-hint text-muted">{{ _("Régulier : chaque étape a la même durée à l'écran. Proportionnel : les longues visites et les longs trajets se voient.") }}</div>
-                    </div>
-                    <div>
-                        <label class="form-label" for="parcoursHours">{{ _("Heures affichées") }}</label>
-                        <select id="parcoursHours" class="form-select form-select-sm" aria-describedby="parcoursHoursHint">
-                            <option value="approx">{{ _("Approximatives (« ≈ 10:40 » quand elles sont estimées)") }}</option>
-                            <option value="exact">{{ _("Exactes, sans « ≈ »") }}</option>
-                            <option value="slots">{{ _("Moments de la journée (matin, midi…)") }}</option>
-                            <option value="none">{{ _("Aucune") }}</option>
-                        </select>
-                        <div id="parcoursHoursHint" class="form-hint text-muted">{{ _("Balise {heure} de la ligne d'informations (onglet Style › Titres)") }}</div>
-                    </div>
-                    <div class="mt-2">
-                        <label class="form-label" for="parcoursCamera">{{ _("Caméra") }}</label>
-                        <select id="parcoursCamera" class="form-select form-select-sm" aria-describedby="parcoursCameraHint">
-                            <option value="follow">{{ _("Suit le géocacheur") }}</option>
-                            <option value="fixed">{{ _("Fixe") }}</option>
-                        </select>
-                        <div id="parcoursCameraHint" class="form-hint text-muted">{{ _("Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. Déplacer la carte pendant la lecture la laisse en place.") }}</div>
-                    </div>
-                    <div class="mt-2">
-                        <label class="form-label" for="parcoursHead">{{ _("Géocacheur") }}</label>
-                        <select id="parcoursHead" class="form-select form-select-sm">
-                            <option value="mode">{{ _("Pictogramme du déplacement (à pied, vélo, voiture…)") }}</option>
-                            <option value="dot">{{ _("Simple point") }}</option>
-                        </select>
-                    </div>
-                    <label class="form-check mt-2 mb-1">
-                        <input type="checkbox" id="parcoursDayCards" class="form-check-input">
-                        <span class="form-check-label">{{ _("Nuit et carton « Jour 2 » entre deux journées, carton final de synthèse") }}</span>
-                    </label>
-                    <label class="form-check mb-0">
-                        <input type="checkbox" id="parcoursEstimatedDashed" class="form-check-input">
-                        <span class="form-check-label">{{ _("Trajets estimés (ligne droite) en pointillés") }}</span>
-                    </label>
-                </div>
-            </div>
-
             <!-- Traces GPS du parcours ouvert (lot 5, parcours_tracks.py / .mjs) -->
             <div id="parcoursTracksCard" hidden>
                 <h5 class="gc-section-title mt-3">

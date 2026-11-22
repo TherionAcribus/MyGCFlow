@@ -1,4 +1,5 @@
-// Réglages de lecture de la page Parcours (carte « Lecture ») : rythme,
+// Réglages de lecture de la page Parcours (onglet Animation : section
+// « Lecture » de « Dates & rythme », sous-onglet « Caméra ») : rythme,
 // heures affichées, caméra, tête du géocacheur, cartons de journée, nuit
 // pointillée. Persistés dans `parcours_playback` (settings_api) ; les
 // réglages du lot 7 sont lus à chaque image et s'appliquent en pleine

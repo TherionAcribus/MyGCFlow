@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-22 12:50+0100\n"
+"POT-Creation-Date: 2026-11-22 12:57+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -648,14 +648,14 @@ msgid "Code GC"
 msgstr "GC-Code"
 
 #: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:634
-#: templates/menu_data_parcours.html:32 templates/menu_data_parcours.html:314
+#: templates/menu_data_parcours.html:32 templates/menu_data_parcours.html:264
 #: templates/menu_images.html:152 templates/stats_page.html:658
 #: templates/stats_page.html:732
 msgid "Nom"
 msgstr "Name"
 
 #: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:668
-#: static/js/ui.js:11717 templates/menu_data_parcours.html:307
+#: static/js/ui.js:11717 templates/menu_data_parcours.html:257
 msgid "Type"
 msgstr "Typ"
 
@@ -836,7 +836,7 @@ msgstr "Einstellungen"
 #: static/js/stats_page_exports.js:160 templates/app.html:236
 #: templates/guide.html:47 templates/guide.html:104 templates/guide.html:126
 #: templates/guide.html:154 templates/guide.html:174
-#: templates/menu_animation.html:86 templates/menu_animation.html:116
+#: templates/menu_animation.html:90 templates/menu_animation.html:120
 #: templates/menu_filtre.html:122 templates/menu_filtre.html:131
 #: templates/menu_filtre.html:147 templates/menu_filtre.html:156
 #: templates/stats_page.html:400 templates/stats_page.html:636
@@ -906,8 +906,8 @@ msgstr "Bestätigen"
 #: static/js/stats_page_links.js:267 static/js/stats_page_video.js:75
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
-#: templates/menu_data_parcours.html:195 templates/menu_data_parcours.html:280
-#: templates/menu_data_parcours.html:355 templates/menu_images.html:118
+#: templates/menu_data_parcours.html:145 templates/menu_data_parcours.html:230
+#: templates/menu_data_parcours.html:305 templates/menu_images.html:118
 #: templates/menu_stats.html:71 templates/menu_style.html:279
 #: templates/menu_style.html:304 templates/menu_style.html:329
 #: templates/menu_style.html:357 templates/menu_style.html:388
@@ -1734,7 +1734,7 @@ msgstr ""
 #: static/js/ui.js:12074 static/js/ui.js:12189 static/js/ui.js:12246
 #: static/js/ui.js:12272 static/js/ui.js:12331 static/js/ui.js:12339
 #: static/js/ui.js:12347 static/js/ui.js:12517 templates/guide.html:314
-#: templates/menu_animation.html:23 templates/menu_animation.html:305
+#: templates/menu_animation.html:27 templates/menu_animation.html:384
 #: templates/stats_page.html:829
 msgid "Musique"
 msgstr "Musik"
@@ -5539,7 +5539,7 @@ msgid "Date de découverte"
 msgstr "Datum der Entdeckung"
 
 #: static/js/labs.js:1866 static/js/parcours_list.mjs:358
-#: static/js/stats_page_image.js:102 templates/menu_data_parcours.html:180
+#: static/js/stats_page_image.js:102 templates/menu_data_parcours.html:130
 #: templates/menu_images.html:117 templates/menu_stats.html:70
 #: templates/stats_page.html:506
 msgid "Enregistrer"
@@ -6178,7 +6178,7 @@ msgstr "Beenden Sie die Wiedergabe, bevor Sie die Tour anpassen."
 
 #: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:353
 #: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:57 static/js/parcours_upload.mjs:120
+#: static/js/parcours_playback_ui.mjs:59 static/js/parcours_upload.mjs:120
 #: static/js/parcours_upload.mjs:134 static/js/parcours_upload.mjs:164
 #: templates/_app_header.html:29 templates/_app_header.html:31
 #: templates/app.html:41
@@ -6224,7 +6224,7 @@ msgid "${count} fiches de caches ajoutées ou mises à jour."
 msgstr "${count} Cache-Seiten hinzugefügt oder aktualisiert."
 
 #: static/js/parcours_collect.js:296 static/js/parcours_collect.js:301
-#: templates/menu_data_parcours.html:213
+#: templates/menu_data_parcours.html:163
 msgid "Compléter depuis geocaching.com"
 msgstr "Von geocaching.com ergänzen"
 
@@ -6310,32 +6310,32 @@ msgid "ravitaillement"
 msgstr "Versorgung"
 
 #: static/js/parcours_labels.mjs:109 static/js/parcours_stops_panel.mjs:332
-#: templates/menu_data_parcours.html:338
+#: templates/menu_data_parcours.html:288
 msgid "Parking"
 msgstr "Parkplatz"
 
-#: static/js/parcours_labels.mjs:110 templates/menu_data_parcours.html:339
+#: static/js/parcours_labels.mjs:110 templates/menu_data_parcours.html:289
 msgid "Repas / pique-nique"
 msgstr "Mahlzeit / Picknick"
 
-#: static/js/parcours_labels.mjs:111 templates/menu_data_parcours.html:340
+#: static/js/parcours_labels.mjs:111 templates/menu_data_parcours.html:290
 msgid "Point de vue"
 msgstr "Aussichtspunkt"
 
-#: static/js/parcours_labels.mjs:112 templates/menu_data_parcours.html:341
+#: static/js/parcours_labels.mjs:112 templates/menu_data_parcours.html:291
 msgid "Hébergement"
 msgstr "Unterkunft"
 
-#: static/js/parcours_labels.mjs:113 templates/menu_data_parcours.html:342
+#: static/js/parcours_labels.mjs:113 templates/menu_data_parcours.html:292
 msgid "Ravitaillement / eau"
 msgstr "Versorgung / Wasser"
 
 #: static/js/parcours_labels.mjs:114 static/js/stats_page_dashboard.js:89
-#: templates/menu_data_parcours.html:343
+#: templates/menu_data_parcours.html:293
 msgid "Personnalisée…"
 msgstr "Benutzerdefiniert…"
 
-#: static/js/parcours_labels.mjs:115 templates/menu_data_parcours.html:337
+#: static/js/parcours_labels.mjs:115 templates/menu_data_parcours.html:287
 msgid "Autre"
 msgstr "Sonstiges"
 
@@ -6517,14 +6517,14 @@ msgid "Impossible de charger les parcours"
 msgstr "Die Touren konnten nicht geladen werden"
 
 #: static/js/parcours_list.mjs:63 static/js/stats_page_cards.js:297
-#: static/js/stats_page_cards.js:323 templates/menu_data_parcours.html:192
+#: static/js/stats_page_cards.js:323 templates/menu_data_parcours.html:142
 #: templates/menu_images.html:86 templates/menu_zones.html:26
 #: templates/stats_page.html:48
 msgid "Réessayer"
 msgstr "Erneut versuchen"
 
 #: static/js/parcours_list.mjs:66 static/js/parcours_stops_panel.mjs:107
-#: templates/menu_data_parcours.html:15 templates/menu_data_parcours.html:271
+#: templates/menu_data_parcours.html:15 templates/menu_data_parcours.html:221
 #: templates/menu_data_poses.html:18
 msgid "Chargement…"
 msgstr "Laden…"
@@ -6561,7 +6561,7 @@ msgstr "Tour duplizieren"
 #: static/js/stats_page_cards.js:455 templates/app.html:259
 #: templates/app.html:260 templates/guide.html:136 templates/guide.html:345
 #: templates/guide.html:351 templates/guide.html:585 templates/guide.html:782
-#: templates/menu_animation.html:47 templates/menu_data.html:271
+#: templates/menu_animation.html:51 templates/menu_data.html:271
 #: templates/menu_data.html:427 templates/menu_zones.html:188
 #: templates/stats_page.html:124
 msgid "Exporter"
@@ -6776,7 +6776,7 @@ msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr "Ziehen Sie auf dem Foto, um den behaltenen Teil zu wählen."
 
 #: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:57 static/js/poses_data.js:131
+#: static/js/parcours_playback_ui.mjs:59 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Die Einstellung wird am Ende der Animation angewendet."
 
@@ -6878,7 +6878,7 @@ msgstr "Ende der Tour"
 msgid "Clé enregistrée (la remplacer)"
 msgstr "Schlüssel gespeichert (ersetzen)"
 
-#: static/js/parcours_routing_ui.mjs:163 templates/menu_data_parcours.html:179
+#: static/js/parcours_routing_ui.mjs:163 templates/menu_data_parcours.html:129
 msgid "Clé openrouteservice"
 msgstr "openrouteservice-Schlüssel"
 
@@ -6942,7 +6942,7 @@ msgstr ""
 msgid "Tout déplier"
 msgstr "Alle aufklappen"
 
-#: static/js/parcours_stops_panel.mjs:153 templates/menu_data_parcours.html:291
+#: static/js/parcours_stops_panel.mjs:153 templates/menu_data_parcours.html:241
 msgid "Tout plier"
 msgstr "Alle zuklappen"
 
@@ -6991,7 +6991,7 @@ msgid "Réintégrer"
 msgstr "Wieder aufnehmen"
 
 #: static/js/parcours_stops_panel.mjs:532 templates/guide.html:315
-#: templates/menu_animation.html:336 templates/menu_images.html:96
+#: templates/menu_animation.html:415 templates/menu_images.html:96
 msgid "Retirer"
 msgstr "Entfernen"
 
@@ -7018,7 +7018,7 @@ msgid "Automatique (${mode})"
 msgstr "Automatisch (${mode})"
 
 #: static/js/parcours_stops_panel.mjs:606
-#: static/js/parcours_stops_panel.mjs:690 templates/menu_data_parcours.html:319
+#: static/js/parcours_stops_panel.mjs:690 templates/menu_data_parcours.html:269
 msgid "Journée"
 msgstr "Tag"
 
@@ -7031,20 +7031,20 @@ msgstr "Umbenennen"
 msgid "Rôle"
 msgstr "Rolle"
 
-#: static/js/parcours_stops_panel.mjs:720 templates/menu_data_parcours.html:329
+#: static/js/parcours_stops_panel.mjs:720 templates/menu_data_parcours.html:279
 msgid "Départ et retour"
 msgstr "Start und Rückkehr"
 
-#: static/js/parcours_stops_panel.mjs:721 templates/menu_data_parcours.html:330
+#: static/js/parcours_stops_panel.mjs:721 templates/menu_data_parcours.html:280
 msgid "Départ seulement"
 msgstr "Nur Start"
 
-#: static/js/parcours_stops_panel.mjs:721 templates/menu_data_parcours.html:331
+#: static/js/parcours_stops_panel.mjs:721 templates/menu_data_parcours.html:281
 msgid "Arrivée seulement"
 msgstr "Nur Ankunft"
 
 #: static/js/parcours_stops_panel.mjs:737 static/js/stats_panels.js:3048
-#: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:335
+#: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:285
 msgid "Catégorie"
 msgstr "Kategorie"
 
@@ -8632,7 +8632,7 @@ msgid "Modifier l'image"
 msgstr "Bild bearbeiten"
 
 #: static/js/stats_page_image.js:102 templates/guide.html:389
-#: templates/guide.html:437 templates/menu_data_parcours.html:353
+#: templates/guide.html:437 templates/menu_data_parcours.html:303
 #: templates/menu_images.html:103 templates/menu_stats.html:57
 #: templates/stats_page.html:717
 msgid "Ajouter"
@@ -9282,13 +9282,13 @@ msgstr "Karteneinstellungen übernommen."
 #: static/js/stats_page_video.js:1135 static/js/stats_page_video.js:2333
 #: static/js/ui.js:1000 templates/app.html:268 templates/app.html:269
 #: templates/guide.html:136 templates/guide.html:346
-#: templates/menu_animation.html:57 templates/menu_data_parcours.html:137
+#: templates/menu_animation.html:61 templates/menu_data_parcours.html:87
 #: templates/menu_photos_parcours.html:28
 msgid "Arrêter"
 msgstr "Anhalten"
 
 #: static/js/stats_page_video.js:1135 static/js/ui.js:991
-#: templates/guide.html:324 templates/menu_animation.html:430
+#: templates/guide.html:324 templates/menu_animation.html:509
 #: templates/stats_page.html:834
 msgid "Écouter"
 msgstr "Anhören"
@@ -10047,7 +10047,7 @@ msgid "Chiffre"
 msgstr "Zahl"
 
 #: static/js/stats_panels.js:3015 static/js/stats_panels.js:3078
-#: templates/menu_animation.html:213
+#: templates/menu_animation.html:217
 msgid "Détail"
 msgstr "Detail"
 
@@ -10576,7 +10576,7 @@ msgid "Arrêtez l'animation pour écouter la musique seule."
 msgstr "Stoppen Sie die Animation, um die Musik allein zu hören."
 
 #: static/js/ui.js:992 templates/guide.html:324
-#: templates/menu_animation.html:434
+#: templates/menu_animation.html:513
 msgid "Écouter la fin"
 msgstr "Ende anhören"
 
@@ -10874,7 +10874,7 @@ msgstr "${n} Tag ohne Fund gruppiert"
 msgid "Vidéo ~${d}"
 msgstr "Video ~${d}"
 
-#: static/js/ui.js:8802 templates/menu_animation.html:23
+#: static/js/ui.js:8802 templates/menu_animation.html:27
 msgid "musique incluse"
 msgstr "Musik eingeschlossen"
 
@@ -11007,7 +11007,7 @@ msgstr "Fehler beim Öffnen des Videoordners"
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Wählen Sie zuerst eine Audiodatei"
 
-#: static/js/ui.js:11661 templates/menu_animation.html:340
+#: static/js/ui.js:11661 templates/menu_animation.html:419
 msgid "Aucune musique sélectionnée"
 msgstr "Keine Musik ausgewählt"
 
@@ -11938,7 +11938,7 @@ msgid "Sélectionner des exports CSV"
 msgstr "CSV-Exporte auswählen"
 
 #: templates/app.html:132 templates/menu_data_evolution.html:58
-#: templates/menu_data_parcours.html:141 templates/menu_photos_parcours.html:32
+#: templates/menu_data_parcours.html:91 templates/menu_photos_parcours.html:32
 msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr ""
 "oder ziehen Sie Ihre Dateien per Drag & Drop an eine beliebige Stelle der"
@@ -12068,17 +12068,17 @@ msgstr "Einstellungen"
 
 #: templates/app.html:255 templates/app.html:256 templates/guide.html:136
 #: templates/guide.html:344 templates/guide.html:351
-#: templates/menu_animation.html:44 templates/menu_data.html:454
+#: templates/menu_animation.html:48 templates/menu_data.html:454
 msgid "Prévisualiser"
 msgstr "Vorschau"
 
 #: templates/app.html:263 templates/app.html:264 templates/app.html:265
 #: templates/guide.html:136 templates/guide.html:346
-#: templates/menu_animation.html:53 templates/menu_animation.html:54
+#: templates/menu_animation.html:57 templates/menu_animation.html:58
 msgid "Pause"
 msgstr "Pause"
 
-#: templates/app.html:264 templates/menu_animation.html:53
+#: templates/app.html:264 templates/menu_animation.html:57
 msgid "Continuer"
 msgstr "Fortsetzen"
 
@@ -12592,7 +12592,7 @@ msgstr ""
 "Rand ein. Die Farben können dem Cache-Typ folgen (GC-Farben), transparent"
 " oder einheitlich sein."
 
-#: templates/guide.html:224 templates/menu_data_parcours.html:347
+#: templates/guide.html:224 templates/menu_data_parcours.html:297
 #: templates/menu_points.html:13
 msgid "Icône"
 msgstr "Symbol"
@@ -12911,15 +12911,15 @@ msgstr ""
 msgid "Renseignez la"
 msgstr "Geben Sie das"
 
-#: templates/guide.html:283 templates/menu_animation.html:82
-#: templates/menu_animation.html:83 templates/menu_filtre.html:118
+#: templates/guide.html:283 templates/menu_animation.html:86
+#: templates/menu_animation.html:87 templates/menu_filtre.html:118
 #: templates/menu_filtre.html:119 templates/menu_filtre.html:143
 #: templates/menu_filtre.html:144
 msgid "Date de début"
 msgstr "Startdatum"
 
-#: templates/guide.html:283 templates/menu_animation.html:112
-#: templates/menu_animation.html:113 templates/menu_filtre.html:127
+#: templates/guide.html:283 templates/menu_animation.html:116
+#: templates/menu_animation.html:117 templates/menu_filtre.html:127
 #: templates/menu_filtre.html:128 templates/menu_filtre.html:152
 #: templates/menu_filtre.html:153
 msgid "Date de fin"
@@ -12944,7 +12944,7 @@ msgstr "Stellen Sie den Rhythmus ein"
 msgid "Le"
 msgstr "Der"
 
-#: templates/guide.html:287 templates/menu_animation.html:155
+#: templates/guide.html:287 templates/menu_animation.html:159
 msgid "Rythme de l'animation"
 msgstr "Rhythmus der Animation"
 
@@ -12952,7 +12952,7 @@ msgstr "Rhythmus der Animation"
 msgid "offre trois modes exclusifs :"
 msgstr "bietet drei exklusive Modi:"
 
-#: templates/guide.html:289 templates/menu_animation.html:162
+#: templates/guide.html:289 templates/menu_animation.html:166
 msgid "Par rythme"
 msgstr "Nach Rhythmus"
 
@@ -12962,7 +12962,7 @@ msgstr ""
 "legen Sie die Geschwindigkeit in Tagen pro Sekunde fest; die Enddauer "
 "wird berechnet."
 
-#: templates/guide.html:290 templates/menu_animation.html:166
+#: templates/guide.html:290 templates/menu_animation.html:170
 msgid "Par durée"
 msgstr "Nach Dauer"
 
@@ -12973,7 +12973,7 @@ msgstr ""
 "berechnet."
 
 #: templates/guide.html:291 templates/guide.html:325
-#: templates/menu_animation.html:170
+#: templates/menu_animation.html:174
 msgid "Sur la musique"
 msgstr "Zur Musik"
 
@@ -12999,7 +12999,7 @@ msgstr ""
 msgid "Un"
 msgstr "Eine"
 
-#: templates/guide.html:294 templates/menu_animation.html:192
+#: templates/guide.html:294 templates/menu_animation.html:196
 msgid "Préréglage"
 msgstr "Voreinstellung"
 
@@ -13007,7 +13007,7 @@ msgstr "Voreinstellung"
 msgid "(Lent, Normal, Rapide) règle le rythme en un clic. Le"
 msgstr "(Langsam, Normal, Schnell) stellt das Tempo mit einem Klick ein. Die"
 
-#: templates/guide.html:294 templates/menu_animation.html:222
+#: templates/guide.html:294 templates/menu_animation.html:226
 msgid "Temps additionnel en fin (sec)"
 msgstr "Zusatzzeit am Ende (Sek.)"
 
@@ -13035,8 +13035,8 @@ msgstr "Kameraverfolgung (experimentell)"
 msgid "Ces réglages se trouvent dans le sous-onglet"
 msgstr "Diese Einstellungen befinden sich im Untertab"
 
-#: templates/guide.html:298 templates/menu_animation.html:19
-#: templates/menu_data_parcours.html:95
+#: templates/guide.html:298 templates/menu_animation.html:23
+#: templates/menu_animation.html:292 templates/menu_animation.html:297
 msgid "Caméra"
 msgstr "Kamera"
 
@@ -13044,7 +13044,7 @@ msgstr "Kamera"
 msgid "Cochez"
 msgstr "Aktivieren Sie"
 
-#: templates/guide.html:299 templates/menu_animation.html:245
+#: templates/guide.html:299 templates/menu_animation.html:323
 msgid "Activer le suivi de caméra"
 msgstr "Kameraverfolgung aktivieren"
 
@@ -13052,7 +13052,7 @@ msgstr "Kameraverfolgung aktivieren"
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr "damit die Ansicht zu den Caches des Tages gleitet, und wählen Sie dann die"
 
-#: templates/guide.html:299 templates/menu_animation.html:256
+#: templates/guide.html:299 templates/menu_animation.html:334
 msgid "Dynamisme de la caméra"
 msgstr "Dynamik der Kamera"
 
@@ -13068,7 +13068,7 @@ msgstr ""
 msgid "La"
 msgstr "Das"
 
-#: templates/guide.html:300 templates/menu_animation.html:249
+#: templates/guide.html:300 templates/menu_animation.html:327
 msgid "Cible du suivi"
 msgstr "Verfolgungsziel"
 
@@ -13088,7 +13088,7 @@ msgstr ""
 msgid "Avec"
 msgstr "Mit"
 
-#: templates/guide.html:301 templates/menu_animation.html:275
+#: templates/guide.html:301 templates/menu_animation.html:353
 msgid "Revenir au cadrage de départ à la fin"
 msgstr "Am Ende zum Ausgangsausschnitt zurückkehren"
 
@@ -13102,7 +13102,7 @@ msgstr ""
 "Position und Zoom des Starts zurück, vor der Endpause. Diese Rückkehr "
 "wird wie die anderen Strecken in die Dauer eingerechnet."
 
-#: templates/guide.html:302 templates/menu_animation.html:268
+#: templates/guide.html:302 templates/menu_animation.html:346
 msgid "Privilégier le cadrage de départ"
 msgstr "Ausgangsausschnitt bevorzugen"
 
@@ -13146,7 +13146,7 @@ msgstr ""
 msgid "Ajoutez une musique (optionnel)"
 msgstr "Fügen Sie eine Musik hinzu (optional)"
 
-#: templates/guide.html:315 templates/menu_animation.html:312
+#: templates/guide.html:315 templates/menu_animation.html:391
 msgid "Inclure la musique"
 msgstr "Musik einschließen"
 
@@ -13154,7 +13154,7 @@ msgstr "Musik einschließen"
 msgid "puis choisissez un fichier avec"
 msgstr "und wählen Sie dann eine Datei mit"
 
-#: templates/guide.html:315 templates/menu_animation.html:320
+#: templates/guide.html:315 templates/menu_animation.html:399
 #: templates/menu_data.html:50 templates/menu_data_evolution.html:53
 #: templates/stats_page.html:691 templates/stats_page.html:819
 #: templates/stats_page.html:832
@@ -13165,7 +13165,7 @@ msgstr "Durchsuchen…"
 msgid "ou glissez-le sur la page. Le menu"
 msgstr "oder ziehen Sie sie auf die Seite. Das Menü"
 
-#: templates/guide.html:315 templates/menu_animation.html:328
+#: templates/guide.html:315 templates/menu_animation.html:407
 msgid "Récentes"
 msgstr "Zuletzt verwendet"
 
@@ -13177,7 +13177,7 @@ msgstr "übernimmt einen bereits verwendeten Titel, ohne ihn erneut zu senden, u
 msgid "oublie la sélection."
 msgstr "verwirft die Auswahl."
 
-#: templates/guide.html:316 templates/menu_animation.html:354
+#: templates/guide.html:316 templates/menu_animation.html:433
 msgid "Ajouter un morceau à la suite"
 msgstr "Einen Titel anhängen"
 
@@ -13189,7 +13189,7 @@ msgstr ""
 "verkettet mehrere Musikstücke zu einem einzigen: Ihre Pegel werden "
 "angeglichen und Stille an den Übergängen entfernt. Aktivieren Sie"
 
-#: templates/guide.html:316 templates/menu_animation.html:359
+#: templates/guide.html:316 templates/menu_animation.html:438
 msgid "Enchaîner en fondu"
 msgstr "Übergänge überblenden"
 
@@ -13212,11 +13212,11 @@ msgstr ""
 "Stelle ab; seine zwei Griffe legen fest, wo er beginnt und wo er endet, "
 "wie die Felder"
 
-#: templates/guide.html:317 templates/menu_animation.html:441
+#: templates/guide.html:317 templates/menu_animation.html:520
 msgid "Commencer la musique à"
 msgstr "Musik beginnen bei"
 
-#: templates/guide.html:317 templates/menu_animation.html:452
+#: templates/guide.html:317 templates/menu_animation.html:531
 msgid "Terminer la musique à"
 msgstr "Musik beenden bei"
 
@@ -13224,7 +13224,7 @@ msgstr "Musik beenden bei"
 msgid "Musique plus courte que la vidéo :"
 msgstr "Musik kürzer als das Video:"
 
-#: templates/guide.html:319 templates/menu_animation.html:529
+#: templates/guide.html:319 templates/menu_animation.html:608
 msgid "Répéter la musique en boucle"
 msgstr "Musik in einer Schleife wiederholen"
 
@@ -13232,7 +13232,7 @@ msgstr "Musik in einer Schleife wiederholen"
 msgid "la fait reprendre à son point de départ,"
 msgstr "lässt sie an ihrem Ausgangspunkt wieder beginnen,"
 
-#: templates/guide.html:319 templates/menu_animation.html:534
+#: templates/guide.html:319 templates/menu_animation.html:613
 msgid "Enchaîner les reprises en fondu"
 msgstr "Wiederholungen mit Überblendung verketten"
 
@@ -13244,7 +13244,7 @@ msgstr "mildert jeden Übergang ab."
 msgid "Musique plus longue que la vidéo :"
 msgstr "Musik länger als das Video:"
 
-#: templates/guide.html:320 templates/menu_animation.html:466
+#: templates/guide.html:320 templates/menu_animation.html:545
 msgid "Garder la fin du morceau"
 msgstr "Das Ende des Titels beibehalten"
 
@@ -13254,7 +13254,7 @@ msgstr ""
 "verschiebt den Anfang, damit sein echtes Ende mit dem des Videos "
 "zusammenfällt, und"
 
-#: templates/guide.html:320 templates/menu_animation.html:560
+#: templates/guide.html:320 templates/menu_animation.html:639
 msgid "Terminer la musique en fondu"
 msgstr "Musik am Ende ausblenden"
 
@@ -13262,7 +13262,7 @@ msgstr "Musik am Ende ausblenden"
 msgid "évite une coupure nette. Si la piste se termine par un blanc,"
 msgstr "vermeidet einen harten Schnitt. Endet die Spur mit Stille,"
 
-#: templates/guide.html:320 templates/menu_animation.html:477
+#: templates/guide.html:320 templates/menu_animation.html:556
 msgid "Ignorer le blanc de fin"
 msgstr "Stille am Ende ignorieren"
 
@@ -13270,7 +13270,7 @@ msgstr "Stille am Ende ignorieren"
 msgid "le retire de la durée."
 msgstr "zieht sie von der Dauer ab."
 
-#: templates/guide.html:321 templates/menu_animation.html:548
+#: templates/guide.html:321 templates/menu_animation.html:627
 msgid "Commencer la musique en fondu"
 msgstr "Musik am Anfang einblenden"
 
@@ -13278,7 +13278,7 @@ msgstr "Musik am Anfang einblenden"
 msgid "monte progressivement le volume au début de la vidéo."
 msgstr "erhöht die Lautstärke zu Beginn des Videos allmählich."
 
-#: templates/guide.html:322 templates/menu_animation.html:487
+#: templates/guide.html:322 templates/menu_animation.html:566
 msgid "Volume musique"
 msgstr "Musiklautstärke"
 
@@ -13286,7 +13286,7 @@ msgstr "Musiklautstärke"
 msgid "règle le niveau (au-delà de 100 % pour relever un morceau calme) ;"
 msgstr "stellt den Pegel ein (über 100 % hinaus, um einen leisen Titel anzuheben);"
 
-#: templates/guide.html:322 templates/menu_animation.html:505
+#: templates/guide.html:322 templates/menu_animation.html:584
 msgid "Niveau sonore standard"
 msgstr "Standard-Lautstärkepegel"
 
@@ -13312,7 +13312,7 @@ msgstr ""
 "spielt nur die letzten Sekunden davon ab, um eine Überblendung oder einen"
 " Schnitt zu beurteilen."
 
-#: templates/guide.html:325 templates/menu_animation.html:516
+#: templates/guide.html:325 templates/menu_animation.html:595
 msgid "Caler sur la musique"
 msgstr "Auf die Musik abstimmen"
 
@@ -13320,7 +13320,7 @@ msgstr "Auf die Musik abstimmen"
 msgid "synchronise la durée sur celle du morceau —"
 msgstr "synchronisiert die Dauer mit der des Titels —"
 
-#: templates/guide.html:325 templates/menu_animation.html:521
+#: templates/guide.html:325 templates/menu_animation.html:600
 msgid "Dissocier"
 msgstr "Verknüpfung aufheben"
 
@@ -13342,7 +13342,7 @@ msgstr ""
 msgid "Qualité d'export"
 msgstr "Exportqualität"
 
-#: templates/guide.html:329 templates/menu_animation.html:26
+#: templates/guide.html:329 templates/menu_animation.html:30
 msgid "Export vidéo"
 msgstr "Videoexport"
 
@@ -15688,15 +15688,15 @@ msgstr ""
 "Das Video wird in Echtzeit aufgenommen: 30 Sekunden Video dauern 30 "
 "Sekunden. Die MP4-Datei landet anschließend in Ihrem Videoordner."
 
-#: templates/menu_animation.html:19
+#: templates/menu_animation.html:23
 msgid "suivi activé"
 msgstr "Verfolgung aktiviert"
 
-#: templates/menu_animation.html:77
+#: templates/menu_animation.html:81
 msgid "Plage de dates de l'animation"
 msgstr "Datumsbereich der Animation"
 
-#: templates/menu_animation.html:79
+#: templates/menu_animation.html:83
 msgid ""
 "Période parcourue par la vidéo — indépendante des filtres de l'onglet "
 "Données."
@@ -15704,48 +15704,48 @@ msgstr ""
 "Zeitraum, den das Video durchläuft — unabhängig von den Filtern des Tabs "
 "„Daten“."
 
-#: templates/menu_animation.html:85
+#: templates/menu_animation.html:89
 msgid "Première cache de toutes les données"
 msgstr "Erster Cache aller Daten"
 
-#: templates/menu_animation.html:93
+#: templates/menu_animation.html:97
 msgid "Première cache de la sélection filtrée"
 msgstr "Erster Cache der gefilterten Auswahl"
 
-#: templates/menu_animation.html:94 templates/menu_animation.html:120
+#: templates/menu_animation.html:98 templates/menu_animation.html:124
 msgid "Sélection"
 msgstr "Auswahl"
 
-#: templates/menu_animation.html:98
+#: templates/menu_animation.html:102
 msgid "Date de début saisie dans le filtre"
 msgstr "Im Filter eingegebenes Startdatum"
 
-#: templates/menu_animation.html:99 templates/menu_animation.html:125
+#: templates/menu_animation.html:103 templates/menu_animation.html:129
 msgid "Filtre"
 msgstr "Filter"
 
-#: templates/menu_animation.html:107 templates/menu_animation.html:129
+#: templates/menu_animation.html:111 templates/menu_animation.html:133
 #: templates/menu_recording.html:65
 msgid "Personnalisée"
 msgstr "Benutzerdefiniert"
 
-#: templates/menu_animation.html:115
+#: templates/menu_animation.html:119
 msgid "Dernière cache de toutes les données"
 msgstr "Letzter Cache aller Daten"
 
-#: templates/menu_animation.html:119
+#: templates/menu_animation.html:123
 msgid "Dernière cache de la sélection filtrée"
 msgstr "Letzter Cache der gefilterten Auswahl"
 
-#: templates/menu_animation.html:124
+#: templates/menu_animation.html:128
 msgid "Date de fin saisie dans le filtre"
 msgstr "Im Filter eingegebenes Enddatum"
 
-#: templates/menu_animation.html:144
+#: templates/menu_animation.html:148
 msgid "Étendre aux DNF et étapes des caches posées affichées"
 msgstr "Auf DNF und Ereignisse der angezeigten eigenen Caches ausdehnen"
 
-#: templates/menu_animation.html:145
+#: templates/menu_animation.html:149
 msgid ""
 "La plage par défaut couvre aussi les événements de ces couches, hors "
 "dates de trouvailles."
@@ -15753,101 +15753,189 @@ msgstr ""
 "Der Standardbereich deckt auch die Ereignisse dieser Ebenen ab, außer "
 "Funddaten."
 
-#: templates/menu_animation.html:162
+#: templates/menu_animation.html:166
 msgid "Vitesse"
 msgstr "Geschwindigkeit"
 
-#: templates/menu_animation.html:178
+#: templates/menu_animation.html:182
 msgid "Rythme (jours par seconde)"
 msgstr "Tempo (Tage pro Sekunde)"
 
-#: templates/menu_animation.html:178
+#: templates/menu_animation.html:182
 msgid "calculé"
 msgstr "berechnet"
 
-#: templates/menu_animation.html:185
+#: templates/menu_animation.html:189
 msgid "Durée finale de la vidéo (mm:ss)"
 msgstr "Enddauer des Videos (mm:ss)"
 
-#: templates/menu_animation.html:185
+#: templates/menu_animation.html:189
 msgid "calculée"
 msgstr "berechnet"
 
-#: templates/menu_animation.html:197 templates/menu_animation.html:202
+#: templates/menu_animation.html:201 templates/menu_animation.html:206
 msgid "Lent"
 msgstr "Langsam"
 
-#: templates/menu_animation.html:198 templates/menu_animation.html:203
+#: templates/menu_animation.html:202 templates/menu_animation.html:207
 #: templates/menu_informations.html:167
 msgid "Normal"
 msgstr "Normal"
 
-#: templates/menu_animation.html:199 templates/menu_animation.html:204
+#: templates/menu_animation.html:203 templates/menu_animation.html:208
 msgid "Rapide"
 msgstr "Schnell"
 
-#: templates/menu_animation.html:202 templates/menu_animation.html:203
-#: templates/menu_animation.html:204
+#: templates/menu_animation.html:206 templates/menu_animation.html:207
+#: templates/menu_animation.html:208
 msgid "jours/s"
 msgstr "Tage/s"
 
-#: templates/menu_animation.html:206 templates/menu_points.html:411
+#: templates/menu_animation.html:210 templates/menu_points.html:411
 msgid "Personnalisé"
 msgstr "Benutzerdefiniert"
 
-#: templates/menu_animation.html:208
+#: templates/menu_animation.html:212
 msgid "Préréglage global, indépendant du thème."
 msgstr "Globale Voreinstellung, unabhängig vom Design."
 
-#: templates/menu_animation.html:214
+#: templates/menu_animation.html:218
 msgid "(animation)"
 msgstr "(Animation)"
 
-#: templates/menu_animation.html:215
+#: templates/menu_animation.html:219
 msgid "(pause automatique de fin)"
 msgstr "(automatische Endpause)"
 
-#: templates/menu_animation.html:216
+#: templates/menu_animation.html:220
 msgid "(temps additionnel)"
 msgstr "(zusätzliche Zeit)"
 
-#: templates/menu_animation.html:223
+#: templates/menu_animation.html:227
 msgid "Temps additionnel (sec)"
 msgstr "Zusätzliche Zeit (Sek.)"
 
-#: templates/menu_animation.html:239
+#: templates/menu_animation.html:243
+msgid "Lecture"
+msgstr "Wiedergabe"
+
+#: templates/menu_animation.html:248
+msgid "Rythme des étapes"
+msgstr "Takt der Stationen"
+
+#: templates/menu_animation.html:250
+msgid "Régulier"
+msgstr "Gleichmäßig"
+
+#: templates/menu_animation.html:251
+msgid "Proportionnel au temps réel"
+msgstr "Proportional zur echten Zeit"
+
+#: templates/menu_animation.html:253
+msgid ""
+"Régulier : chaque étape a la même durée à l'écran. Proportionnel : les "
+"longues visites et les longs trajets se voient."
+msgstr ""
+"Gleichmäßig: Jede Station bleibt gleich lang im Bild. Proportional: Lange"
+" Besuche und lange Wege werden sichtbar."
+
+#: templates/menu_animation.html:258
+msgid "Heures affichées"
+msgstr "Angezeigte Uhrzeiten"
+
+#: templates/menu_animation.html:260
+msgid "Approximatives (« ≈ 10:40 » quand elles sont estimées)"
+msgstr "Ungefähr („≈ 10:40“, wenn geschätzt)"
+
+#: templates/menu_animation.html:261
+msgid "Exactes, sans « ≈ »"
+msgstr "Genau, ohne „≈“"
+
+#: templates/menu_animation.html:262
+msgid "Moments de la journée (matin, midi…)"
+msgstr "Tageszeiten (Vormittag, Mittag…)"
+
+#: templates/menu_animation.html:263 templates/menu_informations.html:221
+#: templates/menu_points.html:39 templates/menu_trail.html:135
+#: templates/menu_trail_parcours.html:54
+msgid "Aucune"
+msgstr "Kein"
+
+#: templates/menu_animation.html:265
+#, python-brace-format
+msgid "Balise {heure} de la ligne d'informations (onglet Style › Titres)"
+msgstr "Platzhalter {heure} der Infozeile (Reiter Stil › Titel)"
+
+#: templates/menu_animation.html:271
+msgid "Nuit et carton « Jour 2 » entre deux journées, carton final de synthèse"
+msgstr "Nacht und Karte „Tag 2“ zwischen den Tagen, abschließende Übersichtskarte"
+
+#: templates/menu_animation.html:275
+msgid "Trajets estimés (ligne droite) en pointillés"
+msgstr "Geschätzte Wege (Luftlinie) gestrichelt"
+
+#: templates/menu_animation.html:299
+msgid "Suit le géocacheur"
+msgstr "Folgt dem Geocacher"
+
+#: templates/menu_animation.html:300 templates/menu_informations.html:346
+#: templates/menu_names.html:91
+msgid "Fixe"
+msgstr "Fixiert"
+
+#: templates/menu_animation.html:302
+msgid ""
+"Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. "
+"Déplacer la carte pendant la lecture la laisse en place."
+msgstr ""
+"Nah zu Fuß, zoomt bei langen Wegen, nachts und am Ende heraus. Wird die "
+"Karte während der Wiedergabe verschoben, bleibt sie dort."
+
+#: templates/menu_animation.html:307
+msgid "Géocacheur"
+msgstr "Geocacher"
+
+#: templates/menu_animation.html:309
+msgid "Pictogramme du déplacement (à pied, vélo, voiture…)"
+msgstr "Symbol der Fortbewegung (zu Fuß, Fahrrad, Auto…)"
+
+#: templates/menu_animation.html:310
+msgid "Simple point"
+msgstr "Einfacher Punkt"
+
+#: templates/menu_animation.html:317
 msgid "Suivi de caméra"
 msgstr "Kameraverfolgung"
 
-#: templates/menu_animation.html:251
+#: templates/menu_animation.html:329
 msgid "Chaque jour, quand il s'affiche"
 msgstr "Jeden Tag, wenn er angezeigt wird"
 
-#: templates/menu_animation.html:252
+#: templates/menu_animation.html:330
 msgid "La tête du trajet"
 msgstr "Der Kopf der Route"
 
-#: templates/menu_animation.html:258
+#: templates/menu_animation.html:336
 msgid "1 — Minimal : hors champ uniquement"
 msgstr "1 — Minimal: nur außerhalb des Bildausschnitts"
 
-#: templates/menu_animation.html:259
+#: templates/menu_animation.html:337
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr "2 — Dezent: außerhalb des Bildausschnitts oder sehr peripher"
 
-#: templates/menu_animation.html:260
+#: templates/menu_animation.html:338
 msgid "3 — Dynamique : hors zone centrale"
 msgstr "3 — Dynamisch: außerhalb der zentralen Zone"
 
-#: templates/menu_animation.html:261
+#: templates/menu_animation.html:339
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr "4 — Intensiv: systematisches Neuzentrieren und Zoomen"
 
-#: templates/menu_animation.html:263
+#: templates/menu_animation.html:341
 msgid "Sans effet avec cette cible : la caméra suit le stylo en continu."
 msgstr "Ohne Wirkung bei diesem Ziel: Die Kamera folgt dem Stift kontinuierlich."
 
-#: templates/menu_animation.html:270
+#: templates/menu_animation.html:348
 msgid ""
 "Quand les caches d'un jour tiennent dans le cadrage de départ, la caméra "
 "revient sur ce cadrage au lieu de se centrer sur elles. Sans effet avec "
@@ -15857,7 +15945,7 @@ msgstr ""
 "Kamera zu diesem Ausschnitt zurück, statt sich auf sie zu zentrieren. "
 "Ohne Wirkung beim Ziel „Der Kopf der Route“."
 
-#: templates/menu_animation.html:277
+#: templates/menu_animation.html:355
 msgid ""
 "Après la dernière date, la caméra retrouve la position et le zoom du "
 "lancement : la dernière image ne dépend plus de l'endroit où se trouvent "
@@ -15867,15 +15955,15 @@ msgstr ""
 "Starts zurück: Das letzte Bild hängt nicht mehr davon ab, wo sich die "
 "letzten Caches befinden."
 
-#: templates/menu_animation.html:283
+#: templates/menu_animation.html:361
 msgid "Le trajet est désactivé : le suivi reste par jour."
 msgstr "Die Route ist deaktiviert: Die Verfolgung bleibt pro Tag."
 
-#: templates/menu_animation.html:284
+#: templates/menu_animation.html:362
 msgid "Ouvrir Style › Trajet"
 msgstr "„Design › Route“ öffnen"
 
-#: templates/menu_animation.html:289
+#: templates/menu_animation.html:367
 msgid ""
 "La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
 "durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
@@ -15885,7 +15973,7 @@ msgstr ""
 "Dauer eingerechnet: Bei „Nach Dauer“ oder „Auf die Musik“ behält das "
 "Video die gewünschte Dauer."
 
-#: templates/menu_animation.html:290
+#: templates/menu_animation.html:368
 msgid ""
 "La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
 "à la vitesse du parcours."
@@ -15893,35 +15981,35 @@ msgstr ""
 "Die Ansicht gleitet hinter dem Stift, der die Route zeichnet, und passt "
 "ihren Zoom an die Geschwindigkeit des Verlaufs an."
 
-#: templates/menu_animation.html:291
+#: templates/menu_animation.html:369
 msgid "En savoir plus"
 msgstr "Mehr erfahren"
 
-#: templates/menu_animation.html:317
+#: templates/menu_animation.html:396
 msgid "Fichier de musique"
 msgstr "Musikdatei"
 
-#: templates/menu_animation.html:319
+#: templates/menu_animation.html:398
 msgid "Choisir un fichier audio"
 msgstr "Audiodatei auswählen"
 
-#: templates/menu_animation.html:335
+#: templates/menu_animation.html:414
 msgid "Retirer la musique"
 msgstr "Musik entfernen"
 
-#: templates/menu_animation.html:348
+#: templates/menu_animation.html:427
 msgid "Morceaux enchaînés"
 msgstr "Aneinandergereihte Titel"
 
-#: templates/menu_animation.html:351
+#: templates/menu_animation.html:430
 msgid "Morceau à ajouter"
 msgstr "Hinzuzufügender Titel"
 
-#: templates/menu_animation.html:353
+#: templates/menu_animation.html:432
 msgid "Enchaîner un autre morceau après celui-ci"
 msgstr "Einen weiteren Titel nach diesem anfügen"
 
-#: templates/menu_animation.html:359
+#: templates/menu_animation.html:438
 msgid ""
 "La fin de chaque morceau s'efface pendant que le suivant monte, au lieu "
 "de s'enchaîner bout à bout."
@@ -15929,59 +16017,59 @@ msgstr ""
 "Das Ende jedes Titels blendet aus, während der nächste einblendet, statt "
 "Stoß an Stoß aneinandergereiht zu werden."
 
-#: templates/menu_animation.html:362
+#: templates/menu_animation.html:441
 msgid "Durée du fondu entre les morceaux, en secondes"
 msgstr "Dauer der Überblendung zwischen den Titeln, in Sekunden"
 
-#: templates/menu_animation.html:379
+#: templates/menu_animation.html:458
 msgid "Cliquez pour écouter à partir d'ici"
 msgstr "Klicken, um von hier ab zu hören"
 
-#: templates/menu_animation.html:404
+#: templates/menu_animation.html:483
 msgid "Point de départ de la musique"
 msgstr "Startpunkt der Musik"
 
-#: templates/menu_animation.html:406
+#: templates/menu_animation.html:485
 msgid "Faites glisser pour choisir où commence la musique"
 msgstr "Ziehen, um zu wählen, wo die Musik beginnt"
 
-#: templates/menu_animation.html:408
+#: templates/menu_animation.html:487
 msgid "Point de fin de la musique"
 msgstr "Endpunkt der Musik"
 
-#: templates/menu_animation.html:410
+#: templates/menu_animation.html:489
 msgid "Faites glisser pour choisir où s'arrête la musique"
 msgstr "Ziehen, um zu wählen, wo die Musik endet"
 
-#: templates/menu_animation.html:416
+#: templates/menu_animation.html:495
 msgid "Début sauté"
 msgstr "Übersprungener Anfang"
 
-#: templates/menu_animation.html:417
+#: templates/menu_animation.html:496
 msgid "Non jouée"
 msgstr "Nicht abgespielt"
 
-#: templates/menu_animation.html:418
+#: templates/menu_animation.html:497
 msgid "Fondu d'entrée"
 msgstr "Einblendung"
 
-#: templates/menu_animation.html:419
+#: templates/menu_animation.html:498
 msgid "Fondu de sortie"
 msgstr "Ausblendung"
 
-#: templates/menu_animation.html:420
+#: templates/menu_animation.html:499
 msgid "Reprise de la boucle"
 msgstr "Wiederholung der Schleife"
 
-#: templates/menu_animation.html:421
+#: templates/menu_animation.html:500
 msgid "Fin de vidéo sans musique"
 msgstr "Videoende ohne Musik"
 
-#: templates/menu_animation.html:429
+#: templates/menu_animation.html:508
 msgid "Entendre la musique comme dans la vidéo : départ, fondus, boucle, fin."
 msgstr "Die Musik wie im Video hören: Anfang, Überblendungen, Schleife, Ende."
 
-#: templates/menu_animation.html:433
+#: templates/menu_animation.html:512
 msgid ""
 "Entendre seulement les dernières secondes de la vidéo, pour juger la fin "
 "de la musique."
@@ -15989,11 +16077,11 @@ msgstr ""
 "Nur die letzten Sekunden des Videos hören, um das Ende der Musik zu "
 "beurteilen."
 
-#: templates/menu_animation.html:447 templates/menu_animation.html:458
+#: templates/menu_animation.html:526 templates/menu_animation.html:537
 msgid "ou faites glisser le repère de la forme d'onde"
 msgstr "oder ziehen Sie die Markierung der Wellenform"
 
-#: templates/menu_animation.html:466
+#: templates/menu_animation.html:545
 msgid ""
 "La musique commence plus loin, pour que sa vraie fin tombe avec celle de "
 "la vidéo au lieu d'être coupée."
@@ -16001,7 +16089,7 @@ msgstr ""
 "Die Musik beginnt später, damit ihr wahres Ende mit dem des Videos "
 "zusammenfällt, statt abgeschnitten zu werden."
 
-#: templates/menu_animation.html:477
+#: templates/menu_animation.html:556
 msgid ""
 "La durée de la musique est comptée sans son blanc de fin : une vidéo "
 "calée dessus se termine avec le dernier son."
@@ -16009,11 +16097,11 @@ msgstr ""
 "Die Dauer der Musik wird ohne ihre Endstille gezählt: Ein darauf "
 "abgestimmtes Video endet mit dem letzten Ton."
 
-#: templates/menu_animation.html:489
+#: templates/menu_animation.html:568
 msgid "Aide : volume de la musique"
 msgstr "Hilfe: Lautstärke der Musik"
 
-#: templates/menu_animation.html:490
+#: templates/menu_animation.html:569
 msgid ""
 "Volume de la musique dans la vidéo, en part du volume du fichier : au-"
 "delà de 100 %, un morceau calme est relevé. « Niveau sonore standard » y "
@@ -16023,11 +16111,11 @@ msgstr ""
 "100 % wird ein ruhiger Titel angehoben. „Standardlautstärke“ setzt den "
 "Regler darauf; ein manuelles Verschieben übernimmt wieder die Kontrolle."
 
-#: templates/menu_animation.html:507
+#: templates/menu_animation.html:586
 msgid "Aide : niveau sonore standard"
 msgstr "Hilfe: Standardlautstärke"
 
-#: templates/menu_animation.html:508
+#: templates/menu_animation.html:587
 msgid ""
 "Mesure le niveau moyen du morceau, sans ses silences, et place le curseur"
 " Volume sur ce qui l'amène à un niveau standard, sans jamais le faire "
@@ -16040,19 +16128,19 @@ msgstr ""
 "welcher Titel. Der ganze Titel steigt oder fällt als Ganzes, leise "
 "Passagen bleiben leise."
 
-#: templates/menu_animation.html:515
+#: templates/menu_animation.html:594
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr "Die Dauer des Videos auf die der Musik abstimmen"
 
-#: templates/menu_animation.html:519
+#: templates/menu_animation.html:598
 msgid "Calé sur la musique"
 msgstr "Auf die Musik abgestimmt"
 
-#: templates/menu_animation.html:522
+#: templates/menu_animation.html:601
 msgid "Différence"
 msgstr "Differenz"
 
-#: templates/menu_animation.html:529
+#: templates/menu_animation.html:608
 msgid ""
 "La musique reprend à son point de départ chaque fois qu'elle se termine, "
 "jusqu'à la fin de la vidéo."
@@ -16060,7 +16148,7 @@ msgstr ""
 "Die Musik beginnt jedes Mal von ihrem Startpunkt neu, wenn sie endet, bis"
 " zum Ende des Videos."
 
-#: templates/menu_animation.html:534
+#: templates/menu_animation.html:613
 msgid ""
 "La fin de la musique s'efface pendant que son début remonte, au lieu d'un"
 " raccord net."
@@ -16068,19 +16156,19 @@ msgstr ""
 "Das Ende der Musik blendet aus, während ihr Anfang einblendet, statt "
 "eines sauberen Übergangs."
 
-#: templates/menu_animation.html:537
+#: templates/menu_animation.html:616
 msgid "Durée du fondu entre les reprises, en secondes"
 msgstr "Dauer der Überblendung zwischen den Wiederholungen, in Sekunden"
 
-#: templates/menu_animation.html:548
+#: templates/menu_animation.html:627
 msgid "Le volume de la musique monte progressivement au début de la vidéo."
 msgstr "Die Lautstärke der Musik steigt am Anfang des Videos allmählich an."
 
-#: templates/menu_animation.html:551
+#: templates/menu_animation.html:630
 msgid "Durée du fondu d'entrée, en secondes"
 msgstr "Dauer der Einblendung, in Sekunden"
 
-#: templates/menu_animation.html:560
+#: templates/menu_animation.html:639
 msgid ""
 "Le volume de la musique baisse progressivement à la fin de la vidéo, au "
 "lieu d'une coupure nette."
@@ -16088,7 +16176,7 @@ msgstr ""
 "Die Lautstärke der Musik sinkt am Ende des Videos allmählich, statt "
 "abrupt abzubrechen."
 
-#: templates/menu_animation.html:563
+#: templates/menu_animation.html:642
 msgid "Durée du fondu de sortie, en secondes"
 msgstr "Dauer der Ausblendung, in Sekunden"
 
@@ -16141,7 +16229,7 @@ msgstr ""
 "(nur einmal):"
 
 #: templates/menu_data.html:189 templates/menu_data.html:358
-#: templates/menu_data_parcours.html:246
+#: templates/menu_data_parcours.html:196
 msgid "Préparation du favori…"
 msgstr "Lesezeichen wird vorbereitet…"
 
@@ -16158,7 +16246,7 @@ msgid "Importer des fichiers à la place"
 msgstr "Stattdessen Dateien importieren"
 
 #: templates/menu_data.html:202 templates/menu_data.html:371
-#: templates/menu_data_parcours.html:240
+#: templates/menu_data_parcours.html:190
 msgid "Ouvrez"
 msgstr "Öffnen Sie"
 
@@ -16167,7 +16255,7 @@ msgid "vos logs Adventure Lab"
 msgstr "Ihre Adventure-Lab-Logs"
 
 #: templates/menu_data.html:203 templates/menu_data.html:372
-#: templates/menu_data_parcours.html:241
+#: templates/menu_data_parcours.html:191
 msgid ", connectez-vous, puis cliquez ce favori."
 msgstr ", melden Sie sich an und klicken Sie dann auf dieses Lesezeichen."
 
@@ -16598,99 +16686,11 @@ msgstr "Zu importierender Tour-Export"
 msgid "Importer un export"
 msgstr "Einen Export importieren"
 
-#: templates/menu_data_parcours.html:72
-msgid "Lecture"
-msgstr "Wiedergabe"
-
-#: templates/menu_data_parcours.html:77
-msgid "Rythme des étapes"
-msgstr "Takt der Stationen"
-
-#: templates/menu_data_parcours.html:79
-msgid "Régulier"
-msgstr "Gleichmäßig"
-
-#: templates/menu_data_parcours.html:80
-msgid "Proportionnel au temps réel"
-msgstr "Proportional zur echten Zeit"
-
-#: templates/menu_data_parcours.html:82
-msgid ""
-"Régulier : chaque étape a la même durée à l'écran. Proportionnel : les "
-"longues visites et les longs trajets se voient."
-msgstr ""
-"Gleichmäßig: Jede Station bleibt gleich lang im Bild. Proportional: Lange"
-" Besuche und lange Wege werden sichtbar."
-
-#: templates/menu_data_parcours.html:85
-msgid "Heures affichées"
-msgstr "Angezeigte Uhrzeiten"
-
-#: templates/menu_data_parcours.html:87
-msgid "Approximatives (« ≈ 10:40 » quand elles sont estimées)"
-msgstr "Ungefähr („≈ 10:40“, wenn geschätzt)"
-
-#: templates/menu_data_parcours.html:88
-msgid "Exactes, sans « ≈ »"
-msgstr "Genau, ohne „≈“"
-
-#: templates/menu_data_parcours.html:89
-msgid "Moments de la journée (matin, midi…)"
-msgstr "Tageszeiten (Vormittag, Mittag…)"
-
-#: templates/menu_data_parcours.html:90 templates/menu_informations.html:221
-#: templates/menu_points.html:39 templates/menu_trail.html:135
-#: templates/menu_trail_parcours.html:54
-msgid "Aucune"
-msgstr "Kein"
-
-#: templates/menu_data_parcours.html:92
-#, python-brace-format
-msgid "Balise {heure} de la ligne d'informations (onglet Style › Titres)"
-msgstr "Platzhalter {heure} der Infozeile (Reiter Stil › Titel)"
-
-#: templates/menu_data_parcours.html:97
-msgid "Suit le géocacheur"
-msgstr "Folgt dem Geocacher"
-
-#: templates/menu_data_parcours.html:98 templates/menu_informations.html:346
-#: templates/menu_names.html:91
-msgid "Fixe"
-msgstr "Fixiert"
-
-#: templates/menu_data_parcours.html:100
-msgid ""
-"Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. "
-"Déplacer la carte pendant la lecture la laisse en place."
-msgstr ""
-"Nah zu Fuß, zoomt bei langen Wegen, nachts und am Ende heraus. Wird die "
-"Karte während der Wiedergabe verschoben, bleibt sie dort."
-
-#: templates/menu_data_parcours.html:103
-msgid "Géocacheur"
-msgstr "Geocacher"
-
-#: templates/menu_data_parcours.html:105
-msgid "Pictogramme du déplacement (à pied, vélo, voiture…)"
-msgstr "Symbol der Fortbewegung (zu Fuß, Fahrrad, Auto…)"
-
-#: templates/menu_data_parcours.html:106
-msgid "Simple point"
-msgstr "Einfacher Punkt"
-
-#: templates/menu_data_parcours.html:111
-msgid "Nuit et carton « Jour 2 » entre deux journées, carton final de synthèse"
-msgstr "Nacht und Karte „Tag 2“ zwischen den Tagen, abschließende Übersichtskarte"
-
-#: templates/menu_data_parcours.html:115
-msgid "Trajets estimés (ligne droite) en pointillés"
-msgstr "Geschätzte Wege (Luftlinie) gestrichelt"
-
-#: templates/menu_data_parcours.html:123
+#: templates/menu_data_parcours.html:73
 msgid "Traces GPS"
 msgstr "GPS-Tracks"
 
-#: templates/menu_data_parcours.html:129
+#: templates/menu_data_parcours.html:79
 msgid ""
 "Une étape à moins de 100 m d'une trace prend son heure de passage (celle "
 "où vous vous êtes attardé), et le trajet entre deux étapes calées suit la"
@@ -16701,27 +16701,27 @@ msgstr ""
 "zwei festgelegten Stationen folgt dem Track. Ein unvollständiger Track "
 "genügt."
 
-#: templates/menu_data_parcours.html:132
+#: templates/menu_data_parcours.html:82
 msgid "Traces à ajouter"
 msgstr "Hinzuzufügende Tracks"
 
-#: templates/menu_data_parcours.html:134
+#: templates/menu_data_parcours.html:84
 msgid "Ajouter des traces (.gpx)"
 msgstr "Tracks hinzufügen (.gpx)"
 
-#: templates/menu_data_parcours.html:145
+#: templates/menu_data_parcours.html:95
 msgid "Heure locale des traces (enregistrées en UTC)"
 msgstr "Ortszeit der Tracks (in UTC aufgezeichnet)"
 
-#: templates/menu_data_parcours.html:159
+#: templates/menu_data_parcours.html:109
 msgid "Itinéraires"
 msgstr "Routen"
 
-#: templates/menu_data_parcours.html:165
+#: templates/menu_data_parcours.html:115
 msgid "Suivre les routes et chemins"
 msgstr "Straßen und Pfaden folgen"
 
-#: templates/menu_data_parcours.html:168
+#: templates/menu_data_parcours.html:118
 msgid ""
 "Les trajets sont calculés par un service en ligne (connexion nécessaire),"
 " puis gardés sur cet ordinateur : la vidéo se refait hors ligne. À pied "
@@ -16733,31 +16733,31 @@ msgstr ""
 "erstellen. Zu Fuß bis 1,5 km, darüber mit dem Auto, ab 300 km als "
 "Luftlinie; der Modus lässt sich an jeder Station ändern."
 
-#: templates/menu_data_parcours.html:171
+#: templates/menu_data_parcours.html:121
 msgid "Service"
 msgstr "Dienst"
 
-#: templates/menu_data_parcours.html:173
+#: templates/menu_data_parcours.html:123
 msgid "FOSSGIS (gratuit, sans clé)"
 msgstr "FOSSGIS (kostenlos, ohne Schlüssel)"
 
-#: templates/menu_data_parcours.html:174
+#: templates/menu_data_parcours.html:124
 msgid "openrouteservice (clé gratuite, plus fiable)"
 msgstr "openrouteservice (kostenloser Schlüssel, zuverlässiger)"
 
-#: templates/menu_data_parcours.html:183
+#: templates/menu_data_parcours.html:133
 msgid "Créer une clé gratuite sur openrouteservice.org"
 msgstr "Einen kostenlosen Schlüssel auf openrouteservice.org erstellen"
 
-#: templates/menu_data_parcours.html:184
+#: templates/menu_data_parcours.html:134
 msgid "2 000 itinéraires par jour. La clé reste sur cet ordinateur."
 msgstr "2.000 Routen pro Tag. Der Schlüssel bleibt auf diesem Computer."
 
-#: templates/menu_data_parcours.html:189
+#: templates/menu_data_parcours.html:139
 msgid "Recalculer les itinéraires"
 msgstr "Routen neu berechnen"
 
-#: templates/menu_data_parcours.html:201
+#: templates/menu_data_parcours.html:151
 msgid ""
 "Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS "
 "(routing.openstreetmap.de) ou openrouteservice (HeiGIT)."
@@ -16765,7 +16765,7 @@ msgstr ""
 "Routen © OpenStreetMap-Mitwirkende, berechnet von FOSSGIS "
 "(routing.openstreetmap.de) oder openrouteservice (HeiGIT)."
 
-#: templates/menu_data_parcours.html:218
+#: templates/menu_data_parcours.html:168
 msgid ""
 "Le favori « MyGCFlow — Mes logs » relit sur geocaching.com les caches de "
 "ce parcours, et elles seules : points favoris donnés, coordonnées "
@@ -16776,19 +16776,19 @@ msgstr ""
 "korrigierte Koordinaten, Seiten der DNF-Caches. Nichts wird vor Ihrer "
 "Bestätigung importiert."
 
-#: templates/menu_data_parcours.html:225
+#: templates/menu_data_parcours.html:175
 msgid "Caches jamais relues"
 msgstr "Nie eingelesene Caches"
 
-#: templates/menu_data_parcours.html:229 templates/menu_trail.html:52
+#: templates/menu_data_parcours.html:179 templates/menu_trail.html:52
 msgid "Toutes les caches"
 msgstr "Alle Caches"
 
-#: templates/menu_data_parcours.html:234
+#: templates/menu_data_parcours.html:184
 msgid "Préparer la collecte"
 msgstr "Sammlung vorbereiten"
 
-#: templates/menu_data_parcours.html:244
+#: templates/menu_data_parcours.html:194
 msgid ""
 "Pas encore installé ? Glissez-le dans la barre de favoris de votre "
 "navigateur :"
@@ -16796,73 +16796,73 @@ msgstr ""
 "Noch nicht installiert? Ziehen Sie es in die Lesezeichenleiste Ihres "
 "Browsers:"
 
-#: templates/menu_data_parcours.html:250
+#: templates/menu_data_parcours.html:200
 msgid "Annuler la demande"
 msgstr "Anfrage abbrechen"
 
-#: templates/menu_data_parcours.html:255
+#: templates/menu_data_parcours.html:205
 msgid "Valider l'import"
 msgstr "Import bestätigen"
 
-#: templates/menu_data_parcours.html:267 templates/menu_informations.html:74
+#: templates/menu_data_parcours.html:217 templates/menu_informations.html:74
 msgid "Étapes"
 msgstr "Stationen"
 
-#: templates/menu_data_parcours.html:279
+#: templates/menu_data_parcours.html:229
 msgid "Annuler le dernier ajustement (Ctrl+Z)"
 msgstr "Letzte Anpassung rückgängig machen (Strg+Z)"
 
-#: templates/menu_data_parcours.html:283
+#: templates/menu_data_parcours.html:233
 msgid "Rétablir l’ajustement annulé (Ctrl+Y)"
 msgstr "Rückgängig gemachte Anpassung wiederherstellen (Strg+Y)"
 
-#: templates/menu_data_parcours.html:284
+#: templates/menu_data_parcours.html:234
 msgid "Rétablir"
 msgstr "Wiederherstellen"
 
-#: templates/menu_data_parcours.html:287
+#: templates/menu_data_parcours.html:237
 msgid ""
 "Astuce : un clic droit sur la carte pose un lieu ou une base à cet "
 "endroit."
 msgstr "Tipp: Ein Rechtsklick auf die Karte setzt dort einen Ort oder eine Basis."
 
-#: templates/menu_data_parcours.html:288
+#: templates/menu_data_parcours.html:238
 msgid "Poser un lieu ou une base sur la carte"
 msgstr "Einen Ort oder eine Basis auf der Karte setzen"
 
-#: templates/menu_data_parcours.html:294
+#: templates/menu_data_parcours.html:244
 msgid "Exporter l’itinéraire en GPX (une route par journée)"
 msgstr ""
 
-#: templates/menu_data_parcours.html:295
+#: templates/menu_data_parcours.html:245
 msgid "Exporter GPX"
 msgstr "GPX exportieren"
 
-#: templates/menu_data_parcours.html:298
+#: templates/menu_data_parcours.html:248
 msgid "Réinitialiser les ajustements"
 msgstr "Anpassungen zurücksetzen"
 
-#: templates/menu_data_parcours.html:302
+#: templates/menu_data_parcours.html:252
 msgid "Cliquez sur la carte à l'endroit du lieu (Échap pour annuler)."
 msgstr "Klicken Sie auf der Karte an die Stelle des Ortes (Esc zum Abbrechen)."
 
-#: templates/menu_data_parcours.html:309
+#: templates/menu_data_parcours.html:259
 msgid "Lieu (une étape de plus)"
 msgstr "Ort (eine zusätzliche Station)"
 
-#: templates/menu_data_parcours.html:310
+#: templates/menu_data_parcours.html:260
 msgid "Base (départ et retour de la journée)"
 msgstr "Basis (Start und Ende des Tages)"
 
-#: templates/menu_data_parcours.html:316
+#: templates/menu_data_parcours.html:266
 msgid "Belvédère, hôtel, restaurant…"
 msgstr "Aussichtspunkt, Hotel, Restaurant…"
 
-#: templates/menu_data_parcours.html:323
+#: templates/menu_data_parcours.html:273
 msgid "Heure (facultative)"
 msgstr "Uhrzeit (optional)"
 
-#: templates/menu_data_parcours.html:327
+#: templates/menu_data_parcours.html:277
 msgid "Rôle de la base"
 msgstr "Rolle der Basis"
 

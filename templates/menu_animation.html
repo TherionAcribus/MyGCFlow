@@ -14,7 +14,11 @@
                         <!-- Pastilles : signalent ce qui pèse sur la vidéo sans
                              ouvrir le sous-onglet (suivi activé, musique
                              incluse) — bascule dans ui.js. -->
-                        {% if not lifecycle %}
+                        <!-- La page Parcours a sa propre caméra (elle suit le
+                             géocacheur) : le sous-onglet y existe aussi, avec
+                             les réglages du parcours au lieu du suivi
+                             générique — voir cameraConfigPane. -->
+                        {% if not lifecycle or mode == 'parcours' %}
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="cameraConfigTab" data-bs-toggle="tab" data-bs-target="#cameraConfigPane" type="button" role="tab" aria-controls="cameraConfigPane" aria-selected="false">{{ _("Caméra") }}<span id="cameraTabDot" class="subtab-dot" hidden><span class="visually-hidden">{{ _("suivi activé") }}</span></span></button>
                         </li>
@@ -230,11 +234,85 @@
                         </div>
                     </div>
 
+                    {% if mode == 'parcours' %}
+                    <!-- Réglages de lecture propres au parcours (parcours_playback,
+                         parcours_playback_ui.mjs) : avec le rythme, où on les
+                         cherche — la caméra et le géocacheur sont dans le
+                         sous-onglet « Caméra ». -->
+                    <div class="anim-section-divider mt-3 mb-2">
+                        <span class="anim-section-label">{{ _("Lecture") }}{{ global_scope_badge() }}</span>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label" for="parcoursPace">{{ _("Rythme des étapes") }}</label>
+                                <select id="parcoursPace" class="form-select form-select-sm" aria-describedby="parcoursPaceHint">
+                                    <option value="regular">{{ _("Régulier") }}</option>
+                                    <option value="proportional">{{ _("Proportionnel au temps réel") }}</option>
+                                </select>
+                                <div id="parcoursPaceHint" class="form-hint text-muted">{{ _("Régulier : chaque étape a la même durée à l'écran. Proportionnel : les longues visites et les longs trajets se voient.") }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label" for="parcoursHours">{{ _("Heures affichées") }}</label>
+                                <select id="parcoursHours" class="form-select form-select-sm" aria-describedby="parcoursHoursHint">
+                                    <option value="approx">{{ _("Approximatives (« ≈ 10:40 » quand elles sont estimées)") }}</option>
+                                    <option value="exact">{{ _("Exactes, sans « ≈ »") }}</option>
+                                    <option value="slots">{{ _("Moments de la journée (matin, midi…)") }}</option>
+                                    <option value="none">{{ _("Aucune") }}</option>
+                                </select>
+                                <div id="parcoursHoursHint" class="form-hint text-muted">{{ _("Balise {heure} de la ligne d'informations (onglet Style › Titres)") }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check mb-1">
+                                <input type="checkbox" id="parcoursDayCards" class="form-check-input">
+                                <span class="form-check-label">{{ _("Nuit et carton « Jour 2 » entre deux journées, carton final de synthèse") }}</span>
+                            </label>
+                            <label class="form-check mb-0">
+                                <input type="checkbox" id="parcoursEstimatedDashed" class="form-check-input">
+                                <span class="form-check-label">{{ _("Trajets estimés (ligne droite) en pointillés") }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     </div>
 
                     {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
-                    {% if not lifecycle %}
+                    {% if not lifecycle or mode == 'parcours' %}
                     <div class="tab-pane fade" id="cameraConfigPane" role="tabpanel" aria-labelledby="cameraConfigTab" tabindex="0">
+                    {% if mode == 'parcours' %}
+                    <!-- Caméra du parcours : elle suit le géocacheur
+                         (parcours_camera.mjs, parcours_playback.camera), pas le
+                         suivi générique — celui-ci est forcé à l'arrêt hors
+                         page principale (ui.js, collectAnimationSettings). -->
+                    <div class="anim-section-divider mt-0 mb-2">
+                        <span class="anim-section-label">{{ _("Caméra") }}{{ global_scope_badge() }}</span>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label" for="parcoursCamera">{{ _("Caméra") }}</label>
+                                <select id="parcoursCamera" class="form-select form-select-sm" aria-describedby="parcoursCameraHint">
+                                    <option value="follow">{{ _("Suit le géocacheur") }}</option>
+                                    <option value="fixed">{{ _("Fixe") }}</option>
+                                </select>
+                                <div id="parcoursCameraHint" class="form-hint text-muted">{{ _("Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. Déplacer la carte pendant la lecture la laisse en place.") }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label" for="parcoursHead">{{ _("Géocacheur") }}</label>
+                                <select id="parcoursHead" class="form-select form-select-sm">
+                                    <option value="mode">{{ _("Pictogramme du déplacement (à pied, vélo, voiture…)") }}</option>
+                                    <option value="dot">{{ _("Simple point") }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
                     <div class="anim-section-divider mt-0 mb-2">
                         <span class="anim-section-label">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</span>
                     </div>
@@ -296,6 +374,7 @@
                             <div id="cameraTimingWarnings" class="alert alert-warning py-2 px-3 mt-2 mb-0" role="status" aria-live="polite" style="display:none;"></div>
                         </div>
                     </div>
+                    {% endif %}
                     </div>
                     {% endif %}
 
