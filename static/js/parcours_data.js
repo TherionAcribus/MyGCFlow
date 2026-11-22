@@ -108,7 +108,7 @@ import {
     photoTimelineOptions,
 } from './parcours_photo_layout.mjs';
 import { reconstructWithEvidence } from './parcours_tracks.mjs';
-import { cacheKey, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
+import { createParcoursRouting } from './parcours_routing_ui.mjs';
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
 import { dayColor } from './parcours_style.mjs';
 
@@ -139,12 +139,6 @@ let legPaths = new Map();     // « from>to » → vrai chemin [[lon, lat], ...]
 let utcOffset = { minutes: 0, source: 'computer' };
 let legProjected = [];        // chemin de chaque trajet, en coordonnées carte
 // Itinéraires (lot 6).
-const routeCache = new Map(); // cacheKey(profil, « from>to ») → réponse du serveur
-let routeRunsNow = [];        // requêtes utiles au parcours ouvert (parcours_routing.mjs)
-let routeEffectsNow = { hints: new Map(), paths: new Map(), missing: 0 };
-let routeState = { state: 'idle', message: '' };
-let routeSeq = 0;
-let routeRevision = 0;
 let counts = null;
 let logsAvailable = false;
 let status = 'idle';          // idle | loading | ready | error
@@ -317,9 +311,7 @@ export async function openParcours(id) {
     // Itinéraires : toute suite en vol appartient au parcours quitté — le
     // numéro de séquence la tue, son état et son cache ne le suivent pas
     // (deux parcours peuvent partager les clés « place:n » de trajets).
-    routeSeq++;
-    routeState = { state: 'idle', message: '' };
-    routeCache.clear();
+    routing.reset();
     // Photos du parcours quitté : images pleine taille et vignettes sont
     // libérées, sinon elles s'accumulent d'un parcours à l'autre.
     playDraw.clearImages();
@@ -668,7 +660,7 @@ function parcoursCamera(leadMs = 0, msPerDay = 1) {
 // l'attribution de la carte ; dans la vidéo, peints en bas à droite (la vidéo
 // ne compose que les canevas de la carte).
 function routeCreditText() {
-    if (!routingConfig().enabled || routeEffectsNow.paths.size === 0) return '';
+    if (!routingConfig().enabled || routing.effects().paths.size === 0) return '';
     return routingConfig().provider === 'ors'
         ? t('Itinéraires © contributeurs OpenStreetMap, openrouteservice')
         : t('Itinéraires © contributeurs OpenStreetMap, FOSSGIS');
@@ -922,16 +914,14 @@ async function deletePlace(id, options) { return adjust.deletePlace(id, options)
 // (parcours_tracks.mjs).
 function rebuild() {
     let result = reconstructWithEvidence(inputs);
-    routeRunsNow = [];
-    routeEffectsNow = { hints: new Map(), paths: new Map(), missing: 0 };
+    routing.clearRunState();
     if (routingConfig().enabled) {
         // Itinéraires déjà connus : leurs durées entrent dans l'horaire, leurs
         // chemins dans le tracé. Les trajets sur une trace n'en ont pas besoin.
         const overrides = new Map((inputs?.overrides || []).map((o) => [o.key, o]));
-        routeRunsNow = routeRuns(result.ordered, overrides, { skip: new Set(result.legPaths.keys()) });
-        routeEffectsNow = routeEffects(routeRunsNow, routeCache);
-        if (routeEffectsNow.hints.size > 0) {
-            result = reconstructWithEvidence(inputs, null, { legHints: routeEffectsNow.hints });
+        const effects = routing.computeRuns(result.ordered, overrides, new Set(result.legPaths.keys()));
+        if (effects.hints.size > 0) {
+            result = reconstructWithEvidence(inputs, null, { legHints: effects.hints });
         }
     }
     ordered = result.ordered;
@@ -939,7 +929,7 @@ function rebuild() {
     photoByStop = result.byStop;
     trackMatches = result.trackMatches;
     // Trace GPS d'abord, itinéraire ensuite.
-    legPaths = new Map([...routeEffectsNow.paths, ...result.legPaths]);
+    legPaths = new Map([...routing.effects().paths, ...result.legPaths]);
     utcOffset = result.utcOffset;
 }
 
@@ -1123,196 +1113,29 @@ function renderStops(errorMessage = '') {
     stopsPanel.render(errorMessage);
 }
 
-// --- Itinéraires (lot 6) --------------------------------------------------------
 
-function routingConfig() {
-    const raw = window.userSettings?.parcours_routing || {};
-    return {
-        enabled: raw.enabled === true,
-        provider: raw.provider === 'ors' ? 'ors' : 'fossgis',
-        orsKeySet: raw.ors_key_set === true,
-    };
-}
+// --- Itinéraires (lot 6, parcours_routing_ui.mjs) --------------------------------
 
-// Écrit le patch puis remet la valeur complète dans window.userSettings
-// (saveSettingsPatch y remplace la clé par le seul patch). Attendre cette
-// promesse avant de demander un itinéraire : le serveur lit `enabled`.
-async function saveRouting(patch) {
-    const current = window.userSettings?.parcours_routing || {};
-    const next = { ...current, ...patch };
-    if ('ors_key' in patch) {
-        next.ors_key_set = !!patch.ors_key;
-        delete next.ors_key;
-    }
-    if (window.userSettings) window.userSettings.parcours_routing = next;
-    const ok = await saveSettingsPatch({ parcours_routing: patch });
-    if (window.userSettings) window.userSettings.parcours_routing = next;
-    return ok;
-}
+// Carte « Itinéraires » : réglages (activation, fournisseur, clé ORS),
+// calcul des routes en chaîne et cache de page — tout l'état y vit ;
+// `rebuild` lui demande requêtes et effets via `computeRuns`.
+const routing = createParcoursRouting({
+    getState: () => ({ selectedId, ordered, inputs }),
+    fetchJson,
+    adjustmentsLocked,
+    receiveAdjustments,
+    rebuild,
+    renderStops,
+    applyTimeline,
+    clockRunning: () => clock.running,
+    deferTimeline: () => { pendingTimeline = true; },
+    syncAttribution: syncRouteAttribution,
+});
 
-// Calcule (côté serveur, cache compris) les itinéraires des trajets qui en
-// manquent, puis rejoue le parcours. Une erreur suspend les nouvelles
-// tentatives jusqu'à une action de l'utilisateur (« Recalculer », réglage) :
-// sinon chaque reconstruction relancerait un fournisseur en panne.
-async function ensureRoutes({ force = false } = {}) {
-    if (!routingConfig().enabled || !selectedId || !ordered) {
-        renderRouting();
-        return;
-    }
-    // Erreur ou annulation : suspendues jusqu'à une action de l'utilisateur.
-    if ((routeState.state === 'error' || routeState.state === 'cancelled') && !force) return;
-    const runs = force ? routeRunsNow : pendingRuns(routeRunsNow, routeCache);
-    if (runs.length === 0) {
-        renderRouting();
-        return;
-    }
-    const seq = ++routeSeq;
-    const total = runs.reduce((n, run) => n + run.keys.length, 0);
-    let done = 0;
-    routeState = { state: 'loading', message: '', done, total };
-    renderRouting();
-    let message = '';
-    let failed = false;
-    for (const run of runs) {
-        let body;
-        try {
-            body = await fetchJson('/api/parcours/routes', {
-                method: 'POST',
-                body: JSON.stringify({ profile: run.profile, waypoints: run.waypoints, force }),
-                // Le serveur chaîne des appels fournisseur temporisés
-                // (throttle + découverte des trajets sans route).
-                timeoutMs: 300_000,
-            });
-        } catch (error) {
-            message = error.message;
-            failed = true;
-            break;
-        }
-        if (seq !== routeSeq) return;
-        body.legs.forEach((leg, i) => {
-            if (leg) routeCache.set(cacheKey(run.profile, run.keys[i]), leg);
-        });
-        done += run.keys.length;
-        routeState = { state: 'loading', message: '', done, total };
-        renderRouting();
-        if (body.error) {
-            message = body.message || '';
-            failed = true;
-            break;
-        }
-    }
-    if (seq !== routeSeq) return;
-    routeState = failed ? { state: 'error', message } : { state: 'ready', message: '' };
-    routeRevision++;
-    if (clock.running) {
-        pendingTimeline = true;
-        renderRouting();
-        return;
-    }
-    rebuild();
-    renderStops();
-    applyTimeline();
-}
-
-function renderRouting() {
-    syncRouteAttribution();
-    const card = el('parcoursRoutingCard');
-    if (!card) return;
-    card.hidden = !inputs;
-    const config = routingConfig();
-    const enabled = el('parcoursRoutingEnabled');
-    if (enabled) enabled.checked = config.enabled;
-    const provider = el('parcoursRoutingProvider');
-    if (provider) provider.value = config.provider;
-    const keyRow = el('parcoursOrsKeyRow');
-    if (keyRow) keyRow.hidden = config.provider !== 'ors';
-    const key = el('parcoursOrsKey');
-    if (key) key.placeholder = config.orsKeySet ? t('Clé enregistrée (la remplacer)') : t('Clé openrouteservice');
-    const details = el('parcoursRoutingDetails');
-    if (details) details.hidden = !config.enabled;
-    const status = el('parcoursRoutingStatus');
-    if (!status) return;
-    status.classList.toggle('text-danger', routeState.state === 'error');
-    const loading = config.enabled && routeState.state === 'loading';
-    const cancel = el('btnParcoursRoutesCancel');
-    if (cancel) cancel.hidden = !loading;
-    // « Réessayer » : proposé après un échec ou une annulation — reprend le
-    // calcul sans ignorer le cache, là où « Recalculer » redemande tout.
-    const retry = el('btnParcoursRoutesRetry');
-    if (retry) retry.hidden = !(config.enabled && (routeState.state === 'error' || routeState.state === 'cancelled'));
-    const progress = el('parcoursRoutesProgress');
-    if (progress) {
-        progress.hidden = !loading;
-        progress.max = routeState.total || 1;
-        progress.value = routeState.done || 0;
-    }
-    const routed = routeEffectsNow.paths.size;
-    const legs = routeRunsNow.reduce((total, run) => total + run.keys.length, 0);
-    if (!config.enabled) status.textContent = '';
-    else if (routeState.state === 'loading') {
-        status.textContent = t('Calcul des itinéraires : ${done} / ${total} trajets…',
-            { done: routeState.done || 0, total: routeState.total || '?' });
-    }
-    else if (routeState.state === 'error') status.textContent = routeState.message || t('Itinéraires indisponibles : trajets en ligne droite.');
-    else if (routeState.state === 'cancelled') {
-        status.textContent = t('Calcul interrompu : ${routed} trajets sur ${legs} gardent leurs itinéraires.', { routed, legs });
-    }
-    else {
-        status.textContent = legs === 0
-            ? t('Aucun trajet à calculer (trajets sur une trace ou en ligne droite).')
-            : t('${routed} trajets sur ${legs} suivent les routes et chemins.', { routed, legs });
-    }
-}
-
-function bindRouting() {
-    const enabled = el('parcoursRoutingEnabled');
-    enabled?.addEventListener('change', async () => {
-        const pid = selectedId;
-        await saveRouting({ enabled: enabled.checked });
-        routeState = { state: 'idle', message: '' };
-        receiveAdjustments({}, pid);
-    });
-    const provider = el('parcoursRoutingProvider');
-    provider?.addEventListener('change', async () => {
-        const pid = selectedId;
-        await saveRouting({ provider: provider.value });
-        // Autre fournisseur, autres itinéraires : le cache de la page repart.
-        routeCache.clear();
-        routeState = { state: 'idle', message: '' };
-        receiveAdjustments({}, pid);
-    });
-    el('btnParcoursOrsKeySave')?.addEventListener('click', async () => {
-        const input = el('parcoursOrsKey');
-        const value = (input?.value || '').trim();
-        const pid = selectedId;
-        await saveRouting({ ors_key: value });
-        if (input) input.value = '';
-        routeState = { state: 'idle', message: '' };
-        receiveAdjustments({}, pid);
-    });
-    el('btnParcoursRoutesRecompute')?.addEventListener('click', () => {
-        if (adjustmentsLocked()) return;
-        routeState = { state: 'idle', message: '' };
-        ensureRoutes({ force: true });
-    });
-    el('btnParcoursRoutesRetry')?.addEventListener('click', () => {
-        if (adjustmentsLocked()) return;
-        routeState = { state: 'idle', message: '' };
-        ensureRoutes();
-    });
-    el('btnParcoursRoutesCancel')?.addEventListener('click', () => {
-        // La boucle meurt après sa requête en cours ; les itinéraires déjà
-        // reçus restent en cache et s'affichent tout de suite. Comme une
-        // erreur, l'annulation suspend les relances automatiques — une
-        // reconstruction ne repartirait pas sans « Recalculer ».
-        routeSeq++;
-        routeState = { state: 'cancelled', message: '' };
-        rebuild();
-        renderStops();
-        applyTimeline();
-        renderRouting();
-    });
-}
+function routingConfig() { return routing.config(); }
+function renderRouting() { routing.render(); }
+function bindRouting() { routing.bind(); }
+function ensureRoutes(options) { return routing.ensure(options); }
 
 // --- Onglet Style : étapes et trait (points.parcours_style) -------------------------
 //
@@ -1925,13 +1748,10 @@ export function getParcoursSnapshot() {
         trackLegs: (timeline?.legs || []).filter((leg) => leg.mode === 'track').length,
         routing: {
             ...routingConfig(),
-            state: routeState.state,
-            message: routeState.message,
-            done: routeState.done || 0,
-            total: routeState.total || 0,
-            revision: routeRevision,
-            requests: routeRunsNow.length,
-            routed: routeEffectsNow.paths.size,
+            ...routing.state(),
+            revision: routing.revision(),
+            requests: routing.runs().length,
+            routed: routing.effects().paths.size,
             modes: (timeline?.legs || []).filter((leg) => !leg.night).map((leg) => leg.mode),
         },
         // Apparence des étapes et du trait (thème, points.parcours_style) et
