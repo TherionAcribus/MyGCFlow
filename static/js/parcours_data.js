@@ -780,6 +780,8 @@ const adjust = createParcoursAdjust({
     renderLayer,
     linkPhoto: (id, key) => photosPanel.linkPhoto(id, key),
     clockRunning: () => clock.running,
+    showToast,
+    t,
 });
 
 function adjustmentsLocked() { return adjust.locked(); }

@@ -8,16 +8,16 @@
 // L'état du parcours ouvert arrive par `getState()` ; `inputs` est muté en
 // place (même référence que parcours_data.js). Reconstruction, liste, plan et
 // chronologie sont injectés — pas d'import de parcours_data.js.
-import { showToast, t } from './notifications.js';
 import { KIND_BASE } from './parcours_reconstruct.mjs';
 
 const el = (id) => document.getElementById(id);
 
 // deps : { getState, fetchJson, rebuild, renderStops, applyTimeline,
-//          renderLayer, linkPhoto, clockRunning }
+//          renderLayer, linkPhoto, clockRunning, showToast, t }
 // getState() → { selectedId, inputs, ordered }
 export function createParcoursAdjust(deps) {
     const s = () => deps.getState() || {};
+    const { showToast, t } = deps;
 
     let adjustmentRevision = 0;
 
@@ -75,6 +75,12 @@ export function createParcoursAdjust(deps) {
     // un envoi refusé la fait sortir, sinon Ctrl+Z rejouerait un geste jamais
     // enregistré (et l'entrée dépilée revient, comme pour les lieux).
     let pendingHistory = [];
+    // Un envoi refusé laisse l'état local (fusionné avant l'envoi) en avance
+    // sur le serveur : une relecture /adjustments le resynchronise en fin de
+    // file. Son propre échec est absorbé — la laisser rejeter figerait la
+    // file rejetée et les gestes suivants ne partiraient jamais ; le drapeau
+    // reste alors posé et la tentative se refait au geste suivant.
+    let resyncNeeded = false;
 
     // Fusion identique au serveur (parcours_store.patch_overrides) : champ
     // présent → remplacé (null l'efface), absent → gardé ; ligne vidée → retirée.
@@ -180,8 +186,17 @@ export function createParcoursAdjust(deps) {
                     if (history.restore) history.restore.stack.push(history.restore.entry);
                     updateButtons();
                 }
-                // Resynchronisation une fois la file écoulée.
-                overridesChain = overridesChain.then(() => reload(pid));
+                resyncNeeded = true;
+            }
+            // File écoulée et état à resynchroniser : la relecture est
+            // absorbée (voir `resyncNeeded` ci-dessus).
+            if (overridesQueued === 0 && resyncNeeded) {
+                try {
+                    await reload(pid);
+                    resyncNeeded = false;
+                } catch (resyncError) {
+                    console.warn('[PARCOURS] Relecture des ajustements impossible :', resyncError);
+                }
             }
         });
     }
