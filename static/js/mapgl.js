@@ -4132,10 +4132,25 @@ function whenImagesReady() {
     ]);
 }
 
+// Photos du parcours encore sans image prête au départ de la capture :
+// la vidéo sortira sans elles — prévenir plutôt que de filmer
+// silencieusement (échecs de chargement comme dépassement de l'attente).
+function warnMissingParcoursPhotos() {
+    const missing = Number(pkg.parcoursPhotosMissing?.()) || 0;
+    if (!missing) return;
+    try {
+        const message = missing > 1
+            ? pkg.t('${n} photos du parcours n’ont pas pu être chargées — elles peuvent manquer dans la vidéo.', { n: missing })
+            : pkg.t('${n} photo du parcours n’a pas pu être chargée — elle peut manquer dans la vidéo.', { n: missing });
+        pkg.showToast?.(message, 'warning', pkg.t('Enregistrement'), 8000);
+    } catch(_) {}
+}
+
 function startRecordingWhenImagesReady(session) {
     whenImagesReady().then(() => {
         // Arrêté pendant l'attente : ne pas démarrer après coup.
         if (session !== recordingSession) return;
+        warnMissingParcoursPhotos();
         startRecordingProcess(session);
     });
 }
@@ -5164,6 +5179,7 @@ function recordAnimationMediaRecorder(){
     Promise.resolve(pkg.parcoursPhotosReady?.(3000)).catch(() => false).then(() => {
         // Arrêté pendant l'attente : ne pas démarrer après coup.
         if (session !== recordingSession) return;
+        warnMissingParcoursPhotos();
         // Démarrer animation timeline existante (musique bloquée)
         try { startAnimation(true); } catch(_) { startAnimation(); }
 

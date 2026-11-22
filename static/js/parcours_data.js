@@ -1107,6 +1107,12 @@ export function parcoursPhotosReady(timeoutMs = 3000) {
     return playDraw.photosReady(timeoutMs);
 }
 
+// Photos de la chronologie sans image prête : elles manqueront dans la
+// vidéo — le départ d'une capture le signale (mapgl.js).
+export function parcoursPhotosMissing() {
+    return playDraw.photosMissing();
+}
+
 const placeForm = createPlaceForm({
     getState: () => ({ ordered }),
     adjustmentsLocked,
@@ -1300,6 +1306,7 @@ export function getParcoursSnapshot() {
         photoStops: Object.fromEntries([...photoByStop].map(([key, ids]) => [key, [...ids]])),
         photosLoaded: playDraw.imageStats().loaded,
         photosThumbs: playDraw.imageStats().thumbs,
+        photosMissing: playDraw.photosMissing(),
         // Lot 9 : réglages d'affichage, créneaux et cartes peintes à la
         // dernière image (centre, taille et cadre en px du canevas).
         photoDisplay: { ...photoDisplay },
@@ -1451,4 +1458,5 @@ if (isParcoursPage()) {
     window.getParcoursSnapshot = getParcoursSnapshot;
     window.getParcoursCollectSnapshot = parcoursCollectSnapshot;
     window.parcoursPhotosReady = parcoursPhotosReady;
+    window.parcoursPhotosMissing = parcoursPhotosMissing;
 }

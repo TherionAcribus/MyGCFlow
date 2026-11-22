@@ -718,7 +718,9 @@ l'étape − heure de la photo.
   attendues (`parcoursPhotosReady`, plafond 3 s, branché sur le
   `whenImagesReady` de l'image par image et, en capture rapide, avant le
   départ de l'animation) : une photo encore en vol ne manque pas dans la
-  vidéo.
+  vidéo. Celles qui manqueraient quand même — échec de chargement ou
+  attente dépassée — sont comptées (`parcoursPhotosMissing`) et signalées
+  par un toast au départ de la capture.
 
 La mise en page et le cadre décrits ci-dessus sont ceux par défaut ; ils se
 règlent depuis le lot 9 (ci-dessous).

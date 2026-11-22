@@ -355,3 +355,31 @@ test('enregistrement : une photo encore en chargement est attendue', async ({ pa
   expect((await snapshot(page)).photosLoaded).toBe(1);
   expect(errors).toEqual([]);
 });
+
+test('enregistrement : une photo dont l’image échoue est signalée avant la capture', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles([files[0]]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+
+  // Rechargée, la photo est re-demandée : vignette et pleine taille
+  // échouent — elle ne sera jamais dessinée (la liste /photos, sans
+  // segment après, n'est pas interceptée).
+  await page.route('**/api/parcours/*/photos/**', (route) => route.abort());
+  await page.reload();
+  await expect.poll(async () => (await snapshot(page)).status, { timeout: 30_000 }).toBe('ready');
+  await expect.poll(async () => page.evaluate(() => window.parcoursPhotosMissing())).toBe(1);
+
+  // Le départ de la capture prévient plutôt que de filmer sans la photo.
+  const existing = new Set(mp4Names());
+  await page.locator('#btnQuickExport').click({ force: true });
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'peut manquer dans la vidéo' }).first())
+    .toBeVisible({ timeout: 15_000 });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+  for (const name of mp4Names().filter((n) => !existing.has(n))) {
+    rmSync(path.join(RUNTIME, 'video', name), { force: true });
+  }
+  expect(errors).toEqual([]);
+});

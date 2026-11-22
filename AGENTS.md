@@ -385,7 +385,15 @@ Autres repères :
   (`a[href="#photos"]`, à ouvrir avant tout `fill`/`toBeVisible`) ; pour
   relever une photo peinte sans rejouer le parcours, « Voir sur la carte »
   (`.parcours-photo-preview`) ouvre l'aperçu en pause sur son créneau, puis
-  `getParcoursSnapshot().photoCards` (exemple : parcours-photo-display.spec.mjs). La caméra de la
+  `getParcoursSnapshot().photoCards` (exemple : parcours-photo-display.spec.mjs).
+  `photosMissing` du même relevé (et `parcoursPhotosMissing()`) compte les
+  photos de la chronologie sans image prête dans les deux caches : le
+  départ d'une capture les signale par un toast (« peut/peuvent manquer
+  dans la vidéo »), échec de chargement comme dépassement de l'attente 3 s.
+  En spec, faire échouer les images via `page.route('**/api/parcours/*/photos/**')`
+  — le `**` final requis : `photos/*` n'atteint que l'identifiant, pas
+  `…/file` ni `…/thumb` — exemple « image échoue » de
+  `parcours-photos.spec.mjs`. La caméra de la
   lecture (`parcours_camera.mjs`) déplace la vue : un spec qui relève la
   vue après un glisser attend la fin de l'inertie d'OpenLayers (deux
   relevés identiques) — exemple dans `parcours-finitions.spec.mjs`.

@@ -42,7 +42,7 @@ import {
 } from './parcours_style.mjs';
 import { STACK_DISTANCE, stackLabel, stackStops } from './parcours_stack.mjs';
 import { cameraOffsets, photoClock, photoTimeTrusted } from './parcours_photos.mjs';
-import { PHOTO_FADE_Q, photoAspect, photoCaptionText, photoFrameAt, photoSlots } from './parcours_photo_layout.mjs';
+import { PHOTO_FADE_Q, PHOTO_LAYOUT_NONE, photoAspect, photoCaptionText, photoFrameAt, photoSlots } from './parcours_photo_layout.mjs';
 import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
@@ -904,6 +904,25 @@ export function createParcoursPlayDraw(deps) {
         ]);
     }
 
+    // Photos de la chronologie qui ne figureront pas dans la vidéo : aucune
+    // image prête dans les deux caches — échec de chargement, photo absente
+    // du parcours, ou encore en vol après le plafond d'attente de
+    // l'enregistrement. Affichage « aucune » : elles ne manquent pas,
+    // elles sont volontairement masquées.
+    function photosMissing() {
+        const { timeline, photoDisplay } = S();
+        if (!timeline || photoDisplay?.layout === PHOTO_LAYOUT_NONE) return 0;
+        const seen = new Set();
+        let missing = 0;
+        for (const slot of photoSlots(timeline)) {
+            if (seen.has(slot.photoId)) continue;
+            seen.add(slot.photoId);
+            if (!imageReady(photoImages.get(slot.photoId))
+                && !imageReady(photoThumbs.get(slot.photoId))) missing++;
+        }
+        return missing;
+    }
+
     // Photos de la lecture (lot 9) : mises en page à `currentQ` selon les
     // réglages (parcours_photo_layout.mjs), peintes dans le canevas de la
     // couche de la tête (parcours_photo_draw.mjs), donc filmées. Une photo
@@ -1014,6 +1033,7 @@ export function createParcoursPlayDraw(deps) {
         headGlyph,
         preloadPhotos,
         photosReady,
+        photosMissing,
         clearImages,
         evictImage,
         imageStats,
