@@ -26,6 +26,7 @@ import {
     headModeAt,
     legPoints,
     nightLevelAt,
+    reachedIndex,
     trailAt,
 } from './parcours_timeline.mjs';
 import {
@@ -175,6 +176,10 @@ export function createParcoursPlayDraw(deps) {
     // routés recréés à chaque image sinon).
     let trailGroups = null;
     const currentLegGeom = new ol.geom.LineString([]);
+    const headPoint = new ol.geom.Point([0, 0]);
+    // Point de travail des dessins immédiats (étapes, PF, lieux) : un seul
+    // objet repositionné, là où l'image en allouait un par fonction.
+    const scratchPoint = new ol.geom.Point([0, 0]);
 
     function doneTrailGroups(done) {
         const { timeline, playback } = S();
@@ -212,7 +217,7 @@ export function createParcoursPlayDraw(deps) {
         const { clock, timeline, currentQ, playback, projected, legProjected } = S();
         if (!clock.running || !timeline) return;
         const context = ol.render.getVectorContext(event);
-        const { done, current } = trailAt(timeline, currentQ);
+        const { done, current } = frame().trail;
         const { groups } = doneTrailGroups(done);
         // Nuits sous les trajets estimés, eux-mêmes sous les trajets réels.
         for (const kind of TRAIL_KINDS) {
@@ -239,7 +244,7 @@ export function createParcoursPlayDraw(deps) {
     function drawPlayHead(event) {
         const { clock, timeline, currentQ, playback } = S();
         if (!clock.running || !timeline) return;
-        const head = headAt(timeline, currentQ);
+        const head = frame().head;
         if (!head) return;
         const ctx = event.context;
         const ratio = event.frameState.pixelRatio || 1;
@@ -253,24 +258,25 @@ export function createParcoursPlayDraw(deps) {
             ctx.restore();
         }
         drawPlayPlaces(context);
-        const { solid: color } = trailOptions(headDayIndex(trailAt(timeline, currentQ).current));
+        const { solid: color } = trailOptions(headDayIndex(frame().trail.current));
         playStopsDrawn.headColor = color;
         const position = ol.proj.fromLonLat([head.lon, head.lat]);
-        const glyph = playback.head === HEAD_PICTOGRAM ? headGlyph(headModeAt(timeline, currentQ)) : null;
+        const glyph = playback.head === HEAD_PICTOGRAM ? headGlyph(frame().mode) : null;
         if (glyph) {
             const m = composeTransform(event.inversePixelTransform, event.frameState.coordinateToPixelTransform);
             const x = m[0] * position[0] + m[2] * position[1] + m[4];
             const y = m[1] * position[0] + m[3] * position[1] + m[5];
             drawHeadPictogram(ctx, x, y, ratio, color, glyph);
         } else {
-            context.setStyle(new ol.style.Style({
+            context.setStyle(paints.cachedStyle(`head:${color}`, () => new ol.style.Style({
                 image: new ol.style.Circle({
                     radius: 7,
                     fill: new ol.style.Fill({ color }),
                     stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
                 }),
-            }));
-            context.drawGeometry(new ol.geom.Point(position));
+            })));
+            headPoint.setCoordinates(position);
+            context.drawGeometry(headPoint);
         }
         // Après le géocacheur : la carte postale passe au-dessus.
         drawPhotoCards(event);
@@ -309,18 +315,33 @@ export function createParcoursPlayDraw(deps) {
         playStopsDrawn = emptyPlayStops();
     }
 
-    // Journée de la chronologie où est le géocacheur : celle du trajet en
-    // cours (la nuit : le lendemain), sinon de la dernière étape atteinte.
-    function playDay() {
+    // État de l'image en cours : trajet, tête, journée et pictogramme à
+    // `currentQ`. Quatre dessins (trait, étapes, lieux, tête) les demandent
+    // chacun — calculés une fois par image au lieu de relire la chronologie.
+    let frameMemo = { timeline: null, q: NaN, trail: null, head: null, day: 0, mode: 'walk' };
+
+    function frame() {
         const { timeline, currentQ } = S();
-        const { current } = trailAt(timeline, currentQ);
-        if (current) return timeline.stops[timeline.legs[current.leg].to]?.day ?? 0;
-        let day = 0;
-        for (const stop of timeline.stops) {
-            if (stop.q > currentQ) break;
-            day = stop.day;
+        if (frameMemo.timeline !== timeline || frameMemo.q !== currentQ) {
+            let trail = { done: 0, current: null };
+            let head = null;
+            let day = 0;
+            let mode = 'walk';
+            if (timeline) {
+                trail = trailAt(timeline, currentQ);
+                head = headAt(timeline, currentQ);
+                mode = headModeAt(timeline, currentQ);
+                if (trail.current) day = timeline.stops[timeline.legs[trail.current.leg].to]?.day ?? 0;
+                else {
+                    // Journée de la dernière étape atteinte (reachedIndex :
+                    // dernière étape à q ≤ currentQ, comme l'ancien balayage).
+                    const reached = reachedIndex(timeline, currentQ);
+                    if (reached >= 0) day = timeline.stops[reached].day;
+                }
+            }
+            frameMemo = { timeline, q: currentQ, trail, head, day, mode };
         }
-        return day;
+        return frameMemo;
     }
 
     function drawPlayStops(context, resolution) {
@@ -329,20 +350,24 @@ export function createParcoursPlayDraw(deps) {
         const labels = paints.currentStopLabels();
         const themed = style.render === deps.renderTheme;
         const past = themed ? 'normal' : style.play_past;
-        const day = playDay();
-        const point = new ol.geom.Point([0, 0]);
+        const day = frame().day;
+        const point = scratchPoint;
         playStopsDrawn = { ...playStopsDrawn, current: null, ring: null, dimmed: 0, preview: 0 };
         if (!themed && style.play_preview) drawPlayPreview(context, day, labels);
         const reached = [];
         let fp = 0;
-        timeline.stops.forEach((stop, i) => {
-            if (isCountedStop(stop) && stop.q <= currentQ) {
+        // Quantas croissants : reachedIndex donne la dernière étape arrivée,
+        // le balayage s'arrête là au lieu de lire toute la chronologie.
+        const last = reachedIndex(timeline, currentQ);
+        for (let i = 0; i <= last; i++) {
+            const stop = timeline.stops[i];
+            if (isCountedStop(stop)) {
                 reached.push(i);
                 // Décalage d'un : sinon la première étape atteinte (i = 0)
                 // laisserait l'empreinte à 0, comme « aucune étape ».
                 fp = ((fp * 31) + (i + 1)) | 0;
             }
-        });
+        }
         // Regroupement mémorisé : il ne dépend que des étapes atteintes
         // (empreinte), de la résolution et de la distance de pile — une image
         // sans nouvelle étape ni zoom le réutilise tel quel.
@@ -410,7 +435,7 @@ export function createParcoursPlayDraw(deps) {
     function drawFavoriteBursts(context, reached) {
         const { timeline, currentQ, projected } = S();
         const radius = paints.favoriteBaseRadius(false);
-        const point = new ol.geom.Point([0, 0]);
+        const point = scratchPoint;
         let bursts = 0;
         for (const i of reached) {
             const stop = timeline.stops[i];
@@ -481,14 +506,21 @@ export function createParcoursPlayDraw(deps) {
     // Aperçu de la suite : étapes comptées de la journée pas encore
     // atteintes, pâles, reliées depuis le géocacheur par un fil pointillé
     // dans l'ordre du parcours (la nuit : celles du lendemain).
+    const previewGeom = new ol.geom.LineString([]);
+
     function drawPlayPreview(context, day, labels) {
         const { timeline, currentQ, projected } = S();
         const upcoming = [];
-        timeline.stops.forEach((stop, i) => {
-            if (isCountedStop(stop) && stop.day === day && stop.q > currentQ) upcoming.push(i);
-        });
+        // Quantas et journées croissants : les étapes à venir de la journée
+        // forment un bloc contigu juste après la dernière atteinte (un lieu
+        // posé dans la nuit peut porter la journée d'avant : on le saute).
+        for (let i = reachedIndex(timeline, currentQ) + 1; i < timeline.stops.length; i++) {
+            const stop = timeline.stops[i];
+            if (stop.day > day) break;
+            if (isCountedStop(stop) && stop.day === day) upcoming.push(i);
+        }
         if (!upcoming.length) return;
-        const head = headAt(timeline, currentQ);
+        const head = frame().head;
         const coords = upcoming.map((i) => projected[i]);
         if (head) coords.unshift(ol.proj.fromLonLat([head.lon, head.lat]));
         const width = paints.stopStyle().trail_width;
@@ -499,8 +531,11 @@ export function createParcoursPlayDraw(deps) {
                 lineDash: [3, 5],
             }),
         })));
-        if (coords.length > 1) context.drawGeometry(new ol.geom.LineString(coords));
-        const point = new ol.geom.Point([0, 0]);
+        if (coords.length > 1) {
+            previewGeom.setCoordinates(coords);
+            context.drawGeometry(previewGeom);
+        }
+        const point = scratchPoint;
         for (const i of upcoming) {
             const stop = timeline.stops[i];
             context.setStyle(dimmedStyle(paints.numberedStyleFor(paints.paintOfStop(stop), labels.get(stop.key) || ''), DIM_PREVIEW));
@@ -533,20 +568,25 @@ export function createParcoursPlayDraw(deps) {
         const { timeline, currentQ, projected } = S();
         const style = paints.stopStyle();
         const past = style.render === deps.renderTheme ? 'normal' : style.play_past;
-        const day = playDay();
+        const day = frame().day;
         const firstQ = baseFirstQ();
         const bases = new Set();
-        const point = new ol.geom.Point([0, 0]);
+        const point = scratchPoint;
         let places = 0;
-        timeline.stops.forEach((stop, i) => {
-            if (stop.kind !== KIND_BASE && stop.kind !== KIND_PLACE) return;
+        // Seules les étapes arrivées dessinent un lieu ou une base (une base
+        // n'apparaît qu'à sa première occurrence, dont le quanta est atteint
+        // aussi) : le balayage s'arrête à la dernière atteinte.
+        const last = reachedIndex(timeline, currentQ);
+        for (let i = 0; i <= last; i++) {
+            const stop = timeline.stops[i];
+            if (stop.kind !== KIND_BASE && stop.kind !== KIND_PLACE) continue;
             const base = stop.kind === KIND_BASE;
-            if (base && bases.has(stop.placeId)) return;
+            if (base && bases.has(stop.placeId)) continue;
             const from = base ? (firstQ.get(stop.placeId) ?? stop.q) : stop.q;
-            if (from > currentQ) return;
+            if (from > currentQ) continue;
             if (base) bases.add(stop.placeId);
             const scale = stopPopScale(currentQ - from);
-            if (scale <= 0.01) return;
+            if (scale <= 0.01) continue;
             point.setCoordinates(projected[i]);
             const phase = base ? 'normal' : playPhase(stop, currentQ, { day, past });
             if (phase === 'current') {
@@ -561,7 +601,7 @@ export function createParcoursPlayDraw(deps) {
             context.setStyle(scale === 1 ? shown : scaledStyle(shown, scale));
             context.drawGeometry(point);
             places++;
-        });
+        }
         playStopsDrawn.places = places;
     }
 

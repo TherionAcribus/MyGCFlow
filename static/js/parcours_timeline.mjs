@@ -304,6 +304,39 @@ export function headAt(timeline, qf) {
     return { lon: stops[reached].lon, lat: stops[reached].lat, leg: -1, progress: 0 };
 }
 
+// Comptes cumulés d'étapes par nature, pré-calculés une fois par
+// chronologie : `stateAt` les lit en O(1) au lieu de recompter les étapes
+// atteintes à chaque appel (plusieurs fois par image pendant la lecture).
+const countPrefixMemo = new WeakMap();
+
+function countPrefix(timeline) {
+    let prefix = countPrefixMemo.get(timeline);
+    if (!prefix) {
+        const stops = timeline?.stops || [];
+        const counted = new Int32Array(stops.length + 1);
+        const finds = new Int32Array(stops.length + 1);
+        const labs = new Int32Array(stops.length + 1);
+        const favorites = new Int32Array(stops.length + 1);
+        for (let i = 0; i < stops.length; i++) {
+            const kind = stops[i].kind;
+            counted[i + 1] = counted[i];
+            finds[i + 1] = finds[i];
+            labs[i + 1] = labs[i];
+            favorites[i + 1] = favorites[i];
+            if (kind === 'place' || kind === 'base') continue;
+            counted[i + 1]++;
+            if (kind === 'lab') labs[i + 1]++;
+            else if (kind === 'find') {
+                finds[i + 1]++;
+                if (stops[i].favorite) favorites[i + 1]++;
+            }
+        }
+        prefix = { counted, finds, labs, favorites };
+        countPrefixMemo.set(timeline, prefix);
+    }
+    return prefix;
+}
+
 // État affiché à `qf` : étape atteinte, journée, heure (minutes depuis
 // minuit, interpolée entre les heures reconstruites), heure estimée ou sûre,
 // distance parcourue, comptes d'étapes par nature.
@@ -346,21 +379,13 @@ export function stateAt(timeline, qf) {
         estimated = at.confidence !== 'anchored';
         km = reached < 0 ? 0 : at.km;
     }
-    // Lieux et bases posés par l'utilisateur : pas des étapes du parcours.
-    let counted = 0;
-    let finds = 0;
-    let labs = 0;
-    let favorites = 0;
-    for (let i = 0; i <= reached; i++) {
-        const kind = stops[i].kind;
-        if (kind === 'place' || kind === 'base') continue;
-        counted++;
-        if (kind === 'lab') labs++;
-        else if (kind === 'find') {
-            finds++;
-            if (stops[i].favorite) favorites++;
-        }
-    }
+    // Lieux et bases posés par l'utilisateur : pas des étapes du parcours
+    // (comptes cumulés pré-calculés à la construction).
+    const counts = countPrefix(timeline);
+    const counted = counts.counted[reached + 1];
+    const finds = counts.finds[reached + 1];
+    const labs = counts.labs[reached + 1];
+    const favorites = counts.favorites[reached + 1];
     const day = timeline.days[dayIndex];
     return {
         reached,
@@ -395,11 +420,17 @@ export function formatClock(minutes, estimated, mode, slotLabels = {}) {
 }
 
 // Trajets à dessiner jusqu'à `qf` : index des trajets terminés et, s'il y en
-// a un, le trajet en cours avec sa part parcourue.
+// a un, le trajet en cours avec sa part parcourue. Les fins de trajet
+// croissent le long de la chronologie : borne dichotomique.
 export function trailAt(timeline, qf) {
     const legs = timeline?.legs || [];
     let done = 0;
-    while (done < legs.length && legs[done].endQ <= qf) done++;
+    let hi = legs.length;
+    while (done < hi) {
+        const mid = (done + hi) >> 1;
+        if (legs[mid].endQ <= qf) done = mid + 1;
+        else hi = mid;
+    }
     const current = done < legs.length && legs[done].startQ <= qf
         ? { leg: done, progress: smoothstep(clamp((qf - legs[done].startQ) / Math.max(1e-9, legs[done].endQ - legs[done].startQ), 0, 1)) }
         : null;
@@ -407,12 +438,18 @@ export function trailAt(timeline, qf) {
 }
 
 // Étapes qui apparaissent dans les quanta [first, last] (index dans `stops`).
+// Les quanta croissent le long de la chronologie : bornes dichotomiques.
 export function stopsInRange(timeline, first, last) {
+    const stops = timeline?.stops || [];
     const out = [];
-    for (let i = 0; i < (timeline?.stops || []).length; i++) {
-        const q = timeline.stops[i].q;
-        if (q >= first && q <= last) out.push(i);
+    let lo = 0;
+    let hi = stops.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (stops[mid].q < first) lo = mid + 1;
+        else hi = mid;
     }
+    for (let i = lo; i < stops.length && stops[i].q <= last; i++) out.push(i);
     return out;
 }
 
@@ -435,6 +472,20 @@ export function nightLevelAt(timeline, qf, options = {}) {
     return smoothstep(clamp(Math.min(t, 1 - t) / Math.max(1e-9, o.nightRampShare), 0, 1));
 }
 
+// Jambes de nuit par étape d'arrivée, calculées une fois par chronologie :
+// `dayCardAt` est appelé à chaque image pendant la lecture.
+const nightIntoMemo = new WeakMap();
+
+function nightIntoMap(timeline) {
+    let map = nightIntoMemo.get(timeline);
+    if (!map) {
+        map = new Map();
+        for (const leg of timeline?.legs || []) if (leg.night) map.set(leg.to, leg);
+        nightIntoMemo.set(timeline, map);
+    }
+    return map;
+}
+
 // Carton de journée à `qf` : { day (index dans `days`), alpha } ou null.
 // Seulement pour un parcours de plusieurs journées : le premier dès le
 // début, les suivants pendant la nuit qui y mène.
@@ -442,8 +493,7 @@ export function dayCardAt(timeline, qf, options = {}) {
     const days = timeline?.days || [];
     if (days.length < 2) return null;
     const o = { ...SCENE_DEFAULTS, ...options };
-    const nightInto = new Map();
-    for (const leg of timeline.legs) if (leg.night) nightInto.set(leg.to, leg);
+    const nightInto = nightIntoMap(timeline);
     for (let d = 0; d < days.length; d++) {
         const first = timeline.stops[days[d].first];
         const night = nightInto.get(days[d].first);
@@ -501,12 +551,31 @@ export function headModeAt(timeline, qf) {
     const legIndex = legIndexAt(timeline, qf);
     if (legIndex >= 0) return legTravelMode(timeline, legIndex);
     const reached = Math.max(0, reachedIndex(timeline, qf));
-    for (let k = legs.length - 1; k >= 0; k--) {
-        if (legs[k].to <= reached && !legs[k].night) return legTravelMode(timeline, k);
-        if (legs[k].to <= reached && legs[k].night) break;
+    // Jambe qui a mené à l'étape atteinte : la plus récente dont l'arrivée la
+    // précède — `to` croît le long de la chronologie, recherche dichotomique.
+    // Une nuit coupe : le trajet qui suit reprend la main.
+    let lo = 0;
+    let hi = legs.length - 1;
+    let prev = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (legs[mid].to <= reached) {
+            prev = mid;
+            lo = mid + 1;
+        } else hi = mid - 1;
     }
-    const next = legs.findIndex((leg) => leg.from >= reached && !leg.night);
-    return next >= 0 ? legTravelMode(timeline, next) : 'walk';
+    if (prev >= 0 && !legs[prev].night) return legTravelMode(timeline, prev);
+    // Sinon : le prochain trajet, premier non nocturne dont le départ n'est
+    // pas avant l'étape atteinte — `from` croît lui aussi.
+    lo = 0;
+    hi = legs.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (legs[mid].from < reached) lo = mid + 1;
+        else hi = mid;
+    }
+    for (let k = lo; k < legs.length && legs[k].night; k++) lo++;
+    return lo < legs.length ? legTravelMode(timeline, lo) : 'walk';
 }
 
 // --- Barre de chronologie --------------------------------------------------------

@@ -136,7 +136,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_place_form.mjs` | Pose et déplacement d'un lieu au clic carte + formulaire (journée, type, rôle, catégorie, icône). Fabrique `createPlaceForm` — `picking`/`placeDraft`/écouteur de clic y sont internes |
 | `static/js/parcours_adjust.mjs` | Moteur des ajustements : file d'écritures PATCH (fusion locale, ordre des gestes), historique Annuler/Rétablir (y compris lieux recréés : `remapPlaceId`), gestes rang/journée, CRUD des lieux. Fabrique `createParcoursAdjust` — `undoStack`/`redoStack`/`overridesQueued` y sont internes |
 | `static/js/parcours_style_ui.mjs` | Panneau « Style du parcours » : contrôles ↔ objet `parcours_style` normalisé (rendu, numéros, palette des journées, lecture, trait). Fabrique `createParcoursStyleUI` — écriture dans le thème injectée |
-| `static/js/parcours_paints.mjs` | Peintures des étapes du plan et de la lecture : pastilles numérotées, lieux/bases, piles et éventails, halo, cœur des PF, lignes de journées, points du thème. Fabrique `createParcoursPaints` — mémoïsé par objet de réglages ; l'état de la pile (`fan`) reste dans `parcours_data.js` |
+| `static/js/parcours_paints.mjs` | Peintures des étapes du plan et de la lecture : pastilles numérotées, lieux/bases, piles et éventails, halo, cœur des PF, lignes de journées, points du thème. Fabrique `createParcoursPaints` — mémoïsé par objet de réglages ; l'état de la pile (`fan`) est injecté, il vit dans `parcours_plan.mjs` |
 | `static/js/parcours_tracks_panel.mjs` | Panneau « Traces GPS » : liste, réglage du décalage UTC, envoi et suppression. Fabrique `createTracksPanel` — état par `getState()`, opérations du parcours injectées |
 | `static/js/parcours_photos_panel.mjs` | Panneau « Photos » : grille, lieux proposés, détail (rattachement, légende, cadrage), réglages d'affichage. Fabrique `createPhotosPanel` — `photoDetailId`/`photosDirty` y sont internes |
 | `static/js/parcours_upload.mjs` | Envois mutualisés photos/traces (`createParcoursUploads` : concurrence bornée, « Arrêter », cible figée au départ) et glisser-déposer de fichiers sur la page (`bindParcoursFileDrop`) |
@@ -315,6 +315,15 @@ Les deux couches dessinent dans leur `postrender` : la capture vidéo, qui
 compose tous les canevas de la carte, les filme. Leur couleur, leur
 épaisseur et leur opacité sont celles du thème (`points.parcours_style`,
 ci-dessus).
+
+Coût par image : l'état à `currentQ` (trait, tête, journée, pictogramme) est
+mémoïsé une fois par image (`frame` de `parcours_play.mjs`) au lieu d'être
+relu par chaque dessin ; les balayages de la chronologie sont bornés
+(`reachedIndex`, dichotomies de `trailAt`, `legIndexAt`, `stopsInRange`,
+`headModeAt`), les comptes de `stateAt` viennent de sommes préfixes
+calculées à la construction, la table des nuits de `dayCardAt` est gardée
+par chronologie, et les géométries de travail (tête, aperçu, point partagé)
+sont réutilisées au lieu d'être allouées à chaque image.
 
 **Ligne d'infos** (modèle `parcours_infos_template`, onglet Style ›
 Titres) :
