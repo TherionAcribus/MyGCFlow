@@ -389,6 +389,13 @@ Autres repères :
   lecture (`parcours_camera.mjs`) déplace la vue : un spec qui relève la
   vue après un glisser attend la fin de l'inertie d'OpenLayers (deux
   relevés identiques) — exemple dans `parcours-finitions.spec.mjs`.
+  `camera.pose` du même relevé donne la pose qu'aurait la caméra à la
+  position courante : un saut en pause (barre, Ctrl+flèches, « Voir sur la
+  carte ») l'atteint — `seekAnimationToDate` pose la vue via le crochet
+  `camera` du moteur, sans réécrire la vue gardée pour la fin ni la
+  suspension manuelle (le `begin` d'un saut voit le moteur encore en
+  marche) ; un quantum vaut un jour fictif depuis le 2000-01-01
+  (`new Date(2000, 0, 1 + q)` pour viser le quantum `q`).
   Barre de chronologie sur `/parcours` : axe en quanta (dates fictives),
   textes et repères par le crochet `timelineBar` du moteur —
   `getTimelineBarSnapshot()` donne `ticks` (`bands` = nuits, `labels`

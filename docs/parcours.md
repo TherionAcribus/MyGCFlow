@@ -432,8 +432,15 @@ sur la bonne, comme la piste de caméra du mode principal.
 
 Les tuiles de la suite sont demandées d'avance (`prefetchBasemapTiles`, pose
 1,5 s plus loin, une fois par seconde d'écran). Glisser ou zoomer la carte
-pendant la lecture suspend la caméra jusqu'à la lecture suivante. À la fin,
-la vue d'avant la lecture revient, sauf si l'utilisateur a repris la main.
+pendant la lecture suspend la caméra jusqu'à la lecture suivante — y compris
+pour un saut en pause, qui la respecte. À la fin, la vue d'avant la lecture
+revient, sauf si l'utilisateur a repris la main.
+
+Un saut en pause (barre de chronologie, Ctrl+flèches, « Voir sur la carte »
+d'une photo) pose la vue sur la pose de la piste au point visé : le
+géocacheur ne part pas hors écran. Le `begin` du moteur, rappelé alors qu'il
+tourne encore, ne réécrit ni la vue gardée pour la fin ni la suspension —
+`seekAnimationToDate` pose la vue via le crochet `camera` du moteur.
 
 **Nuit et cartons** (réglage « Nuit et carton », défaut : oui) :
 - la nuit assombrit la carte en cloche (`nightLevelAt` : 30 % de la nuit

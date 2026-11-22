@@ -3880,6 +3880,10 @@ export function seekAnimationToDate(date) {
         // La date avant les compteurs : la ligne d'infos à balises la relit.
         pkg.updateCurrentDate(day);
         infos = createObjectInfos(beginLifecycleTimeline(next));
+        // Caméra du moteur (page Parcours) : la pose du point visé, comme
+        // seekCameraFollow recale la piste du mode principal. La suspension
+        // manuelle (carte déplacée pendant la lecture) reste respectée.
+        lifecycleEngine()?.camera?.(0, animationMsPerDay());
     } else {
         const shown = seekPointsToDay(dateToDayNumber(day));
         createFlashElements();

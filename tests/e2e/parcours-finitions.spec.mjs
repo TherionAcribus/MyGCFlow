@@ -114,6 +114,44 @@ test('carte déplacée pendant la lecture : la caméra la laisse, même à la fi
   expect(errors).toEqual([]);
 });
 
+test('saut en pause : la caméra recadre sur la pose du saut, vue rendue à la fin', async ({ page }) => {
+  const errors = collectErrors(page);
+  const rest = await openReady(page);
+  const { stopQ } = rest.timeline;
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).camera.following).toBe(true);
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(async () =>
+    page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('paused');
+
+  // Saut à l'arrivée de la dernière étape (dates fictives : le quantum k est
+  // le jour 2000-01-01 + k) : la vue prend la pose qu'elle aurait en déroulé
+  // continu, le géocacheur ne part pas hors écran.
+  const target = stopQ[stopQ.length - 1];
+  const ok = await page.evaluate(async (q) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + q)), target);
+  expect(ok).toBe(true);
+  const at = await snapshot(page);
+  expect(at.camera.center[0]).toBeCloseTo(at.camera.pose.center[0], 6);
+  expect(at.camera.center[1]).toBeCloseTo(at.camera.pose.center[1], 6);
+  expect(at.camera.zoom).toBeCloseTo(at.camera.pose.zoom, 5);
+  const onScreen = await headOnScreen(page);
+  expect(onScreen.x).toBeGreaterThan(0);
+  expect(onScreen.x).toBeLessThan(onScreen.size[0]);
+  expect(onScreen.y).toBeGreaterThan(0);
+  expect(onScreen.y).toBeLessThan(onScreen.size[1]);
+
+  // Reprise jusqu'au bout : la vue d'avant la lecture est rendue — le saut
+  // ne l'a pas remplacée par la pose de caméra du moment.
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(false));
+  await expect.poll(async () => (await snapshot(page)).running, { timeout: 40_000 }).toBe(false);
+  const after = await snapshot(page);
+  expect(after.camera.center[0]).toBeCloseTo(rest.camera.center[0], 6);
+  expect(after.camera.center[1]).toBeCloseTo(rest.camera.center[1], 6);
+  expect(after.camera.zoom).toBeCloseTo(rest.camera.zoom, 5);
+  expect(errors).toEqual([]);
+});
+
 test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés', async ({ page, request }) => {
   const errors = collectErrors(page);
   const rest = await openReady(page);

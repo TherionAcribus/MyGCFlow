@@ -76,6 +76,7 @@ import { createStopsPanel } from './parcours_stops_panel.mjs';
 import { createTracksPanel } from './parcours_tracks_panel.mjs';
 import { createPhotosPanel } from './parcours_photos_panel.mjs';
 import { bindParcoursFileDrop, createParcoursUploads } from './parcours_upload.mjs';
+import { cameraPoseAt } from './parcours_camera.mjs';
 import { createParcoursCamera } from './parcours_camera_ui.mjs';
 import { createParcoursPlaybackUI } from './parcours_playback_ui.mjs';
 import { initParcoursCollect, parcoursCollectSnapshot, refreshParcoursCollect } from './parcours_collect.js';
@@ -453,6 +454,10 @@ function parcoursInfosValues() {
 function parcoursBegin(startDate, endDate, at) {
     const startDay = Math.max(0, dayIndexOf(quantumBase, startDate));
     endDay = endDate instanceof Date ? dayIndexOf(quantumBase, endDate) : (timeline?.quanta || 1) - 1;
+    // Saut en pause (barre de chronologie, Ctrl+flèches, aperçu d'une
+    // photo) : le moteur tourne encore — la vue d'avant la lecture et une
+    // suspension manuelle de la caméra sont gardées, pas réécrites.
+    const wasRunning = clock.running;
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
     playDraw.reset();
@@ -460,7 +465,7 @@ function parcoursBegin(startDate, endDate, at) {
     closeFan();
     setPlanVisible(false);
     playDraw.ensureLayers();
-    beginCamera();
+    if (!wasRunning) beginCamera();
     return countersAt(startDay - 1);
 }
 
@@ -1299,11 +1304,15 @@ export function getParcoursSnapshot() {
         // Lot 7 : caméra, nuit, carton, pictogramme, crédits.
         camera: (() => {
             const view = pkg.getMap?.()?.getView();
+            const pose = cameraPoseAt(timeline, currentQ, pkg.getMap?.()?.getSize());
             return {
                 following: cameraFollowing(),
                 suspended: playCamera.suspended(),
                 center: view?.getCenter() ? ol.proj.toLonLat(view.getCenter()) : null,
                 zoom: view?.getZoom() ?? null,
+                // Pose qu'aurait la caméra à la position courante : un saut
+                // en pause doit l'atteindre, comme en déroulé continu.
+                pose: pose ? { center: ol.proj.toLonLat(pose.center), zoom: pose.zoom } : null,
             };
         })(),
         scene: timeline ? {
