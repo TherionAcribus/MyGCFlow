@@ -25,7 +25,8 @@ from sqlalchemy import func
 
 from models import (Geocache, LabDiscovery, Parcours, ParcoursOverride,
                     ParcoursPhoto, ParcoursPlace, ParcoursTrack)
-from settings_manager import (PARCOURS_CAMERA_MODES, PARCOURS_HEAD_STYLES,
+from settings_manager import (PARCOURS_CAMERA_MODES, PARCOURS_FRAMINGS,
+                              PARCOURS_HEAD_STYLES,
                               PARCOURS_HOURS_DISPLAYS, PARCOURS_PACES)
 
 NAME_MAX_LENGTH = 80
@@ -93,6 +94,7 @@ _PLAYBACK_CHOICES = {
     'pace': PARCOURS_PACES,
     'hours': PARCOURS_HOURS_DISPLAYS,
     'camera': PARCOURS_CAMERA_MODES,
+    'framing': PARCOURS_FRAMINGS,
     'head': PARCOURS_HEAD_STYLES,
 }
 _PLAYBACK_FLAGS = ('day_cards', 'estimated_dashed')

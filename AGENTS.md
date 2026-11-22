@@ -377,7 +377,14 @@ Autres repères :
   `adjustmentRevision` augmente avant de lire l'ordre. `parcours_playback`
   accepte un patch partiel : une nouvelle sous-clé doit entrer dans la
   remise de `resetParcoursSettings`, sinon elle fuit d'un spec à l'autre
-  (la caméra fixe d'un spec figerait la vue des suivants). Même famille :
+  (la caméra fixe d'un spec figerait la vue des suivants). Une nouvelle
+  clé se déclare en QUATRE endroits : `normalizePlayback` +
+  `PLAYBACK_DEFAULTS` (`parcours_timeline.mjs`), `PARCOURS_PLAYBACK_DEFAULTS`
+  et le `choices` de `coerce_parcours_playback` (`settings_manager.py`), et
+  `_PLAYBACK_CHOICES` (`parcours_store.py` — sinon la surcharge d'un
+  parcours la jette silencieusement : le `PATCH` part, `playback` revient
+  sans la clé). `framing` (`tight`/`balanced`/`wide`, cadrage de la caméra
+  suivie, `frame` de `parcours_camera.mjs`) en est l'exemple. Même famille :
   `parcours_photo_display` (affichage des photos), remis à
   `PHOTO_DISPLAY_DEFAULTS` par le même helper, et
   `parcours_infos_template` (un spec qui écrit `#inputInfosTemplate` sur

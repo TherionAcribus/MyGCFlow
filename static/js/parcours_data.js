@@ -52,6 +52,7 @@ import {
     stepEvolution,
 } from './evolution_timeline.mjs';
 import {
+    FRAMING_FRAME,
     HEAD_PICTOGRAM,
     QUANTUM_MS,
     buildParcoursTimeline,
@@ -1423,7 +1424,10 @@ export function getParcoursSnapshot() {
         // Lot 7 : caméra, nuit, carton, pictogramme, crédits.
         camera: (() => {
             const view = pkg.getMap?.()?.getView();
-            const pose = cameraPoseAt(timeline, currentQ, pkg.getMap?.()?.getSize(), { msPerDay: Math.round(playMsPerDay * 10) / 10 });
+            const pose = cameraPoseAt(timeline, currentQ, pkg.getMap?.()?.getSize(), {
+                msPerDay: Math.round(playMsPerDay * 10) / 10,
+                frame: FRAMING_FRAME[playback.framing] ?? 1,
+            });
             return {
                 following: cameraFollowing(),
                 suspended: playCamera.suspended(),

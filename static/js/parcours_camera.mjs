@@ -39,6 +39,7 @@ export const CAMERA_DEFAULTS = Object.freeze({
     minSpanM: 900,       // plus petit cadrage (mètres au sol)
     maxZoom: 16,
     headMarginPx: 40,    // le géocacheur reste à cette distance du bord
+    frame: 1,            // multiplicateur de l'emprise visée (cadrage serré/large)
 });
 
 const SAMPLE_Q = 0.5;
@@ -129,6 +130,7 @@ function buildTrack(timeline, size, o) {
 
     // Ce que la caméra vise à chaque échantillon : le géocacheur, puis la vue
     // d'ensemble (son centre, et une demi-étendue ramenée à safeShare).
+    const frame = Math.max(0.2, Math.min(5, Number(o.frame) || 1));
     const overview = overviewOf(timeline);
     const ocx = (overview[0] + overview[2]) / 2;
     const ocy = (overview[1] + overview[3]) / 2;
@@ -155,7 +157,7 @@ function buildTrack(timeline, size, o) {
             lat = head.lat * DEG;
         }
         // Échelle de Mercator : un mètre au sol vaut 1/cos(lat) unités.
-        const minSpan = o.minSpanM / Math.max(0.05, Math.cos(lat));
+        const minSpan = o.minSpanM * frame / Math.max(0.05, Math.cos(lat));
         minLog[i] = Math.log(Math.max(floor, minSpan / (o.safeShare * Math.min(w, h))));
     }
 
@@ -176,7 +178,7 @@ function buildTrack(timeline, size, o) {
             dx = Math.max(dx, Math.abs(tx[j] - cx0[i]) + ex[j]);
             dy = Math.max(dy, Math.abs(ty[j] - cy0[i]) + ey[j]);
         }
-        need[i] = Math.max(minLog[i], Math.log(Math.max(dx / halfW, dy / halfH, 1e-9)));
+        need[i] = Math.max(minLog[i], Math.log(Math.max(dx * frame / halfW, dy * frame / halfH, 1e-9)));
     }
     // Dézoom tenu : une balade garde un seul cadre, pas un par cache.
     const held = dilate(need, Math.round(perSample(o.holdBackQ)), Math.round(perSample(o.holdAheadQ)));

@@ -357,11 +357,13 @@ PARCOURS_INFOS_TEMPLATE = '{date} · {heure} · {etapes} / {total} · {km}'
 PARCOURS_PACES = ("regular", "proportional")
 PARCOURS_HOURS_DISPLAYS = ("approx", "exact", "slots", "none")
 PARCOURS_CAMERA_MODES = ("follow", "fixed")
+PARCOURS_FRAMINGS = ("tight", "balanced", "wide")
 PARCOURS_HEAD_STYLES = ("mode", "dot")
 PARCOURS_PLAYBACK_DEFAULTS = {
     "pace": "regular",
     "hours": "approx",
     "camera": "follow",
+    "framing": "balanced",
     "day_cards": True,
     "head": "mode",
     "estimated_dashed": False,
@@ -689,6 +691,7 @@ def coerce_parcours_playback(value, current: dict | None = None) -> dict:
         "pace": PARCOURS_PACES,
         "hours": PARCOURS_HOURS_DISPLAYS,
         "camera": PARCOURS_CAMERA_MODES,
+        "framing": PARCOURS_FRAMINGS,
         "head": PARCOURS_HEAD_STYLES,
     }
     flags = ("day_cards", "estimated_dashed")

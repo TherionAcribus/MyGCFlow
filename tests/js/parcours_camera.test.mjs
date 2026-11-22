@@ -68,6 +68,14 @@ test('pose : serrée à pied, dézoom sur le long trajet et la nuit, vue d’ens
     // Jamais plus près que le zoom maximal.
     assert.ok(atA.resolution >= resolutionForZoom(CAMERA_DEFAULTS.maxZoom) - 1e-9);
     assert.ok(atA.zoom <= CAMERA_DEFAULTS.maxZoom + 1e-9);
+    // Le cadrage multiplie l'emprise visée, partout dans la lecture.
+    for (const q of [a.q + 2, (night.startQ + night.endQ) / 2, tl.quanta]) {
+        const wide = cameraPoseAt(tl, q, SIZE, { frame: 1.5 });
+        const tight = cameraPoseAt(tl, q, SIZE, { frame: 0.7 });
+        const mid = cameraPoseAt(tl, q, SIZE);
+        assert.ok(wide.resolution > mid.resolution, `large @${q}`);
+        assert.ok(tight.resolution <= mid.resolution + 1e-9, `serré @${q}`);
+    }
     // À la fin, toutes les étapes sont à l'écran.
     const box = overviewBox(tl);
     for (const [x, y] of [[box[0], box[1]], [box[2], box[3]]]) {

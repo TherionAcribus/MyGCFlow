@@ -443,7 +443,12 @@ géocacheur ») :
 - après la dernière étape, la vue d'ensemble (85 % du demi-écran) est une
   cible comme une autre ;
 - le géocacheur est enfin gardé à 40 px du bord au moins (filet de
-  sécurité, normalement inutile).
+  sécurité, normalement inutile) ;
+- cadrage (réglage « Cadrage », `parcours_playback.framing`) : « Équilibré »
+  par défaut ; « Serré » vise une emprise ×0,7 et « Large » ×1,5 — les
+  pistes sont recalculées avec l'emprise multipliée (`frame`), le
+  dézoom tenu, la vitesse et le plancher de zoom restent tels quels. Sans
+  effet en caméra fixe (le réglage est alors grisé).
 
 Les constantes de temps de la caméra (lissages, fenêtres, maintien de
 dézoom, vitesse de zoom) sont lues en **temps écran** : `msPerDay` les

@@ -5,7 +5,7 @@
 //
 // L'état du moteur arrive par `getState()` ; la carte et la capture par
 // deps — pas d'import de parcours_data.js.
-import { CAMERA_FOLLOW } from './parcours_timeline.mjs';
+import { CAMERA_FOLLOW, FRAMING_FRAME } from './parcours_timeline.mjs';
 import { cameraPoseAt } from './parcours_camera.mjs';
 
 // deps : { getState, getMap, isRecording, prefetchTiles, onSuspended? }
@@ -89,15 +89,19 @@ export function createParcoursCamera(deps) {
     // pose posée en pré-rendu s'applique à l'image suivante : en capture
     // image par image, `leadMs` (une image) la fait tomber sur la bonne.
     function camera(leadMs = 0, msPerDay = 1) {
-        const { timeline, currentQ } = S();
+        const { timeline, currentQ, playback } = S();
         if (!following()) return false;
         const map = deps.getMap();
         const size = map?.getSize();
         const perDay = Math.max(1e-3, Number(msPerDay) || 1);
         const q = currentQ + Math.max(0, Number(leadMs) || 0) / perDay;
         // Constantes de temps de la caméra en secondes d'écran (dixième de ms :
-        // une piste par valeur sert le cache sans l'inonder).
-        const timing = { msPerDay: Math.round(perDay * 10) / 10 };
+        // une piste par valeur sert le cache sans l'inonder). Le cadrage
+        // (serré/équilibré/large) est relu à chaque image.
+        const timing = {
+            msPerDay: Math.round(perDay * 10) / 10,
+            frame: FRAMING_FRAME[playback?.framing] ?? 1,
+        };
         const pose = cameraPoseAt(timeline, q, size, timing);
         if (!pose) return false;
         const view = map.getView();

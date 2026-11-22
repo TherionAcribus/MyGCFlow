@@ -47,11 +47,11 @@ function sample() {
 }
 
 test('réglages de lecture normalisés', () => {
-    const defaults = { pace: 'regular', hours: 'approx', camera: 'follow', day_cards: true, head: 'mode', estimated_dashed: false };
+    const defaults = { pace: 'regular', hours: 'approx', camera: 'follow', framing: 'balanced', day_cards: true, head: 'mode', estimated_dashed: false };
     assert.deepEqual(normalizePlayback(null), defaults);
-    assert.deepEqual(normalizePlayback({ pace: 'proportional', hours: 'slots', camera: 'fixed', day_cards: false, head: 'dot', estimated_dashed: true }),
-        { pace: 'proportional', hours: 'slots', camera: 'fixed', day_cards: false, head: 'dot', estimated_dashed: true });
-    assert.deepEqual(normalizePlayback({ pace: 'vite', hours: 3, camera: 'drone', day_cards: 'non', head: 'vélo' }), defaults);
+    assert.deepEqual(normalizePlayback({ pace: 'proportional', hours: 'slots', camera: 'fixed', framing: 'wide', day_cards: false, head: 'dot', estimated_dashed: true }),
+        { pace: 'proportional', hours: 'slots', camera: 'fixed', framing: 'wide', day_cards: false, head: 'dot', estimated_dashed: true });
+    assert.deepEqual(normalizePlayback({ pace: 'vite', hours: 3, camera: 'drone', framing: 'cinéma', day_cards: 'non', head: 'vélo' }), defaults);
 });
 
 test('rythme régulier : quanta d’arrivée, trajets bornés, nuit entre deux journées', () => {

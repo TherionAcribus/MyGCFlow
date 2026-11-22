@@ -201,6 +201,34 @@ test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés'
   expect(errors).toEqual([]);
 });
 
+test('réglages : cadrage de la caméra suivie, enregistré, grisé en caméra fixe', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
+
+  // Équilibré par défaut, actif seulement quand la caméra suit.
+  const framing = page.locator('#parcoursFraming');
+  await expect(framing).toHaveValue('balanced');
+  await expect(framing).toBeEnabled();
+  const poseZoom = async () => (await snapshot(page)).camera.pose?.zoom;
+  const balanced = await poseZoom();
+  await framing.selectOption('wide');
+  await expect.poll(async () => (await snapshot(page)).playback.framing).toBe('wide');
+  await expect.poll(poseZoom).toBeLessThan(balanced);
+  await framing.selectOption('tight');
+  await expect.poll(async () => (await snapshot(page)).playback.framing).toBe('tight');
+  await expect.poll(poseZoom).toBeGreaterThan(balanced - 0.6);
+
+  // Caméra fixe : le réglage se grise. La surcharge part dans le parcours.
+  await page.locator('#parcoursCamera').selectOption('fixed');
+  await expect(framing).toBeDisabled();
+  const pid = (await (await request.get('/api/parcours')).json()).parcours[0].id;
+  await expect.poll(async () => (await (await request.get(`/api/parcours/${pid}`)).json()).parcours.playback)
+    .toEqual({ camera: 'fixed', framing: 'tight' });
+  expect(errors).toEqual([]);
+});
+
 test('réglages de lecture propres à chaque parcours', async ({ page, request }) => {
   const errors = collectErrors(page);
   await openReady(page);

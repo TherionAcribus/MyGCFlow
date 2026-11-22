@@ -604,8 +604,8 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['parcours_animation']['rhythm_mode'], 'rate')
         self.assertEqual(payload['parcours_animation']['days_per_second'], 10.0)
         self.assertEqual(payload['parcours_playback'], {
-            'pace': 'regular', 'hours': 'approx', 'camera': 'follow', 'day_cards': True,
-            'head': 'mode', 'estimated_dashed': False,
+            'pace': 'regular', 'hours': 'approx', 'camera': 'follow', 'framing': 'balanced',
+            'day_cards': True, 'head': 'mode', 'estimated_dashed': False,
         })
         self.assertIn('{heure}', payload['parcours_infos_template'])
 
@@ -621,8 +621,8 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(after['parcours_animation']['rhythm_mode'], 'rate')  # patch partiel
         self.assertFalse(after['parcours_animation']['camera_follow'])        # jamais la caméra du mode principal
         self.assertEqual(after['parcours_playback'], {
-            'pace': 'regular', 'hours': 'slots', 'camera': 'follow', 'day_cards': False,
-            'head': 'mode', 'estimated_dashed': False,
+            'pace': 'regular', 'hours': 'slots', 'camera': 'follow', 'framing': 'balanced',
+            'day_cards': False, 'head': 'mode', 'estimated_dashed': False,
         })
         self.assertEqual(after['parcours_infos_template'], '{date} · {km}')
         self.assertEqual(after['animation'], main_before)

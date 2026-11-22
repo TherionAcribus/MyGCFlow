@@ -31,10 +31,16 @@ export function createParcoursPlaybackUI(deps) {
         if (pace) pace.value = playback.pace;
         if (hours) hours.value = playback.hours;
         const camera = el('parcoursCamera');
+        const framing = el('parcoursFraming');
         const head = el('parcoursHead');
         const dayCards = el('parcoursDayCards');
         const dashed = el('parcoursEstimatedDashed');
         if (camera) camera.value = playback.camera;
+        // Le cadrage n'agit que sur la caméra suivie.
+        if (framing) {
+            framing.value = playback.framing;
+            framing.disabled = playback.camera !== 'follow';
+        }
         if (head) head.value = playback.head;
         if (dayCards) dayCards.checked = playback.day_cards;
         if (dashed) dashed.checked = playback.estimated_dashed;
@@ -77,12 +83,18 @@ export function createParcoursPlaybackUI(deps) {
         // Lot 7 : lus à chaque image, ils s'appliquent aussi en pleine
         // lecture.
         const camera = el('parcoursCamera');
+        const framing = el('parcoursFraming');
         const head = el('parcoursHead');
         const dayCards = el('parcoursDayCards');
         const dashed = el('parcoursEstimatedDashed');
         camera?.addEventListener('change', () => {
             save({ camera: camera.value });
+            if (framing) framing.disabled = camera.value !== 'follow';
             deps.unsuspendCamera();
+            deps.redraw();
+        });
+        framing?.addEventListener('change', () => {
+            save({ framing: framing.value });
             deps.redraw();
         });
         head?.addEventListener('change', () => {

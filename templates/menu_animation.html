@@ -301,6 +301,14 @@
                                 </select>
                                 <div id="parcoursCameraHint" class="form-hint text-muted">{{ _("Serrée à pied, elle s'éloigne pour un long trajet, la nuit et à la fin. Déplacer la carte pendant la lecture la laisse en place.") }}</div>
                             </div>
+                            <div class="mb-2">
+                                <label class="form-label" for="parcoursFraming">{{ _("Cadrage") }}</label>
+                                <select id="parcoursFraming" class="form-select form-select-sm">
+                                    <option value="tight">{{ _("Serré") }}</option>
+                                    <option value="balanced">{{ _("Équilibré") }}</option>
+                                    <option value="wide">{{ _("Large") }}</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-12 col-md-6">
                             <div class="mb-2">

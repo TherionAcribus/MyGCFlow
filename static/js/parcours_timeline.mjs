@@ -39,6 +39,14 @@ export const CAMERA_FOLLOW = 'follow';
 export const CAMERA_FIXED = 'fixed';
 export const CAMERA_MODES = Object.freeze([CAMERA_FOLLOW, CAMERA_FIXED]);
 
+// Cadrage de la caméra suivie (option `frame` de parcours_camera.mjs :
+// multiplicateur de l'emprise visée — 1,5 montre ~50 % de plus autour).
+export const FRAMING_TIGHT = 'tight';
+export const FRAMING_BALANCED = 'balanced';
+export const FRAMING_WIDE = 'wide';
+export const FRAMINGS = Object.freeze([FRAMING_TIGHT, FRAMING_BALANCED, FRAMING_WIDE]);
+export const FRAMING_FRAME = Object.freeze({ [FRAMING_TIGHT]: 0.7, [FRAMING_BALANCED]: 1, [FRAMING_WIDE]: 1.5 });
+
 export const HEAD_PICTOGRAM = 'mode';
 export const HEAD_DOT = 'dot';
 export const HEAD_STYLES = Object.freeze([HEAD_PICTOGRAM, HEAD_DOT]);
@@ -49,6 +57,7 @@ export const PLAYBACK_DEFAULTS = Object.freeze({
     pace: PACE_REGULAR,
     hours: HOURS_APPROX,
     camera: CAMERA_FOLLOW,
+    framing: FRAMING_BALANCED,
     day_cards: true,
     head: HEAD_PICTOGRAM,
     estimated_dashed: false,
@@ -79,6 +88,7 @@ export function normalizePlayback(raw) {
         pace: PACES.includes(o.pace) ? o.pace : PLAYBACK_DEFAULTS.pace,
         hours: HOURS_DISPLAYS.includes(o.hours) ? o.hours : PLAYBACK_DEFAULTS.hours,
         camera: CAMERA_MODES.includes(o.camera) ? o.camera : PLAYBACK_DEFAULTS.camera,
+        framing: FRAMINGS.includes(o.framing) ? o.framing : PLAYBACK_DEFAULTS.framing,
         day_cards: flag('day_cards'),
         head: HEAD_STYLES.includes(o.head) ? o.head : PLAYBACK_DEFAULTS.head,
         estimated_dashed: flag('estimated_dashed'),
