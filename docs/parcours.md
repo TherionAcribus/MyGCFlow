@@ -132,6 +132,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_stack.mjs` | Pur : étapes empilées (piles, libellé, éventail). Tests : `tests/js/parcours_stack.test.mjs` |
 | `static/js/parcours_labels.mjs` | Libellés et formatage de la page (dates, distances, icônes, diagnostics) — pur, `parcours_data.js` lui passe l'état courant. `parcours_gpx.mjs` : export GPX (ci-dessus) |
 | `static/js/parcours_tbar.mjs` | Barre de chronologie : série, repères (nuits, jours, DNF, photos), textes et sauts de journée pour `timeline_bar.js`. Fabrique `createParcoursTimelineBar` — l'état du parcours ouvert arrive par `getState()` |
+| `static/js/parcours_stops_panel.mjs` | Liste des étapes par journée : pliage, réordonnancement (flèches, glisser-déposer), panneau d'ajustement, parkings suggérés. Fabrique `createStopsPanel` — `editKey`/`collapsedDays`/`dragged` y sont internes |
 | `static/js/parcours_tracks_panel.mjs` | Panneau « Traces GPS » : liste, réglage du décalage UTC, envoi et suppression. Fabrique `createTracksPanel` — état par `getState()`, opérations du parcours injectées |
 | `static/js/parcours_photos_panel.mjs` | Panneau « Photos » : grille, lieux proposés, détail (rattachement, légende, cadrage), réglages d'affichage. Fabrique `createPhotosPanel` — `photoDetailId`/`photosDirty` y sont internes |
 | `static/js/parcours_upload.mjs` | Envois mutualisés photos/traces (`createParcoursUploads` : concurrence bornée, « Arrêter », cible figée au départ) et glisser-déposer de fichiers sur la page (`bindParcoursFileDrop`) |
