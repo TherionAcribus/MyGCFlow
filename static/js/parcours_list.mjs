@@ -34,8 +34,21 @@ export function createParcoursList(deps) {
         const list = el('parcoursList');
         if (!list) return;
         const item = document.createElement('div');
-        item.className = 'text-danger small';
-        item.textContent = t('Impossible de charger les parcours');
+        item.className = 'text-danger small d-flex align-items-center gap-2 p-3';
+        const text = document.createElement('span');
+        text.textContent = t('Impossible de charger les parcours');
+        // Nouvel essai sans recharger la page : un nouvel échec recrée ce
+        // bouton (renderListError est rappelée par refreshParcoursList).
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-sm btn-outline-secondary parcours-retry';
+        retry.textContent = t('Réessayer');
+        retry.addEventListener('click', async () => {
+            retry.disabled = true;
+            retry.textContent = t('Chargement…');
+            await deps.refreshParcoursList({ select: S().selectedId });
+        });
+        item.append(text, retry);
         list.replaceChildren(item);
     }
 

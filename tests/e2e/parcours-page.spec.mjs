@@ -329,6 +329,27 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   expect(state.layer.stops).toBe(0);
 });
 
+test('liste indisponible : « Réessayer » recharge la liste', async ({ page, request }) => {
+  await importFixture(page, request);
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Journée', date_start: '2025-07-12', date_end: '2025-07-12' } });
+  expect(created.status()).toBe(201);
+  let failList = true;
+  await page.route('**/api/parcours', (route) => {
+    if (failList) return route.abort();
+    return route.continue();
+  });
+  await openParcoursPage(page);
+  await expect(page.locator('#parcoursList')).toContainText('Impossible de charger les parcours');
+  await expect(page.locator('.parcours-retry')).toBeVisible();
+
+  // Serveur de nouveau joignable : la liste se remplit sans rechargement.
+  failList = false;
+  await page.locator('.parcours-retry').click();
+  await expect(page.locator('.parcours-list-item')).toHaveCount(1);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+});
+
 test('dupliquer, exporter et importer un parcours', async ({ page, request }) => {
   await importFixture(page, request);
   const created = await request.post('/api/parcours',
