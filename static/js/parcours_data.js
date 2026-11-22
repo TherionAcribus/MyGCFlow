@@ -31,8 +31,6 @@ import { CONFIG } from './init.js';
 import { showConfirmation, showToast, t } from './notifications.js';
 import { FETCH_TIMEOUTS, fetchWithTimeout } from './fetch_with_timeout.mjs';
 import { isParcoursPage } from './app_mode.mjs';
-import { isImageFile } from './images_model.mjs';
-import { isAudioFile } from './music_track.mjs';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { registerLifecycleEngine } from './lifecycle_engine.mjs';
 import { DEFAULT_PARCOURS_TEMPLATE, PARCOURS_INFO_TAGS } from './infos_template.mjs';
@@ -41,15 +39,11 @@ import { buildParcoursGpx } from './parcours_gpx.mjs';
 import {
     CATEGORY_ICONS,
     KIND_ICONS,
-    calibrationOffset,
     categoryOptionLabel,
     dayDiagnostic,
     formatDay,
     formatKm,
-    formatOffset,
     formatRange,
-    matchLabel,
-    refuseSummary,
     stopCategoryIcon,
     stopDetail,
     stopFacts,
@@ -87,6 +81,8 @@ import {
 } from './parcours_timeline.mjs';
 import { createParcoursTimelineBar, slotLabels } from './parcours_tbar.mjs';
 import { createTracksPanel } from './parcours_tracks_panel.mjs';
+import { createPhotosPanel } from './parcours_photos_panel.mjs';
+import { bindParcoursFileDrop, createParcoursUploads } from './parcours_upload.mjs';
 import { cameraPoseAt } from './parcours_camera.mjs';
 import { initParcoursCollect, parcoursCollectSnapshot, refreshParcoursCollect } from './parcours_collect.js';
 import { parcoursExtent, parcoursStops, rangeDayCount } from './parcours_model.mjs';
@@ -113,21 +109,16 @@ import {
 } from './parcours_reconstruct.mjs';
 import {
     cameraOffsets,
-    hasPosition,
     photoClock,
     photoTimeTrusted,
-    suggestPhotoPlaces,
 } from './parcours_photos.mjs';
 import {
     PHOTO_FADE_Q,
     PHOTO_LAYOUT_NONE,
-    PHOTO_ZOOM_RANGE,
-    isFullFrame,
     normalizePhotoDisplay,
     photoAspect,
     photoCaptionText,
     photoCrop,
-    photoCropRect,
     photoFrameAt,
     photoSlots,
     photoTimelineOptions,
@@ -309,11 +300,17 @@ export async function initParcoursPage() {
     bindForm();
     bindPlayback();
     bindAdjustments();
-    bindPhotos();
+    photosPanel.bind();
     tracksPanel.bind();
     bindRouting();
     bindParcoursStyle();
-    bindFileDrop();
+    bindParcoursFileDrop({
+        getSelectedId: () => selectedId,
+        uploadPhotos: photosPanel.upload,
+        uploadTracks: tracksPanel.upload,
+        showBsTab: (a) => pkg.showBsTab?.(a),
+        dropMusicFile: (f) => pkg.dropMusicFile?.(f),
+    });
     // Compléter depuis geocaching.com : rechargement des étapes après import.
     initParcoursCollect({ reload: () => (selectedId != null ? openParcours(selectedId) : Promise.resolve()) });
     pkg.syncOverlayVisibility?.();
@@ -450,7 +447,7 @@ function applyTimeline({ fit = false } = {}) {
     pkg.updateDataAvailabilityUI?.({ dataResolved: true });
     renderLayer({ fit });
     preloadPhotos();
-    renderPhotos();
+    photosPanel.render();
     tracksPanel.render();
     renderRouting();
     ensureRoutes();
@@ -2855,7 +2852,7 @@ function remapPlaceId(oldId, newId) {
         writeOverrides(patches);
     }
     for (const photo of inputs?.photos || []) {
-        if (photo.stopKey === oldKey) linkPhoto(photo.id, newKey);
+        if (photo.stopKey === oldKey) photosPanel.linkPhoto(photo.id, newKey);
     }
 }
 
@@ -3266,9 +3263,6 @@ function bindAdjustments() {
 // vidéo : même origine que la page, le canevas reste exportable.
 const photoImages = new Map();   // id → HTMLImageElement
 const photoThumbs = new Map();   // id → HTMLImageElement (vignettes laissées sur la carte)
-let photoDetailId = null;        // photo dont le panneau est ouvert
-let photosDirty = false;         // panneau à refaire à l'ouverture de l'onglet Photos
-
 function photoUrl(photo, thumb = false) {
     return `${CONFIG.BASE_URL}/api/parcours/${selectedId}/photos/${photo.id}/${thumb ? 'thumb' : 'file'}`;
 }
@@ -3441,750 +3435,34 @@ function previewPhoto(photoId) {
     return ok;
 }
 
-// --- Réglages d'affichage des photos (lot 9) ---------------------------------------
+// --- Photos : panneau, envois et glisser-déposer -----------------------------
+// parcours_photos_panel.mjs / parcours_upload.mjs : l'état du parcours ouvert
+// arrive par getState(), les opérations transverses sont injectées.
 
-const PHOTO_DISPLAY_FIELDS = Object.freeze({
-    layout: 'parcoursPhotoLayout',
-    side: 'parcoursPhotoSide',
-    anchor: 'parcoursPhotoAnchor',
-    strip_edge: 'parcoursPhotoStripEdge',
-    frame: 'parcoursPhotoFrame',
-    effect: 'parcoursPhotoEffect',
-});
-const PHOTO_DISPLAY_FLAGS = Object.freeze({
-    leader: 'parcoursPhotoLeader',
-    strip_reset: 'parcoursPhotoStripReset',
-    stack: 'parcoursPhotoStack',
-    pin: 'parcoursPhotoPin',
-    tilt: 'parcoursPhotoTilt',
-    ken_burns: 'parcoursPhotoKenBurns',
+const uploads = createParcoursUploads({
+    getSelectedId: () => selectedId,
+    reloadAdjustments,
 });
 
-function renderPhotoDisplay() {
-    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FIELDS)) {
-        const field = el(id);
-        if (field) field.value = photoDisplay[key];
-    }
-    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FLAGS)) {
-        const field = el(id);
-        if (field) field.checked = photoDisplay[key];
-    }
-    const size = el('parcoursPhotoSize');
-    if (size) size.value = String(photoDisplay.size);
-    const sizeValue = el('parcoursPhotoSizeValue');
-    if (sizeValue) sizeValue.textContent = `${photoDisplay.size} px`;
-    const pinSize = el('parcoursPhotoPinSize');
-    if (pinSize) pinSize.value = String(photoDisplay.pin_size);
-    const pinSizeValue = el('parcoursPhotoPinSizeValue');
-    if (pinSizeValue) pinSizeValue.textContent = `${photoDisplay.pin_size} px`;
-    const duration = el('parcoursPhotoDuration');
-    if (duration && document.activeElement !== duration) duration.value = String(photoDisplay.duration);
-    const max = el('parcoursPhotoMaxPerStop');
-    if (max && document.activeElement !== max) max.value = String(photoDisplay.max_per_stop);
-    const caption = el('parcoursPhotoCaptionTemplate');
-    if (caption && document.activeElement !== caption) caption.value = photoDisplay.caption;
-    // Réglages propres à chaque placement.
-    const layout = photoDisplay.layout;
-    const show = (id, visible) => {
-        const row = el(id);
-        if (row) row.hidden = !visible;
-    };
-    show('parcoursPhotoSideRow', layout === 'stop');
-    show('parcoursPhotoAnchorRow', layout === 'fixed');
-    show('parcoursPhotoStripEdgeRow', layout === 'strip');
-    show('parcoursPhotoStripResetRow', layout === 'strip');
-    show('parcoursPhotoLeaderRow', layout === 'stop' || layout === 'fixed');
-    show('parcoursPhotoStackRow', layout === 'stop' || layout === 'fixed');
-    show('parcoursPhotoPinRow', layout === 'stop' || layout === 'fixed');
-    show('parcoursPhotoPinSizeRow', (layout === 'stop' || layout === 'fixed') && photoDisplay.pin);
-    const fields = el('parcoursPhotoDisplayFields');
-    if (fields) fields.disabled = layout === PHOTO_LAYOUT_NONE;
-    const preview = el('btnParcoursPhotoPreview');
-    if (preview) preview.disabled = layout === PHOTO_LAYOUT_NONE || !timeline || photoSlots(timeline).length === 0;
-}
-
-function bindPhotoDisplay() {
-    renderPhotoDisplay();
-    // Valeur complète envoyée (comme parcours_playback, cf. bindPlayback) ;
-    // la durée, le plafond et « aucune photo » changent la chronologie.
-    const save = (patch) => {
-        const before = photoDisplay;
-        photoDisplay = normalizePhotoDisplay({ ...photoDisplay, ...patch });
-        const full = { ...photoDisplay };
-        saveSettingsPatch({ parcours_photo_display: full }).then(() => {
-            if (window.userSettings) window.userSettings.parcours_photo_display = full;
-        });
-        if (window.userSettings) window.userSettings.parcours_photo_display = full;
-        renderPhotoDisplay();
-        const timing = before.duration !== photoDisplay.duration
-            || before.max_per_stop !== photoDisplay.max_per_stop
-            || (before.layout === PHOTO_LAYOUT_NONE) !== (photoDisplay.layout === PHOTO_LAYOUT_NONE);
-        if (timing) {
-            if (clock.running) {
-                pendingTimeline = true;
-                showToast(t("Le réglage s'appliquera à la fin de l'animation."), 'info', t('Parcours'));
-            } else {
-                applyTimeline();
-            }
-        }
-        pkg.getMap?.()?.render();
-    };
-    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FIELDS)) {
-        el(id)?.addEventListener('change', (event) => save({ [key]: event.target.value }));
-    }
-    for (const [key, id] of Object.entries(PHOTO_DISPLAY_FLAGS)) {
-        el(id)?.addEventListener('change', (event) => save({ [key]: event.target.checked }));
-    }
-    const size = el('parcoursPhotoSize');
-    size?.addEventListener('input', () => {
-        // Glisser : aperçu immédiat, enregistré au relâchement.
-        photoDisplay = normalizePhotoDisplay({ ...photoDisplay, size: Number(size.value) });
-        const sizeValue = el('parcoursPhotoSizeValue');
-        if (sizeValue) sizeValue.textContent = `${photoDisplay.size} px`;
-        pkg.getMap?.()?.render();
-    });
-    size?.addEventListener('change', () => save({ size: Number(size.value) }));
-    const pinSize = el('parcoursPhotoPinSize');
-    pinSize?.addEventListener('input', () => {
-        photoDisplay = normalizePhotoDisplay({ ...photoDisplay, pin_size: Number(pinSize.value) });
-        const value = el('parcoursPhotoPinSizeValue');
-        if (value) value.textContent = `${photoDisplay.pin_size} px`;
-        pkg.getMap?.()?.render();
-    });
-    pinSize?.addEventListener('change', () => save({ pin_size: Number(pinSize.value) }));
-    el('parcoursPhotoDuration')?.addEventListener('change', (event) => save({ duration: Number(event.target.value) }));
-    el('parcoursPhotoMaxPerStop')?.addEventListener('change', (event) => save({ max_per_stop: Number(event.target.value) }));
-    el('parcoursPhotoCaptionTemplate')?.addEventListener('change', (event) => save({ caption: event.target.value }));
-    el('btnParcoursPhotoPreview')?.addEventListener('click', () => {
-        const first = timeline ? photoSlots(timeline)[0] : null;
-        if (first) previewPhoto(first.photoId);
-    });
-}
-
-
-// Envois photos/traces : quelques fichiers à la fois plutôt qu'un par un
-// (bien plus court sur un gros lot), et « Arrêter » interrompt — les
-// envois partis se terminent, les suivants ne partent pas. Chaque lot
-// emporte son jeton : un second envoi démarré en cours de route a le sien.
-const UPLOAD_CONCURRENCY = 3;
-const uploadJobs = { photo: [], track: [] };
-
-const UPLOAD_KINDS = {
-    photo: {
-        field: 'photo',
-        path: 'photos',
-        status: 'parcoursPhotoStatus',
-        stop: 'btnParcoursPhotosStop',
-        fullError: 'photos-full',
-        progress: (done, total) => t('Envoi des photos : ${done} / ${total}', { done, total }),
-        refusedTitle: () => t('Photos refusées'),
-        stopped: (sent, total) => t('Envoi interrompu : ${sent} photos sur ${total} envoyées', { sent, total }),
-    },
-    track: {
-        field: 'track',
-        path: 'tracks',
-        status: 'parcoursTrackStatus',
-        stop: 'btnParcoursTracksStop',
-        fullError: 'tracks-full',
-        progress: (done, total) => t('Envoi des traces : ${done} / ${total}', { done, total }),
-        refusedTitle: () => t('Traces refusées'),
-        stopped: (sent, total) => t('Envoi interrompu : ${sent} traces sur ${total} envoyées', { sent, total }),
-    },
-};
-
-function refreshUploadStop(kind) {
-    const btn = el(UPLOAD_KINDS[kind].stop);
-    if (btn) btn.hidden = uploadJobs[kind].length === 0;
-}
-
-function cancelUploads(kind) {
-    for (const job of uploadJobs[kind]) job.cancel = true;
-}
-
-async function runUpload(kind, files) {
-    const spec = UPLOAD_KINDS[kind];
-    // Tout part dans le parcours ouvert au début de l'envoi : en ouvrir un
-    // autre en cours de route ne déroute pas la suite.
-    const targetId = selectedId;
-    const status = el(spec.status);
-    const job = { cancel: false };
-    uploadJobs[kind].push(job);
-    refreshUploadStop(kind);
-    const refused = [];
-    let done = 0;
-    let index = 0;
-    let fullMessage = null;
-    const showProgress = () => {
-        if (status) status.textContent = spec.progress(done, files.length);
-    };
-    showProgress();
-    const worker = async () => {
-        while (index < files.length && !job.cancel && !fullMessage) {
-            const file = files[index++];
-            const body = new FormData();
-            body.append(spec.field, file, file.name);
-            try {
-                const response = await fetchWithTimeout(
-                    `${CONFIG.BASE_URL}/api/parcours/${targetId}/${spec.path}`,
-                    { method: 'POST', body },
-                    { timeoutMs: FETCH_TIMEOUTS.upload, t });
-                if (!response.ok) {
-                    const payload = await response.json().catch(() => ({}));
-                    const message = payload.message || `HTTP ${response.status}`;
-                    refused.push({ name: file.name, message });
-                    // Le plafond ne bougera pas d'ici la fin de l'envoi :
-                    // les suivants seraient refusés de la même façon.
-                    if (payload.error === spec.fullError) fullMessage = message;
-                }
-            } catch (error) {
-                refused.push({ name: file.name, message: error.message });
-            }
-            done++;
-            showProgress();
-        }
-    };
-    await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, files.length) }, worker));
-    uploadJobs[kind].splice(uploadJobs[kind].indexOf(job), 1);
-    refreshUploadStop(kind);
-    // Jamais partis (plafond atteint) : refusés de la même cause.
-    if (fullMessage) {
-        for (const rest of files.slice(index)) refused.push({ name: rest.name, message: fullMessage });
-    }
-    if (status) status.textContent = '';
-    if (refused.length) showToast(refuseSummary(refused), 'warning', spec.refusedTitle());
-    else if (job.cancel) {
-        const sent = files.length - files.slice(index).length;
-        showToast(spec.stopped(sent, files.length), 'info', t('Parcours'));
-    }
-    // Autre parcours ouvert entre-temps : ses entrées sont déjà fraîches.
-    await reloadAdjustments(targetId, { tracks: kind === 'track' });
-}
-
-async function uploadPhotos(files) {
-    if (!selectedId || adjustmentsLocked() || files.length === 0) return;
-    await runUpload('photo', files);
-}
-
-async function linkPhoto(id, stopKey) {
-    if (!selectedId || adjustmentsLocked()) return;
-    const pid = selectedId;
-    try {
-        await fetchJson(`/api/parcours/${pid}/photos/${id}`, {
-            method: 'PATCH', body: JSON.stringify({ stopKey }),
-        });
-        await reloadAdjustments(pid);
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
-}
-
-// Réglages d'affichage d'une photo (lot 8). Masquer ou montrer change le
-// temps d'écran : reconstruction complète, refusée pendant une lecture.
-// Légende et cadrage ne touchent que le dessin : la photo est remplacée en
-// mémoire, la carte redessinée.
-async function patchPhoto(id, patch) {
-    if (!selectedId) return;
-    const pid = selectedId;
-    const rebuilds = 'hidden' in patch;
-    if (rebuilds && adjustmentsLocked()) {
-        renderPhotoDetail();
-        return;
-    }
-    try {
-        const { photo } = await fetchJson(`/api/parcours/${pid}/photos/${id}`, {
-            method: 'PATCH', body: JSON.stringify(patch),
-        });
-        if (!inputs || !photo || pid !== selectedId) return;
-        const photos = (inputs.photos || []).map((p) => (p.id === photo.id ? photo : p));
-        if (rebuilds) {
-            receiveAdjustments({ photos }, pid);
-        } else {
-            inputs.photos = photos;
-            renderPhotos();
-            pkg.getMap?.()?.render();
-        }
-    } catch (error) {
-        showToast(error.message, 'error');
-        renderPhotoDetail();
-    }
-}
-
-async function deletePhoto(id) {
-    if (!selectedId || adjustmentsLocked()) return;
-    const pid = selectedId;
-    try {
-        await fetchJson(`/api/parcours/${pid}/photos/${id}`, { method: 'DELETE' });
-        photoImages.delete(id);
-        photoThumbs.delete(id);
-        if (photoDetailId === id) photoDetailId = null;
-        await reloadAdjustments(pid);
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
-}
-
-async function setCameraOffset(camera, offsetMinutes) {
-    if (!selectedId || adjustmentsLocked()) return;
-    const pid = selectedId;
-    try {
-        receiveAdjustments(await fetchJson(`/api/parcours/${pid}/cameras`, {
-            method: 'PUT', body: JSON.stringify({ camera, offsetMinutes }),
-        }), pid);
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
-}
-
-
-function renderPhotos() {
-    const card = el('parcoursPhotosCard');
-    if (!card) return;
-    card.hidden = !inputs;
-    const empty = el('parcoursPhotosEmpty');
-    if (empty) empty.hidden = !!inputs;
-    if (!inputs) return;
-    // Onglet Photos non affiché : la grille (une vignette par photo,
-    // jusqu'à des centaines) n'est pas reconstruite à chaque ajustement
-    // fait ailleurs — juste marquée, refaite à l'ouverture de l'onglet.
-    const pane = card.closest('.tab-pane');
-    if (pane && !pane.classList.contains('active')) {
-        photosDirty = true;
-        return;
-    }
-    photosDirty = false;
-    const photos = inputs.photos || [];
-    const offsets = cameraOffsets(inputs.cameras);
-    const summary = el('parcoursPhotoSummary');
-    if (summary) {
-        const linked = photos.filter((photo) => photoMatches.get(photo.id)?.key).length;
-        summary.textContent = photos.length
-            ? t('${n} photos, ${linked} rattachées à une étape', { n: photos.length, linked })
-            : t('Aucune photo pour ce parcours.');
-    }
-
-    // Appareils : décalage d'horloge (téléphones géolocalisés : à l'heure).
-    const cameras = el('parcoursCameras');
-    if (cameras) {
-        const names = [...new Set(photos.filter((p) => p.camera && !hasPosition(p)).map((p) => p.camera))].sort();
-        cameras.replaceChildren(...names.map((name) => {
-            const row = document.createElement('div');
-            row.className = 'mb-2 parcours-camera';
-            row.dataset.camera = name;
-            const label = document.createElement('div');
-            label.className = 'small mb-1';
-            label.textContent = offsets.has(name)
-                ? t('${camera} : horloge recalée (${offset})', { camera: name, offset: formatOffset(offsets.get(name)) })
-                : t('${camera} : horloge non recalée, heures ignorées', { camera: name });
-            const controls = document.createElement('div');
-            controls.className = 'd-flex align-items-center gap-2 flex-wrap';
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = '1';
-            input.className = 'form-control form-control-sm parcours-camera-offset';
-            input.value = offsets.has(name) ? String(offsets.get(name)) : '0';
-            input.setAttribute('aria-label', t('Décalage en minutes'));
-            const unit = document.createElement('span');
-            unit.className = 'small text-muted';
-            unit.textContent = t('min');
-            const apply = button('btn btn-sm btn-outline-primary parcours-camera-apply', 'ti-clock',
-                t('Recaler l’horloge'), { text: t('Recaler l’horloge') });
-            apply.addEventListener('click', () => {
-                const value = Math.round(Number(input.value));
-                if (Number.isFinite(value)) setCameraOffset(name, value);
-            });
-            controls.append(input, unit, apply);
-            if (offsets.has(name)) {
-                const clear = button('btn btn-sm btn-link parcours-camera-clear', 'ti-x', t('Oublier ce recalage'));
-                clear.addEventListener('click', () => setCameraOffset(name, null));
-                controls.append(clear);
-            }
-            row.append(label, controls);
-            return row;
-        }));
-    }
-
-    const grid = el('parcoursPhotos');
-    if (grid) {
-        grid.replaceChildren(...photos.map((photo) => {
-            const match = photoMatches.get(photo.id);
-            const cell = document.createElement('button');
-            cell.type = 'button';
-            cell.className = 'parcours-photo-thumb';
-            cell.classList.toggle('is-linked', !!match?.key);
-            cell.classList.toggle('is-active', photoDetailId === photo.id);
-            cell.classList.toggle('is-hidden', !!photo.hidden);
-            cell.dataset.photoId = String(photo.id);
-            const hiddenNote = t('masquée dans la vidéo');
-            cell.title = photo.hidden ? `${photo.name} — ${matchLabel(match, stopByKey(match.key))} — ${hiddenNote}` : `${photo.name} — ${matchLabel(match, stopByKey(match.key))}`;
-            const img = document.createElement('img');
-            img.src = photoUrl(photo, true);
-            img.alt = photo.name || '';
-            img.loading = 'lazy';
-            cell.append(img);
-            if (photo.hidden) {
-                const badge = document.createElement('i');
-                badge.className = 'ti ti-eye-off parcours-photo-hidden-badge';
-                badge.setAttribute('aria-hidden', 'true');
-                cell.append(badge);
-            }
-            cell.addEventListener('click', () => {
-                photoDetailId = photoDetailId === photo.id ? null : photo.id;
-                renderPhotos();
-            });
-            return cell;
-        }));
-    }
-    renderPhotoPlaces();
-    renderPhotoDetail();
-    renderPhotoDisplay();
-}
-
-// Photos géolocalisées hors de toute étape (lot 10) : un lieu proposé par
-// endroit, créé d'un clic (nom facultatif) ; ses photos s'y rattachent.
-function renderPhotoPlaces() {
-    const box = el('parcoursPhotoPlaces');
-    const list = el('parcoursPhotoPlaceList');
-    if (!box || !list) return;
-    const dates = new Set((ordered?.days || []).map((day) => day.date));
-    const places = suggestPhotoPlaces(inputs?.photos || [], photoMatches, cameraOffsets(inputs?.cameras), { dates });
-    box.hidden = places.length === 0;
-    const title = el('parcoursPhotoPlacesTitle');
-    if (title) {
-        const n = places.reduce((sum, place) => sum + place.photoIds.length, 0);
-        title.textContent = n === 1 ? t('1 photo hors des étapes') : t('${n} photos hors des étapes', { n });
-    }
-    list.replaceChildren(...places.map((place) => {
-        const row = document.createElement('div');
-        row.className = 'parcours-photo-place d-flex align-items-center gap-2 flex-wrap';
-        row.dataset.photoIds = place.photoIds.join(',');
-        const thumbs = document.createElement('div');
-        thumbs.className = 'parcours-photo-place-thumbs';
-        for (const id of place.photoIds.slice(0, 3)) {
-            const photo = photoById(id);
-            if (!photo) continue;
-            const img = document.createElement('img');
-            img.src = photoUrl(photo, true);
-            img.alt = photo.name || '';
-            img.loading = 'lazy';
-            thumbs.append(img);
-        }
-        const text = document.createElement('div');
-        text.className = 'small flex-grow-1';
-        const count = place.photoIds.length === 1 ? t('1 photo') : t('${n} photos', { n: place.photoIds.length });
-        text.textContent = [
-            count,
-            formatDay(place.date, { weekday: 'short', day: 'numeric', month: 'short' }),
-            minutesToTime(place.minutes),
-        ].filter(Boolean).join(' · ');
-        const name = document.createElement('input');
-        name.type = 'text';
-        name.maxLength = 80;
-        name.className = 'form-control form-control-sm parcours-photo-place-name';
-        name.placeholder = t('Nom du lieu (facultatif)');
-        name.setAttribute('aria-label', t('Nom du lieu'));
-        const create = button('btn btn-sm btn-outline-primary parcours-photo-place-create', 'ti-map-pin-plus',
-            t('Créer ce lieu'), { text: t('Créer ce lieu') });
-        create.addEventListener('click', async () => {
-            create.disabled = true;
-            const ok = await createPlace({
-                kind: KIND_PLACE,
-                name: name.value,
-                lat: place.lat,
-                lon: place.lon,
-                date: place.date,
-                time: minutesToTime(place.minutes) || null,
-            });
-            if (!ok) create.disabled = false;
-        });
-        row.append(thumbs, text, name, create);
-        return row;
-    }));
-}
-
-function renderPhotoDetail() {
-    const box = el('parcoursPhotoDetail');
-    if (!box) return;
-    const photo = photoById(photoDetailId);
-    box.hidden = !photo;
-    if (!photo) return;
-    const match = photoMatches.get(photo.id);
-    const clock = photoClock(photo, cameraOffsets(inputs.cameras));
-    const info = el('parcoursPhotoInfo');
-    if (info) {
-        info.textContent = [
-            photo.name,
-            clock ? `${formatDay(clock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(clock.minutes)}` : t('sans heure'),
-            hasPosition(photo) ? t('géolocalisée') : t('sans position'),
-            photo.camera || '',
-        ].filter(Boolean).join(' · ');
-    }
-
-    const label = document.createElement('label');
-    label.className = 'small';
-    label.textContent = t('Étape');
-    const select = document.createElement('select');
-    select.className = 'form-select form-select-sm w-auto parcours-photo-stop';
-    label.htmlFor = select.id = 'parcoursPhotoStop';
-    const auto = document.createElement('option');
-    auto.value = '';
-    const autoMatch = photo.stopKey ? null : match;
-    auto.textContent = autoMatch?.key ? t('Automatique : ${label}', { label: matchLabel(autoMatch, stopByKey(autoMatch.key)) }) : t('Automatique');
-    select.append(auto);
-    for (const day of ordered?.days || []) {
-        const group = document.createElement('optgroup');
-        group.label = formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' });
-        for (const stop of day.stops) {
-            if (stop.kind === KIND_BASE) continue;
-            const opt = document.createElement('option');
-            opt.value = stop.key;
-            opt.textContent = `${Number.isFinite(stop.index) ? `${stop.index}. ` : ''}${stopLabel(stop)}`;
-            group.append(opt);
-        }
-        if (group.children.length) select.append(group);
-    }
-    select.value = photo.stopKey || '';
-    select.addEventListener('change', () => linkPhoto(photo.id, select.value || null));
-    el('parcoursPhotoLinkRow')?.replaceChildren(label, select);
-
-    const shown = el('parcoursPhotoShown');
-    if (shown) shown.checked = !photo.hidden;
-    const caption = el('parcoursPhotoCaption');
-    if (caption && document.activeElement !== caption) caption.value = photo.caption || '';
-    const crop = photoCrop(photo);
-    const aspect = el('parcoursPhotoAspect');
-    if (aspect) aspect.value = crop.aspect;
-    const zoom = el('parcoursPhotoZoom');
-    if (zoom) zoom.value = String(crop.zoom);
-    renderCropPicker(photo);
-
-    const actions = [];
-    const stop = match?.key ? stopByKey(match.key) : null;
-    const offset = !hasPosition(photo) && photo.camera ? calibrationOffset(photo, stop, ordered?.days) : null;
-    if (offset !== null) {
-        const calibrate = button('btn btn-sm btn-outline-primary parcours-photo-calibrate', 'ti-clock',
-            t('Caler l’horloge de l’appareil sur cette étape'),
-            { text: t('Caler l’horloge sur l’étape (${offset})', { offset: formatOffset(offset) }) });
-        calibrate.addEventListener('click', () => setCameraOffset(photo.camera, offset));
-        actions.push(calibrate);
-    }
-    if (timeline && photoSlots(timeline).some((slot) => slot.photoId === photo.id)) {
-        const show = button('btn btn-sm btn-outline-secondary parcours-photo-preview', 'ti-eye',
-            t('Ouvrir l’aperçu en pause sur cette photo'), { text: t('Voir sur la carte') });
-        show.addEventListener('click', () => previewPhoto(photo.id));
-        actions.push(show);
-    }
-    const remove = button('btn btn-sm btn-outline-danger parcours-photo-delete', 'ti-trash', t('Supprimer la photo'),
-        { text: t('Supprimer la photo') });
-    remove.addEventListener('click', () => deletePhoto(photo.id));
-    actions.push(remove);
-    el('parcoursPhotoActions')?.replaceChildren(...actions);
-}
-
-// Sélecteur du cadrage : la photo entière, la fenêtre gardée par-dessus
-// (le reste assombri). `draft` : cadrage en cours de geste, pas encore
-// enregistré.
-function renderCropPicker(photo, draft = null) {
-    const picker = el('parcoursPhotoCropPicker');
-    const img = el('parcoursPhotoCropImage');
-    const frame = el('parcoursPhotoCropWindow');
-    if (!picker || !img || !frame) return;
-    const url = photoUrl(photo, true);
-    if (img.dataset.src !== url) {
-        img.dataset.src = url;
-        const known = photo.width > 0 && photo.height > 0;
-        picker.style.aspectRatio = known ? `${photo.width} / ${photo.height}` : '';
-        // Portrait : plafonné en hauteur, comme le paysage l'est en largeur.
-        picker.style.maxWidth = known && photo.height > photo.width ? `${Math.round((240 * photo.width) / photo.height)}px` : '';
-        img.src = url;
-    }
-    const crop = { ...photoCrop(photo), ...(draft || {}) };
-    const natural = { width: photo.width || 1, height: photo.height || 1 };
-    const rect = photoCropRect(natural, crop);
-    frame.style.left = `${(rect.x / natural.width) * 100}%`;
-    frame.style.top = `${(rect.y / natural.height) * 100}%`;
-    frame.style.width = `${(rect.width / natural.width) * 100}%`;
-    frame.style.height = `${(rect.height / natural.height) * 100}%`;
-    const full = isFullFrame(crop);
-    picker.classList.toggle('is-full', full);
-    const hint = el('parcoursPhotoCropHint');
-    if (hint) {
-        hint.textContent = full
-            ? t('Photo entière : choisissez un cadrage ou un zoom pour n’en garder qu’une partie.')
-            : t('Glissez sur la photo pour choisir la partie gardée.');
-    }
-    const zoomValue = el('parcoursPhotoZoomValue');
-    if (zoomValue) zoomValue.textContent = `${Math.round(crop.zoom)} %`;
-}
-
-function bindPhotoDetail() {
-    const current = () => photoById(photoDetailId);
-    el('parcoursPhotoShown')?.addEventListener('change', (event) => {
-        const photo = current();
-        if (photo) patchPhoto(photo.id, { hidden: !event.target.checked });
-    });
-    el('parcoursPhotoCaption')?.addEventListener('change', (event) => {
-        const photo = current();
-        const value = event.target.value.trim();
-        if (photo && value !== (photo.caption || '')) patchPhoto(photo.id, { caption: value });
-    });
-    el('parcoursPhotoAspect')?.addEventListener('change', (event) => {
-        const photo = current();
-        if (photo) patchPhoto(photo.id, { aspect: event.target.value });
-    });
-    const zoom = el('parcoursPhotoZoom');
-    zoom?.addEventListener('input', () => {
-        const photo = current();
-        if (photo) renderCropPicker(photo, { zoom: Number(zoom.value) });
-    });
-    zoom?.addEventListener('change', () => {
-        const photo = current();
-        const value = Math.round(Number(zoom.value));
-        if (photo && value >= PHOTO_ZOOM_RANGE[0] && value <= PHOTO_ZOOM_RANGE[1]) patchPhoto(photo.id, { zoom: value });
-    });
-
-    // Point focal : glisser (enregistré au relâchement), ou les flèches
-    // (1 %, Maj = 10 %), comme le sélecteur de l'onglet Images.
-    const picker = el('parcoursPhotoCropPicker');
-    if (!picker) return;
-    const focusAt = (event) => {
-        const rect = picker.getBoundingClientRect();
-        if (!rect.width || !rect.height) return null;
-        const clamp01 = (v) => Math.max(0, Math.min(1, v));
-        return {
-            focusX: Math.round(clamp01((event.clientX - rect.left) / rect.width) * 100),
-            focusY: Math.round(clamp01((event.clientY - rect.top) / rect.height) * 100),
-        };
-    };
-    picker.addEventListener('pointerdown', (event) => {
-        const photo = current();
-        if (event.button !== 0 || !photo) return;
-        picker.setPointerCapture?.(event.pointerId);
-        let draft = focusAt(event);
-        renderCropPicker(photo, draft);
-        const move = (e) => {
-            if (e.pointerId !== event.pointerId) return;
-            draft = focusAt(e) || draft;
-            renderCropPicker(photo, draft);
-        };
-        const up = (e) => {
-            if (e.pointerId !== event.pointerId) return;
-            picker.removeEventListener('pointermove', move);
-            picker.removeEventListener('pointerup', up);
-            picker.removeEventListener('pointercancel', up);
-            if (draft) patchPhoto(photo.id, draft);
-        };
-        picker.addEventListener('pointermove', move);
-        picker.addEventListener('pointerup', up);
-        picker.addEventListener('pointercancel', up);
-        event.preventDefault();
-    });
-    picker.addEventListener('keydown', (event) => {
-        const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
-        const photo = current();
-        if (!dir || !photo) return;
-        event.preventDefault();
-        const step = event.shiftKey ? 10 : 1;
-        const crop = photoCrop(photo);
-        const clamp = (v) => Math.max(0, Math.min(100, v));
-        patchPhoto(photo.id, { focusX: clamp(crop.focusX + dir[0] * step), focusY: clamp(crop.focusY + dir[1] * step) });
-    });
-}
-
-function bindPhotos() {
-    bindPhotoDetail();
-    bindPhotoDisplay();
-    // Rendu différé quand l'onglet n'est pas affiché : refait à l'ouverture.
-    document.querySelector('#mainTabs a[href="#photos"]')?.addEventListener('shown.bs.tab', () => {
-        if (photosDirty) renderPhotos();
-    });
-    el('btnParcoursPhotosStop')?.addEventListener('click', () => cancelUploads('photo'));
-    const input = el('parcoursPhotoInput');
-    el('btnParcoursAddPhotos')?.addEventListener('click', () => input?.click());
-    input?.addEventListener('change', () => {
-        const files = [...(input.files || [])];
-        input.value = '';
-        uploadPhotos(files);
-    });
-}
-
-// --- Glisser-déposer ---------------------------------------------------------------
-
-const isGpxFile = (file) => /\.gpx$/i.test(file?.name || '');
-
-// Fichiers déposés n'importe où sur la page : les photos rejoignent le
-// parcours ouvert (onglet Photos, pour les voir arriver), les .gpx ses traces
-// (onglet Données), une musique Animation > Musique. Sans ce gestionnaire, le
-// navigateur ouvrirait le fichier à la place de l'application.
-function routeDroppedFiles(files) {
-    const music = files.find(isAudioFile);
-    if (music) pkg.dropMusicFile?.(music);
-    const photos = files.filter(isImageFile);
-    const tracks = files.filter(isGpxFile);
-    const ignored = files.filter((f) => f !== music && !isImageFile(f) && !isGpxFile(f));
-    if (ignored.length) {
-        const shown = ignored.slice(0, 3).map((f) => f.name).join(', ');
-        const more = ignored.length > 3 ? t(' et ${n} autres', { n: ignored.length - 3 }) : '';
-        showToast(shown + more, 'warning', t('Fichiers non pris en charge'));
-    }
-    if (!photos.length && !tracks.length) return;
-    if (!selectedId) {
-        showToast(t('Ouvrez un parcours avant d’y déposer des photos ou des traces.'), 'info', t('Parcours'));
-        return;
-    }
-    if (photos.length) {
-        pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#photos"]'));
-        uploadPhotos(photos);
-    } else {
-        pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
-    }
-    if (tracks.length) tracksPanel.upload(tracks);
-}
-
-function bindFileDrop() {
-    const overlay = document.createElement('div');
-    overlay.id = 'parcoursDropOverlay';
-    overlay.className = 'gpx-drop-overlay';
-    overlay.setAttribute('aria-hidden', 'true');
-    const inner = document.createElement('div');
-    inner.className = 'gpx-drop-overlay__inner';
-    const icon = document.createElement('i');
-    icon.className = 'ti ti-file-upload';
-    const text = document.createElement('div');
-    text.className = 'gpx-drop-overlay__text';
-    text.textContent = t('Déposez vos photos ou traces (.gpx) pour les ajouter au parcours, ou une musique');
-    inner.append(icon, text);
-    overlay.append(inner);
-    document.body.append(overlay);
-
-    // Compteur de profondeur : dragenter/dragleave se déclenchent aussi d'un
-    // élément enfant à l'autre.
-    const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
-    let depth = 0;
-    const hide = () => { depth = 0; overlay.classList.remove('is-visible'); };
-    window.addEventListener('dragenter', (e) => {
-        if (!hasFiles(e)) return;
-        e.preventDefault();
-        depth++;
-        overlay.classList.add('is-visible');
-    });
-    window.addEventListener('dragover', (e) => {
-        if (!hasFiles(e)) return;
-        e.preventDefault();
-        try { e.dataTransfer.dropEffect = 'copy'; } catch (_) {}
-    });
-    window.addEventListener('dragleave', (e) => {
-        if (!hasFiles(e)) return;
-        depth = Math.max(0, depth - 1);
-        if (depth === 0) hide();
-    });
-    window.addEventListener('drop', (e) => {
-        if (!hasFiles(e)) return;
-        e.preventDefault();
-        hide();
-        routeDroppedFiles([...(e.dataTransfer.files || [])]);
-    });
-    window.addEventListener('dragend', hide);
-}
+const photosPanel = createPhotosPanel({
+    getState: () => ({ inputs, ordered, photoMatches, timeline, selectedId }),
+    uploads,
+    button,
+    fetchJson,
+    reloadAdjustments,
+    receiveAdjustments,
+    adjustmentsLocked,
+    stopByKey,
+    createPlace,
+    previewPhoto,
+    evictPhotoImages: (id) => { photoImages.delete(id); photoThumbs.delete(id); },
+    getMap: () => pkg.getMap?.(),
+    getPhotoDisplay: () => photoDisplay,
+    setPhotoDisplay: (next) => { photoDisplay = next; },
+    clockRunning: () => clock.running,
+    deferTimeline: () => { pendingTimeline = true; },
+    applyTimeline: () => applyTimeline(),
+});
 
 // --- Traces GPS (lot 5) ---------------------------------------------------------
 
@@ -4193,10 +3471,10 @@ const tracksPanel = createTracksPanel({
     button,
     fetchJson,
     adjustmentsLocked,
-    runUpload,
+    runUpload: uploads.run,
     reloadAdjustments,
     receiveAdjustments,
-    cancelUploads,
+    cancelUploads: uploads.cancel,
 });
 
 // --- Itinéraires (lot 6) --------------------------------------------------------

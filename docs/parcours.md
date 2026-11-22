@@ -133,6 +133,8 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_labels.mjs` | Libellés et formatage de la page (dates, distances, icônes, diagnostics) — pur, `parcours_data.js` lui passe l'état courant. `parcours_gpx.mjs` : export GPX (ci-dessus) |
 | `static/js/parcours_tbar.mjs` | Barre de chronologie : série, repères (nuits, jours, DNF, photos), textes et sauts de journée pour `timeline_bar.js`. Fabrique `createParcoursTimelineBar` — l'état du parcours ouvert arrive par `getState()` |
 | `static/js/parcours_tracks_panel.mjs` | Panneau « Traces GPS » : liste, réglage du décalage UTC, envoi et suppression. Fabrique `createTracksPanel` — état par `getState()`, opérations du parcours injectées |
+| `static/js/parcours_photos_panel.mjs` | Panneau « Photos » : grille, lieux proposés, détail (rattachement, légende, cadrage), réglages d'affichage. Fabrique `createPhotosPanel` — `photoDetailId`/`photosDirty` y sont internes |
+| `static/js/parcours_upload.mjs` | Envois mutualisés photos/traces (`createParcoursUploads` : concurrence bornée, « Arrêter », cible figée au départ) et glisser-déposer de fichiers sur la page (`bindParcoursFileDrop`) |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture, tête et trait |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
