@@ -310,6 +310,26 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertEqual(row, ('Belvédère', 'other', None))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_parcours_gains_playback_column(self):
+        # Base v21 : les réglages de lecture propres au parcours n'existent
+        # pas ; la migration crée la colonne sans toucher au parcours.
+        self._create_app()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO parcours (name, date_start, date_end, include_labs, include_dnf) "
+                "VALUES ('Sortie', '2025-07-12', '2025-07-12', 1, 1)")
+            conn.execute("ALTER TABLE parcours DROP COLUMN playback")
+            conn.execute("PRAGMA user_version = 21")
+        self.assertNotIn('playback', self._columns('parcours'))
+
+        self._create_app()
+
+        self.assertIn('playback', self._columns('parcours'))
+        with self._connect() as conn:
+            row = conn.execute("SELECT name, playback FROM parcours").fetchone()
+        self.assertEqual(row, ('Sortie', None))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,6 +10,9 @@
                enregistrement vidéo, rythme et durées de l'animation. Enregistré
                automatiquement dans les préférences de l'application, et
                conservé quel que soit le thème chargé.
+   - PARCOURS : réglages de lecture d'un parcours (rythme, caméra, cartons) :
+               enregistrés dans le parcours ouvert ; la préférence globale ne
+               sert alors que de défaut.
 
    Ces deux macros posent la même pastille partout, à côté du titre de section.
    Elles se doublent de l'indicateur inline « Enregistré ✓ » pour les réglages
@@ -31,6 +34,13 @@
 <span class="gc-scope-badge gc-scope-global" tabindex="0" data-bs-toggle="tooltip"
       data-bs-title="{{ _('Préférence de l\'application : enregistrée automatiquement, indépendamment du thème chargé.') }}">
     <i class="ti ti-world-cog" aria-hidden="true"></i>{{ _("Global") }}
+</span>
+{% endmacro %}
+
+{% macro parcours_scope_badge() %}
+<span class="gc-scope-badge gc-scope-parcours" tabindex="0" data-bs-toggle="tooltip"
+      data-bs-title="{{ _('Enregistré dans le parcours ouvert : chaque parcours garde ses réglages de lecture. Sans parcours ouvert, la valeur sert de défaut.') }}">
+    <i class="ti ti-route" aria-hidden="true"></i>{{ _("Parcours") }}
 </span>
 {% endmacro %}
 

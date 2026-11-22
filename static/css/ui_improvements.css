@@ -2281,6 +2281,14 @@ top: 20px;
     border-color: #ffe0b2;
 }
 
+/* .gc-scope-parcours = enregistré dans le parcours ouvert (le réglage global
+   ne sert que de défaut). */
+.gc-scope-parcours {
+    background: #e0f2f1;
+    color: #00695c;
+    border-color: #b2dfdb;
+}
+
 /* Marges pour les contenus d'onglets internes */
 #tabMap, #tabPoints, #tabFlash, #tabTitles {
 margin-top: 10px;

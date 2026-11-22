@@ -1,10 +1,12 @@
 // Réglages de lecture de la page Parcours (onglet Animation : section
 // « Lecture » de « Dates & rythme », sous-onglet « Caméra ») : rythme,
 // heures affichées, caméra, tête du géocacheur, cartons de journée, nuit
-// pointillée. Persistés dans `parcours_playback` (settings_api) ; les
-// réglages du lot 7 sont lus à chaque image et s'appliquent en pleine
-// lecture, ceux qui changent la chronologie la font reconstruire — tout de
-// suite au repos, à la fin sinon.
+// pointillée. Persistés dans le parcours ouvert (surcharges éparses,
+// `saveParcoursPlayback`) — la préférence globale `parcours_playback` sert
+// de défaut et n'est écrite que sans parcours ouvert. Les réglages du lot 7
+// sont lus à chaque image et s'appliquent en pleine lecture, ceux qui
+// changent la chronologie la font reconstruire — tout de suite au repos, à
+// la fin sinon.
 //
 // `playback` est partagé avec le moteur : la normalisation et l'écriture
 // passent par `setPlayback` (deps) — pas d'import de parcours_data.js.
@@ -14,24 +16,46 @@ import { normalizePlayback } from './parcours_timeline.mjs';
 
 const el = (id) => document.getElementById(id);
 
-// deps : { getState, setPlayback, applyTimeline, deferTimeline,
-//   unsuspendCamera, notifyRest, redraw }
+// deps : { getState, setPlayback, saveParcoursPlayback, applyTimeline,
+//   deferTimeline, unsuspendCamera, notifyRest, redraw }
+// getState() → { playback, clock, selectedId }
 export function createParcoursPlaybackUI(deps) {
     const S = () => deps.getState();
 
-    function bind() {
+    // Valeurs effectives → contrôles : à l'ouverture d'un parcours comme à
+    // l'initialisation (bind).
+    function sync() {
         const { playback } = S();
         const pace = el('parcoursPace');
         const hours = el('parcoursHours');
         if (pace) pace.value = playback.pace;
         if (hours) hours.value = playback.hours;
-        // saveSettingsPatch remplace la clé entière dans window.userSettings
-        // par le patch envoyé : la valeur complète y est remise une fois
-        // l'écriture faite.
+        const camera = el('parcoursCamera');
+        const head = el('parcoursHead');
+        const dayCards = el('parcoursDayCards');
+        const dashed = el('parcoursEstimatedDashed');
+        if (camera) camera.value = playback.camera;
+        if (head) head.value = playback.head;
+        if (dayCards) dayCards.checked = playback.day_cards;
+        if (dashed) dashed.checked = playback.estimated_dashed;
+    }
+
+    function bind() {
+        sync();
+        const pace = el('parcoursPace');
+        const hours = el('parcoursHours');
+        // Parcours ouvert : le patch rejoint ses surcharges ; sinon la
+        // préférence globale (le défaut) — saveSettingsPatch la remplace
+        // dans window.userSettings par le patch envoyé, d'où la valeur
+        // complète remise une fois l'écriture faite.
         const save = (patch) => {
             const next = normalizePlayback({ ...S().playback, ...patch });
-            const full = { ...next };
             deps.setPlayback(next);
+            if (S().selectedId != null) {
+                deps.saveParcoursPlayback(patch);
+                return;
+            }
+            const full = { ...next };
             saveSettingsPatch({ parcours_playback: patch }).then(() => {
                 if (window.userSettings) window.userSettings.parcours_playback = full;
             });
@@ -56,10 +80,6 @@ export function createParcoursPlaybackUI(deps) {
         const head = el('parcoursHead');
         const dayCards = el('parcoursDayCards');
         const dashed = el('parcoursEstimatedDashed');
-        if (camera) camera.value = playback.camera;
-        if (head) head.value = playback.head;
-        if (dayCards) dayCards.checked = playback.day_cards;
-        if (dashed) dashed.checked = playback.estimated_dashed;
         camera?.addEventListener('change', () => {
             save({ camera: camera.value });
             deps.unsuspendCamera();
@@ -83,5 +103,5 @@ export function createParcoursPlaybackUI(deps) {
         });
     }
 
-    return { bind };
+    return { bind, sync };
 }

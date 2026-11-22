@@ -394,6 +394,15 @@ def _v21_position_etape_parcours(db):
                 conn.exec_driver_sql(f"ALTER TABLE parcours_override ADD COLUMN {name} FLOAT")
 
 
+def _v22_lecture_parcours(db):
+    # Parcours : réglages de lecture propres (JSON épars de surcharges sur la
+    # préférence globale `parcours_playback`). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours)")}
+        if "playback" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours ADD COLUMN playback TEXT")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -416,6 +425,7 @@ MIGRATIONS = [
     (19, _v19_trouvailles_fiche_cache),
     (20, _v20_waypoints_fiche_cache),
     (21, _v21_position_etape_parcours),
+    (22, _v22_lecture_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

@@ -283,6 +283,10 @@ class Parcours(db.Model):
     # Décalage UTC des traces GPS (lot 5), en minutes ; null : déduit
     # (photos, Labs sur la trace, fuseau de l'ordinateur).
     utc_offset_minutes = db.Column(db.Integer)
+    # Réglages de lecture propres au parcours : JSON épars des clés
+    # explicitement réglées ; les autres suivent la préférence globale
+    # `parcours_playback` (le défaut). NULL : aucune surcharge.
+    playback = db.Column(db.Text)
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
 

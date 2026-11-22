@@ -15,6 +15,7 @@ code en message (comme evolution_store).
 
 from __future__ import annotations
 
+import json
 import re
 import threading
 from collections import defaultdict
@@ -24,6 +25,8 @@ from sqlalchemy import func
 
 from models import (Geocache, LabDiscovery, Parcours, ParcoursOverride,
                     ParcoursPhoto, ParcoursPlace, ParcoursTrack)
+from settings_manager import (PARCOURS_CAMERA_MODES, PARCOURS_HEAD_STYLES,
+                              PARCOURS_HOURS_DISPLAYS, PARCOURS_PACES)
 
 NAME_MAX_LENGTH = 80
 # Format pensé pour des sorties courtes : au-delà, l'animation cache par cache
@@ -82,6 +85,38 @@ def _check_range(start: date, end: date) -> None:
         raise ParcoursError('range-too-long')
 
 
+# Réglages de lecture propres au parcours (colonne `playback`, JSON épars) :
+# seules les clés explicitement réglées y vivent ; les autres suivent la
+# préférence globale `parcours_playback` (le défaut). Mêmes domaines que
+# `coerce_parcours_playback` de settings_manager.
+_PLAYBACK_CHOICES = {
+    'pace': PARCOURS_PACES,
+    'hours': PARCOURS_HOURS_DISPLAYS,
+    'camera': PARCOURS_CAMERA_MODES,
+    'head': PARCOURS_HEAD_STYLES,
+}
+_PLAYBACK_FLAGS = ('day_cards', 'estimated_dashed')
+
+
+def _playback_out(raw) -> dict:
+    try:
+        data = json.loads(raw) if raw else {}
+    except (TypeError, ValueError):
+        data = {}
+    return data if isinstance(data, dict) else {}
+
+
+def _playback_in(value) -> str | None:
+    """Surcharges éparses : seules les clés connues et valides sont gardées ;
+    rien de valable → NULL (le parcours suit alors le réglage global)."""
+    if not isinstance(value, dict):
+        return None
+    kept = {key: item for key, item in value.items()
+            if (key in _PLAYBACK_CHOICES and item in _PLAYBACK_CHOICES[key])
+            or (key in _PLAYBACK_FLAGS and isinstance(item, bool))}
+    return json.dumps(kept) if kept else None
+
+
 def to_dict(parcours: Parcours) -> dict:
     return {
         'id': parcours.id,
@@ -91,6 +126,7 @@ def to_dict(parcours: Parcours) -> dict:
         'include_labs': bool(parcours.include_labs),
         'include_dnf': bool(parcours.include_dnf),
         'utc_offset_minutes': parcours.utc_offset_minutes,
+        'playback': _playback_out(parcours.playback),
         'created_at': parcours.created_at.isoformat() if parcours.created_at else None,
         'updated_at': parcours.updated_at.isoformat() if parcours.updated_at else None,
     }
@@ -256,6 +292,8 @@ def update(session, parcours_id: int, data: dict) -> Parcours:
     row.include_dnf = _bool(data.get('include_dnf'), row.include_dnf)
     if 'utc_offset_minutes' in data:
         row.utc_offset_minutes = _utc_offset(data['utc_offset_minutes'])
+    if 'playback' in data:
+        row.playback = _playback_in(data['playback'])
     row.updated_at = datetime.now()
     session.commit()
     return row
@@ -311,6 +349,7 @@ def duplicate(session, parcours_id: int) -> Parcours:
         include_labs=src.include_labs,
         include_dnf=src.include_dnf,
         utc_offset_minutes=src.utc_offset_minutes,
+        playback=src.playback,
         created_at=now,
         updated_at=now,
     )
@@ -344,6 +383,7 @@ def export_payload(session, parcours_id: int) -> dict:
             'include_labs': bool(parcours.include_labs),
             'include_dnf': bool(parcours.include_dnf),
             'utc_offset_minutes': parcours.utc_offset_minutes,
+            'playback': _playback_out(parcours.playback),
         },
         'overrides': [override_to_dict(row) for row in
                       session.query(ParcoursOverride).filter_by(parcours_id=parcours.id)],
@@ -374,6 +414,7 @@ def import_parcours(session, data: dict) -> Parcours:
         include_labs=_bool(p.get('include_labs'), True),
         include_dnf=_bool(p.get('include_dnf'), True),
         utc_offset_minutes=_utc_offset(p.get('utc_offset_minutes')),
+        playback=_playback_in(p.get('playback')),
         created_at=now,
         updated_at=now,
     )

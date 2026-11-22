@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-22 13:02+0100\n"
+"POT-Creation-Date: 2026-11-22 13:12+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -6102,12 +6102,12 @@ msgstr "Active when owned caches are shown"
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr "Stop playback before adjusting the trip."
 
-#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:353
-#: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:59 static/js/parcours_upload.mjs:120
+#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:379
+#: static/js/parcours_data.js:776 static/js/parcours_photos_panel.mjs:539
+#: static/js/parcours_playback_ui.mjs:89 static/js/parcours_upload.mjs:120
 #: static/js/parcours_upload.mjs:134 static/js/parcours_upload.mjs:164
 #: templates/_app_header.html:29 templates/_app_header.html:31
-#: templates/app.html:41
+#: templates/_scope_badges.html:43 templates/app.html:41
 msgid "Parcours"
 msgstr "Trips"
 
@@ -6154,19 +6154,23 @@ msgstr "${count} cache pages added or updated."
 msgid "Compléter depuis geocaching.com"
 msgstr "Complete from geocaching.com"
 
-#: static/js/parcours_data.js:353
+#: static/js/parcours_data.js:379
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr "The trip will open when the animation ends."
 
-#: static/js/parcours_data.js:705
+#: static/js/parcours_data.js:732
 msgid "Itinéraires © contributeurs OpenStreetMap, openrouteservice"
 msgstr "Routes © OpenStreetMap contributors, openrouteservice"
 
-#: static/js/parcours_data.js:706
+#: static/js/parcours_data.js:733
 msgid "Itinéraires © contributeurs OpenStreetMap, FOSSGIS"
 msgstr "Routes © OpenStreetMap contributors, FOSSGIS"
 
-#: static/js/parcours_data.js:969
+#: static/js/parcours_data.js:776
+msgid "Les réglages de lecture n’ont pas pu être enregistrés."
+msgstr "Playback settings could not be saved."
+
+#: static/js/parcours_data.js:1014
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
@@ -6174,11 +6178,11 @@ msgstr ""
 "Undo all adjustments of this trip (order, times, days, exclusions)? "
 "Places you added are kept."
 
-#: static/js/parcours_data.js:970
+#: static/js/parcours_data.js:1015
 msgid "Annuler les ajustements"
 msgstr "Undo the adjustments"
 
-#: static/js/parcours_data.js:973
+#: static/js/parcours_data.js:1018
 msgid "Tout annuler"
 msgstr "Undo everything"
 
@@ -6700,7 +6704,7 @@ msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr "Drag on the photo to choose the part that is kept."
 
 #: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:59 static/js/poses_data.js:131
+#: static/js/parcours_playback_ui.mjs:89 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "The setting will apply at the end of the animation."
 
@@ -11707,7 +11711,7 @@ msgstr "A day or a holiday replayed cache by cache, in the order you visited the
 msgid "Vos trouvailles, importées depuis votre fichier .gpx."
 msgstr "Your finds, imported from your .gpx file."
 
-#: templates/_scope_badges.html:25
+#: templates/_scope_badges.html:28
 msgid ""
 "Réglage du thème actif : appliqué immédiatement, mais conservé seulement "
 "après un clic sur « Sauvegarder » dans la section Thèmes."
@@ -11715,12 +11719,12 @@ msgstr ""
 "Setting of the active theme: applied immediately, but kept only after "
 "clicking \"Save\" in the Themes section."
 
-#: templates/_scope_badges.html:26 templates/guide.html:262
+#: templates/_scope_badges.html:29 templates/guide.html:262
 #: templates/menu_style.html:16
 msgid "Thème"
 msgstr "Theme"
 
-#: templates/_scope_badges.html:32
+#: templates/_scope_badges.html:35
 msgid ""
 "Préférence de l'application : enregistrée automatiquement, indépendamment"
 " du thème chargé."
@@ -11728,17 +11732,23 @@ msgstr ""
 "Application preference: saved automatically, independently of the loaded "
 "theme."
 
-#: templates/_scope_badges.html:33
+#: templates/_scope_badges.html:36
 msgid "Global"
 msgstr "Global"
 
-#: templates/_scope_badges.html:39
+#: templates/_scope_badges.html:42
+msgid ""
+"Enregistré dans le parcours ouvert : chaque parcours garde ses réglages "
+"de lecture. Sans parcours ouvert, la valeur sert de défaut."
+msgstr "Saved on the open trip: each trip keeps its own playback settings. With no trip open, the value is the default."
+
+#: templates/_scope_badges.html:49
 msgid ""
 "Fonctionnalité expérimentale : comportement en cours de validation, "
 "susceptible d'évoluer."
 msgstr "Experimental feature: behavior still being validated, subject to change."
 
-#: templates/_scope_badges.html:40
+#: templates/_scope_badges.html:50
 msgid "Expérimental"
 msgstr "Experimental"
 

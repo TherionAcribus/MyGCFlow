@@ -1,4 +1,4 @@
-{% from '_scope_badges.html' import global_scope_badge, experimental_badge with context %}
+{% from '_scope_badges.html' import global_scope_badge, parcours_scope_badge, experimental_badge with context %}
 <div id="animation" class="col-12 tab-pane fade">
     <div class="row g-3">
 
@@ -240,7 +240,7 @@
                          cherche — la caméra et le géocacheur sont dans le
                          sous-onglet « Caméra ». -->
                     <div class="anim-section-divider mt-3 mb-2">
-                        <span class="anim-section-label">{{ _("Lecture") }}{{ global_scope_badge() }}</span>
+                        <span class="anim-section-label">{{ _("Lecture") }}{{ parcours_scope_badge() }}</span>
                     </div>
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
@@ -289,7 +289,7 @@
                          suivi générique — celui-ci est forcé à l'arrêt hors
                          page principale (ui.js, collectAnimationSettings). -->
                     <div class="anim-section-divider mt-0 mb-2">
-                        <span class="anim-section-label">{{ _("Caméra") }}{{ global_scope_badge() }}</span>
+                        <span class="anim-section-label">{{ _("Caméra") }}{{ parcours_scope_badge() }}</span>
                     </div>
                     <div class="row g-2">
                         <div class="col-12 col-md-6">

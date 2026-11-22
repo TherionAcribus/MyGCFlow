@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-22 13:02+0100\n"
+"POT-Creation-Date: 2026-11-22 13:12+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -6176,12 +6176,12 @@ msgstr "Aktiv, wenn eigene Caches angezeigt werden"
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr "Beenden Sie die Wiedergabe, bevor Sie die Tour anpassen."
 
-#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:353
-#: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:59 static/js/parcours_upload.mjs:120
+#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:379
+#: static/js/parcours_data.js:776 static/js/parcours_photos_panel.mjs:539
+#: static/js/parcours_playback_ui.mjs:89 static/js/parcours_upload.mjs:120
 #: static/js/parcours_upload.mjs:134 static/js/parcours_upload.mjs:164
 #: templates/_app_header.html:29 templates/_app_header.html:31
-#: templates/app.html:41
+#: templates/_scope_badges.html:43 templates/app.html:41
 msgid "Parcours"
 msgstr "Touren"
 
@@ -6228,19 +6228,23 @@ msgstr "${count} Cache-Seiten hinzugefügt oder aktualisiert."
 msgid "Compléter depuis geocaching.com"
 msgstr "Von geocaching.com ergänzen"
 
-#: static/js/parcours_data.js:353
+#: static/js/parcours_data.js:379
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr "Die Tour wird nach dem Ende der Animation geöffnet."
 
-#: static/js/parcours_data.js:705
+#: static/js/parcours_data.js:732
 msgid "Itinéraires © contributeurs OpenStreetMap, openrouteservice"
 msgstr "Routen © OpenStreetMap-Mitwirkende, openrouteservice"
 
-#: static/js/parcours_data.js:706
+#: static/js/parcours_data.js:733
 msgid "Itinéraires © contributeurs OpenStreetMap, FOSSGIS"
 msgstr "Routen © OpenStreetMap-Mitwirkende, FOSSGIS"
 
-#: static/js/parcours_data.js:969
+#: static/js/parcours_data.js:776
+msgid "Les réglages de lecture n’ont pas pu être enregistrés."
+msgstr "Wiedergabeeinstellungen konnten nicht gespeichert werden."
+
+#: static/js/parcours_data.js:1014
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
@@ -6248,11 +6252,11 @@ msgstr ""
 "Alle Anpassungen dieser Tour rückgängig machen (Reihenfolge, Uhrzeiten, "
 "Tage, Ausschlüsse)? Gesetzte Orte bleiben erhalten."
 
-#: static/js/parcours_data.js:970
+#: static/js/parcours_data.js:1015
 msgid "Annuler les ajustements"
 msgstr "Anpassungen rückgängig machen"
 
-#: static/js/parcours_data.js:973
+#: static/js/parcours_data.js:1018
 msgid "Tout annuler"
 msgstr "Alles rückgängig machen"
 
@@ -6776,7 +6780,7 @@ msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr "Ziehen Sie auf dem Foto, um den behaltenen Teil zu wählen."
 
 #: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:59 static/js/poses_data.js:131
+#: static/js/parcours_playback_ui.mjs:89 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Die Einstellung wird am Ende der Animation angewendet."
 
@@ -6896,7 +6900,9 @@ msgstr "Routen nicht verfügbar: Wege als Luftlinie."
 msgid ""
 "Calcul interrompu : ${routed} trajets sur ${legs} gardent leurs "
 "itinéraires."
-msgstr "Berechnung abgebrochen: ${routed} von ${legs} Etappen behalten ihre Routen."
+msgstr ""
+"Berechnung abgebrochen: ${routed} von ${legs} Etappen behalten ihre "
+"Routen."
 
 #: static/js/parcours_routing_ui.mjs:199
 msgid "Aucun trajet à calculer (trajets sur une trace ou en ligne droite)."
@@ -11862,7 +11868,7 @@ msgstr ""
 msgid "Vos trouvailles, importées depuis votre fichier .gpx."
 msgstr "Ihre Funde, importiert aus Ihrer .gpx-Datei."
 
-#: templates/_scope_badges.html:25
+#: templates/_scope_badges.html:28
 msgid ""
 "Réglage du thème actif : appliqué immédiatement, mais conservé seulement "
 "après un clic sur « Sauvegarder » dans la section Thèmes."
@@ -11870,12 +11876,12 @@ msgstr ""
 "Einstellung des aktiven Designs: wird sofort angewendet, aber erst nach "
 "einem Klick auf „Speichern“ im Abschnitt Designs dauerhaft übernommen."
 
-#: templates/_scope_badges.html:26 templates/guide.html:262
+#: templates/_scope_badges.html:29 templates/guide.html:262
 #: templates/menu_style.html:16
 msgid "Thème"
 msgstr "Design"
 
-#: templates/_scope_badges.html:32
+#: templates/_scope_badges.html:35
 msgid ""
 "Préférence de l'application : enregistrée automatiquement, indépendamment"
 " du thème chargé."
@@ -11883,17 +11889,23 @@ msgstr ""
 "Einstellung der Anwendung: wird automatisch gespeichert, unabhängig vom "
 "geladenen Design."
 
-#: templates/_scope_badges.html:33
+#: templates/_scope_badges.html:36
 msgid "Global"
 msgstr "Global"
 
-#: templates/_scope_badges.html:39
+#: templates/_scope_badges.html:42
+msgid ""
+"Enregistré dans le parcours ouvert : chaque parcours garde ses réglages "
+"de lecture. Sans parcours ouvert, la valeur sert de défaut."
+msgstr "In der geöffneten Tour gespeichert: Jede Tour behält ihre eigenen Wiedergabeeinstellungen. Ohne geöffnete Tour dient der Wert als Vorgabe."
+
+#: templates/_scope_badges.html:49
 msgid ""
 "Fonctionnalité expérimentale : comportement en cours de validation, "
 "susceptible d'évoluer."
 msgstr "Experimentelle Funktion: Verhalten wird noch geprüft und kann sich ändern."
 
-#: templates/_scope_badges.html:40
+#: templates/_scope_badges.html:50
 msgid "Expérimental"
 msgstr "Experimentell"
 

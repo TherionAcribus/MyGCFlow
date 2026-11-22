@@ -126,8 +126,11 @@ test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés'
   await page.locator('#animationConfigTab').click();
   await page.locator('#parcoursDayCards').uncheck();
   await page.locator('#parcoursEstimatedDashed').check();
-  await expect.poll(async () => (await (await request.get('/api/settings')).json()).parcours_playback).toEqual({
-    pace: 'regular', hours: 'approx', camera: 'fixed', day_cards: false, head: 'dot', estimated_dashed: true,
+  // Surcharges propres au parcours : seules les clés réglées partent ; le
+  // rythme et les heures suivent le défaut global.
+  const pid = (await (await request.get('/api/parcours')).json()).parcours[0].id;
+  await expect.poll(async () => (await (await request.get(`/api/parcours/${pid}`)).json()).parcours.playback).toEqual({
+    camera: 'fixed', day_cards: false, head: 'dot', estimated_dashed: true,
   });
   // Rechargement : les réglages reviennent dans les contrôles.
   await openReady(page);
@@ -135,6 +138,7 @@ test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés'
   await expect(page.locator('#parcoursHead')).toHaveValue('dot');
   await expect(page.locator('#parcoursDayCards')).not.toBeChecked();
   await expect(page.locator('#parcoursEstimatedDashed')).toBeChecked();
+  await expect.poll(async () => (await snapshot(page)).playback.camera).toBe('fixed');
 
   await page.locator('#btnQuickPreview').click();
   await expect.poll(async () => (await snapshot(page)).running).toBe(true);
@@ -151,6 +155,50 @@ test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés'
     return state.running;
   }, { intervals: [100], timeout: 40_000 }).toBe(false);
   expect(seen).toEqual({ night: 0, card: false, glyph: false, moved: false });
+  expect(errors).toEqual([]);
+});
+
+test('réglages de lecture propres à chaque parcours', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  const firstId = (await snapshot(page)).selectedId;
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
+  await page.locator('#parcoursCamera').selectOption('fixed');
+  const other = await createWeekend(request, 'Autre parcours');
+
+  // Rechargement : le premier parcours (rouvert par dernier-id) garde sa
+  // caméra fixe ; le second n'a que le défaut global.
+  await openReady(page);
+  expect((await snapshot(page)).selectedId).toBe(firstId);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
+  await expect(page.locator('#parcoursCamera')).toHaveValue('fixed');
+
+  // La liste vit dans l'onglet Données : y revenir pour ouvrir l'autre parcours.
+  await page.locator('a[href="#data"]').click();
+  await page.locator('.parcours-open', { hasText: 'Autre parcours' }).click();
+  await page.locator('a[href="#animation"]').click();
+  await expect.poll(async () => (await snapshot(page)).selectedId).toBe(other.id);
+  await expect(page.locator('#parcoursCamera')).toHaveValue('follow');
+  await expect(page.locator('#parcoursHead')).toHaveValue('mode');
+  await expect(page.locator('#parcoursDayCards')).toBeChecked();
+  expect((await snapshot(page)).playback.camera).toBe('follow');
+
+  // La tête « simple point » n'écrit que dans le second parcours.
+  await page.locator('#parcoursHead').selectOption('dot');
+  await expect.poll(async () => (await (await request.get(`/api/parcours/${other.id}`)).json()).parcours.playback)
+    .toEqual({ head: 'dot' });
+  expect((await (await request.get(`/api/parcours/${firstId}`)).json()).parcours.playback)
+    .toEqual({ camera: 'fixed' });
+
+  // Réouverture du premier : ses réglages reviennent.
+  await page.locator('a[href="#data"]').click();
+  await page.locator('.parcours-open', { hasText: 'Week-end' }).click();
+  await page.locator('a[href="#animation"]').click();
+  await expect.poll(async () => (await snapshot(page)).selectedId).toBe(firstId);
+  await expect(page.locator('#parcoursCamera')).toHaveValue('fixed');
+  await expect(page.locator('#parcoursHead')).toHaveValue('mode');
   expect(errors).toEqual([]);
 });
 

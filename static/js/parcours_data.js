@@ -144,7 +144,13 @@ let loadSeq = 0;
 // QUANTUM_ORIGIN + k. Jamais affichée (infosValues donne la vraie date).
 const QUANTUM_ORIGIN = new Date(2000, 0, 1);
 const quantumBase = { originDay: dateToDayNumber(QUANTUM_ORIGIN) };
-let playback = normalizePlayback(window.userSettings?.parcours_playback);
+// Réglages de lecture : la préférence globale `parcours_playback` fait
+// office de défaut, surchargée par les réglages propres au parcours ouvert
+// (colonne `playback`, JSON épars — une journée à pied et trois semaines de
+// voyage n'appellent pas les mêmes réglages).
+let playbackDefaults = normalizePlayback(window.userSettings?.parcours_playback);
+let playbackOverrides = {};     // surcharges du parcours ouvert
+let playback = { ...playbackDefaults };
 // Affichage des photos (lot 9) : préférence globale `parcours_photo_display`.
 let photoDisplay = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
 let infosTemplate = normalizeInfosTemplate(window.userSettings?.parcours_infos_template);
@@ -218,7 +224,8 @@ function signalLoaded() {
 export async function initParcoursPage() {
     if (!isParcoursPage()) return;
     // Les préférences arrivent après l'évaluation du module : relues ici.
-    playback = normalizePlayback(window.userSettings?.parcours_playback);
+    playbackDefaults = normalizePlayback(window.userSettings?.parcours_playback);
+    playback = normalizePlayback({ ...playbackDefaults, ...playbackOverrides });
     photoDisplay = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
     infosTemplate = normalizeInfosTemplate(window.userSettings?.parcours_infos_template);
     const inp = el('inputInfosTemplate');
@@ -266,6 +273,7 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         await openParcours(target.id);
     } else {
         selectedId = null;
+        applyPlaybackContext();
         inputs = null;
         ordered = null;
         stopsPanel.reset();
@@ -279,6 +287,16 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
     }
 }
 
+// Lecture effective du parcours ouvert : ses surcharges posées sur le défaut
+// global ; les contrôles (Animation) reflètent la valeur effective. Sans
+// parcours ouvert, le défaut global seul.
+function applyPlaybackContext() {
+    const item = listing.find((entry) => entry.id === selectedId) || null;
+    playbackOverrides = { ...(item?.playback || {}) };
+    playback = normalizePlayback({ ...playbackDefaults, ...playbackOverrides });
+    playbackUI.sync();
+}
+
 export async function openParcours(id) {
     if (clock.running) {
         // Les étapes de la lecture en cours restent à l'écran jusqu'à sa fin.
@@ -289,6 +307,7 @@ export async function openParcours(id) {
     const seq = ++loadSeq;
     selectedId = id;
     writeLastId(id);
+    applyPlaybackContext();
     renderList(id);
     status = 'loading';
     stopsPanel.reset();
@@ -622,11 +641,32 @@ function setPlanVisible(visible) {
 
 // --- Réglages de lecture (parcours_playback_ui.mjs) -------------------------------
 
-// Carte « Lecture » : rythme, heures, caméra, tête, cartons, nuit — écrit
-// `playback` via setPlayback et redessine ou reporte la chronologie.
+// « Lecture » (onglet Animation) : rythme, heures, caméra, tête, cartons,
+// nuit — écrit `playback` via setPlayback et redessine ou reporte la
+// chronologie. La persistance va au parcours ouvert (surcharges éparses) ou,
+// à défaut, à la préférence globale — cf. parcours_playback_ui.mjs.
 const playbackUI = createParcoursPlaybackUI({
-    getState: () => ({ playback, clock }),
-    setPlayback: (next) => { playback = next; },
+    getState: () => ({ playback, clock, selectedId }),
+    // Sans parcours ouvert, le réglage écrit est le défaut global : les
+    // surcharges d'un parcours ouvert ensuite repartent de la valeur à jour.
+    setPlayback: (next) => {
+        playback = next;
+        if (selectedId == null) playbackDefaults = next;
+    },
+    saveParcoursPlayback: async (patch) => {
+        playbackOverrides = { ...playbackOverrides, ...patch };
+        try {
+            const body = await fetchJson(`/api/parcours/${selectedId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ playback: playbackOverrides }),
+            });
+            const item = listing.find((entry) => entry.id === selectedId);
+            if (item) item.playback = { ...(body?.parcours?.playback || {}) };
+        } catch (error) {
+            console.warn('[PARCOURS] Réglages de lecture non enregistrés :', error);
+            showToast(t('Les réglages de lecture n’ont pas pu être enregistrés.'), 'error', t('Parcours'));
+        }
+    },
     applyTimeline,
     deferTimeline: () => { pendingTimeline = true; },
     unsuspendCamera: () => playCamera.unsuspend(),
@@ -646,7 +686,7 @@ const listUI = createParcoursList({
     fetchJson,
     openParcours: (id) => openParcours(id),
     refreshParcoursList: (options) => refreshParcoursList(options),
-    clearSelection: () => { selectedId = null; writeLastId(null); },
+    clearSelection: () => { selectedId = null; writeLastId(null); applyPlaybackContext(); },
 });
 
 function renderListError() { listUI.renderListError(); }

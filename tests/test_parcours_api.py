@@ -93,6 +93,34 @@ class CrudTests(_Base):
         self.assertEqual(self.get(f"/api/parcours/{created['id']}").status_code, 404)
         self.assertEqual(self.get("/api/parcours").get_json()["parcours"], [])
 
+    def test_playback_overrides(self):
+        # Réglages de lecture propres au parcours : JSON épars, les clés
+        # inconnues ou invalides tombent, le défaut global sert pour le reste.
+        pid = self.create()["id"]
+        self.assertEqual(self.get(f"/api/parcours/{pid}").get_json()["parcours"]["playback"], {})
+
+        body = self.patch(f"/api/parcours/{pid}", {"playback": {
+            "camera": "fixed", "pace": "proportional", "day_cards": False,
+            "head": "casque", "hours": 12, "unknown": "x"}})
+        self.assertEqual(body.status_code, 200)
+        self.assertEqual(body.get_json()["parcours"]["playback"],
+                         {"camera": "fixed", "pace": "proportional", "day_cards": False})
+        listing = self.get("/api/parcours").get_json()
+        self.assertEqual(listing["parcours"][0]["playback"]["camera"], "fixed")
+
+        # La copie et le couple export/import gardent les réglages du voyage.
+        copy = self.post(f"/api/parcours/{pid}/duplicate", {}).get_json()["parcours"]
+        self.assertEqual(copy["playback"]["pace"], "proportional")
+        exported = self.get(f"/api/parcours/{pid}/export").get_json()
+        self.assertEqual(exported["parcours"]["playback"]["camera"], "fixed")
+        imported = self.post("/api/parcours/import", exported).get_json()["parcours"]
+        self.assertFalse(imported["playback"]["day_cards"])
+
+        # Patch vide ou valeur non dict : toutes les surcharges tombent.
+        for payload in ({"playback": {}}, {"playback": "rien"}):
+            body = self.patch(f"/api/parcours/{pid}", payload)
+            self.assertEqual(body.get_json()["parcours"]["playback"], {})
+
     def test_listing_counts(self):
         """Pastilles de la liste : étapes (trouvailles + Labs + DNF, sources
         du parcours comprises) et objets rattachés."""
