@@ -406,6 +406,18 @@ Autres repères :
   cartons (`sceneTimingOptions`). Relevé : `timeline.quanta` et
   `photoSlots` (`fromQ`/`toQ`) du snapshot — exemple « durée imposée »
   dans `parcours-finitions.spec.mjs`.
+  Suspension du suivi de caméra : signalée par `onSuspended` de
+  `parcours_camera_ui.mjs`, qui pose/retire le bouton flottant
+  `.parcours-camera-resume` (viewport de la carte) — le clic lève la
+  suspension et recale la vue sur `camera.pose` (`parcoursCamera(0,
+  playMsPerDay)`). « Lire depuis ici » (`playFromQ`) : boutons
+  `.parcours-stop-play` (lignes d'étapes), `.parcours-day-play`
+  (en-têtes, départ à la nuit de la journée via
+  `timeline.days[stop.day].startQ` — `ordered.days` inclut les jours
+  vides, l'index ne coïncide pas avec `timeline.days`) et
+  `.parcours-popup-play` (bulle d'étape). Depuis le repos :
+  `startPausedPreview` → `seekAnimationToDate` → `setPreviewPaused(false)` ;
+  refus en enregistrement. Exemples dans `parcours-finitions.spec.mjs`.
   Barre de chronologie sur `/parcours` : axe en quanta (dates fictives),
   textes et repères par le crochet `timelineBar` du moteur —
   `getTimelineBarSnapshot()` donne `ticks` (`bands` = nuits, `labels`

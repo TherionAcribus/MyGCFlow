@@ -4248,6 +4248,27 @@ body[data-mode="parcours"] .rhythm-rate-field {
     cursor: crosshair !important;
 }
 
+/* « Reprendre le suivi » : bouton flottant posé sur la carte quand un geste
+   manuel a suspendu le suivi de caméra pendant la lecture. */
+.parcours-camera-resume {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 3rem;
+    z-index: 6;
+}
+
+/* « Lire depuis ici » : discret au repos, net au survol. */
+.parcours-stop-play,
+.parcours-day-play {
+    opacity: 0.55;
+}
+.parcours-stop-play:hover,
+.parcours-stop-play:focus-visible,
+.parcours-day-play:hover,
+.parcours-day-play:focus-visible {
+    opacity: 1;
+}
+
 /* Bulle d'une étape et menu du clic droit (bulle .gc-popup de la carte, qui
    laisse passer la souris : ses contrôles la reprennent). */
 .parcours-bubble {

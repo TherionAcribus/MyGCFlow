@@ -602,7 +602,11 @@ function renderParcoursPopup(feature, container) {
     const detail = document.createElement('div');
     detail.className = 'small text-muted';
     detail.textContent = [stopTime(stop), stopDetail(stop, photoByStop.get(stop.key)?.length || 0)].filter(Boolean).join(' · ');
-    container.replaceChildren(title, detail);
+    // « Lire depuis ici » : la lecture (re)démarre à cette étape.
+    const play = button('btn btn-sm btn-primary w-100 mt-1 parcours-popup-play', 'ti-player-play',
+        t('Lire depuis ici'), { text: t('Lire depuis ici') });
+    play.addEventListener('click', () => playFromQ(stop.q));
+    container.replaceChildren(title, detail, play);
 }
 
 // --- Barre de chronologie ---------------------------------------------------------
@@ -652,6 +656,7 @@ const playCamera = createParcoursCamera({
     getMap: () => pkg.getMap?.(),
     isRecording: () => pkg.isRecordingActive?.() === true,
     prefetchTiles: (center, zoom) => pkg.prefetchBasemapTiles?.(center, zoom),
+    onSuspended: (suspended) => syncCameraResumeButton(suspended),
 });
 
 function beginCamera() { playCamera.begin(); }
@@ -659,6 +664,62 @@ function endCamera() { playCamera.end(); }
 function cameraFollowing() { return playCamera.following(); }
 function bindCameraSuspension(map) { playCamera.bindSuspension(map); }
 function parcoursCamera(leadMs, msPerDay) { return playCamera.camera(leadMs, msPerDay); }
+
+// Bouton flottant « Reprendre le suivi » : posé sur la carte dès qu'un geste
+// manuel suspend le suivi, retiré quand le suivi reprend ou que la lecture
+// s'arrête (transitions signalées par onSuspended).
+let cameraResumeButton = null;
+
+function syncCameraResumeButton(suspended) {
+    if (!suspended) {
+        cameraResumeButton?.remove();
+        cameraResumeButton = null;
+        return;
+    }
+    if (cameraResumeButton) return;
+    const viewport = pkg.getMap?.()?.getViewport();
+    if (!viewport) return;
+    cameraResumeButton = button('btn btn-sm btn-primary parcours-camera-resume', 'ti-video',
+        t('Reprendre le suivi'), { text: t('Reprendre le suivi') });
+    // Le bouton vit dans le viewport de la carte : sans stopPropagation, son
+    // clic compterait comme un clic carte (bulle d'étape, glisser).
+    for (const type of ['pointerdown', 'dblclick']) {
+        cameraResumeButton.addEventListener(type, (event) => event.stopPropagation());
+    }
+    cameraResumeButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        playCamera.unsuspend();
+        // La pose déterministe du point courant est appliquée tout de suite ;
+        // le rendu suivant confirme.
+        parcoursCamera(0, playMsPerDay);
+    });
+    viewport.append(cameraResumeButton);
+}
+
+// « Lire depuis ici » : la lecture (re)démarre à un quantum donné — depuis
+// le repos, en pause ou en cours de route. En capture, refus : la vidéo se
+// joue toujours depuis le début.
+function playFromQ(q) {
+    if (!timeline || !Number.isFinite(q)) return false;
+    const state = pkg.previewPlaybackState?.();
+    if (state === 'recording') return false;
+    const clamped = Math.max(0, Math.min(timeline.quanta - 1, Math.floor(q)));
+    const target = dateOfDayIndex(quantumBase, clamped);
+    if (state === 'idle') {
+        if (pkg.startPausedPreview?.() === false) return false;
+    } else if (state === 'playing') {
+        pkg.setPreviewPaused?.(true);
+    }
+    if (pkg.seekAnimationToDate?.(target) === false) return false;
+    pkg.setPreviewPaused?.(false);
+    return true;
+}
+
+// Le quantum d'une étape du panneau se relit dans la chronologie (les objets
+// `ordered` et `timeline.stops` diffèrent ; la clé les relie).
+function qOfStop(stop) {
+    return timeline?.stops?.find((item) => item.key === stop?.key)?.q ?? null;
+}
 
 // Crédits des itinéraires (CGU des fournisseurs) : à l'écran, dans
 // l'attribution de la carte ; dans la vidéo, peints en bas à droite (la vidéo
@@ -1087,6 +1148,15 @@ const stopsPanel = createStopsPanel({
     customIcons: CUSTOM_ICONS,
     getMap: () => pkg.getMap?.(),
     showDataTab: () => pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]')),
+    // « Lire depuis ici » : l'étape directement, la journée depuis sa nuit
+    // (le carton « Jour n » s'affiche donc aussi). `timeline.days` ne liste
+    // que les journées avec étapes : le rang se relit par la première étape.
+    playFromStop: (stop) => playFromQ(qOfStop(stop)),
+    playFromDay: (day) => {
+        const first = timeline?.stops?.find((item) => item.key === day?.stops?.[0]?.key);
+        const startQ = first ? timeline.days[first.day]?.startQ : null;
+        return playFromQ(startQ ?? qOfStop(day?.stops?.[0]));
+    },
 });
 
 function renderStops(errorMessage = '') {

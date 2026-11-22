@@ -8,7 +8,7 @@
 import { CAMERA_FOLLOW } from './parcours_timeline.mjs';
 import { cameraPoseAt } from './parcours_camera.mjs';
 
-// deps : { getState, getMap, isRecording, prefetchTiles }
+// deps : { getState, getMap, isRecording, prefetchTiles, onSuspended? }
 export function createParcoursCamera(deps) {
     const S = () => deps.getState();
 
@@ -16,6 +16,14 @@ export function createParcoursCamera(deps) {
     let cameraSuspended = false;
     let cameraBound = false;
     let prefetchBucket = null;
+
+    // Toute transition de suspension est signalée : c'est elle qui affiche
+    // ou retire le bouton « Reprendre le suivi ».
+    function setSuspended(next) {
+        if (cameraSuspended === next) return;
+        cameraSuspended = next;
+        deps.onSuspended?.(next);
+    }
 
     function following() {
         const { clock, playback, timeline } = S();
@@ -26,7 +34,7 @@ export function createParcoursCamera(deps) {
     function begin() {
         const view = deps.getMap()?.getView();
         savedView = view ? { center: view.getCenter(), resolution: view.getResolution() } : null;
-        cameraSuspended = false;
+        setSuspended(false);
         prefetchBucket = null;
     }
 
@@ -39,6 +47,7 @@ export function createParcoursCamera(deps) {
             view.setResolution(savedView.resolution);
         }
         savedView = null;
+        setSuspended(false);
     }
 
     // Carte déplacée ou zoomée à la main pendant la lecture : la caméra la
@@ -51,7 +60,7 @@ export function createParcoursCamera(deps) {
         const suspend = () => {
             if (deps.isRecording()) return;
             const { clock, playback } = S();
-            if (clock.running && playback.camera === CAMERA_FOLLOW) cameraSuspended = true;
+            if (clock.running && playback.camera === CAMERA_FOLLOW) setSuspended(true);
         };
         map.on('pointerdrag', suspend);
         map.getViewport().addEventListener('wheel', suspend, { passive: true });
@@ -98,6 +107,6 @@ export function createParcoursCamera(deps) {
         camera,
         following,
         suspended: () => cameraSuspended,
-        unsuspend: () => { cameraSuspended = false; },
+        unsuspend: () => setSuspended(false),
     };
 }

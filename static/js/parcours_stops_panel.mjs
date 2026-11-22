@@ -190,6 +190,12 @@ export function createStopsPanel(deps) {
         count.className = 'small text-muted parcours-day-count';
         count.textContent = t('${n} étapes', { n: day.stops.length });
         header.append(toggle, title, count);
+        if (deps.playFromDay && day.stops.length > 0) {
+            const play = button('btn btn-link btn-sm p-0 parcours-day-play', 'ti-player-play',
+                t('Lire depuis cette journée'));
+            play.addEventListener('click', () => deps.playFromDay(day));
+            header.append(play);
+        }
         if (day.manual) {
             const badge = document.createElement('span');
             badge.className = 'badge bg-azure-lt parcours-day-manual';
@@ -489,6 +495,12 @@ export function createStopsPanel(deps) {
             render();
         });
         item.append(time, badge, icon, text);
+        if (deps.playFromStop) {
+            const play = button('btn btn-sm btn-ghost-secondary parcours-stop-play', 'ti-player-play',
+                t('Lire depuis ici'));
+            play.addEventListener('click', () => deps.playFromStop(stop));
+            item.append(play);
+        }
 
         const position = movable.indexOf(stop);
         if (position >= 0) {

@@ -313,3 +313,61 @@ test('durée imposée : les contenus à lire gardent un temps d’écran', async
   expect(imposed.camera.pose).toBeTruthy();
   expect(errors).toEqual([]);
 });
+
+test('caméra suspendue : « Reprendre le suivi » recale la pose et reprend le suivi', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).camera.following).toBe(true);
+  // Un geste manuel suspend le suivi : le bouton flottant apparaît.
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2 + 60, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => (await snapshot(page)).camera.suspended).toBe(true);
+  const resume = page.locator('.parcours-camera-resume');
+  await expect(resume).toBeVisible();
+  // Clic : la vue se recale tout de suite sur la pose déterministe du point
+  // courant, le bouton disparaît et le suivi reprend.
+  await resume.click();
+  await expect(resume).toBeHidden();
+  const snap = await snapshot(page);
+  expect(snap.camera.suspended).toBe(false);
+  expect(snap.camera.following).toBe(true);
+  expect(snap.camera.center[0]).toBeCloseTo(snap.camera.pose.center[0], 6);
+  expect(snap.camera.center[1]).toBeCloseTo(snap.camera.pose.center[1], 6);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('« Lire depuis ici » : la lecture démarre à l’étape ou à la journée choisie', async ({ page }) => {
+  const errors = collectErrors(page);
+  const rest = await openReady(page);
+  const stopQ = rest.timeline.stopQ;
+  // La fixture : cinq étapes sur deux journées — la 4e ouvre le jour 2.
+  expect(stopQ.length).toBe(5);
+  const targetIndex = 3;
+  const targetQ = stopQ[targetIndex];
+  // Depuis le repos, via le bouton de la ligne d'étape (l'ordre de la liste
+  // est celui de la chronologie).
+  await page.locator('.parcours-stop-play').nth(targetIndex).click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(true);
+  const playing = await snapshot(page);
+  expect(playing.currentQ).toBeGreaterThanOrEqual(targetQ);
+  // Proche du point demandé : la lecture a repris là, pas depuis le début.
+  expect(playing.currentQ).toBeLessThan(targetQ + 50);
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(false);
+  // Journée : chaque en-tête a son bouton ; celle du jour 2 repart de sa
+  // nuit (avant sa première étape), sans repasser par le début.
+  await expect(page.locator('.parcours-day-play')).toHaveCount(2);
+  await page.locator('.parcours-day-play').nth(1).click();
+  await expect.poll(async () => (await snapshot(page)).running).toBe(true);
+  const day2 = await snapshot(page);
+  expect(day2.currentQ).toBeGreaterThan(stopQ[1]);
+  expect(day2.currentQ).toBeLessThan(targetQ + 60);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
