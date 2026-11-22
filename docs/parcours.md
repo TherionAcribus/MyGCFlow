@@ -201,6 +201,18 @@ numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
   une seule fois, en grossissant — avant, toutes les bases étaient là dès
   le début de la vidéo.
 
+Coût par image (banc `tests/js/parcours_perf_bench.mjs` et
+`tests/e2e/parcours-perf.spec.mjs`, parcours de 500 étapes) : les requêtes
+pures de la chronologie (trajet, tête, compteurs, scène — bissections et
+préfixes mémorisés) pèsent ~2 µs ; le dessin est l'essentiel. Trois
+mécanismes le bornent : les piles sont regroupées par mémo (`playStacksMemo`)
+dont la résolution est lue par paliers de ~3 % (en zoom continu, le
+regroupement serait sinon refait à chaque image) ; les piles hors écran ne
+sont pas peintes (`drawn` du relevé = peintes ; `dimmed`, `favorites`,
+`piles`, `current`, `ring` restent des états atteints) ; anneau et cœurs
+réutilisent leurs styles (palier de 0,25 px ; style muté en place) au lieu
+d'allouer à chaque image. Mesuré : dessin médian 1,1 → 0,2 ms/image.
+
 **Couleur par journée ou par type** (depuis le 2026-11-20, `stopPaint` de
 `parcours_style.mjs`) :
 - palette du thème (`day_palette`, depuis le 2026-11-20) : une case par

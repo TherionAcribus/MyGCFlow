@@ -418,6 +418,14 @@ Autres repères :
   `.parcours-popup-play` (bulle d'étape). Depuis le repos :
   `startPausedPreview` → `seekAnimationToDate` → `setPreviewPaused(false)` ;
   refus en enregistrement. Exemples dans `parcours-finitions.spec.mjs`.
+  Perf de la lecture : banc Node `tests/js/parcours_perf_bench.mjs`
+  (requêtes pures ~2 µs/image à 500 étapes, hors suite `*.test.mjs`) et
+  spec `parcours-perf.spec.mjs` (GPX de 500 trouvailles généré à la
+  volée ; deltas rAF + durée prerender→postrender de la couche
+  `parcours-head`, créée au départ de la lecture — l'attendre). Depuis
+  le culling hors écran, `playStops.drawn` = pastilles peintes à l'écran
+  (souvent < 10 en zoom serré), pas les atteintes ; `dimmed`,
+  `favorites`, `piles`, `current`, `ring` restent des états atteints.
   Barre de chronologie sur `/parcours` : axe en quanta (dates fictives),
   textes et repères par le crochet `timelineBar` du moteur —
   `getTimelineBarSnapshot()` donne `ticks` (`bands` = nuits, `labels`

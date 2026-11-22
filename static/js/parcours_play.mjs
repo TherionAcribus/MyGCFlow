@@ -111,12 +111,11 @@ export function createParcoursPlayDraw(deps) {
     function headDayIndex(current) {
         const { timeline, currentQ } = S();
         if (current) return legDayIndex(timeline.legs[current.leg]);
-        let last = null;
-        for (const stop of timeline.stops) {
-            if (stop.q > currentQ) break;
-            last = stop;
-        }
-        return paints.dayIndexes().byKey.get(last?.key) ?? 0;
+        // Dernière étape atteinte par bissection (reachedIndex), comme
+        // partout ailleurs — le balayage linéaire coûtait O(n) à chaque
+        // image de visite ou de nuit.
+        const reached = reachedIndex(timeline, currentQ);
+        return paints.dayIndexes().byKey.get(timeline.stops[reached]?.key) ?? 0;
     }
 
     function trailStyle(kind, dayIndex) {
@@ -250,7 +249,7 @@ export function createParcoursPlayDraw(deps) {
         const ctx = event.context;
         const ratio = event.frameState.pixelRatio || 1;
         const context = ol.render.getVectorContext(event);
-        drawPlayStops(context, event.frameState.viewState.resolution);
+        drawPlayStops(context, event.frameState.viewState.resolution, event.frameState.extent);
         const level = playback.day_cards ? nightLevelAt(timeline, currentQ) : 0;
         if (level > 0) {
             ctx.save();
@@ -303,7 +302,7 @@ export function createParcoursPlayDraw(deps) {
     // Piles d'étapes atteintes de l'image précédente : `projected` est refait
     // à chaque applyTimeline (invalidation), `fp` empreint les indices
     // atteints.
-    let playStacksMemo = { projected: null, fp: -1, resolution: 0, distance: 0, stacks: [] };
+    let playStacksMemo = { projected: null, fp: -1, resKey: 0, distance: 0, stacks: [] };
 
     function emptyPlayStops() {
         return {
@@ -345,7 +344,7 @@ export function createParcoursPlayDraw(deps) {
         return frameMemo;
     }
 
-    function drawPlayStops(context, resolution) {
+    function drawPlayStops(context, resolution, extent = null) {
         const { timeline, currentQ, projected } = S();
         const style = paints.stopStyle();
         const labels = paints.currentStopLabels();
@@ -356,6 +355,7 @@ export function createParcoursPlayDraw(deps) {
         playStopsDrawn = { ...playStopsDrawn, current: null, ring: null, dimmed: 0, preview: 0 };
         if (!themed && style.play_preview) drawPlayPreview(context, day, labels);
         const reached = [];
+        const favIdx = [];
         let fp = 0;
         // Quantas croissants : reachedIndex donne la dernière étape arrivée,
         // le balayage s'arrête là au lieu de lire toute la chronologie.
@@ -364,6 +364,7 @@ export function createParcoursPlayDraw(deps) {
             const stop = timeline.stops[i];
             if (isCountedStop(stop)) {
                 reached.push(i);
+                if (stop.favorite) favIdx.push(i);
                 // Décalage d'un : sinon la première étape atteinte (i = 0)
                 // laisserait l'empreinte à 0, comme « aucune étape ».
                 fp = ((fp * 31) + (i + 1)) | 0;
@@ -371,16 +372,28 @@ export function createParcoursPlayDraw(deps) {
         }
         // Regroupement mémorisé : il ne dépend que des étapes atteintes
         // (empreinte), de la résolution et de la distance de pile — une image
-        // sans nouvelle étape ni zoom le réutilise tel quel.
+        // sans nouvelle étape ni zoom le réutilise tel quel. La résolution
+        // est lue par paliers de ~3 % : en zoom continu (caméra qui suit),
+        // elle change à chaque image sans que les piles ne bougent
+        // visuellement — le regroupement serait sinon refait à chacune.
         const distance = style.size * STACK_DISTANCE;
+        const resKey = Math.round(Math.log(resolution) * 32);
         if (playStacksMemo.projected !== projected || playStacksMemo.fp !== fp
-            || playStacksMemo.resolution !== resolution || playStacksMemo.distance !== distance) {
+            || playStacksMemo.resKey !== resKey || playStacksMemo.distance !== distance) {
             playStacksMemo = {
-                projected, fp, resolution, distance,
+                projected, fp, resKey, distance,
                 stacks: stackStops(reached.map((i) => deps.stackItem(projected[i], timeline.stops[i].key, resolution)), distance),
             };
         }
         const stacks = playStacksMemo.stacks;
+        // Piles hors écran : pastille, anneau et numéro ne sont pas peints
+        // (marge = taille + décalage du numéro + anneau). Les comptes du
+        // relevé restent ceux des étapes atteintes.
+        const margin = extent ? (style.size + 48) * resolution : 0;
+        const inExtent = extent
+            ? ([x, y]) => x >= extent[0] - margin && x <= extent[2] + margin
+                && y >= extent[1] - margin && y <= extent[3] + margin
+            : () => true;
         let drawn = 0;
         let popping = 0;
         let dimmed = 0;
@@ -397,27 +410,30 @@ export function createParcoursPlayDraw(deps) {
                 ? stackLabel(members.map((m) => labels.get(timeline.stops[reached[m]].key) || ''))
                 : labels.get(head.key) || '';
             if (pile) piles.push(label);
-            const paint = paints.paintOfStop(head);
-            const styles = themed ? [paints.themeNumberStyle(paint, label)]
-                : [...(pile ? [paints.pileShadowStyle(paint)] : []), paints.numberedStyleFor(paint, label, { pile })];
             const scale = stopPopScale(currentQ - newest.q);
             if (scale <= 0.01) continue;
             if (scale !== 1) popping++;
-            point.setCoordinates(projected[reached[rep]]);
+            if (dim) dimmed++;
             if (currentIndex >= 0) {
                 const current = timeline.stops[reached[members[currentIndex]]];
                 playStopsDrawn.current = current.key;
-                if (style.play_current) {
-                    playStopsDrawn.ring = current.key;
-                    const radius = themed ? paints.themePointRadius() + 2 : (pile ? style.size + 2 : style.size);
-                    drawCurrentRing(context, point, paint.fill, radius * scale, currentQ - current.q);
-                }
+                if (style.play_current) playStopsDrawn.ring = current.key;
             }
-            if (dim) dimmed++;
-            if (style.favorite_mark && members.some((m) => timeline.stops[reached[m]].favorite)) {
-                styles.push(paints.favoriteMarkStyle(pile));
-                favorites++;
+            const hasFavorite = style.favorite_mark
+                && members.some((m) => timeline.stops[reached[m]].favorite);
+            if (hasFavorite) favorites++;
+            const coords = projected[reached[rep]];
+            if (!inExtent(coords)) continue;
+            const paint = paints.paintOfStop(head);
+            point.setCoordinates(coords);
+            if (currentIndex >= 0 && style.play_current) {
+                const current = timeline.stops[reached[members[currentIndex]]];
+                const radius = themed ? paints.themePointRadius() + 2 : (pile ? style.size + 2 : style.size);
+                drawCurrentRing(context, point, paint.fill, radius * scale, currentQ - current.q);
             }
+            const styles = themed ? [paints.themeNumberStyle(paint, label)]
+                : [...(pile ? [paints.pileShadowStyle(paint)] : []), paints.numberedStyleFor(paint, label, { pile })];
+            if (hasFavorite) styles.push(paints.favoriteMarkStyle(pile));
             for (const s of styles) {
                 if (!s) continue;
                 const shown = dim ? dimmedStyle(s, DIM_PAST) : s;
@@ -426,37 +442,44 @@ export function createParcoursPlayDraw(deps) {
             }
             drawn += members.length;
         }
-        const bursts = style.favorite_burst ? drawFavoriteBursts(context, reached) : 0;
+        const bursts = style.favorite_burst ? drawFavoriteBursts(context, favIdx) : 0;
         playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles, dimmed, favorites, bursts };
     }
 
     // Effet à l'arrivée sur une étape où un PF a été donné (favoriteBurst :
     // cœurs qui s'envolent), par-dessus les pastilles. Renvoie le nombre
-    // d'effets en cours.
-    function drawFavoriteBursts(context, reached) {
+    // d'effets en cours. `favIdx` : indexes atteints déjà filtrés par
+    // drawPlayStops (un balayage de toute la chronologie de moins par image).
+    // Un seul style muté en place : scale, décalage et alpha bougent à
+    // chaque image, une allocation par cœur serait sinon faite à chacune.
+    const heartText = new ol.style.Text({
+        text: HEART,
+        font: '16px system-ui, sans-serif',
+        fill: new ol.style.Fill({ color: FAVORITE_COLOR }),
+        stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 }),
+    });
+    const heartStyle = new ol.style.Style({ text: heartText });
+    const heartFill = heartText.getFill();
+    const heartStroke = heartText.getStroke();
+
+    function drawFavoriteBursts(context, favIdx) {
         const { timeline, currentQ, projected } = S();
         const radius = paints.favoriteBaseRadius(false);
         const point = scratchPoint;
         let bursts = 0;
-        for (const i of reached) {
+        for (const i of favIdx) {
             const stop = timeline.stops[i];
-            if (!stop.favorite) continue;
             const hearts = favoriteBurst(currentQ - stop.q, radius);
             if (!hearts.length) continue;
             bursts++;
             point.setCoordinates(projected[i]);
             for (const heart of hearts) {
-                context.setStyle(new ol.style.Style({
-                    text: new ol.style.Text({
-                        text: HEART,
-                        font: '16px system-ui, sans-serif',
-                        scale: heart.scale,
-                        offsetX: heart.dx,
-                        offsetY: heart.dy,
-                        fill: new ol.style.Fill({ color: hexToRgba(FAVORITE_COLOR, heart.alpha) }),
-                        stroke: new ol.style.Stroke({ color: `rgba(255, 255, 255, ${heart.alpha})`, width: 2 }),
-                    }),
-                }));
+                heartText.setScale(heart.scale);
+                heartText.setOffsetX(heart.dx);
+                heartText.setOffsetY(heart.dy);
+                heartFill.setColor(hexToRgba(FAVORITE_COLOR, heart.alpha));
+                heartStroke.setColor(`rgba(255, 255, 255, ${heart.alpha.toFixed(3)})`);
+                context.setStyle(heartStyle);
                 context.drawGeometry(point);
             }
         }
@@ -465,14 +488,25 @@ export function createParcoursPlayDraw(deps) {
 
     // Anneau de l'étape en cours (currentRingRadius : pulse d'une seconde
     // d'écran), de la couleur de l'étape, sur un voile blanc léger.
+    // Anneau de l'étape en cours : le rayon pulse à chaque image — le style
+    // est mémorisé par palier de quart de pixel au lieu d'être reallocé.
+    const ringStyles = new Map();
+
     function drawCurrentRing(context, point, color, radius, elapsedQ) {
-        context.setStyle(new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: currentRingRadius(radius, elapsedQ),
-                fill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.35)' }),
-                stroke: new ol.style.Stroke({ color, width: 3 }),
-            }),
-        }));
+        const r = Math.round(currentRingRadius(radius, elapsedQ) * 4);
+        const key = `${color}|${r}`;
+        let style = ringStyles.get(key);
+        if (!style) {
+            style = new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: r / 4,
+                    fill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.35)' }),
+                    stroke: new ol.style.Stroke({ color, width: 3 }),
+                }),
+            });
+            ringStyles.set(key, style);
+        }
+        context.setStyle(style);
         context.drawGeometry(point);
     }
 
