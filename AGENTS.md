@@ -410,7 +410,12 @@ Autres repères :
   `parcours_camera_ui.mjs`, qui pose/retire le bouton flottant
   `.parcours-camera-resume` (viewport de la carte) — le clic lève la
   suspension et recale la vue sur `camera.pose` (`parcoursCamera(0,
-  playMsPerDay)`). « Lire depuis ici » (`playFromQ`) : boutons
+  playMsPerDay)`). Suspend sur `pointerdrag`, molette, ET tout changement
+  de vue non posé par la caméra (`change:*` de la vue hors drapeau
+  `applyingPose` — double-clic, pincement, clavier, maj+glisser) ; en
+  spec, geste plutôt en pause (`setPreviewPaused`) pour ne pas courir
+  contre la fin de lecture, et point sondé `elementFromPoint` (le panneau
+  latéral peut couvrir la carte). « Lire depuis ici » (`playFromQ`) : boutons
   `.parcours-stop-play` (lignes d'étapes), `.parcours-day-play`
   (en-têtes, départ à la nuit de la journée via
   `timeline.days[stop.day].startQ` — `ordered.days` inclut les jours

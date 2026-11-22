@@ -16,6 +16,14 @@ export function createParcoursCamera(deps) {
     let cameraSuspended = false;
     let cameraBound = false;
     let prefetchBucket = null;
+    // > 0 pendant que la caméra pose sa pose : les change:* de la vue qui en
+    // découlent ne sont pas un geste utilisateur.
+    let applyingPose = 0;
+
+    function withViewSet(apply) {
+        applyingPose++;
+        try { apply(); } finally { applyingPose--; }
+    }
 
     // Toute transition de suspension est signalée : c'est elle qui affiche
     // ou retire le bouton « Reprendre le suivi ».
@@ -43,8 +51,10 @@ export function createParcoursCamera(deps) {
     function end() {
         const view = deps.getMap()?.getView();
         if (view && savedView && S().playback.camera === CAMERA_FOLLOW && !cameraSuspended) {
-            view.setCenter(savedView.center);
-            view.setResolution(savedView.resolution);
+            withViewSet(() => {
+                view.setCenter(savedView.center);
+                view.setResolution(savedView.resolution);
+            });
         }
         savedView = null;
         setSuspended(false);
@@ -64,6 +74,15 @@ export function createParcoursCamera(deps) {
         };
         map.on('pointerdrag', suspend);
         map.getViewport().addEventListener('wheel', suspend, { passive: true });
+        // Les gestes qui changent la vue sans pointerdrag ni molette —
+        // double-clic, pincement, clavier, maj+glisser, tout autre recadrage
+        // — suspendent aussi : un changement que la caméra n'a pas posé
+        // elle-même est forcément extérieur.
+        const foreignChange = () => { if (!applyingPose) suspend(); };
+        const view = map.getView();
+        view.on('change:center', foreignChange);
+        view.on('change:resolution', foreignChange);
+        view.on('change:rotation', foreignChange);
     }
 
     // Appelée par mapgl.js avant chaque rendu (updatePointAppearClock). La
@@ -86,8 +105,10 @@ export function createParcoursCamera(deps) {
         const moved = !center || center[0] !== pose.center[0] || center[1] !== pose.center[1]
             || view.getResolution() !== pose.resolution;
         if (moved) {
-            view.setCenter(pose.center);
-            view.setResolution(pose.resolution);
+            withViewSet(() => {
+                view.setCenter(pose.center);
+                view.setResolution(pose.resolution);
+            });
         }
         // Tuiles de la suite chargées d'avance (une demande par seconde
         // d'écran, 1,5 s plus loin).

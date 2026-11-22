@@ -467,11 +467,14 @@ sur la bonne, comme la piste de caméra du mode principal.
 Les tuiles de la suite sont demandées d'avance (`prefetchBasemapTiles`, pose
 1,5 s plus loin, une fois par seconde d'écran). Glisser ou zoomer la carte
 pendant la lecture suspend la caméra — y compris pour un saut en pause, qui
-la respecte. Un bouton flottant « Reprendre le suivi » apparaît alors sur la
-carte : le clic lève la suspension et recale la vue tout de suite sur la
-pose du point courant. Sinon la suspension tient jusqu'à la lecture
-suivante ; à la fin, la vue d'avant la lecture revient, sauf si
-l'utilisateur a repris la main.
+la respecte. Tout changement de vue que la caméra n'a pas posé elle-même
+suspend pareil (`change:center`/`resolution`/`rotation` de la vue, hors
+drapeau `applyingPose`) : double-clic, pincement, clavier, maj+glisser ou
+tout recadrage extérieur comptent donc aussi, sans énumérer les gestes. Un
+bouton flottant « Reprendre le suivi » apparaît alors sur la carte : le
+clic lève la suspension et recale la vue tout de suite sur la pose du point
+courant. Sinon la suspension tient jusqu'à la lecture suivante ; à la fin,
+la vue d'avant la lecture revient, sauf si l'utilisateur a repris la main.
 
 Un saut en pause (barre de chronologie, Ctrl+flèches, « Voir sur la carte »
 d'une photo) pose la vue sur la pose de la piste au point visé : le

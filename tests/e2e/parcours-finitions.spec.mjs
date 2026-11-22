@@ -408,3 +408,40 @@ test('ellipse : nuit allongée et bilan du carton après des journées sautées'
   await page.locator('#btnQuickStop').click();
   expect(errors).toEqual([]);
 });
+
+test('caméra : un double-clic suspend aussi le suivi (change de vue extérieur)', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).camera.following).toBe(true);
+  // Pause : la fenêtre de geste ne court plus contre la fin du parcours
+  // (la suspension marche en pause — clock.running reste vrai).
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(async () =>
+    page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('paused');
+  // Maj+double-clic : dézoom d'OpenLayers — ni pointerdrag ni molette, mais
+  // le changement de résolution n'est pas posé par la caméra → suspension.
+  // (Dézoom plutôt que zoom : la caméra peut déjà être à maxZoom, le +1
+  // serait alors borné sans changement de résolution. Le point est sondé :
+  // le panneau latéral peut recouvrir une partie de la carte.)
+  const free = await page.evaluate(() => {
+    const r = document.getElementById('map').getBoundingClientRect();
+    for (const [fx, fy] of [[0.75, 0.8], [0.5, 0.85], [0.85, 0.5], [0.25, 0.8], [0.5, 0.5]]) {
+      const x = r.left + r.width * fx;
+      const y = r.top + r.height * fy;
+      if (document.elementFromPoint(x, y)?.closest('.ol-viewport')) {
+        return { x: Math.round(r.width * fx), y: Math.round(r.height * fy) };
+      }
+    }
+    return null;
+  });
+  expect(free).not.toBeNull();
+  await page.locator('#map').dblclick({ position: free, modifiers: ['Shift'] });
+  await expect.poll(async () => (await snapshot(page)).camera.suspended).toBe(true);
+  await expect(page.locator('.parcours-camera-resume')).toBeVisible();
+  // La reprise repose la pose sous son drapeau : pas de re-suspension.
+  await page.locator('.parcours-camera-resume').click();
+  await expect.poll(async () => (await snapshot(page)).camera.suspended).toBe(false);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
