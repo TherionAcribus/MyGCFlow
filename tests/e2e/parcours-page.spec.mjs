@@ -305,6 +305,11 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   const created = await request.post('/api/parcours',
     { data: { name: 'Journée', date_start: '2025-07-12', date_end: '2025-07-12' } });
   expect(created.status()).toBe(201);
+  const pid = (await created.json()).parcours.id;
+  // Un ajustement : la confirmation l'annonce dans ce qui part avec le
+  // parcours.
+  await request.patch(`/api/parcours/${pid}/overrides`,
+    { data: { overrides: [{ key: 'GCPAR01', rank: 1 }] } });
   await openParcoursPage(page);
   await expect.poll(async () => (await snapshot(page)).layer?.stops).toBe(3);
 
@@ -312,7 +317,10 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   await page.locator('.parcours-edit').click();
   await expect(page.locator('#parcoursFormTitle')).toHaveText('Modifier le parcours');
   await page.locator('.parcours-delete').click();
-  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+  const modal = page.locator('.gcm-confirm-modal.show');
+  await expect(modal).toContainText('1 ajustements');
+  await expect(modal).toContainText('trouvailles ne sont pas touchées');
+  await modal.locator('[data-gcm-role="confirm"]').click();
   await expect(page.locator('#parcoursListEmpty')).toBeVisible();
   await expect(page.locator('#parcoursFormTitle')).toHaveText('Nouveau parcours');
   await expect(page.locator('#btnParcoursEditCancel')).toBeHidden();

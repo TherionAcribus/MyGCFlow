@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-22 12:21+0100\n"
+"POT-Creation-Date: 2026-11-22 12:39+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1481,7 +1481,7 @@ msgstr ""
 msgid "Date invalide"
 msgstr ""
 
-#: blueprints/parcours.py:35 static/js/parcours_list.mjs:282
+#: blueprints/parcours.py:35 static/js/parcours_list.mjs:321
 msgid "La date de fin précède la date de début"
 msgstr ""
 
@@ -1775,7 +1775,7 @@ msgid "… et 1 autre"
 msgstr ""
 
 #: static/js/bdd.js:694 static/js/gc_logs.js:89 static/js/labs.js:730
-#: static/js/parcours_list.mjs:442
+#: static/js/parcours_list.mjs:481
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr ""
@@ -4746,7 +4746,7 @@ msgstr ""
 
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
-#: static/js/parcours_list.mjs:210 static/js/parcours_plan.mjs:405
+#: static/js/parcours_list.mjs:242 static/js/parcours_plan.mjs:405
 #: static/js/parcours_plan.mjs:412 static/js/profiles.js:978
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
@@ -5378,7 +5378,7 @@ msgstr ""
 msgid "Date de découverte"
 msgstr ""
 
-#: static/js/labs.js:1866 static/js/parcours_list.mjs:252
+#: static/js/labs.js:1866 static/js/parcours_list.mjs:291
 #: static/js/stats_page_image.js:102 templates/menu_data_parcours.html:180
 #: templates/menu_images.html:117 templates/menu_stats.html:70
 #: templates/stats_page.html:506
@@ -6229,8 +6229,8 @@ msgstr ""
 msgid "1 photo"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:179 static/js/parcours_photos_panel.mjs:317
-#: static/js/parcours_tbar.mjs:173
+#: static/js/parcours_labels.mjs:179 static/js/parcours_list.mjs:231
+#: static/js/parcours_photos_panel.mjs:317 static/js/parcours_tbar.mjs:173
 #, python-brace-format
 msgid "${n} photos"
 msgstr ""
@@ -6248,7 +6248,7 @@ msgstr ""
 msgid "1 trouvaille"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:196 static/js/parcours_list.mjs:430
+#: static/js/parcours_labels.mjs:196 static/js/parcours_list.mjs:469
 #: static/js/stats_page_dashboard.js:252 static/js/zone_layer.js:1273
 #: static/js/zone_layer.js:1308 static/js/zone_report_ui.js:86
 #, python-brace-format
@@ -6331,7 +6331,7 @@ msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr ""
 
 #: static/js/parcours_list.mjs:94 static/js/parcours_list.mjs:95
-#: static/js/parcours_list.mjs:248
+#: static/js/parcours_list.mjs:287
 msgid "Modifier le parcours"
 msgstr ""
 
@@ -6348,7 +6348,7 @@ msgid "Exporter le parcours (sélection, ajustements, lieux)"
 msgstr ""
 
 #: static/js/parcours_list.mjs:118 static/js/parcours_list.mjs:119
-#: static/js/parcours_list.mjs:207
+#: static/js/parcours_list.mjs:239
 msgid "Supprimer le parcours"
 msgstr ""
 
@@ -6364,54 +6364,80 @@ msgstr ""
 msgid "Parcours importé"
 msgstr ""
 
-#: static/js/parcours_list.mjs:206
+#: static/js/parcours_list.mjs:229
 #, python-brace-format
-msgid "Supprimer le parcours « ${name} » ? Les trouvailles ne sont pas touchées."
+msgid "${n} lieux ou bases"
 msgstr ""
 
-#: static/js/parcours_list.mjs:248 templates/menu_data_parcours.html:20
+#: static/js/parcours_list.mjs:230
+#, python-brace-format
+msgid "${n} ajustements"
+msgstr ""
+
+#: static/js/parcours_list.mjs:232 static/js/parcours_tracks_panel.mjs:62
+#, python-brace-format
+msgid "${n} traces"
+msgstr ""
+
+#: static/js/parcours_list.mjs:234
+#, python-brace-format
+msgid "Supprimés avec lui : ${items}."
+msgstr ""
+
+#: static/js/parcours_list.mjs:235
+msgid "Ses lieux, ajustements, photos et traces seront supprimés avec lui."
+msgstr ""
+
+#: static/js/parcours_list.mjs:237
+#, python-brace-format
+msgid ""
+"Supprimer le parcours « ${name} » ? ${detail} Les trouvailles ne sont pas"
+" touchées."
+msgstr ""
+
+#: static/js/parcours_list.mjs:287 templates/menu_data_parcours.html:20
 msgid "Nouveau parcours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:252 templates/menu_data_parcours.html:56
+#: static/js/parcours_list.mjs:291 templates/menu_data_parcours.html:56
 msgid "Créer le parcours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:283
+#: static/js/parcours_list.mjs:322
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr ""
 
-#: static/js/parcours_list.mjs:284
+#: static/js/parcours_list.mjs:323
 msgid "Une journée"
 msgstr ""
 
-#: static/js/parcours_list.mjs:284 static/js/parcours_stops_panel.mjs:121
+#: static/js/parcours_list.mjs:323 static/js/parcours_stops_panel.mjs:121
 #: static/js/stats_panels.js:1534 static/js/ui.js:8721
 #, python-brace-format
 msgid "${n} jours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:356
+#: static/js/parcours_list.mjs:395
 #, python-brace-format
 msgid "${n} lieux ou bases seront supprimés"
 msgstr ""
 
-#: static/js/parcours_list.mjs:357
+#: static/js/parcours_list.mjs:396
 #, python-brace-format
 msgid "${n} étapes retrouveront leur journée d’origine"
 msgstr ""
 
-#: static/js/parcours_list.mjs:360
+#: static/js/parcours_list.mjs:399
 #, python-brace-format
 msgid "La nouvelle plage laisse des éléments dehors : ${items}."
 msgstr ""
 
-#: static/js/parcours_list.mjs:361
+#: static/js/parcours_list.mjs:400
 msgid "Raccourcir le parcours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:365
+#: static/js/parcours_list.mjs:404
 msgid "Raccourcir quand même"
 msgstr ""
 
@@ -6861,11 +6887,6 @@ msgstr ""
 
 #: static/js/parcours_tracks_panel.mjs:62
 msgid "1 trace"
-msgstr ""
-
-#: static/js/parcours_tracks_panel.mjs:62
-#, python-brace-format
-msgid "${n} traces"
 msgstr ""
 
 #: static/js/parcours_tracks_panel.mjs:64

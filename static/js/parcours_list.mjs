@@ -178,9 +178,38 @@ export function createParcoursList(deps) {
         showToast(t('Parcours importé'), 'success');
     }
 
-    function confirmDelete(item) {
+    // Ce qui part avec le parcours : comptes lus dans les entrées quand il
+    // est ouvert, une relecture légère sinon — sans réponse, le message de
+    // confirmation reste générique (pas de chiffres).
+    async function deleteCounts(item) {
+        const toCounts = (src) => ({
+            places: (src?.places || []).length,
+            overrides: (src?.overrides || []).length,
+            photos: (src?.photos || []).length,
+            tracks: (src?.tracks || []).length,
+        });
+        const { selectedId, inputs } = S();
+        if (item.id === selectedId && inputs) return toCounts(inputs);
+        try {
+            return toCounts(await deps.fetchJson(`/api/parcours/${item.id}/adjustments?tracks=1`));
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function confirmDelete(item) {
+        const counts = await deleteCounts(item);
+        const parts = [];
+        if (counts?.places) parts.push(t('${n} lieux ou bases', { n: counts.places }));
+        if (counts?.overrides) parts.push(t('${n} ajustements', { n: counts.overrides }));
+        if (counts?.photos) parts.push(t('${n} photos', { n: counts.photos }));
+        if (counts?.tracks) parts.push(t('${n} traces', { n: counts.tracks }));
+        const detail = parts.length
+            ? t('Supprimés avec lui : ${items}.', { items: parts.join(', ') })
+            : t('Ses lieux, ajustements, photos et traces seront supprimés avec lui.');
         showConfirmation(
-            t('Supprimer le parcours « ${name} » ? Les trouvailles ne sont pas touchées.', { name: item.name }),
+            t('Supprimer le parcours « ${name} » ? ${detail} Les trouvailles ne sont pas touchées.',
+                { name: item.name, detail }),
             t('Supprimer le parcours'),
             () => deleteParcours(item.id),
             null,
