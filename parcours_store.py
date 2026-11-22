@@ -17,9 +17,13 @@ from __future__ import annotations
 
 import re
 import threading
-from datetime import date, datetime
+from collections import defaultdict
+from datetime import date, datetime, time, timedelta
 
-from models import Parcours, ParcoursOverride, ParcoursPlace
+from sqlalchemy import func
+
+from models import (Geocache, LabDiscovery, Parcours, ParcoursOverride,
+                    ParcoursPhoto, ParcoursPlace, ParcoursTrack)
 
 NAME_MAX_LENGTH = 80
 # Format pensé pour des sorties courtes : au-delà, l'animation cache par cache
@@ -93,10 +97,86 @@ def to_dict(parcours: Parcours) -> dict:
 
 
 def list_parcours(session) -> list[dict]:
-    """Les plus récents d'abord (plage), puis par nom."""
+    """Les plus récents d'abord (plage), puis par nom, avec les compteurs
+    affichés par la liste."""
     rows = session.query(Parcours).order_by(
         Parcours.date_start.desc(), Parcours.date_end.desc(), Parcours.name, Parcours.id).all()
-    return [to_dict(row) for row in rows]
+    counts = _listing_counts(session, rows)
+    return [{**to_dict(row), 'counts': counts[row.id]} for row in rows]
+
+
+def _listing_counts(session, rows: list) -> dict[int, dict]:
+    """{parcours_id → {stops, overrides, places, photos, tracks}} : quatre
+    regroupements pour les objets rattachés, puis les étapes."""
+    counts = {row.id: {'stops': 0, 'overrides': 0, 'places': 0,
+                       'photos': 0, 'tracks': 0} for row in rows}
+    if not rows:
+        return counts
+    ids = [row.id for row in rows]
+    for model, key in ((ParcoursOverride, 'overrides'), (ParcoursPlace, 'places'),
+                       (ParcoursPhoto, 'photos'), (ParcoursTrack, 'tracks')):
+        for pid, n in session.query(model.parcours_id, func.count()).filter(
+                model.parcours_id.in_(ids)).group_by(model.parcours_id):
+            counts[pid][key] = n
+    _listing_stops(session, rows, counts)
+    return counts
+
+
+def _listing_stops(session, rows: list, counts: dict) -> None:
+    """Étapes de chaque parcours : trouvailles, Labs et DNF relevés par
+    journée sur la réunion des plages (trois requêtes, quel que soit le
+    nombre de parcours), puis répartis. Même règle que
+    parcours_dataset.build_days — un DNF sur une cache trouvée le jour
+    même ne compte pas — à une approximation près, assumée pour un badge :
+    une cache sans position compterait."""
+    lo = min(row.date_start for row in rows)
+    hi = max(row.date_end for row in rows)
+    with_labs = any(row.include_labs for row in rows)
+    with_dnf = any(row.include_dnf for row in rows)
+
+    finds: dict = defaultdict(int)
+    found_keys: set = set()
+    for code, found in session.query(Geocache.gc_code, Geocache.date_find).filter(
+            Geocache.found.is_(True),
+            Geocache.date_find >= datetime.combine(lo, time.min),
+            Geocache.date_find < datetime.combine(hi + timedelta(days=1), time.min)):
+        day = found.date() if isinstance(found, datetime) else found
+        finds[day] += 1
+        if with_dnf:
+            found_keys.add((code, day))
+
+    labs: dict = defaultdict(int)
+    if with_labs:
+        # Import local, comme dans parcours_dataset : lab_store importe
+        # déjà les modèles.
+        from lab_store import get_collection
+        collection = get_collection(session)
+        if collection is not None:
+            for day, n in session.query(LabDiscovery.found_date, func.count()).filter(
+                    LabDiscovery.collection_id == collection.id,
+                    LabDiscovery.ready_clause(),
+                    LabDiscovery.found_date >= lo, LabDiscovery.found_date <= hi,
+                    ).group_by(LabDiscovery.found_date):
+                labs[day] = n
+
+    dnfs: dict = defaultdict(int)
+    if with_dnf:
+        # Import local : parcours_dataset importe ce module.
+        from parcours_dataset import _my_logs
+        for _, code, day in _my_logs(session, lo, hi)[1]:
+            if (code, day) not in found_keys:
+                dnfs[day] += 1
+
+    for row in rows:
+        day, total = row.date_start, 0
+        while day <= row.date_end:
+            total += finds[day]
+            if row.include_labs:
+                total += labs[day]
+            if row.include_dnf:
+                total += dnfs[day]
+            day += timedelta(days=1)
+        counts[row.id]['stops'] = total
 
 
 def get(session, parcours_id: int) -> Parcours:

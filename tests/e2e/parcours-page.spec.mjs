@@ -316,6 +316,7 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   // Suppression pendant la modification : le formulaire repasse en création.
   await page.locator('.parcours-edit').click();
   await expect(page.locator('#parcoursFormTitle')).toHaveText('Modifier le parcours');
+  await page.locator('.parcours-menu').click();
   await page.locator('.parcours-delete').click();
   const modal = page.locator('.gcm-confirm-modal.show');
   await expect(modal).toContainText('1 ajustements');
@@ -327,6 +328,28 @@ test('supprimer un parcours après confirmation', async ({ page, request }) => {
   const state = await snapshot(page);
   expect(state.ids).toEqual([]);
   expect(state.layer.stops).toBe(0);
+});
+
+test('liste : jours, étapes et compteurs sur la ligne', async ({ page, request }) => {
+  await importFixture(page, request);
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Week-end', date_start: '2025-07-12', date_end: '2025-07-13' } });
+  const pid = (await created.json()).parcours.id;
+  await request.patch(`/api/parcours/${pid}/overrides`,
+    { data: { overrides: [{ key: 'GCPAR01', rank: 1 }] } });
+  expect((await request.post(`/api/parcours/${pid}/places`,
+    { data: { kind: 'place', name: 'Mont', lat: 45.9, lon: 6.1, date: '2025-07-12' } })).status())
+    .toBe(201);
+  await openParcoursPage(page);
+
+  const item = page.locator('.parcours-list-item');
+  await expect(item).toContainText('2 jours');
+  await expect(item.locator('.parcours-count-stops')).toHaveAttribute('title', '5 étapes');
+  await expect(item.locator('.parcours-count-overrides')).toHaveAttribute('title', '1 ajustements');
+  await expect(item.locator('.parcours-count-places')).toHaveAttribute('title', '1 lieux ou bases');
+  // Comptes nuls masqués ; les libellés complets restent accessibles.
+  await expect(item.locator('.parcours-count-photos')).toHaveCount(0);
+  await expect(item.locator('.parcours-count-tracks')).toHaveCount(0);
 });
 
 test('liste indisponible : « Réessayer » recharge la liste', async ({ page, request }) => {
@@ -364,6 +387,7 @@ test('dupliquer, exporter et importer un parcours', async ({ page, request }) =>
   await expect(items).toHaveCount(1);
 
   // Dupliquer : la copie apparaît et garde les ajustements.
+  await items.first().locator('.parcours-menu').click();
   await items.first().locator('.parcours-duplicate').click();
   await expect(items).toHaveCount(2);
   const copy = items.filter({ hasText: '(copie)' });
@@ -373,6 +397,7 @@ test('dupliquer, exporter et importer un parcours', async ({ page, request }) =>
 
   // Exporter : un fichier JSON téléchargé.
   const download = page.waitForEvent('download');
+  await copy.locator('.parcours-menu').click();
   await copy.locator('.parcours-export').click();
   expect((await download).suggestedFilename()).toMatch(/^parcours-.*\.json$/);
 

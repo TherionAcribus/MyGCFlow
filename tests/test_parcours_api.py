@@ -93,6 +93,37 @@ class CrudTests(_Base):
         self.assertEqual(self.get(f"/api/parcours/{created['id']}").status_code, 404)
         self.assertEqual(self.get("/api/parcours").get_json()["parcours"], [])
 
+    def test_listing_counts(self):
+        """Pastilles de la liste : étapes (trouvailles + Labs + DNF, sources
+        du parcours comprises) et objets rattachés."""
+        self.find("GC1", "2025-07-12")
+        self.find("GC2", "2025-07-13")
+        self.find("GC3", "2025-08-01")          # hors plage des deux parcours
+        collection = LabCollection(uid="default", revision=1)
+        db.session.add(collection)
+        db.session.flush()
+        db.session.add(LabDiscovery(
+            collection_id=collection.id, local_uid="l1", stage_uuid="u1",
+            coordinate_status=LabDiscovery.COORD_RESOLVED, latitude=45.3, longitude=5.3,
+            found_date=date(2025, 7, 13)))
+        self.logs((10, "GC1", "2025-07-12", 3, ME),    # écarté : trouvée le jour même
+                  (11, "GCX", "2025-07-13", 3, ME))
+        db.session.commit()
+        a = self.create()
+        b = self.create(name="Journée", date_start="2025-07-12", date_end="2025-07-12",
+                        include_labs=False, include_dnf=False)
+        self.patch(f"/api/parcours/{a['id']}/overrides",
+                   {"overrides": [{"key": "GC1", "rank": 1}]})
+        self.assertEqual(self.post(f"/api/parcours/{a['id']}/places",
+                         {"kind": "place", "lat": 45.9, "lon": 6.1,
+                          "date": "2025-07-12"}).status_code, 201)
+
+        listing = {p["id"]: p for p in self.get("/api/parcours").get_json()["parcours"]}
+        self.assertEqual(listing[a["id"]]["counts"],
+                         {"stops": 4, "overrides": 1, "places": 1, "photos": 0, "tracks": 0})
+        self.assertEqual(listing[b["id"]]["counts"],
+                         {"stops": 1, "overrides": 0, "places": 0, "photos": 0, "tracks": 0})
+
     def test_single_day_when_end_is_missing(self):
         response = self.post("/api/parcours", {"name": "Journée", "date_start": "2025-07-12"})
         self.assertEqual(response.get_json()["parcours"]["date_end"], "2025-07-12")

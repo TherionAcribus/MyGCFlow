@@ -79,8 +79,12 @@ export function createParcoursList(deps) {
             name.textContent = item.name;
             const range = document.createElement('div');
             range.className = 'small text-muted';
-            range.textContent = formatRange(item.date_start, item.date_end);
-            open.append(name, range);
+            const days = rangeDayCount(item.date_start, item.date_end);
+            range.textContent = days > 0
+                ? `${formatRange(item.date_start, item.date_end)} · `
+                    + (days === 1 ? t('Une journée') : t('${n} jours', { n: days }))
+                : formatRange(item.date_start, item.date_end);
+            open.append(name, range, listCounts(item));
             open.addEventListener('click', () => {
                 if (item.id !== selectedId) deps.openParcours(item.id);
             });
@@ -93,33 +97,76 @@ export function createParcoursList(deps) {
             edit.innerHTML = '<i class="ti ti-pencil" aria-hidden="true"></i>';
             edit.addEventListener('click', () => startEditParcours(item));
 
-            const copy = document.createElement('button');
-            copy.type = 'button';
-            copy.className = 'btn btn-sm btn-ghost-secondary parcours-duplicate';
-            copy.setAttribute('aria-label', t('Dupliquer le parcours'));
-            copy.title = t('Dupliquer le parcours');
-            copy.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i>';
-            copy.addEventListener('click', () => duplicateParcours(item.id));
+            // Actions secondaires dans un menu « ⋯ » : la ligne reste lisible
+            // quand la liste est longue. `strategy: "fixed"` : le menu n'est
+            // pas rogné par le défilement de .parcours-list.
+            const wrap = document.createElement('div');
+            wrap.className = 'dropdown';
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'btn btn-sm btn-ghost-secondary parcours-menu';
+            toggle.setAttribute('data-bs-toggle', 'dropdown');
+            toggle.setAttribute('data-bs-popper-config', '{"strategy":"fixed"}');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', t('Actions du parcours'));
+            toggle.title = t('Actions du parcours');
+            toggle.innerHTML = '<i class="ti ti-dots" aria-hidden="true"></i>';
+            const menu = document.createElement('ul');
+            menu.className = 'dropdown-menu dropdown-menu-end';
+            const menuItem = (cls, icon, label, title, danger, action) => {
+                const li = document.createElement('li');
+                const entry = document.createElement('button');
+                entry.type = 'button';
+                entry.className = `dropdown-item ${cls}${danger ? ' text-danger' : ''}`;
+                entry.title = title;
+                entry.innerHTML = `<i class="ti ${icon} me-2" aria-hidden="true"></i>`;
+                entry.append(document.createTextNode(label));
+                entry.addEventListener('click', action);
+                li.append(entry);
+                return li;
+            };
+            menu.append(
+                menuItem('parcours-duplicate', 'ti-copy', t('Dupliquer'),
+                    t('Dupliquer le parcours'), false, () => duplicateParcours(item.id)),
+                menuItem('parcours-export', 'ti-download', t('Exporter'),
+                    t('Exporter le parcours (sélection, ajustements, lieux)'), false,
+                    () => exportParcours(item)),
+            );
+            const divider = document.createElement('li');
+            divider.innerHTML = '<hr class="dropdown-divider">';
+            menu.append(divider, menuItem('parcours-delete', 'ti-trash', t('Supprimer'),
+                t('Supprimer le parcours'), true, () => confirmDelete(item)));
+            wrap.append(toggle, menu);
 
-            const save = document.createElement('button');
-            save.type = 'button';
-            save.className = 'btn btn-sm btn-ghost-secondary parcours-export';
-            save.setAttribute('aria-label', t('Exporter le parcours'));
-            save.title = t('Exporter le parcours (sélection, ajustements, lieux)');
-            save.innerHTML = '<i class="ti ti-download" aria-hidden="true"></i>';
-            save.addEventListener('click', () => exportParcours(item));
-
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'btn btn-sm btn-ghost-danger parcours-delete';
-            remove.setAttribute('aria-label', t('Supprimer le parcours'));
-            remove.title = t('Supprimer le parcours');
-            remove.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
-            remove.addEventListener('click', () => confirmDelete(item));
-
-            row.append(open, edit, copy, save, remove);
+            row.append(open, edit, wrap);
             return row;
         }));
+    }
+
+    // Pastilles de la ligne : toujours les étapes, puis les autres comptes
+    // quand ils ne sont pas nuls (rien d'autre à dire d'un parcours vide).
+    function listCounts(item) {
+        const box = document.createElement('div');
+        box.className = 'small text-muted d-flex flex-wrap gap-2 parcours-item-counts';
+        const counts = item.counts || {};
+        const entries = [
+            ['ti-map-pins', 'stops', t('${n} étapes', { n: counts.stops ?? 0 }), true],
+            ['ti-photo', 'photos', t('${n} photos', { n: counts.photos ?? 0 }), counts.photos > 0],
+            ['ti-route', 'tracks', t('${n} traces', { n: counts.tracks ?? 0 }), counts.tracks > 0],
+            ['ti-map-pin', 'places', t('${n} lieux ou bases', { n: counts.places ?? 0 }), counts.places > 0],
+            ['ti-adjustments', 'overrides', t('${n} ajustements', { n: counts.overrides ?? 0 }),
+                counts.overrides > 0],
+        ];
+        for (const [icon, key, label, show] of entries) {
+            if (!show) continue;
+            const span = document.createElement('span');
+            span.className = `parcours-count parcours-count-${key}`;
+            span.setAttribute('aria-label', label);
+            span.title = label;
+            span.innerHTML = `<i class="ti ${icon} me-1" aria-hidden="true"></i>${counts[key] ?? 0}`;
+            box.append(span);
+        }
+        return box;
     }
 
     // Copie côté serveur : sélection, ajustements, lieux et bases — jamais les
