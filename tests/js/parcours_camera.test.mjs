@@ -130,3 +130,23 @@ test('pose : même résultat quel que soit le chemin (déterministe)', () => {
     assert.equal(cameraPoseAt(null, q, SIZE), null);
     assert.equal(overviewBox({ stops: [], legs: [] }), null);
 });
+
+test('durée imposée : le confort de la caméra se mesure en temps écran', () => {
+    const tl = sample();
+    // La vitesse de zoom est bornée par seconde d'écran : à quantum comprimé
+    // (durée imposée, musique), le même plafond par milliseconde doit tenir.
+    const maxZoomRate = (msPerDay) => {
+        let worst = 0;
+        for (let q = 0; q + FRAME_Q <= tl.quanta; q += FRAME_Q) {
+            const a = cameraPoseAt(tl, q, SIZE, { msPerDay });
+            const b = cameraPoseAt(tl, q + FRAME_Q, SIZE, { msPerDay });
+            worst = Math.max(worst, Math.abs(b.zoom - a.zoom) / (FRAME_Q * msPerDay));
+        }
+        return worst;
+    };
+    assert.ok(maxZoomRate(50) <= maxZoomRate(100) * 1.05);
+    assert.ok(maxZoomRate(50) <= 0.0026);  // 2,5 niveaux par seconde d'écran
+    // Au rythme naturel, `msPerDay` explicite ne change rien.
+    const q = tl.stops[1].q + 2;
+    assert.deepEqual(cameraPoseAt(tl, q, SIZE, { msPerDay: 100 }), cameraPoseAt(tl, q, SIZE));
+});

@@ -53,6 +53,7 @@ import {
 } from './evolution_timeline.mjs';
 import {
     HEAD_PICTOGRAM,
+    QUANTUM_MS,
     buildParcoursTimeline,
     dayCardAt,
     endCardAt,
@@ -61,6 +62,7 @@ import {
     headModeAt,
     nightLevelAt,
     normalizePlayback,
+    sceneTimingOptions,
     stateAt,
     stopsInRange,
 } from './parcours_timeline.mjs';
@@ -164,6 +166,9 @@ let endDay = 0;
 let currentQ = 0;             // position du moteur, en quanta fractionnaires
 let pendingOpenId = null;     // parcours ouvert pendant une lecture
 let pendingTimeline = false;  // rythme changé pendant une lecture
+let playMsPerDay = QUANTUM_MS;  // quantum à l'écran, tenu par parcoursFrameVars
+let timingMemo = null;        // `timing` de la chronologie construite
+let timingTimer = null;       // reconstruction différée au changement de plan
 // Caméra de la lecture (lot 7, parcours_camera.mjs) : vue d'avant la lecture,
 // rendue à la fin ; suspendue dès que l'utilisateur déplace la carte.
 
@@ -238,6 +243,7 @@ export async function initParcoursPage() {
     tracksPanel.bind();
     bindRouting();
     bindParcoursStyle();
+    bindTimingPlan();
     bindParcoursFileDrop({
         getSelectedId: () => selectedId,
         uploadPhotos: photosPanel.upload,
@@ -348,10 +354,43 @@ export async function openParcours(id) {
 
 // --- Chronologie et moteur ------------------------------------------------------
 
+// Rythme de la chronologie (réglages Animation de la page, plan recalculé
+// dans ui.js) : sous le quantum naturel, les contenus à lire gardent un
+// plancher de temps écran — voir `timing` de buildParcoursTimeline. En
+// durée imposée ou calée sur la musique, le total de quanta est conservé
+// (`fixedTotal`) : le plan garde sa durée exacte.
+function playbackTiming() {
+    const msPerDay = Number(pkg.options?.animation?.timePerDay);
+    if (!Number.isFinite(msPerDay) || msPerDay >= QUANTUM_MS) return null;
+    return { msPerDay, fixedTotal: pkg.options?.animation?.rhythmMode !== 'rate' };
+}
+
+// Le plan de rythme change (durée saisie, musique, vitesse) : la chronologie
+// est reconstruite avec le nouveau `timing` — différée en cours de lecture,
+// comme un changement de rythme du parcours.
+function bindTimingPlan() {
+    document.addEventListener('mygcflow:timing-plan', () => {
+        const next = playbackTiming();
+        const same = (!next && !timingMemo)
+            || (!!next && !!timingMemo && next.fixedTotal === timingMemo.fixedTotal
+                && Math.abs(next.msPerDay - timingMemo.msPerDay) < 0.5);
+        if (same || !ordered) return;
+        clearTimeout(timingTimer);
+        timingTimer = setTimeout(() => {
+            if (clock.running) pendingTimeline = true;
+            else applyTimeline();
+        }, 300);
+    });
+}
+
 // (Re)construit la chronologie écran du parcours ouvert et la donne au moteur :
 // métadonnées (dates fictives des quanta), features WebGL, plan au repos.
 function applyTimeline({ fit = false } = {}) {
     // Sans photos dans la vidéo, les étapes ne s'allongent pas pour elles.
+    timingMemo = playbackTiming();
+    // Le relevé `camera.pose` cadre comme le crochet caméra du moteur :
+    // même quantum à l'écran (parcoursFrameVars l'affinerait en lecture).
+    playMsPerDay = Number(pkg.options?.animation?.timePerDay) || QUANTUM_MS;
     timeline = ordered ? buildParcoursTimeline(ordered, {
         pace: playback.pace,
         photosByStop: photoDisplay.layout === PHOTO_LAYOUT_NONE ? null : photoByStop,
@@ -359,6 +398,7 @@ function applyTimeline({ fit = false } = {}) {
         // Carton final de synthèse : temps d'écran ajouté avec les cartons.
         endCard: playback.day_cards,
         options: photoTimelineOptions(photoDisplay),
+        timing: timingMemo,
     }) : null;
     const stops = timeline?.stops || [];
     projected = stops.map((stop) => ol.proj.fromLonLat([stop.lon, stop.lat]));
@@ -485,6 +525,7 @@ function parcoursFrameVars(now, msPerDay) {
         // du suivant. Elle reste calée sur les apparitions même quand le
         // moteur rattrape plusieurs quanta dans une image.
         const perDay = Math.max(1e-3, Number(msPerDay) || 1);
+        playMsPerDay = perDay;
         const elapsed = Math.max(0, (Number(now) || 0) - clock.stepAt);
         currentQ = Math.max(0, clock.day + Math.min(1, elapsed / perDay));
     }
@@ -977,6 +1018,7 @@ const playDraw = createParcoursPlayDraw({
     getState: () => ({
         clock, timeline, currentQ, playback, projected, legProjected,
         inputs, photoByStop, photoDisplay, listing, selectedId,
+        msPerDay: playMsPerDay,
     }),
     paints,
     quantumBase,
@@ -1304,7 +1346,7 @@ export function getParcoursSnapshot() {
         // Lot 7 : caméra, nuit, carton, pictogramme, crédits.
         camera: (() => {
             const view = pkg.getMap?.()?.getView();
-            const pose = cameraPoseAt(timeline, currentQ, pkg.getMap?.()?.getSize());
+            const pose = cameraPoseAt(timeline, currentQ, pkg.getMap?.()?.getSize(), { msPerDay: Math.round(playMsPerDay * 10) / 10 });
             return {
                 following: cameraFollowing(),
                 suspended: playCamera.suspended(),
@@ -1317,14 +1359,14 @@ export function getParcoursSnapshot() {
         })(),
         scene: timeline ? {
             night: playback.day_cards ? nightLevelAt(timeline, currentQ) : 0,
-            card: playback.day_cards ? dayCardAt(timeline, currentQ) : null,
+            card: playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null,
             cardText: (() => {
-                const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
+                const card = playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null;
                 return card ? playDraw.dayCardText(card.day) : null;
             })(),
-            endCard: playback.day_cards ? endCardAt(timeline, currentQ) : null,
+            endCard: playback.day_cards ? endCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null,
             endCardText: (() => {
-                const card = playback.day_cards ? endCardAt(timeline, currentQ) : null;
+                const card = playback.day_cards ? endCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null;
                 return card ? playDraw.endCardText() : null;
             })(),
             headMode: headModeAt(timeline, currentQ),

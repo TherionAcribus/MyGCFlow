@@ -9,6 +9,7 @@ import {
     HOURS_NONE,
     HOURS_SLOTS,
     PACE_PROPORTIONAL,
+    QUANTUM_MS,
     SCENE_DEFAULTS as S,
     TIMELINE_DEFAULTS as D,
     barSeries,
@@ -22,6 +23,7 @@ import {
     legTravelMode,
     nightLevelAt,
     normalizePlayback,
+    sceneTimingOptions,
     stateAt,
     stopsInRange,
     trailAt,
@@ -287,4 +289,84 @@ test('barre de chronologie : nuits et débuts de journée, heures d’une journ�
         assert.ok(stateAt(single, offset - 1).minutes < hour * 60);
     }
     assert.deepEqual(barTicks(null, 0, 10), { bands: [], days: [], hours: [] });
+});
+
+// Deux journées aux trajets francs : A, B (5 km), C (5 km) le 12 ; D (10 km)
+// le 14 — assez de contenu élastique pour lire la réallocation sous durée
+// imposée.
+function journey() {
+    return reconstructParcours({
+        days: [
+            { date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 50, { logId: 2 }), stop('C', 100, { logId: 3 })] },
+            { date: '2025-07-13', stops: [] },
+            { date: '2025-07-14', stops: [stop('D', 200, { logId: 4 })] },
+        ],
+    });
+}
+
+test('durée imposée : contenus à lire gardés, temps repris sur le reste', () => {
+    const photos = new Map([['A', ['p1', 'p2', 'p3']]]);
+    const opts = { photosByStop: photos, endCard: true };
+    const natural = buildParcoursTimeline(journey(), opts);
+    const tl = buildParcoursTimeline(journey(), { ...opts, timing: { msPerDay: QUANTUM_MS / 2, fixedTotal: true } });
+    // Le total de quanta tient la durée imposée (à l'arrondi d'allocation près).
+    assert.ok(Math.abs(tl.quanta - natural.quanta) <= tl.stops.length + tl.legs.length + 4);
+    // Photos, nuit et carton final : davantage de quanta que la compression
+    // uniforme (un quantum de 50 ms en demande le double pour le même écran).
+    const [a] = tl.stops;
+    assert.ok(a.photoQ * a.photos.length > D.photoQ * Math.min(3, D.maxPhotosPerStop));
+    const night = tl.legs.find((leg) => leg.night);
+    assert.ok(night.endQ - night.startQ > D.nightQ);
+    assert.ok(tl.endCardQ > D.endCardQ);
+    // …pris sur les trajets et les visites, qui se compressent.
+    assert.ok(tl.legs[0].endQ - tl.legs[0].startQ < natural.legs[0].endQ - natural.legs[0].startQ);
+    assert.ok(tl.stops[1].departQ - tl.stops[1].q < natural.stops[1].departQ - natural.stops[1].q);
+    // Le carton final lit la fenêtre réellement allouée.
+    assert.ok(endCardAt(tl, tl.quanta - tl.endCardQ + 1).alpha > 0);
+    // L'état reste cohérent sur la chronologie réallouée.
+    for (const q of [a.q, tl.stops[1].q, tl.quanta - 1]) {
+        assert.equal(stopsInRange(tl, q, q).length, stateAt(tl, q).stopsReached - stateAt(tl, q - 1).stopsReached);
+    }
+});
+
+test('rythme rapide : les planchers rallongent la chronologie', () => {
+    const photos = new Map([['A', ['p1', 'p2', 'p3']]]);
+    const opts = { photosByStop: photos, endCard: true };
+    const natural = buildParcoursTimeline(journey(), opts);
+    const tl = buildParcoursTimeline(journey(), { ...opts, timing: { msPerDay: QUANTUM_MS / 2, fixedTotal: false } });
+    // Sans durée imposée, les planchers s'ajoutent : chaque contenu à lire
+    // garde ses secondes (deux fois plus de quanta à 50 ms).
+    const night = tl.legs.find((leg) => leg.night);
+    assert.equal(night.endQ - night.startQ, 2 * D.nightQ);
+    assert.equal(tl.stops[0].photoQ * 3, 2 * D.photoQ * 3);
+    assert.equal(tl.endCardQ, 2 * D.endCardQ);
+    // Visites et trajets inchangés ; la chronologie s'allonge d'autant.
+    assert.equal(tl.legs[0].endQ - tl.legs[0].startQ, natural.legs[0].endQ - natural.legs[0].startQ);
+    assert.equal(tl.stops[1].departQ - tl.stops[1].q, natural.stops[1].departQ - natural.stops[1].q);
+    assert.ok(tl.quanta > natural.quanta);
+    // L'arrivée de chaque étape reste avant son départ, dans l'ordre.
+    let prev = 0;
+    for (const stop of tl.stops) {
+        assert.ok(stop.q > prev && stop.departQ > stop.q);
+        prev = stop.departQ;
+    }
+});
+
+test('quantum naturel ou plus lent : chronologie inchangée', () => {
+    const photos = new Map([['A', ['p1']]]);
+    const opts = { photosByStop: photos, endCard: true };
+    const natural = buildParcoursTimeline(journey(), opts);
+    for (const msPerDay of [QUANTUM_MS, 2 * QUANTUM_MS]) {
+        const tl = buildParcoursTimeline(journey(), { ...opts, timing: { msPerDay, fixedTotal: true } });
+        assert.equal(tl.quanta, natural.quanta);
+        assert.deepEqual(tl.stops.map((stop) => [stop.q, stop.departQ]), natural.stops.map((stop) => [stop.q, stop.departQ]));
+    }
+});
+
+test('scène : fondu et maintien du carton en temps écran', () => {
+    assert.deepEqual(sceneTimingOptions(QUANTUM_MS), {});
+    assert.deepEqual(sceneTimingOptions(2 * QUANTUM_MS), {});
+    const o = sceneTimingOptions(QUANTUM_MS / 2);
+    assert.equal(o.cardHoldQ, 2 * S.cardHoldQ);
+    assert.equal(o.cardFadeQ, 2 * S.cardFadeQ);
 });

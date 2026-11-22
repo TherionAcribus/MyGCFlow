@@ -396,6 +396,16 @@ Autres repères :
   suspension manuelle (le `begin` d'un saut voit le moteur encore en
   marche) ; un quantum vaut un jour fictif depuis le 2000-01-01
   (`new Date(2000, 0, 1 + q)` pour viser le quantum `q`).
+  Sous le quantum naturel (durée imposée, musique, rythme > 10 quanta/s),
+  `buildParcoursTimeline` réalloue (`timing`) : photos, nuit, cartons
+  gardent leurs secondes, visites et trajets se compressent — total tenu
+  en durée imposée (`fixedTotal`), allongé en vitesse libre ; planchers
+  plafonnés à 70 % du temps écran. Reconstruction sur
+  `mygcflow:timing-plan` (différée en lecture). La caméra exprime ses
+  constantes de temps en secondes via `msPerDay`, comme les fondus des
+  cartons (`sceneTimingOptions`). Relevé : `timeline.quanta` et
+  `photoSlots` (`fromQ`/`toQ`) du snapshot — exemple « durée imposée »
+  dans `parcours-finitions.spec.mjs`.
   Barre de chronologie sur `/parcours` : axe en quanta (dates fictives),
   textes et repères par le crochet `timelineBar` du moteur —
   `getTimelineBarSnapshot()` donne `ticks` (`bands` = nuits, `labels`

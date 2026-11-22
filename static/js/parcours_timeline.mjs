@@ -114,8 +114,14 @@ function dayNumber(iso) {
 //   — sa longueur remplace la distance à vol d'oiseau.
 //   endCard : ajoute `endCardQ` quanta de clôture après l'outro, le temps
 //             d'afficher le carton final de synthèse (cartons activés).
+//   timing ({ msPerDay, fixedTotal }) : sous le quantum naturel, les contenus
+//             « à lire » — photos, nuits (carton du jour), intro, outro et
+//             carton final — gardent leur durée écran naturelle, le temps
+//             manquant étant pris sur les visites et les trajets. Avec
+//             `fixedTotal` (durée imposée, musique), le total de quanta est
+//             conservé ; sinon la chronologie s'allonge d'autant.
 export function buildParcoursTimeline(reconstructed, {
-    pace = PACE_REGULAR, photosByStop = null, legPaths = null, endCard = false, options = null,
+    pace = PACE_REGULAR, photosByStop = null, legPaths = null, endCard = false, options = null, timing = null,
 } = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
@@ -185,7 +191,81 @@ export function buildParcoursTimeline(reconstructed, {
         }
     }
     const quantaCount = stops.length ? q + o.outroQ + (endCard ? o.endCardQ : 0) : 0;
-    return { quanta: quantaCount, stops, legs, days, totalKm: km };
+    return compressTimeline(
+        { quanta: quantaCount, endCardQ: endCard ? o.endCardQ : 0, stops, legs, days, totalKm: km },
+        timing, o,
+    );
+}
+
+// Part du budget que les contenus « à lire » (photos, nuits, cartons) peuvent
+// occuper au maximum quand la durée est imposée : au-delà, leurs planchers se
+// réduisent ensemble plutôt que d'écraser les visites et les trajets.
+const FLOOR_MAX_SHARE = 0.7;
+
+// Réalloue les quanta de la chronologie naturelle quand le quantum est
+// compressé (msPerDay < QUANTUM_MS) : les contenus à lire gardent leur durée
+// écran naturelle — leur plancher —, le reste absorbe la compression.
+function compressTimeline(tl, timing, o) {
+    const msPerDay = Number(timing?.msPerDay);
+    if (!tl.stops.length || !Number.isFinite(msPerDay) || !(msPerDay < QUANTUM_MS)) return tl;
+    const stretch = QUANTUM_MS / msPerDay;   // > 1 : un quantum vaut moins de 100 ms
+    const floorQ = (naturalQ) => Math.max(1, Math.round(naturalQ * stretch));
+    const items = {
+        intro: { natural: o.introQ, floor: true },
+        outro: { natural: o.outroQ, floor: true },
+        endCard: { natural: tl.endCardQ, floor: true },
+    };
+    // Par étape : durée hors photos (élastique) et bloc des photos (plancher) ;
+    // par trajet : trajet de jour (élastique) ou nuit (plancher).
+    const baseDwells = tl.stops.map((stop) => {
+        const block = stop.photoQ * stop.photos.length;
+        return { natural: (stop.departQ - stop.q) - block, elastic: true };
+    });
+    const photoBlocks = tl.stops.map((stop) => {
+        const block = stop.photoQ * stop.photos.length;
+        return block > 0 ? { natural: block, floor: true } : null;
+    });
+    const legItems = tl.legs.map((leg) => ({ natural: leg.endQ - leg.startQ, floor: leg.night }));
+    const all = [items.intro, items.outro, items.endCard, ...baseDwells, ...photoBlocks.filter(Boolean), ...legItems]
+        .filter((it) => it.natural > 0);
+    let floorTotal = 0;
+    let elasticTotal = 0;
+    for (const it of all) {
+        if (it.floor) floorTotal += floorQ(it.natural);
+        else elasticTotal += it.natural;
+    }
+    let floorScale = 1;
+    let elasticScale = 1;
+    if (timing.fixedTotal) {
+        const budget = tl.quanta;
+        const cap = Math.floor(budget * FLOOR_MAX_SHARE);
+        if (floorTotal > cap) floorScale = cap / floorTotal;
+        const pool = Math.max(0, budget - Math.min(floorTotal, cap));
+        elasticScale = elasticTotal > 0 ? pool / elasticTotal : 0;
+    }
+    const allocOf = (it) => it.floor
+        ? Math.max(1, Math.round(floorQ(it.natural) * floorScale))
+        : Math.max(1, Math.round(it.natural * elasticScale));
+    let q = allocOf(items.intro);
+    if (tl.days.length) tl.days[0].startQ = q;
+    for (let i = 0; i < tl.stops.length; i++) {
+        const stop = tl.stops[i];
+        const leg = i > 0 ? tl.legs[i - 1] : null;
+        if (leg) {
+            leg.startQ = q;
+            leg.endQ = q + allocOf(legItems[i - 1]);
+            q = leg.endQ;
+            if (leg.night) tl.days[stop.day].startQ = leg.startQ;
+        }
+        const blockQ = photoBlocks[i] ? allocOf(photoBlocks[i]) : 0;
+        stop.photoQ = blockQ ? blockQ / stop.photos.length : 0;
+        stop.q = q;
+        stop.departQ = q + allocOf(baseDwells[i]) + blockQ;
+        q = stop.departQ;
+    }
+    tl.endCardQ = tl.endCardQ ? allocOf(items.endCard) : 0;
+    tl.quanta = q + allocOf(items.outro) + tl.endCardQ;
+    return tl;
 }
 
 const DEG = Math.PI / 180;
@@ -462,6 +542,18 @@ export const SCENE_DEFAULTS = Object.freeze({
     cardFadeQ: 3,
 });
 
+// Durées de scène ramenées au rythme de lecture : fondu et maintien du carton
+// de journée gardent leur temps écran quand le quantum est compressé (durée
+// imposée, rythme rapide). À vitesse naturelle ou plus lente : les défauts.
+export function sceneTimingOptions(msPerDay) {
+    const scale = QUANTUM_MS / Math.max(1e-3, Number(msPerDay) || QUANTUM_MS);
+    if (!(scale > 1)) return {};
+    return {
+        cardHoldQ: SCENE_DEFAULTS.cardHoldQ * scale,
+        cardFadeQ: SCENE_DEFAULTS.cardFadeQ * scale,
+    };
+}
+
 // Assombrissement de la nuit à `qf` : 0 (jour) à 1 (cœur de la nuit).
 export function nightLevelAt(timeline, qf, options = {}) {
     const o = { ...SCENE_DEFAULTS, ...options };
@@ -513,7 +605,7 @@ export function dayCardAt(timeline, qf, options = {}) {
 export function endCardAt(timeline, qf, options = {}) {
     if (!timeline?.stops?.length) return null;
     const o = { ...TIMELINE_DEFAULTS, ...SCENE_DEFAULTS, ...options };
-    const from = timeline.quanta - o.endCardQ;
+    const from = timeline.quanta - (timeline.endCardQ || o.endCardQ);
     if (qf < from || qf > timeline.quanta) return null;
     const fadeIn = clamp((qf - from) / o.cardFadeQ, 0, 1);
     const fadeOut = clamp((timeline.quanta - qf) / o.cardFadeQ, 0, 1);

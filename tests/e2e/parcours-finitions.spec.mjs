@@ -6,6 +6,8 @@
 // carton « Jour 2 » pendant la nuit. Rythme lent (10 quanta par seconde)
 // pour observer la nuit (20 quanta = 2 s).
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   cleanUp,
   clearLogs,
@@ -16,6 +18,8 @@ import {
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 test.beforeEach(async ({ page, request }) => {
   await deleteAllParcours(request);
@@ -264,5 +268,48 @@ test('parcours suggérés : liste masquée sans séjour, un clic remplit le form
   await expect(page.locator('#parcoursStart')).toHaveValue('2025-07-12');
   await expect(page.locator('#parcoursEnd')).toHaveValue('2025-07-13');
   await expect(page.locator('#parcoursRangeHint')).toContainText('2 jours');
+  expect(errors).toEqual([]);
+});
+
+test('durée imposée : les contenus à lire gardent un temps d’écran', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  // Une photo seule (rattachée à GCPAR01 par son nom) : sa fenêtre dans la
+  // chronologie mesure le plancher de lisibilité.
+  const { parcours: list } = await (await request.get('/api/parcours')).json();
+  const photo = await import('node:fs/promises').then((fs) => fs.readFile(
+    path.join(HERE, 'fixtures', 'parcours-photos', 'telephone.jpg')));
+  const upload = await request.post(`/api/parcours/${list[0].id}/photos`, {
+    multipart: { photo: { name: 'telephone.jpg', mimeType: 'image/jpeg', buffer: photo } },
+  });
+  expect(upload.status()).toBe(201);
+  const rest = await openReady(page);
+  const [baseSlot] = rest.photoSlots;
+  expect(baseSlot).toBeTruthy();
+  const baseQuanta = rest.timeline.quanta;
+
+  // Durée imposée : ~8 s au lieu du rythme naturel (~14 s à 10 quanta/s).
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
+  await page.locator('label:has(#rhythmModeDuration)').click();
+  await page.locator('#inputTotalDuration').fill('00:08');
+  await page.locator('#inputTotalDuration').blur();
+  // La chronologie est reconstruite : la photo gagne des quanta sans que le
+  // total ne bouge — le temps est pris sur les trajets et les visites.
+  await expect.poll(async () => {
+    const state = await snapshot(page);
+    return state.photoSlots[0] ? state.photoSlots[0].toQ - state.photoSlots[0].fromQ : 0;
+  }, { timeout: 15_000 }).toBeGreaterThan(baseSlot.toQ - baseSlot.fromQ);
+  const imposed = await snapshot(page);
+  expect(Math.abs(imposed.timeline.quanta - baseQuanta)).toBeLessThanOrEqual(baseQuanta / 10);
+  // Plus d'une seconde d'écran par photo (le plancher de 1,5 s se réduit à
+  // sa part du plafond, ce parcours n'ayant presque rien d'élastique),
+  // contre ~0,9 s sans plancher à ce rythme.
+  const msPerDay = 8000 / imposed.timeline.quanta;
+  for (const slot of imposed.photoSlots) {
+    expect((slot.toQ - slot.fromQ) * msPerDay).toBeGreaterThan(1000);
+    expect((slot.toQ - slot.fromQ) * msPerDay).toBeGreaterThan(15 * msPerDay);
+  }
+  // La caméra suit toujours une pose déterministe à ce rythme.
+  expect(imposed.camera.pose).toBeTruthy();
   expect(errors).toEqual([]);
 });

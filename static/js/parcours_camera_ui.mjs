@@ -65,8 +65,12 @@ export function createParcoursCamera(deps) {
         if (!following()) return false;
         const map = deps.getMap();
         const size = map?.getSize();
-        const q = currentQ + Math.max(0, Number(leadMs) || 0) / Math.max(1e-3, Number(msPerDay) || 1);
-        const pose = cameraPoseAt(timeline, q, size);
+        const perDay = Math.max(1e-3, Number(msPerDay) || 1);
+        const q = currentQ + Math.max(0, Number(leadMs) || 0) / perDay;
+        // Constantes de temps de la caméra en secondes d'écran (dixième de ms :
+        // une piste par valeur sert le cache sans l'inonder).
+        const timing = { msPerDay: Math.round(perDay * 10) / 10 };
+        const pose = cameraPoseAt(timeline, q, size, timing);
         if (!pose) return false;
         const view = map.getView();
         const center = view.getCenter();
@@ -77,11 +81,11 @@ export function createParcoursCamera(deps) {
             view.setResolution(pose.resolution);
         }
         // Tuiles de la suite chargées d'avance (une demande par seconde
-        // d'écran).
-        const bucket = Math.floor(q / 10);
+        // d'écran, 1,5 s plus loin).
+        const bucket = Math.floor((q * perDay) / 1000);
         if (bucket !== prefetchBucket) {
             prefetchBucket = bucket;
-            const ahead = cameraPoseAt(timeline, q + 15, size);
+            const ahead = cameraPoseAt(timeline, q + 1500 / perDay, size, timing);
             if (ahead) deps.prefetchTiles(ahead.center, ahead.zoom);
         }
         return moved;

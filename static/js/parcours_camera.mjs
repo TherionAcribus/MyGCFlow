@@ -17,7 +17,7 @@
 // Aucune dépendance au DOM ni à OpenLayers : testé sous Node
 // (tests/js/parcours_camera.test.mjs). Coordonnées en EPSG:3857.
 
-import { headAt } from './parcours_timeline.mjs';
+import { QUANTUM_MS, headAt } from './parcours_timeline.mjs';
 
 const R = 6378137;
 const DEG = Math.PI / 180;
@@ -212,6 +212,21 @@ function buildTrack(timeline, size, o) {
     return { n, cx, cy, logRes };
 }
 
+// Les constantes de temps des réglages sont en quanta au rythme naturel
+// (QUANTUM_MS = 100 ms) : `msPerDay` les exprime en temps écran — le lissage,
+// les fenêtres et la vitesse de zoom gardent leur durée réelle quand la
+// lecture est accélérée (durée imposée) ou ralentie.
+function timedOptions(o) {
+    const scale = QUANTUM_MS / Math.max(1e-3, Number(o.msPerDay) || QUANTUM_MS);
+    if (Math.abs(scale - 1) < 1e-9) return o;
+    const scaled = { ...o };
+    for (const key of ['centerSigmaQ', 'leadQ', 'lookBackQ', 'lookAheadQ', 'holdBackQ', 'holdAheadQ', 'zoomSigmaQ']) {
+        scaled[key] = o[key] * scale;
+    }
+    scaled.maxZoomPerQ = o.maxZoomPerQ / scale;
+    return scaled;
+}
+
 // Pistes gardées par chronologie, et par taille de vue et options.
 const tracks = new WeakMap();
 
@@ -224,7 +239,7 @@ function trackFor(timeline, size, options) {
     const key = `${size[0]}x${size[1]}${Object.keys(options).length ? JSON.stringify(options) : ''}`;
     let track = bySize.get(key);
     if (!track) {
-        track = buildTrack(timeline, size, { ...CAMERA_DEFAULTS, ...options });
+        track = buildTrack(timeline, size, timedOptions({ ...CAMERA_DEFAULTS, ...options }));
         if (bySize.size >= MAX_TRACKS) bySize.delete(bySize.keys().next().value);
         bySize.set(key, track);
     }

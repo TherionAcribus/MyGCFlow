@@ -27,6 +27,7 @@ import {
     legPoints,
     nightLevelAt,
     reachedIndex,
+    sceneTimingOptions,
     trailAt,
 } from './parcours_timeline.mjs';
 import {
@@ -711,15 +712,15 @@ export function createParcoursPlayDraw(deps) {
     }
 
     function drawDayCard(ctx, ratio) {
-        const { playback, timeline, currentQ } = S();
-        const card = playback.day_cards ? dayCardAt(timeline, currentQ) : null;
+        const { playback, timeline, currentQ, msPerDay } = S();
+        const card = playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
         const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
         if (text) drawCard(ctx, ratio, text, card.alpha);
     }
 
     function drawEndCard(ctx, ratio) {
-        const { playback, timeline, currentQ } = S();
-        const card = playback.day_cards ? endCardAt(timeline, currentQ) : null;
+        const { playback, timeline, currentQ, msPerDay } = S();
+        const card = playback.day_cards ? endCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
         if (card && card.alpha > 0) drawCard(ctx, ratio, endCardText(), card.alpha);
     }
 

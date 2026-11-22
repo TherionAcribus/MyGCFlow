@@ -301,6 +301,21 @@ S'y ajoutent :
 Les jours sans étape sont sautés, mais `{jour}` garde le rang de la date
 dans la plage.
 
+**Sous le quantum naturel** (durée imposée, musique, rythme au-delà de
+10 quanta/s), la compression ne rend pas illisible ce qui doit être lu :
+les contenus « à lire » — photos, nuit (le carton du jour s'y affiche),
+intro, outro et carton final — gardent leur durée écran naturelle, qui
+devient un plancher de quanta (`timing` de `buildParcoursTimeline`). Le
+temps manquant est pris sur les visites et les trajets, qui se
+compressent. En durée imposée ou calée sur la musique, le total de quanta
+est conservé (`fixedTotal` : la durée annoncée tient exactement) ; en
+vitesse libre, la chronologie s'allonge d'autant. Quand les planchers ne
+tiennent plus ensemble dans la durée voulue, ils se partagent jusqu'à
+70 % du temps écran. La chronologie est reconstruite au changement du
+plan (`mygcflow:timing-plan`), différée à la fin de lecture comme un
+changement de rythme. Maintien et fondu du carton de jour suivent le même
+principe (`sceneTimingOptions`).
+
 **À chaque image**, `frameVars` donne la position fractionnaire du moteur
 (dernier quantum joué + part écoulée). Elle reste calée sur les apparitions
 même quand le moteur rattrape plusieurs quanta dans une image. De cette
@@ -416,6 +431,12 @@ géocacheur ») :
   cible comme une autre ;
 - le géocacheur est enfin gardé à 40 px du bord au moins (filet de
   sécurité, normalement inutile).
+
+Les constantes de temps de la caméra (lissages, fenêtres, maintien de
+dézoom, vitesse de zoom) sont lues en **temps écran** : `msPerDay` les
+convertit du rythme naturel vers le rythme courant — une durée imposée
+accélère le contenu sans accélérer la caméra, le confort (2,5 niveaux/s,
+σ = 0,4 s) vaut à tous les rythmes.
 
 Avant le 2026-11-18, la caméra lissait des cadres par segment (le trajet
 entier, l'étape) : elle partait vers le trajet suivant pendant l'arrêt
