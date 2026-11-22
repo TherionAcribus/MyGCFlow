@@ -158,7 +158,8 @@ test('annuler / rétablir : boutons, Ctrl+Z, et remise à zéro annulable', asyn
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
 
-  // « Annuler les ajustements » est lui-même annulable.
+  // « Réinitialiser les ajustements » est lui-même annulable.
+  await expect(page.locator('#btnParcoursResetAdjustments')).toContainText('Réinitialiser');
   await page.locator('#btnParcoursResetAdjustments').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   state = await adjusted(page, state.adjustmentRevision);
@@ -491,6 +492,12 @@ test('éditer un lieu : nom, journée, type et déplacement sur la carte', async
   expect(state.places.find((p) => p.id === placeId).name).toBe('Mont Veyrier');
   await expect(row(page, placeKey)).toContainText('Mont Veyrier');
 
+  // Quitter le champ enregistre aussi (pas seulement Entrée ou le bouton).
+  await panel.locator('.parcours-edit-place-name').fill('Mont Baron');
+  await panel.locator('.parcours-edit-place-name').press('Tab');
+  state = await adjusted(page, state.adjustmentRevision);
+  expect(state.places.find((p) => p.id === placeId).name).toBe('Mont Baron');
+
   // Changer de journée : le lieu rejoint le 13.
   await panel.locator('.parcours-edit-place-day').selectOption('2025-07-13');
   state = await adjusted(page, state.adjustmentRevision);
@@ -652,6 +659,7 @@ test('annuler / rétablir : création et suppression de lieu', async ({ page, re
 
 test('export GPX : une route par journée, étapes dans l’ordre', async ({ page }) => {
   await openReady(page);
+  await expect(page.locator('#btnParcoursExportGpx')).toContainText('GPX');
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('#btnParcoursExportGpx').click(),

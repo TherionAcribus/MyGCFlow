@@ -568,7 +568,7 @@ export function createStopsPanel(deps) {
         }
 
         if (place) {
-            // Nom : enregistré à l'Entrée ou au bouton.
+            // Nom : enregistré à l'Entrée, à la sortie du champ ou au bouton.
             const nameRow = document.createElement('div');
             nameRow.className = 'd-flex align-items-center gap-2 flex-wrap mb-2';
             const nameLabel = document.createElement('label');
@@ -580,11 +580,17 @@ export function createStopsPanel(deps) {
             nameInput.className = 'form-control form-control-sm w-auto parcours-edit-place-name';
             nameInput.value = place.name || '';
             nameLabel.htmlFor = nameInput.id = `parcoursEditPlaceName-${place.id}`;
+            let applied = place.name || '';
             const saveName = () => {
                 const name = nameInput.value.trim();
-                if (name !== (place.name || '')) deps.updatePlace(place.id, { name });
+                // La suppression de l'input pendant le re-rendu relance
+                // change sur blur : ignorer la valeur déjà appliquée.
+                if (name === applied) return;
+                applied = name;
+                deps.updatePlace(place.id, { name });
             };
             nameInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') saveName(); });
+            nameInput.addEventListener('change', saveName);
             const rename = button('btn btn-sm btn-outline-primary parcours-edit-place-rename', 'ti-check',
                 t('Renommer'), { text: t('Renommer') });
             rename.addEventListener('click', saveName);
